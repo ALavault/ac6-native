@@ -1,0 +1,84 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+openjdk version "21.0.11" 2026-04-21
+OpenJDK Runtime Environment (build 21.0.11+10-1-26.04.2-Ubuntu)
+OpenJDK 64-Bit Server VM (build 21.0.11+10-1-26.04.2-Ubuntu, mixed mode)
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /tmp/ac6-ghidra-home-corrected/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /tmp/ac6-ghidra-home-corrected/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1569 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3235 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpRange.java '0x821b61f8' '0x821b6278'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpRange.java (HeadlessAnalyzer)  
+INFO  DumpRange.java> 821b61f8 li r11,0x8 (GhidraScript)  
+INFO  DumpRange.java> 821b61fc stw r11,0xc(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b6200 addi r1,r1,0xb0 (GhidraScript)  
+INFO  DumpRange.java> 821b6204 b 0x8238653c (GhidraScript)  
+INFO  DumpRange.java> 821b6208 bl 0x821622a8 (GhidraScript)  
+INFO  DumpRange.java> 821b620c lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 821b6210 li r10,0x9 (GhidraScript)  
+INFO  DumpRange.java> 821b6214 ori r11,r11,0x7a8 (GhidraScript)  
+INFO  DumpRange.java> 821b6218 li r9,0xc (GhidraScript)  
+INFO  DumpRange.java> 821b621c li r4,0xf (GhidraScript)  
+INFO  DumpRange.java> 821b6220 or r3,r31,r31 (GhidraScript)  
+INFO  DumpRange.java> 821b6224 stwx r10,r31,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b6228 stw r9,0xc(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b622c bl 0x821b5088 (GhidraScript)  
+INFO  DumpRange.java> 821b6230 addi r1,r1,0xb0 (GhidraScript)  
+INFO  DumpRange.java> 821b6234 b 0x8238653c (GhidraScript)  
+INFO  DumpRange.java> 821b6238 lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 821b623c addis r30,r31,0x2 (GhidraScript)  
+INFO  DumpRange.java> 821b6240 ori r11,r11,0x8c4 (GhidraScript)  
+INFO  DumpRange.java> 821b6244 addi r30,r30,0x78c (GhidraScript)  
+INFO  DumpRange.java> 821b6248 lwzx r11,r31,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b624c lwz r10,0x0(r30) (GhidraScript)  
+INFO  DumpRange.java> 821b6250 stw r11,0x17b8(r10) (GhidraScript)  
+INFO  DumpRange.java> 821b6254 lwz r3,0x0(r30) (GhidraScript)  
+INFO  DumpRange.java> 821b6258 lwz r4,0xc0(r3) (GhidraScript)  
+INFO  DumpRange.java> 821b625c bl 0x82174810 (GhidraScript)  
+INFO  DumpRange.java> 821b6260 lwz r11,0x0(r30) (GhidraScript)  
+INFO  DumpRange.java> 821b6264 lis r10,0x2 (GhidraScript)  
+INFO  DumpRange.java> 821b6268 cmpwi cr6,r3,-0x1 (GhidraScript)  
+INFO  DumpRange.java> 821b626c ori r10,r10,0x794 (GhidraScript)  
+INFO  DumpRange.java> 821b6270 lwz r11,0x4(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b6274 stwx r11,r31,r10 (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  

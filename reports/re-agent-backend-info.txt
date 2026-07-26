@@ -1,0 +1,16 @@
+Ghidra Export Statistics
+========================================
+Functions:    8,824
+With xrefs:   Yes
+Structs:      0
+Enums:        0
+Vtables:      0
+Globals:      4,295
+Strings:      4,963
+Known funcs:  0 (from address map)
+
+Source Code Data:
+  Structs:    0 (with sizes)
+  Enums:      0 (with values)
+
+Export dir:   /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/exports

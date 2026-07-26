@@ -1,0 +1,94 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home
+openjdk version "21.0.11" 2026-04-21
+OpenJDK Runtime Environment (build 21.0.11+10-1-26.04.2-Ubuntu)
+OpenJDK 64-Bit Server VM (build 21.0.11+10-1-26.04.2-Ubuntu, mixed mode)
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /tmp/ac6-ghidra-home/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /tmp/ac6-ghidra-home/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1598 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3235 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6 (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6 (HeadlessProject)  
+INFO  REPORT: Processing input files:  (HeadlessAnalyzer)  
+INFO       project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6 (HeadlessAnalyzer)  
+INFO  IMPORTING: file:///fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex (HeadlessAnalyzer)  
+INFO  XEX Loader: Checking Signature (XEXLoaderWVLoader)  
+INFO  Using Loader: XEX Loader by Warranty Voider (ProgramLoader)  
+INFO  Using Language/Compiler: PowerPC:BE:64:A2ALT-32addr:default (ProgramLoader)  
+INFO  Using Library Search Path: [., /bin, /lib, /lib64, /lib/x86_64-linux-gnu, /lib/aarch64-linux-gnu, /usr/bin, /usr/lib, /usr/X11R6/bin, /usr/X11R6/lib, /usr/java/packages/lib, /usr/lib/x86_64-linux-gnu/jni, /usr/lib/x86_64-linux-gnu, /usr/lib/jni] (ProgramLoader)  
+INFO  XEX Loader: Trying to load as retail... (XEXLoaderWVLoader)  
+INFO  XEX Loader: Loading header (XEXLoaderWVLoader)  
+INFO  XEX Loader: Flag : Title Module (XEXHeader)  
+INFO  XEX Loader: Loading optional headers (XEXHeader)  
+INFO  XEX Loader: Processing section info (XEXHeader)  
+INFO  XEX Loader: Ressource Info = 4E4D07D1 (XEXHeader)  
+INFO  XEX Loader: Entry point address = 0x821F5E90 (XEXHeader)  
+INFO  XEX Loader: Imagebase address = 0x82000000 (XEXHeader)  
+INFO  XEX Loader: Loading loader info (XEXHeader)  
+INFO  XEX Loader: File key    = A9 58 2F C4 9D CE CB 6D A5 18 0D 50 CD BE BD BB  (XEXHeader)  
+INFO  XEX Loader: Session key = 2D 52 9E 59 F0 C5 C9 12 1F 35 D7 32 A6 1B 12 A9  (XEXHeader)  
+INFO  XEX Loader: Loading section info (XEXHeader)  
+INFO  XEX Loader: Loading PE Image (XEXHeader)  
+INFO  XEX Loader: Encryption type = 1 (XEXHeader)  
+INFO  XEX Loader: Compression type = 1 (XEXHeader)  
+INFO  XEX Loader: Decrypting using key    = 2D 52 9E 59 F0 C5 C9 12 1F 35 D7 32 A6 1B 12 A9  (XEXHeader)  
+INFO  XEX Loader: Processing PE Image (XEXHeader)  
+INFO  XEX Loader: Loading section .rdata at 0x82000400 size = 0x000799D4 (XEXHeader)  
+INFO  XEX Loader: Loading section .pdata at 0x82079E00 size = 0x000101B0 (XEXHeader)  
+INFO  XEX Loader: Loading section BINKBSS at 0x8208A000 size = 0x000028C8 (XEXHeader)  
+INFO  XEX Loader: Loading section .text at 0x82090000 size = 0x0034772C (XEXHeader)  
+INFO  XEX Loader: Loading section BINK at 0x823D7800 size = 0x000107F8 (XEXHeader)  
+INFO  XEX Loader: Loading section .data at 0x823F0000 size = 0x0066EFD8 (XEXHeader)  
+INFO  XEX Loader: Loading section .tls at 0x82A5F000 size = 0x00000025 (XEXHeader)  
+INFO  XEX Loader: Loading section .XBMOVIE at 0x82A5F200 size = 0x0000000C (XEXHeader)  
+INFO  XEX Loader: Loading section BINKDATA at 0x82A5F400 size = 0x00003D80 (XEXHeader)  
+INFO  XEX Loader: Loading section .idata at 0x82A70000 size = 0x00000462 (XEXHeader)  
+INFO  XEX Loader: Loading section .XBLD at 0x82A80000 size = 0x000000B0 (XEXHeader)  
+INFO  XEX Loader: Loading section .reloc at 0x82A80200 size = 0x00042E84 (XEXHeader)  
+INFO  XEX Loader: Loaded 8246 additional function symbols and defined 8246 functions (XEXHeader)  
+INFO  XEX Loader: Added import symbols(251 References, 241 Thunks) (XEXHeader)  
+INFO  Additional info:
+Loading file:///fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex?MD5=e6aade50baf7379b074d3a998baefd87...
+------------------------------------------------
+
+ (ProgramLoader)  
+INFO  IMPORTING: Loaded 0 additional files (HeadlessAnalyzer)  
+INFO  /default.xex: file created (lavaulta) (LocalFileSystem)  
+INFO  REPORT: Save succeeded for: /default.xex (ace-combat-6:/default.xex) (HeadlessAnalyzer)  
+INFO  REPORT: Import succeeded (HeadlessAnalyzer)  

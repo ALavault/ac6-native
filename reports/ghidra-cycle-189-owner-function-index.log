@@ -1,0 +1,105 @@
+openjdk version "21.0.11" 2026-04-21
+OpenJDK Runtime Environment (build 21.0.11+10-1-26.04.2-Ubuntu)
+OpenJDK 64-Bit Server VM (build 21.0.11+10-1-26.04.2-Ubuntu, mixed mode)
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1579 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3087 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6 (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6 (HeadlessProject)  
+INFO  REPORT: Processing read-only project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: InspectFunctionIsland.java '0x821b7000' '0x821bb500'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/InspectFunctionIsland.java (HeadlessAnalyzer)  
+INFO  InspectFunctionIsland.java> entry=821b7180 body=[[821b7180, 821b7207]] instructions=34 noreturn=false external=false thunk=false name=Function_821B7180 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b7208 body=[[821b7208, 821b72ff]] instructions=62 noreturn=false external=false thunk=false name=Function_821B7208 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b7300 body=[[821b7300, 821b7307]] instructions=2 noreturn=false external=false thunk=false name=Function_821B7300 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b78e8 body=[[821b78e8, 821b792f]] instructions=18 noreturn=false external=false thunk=false name=Function_821B78E8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b7960 body=[[821b7960, 821b7967]] instructions=2 noreturn=false external=false thunk=false name=Function_821B7960 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b7dc8 body=[[821b7dc8, 821b7dcf]] instructions=2 noreturn=false external=false thunk=false name=Function_821B7DC8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8218 body=[[821b8218, 821b821f]] instructions=2 noreturn=false external=false thunk=false name=Function_821B8218 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8318 body=[[821b8318, 821b831f]] instructions=2 noreturn=false external=false thunk=false name=Function_821B8318 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8430 body=[[821b8430, 821b84e3]] instructions=45 noreturn=false external=false thunk=false name=Function_821B8430 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b84e8 body=[[821b84e8, 821b850b] [821b852c, 821b85ab]] instructions=41 noreturn=false external=false thunk=false name=FUN_821b84e8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b85b0 body=[[821b85b0, 821b861f]] instructions=28 noreturn=false external=false thunk=false name=FUN_821b85b0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8620 body=[[821b8620, 821b867f]] instructions=24 noreturn=false external=false thunk=false name=Function_821B8620 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8680 body=[[821b8680, 821b86df]] instructions=24 noreturn=false external=false thunk=false name=Function_821B8680 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b86e0 body=[[821b86e0, 821b8743]] instructions=25 noreturn=false external=false thunk=false name=Function_821B86E0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8748 body=[[821b8748, 821b878f]] instructions=18 noreturn=false external=false thunk=false name=Function_821B8748 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8790 body=[[821b8790, 821b87d7]] instructions=18 noreturn=false external=false thunk=false name=Function_821B8790 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b87d8 body=[[821b87d8, 821b881f]] instructions=18 noreturn=false external=false thunk=false name=Function_821B87D8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8820 body=[[821b8820, 821b8867]] instructions=18 noreturn=false external=false thunk=false name=Function_821B8820 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8868 body=[[821b8868, 821b88af]] instructions=18 noreturn=false external=false thunk=false name=Function_821B8868 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b88b0 body=[[821b88b0, 821b88f7]] instructions=18 noreturn=false external=false thunk=false name=Function_821B88B0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b88f8 body=[[821b88f8, 821b8947]] instructions=20 noreturn=false external=false thunk=false name=Function_821B88F8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8948 body=[[821b8948, 821b898f]] instructions=18 noreturn=false external=false thunk=false name=Function_821B8948 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8990 body=[[821b8990, 821b89eb]] instructions=23 noreturn=false external=false thunk=false name=Function_821B8990 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b89f0 body=[[821b89f0, 821b8aab]] instructions=47 noreturn=false external=false thunk=false name=Function_821B89F0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8ab0 body=[[821b8ab0, 821b8b0f]] instructions=24 noreturn=false external=false thunk=false name=Function_821B8AB0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8b10 body=[[821b8b10, 821b8b87]] instructions=30 noreturn=false external=false thunk=false name=Function_821B8B10 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8b88 body=[[821b8b88, 821b8bff]] instructions=30 noreturn=false external=false thunk=false name=Function_821B8B88 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8c00 body=[[821b8c00, 821b8c47]] instructions=18 noreturn=false external=false thunk=false name=Function_821B8C00 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8c48 body=[[821b8c48, 821b8c9b]] instructions=21 noreturn=false external=false thunk=false name=Function_821B8C48 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8ca0 body=[[821b8ca0, 821b8cf3]] instructions=21 noreturn=false external=false thunk=false name=Function_821B8CA0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8cf8 body=[[821b8cf8, 821b8d4b]] instructions=21 noreturn=false external=false thunk=false name=Function_821B8CF8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8d50 body=[[821b8d50, 821b8da3]] instructions=21 noreturn=false external=false thunk=false name=Function_821B8D50 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8da8 body=[[821b8da8, 821b8df7]] instructions=20 noreturn=false external=false thunk=false name=Function_821B8DA8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8df8 body=[[821b8df8, 821b8e53]] instructions=23 noreturn=false external=false thunk=false name=Function_821B8DF8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8e58 body=[[821b8e58, 821b8eb3]] instructions=23 noreturn=false external=false thunk=false name=Function_821B8E58 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8eb8 body=[[821b8eb8, 821b8eff]] instructions=18 noreturn=false external=false thunk=false name=Function_821B8EB8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8f00 body=[[821b8f00, 821b8f6f]] instructions=28 noreturn=false external=false thunk=false name=Function_821B8F00 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8f70 body=[[821b8f70, 821b8fdf]] instructions=28 noreturn=false external=false thunk=false name=Function_821B8F70 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b8fe0 body=[[821b8fe0, 821b904f]] instructions=28 noreturn=false external=false thunk=false name=Function_821B8FE0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9050 body=[[821b9050, 821b90ab]] instructions=23 noreturn=false external=false thunk=false name=Function_821B9050 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b90b0 body=[[821b90b0, 821b910b]] instructions=23 noreturn=false external=false thunk=false name=Function_821B90B0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9110 body=[[821b9110, 821b916b]] instructions=23 noreturn=false external=false thunk=false name=Function_821B9110 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9170 body=[[821b9170, 821b91cb]] instructions=23 noreturn=false external=false thunk=false name=Function_821B9170 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b91d0 body=[[821b91d0, 821b922b]] instructions=23 noreturn=false external=false thunk=false name=Function_821B91D0 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9230 body=[[821b9230, 821b928b]] instructions=23 noreturn=false external=false thunk=false name=Function_821B9230 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9290 body=[[821b9290, 821b92e3]] instructions=21 noreturn=false external=false thunk=false name=Function_821B9290 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b92e8 body=[[821b92e8, 821b9343]] instructions=23 noreturn=false external=false thunk=false name=Function_821B92E8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9348 body=[[821b9348, 821b93a3]] instructions=23 noreturn=false external=false thunk=false name=Function_821B9348 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b93a8 body=[[821b93a8, 821b9403]] instructions=23 noreturn=false external=false thunk=false name=Function_821B93A8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9740 body=[[821b9740, 821b9747]] instructions=2 noreturn=false external=false thunk=false name=Function_821B9740 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b9828 body=[[821b9828, 821b982f]] instructions=2 noreturn=false external=false thunk=false name=Function_821B9828 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821b99b8 body=[[821b99b8, 821b99bf]] instructions=2 noreturn=false external=false thunk=false name=Function_821B99B8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821ba278 body=[[821ba278, 821ba27f]] instructions=2 noreturn=false external=false thunk=false name=Function_821BA278 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821ba588 body=[[821ba588, 821ba9f7]] instructions=284 noreturn=false external=false thunk=false name=Function_821BA588 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821ba9f8 body=[[821ba9f8, 821ba9ff]] instructions=2 noreturn=false external=false thunk=false name=Function_821BA9F8 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821bab70 body=[[821bab70, 821babdf] [821babf8, 821bac67]] instructions=56 noreturn=false external=false thunk=false name=Function_821BAB70 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821bac68 body=[[821bac68, 821bac6f]] instructions=2 noreturn=false external=false thunk=false name=Function_821BAC68 (GhidraScript)  
+INFO  InspectFunctionIsland.java> entry=821bb118 body=[[821bb118, 821bb11f]] instructions=2 noreturn=false external=false thunk=false name=Function_821BB118 (GhidraScript)  

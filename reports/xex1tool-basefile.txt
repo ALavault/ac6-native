@@ -1,0 +1,10 @@
+xex1tool  -  emoose
+Reading and parsing input XEX file...
+Successfully dumped basefile to workspaces/ace-combat-6/analysis-input/ACE6_X360.exe
+
+Load basefile into IDA with the following details
+DO NOT load as a PE or EXE file as the format is not valid
+File Type:       Binary file
+Processor Type:  PowerPC: ppcbe
+Load Address:    0x82000000
+Entry Point:     0x821F5E90

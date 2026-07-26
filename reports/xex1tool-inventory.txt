@@ -1,0 +1,508 @@
+xex1tool  -  emoose
+Reading and parsing input XEX file...
+
+XEX Imports:
+# xam.xex v2.0.6132.0
+# (min v2.0.5787.0, 88 imports)
+    1) NetDll_WSAStartup
+    2) NetDll_WSACleanup
+    3) NetDll_socket
+    4) NetDll_closesocket
+    5) NetDll_shutdown
+    6) NetDll_ioctlsocket
+    7) NetDll_setsockopt
+    8) NetDll_getsockopt
+    9) NetDll_getsockname
+   11) NetDll_bind
+   12) NetDll_connect
+   13) NetDll_listen
+   14) NetDll_accept
+   15) NetDll_select
+   18) NetDll_recv
+   20) NetDll_recvfrom
+   22) NetDll_send
+   24) NetDll_sendto
+   27) NetDll_WSAGetLastError
+   34) NetDll___WSAFDIsSet
+   51) NetDll_XNetStartup
+   52) NetDll_XNetCleanup
+   53) NetDll_XNetRandom
+   54) NetDll_XNetCreateKey
+   55) NetDll_XNetRegisterKey
+   57) NetDll_XNetXnAddrToInAddr
+   60) NetDll_XNetInAddrToXnAddr
+   69) NetDll_XNetQosListen
+   70) NetDll_XNetQosLookup
+   71) NetDll_XNetQosServiceLookup
+   72) NetDll_XNetQosRelease
+   73) NetDll_XNetGetTitleXnAddr
+  400) XamInputGetCapabilities
+  401) XamInputGetState
+  402) XamInputSetState
+  408) XamInputGetKeystrokeEx
+  420) XamLoaderLaunchTitle
+  425) XamLoaderTerminateTitle
+  431) XamTaskSchedule
+  433) XamTaskCloseHandle
+  435) XamTaskShouldExit
+  490) XamAlloc
+  492) XamFree
+  500) XMsgInProcessCall
+  503) XMsgStartIORequest
+  504) XMsgCancelIORequest
+  508) XMsgStartIORequestEx
+  522) XamUserGetXUID
+  526) XamUserGetName
+  528) XamUserGetSigninState
+  530) XamUserCheckPrivilege
+  531) XamUserAreUsersFriends
+  537) XamUserReadProfileSettings
+  551) XamUserGetSigninInfo
+  592) XamEnumerate
+  601) XamContentCreateEx
+  602) XamContentClose
+  603) XamContentDelete
+  604) XamContentCreateEnumerator
+  606) XamContentGetDeviceData
+  608) XamContentSetThumbnail
+  613) XamContentGetDeviceState
+  640) XamGetExecutionId
+  642) XamGetSystemVersion
+  650) XamNotifyCreateListener
+  651) XNotifyGetNext
+  652) XNotifyPositionUI
+  700) XamShowSigninUI
+  703) XamShowFriendsUI
+  710) XamShowPlayerReviewUI
+  711) XamShowMarketplaceUI
+  715) XamShowDeviceSelectorUI
+  725) XamShowGamerCardUIForXUID
+  729) XamShowDirtyDiscErrorUI
+  732) XamShowMessageBoxUIEx
+  750) XamUserCreateAchievementEnumerator
+  752) XamWriteGamerTile
+  759) XamUserCreateStatsEnumerator
+  780) XamVoiceCreate
+  781) XamVoiceHeadsetPresent
+  782) XamVoiceSubmitPacket
+  783) XamVoiceClose
+  790) XamSessionCreateHandle
+  791) XamSessionRefObjByHandle
+  971) XGetAVPack
+  972) XGetGameRegion
+  973) XGetLanguage
+  977) XGetVideoMode
+
+# xboxkrnl.exe v2.0.6132.0
+# (min v2.0.5787.0, 163 imports)
+    3) DbgPrint
+    9) ExAllocatePool
+   11) ExAllocatePoolTypeWithTag
+   13) ExCreateThread
+   15) ExFreePool
+   16) ExGetXConfigSetting
+   21) ExRegisterTitleTerminateNotification
+   25) ExTerminateThread
+   27) ExThreadObjectType
+   40) HalReturnToFirmware
+   52) IoCheckShareAccess
+   53) IoCompleteRequest
+   55) IoCreateDevice
+   57) IoDeleteDevice
+   59) IoDismountVolume
+   60) IoDismountVolumeByFileHandle
+   65) IoInvalidDeviceRequest
+   69) IoRemoveShareAccess
+   71) IoSetShareAccess
+   77) KeAcquireSpinLockAtRaisedIrql
+   82) KeBugCheck
+   83) KeBugCheckEx
+   89) KeDebugMonitorData
+   90) KeDelayExecutionThread
+   95) KeEnterCriticalRegion
+  102) KeGetCurrentProcessType
+  107) KeLockL2
+  108) KeUnlockL2
+  116) KeInitializeSemaphore
+  125) KeLeaveCriticalRegion
+  129) KeQueryBasePriorityThread
+  131) KeQueryPerformanceFrequency
+  132) KeQuerySystemTime
+  133) KeRaiseIrqlToDpcLevel
+  136) KeReleaseSemaphore
+  137) KeReleaseSpinLockFromRaisedIrql
+  143) KeResetEvent
+  146) KeResumeThread
+  151) KeSetAffinityThread
+  153) KeSetBasePriorityThread
+  157) KeSetEvent
+  173) KeTimeStampBundle
+  174) KeTryToAcquireSpinLockAtRaisedIrql
+  175) KeWaitForMultipleObjects
+  176) KeWaitForSingleObject
+  177) KfAcquireSpinLock
+  179) KfLowerIrql
+  180) KfReleaseSpinLock
+  186) MmAllocatePhysicalMemoryEx
+  189) MmFreePhysicalMemory
+  190) MmGetPhysicalAddress
+  196) MmQueryAddressProtect
+  198) MmQueryStatistics
+  199) MmSetAddressProtect
+  204) NtAllocateVirtualMemory
+  205) NtCancelTimer
+  206) NtClearEvent
+  207) NtClose
+  209) NtCreateEvent
+  210) NtCreateFile
+  212) NtCreateMutant
+  213) NtCreateSemaphore
+  215) NtCreateTimer
+  217) NtDeviceIoControlFile
+  218) NtDuplicateObject
+  219) NtFlushBuffersFile
+  220) NtFreeVirtualMemory
+  223) NtOpenFile
+  226) NtPulseEvent
+  228) NtQueryDirectoryFile
+  231) NtQueryFullAttributesFile
+  232) NtQueryInformationFile
+  238) NtQueryVirtualMemory
+  239) NtQueryVolumeInformationFile
+  240) NtReadFile
+  241) NtReadFileScatter
+  242) NtReleaseMutant
+  243) NtReleaseSemaphore
+  245) NtResumeThread
+  246) NtSetEvent
+  247) NtSetInformationFile
+  250) NtSetTimerEx
+  251) NtSignalAndWaitForSingleObjectEx
+  253) NtWaitForSingleObjectEx
+  254) NtWaitForMultipleObjectsEx
+  255) NtWriteFile
+  259) ObCreateSymbolicLink
+  260) ObDeleteSymbolicLink
+  261) ObDereferenceObject
+  265) ObIsTitleObject
+  271) ObReferenceObject
+  272) ObReferenceObjectByHandle
+  281) RtlCaptureContext
+  283) RtlCompareMemoryUlong
+  285) RtlCompareStringN
+  293) RtlEnterCriticalSection
+  294) RtlFillMemoryUlong
+  295) RtlFreeAnsiString
+  299) RtlImageXexHeaderField
+  300) RtlInitAnsiString
+  301) RtlInitUnicodeString
+  302) RtlInitializeCriticalSection
+  303) RtlInitializeCriticalSectionAndSpinCount
+  304) RtlLeaveCriticalSection
+  309) RtlNtStatusToDosError
+  310) RtlRaiseException
+  315) sprintf
+  319) RtlTimeFieldsToTime
+  320) RtlTimeToTimeFields
+  321) RtlTryEnterCriticalSection
+  322) RtlUnicodeStringToAnsiString
+  323) RtlUnicodeToMultiByteN
+  327) RtlUnwind
+  329) RtlUpcaseUnicodeChar
+  333) _vsnprintf
+  338) KeTlsAlloc
+  339) KeTlsFree
+  340) KeTlsGetValue
+  341) KeTlsSetValue
+  344) XboxKrnlVersion
+  402) XeCryptSha
+  403) XexExecutableModuleHandle
+  404) XexCheckExecutablePrivilege
+  405) XexGetModuleHandle
+  407) XexGetProcedureAddress
+  421) __C_specific_handler
+  430) ExLoadedCommandLine
+  433) VdCallGraphicsNotificationRoutines
+  436) VdEnableDisableClockGating
+  438) VdEnableRingBufferRPtrWriteBack
+  441) VdGetCurrentDisplayGamma
+  442) VdGetCurrentDisplayInformation
+  445) VdGetSystemCommandBuffer
+  446) VdGlobalDevice
+  448) VdGpuClockInMHz
+  449) VdHSIOCalibrationLock
+  450) VdInitializeEngines
+  451) VdInitializeRingBuffer
+  453) VdInitializeScalerCommandBuffer
+  454) VdIsHSIOTrainingSucceeded
+  455) VdPersistDisplay
+  457) VdQueryVideoFlags
+  458) VdQueryVideoMode
+  467) VdSetDisplayMode
+  469) VdSetGraphicsInterruptCallback
+  473) VdSetSystemCommandBufferGpuIdentifierAddress
+  476) VdShutdownEngines
+  479) KiApcNormalRoutineNop_0
+  499) XAudioRegisterRenderDriverClient
+  500) XAudioUnregisterRenderDriverClient
+  501) XAudioSubmitRenderDriverFrame
+  503) XAudioGetVoiceCategoryVolumeChangeMask
+  504) XAudioGetVoiceCategoryVolume
+  548) XMACreateContext
+  550) XMAReleaseContext
+  598) XeKeysConsolePrivateKeySign
+  599) XeKeysConsoleSignatureVerification
+  601) StfsCreateDevice
+  602) StfsControlDevice
+  603) VdSwap
+  614) KeCertMonitorData
+  617) VdRetrainEDRAM
+  618) VdRetrainEDRAMWorker
+
+
+XEX Info
+  XEX2 Executable (>=1861)
+  Valid RSA signature (signed with 'retail' key)
+  Encrypted using 'retail' key
+  Not Compressed
+  Title Module
+  XGD2 Media Only
+  Xbox360 Logo Data Present
+
+Basefile Info
+  Original PE Name:   ACE6_X360.exe
+  Base Address:       82000000
+  Entry Point:        821F5E90
+  Image Size:           AA0000
+  Page Size:             10000
+  Checksum:           007359FD
+  Filetime:           473AD88F - Wed Nov 14 11:14:23 2007
+  Stack Size:            40000
+
+Regions
+  All Regions
+
+Allowed Media
+  DVD-XGD2 (Xbox360 Original Disc)
+
+XEX Privileges
+   0x9: Uses Game Voice Channel
+   0xA: PAL-50 Incompatible
+
+Media ID
+  EF CC E0 9C C0 32 88 53 CC 5E A0 0C 03 79 EF B3 
+
+Encryption Key (key decrypted using retail key)
+  2D 52 9E 59 F0 C5 C9 12 1F 35 D7 32 A6 1B 12 A9 
+
+LAN Key
+  A1 F7 4E 9C 61 82 43 F7 EA E2 D5 96 3D 16 13 72 
+
+TLS Info
+  Number of Slots:    64
+  Data Size:          00000024
+  Raw Data Address:   82A5F000
+  Raw Data Size:      00000024
+
+Execution ID
+  Media ID:           0379EFB3
+  Title ID:           4E4D07D1 (NM-2001)
+  Savegame ID:        00000000
+  Version:            v0.0.0.11
+  Base Version:       v0.0.0.11
+  Platform:           0
+  Executable Type:    0
+  Disc Number:        1
+  Number of Discs:    1
+
+Static Libraries
+    0) XAPILIB        v2.0.6132.6   (Approved)
+    1) D3DX9          v2.0.6132.0   (Approved)
+    2) XGRAPHC        v2.0.6132.0   (Approved)
+    3) XBOXKRNL       v2.0.6132.0   (Approved)
+    4) XNET           v2.0.6132.0   (Approved)
+    5) XONLINE        v2.0.6132.0   (Approved)
+    6) LIBCPMT        v2.0.6132.0   (Approved)
+    7) XHV            v2.0.6132.0   (Approved)
+    8) XMP            v2.0.6132.0   (Approved)
+    9) XAUD           v2.0.6132.0   (Approved)
+   10) D3D9LTCG       v2.0.6132.4   (Approved)
+
+Import Libraries
+    0) xam.xex        v2.0.6132.0   (min v2.0.5787.0, 88 imports)
+    1) xboxkrnl.exe   v2.0.6132.0   (min v2.0.5787.0, 163 imports)
+
+Resources
+    0) 82A70000 - 82A97BA2 : 4E4D07D1
+
+Memory Pages
+    0) 82000000 - 82010000 : Header/Resource
+    1) 82010000 - 82020000 : Header/Resource
+    2) 82020000 - 82030000 : Header/Resource
+    3) 82030000 - 82040000 : Header/Resource
+    4) 82040000 - 82050000 : Header/Resource
+    5) 82050000 - 82060000 : Header/Resource
+    6) 82060000 - 82070000 : Header/Resource
+    7) 82070000 - 82080000 : Header/Resource
+    8) 82080000 - 82090000 : Header/Resource
+    9) 82090000 - 820A0000 : Code
+   10) 820A0000 - 820B0000 : Code
+   11) 820B0000 - 820C0000 : Code
+   12) 820C0000 - 820D0000 : Code
+   13) 820D0000 - 820E0000 : Code
+   14) 820E0000 - 820F0000 : Code
+   15) 820F0000 - 82100000 : Code
+   16) 82100000 - 82110000 : Code
+   17) 82110000 - 82120000 : Code
+   18) 82120000 - 82130000 : Code
+   19) 82130000 - 82140000 : Code
+   20) 82140000 - 82150000 : Code
+   21) 82150000 - 82160000 : Code
+   22) 82160000 - 82170000 : Code
+   23) 82170000 - 82180000 : Code
+   24) 82180000 - 82190000 : Code
+   25) 82190000 - 821A0000 : Code
+   26) 821A0000 - 821B0000 : Code
+   27) 821B0000 - 821C0000 : Code
+   28) 821C0000 - 821D0000 : Code
+   29) 821D0000 - 821E0000 : Code
+   30) 821E0000 - 821F0000 : Code
+   31) 821F0000 - 82200000 : Code
+   32) 82200000 - 82210000 : Code
+   33) 82210000 - 82220000 : Code
+   34) 82220000 - 82230000 : Code
+   35) 82230000 - 82240000 : Code
+   36) 82240000 - 82250000 : Code
+   37) 82250000 - 82260000 : Code
+   38) 82260000 - 82270000 : Code
+   39) 82270000 - 82280000 : Code
+   40) 82280000 - 82290000 : Code
+   41) 82290000 - 822A0000 : Code
+   42) 822A0000 - 822B0000 : Code
+   43) 822B0000 - 822C0000 : Code
+   44) 822C0000 - 822D0000 : Code
+   45) 822D0000 - 822E0000 : Code
+   46) 822E0000 - 822F0000 : Code
+   47) 822F0000 - 82300000 : Code
+   48) 82300000 - 82310000 : Code
+   49) 82310000 - 82320000 : Code
+   50) 82320000 - 82330000 : Code
+   51) 82330000 - 82340000 : Code
+   52) 82340000 - 82350000 : Code
+   53) 82350000 - 82360000 : Code
+   54) 82360000 - 82370000 : Code
+   55) 82370000 - 82380000 : Code
+   56) 82380000 - 82390000 : Code
+   57) 82390000 - 823A0000 : Code
+   58) 823A0000 - 823B0000 : Code
+   59) 823B0000 - 823C0000 : Code
+   60) 823C0000 - 823D0000 : Code
+   61) 823D0000 - 823E0000 : Code
+   62) 823E0000 - 823F0000 : Code
+   63) 823F0000 - 82400000 : Data
+   64) 82400000 - 82410000 : Data
+   65) 82410000 - 82420000 : Data
+   66) 82420000 - 82430000 : Data
+   67) 82430000 - 82440000 : Data
+   68) 82440000 - 82450000 : Data
+   69) 82450000 - 82460000 : Data
+   70) 82460000 - 82470000 : Data
+   71) 82470000 - 82480000 : Data
+   72) 82480000 - 82490000 : Data
+   73) 82490000 - 824A0000 : Data
+   74) 824A0000 - 824B0000 : Data
+   75) 824B0000 - 824C0000 : Data
+   76) 824C0000 - 824D0000 : Data
+   77) 824D0000 - 824E0000 : Data
+   78) 824E0000 - 824F0000 : Data
+   79) 824F0000 - 82500000 : Data
+   80) 82500000 - 82510000 : Data
+   81) 82510000 - 82520000 : Data
+   82) 82520000 - 82530000 : Data
+   83) 82530000 - 82540000 : Data
+   84) 82540000 - 82550000 : Data
+   85) 82550000 - 82560000 : Data
+   86) 82560000 - 82570000 : Data
+   87) 82570000 - 82580000 : Data
+   88) 82580000 - 82590000 : Data
+   89) 82590000 - 825A0000 : Data
+   90) 825A0000 - 825B0000 : Data
+   91) 825B0000 - 825C0000 : Data
+   92) 825C0000 - 825D0000 : Data
+   93) 825D0000 - 825E0000 : Data
+   94) 825E0000 - 825F0000 : Data
+   95) 825F0000 - 82600000 : Data
+   96) 82600000 - 82610000 : Data
+   97) 82610000 - 82620000 : Data
+   98) 82620000 - 82630000 : Data
+   99) 82630000 - 82640000 : Data
+  100) 82640000 - 82650000 : Data
+  101) 82650000 - 82660000 : Data
+  102) 82660000 - 82670000 : Data
+  103) 82670000 - 82680000 : Data
+  104) 82680000 - 82690000 : Data
+  105) 82690000 - 826A0000 : Data
+  106) 826A0000 - 826B0000 : Data
+  107) 826B0000 - 826C0000 : Data
+  108) 826C0000 - 826D0000 : Data
+  109) 826D0000 - 826E0000 : Data
+  110) 826E0000 - 826F0000 : Data
+  111) 826F0000 - 82700000 : Data
+  112) 82700000 - 82710000 : Data
+  113) 82710000 - 82720000 : Data
+  114) 82720000 - 82730000 : Data
+  115) 82730000 - 82740000 : Data
+  116) 82740000 - 82750000 : Data
+  117) 82750000 - 82760000 : Data
+  118) 82760000 - 82770000 : Data
+  119) 82770000 - 82780000 : Data
+  120) 82780000 - 82790000 : Data
+  121) 82790000 - 827A0000 : Data
+  122) 827A0000 - 827B0000 : Data
+  123) 827B0000 - 827C0000 : Data
+  124) 827C0000 - 827D0000 : Data
+  125) 827D0000 - 827E0000 : Data
+  126) 827E0000 - 827F0000 : Data
+  127) 827F0000 - 82800000 : Data
+  128) 82800000 - 82810000 : Data
+  129) 82810000 - 82820000 : Data
+  130) 82820000 - 82830000 : Data
+  131) 82830000 - 82840000 : Data
+  132) 82840000 - 82850000 : Data
+  133) 82850000 - 82860000 : Data
+  134) 82860000 - 82870000 : Data
+  135) 82870000 - 82880000 : Data
+  136) 82880000 - 82890000 : Data
+  137) 82890000 - 828A0000 : Data
+  138) 828A0000 - 828B0000 : Data
+  139) 828B0000 - 828C0000 : Data
+  140) 828C0000 - 828D0000 : Data
+  141) 828D0000 - 828E0000 : Data
+  142) 828E0000 - 828F0000 : Data
+  143) 828F0000 - 82900000 : Data
+  144) 82900000 - 82910000 : Data
+  145) 82910000 - 82920000 : Data
+  146) 82920000 - 82930000 : Data
+  147) 82930000 - 82940000 : Data
+  148) 82940000 - 82950000 : Data
+  149) 82950000 - 82960000 : Data
+  150) 82960000 - 82970000 : Data
+  151) 82970000 - 82980000 : Data
+  152) 82980000 - 82990000 : Data
+  153) 82990000 - 829A0000 : Data
+  154) 829A0000 - 829B0000 : Data
+  155) 829B0000 - 829C0000 : Data
+  156) 829C0000 - 829D0000 : Data
+  157) 829D0000 - 829E0000 : Data
+  158) 829E0000 - 829F0000 : Data
+  159) 829F0000 - 82A00000 : Data
+  160) 82A00000 - 82A10000 : Data
+  161) 82A10000 - 82A20000 : Data
+  162) 82A20000 - 82A30000 : Data
+  163) 82A30000 - 82A40000 : Data
+  164) 82A40000 - 82A50000 : Data
+  165) 82A50000 - 82A60000 : Data
+  166) 82A60000 - 82A70000 : Data
+  167) 82A70000 - 82A80000 : Header/Resource
+  168) 82A80000 - 82A90000 : Header/Resource
+  169) 82A90000 - 82AA0000 : Header/Resource

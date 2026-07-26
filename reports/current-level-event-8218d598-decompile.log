@@ -1,0 +1,154 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/tmp/ac6-ghidra-home-corrected
+openjdk version "21.0.11" 2026-04-21
+OpenJDK Runtime Environment (build 21.0.11+10-1-26.04.2-Ubuntu)
+OpenJDK 64-Bit Server VM (build 21.0.11+10-1-26.04.2-Ubuntu, mixed mode)
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /tmp/ac6-ghidra-home-corrected/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /tmp/ac6-ghidra-home-corrected/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1509 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3040 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DecompileAt.java '0x8218d598'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 8218d598 Function_8218D598 (GhidraScript)  
+INFO  DecompileAt.java> 
+undefined8 Function_8218D598(undefined8 param_1,int param_2)
+
+{
+  int in_r11;
+  undefined4 local_10;
+  
+  *(undefined4 *)(in_r11 + 0x78) = local_10;
+  *(undefined4 *)(in_r11 + 0x7c) = *(undefined4 *)(param_2 + 0x3b4);
+  *(undefined4 *)(in_r11 + 0x80) = *(undefined4 *)(param_2 + 0x3e0);
+  *(undefined4 *)(in_r11 + 0x84) = *(undefined4 *)(param_2 + 0x3e4);
+  *(undefined4 *)(in_r11 + 0x88) = *(undefined4 *)(param_2 + 0x3c8);
+  *(undefined4 *)(in_r11 + 0x8c) = *(undefined4 *)(param_2 + 0x3cc);
+  *(undefined4 *)(in_r11 + 0x90) = *(undefined4 *)(param_2 + 0x388);
+  *(undefined4 *)(in_r11 + 0x94) = *(undefined4 *)(param_2 + 0x38c);
+  *(undefined4 *)(in_r11 + 0x98) = *(undefined4 *)(param_2 + 0x390);
+  *(undefined4 *)(in_r11 + 0x9c) = *(undefined4 *)(param_2 + 0x394);
+  DAT_82670b58 = *(undefined4 *)(param_2 + 0x478);
+  DAT_82670b5c = *(undefined4 *)(param_2 + 0x47c);
+  DAT_82670b60 = *(undefined4 *)(param_2 + 0x470);
+  DAT_82670b64 = *(undefined4 *)(param_2 + 0x474);
+  DAT_82670b68 = *(undefined4 *)(param_2 + 0x498);
+  DAT_82670b6c = *(undefined4 *)(param_2 + 0x49c);
+  DAT_82670b70 = *(undefined4 *)(param_2 + 0x490);
+  DAT_82670b74 = *(undefined4 *)(param_2 + 0x494);
+  DAT_82670b78 = *(undefined4 *)(param_2 + 0x488);
+  DAT_82670b7c = *(undefined4 *)(param_2 + 0x48c);
+  DAT_82670b80 = *(undefined4 *)(param_2 + 0x438);
+  DAT_82670b84 = *(undefined4 *)(param_2 + 0x43c);
+  DAT_82670b88 = *(undefined4 *)(param_2 + 0x440);
+  DAT_82670b8c = *(undefined4 *)(param_2 + 0x444);
+  DAT_82670b90 = *(undefined4 *)(param_2 + 0x410);
+  DAT_82670b94 = *(undefined4 *)(param_2 + 0x414);
+  DAT_82670b98 = *(undefined4 *)(param_2 + 0x400);
+  DAT_82670b9c = *(undefined4 *)(param_2 + 0x40c);
+  DAT_82670ba0 = *(undefined4 *)(param_2 + 0x404);
+  DAT_82670ba4 = *(undefined4 *)(param_2 + 0x408);
+  DAT_82670ba8 = *(undefined4 *)(param_2 + 0x420);
+  DAT_82670bac = *(undefined4 *)(param_2 + 0x424);
+  DAT_82670bb0 = *(undefined4 *)(param_2 + 0x418);
+  DAT_82670bb4 = *(undefined4 *)(param_2 + 0x41c);
+  DAT_82670bb8 = *(undefined4 *)(param_2 + 0x458);
+  DAT_82670bbc = *(undefined4 *)(param_2 + 0x45c);
+  DAT_82670bc0 = *(undefined4 *)(param_2 + 0x460);
+  DAT_82670bc4 = *(undefined4 *)(param_2 + 0x464);
+  DAT_82670bc8 = *(undefined4 *)(param_2 + 0x448);
+  DAT_82670bcc = *(undefined4 *)(param_2 + 0x44c);
+  DAT_82670bd0 = *(undefined4 *)(param_2 + 0x450);
+  DAT_82670bd4 = *(undefined4 *)(param_2 + 0x454);
+  DAT_82670bd8 = *(undefined4 *)(param_2 + 0x480);
+  DAT_82670bdc = *(undefined4 *)(param_2 + 0x484);
+  DAT_82670be0 = *(undefined4 *)(param_2 + 0x468);
+  DAT_82670be4 = *(undefined4 *)(param_2 + 0x46c);
+  DAT_82670be8 = *(undefined4 *)(param_2 + 0x428);
+  DAT_82670bec = *(undefined4 *)(param_2 + 0x42c);
+  DAT_82670bf0 = *(undefined4 *)(param_2 + 0x430);
+  DAT_82670bf4 = *(undefined4 *)(param_2 + 0x434);
+  DAT_82670ab8 = *(undefined4 *)(param_2 + 0xe8);
+  DAT_82670abc = *(undefined4 *)(param_2 + 0xec);
+  DAT_82670ac0 = *(undefined4 *)(param_2 + 0xe0);
+  DAT_82670ac4 = *(undefined4 *)(param_2 + 0xe4);
+  DAT_82670ac8 = *(undefined4 *)(param_2 + 0x108);
+  DAT_82670acc = *(undefined4 *)(param_2 + 0x10c);
+  DAT_82670ad0 = *(undefined4 *)(param_2 + 0x100);
+  DAT_82670ad4 = *(undefined4 *)(param_2 + 0x104);
+  DAT_82670ad8 = *(undefined4 *)(param_2 + 0xf8);
+  DAT_82670adc = *(undefined4 *)(param_2 + 0xfc);
+  DAT_82670ae0 = *(undefined4 *)(param_2 + 0xa8);
+  DAT_82670ae4 = *(undefined4 *)(param_2 + 0xac);
+  DAT_82670ae8 = *(undefined4 *)(param_2 + 0xb0);
+  DAT_82670aec = *(undefined4 *)(param_2 + 0xb4);
+  DAT_82670af0 = *(undefined4 *)(param_2 + 0x80);
+  DAT_82670af4 = *(undefined4 *)(param_2 + 0x84);
+  DAT_82670af8 = *(undefined4 *)(param_2 + 0x70);
+  DAT_82670afc = *(undefined4 *)(param_2 + 0x7c);
+  DAT_82670b00 = *(undefined4 *)(param_2 + 0x74);
+  DAT_82670b04 = *(undefined4 *)(param_2 + 0x78);
+  DAT_82670b08 = *(undefined4 *)(param_2 + 0x90);
+  DAT_82670b0c = *(undefined4 *)(param_2 + 0x94);
+  DAT_82670b10 = *(undefined4 *)(param_2 + 0x88);
+  DAT_82670b14 = *(undefined4 *)(param_2 + 0x8c);
+  DAT_82670b18 = *(undefined4 *)(param_2 + 200);
+  DAT_82670b1c = *(undefined4 *)(param_2 + 0xcc);
+  DAT_82670b20 = *(undefined4 *)(param_2 + 0xd0);
+  DAT_82670b24 = *(undefined4 *)(param_2 + 0xd4);
+  DAT_82670b28 = *(undefined4 *)(param_2 + 0xb8);
+  DAT_82670b2c = *(undefined4 *)(param_2 + 0xbc);
+  DAT_82670b30 = *(undefined4 *)(param_2 + 0xc0);
+  DAT_82670b34 = *(undefined4 *)(param_2 + 0xc4);
+  DAT_82670b38 = *(undefined4 *)(param_2 + 0xf0);
+  DAT_82670b3c = *(undefined4 *)(param_2 + 0xf4);
+  DAT_82670b40 = *(undefined4 *)(param_2 + 0xd8);
+  DAT_82670b44 = *(undefined4 *)(param_2 + 0xdc);
+  DAT_82670b48 = *(undefined4 *)(param_2 + 0x98);
+  DAT_82670b4c = *(undefined4 *)(param_2 + 0x9c);
+  DAT_82670b50 = *(undefined4 *)(param_2 + 0xa0);
+  DAT_82670b54 = *(undefined4 *)(param_2 + 0xa4);
+  return 1;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  

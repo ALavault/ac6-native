@@ -1,0 +1,55 @@
+::Function_821B3870 (0x821b3870)
+  Status: PASS | Rounds: 1
+  Verdict: PASS
+  Summary: The reversed C++ matches the Ghidra logic exactly, including offsets, call sites, branch condition, and argument order.
+  Objective: PASS
+  Objective Summary: No structural mismatches found
+  Code:
+  ```cpp
+  #include <array>
+  #include <cstddef>
+  #include <cstdint>
+  
+  struct Ace6GlobalRuntime {
+      std::array<std::byte, 0x276a0> reserved_00{};
+      std::uint32_t just_pressed_actions{};
+  };
+  
+  static_assert(offsetof(Ace6GlobalRuntime, just_pressed_actions) == 0x276a0);
+  
+  struct VirtualSubobject32 {
+      std::uint32_t vtable{};
+  };
+  
+  static_assert(sizeof(VirtualSubobject32) == 4);
+  
+  struct Function821B3870Object {
+      std::array<std::byte, 0x1c> reserved_00{};
+      VirtualSubobject32 subobject_1c{};
+      std::array<std::byte, 0x248> reserved_20{};
+      VirtualSubobject32 subobject_268{};
+  };
+  
+  static_assert(offsetof(Function821B3870Object, subobject_1c) == 0x1c);
+  static_assert(offsetof(Function821B3870Object, subobject_268) == 0x268);
+  
+  extern Ace6GlobalRuntime* PTR_DAT_826e4eb4;
+  
+  template <std::size_t VtableOffset, typename Return, typename Object, typename... Args>
+  static Return ppc_virtual_call(Object* const object, Args... args) {
+      const auto* const vtable = reinterpret_cast<const std::uint32_t*>(
+          static_cast<std::uintptr_t>(object->vtable));
+      const auto target = reinterpret_cast<Return (*)(Object*, Args...)>(
+          static_cast<std::uintptr_t>(vtable[VtableOffset / 4]));
+      return target(object, args...);
+  }
+  
+  void Function_821B3870(Function821B3870Object* const self) {
+      ppc_virtual_call<0x20, void>(&self->subobject_1c);
+      if ((PTR_DAT_826e4eb4->just_pressed_actions & 0x10U) != 0U) {
+          ppc_virtual_call<0x54, void>(&self->subobject_268, 0);
+          return;
+      }
+      return;
+  }
+  ```

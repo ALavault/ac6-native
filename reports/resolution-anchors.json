@@ -1,0 +1,97 @@
+{
+  "schema": "ace6-resolution-anchors-v1",
+  "source": {
+    "memory_image": "analysis-input/ACE6_X360.exe",
+    "exports": "exports",
+    "image_base": "0x82000000"
+  },
+  "viewport_depth_range": {
+    "address": "0x820542b8",
+    "min": 0.0,
+    "max": 1.0
+  },
+  "viewports": [
+    {
+      "address": "0x820af548",
+      "width": 1280,
+      "height": 720,
+      "role": "full_resolution_viewport"
+    },
+    {
+      "address": "0x820af5d8",
+      "width": 640,
+      "height": 360,
+      "role": "half_resolution_viewport"
+    },
+    {
+      "address": "0x821382c0",
+      "width": 1280,
+      "height": 720,
+      "role": "renderer_default_viewport"
+    }
+  ],
+  "render_target_allocations": [
+    {
+      "address": "0x820aebc8",
+      "width": 640,
+      "height": 360,
+      "role": "color",
+      "allocator": "0x821e0e88"
+    },
+    {
+      "address": "0x820aebc8",
+      "width": 640,
+      "height": 360,
+      "role": "depth_or_auxiliary",
+      "allocator": "0x821e0e88"
+    }
+  ],
+  "stacked_surface_candidates": [
+    {
+      "address": "0x82146c78",
+      "width": 640,
+      "height": 1440,
+      "roles": [
+        "color",
+        "depth_or_auxiliary"
+      ],
+      "classification": "candidate_atlas_or_surface_stack"
+    }
+  ],
+  "dynamic_effect_viewport": {
+    "address": "0x82249258",
+    "restores": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720,
+        "selector": 3
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 720,
+        "selector": 1
+      }
+    ]
+  },
+  "shader_common_parameter": {
+    "address": "0x82105aa8",
+    "parameter_name": "ACE_vCommonParam2",
+    "setter": "0x82334178",
+    "observed_dimension_pairs": [
+      [
+        208.0,
+        144.0
+      ],
+      [
+        1280.0,
+        720.0
+      ]
+    ],
+    "classification": "pass_dependent_dimensions"
+  },
+  "claim_boundary": "Static anchors only; surface formats, ownership, projection, HUD, scissor and runtime parity remain unverified."
+}

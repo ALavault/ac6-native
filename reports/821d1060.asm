@@ -1,0 +1,24 @@
+821d1060 mfspr r12,LR
+821d1064 stw r12,-0x8(r1)
+821d1068 stwu r1,-0x260(r1)
+821d106c lis r11,-0x7dfa
+821d1070 or r5,r3,r3
+821d1074 addi r4,r11,0x7b00
+821d1078 li r6,0x0
+821d107c addi r3,r1,0x50
+821d1080 bl 0x823800d0
+821d1084 addi r11,r1,0x50
+821d1088 or r10,r11,r11
+821d108c lbz r9,0x0(r11)
+821d1090 addi r11,r11,0x1
+821d1094 cmplwi cr6,r9,0x0
+821d1098 bne cr6,0x821d108c
+821d109c subf r11,r10,r11
+821d10a0 addi r3,r1,0x50
+821d10a4 subi r11,r11,0x1
+821d10a8 rlwinm r4,r11,0x0,0x0,0x1f
+821d10ac bl 0x821d0ef0
+821d10b0 addi r1,r1,0x260
+821d10b4 lwz r12,-0x8(r1)
+821d10b8 mtspr LR,r12
+821d10bc blr

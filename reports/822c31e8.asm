@@ -1,0 +1,22 @@
+822c31e8 cmpwi cr6,r5,0x0
+822c31ec blt cr6,0x822c3238
+822c31f0 lwz r9,0x8(r3)
+822c31f4 cmpw cr6,r5,r9
+822c31f8 bge cr6,0x822c3238
+822c31fc rlwinm r11,r5,0x1,0x0,0x1e
+822c3200 lwz r10,0xc(r3)
+822c3204 or r3,r5,r5
+822c3208 add r11,r5,r11
+822c320c rlwinm r11,r11,0x4,0x0,0x1b
+822c3210 add r11,r11,r10
+822c3214 addi r11,r11,0x24
+822c3218 lhz r10,0x0(r11)
+822c321c extsh r10,r10
+822c3220 cmpw cr6,r10,r4
+822c3224 beqlr cr6
+822c3228 addi r3,r3,0x1
+822c322c addi r11,r11,0x30
+822c3230 cmpw cr6,r3,r9
+822c3234 blt cr6,0x822c3218
+822c3238 li r3,-0x1
+822c323c blr

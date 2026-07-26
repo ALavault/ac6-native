@@ -1,0 +1,1 @@
+entries=926 rows=56514 nested_fhm=5435 empty=11204 fhm=5435 riff=546 ntxr=8006 ndxr=2228 nfic=1549 scene=1293 nfh=1029 mate=733 capt=301 swg=150 ace6=128 nsxr=51 binary=23861

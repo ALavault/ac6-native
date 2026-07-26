@@ -1,0 +1,32 @@
+821d1be8 mfspr r12,LR
+821d1bec stw r12,-0x8(r1)
+821d1bf0 std r30,-0x18(r1)
+821d1bf4 std r31,-0x10(r1)
+821d1bf8 stwu r1,-0x70(r1)
+821d1bfc or r30,r3,r3
+821d1c00 cmplwi cr6,r30,0x0
+821d1c04 beq cr6,0x821d1c44
+821d1c08 or r31,r4,r4
+821d1c0c cmplwi cr6,r4,0x0
+821d1c10 beq cr6,0x821d1c44
+821d1c14 lwz r3,0x0(r31)
+821d1c18 cmplwi cr6,r3,0x0
+821d1c1c beq cr6,0x821d1c38
+821d1c20 lwz r11,0x0(r3)
+821d1c24 lwz r11,0x4(r11)
+821d1c28 mtspr CTR,r11
+821d1c2c bctrl
+821d1c30 cmplw cr6,r3,r30
+821d1c34 beq cr6,0x821d1c60
+821d1c38 lwz r31,0x4(r31)
+821d1c3c cmplwi cr6,r31,0x0
+821d1c40 bne cr6,0x821d1c14
+821d1c44 li r3,0x0
+821d1c48 addi r1,r1,0x70
+821d1c4c lwz r12,-0x8(r1)
+821d1c50 mtspr LR,r12
+821d1c54 ld r30,-0x18(r1)
+821d1c58 ld r31,-0x10(r1)
+821d1c5c blr
+821d1c60 or r3,r31,r31
+821d1c64 b 0x821d1c48

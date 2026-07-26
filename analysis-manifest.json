@@ -1,0 +1,104 @@
+{
+  "ghidra_exports": {
+    "direct_call_edges": 9874,
+    "directory": "exports",
+    "function_count": 8824,
+    "functions_with_callees": 7057,
+    "functions_with_callers": 2818,
+    "index_sha256": "1a91a61b79202f855e22a423b5395ba8831be07f04a1880cda59413ee1455182"
+  },
+  "identity": {
+    "architecture": "powerpc-xenon",
+    "binary": "game-files/default.xex",
+    "platform": "xbox-360",
+    "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "loader": {
+    "endianness": "big",
+    "entry_point": "0x821f5e90",
+    "format": "XEX",
+    "image_base": "0x82000000",
+    "sections": [
+      {
+        "end_exclusive": "0x82079dd4",
+        "name": ".rdata",
+        "size": 498132,
+        "vaddr": "0x82000400"
+      },
+      {
+        "end_exclusive": "0x82089fb0",
+        "name": ".pdata",
+        "size": 65968,
+        "vaddr": "0x82079e00"
+      },
+      {
+        "end_exclusive": "0x8208c8c8",
+        "name": "BINKBSS",
+        "size": 10440,
+        "vaddr": "0x8208a000"
+      },
+      {
+        "end_exclusive": "0x823d772c",
+        "name": ".text",
+        "size": 3438380,
+        "vaddr": "0x82090000"
+      },
+      {
+        "end_exclusive": "0x823e7ff8",
+        "name": "BINK",
+        "size": 67576,
+        "vaddr": "0x823d7800"
+      },
+      {
+        "end_exclusive": "0x82a5efd8",
+        "name": ".data",
+        "size": 6746072,
+        "vaddr": "0x823f0000"
+      },
+      {
+        "end_exclusive": "0x82a5f025",
+        "name": ".tls",
+        "size": 37,
+        "vaddr": "0x82a5f000"
+      },
+      {
+        "end_exclusive": "0x82a5f20c",
+        "name": ".XBMOVIE",
+        "size": 12,
+        "vaddr": "0x82a5f200"
+      },
+      {
+        "end_exclusive": "0x82a63180",
+        "name": "BINKDATA",
+        "size": 15744,
+        "vaddr": "0x82a5f400"
+      },
+      {
+        "end_exclusive": "0x82a70462",
+        "name": ".idata",
+        "size": 1122,
+        "vaddr": "0x82a70000"
+      },
+      {
+        "end_exclusive": "0x82a800b0",
+        "name": ".XBLD",
+        "size": 176,
+        "vaddr": "0x82a80000"
+      },
+      {
+        "end_exclusive": "0x82ac3084",
+        "name": ".reloc",
+        "size": 274052,
+        "vaddr": "0x82a80200"
+      }
+    ],
+    "source": "ghidra-xex-loader-log"
+  },
+  "provenance": {
+    "address_map_contract": "ghidra-ai-bridge address_map.json remains source-to-address only",
+    "confidence": "confirmed",
+    "generator": "tools/build-target-analysis-manifest.py"
+  },
+  "schema": 1,
+  "target_id": "ace-combat-6-pal"
+}

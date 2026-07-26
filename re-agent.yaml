@@ -1,0 +1,40 @@
+project_profile:
+  hook_patterns: []
+  stub_patterns: []
+  stub_markers: []
+  stub_call_prefix: ""
+  class_macro: ""
+  source_root: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/source
+  source_extensions: [".c", ".h", ".cpp", ".hpp"]
+  hooks_csv: null
+llm:
+  provider: codex
+  model: gpt-5.6-terra
+  # Advisory for Codex CLI; the explicit call gate below is the hard control.
+  max_tokens: 2048
+  temperature: 0.0
+  timeout_s: 1800
+backend:
+  type: ghidra-bridge
+  cli_path: /fastdata/lavaulta/auto-re-agent/.venv/bin/ghidra-bridge
+  config_path: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-bridge.yaml
+  timeout_s: 180
+parity:
+  enabled: false
+orchestrator:
+  max_review_rounds: 1
+  max_functions_per_class: 1
+  objective_verifier_enabled: true
+  deterministic_fast_path_enabled: true
+  llm_opt_in_required: true
+  max_llm_calls_per_function: 2
+  reverser_decompile_max_chars: 6000
+  checker_decompile_max_chars: 4000
+  source_context_max_chars: 2000
+  xrefs_max_items: 16
+output:
+  report_dir: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports
+  log_dir: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs
+  session_file: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/re-agent-progress.json
+  codex_thread_store: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/re-agent/codex-threads.json
+  format: json

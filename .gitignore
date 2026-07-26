@@ -1,0 +1,71 @@
+# Per-workspace ignore policy.
+# AGENTS.md: never version or redistribute retail assets, BIOS, executables,
+# Ghidra databases, secrets or caches. Only text evidence, source, scripts and
+# reports belong in this repository.
+
+# --- retail and derived game data -----------------------------------------
+disc-image/
+extracted-disc/
+game-files/
+assets/
+input/
+remaster-export/
+*.iso
+*.ISO
+*.PAC
+*.TBL
+*.pac
+*.tbl
+*.bin
+*.BIN
+*.exe
+*.EXE
+*.pdf
+
+# --- oracle capture and runtime evidence blobs ----------------------------
+artifacts/
+dynamic/
+visual-audit/
+*.p2s
+*.p2m2
+*.p2m2_SaveState*
+*.avi
+*.mp4
+*.mkv
+*.png
+*.jpg
+*.wav
+*.raw
+
+# --- reverse-engineering tool state ---------------------------------------
+ghidra-projects/
+exports/
+*.gpr
+*.rep
+*.gzf
+
+# --- build output and caches ----------------------------------------------
+build/
+.build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.o
+*.a
+*.so
+
+# --- retail installer payloads and media (added after dry-run review) ------
+payload/
+*.bik
+*.bmp
+*.cab
+*.dll
+*.ski
+*.msi
+*.7z
+*.zip
+*.tar.gz
+*.wad
+*.dat

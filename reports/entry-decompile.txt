@@ -1,0 +1,16 @@
+// ===========================================
+// Ghidra:    Function_821F5E90
+// Address:   0x821f5e90
+// Signature: undefined Function_821F5E90(void)
+// Callers:   0  |  Callees: 1
+// ===========================================
+
+
+void Function_821F5E90(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  FUN_82382ef8();
+}
+
+

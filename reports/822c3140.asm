@@ -1,0 +1,4 @@
+822c3140 lwz r10,0x1c(r3)
+822c3144 rlwinm r11,r4,0x5,0x0,0x1a
+822c3148 add r3,r11,r10
+822c314c blr

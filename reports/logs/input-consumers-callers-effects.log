@@ -1,0 +1,2318 @@
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1577 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3143 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DecompileAt.java '0x8214c038'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 8214c038 Function_8214C038 (GhidraScript)  
+INFO  DecompileAt.java> 
+void Function_8214C038(undefined8 param_1,ulonglong param_2)
+
+{
+  int iVar1;
+  char cVar2;
+  longlong lVar3;
+  longlong lVar4;
+  int *piVar5;
+  uint *unaff_r28;
+  longlong unaff_r30;
+  longlong lVar6;
+  double dVar7;
+  
+  dVar7 = (double)DAT_820542b8;
+  lVar4 = unaff_r30 + 0x8d54;
+  lVar3 = unaff_r30 + 0x1c9d;
+  lVar6 = unaff_r30 + 0x8b58;
+  do {
+    if ((((((char *)lVar3)[-1] != '\0') && (*(char *)lVar3 != '\0')) &&
+        ((param_2 & 0xffffffff) == (ulonglong)*(uint *)((int)unaff_r30 + 0x8604))) &&
+       (((cVar2 = FUN_8214be90(unaff_r30), cVar2 != '\0' &&
+         ((*(uint *)(DAT_826e4eb4 + 0x276a0) & 0x10) != 0)) &&
+        (((double)((float *)lVar6)[2] == dVar7 && ((double)*(float *)lVar6 == dVar7)))))) {
+      piVar5 = (int *)lVar4;
+      iVar1 = *piVar5;
+      if (iVar1 == 0) {
+LAB_8214c0f8:
+        *piVar5 = 1;
+      }
+      else if (iVar1 == 1) {
+        *piVar5 = 2;
+      }
+      else if (iVar1 == 2) goto LAB_8214c0f8;
+    }
+    param_2 = param_2 + 1;
+    lVar4 = lVar4 + 4;
+    lVar3 = lVar3 + 0x80;
+    lVar6 = lVar6 + 0x54;
+    if ((ulonglong)*unaff_r28 <= (param_2 & 0xffffffff)) {
+      return;
+    }
+  } while( true );
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x8214c038'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DecompileAt.java '0x821b3870'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 821b3870 Function_821B3870 (GhidraScript)  
+INFO  DecompileAt.java> 
+void Function_821B3870(void)
+
+{
+  int unaff_r31;
+  
+  (**(code **)(*(int *)(unaff_r31 + 0x1c) + 0x20))(unaff_r31 + 0x1c);
+  if ((*(uint *)(DAT_826e4eb4 + 0x276a0) & 0x10) != 0) {
+    (**(code **)(*(int *)(unaff_r31 + 0x268) + 0x54))(unaff_r31 + 0x268,0);
+    return;
+  }
+  return;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x821b3870'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  ReferencesTo.java> 820653b0 DATA (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x821b9110'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 821b9110 Function_821B9110 (GhidraScript)  
+INFO  DecompileAt.java> 
+void Function_821B9110(void)
+
+{
+  char cVar1;
+  ulonglong in_r11;
+  int *unaff_r31;
+  
+  if (((in_r11 & 1) != 0) || ((in_r11 & 0x10) != 0)) {
+    (**(code **)(*(int *)unaff_r31[0x9c] + 8))();
+  }
+  cVar1 = (**(code **)(*(int *)unaff_r31[0x9c] + 0x18))();
+  if (cVar1 != '\0') {
+    (**(code **)(*unaff_r31 + 0x48))(unaff_r31,0);
+    unaff_r31[3] = 2;
+  }
+  return;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x821b9110'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DecompileAt.java '0x820db578'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+WARN  Decompiling 820db578: Unable to read bytes at ram:c1be0064 (DecompileCallback)  
+WARN  Decompiling 820db578, pcode error at d1bf0b00: Could not follow disassembly flow into non-existing memory at d1bf0b00 (DecompileCallback)  
+WARN  Decompiling 820db578: Unable to read bytes at ram:c1be0064 (DecompileCallback)  
+WARN  Decompiling 820db578, pcode error at d1bf0b00: Could not follow disassembly flow into non-existing memory at d1bf0b00 (DecompileCallback)  
+WARN  Decompiling 820db578: Unable to read bytes at ram:c1be0064 (DecompileCallback)  
+INFO  DecompileAt.java> FUNCTION 820db578 Function_820DB578 (GhidraScript)  
+INFO  DecompileAt.java> 
+/* WARNING: Control flow encountered bad instruction data */
+/* WARNING: Exceeded maximum restarts with more pending */
+
+undefined8
+Function_820DB578(ulonglong param_1,uint param_2,ulonglong param_3,char param_4,ulonglong param_5,
+                 uint param_6,uint param_7,int param_8)
+
+{
+  uint uVar1;
+  float fVar2;
+  ulonglong uVar3;
+  ulonglong uVar4;
+  int in_r11;
+  ulonglong unaff_r23;
+  char unaff_r24;
+  ulonglong uVar5;
+  int unaff_r27;
+  ulonglong unaff_r28;
+  ulonglong uVar6;
+  int unaff_r30;
+  int unaff_r31;
+  byte in_cr6;
+  
+  uVar6 = (param_1 & 0xffffffff) >> 5 & 1 ^ 1;
+  uVar3 = (param_3 & 0xffffffff) >> 5 & 1 ^ 1;
+  uVar5 = (ulonglong)(in_r11 == 0) ^ 1;
+  if ((bool)(in_cr6 >> 2 & 1)) {
+                    /* WARNING (jumptable): Sanity check requires truncation of jumptable */
+    switch(unaff_r31) {
+    case 6:
+                    /* WARNING: Bad instruction - Truncating control flow here */
+      halt_baddata();
+    }
+    uVar1 = (int)unaff_r28 << 10;
+    fVar2 = *(float *)(param_8 + 0x276d4) * DAT_82069b28;
+    if (((uVar1 & param_7) == 0) || (uVar4 = unaff_r28, fVar2 <= DAT_820542b8)) {
+      uVar4 = unaff_r23;
+    }
+    uVar6 = uVar4 | uVar6;
+    if (((uVar1 & param_6) == 0) || (uVar4 = unaff_r28, fVar2 <= DAT_820542b8)) {
+      uVar4 = unaff_r23;
+    }
+    uVar3 = uVar4 | uVar3;
+    if (((uVar1 & param_2) == 0) || (uVar4 = unaff_r28, fVar2 <= DAT_820542b8)) {
+      uVar4 = unaff_r23;
+    }
+    uVar5 = uVar4 | uVar5;
+  }
+  if (param_4 == '\0') {
+    if ((uVar3 & 0xffffffff) != 0) {
+      if (0 < unaff_r30) {
+        FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000070);
+      }
+      if (unaff_r24 != '\0') {
+        if (unaff_r31 == 0) {
+          FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000050);
+        }
+        FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000078);
+        if (unaff_r31 == 2) {
+          *(char *)(unaff_r27 + 9) = (char)unaff_r28;
+        }
+      }
+      return 1;
+    }
+    if (((param_5 & 0xffffffff) >> 5 & 1) != 1) {
+      if (unaff_r24 != '\0') {
+        if (unaff_r31 == 0) {
+          FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000054);
+        }
+        FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000080);
+      }
+      return 1;
+    }
+  }
+  else if ((uVar6 & 0xffffffff) != 0) {
+    if (0 < unaff_r30) {
+      FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000058);
+    }
+    if (unaff_r24 != '\0') {
+      if ((uVar5 & 0xffffffff) != 0) {
+        FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000060);
+        return 1;
+      }
+      FUN_8237e4c0(*(undefined4 *)(unaff_r27 + 4),&stack0x00000068);
+    }
+    return 1;
+  }
+  return 0;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x820db578'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1577 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3107 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ListFunctionsRange.java '0x820d9000' '0x820dc000'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ListFunctionsRange.java (HeadlessAnalyzer)  
+INFO  ListFunctionsRange.java> 820d9170 FUN_820d9170 [[820d9170, 820d9177]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d91c0 Function_820D91C0 [[820d91c0, 820d9217]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9218 Function_820D9218 [[820d9218, 820d9293]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d92b8 FUN_820d92b8 [[820d92b8, 820d92bf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9308 Function_820D9308 [[820d9308, 820d933b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9358 Function_820D9358 [[820d9358, 820d93c7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d93c8 Function_820D93C8 [[820d93c8, 820d9413]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9418 Function_820D9418 [[820d9418, 820d9437]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9438 FUN_820d9438 [[820d9438, 820d943f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d94b8 Function_820D94B8 [[820d94b8, 820d94f7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d94f8 Function_820D94F8 [[820d94f8, 820d95bb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d95e0 FUN_820d95e0 [[820d95e0, 820d95e7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d96d8 Function_820D96D8 [[820d96d8, 820d97c3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d97c8 Function_820D97C8 [[820d97c8, 820d97e7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d97e8 FUN_820d97e8 [[820d97e8, 820d97ef]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9940 Function_820D9940 [[820d9940, 820d997f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9980 Function_820D9980 [[820d9980, 820d9997]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d99f8 Function_820D99F8 [[820d99f8, 820d99ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9a30 Function_820D9A30 [[820d9a30, 820d9b0f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9b10 Function_820D9B10 [[820d9b10, 820d9b23]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820d9ee0 FUN_820d9ee0 [[820d9ee0, 820d9f4b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da000 Function_820DA000 [[820da000, 820da037]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da0d8 Function_820DA0D8 [[820da0d8, 820da0e7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da1c0 FUN_820da1c0 [[820da1c0, 820da20f] [820da26c, 820da27f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da210 Function_820DA210 [[820da210, 820da267]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da280 FUN_820da280 [[820da280, 820da2bf] [820da4c8, 820da4df]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da2e8 Function_820DA2E8 [[820da2e8, 820da2f7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da410 Function_820DA410 [[820da410, 820da4a7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da4e0 FUN_820da4e0 [[820da4e0, 820da513] [820da59c, 820da5b3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da618 Function_820DA618 [[820da618, 820da63f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da7d0 Function_820DA7D0 [[820da7d0, 820da84f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820da9a0 Function_820DA9A0 [[820da9a0, 820da9af]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820daa78 Function_820DAA78 [[820daa78, 820daacf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820daad0 FUN_820daad0 [[820daad0, 820daad7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dab80 FUN_820dab80 [[820dab80, 820dab87]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dae00 Function_820DAE00 [[820dae00, 820dae13] [820dae1c, 820dae33]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dae58 Function_820DAE58 [[820dae58, 820daeb7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820daf08 FUN_820daf08 [[820daf08, 820daf0f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820daf68 Function_820DAF68 [[820daf68, 820db083]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db090 Function_820DB090 [[820db090, 820db117]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db118 Function_820DB118 [[820db118, 820db153]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db1a0 FUN_820db1a0 [[820db1a0, 820db1ef]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db1f0 Function_820DB1F0 [[820db1f0, 820db203]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db270 FUN_820db270 [[820db270, 820db277]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db2c8 Function_820DB2C8 [[820db2c8, 820db367]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db368 Function_820DB368 [[820db368, 820db407]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db408 Function_820DB408 [[820db408, 820db4c7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db4c8 Function_820DB4C8 [[820db4c8, 820db4f3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db4f8 FUN_820db4f8 [[820db4f8, 820db4ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db578 Function_820DB578 [[820db578, 820db5d7] [820db5fc, 820db627] [820db6e0, 820db72f] [820db77c, 820db7db]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db628 Function_820DB628 [[820db628, 820db6d7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db6d8 Function_820DB6D8 [[820db6d8, 820db6df]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db730 Function_820DB730 [[820db730, 820db77b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db828 FUN_820db828 [[820db828, 820db857] [820db85c, 820db86f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db870 Function_820DB870 [[820db870, 820db89f] [820db8a4, 820db8b7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db8b8 FUN_820db8b8 [[820db8b8, 820db8bf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db8c0 Function_820DB8C0 [[820db8c0, 820db8e7] [820db8ec, 820db8ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db900 FUN_820db900 [[820db900, 820db92f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db978 FUN_820db978 [[820db978, 820db99f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db9a0 Function_820DB9A0 [[820db9a0, 820db9a7] [820db9ac, 820db9bf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820db9c0 FUN_820db9c0 [[820db9c0, 820db9ef] [820db9f4, 820dba07]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dba08 FUN_820dba08 [[820dba08, 820dba6f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dba70 FUN_820dba70 [[820dba70, 820dbae3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dbb08 FUN_820dbb08 [[820dbb08, 820dbb3b] [820dbb40, 820dbb57]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dbb58 FUN_820dbb58 [[820dbb58, 820dbbcb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dbc48 FUN_820dbc48 [[820dbc48, 820dbcbb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dbcd0 FUN_820dbcd0 [[820dbcd0, 820dbd0f] [820dbd14, 820dbd2b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 820dbf30 Function_820DBF30 [[820dbf30, 820dc0ef] [820dc100, 820dc13b]] (GhidraScript)  
+INFO  REPORT: Execute script: ListFunctionsRange.java '0x8214a000' '0x8214d000'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ListFunctionsRange.java (HeadlessAnalyzer)  
+INFO  ListFunctionsRange.java> 8214a300 FUN_8214a300 [[8214a300, 8214a307]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214a4a8 Function_8214A4A8 [[8214a4a8, 8214a54f] [8214a5a8, 8214a66b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214a7f8 Function_8214A7F8 [[8214a7f8, 8214a8b7] [8214a8d0, 8214a9eb] [8214aa14, 8214aa27] [8214af44, 8214afc3] [8214aff0, 8214b097] [8214b31c, 8214b51b] [8214b5c0, 8214b5ef]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214aa90 Function_8214AA90 [[8214aa90, 8214aacf] [8214ac20, 8214ac3b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214ad70 Function_8214AD70 [[8214ad70, 8214adc7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214adc8 Function_8214ADC8 [[8214adc8, 8214adcf] [8214ade4, 8214aecf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214aed0 Function_8214AED0 [[8214aed0, 8214af1b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214b098 Function_8214B098 [[8214b098, 8214b2b7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214b2b8 Function_8214B2B8 [[8214b2b8, 8214b31b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214b5f0 Function_8214B5F0 [[8214b5f0, 8214b60f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214b610 FUN_8214b610 [[8214b610, 8214b617]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214b8b8 FUN_8214b8b8 [[8214b8b8, 8214b8bf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214b978 Function_8214B978 [[8214b978, 8214b9a3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214ba70 FUN_8214ba70 [[8214ba70, 8214ba77]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214be90 FUN_8214be90 [[8214be90, 8214c00b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214c010 FUN_8214c010 [[8214c010, 8214c017]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214c038 Function_8214C038 [[8214c038, 8214c11f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214c120 FUN_8214c120 [[8214c120, 8214c223]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214c360 Function_8214C360 [[8214c328, 8214c517]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214c518 Function_8214C518 [[8214c518, 8214c6ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214c700 Function_8214C700 [[8214c700, 8214c737] [8214c770, 8214c853]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 8214cf18 FUN_8214cf18 [[8214cf18, 8214cf1f]] (GhidraScript)  
+INFO  REPORT: Execute script: ListFunctionsRange.java '0x821b2000' '0x821ba000'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ListFunctionsRange.java (HeadlessAnalyzer)  
+INFO  ListFunctionsRange.java> 821b20b8 FUN_821b20b8 [[821b20b8, 821b20d7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b20d8 Function_821B20D8 [[821b20d8, 821b20ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2108 FUN_821b2108 [[821b2108, 821b216b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2170 FUN_821b2170 [[821b2170, 821b2187]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2278 FUN_821b2278 [[821b2278, 821b22fb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2328 FUN_821b2328 [[821b2328, 821b232f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2388 Function_821B2388 [[821b2388, 821b23a7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2928 Function_821B2928 [[821b2928, 821b2933]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2998 FUN_821b2998 [[821b2998, 821b299f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2ba0 FUN_821b2ba0 [[821b2ba0, 821b2c37]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b2c90 FUN_821b2c90 [[821b2c90, 821b2c97]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3138 Function_821B3138 [[821b3138, 821b318f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3198 FUN_821b3198 [[821b3198, 821b31af]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b32a0 FUN_821b32a0 [[821b32a0, 821b32c7] [821b331c, 821b3363]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b32c8 Function_821B32C8 [[821b32c8, 821b331b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3398 Function_821B3398 [[821b3398, 821b3437]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3438 FUN_821b3438 [[821b3438, 821b34af] [821b34b4, 821b3517]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b34b0 Function_821B34B0 [[821b34b0, 821b34b3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3518 FUN_821b3518 [[821b3518, 821b3577]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3648 FUN_821b3648 [[821b3648, 821b365f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3870 Function_821B3870 [[821b3870, 821b38cf] [821b396c, 821b397f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b39c8 FUN_821b39c8 [[821b39c8, 821b39df]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3ad0 FUN_821b3ad0 [[821b3ad0, 821b3b9f] [821b3c1c, 821b3c2f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3ba0 Function_821B3BA0 [[821b3ba0, 821b3baf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3c30 FUN_821b3c30 [[821b3c30, 821b3c33]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3c88 Function_821B3C88 [[821b3c88, 821b3ca7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3e00 Function_821B3E00 [[821b3e00, 821b3e2f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3e68 Function_821B3E68 [[821b3e68, 821b3e7b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3ed0 Function_821B3ED0 [[821b3ed0, 821b3edb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3f68 Function_821B3F68 [[821b3f68, 821b3faf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b3ff8 Function_821B3FF8 [[821b3ff8, 821b3fff] [821b4084, 821b40a7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b40b8 Function_821B40B8 [[821b40b8, 821b40c3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4140 Function_821B4140 [[821b4140, 821b4143]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b41d8 Function_821B41D8 [[821b41d8, 821b41f3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4248 Function_821B4248 [[821b4248, 821b4263]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b42f8 Function_821B42F8 [[821b42f8, 821b4307]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4348 Function_821B4348 [[821b4348, 821b4353]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b43f0 Function_821B43F0 [[821b43f0, 821b4407]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b44a8 Function_821B44A8 [[821b44a8, 821b44af]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4518 Function_821B4518 [[821b4518, 821b4523]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4620 Function_821B4620 [[821b461c, 821b46af]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b46b0 Function_821B46B0 [[821b46b0, 821b471b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4758 Function_821B4758 [[821b4758, 821b475b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4818 Function_821B4818 [[821b4818, 821b48b7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b48b8 Function_821B48B8 [[821b48b8, 821b4913]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4950 Function_821B4950 [[821b4950, 821b4963]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b49f0 Function_821B49F0 [[821b49f0, 821b4a07]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4a88 Function_821B4A88 [[821b4a88, 821b4aa3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4b10 Function_821B4B10 [[821b4b10, 821b4b13]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4bd0 Function_821B4BD0 [[821b4bd0, 821b4be7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4c90 Function_821B4C90 [[821b4b14, 821b4b3b] [821b4c90, 821b4ce7] [821b5080, 821b5087]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b4d88 Function_821B4D88 [[821b4d88, 821b4d93]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5088 FUN_821b5088 [[821b5088, 821b5107]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5108 FUN_821b5108 [[821b5108, 821b517b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5180 FUN_821b5180 [[821b5180, 821b51ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5200 FUN_821b5200 [[821b5200, 821b5217]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5330 Function_821B5330 [[821b5330, 821b5363]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5398 Function_821B5398 [[821b5398, 821b5423]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5448 FUN_821b5448 [[821b5448, 821b544f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b54e0 Function_821B54E0 [[821b54e0, 821b553f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5540 Function_821B5540 [[821b5540, 821b557b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5690 Function_821B5690 [[821b5690, 821b56d7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b56d8 FUN_821b56d8 [[821b56d8, 821b5717] [821b5720, 821b573f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5740 FUN_821b5740 [[821b5740, 821b578f] [821b57c0, 821b5807]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5808 Function_821B5808 [[821b5808, 821b581f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5828 FUN_821b5828 [[821b5828, 821b5863] [821b5970, 821b5983]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b58f0 Function_821B58F0 [[821b58f0, 821b592b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5960 Function_821B5960 [[821b5960, 821b596f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b59c0 Function_821B59C0 [[821b59c0, 821b5a27] [821b5c6c, 821b5ce7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5a48 Function_821B5A48 [[821b5a48, 821b5a67]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5c00 Function_821B5C00 [[821b5bd8, 821b5bef] [821b5c00, 821b5c4f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5cf0 Function_821B5CF0 [[821b5cf0, 821b5d0f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5d40 Function_821B5D40 [[821b5d40, 821b5d8b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5de0 Function_821B5DE0 [[821b5de0, 821b5e23]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5e40 FUN_821b5e40 [[821b5e40, 821b5e57]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5e58 Function_821B5E58 [[821b5e58, 821b5e8f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5f28 FUN_821b5f28 [[821b5f28, 821b5f2f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b5f80 Function_821B5F80 [[821b5f80, 821b5fdf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6258 Function_821B6258 [[821b620c, 821b6237] [821b6258, 821b62cb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6490 Function_821B6490 [[821b6490, 821b64c3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b64f8 Function_821B64F8 [[821b64f8, 821b651b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6668 Function_821B6668 [[821b6668, 821b66ab] [821b6728, 821b672f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6738 FUN_821b6738 [[821b6738, 821b673f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6820 FUN_821b6820 [[821b6820, 821b686b] [821b689c, 821b68c3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6998 FUN_821b6998 [[821b6998, 821b69ff] [821b6a5c, 821b6aaf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6ab0 FUN_821b6ab0 [[821b6ab0, 821b6adf] [821b6d94, 821b6da3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6df0 Function_821B6DF0 [[821b6df0, 821b6e2b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6e58 Function_821B6E58 [[821b6e58, 821b6e6f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6e70 FUN_821b6e70 [[821b6e70, 821b6f27] [821b6f38, 821b6fab] [821b6fbc, 821b701b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b6fb0 Function_821B6FB0 [[821b6fb0, 821b6fbb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7038 Function_821B7038 [[821b7038, 821b7107] [821b7138, 821b717f] [821b718c, 821b719b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7108 Function_821B7108 [[821b7108, 821b7137]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7180 Function_821B7180 [[821b7180, 821b718b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b71a0 FUN_821b71a0 [[821b71a0, 821b71ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7208 Function_821B7208 [[821b7208, 821b720f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7210 FUN_821b7210 [[821b7210, 821b7233] [821b727c, 821b7283]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7288 FUN_821b7288 [[821b7288, 821b72c7] [821b73e8, 821b73ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7300 Function_821B7300 [[821b7300, 821b7307]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7400 FUN_821b7400 [[821b7400, 821b7417]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7468 FUN_821b7468 [[821b7468, 821b74b3] [821b74b8, 821b74cf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b74d0 FUN_821b74d0 [[821b74d0, 821b7563]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7568 FUN_821b7568 [[821b7568, 821b758f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7590 Function_821B7590 [[821b7590, 821b75f3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b75f8 FUN_821b75f8 [[821b75f8, 821b75ff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b76b8 FUN_821b76b8 [[821b76b8, 821b76bf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7740 FUN_821b7740 [[821b7740, 821b7747]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b77d8 FUN_821b77d8 [[821b77d8, 821b77df]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7848 FUN_821b7848 [[821b7848, 821b784f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b78e8 Function_821B78E8 [[821b78e8, 821b78eb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b78f8 FUN_821b78f8 [[821b78f8, 821b7943]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7960 Function_821B7960 [[821b7960, 821b79eb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7aa8 FUN_821b7aa8 [[821b7aa8, 821b7b13]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7c20 FUN_821b7c20 [[821b7c20, 821b7c27]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7cb0 FUN_821b7cb0 [[821b7cb0, 821b7cb7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7d58 FUN_821b7d58 [[821b7d58, 821b7d5f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b7dc8 Function_821B7DC8 [[821b7dc8, 821b7e13]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8050 Function_821B8050 [[821b8050, 821b8083]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8088 FUN_821b8088 [[821b8088, 821b810f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8110 FUN_821b8110 [[821b8110, 821b8117]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b81d0 FUN_821b81d0 [[821b81d0, 821b8217] [821b822c, 821b8277]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8218 Function_821B8218 [[821b8218, 821b822b] [821b8278, 821b828f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8290 FUN_821b8290 [[821b8290, 821b8297]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b82cc FUN_821b82cc [[821b82cc, 821b830f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8318 Function_821B8318 [[821b8318, 821b8387]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8388 FUN_821b8388 [[821b8388, 821b838f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8430 Function_821B8430 [[821b8430, 821b844f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8620 Function_821B8620 [[821b8620, 821b8643]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8680 Function_821B8680 [[821b8680, 821b868f] [821b86a0, 821b86ab]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b86e0 Function_821B86E0 [[821b86e0, 821b8747]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8748 Function_821B8748 [[821b8748, 821b8773]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8790 Function_821B8790 [[821b8790, 821b8793]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b87d8 Function_821B87D8 [[821b87d8, 821b87e3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8820 Function_821B8820 [[821b8820, 821b882b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8868 Function_821B8868 [[821b8868, 821b8873]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b88b0 Function_821B88B0 [[821b88b0, 821b88bb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b88f8 Function_821B88F8 [[821b88f8, 821b892b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8930 FUN_821b8930 [[821b8930, 821b8947]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8948 Function_821B8948 [[821b8948, 821b898f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8990 Function_821B8990 [[821b8990, 821b8997]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8998 FUN_821b8998 [[821b8998, 821b89ef]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b89f0 Function_821B89F0 [[821b89f0, 821b8a0b] [821b8a3c, 821b8a87]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8ab0 Function_821B8AB0 [[821b8ab0, 821b8abb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8ae0 FUN_821b8ae0 [[821b8ae0, 821b8af7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8b10 Function_821B8B10 [[821b8b10, 821b8b3f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8b40 FUN_821b8b40 [[821b8b40, 821b8b87]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8b88 Function_821B8B88 [[821b8b88, 821b8bb7] [821b8be8, 821b8bff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8c00 Function_821B8C00 [[821b8c00, 821b8c33]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8c48 Function_821B8C48 [[821b8c48, 821b8c8b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8ca0 Function_821B8CA0 [[821b8ca0, 821b8cf7] [821b8d18, 821b8d4f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8cf8 Function_821B8CF8 [[821b8cf8, 821b8d17]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8d50 Function_821B8D50 [[821b8d50, 821b8d6f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8df8 Function_821B8DF8 [[821b8df8, 821b8e03]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8e58 Function_821B8E58 [[821b8e58, 821b8e6f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8eb8 Function_821B8EB8 [[821b8e44, 821b8e57] [821b8eb8, 821b8ee7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8ef0 FUN_821b8ef0 [[821b8ef0, 821b8eff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8f00 Function_821B8F00 [[821b8f00, 821b8f07]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8f60 FUN_821b8f60 [[821b8f60, 821b8f6f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8f70 Function_821B8F70 [[821b8f70, 821b8fbf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8fc0 FUN_821b8fc0 [[821b8fc0, 821b8fdf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b8fe0 Function_821B8FE0 [[821b8fe0, 821b9047]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9048 FUN_821b9048 [[821b9048, 821b904f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9050 Function_821B9050 [[821b9050, 821b90af]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b90b0 Function_821B90B0 [[821b90b0, 821b90fb]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9110 Function_821B9110 [[821b9110, 821b916f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9170 Function_821B9170 [[821b9170, 821b917b] [821b91bc, 821b91cf]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b91d0 Function_821B91D0 [[821b91d0, 821b91d3]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9230 Function_821B9230 [[821b9230, 821b928b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9290 Function_821B9290 [[821b9290, 821b92b7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b92e8 Function_821B92E8 [[821b92e8, 821b92ef]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b92f0 FUN_821b92f0 [[821b92f0, 821b933f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9340 FUN_821b9340 [[821b9340, 821b9347]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9348 Function_821B9348 [[821b9348, 821b93a7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b93a8 Function_821B93A8 [[821b93a8, 821b93d7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b93e0 FUN_821b93e0 [[821b93e0, 821b93f7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9408 Function_821B9408 [[821b9408, 821b943b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9740 Function_821B9740 [[821b9740, 821b977b]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9828 Function_821B9828 [[821b9828, 821b9857]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b99b8 Function_821B99B8 [[821b99b8, 821b9a8f]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9a90 FUN_821b9a90 [[821b9a90, 821b9adb] [821b9ae0, 821b9af7]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9af8 FUN_821b9af8 [[821b9af8, 821b9aff]] (GhidraScript)  
+INFO  ListFunctionsRange.java> 821b9c68 FUN_821b9c68 [[821b9c68, 821b9c7f]] (GhidraScript)  
+INFO  REPORT: Execute script: DumpRange.java '0x8214bff0' '0x8214c1c0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpRange.java (HeadlessAnalyzer)  
+INFO  DumpRange.java> 8214bff0 beq cr6,0x8214bfd0 (GhidraScript)  
+INFO  DumpRange.java> 8214bff4 cmpwi cr6,r8,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214bff8 bne cr6,0x8214c004 (GhidraScript)  
+INFO  DumpRange.java> 8214bffc li r3,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c000 blr (GhidraScript)  
+INFO  DumpRange.java> 8214c004 li r3,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c008 blr (GhidraScript)  
+INFO  DumpRange.java> 8214c00c <not-disassembled> (GhidraScript)  
+INFO  DumpRange.java> 8214c010 mfspr r12,LR (GhidraScript)  
+INFO  DumpRange.java> 8214c014 bl 0x823864e8 (GhidraScript)  
+INFO  DumpRange.java> 8214c018 stwu r1,-0xa0(r1) (GhidraScript)  
+INFO  DumpRange.java> 8214c01c or r30,r3,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c020 li r4,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c024 addis r28,r30,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c028 subi r28,r28,0x7a00 (GhidraScript)  
+INFO  DumpRange.java> 8214c02c lwz r11,0x0(r28) (GhidraScript)  
+INFO  DumpRange.java> 8214c030 cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c034 ble cr6,0x8214c118 (GhidraScript)  
+INFO  DumpRange.java> 8214c038 lis r10,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c03c lis r11,-0x7dfb (GhidraScript)  
+INFO  DumpRange.java> 8214c040 ori r29,r10,0x8604 (GhidraScript)  
+INFO  DumpRange.java> 8214c044 addis r6,r30,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c048 addis r31,r30,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c04c lis r10,0x2 (GhidraScript)  
+INFO  DumpRange.java> 8214c050 lfs f0,0x42b8(r11) (GhidraScript)  
+INFO  DumpRange.java> 8214c054 subi r6,r6,0x72ac (GhidraScript)  
+INFO  DumpRange.java> 8214c058 addi r5,r30,0x1c9d (GhidraScript)  
+INFO  DumpRange.java> 8214c05c subi r31,r31,0x74a8 (GhidraScript)  
+INFO  DumpRange.java> 8214c060 lis r26,-0x7d92 (GhidraScript)  
+INFO  DumpRange.java> 8214c064 ori r25,r10,0x76a0 (GhidraScript)  
+INFO  DumpRange.java> 8214c068 li r27,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c06c li r24,0x2 (GhidraScript)  
+INFO  DumpRange.java> 8214c070 lbz r11,-0x1(r5) (GhidraScript)  
+INFO  DumpRange.java> 8214c074 cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c078 beq cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c07c lbz r11,0x0(r5) (GhidraScript)  
+INFO  DumpRange.java> 8214c080 cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c084 beq cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c088 lwzx r11,r30,r29 (GhidraScript)  
+INFO  DumpRange.java> 8214c08c cmplw cr6,r4,r11 (GhidraScript)  
+INFO  DumpRange.java> 8214c090 bne cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c094 or r3,r30,r30 (GhidraScript)  
+INFO  DumpRange.java> 8214c098 bl 0x8214be90 (GhidraScript)  
+INFO  DumpRange.java> 8214c09c rlwinm r11,r3,0x0,0x18,0x1f (GhidraScript)  
+INFO  DumpRange.java> 8214c0a0 cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c0a4 beq cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c0a8 lwz r11,0x4eb4(r26) (GhidraScript)  
+INFO  DumpRange.java> 8214c0ac lwzx r11,r11,r25 (GhidraScript)  
+INFO  DumpRange.java> 8214c0b0 rlwinm r11,r11,0x0,0x1b,0x1b (GhidraScript)  
+INFO  DumpRange.java> 8214c0b4 cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c0b8 beq cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c0bc lfs f13,0x8(r31) (GhidraScript)  
+INFO  DumpRange.java> 8214c0c0 fcmpu cr6,f13,f0 (GhidraScript)  
+INFO  DumpRange.java> 8214c0c4 bne cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c0c8 lfs f13,0x0(r31) (GhidraScript)  
+INFO  DumpRange.java> 8214c0cc fcmpu cr6,f13,f0 (GhidraScript)  
+INFO  DumpRange.java> 8214c0d0 bne cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c0d4 lwz r11,0x0(r6) (GhidraScript)  
+INFO  DumpRange.java> 8214c0d8 cmpwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c0dc beq cr6,0x8214c0f8 (GhidraScript)  
+INFO  DumpRange.java> 8214c0e0 cmpwi cr6,r11,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c0e4 bne cr6,0x8214c0f0 (GhidraScript)  
+INFO  DumpRange.java> 8214c0e8 stw r24,0x0(r6) (GhidraScript)  
+INFO  DumpRange.java> 8214c0ec b 0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c0f0 cmpwi cr6,r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 8214c0f4 bne cr6,0x8214c0fc (GhidraScript)  
+INFO  DumpRange.java> 8214c0f8 stw r27,0x0(r6) (GhidraScript)  
+INFO  DumpRange.java> 8214c0fc lwz r11,0x0(r28) (GhidraScript)  
+INFO  DumpRange.java> 8214c100 addi r4,r4,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c104 addi r6,r6,0x4 (GhidraScript)  
+INFO  DumpRange.java> 8214c108 addi r5,r5,0x80 (GhidraScript)  
+INFO  DumpRange.java> 8214c10c addi r31,r31,0x54 (GhidraScript)  
+INFO  DumpRange.java> 8214c110 cmplw cr6,r4,r11 (GhidraScript)  
+INFO  DumpRange.java> 8214c114 blt cr6,0x8214c070 (GhidraScript)  
+INFO  DumpRange.java> 8214c118 addi r1,r1,0xa0 (GhidraScript)  
+INFO  DumpRange.java> 8214c11c b 0x82386538 (GhidraScript)  
+INFO  DumpRange.java> 8214c120 addi r11,r4,0x2355 (GhidraScript)  
+INFO  DumpRange.java> 8214c124 rlwinm r8,r11,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 8214c128 lis r11,-0x7dfb (GhidraScript)  
+INFO  DumpRange.java> 8214c12c addi r11,r11,0x42bc (GhidraScript)  
+INFO  DumpRange.java> 8214c130 lwzx r10,r8,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c134 cmpwi cr6,r10,0x2 (GhidraScript)  
+INFO  DumpRange.java> 8214c138 beq cr6,0x8214c178 (GhidraScript)  
+INFO  DumpRange.java> 8214c13c rlwinm r9,r6,0x0,0x18,0x1f (GhidraScript)  
+INFO  DumpRange.java> 8214c140 cmplwi cr6,r9,0x0 (GhidraScript)  
+INFO  DumpRange.java> 8214c144 bne cr6,0x8214c178 (GhidraScript)  
+INFO  DumpRange.java> 8214c148 cmpwi cr6,r10,0x1 (GhidraScript)  
+INFO  DumpRange.java> 8214c14c bne cr6,0x8214c1a4 (GhidraScript)  
+INFO  DumpRange.java> 8214c150 addi r10,r4,0x2357 (GhidraScript)  
+INFO  DumpRange.java> 8214c154 lfs f0,0x40(r11) (GhidraScript)  
+INFO  DumpRange.java> 8214c158 addi r7,r4,0x2359 (GhidraScript)  
+INFO  DumpRange.java> 8214c15c rlwinm r9,r10,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 8214c160 rlwinm r10,r7,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 8214c164 lfsx f13,r9,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c168 lfsx f12,r10,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c16c fadds f13,f13,f1 (GhidraScript)  
+INFO  DumpRange.java> 8214c170 fmadds f0,f1,f0,f12 (GhidraScript)  
+INFO  DumpRange.java> 8214c174 b 0x8214c19c (GhidraScript)  
+INFO  DumpRange.java> 8214c178 addi r10,r4,0x2357 (GhidraScript)  
+INFO  DumpRange.java> 8214c17c lfs f0,0x40(r11) (GhidraScript)  
+INFO  DumpRange.java> 8214c180 addi r7,r4,0x2359 (GhidraScript)  
+INFO  DumpRange.java> 8214c184 rlwinm r9,r10,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 8214c188 rlwinm r10,r7,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 8214c18c lfsx f13,r9,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c190 lfsx f12,r10,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c194 fsubs f13,f13,f1 (GhidraScript)  
+INFO  DumpRange.java> 8214c198 fnmsubs f0,f1,f0,f12 (GhidraScript)  
+INFO  DumpRange.java> 8214c19c stfsx f0,r10,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c1a0 stfsx f13,r9,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c1a4 addi r10,r4,0x2357 (GhidraScript)  
+INFO  DumpRange.java> 8214c1a8 lfs f12,-0x4(r11) (GhidraScript)  
+INFO  DumpRange.java> 8214c1ac lfs f13,0x0(r11) (GhidraScript)  
+INFO  DumpRange.java> 8214c1b0 rlwinm r10,r10,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 8214c1b4 lfsx f0,r10,r3 (GhidraScript)  
+INFO  DumpRange.java> 8214c1b8 fcmpu cr6,f0,f12 (GhidraScript)  
+INFO  DumpRange.java> 8214c1bc bge cr6,0x8214c1c8 (GhidraScript)  
+INFO  REPORT: Execute script: DumpRange.java '0x821b3820' '0x821b38b0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpRange.java (HeadlessAnalyzer)  
+INFO  DumpRange.java> 821b3820 bgt 0x821b396c (GhidraScript)  
+INFO  DumpRange.java> 821b3824 lis r11,-0x7d6c (GhidraScript)  
+INFO  DumpRange.java> 821b3828 li r10,0x1 (GhidraScript)  
+INFO  DumpRange.java> 821b382c li r9,0x3 (GhidraScript)  
+INFO  DumpRange.java> 821b3830 lwz r11,-0x45f0(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b3834 lwz r3,0x8(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b3838 stw r10,0x18(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b383c stw r9,0x1c(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b3840 cmpwi cr6,r3,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b3844 beq cr6,0x821b396c (GhidraScript)  
+INFO  DumpRange.java> 821b3848 lwz r11,0x0(r3) (GhidraScript)  
+INFO  DumpRange.java> 821b384c li r4,0x3 (GhidraScript)  
+INFO  DumpRange.java> 821b3850 lwz r11,0x20(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b3854 mtspr CTR,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b3858 bctrl (GhidraScript)  
+INFO  DumpRange.java> 821b385c addi r1,r1,0x60 (GhidraScript)  
+INFO  DumpRange.java> 821b3860 lwz r12,-0x8(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b3864 mtspr LR,r12 (GhidraScript)  
+INFO  DumpRange.java> 821b3868 ld r31,-0x10(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b386c blr (GhidraScript)  
+INFO  DumpRange.java> 821b3870 lwz r11,0x1c(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b3874 addi r3,r31,0x1c (GhidraScript)  
+INFO  DumpRange.java> 821b3878 lwz r11,0x20(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b387c mtspr CTR,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b3880 bctrl (GhidraScript)  
+INFO  DumpRange.java> 821b3884 lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 821b3888 ori r10,r11,0x76a0 (GhidraScript)  
+INFO  DumpRange.java> 821b388c lis r11,-0x7d92 (GhidraScript)  
+INFO  DumpRange.java> 821b3890 lwz r11,0x4eb4(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b3894 lwzx r11,r11,r10 (GhidraScript)  
+INFO  DumpRange.java> 821b3898 rlwinm r11,r11,0x0,0x1b,0x1b (GhidraScript)  
+INFO  DumpRange.java> 821b389c cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b38a0 beq cr6,0x821b396c (GhidraScript)  
+INFO  DumpRange.java> 821b38a4 lwz r11,0x268(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b38a8 addi r3,r31,0x268 (GhidraScript)  
+INFO  DumpRange.java> 821b38ac li r4,0x0 (GhidraScript)  
+INFO  REPORT: Execute script: DumpRange.java '0x821b9020' '0x821b9180'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpRange.java (HeadlessAnalyzer)  
+INFO  DumpRange.java> 821b9020 li r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b9024 li r10,0x3 (GhidraScript)  
+INFO  DumpRange.java> 821b9028 stw r3,0x270(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b902c stw r11,0xc(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9030 stw r10,0x48(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9034 addi r1,r1,0x60 (GhidraScript)  
+INFO  DumpRange.java> 821b9038 lwz r12,-0x8(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b903c mtspr LR,r12 (GhidraScript)  
+INFO  DumpRange.java> 821b9040 ld r31,-0x10(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b9044 blr (GhidraScript)  
+INFO  DumpRange.java> 821b9048 mfspr r12,LR (GhidraScript)  
+INFO  DumpRange.java> 821b904c stw r12,-0x8(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b9050 std r31,-0x10(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b9054 stwu r1,-0x60(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b9058 or r31,r3,r3 (GhidraScript)  
+INFO  DumpRange.java> 821b905c lwz r11,0xc(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9060 cmplwi cr6,r11,0x1 (GhidraScript)  
+INFO  DumpRange.java> 821b9064 blt cr6,0x821b917c (GhidraScript)  
+INFO  DumpRange.java> 821b9068 beq cr6,0x821b90fc (GhidraScript)  
+INFO  DumpRange.java> 821b906c cmplwi cr6,r11,0x3 (GhidraScript)  
+INFO  DumpRange.java> 821b9070 bge cr6,0x821b91c0 (GhidraScript)  
+INFO  DumpRange.java> 821b9074 lwz r11,0x48(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9078 subic. r11,r11,0x1 (GhidraScript)  
+INFO  DumpRange.java> 821b907c stw r11,0x48(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9080 bgt 0x821b91c0 (GhidraScript)  
+INFO  DumpRange.java> 821b9084 lwz r4,0x270(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9088 cmplwi cr6,r4,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b908c beq cr6,0x821b90b0 (GhidraScript)  
+INFO  DumpRange.java> 821b9090 lis r11,-0x7d99 (GhidraScript)  
+INFO  DumpRange.java> 821b9094 lwz r3,0x1308(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b9098 lwz r11,0x0(r3) (GhidraScript)  
+INFO  DumpRange.java> 821b909c lwz r11,0x18(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b90a0 mtspr CTR,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b90a4 bctrl (GhidraScript)  
+INFO  DumpRange.java> 821b90a8 li r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b90ac stw r11,0x270(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b90b0 lis r11,-0x7d6c (GhidraScript)  
+INFO  DumpRange.java> 821b90b4 li r10,0x1 (GhidraScript)  
+INFO  DumpRange.java> 821b90b8 li r9,0x3 (GhidraScript)  
+INFO  DumpRange.java> 821b90bc lwz r11,-0x45f0(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b90c0 lwz r3,0x8(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b90c4 stw r10,0x18(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b90c8 stw r9,0x1c(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b90cc cmpwi cr6,r3,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b90d0 beq cr6,0x821b91c0 (GhidraScript)  
+INFO  DumpRange.java> 821b90d4 lwz r11,0x0(r3) (GhidraScript)  
+INFO  DumpRange.java> 821b90d8 li r4,0x3 (GhidraScript)  
+INFO  DumpRange.java> 821b90dc lwz r11,0x20(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b90e0 mtspr CTR,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b90e4 bctrl (GhidraScript)  
+INFO  DumpRange.java> 821b90e8 addi r1,r1,0x60 (GhidraScript)  
+INFO  DumpRange.java> 821b90ec lwz r12,-0x8(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b90f0 mtspr LR,r12 (GhidraScript)  
+INFO  DumpRange.java> 821b90f4 ld r31,-0x10(r1) (GhidraScript)  
+INFO  DumpRange.java> 821b90f8 blr (GhidraScript)  
+INFO  DumpRange.java> 821b90fc lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 821b9100 ori r10,r11,0x76a0 (GhidraScript)  
+INFO  DumpRange.java> 821b9104 lis r11,-0x7d92 (GhidraScript)  
+INFO  DumpRange.java> 821b9108 lwz r11,0x4eb4(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b910c lwzx r11,r11,r10 (GhidraScript)  
+INFO  DumpRange.java> 821b9110 rlwinm r10,r11,0x0,0x1f,0x1f (GhidraScript)  
+INFO  DumpRange.java> 821b9114 cmplwi cr6,r10,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b9118 bne cr6,0x821b9128 (GhidraScript)  
+INFO  DumpRange.java> 821b911c rlwinm r11,r11,0x0,0x1b,0x1b (GhidraScript)  
+INFO  DumpRange.java> 821b9120 cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b9124 beq cr6,0x821b913c (GhidraScript)  
+INFO  DumpRange.java> 821b9128 lwz r3,0x270(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b912c lwz r11,0x0(r3) (GhidraScript)  
+INFO  DumpRange.java> 821b9130 lwz r11,0x8(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b9134 mtspr CTR,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b9138 bctrl (GhidraScript)  
+INFO  DumpRange.java> 821b913c lwz r3,0x270(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9140 lwz r11,0x0(r3) (GhidraScript)  
+INFO  DumpRange.java> 821b9144 lwz r11,0x18(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b9148 mtspr CTR,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b914c bctrl (GhidraScript)  
+INFO  DumpRange.java> 821b9150 rlwinm r11,r3,0x0,0x18,0x1f (GhidraScript)  
+INFO  DumpRange.java> 821b9154 cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b9158 beq cr6,0x821b91c0 (GhidraScript)  
+INFO  DumpRange.java> 821b915c lwz r11,0x0(r31) (GhidraScript)  
+INFO  DumpRange.java> 821b9160 li r4,0x0 (GhidraScript)  
+INFO  DumpRange.java> 821b9164 or r3,r31,r31 (GhidraScript)  
+INFO  DumpRange.java> 821b9168 lwz r11,0x48(r11) (GhidraScript)  
+INFO  DumpRange.java> 821b916c mtspr CTR,r11 (GhidraScript)  
+INFO  DumpRange.java> 821b9170 bctrl (GhidraScript)  
+INFO  DumpRange.java> 821b9174 li r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 821b9178 b 0x821b91bc (GhidraScript)  
+INFO  DumpRange.java> 821b917c lwz r3,0x270(r31) (GhidraScript)  
+INFO  REPORT: Execute script: DumpRange.java '0x820db500' '0x820db700'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpRange.java (HeadlessAnalyzer)  
+INFO  DumpRange.java> 820db500 stwu r1,-0xe0(r1) (GhidraScript)  
+INFO  DumpRange.java> 820db504 lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 820db508 or r24,r5,r5 (GhidraScript)  
+INFO  DumpRange.java> 820db50c ori r9,r11,0x76a0 (GhidraScript)  
+INFO  DumpRange.java> 820db510 lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 820db514 or r27,r3,r3 (GhidraScript)  
+INFO  DumpRange.java> 820db518 ori r5,r11,0x7698 (GhidraScript)  
+INFO  DumpRange.java> 820db51c lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 820db520 extsb r30,r7 (GhidraScript)  
+INFO  DumpRange.java> 820db524 ori r3,r11,0x76a8 (GhidraScript)  
+INFO  DumpRange.java> 820db528 lis r11,0x2 (GhidraScript)  
+INFO  DumpRange.java> 820db52c or r31,r4,r4 (GhidraScript)  
+INFO  DumpRange.java> 820db530 li r28,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db534 ori r7,r11,0x76a4 (GhidraScript)  
+INFO  DumpRange.java> 820db538 lis r11,-0x7d92 (GhidraScript)  
+INFO  DumpRange.java> 820db53c cmpwi cr6,r30,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db540 li r23,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db544 lwz r10,0x4eb4(r11) (GhidraScript)  
+INFO  DumpRange.java> 820db548 lwzx r8,r10,r9 (GhidraScript)  
+INFO  DumpRange.java> 820db54c lwzx r9,r10,r3 (GhidraScript)  
+INFO  DumpRange.java> 820db550 lwzx r7,r10,r7 (GhidraScript)  
+INFO  DumpRange.java> 820db554 lwzx r4,r10,r5 (GhidraScript)  
+INFO  DumpRange.java> 820db558 slw r11,r28,r31 (GhidraScript)  
+INFO  DumpRange.java> 820db55c and r7,r7,r11 (GhidraScript)  
+INFO  DumpRange.java> 820db560 and r5,r8,r11 (GhidraScript)  
+INFO  DumpRange.java> 820db564 and r3,r11,r9 (GhidraScript)  
+INFO  DumpRange.java> 820db568 and r11,r4,r11 (GhidraScript)  
+INFO  DumpRange.java> 820db56c cntlzw r3,r3 (GhidraScript)  
+INFO  DumpRange.java> 820db570 cntlzw r5,r5 (GhidraScript)  
+INFO  DumpRange.java> 820db574 cntlzw r7,r7 (GhidraScript)  
+INFO  DumpRange.java> 820db578 cntlzw r11,r11 (GhidraScript)  
+INFO  DumpRange.java> 820db57c rlwinm r3,r3,0x1b,0x1f,0x1f (GhidraScript)  
+INFO  DumpRange.java> 820db580 rlwinm r5,r5,0x1b,0x1f,0x1f (GhidraScript)  
+INFO  DumpRange.java> 820db584 rlwinm r7,r7,0x1b,0x1f,0x1f (GhidraScript)  
+INFO  DumpRange.java> 820db588 rlwinm r11,r11,0x1b,0x1f,0x1f (GhidraScript)  
+INFO  DumpRange.java> 820db58c xori r29,r3,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db590 xori r3,r5,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db594 xori r25,r7,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db598 xori r26,r11,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db59c ble cr6,0x820db678 (GhidraScript)  
+INFO  DumpRange.java> 820db5a0 lis r5,-0x7df9 (GhidraScript)  
+INFO  DumpRange.java> 820db5a4 subi r7,r31,0x6 (GhidraScript)  
+INFO  DumpRange.java> 820db5a8 li r11,0xa (GhidraScript)  
+INFO  DumpRange.java> 820db5ac cmplwi cr6,r7,0x3 (GhidraScript)  
+INFO  DumpRange.java> 820db5b0 lfs f0,-0x64d8(r5) (GhidraScript)  
+INFO  DumpRange.java> 820db5b4 lis r5,-0x7dfb (GhidraScript)  
+INFO  DumpRange.java> 820db5b8 addi r5,r5,0x42b8 (GhidraScript)  
+INFO  DumpRange.java> 820db5bc bgt cr6,0x820db5fc (GhidraScript)  
+INFO  DumpRange.java> 820db5c0 lis r12,-0x7df3 (GhidraScript)  
+INFO  DumpRange.java> 820db5c4 addi r12,r12,0x7fd8 (GhidraScript)  
+INFO  DumpRange.java> 820db5c8 rlwinm r0,r7,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 820db5cc lwzx r0,r12,r0 (GhidraScript)  
+INFO  DumpRange.java> 820db5d0 mtspr CTR,r0 (GhidraScript)  
+INFO  DumpRange.java> 820db5d4 bctr (GhidraScript)  
+INFO  DumpRange.java> 820db5d8 lwz r16,0x7ff4(r13) (GhidraScript)  
+INFO  DumpRange.java> 820db5dc lwz r16,0x7ff8(r13) (GhidraScript)  
+INFO  DumpRange.java> 820db5e0 lwz r16,0x7fec(r13) (GhidraScript)  
+INFO  DumpRange.java> 820db5e4 lwz r16,0x7fe8(r13) (GhidraScript)  
+INFO  DumpRange.java> 820db5e8 lfs f0,0x4(r5) (GhidraScript)  
+INFO  DumpRange.java> 820db5ec li r11,0xa (GhidraScript)  
+INFO  DumpRange.java> 820db5f0 b 0x820db5fc (GhidraScript)  
+INFO  DumpRange.java> 820db5f4 lfs f0,0x4(r5) (GhidraScript)  
+INFO  DumpRange.java> 820db5f8 li r11,0xb (GhidraScript)  
+INFO  DumpRange.java> 820db5fc addis r7,r11,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db600 slw r11,r28,r11 (GhidraScript)  
+INFO  DumpRange.java> 820db604 subi r7,r7,0x6255 (GhidraScript)  
+INFO  DumpRange.java> 820db608 rlwinm r7,r7,0x2,0x0,0x1d (GhidraScript)  
+INFO  DumpRange.java> 820db60c lfsx f13,r7,r10 (GhidraScript)  
+INFO  DumpRange.java> 820db610 and r10,r11,r9 (GhidraScript)  
+INFO  DumpRange.java> 820db614 fmuls f0,f13,f0 (GhidraScript)  
+INFO  DumpRange.java> 820db618 lfs f13,0x0(r5) (GhidraScript)  
+INFO  DumpRange.java> 820db61c cmplwi cr6,r10,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db620 beq cr6,0x820db630 (GhidraScript)  
+INFO  DumpRange.java> 820db624 fcmpu cr6,f0,f13 (GhidraScript)  
+INFO  DumpRange.java> 820db628 or r10,r28,r28 (GhidraScript)  
+INFO  DumpRange.java> 820db62c bgt cr6,0x820db634 (GhidraScript)  
+INFO  DumpRange.java> 820db630 or r10,r23,r23 (GhidraScript)  
+INFO  DumpRange.java> 820db634 or r29,r10,r29 (GhidraScript)  
+INFO  DumpRange.java> 820db638 and r10,r11,r8 (GhidraScript)  
+INFO  DumpRange.java> 820db63c cmplwi cr6,r10,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db640 beq cr6,0x820db650 (GhidraScript)  
+INFO  DumpRange.java> 820db644 fcmpu cr6,f0,f13 (GhidraScript)  
+INFO  DumpRange.java> 820db648 or r10,r28,r28 (GhidraScript)  
+INFO  DumpRange.java> 820db64c bgt cr6,0x820db654 (GhidraScript)  
+INFO  DumpRange.java> 820db650 or r10,r23,r23 (GhidraScript)  
+INFO  DumpRange.java> 820db654 and r11,r11,r4 (GhidraScript)  
+INFO  DumpRange.java> 820db658 or r3,r10,r3 (GhidraScript)  
+INFO  DumpRange.java> 820db65c cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db660 beq cr6,0x820db670 (GhidraScript)  
+INFO  DumpRange.java> 820db664 fcmpu cr6,f0,f13 (GhidraScript)  
+INFO  DumpRange.java> 820db668 or r11,r28,r28 (GhidraScript)  
+INFO  DumpRange.java> 820db66c bgt cr6,0x820db674 (GhidraScript)  
+INFO  DumpRange.java> 820db670 or r11,r23,r23 (GhidraScript)  
+INFO  DumpRange.java> 820db674 or r26,r11,r26 (GhidraScript)  
+INFO  DumpRange.java> 820db678 rlwinm r11,r6,0x0,0x18,0x1f (GhidraScript)  
+INFO  DumpRange.java> 820db67c cmplwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db680 beq cr6,0x820db700 (GhidraScript)  
+INFO  DumpRange.java> 820db684 cmplwi cr6,r29,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db688 beq cr6,0x820db7d0 (GhidraScript)  
+INFO  DumpRange.java> 820db68c cmpwi cr6,r30,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db690 ble cr6,0x820db6a8 (GhidraScript)  
+INFO  DumpRange.java> 820db694 addi r4,r1,0x58 (GhidraScript)  
+INFO  DumpRange.java> 820db698 lwz r3,0x4(r27) (GhidraScript)  
+INFO  DumpRange.java> 820db69c stw r23,0x58(r1) (GhidraScript)  
+INFO  DumpRange.java> 820db6a0 stw r30,0x5c(r1) (GhidraScript)  
+INFO  DumpRange.java> 820db6a4 bl 0x8237e4c0 (GhidraScript)  
+INFO  DumpRange.java> 820db6a8 extsb r11,r24 (GhidraScript)  
+INFO  DumpRange.java> 820db6ac cmpwi cr6,r11,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db6b0 beq cr6,0x820db6f4 (GhidraScript)  
+INFO  DumpRange.java> 820db6b4 lwz r3,0x4(r27) (GhidraScript)  
+INFO  DumpRange.java> 820db6b8 cmplwi cr6,r26,0x0 (GhidraScript)  
+INFO  DumpRange.java> 820db6bc beq cr6,0x820db6e0 (GhidraScript)  
+INFO  DumpRange.java> 820db6c0 li r11,0x5 (GhidraScript)  
+INFO  DumpRange.java> 820db6c4 stb r24,0x64(r1) (GhidraScript)  
+INFO  DumpRange.java> 820db6c8 addi r4,r1,0x60 (GhidraScript)  
+INFO  DumpRange.java> 820db6cc stw r11,0x60(r1) (GhidraScript)  
+INFO  DumpRange.java> 820db6d0 bl 0x8237e4c0 (GhidraScript)  
+INFO  DumpRange.java> 820db6d4 li r3,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db6d8 addi r1,r1,0xe0 (GhidraScript)  
+INFO  DumpRange.java> 820db6dc b 0x82386534 (GhidraScript)  
+INFO  DumpRange.java> 820db6e0 li r11,0x6 (GhidraScript)  
+INFO  DumpRange.java> 820db6e4 stb r24,0x6c(r1) (GhidraScript)  
+INFO  DumpRange.java> 820db6e8 addi r4,r1,0x68 (GhidraScript)  
+INFO  DumpRange.java> 820db6ec stw r11,0x68(r1) (GhidraScript)  
+INFO  DumpRange.java> 820db6f0 bl 0x8237e4c0 (GhidraScript)  
+INFO  DumpRange.java> 820db6f4 li r3,0x1 (GhidraScript)  
+INFO  DumpRange.java> 820db6f8 addi r1,r1,0xe0 (GhidraScript)  
+INFO  DumpRange.java> 820db6fc b 0x82386534 (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1715 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3483 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x8214c010'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  ReferencesTo.java> 8214a524 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x8214be90'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  ReferencesTo.java> 8214c098 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x8214c120'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  ReferencesTo.java> 8214c710 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x821b9048'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x821b9050'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x820db500'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x820db4f8'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  ReferencesTo.java> 820db2d8 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db2fc UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db324 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db34c UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db370 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db394 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db3b8 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db3dc UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db400 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db424 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db448 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db46c UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db490 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  ReferencesTo.java> 820db4b4 UNCONDITIONAL_CALL (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x8214c038'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 8205db9c (GhidraScript)  
+INFO  FindU32Any.java> 8207cf30 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x821b3870'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 820653b0 (GhidraScript)  
+INFO  FindU32Any.java> 8207ea98 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x821b9048'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x820db500'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1655 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3259 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x8205db40' '0x8205dc10'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 8205db40 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db44 0x82145788 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db48 0x82145800 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db4c 0x82144f98 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db50 0x82144fa8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db54 0x82144fb8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db58 0x82144fc8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db5c 0x82144fd8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db60 0x82145a48 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db64 0x82145d88 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db68 0x82146050 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db6c 0x82145b48 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db70 0x821461c0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db74 0x82146d00 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db78 0x82146db8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db7c 0x82147070 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db80 0x82148470 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db84 0x82148c28 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db88 0x82149258 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db8c 0x82149918 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db90 0x8214b2b8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db94 0x8214b5f0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db98 0x8214b978 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db9c 0x8214c038 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dba0 0x8214c360 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dba4 0x8214c518 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dba8 0x8214c700 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbac 0x8214d000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbb0 0x8214d160 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbb4 0x82074118 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbb8 0x82265eb8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbbc 0x8214e798 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbc0 0x53686164 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbc4 0x6f774861 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbc8 0x6e676172 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbcc 0x436f6c6f (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbd0 0x72000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbd4 0x775f6563 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbd8 0x6d705f65 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbdc 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbe0 0x775f6164 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbe4 0x6d6d5f78 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbe8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbec 0x775f656d (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbf0 0x6c5f7800 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbf4 0x6b5f6563 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbf8 0x6d705f65 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbfc 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dc00 0x6b5f6164 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dc04 0x6d6d5f78 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dc08 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dc0c 0x820741f8 (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x8205db9c'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x82065370' '0x82065400'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 82065370 0x820775a0 (GhidraScript)  
+INFO  DumpU32Range.java> 82065374 0x821b3130 (GhidraScript)  
+INFO  DumpU32Range.java> 82065378 0x821b3320 (GhidraScript)  
+INFO  DumpU32Range.java> 8206537c 0x821b3340 (GhidraScript)  
+INFO  DumpU32Range.java> 82065380 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 82065384 0x821b3398 (GhidraScript)  
+INFO  DumpU32Range.java> 82065388 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8206538c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 82065390 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 82065394 0x821b34b0 (GhidraScript)  
+INFO  DumpU32Range.java> 82065398 0x821b37a8 (GhidraScript)  
+INFO  DumpU32Range.java> 8206539c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653a0 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653a4 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653a8 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653ac 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653b0 0x821b3870 (GhidraScript)  
+INFO  DumpU32Range.java> 820653b4 0x821b3a20 (GhidraScript)  
+INFO  DumpU32Range.java> 820653b8 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653bc 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653c0 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653c4 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653c8 0x821b32c8 (GhidraScript)  
+INFO  DumpU32Range.java> 820653cc 0x2d2d2d2d (GhidraScript)  
+INFO  DumpU32Range.java> 820653d0 0x2d2d2d2d (GhidraScript)  
+INFO  DumpU32Range.java> 820653d4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820653d8 0x2d2d2d2d (GhidraScript)  
+INFO  DumpU32Range.java> 820653dc 0x2d2d2d00 (GhidraScript)  
+INFO  DumpU32Range.java> 820653e0 0x2d2d2d2d (GhidraScript)  
+INFO  DumpU32Range.java> 820653e4 0x2d2d2d2d (GhidraScript)  
+INFO  DumpU32Range.java> 820653e8 0x2d2d2d2d (GhidraScript)  
+INFO  DumpU32Range.java> 820653ec 0x2d2d2d00 (GhidraScript)  
+INFO  DumpU32Range.java> 820653f0 0x20280000 (GhidraScript)  
+INFO  DumpU32Range.java> 820653f4 0x29000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820653f8 0x25303864 (GhidraScript)  
+INFO  DumpU32Range.java> 820653fc 0x00000000 (GhidraScript)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x820653b0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x8207cf00' '0x8207cf60'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 8207cf00 0x8214adc8 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf04 0x40004204 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf08 0x8214aed0 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf0c 0x40007103 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf10 0x8214b098 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf14 0x40008705 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf18 0x8214b2b8 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf1c 0x4000cd03 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf20 0x8214b5f0 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf24 0x4000e204 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf28 0x8214b978 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf2c 0x4001b003 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf30 0x8214c038 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf34 0x4000ca05 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf38 0x8214c360 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf3c 0x40006d05 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf40 0x8214c518 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf44 0x40007a03 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf48 0x8214c700 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf4c 0x40024002 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf50 0x8214d160 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf54 0x40008c03 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf58 0x8214d650 (GhidraScript)  
+INFO  DumpU32Range.java> 8207cf5c 0x40005605 (GhidraScript)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x8207ea60' '0x8207eac0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 8207ea60 0x821b20d8 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea64 0x40001a05 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea68 0x821b2388 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea6c 0x40016803 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea70 0x821b2928 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea74 0x40020203 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea78 0x821b3138 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea7c 0x40003903 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea80 0x821b32c8 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea84 0x40001504 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea88 0x821b3398 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea8c 0x40004605 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea90 0x821b34b0 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea94 0x4000bd03 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea98 0x821b3870 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ea9c 0x40006b03 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eaa0 0x821b3ba0 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eaa4 0x40001c03 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eaa8 0x821b3c88 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eaac 0x40005e03 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eab0 0x821b3e00 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eab4 0x40001a04 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eab8 0x821b3e68 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eabc 0x40001a05 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x821b9050'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 8207ed80 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x821b90b0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 8207ed88 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x821b9110'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 8207ed90 (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x8214a4a8'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 8214a4a8 Function_8214A4A8 (GhidraScript)  
+INFO  DecompileAt.java> 
+void Function_8214A4A8(void)
+
+{
+  code *pcVar1;
+  bool bVar2;
+  undefined8 uVar3;
+  int in_r10;
+  int in_r11;
+  char *unaff_r27;
+  int *unaff_r28;
+  int unaff_r29;
+  float *unaff_r30;
+  int *unaff_r31;
+  
+  if (((*(uint *)(*(int *)(in_r11 + 0x4eb4) + in_r10) & 0x80000) != 0) && (unaff_r31[0x2182] != 1))
+  {
+    bVar2 = *(char *)((int)unaff_r31 + unaff_r29) == '\0';
+    *(char *)((int)unaff_r31 + unaff_r29) = bVar2;
+    if (bVar2) {
+      pcVar1 = *(code **)(unaff_r31[4] + 0x40);
+    }
+    else {
+      pcVar1 = *(code **)(unaff_r31[4] + 0x44);
+    }
+    (*pcVar1)(unaff_r31 + 4);
+    (**(code **)(*unaff_r31 + 0xa8))(unaff_r31,2);
+  }
+  FUN_8214c010(unaff_r31);
+  if (*unaff_r28 == 0) {
+    (**(code **)(*unaff_r31 + 0x94))((double)*unaff_r30,unaff_r31);
+  }
+  if (*unaff_r28 == 0) {
+    if (*unaff_r27 == '\0') {
+      if (unaff_r31[unaff_r31[0x2181] * 0x20 + 0x726] != 0) {
+        uVar3 = 2;
+        if (*(char *)((int)unaff_r31 + unaff_r29) == '\0') {
+          uVar3 = 1;
+        }
+        FUN_822270c0(unaff_r31[unaff_r31[0x2181] * 0x20 + 0x726],uVar3);
+      }
+      (**(code **)(*unaff_r31 + 0x98))((double)*unaff_r30,unaff_r31);
+      (**(code **)(*unaff_r31 + 0x9c))((double)*unaff_r30,unaff_r31);
+    }
+    (**(code **)(unaff_r31[4] + 0x4c))((double)*unaff_r30,unaff_r31 + 4);
+    *unaff_r30 = DAT_820542b8;
+  }
+  (**(code **)(unaff_r31[0x2184] + 0xc))();
+  return;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x820db2c8'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 820db2c8 Function_820DB2C8 (GhidraScript)  
+INFO  DecompileAt.java> 
+ulonglong Function_820DB2C8(void)
+
+{
+  ulonglong uVar1;
+  char cVar2;
+  int unaff_r31;
+  
+  uVar1 = FUN_820db4f8(unaff_r31,6,0x77,1);
+  if ((uVar1 & 0xff) == 0) {
+    uVar1 = FUN_820db4f8(unaff_r31,7,0x73,1,2);
+  }
+  if ((uVar1 & 0xff) == 0) {
+    uVar1 = 1;
+    cVar2 = FUN_820db4f8(unaff_r31,0,0x6b,0,0xffffffffffffffff);
+    if (((((cVar2 == '\0') &&
+          (cVar2 = FUN_820db4f8(unaff_r31,1,0x6c,0,0xffffffffffffffff), cVar2 == '\0')) &&
+         (cVar2 = FUN_820db4f8(unaff_r31,2,0x69,0,0xffffffffffffffff), cVar2 == '\0')) &&
+        ((((cVar2 = FUN_820db4f8(unaff_r31,3,0x6a,0,0xffffffffffffffff), cVar2 == '\0' &&
+           (cVar2 = FUN_820db4f8(unaff_r31,4,0x68,0,0xffffffffffffffff), cVar2 == '\0')) &&
+          ((cVar2 = FUN_820db4f8(unaff_r31,5,0x66,0,0xffffffffffffffff), cVar2 == '\0' &&
+           ((cVar2 = FUN_820db4f8(unaff_r31,0xe,0x71,0,0xffffffffffffffff), cVar2 == '\0' &&
+            (cVar2 = FUN_820db4f8(unaff_r31,0x10,0x65,0,0xffffffffffffffff), cVar2 == '\0')))))) &&
+         (cVar2 = FUN_820db4f8(unaff_r31,0xf,0x75,0,0xffffffffffffffff), cVar2 == '\0')))) &&
+       (((cVar2 = FUN_820db4f8(unaff_r31,0x11,0x6f,0,0xffffffffffffffff), cVar2 == '\0' &&
+         (cVar2 = FUN_820db4f8(unaff_r31,0x12,0x7a,0,0xffffffffffffffff), cVar2 == '\0')) &&
+        (cVar2 = FUN_820db4f8(unaff_r31,0x13,0x6d,0,0xffffffffffffffff), cVar2 == '\0')))) {
+      uVar1 = 0;
+    }
+    if (uVar1 == 0) {
+      FUN_8237e4c0(*(undefined4 *)(unaff_r31 + 4),&stack0x00000050);
+    }
+  }
+  return uVar1;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x820db368'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 820db368 Function_820DB368 (GhidraScript)  
+INFO  DecompileAt.java> 
+ulonglong Function_820DB368(void)
+
+{
+  char cVar1;
+  ulonglong unaff_r29;
+  ulonglong unaff_r30;
+  int unaff_r31;
+  
+  cVar1 = FUN_820db4f8(unaff_r31,2);
+  if ((((((cVar1 == '\0') &&
+         (cVar1 = FUN_820db4f8(unaff_r31,3,0x6a,0,0xffffffffffffffff), cVar1 == '\0')) &&
+        (cVar1 = FUN_820db4f8(unaff_r31,4,0x68,0,0xffffffffffffffff), cVar1 == '\0')) &&
+       ((cVar1 = FUN_820db4f8(unaff_r31,5,0x66,0,0xffffffffffffffff), cVar1 == '\0' &&
+        (cVar1 = FUN_820db4f8(unaff_r31,0xe,0x71,0,0xffffffffffffffff), cVar1 == '\0')))) &&
+      ((cVar1 = FUN_820db4f8(unaff_r31,0x10,0x65,0,0xffffffffffffffff), cVar1 == '\0' &&
+       ((cVar1 = FUN_820db4f8(unaff_r31,0xf,0x75,0,0xffffffffffffffff), cVar1 == '\0' &&
+        (cVar1 = FUN_820db4f8(unaff_r31,0x11,0x6f,0,0xffffffffffffffff), cVar1 == '\0')))))) &&
+     ((cVar1 = FUN_820db4f8(unaff_r31,0x12,0x7a,0,0xffffffffffffffff), cVar1 == '\0' &&
+      (cVar1 = FUN_820db4f8(unaff_r31,0x13,0x6d,0,0xffffffffffffffff), cVar1 == '\0')))) {
+    unaff_r30 = unaff_r29;
+  }
+  if ((unaff_r30 & 0xff) == 0) {
+    FUN_8237e4c0(*(undefined4 *)(unaff_r31 + 4),&stack0x00000050);
+  }
+  return unaff_r30;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x820db408'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 820db408 Function_820DB408 (GhidraScript)  
+INFO  DecompileAt.java> 
+ulonglong Function_820DB408(void)
+
+{
+  char cVar1;
+  int in_r11;
+  ulonglong unaff_r29;
+  ulonglong unaff_r30;
+  int unaff_r31;
+  
+  if ((((in_r11 == 0) &&
+       (cVar1 = FUN_820db4f8(unaff_r31,0x10,0x65,0,0xffffffffffffffff), cVar1 == '\0')) &&
+      (cVar1 = FUN_820db4f8(unaff_r31,0xf,0x75,0,0xffffffffffffffff), cVar1 == '\0')) &&
+     (((cVar1 = FUN_820db4f8(unaff_r31,0x11,0x6f,0,0xffffffffffffffff), cVar1 == '\0' &&
+       (cVar1 = FUN_820db4f8(unaff_r31,0x12,0x7a,0,0xffffffffffffffff), cVar1 == '\0')) &&
+      (cVar1 = FUN_820db4f8(unaff_r31,0x13,0x6d,0,0xffffffffffffffff), cVar1 == '\0')))) {
+    unaff_r30 = unaff_r29;
+  }
+  if ((unaff_r30 & 0xff) == 0) {
+    FUN_8237e4c0(*(undefined4 *)(unaff_r31 + 4),&stack0x00000050);
+  }
+  return unaff_r30;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1604 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3233 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x8205daf0' '0x8205db44'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 8205daf0 0x8214d390 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daf4 0x8214d600 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daf8 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dafc 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db00 0x8214d650 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db04 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db08 0x8214d7a8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db0c 0x8214d870 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db10 0x8214de80 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db14 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db18 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db1c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db20 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db24 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db28 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db2c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db30 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db34 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db38 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db3c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db40 0x822ddbe8 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x8205db40'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x8205db44'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x8205dbc0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x826e8c7c'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: ReferencesTo.java '0x826e8d14'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ReferencesTo.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x8207ed60' '0x8207edb0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 8207ed60 0x821b8eb8 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed64 0x40001204 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed68 0x821b8f00 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed6c 0x40001c04 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed70 0x821b8f70 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed74 0x40001c04 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed78 0x821b8fe0 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed7c 0x40001c04 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed80 0x821b9050 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed84 0x40001704 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed88 0x821b90b0 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed8c 0x40001704 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed90 0x821b9110 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed94 0x40001704 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed98 0x821b9170 (GhidraScript)  
+INFO  DumpU32Range.java> 8207ed9c 0x40001704 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eda0 0x821b91d0 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eda4 0x40001704 (GhidraScript)  
+INFO  DumpU32Range.java> 8207eda8 0x821b9230 (GhidraScript)  
+INFO  DumpU32Range.java> 8207edac 0x40001704 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x8207ed80'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 82108fe6 (GhidraScript)  
+INFO  FindU32Any.java> 821d88ce (GhidraScript)  
+INFO  FindU32Any.java> 821f5f72 (GhidraScript)  
+INFO  FindU32Any.java> 821f609e (GhidraScript)  
+INFO  FindU32Any.java> 821f611e (GhidraScript)  
+INFO  FindU32Any.java> 82246102 (GhidraScript)  
+INFO  FindU32Any.java> 82284986 (GhidraScript)  
+INFO  FindU32Any.java> 82306b5e (GhidraScript)  
+INFO  FindU32Any.java> 823bfe0a (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x8214c700'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 8214c700 Function_8214C700 (GhidraScript)  
+INFO  DecompileAt.java> 
+void Function_8214C700(double param_1,int param_2,ulonglong param_3,int param_4,undefined8 param_5)
+
+{
+  float fVar1;
+  float fVar2;
+  int iVar3;
+  uint uVar4;
+  uint *unaff_r14;
+  int unaff_r15;
+  int unaff_r16;
+  int unaff_r17;
+  int unaff_r18;
+  int *unaff_r19;
+  undefined1 unaff_r21;
+  int unaff_r22;
+  ulonglong unaff_r24;
+  int unaff_r25;
+  undefined4 *unaff_r26;
+  undefined4 *puVar5;
+  int unaff_r27;
+  float *unaff_r28;
+  float *pfVar6;
+  float *unaff_r30;
+  float *unaff_r31;
+  float *pfVar7;
+  double dVar8;
+  double in_f8;
+  double dVar9;
+  double dVar10;
+  double dVar11;
+  double in_f11;
+  double dVar12;
+  double dVar13;
+  double in_f24;
+  double in_f25;
+  undefined8 in_f26;
+  double in_f27;
+  double in_f28;
+  double in_f29;
+  double in_f30;
+  double in_f31;
+  int in_stack_00000050;
+  int in_stack_00000054;
+  
+  while( true ) {
+    unaff_r28[7] = (float)in_f31;
+    unaff_r26[3] = (float)((double)unaff_r31[4] - in_f11);
+    FUN_8214c120(param_1,param_2,param_3,param_4,param_5);
+    unaff_r30[-1] = (float)in_f11;
+    *unaff_r30 = (float)in_f29;
+    pfVar6 = unaff_r30 + -0x2c;
+    unaff_r30[2] = (float)in_f8;
+    unaff_r30[3] = (float)in_f11;
+    unaff_r30[4] = (float)in_f11;
+    unaff_r30[5] = (float)in_f29;
+    unaff_r30[6] = (float)in_f11;
+    unaff_r30[0x67] = (float)((uint)unaff_r30[0x67] | 1);
+    unaff_r30[7] = (float)in_f29;
+    unaff_r30[8] = (float)in_f8;
+    unaff_r30[9] = (float)in_f11;
+    unaff_r30[10] = (float)in_f11;
+    unaff_r30[0xb] = (float)in_f29;
+    unaff_r30[0x10] = (float)in_f31;
+    unaff_r31[0x10] = (float)((uint)unaff_r31[0x10] | 1);
+    FUN_822a4828(in_f30,pfVar6);
+    unaff_r30[0x31] = (float)in_f31;
+    *(undefined1 *)(unaff_r30 + 0x69) = unaff_r21;
+    FUN_822a20c0(in_f26,pfVar6,*unaff_r26,1);
+    param_1 = in_f30;
+    FUN_822a4640(in_f26,pfVar6,*unaff_r26,1);
+    iVar3 = *(int *)(in_stack_00000050 + 0x4eb4);
+    param_3 = unaff_r24;
+    do {
+      pfVar6 = unaff_r28;
+      pfVar7 = unaff_r31;
+      puVar5 = unaff_r26;
+      param_3 = param_3 + 1;
+      unaff_r19 = unaff_r19 + 1;
+      unaff_r28 = pfVar6 + 0x13;
+      unaff_r31 = pfVar7 + 0x15;
+      unaff_r26 = puVar5 + 0x20;
+      unaff_r30 = unaff_r30 + 0x96;
+      if ((ulonglong)*unaff_r14 <= (param_3 & 0xffffffff)) {
+        FUN_82387a84();
+        FUN_82386510();
+        return;
+      }
+    } while ((*(char *)(puVar5 + 0x21) == '\0') || (*(char *)((int)puVar5 + 0x85) == '\0'));
+    in_f29 = (double)*(float *)(&LAB_00004904 + unaff_r18);
+    if ((*(int *)(unaff_r25 + unaff_r15) != 2) ||
+       ((param_3 & 0xffffffff) != (ulonglong)*(uint *)(unaff_r25 + 0x8604))) break;
+    fVar2 = *(float *)(unaff_r27 + 4);
+    in_f8 = (double)fVar2;
+    uVar4 = *(uint *)(iVar3 + unaff_r22);
+    if (*(int *)(in_stack_00000054 + 0x4c84) == 1) {
+      dVar13 = in_f31;
+      if ((uVar4 & 0x10) != 0) {
+        dVar13 = in_f8;
+      }
+      dVar12 = in_f31;
+      if ((uVar4 & 0x20) != 0) {
+        dVar12 = in_f8;
+      }
+      dVar11 = (double)*(float *)(iVar3 + 0x253ec);
+      dVar10 = (double)*(float *)(iVar3 + 0x253f0);
+    }
+    else {
+      dVar13 = (double)*(float *)(iVar3 + unaff_r16);
+      dVar12 = (double)*(float *)(iVar3 + unaff_r17);
+      dVar11 = in_f31;
+      if ((uVar4 & 4) != 0) {
+        dVar11 = in_f8;
+      }
+      dVar10 = in_f31;
+      if ((uVar4 & 8) != 0) {
+        dVar10 = in_f8;
+      }
+    }
+    dVar8 = in_f8;
+    if (*(int *)(in_stack_00000054 + 0x4c78) == 1) {
+      dVar8 = in_f28;
+    }
+    dVar8 = (double)(float)((double)*(float *)(iVar3 + 0x253e4) * dVar8);
+    dVar9 = (double)*(float *)(iVar3 + 0x253e8);
+    if (*unaff_r19 != 0) {
+      dVar8 = in_f31;
+      dVar9 = in_f31;
+    }
+    fVar1 = (float)(dVar13 * param_1 + (double)pfVar7[0x18]);
+    pfVar7[0x18] = fVar1;
+    dVar13 = in_f31;
+    if (in_f25 < dVar12) {
+      dVar13 = (double)(float)(dVar12 * param_1);
+    }
+    fVar1 = (float)((double)fVar1 - dVar13);
+    dVar13 = (double)fVar1;
+    pfVar7[0x18] = fVar1;
+    if (in_f28 <= dVar13) {
+      if (in_f8 < dVar13) {
+        pfVar7[0x18] = fVar2;
+      }
+    }
+    else {
+      pfVar7[0x18] = (float)in_f28;
+    }
+    dVar13 = (double)pfVar7[0x18];
+    pfVar7[0x18] = pfVar7[0x18];
+    pfVar7[0x16] = (float)in_f31;
+    if (in_f31 < dVar13) {
+      pfVar7[0x17] = (float)in_f31;
+    }
+    else {
+      pfVar7[0x17] = (float)-dVar13;
+    }
+    if (in_f31 <= (double)pfVar7[0x17]) {
+      if (in_f8 < (double)pfVar7[0x17]) {
+        pfVar7[0x17] = fVar2;
+      }
+    }
+    else {
+      pfVar7[0x17] = (float)in_f31;
+    }
+    pfVar7[0x17] = pfVar7[0x17];
+    dVar13 = in_f31;
+    if (dVar11 != in_f31) {
+      dVar13 = (double)(float)((double)(float)(dVar11 * param_1) * in_f29);
+    }
+    fVar1 = pfVar7[0x14];
+    pfVar7[0x14] = (float)((double)fVar1 + dVar13);
+    dVar12 = in_f31;
+    if (dVar10 != in_f31) {
+      dVar12 = (double)(float)((double)(float)(dVar10 * param_1) * in_f24);
+    }
+    fVar1 = (float)((double)(float)((double)fVar1 + dVar13) + dVar12);
+    dVar13 = (double)fVar1;
+    pfVar7[0x14] = fVar1;
+    if ((dVar11 == in_f31) && (dVar10 == in_f31)) {
+      if ((in_f31 < dVar13) &&
+         (dVar13 = -(double)(float)(param_1 * in_f29 - dVar13), pfVar7[0x14] = (float)dVar13,
+         dVar13 < in_f31)) {
+        pfVar7[0x14] = (float)in_f31;
+      }
+      if (((double)pfVar7[0x14] < in_f31) &&
+         (fVar1 = (float)(param_1 * in_f29 + (double)pfVar7[0x14]), pfVar7[0x14] = fVar1,
+         in_f31 < (double)fVar1)) {
+        pfVar7[0x14] = (float)in_f31;
+      }
+    }
+    if (in_f28 <= (double)pfVar7[0x14]) {
+      if (in_f8 < (double)pfVar7[0x14]) {
+        pfVar7[0x14] = fVar2;
+      }
+    }
+    else {
+      pfVar7[0x14] = (float)in_f28;
+    }
+    pfVar7[0x14] = pfVar7[0x14];
+    dVar13 = in_f31;
+    if (dVar9 != in_f31) {
+      dVar13 = (double)(float)((double)(float)(dVar9 * param_1) * in_f29);
+    }
+    dVar12 = (double)(float)((double)*unaff_r31 + dVar13);
+    *unaff_r31 = (float)((double)*unaff_r31 + dVar13);
+    if ((dVar9 == in_f31) &&
+       (((in_f31 < dVar12 &&
+         (dVar13 = -(double)(float)(param_1 * in_f29 - dVar12), *unaff_r31 = (float)dVar13,
+         dVar13 < in_f31)) ||
+        (((double)*unaff_r31 < in_f31 &&
+         (fVar1 = (float)(param_1 * in_f29 + (double)*unaff_r31), *unaff_r31 = fVar1,
+         in_f31 < (double)fVar1)))))) {
+      *unaff_r31 = (float)in_f31;
+    }
+    if (in_f28 <= (double)*unaff_r31) {
+      if (in_f8 < (double)*unaff_r31) {
+        *unaff_r31 = fVar2;
+      }
+    }
+    else {
+      *unaff_r31 = (float)in_f28;
+    }
+    *unaff_r31 = *unaff_r31;
+    dVar13 = in_f31;
+    if (dVar8 != in_f31) {
+      dVar13 = (double)(float)((double)(float)(dVar8 * param_1) * in_f29);
+    }
+    dVar12 = (double)(float)((double)pfVar7[0x13] + dVar13);
+    pfVar7[0x13] = (float)((double)pfVar7[0x13] + dVar13);
+    if (dVar8 == in_f31) {
+      if ((in_f31 < dVar12) &&
+         (dVar13 = -(double)(float)(param_1 * in_f29 - dVar12), pfVar7[0x13] = (float)dVar13,
+         dVar13 < in_f31)) {
+        pfVar7[0x13] = (float)in_f31;
+      }
+      if (((double)pfVar7[0x13] < in_f31) &&
+         (fVar1 = (float)(param_1 * in_f29 + (double)pfVar7[0x13]), pfVar7[0x13] = fVar1,
+         in_f31 < (double)fVar1)) {
+        pfVar7[0x13] = (float)in_f31;
+      }
+    }
+    if (in_f28 <= (double)pfVar7[0x13]) {
+      if (in_f8 < (double)pfVar7[0x13]) {
+        pfVar7[0x13] = fVar2;
+      }
+    }
+    else {
+      pfVar7[0x13] = (float)in_f28;
+    }
+    param_5 = 0;
+    in_f11 = (double)*(float *)(unaff_r27 + 0x44);
+    pfVar7[0x19] = (float)((double)pfVar7[0x18] + in_f11);
+    pfVar7[0x13] = pfVar7[0x13];
+    pfVar7[0x1a] = (float)in_f27;
+    pfVar7[0x1c] = fVar2;
+    pfVar7[0x1b] = (float)in_f31;
+    pfVar6[0x16] = pfVar7[0x14];
+    *unaff_r28 = (float)in_f31;
+    pfVar6[0x11] = (float)in_f31;
+    pfVar6[0xb] = (float)in_f31;
+    pfVar6[0x17] = (float)in_f31;
+    pfVar6[10] = (float)in_f31;
+    pfVar6[0x18] = (float)in_f31;
+    pfVar6[0x10] = (float)in_f31;
+    pfVar6[0x12] = (float)in_f31;
+    unaff_r24 = param_3;
+    in_f30 = param_1;
+    param_2 = unaff_r25;
+    param_4 = in_stack_00000054;
+  }
+                    /* WARNING: Subroutine does not return */
+  FUN_82386bd0(pfVar7 + 0x11,0,0x54);
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x8214c120'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 8214c120 FUN_8214c120 (GhidraScript)  
+INFO  DecompileAt.java> 
+void FUN_8214c120(double param_1,int param_2,longlong param_3,undefined8 param_4,char param_5)
+
+{
+  double dVar1;
+  float fVar2;
+  float fVar3;
+  int iVar4;
+  int iVar5;
+  int iVar6;
+  
+  iVar4 = (int)((param_3 + 0x2355U & 0xffffffff) << 2);
+  iVar5 = *(int *)(iVar4 + param_2);
+  if ((iVar5 == 2) || (param_5 != '\0')) {
+    iVar5 = (int)((param_3 + 0x2357U & 0x3fffffff) << 2);
+    iVar6 = (int)((param_3 + 0x2359U & 0x3fffffff) << 2);
+    dVar1 = (double)*(float *)(iVar5 + param_2) - param_1;
+    fVar2 = -(float)(param_1 * (double)DAT_820542fc - (double)*(float *)(iVar6 + param_2));
+  }
+  else {
+    if (iVar5 != 1) goto LAB_8214c1a4;
+    iVar5 = (int)((param_3 + 0x2357U & 0x3fffffff) << 2);
+    iVar6 = (int)((param_3 + 0x2359U & 0x3fffffff) << 2);
+    dVar1 = (double)*(float *)(iVar5 + param_2) + param_1;
+    fVar2 = (float)(param_1 * (double)DAT_820542fc + (double)*(float *)(iVar6 + param_2));
+  }
+  *(float *)(iVar6 + param_2) = fVar2;
+  *(float *)(iVar5 + param_2) = (float)dVar1;
+LAB_8214c1a4:
+  fVar3 = DAT_820542bc;
+  fVar2 = DAT_820542b8;
+  iVar5 = (int)((param_3 + 0x2357U & 0x3fffffff) << 2);
+  if (DAT_820542b8 <= *(float *)(iVar5 + param_2)) {
+    if (DAT_820542bc < *(float *)(iVar5 + param_2)) {
+      *(float *)(iVar5 + param_2) = DAT_820542bc;
+    }
+  }
+  else {
+    *(float *)(iVar5 + param_2) = DAT_820542b8;
+  }
+  *(undefined4 *)(iVar5 + param_2) = *(undefined4 *)(iVar5 + param_2);
+  iVar6 = (int)((param_3 + 0x2359U & 0x3fffffff) << 2);
+  if (fVar2 <= *(float *)(iVar6 + param_2)) {
+    if (fVar3 < *(float *)(iVar6 + param_2)) {
+      *(float *)(iVar6 + param_2) = fVar3;
+    }
+  }
+  else {
+    *(float *)(iVar6 + param_2) = fVar2;
+  }
+  fVar3 = *(float *)(iVar5 + param_2);
+  *(undefined4 *)(iVar6 + param_2) = *(undefined4 *)(iVar6 + param_2);
+  if (fVar2 < fVar3) {
+    return;
+  }
+  *(undefined4 *)(iVar4 + param_2) = 0;
+  return;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1657 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3365 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x826e8c74'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 82074094 (GhidraScript)  
+INFO  FindU32Any.java> 820740b4 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x826e8d0c'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 82074170 (GhidraScript)  
+INFO  FindU32Any.java> 82074194 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x826e8c98'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 820740dc (GhidraScript)  
+INFO  FindU32Any.java> 820740fc (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x826e8d88'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 82074204 (GhidraScript)  
+INFO  FindU32Any.java> 82074224 (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1595 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3228 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x82074070' '0x820741c0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 82074070 0x00000001 (GhidraScript)  
+INFO  DumpU32Range.java> 82074074 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074078 0xffffffff (GhidraScript)  
+INFO  DumpU32Range.java> 8207407c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074080 0x00000040 (GhidraScript)  
+INFO  DumpU32Range.java> 82074084 0x82074050 (GhidraScript)  
+INFO  DumpU32Range.java> 82074088 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8207408c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074090 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074094 0x826e8c74 (GhidraScript)  
+INFO  DumpU32Range.java> 82074098 0x8207409c (GhidraScript)  
+INFO  DumpU32Range.java> 8207409c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740a0 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740a4 0x00000001 (GhidraScript)  
+INFO  DumpU32Range.java> 820740a8 0x820740ac (GhidraScript)  
+INFO  DumpU32Range.java> 820740ac 0x820740b4 (GhidraScript)  
+INFO  DumpU32Range.java> 820740b0 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740b4 0x826e8c74 (GhidraScript)  
+INFO  DumpU32Range.java> 820740b8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740bc 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740c0 0xffffffff (GhidraScript)  
+INFO  DumpU32Range.java> 820740c4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740c8 0x00000040 (GhidraScript)  
+INFO  DumpU32Range.java> 820740cc 0x8207409c (GhidraScript)  
+INFO  DumpU32Range.java> 820740d0 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740d4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740d8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740dc 0x826e8c98 (GhidraScript)  
+INFO  DumpU32Range.java> 820740e0 0x820740e4 (GhidraScript)  
+INFO  DumpU32Range.java> 820740e4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740e8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740ec 0x00000001 (GhidraScript)  
+INFO  DumpU32Range.java> 820740f0 0x820740f4 (GhidraScript)  
+INFO  DumpU32Range.java> 820740f4 0x820740fc (GhidraScript)  
+INFO  DumpU32Range.java> 820740f8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820740fc 0x826e8c98 (GhidraScript)  
+INFO  DumpU32Range.java> 82074100 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074104 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074108 0xffffffff (GhidraScript)  
+INFO  DumpU32Range.java> 8207410c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074110 0x00000040 (GhidraScript)  
+INFO  DumpU32Range.java> 82074114 0x820740e4 (GhidraScript)  
+INFO  DumpU32Range.java> 82074118 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8207411c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074120 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074124 0x826e8cc8 (GhidraScript)  
+INFO  DumpU32Range.java> 82074128 0x8207412c (GhidraScript)  
+INFO  DumpU32Range.java> 8207412c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074130 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074134 0x00000002 (GhidraScript)  
+INFO  DumpU32Range.java> 82074138 0x8207413c (GhidraScript)  
+INFO  DumpU32Range.java> 8207413c 0x82074148 (GhidraScript)  
+INFO  DumpU32Range.java> 82074140 0x8206d798 (GhidraScript)  
+INFO  DumpU32Range.java> 82074144 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074148 0x826e8cc8 (GhidraScript)  
+INFO  DumpU32Range.java> 8207414c 0x00000001 (GhidraScript)  
+INFO  DumpU32Range.java> 82074150 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074154 0xffffffff (GhidraScript)  
+INFO  DumpU32Range.java> 82074158 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8207415c 0x00000040 (GhidraScript)  
+INFO  DumpU32Range.java> 82074160 0x8207412c (GhidraScript)  
+INFO  DumpU32Range.java> 82074164 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074168 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8207416c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074170 0x826e8d0c (GhidraScript)  
+INFO  DumpU32Range.java> 82074174 0x82074178 (GhidraScript)  
+INFO  DumpU32Range.java> 82074178 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8207417c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074180 0x00000002 (GhidraScript)  
+INFO  DumpU32Range.java> 82074184 0x82074188 (GhidraScript)  
+INFO  DumpU32Range.java> 82074188 0x82074194 (GhidraScript)  
+INFO  DumpU32Range.java> 8207418c 0x82071a88 (GhidraScript)  
+INFO  DumpU32Range.java> 82074190 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 82074194 0x826e8d0c (GhidraScript)  
+INFO  DumpU32Range.java> 82074198 0x00000001 (GhidraScript)  
+INFO  DumpU32Range.java> 8207419c 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820741a0 0xffffffff (GhidraScript)  
+INFO  DumpU32Range.java> 820741a4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820741a8 0x00000040 (GhidraScript)  
+INFO  DumpU32Range.java> 820741ac 0x82074178 (GhidraScript)  
+INFO  DumpU32Range.java> 820741b0 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820741b4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820741b8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820741bc 0x826e8d34 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x82074084'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x820740a4'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x82074160'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x82074184'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1945 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3601 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x82074088'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 8205da08 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x82074164'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 8205dae8 (GhidraScript)  
+INFO  REPORT: Execute script: FindU32Any.java '0x8207410c'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: FindU32Any.java '0x820741b0'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/FindU32Any.java (HeadlessAnalyzer)  
+INFO  FindU32Any.java> 8205dadc (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
+INFO  Using log config file: jar:file:/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Framework/Generic/lib/Generic.jar!/generic.log4j.xml (LoggingInitialization)  
+INFO  Using log file: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/application.log (LoggingInitialization)  
+INFO  Loading user preferences: /home/lavaulta/.config/ghidra/ghidra_12.1.2_PUBLIC/preferences (Preferences)  
+INFO  Searching for classes... (ClassSearcher)  
+INFO  Ignoring class 'xexloaderwv.XEXLoaderWVLoader' from '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/lib/XEXLoaderWV.jar'. Already found at '/fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/patch/XEXLoaderWV-java21.jar'. (ClassSearcher)  
+INFO  Class search complete (1483 ms) (ClassSearcher)  
+INFO  Initializing SSL Context (DefaultSSLContextInitializer)  
+INFO  Initializing Random Number Generator... (SecureRandomFactory)  
+INFO  Random Number Generator initialization complete: NativePRNGNonBlocking (SecureRandomFactory)  
+INFO  Trust manager disabled, cacerts have not been set (DefaultTrustManagerFactory)  
+INFO  Headless startup complete (3055 ms) (AnalyzeHeadless)  
+INFO  Class searcher loaded 59 extension points (20 false positives) (ClassSearcher)  
+INFO  HEADLESS Script Paths:
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/MicrosoftCodeAnalyzer/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PDB/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/8051/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Base/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FileFormats/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/GnuDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/ghidra-emotionengine-reloaded/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/Decompiler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/FunctionID/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/DecompilerDependent/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/DATA/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger-rmi-trace/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SwiftDemangler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Debug/Debugger/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/PIC/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Extensions/XEXLoaderWV/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/WildcardAssembler/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/PyGhidra/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BSim/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/VersionTracking/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/BytePatterns/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/Atmel/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Features/SystemEmulation/ghidra_scripts
+    /fastdata/lavaulta/auto-re-agent/.tools/ghidra_12.1.2_PUBLIC/Ghidra/Processors/JVM/ghidra_scripts (HeadlessAnalyzer)  
+INFO  HEADLESS: execution starts (HeadlessAnalyzer)  
+INFO  Opening existing project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessAnalyzer)  
+INFO  Opening project: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected (HeadlessProject)  
+INFO  REPORT: Processing project file: /default.xex (HeadlessAnalyzer)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x8205d9f0' '0x8205dbb8'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 8205d9f0 0x8213ffe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205d9f4 0x821403e8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205d9f8 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205d9fc 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da00 0x82266390 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da04 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da08 0x82074088 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da0c 0x82142620 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da10 0x82142440 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da14 0x82142448 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da18 0x82142680 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da1c 0x82142850 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da20 0x82142468 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da24 0x82142470 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da28 0x82142478 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da2c 0x82142480 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da30 0x82142488 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da34 0x82142490 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da38 0x82142498 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da3c 0x821424a0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da40 0x82142a20 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da44 0x821424a8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da48 0x821424b0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da4c 0x821424d0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da50 0x821424e8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da54 0x82142cc8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da58 0x82142d40 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da5c 0x82143d68 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da60 0x820740d0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da64 0x82144270 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da68 0x705f6631 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da6c 0x38660000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da70 0x705f7375 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da74 0x33330000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da78 0x705f6631 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da7c 0x37610000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da80 0x705f7375 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da84 0x34370000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da88 0x705f6632 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da8c 0x32610000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da90 0x705f6661 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da94 0x34340000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205da98 0x76436f6f (GhidraScript)  
+INFO  DumpU32Range.java> 8205da9c 0x6b546f72 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daa0 0x72616e63 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daa4 0x65506172 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daa8 0x616d0000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daac 0x76536861 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dab0 0x64657250 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dab4 0x6172616d (GhidraScript)  
+INFO  DumpU32Range.java> 8205dab8 0x30310000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dabc 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dac0 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dac4 0x00000280 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dac8 0x000005a0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dacc 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dad0 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dad4 0x00000280 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dad8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dadc 0x820741b0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dae0 0x82144f50 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dae4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dae8 0x82074164 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daec 0x82145578 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daf0 0x8214d390 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daf4 0x8214d600 (GhidraScript)  
+INFO  DumpU32Range.java> 8205daf8 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dafc 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db00 0x8214d650 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db04 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db08 0x8214d7a8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db0c 0x8214d870 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db10 0x8214de80 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db14 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db18 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db1c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db20 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db24 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db28 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db2c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db30 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db34 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db38 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db3c 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db40 0x822ddbe8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db44 0x82145788 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db48 0x82145800 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db4c 0x82144f98 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db50 0x82144fa8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db54 0x82144fb8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db58 0x82144fc8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db5c 0x82144fd8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db60 0x82145a48 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db64 0x82145d88 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db68 0x82146050 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db6c 0x82145b48 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db70 0x821461c0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db74 0x82146d00 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db78 0x82146db8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db7c 0x82147070 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db80 0x82148470 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db84 0x82148c28 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db88 0x82149258 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db8c 0x82149918 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db90 0x8214b2b8 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db94 0x8214b5f0 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db98 0x8214b978 (GhidraScript)  
+INFO  DumpU32Range.java> 8205db9c 0x8214c038 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dba0 0x8214c360 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dba4 0x8214c518 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dba8 0x8214c700 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbac 0x8214d000 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbb0 0x8214d160 (GhidraScript)  
+INFO  DumpU32Range.java> 8205dbb4 0x82074118 (GhidraScript)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x820d7fd8' '0x820d7fe8'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 820d7fd8 0xd1bf0b00 (GhidraScript)  
+INFO  DumpU32Range.java> 820d7fdc 0xc1be0064 (GhidraScript)  
+INFO  DumpU32Range.java> 820d7fe0 0xd1bf0b04 (GhidraScript)  
+INFO  DumpU32Range.java> 820d7fe4 0xc1be0068 (GhidraScript)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x82059b20' '0x82059b30'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 82059b20 0x822663a8 (GhidraScript)  
+INFO  DumpU32Range.java> 82059b24 0x822663a8 (GhidraScript)  
+INFO  DumpU32Range.java> 82059b28 0x820bf000 (GhidraScript)  
+INFO  DumpU32Range.java> 82059b2c 0x822ddbe8 (GhidraScript)  
+INFO  REPORT: Execute script: DumpU32Range.java '0x820542b8' '0x82054300'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DumpU32Range.java (HeadlessAnalyzer)  
+INFO  DumpU32Range.java> 820542b8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542bc 0x3f800000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542c0 0x7361765f (GhidraScript)  
+INFO  DumpU32Range.java> 820542c4 0x61636563 (GhidraScript)  
+INFO  DumpU32Range.java> 820542c8 0x6f6d6261 (GhidraScript)  
+INFO  DumpU32Range.java> 820542cc 0x74360000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542d0 0x6e6f745f (GhidraScript)  
+INFO  DumpU32Range.java> 820542d4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542d8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542dc 0x00000002 (GhidraScript)  
+INFO  DumpU32Range.java> 820542e0 0x00000001 (GhidraScript)  
+INFO  DumpU32Range.java> 820542e4 0x00000001 (GhidraScript)  
+INFO  DumpU32Range.java> 820542e8 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542ec 0x3f800000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542f0 0x3f800000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542f4 0x00000000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542f8 0x3f800000 (GhidraScript)  
+INFO  DumpU32Range.java> 820542fc 0x40000000 (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x82144f98'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 82144f50 Function_82144F50 (GhidraScript)  
+INFO  DecompileAt.java> 
+void Function_82144F50(int param_1,undefined8 param_2,undefined8 param_3,int param_4,
+                      undefined8 param_5,undefined8 param_6,int param_7)
+
+{
+  short *psVar1;
+  uint in_r11;
+  uint *unaff_r31;
+  
+  psVar1 = (short *)(param_1 + 0x4bc);
+  while( true ) {
+    if (*psVar1 != 0) {
+      param_7 = param_7 + 1;
+    }
+    if (param_7 == param_4 + 1) break;
+    in_r11 = in_r11 + 1;
+    psVar1 = psVar1 + 6;
+    if (0x7f < in_r11) {
+      switchD_82144a70::default();
+      return;
+    }
+  }
+  *unaff_r31 = (uint)*(ushort *)((in_r11 + 0x65) * 0xc + param_1);
+  switchD_82144a70::default();
+  return;
+}
+
+ (GhidraScript)  
+INFO  REPORT: Execute script: DecompileAt.java '0x8214b978'  (HeadlessAnalyzer)  
+INFO  SCRIPT: /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/DecompileAt.java (HeadlessAnalyzer)  
+INFO  DecompileAt.java> FUNCTION 8214b978 Function_8214B978 (GhidraScript)  
+INFO  DecompileAt.java> 
+void Function_8214B978(void)
+
+{
+  int in_r10;
+  int in_r11;
+  int unaff_r28;
+  int unaff_r31;
+  
+  (**(code **)(*(int *)(((in_r11 + in_r10) * 4 + unaff_r28) * 0x80 + unaff_r31 + 0x4d30) + 0x10))();
+                    /* WARNING: Subroutine does not return */
+  FUN_821f71a0();
+}
+
+ (GhidraScript)  
+INFO  REPORT: Save succeeded for processed file: /default.xex (HeadlessAnalyzer)  
