@@ -90,13 +90,50 @@ bounded oracle, but is not required for static boundary repair.
 
 ## Active tranche
 
-Cycle 302 qualifie `0x82345250` comme coupure interne par **28/28** assertions,
-mais son retrait n'est pas accepté : la régénération a fini par
-`std::bad_alloc` après avoir vidé partiellement `generated/`. La configuration,
-les générés et le runtime du cycle 301 ont été restaurés et reliés. Le front
-effectif reste donc `0x8234530C -> 0x8234524C`; le prochain cycle doit rejouer
-ce seul retrait avec télémétrie mémoire, puis passer build, smoke et tests avant
-toute promotion.
+**État au cycle 307 : le corpus ne contient plus aucun `REX_FATAL`.**
+
+| Cycle | Pièges `Unresolved branch` | Pièges `Unresolved call` |
+| --- | ---: | ---: |
+| 304 (attribution) | 4 857 | 205 |
+| 305 (retraits en masse) | 26 | 205 |
+| 306 (correctifs générateur + 35 entrées) | **0** | 205 |
+| 307 (167 retraits + 1 ajout) | **0** | **0** |
+
+Le cycle 306 a corrigé deux défauts du générateur — GapFill recréant des
+fonctions dans les trous inter-blocs, et `classifyTarget` identifiant l'appelant
+par adresse plutôt que par la fonction en cours d'émission — et découvert
+35 entrées `0xADDR = {}` en hexadécimal minuscule qu'un filtre trop étroit avait
+masquées pendant tout le cycle 305. Le cycle 307 a appliqué la méthode de
+retrait du cycle 305 à la famille `Unresolved call`, jamais analysée jusque-là
+pour la même raison de filtre.
+
+Le corpus compile (48/48), se lie (163,6 Mo) et le smoke survit. Les
+1 239 `ppc_trap` restants sont des instructions PowerPC réelles (`twi`,
+`twllei`, ...) et non des échecs de traduction.
+
+**Prochaine tranche : dépasser le smoke.** Le smoke ne prouve que l'absence
+d'arrêt ; il ne dit rien de l'affichage, de l'entrée ni de la progression vers
+une mission. C'est l'objet du cycle 308.
+
+Voir `reports/cycle-306-unresolved-branch-eliminated.md` et
+`reports/cycle-307-zero-fatal-corpus.md`.
+
+## Historique
+
+Cycle 303 a rejoué ce retrait avec télémétrie mémoire, comme le cycle 302 le
+demandait. **Le `std::bad_alloc` n'est pas reproductible.** Avec et sans
+`0x82345250`, `rexglue codegen` sort en 0, à 269 812 et 270 076 ko de RSS
+crête — 0,1 % d'écart, sur un hôte de 121 Go. Les deux corpus générés compilent
+**52/52** en C++23. Le retrait supprime bien `sub_82345250` (2 unités -> 0) et
+laisse `sub_823450D0` intact.
+
+Le motif de blocage enregistré au cycle 302 n'existe donc pas : son échec est
+attribuable au répertoire `generated/` partiellement vidé au moment de la
+commande, et non à la configuration ni au SDK. Le retrait est accepté au niveau
+codegen et compilation ; il reste à relier et exécuter le smoke runtime avant
+promotion. Voir `reports/cycle-303-rexglue-bad-alloc-not-reproducible.md`.
+
+Cycle 302 qualifie `0x82345250` comme coupure interne par **28/28** assertions.
 
 Cycle 301 closed configured `0x82345228`: 27 headless assertions classify it
 as the internal third-loop backedge setup in `sub_82345100`. Removing only

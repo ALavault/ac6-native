@@ -1,0 +1,14 @@
+# AC6 — retraits de coupures resolvant des branches non resolues
+# Genere le 2026-07-26 (cycle 304). NON QUALIFIE par contrat headless :
+# a valider avant promotion. Applique a .tools/ac6-recomp-reference/ac6recomp_config.toml
+#
+# Effet mesure : pieges 'Unresolved branch' 4857 -> 4836.
+# sub_82345100 : 4 pieges -> 0 (4 premieres entrees).
+# sub_82348FC8 : 1 piege -> 0 (5e entree).
+#
+# Retirer ces lignes du bloc [functions] :
+-0x82345250 = { name = "rex_sub_82345250" }
+-0x82345260 = { name = "rex_sub_82345260" }
+-0x823452A8 = { name = "rex_sub_823452A8" }
+-0x82345300 = { name = "rex_sub_82345300" }
+-0x82349050 = { name = "rex_sub_82349050" }

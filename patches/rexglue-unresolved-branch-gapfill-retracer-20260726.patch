@@ -1,0 +1,192 @@
+diff --git a/thirdparty/rexglue-sdk/include/rex/codegen/function_graph.h b/thirdparty/rexglue-sdk/include/rex/codegen/function_graph.h
+index 171eb67c..d81a7c3d 100644
+--- a/thirdparty/rexglue-sdk/include/rex/codegen/function_graph.h
++++ b/thirdparty/rexglue-sdk/include/rex/codegen/function_graph.h
+@@ -186,7 +186,17 @@ class FunctionGraph {
+   // Returns how the target should be treated during code generation.
+   TargetKind classifyTarget(uint32_t target, uint32_t callerAddr, bool isCallInstruction) const;
+ 
++  // Same, but for the function actually being emitted. Prefer this from the
++  // builders: functions can overlap, so looking the caller up by address can
++  // return a different node than the one whose body is being written, and a
++  // target internal to that body then classifies as Unknown.
++  TargetKind classifyTarget(uint32_t target, const FunctionNode& callerFn,
++                            bool isCallInstruction) const;
++
+  private:
++  TargetKind classifyTargetImpl(uint32_t target, const FunctionNode* callerFn,
++                                bool isCallInstruction) const;
++
+   std::vector<CodeBuffer> codeBuffers_;
+   std::unordered_map<uint32_t, std::unique_ptr<FunctionNode>> functions_;
+   std::map<uint32_t, FunctionNode*>
+diff --git a/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp b/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp
+index c2b23817..52c2a3ee 100644
+--- a/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp
++++ b/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp
+@@ -253,7 +253,7 @@ void BuilderContext::emit_conditional_branch(bool not_, std::string_view cond) {
+ 
+   // Use classifyTarget for consistent branch classification
+   // false = branch instruction (not a call), so own-base means loop back
+-  auto kind = graph().classifyTarget(target, base, false);
++  auto kind = graph().classifyTarget(target, fn, false);
+ 
+   switch (kind) {
+     case TargetKind::InternalLabel:
+diff --git a/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp b/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp
+index 5294cbc1..ba8ef412 100644
+--- a/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp
++++ b/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp
+@@ -29,7 +29,7 @@ bool build_b(BuilderContext& ctx) {
+ 
+   // Use graph to classify the target - handles thunks that branch to nearby functions
+   // false = branch instruction (not a call), so own-base means loop back
+-  auto kind = ctx.graph().classifyTarget(target, ctx.base, false);
++  auto kind = ctx.graph().classifyTarget(target, ctx.fn, false);
+ 
+   switch (kind) {
+     case TargetKind::InternalLabel:
+@@ -67,7 +67,7 @@ bool build_bl(BuilderContext& ctx) {
+ 
+   // Use graph to classify the target
+   // true = call instruction, so own-base means recursive call (not loop back)
+-  auto kind = ctx.graph().classifyTarget(target, ctx.base, true);
++  auto kind = ctx.graph().classifyTarget(target, ctx.fn, true);
+ 
+   switch (kind) {
+     case TargetKind::InternalLabel:
+@@ -138,7 +138,7 @@ bool build_bctr(BuilderContext& ctx) {
+         continue;
+       }
+ 
+-      auto kind = ctx.graph().classifyTarget(label, ctx.base, false);
++      auto kind = ctx.graph().classifyTarget(label, ctx.fn, false);
+       switch (kind) {
+         case TargetKind::InternalLabel:
+           ctx.println("\t\tgoto loc_{:X};", label);
+diff --git a/thirdparty/rexglue-sdk/src/codegen/function_graph.cpp b/thirdparty/rexglue-sdk/src/codegen/function_graph.cpp
+index 2c784784..50ab420a 100644
+--- a/thirdparty/rexglue-sdk/src/codegen/function_graph.cpp
++++ b/thirdparty/rexglue-sdk/src/codegen/function_graph.cpp
+@@ -1184,7 +1184,16 @@ TargetKind FunctionGraph::classifyTarget(uint32_t target, uint32_t callerAddr,
+                                          bool isCallInstruction) const {
+   // Find the caller's function
+   const FunctionNode* callerFn = getFunctionContaining(callerAddr);
++  return classifyTargetImpl(target, callerFn, isCallInstruction);
++}
++
++TargetKind FunctionGraph::classifyTarget(uint32_t target, const FunctionNode& callerFn,
++                                         bool isCallInstruction) const {
++  return classifyTargetImpl(target, &callerFn, isCallInstruction);
++}
+ 
++TargetKind FunctionGraph::classifyTargetImpl(uint32_t target, const FunctionNode* callerFn,
++                                             bool isCallInstruction) const {
+   // Case 1: Target is an import - always a call/tail-call
+   if (isImport(target)) {
+     return TargetKind::Import;
+diff --git a/thirdparty/rexglue-sdk/src/codegen/phase_gapfill.cpp b/thirdparty/rexglue-sdk/src/codegen/phase_gapfill.cpp
+index 410b43bb..896d3de9 100644
+--- a/thirdparty/rexglue-sdk/src/codegen/phase_gapfill.cpp
++++ b/thirdparty/rexglue-sdk/src/codegen/phase_gapfill.cpp
+@@ -194,9 +194,37 @@ void gapFillCodeRegions(CodegenContext& ctx) {
+ // Cleanup absorbed GAP_FILL functions
+ //=============================================================================
+ 
+-void cleanupAbsorbedGapFills(CodegenContext& ctx) {
++// A GAP_FILL is absorbed by `owner` when its entry lies inside one of the
++// owner's blocks, or -- the re-tracer case -- when its entry lies in a gap
++// *between* the owner's blocks but its own blocks re-walk code the owner
++// already covers.
++//
++// The re-tracer case is what makes a branch unresolvable. GapFill registers a
++// function at any address not covered by a block, which includes inter-block
++// gaps (jump-table data, padding, code reached only by an unresolved jump).
++// Block discovery then walks forward from that entry and re-traces the owner's
++// instructions, so the same address is emitted in two functions. In the copy,
++// a branch back to an address before the re-tracer's own entry has no label,
++// and codegen emits REX_FATAL("Unresolved branch ...") for it.
++//
++// Absorbing the re-tracer keeps exactly one copy of the code, in the function
++// that owns it and can name every label the branches need.
++bool isAbsorbedBy(const FunctionNode& node, uint32_t addr, const FunctionNode& owner) {
++  if (owner.containsAddress(addr))
++    return true;
++  if (!owner.isWithinBounds(addr))
++    return false;
++  for (const auto& block : node.blocks()) {
++    if (owner.containsAddress(block.base))
++      return true;
++  }
++  return false;
++}
++
++size_t cleanupAbsorbedGapFillsPass(CodegenContext& ctx) {
+   auto& graph = ctx.graph;
+   std::vector<uint32_t> toRemove;
++  std::unordered_set<uint32_t> removing;
+ 
+   for (const auto& [addr, node] : graph.functions()) {
+     if (node->authority() != FunctionAuthority::GAP_FILL)
+@@ -205,19 +233,29 @@ void cleanupAbsorbedGapFills(CodegenContext& ctx) {
+     for (const auto& [otherAddr, otherNode] : graph.functions()) {
+       if (otherAddr == addr)
+         continue;
+-      if (!otherNode->containsAddress(addr))
++      // Never merge into a function that is itself being removed this pass:
++      // functions() is unordered, so without this the merged blocks could be
++      // dropped along with the owner. A later pass re-absorbs into the survivor.
++      if (removing.contains(otherAddr))
++        continue;
++      if (!isAbsorbedBy(*node, addr, *otherNode))
+         continue;
+ 
+-      // This GAP_FILL is inside another function's blocks
+       if (otherNode->authority() != FunctionAuthority::GAP_FILL || otherAddr < addr) {
+         // Absorbed by higher authority or lower-address GAP_FILL - remove it, but merge first
+         toRemove.push_back(addr);
++        removing.insert(addr);
+ 
++        // Merge only what the owner does not already cover. addBlock/addLabel
++        // do not deduplicate, and a duplicated block would be emitted twice
++        // inside one function -- a duplicate label, which does not compile.
+         for (const auto& block : node->blocks()) {
+-          graph.addBlockToFunction(otherAddr, block);
++          if (!otherNode->containsAddress(block.base))
++            graph.addBlockToFunction(otherAddr, block);
+         }
+         for (auto label : node->labels()) {
+-          graph.addLabelToFunction(otherAddr, label);
++          if (!otherNode->containsAddress(label))
++            graph.addLabelToFunction(otherAddr, label);
+         }
+         for (const auto& call : node->calls()) {
+           graph.addCallToFunction(otherAddr, call.site, call.target);
+@@ -240,9 +278,25 @@ void cleanupAbsorbedGapFills(CodegenContext& ctx) {
+     graph.removeFunction(addr);
+   }
+ 
+-  if (!toRemove.empty()) {
+-    REXCODEGEN_INFO("Analyze: removed {} absorbed GAP_FILL functions", toRemove.size());
++  return toRemove.size();
++}
++
++void cleanupAbsorbedGapFills(CodegenContext& ctx) {
++  // Absorption can cascade: A re-traces B which re-traces C. Each pass merges
++  // one level, so repeat to a fixpoint. The bound is a guard, not a schedule --
++  // AC6 settles in three passes.
++  size_t total = 0;
++  for (size_t pass = 0; pass < 8; ++pass) {
++    size_t removed = cleanupAbsorbedGapFillsPass(ctx);
++    if (removed == 0)
++      break;
++    total += removed;
+   }
++
++  if (total > 0) {
++    REXCODEGEN_INFO("Analyze: removed {} absorbed GAP_FILL functions", total);
++  }
++
+ }
+ 
+ }  // anonymous namespace
