@@ -69,3 +69,4 @@ payload/
 *.tar.gz
 *.wad
 *.dat
+__pycache__/
