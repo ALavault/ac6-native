@@ -1,0 +1,15 @@
+diff --git a/thirdparty/rexglue-sdk/src/system/xobject.cpp b/thirdparty/rexglue-sdk/src/system/xobject.cpp
+index d72b4558..911573e7 100644
+--- a/thirdparty/rexglue-sdk/src/system/xobject.cpp
++++ b/thirdparty/rexglue-sdk/src/system/xobject.cpp
+@@ -370,6 +370,10 @@ object_ref<XObject> XObject::GetNativeObject(KernelState* kernel_state, void* na
+       case 23:  // ProfileObject
+       case 24:  // ThreadedDpcObject
+       default:
++        // Name the type before dying: the assert alone gives no way to tell a
++        // Timer from a Queue, and which one the guest wants decides the work.
++        REXLOG_ERROR("XObject::GetNativeObject: unimplemented dispatch type {} at {:#010x}",
++                     as_type, kernel_state->memory()->HostToGuestVirtual(native_ptr));
+         assert_always();
+         return NULL;
+     }
