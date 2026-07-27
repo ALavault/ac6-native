@@ -1,0 +1,29 @@
+diff --git a/thirdparty/rexglue-sdk/include/rex/ppc/context.h b/thirdparty/rexglue-sdk/include/rex/ppc/context.h
+index 9aa36c6b..069a27dd 100644
+--- a/thirdparty/rexglue-sdk/include/rex/ppc/context.h
++++ b/thirdparty/rexglue-sdk/include/rex/ppc/context.h
+@@ -128,7 +128,23 @@ PPCFunc* ResolveIndirectFunction(uint32_t guest_address);
+   (*(PPCFunc**)(x + PPC_IMAGE_BASE + PPC_IMAGE_SIZE + (uint64_t(uint32_t(y) - PPC_CODE_BASE) * 2)))
+ 
+ #undef PPC_CALL_INDIRECT_FUNC
+-#define PPC_CALL_INDIRECT_FUNC(x) PPC_LOOKUP_FUNC(base, x)(ctx, base);
++// An address the recompiler never registered has a null slot in the table.
++// Calling through it faults, and ReXGlue's own SIGSEGV handler -- installed for
++// guest MMIO -- swallows the fault, so execution continues with a corrupted
++// context instead of stopping. Report the address instead: an unregistered
++// indirect target is a missing [functions] entry, and naming it is the whole
++// diagnosis.
++#define PPC_CALL_INDIRECT_FUNC(x)                            \
++  do {                                                       \
++    PPCFunc* _rex_target = PPC_LOOKUP_FUNC(base, x);         \
++    if (!_rex_target) {                                      \
++      rex_report_unregistered_indirect_target((uint32_t)(x));  \
++      break;                                                 \
++    }                                                        \
++    _rex_target(ctx, base);                                  \
++  } while (0);
++
++extern "C" void rex_report_unregistered_indirect_target(uint32_t guest_address);
+ 
+ #endif  // PPC_CONFIG_H_INCLUDED
+ 
