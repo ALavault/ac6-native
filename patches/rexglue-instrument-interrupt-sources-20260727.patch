@@ -1,0 +1,41 @@
+diff --git a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
+index e1916e69..80a60d61 100644
+--- a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
++++ b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
+@@ -9,6 +9,7 @@
+  * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
+  */
+ 
++#include <atomic>
+ #include <rex/graphics/graphics_system.h>
+ 
+ #include <algorithm>
+@@ -406,9 +407,28 @@ bool GraphicsSystem::GetLastSwapSubmission(system::GraphicsSwapSubmission* out_s
+ }
+ 
+ void GraphicsSystem::DispatchInterruptCallback(uint32_t source, uint32_t cpu) {
++  // TEMPORARY (cycle 316): the guest stops requesting swaps after two frames.
++  // Its render loop is driven by this interrupt, so record whether the callback
++  // is registered at all and how often it actually fires.
++  static std::atomic<uint64_t> dispatched{0}, skipped{0};
+   if (!interrupt_callback_) {
++    uint64_t n = skipped.fetch_add(1) + 1;
++    if (n <= 3 || n % 500 == 0)
++      REXGPU_ERROR("GPU interrupt source={} DROPPED, no guest callback registered (count={})",
++                   source, n);
+     return;
+   }
++  {
++    // Per-source counters: the guest handler only does work for source 1, so a
++    // shared counter cannot show whether source 1 has stopped firing.
++    static std::atomic<uint64_t> per_source[4]{};
++    uint32_t idx = source < 4 ? source : 3;
++    uint64_t n = per_source[idx].fetch_add(1) + 1;
++    (void)dispatched.fetch_add(1);
++    if (n <= 4 || n % 250 == 0)
++      REXGPU_ERROR("GPU interrupt SOURCE={} count={} -> guest {:#010x}", source, n,
++                   uint32_t(interrupt_callback_));
++  }
+ 
+   auto thread = system::XThread::GetCurrentThread();
+   assert_not_null(thread);
