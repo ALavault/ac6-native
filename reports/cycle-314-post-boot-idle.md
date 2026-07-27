@@ -89,3 +89,29 @@ Aucun contenu de jeu n'est rendu. L'objectif « première mission jouable » res
 derrière cette attente.
 
 `recompiler-generated` n'est pas `verified`.
+
+## 6. Addendum : le jeu tourne, il n'est pas bloqué
+
+Échantillonnage de l'état des 71 fils après 45 s d'exécution, via
+`/proc/<pid>/task/*/stat` et `wchan` — sans `gdb`, donc sans ralentir le
+processus :
+
+| Fil invité | CPU cumulé | Canal d'attente |
+| --- | ---: | --- |
+| `XThread5487D6C0` | **25,9 s** | `futex_do_wait` |
+| `XThread85FFD6C0` | 10,3 s | `futex_do_wait` |
+| `XThread5287B6C0` | 8,8 s | `hrtimer_nanosleep` |
+| `XThread5387C6C0` | 2,2 s | `hrtimer_nanosleep` |
+| `XThread5187A6C0` | 2,1 s | `hrtimer_nanosleep` |
+| ~30 autres | 0 ms | `futex_do_wait` |
+
+Trois fils dorment sur un temporisateur, ce qui est le comportement d'une boucle
+cadencée, et le plus actif a consommé près de 26 secondes de processeur.
+
+**Le jeu n'est donc pas en interblocage : il exécute une boucle réelle.** Il
+travaille, sans produire d'image. C'est un état plus favorable qu'un blocage —
+et cela oriente vers une machine à états qui n'atteint pas sa condition de
+transition, plutôt que vers une primitive de synchronisation non satisfaite.
+
+Cela renforce la piste n°1 : l'oracle Xenia, qui dira si ce point est franchi
+avec le même XEX, tranche la question sans exploration à l'aveugle.
