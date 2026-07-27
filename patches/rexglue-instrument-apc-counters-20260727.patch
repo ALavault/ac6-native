@@ -1,0 +1,46 @@
+diff --git a/thirdparty/rexglue-sdk/src/system/xthread.cpp b/thirdparty/rexglue-sdk/src/system/xthread.cpp
+index f64620e4..0cd4f11f 100644
+--- a/thirdparty/rexglue-sdk/src/system/xthread.cpp
++++ b/thirdparty/rexglue-sdk/src/system/xthread.cpp
+@@ -560,6 +560,15 @@ void XThread::Execute() {
+   bool want_exit_code;
+   int exit_code = 0;
+ 
++  // TEMPORARY (cycle 310): name the guest entry point and its context for every
++  // thread. The XapiThreadStartup trampoline calls the entry with r3 =
++  // start_context, so a garbage context shows up as a garbage first argument
++  // several frames away from where it was chosen.
++  REXLOG_ERROR("XThread::Execute thid={} start_address={:#010x} start_context={:#010x} "
++               "xapi_startup={:#010x}",
++               thread_id_, creation_params_.start_address, creation_params_.start_context,
++               creation_params_.xapi_thread_startup);
++
+   // If a XapiThreadStartup value is present, we use that as a trampoline.
+   // Otherwise, we are a raw thread.
+   if (creation_params_.xapi_thread_startup) {
+@@ -664,6 +673,13 @@ void XThread::UnlockApc(bool queue_delivery) {
+ 
+ void XThread::EnqueueApc(uint32_t normal_routine, uint32_t normal_context, uint32_t arg1,
+                          uint32_t arg2) {
++  // TEMPORARY (cycle 317): an overlapped read that is queued but never
++  // delivered leaves the guest waiting forever. Count both ends.
++  {
++    static std::atomic<uint64_t> n{0};
++    uint64_t c = n.fetch_add(1) + 1;
++    if (c <= 3 || c % 25 == 0) REXSYS_ERROR("APC enqueued #{} thid={}", c, thread_id_);
++  }
+   uint32_t apc_ptr = memory()->SystemHeapAlloc(XAPC::kSize);
+   if (!apc_ptr) {
+     REXSYS_WARN("EnqueueApc: allocation failed (thid={}, normal={:08X})", thread_id_,
+@@ -694,6 +710,11 @@ void XThread::EnqueueApc(uint32_t normal_routine, uint32_t normal_context, uint3
+ }
+ 
+ void XThread::DeliverAPCs() {
++  {
++    static std::atomic<uint64_t> n{0};
++    uint64_t c = n.fetch_add(1) + 1;
++    if (c <= 3 || c % 200 == 0) REXSYS_ERROR("DeliverAPCs call #{} thid={}", c, thread_id_);
++  }
+   auto mem = memory();
+   auto* ctx = thread_state_->context();
+   auto kthread = guest_object<X_KTHREAD>();

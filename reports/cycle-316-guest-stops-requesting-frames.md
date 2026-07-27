@@ -93,3 +93,26 @@ correspond exactement à l'ensemble des observations.
 Aucun contenu de jeu n'est rendu ; l'objectif reste derrière cette phase.
 
 `recompiler-generated` n'est pas `verified`.
+
+## 7. Addendum : l'achèvement par APC est écarté
+
+La piste du §5 — une complétion d'entrée/sortie asynchrone jamais signalée —
+est réfutée par mesure directe. Compteurs posés aux deux extrémités du
+mécanisme :
+
+| | valeur |
+| --- | ---: |
+| `XThread::EnqueueApc` | **0** |
+| `XThread::DeliverAPCs` | 3 |
+
+**Aucune APC n'est jamais mise en file.** Le jeu ne passe pas de routine APC à
+`NtReadFile` : le chemin `apc_requested` n'est jamais emprunté. Il s'appuie donc
+sur l'évènement, que le code positionne bien (`signal_event = true`), ou sur la
+lecture directe du bloc d'état.
+
+L'attente du jeu ne vient pas d'une complétion asynchrone perdue.
+**Hypothèse écartée.**
+
+Le bilan des causes éliminées par mesure s'établit donc à six : chemin de
+présentation hôte, interruption/vblank, sélection GPU, entrée utilisateur,
+service noyau absent, notifications système, et à présent complétion par APC.
