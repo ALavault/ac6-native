@@ -90,6 +90,26 @@ bounded oracle, but is not required for static boundary repair.
 
 ## Active tranche
 
+**État au cycle 313 : le runtime tourne en continu et présente des images.**
+
+Le blocage de démarrage poursuivi des cycles 308 à 312 tenait à **une ligne de
+configuration** : `[rexcrt] memcpy = 0x82382F18`, alors que cette adresse est
+`__restgprlr_16`. Toute fonction dont l'épilogue restaure `r16`-`r31` appelait
+`memcpy` à la place et ne restaurait jamais ses registres non volatils.
+
+| | cycle 312 | cycle 313 |
+| --- | --- | --- |
+| sortie du smoke | 134 (abort) | **124 (survit)** |
+| journal invité | 1,43 s | **111 s, sans fin** |
+| images par seconde | 0,00 | **0,86** |
+| dessins hôte | 0 | **2** |
+| audio | inactif | **10 trames soumises** |
+
+Le jeu charge ses données en continu (45 lectures `DATA00.PAC` sur 111 s) et
+fait tourner son moteur audio. Il n'affiche toujours **aucun contenu de jeu** :
+l'écran ne montre que le panneau de diagnostic. La tranche suivante porte sur le
+faible nombre de dessins hôte.
+
 **État au cycle 307 : le corpus ne contient plus aucun `REX_FATAL`.**
 
 | Cycle | Pièges `Unresolved branch` | Pièges `Unresolved call` |
