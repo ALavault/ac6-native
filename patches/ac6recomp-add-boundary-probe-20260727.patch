@@ -1,0 +1,37 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3ccb52f8..a84cc02d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -30,11 +30,11 @@ endif()
+ set(AC6RECOMP_SOURCES
+     src/main.cpp
+     src/ac6_pac_decode_dump.cpp
++    src/ac6_boundary_probe.cpp
+     src/ac6_pac_decoder_probe.cpp
+     src/ac6_pac_index.cpp
+     src/d3d_hooks.cpp
+     src/render_hooks.cpp
+-    src/ac6_texture_overrides.cpp
+     src/ac6_native_graphics.cpp
+     src/ac6_native_graphics_overlay.cpp
+     src/ac6_backend_fixes/ac6_backend_capture_bridge.cpp
+@@ -43,7 +43,18 @@ set(AC6RECOMP_SOURCES
+     src/ac6_backend_fixes/ac6_fps_physics_fix.cpp
+ )
+ 
+-if(WIN32)
++# Texture dump/replacement is currently integrated only by the D3D12 texture
++# cache. Do not pull Windows SDK types into the Vulkan-only Linux runtime.
++if(REXGLUE_USE_D3D12)
++    list(APPEND AC6RECOMP_SOURCES src/ac6_texture_overrides.cpp)
++endif()
++
++if(REXGLUE_CODEGEN_ONLY)
++    # Keep the generated corpus compilable in the headless tool profile
++    # without pretending that the UI-free stubs form a runnable game. Normal
++    # builds below retain the real executable and runtime source set.
++    add_library(ac6recomp OBJECT ${AC6RECOMP_SOURCES})
++elseif(WIN32)
+     add_executable(ac6recomp WIN32 ${AC6RECOMP_SOURCES})
+ else()
+     add_executable(ac6recomp ${AC6RECOMP_SOURCES})

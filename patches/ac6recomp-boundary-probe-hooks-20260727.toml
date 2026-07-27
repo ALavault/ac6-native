@@ -1,0 +1,20 @@
+# Cycle 311 boundary probes for sub_821D4ED0.
+[[midasm_hook]]
+address = 0x821D4F34
+name = "ac6CriticalSectionBoundaryProbeA"
+registers = ["r28", "r30"]
+
+[[midasm_hook]]
+address = 0x821D4FB8
+name = "ac6CriticalSectionBoundaryProbeB"
+registers = ["r28", "r30"]
+
+[[midasm_hook]]
+address = 0x821D4F30
+name = "ac6CriticalSectionCalleeProbe"
+registers = ["ctr", "r28", "r30"]
+
+[[midasm_hook]]
+address = 0x821D4ED0
+name = "ac6CriticalSectionEntryProbe"
+registers = ["r3"]
