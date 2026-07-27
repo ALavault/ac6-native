@@ -103,6 +103,35 @@ lisant les registres depuis une trame de pile.** Il faut un point d'arrêt au
 site d'appel, ou une accroche qui journalise les registres au moment voulu.
 Toute analyse antérieure fondée sur des registres lus par trame est à rejeter.
 
+## 4 ter. L'indice passé est aberrant, et l'appel est indirect
+
+Trois faits mesurés resserrent le diagnostic.
+
+**Un seul cas dans toute l'exécution.** Une trace ajoutée dans
+`RtlEnterCriticalSection_entry` signale toute section critique dont le type
+d'en-tête sort de {0,1,2,5}. Sur un démarrage complet : **une seule**
+occurrence, celle-ci. Tous les autres verrous du démarrage sont sains. Ses
+champs confirment que ce n'est pas une section critique :
+`lock_count=16846848`, `recursion=-1555562476`, `owner=0xA3480018`.
+
+**L'indice est absurde.** `r28` n'est écrit qu'**une fois** dans
+`sub_821D4ED0` (`r28 = r30 + 16`), donc l'adresse vaut sans ambiguïté
+`r3_entrée * 152 + 0x829E64B8`. En résolvant modulo 2^32 pour obtenir
+`0x826A19B0`, la plus petite solution est **`r3 = 0x035DF8C5`, soit
+56 490 181**. Un indice de tableau réel serait à un chiffre. `r3` à l'entrée
+est donc une valeur parasite, pas un indice.
+
+**L'appel est indirect.** `sub_821F7FC8` ne contient **aucun** appel direct à
+`sub_821D4ED0`. La liaison passe donc par un pointeur de fonction ou une table
+virtuelle. Cela rejoint le premier mot lu en `0x826A19B0`, `0x820679E0`, qui a
+la forme d'un pointeur de table virtuelle.
+
+L'hypothèse à tester en premier est donc une **répartition indirecte erronée** :
+l'appel n'aboutit pas forcément à la fonction voulue, auquel cas `r3` n'est pas
+un indice mais l'argument d'une autre fonction. Les 205 `Unresolved call`
+éliminés au cycle 307 concernaient précisément des cibles indirectes ; cette
+piste est à privilégier avant toute hypothèse de corruption mémoire.
+
 ## 5. Prochaine tranche
 
 1. Remonter à l'origine de `0x826A19B0` en posant un point d'arrêt **au site

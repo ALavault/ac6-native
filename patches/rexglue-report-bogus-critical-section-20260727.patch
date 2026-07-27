@@ -1,0 +1,21 @@
+diff --git a/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_rtl.cpp b/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_rtl.cpp
+index 3ab0df14..03264fb9 100644
+--- a/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_rtl.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_rtl.cpp
+@@ -383,6 +383,16 @@ void RtlEnterCriticalSection_entry(ppc_ptr_t<X_RTL_CRITICAL_SECTION> cs) {
+   uint32_t cur_thread = XThread::GetCurrentThread()->guest_object();
+   uint32_t spin_count = cs->header.absolute * 256;
+ 
++  // TEMPORARY (cycle 309): a critical section whose header type is not 0/1/2/5
++  // is not a critical section. Report it here, where the guest address is still
++  // known, rather than three frames down in GetNativeObject.
++  if (const uint32_t t = cs->header.type; t > 5) {
++    REXLOG_ERROR("RtlEnterCriticalSection: bogus header type {} at guest {:#010x} "
++                 "(lock_count={} recursion={} owner={:#010x})",
++                 t, cs.guest_address(), int32_t(cs->lock_count),
++                 int32_t(cs->recursion_count), uint32_t(cs->owning_thread));
++  }
++
+   if (cs->owning_thread == cur_thread) {
+     // We already own the lock.
+     rex::thread::atomic_inc(&cs->lock_count);
