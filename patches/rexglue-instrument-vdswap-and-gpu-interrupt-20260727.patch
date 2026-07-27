@@ -1,0 +1,69 @@
+diff --git a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
+index e1916e69..e021e817 100644
+--- a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
++++ b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
+@@ -9,6 +9,7 @@
+  * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
+  */
+ 
++#include <atomic>
+ #include <rex/graphics/graphics_system.h>
+ 
+ #include <algorithm>
+@@ -406,9 +407,23 @@ bool GraphicsSystem::GetLastSwapSubmission(system::GraphicsSwapSubmission* out_s
+ }
+ 
+ void GraphicsSystem::DispatchInterruptCallback(uint32_t source, uint32_t cpu) {
++  // TEMPORARY (cycle 316): the guest stops requesting swaps after two frames.
++  // Its render loop is driven by this interrupt, so record whether the callback
++  // is registered at all and how often it actually fires.
++  static std::atomic<uint64_t> dispatched{0}, skipped{0};
+   if (!interrupt_callback_) {
++    uint64_t n = skipped.fetch_add(1) + 1;
++    if (n <= 3 || n % 500 == 0)
++      REXGPU_ERROR("GPU interrupt source={} DROPPED, no guest callback registered (count={})",
++                   source, n);
+     return;
+   }
++  {
++    uint64_t n = dispatched.fetch_add(1) + 1;
++    if (n <= 5 || n % 500 == 0)
++      REXGPU_ERROR("GPU interrupt source={} -> guest callback {:#010x} (count={})", source,
++                   uint32_t(interrupt_callback_), n);
++  }
+ 
+   auto thread = system::XThread::GetCurrentThread();
+   assert_not_null(thread);
+diff --git a/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_video.cpp b/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_video.cpp
+index f50ea25b..c77dd823 100644
+--- a/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_video.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_video.cpp
+@@ -6,6 +6,7 @@
+ // Disable warnings about unused parameters for kernel functions
+ #pragma GCC diagnostic ignored "-Wunused-parameter"
+ 
++#include <atomic>
+ #include <algorithm>
+ #include <string>
+ 
+@@ -414,6 +415,11 @@ ppc_u32_result_t VdRetrainEDRAM_entry(ppc_unknown_t unk0, ppc_unknown_t unk1, pp
+   return 0;
+ }
+ 
++// TEMPORARY (cycle 316): count guest swap requests. Two presents reach the host
++// while the guest keeps running; this separates "the guest stopped asking" from
++// "the host stopped presenting".
++static std::atomic<uint64_t> g_vdswap_calls{0};
++
+ void VdSwap_entry(ppc_pvoid_t buffer_ptr,      // ptr into primary ringbuffer
+                   ppc_pvoid_t fetch_ptr,       // frontbuffer Direct3D 9 texture header fetch
+                   ppc_pvoid_t unk2,            // system writeback ptr
+@@ -422,6 +428,8 @@ void VdSwap_entry(ppc_pvoid_t buffer_ptr,      // ptr into primary ringbuffer
+                   ppc_pu32_t frontbuffer_ptr,  // ptr to frontbuffer address
+                   ppc_pu32_t texture_format_ptr, ppc_pu32_t color_space_ptr, ppc_pu32_t width,
+                   ppc_pu32_t height) {
++  REXKRNL_ERROR("VdSwap call #{}", g_vdswap_calls.fetch_add(1) + 1);
++
+   // All of these parameters are REQUIRED.
+   assert(buffer_ptr);
+   assert(fetch_ptr);
