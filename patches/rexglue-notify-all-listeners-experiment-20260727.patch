@@ -1,0 +1,30 @@
+diff --git a/thirdparty/rexglue-sdk/src/system/kernel_state.cpp b/thirdparty/rexglue-sdk/src/system/kernel_state.cpp
+index 3ec95685..6130eaa5 100644
+--- a/thirdparty/rexglue-sdk/src/system/kernel_state.cpp
++++ b/thirdparty/rexglue-sdk/src/system/kernel_state.cpp
+@@ -3,6 +3,7 @@
+  * Copyright (c) 2026 Tom Clay. All rights reserved.
+  */
+ 
++#include <cstdlib>
+ #include <cstring>
+ #include <string>
+ 
+@@ -799,7 +800,16 @@ void KernelState::RegisterNotifyListener(XNotifyListener* listener) {
+   // Games seem to expect a few notifications on startup, only for the first
+   // listener.
+   // https://cs.rin.ru/forum/viewtopic.php?f=38&t=60668&hilit=resident+evil+5&start=375
+-  if (!has_notified_startup_ && listener->mask() & 0x00000001) {
++  // EXPERIMENT (cycle 314): AC6 registers three listeners (masks 0x1, 0x5,
++  // 0x6F). Latching on the first means the later ones never see sign-in or
++  // input-device events, which a title's main loop may be waiting on. Setting
++  // REX_NOTIFY_ALL_LISTENERS=1 delivers the startup set to every listener that
++  // subscribes to system notifications.
++  static const bool notify_all = [] {
++    const char* v = std::getenv("REX_NOTIFY_ALL_LISTENERS");
++    return v && v[0] && v[0] != '0';
++  }();
++  if ((notify_all || !has_notified_startup_) && listener->mask() & 0x00000001) {
+     has_notified_startup_ = true;
+     // XN_SYS_UI (on, off)
+     listener->EnqueueNotification(0x00000009, 1);
