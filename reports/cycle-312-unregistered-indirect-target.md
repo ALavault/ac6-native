@@ -136,3 +136,50 @@ Aucun rendu d'image à ce stade ; l'objectif « première mission jouable » res
 derrière le démarrage.
 
 `recompiler-generated` n'est pas `verified`.
+
+## 7. Addendum, même cycle : `0x821CCBE0` n'est pas une entrée de fonction
+
+Le §2 concluait que `0x821CCBE0` était « une entrée de fonction au sens strict »
+parce qu'il suit un épilogue complet. Une fois la fonction réellement émise,
+son corps dit le contraire :
+
+| Mesure sur `rex_sub_821CCBE0` | Valeur |
+| --- | ---: |
+| lignes | 129 |
+| `__savegprlr_*` | **0** |
+| `__restgprlr_*` | **1** |
+| écritures de `r30` | 1 |
+| `return` | 4 |
+
+Trois anomalies concordantes :
+
+- **aucun prologue** — la première instruction est `li r4,0` ;
+- **`r31` est utilisé sans être défini** (`addi r3,r31,344`), donc hérité de
+  l'appelant ;
+- **restauration sans sauvegarde** — elle appelle `__restgprlr_*` sans avoir
+  jamais sauvegardé, ce qui écrase `r28`/`r30` de l'appelant avec le contenu de
+  la pile.
+
+Une méthode virtuelle établirait son propre cadre. Celle-ci n'en établit aucun
+et dépend de l'état de registres de son appelant : c'est un **bloc de
+continuation** du parent, atteint par branchement, non un point d'entrée.
+
+Suivre un épilogue est donc une condition **nécessaire mais pas suffisante**
+pour conclure à une entrée de fonction. Le critère utilisé au §2 — et déjà au
+cycle 307 pour `0x8238F434` — est trop faible pris isolément ; il faut le
+compléter par la présence d'un prologue.
+
+**Conséquence sur le diagnostic.** Si `0x821CCBE0` n'est pas une fonction, le
+`bctrl` qui l'appelle n'aurait jamais dû produire cette cible : `ctr` vient de
+`vtable[1]` de l'objet `r29`, lui-même issu du parcours de liste en fin de
+boucle. La cause est donc **en amont** — un objet ou un pointeur de table
+virtuelle erroné — et non dans la fonction appelée.
+
+Le correctif du §4 reste valable et mesuré (démarrage 569 -> 594 lignes, zéro
+cible indirecte non enregistrée) : enregistrer l'adresse évite le saut par
+pointeur nul. Mais il traite un symptôme. La question suivante est l'origine de
+`r29`.
+
+Étape suivante révisée : instrumenter le parcours de liste en fin de boucle
+(`r29 = *(r11 + r31)`) et vérifier la validité de chaque nœud et de son pointeur
+de table virtuelle avant le `bctrl`.
