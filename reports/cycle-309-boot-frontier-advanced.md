@@ -114,12 +114,11 @@ occurrence, celle-ci. Tous les autres verrous du démarrage sont sains. Ses
 champs confirment que ce n'est pas une section critique :
 `lock_count=16846848`, `recursion=-1555562476`, `owner=0xA3480018`.
 
-**L'indice est absurde.** `r28` n'est écrit qu'**une fois** dans
-`sub_821D4ED0` (`r28 = r30 + 16`), donc l'adresse vaut sans ambiguïté
-`r3_entrée * 152 + 0x829E64B8`. En résolvant modulo 2^32 pour obtenir
-`0x826A19B0`, la plus petite solution est **`r3 = 0x035DF8C5`, soit
-56 490 181**. Un indice de tableau réel serait à un chiffre. `r3` à l'entrée
-est donc une valeur parasite, pas un indice.
+**L'indice n'est PAS absurde — voir le cycle 310, qui corrige ce paragraphe.**
+J'avais résolu `r3 * 152 + 0x829E64B8 = 0x826A19B0` modulo 2^32 et obtenu
+`r3 = 56 490 181`, concluant à un `r3` parasite. La mesure directe (cycle 310)
+donne `r3 ∈ {0,1,2,3}`. Le calcul était juste, sa prémisse était fausse :
+il supposait que l'adresse fautive *provenait* de ce calcul.
 
 **L'appel est indirect.** `sub_821F7FC8` ne contient **aucun** appel direct à
 `sub_821D4ED0`. La liaison passe donc par un pointeur de fonction ou une table

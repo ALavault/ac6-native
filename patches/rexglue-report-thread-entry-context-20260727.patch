@@ -1,0 +1,20 @@
+diff --git a/thirdparty/rexglue-sdk/src/system/xthread.cpp b/thirdparty/rexglue-sdk/src/system/xthread.cpp
+index f64620e4..648a564e 100644
+--- a/thirdparty/rexglue-sdk/src/system/xthread.cpp
++++ b/thirdparty/rexglue-sdk/src/system/xthread.cpp
+@@ -560,6 +560,15 @@ void XThread::Execute() {
+   bool want_exit_code;
+   int exit_code = 0;
+ 
++  // TEMPORARY (cycle 310): name the guest entry point and its context for every
++  // thread. The XapiThreadStartup trampoline calls the entry with r3 =
++  // start_context, so a garbage context shows up as a garbage first argument
++  // several frames away from where it was chosen.
++  REXLOG_ERROR("XThread::Execute thid={} start_address={:#010x} start_context={:#010x} "
++               "xapi_startup={:#010x}",
++               thread_id_, creation_params_.start_address, creation_params_.start_context,
++               creation_params_.xapi_thread_startup);
++
+   // If a XapiThreadStartup value is present, we use that as a trampoline.
+   // Otherwise, we are a raw thread.
+   if (creation_params_.xapi_thread_startup) {
