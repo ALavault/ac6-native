@@ -1,4 +1,4 @@
-# AC6 cycle 317 — le rendu est conditionné par un bit MMIO jamais positionné
+# AC6 cycle 317 — sources d'interruption, et une fausse piste MMIO (corrigée au §5)
 
 Suite directe du cycle 316 : l'invité reçoit 4 000 interruptions et ne dessine
 pas. Ce cycle lit le gestionnaire invité et trouve pourquoi.
@@ -72,3 +72,48 @@ livraison des interruptions, sélection GPU, entrée utilisateur, service noyau
 absent, notifications système, complétion par APC.
 
 `recompiler-generated` n'est pas `verified`.
+
+## 5. CORRECTION : le verrou MMIO n'existe pas
+
+Le §2 et le titre d'origine affirmaient que le rendu était bloqué parce que le
+bit 0 du registre `0x7FC86544` restait nul. **C'est faux**, et l'erreur vient
+d'avoir déduit l'état du registre au lieu de le mesurer.
+
+Le registre est implémenté dans le SDK :
+
+```c
+case 0x1951:    // interrupt status
+  return 1;     // vblank
+```
+
+`0x7FC86544` est un registre GPU Xenos, plage `0x7FC80000`-`0x7FCFFFFF`, indice
+`0x6544 / 4 = 0x1951`. Il rend **1**. Le bit 0 est donc **toujours positionné**,
+la condition est **toujours vraie**, et `sub_821EFBA0` est appelé.
+
+Vérification directe, accroche posée à l'entrée de `sub_821EFBA0` :
+
+| | valeur |
+| --- | ---: |
+| interruptions vblank (source 0) | **4 250** |
+| appels à `sub_821EFBA0` | **4 250** |
+| appels à `VdSwap` | 2 |
+
+Les deux premiers nombres sont **égaux**. Le travail de vblank de l'invité
+s'exécute à **chaque** interruption, sans exception.
+
+### Ce que cela change
+
+Le blocage n'est ni dans la livraison des interruptions, ni dans un registre
+manquant, ni dans un verrou matériel. **L'invité exécute sa boucle de trame
+4 250 fois et n'y demande pas de présentation.** La cause est dans la logique
+de `sub_821EFBA0` ou dans l'état de jeu qu'elle pilote : la machine à états
+tourne, dans un mode qui ne dessine pas.
+
+### Leçon
+
+Le §2 lisait correctement le code désassemblé mais **supposait** la valeur du
+registre. Une supposition sur un état d'exécution doit être mesurée avant d'être
+publiée : la vérification coûtait une accroche et une exécution de 75 secondes.
+C'est la seconde fois dans cette campagne qu'une conclusion tirée du code seul
+est renversée par la mesure — la première étant `0x821CCBE0` au cycle 312.
+
