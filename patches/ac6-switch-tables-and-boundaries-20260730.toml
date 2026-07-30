@@ -1,0 +1,54 @@
+# Config additions that opened the P0 gate. Merge into ac6recomp_config.toml.
+#
+# Two [functions] boundary entries, cleared the reachable traps the guest
+# reaches once the socket fix carries it further (cycle 306-307 method):
+#   0x82383EE8 = { name = "rex_sub_82383EE8" }
+#   0x82383EAC = { name = "rex_sub_82383EAC" }
+#
+# Two jump tables, both read out of guest memory with the mapping
+# anchor-qualified, both truncated by the scanner:
+
+# Jump table for the bctr at 0x8237C850, in sub_8237C828.
+#
+# Merge into ac6recomp_config.toml. Needed because the scanner truncated this
+# table to 2 entries of at least 6: it named r11 -- the register the `lwzx`
+# loads the target *address* into -- as the index register, and then bounded the
+# table by a check on that wrong register.
+#
+# The contents below are not inferred. They were read out of guest memory at
+# 0x8267A1D0 in a live process by scripts/ac6_read_guest_memory.py, whose
+# mapping was qualified against the anchor instruction `ld r11,16(r31)` at
+# 0x82346140 before any value was reported:
+#
+#   0x8267A1D0: 8237C828 8237C828 8237C640 8237C658 8237C670 8237C670
+#   0x8267A1E8: 00000000 00000000 00000000 00000000 00000000 00000000
+#
+# The generator emitted only the first two -- both 0x8237C828, the function's
+# own head -- and dropped 0x8237C640, 0x8237C658 and 0x8237C670 entirely. Those
+# three are the only entries that leave the dispatcher, which is why the guest
+# could never make progress through it.
+#
+# The six zero words that follow are the table terminator, not targets; entries
+# 0 and 5 are legitimate duplicates, which real tables do contain.
+#
+# `register` is required by the config schema but is not used once the builder
+# dispatches on the computed address rather than on an index
+# (patches/rexglue-bctr-dispatch-on-address-20260730.patch). It is recorded here
+# as the register that genuinely carried the index before the `rlwinm` at
+# 0x8237C844 overwrote it with index*4, so the entry stays meaningful if the
+# index-dispatch form is ever restored.
+[[switch_tables]]
+address = 0x8237C850
+register = 10
+labels =
+
+# Jump table for the bctr at 0x8237BF30, in sub_8237BF08. Second of the nine
+# degenerate dispatchers enumerated in cycle 329, and the one the guest reaches
+# once the socket fix lets it past sub_8237C828. The scanner emitted a single
+# entry; the real table, read out of guest memory at 0x8267A200 with the mapping
+# anchor-qualified, holds six. 0x8237BF38 -- the target the runtime named when
+# it stopped -- is entry [4], one of the five that were dropped.
+[[switch_tables]]
+address = 0x8237BF30
+register = 10
+labels =
