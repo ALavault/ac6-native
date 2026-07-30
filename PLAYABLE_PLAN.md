@@ -149,10 +149,24 @@ Seule phase active. Rien d'autre ne peut avancer avant elle.
   **retournait sans avancer le PC ni réémettre**, ce qui réexécute l'instruction
   fautive indéfiniment — 121 % de CPU, aucun plantage, aucun message.
   Voir `reports/cycle-329-guest-spins-on-a-ud2.md`.
-- **P0.2 quater — faire sauter ce `bctr`. OUVERTE, et c'est le blocage courant.**
-  Lire la table de saut à `0x8267A1D0`, énumérer ses cibles réelles, comprendre ce
-  qui distingue ces 9 aiguillages des 742 corrects, et traiter les 8 autres au
-  même passage. Coût : une régénération du corpus, pas un correctif d'exécution.
+- **P0.2 quater — pourquoi ce `bctr` ne saute pas. CAUSE ÉTABLIE au cycle 330,
+  correctif non vérifié de bout en bout.** La table réelle, lue en mémoire
+  invitée avec ancrage qualifié, a **au moins 6 cibles** ; le générateur en a
+  émis **2**, toutes deux la tête de la fonction, et a perdu les 3 seules qui
+  sortent de l'aiguillage. Cause racine unique : le `lwzx` réutilise le registre
+  de base de la table comme destination, le scanner a donc pris `r11` — qui porte
+  l'**adresse** — pour le registre d'index, ce qui à la fois fait porter le
+  `switch` sur l'adresse et fait tronquer la table par `scanForBounds`. Aucun
+  registre ne porte l'index simple au `bctr` : un aiguillage par index y est
+  **inexprimable**. Correctifs : aiguiller sur `ctr`, plus une entrée
+  `[[switch_tables]]` avec les 6 cibles mesurées. Compilent et s'appliquent ;
+  **la régénération du corpus et la reconstruction restent à faire dans l'arbre
+  de référence**. Voir `reports/cycle-330-the-jump-table-was-truncated.md`.
+- **P0.2 quinquies — vérifier de bout en bout. OUVERTE.** Aligner ou abandonner
+  l'arbre `ac6-gapfill` (ses sources de génération datent du cycle 313 et
+  produisent un corpus cassé), appliquer les trois correctifs, régénérer,
+  reconstruire, mesurer. Puis traiter les 8 autres aiguillages dégénérés et
+  compter les effets sur les 742 corrects.
 - **P0.3 — attribuer et refermer.** Une fois la boucle nommée, remonter
   statiquement depuis le corpus généré à ce dont elle dépend. Régression isolée
   avant toute correction — règle 22 du plan racine. Un seul lot causal, effet

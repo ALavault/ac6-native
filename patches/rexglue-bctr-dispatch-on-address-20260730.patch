@@ -1,0 +1,73 @@
+--- a/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp	2026-07-18 18:56:09.310284694 +0200
++++ b/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp	2026-07-30 15:12:52.923904458 +0200
+@@ -9,6 +9,8 @@
+  *              See LICENSE file in the project root for full license text.
+  */
+ 
++#include <set>
++
+ #include "builder_context.h"
+ #include "helpers.h"
+ 
+@@ -125,18 +127,36 @@
+   }
+ 
+   if (jt) {
+-    ctx.println("\tswitch ({}.u32) {{", ctx.r(jt->indexRegister));
++    // Dispatch on the computed target address, not on the table index.
++    //
++    // At a `bctr`, ctr already holds the final target address for every table
++    // type, so switching on it is correct by construction and needs no guess
++    // about which register carried the index. Switching on an index register
++    // only works while that register still holds a plain ordinal at the branch,
++    // and it silently emits a dispatcher that can never match when it does not.
++    //
++    // Measured: sub_8237C828 loads its target with `lwzx r11,r10,r11`, reusing
++    // the table-base register as the load destination, and its index register
++    // r10 has already been overwritten with index*4 by the preceding rlwinm. No
++    // register holds a plain index at the branch. The scanner named r11 -- the
++    // register holding the *address* -- as the index, so the emitted
++    // `cmpl $0x2` could never be true for a value >= 0x82000000 and the only
++    // reachable path was `default: __builtin_trap()`. The guest then re-faulted
++    // on that ud2 forever: 100.00% of the thread's profile samples landed on it.
++    //
++    // Addresses as case labels remove the whole failure mode, and duplicate
++    // entries -- which real tables do contain -- must be collapsed, since two
++    // identical case labels do not compile. A null entry is a hole in the table
++    // with no address to switch on, so it needs no case at all.
++    ctx.println("\tswitch ({}.u32) {{", ctx.ctr());
+ 
++    std::set<uint32_t> emitted_labels;
+     for (size_t i = 0; i < jt->targets.size(); i++) {
+-      ctx.println("\tcase {}:", i);
+       auto label = jt->targets[i];
+-
+-      // TODO(tomc): Figure out if this actually is triggered on real hardware and what would
+-      // happen?
+-      if (label == 0) {
+-        ctx.println("\t\t__builtin_trap(); // ERROR - detected jump to null value");
++      if (label == 0 || !emitted_labels.insert(label).second) {
+         continue;
+       }
++      ctx.println("\tcase 0x{:X}:", label);
+ 
+       auto kind = ctx.graph().classifyTarget(label, ctx.base, false);
+       switch (kind) {
+@@ -166,8 +186,16 @@
+       }
+     }
+ 
++    // A target the table did not list is a real defect -- an incomplete table,
++    // or a value ctr should never have held. __builtin_trap() states it as a
++    // bare ud2, which the runtime's signal handler swallowed, resuming on the
++    // same instruction forever with no message. REX_FATAL names the branch and
++    // the value instead, so the next occurrence costs one log line rather than
++    // a profile and an annotate pass.
+     ctx.println("\tdefault:");
+-    ctx.println("\t\t__builtin_trap(); // Switch case out of range");
++    ctx.println(
++        "\t\tREX_FATAL(\"Unlisted jump-table target {{:#010x}} at bctr 0x{:08X}\", {}.u32);",
++        ctx.base, ctx.ctr());
+     ctx.println("\t}}");
+ 
+     ctx.reset_switch_table();
