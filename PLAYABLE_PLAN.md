@@ -36,7 +36,7 @@ sonde de 90 s.
 |---|---:|---|
 | corpus généré | 23 321 implémentations, 50 unités | phase 1 largement acquise |
 | `REX_FATAL` | **0** depuis le cycle 307 | plus aucun arrêt de traduction |
-| threads | 33, dont plusieurs invités consommant du CPU | l'invité **exécute** |
+| threads | 33 | **corrigé au cycle 326** : les threads invités cumulent ~9 % du CPU, l'invité **attend** |
 | lectures `DATA00.PAC` | 129, **toutes dans 1,1 s** | l'invité lit son index puis s'arrête |
 | interruptions vblank (source 0) | 300 → **5 400**, ~60 Hz | l'hôte cadence correctement |
 | interruptions EOP (source 1) | **12, gelé** | ← **le blocage** |
@@ -85,10 +85,13 @@ Aucune de ces trois hypothèses n'a jamais été mesurée. C'est P0.
 
 Établies au cycle 324, elles conditionnent la méthode de tout le plan.
 
-- `perf_event_paranoid = 4` : **aucun profilage perf** sans privilèges.
-- `yama/ptrace_scope = 1` : seul un parent peut tracer. `gdb --args` fonctionne
-  (le cycle 320 l'a fait) ; `gdb -p`, `eu-stack -p` et `perf -p` sur un processus
-  déjà lancé sont **refusés**.
+- **Levé au cycle 326 par l'opérateur** : `kernel.perf_event_paranoid=1` et
+  `kernel.yama.ptrace_scope=0`. `perf record --pid` et l'unwinding DWARF
+  fonctionnent, et sont désormais la première mesure à tenter sur un blocage.
+  Attention : un profil par symbole sans **répartition par thread** est
+  trompeur — au cycle 326 les 51 % de `WaitMultiple` se sont avérés être un
+  thread hôte, pas l'invité.
+- `eu-stack -p` échoue par timeout sur ce binaire LTO de 165 Mo. Ne pas y revenir.
 - `gdb` sur ce binaire LTO de 165 Mo passe des minutes à charger ses symboles.
 - Conséquence : **la mesure vit dans le runtime**, dans des compteurs en arbre
   gardés par cvar. `gdb --args` reste la solution de dernier recours pour une
@@ -112,17 +115,20 @@ Seule phase active. Rien d'autre ne peut avancer avant elle.
   hypothèses côté hôte est close : ni interruptions, ni worker CP, ni décodage
   PM4, ni présentation ne retiennent quoi que ce soit.
   Voir `reports/cycle-325-p0-1-guest-stopped-submitting.md`.
-- **P0.2 — quel code invité tourne sans soumettre ? OUVERTE.** L'invité exécute
-  du code sur plusieurs threads sans appeler aucun service ni soumettre au GPU.
-  La plateforme interdit `perf` et `gdb -p` (§3), donc dans l'ordre de coût :
-  1. **histogramme des cibles d'appel indirect**, sans ptrace : les 14 111 sites
-     du corpus passent par un unique point d'étranglement,
-     `PPC_CALL_INDIRECT_FUNC(x)` → `PPC_LOOKUP_FUNC(base, x)(ctx, base)`
-     (`include/rex/ppc/context.h:131`). Chemin ultra-chaud : compilation
-     conditionnelle obligatoire, coût mesuré avant lecture des résultats ;
-  2. sinon — boucle purement intra-fonction, donc sans appel indirect — obtenir
-     `kernel.perf_event_paranoid=1` et `kernel.yama.ptrace_scope=0`, ou payer un
-     `gdb --args` unique avec `thread apply all bt`.
+- **P0.2 — sur quoi les threads invités attendent-ils ? OUVERTE, prémisse
+  corrigée au cycle 326.** La question du cycle 325 — « quel code invité
+  boucle ? » — était fausse : le profil `perf` montre que les threads invités
+  cumulent **~9 %** du CPU, et que 56 % est le thread **hôte** `Audio Worker`
+  sondant à 1 ms dans `WaitMultiple`. **L'invité ne boucle pas, il attend.**
+  L'histogramme d'appels indirects est donc **retiré** : il aurait coûté une
+  recompilation complète du corpus pour mesurer un chemin froid.
+  Instrument juste : **recensement des attentes invitées**, dans l'arbre, derrière
+  le cvar de télémétrie — dans `NtWaitForSingleObjectEx`,
+  `NtWaitForMultipleObjectsEx` et `NtSignalAndWaitForSingleObjectEx`, tenir par
+  thread invité le handle attendu et l'instant d'entrée, puis émettre « thread T
+  attend le handle H depuis N ms ». Coût : une reconstruction SDK.
+  Identifier au même passage `XThread7087D6C0`, seul thread invité notable à 4,5 %.
+  Voir `reports/cycle-326-guest-is-idle-not-spinning.md`.
 - **P0.3 — attribuer et refermer.** Une fois la boucle nommée, remonter
   statiquement depuis le corpus généré à ce dont elle dépend. Régression isolée
   avant toute correction — règle 22 du plan racine. Un seul lot causal, effet
