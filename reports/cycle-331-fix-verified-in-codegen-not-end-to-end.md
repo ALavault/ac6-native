@@ -154,3 +154,32 @@ La route 1 est la moins chère et se teste immédiatement.
    cycle 305.
 
 `recompiler-generated` n'est pas `verified`.
+
+## 8. Addendum — la reconstruction du correctif GapFill a échoué, et pourquoi
+
+Route 2 tentée immédiatement. Résultats, tous mesurés :
+
+- Les deux fichiers en conflit (`builders/context.cpp`, `builders/control_flow.cpp`)
+  ne contiennent **que** les quatre changements de site d'appel
+  `classifyTarget(..., base, ...)` -> `(..., fn, ...)`. Ma fusion manuelle était
+  donc exacte, et n'explique pas l'échec.
+- Les trois autres fichiers s'appliquent proprement, mais « proprement » ne
+  signifie que « les lignes de contexte concordent » : le patch date du
+  2026-07-26 et les sources ont bougé depuis.
+- Hypothèse testée : le point fixe à 8 passes de `cleanupAbsorbedGapFills`
+  ré-ajouterait des blocs à chaque passe, `addBlock`/`addLabel` ne dédupliquant
+  pas, jusqu'à faire exploser l'émission. **Réfutée** : ramené à **une seule
+  passe**, le générateur abandonne toujours en `std::bad_alloc`.
+- La phase `GapFill` est bornée (`iteration > 10`) et se termine ; l'abandon a
+  lieu pendant **`Recompiling`**, c'est-à-dire l'émission.
+
+Le défaut est donc dans l'interaction entre les modifications de
+`function_graph.{h,cpp}` du patch et les sources actuelles, pas dans le point
+fixe. Le localiser demande de reprendre le correctif depuis son **rapport de
+cycle** et non depuis son patch — ce que le cycle 331 n'a pas eu le budget de
+faire.
+
+État laissé : l'arbre de travail est ramené à la combinaison qui régénère à
+`rc=0` — sources de génération de l'arbre de référence, plus les trois
+correctifs des cycles 328-330. L'arbre de référence est vérifié intact
+(binaire `5fbe1df…`, 52 unités, fichiers suivis inchangés).
