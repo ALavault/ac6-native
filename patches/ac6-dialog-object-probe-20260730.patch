@@ -1,0 +1,190 @@
+diff --git a/src/ac6_pac_decoder_probe.cpp b/src/ac6_pac_decoder_probe.cpp
+index 5a44795a..3111bcab 100644
+--- a/src/ac6_pac_decoder_probe.cpp
++++ b/src/ac6_pac_decoder_probe.cpp
+@@ -1,6 +1,7 @@
+ #include "ac6_pac_decoder_probe.h"
+ #include "ac6_pac_decode_dump.h"
+ 
++#include <fmt/format.h>
+ #include <rex/logging.h>
+ #include <rex/logging/api.h>
+ #include <rex/memory.h>
+@@ -215,6 +216,15 @@ std::string HexPreviewBytes(const uint8_t* data, std::size_t len) {
+     return out;
+ }
+ 
++bool IsGuestRangeReadable(rex::memory::Memory* memory, uint32_t address,
++                          uint32_t size) {
++    if (!memory || size == 0 || address > UINT32_MAX - (size - 1)) return false;
++    auto* heap = memory->LookupHeap(address);
++    return heap &&
++           heap->QueryRangeAccess(address, address + size - 1) !=
++               rex::memory::PageAccess::kNoAccess;
++}
++
+ }  // namespace
+ 
+ void ac6PacDecoderDumpHook(PPCRegister& r4, PPCRegister& r10, PPCRegister& r11,
+@@ -223,12 +233,11 @@ void ac6PacDecoderDumpHook(PPCRegister& r4, PPCRegister& r10, PPCRegister& r11,
+     if (!memory) return;
+ 
+     auto load_u8 = [memory](uint32_t va) -> uint8_t {
+-        if (!memory->LookupHeap(va)) return 0;
++        if (!IsGuestRangeReadable(memory, va, 1)) return 0;
+         return *static_cast<const uint8_t*>(memory->TranslateVirtual(va));
+     };
+     auto load_u32_be = [memory](uint32_t va) -> uint32_t {
+-        if (va > UINT32_MAX - 3) return 0;
+-        if (!memory->LookupHeap(va) || !memory->LookupHeap(va + 3)) return 0;
++        if (!IsGuestRangeReadable(memory, va, 4)) return 0;
+         return rex::memory::load_and_swap<uint32_t>(memory->TranslateVirtual(va));
+     };
+ 
+@@ -237,8 +246,7 @@ void ac6PacDecoderDumpHook(PPCRegister& r4, PPCRegister& r10, PPCRegister& r11,
+     const uint32_t usize = load_u32_be(r11.u32 + 12);
+     const uint32_t source_offset = load_u32_be(r31.u32 + 22888);
+ 
+-    if (usize == 0 || r4.u32 == 0 || r4.u32 > UINT32_MAX - usize) return;
+-    if (!memory->LookupHeap(r4.u32) || !memory->LookupHeap(r4.u32 + usize - 1)) return;
++    if (!IsGuestRangeReadable(memory, r4.u32, usize)) return;
+     const auto* host = memory->TranslateVirtual<const uint8_t*>(r4.u32);
+     if (!host) return;
+ 
+@@ -265,10 +273,7 @@ void ac6PacDecoderDumpHook(PPCRegister& r4, PPCRegister& r10, PPCRegister& r11,
+             constexpr std::size_t kPreviewBytes = 32;
+ 
+             std::string record_hex;
+-            const uint32_t record_end_check =
+-                r11.u32 > UINT32_MAX - kPreviewBytes ? 0 : r11.u32 + kPreviewBytes - 1;
+-            if (record_end_check && memory->LookupHeap(r11.u32) &&
+-                memory->LookupHeap(record_end_check)) {
++            if (IsGuestRangeReadable(memory, r11.u32, kPreviewBytes)) {
+                 const auto* rec_host = memory->TranslateVirtual<const uint8_t*>(r11.u32);
+                 if (rec_host) record_hex = HexPreviewBytes(rec_host, kPreviewBytes);
+             }
+@@ -288,7 +293,7 @@ void ac6PacDecoderDumpHook(PPCRegister& r4, PPCRegister& r10, PPCRegister& r11,
+             const uint32_t seed = load_u32_be(r31.u32 + 22736);
+             std::string pad_hex;
+             const uint32_t pad_addr = r31.u32 + 22724;
+-            if (memory->LookupHeap(pad_addr) && memory->LookupHeap(pad_addr + 7)) {
++            if (IsGuestRangeReadable(memory, pad_addr, 8)) {
+                 const auto* pad = memory->TranslateVirtual<const uint8_t*>(pad_addr);
+                 if (pad) pad_hex = HexPreviewBytes(pad, 8);
+             }
+@@ -346,20 +351,17 @@ bool CodecTraceActive() {
+ }
+ 
+ uint32_t LoadGuestU32BE(rex::memory::Memory* memory, uint32_t va) {
+-    if (!memory || va > UINT32_MAX - 3) return 0;
+-    if (!memory->LookupHeap(va) || !memory->LookupHeap(va + 3)) return 0;
++    if (!IsGuestRangeReadable(memory, va, 4)) return 0;
+     return rex::memory::load_and_swap<uint32_t>(memory->TranslateVirtual(va));
+ }
+ 
+ uint64_t LoadGuestU64BE(rex::memory::Memory* memory, uint32_t va) {
+-    if (!memory || va > UINT32_MAX - 7) return 0;
+-    if (!memory->LookupHeap(va) || !memory->LookupHeap(va + 7)) return 0;
++    if (!IsGuestRangeReadable(memory, va, 8)) return 0;
+     return rex::memory::load_and_swap<uint64_t>(memory->TranslateVirtual(va));
+ }
+ 
+ uint16_t LoadGuestU16BE(rex::memory::Memory* memory, uint32_t va) {
+-    if (!memory || va > UINT32_MAX - 1) return 0;
+-    if (!memory->LookupHeap(va) || !memory->LookupHeap(va + 1)) return 0;
++    if (!IsGuestRangeReadable(memory, va, 2)) return 0;
+     return rex::memory::load_and_swap<uint16_t>(memory->TranslateVirtual(va));
+ }
+ 
+@@ -372,7 +374,7 @@ void DumpStaticHuffmanTablesOnce() {
+         const uint32_t kAddrs[2] = {0x827BD1F8u, 0x827BDDF8u};
+         for (uint32_t addr : kAddrs) {
+             constexpr uint32_t kSize = 256;
+-            if (!memory->LookupHeap(addr) || !memory->LookupHeap(addr + kSize - 1)) continue;
++            if (!IsGuestRangeReadable(memory, addr, kSize)) continue;
+             const auto* p = memory->TranslateVirtual<const uint8_t*>(addr);
+             if (!p) continue;
+             REXFS_INFO("[AC6 PAC CODEC] ROM table @ 0x{:08X} ({} bytes): {}",
+@@ -390,12 +392,11 @@ void DumpCodecInputBuffer(uint32_t ctx, int call_n, std::size_t max_bytes) {
+     if (!memory) return;
+     const uint32_t base = LoadGuestU32BE(memory, ctx + 56);
+     if (base == 0) return;
+-    if (!memory->LookupHeap(base)) return;
+     const uint32_t avail = LoadGuestU32BE(memory, ctx + 16);  // in_end
+     const std::size_t want =
+         std::min<std::size_t>(max_bytes, avail > 0 ? static_cast<std::size_t>(avail) : max_bytes);
+     if (want == 0) return;
+-    if (!memory->LookupHeap(base + static_cast<uint32_t>(want) - 1)) return;
++    if (!IsGuestRangeReadable(memory, base, static_cast<uint32_t>(want))) return;
+     const auto* p = memory->TranslateVirtual<const uint8_t*>(base);
+     if (!p) return;
+ 
+@@ -443,7 +444,7 @@ void ac6PacCodecDispatchProbe(PPCRegister& r3) {
+     if (!memory) return;
+     const uint32_t ctx = r3.u32;
+     uint8_t codec_mode = 0;
+-    if (memory->LookupHeap(ctx + 68)) {
++    if (IsGuestRangeReadable(memory, ctx + 68, 1)) {
+         codec_mode = *memory->TranslateVirtual<const uint8_t*>(ctx + 68);
+     }
+     REXFS_INFO("[AC6 PAC CODEC] dispatch ctx=0x{:08X} codec_mode={} disp_state=0x{:x}",
+@@ -537,3 +538,59 @@ void ac6PacBlockConsumerProbe(PPCRegister& r3) {
+                LoadGuestU64BE(memory, ctx + 72),
+                LoadGuestU32BE(memory, ctx + 80));
+ }
++
++// ---------------------------------------------------------------------------
++// Dialog object probe (P1.3).
++//
++// The YES/NO dialog reached after the title renders with no question text, and
++// answers no confirm button. Cycles 337-339 eliminated every runtime-side
++// explanation by measurement: it is not the runtime's ImGui message box (no
++// XamShowMessageBoxUI* is ever called), not an XDBF string table (that serves
++// only title and achievements), not the storage path (XamShowDeviceSelectorUI
++// returns SUCCESS with device_id = 1), and not a data read (the loud short/failed
++// read warning added in cycle 338 reports zero hits, so the string is on disc
++// and arrives intact).
++//
++// That leaves the guest's own dialog object. sub_821CE8A8 receives it in r3 and
++// writes fields at +84, +88 and a seven-word buffer at +92 before calling out to
++// XamShowDeviceSelectorUI. If the object carries a text pointer that is null --
++// or points at an empty string -- that is the defect, and it would explain both
++// symptoms at once: a dialog built without its text may equally have been built
++// without its buttons' actions.
++//
++// So dump the object's head on entry. Cheap, one line, and it either shows a
++// null field or rules the object out.
++void ac6DialogObjectProbe(PPCRegister& r3, PPCRegister& r4) {
++    static std::atomic<int> seen{0};
++    const int n = ++seen;
++    if (n > 4) {
++        return;  // the dialog is built a handful of times; do not spam
++    }
++    auto* memory = REX_KERNEL_MEMORY();
++    if (!memory) {
++        return;
++    }
++    const uint32_t obj = r3.u32;
++
++    std::string words;
++    for (uint32_t off = 0; off < 128; off += 4) {
++        const uint32_t v = LoadGuestU32BE(memory, obj + off);
++        words += fmt::format(" +{:<3}={:08X}", off, v);
++        if ((off % 32) == 28) {
++            words += "\n                ";
++        }
++    }
++    REXLOG_INFO("[ac6-dialog] sub_821CE8A8 #{} obj=0x{:08X} arg=0x{:08X}\n                {}", n,
++                obj, r4.u32, words);
++
++    // Anything that looks like a guest pointer in the head of the object is a
++    // candidate text field; resolve the plausible ones so a null or empty
++    // string is visible directly rather than inferred from a raw word.
++    for (uint32_t off = 0; off < 128; off += 4) {
++        const uint32_t v = LoadGuestU32BE(memory, obj + off);
++        if (v >= 0x82000000u && v < 0x90000000u) {
++            const uint32_t first = LoadGuestU32BE(memory, v);
++            REXLOG_INFO("[ac6-dialog]   +{} -> 0x{:08X} first_word=0x{:08X}", off, v, first);
++        }
++    }
++}
