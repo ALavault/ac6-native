@@ -1,0 +1,51 @@
+diff --git a/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp b/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp
+index b8eae3cc..50b5d619 100644
+--- a/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp
++++ b/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp
+@@ -8,6 +8,8 @@
+  * @license     BSD 3-Clause License
+  *              See LICENSE file in the project root for full license text.
+  */
++#include <atomic>
++#include <chrono>
+ #include <rex/input/mnk/mnk_input_driver.h>
+ 
+ #include <rex/cvar.h>
+@@ -142,6 +144,37 @@ X_RESULT MnkInputDriver::GetState(uint32_t user_index, X_INPUT_STATE* out_state)
+ 
+   UpdateMouseCapture();
+ 
++  // P1.2 diagnostic. Cycle 314 concluded input was dead from a pixel test that
++  // could not have worked (it sent Return and KP_Enter, which are bound to
++  // nothing; Start is Escape). Repeating it after the P0 gate opened is worse,
++  // not better: the presented scene now animates, so frames differ between two
++  // untouched runs by more than any single keypress moves them -- measured, a
++  // control-vs-control noise floor of 116 mean-abs against a treatment effect
++  // of 36. Pixels cannot answer this question.
++  //
++  // The state observable can. This reports, once per second, the three things
++  // that decide whether a keystroke can reach the guest at all: whether the
++  // driver is active, whether it believes the window has focus (it returns a
++  // zeroed pad and gives up when it does not), and the button mask it would
++  // hand back. A headless X server with no window manager is exactly where
++  // has_focus_ is likely to be wrong.
++  {
++    static std::atomic<uint64_t> last_ms{0};
++    static std::atomic<uint16_t> last_buttons{0};
++    const uint64_t now = uint64_t(std::chrono::duration_cast<std::chrono::milliseconds>(
++                                      std::chrono::steady_clock::now().time_since_epoch())
++                                      .count());
++    uint16_t down_count = 0;
++    for (int i = 0; i < 256; ++i) {
++      if (key_down_[i]) ++down_count;
++    }
++    if (now - last_ms.load(std::memory_order_relaxed) > 1000 || down_count) {
++      last_ms.store(now, std::memory_order_relaxed);
++      REXLOG_INFO("[mnk-probe] active={} has_focus={} keys_down={}", is_active(), has_focus_,
++                  down_count);
++    }
++  }
++
+   if (!is_active() || !has_focus_) {
+     if (out_state) {
+       std::memset(out_state, 0, sizeof(*out_state));
