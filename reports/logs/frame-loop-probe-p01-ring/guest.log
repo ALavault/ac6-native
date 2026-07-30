@@ -1,0 +1,717 @@
+[2026-07-30 13:30:35.623] [info] [core] [t3781853] ac6recomp starting
+[2026-07-30 13:30:35.623] [info] [core] [t3781853]   Game directory: /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/assets
+[2026-07-30 13:30:35.623] [info] [core] [t3781853]   User data:      /home/lavaulta/.local/share/ac6recomp
+[2026-07-30 13:30:35.623] [info] [core] [t3781853] Ac6recompApp::OnPreSetup
+[2026-07-30 13:30:35.623] [info] [core] [t3781853] Ac6recompApp: selected Vulkan graphics backend
+[2026-07-30 13:30:35.629] [debug] [sys] [t3781853] Installed MMIO handler for physical address translation
+[2026-07-30 13:30:35.629] [info] [sys] [t3781853] FunctionDispatcher initialized
+[2026-07-30 13:30:35.629] [info] [core] [t3781853] SDL: Using version 3.5.0
+[2026-07-30 13:30:35.629] [info] [core] [t3781853] MnK input driver initialized
+[2026-07-30 13:30:35.629] [info] [sys] [t3781853] Input system initialized
+[2026-07-30 13:30:35.629] [debug] [sys] [t3781853] Added handle:F8000004 for N3rex6system7XObjectE
+[2026-07-30 13:30:35.630] [debug] [sys] [t3781853] Added handle:F8000008 for N3rex6system7XObjectE
+[2026-07-30 13:30:35.632] [debug] [apu] [t3781853] XMA: Registered MMIO handlers at 0x7FEA0000-0x7FEAFFFF
+[2026-07-30 13:30:35.634] [debug] [sys] [t3781853] Added handle:F800000C for N3rex6system7XObjectE
+[2026-07-30 13:30:35.634] [debug] [sys] [t3781853] XThreadF800000C (1) Stack: 70010000-70030000
+[2026-07-30 13:30:35.635] [info] [apu] [t3781865] AudioRuntime worker started: backend=sdl scheduling=queue-depth-driven low_water=1 target=2 max=8 startup_spacing_ms=4 startup_max_lead_frames=2
+[2026-07-30 13:30:35.635] [info] [apu] [t3781853] AudioSystem setup complete: runtime=AudioRuntime backend=sdl trace_telemetry=false trace_verbose=false mute=false
+[2026-07-30 13:30:35.635] [info] [sys] [t3781853] Audio system initialized
+[2026-07-30 13:30:35.635] [info] [sys] [t3781853]   Mounted /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/assets at \Device\Harddisk0\Partition1
+[2026-07-30 13:30:35.635] [debug] [fs] [t3781853] Registered symbolic link: game: => \Device\Harddisk0\Partition1
+[2026-07-30 13:30:35.635] [debug] [fs] [t3781853] Registered symbolic link: d: => \Device\Harddisk0\Partition1
+[2026-07-30 13:30:35.635] [debug] [sys] [t3781853]   Registered symbolic links: game:, d:
+[2026-07-30 13:30:35.635] [debug] [sys] [t3781853]   Registered NullDevice for \Device\Harddisk0\{{Partition0,Cache0,Cache1}}
+[2026-07-30 13:30:35.724] [info] [core] [t3781853] Vulkan instance API version 1.4.341. Enabled layers and extensions:
+[2026-07-30 13:30:35.724] [info] [core] [t3781853] * VK_KHR_surface
+[2026-07-30 13:30:35.724] [info] [core] [t3781853] * VK_KHR_xcb_surface
+[2026-07-30 13:30:35.724] [info] [core] [t3781853] * VK_EXT_debug_utils
+[2026-07-30 13:30:35.724] [info] [core] [t3781853] * VK_KHR_portability_enumeration
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [debug] [gpu] [t3781853] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 0 into new device 0 (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [debug] [gpu] [t3781853] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 1 into new device 1 (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [debug] [gpu] [t3781853] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 0 into new device 0 (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [debug] [gpu] [t3781853] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 1 into new device 1 (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.726] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [debug] [gpu] [t3781853] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 0 into new device 0 (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [debug] [gpu] [t3781853] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 1 into new device 1 (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_asahi.so due to not having any physical devices (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_gfxstream.so due to not having any physical devices (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_intel_hasvk.so due to not having any physical devices (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_nouveau.so due to not having any physical devices (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.727] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_intel.so due to not having any physical devices (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_radeon.so due to not having any physical devices (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_virtio.so due to not having any physical devices (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [warning] [core] [t3781853] Available Vulkan physical devices (use the 'vulkan_device' configuration variable to force a specific device):
+[2026-07-30 13:30:35.728] [warning] [core] [t3781853] * 0: NVIDIA RTX PRO 4000 Blackwell
+[2026-07-30 13:30:35.728] [warning] [core] [t3781853] * 1: llvmpipe (LLVM 21.1.8, 256 bits)
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] Vulkan device 'NVIDIA RTX PRO 4000 Blackwell': API 1.4.329, vendor 0x10DE, device 0x2C34, driver version 0x94D50000
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] Enabled Vulkan device extensions:
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * VK_KHR_swapchain
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * VK_EXT_custom_border_color
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * VK_EXT_fragment_shader_interlock
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * VK_EXT_memory_budget
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * VK_EXT_non_seamless_cube_map
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * VK_EXT_robustness2
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] Vulkan device properties and enabled features:
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * driverID: NvidiaProprietary
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * driverName: NVIDIA
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * driverInfo: 595.84
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * conformanceVersion: 1.4.3.3
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxImageDimension2D: 32768
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxImageDimension3D: 16384
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxImageDimensionCube: 32768
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxImageArrayLayers: 2048
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxStorageBufferRange: 4294967295
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxSamplerAllocationCount: 4000
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxPerStageDescriptorSamplers: 1048576
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxPerStageDescriptorStorageBuffers: 1048576
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxPerStageDescriptorSampledImages: 1048576
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxPerStageResources: 4294967295
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxVertexOutputComponents: 128
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxTessellationEvaluationOutputComponents: 128
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxGeometryInputComponents: 128
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxGeometryOutputComponents: 128
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxFragmentInputComponents: 128
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxFragmentCombinedOutputResources: 4294967295
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxSamplerAnisotropy: 16
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxViewportDimensions[0]: 32768
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxViewportDimensions[1]: 32768
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * minUniformBufferOffsetAlignment: 64
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * minStorageBufferOffsetAlignment: 16
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxFramebufferWidth: 32768
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxFramebufferHeight: 32768
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * framebufferColorSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * framebufferDepthSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * framebufferStencilSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * framebufferNoAttachmentsSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * sampledImageColorSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * sampledImageIntegerSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * sampledImageDepthSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * sampledImageStencilSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * standardSampleLocations: 1
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * optimalBufferCopyOffsetAlignment: 1
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * optimalBufferCopyRowPitchAlignment: 1
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * nonCoherentAtomSize: 64
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * robustBufferAccess
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * fullDrawIndexUint32
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * independentBlend
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * geometryShader
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * tessellationShader
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * sampleRateShading
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * depthClamp
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * fillModeNonSolid
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * samplerAnisotropy
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * occlusionQueryPrecise
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * vertexPipelineStoresAndAtomics
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * fragmentStoresAndAtomics
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * shaderClipDistance
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * shaderCullDistance
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * sparseBinding
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * sparseResidencyBuffer
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * samplerMirrorClampToEdge
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * uniformBufferStandardLayout
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * scalarBlockLayout
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * shaderDemoteToHelperInvocation
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * dynamicRendering
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * constantAlphaColorBlendFactors
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * imageViewFormatReinterpretation
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * imageViewFormatSwizzle
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * pointPolygons
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * separateStencilMaskRef
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * shaderSampleRateInterpolationFunctions
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * shaderSignedZeroInfNanPreserveFloat32: 1
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * shaderDenormFlushToZeroFloat32: 0
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * shaderRoundingModeRTEFloat32: 1
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * fragmentShaderSampleInterlock
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * fragmentShaderPixelInterlock
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * nonSeamlessCubeMap
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * customBorderColors
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * customBorderColorWithoutFormat
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * maxCustomBorderColorSamplers: 4000
+[2026-07-30 13:30:35.728] [info] [core] [t3781853] * nullDescriptor
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): Failed to find vkGetDeviceProcAddr in layer "/usr/lib/x86_64-linux-gnu/libVkLayer_MESA_device_select.so" (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message): vkCreateDevice layer callstack setup to: (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):    <Application> (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      || (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):    <Loader> (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):      || (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.728] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):    <Device> (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.729] [info] [gpu] [t3781853] Vulkan Info ({ General }, ID 0: Loader Message):        Using "NVIDIA RTX PRO 4000 Blackwell" with driver: "/usr/lib/x86_64-linux-gnu/libGLX_nvidia.so.595.84" (object 0: Instance 0x64914dffb2c0)
+[2026-07-30 13:30:35.931] [debug] [sys] [t3781853] Added handle:F8000010 for N3rex6system7XObjectE
+[2026-07-30 13:30:35.932] [debug] [sys] [t3781853] XThreadF8000010 (2) Stack: 70050000-70070000
+[2026-07-30 13:30:35.932] [info] [sys] [t3781879] XThread::Execute thid 2 (handle=F8000010, 'GPU Commands (F8000010)', native=0F3FE6C0, <host>)
+[2026-07-30 13:30:35.932] [debug] [sys] [t3781853] Added handle:F8000014 for N3rex6system7XObjectE
+[2026-07-30 13:30:35.932] [debug] [sys] [t3781853] XThreadF8000014 (3) Stack: 70090000-700B0000
+[2026-07-30 13:30:35.933] [info] [sys] [t3781853] GPU system initialized (presentation=true)
+[2026-07-30 13:30:35.933] [info] [sys] [t3781853] Runtime initialized successfully
+[2026-07-30 13:30:35.933] [debug] [sys] [t3781853] Initializing function table at 82AA0000, size 006CFFF0 for code 82090000-823E7FF8 (+00010000 thunk reserve)
+[2026-07-30 13:30:35.933] [info] [sys] [t3781880] XThread::Execute thid 3 (handle=F8000014, 'GPU VSync (F8000014)', native=0E3FD6C0, <host>)
+[2026-07-30 13:30:35.939] [info] [core] [t3781853] Function table initialized for module: code=82090000-823E7FF8, image=82000000-82AA0000
+[2026-07-30 13:30:35.944] [debug] [sys] [t3781853] Registered 23797 recompiled functions
+[2026-07-30 13:30:35.944] [debug] [sys] [t3781853] Runtime setup for recompiled code complete (code: 82090000-823E7FF8)
+[2026-07-30 13:30:35.944] [info] [sys] [t3781853] Loading XEX image: game:\default.xex
+[2026-07-30 13:30:35.945] [debug] [sys] [t3781853] Added handle:F8000018 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] created symbols for import library xam with 88 imports
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x158 (XboxKrnlVersion) -> 0x30009000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x1c0 (VdGpuClockInMHz) -> 0xffcac000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x1c1 (VdHSIOCalibrationLock) -> 0xffcab000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x1be (VdGlobalDevice) -> 0xffcae000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x266 (KeCertMonitorData) -> 0x30003000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x193 (XexExecutableModuleHandle) -> 0x30006000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x1ae (ExLoadedCommandLine) -> 0x30008000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x59 (KeDebugMonitorData) -> 0x30002000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0x1b (ExThreadObjectType) -> 0x30000000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] Patched variable import xboxkrnl:0xad (KeTimeStampBundle) -> 0x3000a000
+[2026-07-30 13:30:36.043] [debug] [core] [t3781853] created symbols for import library xboxkrnl with 163 imports
+[2026-07-30 13:30:36.045] [debug] [sys] [t3781853] Added handle:F800001C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.045] [debug] [sys] [t3781853] XThreadF800001C (4) Stack: 700D0000-700F0000
+[2026-07-30 13:30:36.046] [debug] [sys] [t3781853]   XEX image loaded successfully
+[2026-07-30 13:30:36.046] [info] [krnl] [t3781853] rexcrt_heap: added segment guest=0x20000000-0x30000000 size=256MB
+[2026-07-30 13:30:36.046] [info] [krnl] [t3781853] rexcrt_heap: initialized with 1 segment(s), capacity=255MB
+[2026-07-30 13:30:36.046] [info] [core] [t3781853] Ac6recompApp::OnPostSetup
+[2026-07-30 13:30:36.046] [info] [core] [t3781853] Ac6recompApp: Native frame boundary callback registered
+[2026-07-30 13:30:36.047] [info] [sys] [t3781881] XThread::Execute thid 4 (handle=F800001C, 'Kernel Dispatch (F800001C)', native=0D3FC6C0, <host>)
+[2026-07-30 13:30:36.099] [info] [gpu] [t3781879] VulkanTextureCache: Format k_Cr_Y1_Cb_Y0_REP (unsigned) is supported via a fallback format (using the Vulkan format 37 instead of the preferred 1000156000)
+[2026-07-30 13:30:36.099] [info] [gpu] [t3781879] VulkanTextureCache: Format k_Y1_Cr_Y0_Cb_REP (unsigned) is supported via a fallback format (using the Vulkan format 37 instead of the preferred 1000156001)
+[2026-07-30 13:30:36.107] [warning] [core] [t3781853] SDL GameControllerDB: file 'gamecontrollerdb.txt' does not exist.
+[2026-07-30 13:30:36.107] [info] [core] [t3781853] SDL input driver initialized successfully
+[2026-07-30 13:30:36.156] [info] [core] [t3781853] Ac6recompApp::OnCreateDialogs
+[2026-07-30 13:30:36.236] [info] [core] [t3781853] VulkanPresenter: Created 1920x1080 swapchain with format 44, color space 0, presentation mode 0
+[2026-07-30 13:30:36.278] [info] [sys] [t3781853] KernelState: Launching module...
+[2026-07-30 13:30:36.278] [debug] [sys] [t3781853] Added handle:F8000020 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.279] [debug] [sys] [t3781853] XThreadF8000020 (5) Stack: 70110000-70150000
+[2026-07-30 13:30:36.279] [debug] [sys] [t3781853]   Module launched on thread ''
+[2026-07-30 13:30:36.279] [debug] [sys] [t3781910] Execute thid 5 (handle=F8000020, 'Main XThread (F8000020)', native=8FFFF6C0)
+[2026-07-30 13:30:36.279] [info] [core] [t3781853] Shader disk cache: initializing for title 4E4D07D1 at /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/cache
+[2026-07-30 13:30:36.279] [debug] [sys] [t3781910] XThread::Execute - Calling function at 821F5E90
+[2026-07-30 13:30:36.284] [debug] [sys] [t3781910] Added handle:F8000024 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.285] [info] [gpu] [t3781879] Creating graphics pipeline state with VS 0A6D1DD7767FDF27, PS 2E372EA28CC404B7
+[2026-07-30 13:30:36.285] [debug] [sys] [t3781910] Added handle:F8000028 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.285] [info] [gpu] [t3781879] Created 1 graphics pipelines from Vulkan storage (1 requested)
+[2026-07-30 13:30:36.286] [debug] [sys] [t3781910] XThreadF8000028 (6) Stack: 70170000-701B0000
+[2026-07-30 13:30:36.286] [debug] [sys] [t3781910] Added handle:F800002C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.286] [debug] [sys] [t3781910] Added handle:F8000030 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.286] [debug] [sys] [t3781910] Added handle:F8000034 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.286] [debug] [sys] [t3781913] Execute thid 6 (handle=F8000028, 'XThread8E7FD6C0 (F8000028)', native=8E7FD6C0)
+[2026-07-30 13:30:36.287] [debug] [sys] [t3781913] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.287] [debug] [sys] [t3781910] XThreadF8000034 (7) Stack: 701D0000-70210000
+[2026-07-30 13:30:36.287] [debug] [sys] [t3781910] Added handle:F8000038 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.288] [debug] [sys] [t3781910] Added handle:F800003C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.288] [debug] [sys] [t3781910] Added handle:F8000040 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.288] [debug] [sys] [t3781914] Execute thid 7 (handle=F8000034, 'XThread8D7FC6C0 (F8000034)', native=8D7FC6C0)
+[2026-07-30 13:30:36.288] [debug] [sys] [t3781914] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.289] [debug] [sys] [t3781910] XThreadF8000040 (8) Stack: 70230000-70270000
+[2026-07-30 13:30:36.289] [debug] [sys] [t3781910] Added handle:F8000044 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.289] [debug] [sys] [t3781910] Added handle:F8000048 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.289] [debug] [sys] [t3781910] Added handle:F800004C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.289] [debug] [sys] [t3781915] Execute thid 8 (handle=F8000040, 'XThread7FFFF6C0 (F8000040)', native=7FFFF6C0)
+[2026-07-30 13:30:36.289] [debug] [sys] [t3781915] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.290] [debug] [sys] [t3781910] XThreadF800004C (9) Stack: 70290000-702D0000
+[2026-07-30 13:30:36.290] [debug] [sys] [t3781910] Added handle:F8000050 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.290] [debug] [sys] [t3781910] Added handle:F8000054 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.291] [debug] [sys] [t3781910] Added handle:F8000058 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.291] [debug] [sys] [t3781916] Execute thid 9 (handle=F800004C, 'XThread7EFFE6C0 (F800004C)', native=7EFFE6C0)
+[2026-07-30 13:30:36.291] [debug] [sys] [t3781916] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.292] [debug] [sys] [t3781910] XThreadF8000058 (A) Stack: 702F0000-70330000
+[2026-07-30 13:30:36.292] [debug] [sys] [t3781910] Added handle:F800005C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.292] [debug] [sys] [t3781910] Added handle:F8000060 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.292] [debug] [sys] [t3781910] Added handle:F8000064 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.292] [debug] [sys] [t3781917] Execute thid 10 (handle=F8000058, 'XThread7DFFD6C0 (F8000058)', native=7DFFD6C0)
+[2026-07-30 13:30:36.292] [debug] [sys] [t3781917] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.293] [debug] [sys] [t3781910] XThreadF8000064 (B) Stack: 70350000-70390000
+[2026-07-30 13:30:36.293] [debug] [sys] [t3781910] Added handle:F8000068 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.294] [debug] [sys] [t3781910] Added handle:F800006C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.294] [debug] [sys] [t3781910] Added handle:F8000070 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.294] [debug] [sys] [t3781918] Execute thid 11 (handle=F8000064, 'XThread6BFFF6C0 (F8000064)', native=6BFFF6C0)
+[2026-07-30 13:30:36.294] [debug] [sys] [t3781918] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.295] [debug] [sys] [t3781910] XThreadF8000070 (C) Stack: 703B0000-703F0000
+[2026-07-30 13:30:36.295] [debug] [sys] [t3781910] Added handle:F8000074 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.295] [debug] [sys] [t3781910] Added handle:F8000078 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.295] [debug] [sys] [t3781910] Added handle:F800007C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.295] [debug] [sys] [t3781919] Execute thid 12 (handle=F8000070, 'XThread6AFFE6C0 (F8000070)', native=6AFFE6C0)
+[2026-07-30 13:30:36.295] [debug] [sys] [t3781919] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.296] [debug] [sys] [t3781910] XThreadF800007C (D) Stack: 70410000-70450000
+[2026-07-30 13:30:36.296] [debug] [sys] [t3781910] Added handle:F8000080 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.296] [debug] [sys] [t3781910] Added handle:F8000084 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.296] [debug] [sys] [t3781920] Execute thid 13 (handle=F800007C, 'XThread69FFD6C0 (F800007C)', native=69FFD6C0)
+[2026-07-30 13:30:36.296] [debug] [sys] [t3781920] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.298] [debug] [sys] [t3781910] Added handle:F8000088 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.298] [debug] [sys] [t3781910] Added handle:F800008C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.298] [debug] [sys] [t3781910] Added handle:F8000090 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.298] [debug] [sys] [t3781910] Added handle:F8000094 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.298] [debug] [sys] [t3781910] Added handle:F8000098 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.299] [debug] [sys] [t3781910] XThreadF8000098 (E) Stack: 70470000-704B0000
+[2026-07-30 13:30:36.299] [debug] [sys] [t3781910] Added handle:F800009C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.299] [debug] [sys] [t3781921] Execute thid 14 (handle=F8000098, 'XThread5BFFF6C0 (F8000098)', native=5BFFF6C0)
+[2026-07-30 13:30:36.299] [debug] [sys] [t3781910] Added handle:F80000A0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.299] [debug] [sys] [t3781921] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.300] [debug] [sys] [t3781910] XThreadF80000A0 (F) Stack: 704D0000-70510000
+[2026-07-30 13:30:36.300] [debug] [sys] [t3781910] Added handle:F80000A4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.300] [debug] [sys] [t3781910] Added handle:F80000A8 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.300] [debug] [sys] [t3781922] Execute thid 15 (handle=F80000A0, 'XThread5AFFE6C0 (F80000A0)', native=5AFFE6C0)
+[2026-07-30 13:30:36.300] [debug] [sys] [t3781910] Added handle:F80000AC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.300] [debug] [sys] [t3781922] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.301] [debug] [sys] [t3781910] XThreadF80000AC (10) Stack: 70530000-70570000
+[2026-07-30 13:30:36.301] [debug] [sys] [t3781923] Execute thid 16 (handle=F80000AC, 'XThread59FFD6C0 (F80000AC)', native=59FFD6C0)
+[2026-07-30 13:30:36.301] [debug] [sys] [t3781910] Added handle:F80000B0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.302] [debug] [sys] [t3781910] Added handle:F80000B4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.302] [debug] [sys] [t3781910] Added handle:F80000B8 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.302] [debug] [sys] [t3781923] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.302] [debug] [sys] [t3781910] XThreadF80000B8 (11) Stack: 70590000-705A0000
+[2026-07-30 13:30:36.303] [debug] [sys] [t3781910] Added handle:F80000BC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.303] [debug] [sys] [t3781924] Execute thid 17 (handle=F80000B8, 'XThread4BFFF6C0 (F80000B8)', native=4BFFF6C0)
+[2026-07-30 13:30:36.303] [debug] [sys] [t3781924] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.303] [debug] [sys] [t3781910] XThreadF80000BC (12) Stack: 705C0000-705D0000
+[2026-07-30 13:30:36.303] [debug] [sys] [t3781910] Added handle:F80000C0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.303] [debug] [sys] [t3781925] Execute thid 18 (handle=F80000BC, 'XThread4AFFE6C0 (F80000BC)', native=4AFFE6C0)
+[2026-07-30 13:30:36.303] [debug] [sys] [t3781925] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.304] [debug] [sys] [t3781910] XThreadF80000C0 (13) Stack: 705F0000-70600000
+[2026-07-30 13:30:36.304] [debug] [sys] [t3781926] Execute thid 19 (handle=F80000C0, 'XThread49FFD6C0 (F80000C0)', native=49FFD6C0)
+[2026-07-30 13:30:36.304] [debug] [sys] [t3781926] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.304] [info] [gpu] [t3781910] SetInterruptCallback(821E63B0, 40001A00)
+[2026-07-30 13:30:36.306] [debug] [sys] [t3781910] Added handle:F80000C4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.306] [debug] [sys] [t3781910] XThreadF80000C4 (14) Stack: 70620000-70630000
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781910] Added handle:F80000C8 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781927] Execute thid 20 (handle=F80000C4, 'XThread3BFFF6C0 (F80000C4)', native=3BFFF6C0)
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781927] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781927] Added handle:F80000CC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781910] XThreadF80000C8 (15) Stack: 70650000-70660000
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781928] Execute thid 21 (handle=F80000C8, 'XThread3AFFE6C0 (F80000C8)', native=3AFFE6C0)
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781928] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.307] [debug] [sys] [t3781928] Added handle:F80000D0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.314] [debug] [sys] [t3781910] Added handle:F80000D4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.314] [debug] [sys] [t3781910] Added handle:F80000D8 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.314] [debug] [sys] [t3781910] XThreadF80000D8 (16) Stack: 70680000-70690000
+[2026-07-30 13:30:36.314] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.314] [debug] [sys] [t3781929] Execute thid 22 (handle=F80000D8, 'XThread39FFD6C0 (F80000D8)', native=39FFD6C0)
+[2026-07-30 13:30:36.315] [debug] [sys] [t3781929] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.315] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.315] [info] [core] [t3781910] [AC6-VBLANK] pacing -> 60Hz guest vblank
+[2026-07-30 13:30:36.319] [debug] [gpu] [t3781879] Created a 640x1024 4xMSAA color render target with guest format 0 at EDRAM base 0
+[2026-07-30 13:30:36.320] [debug] [gpu] [t3781879] Created a 640x1024 4xMSAA depth render target with guest format 1 at EDRAM base 720
+[2026-07-30 13:30:36.389] [debug] [gpu] [t3781879] XELOG_GPU PRESENT: swap_texture_view=0x7c0afd808350 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.709] [info] [krnl] [t3781929] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA.TBL access=0x80100080 attrs=0x80 share=0x1 disp=0x1 options=0x60
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781929] Added handle:F80000E0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781929] Removed handle:F80000E0 for N3rex6system5XFileE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.709] [info] [krnl] [t3781929] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA.TBL access=0x80100080 attrs=0x80 share=0x1 disp=0x1 options=0x60
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781929] Added handle:F80000E0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.709] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.710] [info] [krnl] [t3781929] [AC6 PAC] NtReadFile request caller=821F4F2C thid=22 path=DATA.TBL handle=0xf80000e0 len=0x39e8 offset=-1 sync=true
+[2026-07-30 13:30:36.710] [info] [krnl] [t3781929] [AC6 PAC] NtReadFile result caller=821F4F2C path=DATA.TBL status=0x0 bytes_read=0x39e8 iosb_status=0x0 iosb_info=0x39e8
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781929] Removed handle:F80000E0 for N3rex6system5XFileE
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-30 13:30:36.710] [info] [krnl] [t3781910] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA00.PAC access=0x80100080 attrs=0x0 share=0x1 disp=0x1 options=0x48
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.710] [info] [krnl] [t3781910] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA01.PAC access=0x80100080 attrs=0x0 share=0x1 disp=0x1 options=0x48
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Added handle:F80000E0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.710] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=3407872 sync=false
+[2026-07-30 13:30:36.710] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.710] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.710] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=3670016 sync=false
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=3932160 sync=false
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4194304 sync=false
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4456448 sync=false
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.711] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.711] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4718592 sync=false
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4980736 sync=false
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=5242880 sync=false
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=5505024 sync=false
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=5767168 sync=false
+[2026-07-30 13:30:36.712] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.712] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6029312 sync=false
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6291456 sync=false
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6553600 sync=false
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6815744 sync=false
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.713] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.713] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7077888 sync=false
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7340032 sync=false
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7602176 sync=false
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7864320 sync=false
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.714] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.714] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8126464 sync=false
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8388608 sync=false
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8650752 sync=false
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8912896 sync=false
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.715] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.715] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9175040 sync=false
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9437184 sync=false
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9699328 sync=false
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9961472 sync=false
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=10223616 sync=false
+[2026-07-30 13:30:36.716] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.716] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=10485760 sync=false
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=10747904 sync=false
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11010048 sync=false
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11272192 sync=false
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.717] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.717] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11534336 sync=false
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11796480 sync=false
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12058624 sync=false
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12320768 sync=false
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12582912 sync=false
+[2026-07-30 13:30:36.718] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.718] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12845056 sync=false
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=13107200 sync=false
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=13369344 sync=false
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=13631488 sync=false
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.719] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.719] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x20000 offset=13893632 sync=false
+[2026-07-30 13:30:36.720] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x20000 iosb_status=0x0 iosb_info=0x20000
+[2026-07-30 13:30:36.720] [debug] [sys] [t3781910] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-30 13:30:36.928] [debug] [sys] [t3781910] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.928] [debug] [sys] [t3781910] Added handle:F80000E8 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.929] [debug] [sys] [t3781910] XThreadF80000E8 (17) Stack: 706B0000-706F0000
+[2026-07-30 13:30:36.929] [debug] [sys] [t3782088] Execute thid 23 (handle=F80000E8, 'XThread2887D6C0 (F80000E8)', native=2887D6C0)
+[2026-07-30 13:30:36.929] [debug] [krnl] [t3781910] XAudioRegisterRenderDriverClient called callback_ptr=7014F830 driver_ptr=40022554
+[2026-07-30 13:30:36.929] [debug] [sys] [t3782088] XThread::Execute - Calling function at 823B41D8
+[2026-07-30 13:30:36.929] [debug] [sys] [t3782088] Added handle:F80000EC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.952] [info] [apu] [t3781910] SdlAudioDriver initialized: client=0 channels=2 freq=48000
+[2026-07-30 13:30:36.953] [debug] [sys] [t3781865] Added handle:F80000F0 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.953] [debug] [sys] [t3781865] Added handle:F80000F4 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.954] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:36.956] [debug] [sys] [t3781910] Added handle:F80000F8 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.957] [debug] [sys] [t3781910] XThreadF80000F8 (18) Stack: 70710000-70750000
+[2026-07-30 13:30:36.957] [debug] [sys] [t3781910] Added handle:F80000FC for N3rex6system7XObjectE
+[2026-07-30 13:30:36.958] [debug] [sys] [t3781910] XThreadF80000FC (19) Stack: 70770000-707B0000
+[2026-07-30 13:30:36.958] [debug] [sys] [t3781910] Added handle:F8000100 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3781910] XThreadF8000100 (1A) Stack: 707D0000-70810000
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782111] Execute thid 26 (handle=F8000100, 'XThread2587A6C0 (F8000100)', native=2587A6C0)
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782108] Execute thid 24 (handle=F80000F8, 'XThread2787C6C0 (F80000F8)', native=2787C6C0)
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Execute thid 25 (handle=F80000FC, 'XThread2687B6C0 (F80000FC)', native=2687B6C0)
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782111] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F8000104 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782108] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F8000108 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F800010C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F8000110 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F8000114 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F8000118 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F800011C for N3rex6system7XObjectE
+[2026-07-30 13:30:36.959] [debug] [sys] [t3782110] Added handle:F8000120 for N3rex6system7XObjectE
+[2026-07-30 13:30:36.960] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:36.980] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:36.981] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:36.982] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:37.001] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:37.002] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:37.003] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:37.022] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:37.023] [debug] [krnl] [t3781865] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-30 13:30:37.057] [debug] [sys] [t3781910] Added handle:F8000124 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.059] [debug] [sys] [t3781910] Added handle:F8000128 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.059] [debug] [sys] [t3781910] Added handle:F800012C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.059] [debug] [krnl] [t3781910] XamNotifyCreateListener(mask=0x0000000000000005, is_system=0, max_version=2) -> handle=F800012C
+[2026-07-30 13:30:37.059] [debug] [sys] [t3781910] Added handle:F8000130 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.059] [debug] [sys] [t3781910] XThreadF8000130 (1B) Stack: 70830000-70840000
+[2026-07-30 13:30:37.059] [debug] [sys] [t3782152] Execute thid 27 (handle=F8000130, 'XThreadFFFFF6C0 (F8000130)', native=FFFFF6C0)
+[2026-07-30 13:30:37.059] [debug] [sys] [t3782152] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:37.060] [debug] [sys] [t3782152] Added handle:F8000134 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.060] [debug] [sys] [t3781910] Added handle:F8000138 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.060] [debug] [krnl] [t3781910] XamNotifyCreateListener(mask=0x0000000000000001, is_system=0, max_version=2) -> handle=F8000138
+[2026-07-30 13:30:37.060] [debug] [sys] [t3781910] Added handle:F800013C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.060] [debug] [sys] [t3781918] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.060] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=15171584 sync=false
+[2026-07-30 13:30:37.061] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.061] [debug] [sys] [t3781918] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-30 13:30:37.061] [debug] [sys] [t3781918] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.061] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x10000 offset=15433728 sync=false
+[2026-07-30 13:30:37.061] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x10000 iosb_status=0x0 iosb_info=0x10000
+[2026-07-30 13:30:37.061] [debug] [sys] [t3781918] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-30 13:30:37.070] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0x9, param=1
+[2026-07-30 13:30:37.080] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0x9, param=0
+[2026-07-30 13:30:37.090] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0xa, param=1
+[2026-07-30 13:30:37.100] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0xa, param=1
+[2026-07-30 13:30:37.112] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0x12, param=0
+[2026-07-30 13:30:37.115] [debug] [sys] [t3781910] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.115] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2054782976 sync=false
+[2026-07-30 13:30:37.116] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.116] [debug] [sys] [t3781910] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-30 13:30:37.116] [debug] [sys] [t3781910] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.116] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2055045120 sync=false
+[2026-07-30 13:30:37.116] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.116] [debug] [sys] [t3781910] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-30 13:30:37.116] [debug] [sys] [t3781910] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.116] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2055307264 sync=false
+[2026-07-30 13:30:37.116] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.116] [debug] [sys] [t3781910] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-30 13:30:37.116] [debug] [sys] [t3781910] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.116] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x34800 offset=2055569408 sync=false
+[2026-07-30 13:30:37.116] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x34800 iosb_status=0x0 iosb_info=0x34800
+[2026-07-30 13:30:37.116] [debug] [sys] [t3781910] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-30 13:30:37.120] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0x12, param=0
+[2026-07-30 13:30:37.130] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0x13, param=0
+[2026-07-30 13:30:37.144] [debug] [krnl] [t3782152] XNotifyGetNext(F800012C, 00000000) -> id=0x13, param=0
+[2026-07-30 13:30:37.538] [debug] [sys] [t3781910] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.538] [debug] [sys] [t3781910] Added handle:F8000144 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.539] [debug] [sys] [t3781910] XThreadF8000144 (1C) Stack: 70860000-708A0000
+[2026-07-30 13:30:37.539] [debug] [sys] [t3782336] Execute thid 28 (handle=F8000144, 'XThreadFEFFE6C0 (F8000144)', native=FEFFE6C0)
+[2026-07-30 13:30:37.539] [debug] [sys] [t3782336] XThread::Execute - Calling function at 821F7FC8
+[2026-07-30 13:30:37.539] [debug] [sys] [t3781910] Added handle:F8000148 for N3rex6system7XObjectE
+[2026-07-30 13:30:37.539] [debug] [krnl] [t3781910] XamNotifyCreateListener(mask=0x000000000000006f, is_system=0, max_version=2) -> handle=F8000148
+[2026-07-30 13:30:37.569] [debug] [gpu] [t3781879] XELOG_GPU PRESENT: swap_texture_view=0x7c0afd808350 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-30 13:30:37.570] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.570] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=0 sync=false
+[2026-07-30 13:30:37.570] [debug] [gpu] [t3781879] Created a 80x8192 1xMSAA color render target with guest format 14 at EDRAM base 0
+[2026-07-30 13:30:37.570] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.570] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.570] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.570] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=262144 sync=false
+[2026-07-30 13:30:37.570] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.570] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.570] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.570] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=524288 sync=false
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=786432 sync=false
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1048576 sync=false
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1310720 sync=false
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1572864 sync=false
+[2026-07-30 13:30:37.571] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.571] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1835008 sync=false
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2097152 sync=false
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2359296 sync=false
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2621440 sync=false
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.572] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.572] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2883584 sync=false
+[2026-07-30 13:30:37.573] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.573] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.573] [debug] [sys] [t3781910] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.573] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x3c000 offset=3145728 sync=false
+[2026-07-30 13:30:37.573] [info] [krnl] [t3781910] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x3c000 iosb_status=0x0 iosb_info=0x3c000
+[2026-07-30 13:30:37.573] [debug] [sys] [t3781910] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.574] [info] [gpu] [t3781879] Creating graphics pipeline state with VS 0A6D1DD7767FDF27
+[2026-07-30 13:30:37.575] [info] [gpu] [t3781885] Creating graphics pipeline state with VS 0A6D1DD7767FDF27, PS 2E372EA28CC404B7
+[2026-07-30 13:30:37.584] [warning] [gpu] [t3781879] Skipping Vulkan frame presentation due to async placeholder draw usage in this frame
+[2026-07-30 13:30:37.734] [debug] [gpu] [t3781879] XELOG_GPU PRESENT: swap_texture_view=0x7c0afd808350 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-30 13:30:37.771] [debug] [sys] [t3781918] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.772] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2069266432 sync=false
+[2026-07-30 13:30:37.772] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.772] [debug] [sys] [t3781918] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.772] [debug] [sys] [t3781918] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.772] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2069528576 sync=false
+[2026-07-30 13:30:37.772] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.772] [debug] [sys] [t3781918] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.772] [debug] [sys] [t3781918] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.772] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2069790720 sync=false
+[2026-07-30 13:30:37.773] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-30 13:30:37.773] [debug] [sys] [t3781918] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:37.773] [debug] [sys] [t3781918] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-30 13:30:37.773] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x9800 offset=2070052864 sync=false
+[2026-07-30 13:30:37.773] [info] [krnl] [t3781918] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x9800 iosb_status=0x0 iosb_info=0x9800
+[2026-07-30 13:30:37.773] [debug] [sys] [t3781918] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-30 13:30:38.448] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=209 consumed=276 queued_played=206 underruns=0 callbacks=209 tic=70656 synthetic_tic=53504 submitted_tic=53504 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1249 peak=3 drift_ms=-21.3
+[2026-07-30 13:30:41.008] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=569 consumed=756 queued_played=566 underruns=0 callbacks=569 tic=193536 synthetic_tic=145664 submitted_tic=145664 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1238 peak=3 drift_ms=-21.4
+[2026-07-30 13:30:41.300] [info] [gpu] [t3781880] [frame-loop] vblank=300 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:30:43.574] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=932 consumed=1240 queued_played=929 underruns=0 callbacks=932 tic=317440 synthetic_tic=238592 submitted_tic=238592 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1262 peak=3 drift_ms=-21.4
+[2026-07-30 13:30:46.134] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=1292 consumed=1720 queued_played=1289 underruns=0 callbacks=1292 tic=440320 synthetic_tic=330752 submitted_tic=330752 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1220 peak=3 drift_ms=-21.4
+[2026-07-30 13:30:46.301] [info] [gpu] [t3781880] [frame-loop] vblank=600 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:30:48.694] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=1652 consumed=2200 queued_played=1649 underruns=0 callbacks=1652 tic=563200 synthetic_tic=422912 submitted_tic=422912 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1256 peak=3 drift_ms=-21.4
+[2026-07-30 13:30:51.301] [info] [gpu] [t3781880] [frame-loop] vblank=900 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:30:51.328] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=2021 consumed=2692 queued_played=2018 underruns=0 callbacks=2021 tic=689152 synthetic_tic=517376 submitted_tic=517376 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1213 peak=3 drift_ms=-21.4
+[2026-07-30 13:30:53.909] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=2384 consumed=3176 queued_played=2381 underruns=0 callbacks=2384 tic=813056 synthetic_tic=610304 submitted_tic=610304 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1235 peak=3 drift_ms=-21.3
+[2026-07-30 13:30:56.301] [info] [gpu] [t3781880] [frame-loop] vblank=1200 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:30:56.469] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=2744 consumed=3656 queued_played=2741 underruns=0 callbacks=2744 tic=935936 synthetic_tic=702464 submitted_tic=702464 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1318 peak=3 drift_ms=-21.4
+[2026-07-30 13:30:59.030] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=3104 consumed=4136 queued_played=3101 underruns=0 callbacks=3104 tic=1058816 synthetic_tic=794624 submitted_tic=794624 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1246 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:01.301] [info] [gpu] [t3781880] [frame-loop] vblank=1500 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:01.594] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=3464 consumed=4616 queued_played=3461 underruns=0 callbacks=3464 tic=1181696 synthetic_tic=886784 submitted_tic=886784 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1236 peak=3 drift_ms=-21.4
+[2026-07-30 13:31:04.155] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=3824 consumed=5096 queued_played=3821 underruns=0 callbacks=3824 tic=1304576 synthetic_tic=978944 submitted_tic=978944 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1337 peak=3 drift_ms=-21.4
+[2026-07-30 13:31:06.302] [info] [gpu] [t3781880] [frame-loop] vblank=1800 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:06.764] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=4193 consumed=5588 queued_played=4190 underruns=0 callbacks=4193 tic=1430528 synthetic_tic=1073408 submitted_tic=1073408 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1280 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:09.345] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=4556 consumed=6072 queued_played=4553 underruns=0 callbacks=4556 tic=1554432 synthetic_tic=1166336 submitted_tic=1166336 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1249 peak=3 drift_ms=-21.4
+[2026-07-30 13:31:11.301] [info] [gpu] [t3781880] [frame-loop] vblank=2100 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:11.910] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=4916 consumed=6552 queued_played=4913 underruns=0 callbacks=4916 tic=1677312 synthetic_tic=1258496 submitted_tic=1258496 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1250 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:14.470] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=5276 consumed=7032 queued_played=5273 underruns=0 callbacks=5276 tic=1800192 synthetic_tic=1350656 submitted_tic=1350656 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1226 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:16.302] [info] [gpu] [t3781880] [frame-loop] vblank=2400 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:17.030] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=5636 consumed=7512 queued_played=5633 underruns=0 callbacks=5636 tic=1923072 synthetic_tic=1442816 submitted_tic=1442816 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1243 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:19.590] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=5996 consumed=7992 queued_played=5993 underruns=0 callbacks=5996 tic=2045952 synthetic_tic=1534976 submitted_tic=1534976 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1229 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:21.303] [info] [gpu] [t3781880] [frame-loop] vblank=2700 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:22.150] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=6356 consumed=8472 queued_played=6353 underruns=0 callbacks=6356 tic=2168832 synthetic_tic=1627136 submitted_tic=1627136 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1395 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:24.715] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=6716 consumed=8952 queued_played=6713 underruns=0 callbacks=6716 tic=2291712 synthetic_tic=1719296 submitted_tic=1719296 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1342 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:26.302] [info] [gpu] [t3781880] [frame-loop] vblank=3000 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:27.352] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=7088 consumed=9448 queued_played=7085 underruns=0 callbacks=7088 tic=2418688 synthetic_tic=1814528 submitted_tic=1814528 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1315 peak=3 drift_ms=-20.7
+[2026-07-30 13:31:29.963] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=7454 consumed=9936 queued_played=7451 underruns=0 callbacks=7454 tic=2543616 synthetic_tic=1908224 submitted_tic=1908224 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1253 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:31.302] [info] [gpu] [t3781880] [frame-loop] vblank=3300 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:32.544] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=7817 consumed=10420 queued_played=7814 underruns=0 callbacks=7817 tic=2667520 synthetic_tic=2001152 submitted_tic=2001152 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1393 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:35.109] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=8177 consumed=10900 queued_played=8174 underruns=0 callbacks=8177 tic=2790400 synthetic_tic=2093312 submitted_tic=2093312 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1254 peak=3 drift_ms=-21.4
+[2026-07-30 13:31:36.303] [info] [gpu] [t3781880] [frame-loop] vblank=3600 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:37.675] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=8540 consumed=11384 queued_played=8537 underruns=0 callbacks=8540 tic=2914304 synthetic_tic=2186240 submitted_tic=2186240 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1218 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:40.236] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=8900 consumed=11864 queued_played=8897 underruns=0 callbacks=8900 tic=3037184 synthetic_tic=2278400 submitted_tic=2278400 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1254 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:41.303] [info] [gpu] [t3781880] [frame-loop] vblank=3900 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:42.795] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=9260 consumed=12344 queued_played=9257 underruns=0 callbacks=9260 tic=3160064 synthetic_tic=2370560 submitted_tic=2370560 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1223 peak=3 drift_ms=-21.4
+[2026-07-30 13:31:45.410] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=9626 consumed=12832 queued_played=9623 underruns=0 callbacks=9626 tic=3284992 synthetic_tic=2464256 submitted_tic=2464256 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=2594 peak=3 drift_ms=-20.7
+[2026-07-30 13:31:46.304] [info] [gpu] [t3781880] [frame-loop] vblank=4200 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4
+[2026-07-30 13:31:48.001] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=9992 consumed=13320 queued_played=9989 underruns=0 callbacks=9992 tic=3409920 synthetic_tic=2557952 submitted_tic=2557952 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1412 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:50.561] [debug] [apu] [t3781865] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=10352 consumed=13800 queued_played=10349 underruns=0 callbacks=10352 tic=3532800 synthetic_tic=2650112 submitted_tic=2650112 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1231 peak=3 drift_ms=-21.3
+[2026-07-30 13:31:51.304] [info] [gpu] [t3781880] [frame-loop] vblank=4500 eop=12 other_source=0 no_handler=22 guest_swap_requests=4 host_swap_presents=3 pacing_notifications=0 | ring wptr_updates=20 wptr=00000043 rptr=00000043 primary_executions=11 pm4_interrupt=12 pm4_swap=4

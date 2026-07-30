@@ -1,8 +1,8 @@
 diff --git a/thirdparty/rexglue-sdk/include/rex/graphics/graphics_system.h b/thirdparty/rexglue-sdk/include/rex/graphics/graphics_system.h
-index d030f7f9..a0dc55d1 100644
+index d030f7f9..aa499676 100644
 --- a/thirdparty/rexglue-sdk/include/rex/graphics/graphics_system.h
 +++ b/thirdparty/rexglue-sdk/include/rex/graphics/graphics_system.h
-@@ -42,6 +42,27 @@ namespace rex::ui {
+@@ -42,6 +42,37 @@ namespace rex::ui {
  class WindowedAppContext;
  }  // namespace rex::ui
  
@@ -25,16 +25,62 @@ index d030f7f9..a0dc55d1 100644
 +// CountHostSwapPresent, and only reached while pacing is armed, so a zero here
 +// with a non-zero host_swap_presents is normal, not a fault.
 +void CountHostPresentDelivery();
++// Guest wrote the PM4 ring-buffer write pointer: it has queued GPU work.
++void CountWritePointerUpdate(uint32_t write_ptr);
++// Command processor drained the ring up to the write pointer.
++void CountPrimaryBufferExecution(uint32_t read_ptr_after);
++// A PM4 INTERRUPT packet was decoded. This is what raises a source-1 (EOP)
++// interrupt, and source 1 is the only path reaching the guest handler's work
++// branch, so a frozen count here is a frozen renderer.
++void CountPm4InterruptPacket();
++// A PM4 XE_SWAP packet was decoded: the guest asked for a presentation.
++void CountPm4SwapPacket();
 +}  // namespace rex::graphics::frame_loop_telemetry
 +
  namespace rex::graphics {
  
  class CommandProcessor;
+diff --git a/thirdparty/rexglue-sdk/src/graphics/command_processor.cpp b/thirdparty/rexglue-sdk/src/graphics/command_processor.cpp
+index 7afcd98d..f1c4f92f 100644
+--- a/thirdparty/rexglue-sdk/src/graphics/command_processor.cpp
++++ b/thirdparty/rexglue-sdk/src/graphics/command_processor.cpp
+@@ -316,6 +316,7 @@ void CommandProcessor::WorkerThreadMain() {
+ 
+     // Execute. Note that we handle wraparound transparently.
+     read_ptr_index_ = ExecutePrimaryBuffer(read_ptr_index_, write_ptr_index);
++    frame_loop_telemetry::CountPrimaryBufferExecution(read_ptr_index_);
+ 
+     // TODO(benvanik): use reader->Read_update_freq_ and only issue after moving
+     //     that many indices.
+@@ -404,6 +405,7 @@ void CommandProcessor::EnableReadPointerWriteBack(uint32_t ptr, uint32_t block_s
+ }
+ 
+ void CommandProcessor::UpdateWritePointer(uint32_t value) {
++  frame_loop_telemetry::CountWritePointerUpdate(value);
+   write_ptr_index_ = value;
+   write_ptr_index_event_->Set();
+ }
+@@ -1064,6 +1066,7 @@ bool CommandProcessor::ExecutePacketType3_INTERRUPT(memory::RingBuffer* reader,
+   SCOPE_profile_cpu_f("gpu");
+ 
+   // generate interrupt from the command stream
++  frame_loop_telemetry::CountPm4InterruptPacket();
+   uint32_t cpu_mask = reader->ReadAndSwap<uint32_t>();
+   for (int n = 0; n < 6; n++) {
+     if (cpu_mask & (1 << n)) {
+@@ -1078,6 +1081,7 @@ bool CommandProcessor::ExecutePacketType3_XE_SWAP(memory::RingBuffer* reader, ui
+   SCOPE_profile_cpu_f("gpu");
+ 
+   rex::debug::Profiler::Flip();
++  frame_loop_telemetry::CountPm4SwapPacket();
+ 
+   // Xenia-specific VdSwap hook.
+   // VdSwap will post this to tell us we need to swap the screen/fire an
 diff --git a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
-index e1916e69..ebac5f88 100644
+index e1916e69..3617cfa3 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
-@@ -45,6 +45,77 @@ REXCVAR_DEFINE_STRING(swap_post_effect, "none", "GPU", "Swap post effect: none,
+@@ -45,6 +45,112 @@ REXCVAR_DEFINE_STRING(swap_post_effect, "none", "GPU", "Swap post effect: none,
      .allowed({"none", "fxaa", "fxaa_extreme"})
      .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
  
@@ -66,6 +112,18 @@ index e1916e69..ebac5f88 100644
 +std::atomic<uint64_t> g_guest_swap_requests{0};
 +std::atomic<uint64_t> g_host_swap_presents{0};
 +std::atomic<uint64_t> g_host_present_deliveries{0};
++// PM4 ring-buffer submission boundary. Everything the guest asks the GPU to do
++// arrives as packets in this ring, so these five counters separate the three
++// mutually exclusive causes of a frozen frame loop (PLAYABLE_PLAN.md section 2):
++//   guest stopped submitting        -> wptr_updates frozen
++//   host stopped consuming          -> wptr_updates grows, primary_executions frozen
++//   packets no longer carry the work-> primary_executions grows, pm4_* frozen
++std::atomic<uint64_t> g_wptr_updates{0};
++std::atomic<uint32_t> g_last_write_ptr{0};
++std::atomic<uint32_t> g_last_read_ptr{0};
++std::atomic<uint64_t> g_primary_executions{0};
++std::atomic<uint64_t> g_pm4_interrupt_packets{0};
++std::atomic<uint64_t> g_pm4_swap_packets{0};
 +}  // namespace
 +
 +void CountInterrupt(uint32_t source) {
@@ -87,13 +145,20 @@ index e1916e69..ebac5f88 100644
 +  }
 +  REXGPU_INFO(
 +      "[frame-loop] vblank={} eop={} other_source={} no_handler={} guest_swap_requests={} "
-+      "host_swap_presents={} pacing_notifications={}",
++      "host_swap_presents={} pacing_notifications={} | ring wptr_updates={} wptr={:08X} "
++      "rptr={:08X} primary_executions={} pm4_interrupt={} pm4_swap={}",
 +      vblanks, g_interrupts_by_source[1].load(std::memory_order_relaxed),
 +      g_interrupts_other_source.load(std::memory_order_relaxed),
 +      g_interrupts_without_handler.load(std::memory_order_relaxed),
 +      g_guest_swap_requests.load(std::memory_order_relaxed),
 +      g_host_swap_presents.load(std::memory_order_relaxed),
-+      g_host_present_deliveries.load(std::memory_order_relaxed));
++      g_host_present_deliveries.load(std::memory_order_relaxed),
++      g_wptr_updates.load(std::memory_order_relaxed),
++      g_last_write_ptr.load(std::memory_order_relaxed),
++      g_last_read_ptr.load(std::memory_order_relaxed),
++      g_primary_executions.load(std::memory_order_relaxed),
++      g_pm4_interrupt_packets.load(std::memory_order_relaxed),
++      g_pm4_swap_packets.load(std::memory_order_relaxed));
 +}
 +
 +void CountInterruptWithoutHandler() {
@@ -107,12 +172,28 @@ index e1916e69..ebac5f88 100644
 +void CountHostPresentDelivery() {
 +  g_host_present_deliveries.fetch_add(1, std::memory_order_relaxed);
 +}
++
++void CountWritePointerUpdate(uint32_t write_ptr) {
++  g_wptr_updates.fetch_add(1, std::memory_order_relaxed);
++  g_last_write_ptr.store(write_ptr, std::memory_order_relaxed);
++}
++
++void CountPrimaryBufferExecution(uint32_t read_ptr_after) {
++  g_primary_executions.fetch_add(1, std::memory_order_relaxed);
++  g_last_read_ptr.store(read_ptr_after, std::memory_order_relaxed);
++}
++
++void CountPm4InterruptPacket() {
++  g_pm4_interrupt_packets.fetch_add(1, std::memory_order_relaxed);
++}
++
++void CountPm4SwapPacket() { g_pm4_swap_packets.fetch_add(1, std::memory_order_relaxed); }
 +}  // namespace rex::graphics::frame_loop_telemetry
 +
  namespace {
  constexpr bool kStoreShaders = true;
  
-@@ -407,9 +478,12 @@ bool GraphicsSystem::GetLastSwapSubmission(system::GraphicsSwapSubmission* out_s
+@@ -407,9 +513,12 @@ bool GraphicsSystem::GetLastSwapSubmission(system::GraphicsSwapSubmission* out_s
  
  void GraphicsSystem::DispatchInterruptCallback(uint32_t source, uint32_t cpu) {
    if (!interrupt_callback_) {
@@ -125,7 +206,7 @@ index e1916e69..ebac5f88 100644
    auto thread = system::XThread::GetCurrentThread();
    assert_not_null(thread);
  
-@@ -448,6 +522,7 @@ void GraphicsSystem::SetGuestPresentPacing(double target_hz) {
+@@ -448,6 +557,7 @@ void GraphicsSystem::SetGuestPresentPacing(double target_hz) {
  }
  
  void GraphicsSystem::NotifyGuestPresent() {
