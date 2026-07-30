@@ -1,0 +1,33 @@
+diff --git a/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_io.cpp b/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_io.cpp
+index 89cae48d..b76969d8 100644
+--- a/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_io.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_io.cpp
+@@ -386,6 +386,28 @@ ppc_u32_result_t NtReadFile_entry(ppc_u32_t file_handle, ppc_u32_t event_handle,
+     }
+     signal_event = true;
+ 
++    // Fail loudly on any guest read that does not deliver what was asked for.
++    //
++    // The block below only speaks for paths already under suspicion
++    // (focused_pac_read), so a failed or short read anywhere else was silent.
++    // That is how the empty YES/NO dialog can happen: AC6 draws that dialog
++    // itself -- it is not the runtime's ImGui message box, and not an XDBF
++    // string table, both checked -- so its question text comes from the game's
++    // own data, and the only place the runtime can see that resolution fail is
++    // right here, at the read.
++    //
++    // This is the rule earned in cycles 312, 329 and 333 applied to the
++    // resource path: a defect that costs cycles to find must cost one log line
++    // instead. Warn level, and only on failure or a short read, so a healthy
++    // run stays quiet.
++    if (XFAILED(result) || (bytes_read < buffer_length && result != X_STATUS_END_OF_FILE)) {
++      REXKRNL_WARN(
++          "[AC6 IO] guest read did not deliver: caller={:08X} path={} status={:#x} "
++          "requested={:#x} delivered={:#x}{}",
++          CurrentGuestCallerAddress(), file->path(), result, buffer_length, bytes_read,
++          XFAILED(result) ? "  <- read FAILED" : "  <- SHORT read");
++    }
++
+     if (focused_pac_read) {
+       if (Ac6PacStackTraceEnabled()) {
+         REXKRNL_INFO(
