@@ -1,0 +1,38 @@
+diff --git a/thirdparty/rexglue-sdk/src/kernel/xam/xam_ui.cpp b/thirdparty/rexglue-sdk/src/kernel/xam/xam_ui.cpp
+index 4d5a9c81..00767652 100644
+--- a/thirdparty/rexglue-sdk/src/kernel/xam/xam_ui.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xam/xam_ui.cpp
+@@ -3,6 +3,7 @@
+  * Copyright (c) 2026 Tom Clay. All rights reserved.
+  */
+ 
++#include <rex/system/thread_state.h>
+ #include <rex/logging.h>
+ #include <rex/string.h>
+ #include <rex/string/util.h>
+@@ -498,6 +499,25 @@ ppc_u32_result_t XamShowDeviceSelectorUI_entry(ppc_u32_t user_index, ppc_u32_t c
+                 uint32_t(user_index), uint32_t(content_type), uint32_t(content_flags),
+                 uint64_t(total_requested), device_id_ptr.guest_address(),
+                 overlapped.guest_address());
++
++  // Locate the guest menu code that owns the empty YES/NO dialog.
++  //
++  // Cycle 338 established the dialog is drawn by AC6 itself -- not the
++  // runtime's ImGui message box, not an XDBF string table -- and that no guest
++  // read fails or under-delivers, so the missing question string is resolved
++  // somewhere in guest code the runtime cannot see. This call is the one fixed
++  // point next to it in the trace, so its caller names the region to hook.
++  //
++  // lr - 4 is the call site, matching CurrentGuestCallerAddress in
++  // xboxkrnl_io.cpp; replicated here rather than exported, since one address is
++  // all this needs.
++  {
++    auto* ts = rex::runtime::ThreadState::Get();
++    auto* ctx = ts ? ts->context() : nullptr;
++    const uint32_t lr = ctx ? static_cast<uint32_t>(ctx->lr) : 0u;
++    REXKRNL_WARN("[ac6-dialog] XamShowDeviceSelectorUI called from guest 0x{:08X}",
++                 lr >= 4 ? lr - 4 : 0u);
++  }
+   return xeXamDispatchHeadless(
+       [device_id_ptr]() -> X_RESULT {
+         // NOTE: 0x00000001 is our dummy device ID from xam_content.cc
