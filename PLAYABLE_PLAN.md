@@ -138,11 +138,21 @@ Seule phase active. Rien d'autre ne peut avancer avant elle.
   `host_swap_presents` **3 -> 12**, `eop` **12 -> 34**, `wptr`
   **`0x43` -> `0x9D`**. Voir `reports/cycle-328-main-thread-blocked-in-a-socket-receive.md`
   et `patches/rexglue-guest-socket-privileged-port-and-fionbio-20260730.patch`.
-- **P0.2 ter — quelle boucle le thread principal exécute-t-il ? OUVERTE.** Il ne
-  dort plus, il tourne à 121 % sans soumettre de trame. C'est le premier cycle où
-  un profil `perf` par thread avec unwinding DWARF restreint au thread principal
-  a des échantillons à prendre — le cycle 326 avait montré cette mesure vide tant
-  que le thread dormait.
+- **P0.2 ter — quelle boucle le thread principal exécute-t-il ? FERMÉE au
+  cycle 329. Ce n'est pas une boucle : c'est une faute répétée.** `perf annotate`
+  sur la fonction chaude donne **100,00 % des échantillons sur une seule `ud2`**.
+  Le générateur a traduit un `bctr` de table de saut en `switch` sur l'**adresse**
+  chargée avec des cas ordinaux (`cmpl $0x2`) : la comparaison ne peut jamais
+  être vraie pour une adresse `>= 0x82000000`, donc seul le `default:
+  __builtin_trap()` est atteignable. Étendue : **9 aiguillages dégénérés sur 751**,
+  tous énumérés. Défaut aggravant, corrigé : le repli du gestionnaire de signaux
+  **retournait sans avancer le PC ni réémettre**, ce qui réexécute l'instruction
+  fautive indéfiniment — 121 % de CPU, aucun plantage, aucun message.
+  Voir `reports/cycle-329-guest-spins-on-a-ud2.md`.
+- **P0.2 quater — faire sauter ce `bctr`. OUVERTE, et c'est le blocage courant.**
+  Lire la table de saut à `0x8267A1D0`, énumérer ses cibles réelles, comprendre ce
+  qui distingue ces 9 aiguillages des 742 corrects, et traiter les 8 autres au
+  même passage. Coût : une régénération du corpus, pas un correctif d'exécution.
 - **P0.3 — attribuer et refermer.** Une fois la boucle nommée, remonter
   statiquement depuis le corpus généré à ce dont elle dépend. Régression isolée
   avant toute correction — règle 22 du plan racine. Un seul lot causal, effet

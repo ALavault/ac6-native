@@ -1,0 +1,73 @@
+== flat profile, main guest thread ==
+    19.11%  [k] 0xffffffffb10011b2
+     9.87%  [k] 0xffffffffb1001268
+     6.04%  [.] __imp__sub_8237C828
+     4.59%  [k] 0xffffffffb1001237
+     2.80%  [k] 0xffffffffb100009c
+     2.44%  [k] 0xffffffffb10015d8
+     2.04%  [.] rex::arch::ExceptionHandlerCallback(int, siginfo_t*, void*)
+     1.03%  [k] 0xffffffffb10011b9
+     0.94%  [k] 0xffffffffb13b43f6
+     0.92%  [k] 0xffffffffb13b6d01
+     0.77%  [k] 0xffffffffb100123a
+     0.75%  [k] 0xffffffffb13b5639
+     0.73%  [k] 0xffffffffb13b7354
+     0.64%  [k] 0xffffffffb100009f
+     0.58%  [k] 0xffffffffb271ba3e
+     0.47%  [k] 0xffffffffb27128da
+     0.41%  [k] 0xffffffffb27128c3
+     0.41%  [k] 0xffffffffb2732a31
+     0.38%  [k] 0xffffffffb27128ca
+     0.34%  [k] 0xffffffffb27128c0
+     0.34%  [k] 0xffffffffb10015db
+     0.33%  [k] 0xffffffffb1488ee3
+     0.33%  [k] 0xffffffffb27128d6
+     0.27%  [k] 0xffffffffb10011af
+     0.27%  [k] 0xffffffffb140be70
+     0.22%  [k] 0xffffffffb271ba20
+     0.21%  [k] 0xffffffffb10000a7
+     0.21%  [.] rex::runtime::MMIOHandler::ExceptionCallback(rex::arch::Exception*)
+     0.21%  [k] 0xffffffffb1488ede
+     0.20%  [k] 0xffffffffb144dfef
+
+== call graph, heaviest chains ==
+    20.21%  [k] 0xffffffffb10011b2
+            |          
+             --20.21%--__clone3 (inlined)
+                       start_thread
+                       ThreadStartRoutine (inlined)
+                       operator() (inlined)
+                       _M_invoke (inlined)
+                       __invoke_r<void, (lambda at /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/thirdparty/rexglue-sdk/src/system/xthread.cpp:322:49) &> (inlined)
+                       __invoke_impl<void, (lambda at /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/thirdparty/rexglue-sdk/src/system/xthread.cpp:322:49) &> (inlined)
+                       operator() (inlined)
+                       Execute (inlined)
+                       __imp__xstart
+                       __imp__sub_821D7D90
+                       __imp__sub_821D7A90
+                       __imp__sub_822AAFC8
+                       __imp__sub_821B04D0
+                       __imp__sub_820D8FE0
+                       __imp__sub_8237B4D8
+                       __imp__sub_8237CC58
+                       __imp__sub_8237CC58
+                       __imp__sub_8237C828
+                       |          
+                       |--10.12%--0xffffffffb10011b9
+                       |          
+                        --10.08%--__restore_rt
+                                  ExceptionHandlerCallback (inlined)
+                                  0xffffffffb10011b9
+     9.54%  [k] 0xffffffffb1001268
+            |          
+             --9.54%--__clone3 (inlined)
+                       start_thread
+                       ThreadStartRoutine (inlined)
+                       operator() (inlined)
+                       _M_invoke (inlined)
+                       __invoke_r<void, (lambda at /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/thirdparty/rexglue-sdk/src/system/xthread.cpp:322:49) &> (inlined)
+                       __invoke_impl<void, (lambda at /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/thirdparty/rexglue-sdk/src/system/xthread.cpp:322:49) &> (inlined)
+                       operator() (inlined)
+                       Execute (inlined)
+                       __imp__xstart
+                       __imp__sub_821D7D90
