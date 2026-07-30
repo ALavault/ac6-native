@@ -115,20 +115,25 @@ Seule phase active. Rien d'autre ne peut avancer avant elle.
   hypothèses côté hôte est close : ni interruptions, ni worker CP, ni décodage
   PM4, ni présentation ne retiennent quoi que ce soit.
   Voir `reports/cycle-325-p0-1-guest-stopped-submitting.md`.
-- **P0.2 — sur quoi les threads invités attendent-ils ? OUVERTE, prémisse
-  corrigée au cycle 326.** La question du cycle 325 — « quel code invité
-  boucle ? » — était fausse : le profil `perf` montre que les threads invités
-  cumulent **~9 %** du CPU, et que 56 % est le thread **hôte** `Audio Worker`
-  sondant à 1 ms dans `WaitMultiple`. **L'invité ne boucle pas, il attend.**
-  L'histogramme d'appels indirects est donc **retiré** : il aurait coûté une
-  recompilation complète du corpus pour mesurer un chemin froid.
-  Instrument juste : **recensement des attentes invitées**, dans l'arbre, derrière
-  le cvar de télémétrie — dans `NtWaitForSingleObjectEx`,
-  `NtWaitForMultipleObjectsEx` et `NtSignalAndWaitForSingleObjectEx`, tenir par
-  thread invité le handle attendu et l'instant d'entrée, puis émettre « thread T
-  attend le handle H depuis N ms ». Coût : une reconstruction SDK.
-  Identifier au même passage `XThread7087D6C0`, seul thread invité notable à 4,5 %.
-  Voir `reports/cycle-326-guest-is-idle-not-spinning.md`.
+- **P0.2 — sur quoi les threads invités attendent-ils ? FERMÉE au cycle 327.**
+  Recensement des attentes invitées dans l'arbre. Sur 70 s : **17 threads garés,
+  2 vivants**. Sept garés ont `waits=1` — entrés une fois au démarrage, jamais
+  revenus — dont six sur des handles distincts régulièrement espacés
+  (`F8000030/3C/48/54/5C/74`), signature d'un pool de travail jamais signalé.
+  `tid=0010` est le ping-pong des cycles 320-323 : `waits=26`, il a cyclé
+  26 fois puis s'est garé, et **un seul** thread y est garé là où le cycle 320 en
+  voyait deux — avec la valeur à `0` et le worker attendant `1`, c'est le
+  protocole **correct**. Résultat central : **le thread principal est absent du
+  recensement.** Voir `reports/cycle-327-guest-wait-census.md`.
+- **P0.2 bis — où est le thread principal ? OUVERTE.** Il n'est dans aucun des
+  trois exports `Nt*` instrumentés. Étendre le recensement à trois familles non
+  couvertes, une reconstruction SDK :
+  1. `KeWaitForSingleObject` / `KeWaitForMultipleObjects`, chemin noyau distinct ;
+  2. `KeDelayExecutionThread`, temporisation invisible comme attente d'objet ;
+  3. `RtlEnterCriticalSection` — **hypothèse la plus économique** : une section
+     critique retenue par l'un des quinze threads garés refermerait
+     l'explication.
+  Question adjacente, distincte : qui devait signaler les sept objets `waits=1` ?
 - **P0.3 — attribuer et refermer.** Une fois la boucle nommée, remonter
   statiquement depuis le corpus généré à ce dont elle dépend. Régression isolée
   avant toute correction — règle 22 du plan racine. Un seul lot causal, effet

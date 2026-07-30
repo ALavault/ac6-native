@@ -77,10 +77,18 @@ index 7afcd98d..f1c4f92f 100644
    // Xenia-specific VdSwap hook.
    // VdSwap will post this to tell us we need to swap the screen/fire an
 diff --git a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
-index e1916e69..3617cfa3 100644
+index e1916e69..3613c455 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/graphics_system.cpp
-@@ -45,6 +45,112 @@ REXCVAR_DEFINE_STRING(swap_post_effect, "none", "GPU", "Swap post effect: none,
+@@ -11,6 +11,7 @@
+ 
+ #include <rex/graphics/graphics_system.h>
+ 
++#include <string>
+ #include <algorithm>
+ #include <cctype>
+ #include <chrono>
+@@ -45,6 +46,121 @@ REXCVAR_DEFINE_STRING(swap_post_effect, "none", "GPU", "Swap post effect: none,
      .allowed({"none", "fxaa", "fxaa_extreme"})
      .lifecycle(rex::cvar::Lifecycle::kRequiresRestart);
  
@@ -104,6 +112,12 @@ index e1916e69..3617cfa3 100644
 +// These counters live in the tree so the measurement survives regeneration.
 +// They are unconditional increments of relaxed atomics on paths that already do
 +// far more work; only the emission is gated, on frame_loop_telemetry_interval.
++// Declared here rather than in a header: the census lives in the xboxkrnl
++// translation unit and this is its only consumer.
++namespace rex::kernel::xboxkrnl::wait_census {
++std::string Describe(size_t max_rows);
++}  // namespace rex::kernel::xboxkrnl::wait_census
++
 +namespace rex::graphics::frame_loop_telemetry {
 +namespace {
 +std::atomic<uint64_t> g_interrupts_by_source[2]{};
@@ -159,6 +173,9 @@ index e1916e69..3617cfa3 100644
 +      g_primary_executions.load(std::memory_order_relaxed),
 +      g_pm4_interrupt_packets.load(std::memory_order_relaxed),
 +      g_pm4_swap_packets.load(std::memory_order_relaxed));
++  // Which guest threads are parked, and for how long. Cycle 326 established the
++  // guest is waiting rather than looping, so this is the frontier observable.
++  REXGPU_INFO("[frame-loop] guest waits:{}", kernel::xboxkrnl::wait_census::Describe(24));
 +}
 +
 +void CountInterruptWithoutHandler() {
@@ -193,7 +210,7 @@ index e1916e69..3617cfa3 100644
  namespace {
  constexpr bool kStoreShaders = true;
  
-@@ -407,9 +513,12 @@ bool GraphicsSystem::GetLastSwapSubmission(system::GraphicsSwapSubmission* out_s
+@@ -407,9 +523,12 @@ bool GraphicsSystem::GetLastSwapSubmission(system::GraphicsSwapSubmission* out_s
  
  void GraphicsSystem::DispatchInterruptCallback(uint32_t source, uint32_t cpu) {
    if (!interrupt_callback_) {
@@ -206,7 +223,7 @@ index e1916e69..3617cfa3 100644
    auto thread = system::XThread::GetCurrentThread();
    assert_not_null(thread);
  
-@@ -448,6 +557,7 @@ void GraphicsSystem::SetGuestPresentPacing(double target_hz) {
+@@ -448,6 +567,7 @@ void GraphicsSystem::SetGuestPresentPacing(double target_hz) {
  }
  
  void GraphicsSystem::NotifyGuestPresent() {
