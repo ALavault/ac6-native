@@ -1,0 +1,77 @@
+diff --git a/thirdparty/rexglue-sdk/src/core/threading_posix.cpp b/thirdparty/rexglue-sdk/src/core/threading_posix.cpp
+index e10e30b4..6d43943f 100644
+--- a/thirdparty/rexglue-sdk/src/core/threading_posix.cpp
++++ b/thirdparty/rexglue-sdk/src/core/threading_posix.cpp
+@@ -13,6 +13,7 @@ static_assert(REX_PLATFORM_LINUX || REX_PLATFORM_MAC, "This file is POSIX-only")
+ 
+ #include <signal.h>
+ 
++#include <algorithm>
+ #include <atomic>
+ #include <array>
+ #include <cerrno>
+@@ -233,7 +234,7 @@ class PosixConditionBase {
+   virtual ~PosixConditionBase() = default;
+   virtual bool Signal() = 0;
+ 
+-  WaitResult Wait(std::chrono::milliseconds timeout) {
++  virtual WaitResult Wait(std::chrono::milliseconds timeout) {
+     bool executed;
+     auto predicate = [this] { return this->signaled(); };
+ #if REX_PLATFORM_LINUX
+@@ -392,9 +393,46 @@ class PosixCondition<Event> : public PosixConditionBase {
+       : signal_(initial_state), manual_reset_(manual_reset) {}
+   virtual ~PosixCondition() = default;
+ 
++  WaitResult Wait(std::chrono::milliseconds timeout) override {
++    if (manual_reset_) {
++      return PosixConditionBase::Wait(timeout);
++    }
++
++    std::unique_lock<std::mutex> lock(mutex_);
++    if (signal_) {
++      signal_ = false;
++      return WaitResult::kSuccess;
++    }
++
++    bool released = false;
++    waiters_.push_back(&released);
++    auto predicate = [&released] { return released; };
++    bool executed;
++    if (timeout == std::chrono::milliseconds::max()) {
++      cond_.wait(lock, predicate);
++      executed = true;
++    } else {
++      executed = cond_.wait_for(lock, timeout, predicate);
++    }
++
++    if (!executed) {
++      auto waiter = std::find(waiters_.begin(), waiters_.end(), &released);
++      if (waiter != waiters_.end()) {
++        waiters_.erase(waiter);
++      }
++      return WaitResult::kTimeout;
++    }
++    return WaitResult::kSuccess;
++  }
++
+   bool Signal() override {
+     auto lock = std::unique_lock<std::mutex>(mutex_);
+-    signal_ = true;
++    if (!manual_reset_ && !waiters_.empty()) {
++      *waiters_.front() = true;
++      waiters_.pop_front();
++    } else {
++      signal_ = true;
++    }
+     cond_.notify_all();
+     return true;
+   }
+@@ -413,6 +451,7 @@ class PosixCondition<Event> : public PosixConditionBase {
+   }
+   bool signal_;
+   const bool manual_reset_;
++  std::deque<bool*> waiters_;
+ };
+ 
+ template <>

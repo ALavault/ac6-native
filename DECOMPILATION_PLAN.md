@@ -90,6 +90,86 @@ bounded oracle, but is not required for static boundary repair.
 
 ## Active tranche
 
+**État au cycle 324 : le front est l'interruption GPU de source 1.**
+
+Le cycle 324 a trouvé pourquoi le runtime paraissait muet, et ce n'était pas les
+correctifs manquants soupçonnés au cycle 323 : `ac6_performance_mode` vaut
+**`true` par défaut** et force `log_level = "error"`. Une exécution nue émet
+3 lignes et un `ac6recomp.log` de 0 octet ; avec
+`--ac6_performance_mode=false`, la même exécution en journalise **716**. Toute
+mesure « le runtime ne fait rien » depuis le cycle 318 a été prise à l'aveugle.
+
+Mesure sur 90 s, télémétrie désormais dans l'arbre :
+
+| observable | valeur |
+| --- | ---: |
+| interruptions vblank (source 0) | 300 → **5 400**, ~60 Hz, régulières |
+| interruptions EOP (source 1) | **12, gelé** |
+| `guest_swap_requests` | **4** |
+| `host_swap_presents` | **3** |
+| présentation refusée, motif journalisé | **1** |
+| lectures `DATA00.PAC` | 129, **toutes en 1,1 s** |
+| lignes de journal après t+1,5 s, hors audio et télémétrie | **0** sur 88 s |
+
+Deux conséquences :
+
+1. Le cycle 316 concluait « les deux nombres sont égaux, il n'y a aucun défaut
+   côté hôte ». Vrai de son échantillon `2/2` ; ici c'est **4 demandées,
+   3 présentées, 1 refusée** avec un motif nommé. À requalifier.
+2. La branche **travail** du gestionnaire invité `sub_821E63B0` est réservée à la
+   **source 1** (cycle 317 §1). Elle a tourné **12 fois puis jamais plus**, alors
+   que la source 0 continue 5 400 fois. Les EOP naissent des soumissions GPU de
+   l'invité : l'état est une boucle refermée sur elle-même.
+
+**Question du cycle suivant : qu'est-ce qui a produit les 12 premières EOP, et
+pourquoi la 13e n'arrive-t-elle pas ?** Ne pas reprendre « pourquoi
+`sub_821EFBA0` ne dessine pas » : cette fonction est sur le chemin source 0, qui
+n'est pas la branche travail.
+
+Mesurer avec `tools/ac6-frame-loop-probe.sh <label> [secondes]`, qui passe
+`--ac6_performance_mode=false` (**obligatoire**), `--log_flush_interval=1`, active
+la télémétrie, borne réellement le processus invité et nettoie les fuites. Ne
+jamais passer `--log_file` : `Ac6recompAppCreate` l'écrase.
+
+Voir `reports/cycle-324-observability-restored-and-eop-frontier.md`.
+
+---
+
+**État au cycle 323 : le défaut de synchronisation est fermé, sans débloquer
+l'affichage.**
+
+Le cycle 323 ferme le défaut de synchronisation poursuivi des cycles 320 à 322.
+La valeur partagée à `0x82870828` a été **mesurée** — `0` sur les deux moitiés
+d'un mot de 64 bits, hors débogueur, mapping prouvé par ancre — ce qui renverse
+la conclusion du cycle 322 (« l'anomalie n'existe pas ») et rétablit celle du
+cycle 320. Le protocole est un ping-pong strict entre `sub_8233BA78` (attend
+`0`, pose `1`) et `sub_8233AD70` (attend `1`, pose `0`), annoncé une seule fois
+par changement d'état ; le voleur du signal est **le thread qui vient de le
+poser**, qui reconsomme son propre `NtSetEvent`. Interblocage reproduit
+**3/3 dès l'itération 1** par `scripts/ac6_condition_pingpong_regression.cpp`,
+corrigé par
+`patches/rexglue-auto-reset-event-nt-ordered-release-20260730.patch`.
+
+**La correction ne débloque pas la présentation.** Le front reste celui du
+cycle 317 §5 : la machine à états tourne dans un mode qui ne dessine pas.
+
+Le cycle 323 a aussi trouvé que les chiffres qui structurent les cycles 316 et
+317 venaient de correctifs d'instrumentation **archivés et non appliqués**, donc
+qu'une exécution nue rapportait `0` partout sans le signaler. C'est corrigé
+durablement : les compteurs vivent maintenant dans l'arbre, dans
+`rex::graphics::frame_loop_telemetry`, et émettent une ligne unique toutes les
+N interruptions vblank sous le cvar `frame_loop_telemetry_interval`
+(`0` = silencieux, défaut). Ils survivent donc aux régénérations.
+
+Mesurer avec `tools/ac6-frame-loop-probe.sh <label> [secondes]`, qui active la
+télémétrie, échantillonne l'état invité, borne réellement le processus invité et
+nettoie les fuites. Ne jamais passer `--log_file` ni `--log_level` au runtime :
+`Ac6recompAppCreate` écrase `log_file` et ne monte le niveau à `debug` que si
+`log_level` est resté par défaut, donc chacun de ces drapeaux **réduit** ce qui
+est enregistré.
+
+Voir `reports/cycle-323-self-consumed-wake-and-contamination-sweep.md`.
+
 **État au cycle 313 : le runtime tourne en continu et présente des images.**
 
 Le blocage de démarrage poursuivi des cycles 308 à 312 tenait à **une ligne de

@@ -1,0 +1,6 @@
+--- a/ac6recomp_config.toml
++++ b/ac6recomp_config.toml
+@@
+-address = 0x821F05F8
++address = 0x821F05BC
+ name = "ac6PresentTimingHook"

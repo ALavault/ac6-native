@@ -16,7 +16,8 @@ set -uo pipefail
 
 REF=/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference
 REX="$REF/thirdparty/rexglue-sdk/out/linux-amd64/rexglue"
-WORK="${CLAUDE_JOB_DIR}/tmp/ac6-loop"
+LEAKS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ac6-clean-runtime-leaks.sh"
+WORK="${CLAUDE_JOB_DIR:-/tmp/ac6-$(id -u)}/tmp/ac6-loop"
 WORKCFG="$WORK/ac6.toml"
 LOG="$WORK/loop.log"
 MAX="${1:-12}"
@@ -65,8 +66,29 @@ for i in $(seq 1 "$MAX"); do
   # 3. Decide whether it still aborts using a DIRECT run first. gdb on this
   # 168 MB LTO binary can spend minutes loading symbols, and an inconclusive
   # gdb log (no SIGABRT line, no backtrace) previously read as false success.
-  ( cd "$REF" && timeout 90 xvfb-run -a ./out/build/linux-amd64-runtime-localdev/ac6recomp \
-      >"$WORK/direct.$i.log" 2>&1 )
+  #
+  # `timeout N xvfb-run -a <exe>` does NOT bound the guest: timeout signals the
+  # xvfb-run shell script, and ac6recomp is its grandchild, so the guest keeps
+  # running with the loop's exit code taken from the wrapper. Cycle 323 found a
+  # gdb from this loop still alive after 3 days with a zombie ac6recomp child,
+  # and 28 orphaned 4.8 GB guest-memory reservations holding 9.8 GiB of tmpfs.
+  # Bound the process group instead, and reap what the kill orphans.
+  bounded_run() {  # bounded_run <seconds> <logfile> <command...>
+    local secs="$1" logfile="$2"; shift 2
+    ( cd "$REF" && setsid "$@" >"$logfile" 2>&1 ) &
+    local wrapper=$! rc=0
+    ( sleep "$secs"; kill -KILL -- "-$(ps -o pgid= -p "$wrapper" 2>/dev/null | tr -d ' ')" 2>/dev/null ) &
+    local watchdog=$!
+    wait "$wrapper"; rc=$?
+    kill "$watchdog" 2>/dev/null
+    pkill -KILL -f "linux-amd64-runtime-localdev/ac6recomp" 2>/dev/null
+    pkill -KILL -u "$(id -u)" -f "Xvfb .*-auth /tmp/xvfb-run\." 2>/dev/null
+    "$LEAKS" >>"$LOG" 2>&1
+    return $rc
+  }
+
+  bounded_run 90 "$WORK/direct.$i.log" \
+    xvfb-run -a ./out/build/linux-amd64-runtime-localdev/ac6recomp
   drc=$?
   if [ $drc -ne 134 ]; then
     log "runtime no longer aborts (direct exit=$drc). STOP -- verify manually."
@@ -76,8 +98,9 @@ for i in $(seq 1 "$MAX"); do
 
   # It does abort: get the frame. Generous timeout for symbol loading, and the
   # log must actually contain a backtrace or we cannot trust it.
-  ( cd "$REF" && timeout 600 xvfb-run -a gdb -batch -ex run -ex "bt 8" \
-      --args ./out/build/linux-amd64-runtime-localdev/ac6recomp >"$WORK/gdb.$i.log" 2>&1 )
+  bounded_run 600 "$WORK/gdb.$i.log" \
+    xvfb-run -a gdb -batch -ex run -ex "bt 8" \
+      --args ./out/build/linux-amd64-runtime-localdev/ac6recomp
   if ! grep -qE '^#[0-9]' "$WORK/gdb.$i.log"; then
     log "gdb produced no backtrace (inconclusive, not success). STOP."
     exit 4

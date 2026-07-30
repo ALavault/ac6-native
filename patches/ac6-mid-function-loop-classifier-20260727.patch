@@ -1,0 +1,45 @@
+diff --git a/ac6recomp_config.toml b/ac6recomp_config.toml
+index 2411fbc6..d99d9e01 100644
+--- a/ac6recomp_config.toml
++++ b/ac6recomp_config.toml
+@@ -1482,7 +1482,6 @@ memmove_s = 0x823809F0
+ 0x821220B8 = { name = "rex_sub_821220B8" }
+ 0x82122188 = { name = "rex_sub_82122188" }
+ 0x82122250 = { name = "rex_sub_82122250" }
+-0x82122398 = { name = "rex_sub_82122398" }
+ 0x821224F8 = { name = "rex_sub_821224F8" }
+ 0x821226D8 = { name = "rex_sub_821226D8" }
+ 0x82122728 = { name = "rex_sub_82122728" }
+@@ -7496,6 +7496,7 @@ memmove_s = 0x823809F0
+ 0x8233C328 = { name = "rex_sub_8233C328" }
+ 0x8233C338 = { name = "rex_sub_8233C338" }
+ 0x8233C3B8 = { name = "rex_sub_8233C3B8" }
++0x8233C3C8 = { name = "rex_sub_8233C3C8" }
+ 0x8233C418 = { name = "rex_sub_8233C418" }
+ 0x8233C4A0 = { name = "rex_sub_8233C4A0" }
+ 0x8233C4E8 = { name = "rex_sub_8233C4E8" }
+@@ -9088,7 +9089,6 @@ memmove_s = 0x823809F0
+ 0x8237FB90 = { name = "rex_sub_8237FB90" }
+ 0x8237FBE8 = { name = "rex_sub_8237FBE8" }
+ 0x8237FCD8 = { name = "rex_sub_8237FCD8" }
+-0x8237FD20 = { name = "rex_sub_8237FD20" }
+ 0x8237FD28 = { name = "rex_sub_8237FD28" }
+ 0x8237FE10 = { name = "rex_sub_8237FE10" }
+ 0x8237FF40 = { name = "rex_sub_8237FF40" }
+diff --git a/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp b/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp
+index c2b23817..d0e7197e 100644
+--- a/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp
++++ b/thirdparty/rexglue-sdk/src/codegen/builders/context.cpp
+@@ -253,7 +253,11 @@ void BuilderContext::emit_conditional_branch(bool not_, std::string_view cond) {
+ 
+   // Use classifyTarget for consistent branch classification
+   // false = branch instruction (not a call), so own-base means loop back
+-  auto kind = graph().classifyTarget(target, base, false);
++  const bool targetInBlock =
++      std::ranges::any_of(fn.blocks(), [target](const auto& block) { return block.contains(target); });
++  auto kind = target == fn.base() || targetInBlock
++                  ? TargetKind::InternalLabel
++                  : graph().classifyTarget(target, base, false);
+ 
+   switch (kind) {
+     case TargetKind::InternalLabel:

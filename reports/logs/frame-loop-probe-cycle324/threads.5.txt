@@ -1,0 +1,73 @@
+sample=5 epoch=1785410175
+  3716749 ac6recomp ticks=1486 wchan=poll_schedule_timeout.constprop.0
+  3716750 ac6recomp ticks=485 wchan=0
+  3716751 [pango] fontcon ticks=1 wchan=futex_do_wait
+  3716753 pool-spawner ticks=0 wchan=futex_do_wait
+  3716754 gmain ticks=0 wchan=poll_schedule_timeout.constprop.0
+  3716755 gdbus ticks=0 wchan=poll_schedule_timeout.constprop.0
+  3716756 ac6recomp ticks=0 wchan=futex_do_wait
+  3716757 XMA Decoder ticks=0 wchan=futex_do_wait
+  3716758 Audio Worker ticks=3916 wchan=0
+  3716759 ac6recomp ticks=0 wchan=futex_do_wait
+  3716760 [vkcf] Analysis ticks=1 wchan=futex_do_wait
+  3716761 [vkrt] Analysis ticks=0 wchan=futex_do_wait
+  3716762 [vkps] Update ticks=6 wchan=futex_do_wait
+  3716763 ac6recomp ticks=12 wchan=futex_do_wait
+  3716764 GPU Commands (F ticks=0 wchan=futex_do_wait
+  3716765 GPU VSync (F800 ticks=0 wchan=hrtimer_nanosleep
+  3716766 Kernel Dispatch ticks=0 wchan=futex_do_wait
+  3716767 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716768 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716769 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716770 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716771 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716772 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716773 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716774 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716775 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716776 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716777 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716778 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716779 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716780 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716781 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716782 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716783 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716784 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716785 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716786 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716787 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716788 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716789 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716790 Vulkan Pipeline ticks=0 wchan=futex_do_wait
+  3716795 Main XThread (F ticks=0 wchan=__skb_wait_for_more_packets
+  3716796 Vulkan Storage  ticks=0 wchan=futex_do_wait
+  3716797 ac6recomp ticks=0 wchan=futex_do_wait
+  3716798 XThread92FFE6C0 ticks=0 wchan=futex_do_wait
+  3716799 XThread91FFD6C0 ticks=0 wchan=futex_do_wait
+  3716800 XThread7FFFF6C0 ticks=0 wchan=futex_do_wait
+  3716801 XThread7EFFE6C0 ticks=0 wchan=futex_do_wait
+  3716802 XThread7DFFD6C0 ticks=0 wchan=futex_do_wait
+  3716803 XThread6BFFF6C0 ticks=12 wchan=futex_do_wait
+  3716804 XThread6AFFE6C0 ticks=0 wchan=futex_do_wait
+  3716805 XThread69FFD6C0 ticks=0 wchan=futex_do_wait
+  3716806 XThread5BFFF6C0 ticks=10 wchan=futex_do_wait
+  3716807 XThread5AFFE6C0 ticks=0 wchan=futex_do_wait
+  3716808 XThread59FFD6C0 ticks=110 wchan=futex_do_wait
+  3716809 XThread4BFFF6C0 ticks=0 wchan=futex_do_wait
+  3716811 XThread4AFFE6C0 ticks=0 wchan=futex_do_wait
+  3716813 XThread49FFD6C0 ticks=0 wchan=futex_do_wait
+  3716816 XThread3BFFF6C0 ticks=5 wchan=0
+  3716817 XThread3AFFE6C0 ticks=0 wchan=futex_do_wait
+  3716820 XThread39FFD6C0 ticks=0 wchan=futex_do_wait
+  3716919 XThread2887D6C0 ticks=259 wchan=futex_do_wait
+  3716922 module-rt ticks=0 wchan=ep_poll
+  3716923 SDLPwAudioPlug ticks=0 wchan=ep_poll
+  3716926 module-rt ticks=0 wchan=ep_poll
+  3716929 module-rt ticks=0 wchan=ep_poll
+  3716930 SDLAudioP15 ticks=15 wchan=ep_poll
+  3716938 XThread2787C6C0 ticks=21 wchan=hrtimer_nanosleep
+  3716940 XThread2687B6C0 ticks=92 wchan=hrtimer_nanosleep
+  3716942 XThread2587A6C0 ticks=20 wchan=hrtimer_nanosleep
+  3716986 XThreadFFFFF6C0 ticks=17 wchan=futex_do_wait
+  3717219 XThreadFEFFE6C0 ticks=0 wchan=futex_do_wait
