@@ -1,0 +1,200 @@
+diff --git a/thirdparty/rexglue-sdk/src/system/xsocket.cpp b/thirdparty/rexglue-sdk/src/system/xsocket.cpp
+index 903a29a4..dca82c23 100644
+--- a/thirdparty/rexglue-sdk/src/system/xsocket.cpp
++++ b/thirdparty/rexglue-sdk/src/system/xsocket.cpp
+@@ -3,9 +3,12 @@
+  * Copyright (c) 2026 Tom Clay. All rights reserved.
+  */
+ 
++#include <cerrno>
+ #include <cstring>
+ 
+ #include <rex/kernel/xam/module.h>
++#include <rex/logging.h>
++#include <rex/types.h>
+ #include <rex/platform.h>
+ #include <rex/system/kernel_state.h>
+ #include <rex/system/xsocket.h>
+@@ -20,13 +23,78 @@
+ #include <WS2tcpip.h>
+ #else
+ #include <arpa/inet.h>
++#include <fcntl.h>
+ #include <netinet/in.h>
+ #include <netinet/ip.h>
++#include <sys/ioctl.h>
+ #include <sys/socket.h>
+ #endif
+ 
+ namespace rex::system {
+ 
++// ---------------------------------------------------------------------------
++// Host divergences on the guest socket path.
++//
++// AC6's main guest thread was measured parked forever in
++// recvfrom(fd, buf, 1281, 0, ...) at 0% CPU, which is why it never appeared in
++// the Nt* wait census: a socket receive is not an object wait. Three separate
++// host divergences stack up on that path, and each one hides the next.
++//
++// 1. Privileged ports. The guest binds UDP port 999. The Xbox 360 has no
++//    privileged-port rule; Linux refuses any bind below
++//    net.ipv4.ip_unprivileged_port_start (1024 by default) with EACCES unless
++//    the process holds CAP_NET_BIND_SERVICE. The bind therefore failed, the
++//    guest received on an unbound socket, and no datagram could ever arrive.
++//
++//    The fix must not require privilege: the deliverable is an executable an
++//    ordinary user runs. So the real port is tried first -- correct when the
++//    host does allow it, e.g. with the sysctl lowered -- and only on EACCES is
++//    the port shifted into the unprivileged range. The shift is applied
++//    identically to outbound traffic so a title that talks to itself over
++//    loopback still matches.
++//
++// 2. Winsock ioctl numbers. Once the bind succeeds the guest goes on to call
++//    ioctlsocket(s, FIONBIO, &1) -- a call it never reached while the bind was
++//    failing. FIONBIO on the 360 is the Winsock value 0x8004667E; Linux's is
++//    0x5421, and socket_ioctl passed the guest's number straight through, so
++//    the request could not take effect.
++//
++// 3. Endianness of the ioctl argument. The guest is big-endian PPC, so its
++//    "1" arrives as 0x01000000. Read as a host word it is neither 0 nor 1, and
++//    any implementation comparing against 1 would take the wrong branch.
++//
++// Measured effect of correcting all three, 60 s headless runs, against the
++// same binary with them uncorrected:
++//
++//     main guest thread   0.0% CPU parked in recvfrom  ->  running
++//     host_swap_presents  3                            ->  12
++//     guest_swap_requests 4                            ->  12
++//     wptr_updates        20                           ->  50
++//     ring wptr           0x43                         ->  0x9D
++//
++// The frame loop still stops later, for a different reason; this removes one
++// blocker, it does not open the P0 gate.
++namespace {
++
++// Chosen to be above the ephemeral range's usual floor and to leave the guest
++// port recoverable by subtraction when reading a trace.
++constexpr uint16_t kPrivilegedPortShift = 40000;
++
++bool IsPrivilegedPort(uint16_t host_order_port) {
++  return host_order_port != 0 && host_order_port < 1024;
++}
++
++uint16_t ShiftPrivilegedPort(uint16_t host_order_port) {
++  return static_cast<uint16_t>(host_order_port + kPrivilegedPortShift);
++}
++
++// Whether a privileged bind has already been observed to fail in this process.
++// Set by Bind, read by SendTo/Connect so outbound traffic follows the same
++// mapping the bind actually used, rather than guessing per call.
++bool g_privileged_ports_denied = false;
++
++}  // namespace
++
+ XSocket::XSocket(KernelState* kernel_state) : XObject(kernel_state, kObjectType) {}
+ 
+ XSocket::XSocket(KernelState* kernel_state, uint64_t native_handle)
+@@ -85,6 +153,47 @@ X_STATUS XSocket::SetOption(uint32_t level, uint32_t optname, void* optval_ptr,
+ }
+ 
+ X_STATUS XSocket::IOControl(uint32_t cmd, uint8_t* arg_ptr) {
++#if !REX_PLATFORM_WIN32
++  // Winsock ioctl command numbers are not Linux ioctl command numbers, and the
++  // argument arrives as big-endian guest data. Passing either through
++  // unchanged silently does nothing, which is how a title that asked for a
++  // non-blocking socket ends up blocking forever on a receive.
++  constexpr uint32_t kWinsockFionbio = 0x8004667Eu;
++  constexpr uint32_t kWinsockFionread = 0x4004667Fu;
++
++  if (cmd == kWinsockFionbio) {
++    uint32_t guest_value = 0;
++    if (arg_ptr) {
++      std::memcpy(&guest_value, arg_ptr, sizeof(guest_value));
++    }
++    // Guest is big-endian PPC: its 1 arrives as 0x01000000.
++    const bool enable = rex::byte_swap(guest_value) != 0;
++
++    int flags = fcntl(static_cast<int>(native_handle_), F_GETFL, 0);
++    if (flags < 0) {
++      return X_STATUS_UNSUCCESSFUL;
++    }
++    const int updated = enable ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK);
++    if (fcntl(static_cast<int>(native_handle_), F_SETFL, updated) < 0) {
++      return X_STATUS_UNSUCCESSFUL;
++    }
++    return X_STATUS_SUCCESS;
++  }
++
++  if (cmd == kWinsockFionread) {
++    int pending = 0;
++    if (rex::net::socket_ioctl(native_handle_, FIONREAD,
++                               reinterpret_cast<uint8_t*>(&pending)) < 0) {
++      return X_STATUS_UNSUCCESSFUL;
++    }
++    if (arg_ptr) {
++      const uint32_t guest_value = rex::byte_swap(static_cast<uint32_t>(pending));
++      std::memcpy(arg_ptr, &guest_value, sizeof(guest_value));
++    }
++    return X_STATUS_SUCCESS;
++  }
++#endif
++
+   int ret = rex::net::socket_ioctl(native_handle_, cmd, arg_ptr);
+   if (ret < 0) {
+     // TODO: Get last error
+@@ -105,11 +214,35 @@ X_STATUS XSocket::Connect(N_XSOCKADDR* name, int name_len) {
+ 
+ X_STATUS XSocket::Bind(N_XSOCKADDR_IN* name, int name_len) {
+   int ret = bind(native_handle_, (sockaddr*)name, name_len);
++
++#if !REX_PLATFORM_WIN32
++  // The guest port is what the title believes it bound; the host port may
++  // differ when the host refuses privileged ports. Try the guest's port first
++  // so a permissive host behaves exactly like the console.
++  const uint16_t guest_port = ntohs(name->sin_port);
++  if (ret < 0 && errno == EACCES && IsPrivilegedPort(guest_port)) {
++    N_XSOCKADDR_IN shifted = *name;
++    const uint16_t host_port = ShiftPrivilegedPort(guest_port);
++    shifted.sin_port = htons(host_port);
++    ret = bind(native_handle_, (sockaddr*)&shifted, name_len);
++    if (ret >= 0) {
++      g_privileged_ports_denied = true;
++      REXKRNL_WARN(
++          "XSocket::Bind: host refused privileged guest port {}; bound {} instead. The Xbox 360 "
++          "has no privileged-port rule, so this mapping keeps an unprivileged process behaving "
++          "like the console. Outbound traffic to privileged ports is shifted to match.",
++          guest_port, host_port);
++    }
++  }
++#endif
++
+   if (ret < 0) {
+     return X_STATUS_UNSUCCESSFUL;
+   }
+ 
+   bound_ = true;
++  // Deliberately the guest's port: everything the title observes must stay in
++  // guest terms, the mapping is a host detail.
+   bound_port_ = name->sin_port;
+ 
+   return X_STATUS_SUCCESS;
+@@ -220,6 +353,19 @@ int XSocket::SendTo(uint8_t* buf, uint32_t buf_len, uint32_t flags, N_XSOCKADDR_
+     nto.sin_addr.s_addr = to->sin_addr;
+     nto.sin_family = to->sin_family;
+     nto.sin_port = to->sin_port;
++
++#if !REX_PLATFORM_WIN32
++    // Only once a privileged bind has actually been refused, and only for the
++    // ports that refusal applies to, so a permissive host still sends exactly
++    // what the guest asked for. Without this a title that talks to itself over
++    // loopback would send to the guest port while listening on the shifted one.
++    if (g_privileged_ports_denied) {
++      const uint16_t guest_port = ntohs(nto.sin_port);
++      if (IsPrivilegedPort(guest_port)) {
++        nto.sin_port = htons(ShiftPrivilegedPort(guest_port));
++      }
++    }
++#endif
+   }
+ 
+   return sendto(native_handle_, reinterpret_cast<char*>(buf), buf_len, flags,

@@ -125,15 +125,24 @@ Seule phase active. Rien d'autre ne peut avancer avant elle.
   voyait deux — avec la valeur à `0` et le worker attendant `1`, c'est le
   protocole **correct**. Résultat central : **le thread principal est absent du
   recensement.** Voir `reports/cycle-327-guest-wait-census.md`.
-- **P0.2 bis — où est le thread principal ? OUVERTE.** Il n'est dans aucun des
-  trois exports `Nt*` instrumentés. Étendre le recensement à trois familles non
-  couvertes, une reconstruction SDK :
-  1. `KeWaitForSingleObject` / `KeWaitForMultipleObjects`, chemin noyau distinct ;
-  2. `KeDelayExecutionThread`, temporisation invisible comme attente d'objet ;
-  3. `RtlEnterCriticalSection` — **hypothèse la plus économique** : une section
-     critique retenue par l'un des quinze threads garés refermerait
-     l'explication.
-  Question adjacente, distincte : qui devait signaler les sept objets `waits=1` ?
+- **P0.2 bis — où est le thread principal ? FERMÉE au cycle 328.** Il n'était
+  dans aucun des trois candidats proposés : il était bloqué dans un **appel
+  système hôte**, `recvfrom(fd, buf, 1281, 0, ...)`, à **0,0 % de CPU**,
+  invisible à tout recensement interne au noyau invité. Mesuré depuis
+  `/proc/<pid>/task` — sans reconstruction — puis attribué à une **cascade de
+  trois divergences hôte** : le port privilégié 999 refusé par Linux (`EACCES`,
+  la 360 n'a pas cette règle), puis, une fois le `bind` réussi, le `FIONBIO`
+  Winsock transmis tel quel à `ioctl()`, puis l'argument big-endian de l'invité.
+  Corrigé dans `XSocket` sans aucun privilège requis. Effet mesuré sur deux
+  exécutions : thread principal **0,0 % bloqué -> 121 % actif**,
+  `host_swap_presents` **3 -> 12**, `eop` **12 -> 34**, `wptr`
+  **`0x43` -> `0x9D`**. Voir `reports/cycle-328-main-thread-blocked-in-a-socket-receive.md`
+  et `patches/rexglue-guest-socket-privileged-port-and-fionbio-20260730.patch`.
+- **P0.2 ter — quelle boucle le thread principal exécute-t-il ? OUVERTE.** Il ne
+  dort plus, il tourne à 121 % sans soumettre de trame. C'est le premier cycle où
+  un profil `perf` par thread avec unwinding DWARF restreint au thread principal
+  a des échantillons à prendre — le cycle 326 avait montré cette mesure vide tant
+  que le thread dormait.
 - **P0.3 — attribuer et refermer.** Une fois la boucle nommée, remonter
   statiquement depuis le corpus généré à ce dont elle dépend. Régression isolée
   avant toute correction — règle 22 du plan racine. Un seul lot causal, effet

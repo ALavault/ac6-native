@@ -1,0 +1,21 @@
+[ac6-net] interposer active: log=1 bt=1 nonblock=0
+[ac6-net] interposer active: log=1 bt=1 nonblock=0
+[ac6-net] socket(domain=2 type=2 proto=17) = 99
+[ac6-net] bind(fd=99 port=999) = -1
+[ac6-net] recvfrom(fd=99 len=1281 flags=0) entering
+[ac6-net] backtrace (first guest recvfrom), 15 frames:
+    #0  0x780a282cc4ed  /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/tools/ac6-net-interpose.so(+0x14ed) [0x780a282cc4ed]
+    #1  0x780a282cc7bf  /fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/tools/ac6-net-interpose.so(recvfrom+0x125) [0x780a282cc7bf]
+    #2  0x5b24b7599556  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x310556) [0x5b24b7599556]
+    #3  0x5b24b745b4e9  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x1d24e9) [0x5b24b745b4e9]
+    #4  0x5b24b7b92a97  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x909a97) [0x5b24b7b92a97]
+    #5  0x5b24b7ff13e3  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0xd683e3) [0x5b24b7ff13e3]
+    #6  0x5b24b7fec4a6  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0xd634a6) [0x5b24b7fec4a6]
+    #7  0x5b24b8299ef5  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x1010ef5) [0x5b24b8299ef5]
+    #8  0x5b24b829b2a5  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x10122a5) [0x5b24b829b2a5]
+    #9  0x5b24b8367b59  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x10deb59) [0x5b24b8367b59]
+    #10 0x5b24b75933c7  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x30a3c7) [0x5b24b75933c7]
+    #11 0x5b24b759573d  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x30c73d) [0x5b24b759573d]
+    #12 0x5b24b7573687  /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/out/build/linux-amd64-runtime-localdev/ac6recomp(+0x2ea687) [0x5b24b7573687]
+    #13 0x780a26aa407a  /usr/lib/x86_64-linux-gnu/libc.so.6(+0xa407a) [0x780a26aa407a]
+    #14 0x780a26b3772c  /usr/lib/x86_64-linux-gnu/libc.so.6(+0x13772c) [0x780a26b3772c]
