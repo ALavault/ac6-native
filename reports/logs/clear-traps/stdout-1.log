@@ -1,0 +1,5 @@
+Early boot logging initialized.
+[info] [core] Ac6recompAppCreate: graphics mode=hybrid_backend_fixes capture=false
+[info] [core] Ac6recompApp::Create
+[info] [core] Ac6recompApp constructor
+Aborted (core dumped)

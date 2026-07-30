@@ -1,0 +1,459 @@
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+-- xxHash build type: RelWithDebInfo
+-- Architecture: x86_64
+-- {fmt} version: 12.1.0
+-- Build type: RelWithDebInfo
+-- Build spdlog: 1.17.0
+-- Build type: RelWithDebInfo
+-- Generating install
+-- dynamic libasound -> libasound.so.2
+-- dynamic libjack -> libjack.so.0
+-- dynamic libpipewire-0.3 -> libpipewire-0.3.so.0
+-- dynamic libpulse -> libpulse.so.0
+-- dynamic libsndio -> libsndio.so.7
+-- dynamic libudev -> libudev.so.1
+-- Checking for one of the modules 'liburing-ffi'
+-- Checking for modules 'libunwind;libunwind-generic'
+--   Package 'libunwind' not found
+--   Package 'libunwind-generic' not found
+-- Checking for module 'libusb-1.0>=1.0.16'
+--   Package 'libusb-1.0' not found
+-- Could NOT find LibUSB (missing: LibUSB_LIBRARY LibUSB_INCLUDE_PATH) (found version "LibUSB_VERSION-NOTFOUND")
+-- 
+-- SDL3 was configured with the following options:
+-- 
+-- Platform: Linux-7.0.0-28-generic
+-- 64-bit:   TRUE
+-- Compiler: /usr/bin/clang-21
+-- Revision: SDL-3.5.0--128-NOTFOUND
+-- Vendor:   
+-- 
+-- Subsystems:
+--   Audio:    ON
+--   Video:    OFF
+--   GPU:      OFF
+--   Render:   OFF
+--   Camera:   OFF
+--   Joystick: ON
+--   Haptic:   OFF
+--   Hidapi:   ON
+--   Power:    OFF
+--   Sensor:   OFF
+--   Dialog:   ON
+--   Tray:     ON
+-- 
+-- Options:
+--   SDL_ALSA                    (Wanted: ON): ON
+--   SDL_ALSA_SHARED             (Wanted: ON): ON
+--   SDL_ALTIVEC                 (Wanted: OFF): OFF
+--   SDL_ARMNEON                 (Wanted: OFF): OFF
+--   SDL_ASAN                    (Wanted: OFF): OFF
+--   SDL_ASSEMBLY                (Wanted: ON): ON
+--   SDL_ASSERTIONS              (Wanted: auto): auto
+--   SDL_AVX                     (Wanted: ON): ON
+--   SDL_AVX2                    (Wanted: ON): ON
+--   SDL_AVX512F                 (Wanted: ON): ON
+--   SDL_BACKGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_CCACHE                  (Wanted: OFF): OFF
+--   SDL_CLANG_TIDY              (Wanted: OFF): OFF
+--   SDL_CLOCK_GETTIME           (Wanted: ON): ON
+--   SDL_COCOA                   (Wanted: OFF): OFF
+--   SDL_DBUS                    (Wanted: ON): ON
+--   SDL_DEPS_SHARED             (Wanted: ON): OFF
+--   SDL_DIRECTX                 (Wanted: OFF): OFF
+--   SDL_DISKAUDIO               (Wanted: OFF): OFF
+--   SDL_DLOPEN_NOTES            (Wanted: ON): ON
+--   SDL_DUMMYAUDIO              (Wanted: OFF): OFF
+--   SDL_DUMMYCAMERA             (Wanted: OFF): OFF
+--   SDL_DUMMYVIDEO              (Wanted: OFF): OFF
+--   SDL_EXAMPLES                (Wanted: OFF): OFF
+--   SDL_EXAMPLES_LINK_SHARED    (Wanted: OFF): OFF
+--   SDL_FOREGROUNDING_SIGNAL    (Wanted: OFF): OFF
+--   SDL_FRIBIDI                 (Wanted: OFF): OFF
+--   SDL_FRIBIDI_SHARED          (Wanted: OFF): OFF
+--   SDL_GCC_ATOMICS             (Wanted: ON): ON
+--   SDL_GPU_OPENXR              (Wanted: OFF): OFF
+--   SDL_HIDAPI                  (Wanted: ON): ON
+--   SDL_HIDAPI_JOYSTICK         (Wanted: ON): ON
+--   SDL_HIDAPI_LIBUSB           (Wanted: ON): OFF
+--   SDL_HIDAPI_LIBUSB_SHARED    (Wanted: ON): OFF
+--   SDL_IBUS                    (Wanted: ON): ON
+--   SDL_INSTALL                 (Wanted: ON): OFF
+--   SDL_INSTALL_TESTS           (Wanted: OFF): OFF
+--   SDL_JACK                    (Wanted: ON): ON
+--   SDL_JACK_SHARED             (Wanted: ON): ON
+--   SDL_KMSDRM                  (Wanted: OFF): OFF
+--   SDL_KMSDRM_SHARED           (Wanted: OFF): OFF
+--   SDL_LASX                    (Wanted: OFF): OFF
+--   SDL_LIBC                    (Wanted: ON): ON
+--   SDL_LIBICONV                (Wanted: OFF): OFF
+--   SDL_LIBTHAI                 (Wanted: OFF): OFF
+--   SDL_LIBTHAI_SHARED          (Wanted: OFF): OFF
+--   SDL_LIBUDEV                 (Wanted: ON): ON
+--   SDL_LIBURING                (Wanted: ON): OFF
+--   SDL_LSX                     (Wanted: OFF): OFF
+--   SDL_METAL                   (Wanted: OFF): OFF
+--   SDL_MMX                     (Wanted: ON): ON
+--   SDL_OFFSCREEN               (Wanted: ON): OFF
+--   SDL_OPENGL                  (Wanted: OFF): OFF
+--   SDL_OPENGLES                (Wanted: OFF): OFF
+--   SDL_OPENVR                  (Wanted: OFF): OFF
+--   SDL_OSS                     (Wanted: OFF): OFF
+--   SDL_PIPEWIRE                (Wanted: ON): ON
+--   SDL_PIPEWIRE_SHARED         (Wanted: ON): ON
+--   SDL_PTHREADS                (Wanted: ON): ON
+--   SDL_PTHREADS_SEM            (Wanted: ON): ON
+--   SDL_PULSEAUDIO              (Wanted: ON): ON
+--   SDL_PULSEAUDIO_SHARED       (Wanted: ON): ON
+--   SDL_RENDER_D3D              (Wanted: OFF): OFF
+--   SDL_RENDER_D3D11            (Wanted: OFF): OFF
+--   SDL_RENDER_D3D12            (Wanted: OFF): OFF
+--   SDL_RENDER_GPU              (Wanted: OFF): OFF
+--   SDL_RENDER_METAL            (Wanted: OFF): OFF
+--   SDL_RENDER_VULKAN           (Wanted: OFF): OFF
+--   SDL_ROCKCHIP                (Wanted: OFF): OFF
+--   SDL_RPATH                   (Wanted: ON): OFF
+--   SDL_RPI                     (Wanted: OFF): OFF
+--   SDL_SNDIO                   (Wanted: ON): ON
+--   SDL_SNDIO_SHARED            (Wanted: ON): ON
+--   SDL_SSE                     (Wanted: ON): ON
+--   SDL_SSE2                    (Wanted: ON): ON
+--   SDL_SSE3                    (Wanted: ON): ON
+--   SDL_SSE4_1                  (Wanted: ON): ON
+--   SDL_SSE4_2                  (Wanted: ON): ON
+--   SDL_SYSTEM_ICONV            (Wanted: ON): ON
+--   SDL_TESTS                   (Wanted: OFF): OFF
+--   SDL_TESTS_LINK_SHARED       (Wanted: OFF): OFF
+--   SDL_UNINSTALL               (Wanted: OFF): OFF
+--   SDL_VIRTUAL_JOYSTICK        (Wanted: ON): ON
+--   SDL_VIVANTE                 (Wanted: OFF): OFF
+--   SDL_VULKAN                  (Wanted: OFF): OFF
+--   SDL_WASAPI                  (Wanted: OFF): OFF
+--   SDL_WAYLAND                 (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR        (Wanted: OFF): OFF
+--   SDL_WAYLAND_LIBDECOR_SHARED (Wanted: OFF): OFF
+--   SDL_WAYLAND_SHARED          (Wanted: OFF): OFF
+--   SDL_X11                     (Wanted: OFF): OFF
+--   SDL_X11_SHARED              (Wanted: OFF): OFF
+--   SDL_X11_XCURSOR             (Wanted: OFF): OFF
+--   SDL_X11_XDBE                (Wanted: OFF): OFF
+--   SDL_X11_XFIXES              (Wanted: OFF): OFF
+--   SDL_X11_XINPUT              (Wanted: OFF): OFF
+--   SDL_X11_XRANDR              (Wanted: OFF): OFF
+--   SDL_X11_XSCRNSAVER          (Wanted: OFF): OFF
+--   SDL_X11_XSHAPE              (Wanted: OFF): OFF
+--   SDL_X11_XSYNC               (Wanted: OFF): OFF
+--   SDL_X11_XTEST               (Wanted: OFF): OFF
+--   SDL_XINPUT                  (Wanted: OFF): OFF
+-- 
+--  Build Shared Library: OFF
+--  Build Static Library: ON
+-- 
+-- Enabled backends:
+--   Video drivers: dummy
+--   Render drivers: 
+--   GPU drivers: disabled openxr
+--   Audio drivers: alsa(dynamic) jack(dynamic) pipewire(dynamic) pulseaudio(dynamic) sndio(dynamic)
+--   Joystick drivers: hidapi linux virtual
+--   Camera drivers: dummy pipewire(dynamic)
+-- 
+-- If something was not detected, although the libraries
+-- were installed, then make sure you have set the
+-- CMAKE_C_FLAGS and CMAKE_PREFIX_PATH CMake variables correctly.
+-- 
+CMake Deprecation Warning at thirdparty/rexglue-sdk/thirdparty/glslang/CMakeLists.txt:39 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+
+
+CMake Warning (dev) at thirdparty/rexglue-sdk/thirdparty/spirv-tools/CMakeLists.txt:237 (find_package):
+  Policy CMP0148 is not set: The FindPythonInterp and FindPythonLibs modules
+  are removed.  Run "cmake --help-policy CMP0148" for policy details.  Use
+  the cmake_policy command to set the policy and suppress this warning.
+
+Call Stack (most recent call first):
+  thirdparty/rexglue-sdk/thirdparty/glslang/CMakeLists.txt:239 (find_host_package)
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- ===========================================
+-- ReXGlue Configuration Summary:
+--   Platform: linux-amd64
+--   Compiler: Clang 21.1.8
+--   Configurations: 
+--   Output Dir: /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/out/linux-amd64
+--   C++ Standard: C++23
+--   Graphics: D3D12=OFF Vulkan=ON
+--   FidelityFX: OFF
+-- ===========================================
+-- Configuring done (1.3s)
+-- Generating done (0.3s)
+-- Build files have been written to: /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt
+[0/4] Re-checking globbed directories...
+[1/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/downmix_info.c.o
+[2/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/display.c.o
+[3/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/dovi_meta.c.o
+[4/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/error.c.o
+[5/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/hdr_dynamic_metadata.c.o
+[6/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/file.c.o
+[7/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/file_open.c.o
+[8/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/color_utils.c.o
+[9/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/cpu.c.o
+[10/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/blowfish.c.o
+[11/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/mastering_display_metadata.c.o
+[12/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/audio_fifo.c.o
+[13/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/adler32.c.o
+[14/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/float_dsp.c.o
+[15/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/fifo.c.o
+[16/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/encryption_info.c.o
+[17/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/hmac.c.o
+[18/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/crc.c.o
+[19/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/aes_ctr.c.o
+[20/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/base64.c.o
+[21/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/channel_layout.c.o
+[22/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/dict.c.o
+[23/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/lfg.c.o
+[24/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/des.c.o
+[25/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/buffer.c.o
+[26/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/hash.c.o
+[27/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/aes.c.o
+[28/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/intmath.c.o
+[29/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/pixelutils.c.o
+[30/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/fixed_dsp.c.o
+[31/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/bprint.c.o
+[32/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/murmur3.c.o
+[33/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/mathematics.c.o
+[34/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/cast5.c.o
+[35/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/hwcontext.c.o
+[36/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/random_seed.c.o
+[37/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/lls.c.o
+[38/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/rc4.c.o
+[39/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/stereo3d.c.o
+[40/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/spherical.c.o
+[41/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/log.c.o
+[42/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/avstring.c.o
+[43/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/threadmessage.c.o
+[44/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/eval.c.o
+[45/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/xga_font_data.c.o
+[46/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/slicethread.c.o
+[47/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/rational.c.o
+[48/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/frame.c.o
+[49/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/utils.c.o
+[50/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/md5.c.o
+[51/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/timecode.c.o
+[52/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/tea.c.o
+[53/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/film_grain_params.c.o
+[54/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/x86/fixed_dsp_init.c.o
+[55/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/tree.c.o
+[56/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/integer.c.o
+[57/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/video_enc_params.c.o
+[58/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/x86/lls_init.c.o
+[59/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/samplefmt.c.o
+[60/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/tx.c.o
+[61/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/parseutils.c.o
+[62/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/x86/imgutils_init.c.o
+[63/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/ac3_parser.c.o
+[64/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/adts_parser.c.o
+[65/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/mem.c.o
+[66/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/camellia.c.o
+[67/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/xtea.c.o
+[68/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/avpicture.c.o
+[69/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/dv_profile.c.o
+[70/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/allcodecs.c.o
+[71/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/bitstream_filter.c.o
+[72/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/bitstream_filters.c.o
+[73/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/codec_par.c.o
+[74/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/avdct.c.o
+[75/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/dirac.c.o
+[76/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mathtables.c.o
+[77/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/imgutils.c.o
+[78/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/qsv_api.c.o
+[79/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/bsf.c.o
+[80/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/codec_desc.c.o
+[81/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpeg12framerate.c.o
+[82/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/imgconvert.c.o
+[83/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/parsers.c.o
+[84/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mediacodec.c.o
+[85/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/twofish.c.o
+[86/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/xiph.c.o
+[87/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/pixdesc.c.o
+[88/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/avcodec.c.o
+[89/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/fdctdsp.c.o
+[90/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/bitstream.c.o
+[91/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/options.c.o
+[92/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/faandct.c.o
+[93/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/profiles.c.o
+[94/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/parser.c.o
+[95/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/avpacket.c.o
+[96/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/encode.c.o
+[97/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/raw.c.o
+[98/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodata.c.o
+[99/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/faanidct.c.o
+[100/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/jfdctfst.c.o
+[101/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/vorbis_parser.c.o
+[102/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudio.c.o
+[103/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodsp_data.c.o
+[104/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodecheader.c.o
+[105/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mdct_float.c.o
+[106/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodsp.c.o
+[107/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/sinewin.c.o
+[108/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mdct_fixed_32.c.o
+[109/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/idctdsp.c.o
+[110/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudio_parser.c.o
+[111/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/jfdctint.c.o
+[112/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/jrevdct.c.o
+[113/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/sha.c.o
+[114/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodec_common.c.o
+[115/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodsp_float.c.o
+[116/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/dct.c.o
+[117/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/sha512.c.o
+[118/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/rdft.c.o
+[119/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/null_bsf.c.o
+[120/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/wma.c.o
+[121/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/pthread.c.o
+[122/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/opt.c.o
+[123/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/dct32_float.c.o
+[124/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/x86/constants.c.o
+[125/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/aactab.c.o
+[126/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/x86/fft_init.c.o
+[127/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/x86/fdctdsp_init.c.o
+[128/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/ripemd.c.o
+[129/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/pthread_slice.c.o
+[130/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/avfft.c.o
+[131/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/x86/idctdsp_init.c.o
+[132/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/utils.c.o
+[133/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodsp_fixed.c.o
+[134/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/fft_init_table.c.o
+[135/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/dct32_fixed.c.o
+[136/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/fft_fixed_32.c.o
+[137/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/tx_float.c.o
+[138/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/x86/dct_init.c.o
+[139/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/x86/fdct.c.o
+[140/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/x86/mpegaudiodsp.c.o
+[141/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/avsscanf.c.o
+[142/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/decode.c.o
+[143/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/fft_float.c.o
+[144/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/simple_idct.c.o
+[145/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/wmadec.c.o
+[146/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/tx_double.c.o
+[147/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/pthread_frame.c.o
+[148/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavutil.dir/FFmpeg/libavutil/tx_int32.c.o
+[149/217] Linking C static library /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/out/linux-amd64/liblibavutilrd.a
+[150/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/wmaprodec.c.o
+[151/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodec_float.c.o
+[152/217] Building C object rexglue-sdk/thirdparty/CMakeFiles/libavcodec.dir/FFmpeg/libavcodec/mpegaudiodec_fixed.c.o
+[153/217] Linking C static library /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/out/linux-amd64/liblibavcodecrd.a
+[154/217] Building CXX object rexglue-sdk/src/native/ui/CMakeFiles/rexui.dir/__/__/ui/overlay/debug_overlay.cpp.o
+[155/217] Building CXX object rexglue-sdk/src/native/ui/CMakeFiles/rexui.dir/__/__/ui/overlay/build_stamp_overlay.cpp.o
+[156/217] Linking CXX static library /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/out/linux-amd64/librexuird.a
+[157/217] Building CXX object rexglue-sdk/src/native/audio/CMakeFiles/rexaudio.dir/xma/xma_decoder_backend.cpp.o
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/src/native/audio/xma/xma_decoder_backend.cpp:8:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/audio/xma/context.h:13:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/kernel.h:18:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/system/xio.h:15:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/memory.h:24:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/memory/ring_buffer.h:3:
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/memory/ring_buffer.h:85:12: warning: unused variable 'read' [-Wunused-variable]
+   85 |     size_t read = Read(reinterpret_cast<uint8_t*>(&imm), sizeof(T));
+      |            ^~~~
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/memory/ring_buffer.h:95:12: warning: unused variable 'read' [-Wunused-variable]
+   95 |     size_t read = Read(reinterpret_cast<uint8_t*>(&imm), sizeof(T));
+      |            ^~~~
+2 warnings generated.
+[158/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_config.cpp.o
+[159/217] Building CXX object rexglue-sdk/src/native/audio/CMakeFiles/rexaudio.dir/xma/decoder.cpp.o
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/src/native/audio/xma/decoder.cpp:8:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/audio/xma/context.h:13:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/kernel.h:18:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/system/xio.h:15:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/memory.h:24:
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/memory/ring_buffer.h:3:
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/memory/ring_buffer.h:85:12: warning: unused variable 'read' [-Wunused-variable]
+   85 |     size_t read = Read(reinterpret_cast<uint8_t*>(&imm), sizeof(T));
+      |            ^~~~
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/memory/ring_buffer.h:95:12: warning: unused variable 'read' [-Wunused-variable]
+   95 |     size_t read = Read(reinterpret_cast<uint8_t*>(&imm), sizeof(T));
+      |            ^~~~
+In file included from /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/src/native/audio/xma/decoder.cpp:9:
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/audio/xma/decoder.h:105:47: warning: unused parameter 'ppc_context' [-Wunused-parameter]
+  105 |   static uint32_t MMIOReadRegisterThunk(void* ppc_context, XmaDecoder* as, uint32_t addr) {
+      |                                               ^
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/native/audio/xma/decoder.h:108:44: warning: unused parameter 'ppc_context' [-Wunused-parameter]
+  108 |   static void MMIOWriteRegisterThunk(void* ppc_context, XmaDecoder* as, uint32_t addr,
+      |                                            ^
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/src/native/audio/xma/decoder.cpp:38:28: warning: unused parameter 'avcl' [-Wunused-parameter]
+   38 | void av_log_callback(void* avcl, int level, const char* fmt, va_list va) {
+      |                            ^
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/src/native/audio/xma/decoder.cpp:227:13: warning: comparison of integers of different signs: 'size_t' (aka 'unsigned long') and 'int' [-Wsign-compare]
+  227 |   if (index == -1) {
+      |       ~~~~~ ^  ~~
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/src/native/audio/xma/decoder.cpp:582:9: warning: unknown pragma ignored [-Wunknown-pragmas]
+  582 | #pragma warning(suppress : 4065)
+      |         ^
+7 warnings generated.
+[160/217] Linking CXX static library /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/out/linux-amd64/librexaudiord.a
+[161/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_init.cpp.o
+[162/217] Building CXX object CMakeFiles/ac6recomp.dir/src/main.cpp.o
+[163/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.6.cpp.o
+[164/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.11.cpp.o
+[165/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.13.cpp.o
+[166/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.3.cpp.o
+[167/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.2.cpp.o
+[168/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.5.cpp.o
+[169/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.0.cpp.o
+[170/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.12.cpp.o
+[171/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.8.cpp.o
+[172/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.15.cpp.o
+[173/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.7.cpp.o
+[174/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.16.cpp.o
+[175/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.10.cpp.o
+[176/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.1.cpp.o
+[177/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.4.cpp.o
+[178/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.19.cpp.o
+[179/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.20.cpp.o
+[180/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.17.cpp.o
+[181/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.24.cpp.o
+[182/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.14.cpp.o
+[183/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.9.cpp.o
+[184/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.22.cpp.o
+[185/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.21.cpp.o
+[186/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.26.cpp.o
+[187/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.23.cpp.o
+[188/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.25.cpp.o
+[189/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.18.cpp.o
+[190/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.27.cpp.o
+[191/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.28.cpp.o
+[192/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.29.cpp.o
+[193/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.30.cpp.o
+[194/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.32.cpp.o
+[195/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.33.cpp.o
+[196/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.31.cpp.o
+[197/217] Building CXX object CMakeFiles/ac6recomp.dir/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp.o
+[198/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.37.cpp.o
+[199/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.49.cpp.o
+[200/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.35.cpp.o
+[201/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.45.cpp.o
+[202/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.36.cpp.o
+[203/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.41.cpp.o
+[204/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.47.cpp.o
+[205/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.39.cpp.o
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/generated/ac6recomp_recomp.39.cpp:17376:3: warning: left operand of comma operator has no effect [-Wunused-value]
+ 17376 |         (ctx, base);
+       |          ^~~
+/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/generated/ac6recomp_recomp.39.cpp:17376:8: warning: expression result unused [-Wunused-value]
+ 17376 |         (ctx, base);
+       |               ^~~~
+2 warnings generated.
+[206/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.46.cpp.o
+[207/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.40.cpp.o
+[208/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.48.cpp.o
+[209/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.43.cpp.o
+[210/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.34.cpp.o
+[211/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.38.cpp.o
+[212/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.42.cpp.o
+[213/217] Building CXX object CMakeFiles/ac6recomp.dir/generated/ac6recomp_recomp.44.cpp.o
+[214/217] Linking CXX executable ac6recomp
