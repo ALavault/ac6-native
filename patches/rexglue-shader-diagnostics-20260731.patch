@@ -1,5 +1,5 @@
 diff --git a/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp b/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp
-index e3945188..038802ad 100644
+index e3945188..8cde0304 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp
 @@ -9,6 +9,13 @@
@@ -16,7 +16,7 @@ index e3945188..038802ad 100644
  #include <climits>
  #include <cmath>
  #include <memory>
-@@ -471,6 +478,23 @@ void SpirvShaderTranslator::ProcessVertexFetchInstruction(
+@@ -471,6 +478,24 @@ void SpirvShaderTranslator::ProcessVertexFetchInstruction(
        builder_->getBuildPoint()->addInstruction(std::move(composite_construct_op));
      }
    }
@@ -30,7 +30,8 @@ index e3945188..038802ad 100644
 +  // UI appears, the fetched colour was the problem; if not, the dependency is
 +  // not the cause. Off by default; a diagnostic, never a fix.
 +  if (instr.attributes.data_format == xenos::VertexFormat::k_8_8_8_8 &&
-+      REXCVAR_GET(ac6_force_white_vertex_colour)) {
++      REXCVAR_GET(ac6_force_white_vertex_colour) &&
++      current_shader().ucode_data_hash() == 0x472913F460D4B446ull) {
 +    const uint32_t component_count =
 +        rex::bit_count(uint32_t(instr.result.GetUsedResultComponents()));
 +    if (component_count >= 1 && component_count <= 4) {
@@ -40,7 +41,7 @@ index e3945188..038802ad 100644
    StoreResult(instr.result, result);
  }
  
-@@ -2071,6 +2095,21 @@ void SpirvShaderTranslator::ProcessTextureFetchInstruction(
+@@ -2071,6 +2096,27 @@ void SpirvShaderTranslator::ProcessTextureFetchInstruction(
      rex::bit_scan_forward(used_result_components, &result_component_index);
      result_vector = result[result_component_index];
    }
@@ -52,7 +53,13 @@ index e3945188..038802ad 100644
 +  // then appears as solid quads, the fault is in sampling or in DXT4/5 decode;
 +  // if it stays absent, neither factor is the cause and the product is not
 +  // where the layer is lost. Off by default; a diagnostic, never a fix.
-+  if (REXCVAR_GET(ac6_force_white_texture_sample)) {
++  if (REXCVAR_GET(ac6_force_white_texture_sample) &&
++      current_shader().ucode_data_hash() == 0x8F1C48BA92C8E43Eull) {
++    // Liveness control: prove the restriction fires before reading any result
++    // from it. Cycle 358 produced output identical to the unrestricted force,
++    // which is impossible if this branch is taken -- so it must be shown.
++    REXLOG_INFO("[ac6-forcetex] forcing white sample in ps={:016X}",
++                current_shader().ucode_data_hash());
 +    const uint32_t component_count =
 +        rex::bit_count(uint32_t(instr.result.GetUsedResultComponents()));
 +    if (component_count >= 1 && component_count <= 4) {
