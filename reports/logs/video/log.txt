@@ -1,0 +1,1177 @@
+[2026-07-31 10:45:39.889] [info] [core] [t533868] ac6recomp starting
+[2026-07-31 10:45:39.889] [info] [core] [t533868]   Game directory: /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/assets
+[2026-07-31 10:45:39.889] [info] [core] [t533868]   User data:      /home/lavaulta/.local/share/ac6recomp
+[2026-07-31 10:45:39.890] [info] [core] [t533868] Ac6recompApp::OnPreSetup
+[2026-07-31 10:45:39.890] [info] [core] [t533868] Ac6recompApp: selected Vulkan graphics backend
+[2026-07-31 10:45:39.897] [debug] [sys] [t533868] Installed MMIO handler for physical address translation
+[2026-07-31 10:45:39.897] [info] [sys] [t533868] FunctionDispatcher initialized
+[2026-07-31 10:45:39.897] [info] [core] [t533868] SDL: Using version 3.5.0
+[2026-07-31 10:45:39.897] [info] [core] [t533868] MnK input driver initialized
+[2026-07-31 10:45:39.897] [info] [sys] [t533868] Input system initialized
+[2026-07-31 10:45:39.897] [debug] [sys] [t533868] Added handle:F8000004 for N3rex6system7XObjectE
+[2026-07-31 10:45:39.898] [debug] [sys] [t533868] Added handle:F8000008 for N3rex6system7XObjectE
+[2026-07-31 10:45:39.900] [debug] [apu] [t533868] XMA: Registered MMIO handlers at 0x7FEA0000-0x7FEAFFFF
+[2026-07-31 10:45:39.902] [debug] [sys] [t533868] Added handle:F800000C for N3rex6system7XObjectE
+[2026-07-31 10:45:39.902] [debug] [sys] [t533868] XThreadF800000C (1) Stack: 70010000-70030000
+[2026-07-31 10:45:39.903] [info] [apu] [t533876] AudioRuntime worker started: backend=sdl scheduling=queue-depth-driven low_water=1 target=2 max=8 startup_spacing_ms=4 startup_max_lead_frames=2
+[2026-07-31 10:45:39.903] [info] [apu] [t533868] AudioSystem setup complete: runtime=AudioRuntime backend=sdl trace_telemetry=false trace_verbose=false mute=false
+[2026-07-31 10:45:39.903] [info] [sys] [t533868] Audio system initialized
+[2026-07-31 10:45:39.903] [info] [sys] [t533868]   Mounted /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/assets at \Device\Harddisk0\Partition1
+[2026-07-31 10:45:39.903] [debug] [fs] [t533868] Registered symbolic link: game: => \Device\Harddisk0\Partition1
+[2026-07-31 10:45:39.903] [debug] [fs] [t533868] Registered symbolic link: d: => \Device\Harddisk0\Partition1
+[2026-07-31 10:45:39.903] [debug] [sys] [t533868]   Registered symbolic links: game:, d:
+[2026-07-31 10:45:39.903] [debug] [sys] [t533868]   Registered NullDevice for \Device\Harddisk0\{{Partition0,Cache0,Cache1}}
+[2026-07-31 10:45:39.993] [info] [core] [t533868] Vulkan instance API version 1.4.341. Enabled layers and extensions:
+[2026-07-31 10:45:39.993] [info] [core] [t533868] * VK_KHR_surface
+[2026-07-31 10:45:39.993] [info] [core] [t533868] * VK_KHR_xcb_surface
+[2026-07-31 10:45:39.993] [info] [core] [t533868] * VK_EXT_debug_utils
+[2026-07-31 10:45:39.993] [info] [core] [t533868] * VK_KHR_portability_enumeration
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.994] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [debug] [gpu] [t533868] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 0 into new device 0 (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [debug] [gpu] [t533868] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 1 into new device 1 (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [debug] [gpu] [t533868] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 0 into new device 0 (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [debug] [gpu] [t533868] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 1 into new device 1 (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): linux_read_sorted_physical_devices: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Original order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits) (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      Sorted order: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [0] NVIDIA RTX PRO 4000 Blackwell   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):            [1] llvmpipe (LLVM 21.1.8, 256 bits)   (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [debug] [gpu] [t533868] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 0 into new device 0 (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [debug] [gpu] [t533868] Vulkan Verbose ({ General }, ID 0: Loader Message): Copying old device 1 into new device 1 (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_asahi.so due to not having any physical devices (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_gfxstream.so due to not having any physical devices (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.995] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_intel_hasvk.so due to not having any physical devices (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_nouveau.so due to not having any physical devices (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_intel.so due to not having any physical devices (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_radeon.so due to not having any physical devices (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Removing driver /usr/lib/x86_64-linux-gnu/libvulkan_virtio.so due to not having any physical devices (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [warning] [core] [t533868] Available Vulkan physical devices (use the 'vulkan_device' configuration variable to force a specific device):
+[2026-07-31 10:45:39.996] [warning] [core] [t533868] * 0: NVIDIA RTX PRO 4000 Blackwell
+[2026-07-31 10:45:39.996] [warning] [core] [t533868] * 1: llvmpipe (LLVM 21.1.8, 256 bits)
+[2026-07-31 10:45:39.996] [info] [core] [t533868] Vulkan device 'NVIDIA RTX PRO 4000 Blackwell': API 1.4.329, vendor 0x10DE, device 0x2C34, driver version 0x94D50000
+[2026-07-31 10:45:39.996] [info] [core] [t533868] Enabled Vulkan device extensions:
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * VK_KHR_swapchain
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * VK_EXT_custom_border_color
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * VK_EXT_fragment_shader_interlock
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * VK_EXT_memory_budget
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * VK_EXT_non_seamless_cube_map
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * VK_EXT_robustness2
+[2026-07-31 10:45:39.996] [info] [core] [t533868] Vulkan device properties and enabled features:
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * driverID: NvidiaProprietary
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * driverName: NVIDIA
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * driverInfo: 595.84
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * conformanceVersion: 1.4.3.3
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxImageDimension2D: 32768
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxImageDimension3D: 16384
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxImageDimensionCube: 32768
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxImageArrayLayers: 2048
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxStorageBufferRange: 4294967295
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxSamplerAllocationCount: 4000
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxPerStageDescriptorSamplers: 1048576
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxPerStageDescriptorStorageBuffers: 1048576
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxPerStageDescriptorSampledImages: 1048576
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxPerStageResources: 4294967295
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxVertexOutputComponents: 128
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxTessellationEvaluationOutputComponents: 128
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxGeometryInputComponents: 128
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxGeometryOutputComponents: 128
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxFragmentInputComponents: 128
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxFragmentCombinedOutputResources: 4294967295
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxSamplerAnisotropy: 16
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxViewportDimensions[0]: 32768
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxViewportDimensions[1]: 32768
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * minUniformBufferOffsetAlignment: 64
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * minStorageBufferOffsetAlignment: 16
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxFramebufferWidth: 32768
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxFramebufferHeight: 32768
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * framebufferColorSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * framebufferDepthSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * framebufferStencilSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * framebufferNoAttachmentsSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * sampledImageColorSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * sampledImageIntegerSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * sampledImageDepthSampleCounts: { 1 | 2 | 4 | 8 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * sampledImageStencilSampleCounts: { 1 | 2 | 4 | 8 | 16 }
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * standardSampleLocations: 1
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * optimalBufferCopyOffsetAlignment: 1
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * optimalBufferCopyRowPitchAlignment: 1
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * nonCoherentAtomSize: 64
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * robustBufferAccess
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * fullDrawIndexUint32
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * independentBlend
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * geometryShader
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * tessellationShader
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * sampleRateShading
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * depthClamp
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * fillModeNonSolid
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * samplerAnisotropy
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * occlusionQueryPrecise
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * vertexPipelineStoresAndAtomics
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * fragmentStoresAndAtomics
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * shaderClipDistance
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * shaderCullDistance
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * sparseBinding
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * sparseResidencyBuffer
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * samplerMirrorClampToEdge
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * uniformBufferStandardLayout
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * scalarBlockLayout
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * shaderDemoteToHelperInvocation
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * dynamicRendering
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * constantAlphaColorBlendFactors
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * imageViewFormatReinterpretation
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * imageViewFormatSwizzle
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * pointPolygons
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * separateStencilMaskRef
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * shaderSampleRateInterpolationFunctions
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * shaderSignedZeroInfNanPreserveFloat32: 1
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * shaderDenormFlushToZeroFloat32: 0
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * shaderRoundingModeRTEFloat32: 1
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * fragmentShaderSampleInterlock
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * fragmentShaderPixelInterlock
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * nonSeamlessCubeMap
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * customBorderColors
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * customBorderColorWithoutFormat
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * maxCustomBorderColorSamplers: 4000
+[2026-07-31 10:45:39.996] [info] [core] [t533868] * nullDescriptor
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): Failed to find vkGetDeviceProcAddr in layer "/usr/lib/x86_64-linux-gnu/libVkLayer_MESA_device_select.so" (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message): vkCreateDevice layer callstack setup to: (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):    <Application> (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      || (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):    <Loader> (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):      || (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.996] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):    <Device> (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:39.997] [info] [gpu] [t533868] Vulkan Info ({ General }, ID 0: Loader Message):        Using "NVIDIA RTX PRO 4000 Blackwell" with driver: "/usr/lib/x86_64-linux-gnu/libGLX_nvidia.so.595.84" (object 0: Instance 0x57fd2f4816c0)
+[2026-07-31 10:45:40.210] [debug] [sys] [t533868] Added handle:F8000010 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.211] [debug] [sys] [t533868] XThreadF8000010 (2) Stack: 70050000-70070000
+[2026-07-31 10:45:40.211] [info] [sys] [t533894] XThread::Execute thid 2 (handle=F8000010, 'GPU Commands (F8000010)', native=0DFFD6C0, <host>)
+[2026-07-31 10:45:40.211] [debug] [sys] [t533868] Added handle:F8000014 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.211] [debug] [sys] [t533868] XThreadF8000014 (3) Stack: 70090000-700B0000
+[2026-07-31 10:45:40.211] [info] [sys] [t533868] GPU system initialized (presentation=true)
+[2026-07-31 10:45:40.211] [info] [sys] [t533868] Runtime initialized successfully
+[2026-07-31 10:45:40.211] [debug] [sys] [t533868] Initializing function table at 82AA0000, size 006CFFF0 for code 82090000-823E7FF8 (+00010000 thunk reserve)
+[2026-07-31 10:45:40.211] [info] [sys] [t533895] XThread::Execute thid 3 (handle=F8000014, 'GPU VSync (F8000014)', native=F7FFF6C0, <host>)
+[2026-07-31 10:45:40.217] [info] [core] [t533868] Function table initialized for module: code=82090000-823E7FF8, image=82000000-82AA0000
+[2026-07-31 10:45:40.222] [debug] [sys] [t533868] Registered 23784 recompiled functions
+[2026-07-31 10:45:40.222] [debug] [sys] [t533868] Runtime setup for recompiled code complete (code: 82090000-823E7FF8)
+[2026-07-31 10:45:40.222] [info] [sys] [t533868] Loading XEX image: game:\default.xex
+[2026-07-31 10:45:40.222] [debug] [sys] [t533868] Added handle:F8000018 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] created symbols for import library xam with 88 imports
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x158 (XboxKrnlVersion) -> 0x30009000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x1c0 (VdGpuClockInMHz) -> 0xffcac000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x1c1 (VdHSIOCalibrationLock) -> 0xffcab000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x1be (VdGlobalDevice) -> 0xffcae000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x266 (KeCertMonitorData) -> 0x30003000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x193 (XexExecutableModuleHandle) -> 0x30006000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x1ae (ExLoadedCommandLine) -> 0x30008000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x59 (KeDebugMonitorData) -> 0x30002000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0x1b (ExThreadObjectType) -> 0x30000000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] Patched variable import xboxkrnl:0xad (KeTimeStampBundle) -> 0x3000a000
+[2026-07-31 10:45:40.281] [debug] [core] [t533868] created symbols for import library xboxkrnl with 163 imports
+[2026-07-31 10:45:40.282] [debug] [sys] [t533868] Added handle:F800001C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.283] [debug] [sys] [t533868] XThreadF800001C (4) Stack: 700D0000-700F0000
+[2026-07-31 10:45:40.283] [debug] [sys] [t533868]   XEX image loaded successfully
+[2026-07-31 10:45:40.283] [info] [sys] [t533896] XThread::Execute thid 4 (handle=F800001C, 'Kernel Dispatch (F800001C)', native=F6FFE6C0, <host>)
+[2026-07-31 10:45:40.283] [info] [krnl] [t533868] rexcrt_heap: added segment guest=0x20000000-0x30000000 size=256MB
+[2026-07-31 10:45:40.283] [info] [krnl] [t533868] rexcrt_heap: initialized with 1 segment(s), capacity=255MB
+[2026-07-31 10:45:40.283] [info] [core] [t533868] Ac6recompApp::OnPostSetup
+[2026-07-31 10:45:40.283] [info] [core] [t533868] Ac6recompApp: Native frame boundary callback registered
+[2026-07-31 10:45:40.325] [info] [gpu] [t533894] VulkanTextureCache: Format k_Cr_Y1_Cb_Y0_REP (unsigned) is supported via a fallback format (using the Vulkan format 37 instead of the preferred 1000156000)
+[2026-07-31 10:45:40.325] [info] [gpu] [t533894] VulkanTextureCache: Format k_Y1_Cr_Y0_Cb_REP (unsigned) is supported via a fallback format (using the Vulkan format 37 instead of the preferred 1000156001)
+[2026-07-31 10:45:40.336] [warning] [core] [t533868] SDL GameControllerDB: file 'gamecontrollerdb.txt' does not exist.
+[2026-07-31 10:45:40.336] [info] [core] [t533868] SDL input driver initialized successfully
+[2026-07-31 10:45:40.390] [info] [core] [t533868] Ac6recompApp::OnCreateDialogs
+[2026-07-31 10:45:40.470] [info] [core] [t533868] VulkanPresenter: Created 1920x1080 swapchain with format 44, color space 0, presentation mode 0
+[2026-07-31 10:45:40.501] [info] [sys] [t533868] KernelState: Launching module...
+[2026-07-31 10:45:40.501] [debug] [sys] [t533868] Added handle:F8000020 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.502] [debug] [sys] [t533868] XThreadF8000020 (5) Stack: 70110000-70150000
+[2026-07-31 10:45:40.502] [debug] [sys] [t533868]   Module launched on thread ''
+[2026-07-31 10:45:40.502] [debug] [sys] [t533925] Execute thid 5 (handle=F8000020, 'Main XThread (F8000020)', native=870296C0)
+[2026-07-31 10:45:40.502] [info] [core] [t533868] Shader disk cache: initializing for title 4E4D07D1 at /fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/cache
+[2026-07-31 10:45:40.502] [error] [sys] [t533925] DeliverAPCs call #1 thid=5
+[2026-07-31 10:45:40.502] [error] [core] [t533925] XThread::Execute thid=5 start_address=0x821f5e90 start_context=0x00000000 xapi_startup=0x00000000
+[2026-07-31 10:45:40.502] [debug] [sys] [t533925] XThread::Execute - Calling function at 821F5E90
+[2026-07-31 10:45:40.507] [debug] [sys] [t533925] Added handle:F8000024 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.508] [debug] [sys] [t533925] Added handle:F8000028 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.508] [debug] [sys] [t533925] XThreadF8000028 (6) Stack: 70170000-701B0000
+[2026-07-31 10:45:40.509] [debug] [sys] [t533925] Added handle:F800002C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.509] [debug] [sys] [t533925] Added handle:F8000030 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.509] [debug] [sys] [t533925] Added handle:F8000034 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.509] [debug] [sys] [t533926] Execute thid 6 (handle=F8000028, 'XThread860286C0 (F8000028)', native=860286C0)
+[2026-07-31 10:45:40.509] [error] [sys] [t533926] DeliverAPCs call #2 thid=6
+[2026-07-31 10:45:40.509] [error] [core] [t533926] XThread::Execute thid=6 start_address=0x821d4bd0 start_context=0x00000000 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.509] [debug] [sys] [t533926] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.510] [debug] [sys] [t533925] XThreadF8000034 (7) Stack: 701D0000-70210000
+[2026-07-31 10:45:40.510] [debug] [sys] [t533925] Added handle:F8000038 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.510] [debug] [sys] [t533925] Added handle:F800003C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.510] [debug] [sys] [t533925] Added handle:F8000040 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.510] [debug] [sys] [t533927] Execute thid 7 (handle=F8000034, 'XThread850276C0 (F8000034)', native=850276C0)
+[2026-07-31 10:45:40.510] [error] [sys] [t533927] DeliverAPCs call #3 thid=7
+[2026-07-31 10:45:40.510] [error] [core] [t533927] XThread::Execute thid=7 start_address=0x821d4bd0 start_context=0x00000001 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.510] [debug] [sys] [t533927] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.511] [debug] [sys] [t533925] XThreadF8000040 (8) Stack: 70230000-70270000
+[2026-07-31 10:45:40.511] [debug] [sys] [t533925] Added handle:F8000044 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.511] [debug] [sys] [t533925] Added handle:F8000048 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.511] [debug] [sys] [t533925] Added handle:F800004C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.511] [debug] [sys] [t533928] Execute thid 8 (handle=F8000040, 'XThread73FFF6C0 (F8000040)', native=73FFF6C0)
+[2026-07-31 10:45:40.511] [error] [core] [t533928] XThread::Execute thid=8 start_address=0x821d4bd0 start_context=0x00000002 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.511] [debug] [sys] [t533928] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.512] [debug] [sys] [t533925] XThreadF800004C (9) Stack: 70290000-702D0000
+[2026-07-31 10:45:40.512] [debug] [sys] [t533925] Added handle:F8000050 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.512] [debug] [sys] [t533925] Added handle:F8000054 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.512] [debug] [sys] [t533925] Added handle:F8000058 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.512] [debug] [sys] [t533929] Execute thid 9 (handle=F800004C, 'XThread72FFE6C0 (F800004C)', native=72FFE6C0)
+[2026-07-31 10:45:40.512] [error] [core] [t533929] XThread::Execute thid=9 start_address=0x821d4bd0 start_context=0x00000003 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.512] [debug] [sys] [t533929] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.513] [debug] [sys] [t533925] XThreadF8000058 (A) Stack: 702F0000-70330000
+[2026-07-31 10:45:40.513] [debug] [sys] [t533925] Added handle:F800005C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.513] [debug] [sys] [t533925] Added handle:F8000060 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.513] [debug] [sys] [t533925] Added handle:F8000064 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.513] [debug] [sys] [t533930] Execute thid 10 (handle=F8000058, 'XThread71FFD6C0 (F8000058)', native=71FFD6C0)
+[2026-07-31 10:45:40.513] [error] [core] [t533930] XThread::Execute thid=10 start_address=0x821d4ed0 start_context=0x00000000 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.513] [debug] [sys] [t533930] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.514] [debug] [sys] [t533925] XThreadF8000064 (B) Stack: 70350000-70390000
+[2026-07-31 10:45:40.514] [debug] [sys] [t533925] Added handle:F8000068 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.514] [debug] [sys] [t533925] Added handle:F800006C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.514] [debug] [sys] [t533925] Added handle:F8000070 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.514] [debug] [sys] [t533931] Execute thid 11 (handle=F8000064, 'XThread63FFF6C0 (F8000064)', native=63FFF6C0)
+[2026-07-31 10:45:40.514] [error] [core] [t533931] XThread::Execute thid=11 start_address=0x821d4ed0 start_context=0x00000001 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.514] [debug] [sys] [t533931] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.515] [debug] [sys] [t533925] XThreadF8000070 (C) Stack: 703B0000-703F0000
+[2026-07-31 10:45:40.515] [debug] [sys] [t533925] Added handle:F8000074 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.515] [debug] [sys] [t533925] Added handle:F8000078 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.515] [debug] [sys] [t533925] Added handle:F800007C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.515] [debug] [sys] [t533932] Execute thid 12 (handle=F8000070, 'XThread62FFE6C0 (F8000070)', native=62FFE6C0)
+[2026-07-31 10:45:40.515] [error] [core] [t533932] XThread::Execute thid=12 start_address=0x821d4ed0 start_context=0x00000002 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.515] [debug] [sys] [t533932] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.516] [debug] [sys] [t533925] XThreadF800007C (D) Stack: 70410000-70450000
+[2026-07-31 10:45:40.516] [debug] [sys] [t533925] Added handle:F8000080 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.516] [debug] [sys] [t533925] Added handle:F8000084 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.516] [debug] [sys] [t533933] Execute thid 13 (handle=F800007C, 'XThread61FFD6C0 (F800007C)', native=61FFD6C0)
+[2026-07-31 10:45:40.516] [error] [core] [t533933] XThread::Execute thid=13 start_address=0x821d4ed0 start_context=0x00000003 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.516] [debug] [sys] [t533933] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.518] [debug] [sys] [t533925] Added handle:F8000088 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.518] [debug] [sys] [t533925] Added handle:F800008C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.518] [debug] [sys] [t533925] Added handle:F8000090 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.518] [debug] [sys] [t533925] Added handle:F8000094 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.518] [debug] [sys] [t533925] Added handle:F8000098 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.519] [debug] [sys] [t533925] XThreadF8000098 (E) Stack: 70470000-704B0000
+[2026-07-31 10:45:40.519] [debug] [sys] [t533925] Added handle:F800009C for N3rex6system7XObjectE
+[2026-07-31 10:45:40.519] [debug] [sys] [t533934] Execute thid 14 (handle=F8000098, 'XThread53FFF6C0 (F8000098)', native=53FFF6C0)
+[2026-07-31 10:45:40.520] [debug] [sys] [t533925] Added handle:F80000A0 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.520] [error] [core] [t533934] XThread::Execute thid=14 start_address=0x82345810 start_context=0x82870ff0 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.520] [debug] [sys] [t533934] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.520] [debug] [sys] [t533925] XThreadF80000A0 (F) Stack: 704D0000-70510000
+[2026-07-31 10:45:40.520] [debug] [sys] [t533935] Execute thid 15 (handle=F80000A0, 'XThread52FFE6C0 (F80000A0)', native=52FFE6C0)
+[2026-07-31 10:45:40.520] [debug] [sys] [t533925] Added handle:F80000A4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.520] [debug] [sys] [t533925] Added handle:F80000A8 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.520] [error] [core] [t533935] XThread::Execute thid=15 start_address=0x82345810 start_context=0x82871b38 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.521] [debug] [sys] [t533935] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.521] [debug] [sys] [t533925] Added handle:F80000AC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.521] [info] [gpu] [t533936] Creating graphics pipeline state with VS 0A6D1DD7767FDF27, PS 2E372EA28CC404B7
+[2026-07-31 10:45:40.521] [info] [gpu] [t533937] Creating graphics pipeline state with VS 0A6D1DD7767FDF27, PS 2E372EA28CC404B7
+[2026-07-31 10:45:40.521] [info] [gpu] [t533938] Creating graphics pipeline state with VS C049A8C9E556F129
+[2026-07-31 10:45:40.521] [info] [gpu] [t533937] Creating graphics pipeline state with VS C049A8C9E556F129
+[2026-07-31 10:45:40.521] [info] [gpu] [t533939] Creating graphics pipeline state with VS 472913F460D4B446, PS 8F1C48BA92C8E43E
+[2026-07-31 10:45:40.521] [debug] [sys] [t533925] XThreadF80000AC (10) Stack: 70530000-70570000
+[2026-07-31 10:45:40.522] [info] [gpu] [t533938] Creating graphics pipeline state with VS C049A8C9E556F129
+[2026-07-31 10:45:40.522] [info] [gpu] [t533938] Creating graphics pipeline state with VS BBAADA3605B82C5A, PS 1899F02DC6758D8F
+[2026-07-31 10:45:40.522] [info] [gpu] [t533940] Creating graphics pipeline state with VS C049A8C9E556F129
+[2026-07-31 10:45:40.522] [debug] [sys] [t533941] Execute thid 16 (handle=F80000AC, 'XThread51FFD6C0 (F80000AC)', native=51FFD6C0)
+[2026-07-31 10:45:40.522] [error] [core] [t533941] XThread::Execute thid=16 start_address=0x82345810 start_context=0x828707f8 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.522] [debug] [sys] [t533925] Added handle:F80000B0 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.522] [debug] [sys] [t533941] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.522] [info] [gpu] [t533940] Creating graphics pipeline state with VS EA41C0069AE03769, PS 25ED986FB3F8E797
+[2026-07-31 10:45:40.522] [debug] [sys] [t533925] Added handle:F80000B4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.522] [debug] [sys] [t533925] Added handle:F80000B8 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.522] [debug] [sys] [t533925] XThreadF80000B8 (11) Stack: 70590000-705A0000
+[2026-07-31 10:45:40.523] [debug] [sys] [t533925] Added handle:F80000BC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.523] [debug] [sys] [t533946] Execute thid 17 (handle=F80000B8, 'XThread2FFFF6C0 (F80000B8)', native=2FFFF6C0)
+[2026-07-31 10:45:40.523] [error] [core] [t533946] XThread::Execute thid=17 start_address=0x82345810 start_context=0x82865478 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.523] [debug] [sys] [t533946] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.523] [info] [gpu] [t533894] Created 9 graphics pipelines from Vulkan storage (9 requested)
+[2026-07-31 10:45:40.523] [debug] [sys] [t533925] XThreadF80000BC (12) Stack: 705C0000-705D0000
+[2026-07-31 10:45:40.523] [debug] [sys] [t533925] Added handle:F80000C0 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.523] [debug] [sys] [t533948] Execute thid 18 (handle=F80000BC, 'XThread2EFFE6C0 (F80000BC)', native=2EFFE6C0)
+[2026-07-31 10:45:40.523] [error] [core] [t533948] XThread::Execute thid=18 start_address=0x82345810 start_context=0x82865458 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.523] [debug] [sys] [t533948] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.524] [debug] [sys] [t533925] XThreadF80000C0 (13) Stack: 705F0000-70600000
+[2026-07-31 10:45:40.524] [debug] [sys] [t533950] Execute thid 19 (handle=F80000C0, 'XThread2D7FC6C0 (F80000C0)', native=2D7FC6C0)
+[2026-07-31 10:45:40.524] [error] [core] [t533950] XThread::Execute thid=19 start_address=0x82345810 start_context=0x82865438 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.524] [debug] [sys] [t533950] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.524] [info] [gpu] [t533925] SetInterruptCallback(821E63B0, 40001A00)
+[2026-07-31 10:45:40.525] [debug] [sys] [t533925] Added handle:F80000C4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.526] [debug] [sys] [t533925] XThreadF80000C4 (14) Stack: 70620000-70630000
+[2026-07-31 10:45:40.526] [debug] [sys] [t533925] Added handle:F80000C8 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.526] [debug] [sys] [t533951] Execute thid 20 (handle=F80000C4, 'XThread2C7FB6C0 (F80000C4)', native=2C7FB6C0)
+[2026-07-31 10:45:40.526] [error] [core] [t533951] XThread::Execute thid=20 start_address=0x821eeda0 start_context=0x400046d4 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.526] [debug] [sys] [t533951] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.526] [debug] [sys] [t533951] Added handle:F80000CC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.526] [debug] [sys] [t533925] XThreadF80000C8 (15) Stack: 70650000-70660000
+[2026-07-31 10:45:40.527] [debug] [sys] [t533952] Execute thid 21 (handle=F80000C8, 'XThread2B7FA6C0 (F80000C8)', native=2B7FA6C0)
+[2026-07-31 10:45:40.527] [error] [core] [t533952] XThread::Execute thid=21 start_address=0x821eeda0 start_context=0x40004724 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.527] [debug] [sys] [t533952] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.527] [debug] [sys] [t533952] Added handle:F80000D0 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.532] [debug] [sys] [t533925] Added handle:F80000D4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.532] [debug] [sys] [t533925] Added handle:F80000D8 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.532] [debug] [sys] [t533925] XThreadF80000D8 (16) Stack: 70680000-70690000
+[2026-07-31 10:45:40.532] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.532] [debug] [sys] [t533953] Execute thid 22 (handle=F80000D8, 'XThread2A7F96C0 (F80000D8)', native=2A7F96C0)
+[2026-07-31 10:45:40.533] [error] [core] [t533953] XThread::Execute thid=22 start_address=0x82345810 start_context=0x829100a8 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:40.533] [debug] [sys] [t533953] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:40.533] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.533] [info] [core] [t533925] [AC6-VBLANK] pacing -> 60Hz guest vblank
+[2026-07-31 10:45:40.537] [debug] [gpu] [t533894] Created a 640x1024 4xMSAA color render target with guest format 0 at EDRAM base 0
+[2026-07-31 10:45:40.537] [debug] [gpu] [t533894] Created a 640x1024 4xMSAA depth render target with guest format 1 at EDRAM base 720
+[2026-07-31 10:45:40.573] [warning] [gpu] [t533894] [ac6-skip] ac6_skip_texture_base = 0x00000000
+[2026-07-31 10:45:40.604] [info] [gpu] [t533894] [ac6-resolve] #1 writes 1AB60000+398000
+[2026-07-31 10:45:40.605] [info] [gpu] [t533894] [ac6-texload] load #1 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:40.605] [warning] [gpu] [t533894] [ac6-loadshader] base=1AB60000 1280x720 load_shader=2 signed=false tiled=1 packed_mips=0 dim=1 scaled_resolve=0
+[2026-07-31 10:45:40.605] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:40.880] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [info] [krnl] [t533953] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA.TBL access=0x80100080 attrs=0x80 share=0x1 disp=0x1 options=0x60
+[2026-07-31 10:45:40.881] [debug] [sys] [t533953] Added handle:F80000E0 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533953] Removed handle:F80000E0 for N3rex6system5XFileE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [info] [krnl] [t533953] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA.TBL access=0x80100080 attrs=0x80 share=0x1 disp=0x1 options=0x60
+[2026-07-31 10:45:40.881] [debug] [sys] [t533953] Added handle:F80000E0 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [info] [krnl] [t533953] [AC6 PAC] NtReadFile request caller=821F4F2C thid=22 path=DATA.TBL handle=0xf80000e0 len=0x39e8 offset=-1 sync=true
+[2026-07-31 10:45:40.881] [info] [krnl] [t533953] [AC6 PAC] NtReadFile result caller=821F4F2C path=DATA.TBL status=0x0 bytes_read=0x39e8 iosb_status=0x0 iosb_info=0x39e8
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.881] [debug] [sys] [t533953] Removed handle:F80000E0 for N3rex6system5XFileE
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Removed handle:F80000DC for N3rex6system10XSemaphoreE
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA00.PAC access=0x80100080 attrs=0x0 share=0x1 disp=0x1 options=0x48
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Added handle:F80000DC for N3rex6system7XObjectE
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtCreateFile caller=821F4D30 path=game:\DATA01.PAC access=0x80100080 attrs=0x0 share=0x1 disp=0x1 options=0x48
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Added handle:F80000E0 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=3407872 sync=false
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=3670016 sync=false
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=3932160 sync=false
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.882] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.882] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4194304 sync=false
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4456448 sync=false
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4718592 sync=false
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=4980736 sync=false
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=5242880 sync=false
+[2026-07-31 10:45:40.883] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.883] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=5505024 sync=false
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=5767168 sync=false
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6029312 sync=false
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6291456 sync=false
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.884] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.884] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6553600 sync=false
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=6815744 sync=false
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7077888 sync=false
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7340032 sync=false
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7602176 sync=false
+[2026-07-31 10:45:40.885] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.885] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=7864320 sync=false
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8126464 sync=false
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8388608 sync=false
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8650752 sync=false
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.886] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.886] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=8912896 sync=false
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9175040 sync=false
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9437184 sync=false
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9699328 sync=false
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=9961472 sync=false
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.887] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.887] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=10223616 sync=false
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=10485760 sync=false
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=10747904 sync=false
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11010048 sync=false
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.888] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.888] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11272192 sync=false
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11534336 sync=false
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=11796480 sync=false
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12058624 sync=false
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12320768 sync=false
+[2026-07-31 10:45:40.889] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.889] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12582912 sync=false
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=12845056 sync=false
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=13107200 sync=false
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=13369344 sync=false
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.890] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.890] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=13631488 sync=false
+[2026-07-31 10:45:40.891] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:40.891] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:40.891] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:40.891] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x20000 offset=13893632 sync=false
+[2026-07-31 10:45:40.891] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x20000 iosb_status=0x0 iosb_info=0x20000
+[2026-07-31 10:45:40.891] [debug] [sys] [t533925] Removed handle:F80000E4 for N3rex6system6XEventE
+[2026-07-31 10:45:41.091] [debug] [sys] [t533925] Added handle:F80000E4 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.091] [debug] [sys] [t533925] Added handle:F80000E8 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.092] [debug] [sys] [t533925] XThreadF80000E8 (17) Stack: 706B0000-706F0000
+[2026-07-31 10:45:41.092] [debug] [sys] [t533954] Execute thid 23 (handle=F80000E8, 'XThread297F86C0 (F80000E8)', native=297F86C0)
+[2026-07-31 10:45:41.092] [debug] [krnl] [t533925] XAudioRegisterRenderDriverClient called callback_ptr=7014F830 driver_ptr=40022554
+[2026-07-31 10:45:41.092] [error] [core] [t533954] XThread::Execute thid=23 start_address=0x823b41d8 start_context=0x00000000 xapi_startup=0x00000000
+[2026-07-31 10:45:41.092] [debug] [sys] [t533954] XThread::Execute - Calling function at 823B41D8
+[2026-07-31 10:45:41.092] [debug] [sys] [t533954] Added handle:F80000EC for N3rex6system7XObjectE
+[2026-07-31 10:45:41.120] [info] [apu] [t533925] SdlAudioDriver initialized: client=0 channels=2 freq=48000
+[2026-07-31 10:45:41.121] [debug] [sys] [t533876] Added handle:F80000F0 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.121] [debug] [sys] [t533876] Added handle:F80000F4 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.122] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.124] [debug] [sys] [t533925] Added handle:F80000F8 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.125] [debug] [sys] [t533925] XThreadF80000F8 (18) Stack: 70710000-70750000
+[2026-07-31 10:45:41.125] [debug] [sys] [t533925] Added handle:F80000FC for N3rex6system7XObjectE
+[2026-07-31 10:45:41.126] [debug] [sys] [t533925] XThreadF80000FC (19) Stack: 70770000-707B0000
+[2026-07-31 10:45:41.126] [debug] [sys] [t533925] Added handle:F8000100 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533925] XThreadF8000100 (1A) Stack: 707D0000-70810000
+[2026-07-31 10:45:41.127] [debug] [sys] [t533961] Execute thid 24 (handle=F80000F8, 'XThread15FFB6C0 (F80000F8)', native=15FFB6C0)
+[2026-07-31 10:45:41.127] [debug] [sys] [t533963] Execute thid 26 (handle=F8000100, 'XThreadFAFFE6C0 (F8000100)', native=FAFFE6C0)
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Execute thid 25 (handle=F80000FC, 'XThreadFBFFF6C0 (F80000FC)', native=FBFFF6C0)
+[2026-07-31 10:45:41.127] [error] [core] [t533961] XThread::Execute thid=24 start_address=0x82379e18 start_context=0x00000000 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:41.127] [error] [core] [t533962] XThread::Execute thid=25 start_address=0x82379eb8 start_context=0x00000000 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:41.127] [error] [core] [t533963] XThread::Execute thid=26 start_address=0x82379f38 start_context=0x00000000 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:41.127] [debug] [sys] [t533961] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F8000104 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533963] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F8000108 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F800010C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F8000110 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F8000114 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F8000118 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F800011C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.127] [debug] [sys] [t533962] Added handle:F8000120 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.128] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.149] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.150] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.152] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.170] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.172] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.173] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.192] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.193] [debug] [krnl] [t533876] XAudioSubmitRenderDriverFrame: driver=41550000 samples=40020380
+[2026-07-31 10:45:41.219] [debug] [sys] [t533925] Added handle:F8000124 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.219] [warning] [krnl] [t533925] XSocket::Bind trace: ret=-1 errno=13 (EACCES) sin_port_read=999 ntohs(sin_port_read)=59139 raw_port_bytes=03E7 name_len=16
+[2026-07-31 10:45:41.219] [warning] [krnl] [t533925] XSocket::Bind: host refused privileged guest port 999; bound 40999 instead. The Xbox 360 has no privileged-port rule, so this mapping keeps an unprivileged process behaving like the console. Outbound traffic to privileged ports is shifted to match.
+[2026-07-31 10:45:41.220] [debug] [sys] [t533925] Added handle:F8000128 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.220] [debug] [sys] [t533925] Added handle:F800012C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.220] [debug] [krnl] [t533925] XamNotifyCreateListener(mask=0x0000000000000005, is_system=0, max_version=2) -> handle=F800012C
+[2026-07-31 10:45:41.220] [debug] [sys] [t533925] Added handle:F8000130 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.221] [debug] [sys] [t533925] XThreadF8000130 (1B) Stack: 70830000-70840000
+[2026-07-31 10:45:41.221] [debug] [sys] [t533972] Execute thid 27 (handle=F8000130, 'XThreadF9FFD6C0 (F8000130)', native=F9FFD6C0)
+[2026-07-31 10:45:41.221] [error] [core] [t533972] XThread::Execute thid=27 start_address=0x82204bc8 start_context=0x400b54b0 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:41.221] [debug] [sys] [t533972] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:41.221] [debug] [sys] [t533972] Added handle:F8000134 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.221] [debug] [sys] [t533925] Added handle:F8000138 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.221] [debug] [krnl] [t533925] XamNotifyCreateListener(mask=0x0000000000000001, is_system=0, max_version=2) -> handle=F8000138
+[2026-07-31 10:45:41.222] [debug] [sys] [t533931] Added handle:F800013C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.222] [info] [krnl] [t533931] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=15171584 sync=false
+[2026-07-31 10:45:41.222] [info] [krnl] [t533931] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.222] [debug] [sys] [t533931] Removed handle:F800013C for N3rex6system6XEventE
+[2026-07-31 10:45:41.222] [debug] [sys] [t533931] Added handle:F800013C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.222] [info] [krnl] [t533931] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x10000 offset=15433728 sync=false
+[2026-07-31 10:45:41.222] [info] [krnl] [t533931] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x10000 iosb_status=0x0 iosb_info=0x10000
+[2026-07-31 10:45:41.222] [debug] [sys] [t533931] Removed handle:F800013C for N3rex6system6XEventE
+[2026-07-31 10:45:41.224] [debug] [sys] [t533925] Added handle:F800013C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.232] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0x9, param=1
+[2026-07-31 10:45:41.242] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0x9, param=0
+[2026-07-31 10:45:41.251] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0xa, param=1
+[2026-07-31 10:45:41.262] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0xa, param=1
+[2026-07-31 10:45:41.271] [debug] [sys] [t533925] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.271] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2054782976 sync=false
+[2026-07-31 10:45:41.272] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0x12, param=0
+[2026-07-31 10:45:41.272] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.272] [debug] [sys] [t533925] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-31 10:45:41.272] [debug] [sys] [t533925] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.272] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2055045120 sync=false
+[2026-07-31 10:45:41.272] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.272] [debug] [sys] [t533925] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-31 10:45:41.272] [debug] [sys] [t533925] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.272] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2055307264 sync=false
+[2026-07-31 10:45:41.272] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.272] [debug] [sys] [t533925] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-31 10:45:41.272] [debug] [sys] [t533925] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.273] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x34800 offset=2055569408 sync=false
+[2026-07-31 10:45:41.273] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x34800 iosb_status=0x0 iosb_info=0x34800
+[2026-07-31 10:45:41.273] [debug] [sys] [t533925] Removed handle:F8000140 for N3rex6system6XEventE
+[2026-07-31 10:45:41.281] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0x12, param=0
+[2026-07-31 10:45:41.292] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0x13, param=0
+[2026-07-31 10:45:41.302] [debug] [krnl] [t533972] XNotifyGetNext(F800012C, 00000000) -> id=0x13, param=0
+[2026-07-31 10:45:41.654] [debug] [sys] [t533925] Added handle:F8000140 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.654] [debug] [sys] [t533925] Added handle:F8000144 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.655] [debug] [sys] [t533925] XThreadF8000144 (1C) Stack: 70860000-708A0000
+[2026-07-31 10:45:41.656] [debug] [sys] [t533925] Added handle:F8000148 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.656] [debug] [krnl] [t533925] XamNotifyCreateListener(mask=0x000000000000006f, is_system=0, max_version=2) -> handle=F8000148
+[2026-07-31 10:45:41.657] [debug] [sys] [t533981] Execute thid 28 (handle=F8000144, 'XThreadEBFFF6C0 (F8000144)', native=EBFFF6C0)
+[2026-07-31 10:45:41.657] [error] [core] [t533981] XThread::Execute thid=28 start_address=0x82345810 start_context=0x82697c18 xapi_startup=0x821f7fc8
+[2026-07-31 10:45:41.657] [debug] [sys] [t533981] XThread::Execute - Calling function at 821F7FC8
+[2026-07-31 10:45:41.717] [info] [gpu] [t533894] [ac6-watch] #1 base=1AB60000 is_mip=false
+[2026-07-31 10:45:41.717] [info] [gpu] [t533894] [ac6-resolve] #2 writes 1AB60000+398000
+[2026-07-31 10:45:41.717] [info] [gpu] [t533894] [ac6-texload] load #2 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:41.717] [warning] [gpu] [t533894] [ac6-loadshader] base=1AB60000 1280x720 load_shader=2 signed=false tiled=1 packed_mips=0 dim=1 scaled_resolve=0
+[2026-07-31 10:45:41.717] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.718] [debug] [gpu] [t533894] Created a 80x8192 1xMSAA color render target with guest format 14 at EDRAM base 0
+[2026-07-31 10:45:41.718] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.718] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=0 sync=false
+[2026-07-31 10:45:41.718] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.718] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.718] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.718] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=262144 sync=false
+[2026-07-31 10:45:41.719] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.719] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.719] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.719] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=524288 sync=false
+[2026-07-31 10:45:41.719] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.719] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.719] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.719] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=786432 sync=false
+[2026-07-31 10:45:41.719] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.719] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.719] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.719] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1048576 sync=false
+[2026-07-31 10:45:41.720] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.720] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.720] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.720] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1310720 sync=false
+[2026-07-31 10:45:41.720] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.720] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.720] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.720] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1572864 sync=false
+[2026-07-31 10:45:41.720] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.720] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.720] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.720] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=1835008 sync=false
+[2026-07-31 10:45:41.721] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.721] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.721] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.721] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2097152 sync=false
+[2026-07-31 10:45:41.721] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.721] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.721] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.721] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2359296 sync=false
+[2026-07-31 10:45:41.721] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.721] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.721] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.722] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2621440 sync=false
+[2026-07-31 10:45:41.722] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.722] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.722] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.722] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2883584 sync=false
+[2026-07-31 10:45:41.722] [info] [gpu] [t533894] [ac6-resolve] #3 writes 1C152000+1000
+[2026-07-31 10:45:41.722] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.722] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.722] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.722] [info] [krnl] [t533925] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=5 path=DATA00.PAC handle=0xf80000dc len=0x3c000 offset=3145728 sync=false
+[2026-07-31 10:45:41.722] [info] [krnl] [t533925] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x3c000 iosb_status=0x0 iosb_info=0x3c000
+[2026-07-31 10:45:41.723] [debug] [sys] [t533925] Removed handle:F800014C for N3rex6system6XEventE
+[2026-07-31 10:45:41.729] [info] [gpu] [t533894] [ac6-watch] #2 base=1AB60000 is_mip=false
+[2026-07-31 10:45:41.729] [info] [gpu] [t533894] [ac6-resolve] #4 writes 1AB60000+398000
+[2026-07-31 10:45:41.729] [info] [gpu] [t533894] [ac6-texload] load #3 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:41.729] [warning] [gpu] [t533894] [ac6-loadshader] base=1AB60000 1280x720 load_shader=2 signed=false tiled=1 packed_mips=0 dim=1 scaled_resolve=0
+[2026-07-31 10:45:41.729] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.870] [info] [core] [t533925] [mnk-probe] active=true has_focus=true keys_down=0
+[2026-07-31 10:45:41.870] [info] [krnl] [t533925] [xam-input] guest sees buttons=0x0000 result=0x0 user=0 state_ptr=yes
+[2026-07-31 10:45:41.870] [debug] [sys] [t533925] Added handle:F800014C for N3rex6system7XObjectE
+[2026-07-31 10:45:41.879] [info] [gpu] [t533894] [ac6-watch] #3 base=1AB60000 is_mip=false
+[2026-07-31 10:45:41.880] [info] [gpu] [t533894] [ac6-resolve] #5 writes 1AB60000+398000
+[2026-07-31 10:45:41.880] [info] [gpu] [t533894] [ac6-texload] load #4 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:41.880] [warning] [gpu] [t533894] [ac6-loadshader] base=1AB60000 1280x720 load_shader=2 signed=false tiled=1 packed_mips=0 dim=1 scaled_resolve=0
+[2026-07-31 10:45:41.880] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.895] [info] [gpu] [t533894] [ac6-watch] #4 base=1AB60000 is_mip=false
+[2026-07-31 10:45:41.895] [info] [gpu] [t533894] [ac6-resolve] #6 writes 1AB60000+398000
+[2026-07-31 10:45:41.895] [info] [gpu] [t533894] [ac6-texload] load #5 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:41.895] [warning] [gpu] [t533894] [ac6-loadshader] base=1AB60000 1280x720 load_shader=2 signed=false tiled=1 packed_mips=0 dim=1 scaled_resolve=0
+[2026-07-31 10:45:41.895] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.912] [info] [gpu] [t533894] [ac6-texload] load #6 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:41.912] [warning] [gpu] [t533894] [ac6-loadshader] base=1AB60000 1280x720 load_shader=2 signed=false tiled=1 packed_mips=0 dim=1 scaled_resolve=0
+[2026-07-31 10:45:41.912] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.929] [info] [gpu] [t533894] [ac6-texload] load #7 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:41.929] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.941] [debug] [sys] [t533931] Added handle:F8000150 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.942] [info] [krnl] [t533931] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2069266432 sync=false
+[2026-07-31 10:45:41.942] [info] [krnl] [t533931] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.942] [debug] [sys] [t533931] Removed handle:F8000150 for N3rex6system6XEventE
+[2026-07-31 10:45:41.942] [debug] [sys] [t533931] Added handle:F8000150 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.942] [info] [krnl] [t533931] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2069528576 sync=false
+[2026-07-31 10:45:41.942] [info] [krnl] [t533931] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.942] [debug] [sys] [t533931] Removed handle:F8000150 for N3rex6system6XEventE
+[2026-07-31 10:45:41.942] [debug] [sys] [t533931] Added handle:F8000150 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.942] [info] [krnl] [t533931] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x40000 offset=2069790720 sync=false
+[2026-07-31 10:45:41.942] [info] [krnl] [t533931] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x40000 iosb_status=0x0 iosb_info=0x40000
+[2026-07-31 10:45:41.942] [debug] [sys] [t533931] Removed handle:F8000150 for N3rex6system6XEventE
+[2026-07-31 10:45:41.942] [debug] [sys] [t533931] Added handle:F8000150 for N3rex6system7XObjectE
+[2026-07-31 10:45:41.942] [info] [krnl] [t533931] [AC6 PAC] NtReadFile request caller=821F4EB4 thid=11 path=DATA00.PAC handle=0xf80000dc len=0x9800 offset=2070052864 sync=false
+[2026-07-31 10:45:41.943] [info] [krnl] [t533931] [AC6 PAC] NtReadFile result caller=821F4EB4 path=DATA00.PAC status=0x103 bytes_read=0x9800 iosb_status=0x0 iosb_info=0x9800
+[2026-07-31 10:45:41.943] [debug] [sys] [t533931] Removed handle:F8000150 for N3rex6system6XEventE
+[2026-07-31 10:45:41.945] [info] [gpu] [t533894] [ac6-texload] load #8 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:41.945] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.963] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.980] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:41.996] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.012] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.029] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.031] [debug] [gpu] [t533894] Created a 1280x2048 1xMSAA color render target with guest format 0 at EDRAM base 0
+[2026-07-31 10:45:42.031] [info] [gpu] [t533894] [ac6-bind] ok #1 fc=0 base=18962000
+[2026-07-31 10:45:42.031] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #1 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.080] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.082] [info] [gpu] [t533894] [ac6-bind] ok #2 fc=0 base=18962000
+[2026-07-31 10:45:42.082] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #2 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.096] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.097] [info] [gpu] [t533894] [ac6-bind] ok #3 fc=0 base=18962000
+[2026-07-31 10:45:42.097] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #3 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.113] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.113] [info] [gpu] [t533894] [ac6-bind] ok #4 fc=0 base=18962000
+[2026-07-31 10:45:42.113] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #4 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.129] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.130] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #5 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.145] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.180] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #6 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.197] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.217] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #7 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.229] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.230] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #8 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.246] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.248] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #9 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.248] [debug] [sys] [t533946] Added handle:F8000150 for N3rex6system7XObjectE
+[2026-07-31 10:45:42.262] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.265] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #10 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.279] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.280] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #11 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.297] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.298] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #12 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.313] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.314] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #13 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.329] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.331] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #14 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.346] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.347] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #15 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.363] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.364] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #16 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.380] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.381] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #17 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.395] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.396] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #18 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.413] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.414] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #19 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.429] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.430] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #20 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.446] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.447] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #21 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.462] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.463] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #22 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.480] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.480] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #23 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.496] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.497] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #24 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:42.513] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.530] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.546] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.563] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.579] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.596] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.613] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.630] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.646] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.663] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.679] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.694] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=221 consumed=292 queued_played=218 underruns=0 callbacks=221 tic=74752 synthetic_tic=56576 submitted_tic=56576 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1300 peak=3 drift_ms=-21.2
+[2026-07-31 10:45:42.696] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.713] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.730] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.746] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.763] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.780] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.796] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.812] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.829] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.846] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.863] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.880] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.880] [info] [core] [t533925] [mnk-probe] active=true has_focus=true keys_down=0
+[2026-07-31 10:45:42.896] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.912] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.929] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.946] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.963] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.980] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:42.996] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.013] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.030] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.045] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.063] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.080] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.081] [debug] [sys] [t533925] Added handle:F8000154 for N3rex6system7XObjectE
+[2026-07-31 10:45:43.096] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.113] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.148] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.167] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.179] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.195] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.214] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.229] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.246] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.262] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.279] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.297] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.312] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.329] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.346] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.363] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.380] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.397] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.413] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.429] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.446] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.463] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.479] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.497] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.512] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.530] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.546] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.562] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.580] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.597] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.612] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.629] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.646] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.664] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.679] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.696] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.713] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.729] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.746] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.762] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.780] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.796] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.812] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.830] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.846] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.863] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.880] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.897] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.897] [info] [core] [t533925] [mnk-probe] active=true has_focus=true keys_down=0
+[2026-07-31 10:45:43.912] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.929] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.946] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.962] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.980] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:43.996] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.013] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.030] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.046] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.063] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.079] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.096] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.114] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.130] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.146] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.162] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.179] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.196] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.213] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.230] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.246] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.263] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.279] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.295] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.313] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.329] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.346] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.363] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.380] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.396] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.413] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.429] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.447] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.463] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.480] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.497] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.512] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.529] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.546] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.564] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.580] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.596] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.616] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.629] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.646] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.662] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.679] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.697] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.712] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.729] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.746] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.763] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.779] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.795] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.813] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.830] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.846] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.863] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.881] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.896] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.914] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.914] [info] [core] [t533925] [mnk-probe] active=true has_focus=true keys_down=0
+[2026-07-31 10:45:44.929] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.946] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.963] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.979] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:44.996] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.013] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.030] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.046] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.063] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.080] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.095] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.113] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.130] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.146] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.163] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.179] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.196] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.212] [info] [gpu] [t533894] [ac6-texload] load #200 base=1AB60000 format=6 1280x720
+[2026-07-31 10:45:45.212] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.229] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.247] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.263] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.279] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.297] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.313] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.327] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=590 consumed=784 queued_played=587 underruns=0 callbacks=590 tic=200704 synthetic_tic=151040 submitted_tic=151040 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1241 peak=3 drift_ms=-21.4
+[2026-07-31 10:45:45.329] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.347] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.363] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.379] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.396] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.413] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.430] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.445] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.463] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.480] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.496] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.496] [debug] [sys] [t533941] Added handle:F8000158 for N3rex6system7XObjectE
+[2026-07-31 10:45:45.513] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.529] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.546] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.562] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.580] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.596] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.613] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.630] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.646] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.664] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.680] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.697] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.712] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.729] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.747] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.762] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.779] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.797] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.813] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.830] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.846] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.862] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.879] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.896] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.914] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.929] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.930] [info] [core] [t533925] [mnk-probe] active=true has_focus=true keys_down=0
+[2026-07-31 10:45:45.946] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.963] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.980] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:45.997] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.012] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.029] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.047] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.063] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.080] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.096] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.113] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.130] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.145] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.163] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.179] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.196] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.213] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.230] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.246] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.263] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.279] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.296] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.313] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.330] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.347] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.363] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.379] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.396] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.412] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.430] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.446] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.463] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.479] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.496] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.514] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.530] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.547] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.562] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.580] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.596] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.613] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.630] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.646] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.662] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.679] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.696] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.713] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.729] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.747] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.763] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.780] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.781] [info] [gpu] [t533894] [ac6-bind] ok #500 fc=0 base=18962000
+[2026-07-31 10:45:46.781] [warning] [gpu] [t533894] [ac6-bind] NULL VIEW #500 fc=0 base=18962000 dim=1
+[2026-07-31 10:45:46.797] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.814] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.829] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.846] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.863] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.879] [warning] [gpu] [t533894] [ac6-loadshader] base=1AB60000 1280x720 load_shader=2 signed=false tiled=1 packed_mips=0 dim=1 scaled_resolve=0
+[2026-07-31 10:45:46.879] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.896] [info] [gpu] [t533894] [ac6-resolve] #300 writes 1AB60000+398000
+[2026-07-31 10:45:46.896] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.914] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.930] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.931] [info] [core] [t533925] [mnk-probe] active=true has_focus=true keys_down=0
+[2026-07-31 10:45:46.946] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.964] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.980] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:46.996] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.013] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.030] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.046] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.063] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.079] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.097] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.112] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.129] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.147] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.163] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.180] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.197] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.212] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.229] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.247] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.263] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.280] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.296] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.313] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.330] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.347] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.363] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.380] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.396] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.413] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.430] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.446] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.463] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.480] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.497] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.513] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.529] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.547] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.562] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.579] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.596] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.613] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.630] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.646] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.663] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.680] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.697] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.713] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.729] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.747] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.763] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.779] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.797] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.813] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.829] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.846] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.863] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.879] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.887] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=950 consumed=1264 queued_played=947 underruns=0 callbacks=950 tic=323584 synthetic_tic=243200 submitted_tic=243200 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1221 peak=3 drift_ms=-21.3
+[2026-07-31 10:45:47.896] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.913] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.930] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.946] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.949] [info] [core] [t533925] [mnk-probe] active=true has_focus=true keys_down=0
+[2026-07-31 10:45:47.963] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.979] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:47.996] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:48.013] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:48.029] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:48.046] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:48.062] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:48.080] [debug] [gpu] [t533894] XELOG_GPU PRESENT: swap_texture_view=0x7f43f1838330 packet_size=1280x720 src_size=1280x720 src_unscaled=1280x720 guest_output_size=1280x720 format=6
+[2026-07-31 10:45:50.447] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=1310 consumed=1744 queued_played=1307 underruns=0 callbacks=1310 tic=446464 synthetic_tic=335360 submitted_tic=335360 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1405 peak=3 drift_ms=-21.4
+[2026-07-31 10:45:53.006] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=1670 consumed=2224 queued_played=1667 underruns=0 callbacks=1670 tic=569344 synthetic_tic=427520 submitted_tic=427520 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1200 peak=3 drift_ms=-21.4
+[2026-07-31 10:45:55.583] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=2033 consumed=2708 queued_played=2030 underruns=0 callbacks=2033 tic=693248 synthetic_tic=520448 submitted_tic=520448 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1234 peak=3 drift_ms=-21.4
+[2026-07-31 10:45:58.160] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=2396 consumed=3192 queued_played=2393 underruns=0 callbacks=2396 tic=817152 synthetic_tic=613376 submitted_tic=613376 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1285 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:00.719] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=2756 consumed=3672 queued_played=2753 underruns=0 callbacks=2756 tic=940032 synthetic_tic=705536 submitted_tic=705536 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1244 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:03.279] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=3116 consumed=4152 queued_played=3113 underruns=0 callbacks=3116 tic=1062912 synthetic_tic=797696 submitted_tic=797696 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1270 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:05.839] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=3476 consumed=4632 queued_played=3473 underruns=0 callbacks=3476 tic=1185792 synthetic_tic=889856 submitted_tic=889856 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1238 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:08.399] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=3836 consumed=5112 queued_played=3833 underruns=0 callbacks=3836 tic=1308672 synthetic_tic=982016 submitted_tic=982016 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1386 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:10.959] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=4196 consumed=5592 queued_played=4193 underruns=0 callbacks=4196 tic=1431552 synthetic_tic=1074176 submitted_tic=1074176 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1312 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:13.519] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=4556 consumed=6072 queued_played=4553 underruns=0 callbacks=4556 tic=1554432 synthetic_tic=1166336 submitted_tic=1166336 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1244 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:16.097] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=4919 consumed=6556 queued_played=4916 underruns=0 callbacks=4919 tic=1678336 synthetic_tic=1259264 submitted_tic=1259264 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1312 peak=3 drift_ms=-21.2
+[2026-07-31 10:46:18.687] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=5282 consumed=7040 queued_played=5279 underruns=0 callbacks=5282 tic=1802240 synthetic_tic=1352192 submitted_tic=1352192 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1268 peak=3 drift_ms=-21.2
+[2026-07-31 10:46:21.273] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=5645 consumed=7524 queued_played=5642 underruns=0 callbacks=5645 tic=1926144 synthetic_tic=1445120 submitted_tic=1445120 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1228 peak=3 drift_ms=-21.3
+[2026-07-31 10:46:23.845] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=6008 consumed=8008 queued_played=6005 underruns=0 callbacks=6008 tic=2050048 synthetic_tic=1538048 submitted_tic=1538048 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1208 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:26.405] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=6368 consumed=8488 queued_played=6365 underruns=0 callbacks=6368 tic=2172928 synthetic_tic=1630208 submitted_tic=1630208 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1250 peak=3 drift_ms=-21.3
+[2026-07-31 10:46:28.964] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=6728 consumed=8968 queued_played=6725 underruns=0 callbacks=6728 tic=2295808 synthetic_tic=1722368 submitted_tic=1722368 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1202 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:31.530] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=7088 consumed=9448 queued_played=7085 underruns=0 callbacks=7088 tic=2418688 synthetic_tic=1814528 submitted_tic=1814528 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1377 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:34.090] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=7448 consumed=9928 queued_played=7445 underruns=0 callbacks=7448 tic=2541568 synthetic_tic=1906688 submitted_tic=1906688 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1331 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:36.703] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=7817 consumed=10420 queued_played=7814 underruns=0 callbacks=7817 tic=2667520 synthetic_tic=2001152 submitted_tic=2001152 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1221 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:39.295] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=8180 consumed=10904 queued_played=8177 underruns=0 callbacks=8180 tic=2791424 synthetic_tic=2094080 submitted_tic=2094080 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1362 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:41.855] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=8540 consumed=11384 queued_played=8537 underruns=0 callbacks=8540 tic=2914304 synthetic_tic=2186240 submitted_tic=2186240 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1222 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:44.420] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=8900 consumed=11864 queued_played=8897 underruns=0 callbacks=8900 tic=3037184 synthetic_tic=2278400 submitted_tic=2278400 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1219 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:46.980] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=9260 consumed=12344 queued_played=9257 underruns=0 callbacks=9260 tic=3160064 synthetic_tic=2370560 submitted_tic=2370560 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1436 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:49.540] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=9620 consumed=12824 queued_played=9617 underruns=0 callbacks=9620 tic=3282944 synthetic_tic=2462720 submitted_tic=2462720 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1365 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:52.106] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=9983 consumed=13308 queued_played=9980 underruns=0 callbacks=9983 tic=3406848 synthetic_tic=2555648 submitted_tic=2555648 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1203 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:54.698] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=10346 consumed=13792 queued_played=10343 underruns=0 callbacks=10346 tic=3530752 synthetic_tic=2648576 submitted_tic=2648576 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1419 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:57.258] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=10706 consumed=14272 queued_played=10703 underruns=0 callbacks=10706 tic=3653632 synthetic_tic=2740736 submitted_tic=2740736 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1280 peak=3 drift_ms=-21.4
+[2026-07-31 10:46:59.818] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=11066 consumed=14752 queued_played=11063 underruns=0 callbacks=11066 tic=3776512 synthetic_tic=2832896 submitted_tic=2832896 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1225 peak=3 drift_ms=-21.4
+[2026-07-31 10:47:02.378] [debug] [apu] [t533876] AudioRuntime periodic: client=0 queued=3 target=3 low_water=2 submitted=11426 consumed=15232 queued_played=11423 underruns=0 callbacks=11426 tic=3899392 synthetic_tic=2925056 submitted_tic=2925056 startup_cap_tic=768 startup_inflight=3 callback_throttles=4 callback_empty=0 last_callback_frames=1 last_callback_us=1369 peak=3 drift_ms=-21.4
