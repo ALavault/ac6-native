@@ -1,5 +1,5 @@
 diff --git a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
-index 22cccb7d..2bd6cbe0 100644
+index 22cccb7d..253dd505 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
 @@ -9,6 +9,8 @@
@@ -198,7 +198,7 @@ index 22cccb7d..2bd6cbe0 100644
    VulkanCommandProcessor::ScratchBufferAcquisition scratch_buffer_acquisition(
        command_processor_.AcquireScratchGpuBuffer(
            host_buffer_size, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT));
-@@ -1611,6 +1760,23 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
+@@ -1611,6 +1760,34 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
                                            &load_constants.host_offset);
        }
        command_processor_.SubmitBarriers(true);
@@ -217,6 +217,17 @@ index 22cccb7d..2bd6cbe0 100644
 +                      load_constants.size_blocks[0], load_constants.size_blocks[1],
 +                      load_constants.size_blocks[2],
 +                      is_glyph ? "   <-- FAILS" : "   <-- WORKS");
++          // Addressing is the only mechanism left (cycle 381): this shader is a
++          // pure block copy, so the guest offset/pitch constants are what decide
++          // where each block is read from.
++          REXGPU_WARN(
++              "[ac6-loadconst] base={:08X} guest_offset={:08X} guest_pitch_aligned={} "
++              "guest_z_stride_rows={} host_offset={:08X} host_pitch={} height_texels={} "
++              "tiled3d_endian_scale={:08X}",
++              probe_base, load_constants.guest_offset, load_constants.guest_pitch_aligned,
++              load_constants.guest_z_stride_block_rows_aligned, load_constants.host_offset,
++              load_constants.host_pitch, load_constants.height_texels,
++              load_constants.is_tiled_3d_endian_scale);
 +        }
 +      }
        command_buffer.CmdVkDispatch(group_count_x, group_count_y, load_constants.size_blocks[2]);
