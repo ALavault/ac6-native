@@ -1,0 +1,40 @@
+diff --git a/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp b/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp
+index e3945188..3da9ff41 100644
+--- a/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp
++++ b/thirdparty/rexglue-sdk/src/graphics/pipeline/shader/spirv_translator_fetch.cpp
+@@ -9,6 +9,11 @@
+  * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
+  */
+ 
++#include <rex/cvar.h>
++
++REXCVAR_DEFINE_BOOL(ac6_force_white_vertex_colour, false, "AC6/Render",
++                    "Diagnostic: force FMT_8_8_8_8 vertex attributes to 1.0");
++
+ #include <climits>
+ #include <cmath>
+ #include <memory>
+@@ -471,6 +476,23 @@ void SpirvShaderTranslator::ProcessVertexFetchInstruction(
+       builder_->getBuildPoint()->addInstruction(std::move(composite_construct_op));
+     }
+   }
++  // Diagnostic (AC6 P1.3): force a packed 8_8_8_8 vertex attribute to white.
++  //
++  // The invisible save-screen UI layer computes oC0 = texture * r1, where r1 is
++  // the interpolated vertex colour fetched as FMT_8_8_8_8. Every other cause has
++  // been eliminated by measurement, so the open question is whether that colour
++  // arrives as zero -- which would cancel the product and make the layer
++  // invisible while breaking nothing else. Forcing it to 1.0 answers it: if the
++  // UI appears, the fetched colour was the problem; if not, the dependency is
++  // not the cause. Off by default; a diagnostic, never a fix.
++  if (instr.attributes.data_format == xenos::VertexFormat::k_8_8_8_8 &&
++      REXCVAR_GET(ac6_force_white_vertex_colour)) {
++    const uint32_t component_count =
++        rex::bit_count(uint32_t(instr.result.GetUsedResultComponents()));
++    if (component_count >= 1 && component_count <= 4) {
++      result = const_float_vectors_1_[component_count - 1];
++    }
++  }
+   StoreResult(instr.result, result);
+ }
+ 
