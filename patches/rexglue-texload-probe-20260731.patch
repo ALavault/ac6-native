@@ -1,0 +1,58 @@
+diff --git a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
+index 22cccb7d..4e621f52 100644
+--- a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
++++ b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
+@@ -9,6 +9,7 @@
+  * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
+  */
+ 
++#include <atomic>
+ #include <algorithm>
+ #include <array>
+ #include <cstddef>
+@@ -1220,6 +1221,18 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
+   VulkanTexture& vulkan_texture = static_cast<VulkanTexture&>(texture);
+   TextureKey texture_key = vulkan_texture.key();
+ 
++  // Liveness control for the failure probes below. A "zero failures" reading is
++  // worthless unless this function is shown to run at all -- six cycles of this
++  // investigation were spent on zeros from channels that were simply dead.
++  {
++    static std::atomic<uint32_t> loads{0};
++    const uint32_t n = ++loads;
++    if (n <= 8 || (n % 200) == 0) {
++      REXGPU_INFO("[ac6-texload] load #{} format={} {}x{}", n, uint32_t(texture_key.format),
++                  texture_key.GetWidth(), texture_key.GetHeight());
++    }
++  }
++
+   // Get the pipeline.
+   const HostFormatPair& host_format_pair = GetHostFormatPair(texture_key);
+   bool host_format_is_signed;
+@@ -1232,11 +1245,26 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
+       host_format_is_signed ? host_format_pair.format_signed : host_format_pair.format_unsigned;
+   LoadShaderIndex load_shader = host_format.load_shader;
+   if (load_shader == kLoadShaderIndexUnknown) {
++    // A texture that cannot be loaded is never populated, so it samples as
++    // blank while the geometry that references it still draws -- which is
++    // exactly the AC6 save-screen picture: a UI layer submitted with a real
++    // pixel shader and 21 shaded draws per frame, and nothing visible.
++    // Failing silently here is what made that cost nine cycles to chase.
++    REXGPU_WARN(
++        "[ac6-texload] NO LOAD SHADER for format {} (signed={}): texture at {:08X} "
++        "{}x{} will never be populated",
++        uint32_t(texture_key.format), host_format_is_signed, texture_key.base_page << 12,
++        texture_key.GetWidth(), texture_key.GetHeight());
+     return false;
+   }
+   VkPipeline pipeline = texture_key.scaled_resolve ? load_pipelines_scaled_[load_shader]
+                                                    : load_pipelines_[load_shader];
+   if (pipeline == VK_NULL_HANDLE) {
++    REXGPU_WARN(
++        "[ac6-texload] NULL LOAD PIPELINE for format {} load_shader={}: texture at {:08X} "
++        "{}x{} will never be populated",
++        uint32_t(texture_key.format), uint32_t(load_shader), texture_key.base_page << 12,
++        texture_key.GetWidth(), texture_key.GetHeight());
+     return false;
+   }
+   const LoadShaderInfo& load_shader_info = GetLoadShaderInfo(load_shader);
