@@ -1,5 +1,5 @@
 diff --git a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
-index 22cccb7d..8feb7c5b 100644
+index 22cccb7d..2bd6cbe0 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
 @@ -9,6 +9,8 @@
@@ -198,3 +198,27 @@ index 22cccb7d..8feb7c5b 100644
    VulkanCommandProcessor::ScratchBufferAcquisition scratch_buffer_acquisition(
        command_processor_.AcquireScratchGpuBuffer(
            host_buffer_size, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT));
+@@ -1611,6 +1760,23 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
+                                           &load_constants.host_offset);
+       }
+       command_processor_.SubmitBarriers(true);
++      // Last unobserved link (cycle 373): does the load dispatch actually run,
++      // and with how much work, for the two textures that sample zero? All
++      // seven of the pass's textures are logged so a zero is interpretable.
++      {
++        const uint32_t probe_base = texture_key.base_page << 12;
++        const bool is_glyph = (probe_base == 0x03514000u || probe_base == 0x028B7000u);
++        const bool is_art = (probe_base == 0x028B2000u || probe_base == 0x028D0000u ||
++                             probe_base == 0x028E9000u || probe_base == 0x02953000u ||
++                             probe_base == 0x0294A000u);
++        if (is_glyph || is_art) {
++          REXGPU_WARN("[ac6-dispatch] base={:08X} groups={}x{}x{} size_blocks={}x{}x{}{}",
++                      probe_base, group_count_x, group_count_y, load_constants.size_blocks[2],
++                      load_constants.size_blocks[0], load_constants.size_blocks[1],
++                      load_constants.size_blocks[2],
++                      is_glyph ? "   <-- FAILS" : "   <-- WORKS");
++        }
++      }
+       command_buffer.CmdVkDispatch(group_count_x, group_count_y, load_constants.size_blocks[2]);
+       load_constants.guest_offset += level_array_slice_stride_bytes_scaled;
+       load_constants.host_offset += uint32_t(level_host_layout.slice_size_bytes);
