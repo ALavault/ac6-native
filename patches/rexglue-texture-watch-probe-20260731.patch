@@ -1,0 +1,28 @@
+diff --git a/thirdparty/rexglue-sdk/src/graphics/pipeline/texture/cache.cpp b/thirdparty/rexglue-sdk/src/graphics/pipeline/texture/cache.cpp
+index 3c48b3e7..a489ce46 100644
+--- a/thirdparty/rexglue-sdk/src/graphics/pipeline/texture/cache.cpp
++++ b/thirdparty/rexglue-sdk/src/graphics/pipeline/texture/cache.cpp
+@@ -741,6 +741,23 @@ void TextureCache::Texture::WatchCallback(
+     base_watch_handle_ = nullptr;
+     outdated_mask_.fetch_or(kOutdatedBitBase, std::memory_order_release);
+   }
++  // AC6 P1.3. Two glyph sheets are loaded exactly once and sample to zero, with
++  // every other property measured identical to five textures in the same pass
++  // that render. The remaining hypothesis is that the guest writes their data
++  // AFTER upload: if so, this watch must fire for them. Logged for the two
++  // named bases plus a global count, so a silence on those bases is
++  // distinguishable from a watch that never fires at all.
++  {
++    static std::atomic<uint32_t> total{0};
++    const uint32_t n = ++total;
++    const uint32_t base = key().base_page << 12;
++    if (base == 0x03514000u || base == 0x028B7000u) {
++      REXGPU_WARN("[ac6-watch] GLYPH SHEET invalidated base={:08X} is_mip={} (watch #{})", base,
++                  is_mip, n);
++    } else if (n <= 4 || (n % 400) == 0) {
++      REXGPU_INFO("[ac6-watch] #{} base={:08X} is_mip={}", n, base, is_mip);
++    }
++  }
+ }
+ 
+ void TextureCache::WatchCallback(const std::unique_lock<std::recursive_mutex>& global_lock,
