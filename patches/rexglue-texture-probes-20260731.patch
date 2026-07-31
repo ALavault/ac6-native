@@ -1,16 +1,17 @@
 diff --git a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
-index 22cccb7d..30176a55 100644
+index 22cccb7d..5ba36652 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
-@@ -9,6 +9,7 @@
+@@ -9,6 +9,8 @@
   * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
   */
  
++#include <rex/system/kernel_state.h>
 +#include <atomic>
  #include <algorithm>
  #include <array>
  #include <cstddef>
-@@ -657,6 +658,35 @@ VkImageView VulkanTextureCache::GetActiveBindingOrNullImageView(uint32_t fetch_c
+@@ -657,6 +659,35 @@ VkImageView VulkanTextureCache::GetActiveBindingOrNullImageView(uint32_t fetch_c
            is_signed ? vulkan_binding.image_view_signed : vulkan_binding.image_view_unsigned;
      }
    }
@@ -46,7 +47,7 @@ index 22cccb7d..30176a55 100644
    if (image_view != VK_NULL_HANDLE) {
      return image_view;
    }
-@@ -1220,6 +1250,23 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
+@@ -1220,6 +1251,40 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
    VulkanTexture& vulkan_texture = static_cast<VulkanTexture&>(texture);
    TextureKey texture_key = vulkan_texture.key();
  
@@ -60,6 +61,23 @@ index 22cccb7d..30176a55 100644
 +    // "never loaded" is distinguishable from "loaded but sampling zero".
 +    const uint32_t base = texture_key.base_page << 12;
 +    const bool of_interest = (base == 0x03514000u || base == 0x028B7000u);
++    if (of_interest) {
++      // Cycle 367 DEDUCED that the glyph memory was already empty at load time.
++      // That was inference, not measurement. Read the source bytes here and say
++      // so directly: non-zero means the data is present and the fault is in
++      // load or decode; all-zero means the guest never produced it.
++      const uint8_t* src = REX_KERNEL_MEMORY()
++                               ? REX_KERNEL_MEMORY()->TranslatePhysical<const uint8_t*>(base)
++                               : nullptr;
++      uint32_t nonzero = 0;
++      if (src) {
++        for (uint32_t b = 0; b < 256; ++b) {
++          if (src[b]) ++nonzero;
++        }
++      }
++      REXGPU_WARN("[ac6-srcdata] base={:08X} first256_nonzero={}/256 ptr={}", base, nonzero,
++                  src ? "ok" : "null");
++    }
 +    if (n <= 8 || (n % 200) == 0 || of_interest) {
 +      REXGPU_INFO("[ac6-texload] load #{} base={:08X} format={} {}x{}{}", n, base,
 +                  uint32_t(texture_key.format), texture_key.GetWidth(), texture_key.GetHeight(),
@@ -70,7 +88,7 @@ index 22cccb7d..30176a55 100644
    // Get the pipeline.
    const HostFormatPair& host_format_pair = GetHostFormatPair(texture_key);
    bool host_format_is_signed;
-@@ -1232,11 +1279,26 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
+@@ -1232,11 +1297,26 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
        host_format_is_signed ? host_format_pair.format_signed : host_format_pair.format_unsigned;
    LoadShaderIndex load_shader = host_format.load_shader;
    if (load_shader == kLoadShaderIndexUnknown) {
