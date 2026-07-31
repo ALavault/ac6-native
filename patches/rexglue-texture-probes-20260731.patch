@@ -1,5 +1,5 @@
 diff --git a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
-index 22cccb7d..26ee5a75 100644
+index 22cccb7d..8feb7c5b 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/vulkan/texture_cache.cpp
 @@ -9,6 +9,8 @@
@@ -169,3 +169,32 @@ index 22cccb7d..26ee5a75 100644
    uint32_t level_packed = guest_layout.packed_level;
    uint32_t level_stored_first = std::min(level_first, level_packed);
    uint32_t level_stored_last = std::min(level_last, level_packed);
+@@ -1366,6 +1493,28 @@ bool VulkanTextureCache::LoadTextureDataFromResidentMemoryImpl(Texture& texture,
+         level_host_layout.y_pitch_blocks * level_guest_z_extent_texels;
+     host_buffer_size += level_host_layout.slice_size_bytes * array_size;
+   }
++
++  // Host layout against the guest layout measured in cycle 371. Zero guest
++  // padding (03514000) or an odd guest block height (028B7000) would show up
++  // here as a host pitch that disagrees with the guest one, which is what turns
++  // a valid source into a blank or shifted image.
++  {
++    const uint32_t probe_base = texture_key.base_page << 12;
++    const bool is_glyph = (probe_base == 0x03514000u || probe_base == 0x028B7000u);
++    const bool is_art = (probe_base == 0x028B2000u || probe_base == 0x028D0000u ||
++                         probe_base == 0x028E9000u || probe_base == 0x02953000u ||
++                         probe_base == 0x0294A000u);
++    if (is_glyph || is_art) {
++      REXGPU_WARN(
++          "[ac6-hostlayout] base={:08X} {}x{} host_x_pitch_blk={} host_y_pitch_blk={} "
++          "host_slice={} guest_x_ext_blk={} guest_y_ext_blk={} guest_pitch={}{}",
++          probe_base, texture_key.GetWidth(), texture_key.GetHeight(),
++          host_layout_base.x_pitch_blocks, host_layout_base.y_pitch_blocks,
++          uint64_t(host_layout_base.slice_size_bytes), guest_layout.base.x_extent_blocks,
++          guest_layout.base.y_extent_blocks, guest_layout.base.row_pitch_bytes,
++          is_glyph ? "   <-- FAILS" : "   <-- WORKS");
++    }
++  }
+   VulkanCommandProcessor::ScratchBufferAcquisition scratch_buffer_acquisition(
+       command_processor_.AcquireScratchGpuBuffer(
+           host_buffer_size, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT));
