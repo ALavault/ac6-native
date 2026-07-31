@@ -1,8 +1,16 @@
 diff --git a/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp b/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp
-index 1004e847..3407a126 100644
+index 1004e847..4311235a 100644
 --- a/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp
 +++ b/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp
-@@ -24,6 +24,7 @@
+@@ -9,6 +9,7 @@
+  * @modified    Tom Clay, 2026 - Adapted for ReXGlue runtime
+  */
+ 
++#include <chrono>
+ #include <algorithm>
+ #include <array>
+ #include <cstdint>
+@@ -24,6 +25,7 @@
  #include <SPIRV/GlslangToSpv.h>
  #include <glslang/Public/ShaderLang.h>
  #include <rex/assert.h>
@@ -10,7 +18,7 @@ index 1004e847..3407a126 100644
  #include <rex/cvar.h>
  #include <rex/dbg.h>
  #include <rex/logging.h>
-@@ -48,6 +49,11 @@
+@@ -48,6 +50,11 @@
  
  #include "../../../../../src/ac6_backend_fixes/ac6_backend_hooks.h"
  
@@ -22,7 +30,7 @@ index 1004e847..3407a126 100644
  // Legacy backend compatibility aliases for shared readback controls.
  REXCVAR_DEFINE_BOOL(vulkan_readback_resolve, false, "GPU/Vulkan",
                      "Read render-to-texture results on the CPU")
-@@ -2414,6 +2420,11 @@ void VulkanCommandProcessor::IssueSwap(uint32_t frontbuffer_ptr, uint32_t frontb
+@@ -2414,6 +2421,11 @@ void VulkanCommandProcessor::IssueSwap(uint32_t frontbuffer_ptr, uint32_t frontb
            frontbuffer_width_scaled, frontbuffer_height_scaled);
      }
    }
@@ -34,7 +42,7 @@ index 1004e847..3407a126 100644
    REXGPU_DEBUG(
        "XELOG_GPU PRESENT: swap_texture_view={:p} packet_size={}x{} src_size={}x{} "
        "src_unscaled={}x{} guest_output_size={}x{} format={}",
-@@ -3638,6 +3649,11 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -3638,6 +3650,11 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
  
    const RegisterFile& regs = *register_file_;
    (void)index_buffer_info;
@@ -46,7 +54,7 @@ index 1004e847..3407a126 100644
    auto draw_fail = [&](const char* stage) {
      auto vgt_draw_initiator = regs.Get<reg::VGT_DRAW_INITIATOR>();
      REXGPU_ERROR(
-@@ -3655,7 +3671,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -3655,7 +3672,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
    xenos::EdramMode edram_mode = regs.Get<reg::RB_MODECONTROL>().edram_mode;
    if (edram_mode == xenos::EdramMode::kCopy) {
      // Special copy handling.
@@ -55,7 +63,7 @@ index 1004e847..3407a126 100644
    }
  
    bool surface_pitch_is_zero = regs.Get<reg::RB_SURFACE_INFO>().surface_pitch == 0;
-@@ -3688,7 +3704,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -3688,7 +3705,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
    if (surface_pitch_is_zero && is_rasterization_done) {
      // Doesn't actually draw.
      // Unlikely that zero would even really be legal though.
@@ -64,7 +72,7 @@ index 1004e847..3407a126 100644
    }
    VulkanShader* pixel_shader = nullptr;
    if (is_rasterization_done) {
-@@ -3708,7 +3724,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -3708,7 +3725,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
      // cache.
      if (!memexport_used_vertex) {
        // This draw has no effect.
@@ -73,7 +81,7 @@ index 1004e847..3407a126 100644
      }
    }
    bool memexport_used_pixel = pixel_shader && (pixel_shader->memexport_eM_written() != 0);
-@@ -3755,7 +3771,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -3755,7 +3772,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
      }
      if (!primitive_processing_result.host_draw_vertex_count) {
        // Nothing to draw.
@@ -82,7 +90,7 @@ index 1004e847..3407a126 100644
      }
      if (primitive_processing_result.host_primitive_type == xenos::PrimitiveType::kTriangleFan) {
        // Vulkan uses the same fan-to-list conversion policy as D3D12.
-@@ -3905,7 +3921,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -3905,7 +3922,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
                                                  &pipeline_is_placeholder);
    if (REXCVAR_GET(async_shader_compilation) && pipeline_is_placeholder) {
      frame_used_async_placeholder_pipeline_ = true;
@@ -91,7 +99,7 @@ index 1004e847..3407a126 100644
    }
    if (pipeline == VK_NULL_HANDLE || pipeline_layout_provider == nullptr) {
      return draw_fail("pipeline_lookup");
-@@ -4157,11 +4173,111 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -4157,11 +4174,121 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
        render_target_cache_->last_update_render_pass(),
        render_target_cache_->last_update_framebuffer());
  
@@ -185,7 +193,17 @@ index 1004e847..3407a126 100644
 +  // Tie a draw batch to a region of the screen (cycle 385). Skipping every draw
 +  // that binds a named texture makes the pixels it owns disappear, which is the
 +  // one thing twenty-seven eliminations never established. Diagnostic only.
-+  if (pixel_shader && REXCVAR_GET(ac6_skip_texture_base)) {
++  // Toggle the skip on a 2-second cycle so both phases occur inside ONE run.
++  // Comparing two separate runs failed (cycle 386): they do not reach the same
++  // state, and 66% of pixels differed for reasons unrelated to the skip.
++  bool skip_phase = false;
++  if (REXCVAR_GET(ac6_skip_texture_base)) {
++    const uint64_t sec = uint64_t(std::chrono::duration_cast<std::chrono::seconds>(
++                                      std::chrono::steady_clock::now().time_since_epoch())
++                                      .count());
++    skip_phase = (sec % 4) < 2;
++  }
++  if (pixel_shader && skip_phase) {
 +    for (const auto& binding : pixel_shader->GetTextureBindingsAfterTranslation()) {
 +      const xenos::xe_gpu_texture_fetch_t fetch = regs.GetTextureFetch(binding.fetch_constant);
 +      if ((uint32_t(fetch.base_address) << 12) == uint32_t(REXCVAR_GET(ac6_skip_texture_base))) {
@@ -203,7 +221,7 @@ index 1004e847..3407a126 100644
    } else {
      std::pair<VkBuffer, VkDeviceSize> index_buffer;
      switch (primitive_processing_result.index_buffer_type) {
-@@ -4194,6 +4310,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -4194,6 +4321,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
              : VK_INDEX_TYPE_UINT32);
      deferred_command_buffer_.CmdVkDrawIndexed(primitive_processing_result.host_draw_vertex_count, 1,
                                                0, 0, 0);
@@ -211,7 +229,7 @@ index 1004e847..3407a126 100644
    }
  
    // Invalidate textures in memexported memory and watch for changes.
-@@ -4223,7 +4340,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+@@ -4223,7 +4351,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
      }
    }
  
@@ -220,7 +238,7 @@ index 1004e847..3407a126 100644
  }
  
  bool VulkanCommandProcessor::IssueDraw_MemexportReadbackFullPath(uint32_t total_size) {
-@@ -4434,8 +4551,27 @@ bool VulkanCommandProcessor::IssueCopy() {
+@@ -4434,8 +4562,27 @@ bool VulkanCommandProcessor::IssueCopy() {
    ReadbackResolveMode readback_mode = GetReadbackResolveMode(REXCVAR_GET(vulkan_readback_resolve));
    if (readback_mode == ReadbackResolveMode::kDisabled) {
      uint32_t written_address, written_length;
