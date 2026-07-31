@@ -1,0 +1,146 @@
+diff --git a/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp b/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp
+index 1004e847..2bf1e2c0 100644
+--- a/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp
++++ b/thirdparty/rexglue-sdk/src/graphics/vulkan/command_processor.cpp
+@@ -24,6 +24,7 @@
+ #include <SPIRV/GlslangToSpv.h>
+ #include <glslang/Public/ShaderLang.h>
+ #include <rex/assert.h>
++#include <rex/graphics/graphics_system.h>
+ #include <rex/cvar.h>
+ #include <rex/dbg.h>
+ #include <rex/logging.h>
+@@ -48,6 +49,9 @@
+ 
+ #include "../../../../../src/ac6_backend_fixes/ac6_backend_hooks.h"
+ 
++REXCVAR_DEFINE_BOOL(ac6_log_vulkan_draws, false, "AC6/Render",
++                    "Log one line per Vulkan draw: primitive, counts and shader hashes");
++
+ // Legacy backend compatibility aliases for shared readback controls.
+ REXCVAR_DEFINE_BOOL(vulkan_readback_resolve, false, "GPU/Vulkan",
+                     "Read render-to-texture results on the CPU")
+@@ -2414,6 +2418,11 @@ void VulkanCommandProcessor::IssueSwap(uint32_t frontbuffer_ptr, uint32_t frontb
+           frontbuffer_width_scaled, frontbuffer_height_scaled);
+     }
+   }
++  // Counted here, not at NotifyGuestPresent: this is the stage cycle 316 paired
++  // against VdSwap when it concluded the host honours exactly what the guest
++  // asks. Keeping the pairing at the same stage is what makes the two cycles
++  // comparable.
++  graphics::frame_loop_telemetry::CountHostSwapPresent();
+   REXGPU_DEBUG(
+       "XELOG_GPU PRESENT: swap_texture_view={:p} packet_size={}x{} src_size={}x{} "
+       "src_unscaled={}x{} guest_output_size={}x{} format={}",
+@@ -3638,6 +3647,11 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+ 
+   const RegisterFile& regs = *register_file_;
+   (void)index_buffer_info;
++  ac6::backend::ReportHostIssueCalled(ac6::backend::BackendDrawApi::kVulkan);
++  auto draw_result = [](bool success) {
++    return ac6::backend::ReportBackendIssueResult(
++        ac6::backend::BackendDrawApi::kVulkan, success);
++  };
+   auto draw_fail = [&](const char* stage) {
+     auto vgt_draw_initiator = regs.Get<reg::VGT_DRAW_INITIATOR>();
+     REXGPU_ERROR(
+@@ -3655,7 +3669,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+   xenos::EdramMode edram_mode = regs.Get<reg::RB_MODECONTROL>().edram_mode;
+   if (edram_mode == xenos::EdramMode::kCopy) {
+     // Special copy handling.
+-    return IssueCopy();
++    return draw_result(IssueCopy());
+   }
+ 
+   bool surface_pitch_is_zero = regs.Get<reg::RB_SURFACE_INFO>().surface_pitch == 0;
+@@ -3688,7 +3702,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+   if (surface_pitch_is_zero && is_rasterization_done) {
+     // Doesn't actually draw.
+     // Unlikely that zero would even really be legal though.
+-    return true;
++    return draw_result(true);
+   }
+   VulkanShader* pixel_shader = nullptr;
+   if (is_rasterization_done) {
+@@ -3708,7 +3722,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+     // cache.
+     if (!memexport_used_vertex) {
+       // This draw has no effect.
+-      return true;
++      return draw_result(true);
+     }
+   }
+   bool memexport_used_pixel = pixel_shader && (pixel_shader->memexport_eM_written() != 0);
+@@ -3755,7 +3769,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+     }
+     if (!primitive_processing_result.host_draw_vertex_count) {
+       // Nothing to draw.
+-      return true;
++      return draw_result(true);
+     }
+     if (primitive_processing_result.host_primitive_type == xenos::PrimitiveType::kTriangleFan) {
+       // Vulkan uses the same fan-to-list conversion policy as D3D12.
+@@ -3905,7 +3919,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+                                                 &pipeline_is_placeholder);
+   if (REXCVAR_GET(async_shader_compilation) && pipeline_is_placeholder) {
+     frame_used_async_placeholder_pipeline_ = true;
+-    return true;
++    return draw_result(true);
+   }
+   if (pipeline == VK_NULL_HANDLE || pipeline_layout_provider == nullptr) {
+     return draw_fail("pipeline_lookup");
+@@ -4157,11 +4171,37 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+       render_target_cache_->last_update_render_pass(),
+       render_target_cache_->last_update_framebuffer());
+ 
++  // Per-draw attribution (AC6 P1.3).
++  //
++  // The save screen issues 56 draws per frame against the title screen's 44,
++  // while showing far less: the oracle renders a GAME DATA browser, row labels,
++  // "Load file 01?" and an OK/CANCEL footer there, and we render only the
++  // background and two buttons. Counting draws cannot say whether the missing
++  // layer is never submitted or submitted invisibly -- that needs draws
++  // attributed to their content.
++  //
++  // ac6_render_capture cannot do it: cycle 346 established it hangs off guest
++  // D3D function overrides while the draws that reach the screen are issued
++  // here, in the Vulkan command processor, off the PM4 ring. Two disjoint
++  // paths, which is why its counters read zero against 97021 host draws.
++  //
++  // So attribute here, where the traffic is. Shader ucode hashes group draws by
++  // pass, which is what distinguishes a text layer from a background quad.
++  // Behind a cvar and off by default: this fires per draw, thousands of times a
++  // second.
++  if (REXCVAR_GET(ac6_log_vulkan_draws)) {
++    REXGPU_INFO("[ac6-draw] prim={} verts={} idx_count={} vs={:016X} ps={:016X}",
++                uint32_t(prim_type), primitive_processing_result.host_draw_vertex_count,
++                index_count, vertex_shader ? vertex_shader->ucode_data_hash() : 0ull,
++                pixel_shader ? pixel_shader->ucode_data_hash() : 0ull);
++  }
++
+   // Draw.
+   if (primitive_processing_result.index_buffer_type ==
+           PrimitiveProcessor::ProcessedIndexBufferType::kNone ||
+       shader_32bit_index_dma) {
+     deferred_command_buffer_.CmdVkDraw(primitive_processing_result.host_draw_vertex_count, 1, 0, 0);
++    ac6::backend::ReportHostDrawEmitted(ac6::backend::BackendDrawApi::kVulkan);
+   } else {
+     std::pair<VkBuffer, VkDeviceSize> index_buffer;
+     switch (primitive_processing_result.index_buffer_type) {
+@@ -4194,6 +4234,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+             : VK_INDEX_TYPE_UINT32);
+     deferred_command_buffer_.CmdVkDrawIndexed(primitive_processing_result.host_draw_vertex_count, 1,
+                                               0, 0, 0);
++    ac6::backend::ReportHostDrawEmitted(ac6::backend::BackendDrawApi::kVulkan);
+   }
+ 
+   // Invalidate textures in memexported memory and watch for changes.
+@@ -4223,7 +4264,7 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type, uint32_t
+     }
+   }
+ 
+-  return true;
++  return draw_result(true);
+ }
+ 
+ bool VulkanCommandProcessor::IssueDraw_MemexportReadbackFullPath(uint32_t total_size) {
