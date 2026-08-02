@@ -1,0 +1,204 @@
+# AC6 — qualifying why the YES/NO dialog never confirms
+
+Date: 2026-07-31. Companion to `AC6_FIRST_MISSION_AUDIT.txt`.
+
+Evidence base: the recompiled C++ generated from the qualified PAL
+`assets/default.xex` (23 058 functions, `.text` `0x82090000`–`0x823E7DF0`), and
+the decompressed PE `workspaces/ace-combat-6/analysis-input/ACE6_X360.exe`
+(Xenon PPC, image base `0x82000000`) for `.rdata` table contents. Runtime values
+are quoted from the cycle journal, not re-measured here.
+
+All static claims below are reproducible by reading the named addresses.
+
+---
+
+## 1. The three objects the investigation chased are one object
+
+This is the finding that reframes cycles 417–452.
+
+`sub_821B9408` is a constructor. It writes three vtable pointers:
+
+```
+lis r10,-32250 ; addi r10,r10,23236   -> 0x82065AC4
+stw r10,0(r30)                        ; [this+0]       = 0x82065AC4
+
+addi r11,r30,96                       ; r11 = this+96
+addi r9,r9,31220                      -> 0x820679F4
+stw r9,0(r11)                         ; [this+96]      = 0x820679F4
+
+addis r11,r30,1 ; addi r11,r11,32224  ; r11 = this+0x17DE0
+addi r10,r11,31136                    -> 0x820679A0
+stw r10,0(r11)                        ; [this+0x17DE0] = 0x820679A0
+```
+
+Against the two runtime addresses the journal measured independently:
+
+| journal | measured object | minus constructor offset | base |
+|---|---|---|---|
+| cycle 417 "device selector object" | `0xA3300060` | −96 | **`0xA3300000`** |
+| cycle 438 "the stuck screen" | `0xA3317DE0` | −`0x17DE0` | **`0xA3300000`** |
+
+Both resolve to the same base. They are two sub-objects of a single object at
+`0xA3300000` whose primary vtable is `0x82065AC4`.
+
+Cycle 438 noticed the two vtables were 84 bytes apart and explicitly declined to
+infer kinship ("deux adresses voisines ne font pas une hiérarchie"). That caution
+was reasonable, but the constructor settles it: they are the same object, and
+roughly thirty-five cycles treated them as unrelated leads.
+
+## 2. `[screen+4]` is the input context, not a "selector object"
+
+In `sub_821B9828` — **vtable slot 3 of the owner class** (`0x82065AC4[3] =
+0x821B9828`):
+
+```
+addi r29,r31,96          ; r29 = this+96
+mr   r3,r29
+bl   0x821ce088          ; initialise the input context at this+96
+
+lis  r10,1 ; ori r9,r10,32228    ; r9 = 0x17DE4
+stwx r29,r31,r9                  ; [this+0x17DE4] = this+96
+```
+
+`this+0x17DE4` is `screen+4`. So **`screen+4` holds a pointer to the input
+context at `this+96` = `0xA3300060`.**
+
+Consequences for the journal:
+
+- cycle 430's "`sub_821C56F8` passes the selector object `[r31+4]`" is passing
+  the **input context**;
+- cycle 431's `r11 = [this+4]; r10 = [r11+84]` reads offset 84 **of the input
+  context**, not a screen state machine;
+- cycle 437 therefore measured `[inputctx+84] = 0`, and read it as "the screen
+  is idle". A field that `sub_821CE8A8` sets to 2 while
+  `XamShowDeviceSelectorUI` is pending, and that gates the screen's update, is
+  better read as "a system modal is currently up" — 0 meaning none is.
+
+Nine cycles (428–436) were spent modelling a screen state machine that is not
+one, and cycle 437's correction, while right that the value was 0, kept the
+wrong owner for the field.
+
+## 3. The layer nobody probed: raw is not what the UI consumes
+
+AC6 does not hand raw XInput masks to its UI. There are three layers, and the
+existing workspace reports already document two of them:
+
+```
+raw XInput buttons (A = 0x1000)
+      |  sub_821CE088                     raw -> canonical   (A -> 0x20)
+canonical masks
+      |  0x821BE268 default bindings      canonical -> 32 logical slots
+logical slots                             (A activates slots 0 and 23)
+      |
+UI consumers                              e.g. "logical-input bits 0 or 4"
+```
+
+Sources: `FUNCTION_821BE268_DEFAULT_BINDINGS_REPORT.md` (canonical mask table,
+`0x821CE088` mapping A to `0x20`, slots 0 and 23) and
+`FUNCTION_821B9048_TITLE_MOVIE_FLOW_REPORT.md` (a sibling mode task consuming
+"logical-input bits 0 or 4").
+
+**Every cycle from 401 to 452 instrumented the raw layer only.** Cycle 425
+decoded the edge detector at `sub_8234D378`, cycle 427 measured `pressed=0x1000`
+and `repeat=0x1000` at pad object `0x8290DE3C`, and cycle 427 concluded "the
+input chain is entirely exonerated, from the physical key to the two fields the
+menu consults". That conclusion is sound about the raw layer and does not reach
+the canonical or logical layers at all — which is precisely where a defect would
+produce the observed signature.
+
+The signature fits: a correctly formed raw A edge, no kernel call, no state
+change, and D-pad navigation still working — because navigation and confirmation
+need not resolve through the same logical slot, and only confirmation is broken.
+
+Note the owner class initialises **its own** input context
+(`sub_821CE088(this+96)`), separate from the five global contexts at
+`DAT_826E4EB4` whose consumers the bindings report audited. The bindings report
+found no consumer of the global just-pressed word inside this screen's class,
+which is consistent: this screen reads its own context.
+
+## 4. `sub_821C56F8` is a jump-table switch, not an if/else
+
+The screen update dispatches on a state value 0..5:
+
+```
+cmplwi cr6,r11,5
+rlwinm r0,r11,2,0,29        ; index*4 into a jump table
+  -> loc_821C5848 / loc_821C58D8 / loc_821C5908 / loc_821C5958 / fallthrough
+```
+
+Cycles 431–432 modelled `loc_821C5848` as *the* branch taken during the block
+and `loc_821C58CC` (`li r3,0; blr`) as "the wait branch that does nothing".
+`loc_821C5848` is one case among six, and `loc_821C58CC` is the shared epilogue
+several cases jump to. One case is additionally gated by a predicate,
+`sub_821C5258` — a large state machine that writes the next state to `[this+68]`
+and reads `[inputctx+80]` — whose false return also lands on `loc_821C58CC`.
+
+So "the screen returns immediately and does nothing" is not established; what is
+established is that several distinct paths share one epilogue.
+
+## 5. Boundary divergence between ReXGlue and Ghidra — handle with care
+
+Addresses named in the workspace reports do not all exist as functions in the
+recompilation:
+
+| Ghidra address | role | ReXGlue function containing it |
+|---|---|---|
+| `0x821BE268` | default bindings | inside `sub_821BE1F8` |
+| `0x821CDE88` | bindings caller | inside `sub_821CDE00` |
+| `0x821CDF08` | main input update | inside `sub_821CDE00` |
+| `0x821B9048` | title-movie update | `sub_821B9050` (8 bytes later) |
+
+All three of `sub_821BE1F8`, `sub_821CDE00` and `sub_821CE088` **are** called in
+the generated tree, so the chain is statically wired. But this repo already
+carries one hand-repaired ReXGlue split defect (`src/ac6_recomp_overrides.cpp`,
+`sub_8234B978`: "ReXGlue splits the first backward loop at `0x8234B9A8` and
+rejects the otherwise valid edge"). A second split in the input path would be
+invisible to static call-presence checks and must be excluded by execution, not
+by inspection.
+
+## 6. What is proven, and what is not
+
+Proven here, statically and reproducibly:
+
+- one object at `0xA3300000` owns both previously separate "objects" (§1);
+- `screen+4` is the input context (§2);
+- the owner initialises its own input context through `sub_821CE088` (§2);
+- the screen update is a six-way switch (§4);
+- the recompilation's function boundaries diverge from Ghidra's in the input
+  path, and the chain is nevertheless statically reachable (§5).
+
+**Not proven: the mechanism by which A fails to confirm.** I did not decode
+`sub_821C5258`'s full state machine, and I did not execute anything. The RTTI
+type names that would name these classes are zero-filled in the extracted PE
+(`0x826EA89C`, `0x826EB03C`, `0x826EB210`, `0x826EB450` all read as zeros),
+although the COL chain itself parses correctly and reproduces the
+`0x82077720 -> 0x826EA89C` link recorded for `CModeTaskTitleMovie`. Names must
+come from the XEX through Ghidra, not from this PE.
+
+## 7. The decisive measurement, now precisely addressed
+
+The question is no longer "where is the selection field" — twelve cycles of
+memory scanning failed at that, and it is the wrong question. The question is
+**does A reach the logical layer**, and it is one probe:
+
+Instrument the input context at owner`+96` (runtime `0xA3300060`, reachable as
+`[screen+4]` from the screen object, or from the owner base). Dump its button
+words across a scripted `Left` press and an `A` press.
+
+- `Left` sets its logical bit and `A` does not → the fault is in
+  raw→canonical→logical (`sub_821CE088` / the binding table at `0x821BE1F8`),
+  and it is localised to two functions.
+- Both set their logical bits → the logical layer is sound and the fault is in
+  the consumer, i.e. `sub_821C5258` and the switch in `sub_821C56F8`.
+
+Either outcome halves the problem and names the next function. This is one run,
+and unlike the twelve scanning cycles it cannot return "nothing changed":
+`Left` is a known-good positive control that must show a difference, so a null
+result indicts the instrument rather than the hypothesis.
+
+Both instruments needed are in the repo already and are described in
+`AC6_FIRST_MISSION_AUDIT.txt` §4: the `PPC_LOAD_*`/`PPC_STORE_*` macros are
+`#ifndef`-guarded and expand inside a `PPC_FUNC` body where `ctx` is in scope,
+and generated functions are `PPC_WEAK_FUNC` and so can be overridden by a strong
+`PPC_FUNC_IMPL` — `sub_821B9828` and `sub_821C56F8` are both overridable this
+way, with no codegen re-run.

@@ -1,0 +1,131 @@
+# AC6 — the generated corpus cannot be reproduced from the tree
+
+Date: 2026-07-31. Result of step P0.3 of `AC6_MISSION1_NATIVE_PLAN.txt`.
+Companion to that plan; read its §1.2 for why this was checked at all.
+
+---
+
+## 1. The finding, stated exactly
+
+`generated/` is in `.gitignore`. It is a build artefact, 100 MB, 23 058 guest
+functions, and it is what every runtime measurement in cycles 397-452 was taken
+against. It is therefore only as trustworthy as the ability to regenerate it.
+
+**It cannot be regenerated.** Running the committed code generator over the
+committed `ac6recomp_config.toml` produces a corpus that differs from the one on
+disk in 21 of 54 files, and the resulting runtime does not boot.
+
+## 2. What was run
+
+```
+rexglue codegen <config with out_directory_path and file_path made absolute>
+```
+
+Nothing else was altered: same XEX (`assets/default.xex`), same 10 456
+`[functions]` entries, same 23 midasm hooks. Codegen completes in 13.6 s and
+reports success.
+
+## 3. What differs
+
+| | on disk (works) | regenerated (does not) |
+|---|---|---|
+| files identical | — | 33 of 54 |
+| files differing | — | 21 of 54 |
+| address-style `case 0x82…` labels | 6 838 | 6 840 |
+| `REX_FATAL` unlisted-target arms | 749 | 751 |
+| `PPC_EXTERN_IMPORT` entries | — | 8 more |
+
+Both corpora contain the committed `bctr` fix (address case labels, `REX_FATAL`
+default arm), so the corpus on disk post-dates
+`codegen: dispatch bctr on the target address`. It pre-dates the second change
+in that same commit, to `emit_conditional_branch` in `builders/context.cpp` —
+the regenerated corpus resolves two more jump tables and imports eight more
+functions, which is that change taking effect.
+
+So the corpus on disk was produced by an intermediate state of the code
+generator that exists in no commit.
+
+## 4. Why the regenerated corpus does not boot
+
+The runtime reaches `DATA00.PAC` streaming normally and then dies:
+
+```
+[critical] [core] [FATAL] Unresolved call from 0x823841F8 to 0x82383EE8
+```
+
+`0x82383EE8` **is** declared in the config
+(`0x82383EE8 = { name = "rex_sub_82383EE8" }`, line 7456). The difference is in
+what codegen emits for it:
+
+| | `rex_sub_82383EE8` occurrences |
+|---|---|
+| working corpus | 13 in `ac6recomp_recomp.41.cpp`, plus `ac6recomp_init.cpp` and `ac6recomp_init.h` |
+| regenerated | 2 in `ac6recomp_recomp.41.cpp`, absent from `init.cpp` and `init.h` |
+
+The function is declared, but no longer emitted or registered, so the call to it
+cannot resolve. The shape is consistent with `0x82383EE8` being absorbed into
+the blocks of its predecessor `0x82383EAC`: the new `targetInBlock` test in
+`emit_conditional_branch` classifies a target contained in one of the function's
+own blocks as an internal label, and a function that is only ever reached that
+way stops being emitted separately.
+
+## 5. Why the change cannot simply be reverted
+
+Reverting `builders/context.cpp` to its pre-change state and regenerating does
+not restore the working corpus. Codegen aborts:
+
+```
+[warning] [codegen] Unresolved b target 0x823616F4 from 0x82361740
+terminate called after throwing an instance of 'std::bad_alloc'
+```
+
+preceded by a cascade of unresolved conditional branches around `0x8236xxxx`.
+The change is load-bearing: without it the generator exhausts memory on this
+title. So the two states are:
+
+- **with** the change: codegen succeeds, corpus does not boot;
+- **without** it: codegen does not finish at all.
+
+Neither reproduces what is on disk.
+
+## 6. Consequences, in order of severity
+
+1. **A clean clone cannot build a working runtime.** `generated/` is ignored, so
+   a fresh checkout must regenerate, and regeneration produces a corpus that
+   dies during boot. The only working corpus is the one in this directory.
+2. **Midasm hooks are unavailable.** They require a codegen re-run, which
+   currently means trading a working runtime for a broken one. The plan lists
+   midasm as the expensive-but-sometimes-necessary instrument; it is presently
+   not available at any price.
+3. **Any future codegen fix is unverifiable** against the corpus in use, because
+   the corpus in use cannot be re-derived.
+
+## 7. What was deliberately not done
+
+The plan says of this step: *"If it differs, that difference is a latent defect
+that will surface the first time anyone regenerates — record it now, do not fix
+it now."* That instruction is followed here. Fixing it is a code-generator
+investigation of unknown depth — the boundary question at `0x82383EAC` /
+`0x82383EE8`, and separately the `0x8236xxxx` allocation cascade — and it is not
+on the path to mission 1 unless a midasm hook becomes necessary.
+
+The working corpus was restored from a backup taken before this experiment, and
+the runtime rebuilt and re-verified. The tree is in the state it was in before
+P0.3 ran, plus this document.
+
+## 8. If it is picked up later
+
+Two concrete entry points, both reproducible in 13.6 s per iteration:
+
+- **The unresolved call.** Test whether removing `0x82383EAC` from `[functions]`
+  — the predecessor whose blocks appear to absorb the target — lets
+  `0x82383EE8` emit as its own function again. `ac6-advance-loop.sh` in
+  `workspaces/ace-combat-6/tools/` automates exactly this
+  regenerate/rebuild/run/adjust-config loop, and was written for the sibling
+  case (`Unresolved branch`, where the fix is to *remove* the entry between
+  source and target). This is `Unresolved call`, so the direction may be the
+  opposite.
+- **The allocation cascade.** The `0x8236xxxx` unresolved conditional branches
+  that precede the `bad_alloc` are the real defect the `targetInBlock` change
+  papers over; the change suppresses the symptom by reclassifying those targets
+  rather than resolving them.
