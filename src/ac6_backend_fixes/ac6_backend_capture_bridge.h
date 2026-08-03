@@ -1,0 +1,88 @@
+#pragma once
+
+#include <array>
+#include <cstdint>
+#include <string>
+
+#include <rex/system/interfaces/graphics.h>
+
+#include "../d3d_state.h"
+
+namespace ac6::backend {
+
+enum class SignatureClass : uint8_t {
+  kUnknown,
+  kScene,
+  kPostProcess,
+  kUiComposite,
+  kParticles,
+  kPointSpriteEffects,
+  kClouds,
+  kSmoke,
+  kExplosions,
+  kMissileTrails,
+};
+
+struct RenderEventSignature {
+  uint64_t stable_id = 0;
+  uint64_t capture_record_signature = 0;
+  uint64_t swap_texture_fetch_signature = 0;
+  uint32_t render_target_0 = 0;
+  uint32_t depth_stencil = 0;
+  uint32_t viewport_width = 0;
+  uint32_t viewport_height = 0;
+  uint32_t draw_count = 0;
+  uint32_t clear_count = 0;
+  uint32_t resolve_count = 0;
+  uint32_t indexed_draw_count = 0;
+  uint32_t primitive_draw_count = 0;
+  uint32_t topology_pointlist_count = 0;
+  uint32_t texture_count = 0;
+  uint32_t sampler_count = 0;
+  uint32_t point_min_sampler_count = 0;
+  uint32_t linear_min_sampler_count = 0;
+  uint32_t point_mip_sampler_count = 0;
+  uint32_t linear_mip_sampler_count = 0;
+  uint32_t anisotropic_sampler_count = 0;
+  uint32_t mip_clamp_sampler_count = 0;
+  uint32_t max_sampler_mip_level = 0;
+  uint32_t stream_count = 0;
+  uint32_t vertex_declaration = 0;
+  uint32_t index_buffer = 0;
+  uint32_t guest_vertex_shader = 0;
+  uint32_t guest_pixel_shader = 0;
+  ac6::d3d::ShaderProgramReference pixel_shader_program{};
+  std::array<ac6::d3d::ShaderProgramReference,
+             ac6::d3d::kCapturedVertexShaderVariantCount>
+      vertex_shader_program_candidates{};
+  uint32_t fetch_constant_count = 0;
+  uint32_t shader_gpr_alloc = 0;
+  uint64_t active_vertex_shader_hash = 0;
+  uint64_t active_pixel_shader_hash = 0;
+  bool has_depth_stencil = false;
+  bool has_resolve = false;
+  bool half_res_like = false;
+  bool quarter_res_like = false;
+  bool post_process_like = false;
+  bool ui_like = false;
+  bool particle_like = false;
+  bool point_sprite_like = false;
+  bool point_filtered_like = false;
+  bool mip_clamped_like = false;
+  bool additive_like = false;
+  SignatureClass classification = SignatureClass::kUnknown;
+};
+
+uint64_t HashSwapTextureFetch(const rex::system::GraphicsSwapSubmission& submission);
+
+RenderEventSignature BuildRenderEventSignature(
+    const ac6::d3d::FrameCaptureSnapshot& frame_capture,
+    const ac6::d3d::FrameCaptureSummary& capture_summary,
+    const ac6::d3d::ShadowState& shadow_state,
+    const rex::system::GraphicsSwapSubmission* swap_submission,
+    uint64_t active_vertex_shader_hash,
+    uint64_t active_pixel_shader_hash);
+
+std::string BuildSignatureTags(const RenderEventSignature& signature);
+
+}  // namespace ac6::backend

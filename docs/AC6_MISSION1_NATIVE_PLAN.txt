@@ -1,0 +1,404 @@
+# AC6 — repo audit and the granular plan to reach mission 1 natively
+
+Date: 2026-07-31. Worktree: `.claude/worktrees/ac6-gapfill`, branch
+`ac6-first-mission-audit`. Companion to `AC6_FIRST_MISSION_AUDIT.txt` (why the
+investigation stalled) and `AC6_CONFIRM_PATH_QUALIFICATION.txt` (what is proven
+statically about the dialog). This document covers what the *repository* looks
+like today and what has to be built, in order, to get from the stuck dialog to
+a playable first mission.
+
+---
+
+## 1. Audit of the repo as it stands
+
+### 1.1 The build
+
+| item | state |
+|---|---|
+| runtime build dir | `build-rt/`, Ninja, RelWithDebInfo, configured against **this worktree** |
+| codegen-only build dir | `build-tool/` (`REXGLUE_CODEGEN_ONLY`, object library, no executable) |
+| binary | `build-rt/ac6recomp`, 167 MB, links, runs, presents |
+| generated corpus | 52 `.cpp` + headers, 100 MB, 23 058 guest functions |
+| codegen config | `ac6recomp_config.toml`, 10 456 `[functions]` entries, 23 midasm hooks |
+| host toolchain | Clang, IPO/LTO enabled for RelWithDebInfo |
+| host tools present | `Xvfb`, `xdotool`, `import`, `convert` — the whole capture harness works |
+| assets | `assets/default.xex` → symlink into `workspaces/ace-combat-6/game-files` |
+
+**Finding B1 — the build dir was stale against the host toolchain.** A plain
+`ninja -C build-rt` failed before any project source was touched: SDL3's
+precompiled header was built against a `sys/cdefs.h` that the system has since
+replaced (mtime 1774989310 → 1784741087). That is a glibc/headers update under
+a cached PCH, not a source defect. Deleting the two stale PCHs (SDL3's and
+glslang's) and rebuilding gives a clean run: 0 errors, `ac6recomp` and the
+`rexglue` codegen tool both relink. **The tree compiles.** Worth recording
+because it presents as "the tree is broken" to the next session that opens it,
+and it is not.
+
+### 1.2 The working tree — the largest single risk
+
+**Finding B2 — 1 567 insertions across 33 tracked files are uncommitted, and
+the binary every recent measurement was taken with was built from them.**
+
+The last five commits are documentation and negative results. The code that
+makes the game boot, stream, render and take input is sitting unstaged. It
+spans the SDK, not just AC6 glue:
+
+- `src/core/threading_posix.cpp` (+43), `src/core/exception_handler_posix.cpp` (+40)
+- `src/system/xsocket.cpp` (+165), `src/system/xmemory.cpp`
+- `src/kernel/xboxkrnl/xboxkrnl_threading.cpp` (+140), `_io.cpp` (+22), `_video.cpp`
+- `src/kernel/xam/xam_ui.cpp` (+20)
+- `src/graphics/vulkan/texture_cache.cpp` (+177), `graphics_system.cpp` (+120),
+  `spirv_translator_fetch.cpp` (+46), `pipeline/texture/cache.cpp`
+- `src/codegen/builders/control_flow.cpp` (+46), `context.cpp` — **codegen
+  changes**, which means the generated corpus on disk may not be reproducible
+  from a clean checkout
+
+plus untracked, load-bearing or nearly so: `src/ac6_recomp_overrides.cpp` (the
+`sub_8234B978` split repair, referenced by `CMakeLists.txt` — a clean clone
+does not configure without it), `thirdparty/rexglue-sdk/src/native/ui/codegen_ui_stubs.cpp`,
+and two new unit tests.
+
+Every measurement in cycles 397–452 is therefore attributable to a tree state
+that exists in exactly one directory on one machine. This is fixed in P0 and
+nothing else should start first.
+
+### 1.3 The instrumentation
+
+Committed and live: `src/ac6_backend_fixes/ac6_ui_input_dispatch_probe.cpp`
+(460 lines) overriding three guest functions through the `PPC_FUNC_IMPL` +
+`__imp__` wrapper pattern — `rex_sub_8234D510` (UI dispatcher),
+`rex_sub_8234D210` (auto-repeat/edges), `rex_sub_821C56F8` (screen update).
+The wrapper pattern is proven in production here, and it is the mechanism every
+step below leans on.
+
+**Finding B3 — roughly 200 of those 460 lines are dead weight from the twelve
+scanning cycles.** `ScanGuestPages` FNV-hashes 32 MB every 120 frames and
+re-hashes it synchronously on every `DPAD_LEFT` edge; `WatchScreenObject` and
+`WatchPointerTargets` walk the object and one pointer level per frame. All of
+it was superseded or eliminated by measurement (cycles 450 and 452 killed both
+candidate blocks by forced write). It is still compiled in and still runs
+whenever `ac6_log_ui_dispatch` is set, and it perturbs the timing of exactly
+the frames the next experiments care about.
+
+**Finding B4 — the audit's §4 claims check out, and neither instrument
+exists.** Verified directly:
+
+- `PPC_STORE_U8/16/32/64` are `#ifndef`-guarded at
+  `thirdparty/rexglue-sdk/include/rex/ppc/memory.h:87-105`. Nothing in the tree
+  defines them first — no `-include` prelude, no `finstrument` flag anywhere in
+  CMake.
+- `PPC_WEAK_FUNC` is `__attribute__((weak, noinline))`
+  (`include/rex/ppc/context.h:87`), and `PPC_FUNC_IMPL` is a plain strong
+  `extern "C"` definition, so override-by-link works and is already in use.
+- Generated sources join the build through `target_sources` on the `ac6recomp`
+  target itself (`generated/sources.cmake` → `rexglue_setup_target`), so
+  per-file compile options must go on `${GENERATED_SOURCES}` via
+  `set_source_files_properties`, not on the target.
+
+### 1.4 The run harness
+
+Working, but **outside the repository**: `workspaces/ace-combat-6/tools/`
+(`ac6-traverse-menus.sh`, `ac6-input-ab-test.sh`, `ac6-capture.sh`,
+`ac6-detect-screen.py`, …) and `$CLAUDE_JOB_DIR/tmp`. The recipe is:
+
+```
+Xvfb :77 -screen 0 1920x1080x24
+build-rt/ac6recomp --mnk_mode=true --ac6_performance_mode=false --log_flush_interval=1
+xdotool keydown/keyup   (keys must be HELD; a bare `xdotool key` is too short)
+import -window root     (capture)   +  convert -format %[fx:mean]  (metric)
+```
+
+Bindings that matter: **A = Space**, B = Shift, D-pad = arrow keys, Start = Escape.
+
+**Finding B5 — the harness is unversioned relative to the code it drives.** The
+scripts already hardcode `$WT/build-rt` in this worktree. Results are not
+reproducible by anyone who does not also have the job tmp directory.
+
+### 1.5 Where the game actually is
+
+Unchanged from the audit, and reconfirmed from `build-rt/ac6recomp.log`: the
+last run presents 1280×720 at 60 Hz continuously, and the final probe lines are
+
+```
+[ac6-sel]       0x82A53428=00000048 0x82A5342C=00000004
+[ac6-screen-id] screen=0xA3317DE0 vtable=0x820679A0 slots=821C3690,82079088,821CA6C8
+[ac6-screen]    obj=0xA3300060 state=0 device_id=0x00000001 ovl_result=0x00000000
+[mnk-probe]     active=true has_focus=true keys_down=0
+```
+
+i.e. the YES/NO modal, alive, device selector finished, input driver healthy.
+
+---
+
+## 2. What "as native" is taken to mean here
+
+Two readings exist and only one is the near-term goal.
+
+**Taken as the goal:** reach mission 1 inside *this* static recompilation —
+the native PC port — as opposed to the from-scratch reconstruction in
+`workspaces/ace-combat-6`. On that reading everything below applies.
+
+**Not taken as the goal, and deliberately deferred:** replacing the vendored
+RexGlue/Xenia backend as the *visible* renderer. `ac6_graphics_mode` currently
+admits only `disabled | analysis_only | hybrid_backend_fixes`
+(`src/ac6_native_graphics.cpp:21`); the AC6 layer is capture, diagnostics and
+backend-fix routing, and the legacy replay renderer is explicitly not the
+present path. Every gate in P2–P5 below is renderer-independent — they are
+input, kernel, asset and control-flow gates — so promoting the native renderer
+before mission 1 is reachable would add risk without moving the goal. §7 states
+what that track would need if it is wanted afterwards.
+
+---
+
+## 3. P0 — make the ground trustworthy (do first, ~1 session)
+
+Nothing here is investigation. It is the precondition for any result being
+worth recording.
+
+- **P0.1 — Triage and commit the 1 567-line diff, in three commits.**
+  (a) SDK runtime fixes that the boot depends on: `threading_posix`,
+  `exception_handler_posix`, `xboxkrnl_threading/io/video`, `xam_ui`,
+  `xsocket`, `xmemory`. (b) Graphics: vulkan `texture_cache`,
+  `graphics_system`, `spirv_translator_fetch`, `pipeline/texture/cache`,
+  `d3d12/command_processor`, plus the two new AC6 cvars
+  (`ac6_force_white_vertex_colour`, `ac6_force_white_texture_sample`) and
+  `frame_loop_telemetry_interval`. (c) Codegen: `builders/control_flow.cpp`,
+  `builders/context.cpp` — **flagged separately in the commit message**,
+  because these change what the corpus regenerates as, and §1.2 means the
+  corpus on disk may not currently be reproducible from a clean tree.
+  Add the untracked `src/ac6_recomp_overrides.cpp` in (a): `CMakeLists.txt:35`
+  already lists it, so its absence breaks configure.
+- **P0.2 — Add the two untracked unit tests** (`ac6_backend_capture_bridge_test.cpp`,
+  `ac6_backend_draw_telemetry_test.cpp`, `tests/unit/core/threading_test.cpp`)
+  and confirm `tests/unit` still passes.
+- **P0.3 — Prove the corpus is reproducible.** Run `rexglue codegen
+  ac6recomp_config.toml` into a scratch dir with the committed codegen changes
+  and diff against `generated/`. If it differs, that difference is a latent
+  defect that will surface the first time anyone regenerates — record it now,
+  do not fix it now.
+- **P0.4 — Green build from cold.** `rm -rf build-rt && cmake --preset …` then
+  build; record wall-clock. This is the number every later step's turnaround is
+  budgeted against, and it is currently unknown. (§1.1: expect a PCH clear to
+  be needed on any machine whose headers moved.)
+- **P0.5 — Move the harness into the repo.** `tools/ac6-run.sh` (Xvfb + launch
+  + log capture), `tools/ac6-input.sh` (hold-key sequences), `tools/ac6-band.py`
+  (the cycle-421 band metric, `y 590-660`, `x 600-1280`, plus full-frame mean
+  as a secondary). One entry point, arguments for key sequence and duration.
+  This is what makes P2 onward comparable across sessions.
+- **P0.6 — Amputate the dead scanning code** (§1.3) from
+  `ac6_ui_input_dispatch_probe.cpp`: remove `ScanGuestPages`,
+  `WatchScreenObject`, `WatchPointerTargets`, `ac6_force_list_shift`,
+  `ac6_force_selection_swap` and their constants. Keep the dispatcher log, the
+  edge log, and the `[ac6-screen*]` identification lines. Net −200 lines and
+  the frame timing of the experiment frames stops being perturbed by a 32 MB
+  hash.
+
+**Exit criterion:** clean `git status`, cold build green, one command runs the
+game and prints a band metric.
+
+---
+
+## 4. P1 — bound the problem before solving it (~1 session)
+
+This is the audit's Step 0 and it comes before any instrument, because it is
+cheap and it changes what the rest of the plan is worth.
+
+- **P1.1 — Add a force-advance cvar** to the existing `rex_sub_821C56F8`
+  wrapper: `ac6_force_dialog_confirm`. On arm, write the confirmed next-state
+  value into `[this+68]` — the field the qualification doc identifies
+  `sub_821C5258` as writing (§4 there) — once, then disarm.
+- **P1.2 — Fallback if P1.1 does nothing:** override `sub_821C5258` itself and
+  force its return true, letting the switch in `sub_821C56F8` take the gated
+  case. Cheaper than decoding the state machine and it answers the same
+  question.
+- **P1.3 — Run 180 s with capture at 15 s intervals** and diff against a
+  no-input control run (the `ac6-input-ab-test.sh` design: two untouched runs
+  establish the animation noise floor, the third is the test).
+- **P1.4 — Read the outcome, and let it re-rank the plan.**
+  - *Advances to title/menu*: the dialog is the last gate. P2–P3 become
+    high-value, and P5's gate list becomes the bulk of the remaining work.
+  - *Hits a second wall*: that wall is now known, and P5 gets re-scoped around
+    it before a single cycle is spent on the dialog's mechanism.
+  - *Crashes*: the crash address is itself information about what the confirm
+    path was supposed to have set up. Cap this at two attempts; do not turn it
+    into a debugging thread.
+
+**Exit criterion:** a written statement of how far the game gets when the
+dialog is bypassed, with a screenshot.
+
+---
+
+## 5. P2 — localise the confirm defect (~1–3 sessions)
+
+Ordered cheapest-discriminator-first. Each step names a function and stops.
+
+- **P2.1 — The logical-input probe (one run, has a positive control).**
+  In the `rex_sub_821C56F8` wrapper, read `[screen+4]` → the input context at
+  owner+96 (runtime `0xA3300060`), and dump a 128-byte window of it on every
+  input edge, tagged with the raw mask. Drive `Left` then `A`.
+  - `Left` sets a logical bit, `A` does not → the fault is in
+    raw→canonical→logical, localised to `sub_821CE088` and the binding table
+    inside `sub_821BE1F8`. Go to P2.4.
+  - Both set bits → the logical layer is sound; the fault is in the consumer,
+    `sub_821C5258` / the six-way switch in `sub_821C56F8`. Go to P2.3.
+  - Neither moves → the *instrument* is wrong, not the hypothesis, because
+    `Left` demonstrably works. Fix the probe before drawing any conclusion.
+    This is the property twelve scanning cycles lacked.
+- **P2.2 — Control-flow differential, if P2.1 is ambiguous.**
+  `-finstrument-functions` on `${GENERATED_SOURCES}` only, via
+  `set_source_files_properties`. `__cyg_profile_func_enter` appends
+  `(this_fn, tid)` to a per-thread ring buffer (64 k entries, lock-free,
+  disarmed by default — an atomic load and an early return on the cold path).
+  Arm on the input edge already detected in `rex_sub_8234D210`, capture ~4
+  frames, dump. Resolve host addresses → `sub_XXXXXXXX` via a linker map
+  (`-Wl,-Map`) generated in the same build. Diff `Left` against `A`: either `A`
+  follows the working path and stops at a branch — which names the swallowing
+  function — or it never enters the handler, which says the mask is filtered
+  upstream. **Build this in a separate `build-instr/` with IPO off**; LTO plus
+  23 058 instrumented functions is the difference between a 5-minute and a
+  40-minute turnaround, and the instrumented binary is not the shipping one.
+- **P2.3 — Store watchpoint with writer attribution, if P2.2 names a state
+  field rather than a branch.** A prelude header
+  (`src/instrument/ac6_ppc_store_hook.h`) defining `PPC_STORE_U8/16/32/64`
+  before `rex/ppc/memory.h` is reached, injected with
+  `-include` on `${GENERATED_SOURCES}`. The hook takes `(addr, value, ctx.lr)` —
+  `ctx` is in scope because the macro expands inside a `PPC_FUNC` body, and
+  `ctx.lr` is the *guest* return address, which is exact attribution in guest
+  space with no `dladdr`/map resolution needed. Gate on a single address-range
+  compare so the unwatched path stays one predictable branch. Watch
+  `[screen+68]` and the input context, filtered to the frame of a `Left` edge,
+  and record who writes.
+  Verify the prelude actually landed: a `static_assert` on a sentinel macro in
+  the header, plus a spot-check that one generated `.o` references the hook
+  symbol. A prelude that silently fails to apply looks exactly like a null
+  result.
+- **P2.4 — Read the named function in Ghidra**, from
+  `ghidra-projects/ace-combat-6` against the PAL XEX — *not* by grepping
+  generated C++, which is the documented failure mode of cycles 412–440.
+  Determine what the confirm branch requires. Two live hypotheses, both
+  consistent with every measurement so far and neither yet tested: a per-screen
+  accepted-button mask that excludes the face buttons, or a readiness flag the
+  confirm branch tests first that a recompilation-driven timer never sets.
+
+**Exit criterion:** one function address, and a sentence saying what it does
+with the A mask that it does not do with the D-pad mask.
+
+---
+
+## 6. P3 — fix and verify (~1 session per cause)
+
+- **P3.1 — Classify the cause**, because the repair differs:
+  (a) *ReXGlue split / codegen defect* — the input path already shows boundary
+  divergence from Ghidra (`0x821BE268` inside `sub_821BE1F8`, `0x821CDF08`
+  inside `sub_821CDE00`), and this repo already carries one hand-repaired split
+  (`sub_8234B978`). Repair as a `PPC_FUNC_IMPL` override first — no codegen
+  re-run — and only then decide whether to fix it in the config.
+  (b) *Missing kernel/XAM semantic* — fix in the SDK, with a unit test.
+  (c) *Readiness/timer never satisfied* — fix whatever drives the flag; a
+  forced flag is a diagnosis, not a fix, and must not be left armed.
+- **P3.2 — Verify with the band metric**, `y 590-660`, `x 600-1280`, never a
+  full-screen mean — the full-screen mean is what hid working navigation for
+  twenty cycles. Real navigation scores ~131 against a resting noise of 2–4;
+  the eliminated candidate scored 4.4. Confirm must additionally *dismiss* the
+  dialog: a new screen, not just a moved highlight.
+- **P3.3 — Regression-guard it.** Unit-test the repaired function's behaviour
+  if it is (a) or (b). For (c), assert the flag reaches its expected value
+  within N frames of boot, in the runtime log, and grep for it in P0.5's script.
+- **P3.4 — Remove every forcing cvar** used to get here, or default them off
+  and document them as diagnostics.
+
+---
+
+## 7. P4 — downstream to the first mission (~4–8 sessions, unmeasured)
+
+Nothing past the dialog has ever been observed, so this is a gate list with
+instruments, not a schedule. Each gate: drive it with `tools/ac6-input.sh`,
+capture, metric, log signature, and a one-paragraph report.
+
+- **P4.1 — Dialog → title.** Expect the title-movie flow (`sub_821B9050`,
+  reported to consume "logical-input bits 0 or 4"). Instrument: the same
+  logical-input probe from P2.1, retargeted. Risk: the title movie is a video
+  asset; if playback is unimplemented the flow may stall on a completion that
+  never arrives — the same signature as the current bug, so test for it
+  explicitly rather than assuming a second input defect.
+- **P4.2 — The save/storage gate.** Commit `979b6269` added a *cvar-gated dummy
+  enumeration item* to XamContent. Reaching a menu will almost certainly demand
+  a real save: `XamContentCreate`/`Open`/`Close`/`Flush` against a host-backed
+  content directory, and `XamUserWrite`/profile settings. Decide early whether
+  to implement real content storage or to keep faking it — faking it works
+  until the game reads back what it wrote.
+- **P4.3 — Title → main menu → campaign → mission select.** Mostly repetition
+  of P4.1 with different screens. Budget one gate per session and expect at
+  least one to be a genuine defect rather than a keypress.
+- **P4.4 — Confirm the DPL identity.** The reduction campaign selector 1 → DPL
+  resource id `0x09` → `"DPL::[0x9,0]"` → CRC `0xfc76b3c6` → recursive
+  resource-registry lookup is exact from the XEX, but **DPL id 9 ≡ `DATA.TBL`
+  record index 9 is not proven**. Instrument the registry lookup for that CRC
+  and read what record it resolves to. Do this the moment mission select is
+  reachable — it is the one downstream fact that can invalidate the asset path.
+- **P4.5 — Mission load.** Expect a step change in `NtReadFile` volume, PAC/DPL
+  decompression (LZX and the mode-1 codec — `tools/ac6_mode1_codec.py`,
+  `src/ac6_pac_decode_dump.cpp` already exist), and memory pressure that boot
+  never exercised. Instrument: the existing PAC decoder probe, plus a peak-RSS
+  and allocation-failure watch. Likely failure modes here are size/alignment
+  and out-of-memory, not logic.
+- **P4.6 — First playable segment.** Independent sub-gates, each of which can
+  fail alone: new shader pipelines compiling (the shader-inventory gate),
+  gameplay tick rate (`ac6_fps_physics_fix.cpp` exists and is untested past
+  menus), analogue stick input (only digital menu nav is proven — the stick
+  path has never been exercised by the guest), XMA streaming music under load,
+  and the HUD render passes.
+- **P4.7 — Fix the dialog layout defect**, tracked separately and not on the
+  critical path: the panel overflows the right screen edge (264 → ≥1279 on a
+  1280-wide frame, cycle 397) and its message text is absent. Once menus are
+  reachable this will affect every screen, so it stops being cosmetic at P4.3.
+
+---
+
+## 8. P5 — definition of done, and the renderer track
+
+**Mission 1 as native is done when:** a cold clone of this branch configures,
+builds and — with the user's own game files — boots to mission 1 and plays the
+first segment, driven only by real input; no forcing cvar is on by default; the
+path is scripted in `tools/` and runs unattended; and the whole thing is
+committed with a PR.
+
+**The renderer track (§2), if wanted afterwards, needs:** a fourth
+`ac6_graphics_mode` value; the AC6 layer promoted from capture/diagnostic to
+authoritative present; ownership of shader translation for AC6's pipelines
+rather than routing through the vendored translator; and the replay renderer
+either finished or discarded. That is a project of its own and it should be
+scoped only once mission 1 runs, because until then there is no content to
+render that the current path does not already render correctly.
+
+---
+
+## 9. Risks, in the order they are likely to bite
+
+1. **The uncommitted tree (§1.2).** One directory holds the only copy of the
+   substrate for 50 cycles of measurement. P0.1 exists for this and nothing
+   should precede it.
+2. **Codegen reproducibility (§1.2, P0.3).** `builders/control_flow.cpp` is
+   modified and uncommitted. If `generated/` cannot be regenerated identically,
+   any future midasm hook — the expensive-but-sometimes-necessary tool — is
+   blocked until that is resolved.
+3. **Instrumented-build turnaround (P2.2).** 100 MB of generated C++ with LTO.
+   Mitigated by a separate no-IPO build dir; unmitigated it will make the
+   control-flow differential feel too expensive to run, which is precisely how
+   the project ended up doing twelve cheap-but-useless scans instead.
+4. **Silent instrument failure (P2.3).** A `-include` prelude that does not
+   apply, or a ring buffer that is never armed, returns "nothing happened" —
+   indistinguishable from a negative result. Every instrument in this plan must
+   have a positive control before it is used to conclude anything.
+5. **P4 is unmeasured.** The gate list is inference from static reduction, not
+   observation. P1 is what converts the first part of it into fact.
+6. **Governance.** `GOAL.md` freezes AC6 in favour of AC5. Executing this plan
+   is a target switch and should be an intentional one, not a side effect of
+   the audit having been requested.
+
+## 10. One-line summary
+
+The repo is one uncommitted directory away from losing fifty cycles of work and
+one control-flow measurement away from naming the confirm defect; P0 makes the
+ground solid, P1 finds out how deep the water is, and only then is it worth
+spending sessions on the dialog itself.

@@ -1,0 +1,248 @@
+# AC6 — audit of the blockage to the first mission, and plan
+
+Date: 2026-07-31. Scope: the AC6Recomp static recompilation
+(`.tools/ac6-recomp-reference`), audited against the investigation journal in
+`workspaces/ace-combat-6/reports/cycle-3xx..452`.
+
+---
+
+## 1. What already works
+
+This is not a project that fails to run. Measured, from the runtime log and the
+journal:
+
+| stage | state |
+|---|---|
+| XEX static recompilation | 23 058 functions, `0x82090000`–`0x823E7DF0` |
+| boot to guest main | works |
+| `DATA00.PAC` streaming | works, `NtReadFile` completes, correct sizes |
+| GPU | Vulkan backend presents 1280×720 at 60 Hz, pipelines compile |
+| audio | XMA path running, 0 underruns, drift ±21 ms |
+| device selector | `XamShowDeviceSelectorUI` completes, `device_id = 1` accepted |
+| input delivery | key → MnK driver → `XamInputGetState` → guest, exact masks |
+| guest button edges | press-edge and auto-repeat both correct for **A and D-pad alike** |
+| UI navigation | D-pad moves the dialog highlight (band delta 128–131 vs noise ~3) |
+
+The game reaches an interactive dialog and renders it every frame. Everything
+upstream of the dialog is measured healthy.
+
+## 2. The blocker, stated exactly
+
+A YES/NO modal (capture: `reports/logs/shift/p.png`) sits on screen
+permanently. **Navigation works; confirmation does nothing.**
+
+- `Left`/`Right` move the highlight between YES and NO — measured, unambiguous.
+- `A` (`0x1000`) and `B` produce a band delta of 3.4 / 3.9 against a resting
+  noise of 1.7–3.7. No transition.
+- The press edge for `A` **is** correctly computed in the guest's own pad
+  object `0x8290DE3C`: `pressed = 0x1000`, `repeat = 0x1000`, `delay = 480`,
+  `interval = 96` (cycle 427). The guest's edge detector is a plain XOR/AND
+  with no per-bit filtering (cycle 425).
+- No kernel call is issued on the press (cycles 402, 417, 419). The last kernel
+  call of the run is a content enumeration; after it there is nothing but
+  presentation and pad polling.
+
+So: a perfectly formed A-button press edge arrives in the field the guest UI
+reads, and **no guest code anywhere reacts to it** — no pixel, no state word,
+no kernel call. The divergence is inside the screen's own logic.
+
+Screen identified by its own code (cycle 438): object `0xA3317DE0`, vtable
+`0x820679A0`, real virtual methods `sub_821C3690` and `sub_821CA6C8`
+(entry 1, `0x82079088`, is data, not a method — cycle 439).
+
+Sixteen hypotheses have been raised and killed by measurement: missing
+textures, unsubmitted navigator, null NDC scale, no input loop, async wait,
+spinning state machine, press duration, missing content storage, empty
+enumeration, JP A/B inversion, `GetKeystroke`, `packet_number`, repeat-vs-edge,
+missing completion routine, state stuck at 2, codegen gap. Two genuine defects
+were fixed along the way (keystroke queue had no producer, `packet_number`
+always incremented) — neither unblocks this.
+
+## 3. Audit finding: why the last 32 cycles produced nothing
+
+Cycle 421 was the last cycle that added information. Cycles 422–452 are thirty
+one cycles with no net progress, and the failure is methodological, not
+technical.
+
+**3.1 — The instrument was mismatched to the question for 12 straight cycles.**
+Cycles 441–452 all attempt the same thing: snapshot guest memory, press a
+button, snapshot again, diff, and hope the selection field falls out. This ran
+through five successive redesigns (range too narrow → strided sampling →
+rotation desync → churn exclusion → wrong region entirely), each fixing a real
+defect in the previous one, and then found two candidate structures
+(`0x82A53428/2C`, and the seven-entry table at `0x82A53Cxx`) — **both of which
+were forced by direct write and moved nothing.** Twelve cycles to eliminate two
+correlated-but-not-causal blocks.
+
+**3.2 — The decisive instrument was named and then never built.** Cycle 440
+concluded, correctly and explicitly, that the only untried approach independent
+of code shape was *a memory write watchpoint on the selection field, capturing
+the writer's `lr`*. Cycle 441 onward did snapshot diffing instead — which is
+strictly weaker: it tells you *that* a word changed, never *who* changed it,
+and it cannot see a field that is written back to the same value within a
+frame. The project identified the right tool and substituted a worse one twelve
+times.
+
+**3.3 — The recurring error is textual pattern-matching over recompiled code.**
+Cycles 412, 428, 431, 433, 436, 439, 440 each produced a false or void claim
+from grepping generated C++ for a fixed offset (`+92`, `+84`, `+20`) when the
+PowerPC code computes base addresses into registers first. The journal
+diagnoses this itself at cycle 440 and then repeats it at 441+.
+
+**3.4 — The question posed at cycle 421 was never actually asked of the
+program.** "What does the guest do with the face-button mask on this screen,
+when it handles the D-pad mask from the same `X_INPUT_STATE` correctly?" That
+is a *control-flow* question. Every cycle since has asked *data* questions.
+
+## 4. The instruments that exist and were never used
+
+This is the substantive finding of the audit. Both tools the investigation
+believed it lacked are already available in this codebase, with no codegen
+regeneration:
+
+**4.1 — Global write watchpoint with writer attribution.**
+`PPC_STORE_U8/16/32/64` are `#ifndef`-guarded macros in
+`thirdparty/rexglue-sdk/include/rex/ppc/memory.h:88-105`. Every one of the
+23 058 generated functions reaches them through
+`generated/ac6recomp_init.h` → `<rex/ppc.h>` → `<rex/ppc/memory.h>`. Defining
+them ahead of that include — via a `-include` prelude on the generated targets
+— replaces every guest store in the program with an address-filtered hook.
+
+Two properties matter and are easy to miss:
+- the macro expands *inside* a `PPC_FUNC` body, so the replacement can
+  reference `ctx` — `ctx.lr` is in scope at every store site;
+- the containing guest function is recoverable precisely via
+  `__builtin_return_address(0)` in a `noinline` helper, resolved against the
+  linker map or `dladdr` to `sub_XXXXXXXX`. This is exact attribution, not
+  inference.
+
+This is exactly the cycle-440 instrument, and it is roughly forty lines.
+
+**4.2 — Function-level interception without regenerating codegen.**
+Generated functions are emitted as `PPC_WEAK_FUNC`
+(`include/rex/ppc/context.h:87`), so a strong `PPC_FUNC_IMPL` of the same
+symbol overrides any of them at link time. **This repo already does it** —
+`src/ac6_recomp_overrides.cpp` overrides `sub_8234B978` to repair a codegen
+loop-splitting defect. The mechanism is proven and in production here.
+
+**4.3 — Whole-program control-flow trace.** The generated code is ordinary C++
+compiled by this project. `-finstrument-functions` on the generated translation
+units yields `__cyg_profile_func_enter/exit` for every guest function, into a
+ring buffer. Gated on an input-edge trigger, that produces the Left-vs-A
+execution diff directly.
+
+Midasm hooks also exist (23 configured in `ac6recomp_config.toml`) but require
+a codegen re-run over 101 MB — they are the expensive option, appropriate only
+once a specific instruction address is the target.
+
+## 5. Plan
+
+Ordered so that each step is decisive — it must return a different next action
+depending on its outcome — and so the cheapest discriminators run first.
+
+### Step 0 — Bound the problem before solving it (do this first)
+
+Nothing in 52 cycles establishes that this dialog is the *only* gate to mission
+1. Before investing in it, find out how deep the water is: force the screen
+past the dialog by any means (override `sub_821C3690`/`sub_821CA6C8` to drive
+the transition, or drive it from the Xenia oracle's known next state) and let
+the game run.
+
+Outcome A: it advances to title/menu/mission select → the dialog is the last
+gate, and the remaining work is bounded. Outcome B: it hits a second wall →
+that wall is now known 30 cycles earlier than it otherwise would be.
+
+This is cheap and it is the step cycle 400 identified as "the one I should have
+taken thirty cycles ago" — the same reasoning applies again, one level up.
+
+### Step 1 — Control-flow differential: Left versus A
+
+The direct form of the cycle-421 question. Build the ring-buffer trace (§4.3),
+trigger it on the input edge already detected in the driver, capture one `Left`
+press (known-good, produces a visible effect) and one `A` press (known-inert),
+and diff the two function sequences.
+
+`Left` gives the working path through the dialog's handler. `A` will either
+follow it and stop at a specific branch — which names the function that
+swallows it — or diverge before entering the handler at all, which says the
+face-button mask is filtered upstream of the screen. Either result identifies a
+single function by address.
+
+This answers in one cycle what data-scanning failed to answer in twelve, and it
+does not depend on locating the selection field at all.
+
+### Step 2 — Write watchpoint, if Step 1 is ambiguous
+
+Build §4.1 and watch the selection field's *effect* rather than searching for
+its address: place the watchpoint over the whole static data range
+`0x82000000`+32 MB, filter to stores that occur within the frame of a `Left`
+edge, and record writer + address. This inverts the failed search — instead of
+scanning for a word that changed, it asks the program to name who writes during
+a navigation. The two candidate blocks eliminated in cycles 450/452 will
+reappear here with their writers attached, which also explains *why* they are
+correlated.
+
+### Step 3 — Identify the dialog and its expected answer
+
+With the handler named, read `sub_821C3690` / `sub_821CA6C8` and the handler in
+full from Ghidra (`ghidra-projects/ace-combat-6`, canonical for the PAL XEX) —
+not by grepping generated C++, which is the documented failure mode of cycles
+412–440. Determine what the confirm branch requires. The two candidates worth
+holding, both consistent with all measurements:
+
+- a per-screen accepted-button mask that is zero or excludes the face buttons,
+  so navigation is handled generically and confirmation is gated;
+- a readiness/animation-complete flag the confirm branch tests first, never set
+  because a fade or timer the recompilation drives differently never completes.
+
+Both predict exactly the observed signature: correct edges in, no kernel call,
+no state change. Neither has been tested.
+
+### Step 4 — Fix, then re-measure with the region metric
+
+Apply the fix as a `PPC_FUNC_IMPL` override or a midasm hook, per house rules
+(never edit generated output). Verify with the **band metric** from cycle 421
+(`y 590-660`, `x 600-1280`), never a full-screen mean — the full-screen mean is
+what hid the working navigation for twenty cycles.
+
+### Step 5 — Downstream to the first mission
+
+Known path, from `CAMPAIGN_MISSION_LOAD_PATH_REDUCTION.md`: campaign selector 1
+→ DPL resource id `0x09` → `"DPL::[0x9,0]"` → CRC `0xfc76b3c6` → recursive
+resource-registry lookup. That reduction is exact from the XEX but does **not**
+yet prove DPL id 9 equals `DATA.TBL` record index 9; that identity is the first
+thing to confirm once the menus are reachable.
+
+Expect, and budget for, in this order: title → main menu → campaign →
+mission select → mission 1 load → first playable segment. The shader inventory
+and gameplay-runtime gates (DECOMPILATION_PLAN phases 6 and 7) apply from the
+load onward. Nothing here is measured yet, because nothing has ever gotten past
+the dialog — which is precisely why Step 0 comes first.
+
+### Cosmetic, tracked separately
+
+The dialog panel overflows the right screen edge (cycle 397: 264 → ≥1279 on a
+1280-wide frame) and its message text is absent. Not the blocker — the dialog
+is functionally live — but it is a real layout defect and should not be lost.
+
+## 6. Two notes on scope
+
+**Governance.** `GOAL.md` freezes AC6 in favour of AC5 ("AC5 est la seule cible
+modifiable jusqu'à instruction explicite contraire"). This audit is an explicit
+instruction to the contrary in scope, but executing the plan is a target switch
+and should be an intentional one.
+
+**Two AC6 efforts, very different maturity.** `.tools/ac6-recomp-reference`
+(this static recompilation) boots, streams assets, renders and plays audio, and
+is blocked on one dialog. `workspaces/ace-combat-6` (from-scratch native
+reconstruction with its own renderer and DPL asset pipeline) is much further
+from a playable mission. If the goal is "reach mission 1", the recompilation is
+the near-term path by a wide margin, and Step 0 is what turns that impression
+into a measurement.
+
+## 7. One-line summary
+
+The game is one non-responsive confirm button away from its menus; the
+investigation has been searching for a *data* address for twelve cycles when
+the question is a *control-flow* one, and both instruments needed to answer it
+already exist in this repo and have never been switched on.
