@@ -2,6 +2,24 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 988 — décodage des payloads missions 9–11 et hashes partagés
+
+Les entrées physiques 17, 18 et 19 sont maintenant décodées avec le codec PAL
+et le parseur FHM borné. Elles portent 26 enfants top-level sans échec de
+parse; l’entrée 17 expose 1 052 lignes récursives et 13 FHM imbriqués, tandis
+que les entrées 18 et 19 en exposent 112 et 9.
+
+La comparaison exacte des nœuds FHM des entrées 11–19 couvre 2 564 nœuds et
+1 961 hashes uniques, avec 27 groupes partagés (26 non vides et un groupe de
+payloads vides). Les groupes FHM de 480 octets et `ACE6` de 4 octets sont
+partagés par les neuf entrées; un `NTXR` de 69 632 octets et un `NFH` de 3 408
+octets relient notamment les entrées 14 et 17. Les groupes complets sont
+conservés dans le catalogue, sans sémantique supposée.
+
+Les missions 9–11 restent `partial` pour `payload_dependency_inventory`; les
+missions 12–15 restent `not_attempted`. Build, CTest sous Xvfb/audio dummy et
+audits campagne/code passent pour ce cycle.
+
 ## Cycle 987 — décodage des payloads missions 6–8 et hashes partagés
 
 Les entrées 14, 15 et 16 sont maintenant décodées avec le même codec PAL et

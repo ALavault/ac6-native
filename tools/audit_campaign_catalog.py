@@ -107,7 +107,7 @@ def main() -> int:
     dependency_hashes = document.get("payload_dependency_hashes")
     if not isinstance(dependency_hashes, dict) or dependency_hashes.get("status") != "bounded":
         return fail("payload_dependency_hashes")
-    if dependency_hashes.get("scope_data_table_entries") != [11, 12, 13, 14, 15, 16]:
+    if dependency_hashes.get("scope_data_table_entries") != [11, 12, 13, 14, 15, 16, 17, 18, 19]:
         return fail("payload_dependency_scope")
     for field in ("recursive_nodes", "unique_node_hashes", "shared_hash_group_count", "nonempty_shared_hash_group_count", "empty_shared_hash_group_count"):
         if type(dependency_hashes.get(field)) is not int or dependency_hashes[field] <= 0:
