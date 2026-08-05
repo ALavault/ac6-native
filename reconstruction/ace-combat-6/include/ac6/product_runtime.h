@@ -99,6 +99,71 @@ class UnitRegistry final {
   std::unordered_map<EntityId, UnitRecord> units_;
 };
 
+struct CombatVector {
+  float x{};
+  float y{};
+  float z{};
+  bool operator==(const CombatVector&) const = default;
+};
+
+struct CombatUnitState {
+  EntityId entity{};
+  EntityId faction{};
+  CombatVector position{};
+  float health{};
+  float max_health{};
+  float collision_radius{1.0f};
+  bool active{};
+  bool valid() const noexcept;
+};
+
+struct WeaponDefinition {
+  std::uint32_t id{};
+  float damage{};
+  float projectile_speed{};
+  float cooldown{};
+  float max_range{};
+  bool valid() const noexcept;
+};
+
+struct ProjectileState {
+  std::uint32_t id{};
+  EntityId owner{};
+  EntityId target{};
+  CombatVector position{};
+  CombatVector velocity{};
+  float damage{};
+  float remaining_range{};
+  bool active{};
+};
+
+class CombatWorld final {
+ public:
+  bool add_unit(CombatUnitState unit);
+  bool add_weapon(WeaponDefinition weapon);
+  bool lock_target(EntityId owner, EntityId target) noexcept;
+  EntityId locked_target(EntityId owner) const noexcept;
+  bool fire(EntityId owner, std::uint32_t weapon_id) noexcept;
+  void tick(float fixed_dt) noexcept;
+  const CombatUnitState* unit(EntityId entity) const noexcept;
+  std::size_t active_units() const noexcept;
+  std::size_t active_projectiles() const noexcept;
+  std::uint64_t damage_events() const noexcept { return damage_events_; }
+  void clear() noexcept;
+
+ private:
+  struct WeaponRuntime {
+    WeaponDefinition definition;
+    float cooldown_remaining{};
+  };
+  std::vector<CombatUnitState> units_;
+  std::vector<WeaponRuntime> weapons_;
+  std::vector<ProjectileState> projectiles_;
+  std::unordered_map<EntityId, EntityId> locks_;
+  std::uint32_t next_projectile_id_{1};
+  std::uint64_t damage_events_{};
+};
+
 class UnitRegistry;
 struct MissionDefinition;
 
@@ -737,6 +802,8 @@ class MissionExecution final {
   bool complete_objective(std::uint32_t id) noexcept;
   bool fail_objective(std::uint32_t id) noexcept;
   bool dispatch_radio(std::uint32_t id) noexcept;
+  bool lock_target(EntityId target) noexcept;
+  bool fire_weapon(std::uint32_t weapon_id) noexcept;
   WorldFrame tick(float fixed_dt, InputFrame input) noexcept;
   RuntimeSnapshot snapshot() const noexcept;
   bool restore(RuntimeSnapshot snapshot) noexcept;
@@ -744,6 +811,8 @@ class MissionExecution final {
   bool launched() const noexcept { return launched_; }
   const MissionScenario& scenario() const noexcept { return scenario_; }
   const UnitRegistry& units() const noexcept { return units_; }
+  CombatWorld& combat() noexcept { return combat_; }
+  const CombatWorld& combat() const noexcept { return combat_; }
 
  private:
   const MissionDefinition* definition_{};
@@ -753,6 +822,7 @@ class MissionExecution final {
   MissionRuntime runtime_;
   MissionScenario scenario_;
   UnitRegistry units_;
+  CombatWorld combat_;
   bool launched_{};
 };
 

@@ -2,6 +2,20 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 957 — contrat combat générique
+
+`CombatWorld` modélise les unités actives par faction, santé et rayon de
+collision, ainsi que les armes, verrous de cible, projectiles, portée,
+cooldown, impacts et dégâts déterministes. `MissionExecution` initialise sa
+frontière combat au lancement et expose le verrouillage et le tir sans branche
+Mission 1. Le test couvre les doublons, le cooldown, l’impact et la destruction
+d’une unité.
+
+Build, CTest (`5/5`) sous Xvfb avec `SDL_AUDIODRIVER=dummy`, et smoke SDL3/
+Vulkan passent. Les paramètres retail d’armes/dégâts restent explicitement
+non qualifiés et devront venir du catalogue/manifeste avant une revendication
+de fidélité.
+
 ## Cycle 956 — catalogue campagne 15 missions
 
 `reports/ac6-pal-campaign-catalog.json` contient exactement les missions 1 à

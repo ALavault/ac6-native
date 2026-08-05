@@ -326,6 +326,151 @@ const UnitRecord* UnitRegistry::find(EntityId id) const noexcept {
   return it == units_.end() ? nullptr : &it->second;
 }
 
+bool CombatUnitState::valid() const noexcept {
+  return entity != 0 && faction != 0 && std::isfinite(position.x) &&
+         std::isfinite(position.y) && std::isfinite(position.z) &&
+         std::isfinite(health) && std::isfinite(max_health) && max_health > 0.0f &&
+         health > 0.0f && health <= max_health && std::isfinite(collision_radius) &&
+         collision_radius > 0.0f;
+}
+
+bool WeaponDefinition::valid() const noexcept {
+  return id != 0 && std::isfinite(damage) && damage > 0.0f &&
+         std::isfinite(projectile_speed) && projectile_speed > 0.0f &&
+         std::isfinite(cooldown) && cooldown >= 0.0f && std::isfinite(max_range) &&
+         max_range > 0.0f;
+}
+
+namespace {
+
+float combat_distance_squared(CombatVector a, CombatVector b) noexcept {
+  const float x = a.x - b.x;
+  const float y = a.y - b.y;
+  const float z = a.z - b.z;
+  return x * x + y * y + z * z;
+}
+
+}  // namespace
+
+bool CombatWorld::add_unit(CombatUnitState unit) {
+  if (!unit.valid() || unit.active == false || this->unit(unit.entity) != nullptr) return false;
+  units_.push_back(unit);
+  return true;
+}
+
+bool CombatWorld::add_weapon(WeaponDefinition weapon) {
+  if (!weapon.valid() || std::any_of(weapons_.begin(), weapons_.end(), [&](const auto& existing) {
+        return existing.definition.id == weapon.id;
+      })) return false;
+  weapons_.push_back({weapon, 0.0f});
+  return true;
+}
+
+bool CombatWorld::lock_target(EntityId owner, EntityId target) noexcept {
+  const CombatUnitState* source = unit(owner);
+  const CombatUnitState* destination = unit(target);
+  if (source == nullptr || destination == nullptr || !source->active || !destination->active ||
+      owner == target || source->faction == destination->faction) return false;
+  locks_[owner] = target;
+  return true;
+}
+
+EntityId CombatWorld::locked_target(EntityId owner) const noexcept {
+  const auto it = locks_.find(owner);
+  return it == locks_.end() ? 0 : it->second;
+}
+
+bool CombatWorld::fire(EntityId owner, std::uint32_t weapon_id) noexcept {
+  const CombatUnitState* source = unit(owner);
+  const EntityId target_id = locked_target(owner);
+  const CombatUnitState* target = unit(target_id);
+  auto weapon = std::find_if(weapons_.begin(), weapons_.end(), [&](const auto& candidate) {
+    return candidate.definition.id == weapon_id;
+  });
+  if (source == nullptr || target == nullptr || weapon == weapons_.end() || !source->active ||
+      !target->active || source->faction == target->faction ||
+      weapon->cooldown_remaining > 0.0f || next_projectile_id_ == 0) return false;
+  CombatVector direction{target->position.x - source->position.x,
+                         target->position.y - source->position.y,
+                         target->position.z - source->position.z};
+  const float distance_squared = combat_distance_squared(source->position, target->position);
+  if (!std::isfinite(distance_squared) || distance_squared <= 0.000001f) return false;
+  const float distance = std::sqrt(distance_squared);
+  if (distance > weapon->definition.max_range) return false;
+  const float inverse_distance = 1.0f / distance;
+  direction.x *= inverse_distance;
+  direction.y *= inverse_distance;
+  direction.z *= inverse_distance;
+  projectiles_.push_back({next_projectile_id_++, owner, target_id, source->position,
+                          {direction.x * weapon->definition.projectile_speed,
+                           direction.y * weapon->definition.projectile_speed,
+                           direction.z * weapon->definition.projectile_speed},
+                          weapon->definition.damage, weapon->definition.max_range, true});
+  weapon->cooldown_remaining = weapon->definition.cooldown;
+  return true;
+}
+
+void CombatWorld::tick(float fixed_dt) noexcept {
+  if (!(fixed_dt > 0.0f) || !std::isfinite(fixed_dt)) fixed_dt = 1.0f / 60.0f;
+  fixed_dt = std::min(fixed_dt, 0.25f);
+  for (auto& weapon : weapons_) {
+    weapon.cooldown_remaining = std::max(0.0f, weapon.cooldown_remaining - fixed_dt);
+  }
+  for (auto& projectile : projectiles_) {
+    if (!projectile.active) continue;
+    projectile.position.x += projectile.velocity.x * fixed_dt;
+    projectile.position.y += projectile.velocity.y * fixed_dt;
+    projectile.position.z += projectile.velocity.z * fixed_dt;
+    projectile.remaining_range -= std::sqrt(combat_distance_squared(
+        {0.0f, 0.0f, 0.0f},
+        {projectile.velocity.x * fixed_dt, projectile.velocity.y * fixed_dt,
+         projectile.velocity.z * fixed_dt}));
+    const CombatUnitState* target = unit(projectile.target);
+    if (target == nullptr || !target->active || projectile.remaining_range <= 0.0f ||
+        !std::isfinite(projectile.remaining_range)) {
+      projectile.active = false;
+      continue;
+    }
+    const float hit_radius = target->collision_radius + 0.25f;
+    if (combat_distance_squared(projectile.position, target->position) <= hit_radius * hit_radius) {
+      for (auto& mutable_target : units_) {
+        if (mutable_target.entity != projectile.target) continue;
+        mutable_target.health = std::max(0.0f, mutable_target.health - projectile.damage);
+        mutable_target.active = mutable_target.health > 0.0f;
+        ++damage_events_;
+        break;
+      }
+      projectile.active = false;
+    }
+  }
+}
+
+const CombatUnitState* CombatWorld::unit(EntityId entity) const noexcept {
+  for (const auto& candidate : units_) {
+    if (candidate.entity == entity) return &candidate;
+  }
+  return nullptr;
+}
+
+std::size_t CombatWorld::active_units() const noexcept {
+  return static_cast<std::size_t>(std::count_if(units_.begin(), units_.end(),
+      [](const auto& unit) { return unit.active && unit.health > 0.0f; }));
+}
+
+std::size_t CombatWorld::active_projectiles() const noexcept {
+  return static_cast<std::size_t>(std::count_if(projectiles_.begin(), projectiles_.end(),
+      [](const auto& projectile) { return projectile.active; }));
+}
+
+void CombatWorld::clear() noexcept {
+  units_.clear();
+  weapons_.clear();
+  projectiles_.clear();
+  locks_.clear();
+  next_projectile_id_ = 1;
+  damage_events_ = 0;
+}
+
 namespace {
 
 bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
@@ -2935,6 +3080,7 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
     if (status == nullptr || status->state != CampaignMissionState::Active) return false;
   }
   units_ = UnitRegistry{};
+  combat_.clear();
   scenario_ = MissionScenario(*definition_);
   if (objectives_ != nullptr) {
     for (const ObjectiveRecord* objective : objectives_->find_by_mission(definition_->id)) {
@@ -2949,9 +3095,24 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
   if (!configure_mission_launch(launch, units_, scenario_) ||
       !scenario_.dispatch({EventType::StartMission, launch.player_entity})) {
     units_ = UnitRegistry{};
+    combat_.clear();
     scenario_ = MissionScenario(*definition_);
     launched_ = false;
     return false;
+  }
+  std::size_t spawn_index = 0;
+  for (const UnitRecord& unit : launch.units) {
+    const float spawn_x = unit.id == launch.player_entity
+        ? 0.0f
+        : 20.0f + static_cast<float>(spawn_index++) * 5.0f;
+    if (!combat_.add_unit({unit.id, unit.owner, {spawn_x, 0.0f, 0.0f},
+                           100.0f, 100.0f, 1.0f, true})) {
+      units_ = UnitRegistry{};
+      combat_.clear();
+      scenario_ = MissionScenario(*definition_);
+      launched_ = false;
+      return false;
+    }
   }
   runtime_.set_definition(definition_);
   runtime_.set_units(&units_);
@@ -2992,8 +3153,17 @@ bool MissionExecution::dispatch_radio(std::uint32_t id) noexcept {
   return launched_ && radios_ != nullptr && scenario_.dispatch_radio(*radios_, id);
 }
 
+bool MissionExecution::lock_target(EntityId target) noexcept {
+  return launched_ && combat_.lock_target(scenario_.player(), target);
+}
+
+bool MissionExecution::fire_weapon(std::uint32_t weapon_id) noexcept {
+  return launched_ && combat_.fire(scenario_.player(), weapon_id);
+}
+
 WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   if (!launched_) return {};
+  combat_.tick(fixed_dt);
   return runtime_.tick(fixed_dt, input);
 }
 

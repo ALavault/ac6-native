@@ -676,6 +676,24 @@ int main() {
   const auto execution_frame = execution.tick(1.0f / 60.0f, {});
   REQUIRE(execution_frame.mission_ready && execution_frame.active_units == 2 &&
           execution_frame.player_entity == 0x1001);
+  ac6::CombatWorld combat;
+  REQUIRE(combat.add_unit({1, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));
+  REQUIRE(combat.add_unit({2, 2, {10.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));
+  REQUIRE(!combat.add_unit({2, 2, {10.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));
+  REQUIRE(combat.add_weapon({7, 60.0f, 20.0f, 0.25f, 100.0f}));
+  REQUIRE(!combat.add_weapon({7, 10.0f, 20.0f, 0.0f, 100.0f}));
+  REQUIRE(combat.lock_target(1, 2) && combat.locked_target(1) == 2);
+  REQUIRE(combat.fire(1, 7) && combat.active_projectiles() == 1);
+  REQUIRE(!combat.fire(1, 7));
+  combat.tick(0.25f);
+  REQUIRE(combat.unit(2) && combat.unit(2)->health == 100.0f);
+  combat.tick(0.25f);
+  REQUIRE(combat.unit(2) && combat.unit(2)->health == 40.0f &&
+          combat.damage_events() == 1);
+  REQUIRE(combat.fire(1, 7));
+  combat.tick(0.25f);
+  combat.tick(0.25f);
+  REQUIRE(combat.unit(2) && !combat.unit(2)->active && combat.active_units() == 1);
   ac6::CampaignProgression mission_campaign;
   REQUIRE(mission_campaign.add({1, {1, 9, 9}, 1, {}}));
   REQUIRE(mission_campaign.finalize());

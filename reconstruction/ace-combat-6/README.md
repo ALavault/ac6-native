@@ -201,3 +201,9 @@ python3 tools/audit_campaign_catalog.py reports/ac6-pal-campaign-catalog.json
 The current PAL evidence is intentionally reported as `1 qualified`, `1
 partial`, and `13 unqualified`; unqualified rows cannot enter the native
 runtime route.
+
+`CombatWorld` is the generic combat boundary for active units, faction-aware
+target locking, weapons, projectiles, collision and damage. `MissionExecution`
+initializes its unit frontier on launch and exposes `lock_target` and
+`fire_weapon`; retail weapon parameters remain unqualified until sourced from
+the campaign manifest and binary evidence.
