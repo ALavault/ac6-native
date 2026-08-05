@@ -3017,3 +3017,14 @@ atteint `selector44=5 → 6 → 7`, puis `type28=8 → 10`, alors que l’ELF
 écrans de transition et non le monde de vol. Cette A/B localise le premier
 écart au contrat save/create-lancement, sans conclure sur Xenos/rendu. Voir
 `reports/cycle-1006-bridge-lane-type8-type10.md`.
+
+## Frontière hangar Mission 01 bridge (cycle 1007, 2026-08-05)
+
+La recette bridge profil neuf poursuit `type28=8 → 10` jusqu’à la sélection
+Mission 01, la confirmation d’arme et l’écran de déploiement. Elle émet
+15 034 `PRESENT`, sans marqueur fatal/crash/SIG, mais aucune occurrence
+`CModeTaskGame` : les captures de pitch/roll/yaw/throttle restent dans le
+hangar malgré une variation de composition caméra/avion. La voie bridge rend
+donc l’interface et l’avion, sans prouver le monde airborne, les contrôles en
+vol ou une correction Xenos. Voir
+`reports/cycle-1007-bridge-full-flight-boundary.md`.
