@@ -214,7 +214,11 @@ int main(int argc, char** argv) {
     const ac6::MissionObjectiveDatabase* objectives =
         services.has_objectives ? &services.objectives : nullptr;
     const ac6::RadioMessageDatabase* radios = services.has_radios ? &services.radios : nullptr;
-    ac6::MissionExecution execution(*definition, &assets, objectives, radios);
+    ac6::MissionSequenceDirector* sequence =
+        services.has_sequence ? &services.sequence : nullptr;
+    const ac6::InputMappingDatabase* input = services.has_input ? &services.input : nullptr;
+    ac6::MissionExecution execution(*definition, &assets, objectives, radios,
+                                     nullptr, nullptr, sequence, input);
     if (!execution.launch(*launch)) return 30;
     ac6::ReplayLog replay;
     ac6::SaveStore saves;
@@ -292,7 +296,11 @@ int main(int argc, char** argv) {
         services.has_objectives ? &services.objectives : nullptr;
     const ac6::RadioMessageDatabase* radio_database =
         services.has_radios ? &services.radios : nullptr;
-    ac6::MissionExecution execution(*definition, &assets, objective_database, radio_database);
+    ac6::MissionSequenceDirector* sequence =
+        services.has_sequence ? &services.sequence : nullptr;
+    const ac6::InputMappingDatabase* input = services.has_input ? &services.input : nullptr;
+    ac6::MissionExecution execution(*definition, &assets, objective_database, radio_database,
+                                    nullptr, nullptr, sequence, input);
     if (!execution.launch(*launch)) return 13;
     const ac6::WorldFrame world = execution.tick(1.0f / 60.0f, {});
     const ac6::MissionRenderTargetDefinition* target_definition =

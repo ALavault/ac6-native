@@ -17,6 +17,8 @@ namespace ac6 {
 
 namespace {
 bool parse_u32(std::string_view text, std::uint32_t& value) noexcept;
+bool parse_u64(std::string_view text, std::uint64_t& value) noexcept;
+bool parse_f32(std::string_view text, float& value) noexcept;
 bool parse_bool01(std::string_view text, bool& value) noexcept;
 std::uint16_t read_le_u16(const unsigned char* bytes) noexcept;
 std::uint32_t read_le_u32(const unsigned char* bytes) noexcept;
@@ -278,6 +280,48 @@ bool MissionSequenceDirector::add(MissionSequenceEvent event) {
     if (left.event.tick != right.event.tick) return left.event.tick < right.event.tick;
     return left.event.order < right.event.order;
   });
+  return true;
+}
+
+bool MissionSequenceDirector::load_manifest(const std::filesystem::path& manifest) {
+  std::ifstream input(manifest);
+  if (!input) return false;
+  MissionSequenceDirector loaded;
+  std::string line;
+  while (std::getline(input, line)) {
+    if (line.empty() || line.front() == '#') continue;
+    std::array<std::string_view, 6> fields{};
+    std::size_t start = 0;
+    std::size_t field_count = 0;
+    while (field_count < fields.size()) {
+      const std::size_t tab = line.find('\t', start);
+      if (tab == std::string::npos) {
+        fields[field_count++] = std::string_view(line).substr(start);
+        break;
+      }
+      fields[field_count++] = std::string_view(line).substr(start, tab - start);
+      start = tab + 1;
+    }
+    if (field_count != fields.size() || line.find('\t', start) != std::string::npos) return false;
+    MissionSequenceEvent event;
+    if (!parse_u32(fields[0], event.mission_id) || !parse_u64(fields[1], event.tick) ||
+        !parse_u32(fields[2], event.order) || !parse_u32(fields[4], event.id) ||
+        !parse_f32(fields[5], event.duration_seconds)) return false;
+    if (fields[3] == "activate_objective") {
+      event.type = MissionSequenceEventType::ActivateObjective;
+    } else if (fields[3] == "complete_objective") {
+      event.type = MissionSequenceEventType::CompleteObjective;
+    } else if (fields[3] == "fail_objective") {
+      event.type = MissionSequenceEventType::FailObjective;
+    } else if (fields[3] == "play_radio") {
+      event.type = MissionSequenceEventType::PlayRadio;
+    } else {
+      return false;
+    }
+    if (!loaded.add(event)) return false;
+  }
+  if (loaded.entries_.empty()) return false;
+  entries_ = std::move(loaded.entries_);
   return true;
 }
 
@@ -1822,6 +1866,7 @@ bool MissionManifestLoader::load_paths(const std::filesystem::path& manifest,
     else if (key == "controls" && loaded.controls.empty()) loaded.controls = resolved;
     else if (key == "objectives" && loaded.objectives.empty()) loaded.objectives = resolved;
     else if (key == "radios" && loaded.radios.empty()) loaded.radios = resolved;
+    else if (key == "sequence" && loaded.sequence.empty()) loaded.sequence = resolved;
     else if (key == "render" && loaded.render.empty()) loaded.render = resolved;
     else if (key == "drawables" && loaded.drawables.empty()) loaded.drawables = resolved;
     else if (key == "transforms" && loaded.transforms.empty()) loaded.transforms = resolved;
@@ -1883,6 +1928,10 @@ bool MissionManifestLoader::load_runtime(const std::filesystem::path& manifest,
   if (!paths.radios.empty()) {
     if (!loaded_services.radios.load_manifest(paths.radios)) return false;
     loaded_services.has_radios = true;
+  }
+  if (!paths.sequence.empty()) {
+    if (!loaded_services.sequence.load_manifest(paths.sequence)) return false;
+    loaded_services.has_sequence = true;
   }
   if (!paths.campaign.empty()) {
     if (!loaded_services.campaign.load_manifest(paths.campaign)) return false;

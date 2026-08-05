@@ -235,13 +235,18 @@ previous catalog unchanged.
 
 The `MissionManifestLoader::load_runtime` overload that accepts
 `MissionRuntimeServices` publishes optional input, objective, radio and
-campaign databases together with the catalog, assets and launches. All seven
+sequence and campaign databases together with the catalog, assets and launches. All eight
 databases are built in temporary state and published only after the last
 manifest succeeds; the legacy overload remains available for callers that
 only need the core three databases. The native `validate-manifest`,
 `frontend-smoke`, `services-smoke` and `present-manifest` commands consume this
 bundle directly, so optional services are not silently reloaded or discarded
 at their command boundaries.
+
+The optional `sequence` path uses six columns
+`mission_id<TAB>tick<TAB>order<TAB>event<TAB>id<TAB>duration`. Event names are
+`activate_objective`, `complete_objective`, `fail_objective` and `play_radio`;
+the sequence is sorted and published atomically with the other services.
 
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted

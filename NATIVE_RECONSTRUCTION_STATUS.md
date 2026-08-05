@@ -2,6 +2,13 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 997 — contrat de séquence mission
+
+Le loader générique publie maintenant les événements de séquence et le flux
+de test les consomme aux ticks 1–2 pour activer un objectif puis jouer une
+radio avant le succès. Le manifeste est borné, trié et atomique. Voir
+`reports/cycle-997-sequence-manifest-contract.md`.
+
 ## Cycle 996 — intégration CLI du bundle services
 
 Les quatre commandes natives de validation/frontend/services/présentation

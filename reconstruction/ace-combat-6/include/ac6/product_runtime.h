@@ -292,17 +292,6 @@ class RadioMessageDatabase final {
   std::vector<RadioMessageDefinition> messages_;
 };
 
-struct MissionRuntimeServices {
-  InputMappingDatabase input;
-  MissionObjectiveDatabase objectives;
-  RadioMessageDatabase radios;
-  CampaignProgression campaign;
-  bool has_input{};
-  bool has_objectives{};
-  bool has_radios{};
-  bool has_campaign{};
-};
-
 enum class RadioPlaybackState : std::uint8_t { Idle, Playing, Complete, Interrupted };
 
 struct RadioPlaybackSnapshot {
@@ -365,6 +354,7 @@ struct MissionSequenceSnapshot {
 class MissionSequenceDirector final {
  public:
   bool add(MissionSequenceEvent event);
+  bool load_manifest(const std::filesystem::path& manifest);
   bool dispatch_due(std::uint32_t mission_id, std::uint64_t tick,
                     MissionExecution& execution) noexcept;
   std::size_t pending(std::uint32_t mission_id) const noexcept;
@@ -379,6 +369,19 @@ class MissionSequenceDirector final {
     bool published{};
   };
   std::vector<Entry> entries_;
+};
+
+struct MissionRuntimeServices {
+  InputMappingDatabase input;
+  MissionObjectiveDatabase objectives;
+  RadioMessageDatabase radios;
+  MissionSequenceDirector sequence;
+  CampaignProgression campaign;
+  bool has_input{};
+  bool has_objectives{};
+  bool has_radios{};
+  bool has_sequence{};
+  bool has_campaign{};
 };
 
 enum class ScenarioState : std::uint8_t { Loading, Briefing, Gameplay, Paused, Complete, Aborted };
@@ -501,6 +504,7 @@ struct MissionManifestPaths {
   std::filesystem::path controls;
   std::filesystem::path objectives;
   std::filesystem::path radios;
+  std::filesystem::path sequence;
   std::filesystem::path render;
   std::filesystem::path drawables;
   std::filesystem::path transforms;

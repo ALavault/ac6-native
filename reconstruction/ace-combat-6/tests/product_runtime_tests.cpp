@@ -507,6 +507,7 @@ int main() {
   const char* runtime_radios = "ac6-test-runtime-radios.tsv";
   const char* runtime_campaign = "ac6-test-runtime-campaign.tsv";
   const char* runtime_objectives = "ac6-test-runtime-objectives.tsv";
+  const char* runtime_sequence = "ac6-test-runtime-sequence.tsv";
   { std::ofstream out(runtime_catalog);
     out << "1\tair_intercept\t9\n";
     out << "2\tstrike\t9,119\n";
@@ -523,6 +524,9 @@ int main() {
   { std::ofstream out(runtime_radios); out << "1\t10\talpha_warning\tAWACS\t9\t119\n"; }
   { std::ofstream out(runtime_campaign); out << "1\t1\t9\t9\t1\t-\n"; }
   { std::ofstream out(runtime_objectives); out << "1\t1\tintercept_primary\t1\n"; }
+  { std::ofstream out(runtime_sequence);
+    out << "1\t1\t1\tactivate_objective\t1\t0\n";
+    out << "1\t2\t2\tplay_radio\t10\t0.25\n"; }
   { std::ofstream out(runtime_manifest);
     out << "catalog\t" << runtime_catalog << "\n";
     out << "assets\t" << runtime_assets << "\n";
@@ -585,6 +589,7 @@ int main() {
     out << "controls\t" << controls_manifest_path << "\n";
     out << "objectives\t" << runtime_objectives << "\n";
     out << "radios\t" << runtime_radios << "\n";
+    out << "sequence\t" << runtime_sequence << "\n";
     for (const char* key : render_keys) out << key << "\tac6-test-" << key << ".tsv\n";
   }
   ac6::MissionRuntimeServices manifest_services;
@@ -596,6 +601,7 @@ int main() {
   REQUIRE(manifest_services.has_objectives &&
           manifest_services.objectives.find_by_mission(1).size() == 1);
   REQUIRE(manifest_services.has_radios && manifest_services.radios.find(1, 10) != nullptr);
+  REQUIRE(manifest_services.has_sequence && manifest_services.sequence.pending(1) == 2);
   REQUIRE(manifest_services.has_campaign &&
           manifest_services.campaign.route_for_selector(1) != nullptr);
   REQUIRE(manifest_services.campaign.enter_briefing(1));
@@ -604,10 +610,15 @@ int main() {
   ac6::MissionExecution services_execution(*manifest_catalog.find(1), &manifest_assets,
                                            &manifest_services.objectives,
                                            &manifest_services.radios,
-                                           &manifest_services.campaign);
+                                           &manifest_services.campaign, nullptr,
+                                           &manifest_services.sequence,
+                                           &manifest_services.input);
   REQUIRE(services_execution.launch(*manifest_launches.find(1)));
-  REQUIRE(services_execution.activate_objective(1));
-  REQUIRE(services_execution.dispatch_radio(10));
+  REQUIRE(services_execution.tick(1.0f / 60.0f, {}).tick == 1);
+  REQUIRE(services_execution.scenario().objectives().find(1)->state ==
+              ac6::ObjectiveState::Active);
+  REQUIRE(services_execution.tick(1.0f / 60.0f, {}).tick == 2);
+  REQUIRE(services_execution.radio().playing() && manifest_services.sequence.pending(1) == 0);
   REQUIRE(services_execution.complete_objective(1));
   REQUIRE(services_execution.dispatch({ac6::EventType::Complete, 0}));
   REQUIRE(manifest_services.campaign.status(1)->state == ac6::CampaignMissionState::Completed);
@@ -619,6 +630,7 @@ int main() {
   REQUIRE(manifest_paths.controls == controls_manifest_path);
   REQUIRE(manifest_paths.objectives == runtime_objectives);
   REQUIRE(manifest_paths.radios == runtime_radios);
+  REQUIRE(manifest_paths.sequence == runtime_sequence);
   REQUIRE(manifest_paths.campaign == runtime_campaign);
   ac6::CampaignProgression manifest_campaign;
   REQUIRE(manifest_loader.load_campaign(runtime_manifest, manifest_campaign));
@@ -639,7 +651,7 @@ int main() {
   REQUIRE(manifest_services.has_input && manifest_services.input.resolve(1) &&
           manifest_services.input.resolve(1)->event == ac6::EventType::StartMission &&
           manifest_services.has_objectives && manifest_services.has_radios &&
-          manifest_services.has_campaign &&
+          manifest_services.has_sequence && manifest_services.has_campaign &&
           manifest_services.campaign.status(1)->state == ac6::CampaignMissionState::Completed);
   std::remove(bad_service_input);
   std::remove(bad_service_manifest);
@@ -650,6 +662,7 @@ int main() {
   std::remove(runtime_radios);
   std::remove(runtime_campaign);
   std::remove(runtime_objectives);
+  std::remove(runtime_sequence);
   std::remove(input_manifest_path);
   std::remove(controls_manifest_path);
   for (const char* key : render_keys) std::remove((std::string("ac6-test-") + key + ".tsv").c_str());
