@@ -218,9 +218,10 @@ definitions without a qualified route; it never infers selector, DPL, or
 DATA.TBL identities.
 
 The current PAL catalog reports `1 qualified` and `14 partial` routes. The
-selector-to-DPL contract is qualified for selectors 1–15, but the physical
-DPL-to-`DATA.TBL` route is still unresolved for missions 3–15; partial rows
-cannot enter the native runtime route.
+selector-to-DPL and low-ID physical DPL-to-`DATA.TBL` contracts are qualified
+for all campaign selectors 1–15, yielding physical entries 9–23. Missions
+3–15 remain partial because their payloads are not decoded and cannot enter
+the native runtime route.
 
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted

@@ -60,6 +60,33 @@ def main() -> int:
         return fail("selector_dpl_mapping")
     if not isinstance(selector_dpl.get("unknown_after_dpl"), str) or not selector_dpl["unknown_after_dpl"]:
         return fail("selector_dpl_boundary")
+    dpl_data_table = document.get("dpl_data_table_evidence")
+    if not isinstance(dpl_data_table, dict) or dpl_data_table.get("status") != "qualified":
+        return fail("dpl_data_table_evidence")
+    if dpl_data_table.get("request_function_address") != "0x821D1128":
+        return fail("dpl_data_table_request_function")
+    if dpl_data_table.get("queue_function_address") != "0x821CD130":
+        return fail("dpl_data_table_queue_function")
+    if dpl_data_table.get("loader_function_address") != "0x821CC250":
+        return fail("dpl_data_table_loader_function")
+    if dpl_data_table.get("module") != "default.xex":
+        return fail("dpl_data_table_module")
+    if dpl_data_table.get("ghidra_project") != "ace-combat-6":
+        return fail("dpl_data_table_project")
+    if dpl_data_table.get("target_id") != "PAL-default-xex":
+        return fail("dpl_data_table_target")
+    if dpl_data_table.get("xex_sha256") != corpus["xex"]["sha256"]:
+        return fail("dpl_data_table_xex_sha256")
+    if dpl_data_table.get("data_tbl_sha256") != corpus["data_tbl"]["sha256"]:
+        return fail("dpl_data_table_data_tbl_sha256")
+    if dpl_data_table.get("entry_count") != 926:
+        return fail("dpl_data_table_entry_count")
+    if dpl_data_table.get("direct_id_exclusive") != "0x39D":
+        return fail("dpl_data_table_boundary")
+    if dpl_data_table.get("mapping_rule") != "dpl_resource_id == data_table_entry_index for 0 <= id < 0x39D":
+        return fail("dpl_data_table_mapping_rule")
+    if dpl_data_table.get("unknown_at_or_above") != "0x39D":
+        return fail("dpl_data_table_unknown_boundary")
     missions = document.get("missions")
     if not isinstance(missions, list) or len(missions) != 15:
         return fail("mission_count")
@@ -80,6 +107,10 @@ def main() -> int:
                 return fail(f"selector_dpl_types:{entry['mission_id']}")
             if expected_mapping.get(str(selector)) != dpl_resource_id:
                 return fail(f"selector_dpl_mapping:{entry['mission_id']}")
+        data_table_entry_index = entry.get("data_table_entry_index")
+        if type(dpl_resource_id) is int and 0 <= dpl_resource_id < 0x39D:
+            if type(data_table_entry_index) is not int or data_table_entry_index != dpl_resource_id:
+                return fail(f"dpl_data_table_mapping:{entry['mission_id']}")
         route_fields = ("campaign_selector", "dpl_resource_id", "data_table_entry_index")
         route_complete = all(isinstance(entry.get(field), int) and entry[field] > 0 for field in route_fields)
         if status == "qualified" and not route_complete:

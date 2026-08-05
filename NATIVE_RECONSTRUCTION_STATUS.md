@@ -2,6 +2,24 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 985 — routes physiques DPL→DATA.TBL 9–23
+
+La preuve de la chaîne d’archive est maintenant reflétée dans le catalogue :
+`0x821D1128` prend la branche directe pour tout identifiant DPL inférieur à
+`0x39D`, transmet l’identifiant inchangé à `0x821CD130`, puis la table chargée
+par `0x821CC250` résout l’entrée physique. Comme les sélecteurs 1–15 donnent
+les DPL 9–23, leurs entrées physiques `DATA.TBL` sont désormais cataloguées
+exactement 9–23.
+
+La borne `0x39D` et le nombre de 926 entrées sont conservés avec les hashes
+PAL, le projet Ghidra canonique `ace-combat-6`, la cible
+`PAL-default-xex` et le module `default.xex`. Les missions 3–15 restent
+`partial` uniquement pour `payload_not_decoded`; aucune ressource ni manifeste
+natif n’est généré à partir de cette qualification physique seule.
+
+Build, CTest sous Xvfb/audio dummy, audits campagne/code et générateur de
+manifeste passent.
+
 ## Cycle 984 — correspondance campagne selector→DPL
 
 Le catalogue machine-readable qualifie maintenant, pour le mode campagne 1,
