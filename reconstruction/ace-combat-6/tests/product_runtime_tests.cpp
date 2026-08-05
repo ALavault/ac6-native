@@ -506,11 +506,19 @@ int main() {
   const char* runtime_launches = "ac6-test-runtime-launches.tsv";
   const char* runtime_radios = "ac6-test-runtime-radios.tsv";
   const char* runtime_campaign = "ac6-test-runtime-campaign.tsv";
-  { std::ofstream out(runtime_catalog); out << "1\tair_intercept\t9\n"; }
+  { std::ofstream out(runtime_catalog);
+    out << "1\tair_intercept\t9\n";
+    out << "2\tstrike\t9,119\n";
+    out << "3\tescort\t9,165\n"; }
   { std::ofstream out(runtime_assets);
     out << "9\tDATA00.PAC@qualified\t0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\n";
+    out << "119\tDATA00.PAC@qualified\tabcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789\n";
+    out << "165\tDATA00.PAC@qualified\t89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\n";
   }
-  { std::ofstream out(runtime_launches); out << "1\t4097\t4097:1:9\n"; }
+  { std::ofstream out(runtime_launches);
+    out << "1\t4097\t4097:1:9\n";
+    out << "2\t4098\t4098:1:119\n";
+    out << "3\t4099\t4099:1:165\n"; }
   { std::ofstream out(runtime_radios); out << "1\t10\talpha_warning\tAWACS\t9\t119\n"; }
   { std::ofstream out(runtime_campaign); out << "1\t1\t9\t9\t1\t-\n"; }
   { std::ofstream out(runtime_manifest);
@@ -525,7 +533,16 @@ int main() {
   ac6::MissionLaunchDatabase manifest_launches;
   REQUIRE(manifest_loader.load_runtime(runtime_manifest, manifest_catalog,
                                        manifest_assets, manifest_launches));
-  REQUIRE(manifest_catalog.find(1) && manifest_assets.resolve(9) && manifest_launches.find(1));
+  REQUIRE(manifest_catalog.find(1) &&
+          manifest_catalog.find(1)->family == ac6::MissionFamily::AirIntercept);
+  REQUIRE(manifest_catalog.find(2) &&
+          manifest_catalog.find(2)->family == ac6::MissionFamily::Strike);
+  REQUIRE(manifest_catalog.find(3) &&
+          manifest_catalog.find(3)->family == ac6::MissionFamily::Escort);
+  REQUIRE(manifest_assets.resolve(9) && manifest_assets.resolve(119) &&
+          manifest_assets.resolve(165));
+  REQUIRE(manifest_launches.find(1) && manifest_launches.find(2) &&
+          manifest_launches.find(3));
   const char* bad_optional_input = "ac6-test-bad-optional-input.tsv";
   const char* bad_optional_manifest = "ac6-test-bad-optional-manifest.tsv";
   { std::ofstream out(bad_optional_input); out << "1\tunknown_event\n"; }
@@ -535,7 +552,10 @@ int main() {
   }
   REQUIRE(!manifest_loader.load_runtime(bad_optional_manifest, manifest_catalog,
                                         manifest_assets, manifest_launches));
-  REQUIRE(manifest_catalog.find(1) && manifest_assets.resolve(9) && manifest_launches.find(1));
+  REQUIRE(manifest_catalog.find(1) && manifest_catalog.find(2) && manifest_catalog.find(3) &&
+          manifest_assets.resolve(9) && manifest_assets.resolve(119) &&
+          manifest_assets.resolve(165) && manifest_launches.find(1) &&
+          manifest_launches.find(2) && manifest_launches.find(3));
   std::remove(bad_optional_input);
   std::remove(bad_optional_manifest);
   const char* render_keys[] = {"render", "drawables", "transforms", "materials", "textures",

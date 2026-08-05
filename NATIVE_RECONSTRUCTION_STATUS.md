@@ -2,6 +2,14 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 992 — couverture multi-missions du loader runtime
+
+Le test `MissionManifestLoader::load_runtime` publie désormais trois routes
+simultanées avec trois familles (`air_intercept`, `strike`, `escort`), trois
+assets et trois lancements. L'assertion post-échec vérifie que les trois
+routes restent publiées, donc la transaction ne se réduit pas à une fixture
+Mission 1. Voir `reports/cycle-992-multi-mission-loader-coverage.md`.
+
 ## Cycle 991 — contrat atomique des manifestes d’assets qualifiés
 
 Le contrat générique `MissionAssetDatabase` accepte désormais les manifestes
