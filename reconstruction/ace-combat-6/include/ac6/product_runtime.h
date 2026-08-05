@@ -267,6 +267,34 @@ class RadioMessageDatabase final {
   std::vector<RadioMessageDefinition> messages_;
 };
 
+enum class RadioPlaybackState : std::uint8_t { Idle, Playing, Complete, Interrupted };
+
+struct RadioPlaybackSnapshot {
+  std::uint32_t mission_id{};
+  std::uint32_t message_id{};
+  AssetId audio_asset{};
+  AssetId subtitle_asset{};
+  float elapsed_seconds{};
+  float duration_seconds{};
+  RadioPlaybackState state{RadioPlaybackState::Idle};
+  bool operator==(const RadioPlaybackSnapshot&) const = default;
+};
+
+class RadioPlaybackService final {
+ public:
+  bool start(const RadioMessageDatabase& messages, std::uint32_t mission_id,
+             std::uint32_t message_id, float duration_seconds) noexcept;
+  bool tick(float fixed_dt) noexcept;
+  bool finish() noexcept;
+  bool interrupt() noexcept;
+  void reset() noexcept;
+  bool playing() const noexcept { return snapshot_.state == RadioPlaybackState::Playing; }
+  const RadioPlaybackSnapshot& snapshot() const noexcept { return snapshot_; }
+
+ private:
+  RadioPlaybackSnapshot snapshot_{};
+};
+
 enum class ScenarioState : std::uint8_t { Loading, Briefing, Gameplay, Paused, Complete, Aborted };
 
 enum class MissionOutcome : std::uint8_t { InProgress, Success, Failure };
@@ -850,6 +878,7 @@ class MissionExecution final {
   bool complete_objective(std::uint32_t id) noexcept;
   bool fail_objective(std::uint32_t id) noexcept;
   bool dispatch_radio(std::uint32_t id) noexcept;
+  bool play_radio(std::uint32_t id, float duration_seconds) noexcept;
   bool lock_target(EntityId target) noexcept;
   bool fire_weapon(std::uint32_t weapon_id) noexcept;
   void set_failure_tick(std::uint64_t tick) noexcept { failure_tick_ = tick; }
@@ -874,6 +903,8 @@ class MissionExecution final {
   const UnitRegistry& units() const noexcept { return units_; }
   CombatWorld& combat() noexcept { return combat_; }
   const CombatWorld& combat() const noexcept { return combat_; }
+  RadioPlaybackService& radio() noexcept { return radio_; }
+  const RadioPlaybackService& radio() const noexcept { return radio_; }
 
  private:
   const MissionDefinition* definition_{};
@@ -885,6 +916,7 @@ class MissionExecution final {
   MissionScenario scenario_;
   UnitRegistry units_;
   CombatWorld combat_;
+  RadioPlaybackService radio_;
   std::uint64_t failure_tick_{};
   bool launched_{};
 };

@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 963 — frontière radio/playback
+
+`RadioPlaybackService` suit la lecture exclusive d’un message, ses assets
+audio/sous-titre, sa durée, sa fin et son interruption. `MissionExecution`
+publie l’historique seulement après démarrage valide; le playback est gelé
+pendant `Paused`.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. Le décodage XMA et les durées retail restent explicitement derrière
+la frontière de service.
+
 ## Cycle 962 — directeur de vagues d’unités
 
 `MissionWaveDirector` publie les unités dues par tick de façon atomique dans

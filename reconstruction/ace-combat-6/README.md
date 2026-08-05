@@ -221,6 +221,10 @@ Mission. Unbound frontend fixtures retain the developer-only state route.
 the unit and combat registries, with atomic duplicate rejection and despawn.
 Retail wave parameters still require a qualified mission manifest.
 
+`RadioPlaybackService` resolves audio/subtitle assets, enforces exclusive
+playback, tracks completion/interruption and freezes while the mission HSM is
+paused. XMA decoding and retail timing remain replaceable service boundaries.
+
 `CombatWorld` is the generic combat boundary for active units, faction-aware
 target locking, weapons, projectiles, collision and damage. `MissionExecution`
 initializes its unit frontier on launch and exposes `lock_target` and

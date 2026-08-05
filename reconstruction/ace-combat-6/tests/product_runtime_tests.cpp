@@ -651,6 +651,26 @@ int main() {
   REQUIRE(radio_scenario.dispatch_radio(radios, 10));
   REQUIRE(!radio_scenario.dispatch_radio(radios, 11));
   REQUIRE(radio_scenario.radio_history().size() == 1 && radio_scenario.radio_history()[0] == 10);
+  ac6::MissionAssetDatabase radio_assets;
+  for (const ac6::AssetId id : {9u, 119u, 165u, 199u, 210u}) {
+    REQUIRE(radio_assets.add({id, "DATA00.PAC@radio", "radio-hash"}));
+  }
+  ac6::MissionExecution radio_execution(*selected_definition, &radio_assets, nullptr, &radios);
+  REQUIRE(radio_execution.launch(*launch));
+  REQUIRE(radio_execution.play_radio(10, 0.5f));
+  REQUIRE(radio_execution.radio().playing() &&
+          radio_execution.radio().snapshot().audio_asset == 199 &&
+          radio_execution.radio().snapshot().subtitle_asset == 210);
+  REQUIRE(!radio_execution.play_radio(10, 0.5f));
+  REQUIRE(radio_execution.dispatch({ac6::EventType::Pause, 0}));
+  radio_execution.tick(0.25f, {});
+  REQUIRE(radio_execution.radio().snapshot().elapsed_seconds == 0.0f);
+  REQUIRE(radio_execution.dispatch({ac6::EventType::Resume, 0}));
+  radio_execution.tick(0.25f, {});
+  REQUIRE(radio_execution.radio().snapshot().state == ac6::RadioPlaybackState::Playing);
+  radio_execution.tick(0.25f, {});
+  REQUIRE(radio_execution.radio().snapshot().state == ac6::RadioPlaybackState::Complete);
+  REQUIRE(!radio_execution.play_radio(11, 0.5f));
   std::remove(radio_manifest);
 
   ac6::MissionAssetDatabase assets;

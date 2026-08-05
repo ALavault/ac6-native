@@ -198,6 +198,44 @@ const RadioMessageDefinition* RadioMessageDatabase::find(std::uint32_t mission_i
   return nullptr;
 }
 
+bool RadioPlaybackService::start(const RadioMessageDatabase& messages, std::uint32_t mission_id,
+                                  std::uint32_t message_id, float duration_seconds) noexcept {
+  const RadioMessageDefinition* message = messages.find(mission_id, message_id);
+  if (message == nullptr || !std::isfinite(duration_seconds) || duration_seconds <= 0.0f ||
+      playing()) return false;
+  snapshot_ = {mission_id, message_id, message->audio_asset, message->subtitle_asset,
+               0.0f, duration_seconds, RadioPlaybackState::Playing};
+  return true;
+}
+
+bool RadioPlaybackService::tick(float fixed_dt) noexcept {
+  if (!playing()) return false;
+  if (!(fixed_dt > 0.0f) || !std::isfinite(fixed_dt)) fixed_dt = 1.0f / 60.0f;
+  snapshot_.elapsed_seconds = std::min(snapshot_.duration_seconds,
+                                       snapshot_.elapsed_seconds + std::min(fixed_dt, 0.25f));
+  if (snapshot_.elapsed_seconds >= snapshot_.duration_seconds) {
+    snapshot_.state = RadioPlaybackState::Complete;
+  }
+  return true;
+}
+
+bool RadioPlaybackService::finish() noexcept {
+  if (!playing()) return false;
+  snapshot_.elapsed_seconds = snapshot_.duration_seconds;
+  snapshot_.state = RadioPlaybackState::Complete;
+  return true;
+}
+
+bool RadioPlaybackService::interrupt() noexcept {
+  if (!playing()) return false;
+  snapshot_.state = RadioPlaybackState::Interrupted;
+  return true;
+}
+
+void RadioPlaybackService::reset() noexcept {
+  snapshot_ = {};
+}
+
 bool InputBinding::valid() const noexcept {
   return button_mask != 0 && static_cast<std::uint8_t>(event) <=
       static_cast<std::uint8_t>(EventType::Abort);
@@ -3272,6 +3310,7 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
   }
   units_ = UnitRegistry{};
   combat_.clear();
+  radio_.reset();
   if (waves_ != nullptr) waves_->reset();
   scenario_ = MissionScenario(*definition_);
   if (objectives_ != nullptr) {
@@ -3352,6 +3391,14 @@ bool MissionExecution::dispatch_radio(std::uint32_t id) noexcept {
   return launched_ && radios_ != nullptr && scenario_.dispatch_radio(*radios_, id);
 }
 
+bool MissionExecution::play_radio(std::uint32_t id, float duration_seconds) noexcept {
+  if (!launched_ || radios_ == nullptr || !radio_.start(*radios_, definition_->id, id,
+                                                          duration_seconds)) return false;
+  if (scenario_.dispatch_radio(*radios_, id)) return true;
+  radio_.reset();
+  return false;
+}
+
 bool MissionExecution::lock_target(EntityId target) noexcept {
   return launched_ && combat_.lock_target(scenario_.player(), target);
 }
@@ -3364,6 +3411,7 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   if (!launched_) return {};
   combat_.tick(fixed_dt);
   WorldFrame frame = runtime_.tick(fixed_dt, input);
+  if (scenario_.state() == ScenarioState::Gameplay) (void)radio_.tick(fixed_dt);
   if (waves_ != nullptr && !waves_->spawn_due(definition_->id, frame.tick, units_, combat_)) {
     frame.mission_ready = false;
     return frame;
