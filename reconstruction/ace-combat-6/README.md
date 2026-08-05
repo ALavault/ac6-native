@@ -198,6 +198,20 @@ Audit the 15-mission provenance catalog with:
 python3 tools/audit_campaign_catalog.py reports/ac6-pal-campaign-catalog.json
 ```
 
+Generate the native campaign TSV only from qualified catalog routes and a
+separate gameplay-definition file:
+
+```sh
+python3 tools/generate_campaign_manifest.py \
+  reports/ac6-pal-campaign-catalog.json \
+  reports/ac6-native-gameplay-definitions.json \
+  /tmp/ac6-qualified-campaign.tsv
+```
+
+The generator refuses partial/unqualified routes and refuses gameplay
+definitions without a qualified route; it never infers selector, DPL, or
+DATA.TBL identities.
+
 The current PAL evidence is intentionally reported as `1 qualified`, `1
 partial`, and `13 unqualified`; unqualified rows cannot enter the native
 runtime route.

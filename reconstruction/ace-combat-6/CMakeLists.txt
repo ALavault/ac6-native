@@ -52,6 +52,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/seal_mission01_reference.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_native_package.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_campaign_catalog.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_campaign_manifest.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_code_reachability.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/probe_ntxr_bc.py
   DESTINATION share/ac6-native/tools)

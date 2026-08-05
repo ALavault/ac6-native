@@ -2,6 +2,18 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 976 — génération fail-closed du manifeste campagne
+
+`tools/generate_campaign_manifest.py` prend le catalogue campagne comme source
+des routes et un fichier séparé pour les définitions gameplay (objectifs et
+prérequis). Il n’émet que les entrées `qualified`, hash le catalogue dans le
+TSV produit et refuse toute définition sans route qualifiée. Le run PAL produit
+une seule ligne `Mission 1: selector 1 → DPL 9 → DATA.TBL 9`; les missions
+partial/unqualified ne sont pas promues.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits campagne/code
+passent.
+
 ## Cycle 975 — replay déterministe de l’exécution mission
 
 `MissionExecution::run_replay` rejoue maintenant les `InputFrame` via le même

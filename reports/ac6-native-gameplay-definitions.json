@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "policy": "gameplay_contract_separate_from_retail_route_qualification",
+  "missions": {
+    "1": {"objective_count": 2, "prerequisites": []}
+  }
+}
