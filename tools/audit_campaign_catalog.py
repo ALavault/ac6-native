@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import re
+import struct
 from pathlib import Path
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -87,6 +88,22 @@ def main() -> int:
         return fail("dpl_data_table_mapping_rule")
     if dpl_data_table.get("unknown_at_or_above") != "0x39D":
         return fail("dpl_data_table_unknown_boundary")
+    data_table_assets = document.get("data_table_assets")
+    expected_asset_keys = {str(index) for index in range(9, 24)}
+    if not isinstance(data_table_assets, dict) or set(data_table_assets) != expected_asset_keys:
+        return fail("data_table_assets_coverage")
+    for key, asset in data_table_assets.items():
+        if not isinstance(asset, dict) or asset.get("archive") not in {"DATA00.PAC", "DATA01.PAC"}:
+            return fail(f"data_table_asset:{key}")
+        if type(asset.get("bank_index")) is not int or asset["bank_index"] < 0:
+            return fail(f"data_table_asset_bank:{key}")
+        if type(asset.get("storage_class")) is not int or asset["storage_class"] < 0:
+            return fail(f"data_table_asset_storage:{key}")
+        if not isinstance(asset.get("offset"), str) or not re.fullmatch(r"0x[0-9A-Fa-f]+", asset["offset"]):
+            return fail(f"data_table_asset_offset:{key}")
+        for field in ("stored_size", "expanded_size"):
+            if type(asset.get(field)) is not int or asset[field] <= 0:
+                return fail(f"data_table_asset_{field}:{key}")
     missions = document.get("missions")
     if not isinstance(missions, list) or len(missions) != 15:
         return fail("mission_count")
@@ -111,6 +128,10 @@ def main() -> int:
         if type(dpl_resource_id) is int and 0 <= dpl_resource_id < 0x39D:
             if type(data_table_entry_index) is not int or data_table_entry_index != dpl_resource_id:
                 return fail(f"dpl_data_table_mapping:{entry['mission_id']}")
+        if type(data_table_entry_index) is int:
+            asset = data_table_assets.get(str(data_table_entry_index))
+            if not isinstance(asset, dict):
+                return fail(f"data_table_asset_route:{entry['mission_id']}")
         route_fields = ("campaign_selector", "dpl_resource_id", "data_table_entry_index")
         route_complete = all(isinstance(entry.get(field), int) and entry[field] > 0 for field in route_fields)
         if status == "qualified" and not route_complete:
@@ -122,6 +143,30 @@ def main() -> int:
         parse = entry.get("parse")
         if not isinstance(parse, dict) or parse.get("status") not in {"decoded", "bounded", "not_attempted"}:
             return fail(f"parse:{entry['mission_id']}")
+        if type(data_table_entry_index) is int:
+            asset = data_table_assets[str(data_table_entry_index)]
+            if parse.get("status") == "decoded" and (
+                parse.get("stored_size") != asset["stored_size"]
+                or parse.get("expanded_size") != asset["expanded_size"]
+            ):
+                return fail(f"decoded_asset_extent:{entry['mission_id']}")
+        if parse.get("status") == "decoded":
+            for field in ("stored_sha256", "payload_sha256"):
+                if not SHA256.fullmatch(parse.get(field, "")):
+                    return fail(f"decoded_{field}:{entry['mission_id']}")
+            for field in ("stored_size", "expanded_size"):
+                if type(parse.get(field)) is not int or parse[field] <= 0:
+                    return fail(f"decoded_{field}:{entry['mission_id']}")
+            if parse.get("codec") != "mode1_pi_xor_raw_deflate":
+                return fail(f"decoded_codec:{entry['mission_id']}")
+            structure = parse.get("structure")
+            if not isinstance(structure, dict) or structure.get("root") != "FHM":
+                return fail(f"decoded_structure:{entry['mission_id']}")
+            for field in ("top_level_child_count", "recursive_manifest_rows", "nested_fhm_count"):
+                if type(structure.get(field)) is not int or structure[field] < 0:
+                    return fail(f"decoded_structure_{field}:{entry['mission_id']}")
+            if structure.get("parse_failures") != 0:
+                return fail(f"decoded_structure_failures:{entry['mission_id']}")
         if status == "unqualified" and parse["status"] != "not_attempted":
             return fail(f"unqualified_parse:{entry['mission_id']}")
     catalog_mapping = {
@@ -136,6 +181,19 @@ def main() -> int:
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             if digest != corpus[key]["sha256"]:
                 return fail(f"{label}_sha256_mismatch")
+            if label == "data_tbl":
+                raw = path.read_bytes()
+                if len(raw) < 8:
+                    return fail("data_tbl_header")
+                entry_count, _pack_count = struct.unpack_from(">II", raw, 0)
+                if len(raw) != 8 + entry_count * 16 or entry_count < 24:
+                    return fail("data_tbl_shape")
+                for index in range(9, 24):
+                    group, offset, stored_size, expanded_size = struct.unpack_from(">4I", raw, 8 + index * 16)
+                    asset = data_table_assets[str(index)]
+                    archive = "DATA01.PAC" if group & 0x01000000 else "DATA00.PAC"
+                    if archive != asset["archive"] or offset != int(asset["offset"], 16) or stored_size != asset["stored_size"] or expanded_size != asset["expanded_size"]:
+                        return fail(f"data_tbl_asset_mismatch:{index}")
     qualified = sum(entry["status"] == "qualified" for entry in missions)
     partial = sum(entry["status"] == "partial" for entry in missions)
     unknown = sum(entry["status"] == "unqualified" for entry in missions)

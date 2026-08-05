@@ -2,6 +2,25 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 986 — décodage des payloads missions 3–5
+
+Le nouvel extracteur `tools/extract_ac6_pac.py` lit uniquement les plages
+sélectionnées de `DATA00.PAC`/`DATA01.PAC`; il ne charge ni ne copie un PAC
+complet. Avec `ac6_mode1_codec.py`, il applique la clé pi/XOR indexée par
+`DATA.TBL`, puis le raw DEFLATE PAL, et `ac6_fhm.py` valide le conteneur
+résultant.
+
+Les entrées physiques 11, 12 et 13 (missions 3, 4 et 5) se décodent toutes en
+`FHM ` avec 26 enfants top-level, 9 FHM imbriqués et 112 lignes récursives,
+sans échec de parse. Le catalogue conserve pour chacune la plage PAC exacte,
+la taille stockée/décompressée, les hashes stockés/décodés et le codec. Les
+missions 3–5 restent `partial` pour `payload_dependency_inventory`; les
+missions 6–15 restent `not_attempted`.
+
+Les mêmes identités de payload sont maintenant explicites pour les missions 1
+et 2. Aucun payload décodé ni PAC complet n’est ajouté au dépôt. Build, CTest
+sous Xvfb/audio dummy et audits campagne/code passent.
+
 ## Cycle 985 — routes physiques DPL→DATA.TBL 9–23
 
 La preuve de la chaîne d’archive est maintenant reflétée dans le catalogue :
