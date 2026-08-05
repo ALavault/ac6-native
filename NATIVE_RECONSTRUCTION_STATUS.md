@@ -2,6 +2,19 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 973 — reprise de campagne active par sauvegarde
+
+Le snapshot campagne version 2 conserve désormais, pour les missions
+`Briefing`, `Active`, `Completed` et `Failed`, l’état, le masque d’objectifs et
+le loadout. `AC6SESS` passe en version 5 pour transporter ces champs ; les
+versions campagne/session antérieures restent lisibles avec l’état historique
+`Completed` implicite.
+
+Le test sauvegarde une mission active avec loadout et objectif partiellement
+complété, recharge le fichier, puis vérifie que la campagne reste `Active` et
+rejouable. Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits
+campagne/code passent.
+
 ## Cycle 972 — input mission et gel de pause
 
 `MissionExecution` accepte maintenant une `InputMappingDatabase` générique.

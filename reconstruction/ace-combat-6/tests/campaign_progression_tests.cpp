@@ -47,7 +47,7 @@ int main() {
 
   std::vector<std::uint8_t> encoded;
   REQUIRE(campaign.encode_snapshot(encoded));
-  REQUIRE(encoded.size() == 24);
+  REQUIRE(encoded.size() == 40);
   ac6::CampaignProgression restored;
   REQUIRE(restored.add({1, {1, 9, 9}, 2, {}}));
   REQUIRE(restored.add({2, {2, 10, 10}, 1, {1}}));
@@ -56,6 +56,23 @@ int main() {
   REQUIRE(restored.status(1)->state == ac6::CampaignMissionState::Completed);
   REQUIRE(restored.is_available(2));
   REQUIRE(!restored.decode_snapshot({}));
+
+  ac6::CampaignProgression active_campaign;
+  REQUIRE(active_campaign.add({1, {1, 9, 9}, 2, {}}));
+  REQUIRE(active_campaign.finalize());
+  REQUIRE(active_campaign.enter_briefing(1));
+  REQUIRE(active_campaign.set_loadout(1, {7, 8, true}));
+  REQUIRE(active_campaign.begin(1));
+  REQUIRE(active_campaign.complete_objective(1, 0));
+  const ac6::CampaignSaveSnapshot active_snapshot = active_campaign.snapshot();
+  ac6::CampaignProgression active_restored;
+  REQUIRE(active_restored.add({1, {1, 9, 9}, 2, {}}));
+  REQUIRE(active_restored.finalize());
+  REQUIRE(active_restored.restore(active_snapshot));
+  REQUIRE(active_restored.status(1)->state == ac6::CampaignMissionState::Active);
+  const ac6::CampaignLoadout expected_loadout{7, 8, true};
+  REQUIRE(active_restored.status(1)->objective_mask == 1 &&
+          active_restored.status(1)->loadout == expected_loadout);
 
   ac6::CampaignSaveStore saves;
   REQUIRE(saves.save(3, campaign.snapshot()));

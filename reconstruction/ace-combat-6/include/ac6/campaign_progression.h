@@ -21,6 +21,7 @@ struct CampaignLoadout {
   std::uint32_t aircraft_id{};
   std::uint32_t weapon_id{};
   bool capability_data_valid{};
+  bool operator==(const CampaignLoadout&) const = default;
   bool valid() const noexcept {
     return aircraft_id != 0 && weapon_id != 0 && capability_data_valid;
   }
@@ -54,6 +55,8 @@ struct CampaignSaveSnapshot {
   struct Record {
     std::uint32_t mission_id{};
     std::uint32_t objective_mask{};
+    CampaignMissionState state{CampaignMissionState::Completed};
+    CampaignLoadout loadout{};
     bool operator==(const Record&) const = default;
   };
   std::vector<Record> completed;

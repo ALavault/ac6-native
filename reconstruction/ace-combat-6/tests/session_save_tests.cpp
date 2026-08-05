@@ -19,7 +19,7 @@ int main() {
   ac6::SessionSaveSnapshot snapshot{};
   snapshot.mission_id = 1;
   snapshot.flight = {120, 1.0f, 2.0f, 3.0f, 0.1f, -0.2f, 0.3f, 0.001f};
-  snapshot.campaign.completed.push_back({1, 1});
+  snapshot.campaign.completed.push_back({1, 1, ac6::CampaignMissionState::Active, {7, 8, true}});
   ac6::MissionExecution::Checkpoint mission_checkpoint;
   mission_checkpoint.mission_id = 1;
   mission_checkpoint.failure_tick = 600;
@@ -52,7 +52,9 @@ int main() {
   REQUIRE(campaign.add({1, {1, 9, 9}, 1, {}}));
   REQUIRE(campaign.finalize());
   REQUIRE(campaign.restore(loaded.load(2)->campaign));
-  REQUIRE(campaign.status(1)->state == ac6::CampaignMissionState::Completed);
+  const ac6::CampaignLoadout expected_loadout{7, 8, true};
+  REQUIRE(campaign.status(1)->state == ac6::CampaignMissionState::Active &&
+          campaign.status(1)->loadout == expected_loadout);
 
   const char* bad_path = "ac6-test-bad-session-save.ac6s";
   { std::ofstream output(bad_path, std::ios::binary); output << "bad"; }

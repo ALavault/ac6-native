@@ -37,7 +37,9 @@ bool valid_snapshot(const CampaignSaveSnapshot& snapshot) noexcept {
   if (snapshot.completed.size() > 1024) return false;
   std::uint32_t previous = 0;
   for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
-    if (record.mission_id == 0 || record.mission_id <= previous) return false;
+    if (record.mission_id == 0 || record.mission_id <= previous ||
+        static_cast<std::uint8_t>(record.state) >
+            static_cast<std::uint8_t>(CampaignMissionState::Failed)) return false;
     previous = record.mission_id;
   }
   return true;
@@ -278,8 +280,12 @@ const CampaignMissionStatus* CampaignProgression::status(std::uint32_t mission_i
 CampaignSaveSnapshot CampaignProgression::snapshot() const {
   CampaignSaveSnapshot result;
   for (const Entry& entry : entries_) {
-    if (entry.status.state == CampaignMissionState::Completed) {
-      result.completed.push_back({entry.spec.mission_id, entry.status.objective_mask});
+    if (entry.status.state == CampaignMissionState::Briefing ||
+        entry.status.state == CampaignMissionState::Active ||
+        entry.status.state == CampaignMissionState::Completed ||
+        entry.status.state == CampaignMissionState::Failed) {
+      result.completed.push_back({entry.spec.mission_id, entry.status.objective_mask,
+                                  entry.status.state, entry.status.loadout});
     }
   }
   std::sort(result.completed.begin(), result.completed.end(),
@@ -293,7 +299,11 @@ bool CampaignProgression::restore(const CampaignSaveSnapshot& snapshot) noexcept
   for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
     const Entry* entry = find_entry(record.mission_id);
     if (entry == nullptr || record.mission_id <= previous ||
-        record.objective_mask != (0xffffffffu >> (32u - entry->spec.objective_count))) {
+        static_cast<std::uint8_t>(record.state) >
+            static_cast<std::uint8_t>(CampaignMissionState::Failed) ||
+        (record.state == CampaignMissionState::Completed &&
+         record.objective_mask != (0xffffffffu >> (32u - entry->spec.objective_count))) ||
+        (record.state == CampaignMissionState::Active && !record.loadout.valid())) {
       return false;
     }
     previous = record.mission_id;
@@ -301,11 +311,13 @@ bool CampaignProgression::restore(const CampaignSaveSnapshot& snapshot) noexcept
   for (Entry& entry : entries_) {
     entry.status.state = CampaignMissionState::Locked;
     entry.status.objective_mask = 0;
+    entry.status.loadout = {};
   }
   for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
     Entry* entry = find_entry(record.mission_id);
-    entry->status.state = CampaignMissionState::Completed;
+    entry->status.state = record.state;
     entry->status.objective_mask = record.objective_mask;
+    entry->status.loadout = record.loadout;
   }
   refresh_unlocks();
   return true;
@@ -315,11 +327,15 @@ bool CampaignProgression::encode_snapshot(std::vector<std::uint8_t>& bytes) cons
   const CampaignSaveSnapshot current = snapshot();
   if (current.completed.size() > 1024) return false;
   bytes.assign(kMagic.begin(), kMagic.end());
-  write_u32(bytes, 1);
+  write_u32(bytes, 2);
   write_u32(bytes, static_cast<std::uint32_t>(current.completed.size()));
   for (const auto record : current.completed) {
     write_u32(bytes, record.mission_id);
     write_u32(bytes, record.objective_mask);
+    write_u32(bytes, static_cast<std::uint32_t>(record.state));
+    write_u32(bytes, record.loadout.aircraft_id);
+    write_u32(bytes, record.loadout.weapon_id);
+    write_u32(bytes, record.loadout.capability_data_valid ? 1u : 0u);
   }
   return true;
 }
@@ -330,8 +346,9 @@ bool CampaignProgression::decode_snapshot(const std::vector<std::uint8_t>& bytes
   std::size_t offset = kMagic.size();
   std::uint32_t version = 0;
   std::uint32_t count = 0;
-  if (!read_u32(bytes, offset, version) || !read_u32(bytes, offset, count) || version != 1 ||
-      count > 1024 || bytes.size() - offset != static_cast<std::size_t>(count) * 8) {
+  if (!read_u32(bytes, offset, version) || !read_u32(bytes, offset, count) ||
+      (version != 1 && version != 2) || count > 1024 ||
+      bytes.size() - offset != static_cast<std::size_t>(count) * (version == 1 ? 8u : 24u)) {
     return false;
   }
   CampaignSaveSnapshot parsed;
@@ -340,6 +357,15 @@ bool CampaignProgression::decode_snapshot(const std::vector<std::uint8_t>& bytes
     CampaignSaveSnapshot::Record record;
     if (!read_u32(bytes, offset, record.mission_id) || !read_u32(bytes, offset, record.objective_mask)) {
       return false;
+    }
+    if (version >= 2) {
+      std::uint32_t state = 0;
+      std::uint32_t capability = 0;
+      if (!read_u32(bytes, offset, state) || !read_u32(bytes, offset, record.loadout.aircraft_id) ||
+          !read_u32(bytes, offset, record.loadout.weapon_id) ||
+          !read_u32(bytes, offset, capability) || capability > 1) return false;
+      record.state = static_cast<CampaignMissionState>(state);
+      record.loadout.capability_data_valid = capability != 0;
     }
     parsed.completed.push_back(record);
   }
@@ -370,7 +396,7 @@ bool CampaignSaveStore::write_file(const std::filesystem::path& path) const {
                            static_cast<char>((value >> 24u) & 0xffu)};
     output.write(bytes, sizeof(bytes));
   };
-  write_file_u32(1);
+  write_file_u32(2);
   write_file_u32(static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -386,6 +412,10 @@ bool CampaignSaveStore::write_file(const std::filesystem::path& path) const {
     for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
       write_file_u32(record.mission_id);
       write_file_u32(record.objective_mask);
+      write_file_u32(static_cast<std::uint32_t>(record.state));
+      write_file_u32(record.loadout.aircraft_id);
+      write_file_u32(record.loadout.weapon_id);
+      write_file_u32(record.loadout.capability_data_valid ? 1u : 0u);
     }
   }
   if (!output) {
@@ -423,7 +453,8 @@ bool CampaignSaveStore::read_file(const std::filesystem::path& path) {
   };
   std::uint32_t version = 0;
   std::uint32_t count = 0;
-  if (!read_file_u32(version) || !read_file_u32(count) || version != 1 || count > 1024) {
+  if (!read_file_u32(version) || !read_file_u32(count) ||
+      (version != 1 && version != 2) || count > 1024) {
     return false;
   }
   std::unordered_map<std::uint32_t, CampaignSaveSnapshot> loaded;
@@ -437,6 +468,15 @@ bool CampaignSaveStore::read_file(const std::filesystem::path& path) {
     for (std::uint32_t record_index = 0; record_index < record_count; ++record_index) {
       CampaignSaveSnapshot::Record record;
       if (!read_file_u32(record.mission_id) || !read_file_u32(record.objective_mask)) return false;
+      if (version >= 2) {
+        std::uint32_t state = 0;
+        std::uint32_t capability = 0;
+        if (!read_file_u32(state) || !read_file_u32(record.loadout.aircraft_id) ||
+            !read_file_u32(record.loadout.weapon_id) || !read_file_u32(capability) ||
+            capability > 1) return false;
+        record.state = static_cast<CampaignMissionState>(state);
+        record.loadout.capability_data_valid = capability != 0;
+      }
       snapshot.completed.push_back(record);
     }
     if (!valid_snapshot(snapshot) || !loaded.emplace(slot, std::move(snapshot)).second) return false;
