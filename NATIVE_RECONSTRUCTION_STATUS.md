@@ -2,6 +2,24 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 980 — IA tolérante aux cibles inactives
+
+Une règle IA dont la source ou la cible est déjà inactive est maintenant
+ignorée sans invalider la frame. Cela permet aux vagues/despawn et aux dégâts
+de progresser sans transformer une cible détruite en erreur permanente.
+Le test de non-régression passe avec la suite complète.
+
+## Cycle 979 — directeur IA déterministe
+
+`MissionAiDirector` ajoute des règles génériques périodiques
+`mission/tick/entity/target/weapon`, sans branche par mission. À chaque tick
+éligible, il verrouille la cible et tente le tir via `CombatWorld`; les unités,
+armes et dégâts restent donc sur le même chemin que le joueur. Les règles
+dupliquées sont refusées.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits campagne/code
+passent.
+
 ## Cycle 978 — armes dans le launch TSV
 
 Le quatrième champ optionnel du launch TSV accepte maintenant les templates

@@ -843,6 +843,19 @@ int main() {
   for (int step = 0; step < 4; ++step) weapon_execution.tick(0.25f, {});
   REQUIRE(weapon_execution.combat().unit(4098) != nullptr &&
           weapon_execution.combat().unit(4098)->health == 40.0f);
+  ac6::MissionAiDirector ai;
+  REQUIRE(ai.add({1, 1, 1, 4097, 4098, 7}));
+  REQUIRE(!ai.add({1, 1, 1, 4097, 4098, 7}));
+  ac6::MissionExecution ai_execution(*selected_definition, &assets, nullptr, nullptr,
+                                     nullptr, nullptr, nullptr, nullptr, &ai);
+  REQUIRE(ai_execution.launch(weapon_launch));
+  REQUIRE(ai_execution.tick(1.0f / 60.0f, {}).tick == 1);
+  REQUIRE(ai.active(1, 1) == 1 && ai_execution.combat().active_projectiles() == 1);
+  for (int step = 0; step < 4; ++step) ai_execution.tick(0.25f, {});
+  REQUIRE(ai_execution.combat().unit(4098) != nullptr &&
+          ai_execution.combat().unit(4098)->health == 40.0f);
+  REQUIRE(ai_execution.combat().deactivate_unit(4098));
+  REQUIRE(ai_execution.tick(1.0f / 60.0f, {}).mission_ready);
   ac6::MissionExecution checkpoint_execution(*selected_definition, &assets,
                                              &loaded_objectives);
   REQUIRE(checkpoint_execution.launch(*launch));

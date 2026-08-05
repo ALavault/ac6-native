@@ -707,6 +707,34 @@ void MissionWaveDirector::reset() noexcept {
   for (Entry& entry : entries_) entry.published = false;
 }
 
+bool MissionAiDirector::add(MissionAiRule rule) {
+  if (!rule.valid() || std::find(rules_.begin(), rules_.end(), rule) != rules_.end()) return false;
+  rules_.push_back(rule);
+  return true;
+}
+
+bool MissionAiDirector::dispatch_due(std::uint32_t mission_id, std::uint64_t tick,
+                                     CombatWorld& combat) noexcept {
+  for (const MissionAiRule& rule : rules_) {
+    if (rule.mission_id != mission_id || tick < rule.first_tick ||
+        (tick - rule.first_tick) % rule.period_ticks != 0) continue;
+    const CombatUnitState* source = combat.unit(rule.entity);
+    const CombatUnitState* target = combat.unit(rule.target);
+    if (source == nullptr || target == nullptr || !source->active || !target->active) continue;
+    if (!combat.lock_target(rule.entity, rule.target)) return false;
+    (void)combat.fire(rule.entity, rule.weapon_id);
+  }
+  return true;
+}
+
+std::size_t MissionAiDirector::active(std::uint32_t mission_id, std::uint64_t tick) const noexcept {
+  return static_cast<std::size_t>(std::count_if(rules_.begin(), rules_.end(),
+      [mission_id, tick](const MissionAiRule& rule) {
+        return rule.mission_id == mission_id && tick >= rule.first_tick &&
+               (tick - rule.first_tick) % rule.period_ticks == 0;
+      }));
+}
+
 namespace {
 
 bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
@@ -3432,9 +3460,10 @@ MissionExecution::MissionExecution(const MissionDefinition& definition,
                                    CampaignProgression* campaign,
                                    MissionWaveDirector* waves,
                                    MissionSequenceDirector* sequence,
-                                   const InputMappingDatabase* input)
+                                   const InputMappingDatabase* input,
+                                   MissionAiDirector* ai)
     : definition_(&definition), objectives_(objectives), radios_(radios), campaign_(campaign),
-      waves_(waves), sequence_(sequence), input_(input),
+      waves_(waves), sequence_(sequence), input_(input), ai_(ai),
       runtime_(definition, assets),
       scenario_(definition) {}
 
@@ -3642,6 +3671,11 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   if (scenario_.state() == ScenarioState::Gameplay) (void)radio_.tick(fixed_dt);
   if (scenario_.state() == ScenarioState::Gameplay && waves_ != nullptr &&
       !waves_->spawn_due(definition_->id, frame.tick, units_, combat_)) {
+    frame.mission_ready = false;
+    return frame;
+  }
+  if (scenario_.state() == ScenarioState::Gameplay && ai_ != nullptr &&
+      !ai_->dispatch_due(definition_->id, frame.tick, combat_)) {
     frame.mission_ready = false;
     return frame;
   }
