@@ -1218,6 +1218,18 @@ const MissionDefinition* FrontendController::mission_definition(
   return catalog.find(selected_mission_);
 }
 
+bool FrontendController::launch_selected(const MissionCatalog& catalog,
+                                         const MissionLaunchDatabase& launches,
+                                         MissionExecution& execution) const noexcept {
+  if (state_ != FrontendState::Mission || selected_mission_ == 0 || execution.launched()) {
+    return false;
+  }
+  const MissionDefinition* definition = catalog.find(selected_mission_);
+  const MissionLaunchDefinition* launch = launches.find(selected_mission_);
+  return definition != nullptr && launch != nullptr && definition->id == selected_mission_ &&
+         execution.launch(*launch);
+}
+
 bool SaveStore::save(std::uint32_t slot, RuntimeSnapshot snapshot) {
   if (slot == 0 || snapshot.tick == 0 || !std::isfinite(snapshot.position_x) ||
       !std::isfinite(snapshot.position_y) || !std::isfinite(snapshot.position_z) ||

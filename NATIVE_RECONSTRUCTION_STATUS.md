@@ -2,6 +2,18 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 970 — raccord frontend vers lancement de mission
+
+`FrontendController::launch_selected` relie désormais l’état `Mission` au
+`MissionLaunchDatabase` et à `MissionExecution` sans branche par mission. Le
+raccord vérifie l’état frontend, l’identité sélectionnée, la présence du
+launch manifest et refuse une seconde activation d’une exécution déjà lancée.
+
+Le test suit le parcours campagne avec loadout valide jusqu’à
+`ScenarioState::Gameplay`, puis vérifie qu’un second lancement est refusé.
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits campagne/code
+passent.
+
 ## Cycle 969 — ordinal des objectifs découplé de leur identité
 
 `MissionExecution` ne déduit plus l’index campagne d’un objectif par

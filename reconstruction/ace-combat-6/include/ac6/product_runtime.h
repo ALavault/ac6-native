@@ -1162,6 +1162,8 @@ class FrontendController final {
   bool select_mission(const MissionCatalog& catalog, std::uint32_t mission_id) noexcept;
   bool set_loadout(CampaignLoadout loadout) noexcept;
   const MissionDefinition* mission_definition(const MissionCatalog& catalog) const noexcept;
+  bool launch_selected(const MissionCatalog& catalog, const MissionLaunchDatabase& launches,
+                       MissionExecution& execution) const noexcept;
   bool advance() noexcept;
   bool dispatch(Event event) noexcept;
   bool dispatch_buttons(const InputMappingDatabase& mappings,

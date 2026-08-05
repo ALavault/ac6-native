@@ -730,6 +730,12 @@ int main() {
   for (const ac6::AssetId id : {119u, 165u, 199u, 210u}) {
     REQUIRE(assets.add({id, "DATA00.PAC@qualified", "hash"}));
   }
+  ac6::MissionExecution frontend_execution(*selected_definition, &assets, nullptr, nullptr,
+                                            &frontend_campaign);
+  REQUIRE(campaign_frontend.launch_selected(loaded_catalog, launches, frontend_execution));
+  REQUIRE(frontend_execution.launched() &&
+          frontend_execution.scenario().state() == ac6::ScenarioState::Gameplay);
+  REQUIRE(!campaign_frontend.launch_selected(loaded_catalog, launches, frontend_execution));
   ac6::MissionExecution execution(*selected_definition, &assets);
   REQUIRE(!execution.launched());
   REQUIRE(execution.launch(*launch));
