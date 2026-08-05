@@ -238,7 +238,10 @@ The `MissionManifestLoader::load_runtime` overload that accepts
 campaign databases together with the catalog, assets and launches. All seven
 databases are built in temporary state and published only after the last
 manifest succeeds; the legacy overload remains available for callers that
-only need the core three databases.
+only need the core three databases. The native `validate-manifest`,
+`frontend-smoke`, `services-smoke` and `present-manifest` commands consume this
+bundle directly, so optional services are not silently reloaded or discarded
+at their command boundaries.
 
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted

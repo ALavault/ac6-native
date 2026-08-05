@@ -147,12 +147,10 @@ int main(int argc, char** argv) {
     ac6::MissionCatalog catalog;
     ac6::MissionAssetDatabase assets;
     ac6::MissionLaunchDatabase launches;
+    ac6::MissionRuntimeServices services;
     if (!loader.load_paths(argv[2], paths) || !paths.render_valid() ||
-        !loader.load_runtime(argv[2], catalog, assets, launches)) return 6;
-    if (!paths.campaign.empty()) {
-      ac6::CampaignProgression campaign;
-      if (!loader.load_campaign(argv[2], campaign)) return 6;
-    }
+        !loader.load_runtime(argv[2], catalog, assets, launches, services)) return 6;
+    if (!paths.campaign.empty() && !services.has_campaign) return 6;
     ac6::MissionRenderDatabase render;
     ac6::MissionDrawableDatabase drawables;
     ac6::MissionTransformDatabase transforms;
@@ -174,11 +172,11 @@ int main(int argc, char** argv) {
     ac6::MissionCatalog catalog;
     ac6::MissionAssetDatabase assets;
     ac6::MissionLaunchDatabase launches;
+    ac6::MissionRuntimeServices services;
     if (!loader.load_paths(argv[2], paths) || paths.input.empty() ||
-        !loader.load_runtime(argv[2], catalog, assets, launches)) return 21;
+        !loader.load_runtime(argv[2], catalog, assets, launches, services) ||
+        !services.has_input) return 21;
     if (catalog.find(mission_id) == nullptr || launches.find(mission_id) == nullptr) return 22;
-    ac6::InputMappingDatabase mappings;
-    if (!loader.load_input(argv[2], mappings)) return 23;
     if (!paths.controls.empty()) {
       ac6::SdlAxisMapping axes;
       ac6::SdlKeyboardMapping keyboard;
@@ -191,7 +189,7 @@ int main(int argc, char** argv) {
                              ac6::FrontendLanguage::English}) ||
         !frontend.select_mission(catalog, mission_id)) return 24;
     for (int phase = 0; phase < 5; ++phase) {
-      if (!frontend.dispatch_buttons(mappings, 1u)) return 25;
+      if (!frontend.dispatch_buttons(services.input, 1u)) return 25;
     }
     return frontend.state() == ac6::FrontendState::Mission &&
                    frontend.mission_definition(catalog) != nullptr
@@ -205,14 +203,18 @@ int main(int argc, char** argv) {
     ac6::MissionCatalog catalog;
     ac6::MissionAssetDatabase assets;
     ac6::MissionLaunchDatabase launches;
-    if (!loader.load_runtime(argv[2], catalog, assets, launches)) return 28;
+    ac6::MissionRuntimeServices services;
+    if (!loader.load_runtime(argv[2], catalog, assets, launches, services)) return 28;
     const ac6::MissionDefinition* definition = catalog.find(mission_id);
     const ac6::MissionLaunchDefinition* launch = launches.find(mission_id);
     if (definition == nullptr || launch == nullptr) return 29;
     const std::vector<ac6::InputFrame> inputs = {
         {12000, -8000, 4000, 192, 0}, {-4000, 1000, 2000, 220, 0},
         {0, 0, 0, 180, 0}, {7000, 0, -3000, 200, 0}};
-    ac6::MissionExecution execution(*definition, &assets);
+    const ac6::MissionObjectiveDatabase* objectives =
+        services.has_objectives ? &services.objectives : nullptr;
+    const ac6::RadioMessageDatabase* radios = services.has_radios ? &services.radios : nullptr;
+    ac6::MissionExecution execution(*definition, &assets, objectives, radios);
     if (!execution.launch(*launch)) return 30;
     ac6::ReplayLog replay;
     ac6::SaveStore saves;
@@ -262,8 +264,9 @@ int main(int argc, char** argv) {
     ac6::MissionCatalog catalog;
     ac6::MissionAssetDatabase assets;
     ac6::MissionLaunchDatabase launches;
+    ac6::MissionRuntimeServices services;
     if (!loader.load_paths(argv[2], paths) || !paths.render_valid() ||
-        !loader.load_runtime(argv[2], catalog, assets, launches)) return 9;
+        !loader.load_runtime(argv[2], catalog, assets, launches, services)) return 9;
     ac6::MissionRenderDatabase render;
     ac6::MissionDrawableDatabase drawables;
     ac6::MissionTransformDatabase transforms;
@@ -285,18 +288,10 @@ int main(int argc, char** argv) {
     const ac6::MissionLaunchDefinition* launch = launches.find(mission_id);
     const ac6::MissionRenderPass* pass = passes.find(mission_id, "world");
     if (definition == nullptr || render_definition == nullptr || launch == nullptr || pass == nullptr) return 11;
-    ac6::MissionObjectiveDatabase objectives;
-    const ac6::MissionObjectiveDatabase* objective_database = nullptr;
-    if (!paths.objectives.empty()) {
-      if (!objectives.load_manifest(paths.objectives)) return 12;
-      objective_database = &objectives;
-    }
-    ac6::RadioMessageDatabase radios;
-    const ac6::RadioMessageDatabase* radio_database = nullptr;
-    if (!paths.radios.empty()) {
-      if (!radios.load_manifest(paths.radios)) return 12;
-      radio_database = &radios;
-    }
+    const ac6::MissionObjectiveDatabase* objective_database =
+        services.has_objectives ? &services.objectives : nullptr;
+    const ac6::RadioMessageDatabase* radio_database =
+        services.has_radios ? &services.radios : nullptr;
     ac6::MissionExecution execution(*definition, &assets, objective_database, radio_database);
     if (!execution.launch(*launch)) return 13;
     const ac6::WorldFrame world = execution.tick(1.0f / 60.0f, {});

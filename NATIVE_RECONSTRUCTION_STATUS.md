@@ -2,6 +2,14 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 996 — intégration CLI du bundle services
+
+Les quatre commandes natives de validation/frontend/services/présentation
+consomment désormais `MissionRuntimeServices`; les objectifs et radios ne
+sont plus rechargés puis jetés dans ces frontières. Build, CTest et
+`--present-smoke` sous Xvfb/audio dummy passent. Voir
+`reports/cycle-996-native-cli-services-integration.md`.
+
 ## Cycle 995 — persistance du contrat resource dans AC6SESS
 
 `AC6SESS` passe en version 7 et persiste désormais taille et dépendances des
