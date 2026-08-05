@@ -1454,6 +1454,14 @@ bool MissionLaunchDatabase::add(MissionLaunchDefinition definition) {
       return false;
     }
   }
+  for (std::size_t i = 0; i < definition.weapons.size(); ++i) {
+    if (!definition.weapons[i].valid() ||
+        std::find_if(definition.weapons.begin() + static_cast<std::ptrdiff_t>(i) + 1,
+                     definition.weapons.end(), [weapon = definition.weapons[i]](
+                         const WeaponDefinition& existing) {
+                       return existing.id == weapon.id;
+                     }) != definition.weapons.end()) return false;
+  }
   if (!has_player) return false;
   return launches_.emplace(definition.mission_id, std::move(definition)).second;
 }
@@ -3432,6 +3440,15 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
         : 20.0f + static_cast<float>(spawn_index++) * 5.0f;
     if (!combat_.add_unit({unit.id, unit.owner, {spawn_x, 0.0f, 0.0f},
                            100.0f, 100.0f, 1.0f, true})) {
+      units_ = UnitRegistry{};
+      combat_.clear();
+      scenario_ = MissionScenario(*definition_);
+      launched_ = false;
+      return false;
+    }
+  }
+  for (const WeaponDefinition weapon : launch.weapons) {
+    if (!combat_.add_weapon(weapon)) {
       units_ = UnitRegistry{};
       combat_.clear();
       scenario_ = MissionScenario(*definition_);

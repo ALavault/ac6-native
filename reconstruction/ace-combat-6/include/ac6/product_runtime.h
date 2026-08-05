@@ -439,6 +439,7 @@ struct MissionLaunchDefinition {
   std::uint32_t mission_id{};
   EntityId player_entity{};
   std::vector<UnitRecord> units;
+  std::vector<WeaponDefinition> weapons;
 };
 
 class MissionLaunchDatabase final {

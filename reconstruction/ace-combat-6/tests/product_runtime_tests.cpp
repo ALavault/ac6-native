@@ -832,6 +832,16 @@ int main() {
   combat.tick(0.25f);
   combat.tick(0.25f);
   REQUIRE(combat.unit(2) && !combat.unit(2)->active && combat.active_units() == 1);
+  const ac6::MissionLaunchDefinition weapon_launch{
+      1, 4097, {{4097, 1, 9, false}, {4098, 2, 119, false}},
+      {{7, 60.0f, 20.0f, 0.25f, 100.0f}}};
+  ac6::MissionExecution weapon_execution(*selected_definition, &assets);
+  REQUIRE(weapon_execution.launch(weapon_launch));
+  REQUIRE(weapon_execution.lock_target(4098));
+  REQUIRE(weapon_execution.fire_weapon(7));
+  for (int step = 0; step < 4; ++step) weapon_execution.tick(0.25f, {});
+  REQUIRE(weapon_execution.combat().unit(4098) != nullptr &&
+          weapon_execution.combat().unit(4098)->health == 40.0f);
   ac6::MissionExecution checkpoint_execution(*selected_definition, &assets,
                                              &loaded_objectives);
   REQUIRE(checkpoint_execution.launch(*launch));

@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 977 — publication des armes au lancement
+
+`MissionLaunchDefinition` porte désormais des `WeaponDefinition` validées.
+`MissionExecution::launch` publie ces templates dans `CombatWorld` avant de
+déclarer l’exécution lancée ; les IDs dupliqués ou paramètres invalides sont
+refusés. Le test verrouille une cible, tire depuis l’exécution mission et
+vérifie collision puis dégâts.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits campagne/code
+passent.
+
 ## Cycle 976 — génération fail-closed du manifeste campagne
 
 `tools/generate_campaign_manifest.py` prend le catalogue campagne comme source
