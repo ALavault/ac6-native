@@ -169,3 +169,9 @@ hypotheses:
     discriminator: Load a six-column objective manifest, destroy the bound combat entity, and require DestroyUnit success, ProtectUnit failure, non-ready terminal frames, and checkpoint round-trip preservation.
     evidence: reports/cycle-1034-native-objective-condition-binding.md; reconstruction/ace-combat-6/tests/product_runtime_tests.cpp; reconstruction/ace-combat-6/tests/session_save_tests.cpp.
     qualification: Qualified as a native mechanism only; no retail Mission 01 objective or wave is inferred.
+  - id: H-BRIDGE-M01-GENERIC-OBJECT-LIST-IS-WAVES
+    status: rejected
+    statement: The generic 0x82009440 objects in the Mission 01 gameplay manager list are retail wave units and can be promoted directly to native enemies.
+    discriminator: Sample the qualified gameplay census, require an owning unit registry or creator identity, and reject the association if only a generic vtable and list order are available.
+    evidence: reports/cycle-1035-bridge-object-vtable-boundary.md; bridge log SHA-256 bc74e35b7b8e9e34ea74e3e02d8633ef224f240dd149801d5f9016a79025831f.
+    qualification: Rejected for the current evidence; 228 generic objects have no unit identity, faction, wave timing, or objective binding.

@@ -235,3 +235,17 @@ calibration de scène comme parité retail sans association exacte.
   `retail_objectives`, `units_and_waves` ni `success_failure_debrief` tant
   qu’une fermeture retail exacte ne fournit pas leurs identités et transitions.
 - Rapport : `reports/cycle-1034-native-objective-condition-binding.md`.
+
+## Frontière bridge objets gameplay — 2026-08-06
+
+- Une route bridge fraîche a rejoint le HUD Mission 01 avec l’exécutable
+  instrumenté `e1a3be5398119c1fa5fabbecc14b1c1f3952ae024e989d3bea4bbff871969bc6`.
+- Le census `0x822707C8` reste à 230 objets : joueur identifié, un enfant,
+  zéro `other_player`, et 228 objets partageant le vtable `0x82009440`.
+  Les mots bornés ne contiennent pas de champ d’identité exploitable; aucune
+  vague, faction ou cible n’est déduite.
+- Cette preuve bridge supporte uniquement la frontière d’acquisition et
+  rejette l’association par ordre/type générique. Le prochain point
+  discriminant est le créateur ou registre d’unités lors d’une publication de
+  vague; les gates `units_and_waves` et `retail_objectives` restent ouverts.
+- Rapport : `reports/cycle-1035-bridge-object-vtable-boundary.md`.
