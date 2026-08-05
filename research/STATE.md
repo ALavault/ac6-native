@@ -173,3 +173,17 @@ calibration de scène comme parité retail sans association exacte.
 - Le chemin interactif conserve le dernier monde lors d'une pause ou d'un
   état terminal et présente l'overlay natif; le monde n'est pas recréé pour
   une frame de pause.
+
+## Slice runtime state P3 — 2026-08-05
+
+- Le run natif `--play-headless` a été rejoué sur 1 800 fixed ticks avec le
+  manifeste P1 et le replay qualifié, à 1280x720. Le nouveau rapport de session
+  v3 est `reports/mission01-native-captures/p3-runtime-state/native-session.json`,
+  SHA-256 `0b509194669eccd022c6e27637b44f3d1df98d383a49ad037b45a63cb47ffeae`.
+- La preuve native enregistre `deterministic_replay=true`, `pause_stable=true`,
+  `save_resume_stable=true` et `restart_stable=true`, avec le hash sémantique
+  `db6cfa8c0aff25f3`. Le contrat ferme donc `pause_save_restart`.
+- Cette exécution ne promeut pas de sémantique retail absente du manifeste :
+  objectifs, vagues, radio/scénario, HUD complet et débrief succès/échec restent
+  ouverts. Les readbacks volumineux restent sous `/tmp/ac6-native-evidence/`;
+  aucun payload retail n'est ajouté au dépôt.

@@ -164,9 +164,17 @@
       "evidence": []
     },
     "pause_save_restart": {
-      "status": "open",
+      "status": "passed",
       "statement": "pause save restart",
-      "evidence": []
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "headless-p3-runtime/native-session.json",
+          "sha256": "0b509194669eccd022c6e27637b44f3d1df98d383a49ad037b45a63cb47ffeae",
+          "size": 1392,
+          "claim": "native --play-headless records deterministic replay, pause, checkpoint save/resume, and fresh restart stability for the 1800-tick Mission 01 session"
+        }
+      ]
     }
   },
   "policy": {

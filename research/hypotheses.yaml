@@ -139,3 +139,9 @@ hypotheses:
     discriminator: Run the exact 1800-tick native replay and require non-zero HUD writes, deterministic readback, and a native unit test covering telemetry, target, weapon, objective and radio state.
     evidence: reports/mission01-native-captures/p2-native-hud/native-session.json SHA-256 e5f4f64564b3e31f8fab919c256614d023890ef0faba8a2f630a920ef97a9bb43; reconstruction/ace-combat-6/tests/product_runtime_tests.cpp.
     qualification: Base reticle/telemetry/radar path is qualified; full Mission 01 HUD acceptance remains open until retail objective, weapon, wave and radio definitions are attached to a qualified manifest.
+  - id: H-NATIVE-PAUSE-SAVE-RESTART
+    status: qualified
+    statement: Native Mission 01 session pause, checkpoint save/resume, and fresh restart preserve deterministic state.
+    discriminator: Run the same 1800-tick replay three times and compare pause, restored checkpoint, and fresh execution hashes.
+    evidence: reports/mission01-native-captures/p3-runtime-state/native-session.json SHA-256 0b509194669eccd022c6e27637b44f3d1df98d383a49ad037b45a63cb47ffeae records deterministic_replay=true, pause_stable=true, save_resume_stable=true, restart_stable=true.
+    qualification: Native pause/save/restart is qualified; Mission success/failure/debrief and retail scenario data remain open.

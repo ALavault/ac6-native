@@ -268,11 +268,12 @@ bool write_headless_report(const std::filesystem::path& output_dir,
                            std::uint64_t hash,
                            bool deterministic,
                            bool pause_stable,
-                           bool save_resume_stable) {
+                           bool save_resume_stable,
+                           bool restart_stable) {
   std::ofstream output(output_dir / "native-session.json");
   if (!output) return false;
   output << "{\n"
-         << "  \"schema\": \"ac6.native-session.v2\",\n"
+         << "  \"schema\": \"ac6.native-session.v3\",\n"
          << "  \"mission_id\": " << mission_id << ",\n"
          << "  \"ticks\": " << frame.tick << ",\n"
          << "  \"mission_ready\": " << (frame.mission_ready ? "true" : "false") << ",\n"
@@ -321,7 +322,8 @@ bool write_headless_report(const std::filesystem::path& output_dir,
          << "  \"semantic_hash\": \"" << std::hex << hash << std::dec << "\",\n"
          << "  \"deterministic_replay\": " << (deterministic ? "true" : "false") << ",\n"
          << "  \"pause_stable\": " << (pause_stable ? "true" : "false") << ",\n"
-         << "  \"save_resume_stable\": " << (save_resume_stable ? "true" : "false") << "\n"
+         << "  \"save_resume_stable\": " << (save_resume_stable ? "true" : "false") << ",\n"
+         << "  \"restart_stable\": " << (restart_stable ? "true" : "false") << "\n"
          << "}\n";
   return static_cast<bool>(output);
 }
@@ -475,6 +477,8 @@ int run_play_headless(const std::filesystem::path& manifest_input,
   const bool deterministic = same_world_frame(first_frame, second_frame) &&
       same_world_frame(first_frame, third_frame) && same_readback(first_readback, second_readback) &&
       same_readback(first_readback, third_readback);
+  const bool restart_stable = same_world_frame(first_frame, second_frame) &&
+      same_readback(first_readback, second_readback);
 
   ac6::SessionSaveStore loaded_store;
   if (!loaded_store.read_file(output_dir / "session.save")) return 72;
@@ -517,8 +521,9 @@ int run_play_headless(const std::filesystem::path& manifest_input,
                              hud.snapshot(),
                              player_asset_id,
                              semantic_hash(first_frame, first_readback), deterministic,
-                             pause_stable, save_resume_stable)) return 81;
-  return deterministic && pause_stable && save_resume_stable && first_frame.tick == kTicks &&
+                             pause_stable, save_resume_stable, restart_stable)) return 81;
+  return deterministic && pause_stable && save_resume_stable && restart_stable &&
+             first_frame.tick == kTicks &&
              first_frame.player_entity != 0 && first_readback.has_world_coverage()
              ? 0
              : 82;
