@@ -232,6 +232,23 @@ bool RadioPlaybackService::interrupt() noexcept {
   return true;
 }
 
+bool RadioPlaybackService::restore(RadioPlaybackSnapshot snapshot) noexcept {
+  if (static_cast<std::uint8_t>(snapshot.state) >
+      static_cast<std::uint8_t>(RadioPlaybackState::Interrupted)) return false;
+  if (snapshot.state == RadioPlaybackState::Idle) {
+    if (snapshot.mission_id != 0 || snapshot.message_id != 0 || snapshot.audio_asset != 0 ||
+        snapshot.subtitle_asset != 0 || snapshot.elapsed_seconds != 0.0f ||
+        snapshot.duration_seconds != 0.0f) return false;
+  } else if (snapshot.mission_id == 0 || snapshot.message_id == 0 || snapshot.audio_asset == 0 ||
+             !std::isfinite(snapshot.elapsed_seconds) || !std::isfinite(snapshot.duration_seconds) ||
+             snapshot.duration_seconds <= 0.0f || snapshot.elapsed_seconds < 0.0f ||
+             snapshot.elapsed_seconds > snapshot.duration_seconds) {
+    return false;
+  }
+  snapshot_ = snapshot;
+  return true;
+}
+
 void RadioPlaybackService::reset() noexcept {
   snapshot_ = {};
 }
@@ -3561,6 +3578,7 @@ bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
   checkpoint.combat_units = combat_.snapshot_units();
   checkpoint.failure_tick = failure_tick_;
   checkpoint.sequence = sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
+  checkpoint.radio_playback = radio_.snapshot();
   return checkpoint.mission_id != 0;
 }
 
@@ -3578,14 +3596,17 @@ bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept
   const std::uint64_t old_failure_tick = failure_tick_;
   const MissionSequenceSnapshot old_sequence =
       sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
+  const RadioPlaybackSnapshot old_radio = radio_.snapshot();
   if (!runtime_.restore(checkpoint.flight) || !scenario_.restore(checkpoint.scenario) ||
       !combat_.restore_units(checkpoint.combat_units) ||
-      (sequence_ != nullptr && !sequence_->restore(checkpoint.sequence))) {
+      (sequence_ != nullptr && !sequence_->restore(checkpoint.sequence)) ||
+      !radio_.restore(checkpoint.radio_playback)) {
     (void)runtime_.restore(old_flight);
     (void)scenario_.restore(old_scenario);
     (void)combat_.restore_units(old_units);
     failure_tick_ = old_failure_tick;
     if (sequence_ != nullptr) (void)sequence_->restore(old_sequence);
+    (void)radio_.restore(old_radio);
     return false;
   }
   failure_tick_ = checkpoint.failure_tick;

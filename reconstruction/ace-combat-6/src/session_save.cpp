@@ -31,9 +31,25 @@ bool valid_flight(const RuntimeSnapshot& flight) noexcept {
          flight.fixed_accumulator >= 0.0f && flight.fixed_accumulator < 1.0f / 60.0f;
 }
 
+bool valid_radio_playback(const RadioPlaybackSnapshot& playback,
+                          std::uint32_t mission_id) noexcept {
+  if (static_cast<std::uint8_t>(playback.state) >
+      static_cast<std::uint8_t>(RadioPlaybackState::Interrupted)) return false;
+  if (playback.state == RadioPlaybackState::Idle) {
+    return playback.mission_id == 0 && playback.message_id == 0 && playback.audio_asset == 0 &&
+           playback.subtitle_asset == 0 && playback.elapsed_seconds == 0.0f &&
+           playback.duration_seconds == 0.0f;
+  }
+  return playback.mission_id == mission_id && playback.message_id != 0 &&
+         playback.audio_asset != 0 && std::isfinite(playback.elapsed_seconds) &&
+         std::isfinite(playback.duration_seconds) && playback.duration_seconds > 0.0f &&
+         playback.elapsed_seconds >= 0.0f && playback.elapsed_seconds <= playback.duration_seconds;
+}
+
 bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
   if (checkpoint.mission_id == 0 || !valid_flight(checkpoint.flight) ||
       checkpoint.scenario.mission_id != checkpoint.mission_id ||
+      !valid_radio_playback(checkpoint.radio_playback, checkpoint.mission_id) ||
       static_cast<std::uint8_t>(checkpoint.scenario.state) >
           static_cast<std::uint8_t>(ScenarioState::Aborted) || checkpoint.scenario.player == 0 ||
       checkpoint.scenario.objectives.size() > 1024 ||
@@ -190,10 +206,17 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
     write_f32(output, entry.event.duration_seconds);
     write_u32(output, entry.published ? 1u : 0u);
   }
+  write_u32(output, checkpoint.radio_playback.mission_id);
+  write_u32(output, checkpoint.radio_playback.message_id);
+  write_u32(output, checkpoint.radio_playback.audio_asset);
+  write_u32(output, checkpoint.radio_playback.subtitle_asset);
+  write_f32(output, checkpoint.radio_playback.elapsed_seconds);
+  write_f32(output, checkpoint.radio_playback.duration_seconds);
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.radio_playback.state));
 }
 
 bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint,
-                     bool has_sequence) {
+                     bool has_sequence, bool has_radio) {
   std::uint32_t state = 0;
   std::uint32_t objective_count = 0;
   std::uint32_t radio_count = 0;
@@ -252,6 +275,17 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
       checkpoint.sequence.entries.push_back(entry);
     }
   }
+  if (has_radio) {
+    std::uint32_t state = 0;
+    if (!read_u32(input, checkpoint.radio_playback.mission_id) ||
+        !read_u32(input, checkpoint.radio_playback.message_id) ||
+        !read_u32(input, checkpoint.radio_playback.audio_asset) ||
+        !read_u32(input, checkpoint.radio_playback.subtitle_asset) ||
+        !read_f32(input, checkpoint.radio_playback.elapsed_seconds) ||
+        !read_f32(input, checkpoint.radio_playback.duration_seconds) ||
+        !read_u32(input, state)) return false;
+    checkpoint.radio_playback.state = static_cast<RadioPlaybackState>(state);
+  }
   return valid_checkpoint(checkpoint);
 }
 
@@ -282,7 +316,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 3);
+  write_u32(output, 4);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -330,7 +364,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   std::uint32_t version = 0;
   std::uint32_t count = 0;
   if (!read_u32(input, version) || !read_u32(input, count) ||
-      (version != 1 && version != 2 && version != 3) || count > 1024) {
+      (version != 1 && version != 2 && version != 3 && version != 4) || count > 1024) {
     return false;
   }
   std::unordered_map<std::uint32_t, SessionSaveSnapshot> loaded;
@@ -354,7 +388,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
       if (!read_u32(input, has_checkpoint) || has_checkpoint > 1) return false;
       if (has_checkpoint != 0) {
         MissionExecution::Checkpoint checkpoint;
-        if (!read_checkpoint(input, checkpoint, version >= 3)) return false;
+        if (!read_checkpoint(input, checkpoint, version >= 3, version >= 4)) return false;
         snapshot.checkpoint = std::move(checkpoint);
       }
     }

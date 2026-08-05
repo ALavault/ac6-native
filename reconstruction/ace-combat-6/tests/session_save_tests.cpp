@@ -23,6 +23,8 @@ int main() {
   ac6::MissionExecution::Checkpoint mission_checkpoint;
   mission_checkpoint.mission_id = 1;
   mission_checkpoint.failure_tick = 600;
+  mission_checkpoint.radio_playback = {1, 10, 199, 210, 0.1f, 0.25f,
+                                       ac6::RadioPlaybackState::Playing};
   mission_checkpoint.flight = snapshot.flight;
   mission_checkpoint.scenario = {
       1, ac6::ScenarioState::Gameplay, 4097,

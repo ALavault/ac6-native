@@ -208,7 +208,8 @@ states transactionally and refuses checkpoints while a projectile is in
 flight. `AC6SESS` version 2 persists the full checkpoint with bounded HSM,
 objective, radio and combat-unit state, while version 1 files remain readable.
 Version 3 also persists the ordered mission-sequence entries and their
-published/pending state; versions 1 and 2 remain readable.
+published/pending state; version 4 adds active radio playback state. Versions
+1 through 3 remain readable.
 
 `MissionExecution` aborts automatically on player destruction or an optional
 failure tick, propagating failure to an active campaign and debrief. The
@@ -229,8 +230,8 @@ paused. XMA decoding and retail timing remain replaceable service boundaries.
 
 `MissionSequenceDirector` schedules objective and radio events by mission tick
 and order, and dispatches them through `MissionExecution` so campaign/HSM
-preconditions remain authoritative. Its ordered publication state is included
-in `AC6SESS` version 3.
+preconditions remain authoritative. Its ordered publication state and active
+radio playback are included in `AC6SESS` versions 3 and 4.
 
 `CombatWorld` is the generic combat boundary for active units, faction-aware
 target locking, weapons, projectiles, collision and damage. `MissionExecution`

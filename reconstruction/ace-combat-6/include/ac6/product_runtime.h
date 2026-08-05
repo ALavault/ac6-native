@@ -287,6 +287,7 @@ class RadioPlaybackService final {
   bool tick(float fixed_dt) noexcept;
   bool finish() noexcept;
   bool interrupt() noexcept;
+  bool restore(RadioPlaybackSnapshot snapshot) noexcept;
   void reset() noexcept;
   bool playing() const noexcept { return snapshot_.state == RadioPlaybackState::Playing; }
   const RadioPlaybackSnapshot& snapshot() const noexcept { return snapshot_; }
@@ -943,6 +944,7 @@ class MissionExecution final {
     std::vector<CombatUnitState> combat_units;
     std::uint64_t failure_tick{};
     MissionSequenceSnapshot sequence;
+    RadioPlaybackSnapshot radio_playback;
     bool operator==(const Checkpoint&) const = default;
   };
   bool save_checkpoint(Checkpoint& checkpoint) const noexcept;

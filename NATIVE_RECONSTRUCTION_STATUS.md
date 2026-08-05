@@ -2,6 +2,15 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 966 — persistance du playback radio
+
+`MissionExecution::Checkpoint` conserve le snapshot radio actif (message,
+assets, temps, durée et état). `AC6SESS` version 4 l’encode avec validation
+bornée; les versions v1–v3 restent lisibles avec playback Idle implicite.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. Les états radio inconnus ou mélangés entre missions sont rejetés.
+
 ## Cycle 965 — persistance du séquenceur
 
 `AC6SESS` version 3 ajoute au checkpoint les événements du
