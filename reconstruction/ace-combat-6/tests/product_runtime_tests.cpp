@@ -479,12 +479,13 @@ int main() {
   {
     std::ofstream out(launch_manifest);
     out << "# mission_id player_entity unit_id:owner:asset\n";
-    out << "1\t4097\t4097:1:9,4098:1:119\n";
+    out << "1\t4097\t4097:1:9,4098:1:119\t7:60.0:20.0:0.25:100.0\n";
   }
   ac6::MissionLaunchDatabase launches;
   REQUIRE(launches.load_manifest(launch_manifest));
   const ac6::MissionLaunchDefinition* launch = launches.find(1);
-  REQUIRE(launch && launch->player_entity == 4097 && launch->units.size() == 2);
+  REQUIRE(launch && launch->player_entity == 4097 && launch->units.size() == 2 &&
+          launch->weapons.size() == 1 && launch->weapons[0].id == 7);
   std::remove(launch_manifest);
   const char* partial_launch_manifest = "ac6-test-partial-launch.tsv";
   { std::ofstream out(partial_launch_manifest);

@@ -994,6 +994,38 @@ bool parse_units(std::string_view text, std::vector<UnitRecord>& units) {
   return !units.empty();
 }
 
+bool parse_weapons(std::string_view text, std::vector<WeaponDefinition>& weapons) {
+  if (text.empty()) return false;
+  while (!text.empty()) {
+    const auto comma = text.find(',');
+    const auto token = text.substr(0, comma);
+    std::array<std::string_view, 5> fields{};
+    std::string_view remaining = token;
+    for (std::size_t index = 0; index < fields.size(); ++index) {
+      const auto colon = remaining.find(':');
+      if (index + 1 == fields.size()) {
+        fields[index] = remaining;
+      } else {
+        if (colon == std::string_view::npos) return false;
+        fields[index] = remaining.substr(0, colon);
+        remaining.remove_prefix(colon + 1);
+      }
+      if (fields[index].empty()) return false;
+    }
+    WeaponDefinition weapon;
+    if (!parse_u32(fields[0], weapon.id) || !parse_f32(fields[1], weapon.damage) ||
+        !parse_f32(fields[2], weapon.projectile_speed) ||
+        !parse_f32(fields[3], weapon.cooldown) || !parse_f32(fields[4], weapon.max_range) ||
+        std::find_if(weapons.begin(), weapons.end(), [weapon](const auto& existing) {
+          return existing.id == weapon.id;
+        }) != weapons.end()) return false;
+    weapons.push_back(weapon);
+    if (comma == std::string_view::npos) break;
+    text.remove_prefix(comma + 1);
+  }
+  return !weapons.empty();
+}
+
 }  // namespace
 
 bool MissionCatalog::add(MissionDefinition definition) {
@@ -1475,15 +1507,20 @@ bool MissionLaunchDatabase::load_manifest(const std::filesystem::path& manifest)
     if (line.empty() || line.front() == '#') continue;
     const auto first = line.find('\t');
     const auto second = first == std::string::npos ? std::string::npos : line.find('\t', first + 1);
+    const auto third = second == std::string::npos ? std::string::npos : line.find('\t', second + 1);
     if (first == std::string::npos || second == std::string::npos ||
-        line.find('\t', second + 1) != std::string::npos) {
+        (third != std::string::npos && line.find('\t', third + 1) != std::string::npos)) {
       return false;
     }
     MissionLaunchDefinition definition;
     if (!parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
         !parse_u32(std::string_view(line).substr(first + 1, second - first - 1),
                    definition.player_entity) ||
-        !parse_units(std::string_view(line).substr(second + 1), definition.units) ||
+        !parse_units(std::string_view(line).substr(second + 1,
+                                                   (third == std::string::npos ? line.size() : third) -
+                                                       second - 1), definition.units) ||
+        (third != std::string::npos &&
+         !parse_weapons(std::string_view(line).substr(third + 1), definition.weapons)) ||
         !loaded.add(std::move(definition))) {
       return false;
     }

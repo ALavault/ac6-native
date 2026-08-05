@@ -187,6 +187,11 @@ bounded `AC6SESS` file. It preserves both legacy stores, validates finite
 fixed-step state and sorted campaign records, and uses the same atomic
 temporary-sibling replacement boundary.
 
+Launch TSV rows accept the legacy `mission_id<TAB>player_entity<TAB>units`
+form, or an optional fourth tab-separated weapon list. Each weapon is encoded
+as `id:damage:projectile_speed:cooldown:max_range`; duplicate or invalid
+definitions are rejected before launch publication.
+
 An optional `campaign` row in the native manifest points to a strict TSV with
 `mission_id`, `selector`, `dpl_resource_id`, `data_table_entry`, objective
 count, and a comma-separated prerequisite list (`-` for none). The validation

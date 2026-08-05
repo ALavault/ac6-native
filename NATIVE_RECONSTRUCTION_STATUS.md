@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 978 — armes dans le launch TSV
+
+Le quatrième champ optionnel du launch TSV accepte maintenant les templates
+d’armes `id:damage:projectile_speed:cooldown:max_range`. Le format trois champs
+historique reste valide ; les définitions sont parsées, bornées et validées
+avant publication. Le test charge une arme depuis le TSV et vérifie le tir
+issu de l’exécution mission.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits campagne/code
+passent.
+
 ## Cycle 977 — publication des armes au lancement
 
 `MissionLaunchDefinition` porte désormais des `WeaponDefinition` validées.
