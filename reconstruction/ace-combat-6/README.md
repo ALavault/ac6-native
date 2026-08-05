@@ -222,13 +222,15 @@ partial`, and `13 unqualified`; unqualified rows cannot enter the native
 runtime route.
 
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
-flight, HSM, objectives, radio history and combat units. It rejects malformed
-states transactionally and refuses checkpoints while a projectile is in
-flight. `AC6SESS` version 2 persists the full checkpoint with bounded HSM,
-objective, radio and combat-unit state, while version 1 files remain readable.
-Version 3 also persists the ordered mission-sequence entries and their
-published/pending state; version 4 adds active radio playback state. Versions
-1 through 3 remain readable.
+flight, HSM, objectives, radio history, combat units and the sorted
+`AssetRecord` identities used by the mission. It rejects malformed states
+transactionally and refuses checkpoints while a projectile is in flight.
+`AC6SESS` version 2 persists the full checkpoint with bounded HSM, objective,
+radio and combat-unit state, while version 1 files remain readable. Version 3
+also persists ordered mission-sequence entries, version 4 adds active radio
+playback, version 5 adds active campaign/loadout records, and version 6 adds
+resource paths and hashes. Versions 1 through 5 remain readable; new resource
+identities are compared against the current manifest during restore.
 
 `MissionExecution` aborts automatically on player destruction or an optional
 failure tick, propagating failure to an active campaign and debrief. The
