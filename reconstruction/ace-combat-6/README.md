@@ -202,6 +202,12 @@ The current PAL evidence is intentionally reported as `1 qualified`, `1
 partial`, and `13 unqualified`; unqualified rows cannot enter the native
 runtime route.
 
+`MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
+flight, HSM, objectives, radio history and combat units. It rejects malformed
+states transactionally and refuses checkpoints while a projectile is in
+flight. `AC6SESS` currently persists the flight and campaign portions; the
+full checkpoint disk encoding remains open.
+
 `CombatWorld` is the generic combat boundary for active units, faction-aware
 target locking, weapons, projectiles, collision and damage. `MissionExecution`
 initializes its unit frontier on launch and exposes `lock_target` and

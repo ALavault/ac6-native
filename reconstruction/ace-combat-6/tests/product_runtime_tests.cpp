@@ -694,6 +694,26 @@ int main() {
   combat.tick(0.25f);
   combat.tick(0.25f);
   REQUIRE(combat.unit(2) && !combat.unit(2)->active && combat.active_units() == 1);
+  ac6::MissionExecution checkpoint_execution(*selected_definition, &assets,
+                                             &loaded_objectives);
+  REQUIRE(checkpoint_execution.launch(*launch));
+  REQUIRE(checkpoint_execution.activate_objective(1));
+  REQUIRE(checkpoint_execution.tick(1.0f / 60.0f, {}).tick == 1);
+  ac6::MissionExecution::Checkpoint mission_checkpoint;
+  REQUIRE(checkpoint_execution.save_checkpoint(mission_checkpoint));
+  REQUIRE(mission_checkpoint.scenario.state == ac6::ScenarioState::Gameplay &&
+          mission_checkpoint.scenario.objectives.size() == 2 &&
+          mission_checkpoint.combat_units.size() == 2);
+  REQUIRE(checkpoint_execution.dispatch({ac6::EventType::Pause, 0}));
+  REQUIRE(checkpoint_execution.restore_checkpoint(mission_checkpoint));
+  REQUIRE(checkpoint_execution.scenario().state() == ac6::ScenarioState::Gameplay &&
+          checkpoint_execution.scenario().objectives().find(1)->state ==
+              ac6::ObjectiveState::Active &&
+          checkpoint_execution.snapshot() == mission_checkpoint.flight);
+  const auto before_bad_checkpoint = checkpoint_execution.snapshot();
+  mission_checkpoint.scenario.state = static_cast<ac6::ScenarioState>(255);
+  REQUIRE(!checkpoint_execution.restore_checkpoint(mission_checkpoint));
+  REQUIRE(checkpoint_execution.snapshot() == before_bad_checkpoint);
   ac6::CampaignProgression mission_campaign;
   REQUIRE(mission_campaign.add({1, {1, 9, 9}, 1, {}}));
   REQUIRE(mission_campaign.finalize());

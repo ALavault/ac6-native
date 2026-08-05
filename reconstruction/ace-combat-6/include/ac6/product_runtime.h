@@ -146,6 +146,8 @@ class CombatWorld final {
   bool fire(EntityId owner, std::uint32_t weapon_id) noexcept;
   void tick(float fixed_dt) noexcept;
   const CombatUnitState* unit(EntityId entity) const noexcept;
+  std::vector<CombatUnitState> snapshot_units() const;
+  bool restore_units(const std::vector<CombatUnitState>& units) noexcept;
   std::size_t active_units() const noexcept;
   std::size_t active_projectiles() const noexcept;
   std::uint64_t damage_events() const noexcept { return damage_events_; }
@@ -188,6 +190,8 @@ class ObjectiveRegistry final {
   std::size_t completed_count() const noexcept;
   std::size_t failed_count() const noexcept;
   std::size_t size() const noexcept { return objectives_.size(); }
+  std::vector<ObjectiveRecord> snapshot() const;
+  bool restore(const std::vector<ObjectiveRecord>& snapshot) noexcept;
 
  private:
   std::unordered_map<std::uint32_t, ObjectiveRecord> objectives_;
@@ -244,6 +248,15 @@ struct MissionDebrief {
   std::vector<std::uint32_t> radio_history;
 };
 
+struct MissionScenarioSnapshot {
+  std::uint32_t mission_id{};
+  ScenarioState state{ScenarioState::Loading};
+  EntityId player{};
+  std::vector<ObjectiveRecord> objectives;
+  std::vector<std::uint32_t> radio_history;
+  bool operator==(const MissionScenarioSnapshot&) const = default;
+};
+
 class MissionScenario final {
  public:
   explicit MissionScenario(std::uint32_t mission_id) : mission_id_(mission_id) {}
@@ -264,6 +277,8 @@ class MissionScenario final {
   const ObjectiveRegistry& objectives() const noexcept { return objectives_; }
   const std::vector<std::uint32_t>& radio_history() const noexcept { return radio_history_; }
   MissionDebrief debrief() const;
+  MissionScenarioSnapshot snapshot() const;
+  bool restore(const MissionScenarioSnapshot& snapshot) noexcept;
 
  private:
   std::uint32_t mission_id_;
@@ -807,6 +822,15 @@ class MissionExecution final {
   WorldFrame tick(float fixed_dt, InputFrame input) noexcept;
   RuntimeSnapshot snapshot() const noexcept;
   bool restore(RuntimeSnapshot snapshot) noexcept;
+  struct Checkpoint {
+    std::uint32_t mission_id{};
+    RuntimeSnapshot flight;
+    MissionScenarioSnapshot scenario;
+    std::vector<CombatUnitState> combat_units;
+    bool operator==(const Checkpoint&) const = default;
+  };
+  bool save_checkpoint(Checkpoint& checkpoint) const noexcept;
+  bool restore_checkpoint(const Checkpoint& checkpoint) noexcept;
   MissionDebrief debrief() const;
   bool launched() const noexcept { return launched_; }
   const MissionScenario& scenario() const noexcept { return scenario_; }

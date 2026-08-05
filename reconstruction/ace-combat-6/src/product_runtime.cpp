@@ -56,6 +56,34 @@ bool ObjectiveRegistry::fail(std::uint32_t id) noexcept {
   return true;
 }
 
+std::vector<ObjectiveRecord> ObjectiveRegistry::snapshot() const {
+  std::vector<ObjectiveRecord> result;
+  result.reserve(objectives_.size());
+  for (const auto& [id, objective] : objectives_) {
+    (void)id;
+    result.push_back(objective);
+  }
+  std::sort(result.begin(), result.end(), [](const auto& left, const auto& right) {
+    return left.id < right.id;
+  });
+  return result;
+}
+
+bool ObjectiveRegistry::restore(const std::vector<ObjectiveRecord>& snapshot) noexcept {
+  if (snapshot.size() > 1024) return false;
+  std::unordered_map<std::uint32_t, ObjectiveRecord> loaded;
+  std::uint32_t previous = 0;
+  for (const ObjectiveRecord& objective : snapshot) {
+    if (!objective.valid() || objective.id <= previous ||
+        static_cast<std::uint8_t>(objective.state) >
+            static_cast<std::uint8_t>(ObjectiveState::Failed) ||
+        !loaded.emplace(objective.id, objective).second) return false;
+    previous = objective.id;
+  }
+  objectives_ = std::move(loaded);
+  return true;
+}
+
 const ObjectiveRecord* ObjectiveRegistry::find(std::uint32_t id) const noexcept {
   const auto it = objectives_.find(id);
   return it == objectives_.end() ? nullptr : &it->second;
@@ -330,7 +358,8 @@ bool CombatUnitState::valid() const noexcept {
   return entity != 0 && faction != 0 && std::isfinite(position.x) &&
          std::isfinite(position.y) && std::isfinite(position.z) &&
          std::isfinite(health) && std::isfinite(max_health) && max_health > 0.0f &&
-         health > 0.0f && health <= max_health && std::isfinite(collision_radius) &&
+         health >= 0.0f && health <= max_health && (!active || health > 0.0f) &&
+         std::isfinite(collision_radius) &&
          collision_radius > 0.0f;
 }
 
@@ -450,6 +479,30 @@ const CombatUnitState* CombatWorld::unit(EntityId entity) const noexcept {
     if (candidate.entity == entity) return &candidate;
   }
   return nullptr;
+}
+
+std::vector<CombatUnitState> CombatWorld::snapshot_units() const {
+  std::vector<CombatUnitState> result = units_;
+  std::sort(result.begin(), result.end(), [](const auto& left, const auto& right) {
+    return left.entity < right.entity;
+  });
+  return result;
+}
+
+bool CombatWorld::restore_units(const std::vector<CombatUnitState>& units) noexcept {
+  if (units.size() > 4096) return false;
+  std::vector<CombatUnitState> loaded;
+  loaded.reserve(units.size());
+  EntityId previous = 0;
+  for (const CombatUnitState& candidate : units) {
+    if (!candidate.valid() || candidate.entity <= previous) return false;
+    loaded.push_back(candidate);
+    previous = candidate.entity;
+  }
+  units_ = std::move(loaded);
+  projectiles_.clear();
+  locks_.clear();
+  return true;
 }
 
 std::size_t CombatWorld::active_units() const noexcept {
@@ -881,6 +934,27 @@ MissionDebrief MissionScenario::debrief() const {
   result.failed_objectives = static_cast<std::uint32_t>(objectives_.failed_count());
   result.radio_history = radio_history_;
   return result;
+}
+
+MissionScenarioSnapshot MissionScenario::snapshot() const {
+  return {mission_id_, state_, player_, objectives_.snapshot(), radio_history_};
+}
+
+bool MissionScenario::restore(const MissionScenarioSnapshot& snapshot) noexcept {
+  if (snapshot.mission_id != mission_id_ ||
+      static_cast<std::uint8_t>(snapshot.state) >
+          static_cast<std::uint8_t>(ScenarioState::Aborted) ||
+      snapshot.radio_history.size() > 65536) return false;
+  for (const std::uint32_t message : snapshot.radio_history) {
+    if (message == 0) return false;
+  }
+  ObjectiveRegistry loaded;
+  if (!loaded.restore(snapshot.objectives)) return false;
+  objectives_ = std::move(loaded);
+  state_ = snapshot.state;
+  player_ = snapshot.player;
+  radio_history_ = snapshot.radio_history;
+  return true;
 }
 
 bool MissionScenario::dispatch_buttons(const InputMappingDatabase& mappings,
@@ -3177,6 +3251,34 @@ MissionDebrief MissionExecution::debrief() const {
 
 bool MissionExecution::restore(RuntimeSnapshot snapshot) noexcept {
   return launched_ && runtime_.restore(snapshot);
+}
+
+bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
+  if (!launched_ || runtime_.snapshot().tick == 0 || combat_.active_projectiles() != 0) {
+    return false;
+  }
+  checkpoint.mission_id = definition_ == nullptr ? 0 : definition_->id;
+  checkpoint.flight = runtime_.snapshot();
+  checkpoint.scenario = scenario_.snapshot();
+  checkpoint.combat_units = combat_.snapshot_units();
+  return checkpoint.mission_id != 0;
+}
+
+bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept {
+  if (!launched_ || definition_ == nullptr || checkpoint.mission_id != definition_->id ||
+      checkpoint.scenario.mission_id != definition_->id ||
+      checkpoint.combat_units.empty()) return false;
+  const RuntimeSnapshot old_flight = runtime_.snapshot();
+  const MissionScenarioSnapshot old_scenario = scenario_.snapshot();
+  const std::vector<CombatUnitState> old_units = combat_.snapshot_units();
+  if (!runtime_.restore(checkpoint.flight) || !scenario_.restore(checkpoint.scenario) ||
+      !combat_.restore_units(checkpoint.combat_units)) {
+    (void)runtime_.restore(old_flight);
+    (void)scenario_.restore(old_scenario);
+    (void)combat_.restore_units(old_units);
+    return false;
+  }
+  return true;
 }
 
 WorldFrame MissionRuntime::run_replay(float fixed_dt, const ReplayLog& replay) {

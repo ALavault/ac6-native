@@ -2,6 +2,19 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 958 — checkpoint MissionExecution
+
+`MissionExecution::Checkpoint` regroupe vol, HSM, joueur, objectifs, radio et
+unités de combat. La restauration valide toutes les bornes avant publication
+et revient à l’état précédent si une partie échoue. Les projectiles en vol
+font explicitement refuser un checkpoint pour éviter une reprise non
+déterministe.
+
+Le test couvre pause/reprise, objectif actif, unités et corruption HSM. Build,
+CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. `AC6SESS` ne sérialise pas encore ce checkpoint complet; seule la
+combinaison vol/progression est actuellement persistée sur disque.
+
 ## Cycle 957 — contrat combat générique
 
 `CombatWorld` modélise les unités actives par faction, santé et rayon de
