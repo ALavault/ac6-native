@@ -22,6 +22,7 @@ int main() {
   snapshot.campaign.completed.push_back({1, 1});
   ac6::MissionExecution::Checkpoint mission_checkpoint;
   mission_checkpoint.mission_id = 1;
+  mission_checkpoint.failure_tick = 600;
   mission_checkpoint.flight = snapshot.flight;
   mission_checkpoint.scenario = {
       1, ac6::ScenarioState::Gameplay, 4097,

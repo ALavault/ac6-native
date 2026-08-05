@@ -747,6 +747,29 @@ int main() {
   const ac6::MissionDebrief failure_debrief = campaign_failure.debrief();
   REQUIRE(failure_debrief.outcome == ac6::MissionOutcome::Failure &&
           failure_debrief.failed_objectives == 1);
+  ac6::CampaignProgression destroyed_campaign;
+  REQUIRE(destroyed_campaign.add({1, {1, 9, 9}, 1, {}}));
+  REQUIRE(destroyed_campaign.finalize());
+  REQUIRE(destroyed_campaign.enter_briefing(1));
+  REQUIRE(destroyed_campaign.set_loadout(1, {7, 8, true}));
+  REQUIRE(destroyed_campaign.begin(1));
+  ac6::MissionExecution destroyed_execution(*selected_definition, &assets, nullptr, nullptr,
+                                             &destroyed_campaign);
+  REQUIRE(destroyed_execution.launch(*launch));
+  REQUIRE(destroyed_execution.combat().apply_damage(4097, 100.0f));
+  const auto destroyed_frame = destroyed_execution.tick(1.0f / 60.0f, {});
+  REQUIRE(!destroyed_frame.mission_ready &&
+          destroyed_execution.scenario().state() == ac6::ScenarioState::Aborted &&
+          destroyed_campaign.status(1)->state == ac6::CampaignMissionState::Failed &&
+          destroyed_execution.debrief().outcome == ac6::MissionOutcome::Failure);
+  REQUIRE(!destroyed_execution.dispatch({ac6::EventType::Abort, 0}));
+  ac6::MissionExecution expiration_execution(*selected_definition, &assets);
+  REQUIRE(expiration_execution.launch(*launch));
+  expiration_execution.set_failure_tick(2);
+  REQUIRE(expiration_execution.tick(1.0f / 60.0f, {}).tick == 1);
+  REQUIRE(!expiration_execution.tick(1.0f / 60.0f, {}).mission_ready &&
+          expiration_execution.scenario().state() == ac6::ScenarioState::Aborted &&
+          expiration_execution.debrief().outcome == ac6::MissionOutcome::Failure);
   ac6::MissionExecution objective_execution(*selected_definition, &assets, &loaded_objectives);
   REQUIRE(objective_execution.launch(*launch));
   REQUIRE(!objective_execution.dispatch({ac6::EventType::Complete, 0}));

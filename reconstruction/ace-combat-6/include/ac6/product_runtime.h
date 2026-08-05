@@ -146,6 +146,7 @@ class CombatWorld final {
   bool lock_target(EntityId owner, EntityId target) noexcept;
   EntityId locked_target(EntityId owner) const noexcept;
   bool fire(EntityId owner, std::uint32_t weapon_id) noexcept;
+  bool apply_damage(EntityId target, float damage) noexcept;
   void tick(float fixed_dt) noexcept;
   const CombatUnitState* unit(EntityId entity) const noexcept;
   std::vector<CombatUnitState> snapshot_units() const;
@@ -822,6 +823,8 @@ class MissionExecution final {
   bool dispatch_radio(std::uint32_t id) noexcept;
   bool lock_target(EntityId target) noexcept;
   bool fire_weapon(std::uint32_t weapon_id) noexcept;
+  void set_failure_tick(std::uint64_t tick) noexcept { failure_tick_ = tick; }
+  std::uint64_t failure_tick() const noexcept { return failure_tick_; }
   WorldFrame tick(float fixed_dt, InputFrame input) noexcept;
   RuntimeSnapshot snapshot() const noexcept;
   bool restore(RuntimeSnapshot snapshot) noexcept;
@@ -830,6 +833,7 @@ class MissionExecution final {
     RuntimeSnapshot flight;
     MissionScenarioSnapshot scenario;
     std::vector<CombatUnitState> combat_units;
+    std::uint64_t failure_tick{};
     bool operator==(const Checkpoint&) const = default;
   };
   bool save_checkpoint(Checkpoint& checkpoint) const noexcept;
@@ -850,6 +854,7 @@ class MissionExecution final {
   MissionScenario scenario_;
   UnitRegistry units_;
   CombatWorld combat_;
+  std::uint64_t failure_tick_{};
   bool launched_{};
 };
 

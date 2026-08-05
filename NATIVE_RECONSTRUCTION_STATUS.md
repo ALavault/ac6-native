@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 960 — échec destruction et expiration
+
+`MissionExecution` déclenche automatiquement l’échec sur destruction du
+joueur ou dépassement d’un tick limite configuré. `Abort` met à jour le HSM,
+la progression campagne active et le débrief; un second abort est rejeté.
+Les impacts et dommages externes passent par `CombatWorld::apply_damage`.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. Le tick limite est une frontière générique et n’est pas présenté
+comme une constante retail qualifiée.
+
 ## Cycle 959 — persistance du checkpoint de session
 
 `AC6SESS` version 2 persiste désormais le checkpoint MissionExecution complet

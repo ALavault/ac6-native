@@ -439,6 +439,18 @@ bool CombatWorld::fire(EntityId owner, std::uint32_t weapon_id) noexcept {
   return true;
 }
 
+bool CombatWorld::apply_damage(EntityId target, float damage) noexcept {
+  if (!std::isfinite(damage) || damage <= 0.0f) return false;
+  for (auto& unit : units_) {
+    if (unit.entity != target || !unit.active) continue;
+    unit.health = std::max(0.0f, unit.health - damage);
+    unit.active = unit.health > 0.0f;
+    ++damage_events_;
+    return true;
+  }
+  return false;
+}
+
 void CombatWorld::tick(float fixed_dt) noexcept {
   if (!(fixed_dt > 0.0f) || !std::isfinite(fixed_dt)) fixed_dt = 1.0f / 60.0f;
   fixed_dt = std::min(fixed_dt, 0.25f);
@@ -462,13 +474,7 @@ void CombatWorld::tick(float fixed_dt) noexcept {
     }
     const float hit_radius = target->collision_radius + 0.25f;
     if (combat_distance_squared(projectile.position, target->position) <= hit_radius * hit_radius) {
-      for (auto& mutable_target : units_) {
-        if (mutable_target.entity != projectile.target) continue;
-        mutable_target.health = std::max(0.0f, mutable_target.health - projectile.damage);
-        mutable_target.active = mutable_target.health > 0.0f;
-        ++damage_events_;
-        break;
-      }
+      (void)apply_damage(projectile.target, projectile.damage);
       projectile.active = false;
     }
   }
@@ -3199,9 +3205,16 @@ bool MissionExecution::dispatch(Event event) noexcept {
   if (!launched_) return false;
   if (event.type == EventType::Complete && campaign_ != nullptr &&
       !campaign_->can_complete(definition_->id)) return false;
+  if (event.type == EventType::Abort && campaign_ != nullptr) {
+    const CampaignMissionStatus* status = campaign_->status(definition_->id);
+    if (status == nullptr || status->state != CampaignMissionState::Active) return false;
+  }
   if (!scenario_.dispatch(event)) return false;
   if (event.type == EventType::Complete && campaign_ != nullptr) {
     return campaign_->complete(definition_->id);
+  }
+  if (event.type == EventType::Abort && campaign_ != nullptr) {
+    return campaign_->fail(definition_->id);
   }
   return true;
 }
@@ -3238,7 +3251,19 @@ bool MissionExecution::fire_weapon(std::uint32_t weapon_id) noexcept {
 WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   if (!launched_) return {};
   combat_.tick(fixed_dt);
-  return runtime_.tick(fixed_dt, input);
+  WorldFrame frame = runtime_.tick(fixed_dt, input);
+  if (scenario_.state() == ScenarioState::Gameplay) {
+    const CombatUnitState* player = combat_.unit(scenario_.player());
+    const bool player_destroyed = player == nullptr || !player->active;
+    const bool expired = failure_tick_ != 0 && frame.tick >= failure_tick_;
+    if (player_destroyed || expired) {
+      if (dispatch({EventType::Abort, scenario_.player()})) {
+        frame.mission_ready = false;
+        frame.active_units = static_cast<std::uint32_t>(combat_.active_units());
+      }
+    }
+  }
+  return frame;
 }
 
 RuntimeSnapshot MissionExecution::snapshot() const noexcept {
@@ -3261,6 +3286,7 @@ bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
   checkpoint.flight = runtime_.snapshot();
   checkpoint.scenario = scenario_.snapshot();
   checkpoint.combat_units = combat_.snapshot_units();
+  checkpoint.failure_tick = failure_tick_;
   return checkpoint.mission_id != 0;
 }
 
@@ -3271,13 +3297,16 @@ bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept
   const RuntimeSnapshot old_flight = runtime_.snapshot();
   const MissionScenarioSnapshot old_scenario = scenario_.snapshot();
   const std::vector<CombatUnitState> old_units = combat_.snapshot_units();
+  const std::uint64_t old_failure_tick = failure_tick_;
   if (!runtime_.restore(checkpoint.flight) || !scenario_.restore(checkpoint.scenario) ||
       !combat_.restore_units(checkpoint.combat_units)) {
     (void)runtime_.restore(old_flight);
     (void)scenario_.restore(old_scenario);
     (void)combat_.restore_units(old_units);
+    failure_tick_ = old_failure_tick;
     return false;
   }
+  failure_tick_ = checkpoint.failure_tick;
   return true;
 }
 

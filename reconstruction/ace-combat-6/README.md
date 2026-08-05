@@ -208,6 +208,11 @@ states transactionally and refuses checkpoints while a projectile is in
 flight. `AC6SESS` version 2 persists the full checkpoint with bounded HSM,
 objective, radio and combat-unit state, while version 1 files remain readable.
 
+`MissionExecution` aborts automatically on player destruction or an optional
+failure tick, propagating failure to an active campaign and debrief. The
+failure tick remains an explicit generic configuration until retail timing is
+qualified.
+
 `CombatWorld` is the generic combat boundary for active units, faction-aware
 target locking, weapons, projectiles, collision and damage. `MissionExecution`
 initializes its unit frontier on launch and exposes `lock_target` and

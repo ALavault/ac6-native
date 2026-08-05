@@ -141,6 +141,7 @@ bool read_string(std::istream& input, std::string& value) {
 
 void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& checkpoint) {
   write_u32(output, checkpoint.mission_id);
+  write_u64(output, checkpoint.failure_tick);
   write_flight(output, checkpoint.flight);
   write_u32(output, static_cast<std::uint32_t>(checkpoint.scenario.state));
   write_u32(output, checkpoint.scenario.player);
@@ -172,7 +173,8 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
   std::uint32_t objective_count = 0;
   std::uint32_t radio_count = 0;
   std::uint32_t unit_count = 0;
-  if (!read_u32(input, checkpoint.mission_id) || !read_flight(input, checkpoint.flight) ||
+  if (!read_u32(input, checkpoint.mission_id) || !read_u64(input, checkpoint.failure_tick) ||
+      !read_flight(input, checkpoint.flight) ||
       !read_u32(input, state) || !read_u32(input, checkpoint.scenario.player) ||
       !read_u32(input, objective_count) || objective_count > 1024) return false;
   checkpoint.scenario.mission_id = checkpoint.mission_id;
