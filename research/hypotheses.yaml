@@ -121,3 +121,15 @@ hypotheses:
     statement: The player drawable receives depth-pass fragments during its draw but contributes no final visible pixels in the current Mission 01 composite.
     discriminator: Attribute final depth-passing pixels to stable drawable IDs after depth testing and compare the player ID with terrain coverage.
     evidence: f16 metrics record 20901 depth-pass/color writes and object_id=3281354, while object-id.ppm has 780389 terrain pixels and 141211 clear pixels with no f16 pixels.
+  - id: H-NATIVE-PLAYER-WORLD-FRAME-ANCHOR
+    status: qualified
+    statement: The native product must apply WorldFrame player position to model-local aircraft geometry before projection.
+    discriminator: Render the same drawable with a zero and non-zero WorldFrame position and require a stable drawable bbox shift; then run the exact Mission 01 replay and require final f16 object-ID pixels.
+    evidence: Native end-to-end anchor test in reconstruction/ace-combat-6/tests/product_runtime_tests.cpp; reports/mission01-native-captures/p1-camera-visible/capture-metrics.json SHA-256 62cf04295349d31cf59535aa7923be9b88ac590fe3697334d503e6346b242dcd.
+    qualification: Qualified for native player attribution; other unit transforms and retail scene-transform parity remain open.
+  - id: H-NATIVE-P1-VISIBILITY
+    status: qualified
+    statement: The native Mission 01 capture has filled world surfaces and final player-aircraft pixels after the explicit external scene calibration.
+    discriminator: Require diagnostic_point_writes=0, filled_fragment_writes>0, terrain unique pixels and f16 object-ID pixels with non-zero bboxes in one 1800-tick 1280x720 native capture.
+    evidence: reports/mission01-native-captures/p1-camera-visible/README.md; capture-metrics.json SHA-256 62cf04295349d31cf59535aa7923be9b88ac590fe3697334d503e6346b242dcd; object-id.png SHA-256 22e2d244cbb412c6537b541f63984a2ec017601271fbad7c67c31544449030e6.
+    qualification: Native J0 visibility conditions pass; the `(0,-40,0)` terrain transform is explicitly calibrated and is not claimed as retail transform parity.

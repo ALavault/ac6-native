@@ -1670,6 +1670,25 @@ int main() {
   REQUIRE(raster_target.raster_metrics().front().inside_fragments > 0);
   REQUIRE(raster_target.filled_fragment_writes() > 0);
 
+  RasterFixture aircraft_anchor_fixture = make_raster_fixture(
+      "aircraft-anchor",
+      {{-0.25f, -0.25f, 2.0f, 0.0f, 0.0f}, {0.25f, -0.25f, 2.0f, 1.0f, 0.0f},
+       {0.0f, 0.25f, 2.0f, 0.5f, 1.0f}},
+      {0, 1, 2}, ac6::NativeIndexTopology::TriangleList);
+  aircraft_anchor_fixture.drawable.kind = "aircraft";
+  raster_frame.position_x = 0.0f;
+  raster_frame.position_y = 0.0f;
+  raster_frame.position_z = 0.0f;
+  REQUIRE(raster_target.clear(0, 1.0f));
+  REQUIRE(draw_raster_fixture(aircraft_anchor_fixture));
+  const auto aircraft_origin_bbox = raster_target.raster_metrics().front();
+  raster_frame.position_x = 0.5f;
+  REQUIRE(raster_target.clear(0, 1.0f));
+  REQUIRE(draw_raster_fixture(aircraft_anchor_fixture));
+  const auto aircraft_anchored_bbox = raster_target.raster_metrics().front();
+  REQUIRE(aircraft_origin_bbox.screen_bbox_valid && aircraft_anchored_bbox.screen_bbox_valid);
+  REQUIRE(aircraft_anchored_bbox.bbox_min_x != aircraft_origin_bbox.bbox_min_x);
+
   const char* texture_manifest = "ac6-test-textures.tsv";
   {
     std::ofstream out(texture_manifest);

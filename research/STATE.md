@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-05T18:20:00+02:00
+Mise à jour : 2026-08-05T20:10:00+02:00
 
 ## Gate courant
 
@@ -18,10 +18,11 @@ Mise à jour : 2026-08-05T18:20:00+02:00
 - Gate UpHud : la frontière inline `0x8226DF00/0x8226DF1C` est atteinte 1 066
   fois; le bit update `0x80` et la cible virtuelle sont observés. La chaîne
   texte par élément reste ouverte.
-- Le seul correctif renderer de ce slice est le raster fill natif : edge
-  barycentrique unique, depth `[0,1]`, clipping NDC conservatif et mode points
-  diagnostic explicite. Aucun correctif shader, texture, resolve, MRT, input ou
-  HSM n'a été appliqué. Les runs bridge restent `bridge`, jamais promus `stock`.
+- Le renderer natif possède un raster fill qualifié : edge barycentrique unique,
+  depth `[0,1]`, clipping NDC conservatif et mode points diagnostic explicite.
+  Le modèle joueur applique désormais la pose `WorldFrame` au drawable local;
+  aucun correctif shader, texture, resolve, MRT, input ou HSM n'a été appliqué.
+  Les runs bridge restent `bridge`, jamais promus `stock`.
 
 ## Faits qualifiés
 
@@ -31,7 +32,8 @@ Mise à jour : 2026-08-05T18:20:00+02:00
 - Corpus généré gelé : 54 fichiers C/C++, tree SHA-256
   `f42fa2c4c1ec3bfb061003ef7074f73881e968ef2719f7f78e59190d1c5af73d`.
 - Mission 01 atteint une frame avec HUD, terrain/sky runtime et entrées de vol
-  dans la lane `bridge`; le monde visible reste noir.
+  dans la lane `bridge`; cette observation bridge reste distincte de la preuve
+  native et ne qualifie pas son monde noir.
 - Le runtime join exact des quatre `mapobj_m01` de l'entry 9 et le batch
   environnement générique ont augmenté `flight_world_pixels` hors HUD de
   12 à 141 sur deux exécutions reproductibles.
@@ -66,11 +68,11 @@ Mise à jour : 2026-08-05T18:20:00+02:00
 
 ## Prochain test discriminant
 
- Qualifier la frontière caméra/clipping à partir de la capture native remplie :
- conserver les triangles partiellement visibles, mesurer les surfaces collées
- aux bords et expliquer la bbox terrain `[0,0]..[1279,718]`. Ne pas rouvrir les
- fronts selector, manager, UpHud, DATA.TBL[119] ou bridge sans preuve
- contradictoire.
+Relier les définitions retail des vagues/objectifs/radio et un HUD natif aux
+états de `MissionExecution`. La calibration de scène native reste hashée comme
+support de visibilité, mais sa parité retail est ouverte; ne pas rouvrir les
+fronts selector, manager, UpHud, DATA.TBL[119] ou bridge sans preuve
+contradictoire.
 
 ## Slice raster P0 — 2026-08-05
 
@@ -93,6 +95,28 @@ Mise à jour : 2026-08-05T18:20:00+02:00
   `player_aircraft_visible` restent `open` dans le contrat. La caméra/clipping
   est la prochaine frontière; la topologie n'est pas rouverte.
 
+## Slice caméra/visibilité P1 — 2026-08-05
+
+- Le défaut de joueur hors-cadre provenait de la géométrie F-16 restée à
+  l'origine alors que la caméra suivait `WorldFrame.position_*`. Le chemin
+  produit ancre uniquement les drawables `kind=aircraft` sur cette pose; les
+  transforms de scène restent ceux du manifeste.
+- La capture native exacte `/tmp/ac6-native-evidence/headless-p1-camera` couvre
+  1 800 ticks à 1280x720 avec `diagnostic_point_writes=0`,
+  `filled_fragment_writes=822161`, 361267 pixels couleur/depth non-clear et
+  hash sémantique `84a39be4daf4e71f`.
+- Le terrain a 257545 pixels finaux et bbox `[0,366]..[1279,718]`; le drawable
+  `f16` a 42722 pixels finaux object-ID et bbox `[452,240]..[1113,457]`.
+  L'object-ID est donc une preuve native d'attribution joueur, pas une simple
+  couverture non nulle.
+- Le manifeste externe est hashé
+  `2e552b538df4e36ec0a800f7c21d8f2fd17e46b5dc7b6d0449da11d7f61dc8fd` et son
+  `transforms.tsv` `fc4ed417367b2711e7bb8d08f2b813ba55f1089c2ef7ead5e7216828c74de0fb`;
+  le terrain y est explicitement `(0,-40,0)`. Cette calibration ferme la
+  visibilité native J0, pas la parité des transforms retail.
+- Le contrat passe désormais `world_visible` et
+  `player_aircraft_visible`; J1 reste ouvert. La topologie n'est pas rouverte.
+
 ## Slice natif J0 — 2026-08-05
 
 - Les fermetures bornées entries 9 et 119 puis 119–133 passent avec les
@@ -108,10 +132,10 @@ Mise à jour : 2026-08-05T18:20:00+02:00
   géométrie, 2 206 pixels couleur et profondeur non constante. Trois
   exécutions du même replay ont le hash sémantique
   `459390c93868090f`; pause et save/resume sont stables.
-- Le contrat `analysis/contracts/mission01-native-gate.json` est fail-closed :
-  `world_visible` et `player_aircraft_visible` sont revenus `open` après la
-  preuve raster, car la capture précédente ne distinguait pas un nuage de
-  points d'une surface remplie. J1 reste ouvert.
+- Le contrat `analysis/contracts/mission01-native-gate.json` passe désormais J0
+  avec une capture native object-ID après calibration de scène; J1 reste
+  ouvert. La capture P0 précédente reste conservée comme baseline du défaut
+  point-cloud.
 - Le binaire natif expose désormais `--combat-headless`. Le probe manifesté
   verrouille la cible hostile 4098 depuis le joueur 4097, tire l'arme 7 deux
   fois, produit deux événements de dégâts, passe la santé de 100 à 0 et réduit
@@ -123,6 +147,6 @@ Mise à jour : 2026-08-05T18:20:00+02:00
 
 ## Prochain gate
 
-Qualifier caméra/clipping et visibilité finale du joueur à partir de l'object-ID
-native; ne pas utiliser la capture bridge comme preuve J0/J1 et ne pas passer
-aux textures avant cette frontière.
+Relier les vagues/objectifs/radio retail et le HUD essentiel aux services natifs;
+ne pas utiliser la capture bridge comme preuve J1 et ne pas promouvoir la
+calibration de scène comme parité retail sans association exacte.

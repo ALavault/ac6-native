@@ -3642,10 +3642,19 @@ bool NativeRenderTarget::draw_world_geometry(const WorldFrame& frame,
     return true;
   };
 
-  const auto to_world = [&transform](const DecodedVertex& vertex) noexcept {
-    return Vec3{vertex.x * transform.scale_x + transform.translate_x,
-                vertex.y * transform.scale_y + transform.translate_y,
-                vertex.z * transform.scale_z + transform.translate_z};
+  const bool follows_player_anchor = drawable.kind == "aircraft";
+  const auto to_world = [&transform, &frame, follows_player_anchor](const DecodedVertex& vertex) noexcept {
+    // Aircraft geometry is stored in model-local coordinates.  The mission
+    // frame owns the native player pose; leaving this drawable at the manifest
+    // origin makes the follow camera look at the player while rasterizing the
+    // aircraft behind it at (0,0,0).  Scene geometry keeps its qualified
+    // manifest transform and is not implicitly re-anchored.
+    const float anchor_x = follows_player_anchor ? frame.position_x : 0.0f;
+    const float anchor_y = follows_player_anchor ? frame.position_y : 0.0f;
+    const float anchor_z = follows_player_anchor ? frame.position_z : 0.0f;
+    return Vec3{vertex.x * transform.scale_x + transform.translate_x + anchor_x,
+                vertex.y * transform.scale_y + transform.translate_y + anchor_y,
+                vertex.z * transform.scale_z + transform.translate_z + anchor_z};
   };
 
   std::vector<ScreenPoint> projected_vertices(decoded.vertices.size());

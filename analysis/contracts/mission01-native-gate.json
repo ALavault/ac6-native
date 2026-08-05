@@ -21,14 +21,44 @@
       ]
     },
     "world_visible": {
-      "status": "open",
+      "status": "passed",
       "statement": "world visible",
-      "evidence": []
+      "evidence": [
+        {
+          "kind": "native-capture",
+          "path": "headless-p1-camera/capture-metrics.json",
+          "sha256": "62cf04295349d31cf59535aa7923be9b88ac590fe3697334d503e6346b242dcd",
+          "size": 5966,
+          "claim": "native 1800-tick capture has zero diagnostic point writes, 822161 filled fragment writes, a filled terrain region and non-degenerate depth"
+        },
+        {
+          "kind": "native-capture",
+          "path": "headless-p1-camera/native-session.json",
+          "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6",
+          "size": 965,
+          "claim": "native session completed 1800 fixed ticks with a non-clear color/depth readback"
+        }
+      ]
     },
     "player_aircraft_visible": {
-      "status": "open",
+      "status": "passed",
       "statement": "player aircraft visible",
-      "evidence": []
+      "evidence": [
+        {
+          "kind": "native-capture",
+          "path": "headless-p1-camera/object-id.png",
+          "sha256": "22e2d244cbb412c6537b541f63984a2ec017601271fbad7c67c31544449030e6",
+          "size": 6776,
+          "claim": "native stable-drawable object-ID readback attributes 42722 final pixels to the f16 player drawable"
+        },
+        {
+          "kind": "native-capture",
+          "path": "headless-p1-camera/capture-metrics.json",
+          "sha256": "62cf04295349d31cf59535aa7923be9b88ac590fe3697334d503e6346b242dcd",
+          "size": 5966,
+          "claim": "native f16 drawable has non-zero bbox [452,240]..[1113,457], 79140 color writes and 42722 final unique object-ID pixels"
+        }
+      ]
     },
     "gameplay_camera": {
       "status": "passed",
