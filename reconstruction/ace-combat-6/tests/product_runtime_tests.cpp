@@ -700,6 +700,22 @@ int main() {
   const auto execution_frame = execution.tick(1.0f / 60.0f, {});
   REQUIRE(execution_frame.mission_ready && execution_frame.active_units == 2 &&
           execution_frame.player_entity == 0x1001);
+  ac6::MissionWaveDirector waves;
+  REQUIRE(waves.add({1, 2, {5000, 2, 119, false},
+                     {5000, 2, {25.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}}));
+  REQUIRE(!waves.add({1, 2, {5000, 2, 119, false},
+                      {5000, 2, {25.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}}));
+  ac6::MissionExecution wave_execution(*selected_definition, &assets, nullptr, nullptr,
+                                        nullptr, &waves);
+  REQUIRE(wave_execution.launch(*launch));
+  REQUIRE(waves.pending(1) == 1 && waves.spawned(1) == 0);
+  REQUIRE(wave_execution.tick(1.0f / 60.0f, {}).active_units == 2);
+  REQUIRE(waves.pending(1) == 1);
+  REQUIRE(wave_execution.tick(1.0f / 60.0f, {}).active_units == 3);
+  REQUIRE(waves.pending(1) == 0 && waves.spawned(1) == 1 &&
+          wave_execution.combat().unit(5000) != nullptr);
+  REQUIRE(waves.despawn(5000, wave_execution.units(), wave_execution.combat()));
+  REQUIRE(wave_execution.combat().active_units() == 2);
   ac6::CombatWorld combat;
   REQUIRE(combat.add_unit({1, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));
   REQUIRE(combat.add_unit({2, 2, {10.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));

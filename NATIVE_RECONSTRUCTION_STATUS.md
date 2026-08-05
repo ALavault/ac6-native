@@ -2,6 +2,16 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 962 — directeur de vagues d’unités
+
+`MissionWaveDirector` publie les unités dues par tick de façon atomique dans
+`UnitRegistry` et `CombatWorld`; `MissionExecution` l’exécute après chaque
+tick. Les doublons sont rejetés et le despawn met les deux registres en accord.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. Les paramètres retail de vagues restent non qualifiés et ne sont pas
+inventés par le runtime.
+
 ## Cycle 961 — route frontend campagne
 
 `FrontendController` est raccordé optionnellement à `CampaignProgression` :

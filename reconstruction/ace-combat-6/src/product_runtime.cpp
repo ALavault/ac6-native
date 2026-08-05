@@ -340,6 +340,13 @@ bool UnitRegistry::activate(EntityId id) noexcept {
   return true;
 }
 
+bool UnitRegistry::deactivate(EntityId id) noexcept {
+  const auto it = units_.find(id);
+  if (it == units_.end() || !it->second.active) return false;
+  it->second.active = false;
+  return true;
+}
+
 std::size_t UnitRegistry::active_count() const noexcept {
   std::size_t count = 0;
   for (const auto& [id, unit] : units_) {
@@ -451,6 +458,19 @@ bool CombatWorld::apply_damage(EntityId target, float damage) noexcept {
   return false;
 }
 
+bool CombatWorld::deactivate_unit(EntityId entity) noexcept {
+  for (auto& unit : units_) {
+    if (unit.entity != entity || !unit.active) continue;
+    unit.active = false;
+    for (auto& projectile : projectiles_) {
+      if (projectile.owner == entity || projectile.target == entity) projectile.active = false;
+    }
+    locks_.erase(entity);
+    return true;
+  }
+  return false;
+}
+
 void CombatWorld::tick(float fixed_dt) noexcept {
   if (!(fixed_dt > 0.0f) || !std::isfinite(fixed_dt)) fixed_dt = 1.0f / 60.0f;
   fixed_dt = std::min(fixed_dt, 0.25f);
@@ -528,6 +548,81 @@ void CombatWorld::clear() noexcept {
   locks_.clear();
   next_projectile_id_ = 1;
   damage_events_ = 0;
+}
+
+bool MissionWaveSpawn::valid() const noexcept {
+  return mission_id != 0 && spawn_tick != 0 && unit.id != 0 && unit.owner != 0 &&
+         unit.asset != 0 && combat.entity == unit.id && combat.faction == unit.owner &&
+         combat.valid();
+}
+
+bool MissionWaveDirector::add(MissionWaveSpawn spawn) {
+  if (!spawn.valid()) return false;
+  for (const Entry& entry : entries_) {
+    if (entry.spawn.mission_id == spawn.mission_id && entry.spawn.unit.id == spawn.unit.id) {
+      return false;
+    }
+  }
+  entries_.push_back({std::move(spawn), false});
+  std::sort(entries_.begin(), entries_.end(), [](const Entry& left, const Entry& right) {
+    if (left.spawn.mission_id != right.spawn.mission_id) {
+      return left.spawn.mission_id < right.spawn.mission_id;
+    }
+    if (left.spawn.spawn_tick != right.spawn.spawn_tick) {
+      return left.spawn.spawn_tick < right.spawn.spawn_tick;
+    }
+    return left.spawn.unit.id < right.spawn.unit.id;
+  });
+  return true;
+}
+
+bool MissionWaveDirector::spawn_due(std::uint32_t mission_id, std::uint64_t tick,
+                                    UnitRegistry& units, CombatWorld& combat) noexcept {
+  UnitRegistry staged_units = units;
+  CombatWorld staged_combat = combat;
+  std::vector<std::size_t> due;
+  for (std::size_t index = 0; index < entries_.size(); ++index) {
+    const Entry& entry = entries_[index];
+    if (entry.spawn.mission_id == mission_id && !entry.published &&
+        entry.spawn.spawn_tick <= tick) due.push_back(index);
+  }
+  for (const std::size_t index : due) {
+    const MissionWaveSpawn& spawn = entries_[index].spawn;
+    if (!staged_units.register_unit(spawn.unit) || !staged_units.activate(spawn.unit.id) ||
+        !staged_combat.add_unit(spawn.combat)) return false;
+  }
+  units = std::move(staged_units);
+  combat = std::move(staged_combat);
+  for (const std::size_t index : due) entries_[index].published = true;
+  return true;
+}
+
+bool MissionWaveDirector::despawn(EntityId entity, UnitRegistry& units,
+                                  CombatWorld& combat) noexcept {
+  UnitRegistry staged_units = units;
+  CombatWorld staged_combat = combat;
+  if (!staged_units.deactivate(entity) || !staged_combat.deactivate_unit(entity)) return false;
+  units = std::move(staged_units);
+  combat = std::move(staged_combat);
+  return true;
+}
+
+std::size_t MissionWaveDirector::pending(std::uint32_t mission_id) const noexcept {
+  return static_cast<std::size_t>(std::count_if(entries_.begin(), entries_.end(),
+      [mission_id](const Entry& entry) {
+        return entry.spawn.mission_id == mission_id && !entry.published;
+      }));
+}
+
+std::size_t MissionWaveDirector::spawned(std::uint32_t mission_id) const noexcept {
+  return static_cast<std::size_t>(std::count_if(entries_.begin(), entries_.end(),
+      [mission_id](const Entry& entry) {
+        return entry.spawn.mission_id == mission_id && entry.published;
+      }));
+}
+
+void MissionWaveDirector::reset() noexcept {
+  for (Entry& entry : entries_) entry.published = false;
 }
 
 namespace {
@@ -3160,8 +3255,10 @@ MissionExecution::MissionExecution(const MissionDefinition& definition,
                                    const MissionAssetDatabase* assets,
                                    const MissionObjectiveDatabase* objectives,
                                    const RadioMessageDatabase* radios,
-                                   CampaignProgression* campaign)
+                                   CampaignProgression* campaign,
+                                   MissionWaveDirector* waves)
     : definition_(&definition), objectives_(objectives), radios_(radios), campaign_(campaign),
+      waves_(waves),
       runtime_(definition, assets),
       scenario_(definition) {}
 
@@ -3175,6 +3272,7 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
   }
   units_ = UnitRegistry{};
   combat_.clear();
+  if (waves_ != nullptr) waves_->reset();
   scenario_ = MissionScenario(*definition_);
   if (objectives_ != nullptr) {
     for (const ObjectiveRecord* objective : objectives_->find_by_mission(definition_->id)) {
@@ -3266,6 +3364,11 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   if (!launched_) return {};
   combat_.tick(fixed_dt);
   WorldFrame frame = runtime_.tick(fixed_dt, input);
+  if (waves_ != nullptr && !waves_->spawn_due(definition_->id, frame.tick, units_, combat_)) {
+    frame.mission_ready = false;
+    return frame;
+  }
+  frame.active_units = static_cast<std::uint32_t>(units_.active_count());
   if (scenario_.state() == ScenarioState::Gameplay) {
     const CombatUnitState* player = combat_.unit(scenario_.player());
     const bool player_destroyed = player == nullptr || !player->active;

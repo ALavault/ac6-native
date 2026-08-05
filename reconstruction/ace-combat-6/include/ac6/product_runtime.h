@@ -92,6 +92,7 @@ class UnitRegistry final {
  public:
   bool register_unit(UnitRecord unit);
   bool activate(EntityId id) noexcept;
+  bool deactivate(EntityId id) noexcept;
   const UnitRecord* find(EntityId id) const noexcept;
   std::size_t size() const noexcept { return units_.size(); }
   std::size_t active_count() const noexcept;
@@ -147,6 +148,7 @@ class CombatWorld final {
   EntityId locked_target(EntityId owner) const noexcept;
   bool fire(EntityId owner, std::uint32_t weapon_id) noexcept;
   bool apply_damage(EntityId target, float damage) noexcept;
+  bool deactivate_unit(EntityId entity) noexcept;
   void tick(float fixed_dt) noexcept;
   const CombatUnitState* unit(EntityId entity) const noexcept;
   std::vector<CombatUnitState> snapshot_units() const;
@@ -167,6 +169,32 @@ class CombatWorld final {
   std::unordered_map<EntityId, EntityId> locks_;
   std::uint32_t next_projectile_id_{1};
   std::uint64_t damage_events_{};
+};
+
+struct MissionWaveSpawn {
+  std::uint32_t mission_id{};
+  std::uint64_t spawn_tick{};
+  UnitRecord unit;
+  CombatUnitState combat;
+  bool valid() const noexcept;
+};
+
+class MissionWaveDirector final {
+ public:
+  bool add(MissionWaveSpawn spawn);
+  bool spawn_due(std::uint32_t mission_id, std::uint64_t tick,
+                 UnitRegistry& units, CombatWorld& combat) noexcept;
+  bool despawn(EntityId entity, UnitRegistry& units, CombatWorld& combat) noexcept;
+  std::size_t pending(std::uint32_t mission_id) const noexcept;
+  std::size_t spawned(std::uint32_t mission_id) const noexcept;
+  void reset() noexcept;
+
+ private:
+  struct Entry {
+    MissionWaveSpawn spawn;
+    bool published{};
+  };
+  std::vector<Entry> entries_;
 };
 
 class UnitRegistry;
@@ -814,7 +842,8 @@ class MissionExecution final {
                    const MissionAssetDatabase* assets = nullptr,
                    const MissionObjectiveDatabase* objectives = nullptr,
                    const RadioMessageDatabase* radios = nullptr,
-                   CampaignProgression* campaign = nullptr);
+                   CampaignProgression* campaign = nullptr,
+                   MissionWaveDirector* waves = nullptr);
   bool launch(const MissionLaunchDefinition& launch) noexcept;
   bool dispatch(Event event) noexcept;
   bool activate_objective(std::uint32_t id) noexcept;
@@ -841,6 +870,7 @@ class MissionExecution final {
   MissionDebrief debrief() const;
   bool launched() const noexcept { return launched_; }
   const MissionScenario& scenario() const noexcept { return scenario_; }
+  UnitRegistry& units() noexcept { return units_; }
   const UnitRegistry& units() const noexcept { return units_; }
   CombatWorld& combat() noexcept { return combat_; }
   const CombatWorld& combat() const noexcept { return combat_; }
@@ -850,6 +880,7 @@ class MissionExecution final {
   const MissionObjectiveDatabase* objectives_{};
   const RadioMessageDatabase* radios_{};
   CampaignProgression* campaign_{};
+  MissionWaveDirector* waves_{};
   MissionRuntime runtime_;
   MissionScenario scenario_;
   UnitRegistry units_;
