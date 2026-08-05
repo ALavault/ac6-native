@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-05T14:35:00+02:00
+Mise à jour : 2026-08-05T16:53:19+02:00
 
 ## Gate courant
 
@@ -69,3 +69,37 @@ Joindre dans un run gameplay courant le registre et le consommateur de
 `draw -> render target -> resolve -> composite -> swap`. La première expérience
 renderer devra relier les draws monde aux pixels; elle ne pourra pas se baser
 sur un compteur de draws ou un bind non nul.
+
+## Slice natif J0 — 2026-08-05
+
+- Les fermetures bornées entries 9 et 119 puis 119–133 passent avec les
+  identités DATA.TBL/PAC qualifiées, zéro note parser et zéro FHM invalide.
+  Les associations non fermées restent `open`; aucune sémantique n'est déduite
+  d'un magic, d'une taille ou de l'ordre FHM.
+- Le runtime expose `--play MANIFEST_DIR 1` et
+  `--play-headless MANIFEST_DIR 1 REPLAY_PATH OUTPUT_DIR`. Le device Vulkan,
+  la swapchain, le renderer et l'exécution de mission sont persistants pendant
+  la boucle.
+- La preuve native headless `/tmp/ac6-native-evidence/headless-v2` couvre 1 800
+  ticks : `mission_ready=true`, joueur 4097/asset 9, 3 unités, 10 appels de
+  géométrie, 2 206 pixels couleur et profondeur non constante. Trois
+  exécutions du même replay ont le hash sémantique
+  `459390c93868090f`; pause et save/resume sont stables.
+- Le contrat `analysis/contracts/mission01-native-gate.json` passe J0 avec
+  artefacts natifs hashés; J1 reste ouvert. La capture reste volontairement
+  minimale et sombre : la parité visuelle fine, le HUD et le scénario ne sont
+  pas promus par ce slice.
+- Le binaire natif expose désormais `--combat-headless`. Le probe manifesté
+  verrouille la cible hostile 4098 depuis le joueur 4097, tire l'arme 7 deux
+  fois, produit deux événements de dégâts, passe la santé de 100 à 0 et réduit
+  les unités actives de 3 à 2. L'artefact externe `combat-v1.json` est hashé
+  `cca1e77db38cc8096bfd1a89d3f47a75c0831507107cd81d9f93072ea3c013a3`.
+  Cette preuve ferme uniquement les mécaniques natives ciblage/armes/
+  dégâts-destruction; elle ne qualifie aucune identité retail de vague ou
+  d'objectif.
+
+## Prochain gate
+
+Relier les définitions retail des vagues/objectifs/radio aux services natifs,
+puis ajouter un HUD qui lit les états natifs; ne pas utiliser la capture bridge
+comme preuve J1.

@@ -45,3 +45,6 @@ address	module	provisional_symbol	type	provenance	evidence_level	status
 0x822E76E4	default.xex	campaign_view_writer_candidate_4	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r31)	confirmed	qualified instruction; parent undefined
 0x822E78FC	default.xex	campaign_view_writer_candidate_5	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r31)	confirmed	qualified instruction; parent undefined
 0x822E89A8	default.xex	campaign_view_writer_candidate_6	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r29)	confirmed	qualified instruction; parent undefined
+native-main:run_play_headless	ac6-native	mission01_native_session_loop	function	main.cpp; fixed-step 1800-tick native Vulkan session, replay, pause and save/resume	runtime-direct	qualified by native headless evidence
+native-main:run_play_interactive	ac6-native	mission01_native_interactive_loop	function	main.cpp; persistent SDL window, Vulkan device, swapchain, renderer and input pump	runtime-direct	qualified by native build and session implementation
+native-main:run_combat_headless	ac6-native	native_combat_probe	function	main.cpp; manifest-loaded target lock, weapon fire, projectile damage and destruction	runtime-direct	qualified by native combat artifact

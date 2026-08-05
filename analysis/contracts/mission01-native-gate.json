@@ -1,0 +1,170 @@
+{
+  "schema": "ac6.mission01-native-gate.v1",
+  "provenance": {
+    "repo_commit": "08f37c080ba0b3c764ef8fd569d313d6bc64947d",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "mission_id": 1
+  },
+  "requirements": {
+    "native_session_loop": {
+      "status": "passed",
+      "statement": "native session loop",
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "headless-v2/native-session.json",
+          "sha256": "7b703ffac27f53f03e4a6fcd6026c7206116203cfab1e878846a1b6253ff67b7",
+          "size": 891,
+          "claim": "native --play-headless completed a persistent 1800-tick session with a native Vulkan target"
+        }
+      ]
+    },
+    "world_visible": {
+      "status": "passed",
+      "statement": "world visible",
+      "evidence": [
+        {
+          "kind": "native-capture",
+          "path": "headless-v2/color.ppm",
+          "sha256": "9fd8d3040f6535c8bd35a39a116e9fd3f109004ff39f2fe6427d51ff99edb196",
+          "size": 2764816,
+          "claim": "native color readback has 2206 non-clear pixels and 10 submitted geometry calls"
+        }
+      ]
+    },
+    "player_aircraft_visible": {
+      "status": "passed",
+      "statement": "player aircraft visible",
+      "evidence": [
+        {
+          "kind": "native-capture",
+          "path": "headless-v2/color.ppm",
+          "sha256": "9fd8d3040f6535c8bd35a39a116e9fd3f109004ff39f2fe6427d51ff99edb196",
+          "size": 2764816,
+          "claim": "native readback is produced by the player entity 4097 bound to asset 9 with non-zero color/depth coverage"
+        },
+        {
+          "kind": "native-test",
+          "path": "headless-v2/native-session.json",
+          "sha256": "7b703ffac27f53f03e4a6fcd6026c7206116203cfab1e878846a1b6253ff67b7",
+          "size": 891,
+          "claim": "native session records player_entity 4097, player_asset_id 9, geometry_calls 10 and raster_writes 2437"
+        }
+      ]
+    },
+    "gameplay_camera": {
+      "status": "passed",
+      "statement": "gameplay camera",
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "headless-v2/native-session.json",
+          "sha256": "7b703ffac27f53f03e4a6fcd6026c7206116203cfab1e878846a1b6253ff67b7",
+          "size": 891,
+          "claim": "native frame records a follow camera at (-11.2965,18.477,34.5148) targeting the player position"
+        }
+      ]
+    },
+    "flight_input": {
+      "status": "passed",
+      "statement": "flight input",
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "headless-v2/native-session.json",
+          "sha256": "7b703ffac27f53f03e4a6fcd6026c7206116203cfab1e878846a1b6253ff67b7",
+          "size": 891,
+          "claim": "native replay input changes pitch/roll/yaw/throttle and reaches non-zero position/orientation at tick 1800"
+        }
+      ]
+    },
+    "deterministic_replay": {
+      "status": "passed",
+      "statement": "deterministic replay",
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "headless-v2/native-session.json",
+          "sha256": "7b703ffac27f53f03e4a6fcd6026c7206116203cfab1e878846a1b6253ff67b7",
+          "size": 891,
+          "claim": "three native executions of the same 1800-frame replay have deterministic_replay=true and semantic hash 459390c93868090f"
+        }
+      ]
+    },
+    "units_and_waves": {
+      "status": "open",
+      "statement": "units and waves",
+      "evidence": []
+    },
+    "targeting": {
+      "status": "passed",
+      "statement": "targeting",
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "combat-v1.json",
+          "sha256": "cca1e77db38cc8096bfd1a89d3f47a75c0831507107cd81d9f93072ea3c013a3",
+          "size": 394,
+          "claim": "native combat probe locks the hostile entity 4098 from player 4097 and records target_locked=true"
+        }
+      ]
+    },
+    "weapons": {
+      "status": "passed",
+      "statement": "weapons",
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "combat-v1.json",
+          "sha256": "cca1e77db38cc8096bfd1a89d3f47a75c0831507107cd81d9f93072ea3c013a3",
+          "size": 394,
+          "claim": "native combat probe fires weapon 7 twice through MissionExecution and records weapon_fired=true"
+        }
+      ]
+    },
+    "damage_and_destruction": {
+      "status": "passed",
+      "statement": "damage and destruction",
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "combat-v1.json",
+          "sha256": "cca1e77db38cc8096bfd1a89d3f47a75c0831507107cd81d9f93072ea3c013a3",
+          "size": 394,
+          "claim": "native combat probe records health 100 to 0, two damage events, target_destroyed=true and active units 3 to 2"
+        }
+      ]
+    },
+    "retail_objectives": {
+      "status": "open",
+      "statement": "retail objectives",
+      "evidence": []
+    },
+    "essential_hud": {
+      "status": "open",
+      "statement": "essential hud",
+      "evidence": []
+    },
+    "scenario_radio_or_subtitles": {
+      "status": "open",
+      "statement": "scenario radio or subtitles",
+      "evidence": []
+    },
+    "success_failure_debrief": {
+      "status": "open",
+      "statement": "success failure debrief",
+      "evidence": []
+    },
+    "pause_save_restart": {
+      "status": "open",
+      "statement": "pause save restart",
+      "evidence": []
+    }
+  },
+  "policy": {
+    "bridge_is_supporting_evidence_only": true,
+    "native_behavior_required_for_pass": true,
+    "retail_assets_remain_external": true
+  }
+}

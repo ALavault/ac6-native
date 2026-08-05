@@ -88,3 +88,19 @@ hypotheses:
     discriminator: Correlate a world draw with RT content, resolve output, composite input, and swap pixels after the entry119 consumer gate.
     evidence: Cycle 1026 bridge has full_3d at C5/C6 while the presented gameplay image remains nearly black; first downstream stage is not yet qualified.
     qualification: Strongly supported in bridge; stock/observe and first-black-stage proof remain open.
+  - id: H-NATIVE-J0-PERSISTENT-LOOP
+    status: qualified
+    statement: The native Linux product can keep one SDL/Vulkan session, mission execution, renderer and swapchain alive through a deterministic Mission 01 headless loop.
+    discriminator: Run 1800 fixed ticks three times from one replay and require identical semantic/render hashes, pause stability and save/resume equality.
+    evidence: Native headless session v2 records mission_ready=true, player 4097, 3 active units, 10 geometry calls, non-zero color/depth coverage, deterministic_replay=true, pause_stable=true and save_resume_stable=true.
+  - id: H-NATIVE-J0-WORLD-CAPTURE
+    status: qualified
+    statement: The native renderer produces a non-clear world/player readback from qualified external slices without loading a PAC at runtime.
+    discriminator: Hash the native color/depth captures and require non-zero color/depth coverage plus a player asset identity in the same native run.
+    evidence: headless-v2 color SHA-256 9fd8d3040f6535c8bd35a39a116e9fd3f109004ff39f2fe6427d51ff99edb196; depth SHA-256 faa9ad8b7306ed64d26dd292855bc38b2ad50b480b003db78cf9f6632a1dd7db; native session SHA-256 7b703ffac27f53f03e4a6fcd6026c7206116203cfab1e878846a1b6253ff67b7.
+  - id: H-NATIVE-COMBAT-MECHANICS
+    status: qualified
+    statement: The native product path can lock a hostile unit, fire a manifest-provided weapon, apply projectile damage, and deactivate the destroyed unit.
+    discriminator: Execute the manifest-loaded combat probe and require target lock, weapon fire, a health decrease, damage events, and active-unit decrease in one native artifact.
+    evidence: reports/mission01-native-combat.md; /tmp/ac6-native-evidence/combat-v1.json SHA-256 cca1e77db38cc8096bfd1a89d3f47a75c0831507107cd81d9f93072ea3c013a3.
+    qualification: Native mechanics only; the combat fixture does not qualify retail Mission 01 wave/objective identities.

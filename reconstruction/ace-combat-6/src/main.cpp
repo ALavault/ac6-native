@@ -4,11 +4,18 @@
 
 #include <SDL3/SDL.h>
 
+#include <algorithm>
 #include <charconv>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <memory>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -60,11 +67,534 @@ bool same_world_frame(const ac6::WorldFrame& a, const ac6::WorldFrame& b) {
       a.camera_target_z == b.camera_target_z && a.input == b.input;
 }
 
+std::filesystem::path resolve_manifest_path(std::filesystem::path path) {
+  std::error_code error;
+  if (std::filesystem::is_directory(path, error)) path /= "manifest.tsv";
+  return path;
+}
+
+struct PlayAssets final {
+  ac6::MissionManifestLoader loader;
+  ac6::MissionManifestPaths paths;
+  ac6::MissionCatalog catalog;
+  ac6::MissionAssetDatabase assets;
+  ac6::MissionLaunchDatabase launches;
+  ac6::MissionRuntimeServices services;
+  ac6::MissionRenderDatabase render;
+  ac6::MissionDrawableDatabase drawables;
+  ac6::MissionTransformDatabase transforms;
+  ac6::MissionMaterialDatabase materials;
+  ac6::MissionTextureDatabase textures;
+  ac6::ShaderPermutationDatabase shaders;
+  ac6::MissionRenderTargetDatabase targets;
+  ac6::MissionRenderPassDatabase passes;
+  ac6::MissionRenderResolveDatabase resolves;
+  ac6::QualifiedBufferDatabase buffers;
+  ac6::NativeGeometryDatabase geometries;
+  ac6::MissionCameraDatabase cameras;
+  ac6::VulkanRenderer renderer;
+  std::uint32_t mission_id{};
+  const ac6::MissionDefinition* definition{};
+  const ac6::MissionLaunchDefinition* launch{};
+  const ac6::MissionRenderDefinition* render_definition{};
+  const ac6::MissionRenderPass* world_pass{};
+  const ac6::MissionRenderTargetDefinition* color_target{};
+
+  bool load(const std::filesystem::path& input, std::uint32_t requested_mission) {
+    mission_id = requested_mission;
+    const std::filesystem::path manifest = resolve_manifest_path(input);
+    if (!loader.load_paths(manifest, paths) || !paths.render_valid() ||
+        !loader.load_runtime(manifest, catalog, assets, launches, services) ||
+        !loader.load_render(manifest, render, drawables, transforms, materials, textures,
+                            shaders, targets, passes, resolves, buffers, geometries)) {
+      return false;
+    }
+    if (!paths.camera.empty() && !loader.load_camera(manifest, cameras)) return false;
+    definition = catalog.find(mission_id);
+    launch = launches.find(mission_id);
+    render_definition = render.find(mission_id);
+    world_pass = passes.find(mission_id, "world");
+    if (definition == nullptr || launch == nullptr || render_definition == nullptr ||
+        world_pass == nullptr) return false;
+    color_target = targets.find(mission_id, world_pass->color_target);
+    return color_target != nullptr && color_target->width != 0 && color_target->height != 0;
+  }
+
+  ac6::VulkanRenderer::RenderAssets render_assets() const noexcept {
+    return {&assets, render_definition, &drawables, &buffers, &geometries, &transforms,
+            &materials, &textures, &shaders, &targets, &passes, &resolves,
+            cameras.find(mission_id)};
+  }
+};
+
+struct NativeGraphics final {
+  bool video_initialized{};
+  bool vulkan_loaded{};
+  ac6::VulkanInstance instance;
+  ac6::SdlWindow window;
+  ac6::SdlVulkanSurface surface;
+  ac6::VulkanDevice device;
+  ac6::VulkanSwapchain swapchain;
+  ac6::VulkanFramePresenter presenter;
+
+  bool initialize(std::uint32_t width, std::uint32_t height, bool hidden) noexcept {
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
+    video_initialized = true;
+    if (!SDL_Vulkan_LoadLibrary(nullptr)) return false;
+    vulkan_loaded = true;
+    std::vector<const char*> extensions;
+    if (!ac6::SdlVulkanSurface::required_instance_extensions(extensions) ||
+        !instance.create(extensions) || !window.create("ac6-native", width, height, true, hidden) ||
+        !surface.create(window, instance.handle()) || !device.create(instance.handle(), surface.handle()) ||
+        !swapchain.create(device, surface.handle(), width, height) ||
+        !presenter.create(device, swapchain)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool present(const ac6::NativeRenderTarget& target) noexcept {
+    return presenter.valid() && presenter.present_frame(target);
+  }
+
+  void shutdown() noexcept {
+    presenter.destroy();
+    swapchain.destroy();
+    device.destroy();
+    surface.destroy();
+    window.destroy();
+    instance.destroy();
+    if (vulkan_loaded) {
+      SDL_Vulkan_UnloadLibrary();
+      vulkan_loaded = false;
+    }
+    if (video_initialized) {
+      SDL_QuitSubSystem(SDL_INIT_VIDEO);
+      video_initialized = false;
+    }
+  }
+
+  ~NativeGraphics() { shutdown(); }
+};
+
+bool render_and_present(PlayAssets& assets, NativeGraphics& graphics,
+                        ac6::NativeRenderTarget& target, const ac6::WorldFrame& frame) {
+  if (!target.clear(assets.world_pass->clear_color, assets.world_pass->clear_depth) ||
+      !assets.renderer.render(frame, assets.render_assets(), &target)) return false;
+  return graphics.present(target);
+}
+
+void hash_bytes(std::uint64_t& hash, const void* data, std::size_t size) noexcept {
+  const auto* bytes = static_cast<const std::uint8_t*>(data);
+  for (std::size_t index = 0; index < size; ++index) {
+    hash ^= bytes[index];
+    hash *= 1099511628211ull;
+  }
+}
+
+template <typename T>
+void hash_value(std::uint64_t& hash, const T& value) noexcept {
+  hash_bytes(hash, &value, sizeof(value));
+}
+
+std::uint64_t semantic_hash(const ac6::WorldFrame& frame,
+                            const ac6::RenderReadback& readback) noexcept {
+  std::uint64_t hash = 1469598103934665603ull;
+  hash_value(hash, frame.tick);
+  hash_value(hash, frame.mission_id);
+  hash_value(hash, frame.mission_ready);
+  hash_value(hash, frame.position_x);
+  hash_value(hash, frame.position_y);
+  hash_value(hash, frame.position_z);
+  hash_value(hash, frame.pitch);
+  hash_value(hash, frame.roll);
+  hash_value(hash, frame.yaw);
+  hash_value(hash, frame.active_units);
+  hash_value(hash, frame.player_entity);
+  hash_value(hash, frame.camera_x);
+  hash_value(hash, frame.camera_y);
+  hash_value(hash, frame.camera_z);
+  hash_value(hash, frame.camera_target_x);
+  hash_value(hash, frame.camera_target_y);
+  hash_value(hash, frame.camera_target_z);
+  hash_value(hash, frame.input.pitch);
+  hash_value(hash, frame.input.roll);
+  hash_value(hash, frame.input.yaw);
+  hash_value(hash, frame.input.throttle);
+  hash_value(hash, frame.input.buttons);
+  hash_value(hash, readback.width);
+  hash_value(hash, readback.height);
+  hash_value(hash, readback.color_coverage);
+  hash_value(hash, readback.depth_coverage);
+  hash_value(hash, readback.color_hash);
+  hash_value(hash, readback.depth_hash);
+  return hash;
+}
+
+bool same_readback(const ac6::RenderReadback& left,
+                   const ac6::RenderReadback& right) noexcept {
+  return left.width == right.width && left.height == right.height &&
+      left.color_coverage == right.color_coverage && left.depth_coverage == right.depth_coverage &&
+      left.color_hash == right.color_hash && left.depth_hash == right.depth_hash;
+}
+
+ac6::InputFrame generated_headless_input(std::size_t tick) noexcept {
+  ac6::InputFrame input{};
+  input.pitch = static_cast<std::int16_t>((tick % 120u < 60u) ? 4096 : -2048);
+  input.roll = static_cast<std::int16_t>((tick % 180u < 90u) ? 1024 : -1024);
+  input.yaw = static_cast<std::int16_t>((tick % 240u < 120u) ? 768 : -768);
+  input.throttle = static_cast<std::uint8_t>(160u + (tick % 64u));
+  return input;
+}
+
+bool write_headless_report(const std::filesystem::path& output_dir,
+                           std::uint32_t mission_id,
+                           const ac6::WorldFrame& frame,
+                           const ac6::RenderReadback& readback,
+                           const ac6::NativeRenderTarget& target,
+                           ac6::AssetId player_asset_id,
+                           std::uint64_t hash,
+                           bool deterministic,
+                           bool pause_stable,
+                           bool save_resume_stable) {
+  std::ofstream output(output_dir / "native-session.json");
+  if (!output) return false;
+  output << "{\n"
+         << "  \"schema\": \"ac6.native-session.v1\",\n"
+         << "  \"mission_id\": " << mission_id << ",\n"
+         << "  \"ticks\": " << frame.tick << ",\n"
+         << "  \"mission_ready\": " << (frame.mission_ready ? "true" : "false") << ",\n"
+         << "  \"player_entity\": " << frame.player_entity << ",\n"
+         << "  \"active_units\": " << frame.active_units << ",\n"
+         << "  \"position_x\": " << frame.position_x << ",\n"
+         << "  \"position_y\": " << frame.position_y << ",\n"
+         << "  \"position_z\": " << frame.position_z << ",\n"
+         << "  \"pitch\": " << frame.pitch << ",\n"
+         << "  \"roll\": " << frame.roll << ",\n"
+         << "  \"yaw\": " << frame.yaw << ",\n"
+         << "  \"camera_x\": " << frame.camera_x << ",\n"
+         << "  \"camera_y\": " << frame.camera_y << ",\n"
+         << "  \"camera_z\": " << frame.camera_z << ",\n"
+         << "  \"camera_target_x\": " << frame.camera_target_x << ",\n"
+         << "  \"camera_target_y\": " << frame.camera_target_y << ",\n"
+         << "  \"camera_target_z\": " << frame.camera_target_z << ",\n"
+         << "  \"input_pitch\": " << frame.input.pitch << ",\n"
+         << "  \"input_roll\": " << frame.input.roll << ",\n"
+         << "  \"input_yaw\": " << frame.input.yaw << ",\n"
+         << "  \"input_throttle\": " << static_cast<unsigned>(frame.input.throttle) << ",\n"
+         << "  \"player_asset_id\": " << player_asset_id << ",\n"
+         << "  \"geometry_calls\": " << target.geometry_calls() << ",\n"
+         << "  \"raster_triangles\": " << target.raster_triangles() << ",\n"
+         << "  \"raster_writes\": " << target.raster_writes() << ",\n"
+         << "  \"color_coverage\": " << readback.color_coverage << ",\n"
+         << "  \"depth_coverage\": " << readback.depth_coverage << ",\n"
+         << "  \"color_hash\": " << readback.color_hash << ",\n"
+         << "  \"depth_hash\": " << readback.depth_hash << ",\n"
+         << "  \"semantic_hash\": \"" << std::hex << hash << std::dec << "\",\n"
+         << "  \"deterministic_replay\": " << (deterministic ? "true" : "false") << ",\n"
+         << "  \"pause_stable\": " << (pause_stable ? "true" : "false") << ",\n"
+         << "  \"save_resume_stable\": " << (save_resume_stable ? "true" : "false") << "\n"
+         << "}\n";
+  return static_cast<bool>(output);
+}
+
+int run_play_headless(const std::filesystem::path& manifest_input,
+                      std::uint32_t mission_id,
+                      const std::filesystem::path& replay_path,
+                      const std::filesystem::path& output_dir) {
+  constexpr std::size_t kTicks = 1800;
+  constexpr float kFixedDt = 1.0f / 60.0f;
+  std::error_code error;
+  std::filesystem::create_directories(output_dir, error);
+  if (error) return 60;
+
+  PlayAssets assets;
+  if (!assets.load(manifest_input, mission_id)) return 61;
+  ac6::ReplayLog replay;
+  const bool replay_exists = std::filesystem::exists(replay_path, error) && !error;
+  if (replay_exists) {
+    if (!replay.read_file(replay_path)) return 62;
+  } else {
+    for (std::size_t tick = 0; tick < kTicks; ++tick) replay.append(generated_headless_input(tick));
+    if (!replay.write_file(replay_path)) return 63;
+  }
+  if (replay.frames().size() != kTicks) return 64;
+
+  NativeGraphics graphics;
+  if (!graphics.initialize(assets.color_target->width, assets.color_target->height, true)) return 65;
+  ac6::NativeRenderTarget target;
+  if (!target.resize(assets.color_target->width, assets.color_target->height)) return 66;
+
+  const ac6::MissionObjectiveDatabase* objectives =
+      assets.services.has_objectives ? &assets.services.objectives : nullptr;
+  const ac6::RadioMessageDatabase* radios =
+      assets.services.has_radios ? &assets.services.radios : nullptr;
+  ac6::MissionSequenceDirector* sequence =
+      assets.services.has_sequence ? &assets.services.sequence : nullptr;
+  const ac6::InputMappingDatabase* input =
+      assets.services.has_input ? &assets.services.input : nullptr;
+  ac6::MissionWaveDirector* waves =
+      assets.services.has_waves ? &assets.services.waves : nullptr;
+  ac6::MissionAiDirector* ai = assets.services.has_ai ? &assets.services.ai : nullptr;
+
+  auto make_execution = [&]() {
+    return std::unique_ptr<ac6::MissionExecution>(new ac6::MissionExecution(
+        *assets.definition, &assets.assets, objectives, radios, nullptr, waves, sequence, input, ai));
+  };
+  auto render_tick = [&](ac6::MissionExecution& execution, const ac6::InputFrame& input_frame,
+                         ac6::WorldFrame& frame) {
+    frame = execution.tick(kFixedDt, input_frame);
+    return render_and_present(assets, graphics, target, frame);
+  };
+
+  std::unique_ptr<ac6::MissionExecution> first = make_execution();
+  if (!first->launch(*assets.launch)) return 67;
+  ac6::WorldFrame first_frame{};
+  ac6::MissionExecution::Checkpoint checkpoint;
+  for (std::size_t tick = 0; tick < replay.frames().size(); ++tick) {
+    if (!render_tick(*first, replay.frames()[tick], first_frame)) return 68;
+    if (tick + 1 == kTicks / 2 && !first->save_checkpoint(checkpoint)) return 69;
+  }
+  const ac6::RenderReadback first_readback = target.readback();
+  ac6::SessionSaveStore save_store;
+  if (!save_store.save(1, {mission_id, first->snapshot(), {}, checkpoint}) ||
+      !save_store.write_file(output_dir / "session.save")) return 70;
+
+  auto replay_execution = [&](ac6::WorldFrame& final_frame,
+                              ac6::RenderReadback& final_readback) -> bool {
+    std::unique_ptr<ac6::MissionExecution> execution = make_execution();
+    if (!execution->launch(*assets.launch)) return false;
+    for (const ac6::InputFrame input_frame : replay.frames()) {
+      final_frame = execution->tick(kFixedDt, input_frame);
+    }
+    if (!render_and_present(assets, graphics, target, final_frame)) return false;
+    final_readback = target.readback();
+    return true;
+  };
+  ac6::WorldFrame second_frame{}, third_frame{};
+  ac6::RenderReadback second_readback{}, third_readback{};
+  if (!replay_execution(second_frame, second_readback) ||
+      !replay_execution(third_frame, third_readback)) return 71;
+  const bool deterministic = same_world_frame(first_frame, second_frame) &&
+      same_world_frame(first_frame, third_frame) && same_readback(first_readback, second_readback) &&
+      same_readback(first_readback, third_readback);
+
+  ac6::SessionSaveStore loaded_store;
+  if (!loaded_store.read_file(output_dir / "session.save")) return 72;
+  const ac6::SessionSaveSnapshot* loaded_snapshot = loaded_store.load(1);
+  if (loaded_snapshot == nullptr || !loaded_snapshot->checkpoint.has_value()) return 73;
+  std::unique_ptr<ac6::MissionExecution> resumed = make_execution();
+  if (!resumed->launch(*assets.launch)) return 74;
+  for (std::size_t tick = 0; tick < kTicks / 2; ++tick) {
+    if (!resumed->tick(kFixedDt, replay.frames()[tick]).mission_ready) return 75;
+  }
+  if (!resumed->restore_checkpoint(*loaded_snapshot->checkpoint)) return 76;
+  ac6::WorldFrame resumed_frame{};
+  for (std::size_t tick = kTicks / 2; tick < kTicks; ++tick) {
+    resumed_frame = resumed->tick(kFixedDt, replay.frames()[tick]);
+  }
+  const bool save_resume_stable = same_world_frame(first_frame, resumed_frame);
+
+  std::unique_ptr<ac6::MissionExecution> paused = make_execution();
+  if (!paused->launch(*assets.launch)) return 77;
+  const ac6::WorldFrame before_pause = paused->tick(kFixedDt, {});
+  if (!paused->dispatch({ac6::EventType::Pause, paused->scenario().player()})) return 78;
+  const ac6::WorldFrame during_pause = paused->tick(kFixedDt, {});
+  const bool pause_stable = before_pause.tick == during_pause.tick &&
+      before_pause.position_x == during_pause.position_x &&
+      before_pause.position_y == during_pause.position_y &&
+      before_pause.position_z == during_pause.position_z;
+  if (!paused->dispatch({ac6::EventType::Resume, paused->scenario().player()})) return 79;
+  const ac6::WorldFrame after_resume = paused->tick(kFixedDt, {});
+  if (after_resume.tick <= during_pause.tick) return 80;
+
+  ac6::AssetId player_asset_id = 0;
+  for (const ac6::UnitRecord& unit : assets.launch->units) {
+    if (unit.id == assets.launch->player_entity) player_asset_id = unit.asset;
+  }
+  if (!target.write_ppm(output_dir / "color.ppm") ||
+      !target.write_depth_f32(output_dir / "depth.f32") ||
+      !write_headless_report(output_dir, mission_id, first_frame, first_readback, target,
+                             player_asset_id,
+                             semantic_hash(first_frame, first_readback), deterministic,
+                             pause_stable, save_resume_stable)) return 81;
+  return deterministic && pause_stable && save_resume_stable && first_frame.tick == kTicks &&
+             first_frame.player_entity != 0 && first_readback.has_world_coverage()
+             ? 0
+             : 82;
+}
+
+int run_combat_headless(const std::filesystem::path& manifest_input,
+                        std::uint32_t mission_id,
+                        const std::filesystem::path& output_path) {
+  PlayAssets assets;
+  if (!assets.load(manifest_input, mission_id)) return 110;
+  const ac6::MissionLaunchDefinition* launch = assets.launch;
+  if (launch == nullptr || launch->weapons.empty()) return 111;
+
+  const ac6::UnitRecord* player = nullptr;
+  for (const ac6::UnitRecord& unit : launch->units) {
+    if (unit.id == launch->player_entity) {
+      player = &unit;
+      break;
+    }
+  }
+  if (player == nullptr) return 112;
+
+  const ac6::UnitRecord* hostile = nullptr;
+  for (const ac6::UnitRecord& unit : launch->units) {
+    if (unit.id != launch->player_entity && unit.owner != player->owner) {
+      hostile = &unit;
+      break;
+    }
+  }
+  if (hostile == nullptr) return 113;
+
+  const ac6::MissionObjectiveDatabase* objectives =
+      assets.services.has_objectives ? &assets.services.objectives : nullptr;
+  const ac6::RadioMessageDatabase* radios =
+      assets.services.has_radios ? &assets.services.radios : nullptr;
+  ac6::MissionSequenceDirector* sequence =
+      assets.services.has_sequence ? &assets.services.sequence : nullptr;
+  const ac6::InputMappingDatabase* input =
+      assets.services.has_input ? &assets.services.input : nullptr;
+  ac6::MissionWaveDirector* waves =
+      assets.services.has_waves ? &assets.services.waves : nullptr;
+  ac6::MissionAiDirector* ai = assets.services.has_ai ? &assets.services.ai : nullptr;
+  ac6::MissionExecution execution(*assets.definition, &assets.assets, objectives, radios,
+                                   nullptr, waves, sequence, input, ai);
+  if (!execution.launch(*launch)) return 114;
+
+  const ac6::CombatUnitState* initial_target = execution.combat().unit(hostile->id);
+  const std::size_t active_before = execution.combat().active_units();
+  if (initial_target == nullptr) return 115;
+  const float health_before = initial_target->health;
+  const std::uint32_t weapon_id = launch->weapons.front().id;
+  const bool target_locked = execution.lock_target(hostile->id);
+  bool weapon_fired = false;
+  std::uint32_t shots_fired = 0;
+  for (std::uint32_t shot = 0; shot < 4 && target_locked; ++shot) {
+    if (execution.fire_weapon(weapon_id)) {
+      weapon_fired = true;
+      ++shots_fired;
+    }
+    for (int step = 0; step < 4; ++step) {
+      (void)execution.tick(0.25f, {});
+    }
+    const ac6::CombatUnitState* current = execution.combat().unit(hostile->id);
+    if (current == nullptr || !current->active) break;
+  }
+  const ac6::CombatUnitState* final_target = execution.combat().unit(hostile->id);
+  const float health_after = final_target == nullptr ? 0.0f : final_target->health;
+  const bool target_destroyed = final_target != nullptr && !final_target->active &&
+      health_after == 0.0f;
+  const std::size_t active_after = execution.combat().active_units();
+  const bool damage_applied = execution.combat().damage_events() != 0 &&
+      health_after < health_before;
+  if (output_path.empty()) return 116;
+  std::ofstream output(output_path);
+  if (!output) return 117;
+  output << "{\n"
+         << "  \"schema\": \"ac6.native-combat.v1\",\n"
+         << "  \"mission_id\": " << mission_id << ",\n"
+         << "  \"player_entity\": " << player->id << ",\n"
+         << "  \"target_entity\": " << hostile->id << ",\n"
+         << "  \"target_faction\": " << hostile->owner << ",\n"
+         << "  \"target_locked\": " << (target_locked ? "true" : "false") << ",\n"
+         << "  \"weapon_id\": " << weapon_id << ",\n"
+         << "  \"weapon_fired\": " << (weapon_fired ? "true" : "false") << ",\n"
+         << "  \"shots_fired\": " << shots_fired << ",\n"
+         << "  \"health_before\": " << health_before << ",\n"
+         << "  \"health_after\": " << health_after << ",\n"
+         << "  \"damage_events\": " << execution.combat().damage_events() << ",\n"
+         << "  \"active_units_before\": " << active_before << ",\n"
+         << "  \"active_units_after\": " << active_after << ",\n"
+         << "  \"damage_applied\": " << (damage_applied ? "true" : "false") << ",\n"
+         << "  \"target_destroyed\": " << (target_destroyed ? "true" : "false") << "\n"
+         << "}\n";
+  if (!output) return 118;
+  return target_locked && weapon_fired && damage_applied && target_destroyed &&
+             active_after < active_before
+         ? 0
+         : 119;
+}
+
+int run_play_interactive(const std::filesystem::path& manifest_input,
+                         std::uint32_t mission_id) {
+  constexpr float kFixedDt = 1.0f / 60.0f;
+  PlayAssets assets;
+  if (!assets.load(manifest_input, mission_id)) return 90;
+  NativeGraphics graphics;
+  if (!graphics.initialize(assets.color_target->width, assets.color_target->height, false)) return 91;
+  ac6::NativeRenderTarget target;
+  if (!target.resize(assets.color_target->width, assets.color_target->height)) return 92;
+  ac6::SdlEventPump pump;
+  if (!pump.initialize()) return 93;
+  ac6::SdlInputAdapter input_adapter;
+  const ac6::MissionObjectiveDatabase* objectives =
+      assets.services.has_objectives ? &assets.services.objectives : nullptr;
+  const ac6::RadioMessageDatabase* radios =
+      assets.services.has_radios ? &assets.services.radios : nullptr;
+  ac6::MissionSequenceDirector* sequence =
+      assets.services.has_sequence ? &assets.services.sequence : nullptr;
+  const ac6::InputMappingDatabase* input_mapping =
+      assets.services.has_input ? &assets.services.input : nullptr;
+  ac6::MissionWaveDirector* waves =
+      assets.services.has_waves ? &assets.services.waves : nullptr;
+  ac6::MissionAiDirector* ai = assets.services.has_ai ? &assets.services.ai : nullptr;
+  ac6::MissionExecution execution(*assets.definition, &assets.assets, objectives, radios,
+                                   nullptr, waves, sequence, input_mapping, ai);
+  if (!execution.launch(*assets.launch)) return 94;
+  ac6::InputFrame input_frame{};
+  std::uint16_t buttons = 0;
+  std::vector<ac6::Event> events;
+  bool quit = false;
+  ac6::WorldFrame frame = execution.tick(kFixedDt, input_frame);
+  if (!render_and_present(assets, graphics, target, frame)) return 95;
+  using Clock = std::chrono::steady_clock;
+  auto previous = Clock::now();
+  double accumulator = 0.0;
+  while (!quit) {
+    events.clear();
+    if (!pump.pump(input_adapter, input_frame, buttons,
+                   assets.services.input, execution.scenario().player(), events, quit)) return 96;
+    for (const ac6::Event event : events) (void)execution.dispatch(event);
+    const auto now = Clock::now();
+    const double elapsed = std::chrono::duration<double>(now - previous).count();
+    previous = now;
+    accumulator = std::min(accumulator + elapsed, 0.25);
+    bool stepped = false;
+    while (accumulator >= static_cast<double>(kFixedDt)) {
+      frame = execution.tick(kFixedDt, input_frame);
+      accumulator -= static_cast<double>(kFixedDt);
+      stepped = true;
+    }
+    if (stepped && !render_and_present(assets, graphics, target, frame)) return 97;
+    SDL_Delay(1);
+  }
+  return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
   ac6::MissionRuntime runtime(1);
   const auto frame = runtime.tick(1.0f / 60.0f, {});
+  if (argc == 4 && std::string_view(argv[1]) == "--play") {
+    std::uint32_t mission_id = 0;
+    if (!parse_u32(argv[3], mission_id) || mission_id == 0) return 98;
+    return run_play_interactive(argv[2], mission_id);
+  }
+  if (argc == 6 && std::string_view(argv[1]) == "--play-headless") {
+    std::uint32_t mission_id = 0;
+    if (!parse_u32(argv[3], mission_id) || mission_id == 0) return 99;
+    return run_play_headless(argv[2], mission_id, argv[4], argv[5]);
+  }
+  if (argc == 5 && std::string_view(argv[1]) == "--combat-headless") {
+    std::uint32_t mission_id = 0;
+    if (!parse_u32(argv[3], mission_id) || mission_id == 0) return 109;
+    return run_combat_headless(argv[2], mission_id, argv[4]);
+  }
   if (argc == 6 && std::string_view(argv[1]) == "--compare-mission01") {
     std::uint32_t mission_id = 0;
     if (!parse_u32(argv[3], mission_id) || mission_id != 1u) return 40;
