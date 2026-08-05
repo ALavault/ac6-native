@@ -2,6 +2,22 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 982 — sauvegarde disque d’une mission active
+
+La reprise ne se limite plus à un objet mémoire : une Mission 1 active avec
+loadout, objectif 1 complété et vol en cours est écrite dans `AC6SESS`, relue,
+puis restaurée dans une nouvelle `MissionExecution`. L’objectif conserve son
+état, la campagne reste `Active` avec son masque, et le joueur peut verrouiller
+la cible puis tirer après reload.
+
+Le contrat de checkpoint refuse désormais un joueur absent de la liste des
+unités combat, à la fois dans `MissionExecution::restore_checkpoint` et dans
+le validateur du codec session. Les checkpoints corrompus ne peuvent donc pas
+publier un état HSM dont le joueur n’a pas de représentation combat.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits
+campagne/code passent.
+
 ## Cycle 981 — reprise d’un checkpoint de combat armé
 
 Un checkpoint pris après résolution d’un projectile restaure désormais la

@@ -871,7 +871,7 @@ int main() {
   REQUIRE(ai_execution.tick(1.0f / 60.0f, {}).mission_ready);
   ac6::MissionExecution checkpoint_execution(*selected_definition, &assets,
                                              &loaded_objectives);
-  REQUIRE(checkpoint_execution.launch(*launch));
+  REQUIRE(checkpoint_execution.launch(weapon_launch));
   REQUIRE(checkpoint_execution.activate_objective(1));
   REQUIRE(checkpoint_execution.tick(1.0f / 60.0f, {}).tick == 1);
   ac6::MissionExecution::Checkpoint mission_checkpoint;
@@ -886,8 +886,9 @@ int main() {
               ac6::ObjectiveState::Active &&
           checkpoint_execution.snapshot() == mission_checkpoint.flight);
   const auto before_bad_checkpoint = checkpoint_execution.snapshot();
-  mission_checkpoint.scenario.state = static_cast<ac6::ScenarioState>(255);
-  REQUIRE(!checkpoint_execution.restore_checkpoint(mission_checkpoint));
+  auto invalid_state_checkpoint = mission_checkpoint;
+  invalid_state_checkpoint.scenario.state = static_cast<ac6::ScenarioState>(255);
+  REQUIRE(!checkpoint_execution.restore_checkpoint(invalid_state_checkpoint));
   REQUIRE(checkpoint_execution.snapshot() == before_bad_checkpoint);
   ac6::CampaignProgression mission_campaign;
   REQUIRE(mission_campaign.add({1, {1, 9, 9}, 1, {}}));
@@ -907,6 +908,58 @@ int main() {
           success_debrief.objective_count == 2 &&
           success_debrief.completed_objectives == 1 &&
           success_debrief.failed_objectives == 0);
+  ac6::CampaignProgression session_campaign;
+  REQUIRE(session_campaign.add({1, {1, 9, 9}, 2, {}}));
+  REQUIRE(session_campaign.finalize());
+  REQUIRE(session_campaign.enter_briefing(1));
+  REQUIRE(session_campaign.set_loadout(1, {7, 8, true}));
+  REQUIRE(session_campaign.begin(1));
+  ac6::MissionExecution session_execution(*selected_definition, &assets, &loaded_objectives,
+                                           nullptr, &session_campaign);
+  REQUIRE(session_execution.launch(weapon_launch));
+  REQUIRE(session_execution.activate_objective(1));
+  REQUIRE(session_execution.complete_objective(1));
+  REQUIRE(session_execution.tick(1.0f / 60.0f, {}).tick == 1);
+  ac6::MissionExecution::Checkpoint session_checkpoint;
+  REQUIRE(session_execution.save_checkpoint(session_checkpoint));
+  ac6::SessionSaveSnapshot mission_session{
+      1, session_checkpoint.flight, session_campaign.snapshot(), session_checkpoint};
+  ac6::SessionSaveStore mission_sessions;
+  REQUIRE(mission_sessions.save(11, mission_session));
+  const char* mission_session_path = "ac6-test-mission1-session.ac6sess";
+  REQUIRE(mission_sessions.write_file(mission_session_path));
+  ac6::SessionSaveStore loaded_mission_sessions;
+  REQUIRE(loaded_mission_sessions.read_file(mission_session_path));
+  REQUIRE(loaded_mission_sessions.load(11) != nullptr &&
+          *loaded_mission_sessions.load(11) == mission_session);
+  ac6::CampaignProgression restored_session_campaign;
+  REQUIRE(restored_session_campaign.add({1, {1, 9, 9}, 2, {}}));
+  REQUIRE(restored_session_campaign.finalize());
+  REQUIRE(restored_session_campaign.restore(loaded_mission_sessions.load(11)->campaign));
+  REQUIRE(restored_session_campaign.status(1)->state == ac6::CampaignMissionState::Active &&
+          restored_session_campaign.status(1)->objective_mask == 1u);
+  ac6::MissionExecution reloaded_session_execution(*selected_definition, &assets,
+                                                    &loaded_objectives, nullptr,
+                                                    &restored_session_campaign);
+  REQUIRE(reloaded_session_execution.launch(weapon_launch));
+  REQUIRE(loaded_mission_sessions.load(11)->checkpoint.has_value());
+  REQUIRE(reloaded_session_execution.restore_checkpoint(
+      *loaded_mission_sessions.load(11)->checkpoint));
+  REQUIRE(reloaded_session_execution.scenario().state() == ac6::ScenarioState::Gameplay &&
+          reloaded_session_execution.scenario().objectives().find(1)->state ==
+              ac6::ObjectiveState::Complete);
+  REQUIRE(reloaded_session_execution.lock_target(4098) &&
+          reloaded_session_execution.fire_weapon(7));
+  for (int step = 0; step < 4; ++step) reloaded_session_execution.tick(0.25f, {});
+  REQUIRE(reloaded_session_execution.combat().unit(4098) != nullptr &&
+          reloaded_session_execution.combat().unit(4098)->health == 40.0f);
+  auto invalid_player_checkpoint = session_checkpoint;
+  invalid_player_checkpoint.scenario.player = 9999;
+  REQUIRE(!checkpoint_execution.restore_checkpoint(invalid_player_checkpoint));
+  auto invalid_player_session = mission_session;
+  invalid_player_session.checkpoint->scenario.player = 9999;
+  REQUIRE(!mission_sessions.save(12, invalid_player_session));
+  std::remove(mission_session_path);
   ac6::CampaignProgression failed_campaign;
   REQUIRE(failed_campaign.add({1, {1, 9, 9}, 1, {}}));
   REQUIRE(failed_campaign.finalize());

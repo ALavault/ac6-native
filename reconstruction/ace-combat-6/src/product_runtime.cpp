@@ -3734,8 +3734,13 @@ bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
 bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept {
   if (!launched_ || definition_ == nullptr || checkpoint.mission_id != definition_->id ||
       checkpoint.scenario.mission_id != definition_->id ||
+      checkpoint.scenario.player == 0 ||
       checkpoint.combat_units.empty() ||
       (sequence_ == nullptr && !checkpoint.sequence.entries.empty())) return false;
+  if (std::find_if(checkpoint.combat_units.begin(), checkpoint.combat_units.end(),
+                   [&](const CombatUnitState& unit) {
+                     return unit.entity == checkpoint.scenario.player;
+                   }) == checkpoint.combat_units.end()) return false;
   for (const MissionSequenceEntrySnapshot& entry : checkpoint.sequence.entries) {
     if (!entry.event.valid() || entry.event.mission_id != definition_->id) return false;
   }

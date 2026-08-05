@@ -70,10 +70,13 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
     if (message == 0) return false;
   }
   EntityId previous_unit = 0;
+  bool player_found = false;
   for (const CombatUnitState& unit : checkpoint.combat_units) {
     if (!unit.valid() || unit.entity <= previous_unit) return false;
+    player_found = player_found || unit.entity == checkpoint.scenario.player;
     previous_unit = unit.entity;
   }
+  if (!player_found) return false;
   std::uint32_t previous_mission = 0;
   std::uint64_t previous_tick = 0;
   std::uint32_t previous_order = 0;
