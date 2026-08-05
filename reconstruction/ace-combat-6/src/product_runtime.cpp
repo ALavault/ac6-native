@@ -3804,7 +3804,9 @@ WorldFrame MissionRuntime::tick(float fixed_dt, InputFrame input) {
     constexpr float simulation_dt = 1.0f / 60.0f;
     constexpr std::uint32_t max_steps_per_call = 16;
     fixed_accumulator_ = std::min(fixed_accumulator_ + fixed_dt, 0.25f);
-    const auto axis = [](std::int16_t value) { return static_cast<float>(value) / 32767.0f; };
+    const auto axis = [](std::int16_t value) {
+      return std::clamp(static_cast<float>(value) / 32767.0f, -1.0f, 1.0f);
+    };
     std::uint32_t steps = 0;
     while (fixed_accumulator_ + 1.0e-7f >= simulation_dt && steps < max_steps_per_call) {
       fixed_accumulator_ = std::max(0.0f, fixed_accumulator_ - simulation_dt);

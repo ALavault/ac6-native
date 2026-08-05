@@ -276,6 +276,10 @@ failure tick, propagating failure to an active campaign and debrief. The
 failure tick remains an explicit generic configuration until retail timing is
 qualified.
 
+Flight axes normalize the full signed SDL range to `[-1, 1]`, including the
+asymmetric `-32768` endpoint; throttle remains the bounded byte range
+`[0, 255]`.
+
 `FrontendController` can bind `CampaignProgression` to enforce available
 mission selection, briefing, Hangar loadout and `Active` state before entering
 Mission. Unbound frontend fixtures retain the developer-only state route.

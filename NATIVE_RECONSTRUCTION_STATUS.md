@@ -2946,3 +2946,9 @@ directeurs sont consommés par `MissionExecution`; la fixture multi-service
 vérifie publication de la vague, tir IA, radio séquencée et succès campagne.
 Les paramètres sont une preuve native de contrat et non une qualification
 retail/Xenia. Voir `reports/cycle-998-wave-ai-service-contract.md`.
+
+## Bornes des axes de vol (cycle 999, 2026-08-05)
+
+La normalisation des axes SDL sature maintenant le domaine signé complet dans
+`[-1, 1]`; une fixture Mission 1 vérifie explicitement `-32768` et `32767`
+sur pitch, roll et yaw. Voir `reports/cycle-999-input-axis-bounds.md`.

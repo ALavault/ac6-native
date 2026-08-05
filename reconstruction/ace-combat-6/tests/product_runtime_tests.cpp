@@ -953,6 +953,20 @@ int main() {
   const auto execution_frame = execution.tick(1.0f / 60.0f, {});
   REQUIRE(execution_frame.mission_ready && execution_frame.active_units == 2 &&
           execution_frame.player_entity == 0x1001);
+  ac6::MissionExecution lower_axis_execution(*selected_definition, &assets);
+  REQUIRE(lower_axis_execution.launch(*launch));
+  const auto lower_axis_frame = lower_axis_execution.tick(
+      1.0f / 60.0f, {-32768, -32768, -32768, 0, 0});
+  REQUIRE(lower_axis_frame.pitch == -1.0f / 60.0f &&
+          lower_axis_frame.roll == -1.0f / 60.0f &&
+          lower_axis_frame.yaw == -1.0f / 60.0f);
+  ac6::MissionExecution upper_axis_execution(*selected_definition, &assets);
+  REQUIRE(upper_axis_execution.launch(*launch));
+  const auto upper_axis_frame = upper_axis_execution.tick(
+      1.0f / 60.0f, {32767, 32767, 32767, 0, 0});
+  REQUIRE(upper_axis_frame.pitch == 1.0f / 60.0f &&
+          upper_axis_frame.roll == 1.0f / 60.0f &&
+          upper_axis_frame.yaw == 1.0f / 60.0f);
   ac6::MissionWaveDirector waves;
   REQUIRE(waves.add({1, 2, {5000, 2, 119, false},
                      {5000, 2, {25.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}}));
