@@ -3007,3 +3007,13 @@ Une recette profil neuf versionnée envoie exactement `Left` puis `space` à
 supplémentaire du cycle 1004 n’est donc pas la cause du blocage. La frontière
 reste le contrat save/create ou lancement, pas le renderer. Voir
 `reports/cycle-1005-bridge-single-launch-edge.md`.
+
+## A/B lane bridge type8/type10 (cycle 1006, 2026-08-05)
+
+Une recompilation externe explicitement configurée `AC6_EXPERIMENT_LANE=bridge`
+atteint `selector44=5 → 6 → 7`, puis `type28=8 → 10`, alors que l’ELF
+`stock` de la même recette reste à `type28=6 / selector44=4`. Le run bridge a
+émis 4666 `PRESENT` sans marqueur fatal/crash/SIG; les captures sont encore des
+écrans de transition et non le monde de vol. Cette A/B localise le premier
+écart au contrat save/create-lancement, sans conclure sur Xenos/rendu. Voir
+`reports/cycle-1006-bridge-lane-type8-type10.md`.
