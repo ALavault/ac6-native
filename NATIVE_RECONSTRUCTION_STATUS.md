@@ -2998,3 +2998,12 @@ retenue est encore une frontière slot/create sombre, pas le monde Mission 1.
 Le log `lane=stock` reste classé bridge à cause de l’ELF recompilé et de
 `hybrid_backend_fixes`. Voir
 `reports/cycle-1004-bridge-fresh-profile-boundary.md`.
+
+## Arête unique de lancement bridge (cycle 1005, 2026-08-05)
+
+Une recette profil neuf versionnée envoie exactement `Left` puis `space` à
+`type28=6`; elle reste à `state40=8 / selector44=4 / type28=6` après 10920
+`PRESENT`, sans `type28=8`/`10` ni marqueur fatal/crash/SIG. Le `Left`
+supplémentaire du cycle 1004 n’est donc pas la cause du blocage. La frontière
+reste le contrat save/create ou lancement, pas le renderer. Voir
+`reports/cycle-1005-bridge-single-launch-edge.md`.
