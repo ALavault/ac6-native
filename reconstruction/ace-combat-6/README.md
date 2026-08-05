@@ -248,6 +248,13 @@ The optional `sequence` path uses six columns
 `activate_objective`, `complete_objective`, `fail_objective` and `play_radio`;
 the sequence is sorted and published atomically with the other services.
 
+After a gameplay tick, the native execution closes the mission HSM
+automatically when at least one objective exists and every required objective
+is complete. Player destruction and the configured failure deadline are
+evaluated first, so failure remains terminal when both conditions occur on the
+same tick. The explicit `Complete` event remains available for qualified
+event consumers and is still validated against campaign progression.
+
 The optional `waves` path uses twelve columns:
 `mission_id<TAB>spawn_tick<TAB>unit_id<TAB>owner<TAB>asset<TAB>faction<TAB>`
 `x<TAB>y<TAB>z<TAB>health<TAB>max_health<TAB>collision_radius`. A row is

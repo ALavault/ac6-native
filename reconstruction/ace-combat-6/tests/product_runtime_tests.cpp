@@ -637,7 +637,9 @@ int main() {
           manifest_services.ai.active(1, 2) == 1 &&
           services_execution.combat().active_projectiles() >= 1);
   REQUIRE(services_execution.complete_objective(1));
-  REQUIRE(services_execution.dispatch({ac6::EventType::Complete, 0}));
+  const auto services_terminal_frame = services_execution.tick(1.0f / 60.0f, {});
+  REQUIRE(!services_terminal_frame.mission_ready &&
+          services_execution.scenario().state() == ac6::ScenarioState::Complete);
   REQUIRE(manifest_services.campaign.status(1)->state == ac6::CampaignMissionState::Completed);
   REQUIRE(services_execution.debrief().outcome == ac6::MissionOutcome::Success);
   ac6::MissionManifestPaths manifest_paths;

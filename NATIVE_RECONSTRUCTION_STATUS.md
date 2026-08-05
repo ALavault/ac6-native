@@ -2977,3 +2977,13 @@ est encore le splash Bandai Namco. Le log `lane=stock` est ignoré comme preuve
 de parité puisque le binaire utilise `hybrid_backend_fixes`. Aucun contrat
 renderer ni preuve `Loading→Game` n’est déduit. Voir
 `reports/cycle-1002-bridge-mission-route-boundary.md`.
+
+## Transition terminale objective native (cycle 1003, 2026-08-05)
+
+`MissionExecution` ferme maintenant automatiquement le HSM en succès après un
+tick de gameplay lorsque les objectifs requis sont tous complets. La transition
+réutilise `EventType::Complete` et reste donc soumise aux préconditions de la
+campagne; destruction du joueur et expiration gardent la priorité. La fixture
+multi-service vérifie le frame non-ready, l’état `Complete`, la campagne
+`Completed` et le débrief `Success`. Voir
+`reports/cycle-1003-native-objective-terminal.md`.

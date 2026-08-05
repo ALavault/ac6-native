@@ -4149,6 +4149,13 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
       }
     }
   }
+  if (scenario_.state() == ScenarioState::Gameplay && scenario_.objectives().size() != 0 &&
+      scenario_.objectives().all_required_complete()) {
+    // Objective completion is the native HSM terminal condition. Keep the
+    // explicit dispatch API for qualified event consumers, but do not require
+    // an external caller to synthesize the mission-complete event.
+    if (dispatch({EventType::Complete, scenario_.player()})) frame.mission_ready = false;
+  }
   return frame;
 }
 
