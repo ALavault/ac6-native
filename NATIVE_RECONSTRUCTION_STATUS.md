@@ -2,6 +2,26 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 984 — correspondance campagne selector→DPL
+
+Le catalogue machine-readable qualifie maintenant, pour le mode campagne 1,
+la table XEX de `0x82065840` consommée par `0x821B6E58` : les sélecteurs 1 à
+15 donnent respectivement les ressources DPL 9 à 23. La preuve est rattachée
+au projet Ghidra canonique `ace-combat-6`, à la cible `PAL-default-xex` et au
+SHA-256 du `default.xex` PAL.
+
+Cette qualification ne déduit aucun index physique `DATA.TBL`. Les missions
+3–15 sont donc `partial`, avec la frontière explicite
+`DPL_to_DATA.TBL_route` et payload non décodé; seules les missions 1 et 2
+conservent une route physique cataloguée, et la mission 2 reste non qualifiée
+pour l’exécution interactive. L’auditeur refuse désormais toute table
+selector→DPL absente, modifiée ou incomplète, ainsi que toute couverture de
+catalogue divergente.
+
+Le générateur de manifeste natif reste limité aux routes `qualified` : aucune
+de ces correspondances partielles ne devient une route de runtime par
+inférence.
+
 ## Cycle 983 — identité des ressources dans les checkpoints
 
 Les checkpoints capturent maintenant les `AssetRecord` triés de la mission

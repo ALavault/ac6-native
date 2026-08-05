@@ -38,6 +38,28 @@ def main() -> int:
             return fail(f"corpus_{key}_sha256")
         if not isinstance(record.get("path"), str) or not record["path"]:
             return fail(f"corpus_{key}_path")
+    selector_dpl = document.get("selector_dpl_evidence")
+    expected_mapping = {str(selector): selector + 8 for selector in range(1, 16)}
+    if not isinstance(selector_dpl, dict) or selector_dpl.get("status") != "qualified":
+        return fail("selector_dpl_evidence")
+    if selector_dpl.get("mode") != 1:
+        return fail("selector_dpl_mode")
+    if selector_dpl.get("function_address") != "0x821B6E58":
+        return fail("selector_dpl_function")
+    if selector_dpl.get("table_address") != "0x82065840":
+        return fail("selector_dpl_table")
+    if selector_dpl.get("module") != "default.xex":
+        return fail("selector_dpl_module")
+    if selector_dpl.get("ghidra_project") != "ace-combat-6":
+        return fail("selector_dpl_project")
+    if selector_dpl.get("target_id") != "PAL-default-xex":
+        return fail("selector_dpl_target")
+    if selector_dpl.get("xex_sha256") != corpus["xex"]["sha256"]:
+        return fail("selector_dpl_xex_sha256")
+    if selector_dpl.get("mapping") != expected_mapping:
+        return fail("selector_dpl_mapping")
+    if not isinstance(selector_dpl.get("unknown_after_dpl"), str) or not selector_dpl["unknown_after_dpl"]:
+        return fail("selector_dpl_boundary")
     missions = document.get("missions")
     if not isinstance(missions, list) or len(missions) != 15:
         return fail("mission_count")
@@ -51,6 +73,13 @@ def main() -> int:
         provenance = entry.get("provenance")
         if not isinstance(provenance, dict) or provenance.get("xex_sha256") != corpus["xex"]["sha256"] or provenance.get("data_tbl_sha256") != corpus["data_tbl"]["sha256"]:
             return fail(f"provenance:{entry.get('mission_id')}")
+        selector = entry.get("campaign_selector")
+        dpl_resource_id = entry.get("dpl_resource_id")
+        if selector is not None or dpl_resource_id is not None:
+            if type(selector) is not int or type(dpl_resource_id) is not int:
+                return fail(f"selector_dpl_types:{entry['mission_id']}")
+            if expected_mapping.get(str(selector)) != dpl_resource_id:
+                return fail(f"selector_dpl_mapping:{entry['mission_id']}")
         route_fields = ("campaign_selector", "dpl_resource_id", "data_table_entry_index")
         route_complete = all(isinstance(entry.get(field), int) and entry[field] > 0 for field in route_fields)
         if status == "qualified" and not route_complete:
@@ -64,6 +93,13 @@ def main() -> int:
             return fail(f"parse:{entry['mission_id']}")
         if status == "unqualified" and parse["status"] != "not_attempted":
             return fail(f"unqualified_parse:{entry['mission_id']}")
+    catalog_mapping = {
+        str(entry["campaign_selector"]): entry["dpl_resource_id"]
+        for entry in missions
+        if type(entry.get("campaign_selector")) is int and type(entry.get("dpl_resource_id")) is int
+    }
+    if catalog_mapping != expected_mapping:
+        return fail("selector_dpl_catalog_coverage")
     for label, path, key in (("xex", args.xex, "xex"), ("data_tbl", args.data_tbl, "data_tbl")):
         if path is not None:
             digest = hashlib.sha256(path.read_bytes()).hexdigest()

@@ -217,9 +217,10 @@ The generator refuses partial/unqualified routes and refuses gameplay
 definitions without a qualified route; it never infers selector, DPL, or
 DATA.TBL identities.
 
-The current PAL evidence is intentionally reported as `1 qualified`, `1
-partial`, and `13 unqualified`; unqualified rows cannot enter the native
-runtime route.
+The current PAL catalog reports `1 qualified` and `14 partial` routes. The
+selector-to-DPL contract is qualified for selectors 1–15, but the physical
+DPL-to-`DATA.TBL` route is still unresolved for missions 3–15; partial rows
+cannot enter the native runtime route.
 
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted
