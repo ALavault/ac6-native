@@ -2937,3 +2937,12 @@ les buffers référencés dans des temporaires, puis publie bases et géométrie
 ensemble. `ac6-native --present-manifest` l'utilise désormais. La preuve retail
 positive attend toujours les manifests et bytes qualifiés locaux. Voir
 `reports/cycle-865-render-loader-geometry-atomic.md`.
+
+## Contrats vagues et IA (cycle 998, 2026-08-05)
+
+Les manifestes runtime optionnels `waves` et `ai` chargent atomiquement les
+spawns et règles IA strictement typés dans `MissionRuntimeServices`. Les
+directeurs sont consommés par `MissionExecution`; la fixture multi-service
+vérifie publication de la vague, tir IA, radio séquencée et succès campagne.
+Les paramètres sont une preuve native de contrat et non une qualification
+retail/Xenia. Voir `reports/cycle-998-wave-ai-service-contract.md`.

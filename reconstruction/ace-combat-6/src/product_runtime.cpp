@@ -16,6 +16,26 @@
 namespace ac6 {
 
 namespace {
+template <std::size_t FieldCount>
+bool parse_tsv_fields(std::string_view line,
+                      std::array<std::string_view, FieldCount>& fields) noexcept {
+  std::size_t start = 0;
+  for (std::size_t index = 0; index < FieldCount; ++index) {
+    if (start > line.size()) return false;
+    const std::size_t tab = line.find('\t', start);
+    if (index + 1 == FieldCount) {
+      if (tab != std::string_view::npos) return false;
+      fields[index] = line.substr(start);
+    } else {
+      if (tab == std::string_view::npos) return false;
+      fields[index] = line.substr(start, tab - start);
+      start = tab + 1;
+    }
+    if (fields[index].empty()) return false;
+  }
+  return true;
+}
+
 bool parse_u32(std::string_view text, std::uint32_t& value) noexcept;
 bool parse_u64(std::string_view text, std::uint64_t& value) noexcept;
 bool parse_f32(std::string_view text, float& value) noexcept;
@@ -703,6 +723,42 @@ bool MissionWaveDirector::add(MissionWaveSpawn spawn) {
   return true;
 }
 
+bool MissionWaveDirector::load_manifest(const std::filesystem::path& manifest) {
+  std::ifstream input(manifest);
+  if (!input) return false;
+  MissionWaveDirector loaded;
+  bool has_entry = false;
+  std::string line;
+  while (std::getline(input, line)) {
+    if (line.empty() || line.front() == '#') continue;
+    std::array<std::string_view, 12> fields{};
+    if (!parse_tsv_fields(std::string_view(line), fields)) return false;
+    MissionWaveSpawn spawn;
+    std::uint32_t unit_id = 0;
+    std::uint32_t owner = 0;
+    AssetId asset = 0;
+    std::uint32_t faction = 0;
+    if (!parse_u32(fields[0], spawn.mission_id) ||
+        !parse_u64(fields[1], spawn.spawn_tick) || !parse_u32(fields[2], unit_id) ||
+        !parse_u32(fields[3], owner) || !parse_u32(fields[4], asset) ||
+        !parse_u32(fields[5], faction) || !parse_f32(fields[6], spawn.combat.position.x) ||
+        !parse_f32(fields[7], spawn.combat.position.y) ||
+        !parse_f32(fields[8], spawn.combat.position.z) ||
+        !parse_f32(fields[9], spawn.combat.health) ||
+        !parse_f32(fields[10], spawn.combat.max_health) ||
+        !parse_f32(fields[11], spawn.combat.collision_radius)) return false;
+    spawn.unit = {unit_id, owner, asset, false};
+    spawn.combat.entity = unit_id;
+    spawn.combat.faction = faction;
+    spawn.combat.active = true;
+    if (!loaded.add(std::move(spawn))) return false;
+    has_entry = true;
+  }
+  if (!has_entry) return false;
+  entries_ = std::move(loaded.entries_);
+  return true;
+}
+
 bool MissionWaveDirector::spawn_due(std::uint32_t mission_id, std::uint64_t tick,
                                     UnitRegistry& units, CombatWorld& combat) noexcept {
   UnitRegistry staged_units = units;
@@ -755,6 +811,28 @@ void MissionWaveDirector::reset() noexcept {
 bool MissionAiDirector::add(MissionAiRule rule) {
   if (!rule.valid() || std::find(rules_.begin(), rules_.end(), rule) != rules_.end()) return false;
   rules_.push_back(rule);
+  return true;
+}
+
+bool MissionAiDirector::load_manifest(const std::filesystem::path& manifest) {
+  std::ifstream input(manifest);
+  if (!input) return false;
+  MissionAiDirector loaded;
+  bool has_rule = false;
+  std::string line;
+  while (std::getline(input, line)) {
+    if (line.empty() || line.front() == '#') continue;
+    std::array<std::string_view, 6> fields{};
+    if (!parse_tsv_fields(std::string_view(line), fields)) return false;
+    MissionAiRule rule;
+    if (!parse_u32(fields[0], rule.mission_id) || !parse_u64(fields[1], rule.first_tick) ||
+        !parse_u64(fields[2], rule.period_ticks) || !parse_u32(fields[3], rule.entity) ||
+        !parse_u32(fields[4], rule.target) || !parse_u32(fields[5], rule.weapon_id) ||
+        !loaded.add(rule)) return false;
+    has_rule = true;
+  }
+  if (!has_rule) return false;
+  rules_ = std::move(loaded.rules_);
   return true;
 }
 
@@ -1866,6 +1944,8 @@ bool MissionManifestLoader::load_paths(const std::filesystem::path& manifest,
     else if (key == "controls" && loaded.controls.empty()) loaded.controls = resolved;
     else if (key == "objectives" && loaded.objectives.empty()) loaded.objectives = resolved;
     else if (key == "radios" && loaded.radios.empty()) loaded.radios = resolved;
+    else if (key == "waves" && loaded.waves.empty()) loaded.waves = resolved;
+    else if (key == "ai" && loaded.ai.empty()) loaded.ai = resolved;
     else if (key == "sequence" && loaded.sequence.empty()) loaded.sequence = resolved;
     else if (key == "render" && loaded.render.empty()) loaded.render = resolved;
     else if (key == "drawables" && loaded.drawables.empty()) loaded.drawables = resolved;
@@ -1928,6 +2008,14 @@ bool MissionManifestLoader::load_runtime(const std::filesystem::path& manifest,
   if (!paths.radios.empty()) {
     if (!loaded_services.radios.load_manifest(paths.radios)) return false;
     loaded_services.has_radios = true;
+  }
+  if (!paths.waves.empty()) {
+    if (!loaded_services.waves.load_manifest(paths.waves)) return false;
+    loaded_services.has_waves = true;
+  }
+  if (!paths.ai.empty()) {
+    if (!loaded_services.ai.load_manifest(paths.ai)) return false;
+    loaded_services.has_ai = true;
   }
   if (!paths.sequence.empty()) {
     if (!loaded_services.sequence.load_manifest(paths.sequence)) return false;

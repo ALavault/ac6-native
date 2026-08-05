@@ -507,6 +507,8 @@ int main() {
   const char* runtime_radios = "ac6-test-runtime-radios.tsv";
   const char* runtime_campaign = "ac6-test-runtime-campaign.tsv";
   const char* runtime_objectives = "ac6-test-runtime-objectives.tsv";
+  const char* runtime_waves = "ac6-test-runtime-waves.tsv";
+  const char* runtime_ai = "ac6-test-runtime-ai.tsv";
   const char* runtime_sequence = "ac6-test-runtime-sequence.tsv";
   { std::ofstream out(runtime_catalog);
     out << "1\tair_intercept\t9\n";
@@ -518,12 +520,15 @@ int main() {
     out << "165\tDATA00.PAC@qualified\t89abcdef0123456789abcdef0123456789abcdef0123456789abcdef01234567\n";
   }
   { std::ofstream out(runtime_launches);
-    out << "1\t4097\t4097:1:9\n";
+    out << "1\t4097\t4097:1:9\t7:10:100:0:1000\n";
     out << "2\t4098\t4098:1:119\n";
     out << "3\t4099\t4099:1:165\n"; }
   { std::ofstream out(runtime_radios); out << "1\t10\talpha_warning\tAWACS\t9\t119\n"; }
   { std::ofstream out(runtime_campaign); out << "1\t1\t9\t9\t1\t-\n"; }
   { std::ofstream out(runtime_objectives); out << "1\t1\tintercept_primary\t1\n"; }
+  { std::ofstream out(runtime_waves);
+    out << "1\t1\t5000\t2\t119\t2\t20\t0\t0\t100\t100\t1\n"; }
+  { std::ofstream out(runtime_ai); out << "1\t1\t1\t4097\t5000\t7\n"; }
   { std::ofstream out(runtime_sequence);
     out << "1\t1\t1\tactivate_objective\t1\t0\n";
     out << "1\t2\t2\tplay_radio\t10\t0.25\n"; }
@@ -589,6 +594,8 @@ int main() {
     out << "controls\t" << controls_manifest_path << "\n";
     out << "objectives\t" << runtime_objectives << "\n";
     out << "radios\t" << runtime_radios << "\n";
+    out << "waves\t" << runtime_waves << "\n";
+    out << "ai\t" << runtime_ai << "\n";
     out << "sequence\t" << runtime_sequence << "\n";
     for (const char* key : render_keys) out << key << "\tac6-test-" << key << ".tsv\n";
   }
@@ -601,6 +608,8 @@ int main() {
   REQUIRE(manifest_services.has_objectives &&
           manifest_services.objectives.find_by_mission(1).size() == 1);
   REQUIRE(manifest_services.has_radios && manifest_services.radios.find(1, 10) != nullptr);
+  REQUIRE(manifest_services.has_waves && manifest_services.waves.pending(1) == 1);
+  REQUIRE(manifest_services.has_ai && manifest_services.ai.active(1, 1) == 1);
   REQUIRE(manifest_services.has_sequence && manifest_services.sequence.pending(1) == 2);
   REQUIRE(manifest_services.has_campaign &&
           manifest_services.campaign.route_for_selector(1) != nullptr);
@@ -610,15 +619,23 @@ int main() {
   ac6::MissionExecution services_execution(*manifest_catalog.find(1), &manifest_assets,
                                            &manifest_services.objectives,
                                            &manifest_services.radios,
-                                           &manifest_services.campaign, nullptr,
+                                           &manifest_services.campaign,
+                                           &manifest_services.waves,
                                            &manifest_services.sequence,
-                                           &manifest_services.input);
+                                           &manifest_services.input,
+                                           &manifest_services.ai);
   REQUIRE(services_execution.launch(*manifest_launches.find(1)));
   REQUIRE(services_execution.tick(1.0f / 60.0f, {}).tick == 1);
   REQUIRE(services_execution.scenario().objectives().find(1)->state ==
               ac6::ObjectiveState::Active);
+  REQUIRE(manifest_services.waves.pending(1) == 0 &&
+          manifest_services.waves.spawned(1) == 1 &&
+          services_execution.combat().unit(5000) != nullptr &&
+          services_execution.combat().active_projectiles() == 1);
   REQUIRE(services_execution.tick(1.0f / 60.0f, {}).tick == 2);
-  REQUIRE(services_execution.radio().playing() && manifest_services.sequence.pending(1) == 0);
+  REQUIRE(services_execution.radio().playing() && manifest_services.sequence.pending(1) == 0 &&
+          manifest_services.ai.active(1, 2) == 1 &&
+          services_execution.combat().active_projectiles() >= 1);
   REQUIRE(services_execution.complete_objective(1));
   REQUIRE(services_execution.dispatch({ac6::EventType::Complete, 0}));
   REQUIRE(manifest_services.campaign.status(1)->state == ac6::CampaignMissionState::Completed);
@@ -630,6 +647,8 @@ int main() {
   REQUIRE(manifest_paths.controls == controls_manifest_path);
   REQUIRE(manifest_paths.objectives == runtime_objectives);
   REQUIRE(manifest_paths.radios == runtime_radios);
+  REQUIRE(manifest_paths.waves == runtime_waves);
+  REQUIRE(manifest_paths.ai == runtime_ai);
   REQUIRE(manifest_paths.sequence == runtime_sequence);
   REQUIRE(manifest_paths.campaign == runtime_campaign);
   ac6::CampaignProgression manifest_campaign;
@@ -651,6 +670,7 @@ int main() {
   REQUIRE(manifest_services.has_input && manifest_services.input.resolve(1) &&
           manifest_services.input.resolve(1)->event == ac6::EventType::StartMission &&
           manifest_services.has_objectives && manifest_services.has_radios &&
+          manifest_services.has_waves && manifest_services.has_ai &&
           manifest_services.has_sequence && manifest_services.has_campaign &&
           manifest_services.campaign.status(1)->state == ac6::CampaignMissionState::Completed);
   std::remove(bad_service_input);
@@ -662,6 +682,8 @@ int main() {
   std::remove(runtime_radios);
   std::remove(runtime_campaign);
   std::remove(runtime_objectives);
+  std::remove(runtime_waves);
+  std::remove(runtime_ai);
   std::remove(runtime_sequence);
   std::remove(input_manifest_path);
   std::remove(controls_manifest_path);

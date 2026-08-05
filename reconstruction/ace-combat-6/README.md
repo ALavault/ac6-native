@@ -235,8 +235,8 @@ previous catalog unchanged.
 
 The `MissionManifestLoader::load_runtime` overload that accepts
 `MissionRuntimeServices` publishes optional input, objective, radio and
-sequence and campaign databases together with the catalog, assets and launches. All eight
-databases are built in temporary state and published only after the last
+sequence, wave, AI and campaign services together with the catalog, assets and
+launches. The complete bundle is built in temporary state and published only after the last
 manifest succeeds; the legacy overload remains available for callers that
 only need the core three databases. The native `validate-manifest`,
 `frontend-smoke`, `services-smoke` and `present-manifest` commands consume this
@@ -247,6 +247,16 @@ The optional `sequence` path uses six columns
 `mission_id<TAB>tick<TAB>order<TAB>event<TAB>id<TAB>duration`. Event names are
 `activate_objective`, `complete_objective`, `fail_objective` and `play_radio`;
 the sequence is sorted and published atomically with the other services.
+
+The optional `waves` path uses twelve columns:
+`mission_id<TAB>spawn_tick<TAB>unit_id<TAB>owner<TAB>asset<TAB>faction<TAB>`
+`x<TAB>y<TAB>z<TAB>health<TAB>max_health<TAB>collision_radius`. A row is
+published only when its unit and active combat state satisfy the existing
+identity and finite-value invariants. The optional `ai` path uses six columns:
+`mission_id<TAB>first_tick<TAB>period_ticks<TAB>entity<TAB>target<TAB>weapon_id`.
+Both directors reject malformed, duplicate or empty manifests transactionally;
+`services-smoke` and `present-manifest` pass the loaded directors directly to
+`MissionExecution`, so spawn and fire scheduling share the same runtime state.
 
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted

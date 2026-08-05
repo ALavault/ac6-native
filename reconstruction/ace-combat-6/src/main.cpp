@@ -217,8 +217,10 @@ int main(int argc, char** argv) {
     ac6::MissionSequenceDirector* sequence =
         services.has_sequence ? &services.sequence : nullptr;
     const ac6::InputMappingDatabase* input = services.has_input ? &services.input : nullptr;
+    ac6::MissionWaveDirector* waves = services.has_waves ? &services.waves : nullptr;
+    ac6::MissionAiDirector* ai = services.has_ai ? &services.ai : nullptr;
     ac6::MissionExecution execution(*definition, &assets, objectives, radios,
-                                     nullptr, nullptr, sequence, input);
+                                     nullptr, waves, sequence, input, ai);
     if (!execution.launch(*launch)) return 30;
     ac6::ReplayLog replay;
     ac6::SaveStore saves;
@@ -299,8 +301,10 @@ int main(int argc, char** argv) {
     ac6::MissionSequenceDirector* sequence =
         services.has_sequence ? &services.sequence : nullptr;
     const ac6::InputMappingDatabase* input = services.has_input ? &services.input : nullptr;
+    ac6::MissionWaveDirector* waves = services.has_waves ? &services.waves : nullptr;
+    ac6::MissionAiDirector* ai = services.has_ai ? &services.ai : nullptr;
     ac6::MissionExecution execution(*definition, &assets, objective_database, radio_database,
-                                    nullptr, nullptr, sequence, input);
+                                    nullptr, waves, sequence, input, ai);
     if (!execution.launch(*launch)) return 13;
     const ac6::WorldFrame world = execution.tick(1.0f / 60.0f, {});
     const ac6::MissionRenderTargetDefinition* target_definition =

@@ -182,6 +182,7 @@ struct MissionWaveSpawn {
 class MissionWaveDirector final {
  public:
   bool add(MissionWaveSpawn spawn);
+  bool load_manifest(const std::filesystem::path& manifest);
   bool spawn_due(std::uint32_t mission_id, std::uint64_t tick,
                  UnitRegistry& units, CombatWorld& combat) noexcept;
   bool despawn(EntityId entity, UnitRegistry& units, CombatWorld& combat) noexcept;
@@ -214,6 +215,7 @@ struct MissionAiRule {
 class MissionAiDirector final {
  public:
   bool add(MissionAiRule rule);
+  bool load_manifest(const std::filesystem::path& manifest);
   bool dispatch_due(std::uint32_t mission_id, std::uint64_t tick,
                     CombatWorld& combat) noexcept;
   std::size_t active(std::uint32_t mission_id, std::uint64_t tick) const noexcept;
@@ -375,11 +377,15 @@ struct MissionRuntimeServices {
   InputMappingDatabase input;
   MissionObjectiveDatabase objectives;
   RadioMessageDatabase radios;
+  MissionWaveDirector waves;
+  MissionAiDirector ai;
   MissionSequenceDirector sequence;
   CampaignProgression campaign;
   bool has_input{};
   bool has_objectives{};
   bool has_radios{};
+  bool has_waves{};
+  bool has_ai{};
   bool has_sequence{};
   bool has_campaign{};
 };
@@ -504,6 +510,8 @@ struct MissionManifestPaths {
   std::filesystem::path controls;
   std::filesystem::path objectives;
   std::filesystem::path radios;
+  std::filesystem::path waves;
+  std::filesystem::path ai;
   std::filesystem::path sequence;
   std::filesystem::path render;
   std::filesystem::path drawables;
