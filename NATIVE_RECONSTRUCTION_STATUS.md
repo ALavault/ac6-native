@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 974 — validation fail-closed des snapshots campagne
+
+Les snapshots campagne v2 refusent désormais les états `Locked`/`Available`,
+les masques d’objectifs dépassant le nombre déclaré et les records invalides
+avant toute mutation. La restauration d’un snapshot corrompu conserve l’état
+précédent de la campagne.
+
+Le test couvre masque hors bornes et état non persistable sur une campagne
+active. Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits
+campagne/code passent.
+
 ## Cycle 973 — reprise de campagne active par sauvegarde
 
 Le snapshot campagne version 2 conserve désormais, pour les missions

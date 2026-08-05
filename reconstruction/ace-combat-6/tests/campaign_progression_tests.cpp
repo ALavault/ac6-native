@@ -73,6 +73,14 @@ int main() {
   const ac6::CampaignLoadout expected_loadout{7, 8, true};
   REQUIRE(active_restored.status(1)->objective_mask == 1 &&
           active_restored.status(1)->loadout == expected_loadout);
+  ac6::CampaignSaveSnapshot invalid_mask = active_snapshot;
+  invalid_mask.completed[0].objective_mask = 4;
+  REQUIRE(!active_restored.restore(invalid_mask));
+  REQUIRE(active_restored.status(1)->state == ac6::CampaignMissionState::Active);
+  ac6::CampaignSaveSnapshot invalid_state = active_snapshot;
+  invalid_state.completed[0].state = ac6::CampaignMissionState::Available;
+  REQUIRE(!active_restored.restore(invalid_state));
+  REQUIRE(active_restored.status(1)->state == ac6::CampaignMissionState::Active);
 
   ac6::CampaignSaveStore saves;
   REQUIRE(saves.save(3, campaign.snapshot()));

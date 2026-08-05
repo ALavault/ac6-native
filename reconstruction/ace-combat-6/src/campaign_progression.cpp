@@ -38,6 +38,8 @@ bool valid_snapshot(const CampaignSaveSnapshot& snapshot) noexcept {
   std::uint32_t previous = 0;
   for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
     if (record.mission_id == 0 || record.mission_id <= previous ||
+        static_cast<std::uint8_t>(record.state) <
+            static_cast<std::uint8_t>(CampaignMissionState::Briefing) ||
         static_cast<std::uint8_t>(record.state) >
             static_cast<std::uint8_t>(CampaignMissionState::Failed)) return false;
     previous = record.mission_id;
@@ -298,7 +300,12 @@ bool CampaignProgression::restore(const CampaignSaveSnapshot& snapshot) noexcept
   std::uint32_t previous = 0;
   for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
     const Entry* entry = find_entry(record.mission_id);
+    const std::uint32_t objective_mask = entry == nullptr ? 0u :
+        (0xffffffffu >> (32u - entry->spec.objective_count));
     if (entry == nullptr || record.mission_id <= previous ||
+        (record.objective_mask & ~objective_mask) != 0 ||
+        static_cast<std::uint8_t>(record.state) <
+            static_cast<std::uint8_t>(CampaignMissionState::Briefing) ||
         static_cast<std::uint8_t>(record.state) >
             static_cast<std::uint8_t>(CampaignMissionState::Failed) ||
         (record.state == CampaignMissionState::Completed &&

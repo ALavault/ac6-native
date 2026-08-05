@@ -18,6 +18,8 @@ bool valid_campaign(const CampaignSaveSnapshot& snapshot) noexcept {
   std::uint32_t previous = 0;
   for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
     if (record.mission_id == 0 || record.mission_id <= previous ||
+        static_cast<std::uint8_t>(record.state) <
+            static_cast<std::uint8_t>(CampaignMissionState::Briefing) ||
         static_cast<std::uint8_t>(record.state) >
             static_cast<std::uint8_t>(CampaignMissionState::Failed)) return false;
     previous = record.mission_id;
