@@ -2987,3 +2987,14 @@ campagne; destruction du joueur et expiration gardent la priorité. La fixture
 multi-service vérifie le frame non-ready, l’état `Complete`, la campagne
 `Completed` et le débrief `Success`. Voir
 `reports/cycle-1003-native-objective-terminal.md`.
+
+## Frontière profil neuf bridge (cycle 1004, 2026-08-05)
+
+La recette profil neuf synchronisée sur les états reproduit
+`type28=30 → 37 → 35`, `selector44=10`, `type28=9 → 5 → 6`, puis reste sur
+`type28=6` malgré les pulses `space` jusqu’à la borne de 300 s. Le run bridge a
+émis 18124 `PRESENT`; aucun marqueur fatal/crash/SIG n’est présent. La capture
+retenue est encore une frontière slot/create sombre, pas le monde Mission 1.
+Le log `lane=stock` reste classé bridge à cause de l’ELF recompilé et de
+`hybrid_backend_fixes`. Voir
+`reports/cycle-1004-bridge-fresh-profile-boundary.md`.
