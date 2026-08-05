@@ -1137,7 +1137,7 @@ class VulkanRenderer final {
   std::uint64_t world_asset_submissions_{};
 };
 
-enum class FrontendState : std::uint8_t { Title, NewGame, Briefing, Hangar, Loading, Mission };
+enum class FrontendState : std::uint8_t { Title, NewGame, Briefing, Hangar, Loading, Mission, Debrief };
 enum class FrontendDifficulty : std::uint8_t { Normal, Easy, Hard };
 enum class FrontendControls : std::uint8_t { Normal, Expert };
 enum class FrontendLanguage : std::uint8_t { English, French, German, Italian, Spanish };
@@ -1164,6 +1164,11 @@ class FrontendController final {
   const MissionDefinition* mission_definition(const MissionCatalog& catalog) const noexcept;
   bool launch_selected(const MissionCatalog& catalog, const MissionLaunchDatabase& launches,
                        MissionExecution& execution) const noexcept;
+  bool enter_debrief(const MissionExecution& execution) noexcept;
+  bool return_to_campaign() noexcept;
+  const MissionDebrief* debrief() const noexcept {
+    return debrief_.has_value() ? &*debrief_ : nullptr;
+  }
   bool advance() noexcept;
   bool dispatch(Event event) noexcept;
   bool dispatch_buttons(const InputMappingDatabase& mappings,
@@ -1174,6 +1179,7 @@ class FrontendController final {
   std::uint32_t selected_mission_{};
   FrontendSettings settings_{};
   CampaignProgression* campaign_{};
+  std::optional<MissionDebrief> debrief_;
 };
 
 class SaveStore final {

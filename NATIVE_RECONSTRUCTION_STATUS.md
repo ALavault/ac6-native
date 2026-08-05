@@ -2,6 +2,20 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 971 — débriefing succès/échec et retour campagne
+
+`FrontendController` expose maintenant `enter_debrief` et
+`return_to_campaign`. Le résultat est accepté uniquement depuis `Mission`,
+pour la mission sélectionnée, après une exécution terminée ; avec une
+campagne, l’état `Completed`/`Failed` doit correspondre au résultat. Le
+débriefing conserve les compteurs d’objectifs et l’historique radio jusqu’au
+retour campagne.
+
+Le test couvre les deux parcours : succès avec progression campagne et échec
+par destruction du joueur, puis retour à `NewGame` avec sélection nettoyée.
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits campagne/code
+passent.
+
 ## Cycle 970 — raccord frontend vers lancement de mission
 
 `FrontendController::launch_selected` relie désormais l’état `Mission` au

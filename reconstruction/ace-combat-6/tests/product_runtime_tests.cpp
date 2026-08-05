@@ -736,6 +736,32 @@ int main() {
   REQUIRE(frontend_execution.launched() &&
           frontend_execution.scenario().state() == ac6::ScenarioState::Gameplay);
   REQUIRE(!campaign_frontend.launch_selected(loaded_catalog, launches, frontend_execution));
+  ac6::MissionExecution debrief_execution(*selected_definition, &assets, &loaded_objectives,
+                                           nullptr, &frontend_campaign);
+  REQUIRE(debrief_execution.launch(*launch));
+  REQUIRE(debrief_execution.activate_objective(1));
+  REQUIRE(debrief_execution.complete_objective(1));
+  REQUIRE(debrief_execution.dispatch({ac6::EventType::Complete, 0}));
+  REQUIRE(campaign_frontend.enter_debrief(debrief_execution));
+  REQUIRE(campaign_frontend.state() == ac6::FrontendState::Debrief &&
+          campaign_frontend.debrief() != nullptr &&
+          campaign_frontend.debrief()->outcome == ac6::MissionOutcome::Success);
+  REQUIRE(campaign_frontend.return_to_campaign());
+  REQUIRE(campaign_frontend.state() == ac6::FrontendState::NewGame &&
+          campaign_frontend.selected_mission() == 0 && campaign_frontend.debrief() == nullptr);
+  ac6::FrontendController failure_frontend;
+  REQUIRE(failure_frontend.configure({ac6::FrontendDifficulty::Normal,
+                                      ac6::FrontendControls::Normal,
+                                      ac6::FrontendLanguage::English}));
+  REQUIRE(failure_frontend.select_mission(loaded_catalog, 1));
+  for (int phase = 0; phase < 5; ++phase) REQUIRE(failure_frontend.advance());
+  ac6::MissionExecution failure_debrief_execution(*selected_definition, &assets);
+  REQUIRE(failure_frontend.launch_selected(loaded_catalog, launches, failure_debrief_execution));
+  REQUIRE(failure_debrief_execution.combat().apply_damage(4097, 100.0f));
+  REQUIRE(!failure_debrief_execution.tick(1.0f / 60.0f, {}).mission_ready);
+  REQUIRE(failure_frontend.enter_debrief(failure_debrief_execution));
+  REQUIRE(failure_frontend.debrief()->outcome == ac6::MissionOutcome::Failure);
+  REQUIRE(failure_frontend.return_to_campaign());
   ac6::MissionExecution execution(*selected_definition, &assets);
   REQUIRE(!execution.launched());
   REQUIRE(execution.launch(*launch));

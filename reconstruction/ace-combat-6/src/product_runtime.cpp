@@ -1230,6 +1230,33 @@ bool FrontendController::launch_selected(const MissionCatalog& catalog,
          execution.launch(*launch);
 }
 
+bool FrontendController::enter_debrief(const MissionExecution& execution) noexcept {
+  if (state_ != FrontendState::Mission || selected_mission_ == 0 || !execution.launched()) {
+    return false;
+  }
+  const MissionDebrief result = execution.debrief();
+  if (result.mission_id != selected_mission_ || result.outcome == MissionOutcome::InProgress) {
+    return false;
+  }
+  if (campaign_ != nullptr) {
+    const CampaignMissionStatus* status = campaign_->status(selected_mission_);
+    const CampaignMissionState expected = result.outcome == MissionOutcome::Success
+        ? CampaignMissionState::Completed : CampaignMissionState::Failed;
+    if (status == nullptr || status->state != expected) return false;
+  }
+  debrief_ = result;
+  state_ = FrontendState::Debrief;
+  return true;
+}
+
+bool FrontendController::return_to_campaign() noexcept {
+  if (state_ != FrontendState::Debrief || !debrief_.has_value()) return false;
+  state_ = FrontendState::NewGame;
+  selected_mission_ = 0;
+  debrief_.reset();
+  return true;
+}
+
 bool SaveStore::save(std::uint32_t slot, RuntimeSnapshot snapshot) {
   if (slot == 0 || snapshot.tick == 0 || !std::isfinite(snapshot.position_x) ||
       !std::isfinite(snapshot.position_y) || !std::isfinite(snapshot.position_z) ||
