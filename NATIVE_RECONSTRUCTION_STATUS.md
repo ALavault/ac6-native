@@ -2,6 +2,24 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 989 — décodage des payloads missions 12–15 et hashes partagés
+
+Les entrées physiques 20, 21, 22 et 23 sont maintenant décodées avec le codec
+PAL et le parseur FHM borné. Elles portent toutes 26 enfants top-level sans
+échec de parse; les entrées 20/22 exposent 112 lignes récursives et 9 FHM
+top-level, l’entrée 21 en expose 837 et 13, et l’entrée 23 en expose 1 930
+et 17.
+
+La comparaison exacte des nœuds FHM des entrées 11–23 couvre 5 555 nœuds et
+4 472 hashes uniques, avec 44 groupes partagés (43 non vides et un groupe de
+payloads vides). Les groupes FHM de 480 octets et `ACE6` de 4 octets sont
+partagés par les 13 entrées; les nouveaux groupes comprennent des blocs
+`CAPT` et des bytes binaires conservés sans sémantique supposée.
+
+Les missions 12–15 restent `partial` pour `payload_dependency_inventory`;
+les 15 routes physiques disposent maintenant d’un payload décodé. Build,
+CTest sous Xvfb/audio dummy et audits campagne/code passent pour ce cycle.
+
 ## Cycle 988 — décodage des payloads missions 9–11 et hashes partagés
 
 Les entrées physiques 17, 18 et 19 sont maintenant décodées avec le codec PAL

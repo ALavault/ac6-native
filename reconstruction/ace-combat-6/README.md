@@ -220,9 +220,8 @@ DATA.TBL identities.
 The current PAL catalog reports `1 qualified` and `14 partial` routes. The
 selector-to-DPL and low-ID physical DPL-to-`DATA.TBL` contracts are qualified
 for all campaign selectors 1–15, yielding physical entries 9–23. Payloads for
-missions 1–11 are decoded and hashed; missions 3–11 still need dependency
-inventory, while missions 12–15 remain undecoded. Partial rows cannot enter
-the native runtime route.
+missions 1–15 are decoded and hashed; missions 3–15 still need dependency
+inventory. Partial rows cannot enter the native runtime route.
 
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted
