@@ -32,6 +32,8 @@ int main() {
   mission_checkpoint.combat_units = {
       {4097, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true},
       {4098, 2, {20.0f, 0.0f, 0.0f}, 40.0f, 100.0f, 1.0f, true}};
+  mission_checkpoint.unit_records = {
+      {4097, 1, 9, true}, {4098, 2, 119, true}};
   mission_checkpoint.resource_identities = {
       {9, "DATA00.PAC@0x01028000+0x00ca0000",
        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
@@ -41,6 +43,9 @@ int main() {
                                  ac6::MissionSequenceEventType::ActivateObjective, 1, 0.0f}, true},
       {ac6::MissionSequenceEvent{1, 2, 1,
                                  ac6::MissionSequenceEventType::PlayRadio, 10, 0.25f}, false}};
+  mission_checkpoint.waves.entries = {
+      {{1, 3, {5000, 2, 119, false},
+        {5000, 2, {25.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}}, false}};
   snapshot.checkpoint = mission_checkpoint;
   ac6::SessionSaveStore store;
   REQUIRE(store.save(2, snapshot));

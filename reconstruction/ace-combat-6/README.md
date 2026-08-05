@@ -267,7 +267,9 @@ radio and combat-unit state, while version 1 files remain readable. Version 3
 also persists ordered mission-sequence entries, version 4 adds active radio
 playback, version 5 adds active campaign/loadout records, and version 6 adds
 resource paths and hashes. Version 7 adds declared resource byte sizes and
-dependency IDs. Versions 1 through 6 remain readable; resource identities are
+dependency IDs. Version 8 adds the unit registry and published-wave state
+needed for deterministic mission reloads. Versions 1 through 7 remain
+readable; resource identities are
 compared against the current manifest during restore, and a legacy checkpoint
 without the extended contract fails closed against an extended manifest.
 

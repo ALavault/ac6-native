@@ -2952,3 +2952,10 @@ retail/Xenia. Voir `reports/cycle-998-wave-ai-service-contract.md`.
 La normalisation des axes SDL sature maintenant le domaine signé complet dans
 `[-1, 1]`; une fixture Mission 1 vérifie explicitement `-32768` et `32767`
 sur pitch, roll et yaw. Voir `reports/cycle-999-input-axis-bounds.md`.
+
+## Checkpoint des unités et vagues (cycle 1000, 2026-08-05)
+
+Les checkpoints Mission 1 persistent maintenant le registre `UnitRecord` et
+les spawns publiés; `AC6SESS` v8 les sérialise, avec lecture legacy des
+versions 1–7. La restauration recompose registre, combat et directeur de
+vagues transactionnellement. Voir `reports/cycle-1000-checkpoint-wave-state.md`.

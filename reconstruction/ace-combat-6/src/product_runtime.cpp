@@ -508,6 +508,32 @@ const UnitRecord* UnitRegistry::find(EntityId id) const noexcept {
   return it == units_.end() ? nullptr : &it->second;
 }
 
+std::vector<UnitRecord> UnitRegistry::snapshot() const {
+  std::vector<UnitRecord> result;
+  result.reserve(units_.size());
+  for (const auto& [id, unit] : units_) {
+    (void)id;
+    result.push_back(unit);
+  }
+  std::sort(result.begin(), result.end(), [](const UnitRecord& left, const UnitRecord& right) {
+    return left.id < right.id;
+  });
+  return result;
+}
+
+bool UnitRegistry::restore(const std::vector<UnitRecord>& snapshot) noexcept {
+  if (snapshot.size() > 4096) return false;
+  std::unordered_map<EntityId, UnitRecord> loaded;
+  EntityId previous = 0;
+  for (const UnitRecord& unit : snapshot) {
+    if (unit.id == 0 || unit.asset == 0 || unit.owner == unit.id || unit.id <= previous ||
+        !loaded.emplace(unit.id, unit).second) return false;
+    previous = unit.id;
+  }
+  units_ = std::move(loaded);
+  return true;
+}
+
 bool CombatUnitState::valid() const noexcept {
   return entity != 0 && faction != 0 && std::isfinite(position.x) &&
          std::isfinite(position.y) && std::isfinite(position.z) &&
@@ -700,7 +726,7 @@ void CombatWorld::clear() noexcept {
 bool MissionWaveSpawn::valid() const noexcept {
   return mission_id != 0 && spawn_tick != 0 && unit.id != 0 && unit.owner != 0 &&
          unit.asset != 0 && combat.entity == unit.id && combat.faction == unit.owner &&
-         combat.valid();
+         combat.active && combat.valid();
 }
 
 bool MissionWaveDirector::add(MissionWaveSpawn spawn) {
@@ -755,6 +781,39 @@ bool MissionWaveDirector::load_manifest(const std::filesystem::path& manifest) {
     has_entry = true;
   }
   if (!has_entry) return false;
+  entries_ = std::move(loaded.entries_);
+  return true;
+}
+
+MissionWaveSnapshot MissionWaveDirector::snapshot() const {
+  MissionWaveSnapshot result;
+  result.entries.reserve(entries_.size());
+  for (const Entry& entry : entries_) {
+    result.entries.push_back({entry.spawn, entry.published});
+  }
+  return result;
+}
+
+bool MissionWaveDirector::restore(const MissionWaveSnapshot& snapshot) noexcept {
+  if (snapshot.entries.size() > 4096) return false;
+  MissionWaveDirector loaded;
+  for (std::size_t index = 0; index < snapshot.entries.size(); ++index) {
+    const MissionWaveEntrySnapshot& candidate = snapshot.entries[index];
+    if (!candidate.spawn.valid() ||
+        (index != 0 &&
+         (candidate.spawn.mission_id < snapshot.entries[index - 1].spawn.mission_id ||
+          (candidate.spawn.mission_id == snapshot.entries[index - 1].spawn.mission_id &&
+           (candidate.spawn.spawn_tick < snapshot.entries[index - 1].spawn.spawn_tick ||
+            (candidate.spawn.spawn_tick == snapshot.entries[index - 1].spawn.spawn_tick &&
+             candidate.spawn.unit.id <= snapshot.entries[index - 1].spawn.unit.id)))))) {
+      return false;
+    }
+    for (const Entry& existing : loaded.entries_) {
+      if (existing.spawn.mission_id == candidate.spawn.mission_id &&
+          existing.spawn.unit.id == candidate.spawn.unit.id) return false;
+    }
+    loaded.entries_.push_back({candidate.spawn, candidate.published});
+  }
   entries_ = std::move(loaded.entries_);
   return true;
 }
@@ -4109,6 +4168,7 @@ bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
   candidate.mission_id = definition_ == nullptr ? 0 : definition_->id;
   candidate.flight = runtime_.snapshot();
   candidate.scenario = scenario_.snapshot();
+  candidate.unit_records = units_.snapshot();
   candidate.combat_units = combat_.snapshot_units();
   if (assets_ != nullptr) {
     candidate.resource_identities.reserve(definition_->asset_ids.size());
@@ -4123,6 +4183,7 @@ bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
               });
   }
   candidate.failure_tick = failure_tick_;
+  candidate.waves = waves_ == nullptr ? MissionWaveSnapshot{} : waves_->snapshot();
   candidate.sequence = sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
   candidate.radio_playback = radio_.snapshot();
   if (candidate.mission_id == 0) return false;
@@ -4136,7 +4197,8 @@ bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept
       checkpoint.scenario.player == 0 ||
       checkpoint.combat_units.empty() ||
       checkpoint.resource_identities.size() > 4096 ||
-      (sequence_ == nullptr && !checkpoint.sequence.entries.empty())) return false;
+      (sequence_ == nullptr && !checkpoint.sequence.entries.empty()) ||
+      (waves_ == nullptr && !checkpoint.waves.entries.empty())) return false;
   if (std::find_if(checkpoint.combat_units.begin(), checkpoint.combat_units.end(),
                    [&](const CombatUnitState& unit) {
                      return unit.entity == checkpoint.scenario.player;
@@ -4158,21 +4220,51 @@ bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept
   for (const MissionSequenceEntrySnapshot& entry : checkpoint.sequence.entries) {
     if (!entry.event.valid() || entry.event.mission_id != definition_->id) return false;
   }
+  if (!checkpoint.unit_records.empty()) {
+    EntityId previous_unit_record = 0;
+    for (const UnitRecord& record : checkpoint.unit_records) {
+      if (record.id == 0 || record.asset == 0 || record.owner == record.id ||
+          record.id <= previous_unit_record) return false;
+      previous_unit_record = record.id;
+      const auto combat_unit = std::find_if(
+          checkpoint.combat_units.begin(), checkpoint.combat_units.end(),
+          [record](const CombatUnitState& unit) { return unit.entity == record.id; });
+      if (combat_unit == checkpoint.combat_units.end() || combat_unit->faction != record.owner) {
+        return false;
+      }
+    }
+    for (const CombatUnitState& unit : checkpoint.combat_units) {
+      if (std::find_if(checkpoint.unit_records.begin(), checkpoint.unit_records.end(),
+                       [unit](const UnitRecord& record) { return record.id == unit.entity; }) ==
+          checkpoint.unit_records.end()) return false;
+    }
+  }
+  if (waves_ != nullptr && !checkpoint.waves.entries.empty()) {
+    MissionWaveDirector validated_waves;
+    if (!validated_waves.restore(checkpoint.waves)) return false;
+  }
   const RuntimeSnapshot old_flight = runtime_.snapshot();
   const MissionScenarioSnapshot old_scenario = scenario_.snapshot();
+  const std::vector<UnitRecord> old_unit_records = units_.snapshot();
   const std::vector<CombatUnitState> old_units = combat_.snapshot_units();
   const std::uint64_t old_failure_tick = failure_tick_;
+  const MissionWaveSnapshot old_waves = waves_ == nullptr ? MissionWaveSnapshot{} : waves_->snapshot();
   const MissionSequenceSnapshot old_sequence =
       sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
   const RadioPlaybackSnapshot old_radio = radio_.snapshot();
   if (!runtime_.restore(checkpoint.flight) || !scenario_.restore(checkpoint.scenario) ||
+      (!checkpoint.unit_records.empty() && !units_.restore(checkpoint.unit_records)) ||
       !combat_.restore_units(checkpoint.combat_units) ||
+      (waves_ != nullptr && !checkpoint.waves.entries.empty() &&
+       !waves_->restore(checkpoint.waves)) ||
       (sequence_ != nullptr && !sequence_->restore(checkpoint.sequence)) ||
       !radio_.restore(checkpoint.radio_playback)) {
     (void)runtime_.restore(old_flight);
     (void)scenario_.restore(old_scenario);
+    (void)units_.restore(old_unit_records);
     (void)combat_.restore_units(old_units);
     failure_tick_ = old_failure_tick;
+    if (waves_ != nullptr) (void)waves_->restore(old_waves);
     if (sequence_ != nullptr) (void)sequence_->restore(old_sequence);
     (void)radio_.restore(old_radio);
     return false;

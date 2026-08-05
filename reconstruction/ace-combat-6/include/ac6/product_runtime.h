@@ -86,6 +86,7 @@ struct UnitRecord {
   EntityId owner{};
   AssetId asset{};
   bool active{};
+  bool operator==(const UnitRecord&) const = default;
 };
 
 class UnitRegistry final {
@@ -94,6 +95,8 @@ class UnitRegistry final {
   bool activate(EntityId id) noexcept;
   bool deactivate(EntityId id) noexcept;
   const UnitRecord* find(EntityId id) const noexcept;
+  std::vector<UnitRecord> snapshot() const;
+  bool restore(const std::vector<UnitRecord>& snapshot) noexcept;
   std::size_t size() const noexcept { return units_.size(); }
   std::size_t active_count() const noexcept;
 
@@ -177,12 +180,26 @@ struct MissionWaveSpawn {
   UnitRecord unit;
   CombatUnitState combat;
   bool valid() const noexcept;
+  bool operator==(const MissionWaveSpawn&) const = default;
+};
+
+struct MissionWaveEntrySnapshot {
+  MissionWaveSpawn spawn;
+  bool published{};
+  bool operator==(const MissionWaveEntrySnapshot&) const = default;
+};
+
+struct MissionWaveSnapshot {
+  std::vector<MissionWaveEntrySnapshot> entries;
+  bool operator==(const MissionWaveSnapshot&) const = default;
 };
 
 class MissionWaveDirector final {
  public:
   bool add(MissionWaveSpawn spawn);
   bool load_manifest(const std::filesystem::path& manifest);
+  MissionWaveSnapshot snapshot() const;
+  bool restore(const MissionWaveSnapshot& snapshot) noexcept;
   bool spawn_due(std::uint32_t mission_id, std::uint64_t tick,
                  UnitRegistry& units, CombatWorld& combat) noexcept;
   bool despawn(EntityId entity, UnitRegistry& units, CombatWorld& combat) noexcept;
@@ -1002,9 +1019,11 @@ class MissionExecution final {
     std::uint32_t mission_id{};
     RuntimeSnapshot flight;
     MissionScenarioSnapshot scenario;
+    std::vector<UnitRecord> unit_records;
     std::vector<CombatUnitState> combat_units;
     std::vector<AssetRecord> resource_identities;
     std::uint64_t failure_tick{};
+    MissionWaveSnapshot waves;
     MissionSequenceSnapshot sequence;
     RadioPlaybackSnapshot radio_playback;
     bool operator==(const Checkpoint&) const = default;

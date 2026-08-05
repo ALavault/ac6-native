@@ -981,8 +981,17 @@ int main() {
   REQUIRE(wave_execution.tick(1.0f / 60.0f, {}).active_units == 3);
   REQUIRE(waves.pending(1) == 0 && waves.spawned(1) == 1 &&
           wave_execution.combat().unit(5000) != nullptr);
+  ac6::MissionExecution::Checkpoint wave_checkpoint;
+  REQUIRE(wave_execution.save_checkpoint(wave_checkpoint));
+  REQUIRE(wave_checkpoint.unit_records.size() == 3 &&
+          wave_checkpoint.waves.entries.size() == 1 &&
+          wave_checkpoint.waves.entries.front().published);
   REQUIRE(waves.despawn(5000, wave_execution.units(), wave_execution.combat()));
   REQUIRE(wave_execution.combat().active_units() == 2);
+  REQUIRE(wave_execution.restore_checkpoint(wave_checkpoint));
+  REQUIRE(wave_execution.units().active_count() == 3 &&
+          wave_execution.combat().active_units() == 3 &&
+          waves.spawned(1) == 1 && waves.pending(1) == 0);
   ac6::CombatWorld combat;
   REQUIRE(combat.add_unit({1, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));
   REQUIRE(combat.add_unit({2, 2, {10.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));

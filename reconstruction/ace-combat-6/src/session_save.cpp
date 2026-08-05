@@ -58,7 +58,8 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
           static_cast<std::uint8_t>(ScenarioState::Aborted) || checkpoint.scenario.player == 0 ||
       checkpoint.scenario.objectives.size() > 1024 ||
       checkpoint.scenario.radio_history.size() > 65536 || checkpoint.combat_units.empty() ||
-      checkpoint.combat_units.size() > 4096 || checkpoint.resource_identities.size() > 4096 ||
+      checkpoint.unit_records.size() > 4096 || checkpoint.combat_units.size() > 4096 ||
+      checkpoint.resource_identities.size() > 4096 || checkpoint.waves.entries.size() > 4096 ||
       checkpoint.sequence.entries.size() > 4096) return false;
   std::uint32_t previous_objective = 0;
   for (const ObjectiveRecord& objective : checkpoint.scenario.objectives) {
@@ -78,6 +79,25 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
     previous_unit = unit.entity;
   }
   if (!player_found) return false;
+  if (!checkpoint.unit_records.empty()) {
+    EntityId previous_record = 0;
+    for (const UnitRecord& record : checkpoint.unit_records) {
+      if (record.id == 0 || record.asset == 0 || record.owner == record.id ||
+          record.id <= previous_record) return false;
+      previous_record = record.id;
+      const auto combat_unit = std::find_if(
+          checkpoint.combat_units.begin(), checkpoint.combat_units.end(),
+          [record](const CombatUnitState& unit) { return unit.entity == record.id; });
+      if (combat_unit == checkpoint.combat_units.end() || combat_unit->faction != record.owner) {
+        return false;
+      }
+    }
+    for (const CombatUnitState& unit : checkpoint.combat_units) {
+      if (std::find_if(checkpoint.unit_records.begin(), checkpoint.unit_records.end(),
+                       [unit](const UnitRecord& record) { return record.id == unit.entity; }) ==
+          checkpoint.unit_records.end()) return false;
+    }
+  }
   AssetId previous_resource = 0;
   for (const AssetRecord& resource : checkpoint.resource_identities) {
     if (!resource.valid() || resource.id <= previous_resource ||
@@ -93,6 +113,26 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
       }
     }
     previous_resource = resource.id;
+  }
+  MissionWaveEntrySnapshot previous_wave{};
+  bool has_previous_wave = false;
+  for (const MissionWaveEntrySnapshot& entry : checkpoint.waves.entries) {
+    if (!entry.spawn.valid() ||
+        (has_previous_wave &&
+         (entry.spawn.mission_id < previous_wave.spawn.mission_id ||
+          (entry.spawn.mission_id == previous_wave.spawn.mission_id &&
+           (entry.spawn.spawn_tick < previous_wave.spawn.spawn_tick ||
+            (entry.spawn.spawn_tick == previous_wave.spawn.spawn_tick &&
+             entry.spawn.unit.id <= previous_wave.spawn.unit.id)))))) return false;
+    if (has_previous_wave && entry.spawn.mission_id == previous_wave.spawn.mission_id &&
+        entry.spawn.unit.id == previous_wave.spawn.unit.id) return false;
+    if (entry.published && !checkpoint.unit_records.empty() &&
+        std::find_if(checkpoint.unit_records.begin(), checkpoint.unit_records.end(),
+                     [entry](const UnitRecord& record) {
+                       return record.id == entry.spawn.unit.id;
+                     }) == checkpoint.unit_records.end()) return false;
+    previous_wave = entry;
+    has_previous_wave = true;
   }
   std::uint32_t previous_mission = 0;
   std::uint64_t previous_tick = 0;
@@ -193,6 +233,66 @@ bool read_string(std::istream& input, std::string& value) {
   return static_cast<bool>(input);
 }
 
+void write_unit_record(std::ostream& output, const UnitRecord& unit) {
+  write_u32(output, unit.id);
+  write_u32(output, unit.owner);
+  write_u32(output, unit.asset);
+  write_u32(output, unit.active ? 1u : 0u);
+}
+
+bool read_unit_record(std::istream& input, UnitRecord& unit) {
+  std::uint32_t active = 0;
+  return read_u32(input, unit.id) && read_u32(input, unit.owner) && read_u32(input, unit.asset) &&
+         read_u32(input, active) && active <= 1 && (unit.active = active != 0, true);
+}
+
+void write_wave_snapshot(std::ostream& output, const MissionWaveSnapshot& snapshot) {
+  write_u32(output, static_cast<std::uint32_t>(snapshot.entries.size()));
+  for (const MissionWaveEntrySnapshot& entry : snapshot.entries) {
+    write_u32(output, entry.spawn.mission_id);
+    write_u64(output, entry.spawn.spawn_tick);
+    write_unit_record(output, entry.spawn.unit);
+    write_u32(output, entry.spawn.combat.entity);
+    write_u32(output, entry.spawn.combat.faction);
+    write_f32(output, entry.spawn.combat.position.x);
+    write_f32(output, entry.spawn.combat.position.y);
+    write_f32(output, entry.spawn.combat.position.z);
+    write_f32(output, entry.spawn.combat.health);
+    write_f32(output, entry.spawn.combat.max_health);
+    write_f32(output, entry.spawn.combat.collision_radius);
+    write_u32(output, entry.spawn.combat.active ? 1u : 0u);
+    write_u32(output, entry.published ? 1u : 0u);
+  }
+}
+
+bool read_wave_snapshot(std::istream& input, MissionWaveSnapshot& snapshot) {
+  std::uint32_t count = 0;
+  if (!read_u32(input, count) || count > 4096) return false;
+  snapshot.entries.reserve(count);
+  for (std::uint32_t index = 0; index < count; ++index) {
+    MissionWaveEntrySnapshot entry;
+    std::uint32_t active = 0;
+    std::uint32_t published = 0;
+    if (!read_u32(input, entry.spawn.mission_id) || !read_u64(input, entry.spawn.spawn_tick) ||
+        !read_unit_record(input, entry.spawn.unit) ||
+        !read_u32(input, entry.spawn.combat.entity) ||
+        !read_u32(input, entry.spawn.combat.faction) ||
+        !read_f32(input, entry.spawn.combat.position.x) ||
+        !read_f32(input, entry.spawn.combat.position.y) ||
+        !read_f32(input, entry.spawn.combat.position.z) ||
+        !read_f32(input, entry.spawn.combat.health) ||
+        !read_f32(input, entry.spawn.combat.max_health) ||
+        !read_f32(input, entry.spawn.combat.collision_radius) ||
+        !read_u32(input, active) || active > 1 || !read_u32(input, published) || published > 1) {
+      return false;
+    }
+    entry.spawn.combat.active = active != 0;
+    entry.published = published != 0;
+    snapshot.entries.push_back(std::move(entry));
+  }
+  return true;
+}
+
 void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& checkpoint) {
   write_u32(output, checkpoint.mission_id);
   write_u64(output, checkpoint.failure_tick);
@@ -220,6 +320,8 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
     write_f32(output, unit.collision_radius);
     write_u32(output, unit.active ? 1u : 0u);
   }
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.unit_records.size()));
+  for (const UnitRecord& unit : checkpoint.unit_records) write_unit_record(output, unit);
   write_u32(output, static_cast<std::uint32_t>(checkpoint.resource_identities.size()));
   for (const AssetRecord& resource : checkpoint.resource_identities) {
     write_u32(output, resource.id);
@@ -246,15 +348,17 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
   write_f32(output, checkpoint.radio_playback.elapsed_seconds);
   write_f32(output, checkpoint.radio_playback.duration_seconds);
   write_u32(output, static_cast<std::uint32_t>(checkpoint.radio_playback.state));
+  write_wave_snapshot(output, checkpoint.waves);
 }
 
 bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint,
                      bool has_sequence, bool has_radio, bool has_resources,
-                     bool has_resource_contract) {
+                     bool has_resource_contract, bool has_unit_records, bool has_waves) {
   std::uint32_t state = 0;
   std::uint32_t objective_count = 0;
   std::uint32_t radio_count = 0;
   std::uint32_t unit_count = 0;
+  std::uint32_t unit_record_count = 0;
   std::uint32_t resource_count = 0;
   std::uint32_t sequence_count = 0;
   if (!read_u32(input, checkpoint.mission_id) || !read_u64(input, checkpoint.failure_tick) ||
@@ -293,6 +397,15 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
         !read_u32(input, active) || active > 1) return false;
     unit.active = active != 0;
     checkpoint.combat_units.push_back(unit);
+  }
+  if (has_unit_records) {
+    if (!read_u32(input, unit_record_count) || unit_record_count > 4096) return false;
+    checkpoint.unit_records.reserve(unit_record_count);
+    for (std::uint32_t index = 0; index < unit_record_count; ++index) {
+      UnitRecord unit;
+      if (!read_unit_record(input, unit)) return false;
+      checkpoint.unit_records.push_back(unit);
+    }
   }
   if (has_resources) {
     if (!read_u32(input, resource_count) || resource_count > 4096) return false;
@@ -343,6 +456,7 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
         !read_u32(input, state)) return false;
     checkpoint.radio_playback.state = static_cast<RadioPlaybackState>(state);
   }
+  if (has_waves && !read_wave_snapshot(input, checkpoint.waves)) return false;
   return valid_checkpoint(checkpoint);
 }
 
@@ -373,7 +487,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 7);
+  write_u32(output, 8);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -426,7 +540,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   std::uint32_t count = 0;
   if (!read_u32(input, version) || !read_u32(input, count) ||
       (version != 1 && version != 2 && version != 3 && version != 4 && version != 5 &&
-       version != 6 && version != 7) ||
+       version != 6 && version != 7 && version != 8) ||
       count > 1024) {
     return false;
   }
@@ -461,7 +575,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
       if (has_checkpoint != 0) {
         MissionExecution::Checkpoint checkpoint;
         if (!read_checkpoint(input, checkpoint, version >= 3, version >= 4, version >= 6,
-                             version >= 7)) return false;
+                             version >= 7, version >= 8, version >= 8)) return false;
         snapshot.checkpoint = std::move(checkpoint);
       }
     }
