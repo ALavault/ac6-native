@@ -3386,9 +3386,10 @@ MissionExecution::MissionExecution(const MissionDefinition& definition,
                                    const RadioMessageDatabase* radios,
                                    CampaignProgression* campaign,
                                    MissionWaveDirector* waves,
-                                   MissionSequenceDirector* sequence)
+                                   MissionSequenceDirector* sequence,
+                                   const InputMappingDatabase* input)
     : definition_(&definition), objectives_(objectives), radios_(radios), campaign_(campaign),
-      waves_(waves), sequence_(sequence),
+      waves_(waves), sequence_(sequence), input_(input),
       runtime_(definition, assets),
       scenario_(definition) {}
 
@@ -3578,14 +3579,20 @@ bool MissionExecution::fire_weapon(std::uint32_t weapon_id) noexcept {
 
 WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   if (!launched_) return {};
-  combat_.tick(fixed_dt);
+  if (input_ != nullptr && input.buttons != 0) {
+    const InputBinding* binding = input_->resolve(input.buttons);
+    if (binding != nullptr && !dispatch({binding->event, scenario_.player()})) return {};
+  }
+  if (scenario_.state() == ScenarioState::Gameplay) combat_.tick(fixed_dt);
   WorldFrame frame = runtime_.tick(fixed_dt, input);
   if (scenario_.state() == ScenarioState::Gameplay) (void)radio_.tick(fixed_dt);
-  if (waves_ != nullptr && !waves_->spawn_due(definition_->id, frame.tick, units_, combat_)) {
+  if (scenario_.state() == ScenarioState::Gameplay && waves_ != nullptr &&
+      !waves_->spawn_due(definition_->id, frame.tick, units_, combat_)) {
     frame.mission_ready = false;
     return frame;
   }
-  if (sequence_ != nullptr && !sequence_->dispatch_due(definition_->id, frame.tick, *this)) {
+  if (scenario_.state() == ScenarioState::Gameplay && sequence_ != nullptr &&
+      !sequence_->dispatch_due(definition_->id, frame.tick, *this)) {
     frame.mission_ready = false;
     return frame;
   }

@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 972 — input mission et gel de pause
+
+`MissionExecution` accepte maintenant une `InputMappingDatabase` générique.
+Les boutons de `InputFrame` sont résolus avant la simulation et dispatchent
+les événements HSM. En `Paused`, combat, radio, vagues et séquence ne
+progressent plus ; la reprise recommence au tick suivant.
+
+Le test couvre pause/reprise par boutons, axes extrêmes pendant la pause et
+bornes de tick. Validation réussie sur un Xvfb explicitement vérifié : build,
+CTest (`5/5`), smoke Vulkan et audits campagne/code.
+
 ## Cycle 971 — débriefing succès/échec et retour campagne
 
 `FrontendController` expose maintenant `enter_debrief` et

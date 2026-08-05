@@ -762,6 +762,19 @@ int main() {
   REQUIRE(failure_frontend.enter_debrief(failure_debrief_execution));
   REQUIRE(failure_frontend.debrief()->outcome == ac6::MissionOutcome::Failure);
   REQUIRE(failure_frontend.return_to_campaign());
+  ac6::InputMappingDatabase mission_input;
+  REQUIRE(mission_input.add({0x0001u, ac6::EventType::Pause}));
+  REQUIRE(mission_input.add({0x0002u, ac6::EventType::Resume}));
+  ac6::MissionExecution button_execution(*selected_definition, &assets, nullptr, nullptr,
+                                         nullptr, nullptr, nullptr, &mission_input);
+  REQUIRE(button_execution.launch(*launch));
+  REQUIRE(button_execution.tick(1.0f / 60.0f, {}).tick == 1);
+  const auto paused_by_button = button_execution.tick(1.0f / 60.0f, {32767, 0, 0, 255, 1});
+  REQUIRE(button_execution.scenario().state() == ac6::ScenarioState::Paused);
+  REQUIRE(paused_by_button.tick == 1 && paused_by_button.position_x == 0.0f);
+  const auto resumed_by_button = button_execution.tick(1.0f / 60.0f, {0, 0, 0, 0, 2});
+  REQUIRE(button_execution.scenario().state() == ac6::ScenarioState::Gameplay);
+  REQUIRE(resumed_by_button.tick == 2);
   ac6::MissionExecution execution(*selected_definition, &assets);
   REQUIRE(!execution.launched());
   REQUIRE(execution.launch(*launch));

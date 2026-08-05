@@ -923,7 +923,8 @@ class MissionExecution final {
                    const RadioMessageDatabase* radios = nullptr,
                    CampaignProgression* campaign = nullptr,
                    MissionWaveDirector* waves = nullptr,
-                   MissionSequenceDirector* sequence = nullptr);
+                   MissionSequenceDirector* sequence = nullptr,
+                   const InputMappingDatabase* input = nullptr);
   bool launch(const MissionLaunchDefinition& launch) noexcept;
   bool dispatch(Event event) noexcept;
   bool activate_objective(std::uint32_t id) noexcept;
@@ -967,6 +968,7 @@ class MissionExecution final {
   CampaignProgression* campaign_{};
   MissionWaveDirector* waves_{};
   MissionSequenceDirector* sequence_{};
+  const InputMappingDatabase* input_{};
   MissionRuntime runtime_;
   MissionScenario scenario_;
   UnitRegistry units_;
