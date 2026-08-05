@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-05T20:10:00+02:00
+Mise à jour : 2026-08-06T00:26:57+02:00
 
 ## Gate courant
 
@@ -187,3 +187,37 @@ calibration de scène comme parité retail sans association exacte.
   objectifs, vagues, radio/scénario, HUD complet et débrief succès/échec restent
   ouverts. Les readbacks volumineux restent sous `/tmp/ac6-native-evidence/`;
   aucun payload retail n'est ajouté au dépôt.
+
+## Slice radio retail M01 P4 — 2026-08-06
+
+- La fermeture statique bornée de `DATA.TBL[34]` est qualifiée sans parser note.
+  Sa racine a le SHA-256
+  `ce5316ffe7f2e52a17bcd7c218a74303fb911a7240fef16b33b5ea416301b0f0` et son
+  leaf `root/0015` (table de clés radio) a la taille 5 944 et le SHA-256
+  `2c5d9fe0ca271e2869157cfc14fdaffa1988d5152275dbdf1647a0b3578b0fd0`.
+  Le même root contient les identités `mapobj_m01_l_brg1` et
+  `mapobj_m01_l_brg2`; cette co-localisation ne suffit pas à déduire les
+  vagues ou les objectifs.
+- Les identifiants big-endian lus dans la table sont `15` pour
+  `JIKKYOU_PLAYER_AWACS_MISSION_START`, `86` pour
+  `JIKKYOU_PLAYER_AWACS_SHTDWN_SHIP_DESTROYER` et `98` pour
+  `JIKKYOU_PLAYER_AWACS_MISSION_END`. Seul l'événement de démarrage est
+  intégré au manifeste natif; les timings, la cible et l'audio XMA exact ne
+  sont pas promus.
+- Le run P4 natif `--play-headless` a utilisé le manifeste hashé
+  `ddec953d1ae9b21d930f86fddedb71a73ff617de7e812a72e959b476b24e54bc`,
+  1 800 ticks et le replay qualifié. Il donne
+  `hud_radio_message_id=15`, `hud_pixel_writes=4920`,
+  `diagnostic_point_writes=0`, `filled_fragment_writes=822161`, avec
+  `deterministic_replay=true`, `pause_stable=true`,
+  `save_resume_stable=true` et `restart_stable=true`. La preuve native
+  `native-session.json` a le SHA-256
+  `c80bebca9624bceb407f4d5162684fa04392b197e09cd3bb82a5cdc7a0465f71`.
+- Le scan textuel complet des entrées PAC n'a pas fourni de
+  `SubMisTbl`/`SubMis`/`ComTbl`/`Maneuver` qualifiable. Les marqueurs bruts
+  `<Obj`/`<Act` des entrées 553/564 sont des octets de flottants NDXR, pas un
+  script scénario. La frontière suivante est donc l'appartenance retail des
+  objectifs/vagues, pas le raster, la caméra ou les textures.
+- Le gate `scenario_radio_or_subtitles` est passé avec cette preuve native;
+  `units_and_waves`, `retail_objectives`, le HUD complet et
+  `success_failure_debrief` restent ouverts.

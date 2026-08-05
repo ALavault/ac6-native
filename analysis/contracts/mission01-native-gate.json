@@ -154,9 +154,17 @@
       "evidence": []
     },
     "scenario_radio_or_subtitles": {
-      "status": "open",
+      "status": "passed",
       "statement": "scenario radio or subtitles",
-      "evidence": []
+      "evidence": [
+        {
+          "kind": "native-test",
+          "path": "headless-p4-retail-radio/native-session.json",
+          "sha256": "c80bebca9624bceb407f4d5162684fa04392b197e09cd3bb82a5cdc7a0465f71",
+          "size": 1393,
+          "claim": "native Mission 01 consumes the retail-qualified DATA.TBL[34] radio key id 15 at startup; the final session records hud_radio_message_id=15 and non-zero native HUD radio writes"
+        }
+      ]
     },
     "success_failure_debrief": {
       "status": "open",

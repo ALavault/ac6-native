@@ -145,3 +145,21 @@ hypotheses:
     discriminator: Run the same 1800-tick replay three times and compare pause, restored checkpoint, and fresh execution hashes.
     evidence: reports/mission01-native-captures/p3-runtime-state/native-session.json SHA-256 0b509194669eccd022c6e27637b44f3d1df98d383a49ad037b45a63cb47ffeae records deterministic_replay=true, pause_stable=true, save_resume_stable=true, restart_stable=true.
     qualification: Native pause/save/restart is qualified; Mission success/failure/debrief and retail scenario data remain open.
+  - id: H-RETAIL-M01-RADIO-KEY
+    status: qualified
+    statement: DATA.TBL[34]/root/0015 contains the retail Mission 01 AWACS startup radio key id 15, and the native scenario path dispatches that key at mission startup.
+    discriminator: Match the exact leaf SHA and preceding big-endian key id, then run the same 1800-tick native manifest and require hud_radio_message_id=15 with non-zero radio HUD writes.
+    evidence: reports/mission01-native-captures/p4-retail-radio/retail-source.json; reports/mission01-native-captures/p4-retail-radio/native-session.json SHA-256 c80bebca9624bceb407f4d5162684fa04392b197e09cd3bb82a5cdc7a0465f71.
+    qualification: Qualified for the startup event only; ids 86/98 have identity evidence but no promoted retail timing, target binding, or XMA payload.
+  - id: H-RETAIL-SCENARIO-TEXT-FALSE-POSITIVE
+    status: rejected
+    statement: Raw <Obj and <Act markers found in PAC entries 553 and 564 are printable retail Mission 01 scenario records.
+    discriminator: Compare the bounded bytes against the owning FHM leaf and decode the surrounding fields instead of accepting a string hit.
+    evidence: reports/cycle-1032-retail-mission01-scenario-boundary.md; raw DATA01 scan SHA-256 ab9ef553395eb423ab6cd4e6c31ba5b56f0afd3bb8d76de0fe909bf5b232813d.
+    qualification: Rejected; the markers are NDXR float bytes and do not establish SubMisTbl, ComTbl, wave, or objective semantics.
+  - id: H-RETAIL-SCENARIO-PAC-CLOSURE
+    status: tested
+    statement: A complete readable scan of the PAC entries identifies Mission 01 resource families but does not by itself expose a qualified printable scenario table for objectives and waves.
+    discriminator: Scan all entry ranges with the official extraction path, separately preserve raw entries, and require an owning qualified FHM closure before assigning scenario semantics.
+    evidence: reports/cycle-1032-retail-mission01-scenario-boundary.md.
+    qualification: Tested boundary; arbitrary binary scenario structures may still require a bounded runtime ownership experiment.
