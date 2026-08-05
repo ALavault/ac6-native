@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 961 — route frontend campagne
+
+`FrontendController` est raccordé optionnellement à `CampaignProgression` :
+disponibilité à la sélection, briefing, loadout au Hangar, début campagne et
+état `Active` avant Mission. Le chemin sans campagne reste disponible pour les
+fixtures développeur; les missions verrouillées sont rejetées.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. Les paramètres menu retail et mappings non qualifiés restent
+explicitement ouverts.
+
 ## Cycle 960 — échec destruction et expiration
 
 `MissionExecution` déclenche automatiquement l’échec sur destruction du

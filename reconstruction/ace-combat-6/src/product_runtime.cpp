@@ -972,9 +972,17 @@ bool MissionScenario::dispatch_buttons(const InputMappingDatabase& mappings,
 bool FrontendController::advance() noexcept {
   switch (state_) {
     case FrontendState::Title: state_ = FrontendState::NewGame; break;
-    case FrontendState::NewGame: state_ = FrontendState::Briefing; break;
+    case FrontendState::NewGame:
+      if (campaign_ != nullptr &&
+          (selected_mission_ == 0 || !campaign_->enter_briefing(selected_mission_))) return false;
+      state_ = FrontendState::Briefing;
+      break;
     case FrontendState::Briefing: state_ = FrontendState::Hangar; break;
-    case FrontendState::Hangar: state_ = FrontendState::Loading; break;
+    case FrontendState::Hangar:
+      if (campaign_ != nullptr &&
+          (selected_mission_ == 0 || !campaign_->begin(selected_mission_))) return false;
+      state_ = FrontendState::Loading;
+      break;
     case FrontendState::Loading: state_ = FrontendState::Mission; break;
     case FrontendState::Mission: return false;
   }
@@ -1008,9 +1016,15 @@ bool FrontendController::dispatch_buttons(const InputMappingDatabase& mappings,
 
 bool FrontendController::select_mission(const MissionCatalog& catalog,
                                         std::uint32_t mission_id) noexcept {
-  if (catalog.find(mission_id) == nullptr) return false;
+  if (catalog.find(mission_id) == nullptr ||
+      (campaign_ != nullptr && !campaign_->is_available(mission_id))) return false;
   selected_mission_ = mission_id;
   return true;
+}
+
+bool FrontendController::set_loadout(CampaignLoadout loadout) noexcept {
+  return campaign_ != nullptr && state_ == FrontendState::Hangar && selected_mission_ != 0 &&
+         campaign_->set_loadout(selected_mission_, loadout);
 }
 
 const MissionDefinition* FrontendController::mission_definition(

@@ -1040,7 +1040,9 @@ class FrontendController final {
   std::uint32_t selected_mission() const noexcept { return selected_mission_; }
   const FrontendSettings& settings() const noexcept { return settings_; }
   bool configure(FrontendSettings settings) noexcept;
+  void set_campaign(CampaignProgression* campaign) noexcept { campaign_ = campaign; }
   bool select_mission(const MissionCatalog& catalog, std::uint32_t mission_id) noexcept;
+  bool set_loadout(CampaignLoadout loadout) noexcept;
   const MissionDefinition* mission_definition(const MissionCatalog& catalog) const noexcept;
   bool advance() noexcept;
   bool dispatch(Event event) noexcept;
@@ -1051,6 +1053,7 @@ class FrontendController final {
   FrontendState state_{FrontendState::Title};
   std::uint32_t selected_mission_{};
   FrontendSettings settings_{};
+  CampaignProgression* campaign_{};
 };
 
 class SaveStore final {

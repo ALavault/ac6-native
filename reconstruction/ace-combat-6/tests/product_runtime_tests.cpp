@@ -451,6 +451,30 @@ int main() {
   REQUIRE(selected_definition && selected_definition->id == 1);
   REQUIRE(!frontend.advance());
 
+  ac6::CampaignProgression frontend_campaign;
+  REQUIRE(frontend_campaign.add({1, {1, 9, 9}, 1, {}}));
+  REQUIRE(frontend_campaign.finalize());
+  ac6::FrontendController campaign_frontend;
+  campaign_frontend.set_campaign(&frontend_campaign);
+  REQUIRE(campaign_frontend.select_mission(loaded_catalog, 1));
+  REQUIRE(campaign_frontend.advance() && campaign_frontend.state() == ac6::FrontendState::NewGame);
+  REQUIRE(campaign_frontend.advance() &&
+          campaign_frontend.state() == ac6::FrontendState::Briefing &&
+          frontend_campaign.status(1)->state == ac6::CampaignMissionState::Briefing);
+  REQUIRE(!campaign_frontend.set_loadout({7, 8, true}));
+  REQUIRE(campaign_frontend.advance() && campaign_frontend.state() == ac6::FrontendState::Hangar);
+  REQUIRE(campaign_frontend.set_loadout({7, 8, true}));
+  REQUIRE(campaign_frontend.advance() && campaign_frontend.state() == ac6::FrontendState::Loading);
+  REQUIRE(frontend_campaign.status(1)->state == ac6::CampaignMissionState::Active);
+  REQUIRE(campaign_frontend.advance() && campaign_frontend.state() == ac6::FrontendState::Mission);
+  ac6::CampaignProgression locked_frontend_campaign;
+  REQUIRE(locked_frontend_campaign.add({1, {1, 9, 9}, 1, {}}));
+  REQUIRE(locked_frontend_campaign.add({2, {2, 10, 10}, 1, {1}}));
+  REQUIRE(locked_frontend_campaign.finalize());
+  ac6::FrontendController locked_frontend;
+  locked_frontend.set_campaign(&locked_frontend_campaign);
+  REQUIRE(!locked_frontend.select_mission(loaded_catalog, 2));
+
   const char* launch_manifest = "ac6-test-launch.tsv";
   {
     std::ofstream out(launch_manifest);

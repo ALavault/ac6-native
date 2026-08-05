@@ -213,6 +213,10 @@ failure tick, propagating failure to an active campaign and debrief. The
 failure tick remains an explicit generic configuration until retail timing is
 qualified.
 
+`FrontendController` can bind `CampaignProgression` to enforce available
+mission selection, briefing, Hangar loadout and `Active` state before entering
+Mission. Unbound frontend fixtures retain the developer-only state route.
+
 `CombatWorld` is the generic combat boundary for active units, faction-aware
 target locking, weapons, projectiles, collision and damage. `MissionExecution`
 initializes its unit frontier on launch and exposes `lock_target` and
