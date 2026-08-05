@@ -1,4 +1,5 @@
 #include "ac6/product_runtime.h"
+#include "ac6/native_hud.h"
 #include "ac6/sdl_input.h"
 
 #include <algorithm>
@@ -2238,5 +2239,40 @@ int main() {
   const auto neutral = replay_a.tick(1.0f / 60.0f, {});
   REQUIRE(neutral.input.pitch == 0 && neutral.input.roll == 0 && neutral.input.yaw == 0 &&
           neutral.input.throttle == 0 && neutral.input.buttons == 0);
+
+  ac6::MissionAssetDatabase hud_assets;
+  for (const ac6::AssetId id : {9u, 119u, 165u, 199u, 210u}) {
+    REQUIRE(hud_assets.add({id, "qualified", "hud-test"}));
+  }
+  ac6::MissionObjectiveDatabase hud_objectives;
+  REQUIRE(hud_objectives.add({1, {1, "retail_objective_record", true,
+                                  ac6::ObjectiveState::Pending}}));
+  ac6::RadioMessageDatabase hud_radios;
+  REQUIRE(hud_radios.add({1, 10, "retail_radio_record", "AWACS", 199, 210}));
+  ac6::MissionLaunchDefinition hud_launch = *launch;
+  hud_launch.units[1].owner = 2;
+  ac6::MissionExecution hud_execution(*selected_definition, &hud_assets, &hud_objectives,
+                                      &hud_radios);
+  REQUIRE(hud_execution.launch(hud_launch));
+  REQUIRE(hud_execution.activate_objective(1));
+  REQUIRE(hud_execution.lock_target(4098));
+  REQUIRE(hud_execution.play_radio(10, 1.0f));
+  const ac6::WorldFrame hud_frame = hud_execution.tick(
+      1.0f / 60.0f, {8192, 0, 2048, 200, 0});
+  REQUIRE(hud_frame.mission_ready && hud_frame.speed > 0.0f);
+  ac6::NativeRenderTarget hud_target;
+  REQUIRE(hud_target.resize(320, 180) && hud_target.clear(0, 1.0f));
+  ac6::NativeHudRenderer hud_renderer;
+  REQUIRE(hud_renderer.render(hud_target, hud_frame, hud_execution));
+  const ac6::NativeHudSnapshot& hud_snapshot = hud_renderer.snapshot();
+  REQUIRE(hud_snapshot.reticle_visible && hud_snapshot.telemetry_visible &&
+          hud_snapshot.weapon_visible && hud_snapshot.target_visible &&
+          hud_snapshot.target_locked && hud_snapshot.radar_visible &&
+          hud_snapshot.objective_visible && hud_snapshot.radio_visible &&
+          hud_snapshot.active_objective_id == 1 &&
+          hud_snapshot.primary_weapon_id == 7 && hud_snapshot.weapon_count == 1 &&
+          hud_snapshot.radio_message_id == 10 && hud_snapshot.pixel_writes > 0 &&
+          hud_snapshot.unique_pixels > 0);
+  REQUIRE(hud_target.readback().color_coverage > 0 && hud_target.readback().depth_coverage == 0);
   return 0;
 }

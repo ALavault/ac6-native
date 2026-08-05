@@ -150,3 +150,26 @@ contradictoire.
 Relier les vagues/objectifs/radio retail et le HUD essentiel aux services natifs;
 ne pas utiliser la capture bridge comme preuve J1 et ne pas promouvoir la
 calibration de scène comme parité retail sans association exacte.
+
+## Slice HUD natif P2 — 2026-08-05
+
+- `NativeHudRenderer` dessine maintenant un overlay vectoriel dans le chemin
+  produit SDL/Vulkan sans texture de secours : réticule, télémétrie, radar et
+  panneaux conditionnels lisent `WorldFrame`, `CombatWorld`,
+  `MissionScenario`, `RadioPlaybackService` et `MissionExecution`.
+- `WorldFrame.speed` est dérivé des mêmes termes de vitesse que l'intégrateur
+  de vol. Les identifiants d'arme et le nombre de stores viennent du lancement
+  de mission; aucun panneau d'arme n'est dessiné si le lancement n'en déclare
+  pas.
+- La capture P2 `/tmp/ac6-native-evidence/headless-p2-hud` couvre 1 800 ticks
+  à 1280x720 : `hud_pixel_writes=1634`, `hud_unique_pixels=1634`,
+  `diagnostic_point_writes=0`, `filled_fragment_writes=822161`, couverture
+  couleur 361984 et profondeur 361267. Le replay, la pause et la reprise de
+  sauvegarde restent déterministes.
+- Le manifeste externe de visibilité ne porte toujours ni définition retail
+  d'objectifs, ni radio, ni vagues, ni arme. La preuve P2 qualifie le chemin
+  HUD de base mais ne passe pas `essential_hud`, `units_and_waves` ou
+  `scenario_radio_or_subtitles`.
+- Le chemin interactif conserve le dernier monde lors d'une pause ou d'un
+  état terminal et présente l'overlay natif; le monde n'est pas recréé pour
+  une frame de pause.

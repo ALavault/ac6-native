@@ -1,5 +1,6 @@
 #include "ac6/product_runtime.h"
 #include "ac6/mission01_compare.h"
+#include "ac6/native_hud.h"
 #include "ac6/sdl_input.h"
 
 #include <SDL3/SDL.h>
@@ -60,7 +61,7 @@ bool same_world_frame(const ac6::WorldFrame& a, const ac6::WorldFrame& b) {
   return a.tick == b.tick && a.mission_id == b.mission_id &&
       a.mission_ready == b.mission_ready && a.position_x == b.position_x &&
       a.position_y == b.position_y && a.position_z == b.position_z &&
-      a.pitch == b.pitch && a.roll == b.roll && a.yaw == b.yaw &&
+      a.pitch == b.pitch && a.roll == b.roll && a.yaw == b.yaw && a.speed == b.speed &&
       a.active_units == b.active_units && a.player_entity == b.player_entity &&
       a.camera_x == b.camera_x && a.camera_y == b.camera_y && a.camera_z == b.camera_z &&
       a.camera_target_x == b.camera_target_x && a.camera_target_y == b.camera_target_y &&
@@ -178,9 +179,18 @@ struct NativeGraphics final {
 };
 
 bool render_and_present(PlayAssets& assets, NativeGraphics& graphics,
-                        ac6::NativeRenderTarget& target, const ac6::WorldFrame& frame) {
-  if (!target.clear(assets.world_pass->clear_color, assets.world_pass->clear_depth) ||
-      !assets.renderer.render(frame, assets.render_assets(), &target)) return false;
+                        ac6::NativeRenderTarget& target, const ac6::WorldFrame& frame,
+                        const ac6::MissionExecution* execution = nullptr,
+                        ac6::NativeHudRenderer* hud = nullptr) {
+  const bool reuse_last_world = !frame.mission_ready && execution != nullptr &&
+      execution->scenario().state() != ac6::ScenarioState::Gameplay;
+  if (frame.mission_ready) {
+    if (!target.clear(assets.world_pass->clear_color, assets.world_pass->clear_depth) ||
+        !assets.renderer.render(frame, assets.render_assets(), &target)) return false;
+  } else if (!reuse_last_world) {
+    return false;
+  }
+  if (execution != nullptr && hud != nullptr && !hud->render(target, frame, *execution)) return false;
   return graphics.present(target);
 }
 
@@ -209,6 +219,7 @@ std::uint64_t semantic_hash(const ac6::WorldFrame& frame,
   hash_value(hash, frame.pitch);
   hash_value(hash, frame.roll);
   hash_value(hash, frame.yaw);
+  hash_value(hash, frame.speed);
   hash_value(hash, frame.active_units);
   hash_value(hash, frame.player_entity);
   hash_value(hash, frame.camera_x);
@@ -252,6 +263,7 @@ bool write_headless_report(const std::filesystem::path& output_dir,
                            const ac6::WorldFrame& frame,
                            const ac6::RenderReadback& readback,
                            const ac6::NativeRenderTarget& target,
+                           const ac6::NativeHudSnapshot& hud,
                            ac6::AssetId player_asset_id,
                            std::uint64_t hash,
                            bool deterministic,
@@ -260,7 +272,7 @@ bool write_headless_report(const std::filesystem::path& output_dir,
   std::ofstream output(output_dir / "native-session.json");
   if (!output) return false;
   output << "{\n"
-         << "  \"schema\": \"ac6.native-session.v1\",\n"
+         << "  \"schema\": \"ac6.native-session.v2\",\n"
          << "  \"mission_id\": " << mission_id << ",\n"
          << "  \"ticks\": " << frame.tick << ",\n"
          << "  \"mission_ready\": " << (frame.mission_ready ? "true" : "false") << ",\n"
@@ -272,6 +284,7 @@ bool write_headless_report(const std::filesystem::path& output_dir,
          << "  \"pitch\": " << frame.pitch << ",\n"
          << "  \"roll\": " << frame.roll << ",\n"
          << "  \"yaw\": " << frame.yaw << ",\n"
+         << "  \"speed\": " << frame.speed << ",\n"
          << "  \"camera_x\": " << frame.camera_x << ",\n"
          << "  \"camera_y\": " << frame.camera_y << ",\n"
          << "  \"camera_z\": " << frame.camera_z << ",\n"
@@ -288,6 +301,19 @@ bool write_headless_report(const std::filesystem::path& output_dir,
          << "  \"raster_writes\": " << target.raster_writes() << ",\n"
          << "  \"diagnostic_point_writes\": " << target.diagnostic_point_writes() << ",\n"
          << "  \"filled_fragment_writes\": " << target.filled_fragment_writes() << ",\n"
+         << "  \"hud_pixel_writes\": " << hud.pixel_writes << ",\n"
+         << "  \"hud_unique_pixels\": " << hud.unique_pixels << ",\n"
+         << "  \"hud_objective_count\": " << hud.objective_count << ",\n"
+         << "  \"hud_active_objective_id\": " << hud.active_objective_id << ",\n"
+         << "  \"hud_target_entity\": " << hud.target_entity << ",\n"
+         << "  \"hud_target_locked\": " << (hud.target_locked ? "true" : "false") << ",\n"
+         << "  \"hud_primary_weapon_id\": " << hud.primary_weapon_id << ",\n"
+         << "  \"hud_weapon_count\": " << hud.weapon_count << ",\n"
+         << "  \"hud_radio_message_id\": " << hud.radio_message_id << ",\n"
+         << "  \"hud_reticle_visible\": " << (hud.reticle_visible ? "true" : "false") << ",\n"
+         << "  \"hud_telemetry_visible\": " << (hud.telemetry_visible ? "true" : "false") << ",\n"
+         << "  \"hud_weapon_visible\": " << (hud.weapon_visible ? "true" : "false") << ",\n"
+         << "  \"hud_radar_visible\": " << (hud.radar_visible ? "true" : "false") << ",\n"
          << "  \"color_coverage\": " << readback.color_coverage << ",\n"
          << "  \"depth_coverage\": " << readback.depth_coverage << ",\n"
          << "  \"color_hash\": " << readback.color_hash << ",\n"
@@ -329,6 +355,8 @@ bool write_capture_metrics(const std::filesystem::path& output_dir,
          << "  \"raster_writes\": " << target.raster_writes() << ",\n"
          << "  \"diagnostic_point_writes\": " << target.diagnostic_point_writes() << ",\n"
          << "  \"filled_fragment_writes\": " << target.filled_fragment_writes() << ",\n"
+         << "  \"hud_pixel_writes\": " << target.hud_pixel_writes() << ",\n"
+         << "  \"hud_unique_pixels\": " << target.hud_unique_pixels() << ",\n"
          << "  \"drawables\": [\n";
   const auto& metrics = target.raster_metrics();
   for (std::size_t index = 0; index < metrics.size(); ++index) {
@@ -391,6 +419,7 @@ int run_play_headless(const std::filesystem::path& manifest_input,
   if (!graphics.initialize(assets.color_target->width, assets.color_target->height, true)) return 65;
   ac6::NativeRenderTarget target;
   if (!target.resize(assets.color_target->width, assets.color_target->height)) return 66;
+  ac6::NativeHudRenderer hud;
 
   const ac6::MissionObjectiveDatabase* objectives =
       assets.services.has_objectives ? &assets.services.objectives : nullptr;
@@ -411,7 +440,7 @@ int run_play_headless(const std::filesystem::path& manifest_input,
   auto render_tick = [&](ac6::MissionExecution& execution, const ac6::InputFrame& input_frame,
                          ac6::WorldFrame& frame) {
     frame = execution.tick(kFixedDt, input_frame);
-    return render_and_present(assets, graphics, target, frame);
+    return render_and_present(assets, graphics, target, frame, &execution, &hud);
   };
 
   std::unique_ptr<ac6::MissionExecution> first = make_execution();
@@ -434,7 +463,8 @@ int run_play_headless(const std::filesystem::path& manifest_input,
     for (const ac6::InputFrame input_frame : replay.frames()) {
       final_frame = execution->tick(kFixedDt, input_frame);
     }
-    if (!render_and_present(assets, graphics, target, final_frame)) return false;
+    ac6::NativeHudRenderer replay_hud;
+    if (!render_and_present(assets, graphics, target, final_frame, execution.get(), &replay_hud)) return false;
     final_readback = target.readback();
     return true;
   };
@@ -484,6 +514,7 @@ int run_play_headless(const std::filesystem::path& manifest_input,
       !target.write_depth_f32(output_dir / "depth.f32") ||
       !write_capture_metrics(output_dir, target) ||
       !write_headless_report(output_dir, mission_id, first_frame, first_readback, target,
+                             hud.snapshot(),
                              player_asset_id,
                              semantic_hash(first_frame, first_readback), deterministic,
                              pause_stable, save_resume_stable)) return 81;
@@ -597,6 +628,7 @@ int run_play_interactive(const std::filesystem::path& manifest_input,
   if (!graphics.initialize(assets.color_target->width, assets.color_target->height, false)) return 91;
   ac6::NativeRenderTarget target;
   if (!target.resize(assets.color_target->width, assets.color_target->height)) return 92;
+  ac6::NativeHudRenderer hud;
   ac6::SdlEventPump pump;
   if (!pump.initialize()) return 93;
   ac6::SdlInputAdapter input_adapter;
@@ -619,7 +651,7 @@ int run_play_interactive(const std::filesystem::path& manifest_input,
   std::vector<ac6::Event> events;
   bool quit = false;
   ac6::WorldFrame frame = execution.tick(kFixedDt, input_frame);
-  if (!render_and_present(assets, graphics, target, frame)) return 95;
+  if (!render_and_present(assets, graphics, target, frame, &execution, &hud)) return 95;
   using Clock = std::chrono::steady_clock;
   auto previous = Clock::now();
   double accumulator = 0.0;
@@ -638,7 +670,7 @@ int run_play_interactive(const std::filesystem::path& manifest_input,
       accumulator -= static_cast<double>(kFixedDt);
       stepped = true;
     }
-    if (stepped && !render_and_present(assets, graphics, target, frame)) return 97;
+    if (stepped && !render_and_present(assets, graphics, target, frame, &execution, &hud)) return 97;
     SDL_Delay(1);
   }
   return 0;

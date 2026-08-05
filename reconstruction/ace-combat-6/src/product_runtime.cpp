@@ -3391,12 +3391,16 @@ bool NativeRenderTarget::resize(std::uint32_t width, std::uint32_t height) {
   depth_.assign(static_cast<std::size_t>(pixels), 1.0f);
   object_ids_.assign(static_cast<std::size_t>(pixels), 0);
   pixel_stamps_.assign(static_cast<std::size_t>(pixels), 0);
+  hud_pixel_stamps_.assign(static_cast<std::size_t>(pixels), 0);
   geometry_calls_ = 0;
   raster_triangles_ = 0;
   raster_writes_ = 0;
   diagnostic_point_writes_ = 0;
   filled_fragment_writes_ = 0;
   raster_stamp_ = 0;
+  hud_stamp_ = 0;
+  hud_pixel_writes_ = 0;
+  hud_unique_pixels_ = 0;
   raster_metrics_.clear();
   return true;
 }
@@ -3409,13 +3413,43 @@ bool NativeRenderTarget::clear(std::uint32_t color, float depth) {
   std::fill(depth_.begin(), depth_.end(), depth);
   std::fill(object_ids_.begin(), object_ids_.end(), 0);
   std::fill(pixel_stamps_.begin(), pixel_stamps_.end(), 0);
+  std::fill(hud_pixel_stamps_.begin(), hud_pixel_stamps_.end(), 0);
   geometry_calls_ = 0;
   raster_triangles_ = 0;
   raster_writes_ = 0;
   diagnostic_point_writes_ = 0;
   filled_fragment_writes_ = 0;
   raster_stamp_ = 0;
+  hud_stamp_ = 0;
+  hud_pixel_writes_ = 0;
+  hud_unique_pixels_ = 0;
   raster_metrics_.clear();
+  return true;
+}
+
+bool NativeRenderTarget::draw_hud_rect(std::uint32_t min_x, std::uint32_t min_y,
+                                       std::uint32_t max_x, std::uint32_t max_y,
+                                       std::uint32_t color) noexcept {
+  if (width_ == 0 || height_ == 0 || color_.empty() || color == 0 ||
+      min_x > max_x || min_y > max_y) return false;
+  if (min_x >= width_ || min_y >= height_) return true;
+  max_x = std::min(max_x, width_ - 1u);
+  max_y = std::min(max_y, height_ - 1u);
+  if (++hud_stamp_ == 0) {
+    std::fill(hud_pixel_stamps_.begin(), hud_pixel_stamps_.end(), 0);
+    hud_stamp_ = 1;
+  }
+  for (std::uint32_t y = min_y; y <= max_y; ++y) {
+    for (std::uint32_t x = min_x; x <= max_x; ++x) {
+      const std::size_t index = static_cast<std::size_t>(y) * width_ + x;
+      color_[index] = color;
+      ++hud_pixel_writes_;
+      if (hud_pixel_stamps_[index] != hud_stamp_) {
+        hud_pixel_stamps_[index] = hud_stamp_;
+        ++hud_unique_pixels_;
+      }
+    }
+  }
   return true;
 }
 
@@ -4038,8 +4072,11 @@ WorldFrame MissionRuntime::tick(float fixed_dt, InputFrame input) {
   const auto player = scenario_ ? scenario_->player() : EntityId{};
   constexpr float follow_distance = 12.0f;
   constexpr float follow_height = 3.0f;
+  const float forward_speed = static_cast<float>(input.throttle) / 255.0f;
+  const float speed = std::sqrt(pitch_ * pitch_ + roll_ * roll_ + yaw_ * yaw_ +
+                                forward_speed * forward_speed);
   return WorldFrame{tick_, mission_id_, ready, position_x_, position_y_, position_z_, pitch_, roll_, yaw_,
-                    active_units, player, position_x_ - follow_distance, position_y_ + follow_height,
+                    speed, active_units, player, position_x_ - follow_distance, position_y_ + follow_height,
                     position_z_ + follow_distance, position_x_, position_y_, position_z_, input};
 }
 
@@ -4068,6 +4105,8 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
   units_ = UnitRegistry{};
   combat_.clear();
   radio_.reset();
+  primary_weapon_id_ = 0;
+  weapon_count_ = 0;
   if (waves_ != nullptr) waves_->reset();
   if (sequence_ != nullptr) sequence_->reset();
   scenario_ = MissionScenario(*definition_);
@@ -4112,6 +4151,8 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
       return false;
     }
   }
+  if (!launch.weapons.empty()) primary_weapon_id_ = launch.weapons.front().id;
+  weapon_count_ = static_cast<std::uint32_t>(launch.weapons.size());
   runtime_.set_definition(definition_);
   runtime_.set_units(&units_);
   runtime_.set_scenario(&scenario_);

@@ -35,6 +35,10 @@ struct WorldFrame {
   float pitch{};
   float roll{};
   float yaw{};
+  // Instantaneous speed of the deterministic flight integrator, in world
+  // units per second.  It is derived from the same velocity terms used to
+  // integrate position; HUD and capture consumers must not invent it.
+  float speed{};
   std::uint32_t active_units{};
   EntityId player_entity{};
   float camera_x{};
@@ -983,6 +987,11 @@ class NativeRenderTarget final {
   std::uint32_t geometry_calls() const noexcept { return geometry_calls_; }
   std::uint32_t raster_triangles() const noexcept { return raster_triangles_; }
   std::uint64_t raster_writes() const noexcept { return raster_writes_; }
+  bool draw_hud_rect(std::uint32_t min_x, std::uint32_t min_y,
+                    std::uint32_t max_x, std::uint32_t max_y,
+                    std::uint32_t color) noexcept;
+  std::uint64_t hud_pixel_writes() const noexcept { return hud_pixel_writes_; }
+  std::uint64_t hud_unique_pixels() const noexcept { return hud_unique_pixels_; }
   void set_raster_mode(NativeRasterMode mode) noexcept { raster_mode_ = mode; }
   NativeRasterMode raster_mode() const noexcept { return raster_mode_; }
   std::uint64_t diagnostic_point_writes() const noexcept { return diagnostic_point_writes_; }
@@ -1006,6 +1015,10 @@ class NativeRenderTarget final {
   std::uint64_t filled_fragment_writes_{};
   std::uint32_t raster_stamp_{};
   std::vector<NativeRasterDrawableMetrics> raster_metrics_;
+  std::vector<std::uint32_t> hud_pixel_stamps_;
+  std::uint32_t hud_stamp_{};
+  std::uint64_t hud_pixel_writes_{};
+  std::uint64_t hud_unique_pixels_{};
 };
 
 class MissionRuntime final {
@@ -1087,6 +1100,8 @@ class MissionExecution final {
   const CombatWorld& combat() const noexcept { return combat_; }
   RadioPlaybackService& radio() noexcept { return radio_; }
   const RadioPlaybackService& radio() const noexcept { return radio_; }
+  std::uint32_t primary_weapon_id() const noexcept { return primary_weapon_id_; }
+  std::uint32_t weapon_count() const noexcept { return weapon_count_; }
 
  private:
   const MissionDefinition* definition_{};
@@ -1104,6 +1119,8 @@ class MissionExecution final {
   CombatWorld combat_;
   RadioPlaybackService radio_;
   std::uint64_t failure_tick_{};
+  std::uint32_t primary_weapon_id_{};
+  std::uint32_t weapon_count_{};
   bool launched_{};
 };
 
