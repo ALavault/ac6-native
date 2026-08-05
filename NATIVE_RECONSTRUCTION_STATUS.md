@@ -2,6 +2,23 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 981 — reprise d’un checkpoint de combat armé
+
+Un checkpoint pris après résolution d’un projectile restaure désormais la
+mission sans perdre les templates d’armes publiés au lancement. Le test
+modifie la santé de la cible, restaure le checkpoint, verrouille puis retire
+une seconde salve et vérifie la destruction.
+
+La qualification a aussi fermé un défaut de cadence : une entrée de 250 ms
+pouvait conserver plus d’une frame d’accumulateur parce que le plafond était
+de 8 steps, puis être refusée par le validateur de snapshot. Le plafond passe
+à 16 steps, suffisant pour la fenêtre d’entrée maximale de 250 ms ;
+l’accumulateur reste borné à zéro côté flottant et compatible avec les
+validateurs de sauvegarde.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits
+campagne/code passent.
+
 ## Cycle 980 — IA tolérante aux cibles inactives
 
 Une règle IA dont la source ou la cible est déjà inactive est maintenant
