@@ -1,0 +1,65 @@
+{
+  "schema": "ac6-runtime-pac-integrity-gate/v1",
+  "cycle": 739,
+  "date": "2026-08-04",
+  "result": "pass",
+  "identity": {
+    "workspace_commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_tracked_diff_sha256": "05118e4cd1659dc7695c6abe11235e288819736dd446095df071c1da8f335b6c",
+    "runtime_commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_tracked_diff_sha256": "9d3581aed99f87a313eb98326706f6daf0d51f61b15f9a837ebe002d25dda3ae",
+    "rexglue_sdk_commit": "31a36d69f796cddd6b3ce545f6c6c332544ab294",
+    "generated_tree_sha256": "f42fa2c4c1ec3bfb061003ef7074f73881e968ef2719f7f78e59190d1c5af73d",
+    "executable_sha256": "71bc891befa54b29786c370477e8a78a1e2292af41cc521f300ce0c826574c16",
+    "toml_sha256": "fed716e3ff77b50e4866e2a67c5a183f21651f6cf29fdae930091c3fdf1c85b0",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "data00_pac_sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+    "data01_pac_sha256": "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4"
+  },
+  "runtime_configuration": {
+    "ac6_performance_mode": false,
+    "log_level": "debug",
+    "ac6_unlock_fps": false,
+    "ac6_render_capture": true,
+    "ac6_backend_signature_diagnostics": true,
+    "ac6_backend_log_signatures": false,
+    "ac6_d3d_trace": false,
+    "resolution_scale": 1,
+    "draw_resolution_scale_x": 1,
+    "draw_resolution_scale_y": 1,
+    "direct_host_resolve": false,
+    "native_2x_msaa": true,
+    "gpu_allow_invalid_fetch_constants": false,
+    "depth_float24_convert_in_pixel_shader": false,
+    "depth_float24_round": false,
+    "ac6_fix_deswizzle": true
+  },
+  "gpu": {
+    "name": "NVIDIA RTX PRO 4000 Blackwell",
+    "vulkan_api": "1.4.329",
+    "driver": "595.84",
+    "vendor_id": "10de",
+    "device_id": "2c34"
+  },
+  "entries": [
+    {"index":9,"archive":"DATA00.PAC","source_offset":16941056,"compressed_size":13234234,"decompressed_size":42446032,"stored_sha256":"95a7382b1e94dacf669837ced26f787cc6cddff0261d7565bf099d9e6b0eab54","runtime_sha256":"cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05","offline_sha256":"cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05","byte_equal":true,"normalized_fhm_sha256":"398c90b73925064e13c568bdc106aba10c26ba8a628aff6fb587354886c94138","top_children":26,"recursive_nodes":1111,"fhm":133,"ntxr":28,"ndxr":0,"mdlp":1,"literal_mate":0},
+    {"index":119,"archive":"DATA00.PAC","source_offset":210927616,"compressed_size":116266854,"decompressed_size":165892096,"stored_sha256":"c33dc3d9abd45293f3a1635534a7de099f84d7946d23d61e846dfa625bc1d142","runtime_sha256":"e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd","offline_sha256":"e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd","byte_equal":true,"normalized_fhm_sha256":"313401e2c17ab2dfb06e8ead3f6405076da877e7ad6d36d86248273c4f108055","top_children":23,"recursive_nodes":588,"fhm":7,"ntxr":192,"ndxr":178,"mdlp":0,"literal_mate":0},
+    {"index":165,"archive":"DATA00.PAC","source_offset":2065727488,"compressed_size":830649,"decompressed_size":2422384,"stored_sha256":"4ed672f5498c9b626367409c03eed6f771f0e1d48aaf2bd89ddfe0c9cb53e106","runtime_sha256":"2a469f0d9236cd3a5e463e42e6ae8bb02cb7f0689427683a689a58c8a73b9bfa","offline_sha256":"2a469f0d9236cd3a5e463e42e6ae8bb02cb7f0689427683a689a58c8a73b9bfa","byte_equal":true,"normalized_fhm_sha256":"c2782e525099d002c01c282c0f7edceeb809db2c1092a4c5e9fd7692f3f11128","top_children":11,"recursive_nodes":11,"fhm":0,"ntxr":10,"ndxr":0,"mdlp":0,"literal_mate":0},
+    {"index":199,"archive":"DATA00.PAC","source_offset":2092105728,"compressed_size":935216,"decompressed_size":4075520,"stored_sha256":"23e5713a146107ab5c494b8b99cea9db70dd1e89485792d4d7401ccb81690b25","runtime_sha256":"ff5f0b58198feab5c40e3ef9486ee901330a57dd6489b7bb0d7499e289acac7a","offline_sha256":"ff5f0b58198feab5c40e3ef9486ee901330a57dd6489b7bb0d7499e289acac7a","byte_equal":true,"normalized_fhm_sha256":"d2659382d322cca89875289dbb718b1fcb84f0d9b998a80ab81dcb668093a2ea","top_children":1,"recursive_nodes":16,"fhm":1,"ntxr":14,"ndxr":0,"mdlp":0,"literal_mate":0},
+    {"index":210,"archive":"DATA00.PAC","source_offset":2097414144,"compressed_size":943180,"decompressed_size":7471288,"stored_sha256":"1626a3b08f8ebc8010c593ed69609a20a7f6487a55c86d355d897e38449c225d","runtime_sha256":"c79943600f931fa4696885e7d246c7bdd5b8d025521eea7d933f9c6ce907415d","offline_sha256":"c79943600f931fa4696885e7d246c7bdd5b8d025521eea7d933f9c6ce907415d","byte_equal":true,"normalized_fhm_sha256":"cd6e492060d1c798ae7109fd1cc7f238f7ede17d6c7ddca8141a590f7f39337c","top_children":6,"recursive_nodes":131,"fhm":5,"ntxr":102,"ndxr":1,"mdlp":0,"literal_mate":0}
+  ],
+  "validation": {
+    "ac6_ctest_passed": 8,
+    "ac6_ctest_total": 8,
+    "selected_runtime_joins": 5,
+    "selected_runtime_dumps": 5,
+    "byte_equal_pairs": 5,
+    "normalized_fhm_equal_pairs": 5,
+    "route_exit_code": 0,
+    "owned_timeout_seconds": 426,
+    "follow_log_sha256": "c1b934d0489c34429a78371b368cf8fcbf90e68f5ce8fcc7957dbfb290ca9",
+    "runtime_log_sha256": "93203df90708d9ca01e023cf3a9f0e4c3fb5e128b7d4e3a053c5374038c95386",
+    "xenia_runs": 0
+  }
+}

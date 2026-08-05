@@ -1,0 +1,74 @@
+{
+  "schema": "ac6.entry119.runtime-offline-comparison.v1",
+  "lane": "bridge",
+  "proof_policy": "The runtime run is bridge evidence; the offline payload is a local qualified extraction. No PAC bytes are included.",
+  "provenance": {
+    "project": "ghidra-projects/ace-combat-6",
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "archive": "DATA00.PAC",
+    "archive_sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+    "entry_index": 119,
+    "source_offset": "0x0C928000",
+    "compressed_size": "0x06EE1766",
+    "decompressed_size": "0x09E35000",
+    "dpl_mapping": {
+      "function": "0x821B7300",
+      "table": "0x820658D8",
+      "mission": 1,
+      "resource_id": 119,
+      "identity_rule": "DPL < 0x39D uses DATA.TBL entry index",
+      "status": "strongly_supported"
+    }
+  },
+  "runtime": {
+    "run": "cycle-1027-entry119-selector-current",
+    "binary_sha256": "9e0ef14cc07a6c1c1b584b73b30d989683a791790f15f75fb58f71cfe2e8bdd4",
+    "runtime_log_sha256": "c0beee61b090a9e2c33108f690289a7fb9e7eb86ba4501d85de5edf8f5f1e31c",
+    "decoder_log": "ac6recomp.log:15879",
+    "record": {
+      "archive": "DATA00.PAC",
+      "entry": 119,
+      "mode": 1,
+      "compressed_size": "0x06EE1766",
+      "decompressed_size": "0x09E35000",
+      "source_offset": "0x0C928000",
+      "record": 119,
+      "stream_slot": 0,
+      "output_guest": "0xA6040000",
+      "record_va": "0xA1D04778",
+      "head_hex": "46484d2001010010000000000000000000000017000010000015600000177000"
+    },
+    "dump_log": "ac6recomp.log:15893",
+    "dump_path": "/tmp/ac6-cycle1027-entry119-selector-current.3198020/pac/entry_119_mode1_c116266854_u165892096_offc928000.bin",
+    "decoded_sha256": "e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd",
+    "loaded": "proven",
+    "registered": "open_in_current_run; selected runtime join proven by cycle-739 for the same tuple",
+    "consumer_reached": "open_in_current_run; entry119/022_FHM consumers are strongly supported by prior bounded bridge asset joins"
+  },
+  "offline": {
+    "source_payload": "reports/logs/cycle-739-pac-mission-gate/pac/entry_119_mode1_c116266854_u165892096_offc928000.bin",
+    "decoded_sha256": "e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd",
+    "size": 165892096,
+    "root": "FHM ",
+    "recursive_nodes": 588,
+    "top_level_children": 23,
+    "fhm": 7,
+    "ntxr": 192,
+    "ndxr": 178,
+    "mdlp": 0,
+    "normalized_fhm_sha256": "313401e2c17ab2dfb06e8ead3f6405076da877e7ad6d36d86248273c4f108055",
+    "parse_failures": 0
+  },
+  "comparison": {
+    "size_equal": true,
+    "sha256_equal": true,
+    "status": "qualified_equal",
+    "root_mismatch": false,
+    "decoder_or_copy_failure": "rejected_for_entry119_bytes",
+    "registration_or_consumer_failure": "not_rejected; separate runtime register/consumer trace remains required"
+  },
+  "retail_payload_policy": "Only bounded metadata and hashes are recorded; no PAC or decoded payload is committed."
+}

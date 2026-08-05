@@ -1,0 +1,47 @@
+address	module	provisional_symbol	type	provenance	evidence_level	status
+0x82054F7C	default.xex	CAce6MissionManager_base_vtable	vtable	user lead; PAL XEX verification pending	lead	unqualified
+0x82064264	default.xex	CAce6MissionManagerCampaign_primary_vtable	vtable	canonical Ghidra ace-combat-6; cycle 543 RTTI	confirmed	qualified
+0x8206432C	default.xex	CAce6MissionManagerCampaign_CHsm_vtable	vtable	canonical Ghidra ace-combat-6; cycle 543 RTTI	confirmed	qualified
+0x82064384	default.xex	CModeTaskGame_primary_vtable	vtable	canonical Ghidra ace-combat-6; cycle 778 runtime object	confirmed	qualified
+0x820643DC	default.xex	CModeTaskGame_CFsm_vtable	vtable	user lead; PAL XEX verification pending	lead	unqualified
+0x8206457C	default.xex	CX360MissionManager_primary_vtable	vtable	canonical RTTI; cycle 778 runtime manager	confirmed	qualified
+0x82064648	default.xex	CX360MissionManager_Hsm_vtable	vtable	canonical RTTI; cycle 778 runtime subobject	confirmed	qualified
+0x82055190	default.xex	CX360UnitManager_vtable	vtable	canonical RTTI; cycle 778 runtime census	confirmed	qualified
+0x820568D4	default.xex	CAce6UnitPlayer_vtable	vtable	canonical factory/RTTI; cycle 778 runtime registry	confirmed	qualified
+0x820A7F48	default.xex	sub_820A7F48_unit_factory	function	canonical Ghidra ace-combat-6; selector branches and cycle 778 player	cross-match	qualified
+0x8219A140	default.xex	sub_8219A140_CModeTaskGame_state_dispatch	function	canonical vtable ownership plus cycle 778 runtime	cross-match	qualified
+0x8226D1C8	default.xex	sub_8226D1C8_mission_manager_update	function	canonical XEX/vtable refs; generated literal cross-match; cycle 778 runtime	cross-match	qualified
+0x822707C8	default.xex	sub_822707C8_unit_object_update	function	canonical XEX; generated literal loop; cycle 778 runtime	cross-match	qualified
+0x822E5708	default.xex	sub_822E5708_UpInput	function	canonical phase label/callsite cross-match; cycle 778 runtime	cross-match	qualified
+0x82263A50	default.xex	sub_82263A50_UpCam	function	canonical phase label/callsite cross-match; cycle 778 runtime	cross-match	qualified
+0x82271DE0	default.xex	sub_82271DE0_UpRadio	function	canonical phase label/callsite cross-match; cycle 778 runtime	cross-match	qualified
+0x822A6560	default.xex	sub_822A6560_CAce6UnitPlayer_constructor	function	canonical Ghidra; factory selector 1; writes vtable and +240	cross-match	qualified
+0x822A6710	default.xex	sub_822A6710_CAce6UnitPlayer_update	function	canonical Ghidra vtable +0x3C; child +216/+220 transform copy	cross-match	qualified
+0x82007A10	default.xex	player_child_dispatch_table	vtable-like table	cycle 779 runtime child; canonical read-only words; Ghidra Bridge vtable export absent	runtime-direct	qualified-address-semantics-open
+0x82229200	default.xex	sub_82229200	function	Ghidra Bridge; first entry of runtime child table; calls 0x82227B08	cross-match	qualified
+0x82293C28	default.xex	sub_82293C28	function	Ghidra Bridge; constructs derived object and subobject at +10672	cross-match	qualified
+0x82293C88	default.xex	sub_82293C88	function	Ghidra Bridge; destroys subobject at +10672 then calls 0x82227B08	cross-match	qualified
+0x82329428	default.xex	sub_82329428	function	Ghidra Bridge; destructor path for derived +10672 subobject	cross-match	qualified
+0x822270A0	default.xex	sub_822270A0_player_child_dispatch_c0	function	canonical table 0x82007A10 +0xC0; Ghidra Bridge decompile; cycle 781 runtime halfword moves	cross-match	qualified; halfwords rejected as analog pitch
+0x823911C0	default.xex	sub_823911C0_XamInputGetState_wrapper	function	canonical Ghidra ace-combat-6; calls XamInputGetState with type 1	cross-match	qualified
+0x8234D3F0	default.xex	sub_8234D3F0_device_poll	function	canonical Ghidra ace-combat-6; calls 0x823911C0 with object+0x44 then 0x8234D378	cross-match	qualified
+0x8234D478	default.xex	sub_8234D478_device_capability_poll	function	canonical Ghidra ace-combat-6; capability check then same state/copy chain	cross-match	qualified
+0x8234D378	default.xex	sub_8234D378_raw_to_canonical_axes	function	canonical Ghidra ace-combat-6; cycle 782 raw+0x4E to canonical+0x3E runtime join	runtime-direct	qualified
+0x821CE088	default.xex	historical_input_poller_rejected	address	canonical Ghidra containing function plus qualified generated literal; no XAM poll at this address	cross-match	rejected historical semantics
+0x82215418	default.xex	historical_input_aggregator_rejected	address	canonical Ghidra boundary truncated; qualified generated literal initializes unrelated tables	cross-match	rejected historical semantics
+0x82215210	default.xex	historical_analog_mapper_rejected	address	canonical Ghidra locates address inside 0x822151D0; not canonical analog mapper entry	cross-match	rejected historical semantics
+0x823093C8	default.xex	RadioTblBin_getReadBuffSize_candidate	function	user lead; PAL XEX verification pending	lead	unqualified
+0x823094D8	default.xex	RadioTblBin_read_candidate	function	user lead; PAL XEX verification pending	lead	unqualified
+0x821A16B8	default.xex	campaign_render_selector	function	canonical Ghidra ace-combat-6; loaded-image fingerprint; cycle-1026 runtime hook	confirmed	qualified; runtime route full_3d in C5/C6
+0x821A1704	default.xex	campaign_render_mask_load	instruction	canonical Ghidra ace-combat-6; bytes 7E4BA02E; loaded-image fingerprint	confirmed	qualified
+0x821A1884	default.xex	campaign_render_3d_mask_test	instruction	canonical Ghidra ace-combat-6; 16-byte fingerprint; loaded-image test	confirmed	qualified
+0x821A0DFC	default.xex	campaign_context_prepare_flag_test	instruction	canonical Ghidra ace-combat-6; manager+0x1E0 bit 0x100 fingerprint	confirmed	qualified; runtime installation parent wrapper not directly observed
+0x8226DF00	default.xex	campaign_uphud_inline_marker	instruction	canonical Ghidra ace-combat-6; inline in sub_8226D1C8; cycle-1026 runtime	cross-match	qualified; reached
+0x8226DF1C	default.xex	campaign_uphud_context_call	instruction	canonical Ghidra ace-combat-6; manager+0x29C load and virtual slot +0x38	cross-match	qualified; target non-null
+0x822E5310	default.xex	campaign_view_writer_candidate_0	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r30); parent 0x822E5280	confirmed	qualified instruction; runtime writer role open
+0x822E5454	default.xex	campaign_view_writer_candidate_1	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r4)	confirmed	qualified instruction; parent undefined
+0x822E7218	default.xex	campaign_view_writer_candidate_2	instruction	canonical Ghidra ace-combat-6; stw r9,0x260(r31)	confirmed	qualified instruction; parent undefined
+0x822E74F8	default.xex	campaign_view_writer_candidate_3	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r29)	confirmed	qualified instruction; parent undefined
+0x822E76E4	default.xex	campaign_view_writer_candidate_4	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r31)	confirmed	qualified instruction; parent undefined
+0x822E78FC	default.xex	campaign_view_writer_candidate_5	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r31)	confirmed	qualified instruction; parent undefined
+0x822E89A8	default.xex	campaign_view_writer_candidate_6	instruction	canonical Ghidra ace-combat-6; stw r11,0x260(r29)	confirmed	qualified instruction; parent undefined

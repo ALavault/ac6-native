@@ -1,0 +1,4 @@
+{"address":"0x82382480","name":"atoi PAL override","input":"200","observed_stock":"22","bridge":"li r5,0xa; li r4,0x0; b 0x823821d0","status":"corrected","proof":"cycle-548; bounded decimal conversion override; 7 AC6 tests pass including boundary/saturation"}
+{"address":"0x820F8924","role":"numeric/text stage","status":"observed","proof":"LOAD_W_003 lookup_id=69; M70000_222 lookup_id=0 in cycle-454 runtime log"}
+{"address":"0x8228CA34","role":"numeric/text result","status":"observed","proof":"LOAD_W_003 r5/result=0x0B; M70000_222 r5/result=0x24 in cycle-454 runtime log"}
+{"address":"numeric_draw_pixels","status":"unknown","proof":"No existing report proves numeric glyph pixels reach the atlas image; do not classify as constructed or masked."}

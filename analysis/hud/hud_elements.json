@@ -1,0 +1,12 @@
+{
+  "scope": "HUD symbole/texte/valeur numérique; PAL default.xex",
+  "evidence_identity": {"project": "ghidra-projects/ace-combat-6", "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde", "sources": ["bridge", "observe", "stock"]},
+  "elements": [
+    {"id":"panels_buttons", "class":"pixels_masques_only", "status":"built_submitted_drawn", "proof":"observe: cycle-361, 23 isolated 4-vertex quads visible; cycle-373 art bases 028D0000/028E9000/02953000/028B2000"},
+    {"id":"short_labels_headers_browser", "class":"atlas", "status":"built_submitted_draw_absent", "proof":"observe: cycle-361, 6x8 and 6x20 vertex glyph batches absent; same pass and format 20 as visible art"},
+    {"id":"long_text_lines", "class":"atlas", "status":"built_submitted_draw_absent", "proof":"observe: cycle-361, 5x64 vertices = 16 glyph quads; cycle-373 base 028B7000 is last draw and cannot be occluded by a later draw"},
+    {"id":"symbol_lookup", "class":"non_submitted", "status":"unknown", "proof":"observe: M70000_222 lookup returns 0 at 822C1B48/8228B6D8; no proof whether missing stock key, bridge mapping, or caller suppression"},
+    {"id":"numeric_value", "class":"non_constructed", "status":"corrected_override", "proof":"bridge+stock: PAL 82382480 is li r5,10; li r4,0; branch 823821D0. Cycle-548 reports valid \"200\" previously returned 22; bounded decimal override tested with 7 AC6 tests"}
+  ],
+  "classification_rule": "Do not infer pixels_masques_only from absent pixels; atlas means glyph texture path implicated, not proof of texture contents."
+}

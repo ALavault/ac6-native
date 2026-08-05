@@ -1,0 +1,10 @@
+{"address":"0x820F885C","role":"text_pipeline_boundary","status":"unknown","proof":"bridge: no qualifying report/log hit with this exact boundary; not promoted from adjacent generated names"}
+{"address":"0x820F8924","role":"text_stage","status":"observed_executed","proof":"observe: cycle-454 log [ac6-text-stage] return=0x820F8924; LOAD_W_003 lookup_id=69 and M70000_222 lookup_id=0"}
+{"address":"0x820F8990","role":"text_stage","status":"observed_executed","proof":"observe: cycle-454 log [ac6-text-stage] return=0x820F8990; LOAD_W_003 and M70000_222 both reach it"}
+{"address":"0x8228CA14","role":"text_stage","status":"observed_executed","proof":"observe: cycle-454 log; target 0x822EFEB0, lookup_id 69 for LOAD_W_003 and 0 for M70000_222"}
+{"address":"0x8228CA34","role":"text_stage","status":"observed_executed","proof":"observe: cycle-454 log; LOAD_W_003 produces 0x0B, M70000_222 produces 0x24"}
+{"address":"0x8228CA6C","role":"text_stage","status":"observed_executed","proof":"observe: cycle-454 log; LOAD_W_003 returns 1 with r5=14, M70000_222 returns 1 with r5=19"}
+{"address":"0x8228B6D8","role":"lookup_resolver","status":"observed_negative_for_symbol","proof":"observe: M70000_222 result=0; LOAD_W_003 result=69"}
+{"address":"glyph_batches","role":"draw_submission","status":"observed_submitted_draw_absent","proof":"observe: cycle-361/373, 20- and 64-vertex glyph batches submitted; 028B7000 is final draw; no later occluder"}
+{"address":"glyph_atlas_bind","role":"texture_bind","status":"unknown","proof":"observe: cycle-361 isolates glyph texture as failing path; exact atlas descriptor/bind association not established"}
+{"address":"bridge_vs_stock","role":"provenance","status":"qualified","proof":"bridge: canonical Ghidra project/XEX identity from cycle-548; stock: PAL thunk cross-match; observe: cycle-454 runtime traces"}

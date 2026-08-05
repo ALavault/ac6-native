@@ -1,0 +1,90 @@
+version: 1
+updated: 2026-08-05T14:35:00+02:00
+hypotheses:
+  - id: H-GAMEPLAY-ACTIVE-BEHIND-BLACK
+    status: supported
+    statement: The first stable black frame masks an active ModeTask Game and progressing gameplay loop.
+    discriminator: Observe ModeTask, campaign HSM, Up phases, physics ticks, player and camera in one bounded frame window.
+    positive_control: Observe the visible Hangar to Loading transition with the same hooks.
+    qualification: Supported only in cycle 778 lane bridge; stock/observe remains required.
+  - id: H-DEMO-HANDOFF-INCOMPLETE
+    status: proposed
+    statement: The demo-to-gameplay handoff omits or fails one callback, player, camera, or operation link.
+    discriminator: Trace the last cut through callback, HSM event, demo teardown, player/camera attachment and initial operation.
+  - id: H-RENDER-PRIMARY
+    status: proposed
+    statement: Gameplay and scenario progress correctly and the remaining black-world failure is primarily graphical.
+    discriminator: Require G1 through G8 observations in lane stock or observe; bridge runs cannot qualify this hypothesis.
+  - id: H-PLAYER-CONTROLLER-DISPATCH
+    status: rejected
+    statement: The 256-byte CAce6UnitPlayer directly owns a flight model at offset 10672 whose missing updates prove incomplete controller dispatch.
+    discriminator: Canonical factory size and valid object layout.
+    evidence: Factory 0x820A7F48 allocates 256 bytes; poison at player+10672 rejects the owner join. Follow child-list +216/+220 instead.
+  - id: H-PLAYER-CHILD-TRANSFORM-ACTIVE
+    status: supported
+    statement: The live CAce6UnitPlayer owns a child whose update supplies a changing gameplay transform behind the black world.
+    discriminator: Join the runtime player child list, update slot and copied transform with stable object identities.
+    positive_control: UnitManager census repeatedly finds the exact player and one stable child.
+    qualification: Cycle 779 bridge only; child class semantics and causal input effect remain open.
+  - id: H-PITCH-PHYSICAL-RESPONSE
+    status: supported
+    statement: A positive pitch input produces a physical transform response on the live player child behind the black world.
+    discriminator: One-variable pitch run with null windows and timestamped child/player transform samples.
+    positive_control: XAM reports ly=32767 then zero; player and child identities remain stable.
+    qualification: Cycles 780-781 bridge reproduce the transform response; canonical command/controller field is not yet joined, so G8 is not qualified.
+  - id: H-CHILD-DISPATCH-HALFWORDS-PITCH
+    status: rejected
+    statement: The halfwords child+380/+382/+536/+538 consumed by 0x822270A0 carry the live analog pitch command.
+    discriminator: Sample all four fields immediately before and after 0x822270A0 across null, pitch and release windows.
+    positive_control: The hook executes continuously and later observes child+382=1 before the function clears it.
+    evidence: Cycle 781 keeps all four fields zero before, during and immediately after ly=32767; the only nonzero edge occurs 5.815 seconds after release.
+  - id: H-CANONICAL-LY-COPY
+    status: qualified
+    statement: The canonical PAL input path copies XAM left-stick Y into device+0x3E at 0x8234D378.
+    discriminator: Observe XAM ly, raw device+0x4E and canonical device+0x3E with one pitch variable and null/release controls.
+    positive_control: Cycle 782 observes 0x7FFF in both fields at the exact XAM timestamp and both return to zero at release.
+    evidence: Ghidra Bridge canonical decompile plus cycle 782 runtime device 0x8290DE3C.
+  - id: H-HISTORICAL-821CE088-INPUT-PATH
+    status: rejected
+    statement: 0x821CE088 and 0x82215418/0x82215210 are the PAL canonical controller poller and logical analog aggregator.
+    discriminator: Compare canonical Ghidra project bytes/decompilation and the XEX-qualified generated literal with the historical corrected-project reports.
+    positive_control: Canonical Ghidra directly recovers the actual XAM wrapper 0x823911C0 and copy function 0x8234D378.
+    evidence: Cycle 782; canonical bytes show initialization/constructor roles at the historical addresses, not the reported input chain.
+  - id: H-CAMPAIGN-RENDER-SELECTOR-2D-ONLY
+    status: rejected
+    statement: Gameplay remains in a campaign view whose effective mask lacks master 3D bit 0x10, explaining the black world and surviving 2D HUD.
+    discriminator: Hook 0x821A16B8 and classify the effective mask at C5/C6.
+    evidence: Cycle 1026 bridge observes view 2 mask 0x4000003F and view 3 mask 0x4000001F at C5/C6; both contain bit 0x10 and route full_3d.
+    stock_proof: false
+  - id: H-CAMPAIGN-CONTEXT-29C-NULL
+    status: rejected
+    statement: manager+0x29C is null in gameplay after the cinematic handoff and independently skips 3D.
+    discriminator: Read manager+0x1E0, the 0x100 gate, and manager+0x29C at C5/C6.
+    evidence: Cycle 1026 bridge observes manager+0x1E0=0xFFFFFFFF and manager+0x29C=0xB0E8CE20 while route is full_3d.
+    qualification_gap: Exact execution of the installation block and later reset was not directly wrapped.
+  - id: H-CAMPAIGN-VIEW-HANDOFF-MISSING
+    status: rejected
+    statement: The cinematic-to-gameplay transition fails to write a gameplay view.
+    discriminator: Trace manager+0x260 stores and compare route before/after the first gameplay ticks.
+    evidence: Cycle 1026 bridge observes multiple view changes including 1->2, 1->8, and 1->3; exact store PC remains open because the frozen generated corpus reports pc=0.
+  - id: H-UPHUD-NOT-EXECUTED
+    status: rejected
+    statement: Missing text and numeric HUD values are explained by UpHud never executing.
+    discriminator: Trace the inline 0x8226DF00/0x8226DF1C boundary in sub_8226D1C8 and the update bit 0x80.
+    evidence: Cycle 1026 bridge records 1066 UpHud boundaries, bit 0x80 set in gameplay, non-null target 0x8223B398.
+  - id: H-ENTRY119-DECODE-MISMATCH
+    status: rejected
+    statement: Mission 1's large entry 119 is corrupted or decoded from the wrong DATA.TBL tuple.
+    discriminator: Compare the current runtime decoded buffer against an independent offline extraction by archive, offset, compressed size, and decompressed size.
+    evidence: Cycle 1027 current bridge binary emits the exact tuple and decoded SHA e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd, equal to offline.
+  - id: H-ENTRY119-REGISTER-CONSUMER
+    status: tested
+    statement: Entry 119 is decoded correctly but its register or gameplay consumer is not reached.
+    discriminator: Join entry 119 registration, entry119/022_FHM consumer, and the C5/C6 world draws in one current run.
+    evidence: Current decode is proven; prior bounded bridge joins entry119/022_FHM; current register/consumer join remains open.
+  - id: H-DOWNSTREAM-RENDER-AFTER-FULL3D
+    status: supported
+    statement: With selector and context gates satisfied, the black-world defect is downstream of the campaign render selector.
+    discriminator: Correlate a world draw with RT content, resolve output, composite input, and swap pixels after the entry119 consumer gate.
+    evidence: Cycle 1026 bridge has full_3d at C5/C6 while the presented gameplay image remains nearly black; first downstream stage is not yet qualified.
+    qualification: Strongly supported in bridge; stock/observe and first-black-stage proof remain open.
