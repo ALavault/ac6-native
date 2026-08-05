@@ -917,6 +917,36 @@ struct RenderReadback {
   }
 };
 
+enum class NativeRasterMode : std::uint8_t {
+  Filled,
+  Points,
+  Wireframe,
+  ObjectId,
+};
+
+struct NativeRasterDrawableMetrics {
+  std::string stable_id;
+  std::uint32_t object_id{};
+  std::uint64_t projected_vertices{};
+  std::uint64_t restart_markers{};
+  std::uint64_t candidate_triangles{};
+  std::uint64_t degenerate_triangles{};
+  std::uint64_t clip_rejected_triangles{};
+  std::uint64_t nondegenerate_triangles{};
+  std::uint64_t fragment_tests{};
+  std::uint64_t inside_fragments{};
+  std::uint64_t depth_pass_fragments{};
+  std::uint64_t color_writes{};
+  std::uint64_t unique_pixels{};
+  std::uint32_t bbox_min_x{};
+  std::uint32_t bbox_min_y{};
+  std::uint32_t bbox_max_x{};
+  std::uint32_t bbox_max_y{};
+  bool screen_bbox_valid{};
+  float depth_min{1.0f};
+  float depth_max{};
+};
+
 class NativeRenderTarget final {
  public:
   bool resize(std::uint32_t width, std::uint32_t height);
@@ -937,12 +967,15 @@ class NativeRenderTarget final {
                            const MissionRenderResolve& resolve,
                            const MissionCameraDefinition* camera,
                            const MissionTextureDatabase* texture_database,
-                           std::uint32_t ordinal) noexcept;
+                           std::uint32_t ordinal);
   RenderReadback readback() const noexcept;
   bool copy_rgba8(std::vector<std::uint8_t>& pixels) const;
   bool copy_depth(std::vector<float>& depth) const;
+  bool copy_object_id(std::vector<std::uint32_t>& object_ids) const;
   // Verification-only export; the product runtime does not present this file.
   bool write_ppm(const std::filesystem::path& path) const noexcept;
+  // Verification-only export of stable drawable IDs as RGB colors.
+  bool write_object_id_ppm(const std::filesystem::path& path) const noexcept;
   // Verification-only export of the native depth plane as little-endian f32.
   bool write_depth_f32(const std::filesystem::path& path) const noexcept;
   std::uint32_t width() const noexcept { return width_; }
@@ -950,15 +983,29 @@ class NativeRenderTarget final {
   std::uint32_t geometry_calls() const noexcept { return geometry_calls_; }
   std::uint32_t raster_triangles() const noexcept { return raster_triangles_; }
   std::uint64_t raster_writes() const noexcept { return raster_writes_; }
+  void set_raster_mode(NativeRasterMode mode) noexcept { raster_mode_ = mode; }
+  NativeRasterMode raster_mode() const noexcept { return raster_mode_; }
+  std::uint64_t diagnostic_point_writes() const noexcept { return diagnostic_point_writes_; }
+  std::uint64_t filled_fragment_writes() const noexcept { return filled_fragment_writes_; }
+  const std::vector<NativeRasterDrawableMetrics>& raster_metrics() const noexcept {
+    return raster_metrics_;
+  }
 
  private:
   std::uint32_t width_{};
   std::uint32_t height_{};
   std::vector<std::uint32_t> color_;
   std::vector<float> depth_;
+  std::vector<std::uint32_t> object_ids_;
+  std::vector<std::uint32_t> pixel_stamps_;
   std::uint32_t geometry_calls_{};
   std::uint32_t raster_triangles_{};
   std::uint64_t raster_writes_{};
+  NativeRasterMode raster_mode_{NativeRasterMode::Filled};
+  std::uint64_t diagnostic_point_writes_{};
+  std::uint64_t filled_fragment_writes_{};
+  std::uint32_t raster_stamp_{};
+  std::vector<NativeRasterDrawableMetrics> raster_metrics_;
 };
 
 class MissionRuntime final {

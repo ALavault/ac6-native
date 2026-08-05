@@ -104,3 +104,20 @@ hypotheses:
     discriminator: Execute the manifest-loaded combat probe and require target lock, weapon fire, a health decrease, damage events, and active-unit decrease in one native artifact.
     evidence: reports/mission01-native-combat.md; /tmp/ac6-native-evidence/combat-v1.json SHA-256 cca1e77db38cc8096bfd1a89d3f47a75c0831507107cd81d9f93072ea3c013a3.
     qualification: Native mechanics only; the combat fixture does not qualify retail Mission 01 wave/objective identities.
+  - id: H-NATIVE-RASTER-FILL
+    status: qualified
+    statement: The native product filled path produces interior fragments with one normalized depth convention and no implicit point writes.
+    discriminator: Run the NDXR strip fixture and Mission 01 replay; require inside_fragments, filled_fragment_writes, non-degenerate depth range and diagnostic_point_writes=0.
+    evidence: reports/mission01-native-captures/p0-raster-fill/capture-metrics.json SHA-256 87281465b47b8d36eac23be0208e7b46d0c2275dcb4cb4305d2a9de89eb9adcf; native test covers CW/CCW, restart, degeneracy, occlusion and partial clipping.
+    qualification: Filled raster is qualified; this does not qualify world_visible or player_aircraft_visible.
+  - id: H-NATIVE-RASTER-CAMERA-CLIPPING
+    status: supported
+    statement: After filled rasterization, the remaining Mission 01 image defect is camera/clipping or transform scale, with terrain surfaces oversized and collated to the viewport.
+    discriminator: Compare homogeneous camera coordinates, clipped polygon extents and final object-ID coverage for terrain and player in the same native run.
+    evidence: Native capture terrain screen_bbox [0,0]..[1279,718], 24112482 fragment tests and final object-ID histogram containing terrain only; color.png SHA-256 3a793d3428966b0ae16d843f6a2d35e0495602a3934cc63775874f2ede2daa5f.
+    qualification: Supported by native evidence; do not reopen raster edge or topology without contradictory measurements.
+  - id: H-NATIVE-PLAYER-FINAL-OBJECT-ID
+    status: tested
+    statement: The player drawable receives depth-pass fragments during its draw but contributes no final visible pixels in the current Mission 01 composite.
+    discriminator: Attribute final depth-passing pixels to stable drawable IDs after depth testing and compare the player ID with terrain coverage.
+    evidence: f16 metrics record 20901 depth-pass/color writes and object_id=3281354, while object-id.ppm has 780389 terrain pixels and 141211 clear pixels with no f16 pixels.

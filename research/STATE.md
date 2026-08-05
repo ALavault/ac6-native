@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-05T16:53:19+02:00
+Mise à jour : 2026-08-05T18:20:00+02:00
 
 ## Gate courant
 
@@ -18,8 +18,10 @@ Mise à jour : 2026-08-05T16:53:19+02:00
 - Gate UpHud : la frontière inline `0x8226DF00/0x8226DF1C` est atteinte 1 066
   fois; le bit update `0x80` et la cible virtuelle sont observés. La chaîne
   texte par élément reste ouverte.
-- Aucun correctif Vulkan, shader, texture, resolve, MRT, input ou HSM n'a été
-  appliqué dans ce slice. Les runs restent `bridge`, jamais promus `stock`.
+- Le seul correctif renderer de ce slice est le raster fill natif : edge
+  barycentrique unique, depth `[0,1]`, clipping NDC conservatif et mode points
+  diagnostic explicite. Aucun correctif shader, texture, resolve, MRT, input ou
+  HSM n'a été appliqué. Les runs bridge restent `bridge`, jamais promus `stock`.
 
 ## Faits qualifiés
 
@@ -64,11 +66,32 @@ Mise à jour : 2026-08-05T16:53:19+02:00
 
 ## Prochain test discriminant
 
-Joindre dans un run gameplay courant le registre et le consommateur de
-`DATA.TBL[119]`, puis reprendre le graphe borné
-`draw -> render target -> resolve -> composite -> swap`. La première expérience
-renderer devra relier les draws monde aux pixels; elle ne pourra pas se baser
-sur un compteur de draws ou un bind non nul.
+ Qualifier la frontière caméra/clipping à partir de la capture native remplie :
+ conserver les triangles partiellement visibles, mesurer les surfaces collées
+ aux bords et expliquer la bbox terrain `[0,0]..[1279,718]`. Ne pas rouvrir les
+ fronts selector, manager, UpHud, DATA.TBL[119] ou bridge sans preuve
+ contradictoire.
+
+## Slice raster P0 — 2026-08-05
+
+- Le test end-to-end `make_ndxr_be_strip_fixture` couvre triangle strip,
+  restart `0xFFFF`, winding CW/CCW, restart entre strips, triangle dégénéré,
+  occlusion depth et triangle partiellement hors viewport. Il mesure des
+  fragments intérieurs et rejette les écritures ponctuelles implicites.
+- La capture native exacte `/tmp/ac6-native-evidence/headless-p0-NAIyvS` couvre
+  1 800 ticks à 1280x720 avec `diagnostic_point_writes=0` et
+  `filled_fragment_writes=1365250`. Le readback a 780389 pixels couleur et
+  profondeur non-clear; le hash couleur est
+  `17683416805664810819`, le hash depth `2344087371551432379` et le hash
+  sémantique `1cd250de1c0a3e23`.
+- Le terrain produit 6 765 275 fragments intérieurs, 1 344 349 écritures
+  couleur/depth et une bbox `[0,0]..[1279,718]`; l'image est donc remplie mais
+  trop grande/collée aux bords. L'object-ID final ne contient que le terrain;
+  le joueur `f16` a des fragments depth-pass pendant le draw mais aucun pixel
+  final attribué dans le readback.
+- Conclusion : `raster fill qualified`; `world_visible` et
+  `player_aircraft_visible` restent `open` dans le contrat. La caméra/clipping
+  est la prochaine frontière; la topologie n'est pas rouverte.
 
 ## Slice natif J0 — 2026-08-05
 
@@ -85,10 +108,10 @@ sur un compteur de draws ou un bind non nul.
   géométrie, 2 206 pixels couleur et profondeur non constante. Trois
   exécutions du même replay ont le hash sémantique
   `459390c93868090f`; pause et save/resume sont stables.
-- Le contrat `analysis/contracts/mission01-native-gate.json` passe J0 avec
-  artefacts natifs hashés; J1 reste ouvert. La capture reste volontairement
-  minimale et sombre : la parité visuelle fine, le HUD et le scénario ne sont
-  pas promus par ce slice.
+- Le contrat `analysis/contracts/mission01-native-gate.json` est fail-closed :
+  `world_visible` et `player_aircraft_visible` sont revenus `open` après la
+  preuve raster, car la capture précédente ne distinguait pas un nuage de
+  points d'une surface remplie. J1 reste ouvert.
 - Le binaire natif expose désormais `--combat-headless`. Le probe manifesté
   verrouille la cible hostile 4098 depuis le joueur 4097, tire l'arme 7 deux
   fois, produit deux événements de dégâts, passe la santé de 100 à 0 et réduit
@@ -100,6 +123,6 @@ sur un compteur de draws ou un bind non nul.
 
 ## Prochain gate
 
-Relier les définitions retail des vagues/objectifs/radio aux services natifs,
-puis ajouter un HUD qui lit les états natifs; ne pas utiliser la capture bridge
-comme preuve J1.
+Qualifier caméra/clipping et visibilité finale du joueur à partir de l'object-ID
+native; ne pas utiliser la capture bridge comme preuve J0/J1 et ne pas passer
+aux textures avant cette frontière.

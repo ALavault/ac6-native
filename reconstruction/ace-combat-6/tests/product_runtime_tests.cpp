@@ -91,7 +91,7 @@ std::string make_ndxr_be_strip_fixture() {
   write_be_u16_at(bytes, polygon_descriptor + 0x20, 5);
   const std::uint16_t indices[] = {0, 1, 2, 3, 0xffffu};
   for (std::size_t i = 0; i < 5; ++i) write_be_u16_at(bytes, polygon_base + i * 2, indices[i]);
-  const float vertices[][3] = {{-1, 0, 2}, {1, 0, 2}, {-1, 1, 2}, {1, 1, 2}};
+  const float vertices[][3] = {{-1, 0, 2}, {1, 0, 2.5f}, {-1, 1, 2.75f}, {1, 1, 3}};
   for (std::size_t i = 0; i < 4; ++i) {
     write_be_f32_at(bytes, vertex_base + i * vertex_stride + 0, vertices[i][0]);
     write_be_f32_at(bytes, vertex_base + i * vertex_stride + 4, vertices[i][1]);
@@ -139,6 +139,46 @@ std::string make_ndxr_fixture(std::uint32_t vertex_count, std::uint32_t index_co
 
 std::size_t ndxr_payload_offset(const std::string& bytes) {
   return bytes.find("DATA\n") + 5u;
+}
+
+struct RasterFixture final {
+  ac6::MissionDrawable drawable;
+  ac6::NativeGeometryMetadata geometry;
+  ac6::DecodedGeometry decoded;
+};
+
+RasterFixture make_raster_fixture(const char* stable_id,
+                                  std::vector<ac6::DecodedVertex> vertices,
+                                  std::vector<std::uint32_t> indices,
+                                  ac6::NativeIndexTopology topology) {
+  RasterFixture fixture;
+  fixture.drawable = {1, stable_id, "terrain", 119, 1, stable_id,
+                      static_cast<std::uint32_t>(vertices.size()),
+                      static_cast<std::uint32_t>(indices.size()), stable_id};
+  fixture.geometry = {stable_id, "NDXR", topology,
+                      static_cast<std::uint32_t>(vertices.size()),
+                      static_cast<std::uint32_t>(indices.size()), 1,
+                      static_cast<std::uint32_t>(vertices.size()),
+                      static_cast<std::uint32_t>(indices.size()), 1, 32, 2,
+                      static_cast<std::uint64_t>(vertices.size()) * 32u,
+                      static_cast<std::uint64_t>(indices.size()) * 2u};
+  fixture.decoded.buffer_id = stable_id;
+  fixture.decoded.vertices = std::move(vertices);
+  fixture.decoded.indices = std::move(indices);
+  for (const ac6::DecodedVertex& vertex : fixture.decoded.vertices) {
+    if (!fixture.decoded.bounds.valid) {
+      fixture.decoded.bounds = {vertex.x, vertex.y, vertex.z,
+                                vertex.x, vertex.y, vertex.z, true};
+    } else {
+      fixture.decoded.bounds.min_x = std::min(fixture.decoded.bounds.min_x, vertex.x);
+      fixture.decoded.bounds.min_y = std::min(fixture.decoded.bounds.min_y, vertex.y);
+      fixture.decoded.bounds.min_z = std::min(fixture.decoded.bounds.min_z, vertex.z);
+      fixture.decoded.bounds.max_x = std::max(fixture.decoded.bounds.max_x, vertex.x);
+      fixture.decoded.bounds.max_y = std::max(fixture.decoded.bounds.max_y, vertex.y);
+      fixture.decoded.bounds.max_z = std::max(fixture.decoded.bounds.max_z, vertex.z);
+    }
+  }
+  return fixture;
 }
 
 }  // namespace
@@ -1474,6 +1514,162 @@ int main() {
   REQUIRE(!bad_render_resolves.load_manifest(bad_render_resolve_manifest));
   std::remove(bad_render_resolve_manifest);
 
+  // Filled raster end-to-end contract.  The BE NDXR fixture exercises the
+  // retail-style strip/restart decoder; the small variants below isolate
+  // winding, restart, degeneracy, depth occlusion, and viewport clipping.
+  const ac6::MissionRenderTargetDefinition& raster_color_target =
+      *render_targets.find(1, "world_color");
+  const ac6::MissionRenderTargetDefinition& raster_present_target =
+      *render_targets.find(1, "present");
+  const ac6::MissionRenderPass& raster_pass = *render_passes.find(1, "world");
+  const ac6::MissionRenderResolve& raster_resolve = *render_resolves.find(1, "world");
+  const ac6::ShaderPermutation& raster_shader = *shaders.find("D5B4.terrain");
+  ac6::WorldFrame raster_frame = second;
+  raster_frame.mission_id = 1;
+  raster_frame.mission_ready = true;
+  raster_frame.camera_x = 0.0f;
+  raster_frame.camera_y = 0.0f;
+  raster_frame.camera_z = 0.0f;
+  raster_frame.camera_target_x = 0.0f;
+  raster_frame.camera_target_y = 0.0f;
+  raster_frame.camera_target_z = 1.0f;
+  ac6::NativeRenderTarget raster_target;
+  REQUIRE(raster_target.resize(64, 32));
+  REQUIRE(raster_target.raster_mode() == ac6::NativeRasterMode::Filled);
+  const auto draw_raster_fixture = [&](const RasterFixture& fixture,
+                                       std::uint32_t ordinal = 0u) {
+    const ac6::MissionDrawableTransform transform{
+        1, fixture.drawable.stable_id, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+    const ac6::MissionMaterial material{
+        1, fixture.drawable.stable_id, "D5B4.terrain", true, true, "opaque", 0xFFFFFFFFu, 1};
+    const ac6::MissionTextureBinding texture{
+        1, fixture.drawable.stable_id, "fixture", "nearest", "wrap", 1};
+    return raster_target.draw_world_geometry(
+        raster_frame, fixture.drawable, fixture.geometry, fixture.decoded, transform,
+        material, texture, raster_shader, raster_color_target, raster_present_target,
+        raster_pass, raster_resolve, nullptr, nullptr, ordinal);
+  };
+  const char* raster_be_slice = "ac6-test-raster-be-strip.ndxr";
+  const std::string raster_be_bytes = make_ndxr_be_strip_fixture();
+  { std::ofstream out(raster_be_slice, std::ios::binary); out << raster_be_bytes; }
+  ac6::QualifiedBufferDatabase raster_be_buffers;
+  REQUIRE(raster_be_buffers.add({"raster-be-strip", raster_be_slice,
+                                 raster_be_bytes.size(), fnv64(raster_be_bytes), false}));
+  REQUIRE(raster_be_buffers.verify("raster-be-strip"));
+  const ac6::MissionDrawable raster_be_drawable{
+      1, "raster-be-strip", "terrain", 119, 1, "raster-be-strip", 4, 5,
+      "raster-be-strip"};
+  ac6::NativeGeometryDatabase raster_be_geometry;
+  REQUIRE(raster_be_geometry.load_verified(raster_be_drawable, raster_be_buffers));
+  REQUIRE(raster_be_geometry.find("raster-be-strip")->topology ==
+          ac6::NativeIndexTopology::TriangleStripRestart);
+  const RasterFixture strip_fixture{
+      raster_be_drawable, *raster_be_geometry.find("raster-be-strip"),
+      *raster_be_geometry.decoded("raster-be-strip")};
+  std::remove(raster_be_slice);
+  REQUIRE(raster_target.clear(0, 1.0f));
+  REQUIRE(draw_raster_fixture(strip_fixture));
+  const ac6::RenderReadback strip_readback = raster_target.readback();
+  REQUIRE(strip_readback.color_coverage > 0);
+  REQUIRE(strip_readback.depth_coverage > 0);
+  REQUIRE(raster_target.diagnostic_point_writes() == 0);
+  REQUIRE(raster_target.filled_fragment_writes() > 0);
+  REQUIRE(raster_target.raster_metrics().size() == 1);
+  const ac6::NativeRasterDrawableMetrics strip_metrics = raster_target.raster_metrics().front();
+  REQUIRE(strip_metrics.stable_id == "raster-be-strip");
+  REQUIRE(strip_metrics.projected_vertices == 4);
+  REQUIRE(strip_metrics.restart_markers == 1);
+  REQUIRE(strip_metrics.candidate_triangles == 2);
+  REQUIRE(strip_metrics.degenerate_triangles == 0);
+  REQUIRE(strip_metrics.nondegenerate_triangles == 2);
+  REQUIRE(strip_metrics.fragment_tests > 0 && strip_metrics.inside_fragments > 0);
+  REQUIRE(strip_metrics.depth_pass_fragments == strip_metrics.color_writes);
+  REQUIRE(strip_metrics.screen_bbox_valid && strip_metrics.depth_min < 1.0f &&
+          strip_metrics.depth_max > strip_metrics.depth_min);
+  const std::uint64_t bbox_area =
+      static_cast<std::uint64_t>(strip_metrics.bbox_max_x - strip_metrics.bbox_min_x + 1u) *
+      static_cast<std::uint64_t>(strip_metrics.bbox_max_y - strip_metrics.bbox_min_y + 1u);
+  REQUIRE(strip_readback.color_coverage == strip_metrics.unique_pixels);
+  REQUIRE(strip_metrics.unique_pixels > bbox_area * 3u / 4u);
+  std::vector<std::uint8_t> raster_pixels;
+  REQUIRE(raster_target.copy_rgba8(raster_pixels));
+  const std::size_t center_pixel = (8u * 64u + 32u) * 4u;
+  REQUIRE(raster_pixels[center_pixel] != 0 || raster_pixels[center_pixel + 1u] != 0 ||
+          raster_pixels[center_pixel + 2u] != 0 || raster_pixels[center_pixel + 3u] != 0);
+  std::vector<std::uint32_t> raster_object_ids;
+  REQUIRE(raster_target.copy_object_id(raster_object_ids));
+  REQUIRE(raster_object_ids[8u * 64u + 32u] != 0);
+  std::vector<float> raster_depth;
+  REQUIRE(raster_target.copy_depth(raster_depth));
+  REQUIRE(raster_depth[8u * 64u + 32u] < 1.0f);
+  REQUIRE(raster_pixels[0] == 0 && raster_pixels[1] == 0 && raster_pixels[2] == 0);
+
+  const auto triangle_vertices = [] (float z) {
+    return std::vector<ac6::DecodedVertex>{{-0.8f, -0.8f, z, 0.0f, 0.0f},
+                                           {0.0f, 0.8f, z, 0.5f, 1.0f},
+                                           {0.8f, -0.8f, z, 1.0f, 0.0f}};
+  };
+  const RasterFixture cw_fixture = make_raster_fixture(
+      "raster-cw", triangle_vertices(2.0f), {0, 1, 2}, ac6::NativeIndexTopology::TriangleList);
+  const RasterFixture ccw_fixture = make_raster_fixture(
+      "raster-ccw", triangle_vertices(2.0f), {0, 2, 1}, ac6::NativeIndexTopology::TriangleList);
+  for (const RasterFixture* fixture : {&cw_fixture, &ccw_fixture}) {
+    REQUIRE(raster_target.clear(0, 1.0f));
+    REQUIRE(draw_raster_fixture(*fixture));
+    REQUIRE(raster_target.filled_fragment_writes() > 0);
+    REQUIRE(raster_target.raster_metrics().front().nondegenerate_triangles == 1);
+    REQUIRE(raster_target.raster_metrics().front().inside_fragments > 0);
+  }
+
+  const RasterFixture restart_fixture = make_raster_fixture(
+      "raster-restart",
+      {{-0.8f, -0.8f, 2.0f, 0.0f, 0.0f}, {0.0f, 0.8f, 2.0f, 0.5f, 1.0f},
+       {0.8f, -0.8f, 2.0f, 1.0f, 0.0f}, {-0.8f, 0.8f, 2.0f, 0.0f, 1.0f}},
+      {0, 1, 2, std::numeric_limits<std::uint32_t>::max(), 0, 2, 3},
+      ac6::NativeIndexTopology::TriangleStripRestart);
+  REQUIRE(raster_target.clear(0, 1.0f));
+  REQUIRE(draw_raster_fixture(restart_fixture));
+  REQUIRE(raster_target.raster_metrics().front().restart_markers == 1);
+  REQUIRE(raster_target.raster_metrics().front().candidate_triangles == 2);
+  REQUIRE(raster_target.raster_metrics().front().inside_fragments > 0);
+
+  const RasterFixture degenerate_fixture = make_raster_fixture(
+      "raster-degenerate",
+      {{-0.8f, 0.0f, 2.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 2.0f, 0.5f, 0.0f},
+       {0.8f, 0.0f, 2.0f, 1.0f, 0.0f}},
+      {0, 1, 2}, ac6::NativeIndexTopology::TriangleList);
+  REQUIRE(raster_target.clear(0, 1.0f));
+  REQUIRE(draw_raster_fixture(degenerate_fixture));
+  REQUIRE(raster_target.raster_metrics().front().degenerate_triangles == 1);
+  REQUIRE(raster_target.raster_metrics().front().nondegenerate_triangles == 0);
+  REQUIRE(raster_target.filled_fragment_writes() == 0);
+
+  const RasterFixture occlusion_near = make_raster_fixture(
+      "raster-occlusion-near", triangle_vertices(2.0f), {0, 1, 2},
+      ac6::NativeIndexTopology::TriangleList);
+  const RasterFixture occlusion_far = make_raster_fixture(
+      "raster-occlusion-far", triangle_vertices(4.0f), {0, 1, 2},
+      ac6::NativeIndexTopology::TriangleList);
+  REQUIRE(raster_target.clear(0, 1.0f));
+  REQUIRE(draw_raster_fixture(occlusion_near, 1));
+  REQUIRE(draw_raster_fixture(occlusion_far, 2));
+  REQUIRE(raster_target.raster_metrics().size() == 2);
+  const ac6::NativeRasterDrawableMetrics occlusion_metrics = raster_target.raster_metrics().back();
+  REQUIRE(occlusion_metrics.inside_fragments > 0);
+  REQUIRE(occlusion_metrics.depth_pass_fragments < occlusion_metrics.inside_fragments);
+
+  const RasterFixture partial_fixture = make_raster_fixture(
+      "raster-partial",
+      {{-5.0f, -0.5f, 2.0f, 0.0f, 0.0f}, {5.0f, -0.5f, 2.0f, 1.0f, 0.0f},
+       {0.0f, 1.0f, 2.0f, 0.5f, 1.0f}},
+      {0, 1, 2}, ac6::NativeIndexTopology::TriangleList);
+  REQUIRE(raster_target.clear(0, 1.0f));
+  REQUIRE(draw_raster_fixture(partial_fixture));
+  REQUIRE(raster_target.raster_metrics().front().projected_vertices == 3);
+  REQUIRE(raster_target.raster_metrics().front().nondegenerate_triangles > 0);
+  REQUIRE(raster_target.raster_metrics().front().inside_fragments > 0);
+  REQUIRE(raster_target.filled_fragment_writes() > 0);
+
   const char* texture_manifest = "ac6-test-textures.tsv";
   {
     std::ofstream out(texture_manifest);
@@ -1797,6 +1993,7 @@ int main() {
   ac6::NativeRenderTarget synthetic_target;
   REQUIRE(synthetic_target.resize(64, 32));
   REQUIRE(synthetic_target.clear(0, 1.0f));
+  synthetic_target.set_raster_mode(ac6::NativeRasterMode::Points);
   ac6::NativeRenderTarget rgba_target;
   REQUIRE(rgba_target.resize(1, 1));
   REQUIRE(rgba_target.clear(0xAABBCCDDu, 1.0f));
@@ -1809,6 +2006,8 @@ int main() {
   const auto synthetic_readback = synthetic_target.readback();
   REQUIRE(synthetic_readback.color_coverage == 15);
   REQUIRE(synthetic_readback.depth_coverage == 15);
+  REQUIRE(synthetic_target.diagnostic_point_writes() == 15);
+  REQUIRE(synthetic_target.filled_fragment_writes() == 0);
   ac6::NativeRenderTarget target;
   REQUIRE(!target.resize(0, 64));
   REQUIRE(target.resize(64, 32));

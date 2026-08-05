@@ -286,6 +286,8 @@ bool write_headless_report(const std::filesystem::path& output_dir,
          << "  \"geometry_calls\": " << target.geometry_calls() << ",\n"
          << "  \"raster_triangles\": " << target.raster_triangles() << ",\n"
          << "  \"raster_writes\": " << target.raster_writes() << ",\n"
+         << "  \"diagnostic_point_writes\": " << target.diagnostic_point_writes() << ",\n"
+         << "  \"filled_fragment_writes\": " << target.filled_fragment_writes() << ",\n"
          << "  \"color_coverage\": " << readback.color_coverage << ",\n"
          << "  \"depth_coverage\": " << readback.depth_coverage << ",\n"
          << "  \"color_hash\": " << readback.color_hash << ",\n"
@@ -295,6 +297,71 @@ bool write_headless_report(const std::filesystem::path& output_dir,
          << "  \"pause_stable\": " << (pause_stable ? "true" : "false") << ",\n"
          << "  \"save_resume_stable\": " << (save_resume_stable ? "true" : "false") << "\n"
          << "}\n";
+  return static_cast<bool>(output);
+}
+
+void write_json_string(std::ostream& output, std::string_view value) {
+  output << '"';
+  for (const char character : value) {
+    switch (character) {
+      case '\\': output << "\\\\"; break;
+      case '"': output << "\\\""; break;
+      case '\n': output << "\\n"; break;
+      case '\r': output << "\\r"; break;
+      case '\t': output << "\\t"; break;
+      default: output << character; break;
+    }
+  }
+  output << '"';
+}
+
+bool write_capture_metrics(const std::filesystem::path& output_dir,
+                           const ac6::NativeRenderTarget& target) {
+  std::ofstream output(output_dir / "capture-metrics.json");
+  if (!output) return false;
+  output << std::setprecision(9);
+  output << "{\n"
+         << "  \"schema\": \"ac6.native-raster-capture.v1\",\n"
+         << "  \"width\": " << target.width() << ",\n"
+         << "  \"height\": " << target.height() << ",\n"
+         << "  \"geometry_calls\": " << target.geometry_calls() << ",\n"
+         << "  \"raster_triangles\": " << target.raster_triangles() << ",\n"
+         << "  \"raster_writes\": " << target.raster_writes() << ",\n"
+         << "  \"diagnostic_point_writes\": " << target.diagnostic_point_writes() << ",\n"
+         << "  \"filled_fragment_writes\": " << target.filled_fragment_writes() << ",\n"
+         << "  \"drawables\": [\n";
+  const auto& metrics = target.raster_metrics();
+  for (std::size_t index = 0; index < metrics.size(); ++index) {
+    const auto& metric = metrics[index];
+    output << "    {\n      \"stable_id\": ";
+    write_json_string(output, metric.stable_id);
+    output << ",\n"
+            << "      \"object_id\": " << metric.object_id << ",\n"
+            << "      \"projected_vertices\": " << metric.projected_vertices << ",\n"
+            << "      \"restart_markers\": " << metric.restart_markers << ",\n"
+            << "      \"candidate_triangles\": " << metric.candidate_triangles << ",\n"
+            << "      \"degenerate_triangles\": " << metric.degenerate_triangles << ",\n"
+            << "      \"clip_rejected_triangles\": " << metric.clip_rejected_triangles << ",\n"
+            << "      \"nondegenerate_triangles\": " << metric.nondegenerate_triangles << ",\n"
+            << "      \"fragment_tests\": " << metric.fragment_tests << ",\n"
+            << "      \"inside_fragments\": " << metric.inside_fragments << ",\n"
+            << "      \"depth_pass_fragments\": " << metric.depth_pass_fragments << ",\n"
+            << "      \"color_writes\": " << metric.color_writes << ",\n"
+            << "      \"unique_pixels\": " << metric.unique_pixels << ",\n"
+            << "      \"screen_bbox\": ";
+    if (!metric.screen_bbox_valid) {
+      output << "null,\n";
+    } else {
+      output << "{\"min_x\": " << metric.bbox_min_x
+             << ", \"min_y\": " << metric.bbox_min_y
+             << ", \"max_x\": " << metric.bbox_max_x
+             << ", \"max_y\": " << metric.bbox_max_y << "},\n";
+    }
+    output << "      \"depth_min\": " << metric.depth_min << ",\n"
+            << "      \"depth_max\": " << metric.depth_max << "\n"
+            << "    }" << (index + 1u == metrics.size() ? "\n" : ",\n");
+  }
+  output << "  ]\n}\n";
   return static_cast<bool>(output);
 }
 
@@ -413,7 +480,9 @@ int run_play_headless(const std::filesystem::path& manifest_input,
     if (unit.id == assets.launch->player_entity) player_asset_id = unit.asset;
   }
   if (!target.write_ppm(output_dir / "color.ppm") ||
+      !target.write_object_id_ppm(output_dir / "object-id.ppm") ||
       !target.write_depth_f32(output_dir / "depth.f32") ||
+      !write_capture_metrics(output_dir, target) ||
       !write_headless_report(output_dir, mission_id, first_frame, first_readback, target,
                              player_asset_id,
                              semantic_hash(first_frame, first_readback), deterministic,

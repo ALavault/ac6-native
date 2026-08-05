@@ -1,7 +1,7 @@
 {
   "schema": "ac6.mission01-native-gate.v1",
   "provenance": {
-    "repo_commit": "08f37c080ba0b3c764ef8fd569d313d6bc64947d",
+    "repo_commit": "183bbec4644279f000dcad1a5f2361e9cf96b4d1",
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
     "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
     "mission_id": 1
@@ -21,37 +21,14 @@
       ]
     },
     "world_visible": {
-      "status": "passed",
+      "status": "open",
       "statement": "world visible",
-      "evidence": [
-        {
-          "kind": "native-capture",
-          "path": "headless-v2/color.ppm",
-          "sha256": "9fd8d3040f6535c8bd35a39a116e9fd3f109004ff39f2fe6427d51ff99edb196",
-          "size": 2764816,
-          "claim": "native color readback has 2206 non-clear pixels and 10 submitted geometry calls"
-        }
-      ]
+      "evidence": []
     },
     "player_aircraft_visible": {
-      "status": "passed",
+      "status": "open",
       "statement": "player aircraft visible",
-      "evidence": [
-        {
-          "kind": "native-capture",
-          "path": "headless-v2/color.ppm",
-          "sha256": "9fd8d3040f6535c8bd35a39a116e9fd3f109004ff39f2fe6427d51ff99edb196",
-          "size": 2764816,
-          "claim": "native readback is produced by the player entity 4097 bound to asset 9 with non-zero color/depth coverage"
-        },
-        {
-          "kind": "native-test",
-          "path": "headless-v2/native-session.json",
-          "sha256": "7b703ffac27f53f03e4a6fcd6026c7206116203cfab1e878846a1b6253ff67b7",
-          "size": 891,
-          "claim": "native session records player_entity 4097, player_asset_id 9, geometry_calls 10 and raster_writes 2437"
-        }
-      ]
+      "evidence": []
     },
     "gameplay_camera": {
       "status": "passed",
