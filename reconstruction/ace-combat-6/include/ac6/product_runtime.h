@@ -428,6 +428,8 @@ struct AssetRecord {
   AssetId id{};
   std::string relative_path;
   std::string sha256;
+  std::uint64_t byte_size{};
+  std::vector<AssetId> dependencies;
   bool valid() const noexcept { return id != 0 && !relative_path.empty() && !sha256.empty(); }
   bool operator==(const AssetRecord&) const = default;
 };

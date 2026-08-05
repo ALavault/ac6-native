@@ -2,6 +2,20 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 991 — contrat atomique des manifestes d’assets qualifiés
+
+Le contrat générique `MissionAssetDatabase` accepte désormais les manifestes
+legacy à trois colonnes et les lignes étendues avec taille, SHA-256 et
+dépendances. En mode étendu, il vérifie les fichiers relatifs au manifeste,
+refuse les chemins absolus ou parent-traversing, valide les tailles et hashes,
+et rejette les dépendances absentes, auto-référentes ou cycliques. La
+publication reste atomique: un échec ne remplace pas le catalogue courant.
+
+Le générateur Mission 01 produit les lignes étendues; les tests couvrent la
+compatibilité legacy et les échecs d'intégrité/graphe. Build et CTest qualifié
+sous Xvfb avec `SDL_AUDIODRIVER=dummy` passent à 5/5. Voir
+`reports/cycle-991-qualified-asset-manifest-contract.md`.
+
 ## Cycle 990 — inventaire borné des dépendances payloads 9–23
 
 L’inventaire machine-readable parcourt maintenant les 15 payloads `FHM`

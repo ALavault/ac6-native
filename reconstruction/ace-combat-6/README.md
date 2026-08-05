@@ -224,6 +224,15 @@ missions 1–15 are decoded and hashed; the bounded dependency inventory is
 durable, while missions 3–15 still need semantic dependency qualification.
 Partial rows cannot enter the native runtime route.
 
+Asset manifests accept the legacy three-column form
+`asset_id<TAB>relative_path<TAB>sha256`. An extended row may append
+`byte_size<TAB>dependencies`, with `-` for no dependencies. When any extended
+row is present, the loader requires every row to declare a non-zero size,
+rejects absolute or parent-traversing paths, verifies each file's size and
+SHA-256 against the manifest, and validates the dependency DAG. The complete
+catalog is published only after all checks pass; a failed load leaves the
+previous catalog unchanged.
+
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted
 `AssetRecord` identities used by the mission. It rejects malformed states

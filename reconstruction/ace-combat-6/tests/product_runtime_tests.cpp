@@ -714,6 +714,60 @@ int main() {
   REQUIRE(loaded.resolve(119) && loaded.resolve(165) == nullptr);
   std::remove(partial_asset_manifest);
 
+  const char* legacy_qualified_manifest = "ac6-test-legacy-qualified-assets.tsv";
+  { std::ofstream out(legacy_qualified_manifest);
+    out << "119\tlegacy\t" << std::string(64, 'a') << "\n"; }
+  REQUIRE(qualified_assets.load_qualified_manifest(legacy_qualified_manifest));
+  REQUIRE(qualified_assets.resolve(119) && qualified_assets.resolve(119)->byte_size == 0);
+  std::remove(legacy_qualified_manifest);
+
+  const char* qualified_a = "ac6-qualified-a.bin";
+  const char* qualified_b = "ac6-qualified-b.bin";
+  { std::ofstream out(qualified_a, std::ios::binary); out << "asset-a"; }
+  { std::ofstream out(qualified_b, std::ios::binary); out << "asset-b"; }
+  const char* extended_manifest = "ac6-test-extended-assets.tsv";
+  { std::ofstream out(extended_manifest);
+    out << "9\tac6-qualified-a.bin\t769b206a3f59eae2ed7455e4a9269121ce20f26534c06e32f9fa6085c7274a63\t7\t-\n";
+    out << "119\tac6-qualified-b.bin\t7b4875f447a821ed6920925775a6aa62791a87298e1637fd2ba8f4b9a0d72637\t7\t9\n"; }
+  ac6::MissionAssetDatabase extended_assets;
+  REQUIRE(extended_assets.load_qualified_manifest(extended_manifest));
+  REQUIRE(extended_assets.resolve(119) && extended_assets.resolve(119)->byte_size == 7 &&
+          extended_assets.resolve(119)->dependencies == std::vector<ac6::AssetId>{9});
+
+  const char* bad_size_manifest = "ac6-test-bad-size-assets.tsv";
+  { std::ofstream out(bad_size_manifest);
+    out << "9\tac6-qualified-a.bin\t769b206a3f59eae2ed7455e4a9269121ce20f26534c06e32f9fa6085c7274a63\t8\t-\n";
+    out << "119\tac6-qualified-b.bin\t7b4875f447a821ed6920925775a6aa62791a87298e1637fd2ba8f4b9a0d72637\t7\t9\n"; }
+  REQUIRE(!extended_assets.load_qualified_manifest(bad_size_manifest));
+  REQUIRE(extended_assets.resolve(119) && extended_assets.resolve(119)->relative_path == qualified_b);
+  std::remove(bad_size_manifest);
+
+  const char* bad_hash_manifest = "ac6-test-bad-hash-assets.tsv";
+  { std::ofstream out(bad_hash_manifest);
+    out << "9\tac6-qualified-a.bin\t" << std::string(64, 'b') << "\t7\t-\n";
+    out << "119\tac6-qualified-b.bin\t7b4875f447a821ed6920925775a6aa62791a87298e1637fd2ba8f4b9a0d72637\t7\t9\n"; }
+  REQUIRE(!extended_assets.load_qualified_manifest(bad_hash_manifest));
+  REQUIRE(extended_assets.resolve(9) &&
+          extended_assets.resolve(9)->sha256 ==
+              "769b206a3f59eae2ed7455e4a9269121ce20f26534c06e32f9fa6085c7274a63");
+  std::remove(bad_hash_manifest);
+
+  const char* missing_dependency_manifest = "ac6-test-missing-dependency-assets.tsv";
+  { std::ofstream out(missing_dependency_manifest);
+    out << "9\tac6-qualified-a.bin\t769b206a3f59eae2ed7455e4a9269121ce20f26534c06e32f9fa6085c7274a63\t7\t119\n"; }
+  REQUIRE(!extended_assets.load_qualified_manifest(missing_dependency_manifest));
+  std::remove(missing_dependency_manifest);
+
+  const char* cycle_manifest = "ac6-test-cycle-assets.tsv";
+  { std::ofstream out(cycle_manifest);
+    out << "9\tac6-qualified-a.bin\t769b206a3f59eae2ed7455e4a9269121ce20f26534c06e32f9fa6085c7274a63\t7\t119\n";
+    out << "119\tac6-qualified-b.bin\t7b4875f447a821ed6920925775a6aa62791a87298e1637fd2ba8f4b9a0d72637\t7\t9\n"; }
+  REQUIRE(!extended_assets.load_qualified_manifest(cycle_manifest));
+  std::remove(cycle_manifest);
+  std::remove(extended_manifest);
+  std::remove(qualified_a);
+  std::remove(qualified_b);
+
   ac6::MissionRuntime runtime(*selected_definition, &assets);
   ac6::UnitRegistry runtime_units;
   ac6::MissionScenario runtime_scenario(*selected_definition);

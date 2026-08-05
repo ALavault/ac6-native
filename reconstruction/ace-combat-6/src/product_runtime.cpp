@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <limits>
 #include <string_view>
 #include <utility>
@@ -808,6 +809,167 @@ bool file_fnv64(const std::filesystem::path& path, std::uint64_t& hash) {
   return true;
 }
 
+class Sha256 final {
+ public:
+  void update(const unsigned char* data, std::size_t size) noexcept {
+    bit_length_ += static_cast<std::uint64_t>(size) * 8u;
+    while (size != 0) {
+      const std::size_t count = std::min(size, block_.size() - block_size_);
+      std::memcpy(block_.data() + block_size_, data, count);
+      block_size_ += count;
+      data += count;
+      size -= count;
+      if (block_size_ == block_.size()) {
+        transform(block_.data());
+        block_size_ = 0;
+      }
+    }
+  }
+
+  std::array<unsigned char, 32> digest() const noexcept {
+    Sha256 copy = *this;
+    copy.finish();
+    std::array<unsigned char, 32> result{};
+    for (std::size_t index = 0; index < copy.state_.size(); ++index) {
+      const std::uint32_t word = copy.state_[index];
+      result[index * 4u] = static_cast<unsigned char>(word >> 24u);
+      result[index * 4u + 1u] = static_cast<unsigned char>(word >> 16u);
+      result[index * 4u + 2u] = static_cast<unsigned char>(word >> 8u);
+      result[index * 4u + 3u] = static_cast<unsigned char>(word);
+    }
+    return result;
+  }
+
+ private:
+  static constexpr std::array<std::uint32_t, 64> kRoundConstants{
+      0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u,
+      0x3956c25bu, 0x59f111f1u, 0x923f82a4u, 0xab1c5ed5u,
+      0xd807aa98u, 0x12835b01u, 0x243185beu, 0x550c7dc3u,
+      0x72be5d74u, 0x80deb1feu, 0x9bdc06a7u, 0xc19bf174u,
+      0xe49b69c1u, 0xefbe4786u, 0x0fc19dc6u, 0x240ca1ccu,
+      0x2de92c6fu, 0x4a7484aau, 0x5cb0a9dcu, 0x76f988dau,
+      0x983e5152u, 0xa831c66du, 0xb00327c8u, 0xbf597fc7u,
+      0xc6e00bf3u, 0xd5a79147u, 0x06ca6351u, 0x14292967u,
+      0x27b70a85u, 0x2e1b2138u, 0x4d2c6dfcu, 0x53380d13u,
+      0x650a7354u, 0x766a0abbu, 0x81c2c92eu, 0x92722c85u,
+      0xa2bfe8a1u, 0xa81a664bu, 0xc24b8b70u, 0xc76c51a3u,
+      0xd192e819u, 0xd6990624u, 0xf40e3585u, 0x106aa070u,
+      0x19a4c116u, 0x1e376c08u, 0x2748774cu, 0x34b0bcb5u,
+      0x391c0cb3u, 0x4ed8aa4au, 0x5b9cca4fu, 0x682e6ff3u,
+      0x748f82eeu, 0x78a5636fu, 0x84c87814u, 0x8cc70208u,
+      0x90befffau, 0xa4506cebu, 0xbef9a3f7u, 0xc67178f2u};
+
+  static std::uint32_t rotate_right(std::uint32_t value, unsigned count) noexcept {
+    return (value >> count) | (value << (32u - count));
+  }
+
+  void transform(const unsigned char* block) noexcept {
+    std::array<std::uint32_t, 64> words{};
+    for (std::size_t index = 0; index < 16; ++index) {
+      const std::size_t offset = index * 4u;
+      words[index] = (static_cast<std::uint32_t>(block[offset]) << 24u) |
+                     (static_cast<std::uint32_t>(block[offset + 1u]) << 16u) |
+                     (static_cast<std::uint32_t>(block[offset + 2u]) << 8u) |
+                     static_cast<std::uint32_t>(block[offset + 3u]);
+    }
+    for (std::size_t index = 16; index < words.size(); ++index) {
+      const std::uint32_t s0 = rotate_right(words[index - 15u], 7u) ^
+                               rotate_right(words[index - 15u], 18u) ^
+                               (words[index - 15u] >> 3u);
+      const std::uint32_t s1 = rotate_right(words[index - 2u], 17u) ^
+                               rotate_right(words[index - 2u], 19u) ^
+                               (words[index - 2u] >> 10u);
+      words[index] = words[index - 16u] + s0 + words[index - 7u] + s1;
+    }
+    std::uint32_t a = state_[0];
+    std::uint32_t b = state_[1];
+    std::uint32_t c = state_[2];
+    std::uint32_t d = state_[3];
+    std::uint32_t e = state_[4];
+    std::uint32_t f = state_[5];
+    std::uint32_t g = state_[6];
+    std::uint32_t h = state_[7];
+    for (std::size_t index = 0; index < words.size(); ++index) {
+      const std::uint32_t s1 = rotate_right(e, 6u) ^ rotate_right(e, 11u) ^ rotate_right(e, 25u);
+      const std::uint32_t choose = (e & f) ^ ((~e) & g);
+      const std::uint32_t temporary1 = h + s1 + choose + kRoundConstants[index] + words[index];
+      const std::uint32_t s0 = rotate_right(a, 2u) ^ rotate_right(a, 13u) ^ rotate_right(a, 22u);
+      const std::uint32_t majority = (a & b) ^ (a & c) ^ (b & c);
+      const std::uint32_t temporary2 = s0 + majority;
+      h = g;
+      g = f;
+      f = e;
+      e = d + temporary1;
+      d = c;
+      c = b;
+      b = a;
+      a = temporary1 + temporary2;
+    }
+    state_[0] += a;
+    state_[1] += b;
+    state_[2] += c;
+    state_[3] += d;
+    state_[4] += e;
+    state_[5] += f;
+    state_[6] += g;
+    state_[7] += h;
+  }
+
+  void finish() noexcept {
+    block_[block_size_++] = 0x80u;
+    if (block_size_ > 56u) {
+      std::fill(block_.begin() + static_cast<std::ptrdiff_t>(block_size_), block_.end(), 0u);
+      transform(block_.data());
+      block_size_ = 0;
+    }
+    std::fill(block_.begin() + static_cast<std::ptrdiff_t>(block_size_), block_.begin() + 56, 0u);
+    for (std::size_t index = 0; index < 8; ++index) {
+      block_[56u + index] = static_cast<unsigned char>(bit_length_ >> (56u - index * 8u));
+    }
+    transform(block_.data());
+    block_size_ = 0;
+  }
+
+  std::array<std::uint32_t, 8> state_{
+      0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
+      0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u};
+  std::array<unsigned char, 64> block_{};
+  std::size_t block_size_{};
+  std::uint64_t bit_length_{};
+};
+
+bool file_sha256(const std::filesystem::path& path, std::string& digest) {
+  std::ifstream input(path, std::ios::binary);
+  if (!input) return false;
+  Sha256 sha;
+  std::array<unsigned char, 64 * 1024> bytes{};
+  while (input) {
+    input.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+    const std::streamsize count = input.gcount();
+    if (count > 0) sha.update(bytes.data(), static_cast<std::size_t>(count));
+  }
+  if (!input.eof()) return false;
+  constexpr char hex[] = "0123456789abcdef";
+  digest.clear();
+  digest.reserve(64);
+  for (const unsigned char byte : sha.digest()) {
+    digest.push_back(hex[byte >> 4u]);
+    digest.push_back(hex[byte & 0x0fu]);
+  }
+  return true;
+}
+
+bool equal_hex(std::string_view left, std::string_view right) noexcept {
+  if (left.size() != right.size()) return false;
+  for (std::size_t index = 0; index < left.size(); ++index) {
+    const auto lower = [](char value) {
+      return static_cast<char>(value >= 'A' && value <= 'F' ? value + ('a' - 'A') : value);
+    };
+    if (lower(left[index]) != lower(right[index])) return false;
+  }
+  return true;
+}
+
 std::uint16_t read_le_u16(const unsigned char* bytes) noexcept {
   return static_cast<std::uint16_t>(bytes[0]) |
          static_cast<std::uint16_t>(static_cast<std::uint16_t>(bytes[1]) << 8u);
@@ -1462,15 +1624,39 @@ bool MissionAssetDatabase::load_manifest(const std::filesystem::path& manifest) 
   std::string line;
   while (std::getline(input, line)) {
     if (line.empty() || line.front() == '#') continue;
-    const auto first = line.find('\t');
-    const auto second = first == std::string::npos ? std::string::npos : line.find('\t', first + 1);
-    if (first == std::string::npos || second == std::string::npos) return false;
-    AssetId id{};
-    const auto number = std::string_view(line).substr(0, first);
-    if (!parse_u32(number, id) ||
-        !loaded.add({id, line.substr(first + 1, second - first - 1), line.substr(second + 1)})) {
-      return false;
+    std::array<std::size_t, 4> tabs{};
+    std::size_t tab_count = 0;
+    std::size_t search_from = 0;
+    while (tab_count < tabs.size()) {
+      const auto tab = line.find('\t', search_from);
+      if (tab == std::string::npos) break;
+      tabs[tab_count++] = tab;
+      search_from = tab + 1;
     }
+    if (tab_count < 2 || tab_count > tabs.size()) return false;
+
+    AssetRecord record;
+    const auto line_view = std::string_view(line);
+    if (!parse_u32(line_view.substr(0, tabs[0]), record.id)) return false;
+    record.relative_path = line.substr(tabs[0] + 1, tabs[1] - tabs[0] - 1);
+    if (tab_count == 2) {
+      record.sha256 = line.substr(tabs[1] + 1);
+    } else {
+      record.sha256 = line.substr(tabs[1] + 1, tabs[2] - tabs[1] - 1);
+      const auto size_end = tab_count == 4 ? tabs[3] : line.size();
+      if (!parse_u64(line_view.substr(tabs[2] + 1, size_end - tabs[2] - 1),
+                     record.byte_size) ||
+          record.byte_size == 0) {
+        return false;
+      }
+      if (tab_count == 4) {
+        const auto dependencies = line_view.substr(tabs[3] + 1);
+        if (dependencies != "-" && !parse_asset_ids(dependencies, record.dependencies)) {
+          return false;
+        }
+      }
+    }
+    if (!loaded.add(std::move(record))) return false;
   }
   records_ = std::move(loaded.records_);
   return true;
@@ -1485,8 +1671,56 @@ bool MissionAssetDatabase::load_qualified_manifest(const std::filesystem::path& 
         !std::all_of(record.sha256.begin(), record.sha256.end(), [](char value) {
           return (value >= '0' && value <= '9') || (value >= 'a' && value <= 'f') ||
                  (value >= 'A' && value <= 'F');
-        })) {
+      })) {
       return false;
+    }
+  }
+
+  bool extended = false;
+  for (const auto& [id, record] : loaded.records_) {
+    (void)id;
+    extended = extended || record.byte_size != 0 || !record.dependencies.empty();
+  }
+  if (extended) {
+    for (const auto& [id, record] : loaded.records_) {
+      if (record.byte_size == 0) return false;
+      for (const AssetId dependency : record.dependencies) {
+        if (dependency == id || loaded.records_.find(dependency) == loaded.records_.end()) {
+          return false;
+        }
+      }
+      const std::filesystem::path relative(record.relative_path);
+      if (relative.is_absolute() || std::any_of(relative.begin(), relative.end(),
+                                                 [](const auto& component) {
+                                                   return component == "..";
+                                                 })) {
+        return false;
+      }
+      const std::filesystem::path resolved = manifest.parent_path() / relative;
+      std::error_code error;
+      const std::uintmax_t size = std::filesystem::file_size(resolved, error);
+      if (error || size != record.byte_size) return false;
+      std::string digest;
+      if (!file_sha256(resolved, digest) || !equal_hex(record.sha256, digest)) return false;
+    }
+
+    std::unordered_map<AssetId, std::uint8_t> marks;
+    std::function<bool(AssetId)> acyclic = [&](AssetId id) {
+      auto& mark = marks[id];
+      if (mark == 1) return false;
+      if (mark == 2) return true;
+      mark = 1;
+      const auto record = loaded.records_.find(id);
+      if (record == loaded.records_.end()) return false;
+      for (const AssetId dependency : record->second.dependencies) {
+        if (!acyclic(dependency)) return false;
+      }
+      mark = 2;
+      return true;
+    };
+    for (const auto& [id, record] : loaded.records_) {
+      (void)record;
+      if (!acyclic(id)) return false;
     }
   }
   records_ = std::move(loaded.records_);
