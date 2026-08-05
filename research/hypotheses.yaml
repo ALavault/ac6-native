@@ -163,3 +163,9 @@ hypotheses:
     discriminator: Scan all entry ranges with the official extraction path, separately preserve raw entries, and require an owning qualified FHM closure before assigning scenario semantics.
     evidence: reports/cycle-1032-retail-mission01-scenario-boundary.md.
     qualification: Tested boundary; arbitrary binary scenario structures may still require a bounded runtime ownership experiment.
+  - id: H-NATIVE-OBJECTIVE-CONDITION-BINDING
+    status: qualified
+    statement: Native terminal objective behavior can be evaluated from an explicit condition and a UnitRegistry entity binding without relying on draw order or an implicit last enemy.
+    discriminator: Load a six-column objective manifest, destroy the bound combat entity, and require DestroyUnit success, ProtectUnit failure, non-ready terminal frames, and checkpoint round-trip preservation.
+    evidence: reports/cycle-1034-native-objective-condition-binding.md; reconstruction/ace-combat-6/tests/product_runtime_tests.cpp; reconstruction/ace-combat-6/tests/session_save_tests.cpp.
+    qualification: Qualified as a native mechanism only; no retail Mission 01 objective or wave is inferred.

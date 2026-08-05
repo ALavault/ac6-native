@@ -251,12 +251,31 @@ struct MissionDefinition;
 
 enum class ObjectiveState : std::uint8_t { Pending, Active, Complete, Failed };
 
+// The retail scenario parser will eventually expose more condition kinds.  These
+// two native conditions are deliberately small and explicit: a manifest must
+// name the unit whose destruction completes or fails the objective instead of
+// relying on draw order, unit order, or an implicit "last enemy" convention.
+enum class ObjectiveCondition : std::uint8_t {
+  Manual,
+  DestroyUnit,
+  ProtectUnit,
+};
+
 struct ObjectiveRecord {
   std::uint32_t id{};
   std::string stable_id;
   bool required{true};
   ObjectiveState state{ObjectiveState::Pending};
-  bool valid() const noexcept { return id != 0 && !stable_id.empty(); }
+  ObjectiveCondition condition{ObjectiveCondition::Manual};
+  EntityId target_entity{};
+  bool valid() const noexcept {
+    const auto condition_value = static_cast<std::uint8_t>(condition);
+    return id != 0 && !stable_id.empty() &&
+           condition_value <= static_cast<std::uint8_t>(ObjectiveCondition::ProtectUnit) &&
+           (condition == ObjectiveCondition::Manual
+                ? target_entity == 0
+                : target_entity != 0);
+  }
   bool operator==(const ObjectiveRecord&) const = default;
 };
 
@@ -443,6 +462,7 @@ class MissionScenario final {
   bool activate_objective(std::uint32_t id) noexcept;
   bool complete_objective(std::uint32_t id) noexcept;
   bool fail_objective(std::uint32_t id) noexcept;
+  bool evaluate_combat(const UnitRegistry& units, const CombatWorld& combat) noexcept;
   bool dispatch_radio(const RadioMessageDatabase& messages, std::uint32_t id) noexcept;
   bool dispatch_buttons(const InputMappingDatabase& mappings, std::uint16_t buttons,
                         EntityId subject = 0) noexcept;

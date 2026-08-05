@@ -221,3 +221,17 @@ calibration de scène comme parité retail sans association exacte.
 - Le gate `scenario_radio_or_subtitles` est passé avec cette preuve native;
   `units_and_waves`, `retail_objectives`, le HUD complet et
   `success_failure_debrief` restent ouverts.
+
+## Slice conditions d’objectif natives — 2026-08-06
+
+- Le runtime accepte maintenant les conditions explicites `manual`,
+  `destroy_unit` et `protect_unit` avec une cible d’entité obligatoire pour
+  les deux dernières. La résolution est fermée par `UnitRegistry` puis
+  `CombatWorld`; un identifiant périmé ne déclenche aucun terminal implicite.
+- La sauvegarde version 9 persiste condition et cible; les versions 1 à 8
+  restent rétrocompatibles en condition manuelle. Les tests natifs couvrent
+  le succès, l’échec et le round-trip checkpoint.
+- Cette primitive ne constitue pas une donnée retail. Le contrat ne passe pas
+  `retail_objectives`, `units_and_waves` ni `success_failure_debrief` tant
+  qu’une fermeture retail exacte ne fournit pas leurs identités et transitions.
+- Rapport : `reports/cycle-1034-native-objective-condition-binding.md`.

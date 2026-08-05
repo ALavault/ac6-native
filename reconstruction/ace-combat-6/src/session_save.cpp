@@ -305,6 +305,8 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
     write_string(output, objective.stable_id);
     write_u32(output, objective.required ? 1u : 0u);
     write_u32(output, static_cast<std::uint32_t>(objective.state));
+    write_u32(output, static_cast<std::uint32_t>(objective.condition));
+    write_u32(output, objective.target_entity);
   }
   write_u32(output, static_cast<std::uint32_t>(checkpoint.scenario.radio_history.size()));
   for (const std::uint32_t message : checkpoint.scenario.radio_history) write_u32(output, message);
@@ -353,7 +355,8 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
 
 bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint,
                      bool has_sequence, bool has_radio, bool has_resources,
-                     bool has_resource_contract, bool has_unit_records, bool has_waves) {
+                     bool has_resource_contract, bool has_unit_records, bool has_waves,
+                     bool has_objective_conditions) {
   std::uint32_t state = 0;
   std::uint32_t objective_count = 0;
   std::uint32_t radio_count = 0;
@@ -376,6 +379,11 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
         !read_u32(input, required) || required > 1 || !read_u32(input, objective_state)) return false;
     objective.required = required != 0;
     objective.state = static_cast<ObjectiveState>(objective_state);
+    if (has_objective_conditions) {
+      std::uint32_t condition = 0;
+      if (!read_u32(input, condition) || !read_u32(input, objective.target_entity)) return false;
+      objective.condition = static_cast<ObjectiveCondition>(condition);
+    }
     checkpoint.scenario.objectives.push_back(std::move(objective));
   }
   if (!read_u32(input, radio_count) || radio_count > 65536) return false;
@@ -487,7 +495,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 8);
+  write_u32(output, 9);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -540,7 +548,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   std::uint32_t count = 0;
   if (!read_u32(input, version) || !read_u32(input, count) ||
       (version != 1 && version != 2 && version != 3 && version != 4 && version != 5 &&
-       version != 6 && version != 7 && version != 8) ||
+       version != 6 && version != 7 && version != 8 && version != 9) ||
       count > 1024) {
     return false;
   }
@@ -575,7 +583,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
       if (has_checkpoint != 0) {
         MissionExecution::Checkpoint checkpoint;
         if (!read_checkpoint(input, checkpoint, version >= 3, version >= 4, version >= 6,
-                             version >= 7, version >= 8, version >= 8)) return false;
+                             version >= 7, version >= 8, version >= 8, version >= 9)) return false;
         snapshot.checkpoint = std::move(checkpoint);
       }
     }

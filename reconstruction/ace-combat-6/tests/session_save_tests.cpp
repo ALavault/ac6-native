@@ -28,7 +28,8 @@ int main() {
   mission_checkpoint.flight = snapshot.flight;
   mission_checkpoint.scenario = {
       1, ac6::ScenarioState::Gameplay, 4097,
-      {{1, "intercept_primary", true, ac6::ObjectiveState::Active}}, {10}};
+      {{1, "intercept_primary", true, ac6::ObjectiveState::Active,
+        ac6::ObjectiveCondition::DestroyUnit, 4098}}, {10}};
   mission_checkpoint.combat_units = {
       {4097, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true},
       {4098, 2, {20.0f, 0.0f, 0.0f}, 40.0f, 100.0f, 1.0f, true}};

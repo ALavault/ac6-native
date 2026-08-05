@@ -40,6 +40,8 @@ bool parse_u32(std::string_view text, std::uint32_t& value) noexcept;
 bool parse_u64(std::string_view text, std::uint64_t& value) noexcept;
 bool parse_f32(std::string_view text, float& value) noexcept;
 bool parse_bool01(std::string_view text, bool& value) noexcept;
+bool parse_objective_condition(std::string_view text,
+                               ObjectiveCondition& condition) noexcept;
 std::uint16_t read_le_u16(const unsigned char* bytes) noexcept;
 std::uint32_t read_le_u32(const unsigned char* bytes) noexcept;
 }
@@ -150,18 +152,33 @@ bool MissionObjectiveDatabase::load_manifest(const std::filesystem::path& manife
   std::string line;
   while (std::getline(input, line)) {
     if (line.empty() || line.front() == '#') continue;
-    const auto first = line.find('\t');
-    const auto second = first == std::string::npos ? std::string::npos : line.find('\t', first + 1);
-    const auto third = second == std::string::npos ? std::string::npos : line.find('\t', second + 1);
-    if (first == std::string::npos || second == std::string::npos || third == std::string::npos ||
-        line.find('\t', third + 1) != std::string::npos) return false;
+    std::array<std::string_view, 6> fields{};
+    std::size_t start = 0;
+    std::size_t field_count = 0;
+    while (field_count < fields.size()) {
+      const std::size_t tab = line.find('\t', start);
+      if (tab == std::string::npos) {
+        fields[field_count++] = std::string_view(line).substr(start);
+        break;
+      }
+      fields[field_count++] = std::string_view(line).substr(start, tab - start);
+      start = tab + 1;
+    }
+    if ((field_count != 4 && field_count != 6) || line.find('\t', start) != std::string::npos) {
+      return false;
+    }
     MissionObjectiveDefinition definition;
     bool required = false;
-    if (!parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
-        !parse_u32(std::string_view(line).substr(first + 1, second - first - 1), definition.objective.id) ||
-        (definition.objective.stable_id = line.substr(second + 1, third - second - 1)).empty() ||
-        !parse_bool01(std::string_view(line).substr(third + 1), required)) return false;
+    if (!parse_u32(fields[0], definition.mission_id) ||
+        !parse_u32(fields[1], definition.objective.id) ||
+        fields[2].empty() ||
+        !parse_bool01(fields[3], required)) return false;
+    definition.objective.stable_id = std::string(fields[2]);
     definition.objective.required = required;
+    if (field_count == 6) {
+      if (!parse_objective_condition(fields[4], definition.objective.condition) ||
+          !parse_u32(fields[5], definition.objective.target_entity)) return false;
+    }
     if (!loaded.add(std::move(definition))) return false;
   }
   objectives_ = std::move(loaded.objectives_);
@@ -954,6 +971,23 @@ bool parse_bool01(std::string_view text, bool& value) noexcept {
   return false;
 }
 
+bool parse_objective_condition(std::string_view text,
+                               ObjectiveCondition& condition) noexcept {
+  if (text == "manual") {
+    condition = ObjectiveCondition::Manual;
+    return true;
+  }
+  if (text == "destroy_unit") {
+    condition = ObjectiveCondition::DestroyUnit;
+    return true;
+  }
+  if (text == "protect_unit") {
+    condition = ObjectiveCondition::ProtectUnit;
+    return true;
+  }
+  return false;
+}
+
 bool parse_hex_u32(std::string_view text, std::uint32_t& value) noexcept {
   if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) {
     text.remove_prefix(2);
@@ -1518,6 +1552,31 @@ bool MissionScenario::fail_objective(std::uint32_t id) noexcept {
   if (!objectives_.fail(id)) return false;
   state_ = ScenarioState::Aborted;
   return true;
+}
+
+bool MissionScenario::evaluate_combat(const UnitRegistry& units,
+                                      const CombatWorld& combat) noexcept {
+  if (state_ != ScenarioState::Gameplay || player_ == 0) return false;
+  bool changed = false;
+  for (const ObjectiveRecord& objective : objectives_.snapshot()) {
+    if (objective.state != ObjectiveState::Active ||
+        objective.condition == ObjectiveCondition::Manual) {
+      continue;
+    }
+    // A condition never completes or fails from a stale entity id.  The unit
+    // registry is the authoritative scenario ownership table; combat state
+    // alone is not enough to qualify a retail target binding.
+    if (units.find(objective.target_entity) == nullptr) continue;
+    const CombatUnitState* target = combat.unit(objective.target_entity);
+    const bool target_active = target != nullptr && target->active && target->health > 0.0f;
+    if (objective.condition == ObjectiveCondition::DestroyUnit && !target_active) {
+      changed = objectives_.complete(objective.id) || changed;
+    } else if (objective.condition == ObjectiveCondition::ProtectUnit && !target_active) {
+      changed = objectives_.fail(objective.id) || changed;
+    }
+  }
+  if (objectives_.failed_count() != 0) state_ = ScenarioState::Aborted;
+  return changed;
 }
 
 bool MissionScenario::dispatch_radio(const RadioMessageDatabase& messages,
@@ -4319,6 +4378,8 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
     (void)units_.set_active(unit.entity, unit.active && unit.health > 0.0f);
   }
   frame.active_units = static_cast<std::uint32_t>(units_.active_count());
+  (void)scenario_.evaluate_combat(units_, combat_);
+  if (scenario_.state() != ScenarioState::Gameplay) frame.mission_ready = false;
   if (scenario_.state() == ScenarioState::Gameplay) {
     const CombatUnitState* player = combat_.unit(scenario_.player());
     const bool player_destroyed = player == nullptr || !player->active;

@@ -2274,5 +2274,67 @@ int main() {
           hud_snapshot.radio_message_id == 10 && hud_snapshot.pixel_writes > 0 &&
           hud_snapshot.unique_pixels > 0);
   REQUIRE(hud_target.readback().color_coverage > 0 && hud_target.readback().depth_coverage == 0);
+
+  // Objective conditions are explicit native bindings.  The four-column
+  // manifest remains compatible with manual objectives; the six-column form
+  // is the only form allowed to bind a combat entity.
+  const char* condition_manifest = "ac6-test-objective-conditions.tsv";
+  {
+    std::ofstream out(condition_manifest);
+    out << "1\t1\tdestroy_retail_target\t1\tdestroy_unit\t4098\n";
+    out << "1\t2\tprotect_retail_target\t1\tprotect_unit\t4098\n";
+  }
+  ac6::MissionObjectiveDatabase condition_database;
+  REQUIRE(condition_database.load_manifest(condition_manifest));
+  std::remove(condition_manifest);
+  const auto condition_records = condition_database.find_by_mission(1);
+  REQUIRE(condition_records.size() == 2 && condition_records[0]->condition ==
+              ac6::ObjectiveCondition::DestroyUnit && condition_records[0]->target_entity == 4098 &&
+          condition_records[1]->condition == ac6::ObjectiveCondition::ProtectUnit &&
+          condition_records[1]->target_entity == 4098);
+
+  const char* legacy_condition_manifest = "ac6-test-objective-manual.tsv";
+  {
+    std::ofstream out(legacy_condition_manifest);
+    out << "1\t3\tmanual_retail_pending\t1\n";
+  }
+  ac6::MissionObjectiveDatabase legacy_condition_database;
+  REQUIRE(legacy_condition_database.load_manifest(legacy_condition_manifest));
+  std::remove(legacy_condition_manifest);
+  const auto legacy_records = legacy_condition_database.find_by_mission(1);
+  REQUIRE(legacy_records.size() == 1 &&
+          legacy_records[0]->condition == ac6::ObjectiveCondition::Manual &&
+          legacy_records[0]->target_entity == 0);
+
+  const char* invalid_condition_manifest = "ac6-test-objective-invalid.tsv";
+  {
+    std::ofstream out(invalid_condition_manifest);
+    out << "1\t4\tinvalid_target\t1\tdestroy_unit\t0\n";
+  }
+  REQUIRE(!condition_database.load_manifest(invalid_condition_manifest));
+  std::remove(invalid_condition_manifest);
+  REQUIRE(condition_database.find_by_mission(1).size() == 2);
+
+  ac6::MissionObjectiveDatabase destroy_database;
+  REQUIRE(destroy_database.add({1, {1, "destroy_target", true, ac6::ObjectiveState::Pending,
+                                    ac6::ObjectiveCondition::DestroyUnit, 4098}}));
+  ac6::MissionExecution destroy_execution(*selected_definition, &hud_assets, &destroy_database);
+  REQUIRE(destroy_execution.launch(hud_launch) && destroy_execution.activate_objective(1));
+  REQUIRE(destroy_execution.combat().apply_damage(4098, 100.0f));
+  const ac6::WorldFrame condition_success_frame = destroy_execution.tick(1.0f / 60.0f, {});
+  REQUIRE(!condition_success_frame.mission_ready &&
+          destroy_execution.debrief().outcome == ac6::MissionOutcome::Success &&
+          destroy_execution.debrief().completed_objectives == 1);
+
+  ac6::MissionObjectiveDatabase protect_database;
+  REQUIRE(protect_database.add({1, {1, "protect_target", true, ac6::ObjectiveState::Pending,
+                                    ac6::ObjectiveCondition::ProtectUnit, 4098}}));
+  ac6::MissionExecution protect_execution(*selected_definition, &hud_assets, &protect_database);
+  REQUIRE(protect_execution.launch(hud_launch) && protect_execution.activate_objective(1));
+  REQUIRE(protect_execution.combat().apply_damage(4098, 100.0f));
+  const ac6::WorldFrame condition_failure_frame = protect_execution.tick(1.0f / 60.0f, {});
+  REQUIRE(!condition_failure_frame.mission_ready &&
+          protect_execution.debrief().outcome == ac6::MissionOutcome::Failure &&
+          protect_execution.debrief().failed_objectives == 1);
   return 0;
 }
