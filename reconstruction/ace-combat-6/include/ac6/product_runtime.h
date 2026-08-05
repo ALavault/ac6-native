@@ -197,6 +197,31 @@ class MissionWaveDirector final {
   std::vector<Entry> entries_;
 };
 
+struct MissionAiRule {
+  std::uint32_t mission_id{};
+  std::uint64_t first_tick{};
+  std::uint64_t period_ticks{1};
+  EntityId entity{};
+  EntityId target{};
+  std::uint32_t weapon_id{};
+  bool valid() const noexcept {
+    return mission_id != 0 && first_tick != 0 && period_ticks != 0 && entity != 0 &&
+           target != 0 && weapon_id != 0;
+  }
+  bool operator==(const MissionAiRule&) const = default;
+};
+
+class MissionAiDirector final {
+ public:
+  bool add(MissionAiRule rule);
+  bool dispatch_due(std::uint32_t mission_id, std::uint64_t tick,
+                    CombatWorld& combat) noexcept;
+  std::size_t active(std::uint32_t mission_id, std::uint64_t tick) const noexcept;
+
+ private:
+  std::vector<MissionAiRule> rules_;
+};
+
 class UnitRegistry;
 struct MissionDefinition;
 
@@ -925,7 +950,8 @@ class MissionExecution final {
                    CampaignProgression* campaign = nullptr,
                    MissionWaveDirector* waves = nullptr,
                    MissionSequenceDirector* sequence = nullptr,
-                   const InputMappingDatabase* input = nullptr);
+                   const InputMappingDatabase* input = nullptr,
+                   MissionAiDirector* ai = nullptr);
   bool launch(const MissionLaunchDefinition& launch) noexcept;
   bool dispatch(Event event) noexcept;
   bool activate_objective(std::uint32_t id) noexcept;
@@ -971,6 +997,7 @@ class MissionExecution final {
   MissionWaveDirector* waves_{};
   MissionSequenceDirector* sequence_{};
   const InputMappingDatabase* input_{};
+  MissionAiDirector* ai_{};
   MissionRuntime runtime_;
   MissionScenario scenario_;
   UnitRegistry units_;
