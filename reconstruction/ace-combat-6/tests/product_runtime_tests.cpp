@@ -1027,12 +1027,11 @@ int main() {
   REQUIRE(weapon_execution.combat().unit(4098) != nullptr &&
           weapon_execution.combat().unit(4098)->health == 40.0f);
   REQUIRE(weapon_execution.lock_target(4098) && weapon_execution.fire_weapon(7));
-  weapon_execution.tick(0.25f, {});
-  weapon_execution.tick(0.25f, {});
-  weapon_execution.tick(0.25f, {});
-  weapon_execution.tick(0.25f, {});
+  ac6::WorldFrame weapon_final_frame{};
+  for (int step = 0; step < 4; ++step) weapon_final_frame = weapon_execution.tick(0.25f, {});
   REQUIRE(weapon_execution.combat().unit(4098) != nullptr &&
-          weapon_execution.combat().unit(4098)->health == 0.0f);
+          weapon_execution.combat().unit(4098)->health == 0.0f &&
+          weapon_final_frame.active_units == 1 && weapon_execution.units().active_count() == 1);
   ac6::MissionAiDirector ai;
   REQUIRE(ai.add({1, 1, 1, 4097, 4098, 7}));
   REQUIRE(!ai.add({1, 1, 1, 4097, 4098, 7}));

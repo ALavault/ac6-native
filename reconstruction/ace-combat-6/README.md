@@ -282,6 +282,10 @@ Flight axes normalize the full signed SDL range to `[-1, 1]`, including the
 asymmetric `-32768` endpoint; throttle remains the bounded byte range
 `[0, 255]`.
 
+After each gameplay tick, combat activity is synchronized into the unit
+registry before `WorldFrame` publication, so destruction and despawn update
+the active-unit count used by HUD, rendering and checkpoints.
+
 `FrontendController` can bind `CampaignProgression` to enforce available
 mission selection, briefing, Hangar loadout and `Active` state before entering
 Mission. Unbound frontend fixtures retain the developer-only state route.

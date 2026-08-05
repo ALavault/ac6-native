@@ -94,6 +94,7 @@ class UnitRegistry final {
   bool register_unit(UnitRecord unit);
   bool activate(EntityId id) noexcept;
   bool deactivate(EntityId id) noexcept;
+  bool set_active(EntityId id, bool active) noexcept;
   const UnitRecord* find(EntityId id) const noexcept;
   std::vector<UnitRecord> snapshot() const;
   bool restore(const std::vector<UnitRecord>& snapshot) noexcept;

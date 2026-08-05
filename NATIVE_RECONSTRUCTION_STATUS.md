@@ -2959,3 +2959,10 @@ Les checkpoints Mission 1 persistent maintenant le registre `UnitRecord` et
 les spawns publiés; `AC6SESS` v8 les sérialise, avec lecture legacy des
 versions 1–7. La restauration recompose registre, combat et directeur de
 vagues transactionnellement. Voir `reports/cycle-1000-checkpoint-wave-state.md`.
+
+## Synchronisation activité combat (cycle 1001, 2026-08-05)
+
+Les destructions et désactivations du `CombatWorld` sont maintenant reflétées
+dans `UnitRegistry` avant publication de `WorldFrame`; le compteur d’unités et
+les checkpoints ne conservent plus un ennemi mort comme actif. Voir
+`reports/cycle-1001-combat-unit-activity-sync.md`.

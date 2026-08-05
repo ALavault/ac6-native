@@ -494,6 +494,13 @@ bool UnitRegistry::deactivate(EntityId id) noexcept {
   return true;
 }
 
+bool UnitRegistry::set_active(EntityId id, bool active) noexcept {
+  const auto it = units_.find(id);
+  if (it == units_.end()) return false;
+  it->second.active = active;
+  return true;
+}
+
 std::size_t UnitRegistry::active_count() const noexcept {
   std::size_t count = 0;
   for (const auto& [id, unit] : units_) {
@@ -4126,6 +4133,9 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
       !sequence_->dispatch_due(definition_->id, frame.tick, *this)) {
     frame.mission_ready = false;
     return frame;
+  }
+  for (const CombatUnitState& unit : combat_.snapshot_units()) {
+    (void)units_.set_active(unit.entity, unit.active && unit.health > 0.0f);
   }
   frame.active_units = static_cast<std::uint32_t>(units_.active_count());
   if (scenario_.state() == ScenarioState::Gameplay) {
