@@ -1854,33 +1854,44 @@ bool MissionManifestLoader::load_runtime(const std::filesystem::path& manifest,
                                          MissionCatalog& catalog,
                                          MissionAssetDatabase& assets,
                                          MissionLaunchDatabase& launches) const {
+  MissionRuntimeServices services;
+  return load_runtime(manifest, catalog, assets, launches, services);
+}
+
+bool MissionManifestLoader::load_runtime(const std::filesystem::path& manifest,
+                                         MissionCatalog& catalog,
+                                         MissionAssetDatabase& assets,
+                                         MissionLaunchDatabase& launches,
+                                         MissionRuntimeServices& services) const {
   MissionManifestPaths paths;
   if (!load_paths(manifest, paths)) return false;
   MissionCatalog loaded_catalog;
   MissionAssetDatabase loaded_assets;
   MissionLaunchDatabase loaded_launches;
+  MissionRuntimeServices loaded_services;
   if (!loaded_catalog.load_manifest(paths.catalog) ||
       !loaded_assets.load_qualified_manifest(paths.assets) ||
       !loaded_launches.load_manifest(paths.launches)) return false;
   if (!paths.input.empty()) {
-    InputMappingDatabase loaded_input;
-    if (!loaded_input.load_manifest(paths.input)) return false;
+    if (!loaded_services.input.load_manifest(paths.input)) return false;
+    loaded_services.has_input = true;
   }
   if (!paths.objectives.empty()) {
-    MissionObjectiveDatabase loaded_objectives;
-    if (!loaded_objectives.load_manifest(paths.objectives)) return false;
+    if (!loaded_services.objectives.load_manifest(paths.objectives)) return false;
+    loaded_services.has_objectives = true;
   }
   if (!paths.radios.empty()) {
-    RadioMessageDatabase loaded_radios;
-    if (!loaded_radios.load_manifest(paths.radios)) return false;
+    if (!loaded_services.radios.load_manifest(paths.radios)) return false;
+    loaded_services.has_radios = true;
   }
   if (!paths.campaign.empty()) {
-    CampaignProgression loaded_campaign;
-    if (!loaded_campaign.load_manifest(paths.campaign)) return false;
+    if (!loaded_services.campaign.load_manifest(paths.campaign)) return false;
+    loaded_services.has_campaign = true;
   }
   catalog = std::move(loaded_catalog);
   assets = std::move(loaded_assets);
   launches = std::move(loaded_launches);
+  services = std::move(loaded_services);
   return true;
 }
 

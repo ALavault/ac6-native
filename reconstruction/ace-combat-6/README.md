@@ -233,6 +233,13 @@ SHA-256 against the manifest, and validates the dependency DAG. The complete
 catalog is published only after all checks pass; a failed load leaves the
 previous catalog unchanged.
 
+The `MissionManifestLoader::load_runtime` overload that accepts
+`MissionRuntimeServices` publishes optional input, objective, radio and
+campaign databases together with the catalog, assets and launches. All seven
+databases are built in temporary state and published only after the last
+manifest succeeds; the legacy overload remains available for callers that
+only need the core three databases.
+
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history, combat units and the sorted
 `AssetRecord` identities used by the mission. It rejects malformed states

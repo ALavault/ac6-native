@@ -292,6 +292,17 @@ class RadioMessageDatabase final {
   std::vector<RadioMessageDefinition> messages_;
 };
 
+struct MissionRuntimeServices {
+  InputMappingDatabase input;
+  MissionObjectiveDatabase objectives;
+  RadioMessageDatabase radios;
+  CampaignProgression campaign;
+  bool has_input{};
+  bool has_objectives{};
+  bool has_radios{};
+  bool has_campaign{};
+};
+
 enum class RadioPlaybackState : std::uint8_t { Idle, Playing, Complete, Interrupted };
 
 struct RadioPlaybackSnapshot {
@@ -552,6 +563,10 @@ class MissionManifestLoader final {
   bool load_runtime(const std::filesystem::path& manifest,
                     MissionCatalog& catalog, MissionAssetDatabase& assets,
                     MissionLaunchDatabase& launches) const;
+  bool load_runtime(const std::filesystem::path& manifest,
+                    MissionCatalog& catalog, MissionAssetDatabase& assets,
+                    MissionLaunchDatabase& launches,
+                    MissionRuntimeServices& services) const;
   bool load_input(const std::filesystem::path& manifest,
                   InputMappingDatabase& input) const;
   bool load_camera(const std::filesystem::path& manifest,

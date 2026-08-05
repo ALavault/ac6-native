@@ -2,6 +2,14 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 993 — publication atomique des services runtime
+
+`MissionManifestLoader` publie désormais les bases input, objectifs, radio et
+campagne dans `MissionRuntimeServices`, avec transaction commune au catalogue,
+aux assets et aux lancements. Le test vérifie les quatre services et leur
+conservation après échec d'un manifeste optionnel. Voir
+`reports/cycle-993-runtime-services-publication.md`.
+
 ## Cycle 992 — couverture multi-missions du loader runtime
 
 Le test `MissionManifestLoader::load_runtime` publie désormais trois routes

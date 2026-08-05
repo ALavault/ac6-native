@@ -506,6 +506,7 @@ int main() {
   const char* runtime_launches = "ac6-test-runtime-launches.tsv";
   const char* runtime_radios = "ac6-test-runtime-radios.tsv";
   const char* runtime_campaign = "ac6-test-runtime-campaign.tsv";
+  const char* runtime_objectives = "ac6-test-runtime-objectives.tsv";
   { std::ofstream out(runtime_catalog);
     out << "1\tair_intercept\t9\n";
     out << "2\tstrike\t9,119\n";
@@ -521,6 +522,7 @@ int main() {
     out << "3\t4099\t4099:1:165\n"; }
   { std::ofstream out(runtime_radios); out << "1\t10\talpha_warning\tAWACS\t9\t119\n"; }
   { std::ofstream out(runtime_campaign); out << "1\t1\t9\t9\t1\t-\n"; }
+  { std::ofstream out(runtime_objectives); out << "1\t1\tintercept_primary\t1\n"; }
   { std::ofstream out(runtime_manifest);
     out << "catalog\t" << runtime_catalog << "\n";
     out << "assets\t" << runtime_assets << "\n";
@@ -581,16 +583,27 @@ int main() {
     out << "campaign\t" << runtime_campaign << "\n";
     out << "input\t" << input_manifest_path << "\n";
     out << "controls\t" << controls_manifest_path << "\n";
+    out << "objectives\t" << runtime_objectives << "\n";
     out << "radios\t" << runtime_radios << "\n";
     for (const char* key : render_keys) out << key << "\tac6-test-" << key << ".tsv\n";
   }
+  ac6::MissionRuntimeServices manifest_services;
   REQUIRE(manifest_loader.load_runtime(runtime_manifest, manifest_catalog,
-                                       manifest_assets, manifest_launches));
+                                       manifest_assets, manifest_launches,
+                                       manifest_services));
+  REQUIRE(manifest_services.has_input && manifest_services.input.resolve(1) &&
+          manifest_services.input.resolve(1)->event == ac6::EventType::StartMission);
+  REQUIRE(manifest_services.has_objectives &&
+          manifest_services.objectives.find_by_mission(1).size() == 1);
+  REQUIRE(manifest_services.has_radios && manifest_services.radios.find(1, 10) != nullptr);
+  REQUIRE(manifest_services.has_campaign &&
+          manifest_services.campaign.route_for_selector(1) != nullptr);
   ac6::MissionManifestPaths manifest_paths;
   REQUIRE(manifest_loader.load_paths(runtime_manifest, manifest_paths));
   REQUIRE(manifest_paths.render_valid());
   REQUIRE(manifest_paths.input == input_manifest_path);
   REQUIRE(manifest_paths.controls == controls_manifest_path);
+  REQUIRE(manifest_paths.objectives == runtime_objectives);
   REQUIRE(manifest_paths.radios == runtime_radios);
   REQUIRE(manifest_paths.campaign == runtime_campaign);
   ac6::CampaignProgression manifest_campaign;
@@ -599,12 +612,29 @@ int main() {
   ac6::InputMappingDatabase manifest_input;
   REQUIRE(manifest_loader.load_input(runtime_manifest, manifest_input));
   REQUIRE(manifest_input.resolve(1) && manifest_input.resolve(1)->event == ac6::EventType::StartMission);
+  const char* bad_service_input = "ac6-test-bad-service-input.tsv";
+  const char* bad_service_manifest = "ac6-test-bad-service-manifest.tsv";
+  { std::ofstream out(bad_service_input); out << "1\tunknown_event\n"; }
+  { std::ofstream out(bad_service_manifest);
+    out << "catalog\t" << runtime_catalog << "\nassets\t" << runtime_assets
+        << "\nlaunches\t" << runtime_launches << "\ninput\t" << bad_service_input << "\n";
+  }
+  REQUIRE(!manifest_loader.load_runtime(bad_service_manifest, manifest_catalog,
+                                        manifest_assets, manifest_launches,
+                                        manifest_services));
+  REQUIRE(manifest_services.has_input && manifest_services.input.resolve(1) &&
+          manifest_services.input.resolve(1)->event == ac6::EventType::StartMission &&
+          manifest_services.has_objectives && manifest_services.has_radios &&
+          manifest_services.has_campaign);
+  std::remove(bad_service_input);
+  std::remove(bad_service_manifest);
   std::remove(runtime_manifest);
   std::remove(runtime_catalog);
   std::remove(runtime_assets);
   std::remove(runtime_launches);
   std::remove(runtime_radios);
   std::remove(runtime_campaign);
+  std::remove(runtime_objectives);
   std::remove(input_manifest_path);
   std::remove(controls_manifest_path);
   for (const char* key : render_keys) std::remove((std::string("ac6-test-") + key + ".tsv").c_str());
