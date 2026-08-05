@@ -598,6 +598,20 @@ int main() {
   REQUIRE(manifest_services.has_radios && manifest_services.radios.find(1, 10) != nullptr);
   REQUIRE(manifest_services.has_campaign &&
           manifest_services.campaign.route_for_selector(1) != nullptr);
+  REQUIRE(manifest_services.campaign.enter_briefing(1));
+  REQUIRE(manifest_services.campaign.set_loadout(1, {7, 8, true}));
+  REQUIRE(manifest_services.campaign.begin(1));
+  ac6::MissionExecution services_execution(*manifest_catalog.find(1), &manifest_assets,
+                                           &manifest_services.objectives,
+                                           &manifest_services.radios,
+                                           &manifest_services.campaign);
+  REQUIRE(services_execution.launch(*manifest_launches.find(1)));
+  REQUIRE(services_execution.activate_objective(1));
+  REQUIRE(services_execution.dispatch_radio(10));
+  REQUIRE(services_execution.complete_objective(1));
+  REQUIRE(services_execution.dispatch({ac6::EventType::Complete, 0}));
+  REQUIRE(manifest_services.campaign.status(1)->state == ac6::CampaignMissionState::Completed);
+  REQUIRE(services_execution.debrief().outcome == ac6::MissionOutcome::Success);
   ac6::MissionManifestPaths manifest_paths;
   REQUIRE(manifest_loader.load_paths(runtime_manifest, manifest_paths));
   REQUIRE(manifest_paths.render_valid());
@@ -625,7 +639,8 @@ int main() {
   REQUIRE(manifest_services.has_input && manifest_services.input.resolve(1) &&
           manifest_services.input.resolve(1)->event == ac6::EventType::StartMission &&
           manifest_services.has_objectives && manifest_services.has_radios &&
-          manifest_services.has_campaign);
+          manifest_services.has_campaign &&
+          manifest_services.campaign.status(1)->state == ac6::CampaignMissionState::Completed);
   std::remove(bad_service_input);
   std::remove(bad_service_manifest);
   std::remove(runtime_manifest);

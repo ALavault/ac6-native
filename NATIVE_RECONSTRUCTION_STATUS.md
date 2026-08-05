@@ -2,6 +2,13 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 994 — intégration du bundle services dans le flux mission
+
+Le test consomme maintenant `MissionRuntimeServices` pour traverser briefing,
+loadout, Active, lancement, objectif, radio, succès et débrief, puis vérifie
+la conservation de cet état après un manifeste invalide. Voir
+`reports/cycle-994-runtime-services-mission-flow.md`.
+
 ## Cycle 993 — publication atomique des services runtime
 
 `MissionManifestLoader` publie désormais les bases input, objectifs, radio et
