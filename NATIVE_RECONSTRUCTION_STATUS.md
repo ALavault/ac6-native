@@ -3028,3 +3028,16 @@ hangar malgré une variation de composition caméra/avion. La voie bridge rend
 donc l’interface et l’avion, sans prouver le monde airborne, les contrôles en
 vol ou une correction Xenos. Voir
 `reports/cycle-1007-bridge-full-flight-boundary.md`.
+
+## Boucle gameplay Mission 01 et frontière monde noir (cycle 1010, 2026-08-05)
+
+La recette airborne bridge atteint maintenant le HUD Mission 01 après
+briefing/cinématique. La sonde qualifie `CModeTaskGame` (`0x8219A140`, vtable
+`0x82064384`), le manager `0x8226D1C8`, `UpInput/UpObj/UpCam/UpRadio`, le
+joueur `0xB2470000` et son enfant `0xB2470100`. Les axes W/S/A arrivent au
+champ canonique (`ly=7FFF/8001`, `lx=7FFF`), tandis que les anciens hooks
+flight `0x82329B40/0x823046A0` ne s’exécutent pas. Le HUD est visible sur un
+monde noir ; `PRESENT`, les binds et les resolves continuent, avec des régions
+de resolve vides répétées. La prochaine preuve requise est donc un catalogue
+draw-level activé sur la fenêtre briefing→HUD, pas une correction input ou HSM.
+Voir `reports/cycle-1010-bridge-gameplay-black-world.md`.

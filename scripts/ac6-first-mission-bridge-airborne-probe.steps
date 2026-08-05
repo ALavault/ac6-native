@@ -1,0 +1,116 @@
+# Fresh-profile bridge route through the complete Mission 01 briefing and
+# deploy boundary. The menu prefix is kept identical to the cycle-1007 route;
+# the long post-launch waits are intentional because the recompilation lane
+# advances the briefing/cinematic below retail presentation rate.
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+capture	game-data-browser
+key	Shift	0.1
+wait	selector44=10	20
+sleep	1
+capture	post-browser-cancel
+key	Left	0.1
+key	space	0.1
+wait	state40=9.*type28=5	20
+capture	create-game-data-prompt
+key	space	0.1
+sleep	2
+capture	post-create-confirm
+key	space	0.1
+sleep	5
+capture	post-file-selection
+wait	type28=[^ ]*6	20
+sleep	2
+capture	slot-create-prompt-ready
+key	Left	0.1
+key	space	0.1
+wait-pulse	type28=[^ ]*8	space
+capture	post-launch-type8
+key	space	0.1
+wait	type28=[^ ]*10	30
+capture	post-launch-type10
+
+# Campaign setup and intro, paced exactly at the guest transition boundary.
+key	space	0.1
+sleep	3
+capture	campaign-new-game
+key	space	0.1
+sleep	3
+capture	difficulty
+key	space	0.1
+sleep	3
+capture	controls
+key	space	0.1
+present	180	20
+capture	language
+key	space	0.1
+present	180	20
+capture	post-language-first-a
+key	space	0.1
+present	120	15
+capture	campaign-intro
+wait-pulse	\[ac6-campaign-transition\].*state=1->2	Escape
+capture	post-campaign-intro-skip
+
+# Mission 01 briefing, loadout and cinematic. Keep each confirmation explicit
+# so a changed page cannot be mistaken for a renderer or HSM transition.
+sleep	5
+capture	mission-01-start
+key	space	0.1
+sleep	15
+capture	post-start-a
+key	space	0.1
+sleep	20
+capture	post-start-b
+key	space	0.1
+sleep	12
+capture	post-weapon-confirm
+key	Shift	0.1
+sleep	8
+capture	mission-submenu-ready
+key	space	0.1
+sleep	35
+capture	mission-launch
+sleep	60
+capture	mission-briefing
+key	space	0.1
+sleep	45
+capture	mission-cinematic
+sleep	30
+capture	post-cinematic-30s
+key	space	0.1
+sleep	15
+capture	post-cinematic-a-15s
+key	Escape	0.1
+sleep	15
+capture	flight-hud-baseline
+
+# Input proof starts only after the HUD boundary; no synthetic flight state is
+# injected. Each edge is isolated by a neutral two-second window.
+key	W	1.0
+sleep	2
+capture	flight-pitch-up
+key	S	1.0
+sleep	2
+capture	flight-pitch-down
+key	A	1.0
+sleep	2
+capture	flight-roll-left
+key	D	1.0
+sleep	2
+capture	flight-roll-right
+key	Q	1.0
+sleep	2
+capture	flight-yaw
+mouse	1	1.0
+sleep	2
+capture	flight-throttle
+mouse	3	1.0
+sleep	2
+capture	flight-brake
