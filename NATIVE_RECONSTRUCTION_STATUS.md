@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 969 — ordinal des objectifs découplé de leur identité
+
+`MissionExecution` ne déduit plus l’index campagne d’un objectif par
+`objective_id - 1`. `MissionScenario::objective_index` calcule l’ordinal
+déterministe des objectifs réellement chargés ; les IDs stables peuvent donc
+être non contigus sans perdre la progression ni bloquer la réussite.
+
+Le test ajoute une mission avec les objectifs `10` et `20`, vérifie leur
+activation/complétion et le passage campagne à `Completed`. Build et CTest
+(`5/5`) sous Xvfb/audio dummy passent.
+
 ## Cycle 968 — racines retail partiellement qualifiées
 
 L’inventaire de code conserve les sept racines natives et ajoute les adresses

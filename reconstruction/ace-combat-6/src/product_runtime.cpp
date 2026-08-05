@@ -1105,6 +1105,14 @@ bool MissionScenario::dispatch_radio(const RadioMessageDatabase& messages,
   return true;
 }
 
+std::optional<std::uint32_t> MissionScenario::objective_index(std::uint32_t id) const noexcept {
+  const std::vector<ObjectiveRecord> records = objectives_.snapshot();
+  for (std::size_t index = 0; index < records.size(); ++index) {
+    if (records[index].id == id) return static_cast<std::uint32_t>(index);
+  }
+  return std::nullopt;
+}
+
 MissionDebrief MissionScenario::debrief() const {
   MissionDebrief result;
   result.mission_id = mission_id_;
@@ -3422,10 +3430,11 @@ bool MissionExecution::activate_objective(std::uint32_t id) noexcept {
 
 bool MissionExecution::complete_objective(std::uint32_t id) noexcept {
   if (!launched_) return false;
-  if (campaign_ != nullptr &&
-      !campaign_->can_complete_objective(definition_->id, id == 0 ? 0 : id - 1)) return false;
+  const auto index = scenario_.objective_index(id);
+  if (!index || (campaign_ != nullptr &&
+                 !campaign_->can_complete_objective(definition_->id, *index))) return false;
   if (!scenario_.complete_objective(id)) return false;
-  return campaign_ == nullptr || campaign_->complete_objective(definition_->id, id - 1);
+  return campaign_ == nullptr || campaign_->complete_objective(definition_->id, *index);
 }
 
 bool MissionExecution::fail_objective(std::uint32_t id) noexcept {

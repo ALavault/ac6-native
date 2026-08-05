@@ -857,6 +857,28 @@ int main() {
   REQUIRE(objective_execution.activate_objective(1));
   REQUIRE(objective_execution.complete_objective(1));
   REQUIRE(objective_execution.dispatch({ac6::EventType::Complete, 0}));
+  ac6::CampaignProgression noncontiguous_campaign;
+  REQUIRE(noncontiguous_campaign.add({1, {1, 9, 9}, 2, {}}));
+  REQUIRE(noncontiguous_campaign.finalize());
+  REQUIRE(noncontiguous_campaign.enter_briefing(1));
+  REQUIRE(noncontiguous_campaign.set_loadout(1, {7, 8, true}));
+  REQUIRE(noncontiguous_campaign.begin(1));
+  ac6::MissionObjectiveDatabase noncontiguous_objectives;
+  const char* noncontiguous_manifest = "ac6-test-noncontiguous-objectives.tsv";
+  { std::ofstream out(noncontiguous_manifest);
+    out << "1\t10\tprimary\t1\n" << "1\t20\tsecondary\t1\n"; }
+  REQUIRE(noncontiguous_objectives.load_manifest(noncontiguous_manifest));
+  std::remove(noncontiguous_manifest);
+  ac6::MissionExecution noncontiguous_execution(*selected_definition, &assets,
+                                                 &noncontiguous_objectives, nullptr,
+                                                 &noncontiguous_campaign);
+  REQUIRE(noncontiguous_execution.launch(*launch));
+  REQUIRE(noncontiguous_execution.activate_objective(10));
+  REQUIRE(noncontiguous_execution.complete_objective(10));
+  REQUIRE(noncontiguous_execution.activate_objective(20));
+  REQUIRE(noncontiguous_execution.complete_objective(20));
+  REQUIRE(noncontiguous_execution.dispatch({ac6::EventType::Complete, 0}));
+  REQUIRE(noncontiguous_campaign.status(1)->state == ac6::CampaignMissionState::Completed);
   ac6::MissionExecution failed_execution(*selected_definition, &assets, &loaded_objectives);
   REQUIRE(failed_execution.launch(*launch));
   REQUIRE(failed_execution.activate_objective(1));

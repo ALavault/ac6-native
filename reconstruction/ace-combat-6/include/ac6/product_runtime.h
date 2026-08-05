@@ -385,6 +385,7 @@ class MissionScenario final {
   ScenarioState state() const noexcept { return state_; }
   EntityId player() const noexcept { return player_; }
   const ObjectiveRegistry& objectives() const noexcept { return objectives_; }
+  std::optional<std::uint32_t> objective_index(std::uint32_t id) const noexcept;
   const std::vector<std::uint32_t>& radio_history() const noexcept { return radio_history_; }
   MissionDebrief debrief() const;
   MissionScenarioSnapshot snapshot() const;
