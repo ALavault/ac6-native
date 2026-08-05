@@ -3041,3 +3041,15 @@ monde noir ; `PRESENT`, les binds et les resolves continuent, avec des régions
 de resolve vides répétées. La prochaine preuve requise est donc un catalogue
 draw-level activé sur la fenêtre briefing→HUD, pas une correction input ou HSM.
 Voir `reports/cycle-1010-bridge-gameplay-black-world.md`.
+
+## Shader, lumière et texte au bord du monde noir (cycle 1017, 2026-08-05)
+
+Le frame gameplay bridge `26537` est maintenant catalogué: 1325 draws,
+372 D5B4 map-object draws, D5B4 et `8F1C` valides, constantes de lumière
+cohérentes, swap guest 1280x720 sans scale, et huit régions resolve vides dans
+la fenêtre observée. `mapobj_m01_l_brg1_n/brg2_n` bindent les bases
+`045A2000/045FB000`; l’image HUD reste verte sur monde noir. Les glyph sheets
+dialogue ne sont pas bindées dans ce frame, donc l’absence de texte ne qualifie
+pas le shader texte comme cause du monde noir. La prochaine A/B est le sample
+D5B4 zéro/blanc, puis une sonde bornée source/texel et target/resolve. Voir
+`reports/cycle-1017-gameplay-shader-light-text-boundary.md`.
