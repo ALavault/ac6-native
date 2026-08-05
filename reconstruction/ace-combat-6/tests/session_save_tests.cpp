@@ -34,7 +34,8 @@ int main() {
       {4098, 2, {20.0f, 0.0f, 0.0f}, 40.0f, 100.0f, 1.0f, true}};
   mission_checkpoint.resource_identities = {
       {9, "DATA00.PAC@0x01028000+0x00ca0000",
-       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}};
+       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+       7, {119}}};
   mission_checkpoint.sequence.entries = {
       {ac6::MissionSequenceEvent{1, 1, 1,
                                  ac6::MissionSequenceEventType::ActivateObjective, 1, 0.0f}, true},

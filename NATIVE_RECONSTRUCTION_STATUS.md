@@ -2,6 +2,14 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 995 — persistance du contrat resource dans AC6SESS
+
+`AC6SESS` passe en version 7 et persiste désormais taille et dépendances des
+identités d'assets; les versions 1–6 restent lisibles. Le test de session
+effectue le round-trip d'un checkpoint étendu et la validation conserve le
+fail-closed sur les dépendances invalides. Voir
+`reports/cycle-995-session-resource-contract.md`.
+
 ## Cycle 994 — intégration du bundle services dans le flux mission
 
 Le test consomme maintenant `MissionRuntimeServices` pour traverser briefing,
