@@ -2966,3 +2966,14 @@ Les destructions et désactivations du `CombatWorld` sont maintenant reflétées
 dans `UnitRegistry` avant publication de `WorldFrame`; le compteur d’unités et
 les checkpoints ne conservent plus un ennemi mort comme actif. Voir
 `reports/cycle-1001-combat-unit-activity-sync.md`.
+
+## Frontière de route bridge Mission 1 (cycle 1002, 2026-08-05)
+
+Une exécution recompiled/bridge qualifiée par les SHA du PAL et de l’ELF a
+atteint `type28=30 → 37 → 35`, `selector44=3`, puis `type28=6` et a émis 3331
+`PRESENT`; elle a expiré en attendant `type28=8`. Aucun marqueur fatal/crash/
+segmentation/assert n’a été trouvé dans les deux logs, mais la capture retenue
+est encore le splash Bandai Namco. Le log `lane=stock` est ignoré comme preuve
+de parité puisque le binaire utilise `hybrid_backend_fixes`. Aucun contrat
+renderer ni preuve `Loading→Game` n’est déduit. Voir
+`reports/cycle-1002-bridge-mission-route-boundary.md`.
