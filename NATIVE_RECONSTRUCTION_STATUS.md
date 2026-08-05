@@ -2,6 +2,20 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 990 — inventaire borné des dépendances payloads 9–23
+
+L’inventaire machine-readable parcourt maintenant les 15 payloads `FHM`
+décodés, avec vérification des hashes, tailles, offsets, chemins FHM,
+parents et arêtes. Il couvre 6 778 nœuds récursifs, 5 485 ressources uniques
+et 52 hashes partagés, dont un hash vide. Le JSON durable est référencé par le
+catalogue avec son SHA-256; aucun blob retail n’est ajouté.
+
+Les types `NTXR`, `NFH`, `NFIC`, `Scene` et `CAPT` sont observés et
+content-addressed. `MATE`, `NDXR`, `TCAM` et `XMA` ne sont pas observés comme
+tags autonomes. Les contrats correspondants restent donc explicitement
+partiels ou inconnus; les missions 3–15 conservent leur statut `partial` pour
+la qualification sémantique. Les audits catalogue, build et CTest passent.
+
 ## Cycle 989 — décodage des payloads missions 12–15 et hashes partagés
 
 Les entrées physiques 20, 21, 22 et 23 sont maintenant décodées avec le codec

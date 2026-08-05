@@ -138,6 +138,29 @@ def main() -> int:
             return fail("payload_dependency_group_entries")
     if dependency_hashes["shared_hash_group_count"] != len(groups) + dependency_hashes["empty_shared_hash_group_count"]:
         return fail("payload_dependency_group_count")
+    dependency_inventory = document.get("payload_dependency_inventory")
+    expected_inventory_stats = {
+        "scope_data_table_entries": list(range(9, 24)),
+        "recursive_nodes": 6778,
+        "unique_resource_hashes": 5485,
+        "shared_resource_hashes": 52,
+        "empty_resource_hashes": 1,
+    }
+    if not isinstance(dependency_inventory, dict) or dependency_inventory.get("status") != "partial":
+        return fail("payload_dependency_inventory")
+    for field, expected in expected_inventory_stats.items():
+        if dependency_inventory.get(field) != expected:
+            return fail(f"payload_dependency_inventory_{field}")
+    artifact = dependency_inventory.get("artifact")
+    artifact_sha256 = dependency_inventory.get("artifact_sha256")
+    if not isinstance(artifact, str) or not SHA256.fullmatch(artifact_sha256 or ""):
+        return fail("payload_dependency_inventory_artifact")
+    artifact_path = (args.catalog.parent.parent / artifact) if artifact.startswith("reports/") else (args.catalog.parent / artifact)
+    try:
+        if artifact_path.stat().st_size != dependency_inventory.get("artifact_size") or hashlib.sha256(artifact_path.read_bytes()).hexdigest() != artifact_sha256:
+            return fail("payload_dependency_inventory_artifact_sha256")
+    except OSError:
+        return fail("payload_dependency_inventory_artifact_read")
     missions = document.get("missions")
     if not isinstance(missions, list) or len(missions) != 15:
         return fail("mission_count")
