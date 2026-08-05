@@ -2,6 +2,24 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 987 — décodage des payloads missions 6–8 et hashes partagés
+
+Les entrées 14, 15 et 16 sont maintenant décodées avec le même codec PAL et
+le même parseur FHM borné. Elles commencent toutes par `FHM ` et portent 26
+enfants top-level; l’entrée 15 expose 728 lignes FHM récursives et les
+entrées 14/16 en exposent 112. Aucun échec de parse n’est observé.
+
+La comparaison hash exacte des nœuds FHM des entrées 11–16 couvre 1 288 nœuds
+et 877 hashes uniques, avec 18 groupes partagés (17 non vides et un groupe de
+payloads vides). Le groupe FHM de 480 octets et le bloc `ACE6` de 4 octets
+sont partagés par les six entrées; les autres groupes restent des bytes
+adressés par hash, sans sémantique supposée. Le catalogue conserve la liste
+complète des groupes et leur provenance.
+
+Les missions 6–8 restent `partial` pour `payload_dependency_inventory`; les
+missions 9–15 restent `not_attempted`. Build, CTest sous Xvfb/audio dummy et
+audits campagne/code passent.
+
 ## Cycle 986 — décodage des payloads missions 3–5
 
 Le nouvel extracteur `tools/extract_ac6_pac.py` lit uniquement les plages

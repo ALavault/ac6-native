@@ -104,6 +104,33 @@ def main() -> int:
         for field in ("stored_size", "expanded_size"):
             if type(asset.get(field)) is not int or asset[field] <= 0:
                 return fail(f"data_table_asset_{field}:{key}")
+    dependency_hashes = document.get("payload_dependency_hashes")
+    if not isinstance(dependency_hashes, dict) or dependency_hashes.get("status") != "bounded":
+        return fail("payload_dependency_hashes")
+    if dependency_hashes.get("scope_data_table_entries") != [11, 12, 13, 14, 15, 16]:
+        return fail("payload_dependency_scope")
+    for field in ("recursive_nodes", "unique_node_hashes", "shared_hash_group_count", "nonempty_shared_hash_group_count", "empty_shared_hash_group_count"):
+        if type(dependency_hashes.get(field)) is not int or dependency_hashes[field] <= 0:
+            return fail(f"payload_dependency_{field}")
+    groups = dependency_hashes.get("groups")
+    if not isinstance(groups, list) or len(groups) != dependency_hashes["nonempty_shared_hash_group_count"]:
+        return fail("payload_dependency_groups")
+    seen_hashes: set[str] = set()
+    for group in groups:
+        if not isinstance(group, dict) or not SHA256.fullmatch(group.get("sha256", "")):
+            return fail("payload_dependency_group_hash")
+        if group["sha256"] in seen_hashes:
+            return fail("payload_dependency_duplicate_hash")
+        seen_hashes.add(group["sha256"])
+        if not isinstance(group.get("magic_hex"), str) or not re.fullmatch(r"[0-9a-fA-F]{8}", group["magic_hex"]):
+            return fail("payload_dependency_group_magic")
+        if type(group.get("size")) is not int or group["size"] <= 0:
+            return fail("payload_dependency_group_size")
+        entries = group.get("entries")
+        if not isinstance(entries, list) or len(entries) < 2 or not all(entry in dependency_hashes["scope_data_table_entries"] for entry in entries):
+            return fail("payload_dependency_group_entries")
+    if dependency_hashes["shared_hash_group_count"] != len(groups) + dependency_hashes["empty_shared_hash_group_count"]:
+        return fail("payload_dependency_group_count")
     missions = document.get("missions")
     if not isinstance(missions, list) or len(missions) != 15:
         return fail("mission_count")
