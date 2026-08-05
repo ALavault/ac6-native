@@ -2,6 +2,18 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 968 — racines retail partiellement qualifiées
+
+L’inventaire de code conserve les sept racines natives et ajoute les adresses
+retail qualifiées déjà présentes dans `analysis/address_catalog.tsv` : vtables
+campagne/HSM, update du manager, dispatch d’état, factory joueur et update
+radio. Ces entrées restent `retail_status=partial` : elles qualifient une
+frontière binaire, pas le graphe complet ni les routes sélecteur→DPL.
+
+Validation : `code_inventory=pass roots=7 native_covered=7 retail_partial=6
+retail_unknown=1 entries=16` avec le SHA-256 du `default.xex` vérifié. Le
+catalogue campagne reste `1 qualified / 1 partial / 13 unqualified`.
+
 ## Cycle 967 — inventaire code machine-readable
 
 `reports/ac6-code-reachability-inventory.json` couvre les sept racines
@@ -9,7 +21,7 @@ fonctionnelles avec preuves natives et distingue explicitement les racines
 retail inconnues. Le validateur fail-closed exige module, callers/callees,
 missions, rôle, preuve et gaps pour chaque inconnue.
 
-Résultat : `roots=7 native_covered=7 retail_unknown=7 entries=9`; le catalogue
+Résultat initial : `roots=7 native_covered=7 retail_unknown=7 entries=9`; le catalogue
 campagne reste `1 qualified / 1 partial / 13 unqualified`. Ce checkpoint ne
 transforme aucune hypothèse retail en sémantique.
 

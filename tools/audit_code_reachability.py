@@ -75,7 +75,7 @@ def main() -> int:
         status = root.get("status")
         root_entries = root.get("entry_ids")
         retail_status = root.get("retail_status")
-        if status not in {"covered", "unknown"} or retail_status not in {"covered", "unknown"} or not isinstance(root_entries, list):
+        if status not in {"covered", "unknown"} or retail_status not in {"covered", "partial", "unknown"} or not isinstance(root_entries, list):
             return fail(f"root_status:{root.get('role')}")
         if any(entry_id not in entry_ids for entry_id in root_entries):
             return fail(f"root_entry_reference:{root['role']}")
@@ -83,11 +83,12 @@ def main() -> int:
             return fail(f"covered_without_entry:{root['role']}")
         if status == "unknown" and not root.get("gaps"):
             return fail(f"unknown_without_gap:{root['role']}")
-        if retail_status == "unknown" and not root.get("retail_gaps"):
-            return fail(f"retail_unknown_without_gap:{root['role']}")
+        if retail_status in {"partial", "unknown"} and not root.get("retail_gaps"):
+            return fail(f"retail_{retail_status}_without_gap:{root['role']}")
         covered += status == "covered"
         unknown += retail_status == "unknown"
-    print(f"code_inventory=pass roots={len(roots)} native_covered={covered} retail_unknown={unknown} entries={len(entries)}")
+    partial = sum(root.get("retail_status") == "partial" for root in roots)
+    print(f"code_inventory=pass roots={len(roots)} native_covered={covered} retail_partial={partial} retail_unknown={unknown} entries={len(entries)}")
     return 0
 
 

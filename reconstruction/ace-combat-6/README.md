@@ -245,6 +245,7 @@ Audit the machine-readable code reachability inventory with:
 python3 tools/audit_code_reachability.py reports/ac6-code-reachability-inventory.json
 ```
 
-The inventory records native covered roots separately from retail unknown
-roots. Unknown retail callers/callees require explicit gaps and cannot publish
-mission semantics.
+The inventory records native covered roots separately from retail partial and
+unknown roots. Qualified retail addresses do not imply a complete call graph;
+all partial/unknown callers, callees, routes, and templates require explicit
+gaps and cannot publish mission semantics.
