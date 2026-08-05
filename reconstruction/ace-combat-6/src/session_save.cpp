@@ -31,9 +31,36 @@ bool valid_flight(const RuntimeSnapshot& flight) noexcept {
          flight.fixed_accumulator >= 0.0f && flight.fixed_accumulator < 1.0f / 60.0f;
 }
 
+bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
+  if (checkpoint.mission_id == 0 || !valid_flight(checkpoint.flight) ||
+      checkpoint.scenario.mission_id != checkpoint.mission_id ||
+      static_cast<std::uint8_t>(checkpoint.scenario.state) >
+          static_cast<std::uint8_t>(ScenarioState::Aborted) || checkpoint.scenario.player == 0 ||
+      checkpoint.scenario.objectives.size() > 1024 ||
+      checkpoint.scenario.radio_history.size() > 65536 || checkpoint.combat_units.empty() ||
+      checkpoint.combat_units.size() > 4096) return false;
+  std::uint32_t previous_objective = 0;
+  for (const ObjectiveRecord& objective : checkpoint.scenario.objectives) {
+    if (!objective.valid() || objective.id <= previous_objective ||
+        static_cast<std::uint8_t>(objective.state) >
+            static_cast<std::uint8_t>(ObjectiveState::Failed)) return false;
+    previous_objective = objective.id;
+  }
+  for (const std::uint32_t message : checkpoint.scenario.radio_history) {
+    if (message == 0) return false;
+  }
+  EntityId previous_unit = 0;
+  for (const CombatUnitState& unit : checkpoint.combat_units) {
+    if (!unit.valid() || unit.entity <= previous_unit) return false;
+    previous_unit = unit.entity;
+  }
+  return true;
+}
+
 bool valid_session(const SessionSaveSnapshot& snapshot) noexcept {
   return snapshot.mission_id != 0 && valid_flight(snapshot.flight) &&
-         valid_campaign(snapshot.campaign);
+         valid_campaign(snapshot.campaign) &&
+         (!snapshot.checkpoint.has_value() || valid_checkpoint(*snapshot.checkpoint));
 }
 
 void write_u32(std::ostream& output, std::uint32_t value) {
@@ -97,6 +124,93 @@ void write_flight(std::ostream& output, const RuntimeSnapshot& flight) {
   write_f32(output, flight.fixed_accumulator);
 }
 
+bool read_flight(std::istream& input, RuntimeSnapshot& flight);
+
+void write_string(std::ostream& output, const std::string& value) {
+  write_u32(output, static_cast<std::uint32_t>(value.size()));
+  output.write(value.data(), static_cast<std::streamsize>(value.size()));
+}
+
+bool read_string(std::istream& input, std::string& value) {
+  std::uint32_t size = 0;
+  if (!read_u32(input, size) || size > 65536) return false;
+  value.resize(size);
+  input.read(value.data(), static_cast<std::streamsize>(size));
+  return static_cast<bool>(input);
+}
+
+void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& checkpoint) {
+  write_u32(output, checkpoint.mission_id);
+  write_flight(output, checkpoint.flight);
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.scenario.state));
+  write_u32(output, checkpoint.scenario.player);
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.scenario.objectives.size()));
+  for (const ObjectiveRecord& objective : checkpoint.scenario.objectives) {
+    write_u32(output, objective.id);
+    write_string(output, objective.stable_id);
+    write_u32(output, objective.required ? 1u : 0u);
+    write_u32(output, static_cast<std::uint32_t>(objective.state));
+  }
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.scenario.radio_history.size()));
+  for (const std::uint32_t message : checkpoint.scenario.radio_history) write_u32(output, message);
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.combat_units.size()));
+  for (const CombatUnitState& unit : checkpoint.combat_units) {
+    write_u32(output, unit.entity);
+    write_u32(output, unit.faction);
+    write_f32(output, unit.position.x);
+    write_f32(output, unit.position.y);
+    write_f32(output, unit.position.z);
+    write_f32(output, unit.health);
+    write_f32(output, unit.max_health);
+    write_f32(output, unit.collision_radius);
+    write_u32(output, unit.active ? 1u : 0u);
+  }
+}
+
+bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint) {
+  std::uint32_t state = 0;
+  std::uint32_t objective_count = 0;
+  std::uint32_t radio_count = 0;
+  std::uint32_t unit_count = 0;
+  if (!read_u32(input, checkpoint.mission_id) || !read_flight(input, checkpoint.flight) ||
+      !read_u32(input, state) || !read_u32(input, checkpoint.scenario.player) ||
+      !read_u32(input, objective_count) || objective_count > 1024) return false;
+  checkpoint.scenario.mission_id = checkpoint.mission_id;
+  checkpoint.scenario.state = static_cast<ScenarioState>(state);
+  checkpoint.scenario.objectives.reserve(objective_count);
+  for (std::uint32_t index = 0; index < objective_count; ++index) {
+    ObjectiveRecord objective;
+    std::uint32_t required = 0;
+    std::uint32_t objective_state = 0;
+    if (!read_u32(input, objective.id) || !read_string(input, objective.stable_id) ||
+        !read_u32(input, required) || required > 1 || !read_u32(input, objective_state)) return false;
+    objective.required = required != 0;
+    objective.state = static_cast<ObjectiveState>(objective_state);
+    checkpoint.scenario.objectives.push_back(std::move(objective));
+  }
+  if (!read_u32(input, radio_count) || radio_count > 65536) return false;
+  checkpoint.scenario.radio_history.reserve(radio_count);
+  for (std::uint32_t index = 0; index < radio_count; ++index) {
+    std::uint32_t message = 0;
+    if (!read_u32(input, message)) return false;
+    checkpoint.scenario.radio_history.push_back(message);
+  }
+  if (!read_u32(input, unit_count) || unit_count == 0 || unit_count > 4096) return false;
+  checkpoint.combat_units.reserve(unit_count);
+  for (std::uint32_t index = 0; index < unit_count; ++index) {
+    CombatUnitState unit;
+    std::uint32_t active = 0;
+    if (!read_u32(input, unit.entity) || !read_u32(input, unit.faction) ||
+        !read_f32(input, unit.position.x) || !read_f32(input, unit.position.y) ||
+        !read_f32(input, unit.position.z) || !read_f32(input, unit.health) ||
+        !read_f32(input, unit.max_health) || !read_f32(input, unit.collision_radius) ||
+        !read_u32(input, active) || active > 1) return false;
+    unit.active = active != 0;
+    checkpoint.combat_units.push_back(unit);
+  }
+  return valid_checkpoint(checkpoint);
+}
+
 bool read_flight(std::istream& input, RuntimeSnapshot& flight) {
   return read_u64(input, flight.tick) && read_f32(input, flight.position_x) &&
          read_f32(input, flight.position_y) && read_f32(input, flight.position_z) &&
@@ -124,7 +238,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 1);
+  write_u32(output, 2);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -143,6 +257,8 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
       write_u32(output, record.mission_id);
       write_u32(output, record.objective_mask);
     }
+    write_u32(output, snapshot.checkpoint.has_value() ? 1u : 0u);
+    if (snapshot.checkpoint.has_value()) write_checkpoint(output, *snapshot.checkpoint);
   }
   if (!output) {
     output.close();
@@ -169,7 +285,8 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   if (!input || std::memcmp(magic, kMagic.data(), kMagic.size()) != 0) return false;
   std::uint32_t version = 0;
   std::uint32_t count = 0;
-  if (!read_u32(input, version) || !read_u32(input, count) || version != 1 || count > 1024) {
+  if (!read_u32(input, version) || !read_u32(input, count) ||
+      (version != 1 && version != 2) || count > 1024) {
     return false;
   }
   std::unordered_map<std::uint32_t, SessionSaveSnapshot> loaded;
@@ -187,6 +304,15 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
         return false;
       }
       snapshot.campaign.completed.push_back(record);
+    }
+    if (version >= 2) {
+      std::uint32_t has_checkpoint = 0;
+      if (!read_u32(input, has_checkpoint) || has_checkpoint > 1) return false;
+      if (has_checkpoint != 0) {
+        MissionExecution::Checkpoint checkpoint;
+        if (!read_checkpoint(input, checkpoint)) return false;
+        snapshot.checkpoint = std::move(checkpoint);
+      }
     }
     if (!valid_session(snapshot) || !loaded.emplace(slot, std::move(snapshot)).second) return false;
   }

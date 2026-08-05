@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <filesystem>
+#include <optional>
 #include <vector>
 
 #include "ac6/campaign_progression.h"
@@ -115,6 +116,7 @@ struct CombatUnitState {
   float collision_radius{1.0f};
   bool active{};
   bool valid() const noexcept;
+  bool operator==(const CombatUnitState&) const = default;
 };
 
 struct WeaponDefinition {
@@ -177,6 +179,7 @@ struct ObjectiveRecord {
   bool required{true};
   ObjectiveState state{ObjectiveState::Pending};
   bool valid() const noexcept { return id != 0 && !stable_id.empty(); }
+  bool operator==(const ObjectiveRecord&) const = default;
 };
 
 class ObjectiveRegistry final {
@@ -1060,6 +1063,7 @@ struct SessionSaveSnapshot {
   std::uint32_t mission_id{};
   RuntimeSnapshot flight{};
   CampaignSaveSnapshot campaign;
+  std::optional<MissionExecution::Checkpoint> checkpoint;
   bool operator==(const SessionSaveSnapshot&) const = default;
 };
 

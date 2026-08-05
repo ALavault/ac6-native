@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 959 — persistance du checkpoint de session
+
+`AC6SESS` version 2 persiste désormais le checkpoint MissionExecution complet
+(vol, HSM, objectifs, radio et unités de combat), avec bornes, validation
+transactionnelle et lecture rétrocompatible de la version 1. Le test couvre
+round-trip, corruption sans mutation et fichier v1.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. Les projectiles en vol restent volontairement exclus et empêchent la
+création d’un checkpoint.
+
 ## Cycle 958 — checkpoint MissionExecution
 
 `MissionExecution::Checkpoint` regroupe vol, HSM, joueur, objectifs, radio et

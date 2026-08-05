@@ -205,8 +205,8 @@ runtime route.
 `MissionExecution::Checkpoint` is the in-memory pause/restart boundary for
 flight, HSM, objectives, radio history and combat units. It rejects malformed
 states transactionally and refuses checkpoints while a projectile is in
-flight. `AC6SESS` currently persists the flight and campaign portions; the
-full checkpoint disk encoding remains open.
+flight. `AC6SESS` version 2 persists the full checkpoint with bounded HSM,
+objective, radio and combat-unit state, while version 1 files remain readable.
 
 `CombatWorld` is the generic combat boundary for active units, faction-aware
 target locking, weapons, projectiles, collision and damage. `MissionExecution`
