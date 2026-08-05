@@ -775,6 +775,22 @@ int main() {
   const auto resumed_by_button = button_execution.tick(1.0f / 60.0f, {0, 0, 0, 0, 2});
   REQUIRE(button_execution.scenario().state() == ac6::ScenarioState::Gameplay);
   REQUIRE(resumed_by_button.tick == 2);
+  ac6::ReplayLog mission_replay;
+  mission_replay.append({0, 0, 0, 0, 0});
+  mission_replay.append({32767, 0, 0, 255, 1});
+  mission_replay.append({0, 0, 0, 0, 2});
+  ac6::MissionExecution replay_execution_a(*selected_definition, &assets, nullptr, nullptr,
+                                            nullptr, nullptr, nullptr, &mission_input);
+  ac6::MissionExecution replay_execution_b(*selected_definition, &assets, nullptr, nullptr,
+                                            nullptr, nullptr, nullptr, &mission_input);
+  REQUIRE(replay_execution_a.launch(*launch) && replay_execution_b.launch(*launch));
+  const auto mission_replay_frame_a = replay_execution_a.run_replay(1.0f / 60.0f, mission_replay);
+  const auto mission_replay_frame_b = replay_execution_b.run_replay(1.0f / 60.0f, mission_replay);
+  REQUIRE(mission_replay_frame_a.tick == mission_replay_frame_b.tick &&
+          mission_replay_frame_a.position_x == mission_replay_frame_b.position_x &&
+          mission_replay_frame_a.position_z == mission_replay_frame_b.position_z &&
+          replay_execution_a.scenario().state() == ac6::ScenarioState::Gameplay &&
+          replay_execution_b.scenario().state() == ac6::ScenarioState::Gameplay);
   ac6::MissionExecution execution(*selected_definition, &assets);
   REQUIRE(!execution.launched());
   REQUIRE(execution.launch(*launch));

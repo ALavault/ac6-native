@@ -3611,6 +3611,12 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   return frame;
 }
 
+WorldFrame MissionExecution::run_replay(float fixed_dt, const ReplayLog& replay) noexcept {
+  WorldFrame frame{};
+  for (const InputFrame input : replay.frames()) frame = tick(fixed_dt, input);
+  return frame;
+}
+
 RuntimeSnapshot MissionExecution::snapshot() const noexcept {
   return runtime_.snapshot();
 }

@@ -937,6 +937,7 @@ class MissionExecution final {
   void set_failure_tick(std::uint64_t tick) noexcept { failure_tick_ = tick; }
   std::uint64_t failure_tick() const noexcept { return failure_tick_; }
   WorldFrame tick(float fixed_dt, InputFrame input) noexcept;
+  WorldFrame run_replay(float fixed_dt, const ReplayLog& replay) noexcept;
   RuntimeSnapshot snapshot() const noexcept;
   bool restore(RuntimeSnapshot snapshot) noexcept;
   struct Checkpoint {

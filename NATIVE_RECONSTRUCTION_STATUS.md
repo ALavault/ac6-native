@@ -2,6 +2,16 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 975 — replay déterministe de l’exécution mission
+
+`MissionExecution::run_replay` rejoue maintenant les `InputFrame` via le même
+chemin que le vol interactif, y compris `buttons` et les transitions Pause /
+Resume. Deux exécutions lancées avec les mêmes assets, mapping et replay
+produisent le même tick et la même pose finale.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits campagne/code
+passent.
+
 ## Cycle 974 — validation fail-closed des snapshots campagne
 
 Les snapshots campagne v2 refusent désormais les états `Locked`/`Available`,
