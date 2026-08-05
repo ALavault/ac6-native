@@ -238,3 +238,13 @@ target locking, weapons, projectiles, collision and damage. `MissionExecution`
 initializes its unit frontier on launch and exposes `lock_target` and
 `fire_weapon`; retail weapon parameters remain unqualified until sourced from
 the campaign manifest and binary evidence.
+
+Audit the machine-readable code reachability inventory with:
+
+```sh
+python3 tools/audit_code_reachability.py reports/ac6-code-reachability-inventory.json
+```
+
+The inventory records native covered roots separately from retail unknown
+roots. Unknown retail callers/callees require explicit gaps and cannot publish
+mission semantics.

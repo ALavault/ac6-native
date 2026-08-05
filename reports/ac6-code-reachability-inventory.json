@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "ghidra_project": "ace-combat-6",
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "roots": [
+    {"role": "campaign_selection", "status": "covered", "entry_ids": ["native.frontend.select_mission"], "retail_status": "unknown", "retail_gaps": ["selector caller chain for missions 3-15"]},
+    {"role": "campaign_loading", "status": "covered", "entry_ids": ["native.manifest.load_campaign"], "retail_status": "unknown", "retail_gaps": ["retail DPL/data-table loader root not Ghidra-qualified"]},
+    {"role": "mission_hsm", "status": "covered", "entry_ids": ["native.mission.dispatch"], "retail_status": "unknown", "retail_gaps": ["retail HSM event roots not qualified"]},
+    {"role": "mission_update", "status": "covered", "entry_ids": ["native.mission.tick"], "retail_status": "unknown", "retail_gaps": ["retail mission update callers not qualified"]},
+    {"role": "event_dispatch", "status": "covered", "entry_ids": ["native.sequence.dispatch_due"], "retail_status": "unknown", "retail_gaps": ["retail event dispatch graph not qualified"]},
+    {"role": "unit_factory", "status": "covered", "entry_ids": ["native.wave.spawn_due"], "retail_status": "unknown", "retail_gaps": ["retail unit factory roots/templates not qualified"]},
+    {"role": "radio_dispatch", "status": "covered", "entry_ids": ["native.radio.play"], "retail_status": "unknown", "retail_gaps": ["retail radio/XMA dispatch graph not qualified"]}
+  ],
+  "entries": [
+    {"id": "native.frontend.select_mission", "address": "native:FrontendController::select_mission", "module": "reconstruction/ace-combat-6/src/product_runtime.cpp", "callers": ["native.frontend.advance"], "callees": ["CampaignProgression::is_available"], "missions": [], "role": "campaign selection", "proof": "native_test"},
+    {"id": "native.manifest.load_campaign", "address": "native:MissionManifestLoader::load_campaign", "module": "reconstruction/ace-combat-6/src/product_runtime.cpp", "callers": ["ac6-native --validate-manifest"], "callees": ["CampaignProgression::load_manifest"], "missions": [], "role": "campaign loading", "proof": "native_test"},
+    {"id": "native.mission.dispatch", "address": "native:MissionExecution::dispatch", "module": "reconstruction/ace-combat-6/src/product_runtime.cpp", "callers": ["native.sequence.dispatch_due", "ac6-native"], "callees": ["MissionScenario::dispatch", "CampaignProgression::complete", "CampaignProgression::fail"], "missions": [], "role": "mission HSM", "proof": "native_test"},
+    {"id": "native.mission.tick", "address": "native:MissionExecution::tick", "module": "reconstruction/ace-combat-6/src/product_runtime.cpp", "callers": ["ac6-native --services-smoke", "ac6-native --present-manifest"], "callees": ["MissionRuntime::tick", "CombatWorld::tick", "MissionWaveDirector::spawn_due"], "missions": [], "role": "mission update", "proof": "native_test"},
+    {"id": "native.sequence.dispatch_due", "address": "native:MissionSequenceDirector::dispatch_due", "module": "reconstruction/ace-combat-6/src/product_runtime.cpp", "callers": ["native.mission.tick"], "callees": ["MissionExecution::activate_objective", "MissionExecution::complete_objective", "MissionExecution::play_radio"], "missions": [], "role": "event dispatch", "proof": "native_test"},
+    {"id": "native.wave.spawn_due", "address": "native:MissionWaveDirector::spawn_due", "module": "reconstruction/ace-combat-6/src/product_runtime.cpp", "callers": ["native.mission.tick"], "callees": ["UnitRegistry::register_unit", "CombatWorld::add_unit"], "missions": [], "role": "unit factory", "proof": "native_test"},
+    {"id": "native.radio.play", "address": "native:MissionExecution::play_radio", "module": "reconstruction/ace-combat-6/src/product_runtime.cpp", "callers": ["native.sequence.dispatch_due", "ac6-native"], "callees": ["RadioPlaybackService::start", "MissionScenario::dispatch_radio"], "missions": [], "role": "radio dispatch", "proof": "native_test"},
+    {"id": "retail.campaign_selector_to_dpl", "address": null, "module": "default.xex", "callers": [], "callees": [], "missions": [], "role": "campaign selection", "proof": "unknown", "gaps": ["Ghidra-qualified caller chain for selectors 3-15"]},
+    {"id": "retail.mission_unit_factory", "address": null, "module": "default.xex", "callers": [], "callees": [], "missions": [], "role": "unit factory", "proof": "unknown", "gaps": ["Mission-specific factory roots and templates not qualified"]}
+  ],
+  "policy": {"unknown_is_explicit": true, "generated_cpp_is_not_semantics": true, "xenia_is_oracle_only": true}
+}

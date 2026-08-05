@@ -2,6 +2,17 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 967 — inventaire code machine-readable
+
+`reports/ac6-code-reachability-inventory.json` couvre les sept racines
+fonctionnelles avec preuves natives et distingue explicitement les racines
+retail inconnues. Le validateur fail-closed exige module, callers/callees,
+missions, rôle, preuve et gaps pour chaque inconnue.
+
+Résultat : `roots=7 native_covered=7 retail_unknown=7 entries=9`; le catalogue
+campagne reste `1 qualified / 1 partial / 13 unqualified`. Ce checkpoint ne
+transforme aucune hypothèse retail en sémantique.
+
 ## Cycle 966 — persistance du playback radio
 
 `MissionExecution::Checkpoint` conserve le snapshot radio actif (message,
