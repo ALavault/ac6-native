@@ -671,6 +671,23 @@ int main() {
   radio_execution.tick(0.25f, {});
   REQUIRE(radio_execution.radio().snapshot().state == ac6::RadioPlaybackState::Complete);
   REQUIRE(!radio_execution.play_radio(11, 0.5f));
+  ac6::MissionSequenceDirector sequence;
+  REQUIRE(sequence.add({1, 1, 1, ac6::MissionSequenceEventType::ActivateObjective, 1, 0.0f}));
+  REQUIRE(sequence.add({1, 2, 1, ac6::MissionSequenceEventType::PlayRadio, 10, 0.25f}));
+  REQUIRE(sequence.add({1, 3, 1, ac6::MissionSequenceEventType::CompleteObjective, 1, 0.0f}));
+  REQUIRE(!sequence.add({1, 1, 1, ac6::MissionSequenceEventType::FailObjective, 1, 0.0f}));
+  ac6::MissionExecution sequenced_execution(*selected_definition, &radio_assets,
+                                            &loaded_objectives, &radios, nullptr, nullptr,
+                                            &sequence);
+  REQUIRE(sequenced_execution.launch(*launch));
+  REQUIRE(sequenced_execution.tick(1.0f / 60.0f, {}).tick == 1);
+  REQUIRE(sequenced_execution.scenario().objectives().find(1)->state ==
+              ac6::ObjectiveState::Active && sequence.dispatched(1) == 1);
+  sequenced_execution.tick(1.0f / 60.0f, {});
+  REQUIRE(sequenced_execution.radio().playing() && sequence.dispatched(1) == 2);
+  sequenced_execution.tick(1.0f / 60.0f, {});
+  REQUIRE(sequenced_execution.scenario().objectives().find(1)->state ==
+              ac6::ObjectiveState::Complete && sequence.pending(1) == 0);
   std::remove(radio_manifest);
 
   ac6::MissionAssetDatabase assets;

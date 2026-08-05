@@ -295,6 +295,41 @@ class RadioPlaybackService final {
   RadioPlaybackSnapshot snapshot_{};
 };
 
+class MissionExecution;
+enum class MissionSequenceEventType : std::uint8_t {
+  ActivateObjective,
+  CompleteObjective,
+  FailObjective,
+  PlayRadio,
+};
+
+struct MissionSequenceEvent {
+  std::uint32_t mission_id{};
+  std::uint64_t tick{};
+  std::uint32_t order{};
+  MissionSequenceEventType type{MissionSequenceEventType::ActivateObjective};
+  std::uint32_t id{};
+  float duration_seconds{};
+  bool valid() const noexcept;
+};
+
+class MissionSequenceDirector final {
+ public:
+  bool add(MissionSequenceEvent event);
+  bool dispatch_due(std::uint32_t mission_id, std::uint64_t tick,
+                    MissionExecution& execution) noexcept;
+  std::size_t pending(std::uint32_t mission_id) const noexcept;
+  std::size_t dispatched(std::uint32_t mission_id) const noexcept;
+  void reset() noexcept;
+
+ private:
+  struct Entry {
+    MissionSequenceEvent event;
+    bool published{};
+  };
+  std::vector<Entry> entries_;
+};
+
 enum class ScenarioState : std::uint8_t { Loading, Briefing, Gameplay, Paused, Complete, Aborted };
 
 enum class MissionOutcome : std::uint8_t { InProgress, Success, Failure };
@@ -871,7 +906,8 @@ class MissionExecution final {
                    const MissionObjectiveDatabase* objectives = nullptr,
                    const RadioMessageDatabase* radios = nullptr,
                    CampaignProgression* campaign = nullptr,
-                   MissionWaveDirector* waves = nullptr);
+                   MissionWaveDirector* waves = nullptr,
+                   MissionSequenceDirector* sequence = nullptr);
   bool launch(const MissionLaunchDefinition& launch) noexcept;
   bool dispatch(Event event) noexcept;
   bool activate_objective(std::uint32_t id) noexcept;
@@ -912,6 +948,7 @@ class MissionExecution final {
   const RadioMessageDatabase* radios_{};
   CampaignProgression* campaign_{};
   MissionWaveDirector* waves_{};
+  MissionSequenceDirector* sequence_{};
   MissionRuntime runtime_;
   MissionScenario scenario_;
   UnitRegistry units_;

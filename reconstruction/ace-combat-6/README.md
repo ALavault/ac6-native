@@ -225,6 +225,11 @@ Retail wave parameters still require a qualified mission manifest.
 playback, tracks completion/interruption and freezes while the mission HSM is
 paused. XMA decoding and retail timing remain replaceable service boundaries.
 
+`MissionSequenceDirector` schedules objective and radio events by mission tick
+and order, and dispatches them through `MissionExecution` so campaign/HSM
+preconditions remain authoritative. Sequence publication is not yet part of
+the `AC6SESS` checkpoint payload.
+
 `CombatWorld` is the generic combat boundary for active units, faction-aware
 target locking, weapons, projectiles, collision and damage. `MissionExecution`
 initializes its unit frontier on launch and exposes `lock_target` and

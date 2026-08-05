@@ -236,6 +236,33 @@ void RadioPlaybackService::reset() noexcept {
   snapshot_ = {};
 }
 
+bool MissionSequenceEvent::valid() const noexcept {
+  const auto event_type = static_cast<std::uint8_t>(type);
+  if (mission_id == 0 || tick == 0 || order == 0 || id == 0 || event_type >
+      static_cast<std::uint8_t>(MissionSequenceEventType::PlayRadio)) return false;
+  if (event_type == static_cast<std::uint8_t>(MissionSequenceEventType::PlayRadio)) {
+    return std::isfinite(duration_seconds) && duration_seconds > 0.0f;
+  }
+  return duration_seconds == 0.0f;
+}
+
+bool MissionSequenceDirector::add(MissionSequenceEvent event) {
+  if (!event.valid()) return false;
+  for (const Entry& entry : entries_) {
+    if (entry.event.mission_id == event.mission_id && entry.event.tick == event.tick &&
+        entry.event.order == event.order) return false;
+  }
+  entries_.push_back({event, false});
+  std::sort(entries_.begin(), entries_.end(), [](const Entry& left, const Entry& right) {
+    if (left.event.mission_id != right.event.mission_id) {
+      return left.event.mission_id < right.event.mission_id;
+    }
+    if (left.event.tick != right.event.tick) return left.event.tick < right.event.tick;
+    return left.event.order < right.event.order;
+  });
+  return true;
+}
+
 bool InputBinding::valid() const noexcept {
   return button_mask != 0 && static_cast<std::uint8_t>(event) <=
       static_cast<std::uint8_t>(EventType::Abort);
@@ -3294,9 +3321,10 @@ MissionExecution::MissionExecution(const MissionDefinition& definition,
                                    const MissionObjectiveDatabase* objectives,
                                    const RadioMessageDatabase* radios,
                                    CampaignProgression* campaign,
-                                   MissionWaveDirector* waves)
+                                   MissionWaveDirector* waves,
+                                   MissionSequenceDirector* sequence)
     : definition_(&definition), objectives_(objectives), radios_(radios), campaign_(campaign),
-      waves_(waves),
+      waves_(waves), sequence_(sequence),
       runtime_(definition, assets),
       scenario_(definition) {}
 
@@ -3312,6 +3340,7 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
   combat_.clear();
   radio_.reset();
   if (waves_ != nullptr) waves_->reset();
+  if (sequence_ != nullptr) sequence_->reset();
   scenario_ = MissionScenario(*definition_);
   if (objectives_ != nullptr) {
     for (const ObjectiveRecord* objective : objectives_->find_by_mission(definition_->id)) {
@@ -3399,6 +3428,51 @@ bool MissionExecution::play_radio(std::uint32_t id, float duration_seconds) noex
   return false;
 }
 
+bool MissionSequenceDirector::dispatch_due(std::uint32_t mission_id, std::uint64_t tick,
+                                           MissionExecution& execution) noexcept {
+  for (Entry& entry : entries_) {
+    if (entry.published || entry.event.mission_id != mission_id || entry.event.tick > tick) {
+      continue;
+    }
+    bool dispatched = false;
+    switch (entry.event.type) {
+      case MissionSequenceEventType::ActivateObjective:
+        dispatched = execution.activate_objective(entry.event.id);
+        break;
+      case MissionSequenceEventType::CompleteObjective:
+        dispatched = execution.complete_objective(entry.event.id);
+        break;
+      case MissionSequenceEventType::FailObjective:
+        dispatched = execution.fail_objective(entry.event.id);
+        break;
+      case MissionSequenceEventType::PlayRadio:
+        dispatched = execution.play_radio(entry.event.id, entry.event.duration_seconds);
+        break;
+    }
+    if (!dispatched) return false;
+    entry.published = true;
+  }
+  return true;
+}
+
+std::size_t MissionSequenceDirector::pending(std::uint32_t mission_id) const noexcept {
+  return static_cast<std::size_t>(std::count_if(entries_.begin(), entries_.end(),
+      [mission_id](const Entry& entry) {
+        return entry.event.mission_id == mission_id && !entry.published;
+      }));
+}
+
+std::size_t MissionSequenceDirector::dispatched(std::uint32_t mission_id) const noexcept {
+  return static_cast<std::size_t>(std::count_if(entries_.begin(), entries_.end(),
+      [mission_id](const Entry& entry) {
+        return entry.event.mission_id == mission_id && entry.published;
+      }));
+}
+
+void MissionSequenceDirector::reset() noexcept {
+  for (Entry& entry : entries_) entry.published = false;
+}
+
 bool MissionExecution::lock_target(EntityId target) noexcept {
   return launched_ && combat_.lock_target(scenario_.player(), target);
 }
@@ -3413,6 +3487,10 @@ WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
   WorldFrame frame = runtime_.tick(fixed_dt, input);
   if (scenario_.state() == ScenarioState::Gameplay) (void)radio_.tick(fixed_dt);
   if (waves_ != nullptr && !waves_->spawn_due(definition_->id, frame.tick, units_, combat_)) {
+    frame.mission_ready = false;
+    return frame;
+  }
+  if (sequence_ != nullptr && !sequence_->dispatch_due(definition_->id, frame.tick, *this)) {
     frame.mission_ready = false;
     return frame;
   }

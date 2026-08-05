@@ -2,6 +2,16 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 964 — séquenceur HSM mission
+
+`MissionSequenceDirector` ordonne les événements objectifs/radio par tick et
+rang, et `MissionExecution` les applique avec ses préconditions. Les doublons
+sont rejetés et la publication est confirmée seulement après succès.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. La position publiée du séquenceur reste à sérialiser dans `AC6SESS`;
+les événements non publiés doivent être conservés par la frontière runtime.
+
 ## Cycle 963 — frontière radio/playback
 
 `RadioPlaybackService` suit la lecture exclusive d’un message, ses assets
