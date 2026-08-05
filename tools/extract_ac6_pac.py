@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ac6_fhm import parse_fhm
-from ac6_mode1_codec import decompress_entry
+from ac6_mode1_codec import decompress_entry, descramble
 
 
 HEADER_SIZE = 8
@@ -120,7 +120,63 @@ def summarize_fhm(blob: bytes) -> dict | None:
     }
 
 
-def extract_selected(asset_root: Path, output_root: Path, indices: list[int], decompress: bool) -> dict:
+def decode_payload(
+    stored: bytes,
+    entry: dict,
+    *,
+    decode: bool,
+    preserve_raw_storage: bool,
+) -> tuple[bytes, dict, str]:
+    """Return logical payload bytes, decode metadata and output suffix.
+
+    AC6 applies the same index-derived XOR descrambling to both compressed and
+    raw DATA.TBL records. Compressed records are additionally raw-DEFLATE
+    streams. ``--preserve-raw-storage`` keeps the exact on-disc bytes for
+    forensic work while the normal decode path exposes the logical raw payload.
+    """
+    if not decode:
+        return stored, {"status": "not_attempted"}, ".stored.bin"
+
+    if entry["storage_kind"] == "compressed":
+        payload = decompress_entry(stored, entry["index"], entry["expanded_size"])
+        return (
+            payload,
+            {"status": "decoded", "codec": "mode1_pi_xor_raw_deflate"},
+            ".decompressed.bin",
+        )
+
+    if preserve_raw_storage:
+        return (
+            stored,
+            {
+                "status": "preserved",
+                "codec": "stored_bytes",
+                "reason": "preserve_raw_storage",
+            },
+            ".stored.bin",
+        )
+
+    payload = descramble(stored, entry["index"])
+    expected_size = entry["expanded_size"]
+    if expected_size not in (0, len(payload)):
+        raise ValueError(
+            f"raw decoded size mismatch for entry {entry['index']}: "
+            f"got {len(payload)}, expected {expected_size}"
+        )
+    return (
+        payload,
+        {"status": "decoded", "codec": "mode1_pi_xor_raw"},
+        ".descrambled.bin",
+    )
+
+
+def extract_selected(
+    asset_root: Path,
+    output_root: Path,
+    indices: list[int],
+    decompress: bool,
+    preserve_raw_storage: bool = False,
+) -> dict:
     data_tbl = asset_root / "DATA.TBL"
     entry_count, pack_count, all_entries = parse_tbl(data_tbl)
     selected = []
@@ -155,13 +211,13 @@ def extract_selected(asset_root: Path, output_root: Path, indices: list[int], de
             "sha256": hashlib.sha256(stored).hexdigest(),
             "head_hex": stored[:32].hex(),
         }
-        payload = stored
-        record["decode"] = {"status": "not_attempted"}
-        if decompress and entry["storage_kind"] == "compressed":
-            payload = decompress_entry(stored, entry["index"], entry["expanded_size"])
-            record["decode"] = {"status": "decoded", "codec": "mode1_pi_xor_raw_deflate"}
-        elif decompress:
-            record["decode"] = {"status": "not_applicable", "reason": "raw_storage"}
+        payload, decode_metadata, suffix = decode_payload(
+            stored,
+            entry,
+            decode=decompress,
+            preserve_raw_storage=preserve_raw_storage,
+        )
+        record["decode"] = decode_metadata
         record["payload"] = {
             "size": len(payload),
             "sha256": hashlib.sha256(payload).hexdigest(),
@@ -172,7 +228,6 @@ def extract_selected(asset_root: Path, output_root: Path, indices: list[int], de
             "status": "unknown_magic",
             "magic_hex": payload[:4].hex(),
         }
-        suffix = ".decompressed.bin" if record["decode"]["status"] == "decoded" else ".stored.bin"
         out_path = payload_root / f"{entry['index']:04d}{suffix}"
         out_path.write_bytes(payload)
         record["payload_path"] = str(out_path.relative_to(output_root)).replace("\\", "/")
@@ -195,9 +250,13 @@ def extract_selected(asset_root: Path, output_root: Path, indices: list[int], de
             "bounded_pac_reads": True,
             "complete_pac_not_copied": True,
             "unknown_magic_fail_closed": True,
+            "raw_storage_descrambled_when_decoding": not preserve_raw_storage,
+            "raw_storage_preserved": preserve_raw_storage,
         },
     }
-    (output_root / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    (output_root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
+    )
     return manifest
 
 
@@ -206,15 +265,43 @@ def main() -> int:
     parser.add_argument("asset_root", type=Path)
     parser.add_argument("--indices", type=int, nargs="+", required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--decompress", action="store_true")
+    parser.add_argument(
+        "--decompress",
+        action="store_true",
+        help="decode logical payloads: descramble raw records and inflate compressed records",
+    )
+    parser.add_argument(
+        "--preserve-raw-storage",
+        action="store_true",
+        help="with --decompress, keep exact on-disc bytes for raw records",
+    )
     args = parser.parse_args()
-    manifest = extract_selected(args.asset_root.resolve(), args.output.resolve(), args.indices, args.decompress)
-    print(json.dumps({
-        "indices": manifest["indices"],
-        "decoded": sum(entry["decode"]["status"] == "decoded" for entry in manifest["entries"]),
-        "fhm": sum(entry["structure"].get("root") == "FHM" for entry in manifest["entries"]),
-        "output": str(args.output.resolve()),
-    }, indent=2))
+    if args.preserve_raw_storage and not args.decompress:
+        parser.error("--preserve-raw-storage requires --decompress")
+    manifest = extract_selected(
+        args.asset_root.resolve(),
+        args.output.resolve(),
+        args.indices,
+        args.decompress,
+        args.preserve_raw_storage,
+    )
+    print(
+        json.dumps(
+            {
+                "indices": manifest["indices"],
+                "decoded": sum(
+                    entry["decode"]["status"] == "decoded"
+                    for entry in manifest["entries"]
+                ),
+                "fhm": sum(
+                    entry["structure"].get("root") == "FHM"
+                    for entry in manifest["entries"]
+                ),
+                "output": str(args.output.resolve()),
+            },
+            indent=2,
+        )
+    )
     return 0
 
 
