@@ -32,6 +32,9 @@ int main() {
   mission_checkpoint.combat_units = {
       {4097, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true},
       {4098, 2, {20.0f, 0.0f, 0.0f}, 40.0f, 100.0f, 1.0f, true}};
+  mission_checkpoint.resource_identities = {
+      {9, "DATA00.PAC@0x01028000+0x00ca0000",
+       "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}};
   mission_checkpoint.sequence.entries = {
       {ac6::MissionSequenceEvent{1, 1, 1,
                                  ac6::MissionSequenceEventType::ActivateObjective, 1, 0.0f}, true},
@@ -95,8 +98,26 @@ int main() {
   }
   REQUIRE(loaded.read_file(v1_path));
   REQUIRE(loaded.load(3) != nullptr && !loaded.load(3)->checkpoint.has_value());
+  const char* v5_path = "ac6-test-session-save-v5.ac6s";
+  {
+    std::ofstream output(v5_path, std::ios::binary);
+    output.write("AC6SESS\0", 8);
+    write_u32(output, 5);
+    write_u32(output, 1);
+    write_u32(output, 4);
+    write_u32(output, 1);
+    write_u64(output, 120);
+    for (const float value : {1.0f, 2.0f, 3.0f, 0.1f, -0.2f, 0.3f, 0.001f}) {
+      write_f32(output, value);
+    }
+    write_u32(output, 0);
+    write_u32(output, 0);
+  }
+  REQUIRE(loaded.read_file(v5_path));
+  REQUIRE(loaded.load(4) != nullptr && !loaded.load(4)->checkpoint.has_value());
   std::remove(path);
   std::remove(bad_path);
   std::remove(v1_path);
+  std::remove(v5_path);
   return 0;
 }

@@ -3460,9 +3460,9 @@ MissionExecution::MissionExecution(const MissionDefinition& definition,
                                    CampaignProgression* campaign,
                                    MissionWaveDirector* waves,
                                    MissionSequenceDirector* sequence,
-                                   const InputMappingDatabase* input,
-                                   MissionAiDirector* ai)
-    : definition_(&definition), objectives_(objectives), radios_(radios), campaign_(campaign),
+    const InputMappingDatabase* input,
+    MissionAiDirector* ai)
+    : definition_(&definition), assets_(assets), objectives_(objectives), radios_(radios), campaign_(campaign),
       waves_(waves), sequence_(sequence), input_(input), ai_(ai),
       runtime_(definition, assets),
       scenario_(definition) {}
@@ -3721,14 +3721,29 @@ bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
   if (!launched_ || runtime_.snapshot().tick == 0 || combat_.active_projectiles() != 0) {
     return false;
   }
-  checkpoint.mission_id = definition_ == nullptr ? 0 : definition_->id;
-  checkpoint.flight = runtime_.snapshot();
-  checkpoint.scenario = scenario_.snapshot();
-  checkpoint.combat_units = combat_.snapshot_units();
-  checkpoint.failure_tick = failure_tick_;
-  checkpoint.sequence = sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
-  checkpoint.radio_playback = radio_.snapshot();
-  return checkpoint.mission_id != 0;
+  Checkpoint candidate;
+  candidate.mission_id = definition_ == nullptr ? 0 : definition_->id;
+  candidate.flight = runtime_.snapshot();
+  candidate.scenario = scenario_.snapshot();
+  candidate.combat_units = combat_.snapshot_units();
+  if (assets_ != nullptr) {
+    candidate.resource_identities.reserve(definition_->asset_ids.size());
+    for (const AssetId id : definition_->asset_ids) {
+      const AssetRecord* resource = assets_->resolve(id);
+      if (resource == nullptr || !resource->valid()) return false;
+      candidate.resource_identities.push_back(*resource);
+    }
+    std::sort(candidate.resource_identities.begin(), candidate.resource_identities.end(),
+              [](const AssetRecord& left, const AssetRecord& right) {
+                return left.id < right.id;
+              });
+  }
+  candidate.failure_tick = failure_tick_;
+  candidate.sequence = sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
+  candidate.radio_playback = radio_.snapshot();
+  if (candidate.mission_id == 0) return false;
+  checkpoint = std::move(candidate);
+  return true;
 }
 
 bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept {
@@ -3736,11 +3751,26 @@ bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept
       checkpoint.scenario.mission_id != definition_->id ||
       checkpoint.scenario.player == 0 ||
       checkpoint.combat_units.empty() ||
+      checkpoint.resource_identities.size() > 4096 ||
       (sequence_ == nullptr && !checkpoint.sequence.entries.empty())) return false;
   if (std::find_if(checkpoint.combat_units.begin(), checkpoint.combat_units.end(),
                    [&](const CombatUnitState& unit) {
                      return unit.entity == checkpoint.scenario.player;
                    }) == checkpoint.combat_units.end()) return false;
+  AssetId previous_resource = 0;
+  for (const AssetRecord& resource : checkpoint.resource_identities) {
+    if (!resource.valid() || resource.id <= previous_resource) return false;
+    previous_resource = resource.id;
+  }
+  if (!checkpoint.resource_identities.empty()) {
+    if (assets_ == nullptr || checkpoint.resource_identities.size() != definition_->asset_ids.size()) {
+      return false;
+    }
+    for (const AssetRecord& checkpoint_resource : checkpoint.resource_identities) {
+      const AssetRecord* current_resource = assets_->resolve(checkpoint_resource.id);
+      if (current_resource == nullptr || *current_resource != checkpoint_resource) return false;
+    }
+  }
   for (const MissionSequenceEntrySnapshot& entry : checkpoint.sequence.entries) {
     if (!entry.event.valid() || entry.event.mission_id != definition_->id) return false;
   }

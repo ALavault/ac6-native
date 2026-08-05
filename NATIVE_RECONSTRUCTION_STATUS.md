@@ -2,6 +2,22 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 983 — identité des ressources dans les checkpoints
+
+Les checkpoints capturent maintenant les `AssetRecord` triés de la mission
+(ID, chemin relatif et hash), et `MissionExecution::restore_checkpoint` les
+compare au manifeste actuellement chargé avant toute mutation. Un chemin ou
+hash modifié est refusé ; la capture est publiée atomiquement seulement après
+la résolution de toutes les ressources.
+
+`AC6SESS` passe en version 6 pour sérialiser ces identités. Les versions 1 à 5
+restent lisibles ; leurs anciens checkpoints sans identité suivent le chemin
+de compatibilité historique, tandis que toute nouvelle capture porte les
+ressources qualifiées.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke Vulkan et audits
+campagne/code passent.
+
 ## Cycle 982 — sauvegarde disque d’une mission active
 
 La reprise ne se limite plus à un objet mémoire : une Mission 1 active avec

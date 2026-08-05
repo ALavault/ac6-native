@@ -428,6 +428,8 @@ struct AssetRecord {
   AssetId id{};
   std::string relative_path;
   std::string sha256;
+  bool valid() const noexcept { return id != 0 && !relative_path.empty() && !sha256.empty(); }
+  bool operator==(const AssetRecord&) const = default;
 };
 
 enum class MissionFamily : std::uint8_t { AirIntercept, Strike, Escort, Unknown };
@@ -972,6 +974,7 @@ class MissionExecution final {
     RuntimeSnapshot flight;
     MissionScenarioSnapshot scenario;
     std::vector<CombatUnitState> combat_units;
+    std::vector<AssetRecord> resource_identities;
     std::uint64_t failure_tick{};
     MissionSequenceSnapshot sequence;
     RadioPlaybackSnapshot radio_playback;
@@ -991,6 +994,7 @@ class MissionExecution final {
 
  private:
   const MissionDefinition* definition_{};
+  const MissionAssetDatabase* assets_{};
   const MissionObjectiveDatabase* objectives_{};
   const RadioMessageDatabase* radios_{};
   CampaignProgression* campaign_{};

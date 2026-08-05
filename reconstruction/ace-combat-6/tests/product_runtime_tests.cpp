@@ -943,6 +943,10 @@ int main() {
                                                     &restored_session_campaign);
   REQUIRE(reloaded_session_execution.launch(weapon_launch));
   REQUIRE(loaded_mission_sessions.load(11)->checkpoint.has_value());
+  auto stale_resource_checkpoint = *loaded_mission_sessions.load(11)->checkpoint;
+  REQUIRE(!stale_resource_checkpoint.resource_identities.empty());
+  stale_resource_checkpoint.resource_identities.front().relative_path += ".stale";
+  REQUIRE(!reloaded_session_execution.restore_checkpoint(stale_resource_checkpoint));
   REQUIRE(reloaded_session_execution.restore_checkpoint(
       *loaded_mission_sessions.load(11)->checkpoint));
   REQUIRE(reloaded_session_execution.scenario().state() == ac6::ScenarioState::Gameplay &&

@@ -58,7 +58,8 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
           static_cast<std::uint8_t>(ScenarioState::Aborted) || checkpoint.scenario.player == 0 ||
       checkpoint.scenario.objectives.size() > 1024 ||
       checkpoint.scenario.radio_history.size() > 65536 || checkpoint.combat_units.empty() ||
-      checkpoint.combat_units.size() > 4096 || checkpoint.sequence.entries.size() > 4096) return false;
+      checkpoint.combat_units.size() > 4096 || checkpoint.resource_identities.size() > 4096 ||
+      checkpoint.sequence.entries.size() > 4096) return false;
   std::uint32_t previous_objective = 0;
   for (const ObjectiveRecord& objective : checkpoint.scenario.objectives) {
     if (!objective.valid() || objective.id <= previous_objective ||
@@ -77,6 +78,11 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
     previous_unit = unit.entity;
   }
   if (!player_found) return false;
+  AssetId previous_resource = 0;
+  for (const AssetRecord& resource : checkpoint.resource_identities) {
+    if (!resource.valid() || resource.id <= previous_resource) return false;
+    previous_resource = resource.id;
+  }
   std::uint32_t previous_mission = 0;
   std::uint64_t previous_tick = 0;
   std::uint32_t previous_order = 0;
@@ -203,6 +209,12 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
     write_f32(output, unit.collision_radius);
     write_u32(output, unit.active ? 1u : 0u);
   }
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.resource_identities.size()));
+  for (const AssetRecord& resource : checkpoint.resource_identities) {
+    write_u32(output, resource.id);
+    write_string(output, resource.relative_path);
+    write_string(output, resource.sha256);
+  }
   write_u32(output, static_cast<std::uint32_t>(checkpoint.sequence.entries.size()));
   for (const MissionSequenceEntrySnapshot& entry : checkpoint.sequence.entries) {
     write_u32(output, entry.event.mission_id);
@@ -223,11 +235,12 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
 }
 
 bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint,
-                     bool has_sequence, bool has_radio) {
+                     bool has_sequence, bool has_radio, bool has_resources) {
   std::uint32_t state = 0;
   std::uint32_t objective_count = 0;
   std::uint32_t radio_count = 0;
   std::uint32_t unit_count = 0;
+  std::uint32_t resource_count = 0;
   std::uint32_t sequence_count = 0;
   if (!read_u32(input, checkpoint.mission_id) || !read_u64(input, checkpoint.failure_tick) ||
       !read_flight(input, checkpoint.flight) ||
@@ -265,6 +278,16 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
         !read_u32(input, active) || active > 1) return false;
     unit.active = active != 0;
     checkpoint.combat_units.push_back(unit);
+  }
+  if (has_resources) {
+    if (!read_u32(input, resource_count) || resource_count > 4096) return false;
+    checkpoint.resource_identities.reserve(resource_count);
+    for (std::uint32_t index = 0; index < resource_count; ++index) {
+      AssetRecord resource;
+      if (!read_u32(input, resource.id) || !read_string(input, resource.relative_path) ||
+          !read_string(input, resource.sha256)) return false;
+      checkpoint.resource_identities.push_back(std::move(resource));
+    }
   }
   if (has_sequence) {
     if (!read_u32(input, sequence_count) || sequence_count > 4096) return false;
@@ -323,7 +346,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 5);
+  write_u32(output, 6);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -375,7 +398,8 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   std::uint32_t version = 0;
   std::uint32_t count = 0;
   if (!read_u32(input, version) || !read_u32(input, count) ||
-      (version != 1 && version != 2 && version != 3 && version != 4 && version != 5) ||
+      (version != 1 && version != 2 && version != 3 && version != 4 && version != 5 &&
+       version != 6) ||
       count > 1024) {
     return false;
   }
@@ -409,7 +433,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
       if (!read_u32(input, has_checkpoint) || has_checkpoint > 1) return false;
       if (has_checkpoint != 0) {
         MissionExecution::Checkpoint checkpoint;
-        if (!read_checkpoint(input, checkpoint, version >= 3, version >= 4)) return false;
+        if (!read_checkpoint(input, checkpoint, version >= 3, version >= 4, version >= 6)) return false;
         snapshot.checkpoint = std::move(checkpoint);
       }
     }
