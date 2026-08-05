@@ -311,6 +311,18 @@ struct MissionSequenceEvent {
   std::uint32_t id{};
   float duration_seconds{};
   bool valid() const noexcept;
+  bool operator==(const MissionSequenceEvent&) const = default;
+};
+
+struct MissionSequenceEntrySnapshot {
+  MissionSequenceEvent event;
+  bool published{};
+  bool operator==(const MissionSequenceEntrySnapshot&) const = default;
+};
+
+struct MissionSequenceSnapshot {
+  std::vector<MissionSequenceEntrySnapshot> entries;
+  bool operator==(const MissionSequenceSnapshot&) const = default;
 };
 
 class MissionSequenceDirector final {
@@ -320,6 +332,8 @@ class MissionSequenceDirector final {
                     MissionExecution& execution) noexcept;
   std::size_t pending(std::uint32_t mission_id) const noexcept;
   std::size_t dispatched(std::uint32_t mission_id) const noexcept;
+  MissionSequenceSnapshot snapshot() const;
+  bool restore(const MissionSequenceSnapshot& snapshot) noexcept;
   void reset() noexcept;
 
  private:
@@ -928,6 +942,7 @@ class MissionExecution final {
     MissionScenarioSnapshot scenario;
     std::vector<CombatUnitState> combat_units;
     std::uint64_t failure_tick{};
+    MissionSequenceSnapshot sequence;
     bool operator==(const Checkpoint&) const = default;
   };
   bool save_checkpoint(Checkpoint& checkpoint) const noexcept;

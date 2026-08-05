@@ -2,6 +2,16 @@
 
 Updated: 2026-08-05 (Europe/Paris)
 
+## Cycle 965 — persistance du séquenceur
+
+`AC6SESS` version 3 ajoute au checkpoint les événements du
+`MissionSequenceDirector` avec leur état published/pending. Les identités de
+mission, l’ordre, les types, durées et bornes sont validés avant publication;
+les formats v1/v2 restent lisibles.
+
+Build, CTest (`5/5`) sous Xvfb/audio dummy, smoke SDL3/Vulkan et audit campagne
+passent. Les séquences mélangées entre missions sont rejetées.
+
 ## Cycle 964 — séquenceur HSM mission
 
 `MissionSequenceDirector` ordonne les événements objectifs/radio par tick et

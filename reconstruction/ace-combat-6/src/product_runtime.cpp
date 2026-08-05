@@ -3469,6 +3469,36 @@ std::size_t MissionSequenceDirector::dispatched(std::uint32_t mission_id) const 
       }));
 }
 
+MissionSequenceSnapshot MissionSequenceDirector::snapshot() const {
+  MissionSequenceSnapshot result;
+  result.entries.reserve(entries_.size());
+  for (const Entry& entry : entries_) result.entries.push_back({entry.event, entry.published});
+  return result;
+}
+
+bool MissionSequenceDirector::restore(const MissionSequenceSnapshot& snapshot) noexcept {
+  if (snapshot.entries.size() > 4096) return false;
+  std::vector<Entry> loaded;
+  loaded.reserve(snapshot.entries.size());
+  std::uint32_t previous_mission = 0;
+  std::uint64_t previous_tick = 0;
+  std::uint32_t previous_order = 0;
+  for (const MissionSequenceEntrySnapshot& candidate : snapshot.entries) {
+    const MissionSequenceEvent& event = candidate.event;
+    if (!event.valid() ||
+        (event.mission_id < previous_mission) ||
+        (event.mission_id == previous_mission && event.tick < previous_tick) ||
+        (event.mission_id == previous_mission && event.tick == previous_tick &&
+         event.order <= previous_order)) return false;
+    loaded.push_back({event, candidate.published});
+    previous_mission = event.mission_id;
+    previous_tick = event.tick;
+    previous_order = event.order;
+  }
+  entries_ = std::move(loaded);
+  return true;
+}
+
 void MissionSequenceDirector::reset() noexcept {
   for (Entry& entry : entries_) entry.published = false;
 }
@@ -3530,23 +3560,32 @@ bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
   checkpoint.scenario = scenario_.snapshot();
   checkpoint.combat_units = combat_.snapshot_units();
   checkpoint.failure_tick = failure_tick_;
+  checkpoint.sequence = sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
   return checkpoint.mission_id != 0;
 }
 
 bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept {
   if (!launched_ || definition_ == nullptr || checkpoint.mission_id != definition_->id ||
       checkpoint.scenario.mission_id != definition_->id ||
-      checkpoint.combat_units.empty()) return false;
+      checkpoint.combat_units.empty() ||
+      (sequence_ == nullptr && !checkpoint.sequence.entries.empty())) return false;
+  for (const MissionSequenceEntrySnapshot& entry : checkpoint.sequence.entries) {
+    if (!entry.event.valid() || entry.event.mission_id != definition_->id) return false;
+  }
   const RuntimeSnapshot old_flight = runtime_.snapshot();
   const MissionScenarioSnapshot old_scenario = scenario_.snapshot();
   const std::vector<CombatUnitState> old_units = combat_.snapshot_units();
   const std::uint64_t old_failure_tick = failure_tick_;
+  const MissionSequenceSnapshot old_sequence =
+      sequence_ == nullptr ? MissionSequenceSnapshot{} : sequence_->snapshot();
   if (!runtime_.restore(checkpoint.flight) || !scenario_.restore(checkpoint.scenario) ||
-      !combat_.restore_units(checkpoint.combat_units)) {
+      !combat_.restore_units(checkpoint.combat_units) ||
+      (sequence_ != nullptr && !sequence_->restore(checkpoint.sequence))) {
     (void)runtime_.restore(old_flight);
     (void)scenario_.restore(old_scenario);
     (void)combat_.restore_units(old_units);
     failure_tick_ = old_failure_tick;
+    if (sequence_ != nullptr) (void)sequence_->restore(old_sequence);
     return false;
   }
   failure_tick_ = checkpoint.failure_tick;

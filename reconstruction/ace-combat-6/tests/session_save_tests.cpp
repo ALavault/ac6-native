@@ -30,6 +30,11 @@ int main() {
   mission_checkpoint.combat_units = {
       {4097, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true},
       {4098, 2, {20.0f, 0.0f, 0.0f}, 40.0f, 100.0f, 1.0f, true}};
+  mission_checkpoint.sequence.entries = {
+      {ac6::MissionSequenceEvent{1, 1, 1,
+                                 ac6::MissionSequenceEventType::ActivateObjective, 1, 0.0f}, true},
+      {ac6::MissionSequenceEvent{1, 2, 1,
+                                 ac6::MissionSequenceEventType::PlayRadio, 10, 0.25f}, false}};
   snapshot.checkpoint = mission_checkpoint;
   ac6::SessionSaveStore store;
   REQUIRE(store.save(2, snapshot));
