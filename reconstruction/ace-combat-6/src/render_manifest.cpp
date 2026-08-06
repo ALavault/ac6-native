@@ -12,26 +12,6 @@
 namespace ac6 {
 
 namespace {
-template <std::size_t FieldCount>
-bool parse_tsv_fields(std::string_view line,
-                      std::array<std::string_view, FieldCount>& fields) noexcept {
-  std::size_t start = 0;
-  for (std::size_t index = 0; index < FieldCount; ++index) {
-    if (start > line.size()) return false;
-    const std::size_t tab = line.find('\t', start);
-    if (index + 1 == FieldCount) {
-      if (tab != std::string_view::npos) return false;
-      fields[index] = line.substr(start);
-    } else {
-      if (tab == std::string_view::npos) return false;
-      fields[index] = line.substr(start, tab - start);
-      start = tab + 1;
-    }
-    if (fields[index].empty()) return false;
-  }
-  return true;
-}
-
 bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
   const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
   return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
@@ -49,12 +29,6 @@ bool parse_bool01(std::string_view text, bool& value) noexcept {
   if (text == "1") { value = true; return true; }
   return false;
 }
-bool parse_objective_condition(std::string_view text, ObjectiveCondition& condition) noexcept {
-  if (text == "manual") { condition = ObjectiveCondition::Manual; return true; }
-  if (text == "destroy_unit") { condition = ObjectiveCondition::DestroyUnit; return true; }
-  if (text == "protect_unit") { condition = ObjectiveCondition::ProtectUnit; return true; }
-  return false;
-}
 bool parse_hex_u32(std::string_view text, std::uint32_t& value) noexcept {
   if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) text.remove_prefix(2);
   const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value, 16);
@@ -64,15 +38,6 @@ bool parse_hex_u64(std::string_view text, std::uint64_t& value) noexcept {
   if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) text.remove_prefix(2);
   const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value, 16);
   return !text.empty() && parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-
-std::uint32_t stable_hash32(std::string_view text) noexcept {
-  std::uint32_t hash = 2166136261u;
-  for (const char byte : text) {
-    hash ^= static_cast<unsigned char>(byte);
-    hash *= 16777619u;
-  }
-  return hash;
 }
 
 bool file_fnv64(const std::filesystem::path& path, std::uint64_t& hash) {
@@ -507,16 +472,22 @@ bool MissionTextureDatabase::sample(std::uint32_t mission_id, const std::string&
     u -= std::floor(u);
     v -= std::floor(v);
   }
-  const std::uint32_t x = std::min(it->second.width - 1u,
-                                   static_cast<std::uint32_t>(u * it->second.width));
-  const std::uint32_t y = std::min(it->second.height - 1u,
-                                   static_cast<std::uint32_t>(v * it->second.height));
+  const float width = static_cast<float>(it->second.width);
+  const float height = static_cast<float>(it->second.height);
+  const std::uint32_t x = std::min(
+      it->second.width - 1u, static_cast<std::uint32_t>(u * width));
+  const std::uint32_t y = std::min(
+      it->second.height - 1u, static_cast<std::uint32_t>(v * height));
   if (binding->sampler_filter == "nearest") {
     rgba = it->second.pixels[static_cast<std::size_t>(y) * it->second.width + x];
     return true;
   }
-  const float px = binding->sampler_address == "clamp" ? u * (it->second.width - 1u) : u * it->second.width;
-  const float py = binding->sampler_address == "clamp" ? v * (it->second.height - 1u) : v * it->second.height;
+  const float px = binding->sampler_address == "clamp"
+      ? u * static_cast<float>(it->second.width - 1u)
+      : u * width;
+  const float py = binding->sampler_address == "clamp"
+      ? v * static_cast<float>(it->second.height - 1u)
+      : v * height;
   const std::uint32_t x0 = static_cast<std::uint32_t>(std::floor(px)) % it->second.width;
   const std::uint32_t y0 = static_cast<std::uint32_t>(std::floor(py)) % it->second.height;
   const std::uint32_t x1 = binding->sampler_address == "clamp" ?

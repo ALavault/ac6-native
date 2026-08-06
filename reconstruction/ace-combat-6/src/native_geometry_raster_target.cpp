@@ -110,8 +110,12 @@ bool project_clip_point(const MissionCameraDefinition& camera, Vec3 world,
                            ndc_z < -1.0f || ndc_z > 1.0f)) return false;
   const float safe_x = std::clamp(ndc_x, -1.0f, 1.0f);
   const float safe_y = std::clamp(ndc_y, -1.0f, 1.0f);
-  screen.x = std::min(width - 1u, static_cast<std::uint32_t>((safe_x * 0.5f + 0.5f) * width));
-  screen.y = std::min(height - 1u, static_cast<std::uint32_t>((0.5f - safe_y * 0.5f) * height));
+  screen.x = std::min(
+      width - 1u,
+      static_cast<std::uint32_t>((safe_x * 0.5f + 0.5f) * static_cast<float>(width)));
+  screen.y = std::min(
+      height - 1u,
+      static_cast<std::uint32_t>((0.5f - safe_y * 0.5f) * static_cast<float>(height)));
   screen.ndc_x = ndc_x;
   screen.ndc_y = ndc_y;
   screen.ndc_z = ndc_z;
@@ -455,7 +459,8 @@ std::uint32_t NativeRenderTarget::shade_fragment(const GeometryRasterContext& co
       salt ^ context.texture_salt ^ context.shader_salt ^ context.material_salt;
   const float gain = 0.78f + static_cast<float>(identity & 0x3Fu) / 256.0f;
   const auto modulate = [gain](std::uint32_t value) {
-    return static_cast<std::uint32_t>(std::clamp(value * gain, 0.0f, 255.0f));
+    return static_cast<std::uint32_t>(
+        std::clamp(static_cast<float>(value) * gain, 0.0f, 255.0f));
   };
   return (material.base_color & 0xFF000000u) |
          (modulate((rgb >> 16u) & 0xFFu) << 16u) |

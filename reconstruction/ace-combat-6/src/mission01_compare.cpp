@@ -160,7 +160,9 @@ float global_ssim(const std::vector<std::uint8_t>& a, const std::vector<std::uin
   if (count == 0 || a.size() != b.size()) return 0.0f;
   double mean_a = 0.0, mean_b = 0.0;
   for (std::size_t i = 0; i < count; ++i) { mean_a += luminance(a, i); mean_b += luminance(b, i); }
-  mean_a /= count; mean_b /= count;
+  const double sample_count = static_cast<double>(count);
+  mean_a /= sample_count;
+  mean_b /= sample_count;
   double variance_a = 0.0, variance_b = 0.0, covariance = 0.0;
   for (std::size_t i = 0; i < count; ++i) {
     const double da = luminance(a, i) - mean_a;
@@ -185,7 +187,9 @@ float coverage_iou(const std::vector<std::uint8_t>& a, const std::vector<std::ui
     const bool ca = covered(a, i), cb = covered(b, i);
     intersection += ca && cb; union_count += ca || cb;
   }
-  return union_count == 0 ? 1.0f : static_cast<float>(intersection) / union_count;
+  return union_count == 0
+      ? 1.0f
+      : static_cast<float>(intersection) / static_cast<float>(union_count);
 }
 
 float depth_rmse(const std::vector<float>& a, const std::vector<float>& b) {
@@ -196,7 +200,8 @@ float depth_rmse(const std::vector<float>& a, const std::vector<float>& b) {
     const double delta = static_cast<double>(a[i]) - b[i];
     squared += delta * delta;
   }
-  return static_cast<float>(std::sqrt(squared / a.size()));
+  return static_cast<float>(
+      std::sqrt(squared / static_cast<double>(a.size())));
 }
 
 bool write_diff(const std::filesystem::path& path, std::uint32_t width, std::uint32_t height,

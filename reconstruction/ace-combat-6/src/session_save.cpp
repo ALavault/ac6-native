@@ -454,15 +454,15 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
     }
   }
   if (has_radio) {
-    std::uint32_t state = 0;
+    std::uint32_t radio_state = 0;
     if (!read_u32(input, checkpoint.radio_playback.mission_id) ||
         !read_u32(input, checkpoint.radio_playback.message_id) ||
         !read_u32(input, checkpoint.radio_playback.audio_asset) ||
         !read_u32(input, checkpoint.radio_playback.subtitle_asset) ||
         !read_f32(input, checkpoint.radio_playback.elapsed_seconds) ||
         !read_f32(input, checkpoint.radio_playback.duration_seconds) ||
-        !read_u32(input, state)) return false;
-    checkpoint.radio_playback.state = static_cast<RadioPlaybackState>(state);
+        !read_u32(input, radio_state)) return false;
+    checkpoint.radio_playback.state = static_cast<RadioPlaybackState>(radio_state);
   }
   if (has_waves && !read_wave_snapshot(input, checkpoint.waves)) return false;
   return valid_checkpoint(checkpoint);

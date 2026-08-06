@@ -4,6 +4,8 @@ project(ac6_native LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(AC6_BUILD_PLATFORM "Build the SDL3/Vulkan frontend" ON)
+
 add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cpp
   src/render_manifest.cpp src/frontend_runtime.cpp src/combat_scenario_frontend.cpp
   src/native_geometry_raster.cpp
@@ -14,16 +16,19 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
-find_package(PkgConfig REQUIRED)
-find_package(Vulkan REQUIRED)
-pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
-add_library(ac6_platform STATIC src/sdl_input.cpp)
-target_include_directories(ac6_platform PUBLIC include)
-target_link_libraries(ac6_platform PUBLIC ac6_product_core PkgConfig::SDL3 Vulkan::Vulkan)
-target_compile_features(ac6_platform PUBLIC cxx_std_20)
+if(AC6_BUILD_PLATFORM)
+  find_package(PkgConfig REQUIRED)
+  find_package(Vulkan REQUIRED)
+  pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
 
-add_executable(ac6-native src/main.cpp src/commands.cpp src/cli.cpp src/interactive.cpp)
-target_link_libraries(ac6-native PRIVATE ac6_platform)
+  add_library(ac6_platform STATIC src/sdl_input.cpp)
+  target_include_directories(ac6_platform PUBLIC include)
+  target_link_libraries(ac6_platform PUBLIC ac6_product_core PkgConfig::SDL3 Vulkan::Vulkan)
+  target_compile_features(ac6_platform PUBLIC cxx_std_20)
+
+  add_executable(ac6-native src/main.cpp src/commands.cpp src/cli.cpp src/interactive.cpp)
+  target_link_libraries(ac6-native PRIVATE ac6_platform)
+endif()
 
 enable_testing()
 find_package(Python3 COMPONENTS Interpreter QUIET)
@@ -35,8 +40,9 @@ if(Python3_Interpreter_FOUND)
       --baseline ${CMAKE_SOURCE_DIR}/../../analysis/source_complexity_baseline.json
       --check)
 endif()
+
 add_executable(ac6-product-runtime-tests tests/product_runtime_tests.cpp)
-target_link_libraries(ac6-product-runtime-tests PRIVATE ac6_platform)
+target_link_libraries(ac6-product-runtime-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-product-runtime-tests COMMAND ac6-product-runtime-tests)
 
 add_executable(ac6-mission-input-functional-tests tests/mission_input_functional_tests.cpp)
@@ -72,7 +78,6 @@ add_test(NAME ac6-manifest-loader-transaction-tests
 add_executable(ac6-native-hud-acceptance-tests tests/native_hud_acceptance_tests.cpp)
 target_link_libraries(ac6-native-hud-acceptance-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-native-hud-acceptance-tests COMMAND ac6-native-hud-acceptance-tests)
-add_test(NAME ac6-native-headless COMMAND ac6-native)
 
 add_executable(ac6-mission01-compare-tests tests/mission01_compare_tests.cpp)
 target_link_libraries(ac6-mission01-compare-tests PRIVATE ac6_product_core)
@@ -86,11 +91,19 @@ add_executable(ac6-session-save-tests tests/session_save_tests.cpp)
 target_link_libraries(ac6-session-save-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-session-save-tests COMMAND ac6-session-save-tests)
 
-add_executable(ac6-vulkan-surface-smoke tests/vulkan_surface_smoke.cpp)
-target_link_libraries(ac6-vulkan-surface-smoke PRIVATE ac6_platform)
+if(AC6_BUILD_PLATFORM)
+  add_test(NAME ac6-native-headless COMMAND ac6-native)
+
+  add_executable(ac6-vulkan-surface-smoke tests/vulkan_surface_smoke.cpp)
+  target_link_libraries(ac6-vulkan-surface-smoke PRIVATE ac6_platform)
+  add_test(NAME ac6-vulkan-surface-smoke COMMAND ac6-vulkan-surface-smoke)
+  set_tests_properties(ac6-vulkan-surface-smoke PROPERTIES SKIP_RETURN_CODE 77)
+endif()
 
 include(GNUInstallDirs)
-install(TARGETS ac6-native RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+if(AC6_BUILD_PLATFORM)
+  install(TARGETS ac6-native RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(FILES README.md DESTINATION .)
 install(PROGRAMS

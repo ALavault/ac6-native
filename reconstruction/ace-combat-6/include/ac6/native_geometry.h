@@ -8,7 +8,7 @@
 
 namespace ac6 {
 
-class MissionDrawable;
+struct MissionDrawable;
 class QualifiedBufferDatabase;
 struct QualifiedBufferRecord;
 

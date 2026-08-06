@@ -401,6 +401,57 @@ class NativeGateTests(unittest.TestCase):
         with self.assertRaises(GateError):
             audit_contract(document, Path(tempfile.mkdtemp()))
 
+    def test_v2_template_requires_native_wave_mechanics(self) -> None:
+        document = template()
+        self.assertIn(
+            "native_units_and_waves",
+            document["policy"]["retail_gate_requires"],
+        )
+
+    def test_v2_j0_static_evidence_cannot_replace_native_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence = root / "static.json"
+            evidence.write_text("{}", encoding="utf-8")
+            document = template()
+            document["provenance"]["repo_commit"] = "8" * 40
+            record = document["requirements"]["J0"]["world_visible"]
+            record["status"] = "passed"
+            record["evidence"] = [{
+                "kind": "static",
+                "path": evidence.name,
+                "sha256": hashlib.sha256(evidence.read_bytes()).hexdigest(),
+                "claim": "static geometry exists",
+            }]
+            with self.assertRaises(GateError):
+                audit_contract(document, root)
+
+    def test_v2_retail_gate_requires_native_consumption(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            evidence = root / "retail.json"
+            evidence.write_text('{"retail_semantics_qualified": true}', encoding="utf-8")
+            document = template()
+            document["provenance"]["repo_commit"] = "9" * 40
+            record = document["requirements"]["domains"]["retail_objectives"]
+            record["status"] = "passed"
+            record["retail_semantics_qualified"] = True
+            record["evidence"] = [{
+                "kind": "static",
+                "path": evidence.name,
+                "sha256": hashlib.sha256(evidence.read_bytes()).hexdigest(),
+                "claim": "retail objective record identified statically",
+            }]
+            with self.assertRaises(GateError):
+                audit_contract(document, root)
+
+    def test_v2_policy_drift_is_rejected(self) -> None:
+        document = template()
+        document["provenance"]["repo_commit"] = "a" * 40
+        document["policy"]["retail_gate_requires"].remove("native_units_and_waves")
+        with self.assertRaises(GateError):
+            audit_contract(document, Path(tempfile.mkdtemp()))
+
 
 if __name__ == "__main__":
     unittest.main()

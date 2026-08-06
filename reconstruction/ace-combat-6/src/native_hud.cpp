@@ -233,7 +233,8 @@ bool NativeHudRenderer::render(NativeRenderTarget& target, const WorldFrame& fra
                                   std::uint32_t half) noexcept {
         const float normalized = std::clamp(value / 64.0f, -1.0f, 1.0f);
         return static_cast<std::uint32_t>(std::clamp(
-            static_cast<int>(std::lround(static_cast<float>(center) + normalized * half)),
+            static_cast<int>(std::lround(
+                static_cast<float>(center) + normalized * static_cast<float>(half))),
             0, static_cast<int>(center + half)));
       };
       const std::uint32_t tx = radar_coord(dx, radar_cx, radar_width / 2u - 2u * scale);

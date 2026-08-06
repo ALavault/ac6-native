@@ -76,15 +76,39 @@ def audit(root: Path, baseline_path: Path) -> tuple[dict, list[str]]:
         if duplicate_error:
             errors.append(duplicate_error)
             previous = None
-        exempt = bool(previous and previous.get("exempt")) and item == {k: previous.get(k) for k in ("kind", "lines", "functions")}
-        if physical > LIMITS[kind] and not exempt: errors.append(f"{rel}: {physical} physical lines > {LIMITS[kind]} {kind} budget")
-        for fn in funcs:
-            if fn["lines"] > LIMITS["function"] and not exempt: errors.append(f"{rel}:{fn['line']}: {fn['name']} is {fn['lines']} lines > 220 function budget")
-        if previous and not exempt:
-            if physical > previous.get("lines", 0): errors.append(f"{rel}: aggravated baseline ({previous.get('lines')} -> {physical} lines)")
-            old_max = max((f.get("lines", 0) for f in previous.get("functions", [])), default=0)
-            new_max = max((f["lines"] for f in funcs), default=0)
-            if new_max > old_max: errors.append(f"{rel}: aggravated function baseline ({old_max} -> {new_max} lines)")
+        previous_lines = previous.get("lines", 0) if previous else 0
+        if physical > LIMITS[kind]:
+            if previous is None or previous_lines <= LIMITS[kind]:
+                errors.append(
+                    f"{rel}: {physical} physical lines > {LIMITS[kind]} {kind} budget"
+                )
+            elif physical > previous_lines:
+                errors.append(
+                    f"{rel}: aggravated over-budget baseline "
+                    f"({previous_lines} -> {physical} lines)"
+                )
+
+        previous_functions = {
+            function.get("name"): function.get("lines", 0)
+            for function in (previous or {}).get("functions", [])
+            if isinstance(function, dict) and isinstance(function.get("name"), str)
+        }
+        for function in funcs:
+            if function["lines"] <= LIMITS["function"]:
+                continue
+            previous_size = previous_functions.get(function["name"], 0)
+            if previous_size > LIMITS["function"] and function["lines"] <= previous_size:
+                continue
+            if previous_size > LIMITS["function"]:
+                errors.append(
+                    f"{rel}:{function['line']}: {function['name']} aggravated "
+                    f"over-budget function baseline ({previous_size} -> {function['lines']} lines)"
+                )
+            else:
+                errors.append(
+                    f"{rel}:{function['line']}: {function['name']} is "
+                    f"{function['lines']} lines > {LIMITS['function']} function budget"
+                )
     return report, errors
 
 

@@ -32,7 +32,9 @@ bool FrontendController::advance() noexcept {
       state_ = FrontendState::Loading;
       break;
     case FrontendState::Loading: state_ = FrontendState::Mission; break;
-    case FrontendState::Mission: return false;
+    case FrontendState::Mission:
+    case FrontendState::Debrief:
+      return false;
   }
   return true;
 }

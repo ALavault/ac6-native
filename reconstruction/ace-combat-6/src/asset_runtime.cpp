@@ -7,7 +7,6 @@
 #include <cstring>
 #include <fstream>
 #include <functional>
-#include <limits>
 #include <string_view>
 #include <unordered_set>
 #include <utility>
@@ -15,26 +14,6 @@
 namespace ac6 {
 
 namespace {
-template <std::size_t FieldCount>
-bool parse_tsv_fields(std::string_view line,
-                      std::array<std::string_view, FieldCount>& fields) noexcept {
-  std::size_t start = 0;
-  for (std::size_t index = 0; index < FieldCount; ++index) {
-    if (start > line.size()) return false;
-    const std::size_t tab = line.find('\t', start);
-    if (index + 1 == FieldCount) {
-      if (tab != std::string_view::npos) return false;
-      fields[index] = line.substr(start);
-    } else {
-      if (tab == std::string_view::npos) return false;
-      fields[index] = line.substr(start, tab - start);
-      start = tab + 1;
-    }
-    if (fields[index].empty()) return false;
-  }
-  return true;
-}
-
 bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
   const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
   return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
@@ -47,28 +26,6 @@ bool parse_f32(std::string_view text, float& value) noexcept {
   const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
   return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() && std::isfinite(value);
 }
-bool parse_bool01(std::string_view text, bool& value) noexcept {
-  if (text == "0") { value = false; return true; }
-  if (text == "1") { value = true; return true; }
-  return false;
-}
-bool parse_objective_condition(std::string_view text, ObjectiveCondition& condition) noexcept {
-  if (text == "manual") { condition = ObjectiveCondition::Manual; return true; }
-  if (text == "destroy_unit") { condition = ObjectiveCondition::DestroyUnit; return true; }
-  if (text == "protect_unit") { condition = ObjectiveCondition::ProtectUnit; return true; }
-  return false;
-}
-bool parse_hex_u32(std::string_view text, std::uint32_t& value) noexcept {
-  if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) text.remove_prefix(2);
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value, 16);
-  return !text.empty() && parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-bool parse_hex_u64(std::string_view text, std::uint64_t& value) noexcept {
-  if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) text.remove_prefix(2);
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value, 16);
-  return !text.empty() && parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-
 class Sha256 final {
  public:
   void update(const unsigned char* data, std::size_t size) noexcept {
