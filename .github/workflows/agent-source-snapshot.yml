@@ -1,0 +1,32 @@
+name: Agent source snapshot
+
+on:
+  push:
+    paths:
+      - .github/workflows/agent-source-snapshot.yml
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Pack tracked source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-files -z | tar --null -T - -czf ac6-native-source.tar.gz
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ac6-native-source-${{ github.sha }}
+          path: ac6-native-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
