@@ -1,0 +1,91 @@
+{
+  "entries": {
+    "5d1f23f99077560ec92d3d2cfa1de1dbed55d2df45968c4424261f78e7ffd8e0": {
+      "command": [
+        "ctest",
+        "--test-dir",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "--test-action",
+        "test",
+        "--output-on-failure",
+        "--output-junit",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-460-first-mission-final-targeted.xml",
+        "-R",
+        "^ac6_(backend_draw_telemetry|backend_capture_bridge|dialog_text_fallback|save_dialog_input_bridge|campaign_resource_bridge|display_defaults)$"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 0.114461,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "ctest",
+        "resolved": "/usr/bin/ctest",
+        "sha256": "d612a9a0f64fed3dc9c92b03f163ef8296d40eafcd8ee60a871c1edc3f85c393"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T23:03:52Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/CTestTestfile.cmake": "2d6d2b8f9f65deaf72defb373a51a5c4008734a43a05fa377aafa3d746f6245e",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_capture_bridge_test": "f143eb7a9cbfe494a304e77d1375e12cf5ba9dff5d4dd01eda1139d1bb5b30c7",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_draw_telemetry_test": "bc18dd428a6aa0c56112b947b7030a88e586281a0bfab64831ed3e06a69ce0c1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_campaign_resource_bridge_test": "569f766058622602d0240c0595cb1eef329776c7c286b0f5ea24ca68ac171e09",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_dialog_text_fallback_test": "2cffdbdaf7f80b350ac69dd5c1a3c35887fefeb6c18b89be22371df80ccd83f1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_display_defaults_test": "8654496c7a02d88d84a1a338e9cc84832061ffd69dc787a8034579af21473449",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_save_dialog_input_bridge_test": "713e70f99d7966c9986ed906834662788a7f5ca21b6c47d628717e38495f5790"
+      },
+      "name": "cycle-460-first-mission-final-targeted-tests",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-460-first-mission-final-targeted.xml": "0671ceb990382dd168da23500cb099e032b432cce8d28b58ff6b2c9fdac6aadb"
+      },
+      "pid": 1751974,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T23:03:52Z",
+      "status": "passed"
+    },
+    "dee10e6c0b5ac59297de7c9e717fe0fe41889391451cec1f222fbe0980e8043c": {
+      "command": [
+        "ctest",
+        "--test-dir",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "--test-action",
+        "test",
+        "--output-on-failure",
+        "--output-junit",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-460-first-mission-selection-targeted.xml",
+        "-R",
+        "^ac6_(backend_draw_telemetry|backend_capture_bridge|dialog_text_fallback|save_dialog_input_bridge|campaign_resource_bridge|display_defaults)$"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 0.088339,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "ctest",
+        "resolved": "/usr/bin/ctest",
+        "sha256": "d612a9a0f64fed3dc9c92b03f163ef8296d40eafcd8ee60a871c1edc3f85c393"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T22:06:59Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/CTestTestfile.cmake": "2d6d2b8f9f65deaf72defb373a51a5c4008734a43a05fa377aafa3d746f6245e",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_capture_bridge_test": "f143eb7a9cbfe494a304e77d1375e12cf5ba9dff5d4dd01eda1139d1bb5b30c7",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_draw_telemetry_test": "bc18dd428a6aa0c56112b947b7030a88e586281a0bfab64831ed3e06a69ce0c1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_campaign_resource_bridge_test": "bd3e99226a3a80d7a5703dc7e0d428d69ff5c66bc21ac1dfc3b30a51d499e58b",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_dialog_text_fallback_test": "2cffdbdaf7f80b350ac69dd5c1a3c35887fefeb6c18b89be22371df80ccd83f1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_display_defaults_test": "8654496c7a02d88d84a1a338e9cc84832061ffd69dc787a8034579af21473449",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_save_dialog_input_bridge_test": "713e70f99d7966c9986ed906834662788a7f5ca21b6c47d628717e38495f5790"
+      },
+      "name": "ac6-cycle460-first-mission-selection-targeted-tests",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-460-first-mission-selection-targeted.xml": "24a8816241027bb921b8d48126a489098aebce3d7e2eea4f07d1cb604cb717a9"
+      },
+      "pid": 1494015,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T22:06:59Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

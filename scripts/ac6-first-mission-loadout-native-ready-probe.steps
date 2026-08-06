@@ -1,0 +1,51 @@
+# Cycle-524 native readiness control. Identical qualified route to the loadout
+# probe, but the final A is followed by observation only: no force-override
+# marker is required and no mission-launch input is sent.
+sleep	1
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*37	20
+key	space	0.1
+wait	type28=[^ ]*35	20
+key	space	0.1
+wait	selector44=[^ ]*3	20
+key	space	0.1
+wait	type28=[^ ]*6	20
+sleep	1
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*8	20
+key	space	0.1
+wait	type28=[^ ]*10	20
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+# Level 1 is now selected naturally, so the historical level=0->1 bridge
+# marker is absent.  Synchronize on the qualified mission task instead.
+wait	\[ac6-first-mission-task\]	30
+key	Escape	0.1
+sleep	15
+key	space	0.1
+sleep	5
+capture	aircraft-select
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	12
+capture	native-ready-observation

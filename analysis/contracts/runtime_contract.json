@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-04T13:00:00+02:00",
+  "target": "Ace Combat 6 PAL Xbox 360 native Linux",
+  "workspace": {
+    "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6",
+    "commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "tracked_diff_sha256_before_memory_update": "39f692474356344f3dcbc45070216d2e27dbd962af1ffbf51eb4634b02d96c70",
+    "dirty": true
+  },
+  "runtime": {
+    "path": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill",
+    "commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "tracked_diff_sha256": "fe46948412b4160bfcfe3afe58d38d91aa825560eea22b13a6c3b0bdab71f9da",
+    "dirty": true,
+    "rexglue_sdk_provenance_commit": "31a36d69f796cddd6b3ce545f6c6c332544ab294",
+    "toml_path": "ac6recomp_config.toml",
+    "toml_sha256": "fed716e3ff77b50e4866e2a67c5a183f21651f6cf29fdae930091c3fdf1c85b0"
+  },
+  "corpus": {
+    "xex":{"sha256":"acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"},
+    "data_tbl":{"size":14824,"entries":926,"packs":2,"sha256":"82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5"},
+    "data00_pac":{"sha256":"c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816"},
+    "data01_pac":{"sha256":"eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4"},
+    "generated":{"files":54,"tree_sha256":"f42fa2c4c1ec3bfb061003ef7074f73881e968ef2719f7f78e59190d1c5af73d","frozen":true,"regenerated":false}
+  },
+  "host": {
+    "os":"Linux",
+    "gpu":"NVIDIA RTX PRO 4000 Blackwell",
+    "driver":"NVIDIA 595.84",
+    "vulkan":"1.4.329",
+    "qualified_render_target_path":"RexGlue Vulkan FBO/default, render_path=0"
+  },
+  "process_ownership_at_capture": {
+    "ac6":[],"xenia":[],"ac6_xvfb":[],
+    "foreign_xvfb":[{"pid":251738,"display":":79","ownership":"foreign"}],
+    "ollama":[{"pid":3585823,"endpoint":"127.0.0.1:11435","ownership":"shared/foreign"}],
+    "foreign_processes_touched":false
+  },
+  "latest_run": {
+    "id":"cycle-782-bridge-pitch-canonical-input",
+    "lane":"bridge",
+    "start":"2026-08-04T12:53:16+02:00",
+    "end":"2026-08-04T12:57:51+02:00",
+    "executable_sha256":"401cc83b491bf1f594df95168a54209e8c33b9eaa09224cd6c35742b1cd94f6a",
+    "log_sha256":"06a27bb4bf2bc072e88f8f2159edb4230bc6c13d345401dabbde2417318e5eff",
+    "display":":97",
+    "environment":{"SDL_AUDIODRIVER":"dummy"},
+    "timing":"stock; ac6_unlock_fps=false",
+    "instrumentation":["ac6_log_ui_dispatch","ac6_log_loadout_dispatch","ac6_log_gameplay_state"],
+    "game_data_root":"/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files",
+    "result":"XAM left-stick Y joined directly to canonical device+0x3E at 0x8234D378; physical response reproduced; canonical-to-child consumer remains open"
+  },
+  "run_requirement":"Every subsequent run must append its executable hash, complete effective configuration, environment, timing, instrumentation, save/profile and start/end timestamps."
+}

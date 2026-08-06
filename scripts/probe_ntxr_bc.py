@@ -66,18 +66,25 @@ def main():
     blocks_x, blocks_y = width // 4, height // 4
     image = Image.new("RGBA", (width, height))
     pixels = image.load()
+    decoded_blocks = 0
+    skipped_blocks = 0
     for by in range(blocks_y):
         for bx in range(blocks_x):
             offset = start + tiled_2d(bx, by, blocks_x, 4)
+            if offset < 0 or offset + 16 > len(data):
+                skipped_blocks += 1
+                continue
             block = bytearray(data[offset:offset + 16])
             if swap_mode == "swap16":
                 for i in range(0, 16, 2):
                     block[i], block[i + 1] = block[i + 1], block[i]
             decoded = decode_bc3(block)
+            decoded_blocks += 1
             for py in range(4):
                 for px in range(4):
                     pixels[bx * 4 + px, by * 4 + py] = decoded[py * 4 + px]
     image.save(output)
+    print(f"decoded_blocks={decoded_blocks} skipped_blocks={skipped_blocks}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,45 @@
+{
+  "cycle": 712,
+  "date": "2026-08-03",
+  "scope": "qualified retail shader contract to native Vulkan frame seam",
+  "retail_shader_contract": {
+    "vertex_shader_hash": "A1863AF658456A14",
+    "pixel_shader_hash": "D5B4F4A878949938",
+    "texture_fetch_index": 0,
+    "uv_attribute_offset": 6,
+    "mip_min_level": 0,
+    "interpolated_uv": true,
+    "texture_fetch": true,
+    "provenance": "reports/cycle-675-676-vulkan-pass-frontier.md"
+  },
+  "native_frame_seam": {
+    "frame_identity_checked": true,
+    "material_upload_identity_checked": true,
+    "ntxr_descriptor_bound": true,
+    "clip_mesh_batch_drawn": true,
+    "temporary_handles_released": true,
+    "unqualified_shader_rejected": true
+  },
+  "validation": {
+    "xenos_shader_tests": "pass",
+    "vulkan_backend_tests": "pass",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 60.97
+  },
+  "claims": {
+    "retail_shader_contract_static": true,
+    "retail_spirv_byte_parity": false,
+    "native_material_frame_submission": true,
+    "unique_runtime_material_selection": false,
+    "swapchain_presentation_proven": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_material.h": "7668f144871f214fec3800cb5a5b8ac4c27bda2c80513658cb478b8274aca0d7",
+    "include/ac6/vulkan_backend.h": "ce1a580691d2a722032273aebfe6a516eab81f38e0efb53292b87d5c6409497a",
+    "src/vulkan_backend.cpp": "c7fd45799e3ee9d64f9c5778df9bb5d71e22c10714b38405cc37828804418aac",
+    "tests/vulkan_backend_tests.cpp": "a5bae5d2d35cf97ecd6b4bb43d3a9cb261ff109c4a8adbbfeea09f4de51884d8",
+    "tests/xenos_shader_tests.cpp": "8561523accbb35ada48bf74b747d33b2fec0624b76a1c8a39ebfd4a87322ef70"
+  }
+}

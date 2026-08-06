@@ -1,0 +1,44 @@
+{
+  "entries": {
+    "a6338ab53ae35d22eb30403d4ed8171e36d6174be126c8ef4677b0eed4445c94": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "-j16",
+        "--target",
+        "ac6recomp",
+        "ac6_dialog_text_fallback_test"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 45.882365,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T21:16:08Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/CMakeLists.txt": "9a2eeac376bebde8e1bc8c0a151cd8ace314a272a731bd460482a0fab07b7e6f",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_backend_fixes/ac6_dialog_text_fallback_test.cpp": "c0c7681a3454d16471847d9fbb64ec03d2ea674a72219473ebc57cf6ff49538e",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_dialog_text_fallback.cpp": "6c0ea329840a5e01e487fb7f30c1b4b057fa0c7ad8a8c35b26b1323615f07eac",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_dialog_text_fallback.h": "6ab9e75c153cec905708d8f6d8fa650e8a029091a9821e323d0348e7e688b9a4",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_native_graphics_overlay.cpp": "210bbc5a22ed88fbcf54d8d0d7b834e2dd1c0b49865d26e4027b9a4571ff760a"
+      },
+      "name": "ac6-cycle459-dialog-alignment-build",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_dialog_text_fallback_test": "2cffdbdaf7f80b350ac69dd5c1a3c35887fefeb6c18b89be22371df80ccd83f1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "f170b8f3a343e3ef931ec0d9a2480363ca67dd880ce9327c1a867eecb2e862c6"
+      },
+      "pid": 1264815,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T21:15:23Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

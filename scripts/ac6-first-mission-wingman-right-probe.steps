@@ -1,0 +1,56 @@
+# Probe the horizontal focus transition from the player's aircraft after its
+# special weapon is confirmed. The right panel contains the player/wingman
+# slots; capture before and after A so the focus change is explicit.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait-pulse	\[ac6-first-campaign-level-bridge\]	Escape
+sleep	20
+key	space	0.1
+present	120	30
+capture	mission-submenu
+key	space	0.1
+present	180	30
+capture	aircraft-player
+key	space	0.1
+present	240	45
+capture	player-weapon
+key	space	0.1
+present	240	45
+capture	aircraft-ready
+key	Right	0.1
+present	240	45
+capture	right-focus
+key	space	0.1
+present	300	60
+capture	right-focus-a
+key	space	0.1
+present	300	60
+capture	right-focus-a2
+key	space	0.1
+present	900	120
+capture	mission-world

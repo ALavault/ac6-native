@@ -1,0 +1,38 @@
+{
+  "cycle": 718,
+  "date": "2026-08-03",
+  "scope": "SDL platform surface to native Vulkan swapchain seam",
+  "backend": {
+    "surface_factory_callback": true,
+    "opaque_instance_surface_handles": true,
+    "present_queue_selection": true,
+    "pending_surface_cleanup": true,
+    "headless_path_preserved": true
+  },
+  "sdl_smoke": {
+    "window_vulkan_surface_attempt": true,
+    "dummy_driver_result": "controlled_skip_window",
+    "real_present_observed": false
+  },
+  "validation": {
+    "vulkan_backend_tests": "pass",
+    "vulkan_sdl_window_tests": "pass",
+    "ctest": "56/56 passed",
+    "ctest_time_seconds": 69.15,
+    "post_guard_targeted_tests": "2/2 passed"
+  },
+  "claims": {
+    "generic_platform_presentation_seam": true,
+    "interactive_mission_1": false,
+    "retail_hud_visual_parity": false,
+    "real_swapchain_present_observed": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "ea77d3fa98fde09871a828c6871a66716bae0a19fcc9e6eae054e5284717e38c",
+    "src/vulkan_backend.cpp": "1a4a709027c09db03a205c77904b304ab044e881a0a903f9cf7597fcb0e2cdd6",
+    "tests/vulkan_backend_tests.cpp": "006bb6e76018c0b5d9a0f81fa983e7d80f8e7df4709a0d211ebe8f040f771ace",
+    "tests/vulkan_sdl_window_tests.cpp": "df2dddf462f0544b4bd145247c5bf27943a82626cc7b2a40a1c321711db8d0de",
+    "CMakeLists.txt": "cde06ac4664028113cf052f149bc43060bf005b846e973939d8c07b9b4c29b46"
+  }
+}

@@ -1,0 +1,26 @@
+# Cycle-527 bounded input-map probe. Each pulse is separated by one second so
+# changes at level_root+0x276A0 can be assigned to a single MnK/XInput binding.
+key	Tab	0.1
+sleep	1
+key	Shift_L	0.1
+sleep	1
+key	r	0.1
+sleep	1
+key	e	0.1
+sleep	1
+key	q	0.1
+sleep	1
+key	f	0.1
+sleep	1
+key	Escape	0.1
+sleep	1
+key	Up	0.1
+sleep	1
+key	Down	0.1
+sleep	1
+key	Left	0.1
+sleep	1
+key	Right	0.1
+sleep	1
+key	space	0.1
+sleep	2

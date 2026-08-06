@@ -1,0 +1,267 @@
+{
+  "entries": {
+    "00c0ce6ad156f0d27e0f2d3e65785cda8a33fcbe7e8537c446e7a62662e0c0f8": {
+      "command": [
+        "bash",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "--out",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge",
+        "--duration",
+        "150",
+        "--display",
+        ":95",
+        "--keys",
+        "35:Escape:0.1,42:space:0.1",
+        "--wait-for",
+        "\\[ac6-screen-id\\]",
+        "--then-keys",
+        "1:Left:0.1,1:space:0.1,1:space:0.1,1:space:0.1,1:space:0.1,1:Left:0.1,1:space:0.1,1:space:0.1,1:space:0.1,2:space:0.1,2:space:0.1,2:space:0.1,2:space:0.1,3:space:0.1,2:CAPTURE:0,3:Escape:0.1,1:CAPTURE:0,4:CAPTURE:0,5:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,10:CAPTURE:0",
+        "--",
+        "--ac6_log_ui_dispatch=true",
+        "--user_data_root=/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge/user-data"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "bash",
+        "resolved": "/usr/bin/bash",
+        "sha256": "5c162b252496c9f18cf45b62f2a2417666a21d75435186a99ffeb23d7df0c45f"
+      },
+      "failure_count": 0,
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "92fdfb4a0c8b9e0d35cd07aaa38d8e4d63fed33bd7ea810449b803ee1f291831",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh": "e1a23b21c5b9819cd93688d72906b9c6e3181ec906b04212c1aef748ec438e8d",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex": "c6ca3556c3a7278d42326bbd894d0740203824525f1ebc6a84e0730126d3b2bf",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/demopack_eng.bin": "8c1bab9a99b15680ab8b8d3b1f10ef59906041711105553cabf93b2689dea256",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/voicepack_eng.bin": "e2f8cda3dfa339fbd79955ef2ab8eddd9291e343c58054bae2d9064e5485c82e"
+      },
+      "name": "ac6-cycle457-campaign-parent-bridge-runtime",
+      "pid": 498060,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:21:35Z",
+      "status": "running"
+    },
+    "4527fbc168f2b29409198de243419ac17ff0338db8e2655edcc6758daf9b05ed": {
+      "command": [
+        "bash",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "--out",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v4",
+        "--duration",
+        "200",
+        "--display",
+        ":95",
+        "--capture-at",
+        "0",
+        "--keys",
+        "35:Escape:0.1,42:space:0.1",
+        "--wait-for",
+        "\\[ac6-screen-id\\]",
+        "--wait-pulse",
+        "Escape:0.1:2",
+        "--then-keys",
+        "1:Left:0.1,1:space:0.1,2:space:0.1,2:space:0.1,6:space:0.1,2:Left:0.1,1:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,2:CAPTURE:0,3:Escape:0.1,1:CAPTURE:0,4:CAPTURE:0,5:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,10:CAPTURE:0",
+        "--",
+        "--ac6_log_ui_dispatch=true",
+        "--user_data_root=/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v4/user-data"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 208.925941,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "bash",
+        "resolved": "/usr/bin/bash",
+        "sha256": "5c162b252496c9f18cf45b62f2a2417666a21d75435186a99ffeb23d7df0c45f"
+      },
+      "failure_count": 1,
+      "finished_at": "2026-08-01T18:40:16Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "92fdfb4a0c8b9e0d35cd07aaa38d8e4d63fed33bd7ea810449b803ee1f291831",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh": "e1a23b21c5b9819cd93688d72906b9c6e3181ec906b04212c1aef748ec438e8d",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex": "c6ca3556c3a7278d42326bbd894d0740203824525f1ebc6a84e0730126d3b2bf",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/demopack_eng.bin": "8c1bab9a99b15680ab8b8d3b1f10ef59906041711105553cabf93b2689dea256",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/voicepack_eng.bin": "e2f8cda3dfa339fbd79955ef2ab8eddd9291e343c58054bae2d9064e5485c82e"
+      },
+      "missing_outputs": [
+        "workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v4/after-26-CAPTURE.png"
+      ],
+      "name": "ac6-cycle457-campaign-parent-bridge-runtime-v4",
+      "pid": 562201,
+      "returncode": 66,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:36:47Z",
+      "status": "failed"
+    },
+    "80badedb11f4a9bb65a70924289398c724fe87d615fba585bcef80dffff83a76": {
+      "command": [
+        "bash",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "--out",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v3",
+        "--duration",
+        "170",
+        "--display",
+        ":95",
+        "--capture-at",
+        "0",
+        "--keys",
+        "35:Escape:0.1,42:space:0.1",
+        "--wait-for",
+        "\\[ac6-screen-id\\]",
+        "--then-keys",
+        "1:Left:0.1,1:space:0.1,2:space:0.1,2:space:0.1,6:space:0.1,2:Left:0.1,1:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,2:CAPTURE:0,3:Escape:0.1,1:CAPTURE:0,4:CAPTURE:0,5:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,10:CAPTURE:0",
+        "--",
+        "--ac6_log_ui_dispatch=true",
+        "--user_data_root=/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v3/user-data"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 179.225826,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "bash",
+        "resolved": "/usr/bin/bash",
+        "sha256": "5c162b252496c9f18cf45b62f2a2417666a21d75435186a99ffeb23d7df0c45f"
+      },
+      "failure_count": 1,
+      "finished_at": "2026-08-01T18:36:17Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "92fdfb4a0c8b9e0d35cd07aaa38d8e4d63fed33bd7ea810449b803ee1f291831",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh": "e1a23b21c5b9819cd93688d72906b9c6e3181ec906b04212c1aef748ec438e8d",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex": "c6ca3556c3a7278d42326bbd894d0740203824525f1ebc6a84e0730126d3b2bf",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/demopack_eng.bin": "8c1bab9a99b15680ab8b8d3b1f10ef59906041711105553cabf93b2689dea256",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/voicepack_eng.bin": "e2f8cda3dfa339fbd79955ef2ab8eddd9291e343c58054bae2d9064e5485c82e"
+      },
+      "missing_outputs": [
+        "workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v3/after-26-CAPTURE.png"
+      ],
+      "name": "ac6-cycle457-campaign-parent-bridge-runtime-v3",
+      "pid": 549308,
+      "returncode": 66,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:33:18Z",
+      "status": "failed"
+    },
+    "b968b6e78197b0b0864711447befcc0811b8607a1376ce15857f82c1d001ecff": {
+      "command": [
+        "bash",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "--out",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v5",
+        "--duration",
+        "200",
+        "--display",
+        ":95",
+        "--capture-at",
+        "0",
+        "--keys",
+        "25:space:0.1,35:Escape:0.1,42:space:0.1",
+        "--wait-for",
+        "\\[ac6-screen-id\\]",
+        "--wait-pulse",
+        "space:0.1:2",
+        "--then-keys",
+        "1:Left:0.1,1:space:0.1,2:space:0.1,2:space:0.1,6:space:0.1,2:Left:0.1,1:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,3:space:0.1,2:CAPTURE:0,3:Escape:0.1,1:CAPTURE:0,4:CAPTURE:0,5:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,10:CAPTURE:0",
+        "--",
+        "--ac6_log_ui_dispatch=true",
+        "--user_data_root=/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v5/user-data"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 38.535718,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "bash",
+        "resolved": "/usr/bin/bash",
+        "sha256": "5c162b252496c9f18cf45b62f2a2417666a21d75435186a99ffeb23d7df0c45f"
+      },
+      "failure_count": 1,
+      "finished_at": "2026-08-01T18:41:57Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "92fdfb4a0c8b9e0d35cd07aaa38d8e4d63fed33bd7ea810449b803ee1f291831",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh": "e1a23b21c5b9819cd93688d72906b9c6e3181ec906b04212c1aef748ec438e8d",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex": "c6ca3556c3a7278d42326bbd894d0740203824525f1ebc6a84e0730126d3b2bf",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/demopack_eng.bin": "8c1bab9a99b15680ab8b8d3b1f10ef59906041711105553cabf93b2689dea256",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/voicepack_eng.bin": "e2f8cda3dfa339fbd79955ef2ab8eddd9291e343c58054bae2d9064e5485c82e"
+      },
+      "name": "ac6-cycle457-campaign-parent-bridge-runtime-v5",
+      "observed_outputs": {
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v5/ac6recomp.log": "3ff8262181d86592b08e697894c8508395f5dbb3716d09fac94259f99659e786"
+      },
+      "pid": 582710,
+      "returncode": 1,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:41:19Z",
+      "status": "failed"
+    },
+    "d2084d986416ffa78a8358a9351e5db02d09963c5c44880e472fd115faaefb8a": {
+      "command": [
+        "bash",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "--out",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v2",
+        "--duration",
+        "150",
+        "--display",
+        ":95",
+        "--capture-at",
+        "0",
+        "--keys",
+        "35:Escape:0.1,42:space:0.1",
+        "--wait-for",
+        "\\[ac6-screen-id\\]",
+        "--then-keys",
+        "1:Left:0.1,1:space:0.1,1:space:0.1,1:space:0.1,1:space:0.1,1:Left:0.1,1:space:0.1,1:space:0.1,1:space:0.1,2:space:0.1,2:space:0.1,2:space:0.1,2:space:0.1,3:space:0.1,2:CAPTURE:0,3:Escape:0.1,1:CAPTURE:0,4:CAPTURE:0,5:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,5:space:0.1,2:CAPTURE:0,10:CAPTURE:0",
+        "--",
+        "--ac6_log_ui_dispatch=true",
+        "--user_data_root=/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v2/user-data"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 158.373692,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "bash",
+        "resolved": "/usr/bin/bash",
+        "sha256": "5c162b252496c9f18cf45b62f2a2417666a21d75435186a99ffeb23d7df0c45f"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T18:26:23Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "92fdfb4a0c8b9e0d35cd07aaa38d8e4d63fed33bd7ea810449b803ee1f291831",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh": "e1a23b21c5b9819cd93688d72906b9c6e3181ec906b04212c1aef748ec438e8d",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex": "c6ca3556c3a7278d42326bbd894d0740203824525f1ebc6a84e0730126d3b2bf",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/demopack_eng.bin": "8c1bab9a99b15680ab8b8d3b1f10ef59906041711105553cabf93b2689dea256",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/voicepack_eng.bin": "e2f8cda3dfa339fbd79955ef2ab8eddd9291e343c58054bae2d9064e5485c82e"
+      },
+      "name": "ac6-cycle457-campaign-parent-bridge-runtime-v2",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v2/ac6recomp.log": "9eafed68db5c416e72299ff284374f2fc6e3b72004f84a6e5596866648866c95",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-457-campaign-parent-bridge-v2/after-26-CAPTURE.png": "c578621517631dceaa2eeea708c9be96acd3cce8031b8a52c2076365173ee76f"
+      },
+      "pid": 506487,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:23:45Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

@@ -1,0 +1,51 @@
+{
+  "cycle": 704,
+  "date": "2026-08-03",
+  "scope": "bounded NDXR to native mesh contract on PAL campaign payloads",
+  "mesh_contract": {
+    "vertex_layout": ["position_xyz_f32", "uv0_f32x2"],
+    "texture_identity_preserved": true,
+    "primitive_flags_reinterpreted": false,
+    "invalid_indices_rejected": true,
+    "missing_uv_rejected_when_required": true,
+    "non_finite_vertices_rejected": true
+  },
+  "retail_payloads": [
+    {
+      "selector": 1,
+      "data_table_entry": 9,
+      "ndxr_payloads_seen": 42,
+      "mesh_contracts": 42,
+      "textured_mesh_contracts": 42
+    },
+    {
+      "selector": 2,
+      "data_table_entry": 10,
+      "ndxr_payloads_seen": 8,
+      "mesh_contracts": 8,
+      "textured_mesh_contracts": 8
+    }
+  ],
+  "validation": {
+    "mesh_layout_test": "pass",
+    "retail_asset_test": "pass",
+    "ctest": "53/53 passed",
+    "ctest_time_seconds": 39.88,
+    "whitespace_check": "pass"
+  },
+  "claims": {
+    "retail_ndxr_mesh_metadata": true,
+    "retail_mesh_gpu_draw": false,
+    "xenos_primitive_semantics": false,
+    "ac6_shader_layout": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/mesh_layout.h": "282191848de97ea42ee17e2f9dc97f45420e2d66afb76f5faba96a683450543d",
+    "src/mesh_layout.cpp": "2f522feaa5bee4669d15dd03035ad15766fac5e0595ed7816e667c570d27a671",
+    "tests/mesh_layout_tests.cpp": "f929dd5b065f0a3e8866449787e7b31e9731fb100b91cfb548a8d297ff678b22",
+    "tests/campaign_retail_asset_tests.cpp": "34e8860c366da87b31f65872a6c371c8df8c56835dc3419be0771ba8dc16af4b",
+    "CMakeLists.txt": "d640395c752578817712d7c44e710839beb65436af6d7be7ac5460c6336fc448"
+  }
+}

@@ -30,6 +30,10 @@
   locally extracted slices required by the question.
 - Keep runtime hooks, kernel/XAM/XMA services and renderer divergence as
   explicit boundaries. Build and install with the AC6 command from root rules.
+- `SDL_AUDIODRIVER=dummy` is the qualified audio configuration for AC6 Xvfb
+  runs. Without it, headless startup may stall after one `PRESENT`; do not
+  remove it from a headless harness or classify that stall as a guest/build
+  regression without an audio A/B.
 - For interactive retail observation, follow `XENIA_WINE_ORACLE_HANDOFF.md`;
   it records the pinned Wine/Vulkan launcher, local `codex` profile and AZERTY
   keyboard route without promoting oracle use to parity evidence.

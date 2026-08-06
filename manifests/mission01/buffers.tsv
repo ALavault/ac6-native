@@ -1,0 +1,7 @@
+# mission_id	asset_id	stable_id	format	vertex_count	index_count	content_sha256	source
+1	119	entry119.021/014/010	NDXR	1300	1626	64db82451822a31abe3cccd3f3865a1fb60ad5848e38615273d54efa11381177	reports/logs/cycle-738-pac-mission-gate/fhm/idx_0119/021_FHM/014_FHM/010_NDXR.ndxr
+1	119	entry119.021/014/059	NDXR	148	open	96464dade16c0e265d812dca2dc29226afa505e677624fb977cbcc3b947923af	reports/logs/cycle-738-pac-mission-gate/fhm/idx_0119/021_FHM/014_FHM/059_NDXR.ndxr
+1	119	entry119.021/014/063	NDXR	517	open	55c8568e208a1299caf86bcd9bbbecd2a3076eb8c8ca2da1174dc667f84312e5	reports/logs/cycle-738-pac-mission-gate/fhm/idx_0119/021_FHM/014_FHM/063_NDXR.ndxr
+1	119	entry119.021/014/144	NDXR	168	open	02310f4f8fe545646d9bd236a21530e8cc587cf9d8d0cc6def1930a1380db75e4	reports/logs/cycle-738-pac-mission-gate/fhm/idx_0119/021_FHM/014_FHM/144_NDXR.ndxr
+1	119	entry119.021/014/163	NDXR	6218	open	f424e8b51ffbb0d490984f4eb64880cd7a57d545cb36b366e5dcb31cd8077798	reports/logs/cycle-738-pac-mission-gate/fhm/idx_0119/021_FHM/014_FHM/163_NDXR.ndxr
+1	119	entry119.021/014/169	NDXR	862	open	4377bc34d51585874807024babcde284515b43cdecec2fbaff3457aafbd37bed	reports/logs/cycle-738-pac-mission-gate/fhm/idx_0119/021_FHM/014_FHM/169_NDXR.ndxr

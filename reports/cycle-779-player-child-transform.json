@@ -1,0 +1,65 @@
+{
+  "cycle": 779,
+  "lane": "bridge",
+  "stock_gameplay_or_scenario_proven": false,
+  "run": {
+    "start": "2026-08-04T12:00:06+02:00",
+    "end": "2026-08-04T12:04:52+02:00",
+    "display": ":97",
+    "duration_seconds": 285,
+    "exit": "bounded_timeout_cleanup"
+  },
+  "observations": {
+    "black_world_with_hud": true,
+    "unit_manager_object_count": 230,
+    "player": {
+      "object": "0xB2470000",
+      "vtable": "0x820568D4",
+      "child_list": "0xB0FA9F48",
+      "child_count": 1,
+      "child": "0xB2470100",
+      "child_dispatch_table": "0x82007A10"
+    },
+    "player_update": {
+      "function_pc": "0x822A6710",
+      "first_frame": 11013,
+      "last_sample_frame": 11528,
+      "last_sample_sequence": 300
+    },
+    "transform": {
+      "first_position_bits": "0xC4FC7CB9",
+      "first_position_float": -2019.8975830078125,
+      "last_position_bits": "0x43DE6C55",
+      "last_position_float": 444.8463439941406,
+      "orientation_changed": true,
+      "causal_input_join": false
+    },
+    "raw_inputs_observed": {
+      "pitch_ly": 32767,
+      "roll_lx": 32767,
+      "button": "0x0100",
+      "right_trigger": 255,
+      "zero_controls_observed": true
+    },
+    "legacy_flight_hook_calls": 0,
+    "player_plus_10672_owner_join": "rejected",
+    "child_plus_10672_owner_join": "not_yet_qualified"
+  },
+  "classification": "player wrapper, live child and changing transform are proven; exact input-to-physical-effect join remains open",
+  "validation": {
+    "build": "pass",
+    "pal_ctest": {"passed": 63, "failed": 0, "skipped": 4},
+    "generated_corpus_modified": false,
+    "ghidra_bridge_export_regenerated": false,
+    "xenia_runs": 0,
+    "foreign_processes_touched": false
+  },
+  "identity": {
+    "workspace_commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_diff_sha256_before_report": "a55eb58c1080d37d7230aca6e2ca81708e8717ba007138456983a9c1fb94aa0b",
+    "runtime_commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_diff_sha256": "fe46948412b4160bfcfe3afe58d38d91aa825560eea22b13a6c3b0bdab71f9da",
+    "executable_sha256": "f202d0467579d0c477ba913cd240580412618c7e97acb0360476c49934d77a5a",
+    "runtime_log_sha256": "375b12933d9313a97b641395dae5352ceb5e803cacc7da6c450d8e97711e64d8"
+  }
+}

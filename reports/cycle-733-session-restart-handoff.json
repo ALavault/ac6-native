@@ -1,0 +1,57 @@
+{
+  "schema": "ac6.session_handoff.v1",
+  "cycle": 733,
+  "updated_at": "2026-08-04T03:49:02+02:00",
+  "target": "ace-combat-6-pal-xbox-360",
+  "long_term_target": "native Vulkan implementation independent of RexGlue, Xenia and Xbox libraries",
+  "next_objective": "one-to-one playable Mission 01",
+  "qualified_assets": {
+    "default_xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "data_tbl_size": 14824,
+    "data_tbl_entries": 926,
+    "data_tbl_pack_count": 2
+  },
+  "latest_validation": {
+    "ctest_passed": 63,
+    "ctest_failed": 0,
+    "ctest_skipped": 1,
+    "manual_xvfb_sdl_vulkan": "passed",
+    "scene_changed": 4439,
+    "world_changed": 11,
+    "textured_changed": 1,
+    "flight_world_pixels": 12
+  },
+  "graphical_contract": {
+    "gameplay_frame_qualified": false,
+    "retail_hud_qualified": false,
+    "gameplay_camera_qualified": false,
+    "player_aircraft_pose_qualified": false,
+    "terrain_presented": false,
+    "skybox_presented": false,
+    "mission2_frame_class": "fit_mesh_diagnostic"
+  },
+  "entry9_inventory": {
+    "decoded_sha256": "cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05",
+    "ndxr_models": 292,
+    "mapobj_candidates": 4,
+    "runtime_ownership_proved": false
+  },
+  "next_checkpoint": "Prove one environment batch asset/material/texture/transform/runtime-owner join and increase flight_world_pixels outside the HUD.",
+  "constraints": [
+    "main thread only",
+    "do not edit generated output",
+    "do not commit retail assets",
+    "no synthetic terrain, skybox, aircraft rotation or HUD",
+    "Xenia is a bounded oracle only",
+    "preserve dirty and untracked worktree state"
+  ],
+  "terminated_processes": [
+    {"pids": [1305095, 1305176, 1305177], "kind": "ac6-scene-shell pipeline", "signal": "SIGTERM", "verified_absent": true},
+    {"pids": [1909667, 1909726, 1909734], "kind": "AC6 screenshot Xvfb :98 pipeline", "signal": "SIGTERM", "verified_absent": true}
+  ],
+  "remaining_external_processes": [
+    {"pid_observed": 2141405, "kind": "Xvfb :106 Pharaoh", "ownership": "external-do-not-touch"}
+  ],
+  "source_report": "workspaces/ace-combat-6/reports/cycle-733-session-restart-handoff.md"
+}

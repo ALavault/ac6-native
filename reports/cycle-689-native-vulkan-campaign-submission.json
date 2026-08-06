@@ -1,0 +1,24 @@
+{
+  "cycle": "689",
+  "classification": "native_vulkan_campaign_submission_contract",
+  "validation": {
+    "ctest_total": 49,
+    "ctest_passed": 49,
+    "targeted_tests": 2,
+    "targeted_passed": 2,
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "frontend_header_sha256": "9ad437239ae8ea0e9669498e5935b6b473844b3024b553ea78b272a950db15eb",
+    "frontend_source_sha256": "fd82bcbb3c76489a4a6fa6a897cf95c0f9ad8d9c0e621da4382c18ab4df838cb",
+    "frontend_test_sha256": "2d10d669146536d41f6658132cc4acf56356b46be1f2d13f43619107aa227ba4",
+    "frontend_executable_sha256": "91be7e5ce8178815aa23632d2202dfc646d32a28a387756b237030bbe95c58f7"
+  },
+  "required_inputs": [
+    "active_mission",
+    "decoded_resource",
+    "qualified_material_binding",
+    "matching_dpl_and_data_table_route"
+  ],
+  "retail_claim": "none_for_selector_2_or_mission_2_runtime"
+}

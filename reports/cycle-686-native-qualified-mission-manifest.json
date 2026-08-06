@@ -1,0 +1,28 @@
+{
+  "cycle": "686",
+  "classification": "native_qualified_campaign_manifest_gate",
+  "validation": {
+    "ctest_total": 47,
+    "ctest_passed": 47,
+    "targeted_campaign_tests": 2,
+    "targeted_campaign_passed": 2,
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "progression_header_sha256": "6b8bc147ab28a3bc10fe8f14ea5a39beb2074a312cb0f41ef2b437849fb28647",
+    "progression_source_sha256": "371d002945549e0b9b3333a961a11bd2dda86c9577837d7584c9322fa1baa1e9",
+    "progression_test_sha256": "deaae27b9f2089312265dc196f3676287bb245dd8b285bf9052dd871594982c5",
+    "progression_executable_sha256": "4d7adcd6a0c7ac72a9b0888e7e0eab051fa2548d0669280953341036a75fe575",
+    "resource_loader_executable_sha256": "235301db06e6a3d4fafbb02e1d7a58f140b057414f520d1877b6134035901b94"
+  },
+  "manifest_checks": [
+    "dpl_resource_id",
+    "dpl_variant",
+    "data_table_entry_index",
+    "bank_index",
+    "offset",
+    "stored_size",
+    "expanded_size"
+  ],
+  "retail_claim": "none_for_selector_2_or_any_unqualified_manifest"
+}

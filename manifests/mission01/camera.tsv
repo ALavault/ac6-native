@@ -1,0 +1,2 @@
+# mission_id	camera_id	status	evidence
+1	mission01.stock	open	qualified camera smoke exists; exact retail camera asset association is not present in bounded slices

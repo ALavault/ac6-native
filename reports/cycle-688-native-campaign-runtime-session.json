@@ -1,0 +1,24 @@
+{
+  "cycle": "688",
+  "classification": "native_transactional_campaign_runtime_session",
+  "validation": {
+    "ctest_total": 48,
+    "ctest_passed": 48,
+    "targeted_campaign_tests": 3,
+    "targeted_campaign_passed": 3,
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "runtime_header_sha256": "ce430828652d0aa40acf8baa4ab7e1d55af3d4939a12859772ba6a4f4477396a",
+    "runtime_source_sha256": "06a75430c97b175235eac20409b001df9b6e7f0023cf773bfe86d23e4ed371f1",
+    "runtime_test_sha256": "faa9017087878b88dbc63eb56295b77789100aa8351ce905d02d0d4279faefe1",
+    "runtime_executable_sha256": "56578b9ddcc267f504502d1007f1b751a2d070c7998335c5a70f63d85ce8f359"
+  },
+  "transaction_invariants": [
+    "resource_load_before_loadout",
+    "progression_rollback_on_resource_failure",
+    "objective_events_require_active_resource",
+    "resource_release_after_completion"
+  ],
+  "retail_claim": "none_for_selector_2_or_mission_2_runtime"
+}

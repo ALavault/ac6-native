@@ -1,0 +1,43 @@
+{
+  "cycle": 709,
+  "date": "2026-08-03",
+  "scope": "Vulkan clip-space mesh pipeline and depth render target",
+  "vertex_layout": {
+    "position": "vec4",
+    "uv": "vec2",
+    "stride_bytes": 24,
+    "position_offset": 0,
+    "uv_offset": 16,
+    "clip_w_preserved": true
+  },
+  "depth_target": {
+    "format": "VK_FORMAT_D32_SFLOAT",
+    "clear_depth": 1.0,
+    "compare": "LESS_OR_EQUAL",
+    "write_enabled": true
+  },
+  "validation": {
+    "vulkan_backend_test": "pass",
+    "clip_projection_readback": "pass",
+    "depth_target_readback": "pass",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 63.83
+  },
+  "claims": {
+    "native_clip_mesh_pipeline": true,
+    "native_depth_attachment": true,
+    "multi_mesh_occlusion_proven": false,
+    "swapchain_presentation_proven": false,
+    "retail_xenos_shader_proven": false,
+    "retail_mate_texture_binding_proven": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "7606741048a0c37b85e4201be1498da7f419c93669bda406e44abd9f79f993ff",
+    "src/vulkan_backend.cpp": "336d606e451a2579745e8ec2bc5ebec2d586332e3899898bd5cccd2e1e62860e",
+    "tests/vulkan_backend_tests.cpp": "fdbafffd567a0b39f29fe015e7340ba59bd95a496d9f32b69e5ab61e6466a90e",
+    "tests/fixtures/vulkan_clip_mesh.vert": "36ecf3497aa0d09100c8c222ac2c715024038d573c2673ae6159d22fb901b8eb",
+    "tests/fixtures/vulkan_clip_mesh_spirv.h": "64e890290b2243afe63a85b89d5f54d5dfb924e9ba697bd7e83a7a07144cc035"
+  }
+}

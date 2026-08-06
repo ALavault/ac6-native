@@ -1,0 +1,37 @@
+# Reach the campaign Mission 01 submenu and capture only the first A edge after
+# the native campaign-resource bridge. Keeping the recipe to one edge prevents
+# the guest trace from being overwritten by later selector presses.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait-pulse	\[ac6-first-campaign-level-bridge\]	Escape
+sleep	20
+key	space	0.1
+present	120	30
+capture	mission-submenu-after-first-a

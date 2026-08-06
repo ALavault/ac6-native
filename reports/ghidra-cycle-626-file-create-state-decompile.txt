@@ -1,0 +1,16 @@
+// ===========================================
+// Ghidra:    FileCreateState_821C56F8
+// Address:   0x821c56f8
+// Signature: undefined FileCreateState_821C56F8(void)
+// Callers:   3  |  Callees: 3
+// ===========================================
+
+
+void FileCreateState_821C56F8(void)
+
+{
+                    /* WARNING: Subroutine does not return */
+  FUN_82382ed4();
+}
+
+

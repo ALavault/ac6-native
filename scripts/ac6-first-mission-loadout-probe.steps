@@ -1,0 +1,39 @@
+# Reach the first campaign loadout and stop after the first aircraft/weapon
+# confirmation. This is the short deterministic route used for manager-vtable
+# and launch-readiness probes; it intentionally omits the long post-loadout
+# observation window from ac6-first-mission-full-a.steps.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait-pulse	\[ac6-first-campaign-level-bridge\]	Escape
+sleep	15
+key	space	0.1
+present	120	30
+key	space	0.1
+present	240	45
+key	space	0.1
+present	240	45
+key	space	0.1
+present	240	45

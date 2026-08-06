@@ -1,0 +1,35 @@
+{
+  "cycle": 698,
+  "date": "2026-08-03",
+  "scope": "generic Vulkan SPIR-V triangle draw and pixel readback",
+  "draw": {
+    "target": "8x8 RGBA8",
+    "vertices": [[-0.8, -0.8], [0.8, -0.8], [0.0, 0.8]],
+    "fragment_color": [0.0, 1.0, 0.0, 1.0],
+    "center_pixel_rgba8": [0, 255, 0, 255],
+    "descriptor_free": true,
+    "retail_shader_claim": false
+  },
+  "validation": {
+    "ctest": "51/51 passed",
+    "ctest_time_seconds": 40.82,
+    "backend_smoke": "pass",
+    "git_diff_check": "pass"
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "7883197363d4c6ae8fe4466d89ab83244f021b62f3cb5f155df0c3715a1239c5",
+    "src/vulkan_backend.cpp": "08307974677a735f254fc9146e7ed4750ab2c6166c9a2af3910f0abd860e4c0c",
+    "tests/vulkan_backend_tests.cpp": "00e6a56f80533d55e1541a60067dc8a4185bf1810e8d5596bc0a6202113a065f",
+    "tests/fixtures/vulkan_triangle.vert": "7cd3024342e0e98c9b5707fba2cd9a7770035c6670c723d3e5afbe403e11785f",
+    "tests/fixtures/vulkan_triangle.frag": "86ed0b99c7569133fe9270106a56e36cd850633eb753ff89645282e280925ba5",
+    "tests/fixtures/vulkan_triangle_spirv.h": "f51331ab6b6c9d1cb55769f295e3258071f31f9dad68bed436e0279f5c9b910c"
+  },
+  "claims": {
+    "spirv_pipeline": true,
+    "vertex_buffer": true,
+    "mesh_draw": true,
+    "readback": true,
+    "xenos_shader_parity": false,
+    "mission_2_runtime": false
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "cycle": 705,
+  "date": "2026-08-03",
+  "scope": "explicit Vulkan indexed mesh draw seam",
+  "draw": {
+    "vertex_stream": "VulkanTexturedTriangleVertex position.xy + uv",
+    "index_type": "uint16",
+    "topology": "triangle_list",
+    "two_buffer_upload": true,
+    "quad_indices": 6,
+    "readback": "textured center pixel",
+    "invalid_index_rejected": true,
+    "non_triangle_index_count_rejected": true
+  },
+  "validation": {
+    "vulkan_backend_test": "pass",
+    "ctest": "53/53 passed",
+    "ctest_time_seconds": 40.49,
+    "whitespace_check": "pass"
+  },
+  "claims": {
+    "indexed_gpu_transport": true,
+    "retail_xenos_topology": false,
+    "retail_3d_vertex_layout": false,
+    "ac6_shader_parity": false,
+    "swapchain_presentation": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "5c1cd378334b91ed99e5c7cb83cb673e35d260ca466a8697c7fd31706188f815",
+    "src/vulkan_backend.cpp": "af2846b59a1534abb1707aac19af650cbd473521bffe244e1e96f720f24673fd",
+    "tests/vulkan_backend_tests.cpp": "a3ebf02400a64c75f4909f4fc1f2444c67e09aca5e9719d91413f0bb98e458ee"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "entries": {
+    "cbcc0e737c6ce880feba565aad248162ead5b9faafc36c1cf480243ccaebd016": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "-j16",
+        "--target",
+        "ac6recomp",
+        "ac6_recomp_overrides_test",
+        "ac6_backend_draw_telemetry_test",
+        "ac6_backend_capture_bridge_test"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 50.178694,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T06:51:06Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/CMakeLists.txt": "0d68f74a77e916e092263783eabc78d69deb8e98b8b6db7e7b699735c82b5128",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/CMakeCache.txt": "07d90dfbc0c87446111cdf0f3b5a5d0b02c2455672648c400b5ac05d226fa742",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_recomp_overrides.cpp": "996f9f68b4b479c49f1b7ead127f68c76759ae2b6db5b416ca72147032ce4829",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_recomp_overrides.h": "3ac387a06d74516441f4dba1b11d13bafa2d1501020a798c3e81deccdeffddff",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_recomp_overrides_test.cpp": "60d877de4d45cebd0b9aa3419650692ac926b136002c64906addcd9740bef1e7"
+      },
+      "name": "ac6-cycle454-index-fix-normal-build",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_capture_bridge_test": "f143eb7a9cbfe494a304e77d1375e12cf5ba9dff5d4dd01eda1139d1bb5b30c7",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_draw_telemetry_test": "bc18dd428a6aa0c56112b947b7030a88e586281a0bfab64831ed3e06a69ce0c1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_recomp_overrides_test": "03e5fb60c92d5ec8b10197609391bf94c1c5d5da8c589da03cb8d42d556654a8",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "330778b1ccaea1ab3f693e8104a8c1dc82745e95c06b942d933ce40c97935851"
+      },
+      "pid": 1727571,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T06:50:16Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

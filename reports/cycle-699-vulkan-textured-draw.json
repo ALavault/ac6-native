@@ -1,0 +1,32 @@
+{
+  "cycle": 699,
+  "date": "2026-08-03",
+  "scope": "generic Vulkan textured triangle through uploaded descriptor",
+  "textured_draw": {
+    "texture_extent": [4, 4],
+    "texture_format": "RGBA8_UNORM",
+    "texture_fill": 127,
+    "center_pixel_rgba8": [127, 127, 127, 127],
+    "descriptor_set": "set0_binding0",
+    "xenos_bc1_bc3_claim": false
+  },
+  "validation": {
+    "ctest": "51/51 passed",
+    "ctest_time_seconds": 40.06,
+    "backend_smoke": "pass",
+    "git_diff_check": "pass"
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "2448c92f4c80e1ab5e49c8b4a70113d3252249f5c59d8413497aeb079071d1c1",
+    "src/vulkan_backend.cpp": "597957b4ada493c194008954f9b634ae09946f06290babcf4bfec680827bab9b",
+    "tests/vulkan_backend_tests.cpp": "f346e4e78e6e71e29ecda61ec5466abb851b9928c4c3c19bea2dc3ca8a2af780",
+    "tests/fixtures/vulkan_textured_triangle.vert": "87beaeaee2e424dfe22ed59034c4a17eee3a9a16e26769819f7c06185a03dbec",
+    "tests/fixtures/vulkan_textured_triangle.frag": "20e1f4d10413b3c7071d36f7648ea8a7ac45fe45291e684870a79ff482f4f01f",
+    "tests/fixtures/vulkan_textured_triangle_spirv.h": "3cb4e4bfd6df7156f00cae5e0e949a231b333f2ab63ba768cbd65ce6e07485fc"
+  },
+  "claims": {
+    "descriptor_sampling": true,
+    "native_xenos_format": false,
+    "mission_2_runtime": false
+  }
+}

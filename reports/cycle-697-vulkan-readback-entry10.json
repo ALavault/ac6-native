@@ -1,0 +1,60 @@
+{
+  "cycle": 697,
+  "date": "2026-08-03",
+  "scope": "native Vulkan readback plus bounded PAL DATA.TBL entry 10 qualification",
+  "vulkan": {
+    "target": "8x8 RGBA8",
+    "clear_color": [1.0, 0.0, 0.0, 1.0],
+    "readback_bytes": 256,
+    "first_pixel_rgba8": [255, 0, 0, 255],
+    "source_sha256": {
+      "include/ac6/vulkan_backend.h": "6b4e75c069c9740febd976534cb49b2c391686a0fc8507612dc0900a4ab137ff",
+      "src/vulkan_backend.cpp": "43dd4b5103ae47d8c35c33fd3c7c3891915a813b2fd09c4b0b2d0c8a59234489",
+      "tests/vulkan_backend_tests.cpp": "aac8a5107532493b79a5a750fb6387c1b22a0507f7c9ea004f80d58528056da7"
+    },
+    "claims": {
+      "headless_readback": true,
+      "shader_pipeline": false,
+      "mesh_draw": false,
+      "swapchain_presentation": false
+    }
+  },
+  "retail_corpus": {
+    "region": "PAL",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "selector": 2,
+    "dpl_resource_id": 10,
+    "dpl_variant": 0,
+    "data_table_entry": 10,
+    "bank": 0,
+    "offset": "0x01cc8000",
+    "storage_class": 1,
+    "stored_size": 2860059,
+    "expanded_size": 10232304,
+    "stored_sha256": "ec6bbe672a3e33efd6b70bb1c54551837463aa942777998a0d85285c16b6490f",
+    "expanded_sha256": "e894db3b36956562fa888511c3a0ce352cd690186f96eeb0d7a772f3b1a59675",
+    "structure": {
+      "root": "FHM",
+      "recursive_manifest_rows": 112,
+      "child_1_offset": "0x150000",
+      "child_1_size": "0x693000",
+      "child_1": "MDLP",
+      "mdlp_elements": 27,
+      "ntxr": 40,
+      "ndxr": 71,
+      "mate": 127,
+      "scene": 0,
+      "nfic": 0,
+      "gyz": 0
+    },
+    "qualification": {
+      "direct_static_route": true,
+      "retail_interactive_route": false,
+      "mission_2_runtime_claim": false
+    }
+  },
+  "validation": {
+    "vulkan_backend_smoke": "pass",
+    "git_diff_check": "pass"
+  }
+}

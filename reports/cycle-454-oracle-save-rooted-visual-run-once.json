@@ -1,0 +1,63 @@
+{
+  "entries": {
+    "2953f1581549b62eb9ff38ad2c0ec1bf03c1ca58cdb913faf9ea17d1245c04a0": {
+      "command": [
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "--out",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-454-oracle-save-rooted-visual",
+        "--duration",
+        "65",
+        "--display",
+        ":99",
+        "--binary",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/ac6recomp",
+        "--screen",
+        "1280x720",
+        "--keys",
+        "5:Escape:0.1,10:Escape:0.1,15:space:0.1,20:space:0.1,25:Escape:0.1,30:space:0.1,35:space:0.1,40:Escape:0.1,45:space:0.1,50:space:0.1",
+        "--capture-at",
+        "50,60",
+        "--",
+        "--user_data_root=/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content",
+        "--ac6_probe_guest_text=true",
+        "--ac6_probe_guest_text_entries=1000000",
+        "--window_width=1280",
+        "--window_height=720",
+        "--ac6_render_capture=false"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 73.315174,
+      "environment_digest": "fa0de86ebd1c1ea61cb72e70ef74895314ea39a677093408fccdde5dff6dc6b0",
+      "environment_names": [
+        "DISPLAY"
+      ],
+      "executable": {
+        "requested": ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "resolved": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "sha256": "0e50ab9f4a3c7816d26ac56f3e825fc60b63e56319102729f0d8ea8c0874e1e0"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T05:51:17Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/ac6recomp": "1df51a451e8e5f2d6c50f9511f2536aa696cf24f65e10ab4dfb76efa641d271b",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content/B13EBABEBABEBABE/4E4D07D1/00000001/sav_acecombat6/not_00000000.dat": "2745b3c93456e9541fe095fdd15f4289fd631874ed0bfb60910ef2e394b4690e",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content/B13EBABEBABEBABE/4E4D07D1/00000001/sav_acecombat6/save.dat": "2b1c9d4a1b0d742c3aff24e66f3f67c7c813b291a26305a6c1f5b3a9b8035653",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh": "0e50ab9f4a3c7816d26ac56f3e825fc60b63e56319102729f0d8ea8c0874e1e0",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex": "c6ca3556c3a7278d42326bbd894d0740203824525f1ebc6a84e0730126d3b2bf"
+      },
+      "name": "ac6-cycle454-oracle-save-rooted-visual",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-454-oracle-save-rooted-visual/ac6recomp.log": "d35ff2acb42dad25cc129fb7e23c3bd7a6df3c4dc1095dfb1aa9ea7669bb15d2"
+      },
+      "pid": 1455475,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T05:50:04Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

@@ -12,6 +12,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from ac6_mode1_codec import descramble
+from ac6_fhm import parse_fhm
 from audit_ac6_mission01_native_gate import GateError, audit_contract, template
 from build_ac6_asset_closure import build_closure
 from compare_ac6_asset_closures import compare as compare_closures
@@ -131,6 +132,66 @@ class ExtractPacTests(unittest.TestCase):
             entry = manifest["entries"][0]
             self.assertEqual(entry["decode"]["status"], "preserved")
             self.assertEqual((output_root / entry["payload_path"]).read_bytes(), stored)
+
+    def test_fhm_ignores_trailing_zero_size_capacity_slots(self) -> None:
+        child = b"NDXR" + b"A" * 12
+        # Preserve a valid child while expanding the table with the retail
+        # sentinel used for unused FHM capacity slots.
+        count = 4
+        header_size = 0x14 + 8 * count
+        child_offset = header_size
+        expanded = bytearray(header_size + len(child))
+        expanded[:4] = b"FHM "
+        struct.pack_into(">I", expanded, 0x10, count)
+        struct.pack_into(">I", expanded, 0x14, child_offset)
+        sentinel_offset = len(expanded) + 7
+        struct.pack_into(">I", expanded, 0x18, sentinel_offset)
+        struct.pack_into(">I", expanded, 0x1c, sentinel_offset)
+        struct.pack_into(">I", expanded, 0x20, sentinel_offset)
+        sizes_begin = 0x14 + count * 4
+        struct.pack_into(">I", expanded, sizes_begin, len(child))
+        expanded[child_offset:] = child
+        self.assertEqual(len(parse_fhm(bytes(expanded))), 1)
+
+    def test_selected_entry_identity_survives_adjacent_indices(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            asset_root = root / "assets"
+            output_root = root / "out"
+            asset_root.mkdir()
+            payload_119 = make_fhm([b"NDXR" + b"A" * 12])
+            payload_120 = make_fhm([b"NTXR" + b"B" * 12])
+            stored_119 = descramble(payload_119, 119)
+            stored_120 = descramble(payload_120, 120)
+            offset_119 = 0x1000
+            offset_120 = offset_119 + len(stored_119)
+            pac = bytearray(offset_120 + len(stored_120))
+            pac[offset_119 : offset_119 + len(stored_119)] = stored_119
+            pac[offset_120 : offset_120 + len(stored_120)] = stored_120
+            (asset_root / "DATA00.PAC").write_bytes(pac)
+            (asset_root / "DATA01.PAC").write_bytes(b"")
+            entries = bytearray()
+            for index in range(121):
+                if index == 119:
+                    entries += struct.pack(">4I", 0x00020000, offset_119,
+                                           len(stored_119), len(payload_119))
+                elif index == 120:
+                    entries += struct.pack(">4I", 0x00020000, offset_120,
+                                           len(stored_120), len(payload_120))
+                else:
+                    entries += struct.pack(">4I", 0x00020000, 0, 0, 0)
+            (asset_root / "DATA.TBL").write_bytes(struct.pack(">II", 121, 2) + entries)
+
+            manifest = extract_selected(asset_root, output_root, [119, 120], True)
+            records = {entry["index"]: entry for entry in manifest["entries"]}
+            self.assertEqual(set(records), {119, 120})
+            self.assertEqual(records[119]["group_hex"], "0x00020000")
+            self.assertEqual(records[120]["group_hex"], "0x00020000")
+            self.assertEqual(records[119]["offset"], offset_119)
+            self.assertEqual(records[120]["offset"], offset_120)
+            closure_manifest = output_root / "manifest.json"
+            closure = build_closure([closure_manifest], root / "closure")
+            self.assertEqual([root["data_tbl_index"] for root in closure["roots"]], [119, 120])
 
 
 class AssetClosureTests(unittest.TestCase):

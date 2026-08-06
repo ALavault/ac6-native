@@ -1,0 +1,35 @@
+{
+  "cycle": "683",
+  "date": "2026-08-03",
+  "classification": "harness_save_corpus_no_graphics_evidence",
+  "binary_sha256": "f2eb1fa6a569ecfa1feef0e871549622364461876b144392946e2b49b57f450f",
+  "runner_sha256": "b9af13a68f8b61b3ca9f4e2de0e47cbf243149c8707cd6f524ab5a3216b7430a",
+  "recipe_sha256": "4cd7e7cdd528312184980d72d9e003b88b4e57a32ec3abd54f1eb60a4b68bd82",
+  "accepted_attempt": {
+    "directory": "reports/logs/cycle-683g-d5b4-existing-save-scene-window",
+    "follow_log_sha256": "bef6b0435085c4be707e8fe5da0d78fe41cc72b039534a356256e8929f83549d",
+    "state_counts": {
+      "selector44_3": 1,
+      "type28_6": 1,
+      "type28_8": 0,
+      "type28_10": 0,
+      "d5b4_constants": 0,
+      "null_texture_binds": 0,
+      "fatal_assert_unresolved": 0
+    },
+    "captures": {
+      "save_browser_sha256": "3798ba20b41b7bca985b00e8385d8f109e0577c3a8bd8e4ca7e1d1eae6206bfb",
+      "type6_sha256": "d95bc2633b778c20e31701c958da3d471cc6d898a0bad587b4234d244f675994"
+    }
+  },
+  "profile": {
+    "save_dat_size": 129112,
+    "save_dat_sha256": "37740dda30cd5dbc829d5342b0880f707fa4b4937b400ec068b4a4735455925c",
+    "not_file_size": 524296,
+    "not_file_sha256": "7999583abfa6bf03f346a4258a59e9bf122a1a58cabce61583e3ce30fb174e3e",
+    "header_size": 328,
+    "header_sha256": "61cef61c40c18c26dd938d2dc2cedb047f60897e189175bc189771be30f7354a",
+    "mission_slots_populated": false
+  },
+  "runner_invariant": "state waits match only lines after the append-only follow-log baseline"
+}

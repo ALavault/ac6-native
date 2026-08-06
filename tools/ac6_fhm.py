@@ -36,8 +36,24 @@ def parse_fhm(blob: bytes) -> list[FhmChild] | None:
         return None
     offsets = struct.unpack_from(f">{count}I", blob, offsets_begin) if count else ()
     sizes = struct.unpack_from(f">{count}I", blob, sizes_begin) if count else ()
+    # Retail FHM tables can reserve capacity beyond the last payload.  In the
+    # observed form those trailing slots contain a zero size and the same
+    # sentinel offset just past the container.  They are not resources and
+    # must not turn a valid closure into a parser-note failure.  An out-of
+    # range slot is still reported when it is interleaved with live entries or
+    # carries a non-zero size.
+    last_live_index = -1
+    for index, declared_size in enumerate(sizes):
+        if declared_size:
+            last_live_index = index
+    trailing_empty_slots = all(
+        declared_size == 0 and offset > len(blob)
+        for offset, declared_size in zip(offsets[last_live_index + 1 :], sizes[last_live_index + 1 :])
+    )
     children: list[FhmChild] = []
     for index, (offset, declared_size) in enumerate(zip(offsets, sizes)):
+        if trailing_empty_slots and index > last_live_index:
+            continue
         notes: list[str] = []
         if offset > len(blob):
             data = b""

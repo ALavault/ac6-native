@@ -1,0 +1,36 @@
+{
+  "cycle": 715,
+  "date": "2026-08-03",
+  "scope": "Vulkan headless surface and swapchain boundary",
+  "implementation": {
+    "explicit_instance_device_extensions": true,
+    "present_queue_selection": true,
+    "headless_surface_creation": true,
+    "swapchain_creation_path": true,
+    "render_target_copy_path": true,
+    "queue_present_path": true
+  },
+  "environment": {
+    "headless_surface": "created",
+    "swapchain": "VK_ERROR_INITIALIZATION_FAILED",
+    "test_result": "controlled_skip"
+  },
+  "validation": {
+    "vulkan_backend_tests": "pass_with_controlled_skip",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 61.46
+  },
+  "claims": {
+    "presentation_contract_implemented": true,
+    "presentation_observed": false,
+    "persistent_native_frame": true,
+    "native_hud": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "5043e3f06023998b23ca000b2a2b3161ae2f660af0764c238c55b691ee8df833",
+    "src/vulkan_backend.cpp": "e6f2e1f183cd8076bc15bbb4ecfdf56dde8afd815f02c33e85a3d16e77f1f12e",
+    "tests/vulkan_backend_tests.cpp": "11a4778bf64391e01a62bc3b1f344e55d21408da0c4d95a7f31fcc750dfc38f1"
+  }
+}

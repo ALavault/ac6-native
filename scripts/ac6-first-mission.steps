@@ -1,0 +1,55 @@
+# Operation<TAB>argument<TAB>timeout/hold
+sleep	1
+key	Left	0.1
+key	space	0.1
+wait	type28=[^ ]*37	20
+key	space	0.1
+wait	type28=[^ ]*35	20
+key	space	0.1
+wait	selector44=[^ ]*3	20
+key	space	0.1
+wait	type28=[^ ]*6	20
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*8	20
+key	space	0.1
+wait	type28=[^ ]*10	20
+key	space	0.1
+present	120	15
+capture	post-save-transition
+key	space	0.1
+present	90	10
+capture	main-menu
+key	space	0.1
+present	90	10
+capture	campaign-menu
+key	space	0.1
+present	90	10
+capture	difficulty
+key	space	0.1
+present	90	10
+capture	controls
+key	space	0.1
+present	180	15
+capture	language
+key	space	0.1
+present	180	15
+capture	campaign-intro
+key	Escape	0.1
+wait	\[ac6-first-mission-task\]	30
+present	120	20
+capture	post-campaign-intro
+key	Escape	0.1
+present	180	20
+capture	post-black-start
+key	space	0.1
+sleep	5
+capture	aircraft-select
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	12
+capture	native-ready-observation

@@ -1,0 +1,45 @@
+{
+  "cycle": 725,
+  "date": "2026-08-04",
+  "scope": "Bounded file-backed AC6S save and PAL restore through Mission 2 unlock",
+  "selector_1": {
+    "data_table_entry": 9,
+    "save_bytes": 28,
+    "save_file_restored": true,
+    "mission2_restored": true,
+    "active_scene_changed": 3,
+    "active_hud_green": 303
+  },
+  "selector_2": {
+    "data_table_entry": 10,
+    "same_generic_runtime_pipeline": true,
+    "active_scene_changed": 166,
+    "active_hud_green": 300
+  },
+  "validation": {
+    "targeted_ctest_pass": 7,
+    "targeted_ctest_total": 7,
+    "targeted_ctest_seconds": 2.37,
+    "full_ctest_pass": 62,
+    "full_ctest_total": 62,
+    "full_ctest_seconds": 63.58
+  },
+  "claims": {
+    "bounded_file_read": true,
+    "temporary_then_platform_replace": true,
+    "file_backed_native_restore": true,
+    "mission_2_unlocked_after_file_restore": true,
+    "retail_save_compatibility": false,
+    "power_loss_durability_proved": false,
+    "interactive_sdl_flight": false,
+    "real_vulkan_swapchain": false,
+    "mission_2_flown_or_completed": false
+  },
+  "hashes": {
+    "include/ac6/campaign_save_io.h": "3622448d6d0898ef86679322fa2de64cb338d714088146b2b54498477e628d99",
+    "src/campaign_save_io.cpp": "5cda47484e98c54b1dd68128332214da5627c2d61db303cbe0ae4a01295f66ed",
+    "tests/campaign_save_io_tests.cpp": "505abd6e26d30aaabd298487ac9243cd298f8303f95911345927428f7e4f015e",
+    "tests/campaign_vulkan_retail_frame_tests.cpp": "82dc9782b7b66942d1d73b614caf6590b6baddff754cc662f17cc499a4325880",
+    "CMakeLists.txt": "884e7ad1a49931146562c46951b8d0c62b0a68b5dde8a439a36d457f1318cc5a"
+  }
+}

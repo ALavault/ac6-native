@@ -1,0 +1,50 @@
+{
+  "cycle": 726,
+  "date": "2026-08-04",
+  "scope": "PAL Mission 1 campaign frame through SDL/X11 Vulkan presentation",
+  "presentation": {
+    "window_system": "X11 via Xvfb",
+    "display": ":99",
+    "width": 640,
+    "height": 360,
+    "data_table_entry": 9,
+    "mission": 1,
+    "active_after_standby_confirm": true,
+    "scene_changed": 4439,
+    "hud_green": 4439,
+    "world_changed": 11,
+    "textured_changed": 1,
+    "scene_draw_groups": 3,
+    "clip_x_min": -0.612867,
+    "clip_x_max": -0.336477,
+    "clip_y_min": 0.228415,
+    "clip_y_max": 0.472099,
+    "presented": true
+  },
+  "validation": {
+    "targeted_ctest_total": 8,
+    "targeted_ctest_pass_or_skip": 8,
+    "targeted_ctest_skipped_dummy": 1,
+    "targeted_ctest_seconds": 1.87,
+    "full_ctest_total": 63,
+    "full_ctest_pass_or_skip": 63,
+    "full_ctest_skipped_dummy": 1,
+    "full_ctest_seconds": 63.93
+  },
+  "claims": {
+    "sdl_vulkan_surface": true,
+    "real_swapchain_submission": true,
+    "campaign_asset_presented": true,
+    "hud_presented": true,
+    "tcam_cut_camera_presented": true,
+    "tcam_cut_world_visible_pixels": 11,
+    "interactive_flight": false,
+    "mission_2_presented": false,
+    "mission_2_flown_or_completed": false,
+    "retail_material_parity": false
+  },
+  "hashes": {
+    "tests/campaign_vulkan_sdl_present_tests.cpp": "7fbaa018f44775bd01199dbc51ce4dbc27866ae198347457b2c0c28d6dcb16e3",
+    "CMakeLists.txt": "beef784908c9b4452f30da58e933addf7b8d47e69ba8d929f54604211dab3851"
+  }
+}

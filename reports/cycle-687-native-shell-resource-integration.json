@@ -1,0 +1,26 @@
+{
+  "cycle": "687",
+  "classification": "native_scene_shell_bounded_resource_integration",
+  "validation": {
+    "ctest_total": 47,
+    "ctest_passed": 47,
+    "targeted_tests": 4,
+    "targeted_passed": 4,
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "resource_loader_header_sha256": "14c01e7e9d6890fe5ec665a793be1c2b0f3490ec042fbc53c449c8263be72a06",
+    "resource_loader_source_sha256": "aea385b24d8a9e2f6d535bddd7ec70755a7c69d2775253a770a6c49a4f6fe58c",
+    "resource_loader_test_sha256": "5645eca70eb92e1194b57c4eeeff31c211829010c3205a8a138842154bfe00fa",
+    "scene_shell_source_sha256": "645f59cf25bfa6f7a8f18a14aa620411c87f9d0b315a08d958da934986f3db48",
+    "scene_shell_executable_sha256": "4921feff59cf07baa608a61d34c0c87fc39f05af9c634e3a605a4d5ccf70726c",
+    "resource_loader_test_executable_sha256": "3f8f98188945984ae37ae0fc8730c2bb420e1d8985d351ec0c0004ea747f4f9d"
+  },
+  "io_contract": [
+    "declared_pac_size",
+    "bounded_read_callback",
+    "short_read_rejected",
+    "decode_result_propagated"
+  ],
+  "retail_claim": "none_for_selector_2_or_mission_2_runtime"
+}

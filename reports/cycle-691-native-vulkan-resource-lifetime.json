@@ -1,0 +1,24 @@
+{
+  "cycle": "691",
+  "classification": "native_vulkan_opaque_resource_lifetime",
+  "validation": {
+    "ctest_total": 50,
+    "ctest_passed": 50,
+    "targeted_tests": 2,
+    "targeted_passed": 2,
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "lifetime_header_sha256": "8a20a8354df9d7ea2cf5fb9ffb16bc464c5abf0980292e4d7f90e10cb5d99653",
+    "lifetime_source_sha256": "5e26d013aa0ed6b074a2ad9604c3f33d348c03ea0531ec24edc86d1a35ef6ad9",
+    "lifetime_test_sha256": "a410c44fff34243797cd4d1f8ca624323ed6c0a073022bf38a71b7f6c7f427a8",
+    "lifetime_executable_sha256": "14bebf1e7400e40e6449bc40ea548de081066d6b97cda5df90d50af4d3a6867f"
+  },
+  "invariants": [
+    "one_in_flight_lease",
+    "generation_checked_completion",
+    "release_retry_on_exception",
+    "backend_owns_opaque_handle"
+  ],
+  "retail_claim": "none_for_selector_2_or_mission_2_runtime"
+}

@@ -1,0 +1,35 @@
+{
+  "entries": {
+    "ac511830560edcbe226616c19b6acf1d61cdc29134dca21d9f9b51118659b005": {
+      "command": [
+        "python",
+        "tools/render-current-handoff.py"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 0.079496,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "python",
+        "resolved": "/usr/bin/python3.14",
+        "sha256": "69a4bce1763e003a7fd7ba8de0a87429e16df3cc09568dcb29c32285c615e165"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T18:54:11Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/reports/handoff/CURRENT.json": "17e63774e456a69f0f9128ad2f70877ee2b95b5b0b99007946b1ed55f71fffa4",
+        "/fastdata/lavaulta/auto-re-agent/tools/render-current-handoff.py": "cf3b910d147e3c6d1a5fecd1190aeeed1c0bb3978601007c9b9df15599441200"
+      },
+      "name": "ac6-cycle457-render-current-handoff",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/reports/handoff/CURRENT_BRIEF.md": "6e27858605b47d950606901b3760ca88ffdb32c48fc45349aad1082ff27b078d"
+      },
+      "pid": 640859,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:54:11Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

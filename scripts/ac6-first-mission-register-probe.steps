@@ -1,0 +1,51 @@
+# Cycle-516 register-contract probe. The menu prefix uses qualified guest-state
+# markers. After the campaign bridge, short observation windows replace PRESENT
+# gates because presentation logging can stall independently of the live UI.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait-pulse	\[ac6-first-campaign-level-bridge\]	Escape
+sleep	15
+capture	mission-submenu-before-a
+key	space	0.1
+sleep	5
+capture	aircraft-select
+key	space	0.1
+sleep	5
+capture	special-weapon-select
+key	space	0.1
+sleep	5
+capture	loadout-confirm-1
+key	space	0.1
+sleep	5
+capture	loadout-confirm-2
+key	space	0.1
+wait	\[ac6-loadout-ready-override\]	20
+capture	loadout-ready
+key	space	0.1
+wait	\[ac6-first-mission-timeline-repeat\] sequence=2	45
+capture	timeline-repeat-2

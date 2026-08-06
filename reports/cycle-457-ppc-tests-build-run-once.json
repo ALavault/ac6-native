@@ -1,0 +1,73 @@
+{
+  "entries": {
+    "923c5c19313c02157f40328998cff4988b8a2982dfec4d884fc097c2af4463cd": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "--target",
+        "ppc_tests",
+        "-j16"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 59.007798,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T18:48:53Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/tests/ppc/CMakeLists.txt": "18a087115fbad1263bbd68a8577b36f8e8263b697efe4e3f5810adf454995755",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/tools/binutils/powerpc-none-elf-as": "1038d2d43773b568714e85cf64d5f0522e5ecf68d32b2178acf4196a61899742",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/tools/binutils/powerpc-none-elf-ld": "62764e2ae97124ce85d4784f20258d7a01f25ba6d409e009dc65fc5c13a6e982",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/tools/binutils/powerpc-none-elf-nm": "1e543e2664606522516665ba99b6a964436194d4cd49a9c78e34cdd3833fd67d"
+      },
+      "name": "ac6-cycle457-ppc-tests-build-permissions-fixed",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/tests/bin/ppc_tests": "211ecfcd3b5d83b3191d59e49fb64846910b5eee01c4ad24237370e98d9311ba"
+      },
+      "pid": 608386,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:47:54Z",
+      "status": "passed"
+    },
+    "f0f464840f55c24b5b75afe949df8ae82eaa9591a9e39963dde617f71880a2ed": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "--target",
+        "ppc_tests",
+        "-j16"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 21.15135,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 1,
+      "finished_at": "2026-08-01T18:45:12Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/tests/ppc/CMakeLists.txt": "18a087115fbad1263bbd68a8577b36f8e8263b697efe4e3f5810adf454995755",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/tools/binutils/powerpc-none-elf-as": "1038d2d43773b568714e85cf64d5f0522e5ecf68d32b2178acf4196a61899742"
+      },
+      "name": "ac6-cycle457-ppc-tests-build",
+      "observed_outputs": {},
+      "pid": 596087,
+      "returncode": 126,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T18:44:51Z",
+      "status": "failed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

@@ -1,0 +1,72 @@
+# Create the first Game Data entry after cancelling the empty file browser.
+# The harness starts this after selector44=3 is observed.
+capture	game-data-browser
+key	Shift	0.1
+wait	selector44=10	20
+sleep	1
+capture	post-browser-cancel
+key	Left	0.1
+key	space	0.1
+wait	state40=9.*type28=5	20
+capture	create-game-data-prompt
+key	space	0.1
+sleep	2
+capture	post-create-confirm
+key	space	0.1
+sleep	5
+capture	post-file-selection
+key	Left	0.1
+key	space	0.1
+wait	state40=9.*type28=5	20
+sleep	1
+capture	slot-create-prompt-ready
+key	Left	0.1
+key	space	0.1
+sleep	5
+capture	post-slot-create-confirm
+# The final confirmation returns to MAIN MENU with CAMPAIGN highlighted.
+key	space	0.1
+sleep	3
+capture	campaign-new-game
+key	space	0.1
+sleep	3
+capture	difficulty
+key	space	0.1
+sleep	3
+capture	controls
+key	space	0.1
+sleep	3
+capture	language
+key	space	0.1
+sleep	8
+capture	campaign-intro
+wait-pulse	\[ac6-campaign-transition\].*state=1->2	Escape
+capture	post-campaign-intro-skip
+# The campaign transition marker is the authoritative state boundary. The
+# former level-bridge probe is not emitted by the corrected corpus, so settle
+# on the visible Mission 01 START MISSION screen and record each launch input.
+sleep	5
+capture	mission-01-start
+key	space	0.1
+sleep	15
+capture	post-start-a
+key	space	0.1
+sleep	20
+capture	post-start-b
+key	space	0.1
+sleep	12
+capture	post-weapon-confirm
+key	Shift	0.1
+sleep	8
+capture	mission-submenu-ready
+key	space	0.1
+sleep	35
+capture	mission-launch
+key	space	0.1
+sleep	60
+capture	mission-flight-candidate
+key	space	0.1
+sleep	60
+capture	mission-flight-candidate-2
+sleep	240
+capture	mission-flight-candidate-3

@@ -1,0 +1,25 @@
+{
+  "cycle": "693",
+  "classification": "native_vulkan_ntxr_rgba8_upload",
+  "validation": {
+    "ctest_total": 51,
+    "ctest_passed": 51,
+    "vulkan_backend_smoke": "passed",
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "backend_header_sha256": "7915dbb0dc1b2a0b3399849d2540231e11e6e2f721514a5e934d7be9e4fb3a38",
+    "backend_source_sha256": "42e1bf32782f7f7a5d6ab53d4ca01e42720caf523f1631ebed40a5a895548ad7",
+    "backend_test_sha256": "995447e3779892997a25c7ab283ec05885bbf6d0b19284f503ddc6a8d971ecfb",
+    "backend_executable_sha256": "d712e877b039e7692f3a59d747a944b12013b743700a886d85f731581bc26198"
+  },
+  "image_contract": [
+    "rgba8_staging_copy",
+    "optimal_2d_image",
+    "layout_transition_to_transfer",
+    "copy_buffer_to_image",
+    "layout_transition_to_shader_read",
+    "queue_wait_before_release"
+  ],
+  "retail_claim": "none_for_bc1_bc3_descriptor_or_mission_2_presentation"
+}

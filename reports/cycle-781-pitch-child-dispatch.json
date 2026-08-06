@@ -1,0 +1,57 @@
+{
+  "cycle": 781,
+  "lane": "bridge",
+  "stock_gameplay_or_scenario_proven": false,
+  "single_gameplay_variable": "pitch_positive",
+  "raw_input": {
+    "on": "2026-08-04T12:35:05.479+02:00",
+    "ly": 32767,
+    "off": "2026-08-04T12:35:06.546+02:00",
+    "zero_controls_before_and_after": true
+  },
+  "ownership": {
+    "player": "0xB2470000",
+    "player_vtable": "0x820568D4",
+    "child": "0xB2470100",
+    "child_dispatch_table": "0x82007A10",
+    "dispatch_pc": "0x822270A0"
+  },
+  "child_halfword_candidate": {
+    "fields": ["child+380", "child+382", "child+536", "child+538"],
+    "before_pitch_sequence_160": [0, 0, 0, 0],
+    "during_pitch_sequence_170": [0, 0, 0, 0],
+    "after_release_sequence_180": [0, 0, 0, 0],
+    "late_positive_control": {"sequence": 240, "time": "12:35:12.361", "field": "child+382", "before": 1, "after": 0},
+    "classification": "rejected_as_analog_pitch_command"
+  },
+  "physical_observation": {
+    "field": "player+160 copied from child+128",
+    "null_start": {"time": "12:35:04.321", "bits": "0x3E6DD3B4", "float": 0.232252896},
+    "null_pre_input": {"time": "12:35:05.018", "bits": "0x3E6D382A", "float": 0.231659561},
+    "during_pitch": {"time": "12:35:05.855", "bits": "0x3EA67812", "float": 0.325134814},
+    "post_release": {"time": "12:35:06.821", "bits": "0x3F28C22B", "float": 0.659212768},
+    "null_drift": -0.000593334,
+    "first_pitch_delta": 0.093475252,
+    "copied_words_equal_at_every_sample": true,
+    "classification": "physical_response_reproduced"
+  },
+  "canonical_command_join": "open",
+  "g8_status": "supported_not_qualified",
+  "validation": {
+    "build": "pass",
+    "pal_ctest": {"passed": 63, "failed": 0, "skipped": 4},
+    "generated_tree_sha256": "f42fa2c4c1ec3bfb061003ef7074f73881e968ef2719f7f78e59190d1c5af73d",
+    "generated_corpus_modified": false,
+    "xenia_runs": 0,
+    "foreign_processes_touched": false
+  },
+  "identity": {
+    "workspace_commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_diff_sha256_before_report": "4e6c24c65df5db0af1a01bc0a1090ccf90f11bc7abca58895702c7d86bf7ff15",
+    "runtime_commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_diff_sha256": "fe46948412b4160bfcfe3afe58d38d91aa825560eea22b13a6c3b0bdab71f9da",
+    "probe_sha256": "5de8189e80bdd9272519f31add2dbfd34e63335f3b6b831621201d272cc5dd35",
+    "executable_sha256": "0d49fe98ba1dbee8b2b80b5bc0544213d7ed348819b7c5907176a658c28c2fd6",
+    "runtime_log_sha256": "3dd4fa5abca5faf154f9a83870a77f83308a0f441ade3571eee28cfee836ad5a"
+  }
+}

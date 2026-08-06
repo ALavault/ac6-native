@@ -1,0 +1,23 @@
+{
+  "cycle": "692",
+  "classification": "native_vulkan_headless_backend",
+  "validation": {
+    "ctest_total": 51,
+    "ctest_passed": 51,
+    "vulkan_backend_smoke": "passed",
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "backend_header_sha256": "252abba10963922d3ed10cf942c7c4335bec0ccd2c51852c2725d7edc69f0ef7",
+    "backend_source_sha256": "dee43763b95f694ba86a9c192ec0f32ec610212bd5c78fd8b224fbd4b8c0b437",
+    "backend_test_sha256": "2c5d0638d00228f08a402a9e492ce6fe039094889e98c77c402168e6cb6f3ab5",
+    "backend_executable_sha256": "326f6ca37add766281eed8efaed05296877cc4a9343fa3698b7e417c42cd86dd"
+  },
+  "backend_invariants": [
+    "instance_device_queue_created",
+    "buffer_memory_bound",
+    "command_submitted_and_waited",
+    "lease_release_destroys_buffer_and_memory"
+  ],
+  "retail_claim": "none_for_mission_2_or_ac6_mesh_texture_presentation"
+}

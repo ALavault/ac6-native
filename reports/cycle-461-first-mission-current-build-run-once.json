@@ -1,0 +1,44 @@
+{
+  "entries": {
+    "7f863ffc5254fd2cfced22bd147fe713b60b3e5cd1d1eda3e175d3cbc5240853": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-instr",
+        "--target",
+        "ac6recomp",
+        "-j16"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 0.110137,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-02T06:28:03Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/CMakeLists.txt": "9a2eeac376bebde8e1bc8c0a151cd8ace314a272a731bd460482a0fab07b7e6f",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_backend_fixes/ac6_ui_input_dispatch_probe.cpp": "0aa338015dad846913e7eba29e64ed70c5bd69738a8cc48890e8a5f94a2ed2bd",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_campaign_resource_bridge.h": "5c439001fd1bfd79c0c8b32995e41910d3db2b9125a7863d1638b1d584017cd3",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_dialog_text_fallback.cpp": "6c0ea329840a5e01e487fb7f30c1b4b057fa0c7ad8a8c35b26b1323615f07eac",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_recomp_overrides.cpp": "01ebe0a6b45bc4b96fe33c375a49846fa14859d3f9d5fc7f68e267affd4ae47d",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6recomp_app.h": "cfaaad39c4bca3c7632e3ae042a8eeac7d680b51744c2526c63fef27c70a2776",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/thirdparty/rexglue-sdk/include/rex/ppc/context.h": "9c476ac39995a53541ddfd06e8510f2e3b78a8464bffad3c7611797b48a98a8e"
+      },
+      "name": "ac6-cycle461-first-mission-diagnostic-rebuild-v1",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-instr/ac6recomp": "3d0f48a647faab941ffa40695044d101b5b698387b09130ab9907d9d39526b9b"
+      },
+      "pid": 3429254,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-02T06:28:03Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

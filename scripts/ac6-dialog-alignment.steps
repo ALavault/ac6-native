@@ -1,0 +1,3 @@
+# Capture the first stable PAL missing-game-data prompt without dismissing it.
+present	30	10
+capture	missing-game-data

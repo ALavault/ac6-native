@@ -1,0 +1,31 @@
+{
+  "cycle": 713,
+  "date": "2026-08-03",
+  "scope": "persistent Vulkan frame targets",
+  "targets": {
+    "persistent_color": true,
+    "persistent_depth": true,
+    "attachment_load_op": "LOAD",
+    "initial_clear_explicit": true,
+    "draw_before_clear_rejected": true,
+    "separate_submissions_preserve_previous_lot": true
+  },
+  "validation": {
+    "vulkan_backend_tests": "pass",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 60.72
+  },
+  "claims": {
+    "persistent_native_frame": true,
+    "swapchain_presentation": false,
+    "multi_frame_sync": false,
+    "native_hud": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "9da7550426b06a16e23e4e3d47edb2f0f4e3cb4a3fa1232611b6310ab2768954",
+    "src/vulkan_backend.cpp": "75e31515c3ef9fe1042e6e499fab57cc8b7d7177011ed8c224152dd01e1202a6",
+    "tests/vulkan_backend_tests.cpp": "1ce6dc7d5b50fae949e69a5b4be66550c748ce324501c825301e33df89de2c68"
+  }
+}

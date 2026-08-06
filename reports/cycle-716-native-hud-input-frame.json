@@ -1,0 +1,42 @@
+{
+  "cycle": 716,
+  "date": "2026-08-03",
+  "scope": "native HUD and qualified input frame contract",
+  "input": {
+    "xinput_normalization": true,
+    "logical_action_mapping": true,
+    "edge_tracking": true,
+    "gun_action_slot": 0,
+    "missile_action_slot": 1
+  },
+  "hud_frame": {
+    "mission_route": true,
+    "loadout": true,
+    "objective_progress": true,
+    "attached_to_campaign_vulkan_frame": true,
+    "renderer_glyph_draw": false
+  },
+  "validation": {
+    "campaign_hud_tests": "pass",
+    "campaign_vulkan_frontend_tests": "pass",
+    "ctest": "55/55 passed",
+    "ctest_time_seconds": 61.15
+  },
+  "claims": {
+    "generic_hud_input_contract": true,
+    "native_hud_data_frame": true,
+    "retail_hud_visual_parity": false,
+    "swapchain_presentation": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/campaign_hud.h": "f1cb5d2ef86d51f789b40512021e6747e20353f037f8de2c1f4b13c0973f473e",
+    "src/campaign_hud.cpp": "0f75b69c813704f17a3a350e83e76c490ce3977d83f39264197eef5d6a95b28f",
+    "include/ac6/campaign_vulkan_frontend.h": "7398bc8828c839f85971fe4e72987e4530e5b072e357f0c21e39e2a15351c6d7",
+    "src/campaign_vulkan_frontend.cpp": "da1756c59d78435b0f7191bd5e4c74043f5a5203fd5c5f8de449696e49cba21e",
+    "tests/campaign_hud_tests.cpp": "5c9371f0bab74cbad4a00c297d95e0f532069b6f0856b1d8cfbccef4844a3ce5",
+    "tests/campaign_vulkan_frontend_tests.cpp": "26a9f91a47ff563cb4c2d161b7c016be3842ddd6fe0dc8ffc4fa017d603e2ad6",
+    "CMakeLists.txt": "e0368ee3e5ace2457ecd87642149c6aeeb7ef9f8665965cfa144a2f98ef3c996"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "cycle": 782,
+  "lane": "bridge",
+  "stock_gameplay_or_scenario_proven": false,
+  "single_gameplay_variable": "pitch_positive",
+  "canonical_project": {
+    "name": "ace-combat-6",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "raw_to_canonical": {
+    "xam_wrapper_pc": "0x823911C0",
+    "copy_pc": "0x8234D378",
+    "device": "0x8290DE3C",
+    "raw_ly_field": "device+0x4E",
+    "canonical_ly_field": "device+0x3E",
+    "positive": {"time": "12:56:44.955", "xam_ly": 32767, "raw_bits": "0x7FFF", "canonical_bits": "0x7FFF"},
+    "release": {"time": "12:56:45.942", "xam_ly": 0, "raw_bits": "0x0000", "canonical_bits": "0x0000"},
+    "other_axes_zero": true,
+    "classification": "qualified_direct_join"
+  },
+  "rejected_historical_addresses": {
+    "source_project": "ace-combat-6-corrected",
+    "addresses": ["0x821CE088", "0x82215418", "0x82215210"],
+    "reason": "canonical Ghidra/XEX bytes do not implement the previously assigned input poller/aggregator roles"
+  },
+  "physical_observation": {
+    "player": "0xB2470000",
+    "child": "0xB2470100",
+    "field": "player+160 copied from child+128",
+    "null_start": {"time": "12:56:44.132", "bits": "0x3E6D823C", "float": 0.231942117},
+    "null_pre_input": {"time": "12:56:44.876", "bits": "0x3E6CDB4C", "float": 0.231305301},
+    "during_pitch": {"time": "12:56:45.747", "bits": "0x3F005884", "float": 0.501350641},
+    "post_release": {"time": "12:56:46.748", "bits": "0x3F2BABB4", "float": 0.670588732},
+    "null_drift": -0.000636816,
+    "first_pitch_delta": 0.270045340,
+    "classification": "physical_response_reproduced"
+  },
+  "canonical_to_child_command": "open",
+  "g8_status": "supported_not_qualified",
+  "headless_audio": {
+    "qualified_environment": "SDL_AUDIODRIVER=dummy",
+    "without_dummy_observation": "startup stalled after one PRESENT",
+    "documented_in": "AGENTS.md"
+  },
+  "validation": {
+    "build": "pass",
+    "parser_py_compile": "pass",
+    "pal_ctest": {"passed": 63, "failed": 0, "skipped": 4, "seconds": 38.16},
+    "generated_tree_sha256": "f42fa2c4c1ec3bfb061003ef7074f73881e968ef2719f7f78e59190d1c5af73d",
+    "generated_corpus_modified": false,
+    "xenia_runs": 0,
+    "foreign_processes_touched": false
+  },
+  "identity": {
+    "workspace_commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_diff_sha256_before_report": "39f692474356344f3dcbc45070216d2e27dbd962af1ffbf51eb4634b02d96c70",
+    "runtime_commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_diff_sha256": "fe46948412b4160bfcfe3afe58d38d91aa825560eea22b13a6c3b0bdab71f9da",
+    "probe_sha256": "d07f7097fe826ad073f1c92b408266ae3e711c7f6c87568a416ca8159ec7964d",
+    "executable_sha256": "401cc83b491bf1f594df95168a54209e8c33b9eaa09224cd6c35742b1cd94f6a",
+    "runtime_log_sha256": "06a27bb4bf2bc072e88f8f2159edb4230bc6c13d345401dabbde2417318e5eff"
+  }
+}

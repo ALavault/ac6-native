@@ -1,0 +1,25 @@
+{
+  "cycle": "695",
+  "classification": "native_vulkan_headless_render_target",
+  "validation": {
+    "ctest_total": 51,
+    "ctest_passed": 51,
+    "vulkan_backend_smoke": "passed",
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "backend_header_sha256": "a9761d490935507643cc0d0eeb0571d9edfe97402805a50e74c4aaea35ff1f6f",
+    "backend_source_sha256": "89ee1767a8535a46e040bfb26656d34fbea384aba7265b778f2605c48e7d430e",
+    "backend_test_sha256": "f8f34a7f0ae12cfe835f4d38710364a29bee4e6badb2e052f38854e7746a8493",
+    "backend_executable_sha256": "2d5e5f8b99ca77302632c0892cc59b27b914471c0da0a128063765f36fba79e6"
+  },
+  "render_target_contract": [
+    "color_image_allocated",
+    "image_view_created",
+    "render_pass_created",
+    "framebuffer_created",
+    "clear_submitted_and_waited",
+    "dependency_order_release"
+  ],
+  "retail_claim": "none_for_mesh_pipeline_or_mission_2_presentation"
+}

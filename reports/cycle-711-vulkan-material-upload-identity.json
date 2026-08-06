@@ -1,0 +1,34 @@
+{
+  "cycle": 711,
+  "date": "2026-08-03",
+  "scope": "Vulkan material binding identity guard",
+  "guard": {
+    "gidx_match": true,
+    "extent_match": true,
+    "bc_format_match": true,
+    "resident_mips_nonzero": true,
+    "mismatch_rejected": true
+  },
+  "validation": {
+    "vulkan_backend_tests": "pass",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 64.54,
+    "retail_resolver_context": {
+      "entry_9_native_bindings": 1021,
+      "entry_10_native_bindings": 85
+    }
+  },
+  "claims": {
+    "material_upload_identity_guard": true,
+    "retail_shader_hash_qualified": false,
+    "unique_runtime_material_selection": false,
+    "swapchain_presentation_proven": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "9c2601157ce06b023b1c71117b0f7b08e35b62b6a4979d4c6178f5c0045df59f",
+    "src/vulkan_backend.cpp": "d1a4289babe96041e5d253a724ab7b5f55adf7acd4a96e97684cb4c66c849398",
+    "tests/vulkan_backend_tests.cpp": "3dc6555186a4a5a3d3f8ca919eee8888274a56334ab4c95204186a89b1e3cc57"
+  }
+}

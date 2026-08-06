@@ -1,0 +1,42 @@
+{
+  "entries": {
+    "4a08c706c2d94471622203d94878ebb7de5ff445a19eaf28e2fd1e85257c9f07": {
+      "command": [
+        "ctest",
+        "--test-dir",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "--output-on-failure",
+        "--output-log",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-454-index-fix-targeted-ctest.log",
+        "-R",
+        "^(ac6_recomp_overrides|ac6_backend_draw_telemetry|ac6_backend_capture_bridge)$"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 0.028368,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "ctest",
+        "resolved": "/usr/bin/ctest",
+        "sha256": "d612a9a0f64fed3dc9c92b03f163ef8296d40eafcd8ee60a871c1edc3f85c393"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T06:51:18Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_capture_bridge_test": "f143eb7a9cbfe494a304e77d1375e12cf5ba9dff5d4dd01eda1139d1bb5b30c7",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_backend_draw_telemetry_test": "bc18dd428a6aa0c56112b947b7030a88e586281a0bfab64831ed3e06a69ce0c1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6_recomp_overrides_test": "03e5fb60c92d5ec8b10197609391bf94c1c5d5da8c589da03cb8d42d556654a8"
+      },
+      "name": "ac6-cycle454-index-fix-targeted-tests",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-454-index-fix-targeted-ctest.log": "58ca128446464eaad2dddc72911c55e7507b47c03562cc3def32c83bad8aa262"
+      },
+      "pid": 1731825,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T06:51:18Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

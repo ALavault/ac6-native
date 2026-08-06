@@ -1,0 +1,31 @@
+{
+  "cycle": 730,
+  "date": "2026-08-04",
+  "scope": "post-present X11 screenshot verification",
+  "capture": {
+    "path": "/home/lavaulta/Pictures/screenshot-2026-08-04_02-59-11.png",
+    "window_title": "AC6 campaign Vulkan frame",
+    "window_size": [640, 360],
+    "desktop_size": [640, 480],
+    "all_pixels_rgb": [0, 0, 0],
+    "pixel_count": 307200,
+    "taken_after_present": true
+  },
+  "comparison": {
+    "vulkan_readback_scene_changed": 4439,
+    "vulkan_readback_hud_green": 4439,
+    "vulkan_readback_flight_world_pixels": 12,
+    "vulkan_readback_mission2_changed": 6974,
+    "screen_visible_pixels": 0,
+    "presentation_surface_visual_match": false
+  },
+  "validation": {
+    "focused_ctest_total": 2,
+    "focused_ctest_pass_or_skip": 2,
+    "focused_ctest_skipped_dummy": 1,
+    "focused_ctest_seconds": 0.04
+  },
+  "hashes": {
+    "tests/campaign_vulkan_sdl_present_tests.cpp": "647b11ffac790346242335efbfb00fe47f6d571be570b08b98ddd1f326369560"
+  }
+}

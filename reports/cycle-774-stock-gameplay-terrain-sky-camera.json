@@ -1,0 +1,80 @@
+{
+  "cycle": 774,
+  "date": "2026-08-04",
+  "run": {
+    "path": "reports/logs/cycle-774-stock-delayed-gameplay-frame",
+    "lane": "bridge",
+    "interventions": ["save-dialog-synthesis", "force-cvars", "fallback-allocator"],
+    "gpu_frame": 11868,
+    "trigger_frame": 10068,
+    "delay_frames": 1800,
+    "draws": 1340,
+    "vfetch_records": 2428,
+    "texture_records": 4094,
+    "unique_texture_bindings": 2047,
+    "stock_timing": true,
+    "unlock_fps": false,
+    "post_hud_and_flight_inputs": true,
+    "xenia_used": false
+  },
+  "joins": {
+    "matched_vfetch_records": 452,
+    "unmatched_vfetch_records": 1976,
+    "entry119_candidate_occurrences": 408,
+    "entry9_candidate_occurrences": 66,
+    "matched_unique_texture_bindings": 883,
+    "terrain_runtime": true,
+    "sky_cloud_runtime": true,
+    "gameplay_camera": true,
+    "player_f16_runtime": false
+  },
+  "player_aircraft": {
+    "static_entry9": {
+      "lod1": "root.1.m16.10",
+      "lod2": "root.1.m16.11",
+      "lod3": "root.1.m16.12",
+      "lod4": "root.1.m16.13",
+      "detailed": "root.1.m76.6"
+    },
+    "exact_runtime_join": null
+  },
+  "white_aircraft": {
+    "frame": 9859,
+    "draw": 138,
+    "invalid_or_null_fetch_excluded": true,
+    "source_xxh3": "6C1BE48B64630BA2",
+    "host_image_view_nonnull": true,
+    "remaining_classes": ["format_or_swizzle", "shader_or_constants", "unexpected_target", "blend_or_lighting"]
+  },
+  "presentation": {
+    "hud_visible": true,
+    "world_black": true,
+    "first_black_stage_identified": false
+  },
+  "validation": {
+    "runtime_build": "pass",
+    "bounded_xvfb_run": "pass",
+    "reconstruction_build": "pass",
+    "pal_ctest": {"passed": 63, "total": 63, "sdl_dummy_skipped": 1}
+  },
+  "identity": {
+    "workspace_commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_dirty_diff_sha256": "2da4ac71c1f8ed4cf56e825b5679bd2ef874e1f7008edf4de2e4a78653188e43",
+    "runtime_commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_dirty_diff_sha256": "b0bf93c5434bde7ad8058ee203c07864ec080447d74f722b90db6ada58ecd1d9",
+    "executable_sha256": "6853ae97d83e1b0c5a167ba65a702354ca0d73caab974c1c980b9962951a5877",
+    "toml_sha256": "fed716e3ff77b50e4866e2a67c5a183f21651f6cf29fdae930091c3fdf1c85b0",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "data00_pac_sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+    "data01_pac_sha256": "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4"
+  },
+  "boundaries": {
+    "player_aircraft_lod_runtime": false,
+    "first_black_stage": false,
+    "white_aircraft_fully_classified": false,
+    "audio_1_to_1": false,
+    "dummy_audio_diagnostic_only": true
+    ,"stock_gameplay_or_scenario_proven": false
+  }
+}

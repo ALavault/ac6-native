@@ -1,0 +1,32 @@
+{
+  "cycle": 717,
+  "date": "2026-08-03",
+  "scope": "native HUD overlay on persistent Vulkan frame",
+  "hud_overlay": {
+    "persistent_target_required": true,
+    "same_render_pass_required": true,
+    "untextured_pipeline_required": true,
+    "objective_bar": true,
+    "action_indicators": ["gun", "missile", "target"],
+    "scene_preservation_readback": true
+  },
+  "validation": {
+    "ac6_vulkan_backend_tests": "pass",
+    "ctest": "55/55 passed",
+    "ctest_time_seconds": 64.12,
+    "controlled_skips": ["headless swapchain"]
+  },
+  "claims": {
+    "native_hud_geometry_seam": true,
+    "retail_hud_visual_parity": false,
+    "swapchain_presentation": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "363d141392c39b00ecd72c7e45b34efa2942640a89f8f2c0e1ec62329ba57a2d",
+    "src/vulkan_backend.cpp": "be736e5664a288c3454d1205805270f03ac8ccb7117a15edcd0f262940c967e9",
+    "tests/vulkan_backend_tests.cpp": "9ff14b9f08afaebf936267407adfc59e430d09e6202b35c68cdca45f46064292",
+    "CMakeLists.txt": "e0368ee3e5ace2457ecd87642149c6aeeb7ef9f8665965cfa144a2f98ef3c996"
+  }
+}

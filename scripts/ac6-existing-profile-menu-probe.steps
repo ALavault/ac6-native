@@ -1,0 +1,22 @@
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*37	20
+key	space	0.1
+wait	type28=[^ ]*35	20
+key	space	0.1
+wait	selector44=[^ ]*3	20
+capture	existing-save-browser
+key	space	0.1
+wait	\[ac6-file-selector-call\].*type=[^ ]*6	20
+capture	existing-save-type6
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	\[ac6-file-selector-call\].*type=[^ ]*8	20
+key	space	0.1
+wait	\[ac6-file-selector-call\].*type=[^ ]*10	20
+capture	existing-save-complete
+key	space	0.1
+sleep	5
+capture	main-menu
