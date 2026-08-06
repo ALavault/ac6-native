@@ -1,7 +1,7 @@
 {
   "schema": "ac6.mission01-native-gate.v2",
   "provenance": {
-    "repo_commit": "bbbd94b92337e5ab8a866eb0f289b1a56537bad6",
+    "repo_commit": "ce457c5baa3e6c62e8a87516a897aed47b69e4c6",
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
     "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
     "mission_id": 1
@@ -11,32 +11,32 @@
       "native_session_loop": {
         "status": "passed",
         "statement": "native session loop",
-        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "native session completed 1800 fixed ticks"}]
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p7-current-main/native-session.json", "sha256": "9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b", "size": 1632, "claim": "native session completed 1800 fixed ticks with deterministic replay, pause, save/resume and restart checks"}]
       },
       "world_visible": {
         "status": "passed",
         "statement": "world visible",
-        "evidence": [{"kind": "native-capture", "path": "reports/mission01-native-captures/p1-camera-visible/capture-metrics.json", "sha256": "62cf04295349d31cf59535aa7923be9b88ac590fe3697334d503e6346b242dcd", "size": 5966, "claim": "native readback has filled color and depth coverage"}]
+        "evidence": [{"kind": "native-capture", "path": "reports/mission01-native-captures/p7-current-main/capture-metrics.json", "sha256": "ac67cd27b11555cc763d1f8601f866a72946014566b8b197dcc424ce3318397d", "size": 6023, "claim": "native readback has zero diagnostic point writes, 822161 filled fragment writes, a filled terrain region and non-degenerate depth"}]
       },
       "player_aircraft_visible": {
         "status": "passed",
         "statement": "player aircraft visible",
-        "evidence": [{"kind": "native-capture", "path": "reports/mission01-native-captures/p1-camera-visible/object-id.png", "sha256": "22e2d244cbb412c6537b541f63984a2ec017601271fbad7c67c31544449030e6", "size": 6776, "claim": "native object-ID readback attributes final pixels to the player drawable"}]
+        "evidence": [{"kind": "native-capture", "path": "reports/mission01-native-captures/p7-current-main/object-id.png", "sha256": "5c5bbd45a86873f9338aa9b2144ce1722c96590e66836d2fe9e80239c3308d34", "size": 6776, "claim": "native object-ID readback attributes 42722 final pixels to the f16 player drawable"}]
       },
       "gameplay_camera": {
         "status": "passed",
         "statement": "gameplay camera",
-        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "native frame records a follow camera targeting the player"}]
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p7-current-main/native-session.json", "sha256": "9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b", "size": 1632, "claim": "native frame records a follow camera targeting the player at tick 1800"}]
       },
       "flight_input": {
         "status": "passed",
         "statement": "flight input",
-        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "native replay input changes flight state"}]
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p7-current-main/native-session.json", "sha256": "9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b", "size": 1632, "claim": "native replay input changes pitch, roll, yaw, throttle, position and orientation"}]
       },
       "deterministic_replay": {
         "status": "passed",
         "statement": "deterministic replay",
-        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "repeated native replay records a stable session"}]
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p7-current-main/native-session.json", "sha256": "9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b", "size": 1632, "claim": "three native executions of the same 1800-frame replay have deterministic_replay=true and semantic hash 325ccd51b29e8579"}]
       }
     },
     "domains": {

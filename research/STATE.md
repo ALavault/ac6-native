@@ -448,3 +448,41 @@ calibration de scène comme parité retail sans association exacte.
   Le handoff gameplay est qualifié comme borne bridge ; `retail_units_and_waves`
   et `retail_objectives` restent ouverts. La prochaine frontière est le lien
   exact record/scénario → insertion ou activation gameplay.
+
+## Refactoring runtime et gate v2 — 2026-08-06
+
+- Le runtime natif est réparti en translation units mission, combat/scénario,
+  assets/manifests, géométrie/raster, renderer et frontend. `main.cpp` est un
+  dispatcher court ; les anciennes façades restent compatibles.
+- Les dix chargeurs de manifests ciblés valident une instance temporaire et ne
+  publient qu'après succès complet ; les caches dérivés de textures suivent la
+  même transaction. Les tests couvrent l'invalidité tardive, les doublons et
+  la conservation de l'état antérieur.
+- Le ratchet local mesure les lignes physiques et les fonctions, exclut les
+  artefacts générés/build, et passe sur 55 fichiers sans exemption.
+- Le contrat v2 sépare `native_units_and_waves` et `native_objective_flow` de
+  `retail_units_and_waves` et `retail_objectives`. J0 et les mécanismes natifs
+  sont passés ; la Mission 01 retail reste ouverte sur l'identité exacte des
+  vagues/unités et des objectifs.
+- La frontière retail n'a pas changé : cycle 1080 réduit le prochain test au
+  lien record/scénario → insertion ou activation dans UnitManager/MissionManager.
+
+## Recapture native post-merge P7 — 2026-08-06
+
+- Après arrêt des workers persistants, le HEAD stable est
+  `ce457c5baa3e6c62e8a87516a897aed47b69e4c6`. Le bundle
+  `reports/mission01-native-captures/p7-current-main/` est une recapture native
+  1280x720 avec le même manifest/replay et 1 800 fixed ticks.
+- Le chemin produit enregistre `diagnostic_point_writes=0` et
+  `filled_fragment_writes=822161`; la couverture finale est `361984` pixels
+  couleur et `361267` pixels profondeur. Le terrain a `257545` pixels uniques
+  dans `[0,366]..[1279,718]`; `f16` a `42722` pixels object-ID dans
+  `[452,240]..[1113,457]` et `79140` écritures couleur/depth-pass.
+- La profondeur est non dégénérée (`0.00241196877..0.0550876558`), le radio
+  natif consomme la clé `15`, et `deterministic_replay`, pause, save/resume et
+  restart sont vrais. Les PPM/F32/replay restent externes; seuls les PNG,
+  metrics et session sont versionnés.
+- Conclusion obligatoire : raster fill qualified ; raster fill still broken
+  pour le contenu retail complet tant que l'ownership matériel/texture retail
+  n'est pas qualifié ; topology is next boundary ; camera/clipping is next
+  boundary. La recapture ne promeut pas les vagues ou objectifs retail ni J1.

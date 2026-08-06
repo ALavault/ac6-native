@@ -247,3 +247,15 @@ hypotheses:
     discriminator: Require a hash-linked decode, registry insertion, consumer call and gameplay identity join in one run; a file-read range alone is insufficient.
     evidence: reports/cycle-1080-bridge-airborne-owner-boundary.md; 443 reads over offset 0x0C928000 length 0x06EE1766; campaign-resource-bridge marker count 0.
     qualification: Rejected for range-read-only evidence; entry 119 registration/consumer ownership remains open.
+  - id: H-NATIVE-MECHANICS-CLOSE-RETAIL-SEMANTICS
+    status: rejected
+    statement: Native MissionExecution wave/objective mechanics and successful HUD/debrief fixtures establish the retail Mission 01 unit, wave, and objective identities.
+    discriminator: Require separate retail-qualified evidence with exact payload hash, owner/consumer chain, and activation transition; native fixtures must carry an explicit retail_semantics_qualified=false marker.
+    evidence: analysis/contracts/mission01-native-gate-v2.json; reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json SHA-256 d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f.
+    qualification: Rejected; v2 closes native mechanisms only and leaves retail_units_and_waves and retail_objectives open.
+- id: H-NATIVE-P7-CURRENT-MAIN-RASTER-RECAPTURE
+  status: qualified
+  statement: The current main native product path fills the Mission 01 world and attributes visible player pixels after 1800 deterministic fixed ticks.
+  discriminator: Require one hash-linked native capture with diagnostic_point_writes=0, filled_fragment_writes>0, a non-zero terrain region, f16 object-ID pixels and a non-degenerate depth range, plus deterministic replay and pause/save/restart evidence.
+  evidence: reports/mission01-native-captures/p7-current-main/README.md; capture-metrics.json SHA-256 ac67cd27b11555cc763d1f8601f866a72946014566b8b197dcc424ce3318397d; native-session.json SHA-256 9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b.
+  qualification: Qualified for native raster fill and player attribution; raster fill remains broken for the complete retail content path, and retail objective/wave semantics remain open. Topology and camera/clipping are the next boundaries.
