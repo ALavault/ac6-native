@@ -12,7 +12,8 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA = "ac6.mission01-native-gate.v1"
+SCHEMA = "ac6.mission01-native-gate.v2"
+V1_SCHEMA = "ac6.mission01-native-gate.v1"
 CANONICAL_XEX_SHA256 = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
 CANONICAL_DATA_TBL_SHA256 = "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5"
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -55,6 +56,24 @@ REQUIRES_NATIVE_TEST = {
     *J1_REQUIREMENTS,
 }
 REQUIRES_RETAIL_SEMANTIC_EVIDENCE = {"retail_objectives"}
+V2_DOMAINS = (
+    "native_combat_mechanics",
+    "native_units_and_waves",
+    "retail_units_and_waves",
+    "native_objective_flow",
+    "retail_objectives",
+    "essential_hud",
+    "scenario_radio_or_subtitles",
+    "success_failure_debrief",
+)
+V2_RETAIL_DOMAINS = {
+    "retail_units_and_waves", "retail_objectives", "scenario_radio_or_subtitles"
+}
+V2_NATIVE_DOMAINS = {
+    "native_combat_mechanics",
+    "native_units_and_waves", "native_objective_flow", "essential_hud",
+    "success_failure_debrief"
+}
 
 
 class GateError(ValueError):
@@ -86,12 +105,21 @@ def template() -> dict[str, Any]:
             "mission_id": 1,
         },
         "requirements": {
-            name: requirement(name) for name in (*J0_REQUIREMENTS, *J1_REQUIREMENTS)
+            "J0": {name: requirement(name) for name in J0_REQUIREMENTS},
+            "domains": {name: requirement(name) for name in V2_DOMAINS},
+            "runtime": {"pause_save_restart": requirement("pause_save_restart")},
         },
         "policy": {
             "bridge_is_supporting_evidence_only": True,
             "native_behavior_required_for_pass": True,
             "retail_assets_remain_external": True,
+            "retail_semantics_qualified_required": True,
+            "retail_gate_requires": [
+                "J0", "native_combat_mechanics", "native_objective_flow", "essential_hud",
+                "success_failure_debrief", "retail_units_and_waves",
+                "retail_objectives", "scenario_radio_or_subtitles",
+                "pause_save_restart",
+            ],
         },
     }
 
@@ -157,8 +185,8 @@ def validate_evidence(
     return kinds
 
 
-def audit_contract(document: dict[str, Any], artifact_root: Path) -> dict[str, Any]:
-    if document.get("schema") != SCHEMA:
+def _audit_v1(document: dict[str, Any], artifact_root: Path) -> dict[str, Any]:
+    if document.get("schema") != V1_SCHEMA:
         raise GateError("schema")
     provenance = document.get("provenance")
     if not isinstance(provenance, dict):
@@ -230,7 +258,92 @@ def audit_contract(document: dict[str, Any], artifact_root: Path) -> dict[str, A
             "blocked_by_J0": not j0_passed,
         },
         "evidence_kinds": evidence_kinds,
+        "retail_semantics_qualified": False,
     }
+
+
+def _audit_v2(document: dict[str, Any], artifact_root: Path) -> dict[str, Any]:
+    if document.get("schema") != SCHEMA:
+        raise GateError("schema")
+    # Reuse the binary-qualified provenance and evidence checks from v1, while
+    # keeping v2's categories independent.
+    provenance = document.get("provenance")
+    if not isinstance(provenance, dict):
+        raise GateError("provenance")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(provenance.get("repo_commit", ""))):
+        raise GateError("provenance.repo_commit")
+    if provenance.get("xex_sha256") != CANONICAL_XEX_SHA256:
+        raise GateError("provenance.xex_sha256")
+    if provenance.get("data_tbl_sha256") != CANONICAL_DATA_TBL_SHA256:
+        raise GateError("provenance.data_tbl_sha256")
+    if provenance.get("mission_id") != 1:
+        raise GateError("provenance.mission_id")
+    requirements = document.get("requirements")
+    if not isinstance(requirements, dict):
+        raise GateError("requirements")
+    j0 = requirements.get("J0")
+    domains = requirements.get("domains")
+    runtime = requirements.get("runtime")
+    if not isinstance(j0, dict) or set(j0) != set(J0_REQUIREMENTS):
+        raise GateError("requirements.J0 coverage")
+    if not isinstance(domains, dict) or set(domains) != set(V2_DOMAINS):
+        raise GateError("requirements.domains coverage")
+    if not isinstance(runtime, dict) or set(runtime) != {"pause_save_restart"}:
+        raise GateError("requirements.runtime coverage")
+    statuses: dict[str, str] = {}
+    kinds_by_name: dict[str, list[str]] = {}
+    for name, record in [(n, j0[n]) for n in J0_REQUIREMENTS] + [(n, domains[n]) for n in V2_DOMAINS] + [("pause_save_restart", runtime["pause_save_restart"])]:
+        if not isinstance(record, dict) or record.get("status") not in {"open", "passed"}:
+            raise GateError(f"{name}.status")
+        if not isinstance(record.get("statement"), str) or not record["statement"]:
+            raise GateError(f"{name}.statement")
+        kinds = validate_evidence(name, record.get("evidence"), artifact_root)
+        if record["status"] == "open" and kinds:
+            raise GateError(f"{name} is open but carries acceptance evidence")
+        if record["status"] == "passed":
+            if not kinds or kinds <= {"bridge", "retail"}:
+                raise GateError(f"{name} passed using insufficient evidence")
+            if name in V2_NATIVE_DOMAINS and "native-test" not in kinds:
+                raise GateError(f"{name} requires native-test evidence")
+            if name in {"essential_hud", "success_failure_debrief"} and "native-capture" not in kinds:
+                raise GateError(f"{name} requires native-capture evidence")
+            if name == "pause_save_restart" and "native-test" not in kinds:
+                raise GateError(f"{name} requires native-test evidence")
+            if name in V2_RETAIL_DOMAINS:
+                if record.get("retail_semantics_qualified") is not True:
+                    raise GateError(f"{name} lacks retail semantic qualification")
+                if not kinds.intersection({"static", "microexec", "differential", "retail"}):
+                    raise GateError(f"{name} requires retail evidence")
+        statuses[name] = record["status"]
+        kinds_by_name[name] = sorted(kinds)
+    j0_passed = all(statuses[n] == "passed" for n in J0_REQUIREMENTS)
+    retail_semantics_qualified = all(
+        statuses[n] == "passed" and
+        domains[n].get("retail_semantics_qualified") is True
+        for n in V2_RETAIL_DOMAINS
+    )
+    retail_passed = j0_passed and all(
+        statuses[n] == "passed"
+        for n in V2_RETAIL_DOMAINS | V2_NATIVE_DOMAINS | {"pause_save_restart"}
+    ) and retail_semantics_qualified
+    return {
+        "schema": "ac6.mission01-native-gate-audit.v2",
+        "repo_commit": provenance["repo_commit"],
+        "J0": {"passed": j0_passed},
+        "retail": {
+            "passed": retail_passed,
+            "open": [n for n in (*V2_DOMAINS, "pause_save_restart") if statuses[n] != "passed"],
+        },
+        "evidence_kinds": kinds_by_name,
+        "retail_semantics_qualified": retail_semantics_qualified,
+    }
+
+
+def audit_contract(document: dict[str, Any], artifact_root: Path) -> dict[str, Any]:
+    schema = document.get("schema")
+    if schema == V1_SCHEMA:
+        return _audit_v1(document, artifact_root)
+    return _audit_v2(document, artifact_root)
 
 
 def fail(message: str) -> int:
@@ -243,7 +356,7 @@ def main() -> int:
     parser.add_argument("contract", type=Path, nargs="?")
     parser.add_argument("--artifact-root", type=Path, default=Path("."))
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--require", choices=("J0", "J1"))
+    parser.add_argument("--require", choices=("J0", "J1", "retail"))
     parser.add_argument("--init", type=Path, help="write a new fail-closed template")
     args = parser.parse_args()
     if args.init is not None:
@@ -267,12 +380,19 @@ def main() -> int:
         args.output.write_text(
             json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
+    retail_report = report.get("J1", report.get("retail", {"passed": False}))
     print(
         "mission01_native_gate=pass "
         f"J0={'pass' if report['J0']['passed'] else 'open'} "
-        f"J1={'pass' if report['J1']['passed'] else 'open'}"
+        f"J1={'pass' if retail_report['passed'] else 'open'}"
     )
-    if args.require and not report[args.require]["passed"]:
+    required_key = "J0" if args.require == "J0" else (
+        "J1" if args.require == "J1" and "J1" in report else
+        ("retail" if args.require == "J1" else None)
+    )
+    if args.require == "retail":
+        required_key = "retail"
+    if required_key and not report[required_key]["passed"]:
         return 2
     return 0
 

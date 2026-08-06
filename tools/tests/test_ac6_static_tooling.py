@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
 import struct
 import sys
@@ -18,6 +19,25 @@ from build_ac6_asset_closure import build_closure
 from compare_ac6_asset_closures import compare as compare_closures
 from compare_ac6_function_snapshots import compare_three
 from extract_ac6_pac import extract_selected
+
+
+def legacy_template() -> dict:
+    document = template()
+    old = copy.deepcopy(document)
+    old["schema"] = "ac6.mission01-native-gate.v1"
+    old["requirements"] = {
+        **old["requirements"]["J0"],
+        "units_and_waves": old["requirements"]["domains"]["native_units_and_waves"],
+        "targeting": {"status": "open", "statement": "targeting", "evidence": []},
+        "weapons": {"status": "open", "statement": "weapons", "evidence": []},
+        "damage_and_destruction": {"status": "open", "statement": "damage and destruction", "evidence": []},
+        "retail_objectives": old["requirements"]["domains"]["retail_objectives"],
+        "essential_hud": old["requirements"]["domains"]["essential_hud"],
+        "scenario_radio_or_subtitles": old["requirements"]["domains"]["scenario_radio_or_subtitles"],
+        "success_failure_debrief": old["requirements"]["domains"]["success_failure_debrief"],
+        "pause_save_restart": old["requirements"]["runtime"]["pause_save_restart"],
+    }
+    return old
 
 
 def make_fhm(children: list[bytes]) -> bytes:
@@ -267,7 +287,7 @@ class NativeGateTests(unittest.TestCase):
             capture.write_bytes(b"P6\n1 1\n255\n\x00\x00\x00")
             test_hash = hashlib.sha256(test_log.read_bytes()).hexdigest()
             capture_hash = hashlib.sha256(capture.read_bytes()).hexdigest()
-            document = template()
+            document = legacy_template()
             document["provenance"]["repo_commit"] = "1" * 40
             for name in (
                 "native_session_loop",
@@ -305,7 +325,7 @@ class NativeGateTests(unittest.TestCase):
             root = Path(temporary)
             evidence = root / "bridge.log"
             evidence.write_text("bridge observation\n", encoding="utf-8")
-            document = template()
+            document = legacy_template()
             document["provenance"]["repo_commit"] = "2" * 40
             record = document["requirements"]["native_session_loop"]
             record["status"] = "passed"
@@ -319,6 +339,67 @@ class NativeGateTests(unittest.TestCase):
             ]
             with self.assertRaises(GateError):
                 audit_contract(document, root)
+
+    def test_v1_is_readable_but_never_promotes_retail(self) -> None:
+        document = legacy_template()
+        document["provenance"]["repo_commit"] = "3" * 40
+        report = audit_contract(document, Path(tempfile.mkdtemp()))
+        self.assertFalse(report["J1"]["passed"])
+        self.assertFalse(report["retail_semantics_qualified"])
+
+    def test_native_as_retail_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture = root / "native.json"
+            fixture.write_text('{"retail_semantics_qualified": false}', encoding="utf-8")
+            document = template()
+            document["provenance"]["repo_commit"] = "4" * 40
+            record = document["requirements"]["domains"]["retail_units_and_waves"]
+            record["status"] = "passed"
+            record["retail_semantics_qualified"] = False
+            record["evidence"] = [{"kind": "native-test", "path": fixture.name, "sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(), "claim": "native fixture"}]
+            with self.assertRaises(GateError):
+                audit_contract(document, root)
+
+    def test_bridge_only_and_fhm_colocation_do_not_qualify_retail(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture = root / "fhm.json"
+            fixture.write_text("bridge and co-located FHM", encoding="utf-8")
+            document = template()
+            document["provenance"]["repo_commit"] = "5" * 40
+            record = document["requirements"]["domains"]["retail_objectives"]
+            record["status"] = "passed"
+            record["retail_semantics_qualified"] = True
+            record["evidence"] = [{"kind": "bridge", "path": fixture.name, "sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(), "claim": "FHM co-location only"}]
+            with self.assertRaises(GateError):
+                audit_contract(document, root)
+
+    def test_evidence_provenance_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            fixture = root / "native.log"
+            fixture.write_text("qualified native evidence\n", encoding="utf-8")
+            document = template()
+            document["provenance"]["repo_commit"] = "6" * 40
+            record = document["requirements"]["J0"]["native_session_loop"]
+            record["status"] = "passed"
+            record["evidence"] = [{
+                "kind": "native-test",
+                "path": fixture.name,
+                "sha256": "0" * 64,
+                "size": fixture.stat().st_size,
+                "claim": "native evidence with mismatched provenance",
+            }]
+            with self.assertRaises(GateError):
+                audit_contract(document, root)
+
+    def test_retail_provenance_mismatch_is_rejected(self) -> None:
+        document = template()
+        document["provenance"]["repo_commit"] = "7" * 40
+        document["provenance"]["xex_sha256"] = "0" * 64
+        with self.assertRaises(GateError):
+            audit_contract(document, Path(tempfile.mkdtemp()))
 
 
 if __name__ == "__main__":

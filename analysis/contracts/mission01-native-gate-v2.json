@@ -1,0 +1,110 @@
+{
+  "schema": "ac6.mission01-native-gate.v2",
+  "provenance": {
+    "repo_commit": "bbbd94b92337e5ab8a866eb0f289b1a56537bad6",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "mission_id": 1
+  },
+  "requirements": {
+    "J0": {
+      "native_session_loop": {
+        "status": "passed",
+        "statement": "native session loop",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "native session completed 1800 fixed ticks"}]
+      },
+      "world_visible": {
+        "status": "passed",
+        "statement": "world visible",
+        "evidence": [{"kind": "native-capture", "path": "reports/mission01-native-captures/p1-camera-visible/capture-metrics.json", "sha256": "62cf04295349d31cf59535aa7923be9b88ac590fe3697334d503e6346b242dcd", "size": 5966, "claim": "native readback has filled color and depth coverage"}]
+      },
+      "player_aircraft_visible": {
+        "status": "passed",
+        "statement": "player aircraft visible",
+        "evidence": [{"kind": "native-capture", "path": "reports/mission01-native-captures/p1-camera-visible/object-id.png", "sha256": "22e2d244cbb412c6537b541f63984a2ec017601271fbad7c67c31544449030e6", "size": 6776, "claim": "native object-ID readback attributes final pixels to the player drawable"}]
+      },
+      "gameplay_camera": {
+        "status": "passed",
+        "statement": "gameplay camera",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "native frame records a follow camera targeting the player"}]
+      },
+      "flight_input": {
+        "status": "passed",
+        "statement": "flight input",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "native replay input changes flight state"}]
+      },
+      "deterministic_replay": {
+        "status": "passed",
+        "statement": "deterministic replay",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p1-camera-visible/native-session.json", "sha256": "5a2bfdf10a9b1a533b7b5a461f0309f40847a48e86682d564c5a5ea41f7c48b6", "size": 965, "claim": "repeated native replay records a stable session"}]
+      }
+    },
+    "domains": {
+      "native_combat_mechanics": {
+        "status": "passed",
+        "statement": "native combat mechanics",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-combat.md", "sha256": "c5943c955ce82acacda52a32b116aca071f1e61ebca5898c894f276a676af1d9", "size": 1348, "claim": "native combat probe qualifies targeting, weapons and damage only"}]
+      },
+      "native_units_and_waves": {
+        "status": "passed",
+        "statement": "native units and waves mechanics",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json", "sha256": "d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f", "size": 3004, "claim": "native wave director publishes the synthetic fixture entity; retail semantics are explicitly false"}]
+      },
+      "retail_units_and_waves": {
+        "status": "open",
+        "statement": "retail units and waves identity",
+        "evidence": []
+      },
+      "native_objective_flow": {
+        "status": "passed",
+        "statement": "native objective flow mechanics",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json", "sha256": "d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f", "size": 3004, "claim": "native objective state reaches success and failure from MissionExecution"}]
+      },
+      "retail_objectives": {
+        "status": "open",
+        "statement": "retail objective identity and transitions",
+        "evidence": []
+      },
+      "essential_hud": {
+        "status": "passed",
+        "statement": "essential HUD mechanics",
+        "evidence": [
+          {"kind": "native-test", "path": "reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json", "sha256": "d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f", "size": 3004, "claim": "native HUD consumes MissionExecution state; fixture is not retail semantics"},
+          {"kind": "native-capture", "path": "reports/mission01-native-captures/p6-native-hud/hud-live.png", "sha256": "c1059a42b5f0243633505278393fdd414ab65060811b785ede4542164b87fe64", "size": 1422, "claim": "native HUD live capture has non-zero writes"}
+        ]
+      },
+      "scenario_radio_or_subtitles": {
+        "status": "passed",
+        "statement": "retail-qualified Mission 01 radio key consumed natively",
+        "retail_semantics_qualified": true,
+        "evidence": [
+          {"kind": "native-test", "path": "reports/mission01-native-captures/p4-retail-radio/native-session.json", "sha256": "c80bebca9624bceb407f4d5162684fa04392b197e09cd3bb82a5cdc7a0465f71", "size": 1393, "claim": "native session consumes the qualified Mission 01 radio key 15"},
+          {"kind": "static", "path": "reports/cycle-1032-retail-mission01-scenario-boundary.md", "sha256": "b012a727f1e872eecd0f6e6ce2fe3ce7da77785a56fee211b4c2db10ca4a19f0", "size": 2565, "claim": "DATA.TBL[34] leaf 0015 qualifies the radio key identity; objectives remain open"}
+        ]
+      },
+      "success_failure_debrief": {
+        "status": "passed",
+        "statement": "native success and failure debrief mechanics",
+        "evidence": [
+          {"kind": "native-test", "path": "reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json", "sha256": "d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f", "size": 3004, "claim": "native scenario produces success and failure outcome records"},
+          {"kind": "native-capture", "path": "reports/mission01-native-captures/p6-native-hud/hud-success.png", "sha256": "76dfd3d139e22ba6f1b8170f45c0a08a32277b8446ba9928f02ff28db3d519e4", "size": 1483, "claim": "native success debrief panel is rendered"},
+          {"kind": "native-capture", "path": "reports/mission01-native-captures/p6-native-hud/hud-failure.png", "sha256": "2e70fadd729c5da98ea4392b93064e54960626e2b3853c08b477cc2b925e2aa8", "size": 1498, "claim": "native failure debrief panel is rendered"}
+        ]
+      }
+    },
+    "runtime": {
+      "pause_save_restart": {
+        "status": "passed",
+        "statement": "pause save resume and restart",
+        "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p3-runtime-state/native-session.json", "sha256": "0b509194669eccd022c6e27637b44f3d1df98d383a49ad037b45a63cb47ffeae", "size": 1392, "claim": "native session records pause, checkpoint restore and restart stability"}]
+      }
+    }
+  },
+  "policy": {
+    "bridge_is_supporting_evidence_only": true,
+    "native_behavior_required_for_pass": true,
+    "retail_assets_remain_external": true,
+    "retail_semantics_qualified_required": true,
+    "retail_gate_requires": ["J0", "native_combat_mechanics", "native_units_and_waves", "native_objective_flow", "essential_hud", "success_failure_debrief", "retail_units_and_waves", "retail_objectives", "scenario_radio_or_subtitles", "pause_save_restart"]
+  }
+}
