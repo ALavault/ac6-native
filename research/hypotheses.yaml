@@ -143,14 +143,14 @@ hypotheses:
     status: qualified
     statement: The native product can render a deterministic HUD overlay from WorldFrame and live MissionExecution state without demo constants or retail archive access.
     discriminator: Run the exact 1800-tick native replay and require non-zero HUD writes, deterministic readback, and a native unit test covering telemetry, target, weapon, objective and radio state.
-    evidence: reports/mission01-native-captures/p2-native-hud/native-session.json SHA-256 e5f4f64564b3e31f8fab919c256614d023890ef0faba8a2f630a920ef97a9bb43; reconstruction/ace-combat-6/tests/product_runtime_tests.cpp.
-    qualification: Base reticle/telemetry/radar path is qualified; full Mission 01 HUD acceptance remains open until retail objective, weapon, wave and radio definitions are attached to a qualified manifest.
+    evidence: reports/mission01-native-captures/p2-native-hud/native-session.json SHA-256 e5f4f64564b3e31f8fab919c256614d023890ef0faba8a2f630a920ef97a9bb43; reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json SHA-256 d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f; reconstruction/ace-combat-6/tests/native_hud_acceptance_tests.cpp.
+    qualification: Native HUD data path is qualified for live, paused and terminal mechanics; the P6 fixture is explicitly non-retail and does not qualify Mission 01 objective semantics.
   - id: H-NATIVE-PAUSE-SAVE-RESTART
     status: qualified
     statement: Native Mission 01 session pause, checkpoint save/resume, and fresh restart preserve deterministic state.
     discriminator: Run the same 1800-tick replay three times and compare pause, restored checkpoint, and fresh execution hashes.
     evidence: reports/mission01-native-captures/p3-runtime-state/native-session.json SHA-256 0b509194669eccd022c6e27637b44f3d1df98d383a49ad037b45a63cb47ffeae records deterministic_replay=true, pause_stable=true, save_resume_stable=true, restart_stable=true.
-    qualification: Native pause/save/restart is qualified; Mission success/failure/debrief and retail scenario data remain open.
+    qualification: Native pause/save/restart and success/failure/debrief mechanics are qualified; retail scenario data remains open.
   - id: H-RETAIL-M01-RADIO-KEY
     status: qualified
     statement: DATA.TBL[34]/root/0015 contains the retail Mission 01 AWACS startup radio key id 15, and the native scenario path dispatches that key at mission startup.
@@ -167,8 +167,8 @@ hypotheses:
     status: tested
     statement: A complete readable scan of the PAC entries identifies Mission 01 resource families but does not by itself expose a qualified printable scenario table for objectives and waves.
     discriminator: Scan all entry ranges with the official extraction path, separately preserve raw entries, and require an owning qualified FHM closure before assigning scenario semantics.
-    evidence: reports/cycle-1032-retail-mission01-scenario-boundary.md.
-    qualification: Tested boundary; arbitrary binary scenario structures may still require a bounded runtime ownership experiment.
+    evidence: reports/cycle-1032-retail-mission01-scenario-boundary.md; reports/cycle-1070-retail-scenario-exhaustive-cpu-boundary.md; DATA.TBL SHA-256 82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5.
+    qualification: Tested negative static boundary; UI/briefing/debrief/map/shader families are classified, but binary scenario ownership still requires a bounded dynamic experiment.
   - id: H-NATIVE-OBJECTIVE-CONDITION-BINDING
     status: qualified
     statement: Native terminal objective behavior can be evaluated from an explicit condition and a UnitRegistry entity binding without relying on draw order or an implicit last enemy.

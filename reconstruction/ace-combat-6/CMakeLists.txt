@@ -24,6 +24,10 @@ enable_testing()
 add_executable(ac6-product-runtime-tests tests/product_runtime_tests.cpp)
 target_link_libraries(ac6-product-runtime-tests PRIVATE ac6_platform)
 add_test(NAME ac6-product-runtime-tests COMMAND ac6-product-runtime-tests)
+
+add_executable(ac6-native-hud-acceptance-tests tests/native_hud_acceptance_tests.cpp)
+target_link_libraries(ac6-native-hud-acceptance-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-native-hud-acceptance-tests COMMAND ac6-native-hud-acceptance-tests)
 add_test(NAME ac6-native-headless COMMAND ac6-native)
 
 add_executable(ac6-mission01-compare-tests tests/mission01_compare_tests.cpp)

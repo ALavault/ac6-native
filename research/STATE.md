@@ -370,3 +370,34 @@ calibration de scène comme parité retail sans association exacte.
 - La conclusion obligatoire reste : raster fill qualified ; raster fill still
   broken pour le contenu retail complet ; topology is next boundary ;
   camera/clipping is next boundary.
+
+## Native HUD, wave et débrief P6 — 2026-08-06
+
+- `ac6-native-hud-acceptance-tests` exerce le chemin natif complet depuis
+  `MissionExecution`, `CombatWorld`, `ObjectiveRegistry` et
+  `RadioPlaybackService` vers `NativeHudRenderer`.
+- La capture live rend réticule, télémétrie, arme, cible verrouillée, radar,
+  objectif et radio : `target=4098`, `weapon=7`, `radio=15`, `2250` écritures
+  HUD et `2218` pixels uniques à 640x360. La pause est capturée sans
+  progression.
+- Une `MissionWaveSpawn` native publie l'entité `5000` au tick 2, fait passer
+  les unités actives de 3 à 4 et laisse zéro entrée en attente.
+- Les branches natives success/failure rendent respectivement un panneau de
+  débrief avec `completed_objectives=1` et `failed_objectives=1`.
+- Le bundle versionné est
+  `reports/mission01-native-captures/p6-native-hud/`. Son JSON porte
+  explicitement `fixture=true` et `retail_semantics_qualified=false` : ces
+  preuves ferment les mécanismes natifs `units_and_waves`, `essential_hud` et
+  `success_failure_debrief`, mais ne ferment pas `retail_objectives`.
+
+## Borne statique scénario retail — cycle 1070
+
+- Le scan CPU parallèle des 926 entrées DATA.TBL couvre
+  `5,424,368,676` octets expansés. Les occurrences `SubMis`, `loadMission`,
+  `missionID`, `Destroy`, `Obj` et `Act` sont attribuées aux familles UI,
+  briefing/debrief, shaders ou noms d'objets map après fermeture des FHM.
+- Aucun corpus imprimable exact `SubMisTbl`, `ComTbl` ou `Maneuver`, aucune
+  table d'objectifs et aucune identité qualifiée unité/vague n'est promue.
+- Rapport : `reports/cycle-1070-retail-scenario-exhaustive-cpu-boundary.md`.
+  La prochaine frontière causale reste l'ownership dynamique d'une table
+  binaire/scénario retail ; ne pas inventer les vagues ni les objectifs.
