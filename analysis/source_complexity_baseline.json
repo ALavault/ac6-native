@@ -1,0 +1,3169 @@
+{
+  "files": {
+    "patches/ac6_boundary_probe.cpp": {
+      "functions": [
+        {
+          "line": 24,
+          "lines": 3,
+          "name": "uint32_t HostTid()"
+        },
+        {
+          "line": 28,
+          "lines": 9,
+          "name": "void Report(const char* site, const PPCRegister& r28, const PPCRegister& r30)"
+        },
+        {
+          "line": 40,
+          "lines": 5,
+          "name": "void ac6CriticalSectionEntryProbe(PPCRegister& r3)"
+        },
+        {
+          "line": 46,
+          "lines": 3,
+          "name": "void ac6CriticalSectionBoundaryProbeA(PPCRegister& r28, PPCRegister& r30)"
+        },
+        {
+          "line": 50,
+          "lines": 3,
+          "name": "void ac6CriticalSectionBoundaryProbeB(PPCRegister& r28, PPCRegister& r30)"
+        },
+        {
+          "line": 54,
+          "lines": 4,
+          "name": "void ac6CriticalSectionCalleeProbe(PPCRegister& ctr, PPCRegister& r28, PPCRegister& r30)"
+        }
+      ],
+      "kind": "source",
+      "lines": 57
+    },
+    "patches/ac6_boundary_probe.h": {
+      "functions": [],
+      "kind": "header",
+      "lines": 21
+    },
+    "patches/ac6_indirect_audit.cpp": {
+      "functions": [
+        {
+          "line": 6,
+          "lines": 20,
+          "name": "include <set> extern void rex_report_unregistered_indirect_target(uint32_t guest_address)"
+        }
+      ],
+      "kind": "source",
+      "lines": 25
+    },
+    "reconstruction/ace-combat-6/build-sanitize/CMakeFiles/4.2.3/CompilerIdCXX/CMakeCXXCompilerId.cpp": {
+      "functions": [
+        {
+          "line": 924,
+          "lines": 26,
+          "name": "int main(int argc, char* argv[])"
+        }
+      ],
+      "kind": "source",
+      "lines": 949
+    },
+    "reconstruction/ace-combat-6/include/ac6/campaign_progression.h": {
+      "functions": [
+        {
+          "line": 14,
+          "lines": 3,
+          "name": "bool valid() const noexcept"
+        },
+        {
+          "line": 25,
+          "lines": 3,
+          "name": "bool valid() const noexcept"
+        }
+      ],
+      "kind": "header",
+      "lines": 113
+    },
+    "reconstruction/ace-combat-6/include/ac6/cli.h": {
+      "functions": [],
+      "kind": "header",
+      "lines": 6
+    },
+    "reconstruction/ace-combat-6/include/ac6/interactive.h": {
+      "functions": [],
+      "kind": "header",
+      "lines": 5
+    },
+    "reconstruction/ace-combat-6/include/ac6/mission01_compare.h": {
+      "functions": [
+        {
+          "line": 26,
+          "lines": 1,
+          "name": "const ReplayLog& replay() const noexcept"
+        },
+        {
+          "line": 27,
+          "lines": 1,
+          "name": "const std::vector<Mission01Checkpoint>& checkpoints() const noexcept"
+        },
+        {
+          "line": 28,
+          "lines": 1,
+          "name": "const std::vector<std::uint8_t>& oracle_rgba() const noexcept"
+        },
+        {
+          "line": 29,
+          "lines": 1,
+          "name": "const std::vector<float>& oracle_depth() const noexcept"
+        },
+        {
+          "line": 30,
+          "lines": 1,
+          "name": "std::uint32_t width() const noexcept"
+        },
+        {
+          "line": 31,
+          "lines": 1,
+          "name": "std::uint32_t height() const noexcept"
+        },
+        {
+          "line": 54,
+          "lines": 1,
+          "name": "bool passed() const noexcept"
+        },
+        {
+          "line": 59,
+          "lines": 1,
+          "name": ": thresholds_(thresholds)"
+        }
+      ],
+      "kind": "header",
+      "lines": 70
+    },
+    "reconstruction/ace-combat-6/include/ac6/native_hud.h": {
+      "functions": [
+        {
+          "line": 44,
+          "lines": 2,
+          "name": "public: void reset() noexcept"
+        },
+        {
+          "line": 48,
+          "lines": 1,
+          "name": "const NativeHudSnapshot& snapshot() const noexcept"
+        }
+      ],
+      "kind": "header",
+      "lines": 54
+    },
+    "reconstruction/ace-combat-6/include/ac6/product_runtime.h": {
+      "kind": "header",
+      "lines": 1156,
+      "functions": [
+        {
+          "name": "std::size_t size() const noexcept",
+          "lines": 1,
+          "line": 107
+        },
+        {
+          "name": "std::uint64_t damage_events() const noexcept",
+          "lines": 1,
+          "line": 168
+        },
+        {
+          "name": "bool valid() const noexcept",
+          "lines": 4,
+          "line": 232
+        },
+        {
+          "name": "bool valid() const noexcept",
+          "lines": 8,
+          "line": 273
+        },
+        {
+          "name": "std::size_t size() const noexcept",
+          "lines": 1,
+          "line": 294
+        },
+        {
+          "name": "bool valid() const noexcept",
+          "lines": 4,
+          "line": 324
+        },
+        {
+          "name": "bool playing() const noexcept",
+          "lines": 1,
+          "line": 362
+        },
+        {
+          "name": "const RadioPlaybackSnapshot& snapshot() const noexcept",
+          "lines": 1,
+          "line": 363
+        },
+        {
+          "name": "public: explicit MissionScenario(std::uint32_t mission_id) : mission_id_(mission_id)",
+          "lines": 2,
+          "line": 459
+        },
+        {
+          "name": "void own_player(EntityId entity) noexcept",
+          "lines": 1,
+          "line": 471
+        },
+        {
+          "name": "std::uint32_t mission_id() const noexcept",
+          "lines": 1,
+          "line": 473
+        },
+        {
+          "name": "ScenarioState state() const noexcept",
+          "lines": 1,
+          "line": 474
+        },
+        {
+          "name": "EntityId player() const noexcept",
+          "lines": 1,
+          "line": 475
+        },
+        {
+          "name": "const ObjectiveRegistry& objectives() const noexcept",
+          "lines": 1,
+          "line": 476
+        },
+        {
+          "name": "const std::vector<std::uint32_t>& radio_history() const noexcept",
+          "lines": 1,
+          "line": 478
+        },
+        {
+          "name": "bool valid() const noexcept",
+          "lines": 1,
+          "line": 497
+        },
+        {
+          "name": "bool empty() const noexcept",
+          "lines": 1,
+          "line": 525
+        },
+        {
+          "name": "bool valid() const noexcept",
+          "lines": 3,
+          "line": 571
+        },
+        {
+          "name": "bool render_valid() const noexcept",
+          "lines": 5,
+          "line": 574
+        },
+        {
+          "name": "MissionRenderDefinition>& definitions() const noexcept",
+          "lines": 3,
+          "line": 658
+        },
+        {
+          "name": "bool has_buffer_contract() const noexcept",
+          "lines": 3,
+          "line": 676
+        },
+        {
+          "name": "bool has_world_coverage() const noexcept",
+          "lines": 3,
+          "line": 884
+        },
+        {
+          "name": "std::uint32_t width() const noexcept",
+          "lines": 1,
+          "line": 950
+        },
+        {
+          "name": "std::uint32_t height() const noexcept",
+          "lines": 1,
+          "line": 951
+        },
+        {
+          "name": "std::uint32_t geometry_calls() const noexcept",
+          "lines": 1,
+          "line": 952
+        },
+        {
+          "name": "std::uint32_t raster_triangles() const noexcept",
+          "lines": 1,
+          "line": 953
+        },
+        {
+          "name": "std::uint64_t raster_writes() const noexcept",
+          "lines": 1,
+          "line": 954
+        },
+        {
+          "name": "std::uint64_t hud_pixel_writes() const noexcept",
+          "lines": 1,
+          "line": 958
+        },
+        {
+          "name": "std::uint64_t hud_unique_pixels() const noexcept",
+          "lines": 1,
+          "line": 959
+        },
+        {
+          "name": "void set_raster_mode(NativeRasterMode mode) noexcept",
+          "lines": 1,
+          "line": 960
+        },
+        {
+          "name": "NativeRasterMode raster_mode() const noexcept",
+          "lines": 1,
+          "line": 961
+        },
+        {
+          "name": "std::uint64_t diagnostic_point_writes() const noexcept",
+          "lines": 1,
+          "line": 962
+        },
+        {
+          "name": "std::uint64_t filled_fragment_writes() const noexcept",
+          "lines": 1,
+          "line": 963
+        },
+        {
+          "name": "const std::vector<NativeRasterDrawableMetrics>& raster_metrics() const noexcept",
+          "lines": 3,
+          "line": 964
+        },
+        {
+          "name": "void set_scenario(const MissionScenario* scenario) noexcept",
+          "lines": 1,
+          "line": 1013
+        },
+        {
+          "name": "void set_units(const UnitRegistry* units) noexcept",
+          "lines": 1,
+          "line": 1014
+        },
+        {
+          "name": "std::uint32_t mission_id() const noexcept",
+          "lines": 1,
+          "line": 1015
+        },
+        {
+          "name": "void set_failure_tick(std::uint64_t tick) noexcept",
+          "lines": 1,
+          "line": 1053
+        },
+        {
+          "name": "std::uint64_t failure_tick() const noexcept",
+          "lines": 1,
+          "line": 1054
+        },
+        {
+          "name": "bool launched() const noexcept",
+          "lines": 1,
+          "line": 1075
+        },
+        {
+          "name": "const MissionScenario& scenario() const noexcept",
+          "lines": 1,
+          "line": 1076
+        },
+        {
+          "name": "UnitRegistry& units() noexcept",
+          "lines": 1,
+          "line": 1077
+        },
+        {
+          "name": "const UnitRegistry& units() const noexcept",
+          "lines": 1,
+          "line": 1078
+        },
+        {
+          "name": "CombatWorld& combat() noexcept",
+          "lines": 1,
+          "line": 1079
+        },
+        {
+          "name": "const CombatWorld& combat() const noexcept",
+          "lines": 1,
+          "line": 1080
+        },
+        {
+          "name": "RadioPlaybackService& radio() noexcept",
+          "lines": 1,
+          "line": 1081
+        },
+        {
+          "name": "const RadioPlaybackService& radio() const noexcept",
+          "lines": 1,
+          "line": 1082
+        },
+        {
+          "name": "std::uint32_t primary_weapon_id() const noexcept",
+          "lines": 1,
+          "line": 1083
+        },
+        {
+          "name": "std::uint32_t weapon_count() const noexcept",
+          "lines": 1,
+          "line": 1084
+        },
+        {
+          "name": "public: void append(InputFrame input)",
+          "lines": 2,
+          "line": 1142
+        },
+        {
+          "name": "const std::vector<InputFrame>& frames() const noexcept",
+          "lines": 1,
+          "line": 1144
+        },
+        {
+          "name": "void clear() noexcept",
+          "lines": 1,
+          "line": 1145
+        }
+      ]
+    },
+    "reconstruction/ace-combat-6/include/ac6/sdl_input.h": {
+      "functions": [
+        {
+          "line": 41,
+          "lines": 1,
+          "name": ": mapping_(mapping), keyboard_(keyboard)"
+        },
+        {
+          "line": 46,
+          "lines": 1,
+          "name": "const SdlAxisMapping& mapping() const noexcept"
+        },
+        {
+          "line": 47,
+          "lines": 1,
+          "name": "const SdlKeyboardMapping& keyboard_mapping() const noexcept"
+        },
+        {
+          "line": 73,
+          "lines": 1,
+          "name": "bool initialized() const noexcept"
+        },
+        {
+          "line": 90,
+          "lines": 1,
+          "name": "bool initialized() const noexcept"
+        },
+        {
+          "line": 107,
+          "lines": 1,
+          "name": "bool valid() const noexcept"
+        },
+        {
+          "line": 108,
+          "lines": 1,
+          "name": "SDL_Window* native_handle() const noexcept"
+        },
+        {
+          "line": 123,
+          "lines": 1,
+          "name": "bool valid() const noexcept"
+        },
+        {
+          "line": 124,
+          "lines": 1,
+          "name": "VkSurfaceKHR handle() const noexcept"
+        },
+        {
+          "line": 139,
+          "lines": 1,
+          "name": "bool valid() const noexcept"
+        },
+        {
+          "line": 140,
+          "lines": 1,
+          "name": "VkInstance handle() const noexcept"
+        },
+        {
+          "line": 154,
+          "lines": 1,
+          "name": "bool valid() const noexcept"
+        },
+        {
+          "line": 155,
+          "lines": 1,
+          "name": "VkPhysicalDevice physical_device() const noexcept"
+        },
+        {
+          "line": 156,
+          "lines": 1,
+          "name": "VkDevice device() const noexcept"
+        },
+        {
+          "line": 157,
+          "lines": 1,
+          "name": "VkQueue graphics_queue() const noexcept"
+        },
+        {
+          "line": 158,
+          "lines": 1,
+          "name": "std::uint32_t queue_family() const noexcept"
+        },
+        {
+          "line": 176,
+          "lines": 1,
+          "name": "bool valid() const noexcept"
+        },
+        {
+          "line": 177,
+          "lines": 1,
+          "name": "VkSwapchainKHR handle() const noexcept"
+        },
+        {
+          "line": 178,
+          "lines": 1,
+          "name": "VkFormat format() const noexcept"
+        },
+        {
+          "line": 179,
+          "lines": 1,
+          "name": "VkExtent2D extent() const noexcept"
+        },
+        {
+          "line": 180,
+          "lines": 1,
+          "name": "std::size_t image_count() const noexcept"
+        },
+        {
+          "line": 181,
+          "lines": 1,
+          "name": "const std::vector<VkImage>& images() const noexcept"
+        },
+        {
+          "line": 202,
+          "lines": 1,
+          "name": "bool valid() const noexcept"
+        }
+      ],
+      "kind": "header",
+      "lines": 219
+    },
+    "reconstruction/ace-combat-6/src/campaign_progression.cpp": {
+      "functions": [
+        {
+          "line": 18,
+          "lines": 6,
+          "name": "void write_u32(std::vector<std::uint8_t>& bytes, std::uint32_t value)"
+        },
+        {
+          "line": 25,
+          "lines": 10,
+          "name": "bool read_u32(const std::vector<std::uint8_t>& bytes, std::size_t& offset, std::uint32_t& value) noexcept"
+        },
+        {
+          "line": 36,
+          "lines": 13,
+          "name": "bool valid_snapshot(const CampaignSaveSnapshot& snapshot) noexcept"
+        },
+        {
+          "line": 52,
+          "lines": 14,
+          "name": "bool CampaignMissionSpec::valid() const noexcept"
+        },
+        {
+          "line": 67,
+          "lines": 7,
+          "name": "CampaignProgression::Entry* CampaignProgression::find_entry(std::uint32_t mission_id) noexcept"
+        },
+        {
+          "line": 68,
+          "lines": 4,
+          "name": "std::find_if(entries_.begin(), entries_.end(), [mission_id](const Entry& entry)"
+        },
+        {
+          "line": 75,
+          "lines": 8,
+          "name": "const CampaignProgression::Entry* CampaignProgression::find_entry( std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 77,
+          "lines": 4,
+          "name": "std::find_if(entries_.begin(), entries_.end(), [mission_id](const Entry& entry)"
+        },
+        {
+          "line": 84,
+          "lines": 11,
+          "name": "bool CampaignProgression::add(CampaignMissionSpec spec)"
+        },
+        {
+          "line": 96,
+          "lines": 49,
+          "name": "bool CampaignProgression::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 146,
+          "lines": 29,
+          "name": "bool CampaignProgression::finalize() noexcept"
+        },
+        {
+          "line": 155,
+          "lines": 13,
+          "name": "bool(std::uint32_t)> visit = [&](std::uint32_t id)"
+        },
+        {
+          "line": 176,
+          "lines": 8,
+          "name": "bool CampaignProgression::set_loadout(std::uint32_t mission_id, CampaignLoadout loadout) noexcept"
+        },
+        {
+          "line": 185,
+          "lines": 8,
+          "name": "bool CampaignProgression::prerequisites_complete(const Entry& entry) const noexcept"
+        },
+        {
+          "line": 186,
+          "lines": 6,
+          "name": "return std::all_of(entry.spec.prerequisites.begin(), entry.spec.prerequisites.end(), [this](std::uint32_t prerequisite)"
+        },
+        {
+          "line": 194,
+          "lines": 8,
+          "name": "void CampaignProgression::refresh_unlocks() noexcept"
+        },
+        {
+          "line": 203,
+          "lines": 8,
+          "name": "bool CampaignProgression::enter_briefing(std::uint32_t mission_id) noexcept"
+        },
+        {
+          "line": 212,
+          "lines": 7,
+          "name": "bool CampaignProgression::begin(std::uint32_t mission_id) noexcept"
+        },
+        {
+          "line": 220,
+          "lines": 6,
+          "name": "bool CampaignProgression::can_complete_objective(std::uint32_t mission_id, std::uint32_t objective_index) const noexcept"
+        },
+        {
+          "line": 227,
+          "lines": 8,
+          "name": "bool CampaignProgression::complete_objective(std::uint32_t mission_id, std::uint32_t objective_index) noexcept"
+        },
+        {
+          "line": 236,
+          "lines": 6,
+          "name": "bool CampaignProgression::can_complete(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 243,
+          "lines": 10,
+          "name": "bool CampaignProgression::complete(std::uint32_t mission_id) noexcept"
+        },
+        {
+          "line": 254,
+          "lines": 8,
+          "name": "bool CampaignProgression::fail(std::uint32_t mission_id) noexcept"
+        },
+        {
+          "line": 263,
+          "lines": 4,
+          "name": "bool CampaignProgression::is_available(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 268,
+          "lines": 8,
+          "name": "const CampaignResourceRoute* CampaignProgression::route_for_selector( std::uint32_t selector) const noexcept"
+        },
+        {
+          "line": 270,
+          "lines": 4,
+          "name": "std::find_if(entries_.begin(), entries_.end(), [selector](const Entry& entry)"
+        },
+        {
+          "line": 277,
+          "lines": 4,
+          "name": "const CampaignMissionStatus* CampaignProgression::status(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 282,
+          "lines": 15,
+          "name": "CampaignSaveSnapshot CampaignProgression::snapshot() const"
+        },
+        {
+          "line": 293,
+          "lines": 2,
+          "name": "std::sort(result.completed.begin(), result.completed.end(), [](const auto& left, const auto& right)"
+        },
+        {
+          "line": 298,
+          "lines": 34,
+          "name": "bool CampaignProgression::restore(const CampaignSaveSnapshot& snapshot) noexcept"
+        },
+        {
+          "line": 333,
+          "lines": 16,
+          "name": "bool CampaignProgression::encode_snapshot(std::vector<std::uint8_t>& bytes) const"
+        },
+        {
+          "line": 350,
+          "lines": 31,
+          "name": "bool CampaignProgression::decode_snapshot(const std::vector<std::uint8_t>& bytes) noexcept"
+        },
+        {
+          "line": 382,
+          "lines": 5,
+          "name": "bool CampaignSaveStore::save(std::uint32_t slot, CampaignSaveSnapshot snapshot)"
+        },
+        {
+          "line": 388,
+          "lines": 4,
+          "name": "const CampaignSaveSnapshot* CampaignSaveStore::load(std::uint32_t slot) const noexcept"
+        },
+        {
+          "line": 393,
+          "lines": 50,
+          "name": "bool CampaignSaveStore::write_file(const std::filesystem::path& path) const"
+        },
+        {
+          "line": 444,
+          "lines": 53,
+          "name": "bool CampaignSaveStore::read_file(const std::filesystem::path& path)"
+        }
+      ],
+      "kind": "source",
+      "lines": 498
+    },
+    "reconstruction/ace-combat-6/src/cli.cpp": {
+      "functions": [
+        {
+          "line": 4,
+          "lines": 4,
+          "name": "bool parse_u32(std::string_view text, std::uint32_t& value) noexcept"
+        }
+      ],
+      "kind": "source",
+      "lines": 8
+    },
+    "reconstruction/ace-combat-6/src/commands.cpp": {
+      "functions": [
+        {
+          "line": 27,
+          "lines": 10,
+          "name": "bool same_world_frame(const ac6::WorldFrame& a, const ac6::WorldFrame& b)"
+        },
+        {
+          "line": 38,
+          "lines": 5,
+          "name": "std::filesystem::path resolve_manifest_path(std::filesystem::path path)"
+        },
+        {
+          "line": 71,
+          "lines": 19,
+          "name": "bool load(const std::filesystem::path& input, std::uint32_t requested_mission)"
+        },
+        {
+          "line": 91,
+          "lines": 5,
+          "name": "ac6::VulkanRenderer::RenderAssets render_assets() const noexcept"
+        },
+        {
+          "line": 108,
+          "lines": 15,
+          "name": "bool initialize(std::uint32_t width, std::uint32_t height, bool hidden) noexcept"
+        },
+        {
+          "line": 124,
+          "lines": 3,
+          "name": "bool present(const ac6::NativeRenderTarget& target) noexcept"
+        },
+        {
+          "line": 128,
+          "lines": 16,
+          "name": "void shutdown() noexcept"
+        },
+        {
+          "line": 145,
+          "lines": 1,
+          "name": "~NativeGraphics()"
+        },
+        {
+          "line": 148,
+          "lines": 15,
+          "name": "bool render_and_present(PlayAssets& assets, NativeGraphics& graphics, ac6::NativeRenderTarget& target, const ac6::WorldFrame& frame, const ac6::MissionExecution* execution = nullptr, ac6::NativeHudRenderer* hud = nullptr)"
+        },
+        {
+          "line": 164,
+          "lines": 7,
+          "name": "void hash_bytes(std::uint64_t& hash, const void* data, std::size_t size) noexcept"
+        },
+        {
+          "line": 172,
+          "lines": 4,
+          "name": "template <typename T> void hash_value(std::uint64_t& hash, const T& value) noexcept"
+        },
+        {
+          "line": 177,
+          "lines": 34,
+          "name": "std::uint64_t semantic_hash(const ac6::WorldFrame& frame, const ac6::RenderReadback& readback) noexcept"
+        },
+        {
+          "line": 212,
+          "lines": 6,
+          "name": "bool same_readback(const ac6::RenderReadback& left, const ac6::RenderReadback& right) noexcept"
+        },
+        {
+          "line": 219,
+          "lines": 8,
+          "name": "ac6::InputFrame generated_headless_input(std::size_t tick) noexcept"
+        },
+        {
+          "line": 228,
+          "lines": 77,
+          "name": "bool write_headless_report(const std::filesystem::path& output_dir, std::uint32_t mission_id, const ac6::WorldFrame& frame, const ac6::RenderReadback& readback, const ac6::NativeRenderTarget& target, const ac6::NativeHudSnapshot& hud, ac6::AssetId player_asset_id, std::uint64_t hash, bool deterministic, bool pause_stable, bool save_resume_stable, bool restart_stable)"
+        },
+        {
+          "line": 306,
+          "lines": 14,
+          "name": "void write_json_string(std::ostream& output, std::string_view value)"
+        },
+        {
+          "line": 321,
+          "lines": 51,
+          "name": "bool write_capture_metrics(const std::filesystem::path& output_dir, const ac6::NativeRenderTarget& target)"
+        },
+        {
+          "line": 373,
+          "lines": 133,
+          "name": "int run_play_headless(const std::filesystem::path& manifest_input, std::uint32_t mission_id, const std::filesystem::path& replay_path, const std::filesystem::path& output_dir)"
+        },
+        {
+          "line": 507,
+          "lines": 94,
+          "name": "int run_combat_headless(const std::filesystem::path& manifest_input, std::uint32_t mission_id, const std::filesystem::path& output_path)"
+        },
+        {
+          "line": 602,
+          "lines": 56,
+          "name": "int run_play_interactive(const std::filesystem::path& manifest_input, std::uint32_t mission_id)"
+        },
+        {
+          "line": 661,
+          "lines": 290,
+          "name": "int run_commands(int argc, char** argv)"
+        }
+      ],
+      "kind": "source",
+      "lines": 950
+    },
+    "reconstruction/ace-combat-6/src/interactive.cpp": {
+      "functions": [
+        {
+          "line": 6,
+          "lines": 16,
+          "name": "bool present_target(const ac6::NativeRenderTarget& target)"
+        }
+      ],
+      "kind": "source",
+      "lines": 22
+    },
+    "reconstruction/ace-combat-6/src/main.cpp": {
+      "functions": [
+        {
+          "line": 5,
+          "lines": 4,
+          "name": "int main(int argc, char** argv)"
+        }
+      ],
+      "kind": "source",
+      "lines": 8
+    },
+    "reconstruction/ace-combat-6/src/mission01_compare.cpp": {
+      "functions": [
+        {
+          "line": 15,
+          "lines": 17,
+          "name": "std::uint64_t fnv64_file(const std::filesystem::path& path, std::uint64_t& size)"
+        },
+        {
+          "line": 33,
+          "lines": 4,
+          "name": "bool parse_u64(std::string_view text, std::uint64_t& value, int base = 10)"
+        },
+        {
+          "line": 38,
+          "lines": 42,
+          "name": "bool verify_reference_manifest(const std::filesystem::path& directory, std::uint32_t& declared_width, std::uint32_t& declared_height)"
+        },
+        {
+          "line": 77,
+          "lines": 2,
+          "name": "return version && mission && ticks && width && height && std::all_of(files.begin(), files.end(), [](bool present)"
+        },
+        {
+          "line": 81,
+          "lines": 20,
+          "name": "bool parse_ppm(const std::filesystem::path& path, std::uint32_t& width, std::uint32_t& height, std::vector<std::uint8_t>& rgba)"
+        },
+        {
+          "line": 102,
+          "lines": 27,
+          "name": "bool parse_checkpoints(const std::filesystem::path& path, std::vector<Mission01Checkpoint>& checkpoints)"
+        },
+        {
+          "line": 130,
+          "lines": 1,
+          "name": "float max3(float a, float b, float c)"
+        },
+        {
+          "line": 132,
+          "lines": 6,
+          "name": "float position_error(const WorldFrame& a, const WorldFrame& b)"
+        },
+        {
+          "line": 139,
+          "lines": 5,
+          "name": "float orientation_error(const WorldFrame& a, const WorldFrame& b)"
+        },
+        {
+          "line": 145,
+          "lines": 7,
+          "name": "float camera_error(const WorldFrame& a, const WorldFrame& b)"
+        },
+        {
+          "line": 153,
+          "lines": 4,
+          "name": "double luminance(const std::vector<std::uint8_t>& rgba, std::size_t pixel)"
+        },
+        {
+          "line": 158,
+          "lines": 19,
+          "name": "float global_ssim(const std::vector<std::uint8_t>& a, const std::vector<std::uint8_t>& b)"
+        },
+        {
+          "line": 178,
+          "lines": 3,
+          "name": "bool covered(const std::vector<std::uint8_t>& image, std::size_t pixel)"
+        },
+        {
+          "line": 182,
+          "lines": 8,
+          "name": "float coverage_iou(const std::vector<std::uint8_t>& a, const std::vector<std::uint8_t>& b)"
+        },
+        {
+          "line": 191,
+          "lines": 10,
+          "name": "float depth_rmse(const std::vector<float>& a, const std::vector<float>& b)"
+        },
+        {
+          "line": 202,
+          "lines": 14,
+          "name": "bool write_diff(const std::filesystem::path& path, std::uint32_t width, std::uint32_t height, const std::vector<std::uint8_t>& a, const std::vector<std::uint8_t>& b)"
+        },
+        {
+          "line": 217,
+          "lines": 7,
+          "name": "bool write_depth(const std::filesystem::path& path, const std::vector<float>& depth)"
+        },
+        {
+          "line": 227,
+          "lines": 26,
+          "name": "bool Mission01Reference::load(const std::filesystem::path& directory)"
+        },
+        {
+          "line": 254,
+          "lines": 78,
+          "name": "Mission01ComparisonResult Mission01Comparator::compare( const Mission01Reference& reference, const std::vector<WorldFrame>& observed, const NativeRenderTarget& target, bool deterministic, const std::filesystem::path& output_directory) const"
+        }
+      ],
+      "kind": "source",
+      "lines": 333
+    },
+    "reconstruction/ace-combat-6/src/native_hud.cpp": {
+      "functions": [
+        {
+          "line": 17,
+          "lines": 4,
+          "name": "bool rect(NativeRenderTarget& target, std::uint32_t x0, std::uint32_t y0, std::uint32_t x1, std::uint32_t y1, std::uint32_t color) noexcept"
+        },
+        {
+          "line": 22,
+          "lines": 11,
+          "name": "bool outline(NativeRenderTarget& target, std::uint32_t x0, std::uint32_t y0, std::uint32_t x1, std::uint32_t y1, std::uint32_t thickness, std::uint32_t color) noexcept"
+        },
+        {
+          "line": 34,
+          "lines": 30,
+          "name": "bool digit(NativeRenderTarget& target, std::uint32_t x, std::uint32_t y, std::uint32_t scale, std::uint32_t value, std::uint32_t color) noexcept"
+        },
+        {
+          "line": 65,
+          "lines": 17,
+          "name": "bool number(NativeRenderTarget& target, std::uint32_t x, std::uint32_t y, std::uint32_t scale, std::uint32_t value, std::uint32_t color) noexcept"
+        },
+        {
+          "line": 83,
+          "lines": 5,
+          "name": "std::uint32_t scaled_abs(float value) noexcept"
+        },
+        {
+          "line": 89,
+          "lines": 9,
+          "name": "std::uint32_t state_color(ObjectiveState state) noexcept"
+        },
+        {
+          "line": 101,
+          "lines": 180,
+          "name": "bool NativeHudRenderer::render(NativeRenderTarget& target, const WorldFrame& frame, const MissionExecution& execution) noexcept"
+        }
+      ],
+      "kind": "source",
+      "lines": 282
+    },
+    "reconstruction/ace-combat-6/src/product_runtime.cpp": {
+      "functions": [
+        {
+          "line": 19,
+          "lines": 19,
+          "name": "template <std::size_t FieldCount> bool parse_tsv_fields(std::string_view line, std::array<std::string_view, FieldCount>& fields) noexcept"
+        },
+        {
+          "line": 49,
+          "lines": 5,
+          "name": "bool UnitRegistry::register_unit(UnitRecord unit)"
+        },
+        {
+          "line": 55,
+          "lines": 4,
+          "name": "bool ObjectiveRegistry::add(ObjectiveRecord objective)"
+        },
+        {
+          "line": 60,
+          "lines": 8,
+          "name": "bool ObjectiveRegistry::activate(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 69,
+          "lines": 6,
+          "name": "bool ObjectiveRegistry::complete(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 76,
+          "lines": 7,
+          "name": "bool ObjectiveRegistry::fail(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 84,
+          "lines": 12,
+          "name": "std::vector<ObjectiveRecord> ObjectiveRegistry::snapshot() const"
+        },
+        {
+          "line": 91,
+          "lines": 3,
+          "name": "std::sort(result.begin(), result.end(), [](const auto& left, const auto& right)"
+        },
+        {
+          "line": 97,
+          "lines": 14,
+          "name": "bool ObjectiveRegistry::restore(const std::vector<ObjectiveRecord>& snapshot) noexcept"
+        },
+        {
+          "line": 112,
+          "lines": 4,
+          "name": "const ObjectiveRecord* ObjectiveRegistry::find(std::uint32_t id) const noexcept"
+        },
+        {
+          "line": 117,
+          "lines": 5,
+          "name": "bool ObjectiveRegistry::all_required_complete() const noexcept"
+        },
+        {
+          "line": 118,
+          "lines": 3,
+          "name": "return std::all_of(objectives_.begin(), objectives_.end(), [](const auto& entry)"
+        },
+        {
+          "line": 123,
+          "lines": 6,
+          "name": "std::size_t ObjectiveRegistry::completed_count() const noexcept"
+        },
+        {
+          "line": 124,
+          "lines": 4,
+          "name": "std::count_if( objectives_.begin(), objectives_.end(), [](const auto& entry)"
+        },
+        {
+          "line": 130,
+          "lines": 6,
+          "name": "std::size_t ObjectiveRegistry::failed_count() const noexcept"
+        },
+        {
+          "line": 131,
+          "lines": 4,
+          "name": "std::count_if( objectives_.begin(), objectives_.end(), [](const auto& entry)"
+        },
+        {
+          "line": 137,
+          "lines": 10,
+          "name": "bool MissionObjectiveDatabase::add(MissionObjectiveDefinition definition)"
+        },
+        {
+          "line": 148,
+          "lines": 39,
+          "name": "bool MissionObjectiveDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 188,
+          "lines": 8,
+          "name": "std::vector<const ObjectiveRecord*> MissionObjectiveDatabase::find_by_mission( std::uint32_t mission_id) const"
+        },
+        {
+          "line": 197,
+          "lines": 6,
+          "name": "bool RadioMessageDatabase::add(RadioMessageDefinition message)"
+        },
+        {
+          "line": 204,
+          "lines": 28,
+          "name": "bool RadioMessageDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 233,
+          "lines": 7,
+          "name": "const RadioMessageDefinition* RadioMessageDatabase::find(std::uint32_t mission_id, std::uint32_t id) const noexcept"
+        },
+        {
+          "line": 241,
+          "lines": 9,
+          "name": "bool RadioPlaybackService::start(const RadioMessageDatabase& messages, std::uint32_t mission_id, std::uint32_t message_id, float duration_seconds) noexcept"
+        },
+        {
+          "line": 251,
+          "lines": 10,
+          "name": "bool RadioPlaybackService::tick(float fixed_dt) noexcept"
+        },
+        {
+          "line": 262,
+          "lines": 6,
+          "name": "bool RadioPlaybackService::finish() noexcept"
+        },
+        {
+          "line": 269,
+          "lines": 5,
+          "name": "bool RadioPlaybackService::interrupt() noexcept"
+        },
+        {
+          "line": 275,
+          "lines": 16,
+          "name": "bool RadioPlaybackService::restore(RadioPlaybackSnapshot snapshot) noexcept"
+        },
+        {
+          "line": 292,
+          "lines": 3,
+          "name": "void RadioPlaybackService::reset() noexcept"
+        },
+        {
+          "line": 296,
+          "lines": 9,
+          "name": "bool MissionSequenceEvent::valid() const noexcept"
+        },
+        {
+          "line": 306,
+          "lines": 16,
+          "name": "bool MissionSequenceDirector::add(MissionSequenceEvent event)"
+        },
+        {
+          "line": 313,
+          "lines": 7,
+          "name": "std::sort(entries_.begin(), entries_.end(), [](const Entry& left, const Entry& right)"
+        },
+        {
+          "line": 323,
+          "lines": 41,
+          "name": "bool MissionSequenceDirector::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 365,
+          "lines": 4,
+          "name": "bool InputBinding::valid() const noexcept"
+        },
+        {
+          "line": 370,
+          "lines": 10,
+          "name": "bool InputMappingDatabase::add(InputBinding binding)"
+        },
+        {
+          "line": 374,
+          "lines": 3,
+          "name": "end())"
+        },
+        {
+          "line": 381,
+          "lines": 26,
+          "name": "bool InputMappingDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 408,
+          "lines": 20,
+          "name": "const InputBinding* InputMappingDatabase::resolve(std::uint16_t buttons) const noexcept"
+        },
+        {
+          "line": 429,
+          "lines": 28,
+          "name": "bool ReplayLog::write_file(const std::filesystem::path& path) const"
+        },
+        {
+          "line": 458,
+          "lines": 41,
+          "name": "bool ReplayLog::read_file(const std::filesystem::path& path)"
+        },
+        {
+          "line": 500,
+          "lines": 6,
+          "name": "bool UnitRegistry::activate(EntityId id) noexcept"
+        },
+        {
+          "line": 507,
+          "lines": 6,
+          "name": "bool UnitRegistry::deactivate(EntityId id) noexcept"
+        },
+        {
+          "line": 514,
+          "lines": 6,
+          "name": "bool UnitRegistry::set_active(EntityId id, bool active) noexcept"
+        },
+        {
+          "line": 521,
+          "lines": 8,
+          "name": "std::size_t UnitRegistry::active_count() const noexcept"
+        },
+        {
+          "line": 530,
+          "lines": 4,
+          "name": "const UnitRecord* UnitRegistry::find(EntityId id) const noexcept"
+        },
+        {
+          "line": 535,
+          "lines": 12,
+          "name": "std::vector<UnitRecord> UnitRegistry::snapshot() const"
+        },
+        {
+          "line": 542,
+          "lines": 3,
+          "name": "std::sort(result.begin(), result.end(), [](const UnitRecord& left, const UnitRecord& right)"
+        },
+        {
+          "line": 548,
+          "lines": 12,
+          "name": "bool UnitRegistry::restore(const std::vector<UnitRecord>& snapshot) noexcept"
+        },
+        {
+          "line": 561,
+          "lines": 8,
+          "name": "bool CombatUnitState::valid() const noexcept"
+        },
+        {
+          "line": 570,
+          "lines": 6,
+          "name": "bool WeaponDefinition::valid() const noexcept"
+        },
+        {
+          "line": 579,
+          "lines": 6,
+          "name": "float combat_distance_squared(CombatVector a, CombatVector b) noexcept"
+        },
+        {
+          "line": 588,
+          "lines": 5,
+          "name": "bool CombatWorld::add_unit(CombatUnitState unit)"
+        },
+        {
+          "line": 594,
+          "lines": 7,
+          "name": "bool CombatWorld::add_weapon(WeaponDefinition weapon)"
+        },
+        {
+          "line": 602,
+          "lines": 8,
+          "name": "bool CombatWorld::lock_target(EntityId owner, EntityId target) noexcept"
+        },
+        {
+          "line": 611,
+          "lines": 4,
+          "name": "EntityId CombatWorld::locked_target(EntityId owner) const noexcept"
+        },
+        {
+          "line": 616,
+          "lines": 29,
+          "name": "bool CombatWorld::fire(EntityId owner, std::uint32_t weapon_id) noexcept"
+        },
+        {
+          "line": 620,
+          "lines": 3,
+          "name": "std::find_if(weapons_.begin(), weapons_.end(), [&](const auto& candidate)"
+        },
+        {
+          "line": 646,
+          "lines": 11,
+          "name": "bool CombatWorld::apply_damage(EntityId target, float damage) noexcept"
+        },
+        {
+          "line": 658,
+          "lines": 12,
+          "name": "bool CombatWorld::deactivate_unit(EntityId entity) noexcept"
+        },
+        {
+          "line": 671,
+          "lines": 28,
+          "name": "void CombatWorld::tick(float fixed_dt) noexcept"
+        },
+        {
+          "line": 700,
+          "lines": 6,
+          "name": "const CombatUnitState* CombatWorld::unit(EntityId entity) const noexcept"
+        },
+        {
+          "line": 707,
+          "lines": 7,
+          "name": "std::vector<CombatUnitState> CombatWorld::snapshot_units() const"
+        },
+        {
+          "line": 709,
+          "lines": 3,
+          "name": "std::sort(result.begin(), result.end(), [](const auto& left, const auto& right)"
+        },
+        {
+          "line": 715,
+          "lines": 15,
+          "name": "bool CombatWorld::restore_units(const std::vector<CombatUnitState>& units) noexcept"
+        },
+        {
+          "line": 731,
+          "lines": 4,
+          "name": "std::size_t CombatWorld::active_units() const noexcept"
+        },
+        {
+          "line": 732,
+          "lines": 2,
+          "name": "std::count_if(units_.begin(), units_.end(), [](const auto& unit)"
+        },
+        {
+          "line": 736,
+          "lines": 4,
+          "name": "std::size_t CombatWorld::active_projectiles() const noexcept"
+        },
+        {
+          "line": 737,
+          "lines": 2,
+          "name": "std::count_if(projectiles_.begin(), projectiles_.end(), [](const auto& projectile)"
+        },
+        {
+          "line": 741,
+          "lines": 8,
+          "name": "void CombatWorld::clear() noexcept"
+        },
+        {
+          "line": 750,
+          "lines": 5,
+          "name": "bool MissionWaveSpawn::valid() const noexcept"
+        },
+        {
+          "line": 756,
+          "lines": 19,
+          "name": "bool MissionWaveDirector::add(MissionWaveSpawn spawn)"
+        },
+        {
+          "line": 764,
+          "lines": 9,
+          "name": "std::sort(entries_.begin(), entries_.end(), [](const Entry& left, const Entry& right)"
+        },
+        {
+          "line": 776,
+          "lines": 35,
+          "name": "bool MissionWaveDirector::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 812,
+          "lines": 8,
+          "name": "MissionWaveSnapshot MissionWaveDirector::snapshot() const"
+        },
+        {
+          "line": 821,
+          "lines": 23,
+          "name": "bool MissionWaveDirector::restore(const MissionWaveSnapshot& snapshot) noexcept"
+        },
+        {
+          "line": 845,
+          "lines": 20,
+          "name": "bool MissionWaveDirector::spawn_due(std::uint32_t mission_id, std::uint64_t tick, UnitRegistry& units, CombatWorld& combat) noexcept"
+        },
+        {
+          "line": 866,
+          "lines": 9,
+          "name": "bool MissionWaveDirector::despawn(EntityId entity, UnitRegistry& units, CombatWorld& combat) noexcept"
+        },
+        {
+          "line": 876,
+          "lines": 6,
+          "name": "std::size_t MissionWaveDirector::pending(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 877,
+          "lines": 4,
+          "name": "std::count_if(entries_.begin(), entries_.end(), [mission_id](const Entry& entry)"
+        },
+        {
+          "line": 883,
+          "lines": 6,
+          "name": "std::size_t MissionWaveDirector::spawned(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 884,
+          "lines": 4,
+          "name": "std::count_if(entries_.begin(), entries_.end(), [mission_id](const Entry& entry)"
+        },
+        {
+          "line": 890,
+          "lines": 3,
+          "name": "void MissionWaveDirector::reset() noexcept"
+        },
+        {
+          "line": 894,
+          "lines": 5,
+          "name": "bool MissionAiDirector::add(MissionAiRule rule)"
+        },
+        {
+          "line": 900,
+          "lines": 21,
+          "name": "bool MissionAiDirector::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 922,
+          "lines": 13,
+          "name": "bool MissionAiDirector::dispatch_due(std::uint32_t mission_id, std::uint64_t tick, CombatWorld& combat) noexcept"
+        },
+        {
+          "line": 936,
+          "lines": 7,
+          "name": "std::size_t MissionAiDirector::active(std::uint32_t mission_id, std::uint64_t tick) const noexcept"
+        },
+        {
+          "line": 937,
+          "lines": 5,
+          "name": "std::count_if(rules_.begin(), rules_.end(), [mission_id, tick](const MissionAiRule& rule)"
+        },
+        {
+          "line": 946,
+          "lines": 4,
+          "name": "bool parse_u32(std::string_view text, std::uint32_t& value) noexcept"
+        },
+        {
+          "line": 951,
+          "lines": 4,
+          "name": "bool parse_u64(std::string_view text, std::uint64_t& value) noexcept"
+        },
+        {
+          "line": 956,
+          "lines": 5,
+          "name": "bool parse_f32(std::string_view text, float& value) noexcept"
+        },
+        {
+          "line": 962,
+          "lines": 11,
+          "name": "bool parse_bool01(std::string_view text, bool& value) noexcept"
+        },
+        {
+          "line": 974,
+          "lines": 16,
+          "name": "bool parse_objective_condition(std::string_view text, ObjectiveCondition& condition) noexcept"
+        },
+        {
+          "line": 991,
+          "lines": 7,
+          "name": "bool parse_hex_u32(std::string_view text, std::uint32_t& value) noexcept"
+        },
+        {
+          "line": 999,
+          "lines": 7,
+          "name": "bool parse_hex_u64(std::string_view text, std::uint64_t& value) noexcept"
+        },
+        {
+          "line": 1007,
+          "lines": 8,
+          "name": "std::uint32_t stable_hash32(std::string_view text) noexcept"
+        },
+        {
+          "line": 1016,
+          "lines": 17,
+          "name": "bool file_fnv64(const std::filesystem::path& path, std::uint64_t& hash)"
+        },
+        {
+          "line": 1035,
+          "lines": 15,
+          "name": "public: void update(const unsigned char* data, std::size_t size) noexcept"
+        },
+        {
+          "line": 1051,
+          "lines": 13,
+          "name": "32> digest() const noexcept"
+        },
+        {
+          "line": 1084,
+          "lines": 3,
+          "name": "static std::uint32_t rotate_right(std::uint32_t value, unsigned count) noexcept"
+        },
+        {
+          "line": 1088,
+          "lines": 51,
+          "name": "void transform(const unsigned char* block) noexcept"
+        },
+        {
+          "line": 1140,
+          "lines": 14,
+          "name": "void finish() noexcept"
+        },
+        {
+          "line": 1163,
+          "lines": 20,
+          "name": "bool file_sha256(const std::filesystem::path& path, std::string& digest)"
+        },
+        {
+          "line": 1184,
+          "lines": 10,
+          "name": "bool equal_hex(std::string_view left, std::string_view right) noexcept"
+        },
+        {
+          "line": 1195,
+          "lines": 4,
+          "name": "std::uint16_t read_le_u16(const unsigned char* bytes) noexcept"
+        },
+        {
+          "line": 1200,
+          "lines": 6,
+          "name": "std::uint32_t read_le_u32(const unsigned char* bytes) noexcept"
+        },
+        {
+          "line": 1207,
+          "lines": 6,
+          "name": "float read_le_f32(const unsigned char* bytes) noexcept"
+        },
+        {
+          "line": 1214,
+          "lines": 11,
+          "name": "bool read_exact_at(std::ifstream& input, std::uint64_t offset, unsigned char* bytes, std::size_t size)"
+        },
+        {
+          "line": 1241,
+          "lines": 3,
+          "name": "float dot(Vec3 a, Vec3 b) noexcept"
+        },
+        {
+          "line": 1245,
+          "lines": 3,
+          "name": "Vec3 cross(Vec3 a, Vec3 b) noexcept"
+        },
+        {
+          "line": 1249,
+          "lines": 9,
+          "name": "bool normalize(Vec3& value) noexcept"
+        },
+        {
+          "line": 1268,
+          "lines": 24,
+          "name": "bool make_projection(const WorldFrame& frame, std::uint32_t width, std::uint32_t height, NativeCameraProjection& projection) noexcept"
+        },
+        {
+          "line": 1293,
+          "lines": 36,
+          "name": "bool project_clip_point(const MissionCameraDefinition& camera, Vec3 world, std::uint32_t width, std::uint32_t height, ScreenPoint& screen, bool clip_to_viewport = true) noexcept"
+        },
+        {
+          "line": 1330,
+          "lines": 37,
+          "name": "bool project_point(const NativeCameraProjection& projection, Vec3 world, std::uint32_t width, std::uint32_t height, ScreenPoint& screen, bool clip_to_viewport = true) noexcept"
+        },
+        {
+          "line": 1368,
+          "lines": 6,
+          "name": "MissionFamily parse_family(std::string_view family) noexcept"
+        },
+        {
+          "line": 1375,
+          "lines": 15,
+          "name": "bool parse_asset_ids(std::string_view text, std::vector<AssetId>& asset_ids)"
+        },
+        {
+          "line": 1391,
+          "lines": 30,
+          "name": "bool parse_units(std::string_view text, std::vector<UnitRecord>& units)"
+        },
+        {
+          "line": 1412,
+          "lines": 3,
+          "name": "end())"
+        },
+        {
+          "line": 1422,
+          "lines": 31,
+          "name": "bool parse_weapons(std::string_view text, std::vector<WeaponDefinition>& weapons)"
+        },
+        {
+          "line": 1456,
+          "lines": 12,
+          "name": "bool MissionCatalog::add(MissionDefinition definition)"
+        },
+        {
+          "line": 1469,
+          "lines": 27,
+          "name": "bool MissionCatalog::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 1497,
+          "lines": 4,
+          "name": "const MissionDefinition* MissionCatalog::find(std::uint32_t id) const noexcept"
+        },
+        {
+          "line": 1502,
+          "lines": 1,
+          "name": "MissionScenario::MissionScenario(const MissionDefinition& definition) : mission_id_(definition.id)"
+        },
+        {
+          "line": 1504,
+          "lines": 6,
+          "name": "bool MissionScenario::bind_player(const UnitRegistry& units, EntityId entity) noexcept"
+        },
+        {
+          "line": 1511,
+          "lines": 27,
+          "name": "bool MissionScenario::dispatch(Event event) noexcept"
+        },
+        {
+          "line": 1539,
+          "lines": 3,
+          "name": "bool MissionScenario::complete_objective(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 1543,
+          "lines": 3,
+          "name": "bool MissionScenario::add_objective(ObjectiveRecord objective)"
+        },
+        {
+          "line": 1547,
+          "lines": 3,
+          "name": "bool MissionScenario::activate_objective(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 1551,
+          "lines": 5,
+          "name": "bool MissionScenario::fail_objective(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 1557,
+          "lines": 24,
+          "name": "bool MissionScenario::evaluate_combat(const UnitRegistry& units, const CombatWorld& combat) noexcept"
+        },
+        {
+          "line": 1582,
+          "lines": 7,
+          "name": "bool MissionScenario::dispatch_radio(const RadioMessageDatabase& messages, std::uint32_t id) noexcept"
+        },
+        {
+          "line": 1590,
+          "lines": 7,
+          "name": "std::optional<std::uint32_t> MissionScenario::objective_index(std::uint32_t id) const noexcept"
+        },
+        {
+          "line": 1598,
+          "lines": 13,
+          "name": "MissionDebrief MissionScenario::debrief() const"
+        },
+        {
+          "line": 1612,
+          "lines": 3,
+          "name": "MissionScenarioSnapshot MissionScenario::snapshot() const"
+        },
+        {
+          "line": 1616,
+          "lines": 16,
+          "name": "bool MissionScenario::restore(const MissionScenarioSnapshot& snapshot) noexcept"
+        },
+        {
+          "line": 1633,
+          "lines": 5,
+          "name": "bool MissionScenario::dispatch_buttons(const InputMappingDatabase& mappings, std::uint16_t buttons, EntityId subject) noexcept"
+        },
+        {
+          "line": 1639,
+          "lines": 19,
+          "name": "bool FrontendController::advance() noexcept"
+        },
+        {
+          "line": 1659,
+          "lines": 5,
+          "name": "bool FrontendController::configure(FrontendSettings settings) noexcept"
+        },
+        {
+          "line": 1665,
+          "lines": 12,
+          "name": "bool FrontendController::dispatch(Event event) noexcept"
+        },
+        {
+          "line": 1678,
+          "lines": 5,
+          "name": "bool FrontendController::dispatch_buttons(const InputMappingDatabase& mappings, std::uint16_t buttons) noexcept"
+        },
+        {
+          "line": 1684,
+          "lines": 7,
+          "name": "bool FrontendController::select_mission(const MissionCatalog& catalog, std::uint32_t mission_id) noexcept"
+        },
+        {
+          "line": 1692,
+          "lines": 4,
+          "name": "bool FrontendController::set_loadout(CampaignLoadout loadout) noexcept"
+        },
+        {
+          "line": 1697,
+          "lines": 5,
+          "name": "const MissionDefinition* FrontendController::mission_definition( const MissionCatalog& catalog) const noexcept"
+        },
+        {
+          "line": 1703,
+          "lines": 11,
+          "name": "bool FrontendController::launch_selected(const MissionCatalog& catalog, const MissionLaunchDatabase& launches, MissionExecution& execution) const noexcept"
+        },
+        {
+          "line": 1715,
+          "lines": 18,
+          "name": "bool FrontendController::enter_debrief(const MissionExecution& execution) noexcept"
+        },
+        {
+          "line": 1734,
+          "lines": 7,
+          "name": "bool FrontendController::return_to_campaign() noexcept"
+        },
+        {
+          "line": 1742,
+          "lines": 9,
+          "name": "bool SaveStore::save(std::uint32_t slot, RuntimeSnapshot snapshot)"
+        },
+        {
+          "line": 1752,
+          "lines": 4,
+          "name": "const RuntimeSnapshot* SaveStore::load(std::uint32_t slot) const noexcept"
+        },
+        {
+          "line": 1757,
+          "lines": 62,
+          "name": "bool SaveStore::write_file(const std::filesystem::path& path) const"
+        },
+        {
+          "line": 1820,
+          "lines": 52,
+          "name": "bool SaveStore::read_file(const std::filesystem::path& path)"
+        },
+        {
+          "line": 1873,
+          "lines": 6,
+          "name": "bool MissionAssetDatabase::add(AssetRecord record)"
+        },
+        {
+          "line": 1880,
+          "lines": 44,
+          "name": "bool MissionAssetDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 1925,
+          "lines": 64,
+          "name": "bool MissionAssetDatabase::load_qualified_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 1968,
+          "lines": 13,
+          "name": "bool(AssetId)> acyclic = [&](AssetId id)"
+        },
+        {
+          "line": 1990,
+          "lines": 4,
+          "name": "const AssetRecord* MissionAssetDatabase::resolve(AssetId id) const noexcept"
+        },
+        {
+          "line": 1995,
+          "lines": 27,
+          "name": "bool MissionLaunchDatabase::add(MissionLaunchDefinition definition)"
+        },
+        {
+          "line": 2007,
+          "lines": 3,
+          "name": "end())"
+        },
+        {
+          "line": 2023,
+          "lines": 30,
+          "name": "bool MissionLaunchDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2054,
+          "lines": 5,
+          "name": "const MissionLaunchDefinition* MissionLaunchDatabase::find( std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 2060,
+          "lines": 45,
+          "name": "bool MissionManifestLoader::load_paths(const std::filesystem::path& manifest, MissionManifestPaths& paths) const"
+        },
+        {
+          "line": 2106,
+          "lines": 9,
+          "name": "bool MissionManifestLoader::load_campaign(const std::filesystem::path& manifest, CampaignProgression& campaign) const"
+        },
+        {
+          "line": 2116,
+          "lines": 7,
+          "name": "bool MissionManifestLoader::load_runtime(const std::filesystem::path& manifest, MissionCatalog& catalog, MissionAssetDatabase& assets, MissionLaunchDatabase& launches) const"
+        },
+        {
+          "line": 2124,
+          "lines": 48,
+          "name": "bool MissionManifestLoader::load_runtime(const std::filesystem::path& manifest, MissionCatalog& catalog, MissionAssetDatabase& assets, MissionLaunchDatabase& launches, MissionRuntimeServices& services) const"
+        },
+        {
+          "line": 2173,
+          "lines": 9,
+          "name": "bool MissionManifestLoader::load_input(const std::filesystem::path& manifest, InputMappingDatabase& input) const"
+        },
+        {
+          "line": 2183,
+          "lines": 5,
+          "name": "bool MissionCameraDefinition::valid() const noexcept"
+        },
+        {
+          "line": 2189,
+          "lines": 5,
+          "name": "bool MissionCameraDatabase::add(MissionCameraDefinition definition)"
+        },
+        {
+          "line": 2195,
+          "lines": 37,
+          "name": "bool MissionCameraDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2233,
+          "lines": 7,
+          "name": "const MissionCameraDefinition* MissionCameraDatabase::find(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 2234,
+          "lines": 4,
+          "name": "std::find_if(cameras_.begin(), cameras_.end(), [mission_id](const MissionCameraDefinition& camera)"
+        },
+        {
+          "line": 2241,
+          "lines": 9,
+          "name": "bool MissionManifestLoader::load_camera(const std::filesystem::path& manifest, MissionCameraDatabase& cameras) const"
+        },
+        {
+          "line": 2251,
+          "lines": 45,
+          "name": "bool MissionManifestLoader::load_render(const std::filesystem::path& manifest, MissionRenderDatabase& render, MissionDrawableDatabase& drawables, MissionTransformDatabase& transforms, MissionMaterialDatabase& materials, MissionTextureDatabase& textures, ShaderPermutationDatabase& shaders, MissionRenderTargetDatabase& targets, MissionRenderPassDatabase& passes, MissionRenderResolveDatabase& resolves, QualifiedBufferDatabase& buffers) const"
+        },
+        {
+          "line": 2297,
+          "lines": 49,
+          "name": "bool MissionManifestLoader::load_render(const std::filesystem::path& manifest, MissionRenderDatabase& render, MissionDrawableDatabase& drawables, MissionTransformDatabase& transforms, MissionMaterialDatabase& materials, MissionTextureDatabase& textures, ShaderPermutationDatabase& shaders, MissionRenderTargetDatabase& targets, MissionRenderPassDatabase& passes, MissionRenderResolveDatabase& resolves, QualifiedBufferDatabase& buffers, NativeGeometryDatabase& geometries) const"
+        },
+        {
+          "line": 2347,
+          "lines": 11,
+          "name": "bool configure_mission_launch(const MissionLaunchDefinition& launch, UnitRegistry& units, MissionScenario& scenario) noexcept"
+        },
+        {
+          "line": 2359,
+          "lines": 11,
+          "name": "bool MissionRenderDatabase::add(MissionRenderDefinition definition)"
+        },
+        {
+          "line": 2371,
+          "lines": 19,
+          "name": "bool MissionRenderDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2391,
+          "lines": 5,
+          "name": "const MissionRenderDefinition* MissionRenderDatabase::find( std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 2397,
+          "lines": 10,
+          "name": "bool MissionDrawableDatabase::add(MissionDrawable drawable)"
+        },
+        {
+          "line": 2408,
+          "lines": 37,
+          "name": "bool MissionDrawableDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2446,
+          "lines": 9,
+          "name": "const MissionDrawable* MissionDrawableDatabase::find( std::uint32_t mission_id, const std::string& stable_id) const noexcept"
+        },
+        {
+          "line": 2448,
+          "lines": 5,
+          "name": "std::find_if(drawables_.begin(), drawables_.end(), [mission_id, &stable_id](const MissionDrawable& drawable)"
+        },
+        {
+          "line": 2456,
+          "lines": 10,
+          "name": "std::vector<const MissionDrawable*> MissionDrawableDatabase::find_by_asset( std::uint32_t mission_id, AssetId asset) const"
+        },
+        {
+          "line": 2467,
+          "lines": 7,
+          "name": "bool MissionDrawableTransform::valid() const noexcept"
+        },
+        {
+          "line": 2475,
+          "lines": 7,
+          "name": "bool MissionTransformDatabase::add(MissionDrawableTransform transform)"
+        },
+        {
+          "line": 2483,
+          "lines": 39,
+          "name": "bool MissionTransformDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2523,
+          "lines": 9,
+          "name": "const MissionDrawableTransform* MissionTransformDatabase::find( std::uint32_t mission_id, const std::string& stable_id) const noexcept"
+        },
+        {
+          "line": 2525,
+          "lines": 5,
+          "name": "std::find_if(transforms_.begin(), transforms_.end(), [mission_id, &stable_id](const MissionDrawableTransform& transform)"
+        },
+        {
+          "line": 2533,
+          "lines": 5,
+          "name": "bool MissionMaterial::valid() const noexcept"
+        },
+        {
+          "line": 2539,
+          "lines": 7,
+          "name": "bool MissionMaterialDatabase::add(MissionMaterial material)"
+        },
+        {
+          "line": 2547,
+          "lines": 41,
+          "name": "bool MissionMaterialDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2589,
+          "lines": 9,
+          "name": "const MissionMaterial* MissionMaterialDatabase::find( std::uint32_t mission_id, const std::string& stable_id) const noexcept"
+        },
+        {
+          "line": 2591,
+          "lines": 5,
+          "name": "std::find_if(materials_.begin(), materials_.end(), [mission_id, &stable_id](const MissionMaterial& material)"
+        },
+        {
+          "line": 2599,
+          "lines": 6,
+          "name": "bool MissionTextureBinding::valid() const noexcept"
+        },
+        {
+          "line": 2606,
+          "lines": 7,
+          "name": "bool MissionTextureDatabase::add(MissionTextureBinding texture)"
+        },
+        {
+          "line": 2614,
+          "lines": 106,
+          "name": "bool MissionTextureDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2721,
+          "lines": 9,
+          "name": "const MissionTextureBinding* MissionTextureDatabase::find( std::uint32_t mission_id, const std::string& stable_id) const noexcept"
+        },
+        {
+          "line": 2723,
+          "lines": 5,
+          "name": "std::find_if(textures_.begin(), textures_.end(), [mission_id, &stable_id](const MissionTextureBinding& texture)"
+        },
+        {
+          "line": 2731,
+          "lines": 48,
+          "name": "bool MissionTextureDatabase::sample(std::uint32_t mission_id, const std::string& stable_id, float u, float v, std::uint32_t& rgba) const noexcept"
+        },
+        {
+          "line": 2780,
+          "lines": 6,
+          "name": "bool ShaderPermutation::valid() const noexcept"
+        },
+        {
+          "line": 2787,
+          "lines": 7,
+          "name": "bool ShaderPermutationDatabase::add(ShaderPermutation permutation)"
+        },
+        {
+          "line": 2795,
+          "lines": 29,
+          "name": "bool ShaderPermutationDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2825,
+          "lines": 7,
+          "name": "const ShaderPermutation* ShaderPermutationDatabase::find(const std::string& id) const noexcept"
+        },
+        {
+          "line": 2826,
+          "lines": 4,
+          "name": "std::find_if(permutations_.begin(), permutations_.end(), [&id](const ShaderPermutation& permutation)"
+        },
+        {
+          "line": 2833,
+          "lines": 15,
+          "name": "bool MissionRenderTargetDefinition::valid() const noexcept"
+        },
+        {
+          "line": 2849,
+          "lines": 5,
+          "name": "bool MissionRenderTargetDatabase::add(MissionRenderTargetDefinition definition)"
+        },
+        {
+          "line": 2855,
+          "lines": 37,
+          "name": "bool MissionRenderTargetDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2893,
+          "lines": 4,
+          "name": "const MissionRenderTargetDefinition* MissionRenderTargetDatabase::find( std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 2898,
+          "lines": 9,
+          "name": "const MissionRenderTargetDefinition* MissionRenderTargetDatabase::find( std::uint32_t mission_id, const std::string& target_id) const noexcept"
+        },
+        {
+          "line": 2900,
+          "lines": 5,
+          "name": "std::find_if(targets_.begin(), targets_.end(), [mission_id, &target_id](const MissionRenderTargetDefinition& target)"
+        },
+        {
+          "line": 2908,
+          "lines": 6,
+          "name": "bool MissionRenderPass::valid() const noexcept"
+        },
+        {
+          "line": 2915,
+          "lines": 5,
+          "name": "bool MissionRenderPassDatabase::add(MissionRenderPass pass)"
+        },
+        {
+          "line": 2921,
+          "lines": 33,
+          "name": "bool MissionRenderPassDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 2955,
+          "lines": 8,
+          "name": "const MissionRenderPass* MissionRenderPassDatabase::find( std::uint32_t mission_id, const std::string& pass_id) const noexcept"
+        },
+        {
+          "line": 2957,
+          "lines": 4,
+          "name": "std::find_if(passes_.begin(), passes_.end(), [mission_id, &pass_id](const MissionRenderPass& pass)"
+        },
+        {
+          "line": 2964,
+          "lines": 6,
+          "name": "bool MissionRenderResolve::valid() const noexcept"
+        },
+        {
+          "line": 2971,
+          "lines": 5,
+          "name": "bool MissionRenderResolveDatabase::add(MissionRenderResolve resolve)"
+        },
+        {
+          "line": 2977,
+          "lines": 27,
+          "name": "bool MissionRenderResolveDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 3005,
+          "lines": 9,
+          "name": "const MissionRenderResolve* MissionRenderResolveDatabase::find( std::uint32_t mission_id, const std::string& source_pass) const noexcept"
+        },
+        {
+          "line": 3007,
+          "lines": 5,
+          "name": "std::find_if(resolves_.begin(), resolves_.end(), [mission_id, &source_pass](const MissionRenderResolve& resolve)"
+        },
+        {
+          "line": 3015,
+          "lines": 9,
+          "name": "bool QualifiedBufferDatabase::add(QualifiedBufferRecord record)"
+        },
+        {
+          "line": 3025,
+          "lines": 26,
+          "name": "bool QualifiedBufferDatabase::load_manifest(const std::filesystem::path& manifest)"
+        },
+        {
+          "line": 3052,
+          "lines": 22,
+          "name": "bool QualifiedBufferDatabase::verify(const std::string& buffer_id)"
+        },
+        {
+          "line": 3075,
+          "lines": 4,
+          "name": "bool QualifiedBufferDatabase::has_verified(const std::string& buffer_id) const noexcept"
+        },
+        {
+          "line": 3080,
+          "lines": 8,
+          "name": "const QualifiedBufferRecord* QualifiedBufferDatabase::find( const std::string& buffer_id) const noexcept"
+        },
+        {
+          "line": 3082,
+          "lines": 4,
+          "name": "std::find_if(buffers_.begin(), buffers_.end(), [&buffer_id](const QualifiedBufferRecord& record)"
+        },
+        {
+          "line": 3089,
+          "lines": 332,
+          "name": "bool NativeGeometryDatabase::load_verified(const MissionDrawable& drawable, const QualifiedBufferDatabase& buffers)"
+        },
+        {
+          "line": 3422,
+          "lines": 8,
+          "name": "const NativeGeometryMetadata* NativeGeometryDatabase::find( const std::string& buffer_id) const noexcept"
+        },
+        {
+          "line": 3424,
+          "lines": 4,
+          "name": "std::find_if(geometries_.begin(), geometries_.end(), [&buffer_id](const NativeGeometryMetadata& metadata)"
+        },
+        {
+          "line": 3431,
+          "lines": 8,
+          "name": "const DecodedGeometry* NativeGeometryDatabase::decoded( const std::string& buffer_id) const noexcept"
+        },
+        {
+          "line": 3433,
+          "lines": 4,
+          "name": "std::find_if(decoded_.begin(), decoded_.end(), [&buffer_id](const DecodedGeometry& decoded)"
+        },
+        {
+          "line": 3440,
+          "lines": 26,
+          "name": "bool NativeRenderTarget::resize(std::uint32_t width, std::uint32_t height)"
+        },
+        {
+          "line": 3467,
+          "lines": 21,
+          "name": "bool NativeRenderTarget::clear(std::uint32_t color, float depth)"
+        },
+        {
+          "line": 3489,
+          "lines": 25,
+          "name": "bool NativeRenderTarget::draw_hud_rect(std::uint32_t min_x, std::uint32_t min_y, std::uint32_t max_x, std::uint32_t max_y, std::uint32_t color) noexcept"
+        },
+        {
+          "line": 3515,
+          "lines": 19,
+          "name": "bool NativeRenderTarget::mark_world_asset(const WorldFrame& frame, AssetId asset, std::uint32_t ordinal) noexcept"
+        },
+        {
+          "line": 3535,
+          "lines": 15,
+          "name": "bool NativeRenderTarget::draw_world_asset(const WorldFrame& frame, const MissionDrawable& drawable, std::uint32_t ordinal) noexcept"
+        },
+        {
+          "line": 3551,
+          "lines": 405,
+          "name": "bool NativeRenderTarget::draw_world_geometry(const WorldFrame& frame, const MissionDrawable& drawable, const NativeGeometryMetadata& geometry, const DecodedGeometry& decoded, const MissionDrawableTransform& transform, const MissionMaterial& material, const MissionTextureBinding& texture, const ShaderPermutation& shader, const MissionRenderTargetDefinition& render_target, const MissionRenderTargetDefinition& destination_target, const MissionRenderPass& pass, const MissionRenderResolve& resolve, const MissionCameraDefinition* camera, const MissionTextureDatabase* texture_database, std::uint32_t ordinal)"
+        },
+        {
+          "line": 3957,
+          "lines": 17,
+          "name": "RenderReadback NativeRenderTarget::readback() const noexcept"
+        },
+        {
+          "line": 3975,
+          "lines": 16,
+          "name": "bool NativeRenderTarget::copy_rgba8(std::vector<std::uint8_t>& pixels) const"
+        },
+        {
+          "line": 3992,
+          "lines": 6,
+          "name": "bool NativeRenderTarget::copy_depth(std::vector<float>& depth) const"
+        },
+        {
+          "line": 3999,
+          "lines": 6,
+          "name": "bool NativeRenderTarget::copy_object_id(std::vector<std::uint32_t>& object_ids) const"
+        },
+        {
+          "line": 4006,
+          "lines": 19,
+          "name": "bool NativeRenderTarget::write_ppm(const std::filesystem::path& path) const noexcept"
+        },
+        {
+          "line": 4026,
+          "lines": 19,
+          "name": "bool NativeRenderTarget::write_object_id_ppm(const std::filesystem::path& path) const noexcept"
+        },
+        {
+          "line": 4046,
+          "lines": 11,
+          "name": "bool NativeRenderTarget::write_depth_f32(const std::filesystem::path& path) const noexcept"
+        },
+        {
+          "line": 4058,
+          "lines": 2,
+          "name": "MissionRuntime::MissionRuntime(std::uint32_t mission_id, const MissionAssetDatabase* assets) : mission_id_(mission_id), assets_(assets)"
+        },
+        {
+          "line": 4061,
+          "lines": 3,
+          "name": "MissionRuntime::MissionRuntime(const MissionDefinition& definition, const MissionAssetDatabase* assets) : mission_id_(definition.id), assets_(assets), definition_(&definition)"
+        },
+        {
+          "line": 4065,
+          "lines": 3,
+          "name": "RuntimeSnapshot MissionRuntime::snapshot() const noexcept"
+        },
+        {
+          "line": 4069,
+          "lines": 16,
+          "name": "bool MissionRuntime::restore(RuntimeSnapshot snapshot) noexcept"
+        },
+        {
+          "line": 4086,
+          "lines": 9,
+          "name": "bool MissionRuntime::set_definition(const MissionDefinition* definition) noexcept"
+        },
+        {
+          "line": 4096,
+          "lines": 45,
+          "name": "WorldFrame MissionRuntime::tick(float fixed_dt, InputFrame input)"
+        },
+        {
+          "line": 4142,
+          "lines": 13,
+          "name": "MissionExecution::MissionExecution(const MissionDefinition& definition, const MissionAssetDatabase* assets, const MissionObjectiveDatabase* objectives, const RadioMessageDatabase* radios, CampaignProgression* campaign, MissionWaveDirector* waves, MissionSequenceDirector* sequence, const InputMappingDatabase* input, MissionAiDirector* ai) : definition_(&definition), assets_(assets), objectives_(objectives), radios_(radios), campaign_(campaign), waves_(waves), sequence_(sequence), input_(input), ai_(ai), runtime_(definition, assets), scenario_(definition)"
+        },
+        {
+          "line": 4156,
+          "lines": 65,
+          "name": "bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept"
+        },
+        {
+          "line": 4222,
+          "lines": 17,
+          "name": "bool MissionExecution::dispatch(Event event) noexcept"
+        },
+        {
+          "line": 4240,
+          "lines": 3,
+          "name": "bool MissionExecution::activate_objective(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 4244,
+          "lines": 8,
+          "name": "bool MissionExecution::complete_objective(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 4253,
+          "lines": 4,
+          "name": "bool MissionExecution::fail_objective(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 4258,
+          "lines": 3,
+          "name": "bool MissionExecution::dispatch_radio(std::uint32_t id) noexcept"
+        },
+        {
+          "line": 4262,
+          "lines": 7,
+          "name": "bool MissionExecution::play_radio(std::uint32_t id, float duration_seconds) noexcept"
+        },
+        {
+          "line": 4270,
+          "lines": 26,
+          "name": "bool MissionSequenceDirector::dispatch_due(std::uint32_t mission_id, std::uint64_t tick, MissionExecution& execution) noexcept"
+        },
+        {
+          "line": 4297,
+          "lines": 6,
+          "name": "std::size_t MissionSequenceDirector::pending(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 4298,
+          "lines": 4,
+          "name": "std::count_if(entries_.begin(), entries_.end(), [mission_id](const Entry& entry)"
+        },
+        {
+          "line": 4304,
+          "lines": 6,
+          "name": "std::size_t MissionSequenceDirector::dispatched(std::uint32_t mission_id) const noexcept"
+        },
+        {
+          "line": 4305,
+          "lines": 4,
+          "name": "std::count_if(entries_.begin(), entries_.end(), [mission_id](const Entry& entry)"
+        },
+        {
+          "line": 4311,
+          "lines": 6,
+          "name": "MissionSequenceSnapshot MissionSequenceDirector::snapshot() const"
+        },
+        {
+          "line": 4318,
+          "lines": 22,
+          "name": "bool MissionSequenceDirector::restore(const MissionSequenceSnapshot& snapshot) noexcept"
+        },
+        {
+          "line": 4341,
+          "lines": 3,
+          "name": "void MissionSequenceDirector::reset() noexcept"
+        },
+        {
+          "line": 4345,
+          "lines": 3,
+          "name": "bool MissionExecution::lock_target(EntityId target) noexcept"
+        },
+        {
+          "line": 4349,
+          "lines": 3,
+          "name": "bool MissionExecution::fire_weapon(std::uint32_t weapon_id) noexcept"
+        },
+        {
+          "line": 4353,
+          "lines": 50,
+          "name": "WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept"
+        },
+        {
+          "line": 4404,
+          "lines": 5,
+          "name": "WorldFrame MissionExecution::run_replay(float fixed_dt, const ReplayLog& replay) noexcept"
+        },
+        {
+          "line": 4410,
+          "lines": 3,
+          "name": "RuntimeSnapshot MissionExecution::snapshot() const noexcept"
+        },
+        {
+          "line": 4414,
+          "lines": 3,
+          "name": "MissionDebrief MissionExecution::debrief() const"
+        },
+        {
+          "line": 4418,
+          "lines": 3,
+          "name": "bool MissionExecution::restore(RuntimeSnapshot snapshot) noexcept"
+        },
+        {
+          "line": 4422,
+          "lines": 30,
+          "name": "bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept"
+        },
+        {
+          "line": 4439,
+          "lines": 4,
+          "name": "std::sort(candidate.resource_identities.begin(), candidate.resource_identities.end(), [](const AssetRecord& left, const AssetRecord& right)"
+        },
+        {
+          "line": 4453,
+          "lines": 81,
+          "name": "bool MissionExecution::restore_checkpoint(const Checkpoint& checkpoint) noexcept"
+        },
+        {
+          "line": 4488,
+          "lines": 3,
+          "name": "std::find_if( checkpoint.combat_units.begin(), checkpoint.combat_units.end(), [record](const CombatUnitState& unit)"
+        },
+        {
+          "line": 4535,
+          "lines": 5,
+          "name": "WorldFrame MissionRuntime::run_replay(float fixed_dt, const ReplayLog& replay)"
+        }
+      ],
+      "kind": "source",
+      "lines": 4541
+    },
+    "reconstruction/ace-combat-6/src/sdl_input.cpp": {
+      "functions": [
+        {
+          "line": 15,
+          "lines": 53,
+          "name": "bool SdlInputProfile::load_manifest(const std::filesystem::path& path, SdlAxisMapping& axes, SdlKeyboardMapping& keyboard) noexcept"
+        },
+        {
+          "line": 69,
+          "lines": 7,
+          "name": "bool SdlAxisMapping::valid() const noexcept"
+        },
+        {
+          "line": 77,
+          "lines": 13,
+          "name": "bool SdlKeyboardMapping::valid() const noexcept"
+        },
+        {
+          "line": 91,
+          "lines": 60,
+          "name": "bool SdlInputAdapter::apply(const SDL_Event& event, InputFrame& frame, std::uint16_t& buttons, const InputMappingDatabase& mappings, EntityId subject, std::vector<Event>& events) const noexcept"
+        },
+        {
+          "line": 152,
+          "lines": 5,
+          "name": "void SdlInputAdapter::reset(InputFrame& frame, std::uint16_t& buttons) const noexcept"
+        },
+        {
+          "line": 158,
+          "lines": 6,
+          "name": "void SdlEventPump::close_gamepads() noexcept"
+        },
+        {
+          "line": 165,
+          "lines": 1,
+          "name": "SdlEventPump::~SdlEventPump()"
+        },
+        {
+          "line": 167,
+          "lines": 18,
+          "name": "bool SdlEventPump::initialize() noexcept"
+        },
+        {
+          "line": 186,
+          "lines": 6,
+          "name": "void SdlEventPump::shutdown() noexcept"
+        },
+        {
+          "line": 193,
+          "lines": 1,
+          "name": "SdlAudioDevice::~SdlAudioDevice()"
+        },
+        {
+          "line": 195,
+          "lines": 12,
+          "name": "bool SdlAudioDevice::initialize(const SDL_AudioSpec& spec) noexcept"
+        },
+        {
+          "line": 208,
+          "lines": 4,
+          "name": "bool SdlAudioDevice::queue(const void* samples, int bytes) noexcept"
+        },
+        {
+          "line": 213,
+          "lines": 10,
+          "name": "void SdlAudioDevice::shutdown() noexcept"
+        },
+        {
+          "line": 224,
+          "lines": 36,
+          "name": "bool SdlEventPump::pump(const SdlInputAdapter& adapter, InputFrame& frame, std::uint16_t& buttons, const InputMappingDatabase& mappings, EntityId subject, std::vector<Event>& events, bool& quit) noexcept"
+        },
+        {
+          "line": 261,
+          "lines": 1,
+          "name": "SdlWindow::~SdlWindow()"
+        },
+        {
+          "line": 263,
+          "lines": 8,
+          "name": "bool SdlWindow::create(const char* title, std::uint32_t width, std::uint32_t height, bool vulkan, bool hidden) noexcept"
+        },
+        {
+          "line": 272,
+          "lines": 3,
+          "name": "bool SdlWindow::show() noexcept"
+        },
+        {
+          "line": 276,
+          "lines": 5,
+          "name": "void SdlWindow::destroy() noexcept"
+        },
+        {
+          "line": 282,
+          "lines": 1,
+          "name": "SdlVulkanSurface::~SdlVulkanSurface()"
+        },
+        {
+          "line": 284,
+          "lines": 8,
+          "name": "bool SdlVulkanSurface::required_instance_extensions( std::vector<const char*>& extensions) noexcept"
+        },
+        {
+          "line": 293,
+          "lines": 9,
+          "name": "bool SdlVulkanSurface::create(const SdlWindow& window, VkInstance instance) noexcept"
+        },
+        {
+          "line": 303,
+          "lines": 6,
+          "name": "void SdlVulkanSurface::destroy() noexcept"
+        },
+        {
+          "line": 310,
+          "lines": 1,
+          "name": "VulkanInstance::~VulkanInstance()"
+        },
+        {
+          "line": 312,
+          "lines": 18,
+          "name": "bool VulkanInstance::create(const std::vector<const char*>& extensions) noexcept"
+        },
+        {
+          "line": 331,
+          "lines": 5,
+          "name": "void VulkanInstance::destroy() noexcept"
+        },
+        {
+          "line": 337,
+          "lines": 1,
+          "name": "VulkanDevice::~VulkanDevice()"
+        },
+        {
+          "line": 339,
+          "lines": 49,
+          "name": "bool VulkanDevice::create(VkInstance instance, VkSurfaceKHR surface) noexcept"
+        },
+        {
+          "line": 356,
+          "lines": 4,
+          "name": "std::any_of( extensions.begin(), extensions.end(), [](const VkExtensionProperties& extension)"
+        },
+        {
+          "line": 389,
+          "lines": 9,
+          "name": "void VulkanDevice::destroy() noexcept"
+        },
+        {
+          "line": 399,
+          "lines": 1,
+          "name": "VulkanSwapchain::~VulkanSwapchain()"
+        },
+        {
+          "line": 401,
+          "lines": 66,
+          "name": "bool VulkanSwapchain::create(const VulkanDevice& device, VkSurfaceKHR surface, std::uint32_t width, std::uint32_t height) noexcept"
+        },
+        {
+          "line": 410,
+          "lines": 3,
+          "name": "std::find_if(formats.begin(), formats.end(), [](const VkSurfaceFormatKHR& value)"
+        },
+        {
+          "line": 468,
+          "lines": 11,
+          "name": "void VulkanSwapchain::destroy() noexcept"
+        },
+        {
+          "line": 480,
+          "lines": 1,
+          "name": "VulkanFramePresenter::~VulkanFramePresenter()"
+        },
+        {
+          "line": 482,
+          "lines": 38,
+          "name": "bool VulkanFramePresenter::create(const VulkanDevice& device, const VulkanSwapchain& swapchain) noexcept"
+        },
+        {
+          "line": 521,
+          "lines": 93,
+          "name": "bool VulkanFramePresenter::present_frame(const NativeRenderTarget& target) noexcept"
+        },
+        {
+          "line": 615,
+          "lines": 42,
+          "name": "bool VulkanFramePresenter::present_clear(float red, float green, float blue, float alpha) noexcept"
+        },
+        {
+          "line": 658,
+          "lines": 20,
+          "name": "void VulkanFramePresenter::destroy() noexcept"
+        }
+      ],
+      "kind": "source",
+      "lines": 679
+    },
+    "reconstruction/ace-combat-6/src/session_save.cpp": {
+      "functions": [
+        {
+          "line": 16,
+          "lines": 13,
+          "name": "bool valid_campaign(const CampaignSaveSnapshot& snapshot) noexcept"
+        },
+        {
+          "line": 30,
+          "lines": 7,
+          "name": "bool valid_flight(const RuntimeSnapshot& flight) noexcept"
+        },
+        {
+          "line": 38,
+          "lines": 14,
+          "name": "bool valid_radio_playback(const RadioPlaybackSnapshot& playback, std::uint32_t mission_id) noexcept"
+        },
+        {
+          "line": 53,
+          "lines": 100,
+          "name": "bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept"
+        },
+        {
+          "line": 88,
+          "lines": 3,
+          "name": "std::find_if( checkpoint.combat_units.begin(), checkpoint.combat_units.end(), [record](const CombatUnitState& unit)"
+        },
+        {
+          "line": 154,
+          "lines": 5,
+          "name": "bool valid_session(const SessionSaveSnapshot& snapshot) noexcept"
+        },
+        {
+          "line": 160,
+          "lines": 7,
+          "name": "void write_u32(std::ostream& output, std::uint32_t value)"
+        },
+        {
+          "line": 168,
+          "lines": 6,
+          "name": "void write_u64(std::ostream& output, std::uint64_t value)"
+        },
+        {
+          "line": 175,
+          "lines": 5,
+          "name": "void write_f32(std::ostream& output, float value)"
+        },
+        {
+          "line": 181,
+          "lines": 10,
+          "name": "bool read_u32(std::istream& input, std::uint32_t& value)"
+        },
+        {
+          "line": 192,
+          "lines": 10,
+          "name": "bool read_u64(std::istream& input, std::uint64_t& value)"
+        },
+        {
+          "line": 203,
+          "lines": 6,
+          "name": "bool read_f32(std::istream& input, float& value)"
+        },
+        {
+          "line": 210,
+          "lines": 10,
+          "name": "void write_flight(std::ostream& output, const RuntimeSnapshot& flight)"
+        },
+        {
+          "line": 223,
+          "lines": 4,
+          "name": "void write_string(std::ostream& output, const std::string& value)"
+        },
+        {
+          "line": 228,
+          "lines": 7,
+          "name": "bool read_string(std::istream& input, std::string& value)"
+        },
+        {
+          "line": 236,
+          "lines": 6,
+          "name": "void write_unit_record(std::ostream& output, const UnitRecord& unit)"
+        },
+        {
+          "line": 243,
+          "lines": 5,
+          "name": "bool read_unit_record(std::istream& input, UnitRecord& unit)"
+        },
+        {
+          "line": 249,
+          "lines": 18,
+          "name": "void write_wave_snapshot(std::ostream& output, const MissionWaveSnapshot& snapshot)"
+        },
+        {
+          "line": 268,
+          "lines": 27,
+          "name": "bool read_wave_snapshot(std::istream& input, MissionWaveSnapshot& snapshot)"
+        },
+        {
+          "line": 296,
+          "lines": 59,
+          "name": "void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& checkpoint)"
+        },
+        {
+          "line": 356,
+          "lines": 114,
+          "name": "bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint, bool has_sequence, bool has_radio, bool has_resources, bool has_resource_contract, bool has_unit_records, bool has_waves, bool has_objective_conditions)"
+        },
+        {
+          "line": 471,
+          "lines": 7,
+          "name": "bool read_flight(std::istream& input, RuntimeSnapshot& flight)"
+        },
+        {
+          "line": 481,
+          "lines": 5,
+          "name": "bool SessionSaveStore::save(std::uint32_t slot, SessionSaveSnapshot snapshot)"
+        },
+        {
+          "line": 487,
+          "lines": 4,
+          "name": "const SessionSaveSnapshot* SessionSaveStore::load(std::uint32_t slot) const noexcept"
+        },
+        {
+          "line": 492,
+          "lines": 47,
+          "name": "bool SessionSaveStore::write_file(const std::filesystem::path& path) const"
+        },
+        {
+          "line": 540,
+          "lines": 58,
+          "name": "bool SessionSaveStore::read_file(const std::filesystem::path& path)"
+        }
+      ],
+      "kind": "source",
+      "lines": 599
+    },
+    "reconstruction/ace-combat-6/tests/campaign_progression_tests.cpp": {
+      "functions": [
+        {
+          "line": 8,
+          "lines": 6,
+          "name": "void require(bool condition, const char* expression, int line)"
+        },
+        {
+          "line": 17,
+          "lines": 119,
+          "name": "int main()"
+        }
+      ],
+      "kind": "test",
+      "lines": 135
+    },
+    "reconstruction/ace-combat-6/tests/mission01_compare_tests.cpp": {
+      "functions": [
+        {
+          "line": 10,
+          "lines": 6,
+          "name": "void require(bool condition, const char* expression, int line)"
+        },
+        {
+          "line": 16,
+          "lines": 16,
+          "name": "define REQUIRE(value) require((value), #value, __LINE__) std::pair<std::uint64_t, std::uint64_t> file_identity(const std::filesystem::path& path)"
+        },
+        {
+          "line": 34,
+          "lines": 97,
+          "name": "int main()"
+        }
+      ],
+      "kind": "test",
+      "lines": 130
+    },
+    "reconstruction/ace-combat-6/tests/native_hud_acceptance_tests.cpp": {
+      "functions": [
+        {
+          "line": 29,
+          "lines": 5,
+          "name": "bool add_common_assets(MissionAssetDatabase& assets)"
+        },
+        {
+          "line": 35,
+          "lines": 3,
+          "name": "MissionDefinition definition()"
+        },
+        {
+          "line": 39,
+          "lines": 5,
+          "name": "MissionLaunchDefinition launch()"
+        },
+        {
+          "line": 45,
+          "lines": 9,
+          "name": "bool render_hud(NativeRenderTarget& target, NativeHudRenderer& renderer, MissionExecution& execution, WorldFrame frame, HudProbe& result, const std::filesystem::path& ppm)"
+        },
+        {
+          "line": 55,
+          "lines": 69,
+          "name": "bool write_report(const std::filesystem::path& path, const HudProbe& live, const HudProbe& paused, const HudProbe& success, const HudProbe& failure, const WaveProbe& wave)"
+        },
+        {
+          "line": 125,
+          "lines": 11,
+          "name": "bool check_live_snapshot(const HudProbe& probe)"
+        },
+        {
+          "line": 139,
+          "lines": 96,
+          "name": "int main(int argc, char** argv)"
+        }
+      ],
+      "kind": "test",
+      "lines": 234
+    },
+    "reconstruction/ace-combat-6/tests/product_runtime_tests.cpp": {
+      "functions": [
+        {
+          "line": 17,
+          "lines": 6,
+          "name": "void require(bool condition, const char* expression, const char* file, int line)"
+        },
+        {
+          "line": 24,
+          "lines": 8,
+          "name": "std::uint64_t fnv64(std::string_view bytes)"
+        },
+        {
+          "line": 33,
+          "lines": 4,
+          "name": "void write_le_u16_at(std::string& bytes, std::size_t offset, std::uint16_t value)"
+        },
+        {
+          "line": 38,
+          "lines": 6,
+          "name": "void write_le_u32_at(std::string& bytes, std::size_t offset, std::uint32_t value)"
+        },
+        {
+          "line": 45,
+          "lines": 5,
+          "name": "void write_le_f32_at(std::string& bytes, std::size_t offset, float value)"
+        },
+        {
+          "line": 51,
+          "lines": 4,
+          "name": "void write_be_u16_at(std::string& bytes, std::size_t offset, std::uint16_t value)"
+        },
+        {
+          "line": 56,
+          "lines": 6,
+          "name": "void write_be_u32_at(std::string& bytes, std::size_t offset, std::uint32_t value)"
+        },
+        {
+          "line": 63,
+          "lines": 5,
+          "name": "void write_be_f32_at(std::string& bytes, std::size_t offset, float value)"
+        },
+        {
+          "line": 69,
+          "lines": 36,
+          "name": "std::string make_ndxr_be_strip_fixture()"
+        },
+        {
+          "line": 106,
+          "lines": 34,
+          "name": "std::string make_ndxr_fixture(std::uint32_t vertex_count, std::uint32_t index_count, std::uint32_t primitive_count, std::uint32_t vertex_stride, std::uint32_t index_size)"
+        },
+        {
+          "line": 141,
+          "lines": 3,
+          "name": "std::size_t ndxr_payload_offset(const std::string& bytes)"
+        },
+        {
+          "line": 151,
+          "lines": 33,
+          "name": "RasterFixture make_raster_fixture(const char* stable_id, std::vector<ac6::DecodedVertex> vertices, std::vector<std::uint32_t> indices, ac6::NativeIndexTopology topology)"
+        },
+        {
+          "line": 187,
+          "lines": 2154,
+          "name": "define REQUIRE(condition) require(static_cast<bool>(condition), #condition, __FILE__, __LINE__) int main()"
+        }
+      ],
+      "kind": "test",
+      "lines": 2340
+    },
+    "reconstruction/ace-combat-6/tests/session_save_tests.cpp": {
+      "functions": [
+        {
+          "line": 9,
+          "lines": 6,
+          "name": "void require(bool condition, const char* expression, int line)"
+        },
+        {
+          "line": 18,
+          "lines": 113,
+          "name": "int main()"
+        }
+      ],
+      "kind": "test",
+      "lines": 130
+    },
+    "reconstruction/ace-combat-6/tests/vulkan_surface_smoke.cpp": {
+      "functions": [
+        {
+          "line": 4,
+          "lines": 92,
+          "name": "include <vector> int main()"
+        }
+      ],
+      "kind": "test",
+      "lines": 95
+    },
+    "reports/code/0x820f7d38__FUN_820f7d38.cpp": {
+      "functions": [
+        {
+          "line": 14,
+          "lines": 4,
+          "name": "void FUN_820f7d38([[maybe_unused]] const std::uint64_t caller_context, std::uint32_t* const out_current_mode)"
+        }
+      ],
+      "kind": "source",
+      "lines": 17
+    },
+    "reports/code/0x821b6e58__Function_821B6E58.cpp": {
+      "functions": [
+        {
+          "line": 30,
+          "lines": 50,
+          "name": "std::uint64_t Function_821B6E58(std::uint64_t level_selector)"
+        }
+      ],
+      "kind": "source",
+      "lines": 79
+    },
+    "reports/code/0x821d1be8__Function_821D1BE8.cpp": {
+      "functions": [
+        {
+          "line": 12,
+          "lines": 12,
+          "name": "Ace6TreeEntryLink* Function_821D1BE8(const std::int32_t target_id, Ace6TreeEntryLink* link)"
+        }
+      ],
+      "kind": "source",
+      "lines": 23
+    },
+    "reports/code/0x82234dd0__FUN_82234dd0.cpp": {
+      "functions": [
+        {
+          "line": 16,
+          "lines": 18,
+          "name": "std::uint64_t FUN_82234dd0(const Ace6PackedSubrecordTable* const subrecord_table, const std::int32_t subrecord_index)"
+        }
+      ],
+      "kind": "source",
+      "lines": 33
+    },
+    "reports/code/0x822c3150__FUN_822c3150.cpp": {
+      "functions": [
+        {
+          "line": 12,
+          "lines": 5,
+          "name": "std::uint64_t FUN_822c3150(const RecordPoolRuntime* runtime, const std::uint64_t packed_handle)"
+        }
+      ],
+      "kind": "source",
+      "lines": 16
+    },
+    "reports/code/0x822c31e8__FUN_822c31e8.cpp": {
+      "functions": [
+        {
+          "line": 1,
+          "lines": 21,
+          "name": "std::optional<std::size_t> ac6::find_ndxr_function_822c31e8_key( const std::span<const std::byte> bytes, const std::int16_t key, const std::size_t start_index)"
+        }
+      ],
+      "kind": "source",
+      "lines": 21
+    },
+    "scripts/ac6_auto_reset_event_regression.cpp": {
+      "functions": [
+        {
+          "line": 30,
+          "lines": 6,
+          "name": "public: void Signal()"
+        },
+        {
+          "line": 36,
+          "lines": 10,
+          "name": "bool Wait(std::chrono::milliseconds timeout)"
+        },
+        {
+          "line": 62,
+          "lines": 35,
+          "name": "Outcome Run(int signals, std::chrono::microseconds reentry_delay)"
+        },
+        {
+          "line": 100,
+          "lines": 21,
+          "name": "int main()"
+        }
+      ],
+      "kind": "source",
+      "lines": 120
+    },
+    "scripts/ac6_condition_pingpong_regression.cpp": {
+      "functions": [
+        {
+          "line": 79,
+          "lines": 20,
+          "name": "virtual WaitResult Wait(std::chrono::milliseconds timeout)"
+        },
+        {
+          "line": 109,
+          "lines": 3,
+          "name": "public: EventHead(bool manual_reset, bool initial_state) : signal_(initial_state), manual_reset_(manual_reset)"
+        },
+        {
+          "line": 113,
+          "lines": 6,
+          "name": "bool Signal() override"
+        },
+        {
+          "line": 120,
+          "lines": 2,
+          "name": "private: bool signaled() const override"
+        },
+        {
+          "line": 122,
+          "lines": 5,
+          "name": "void post_execution() override"
+        },
+        {
+          "line": 135,
+          "lines": 3,
+          "name": "public: EventFifo(bool manual_reset, bool initial_state) : signal_(initial_state), manual_reset_(manual_reset)"
+        },
+        {
+          "line": 139,
+          "lines": 30,
+          "name": "WaitResult Wait(std::chrono::milliseconds timeout) override"
+        },
+        {
+          "line": 170,
+          "lines": 11,
+          "name": "bool Signal() override"
+        },
+        {
+          "line": 182,
+          "lines": 2,
+          "name": "private: bool signaled() const override"
+        },
+        {
+          "line": 184,
+          "lines": 5,
+          "name": "void post_execution() override"
+        },
+        {
+          "line": 196,
+          "lines": 2,
+          "name": "public: Mutant() : count_(0)"
+        },
+        {
+          "line": 199,
+          "lines": 1,
+          "name": "bool Signal() override"
+        },
+        {
+          "line": 201,
+          "lines": 11,
+          "name": "bool Release()"
+        },
+        {
+          "line": 213,
+          "lines": 4,
+          "name": "private: bool signaled() const override"
+        },
+        {
+          "line": 217,
+          "lines": 4,
+          "name": "void post_execution() override"
+        },
+        {
+          "line": 226,
+          "lines": 7,
+          "name": "WaitResult SignalAndWait(PosixConditionBase* to_signal, PosixConditionBase* to_wait_on, std::chrono::milliseconds timeout)"
+        },
+        {
+          "line": 246,
+          "lines": 10,
+          "name": "void WaitForValue(uint64_t wanted)"
+        },
+        {
+          "line": 258,
+          "lines": 6,
+          "name": "void SetValue(uint64_t next)"
+        },
+        {
+          "line": 283,
+          "lines": 65,
+          "name": "Outcome RunPingPong(bool fifo, uint64_t target, std::chrono::milliseconds deadline)"
+        },
+        {
+          "line": 351,
+          "lines": 48,
+          "name": "int main(int argc, char** argv)"
+        }
+      ],
+      "kind": "source",
+      "lines": 398
+    },
+    "source/recovered/render_state_types.h": {
+      "functions": [],
+      "kind": "header",
+      "lines": 19
+    },
+    "tools/ac6-net-interpose.c": {
+      "functions": [
+        {
+          "line": 72,
+          "lines": 6,
+          "name": "static unsigned short shift_port(unsigned short host_order)"
+        },
+        {
+          "line": 81,
+          "lines": 30,
+          "name": "define WINSOCK_FIONREAD 0x4004667FUL static void init(void)"
+        },
+        {
+          "line": 113,
+          "lines": 7,
+          "name": "static int is_inet(int fd)"
+        },
+        {
+          "line": 121,
+          "lines": 13,
+          "name": "static void dump_bt(const char *why)"
+        },
+        {
+          "line": 135,
+          "lines": 14,
+          "name": "int socket(int domain, int type, int protocol)"
+        },
+        {
+          "line": 150,
+          "lines": 27,
+          "name": "int bind(int fd, const struct sockaddr *addr, socklen_t len)"
+        },
+        {
+          "line": 178,
+          "lines": 10,
+          "name": "int setsockopt(int fd, int level, int optname, const void *val, socklen_t len)"
+        },
+        {
+          "line": 189,
+          "lines": 30,
+          "name": "int ioctl(int fd, unsigned long request, ...)"
+        },
+        {
+          "line": 220,
+          "lines": 24,
+          "name": "ssize_t recvfrom(int fd, void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)"
+        },
+        {
+          "line": 247,
+          "lines": 20,
+          "name": "ssize_t sendto(int fd, const void *buf, size_t len, int flags, const struct sockaddr *to, socklen_t tolen)"
+        },
+        {
+          "line": 268,
+          "lines": 14,
+          "name": "ssize_t recv(int fd, void *buf, size_t len, int flags)"
+        }
+      ],
+      "kind": "source",
+      "lines": 281
+    }
+  },
+  "limits": {
+    "function": 220,
+    "header": 1200,
+    "source": 1200,
+    "test": 1000
+  },
+  "schema": 1
+}
