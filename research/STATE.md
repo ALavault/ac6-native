@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-06T00:26:57+02:00
+Mise à jour : 2026-08-06T02:27:03+02:00
 
 ## Gate courant
 
@@ -249,3 +249,22 @@ calibration de scène comme parité retail sans association exacte.
   discriminant est le créateur ou registre d’unités lors d’une publication de
   vague; les gates `units_and_waves` et `retail_objectives` restent ouverts.
 - Rapport : `reports/cycle-1035-bridge-object-vtable-boundary.md`.
+
+## Slice frontière corpus scénario retail — 2026-08-06
+
+- Un scan borné parallèle des 926 entrées décodées, avec les encodages ASCII,
+  UTF-8, UTF-16LE et UTF-16BE, confirme que toutes les racines sont `FHM `;
+  aucun `SubMisTbl`, `ComTbl` ou `Maneuver` exact n'est qualifié.
+- Les candidats `SubMis` des entries 187 et 191 sont des fermetures UI/SWG,
+  pas des propriétaires de scénario. L'entrée 163 est une base `NSXR` de
+  shaders et l'entrée 230 une fermeture debrief UI. Les noms génériques
+  `Mission`/`Wave` et les marqueurs isolés `Obj`/`Act` restent rejetés sans
+  fermeture et décodage lossless.
+- Le contrôle Ghidra canonique de la chaîne `SubMisTblBin` à `0x8200F5A8`
+  ne trouve aucune référence ni matérialisation split sur 64 octets. Le
+  contrôle de la grammaire AC5 sur les entries AC6 0/9/119 produit zéro
+  candidat; aucune sémantique AC5 n'est transférée.
+- Cette frontière négative ne passe aucun gate J1. La prochaine arête utile
+  est le créateur ou registre d'unités au moment d'une publication de vague;
+  le census générique du cycle 1035 reste invalidé pour les unités.
+- Rapport : `reports/cycle-1036-retail-scenario-corpus-boundary.md`.

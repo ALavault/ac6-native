@@ -175,3 +175,21 @@ hypotheses:
     discriminator: Sample the qualified gameplay census, require an owning unit registry or creator identity, and reject the association if only a generic vtable and list order are available.
     evidence: reports/cycle-1035-bridge-object-vtable-boundary.md; bridge log SHA-256 bc74e35b7b8e9e34ea74e3e02d8633ef224f240dd149801d5f9016a79025831f.
     qualification: Rejected for the current evidence; 228 generic objects have no unit identity, faction, wave timing, or objective binding.
+  - id: H-RETAIL-SCENARIO-TEXT-CORPUS
+    status: tested
+    statement: A complete decoded scan of the AC6 PAC corpus exposes a qualified printable SubMisTbl, ComTbl, or Maneuver scenario table for Mission 01.
+    discriminator: Decode all 926 DATA.TBL entries, inspect ASCII/UTF-8/UTF-16LE/UTF-16BE, require an owning FHM closure, and classify every relevant candidate by its leaf family.
+    evidence: reports/cycle-1036-retail-scenario-corpus-boundary.md; DATA.TBL SHA-256 82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5.
+    qualification: Tested negative boundary; no exact SubMisTbl, ComTbl, or Maneuver token is qualified. Binary tables without text remain an open dynamic ownership problem.
+  - id: H-AC5-PACKED-NODE-GRAMMAR-IS-AC6-SCENARIO
+    status: rejected
+    statement: The little-endian packed-node grammar qualified for AC5 directly identifies AC6 Mission 01 scenario roots in entries 0, 9, or 119.
+    discriminator: Apply the neutral AC5 node parser to the three AC6 closures and require at least one bounded candidate with valid offsets and children.
+    evidence: reports/cycle-1036-retail-scenario-corpus-boundary.md.
+    qualification: Rejected as a transfer rule; zero candidates were found and no AC5 semantics are promoted to AC6.
+  - id: H-GHIDRA-SUBMISTBL-STRING-REFERENCE
+    status: rejected
+    statement: The canonical AC6 XEX has a statically referenced parser-error string at 0x8200F5A8 that can identify the Mission 01 scenario loader.
+    discriminator: Resolve references in the canonical Ghidra project and search a 64-byte PPC window for split-address materialization.
+    evidence: reports/cycle-1036-retail-scenario-corpus-boundary.md; canonical project ace-combat-6; target default.xex SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
+    qualification: "Rejected for this string only: zero references and zero split-materialization hits. Other parser symbols require separate qualification."
