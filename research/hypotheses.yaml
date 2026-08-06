@@ -229,3 +229,21 @@ hypotheses:
     discriminator: Decode the complete fifteen-entry family, compare exact root and leaf identities, inspect BRDB/BMAP/SWG ownership, and require an objective condition or unit/wave binding rather than package shape or mission-number correspondence.
     evidence: reports/cycle-1072-retail-briefing-package-boundary.md; family census SHA-256 80967c8584883457a262d7469c418943cf1250e73b5f26a096dd0209163a3fcc; entry 210 BRDB/BMAP/SWG hashes in the report.
     qualification: Rejected as the gameplay scenario owner; the family is a briefing/map/UI/audio package and exposes no qualified retail objective, wave, faction, or unit identity.
+  - id: H-RETAIL-OBJECTIVE-WAVE-OWNER-STATIC-BOUNDARY
+    status: open
+    statement: The canonical static evidence identifies an exact retail owner/consumer pair for Mission 01 objective or wave records.
+    discriminator: Require selector 4, stable record address, variant field, caller/LR context, and atomic insertion or activation in UnitManager or MissionManager after state40=8 selector44=4 type28=6 -> type28=8.
+    evidence: reports/cycle-1073-static-objective-wave-owner-boundary.md; XEX SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
+    qualification: Open; static evidence reduces the boundary to 0x820A7F48, 0x822A6560, 0x822A8570, 0x820A8E08 and consumer census 0x822707C8, but proves no retail publication or activation.
+  - id: H-BRIDGE-M01-AIRBORNE-GAMEPLAY-HANDOFF
+    status: qualified
+    statement: The current bridge route can reach the Mission 01 airborne gameplay update loop without loadout or launch force overrides.
+    discriminator: Use the fixed airborne recipe, hash the bridge binary and follow log, require UpInput/UpObj/UpCam/UpRadio, manager tick, player update, factory and stable object census markers.
+    evidence: reports/cycle-1080-bridge-airborne-owner-boundary.md; follow log SHA-256 2ca857a8f4f759902697a6a704f9afc9ce54fafa45c0a0e2dbc87fd1d8d48c85; binary SHA-256 fb5fea32ac3fb34aa2fe1be758151861efdf5ef6cc11d81fea4943d4178920ae.
+    qualification: Qualified as bridge-only gameplay handoff evidence; it does not qualify native runtime behavior or retail scenario semantics.
+  - id: H-ENTRY119-SAME-RUN-RANGE-READ-IS-CONSUMER
+    status: rejected
+    statement: A same-run DATA00.PAC read range overlapping entry 119 proves that the decoded entry is registered and consumed as the Mission 01 objective or wave owner.
+    discriminator: Require a hash-linked decode, registry insertion, consumer call and gameplay identity join in one run; a file-read range alone is insufficient.
+    evidence: reports/cycle-1080-bridge-airborne-owner-boundary.md; 443 reads over offset 0x0C928000 length 0x06EE1766; campaign-resource-bridge marker count 0.
+    qualification: Rejected for range-read-only evidence; entry 119 registration/consumer ownership remains open.

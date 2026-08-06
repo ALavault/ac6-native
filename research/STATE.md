@@ -89,6 +89,17 @@ Le gate `retail_objectives` reste ouvert; les fixtures P6 et la preuve bridge ne
 peuvent pas le fermer. Ne pas rouvrir selector, manager, UpHud, DATA.TBL[119]
 ou le renderer sans preuve contradictoire.
 
+## Borne owner/consumer objectifs-vagues — cycle 1073
+
+- La passe statique canonique ne qualifie aucune paire owner/consumer retail.
+  La frontière est réduite à `0x820A7F48`, ses constructeurs directs
+  `0x822A6560`, `0x822A8570`, `0x820A8E08`, et le consommateur générique
+  `0x822707C8`.
+- Aucun selector 4, record stable, champ variant ou insertion
+  `UnitManager`/`MissionManager` n'est établi. L'hypothèse historique d'un
+  créateur derrière `state40=8, selector44=4, type28=6 → type28=8` reste ouverte.
+- Artefact : `reports/cycle-1073-static-objective-wave-owner-boundary.md`.
+
 ## Slice raster P0 — 2026-08-05
 
 - Le test end-to-end `make_ndxr_be_strip_fixture` couvre triangle strip,
@@ -416,3 +427,24 @@ calibration de scène comme parité retail sans association exacte.
 - Rapport : `reports/cycle-1070-retail-scenario-exhaustive-cpu-boundary.md`.
   La prochaine frontière causale reste l'ownership dynamique d'une table
   binaire/scénario retail ; ne pas inventer les vagues ni les objectifs.
+
+## Handoff aérien et factory retail — cycle 1080
+
+- Le run bridge `/tmp/ac6-cycle-1080-airborne-qualified` atteint le gameplay
+  aérien avec le binaire hashé `fb5fea32…8920ae`, sans forçage loadout/launch,
+  sur NVIDIA Vulkan et `SDL_AUDIODRIVER=dummy`.
+- Les hooks gameplay observent `UpInput`, `UpObj`, `UpCam`, `UpRadio`, le tick
+  manager, les mises à jour joueur et la factory `0x820A7F48`. Le census reste
+  à 230 objets : joueur `0xB2470000`, enfant `0xB2470100`, zéro autre joueur,
+  et 228 objets au vtable `0x82009440`.
+- Le dispatcher et l'interpréteur de records sont très actifs, mais le record
+  observé est `SWG\0` et aucune insertion de faction, cible, unité, vague ou
+  objectif n'est reliée au `UnitManager`/`MissionManager`.
+- Entry 119 est lue dans le même run sur toute sa plage stockée : 443
+  requêtes `DATA00.PAC`. Le marqueur de bridge registry/consumer reste à
+  zéro ; cette corrélation de stockage ne qualifie pas l'entry 119 comme
+  propriétaire de scénario.
+- Rapport : `reports/cycle-1080-bridge-airborne-owner-boundary.md`.
+  Le handoff gameplay est qualifié comme borne bridge ; `retail_units_and_waves`
+  et `retail_objectives` restent ouverts. La prochaine frontière est le lien
+  exact record/scénario → insertion ou activation gameplay.
