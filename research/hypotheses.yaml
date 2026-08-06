@@ -1,5 +1,5 @@
 version: 1
-updated: 2026-08-05T14:35:00+02:00
+updated: 2026-08-06T04:45:00+02:00
 hypotheses:
   - id: H-GAMEPLAY-ACTIVE-BEHIND-BLACK
     status: supported
@@ -199,3 +199,15 @@ hypotheses:
     discriminator: Reach the qualified HUD gameplay route, then require a hook event with selector, caller/link-register context, result identity, and a stable object or registry transition.
     evidence: reports/cycle-1043-bridge-unit-factory-entry-boundary.md; bridge logs SHA-256 5bba586688d52633bb86af10234c36ec9648b7622121890f7668f4e08ec69447, cacbce2eb4e9be1c1d3f684c0b33562c5dd07b8d214a1e01d3bbfb7ed347af52, 996e6907d77cbf20bdd3c46fff40210ae3b5b684e5ad6aaad751ec82b14097e5.
     qualification: Tested precondition only; all runs stopped at storage browser type28=6 before any factory or constructor call, so no retail unit or wave semantics are promoted.
+  - id: H-BRIDGE-M01-STORAGE-TRANSITION-LANE
+    status: qualified
+    statement: The Mission 01 storage transition from type28=6 to type28=8 is supplied by the bridge intervention lane and is not native gameplay evidence.
+    discriminator: Build the current external source once with AC6_EXPERIMENT_LANE=stock and once with AC6_EXPERIMENT_LANE=bridge, use fresh profiles and the same bounded recipe, and compare the state sequence.
+    evidence: reports/cycle-1043-bridge-unit-factory-entry-boundary.md; reports/cycle-1047-current-source-bridge-storage-and-window-boundary.md; bridge binary SHA-256 c82042b60b78d2e2b69733a70499eb1243a9c5fb6e47b3db0fd70dc1b814a30e.
+    qualification: Qualified as a bridge-only storage boundary; type8/type10, the briefing image, and later bridge gameplay logs cannot pass a native gate or establish retail units, waves, objectives, HUD, or debrief semantics.
+  - id: H-BRIDGE-M01-TEXT-PROBE-BOUNDARY
+    status: tested
+    statement: A guest-text diagnostic can identify Mission 01 retail objective strings once the current bridge route reaches its gameplay handoff.
+    discriminator: Run a fresh profile with the bounded storage/window recipe, hash the binary and append-only log, and require type28=37 plus at least one qualified text record before assigning scenario semantics.
+    evidence: reports/cycle-1050-bridge-text-probe-window-boundary.md; bridge binary SHA-256 c94d00106afb23d105c5b3f1c24715124c1e62d01c39dd0b45cae7ffd4153a75.
+    qualification: Tested but unqualified; both diagnostic variants stopped before type28=37 and emitted no text record, so no retail objective or subtitle identity is promoted.

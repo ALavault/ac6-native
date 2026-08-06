@@ -1,0 +1,82 @@
+# Bounded bridge recipe for the SDL-window recreation boundary after Mission 01
+# cinematic. It intentionally stops sending input before the gameplay-window
+# handoff and only observes PRESENT progress afterward.
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+capture	game-data-browser
+key	Shift	0.1
+wait	selector44=10	20
+sleep	1
+capture	post-browser-cancel
+key	Left	0.1
+key	space	0.1
+wait	state40=9.*type28=5	20
+capture	create-game-data-prompt
+key	space	0.1
+sleep	2
+capture	post-create-confirm
+key	space	0.1
+sleep	5
+capture	post-file-selection
+wait	type28=[^ ]*6	20
+sleep	2
+capture	slot-create-prompt-ready
+key	Left	0.1
+key	space	0.1
+wait-pulse	type28=[^ ]*8	space
+capture	post-launch-type8
+key	space	0.1
+wait	type28=[^ ]*10	30
+capture	post-launch-type10
+key	space	0.1
+sleep	3
+capture	campaign-new-game
+key	space	0.1
+sleep	3
+capture	difficulty
+key	space	0.1
+sleep	3
+capture	controls
+key	space	0.1
+present	180	20
+capture	language
+key	space	0.1
+present	180	20
+capture	post-language-first-a
+key	space	0.1
+present	120	15
+capture	campaign-intro
+wait-pulse	\[ac6-campaign-transition\].*state=1->2	Escape
+capture	post-campaign-intro-skip
+sleep	5
+capture	mission-01-start
+key	space	0.1
+sleep	15
+capture	post-start-a
+key	space	0.1
+sleep	20
+capture	post-start-b
+key	space	0.1
+sleep	12
+capture	post-weapon-confirm
+key	Shift	0.1
+sleep	8
+capture	mission-submenu-ready
+key	space	0.1
+sleep	35
+capture	mission-launch
+sleep	60
+capture	mission-briefing
+key	space	0.1
+sleep	45
+capture	mission-cinematic
+sleep	30
+capture	post-cinematic-30s
+present	180	60
+capture	post-cinematic-observe-only

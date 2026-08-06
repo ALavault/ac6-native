@@ -281,3 +281,36 @@ calibration de scène comme parité retail sans association exacte.
   Le prochain run doit fermer l’entrée storage/save avant toute nouvelle
   instrumentation créateur; le census générique du cycle 1035 reste fermé.
 - Rapport : `reports/cycle-1043-bridge-unit-factory-entry-boundary.md`.
+
+## Frontière storage bridge depuis la source courante — 2026-08-06
+
+- Une reconstruction externe fraîche en `AC6_EXPERIMENT_LANE=bridge` avec le
+  source tree `b8b03c7a89dc7f23bcd7844d15aa5080d480bf11` atteint sur profil neuf
+  `type28=6 → selector44=7/type28=8 → selector44=8/type28=10`. Le binaire est
+  hashé `c82042b60b78d2e2b69733a70499eb1243a9c5fb6e47b3db0fd70dc1b814a30e`.
+- Le contrôle stock précédent reste à `state40=8, selector44=4, type28=6`.
+  Cette différence ferme la dépendance de la transition aux interventions
+  bridge `save-dialog-synthesis, force-cvars, fallback-allocator`; elle ne
+  qualifie aucun comportement natif.
+- Le recipe d’observation sans entrée a publié 180 `PRESENT` supplémentaires
+  après la cinématique. Le log contient 17 266 PRESENT, 200 enregistrements de
+  tâche Mission 01 et 583 entrées d’input canonique, mais aucune identité retail
+  d’unité/vague et aucune preuve native HUD. La capture affiche encore le
+  briefing retail; elle reste bridge-only.
+- La prochaine frontière est le handoff fenêtre/input vers le gameplay et son
+  équivalent natif, pas une nouvelle exploration storage ou renderer.
+- Rapport : `reports/cycle-1047-current-source-bridge-storage-and-window-boundary.md`.
+
+## Frontière probe texte bridge — 2026-08-06
+
+- Deux builds diagnostiques ont été exécutés sur le GPU Vulkan réel avec le
+  recipe déterministe de handoff. Le build avec préambule PPC forcé et le build
+  isolé avec logger activé mais préambule désactivé n'atteignent pas
+  `type28=37` après la route initiale.
+- Aucun log `[ac6-text*]`, aucune identité de texte d'objectif et aucun
+  événement d'unité/vague n'est produit. Ces runs ne qualifient donc ni la
+  présence ni l'absence d'un corpus texte retail.
+- Le macro de diagnostic reste externe et ne doit pas entrer dans le runtime
+  natif. La frontière causale reste le handoff gameplay puis l'identité du
+  créateur/registre retail, pas une interprétation de chaînes non capturées.
+- Rapport : `reports/cycle-1050-bridge-text-probe-window-boundary.md`.
