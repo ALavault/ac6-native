@@ -133,6 +133,12 @@ hypotheses:
     discriminator: Require diagnostic_point_writes=0, filled_fragment_writes>0, terrain unique pixels and f16 object-ID pixels with non-zero bboxes in one 1800-tick 1280x720 native capture.
     evidence: reports/mission01-native-captures/p1-camera-visible/README.md; capture-metrics.json SHA-256 62cf04295349d31cf59535aa7923be9b88ac590fe3697334d503e6346b242dcd; object-id.png SHA-256 22e2d244cbb412c6537b541f63984a2ec017601271fbad7c67c31544449030e6.
     qualification: Native J0 visibility conditions pass; the `(0,-40,0)` terrain transform is explicitly calibrated and is not claimed as retail transform parity.
+  - id: H-NATIVE-P5-RASTER-RECAPTURE
+    status: qualified
+    statement: The current native build still produces filled interior fragments and stable terrain/player attribution after an independent 1800-tick replay.
+    discriminator: Re-run the exact 1280x720 manifest/replay after the merge and require zero diagnostic point writes, non-zero filled fragments, non-degenerate depth, and a non-zero player stable-ID region.
+    evidence: reports/mission01-native-captures/p5-raster-recapture/README.md; capture-metrics.json SHA-256 7f02134a8c95ad391995c86f478eb40f80909aff204243af242a7250f72c4a3f; native-session.json SHA-256 0b509194669eccd022c6e27637b44f3d1df98d383a49ad037b45a63cb47ffeae.
+    qualification: Filled raster and native attribution remain qualified; retail material/texture ownership, topology parity, and final camera/clipping parity remain open.
   - id: H-NATIVE-HUD-DATA-PATH
     status: qualified
     statement: The native product can render a deterministic HUD overlay from WorldFrame and live MissionExecution state without demo constants or retail archive access.

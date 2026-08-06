@@ -354,3 +354,19 @@ calibration de scène comme parité retail sans association exacte.
 - Conclusion raster conservée : raster fill qualified ; raster fill still
   broken dans la voie retail complète tant que la chaîne de contenu n'est pas
   qualifiée ; topology is next boundary ; camera/clipping is next boundary.
+
+## Recapture raster native P5 — 2026-08-06
+
+- Le binaire natif courant a rejoué exactement 1 800 fixed ticks avec le même
+  manifeste/replay 1280x720. La recapture indépendante est versionnée sous
+  `reports/mission01-native-captures/p5-raster-recapture/`.
+- `diagnostic_point_writes=0`, `filled_fragment_writes=822161`, couverture
+  finale couleur `361984`, profondeur `361267`, et profondeur joueur
+  `0.00241196877..0.00522737764`.
+- L'object-ID attribue `42722` pixels finaux au drawable `f16` dans la bbox
+  `[452,240]..[1113,457]`; le terrain couvre `257545` pixels dans
+  `[0,366]..[1279,718]`. Cela confirme des surfaces intérieures remplies,
+  indépendamment des compteurs de draws.
+- La conclusion obligatoire reste : raster fill qualified ; raster fill still
+  broken pour le contenu retail complet ; topology is next boundary ;
+  camera/clipping is next boundary.
