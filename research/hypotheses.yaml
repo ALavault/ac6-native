@@ -193,3 +193,9 @@ hypotheses:
     discriminator: Resolve references in the canonical Ghidra project and search a 64-byte PPC window for split-address materialization.
     evidence: reports/cycle-1036-retail-scenario-corpus-boundary.md; canonical project ace-combat-6; target default.xex SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
     qualification: "Rejected for this string only: zero references and zero split-materialization hits. Other parser symbols require separate qualification."
+  - id: H-BRIDGE-M01-UNIT-FACTORY-ENTRY
+    status: tested
+    statement: The read-only factory and constructor hooks can qualify a Mission 01 retail unit at the first gameplay wave boundary.
+    discriminator: Reach the qualified HUD gameplay route, then require a hook event with selector, caller/link-register context, result identity, and a stable object or registry transition.
+    evidence: reports/cycle-1043-bridge-unit-factory-entry-boundary.md; bridge logs SHA-256 5bba586688d52633bb86af10234c36ec9648b7622121890f7668f4e08ec69447, cacbce2eb4e9be1c1d3f684c0b33562c5dd07b8d214a1e01d3bbfb7ed347af52, 996e6907d77cbf20bdd3c46fff40210ae3b5b684e5ad6aaad751ec82b14097e5.
+    qualification: Tested precondition only; all runs stopped at storage browser type28=6 before any factory or constructor call, so no retail unit or wave semantics are promoted.

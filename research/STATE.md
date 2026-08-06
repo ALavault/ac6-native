@@ -268,3 +268,16 @@ calibration de scène comme parité retail sans association exacte.
   est le créateur ou registre d'unités au moment d'une publication de vague;
   le census générique du cycle 1035 reste invalidé pour les unités.
 - Rapport : `reports/cycle-1036-retail-scenario-corpus-boundary.md`.
+
+## Frontière d’entrée du créateur retail — 2026-08-06
+
+- Les runs bridge instrumentés 1041–1043 ont conservé `SDL_AUDIODRIVER=dummy`
+  et un GPU Vulkan réel, mais se sont arrêtés avant le HUD gameplay à
+  `state40=8, selector44=4, type28=6`.
+- Les hooks read-only de `0x820A7F48`, `0x822A6560`, `0x822A8570` et
+  `0x820A8E08` n’ont produit aucun appel. Il n’existe donc aucune identité
+  retail nouvelle pour une unité, une vague ou un objectif.
+- Cette frontière ne passe aucun gate et ne réfute pas le créateur retail.
+  Le prochain run doit fermer l’entrée storage/save avant toute nouvelle
+  instrumentation créateur; le census générique du cycle 1035 reste fermé.
+- Rapport : `reports/cycle-1043-bridge-unit-factory-entry-boundary.md`.
