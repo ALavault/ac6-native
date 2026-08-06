@@ -1,0 +1,42 @@
+{
+  "cycle": 720,
+  "date": "2026-08-03",
+  "scope": "real DATA.TBL resource group to Vulkan frame",
+  "retail_join": {
+    "fhm_mdlp_walk": true,
+    "ndxr_mate_adjacent_join": true,
+    "ntxr_gidx_resolution": true,
+    "shader_contract_supplied_by_caller": true,
+    "strip_restart_ffff_conversion": true,
+    "triangle_list_flag_0x40": true
+  },
+  "asset_results": {
+    "selector_1": {"data_entry": 9, "polygon": 8, "vertices": 4, "indices": 6, "gidx": 268444181},
+    "selector_2": {"data_entry": 10, "polygon": 4, "vertices": 4, "indices": 6, "gidx": 268444181}
+  },
+  "vulkan_results": {
+    "selector_1": {"scene_changed": 8568, "hud_green": 342},
+    "selector_2": {"scene_changed": 8568, "hud_green": 342},
+    "camera_mode": "diagnostic_aabb_fit"
+  },
+  "validation": {
+    "ctest": "58/58 passed",
+    "ctest_time_seconds": 64.42
+  },
+  "claims": {
+    "real_retail_asset_to_vulkan_offscreen": true,
+    "interactive_mission_1": false,
+    "retail_tcam_parity": false,
+    "real_swapchain_present_observed": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/campaign_retail_frame.h": "1d57b19af1c7428aadb601fe7c8aee15ea59c94985d4bea5f92708b7891afc59",
+    "src/campaign_retail_frame.cpp": "58c8102c70c9539a20ab6c49c91404345e915c6bc7336c940c8003960b0c9a59",
+    "tests/campaign_retail_frame_tests.cpp": "3faf184d5be854a2828f45473db666a490226ad87669b88fc78fc1c1eb333cc2",
+    "tests/campaign_vulkan_retail_frame_tests.cpp": "c01960a49637ef6dd0cd29061e48f23062d3d0e6610a06a7596f26474b6feb8b",
+    "src/vulkan_backend.cpp": "dca36c4b1e826bad462f43aef8ffc9d66cf0958a8479b534184d5d6f2ead54c2",
+    "tests/vulkan_backend_tests.cpp": "e7e604dab65a18695ffe08a47dc5a22fb84d2eb7d35106cc3a02bfbdad082b46",
+    "CMakeLists.txt": "93afa67231745eff1f3733c7411b31975f87190abf1ef69de9e3ed23209c769d"
+  }
+}

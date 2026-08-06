@@ -1,0 +1,66 @@
+# Fresh-profile Mission 01 route with one causal gameplay variable only.
+# After the HUD baseline, hold positive pitch for one second between bounded
+# null-control windows. All campaign/menu inputs are route prerequisites.
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*37	20
+key	space	0.1
+wait	type28=[^ ]*35	20
+key	space	0.1
+wait	selector44=[^ ]*3	20
+key	Shift	0.1
+wait	selector44=[^ ]*10	20
+key	Left	0.1
+key	space	0.1
+wait	state40=9.*type28=5	20
+key	space	0.1
+sleep	2
+key	space	0.1
+sleep	5
+wait	type28=[^ ]*6	20
+present	120	20
+key	Left	0.1
+sleep	1
+key	Left	0.1
+key	space	0.1
+wait-pulse	type28=[^ ]*8	space
+key	space	0.1
+wait	type28=[^ ]*10	20
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+present	180	20
+key	space	0.1
+present	180	20
+key	space	0.1
+present	120	15
+wait-pulse	\[ac6-campaign-transition\].*state=1->2	Escape
+sleep	5
+key	space	0.1
+sleep	15
+key	space	0.1
+sleep	20
+key	space	0.1
+sleep	12
+key	Shift	0.1
+sleep	8
+key	space	0.1
+sleep	35
+key	space	0.1
+sleep	10
+key	space	0.1
+sleep	10
+key	Escape	0.1
+sleep	10
+capture	flight-hud-null-start
+sleep	3
+capture	flight-hud-null-end
+key	w	1.0
+capture	flight-pitch-release
+sleep	3
+capture	flight-pitch-zero-return

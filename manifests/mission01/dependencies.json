@@ -1,0 +1,15 @@
+{
+  "schema": "ac6.mission01.static-closure.v1",
+  "mission_id": 1,
+  "retail": {
+    "root": "game-files",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "data00_pac_sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+    "data01_pac_sha256": "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4",
+    "bounded_entries": [9, 119],
+    "fhm_parse_failures": 0
+  },
+  "status": "partial_static_closure",
+  "open_associations": ["transforms", "materials", "textures", "camera"],
+  "payload_policy": "no retail payload retained; manifests and hashes only"
+}

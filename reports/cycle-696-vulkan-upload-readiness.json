@@ -1,0 +1,22 @@
+{
+  "cycle": "696",
+  "classification": "native_vulkan_upload_readiness_gate",
+  "validation": {
+    "ctest_total": 51,
+    "ctest_passed": 51,
+    "vulkan_backend_smoke": "passed",
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "backend_header_sha256": "a9761d490935507643cc0d0eeb0571d9edfe97402805a50e74c4aaea35ff1f6f",
+    "backend_source_sha256": "9bba95a88dccf5da74a12286ea957165d74d0b59604f392418077876e101606f",
+    "backend_test_sha256": "0f72aaa47d651f19de47aa9bf9bd83a961a0bb316de955041561f2d2fa74535c",
+    "backend_executable_sha256": "aae824b450fdc45071d651dd7a7cb28ea61a285b0674db675ffd9e714a72dc6d"
+  },
+  "readiness_invariants": [
+    "descriptor_rejected_before_upload",
+    "descriptor_allowed_after_shader_read_transition",
+    "duplicate_upload_rejected"
+  ],
+  "retail_claim": "none_for_visible_gameplay_or_mission_2"
+}

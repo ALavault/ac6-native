@@ -1,0 +1,42 @@
+{
+  "cycle": 778,
+  "lane": "bridge",
+  "stock_gameplay_or_scenario_proven": false,
+  "run": {
+    "start": "2026-08-04T11:40:28+02:00",
+    "end": "2026-08-04T11:45:18+02:00",
+    "display": ":97",
+    "duration_seconds": 285,
+    "exit": "bounded_timeout_cleanup"
+  },
+  "observations": {
+    "black_world_with_hud": true,
+    "mode_task_game": {"object":"0xB8EA0400","vtable":"0x82064384","last_sample_frame":11808},
+    "mission_manager": {"object":"0xB0E80000","vtable":"0x8206457C","hsm_vtable":"0x82064648","last_sample_frame":11809},
+    "phases_progressing": ["UpInput","UpObj","UpCam","UpRadio"],
+    "unit_manager": {"object":"0xB0FB7F10","vtable":"0x82055190","object_count":230},
+    "player": {"object":"0xB2470000","vtable":"0x820568D4","count":1},
+    "other_player_count": 0,
+    "raw_inputs_observed": {"pitch_ly":32767,"roll_lx":32767,"button":"0x0100","right_trigger":255},
+    "flight_hook_calls": 0,
+    "player_object_size": 256,
+    "player_plus_10672_owner_join": "rejected",
+    "allocator_poison_observed_at_rejected_offset": "0xFEFEFEFE"
+  },
+  "classification": "CModeTaskGame, gameplay phases and a player wrapper exist; the next non-graphical boundary is the player's child list and transform/update owner",
+  "validation": {
+    "build": "pass",
+    "pal_ctest": {"passed":63,"failed":0,"skipped":4},
+    "generated_corpus_modified": false,
+    "xenia_runs": 0,
+    "foreign_processes_touched": false
+  },
+  "identity": {
+    "workspace_commit":"442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_diff_sha256":"cf1f98a4a8dc32d339353f5c2d0406f275f002451c0b07d82eea40a8acf959b8",
+    "runtime_commit":"b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_diff_sha256":"fe46948412b4160bfcfe3afe58d38d91aa825560eea22b13a6c3b0bdab71f9da",
+    "executable_sha256":"c5a55554cb9a78ffbd79725043907c7e93470bf4ce28707173fa6fdb7f9d96d5",
+    "runtime_log_sha256":"ffa67fdbb8c91c6835488f6dddf092e8974890c1eafe35571286bf9c06b3882c"
+  }
+}

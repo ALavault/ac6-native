@@ -1,0 +1,31 @@
+{
+  "cycle": 719,
+  "date": "2026-08-03",
+  "scope": "generic native campaign frame plus HUD submission",
+  "frame_submit": {
+    "requires_hud": true,
+    "world_batch_path": true,
+    "hud_overlay_path": true,
+    "same_persistent_target": true,
+    "same_render_pass": true
+  },
+  "validation": {
+    "ac6_vulkan_backend_tests": "pass",
+    "ac6_vulkan_sdl_window_tests": "pass_controlled_skip",
+    "full_pal_ctest": "56/56 passed",
+    "ctest_time_seconds": 62.85
+  },
+  "claims": {
+    "campaign_frame_hud_renderer_seam": true,
+    "interactive_mission_1": false,
+    "retail_hud_visual_parity": false,
+    "real_swapchain_present_observed": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "1b6760519d58bcec83c027f59536fe910edb08a64af149446d7c3450ee0c9d8a",
+    "src/vulkan_backend.cpp": "dfaf035251e74977edd47493f2056a2f479ec80facba78a23d5d502a294b89fd",
+    "tests/vulkan_backend_tests.cpp": "e7e604dab65a18695ffe08a47dc5a22fb84d2eb7d35106cc3a02bfbdad082b46",
+    "CMakeLists.txt": "cde06ac4664028113cf052f149bc43060bf005b846e973939d8c07b9b4c29b46"
+  }
+}

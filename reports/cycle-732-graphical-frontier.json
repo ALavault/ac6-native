@@ -1,0 +1,31 @@
+{
+  "cycle": 732,
+  "date": "2026-08-04",
+  "scope": "graphical frontier, near-plane clipping, entry-9 static inventory",
+  "capture_classification": {
+    "visible_window": true,
+    "retail_hud_parity": false,
+    "gameplay_camera": false,
+    "mission2_fit_mesh_diagnostic": true,
+    "terrain_or_skybox_presented": false
+  },
+  "metrics": {
+    "scene_changed": 4439,
+    "world_changed": 11,
+    "textured_changed": 1,
+    "flight_world_pixels": 12
+  },
+  "entry9": {
+    "decoded_sha256": "cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05",
+    "ndxr_models_total": 292,
+    "static_candidates": 4,
+    "static_environment_ownership_proved": false
+  },
+  "implementation": {
+    "near_plane_clipped_projection": true,
+    "strict_projection_contract_preserved": true,
+    "clipping_changed_presented_metrics": false,
+    "mission2_screenshot_requires_explicit_stage": true,
+    "mission2_frame_class": "fit_mesh_diagnostic"
+  }
+}

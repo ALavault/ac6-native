@@ -1,0 +1,21 @@
+{
+  "cycle": "684",
+  "classification": "native_generic_campaign_progression_contract",
+  "tests": {
+    "ctest_total": 46,
+    "ctest_passed": 46,
+    "asset_tools_total": 8,
+    "asset_tools_passed": 8,
+    "campaign_progression_test_sha256": "85ce5b4e58fa35d0c3547cc57c45d6f56eafcf53295b75e5a4c5f9cd3574953f"
+  },
+  "artifacts": {
+    "header_sha256": "adf930008e68965552f7b6c6a4b749f37208e5a48d0f9f336e29872d65838074",
+    "source_sha256": "5dab19b663525eb0eee217aa2b0043e71af761c66319caefb5eb499f14228539",
+    "test_sha256": "45698262896fe5284bf88ba6d9919257e49f478ff72bf9d7164d78137c823156"
+  },
+  "synthetic_route": {
+    "mission_1": {"selector": 1, "dpl_resource_id": 9, "data_table_entry": 9},
+    "mission_2": {"selector": 2, "dpl_resource_id": 10, "data_table_entry": 10}
+  },
+  "retail_claim": "none_for_selector_2"
+}

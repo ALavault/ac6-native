@@ -1,0 +1,49 @@
+{
+  "cycle": 681,
+  "date": "2026-08-03",
+  "lane": "bridge",
+  "binary": {
+    "path": "out/build/linux-bridge-relwithdebinfo/ac6recomp",
+    "sha256": "9620c0ca50ea28ecbf20c854737aa9d878ff149c67953c7eb949e46525853317"
+  },
+  "route": "scripts/ac6-first-mission-fresh-loadout.steps",
+  "output": "reports/logs/cycle-681d-d5b4-sample-zero",
+  "diagnostic": {
+    "cvar": "ac6_d5b4_texture_sample_override",
+    "value": 1,
+    "scope": {
+      "pixel_shader_hash": "D5B4F4A878949938",
+      "texture_fetch_index": 0,
+      "replacement": "float4(0,0,0,0)",
+      "stage": "after_sample_before_xenos_postprocessing"
+    },
+    "marker_count": 1
+  },
+  "source_logs": {
+    "follow_log_sha256": "df3aeb2ea3a3c22d0be8aa3240fc7e0a21c9077d4be3bf99595658404fc71719",
+    "runtime_log_sha256": "75e3b1c54ff34d83d828c8bbd050b14132de909425a2acced5c6720c5b45dcef",
+    "null_bind_count": 0,
+    "fatal_assert_unresolved_count": 0
+  },
+  "captures": {
+    "step-72-mission-flight-candidate.png": {
+      "sha256": "842f0a33e6cea98be5ea7ac6bb34b640363412aeaf654aece7a769416b48703a",
+      "baseline": "byte_identical"
+    },
+    "step-75-post-objective-confirm.png": {
+      "sha256": "50dab74f1a725ff12f82657b90640a0ba320843ed58ec36531b4ee4aa3f8a577",
+      "baseline_cycle675": "d908bb848783e0459f83634eaeea7caabaf39e68683949700e6ae82d9b101cc5",
+      "absolute_channel_delta": 14608719
+    },
+    "step-78-flight-hud-baseline.png": {
+      "sha256": "d5fa3b72adaad424282d748ebb75f4aba22c32c54fab90d6072dbb3fd4499b2c",
+      "baseline_cycle675": "e052e1d98f3cfa7568381d45259727b3c9ecf27e9d1bc9eb9dade2d4ad977da9",
+      "absolute_channel_delta": 464
+    }
+  },
+  "classification": {
+    "cutscene_aircraft": "still_white",
+    "gameplay_world": "still_black",
+    "sample_content_or_mip_alone": "deprioritized"
+  }
+}

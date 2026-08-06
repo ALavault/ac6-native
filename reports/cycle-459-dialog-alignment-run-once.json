@@ -1,0 +1,63 @@
+{
+  "entries": {
+    "2a380aa292ac237b2ec7727d653bfab677697580b7fbd074efe8838855a82084": {
+      "command": [
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "--out",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-459-dialog-alignment",
+        "--duration",
+        "65",
+        "--display",
+        ":96",
+        "--capture-at",
+        "0",
+        "--startup-timeout",
+        "120",
+        "--keys",
+        "0:Escape:0.1,2:space:0.1",
+        "--wait-for",
+        "type28=30",
+        "--wait-pulse",
+        "Escape+space:0.1:2",
+        "--wait-stall-timeout",
+        "20",
+        "--step-file",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ac6-dialog-alignment.steps",
+        "--",
+        "--ac6_log_ui_dispatch=true",
+        "--user_data_root=/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-459-dialog-alignment/user-data"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 73.434923,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "resolved": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh",
+        "sha256": "2067b752dc4f627bc7cce9f741eeba27c6bf4b73c07814692cc5c28b4cf307a2"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T21:18:33Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "f170b8f3a343e3ef931ec0d9a2480363ca67dd880ce9327c1a867eecb2e862c6",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6-run.sh": "2067b752dc4f627bc7cce9f741eeba27c6bf4b73c07814692cc5c28b4cf307a2",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/default.xex": "c6ca3556c3a7278d42326bbd894d0740203824525f1ebc6a84e0730126d3b2bf",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ac6-dialog-alignment.steps": "4656a34d88ad72807cd6f56e5d717ad0d4c4886008005b8a58863ef866d58d9b"
+      },
+      "name": "ac6-cycle459-dialog-alignment-runtime",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-459-dialog-alignment/ac6recomp.log": "fd6b527605356647543b2a99ce2629275208e2d422a334a86a10944aa5d0e341",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reports/logs/cycle-459-dialog-alignment/step-02-missing-game-data.png": "47e5f3a7158c958fa3022b2dfccf3fb62dd5d4d3dabcc8e1d7868823d3190bc1"
+      },
+      "pid": 1273568,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T21:17:19Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

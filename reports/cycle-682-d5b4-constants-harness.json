@@ -1,0 +1,32 @@
+{
+  "cycle": 682,
+  "date": "2026-08-03",
+  "binary_sha256": "f2eb1fa6a569ecfa1feef0e871549622364461876b144392946e2b49b57f450f",
+  "diagnostic": "ac6_log_d5b4_constants=true",
+  "attempts": [
+    {
+      "output": "reports/logs/cycle-682-d5b4-constants",
+      "route": "ac6-first-mission-fresh-loadout.steps",
+      "follow_log_sha256": "b8ab5a3ce0413457d6104b4f84e022afefa89a1bccd6becff9e92dc658ae08dd",
+      "d5b4_constant_records": 0,
+      "boundary": "step 73 window transition"
+    },
+    {
+      "output": "reports/logs/cycle-682b-d5b4-no-const",
+      "route": "ac6-first-mission-fresh-loadout.steps",
+      "follow_log_sha256": "94ba71b9f732ab83557683edee7dc6f09c5e19b5e8515ed28524bf16c2a52bf2",
+      "d5b4_constant_records": 0,
+      "boundary": "step 73 window transition",
+      "control": "diagnostic disabled"
+    },
+    {
+      "output": "reports/logs/cycle-682e-d5b4-constants",
+      "route": "ac6-first-mission-launch-final.steps",
+      "follow_log_sha256": "aa564e5c84262102644165c8dade40fb7bc45bb19ad54fa1939fd2722f03a919",
+      "d5b4_constant_records": 0,
+      "boundary": "campaign transition timeout"
+    }
+  ],
+  "classification": "harness_only_no_graphics_evidence",
+  "next_gate": "existing_save_or_scene_window_before_d5b4_draw"
+}

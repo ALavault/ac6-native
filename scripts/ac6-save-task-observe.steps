@@ -1,0 +1,7 @@
+# Read-only save task/state experiment. Starts after the task publishes type30.
+capture	async-result-type30
+key	space	0.1
+wait	response12=[1-9]	10
+capture	modal-response-published
+wait	\[ac6-save-inner\].*before=9.*after=[0-8]	20
+capture	post-modal-consume

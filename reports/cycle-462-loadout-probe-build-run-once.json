@@ -1,0 +1,39 @@
+{
+  "entries": {
+    "48b2d57228a5b88a716992ee19d2680417e890f5452428e60b248262f61addce": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt",
+        "--target",
+        "ac6recomp",
+        "-j16"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 65.590341,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-02T16:04:52Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/CMakeLists.txt": "9a2eeac376bebde8e1bc8c0a151cd8ace314a272a731bd460482a0fab07b7e6f",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_backend_fixes/ac6_ui_input_dispatch_probe.cpp": "b43010bfb2027b275cba53f772e6fb7137ceebc6473d65e9f91beaa2f61a7b8d"
+      },
+      "name": "ac6-cycle-462-loadout-probe-build",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-rt/ac6recomp": "e45a5fc08622a0735cbb7414e3db9fa72a7fbcbf993540927cb4d745f96a7b62"
+      },
+      "pid": 1679271,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-02T16:03:46Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

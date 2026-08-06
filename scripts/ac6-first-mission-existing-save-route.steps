@@ -1,0 +1,36 @@
+# The harness waits for selector44=3 before starting this recipe.
+capture	existing-save-browser
+key	space	0.1
+wait	type=[^ ]*6	20
+capture	existing-save-create-prompt
+sleep	1
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type=[^ ]*8	20
+key	space	0.1
+wait	type=[^ ]*10	20
+capture	existing-save-created
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait	\[ac6-first-mission-task\]	30
+key	Escape	0.1
+sleep	15
+key	space	0.1
+sleep	5
+capture	aircraft-select
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	12
+capture	native-ready-observation

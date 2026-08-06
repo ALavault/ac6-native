@@ -1,0 +1,46 @@
+{
+  "cycle": 729,
+  "date": "2026-08-04",
+  "scope": "native flight pose to full Scene geometry raster coverage",
+  "presentation": {
+    "window_system": "X11 via Xvfb",
+    "width": 640,
+    "height": 360,
+    "mission_1_data_table_entry": 9,
+    "flight_projection_changed": true,
+    "flight_world_pixels": 12,
+    "flight_pixels_with_hud": 4440,
+    "scene_changed": 4439,
+    "world_changed": 11,
+    "textured_changed": 1,
+    "mission_1_completed": true,
+    "save_file_restored": true,
+    "mission_2_presented": true,
+    "mission_2_changed": 6974,
+    "mission_2_hud_green": 4428
+  },
+  "validation": {
+    "targeted_ctest_total": 5,
+    "targeted_ctest_pass_or_skip": 5,
+    "targeted_ctest_skipped_dummy": 1,
+    "targeted_ctest_seconds": 1.67,
+    "full_ctest_total": 63,
+    "full_ctest_pass_or_skip": 63,
+    "full_ctest_skipped_dummy": 1,
+    "full_ctest_seconds": 62.55
+  },
+  "claims": {
+    "flight_pose_reaches_raster": true,
+    "full_scene_geometry_batch_used": true,
+    "textured_material_parity": false,
+    "mission_2_presented": true,
+    "mission_2_flown_or_completed": false,
+    "physical_gamepad_loop": false
+  },
+  "hashes": {
+    "tests/campaign_vulkan_sdl_present_tests.cpp": "683ae136110a35756e76aceff2b32dc2c0085192bff03360deb77ed2dec68677",
+    "include/ac6/campaign_runtime.h": "1eec85c10a60a7259af890ed08dc4ec32ab4de1c1cd17b9fa0ee7c5e2eea3561",
+    "src/campaign_runtime.cpp": "df1e1b249a756a9916e4b5ffc44b157a04c773dbb2a87ec597159e0a1c5851dd",
+    "tests/campaign_runtime_tests.cpp": "4eac5fe15ed3aa53f67c43d23e4c337821ec8374f6aa49d84bc4e96fa7aed624"
+  }
+}

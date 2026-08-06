@@ -1,0 +1,36 @@
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+key	space	0.1
+present	120	15
+key	space	0.1
+present	90	10
+key	space	0.1
+present	90	10
+key	space	0.1
+present	90	10
+key	space	0.1
+present	90	10
+key	space	0.1
+present	180	15
+key	space	0.1
+present	180	15
+capture	campaign-intro
+key	Escape	0.1
+wait	source=live-single-member-wrapper	30
+wait	\[ac6-campaign-transition\]	10
+present	60	10
+capture	post-transition-1s
+present	600	20
+capture	post-transition-11s

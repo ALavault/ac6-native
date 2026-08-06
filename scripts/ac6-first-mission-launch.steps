@@ -1,0 +1,42 @@
+# Reach Mission 01, advance the briefing into the mission submenu, then
+# confirm Start Mission and observe the first flight frame.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+key	space	0.1
+present	120	20
+key	space	0.1
+present	90	20
+key	space	0.1
+present	90	20
+key	space	0.1
+present	90	20
+key	space	0.1
+present	90	20
+key	space	0.1
+present	180	30
+key	space	0.1
+present	180	30
+key	Escape	0.1
+wait	\[ac6-first-campaign-level-bridge\]	60
+sleep	20
+key	space	0.1
+present	120	30
+capture	mission-submenu
+key	space	0.1
+present	180	30
+capture	mission-launch
+key	space	0.1
+present	300	45
+capture	flight-candidate

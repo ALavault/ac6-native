@@ -1,0 +1,40 @@
+{
+  "cycle": 706,
+  "date": "2026-08-03",
+  "scope": "synthetic Vulkan xyz+uv vertex input and indexed mesh draw",
+  "vertex_layout": {
+    "stride_bytes": 20,
+    "location_0": "R32G32B32_SFLOAT offset 0",
+    "location_1": "R32G32_SFLOAT offset 12",
+    "shader": "glslang-generated SPIR-V",
+    "z_consumed_by_vertex_shader": true
+  },
+  "draw": {
+    "vertices": 4,
+    "indices": 6,
+    "topology": "triangle_list",
+    "textured_readback": true
+  },
+  "validation": {
+    "vulkan_backend_test": "pass",
+    "ctest": "53/53 passed",
+    "ctest_time_seconds": 40.14,
+    "whitespace_check": "pass"
+  },
+  "claims": {
+    "generic_xyz_uv_gpu_layout": true,
+    "retail_xenos_vertex_layout": false,
+    "retail_primitive_semantics": false,
+    "ac6_shader_parity": false,
+    "swapchain_presentation": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "e796f2f4252621d0c4fa04a2f250c66c1cbdc9e37ca983544c385d5eb1c17da2",
+    "src/vulkan_backend.cpp": "eb48e7ee5fe15ecbc65194be8a46321bb6d4137937b69d86a6c0fbfa7f50057f",
+    "tests/vulkan_backend_tests.cpp": "c512695a0cd3a620affe2ae1234c0d5014021d034ffd2b8575fa527ae43b856f",
+    "tests/fixtures/vulkan_mesh.vert": "ed1d2615d5034e0788de406bd70d3d51c6bedabc9e3728251f9a13609f0009e3",
+    "tests/fixtures/vulkan_mesh_spirv.h": "330c0b72b9c2169820a45dd9fe8d83951db8cb1ebe52c45e3039e3141f089649"
+  }
+}

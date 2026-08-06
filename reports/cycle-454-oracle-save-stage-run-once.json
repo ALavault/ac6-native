@@ -1,0 +1,74 @@
+{
+  "entries": {
+    "07e0db9637976821cf3b60e30f8fd06a654021f4ff511b91cd208fb5ec83b2b2": {
+      "command": [
+        "install",
+        "-D",
+        "-m",
+        "0644",
+        ".tools/xenia-canary-windows/16e1eb8/app/content/E030000042B27D70/4E4D07D1/00000001/sav_acecombat6/save.dat",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content/B13EBABEBABEBABE/4E4D07D1/00000001/sav_acecombat6/save.dat"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 0.005678,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "install",
+        "resolved": "/usr/lib/cargo/bin/coreutils/install",
+        "sha256": "cb59ca98ea72c452f643aad98d8b9096fc32598d9ffbda25c6c0e6342f206106"
+      },
+      "failure_count": 1,
+      "finished_at": "2026-08-01T05:46:38Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/xenia-canary-windows/16e1eb8/app/content/E030000042B27D70/4E4D07D1/00000001/sav_acecombat6/not_00000000.dat": "3d6da616d7fa0ba019217fc52c92050c40d560b7bbc80a36dac6dc2e44406d3b",
+        "/fastdata/lavaulta/auto-re-agent/.tools/xenia-canary-windows/16e1eb8/app/content/E030000042B27D70/4E4D07D1/00000001/sav_acecombat6/save.dat": "aadc0302d6e06b39e4b27231a39934062182d5faa05d25e244cd01baae88f626"
+      },
+      "missing_outputs": [
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content/B13EBABEBABEBABE/4E4D07D1/00000001/sav_acecombat6/not_00000000.dat"
+      ],
+      "name": "ac6-cycle454-stage-oracle-save-copy",
+      "pid": 1440567,
+      "returncode": 66,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T05:46:38Z",
+      "status": "failed"
+    },
+    "bfb2d53b42575d7e75f94ee4ad3b430714637f73f338e41f0ba9726269657187": {
+      "command": [
+        "install",
+        "-m",
+        "0644",
+        ".tools/xenia-canary-windows/16e1eb8/app/content/E030000042B27D70/4E4D07D1/00000001/sav_acecombat6/save.dat",
+        ".tools/xenia-canary-windows/16e1eb8/app/content/E030000042B27D70/4E4D07D1/00000001/sav_acecombat6/not_00000000.dat",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content/B13EBABEBABEBABE/4E4D07D1/00000001/sav_acecombat6"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 0.005611,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "install",
+        "resolved": "/usr/lib/cargo/bin/coreutils/install",
+        "sha256": "cb59ca98ea72c452f643aad98d8b9096fc32598d9ffbda25c6c0e6342f206106"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T05:46:49Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/xenia-canary-windows/16e1eb8/app/content/E030000042B27D70/4E4D07D1/00000001/sav_acecombat6/not_00000000.dat": "3d6da616d7fa0ba019217fc52c92050c40d560b7bbc80a36dac6dc2e44406d3b",
+        "/fastdata/lavaulta/auto-re-agent/.tools/xenia-canary-windows/16e1eb8/app/content/E030000042B27D70/4E4D07D1/00000001/sav_acecombat6/save.dat": "aadc0302d6e06b39e4b27231a39934062182d5faa05d25e244cd01baae88f626"
+      },
+      "name": "ac6-cycle454-stage-oracle-save-copy",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content/B13EBABEBABEBABE/4E4D07D1/00000001/sav_acecombat6/not_00000000.dat": "2745b3c93456e9541fe095fdd15f4289fd631874ed0bfb60910ef2e394b4690e",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/content/B13EBABEBABEBABE/4E4D07D1/00000001/sav_acecombat6/save.dat": "2b1c9d4a1b0d742c3aff24e66f3f67c7c813b291a26305a6c1f5b3a9b8035653"
+      },
+      "pid": 1440769,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T05:46:49Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

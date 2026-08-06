@@ -1,0 +1,25 @@
+{
+  "cycle": "694",
+  "classification": "native_vulkan_ntxr_descriptor_binding",
+  "validation": {
+    "ctest_total": 51,
+    "ctest_passed": 51,
+    "vulkan_backend_smoke": "passed",
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "backend_header_sha256": "72791a4529b3c026595eb69f2e47286c27d32ac7d7f678c5b5142dd70edfcd57",
+    "backend_source_sha256": "711dc75742f18e4d132a647c1b6fd2ce08e0a12def356e70078b87c046f8cc2b",
+    "backend_test_sha256": "d9db6cd7540504769b9a7cc58299a4f0f473151d99947ad3029e7fa1be8f9829",
+    "backend_executable_sha256": "75a54f37519aac323352289e0b9987d78f4a261e2b6abf83b69922ef29f78d2b"
+  },
+  "descriptor_contract": [
+    "image_view_created",
+    "sampler_created",
+    "descriptor_layout_created",
+    "descriptor_pool_bounded",
+    "descriptor_set_updated",
+    "descriptor_freed_before_image_destroy"
+  ],
+  "retail_claim": "none_for_render_target_or_mission_2_presentation"
+}

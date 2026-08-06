@@ -1,0 +1,42 @@
+{
+  "cycle": 701,
+  "date": "2026-08-03",
+  "scope": "Xenos tiled/endian BC block preservation and PAL selector-2 manifest",
+  "ntxr": {
+    "decoded_format": "BC3",
+    "fixture_extent": [128, 128],
+    "rgba8_first_pixel": [255, 0, 0, 255],
+    "compressed_block_bytes": 16384,
+    "first_block_prefix_hex": "ff0000000000000000f80000",
+    "xenos_tiled_2d": true,
+    "endian_8_in_16": true
+  },
+  "mission_2_manifest": {
+    "selector": 2,
+    "dpl_resource_id": 10,
+    "data_table_entry": 10,
+    "bank": 0,
+    "offset": "0x01cc8000",
+    "stored_size": 2860059,
+    "expanded_size": 10232304,
+    "interactive_runtime_qualification": false,
+    "manifest_sha256": "ca25ba8b15324163ceab4495aa924cc427e3cf3b1317cd88ead3d6a1fcd5cf8f"
+  },
+  "validation": {
+    "ntxr_test": "pass",
+    "vulkan_backend_test": "pass",
+    "ctest": "51/51 passed",
+    "ctest_time_seconds": 39.50,
+    "git_diff_check": "pass"
+  },
+  "source_sha256": {
+    "include/ac6/ntxr.h": "34b6c014f383edbbbfe60ae4c608dcfe9f1c5c7e327f74fccd2c4b490257f2f1",
+    "src/ntxr.cpp": "f972b65c74823c5b6cac682563e26240400a46678b7251dae8e83bc5893bc8bb",
+    "tests/ntxr_tests.cpp": "4f9d5df2b0b76729271c18e58ed15e76e01422d6b1d515e24f3862592c115f08"
+  },
+  "claims": {
+    "native_block_preservation": true,
+    "retail_mission_2_runtime": false,
+    "save_unlock": false
+  }
+}

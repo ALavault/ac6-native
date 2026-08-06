@@ -1,0 +1,140 @@
+// ===========================================
+// Ghidra:    FileCreateDialog_821C4FA0
+// Address:   0x821c4fa0
+// Signature: undefined FileCreateDialog_821C4FA0(void)
+// Callers:   1  |  Callees: 6
+// ===========================================
+
+
+void FileCreateDialog_821C4FA0(void)
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  int iVar3;
+  char cVar4;
+  
+  iVar3 = __savegprlr_14();
+  *(undefined4 *)(iVar3 + 0x18c) = 0xf6000;
+  *(undefined4 *)(iVar3 + 0x188) = 0;
+  *(undefined4 *)(iVar3 + 0x184) = 2;
+switchD_821c5030_default:
+  switch(*(undefined4 *)(iVar3 + 0x40)) {
+  case 0:
+    *(undefined4 *)(*(int *)(iVar3 + 4) + 0x50) = 0;
+    *(undefined4 *)(iVar3 + 0x40) = 1;
+    goto switchD_821c5030_default;
+  case 1:
+    cVar4 = FileCreateState_821C56F8(iVar3,0,0,1);
+    if (cVar4 == '\0') goto LAB_821c51f0;
+    if (*(int *)(iVar3 + 0x24) == 3) {
+      *(undefined4 *)(iVar3 + 0x18) = 1;
+      *(undefined4 *)(iVar3 + 0x20) = 1;
+      *(undefined4 *)(iVar3 + 0x1c) = 0x25;
+      *(undefined4 *)(iVar3 + 0xc) = 0;
+      *(undefined4 *)(iVar3 + 0x40) = 2;
+      goto switchD_821c5030_default;
+    }
+    if (*(int *)(iVar3 + 0x24) != 0) {
+      *(undefined4 *)(iVar3 + 0x18) = 1;
+      *(undefined4 *)(iVar3 + 0x20) = 1;
+      *(undefined4 *)(iVar3 + 0x1c) = 0x24;
+      *(undefined4 *)(iVar3 + 0xc) = 0;
+      *(undefined4 *)(iVar3 + 0x40) = 7;
+      goto switchD_821c5030_default;
+    }
+    break;
+  case 2:
+    if (*(int *)(iVar3 + 0xc) == 0) goto LAB_821c51f0;
+    if (*(int *)(iVar3 + 0xc) != 1) goto LAB_821c51c4;
+    *(undefined4 *)(iVar3 + 0x18) = 10;
+    *(undefined4 *)(iVar3 + 0x20) = 1;
+    *(undefined4 *)(iVar3 + 0x40) = 3;
+    goto switchD_821c5030_default;
+  case 3:
+    *(undefined4 *)(iVar3 + 0x184) = 0;
+    cVar4 = FileCreateTask_821C5258(iVar3,1);
+    if (cVar4 == '\0') goto LAB_821c51f0;
+    *(undefined4 *)(iVar3 + 0x20) = 1;
+    if (*(int *)(iVar3 + 0x24) == 0) {
+      *(undefined4 *)(iVar3 + 0x18) = 0xb;
+      *(undefined4 *)(*(int *)(iVar3 + 4) + 0x50) = 0;
+      iVar1 = *(int *)(iVar3 + 4);
+      if (*(int *)(iVar1 + 0x50) == 1) {
+        uVar2 = *(undefined4 *)(iVar1 + 0x4c);
+      }
+      else {
+        uVar2 = *(undefined4 *)(iVar1 + 0x48);
+      }
+      Function_821C33A0(iVar3 + 0x50,uVar2,1,0xffffffff8206780c,0xffffffff820542c0);
+      *(undefined4 *)(iVar3 + 0x40) = 4;
+    }
+    else {
+      *(undefined4 *)(iVar3 + 0x18) = 1;
+      *(undefined4 *)(iVar3 + 0x1c) = 0x24;
+      *(undefined4 *)(iVar3 + 0xc) = 0;
+      *(undefined4 *)(iVar3 + 0x40) = 7;
+    }
+    goto switchD_821c5030_default;
+  case 4:
+    cVar4 = Function_821C5FE8(iVar3);
+    if (cVar4 != '\0') goto code_r0x821c5188;
+    goto LAB_821c51f0;
+  case 5:
+    if (*(int *)(iVar3 + 0xc) == 0) goto LAB_821c51f0;
+LAB_821c51c4:
+    *(undefined4 *)(iVar3 + 0x18) = 1;
+    *(undefined4 *)(iVar3 + 0x20) = 1;
+    *(undefined4 *)(iVar3 + 0x1c) = 0x24;
+    *(undefined4 *)(iVar3 + 0xc) = 0;
+    *(undefined4 *)(iVar3 + 0x40) = 7;
+    goto switchD_821c5030_default;
+  case 6:
+    if (*(int *)(iVar3 + 0xc) == 0) goto LAB_821c51f0;
+    break;
+  case 7:
+    goto switchD_821c5030_caseD_7;
+  case 8:
+    *(undefined4 *)(iVar3 + 0x18) = 0;
+    *(undefined4 *)(iVar3 + 0x20) = 1;
+    *(undefined4 *)(iVar3 + 0x40) = 0;
+    *(undefined4 *)(iVar3 + 0x24) = 0;
+    Function_82382F10(1);
+    return;
+  default:
+    goto switchD_821c5030_default;
+  }
+  *(undefined4 *)(iVar3 + 0x40) = 8;
+  goto switchD_821c5030_default;
+code_r0x821c5188:
+  *(undefined4 *)(iVar3 + 0x18) = 1;
+  *(undefined4 *)(iVar3 + 0x20) = 1;
+  *(undefined4 *)(iVar3 + 0xc) = 0;
+  if (*(int *)(iVar3 + 0x24) == 0) {
+    *(undefined4 *)(iVar3 + 0x1c) = 0x23;
+    *(undefined4 *)(iVar3 + 0x40) = 6;
+  }
+  else {
+    *(undefined4 *)(iVar3 + 0x1c) = 0x22;
+    *(undefined4 *)(iVar3 + 0x40) = 5;
+  }
+  goto switchD_821c5030_default;
+switchD_821c5030_caseD_7:
+  if (*(int *)(iVar3 + 0xc) != 0) {
+    if (*(int *)(iVar3 + 0xc) != 1) {
+      *(undefined4 *)(iVar3 + 0x24) = 6;
+      *(undefined4 *)(iVar3 + 0x40) = 0;
+      Function_82382F10(1);
+      return;
+    }
+    *(undefined4 *)(iVar3 + 0x24) = 1;
+    *(undefined4 *)(iVar3 + 0x40) = 0;
+    Function_82382F10(1);
+    return;
+  }
+LAB_821c51f0:
+  Function_82382F10(0);
+  return;
+}
+
+

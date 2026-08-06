@@ -1,0 +1,59 @@
+{
+  "cycle": 702,
+  "date": "2026-08-03",
+  "scope": "file-backed bounded PAL campaign runtime pipeline",
+  "asset_root": "game-files",
+  "data_table": {
+    "entry_count": 926,
+    "pack_count": 2,
+    "sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5"
+  },
+  "routes": [
+    {
+      "selector": 1,
+      "dpl_resource_id": 9,
+      "data_table_entry": 9,
+      "bank": 0,
+      "offset": "0x01028000",
+      "stored_size": 13234234,
+      "expanded_size": 42446032
+    },
+    {
+      "selector": 2,
+      "dpl_resource_id": 10,
+      "data_table_entry": 10,
+      "bank": 0,
+      "offset": "0x01cc8000",
+      "stored_size": 2860059,
+      "expanded_size": 10232304
+    }
+  ],
+  "bounded_reads": {
+    "DATA00.PAC": 2,
+    "DATA01.PAC": 0,
+    "whole_archive_read": false
+  },
+  "validation": {
+    "runtime_test": "pass",
+    "retail_asset_test": "pass",
+    "retail_asset_test_without_root": "skipped_77",
+    "ctest": "52/52 passed",
+    "ctest_time_seconds": 40.31,
+    "git_diff_check": "pass"
+  },
+  "claims": {
+    "file_backed_native_loader": true,
+    "selector_1_physical_route": true,
+    "selector_2_physical_route": true,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false,
+    "retail_save_unlock": false,
+    "vulkan_gameplay_presentation": false
+  },
+  "source_sha256": {
+    "include/ac6/campaign_runtime.h": "6718a99f19356edb1673af0f77d2256bcacf255a2baffd8cfca1317cea8504aa",
+    "src/campaign_runtime.cpp": "b292f72ae8129a032222ca6cb04b1f9c8c05be62fa2d25027e8bf1c5fa726d9b",
+    "tests/campaign_retail_asset_tests.cpp": "0281d6ae1cd035babe78e0090d7a871ce4adbd1b1536d1dd384c9db90759b1ff",
+    "CMakeLists.txt": "a3debe48d3df643f22c5a1d0425db26047825e69396f7ea329db5fd25763cf23"
+  }
+}

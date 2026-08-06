@@ -1,0 +1,54 @@
+{
+  "cycle": 722,
+  "date": "2026-08-03",
+  "scope": "STANDBY runtime vers frame Vulkan",
+  "runtime_phases": ["idle", "loadout", "briefing", "standby", "active", "complete"],
+  "confirm_action": {
+    "action_slot": 0,
+    "qualified_from_physical_button": "A",
+    "launch_without_edge_rejected": true,
+    "launch_with_edge_accepted": true
+  },
+  "selector_1": {
+    "data_table_entry": 9,
+    "standby_frame_submitted": true,
+    "standby_hud_green": 300,
+    "active_frame_submitted": true,
+    "camera_path": "Scene/dd01_01a/dd01_01a_01/Tcam__c01.mop",
+    "world_transforms_joined": 16,
+    "active_scene_changed": 0,
+    "note": "mesh initial sous-pixellaire à 128x128"
+  },
+  "selector_2": {
+    "data_table_entry": 10,
+    "same_generic_runtime_pipeline": true,
+    "active_scene_changed": 8568,
+    "active_hud_green": 300
+  },
+  "validation": {
+    "targeted_ctest_pass": 6,
+    "targeted_ctest_total": 6,
+    "targeted_ctest_seconds": 1.12,
+    "full_ctest_pass": 59,
+    "full_ctest_total": 59,
+    "full_ctest_seconds": 62.89
+  },
+  "claims": {
+    "standby_to_active_a_gate": true,
+    "real_asset_manifest_loader_runtime": true,
+    "interactive_flight": false,
+    "real_vulkan_swapchain": false,
+    "retail_save": false,
+    "mission_2_unlock": false
+  },
+  "hashes": {
+    "include/ac6/campaign_runtime.h": "5b352a864c9d87fba48c9b0ef77a117c8b7a3dd9a6788b10e341541160db0261",
+    "src/campaign_runtime.cpp": "63e6e310aeb49d4add5199d9ff6780960357ffdce910b78c81f2a9f640fbe85a",
+    "include/ac6/campaign_vulkan_frontend.h": "b7e4f9bea904899ce6d9170a82c3b02657c3ebc63ca765d87cad93547f8f84cb",
+    "src/campaign_vulkan_frontend.cpp": "e230216f870dd175759244d196446364b04b279bdcb1bdf59d5eadecfc030c8a",
+    "tests/campaign_runtime_tests.cpp": "addfff39f7f7e134fed675f17a9dc42f5a7111cf734c7e87ea3fa0ff85732085",
+    "tests/campaign_vulkan_frontend_tests.cpp": "5445df628ceb3e162e8f50655d7f8e580ae59ad4abda9c9e1bd0ef2e9d5d7344",
+    "tests/campaign_vulkan_retail_frame_tests.cpp": "e60fc4c1c706afaca24c268a8a5faa37ec58a588ad052ad251a2202cdc3a060a",
+    "CMakeLists.txt": "8784567665fb1e7707b11a984a8c563a31b6fff1b9367d77fd802fbaff5be7b5"
+  }
+}

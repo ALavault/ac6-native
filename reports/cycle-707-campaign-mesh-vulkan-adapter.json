@@ -1,0 +1,33 @@
+{
+  "cycle": 707,
+  "date": "2026-08-03",
+  "scope": "CampaignMesh CPU to Vulkan xyz+uv adapter",
+  "adapter": {
+    "cpu_vertices": 4,
+    "cpu_indices": 6,
+    "pipeline": "mesh_xyz_uv",
+    "primitive_flags_interpreted": false,
+    "texture_identity_resolved": false,
+    "readback_rgba": [127, 127, 127, 127]
+  },
+  "validation": {
+    "vulkan_backend_test": "pass",
+    "ctest": "53/53 passed",
+    "ctest_time_seconds": 39.82,
+    "whitespace_check": "pass"
+  },
+  "claims": {
+    "campaign_mesh_gpu_adapter": true,
+    "ndxr_clip_space_proven": false,
+    "retail_camera_matrices": false,
+    "retail_mate_texture_binding": false,
+    "ac6_world_render": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "0d9ab85396f514899a962e9cb21d63cdec57c2e8a4711f3f8bcf445dc54b14e7",
+    "src/vulkan_backend.cpp": "e00654b27903e999b64e46239c5e6b560411ba4639c13ec4051fa7ce5eb61d27",
+    "tests/vulkan_backend_tests.cpp": "8c7d4f6b232650a580fd7c8f1163a1adf6f939c088fa4de9d14cfa07f3268637"
+  }
+}

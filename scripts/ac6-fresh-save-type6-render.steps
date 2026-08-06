@@ -1,0 +1,20 @@
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*37	20
+key	space	0.1
+wait	type28=[^ ]*35	20
+key	space	0.1
+wait	selector44=[^ ]*3	20
+key	Shift	0.1
+wait	selector44=[^ ]*10	20
+sleep	1
+key	Left	0.1
+key	space	0.1
+wait	state40=9.*type28=5	20
+key	space	0.1
+sleep	2
+key	space	0.1
+wait	type28=[^ ]*6	20
+sleep	3
+capture	fresh-save-type6

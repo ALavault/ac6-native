@@ -1,0 +1,16 @@
+// ===========================================
+// Ghidra:    FileCreateDialog_821C4FA0
+// Address:   0x821c4fa0
+// Signature: undefined FileCreateDialog_821C4FA0(void)
+// Callers:   1  |  Callees: 6
+// ===========================================
+
+
+void FileCreateDialog_821C4FA0(void)
+
+{
+  __savegprlr_14();
+  return;
+}
+
+

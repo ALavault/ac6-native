@@ -1,0 +1,83 @@
+{
+  "entries": {
+    "a3a8eaa7007cb6d97aa2f6e0e69d4d80bfd78bbb805c29f0bd0251d9d32f32ae": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text",
+        "-j16",
+        "--target",
+        "ac6recomp"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 25.246935,
+      "environment_digest": "73796e74977b6cc6a16647927d8c565b07f8003352d357f4b486ef8a3984dcb3",
+      "environment_names": [
+        "PATH"
+      ],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T05:09:18Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/CMakeLists.txt": "52f436dcbb308b393608dd73ca65b49058259cd8b644249e15ae33d648f967bc",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/CMakeCache.txt": "4d496f1ed39172509c78fd7eefc8a803ae1d1a8bfce83e8f116bfcc322fd707b",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_guest_text_probe.cpp": "fbb76235c462019fa0c20aedb3561346f101fe31b076a6c6d5fa43917f9940d4",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_guest_text_probe.h": "ba5bdc7178d796a30e7d7dfc0f62bf9290101f0b46c65cda4513582a8ac18c83",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_ppc_text_probe_prelude.h": "a0982fc930123589be78d05098c39cea312603e52eef3a8eba7b5d047e582b07"
+      },
+      "name": "ac6-cycle454-text-prepare-build",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/ac6recomp": "3dab0b42acc72d8cdb94d10d2f2d257dfd0a063ebe49a4cd69fbfaaf66d6b1fa"
+      },
+      "pid": 1282432,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T05:08:52Z",
+      "status": "passed"
+    },
+    "fc78b3d17d5ab99d725f7a6f5307bdf19260498dbbfba771b0635a4113bcbd68": {
+      "command": [
+        "cmake",
+        "--build",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text",
+        "-j16",
+        "--target",
+        "ac6recomp"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 9.173501,
+      "environment_digest": "73796e74977b6cc6a16647927d8c565b07f8003352d357f4b486ef8a3984dcb3",
+      "environment_names": [
+        "PATH"
+      ],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T05:15:32Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/CMakeLists.txt": "52f436dcbb308b393608dd73ca65b49058259cd8b644249e15ae33d648f967bc",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/CMakeCache.txt": "4d496f1ed39172509c78fd7eefc8a803ae1d1a8bfce83e8f116bfcc322fd707b",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_guest_text_probe.cpp": "47bda5123f17d097de2f8f6333604c3d065f24a70906588fb91764663713fa14",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_guest_text_probe.h": "ba5bdc7178d796a30e7d7dfc0f62bf9290101f0b46c65cda4513582a8ac18c83",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/src/ac6_ppc_text_probe_prelude.h": "a0982fc930123589be78d05098c39cea312603e52eef3a8eba7b5d047e582b07"
+      },
+      "name": "ac6-cycle454-text-prepare-build",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/ac6recomp": "35be44c60ce33a003b597c80e60b943a34eb74506a551a931920a42dcafaa062"
+      },
+      "pid": 1311657,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T05:15:23Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

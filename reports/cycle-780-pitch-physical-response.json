@@ -1,0 +1,52 @@
+{
+  "cycle": 780,
+  "lane": "bridge",
+  "stock_gameplay_or_scenario_proven": false,
+  "single_gameplay_variable": "pitch_positive",
+  "raw_input": {
+    "on": "2026-08-04T12:24:05.463+02:00",
+    "ly": 32767,
+    "off": "2026-08-04T12:24:06.447+02:00",
+    "zero_controls_before_and_after": true
+  },
+  "ownership": {
+    "player": "0xB2470000",
+    "player_vtable": "0x820568D4",
+    "child": "0xB2470100",
+    "child_dispatch_table": "0x82007A10",
+    "update_pc": "0x822A6710"
+  },
+  "physical_observation": {
+    "field": "player+160 copied from child+128",
+    "null_start": {"time": "12:24:02.536", "bits": "0x3E6F6339", "float": 0.233776942},
+    "null_pre_input": {"time": "12:24:04.885", "bits": "0x3E6D55AC", "float": 0.231772125},
+    "during_pitch": {"time": "12:24:05.756", "bits": "0x3E9A79B9", "float": 0.301709920},
+    "post_release": {"time": "12:24:06.739", "bits": "0x3F267EA4", "float": 0.650369883},
+    "null_drift": -0.002004817,
+    "first_pitch_delta": 0.069937795,
+    "classification": "physical_response_supported"
+  },
+  "canonical_command_join": {
+    "status": "open",
+    "rejected_candidate": "r5 0x82A0ACAC halfwords",
+    "next_candidate": "child+380/+382/+536/+538 at dispatch 0x822270A0"
+  },
+  "g8_status": "supported_not_qualified",
+  "validation": {
+    "build": "pass",
+    "pal_ctest": {"passed": 63, "failed": 0, "skipped": 4},
+    "generated_tree_sha256": "f42fa2c4c1ec3bfb061003ef7074f73881e968ef2719f7f78e59190d1c5af73d",
+    "generated_corpus_modified": false,
+    "xenia_runs": 0,
+    "foreign_processes_touched": false
+  },
+  "identity": {
+    "workspace_commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_diff_sha256_before_report": "655522cfaa0e2ce228cebda3ebaf22390ddb19bca6d34cde8012e52268508830",
+    "runtime_commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_diff_sha256": "fe46948412b4160bfcfe3afe58d38d91aa825560eea22b13a6c3b0bdab71f9da",
+    "probe_sha256": "e28bc28eb1a8008a4feecb952952b16fdedc39f8ea837e7a5458adbfcff67d67",
+    "executable_sha256": "330ee1eda8d0a61a85d1ab045a756c4027f139f63a5ac02b004c8d3ab6f619ee",
+    "runtime_log_sha256": "bb41df1d479c428fcd4b2f6ea3e63307e9718b7b8b0b8b7477c5b828d4ad9ba8"
+  }
+}

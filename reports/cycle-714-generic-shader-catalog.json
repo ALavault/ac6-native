@@ -1,0 +1,41 @@
+{
+  "cycle": 714,
+  "date": "2026-08-03",
+  "scope": "generic qualified Vulkan shader catalog",
+  "catalog": {
+    "data_driven": true,
+    "initial_entries": ["A1863AF658456A14/D5B4F4A878949938"],
+    "backend_d5b4_branch": false,
+    "mission_2_extension": true
+  },
+  "retail_asset_gate": {
+    "entry_9_native_bindings": 1021,
+    "entry_10_native_bindings": 85,
+    "synthetic_zero_hash_shader": false
+  },
+  "validation": {
+    "xenos_shader_tests": "pass",
+    "vulkan_backend_tests": "pass",
+    "campaign_retail_asset_tests": "pass",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 61.12
+  },
+  "claims": {
+    "generic_shader_catalog": true,
+    "retail_material_identity": true,
+    "unique_runtime_material_selection": false,
+    "retail_spirv_byte_parity": false,
+    "swapchain_presentation": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_material.h": "e6a3904cd2520ad1d03fa5de8fe6fee8039d869327c027dc777c16c1cef27ee2",
+    "src/vulkan_material.cpp": "c9ac4366d1b3fcbe39d6090bb7d1869142d4b998286b397d1961b3d2aab070ab",
+    "include/ac6/vulkan_backend.h": "04f4acc4331afc7dfaf25ca712fc28b5995d1d37cb1c1b3862f5a74fe5bd6c7c",
+    "src/vulkan_backend.cpp": "ed1f64b9507d107116802f4d36fa676fe2ef589acdd6cc32f7a39eefbeca62f1",
+    "tests/vulkan_backend_tests.cpp": "372866e9b0e8649f189af334d3d30fef92f636e8c691a5a7470eab8fa0bb471c",
+    "tests/xenos_shader_tests.cpp": "c037ab52fbd7d3853b68b563ca27d38ed1c6f55797e8551cf912497346ba74c8",
+    "tests/campaign_retail_asset_tests.cpp": "28e5f5b579e52ca40467090c47a32c8b4ec40fb2d913d336b97b64c3fac7f9c6"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "cycle": 731,
+  "date": "2026-08-04",
+  "scope": "visible SDL/X11 Vulkan campaign frame",
+  "capture": {
+    "path": "/home/lavaulta/Pictures/screenshot-2026-08-04_03-06-00.png",
+    "window_title": "AC6 campaign Vulkan frame",
+    "window_size": [640, 360],
+    "desktop_size": [640, 480],
+    "window_visible": true,
+    "scene_visible": true,
+    "hud_visible": true,
+    "black_desktop_bars": true
+  },
+  "presentation": {
+    "scene_changed": 4439,
+    "hud_green": 4439,
+    "world_changed": 11,
+    "textured_changed": 1,
+    "flight_world_pixels": 12,
+    "flight_pixels": 4440,
+    "mission_2_presented": true,
+    "mission_2_changed": 6974,
+    "mission_2_hud_green": 4428
+  },
+  "validation": {
+    "focused_ctest_total": 4,
+    "focused_ctest_pass_or_skip": 4,
+    "focused_ctest_skipped_dummy": 1,
+    "focused_ctest_seconds": 2.16,
+    "full_ctest_total": 63,
+    "full_ctest_pass_or_skip": 63,
+    "full_ctest_skipped_dummy": 1,
+    "full_ctest_seconds": 68.30
+  },
+  "hashes": {
+    "src/vulkan_backend.cpp": "30a5df60642a0e044d3f03f7790df85c98b750c043fd1d647f51d9a7cd105642",
+    "tests/campaign_vulkan_sdl_present_tests.cpp": "2b62c3e3d3a46b7834f92881a89e8e000e2425fa9f90ef727e0be12e27f94b08",
+    "tests/vulkan_sdl_window_tests.cpp": "cf427b847902b214744b6b5b6f849e185f948c2aaf5a23a07683ed68fba1a36c"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "cycle": 760,
+  "date": "2026-08-04",
+  "result": "qualified_entry9_mapobj_batch",
+  "entry": 9,
+  "assets": [
+    {"key":"mapobj_m01_l_brg1_n","gidx":268439850,"parts":1,"runtime_draw":{"gpu_frame":9665,"draw":514,"submission":18928,"vertex_address":"04597990","vertex_bytes":13952,"texture_base":"045A2000","host_image_non_null":true,"host_view_non_null":true}},
+    {"key":"mapobj_m01_l_brg1_b","gidx":268439851,"parts":3,"runtime_draw":null},
+    {"key":"mapobj_m01_l_brg2_n","gidx":268440744,"parts":1,"runtime_draw":{"gpu_frame":9664,"draw":468,"submission":18925,"vertex_address":"045E8C40","vertex_bytes":34240,"texture_base":"045FB000","host_image_non_null":true,"host_view_non_null":true}},
+    {"key":"mapobj_m01_l_brg2_b","gidx":268440779,"parts":3,"runtime_draw":null}
+  ],
+  "texture_contract": {"descriptor_words":24,"exact_profile_only":true,"guest_format":20,"native_format":"bc3","width":256,"height":256,"tiled":true},
+  "projection_contract": {"vertex_shader":"C1EE3147DFD5E624","pixel_shader":"D5B4F4A878949938","operation":"x*c218+y*c219+z*c220+c221","source":"runtime gameplay draws","tcam":false,"fit_mesh":false,"fabricated_rotation":false},
+  "coverage_runs": [
+    {"before_environment":12,"environment_changed":129,"after_environment":141,"hud_included":false},
+    {"before_environment":12,"environment_changed":129,"after_environment":141,"hud_included":false}
+  ],
+  "coverage_output_sha256":"b4d5ad17173ddcc3efbe2c55c0eb9746df9b34cecf5627133fb5243f16fe0eb4",
+  "validation": {"build":true,"targeted_tests":"3/3","pal_ctest":"63/63","sdl_dummy_skip":1,"xvfb_runs":"2/2","diff_check":true},
+  "identity": {
+    "workspace_commit":"442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "reconstruction_parent_commit":"9b893e6fd76e972dbbb6dbef81f1be015b5e6dd9",
+    "runtime_commit":"b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "rexglue_commit":"b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "xex_sha256":"acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256":"82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "data00_sha256":"c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+    "data01_sha256":"eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4",
+    "runtime_executable_sha256":"937a5d46901e1b6be9b043a9c0d7702077cf57159a441bcf6695b130b8da2c58",
+    "native_test_executable_sha256":"d23b991eb562b9f5a5e1927e5dfd6606c4eff6a954d6e94520bd205b5d3f1d67",
+    "reconstruction_source_set_sha256":"b1a90b3fa6fcc060a2cbf9febb073e2557984bb45689740989de4b8dadf88495",
+    "runtime_tracked_diff_sha256":"5959cb96839475c9f21b1ed632062ded35fee11bea0c519641843d44a8a9643b"
+  },
+  "host": {"gpu":"NVIDIA RTX PRO 4000 Blackwell","driver":"NVIDIA 595.84","vulkan":"1.4.329","target":"persistent 640x360 -> SDL X11 swapchain"},
+  "processes": {"xenia_runs":0,"ollama_pid":3585823,"ollama_endpoint":"127.0.0.1:11435","foreign_processes_touched":false},
+  "boundaries": {"runtime_owner_pointer_scan_hits":0,"material_identity_latch_joined":false,"broken_variants_executed":false,"runtime_unlock_fps":true,"stock_timing_baseline":false,"terrain_identified":false,"sky_cloud_identified":false,"player_aircraft_lod_identified":false,"gameplay_camera_identified":false,"white_aircraft_classified":false,"first_black_stage_identified":false}
+}

@@ -1,0 +1,34 @@
+{
+  "cycle": 708,
+  "date": "2026-08-03",
+  "scope": "native TCAM camera matrices and CampaignMesh clip projection",
+  "contract": {
+    "matrix_convention": "row_major_column_vector",
+    "view_basis": "explicit_xyz_camera_relative_basis",
+    "projection_depth": "vulkan_zero_to_one",
+    "preserves_clip_w": true,
+    "metadata_preserved": ["uv", "indices", "first_texture_id", "primitive_flags"]
+  },
+  "validation": {
+    "camera_projection_tests": "pass",
+    "vulkan_backend_tests": "pass",
+    "retail_asset_tests": "pass",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 62.76
+  },
+  "claims": {
+    "native_camera_matrix_contract": true,
+    "retail_rotation_order_proven": false,
+    "xenos_register_layout_proven": false,
+    "depth_presentation_proven": false,
+    "retail_material_binding_proven": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/camera_projection.h": "456dbaac67fb340058285b738900de88fbe5e06d1b1886ebc1fbb00b85aaeb59",
+    "src/camera_projection.cpp": "ea705a3ec8172167bb240705834f31515a4e26a95029f94d53236d6c1f7bc80e",
+    "tests/camera_projection_tests.cpp": "df84e118d9f46e8cdba143defcc1321d10d53411c02b96a8a9c8070814733533",
+    "CMakeLists.txt": "4dbe091d4ca4f4f513422cc6a671c0e9769b4504446ef2fb33b14259ca5737ae"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "cycle": "685",
+  "classification": "native_bounded_campaign_resource_loader",
+  "validation": {
+    "ctest_total": 47,
+    "ctest_passed": 47,
+    "targeted_campaign_tests": 2,
+    "targeted_campaign_passed": 2,
+    "git_diff_check": "clean"
+  },
+  "artifacts": {
+    "header_sha256": "72694a07fea1093cc06fdbcc337bb37b82d99780986b427db1dce056e103a801",
+    "source_sha256": "2709042f6046ed573d7da01c47389bd57dbb4ebd45a0f22a8c03914bedceb05c",
+    "test_sha256": "ae265737b5a514b6a84d8f47184531c92859f1cd164c05ab65f5188dfaedc387",
+    "cmake_sha256": "e7c0dedddfaa90b675f87430e9066f3d64c79dc15ff71debc90bca17165359e4",
+    "test_executable_sha256": "235301db06e6a3d4fafbb02e1d7a58f140b057414f520d1877b6134035901b94"
+  },
+  "failure_modes": [
+    "missing_bank",
+    "invalid_catalog_index",
+    "invalid_storage_class",
+    "truncated_stored_range",
+    "decode_failed"
+  ],
+  "retail_claim": "none_for_selector_2_or_any_unqualified_payload"
+}

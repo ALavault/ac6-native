@@ -1,0 +1,48 @@
+# Cycle-529: reproduce the first-mission route with native loadout forcing off,
+# then exercise the qualified Back -> bit 0x20 -> event 207 transition.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait-pulse	\[ac6-first-campaign-level-bridge\]	Escape
+sleep	15
+key	space	0.1
+sleep	5
+capture	aircraft-select
+key	Tab	0.1
+wait	event=207	5
+sleep	2
+capture	after-back-toggle
+key	space	0.1
+sleep	5
+capture	after-back-a
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	5
+key	space	0.1
+sleep	8
+capture	after-back-route

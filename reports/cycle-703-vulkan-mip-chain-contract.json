@@ -1,0 +1,39 @@
+{
+  "cycle": 703,
+  "date": "2026-08-03",
+  "scope": "generic Vulkan mip-chain upload and fail-closed validation",
+  "mip_chain": {
+    "levels": [
+      [8, 8],
+      [4, 4],
+      [2, 2],
+      [1, 1]
+    ],
+    "format": "rgba8",
+    "staging_buffers": 1,
+    "subresource_copies": 4,
+    "invalid_extent_rejected": true,
+    "sampled_via_descriptor": true
+  },
+  "validation": {
+    "vulkan_backend_test": "pass",
+    "ntxr_test": "pass",
+    "ctest": "52/52 passed",
+    "ctest_time_seconds": 40.75,
+    "whitespace_check": "pass"
+  },
+  "claims": {
+    "generic_mip_transport": true,
+    "xenos_mip_fields_qualified": false,
+    "ac6_texture_parity": false,
+    "gameplay_world_render": false,
+    "cutscene_aircraft_materials": false,
+    "swapchain_presentation": false
+  },
+  "source_sha256": {
+    "include/ac6/ntxr.h": "582820a09198cac7c19dca300dda5ac582a23a9d66673c25d640377082937df8",
+    "include/ac6/vulkan_backend.h": "1178f4f33900353dd428bfb0e4e12d7bab9ddc567ebd2a8c8170856e176483ee",
+    "src/vulkan_backend.cpp": "d9abcebe2a217783e567cd0752aff4ea9033973cbc62eda1b6d32e332b7962dd",
+    "tests/vulkan_backend_tests.cpp": "a4017365ff1b39aa6dfdf6ee84a03bba63e849ecb10c101b5635375b989e20f7"
+  }
+}

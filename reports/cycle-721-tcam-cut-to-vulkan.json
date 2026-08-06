@@ -1,0 +1,55 @@
+{
+  "cycle": 721,
+  "date": "2026-08-03",
+  "scope": "CUT/TCAM réel vers projection Vulkan",
+  "implementation": {
+    "scene_frame_module": "campaign_scene_frame",
+    "initial_camera_contract": "CutStart -> FrameStart(1) -> MoveCamera",
+    "camera_path": "Scene/dd01_01a/dd01_01a_01/Tcam__c01.mop",
+    "world_transforms_joined": 16,
+    "camera_forward_sign": -1,
+    "aabb_framing_for_selector_1": false
+  },
+  "validation": {
+    "targeted_ctest_pass": 5,
+    "targeted_ctest_total": 5,
+    "targeted_ctest_seconds": 1.67,
+    "full_ctest_pass": 59,
+    "full_ctest_total": 59,
+    "full_ctest_seconds": 63.14,
+    "selector_1": {
+      "entry": 9,
+      "gidx": 268444181,
+      "scene_changed": 0,
+      "hud_green": 342,
+      "projection_and_submission": true,
+      "note": "mesh initial sous-pixellaire à 128x128"
+    },
+    "selector_2": {
+      "entry": 10,
+      "scene_changed": 8568,
+      "hud_green": 342,
+      "aabb_smoke_retained": true,
+      "scene_group_available": false
+    }
+  },
+  "claims": {
+    "real_cut_to_tcam_projection": true,
+    "real_world_non_black_at_normal_resolution": false,
+    "interactive_standby_to_mission_1": false,
+    "real_vulkan_swapchain": false,
+    "save_and_mission_2": false
+  },
+  "hashes": {
+    "include/ac6/campaign_scene_frame.h": "376f6904f552a470949a5a436707de358a83b9127ffffe00eed4ac433488071c",
+    "src/campaign_scene_frame.cpp": "b9d3df4444158b54be8a7f72dfddbdf95dd3e124ec9a64df07fbc7a4975d319b",
+    "include/ac6/camera_projection.h": "db45877349cbb9bcdd1233183f7777a53a65a836b2b310c607e9844a62599610",
+    "src/camera_projection.cpp": "9b6147abd45053622e3ed3c3913122f94ee70396ceee85b48d4d6a1a89d2d0b6",
+    "include/ac6/campaign_retail_frame.h": "230a861a9c923a3a232dc0318e63088c0ae96e5352b768e56b54735462221b08",
+    "src/campaign_retail_frame.cpp": "456712b854946735c9cb278341322cd1a57b2f5ea303d080bca76b7c28577c11",
+    "tests/campaign_scene_frame_tests.cpp": "4637747decac9590aa9777da36b843b30deaa3cb549c368d4fa0bfa5b1177d86",
+    "tests/campaign_vulkan_retail_frame_tests.cpp": "1435f9269502a0478ff8001d93ceffff28748db7dfa22a58deffdfc248166c0b",
+    "tests/camera_projection_tests.cpp": "a87512b4296a7e020bac50b03de503c27b3cdc403f97e20fb9039be1ce8e44ce",
+    "CMakeLists.txt": "8784567665fb1e7707b11a984a8c563a31b6fff1b9367d77fd802fbaff5be7b5"
+  }
+}

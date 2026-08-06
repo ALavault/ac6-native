@@ -1,0 +1,44 @@
+{
+  "entries": {
+    "59f697a52f81c43ded362bb2f17ce00daf5714336f7e01f1038d88eecb7a2e8d": {
+      "command": [
+        "cmake",
+        "-S",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill",
+        "-B",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+        "-DAC6RECOMP_BUILD_TESTS=ON",
+        "-DAC6RECOMP_PROBE_GUEST_TEXT=ON",
+        "-DAC6RECOMP_TRACE_GUEST_CALLS=OFF",
+        "-DAC6RECOMP_WATCH_GUEST_STORES=OFF"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "elapsed_s": 1.354857,
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "cmake",
+        "resolved": "/usr/bin/cmake",
+        "sha256": "d1b97184a23f8a3a295b5f4f867e803b14e8abcb84f32dd0382697669a15fc95"
+      },
+      "failure_count": 0,
+      "finished_at": "2026-08-01T06:29:38Z",
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/CMakeLists.txt": "2b03dc347c20782083a828bd649b3d251947a5ea9d0137ac628e2b6f3e9ea2bb"
+      },
+      "name": "ac6-cycle454-text-record-configure",
+      "outputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/build-text/build.ninja": "4f0be518f9f27785b1d39f87622bde928c90704e92a5f010b643a7d6e034bab5"
+      },
+      "pid": 1636219,
+      "returncode": 0,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T06:29:36Z",
+      "status": "passed"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

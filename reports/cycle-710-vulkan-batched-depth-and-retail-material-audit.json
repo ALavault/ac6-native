@@ -1,0 +1,53 @@
+{
+  "cycle": 710,
+  "date": "2026-08-03",
+  "scope": "batched clip mesh depth draw and PAL MATE/NDXR structural audit",
+  "batch": {
+    "single_render_pass": true,
+    "index_rebase": "uint16_bounded",
+    "shared_pipeline_texture": true,
+    "occlusion_center_pixel": [0, 255, 0, 255]
+  },
+  "retail_material_audit": {
+    "selector_1_entry_9": {
+      "textured_meshes": 42,
+      "mate_payloads": 379,
+      "candidate_binding_sets": 1435,
+      "matching_first_texture_bindings": 1885,
+      "ntxr_candidates": 86,
+      "resolved_native_bindings": 1021
+    },
+    "selector_2_entry_10": {
+      "textured_meshes": 8,
+      "mate_payloads": 120,
+      "candidate_binding_sets": 398,
+      "matching_first_texture_bindings": 294,
+      "ntxr_candidates": 23,
+      "resolved_native_bindings": 85
+    },
+    "runtime_material_selection_proven": false,
+    "ntxr_decode_selection_proven": true,
+    "shader_identity_proven": false,
+    "unique_runtime_material_selection_proven": false
+  },
+  "validation": {
+    "vulkan_backend_tests": "pass",
+    "retail_asset_tests": "pass",
+    "ctest": "54/54 passed",
+    "ctest_time_seconds": 63.82
+  },
+  "claims": {
+    "multi_mesh_depth_occlusion": true,
+    "retail_mate_ndxr_structural_candidates": true,
+    "unique_runtime_mate_selection": false,
+    "swapchain_presentation_proven": false,
+    "interactive_mission_1": false,
+    "interactive_mission_2": false
+  },
+  "source_sha256": {
+    "include/ac6/vulkan_backend.h": "20afbb1ef7f1484d84cdd0058242adc55b433a9105d8d409417f244dc1a14ca3",
+    "src/vulkan_backend.cpp": "158c2bc3f39c37bf8940de62370bf8cf13ec7fe37f5fa6796a8c2810155bccd7",
+    "tests/vulkan_backend_tests.cpp": "df7080e7ca832e4b0482053c39ae0db42090895fbfd9381f6e6b5fc4e88495a8",
+    "tests/campaign_retail_asset_tests.cpp": "ae96f2e04a2bb8c718db675685d86992b88dedfcd0ebd00debccb46b1be86752"
+  }
+}

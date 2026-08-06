@@ -1,0 +1,16 @@
+// ===========================================
+// Ghidra:    FileCreateTask_821C5258
+// Address:   0x821c5258
+// Signature: undefined FileCreateTask_821C5258(void)
+// Callers:   3  |  Callees: 6
+// ===========================================
+
+
+void FileCreateTask_821C5258(void)
+
+{
+  __savegprlr_14();
+  return;
+}
+
+

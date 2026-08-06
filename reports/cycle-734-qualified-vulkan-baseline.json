@@ -1,0 +1,28 @@
+{
+  "cycle": 734,
+  "date": "2026-08-04",
+  "result": "baseline_reproduced_pac_decoder_hook_context_defect",
+  "identity": {
+    "workspace_commit": "442c6dbcd5188fb84b056293a3ce7a000bd20669",
+    "workspace_dirty_diff_sha256": "3f175de441fd4c9fb02944ad125e3ac67ef6b5d7685b99617c1a16405b4086f7",
+    "runtime_commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+    "runtime_dirty_diff_sha256": "669b524e0563eba2626318a8880fe01a99936a9b91d30105422a71e89d82f03b",
+    "rexglue_sdk_commit": "31a36d69f796cddd6b3ce545f6c6c332544ab294",
+    "executable_sha256": "685db465cf6f48f4aea328f85cff257009b6a4a8a6cc089b393639aa103522fb",
+    "toml_sha256": "fed716e3ff77b50e4866e2a67c5a183f21651f6cf29fdae930091c3fdf1c85b0",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "data00_pac_sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+    "data01_pac_sha256": "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4"
+  },
+  "gpu": {"name":"NVIDIA RTX PRO 4000 Blackwell","vulkan":"1.4.329","driver":"595.84","vendor":"10de","device":"2c34","backend":"vulkan","rt_path":"default"},
+  "configuration": {"ac6_performance_mode":false,"log_level":"debug","ac6_unlock_fps":false,"ac6_render_capture":true,"ac6_backend_signature_diagnostics":true,"ac6_backend_log_signatures":true,"ac6_backend_debug_swap":true,"ac6_d3d_trace":false,"resolution_scale":1,"draw_resolution_scale_x":1,"draw_resolution_scale_y":1,"direct_host_resolve":false,"native_2x_msaa":true,"gpu_allow_invalid_fetch_constants":false,"effective_marker_observed":false},
+  "captures": {
+    "hangar": {"path":"reports/logs/cycle-734-qualified-baseline/step-69-mission-launch.png","sha256":"7f961709bb6c511ca422707c56a3a490afac624d0d3137480c597974a296220c","present":9754,"mean_rgb":[26.0263,47.0468,50.4516],"observation":"textured_aircraft_and_hangar"},
+    "white_aircraft": {"path":"reports/logs/cycle-734-qualified-baseline/step-75-post-objective-confirm.png","sha256":"ac148bc572e9db945e0ea4a3879301fd1f83373c244d046455b76fca822b0778","present":10524,"mean_rgb":[97.8354,104.29,93.4119],"observation":"textured_terrain_white_aircraft"},
+    "black_gameplay": {"path":"reports/logs/cycle-734-qualified-baseline/step-78-flight-hud-baseline.png","sha256":"e052e1d98f3cfa7568381d45259727b3c9ecf27e9d1bc9eb9dade2d4ad977da9","present":10649,"mean_rgb":[1.77045,2.7073,1.80076],"distinct_colors":28,"dominant_rgb":[2,2,2],"dominant_pixels":676347,"hud_visible":true,"world_visible":false}
+  },
+  "white_draw": {"vs":"A1863AF658456A14","ps":"D5B4F4A878949938","texture_base":"06B30000","format":20,"extent":[256,256],"tiled":true,"endianness":1,"mips":[0,2],"constants":{"c129":[0.384313762,0.466666698,0.545098066,-0.000140000004],"c138":[1,1,3,0.5],"c140":[0.941176534,0.933333397,0.674509823,1],"c142":[1,5,3,1],"c254":[0,0.25,-1,1.44269502],"c255":[0.5,0.0392156877,0.941176474,1]}},
+  "pac_gate": {"allowlist":[9,119,165,199,210],"stored_bytes_equal":[9,165,199,210],"not_read":[119],"runtime_decoded_outputs":0,"closed":false,"defect":"hook register roles invalid at frozen cache-flush callsite"},
+  "validation": {"focused_pac":"1/1","ac6_ctest_pal":"8/8","vulkan_build":"passed","codegen":"disabled","follow_log_sha256":"e743897c7f58e34e58e403d00cbc8f0a60228dec24337bd1d91b57fcf6c31627","runtime_log_sha256":"68e6cbb22e35d69d01a5311e642d04a05fcbb6111c78cf91d8e137c120e52d7b"}
+}

@@ -1,0 +1,64 @@
+{
+  "cycle": 724,
+  "date": "2026-08-04",
+  "scope": "Native flight controls, versioned progression save, restore and Mission 2 unlock",
+  "selector_1": {
+    "data_table_entry": 9,
+    "standby_hud_green": 300,
+    "camera_path": "Scene/dd01_01a/dd01_01a_01/Tcam__c01.mop",
+    "world_transforms_joined": 16,
+    "textured_scene_parts": 115,
+    "textured_draw_groups": 2,
+    "solid_geometry_parts": 91,
+    "solid_draw_groups": 1,
+    "active_scene_changed": 3,
+    "active_hud_green": 303,
+    "flight_changed": 1,
+    "save_bytes": 28,
+    "mission2_restored": true,
+    "camera_forward_sign": -1
+  },
+  "selector_2": {
+    "data_table_entry": 10,
+    "same_generic_runtime_pipeline": true,
+    "active_scene_changed": 166,
+    "active_hud_green": 300
+  },
+  "validation": {
+    "targeted_ctest_pass": 6,
+    "targeted_ctest_total": 6,
+    "targeted_ctest_seconds": 2.31,
+    "full_ctest_pass": 61,
+    "full_ctest_total": 61,
+    "full_ctest_seconds": 63.82
+  },
+  "claims": {
+    "native_axis_state_contract": true,
+    "native_flight_projection_changed": true,
+    "versioned_ac6s_snapshot": true,
+    "transactional_progression_restore": true,
+    "mission_2_unlocked_after_restore": true,
+    "mission_2_resource_selected_with_same_loader": true,
+    "interactive_sdl_flight": false,
+    "real_vulkan_swapchain": false,
+    "retail_save_compatibility": false,
+    "mission_2_flown_or_completed": false,
+    "retail_flight_physics_parity": false
+  },
+  "hashes": {
+    "include/ac6/campaign_flight.h": "6a44a2ce0d8ca523a7fdb7363878503e91807f5c6213b6f39f5dc07de4d743f2",
+    "src/campaign_flight.cpp": "4a2f308a95dfcff2920d958293ac0411bb2bfc48181699b0b6f780e0bb18251d",
+    "tests/campaign_flight_tests.cpp": "7ef402d95525e3006961afc92745cd4301b152fc4b64ef64e0830a2e0a5ad9e4",
+    "include/ac6/campaign_save.h": "ddfc1d6a412fc44725acd621312dfbcd04e2de8a6b1b393ba25730103798aed1",
+    "src/campaign_save.cpp": "3090a188f59340c8a4eae0bee378663caabde176bc21141073299cee035130af",
+    "tests/campaign_save_tests.cpp": "4a0136d9bc5acf7d6f106d212dadf0031f792318b9a2ebf599ed1539bd9167a8",
+    "include/ac6/campaign_progression.h": "9b56f9fe02e0ae1b873b816b80f9925727823067b7c66cdba607a055c27680fe",
+    "src/campaign_progression.cpp": "0d350ef2a70f62623fb15dc7dda769de6aec14485a0423bd02a81ec233013887",
+    "include/ac6/campaign_runtime.h": "b9c8146e85a670e6220c051ab9b49bb20a124921ff0642a255786e22e330fc85",
+    "src/campaign_runtime.cpp": "67144e13a1be73acfc1f2a24654faf30a92d673a877b1e5462902ff38d77b9d9",
+    "tests/campaign_progression_tests.cpp": "dae8a88e45b7228250e475f9d6d1be0cd56822d17a12da36f90584b68c45b165",
+    "tests/campaign_runtime_tests.cpp": "a282180f332b5bfc83031e164b24ffed06b83ed5d283071ebf87a8af6122aa2c",
+    "tests/campaign_vulkan_retail_frame_tests.cpp": "6b16b1bf6f3bd958ee55f28875f1ce07a8848ee54ca5224dc013bf7baaf8dd0a",
+    "CMakeLists.txt": "117fd2fe35d85f0e500d5f12773f2d92c161e6a1d59050eef6a58ace006e3714"
+  }
+}

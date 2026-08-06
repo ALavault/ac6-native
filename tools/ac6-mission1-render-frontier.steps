@@ -1,0 +1,37 @@
+# State entry is the existing bridge campaign menu (selector44=3).  This
+# recipe is intentionally bridge/diagnostic: it adds no gameplay state and
+# only records the visible route and the bounded C0..C7 captures.
+capture	campaign-menu-entry
+key	space	0.1
+sleep	15
+capture	aircraft-select
+key	space	0.1
+sleep	20
+capture	weapon-select
+key	space	0.1
+sleep	12
+capture	loadout-confirm
+key	Shift	0.1
+sleep	8
+capture	mission-submenu
+key	space	0.1
+sleep	35
+capture	C0-hangar
+sleep	60
+capture	C1-briefing
+key	space	0.1
+sleep	45
+capture	C2-cinematic
+sleep	30
+capture	C3-cinematic-late
+key	space	0.1
+sleep	15
+capture	C4-gameplay-transition
+key	Escape	0.1
+sleep	15
+capture	C5-hud-first
+sleep	20
+capture	C6-gameplay-stable
+key	W	1.0
+sleep	2
+capture	C7-input-qualified

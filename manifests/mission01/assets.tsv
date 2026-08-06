@@ -1,0 +1,3 @@
+# mission_id	asset_id	identity	entry	status	source_sha256	archive	source_offset	stored_size	expanded_size
+1	9	DATA.TBL:index=9;group=0x00010000	9	qualified	cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05	DATA00.PAC	16941056	13234234	42446032
+1	119	DATA.TBL:index=119;group=0x00010000	119	qualified	e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd	DATA00.PAC	210927616	116266854	165892096

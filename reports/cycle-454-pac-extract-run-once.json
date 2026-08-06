@@ -1,0 +1,66 @@
+{
+  "entries": {
+    "6db1c41272c1561150ab2104faa3d656d009f8ac8d8579291845845341f96a5e": {
+      "command": [
+        "python3",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/extract_ac6_pac.py",
+        "workspaces/ace-combat-6/game-files",
+        "--output",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/out/ac6_pac_extracted_decompressed",
+        "--decompress"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": "python3",
+        "resolved": "/usr/bin/python3.14",
+        "sha256": "69a4bce1763e003a7fd7ba8de0a87429e16df3cc09568dcb29c32285c615e165"
+      },
+      "failure_count": 0,
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6_mode1_codec.py": "c5b6eddf41beb57ff8b20cfd226563f24caa8f1834ea501ea5c019f4492491c1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/extract_ac6_pac.py": "a3cc44c8f95755690922098058464c27187c2c96e98f744f9be97bc957e93ced",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7"
+      },
+      "name": "ac6-cycle454-pac-extract",
+      "pid": 1417516,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T05:41:09Z",
+      "status": "running"
+    },
+    "706616bdffbfd5d7b5b24e1ede396b0d7da18121cda24a747cacbf118fcfa25c": {
+      "command": [
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/extract_ac6_pac.py",
+        "workspaces/ace-combat-6/game-files",
+        "--output",
+        ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/out/ac6_pac_extracted_decompressed",
+        "--decompress"
+      ],
+      "cwd": "/fastdata/lavaulta/auto-re-agent",
+      "environment_digest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "environment_names": [],
+      "executable": {
+        "requested": ".tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/extract_ac6_pac.py",
+        "resolved": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/extract_ac6_pac.py",
+        "sha256": "a3cc44c8f95755690922098058464c27187c2c96e98f744f9be97bc957e93ced"
+      },
+      "failure_count": 0,
+      "inputs": {
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/ac6_mode1_codec.py": "c5b6eddf41beb57ff8b20cfd226563f24caa8f1834ea501ea5c019f4492491c1",
+        "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-reference/.claude/worktrees/ac6-gapfill/tools/extract_ac6_pac.py": "a3cc44c8f95755690922098058464c27187c2c96e98f744f9be97bc957e93ced",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA.TBL": "f0be31c0a8eea14c9279a0131cd1aaf0bd3177ed083e271a85c7244e2bf37140",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA00.PAC": "5bb24e1f98969ebba291eab29855ee8b9cb859a2d06cd27a6e8f6c4bc4acffea",
+        "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/game-files/DATA01.PAC": "316a7f76d04a06aae241d74ee3fc2feee3459257a0fe81bae538a8aa70f654c7"
+      },
+      "name": "ac6-cycle454-pac-extract",
+      "pid": 1417019,
+      "schema": "direct-action-ledger/v1",
+      "started_at": "2026-08-01T05:40:51Z",
+      "status": "running"
+    }
+  },
+  "schema": "direct-action-ledger/v1"
+}

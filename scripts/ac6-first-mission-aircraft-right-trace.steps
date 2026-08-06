@@ -1,0 +1,43 @@
+# Reach Mission 01, stop on the aircraft selector, then capture one D-pad-right
+# edge. This is the working-navigation control-flow counterpart to the A-only
+# loadout traces; it is armed after the first-campaign bridge by the runtime.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=8	20
+key	space	0.1
+wait	type28=10	20
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait-pulse	\[ac6-first-campaign-level-bridge\]	Escape
+sleep	20
+key	space	0.1
+present	120	30
+capture	mission-submenu
+key	space	0.1
+present	120	30
+capture	aircraft-before-right
+key	Right	0.1
+present	180	45
+capture	aircraft-after-right

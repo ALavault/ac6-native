@@ -1,0 +1,40 @@
+# Cycle-548 follow-up to the deterministic atoi correction.  The corrected
+# route skips the historical type28=8/10 observations and reaches type28=5;
+# capture that screen without readiness or launch forcing.
+key	Left	0.1
+key	space	0.1
+wait	type28=37	20
+key	space	0.1
+wait	type28=35	20
+key	space	0.1
+wait	selector44=3	20
+key	space	0.1
+wait	type28=6	20
+key	Left	0.1
+key	space	0.1
+wait	type28=5	20
+sleep	5
+capture	post-atoi-transition
+key	space	0.1
+wait	selector44=3	20
+capture	post-atoi-confirm
+key	space	0.1
+wait	type28=10	20
+capture	post-atoi-created
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	3
+key	space	0.1
+sleep	20
+wait-pulse	\[ac6-first-campaign-level-bridge\]	Escape
+sleep	15
+key	space	0.1
+sleep	5
+capture	aircraft-select

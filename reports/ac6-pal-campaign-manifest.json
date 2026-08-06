@@ -1,0 +1,83 @@
+{
+  "corpus": {
+    "region": "PAL",
+    "xex": {
+      "path": "default.xex",
+      "size": 7483392,
+      "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+    },
+    "data_tbl": {
+      "path": "DATA.TBL",
+      "size": 14824,
+      "sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+      "entry_count": 926,
+      "pack_count": 2,
+      "archive_counts": [466, 460],
+      "raw_counts": [74, 52]
+    },
+    "pac": [
+      {
+        "path": "DATA00.PAC",
+        "size": 2267086848,
+        "sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+        "required_end": "0x8720ca9f"
+      },
+      {
+        "path": "DATA01.PAC",
+        "size": 664141824,
+        "sha256": "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4",
+        "required_end": "0x27958034"
+      }
+    ]
+  },
+  "missions": [
+    {
+      "mission_id": 1,
+      "campaign_selector": 1,
+      "dpl_resource_id": 9,
+      "dpl_variant": 0,
+      "data_table_entry_index": 9,
+      "bank_index": 0,
+      "offset": "0x01028000",
+      "storage_class": 1,
+      "stored_size": 13234234,
+      "expanded_size": 42446032,
+      "qualification": "xex_dpl_registry_to_data_table_entry_9_proven"
+    },
+    {
+      "mission_id": 2,
+      "campaign_selector": 2,
+      "dpl_resource_id": 10,
+      "dpl_variant": 0,
+      "data_table_entry_index": 10,
+      "bank_index": 0,
+      "offset": "0x01cc8000",
+      "storage_class": 1,
+      "stored_size": 2860059,
+      "expanded_size": 10232304,
+      "expanded_sha256": "e894db3b36956562fa888511c3a0ce352cd690186f96eeb0d7a772f3b1a59675",
+      "structure": {
+        "root": "FHM",
+        "recursive_manifest_rows": 112,
+        "child_1": "MDLP",
+        "child_1_offset": "0x150000",
+        "child_1_size": "0x693000",
+        "mdlp_elements": 27,
+        "ntxr": 40,
+        "ndxr": 71,
+        "mate": 127,
+        "scene": 0,
+        "nfic": 0,
+        "gyz": 0
+      },
+      "qualification": "xex_dpl_registry_to_data_table_entry_10_and_payload_bounded",
+      "interactive_runtime_qualification": false
+    }
+  ],
+  "policy": {
+    "retail_bytes_local_only": true,
+    "large_pac_uploads_forbidden": true,
+    "mission_2_runtime_claim": false,
+    "mission_2_interactive_save_required": true
+  }
+}
