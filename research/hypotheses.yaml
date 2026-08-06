@@ -1,5 +1,5 @@
 version: 1
-updated: 2026-08-06T04:45:00+02:00
+updated: 2026-08-06T07:15:00+02:00
 hypotheses:
   - id: H-GAMEPLAY-ACTIVE-BEHIND-BLACK
     status: supported
@@ -211,3 +211,9 @@ hypotheses:
     discriminator: Run a fresh profile with the bounded storage/window recipe, hash the binary and append-only log, and require type28=37 plus at least one qualified text record before assigning scenario semantics.
     evidence: reports/cycle-1050-bridge-text-probe-window-boundary.md; bridge binary SHA-256 c94d00106afb23d105c5b3f1c24715124c1e62d01c39dd0b45cae7ffd4153a75.
     qualification: Tested but unqualified; both diagnostic variants stopped before type28=37 and emitted no text record, so no retail objective or subtitle identity is promoted.
+  - id: H-STATIC-M01-MISSION-FAMILY-SLOT-SEMANTICS
+    status: rejected
+    statement: The repeated binary slots 0014 or 0015 in DATA.TBL entries 9–23 can be assigned Mission 01 unit, wave, or objective semantics from closure shape, magic, slot position, or printable strings alone.
+    discriminator: Compare all fifteen bounded closures, require exact hash-linked ownership, and require a parser or runtime transition binding the candidate to a unit, wave, faction, order, or objective.
+    evidence: reports/cycle-1067-retail-mission-family-closure-boundary.md; DATA.TBL SHA-256 82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5.
+    qualification: Rejected for static evidence; 0014/0015 remain binary candidates and no retail scenario semantics are promoted.

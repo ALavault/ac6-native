@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-06T05:52:26+02:00
+Mise à jour : 2026-08-06T07:15:00+02:00
 
 ## Gate courant
 
@@ -335,3 +335,22 @@ calibration de scène comme parité retail sans association exacte.
 - La prochaine frontière causale est l'identité du créateur/registre de vague,
   pas une nouvelle exploration du raster, de la caméra ou des textures.
 - Rapport : `reports/cycle-1057-bridge-retail-factory-gameplay-boundary.md`.
+
+## Fermeture statique des familles Mission 01 — cycles 1067–1068
+
+- Les entrées DATA.TBL 9–23 ont été extraites et fermées en parallèle sur le
+  CPU. Les quinze racines sont des FHM valides, avec zéro parser note et des
+  identités SHA-256 enregistrées dans
+  `reports/cycle-1067-retail-mission-family-closure-boundary.md`.
+- La comparaison entry 9 contre 10–23 distingue les nœuds exactement partagés
+  des formes seulement similaires. Les extensions NFIC/Scen sont limitées aux
+  entrées 9, 15, 17, 21 et 23 ; les slots binaires 0014/0015 restent sans
+  sémantique qualifiée.
+- Aucun objectif, vague, faction ou unité retail n'est promu. Le gate
+  `units_and_waves` reste ouvert, de même que `retail_objectives`.
+- L'A/B bridge du cycle 1068 avec logger mémoire et contrôle intact reste dans
+  `type28=0 → 6 → 9`; aucun record task n'a été produit. C'est une borne
+  négative diagnostique, pas une preuve native.
+- Conclusion raster conservée : raster fill qualified ; raster fill still
+  broken dans la voie retail complète tant que la chaîne de contenu n'est pas
+  qualifiée ; topology is next boundary ; camera/clipping is next boundary.
