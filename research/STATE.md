@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-06T02:27:03+02:00
+Mise à jour : 2026-08-06T05:52:26+02:00
 
 ## Gate courant
 
@@ -314,3 +314,24 @@ calibration de scène comme parité retail sans association exacte.
   natif. La frontière causale reste le handoff gameplay puis l'identité du
   créateur/registre retail, pas une interprétation de chaînes non capturées.
 - Rapport : `reports/cycle-1050-bridge-text-probe-window-boundary.md`.
+
+## Frontière factory retail après handoff gameplay — 2026-08-06
+
+- Le run bridge courant atteint réellement le handoff Mission 01 :
+  `type28=30 → 37 → 35 → selector44=3 → type28=6 → 8 → 10`, puis la
+  transition de campagne `1→2`. Il ne s'agit plus d'une précondition de menu.
+- Le hook read-only `0x820A7F48` observe 128 créations : le joueur est
+  `selector=1`, un objet `selector=3` a le vtable `0x82009AB0`, et 126
+  `selector=4` ont le vtable `0x82009440`.
+- Le census `0x822707C8` reste `object_count=230`, avec le joueur
+  `0xB2470000/0x820568D4`, un enfant `0xB2470100/0x82007A10`, zéro
+  `other_player`, et 228 objets génériques `0x82009440`. Aucun registre
+  d'unité, publication de vague, faction, cible ou transition d'objectif n'est
+  capturé.
+- Le briefing bridge montre `Invasion of Gracemeria` et
+  `Aerial Defence (Air-to-Air)`. Cette chaîne est une observation retail
+  hashée, pas une table scénario ni une preuve native ; elle ne passe pas
+  `retail_objectives`.
+- La prochaine frontière causale est l'identité du créateur/registre de vague,
+  pas une nouvelle exploration du raster, de la caméra ou des textures.
+- Rapport : `reports/cycle-1057-bridge-retail-factory-gameplay-boundary.md`.
