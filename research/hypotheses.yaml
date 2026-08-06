@@ -1,5 +1,5 @@
 version: 1
-updated: 2026-08-06T07:15:00+02:00
+updated: 2026-08-06T08:43:03+02:00
 hypotheses:
   - id: H-GAMEPLAY-ACTIVE-BEHIND-BLACK
     status: supported
@@ -223,3 +223,9 @@ hypotheses:
     discriminator: Compare all fifteen bounded closures, require exact hash-linked ownership, and require a parser or runtime transition binding the candidate to a unit, wave, faction, order, or objective.
     evidence: reports/cycle-1067-retail-mission-family-closure-boundary.md; DATA.TBL SHA-256 82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5.
     qualification: Rejected for static evidence; 0014/0015 remain binary candidates and no retail scenario semantics are promoted.
+  - id: H-RETAIL-M01-BRIEFING-PACKAGES-ARE-SCENARIO
+    status: rejected
+    statement: DATA.TBL entries 210–224, identified by briefing_ms01 through briefing_ms15, are the retail Mission 01 gameplay objective and wave tables.
+    discriminator: Decode the complete fifteen-entry family, compare exact root and leaf identities, inspect BRDB/BMAP/SWG ownership, and require an objective condition or unit/wave binding rather than package shape or mission-number correspondence.
+    evidence: reports/cycle-1072-retail-briefing-package-boundary.md; family census SHA-256 80967c8584883457a262d7469c418943cf1250e73b5f26a096dd0209163a3fcc; entry 210 BRDB/BMAP/SWG hashes in the report.
+    qualification: Rejected as the gameplay scenario owner; the family is a briefing/map/UI/audio package and exposes no qualified retail objective, wave, faction, or unit identity.

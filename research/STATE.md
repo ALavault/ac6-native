@@ -1,6 +1,6 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-06T07:15:00+02:00
+Mise à jour : 2026-08-06T08:43:03+02:00
 
 ## Gate courant
 
@@ -66,13 +66,28 @@ Mise à jour : 2026-08-06T07:15:00+02:00
 - `SDL_AUDIODRIVER=dummy` est un invariant qualifié des runs AC6/Xvfb ; son
   absence peut figer le startup après un seul `PRESENT`.
 
+## Borne briefing/map retail — cycle 1072
+
+- Le census CPU des entrées DATA.TBL 210–224 établit une famille répétée
+  `BRDB`/`BMAP`/`SWG`/`NTXR`/`RIFF`; les SWG sont nommés
+  `briefing_ms01`…`briefing_ms15`. Les quinze racines et leurs tailles sont
+  hashées dans `reports/cycle-1072-retail-briefing-package-boundary.md`.
+- Pour l'entrée 210, `BRDB` (`c46c824a...`) et `BMAP` (`c50823a...`) sont des
+  feuilles de données carte/briefing; `briefing_ms01` contient 618 chaînes de
+  widgets et zéro occurrence de `Aerial`, `Defence`, `Gracemeria`, `objective`,
+  `wave` ou `target`.
+- Le résultat est une classification négative qualifiée : ces paquets ne sont
+  pas promus comme propriétaire des objectifs ou vagues de gameplay. Le scan
+  des 926 entrées n'a toujours aucun propriétaire `SubMisTbl`, `ComTbl`,
+  `Maneuver`, condition d'objectif ou identité unité/vague qualifiée.
+
 ## Prochain test discriminant
 
-Relier les définitions retail des vagues/objectifs/radio et un HUD natif aux
-états de `MissionExecution`. La calibration de scène native reste hashée comme
-support de visibilité, mais sa parité retail est ouverte; ne pas rouvrir les
-fronts selector, manager, UpHud, DATA.TBL[119] ou bridge sans preuve
-contradictoire.
+Fermer l'owner/consumer des records binaires de scénario par une acquisition
+dynamique étroite et hashée, avec transition native vers `MissionExecution`.
+Le gate `retail_objectives` reste ouvert; les fixtures P6 et la preuve bridge ne
+peuvent pas le fermer. Ne pas rouvrir selector, manager, UpHud, DATA.TBL[119]
+ou le renderer sans preuve contradictoire.
 
 ## Slice raster P0 — 2026-08-05
 
