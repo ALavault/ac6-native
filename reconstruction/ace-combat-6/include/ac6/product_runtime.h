@@ -6,10 +6,12 @@
 #include <string>
 #include <unordered_map>
 #include <filesystem>
+#include <iosfwd>
 #include <optional>
 #include <vector>
 
 #include "ac6/campaign_progression.h"
+#include "ac6/native_geometry.h"
 
 namespace ac6 {
 
@@ -870,63 +872,6 @@ class QualifiedBufferDatabase final {
   std::vector<QualifiedBufferRecord> buffers_;
 };
 
-enum class NativeIndexTopology : std::uint8_t {
-  TriangleList,
-  TriangleStripRestart,
-};
-
-struct NativeGeometryMetadata {
-  std::string buffer_id;
-  std::string source_format;
-  NativeIndexTopology topology{NativeIndexTopology::TriangleList};
-  std::uint32_t vertex_count{};
-  std::uint32_t index_count{};
-  std::uint32_t primitive_count{};
-  std::uint32_t vertex_section_count{};
-  std::uint32_t index_section_count{};
-  std::uint32_t polygon_descriptor_count{};
-  std::uint32_t vertex_stride{};
-  std::uint32_t index_size{};
-  std::uint64_t vertex_byte_size{};
-  std::uint64_t index_byte_size{};
-};
-
-struct DecodedVertex {
-  float x{};
-  float y{};
-  float z{};
-  float u{};
-  float v{};
-};
-
-struct DecodedGeometryBounds {
-  float min_x{};
-  float min_y{};
-  float min_z{};
-  float max_x{};
-  float max_y{};
-  float max_z{};
-  bool valid{};
-};
-
-struct DecodedGeometry {
-  std::string buffer_id;
-  std::vector<DecodedVertex> vertices;
-  std::vector<std::uint32_t> indices;
-  DecodedGeometryBounds bounds;
-};
-
-class NativeGeometryDatabase final {
- public:
-  bool load_verified(const MissionDrawable& drawable, const QualifiedBufferDatabase& buffers);
-  const NativeGeometryMetadata* find(const std::string& buffer_id) const noexcept;
-  const DecodedGeometry* decoded(const std::string& buffer_id) const noexcept;
-
- private:
-  std::vector<NativeGeometryMetadata> geometries_;
-  std::vector<DecodedGeometry> decoded_;
-};
-
 class ReplayLog;
 
 struct RenderReadback {
@@ -1021,6 +966,21 @@ class NativeRenderTarget final {
   }
 
  private:
+  struct GeometryRasterContext;
+  struct ClipVertex;
+  bool prepare_geometry_draw(GeometryRasterContext& context);
+  bool rasterize_geometry_draw(GeometryRasterContext& context);
+  std::uint32_t shade_fragment(const GeometryRasterContext& context,
+                               std::uint32_t salt, float u, float v) const noexcept;
+  bool write_projected_fragment(GeometryRasterContext& context,
+                                std::uint32_t x, std::uint32_t y, float depth,
+                                std::uint32_t salt, float u, float v) noexcept;
+  void rasterize_clipped_triangle(GeometryRasterContext& context,
+                                  const ClipVertex& clip_a, const ClipVertex& clip_b,
+                                  const ClipVertex& clip_c, std::uint32_t salt);
+  bool rasterize_triangle(GeometryRasterContext& context, std::uint32_t ia,
+                          std::uint32_t ib, std::uint32_t ic,
+                          std::uint32_t salt);
   std::uint32_t width_{};
   std::uint32_t height_{};
   std::vector<std::uint32_t> color_;
@@ -1144,211 +1104,9 @@ class MissionExecution final {
   bool launched_{};
 };
 
-class VulkanRenderer final {
- public:
-  struct RenderAssets {
-    const MissionAssetDatabase* database{};
-    const MissionRenderDefinition* definition{};
-    const MissionDrawableDatabase* drawables{};
-    const QualifiedBufferDatabase* buffers{};
-    const NativeGeometryDatabase* geometries{};
-    const MissionTransformDatabase* transforms{};
-    const MissionMaterialDatabase* materials{};
-    const MissionTextureDatabase* textures{};
-    const ShaderPermutationDatabase* shaders{};
-    const MissionRenderTargetDatabase* render_targets{};
-    const MissionRenderPassDatabase* render_passes{};
-    const MissionRenderResolveDatabase* render_resolves{};
-    const MissionCameraDefinition* camera{};
-    bool has(AssetId id) const noexcept {
-      return database != nullptr && database->resolve(id) != nullptr;
-    }
-    bool ready_for(const WorldFrame& frame) const noexcept {
-      if (definition == nullptr || definition->mission_id != frame.mission_id ||
-          definition->asset_ids.empty()) {
-        return false;
-      }
-      for (const AssetId id : definition->asset_ids) {
-        if (!has(id)) return false;
-        if (drawables != nullptr && drawables->find_by_asset(frame.mission_id, id).empty()) {
-          return false;
-        }
-        if (drawables != nullptr && buffers != nullptr) {
-          for (const MissionDrawable* drawable : drawables->find_by_asset(frame.mission_id, id)) {
-            if (drawable == nullptr || !buffers->has_verified(drawable->buffer_id)) return false;
-            if (geometries != nullptr && geometries->find(drawable->buffer_id) == nullptr) {
-              return false;
-            }
-            if (geometries != nullptr && geometries->decoded(drawable->buffer_id) == nullptr) {
-              return false;
-            }
-            if (geometries != nullptr &&
-                (transforms == nullptr ||
-                 transforms->find(frame.mission_id, drawable->stable_id) == nullptr)) {
-              return false;
-            }
-            if (geometries != nullptr &&
-                (materials == nullptr ||
-                 materials->find(frame.mission_id, drawable->stable_id) == nullptr)) {
-              return false;
-            }
-            if (geometries != nullptr &&
-                (textures == nullptr ||
-                 textures->find(frame.mission_id, drawable->stable_id) == nullptr)) {
-              return false;
-            }
-            if (geometries != nullptr) {
-              const MissionMaterial* material =
-                  materials == nullptr ? nullptr : materials->find(frame.mission_id, drawable->stable_id);
-              if (material == nullptr || shaders == nullptr ||
-                  shaders->find(material->shader_permutation) == nullptr) {
-                return false;
-              }
-            }
-            if (geometries != nullptr &&
-                (render_passes == nullptr || render_passes->find(frame.mission_id, "world") == nullptr ||
-                 render_targets == nullptr ||
-                 render_targets->find(frame.mission_id,
-                                      render_passes->find(frame.mission_id, "world")->color_target) == nullptr)) {
-              return false;
-            }
-            if (geometries != nullptr &&
-                (render_passes == nullptr || render_passes->find(frame.mission_id, "world") == nullptr)) {
-              return false;
-            }
-            if (geometries != nullptr &&
-                (render_resolves == nullptr ||
-                 render_resolves->find(frame.mission_id, "world") == nullptr)) {
-              return false;
-            }
-          }
-        }
-      }
-      return true;
-    }
-  };
+class VulkanRenderer;
 
-  bool render(const WorldFrame& frame, RenderAssets assets, NativeRenderTarget* target = nullptr) noexcept {
-    if (!frame.mission_ready || frame.active_units == 0 || frame.player_entity == 0 ||
-        !assets.ready_for(frame)) return false;
-    if (target != nullptr) {
-      for (std::uint32_t i = 0; i < assets.definition->asset_ids.size(); ++i) {
-        const AssetId asset = assets.definition->asset_ids[i];
-        if (assets.drawables != nullptr) {
-          const auto drawables = assets.drawables->find_by_asset(frame.mission_id, asset);
-          if (drawables.empty()) return false;
-          for (std::uint32_t j = 0; j < drawables.size(); ++j) {
-            if (assets.geometries != nullptr) {
-              const NativeGeometryMetadata* geometry = assets.geometries->find(drawables[j]->buffer_id);
-              const DecodedGeometry* decoded = assets.geometries->decoded(drawables[j]->buffer_id);
-              const MissionDrawableTransform* transform =
-                  assets.transforms == nullptr ? nullptr :
-                      assets.transforms->find(frame.mission_id, drawables[j]->stable_id);
-              const MissionMaterial* material =
-                  assets.materials == nullptr ? nullptr :
-                      assets.materials->find(frame.mission_id, drawables[j]->stable_id);
-              const MissionTextureBinding* texture =
-                  assets.textures == nullptr ? nullptr :
-                      assets.textures->find(frame.mission_id, drawables[j]->stable_id);
-              const ShaderPermutation* shader =
-                  material == nullptr || assets.shaders == nullptr ? nullptr :
-                      assets.shaders->find(material->shader_permutation);
-              const MissionRenderTargetDefinition* render_target =
-                  assets.render_targets == nullptr ? nullptr :
-                      assets.render_targets->find(frame.mission_id);
-              const MissionRenderPass* pass =
-                  assets.render_passes == nullptr ? nullptr :
-                      assets.render_passes->find(frame.mission_id, "world");
-              const MissionRenderResolve* resolve =
-                  assets.render_resolves == nullptr ? nullptr :
-                      assets.render_resolves->find(frame.mission_id, "world");
-              if (geometry == nullptr || decoded == nullptr || transform == nullptr ||
-                  material == nullptr || texture == nullptr || shader == nullptr ||
-                  pass == nullptr || resolve == nullptr) {
-                return false;
-              }
-              render_target = assets.render_targets == nullptr ? nullptr :
-                  assets.render_targets->find(frame.mission_id, pass->color_target);
-              const MissionRenderTargetDefinition* destination_target =
-                  assets.render_targets == nullptr ? nullptr :
-                      assets.render_targets->find(frame.mission_id, resolve->destination_target);
-              if (render_target == nullptr || destination_target == nullptr ||
-                  !target->draw_world_geometry(frame, *drawables[j], *geometry, *decoded,
-                                               *transform, *material, *texture, *shader, *render_target,
-                                               *destination_target, *pass, *resolve,
-                                               assets.camera,
-                                               assets.textures,
-                                               i * 4096u + j)) {
-                return false;
-              }
-            } else if (!target->draw_world_asset(frame, *drawables[j], i * 4096u + j)) {
-              return false;
-            }
-          }
-        } else if (!target->mark_world_asset(frame, asset, i)) {
-          return false;
-        }
-      }
-    }
-    ++submitted_frames_;
-    last_world_asset_count_ = static_cast<std::uint32_t>(assets.definition->asset_ids.size());
-    world_asset_submissions_ += last_world_asset_count_;
-    return true;
-  }
-  std::uint64_t submitted_frames() const noexcept { return submitted_frames_; }
-  std::uint32_t last_world_asset_count() const noexcept { return last_world_asset_count_; }
-  std::uint64_t world_asset_submissions() const noexcept { return world_asset_submissions_; }
-
- private:
-  std::uint64_t submitted_frames_{};
-  std::uint32_t last_world_asset_count_{};
-  std::uint64_t world_asset_submissions_{};
-};
-
-enum class FrontendState : std::uint8_t { Title, NewGame, Briefing, Hangar, Loading, Mission, Debrief };
-enum class FrontendDifficulty : std::uint8_t { Normal, Easy, Hard };
-enum class FrontendControls : std::uint8_t { Normal, Expert };
-enum class FrontendLanguage : std::uint8_t { English, French, German, Italian, Spanish };
-
-struct FrontendSettings {
-  FrontendDifficulty difficulty{FrontendDifficulty::Normal};
-  FrontendControls controls{FrontendControls::Normal};
-  FrontendLanguage language{FrontendLanguage::English};
-  bool valid() const noexcept {
-    return difficulty == FrontendDifficulty::Normal && controls == FrontendControls::Normal &&
-           language == FrontendLanguage::English;
-  }
-};
-
-class FrontendController final {
- public:
-  FrontendState state() const noexcept { return state_; }
-  std::uint32_t selected_mission() const noexcept { return selected_mission_; }
-  const FrontendSettings& settings() const noexcept { return settings_; }
-  bool configure(FrontendSettings settings) noexcept;
-  void set_campaign(CampaignProgression* campaign) noexcept { campaign_ = campaign; }
-  bool select_mission(const MissionCatalog& catalog, std::uint32_t mission_id) noexcept;
-  bool set_loadout(CampaignLoadout loadout) noexcept;
-  const MissionDefinition* mission_definition(const MissionCatalog& catalog) const noexcept;
-  bool launch_selected(const MissionCatalog& catalog, const MissionLaunchDatabase& launches,
-                       MissionExecution& execution) const noexcept;
-  bool enter_debrief(const MissionExecution& execution) noexcept;
-  bool return_to_campaign() noexcept;
-  const MissionDebrief* debrief() const noexcept {
-    return debrief_.has_value() ? &*debrief_ : nullptr;
-  }
-  bool advance() noexcept;
-  bool dispatch(Event event) noexcept;
-  bool dispatch_buttons(const InputMappingDatabase& mappings,
-                        std::uint16_t buttons) noexcept;
-
- private:
-  FrontendState state_{FrontendState::Title};
-  std::uint32_t selected_mission_{};
-  FrontendSettings settings_{};
-  CampaignProgression* campaign_{};
-  std::optional<MissionDebrief> debrief_;
-};
+class FrontendController;
 
 class SaveStore final {
  public:
@@ -1393,3 +1151,6 @@ class ReplayLog final {
 };
 
 }  // namespace ac6
+
+#include "ac6/native_renderer.h"
+#include "ac6/frontend_runtime.h"
