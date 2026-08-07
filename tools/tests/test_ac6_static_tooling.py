@@ -20,6 +20,7 @@ from compare_ac6_asset_closures import compare as compare_closures
 from compare_ac6_function_snapshots import compare_three
 from extract_ac6_pac import extract_selected
 from validate_ac6_scenario_schema import main as validate_scenario_schema
+from emit_ac6_reader_digests import canonical as digest_canonical, fnv64 as digest_fnv64
 from emit_mission01_retail_manifests import (CLASS_TO_OBJECT_CATEGORY, ENTITY_BASE,
                                              objectives_rows, waves_rows)
 from emit_ac6_native_snapshot import (Image as NativeImage, Parsers as NativeParsers,
@@ -1354,3 +1355,37 @@ class RetailManifestTests(unittest.TestCase):
         self.assertEqual([len(row) for row in rows], [4, 4])
         self.assertEqual(rows[0], ["1", "1", "mission01-submission-0", "1"])
         self.assertEqual(rows[1][2], "mission01-submission-1")
+
+
+class ReaderDigestTests(unittest.TestCase):
+    """The digest the C++ readers are replayed against."""
+
+    def test_runs_are_hashed_in_address_order_not_file_order(self):
+        first = {"address": "0xb4000000", "size": 2, "after_hex": "0102"}
+        second = {"address": "0xb5000000", "size": 1, "after_hex": "ff"}
+        forward, runs, written = digest_canonical([first, second])
+        backward, _, _ = digest_canonical([second, first])
+        self.assertEqual(forward, backward)
+        self.assertEqual(runs, 2)
+        self.assertEqual(written, 3)
+        self.assertEqual(forward, "b4000000:2:0102\nb5000000:1:ff\n")
+
+    def test_a_declared_size_that_contradicts_the_bytes_is_an_error(self):
+        with self.assertRaises(ValueError):
+            digest_canonical([{"address": "0xb4000000", "size": 4, "after_hex": "0102"}])
+
+    def test_the_hash_is_fnv1a_64_and_moves_with_one_byte(self):
+        # The FNV-1a 64 offset basis, hashed over the empty string.
+        self.assertEqual(digest_fnv64(""), 0xCBF29CE484222325)
+        self.assertNotEqual(digest_fnv64("b4000000:1:00\n"),
+                            digest_fnv64("b4000000:1:01\n"))
+
+    def test_the_committed_table_covers_the_whole_family(self):
+        path = TOOLS.parent / "analysis" / "microexec" / "reader-digests.tsv"
+        rows = [line.split("\t") for line in path.read_text().splitlines()
+                if line and not line.startswith("#")]
+        self.assertEqual(len(rows), 138)
+        self.assertEqual(len({row[0] for row in rows}), 10)
+        for row in rows:
+            self.assertEqual(len(row), 5)
+            self.assertEqual(len(row[4]), 16)
