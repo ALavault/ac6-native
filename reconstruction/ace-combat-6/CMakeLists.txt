@@ -130,6 +130,11 @@ add_test(NAME ac6-retail-bin-readers-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin)
 set_tests_properties(ac6-retail-bin-readers-tests PROPERTIES SKIP_RETURN_CODE 77)
 
+# Points the same reader at a payload that is not committed - another mission,
+# say - and reports what happens. Not wired to ctest: it needs a payload.
+add_executable(ac6-retail-scenario-probe tools/retail_scenario_probe.cpp)
+target_link_libraries(ac6-retail-scenario-probe PRIVATE ac6_product_core)
+
 if(AC6_BUILD_PLATFORM)
   add_test(NAME ac6-native-headless COMMAND ac6-native)
 
