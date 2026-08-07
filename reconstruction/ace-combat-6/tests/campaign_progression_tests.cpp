@@ -1,8 +1,12 @@
 #include "ac6/campaign_progression.h"
+#include "ac6/product_runtime.h"
 
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
+#include <sstream>
+#include <string>
 
 namespace {
 void require(bool condition, const char* expression, int line) {
@@ -12,9 +16,54 @@ void require(bool condition, const char* expression, int line) {
   }
 }
 #define REQUIRE(value) require((value), #value, __LINE__)
+
+std::string read_file(const std::filesystem::path& path) {
+  std::ifstream input(path, std::ios::binary);
+  std::ostringstream buffer;
+  buffer << input.rdbuf();
+  return buffer.str();
 }
 
-int main() {
+bool write_file(const std::filesystem::path& path, const std::string& text) {
+  std::ofstream output(path, std::ios::binary);
+  output << text;
+  return static_cast<bool>(output);
+}
+
+// The retail objective manifest, loaded transactionally, and left alone: no
+// objective may complete because it was loaded or because time passed.
+void check_retail_objectives(const std::filesystem::path& manifests) {
+  const std::filesystem::path source = manifests / "objectives.tsv";
+  if (!std::filesystem::exists(source)) return;
+  const std::string valid = read_file(source);
+
+  ac6::MissionObjectiveDatabase objectives;
+  REQUIRE(objectives.load_manifest(source));
+  REQUIRE(objectives.find_by_mission(1).size() == 4);
+  for (const ac6::ObjectiveRecord* objective : objectives.find_by_mission(1)) {
+    REQUIRE(objective->state == ac6::ObjectiveState::Pending);
+    REQUIRE(objective->condition == ac6::ObjectiveCondition::Manual);
+  }
+
+  const std::filesystem::path scratch =
+      std::filesystem::temp_directory_path() / "ac6-retail-objectives.tsv";
+  REQUIRE(write_file(scratch, valid + "1\t5\t\t1\n"));   // an empty stable id
+  REQUIRE(!objectives.load_manifest(scratch));
+  REQUIRE(objectives.find_by_mission(1).size() == 4);
+
+  REQUIRE(write_file(scratch, valid + valid));
+  REQUIRE(!objectives.load_manifest(scratch));              // duplicate ids
+  REQUIRE(objectives.find_by_mission(1).size() == 4);
+
+  // Still Pending after the refused loads: nothing forced a completion.
+  for (const ac6::ObjectiveRecord* objective : objectives.find_by_mission(1)) {
+    REQUIRE(objective->state == ac6::ObjectiveState::Pending);
+  }
+  std::filesystem::remove(scratch);
+}
+}
+
+int main(int argc, char** argv) {
   ac6::CampaignProgression campaign;
   REQUIRE(campaign.add({1, {1, 9, 9}, 2, {}}));
   REQUIRE(campaign.add({2, {2, 10, 10}, 1, {1}}));
@@ -131,5 +180,6 @@ int main() {
   REQUIRE(!from_manifest.load_manifest(manifest));
   REQUIRE(from_manifest.is_available(1));
   std::remove(manifest);
+  if (argc >= 2) check_retail_objectives(argv[1]);
   return 0;
 }

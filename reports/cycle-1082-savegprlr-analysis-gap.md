@@ -382,3 +382,36 @@ corpus réparé.
 - `scripts/InspectScenarioBinParsers.java` — mesure de la famille `*Bin` ;
 - sauvegarde du projet avant écriture :
   `ghidra-projects/ace-combat-6.rep.bak-pre-s0`.
+
+## Addendum — la frontière `0x8237CC58` / `0x8237CEF0`, relue
+
+Le plan demandait de rejouer cette frontière **en statique** après S0, avant
+toute nouvelle session bridge. Fait ici, sans oracle.
+
+`0x8237CC58` commençait par `mflr r12 ; bl 0x82382EDC` — la signature de
+troncature de ce cycle. Elle est levée : la fonction porte maintenant un corps
+complet, `[0x8237CC58, 0x8237D1B3]`, soit **1372 octets**.
+
+Deux adresses citées par les cycles 460 et 514 se requalifient :
+
+| adresse | ce qu'on en disait | ce qu'elle est |
+| --- | --- | --- |
+| `0x8237CEF0` | « le caller PAL », « le `bctrl` à `0x8237CEF0` » | **intérieure** à `0x8237CC58`, à `+0x298` : l'instruction `subic. r30,r30,0x1`, adresse de **retour** du `bctrl` de `0x8237CEEC` |
+| `0x8237D0FC` | « l'appel invité à `0x8237D0FC` » | adresse de **retour** du `bl 0x8237CC58` de `0x8237D0F8` — un appel **récursif** |
+
+`0x8237CEEC` est un appel indirect via une table indexée par
+`*(u32 *)*(état + 0xF8)`, mise à l'échelle par 4 sur la base `r23`. Et
+`0x8237D0F8` boucle sur `r30 = *(r30 + 0x18)` : `0x8237CC58` se rappelle
+elle-même le long d'une liste chaînée, ce qui confirme par le listing la lecture
+du cycle 460 — « il parcourt récursivement les timelines enfants » — que ce
+cycle avait dû faire sur un listing vide.
+
+Ce que le corps montre par ailleurs, sans que ce soit revendiqué au-delà : un
+curseur en `+0xD8` borné par `(*(état+0x2C) − *(état+0x28)) >> 3`, une
+transformation de huit flottants composée en `+0x140..+0x15C` depuis
+`+0x40..+0x5C`, et deux tables de pointeurs (`PTR_LAB_8267A1D0`,
+`PTR_LAB_8267A208`) indexées par une étiquette de type.
+
+**Aucun run N3 n'est engagé**, et aucune conclusion des cycles 460/514 n'est
+promue : ce qu'on gagne est que la prochaine session bridge, si elle a lieu,
+partira d'un listing réel plutôt que d'un vide.

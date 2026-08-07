@@ -21,6 +21,7 @@ from compare_ac6_function_snapshots import compare_three
 from extract_ac6_pac import extract_selected
 from validate_ac6_scenario_schema import main as validate_scenario_schema
 from emit_ac6_reader_digests import canonical as digest_canonical, fnv64 as digest_fnv64
+from roundtrip_ac6_scenario import Walk as ScenarioWalk, reemit as scenario_reemit
 from emit_mission01_retail_manifests import (CLASS_TO_OBJECT_CATEGORY, ENTITY_BASE,
                                              objectives_rows, waves_rows)
 from emit_ac6_native_snapshot import (Image as NativeImage, Parsers as NativeParsers,
@@ -1389,3 +1390,85 @@ class ReaderDigestTests(unittest.TestCase):
         for row in rows:
             self.assertEqual(len(row), 5)
             self.assertEqual(len(row[4]), 16)
+
+
+class ScenarioRoundTripTests(unittest.TestCase):
+    """Parse then re-emit, on containers built here rather than read from retail."""
+
+    @staticmethod
+    def _payload(child_count: int = 2, data: bytes = b"\x01\x02\x03\x04") -> bytes:
+        """A root with `child_count` children, each carrying a data block."""
+        # Layout: root node, root table, then one node + data block per child.
+        blob = bytearray()
+
+        def u32(value: int) -> None:
+            blob.extend(struct.pack(">I", value))
+
+        u32(0)                       # the root has no data block
+        u32(8)                       # its table follows immediately
+        table = len(blob)
+        u32(child_count)
+        slots = []
+        for _ in range(child_count):
+            slots.append(len(blob))
+            u32(0)
+        for index in range(child_count):
+            node = len(blob)
+            struct.pack_into(">I", blob, slots[index], node - table)
+            u32(16)                  # data block sits 16 bytes past the node
+            u32(0)                   # no table of its own
+            blob.extend(b"\x00" * 8)  # padding the walk will not claim
+            blob.extend(data)
+        return bytes(blob)
+
+    def _roundtrip(self, raw: bytes):
+        payload = NativePayload(raw)
+        walk = ScenarioWalk(payload)
+        rebuilt, written = scenario_reemit(payload, walk)
+        return walk, rebuilt, written
+
+    def test_a_container_is_reproduced_byte_for_byte(self):
+        raw = self._payload()
+        walk, rebuilt, written = self._roundtrip(raw)
+        self.assertEqual(rebuilt, raw)
+        self.assertEqual(len(walk.nodes), 3)      # the root and its two children
+        self.assertEqual(len(walk.tables), 1)
+        self.assertEqual(len(walk.data), 2)
+
+    def test_unclaimed_bytes_are_the_padding_and_are_zero(self):
+        raw = self._payload()
+        _, _, written = self._roundtrip(raw)
+        unclaimed = [index for index, flag in enumerate(written) if not flag]
+        self.assertTrue(unclaimed)                # the eight-byte gaps
+        self.assertTrue(all(raw[index] == 0 for index in unclaimed))
+
+    def test_an_unclaimed_non_zero_byte_breaks_the_contract(self):
+        # The same container with one byte written into the padding: the walk
+        # never sees it, so the rebuilt file must differ.
+        raw = bytearray(self._payload())
+        _, _, written = self._roundtrip(bytes(raw))
+        gap = next(index for index, flag in enumerate(written) if not flag)
+        raw[gap] = 0xAB
+        _, rebuilt, _ = self._roundtrip(bytes(raw))
+        self.assertNotEqual(rebuilt, bytes(raw))
+
+    def test_the_structure_is_recomputed_and_not_copied(self):
+        # Tampering with the model, not the bytes, must move the output. If the
+        # emitter copied structural words the mutation would be invisible.
+        raw = self._payload()
+        payload = NativePayload(raw)
+        walk = ScenarioWalk(payload)
+        table = next(iter(walk.tables))
+        walk.tables[table] = [offset + 4 for offset in walk.tables[table]]
+        rebuilt, _ = scenario_reemit(payload, walk)
+        self.assertNotEqual(rebuilt, raw)
+
+    def test_a_negative_count_is_kept_and_not_followed(self):
+        raw = bytearray(self._payload())
+        payload = NativePayload(bytes(raw))
+        walk = ScenarioWalk(payload)
+        table = next(iter(walk.tables))
+        struct.pack_into(">i", raw, table, -1)
+        walk2 = ScenarioWalk(NativePayload(bytes(raw)))
+        self.assertEqual(walk2.tables[table], [])
+        self.assertEqual(len(walk2.nodes), 1)     # the children are not reached

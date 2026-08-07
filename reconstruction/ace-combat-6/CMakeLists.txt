@@ -57,7 +57,8 @@ add_test(NAME ac6-render-contract-functional-tests COMMAND ac6-render-contract-f
 
 add_executable(ac6-combat-runtime-tests tests/combat_runtime_tests.cpp)
 target_link_libraries(ac6-combat-runtime-tests PRIVATE ac6_product_core)
-add_test(NAME ac6-combat-runtime-tests COMMAND ac6-combat-runtime-tests)
+add_test(NAME ac6-combat-runtime-tests COMMAND ac6-combat-runtime-tests
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../manifests/mission01-retail)
 
 add_executable(ac6-frontend-runtime-tests tests/frontend_runtime_tests.cpp)
 target_link_libraries(ac6-frontend-runtime-tests PRIVATE ac6_product_core)
@@ -87,7 +88,8 @@ add_test(NAME ac6-mission01-compare-tests COMMAND ac6-mission01-compare-tests)
 
 add_executable(ac6-campaign-progression-tests tests/campaign_progression_tests.cpp)
 target_link_libraries(ac6-campaign-progression-tests PRIVATE ac6_product_core)
-add_test(NAME ac6-campaign-progression-tests COMMAND ac6-campaign-progression-tests)
+add_test(NAME ac6-campaign-progression-tests COMMAND ac6-campaign-progression-tests
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../manifests/mission01-retail)
 
 add_executable(ac6-session-save-tests tests/session_save_tests.cpp)
 target_link_libraries(ac6-session-save-tests PRIVATE ac6_product_core)
