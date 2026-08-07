@@ -13,6 +13,7 @@
 
 #include <cstdio>
 #include <fstream>
+#include <algorithm>
 #include <map>
 #include <sstream>
 #include <string>
@@ -74,9 +75,21 @@ int main(int argc, char** argv) {
   }
   std::map<int, std::size_t> operations;
   std::map<int, std::size_t> counter_ids;
+  std::uint32_t highest_counter = 0;
   for (const ac6::retail::ScenarioFlagOrder& order : scenario->flag_orders()) {
     operations[order.operation] += 1;
     counter_ids[order.counter_id] += 1;
+    highest_counter = std::max<std::uint32_t>(highest_counter, order.counter_id);
+  }
+  // The two domain checks that matter: no flag order may name a counter the
+  // loader's table cannot hold, and no record may name a faction the table
+  // does not have.
+  const bool counters_in_range =
+      scenario->flag_orders().empty() ||
+      highest_counter < scenario->counter_capacity();
+  bool factions_in_range = true;
+  for (const ac6::retail::ScenarioUnitRecord& record : scenario->units()) {
+    if (record.faction_byte >= scenario->factions().size()) factions_in_range = false;
   }
 
   const std::optional<ac6::retail::RetailUnitBuild> build =
@@ -147,11 +160,18 @@ int main(int argc, char** argv) {
   std::printf("  \"flag_orders\": %zu,\n", scenario->flag_orders().size());
   std::printf("  \"flag_operations\": %s,\n", histogram(operations).c_str());
   std::printf("  \"distinct_counters\": %zu,\n", counter_ids.size());
+  std::printf("  \"highest_counter_id\": %u,\n", highest_counter);
+  std::printf("  \"counter_capacity\": %u,\n", scenario->counter_capacity());
+  std::printf("  \"counters_in_range\": %s,\n", counters_in_range ? "true" : "false");
+  std::printf("  \"factions_in_range\": %s,\n", factions_in_range ? "true" : "false");
   std::printf("  \"units_built\": %s,\n",
               build.has_value() ? std::to_string(build->objects.size()).c_str() : "null");
   std::printf("  \"reader_runs\": %zu,\n", reader_runs);
   std::printf("  \"reader_failure\": %s\n",
               reader_failure.empty() ? "null" : ("\"" + reader_failure + "\"").c_str());
   std::printf("}\n");
-  return reader_failure.empty() && build.has_value() ? 0 : 1;
+  return reader_failure.empty() && build.has_value() && counters_in_range &&
+                 factions_in_range
+             ? 0
+             : 1;
 }

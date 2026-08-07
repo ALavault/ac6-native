@@ -10,6 +10,7 @@ namespace {
 // The scenario root's slots, numbered as the dispatch table numbers them.
 constexpr std::size_t kRootNode = 0;
 constexpr std::size_t kSlotObjAndUnit = 0;
+constexpr std::size_t kSlotCounters = 1;
 constexpr std::size_t kSlotSubMissions = 2;
 constexpr std::size_t kSlotFactions = 5;
 constexpr std::size_t kRootSlots = 10;
@@ -188,6 +189,17 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
     }
 
     scenario.units_.push_back(std::move(record));
+  }
+
+  // Slot 1, whose u16 count sizes the mission counter table.
+  {
+    const std::optional<std::size_t> data =
+        payload.resolve(slots[kSlotCounters], 0);
+    if (data.has_value()) {
+      const std::optional<std::uint16_t> count = payload.u16(*data);
+      if (!count.has_value()) return std::nullopt;
+      scenario.counter_capacity_ = *count;
+    }
   }
 
   // Slot 5, the faction table. Its entries carry data without a table, so the

@@ -114,11 +114,16 @@ class MissionScenario final {
   }
   std::size_t object_records() const noexcept;
 
+  // The u16 count of root slot 1, from which the loader sizes the mission
+  // counter table at context+0x5C. Every OrderFlagBin id must fall below it.
+  std::uint16_t counter_capacity() const noexcept { return counter_capacity_; }
+
  private:
   std::vector<ScenarioUnitRecord> units_;
   std::vector<ScenarioFaction> factions_;
   std::vector<ScenarioSubMission> sub_missions_;
   std::vector<ScenarioFlagOrder> flag_orders_;
+  std::uint16_t counter_capacity_{};
 };
 
 // The class 0x820A7F48 allocates for a record's class byte, or nullopt for a
