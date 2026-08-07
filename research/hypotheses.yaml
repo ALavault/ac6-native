@@ -1,5 +1,5 @@
 version: 1
-updated: 2026-08-08T14:00:00+02:00
+updated: 2026-08-08T16:00:00+02:00
 hypotheses:
   - id: H-GAMEPLAY-ACTIVE-BEHIND-BLACK
     status: supported
@@ -361,6 +361,13 @@ hypotheses:
     discriminator: Require the two addresses to coincide, or a read of context+0x2E8 that indexes the 0x20 ObjBin record stride, or a write into context+0x123C40 from the parser chain. Adjacency to an allocation label is not evidence.
     evidence: reports/cycle-1093-scenario-record-runtime-address.md. The loader stores context + 0x123C40 at context+0x2E8, and 0x8226D1C8 mission_manager_update reloads it under the guard state+0x260 == 8 and passes it to 0x8226EBD0 with a float. But 0x123C40 is not 0x12540DC - the region is distinct from the scenario buffer.
     qualification: Proposed only. The owner-to-consumer chain is complete and state-guarded, which is suggestive, but the two regions are different addresses and the only link is the adjacency of an allocation label. Promoting it on that basis is the shortcut cycle 1073 already paid for.
+  - id: H-STATIC-OBJ-SLOT-CONSUMER-IS-0x820A7070
+    status: qualified
+    statement: The parsed Obj and Unit slot at scenario record+0x04 is consumed by 0x820A7070, which iterates it using the parsed count and turns two of its byte fields into a classification, a counter increment and activation bits.
+    discriminator: Require the loop bound to be the parsed count itself rather than a parallel structure, require the element stride to match the parser's record, and require every record in the payload to fall inside the domain the consumer's switch implements.
+    positive_control: The loop bound is *(u8*)(*(u32*)slot), which is exactly the container data word and its count byte. The stride is 0x0C, the record size 0x8232CCA0 writes. The switch at 0x820A7070 implements only values 0 to 4 for data+0x08, and all 230 level-0 records fall inside it - 1, 40, 188, 0, 1 - with zero outside. data+0x0D takes only three values and is used as an index into an 8-byte-stride table. The loop ends by incrementing a per-kind counter at kind*0x44 + context+0x58 + 0x24 and setting activation bits at target+0x60.
+    evidence: reports/cycle-1094-obj-slot-consumer.md; reports/cycle-1093-scenario-record-runtime-address.md; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for the chain and the field domain only. The classified value lVar19 is a category in 1..6 passed to a virtual method at the target's vtable slot +0x10, and then used to pick activation bits; it is NOT a formation size, although 1, 4, 4, 4, 3 invites that reading. What the categories mean, what the 0x24 counter counts and what the 0x60 bits activate are all unknown. 0x820A7070 reaches neither the unit factory 0x820A7F48 nor 0x822707C8 nor 0x8226D1C8 within six calls, so it is not the unit creator. This is the owner-to-consumer chain G1 asked for; it is not a wave identity and not an objective condition."
   - id: H-STATIC-PARSER-IDENTITY-FROM-ERROR-STRINGS
     status: qualified
     statement: "The AC6 scenario parser family identifies itself: each function materializes its own 'Error / Class::method' string, so class identity needs no address guess."
