@@ -3,7 +3,8 @@
 namespace ac6::retail {
 namespace {
 
-// The side flag word for a side code, from the nine-way switch: codes 0 to 2
+// The side flag word for a side code, from the nine-way switch at 0x820A7420:
+// codes 0 to 2
 // give the first word, 3 to 5 the second, 6 to 8 the third.
 std::optional<std::uint32_t> side_flags(std::uint8_t side_code) noexcept {
   switch (side_code / 3u) {
@@ -14,7 +15,8 @@ std::optional<std::uint32_t> side_flags(std::uint8_t side_code) noexcept {
   }
 }
 
-// The category the same switch produces, which is NOT symmetric across the
+// The category the same switch produces and hands to the factory 0x820A7F48,
+// which is NOT symmetric across the
 // three sides. Codes 0 and 3 walk the 16-entry table and yield 2 for the local
 // player and 1 otherwise; code 6 does not walk it and yields 5. Codes 1, 4 and
 // 7 yield 6; codes 2, 5 and 8 yield 4. Reproduced as retail has it.
@@ -53,6 +55,7 @@ std::optional<UnitClassification> classify_unit_record(
   return UnitClassification{*category, *flags};
 }
 
+// 0x8226FEC0: store at the incremented index, then bump the count.
 bool RetailUnitTable::insert(std::uint32_t entity) noexcept {
   if (count_ >= kSlots) return false;
   slots_[count_] = entity;
@@ -70,6 +73,7 @@ void RetailUnitTable::reset() noexcept {
   count_ = 0;
 }
 
+// The per-record loop of 0x820A7070: classify, construct, insert, count.
 std::optional<RetailUnitBuild> build_units(
     const MissionScenario& scenario,
     std::optional<LocalPlayerSlot> local_player) {
@@ -123,6 +127,7 @@ SubMissionSequencer SubMissionSequencer::from(const MissionScenario& scenario,
   return sequencer;
 }
 
+// 0x8226E908: bound the index by the parsed count, reset the step, timestamp.
 SubMissionStatus SubMissionSequencer::select(std::uint32_t index, float now) noexcept {
   sub_mission_ = index;
   step_ = 0;
@@ -131,6 +136,7 @@ SubMissionStatus SubMissionSequencer::select(std::uint32_t index, float now) noe
   return SubMissionStatus::Running;
 }
 
+// The step cursor 0x8226E158 walks at stride 0x28.
 bool SubMissionSequencer::advance_step() noexcept {
   if (sub_mission_ >= step_counts_.size()) return false;
   if (step_ + 1 >= step_counts_[sub_mission_]) return false;
@@ -138,6 +144,7 @@ bool SubMissionSequencer::advance_step() noexcept {
   return true;
 }
 
+// 0x82267008: has `threshold` elapsed since this sub-mission started?
 std::optional<bool> SubMissionSequencer::elapsed_at_least(float threshold,
                                                           float now) const noexcept {
   if (sub_mission_ >= started_at_.size()) return std::nullopt;
@@ -178,6 +185,8 @@ std::optional<MissionCounter> SubMissionSequencer::counter_entry(
   return counters_[id];
 }
 
+// 0x82267468, with the random draw retail takes from 0x82380798 injected by the
+// caller and the never-sentinel of 0x82008120 guarding the stamp.
 bool SubMissionSequencer::apply(std::uint16_t id, const CounterOperand& operand,
                                 float now, std::uint32_t random) noexcept {
   if (id >= counters_.size()) return false;
@@ -223,6 +232,8 @@ bool SubMissionSequencer::apply(std::uint16_t id, const CounterOperand& operand,
 }
 
 
+// The loader's own sequence: 0x8219BDD8 builds the slots, 0x820A7070 turns the
+// unit slot into objects, and root slot 1 sizes the counter table.
 std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
                                               std::uint32_t mission_id,
                                               std::optional<LocalPlayerSlot> local_player) {

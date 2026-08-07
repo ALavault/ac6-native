@@ -139,5 +139,27 @@ int main(int argc, char** argv) {
 
   std::printf("retail_playable units=%zu ticks=%zu hash=%016llx\n", world->published,
               kTicks, static_cast<unsigned long long>(first_hash));
+
+  if (argc >= 4) {
+    std::ofstream report(argv[3]);
+    REQUIRE(static_cast<bool>(report));
+    report << "{\n"
+           << "  \"schema\": \"ac6.retail-playable.v1\",\n"
+           << "  \"mission_id\": " << kMissionId << ",\n"
+           << "  \"source\": \"retail scenario container only, no manifest\",\n"
+           << "  \"units_published\": " << world->published << ",\n"
+           << "  \"faction_census\": [" << world->build.faction_census[0] << ", "
+           << world->build.faction_census[1] << ", " << world->build.faction_census[2]
+           << ", " << world->build.faction_census[3] << "],\n"
+           << "  \"objectives\": " << world->objectives.find_by_mission(kMissionId).size()
+           << ",\n"
+           << "  \"objectives_completed\": 0,\n"
+           << "  \"counter_capacity\": " << world->sequencer.counter_capacity() << ",\n"
+           << "  \"ticks\": " << kTicks << ",\n"
+           << "  \"deterministic_replay\": true,\n"
+           << "  \"semantic_hash\": \"" << std::hex << first_hash << std::dec << "\"\n"
+           << "}\n";
+    REQUIRE(static_cast<bool>(report));
+  }
   return 0;
 }

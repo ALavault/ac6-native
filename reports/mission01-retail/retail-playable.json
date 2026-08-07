@@ -1,0 +1,13 @@
+{
+  "schema": "ac6.retail-playable.v1",
+  "mission_id": 1,
+  "source": "retail scenario container only, no manifest",
+  "units_published": 230,
+  "faction_census": [140, 42, 48, 0],
+  "objectives": 4,
+  "objectives_completed": 0,
+  "counter_capacity": 339,
+  "ticks": 1800,
+  "deterministic_replay": true,
+  "semantic_hash": "4efb07a0a1d370a6"
+}

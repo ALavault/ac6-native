@@ -677,6 +677,7 @@ void BinReaders::radiotbl_read(std::uint32_t record, std::size_t node,
 
 // -- ObjBin ------------------------------------------------------------------
 
+// ObjBin::read, 0x82330158.
 void BinReaders::obj_read(std::uint32_t record, std::size_t node,
                           std::uint32_t buffer) {
   const std::optional<std::size_t> data = resolve(node, 0);
@@ -715,6 +716,7 @@ void BinReaders::obj_read(std::uint32_t record, std::size_t node,
 
 // -- entry points ------------------------------------------------------------
 
+// The entry points the scenario root reader 0x82249718 dispatches to.
 bool BinReaders::run(std::string_view klass, std::size_t node) {
   if (klass == "ComBin") {
     com_read(kRecordBase, node);

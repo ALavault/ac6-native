@@ -13,11 +13,13 @@ from typing import Any
 
 
 SCHEMA = "ac6.mission01-native-gate.v2"
+V3_SCHEMA = "ac6.mission01-final-gate.v3"
 V1_SCHEMA = "ac6.mission01-native-gate.v1"
 CANONICAL_XEX_SHA256 = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
 CANONICAL_DATA_TBL_SHA256 = "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5"
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 EVIDENCE_KINDS = {
+    "derivation",
     "static",
     "microexec",
     "differential",
@@ -89,6 +91,19 @@ V2_RETAIL_GATE_REQUIREMENTS = (
     "pause_save_restart",
 )
 V2_RETAIL_EVIDENCE_KINDS = {"static", "microexec", "differential", "retail"}
+
+
+# A derivation may not cite generated or recompiled sources: those are literal
+# cross-match evidence, never the origin of native behaviour.
+FORBIDDEN_DERIVATION_MARKERS = (
+    "ac6-recomp-reference",
+    "/generated/",
+    "ppc_recomp",
+    "XenonRecomp",
+    "xenonrecomp",
+)
+
+V3_REQUIRED_KINDS = {"static", "native-test", "derivation"}
 
 
 class GateError(ValueError):
@@ -389,10 +404,101 @@ def _audit_v2(document: dict[str, Any], artifact_root: Path) -> dict[str, Any]:
     }
 
 
+def _validate_derivation(name: str, item: dict[str, Any], path: Path,
+                         addresses: list[str]) -> None:
+    """A derivation must name its origin inside the file it points at.
+
+    Declaring provenance in the contract proves nothing: the contract is the
+    thing being audited. So the native source itself has to carry the retail
+    address, and it must not be generated code.
+    """
+    relative = item["path"]
+    for marker in FORBIDDEN_DERIVATION_MARKERS:
+        if marker in relative:
+            raise GateError(
+                f"{name} derivation cites generated or recompiled source: {relative}")
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        raise GateError(f"{name} derivation unreadable: {relative}") from exc
+    lowered = text.lower()
+    for address in addresses:
+        bare = address.lower().removeprefix("0x")
+        if bare not in lowered:
+            raise GateError(
+                f"{name} derivation {relative} never cites retail address {address}")
+
+
+def _audit_v3(document: dict[str, Any], artifact_root: Path) -> dict[str, Any]:
+    if document.get("schema") != V3_SCHEMA:
+        raise GateError("schema")
+    provenance = document.get("provenance")
+    if not isinstance(provenance, dict):
+        raise GateError("provenance")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(provenance.get("repo_commit", ""))):
+        raise GateError("provenance.repo_commit")
+    if provenance.get("xex_sha256") != CANONICAL_XEX_SHA256:
+        raise GateError("provenance.xex_sha256")
+    if provenance.get("mission_id") != 1:
+        raise GateError("provenance.mission_id")
+
+    policy = document.get("policy")
+    expected = {"derivation_required_for_pass", "generated_recomp_is_cross_match_only",
+                "no_forced_objective_completion", "visual_parity_out_of_scope"}
+    if not isinstance(policy, dict) or not expected <= set(policy):
+        raise GateError("policy coverage")
+    for flag in expected:
+        if policy.get(flag) is not True:
+            raise GateError(f"policy.{flag}")
+
+    behaviours = document.get("requirements", {}).get("behaviours")
+    if not isinstance(behaviours, dict) or not behaviours:
+        raise GateError("requirements.behaviours")
+
+    statuses: dict[str, str] = {}
+    kinds_by_name: dict[str, list[str]] = {}
+    for name, record in behaviours.items():
+        if not isinstance(record, dict) or record.get("status") not in {"open", "passed"}:
+            raise GateError(f"{name}.status")
+        if not isinstance(record.get("statement"), str) or not record["statement"]:
+            raise GateError(f"{name}.statement")
+        addresses = record.get("retail_addresses")
+        if not isinstance(addresses, list) or not addresses:
+            raise GateError(f"{name}.retail_addresses")
+
+        kinds = validate_evidence(name, record.get("evidence"), artifact_root)
+        if record["status"] == "open":
+            if kinds:
+                raise GateError(f"{name} is open but carries acceptance evidence")
+        else:
+            missing = V3_REQUIRED_KINDS - kinds
+            if missing:
+                raise GateError(f"{name} passed without {sorted(missing)}")
+            for item in record["evidence"]:
+                if item.get("kind") != "derivation":
+                    continue
+                _validate_derivation(name, item,
+                                     safe_artifact_path(artifact_root, item["path"]),
+                                     addresses)
+        statuses[name] = record["status"]
+        kinds_by_name[name] = sorted(kinds)
+
+    open_names = [name for name, status in statuses.items() if status != "passed"]
+    return {
+        "schema": "ac6.mission01-final-gate-audit.v3",
+        "repo_commit": provenance["repo_commit"],
+        "JF": {"passed": not open_names, "open": open_names},
+        "behaviours": statuses,
+        "evidence_kinds": kinds_by_name,
+    }
+
+
 def audit_contract(document: dict[str, Any], artifact_root: Path) -> dict[str, Any]:
     schema = document.get("schema")
     if schema == V1_SCHEMA:
         return _audit_v1(document, artifact_root)
+    if schema == V3_SCHEMA:
+        return _audit_v3(document, artifact_root)
     return _audit_v2(document, artifact_root)
 
 
@@ -406,7 +512,7 @@ def main() -> int:
     parser.add_argument("contract", type=Path, nargs="?")
     parser.add_argument("--artifact-root", type=Path, default=Path("."))
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--require", choices=("J0", "J1", "retail"))
+    parser.add_argument("--require", choices=("J0", "J1", "retail", "JF"))
     parser.add_argument("--init", type=Path, help="write a new fail-closed template")
     args = parser.parse_args()
     if args.init is not None:
@@ -430,6 +536,13 @@ def main() -> int:
         args.output.write_text(
             json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
+    if "JF" in report:
+        state = "pass" if report["JF"]["passed"] else "open"
+        print(f"mission01_final_gate=audit-valid JF={state} "
+              f"open={','.join(report['JF']['open']) or 'none'}")
+        if args.require == "JF" and not report["JF"]["passed"]:
+            return 2
+        return 0
     retail_report = report.get("J1", report.get("retail", {"passed": False}))
     print(
         "mission01_native_gate=audit-valid "
