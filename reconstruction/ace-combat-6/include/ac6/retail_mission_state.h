@@ -106,6 +106,10 @@ struct LocalPlayerSlot {
 std::optional<RetailUnitBuild> build_units(const MissionScenario& scenario,
                                            std::optional<LocalPlayerSlot> local_player);
 
+// The value a time field carries until it is stamped. Retail compares against
+// this exact constant, so a field already stamped is never stamped again.
+inline constexpr float kNever = 3.4028234663852886e+38f;  // FLT_MAX, at 0x82008120
+
 // The sub-mission sequencer of 0x8226E908 and 0x8226E158.
 enum class SubMissionStatus : std::uint8_t {
   Running,   // a step is current
@@ -124,6 +128,32 @@ struct CounterCondition {
   std::int16_t threshold{};
   CounterComparison comparison{};
   std::uint8_t target_sub_mission{};
+};
+
+// One entry of the mission counter table the loader sizes from root slot 1:
+// 0x14 bytes, of which three fields are established.
+struct MissionCounter {
+  std::int32_t value{};                  // +0x00, what a tag-7 condition compares
+  float reached_one_at{kNever};          // +0x04, stamped the first time value == 1
+  std::uint32_t bits{};                  // +0x08, a bit set elsewhere per index
+  bool operator==(const MissionCounter&) const = default;
+};
+
+// The four operations 0x82267468 dispatches on the operand's byte +0x08.
+enum class CounterOperation : std::uint8_t {
+  SetLiteral = 0,           // value  = literal
+  AddLiteral = 1,           // value += literal
+  RandomOneToLiteral = 2,   // value  = 1 + random % literal
+  SumOfTwo = 3,             // value  = counters[a] + counters[b]
+};
+
+// The operand record the writer reads: a literal at +0x00, two counter ids at
+// +0x04 and +0x06, and the operation at +0x08.
+struct CounterOperand {
+  std::int16_t literal{};
+  std::uint16_t source_a{0xFFFF};
+  std::uint16_t source_b{0xFFFF};
+  CounterOperation operation{CounterOperation::SetLiteral};
 };
 
 class SubMissionSequencer final {
@@ -150,11 +180,21 @@ class SubMissionSequencer final {
 
   bool set_counter(std::uint16_t id, std::int32_t value) noexcept;
   std::optional<std::int32_t> counter(std::uint16_t id) const noexcept;
+  std::optional<MissionCounter> counter_entry(std::uint16_t id) const noexcept;
+  std::size_t counter_capacity() const noexcept { return counters_.size(); }
+
+  // 0x82267468. `now` is the mission clock the stamp uses; `random` is the
+  // value retail draws from 0x82380798, passed in so a replay is deterministic.
+  // False when the id is out of the table, when a SumOfTwo operand names a
+  // counter the table does not have, or when RandomOneToLiteral is given a zero
+  // literal - retail would divide by zero there.
+  bool apply(std::uint16_t id, const CounterOperand& operand, float now,
+             std::uint32_t random) noexcept;
 
  private:
   std::vector<std::uint32_t> step_counts_;
   std::vector<float> started_at_;      // context+0x2C
-  std::vector<std::int32_t> counters_; // context+0x5C, one per counter
+  std::vector<MissionCounter> counters_;  // context+0x5C, stride 0x14
   std::uint32_t sub_mission_{};
   std::uint32_t step_{};
 };

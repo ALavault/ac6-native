@@ -41,6 +41,7 @@ class ScenarioPayload final {
   std::size_t size() const noexcept { return bytes_.size(); }
 
   std::optional<std::uint8_t> u8(std::size_t offset) const noexcept;
+  std::optional<std::uint16_t> u16(std::size_t offset) const noexcept;
   std::optional<std::uint32_t> u32(std::size_t offset) const noexcept;
   std::optional<float> f32(std::size_t offset) const noexcept;
 
@@ -79,6 +80,17 @@ struct ScenarioFaction {
   bool operator==(const ScenarioFaction&) const = default;
 };
 
+// One OrderFlagBin order - tag 6 of the per-unit order program, and the only
+// thing in the scenario that writes a mission counter. Its payload is
+// {u16 counter_id, u16 literal, u8 operation}.
+struct ScenarioFlagOrder {
+  std::uint32_t unit_index{};
+  std::uint16_t counter_id{};
+  std::uint16_t literal{};
+  std::uint8_t operation{};
+  bool operator==(const ScenarioFlagOrder&) const = default;
+};
+
 // One entry of root slot 2, with the script 0x8226E158 steps through.
 struct ScenarioSubMission {
   std::uint32_t index{};
@@ -97,12 +109,16 @@ class MissionScenario final {
   const std::vector<ScenarioSubMission>& sub_missions() const noexcept {
     return sub_missions_;
   }
+  const std::vector<ScenarioFlagOrder>& flag_orders() const noexcept {
+    return flag_orders_;
+  }
   std::size_t object_records() const noexcept;
 
  private:
   std::vector<ScenarioUnitRecord> units_;
   std::vector<ScenarioFaction> factions_;
   std::vector<ScenarioSubMission> sub_missions_;
+  std::vector<ScenarioFlagOrder> flag_orders_;
 };
 
 // The class 0x820A7F48 allocates for a record's class byte, or nullopt for a

@@ -19,6 +19,13 @@ constexpr std::size_t kRootSlots = 10;
 constexpr std::size_t kUnitClassByte = 0x08;
 constexpr std::size_t kUnitFactionByte = 0x0D;
 
+// The order tag whose payload writes a mission counter, and the payload's
+// three fields, read at 0x82296BC0 and 0x82267474.
+constexpr std::uint8_t kFlagOrderTag = 6;
+constexpr std::size_t kFlagOrderCounterId = 0x00;
+constexpr std::size_t kFlagOrderLiteral = 0x02;
+constexpr std::size_t kFlagOrderOperation = 0x04;
+
 // The nine-way flag selector inside a faction entry, read at 0x820A7420.
 constexpr std::size_t kFactionSideByte = 0x2C;
 constexpr std::size_t kFactionWord = 0x28;
@@ -40,6 +47,11 @@ std::optional<ScenarioPayload> ScenarioPayload::open(std::vector<std::uint8_t> b
 std::optional<std::uint8_t> ScenarioPayload::u8(std::size_t offset) const noexcept {
   if (offset >= bytes_.size()) return std::nullopt;
   return bytes_[offset];
+}
+
+std::optional<std::uint16_t> ScenarioPayload::u16(std::size_t offset) const noexcept {
+  if (offset > bytes_.size() || bytes_.size() - offset < 2) return std::nullopt;
+  return static_cast<std::uint16_t>(bytes_[offset] << 8 | bytes_[offset + 1]);
 }
 
 std::optional<std::uint32_t> ScenarioPayload::u32(std::size_t offset) const noexcept {
@@ -146,6 +158,35 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         record.objects.push_back({*x, *y, *z});
       }
     }
+    // The unit's Set -> Act -> Order program, kept only for the orders that
+    // write a mission counter.
+    if (record.has_behaviour_set) {
+      for (const std::size_t act : payload.children(record_children[0])) {
+        for (const std::size_t order : payload.children(act)) {
+          const std::optional<std::size_t> order_data = payload.resolve(order, 0);
+          if (!order_data.has_value()) continue;
+          const std::optional<std::uint8_t> tag = payload.u8(*order_data);
+          if (!tag.has_value() || *tag != kFlagOrderTag) continue;
+          const std::vector<std::size_t> order_children = payload.children(order);
+          if (order_children.empty() || !payload.present(order_children[0])) continue;
+          const std::optional<std::size_t> flag = payload.resolve(order_children[0], 0);
+          if (!flag.has_value()) continue;
+          const std::optional<std::uint16_t> counter_id =
+              payload.u16(*flag + kFlagOrderCounterId);
+          const std::optional<std::uint16_t> literal =
+              payload.u16(*flag + kFlagOrderLiteral);
+          const std::optional<std::uint8_t> operation =
+              payload.u8(*flag + kFlagOrderOperation);
+          if (!counter_id.has_value() || !literal.has_value() ||
+              !operation.has_value()) {
+            return std::nullopt;
+          }
+          scenario.flag_orders_.push_back(
+              {record.index, *counter_id, *literal, *operation});
+        }
+      }
+    }
+
     scenario.units_.push_back(std::move(record));
   }
 

@@ -15,12 +15,15 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <sstream>
 #include <vector>
 
 namespace {
 
 using ac6::retail::CounterComparison;
+using ac6::retail::CounterOperand;
+using ac6::retail::CounterOperation;
 using ac6::retail::CounterCondition;
 using ac6::retail::MissionScenario;
 using ac6::retail::RetailUnitTable;
@@ -109,6 +112,49 @@ void check_sequencer_on_a_chosen_script() {
   REQUIRE(!sequencer.evaluate({3, 6, CounterComparison::AtLeast, 0}).has_value());
 }
 
+void check_counter_operations() {
+  ac6::retail::MissionScenario empty;
+  SubMissionSequencer sequencer = SubMissionSequencer::from(empty, 16);
+
+  // Set, then add: the two operations Mission 01 actually uses.
+  REQUIRE(sequencer.apply(4, {7, 0xFFFF, 0xFFFF, CounterOperation::SetLiteral},
+                          1.0f, 0));
+  REQUIRE(sequencer.counter(4) == 7);
+  REQUIRE(sequencer.apply(4, {5, 0xFFFF, 0xFFFF, CounterOperation::AddLiteral},
+                          2.0f, 0));
+  REQUIRE(sequencer.counter(4) == 12);
+
+  // The stamp fires at exactly 1, once, and never moves afterwards.
+  REQUIRE(sequencer.counter_entry(5)->reached_one_at == ac6::retail::kNever);
+  REQUIRE(sequencer.apply(5, {2, 0xFFFF, 0xFFFF, CounterOperation::SetLiteral},
+                          3.0f, 0));
+  REQUIRE(sequencer.counter_entry(5)->reached_one_at == ac6::retail::kNever);
+  REQUIRE(sequencer.apply(5, {1, 0xFFFF, 0xFFFF, CounterOperation::SetLiteral},
+                          4.0f, 0));
+  REQUIRE(sequencer.counter_entry(5)->reached_one_at == 4.0f);
+  REQUIRE(sequencer.apply(5, {0, 0xFFFF, 0xFFFF, CounterOperation::SetLiteral},
+                          5.0f, 0));
+  REQUIRE(sequencer.apply(5, {1, 0xFFFF, 0xFFFF, CounterOperation::SetLiteral},
+                          6.0f, 0));
+  REQUIRE(sequencer.counter_entry(5)->reached_one_at == 4.0f);
+
+  // 1 + random % literal, and a zero literal is refused rather than dividing.
+  REQUIRE(sequencer.apply(6, {10, 0xFFFF, 0xFFFF,
+                              CounterOperation::RandomOneToLiteral}, 7.0f, 37));
+  REQUIRE(sequencer.counter(6) == 8);
+  REQUIRE(!sequencer.apply(6, {0, 0xFFFF, 0xFFFF,
+                               CounterOperation::RandomOneToLiteral}, 7.0f, 1));
+
+  // The sum of two counters, and the 0xFFFF sentinel that skips the store.
+  REQUIRE(sequencer.apply(7, {0, 4, 6, CounterOperation::SumOfTwo}, 8.0f, 0));
+  REQUIRE(sequencer.counter(7) == 20);
+  REQUIRE(sequencer.apply(8, {0, 0xFFFF, 6, CounterOperation::SumOfTwo}, 9.0f, 0));
+  REQUIRE(sequencer.counter(8) == 0);
+  REQUIRE(!sequencer.apply(9, {0, 4, 99, CounterOperation::SumOfTwo}, 9.0f, 0));
+  REQUIRE(!sequencer.apply(99, {1, 0xFFFF, 0xFFFF, CounterOperation::SetLiteral},
+                           9.0f, 0));
+}
+
 std::string read_file(const std::filesystem::path& path) {
   std::ifstream input(path, std::ios::binary);
   std::ostringstream buffer;
@@ -157,6 +203,39 @@ int check_retail(const std::filesystem::path& payload_path) {
     REQUIRE(object.category == (object.record_index == 0 ? 2u : 1u));
   }
 
+  // The counter-writing orders: every id the scenario names must land inside
+  // the table the loader sizes from root slot 1.
+  const std::vector<ac6::retail::ScenarioFlagOrder>& flags = scenario->flag_orders();
+  REQUIRE(flags.size() == 232);
+  std::map<std::uint16_t, std::size_t> per_counter;
+  std::map<std::uint8_t, std::size_t> per_operation;
+  for (const ac6::retail::ScenarioFlagOrder& order : flags) {
+    REQUIRE(order.counter_id < 339);
+    per_counter[order.counter_id] += 1;
+    per_operation[order.operation] += 1;
+  }
+  REQUIRE(per_counter.size() == 133);
+  REQUIRE(per_operation.size() == 2);
+  REQUIRE(per_operation[0] == 231);
+  REQUIRE(per_operation[1] == 1);
+
+  // Applying every one of them must succeed and leave the counters set.
+  SubMissionSequencer counters = SubMissionSequencer::from(*scenario, 339);
+  REQUIRE(counters.counter_capacity() == 339);
+  for (const ac6::retail::ScenarioFlagOrder& order : flags) {
+    const CounterOperand operand{static_cast<std::int16_t>(order.literal), 0xFFFF,
+                                 0xFFFF,
+                                 static_cast<CounterOperation>(order.operation)};
+    REQUIRE(counters.apply(order.counter_id, operand, 1.0f, 0));
+  }
+  std::size_t stamped = 0;
+  for (std::uint16_t id = 0; id < 339; ++id) {
+    if (counters.counter_entry(id)->reached_one_at != ac6::retail::kNever) {
+      stamped += 1;
+    }
+  }
+  REQUIRE(stamped > 0 && stamped <= per_counter.size());
+
   // The sequencer over the real script: four sub-missions, then finished.
   SubMissionSequencer sequencer = SubMissionSequencer::from(*scenario, 339);
   REQUIRE(sequencer.select(0, 10.0f) == SubMissionStatus::Running);
@@ -178,6 +257,7 @@ int main(int argc, char** argv) {
   check_classification();
   check_unit_table();
   check_sequencer_on_a_chosen_script();
+  check_counter_operations();
   if (argc < 2) return 0;
   return check_retail(argv[1]);
 }

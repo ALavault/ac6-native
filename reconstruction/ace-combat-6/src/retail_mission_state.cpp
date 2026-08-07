@@ -119,7 +119,7 @@ SubMissionSequencer SubMissionSequencer::from(const MissionScenario& scenario,
         static_cast<std::uint32_t>(sub_mission.step_tags.size()));
   }
   sequencer.started_at_.assign(sequencer.step_counts_.size(), 0.0f);
-  sequencer.counters_.assign(counter_count, 0);
+  sequencer.counters_.assign(counter_count, MissionCounter{});
   return sequencer;
 }
 
@@ -149,7 +149,7 @@ std::optional<std::uint32_t> SubMissionSequencer::evaluate(
   // Retail treats 0 and 0xFFFF as "no condition" before indexing anything.
   if (condition.counter_id == 0 || condition.counter_id == 0xFFFFu) return std::nullopt;
   if (condition.counter_id >= counters_.size()) return std::nullopt;
-  const std::int32_t value = counters_[condition.counter_id];
+  const std::int32_t value = counters_[condition.counter_id].value;
   const std::int32_t threshold = condition.threshold;
   bool satisfied = false;
   switch (condition.comparison) {
@@ -163,13 +163,63 @@ std::optional<std::uint32_t> SubMissionSequencer::evaluate(
 
 bool SubMissionSequencer::set_counter(std::uint16_t id, std::int32_t value) noexcept {
   if (id >= counters_.size()) return false;
-  counters_[id] = value;
+  counters_[id].value = value;
   return true;
 }
 
 std::optional<std::int32_t> SubMissionSequencer::counter(std::uint16_t id) const noexcept {
   if (id >= counters_.size()) return std::nullopt;
+  return counters_[id].value;
+}
+
+std::optional<MissionCounter> SubMissionSequencer::counter_entry(
+    std::uint16_t id) const noexcept {
+  if (id >= counters_.size()) return std::nullopt;
   return counters_[id];
+}
+
+bool SubMissionSequencer::apply(std::uint16_t id, const CounterOperand& operand,
+                                float now, std::uint32_t random) noexcept {
+  if (id >= counters_.size()) return false;
+  MissionCounter& target = counters_[id];
+
+  // Retail computes the new value, stores it, and then runs the stamp check -
+  // which it also reaches when the operation byte is out of range and nothing
+  // was stored. Reproduced in that order.
+  switch (operand.operation) {
+    case CounterOperation::SetLiteral:
+      target.value = operand.literal;
+      break;
+    case CounterOperation::AddLiteral:
+      target.value += operand.literal;
+      break;
+    case CounterOperation::RandomOneToLiteral: {
+      // 1 + random % literal, with retail's signed remainder. A zero literal
+      // would divide by zero in retail; refuse rather than reproduce that.
+      if (operand.literal == 0) return false;
+      const std::int32_t draw = static_cast<std::int32_t>(random);
+      target.value = draw - draw / operand.literal * operand.literal + 1;
+      break;
+    }
+    case CounterOperation::SumOfTwo: {
+      // Retail treats 0xFFFF as "no counter" and skips the store when either
+      // side is absent; it does not range-check the other ids, this does.
+      if (operand.source_a == 0xFFFF || operand.source_b == 0xFFFF) break;
+      if (operand.source_a >= counters_.size() ||
+          operand.source_b >= counters_.size()) {
+        return false;
+      }
+      target.value = counters_[operand.source_a].value +
+                     counters_[operand.source_b].value;
+      break;
+    }
+  }
+
+  // The stamp: only at exactly 1, and only while the field still holds kNever.
+  if (target.value == 1 && target.reached_one_at == kNever) {
+    target.reached_one_at = now;
+  }
+  return true;
 }
 
 }  // namespace ac6::retail
