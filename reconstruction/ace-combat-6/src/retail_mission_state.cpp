@@ -1,0 +1,175 @@
+#include "ac6/retail_mission_state.h"
+
+namespace ac6::retail {
+namespace {
+
+// The side flag word for a side code, from the nine-way switch: codes 0 to 2
+// give the first word, 3 to 5 the second, 6 to 8 the third.
+std::optional<std::uint32_t> side_flags(std::uint8_t side_code) noexcept {
+  switch (side_code / 3u) {
+    case 0: return kSideFlagsFirst;
+    case 1: return kSideFlagsSecond;
+    case 2: return kSideFlagsThird;
+    default: return std::nullopt;  // a code above 8 leaves the switch open
+  }
+}
+
+// The category the same switch produces, which is NOT symmetric across the
+// three sides. Codes 0 and 3 walk the 16-entry table and yield 2 for the local
+// player and 1 otherwise; code 6 does not walk it and yields 5. Codes 1, 4 and
+// 7 yield 6; codes 2, 5 and 8 yield 4. Reproduced as retail has it.
+std::optional<std::uint32_t> side_category(std::uint8_t side_code,
+                                           bool is_local_player) noexcept {
+  switch (side_code) {
+    case 0:
+    case 3: return is_local_player ? 2u : 1u;
+    case 6: return 5u;
+    case 1:
+    case 4:
+    case 7: return 6u;
+    case 2:
+    case 5:
+    case 8: return 4u;
+    default: return std::nullopt;
+  }
+}
+
+}  // namespace
+
+std::optional<UnitClassification> classify_unit_record(
+    std::uint8_t class_byte, std::optional<std::uint8_t> side_code,
+    bool is_local_player) noexcept {
+  const std::optional<std::uint32_t> base = object_category(class_byte);
+  if (!base.has_value()) return std::nullopt;
+  if (!side_code.has_value()) {
+    // Modes other than 2 and 3 never reach the faction switch, so the class
+    // byte alone decides and no side flag is written.
+    return UnitClassification{*base, 0};
+  }
+  const std::optional<std::uint32_t> flags = side_flags(*side_code);
+  const std::optional<std::uint32_t> category =
+      side_category(*side_code, is_local_player);
+  if (!flags.has_value() || !category.has_value()) return std::nullopt;
+  return UnitClassification{*category, *flags};
+}
+
+bool RetailUnitTable::insert(std::uint32_t entity) noexcept {
+  if (count_ >= kSlots) return false;
+  slots_[count_] = entity;
+  count_ += 1;
+  return true;
+}
+
+std::optional<std::uint32_t> RetailUnitTable::at(std::size_t index) const noexcept {
+  if (index >= count_) return std::nullopt;
+  return slots_[index];
+}
+
+void RetailUnitTable::reset() noexcept {
+  slots_.fill(0);
+  count_ = 0;
+}
+
+std::optional<RetailUnitBuild> build_units(
+    const MissionScenario& scenario,
+    std::optional<LocalPlayerSlot> local_player) {
+  const std::vector<ScenarioFaction>& factions = scenario.factions();
+  if (factions.empty()) return std::nullopt;
+
+  RetailUnitBuild build;
+  build.faction_census.assign(factions.size(), 0);
+  // The two running ordinals retail keeps, one per local-player branch.
+  std::array<std::uint32_t, 2> ordinals{};
+
+  for (const ScenarioUnitRecord& record : scenario.units()) {
+    if (record.faction_byte >= factions.size()) return std::nullopt;
+    const ScenarioFaction& faction = factions[record.faction_byte];
+    bool is_local_player = false;
+    if (faction.side_code == 0 || faction.side_code == 3) {
+      const std::uint8_t branch = faction.side_code == 0 ? 0 : 1;
+      const std::uint32_t ordinal = ordinals[branch]++;
+      is_local_player = local_player.has_value() &&
+                        local_player->branch == branch &&
+                        local_player->ordinal == ordinal;
+    }
+    const std::optional<UnitClassification> classification =
+        classify_unit_record(record.class_byte, faction.side_code, is_local_player);
+    if (!classification.has_value()) return std::nullopt;
+
+    RetailUnitObject object;
+    object.entity = kEntityBase + record.index;
+    object.record_index = record.index;
+    object.flags = classification->flags;
+    object.object_count = static_cast<std::uint32_t>(record.objects.size());
+    object.category = classification->category;
+    object.faction_byte = record.faction_byte;
+
+    if (!build.table.insert(object.entity)) return std::nullopt;
+    build.objects.push_back(object);
+    build.faction_census[record.faction_byte] += 1;
+  }
+  return build;
+}
+
+SubMissionSequencer SubMissionSequencer::from(const MissionScenario& scenario,
+                                              std::size_t counter_count) {
+  SubMissionSequencer sequencer;
+  for (const ScenarioSubMission& sub_mission : scenario.sub_missions()) {
+    sequencer.step_counts_.push_back(
+        static_cast<std::uint32_t>(sub_mission.step_tags.size()));
+  }
+  sequencer.started_at_.assign(sequencer.step_counts_.size(), 0.0f);
+  sequencer.counters_.assign(counter_count, 0);
+  return sequencer;
+}
+
+SubMissionStatus SubMissionSequencer::select(std::uint32_t index, float now) noexcept {
+  sub_mission_ = index;
+  step_ = 0;
+  if (index >= step_counts_.size()) return SubMissionStatus::Finished;
+  started_at_[index] = now;
+  return SubMissionStatus::Running;
+}
+
+bool SubMissionSequencer::advance_step() noexcept {
+  if (sub_mission_ >= step_counts_.size()) return false;
+  if (step_ + 1 >= step_counts_[sub_mission_]) return false;
+  step_ += 1;
+  return true;
+}
+
+std::optional<bool> SubMissionSequencer::elapsed_at_least(float threshold,
+                                                          float now) const noexcept {
+  if (sub_mission_ >= started_at_.size()) return std::nullopt;
+  return threshold <= now - started_at_[sub_mission_];
+}
+
+std::optional<std::uint32_t> SubMissionSequencer::evaluate(
+    const CounterCondition& condition) const noexcept {
+  // Retail treats 0 and 0xFFFF as "no condition" before indexing anything.
+  if (condition.counter_id == 0 || condition.counter_id == 0xFFFFu) return std::nullopt;
+  if (condition.counter_id >= counters_.size()) return std::nullopt;
+  const std::int32_t value = counters_[condition.counter_id];
+  const std::int32_t threshold = condition.threshold;
+  bool satisfied = false;
+  switch (condition.comparison) {
+    case CounterComparison::Equal: satisfied = value == threshold; break;
+    case CounterComparison::AtMost: satisfied = value <= threshold; break;
+    case CounterComparison::AtLeast: satisfied = value >= threshold; break;
+  }
+  if (!satisfied) return std::nullopt;
+  return condition.target_sub_mission;
+}
+
+bool SubMissionSequencer::set_counter(std::uint16_t id, std::int32_t value) noexcept {
+  if (id >= counters_.size()) return false;
+  counters_[id] = value;
+  return true;
+}
+
+std::optional<std::int32_t> SubMissionSequencer::counter(std::uint16_t id) const noexcept {
+  if (id >= counters_.size()) return std::nullopt;
+  return counters_[id];
+}
+
+}  // namespace ac6::retail

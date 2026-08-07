@@ -1,0 +1,162 @@
+#pragma once
+
+// The retail mission behaviours, reimplemented natively.
+//
+// Cycle 1096 established what 0x820A7070 does with a parsed unit record and
+// cycle 1097 what 0x8226E158 does with a sub-mission script. This header
+// declares those two behaviours as native code: the classification and the
+// insertion into a unit table on one side, the sub-mission sequencer with its
+// step index, its start timestamps and its counter condition on the other.
+//
+// Two deliberate divergences from retail, both stated where they occur:
+//   - the unit table refuses an insertion past its 256 slots, where retail
+//     would keep writing into the fields that follow it;
+//   - the sequencer returns a status instead of calling the next step, so the
+//     caller owns the control flow.
+// Everything else, including one asymmetry in the side-code switch, is
+// reproduced as retail has it rather than as it would read better.
+
+#include "ac6/retail_scenario.h"
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <vector>
+
+namespace ac6::retail {
+
+// The three side flag words the nine-way switch at 0x820A7420 produces.
+inline constexpr std::uint32_t kSideFlagsFirst = 0x20000000u;
+inline constexpr std::uint32_t kSideFlagsSecond = 0x40000000u;
+inline constexpr std::uint32_t kSideFlagsThird = 0x80000000u;
+
+struct UnitClassification {
+  std::uint32_t category{};  // the class 0x820A7F48 allocates
+  std::uint32_t flags{};     // the side flags written to object +0xD4
+  bool operator==(const UnitClassification&) const = default;
+};
+
+// The classification of one record.
+//
+// `side_code` is the faction entry's byte +0x2C, and it only applies when the
+// game reports mode 2 or 3 with a faction table present; pass nullopt for the
+// other modes, where the class byte alone decides and no side flag is set.
+//
+// `is_local_player` resolves the one branch that reads runtime state: for side
+// codes 0 and 3 the retail consumer walks a 16-entry table with the record's
+// ordinal within its branch - not its record index - and yields category 2 when
+// the matched row is the local player's, 1 otherwise.
+std::optional<UnitClassification> classify_unit_record(
+    std::uint8_t class_byte, std::optional<std::uint8_t> side_code,
+    bool is_local_player) noexcept;
+
+// The CX360UnitManager's insertion target: 256 slots from +0x04 to +0x400 with
+// the count at +0x40C, as its base constructor lays them out.
+class RetailUnitTable final {
+ public:
+  static constexpr std::size_t kSlots = 256;
+
+  // 0x8226FEC0 stores the entry at the incremented index and bumps the count.
+  // Retail performs no bounds check; this refuses instead of writing past the
+  // table, which in retail would land on the two predicate pointers at +0x404
+  // and +0x408 and then on the counter itself.
+  bool insert(std::uint32_t entity) noexcept;
+
+  std::size_t count() const noexcept { return count_; }
+  std::optional<std::uint32_t> at(std::size_t index) const noexcept;
+  void reset() noexcept;
+
+ private:
+  std::array<std::uint32_t, kSlots> slots_{};
+  std::size_t count_{};
+};
+
+// One constructed object, carrying the fields 0x820A7070 writes into it.
+struct RetailUnitObject {
+  std::uint32_t entity{};
+  std::uint32_t record_index{};   // object +0xD0
+  std::uint32_t flags{};          // object +0xD4
+  std::uint32_t object_count{};   // object +0xDC
+  std::uint32_t category{};
+  std::uint8_t faction_byte{};
+  bool operator==(const RetailUnitObject&) const = default;
+};
+
+struct RetailUnitBuild {
+  std::vector<RetailUnitObject> objects;
+  RetailUnitTable table;
+  std::vector<std::uint32_t> faction_census;  // context+0x58, field +0x24
+};
+
+// Which record the local-player branch matches. Retail keeps two independent
+// running ordinals - one for side code 0, one for side code 3 - and compares
+// the ordinal, not the record index, against a 16-entry table. `branch` is 0
+// for the side-code-0 counter and 1 for the side-code-3 counter.
+struct LocalPlayerSlot {
+  std::uint8_t branch{};
+  std::uint32_t ordinal{};
+  bool operator==(const LocalPlayerSlot&) const = default;
+};
+
+// Runs the consumer over a parsed scenario: classify, construct, insert, and
+// increment the per-faction census the loader sizes from the faction table.
+// Fails when a record names a faction the table does not have, or when the
+// table fills up.
+std::optional<RetailUnitBuild> build_units(const MissionScenario& scenario,
+                                           std::optional<LocalPlayerSlot> local_player);
+
+// The sub-mission sequencer of 0x8226E908 and 0x8226E158.
+enum class SubMissionStatus : std::uint8_t {
+  Running,   // a step is current
+  Finished,  // the index reached the parsed count: the mission is over
+};
+
+// The three comparisons a tag-7 step applies to a mission counter.
+enum class CounterComparison : std::uint8_t {
+  Equal,        // operator 0
+  AtMost,       // operator 1: counter <= threshold
+  AtLeast,      // operator 2: counter >= threshold
+};
+
+struct CounterCondition {
+  std::uint16_t counter_id{};
+  std::int16_t threshold{};
+  CounterComparison comparison{};
+  std::uint8_t target_sub_mission{};
+};
+
+class SubMissionSequencer final {
+ public:
+  // Snapshots the counts the loader derives from the payload: the number of
+  // sub-missions and the number of mission counters.
+  static SubMissionSequencer from(const MissionScenario& scenario,
+                                  std::size_t counter_count);
+
+  // 0x8226E908: bound the index, make it current, reset the step index.
+  SubMissionStatus select(std::uint32_t index, float now) noexcept;
+
+  std::uint32_t current_sub_mission() const noexcept { return sub_mission_; }
+  std::uint32_t current_step() const noexcept { return step_; }
+  bool advance_step() noexcept;  // false when the script has no further step
+
+  // 0x82267008: has `threshold` elapsed since this sub-mission started?
+  std::optional<bool> elapsed_at_least(float threshold, float now) const noexcept;
+
+  // The tag-7 evaluation. Returns the sub-mission to jump to when the
+  // condition holds, nullopt when it does not or when the counter is out of
+  // range - retail treats ids 0 and 0xFFFF as "no condition".
+  std::optional<std::uint32_t> evaluate(const CounterCondition& condition) const noexcept;
+
+  bool set_counter(std::uint16_t id, std::int32_t value) noexcept;
+  std::optional<std::int32_t> counter(std::uint16_t id) const noexcept;
+
+ private:
+  std::vector<std::uint32_t> step_counts_;
+  std::vector<float> started_at_;      // context+0x2C
+  std::vector<std::int32_t> counters_; // context+0x5C, one per counter
+  std::uint32_t sub_mission_{};
+  std::uint32_t step_{};
+};
+
+}  // namespace ac6::retail
