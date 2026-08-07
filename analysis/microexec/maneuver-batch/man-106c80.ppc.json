@@ -1,0 +1,29 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x82331808",
+    "case": "ManeuverBin@node+0x106c80"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "payload_base": "0xb0000000",
+    "record_base": "0xb4000000",
+    "buffer_base": "0xb5000000",
+    "steps": 2426,
+    "sub_parser_entries": 146,
+    "r3_on_return": "0x00000010",
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "r3_note": "scratch after a void reader; not compared",
+    "record_written": "12 bytes",
+    "buffer_written": "240 bytes"
+  },
+  "exit": {"kind": "return"},
+  "registers": {},
+  "calls": [],
+  "memory_writes": [
+    {"address": "0xb4000000", "size": 12, "after_hex": "b0106c90b5000000b5000024"},
+    {"address": "0xb5000000", "size": 240, "after_hex": "b0106ce0b0106d80b0106e20b0107010b01071c0b0107330b01074a0b0107610b0107780b0106d10b500006cb0106db0b5000070b0106e50b5000074b0107040b500008cb01071f0b50000a0b0107360b50000b0b01074d0b50000c0b0107640b50000d0b01077b0b50000e0b0106d40b0106de0b0106e90b0106ed0b0106f10b0106f50b0106f90b0106fd0b0107080b01070c0b0107100b0107140b0107180b0107230b0107270b01072b0b01072f0b01073a0b01073e0b0107420b0107460b0107510b0107550b0107590b01075d0b0107680b01076c0b0107700b0107740b01077f0b0107830b0107870b01078b0"}
+  ]
+}

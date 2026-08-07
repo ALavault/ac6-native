@@ -1,0 +1,31 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "native",
+    "function": "0x82331808",
+    "case": "ManeuverBin@node+0x1634f0"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "derived_from": "analysis/scenario-schema/, not from the machine code",
+    "fail_closed_messages": []
+  },
+  "exit": {
+    "kind": "return"
+  },
+  "registers": {},
+  "calls": [],
+  "memory_writes": [
+    {
+      "address": "0xb4000000",
+      "size": 12,
+      "after_hex": "b0163500b5000000b5000010"
+    },
+    {
+      "address": "0xb5000000",
+      "size": 92,
+      "after_hex": "b0163540b01635e0b0163680b0163830b0163570b5000030b0163610b5000034b01636b0b5000038b0163860b500004cb01635a0b0163640b01636f0b0163730b0163770b01637b0b01637f0b01638a0b01638e0b0163920b0163960"
+    }
+  ]
+}

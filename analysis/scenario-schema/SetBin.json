@@ -1,0 +1,94 @@
+{
+  "schema": "ac6.scenario-schema.v1",
+  "class": "SetBin",
+  "provenance": {
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6",
+    "image_base": "0x82000000",
+    "derived_from": "decompilation only; no emulator, bridge or native run",
+    "report": "reports/cycle-1088-remaining-bin-schemas.md"
+  },
+  "container_primitive": {
+    "comment": "Shared by every *Bin class.",
+    "node": [
+      {
+        "offset": "0x00",
+        "type": "u32",
+        "name": "data_off"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32",
+        "name": "table_off"
+      }
+    ],
+    "table": [
+      {
+        "offset": "0x00",
+        "type": "s32",
+        "name": "count"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32[count]",
+        "name": "child_off"
+      }
+    ],
+    "child_present_predicate": "count > i AND (u32[child] != 0 OR u32[child+4] != 0)"
+  },
+  "functions": {
+    "read": "0x8232F5F8",
+    "getReadBuffSize": "0x8232F4D0",
+    "identity_evidence": [
+      "0x82010074 'SetBin::read() / data empty!'",
+      "0x8201004C 'SetBin::read() / child empty!'",
+      "0x82010020 'SetBin::read() / act empty! : %d'",
+      "0x8200FFEC 'SetBin::getReadBuffSize() / data empty!'",
+      "0x8200FFB8 'SetBin::getReadBuffSize() / child empty!'",
+      "0x8200FF80 'SetBin::getReadBuffSize() / act empty! : %d'"
+    ]
+  },
+  "record": {
+    "size": "0x08",
+    "layout": "2 x u32",
+    "size_evidence": "0x8232CCA0 and 0x8232F198 both zero two u32 before calling SetBin::read",
+    "fields": [
+      {
+        "offset": "0x00",
+        "type": "u32",
+        "name": "data",
+        "fail_closed": "0x82010074",
+        "note": "carries the u8 act count at its first byte"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32",
+        "name": "acts",
+        "note": "array of `count` ActBin records of 0x08 each"
+      }
+    ]
+  },
+  "list_header": {
+    "count_type": "u8",
+    "count_offset": 0,
+    "element_stride": 8,
+    "element": "ActBin",
+    "early_exit": "count == 0 returns before the child table is read"
+  },
+  "buffer_accounting": {
+    "read": "reserves count * 0x08, then advances by ActBin::getReadBuffSize per element",
+    "getReadBuffSize": "count * 0x2C plus the sum of ActBin::getReadBuffSize",
+    "discrepancy": "read writes 0x08 per act while getReadBuffSize reserves 0x2C. The sizer over-reserves by 0x24 per act. 0x2C is the ActBin element stride, so this reads as a copied constant that was never narrowed. It is slack, never a shortfall, which is why it is harmless at runtime."
+  },
+  "validation": {
+    "payload": "DATA.TBL entry 9 child 0",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "note": "walked as a container by the ActBin validator: 230 Set nodes, 0 overruns",
+    "validated_transitively_by": "ActBin"
+  },
+  "not_established": [
+    "what a Set groups semantically"
+  ]
+}

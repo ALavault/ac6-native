@@ -1,0 +1,155 @@
+{
+  "schema": "ac6.scenario-schema.v1",
+  "class": "OrderBin",
+  "provenance": {
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6",
+    "image_base": "0x82000000",
+    "derived_from": "decompilation only; no emulator, bridge or native run",
+    "report": "reports/cycle-1085-orderbin-field-schema.md"
+  },
+  "functions": {
+    "read": "0x82331208",
+    "getReadBuffSize": "0x823310E8",
+    "identity_evidence": [
+      "0x82010438 'Error / OrderBin::read() / data empty!'",
+      "0x8201040C 'Error / OrderBin::read() / child empty!'",
+      "0x820103D8 'Error / OrderBin::getReadBuffSize() / data empty!'"
+    ]
+  },
+
+  "container_primitive": {
+    "comment": "Identical to ObjBin.json; repeated so this file stands alone.",
+    "node": [
+      {"offset": "0x00", "type": "u32", "name": "data_off", "note": "0 means absent; resolved as node + data_off"},
+      {"offset": "0x04", "type": "u32", "name": "table_off", "note": "0 means absent; resolved as node + table_off"}
+    ],
+    "table": [
+      {"offset": "0x00", "type": "s32", "name": "count"},
+      {"offset": "0x04", "type": "u32[count]", "name": "child_off", "note": "each resolved as table + child_off[i]"}
+    ],
+    "child_present_predicate": "count > i AND (u32[child] != 0 OR u32[child+4] != 0)"
+  },
+
+  "record": {
+    "size": "0x2C",
+    "layout": "11 x u32, big-endian, 32-bit guest pointers",
+    "size_evidence": "ActBin::read 0x82330688 allocates count * 0x2C and zeroes puVar7[0..10] before each OrderBin::read call",
+    "discriminator": {
+      "expression": "u8 tag = *(u8*)(node.data_off resolved)",
+      "fail_closed": "0x82010438 'OrderBin::read() / data empty!'",
+      "range": "0..9; any other tag writes nothing and getReadBuffSize returns 0"
+    },
+    "fields": [
+      {"offset": "0x00", "type": "u32", "name": "data", "source": "node.data_off resolved", "note": "carries the tag byte"},
+
+      {"offset": "0x04", "type": "u32", "name": "tag_0", "written_when": "tag == 0",
+       "buffer_size": 4, "variant": "unnamed", "fail_closed": null,
+       "note": "resolves child[0].data_off; writes 0 when absent instead of failing"},
+
+      {"offset": "0x08", "type": "u32", "name": "disappear", "written_when": "tag == 1",
+       "buffer_size": 4, "variant": "OrderDisappearBin",
+       "fail_closed": "0x820102C4 'OrderDisappearBin::read() / data empty!'"},
+
+      {"offset": "0x0C", "type": "u32", "name": "tag_2", "written_when": "tag == 2",
+       "buffer_size": "8 + nested", "variant": "unnamed",
+       "reader": "0x82331AD0", "sizer": "0x82331A38",
+       "sub_record": "OrderTag2Block", "fail_closed": null},
+
+      {"offset": "0x10", "type": "u32", "name": "stop", "written_when": "tag == 3",
+       "buffer_size": 4, "variant": "OrderStopBin",
+       "fail_closed": "0x820102F8 'OrderStopBin::read() / data empty!'"},
+
+      {"offset": "0x14", "type": "u32", "name": "lead", "written_when": "tag == 4",
+       "buffer_size": 4, "variant": "OrderLeadBin",
+       "fail_closed": "0x82010324 'OrderLeadBin::read() / data empty!'"},
+
+      {"offset": "0x18", "type": "u32", "name": "jump", "written_when": "tag == 5",
+       "buffer_size": 4, "variant": "OrderJumpBin",
+       "fail_closed": "0x8201037C 'OrderJumpBin::read() / data empty!'"},
+
+      {"offset": "0x1C", "type": "u32", "name": "flag", "written_when": "tag == 6",
+       "buffer_size": 4, "variant": "OrderFlagBin",
+       "fail_closed": "0x82010350 'OrderFlagBin::read() / data empty!'"},
+
+      {"offset": "0x20", "type": "u32", "name": "tag_7", "written_when": "tag == 7",
+       "buffer_size": 4, "variant": "unnamed", "fail_closed": null},
+
+      {"offset": "0x24", "type": "u32", "name": "property", "written_when": "tag == 8",
+       "buffer_size": 4, "variant": "OrderPropertyBin",
+       "fail_closed": "0x820103A8 'OrderPropertyBin::read() / data empty!'"},
+
+      {"offset": "0x28", "type": "u32", "name": "tag_9", "written_when": "tag == 9",
+       "buffer_size": 4, "variant": "unnamed", "fail_closed": null}
+    ],
+    "note": "Exactly one slot is written per record; the other ten stay zero. Six of the ten variants are named by the error string their own branch materializes; four write a resolved pointer with no failure path and stay unnamed."
+  },
+
+  "sub_records": {
+    "OrderTag2Block": {
+      "size": "0x08",
+      "reader": "0x82331AD0", "sizer": "0x82331A38",
+      "fields": [
+        {"offset": "0x00", "type": "u32", "name": "data"},
+        {"offset": "0x04", "type": "u32", "name": "list",
+         "sub_reader": "0x82331D98", "sub_sizer": "0x82331D58",
+         "note": "nested list; its element count is s32 at data+0x0C and the sizer returns count << 4"}
+      ],
+      "note": "role unknown: neither the reader nor the sizer materializes an error string"
+    }
+  },
+
+  "containers": {
+    "SetBin": {
+      "read": "0x8232F5F8", "getReadBuffSize": "0x8232F4D0",
+      "count": "u8 at node.data_off resolved",
+      "element_stride": "0x08",
+      "element": "ActBin",
+      "fail_closed": ["0x82010074 data empty!", "0x8201004C child empty!", "0x82010020 act empty! : %d"]
+    },
+    "ActBin": {
+      "read": "0x82330688", "getReadBuffSize": "0x82330540",
+      "count": "u8 at node.data_off resolved",
+      "element_stride": "0x2C",
+      "element": "OrderBin",
+      "fail_closed": ["0x8201026C data empty!", "0x82010244 child empty!", "0x82010218 order empty! : %d"]
+    }
+  },
+
+  "reach_path": {
+    "comment": "Two entry points reach SetBin; both are walked.",
+    "steps": [
+      "0x8232CCA0 per-entry node, child[0] -> SetBin::read",
+      "0x8232F198 per-Obj node, child[1] -> SetBin::read",
+      "SetBin -> ActBin -> OrderBin"
+    ]
+  },
+
+  "validation": {
+    "payload": "DATA.TBL entry 9 child 0",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "set_nodes": 230,
+    "act_nodes": 492,
+    "order_records_reached": 2975,
+    "inconsistencies": 0,
+    "tag_distribution": {"0": 233, "1": 206, "2": 890, "3": 442, "5": 686, "6": 232, "7": 53, "8": 233},
+    "children_per_order_node": {"1": 2975},
+    "tag2_descent": {"grandchild0_absent": 890},
+    "notes": [
+      "Every one of the 2975 records carries exactly one child, which is the single child the reader looks for.",
+      "Every tag falls inside the 0..9 range the reader and sizer implement.",
+      "Tags 4 (OrderLeadBin) and 9 are never used by Mission 01; the other eight are.",
+      "All 890 tag-2 records stop before the nested list: child[0] is present and its table holds exactly one entry, and that entry is an empty node, so 0x82331AD0 writes only the 8-byte header. Verified by hand on three records at 0xDD0, 0x7B50 and 0x7CA0.",
+      "The nested list element count is therefore never exercised by this payload and stays unqualified."
+    ]
+  },
+
+  "not_established": [
+    "the payload behind each resolved variant pointer; only the container and record layout are read",
+    "the role of the four unnamed tags 0, 2, 7 and 9",
+    "the meaning of the OrderTag2Block nested list",
+    "objective-condition semantics"
+  ]
+}

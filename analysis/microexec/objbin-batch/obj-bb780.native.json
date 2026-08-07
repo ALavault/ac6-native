@@ -1,0 +1,46 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "native",
+    "function": "0x82330158",
+    "case": "ObjBin@node+0xbb780"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "derived_from": "analysis/scenario-schema/, not from the machine code",
+    "fail_closed_messages": []
+  },
+  "exit": {
+    "kind": "return"
+  },
+  "registers": {},
+  "calls": [],
+  "memory_writes": [
+    {
+      "address": "0xb4000000",
+      "size": 12,
+      "after_hex": "b00bb790b5000000b5000020"
+    },
+    {
+      "address": "0xb4000010",
+      "size": 4,
+      "after_hex": "b500048c"
+    },
+    {
+      "address": "0xb5000000",
+      "size": 20,
+      "after_hex": "b00bb830b50000100000000000000000b00bb860"
+    },
+    {
+      "address": "0xb5000020",
+      "size": 1036,
+      "after_hex": "b00bb8a0b5000044b500011cb50001ecb50002c4b5000378000000000000000000000000b00bb910b5000050b5000074b00bb960b00bba00b00bbaa0b00bbc10b00bbdc0b00bbf70b00bc050b00bc130b00bc210b00bb990b50000bcb00bba30b50000c0b00bbad0b50000c4b00bbc40b50000d4b00bbdf0b50000e8b00bbfa0b50000fcb00bc080b5000104b00bc160b500010cb00bc240b5000114b00bb9c0b00bba60b00bbb10b00bbb50b00bbb90b00bbbd0b00bbc80b00bbcc0b00bbd00b00bbd40b00bbd80b00bbe30b00bbe70b00bbeb0b00bbef0b00bbf30b00bbfd0b00bc010b00bc0b0b00bc0f0b00bc190b00bc1d0b00bc270b00bc2b0b00bc2f0b5000128b500014cb00bc340b00bc3e0b00bc480b00bc5f0b00bc760b00bc8d0b00bc9b0b00bca90b00bcb70b00bc370b5000194b00bc410b5000198b00bc4b0b500019cb00bc620b50001acb00bc790b50001bcb00bc900b50001ccb00bc9e0b50001d4b00bcac0b50001dcb00bcba0b50001e4b00bc3a0b00bc440b00bc4f0b00bc530b00bc570b00bc5b0b00bc660b00bc6a0b00bc6e0b00bc720b00bc7d0b00bc810b00bc850b00bc890b00bc930b00bc970b00bca10b00bca50b00bcaf0b00bcb30b00bcbd0b00bcc10b00bcc50b50001f8b500021cb00bcca0b00bcd40b00bcde0b00bcf50b00bd100b00bd2b0b00bd390b00bd470b00bd550b00bccd0b5000264b00bcd70b5000268b00bce10b500026cb00bcf80b500027cb00bd130b5000290b00bd2e0b50002a4b00bd3c0b50002acb00bd4a0b50002b4b00bd580b50002bcb00bcd00b00bcda0b00bce50b00bce90b00bced0b00bcf10b00bcfc0b00bd000b00bd040b00bd080b00bd0c0b00bd170b00bd1b0b00bd1f0b00bd230b00bd270b00bd310b00bd350b00bd3f0b00bd430b00bd4d0b00bd510b00bd5b0b00bd5f0b00bd630b50002d0b50002ecb00bd670b00bd710b00bd7b0b00bd9a0b00bdb50b00bdcc0b00bdda0b00bd6a0b5000324b00bd740b5000328b00bd7e0b500032cb00bd9d0b5000344b00bdb80b5000358b00bdcf0b5000368b00bddd0b5000370b00bd6d0b00bd770b00bd820b00bd860b00bd8a0b00bd8e0b00bd920b00bd960b00bda10b00bda50b00bda90b00bdad0b00bdb10b00bdbc0b00bdc00b00bdc40b00bdc80b00bdd20b00bdd60b00bde00b00bde40b00bde80b5000384b50003a0b00bdec0b00bdf60b00be000b00be1f0b00be3a0b00be510b00be5f0b00bdef0b50003d8b00bdf90b50003dcb00be030b50003e0b00be220b50003f8b00be3d0b500040cb00be540b500041cb00be620b5000424b00bdf20b00bdfc0b00be070b00be0b0b00be0f0b00be130b00be170b00be1b0b00be260b00be2a0b00be2e0b00be320b00be360b00be410b00be450b00be490b00be4d0b00be570b00be5b0b00be650b00be690"
+    },
+    {
+      "address": "0xb500048c",
+      "size": 4,
+      "after_hex": "b00be710"
+    }
+  ]
+}

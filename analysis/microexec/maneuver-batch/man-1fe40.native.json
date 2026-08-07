@@ -1,0 +1,31 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "native",
+    "function": "0x82331808",
+    "case": "ManeuverBin@node+0x1fe40"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "derived_from": "analysis/scenario-schema/, not from the machine code",
+    "fail_closed_messages": []
+  },
+  "exit": {
+    "kind": "return"
+  },
+  "registers": {},
+  "calls": [],
+  "memory_writes": [
+    {
+      "address": "0xb4000000",
+      "size": 12,
+      "after_hex": "b001fe50b5000000b5000024"
+    },
+    {
+      "address": "0xb5000000",
+      "size": 204,
+      "after_hex": "b001fea0b001ff40b001ffe0b0020150b0020300b00204b0b0020590b0020670b0020750b001fed0b500006cb001ff70b5000070b0020010b5000074b0020180b5000084b0020330b5000098b00204e0b50000acb00205c0b50000b4b00206a0b50000bcb0020780b50000c4b001ff00b001ffa0b0020050b0020090b00200d0b0020110b00201c0b0020200b0020240b0020280b00202c0b0020370b00203b0b00203f0b0020430b0020470b0020510b0020550b00205f0b0020630b00206d0b0020710b00207b0b00207f0"
+    }
+  ]
+}

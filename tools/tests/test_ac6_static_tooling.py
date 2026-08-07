@@ -19,6 +19,11 @@ from build_ac6_asset_closure import build_closure
 from compare_ac6_asset_closures import compare as compare_closures
 from compare_ac6_function_snapshots import compare_three
 from extract_ac6_pac import extract_selected
+from validate_ac6_scenario_schema import main as validate_scenario_schema
+from emit_ac6_native_snapshot import (Image as NativeImage, Parsers as NativeParsers,
+                                      Payload as NativePayload,
+                                      RECORD_BASE as NativeRecordBase,
+                                      BUFFER_BASE as NativeBufferBase)
 
 
 def legacy_template() -> dict:
@@ -455,3 +460,841 @@ class NativeGateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ScenarioSchemaTests(unittest.TestCase):
+    """Cover the schema validator with synthetic nodes, no retail bytes."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _payload(self, obj_children: int, param_tag: int) -> bytes:
+        """Build one scenario root reaching a single ObjBin node.
+
+        Layout is flat and hand-placed so every offset in the file is a
+        deliberate value the test can reason about.
+        """
+        blob = bytearray(0x400)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        # The Obj node's children: child[0] is the param variant, the rest are
+        # plain present nodes pointing at themselves.
+        child_base = 0x300
+        for index in range(obj_children):
+            here = child_base + 0x10 * index
+            # data_off resolves to the tag byte for child[0], to itself otherwise
+            put(here, self._node(0x08, 0x00))
+            put(here + 0x08, bytes([param_tag if index == 0 else 0, 0, 0, 0]))
+
+        obj_table = 0x280
+        put(obj_table, self._table([child_base - obj_table + 0x10 * i
+                                    for i in range(obj_children)]))
+        obj_node = 0x260
+        put(obj_node, self._node(0x08, obj_table - obj_node))
+        put(obj_node + 0x08, b"\x01\x00\x00\x00")
+
+        # 0x8232F198 level: child[0] is the Obj node.
+        inner_table = 0x240
+        put(inner_table, self._table([obj_node - inner_table]))
+        inner = 0x230
+        put(inner, self._node(0x08, inner_table - inner))
+        put(inner + 0x08, b"\x01\x00\x00\x00")
+
+        # 0x8232F380 level: u8 count in data, one child.
+        array_table = 0x200
+        put(array_table, self._table([inner - array_table]))
+        array_node = 0x1F0
+        put(array_node, self._node(0x08, array_table - array_node))
+        put(array_node + 0x08, bytes([1, 0, 0, 0]))
+
+        # 0x8232CCA0 level: two slots, slot 1 is the array node.
+        dispatch_table = 0x1C0
+        put(dispatch_table, self._table([array_node - dispatch_table,
+                                         array_node - dispatch_table]))
+        dispatch = 0x1B0
+        put(dispatch, self._node(0x08, dispatch_table - dispatch))
+        put(dispatch + 0x08, b"\x01\x00\x00\x00")
+
+        entry_table = 0x1A0
+        put(entry_table, self._table([dispatch - entry_table]))
+        entry = 0x190
+        put(entry, self._node(0x08, entry_table - entry))
+        put(entry + 0x08, b"\x01\x00\x00\x00")
+
+        slot0_table = 0x180
+        put(slot0_table, self._table([entry - slot0_table]))
+        slot0 = 0x170
+        put(slot0, self._node(0x08, slot0_table - slot0))
+        put(slot0 + 0x08, b"\x01\x00\x00\x00")
+
+        root_table = 0x160
+        put(root_table, self._table([slot0 - root_table]))
+        put(0, self._node(0x08, root_table))
+        put(0x08, b"\x01\x00\x00\x00")
+        return bytes(blob)
+
+    def _schema(self, payload: bytes, **validation) -> dict:
+        return {
+            "schema": "ac6.scenario-schema.v1",
+            "class": "ObjBin",
+            "record": {"fields": [{"name": name} for name in
+                                  ("data", "param", "maneuvers", "durable",
+                                   "weapon_0", "weapon_1", "weapon_2", "tail")]},
+            "validation": {"payload_sha256": hashlib.sha256(payload).hexdigest(),
+                           **validation},
+        }
+
+    def _run(self, schema: dict, payload: bytes) -> int:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            schema_path = root / "schema.json"
+            payload_path = root / "payload.bin"
+            schema_path.write_text(json.dumps(schema))
+            payload_path.write_bytes(payload)
+            return validate_scenario_schema([str(schema_path), str(payload_path),
+                                             "--output", str(root / "out.json")])
+
+    def test_seven_children_and_tag_in_range_pass(self):
+        payload = self._payload(obj_children=7, param_tag=1)
+        schema = self._schema(payload, slot0_entries=1, obj_records_reached=1,
+                              inconsistencies=0)
+        self.assertEqual(self._run(schema, payload), 0)
+
+    def test_more_children_than_the_schema_allows_fails(self):
+        payload = self._payload(obj_children=9, param_tag=0)
+        schema = self._schema(payload)
+        self.assertEqual(self._run(schema, payload), 1)
+
+    def test_param_tag_outside_the_reader_range_fails(self):
+        payload = self._payload(obj_children=7, param_tag=5)
+        schema = self._schema(payload)
+        self.assertEqual(self._run(schema, payload), 1)
+
+    def test_payload_hash_mismatch_fails_closed(self):
+        payload = self._payload(obj_children=7, param_tag=0)
+        schema = self._schema(payload)
+        schema["validation"]["payload_sha256"] = "0" * 64
+        self.assertEqual(self._run(schema, payload), 2)
+
+    def test_recorded_counters_are_cross_checked(self):
+        payload = self._payload(obj_children=7, param_tag=0)
+        # The walk reaches one record; claiming two must fail rather than pass.
+        schema = self._schema(payload, obj_records_reached=2)
+        self.assertEqual(self._run(schema, payload), 1)
+
+
+class OrderSchemaTests(unittest.TestCase):
+    """Cover the OrderBin walk with synthetic Set/Act/Order nodes."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _payload(self, order_tag: int) -> bytes:
+        """One Set holding one Act holding one Order with the given tag."""
+        blob = bytearray(0x400)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        # Order node: data carries the tag, one child.
+        order_child = 0x340
+        put(order_child, self._node(0x08, 0x00))
+        put(order_child + 0x08, b"\x01\x00\x00\x00")
+        order_table = 0x330
+        put(order_table, self._table([order_child - order_table]))
+        order = 0x320
+        put(order, self._node(0x08, order_table - order))
+        put(order + 0x08, bytes([order_tag, 0, 0, 0]))
+
+        # Act node: u8 order count in data, one child.
+        act_table = 0x300
+        put(act_table, self._table([order - act_table]))
+        act = 0x2F0
+        put(act, self._node(0x08, act_table - act))
+        put(act + 0x08, bytes([1, 0, 0, 0]))
+
+        # Set node: u8 act count in data, one child.
+        set_table = 0x2D0
+        put(set_table, self._table([act - set_table]))
+        set_node = 0x2C0
+        put(set_node, self._node(0x08, set_table - set_node))
+        put(set_node + 0x08, bytes([1, 0, 0, 0]))
+
+        # 0x8232CCA0 dispatch node: slot 0 is the Set, slot 1 an empty array.
+        empty_array = 0x2A0
+        put(empty_array, self._node(0x08, 0x00))
+        put(empty_array + 0x08, bytes([0, 0, 0, 0]))
+        dispatch_table = 0x280
+        put(dispatch_table, self._table([set_node - dispatch_table,
+                                         empty_array - dispatch_table]))
+        dispatch = 0x270
+        put(dispatch, self._node(0x08, dispatch_table - dispatch))
+        put(dispatch + 0x08, b"\x01\x00\x00\x00")
+
+        entry_table = 0x260
+        put(entry_table, self._table([dispatch - entry_table]))
+        entry = 0x250
+        put(entry, self._node(0x08, entry_table - entry))
+        put(entry + 0x08, b"\x01\x00\x00\x00")
+
+        slot0_table = 0x240
+        put(slot0_table, self._table([entry - slot0_table]))
+        slot0 = 0x230
+        put(slot0, self._node(0x08, slot0_table - slot0))
+        put(slot0 + 0x08, b"\x01\x00\x00\x00")
+
+        root_table = 0x220
+        put(root_table, self._table([slot0 - root_table]))
+        put(0, self._node(0x08, root_table))
+        put(0x08, b"\x01\x00\x00\x00")
+        return bytes(blob)
+
+    def _schema(self, payload: bytes, **validation) -> dict:
+        return {
+            "schema": "ac6.scenario-schema.v1",
+            "class": "OrderBin",
+            "record": {"size": "0x2C"},
+            "validation": {"payload_sha256": hashlib.sha256(payload).hexdigest(),
+                           **validation},
+        }
+
+    def _run(self, schema: dict, payload: bytes) -> int:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            schema_path = root / "schema.json"
+            payload_path = root / "payload.bin"
+            schema_path.write_text(json.dumps(schema))
+            payload_path.write_bytes(payload)
+            return validate_scenario_schema([str(schema_path), str(payload_path),
+                                             "--output", str(root / "out.json")])
+
+    def test_tag_inside_the_reader_range_passes(self):
+        payload = self._payload(order_tag=5)
+        schema = self._schema(payload, set_nodes=1, act_nodes=1,
+                              order_records_reached=1, inconsistencies=0,
+                              tag_distribution={"5": 1})
+        self.assertEqual(self._run(schema, payload), 0)
+
+    def test_tag_outside_the_reader_range_fails(self):
+        payload = self._payload(order_tag=10)
+        self.assertEqual(self._run(self._schema(payload), payload), 1)
+
+    def test_recorded_tag_distribution_is_cross_checked(self):
+        payload = self._payload(order_tag=3)
+        schema = self._schema(payload, tag_distribution={"8": 1})
+        self.assertEqual(self._run(schema, payload), 1)
+
+
+class ActSchemaTests(unittest.TestCase):
+    """Cover the ActBin list-header rules with synthetic Set/Act nodes."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _payload(self, declared_orders: int, real_orders: int) -> bytes:
+        """One Set, one Act declaring `declared_orders` over `real_orders` children."""
+        blob = bytearray(0x500)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        order_base = 0x400
+        for index in range(real_orders):
+            here = order_base + 0x20 * index
+            child = here + 0x10
+            put(child, self._node(0x08, 0x00))
+            put(child + 0x08, b"\x01\x00\x00\x00")
+            put(here, self._node(0x08, 0x00))
+            put(here + 0x08, bytes([5, 0, 0, 0]))   # a tag the reader handles
+
+        act_table = 0x3A0
+        put(act_table, self._table([order_base - act_table + 0x20 * i
+                                    for i in range(real_orders)]))
+        act = 0x390
+        put(act, self._node(0x08, act_table - act))
+        put(act + 0x08, bytes([declared_orders, 0, 0, 0]))
+
+        set_table = 0x370
+        put(set_table, self._table([act - set_table]))
+        set_node = 0x360
+        put(set_node, self._node(0x08, set_table - set_node))
+        put(set_node + 0x08, b"\x01\x00\x00\x00")
+
+        empty_array = 0x340
+        put(empty_array, self._node(0x08, 0x00))
+        put(empty_array + 0x08, bytes([0, 0, 0, 0]))
+        dispatch_table = 0x320
+        put(dispatch_table, self._table([set_node - dispatch_table,
+                                         empty_array - dispatch_table]))
+        dispatch = 0x310
+        put(dispatch, self._node(0x08, dispatch_table - dispatch))
+        put(dispatch + 0x08, b"\x01\x00\x00\x00")
+
+        entry_table = 0x300
+        put(entry_table, self._table([dispatch - entry_table]))
+        entry = 0x2F0
+        put(entry, self._node(0x08, entry_table - entry))
+        put(entry + 0x08, b"\x01\x00\x00\x00")
+
+        slot0_table = 0x2E0
+        put(slot0_table, self._table([entry - slot0_table]))
+        slot0 = 0x2D0
+        put(slot0, self._node(0x08, slot0_table - slot0))
+        put(slot0 + 0x08, b"\x01\x00\x00\x00")
+
+        root_table = 0x2C0
+        put(root_table, self._table([slot0 - root_table]))
+        put(0, self._node(0x08, root_table))
+        put(0x08, b"\x01\x00\x00\x00")
+        return bytes(blob)
+
+    def _schema(self, payload: bytes, **validation) -> dict:
+        return {
+            "schema": "ac6.scenario-schema.v1",
+            "class": "ActBin",
+            "record": {"size": "0x08"},
+            "validation": {"payload_sha256": hashlib.sha256(payload).hexdigest(),
+                           **validation},
+        }
+
+    def _run(self, schema: dict, payload: bytes) -> int:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            schema_path = root / "schema.json"
+            payload_path = root / "payload.bin"
+            schema_path.write_text(json.dumps(schema))
+            payload_path.write_bytes(payload)
+            return validate_scenario_schema([str(schema_path), str(payload_path),
+                                             "--output", str(root / "out.json")])
+
+    def test_declared_count_matching_the_table_passes(self):
+        payload = self._payload(declared_orders=3, real_orders=3)
+        schema = self._schema(payload, set_nodes=1, act_nodes=1,
+                              inconsistencies=0, act_count_overruns=0,
+                              orders_per_act={"3": 1})
+        self.assertEqual(self._run(schema, payload), 0)
+
+    def test_declared_count_overrunning_the_table_fails(self):
+        payload = self._payload(declared_orders=5, real_orders=2)
+        self.assertEqual(self._run(self._schema(payload), payload), 1)
+
+    def test_act_declaring_zero_orders_is_counted_not_walked(self):
+        payload = self._payload(declared_orders=0, real_orders=2)
+        schema = self._schema(payload, acts_declaring_zero_orders=1,
+                              act_count_overruns=0, inconsistencies=0)
+        self.assertEqual(self._run(schema, payload), 0)
+
+
+class ManeuverSchemaTests(unittest.TestCase):
+    """Cover the ManeuverBin s32 count and its two-hop descent to ComTblBin."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _payload(self, declared: int, real: int, break_descent: bool = False) -> bytes:
+        """One Obj whose maneuver block holds one ManeuverBin with `real` elements."""
+        blob = bytearray(0x800)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        # Each maneuver element: data is the ComTblM pointer, table[0] leads to
+        # a node whose own table[0] is the ComTblBin node.
+        element_base = 0x600
+        for index in range(real):
+            here = element_base + 0x40 * index
+            comtbl = here + 0x30
+            put(comtbl, self._node(0x08, 0x00))
+            put(comtbl + 0x08, bytes([0, 0, 0, 0]))   # zero coms: the early exit
+            inner_table = here + 0x20
+            put(inner_table, self._table([] if break_descent else [comtbl - inner_table]))
+            put(here, self._node(0x08, inner_table - here))
+            put(here + 0x08, b"\x01\x00\x00\x00")
+
+        man_table = 0x560
+        put(man_table, self._table([element_base - man_table + 0x40 * i
+                                    for i in range(real)]))
+        maneuver = 0x550
+        put(maneuver, self._node(0x08, man_table - maneuver))
+        put(maneuver + 0x08, struct.pack(">i", declared))
+
+        block_table = 0x530
+        put(block_table, self._table([maneuver - block_table]))
+        block = 0x520
+        put(block, self._node(0x08, block_table - block))
+        put(block + 0x08, b"\x01\x00\x00\x00")
+
+        # Obj node needs child[1] to be the maneuver block.
+        obj_table = 0x500
+        put(obj_table, self._table([block - obj_table, block - obj_table]))
+        obj = 0x4F0
+        put(obj, self._node(0x08, obj_table - obj))
+        put(obj + 0x08, b"\x01\x00\x00\x00")
+
+        inner_t = 0x4E0
+        put(inner_t, self._table([obj - inner_t]))
+        inner = 0x4D0
+        put(inner, self._node(0x08, inner_t - inner))
+        put(inner + 0x08, b"\x01\x00\x00\x00")
+
+        array_table = 0x4B0
+        put(array_table, self._table([inner - array_table]))
+        array_node = 0x4A0
+        put(array_node, self._node(0x08, array_table - array_node))
+        put(array_node + 0x08, bytes([1, 0, 0, 0]))
+
+        dispatch_table = 0x480
+        put(dispatch_table, self._table([array_node - dispatch_table,
+                                         array_node - dispatch_table]))
+        dispatch = 0x470
+        put(dispatch, self._node(0x08, dispatch_table - dispatch))
+        put(dispatch + 0x08, b"\x01\x00\x00\x00")
+
+        entry_table = 0x460
+        put(entry_table, self._table([dispatch - entry_table]))
+        entry = 0x450
+        put(entry, self._node(0x08, entry_table - entry))
+        put(entry + 0x08, b"\x01\x00\x00\x00")
+
+        slot0_table = 0x440
+        put(slot0_table, self._table([entry - slot0_table]))
+        slot0 = 0x430
+        put(slot0, self._node(0x08, slot0_table - slot0))
+        put(slot0 + 0x08, b"\x01\x00\x00\x00")
+
+        root_table = 0x420
+        put(root_table, self._table([slot0 - root_table]))
+        put(0, self._node(0x08, root_table))
+        put(0x08, b"\x01\x00\x00\x00")
+        return bytes(blob)
+
+    def _schema(self, payload: bytes, **validation) -> dict:
+        return {
+            "schema": "ac6.scenario-schema.v1",
+            "class": "ManeuverBin",
+            "record": {"size": "0x0C"},
+            "validation": {"payload_sha256": hashlib.sha256(payload).hexdigest(),
+                           **validation},
+        }
+
+    def _run(self, schema: dict, payload: bytes) -> int:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            schema_path = root / "schema.json"
+            payload_path = root / "payload.bin"
+            schema_path.write_text(json.dumps(schema))
+            payload_path.write_bytes(payload)
+            return validate_scenario_schema([str(schema_path), str(payload_path),
+                                             "--output", str(root / "out.json")])
+
+    def test_full_descent_to_comtbl_passes(self):
+        payload = self._payload(declared=2, real=2)
+        schema = self._schema(payload, maneuver_nodes=1, maneuver_elements=2,
+                              inconsistencies=0,
+                              element_descent={"reaches_comtbl": 2})
+        self.assertEqual(self._run(schema, payload), 0)
+
+    def test_declared_count_overrunning_the_table_fails(self):
+        payload = self._payload(declared=5, real=2)
+        self.assertEqual(self._run(self._schema(payload), payload), 1)
+
+    def test_broken_descent_is_classified_not_silently_dropped(self):
+        payload = self._payload(declared=2, real=2, break_descent=True)
+        schema = self._schema(payload, maneuver_elements=2, inconsistencies=0,
+                              element_descent={"comtblm_child_absent": 2})
+        self.assertEqual(self._run(schema, payload), 0)
+
+
+class ListHeaderSchemaTests(unittest.TestCase):
+    """Cover the schema-driven list-header walk across the three count widths."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _payload(self, slot: int, count_bytes: bytes, real: int) -> bytes:
+        """Root with `slot+1` slots; the chosen slot is a list header."""
+        blob = bytearray(0x400)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        element_base = 0x300
+        for index in range(real):
+            here = element_base + 0x10 * index
+            put(here, self._node(0x08, 0x00))
+            put(here + 0x08, b"\x01\x00\x00\x00")
+
+        header_table = 0x2C0
+        put(header_table, self._table([element_base - header_table + 0x10 * i
+                                       for i in range(real)]))
+        header = 0x2B0
+        put(header, self._node(0x08, header_table - header))
+        put(header + 0x08, count_bytes)
+
+        root_table = 0x200
+        put(root_table, self._table([header - root_table] * (slot + 1)))
+        put(0, self._node(0x08, root_table))
+        put(0x08, b"\x01\x00\x00\x00")
+        return bytes(blob)
+
+    def _schema(self, payload: bytes, width: str, stride: int, slot: int,
+                **validation) -> dict:
+        return {
+            "schema": "ac6.scenario-schema.v1",
+            "class": "SyntheticListHeader",
+            "list_header": {"count_type": width, "count_offset": 0,
+                            "element_stride": stride, "element": "Synthetic"},
+            "reach": [{"op": "root"}, {"op": "child", "index": slot}],
+            "validation": {"payload_sha256": hashlib.sha256(payload).hexdigest(),
+                           **validation},
+        }
+
+    def _run(self, schema: dict, payload: bytes) -> int:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            schema_path = root / "schema.json"
+            payload_path = root / "payload.bin"
+            schema_path.write_text(json.dumps(schema))
+            payload_path.write_bytes(payload)
+            return validate_scenario_schema([str(schema_path), str(payload_path),
+                                             "--output", str(root / "out.json")])
+
+    def test_u8_count(self):
+        payload = self._payload(0, bytes([3, 0, 0, 0]), 3)
+        schema = self._schema(payload, "u8", 16, 0, declared_count=3,
+                              elements_present=3, inconsistencies=0)
+        self.assertEqual(self._run(schema, payload), 0)
+
+    def test_u16_count(self):
+        payload = self._payload(3, struct.pack(">HH", 5, 0), 5)
+        schema = self._schema(payload, "u16", 16, 3, declared_count=5,
+                              elements_present=5, inconsistencies=0)
+        self.assertEqual(self._run(schema, payload), 0)
+
+    def test_s32_count(self):
+        payload = self._payload(1, struct.pack(">i", 2), 2)
+        schema = self._schema(payload, "s32", 12, 1, declared_count=2,
+                              elements_present=2, inconsistencies=0)
+        self.assertEqual(self._run(schema, payload), 0)
+
+    def test_count_overrunning_the_table_fails(self):
+        payload = self._payload(0, bytes([9, 0, 0, 0]), 2)
+        self.assertEqual(self._run(self._schema(payload, "u8", 16, 0), payload), 1)
+
+    def test_reading_the_wrong_count_width_is_visible(self):
+        # A u16 count of 5 read as u8 yields 0, so the declared count changes.
+        payload = self._payload(0, struct.pack(">HH", 5, 0), 5)
+        schema = self._schema(payload, "u8", 16, 0, declared_count=5)
+        self.assertEqual(self._run(schema, payload), 1)
+
+
+class NativeSnapshotTests(unittest.TestCase):
+    """Guard the reader/sizer asymmetries a single sample would have hidden."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _block(self, present_slots: list[int]) -> tuple[NativePayload, int]:
+        """A maneuver block whose slots in `present_slots` are non-empty."""
+        blob = bytearray(0x400)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        slot_base = 0x200
+        offsets = []
+        for index in range(8):
+            here = slot_base + 0x40 * index
+            if index in present_slots:
+                # A ManeuverBin node declaring zero elements: size is 0.
+                put(here, self._node(0x08, 0x00))
+                put(here + 0x08, struct.pack(">i", 0))
+            # absent slots stay {0, 0}
+            offsets.append(here)
+
+        table = 0x180
+        put(table, self._table([offset - table for offset in offsets]))
+        block = 0x170
+        put(block, self._node(0x08, table - block))
+        put(block + 0x08, b"\x01\x00\x00\x00")
+        return NativePayload(bytes(blob)), block
+
+    def _size(self, present_slots: list[int]) -> int:
+        payload, block = self._block(present_slots)
+        parsers = NativeParsers(payload, NativeImage())
+        return parsers.maneuver_block_size(block)
+
+    def test_empty_block_reserves_the_fixed_base(self):
+        # 0x82330A30 starts at 0x60 - eight maneuver records of 0x0C.
+        self.assertEqual(self._size([]), 0x60)
+
+    def test_slot_zero_overwrites_the_base_rather_than_adding(self):
+        # size0 is 0 here, so the total is exactly 0x6C, not 0x60 + 0x0C + 0.
+        self.assertEqual(self._size([0]), 0x6C)
+
+    def test_later_slots_add_to_whichever_base_applies(self):
+        self.assertEqual(self._size([1]), 0x60 + 0x0C)
+        self.assertEqual(self._size([0, 1]), 0x6C + 0x0C)
+
+    def test_the_asymmetry_is_exactly_0x60(self):
+        # The reader advances 0x0C per present slot; the sizer, which is what
+        # ObjBin::read follows, differs by 0x60 once slot 0 is present.
+        reader_style = 0x0C * 2
+        self.assertEqual(self._size([0, 1]) - reader_style, 0x60)
+
+
+class OrderNativeParserTests(unittest.TestCase):
+    """Guard the OrderBin tag dispatch and the exact-write mask."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _order(self, tag: int, child_present: bool = True) -> tuple[NativePayload, int]:
+        blob = bytearray(0x200)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        child = 0x100
+        if child_present:
+            put(child, self._node(0x08, 0x00))
+            put(child + 0x08, b"\x01\x00\x00\x00")
+        table = 0x0C0
+        put(table, self._table([child - table]))
+        node = 0x0B0
+        put(node, self._node(0x08, table - node))
+        put(node + 0x08, bytes([tag, 0, 0, 0]))
+        return NativePayload(bytes(blob)), node
+
+    def _run(self, tag: int, child_present: bool = True):
+        payload, node = self._order(tag, child_present)
+        image = NativeImage()
+        parsers = NativeParsers(payload, image)
+        parsers.order_read(NativeRecordBase, node, NativeBufferBase)
+        return image, parsers
+
+    def test_each_tag_writes_its_own_record_slot(self):
+        for tag in range(10):
+            with self.subTest(tag=tag):
+                image, _ = self._run(tag)
+                offsets = set()
+                for run in image.runs():
+                    base = int(run["address"], 16)
+                    if base < NativeRecordBase + 0x100:
+                        start = base - NativeRecordBase
+                        offsets.update(start + 4 * k for k in range(run["size"] // 4))
+                self.assertIn(4 * (tag + 1), offsets)
+
+    def test_a_tag_outside_the_reader_range_writes_only_the_data_word(self):
+        image, _ = self._run(11)
+        offsets = [run["address"] for run in image.runs()]
+        self.assertEqual(offsets, [f"0x{NativeRecordBase:08x}"])
+
+    def test_named_variants_fail_closed_on_an_absent_child(self):
+        # Tag 3 is OrderStopBin, which has a failure path; tag 0 has none.
+        _, parsers = self._run(3, child_present=False)
+        self.assertEqual(len(parsers.errors), 1)
+        self.assertIn("OrderStopBin", parsers.errors[0]["message"])
+        _, quiet = self._run(0, child_present=False)
+        self.assertEqual(quiet.errors, [])
+
+    def test_a_written_byte_equal_to_the_poison_is_still_reported(self):
+        # The write mask must not lose a byte that happens to equal 0xCD.
+        image = NativeImage()
+        image.write32(NativeBufferBase, 0xCDCDCDCD)
+        self.assertEqual(image.runs(),
+                         [{"address": f"0x{NativeBufferBase:08x}", "size": 4,
+                           "after_hex": "cdcdcdcd"}])
+
+
+class SetActNativeParserTests(unittest.TestCase):
+    """Guard the two list-header readers and their early exit."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _act(self, declared: int, real: int) -> tuple[NativePayload, int]:
+        """One Act over `real` orders, declaring `declared` of them."""
+        blob = bytearray(0x400)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        base = 0x200
+        for index in range(real):
+            here = base + 0x40 * index
+            child = here + 0x20
+            put(child, self._node(0x08, 0x00))
+            put(child + 0x08, b"\x01\x00\x00\x00")
+            order_table = here + 0x10
+            put(order_table, self._table([child - order_table]))
+            put(here, self._node(0x08, order_table - here))
+            put(here + 0x08, bytes([5, 0, 0, 0]))   # OrderJumpBin
+
+        table = 0x180
+        put(table, self._table([base - table + 0x40 * i for i in range(real)]))
+        act = 0x170
+        put(act, self._node(0x08, table - act))
+        put(act + 0x08, bytes([declared, 0, 0, 0]))
+        return NativePayload(bytes(blob)), act
+
+    def _run_act(self, declared: int, real: int):
+        payload, act = self._act(declared, real)
+        image = NativeImage()
+        parsers = NativeParsers(payload, image)
+        parsers.act_read(NativeRecordBase, act, NativeBufferBase)
+        return image, parsers
+
+    def test_orders_are_laid_out_at_the_0x2c_stride(self):
+        image, _ = self._run_act(declared=3, real=3)
+        buffer_runs = [run for run in image.runs()
+                       if int(run["address"], 16) >= NativeBufferBase]
+        # Three zeroed 0x2C records are contiguous: 3 * 0x2C = 0x84 bytes.
+        self.assertEqual(buffer_runs[0]["address"], f"0x{NativeBufferBase:08x}")
+        self.assertGreaterEqual(buffer_runs[0]["size"], 3 * 0x2C)
+
+    def test_zero_orders_takes_the_early_exit(self):
+        image, parsers = self._run_act(declared=0, real=2)
+        # Only the data word is written: no orders pointer, no element array.
+        self.assertEqual([run["address"] for run in image.runs()],
+                         [f"0x{NativeRecordBase:08x}"])
+        self.assertEqual(parsers.errors, [])
+
+    def test_declaring_more_orders_than_the_table_fails_closed(self):
+        _, parsers = self._run_act(declared=3, real=1)
+        messages = [error["message"] for error in parsers.errors]
+        self.assertEqual(len(messages), 2)
+        self.assertTrue(all("order empty" in message for message in messages))
+
+    def test_act_size_matches_the_records_plus_their_orders(self):
+        payload, act = self._act(declared=2, real=2)
+        parsers = NativeParsers(payload, NativeImage())
+        # Two 0x2C records plus two tag-5 orders of 4 bytes each.
+        self.assertEqual(parsers.act_size(act), 2 * 0x2C + 2 * 4)
+
+
+class SizerQuirkTests(unittest.TestCase):
+    """Guard the four reader/sizer quirks breadth testing exposed."""
+
+    @staticmethod
+    def _node(data_off: int, table_off: int) -> bytes:
+        return struct.pack(">II", data_off, table_off)
+
+    @staticmethod
+    def _table(child_offsets: list[int]) -> bytes:
+        body = struct.pack(">i", len(child_offsets))
+        for offset in child_offsets:
+            body += struct.pack(">I", offset)
+        return body
+
+    def _list(self, elements: int, tag: int = 0) -> tuple[NativePayload, int]:
+        """An unnamed 0x28 list with `elements` entries of the given tag."""
+        blob = bytearray(0x600)
+
+        def put(offset: int, data: bytes) -> None:
+            blob[offset:offset + len(data)] = data
+
+        base = 0x300
+        for index in range(elements):
+            here = base + 0x60 * index
+            grand = here + 0x40
+            put(grand, self._node(0x08, 0x00))
+            put(grand + 0x08, b"\x01\x00\x00\x00")
+            inner = here + 0x20
+            put(inner, self._table([grand - inner]))
+            put(here, self._node(0x08, inner - here))
+            put(here + 0x08, bytes([tag, 0, 0, 0]))
+
+        table = 0x280
+        put(table, self._table([base - table + 0x60 * i for i in range(elements)]))
+        node = 0x270
+        put(node, self._node(0x08, table - node))
+        put(node + 0x08, bytes([elements, 0, 0, 0]))
+        return NativePayload(bytes(blob)), node
+
+    def _size(self, elements: int) -> int:
+        payload, node = self._list(elements)
+        return NativeParsers(payload, NativeImage()).unnamed28_list_size(node)
+
+    def test_the_list_sizer_rounds_up_to_sixteen(self):
+        # Two elements: 2*0x28 + 2*4 = 88, which rounds to 96.
+        self.assertEqual(self._size(2), 96)
+        # One element: 0x28 + 4 = 44, which rounds to 48.
+        self.assertEqual(self._size(1), 48)
+
+    def test_the_round_up_is_the_only_difference_from_the_raw_total(self):
+        for elements in (1, 2, 3, 5):
+            raw = elements * 0x28 + elements * 4
+            with self.subTest(elements=elements):
+                self.assertEqual(self._size(elements), (raw + 0xF) & ~0xF)
+
+    def test_an_already_aligned_total_is_left_alone(self):
+        # Four elements: 4*0x28 + 4*4 = 176, already a multiple of 16.
+        self.assertEqual(self._size(4), 176)
+        self.assertEqual(176 % 16, 0)

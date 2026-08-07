@@ -1,0 +1,153 @@
+{
+  "schema": "ac6.scenario-schema.v1",
+  "class": "ObjBin",
+  "provenance": {
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6",
+    "image_base": "0x82000000",
+    "derived_from": "decompilation only; no emulator, bridge or native run",
+    "report": "reports/cycle-1084-objbin-field-schema.md"
+  },
+  "functions": {
+    "read": "0x82330158",
+    "getReadBuffSize": "0x8232FF78",
+    "identity_evidence": [
+      "0x82010150 'Error / ObjBin::read() / data empty!'",
+      "0x82010128 'Error / ObjBin::read() / child empty!'",
+      "0x820100F4 'Error / ObjBin::getReadBuffSize() / child empty!'"
+    ]
+  },
+
+  "container_primitive": {
+    "comment": "Shared by every *Bin class. All offsets are relative to their own base, never absolute.",
+    "node": [
+      {"offset": "0x00", "type": "u32", "name": "data_off", "note": "0 means absent; resolved as node + data_off"},
+      {"offset": "0x04", "type": "u32", "name": "table_off", "note": "0 means absent; resolved as node + table_off"}
+    ],
+    "table": [
+      {"offset": "0x00", "type": "s32", "name": "count"},
+      {"offset": "0x04", "type": "u32[count]", "name": "child_off", "note": "each resolved as table + child_off[i]"}
+    ],
+    "child_present_predicate": "count > i AND (u32[child] != 0 OR u32[child+4] != 0)",
+    "predicate_evidence": "the exact test 0x82330158 performs before every slot"
+  },
+
+  "record": {
+    "size": "0x20",
+    "layout": "8 x u32, big-endian, 32-bit guest pointers",
+    "size_evidence": "0x8232F380 allocates count * 0x20 for this array before looping over 0x8232F198",
+    "fields": [
+      {
+        "offset": "0x00", "type": "u32", "name": "data",
+        "source": "node.data_off resolved",
+        "fail_closed": "0x82010150 'ObjBin::read() / data empty!'"
+      },
+      {
+        "offset": "0x04", "type": "u32", "name": "param",
+        "source": "child[0]", "sub_record": "ObjParamVariant", "sub_record_size": "0x10",
+        "reader": "0x82330F98", "sizer": "0x82330F28"
+      },
+      {
+        "offset": "0x08", "type": "u32", "name": "maneuvers",
+        "source": "child[1]", "sub_record": "ObjManeuverBlock", "sub_record_size": "0x24",
+        "reader": "0x82330C58", "sizer": "0x82330A30"
+      },
+      {
+        "offset": "0x0C", "type": "u32", "name": "durable",
+        "source": "child[2]", "sub_record": "PointerRecord", "sub_record_size": "0x10",
+        "fail_closed": "0x8201009C 'DurableBin::read() / data empty!'",
+        "note": "class identity comes from the error string this exact branch materializes"
+      },
+      {
+        "offset": "0x10", "type": "u32", "name": "weapon_0",
+        "source": "child[3]", "sub_record": "PointerRecord", "sub_record_size": "0x10",
+        "fail_closed": "0x820100C8 'WeaponBin::read() / data empty!'"
+      },
+      {
+        "offset": "0x14", "type": "u32", "name": "weapon_1",
+        "source": "child[4]", "sub_record": "PointerRecord", "sub_record_size": "0x10",
+        "fail_closed": "0x820100C8 'WeaponBin::read() / data empty!'"
+      },
+      {
+        "offset": "0x18", "type": "u32", "name": "weapon_2",
+        "source": "child[5]", "sub_record": "PointerRecord", "sub_record_size": "0x10",
+        "fail_closed": "0x820100C8 'WeaponBin::read() / data empty!'"
+      },
+      {
+        "offset": "0x1C", "type": "u32", "name": "tail",
+        "source": "child[6]", "sub_record": "PointerRecord", "sub_record_size": "0x04",
+        "note": "role unknown; getReadBuffSize adds 4 and read does not advance the cursor after it"
+      }
+    ]
+  },
+
+  "sub_records": {
+    "PointerRecord": {
+      "size_variants": ["0x10", "0x04"],
+      "fields": [
+        {"offset": "0x00", "type": "u32", "name": "data", "source": "child.data_off resolved"}
+      ],
+      "note": "only the first word is written; the rest of the 0x10 stride is padding"
+    },
+    "ObjParamVariant": {
+      "size": "0x10",
+      "reader": "0x82330F98", "sizer": "0x82330F28",
+      "discriminator": "u8 tag = *(u8*)(child.data_off resolved)",
+      "fields": [
+        {"offset": "0x00", "type": "u32", "name": "data", "note": "carries the tag byte"},
+        {"offset": "0x04", "type": "u32", "name": "variant_0", "written_when": "tag == 0"},
+        {"offset": "0x08", "type": "u32", "name": "variant_1", "written_when": "tag == 1",
+         "fail_closed": "0x82010294 'ParamGroundBin::read() / data empty!'"},
+        {"offset": "0x0C", "type": "u32", "name": "variant_2", "written_when": "tag == 2"}
+      ],
+      "note": "tags outside 0..2 write nothing; the sizer returns 0x10 for 0..2 and 0 otherwise"
+    },
+    "ObjManeuverBlock": {
+      "size": "0x24",
+      "reader": "0x82330C58", "sizer": "0x82330A30",
+      "fields": [
+        {"offset": "0x00", "type": "u32", "name": "data"},
+        {"offset": "0x04", "type": "u32[8]", "name": "maneuver",
+         "sub_reader": "ManeuverBin::read 0x82331808", "sub_sizer": "ManeuverBin::getReadBuffSize 0x823316A0",
+         "sub_record_size": "0x0C"}
+      ]
+    }
+  },
+
+  "reach_path": {
+    "comment": "How a Mission 01 Obj node is reached from the scenario root.",
+    "steps": [
+      "root slot 0, parser 0x82309D20",
+      "0x8232CCA0 per-entry node: child[0] -> SetBin::read, child[1] -> 0x8232F380",
+      "0x8232F380: u8 count at node.data; allocates count * 0x08 and count * 0x20; loops 0x8232F198",
+      "0x8232F198: child[0] -> ObjBin::read into the 0x20 record, child[1] -> SetBin::read"
+    ]
+  },
+
+  "validation": {
+    "payload": "DATA.TBL entry 9 child 0",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "slot0_entries": 230,
+    "obj_records_reached": 434,
+    "inconsistencies": 0,
+    "children_per_obj_node": {"7": 434},
+    "param_tag_distribution": {"0": 170, "1": 202, "2": 16},
+    "weapon_slots_filled": {"0": 152, "1": 189, "2": 93},
+    "maneuvers_per_obj": {"5": 37, "6": 132},
+    "notes": [
+      "Every one of the 434 records has exactly 7 children, the maximum the code handles.",
+      "No param tag falls outside the 0..2 range the reader and sizer implement.",
+      "No record fills a fourth weapon slot; only three exist.",
+      "Only 169 of the 434 records carry a maneuver block."
+    ]
+  },
+
+  "not_established": [
+    "the meaning of the payload each resolved pointer targets; only the container and record layout are read",
+    "field-level semantics inside DurableBin, WeaponBin or ParamGroundBin payloads",
+    "which of the 434 records corresponds to which runtime object",
+    "wave identity and objective-condition semantics"
+  ]
+}

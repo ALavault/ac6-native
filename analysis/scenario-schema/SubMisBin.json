@@ -1,0 +1,104 @@
+{
+  "schema": "ac6.scenario-schema.v1",
+  "class": "SubMisBin",
+  "provenance": {
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6",
+    "image_base": "0x82000000",
+    "derived_from": "decompilation only; no emulator, bridge or native run",
+    "report": "reports/cycle-1088-remaining-bin-schemas.md"
+  },
+  "container_primitive": {
+    "comment": "Shared by every *Bin class.",
+    "node": [
+      {
+        "offset": "0x00",
+        "type": "u32",
+        "name": "data_off"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32",
+        "name": "table_off"
+      }
+    ],
+    "table": [
+      {
+        "offset": "0x00",
+        "type": "s32",
+        "name": "count"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32[count]",
+        "name": "child_off"
+      }
+    ],
+    "child_present_predicate": "count > i AND (u32[child] != 0 OR u32[child+4] != 0)"
+  },
+  "functions": {
+    "read": "0x8232C8A8",
+    "getReadBuffSize": "0x8232C7E0",
+    "identity_evidence": [
+      "0x8200FE9C 'SubMisBin::read() / child data empty!'",
+      "0x8200FE64 'SubMisBin::getReadBuffSize ( ) / child empty!'"
+    ]
+  },
+  "record": {
+    "size": "0x0C",
+    "layout": "3 x u32",
+    "size_evidence": "SubMisTblBin::read zeroes three u32 per element at stride 0x10",
+    "fields": [
+      {
+        "offset": "0x00",
+        "type": "u32",
+        "name": "data",
+        "note": "resolved node.data_off; may legitimately be absent"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32",
+        "name": "mapmask",
+        "source": "child[0]",
+        "sub_record_size": "0x10",
+        "fail_closed": "0x8200FE38 'MapmaskBin::read ( ) / data empty!'",
+        "note": "MapmaskBin has no function of its own; it is inlined here and its only trace is this string"
+      },
+      {
+        "offset": "0x08",
+        "type": "u32",
+        "name": "block",
+        "source": "child[1]",
+        "sub_record_size": "0x08",
+        "reader": "0x8232ED10",
+        "sizer": "0x8232EC08",
+        "note": "unnamed list of 0x28 elements; neither function materializes an error string"
+      }
+    ]
+  },
+  "sub_records": {
+    "Unnamed0x28List": {
+      "size": "0x08",
+      "reader": "0x8232ED10",
+      "sizer": "0x8232EC08",
+      "count": {
+        "type": "u8",
+        "location": "first byte of the resolved data word"
+      },
+      "element_stride": 40,
+      "element_reader": "0x8232F8B0",
+      "note": "role unknown: no error string anywhere in this subtree"
+    }
+  },
+  "validation": {
+    "payload": "DATA.TBL entry 9 child 0",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "validated_transitively_by": "SubMisTblBin"
+  },
+  "not_established": [
+    "the MapmaskBin payload",
+    "the role of the 0x28 element list"
+  ]
+}

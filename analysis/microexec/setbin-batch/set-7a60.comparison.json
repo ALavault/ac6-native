@@ -1,0 +1,30 @@
+{
+  "case": "SetBin@node+0x7a60",
+  "classification": "pair_equal",
+  "comparisons": {
+    "ppc_native": {
+      "difference_count": 0,
+      "differences": [],
+      "equal": true
+    }
+  },
+  "equal": true,
+  "function": "0x8232F5F8",
+  "implementations": {
+    "native": "native",
+    "ppc": "ppc-pcode"
+  },
+  "mode": "pair",
+  "policy": {
+    "float_comparison": "math.isclose",
+    "generated_snapshot": "absent; this is a two-way comparison, not a three-way one",
+    "ignored_top_level": [
+      "identity",
+      "notes",
+      "provenance"
+    ],
+    "list_order_significant": true,
+    "memory_write_order_significant": true
+  },
+  "schema": "ac6.function-snapshot-comparison.v1"
+}

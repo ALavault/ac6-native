@@ -1,0 +1,123 @@
+{
+  "schema": "ac6.scenario-schema.v1",
+  "class": "ActBin",
+  "provenance": {
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6",
+    "image_base": "0x82000000",
+    "derived_from": "decompilation only; no emulator, bridge or native run",
+    "report": "reports/cycle-1086-actbin-field-schema.md"
+  },
+  "functions": {
+    "read": "0x82330688",
+    "getReadBuffSize": "0x82330540",
+    "identity_evidence": [
+      "0x8201026C 'Error / ActBin::read() / data empty!'",
+      "0x82010244 'Error / ActBin::read() / child empty!'",
+      "0x82010218 'Error / ActBin::read() / order empty! : %d'",
+      "0x820101E4 'Error / ActBin::getReadBuffSize() / data empty!'",
+      "0x820101B0 'Error / ActBin::getReadBuffSize() / child empty!'",
+      "0x82010178 'Error / ActBin::getReadBuffSize() / order empty! : %d'"
+    ],
+    "note": "read and getReadBuffSize each materialize their own triple of strings, so both are named by the binary independently."
+  },
+
+  "container_primitive": {
+    "comment": "Identical to ObjBin.json and OrderBin.json; repeated so this file stands alone.",
+    "node": [
+      {"offset": "0x00", "type": "u32", "name": "data_off", "note": "0 means absent; resolved as node + data_off"},
+      {"offset": "0x04", "type": "u32", "name": "table_off", "note": "0 means absent; resolved as node + table_off"}
+    ],
+    "table": [
+      {"offset": "0x00", "type": "s32", "name": "count"},
+      {"offset": "0x04", "type": "u32[count]", "name": "child_off", "note": "each resolved as table + child_off[i]"}
+    ],
+    "child_present_predicate": "count > i AND (u32[child] != 0 OR u32[child+4] != 0)"
+  },
+
+  "record": {
+    "size": "0x08",
+    "layout": "2 x u32, big-endian, 32-bit guest pointers",
+    "size_evidence": "SetBin::read 0x8232F5F8 allocates count * 0x08 and zeroes puVar6[0..1] before each ActBin::read call",
+    "fields": [
+      {"offset": "0x00", "type": "u32", "name": "data",
+       "source": "node.data_off resolved",
+       "fail_closed": "0x8201026C 'ActBin::read() / data empty!'",
+       "note": "carries the u8 order count at its first byte"},
+      {"offset": "0x04", "type": "u32", "name": "orders",
+       "source": "buffer cursor",
+       "note": "points at an array of `count` OrderBin records of 0x2C each; written only when count != 0"}
+    ],
+    "note": "ActBin is a pure list header. It owns no variant and no scalar of its own beyond the count byte."
+  },
+
+  "list": {
+    "count": {"type": "u8", "location": "first byte of the resolved data word"},
+    "element": "OrderBin",
+    "element_stride": "0x2C",
+    "element_schema": "analysis/scenario-schema/OrderBin.json",
+    "early_exit": "count == 0 returns before the child table is read or the orders pointer is written",
+    "per_element_fail_closed": "0x82010218 'ActBin::read() / order empty! : %d', raised when the index reaches the table count or the child node is empty"
+  },
+
+  "buffer_accounting": {
+    "read": "reserves count * 0x2C, then advances by OrderBin::getReadBuffSize per element",
+    "getReadBuffSize": "returns 0 when count == 0, otherwise count * 0x2C plus the sum of OrderBin::getReadBuffSize over the elements",
+    "cross_check": "getReadBuffSize zeroes eleven u32 of stack scratch per element, the same 0x2C OrderBin record read allocates"
+  },
+
+  "container": {
+    "SetBin": {
+      "read": "0x8232F5F8",
+      "getReadBuffSize": "0x8232F4D0",
+      "record_size": "0x08",
+      "record_fields": ["data", "acts"],
+      "count": "u8 at the resolved data word",
+      "element_stride": "0x08",
+      "element": "ActBin",
+      "fail_closed": [
+        "0x82010074 'SetBin::read() / data empty!'",
+        "0x8201004C 'SetBin::read() / child empty!'",
+        "0x82010020 'SetBin::read() / act empty! : %d'",
+        "0x8200FFEC 'SetBin::getReadBuffSize() / data empty!'",
+        "0x8200FFB8 'SetBin::getReadBuffSize() / child empty!'",
+        "0x8200FF80 'SetBin::getReadBuffSize() / act empty! : %d'"
+      ],
+      "note": "SetBin has the same 0x08 list-header shape as ActBin, one level up."
+    }
+  },
+
+  "validation": {
+    "payload": "DATA.TBL entry 9 child 0",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "set_nodes": 230,
+    "act_nodes": 492,
+    "acts_declaring_zero_orders": 0,
+    "set_count_overruns": 0,
+    "act_count_overruns": 0,
+    "inconsistencies": 0,
+    "acts_per_set": {"1": 75, "2": 81, "3": 41, "4": 33},
+    "orders_per_act": {"2": 209, "3": 92, "4": 28, "5": 12, "6": 22, "7": 41, "8": 5,
+                       "9": 8, "10": 23, "11": 7, "12": 4, "14": 2, "15": 1, "18": 1,
+                       "19": 8, "21": 4, "22": 4, "24": 3, "25": 4, "26": 1,
+                       "47": 4, "48": 2, "49": 2, "50": 1, "52": 4},
+    "arithmetic_cross_checks": {
+      "sum_acts_per_set_equals_act_nodes": "1*75 + 2*81 + 3*41 + 4*33 = 492",
+      "sum_orders_per_act_equals_orderbin_records": "2975, the exact count the independently written OrderBin validator reports",
+      "sets_counted": "75 + 81 + 41 + 33 = 230"
+    },
+    "notes": [
+      "No SetBin or ActBin declares more elements than its child table holds, so the `act empty! : %d` and `order empty! : %d` paths never fire on this payload.",
+      "No Act declares zero orders, so the early exit in read() is never taken here.",
+      "Acts per Set are 1 to 4; orders per Act reach 52."
+    ]
+  },
+
+  "not_established": [
+    "the meaning of the bytes after the count in the resolved data word",
+    "what an Act groups semantically; only that it is an ordered list of Orders",
+    "objective-condition semantics"
+  ]
+}

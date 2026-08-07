@@ -1,0 +1,128 @@
+{
+  "schema": "ac6.scenario-schema.v1",
+  "class": "RadioTblBin",
+  "provenance": {
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6",
+    "image_base": "0x82000000",
+    "derived_from": "decompilation only; no emulator, bridge or native run",
+    "report": "reports/cycle-1088-remaining-bin-schemas.md"
+  },
+  "container_primitive": {
+    "comment": "Shared by every *Bin class.",
+    "node": [
+      {
+        "offset": "0x00",
+        "type": "u32",
+        "name": "data_off"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32",
+        "name": "table_off"
+      }
+    ],
+    "table": [
+      {
+        "offset": "0x00",
+        "type": "s32",
+        "name": "count"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32[count]",
+        "name": "child_off"
+      }
+    ],
+    "child_present_predicate": "count > i AND (u32[child] != 0 OR u32[child+4] != 0)"
+  },
+  "functions": {
+    "read": "0x823094D8",
+    "getReadBuffSize": "0x823093C8",
+    "identity_evidence": [
+      "0x8200F574 'RadioTblBin::read ( ) / data empty!'",
+      "0x8200F544 'RadioTblBin::read ( ) / child empty!'",
+      "0x8200F50C 'RadioTblBin::read ( ) / radio data empty! : %d'",
+      "0x8200F4D4 'RadioTblBin::getReadBuffSize ( ) / data empty!'",
+      "0x8200F49C 'RadioTblBin::getReadBuffSize() / child empty!'"
+    ]
+  },
+  "record": {
+    "size": "0x08",
+    "layout": "2 x u32",
+    "fields": [
+      {
+        "offset": "0x00",
+        "type": "u32",
+        "name": "data",
+        "fail_closed": "0x8200F574",
+        "note": "carries a u16 element count at its first halfword"
+      },
+      {
+        "offset": "0x04",
+        "type": "u32",
+        "name": "entries",
+        "note": "array of `count` radio entries of 0x10 each"
+      }
+    ]
+  },
+  "list_header": {
+    "count_type": "u16",
+    "count_offset": 0,
+    "element_stride": 16,
+    "element": "RadioEntry",
+    "early_exit": "count == 0 returns before the child table is read",
+    "per_element_fail_closed": "0x8200F50C 'radio data empty! : %d'"
+  },
+  "sub_records": {
+    "RadioEntry": {
+      "size": "0x10",
+      "reader": "0x8232C7B0",
+      "sizer": "0x822663A8",
+      "fields": [
+        {
+          "offset": "0x00",
+          "type": "u32",
+          "name": "payload",
+          "note": "resolved child.data_off, or 0"
+        }
+      ],
+      "note": "the reader writes one word and nothing else; the sizer is a stub returning 0, so a radio entry adds no sub-buffer"
+    }
+  },
+  "buffer_accounting": {
+    "read": "reserves count * 0x10",
+    "getReadBuffSize": "count << 4 plus a per-element sizer that always returns 0"
+  },
+  "reach": [
+    {
+      "op": "root"
+    },
+    {
+      "op": "child",
+      "index": 3
+    }
+  ],
+  "validation": {
+    "payload": "DATA.TBL entry 9 child 0",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "declared_count": 54,
+    "table_children": 54,
+    "table_overrun": false,
+    "elements_present": 54,
+    "elements_absent": 0,
+    "children_per_element": {
+      "0": 54
+    },
+    "inconsistencies": 0,
+    "notes": [
+      "All 54 radio entries carry no child table, consistent with a reader that writes one word and a sizer that returns 0."
+    ]
+  },
+  "not_established": [
+    "the payload behind each radio entry pointer",
+    "the join to a radio key or subtitle"
+  ]
+}

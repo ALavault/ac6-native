@@ -1,5 +1,5 @@
 version: 1
-updated: 2026-08-06T08:43:03+02:00
+updated: 2026-08-08T14:00:00+02:00
 hypotheses:
   - id: H-GAMEPLAY-ACTIVE-BEHIND-BLACK
     status: supported
@@ -194,11 +194,19 @@ hypotheses:
     evidence: reports/cycle-1036-retail-scenario-corpus-boundary.md.
     qualification: Rejected as a transfer rule; zero candidates were found and no AC5 semantics are promoted to AC6.
   - id: H-GHIDRA-SUBMISTBL-STRING-REFERENCE
-    status: rejected
+    status: qualified
     statement: The canonical AC6 XEX has a statically referenced parser-error string at 0x8200F5A8 that can identify the Mission 01 scenario loader.
     discriminator: Resolve references in the canonical Ghidra project and search a 64-byte PPC window for split-address materialization.
-    evidence: reports/cycle-1036-retail-scenario-corpus-boundary.md; canonical project ace-combat-6; target default.xex SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
-    qualification: "Rejected for this string only: zero references and zero split-materialization hits. Other parser symbols require separate qualification."
+    positive_control: Cycle 1082 reruns FindPpcSplitAddressMaterialization.java unmodified on the repaired corpus and reports 3 hits resolving to the single site 0x823096C8, inside SubMisTblBin::getReadBuffSize at 0x82309620, whose own error strings 0x8200F624/0x8200F5E8/0x8200F5A8 name the function.
+    evidence: reports/cycle-1082-savegprlr-analysis-gap.md; canonical project ace-combat-6; target default.xex SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
+    qualification: "Qualified. The cycle-1036 rejection was a coverage artefact, not a property of the binary: 0x823096C8 sat inside the analysis gap opened by the noreturn flag on 0x82382EE8, and only 44.8 percent of the code range was disassembled. Ghidra still creates no reference for the split lis/addi pair; reference recovery remains open."
+  - id: H-GHIDRA-SAVEGPRLR-NORETURN-ANALYSIS-GAP
+    status: qualified
+    statement: The noreturn flag on part of the __savegprlr_N island truncates every function whose prologue calls it and leaves most of the AC6 code range undisassembled.
+    discriminator: Measure noreturn entries, save-helper call sites without fall-through, and disassembled bytes over 0x82090000-0x823E7FF7 in the canonical project before and after clearing the flag, the residual per-call flow overrides and the recomputed bodies.
+    positive_control: 3871 of 4128 save-helper call sites had no fall-through; clearing them grew 3556 function bodies and raised disassembly from 44.8 to 77.6 percent and function-body coverage from 23.5 to 57.9 percent. ObjBin::read at 0x82330158 goes from 2 to 249 instructions, OrderBin::read at 0x82331208 from 2 to 280.
+    evidence: reports/cycle-1082-savegprlr-analysis-gap.md; scripts/AuditPpcHelperNoReturnImpact.java; scripts/RepairPpcSaveHelperFamily.java; helper chains byte-qualified SHA-256 c91d6acdcca047ceaa15c988eab916f741a0dcb81941ab90e45888ef845539e0 and f5f9f5c1203f5d2d1a3e554b1a00333f1a7e0fe6245eeea147424b7914efe443.
+    qualification: Qualified for the save island only; the restore island legitimately has no fall-through. Every static negative boundary established before this repair, including cycles 1036, 1070 and 1073, must be replayed on the repaired corpus before any further runtime session.
   - id: H-BRIDGE-M01-UNIT-FACTORY-ENTRY
     status: tested
     statement: The read-only factory and constructor hooks can qualify a Mission 01 retail unit at the first gameplay wave boundary.
@@ -233,8 +241,133 @@ hypotheses:
     status: open
     statement: The canonical static evidence identifies an exact retail owner/consumer pair for Mission 01 objective or wave records.
     discriminator: Require selector 4, stable record address, variant field, caller/LR context, and atomic insertion or activation in UnitManager or MissionManager after state40=8 selector44=4 type28=6 -> type28=8.
-    evidence: reports/cycle-1073-static-objective-wave-owner-boundary.md; XEX SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
-    qualification: Open; static evidence reduces the boundary to 0x820A7F48, 0x822A6560, 0x822A8570, 0x820A8E08 and consumer census 0x822707C8, but proves no retail publication or activation.
+    evidence: reports/cycle-1083-dpl-scenario-owner-join.md; reports/cycle-1073-static-objective-wave-owner-boundary.md; XEX SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
+    qualification: "Still open, but the boundary moved. Cycle 1083 identifies the producer side statically - DATA.TBL entry 9 child 0 root slot 0, the block the loader labels 'Obj & Unit', 230 records, read by ObjBin/SetBin/ActBin/OrderBin/ManeuverBin. What remains unproven is the consumer side the discriminator asks for: no atomic insertion or activation in UnitManager or MissionManager is shown, and the one-to-one pairing between the 230 static records and the 230 runtime objects of cycle 1080 is a cardinality match only."
+  - id: H-STATIC-M01-SCENARIO-OWNER-IS-ENTRY9-SLOT0
+    status: qualified
+    statement: Mission 01 resolves to DATA.TBL entry 9, whose child 0 is a scenario container whose root slot 0 is the Obj & Unit block read by the ObjBin/SetBin/ActBin/OrderBin/ManeuverBin family.
+    discriminator: Read the level-to-resource mapping out of .rdata, require every campaign id below the 0x39d direct-resource threshold, walk the container with the dispatch table taken from the decompiled root reader, and require the walk to agree with the code including which slots the code tests as empty.
+    positive_control: DAT_82065840[1] = 9 reproduces the independent selector-1-to-entry-9 mapping of DPL_ARCHIVE_HANDLE_CHAIN.md. The walk yields 10 slots, slots 4 and 6 empty exactly where the code tests emptiness, slot 2 SubMisTblBin with 4 sub-missions, slot 3 RadioTblBin with 54 entries, and slot 0 with 230 children equal to the 230-object runtime census of cycle 1080. Reachability from slot 0 reaches ObjBin, SetBin, ActBin, OrderBin and ManeuverBin; no other slot reaches them.
+    evidence: reports/cycle-1083-dpl-scenario-owner-join.md; DATA.TBL SHA-256 82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5; decoded entry 9 SHA-256 cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05; scenario root node SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: Qualified for location and container structure only. Record field layout is not read, the static-to-runtime pairing of the 230 records is a cardinality match not an identity proof, and no wave or objective-condition semantics are established.
+  - id: H-STATIC-OBJBIN-FIELD-SCHEMA
+    status: qualified
+    statement: The ObjBin record layout is derivable from the decompiled reader and sizer alone and agrees byte-for-byte with the Mission 01 payload.
+    discriminator: Derive the record size and every field from ObjBin::read and ObjBin::getReadBuffSize, then walk the real payload with the same container rules and require no record to exceed the slot count, tag range, weapon-slot count or maneuver count the code implements.
+    positive_control: 0x8232F380 allocates count*0x20 independently of the field reads, matching the eight u32 ObjBin::read writes. On the payload, 434 records are reached with 0 inconsistencies, all 434 have exactly 7 children which is the maximum the code handles, param tags stay within 0..2, no fourth weapon slot is ever filled and no record exceeds 8 maneuvers.
+    evidence: reports/cycle-1084-objbin-field-schema.md; analysis/scenario-schema/ObjBin.json; tools/validate_ac6_scenario_schema.py; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: Qualified for container and record layout only. Field identity comes from the error string each branch materializes - DurableBin at 0x8201009C, WeaponBin at 0x820100C8, ParamGroundBin at 0x82010294. The meaning of the payload behind each resolved pointer is not read, and no wave or objective-condition semantics follow from this.
+  - id: H-STATIC-ORDERBIN-FIELD-SCHEMA
+    status: qualified
+    statement: OrderBin is a 0x2C tagged union of ten variants whose layout follows from its reader and sizer and agrees with the Mission 01 payload.
+    discriminator: Derive the record size from the ActBin allocation, the tag domain from both OrderBin::read and OrderBin::getReadBuffSize, then walk Set to Act to Order on the payload and require every tag to fall inside that domain and every record to carry the single child the reader looks for.
+    positive_control: ActBin::read 0x82330688 allocates count*0x2C and zeroes eleven u32 per element, independently of the field reads. getReadBuffSize returns 4 for tags 0,1,3..9, 8 plus nested for tag 2 and 0 otherwise, which is the same domain the reader implements. On the payload, 2975 records are reached with 0 inconsistencies, all carry exactly one child, and no tag falls outside 0..9.
+    evidence: reports/cycle-1085-orderbin-field-schema.md; analysis/scenario-schema/OrderBin.json; tools/validate_ac6_scenario_schema.py; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for container and record layout only. Six of the ten variants are named by the error string their own branch materializes - OrderDisappearBin, OrderStopBin, OrderLeadBin, OrderJumpBin, OrderFlagBin, OrderPropertyBin. Tags 0, 2, 7 and 9 have no failure path and stay unnamed. Tags 4 and 9 are unused by Mission 01. Knowing an order is an OrderStopBin does not say what it stops, so no objective-condition semantics follow."
+  - id: H-STATIC-ORDERBIN-TAG2-NESTED-LIST-UNEXERCISED
+    status: qualified
+    statement: The nested list behind OrderBin tag 2 is never populated by the Mission 01 payload, so its element layout cannot be qualified from this data.
+    discriminator: Apply the exact precondition 0x82331AD0 enforces before it descends - a resolved data word, a table, and a present first child - and classify every tag-2 record by how far the descent gets.
+    positive_control: All 890 tag-2 records stop at an empty first grandchild. Hand-checked at payload offsets 0xDD0, 0x7B50 and 0x7CA0, each showing child[0] present with {0x10, 0x60}, a one-entry table, and that entry a {0,0} node.
+    evidence: reports/cycle-1085-orderbin-field-schema.md.
+    qualification: "Qualified as a negative result about this payload only. A first reading placed the element count at data+0x0C from 0x82331D58; applied to the payload it yields float bit patterns such as 0x442F0000 and 0x44C80000, so the node reached was wrong and the count stays unqualified rather than asserted."
+  - id: H-STATIC-ACTBIN-FIELD-SCHEMA
+    status: qualified
+    statement: ActBin and SetBin are 0x08 list headers of two u32 - a resolved data word whose first byte is the element count, and a pointer to the element array.
+    discriminator: Take the record size from the caller allocation rather than the field reads, take the count location and the early exit from both read and getReadBuffSize, then walk the payload and require no header to declare more elements than its child table holds.
+    positive_control: SetBin::read allocates count*0x08 and zeroes two u32 per element. ActBin::getReadBuffSize zeroes eleven u32 of scratch per element, the same 0x2C OrderBin record read allocates, giving a third independent confirmation of the OrderBin size. On the payload, 230 Sets and 492 Acts walk with zero overruns and zero inconsistencies, and the sums cross-check - 1*75+2*81+3*41+4*33 = 492 acts, and the orders-per-act distribution sums to 2975, the exact count the separately written OrderBin validator reports.
+    evidence: reports/cycle-1086-actbin-field-schema.md; analysis/scenario-schema/ActBin.json; tools/validate_ac6_scenario_schema.py; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for the list-header layout only. Both ActBin functions name themselves through their own triple of error strings, as do both SetBin functions. What an Act groups semantically is not established, only that it is an ordered list of Orders, so no objective-condition semantics follow."
+  - id: H-STATIC-MANEUVERBIN-FIELD-SCHEMA
+    status: qualified
+    statement: ManeuverBin is a 0x0C record of three u32 holding an s32 count and two parallel arrays, and its reader descends two hops per element before reaching the ComTblBin node.
+    discriminator: Take the record size from the caller cursor arithmetic, derive the two array strides from read and check them against the independent expression getReadBuffSize computes, then walk the payload and require every element to complete the exact descent the reader enforces.
+    positive_control: 0x82330C58 passes cursor + 0x0C per maneuver slot. getReadBuffSize returns ((count + count*2) and 0x3FFFFFFF) shifted left 2, that is count*12, which is exactly the 4-byte and 8-byte arrays read allocates. On the payload, 977 nodes and 9251 elements walk with zero negative counts, zero table overruns and zero inconsistencies, and all 9251 elements complete the two-hop descent. The 977 matches the ObjBin distribution from cycle 1084 - 37*5 + 132*6 - reported by a separate validator.
+    evidence: reports/cycle-1087-maneuverbin-field-schema.md; analysis/scenario-schema/ManeuverBin.json; tools/validate_ac6_scenario_schema.py; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for container and record layout only. ManeuverBin is the one class in the family whose count is an s32 rather than a u8. ComTblMBin has no function of its own - it is inlined into ManeuverBin::read and its only trace is the p_data error string 0x82010460. What a maneuver commands is not established, only that it is a list of ComTblM and ComTbl pairs."
+  - id: H-STATIC-BIN-FAMILY-SCHEMA-COMPLETE
+    status: qualified
+    statement: Every class of the AC6 scenario *Bin family has a derived container and record layout, either as its own schema or as a named inlined variant.
+    discriminator: Derive each record size from its caller allocation rather than its field reads, take each count width from the reader, then walk the Mission 01 payload with those rules and require zero table overruns and zero inconsistencies.
+    positive_control: Ten schemas cover the family. The counts use three widths the readers distinguish - u8 for SetBin, ActBin, SubMisTblBin and ComTblBin, u16 for RadioTblBin, s32 for ManeuverBin - and a schema-driven validator reads each width from the schema. On the payload SubMisTblBin declares 4 with a 4-entry table and two children per element, RadioTblBin declares 54 with a 54-entry table and no children per element, both with zero inconsistencies.
+    evidence: reports/cycle-1088-remaining-bin-schemas.md; analysis/scenario-schema/*.json; tools/validate_ac6_scenario_schema.py; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for structure and class identity only. Inlined classes with no function of their own - DurableBin, WeaponBin, ParamGroundBin, the six Order variants, ComTblMBin and MapmaskBin - are named solely by the error string they materialize. No schema states what the payload behind a resolved pointer means, so no wave identity, no objective condition and no radio-key join follows. That is the ceiling of naming by error strings."
+  - id: H-STATIC-SETBIN-SIZER-OVER-RESERVES
+    status: qualified
+    statement: SetBin::getReadBuffSize reserves 0x2C per act while SetBin::read writes 0x08, over-reserving by 0x24 per act.
+    discriminator: Compare the per-element stride each function uses on the same node, and check whether the difference is a shortfall or slack.
+    positive_control: SetBin::read advances its cursor by count*8 and zeroes two u32 per act; SetBin::getReadBuffSize computes count*0x2C. 0x2C is the ActBin element stride used by ActBin::getReadBuffSize, which reads as a copied constant that was never narrowed.
+    evidence: reports/cycle-1088-remaining-bin-schemas.md; analysis/scenario-schema/SetBin.json.
+    qualification: Qualified as an observation about the retail binary, recorded not corrected. The direction is over-allocation, never a shortfall, so it has no observable runtime effect and explains nothing about the open retail domains.
+  - id: H-MICROEXEC-SCENARIO-PARSERS-MATCH-NATIVE
+    status: qualified
+    statement: A native parser written from analysis/scenario-schema/ reproduces the retail PPC parsers byte for byte on real Mission 01 nodes.
+    discriminator: Micro-execute the retail instruction semantics through Ghidra's p-code emulator on the real payload with a poison-filled destination, reimplement the same parsers from the schema alone into the same synthetic address space, and require the written ranges and the fail-closed call list to be equal across many nodes, not one.
+    positive_control: 52 comparisons over ComBin, ComTblBin, ManeuverBin and ObjBin all classify pair_equal, including 24 spread ObjBin nodes and 24 spread ManeuverBin nodes. No fail-closed path fires in any of the 52 runs, on either side.
+    evidence: reports/cycle-1089-pcode-microexecution.md; scripts/MicroExecuteScenarioParser.java; tools/emit_ac6_native_snapshot.py; analysis/microexec/; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for ObjBin, ManeuverBin, ComTblBin and ComBin only. OrderBin, ActBin, SetBin, SubMisTblBin, SubMisBin and RadioTblBin remain structurally validated but not micro-executed. The comparison is two-way and labelled mode pair; no generated-C++ snapshot exists, so it is not a three-way result. It says nothing about the meaning of the payloads behind the resolved pointers, which the parsers copy without interpreting."
+  - id: H-STATIC-MANEUVER-BLOCK-SIZER-ASYMMETRY
+    status: qualified
+    statement: The maneuver-block sizer 0x82330A30 starts at a fixed 0x60 and overwrites that base with size0 + 0x6C when slot 0 is present, diverging from its reader by exactly 0x60.
+    discriminator: Compare the per-slot advance of reader 0x82330C58 against sizer 0x82330A30 on the same node, and require a native reimplementation to reproduce the buffer layout across many nodes rather than one.
+    positive_control: Modelling the block size as the reader does - 0x0C per present slot - passes 15 of 24 ObjBin nodes and fails 9, every failure a 0x60 cursor drift. Reproducing the sizer exactly gives 24 of 24. ObjBin::read advances its cursor by the sizer, so the sizer is what the layout follows.
+    evidence: reports/cycle-1089-pcode-microexecution.md; tools/emit_ac6_native_snapshot.py maneuver_block_size; four regression tests in tools/tests/test_ac6_static_tooling.py.
+    qualification: Qualified as a property of the retail binary, recorded not corrected. It is the third reader/sizer asymmetry in this family after SetBin, and like the others it over-reserves rather than under-reserves, so it has no observable runtime effect - but it does change the buffer layout, so it cannot be ignored.
+  - id: H-MICROEXEC-ORDERBIN-TAG-DISPATCH
+    status: qualified
+    statement: The OrderBin tag-to-slot mapping holds under execution, not only under reading, on every tag the Mission 01 payload uses.
+    discriminator: Micro-execute OrderBin::read on four spread nodes per present tag and require each tag to write exactly the record slot the schema assigns it, with a native reimplementation matching byte for byte.
+    positive_control: 32 nodes across the eight present tags all classify pair_equal. Each tag writes exactly 4*(tag+1) and each tag has its own step count, constant across its four nodes - 63, 66, 132, 70, 74, 76, 75, 80 for tags 0, 1, 2, 3, 5, 6, 7, 8.
+    evidence: reports/cycle-1090-orderbin-microexecution.md; analysis/microexec/orderbin-batch/; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for the eight tags the payload uses. Tags 4 (OrderLeadBin) and 9 are absent from Mission 01, so the slots 0x14 and 0x28 the schema assigns them stay unexercised. The tag-2 nested sub-reader 0x82331D98 is not modelled; the native parser reproduces its precondition and raises rather than guessing, and across all 2975 orders that precondition never holds. Knowing an order is an OrderStopBin still says nothing about what it stops."
+  - id: H-MICROEXEC-POISON-DIFF-WAS-UNSOUND
+    status: qualified
+    statement: Detecting writes by diffing against a single poison fill is unsound, because a parser can legitimately write a byte equal to that poison.
+    discriminator: Sweep the whole payload rather than a sample and look for write runs that start on a misaligned offset; then re-detect using two poison passes and an explicit write mask and require the anomaly to disappear.
+    positive_control: Sweeping all 2975 orders reported a tag-0 write run starting at record offset 0x03 instead of 0x04. With the union of a 0xCD pass and a 0x00 pass on the emulator side, and an explicit write mask on the native side, the anomaly is gone and all 84 comparisons still classify pair_equal.
+    evidence: reports/cycle-1090-orderbin-microexecution.md; scripts/MicroExecuteScenarioParser.java emulationPass; tools/emit_ac6_native_snapshot.py Image; regression test in tools/tests/test_ac6_static_tooling.py.
+    qualification: "The cycle-1089 conclusions survive - the flaw affected both sides identically, so its 52 comparisons were valid - but the method was wrong and a wrong method that happens to give the right answer is still wrong. All batches were replayed with the corrected detection."
+  - id: H-MICROEXEC-SET-ACT-ORDER-CHAIN-CLOSED
+    status: qualified
+    statement: The whole Set to Act to Order chain is reproduced byte for byte by a native parser derived from the schemas, on real Mission 01 nodes.
+    discriminator: Micro-execute ActBin::read and SetBin::read on spread nodes including the extremes of the orders-per-act distribution, and require the native reimplementation to match the written image exactly, not merely to parse without error.
+    positive_control: 24 ActBin nodes and 24 SetBin nodes all classify pair_equal, both on the first attempt. A single SetBin run reaches 17780 steps and 956 sub-parser entries, traversing SetBin to ActBin to OrderBin and its variants in one execution. The native parser then sweeps all 230 sets and 492 acts of the payload with zero fail-closed paths and zero tag-2 descents.
+    evidence: reports/cycle-1091-set-act-microexecution.md; analysis/microexec/actbin-batch/; analysis/microexec/setbin-batch/; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for structure only, and that limit matters: 132 byte-exact comparisons say nothing about semantics. The parsers copy pointers without interpreting them and the native parser does the same, so their agreement proves the structure is read correctly, not that its meaning is known. SubMisTblBin, SubMisBin and RadioTblBin remain un-micro-executed. Neither retail_units_and_waves nor retail_objectives moves, because both ask for a wave identity and an objective condition, not a record layout."
+  - id: H-MICROEXEC-BIN-FAMILY-COMPLETE
+    status: qualified
+    statement: All ten classes of the AC6 scenario *Bin family are reproduced byte for byte by a native parser derived from the schemas alone, on real Mission 01 nodes, with no oracle of any kind.
+    discriminator: Micro-execute every reader on real nodes with a two-poison write detection, reimplement each from the schema rather than the machine code, and require byte equality of the written image and of the fail-closed call list.
+    positive_control: 138 comparisons all classify pair_equal across ObjBin, OrderBin, ActBin, SetBin, ManeuverBin, ComTblBin, ComBin, SubMisTblBin, SubMisBin and RadioTblBin. RadioTblBin writes 216 bytes for 54 entries of stride 0x10, confirming by execution both the u16 count and the one-word element reader with its null sizer.
+    evidence: reports/cycle-1092-bin-family-microexecution-complete.md; analysis/microexec/; payload SHA-256 51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45.
+    qualification: "Qualified for structure only. The parsers copy pointers without interpreting them and so does the native parser, so their agreement proves the structure is read correctly and nothing more. The unnamed 0x28 list under SubMisBin has no error string anywhere in its subtree, so none of its ten variants can be named; only tags 0 and 1 occur in Mission 01 and the tag-2 descent into 0x823308E0 is unmodelled and raises rather than guessing. retail_units_and_waves and retail_objectives are untouched."
+  - id: H-STATIC-BIN-SIZER-QUIRKS-NEED-BREADTH
+    status: qualified
+    statement: The *Bin sizers carry four separate quirks that reading the code did not reveal and that only multi-node comparison exposed.
+    discriminator: Compare a schema-derived parser against micro-execution on many nodes per class rather than one, and attribute every divergence to a specific instruction sequence.
+    positive_control: Four quirks, each found by a divergence and not by reading - SetBin::getReadBuffSize reserves 0x2C per act where read writes 0x08; the maneuver block sizer 0x82330A30 starts at 0x60 and overwrites with size0 + 0x6C; the order sizer would dereference a null pointer on an absent child, a path this payload never takes; and 0x8232EC08 rounds its total up to a multiple of 16, the only sizer in the family that aligns. One node per class would have passed 10 of 10 with a wrong schema.
+    evidence: reports/cycle-1092-bin-family-microexecution-complete.md; reports/cycle-1089-pcode-microexecution.md; tools/tests/test_ac6_static_tooling.py.
+    qualification: Qualified as properties of the retail binary, recorded not corrected. All four over-reserve or are unreachable rather than under-reserving, so none has an observable runtime effect, but each changes the buffer layout and so none is ignorable.
+  - id: H-STATIC-SCENARIO-RECORD-RUNTIME-ADDRESS
+    status: qualified
+    statement: The parsed Mission 01 scenario structure has an exact address in the mission context - the record at context+0x12540DC and its buffer pointer at context+0x12540D8 - and the context itself is published at PTR_DAT_826E4EB4 + 0x29C80.
+    discriminator: Read the loader's own stores rather than inferring them - require the context publication, the sizer call, the allocation, the buffer store and the reader call to appear as one instruction sequence in 0x8219BDD8.
+    positive_control: 0x8219BDF0 to 0x8219BE0C publishes r28 at global + 0x29C80. 0x8219BF08 to 0x8219BF54 forms r31 = context + 0x12540DC, calls 0x822493F0 to size, 0x82222E98 to allocate, stores the buffer at context + 0x12540D8 and calls 0x82249718 to fill it. 0x82234DD0 is called with child index 0, independently confirming the cycle-1083 identification of the scenario root node as child 0 of entry 9.
+    evidence: reports/cycle-1093-scenario-record-runtime-address.md; XEX SHA-256 acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
+    qualification: "Qualified for the addresses only. It says where the records the cycles 1089 to 1092 micro-executed are stored, which is what was missing to look for their consumers, and nothing about what any consumer does with them."
+  - id: H-STATIC-OBJ-AND-UNIT-REGION-IS-THE-PARSED-BUFFER
+    status: proposed
+    statement: The region the loader publishes at context+0x2E8, immediately after emitting the 'Obj & Unit' allocation label, holds the parsed ObjBin records.
+    discriminator: Require the two addresses to coincide, or a read of context+0x2E8 that indexes the 0x20 ObjBin record stride, or a write into context+0x123C40 from the parser chain. Adjacency to an allocation label is not evidence.
+    evidence: reports/cycle-1093-scenario-record-runtime-address.md. The loader stores context + 0x123C40 at context+0x2E8, and 0x8226D1C8 mission_manager_update reloads it under the guard state+0x260 == 8 and passes it to 0x8226EBD0 with a float. But 0x123C40 is not 0x12540DC - the region is distinct from the scenario buffer.
+    qualification: Proposed only. The owner-to-consumer chain is complete and state-guarded, which is suggestive, but the two regions are different addresses and the only link is the adjacency of an allocation label. Promoting it on that basis is the shortcut cycle 1073 already paid for.
+  - id: H-STATIC-PARSER-IDENTITY-FROM-ERROR-STRINGS
+    status: qualified
+    statement: "The AC6 scenario parser family identifies itself: each function materializes its own 'Error / Class::method' string, so class identity needs no address guess."
+    discriminator: Recover split lis/addi references, map every such string back to the referencing function, and require the resulting names to be consistent with the call graph and with the container hierarchy the messages describe.
+    positive_control: 19 functions resolve. The child named in each 'X empty!' message matches the callee actually invoked, giving SubMisTbl -> SubMis -> Set -> Act -> Order{Disappear,Stop,Lead,Jump,Flag,Property}, Obj -> {Durable,Weapon}, Maneuver -> ComTblM, ComTbl -> Com.
+    evidence: reports/cycle-1083-dpl-scenario-owner-join.md; reports/cycle-1082-savegprlr-analysis-gap.md.
+    qualification: "Qualified for identity only. Two entries of the unverified candidate list tools/ac6_parser_inspect.py are corrected: 0x823094D8/0x823093C8 are RadioTblBin, and ComBin::read is at 0x82331E78 rather than 0x82331D98. Field layouts remain unread."
   - id: H-BRIDGE-M01-AIRBORNE-GAMEPLAY-HANDOFF
     status: qualified
     statement: The current bridge route can reach the Mission 01 airborne gameplay update loop without loadout or launch force overrides.
@@ -253,9 +386,9 @@ hypotheses:
     discriminator: Require separate retail-qualified evidence with exact payload hash, owner/consumer chain, and activation transition; native fixtures must carry an explicit retail_semantics_qualified=false marker.
     evidence: analysis/contracts/mission01-native-gate-v2.json; reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json SHA-256 d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f.
     qualification: Rejected; v2 closes native mechanisms only and leaves retail_units_and_waves and retail_objectives open.
-- id: H-NATIVE-P7-CURRENT-MAIN-RASTER-RECAPTURE
-  status: qualified
-  statement: The current main native product path fills the Mission 01 world and attributes visible player pixels after 1800 deterministic fixed ticks.
-  discriminator: Require one hash-linked native capture with diagnostic_point_writes=0, filled_fragment_writes>0, a non-zero terrain region, f16 object-ID pixels and a non-degenerate depth range, plus deterministic replay and pause/save/restart evidence.
-  evidence: reports/mission01-native-captures/p7-current-main/README.md; capture-metrics.json SHA-256 ac67cd27b11555cc763d1f8601f866a72946014566b8b197dcc424ce3318397d; native-session.json SHA-256 9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b.
-  qualification: Qualified for native raster fill and player attribution; raster fill remains broken for the complete retail content path, and retail objective/wave semantics remain open. Topology and camera/clipping are the next boundaries.
+  - id: H-NATIVE-P7-CURRENT-MAIN-RASTER-RECAPTURE
+    status: qualified
+    statement: The current main native product path fills the Mission 01 world and attributes visible player pixels after 1800 deterministic fixed ticks.
+    discriminator: Require one hash-linked native capture with diagnostic_point_writes=0, filled_fragment_writes>0, a non-zero terrain region, f16 object-ID pixels and a non-degenerate depth range, plus deterministic replay and pause/save/restart evidence.
+    evidence: reports/mission01-native-captures/p7-current-main/README.md; capture-metrics.json SHA-256 ac67cd27b11555cc763d1f8601f866a72946014566b8b197dcc424ce3318397d; native-session.json SHA-256 9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b.
+    qualification: Qualified for native raster fill and player attribution; raster fill remains broken for the complete retail content path, and retail objective/wave semantics remain open. Topology and camera/clipping are the next boundaries.

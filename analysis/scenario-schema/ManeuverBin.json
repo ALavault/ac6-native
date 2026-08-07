@@ -1,0 +1,152 @@
+{
+  "schema": "ac6.scenario-schema.v1",
+  "class": "ManeuverBin",
+  "provenance": {
+    "target_id": "PAL-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6",
+    "image_base": "0x82000000",
+    "derived_from": "decompilation only; no emulator, bridge or native run",
+    "report": "reports/cycle-1087-maneuverbin-field-schema.md"
+  },
+  "functions": {
+    "read": "0x82331808",
+    "getReadBuffSize": "0x823316A0",
+    "identity_evidence": [
+      "0x820105D4 'Error / ManeuverBin::read() / data empty!'",
+      "0x820105A8 'Error / ManeuverBin::read() / child empty!'",
+      "0x82010538 'Error / ManeuverBin::read() / comtblm empty! : %d'",
+      "0x8201056C 'Error / ManeuverBin::read() / comtblm child empty! : %d'",
+      "0x82010500 'Error / ManeuverBin::getReadBuffSize() / data empty!'",
+      "0x820104C8 'Error / ManeuverBin::getReadBuffSize() / child empty!'",
+      "0x8201048C 'Error / ManeuverBin::getReadBuffSize() / comtblm empty!'"
+    ]
+  },
+
+  "container_primitive": {
+    "comment": "Identical to the other schema files; repeated so this one stands alone.",
+    "node": [
+      {"offset": "0x00", "type": "u32", "name": "data_off", "note": "0 means absent; resolved as node + data_off"},
+      {"offset": "0x04", "type": "u32", "name": "table_off", "note": "0 means absent; resolved as node + table_off"}
+    ],
+    "table": [
+      {"offset": "0x00", "type": "s32", "name": "count"},
+      {"offset": "0x04", "type": "u32[count]", "name": "child_off", "note": "each resolved as table + child_off[i]"}
+    ],
+    "child_present_predicate": "count > i AND (u32[child] != 0 OR u32[child+4] != 0)"
+  },
+
+  "record": {
+    "size": "0x0C",
+    "layout": "3 x u32, big-endian, 32-bit guest pointers",
+    "size_evidence": "0x82330C58 writes the record at the buffer cursor and passes cursor + 0x0C as the sub-buffer for every maneuver slot",
+    "count": {
+      "type": "s32",
+      "location": "first word of the resolved data word",
+      "note": "unlike SetBin, ActBin and ComTblBin, which use a u8 count"
+    },
+    "fields": [
+      {"offset": "0x00", "type": "u32", "name": "data",
+       "source": "node.data_off resolved",
+       "fail_closed": "0x820105D4 'ManeuverBin::read() / data empty!'",
+       "note": "carries the s32 element count at its first word"},
+      {"offset": "0x04", "type": "u32", "name": "comtblm",
+       "source": "buffer cursor",
+       "element_stride": 4,
+       "element_count": "count",
+       "note": "each element is one resolved pointer, the ComTblMBin payload",
+       "element_fail_closed": "0x82010460 'ComTblMBin::read() / p_data empty!'"},
+      {"offset": "0x08", "type": "u32", "name": "comtbl",
+       "source": "buffer cursor after the comtblm array",
+       "element_stride": 8,
+       "element_count": "count",
+       "element_schema": "ComTblBin record, 2 x u32",
+       "reader": "ComTblBin::read 0x82331C10",
+       "sizer": "ComTblBin::getReadBuffSize 0x82331BB0"}
+    ],
+    "note": "ComTblMBin has no function of its own: it is inlined into ManeuverBin::read and its only trace is the p_data error string."
+  },
+
+  "buffer_accounting": {
+    "read": "reserves count * 4 for the comtblm array, then count * 8 for the comtbl records, then advances by ComTblBin::getReadBuffSize per element",
+    "getReadBuffSize": "returns ((count + count*2) & 0x3FFFFFFF) << 2, which is count * 12, plus the sum of ComTblBin::getReadBuffSize",
+    "cross_check": "count * 12 is exactly the 4-byte and 8-byte arrays read() allocates, computed by a different expression"
+  },
+
+  "descent": {
+    "comment": "read() takes two hops per element before it reaches the ComTblBin node.",
+    "steps": [
+      "element = table + child_off[i]; fail-closed 0x82010538 when the index reaches the table count or the node is empty",
+      "comtblm[i] = element.data_off resolved; fail-closed 0x82010460",
+      "inner = element.table_off resolved; fail-closed 0x8201056C",
+      "ComTblBin node = inner table's first child, required present; fail-closed 0x8201056C again"
+    ]
+  },
+
+  "sub_records": {
+    "ComTblBin": {
+      "size": "0x08",
+      "read": "0x82331C10",
+      "getReadBuffSize": "0x82331BB0",
+      "count": {"type": "u8", "location": "first byte of the resolved data word"},
+      "fields": [
+        {"offset": "0x00", "type": "u32", "name": "data",
+         "fail_closed": "0x82010690 'ComTblBin::read() / data empty!'"},
+        {"offset": "0x04", "type": "u32", "name": "coms",
+         "element_stride": 4, "element_count": "count",
+         "reader": "ComBin::read 0x82331E78",
+         "element_fail_closed": "0x82010634 'ComTblBin::read() / com empty! : %d'"}
+      ],
+      "early_exit": "count == 0 returns before the child table is read",
+      "buffer": "getReadBuffSize returns count << 2, matching the 4-byte ComBin elements",
+      "identity_evidence": [
+        "0x82010690 read data empty",
+        "0x82010664 read child empty",
+        "0x82010634 read com empty : %d",
+        "0x82010600 getReadBuffSize data empty"
+      ]
+    }
+  },
+
+  "reach_path": {
+    "steps": [
+      "ObjBin record field `maneuvers` at +0x08, child[1], parser 0x82330C58",
+      "that block holds up to 8 maneuver slots, each a ManeuverBin node with a 0x0C record",
+      "ManeuverBin -> per element -> ComTblBin -> ComBin"
+    ]
+  },
+
+  "validation": {
+    "payload": "DATA.TBL entry 9 child 0",
+    "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+    "obj_records": 434,
+    "maneuver_nodes": 977,
+    "maneuver_elements": 9251,
+    "negative_counts": 0,
+    "maneuver_table_overruns": 0,
+    "inconsistencies": 0,
+    "elements_per_maneuver": {"3": 8, "4": 28, "5": 94, "7": 58, "8": 8, "9": 371,
+                              "10": 98, "11": 74, "12": 142, "13": 42, "14": 18, "15": 36},
+    "element_descent": {"reaches_comtbl": 9251},
+    "coms_per_comtbl": {"0": 18, "1": 2130, "2": 3760, "3": 264, "4": 1251,
+                        "5": 1248, "6": 352, "7": 228},
+    "arithmetic_cross_checks": {
+      "maneuver_nodes_match_objbin_distribution": "ObjBin reports maneuvers_per_obj {5: 37, 6: 132}; 37*5 + 132*6 = 977 = maneuver_nodes",
+      "elements_sum": "3*8 + 4*28 + 5*94 + 7*58 + 8*8 + 9*371 + 10*98 + 11*74 + 12*142 + 13*42 + 14*18 + 15*36 = 9251"
+    },
+    "notes": [
+      "All 9251 elements complete the two-hop descent to their ComTblBin node; not one stops at an absent p_data, table or first child.",
+      "No ManeuverBin declares a negative count or more elements than its table holds.",
+      "Element counts per maneuver range from 3 to 15 and never take the value 6.",
+      "18 ComTblBin nodes declare zero coms, which is the early exit in ComTblBin::read."
+    ]
+  },
+
+  "not_established": [
+    "the payload behind each resolved ComTblM pointer",
+    "what a maneuver commands; only that it is a list of ComTblM/ComTbl pairs",
+    "ComBin record contents",
+    "objective-condition semantics"
+  ]
+}

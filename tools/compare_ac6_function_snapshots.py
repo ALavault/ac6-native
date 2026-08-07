@@ -206,6 +206,57 @@ def compare_three(
     }
 
 
+def compare_pair_only(
+    ppc: dict[str, Any],
+    native: dict[str, Any],
+    *,
+    abs_tol: float = 0.0,
+    rel_tol: float = 0.0,
+) -> dict[str, Any]:
+    """Compare two implementations when no generated snapshot exists.
+
+    The three-way form stays the default because a generated snapshot is a
+    genuinely independent third opinion. But it is not always available: a
+    p-code micro-execution against a from-scratch native parser is already a
+    meaningful cross-check, and refusing to run it would push the work toward
+    fabricating a third file. The report is labelled `mode: pair` and uses its
+    own classification vocabulary so it can never be read as a three-way pass.
+    """
+    identities = [document["identity"] for document in (ppc, native)]
+    functions = {identity["function"] for identity in identities}
+    cases = {identity["case"] for identity in identities}
+    if len(functions) != 1 or len(cases) != 1:
+        raise SnapshotError(
+            f"snapshots do not describe one function/case: functions={sorted(functions)} "
+            f"cases={sorted(cases)}"
+        )
+    implementations = [identity["implementation"] for identity in identities]
+    if len(set(implementations)) != 2:
+        raise SnapshotError(f"implementation identities must be distinct: {implementations}")
+
+    result = compare_pair(ppc, native, abs_tol=abs_tol, rel_tol=rel_tol)
+    return {
+        "schema": REPORT_SCHEMA,
+        "mode": "pair",
+        "function": next(iter(functions)),
+        "case": next(iter(cases)),
+        "implementations": {
+            "ppc": ppc["identity"]["implementation"],
+            "native": native["identity"]["implementation"],
+        },
+        "classification": "pair_equal" if result["equal"] else "pair_diverges",
+        "equal": result["equal"],
+        "comparisons": {"ppc_native": result},
+        "policy": {
+            "ignored_top_level": sorted(IGNORED_TOP_LEVEL),
+            "list_order_significant": True,
+            "memory_write_order_significant": True,
+            "float_comparison": "math.isclose",
+            "generated_snapshot": "absent; this is a two-way comparison, not a three-way one",
+        },
+    }
+
+
 def fail(message: str) -> int:
     print(f"function_snapshot_compare=fail reason={message}", file=sys.stderr)
     return 1
@@ -214,7 +265,11 @@ def fail(message: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--ppc", type=Path, required=True)
-    parser.add_argument("--generated", type=Path, required=True)
+    parser.add_argument(
+        "--generated",
+        type=Path,
+        help="generated-C++ snapshot; omit for an explicitly labelled two-way comparison",
+    )
     parser.add_argument("--native", type=Path, required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--float-abs", type=float, default=0.0)
@@ -228,13 +283,21 @@ def main() -> int:
     if args.float_abs < 0 or args.float_rel < 0:
         parser.error("float tolerances must be non-negative")
     try:
-        report = compare_three(
-            load_snapshot(args.ppc),
-            load_snapshot(args.generated),
-            load_snapshot(args.native),
-            abs_tol=args.float_abs,
-            rel_tol=args.float_rel,
-        )
+        if args.generated is None:
+            report = compare_pair_only(
+                load_snapshot(args.ppc),
+                load_snapshot(args.native),
+                abs_tol=args.float_abs,
+                rel_tol=args.float_rel,
+            )
+        else:
+            report = compare_three(
+                load_snapshot(args.ppc),
+                load_snapshot(args.generated),
+                load_snapshot(args.native),
+                abs_tol=args.float_abs,
+                rel_tol=args.float_rel,
+            )
     except SnapshotError as exc:
         return fail(str(exc))
     if args.output:
@@ -244,6 +307,7 @@ def main() -> int:
         )
     print(
         "function_snapshot_compare=pass "
+        f"mode={report.get('mode', 'three-way')} "
         f"classification={report['classification']} "
         f"function={report['function']} case={report['case']}"
     )
