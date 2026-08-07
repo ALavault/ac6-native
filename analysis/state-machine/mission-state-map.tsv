@@ -1,0 +1,27 @@
+# Mission state machine, cluster 0x822E0000-0x822F0000.
+# Recovered by scripts/MapStateCodes.java from the retail binary; see
+# reports/cycle-1111-mission-state-map.md for the method and its limits.
+# code: every constant the handler stores to this+0x260, the field
+#   mission_manager_update tests; the entry-branch value is the state's own
+#   code, and this column is NOT branch-attributed - '1' recurs in many.
+# super: the state named on the fall-through path, after every signal
+#   comparison missed. Empty when the pattern did not resolve.
+# columns: state code super
+0x822e3560	1	
+0x822e35f8	14	
+0x822e3640	14	
+0x822e4a48	4,?	
+0x822e5280	10,?	0x822e39a8
+0x822e70b0	0,12	
+0x822e73b0	11,3	0x822e8660
+0x822e7598	0,9	
+0x822e7760	8,?	
+0x822e8660	3,?	0x822e39a8
+0x822e8a90	-	0x822e7e68
+0x822eacc0	1,7	0x822ed708
+0x822eb090	1,6	0x822ed708
+0x822eb5a8	1,2	
+0x822ed070	1,5	0x822ed708
+0x822ed708	1,?	0x822e39a8
+0x822edc58	1,?	0x822e39a8
+0x822ee5c0	1,?	0x822e39a8
