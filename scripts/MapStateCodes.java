@@ -14,6 +14,7 @@
 // @category AC6
 
 import ghidra.app.script.GhidraScript;
+import ghidra.program.model.address.Address;
 import ghidra.program.model.lang.Register;
 import ghidra.program.model.listing.Function;
 import ghidra.program.model.listing.Instruction;
@@ -113,10 +114,72 @@ public class MapStateCodes extends GhidraScript {
             }
         }
         if (dispatchEnd < 0) {
+            // Third dispatch form: a jump table. The handler biases the signal
+            // by 5 to map -5..-1 onto 0..4, bounds it, and branches away when
+            // it is out of range - that branch target is the default path.
+            for (int index = 0; index + 2 < body.size() && index < 40; index++) {
+                Instruction bias = body.get(index);
+                if (!bias.getMnemonicString().equals("addi")) {
+                    continue;
+                }
+                Scalar amount = scalarOf(bias, 2);
+                Register biased = registerOf(bias, 0);
+                if (amount == null || biased == null || amount.getSignedValue() != 5) {
+                    continue;
+                }
+                for (int step = index + 1; step + 1 < body.size() && step <= index + 8; step++) {
+                    Instruction bound = body.get(step);
+                    if (!bound.getMnemonicString().startsWith("cmpl")) {
+                        continue;
+                    }
+                    Scalar limit = scalarOf(bound, 2);
+                    if (limit == null || limit.getSignedValue() != 4) {
+                        continue;
+                    }
+                    Instruction branch = body.get(step + 1);
+                    if (!branch.getMnemonicString().startsWith("bgt")) {
+                        continue;
+                    }
+                    Address[] flows = branch.getFlows();
+                    if (flows.length == 0) {
+                        return null;
+                    }
+                    for (int at = 0; at < body.size(); at++) {
+                        if (body.get(at).getAddress().equals(flows[0])) {
+                            return materialisedFrom(body, at, low, high);
+                        }
+                    }
+                    return null;
+                }
+            }
             return null;
         }
-        for (int index = dispatchEnd + 1; index < body.size() && index <= dispatchEnd + 24;
-                index++) {
+        // The default path is inline after a `beq`, but at the branch target
+        // after a `bne`: there the exit handler is the one that falls through.
+        int start = dispatchEnd + 1;
+        Instruction dispatch = body.get(dispatchEnd);
+        if (dispatch.getMnemonicString().startsWith("bne")) {
+            Address[] flows = dispatch.getFlows();
+            if (flows.length == 0) {
+                return null;
+            }
+            start = -1;
+            for (int index = 0; index < body.size(); index++) {
+                if (body.get(index).getAddress().equals(flows[0])) {
+                    start = index;
+                    break;
+                }
+            }
+            if (start < 0) {
+                return null;
+            }
+        }
+        return materialisedFrom(body, start, low, high);
+    }
+
+    /** The first in-range address materialised from this point forward. */
+    private String materialisedFrom(List<Instruction> body, int start, long low, long high) {
+        for (int index = start; index < body.size() && index <= start + 24; index++) {
             Instruction instruction = body.get(index);
             String mnemonic = instruction.getMnemonicString();
             if (!mnemonic.equals("ori") && !mnemonic.equals("addi")
