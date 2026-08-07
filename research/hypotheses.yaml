@@ -1,5 +1,5 @@
 version: 1
-updated: 2026-08-08T19:00:00+02:00
+updated: 2026-08-08T20:00:00+02:00
 hypotheses:
   - id: H-GAMEPLAY-ACTIVE-BEHIND-BLACK
     status: supported
@@ -379,6 +379,13 @@ hypotheses:
     discriminator: Scan every u16 position of the level-0 header blocks and of the ObjBin data blocks for a field whose values all fall below the dictionary size (737 units, 229 behaviours) and vary across records.
     evidence: 230 level-0 blocks and 434 ObjBin blocks scanned. At level 0 the only candidate is +0x0A, whose values are 0, 255 and 511 - sentinels or a bitmask, not indices. At ObjBin level no u16 position stays below 737 with more than 20 distinct values. The blocks are dominated by floats - level 0 opens with 10000.0 and 800.0 at +0x00 and +0x04, ObjBin with 30720.0 at +0x04 - and by zeros.
     qualification: Rejected at these two levels only. The dictionaries may still be indexed from a level not examined - the Set/Act/Order subtree, the unnamed 0x28 list, or a field wider or narrower than u16. What is rejected is the cheap version of the idea, so it is not retried unchanged.
+  - id: H-STATIC-CONTEXT-2E8-IS-A-PER-FRAME-COLLECTION
+    status: qualified
+    statement: The region the loader publishes at context+0x2E8 is a collection with an element count at +0x04, updated every frame by splitting that count across 32 parallel job slices.
+    discriminator: Read 0x8226EBD0, the function mission_manager_update passes the region to, and require the loop bound, the slicing arithmetic and the dispatch to be explicit rather than inferred.
+    positive_control: 0x8226EBD0 loops exactly 0x20 times building triples {start, end, delta} where start = count*i >> 5 and end = count*(i+1) >> 5 from *(region+4), dispatches each through 0x821D4938 against the job object 0x8275A494, joins with 0x821D49D8, advances a frame cursor at region+0x33E4 wrapping at DAT_823F9C7C, and calls 0x82265F00 on region+0x1050. mission_manager_update reaches it only under context+0x260 == 8 and passes the frame delta in f1.
+    evidence: reports/cycle-1095-context-2e8-collection.md; reports/cycle-1093-scenario-record-runtime-address.md.
+    qualification: "Qualified for the shape only - a counted collection ticked in parallel each frame, at least 0x33E8 bytes, with a sub-structure at +0x1050. Consistent with a unit registry and not proof of one: nothing here shows the elements are the parsed Obj records. The count at +0x04 lives in runtime memory, so it cannot be compared against the 230 static records without a run. H-STATIC-OBJ-AND-UNIT-REGION-IS-THE-PARSED-BUFFER stays proposed."
   - id: H-STATIC-PARSER-IDENTITY-FROM-ERROR-STRINGS
     status: qualified
     statement: "The AC6 scenario parser family identifies itself: each function materializes its own 'Error / Class::method' string, so class identity needs no address guess."
