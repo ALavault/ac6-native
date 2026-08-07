@@ -91,6 +91,17 @@ struct ScenarioFlagOrder {
   bool operator==(const ScenarioFlagOrder&) const = default;
 };
 
+// One entry of root slot 6: an area record keyed by the byte at +0xA6, whose
+// four floats 0x82268B28 normalises into the mission rectangle.
+struct ScenarioArea {
+  std::uint8_t kind{};
+  float x0{};
+  float z0{};
+  float x1{};
+  float z1{};
+  bool operator==(const ScenarioArea&) const = default;
+};
+
 // One entry of root slot 2, with the script 0x8226E158 steps through.
 struct ScenarioSubMission {
   std::uint32_t index{};
@@ -112,6 +123,7 @@ class MissionScenario final {
   const std::vector<ScenarioFlagOrder>& flag_orders() const noexcept {
     return flag_orders_;
   }
+  const std::vector<ScenarioArea>& areas() const noexcept { return areas_; }
   std::size_t object_records() const noexcept;
 
   // The u16 count of root slot 1, from which the loader sizes the mission
@@ -123,6 +135,7 @@ class MissionScenario final {
   std::vector<ScenarioFaction> factions_;
   std::vector<ScenarioSubMission> sub_missions_;
   std::vector<ScenarioFlagOrder> flag_orders_;
+  std::vector<ScenarioArea> areas_;
   std::uint16_t counter_capacity_{};
 };
 

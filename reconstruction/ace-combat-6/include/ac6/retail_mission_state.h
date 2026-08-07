@@ -111,6 +111,30 @@ std::optional<RetailUnitBuild> build_units(const MissionScenario& scenario,
 // this exact constant, so a field already stamped is never stamped again.
 inline constexpr float kNever = 3.4028234663852886e+38f;  // FLT_MAX, at 0x82008120
 
+// The mission area: an axis-aligned rectangle in the world's horizontal plane,
+// stored as min and max per axis exactly as FUN_82268B28 normalises it.
+struct MissionArea {
+  float min_x{};
+  float min_z{};
+  float max_x{};
+  float max_z{};
+  bool operator==(const MissionArea&) const = default;
+};
+
+// FUN_82268B28: four floats become min and max per axis, whatever their order.
+MissionArea normalise_area(float x0, float z0, float x1, float z1) noexcept;
+
+// FUN_82268BA0: is this point inside? Components 0 and 2 of a position triple,
+// so altitude never enters.
+bool area_contains(const MissionArea& area, const ScenarioVector& point) noexcept;
+
+// 0x8226A018: pick the kind the game mode selects - kind 1 in modes 4, 6, 7, 9
+// and 0x0E, kind 0 otherwise - and refuse kind 2, which the installer skips.
+// Returns nothing when the scenario has no record of the chosen kind; retail
+// then falls back to a static zero rectangle, which the caller supplies.
+std::optional<MissionArea> select_mission_area(const MissionScenario& scenario,
+                                               bool second_kind) noexcept;
+
 // The sub-mission sequencer of 0x8226E908 and 0x8226E158.
 enum class SubMissionStatus : std::uint8_t {
   Running,   // a step is current

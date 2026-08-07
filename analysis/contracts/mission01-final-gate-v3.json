@@ -1,7 +1,7 @@
 {
   "schema": "ac6.mission01-final-gate.v3",
   "provenance": {
-    "repo_commit": "9e4f354a656279b8ee06a540fba5649a6ee090ad",
+    "repo_commit": "19a3252d804338b740a4818ddf7a1fb7c6e46a3b",
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
     "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
     "mission_id": 1
@@ -75,8 +75,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "5e4ed2fe9aa998751fa84319f7481fc36bee8e9738377b56a6a70a272b0b2bb0",
-            "size": 11178,
+            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
+            "size": 12425,
             "claim": "src/retail_mission_state.cpp implements the classification, the insertion and the per-faction census"
           }
         ]
@@ -107,8 +107,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "5e4ed2fe9aa998751fa84319f7481fc36bee8e9738377b56a6a70a272b0b2bb0",
-            "size": 11178,
+            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
+            "size": 12425,
             "claim": "src/retail_mission_state.cpp implements the sequencer with its bound, its cursor and its elapsed test"
           }
         ]
@@ -139,8 +139,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "5e4ed2fe9aa998751fa84319f7481fc36bee8e9738377b56a6a70a272b0b2bb0",
-            "size": 11178,
+            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
+            "size": 12425,
             "claim": "src/retail_mission_state.cpp implements the four operations in retail's compute-store-then-stamp order"
           }
         ]
@@ -156,15 +156,36 @@
         "open_because": "the transition engine is read (cycle 1109) and the state tree mapped (cycle 1112), but nothing of it is ported to native code"
       },
       "mission_area": {
-        "status": "open",
-        "statement": "the mission area is installed from the scenario and enforced on the player's horizontal position",
+        "status": "passed",
+        "statement": "the mission area is a horizontal rectangle normalised min/max per axis, selected by game mode from the scenario's area records and tested on a position's x and z only",
         "retail_addresses": [
           "0x82268BA0",
           "0x82268B28",
           "0x8226A018"
         ],
-        "evidence": [],
-        "open_because": "the rectangle, its axes and its enforcement are read (cycles 1105 and 1107) and not ported"
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1107-mission-area-rectangle.md",
+            "sha256": "7d761bcb365fed3d4936fff609eb9e16611625e8f57bf173a7e1582f0e187b8e",
+            "size": 4848,
+            "claim": "the predicate reads components 0 and 2, the normaliser writes min and max per pair, and the installer refuses kind 2"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-mission-state.json",
+            "sha256": "8bf38205a663bea5b974ac36fd9422295995189d5795a3c9732bf29b720375f1",
+            "size": 346,
+            "claim": "the ported normaliser, predicate and selector run against the retail scenario; Mission 01 declares no area record, so the selector correctly reports none and retail's static fallback is the path taken"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
+            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
+            "size": 12425,
+            "claim": "normalise_area, area_contains and select_mission_area implement the three functions and cite them"
+          }
+        ]
       },
       "playable_session": {
         "status": "open",

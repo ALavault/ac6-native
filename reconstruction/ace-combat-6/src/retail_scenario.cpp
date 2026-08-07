@@ -13,6 +13,7 @@ constexpr std::size_t kSlotObjAndUnit = 0;
 constexpr std::size_t kSlotCounters = 1;
 constexpr std::size_t kSlotSubMissions = 2;
 constexpr std::size_t kSlotFactions = 5;
+constexpr std::size_t kSlotAreas = 6;
 constexpr std::size_t kRootSlots = 10;
 
 // Field offsets inside a unit record's data block, read at 0x820A70FC and
@@ -212,6 +213,25 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
     const std::optional<std::uint32_t> word = payload.u32(*data + kFactionWord);
     if (!side.has_value() || !word.has_value()) return std::nullopt;
     scenario.factions_.push_back({faction_index++, *side, *word});
+  }
+
+  // Slot 6, the area records. FUN_82266EF0 keys them by the byte at +0xA6 and
+  // 0x82268B28 turns +0x28/+0x30/+0x34/+0x3C into a rectangle.
+  if (slots.size() > kSlotAreas && payload.present(slots[kSlotAreas])) {
+    for (const std::size_t node : payload.children(slots[kSlotAreas])) {
+      const std::optional<std::size_t> data = payload.resolve(node, 0);
+      if (!data.has_value()) continue;
+      const std::optional<std::uint8_t> kind = payload.u8(*data + 0xA6);
+      const std::optional<float> x0 = payload.f32(*data + 0x28);
+      const std::optional<float> z0 = payload.f32(*data + 0x30);
+      const std::optional<float> x1 = payload.f32(*data + 0x34);
+      const std::optional<float> z1 = payload.f32(*data + 0x3C);
+      if (!kind.has_value() || !x0.has_value() || !z0.has_value() ||
+          !x1.has_value() || !z1.has_value()) {
+        return std::nullopt;
+      }
+      scenario.areas_.push_back({*kind, *x0, *z0, *x1, *z1});
+    }
   }
 
   // Slot 2, the sub-missions, each with the 0x28-stride script 0x8226E158 runs.

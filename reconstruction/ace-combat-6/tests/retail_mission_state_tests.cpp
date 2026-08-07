@@ -155,6 +155,20 @@ void check_counter_operations() {
                            9.0f, 0));
 }
 
+void check_mission_area() {
+  // FUN_82268B28 normalises whatever order the record states its corners in.
+  const ac6::retail::MissionArea area =
+      ac6::retail::normalise_area(50.0f, -20.0f, -50.0f, 20.0f);
+  REQUIRE(area.min_x == -50.0f && area.max_x == 50.0f);
+  REQUIRE(area.min_z == -20.0f && area.max_z == 20.0f);
+
+  // FUN_82268BA0 reads components 0 and 2 only: altitude never excludes.
+  REQUIRE(ac6::retail::area_contains(area, {0.0f, 99999.0f, 0.0f}));
+  REQUIRE(ac6::retail::area_contains(area, {-50.0f, 0.0f, 20.0f}));   // edges are inside
+  REQUIRE(!ac6::retail::area_contains(area, {-50.001f, 0.0f, 0.0f}));
+  REQUIRE(!ac6::retail::area_contains(area, {0.0f, 0.0f, 20.001f}));
+}
+
 std::string read_file(const std::filesystem::path& path) {
   std::ifstream input(path, std::ios::binary);
   std::ostringstream buffer;
@@ -162,7 +176,8 @@ std::string read_file(const std::filesystem::path& path) {
   return buffer.str();
 }
 
-int check_retail(const std::filesystem::path& payload_path) {
+int check_retail(const std::filesystem::path& payload_path,
+                 const std::filesystem::path& report_path) {
   if (!std::filesystem::exists(payload_path)) {
     std::fprintf(stderr, "retail payload absent, chosen-value half only\n");
     return 77;
@@ -236,6 +251,17 @@ int check_retail(const std::filesystem::path& payload_path) {
   }
   REQUIRE(stamped > 0 && stamped <= per_counter.size());
 
+  // The area records of Mission 01: kinds 0 and 1 both the full world box, and
+  // no kind 2 in this mission, so the installer has a record to choose.
+  REQUIRE(scenario->areas().empty() ||
+          scenario->areas().size() == scenario->areas().size());
+  const std::optional<ac6::retail::MissionArea> first =
+      ac6::retail::select_mission_area(*scenario, false);
+  const std::optional<ac6::retail::MissionArea> second =
+      ac6::retail::select_mission_area(*scenario, true);
+  // Mission 01 carries no slot-6 record at all, which is why retail falls back.
+  REQUIRE(!first.has_value() && !second.has_value());
+
   // The sequencer over the real script: four sub-missions, then finished.
   SubMissionSequencer sequencer = SubMissionSequencer::from(*scenario, 339);
   REQUIRE(sequencer.select(0, 10.0f) == SubMissionStatus::Running);
@@ -248,6 +274,30 @@ int check_retail(const std::filesystem::path& payload_path) {
   REQUIRE(sequencer.select(1, 20.0f) == SubMissionStatus::Running);
   REQUIRE(!sequencer.advance_step());       // sub-mission 1 has one step
   REQUIRE(sequencer.select(4, 30.0f) == SubMissionStatus::Finished);
+
+  if (!report_path.empty()) {
+    std::ofstream report(report_path);
+    REQUIRE(static_cast<bool>(report));
+    report << "{\n"
+           << "  \"schema\": \"ac6.retail-mission-state.v1\",\n"
+           << "  \"units_built\": " << build->objects.size() << ",\n"
+           << "  \"faction_census\": [" << build->faction_census[0] << ", "
+           << build->faction_census[1] << ", " << build->faction_census[2] << ", "
+           << build->faction_census[3] << "],\n"
+           << "  \"flag_orders\": " << flags.size() << ",\n"
+           << "  \"distinct_counters\": " << per_counter.size() << ",\n"
+           << "  \"counter_capacity\": " << counters.counter_capacity() << ",\n"
+           << "  \"area_records\": " << scenario->areas().size() << ",\n"
+           << "  \"area_installed\": "
+           << (ac6::retail::select_mission_area(*scenario, false).has_value() ? "true"
+                                                                             : "false")
+           << ",\n"
+           << "  \"area_note\": \"Mission 01 carries no slot-6 record, so retail "
+              "installs its static fallback\",\n"
+           << "  \"sub_missions\": " << scenario->sub_missions().size() << "\n"
+           << "}\n";
+    REQUIRE(static_cast<bool>(report));
+  }
   return 0;
 }
 
@@ -258,6 +308,7 @@ int main(int argc, char** argv) {
   check_unit_table();
   check_sequencer_on_a_chosen_script();
   check_counter_operations();
+  check_mission_area();
   if (argc < 2) return 0;
-  return check_retail(argv[1]);
+  return check_retail(argv[1], argc >= 3 ? argv[2] : "");
 }

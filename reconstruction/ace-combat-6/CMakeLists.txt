@@ -118,7 +118,8 @@ add_executable(ac6-retail-mission-state-tests tests/retail_mission_state_tests.c
 target_link_libraries(ac6-retail-mission-state-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-mission-state-tests
   COMMAND ac6-retail-mission-state-tests
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-mission-state.json)
 set_tests_properties(ac6-retail-mission-state-tests PROPERTIES SKIP_RETURN_CODE 77)
 
 # Replays the committed p-code snapshots through the native *Bin readers.

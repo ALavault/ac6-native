@@ -1,0 +1,12 @@
+{
+  "schema": "ac6.retail-mission-state.v1",
+  "units_built": 230,
+  "faction_census": [140, 42, 48, 0],
+  "flag_orders": 232,
+  "distinct_counters": 133,
+  "counter_capacity": 339,
+  "area_records": 0,
+  "area_installed": false,
+  "area_note": "Mission 01 carries no slot-6 record, so retail installs its static fallback",
+  "sub_missions": 4
+}

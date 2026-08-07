@@ -56,6 +56,36 @@ std::optional<UnitClassification> classify_unit_record(
 }
 
 // 0x8226FEC0: store at the incremented index, then bump the count.
+MissionArea normalise_area(float x0, float z0, float x1, float z1) noexcept {
+  // FUN_82268B28 writes min(a,c) and max(a,c) for one axis and min(b,d),
+  // max(b,d) for the other, so a record may state its corners in any order.
+  MissionArea area;
+  area.min_x = x0 <= x1 ? x0 : x1;
+  area.max_x = x0 <= x1 ? x1 : x0;
+  area.min_z = z0 <= z1 ? z0 : z1;
+  area.max_z = z0 <= z1 ? z1 : z0;
+  return area;
+}
+
+bool area_contains(const MissionArea& area, const ScenarioVector& point) noexcept {
+  // FUN_82268BA0 compares point[0] and point[2] only.
+  return !(point.x < area.min_x || area.max_x < point.x || point.z < area.min_z ||
+           area.max_z < point.z);
+}
+
+std::optional<MissionArea> select_mission_area(const MissionScenario& scenario,
+                                               bool second_kind) noexcept {
+  // 0x8226A018 caches the last record of each kind and installs kind 1 or kind
+  // 0 by mode, never kind 2.
+  const std::uint8_t wanted = second_kind ? 1 : 0;
+  std::optional<ScenarioArea> chosen;
+  for (const ScenarioArea& area : scenario.areas()) {
+    if (area.kind == wanted) chosen = area;
+  }
+  if (!chosen.has_value()) return std::nullopt;
+  return normalise_area(chosen->x0, chosen->z0, chosen->x1, chosen->z1);
+}
+
 bool RetailUnitTable::insert(std::uint32_t entity) noexcept {
   if (count_ >= kSlots) return false;
   slots_[count_] = entity;
