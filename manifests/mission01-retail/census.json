@@ -1,0 +1,83 @@
+{
+  "class_byte_histogram": {
+    "0": 1,
+    "1": 40,
+    "2": 188,
+    "4": 1
+  },
+  "faction_index_histogram": {
+    "0": 140,
+    "1": 42,
+    "2": 48
+  },
+  "factions": [
+    {
+      "index": 0,
+      "side_code": 0,
+      "word_0x28": 652
+    },
+    {
+      "index": 1,
+      "side_code": 0,
+      "word_0x28": 554
+    },
+    {
+      "index": 2,
+      "side_code": 0,
+      "word_0x28": 560
+    },
+    {
+      "index": 3,
+      "side_code": 0,
+      "word_0x28": 768
+    }
+  ],
+  "object_category_histogram": {
+    "1": 1,
+    "3": 1,
+    "4": 228
+  },
+  "object_records": 434,
+  "objects_per_record_histogram": {
+    "1": 161,
+    "12": 1,
+    "2": 12,
+    "3": 10,
+    "4": 35,
+    "5": 5,
+    "6": 3,
+    "8": 3
+  },
+  "payload_sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+  "records_with_behaviour_set": 230,
+  "schema": "ac6.mission01-retail-census.v1",
+  "sub_missions": [
+    {
+      "index": 0,
+      "steps": [
+        0,
+        1
+      ]
+    },
+    {
+      "index": 1,
+      "steps": [
+        0
+      ]
+    },
+    {
+      "index": 2,
+      "steps": [
+        1,
+        0
+      ]
+    },
+    {
+      "index": 3,
+      "steps": [
+        0
+      ]
+    }
+  ],
+  "unit_records": 230
+}

@@ -91,6 +91,14 @@ add_executable(ac6-session-save-tests tests/session_save_tests.cpp)
 target_link_libraries(ac6-session-save-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-session-save-tests COMMAND ac6-session-save-tests)
 
+# Consumes the committed Mission 01 retail manifests, not a fixture.
+add_executable(ac6-retail-scenario-tests tests/retail_scenario_tests.cpp)
+target_link_libraries(ac6-retail-scenario-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-scenario-tests
+  COMMAND ac6-retail-scenario-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../manifests/mission01-retail
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-scenario-test.json)
+
 if(AC6_BUILD_PLATFORM)
   add_test(NAME ac6-native-headless COMMAND ac6-native)
 

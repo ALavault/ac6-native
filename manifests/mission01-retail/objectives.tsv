@@ -1,0 +1,11 @@
+# Mission 01 retail sub-missions, one row per element of the parsed
+# sub-mission table (root slot 2), which context+0x10 indexes and
+# context+0x2C timestamps.
+# columns: mission_id objective_id stable_id required
+# Four columns, so the condition is Manual: retail advances a sub-mission from
+# its own script (0x8226E158), not from a predicate the native runtime could
+# evaluate. Nothing here completes an objective by itself.
+1	1	mission01-submission-0	1
+1	2	mission01-submission-1	1
+1	3	mission01-submission-2	1
+1	4	mission01-submission-3	1

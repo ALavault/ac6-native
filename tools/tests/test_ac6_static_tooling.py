@@ -20,6 +20,8 @@ from compare_ac6_asset_closures import compare as compare_closures
 from compare_ac6_function_snapshots import compare_three
 from extract_ac6_pac import extract_selected
 from validate_ac6_scenario_schema import main as validate_scenario_schema
+from emit_mission01_retail_manifests import (CLASS_TO_OBJECT_CATEGORY, ENTITY_BASE,
+                                             objectives_rows, waves_rows)
 from emit_ac6_native_snapshot import (Image as NativeImage, Parsers as NativeParsers,
                                       Payload as NativePayload,
                                       RECORD_BASE as NativeRecordBase,
@@ -1298,3 +1300,57 @@ class SizerQuirkTests(unittest.TestCase):
         # Four elements: 4*0x28 + 4*4 = 176, already a multiple of 16.
         self.assertEqual(self._size(4), 176)
         self.assertEqual(176 % 16, 0)
+
+
+class RetailManifestTests(unittest.TestCase):
+    """The Mission 01 retail manifests, and what they are allowed to claim."""
+
+    @staticmethod
+    def _record(index, class_byte, faction_index, objects):
+        return {
+            "index": index,
+            "class_byte": class_byte,
+            "faction_index": faction_index,
+            "object_category": CLASS_TO_OBJECT_CATEGORY[class_byte],
+            "has_behaviour_set": True,
+            "objects": objects,
+        }
+
+    def test_the_category_map_is_the_switch_at_0x820a72e0(self):
+        # 0 -> 1, 1 -> 4, 2 -> 4, 3 -> 4, 4 -> 3. Nothing else is implemented,
+        # and every Mission 01 record falls inside that domain.
+        self.assertEqual(CLASS_TO_OBJECT_CATEGORY, {0: 1, 1: 4, 2: 4, 3: 4, 4: 3})
+
+    def test_a_wave_row_carries_the_record_fields_and_declared_placeholders(self):
+        rows = waves_rows([self._record(0, 2, 1, [(1.5, -2.0, 3.25)])])
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(len(row), 12)
+        self.assertEqual(row[0], "1")
+        self.assertEqual(row[1], "1")                       # one load-time pass
+        self.assertEqual(row[2], str(ENTITY_BASE))          # element index 0
+        self.assertEqual(row[3], "2")                       # faction byte + 1
+        self.assertEqual(row[4], "4")                       # class byte 2 -> 4
+        self.assertEqual(row[5], row[3])                    # faction == owner
+        self.assertEqual(row[6:9], ["1.500000", "-2.000000", "3.250000"])
+        self.assertEqual(row[9:], ["1.000000", "1.000000", "1.000000"])
+
+    def test_a_record_without_an_obj_child_gets_the_origin_not_an_invention(self):
+        row = waves_rows([self._record(3, 0, 0, [])])[0]
+        self.assertEqual(row[6:9], ["0.000000", "0.000000", "0.000000"])
+        self.assertEqual(row[2], str(ENTITY_BASE + 3))
+
+    def test_unit_ids_never_collide_with_owner_ids(self):
+        # The native registry rejects a unit whose id equals its owner id, so
+        # the entity base has to keep the two ranges apart.
+        rows = waves_rows([self._record(index, 1, index % 3, [])
+                           for index in range(8)])
+        for row in rows:
+            self.assertNotEqual(row[2], row[3])
+
+    def test_objectives_are_emitted_with_four_columns_so_the_condition_is_manual(self):
+        rows = objectives_rows([{"index": 0, "steps": [0, 1]},
+                                {"index": 1, "steps": [0]}])
+        self.assertEqual([len(row) for row in rows], [4, 4])
+        self.assertEqual(rows[0], ["1", "1", "mission01-submission-0", "1"])
+        self.assertEqual(rows[1][2], "mission01-submission-1")

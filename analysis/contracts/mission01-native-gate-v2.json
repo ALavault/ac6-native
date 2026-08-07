@@ -1,7 +1,7 @@
 {
   "schema": "ac6.mission01-native-gate.v2",
   "provenance": {
-    "repo_commit": "ce457c5baa3e6c62e8a87516a897aed47b69e4c6",
+    "repo_commit": "51a279802d0450dc3f5917c3e9a63a32be1d95d6",
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
     "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
     "mission_id": 1
@@ -51,9 +51,15 @@
         "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json", "sha256": "d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f", "size": 3004, "claim": "native wave director publishes the synthetic fixture entity; retail semantics are explicitly false"}]
       },
       "retail_units_and_waves": {
-        "status": "open",
+        "status": "passed",
         "statement": "retail units and waves identity",
-        "evidence": []
+        "evidence": [
+          {"kind": "static", "path": "reports/cycle-1096-obj-slot-inserts-into-unitmanager.md", "sha256": "754a237aed2456bd5a8888d663b7375ee083bf23e5ccf18861ff7f52f283264b", "size": 11189, "claim": "each element of the parsed Obj & Unit slot is classified by its class byte into the object class 0x820A7F48 allocates, given side flags from the mission faction table its faction byte indexes, and inserted at an atomically incremented index into a CX360UnitManager's 256-slot table by 0x8226FEC0, keeping the parsed record pointer at object +0xE4"},
+          {"kind": "microexec", "path": "analysis/microexec/objbin-read.comparison.json", "sha256": "917654d4099dff17bc3aa6edb262cafbb5e48ac117c4f79f774a970f117c4c30", "size": 692, "claim": "the ObjBin reader the unit records descend from is reproduced byte for byte by a schema-derived parser, pair_equal, with no oracle"},
+          {"kind": "retail", "path": "manifests/mission01-retail/census.json", "sha256": "5f5233afd95fc9283e26773c5f972fa26afce59525f3017820d1e4ec869a7218", "size": 1231, "claim": "230 unit records with class bytes 0/1/2/4 counted 1/40/188/1, faction bytes 0/1/2 counted 140/42/48 against a 4-entry faction table, and 434 Obj sub-records - every record inside the domain both consumer switches implement"},
+          {"kind": "native-test", "path": "reports/mission01-retail/retail-scenario-test.json", "sha256": "9698d3f3557a00f6552535b38f532363edaacbf0152a35b986309c740f977095", "size": 451, "claim": "the native product loads the retail-derived waves manifest, publishes all 230 records into the unit registry and combat world in one pass, and reproduces the retail faction and object-class distributions"}
+        ],
+        "retail_semantics_qualified": true
       },
       "native_objective_flow": {
         "status": "passed",
@@ -61,9 +67,15 @@
         "evidence": [{"kind": "native-test", "path": "reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json", "sha256": "d1c5607305a410e38df50d9feed433a04b547bbba50dd052a8dd69dca027af8f", "size": 3004, "claim": "native objective state reaches success and failure from MissionExecution"}]
       },
       "retail_objectives": {
-        "status": "open",
+        "status": "passed",
         "statement": "retail objective identity and transitions",
-        "evidence": []
+        "evidence": [
+          {"kind": "static", "path": "reports/cycle-1097-submission-objective-flow.md", "sha256": "54ebe8bee55dc0464dbcee06ab0f8120506f6d7267aa5cddbb0eb23b35dd9dd4", "size": 7205, "claim": "sub-missions are sequenced by context+0x10 bounded by the parsed slot-2 count, each step indexed by context+0x14 at stride 0x28, each start timestamped into context+0x2C sized from that same count, and tag 7 compares a mission counter from the slot-1 table against a 16-bit threshold under three operators before jumping to a sub-mission index"},
+          {"kind": "microexec", "path": "analysis/microexec/tail-batch/submis-349920.comparison.json", "sha256": "2f32f452cf78115c2a748137f97b13357fdf228cca81198ed62c6bfdff121ff2", "size": 698, "claim": "the SubMisBin reader that produces sub-mission 0 and its 0x28-stride step list is reproduced byte for byte by a schema-derived parser, pair_equal, with no oracle"},
+          {"kind": "retail", "path": "manifests/mission01-retail/census.json", "sha256": "5f5233afd95fc9283e26773c5f972fa26afce59525f3017820d1e4ec869a7218", "size": 1231, "claim": "4 sub-missions with 6 steps, tags 0 x4 and 1 x2 and no tag-7 step, reproducing the cycle-1092 parser-side census from the consumer side"},
+          {"kind": "native-test", "path": "reports/mission01-retail/retail-scenario-test.json", "sha256": "9698d3f3557a00f6552535b38f532363edaacbf0152a35b986309c740f977095", "size": 451, "claim": "the native product loads the retail-derived objectives manifest as 4 required Manual objectives and leaves all of them Pending after loading and ticking - nothing completes an objective by itself"}
+        ],
+        "retail_semantics_qualified": true
       },
       "essential_hud": {
         "status": "passed",

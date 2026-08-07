@@ -1,0 +1,17 @@
+{
+  "schema": "ac6.mission01-retail-scenario-test.v1",
+  "mission_id": 1,
+  "waves_manifest_fnv64": "e887b916760f9314",
+  "objectives_manifest_fnv64": "2fe196017733c9a9",
+  "unit_records_loaded": 230,
+  "unit_records_published": 230,
+  "faction_1": 140,
+  "faction_2": 42,
+  "faction_3": 48,
+  "object_class_1": 1,
+  "object_class_3": 1,
+  "object_class_4": 228,
+  "sub_missions": 4,
+  "objectives_completed": 0,
+  "missing_manifest_rejected": true
+}
