@@ -124,6 +124,41 @@ analysé.
 - Aucune identité de vague, aucune condition d'objectif.
   `retail_units_and_waves` et `retail_objectives` restent **ouverts**.
 
+## Correction — ce que « la cible » désigne
+
+La première rédaction de ce cycle parlait d'une « méthode virtuelle de la cible »
+et de « bits d'activation sur l'objet cible ». **C'était attribué à un objet non
+établi.** Le décompilé rend `piVar10 = __savegprlr_14()`, ce que Ghidra modélise
+comme la valeur de retour de l'aide de prologue, donc comme `r3`. L'assembleur
+dit autre chose :
+
+```
+820a7088  or r28,r4,r4      ; r28 = le pointeur du slot analysé
+820a7090  or r25,r3,r3      ; r25 = le premier argument
+820a70d8  lis r18,-0x7d92
+820a70e4  ori r19,r11,0x9c80
+820a7334  lwzx r3,r11,r19   ; r3 = *(global + 0x29C80) = le contexte de mission
+820a7338  lwz  r11,0x0(r3)
+820a733c  lwz  r11,0x4(r11)
+820a7344  bctrl             ; appel virtuel sur le CONTEXTE, pas sur param_1
+```
+
+Les appels virtuels portent donc sur le **contexte de mission**, et les
+écritures visent des objets dérivés de lui — `type*0x44 + *(contexte+0x58)` pour
+le compteur, `*(*(contexte+0x264) + 0x18) + 0x60` pour les bits. Rien de tout
+cela n'est « la cible » passée en argument.
+
+Et le premier argument n'est pas un objet du tout. Il vient de `0x821B7300`,
+qui écrit trois sorties depuis des tables indexées par le niveau
+(`DAT_820658D8`, `DAT_82065920`, `DAT_820659A0`) et rend des petits entiers —
+`0x86`, `0x87`, `0x92`, `0x96`, `0xA1`, `0xFFFFFFFF`. **C'est un identifiant,
+pas un pointeur.**
+
+Ce qui reste intact : la borne de boucle est le compteur analysé, la foulée est
+`0x0C`, les champs `data+0x08` et `data+0x0D` sont lus par enregistrement, et
+les 230 enregistrements tombent dans le domaine du `switch`. Ces énoncés
+dépendent de `param_2`, qui est sans ambiguïté (`r4` → `r28`).
+
 ## Précision sur la valeur classée
 
 Le `switch` de `data+0x08` produit une valeur — `lVar19` — qui vaut 1, 4, 4, 4, 3
@@ -142,14 +177,16 @@ et sert ensuite de discriminant à trois comparaisons qui choisissent les bits
 d'activation (`== 4` → `0x5800`, `== 5` → `0x4200`, `== 6` → `0x4400`). C'est
 donc une **catégorie** d'un petit domaine (1 à 6), pas un compte.
 
-L'appel virtuel au slot `+0x10` de la cible, avec la catégorie en argument, est
-l'acte de création ou d'insertion ; le compteur `+0x24` et les bits `+0x60` en
-sont les traces.
+La catégorie est passée à un appel virtuel — mais sur le contexte de mission,
+comme le montre la correction ci-dessus, pas sur un objet cible. Le compteur
+`+0x24` et les bits `+0x60` sont des traces d'activation ; **quel objet les
+reçoit reste à établir.**
 
 ## Prochaine tranche
 
-1. Qualifier le slot virtuel `+0x10` de la cible et le domaine de catégorie
-   1 à 6 qu'il reçoit. C'est là que se décide ce qui est créé.
+1. Qualifier le slot virtuel appelé sur le contexte de mission et le domaine de
+   catégorie 1 à 6 qu'il reçoit, ainsi que l'identifiant issu de `0x821B7300`
+   (tables `DAT_820658D8`, `DAT_82065920`, `DAT_820659A0`, indexées par niveau).
 2. Qualifier la table `contexte+0x58` de foulée `0x44` et son champ `+0x24` :
    un compteur par type d'objet est le candidat le plus direct pour
    `retail_units_and_waves`.
