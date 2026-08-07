@@ -119,3 +119,4 @@ reports/**/*.jpg
 reports/**/*.ppm
 reports/**/*.bin
 reports/**/*.capt
+ghidra-projects-xenon/
