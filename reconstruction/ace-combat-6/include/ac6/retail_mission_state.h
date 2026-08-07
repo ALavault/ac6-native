@@ -16,6 +16,7 @@
 // Everything else, including one asymmetry in the side-code switch, is
 // reproduced as retail has it rather than as it would read better.
 
+#include "ac6/product_runtime.h"
 #include "ac6/retail_scenario.h"
 
 #include <array>
@@ -198,5 +199,29 @@ class SubMissionSequencer final {
   std::uint32_t sub_mission_{};
   std::uint32_t step_{};
 };
+
+
+// A world built from the retail payload alone - no manifest is read, and none
+// can be: the only input is the parsed scenario.
+struct RetailWorld {
+  UnitRegistry units;
+  CombatWorld combat;
+  MissionObjectiveDatabase objectives;
+  SubMissionSequencer sequencer;
+  RetailUnitBuild build;
+  std::size_t published{};
+};
+
+// Populates a world from a parsed scenario: one combat unit per record with its
+// faction and the class the factory selects, one Manual objective per
+// sub-mission, and a counter table sized by root slot 1.
+//
+// Positions come from the record's first Obj sub-record, which carries a
+// relative offset rather than a world coordinate; the field is filled because
+// the runtime needs one, and the distinction is stated here rather than hidden.
+// Durability has no source in the payload at all and is left at 1.
+std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
+                                              std::uint32_t mission_id,
+                                              std::optional<LocalPlayerSlot> local_player);
 
 }  // namespace ac6::retail

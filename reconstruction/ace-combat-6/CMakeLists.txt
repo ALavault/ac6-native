@@ -130,6 +130,24 @@ add_test(NAME ac6-retail-bin-readers-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin)
 set_tests_properties(ac6-retail-bin-readers-tests PROPERTIES SKIP_RETURN_CODE 77)
 
+# J2: Mission 01 driven by the retail payload alone, no manifest.
+add_executable(ac6-retail-playable-tests tests/retail_playable_tests.cpp)
+target_link_libraries(ac6-retail-playable-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-playable
+  COMMAND ac6-retail-playable-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../manifests/mission01-retail)
+set_tests_properties(ac6-retail-playable PROPERTIES SKIP_RETURN_CODE 77)
+
+# J2: every vtable of the binary named by RTTI in a versioned map.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_Interpreter_FOUND)
+  add_test(NAME ac6-retail-classmap
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_class_map.py
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map.tsv --require J2)
+endif()
+
 # Points the same reader at a payload that is not committed - another mission,
 # say - and reports what happens. Not wired to ctest: it needs a payload.
 add_executable(ac6-retail-scenario-probe tools/retail_scenario_probe.cpp)

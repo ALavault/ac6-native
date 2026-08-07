@@ -222,4 +222,53 @@ bool SubMissionSequencer::apply(std::uint16_t id, const CounterOperand& operand,
   return true;
 }
 
+
+std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
+                                              std::uint32_t mission_id,
+                                              std::optional<LocalPlayerSlot> local_player) {
+  std::optional<RetailUnitBuild> build = build_units(scenario, local_player);
+  if (!build.has_value()) return std::nullopt;
+
+  RetailWorld world;
+  world.build = std::move(*build);
+
+  for (const RetailUnitObject& object : world.build.objects) {
+    const ScenarioUnitRecord& record = scenario.units()[object.record_index];
+    const ScenarioVector offset =
+        record.objects.empty() ? ScenarioVector{} : record.objects.front();
+    const std::uint32_t faction = object.faction_byte + 1u;
+
+    UnitRecord unit;
+    unit.id = object.entity;
+    unit.owner = faction;
+    unit.asset = object.category;
+    if (!world.units.register_unit(unit)) return std::nullopt;
+    if (!world.units.activate(unit.id)) return std::nullopt;
+
+    CombatUnitState combat;
+    combat.entity = object.entity;
+    combat.faction = faction;
+    combat.position = {offset.x, offset.y, offset.z};
+    combat.health = 1.0f;
+    combat.max_health = 1.0f;
+    combat.collision_radius = 1.0f;
+    combat.active = true;
+    if (!world.combat.add_unit(combat)) return std::nullopt;
+    world.published += 1;
+  }
+
+  for (const ScenarioSubMission& sub_mission : scenario.sub_missions()) {
+    MissionObjectiveDefinition definition;
+    definition.mission_id = mission_id;
+    definition.objective.id = sub_mission.index + 1;
+    definition.objective.stable_id =
+        "mission01-submission-" + std::to_string(sub_mission.index);
+    definition.objective.required = true;
+    if (!world.objectives.add(std::move(definition))) return std::nullopt;
+  }
+
+  world.sequencer = SubMissionSequencer::from(scenario, scenario.counter_capacity());
+  return world;
+}
+
 }  // namespace ac6::retail
