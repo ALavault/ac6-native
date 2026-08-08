@@ -784,3 +784,18 @@ The general form is the eighteenth shape again — a correct measurement, over-r
 — but the specific trap is worth its own entry because the output is
 *indistinguishable*: the scan reports "1" in both cases, and the number is right
 in both cases.
+
+**And the repository already knew.** Cycle 1225, which wrote this instrument,
+printed the block name for every hit and labelled the row itself:
+
+```
+821b5808  at 0x820655CC  .rdata      <- a vtable slot
+821b5808  at 0x8207EBA8  .pdata         (an unwind record, not a reference)
+```
+
+The distinction was lost forty cycles later, when the same scan was
+re-implemented in Python directly over the flat image — faster, correct in what
+it counted, and without block names. **A scan re-expressed in another language
+is a new scan. It inherits the earlier one's arithmetic and none of its
+judgement**, which is the lesson the `PrintableStringLength` control taught about
+tests, arriving a second time about instruments.

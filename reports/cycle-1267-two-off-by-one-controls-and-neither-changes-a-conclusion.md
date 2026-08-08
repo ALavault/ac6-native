@@ -68,9 +68,45 @@ Two of the four addresses scanned here were published in the same sentence as a
 conclusion that did not need them. Both were wrong. Neither was ever going to be
 caught by a gate.
 
+## The boundary, widened — and the repository already knew
+
+The first draft closed by saying older claims might rest on the same conflation
+and had not been searched. That was checkable, so it was checked: a second grep
+over `reports/` for every other phrasing — "no vtable", "dispatch table", "as a
+data word", "byte-level scan" — turned up two more claims, **and both are
+right**.
+
+- **Cycle 1240** reports `0x821A72C0` as a data word at `0x82064A80` and
+  `0x821A7A70` at `0x82064A9C`. Both are below `0x82079E00`, in `.rdata`: real
+  references, and the cycle used them to anchor `CModeTaskLoading`'s vtable.
+- **Cycle 1225 — the report that created this instrument — got it right on the
+  first day**, and said so in its own output:
+
+  ```
+  821b5808  at 0x820655CC  .rdata      <- a vtable slot
+  821b5808  at 0x8207EBA8  .pdata         (an unwind record, not a reference)
+  ```
+
+  The tool printed the block name; the author read it; the summary line
+  "2 aligned / 0 unaligned" was published beside a listing that explains what
+  the second one is.
+
+**So the knowledge was never missing. It was lost in a re-implementation.**
+Cycles 1263 and 1265 re-ran the same scan in Python, directly over the flat
+image, without block names — and with the block names went the only thing that
+distinguished a vtable slot from an unwind record. The Python version was
+faster, correct in what it counted, and silent about the one thing that mattered.
+
+That is the lesson from the C++ control that accepted one-character strings,
+transposed from a test to an instrument: **a scan re-expressed in another
+language is a new scan, and it does not inherit the earlier one's judgement —
+only its arithmetic.** The fix committed in cycle 1266 puts the distinction back
+into the Java tool's output; nothing prevents the next Python one-liner from
+losing it again except knowing that it happened.
+
 ## Not established
 
-- Whether any claim **older than this session** rests on the same conflation.
-  The grep covered `reports/` and the root documents for the phrasings this
-  session used — "as data", "as aligned data", "occurrences as data" — and a
-  cycle that phrased it differently would not have been found.
+- Whether a cycle earlier than 1225 made such a claim without any of the six
+  phrasings searched. Two greps is not a proof of absence, and the instrument
+  only exists from 1225 onward, so anything earlier would have been hand-rolled
+  and phrased freely.
