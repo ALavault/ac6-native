@@ -46,3 +46,23 @@ not by itself qualify Mission 01 retail objectives or J1.
 | external depth F32 | `724dd5994f64c78bf973ba8d05734eed1eb06b94f26685e7b88eb0a331ebdb8e` |
 | native binary | `5af7fe11d18311b1f0ca74f5497bb6319cc145f835316e7ea9c6e7f70a0087ec` |
 | repo commit | `ce457c5baa3e6c62e8a87516a897aed47b69e4c6` |
+
+
+## STALE since cycle 1233 — `color.png`
+
+`color.png` was rendered by a raster target that read the vertex UV **four bytes
+early** on every vertex of every mesh. Cycle 1233 derived the true offsets from
+the renderer's own vertex-declaration tables (TEXCOORD at `+20` for stride 28 and
+`+24` for stride 32, against the `+16`/`+20` this capture was made with) and
+corrected the reader; a corpus control scores the derived offset at 99.8%
+plausible against 0.0% for both offsets used here.
+
+**The image is therefore wrong in a known way.** It has deliberately not been
+regenerated: it is cited by no contract, the metrics beside it are counts and
+object IDs that a UV offset cannot change, and the manifest path's transforms and
+materials are synthesised anyway — so a corrected picture would be a better
+rendering of something that is still not Mission 01. The regeneration belongs
+with JV's fused retail-session render.
+
+`capture-metrics.json`, `native-session.json` and `object-id.png` are unaffected
+and remain valid.
