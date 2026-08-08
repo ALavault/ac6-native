@@ -133,29 +133,33 @@ The names mislead, so plainly:
    - `+0x180`–`+0x194` are **floats on a different class** (`0x8229EAC0` clamps
      four of them between limits). They are not the unit class's `+0x184`
      pointer and `+0x188` parent, and cycle 1146 nearly read them as such.
-4. **Textures — not a porting job (cycle 1149).** `scripts/probe_ntxr_bc.py`
-   reads word 5 of the descriptor as `width = hi16, height = lo16` and word 8 as
-   the data offset. `NTXR_STRUCTURE_REPORT.md` explicitly refuses to name those
-   fields, and the script's own docstring calls itself diagnostic-only, gated on
-   visual proof. Promoting that interpretation into the product is anti-goal 2.
+4. **Textures — the descriptor is now derived (cycle 1150).** The consumer is
+   `0x8233EA78`. `0x8234B360` decodes the descriptor: `lhz +0x14` = **width**,
+   `lhz +0x16` = **height**, `lbz +0x13` = **format code** bounds-checked `< 47`
+   and indexing an 8-byte table at `0x826767C0` whose word 0 carries the Xenos
+   `TextureFormat` in its low 6 bits. `0x8234B128` reads the **mip count** at
+   `+0x11`, `0x8234B118` the **cube flag** at bit 9 of `+0x1C`. The factory
+   `0x8234AED8` picks `TextureContextXenon` / `…MipMapXenon` / `…CubeMapXenon`
+   from those two, and `0x8234AA68` fixes the field mapping. The table has
+   exactly 47 entries, which is the bound the code checks.
 
-   Cycle 1149 tried to earn the names by measurement over 692 wrappers and
-   **failed honestly**. If word 5 held the dimensions, `payload / (hi*lo)` would
-   be a clean multiple: it is, for 83%. But shuffling payloads against dimensions
-   scores **70.9% mean, 73.3% max over 200 trials** — the baseline is that high
-   because both are powers of two. 83% over a 71% floor is signal, not a name.
-   (Control: the same measure on word 0 scores 0%.) A second, non-visual
-   orientation test — wrong pitch should push tiled addresses past the payload —
-   returned **completely null: 148 of 148 non-square wrappers fit both ways**.
+   Cycle 1149 refused to name these fields from payload correlation (83% vs a
+   71% shuffled null) and was right to; the method was simply the wrong one.
+   `NTXR_STRUCTURE_REPORT.md`'s refusal is lifted for these four fields.
 
-   What it needs is the retail consumer. Concrete start: `0x8233EF48` tests
-   `0x4E445852` (`NDXR`) and `0x8233EF68` tests `0x47494458` (`GIDX`), same
-   shape. **No instruction in the image builds `0x4E54`**, the high half of
-   `NTXR` — so NTXR is recognised by container type code, not by signature, and
-   the descriptor consumer must be found through the resource system.
+   **The correction this forced:** `probe_ntxr_bc.py` decodes the one visually
+   validated wrapper as BC3/DXT5, but its descriptor says format code 1 → low6
+   `0x13` → **k_DXT2_3, BC2/DXT3**. BC2 and BC3 share their colour half exactly
+   and differ only in alpha, so the probe's RGB was right — which is why the
+   atlas looked intelligible — and its alpha has always been wrong. Derived
+   census over 692 wrappers: **656 BC3, 22 ARGB8888, 12 BC1, 2 BC2**.
 
-   Then, once the descriptor is named: port BC3 + Xenos `Tiled2D` + 8-in-16 into
-   C++, and close
+   Still open before a decoder is worth writing: the **surface layout**.
+   `payload / (W·H·word1/4)` is 1.0 for only 96 wrappers, massing on 2, 4, 12,
+   16 with a 4/3 tail — mips and cube faces are now readable, so this is
+   finishable, but guessing it would be the same mistake one field later.
+
+   Then: port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, and close
    MATE batch→material→texture→NTXR in the runtime.
 5. **Terrain.** Currently **fail-closed by policy**:
    `MISSION_VISUAL_BOOTSTRAP_REPORT.md` requires a proved Scene/CUT ownership

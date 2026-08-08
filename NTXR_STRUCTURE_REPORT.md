@@ -122,3 +122,23 @@ bitwise OR. This closes several useful negative/constant facts across all
 The exact aggregate tuples remain in `reports/ntxr-structure-summary.txt`.
 These invariants identify candidate reserved fields and masks, but no field is
 yet named as width, height, format or mip count.
+
+**Lifted in part, cycle 1150.** Four fields are now named by derivation, from
+the consumer rather than from the corpus. `0x8233EA78` hands the descriptor to
+`0x8234B360`, which reads `lhz +0x14` as **width**, `lhz +0x16` as **height**,
+and `lbz +0x13` as a **format code** bounds-checked against 47 and used to index
+an 8-byte table at `0x826767C0`; that entry's word 0 carries the Xenos
+`TextureFormat` in its low six bits. `0x8234B128` reads the **mip count** at
+`+0x11` and `0x8234B118` the **cube-map flag** at bit 9 of `+0x1C`. The table
+holds exactly 47 entries, matching the bound the code checks. Offsets are
+relative to file `0x10`, so width and height are the two halves of what this
+report calls word 5, in that order.
+
+The remaining fields stay unnamed, and the **surface layout is still unproven** -
+`payload / (W · H · word1/4)` equals 1 for only 96 of 692 wrappers.
+
+Consequence for `scripts/probe_ntxr_bc.py`: the wrapper it was validated on,
+GIDX `0x10002215`, has format code 1, whose table entry gives low6 `0x13` =
+**k_DXT2_3 (BC2/DXT3)**. The probe decodes BC3/DXT5. The two formats share their
+colour half byte-for-byte and differ only in alpha, so the probe's RGB is correct
+and its alpha is not. Full account: `reports/cycle-1150-the-ntxr-descriptor-consumer.md`.
