@@ -1,0 +1,77 @@
+# Every write to an object's translation row (effective offset +0x50), classified.
+# Produced by tools/ghidra_scripts/Ac6TransformWrite.java then Ac6Window.java,
+# read-only, against the non-canonical Xenon import. No oracle.
+#
+# kind: stack      - the base is r1; a local, not an object
+#       copy       - the vector was loaded from memory: a transfer
+#       computed   - the vector came out of vector arithmetic
+#       unresolved - the source is outside a 14-instruction window
+#
+# Not one site in the mission cluster 0x822xxxxx authors a position from
+# data: they copy one or compose one.
+# columns: at function kind vector_source
+8209a728	Function_82099358@82099358	copy	lvx128
+820a1738	Function_820A15E0@820a15e0	copy	lvx128
+820b3480	Function_820B3290@820b3290	copy	lvx128
+820cd440	Function_820CD1A0@820cd1a0	copy	lvx128
+820cde40	Function_820CDC28@820cdc28	unresolved	-
+820d6a88	Function_820D68E0@820d68e0	copy	lvx128
+820f91d0	Function_820F9168@820f9168	computed	vpermwi128
+820f9514	Function_820F9168@820f9168	computed	vmsum4fp128
+820f95d0	none	unresolved	-
+82119308	Function_82119230@82119230	stack	-
+82119408	Function_82119340@82119340	stack	-
+82126530	Function_82126368@82126368	unresolved	-
+8212ae54	Function_8212A9B0@8212a9b0	unresolved	-
+8212b044	Function_8212A9B0@8212a9b0	unresolved	-
+821308e4	Function_82130398@82130398	copy	lvx128
+8213fcf4	Function_8213FA78@8213fa78	copy	lvx128
+8219efa0	Function_8219DBD0@8219dbd0	copy	lvx128
+821a17b0	Function_821A16B8@821a16b8	copy	lvx128
+821a2aa8	Function_821A16B8@821a16b8	copy	lvx128
+821f37b4	Function_821F36D0@821f36d0	computed	stvx128
+821f3a44	Function_821F37D0@821f37d0	copy	lvx128
+82211590	Function_82211538@82211538	copy	lvx128
+8221eee4	Function_8221EE50@8221ee50	copy	lvx128
+822331ac	Function_82232B28@82232b28	copy	lvx128
+8225ca5c	none	copy	lvx128
+8225e044	Function_8225DF88@8225df88	copy	lvx128
+82260284	Function_8225E508@8225e508	computed	vor128
+822608ec	Function_8225E508@8225e508	copy	lvx128
+8226b3b8	Function_8226B368@8226b368	copy	lvx128
+8226fce8	none	copy	lvx128
+82278318	Function_82278178@82278178	copy	lvx128
+822783d0	Function_82278178@82278178	copy	lvx128
+822785b0	Function_822784A8@822784a8	copy	lvx128
+8227d0c4	Function_8227CFF8@8227cff8	copy	lvx128
+822818f0	Function_82281888@82281888	copy	lvx128
+8229bf1c	Function_8229BE98@8229be98	copy	lvx128
+822a1fe4	none	copy	lvx128
+822c6aa0	Function_822C6A30@822c6a30	copy	lvx128
+822d2b78	Function_822D29B8@822d29b8	copy	lvx128
+822d6334	Function_822D62D8@822d62d8	copy	lvx128
+822d8324	Function_822D8220@822d8220	copy	lvx128
+822d8eb0	Function_822D8220@822d8220	unresolved	-
+822da140	Function_822D9A30@822d9a30	copy	lvx128
+822db148	Function_822DB0D8@822db0d8	copy	lvx128
+822db288	Function_822DB220@822db220	copy	lvx128
+822e1d40	Function_822E1B70@822e1b70	copy	lvx128
+822e5074	Function_822E4A48@822e4a48	copy	lvx128
+822f4d34	Function_822F4B58@822f4b58	copy	lvx128
+822f57cc	Function_822F5668@822f5668	copy	lvx128
+822f922c	Function_822F9040@822f9040	copy	lvx128
+822f95c0	none	copy	lvx128
+822fb26c	Function_822FB048@822fb048	copy	lvx128
+822fbab0	Function_822FB800@822fb800	copy	lvx128
+822fcc88	none	copy	lvx128
+82306fd8	Function_82306EB8@82306eb8	copy	lvx128
+8230de20	Function_8230DBD8@8230dbd8	copy	lvx128
+8231179c	Function_823116C8@823116c8	copy	lvx128
+823131a8	Function_823130D0@823130d0	copy	lvx128
+8231549c	Function_823153D0@823153d0	copy	lvx128
+82316258	Function_82316190@82316190	copy	lvx128
+823c12f8	Function_823C0FF8@823c0ff8	unresolved	-
+823c15ec	Function_823C13A8@823c13a8	stack	-
+823c3644	Function_823C3118@823c3118	stack	-
+823d064c	Function_823D03F0@823d03f0	computed	vmulfp128
+823d0e60	Function_823D0BA0@823d0ba0	unresolved	-
