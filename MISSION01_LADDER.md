@@ -36,8 +36,18 @@ python3 tools/audit_ac6_mission01_native_gate.py \
     analysis/contracts/mission01-native-gate-v2.json --artifact-root .
 python3 tools/audit_ac6_class_map.py analysis/class-map.tsv \
     --rejects analysis/class-map-rejects.tsv --require J2
+python3 tools/audit_ac6_contract_artifacts.py \
+    analysis/contracts/mission01-final-gate-v3.json \
+    analysis/contracts/mission01-visible-gate-v4.json
 ctest --test-dir reconstruction/ace-combat-6/build
 ```
+
+The third of those exists because the gate auditor hashes the **working tree**,
+which is right for what it audits and leaves one gap it cannot see: an artefact
+regenerated and never staged. The contract hash gets refreshed against the file
+on disk, the gate passes locally, and a fresh clone fails on the stale committed
+copy. That happened once and was caught by reading `git status`. It now has a
+check.
 
 Both auditors must exit 0 and ctest must pass before any commit. Anything
 windowed runs as `SDL_AUDIODRIVER=dummy xvfb-run -a <cmd>`.
