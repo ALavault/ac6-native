@@ -116,10 +116,18 @@
 //   public hardware documentation by way of Xenia's texture_address::Tiled2D.
 //   It is not read out of this image and is not claimed to be.
 // * BC1/BC2/BC3 block decoding is the standard S3TC/DXT definition.
-// * The 8-in-16 byte swap is the endianness of the stored blocks. The control
-//   on record is negative and visual - omitting it corrupts colours - which is
-//   weaker than the rest of this file and is why decode() exposes it as an
-//   explicit argument instead of hiding it.
+// * The 8-in-16 byte swap is the endianness of the stored blocks. It is still
+//   not derived - no instruction has been read that performs it - but it is no
+//   longer only visual (cycle 1169). Decoding every wrapper both ways and
+//   scoring each by mean absolute difference between horizontally adjacent
+//   texels: on the 436 world textures inside the MDLP, 424 are smoother with
+//   the swap, 0 without, 12 tied, mean 7.17 against 26.84. On the 668 UI
+//   wrappers - fonts and HUD panels, largely flat black with hard edges, where
+//   both decodes can score alike - it is 468, 170 and 30, mean 11.89 against
+//   19.54. The measure discriminates on the population it should.
+//
+//   It stays an explicit argument, because a measured control over one corpus
+//   is not the same as reading the instruction that does the swap.
 //
 // ---------------------------------------------------------------------------
 // What this decoder refuses
