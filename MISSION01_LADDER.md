@@ -118,6 +118,16 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    01 spans 66,000 units. Callers plotting the world now pass their own far
    plane, and `world-overview.png` shows all 57 distinguishable positions.
 
+   **A candidate spawn, and a reversal to check (cycle 1182).** The player's
+   first order is tag 0 and its payload carries `(-2025, 1500, 1345)` — exactly
+   Mission 1's `PLAD` row, in a second independent file, with mode 0 and `FF FF`
+   anchors. Four controls hold across 230 units. It also suggests
+   `initial_world_position` reads the wrong order: unit 9's first tag-2 triple is
+   shared with sixteen ground units, so it is a destination, not a spawn. **The
+   product is unchanged** — `0x822A23D8` has not been read (VMX128 halt), and
+   reversing a ported behaviour on correlation is what this campaign refuses.
+   Next read: `0x822A23D8` in the Xenon corpus.
+
    What remains is the player's spawn. Cycle 1177 exhausted `PLAD` — both its
    accessors have exactly three call sites each, paired, and every getter reads
    only word 3 — and cycle 1176 found the player also carries no model index,
