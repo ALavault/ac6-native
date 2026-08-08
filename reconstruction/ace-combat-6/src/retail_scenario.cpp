@@ -35,6 +35,9 @@ constexpr std::size_t kFlagOrderOperation = 0x04;
 
 // The nine-way flag selector inside a faction entry, read at 0x820A7420.
 constexpr std::size_t kFactionSideByte = 0x2C;
+// 0x820A7944 and 0x820A7968, on the ObjBin data block.
+constexpr std::size_t kObjModelPrimary = 0x61;
+constexpr std::size_t kObjModelSecondary = 0x62;
 constexpr std::size_t kFactionWord = 0x28;
 
 std::string format_float(float value) {
@@ -192,6 +195,23 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         const std::optional<float> z = payload.f32(*object_data + 8);
         if (!x.has_value() || !y.has_value() || !z.has_value()) return std::nullopt;
         record.obj_scalars.push_back({*x, *y, *z});
+
+        // The model indices are not on this node. 0x82330158 stores the Obj
+        // entry's child[0] data block into the 0x20-byte record, and 0x820A7944
+        // reads +0x61/+0x62 from that. Cycle 1148 measured this node instead and
+        // found only zeros, which is why three cycles hunted an external table.
+        ScenarioModelBinding binding;
+        const std::vector<std::size_t> entry_children = payload.children(object);
+        if (!entry_children.empty()) {
+          const std::optional<std::size_t> bin = payload.resolve(entry_children[0], 0);
+          if (bin.has_value()) {
+            const std::optional<std::uint8_t> primary = payload.u8(*bin + kObjModelPrimary);
+            const std::optional<std::uint8_t> secondary = payload.u8(*bin + kObjModelSecondary);
+            if (primary.has_value()) binding.primary = *primary;
+            if (secondary.has_value()) binding.secondary = *secondary;
+          }
+        }
+        record.model_bindings.push_back(binding);
       }
     }
     // The unit's Set -> Act -> Order program, kept only for the orders that

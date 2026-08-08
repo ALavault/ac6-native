@@ -21,6 +21,7 @@
 #include <fstream>
 #include <map>
 #include <sstream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -315,6 +316,44 @@ int check_retail(const std::filesystem::path& manifests,
   REQUIRE(scenario.has_value());
 
   REQUIRE(scenario->units().size() == 230);
+
+  // The model-directory indices, from the ObjBin data block the Obj entry's
+  // child[0] resolves to (cycle 1171). Cycle 1148 read the entry node itself,
+  // found one distinct value of zero, and concluded the selector was not in the
+  // container at all - which sent three cycles hunting an external table. These
+  // numbers are the correction, and they are asserted so the wrong node cannot
+  // be read again without failing.
+  std::size_t bindings = 0, without_model = 0, with_secondary = 0, consecutive = 0;
+  std::set<std::uint8_t> primaries;
+  std::uint8_t highest = 0;
+  for (const ac6::retail::ScenarioUnitRecord& unit : scenario->units()) {
+    REQUIRE(unit.model_bindings.size() == unit.obj_scalars.size());
+    for (const ac6::retail::ScenarioModelBinding& binding : unit.model_bindings) {
+      bindings += 1;
+      if (!binding.has_model()) {
+        // 0x820A7944 skips the whole model block on the sentinel, so a record
+        // without a primary must not carry a secondary either.
+        REQUIRE(!binding.has_secondary());
+        without_model += 1;
+        continue;
+      }
+      primaries.insert(binding.primary);
+      if (binding.primary > highest) highest = binding.primary;
+      if (binding.has_secondary()) {
+        with_secondary += 1;
+        if (binding.secondary == binding.primary + 1) consecutive += 1;
+      }
+    }
+  }
+  REQUIRE(bindings == 434);
+  REQUIRE(without_model == 123);
+  REQUIRE(with_secondary == 309);
+  REQUIRE(consecutive == 281);
+  REQUIRE(primaries.size() == 38);
+  // Every index addresses Mission 01's own 94-entry model directory. An index
+  // at or above the count would make 0x8228E9B8 return null.
+  REQUIRE(highest == 74);
+  REQUIRE(highest < 94);
   REQUIRE(scenario->object_records() == 434);
   REQUIRE(scenario->factions().size() == 4);
   REQUIRE(scenario->sub_missions().size() == 4);

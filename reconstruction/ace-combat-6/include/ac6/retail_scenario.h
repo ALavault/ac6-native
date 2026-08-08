@@ -25,6 +25,9 @@
 
 namespace ac6::retail {
 
+// 0x820A7944 tests the model byte against 0xFF before doing anything with it.
+inline constexpr std::uint8_t kNoModel = 0xFF;
+
 struct ScenarioVector {
   float x{};
   float y{};
@@ -70,6 +73,48 @@ struct ScenarioObjScalars {
   bool operator==(const ScenarioObjScalars&) const = default;
 };
 
+// The pair of model-directory indices an Obj record carries, and the retail
+// chain that gives them meaning (cycles 1157-1171).
+//
+// 0x8232F380 builds, per unit, a three-word list header: +0x00 the list node's
+// data block, +0x04 an 8-byte element array, +0x08 a 0x20-byte record array
+// sized from byte 0 of that data block. 0x8232F198 fills one element and one
+// record per Obj entry, and 0x82330158 - ObjBin::read - sets word 0 of the
+// record from the entry's **child[0]**:
+//
+//     82330184  lwz r11,0x0(r30)   ; the child's relative data offset
+//     82330198  add r11,r11,r30
+//     823301a0  stw r11,0x0(r27)   ; record+0x00 = that data block
+//
+// It is that block, not the entry's own, that carries the model bytes.
+// 0x820A7070 reads them and turns each into a resource:
+//
+//     820a7944  lbz r11,0x61(r28)   ; 0xFF -> no model at all, skip the block
+//     820a795c  lbz r4,0x61(r28)
+//     820a7964  bl  0x8228e9b8      ; -> directory entry
+//     820a7968  lbz r4,0x62(r28)    ; 0xFF -> only the first
+//     820a797c  bl  0x8228e9b8
+//     820a79c8  stw r30,0x15c(r31)  ; the object's model resource
+//
+// 0x8228E9B8 indexes the container the unit manager supplies through its vtable
+// slot +0x0C (0x820A85E0), whose writer 0x8228E988 sets word0 = blob,
+// word1 = blob + [blob+0x0C], word2 = blob + [blob+0x10] and whose count is
+// [blob+0x04] - the header layout of Mission 01's own 94-entry MDLP.
+//
+// Measured over Mission 01's 434 Obj records: `primary` takes 38 non-sentinel
+// values (0, 2, 4 ... 74, only 19 and 43 odd) with 0xFF in 123; `secondary` is
+// `primary + 1` in 281 records and is never set when `primary` is the sentinel;
+// every value is below the directory's 94 entries. What the second entry is -
+// a variant, a damaged model, a level of detail - is NOT established, and this
+// port carries the pair without interpreting it.
+struct ScenarioModelBinding {
+  std::uint8_t primary{kNoModel};    // data +0x61
+  std::uint8_t secondary{kNoModel};  // data +0x62
+  bool has_model() const noexcept { return primary != kNoModel; }
+  bool has_secondary() const noexcept { return secondary != kNoModel; }
+  bool operator==(const ScenarioModelBinding&) const = default;
+};
+
 // One element of the parsed 'Obj & Unit' slot, as 0x820A7070 reads it.
 struct ScenarioUnitRecord {
   std::uint32_t index{};
@@ -100,6 +145,8 @@ struct ScenarioUnitRecord {
   // writing, so there is a parent; what it is, and how its transform enters,
   // is not established.
   std::vector<ScenarioObjScalars> obj_scalars;
+  // One per Obj record, in the same order as obj_scalars.
+  std::vector<ScenarioModelBinding> model_bindings;
   bool operator==(const ScenarioUnitRecord&) const = default;
 };
 
