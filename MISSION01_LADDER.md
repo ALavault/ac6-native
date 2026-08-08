@@ -213,9 +213,20 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    calls to the getter in the image are in that function and all use the same
    container.
 
+   **The container is an MDLP, derived (cycle 1163).** `0x820A7070`'s first
+   argument is a `CX360UnitManager` (vptr `0x82055190`, two instances embedded in
+   `CX360MissionManager<ACE6::CAce6MissionManagerReplay>`); its vtable `+0x0C` is
+   `0x820A85E0`, ending in the writer `0x8228E988` which sets word0 = blob,
+   word1 = blob + `*(blob+0x0C)`, word2 = blob + `*(blob+0x10)`, count =
+   `*(blob+0x04)` — the MDLP's three header fields exactly. The blob is
+   payload-resident: `0x820A85E0` re-derives the loader's own node and descends
+   by the hashed name `"DPL::[%#x,%#x]"` to chunk index 1.
+
    The gap is now one record: byte `+0x61` is zero in all 230 unit records and
    all 434 Obj node blocks (cycle 1148), so it lives on a third structure not yet
-   identified. Also still to derive: MATE material → texture id → GIDX.
+   identified. Also still to derive: MATE material → texture id → GIDX, and the
+   NTXR pack directory (measured in cycle 1163: 522 records of stride `0x50`,
+   518 with `eXt`+`GIDX`, 494 decoding).
    Walked with `tools/ac6_fhm.py` rather than regex-scanned: **94/94 parse with
    zero parser notes**; 47 entries carry geometry, 46 of those pair NDXR 1:1
    with MATE and entry 88 does not (9 NDXR, 5 MATE); 82 entries hold exactly one
