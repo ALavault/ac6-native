@@ -104,10 +104,40 @@ The names mislead, so plainly:
   `rec+0x20` resolving to a printable C string on **13,014/13,014** — the names
   being `mapparts_m01_*`, Mission 01's own map parts.
 
-  **Still uncontrolled:** the vertex stride `0x14` (`table[6]`, and `sub+0x0E` is
-  6 in all 13,014). In-bounds passes identically at `0x10`, `0x14`, `0x18` and
-  `0x20`, so that test proves nothing, and no second test discriminated it
-  (cycle 1198). Two calls remain unread: `0x8233EE40` and `0x8233EF88`. The `NTXR`, `MATE`
+  **The geometry is located, and the product's old reader was right (cycles
+  1212–1213).** `0x82362190`, which `0x823556E0` calls unconditionally as its
+  first act, binds **section 1 as a `D3DFMT_INDEX16` index buffer** (Length
+  `[buf+0x14]`, base `obj+0x84`) and **section 2 as a vertex buffer** (Length
+  `[buf+0x18]`, base `obj+0x88`). Five cycles said "nothing addresses the
+  vertices" because the object is **aliased** — everything below `0x82350F08`
+  gets `ctx = this + 0x10`, so the bases read as `0x74/0x78(ctx)`.
+
+  The draw at `0x82364518` reads `desc+0x00 >> 1` as StartIndex, `desc+0x04` as a
+  byte offset into the vertex block, `desc+0x20` as a count of 16-bit indices,
+  and draws triangle strips — **exactly the mapping
+  `native_geometry_raster.cpp` has carried unaudited.** The extent control
+  settles it: over 179 distinct files and 4,338 descriptors the product's
+  `0x0613→32 / 0x0611→28` gives `max(desc+0x04 + stride·count) == [buf+0x18]` in
+  **178/179**, against **0/179** for both rivals (20 and 16). Cycle 1198's `0x14`
+  was never a vertex stride: `0x82012C40` is materialised once in the image and
+  its only use writes `desc+0x28 = table[idx]·count`, a field zero on disk
+  everywhere.
+
+  **What remains is runtime state, not file content.** The stride comes from an
+  8-byte table at `0x828711F0`, BSS-resident and built at run time, so the
+  product's constants are corroborated rather than read.
+
+  **And the path is proven to execute (cycle 1213).** `0x821D5EF8` is reached
+  unconditionally from the XEX entry point through `main`, one call site per
+  link. The NDXR loader is reached through vtable slot `+0xEC` of `0x8205C9A4`
+  into `0x820FA9C0`, pinned by receiver-offset matching on three distinct
+  literals — but **guarded**: it runs iff the mission container carries the
+  member `0x820FB064` looks up. Mission 01's six `mode = 0` NTXR mounts are in
+  that same function, out of a complete enumeration of 53 sites; the nine sites
+  sitting directly in the load functions all pass `mode = 1`.
+
+  Two earlier calls, `0x8233EE40` and `0x8233EF88`, are read: they resolve
+  texture and shader ids (cycles 1200–1209). The `NTXR`, `MATE`
   and `MDLP` parsers described in the root structure reports are **not in this
   repository**; they lived in a prior workspace. One texture profile is
   pixel-decoded, in a Python diagnostic script, out of 7,993 wrappers.
