@@ -77,11 +77,37 @@ The names mislead, so plainly:
   (`src/native_geometry_raster_target.cpp`).
 - Vulkan exists only in `src/sdl_input.cpp`, as a present path that blits the CPU
   buffer to the swapchain — allocating a staging buffer every frame.
-- **NDXR is the only retail format the product decodes** — and its header layout
-  is **measured, not derived** (cycle 1189): `src/native_geometry_raster.cpp` and
-  `include/ac6/native_geometry.h` cite zero retail addresses, and no contract
-  names either as a derivation. It predates this session and has never been
-  audited. That is a larger open item than any texture question. The `NTXR`, `MATE`
+- **NDXR is the only retail format the product decodes** — and the *product's*
+  header layout is still **measured, not derived** (cycle 1189):
+  `src/native_geometry_raster.cpp` and `include/ac6/native_geometry.h` cite zero
+  retail addresses, and no contract names either as a derivation. It predates
+  this session and has never been audited.
+
+  **The derivation now exists to replace it (cycles 1194–1199), in eight stages
+  and with no measured format imported:**
+
+  | stage | address | what it does |
+  |---|---|---|
+  | recognise | `0x8234CA28` | type code = `u16` at `+0x08`; GIDX is a `0x10`-byte header in front of an NDXR |
+  | dispatch | `0x8234CB58` | `0x200` → `0x82350CA0` / `0x82350C50` (all 537 retail files are `0x200`) |
+  | construct | `0x82350C50/CA0` | vtable `0x8201283C` / `0x820128B4`; size at `this+0x08` |
+  | sequence | `0x82352B88` | vtable slots `+0x18`, `+0x10`, `+0x20`; two of the three are `blr` |
+  | header | `0x82350F08` | four section extents at `buf+0x10..+0x1C`; body base `buf + [buf+0x10] + 0x30` |
+  | records | `0x823556E0` → `0x823555D0` | `u16 [+0x0A]` records of fixed `0x30` at `file+0x30`; relocated in place |
+  | streams | `0x82355468` | four stream pointers at `sub+0x10..+0x1C`; stride table `0x82012C40`; `[obj+0x98]` counts |
+  | names | `0x82355318` | linked list relocated by `[obj+0x90]`, a string table |
+
+  Controls, each able to fail: `[+0x04] == filesize` and `[+0x08] == 0x200` on
+  **537/537**; printable bytes at the derived body end on **537/537** against
+  **0/537** for the rival without the `+0x30`; the relocation guard bit clear on
+  disk and `sub+0x28` zero on disk on **13,014/13,014**; and every record's
+  `rec+0x20` resolving to a printable C string on **13,014/13,014** — the names
+  being `mapparts_m01_*`, Mission 01's own map parts.
+
+  **Still uncontrolled:** the vertex stride `0x14` (`table[6]`, and `sub+0x0E` is
+  6 in all 13,014). In-bounds passes identically at `0x10`, `0x14`, `0x18` and
+  `0x20`, so that test proves nothing, and no second test discriminated it
+  (cycle 1198). Two calls remain unread: `0x8233EE40` and `0x8233EF88`. The `NTXR`, `MATE`
   and `MDLP` parsers described in the root structure reports are **not in this
   repository**; they lived in a prior workspace. One texture profile is
   pixel-decoded, in a Python diagnostic script, out of 7,993 wrappers.
