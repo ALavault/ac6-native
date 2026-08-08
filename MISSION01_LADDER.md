@@ -227,8 +227,9 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    `0x7D1` or `0x7D4` per child, and `0x8229C920` turns those into
    `bl 0x8229adf8`. The census is complete rather than a lower bound — three
    `li 0x7d1` and three `li 0x7d4` in 851,718 instructions, and **both codes
-   occur zero times as data across 11,117,714 bytes** with `0x8229C920` at 7 as
-   the control. `0x820A7070` wires every input the push needs, on the unit
+   occur zero times as data across 11,117,714 bytes** with `0x8229C920` as the
+   control at **6** references — cycle 1244 published 7, counting that
+   function's own `.pdata` row as a reference (cycle 1267). `0x820A7070` wires every input the push needs, on the unit
    (`+0x184`, `+0x170`, `+0x118`, `+0x188`) and on the leader (`+0xD8`, `+0xDC`,
    `+0xE0`, `+0xE4`), and never fires it.
 

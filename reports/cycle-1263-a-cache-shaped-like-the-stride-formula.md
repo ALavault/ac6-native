@@ -55,6 +55,13 @@ Callers, enumerated by decoding every `bl` in the flat image:
 - Neither address appears as aligned data, so neither is reached through a
   vtable or a dispatch table.
 
+  > **Corrected by cycle 1267.** `0x82345100` **does** appear once as aligned
+  > data, at `0x82085D20` — its own `.pdata` row. `0x82345098` has no row and no
+  > hit at all. The conclusion survives, because an exception record is not a
+  > vtable, but the observation as written is wrong, and it is the same error
+  > cycle 1266 caught in cycle 1265 — present here one cycle earlier and
+  > unnoticed.
+
 The two functions are **four instructions apart in the image and have entirely
 separate single callers.** Nothing ties the cleared tables to the stride path
 except that the code sits next to it, which is what "adjacency" means and not

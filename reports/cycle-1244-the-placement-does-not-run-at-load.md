@@ -109,4 +109,11 @@ audit ... --require JF                               ->  mission01_final_gate=au
 0x7D4 and 0x7D1 as data words: 0 of 11,117,714 bytes; control 0x8229C920 = 7
 ```
 
+> **Corrected by cycle 1267.** The control is **6**, not 7. The seventh hit is
+> `0x8229C920`'s own `.pdata` row at `0x82082xxx` — a function with an exception
+> record appears once as data by construction, and the scan of the day counted
+> it as a reference. The conclusion is untouched: 6 is as good a positive
+> control as 7, and the codes' zero is unaffected because `0x7D1` and `0x7D4`
+> cannot collide with a `BeginAddress`. The number was still wrong.
+
 No product code changed — **deliberately, and now for a proved reason.**
