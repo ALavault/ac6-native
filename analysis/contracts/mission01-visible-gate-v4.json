@@ -1,0 +1,336 @@
+{
+  "schema": "ac6.mission01-final-gate.v3",
+  "provenance": {
+    "repo_commit": "c6978cd07bd0f42a298561c66cdee4d239956daa",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "mission_id": 1
+  },
+  "policy": {
+    "derivation_required_for_pass": true,
+    "generated_recomp_is_cross_match_only": true,
+    "no_forced_objective_completion": true,
+    "visual_parity_out_of_scope": true,
+    "note": "a derivation must be native source that cites, in the file itself, every retail address the behaviour claims; the auditor reads the file and refuses generated or recompiled sources"
+  },
+  "requirements": {
+    "behaviours": {
+      "scenario_container": {
+        "status": "passed",
+        "statement": "the native product reads the retail scenario container with the retail readers' own layout, including their sizer quirks",
+        "retail_addresses": [
+          "0x82249718",
+          "0x82330158",
+          "0x8232EC08",
+          "0x82330A30"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1100-native-bin-readers.md",
+            "sha256": "16a04ab1180c73e7283bc58c739c3530e4dcf1c3f0290b5cea3a69d751632c41",
+            "size": 4364,
+            "claim": "138 of 138 p-code snapshots reproduced byte for byte by the native readers"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-playable.json",
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_bin_readers.cpp",
+            "sha256": "fafdfd8c37c37c9e085355ffb95bf57dfde220409c02ce2688a1049d993a7ba4",
+            "size": 28473,
+            "claim": "src/retail_bin_readers.cpp implements the ten readers and cites each retail function it reproduces"
+          }
+        ]
+      },
+      "unit_construction": {
+        "status": "passed",
+        "statement": "a parsed unit record becomes an object whose class comes from its class byte and whose side flags come from the faction table, inserted into a 256-slot table",
+        "retail_addresses": [
+          "0x820A7070",
+          "0x820A7F48",
+          "0x8226FEC0",
+          "0x820A7420"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1096-obj-slot-inserts-into-unitmanager.md",
+            "sha256": "754a237aed2456bd5a8888d663b7375ee083bf23e5ccf18861ff7f52f283264b",
+            "size": 11189,
+            "claim": "the owner-to-consumer chain read instruction by instruction, with the insertion at 0x8226FEC0"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-playable.json",
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
+            "claim": "src/retail_mission_state.cpp implements the classification, the insertion and the per-faction census"
+          }
+        ]
+      },
+      "sub_mission_flow": {
+        "status": "passed",
+        "statement": "sub-missions are sequenced by index with a step cursor, a start timestamp and a counter condition",
+        "retail_addresses": [
+          "0x8226E908",
+          "0x8226E158",
+          "0x82267008"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1097-submission-objective-flow.md",
+            "sha256": "54ebe8bee55dc0464dbcee06ab0f8120506f6d7267aa5cddbb0eb23b35dd9dd4",
+            "size": 7205,
+            "claim": "the selector, the step runner and the elapsed test, with Mission 01's four sub-missions and six steps"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-playable.json",
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
+            "claim": "src/retail_mission_state.cpp implements the sequencer with its bound, its cursor and its elapsed test"
+          }
+        ]
+      },
+      "mission_counters": {
+        "status": "passed",
+        "statement": "mission counters are written by four operations and stamped the first time a counter reaches one",
+        "retail_addresses": [
+          "0x82267468",
+          "0x82380798",
+          "0x82008120"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1101-mission-counter-writers.md",
+            "sha256": "5fd3129a025e33f0359502d08a5b5c6958c5939f9e8efc088d380d1caaff424f",
+            "size": 7096,
+            "claim": "the single writer, its four-entry jump table and the 232 OrderFlag orders of Mission 01"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-playable.json",
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
+            "claim": "src/retail_mission_state.cpp implements the four operations in retail's compute-store-then-stamp order"
+          }
+        ]
+      },
+      "mission_state_machine": {
+        "status": "passed",
+        "statement": "the mission runs on the hierarchical state machine the retail manager carries: a transition exits up to the common ancestor and enters down to the target, over the tree the binary declares",
+        "retail_addresses": [
+          "0x8219AD20",
+          "0x822E7760",
+          "0x822E39A8"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1112-state-hierarchy-complete.md",
+            "sha256": "b04bdb765b2e7c1cfe13351a73d76719f8e8d3cf066fa60458fdc5a5a9b65635",
+            "size": 4608,
+            "claim": "36 states, 36 parent edges, no cycle, one root, depth 6, and 0x822E7760 writing state code 8 on its entry branch"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-state-machine.json",
+            "sha256": "0423b583f31229e5f36ce2304a2795fb12583a4218be50576a4c5eb8392ec2e9",
+            "size": 289,
+            "claim": "the ported tree re-measured from the compiled table and the transition order checked step by step rather than by its result"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_state_machine.cpp",
+            "sha256": "f862508d996e210aad53c4d33195570474fed36db4da587d9e8ea962eb196a77",
+            "size": 4646,
+            "claim": "plan_transition implements 0x8219AD20's exit-then-entry order and the table carries the 36 handler addresses with their superstates"
+          }
+        ]
+      },
+      "mission_area": {
+        "status": "passed",
+        "statement": "the mission area is a horizontal rectangle normalised min/max per axis, selected by game mode from the scenario's area records and tested on a position's x and z only",
+        "retail_addresses": [
+          "0x82268BA0",
+          "0x82268B28",
+          "0x8226A018"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1107-mission-area-rectangle.md",
+            "sha256": "7d761bcb365fed3d4936fff609eb9e16611625e8f57bf173a7e1582f0e187b8e",
+            "size": 4848,
+            "claim": "the predicate reads components 0 and 2, the normaliser writes min and max per pair, and the installer refuses kind 2"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-mission-state.json",
+            "sha256": "600e99e0be06d7efe756d8c4dc44065e71a72e525041c1e09a9bf022bf28b756",
+            "size": 507,
+            "claim": "the ported normaliser, predicate and selector run against the retail scenario; Mission 01 declares no slot-6 record, and cycle 1121 found where its rectangle does come from - each sub-mission's tag-0 step calls FUN_82268B28 at 0x8226E2A8 - correcting cycle 1117's reading that the static fallback was the path taken"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
+            "claim": "normalise_area, area_contains and select_mission_area implement the three functions and cite them"
+          }
+        ]
+      },
+      "playable_session": {
+        "status": "passed",
+        "statement": "the product's own session loop - input, camera, HUD - runs on the world built from the retail container, with no manifest anywhere on its path",
+        "retail_addresses": [
+          "0x8219BDD8",
+          "0x820A7070",
+          "0x820A7420"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1121-retail-session.md",
+            "sha256": "93c11a350589c873422cd82f4f062c486e295c7ee4dbc64c41dfe5683e28f036",
+            "claim": "the loader's sequence read off its own instructions: read the container, publish it at context+0x264, then size the counter table, the sub-mission timestamps and the faction census from the slots it just published",
+            "size": 8484
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-session.json",
+            "sha256": "064fd07f4bebbb8ee5d8599f2bc9ea67e3eb0ca4a96eb67c54ba1f99ce788e12",
+            "claim": "1800 fixed ticks over the world the container built: 230 units, the player the faction switch classified, the camera at the runtime's fixed offset, deterministic across runs and different under a different input stream",
+            "size": 805
+          },
+          {
+            "kind": "native-capture",
+            "path": "reports/mission01-native-captures/jf-retail-session/hud-debrief.png",
+            "sha256": "7664a838e351970ebb46743bc39a93321203d1794a9239f7f7cf6d6dbcccd412",
+            "size": 1018,
+            "claim": "the HUD over the retail-built world once the script has run out: outcome panel shown, 4 of 4 sub-missions complete, 230 units still active, 95 of them carrying a load-time position"
+          },
+          {
+            "kind": "native-capture",
+            "path": "reports/mission01-native-captures/jf-retail-session/retail-session-hud.json",
+            "sha256": "98f0cd9617f4704469e05b5490c020fd6c8c7021cb57a32d677e3688e09961e2",
+            "size": 1514,
+            "claim": "the numbers the test asserted before either image was written - two captures at tick 900 and tick 1800, differing colour hashes, 1276 and 1521 HUD pixel writes, no fixture"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
+            "sha256": "ed25550da2bcfb9e3b4956bcde86e9354a7f44a2dcac52e94fb66f668bc4d0a3",
+            "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from 0x820A7420's category 2, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
+            "size": 7183
+          }
+        ]
+      },
+      "mission_completion": {
+        "status": "passed",
+        "statement": "the mission reaches its debrief because the retail sub-mission script ran out, and for no other reason",
+        "retail_addresses": [
+          "0x82267370",
+          "0x8226E908",
+          "0x8226E158",
+          "0x82093DD0",
+          "0x822ED708",
+          "0x82266710"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1120-submission-script-driver.md",
+            "sha256": "927507d64c6891aafc13c3b35c6f1b6175f685420a955175623682bc580fb303",
+            "size": 6410,
+            "claim": "the cursor 0x82267370 transcribed instruction by instruction, the state handler 0x822ED708 that calls it on signal -2, the exhaustion branch into 0x82266710 and its write of 1 to context+0x338, and the six-step trace those imply before it was measured"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-session.json",
+            "sha256": "064fd07f4bebbb8ee5d8599f2bc9ea67e3eb0ca4a96eb67c54ba1f99ce788e12",
+            "claim": "the predicted trace measured at three cadences, identical each time; the debrief reached with 4 of 4 sub-missions behind the cursor; and a session whose script never advances still in gameplay at tick 1800 with nothing completed",
+            "size": 805
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_mission_script.cpp",
+            "sha256": "9aa82a457d3ff7dbeed7262584ed5eb3ada1d2bb5a6ad7b8e9c0851e249c607d",
+            "claim": "src/retail_mission_script.cpp implements the advance in 0x82267370's own order, its three-way entry guard, the payload step-count bound, the exhaustion return and the end code 0x82266710 writes",
+            "size": 4195
+          }
+        ]
+      },
+      "texture_decode": {
+        "status": "passed",
+        "statement": "the native product decodes the base level of the retail NTXR population from the descriptor fields retail itself reads, and refuses every wrapper it cannot address",
+        "retail_addresses": [
+          "0x8233EA78",
+          "0x8234B360",
+          "0x8234B128",
+          "0x8234B118",
+          "0x8234AED8",
+          "0x8234AA68",
+          "0x8234EC38",
+          "0x821FBE30",
+          "0x821DF838",
+          "0x821DF958",
+          "0x826767C0",
+          "0x8234B268"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1150-the-ntxr-descriptor-consumer.md",
+            "sha256": "91ba1f13e82cf5be4b52f8bc68240b56f7e3aa1496ed06f15380c9af9dd71c2f",
+            "size": 6562,
+            "claim": "the consumer read end to end: 0x8234B360 gives width at +0x14, height at +0x16 and a format code at +0x13 bounded by 47 and indexing the 47-entry table at 0x826767C0"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/ntxr-decode.json",
+            "sha256": "17699491653945602a74b1e79afb4fc80af8be5aed269dd5ba4446a136381ab7",
+            "size": 626,
+            "claim": "668 of 692 wrappers decoded and 24 refused with a named cause, no bad headers and no size disagreements, asserted before the numbers were written"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/ntxr_texture.h",
+            "sha256": "8ee0b32ffa8bcf56322f1af6f17a132677881f26cfdd27385d4288627e0531fe",
+            "size": 10969,
+            "claim": "include/ac6/ntxr_texture.h carries the whole derivation - the descriptor fields from 0x8234B360, the level count from 0x8234B128, the cube flag from 0x8234B118, the context choice in 0x8234AED8, the field mapping in 0x8234AA68, and the surface arithmetic of 0x821DF838 and 0x821DF958 under XGSetTextureHeader at 0x821FBE30 - and states plainly what is not derived"
+          }
+        ]
+      }
+    }
+  }
+}

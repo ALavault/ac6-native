@@ -74,6 +74,22 @@ The names mislead, so plainly:
 
 ## JV — the visible world
 
+**The v4 contract exists**: `analysis/contracts/mission01-visible-gate-v4.json`,
+extending v3 with one behaviour per asset domain as the plan requires. It carries
+`texture_decode` today and audits clean, every claimed retail address cited in
+`include/ac6/ntxr_texture.h` and every artefact hashed.
+
+There is deliberately **no `--require JV`** in the auditor. One domain of several
+is not a gate, and adding the name before the domains exist would make the gate
+assert something no evidence supports. It goes in when terrain, the binding and
+the camera have entries beside the texture one.
+
+```bash
+python3 tools/audit_ac6_mission01_native_gate.py \
+    analysis/contracts/mission01-visible-gate-v4.json --artifact-root . --require JF
+```
+
+
 1. ~~**Fuse the halves.**~~ **Done, cycle 1144.** `RetailSession` draws the world
    through the rasteriser's own projection. Diagnostic markers only — no
    geometry, and no capture containing one may be offered as visual parity.

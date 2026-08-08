@@ -65,6 +65,26 @@
 // and the odd shapes are what make it a test, because on a power of two pad32
 // is a no-op and the rule cannot fail.
 //
+// It is also derived (cycle 1156). 0x821FBE30 is XGSetTextureHeader: it
+// allocates nothing and returns the size the caller must allocate. Two frames
+// down, 0x821DF838 computes a level's surface -
+//
+//     821df868  li r25,0x20                    ; X align = 32 blocks
+//     821df870  addi r24,r11,0x1               ; Y align = 32 block-rows
+//     821df8b8  divwu r9,r8,r9                 ; untiled: 256 / bytesPerBlock
+//     821df8c0  blt cr6,0x821df8c8             ;   floored at 32
+//     821df8e0  andc r11,r9,r11                ; *W = roundUp(W, blockW * xAlign)
+//     821df900  andc r11,r11,r9                ; *H = roundUp(H, blockH * 32)
+//     821df928  rlwinm r10,r10,0x1d,0x3,0x1f   ; pitch = alignedW * bpt / 8
+//     821df92c  mullw r10,r10,r9               ;   * alignedH
+//     821df938  rlwinm r10,r10,0x0,0x0,0x13    ; round up to 4096
+//
+// - and for BC1 the untiled floor is 256/8 = 32 while for BC2/BC3 it is 16
+// floored to 32, so X is 32 blocks either way. 0x821DF958 then chooses among
+// four base-size formulas; this corpus takes the tiled one,
+// roundUp(pitch * alignedH, 4096), confirmed on four shapes where the tiled and
+// untiled answers differ by 6 to 20 percent.
+//
 // This decoder asserts that identity before it decodes anything, so a wrapper
 // whose payload disagrees is refused rather than mis-addressed.
 //
