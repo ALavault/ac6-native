@@ -2,8 +2,9 @@
 # Produced by scripts/SweepMsvcRtti.java, read-only, no oracle.
 # An entry appears only when the whole chain resolves - locator, type
 # descriptor, a name beginning '.?A', and a first slot pointing into an
-# executable block. 1619 locator-like words failed a step; they are counted in
-# the sweep summary and deliberately not named here.
+# executable block. 1619 locator-like words failed a step; cycle 1123 named
+# every one of them in analysis/class-map-rejects.tsv, and not one had reached
+# the vtable test - every refusal happened on the name, so no class was lost.
 # class is a best-effort undecoration and is EMPTY for templates: the mangled
 # column is the authoritative name. bases are 'mangled@mdisp' in decimal.
 # columns: vtable class bases mangled

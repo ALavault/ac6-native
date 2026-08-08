@@ -175,7 +175,9 @@ if(Python3_Interpreter_FOUND)
   add_test(NAME ac6-retail-classmap
     COMMAND ${Python3_EXECUTABLE}
       ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_class_map.py
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map.tsv --require J2)
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map.tsv
+      --rejects ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map-rejects.tsv
+      --require J2)
 endif()
 
 # Points the same reader at a payload that is not committed - another mission,
