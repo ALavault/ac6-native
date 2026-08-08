@@ -5,6 +5,15 @@ means in practice, written from failures rather than from first principles —
 eight in the session that started it, and eight more in the session that doubled
 it.
 
+**Before anything else — the general case.** Every shape below is an instance of
+*a correct measurement whose reporting sentence widened its scope*: "this
+instruction exists" written as "it runs", "true of this corpus" as "true", "not
+in 786,122 instructions" as "not in the program". **Write the measurement, then
+the claim, then ask what stands between them.** If the answer is a step of
+reasoning, that step is a hypothesis and needs its own control. See *a correct
+measurement, over-read*, and its delegation variant *an agent's scope, written as
+the repository's*.
+
 **If you are here mid-investigation, find your symptom:**
 
 | the shape you are in | section |
@@ -21,6 +30,10 @@ it.
 | **`Ac6Xrefs` returned 0** for something you know is referenced | *the Xenon project has no reference database* — it is empty for everything, including globals the code demonstrably loads; use a text or force scan instead |
 | you drew a conclusion from **seven of eight** call sites | *a corollary about call sites* — an unexhausted list is indistinguishable from an exhausted one, because the evidence looks uniform until the exception |
 | your **positive** result confirms what you hoped | `.pdata` is incomplete, and a false positive gets challenged far less than a false negative |
+| your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
+| you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
+| your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
+| every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 
 ## The pattern
 

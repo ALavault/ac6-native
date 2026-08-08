@@ -69,3 +69,12 @@ The first verifies every cited artefact is in HEAD and matches the tree. The
 second verifies every `retail_addresses` entry is actually mentioned by one of
 that behaviour's own evidence files — a citation to nowhere is not a derivation.
 It caught its author three times on the day it was written.
+
+A third guards the documentation instead of the contracts:
+
+    python3 tools/audit_instrument_discipline_index.py INSTRUMENT_DISCIPLINE.md
+
+`INSTRUMENT_DISCIPLINE.md` is read mid-investigation, by scanning its symptom
+table — never front to back. A shape that is written but not indexed is, for
+that reader, not written, and this catches exactly that. Run it whenever you add
+a shape; it is instant.
