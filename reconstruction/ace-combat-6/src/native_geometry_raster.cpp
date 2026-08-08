@@ -113,36 +113,54 @@ bool NativeGeometryDatabase::load_verified_binary(
         std::uint32_t vertex_stride = 0;
         std::uint64_t max_vertex_end = 0;
         std::uint64_t total_indices = 0;
-        for (std::uint32_t polygon = 0; polygon < polygon_count; ++polygon) {
-          const std::size_t offset = polygon_descriptors + static_cast<std::size_t>(polygon) * 0x30u;
-          Polygon value;
-          if (!be32(offset, value.index_offset) || !be32(offset + 4u, value.vertex_offset) ||
-              !be16(offset + 0x0cu, value.vertex_count) || !be16(offset + 0x0eu, value.format) ||
-              !be16(offset + 0x20u, value.index_count) ||
-              value.index_offset > polygon_size ||
-              static_cast<std::uint64_t>(value.index_count) * 2u > polygon_size - value.index_offset) {
-            return false;
+        // Retail DEREFERENCES rec+0x2C to reach a record's descriptors
+        // (0x823555D0); this loop used to assume they are contiguous after the
+        // record array. On the extracted corpus the two walks agree for 537 of
+        // 537 files - measured before the change, not after - so following the
+        // pointer is behaviour-preserving here and strictly closer to retail on
+        // any file where they would not.
+        for (std::uint16_t object = 0; object < object_count; ++object) {
+          const auto record = container->Record(object);
+          if (!record.has_value()) return false;
+          for (std::uint16_t index = 0; index < record->descriptor_count; ++index) {
+            const auto descriptor = container->Descriptor(*record, index);
+            if (!descriptor.has_value()) return false;
+            Polygon value;
+            value.index_offset = descriptor->index_offset;
+            value.vertex_offset = descriptor->vertex_offset;
+            value.vertex_count = descriptor->vertex_count;
+            value.index_count = descriptor->index_count;
+            value.format = static_cast<std::uint16_t>(
+                (static_cast<std::uint16_t>(descriptor->format_hi) << 8) |
+                descriptor->format_lo);
+            if (value.index_offset > polygon_size ||
+                static_cast<std::uint64_t>(value.index_count) * 2u >
+                    polygon_size - value.index_offset) {
+              return false;
+            }
+            // Was four measured constants - 0x0611->28, 0x0613->32, 0x0711->44,
+            // 0x0721->52 - which cycle 1189 flagged as citing no retail address
+            // and cycle 1203 could not settle. Cycle 1217 derived them, and the
+            // container now computes the sum, so this reads the field rather
+            // than re-deriving it here.
+            const std::uint32_t stride = descriptor->vertex_stride;
+            if (stride == 0 || (vertex_stride != 0 && vertex_stride != stride)) {
+              return false;
+            }
+            vertex_stride = stride;
+            if (value.vertex_offset % stride != 0 || value.vertex_offset > vertex_size ||
+                static_cast<std::uint64_t>(value.vertex_count) * stride >
+                    vertex_size - value.vertex_offset ||
+                total_indices >
+                    std::numeric_limits<std::uint32_t>::max() - value.index_count) {
+              return false;
+            }
+            total_indices += value.index_count;
+            max_vertex_end = std::max(max_vertex_end,
+                static_cast<std::uint64_t>(value.vertex_offset) +
+                static_cast<std::uint64_t>(value.vertex_count) * stride);
+            polygons.push_back(value);
           }
-          // Was four measured constants - 0x0611->28, 0x0613->32, 0x0711->44,
-          // 0x0721->52 - which cycle 1189 flagged as citing no retail address
-          // and cycle 1203 could not settle. Cycle 1217 derived them: the
-          // renderer's declaration builder 0x82345100 sums the strides of two
-          // const .rdata tables, T8 at 0x820110F0 indexed by the format's high
-          // byte and T18 at 0x82011130 by its low byte. All four constants come
-          // back out of that formula, which was not fitted to them.
-          const std::uint32_t stride = ac6::retail::NdxrContainer::VertexStride(
-              static_cast<std::uint8_t>(value.format >> 8),
-              static_cast<std::uint8_t>(value.format & 0xFFu));
-          if (stride == 0 || (vertex_stride != 0 && vertex_stride != stride)) return false;
-          vertex_stride = stride;
-          if (value.vertex_offset % stride != 0 || value.vertex_offset > vertex_size ||
-              static_cast<std::uint64_t>(value.vertex_count) * stride > vertex_size - value.vertex_offset ||
-              total_indices > std::numeric_limits<std::uint32_t>::max() - value.index_count) return false;
-          total_indices += value.index_count;
-          max_vertex_end = std::max(max_vertex_end,
-              static_cast<std::uint64_t>(value.vertex_offset) +
-              static_cast<std::uint64_t>(value.vertex_count) * stride);
-          polygons.push_back(value);
         }
         if (vertex_stride == 0 || max_vertex_end == 0 ||
             (max_vertex_end + vertex_stride - 1u) / vertex_stride > std::numeric_limits<std::uint32_t>::max() ||
