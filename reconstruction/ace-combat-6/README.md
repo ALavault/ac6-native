@@ -20,7 +20,11 @@ player and four sub-missions all come out of the payload; the session runs 1800
 fixed ticks of input, flight, camera and HUD over it, and the mission ends when
 its own sub-mission script runs out — the command exits non-zero if it does not.
 
-`OUTPUT_DIR` receives `retail-session.json` and `retail-session-hud.ppm`.
+`OUTPUT_DIR` receives `retail-session-cli.json` and `retail-session-hud.ppm`.
+The name is not `retail-session.json`: that one belongs to
+`ac6-retail-session-tests`, which writes it only after its assertions pass
+and which the JF and JV contracts cite. Two producers under one name meant
+the last writer won (cycle 1269).
 
 The payload is retail content and is never shipped with this package. The
 session declares no external asset, so the runtime's `mission_ready` flag stays

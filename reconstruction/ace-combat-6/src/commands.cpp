@@ -566,7 +566,17 @@ int run_retail_session(const std::filesystem::path& payload_path,
   const ac6::MissionDebrief debrief = session->debrief();
   if (!target.write_ppm(output_dir / "retail-session-hud.ppm")) return 116;
 
-  std::ofstream report(output_dir / "retail-session.json");
+  // NOT "retail-session.json": that name belongs to ac6-retail-session-tests,
+  // which writes it only after its assertions pass and which the JF and JV
+  // contracts cite as evidence. Both commands used to write it, with different
+  // schemas, and the last writer won -- cycle 1269 watched ctest silently
+  // revert three fields this command had just produced, under contract hashes
+  // that had already been refreshed against them.
+  //
+  // A contract-cited artefact must come from a producer that REFUSES to write
+  // it when the assertions fail. This command prints; it does not assert. So it
+  // writes its own name.
+  std::ofstream report(output_dir / "retail-session-cli.json");
   if (!report) return 117;
   report << "{\n"
          << "  \"schema\": \"ac6.native-retail-session.v1\",\n"
