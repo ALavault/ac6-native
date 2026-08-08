@@ -188,8 +188,18 @@ The names mislead, so plainly:
 
    Cycle 1148 said the binding needed "the external definition table identified
    and parsed first" and looked for it in the archives at large. It was in the
-   mission's own bundle the whole time. Still to derive: the class-byte → entry-index join, and MATE material →
-   texture id → GIDX.
+   mission's own bundle the whole time. **The index space is derived (cycle 1158).** `0x8228E9B8` is the entry
+   getter — count at header `+0x04`, offset table stride 4, `entry = base +
+   table[index]`, bound-checked — which is the MDLP layout exactly, established
+   independently by disassembly and by parsing the file. `0x820A7070` walks the
+   whole container registering every entry, then indexes **the same container**
+   with bytes `+0x61`/`+0x62`, so those bytes are MDLP entry indices. All four
+   calls to the getter in the image are in that function and all use the same
+   container.
+
+   The gap is now one record: byte `+0x61` is zero in all 230 unit records and
+   all 434 Obj node blocks (cycle 1148), so it lives on a third structure not yet
+   identified. Also still to derive: MATE material → texture id → GIDX.
    Walked with `tools/ac6_fhm.py` rather than regex-scanned: **94/94 parse with
    zero parser notes**; 47 entries carry geometry, 46 of those pair NDXR 1:1
    with MATE and entry 88 does not (9 NDXR, 5 MATE); 82 entries hold exactly one
