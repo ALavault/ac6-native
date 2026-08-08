@@ -104,9 +104,22 @@ struct ScenarioObjScalars {
 // Measured over Mission 01's 434 Obj records: `primary` takes 38 non-sentinel
 // values (0, 2, 4 ... 74, only 19 and 43 odd) with 0xFF in 123; `secondary` is
 // `primary + 1` in 281 records and is never set when `primary` is the sentinel;
-// every value is below the directory's 94 entries. What the second entry is -
-// a variant, a damaged model, a level of detail - is NOT established, and this
-// port carries the pair without interpreting it.
+// every value is below the directory's 94 entries.
+//
+// What the pair means was measured in cycle 1173 rather than guessed. Mission
+// 01's directory holds 94 entries of which 47 carry geometry, and:
+//
+//     the 38 primaries    land in a geometry-bearing entry   38 of 38
+//     the 38 secondaries  land in a geometry-bearing entry    0 of 38
+//
+// A perfect partition, in both directions. So `primary` addresses the mesh
+// bundle and `secondary` the texture bundle beside it - which is why the two
+// indices are consecutive and why `primary` is almost always even.
+//
+// That is a measurement over one mission, not a reading of the code: 0x820A7070
+// performs two identical lookups and nothing in it distinguishes their roles.
+// The struct therefore still carries the two bytes without acting on the
+// distinction.
 struct ScenarioModelBinding {
   std::uint8_t primary{kNoModel};    // data +0x61
   std::uint8_t secondary{kNoModel};  // data +0x62
