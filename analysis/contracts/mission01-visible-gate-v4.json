@@ -338,7 +338,7 @@
    },
    "ndxr_container": {
     "status": "passed",
-    "statement": "the native product walks the retail NDXR container with the retail loader's own layout - identity, four section extents, the fixed 0x30 record array, the string table, and the material and texture-reference layer - and stops at the polygon descriptor, which the product's older measured reader and this derivation disagree about with neither mapping controlled",
+    "statement": "the native product walks the retail NDXR container with the retail loader's own layout - identity, four section extents, the fixed 0x30 record array, the string table, the material and texture-reference layer, and the polygon descriptor with the vertex stride the renderer's own declaration builder computes",
     "retail_addresses": [
      "0x8234CA28",
      "0x8233EF48",
@@ -365,7 +365,12 @@
      "0x821FBA78",
      "0x821FC070",
      "0x82364518",
-     "0x823453D0"
+     "0x823453D0",
+     "0x82345100",
+     "0x820110F0",
+     "0x82011130",
+     "0x8233E6B0",
+     "0x82345098"
     ],
     "evidence": [
      {
@@ -385,22 +390,22 @@
      {
       "kind": "native-test",
       "path": "reports/mission01-retail/ndxr-container.json",
-      "sha256": "03e34ef4f35461485870b7f0ea22074f1354ee8c022417caab69f583aec197e6",
-      "size": 655,
+      "sha256": "d55c313a6a38b533460988f7898c11b567f9348dd475039e75d71bd86e2b9690",
+      "size": 908,
       "claim": "537 files, 13,014 records, 13,014 materials and 13,014 texture references, 0 refused, 0 unnamed, every relocation and resolve guard clear on disk, every parameter chain terminating, the rival string base naming 0 files against the derived base naming 537, and the rival stride 0x10 terminating 0 times - with the 0x20 rival reported and explicitly NOT asserted, because at texture_count == 1 it is not discriminated"
      },
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/include/ac6/retail_ndxr_container.h",
-      "sha256": "b7f9c99b8ab77ec18ec96d39b2e6d51e641204e043aaf19d0bd04eee1a21e8cb",
-      "size": 11701,
+      "sha256": "1c23851a00dbb1d3a360cac300a1b1647d23e2715a997ee43deac8257fc17202",
+      "size": 13760,
       "claim": "include/ac6/retail_ndxr_container.h carries the chain stage by stage with the address establishing each, states the two deliberate deviations from retail - it does not relocate the buffer and it checks the declared size, which retail does not - and names what it refuses to port: the polygon descriptor, because cycle 1203 showed neither field mapping is controlled"
      },
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/src/retail_ndxr_container.cpp",
-      "sha256": "cb0192a3e1f07563e37eaeb0b60e6835d5038db37f9d0493c1e9f5de7289a506",
-      "size": 8670,
+      "sha256": "5db970fcee2b9d556b5c026fbce8ba91db3644f55b131d495389cb84637c47fd",
+      "size": 10198,
       "claim": "src/retail_ndxr_container.cpp implements Open, Record, Material, TextureRef and ParameterChainLength against those addresses, in 64-bit arithmetic so a hostile file cannot wrap the section adds"
      },
      {
@@ -409,6 +414,13 @@
       "claim": "the vertex and index blocks located - 0x82362190 binds section 2 as a vertex buffer and section 1 as a D3DFMT_INDEX16 index buffer - with the reason five cycles missed it (the object is aliased at ctx = this + 0x10) and the extent control that discriminates the stride at 178/179 against 0/179 for both rivals",
       "sha256": "d6f140e5f720bcd9265621c89ec6bcf8c0ba8976973160723fc63d72c20a0548",
       "size": 8309
+     },
+     {
+      "kind": "static",
+      "path": "reports/cycle-1217-the-stride-is-derived-and-cycle-1198-had-half-of-it.md",
+      "claim": "the vertex stride derived rather than corroborated: 0x828711F0 is field +0x170 of the renderer object, its writer 0x82345100 runs eight instructions before the device is published, and stride = T8[hi&0xF] + T18[((lo>>4)-1)*6+(lo&0xF)] from two const .rdata tables - reproducing all four constants the product carried, with both one-term-dropped rivals scoring 0 of 179 on the extent control",
+      "sha256": "7be6fdb9b47d2694547f578ab7703ce2c87f76a85db2fb78c4e7dc8ec2905a17",
+      "size": 5575
      }
     ]
    }

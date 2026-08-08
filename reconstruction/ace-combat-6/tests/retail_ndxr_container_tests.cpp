@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 #include <iterator>
 #include <string>
 #include <system_error>
@@ -111,7 +112,32 @@ struct Totals {
   std::uint64_t chain_rival_10 = 0;
   std::uint64_t chain_rival_20 = 0;
   std::uint64_t single_texture = 0;
+  std::uint64_t descriptors = 0;
+  std::uint64_t stride_known = 0;
+  std::uint64_t vertex_fits = 0;
+  std::uint64_t extent_exact_derived = 0;
+  std::uint64_t extent_exact_t8_only = 0;
+  std::uint64_t extent_exact_t18_only = 0;
 };
+
+// The two terms of cycle 1217's rule, so the test can score the rivals that are
+// the rule with one term dropped. Those are the ones worth beating: a constant
+// or a swapped-byte reading is easy to kill, but T8 alone scores 4083 of 4338 on
+// divisibility and dies only on the extent.
+std::uint32_t T8Only(std::uint8_t hi, std::uint8_t lo) {
+  static constexpr std::uint16_t kT8[8] = {16, 32, 48, 64, 16, 24, 20, 36};
+  (void)lo;
+  return (hi & 0x0Fu) < 8 ? kT8[hi & 0x0Fu] : 0;
+}
+std::uint32_t T18Only(std::uint8_t hi, std::uint8_t lo) {
+  static constexpr std::uint16_t kT18[18] = {4,  8,  8,  12, 12, 16, 8,  16, 12,
+                                             20, 16, 24, 4,  8,  8,  12, 12, 16};
+  (void)hi;
+  const unsigned h = static_cast<unsigned>(lo) >> 4;
+  if (h == 0) return 0;
+  const unsigned j = (h - 1) * 6 + (lo & 0x0Fu);
+  return j < 18 ? kT18[j] : 0;
+}
 
 // Lifted out of main to stay inside the repository's per-function line budget,
 // which ac6-cpp-complexity enforces at 220. Returns false on a write failure so
@@ -144,7 +170,13 @@ bool WriteMetrics(const char* path, std::size_t file_count,
                "  \"rival_stride_0x20_terminates\": %llu,\n"
                "  \"rival_stride_0x20_asserted\": false,\n"
                "  \"rival_stride_0x20_note\": \"not discriminated at "
-               "texture_count == 1; see ChainLengthWithStride\"\n"
+               "texture_count == 1; see ChainLengthWithStride\",\n"
+               "  \"descriptors\": %llu,\n"
+               "  \"descriptors_stride_resolved\": %llu,\n"
+               "  \"descriptors_vertex_extent_in_bounds\": %llu,\n"
+               "  \"files_vertex_extent_exact_derived\": %llu,\n"
+               "  \"files_vertex_extent_exact_rival_t8_only\": %llu,\n"
+               "  \"files_vertex_extent_exact_rival_t18_only\": %llu\n"
                "}\n",
                file_count, static_cast<unsigned long long>(totals.opened),
                static_cast<unsigned long long>(totals.refused),
@@ -161,9 +193,42 @@ bool WriteMetrics(const char* path, std::size_t file_count,
                static_cast<unsigned long long>(totals.texture_resolved),
                static_cast<unsigned long long>(totals.chain_ok),
                static_cast<unsigned long long>(totals.chain_rival_10),
-               static_cast<unsigned long long>(totals.chain_rival_20));
+               static_cast<unsigned long long>(totals.chain_rival_20),
+               static_cast<unsigned long long>(totals.descriptors),
+               static_cast<unsigned long long>(totals.stride_known),
+               static_cast<unsigned long long>(totals.vertex_fits),
+               static_cast<unsigned long long>(totals.extent_exact_derived),
+               static_cast<unsigned long long>(totals.extent_exact_t8_only),
+               static_cast<unsigned long long>(totals.extent_exact_t18_only));
   std::fclose(out);
   return true;
+}
+
+// Lifted out of main for the 220-line per-function budget ac6-cpp-complexity
+// enforces. Accumulates the descriptor totals for one record and folds the three
+// competing vertex extents - the derived rule and the two rivals that are the
+// rule with one term dropped.
+void AccumulateDescriptors(const ac6::retail::NdxrContainer& container,
+                           const ac6::retail::NdxrRecord& record,
+                           std::uint64_t vertex_length, Totals* totals,
+                           std::uint64_t* derived_extent,
+                           std::uint64_t* t8_extent, std::uint64_t* t18_extent) {
+  for (std::uint16_t d = 0; d < record.descriptor_count; ++d) {
+    const auto desc = container.Descriptor(record, d);
+    if (!desc.has_value()) continue;
+    ++totals->descriptors;
+    if (desc->vertex_stride != 0) ++totals->stride_known;
+    const std::uint64_t count = desc->vertex_count;
+    const std::uint64_t end = desc->vertex_offset + count * desc->vertex_stride;
+    if (end <= vertex_length) ++totals->vertex_fits;
+    *derived_extent = std::max(*derived_extent, end);
+    *t8_extent = std::max(
+        *t8_extent,
+        desc->vertex_offset + count * T8Only(desc->format_hi, desc->format_lo));
+    *t18_extent = std::max(
+        *t18_extent,
+        desc->vertex_offset + count * T18Only(desc->format_hi, desc->format_lo));
+  }
 }
 
 bool Check(bool condition, const char* what) {
@@ -217,6 +282,11 @@ int main(int argc, char** argv) {
       continue;
     }
     ++totals.opened;
+    // 0x82362190 gives the vertex buffer Length = [buf+0x18]. With [buf+0x1C]
+    // zero in every shipped file, that is exactly end - second.
+    const std::uint64_t vertex_length =
+        container->sections().end - container->sections().second;
+    std::uint64_t derived_extent = 0, t8_extent = 0, t18_extent = 0;
 
     // Cycle 1195: every shipped file carries 0x200, which is why Open() serves
     // that code alone.
@@ -234,6 +304,9 @@ int main(int argc, char** argv) {
       // field is not what the derivation says it is.
       if (record->relocated) ++totals.relocated;
       if (record->name.empty()) ++totals.unnamed;
+
+      AccumulateDescriptors(*container, *record, vertex_length, &totals,
+                            &derived_extent, &t8_extent, &t18_extent);
 
       // Cycle 1207: the four slots are MATERIALS. Only slot 0 is ever used in
       // this corpus, so the loop covers all four and the count proves it.
@@ -264,6 +337,10 @@ int main(int argc, char** argv) {
         }
       }
     }
+
+    if (derived_extent == vertex_length) ++totals.extent_exact_derived;
+    if (t8_extent == vertex_length) ++totals.extent_exact_t8_only;
+    if (t18_extent == vertex_length) ++totals.extent_exact_t18_only;
 
     // THE DISCRIMINATING CONTROL, cycle 1196. The body base is
     // buf + [buf+0x10] + 0x30, and dropping the 0x30 still lands inside the
@@ -306,6 +383,17 @@ int main(int argc, char** argv) {
   std::printf("  parameter chain terminates, stride 0x18   : %llu of %llu\n",
               static_cast<unsigned long long>(totals.chain_ok),
               static_cast<unsigned long long>(totals.materials));
+  std::printf("  descriptors=%llu stride resolved=%llu vertex block fits=%llu\n",
+              static_cast<unsigned long long>(totals.descriptors),
+              static_cast<unsigned long long>(totals.stride_known),
+              static_cast<unsigned long long>(totals.vertex_fits));
+  std::printf("  files whose furthest vertex lands exactly on [buf+0x18]:\n");
+  std::printf("    derived T8[i]+T18[j] : %llu of %llu\n",
+              static_cast<unsigned long long>(totals.extent_exact_derived),
+              static_cast<unsigned long long>(totals.opened));
+  std::printf("    rival T8 alone       : %llu   rival T18 alone : %llu\n",
+              static_cast<unsigned long long>(totals.extent_exact_t8_only),
+              static_cast<unsigned long long>(totals.extent_exact_t18_only));
   std::printf("  materials with texture_count == 1         : %llu of %llu\n",
               static_cast<unsigned long long>(totals.single_texture),
               static_cast<unsigned long long>(totals.materials));
@@ -337,6 +425,17 @@ int main(int argc, char** argv) {
   // If the rival ever passes, the +0x30 loses its only discriminator and the
   // derivation is weaker than the header claims.
   ok = Check(totals.rival_named == 0, "the rival base produced a name") && ok;
+  ok = Check(totals.stride_known == totals.descriptors,
+             "a descriptor's format code fell outside T8/T18") && ok;
+  ok = Check(totals.vertex_fits == totals.descriptors,
+             "a descriptor's vertex extent leaves [buf+0x18]") && ok;
+  // Cycle 1217's control. The rivals are the derived rule with one term
+  // dropped - the ones worth beating - and both must reach zero while the
+  // derived rule names most of the corpus.
+  ok = Check(totals.extent_exact_t8_only == 0, "rival T8-alone matched a file") && ok;
+  ok = Check(totals.extent_exact_t18_only == 0, "rival T18-alone matched a file") && ok;
+  ok = Check(totals.extent_exact_derived > totals.opened / 2,
+             "the derived stride did not land exactly for most files") && ok;
 
   if (!ok) return 1;
 

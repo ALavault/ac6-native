@@ -17,5 +17,11 @@
   "rival_stride_0x10_terminates": 0,
   "rival_stride_0x20_terminates": 13014,
   "rival_stride_0x20_asserted": false,
-  "rival_stride_0x20_note": "not discriminated at texture_count == 1; see ChainLengthWithStride"
+  "rival_stride_0x20_note": "not discriminated at texture_count == 1; see ChainLengthWithStride",
+  "descriptors": 13014,
+  "descriptors_stride_resolved": 13014,
+  "descriptors_vertex_extent_in_bounds": 13014,
+  "files_vertex_extent_exact_derived": 534,
+  "files_vertex_extent_exact_rival_t8_only": 0,
+  "files_vertex_extent_exact_rival_t18_only": 0
 }

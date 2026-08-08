@@ -218,4 +218,38 @@ std::optional<std::uint32_t> NdxrContainer::ParameterChainLength(
   return std::nullopt;
 }
 
+std::uint32_t NdxrContainer::VertexStride(std::uint8_t format_hi,
+                                          std::uint8_t format_lo) noexcept {
+  // Read from 0x820110F0 and 0x82011130; each record's first u16 is the stride.
+  static constexpr std::uint16_t kT8[8] = {16, 32, 48, 64, 16, 24, 20, 36};
+  static constexpr std::uint16_t kT18[18] = {4,  8,  8,  12, 12, 16, 8,  16, 12,
+                                             20, 16, 24, 4,  8,  8,  12, 12, 16};
+  const unsigned i = format_hi & 0x0Fu;
+  const unsigned high_nibble = static_cast<unsigned>(format_lo) >> 4;
+  if (i >= 8 || high_nibble == 0) return 0;
+  const unsigned j = (high_nibble - 1) * 6 + (format_lo & 0x0Fu);
+  if (j >= 18) return 0;
+  return static_cast<std::uint32_t>(kT8[i]) + kT18[j];
+}
+
+std::optional<NdxrDescriptor> NdxrContainer::Descriptor(
+    const NdxrRecord& record, std::uint16_t index) const noexcept {
+  if (bytes_ == nullptr || index >= record.descriptor_count) return std::nullopt;
+  const std::uint64_t at =
+      static_cast<std::uint64_t>(record.descriptor_offset) +
+      static_cast<std::uint64_t>(index) * kDescriptorStride;
+  if (at + kDescriptorStride > size_) return std::nullopt;
+
+  const std::uint8_t* d = bytes_ + at;
+  NdxrDescriptor out;
+  out.index_offset = Be32(d + 0x00);
+  out.vertex_offset = Be32(d + 0x04);
+  out.vertex_count = Be16(d + 0x0C);
+  out.format_hi = d[0x0E];
+  out.format_lo = d[0x0F];
+  out.index_count = Be16(d + 0x20);
+  out.vertex_stride = VertexStride(out.format_hi, out.format_lo);
+  return out;
+}
+
 }  // namespace ac6::retail

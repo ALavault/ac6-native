@@ -169,6 +169,19 @@ struct NdxrMaterial {
   bool resolved{};                 // +0x08 bit 0x4000, expected false on disk
 };
 
+// 0x82364518, the draw. Cycle 1203 could not settle this record's field mapping
+// and cycle 1212 did, out of the draw rather than the loader: the loader never
+// touches geometry because 0x82362190 binds the whole section once.
+struct NdxrDescriptor {
+  std::uint32_t index_offset{};   // +0x00; StartIndex is this >> 1 (823648c4)
+  std::uint32_t vertex_offset{};  // +0x04; added to the vertex buffer base
+  std::uint16_t vertex_count{};   // +0x0C
+  std::uint8_t format_hi{};       // +0x0E, indexes T8
+  std::uint8_t format_lo{};       // +0x0F, indexes T18
+  std::uint16_t index_count{};    // +0x20, 16-bit indices, triangle strips
+  std::uint32_t vertex_stride{};  // T8[i] + T18[j]; 0 when the code is out of range
+};
+
 struct NdxrRecord {
   std::uint16_t index{};
   std::string_view name{};             // rec+0x20 resolved against the table
@@ -192,6 +205,31 @@ class NdxrContainer final {
   bool was_gidx_wrapped() const noexcept { return gidx_wrapped_; }
 
   std::optional<NdxrRecord> Record(std::uint16_t index) const noexcept;
+
+  // The polygon descriptor. Held back until cycle 1217, because until the stride
+  // was derived the product's own reader and this one disagreed with neither
+  // mapping controlled (cycle 1203).
+  std::optional<NdxrDescriptor> Descriptor(const NdxrRecord& record,
+                                           std::uint16_t index) const noexcept;
+
+  // 0x82345100 builds the vertex declarations from two const .rdata tables and
+  // stores the sum of their strides:
+  //
+  //     T8  @ 0x820110F0, 8 records  {u16 stride; u16 count; const elems*}
+  //         strides 16, 32, 48, 64, 16, 24, 20, 36      indexed by hi & 0xF
+  //     T18 @ 0x82011130, 18 records, same record shape
+  //         strides 4,8,8,12,12,16, 8,16,12,20,16,24, 4,8,8,12,12,16
+  //                                indexed by ((lo>>4)-1)*6 + (lo&0xF)
+  //
+  //     823451d4  lhz r10,-0x4(r29)   ; T18[j].stride
+  //     823451e0  add r10,r10,r7      ; + T8[i].stride
+  //     823451e4  stw r10,0x4(r31)
+  //
+  // Returns 0 for a code outside either table rather than guessing. Note that
+  // 0x82012C40 carries T8's eight values in another layout - cycle 1198 read it
+  // there and mistook the first term for the whole stride.
+  static std::uint32_t VertexStride(std::uint8_t format_hi,
+                                    std::uint8_t format_lo) noexcept;
 
   // The material at one of a descriptor's four slots, or nullopt when the slot
   // is null or the material does not fit. `descriptor_index` counts within the
