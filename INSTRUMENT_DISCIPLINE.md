@@ -556,3 +556,45 @@ uniformly and sent someone looking for the reader.
 
 A zero tells you where something is not. It never tells you what is not
 happening.
+
+## The nineteenth shape: the collision in the prose
+
+Cycle 1244 wrote that `0x820A7070` writes *"on each unit `+0x184`, `+0x170`,
+`+0x118`, `+0x188` — and on the leader `+0xD8`, `+0xDC`, `+0xE0`, `+0xE4`"*.
+
+Every offset is right. Every one was read from an instruction. And the sentence
+is wrong, because **"unit" names two different class hierarchies**:
+
+- the loop's `r31`, from factory slot `+0x14`, is a **`galib::CGaObj`** — it gets
+  the parent pointer at `+0x188`;
+- `r16`, from slot `+0x10` and the only object the function registers, is an
+  **`ACE6::CAce6Unit`** — it gets the child array and the order FSM.
+
+Both are RTTI roots, so they share no base. `+0xD0`, `+0xD4` and `+0xDC` collide
+too — integers in one hierarchy, floats in the other — and they disagree about
+where their own matrix sub-object lives.
+
+A reader following that sentence would put the child array and the parent pointer
+on the same object. They are not on the same object.
+
+### Why it needs its own entry
+
+The fifteenth shape — *the displacement collision* — is this failure in a **scan**,
+and its fix is mechanical: read the four lines around the hit, because a field
+belongs to the structure its neighbours belong to.
+
+This is the same failure in a **paragraph**, and no reading of neighbours
+catches it. The listing was read correctly; the collision entered when two
+correctly-read objects were given one English noun.
+
+### The rule
+
+**Name the class, not the role.** "The unit", "the object", "the entity", "the
+manager" are all free to denote two things in one flow, and a report is where
+that becomes invisible — a disassembly at least forces you to write down a
+register.
+
+When a cycle describes several offsets on "the X", check that every one was read
+from the same register, and if it was not, say which class each belongs to. Cycle
+1250 needed a vtable length and an RTTI walk to separate two objects that four
+reports had been calling by the same word.
