@@ -154,10 +154,23 @@ The names mislead, so plainly:
    atlas looked intelligible — and its alpha has always been wrong. Derived
    census over 692 wrappers: **656 BC3, 22 ARGB8888, 12 BC1, 2 BC2**.
 
-   Still open before a decoder is worth writing: the **surface layout**.
-   `payload / (W·H·word1/4)` is 1.0 for only 96 wrappers, massing on 2, 4, 12,
-   16 with a 4/3 tail — mips and cube faces are now readable, so this is
-   finishable, but guessing it would be the same mistake one field later.
+   **Half the surface layout is closed (cycle 1151).** For a block texture with
+   one level and no cube flag, `payload = pad32(ceil(W/4)) · pad32(ceil(H/4)) ·
+   bytes_per_block`, where `pad32` rounds to the 32-block Xenos tile and
+   `bytes_per_block` is 8 for BC1, 16 for BC2/BC3. **308 of 308 exact, zero
+   mismatches, 38 shapes of which 26 non-power-of-two** — the odd shapes are what
+   make it a test, since `pad32` is a no-op on powers of two.
+
+   The **mip chain is still open**. Groups are internally consistent but the
+   naive per-level tile model overshoots: 512×512/10 levels holds 393,216 where
+   it predicts 458,752, and 256×256/9 holds 131,072 against 196,608. The tails
+   are exact powers of two, so levels below some threshold use a fixed
+   granularity; a 32×16-block minimum fits the 256×256 tail and misses the
+   512×512 one by a level, so no rule is asserted.
+
+   Mission 01's atlases are the single-level population, so a decoder restricted
+   to it is buildable now and would mis-address only the 4096×4096 terrain mip
+   tails — which is where JG will look.
 
    Then: port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, and close
    MATE batch→material→texture→NTXR in the runtime.
