@@ -137,6 +137,13 @@ report calls word 5, in that order.
 The remaining fields stay unnamed, and the **surface layout is still unproven** -
 `payload / (W · H · word1/4)` equals 1 for only 96 of 692 wrappers.
 
+**The retained wrapper is not a clean single-surface file (cycle 1152).**
+`exports/first-linked-0x10002215.ntxr` declares 512x512, one level, BC2 - a
+262,144-byte surface - and carries 507,904 bytes after its data offset. The name
+says why: it is cut at a container boundary, not at the end of the surface. The
+native decoder refuses it for that reason, and `probe_ntxr_bc.py` accepts it only
+because it never checks a size.
+
 Consequence for `scripts/probe_ntxr_bc.py`: the wrapper it was validated on,
 GIDX `0x10002215`, has format code 1, whose table entry gives low6 `0x13` =
 **k_DXT2_3 (BC2/DXT3)**. The probe decodes BC3/DXT5. The two formats share their

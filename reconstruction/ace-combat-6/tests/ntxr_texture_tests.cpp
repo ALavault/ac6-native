@@ -151,6 +151,15 @@ int main(int argc, char** argv) {
   REQUIRE(decoded_formats[ac6::retail::kXenosDxt2_3] == 2);
   REQUIRE(decoded_formats.size() == 3);
 
+  // The decoded pixels themselves, pinned. Every assertion above is about
+  // counts and would survive a decoder that emitted the wrong colours; this
+  // one would not. The value was cross-validated once against an independent
+  // implementation - scripts/probe_ntxr_bc.py, run over the corpus BC2 wrapper
+  // idx_0119/022_FHM/006_FHM/006_NTXR.ntxr - which agreed on 65536 of 65536
+  // RGB texels and differed on 3286 alpha texels, exactly as BC2-versus-BC3
+  // requires.
+  REQUIRE(corpus_hash == 0x949b3bb0fb7dcdfbull);
+
   std::printf("ntxr decoded=%zu refused=%zu shapes=%zu npo2=%zu\n", decoded,
               refused_total, shapes.size(), non_power_of_two);
 
