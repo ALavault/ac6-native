@@ -247,10 +247,21 @@ struct RetailWorld {
 // Cycle 1122 read 0x822953F0 and found where the payload's world coordinates
 // live: not in the Obj sub-record, but in the tag-2 orders - 890 of them in
 // Mission 01, spanning tens of thousands of world units. See
-// retail_world_position.h. What that leaves open is precisely this field: the
-// Obj sub-record is a different record with a different layout, no mode byte and
-// no anchor pair, and no consumer of it has been read. So the spawn position
-// stays an offset, and now says what it is not rather than only what it is.
+// retail_world_position.h.
+//
+// Cycle 1124 then read the Obj sub-record's own consumer, 0x820A7070, and the
+// answer is sharper and less comfortable: it does not read these three floats
+// at all. Of the ObjBin data block it reads exactly three bytes - +0x56, the
+// factory key, and +0x61 and +0x62, two unit slots - and it hands the record
+// itself to the object, whose vtable slot +0x50 (0x8228F678) files it at
+// object+0x180 and touches no coordinate. Every one of the 434 records takes
+// that same path, and every object leaves the loader with the identity
+// transform and a translation of zero.
+//
+// So this field is not "a relative offset where a world coordinate should be".
+// It is a number retail does not consult on this path, filled because the
+// runtime needs a position and nothing derived is available. Who moves the
+// objects afterwards is not established.
 //
 // Durability has no source in the payload at all and is left at 1.
 std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,

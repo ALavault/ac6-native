@@ -44,6 +44,23 @@
 // [-63000, 55600], while its 79 mode-1 records have median 0 on all three axes
 // and span at most a few thousand. World coordinates on one side, offsets on
 // the other, exactly as the branch requires.
+//
+// Cycle 1124 anchored those offsets to a layout instead of to one function's
+// habits. The unit constructor at 0x820A77BC-0x820A7818 writes three constant
+// vectors into a fresh object and zeroes a fourth:
+//
+//     object + 0x20  <- (1,0,0,0)   at 0x8204F7F0
+//     object + 0x30  <- (0,1,0,0)   at 0x8204F800
+//     object + 0x40  <- (0,0,1,0)   at 0x8204F810
+//     object + 0x50  <- 0, 0, 0     stored one float at a time
+//
+// which is a four-row transform - X, Y, Z, translation - initialised to the
+// identity. And 0x82270380 returns object+0x10 rather than the object
+// (0x82270434: addi r3,r31,0x10), so this resolver's +0x30 and +0x38 are the
+// object's +0x40 and +0x48 - the forward row's x and z, which is what a heading
+// of atan2(x, z) needs - and its +0x40, +0x44, +0x48 are the object's +0x50,
+// +0x54, +0x58: the translation. Everything cycle 1122 read lands where the
+// constructor puts it.
 
 #include "ac6/retail_scenario.h"
 
