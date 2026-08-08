@@ -153,12 +153,25 @@ void write_capture_bundle(const std::filesystem::path& directory,
   REQUIRE(debrief_target.resize(640, 360) && debrief_target.clear(0xFF000000u, 1.0f));
   ac6::NativeHudRenderer live_hud, debrief_hud;
   ac6::retail::RetailSessionFrame frame;
+  std::size_t live_markers = 0, debrief_markers = 0;
   for (std::size_t tick = 1; tick <= kTicks; ++tick) {
     if (tick % 300 == 0 && !session->script().ended()) (void)session->advance_script();
     frame = session->tick(kFixedDt, session_input(tick));
-    if (tick == 900) REQUIRE(live_hud.render(live_target, frame.world, session->execution()));
+    if (tick == 900) {
+      // World first, HUD over it - the order the geometry path uses.
+      live_markers = session->render_world_markers(live_target, frame.world);
+      REQUIRE(live_hud.render(live_target, frame.world, session->execution()));
+    }
   }
+  debrief_markers = session->render_world_markers(debrief_target, frame.world);
   REQUIRE(debrief_hud.render(debrief_target, frame.world, session->execution()));
+
+  // The world the container built is now visible, and measured. Every marker
+  // is a unit the retail faction table placed; none is invented, and the count
+  // is bounded by the 230 the payload declares.
+  REQUIRE(live_markers > 0 && live_markers <= 230);
+  REQUIRE(debrief_markers > 0 && debrief_markers <= 230);
+  REQUIRE(live_target.world_marker_writes() > 0);
 
   const ac6::NativeHudSnapshot& live = live_hud.snapshot();
   REQUIRE(live.tick == 900);
@@ -188,7 +201,11 @@ void write_capture_bundle(const std::filesystem::path& directory,
           << "  \"mission_id\": " << kMissionId << ",\n"
           << "  \"fixture\": false,\n"
           << "  \"source\": \"retail scenario container only, no manifest\",\n"
-          << "  \"width\": 640,\n  \"height\": 360,\n";
+          << "  \"width\": 640,\n  \"height\": 360,\n"
+          << "  \"world_markers_live\": " << live_markers << ",\n"
+          << "  \"world_markers_debrief\": " << debrief_markers << ",\n"
+          << "  \"world_marker_writes\": " << live_target.world_marker_writes() << ",\n"
+          << "  \"world_markers_are_diagnostic\": true,\n";
   write_snapshot_json(metrics, "live", live, live_target.readback());
   metrics << ",\n";
   write_snapshot_json(metrics, "debrief", done, debrief_target.readback());

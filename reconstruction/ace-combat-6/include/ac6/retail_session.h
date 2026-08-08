@@ -76,6 +76,17 @@ class RetailSession final {
   // moves an objective, and the retail cursor is what drives it.
   ScriptAdvance advance_script() noexcept;
 
+  // Draws the world the container built: one marker per active unit, coloured
+  // by the faction byte the retail faction table gave it, the local player
+  // distinguished. Returns how many landed on screen.
+  //
+  // Markers are a diagnostic lane, not geometry - see
+  // NativeRenderTarget::draw_world_marker. The retail session knows where 230
+  // units are long before it knows what they look like, and this is what makes
+  // the placement work checkable instead of merely asserted.
+  std::size_t render_world_markers(NativeRenderTarget& target,
+                                   const WorldFrame& frame) const noexcept;
+
   MissionDebrief debrief() const { return execution_->debrief(); }
   ScenarioState state() const noexcept { return execution_->scenario().state(); }
 

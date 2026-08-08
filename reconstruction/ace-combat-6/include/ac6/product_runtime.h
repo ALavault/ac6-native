@@ -927,6 +927,20 @@ class NativeRenderTarget final {
   bool resize(std::uint32_t width, std::uint32_t height);
   bool clear(std::uint32_t color, float depth);
   bool mark_world_asset(const WorldFrame& frame, AssetId asset, std::uint32_t ordinal) noexcept;
+  // Projects a world position with the same camera the geometry path uses and
+  // plots a depth-tested square of `radius` pixels. Returns false when the
+  // point is behind the camera or outside the viewport, so a caller can count
+  // how many of its world positions actually landed.
+  //
+  // This is a diagnostic lane and says so: a marker is not a drawable, carries
+  // no material, no texture and no topology, and no capture containing one may
+  // be offered as visual parity. It exists because the retail-driven session
+  // knows where 230 units are long before it knows what they look like, and a
+  // position you cannot see is a position you cannot check.
+  bool draw_world_marker(const WorldFrame& frame, const CombatVector& position,
+                         std::uint32_t color, std::uint32_t radius,
+                         const MissionCameraDefinition* camera = nullptr) noexcept;
+  std::uint64_t world_marker_writes() const noexcept { return world_marker_writes_; }
   bool draw_world_asset(const WorldFrame& frame, const MissionDrawable& drawable,
                         std::uint32_t ordinal) noexcept;
   bool draw_world_geometry(const WorldFrame& frame, const MissionDrawable& drawable,
@@ -998,6 +1012,7 @@ class NativeRenderTarget final {
   std::uint64_t raster_writes_{};
   NativeRasterMode raster_mode_{NativeRasterMode::Filled};
   std::uint64_t diagnostic_point_writes_{};
+  std::uint64_t world_marker_writes_{};
   std::uint64_t filled_fragment_writes_{};
   std::uint32_t raster_stamp_{};
   std::vector<NativeRasterDrawableMetrics> raster_metrics_;

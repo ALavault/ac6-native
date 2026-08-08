@@ -235,23 +235,23 @@
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/hud-debrief.png",
-            "sha256": "8a54594ca14e53f91839c04117609acb33f698b6c602a28cb97deac55234f348",
-            "size": 693,
+            "sha256": "51bb2747c5759095c77e6d823cce96439608f538aaa65653904a2eeace427dd6",
+            "size": 959,
             "claim": "the HUD over the retail-built world once the script has run out: outcome panel shown, 4 of 4 sub-missions complete, 230 units still active"
           },
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/retail-session-hud.json",
-            "sha256": "e252506c9ccea6a05050724d31edfde9a574bd5f5f6fb539ac12f4e7a7ed4de1",
-            "size": 1101,
+            "sha256": "6779d64be39c9a98131d1462f862816fe9557f5cd64b5d7f94081cfb0139cb99",
+            "size": 1229,
             "claim": "the numbers the test asserted before either image was written - two captures at tick 900 and tick 1800, differing colour hashes, 1276 and 1521 HUD pixel writes, no fixture"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "9861ceaf75413f597186b3932c37c78007a93609f71538373c56691f96485d5b",
+            "sha256": "9aa7f3ce8a217350b7dd73d5ade1e0167256960b13ada5b9c5d900c4a7cb7c08",
             "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from 0x820A7420's category 2, and installs the container's own combat states instead of the developer spawn layout",
-            "size": 5689
+            "size": 6764
           }
         ]
       },

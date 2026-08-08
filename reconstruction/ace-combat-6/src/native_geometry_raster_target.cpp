@@ -294,6 +294,49 @@ bool NativeRenderTarget::mark_world_asset(const WorldFrame& frame, AssetId asset
   return true;
 }
 
+// Diagnostic: a world position, projected by the same two camera paths the
+// geometry raster uses - the qualified c218-c221 rows when a camera is given,
+// the runtime's own basis otherwise - and plotted depth-tested. No material, no
+// texture, no topology; see the header for why this lane exists and what it may
+// not be used to claim.
+bool NativeRenderTarget::draw_world_marker(const WorldFrame& frame,
+                                           const CombatVector& position,
+                                           std::uint32_t color, std::uint32_t radius,
+                                           const MissionCameraDefinition* camera) noexcept {
+  if (width_ == 0 || height_ == 0 || color_.empty() || depth_.empty()) return false;
+  if (!std::isfinite(position.x) || !std::isfinite(position.y) ||
+      !std::isfinite(position.z)) {
+    return false;
+  }
+  const Vec3 world{position.x, position.y, position.z};
+  ScreenPoint screen;
+  if (camera != nullptr) {
+    if (!project_clip_point(*camera, world, width_, height_, screen)) return false;
+  } else {
+    NativeCameraProjection projection;
+    if (!make_projection(frame, width_, height_, projection)) return false;
+    if (!project_point(projection, world, width_, height_, screen)) return false;
+  }
+  const float depth_value = std::clamp(screen.depth, 0.0f, 1.0f);
+  const std::uint32_t span = std::min(radius, 64u);
+  bool wrote = false;
+  const std::uint32_t min_x = screen.x > span ? screen.x - span : 0u;
+  const std::uint32_t min_y = screen.y > span ? screen.y - span : 0u;
+  const std::uint32_t max_x = std::min(width_ - 1u, screen.x + span);
+  const std::uint32_t max_y = std::min(height_ - 1u, screen.y + span);
+  for (std::uint32_t y = min_y; y <= max_y; ++y) {
+    for (std::uint32_t x = min_x; x <= max_x; ++x) {
+      const std::size_t pixel = static_cast<std::size_t>(y) * width_ + x;
+      if (depth_value >= depth_[pixel]) continue;
+      depth_[pixel] = depth_value;
+      color_[pixel] = color;
+      ++world_marker_writes_;
+      wrote = true;
+    }
+  }
+  return wrote;
+}
+
 bool NativeRenderTarget::draw_world_asset(const WorldFrame& frame,
                                           const MissionDrawable& drawable,
                                           std::uint32_t ordinal) noexcept {

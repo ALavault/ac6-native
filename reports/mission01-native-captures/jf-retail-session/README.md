@@ -14,8 +14,21 @@ them, because `reports/**/*.ppm` is ignored. The numbers below are asserted by
 the test **before** either image is written — an image that merely looked right
 would not get this far.
 
+Since cycle 1144 the capture also draws **the world**, not only the HUD: one
+marker per active unit, coloured by the faction byte the retail faction table
+gave it, the player larger and white. Markers are a diagnostic lane — no
+material, no texture, no topology — and no capture here may be offered as visual
+parity.
+
+The count is the point. **Ten of 230 units land on screen**, because their
+positions are still the unframed `Obj` offsets: cycle 1142 found the placement
+chain but not the frame it is relative to, so most units sit at or near the
+origin while the camera follows the player. The picture shows the defect the
+reports could only describe.
+
 | | live (tick 900) | debrief (tick 1800) |
 |---|---:|---:|
+| world markers on screen | 10 | 11 |
 | active units | 230 | 230 |
 | player entity | 4097 | 4097 |
 | objectives | 4 | 4 |
@@ -37,6 +50,6 @@ and none was used here.
 
 | artifact | SHA-256 |
 |---|---|
-| `retail-session-hud.json` | `e252506c9ccea6a05050724d31edfde9a574bd5f5f6fb539ac12f4e7a7ed4de1` |
-| `hud-live.png` | `abaf437844fa4ffb38778eef48125bfeeaf2f9612c6e37f0de03a66bbca1ab22` |
-| `hud-debrief.png` | `8a54594ca14e53f91839c04117609acb33f698b6c602a28cb97deac55234f348` |
+| `retail-session-hud.json` | `6779d64be39c9a98131d1462f862816fe9557f5cd64b5d7f94081cfb0139cb99` |
+| `hud-live.png` | `a32f4e600523a2b09ec0ce47c71ddbf3d76cabad231c3dde4202976e057ac877` |
+| `hud-debrief.png` | `51bb2747c5759095c77e6d823cce96439608f538aaa65653904a2eeace427dd6` |
