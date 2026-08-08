@@ -406,3 +406,40 @@ two fail independently. Cycle 1214 had the control flow wrong with the data
 right; cycle 1227 had the data wrong with the control flow irrelevant.
 
 **Print context around every hit before believing what the hit is a hit on.**
+
+## The sixteenth shape: stopping at a natural boundary, twenty bytes short
+
+Three times in one session, a cycle published a conclusion and the instruction
+that refutes it was **within twenty bytes of where the reading stopped**:
+
+| cycle | stopped at | what was just past it |
+|---|---|---|
+| 1214 | the end of a 300-instruction dump | the loop's back-edge, `0x8C` later — the "fixed-member test" was a loop body |
+| 1224 | a `lwzx`/`stw` that looked like the whole function | a `cmpwi r4,2` guard eight instructions up, making the published index impossible |
+| 1223 | `8218d2c4 blr` | `0x8218D2C8`, the identical **clearer** of the setter it had just written up as "sets, never clears" |
+
+None was a careless read. Each stopped at something that **looks like an
+ending** — a `blr`, a return path, the edge of a dump — and in each case the
+answer to the cycle's own question was on the other side of it.
+
+### The mechanical fix, and it is embarrassingly cheap
+
+- When a dump ends at a `blr`, **disassemble the next address anyway.** MSVC emits
+  sibling overrides back to back; the setter and its clearer differ by one
+  `li` immediate and sit eight instructions apart.
+- When a block of interest sits near the end of a 300-instruction dump, **re-dump
+  from before it** and read past it until a `blr`, an unconditional forward `b`,
+  *or a backward branch*.
+- Before publishing "X does A and never B", **read the next function.** The
+  counter-example is more often adjacent than absent.
+
+### Why it is its own shape
+
+The other entries here are about instruments that returned the wrong answer. This
+one is about a reading that was correct over the range it covered and wrong about
+the program, with no instrument at fault. **The scan reported its denominator
+honestly; the reader chose the range.**
+
+Cycle 1223's case is the sharpest: it asked "does anything clear this byte",
+examined a function, answered "no, it sets", and the clearer was the next symbol
+in the file.
