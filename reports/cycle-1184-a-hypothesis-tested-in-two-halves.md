@@ -72,3 +72,40 @@ all four gates                                      ->  pass
 
 No product code changed. Measurement is over locally decoded pixels; none is
 committed.
+
+## Addendum — the better test was run, and it refutes the pairing
+
+Cycle 1184 named the test it had not run: for each colour texture, whether some
+*other* texture in the same pack is a plausible same-or-half-resolution partner
+with markedly lower saturation. Thresholds fixed before looking at the outcome —
+colour at saturation ≥ 6, grey at ≤ 3, partner at the same or half dimensions.
+
+```
+colour textures                                          50
+  with a same-or-half-res grey partner in the same pack   36
+  without                                                 14
+observed match rate                                    72.0%
+
+control: the same matching over shuffled packs, 200 trials
+  mean 77.3%    max 92.0%
+```
+
+**The observed rate is below the null.** Assigning every texture to a random pack
+produces *more* apparent diffuse/specular pairs than the real packing does. So
+there is no pairing signal — not a weak one, none — and the 79% near-grey
+population is not organised as partners of the coloured 11%.
+
+The control is what makes this a refutation rather than a shrug: a 72% match rate
+looks like strong support until the null says 77%. Most textures are grey, and
+most packs are small, so a grey partner is nearly always available by accident.
+
+## Where this leaves both readings
+
+- **Mine (cycle 1170)**, that these are base-colour atlases tinted by the
+  material: weakened by 79% near-grey, and not restored by any of this.
+- **Diffuse/specular pairs**: the structural claim is now refuted with a control.
+  What remains true is the observation that started it — four textures in five
+  carry almost no colour, and something has to account for that.
+
+Neither reading explains the population. That is the honest state, and it is a
+better one than either side of the argument being allowed to stand.
