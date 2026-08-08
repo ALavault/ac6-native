@@ -85,7 +85,16 @@ corresponding object at `context+0x2A4` — transform included, via `0x8226CF90`
 and `0x8226B368`. Both managers are filled from the same slot 0 at load, so this
 is a reset of a live set from a pristine one, not an origin.
 
-**`PLAD`.** The mission's FHM bundle carries, as child 2, a counted array of
+**`PLAD`.** Confirmed across the campaign by cycle 1143: **all fifteen missions**
+carry one, 33 records, 33 distinct world-scale positions. Nine missions declare
+**three** records and six declare one — three being exactly the multi-operation
+missions AC6 makes you choose between, so the index at `global+0x4B40` is the
+operation choice. The fourth word takes `{0,1,2,3}` and is *not* the array index
+(mission 3 has `0, 2, 3`). Cycle 1130 deferred this control as impossible because
+it believed the retail archives were absent from the workspace; they are present,
+and that claim was mine and wrong.
+
+The mission's FHM bundle carries, as child 2, a counted array of
 `0x10`-byte records (`0x82249BA8` exposes it, `0x82249BC8` indexes it). Mission
 01 declares one: `(-2025.0, 1500.0, 1345.0)` then the word `0`. All three
 mission loaders read **only the fourth word**, index the array by the player
