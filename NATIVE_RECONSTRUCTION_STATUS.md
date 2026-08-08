@@ -1,5 +1,14 @@
 # Ace Combat 6 native reconstruction status
 
+> **SUPERSEDED — 2026-08-08, cycle 1143.** A status snapshot at cycle 1017, before J2, JF and the world-position work. It also refers to `reconstruction/ace-combat-6/build`, while current cycles use `build-core`.
+>
+> The live roadmap is **`MISSION01_LADDER.md`**. The gates that actually run are
+> `analysis/contracts/mission01-final-gate-v3.json` (JF) and
+> `analysis/contracts/mission01-native-gate-v2.json` (J0/J1), audited by
+> `tools/audit_ac6_mission01_native_gate.py`. Working rules are in `CLAUDE.md`.
+>
+> This file is kept for its history. Do not plan from it.
+
 Updated: 2026-08-05 (Europe/Paris)
 
 ## Cycle 997 — contrat de séquence mission

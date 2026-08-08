@@ -1,5 +1,14 @@
 # PLAN — AC6 Native Playable
 
+> **SUPERSEDED — 2026-08-08, cycle 1143.** Its P0–P7 ladder targets the **recompiled** RexGlue runtime as the product. That runtime is now evidence and oracle only; the product is the hand-written native reconstruction under `reconstruction/ace-combat-6/`. P0 was the last phase touched, at cycle 330.
+>
+> The live roadmap is **`MISSION01_LADDER.md`**. The gates that actually run are
+> `analysis/contracts/mission01-final-gate-v3.json` (JF) and
+> `analysis/contracts/mission01-native-gate-v2.json` (J0/J1), audited by
+> `tools/audit_ac6_mission01_native_gate.py`. Working rules are in `CLAUDE.md`.
+>
+> This file is kept for its history. Do not plan from it.
+
 Écrit le 2026-07-30 après le cycle 324. Ce document est le **chemin critique**
 vers un AC6 natif jouable. `DECOMPILATION_PLAN.md` reste la référence pour les
 neuf phases de traduction et pour les inventaires ; ce plan-ci dit dans quel

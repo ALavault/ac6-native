@@ -1,5 +1,14 @@
 # AC6 — Native Vulkan reconstruction plan
 
+> **SUPERSEDED — 2026-08-08, cycle 1143.** Despite the name it is not current: its "immediate next action" is a renderer/D5B4 material investigation abandoned around cycle 700. Its statement of product architecture — that XenonRecomp, RexGlue and Xenia are temporary evidence tools that never ship — is still correct and is carried into `MISSION01_LADDER.md`. Last touched at cycle 783.
+>
+> The live roadmap is **`MISSION01_LADDER.md`**. The gates that actually run are
+> `analysis/contracts/mission01-final-gate-v3.json` (JF) and
+> `analysis/contracts/mission01-native-gate-v2.json` (J0/J1), audited by
+> `tools/audit_ac6_mission01_native_gate.py`. Working rules are in `CLAUDE.md`.
+>
+> This file is kept for its history. Do not plan from it.
+
 Updated: 2026-08-04
 
 ## Current native checkpoint — 2026-08-04

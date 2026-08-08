@@ -1,5 +1,14 @@
 # AC6 complete native reconstruction plan
 
+> **SUPERSEDED — 2026-08-08, cycle 1143.** Its phases 0–9 measure the **generated** corpus (translation units, implemented function counts), which is no longer the product. Its durable rules — separate denominators for generated and verified, never edit generated output, oracles are not shipped dependencies — survive in `AGENTS.md` and `CLAUDE.md`. Last touched at cycle 324.
+>
+> The live roadmap is **`MISSION01_LADDER.md`**. The gates that actually run are
+> `analysis/contracts/mission01-final-gate-v3.json` (JF) and
+> `analysis/contracts/mission01-native-gate-v2.json` (J0/J1), audited by
+> `tools/audit_ac6_mission01_native_gate.py`. Working rules are in `CLAUDE.md`.
+>
+> This file is kept for its history. Do not plan from it.
+
 ## Scope and completion definition
 
 This plan covers `ac6-xbox360-pal`, module `default.xex`, SHA-256

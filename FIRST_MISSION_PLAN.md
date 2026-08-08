@@ -1,5 +1,14 @@
 # AC6 — plan revu vers la première mission
 
+> **SUPERSEDED — 2026-08-08, cycle 1143.** Its Portes A–D also target the recompiled runtime, and its terminal token `AC6_FIRST_MISSION_REACHED` was never reached on that route. The first mission now runs on the native product and is certified by JF instead. Last touched at cycle 514.
+>
+> The live roadmap is **`MISSION01_LADDER.md`**. The gates that actually run are
+> `analysis/contracts/mission01-final-gate-v3.json` (JF) and
+> `analysis/contracts/mission01-native-gate-v2.json` (J0/J1), audited by
+> `tools/audit_ac6_mission01_native_gate.py`. Working rules are in `CLAUDE.md`.
+>
+> This file is kept for its history. Do not plan from it.
+
 Date : 2026-08-01. Cible : XEX PAL
 `acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde`.
 

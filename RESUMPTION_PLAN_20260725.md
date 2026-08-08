@@ -1,5 +1,14 @@
 # AC6 — resumption plan: unblock the runtime before resuming codegen
 
+> **SUPERSEDED — 2026-08-08, cycle 1143.** Entirely overtaken. Its Phase 1 question — characterise the `bad_alloc` — was answered at cycle 303 (not reproducible); its Phase 3 deliverables `functions.csv` and `subsystems.csv` were never produced and are not wanted; and its opening premise, that the target is frozen during an AC5 focus, no longer holds.
+>
+> The live roadmap is **`MISSION01_LADDER.md`**. The gates that actually run are
+> `analysis/contracts/mission01-final-gate-v3.json` (JF) and
+> `analysis/contracts/mission01-native-gate-v2.json` (J0/J1), audited by
+> `tools/audit_ac6_mission01_native_gate.py`. Working rules are in `CLAUDE.md`.
+>
+> This file is kept for its history. Do not plan from it.
+
 Written 2026-07-25. A re-prioritisation, not a replacement: the durable phases,
 workstreams and gates stay in `DECOMPILATION_PLAN.md`. Proof rules stay in
 `AGENTS.md` and `workspaces/ace-combat-6/AGENTS.md`.
