@@ -73,6 +73,11 @@ int main(int argc, char** argv) {
   std::size_t non_power_of_two = 0;
   std::uint64_t corpus_hash = 1469598103934665603ull;
   std::size_t single_level_block = 0;
+  // The corpus carries each wrapper twice, under idx_NNNN and runtime_idx_NNNN.
+  // Counting files overstates how much independent evidence there is, so the
+  // distinct-content population is counted too and asserted separately.
+  std::set<std::uint64_t> distinct_content;
+  std::set<std::uint64_t> distinct_decoded;
 
   for (const std::filesystem::path& path : wrappers) {
     const std::vector<std::uint8_t> bytes = read_file(path);
@@ -86,6 +91,13 @@ int main(int argc, char** argv) {
     if (is_block && descriptor->mip_count == 1 && !descriptor->cube_map) {
       single_level_block += 1;
     }
+
+    std::uint64_t content = 1469598103934665603ull;
+    for (const std::uint8_t byte : bytes) {
+      content ^= byte;
+      content *= 1099511628211ull;
+    }
+    distinct_content.insert(content);
 
     NtxrRefusal refusal = NtxrRefusal::None;
     const std::optional<DecodedTexture> texture = ac6::retail::decode_ntxr_single_level(
@@ -103,6 +115,7 @@ int main(int argc, char** argv) {
     REQUIRE(texture->pixels.size() ==
             static_cast<std::size_t>(texture->width) * texture->height);
     decoded += 1;
+    distinct_decoded.insert(content);
     decoded_formats[descriptor->xenos_format] += 1;
     const auto shape = std::make_pair<std::uint32_t, std::uint32_t>(
         descriptor->width, descriptor->height);
@@ -140,6 +153,14 @@ int main(int argc, char** argv) {
   // make the tile-padding rule falsifiable at all.
   REQUIRE(shapes.size() == 38);
   REQUIRE(non_power_of_two == 26);
+
+  // What the counts above are really worth. 692 files hold 336 distinct
+  // wrappers and the 308 decoded hold 144 distinct textures, so the file counts
+  // roughly double the apparent evidence. The shape figures do not double -
+  // duplicates share their shape - which is why the 26 non-power-of-two shapes,
+  // and not the 308, are what make the tile rule falsifiable.
+  REQUIRE(distinct_content.size() == 336);
+  REQUIRE(distinct_decoded.size() == 144);
 
   // The formats come from the derived table, not from a guess. The two BC2
   // wrappers are the point: BC2 and BC3 share their colour half byte for byte
@@ -184,6 +205,8 @@ int main(int argc, char** argv) {
            << "  \"decoded_bc3\": " << decoded_formats[ac6::retail::kXenosDxt4_5] << ",\n"
            << "  \"decoded_bc1\": " << decoded_formats[ac6::retail::kXenosDxt1] << ",\n"
            << "  \"decoded_bc2\": " << decoded_formats[ac6::retail::kXenosDxt2_3] << ",\n"
+           << "  \"distinct_wrappers_by_content\": " << distinct_content.size() << ",\n"
+           << "  \"distinct_decoded_by_content\": " << distinct_decoded.size() << ",\n"
            << "  \"distinct_shapes\": " << shapes.size() << ",\n"
            << "  \"non_power_of_two_shapes\": " << non_power_of_two << ",\n"
            << "  \"mip_chains_are_not_addressed\": true,\n"
