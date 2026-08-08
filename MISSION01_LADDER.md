@@ -249,9 +249,27 @@ python3 tools/audit_ac6_mission01_native_gate.py \
 
    Still open: 
    MATE batch→material→texture→NTXR in the runtime.
-5. **Terrain.** Currently **fail-closed by policy**:
-   `MISSION_VISUAL_BOOTSTRAP_REPORT.md` requires a proved Scene/CUT ownership
-   edge before any static environment is drawn. Prove it; do not lift it.
+5. **Terrain. The Scene/CUT edge is REFUTED (cycle 1205) — the rule stays, and
+   now for a stronger reason.** `CDemoDDMapObj` is reached only by
+   `82129b24 cmpwi 0x2005`; its vtable `0x8205D774` has one reference in the
+   whole image and zero data pointers; and across **all 44 Mission 01 Scene
+   groups — 575 records, 2.68 MB — there is not one record of type `0x2005`**.
+   The singleton control makes that zero mean something: type `0x3001` occurs
+   exactly once in the same data and the parser found it.
+
+   Nor would that branch own a mesh: `0x82129C10` allocates `0x50` bytes, looks
+   up an **already-existing** world object via `0x8226F9B8` and toggles a flag on
+   its `+0x15C` — the handle `0x820A7070` fills from the two `0x8228E9B8` MDLP
+   lookups. And the namespace it could reach holds no geometry: entry 9 carries
+   **1,106 `.mop` and zero `.nud`/`.nut`/`.hir`/`.bin`**, while the same scan
+   finds 292 NDXR. The 553 named records match the 553 resolved Scene paths with
+   no remainder.
+
+   So Mission 01's Scene/CUT system owns `.mop` tracks and nothing else. **The
+   four `mapobj_m01` NDXRs stay uninjected** — injecting them would be a
+   fabrication with no retail edge behind it. If terrain comes from anywhere it
+   is the scenario Obj→MDLP path, which is untouched. Only reopener: the source
+   of `*0x8291889C + 0x5174`, published at `0x82185C84`.
 6. **Derived binding — the data is Mission 01's own MDLP (cycle 1157).**
    `idx_0009/001_MDLP.mdlp` is 29 MB indexing **94 `FHM ` bundles** — header
    `+0x04` count, `+0x08` total size (equals the file size), `+0x0C` table at
