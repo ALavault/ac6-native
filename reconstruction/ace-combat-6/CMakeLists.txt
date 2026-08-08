@@ -18,6 +18,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_world_position.cpp
   src/ntxr_texture.cpp
   src/retail_model_directory.cpp
+  src/retail_ndxr_container.cpp
   src/retail_bin_readers.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
@@ -180,6 +181,15 @@ target_link_libraries(ac6-ntxr-extract PRIVATE ac6_product_core)
 # The NTXR decoder, restricted to single-level block textures. The corpus is
 # the control: it must accept exactly the single-level block population and
 # refuse the rest with a named cause.
+add_executable(ac6-retail-ndxr-container-tests tests/retail_ndxr_container_tests.cpp)
+target_link_libraries(ac6-retail-ndxr-container-tests PRIVATE ac6_product_core)
+# The corpus is extracted retail content and is never committed; the test exits
+# 77 when it is absent, so a clean clone skips rather than fails.
+add_test(NAME ac6-retail-ndxr-container
+  COMMAND ac6-retail-ndxr-container-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs)
+set_tests_properties(ac6-retail-ndxr-container PROPERTIES SKIP_RETURN_CODE 77)
+
 add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)
 target_link_libraries(ac6-ntxr-texture-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-ntxr-texture

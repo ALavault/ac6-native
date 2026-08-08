@@ -1,7 +1,7 @@
 #include "ac6/product_runtime.h"
+#include "text_parse.h"
 
 #include <algorithm>
-#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <fstream>
@@ -10,11 +10,6 @@
 
 namespace ac6 {
 namespace {
-
-bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
 
 MissionFamily parse_family(std::string_view family) noexcept {
   if (family == "air_intercept") return MissionFamily::AirIntercept;
@@ -28,7 +23,7 @@ bool parse_asset_ids(std::string_view text, std::vector<AssetId>& asset_ids) {
     const auto comma = text.find(',');
     const auto token = text.substr(0, comma);
     AssetId id{};
-    if (token.empty() || !parse_u32(token, id) || id == 0 ||
+    if (token.empty() || !detail::parse_u32(token, id) || id == 0 ||
         std::find(asset_ids.begin(), asset_ids.end(), id) != asset_ids.end()) {
       return false;
     }
@@ -69,7 +64,7 @@ bool MissionCatalog::load_manifest(const std::filesystem::path& manifest) {
     }
     std::uint32_t mission_id{};
     const auto id_text = std::string_view(line).substr(0, first);
-    if (!parse_u32(id_text, mission_id)) return false;
+    if (!detail::parse_u32(id_text, mission_id)) return false;
     std::vector<AssetId> asset_ids;
     const auto assets_text = std::string_view(line).substr(second + 1);
     if (!parse_asset_ids(assets_text, asset_ids)) return false;

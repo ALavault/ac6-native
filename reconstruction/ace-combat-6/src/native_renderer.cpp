@@ -84,9 +84,6 @@ bool VulkanRenderer::render(const WorldFrame& frame, RenderAssets assets,
             const ShaderPermutation* shader =
                 material == nullptr || assets.shaders == nullptr ? nullptr :
                     assets.shaders->find(material->shader_permutation);
-            const MissionRenderTargetDefinition* render_target =
-                assets.render_targets == nullptr ? nullptr :
-                    assets.render_targets->find(frame.mission_id);
             const MissionRenderPass* pass =
                 assets.render_passes == nullptr ? nullptr :
                     assets.render_passes->find(frame.mission_id, "world");
@@ -96,8 +93,9 @@ bool VulkanRenderer::render(const WorldFrame& frame, RenderAssets assets,
             if (geometry == nullptr || decoded == nullptr || transform == nullptr ||
                 material == nullptr || texture == nullptr || shader == nullptr ||
                 pass == nullptr || resolve == nullptr) return false;
-            render_target = assets.render_targets == nullptr ? nullptr :
-                assets.render_targets->find(frame.mission_id, pass->color_target);
+            const MissionRenderTargetDefinition* render_target =
+                assets.render_targets == nullptr ? nullptr :
+                    assets.render_targets->find(frame.mission_id, pass->color_target);
             const MissionRenderTargetDefinition* destination_target =
                 assets.render_targets == nullptr ? nullptr :
                     assets.render_targets->find(frame.mission_id, resolve->destination_target);

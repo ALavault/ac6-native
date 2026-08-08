@@ -1,8 +1,8 @@
 #include "ac6/product_runtime.h"
+#include "text_parse.h"
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -14,18 +14,7 @@
 namespace ac6 {
 
 namespace {
-bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-bool parse_u64(std::string_view text, std::uint64_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-bool parse_f32(std::string_view text, float& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() && std::isfinite(value);
-}
+
 class Sha256 final {
  public:
   void update(const unsigned char* data, std::size_t size) noexcept {
@@ -192,7 +181,7 @@ bool parse_asset_ids(std::string_view text, std::vector<AssetId>& asset_ids) {
     const auto comma = text.find(',');
     const auto token = text.substr(0, comma);
     AssetId id{};
-    if (token.empty() || !parse_u32(token, id) || id == 0 ||
+    if (token.empty() || !detail::parse_u32(token, id) || id == 0 ||
         std::find(asset_ids.begin(), asset_ids.end(), id) != asset_ids.end()) {
       return false;
     }
@@ -215,9 +204,9 @@ bool parse_units(std::string_view text, std::vector<UnitRecord>& units) {
       return false;
     }
     UnitRecord unit;
-    if (!parse_u32(token.substr(0, first), unit.id) ||
-        !parse_u32(token.substr(first + 1, second - first - 1), unit.owner) ||
-        !parse_u32(token.substr(second + 1), unit.asset)) {
+    if (!detail::parse_u32(token.substr(0, first), unit.id) ||
+        !detail::parse_u32(token.substr(first + 1, second - first - 1), unit.owner) ||
+        !detail::parse_u32(token.substr(second + 1), unit.asset)) {
       return false;
     }
     unit.active = false;
@@ -253,9 +242,9 @@ bool parse_weapons(std::string_view text, std::vector<WeaponDefinition>& weapons
       if (fields[index].empty()) return false;
     }
     WeaponDefinition weapon;
-    if (!parse_u32(fields[0], weapon.id) || !parse_f32(fields[1], weapon.damage) ||
-        !parse_f32(fields[2], weapon.projectile_speed) ||
-        !parse_f32(fields[3], weapon.cooldown) || !parse_f32(fields[4], weapon.max_range) ||
+    if (!detail::parse_u32(fields[0], weapon.id) || !detail::parse_f32(fields[1], weapon.damage) ||
+        !detail::parse_f32(fields[2], weapon.projectile_speed) ||
+        !detail::parse_f32(fields[3], weapon.cooldown) || !detail::parse_f32(fields[4], weapon.max_range) ||
         std::find_if(weapons.begin(), weapons.end(), [weapon](const auto& existing) {
           return existing.id == weapon.id;
         }) != weapons.end()) return false;
@@ -295,14 +284,14 @@ bool MissionAssetDatabase::load_manifest(const std::filesystem::path& manifest) 
 
     AssetRecord record;
     const auto line_view = std::string_view(line);
-    if (!parse_u32(line_view.substr(0, tabs[0]), record.id)) return false;
+    if (!detail::parse_u32(line_view.substr(0, tabs[0]), record.id)) return false;
     record.relative_path = line.substr(tabs[0] + 1, tabs[1] - tabs[0] - 1);
     if (tab_count == 2) {
       record.sha256 = line.substr(tabs[1] + 1);
     } else {
       record.sha256 = line.substr(tabs[1] + 1, tabs[2] - tabs[1] - 1);
       const auto size_end = tab_count == 4 ? tabs[3] : line.size();
-      if (!parse_u64(line_view.substr(tabs[2] + 1, size_end - tabs[2] - 1),
+      if (!detail::parse_u64(line_view.substr(tabs[2] + 1, size_end - tabs[2] - 1),
                      record.byte_size) ||
           record.byte_size == 0) {
         return false;
@@ -433,8 +422,8 @@ bool MissionLaunchDatabase::load_manifest(const std::filesystem::path& manifest)
       return false;
     }
     MissionLaunchDefinition definition;
-    if (!parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
-        !parse_u32(std::string_view(line).substr(first + 1, second - first - 1),
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
+        !detail::parse_u32(std::string_view(line).substr(first + 1, second - first - 1),
                    definition.player_entity) ||
         !parse_units(std::string_view(line).substr(second + 1,
                                                    (third == std::string::npos ? line.size() : third) -
@@ -613,9 +602,9 @@ bool MissionCameraDatabase::load_manifest(const std::filesystem::path& manifest)
     if (field_count < 17 || field_count > 19) return false;
     if (field_count == fields.size() && line.find('\t', start) != std::string::npos) return false;
     MissionCameraDefinition definition;
-    if (!parse_u32(fields[0], definition.mission_id)) return false;
+    if (!detail::parse_u32(fields[0], definition.mission_id)) return false;
     for (std::size_t i = 0; i < definition.clip_rows.size(); ++i) {
-      if (!parse_f32(fields[i + 1], definition.clip_rows[i])) return false;
+      if (!detail::parse_f32(fields[i + 1], definition.clip_rows[i])) return false;
     }
     for (std::size_t field = 17; field < field_count; ++field) {
       if (fields[field] == "qualified") definition.qualified = true;

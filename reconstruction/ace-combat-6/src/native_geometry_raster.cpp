@@ -1,7 +1,7 @@
 #include "ac6/product_runtime.h"
+#include "text_parse.h"
 
 #include <algorithm>
-#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
@@ -12,11 +12,6 @@
 
 namespace ac6 {
 namespace {
-
-bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
 
 std::uint16_t read_le_u16(const unsigned char* bytes) noexcept {
   return static_cast<std::uint16_t>(bytes[0]) |
@@ -198,7 +193,11 @@ bool NativeGeometryDatabase::load_verified_binary(
                 decoded.indices.push_back(std::numeric_limits<std::uint32_t>::max());
               continue;
             }
-            if (local >= polygon.vertex_count || vertex_base_index + local >= metadata.vertex_count) return false;
+            if (local >= polygon.vertex_count ||
+                vertex_base_index >= metadata.vertex_count ||
+                local >= metadata.vertex_count - vertex_base_index) {
+              return false;
+            }
             decoded.indices.push_back(vertex_base_index + local);
           }
         }
@@ -231,11 +230,11 @@ bool NativeGeometryDatabase::load_verified_text(const MissionDrawable& drawable,
   NativeGeometryMetadata metadata;
   metadata.buffer_id = drawable.buffer_id;
   metadata.source_format = "NDXR";
-  if (!parse_u32(std::string_view(line).substr(second + 1, third - second - 1),
+  if (!detail::parse_u32(std::string_view(line).substr(second + 1, third - second - 1),
                  metadata.vertex_count) ||
-      !parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1),
+      !detail::parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1),
                  metadata.index_count) ||
-      !parse_u32(std::string_view(line).substr(fourth + 1), metadata.primitive_count)) {
+      !detail::parse_u32(std::string_view(line).substr(fourth + 1), metadata.primitive_count)) {
     return false;
   }
   if (metadata.vertex_count != drawable.vertex_count ||
@@ -268,9 +267,9 @@ bool NativeGeometryDatabase::load_verified_text(const MissionDrawable& drawable,
     const auto section = line.substr(0, section_first);
     std::uint32_t count = 0;
     std::uint32_t stride_or_flags = 0;
-    if (!parse_u32(std::string_view(line).substr(section_first + 1,
+    if (!detail::parse_u32(std::string_view(line).substr(section_first + 1,
                                                  section_second - section_first - 1), count) ||
-        !parse_u32(std::string_view(line).substr(section_second + 1), stride_or_flags)) {
+        !detail::parse_u32(std::string_view(line).substr(section_second + 1), stride_or_flags)) {
       return false;
     }
     if (section == "VTX") {
@@ -306,7 +305,8 @@ bool NativeGeometryDatabase::load_verified_text(const MissionDrawable& drawable,
   metadata.index_byte_size = static_cast<std::uint64_t>(metadata.index_count) *
                              static_cast<std::uint64_t>(metadata.index_size);
   if (metadata.vertex_byte_size == 0 || metadata.index_byte_size == 0 ||
-      metadata.vertex_byte_size + metadata.index_byte_size > payload_byte_size) {
+      metadata.vertex_byte_size > payload_byte_size ||
+      metadata.index_byte_size > payload_byte_size - metadata.vertex_byte_size) {
     return false;
   }
   if (metadata.vertex_stride < 12) return false;

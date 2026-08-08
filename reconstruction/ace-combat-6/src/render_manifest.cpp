@@ -1,8 +1,8 @@
 #include "ac6/product_runtime.h"
+#include "text_parse.h"
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -12,33 +12,6 @@
 namespace ac6 {
 
 namespace {
-bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-bool parse_u64(std::string_view text, std::uint64_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-bool parse_f32(std::string_view text, float& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() && std::isfinite(value);
-}
-bool parse_bool01(std::string_view text, bool& value) noexcept {
-  if (text == "0") { value = false; return true; }
-  if (text == "1") { value = true; return true; }
-  return false;
-}
-bool parse_hex_u32(std::string_view text, std::uint32_t& value) noexcept {
-  if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) text.remove_prefix(2);
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value, 16);
-  return !text.empty() && parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-bool parse_hex_u64(std::string_view text, std::uint64_t& value) noexcept {
-  if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) text.remove_prefix(2);
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value, 16);
-  return !text.empty() && parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
 
 bool file_fnv64(const std::filesystem::path& path, std::uint64_t& hash) {
   std::ifstream input(path, std::ios::binary);
@@ -63,7 +36,7 @@ bool parse_asset_ids(std::string_view text, std::vector<AssetId>& asset_ids) {
     const auto comma = text.find(',');
     const auto token = text.substr(0, comma);
     AssetId id{};
-    if (token.empty() || !parse_u32(token, id) || id == 0 ||
+    if (token.empty() || !detail::parse_u32(token, id) || id == 0 ||
         std::find(asset_ids.begin(), asset_ids.end(), id) != asset_ids.end()) {
       return false;
     }
@@ -100,9 +73,11 @@ bool MissionRenderDatabase::load_manifest(const std::filesystem::path& manifest)
       return false;
     }
     MissionRenderDefinition definition;
-    if (!parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
-        !parse_asset_ids(std::string_view(line).substr(first + 1), definition.asset_ids) ||
-        !loaded.add(std::move(definition))) {
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
+        !parse_asset_ids(std::string_view(line).substr(first + 1), definition.asset_ids)) {
+      return false;
+    }
+    if (!loaded.add(std::move(definition))) {
       return false;
     }
   }
@@ -150,16 +125,18 @@ bool MissionDrawableDatabase::load_manifest(const std::filesystem::path& manifes
       return false;
     }
     MissionDrawable drawable;
-    if (!parse_u32(std::string_view(line).substr(0, first), drawable.mission_id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), drawable.mission_id) ||
         (drawable.stable_id = line.substr(first + 1, second - first - 1)).empty() ||
         (drawable.kind = line.substr(second + 1, third - second - 1)).empty() ||
-        !parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1), drawable.asset) ||
-        !parse_u32(std::string_view(line).substr(fourth + 1, fifth - fourth - 1), drawable.primitive_count) ||
+        !detail::parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1), drawable.asset) ||
+        !detail::parse_u32(std::string_view(line).substr(fourth + 1, fifth - fourth - 1), drawable.primitive_count) ||
         (drawable.buffer_id = line.substr(fifth + 1, sixth - fifth - 1)).empty() ||
-        !parse_u32(std::string_view(line).substr(sixth + 1, seventh - sixth - 1), drawable.vertex_count) ||
-        !parse_u32(std::string_view(line).substr(seventh + 1, eighth - seventh - 1), drawable.index_count) ||
-        (drawable.content_hash = line.substr(eighth + 1)).empty() ||
-        !loaded.add(std::move(drawable))) {
+        !detail::parse_u32(std::string_view(line).substr(sixth + 1, seventh - sixth - 1), drawable.vertex_count) ||
+        !detail::parse_u32(std::string_view(line).substr(seventh + 1, eighth - seventh - 1), drawable.index_count) ||
+        (drawable.content_hash = line.substr(eighth + 1)).empty()) {
+      return false;
+    }
+    if (!loaded.add(std::move(drawable))) {
       return false;
     }
   }
@@ -225,20 +202,22 @@ bool MissionTransformDatabase::load_manifest(const std::filesystem::path& manife
       return false;
     }
     MissionDrawableTransform transform;
-    if (!parse_u32(std::string_view(line).substr(0, first), transform.mission_id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), transform.mission_id) ||
         (transform.stable_id = line.substr(first + 1, second - first - 1)).empty() ||
-        !parse_f32(std::string_view(line).substr(second + 1, third - second - 1),
+        !detail::parse_f32(std::string_view(line).substr(second + 1, third - second - 1),
                    transform.translate_x) ||
-        !parse_f32(std::string_view(line).substr(third + 1, fourth - third - 1),
+        !detail::parse_f32(std::string_view(line).substr(third + 1, fourth - third - 1),
                    transform.translate_y) ||
-        !parse_f32(std::string_view(line).substr(fourth + 1, fifth - fourth - 1),
+        !detail::parse_f32(std::string_view(line).substr(fourth + 1, fifth - fourth - 1),
                    transform.translate_z) ||
-        !parse_f32(std::string_view(line).substr(fifth + 1, sixth - fifth - 1),
+        !detail::parse_f32(std::string_view(line).substr(fifth + 1, sixth - fifth - 1),
                    transform.scale_x) ||
-        !parse_f32(std::string_view(line).substr(sixth + 1, seventh - sixth - 1),
+        !detail::parse_f32(std::string_view(line).substr(sixth + 1, seventh - sixth - 1),
                    transform.scale_y) ||
-        !parse_f32(std::string_view(line).substr(seventh + 1), transform.scale_z) ||
-        !loaded.add(std::move(transform))) {
+        !detail::parse_f32(std::string_view(line).substr(seventh + 1), transform.scale_z)) {
+      return false;
+    }
+    if (!loaded.add(std::move(transform))) {
       return false;
     }
   }
@@ -291,22 +270,24 @@ bool MissionMaterialDatabase::load_manifest(const std::filesystem::path& manifes
       return false;
     }
     MissionMaterial material;
-    if (!parse_u32(std::string_view(line).substr(0, first), material.mission_id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), material.mission_id) ||
         (material.stable_id = line.substr(first + 1, second - first - 1)).empty() ||
         (material.shader_permutation = line.substr(second + 1, third - second - 1)).empty() ||
-        !parse_bool01(std::string_view(line).substr(third + 1, fourth - third - 1),
+        !detail::parse_bool01(std::string_view(line).substr(third + 1, fourth - third - 1),
                       material.depth_test) ||
-        !parse_bool01(std::string_view(line).substr(fourth + 1, fifth - fourth - 1),
+        !detail::parse_bool01(std::string_view(line).substr(fourth + 1, fifth - fourth - 1),
                       material.depth_write) ||
         (material.blend_mode = line.substr(fifth + 1, sixth - fifth - 1)).empty() ||
-        !parse_hex_u32(std::string_view(line).substr(sixth + 1,
+        !detail::parse_hex_u32(std::string_view(line).substr(sixth + 1,
                                                       seventh == std::string::npos ?
                                                           std::string::npos : seventh - sixth - 1),
                        material.base_color) ||
         (seventh != std::string::npos &&
-         (!parse_u64(std::string_view(line).substr(seventh + 1), material.mate_id) ||
-          material.mate_id == 0)) ||
-        !loaded.add(std::move(material))) {
+         (!detail::parse_u64(std::string_view(line).substr(seventh + 1), material.mate_id) ||
+          material.mate_id == 0))) {
+      return false;
+    }
+    if (!loaded.add(std::move(material))) {
       return false;
     }
   }
@@ -358,12 +339,12 @@ bool MissionTextureDatabase::load_manifest(const std::filesystem::path& manifest
       return false;
     }
     MissionTextureBinding texture;
-    if (!parse_u32(std::string_view(line).substr(0, first), texture.mission_id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), texture.mission_id) ||
         (texture.stable_id = line.substr(first + 1, second - first - 1)).empty() ||
         (texture.texture_id = line.substr(second + 1, third - second - 1)).empty() ||
         (texture.sampler_filter = line.substr(third + 1, fourth - third - 1)).empty() ||
         (texture.sampler_address = line.substr(fourth + 1, fifth - fourth - 1)).empty() ||
-        !parse_hex_u64(std::string_view(line).substr(fifth + 1,
+        !detail::parse_hex_u64(std::string_view(line).substr(fifth + 1,
                                                        sixth == std::string::npos ?
                                                            std::string::npos : sixth - fifth - 1),
                        texture.content_hash)) {
@@ -373,7 +354,7 @@ bool MissionTextureDatabase::load_manifest(const std::filesystem::path& manifest
       const auto seventh = line.find('\t', sixth + 1);
       if (seventh == std::string::npos ||
           (texture.source_path = line.substr(sixth + 1, seventh - sixth - 1)).empty() ||
-          !parse_u64(std::string_view(line).substr(seventh + 1,
+          !detail::parse_u64(std::string_view(line).substr(seventh + 1,
                                                    line.find('\t', seventh + 1) == std::string::npos ?
                                                        std::string::npos : line.find('\t', seventh + 1) - seventh - 1),
                      texture.source_size) ||
@@ -384,15 +365,15 @@ bool MissionTextureDatabase::load_manifest(const std::filesystem::path& manifest
         const auto tenth = ninth == std::string::npos ? std::string::npos : line.find('\t', ninth + 1);
         const auto eleventh = tenth == std::string::npos ? std::string::npos : line.find('\t', tenth + 1);
         if (ninth == std::string::npos || tenth == std::string::npos ||
-            !parse_u32(std::string_view(line).substr(eighth + 1, ninth - eighth - 1), texture.source_width) ||
-            !parse_u32(std::string_view(line).substr(ninth + 1, tenth - ninth - 1), texture.source_height) ||
-            !parse_u32(std::string_view(line).substr(tenth + 1,
+            !detail::parse_u32(std::string_view(line).substr(eighth + 1, ninth - eighth - 1), texture.source_width) ||
+            !detail::parse_u32(std::string_view(line).substr(ninth + 1, tenth - ninth - 1), texture.source_height) ||
+            !detail::parse_u32(std::string_view(line).substr(tenth + 1,
                                                      eleventh == std::string::npos ?
                                                          std::string::npos : eleventh - tenth - 1),
                        texture.source_format) ||
             texture.source_width == 0 || texture.source_height == 0 || texture.source_format == 0) return false;
         if (eleventh != std::string::npos &&
-            (!parse_u64(std::string_view(line).substr(eleventh + 1), texture.gidx) || texture.gidx == 0)) return false;
+            (!detail::parse_u64(std::string_view(line).substr(eleventh + 1), texture.gidx) || texture.gidx == 0)) return false;
       }
       if (texture.source_path.is_relative()) texture.source_path = manifest.parent_path() / texture.source_path;
       std::error_code error;
@@ -548,12 +529,14 @@ bool ShaderPermutationDatabase::load_manifest(const std::filesystem::path& manif
     ShaderPermutation permutation;
     permutation.id = line.substr(0, first);
     permutation.vertex_layout = line.substr(first + 1, second - first - 1);
-    if (!parse_u32(std::string_view(line).substr(second + 1, third - second - 1),
-                   permutation.texture_fetches) ||
-        !parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1),
-                   permutation.constant_count) ||
-        (permutation.render_target_format = line.substr(fourth + 1)).empty() ||
-        !loaded.add(std::move(permutation))) {
+    if (!detail::parse_u32(std::string_view(line).substr(second + 1, third - second - 1),
+                           permutation.texture_fetches) ||
+        !detail::parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1),
+                           permutation.constant_count) ||
+        (permutation.render_target_format = line.substr(fourth + 1)).empty()) {
+      return false;
+    }
+    if (!loaded.add(std::move(permutation))) {
       return false;
     }
   }
@@ -612,17 +595,17 @@ bool MissionRenderTargetDatabase::load_manifest(const std::filesystem::path& man
       return false;
     }
     MissionRenderTargetDefinition definition;
-    if (!parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), definition.mission_id) ||
         (definition.target_id = line.substr(first + 1, second - first - 1)).empty() ||
-        !parse_u32(std::string_view(line).substr(second + 1, third - second - 1),
+        !detail::parse_u32(std::string_view(line).substr(second + 1, third - second - 1),
                    definition.width) ||
-        !parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1),
+        !detail::parse_u32(std::string_view(line).substr(third + 1, fourth - third - 1),
                    definition.height) ||
-        !parse_u32(std::string_view(line).substr(fourth + 1, fifth - fourth - 1),
+        !detail::parse_u32(std::string_view(line).substr(fourth + 1, fifth - fourth - 1),
                    definition.sample_count) ||
         (definition.color_format = line.substr(fifth + 1, sixth - fifth - 1)).empty() ||
         (definition.depth_format = line.substr(sixth + 1, seventh - sixth - 1)).empty() ||
-        !parse_bool01(std::string_view(line).substr(seventh + 1), definition.depth_enabled) ||
+        !detail::parse_bool01(std::string_view(line).substr(seventh + 1), definition.depth_enabled) ||
         !loaded.add(std::move(definition))) {
       return false;
     }
@@ -679,14 +662,14 @@ bool MissionRenderPassDatabase::load_manifest(const std::filesystem::path& manif
       return false;
     }
     MissionRenderPass pass;
-    if (!parse_u32(std::string_view(line).substr(0, first), pass.mission_id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), pass.mission_id) ||
         (pass.pass_id = line.substr(first + 1, second - first - 1)).empty() ||
-        !parse_u32(std::string_view(line).substr(second + 1, third - second - 1), pass.order) ||
+        !detail::parse_u32(std::string_view(line).substr(second + 1, third - second - 1), pass.order) ||
         (pass.color_target = line.substr(third + 1, fourth - third - 1)).empty() ||
         (pass.depth_target = line.substr(fourth + 1, fifth - fourth - 1)).empty() ||
-        !parse_hex_u32(std::string_view(line).substr(fifth + 1, sixth - fifth - 1),
+        !detail::parse_hex_u32(std::string_view(line).substr(fifth + 1, sixth - fifth - 1),
                        pass.clear_color) ||
-        !parse_f32(std::string_view(line).substr(sixth + 1), pass.clear_depth) ||
+        !detail::parse_f32(std::string_view(line).substr(sixth + 1), pass.clear_depth) ||
         !loaded.add(std::move(pass))) {
       return false;
     }
@@ -734,12 +717,14 @@ bool MissionRenderResolveDatabase::load_manifest(const std::filesystem::path& ma
       return false;
     }
     MissionRenderResolve resolve;
-    if (!parse_u32(std::string_view(line).substr(0, first), resolve.mission_id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, first), resolve.mission_id) ||
         (resolve.source_pass = line.substr(first + 1, second - first - 1)).empty() ||
         (resolve.source_target = line.substr(second + 1, third - second - 1)).empty() ||
         (resolve.destination_target = line.substr(third + 1, fourth - third - 1)).empty() ||
-        (resolve.mode = line.substr(fourth + 1)).empty() ||
-        !loaded.add(std::move(resolve))) {
+        (resolve.mode = line.substr(fourth + 1)).empty()) {
+      return false;
+    }
+    if (!loaded.add(std::move(resolve))) {
       return false;
     }
   }
@@ -785,10 +770,12 @@ bool QualifiedBufferDatabase::load_manifest(const std::filesystem::path& manifes
     record.buffer_id = line.substr(0, first);
     record.path = line.substr(first + 1, second - first - 1);
     if (record.path.is_relative()) record.path = manifest.parent_path() / record.path;
-    if (!parse_u64(std::string_view(line).substr(second + 1, third - second - 1),
-                   record.byte_size) ||
-        !parse_u64(std::string_view(line).substr(third + 1), record.fnv64) ||
-        !loaded.add(std::move(record))) {
+    if (!detail::parse_u64(std::string_view(line).substr(second + 1, third - second - 1),
+                           record.byte_size) ||
+        !detail::parse_u64(std::string_view(line).substr(third + 1), record.fnv64)) {
+      return false;
+    }
+    if (!loaded.add(std::move(record))) {
       return false;
     }
   }

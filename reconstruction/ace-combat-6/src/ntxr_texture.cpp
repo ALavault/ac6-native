@@ -240,7 +240,9 @@ std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
     for (std::uint32_t bx = 0; bx < blocks_x; ++bx) {
       const std::size_t offset =
           start + xenos_tiled_2d_offset(bx, by, pitch, log2_block);
-      if (offset + block_bytes > size) return refuse(NtxrRefusal::PayloadSizeMismatch);
+      if (offset > size || block_bytes > size - offset) {
+        return refuse(NtxrRefusal::PayloadSizeMismatch);
+      }
       std::memcpy(block, bytes + offset, block_bytes);
       if (swap_16) {
         for (std::uint32_t i = 0; i + 1 < block_bytes; i += 2) {

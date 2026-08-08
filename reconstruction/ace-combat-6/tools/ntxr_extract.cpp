@@ -60,6 +60,10 @@ int main(int argc, char** argv) {
     }
     const std::optional<ac6::retail::NtxrDescriptor> descriptor =
         ac6::retail::parse_ntxr_descriptor(bytes.data(), bytes.size());
+    if (!descriptor.has_value()) {
+      refused += 1;
+      continue;
+    }
     char name[512];
     std::snprintf(name, sizeof(name), "%s/%04zu_%ux%u_fmt%02x_mip%u.ppm", out.c_str(),
                   written, texture->width, texture->height,

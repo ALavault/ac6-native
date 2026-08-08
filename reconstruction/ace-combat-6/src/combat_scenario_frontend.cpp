@@ -1,8 +1,8 @@
 #include "ac6/product_runtime.h"
+#include "text_parse.h"
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -11,6 +11,7 @@
 
 namespace ac6 {
 namespace {
+
 template <std::size_t FieldCount>
 bool parse_tsv_fields(std::string_view line,
                       std::array<std::string_view, FieldCount>& fields) noexcept {
@@ -30,34 +31,6 @@ bool parse_tsv_fields(std::string_view line,
   }
   return true;
 }
-bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-
-bool parse_u64(std::string_view text, std::uint64_t& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size();
-}
-
-bool parse_f32(std::string_view text, float& value) noexcept {
-  const auto parsed = std::from_chars(text.data(), text.data() + text.size(), value);
-  return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() &&
-         std::isfinite(value);
-}
-
-bool parse_bool01(std::string_view text, bool& value) noexcept {
-  if (text == "0") {
-    value = false;
-    return true;
-  }
-  if (text == "1") {
-    value = true;
-    return true;
-  }
-  return false;
-}
-
 bool parse_objective_condition(std::string_view text,
                                ObjectiveCondition& condition) noexcept {
   if (text == "manual") {
@@ -209,15 +182,15 @@ bool MissionObjectiveDatabase::load_manifest(const std::filesystem::path& manife
     }
     MissionObjectiveDefinition definition;
     bool required = false;
-    if (!parse_u32(fields[0], definition.mission_id) ||
-        !parse_u32(fields[1], definition.objective.id) ||
+    if (!detail::parse_u32(fields[0], definition.mission_id) ||
+        !detail::parse_u32(fields[1], definition.objective.id) ||
         fields[2].empty() ||
-        !parse_bool01(fields[3], required)) return false;
+        !detail::parse_bool01(fields[3], required)) return false;
     definition.objective.stable_id = std::string(fields[2]);
     definition.objective.required = required;
     if (field_count == 6) {
       if (!parse_objective_condition(fields[4], definition.objective.condition) ||
-          !parse_u32(fields[5], definition.objective.target_entity)) return false;
+          !detail::parse_u32(fields[5], definition.objective.target_entity)) return false;
     }
     if (!loaded.add(std::move(definition))) return false;
   }
@@ -258,12 +231,12 @@ bool RadioMessageDatabase::load_manifest(const std::filesystem::path& manifest) 
     }
     if (malformed || line.find('\t', previous) != std::string::npos) return false;
     RadioMessageDefinition message;
-    if (!parse_u32(std::string_view(line).substr(0, tabs[0]), message.mission_id) ||
-        !parse_u32(std::string_view(line).substr(tabs[0] + 1, tabs[1] - tabs[0] - 1), message.id) ||
+    if (!detail::parse_u32(std::string_view(line).substr(0, tabs[0]), message.mission_id) ||
+        !detail::parse_u32(std::string_view(line).substr(tabs[0] + 1, tabs[1] - tabs[0] - 1), message.id) ||
         (message.stable_id = line.substr(tabs[1] + 1, tabs[2] - tabs[1] - 1)).empty() ||
         (message.speaker = line.substr(tabs[2] + 1, tabs[3] - tabs[2] - 1)).empty() ||
-        !parse_u32(std::string_view(line).substr(tabs[3] + 1, tabs[4] - tabs[3] - 1), message.audio_asset) ||
-        !parse_u32(std::string_view(line).substr(tabs[4] + 1), message.subtitle_asset) ||
+        !detail::parse_u32(std::string_view(line).substr(tabs[3] + 1, tabs[4] - tabs[3] - 1), message.audio_asset) ||
+        !detail::parse_u32(std::string_view(line).substr(tabs[4] + 1), message.subtitle_asset) ||
         !loaded.add(std::move(message))) return false;
   }
   messages_ = std::move(loaded.messages_);
@@ -381,9 +354,9 @@ bool MissionSequenceDirector::load_manifest(const std::filesystem::path& manifes
     }
     if (field_count != fields.size() || line.find('\t', start) != std::string::npos) return false;
     MissionSequenceEvent event;
-    if (!parse_u32(fields[0], event.mission_id) || !parse_u64(fields[1], event.tick) ||
-        !parse_u32(fields[2], event.order) || !parse_u32(fields[4], event.id) ||
-        !parse_f32(fields[5], event.duration_seconds)) return false;
+    if (!detail::parse_u32(fields[0], event.mission_id) || !detail::parse_u64(fields[1], event.tick) ||
+        !detail::parse_u32(fields[2], event.order) || !detail::parse_u32(fields[4], event.id) ||
+        !detail::parse_f32(fields[5], event.duration_seconds)) return false;
     if (fields[3] == "activate_objective") {
       event.type = MissionSequenceEventType::ActivateObjective;
     } else if (fields[3] == "complete_objective") {
@@ -429,7 +402,7 @@ bool InputMappingDatabase::load_manifest(const std::filesystem::path& manifest) 
     const auto tab = view.find('\t');
     if (tab == std::string_view::npos) return false;
     std::uint32_t mask{};
-    if (!parse_u32(view.substr(0, tab), mask) || mask > 0xFFFFu) return false;
+    if (!detail::parse_u32(view.substr(0, tab), mask) || mask > 0xFFFFu) return false;
     const auto action = view.substr(tab + 1);
     EventType event{};
     if (action == "start_mission") event = EventType::StartMission;
@@ -828,15 +801,15 @@ bool MissionWaveDirector::load_manifest(const std::filesystem::path& manifest) {
     std::uint32_t owner = 0;
     AssetId asset = 0;
     std::uint32_t faction = 0;
-    if (!parse_u32(fields[0], spawn.mission_id) ||
-        !parse_u64(fields[1], spawn.spawn_tick) || !parse_u32(fields[2], unit_id) ||
-        !parse_u32(fields[3], owner) || !parse_u32(fields[4], asset) ||
-        !parse_u32(fields[5], faction) || !parse_f32(fields[6], spawn.combat.position.x) ||
-        !parse_f32(fields[7], spawn.combat.position.y) ||
-        !parse_f32(fields[8], spawn.combat.position.z) ||
-        !parse_f32(fields[9], spawn.combat.health) ||
-        !parse_f32(fields[10], spawn.combat.max_health) ||
-        !parse_f32(fields[11], spawn.combat.collision_radius)) return false;
+    if (!detail::parse_u32(fields[0], spawn.mission_id) ||
+        !detail::parse_u64(fields[1], spawn.spawn_tick) || !detail::parse_u32(fields[2], unit_id) ||
+        !detail::parse_u32(fields[3], owner) || !detail::parse_u32(fields[4], asset) ||
+        !detail::parse_u32(fields[5], faction) || !detail::parse_f32(fields[6], spawn.combat.position.x) ||
+        !detail::parse_f32(fields[7], spawn.combat.position.y) ||
+        !detail::parse_f32(fields[8], spawn.combat.position.z) ||
+        !detail::parse_f32(fields[9], spawn.combat.health) ||
+        !detail::parse_f32(fields[10], spawn.combat.max_health) ||
+        !detail::parse_f32(fields[11], spawn.combat.collision_radius)) return false;
     spawn.unit = {unit_id, owner, asset, false};
     spawn.combat.entity = unit_id;
     spawn.combat.faction = faction;
@@ -948,9 +921,9 @@ bool MissionAiDirector::load_manifest(const std::filesystem::path& manifest) {
     std::array<std::string_view, 6> fields{};
     if (!parse_tsv_fields(std::string_view(line), fields)) return false;
     MissionAiRule rule;
-    if (!parse_u32(fields[0], rule.mission_id) || !parse_u64(fields[1], rule.first_tick) ||
-        !parse_u64(fields[2], rule.period_ticks) || !parse_u32(fields[3], rule.entity) ||
-        !parse_u32(fields[4], rule.target) || !parse_u32(fields[5], rule.weapon_id) ||
+    if (!detail::parse_u32(fields[0], rule.mission_id) || !detail::parse_u64(fields[1], rule.first_tick) ||
+        !detail::parse_u64(fields[2], rule.period_ticks) || !detail::parse_u32(fields[3], rule.entity) ||
+        !detail::parse_u32(fields[4], rule.target) || !detail::parse_u32(fields[5], rule.weapon_id) ||
         !loaded.add(rule)) return false;
     has_rule = true;
   }

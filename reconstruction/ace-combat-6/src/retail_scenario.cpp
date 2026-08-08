@@ -129,7 +129,7 @@ std::vector<std::size_t> ScenarioPayload::children(std::size_t node) const {
     const std::optional<std::uint32_t> offset = u32(*table + 4 + 4 * index);
     if (!offset.has_value()) return {};
     const std::size_t child = *table + *offset;
-    if (child + 8 > bytes_.size()) return {};
+    if (child > bytes_.size() || bytes_.size() - child < 8) return {};
     result.push_back(child);
   }
   return result;

@@ -69,7 +69,7 @@ std::optional<ModelDirectoryEntry> ModelDirectory::entry(std::uint32_t index) co
 bool ModelDirectory::every_entry_starts_with(const char signature[4]) const noexcept {
   for (std::uint32_t index = 0; index < count_; ++index) {
     const std::optional<ModelDirectoryEntry> row = entry(index);
-    if (!row.has_value() || row->offset + 4 > size_) return false;
+    if (!row.has_value() || row->offset > size_ || size_ - row->offset < 4) return false;
     if (std::memcmp(bytes_ + row->offset, signature, 4) != 0) return false;
   }
   return true;

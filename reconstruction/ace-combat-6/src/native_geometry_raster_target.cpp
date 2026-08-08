@@ -595,8 +595,10 @@ void NativeRenderTarget::rasterize_clipped_triangle(GeometryRasterContext& conte
     const float safe_x = std::clamp(vertex.x, -1.0f, 1.0f);
     const float safe_y = std::clamp(vertex.y, -1.0f, 1.0f);
     return ScreenPoint{
-        std::min(width_ - 1u, static_cast<std::uint32_t>((safe_x * 0.5f + 0.5f) * width_)),
-        std::min(height_ - 1u, static_cast<std::uint32_t>((0.5f - safe_y * 0.5f) * height_)),
+        std::min(width_ - 1u, static_cast<std::uint32_t>(
+                                  (safe_x * 0.5f + 0.5f) * static_cast<float>(width_))),
+        std::min(height_ - 1u, static_cast<std::uint32_t>(
+                                   (0.5f - safe_y * 0.5f) * static_cast<float>(height_))),
         std::clamp(vertex.z * 0.5f + 0.5f, 0.0f, 1.0f),
         vertex.x, vertex.y, vertex.z};
   };

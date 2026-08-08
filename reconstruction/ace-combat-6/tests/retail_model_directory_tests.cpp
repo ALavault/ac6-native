@@ -22,6 +22,35 @@
 
 namespace {
 
+void write_be_u32(std::vector<std::uint8_t>& bytes, std::size_t offset,
+                  std::uint32_t value) {
+  bytes[offset] = static_cast<std::uint8_t>(value >> 24u);
+  bytes[offset + 1] = static_cast<std::uint8_t>(value >> 16u);
+  bytes[offset + 2] = static_cast<std::uint8_t>(value >> 8u);
+  bytes[offset + 3] = static_cast<std::uint8_t>(value);
+}
+
+void verify_signature_bounds() {
+  std::vector<std::uint8_t> bytes(28, 0);
+  write_be_u32(bytes, 4, 1);
+  write_be_u32(bytes, 12, 20);
+  write_be_u32(bytes, 16, 0);
+
+  write_be_u32(bytes, 20, 26);
+  const auto truncated = ac6::retail::ModelDirectory::open(bytes.data(), bytes.size());
+  REQUIRE(truncated.has_value());
+  REQUIRE(!truncated->every_entry_starts_with("FHM "));
+
+  write_be_u32(bytes, 20, 24);
+  bytes[24] = 'F';
+  bytes[25] = 'H';
+  bytes[26] = 'M';
+  bytes[27] = ' ';
+  const auto exact = ac6::retail::ModelDirectory::open(bytes.data(), bytes.size());
+  REQUIRE(exact.has_value());
+  REQUIRE(exact->every_entry_starts_with("FHM "));
+}
+
 std::vector<std::uint8_t> read_file(const std::filesystem::path& path) {
   std::ifstream input(path, std::ios::binary);
   std::ostringstream buffer;
@@ -34,6 +63,7 @@ std::vector<std::uint8_t> read_file(const std::filesystem::path& path) {
 
 int main(int argc, char** argv) {
   if (argc < 2) return 2;
+  verify_signature_bounds();
   const std::vector<std::uint8_t> blob = read_file(argv[1]);
   if (blob.empty()) return 77;
 
