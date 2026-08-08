@@ -82,11 +82,39 @@
 // 0x82340870 / 0x8234BEC8 fills, keyed by GIDX+0x08.
 //
 // So the material -> texture -> NTXR link is derived, and it lands on the
-// decoder already ported in ntxr_texture.h. What is still missing is the
-// VERTEX data: no field read on the derived path has been shown to address it,
-// and cycle 1203 established that the product's existing reader and this
-// derivation disagree about +0x00/+0x04/+0x20 with neither mapping controlled.
-// See cycles 1200-1203 and 1207.
+// decoder already ported in ntxr_texture.h.
+//
+// GEOMETRY — 0x82362190, and cycle 1212 corrects five cycles that said the
+// vertex data was addressed by nothing. It is, and the reason the scans missed
+// it is that the object is ALIASED: everything below 0x82350F08 receives
+// ctx = this + 0x10, so the section bases are spelled 0x74/0x78/0x7C(ctx),
+// never 0x84/0x88/0x8C(this).
+//
+//     823621bc  lwz r3,0x14(r30)   ; Length = [buf+0x14], SECTION 1
+//     823621d4  bl  0x821fbb10     ;   XGSetIndexBufferHeader, D3DFMT_INDEX16
+//     823621dc  lwz r4,0x74(r31)   ;   offset by obj+0x84
+//     823621ec  lwz r3,0x18(r30)   ; Length = [buf+0x18], SECTION 2
+//     823621fc  bl  0x821fba78     ;   XGSetVertexBufferHeader
+//     82362204  lwz r4,0x78(r31)   ;   offset by obj+0x88
+//
+// The draw at 0x82364518 then reads desc+0x00 >> 1 as StartIndex, desc+0x04 as
+// a byte offset into the vertex block, desc+0x20 as a count of 16-bit indices,
+// and draws triangle strips.
+//
+// This reader still does not expose those fields, for one reason: the vertex
+// STRIDE is not in the file. 0x823453D0 takes it from an 8-byte table at
+// 0x828711F0 indexed by desc+0x0F/desc+0x0E, which is BSS-resident and built at
+// runtime. The product's older reader in native_geometry_raster.cpp carries
+// 0x0613 -> 32 and 0x0611 -> 28, and cycle 1212's extent control corroborates
+// them (178/179 exact against 0/179 for both rivals) - but corroborated is not
+// read, and the values stay out of this header until they are.
+//
+// Note also that 0x82012C40 is NOT a vertex stride table, though cycle 1198
+// treated it as one. It is materialised once in the image and its single use
+// writes desc+0x28 = table[idx] * count; desc+0x28 is zero on disk in every
+// descriptor, so it is runtime scratch.
+//
+// See cycles 1200-1204, 1207 and 1212.
 //
 // It does not mutate the buffer. Retail relocates in place and guards with two
 // bits — 0x8000 for "pointers rebased", 0x4000 for "ids resolved". This reader

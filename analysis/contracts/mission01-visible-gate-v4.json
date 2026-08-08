@@ -359,7 +359,13 @@
      "0x8234AE00",
      "0x82012C40",
      "0x820128B4",
-     "0x8201283C"
+     "0x8201283C",
+     "0x82362190",
+     "0x821FBB10",
+     "0x821FBA78",
+     "0x821FC070",
+     "0x82364518",
+     "0x823453D0"
     ],
     "evidence": [
      {
@@ -386,8 +392,8 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/include/ac6/retail_ndxr_container.h",
-      "sha256": "368ce7c7a4cff61e97567c4710f90b6822f300158471a05e3a5abfba9b1146f6",
-      "size": 10206,
+      "sha256": "b7f9c99b8ab77ec18ec96d39b2e6d51e641204e043aaf19d0bd04eee1a21e8cb",
+      "size": 11701,
       "claim": "include/ac6/retail_ndxr_container.h carries the chain stage by stage with the address establishing each, states the two deliberate deviations from retail - it does not relocate the buffer and it checks the declared size, which retail does not - and names what it refuses to port: the polygon descriptor, because cycle 1203 showed neither field mapping is controlled"
      },
      {
@@ -396,6 +402,13 @@
       "sha256": "cb0192a3e1f07563e37eaeb0b60e6835d5038db37f9d0493c1e9f5de7289a506",
       "size": 8670,
       "claim": "src/retail_ndxr_container.cpp implements Open, Record, Material, TextureRef and ParameterChainLength against those addresses, in 64-bit arithmetic so a hostile file cannot wrap the section adds"
+     },
+     {
+      "kind": "static",
+      "path": "reports/cycle-1212-the-vertices-were-behind-an-alias.md",
+      "claim": "the vertex and index blocks located - 0x82362190 binds section 2 as a vertex buffer and section 1 as a D3DFMT_INDEX16 index buffer - with the reason five cycles missed it (the object is aliased at ctx = this + 0x10) and the extent control that discriminates the stride at 178/179 against 0/179 for both rivals",
+      "sha256": "d6f140e5f720bcd9265621c89ec6bcf8c0ba8976973160723fc63d72c20a0548",
+      "size": 8309
      }
     ]
    }
