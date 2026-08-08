@@ -534,6 +534,34 @@ int run_retail_session(const std::filesystem::path& payload_path,
     }
     frame = session->tick(kFixedDt, generated_headless_input(tick));
   }
+  // JV 2a: the retail path drives the rasteriser, not the HUD alone.
+  //
+  // The far plane is derived from the world's own extent rather than left to
+  // the fallback. Cycle 1146 paid for that lesson once: project_point
+  // normalises depth as view_z / far, so with the 4096 default every marker
+  // beyond 4,096 units saturates to 1.0, fails the depth test and vanishes.
+  // Mission 01 spans roughly 66,000 units, so the default would silently drop
+  // nearly the whole world and leave a picture that looks deliberate.
+  float min_x = 0.0f, max_x = 0.0f, min_z = 0.0f, max_z = 0.0f;
+  std::size_t placed_units = 0;
+  for (const ac6::CombatUnitState& unit : session->world().combat.snapshot_units()) {
+    const std::vector<ac6::EntityId>& placed = session->world().placed;
+    if (std::find(placed.begin(), placed.end(), unit.entity) == placed.end()) continue;
+    if (placed_units == 0) {
+      min_x = max_x = unit.position.x;
+      min_z = max_z = unit.position.z;
+    } else {
+      min_x = std::min(min_x, unit.position.x);
+      max_x = std::max(max_x, unit.position.x);
+      min_z = std::min(min_z, unit.position.z);
+      max_z = std::max(max_z, unit.position.z);
+    }
+    placed_units += 1;
+  }
+  const float world_extent = std::max({max_x - min_x, max_z - min_z, 1.0f});
+  const std::size_t markers =
+      session->render_world_markers(target, frame.world, 4.0f * world_extent);
+
   if (!hud.render(target, frame.world, session->execution())) return 115;
   const ac6::MissionDebrief debrief = session->debrief();
   if (!target.write_ppm(output_dir / "retail-session-hud.ppm")) return 116;
@@ -551,6 +579,9 @@ int run_retail_session(const std::filesystem::path& payload_path,
          << "  \"script_exhausted_at_tick\": " << exhausted_at << ",\n"
          << "  \"objectives\": " << debrief.objective_count << ",\n"
          << "  \"objectives_completed\": " << debrief.completed_objectives << ",\n"
+         << "  \"world_markers_drawn\": " << markers << ",\n"
+         << "  \"world_units_placed\": " << placed_units << ",\n"
+         << "  \"world_extent\": " << world_extent << ",\n"
          << "  \"hud_pixel_writes\": " << hud.snapshot().pixel_writes << ",\n"
          << "  \"hud_objective_count\": " << hud.snapshot().objective_count << "\n"
          << "}\n";
