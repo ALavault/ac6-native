@@ -23,5 +23,9 @@
   "descriptors_vertex_extent_in_bounds": 13014,
   "files_vertex_extent_exact_derived": 534,
   "files_vertex_extent_exact_rival_t8_only": 0,
-  "files_vertex_extent_exact_rival_t18_only": 0
+  "files_vertex_extent_exact_rival_t18_only": 0,
+  "uv_sampled": 276159,
+  "uv_plausible_at_24_derived": 275499,
+  "uv_plausible_at_20_rival": 30,
+  "uv_plausible_at_16_rival": 30
 }

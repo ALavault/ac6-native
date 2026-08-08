@@ -372,7 +372,9 @@
      "0x8233E6B0",
      "0x82345098",
      "0x82340870",
-     "0x8234BEC8"
+     "0x8234BEC8",
+     "0x821DE898",
+     "0x820111C0"
     ],
     "evidence": [
      {
@@ -392,8 +394,8 @@
      {
       "kind": "native-test",
       "path": "reports/mission01-retail/ndxr-container.json",
-      "sha256": "d55c313a6a38b533460988f7898c11b567f9348dd475039e75d71bd86e2b9690",
-      "size": 908,
+      "sha256": "d5621b55b208f01ea154ed65b0f56ca6983c6ccb982b06d54fe7003869ac4955",
+      "size": 1040,
       "claim": "537 files, 13,014 records, 13,014 materials and 13,014 texture references, 0 refused, 0 unnamed, every relocation and resolve guard clear on disk, every parameter chain terminating, the rival string base naming 0 files against the derived base naming 537, and the rival stride 0x10 terminating 0 times - with the 0x20 rival reported and explicitly NOT asserted, because at texture_count == 1 it is not discriminated"
      },
      {
@@ -430,6 +432,13 @@
       "claim": "the resource lookup one level deeper than cycle 1201 read it: 0x8233EBB0 adds 0x80 to reach a ResourceManager and 0x8234AE00 adds 0x80 again to reach the map at registry+0x100, with sixteen reserved ids at or above 0xFFFFFFF0 bypassing it into a 0x120-slot array - zero of 13,014 corpus ids are sentinels",
       "sha256": "440918d86ecbd20152182d8952bd12e3cb3986508ce669aab3693cb9c8bc3ac1",
       "size": 3768
+     },
+     {
+      "kind": "static",
+      "path": "reports/cycle-1233-the-uv-offset-was-four-bytes-early.md",
+      "claim": "the vertex element layout derived from the declaration lists the renderer's builder walks - POSITION@0, NORMAL@12, COLOR@20, TEXCOORD@24 for format 0x0613 - correcting a product that read UV four bytes early on every vertex, with a corpus control scoring the derived offset at 99.8% plausible against 0.0% for both offsets the product had used",
+      "sha256": "3eb7b73689802a86046c03367d7911e1f41c8c3281bddfb8bf89721a81ae8ae2",
+      "size": 3740
      }
     ]
    }

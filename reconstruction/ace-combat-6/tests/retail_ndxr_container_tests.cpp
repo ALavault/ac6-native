@@ -20,7 +20,9 @@
 #include "ac6/retail_ndxr_container.h"
 
 #include <cstdint>
+#include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
@@ -96,6 +98,26 @@ std::uint32_t ChainLengthWithStride(const std::vector<std::uint8_t>& bytes,
   return 0;
 }
 
+// Cycle 1233 found the product reading UV four bytes early on every vertex of
+// every mesh, and ctest passed 27 of 27 before and after because nothing here
+// asserted a UV. This is that missing control.
+//
+// The derived layout puts TEXCOORD at +24 for stride 32 (POSITION@0, NORMAL@12,
+// COLOR@20, TEXCOORD@24). A texture coordinate read from the right place is a
+// finite number of modest magnitude; read from the wrong place it is four bytes
+// of colour or normal reinterpreted as a float, which almost never is. The
+// rivals are the two offsets the product actually used.
+bool PlausibleUv(float value) {
+  return std::isfinite(value) && std::fabs(value) <= 64.0f;
+}
+
+float BeFloat(const std::vector<std::uint8_t>& bytes, std::size_t at) {
+  const std::uint32_t bits = Be32(bytes.data() + at);
+  float value = 0.0f;
+  std::memcpy(&value, &bits, sizeof(value));
+  return value;
+}
+
 struct Totals {
   std::uint64_t opened = 0;
   std::uint64_t refused = 0;
@@ -118,6 +140,10 @@ struct Totals {
   std::uint64_t extent_exact_derived = 0;
   std::uint64_t extent_exact_t8_only = 0;
   std::uint64_t extent_exact_t18_only = 0;
+  std::uint64_t uv_sampled = 0;
+  std::uint64_t uv_plausible_derived = 0;
+  std::uint64_t uv_plausible_rival_20 = 0;
+  std::uint64_t uv_plausible_rival_16 = 0;
 };
 
 // The two terms of cycle 1217's rule, so the test can score the rivals that are
@@ -142,6 +168,7 @@ std::uint32_t T18Only(std::uint8_t hi, std::uint8_t lo) {
 // Lifted out of main to stay inside the repository's per-function line budget,
 // which ac6-cpp-complexity enforces at 220. Returns false on a write failure so
 // the caller can fail the run rather than report success with no artefact.
+
 bool WriteMetrics(const char* path, std::size_t file_count,
                   const Totals& totals) {
   std::FILE* out = std::fopen(path, "wb");
@@ -176,7 +203,11 @@ bool WriteMetrics(const char* path, std::size_t file_count,
                "  \"descriptors_vertex_extent_in_bounds\": %llu,\n"
                "  \"files_vertex_extent_exact_derived\": %llu,\n"
                "  \"files_vertex_extent_exact_rival_t8_only\": %llu,\n"
-               "  \"files_vertex_extent_exact_rival_t18_only\": %llu\n"
+               "  \"files_vertex_extent_exact_rival_t18_only\": %llu,\n"
+               "  \"uv_sampled\": %llu,\n"
+               "  \"uv_plausible_at_24_derived\": %llu,\n"
+               "  \"uv_plausible_at_20_rival\": %llu,\n"
+               "  \"uv_plausible_at_16_rival\": %llu\n"
                "}\n",
                file_count, static_cast<unsigned long long>(totals.opened),
                static_cast<unsigned long long>(totals.refused),
@@ -199,7 +230,11 @@ bool WriteMetrics(const char* path, std::size_t file_count,
                static_cast<unsigned long long>(totals.vertex_fits),
                static_cast<unsigned long long>(totals.extent_exact_derived),
                static_cast<unsigned long long>(totals.extent_exact_t8_only),
-               static_cast<unsigned long long>(totals.extent_exact_t18_only));
+               static_cast<unsigned long long>(totals.extent_exact_t18_only),
+               static_cast<unsigned long long>(totals.uv_sampled),
+               static_cast<unsigned long long>(totals.uv_plausible_derived),
+               static_cast<unsigned long long>(totals.uv_plausible_rival_20),
+               static_cast<unsigned long long>(totals.uv_plausible_rival_16));
   std::fclose(out);
   return true;
 }
@@ -212,7 +247,9 @@ void AccumulateDescriptors(const ac6::retail::NdxrContainer& container,
                            const ac6::retail::NdxrRecord& record,
                            std::uint64_t vertex_length, Totals* totals,
                            std::uint64_t* derived_extent,
-                           std::uint64_t* t8_extent, std::uint64_t* t18_extent) {
+                           std::uint64_t* t8_extent, std::uint64_t* t18_extent,
+                           const std::vector<std::uint8_t>* bytes,
+                           std::size_t vertex_base) {
   for (std::uint16_t d = 0; d < record.descriptor_count; ++d) {
     const auto desc = container.Descriptor(record, d);
     if (!desc.has_value()) continue;
@@ -225,6 +262,28 @@ void AccumulateDescriptors(const ac6::retail::NdxrContainer& container,
     *t8_extent = std::max(
         *t8_extent,
         desc->vertex_offset + count * T8Only(desc->format_hi, desc->format_lo));
+    // Sample this descriptor's vertices at the derived UV offset and at the two
+    // the product used before cycle 1233.
+    if (desc->vertex_stride == 32) {
+      constexpr std::uint16_t kSampleCap = 40;
+      const std::uint16_t take = std::min<std::uint16_t>(desc->vertex_count, kSampleCap);
+      for (std::uint16_t k = 0; k < take; ++k) {
+        const std::size_t base = vertex_base + desc->vertex_offset +
+                                 static_cast<std::size_t>(k) * desc->vertex_stride;
+        if (base + desc->vertex_stride > bytes->size()) break;
+        ++totals->uv_sampled;
+        struct { std::size_t offset; std::uint64_t* counter; } probes[] = {
+            {24, &totals->uv_plausible_derived},
+            {20, &totals->uv_plausible_rival_20},
+            {16, &totals->uv_plausible_rival_16}};
+        for (const auto& probe : probes) {
+          if (PlausibleUv(BeFloat(*bytes, base + probe.offset)) &&
+              PlausibleUv(BeFloat(*bytes, base + probe.offset + 4))) {
+            ++*probe.counter;
+          }
+        }
+      }
+    }
     *t18_extent = std::max(
         *t18_extent,
         desc->vertex_offset + count * T18Only(desc->format_hi, desc->format_lo));
@@ -234,6 +293,23 @@ void AccumulateDescriptors(const ac6::retail::NdxrContainer& container,
 bool Check(bool condition, const char* what) {
   if (!condition) std::fprintf(stderr, "FAIL: %s\n", what);
   return condition;
+}
+
+// Lifted out of main for the 220-line per-function budget. Cycle 1233's control:
+// the derived UV offset must dominate and both rivals must collapse. If a rival
+// ever rises, the element-list reading behind it is wrong.
+bool CheckUvControl(const Totals& totals) {
+  if (totals.uv_sampled == 0) return true;
+  const double sampled = static_cast<double>(totals.uv_sampled);
+  const double derived = 100.0 * static_cast<double>(totals.uv_plausible_derived) / sampled;
+  const double rival20 = 100.0 * static_cast<double>(totals.uv_plausible_rival_20) / sampled;
+  const double rival16 = 100.0 * static_cast<double>(totals.uv_plausible_rival_16) / sampled;
+  std::printf("  UV plausible at +24 derived / +20 / +16    : %.1f%% / %.1f%% / %.1f%%\n",
+              derived, rival20, rival16);
+  bool ok = Check(derived > 90.0, "the derived UV offset is not plausible");
+  ok = Check(rival20 < 10.0, "the +20 rival UV offset became plausible") && ok;
+  ok = Check(rival16 < 10.0, "the +16 rival UV offset became plausible") && ok;
+  return ok;
 }
 
 }  // namespace
@@ -306,7 +382,8 @@ int main(int argc, char** argv) {
       if (record->name.empty()) ++totals.unnamed;
 
       AccumulateDescriptors(*container, *record, vertex_length, &totals,
-                            &derived_extent, &t8_extent, &t18_extent);
+                            &derived_extent, &t8_extent, &t18_extent, &bytes,
+                            container->sections().second);
 
       // Cycle 1207: the four slots are MATERIALS. Only slot 0 is ever used in
       // this corpus, so the loop covers all four and the count proves it.
@@ -434,6 +511,7 @@ int main(int argc, char** argv) {
   // derived rule names most of the corpus.
   ok = Check(totals.extent_exact_t8_only == 0, "rival T8-alone matched a file") && ok;
   ok = Check(totals.extent_exact_t18_only == 0, "rival T18-alone matched a file") && ok;
+  ok = CheckUvControl(totals) && ok;
   ok = Check(totals.extent_exact_derived > totals.opened / 2,
              "the derived stride did not land exactly for most files") && ok;
 
