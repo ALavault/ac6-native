@@ -543,7 +543,26 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    (`821aeb60 lis r3,0xf00`), so the value in the file is its seed — a
    placeholder meaning "assign me", discarded before the registry sees it.
 
-   **The 115 copies of `0x08000000` are not settled.** PAC entries 199 and 210
+   **Cycle 1268 settled them: they are not a collision either.** PAC entries 199
+   and 210 are reached not by the DPL mount but through an **SWG** node, whose
+   worker hard-wires the mode — `821d2010 li r10,0x1` / `821d2024 stw
+   r10,0x18(r11)` — and `0x821D1620` reads it into the thunk at
+   `821d16c0 lwz r5,0x18(r31)`. **Mode 1, so the file ids are discarded** and the
+   allocator `0x820F80C0` gives each child a distinct base.
+
+   The control could have failed three ways and did not: the worker loops from
+   child **1** (`821d1834 li r30,0x1`) because child 0 is the SWG descriptor, and
+   `idx_0199/000_FHM` holds 15 children with an `SWG_00`, `idx_0210/002_FHM`
+   holds 102 — 14 and 101 mounted, exactly the two wrapper counts — while
+   entries 9, 119 and 165 hold no `SWG_00` at all.
+
+   **So all 141 extra copies are artefacts of reading ids retail discards: 28 by
+   the entry-9 mount, 113 by the SWG mount. Mount order is not load-bearing for
+   Mission 01 and the flat extraction is exactly right.** What `0x08000000`
+   *means* in the file is still unknown — cycle 1264's "allocator seed" story
+   does not transfer, since this allocator seeds at `0x0E000000`.
+
+   **Superseded — the paragraph this replaces read:** PAC entries 199 and 210
    carry all of them and no mount site was found: 39 `bl 0x821D1DD0` sites were
    enumerated and neither `0xC7` nor `0xD2` appears as an immediate on any mount
    path. Their shape matches the `0x0F000000` case exactly, which suggests the
