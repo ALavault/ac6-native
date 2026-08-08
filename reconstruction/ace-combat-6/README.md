@@ -8,6 +8,24 @@ The PAC/DATA archives are not runtime inputs and are not required by the
 Mission 01 comparison lane. That lane consumes only bounded, content-addressed
 buffers plus a local oracle reference pack; neither is installed by CPack.
 
+## Retail session
+
+```sh
+ac6-native --retail-session SCENARIO_PAYLOAD 1 OUTPUT_DIR
+```
+
+Plays Mission 01 from the retail scenario container and from nothing else:
+there is no manifest argument, and none is read. The world's units, factions,
+player and four sub-missions all come out of the payload; the session runs 1800
+fixed ticks of input, flight, camera and HUD over it, and the mission ends when
+its own sub-mission script runs out — the command exits non-zero if it does not.
+
+`OUTPUT_DIR` receives `retail-session.json` and `retail-session-hud.ppm`.
+
+The payload is retail content and is never shipped with this package. The
+session declares no external asset, so the runtime's `mission_ready` flag stays
+false: frame parity with the disc is not claimed anywhere on this path.
+
 ## Mission 01 comparison gate
 
 Run:

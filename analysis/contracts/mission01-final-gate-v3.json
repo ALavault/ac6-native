@@ -1,7 +1,7 @@
 {
   "schema": "ac6.mission01-final-gate.v3",
   "provenance": {
-    "repo_commit": "14c704f3c5fd5433b1ee266368dd653627e8370b",
+    "repo_commit": "c6978cd07bd0f42a298561c66cdee4d239956daa",
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
     "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
     "mission_id": 1
@@ -196,9 +196,9 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-mission-state.json",
-            "sha256": "8bf38205a663bea5b974ac36fd9422295995189d5795a3c9732bf29b720375f1",
-            "size": 346,
-            "claim": "the ported normaliser, predicate and selector run against the retail scenario; Mission 01 declares no area record, so the selector correctly reports none and retail's static fallback is the path taken"
+            "sha256": "600e99e0be06d7efe756d8c4dc44065e71a72e525041c1e09a9bf022bf28b756",
+            "size": 507,
+            "claim": "the ported normaliser, predicate and selector run against the retail scenario; Mission 01 declares no slot-6 record, and cycle 1121 found where its rectangle does come from - each sub-mission's tag-0 step calls FUN_82268B28 at 0x8226E2A8 - correcting cycle 1117's reading that the static fallback was the path taken"
           },
           {
             "kind": "derivation",
@@ -210,22 +210,85 @@
         ]
       },
       "playable_session": {
-        "status": "open",
-        "statement": "the product's own session loop - input, camera, HUD - runs on the world built from the retail container",
+        "status": "passed",
+        "statement": "the product's own session loop - input, camera, HUD - runs on the world built from the retail container, with no manifest anywhere on its path",
         "retail_addresses": [
-          "0x8219BDD8"
+          "0x8219BDD8",
+          "0x820A7070",
+          "0x820A7420"
         ],
-        "evidence": [],
-        "open_because": "the world builder exists and is tested, but ac6-native's session command still consumes manifests"
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1121-retail-session.md",
+            "sha256": "93c11a350589c873422cd82f4f062c486e295c7ee4dbc64c41dfe5683e28f036",
+            "claim": "the loader's sequence read off its own instructions: read the container, publish it at context+0x264, then size the counter table, the sub-mission timestamps and the faction census from the slots it just published",
+            "size": 8484
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-session.json",
+            "sha256": "064fd07f4bebbb8ee5d8599f2bc9ea67e3eb0ca4a96eb67c54ba1f99ce788e12",
+            "claim": "1800 fixed ticks over the world the container built: 230 units, the player the faction switch classified, the camera at the runtime's fixed offset, deterministic across runs and different under a different input stream",
+            "size": 805
+          },
+          {
+            "kind": "native-capture",
+            "path": "reports/mission01-native-captures/jf-retail-session/hud-debrief.png",
+            "sha256": "8a54594ca14e53f91839c04117609acb33f698b6c602a28cb97deac55234f348",
+            "size": 693,
+            "claim": "the HUD over the retail-built world once the script has run out: outcome panel shown, 4 of 4 sub-missions complete, 230 units still active"
+          },
+          {
+            "kind": "native-capture",
+            "path": "reports/mission01-native-captures/jf-retail-session/retail-session-hud.json",
+            "sha256": "e252506c9ccea6a05050724d31edfde9a574bd5f5f6fb539ac12f4e7a7ed4de1",
+            "size": 1101,
+            "claim": "the numbers the test asserted before either image was written - two captures at tick 900 and tick 1800, differing colour hashes, 1276 and 1521 HUD pixel writes, no fixture"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
+            "sha256": "9861ceaf75413f597186b3932c37c78007a93609f71538373c56691f96485d5b",
+            "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from 0x820A7420's category 2, and installs the container's own combat states instead of the developer spawn layout",
+            "size": 5689
+          }
+        ]
       },
       "mission_completion": {
-        "status": "open",
-        "statement": "the mission reaches its debrief through the retail sub-mission script, with no forced completion",
+        "status": "passed",
+        "statement": "the mission reaches its debrief because the retail sub-mission script ran out, and for no other reason",
         "retail_addresses": [
-          "0x8226E908"
+          "0x82267370",
+          "0x8226E908",
+          "0x8226E158",
+          "0x82093DD0",
+          "0x822ED708",
+          "0x82266710"
         ],
-        "evidence": [],
-        "open_because": "no path yet drives the sequencer to the end of the script and into a debrief"
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1120-submission-script-driver.md",
+            "sha256": "927507d64c6891aafc13c3b35c6f1b6175f685420a955175623682bc580fb303",
+            "size": 6410,
+            "claim": "the cursor 0x82267370 transcribed instruction by instruction, the state handler 0x822ED708 that calls it on signal -2, the exhaustion branch into 0x82266710 and its write of 1 to context+0x338, and the six-step trace those imply before it was measured"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-session.json",
+            "sha256": "064fd07f4bebbb8ee5d8599f2bc9ea67e3eb0ca4a96eb67c54ba1f99ce788e12",
+            "claim": "the predicted trace measured at three cadences, identical each time; the debrief reached with 4 of 4 sub-missions behind the cursor; and a session whose script never advances still in gameplay at tick 1800 with nothing completed",
+            "size": 805
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_mission_script.cpp",
+            "sha256": "9aa82a457d3ff7dbeed7262584ed5eb3ada1d2bb5a6ad7b8e9c0851e249c607d",
+            "claim": "src/retail_mission_script.cpp implements the advance in 0x82267370's own order, its three-way entry guard, the payload step-count bound, the exhaustion return and the end code 0x82266710 writes",
+            "size": 4195
+          }
+        ]
       }
     }
   }

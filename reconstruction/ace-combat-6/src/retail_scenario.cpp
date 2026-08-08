@@ -240,12 +240,38 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
     ScenarioSubMission sub_mission;
     sub_mission.index = sub_mission_index++;
     for (const std::size_t list : payload.children(node)) {
+      // 0x822673E4-0x822673EC: lwz r10,0x8(r10); lwz r10,0x0(r10); lbz r10,0x0(r10)
+      // - the step count the advance compares the cursor against.
+      const std::optional<std::size_t> list_data = payload.resolve(list, 0);
+      if (list_data.has_value()) {
+        const std::optional<std::uint8_t> count = payload.u8(*list_data);
+        if (!count.has_value()) return std::nullopt;
+        sub_mission.step_count_byte = *count;
+      }
       for (const std::size_t step : payload.children(list)) {
         const std::optional<std::size_t> data = payload.resolve(step, 0);
         if (!data.has_value()) continue;
         const std::optional<std::uint8_t> tag = payload.u8(*data);
         if (!tag.has_value()) return std::nullopt;
         sub_mission.step_tags.push_back(*tag);
+        if (*tag != 0 || sub_mission.setup.present) continue;
+        // 0x8226E2A0: pfVar3 = **(float ***)(step + 4) - the step's first
+        // child's data block, which is where the sub-mission's rectangle, its
+        // time limit and its completion code live.
+        const std::vector<std::size_t> step_children = payload.children(step);
+        if (step_children.empty()) continue;
+        const std::optional<std::size_t> setup = payload.resolve(step_children[0], 0);
+        if (!setup.has_value()) continue;
+        ScenarioSubMissionSetup& record = sub_mission.setup;
+        const std::optional<float> f0 = payload.f32(*setup);
+        const std::optional<float> f1 = payload.f32(*setup + 0x04);
+        const std::optional<float> f2 = payload.f32(*setup + 0x08);
+        const std::optional<float> f3 = payload.f32(*setup + 0x0C);
+        const std::optional<float> limit = payload.f32(*setup + 0x24);
+        const std::optional<std::uint32_t> flags = payload.u32(*setup + 0x30);
+        const std::optional<std::uint8_t> code = payload.u8(*setup + 0x40);
+        if (!f0 || !f1 || !f2 || !f3 || !limit || !flags || !code) return std::nullopt;
+        record = {true, *f0, *f2, *f1, *f3, *limit, *flags, *code};
       }
     }
     scenario.sub_missions_.push_back(std::move(sub_mission));

@@ -7,6 +7,7 @@
   "counter_capacity": 339,
   "area_records": 0,
   "area_installed": false,
-  "area_note": "Mission 01 carries no slot-6 record, so retail installs its static fallback",
+  "area_note": "Mission 01 carries no slot-6 record; its rectangle comes from each sub-mission's tag-0 step, which calls FUN_82268B28 at 0x8226E2A8 - correcting cycle 1117's reading that the static fallback was the path taken",
+  "sub_mission_setups": 4,
   "sub_missions": 4
 }

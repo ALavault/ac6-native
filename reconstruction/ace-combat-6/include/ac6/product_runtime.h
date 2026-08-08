@@ -533,6 +533,12 @@ struct MissionLaunchDefinition {
   EntityId player_entity{};
   std::vector<UnitRecord> units;
   std::vector<WeaponDefinition> weapons;
+  // The combat states to install verbatim, one per unit and in the same order.
+  // A manifest never fills this in and gets the developer spawn layout below;
+  // a caller that already holds the states - the retail session, whose units
+  // come out of the scenario container with their own positions - passes them
+  // here so the launch does not overwrite them with a fixture.
+  std::vector<CombatUnitState> combat_states;
 };
 
 class MissionLaunchDatabase final {

@@ -102,10 +102,34 @@ struct ScenarioArea {
   bool operator==(const ScenarioArea&) const = default;
 };
 
+// The record a tag-0 step points at, read at the offsets 0x8226E158 reads it.
+// Only the fields with a consumer in that function are taken; the rest of the
+// block is left alone rather than guessed at.
+struct ScenarioSubMissionSetup {
+  bool present{};
+  // The four floats handed to FUN_82268B28 at 0x8226E2A8, in its argument
+  // order: pfVar3[0], pfVar3[2], pfVar3[1], pfVar3[3].
+  float x0{};
+  float z0{};
+  float x1{};
+  float z1{};
+  float time_limit{};             // pfVar3[9], the value FUN_822562B0 receives
+  std::uint32_t flags{};          // (uint)pfVar3[0xC]; bits 0,1,2,4,5,6,9,10 are read
+  std::uint8_t completion_code{}; // the byte at +0x40, compared against 1 and 2
+  bool operator==(const ScenarioSubMissionSetup&) const = default;
+};
+
 // One entry of root slot 2, with the script 0x8226E158 steps through.
 struct ScenarioSubMission {
   std::uint32_t index{};
   std::vector<std::uint8_t> step_tags;
+  // The byte 0x82267370 loads to bound the step cursor - the head of the step
+  // list's own data block, not the table's declared child count. The two are
+  // parsed independently on purpose: a payload where they disagree would tell
+  // us the model is wrong, and the runner uses this one because retail does.
+  std::uint8_t step_count_byte{};
+  // The setup of this sub-mission's first tag-0 step, if it has one.
+  ScenarioSubMissionSetup setup;
   bool operator==(const ScenarioSubMission&) const = default;
 };
 

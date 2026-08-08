@@ -2,6 +2,7 @@
 #include "ac6/product_runtime.h"
 #include "ac6/mission01_compare.h"
 #include "ac6/native_hud.h"
+#include "ac6/retail_session.h"
 #include "ac6/sdl_input.h"
 #include "ac6/interactive.h"
 
@@ -499,6 +500,69 @@ int run_play_headless(const std::filesystem::path& manifest_input,
              : 82;
 }
 
+// The session command that reads no manifest. Its only input is the retail
+// scenario container; everything the session runs on comes out of it.
+int run_retail_session(const std::filesystem::path& payload_path,
+                       std::uint32_t mission_id,
+                       const std::filesystem::path& output_dir) {
+  constexpr std::size_t kTicks = 1800;
+  constexpr std::size_t kCadence = 300;
+  constexpr float kFixedDt = 1.0f / 60.0f;
+  std::error_code error;
+  std::filesystem::create_directories(output_dir, error);
+  if (error) return 111;
+
+  std::ifstream input(payload_path, std::ios::binary);
+  if (!input) return 112;
+  std::ostringstream buffer;
+  buffer << input.rdbuf();
+  const std::string raw = buffer.str();
+  std::unique_ptr<ac6::retail::RetailSession> session = ac6::retail::RetailSession::open(
+      std::vector<std::uint8_t>(raw.begin(), raw.end()), {mission_id, {0, 0}});
+  if (session == nullptr) return 113;
+
+  ac6::NativeRenderTarget target;
+  if (!target.resize(640, 360) || !target.clear(0xFF000000u, 1.0f)) return 114;
+  ac6::NativeHudRenderer hud;
+  ac6::retail::RetailSessionFrame frame;
+  std::size_t advances = 0;
+  std::size_t exhausted_at = 0;
+  for (std::size_t tick = 1; tick <= kTicks; ++tick) {
+    if (tick % kCadence == 0 && !session->script().ended()) {
+      advances += 1;
+      if (session->advance_script() == ac6::retail::ScriptAdvance::Exhausted) exhausted_at = tick;
+    }
+    frame = session->tick(kFixedDt, generated_headless_input(tick));
+  }
+  if (!hud.render(target, frame.world, session->execution())) return 115;
+  const ac6::MissionDebrief debrief = session->debrief();
+  if (!target.write_ppm(output_dir / "retail-session-hud.ppm")) return 116;
+
+  std::ofstream report(output_dir / "retail-session.json");
+  if (!report) return 117;
+  report << "{\n"
+         << "  \"schema\": \"ac6.native-retail-session.v1\",\n"
+         << "  \"mission_id\": " << mission_id << ",\n"
+         << "  \"source\": \"retail scenario container only, no manifest\",\n"
+         << "  \"ticks\": " << frame.world.tick << ",\n"
+         << "  \"units_published\": " << session->world().published << ",\n"
+         << "  \"player_entity\": " << session->player_entity() << ",\n"
+         << "  \"script_advances\": " << advances << ",\n"
+         << "  \"script_exhausted_at_tick\": " << exhausted_at << ",\n"
+         << "  \"objectives\": " << debrief.objective_count << ",\n"
+         << "  \"objectives_completed\": " << debrief.completed_objectives << ",\n"
+         << "  \"hud_pixel_writes\": " << hud.snapshot().pixel_writes << ",\n"
+         << "  \"hud_objective_count\": " << hud.snapshot().objective_count << "\n"
+         << "}\n";
+  if (!report) return 118;
+  std::fprintf(stderr,
+               "retail_session units=%zu ticks=%llu advances=%zu exhausted_at=%zu completed=%u\n",
+               session->world().published,
+               static_cast<unsigned long long>(frame.world.tick), advances, exhausted_at,
+               debrief.completed_objectives);
+  return exhausted_at != 0 && debrief.outcome == ac6::MissionOutcome::Success ? 0 : 119;
+}
+
 int run_combat_headless(const std::filesystem::path& manifest_input,
                         std::uint32_t mission_id,
                         const std::filesystem::path& output_path) {
@@ -791,6 +855,11 @@ int run_commands(int argc, char** argv) {
     std::uint32_t mission_id = 0;
     if (!parse_u32(argv[3], mission_id) || mission_id == 0) return 99;
     return run_play_headless(argv[2], mission_id, argv[4], argv[5]);
+  }
+  if (argc == 5 && std::string_view(argv[1]) == "--retail-session") {
+    std::uint32_t mission_id = 0;
+    if (!parse_u32(argv[3], mission_id) || mission_id == 0) return 110;
+    return run_retail_session(argv[2], mission_id, argv[4]);
   }
   if (argc == 5 && std::string_view(argv[1]) == "--combat-headless") {
     std::uint32_t mission_id = 0;

@@ -357,13 +357,25 @@ bool MissionExecution::launch(const MissionLaunchDefinition& launch) noexcept {
     launched_ = false;
     return false;
   }
+  const bool supplied_states = !launch.combat_states.empty();
+  if (supplied_states && launch.combat_states.size() != launch.units.size()) {
+    units_ = UnitRegistry{};
+    combat_.clear();
+    scenario_ = MissionScenario(*definition_);
+    launched_ = false;
+    return false;
+  }
   std::size_t spawn_index = 0;
-  for (const UnitRecord& unit : launch.units) {
+  for (std::size_t index = 0; index < launch.units.size(); ++index) {
+    const UnitRecord& unit = launch.units[index];
     const float spawn_x = unit.id == launch.player_entity
         ? 0.0f
         : 20.0f + static_cast<float>(spawn_index++) * 5.0f;
-    if (!combat_.add_unit({unit.id, unit.owner, {spawn_x, 0.0f, 0.0f},
-                           100.0f, 100.0f, 1.0f, true})) {
+    const CombatUnitState state = supplied_states
+        ? launch.combat_states[index]
+        : CombatUnitState{unit.id, unit.owner, {spawn_x, 0.0f, 0.0f},
+                          100.0f, 100.0f, 1.0f, true};
+    if (state.entity != unit.id || !combat_.add_unit(state)) {
       units_ = UnitRegistry{};
       combat_.clear();
       scenario_ = MissionScenario(*definition_);

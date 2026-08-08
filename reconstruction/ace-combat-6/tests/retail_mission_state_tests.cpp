@@ -259,8 +259,24 @@ int check_retail(const std::filesystem::path& payload_path,
       ac6::retail::select_mission_area(*scenario, false);
   const std::optional<ac6::retail::MissionArea> second =
       ac6::retail::select_mission_area(*scenario, true);
-  // Mission 01 carries no slot-6 record at all, which is why retail falls back.
+  // Mission 01 carries no slot-6 record at all. Cycle 1117 read that as "retail
+  // installs its static fallback"; cycle 1121 found the real source and the
+  // conclusion was wrong. The rectangle comes from the sub-mission script: each
+  // tag-0 step calls FUN_82268B28 at 0x8226E2A8 with four floats of its own
+  // record, so the area is per sub-mission and the selector is simply not the
+  // path this mission takes.
   REQUIRE(!first.has_value() && !second.has_value());
+  std::size_t setups = 0;
+  for (const ac6::retail::ScenarioSubMission& sub_mission : scenario->sub_missions()) {
+    if (!sub_mission.setup.present) continue;
+    setups += 1;
+    const ac6::retail::MissionArea area = ac6::retail::normalise_area(
+        sub_mission.setup.x0, sub_mission.setup.z0, sub_mission.setup.x1,
+        sub_mission.setup.z1);
+    REQUIRE(area.min_x < area.max_x && area.min_z < area.max_z);
+    REQUIRE(area.min_x >= -50000.0f && area.max_x <= 50000.0f);
+  }
+  REQUIRE(setups == 4);
 
   // The sequencer over the real script: four sub-missions, then finished.
   SubMissionSequencer sequencer = SubMissionSequencer::from(*scenario, 339);
@@ -292,8 +308,11 @@ int check_retail(const std::filesystem::path& payload_path,
            << (ac6::retail::select_mission_area(*scenario, false).has_value() ? "true"
                                                                              : "false")
            << ",\n"
-           << "  \"area_note\": \"Mission 01 carries no slot-6 record, so retail "
-              "installs its static fallback\",\n"
+           << "  \"area_note\": \"Mission 01 carries no slot-6 record; its "
+              "rectangle comes from each sub-mission's tag-0 step, which calls "
+              "FUN_82268B28 at 0x8226E2A8 - correcting cycle 1117's reading that "
+              "the static fallback was the path taken\",\n"
+           << "  \"sub_mission_setups\": " << setups << ",\n"
            << "  \"sub_missions\": " << scenario->sub_missions().size() << "\n"
            << "}\n";
     REQUIRE(static_cast<bool>(report));
