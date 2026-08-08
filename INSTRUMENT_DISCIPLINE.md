@@ -285,3 +285,40 @@ obvious function for the obvious argument returns a clean, complete, wrong answe
 — nine sites examined, none matching, conclusion drawn.
 
 **Where you look is a hypothesis too, and it needs the same control as the rest.**
+
+## The fourteenth shape: half a rule
+
+Cycle 1213 wrote the rule *walk up to the nearest conditional and establish what
+selects the block*. Cycle 1214 applied it to `0x820FB050`, correctly, and
+published a fixed-member existence test with a corpus census behind it. Cycle
+1215 found the block is a **loop body** — the back-edge is at `820fb11c`, `0x8C`
+bytes below where the reading stopped.
+
+Everything in cycle 1214 is accurate and beside the point.
+
+**The rule has a twin: walk DOWN to the nearest back-edge.** A conditional tells
+you what selects a block. It does not tell you *how many times the block runs, or
+over what*. Those are different questions and only the second one distinguishes
+"the loader runs when member N is present" from "the loader runs once per member,
+for all 256 of them."
+
+### The tell that was already written down
+
+Cycle 1214's own "not established" list contains this sentence:
+
+> what `r26` — the index at the guard — holds when the guard runs. The cached
+> probes use literals; **the guard uses a register**.
+
+**A register where the surrounding code uses literals is a loop counter.** The
+observation was made, recorded, and filed under "unknown" instead of chased. When
+a "not established" item is one instruction away from being established, it is
+not an open question; it is an unfinished read.
+
+### The mechanical version
+
+When a dump is truncated — `Ac6XenonDisasm` stops at 300 instructions — and the
+block of interest sits near or past the end, **re-dump from before the block and
+read past it until a `blr`, an unconditional forward `b`, or a backward branch is
+seen.** Cycle 1214 read its block from a second dump that began 0x1A0 bytes
+before it and stopped 0x8C bytes short of the answer, which is exactly the window
+where this fails silently.
