@@ -257,6 +257,19 @@ class NdxrContainer final {
   static constexpr unsigned kMaterialSlots = 4;
   static constexpr std::size_t kTextureRecordBase = 0x20;
   static constexpr std::size_t kTextureRecordStride = 0x18;
+  // 0x8233EF88 is the predicate that reads it, and it is the third function in
+  // the run that begins with the two magic tests - 0x8233EF48 for 'NDXR' and
+  // 0x8233EF68 for 'GIDX', both branchless through subf/cntlzw:
+  //
+  //   8233ef9c  lhz     r11,0x8(r31)
+  //   8233efa0  rlwinm. r11,r11,0x0,0x11,0x11    ; mask bit 0x4000
+  //   8233efa4  bne     0x8233effc               ; already resolved: nothing to do
+  //
+  // The mask is a single bit named by the rotate's MB = ME = 17, which is
+  // 0x4000 in the halfword. A record whose bit is set carries a live pointer;
+  // one whose bit is clear carries the on-disk value the loader has yet to
+  // resolve. This reader never resolves, so it reports the bit rather than
+  // acting on it.
   static constexpr std::uint16_t kResolvedBit = 0x4000;
 
   static constexpr std::size_t kRecordStride = 0x30;

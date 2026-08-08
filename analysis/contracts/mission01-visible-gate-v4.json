@@ -404,8 +404,8 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/include/ac6/retail_ndxr_container.h",
-      "sha256": "1c23851a00dbb1d3a360cac300a1b1647d23e2715a997ee43deac8257fc17202",
-      "size": 13760,
+      "sha256": "3e895a0f54260166b3fdd230862e78303942c4e9e513ae219568fbd292d0413d",
+      "size": 14508,
       "claim": "include/ac6/retail_ndxr_container.h carries the chain stage by stage with the address establishing each, states the two deliberate deviations from retail - it does not relocate the buffer and it checks the declared size, which retail does not - and names what it refuses to port: the polygon descriptor, because cycle 1203 showed neither field mapping is controlled"
      },
      {
