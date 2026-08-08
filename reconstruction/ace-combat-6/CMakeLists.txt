@@ -161,6 +161,11 @@ add_test(NAME ac6-retail-session
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-native-captures/jf-retail-session)
 set_tests_properties(ac6-retail-session PROPERTIES SKIP_RETURN_CODE 77)
 
+# Visual inspection of the decoder's output. Not a test - it writes retail art,
+# which stays local and is never committed. See tools/ntxr_extract.cpp.
+add_executable(ac6-ntxr-extract tools/ntxr_extract.cpp)
+target_link_libraries(ac6-ntxr-extract PRIVATE ac6_product_core)
+
 # The NTXR decoder, restricted to single-level block textures. The corpus is
 # the control: it must accept exactly the single-level block population and
 # refuse the rest with a named cause.
