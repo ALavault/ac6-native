@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     distinct_content.insert(content);
 
     NtxrRefusal refusal = NtxrRefusal::None;
-    const std::optional<DecodedTexture> texture = ac6::retail::decode_ntxr_single_level(
+    const std::optional<DecodedTexture> texture = ac6::retail::decode_ntxr_base_level(
         bytes.data(), bytes.size(), /*swap_16=*/true, &refusal);
     if (!texture.has_value()) {
       REQUIRE(refusal != NtxrRefusal::None);
@@ -134,43 +134,46 @@ int main(int argc, char** argv) {
   std::size_t refused_total = 0;
   for (const std::pair<const int, std::size_t>& row : refusals) refused_total += row.second;
   REQUIRE(decoded + refused_total == wrappers.size());
-  REQUIRE(decoded == single_level_block);
-  REQUIRE(decoded == 308);
+  // 308 of the 668 are single-level; the rest carry a chain whose base level
+  // the file locates for us.
+  REQUIRE(single_level_block == 308);
+
   REQUIRE(wrappers.size() == 692);
 
-  // Nothing is refused for a reason that would indicate a parse defect: every
-  // refusal is a population boundary, not a broken header.
+  // The partition, measured. Only two structural refusals remain - 22 wrappers
+  // are not block formats and 2 are cube maps, whose six faces are not
+  // addressed. Nothing is refused for a bad header or a size disagreement,
+  // which is the part that matters: every block wrapper's declared geometry and
+  // its actual byte count agree.
   REQUIRE(refusals[static_cast<int>(NtxrRefusal::BadHeader)] == 0);
   REQUIRE(refusals[static_cast<int>(NtxrRefusal::PayloadSizeMismatch)] == 0);
-  // 360 carry a mip chain, 22 are not block formats, and 2 are cube maps -
-  // the cube maps declare one level, so they would have slipped past a mip
-  // check alone. Together with the 308 decoded these account for all 692.
-  REQUIRE(refusals[static_cast<int>(NtxrRefusal::HasMipChain)] == 360);
   REQUIRE(refusals[static_cast<int>(NtxrRefusal::NotBlockFormat)] == 22);
   REQUIRE(refusals[static_cast<int>(NtxrRefusal::CubeMap)] == 2);
+  REQUIRE(decoded == 668);
 
-  // 26 of the decoded shapes are non-power-of-two, and those are the ones that
-  // make the tile-padding rule falsifiable at all.
-  REQUIRE(shapes.size() == 38);
+  // 41 shapes, 26 of them non-power-of-two. The odd shapes are what make the
+  // tile rule falsifiable, since pad32 is a no-op on a power of two.
+  REQUIRE(shapes.size() == 41);
   REQUIRE(non_power_of_two == 26);
 
-  // What the counts above are really worth. 692 files hold 336 distinct
-  // wrappers and the 308 decoded hold 144 distinct textures, so the file counts
-  // roughly double the apparent evidence. The shape figures do not double -
-  // duplicates share their shape - which is why the 26 non-power-of-two shapes,
-  // and not the 308, are what make the tile rule falsifiable.
+  // The corpus carries every wrapper twice, so file counts overstate the
+  // evidence by roughly two; the distinct-content figures are what the claims
+  // are really worth. Shapes do not double - duplicates share theirs.
   REQUIRE(distinct_content.size() == 336);
-  REQUIRE(distinct_decoded.size() == 144);
+  REQUIRE(distinct_decoded.size() == 324);
 
-  // The formats come from the derived table, not from a guess. The two BC2
-  // wrappers are the point: BC2 and BC3 share their colour half byte for byte
-  // and differ only in alpha, so scripts/probe_ntxr_bc.py - which decodes
-  // every wrapper as BC3 - produces correct colour and wrong alpha for exactly
-  // these two, one of which is the profile the workspace validated by eye.
-  REQUIRE(decoded_formats[ac6::retail::kXenosDxt4_5] == 300);
-  REQUIRE(decoded_formats[ac6::retail::kXenosDxt1] == 6);
+  // Formats from the derived table. The 2 BC2 wrappers are the ones
+  // scripts/probe_ntxr_bc.py decodes as BC3 - identical colour, wrong alpha.
+  REQUIRE(decoded_formats[ac6::retail::kXenosDxt4_5] == 656);
+  REQUIRE(decoded_formats[ac6::retail::kXenosDxt1] == 10);
   REQUIRE(decoded_formats[ac6::retail::kXenosDxt2_3] == 2);
   REQUIRE(decoded_formats.size() == 3);
+
+  // The pixels themselves, pinned. Cross-validated once against
+  // scripts/probe_ntxr_bc.py on the corpus BC2 wrapper: 65536 of 65536 RGB
+  // texels agreed and 3286 alpha texels differed, exactly as BC2-versus-BC3
+  // requires.
+  REQUIRE(corpus_hash == 0x8a7b59cbf13ba39bull);
 
   // The decoded pixels themselves, pinned. Every assertion above is about
   // counts and would survive a decoder that emitted the wrong colours; this
@@ -179,7 +182,6 @@ int main(int argc, char** argv) {
   // idx_0119/022_FHM/006_FHM/006_NTXR.ntxr - which agreed on 65536 of 65536
   // RGB texels and differed on 3286 alpha texels, exactly as BC2-versus-BC3
   // requires.
-  REQUIRE(corpus_hash == 0x949b3bb0fb7dcdfbull);
 
   std::printf("ntxr decoded=%zu refused=%zu shapes=%zu npo2=%zu\n", decoded,
               refused_total, shapes.size(), non_power_of_two);
@@ -192,8 +194,7 @@ int main(int argc, char** argv) {
            << "  \"source\": \"extracted NTXR wrappers, retail bytes never committed\",\n"
            << "  \"wrappers\": " << wrappers.size() << ",\n"
            << "  \"decoded\": " << decoded << ",\n"
-           << "  \"refused_mip_chain\": "
-           << refusals[static_cast<int>(NtxrRefusal::HasMipChain)] << ",\n"
+           << "  \"decoded_is_base_level_only\": true,\n"
            << "  \"refused_not_block_format\": "
            << refusals[static_cast<int>(NtxrRefusal::NotBlockFormat)] << ",\n"
            << "  \"refused_cube_map\": "
@@ -209,7 +210,7 @@ int main(int argc, char** argv) {
            << "  \"distinct_decoded_by_content\": " << distinct_decoded.size() << ",\n"
            << "  \"distinct_shapes\": " << shapes.size() << ",\n"
            << "  \"non_power_of_two_shapes\": " << non_power_of_two << ",\n"
-           << "  \"mip_chains_are_not_addressed\": true,\n"
+           << "  \"mip_levels_above_zero_not_decoded\": true,\n"
            << "  \"endianness_control_is_visual\": true,\n"
            << "  \"corpus_pixel_hash\": \"" << std::hex << corpus_hash << std::dec
            << "\"\n}\n";

@@ -73,6 +73,15 @@ The last two are the controls that matter: a wrong stride or a wrong offset
 would break the ordinal sequence or push a material index out of range, and
 neither happens.
 
+## RETRACTED — the section below is wrong (see cycle 1156)
+
+The asset inventory in this section was produced with `find . -maxdepth 3`, and
+the extracted assets are four to six levels deep. The true counts are
+**537 `.ndxr` files (179 distinct by content)** and **3 `.mdlp` (1 distinct,
+29 MB, in Mission 01's own bundle)**. Only the `.mate` count of 1 was right.
+The binding is *not* input-blocked. Retained below unaltered as the record of
+the error.
+
 ## Why the binding still cannot be written
 
 The report's chain is MATE batch → material → texture id, matched against an

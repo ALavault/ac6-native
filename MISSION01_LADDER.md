@@ -154,48 +154,37 @@ The names mislead, so plainly:
    atlas looked intelligible — and its alpha has always been wrong. Derived
    census over 692 wrappers: **656 BC3, 22 ARGB8888, 12 BC1, 2 BC2**.
 
-   **Half the surface layout is closed (cycle 1151).** For a block texture with
-   one level and no cube flag, `payload = pad32(ceil(W/4)) · pad32(ceil(H/4)) ·
-   bytes_per_block`, where `pad32` rounds to the 32-block Xenos tile and
-   `bytes_per_block` is 8 for BC1, 16 for BC2/BC3. **308 of 308 exact, zero
-   mismatches, 38 shapes of which 26 non-power-of-two** — the odd shapes are what
-   make it a test, since `pad32` is a no-op on powers of two.
+   **The surface rule is derived and the decoder is written (cycles 1151-1156).**
+   `0x821FBE30` is `XGSetTextureHeader`: it allocates nothing and returns the
+   size to allocate. `0x821DF838` aligns X to 32 blocks and Y to 32 block-rows
+   and rounds every level to 4096; for BC1 and BC3 alike the untiled 256-byte
+   pitch floor also lands on 32, so `pad32 x pad32 x bytes_per_block` is the
+   rule either way. Of `0x821DF958`'s four base-size formulas the corpus takes
+   the **tiled** one, `roundUp(pitch x alignedH, 4096)` - confirmed on four
+   shapes where the tiled and untiled answers differ by 6-20%.
 
-   The **mip chain is still open (cycle 1153)**. A model summing tile-padded
-   levels with a flat 512-block floor for levels at or below 32x32 matches
-   **212 of 360** multi-level wrappers exactly, including the whole 4096x4096
-   terrain group. It fails on 64x64/7-levels (144 wrappers) and two small
-   groups. Cycle 1153 distrusted the variable the model is fitted to; **cycle
-   1155 removed that doubt.** `0x8234FB98`, the mip-mapped load path, and
-   `0x8234EC38`, the plain one, call `0x821FBE30` with the same argument shape
-   and differ in exactly one slot: the plain path passes `li r5,0x1` where the
-   mip path passes `0x8234B128`'s return, which is byte `+0x11`. That is a
-   `CreateTexture(width, height, levels, ...)` shape, so `+0x11` **is** the level
-   count. The model is still 212 of 360 and 64x64/7 is still unexplained, but
-   the variable is sound.
+   The mip geometry is **declared, not modelled**: file `+0x40` and `+0x44`
+   (absent on single-level headers, which hold `eXt` there) satisfy
+   `payload == word[0x40] + word[0x44]` for **360 of 360** multi-level wrappers,
+   and `word[0x40]` equals the rule measured from single-level payloads for all
+   360 - two derivations sharing nothing and agreeing.
 
-   Historical note. Groups are internally consistent but the
-   naive per-level tile model overshoots: 512×512/10 levels holds 393,216 where
-   it predicts 458,752, and 256×256/9 holds 131,072 against 196,608. The tails
-   are exact powers of two, so levels below some threshold use a fixed
-   granularity; a 32×16-block minimum fits the 256×256 tail and misses the
-   512×512 one by a level, so no rule is asserted.
+   `decode_ntxr_base_level` decodes **668 of 692** wrappers (324 distinct, 41
+   shapes, 26 non-power-of-two); 22 are not block formats and 2 are cube maps.
+   Levels above zero are not decoded and nothing consumes them yet.
 
-   **Written, cycle 1152**: `include/ac6/ntxr_texture.h` +
-   `src/ntxr_texture.cpp`, restricted to single-level block textures and
-   refusing everything else with a named cause. Over the 692-wrapper corpus:
-   **308 decoded** (300 BC3, 6 BC1, 2 BC2), 360 refused for a mip chain, 22 for
-   a non-block format, 2 for a cube map — **0 bad headers, 0 payload
-   mismatches**, and the four causes plus the decoded set account for all 692.
-   The measured surface rule is asserted inside the decoder, so a wrapper whose
-   payload disagrees is refused rather than mis-addressed.
-
-   Then: port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, and close
+   Still open: 
    MATE batch→material→texture→NTXR in the runtime.
 5. **Terrain.** Currently **fail-closed by policy**:
    `MISSION_VISUAL_BOOTSTRAP_REPORT.md` requires a proved Scene/CUT ownership
    edge before any static environment is drawn. Prove it; do not lift it.
-6. **Derived binding — needs a second data source (cycle 1148).** Unit class
+6. **Derived binding — the inputs are present (cycle 1156 corrects 1155).**
+   179 distinct NDXR models and Mission 01's own 29 MB `001_MDLP.mdlp` (94
+   entries) are extracted, in `idx_0009` beside the scenario container the
+   session already reads. Cycle 1155 reported them absent from a `find` capped
+   at depth 3; the assets are four to six levels deep.
+
+   **Still needs a second data source (cycle 1148).** Unit class
    byte → object category → model must come from retail data, not a hand-written
    table. `0x820A7070` fills `+0x15C` from two `0x8228E9B8` lookups keyed by
    bytes `+0x61` and `+0x62` of the record at word 0 of the 0x20-byte array

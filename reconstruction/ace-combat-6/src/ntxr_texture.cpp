@@ -18,6 +18,11 @@ constexpr std::size_t kFlagsOffset = kDescriptorBase + 0x1C;
 // this one is a container convention rather than a field retail reads here,
 // so it is named by its file offset, which is how the control measured it.
 constexpr std::size_t kDataOffsetOffset = kDescriptorBase + 0x20;
+// Descriptor +0x30, which 0x8234B268 walks as a dword-per-level array. Only the
+// first two entries are used here: the base surface size and the mip-chain
+// size. Present only when the level count exceeds 1.
+constexpr std::size_t kBaseSurfaceOffset = kDescriptorBase + 0x30;
+constexpr std::size_t kMipChainOffset = kDescriptorBase + 0x34;
 
 // 0x8234B374 compares the format code against 0x2F and fails the load when it
 // is not below it. The table has exactly that many entries.
@@ -159,6 +164,10 @@ std::optional<NtxrDescriptor> parse_ntxr_descriptor(const std::uint8_t* bytes,
   descriptor.height = read_u16(bytes + kHeightOffset);
   descriptor.cube_map = (read_u32(bytes + kFlagsOffset) & kCubeMapBit) != 0;
   descriptor.data_offset = read_u32(bytes + kDataOffsetOffset);
+  if (descriptor.mip_count > 1 && size >= kMipChainOffset + 4) {
+    descriptor.base_surface_bytes = read_u32(bytes + kBaseSurfaceOffset);
+    descriptor.mip_chain_bytes = read_u32(bytes + kMipChainOffset);
+  }
   return descriptor;
 }
 
@@ -170,9 +179,9 @@ std::size_t single_level_surface_bytes(const NtxrDescriptor& descriptor) noexcep
   return static_cast<std::size_t>(blocks_x) * blocks_y * block_bytes;
 }
 
-std::optional<DecodedTexture> decode_ntxr_single_level(const std::uint8_t* bytes,
-                                                       std::size_t size, bool swap_16,
-                                                       NtxrRefusal* refusal) noexcept {
+std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
+                                                     std::size_t size, bool swap_16,
+                                                     NtxrRefusal* refusal) noexcept {
   const auto refuse = [&](NtxrRefusal cause) {
     if (refusal != nullptr) *refusal = cause;
     return std::optional<DecodedTexture>{};
@@ -184,17 +193,35 @@ std::optional<DecodedTexture> decode_ntxr_single_level(const std::uint8_t* bytes
 
   const std::uint32_t block_bytes = bytes_per_block(descriptor->xenos_format);
   if (block_bytes == 0) return refuse(NtxrRefusal::NotBlockFormat);
-  // The two refusals that define this decoder's population.
-  if (descriptor->mip_count != 1) return refuse(NtxrRefusal::HasMipChain);
+  // Cube maps are the only structural refusal left: six faces are not
+  // addressed. A mip chain is fine, because only the base level is decoded and
+  // the file states where it ends.
   if (descriptor->cube_map) return refuse(NtxrRefusal::CubeMap);
 
   const std::size_t start = kDescriptorBase + descriptor->data_offset;
   if (start > size) return refuse(NtxrRefusal::BadHeader);
   const std::size_t payload = size - start;
   const std::size_t expected = single_level_surface_bytes(*descriptor);
-  // The measured rule, asserted rather than assumed: a wrapper whose payload
-  // disagrees is refused, because addressing it would be guesswork.
-  if (expected == 0 || payload != expected) return refuse(NtxrRefusal::PayloadSizeMismatch);
+  if (expected == 0) return refuse(NtxrRefusal::PayloadSizeMismatch);
+  // Two independent statements of the same number, and both are checked.
+  //
+  //   single level : the payload IS the base surface, by the measured rule.
+  //   mip chain    : the file declares the base surface at +0x40 and the chain
+  //                  at +0x44, and their sum is the payload. The declared base
+  //                  must also equal the measured rule - it does for 360 of 360
+  //                  multi-level wrappers, which is the rule and the file
+  //                  agreeing from derivations that share nothing.
+  if (descriptor->mip_count > 1) {
+    if (descriptor->base_surface_bytes != expected) {
+      return refuse(NtxrRefusal::PayloadSizeMismatch);
+    }
+    if (static_cast<std::size_t>(descriptor->base_surface_bytes) +
+            descriptor->mip_chain_bytes != payload) {
+      return refuse(NtxrRefusal::PayloadSizeMismatch);
+    }
+  } else if (payload != expected) {
+    return refuse(NtxrRefusal::PayloadSizeMismatch);
+  }
 
   const std::uint32_t blocks_x = (descriptor->width + 3u) / 4u;
   const std::uint32_t blocks_y = (descriptor->height + 3u) / 4u;

@@ -135,6 +135,14 @@ struct NtxrDescriptor {
   bool cube_map{};              // file +0x2C bit 9
   std::uint32_t data_offset{};  // file +0x30, relative to file 0x10
   std::uint8_t xenos_format{};  // kXenosFormatTable[format_code]
+  // File +0x40 and +0x44, present only when mip_count > 1. 0x8234B268 sums a
+  // dword-per-level array at descriptor +0x30 (file +0x40) to find each level's
+  // source offset, and 0x821FBC30 returns roundup4096(base) + chain as the
+  // total. Measured: base + chain == the payload for 360 of 360 multi-level
+  // wrappers. When mip_count == 1 there is no array - file +0x40 holds the
+  // ASCII "eXt\0" chunk signature instead - and both stay zero.
+  std::uint32_t base_surface_bytes{};
+  std::uint32_t mip_chain_bytes{};
 
   bool operator==(const NtxrDescriptor&) const = default;
 };
@@ -161,18 +169,20 @@ enum class NtxrRefusal {
   None,
   BadHeader,
   NotBlockFormat,
-  HasMipChain,
   CubeMap,
   PayloadSizeMismatch,
 };
 
-// Decodes a single-level block texture. `swap_16` applies the 8-in-16 byte
-// swap; it is an argument and not a constant because its evidence is visual,
-// unlike everything else here.
-std::optional<DecodedTexture> decode_ntxr_single_level(const std::uint8_t* bytes,
-                                                       std::size_t size,
-                                                       bool swap_16,
-                                                       NtxrRefusal* refusal) noexcept;
+// Decodes the **base level** of a block texture, whether or not it carries a
+// mip chain. Levels above 0 are not decoded: 0x8234B268 locates them by summing
+// the per-level array, which this port has read but not validated, and nothing
+// downstream consumes them yet.
+//
+// `swap_16` applies the 8-in-16 byte swap; it is an argument and not a constant
+// because its evidence is visual, unlike everything else here.
+std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
+                                                     std::size_t size, bool swap_16,
+                                                     NtxrRefusal* refusal) noexcept;
 
 // The Xenos Tiled2D block address, in bytes, for a block at (x, y) of a
 // surface whose pitch is `pitch_blocks`. Public hardware layout, not derived
