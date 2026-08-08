@@ -393,14 +393,27 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    magic, the reader has not been found, and `tools/ac6_fhm.py`'s field offsets
    rest on 94 of 94 bundles parsing cleanly.
 
-   **And no reader will be found (cycle 1192).** The bytes `46 48 4D` occur
-   **zero times anywhere in the loaded image**, code or data, verified with a
-   scanner that finds `NDXR` at `0x8200A24C`, `GIDX` at `0x82067EC8` and `NTXR`
-   at `0x82067EC0`. There is no type registry to look in either: `0x82337BD8` is
-   `ResourceManager::init(1 MiB, 0x400 resources)` with one caller, and dispatch
-   at `0x8234CA28` / `0x8234CB58` is compiled in over three codes (1, 2, `0x200`).
-   Retail does not parse an FHM container in this executable, so 2d is resolved
-   negatively rather than left open, and the walker stays out permanently.
+   **CORRECTED (cycle 1248).** The bytes `46 48 4D` do occur **zero times
+   anywhere in the loaded image**, code or data — that measurement stands,
+   verified with a scanner that finds `NDXR` at `0x8200A24C`, `GIDX` at
+   `0x82067EC8` and `NTXR` at `0x82067EC0`. **What was wrong is the conclusion
+   drawn from it.** Retail walks the FHM layout through **`0x82234C18`**, a
+   directory reader that takes a version byte at `+0x04`, an endian byte at
+   `+0x05` and a table offset at `+0x06`, and **never compares a magic**. A
+   format is parsed; its name is never looked at, which is exactly why the tag
+   scan returns zero.
+
+   Control: `u16[+0x06]` is `0x10` in all **439** extracted `.fhm`, against 1 in
+   all 1052 `.ntxr` and 94 in all 3 `.mdlp` — and `0x10` puts the count and the
+   offset table exactly where `tools/ac6_fhm.py` reads them. So the layout cycle
+   1192 called *measured, not derived* **is derivable**, and two independent
+   readings of the same header meet.
+
+   There is still no type registry: `0x82337BD8` is
+   `ResourceManager::init(1 MiB, 0x400 resources)` and dispatch at `0x8234CA28` /
+   `0x8234CB58` is compiled in over three codes. And cycle 1181's "registry
+   entries are twelve bytes each" remains wrong — `0x82342D70` is a byte-size
+   query, `n * 0xDC`.
 
    **And cycle 1246 decides what that means for the product, not just for the
    derivation.** The temptation was to port the measured FHM walk anyway, or to
@@ -421,12 +434,20 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    `ModelDirectory` stays: it resolves the index retail resolves, and must not go
    further.
 
-   The real remaining work is therefore the **id path**, and it is harder than
-   step 6 originally implied: the registries are BSS, populated at runtime from
-   the packs (cycle 1209). Bridging means reproducing that population, or
-   accepting an extraction-side index **and declaring it in the contract with a
-   status that is not "derived"**. Cycle 1246 deliberately decides only the
-   negative.
+   The real remaining work is therefore the **id path** — and cycle 1248 measured
+   it **easier than cycle 1246 said**, not harder. The rebasing bias
+   `[0x828C9700+0x08]` is **zero**, written once as a literal in the constructor
+   `0x82340A60`, its address materialised at `82335f2c` rather than inferred from
+   stride arithmetic. Every extracted `.ntxr` is a **self-describing pack of
+   count 1**, and the six `mode = 0` mount sites take each entry's own GIDX id —
+   so on that path **pack grouping is irrelevant** and an offline index keys
+   exactly as retail does.
+
+   Still open: **duplicate-mount policy** (first mount of an id wins, 847
+   duplicates over 205 ids, and a flat extraction does not record order), the
+   `mode = 1` packs whose ids are `base + index`, and the pixels — located at
+   file offset 4096 in 1052 of 1052, needing `0x821FCA48`, the X360 tiler, which
+   is unported.
 
    Cycle 1181's "registry entries are twelve bytes each" is also wrong:
    `0x82342D70` is a byte-size query, `n * 0xDC`, carved by `0x82342F68` into a
