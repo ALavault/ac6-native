@@ -6,8 +6,10 @@ namespace ac6::retail {
 namespace {
 
 constexpr std::uint32_t kSignature = 0x4E545852u;  // 'NTXR'
-// The descriptor begins at file 0x10; every offset 0x8234B360 uses is relative
-// to that, so the file offsets are those plus 0x10.
+// The descriptor begins at file 0x10 - derived, not assumed (cycle 1167):
+// 0x8234B0C0 is the one-line accessor `addi r3,r3,0x10; blr`, and every offset
+// 0x8234B360 uses is relative to what it returns. The neighbouring accessor
+// 0x8234B0B8 (`lhz r3,0x6(r3)`) returns the texture count at file +0x06.
 constexpr std::size_t kDescriptorBase = 0x10;
 constexpr std::size_t kMipCountOffset = kDescriptorBase + 0x11;
 constexpr std::size_t kFormatCodeOffset = kDescriptorBase + 0x13;
