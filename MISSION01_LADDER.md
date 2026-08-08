@@ -165,12 +165,14 @@ The names mislead, so plainly:
    levels with a flat 512-block floor for levels at or below 32x32 matches
    **212 of 360** multi-level wrappers exactly, including the whole 4096x4096
    terrain group. It fails on 64x64/7-levels (144 wrappers) and two small
-   groups. The blocker underneath is a **name**: byte `+0x11` is called the mip
-   count here, but all `0x8234B128` and `0x8234AED8` establish is that value 1
-   selects the plain context. Nothing loops over it or bounds anything with it,
-   so a layout fitted to it as a level count may be fitting the wrong variable.
-   Read `0x8234FB08`'s load path - the mip-map sibling of `0x8234EC38` - before
-   fitting anything further.
+   groups. Cycle 1153 distrusted the variable the model is fitted to; **cycle
+   1155 removed that doubt.** `0x8234FB98`, the mip-mapped load path, and
+   `0x8234EC38`, the plain one, call `0x821FBE30` with the same argument shape
+   and differ in exactly one slot: the plain path passes `li r5,0x1` where the
+   mip path passes `0x8234B128`'s return, which is byte `+0x11`. That is a
+   `CreateTexture(width, height, levels, ...)` shape, so `+0x11` **is** the level
+   count. The model is still 212 of 360 and 64x64/7 is still unexplained, but
+   the variable is sound.
 
    Historical note. Groups are internally consistent but the
    naive per-level tile model overshoots: 512×512/10 levels holds 393,216 where

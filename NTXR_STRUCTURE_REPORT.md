@@ -140,9 +140,15 @@ The remaining fields stay unnamed, and the **surface layout is still unproven** 
 **The retained wrapper is not a clean single-surface file (cycle 1152).**
 `exports/first-linked-0x10002215.ntxr` declares 512x512, one level, BC2 - a
 262,144-byte surface - and carries 507,904 bytes after its data offset. The name
-says why: it is cut at a container boundary, not at the end of the surface. The
-native decoder refuses it for that reason, and `probe_ntxr_bc.py` accepts it only
-because it never checks a size.
+says why: it is cut at a container boundary, not at the end of the surface, and
+the native decoder refuses it for that reason.
+
+**Attribution corrected, cycle 1155.** Cycle 1152 wrote that nothing had noticed
+this. `AC6_MATERIAL_TEXTURE_LINK_REPORT.md` had: it calls the same file's tail a
+bounded 507,904-byte *aggregate* texture-data tail, with the same byte count. The
+aggregation was on record. What had not been noticed is narrower - that
+`probe_ntxr_bc.py` decodes that aggregate as a single 512x512 surface anyway,
+because it never checks a size against the dimensions it reads.
 
 Consequence for `scripts/probe_ntxr_bc.py`: the wrapper it was validated on,
 GIDX `0x10002215`, has format code 1, whose table entry gives low6 `0x13` =
