@@ -81,6 +81,18 @@ cites**. Both matter: a heredoc version reported only the sites it visited, and
 cited by neither contract. Run it after `ctest`, never before, for the reason
 above.
 
+The gate stops at its first failure, which is right for a gate and wrong for
+fixing one. This maps the whole problem in a single pass:
+
+    python3 tools/audit_contract_derivations.py analysis/contracts/*.json
+
+It names every derivation file that fails to cite all of its behaviour's
+`retail_addresses`, and every behaviour carrying **more than one** derivation
+file — because the gate requires each of them to cite all addresses
+independently, which for a header/implementation pair forces either duplication
+or a false claim. Cycle 1261 fixed one address the gate named and found ten;
+nine were not missing citations at all.
+
 A third checker guards the documentation instead of the contracts:
 
     python3 tools/audit_instrument_discipline_index.py INSTRUMENT_DISCIPLINE.md
