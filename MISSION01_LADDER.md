@@ -146,7 +146,12 @@ The names mislead, so plainly:
   The loader itself is chosen by `mode = *([0x826E4EB4] + 0x78)`: **4** → Online
   `0x82097560`, **5** → Replay `0x8219BDD8`, **else** → Campaign `0x8219F8C0`.
   Modes 1, 2 and 3 share the `else` arm, so Campaign and Tutorial are not
-  distinguished there — a real ambiguity in the binary.
+  distinguished **by this selector** — a real ambiguity in the binary. Note
+  (cycle 1239) that `BeginLoad`'s selector is a **different partition of the same
+  word**: it tests 4 then **3**, not 4 then 5, so modes 3 and 5 land on different
+  arms of the two. For Mission 01 the mode is normalised to `{1, 2}` by
+  `CModeTaskGame`'s base constructor `0x82199BD8`, so both selectors take their
+  `else` arm.
 
   The NDXR loader is reached through vtable slot `+0xEC` of `0x8205C9A4` into
   `0x820FA9C0`, pinned by receiver-offset matching on `+0x29520`, `+0x29130` and
