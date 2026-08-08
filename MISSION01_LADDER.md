@@ -104,11 +104,21 @@ The names mislead, so plainly:
    `manager+0x404` — the player — so the player's start is plausibly the first
    point of the route it selects. Two warnings for whoever picks this up:
 
-   - `grep "0xf0(r"` does **not** find the readers. Most hits are vtable
-     dispatch (`lwz r11,0x0(r3)` then `lwz r11,0xf0(r11)` then `bctrl`), where
-     `+0xF0` is a method slot and not a field. Separating field reads from
-     virtual calls needs an instrument that knows which register holds the
-     object, not a text match. Cycle 1145 made this mistake and caught it.
+   - `grep "0xf0(r"` does **not** find the readers, and cycle 1147 built the
+     instrument that does: `tools/ghidra_scripts/Ac6FieldRead.java`. It splits
+     a displacement load three ways using signatures the codegen guarantees —
+     a **vtable dispatch** is consumed by `mtspr CTR` within four instructions,
+     a **stack slot** has `r1` as its base, and what is left is a **field
+     read**. On `+0xF0` the split is 43 field reads, 17 dispatches, 10 stack
+     slots: a grep would have been 63% wrong, which is what cycle 1145 was.
+
+     The result is a bounded negative. None of the 43 reads `+0xF0` as the
+     route index PLAD wrote. They belong to a dozen unrelated classes that
+     happen to share the offset — `0x82091130` copies it as a float,
+     `0x82269530` dereferences it as an object pointer and checks `+0xB0`
+     against `+0xF4`. Finding the right one needs the **class** of the object
+     at `global+0x12BC34`, which this search does not establish. That is the
+     next question for this thread, and it is a bigger one than a scan.
    - `+0x180`–`+0x194` are **floats on a different class** (`0x8229EAC0` clamps
      four of them between limits). They are not the unit class's `+0x184`
      pointer and `+0x188` parent. Both scans — literal displacement and
