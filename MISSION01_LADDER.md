@@ -77,7 +77,11 @@ The names mislead, so plainly:
   (`src/native_geometry_raster_target.cpp`).
 - Vulkan exists only in `src/sdl_input.cpp`, as a present path that blits the CPU
   buffer to the swapchain — allocating a staging buffer every frame.
-- **NDXR is the only retail format the product decodes.** The `NTXR`, `MATE`
+- **NDXR is the only retail format the product decodes** — and its header layout
+  is **measured, not derived** (cycle 1189): `src/native_geometry_raster.cpp` and
+  `include/ac6/native_geometry.h` cite zero retail addresses, and no contract
+  names either as a derivation. It predates this session and has never been
+  audited. That is a larger open item than any texture question. The `NTXR`, `MATE`
   and `MDLP` parsers described in the root structure reports are **not in this
   repository**; they lived in a prior workspace. One texture profile is
   pixel-decoded, in a Python diagnostic script, out of 7,993 wrappers.

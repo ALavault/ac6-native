@@ -45,9 +45,26 @@ independently-declared sizes agree. Two formats, two conventions, no disagreemen
 **And**: removes part of the price cycle 1186 counted. That cycle found the
 diagnostic render blocked behind declaring `vertex_count` and `index_count` for
 the drawable contract, and called it "an NDXR header parse in the harness". The
-product already contains that parse, at derived offsets — `0x10`, `0x14`, `0x18`,
-`0x1c`, object table at `0x30`. The harness would be repeating a reading the
-product already carries, not inventing one.
+product already contains that parse — `0x10`, `0x14`, `0x18`, `0x1c`, object
+table at `0x30` — so the harness would repeat a reading the product carries
+rather than invent one.
+
+**Correction, made the same day.** The paragraph above first called those
+offsets *derived*. They are not. `src/native_geometry_raster.cpp` and
+`include/ac6/native_geometry.h` cite **zero retail addresses** between them, and
+no contract names either as a derivation. The NDXR header layout in this product
+is exactly as measured as the FHM layout is.
+
+So the price cycle 1186 counted is **not** removed — it is relocated. The harness
+would not be repeating a derived reading; it would be repeating a second measured
+format alongside the first. And the more useful thing this exposes is that the
+NDXR decoder, which has been in the product since long before this session, rests
+on an unaudited format description. That is a bigger open item than the one this
+cycle set out to close, and it is now written down.
+
+I caught it by checking a claim I had made one cycle earlier rather than
+inheriting it — which is the same habit that produced four corrections this
+session and the only reason this one took minutes instead of twenty cycles.
 
 ## Verification
 
