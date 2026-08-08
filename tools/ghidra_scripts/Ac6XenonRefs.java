@@ -12,6 +12,20 @@ public class Ac6XenonRefs extends GhidraScript {
   public void run() throws Exception {
     String[] args = getScriptArgs();
     PrintWriter out = new PrintWriter(args[0], "UTF-8");
+
+    // This is a SUBSTRING matcher, not a regex. A pattern written with regex
+    // syntax silently searches for the metacharacter itself and returns zero -
+    // which reads exactly like a clean negative. That happened once, and was
+    // caught only because a known-good hit existed to check against. Warn
+    // loudly instead of relying on the next reader having one.
+    for (int i = 1; i < args.length; ++i) {
+      if (args[i].matches(".*[\\^$\\\\\\[\\]|+*?].*")) {
+        println("WARNING: pattern \"" + args[i] + "\" contains regex syntax. " +
+                "This tool matches SUBSTRINGS - the metacharacter is searched literally. " +
+                "A zero result here is not a negative.");
+        out.println("# WARNING regex-looking pattern matched literally: " + args[i]);
+      }
+    }
     long total = 0;
     InstructionIterator it = currentProgram.getListing().getInstructions(true);
     while (it.hasNext()) {
