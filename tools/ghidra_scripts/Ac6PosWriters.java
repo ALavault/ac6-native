@@ -1,6 +1,11 @@
-// Who writes an object's translation? The transform's fourth row is at +0x50, so
-// a writer either stores a vector through a pointer formed as base+0x50, or
-// stores three floats at 0x50/0x54/0x58 of the same base. Read-only. @category AC6
+// Who writes an object's translation? The transform's fourth row is at +0x50.
+//
+// Two earlier versions of this scan were wrong in instructive ways, and both
+// mistakes are excluded here. Counting `addi rX,r1,0x50` treated every stack
+// frame as a position (797 hits). Accepting three stores at +0x50/+0x54/+0x58
+// regardless of source treated every bulk-zeroing constructor as a position
+// (52 hits). A real position write stores three *different* values to a base
+// that is not the stack pointer. Read-only. @category AC6
 
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;
@@ -9,14 +14,17 @@ import ghidra.program.model.listing.InstructionIterator;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Ac6PosWriters extends GhidraScript {
+    private static final Pattern STFS =
+            Pattern.compile("^stfs (f\\d+),(0x5[048])\\((r\\d+)\\)$");
     private static final Pattern ADDI = Pattern.compile("^addi (r\\d+),(r\\d+),0x50$");
     private static final Pattern STVX = Pattern.compile("^stvx128 (vr\\d+),r0,(r\\d+)$");
-    private static final Pattern STFS = Pattern.compile("^stfs (f\\d+),(0x5[048])\\((r\\d+)\\)$");
 
     @Override
     public void run() throws Exception {
@@ -29,10 +37,9 @@ public class Ac6PosWriters extends GhidraScript {
         for (int i = 0; i < all.size(); ++i) {
             Matcher base = ADDI.matcher(all.get(i).toString());
             if (base.matches() && !base.group(2).equals("r1")) {
-                String pointer = base.group(1);
                 for (int k = i + 1; k < Math.min(i + 8, all.size()); ++k) {
                     Matcher store = STVX.matcher(all.get(k).toString());
-                    if (store.matches() && store.group(2).equals(pointer)) {
+                    if (store.matches() && store.group(2).equals(base.group(1))) {
                         report(out, "VECTOR", all.get(k), all.get(i).toString());
                         vector++;
                         break;
@@ -43,14 +50,20 @@ public class Ac6PosWriters extends GhidraScript {
             Matcher first = STFS.matcher(all.get(i).toString());
             if (!first.matches() || !first.group(2).equals("0x50")
                     || first.group(3).equals("r1")) continue;
+            Set<String> sources = new HashSet<>();
+            sources.add(first.group(1));
             boolean has54 = false, has58 = false;
             for (int k = i + 1; k < Math.min(i + 10, all.size()); ++k) {
                 Matcher m = STFS.matcher(all.get(k).toString());
                 if (!m.matches() || !m.group(3).equals(first.group(3))) continue;
-                if (m.group(2).equals("0x54")) has54 = true;
-                if (m.group(2).equals("0x58")) has58 = true;
+                if (m.group(2).equals("0x54")) { has54 = true; sources.add(m.group(1)); }
+                if (m.group(2).equals("0x58")) { has58 = true; sources.add(m.group(1)); }
             }
-            if (has54 && has58) { report(out, "TRIPLE", all.get(i), first.group(3)); triple++; }
+            // Three stores of one register is a memset, not a position.
+            if (has54 && has58 && sources.size() >= 2) {
+                report(out, "TRIPLE", all.get(i), first.group(3) + " sources=" + sources.size());
+                triple++;
+            }
         }
         out.println("SUMMARY vector=" + vector + " triple=" + triple);
         out.close();
