@@ -127,14 +127,38 @@ The names mislead, so plainly:
   8-byte table at `0x828711F0`, BSS-resident and built at run time, so the
   product's constants are corroborated rather than read.
 
-  **And the path is proven to execute (cycle 1213).** `0x821D5EF8` is reached
-  unconditionally from the XEX entry point through `main`, one call site per
-  link. The NDXR loader is reached through vtable slot `+0xEC` of `0x8205C9A4`
-  into `0x820FA9C0`, pinned by receiver-offset matching on three distinct
-  literals — but **guarded**: it runs iff the mission container carries the
-  member `0x820FB064` looks up. Mission 01's six `mode = 0` NTXR mounts are in
-  that same function, out of a complete enumeration of 53 sites; the nine sites
-  sitting directly in the load functions all pass `mode = 1`.
+  **And the path is proven to execute, end to end (cycles 1213, 1218, 1234).**
+
+  | hop | address | what selects it |
+  |---|---|---|
+  | XEX entry | `0x821F5E90` | — |
+  | `main` | `0x821D7D90` | one call site |
+  | boot resource mount | `0x821D5EF8` | one call site, unconditional |
+  | frame update | `0x821D7A90` | `821d7e34`, every frame |
+  | task pump | `0x822AAFC8` | `CAce6TaskManager` vtable `+0x04` |
+  | mode manager tick | `0x821B99B8` | registered at `821D6B4C` |
+  | mode switch | `0x821BA588` | counter at `this+0x1C` |
+  | **creator select** | **`0x821A7A70`** | `CModeTaskLoading::vf18(0)` → `[0x82691B8C]` = `new CModeTaskGame` |
+  | register | `0x822AB0F0` | **tail-calls** `vt[+0x0C]` via `bcctr` |
+  | FSM enter | `0x82199F68` | `SetInitialState(−3)` |
+  | **the load call** | **`8219A1B0`** | `lwz r3,0x288(r30)` / `lwz r11,0x2c(r11)` / `bctrl` |
+
+  The loader itself is chosen by `mode = *([0x826E4EB4] + 0x78)`: **4** → Online
+  `0x82097560`, **5** → Replay `0x8219BDD8`, **else** → Campaign `0x8219F8C0`.
+  Modes 1, 2 and 3 share the `else` arm, so Campaign and Tutorial are not
+  distinguished there — a real ambiguity in the binary.
+
+  The NDXR loader is reached through vtable slot `+0xEC` of `0x8205C9A4` into
+  `0x820FA9C0`, pinned by receiver-offset matching on `+0x29520`, `+0x29130` and
+  `+0x35C00`. `0x820FA9C0` **sweeps container members 0…0xFF** (cycle 1215) and
+  feeds every one that exists to the loader and to an NTXR mount; Mission 01's
+  entry carries 26 members, and members 4–10 are the texture-bearing FHM bundles.
+
+  Two corrections worth carrying: `0x82691AD8` is **not** one indexable creator
+  table but a concatenation of per-class successor lists (cycle 1234), and
+  `CModeTaskTitle::vf18` accepts only `k ∈ {0,1}` — cycle 1224's "index 44" is
+  impossible. **Not established:** what invokes `CModeTaskLoading::vf11`, one
+  level above the creator select.
 
   Two earlier calls, `0x8233EE40` and `0x8233EF88`, are read: they resolve
   texture and shader ids (cycles 1200–1209). The `NTXR`, `MATE`
