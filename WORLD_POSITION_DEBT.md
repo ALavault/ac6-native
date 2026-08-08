@@ -33,6 +33,13 @@ Order` program, which `0x82295A88` sends to `0x822953F0` through its default arm
 230 placed, 135 with no load-time position at all**, and 94 of the 95 inside the
 union of the four sub-mission rectangles.
 
+`PLAD` is a **route-selection table** (cycle 1179), and this is now exhaustive
+rather than a negative. `global+0x4B40`, the player slot, has exactly three
+readers in the image and each is the instruction immediately before a `PLAD`
+getter call; the slot itself is written by a state-transition handler outside the
+mission load (`0x82199F68`, cycle 1178). Every getter reads word 3 and stores it
+to `+0xF0`, the route cursor. The table's whole effect is to choose a route.
+
 `PLAD` is **not** the player's spawn. All three callers of the record getter
 `0x82249BC8` — `0x82097FC8`, `0x8219C840`, `0x821A0328` — read only `+0x0C` and
 store it to `+0xF0`, the route cursor. Nothing reads the three floats.
