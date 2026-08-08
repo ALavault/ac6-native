@@ -510,6 +510,30 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    Cycle 1248's "847 duplicates over 1052 packs" counted **extraction replicas as
    packs**: the tree holds 1,053 `.ntxr` files and 337 distinct contents.
 
+   **Cycle 1260 read the `mode = 1` arm, and refuted half of 1256's
+   hypothesis.** `mode` is arg 4 of `0x82340870`, masked to bit 0 once before
+   the loop (`823408ec`), so the arm is fixed per call. The mode-1 id is three
+   instructions — `823408f8 or r5,r23,r23` / `823408fc addi r23,r23,0x1` — with
+   `r23` loaded from arg 3 in the prologue (`82340888`) and supplied by the only
+   entry, the thunk `0x82335F18` (`82335f28 or r5,r4,r4`, and
+   `82335f2c subi r3,r10,0x6900` = `0x828C9700`). So **`id(k) = base + k`**,
+   the index being the entry's ordinal within that pack, then `+[0x828C9708]`
+   below the threshold. Counted twice, independently: **16 mode-1 sites, 36
+   mode-0, one runtime-mode.**
+
+   **`0x08000000` is refuted as a base**: exactly seven `lis rX,0x0800` exist in
+   the image and none is on a mount path. **`0x0F000000` exists but not in the
+   shape proposed** — it is the seed and reset of the id allocator `0x821AEB08`,
+   emitting `0x0F000001`…`0x0F00F000` for *runtime-created* textures, not a
+   per-pack constant. The consecutive low-id blocks that motivated the
+   hypothesis remain unexplained by any base found. A shape that looks like
+   `base + index` is not evidence of `base + index`.
+
+   Still unattached: **no mount site has been tied to the 346-wrapper extraction
+   root**, so whether those two ids are mounted mode-1 (file ids discarded) or
+   mode-0 (file ids used) is unknown, and that is what the duplicate question
+   now reduces to.
+
    **What stays open is applicability, not policy.** Cycle 1248 counted 847
    duplicates over 205 ids across 1052 packs from a script that was not kept,
    and no committed artefact carries an id. Recomputing it needs the per-entry
