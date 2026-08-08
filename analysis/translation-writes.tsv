@@ -9,6 +9,12 @@
 #
 # Not one site in the mission cluster 0x822xxxxx authors a position from
 # data: they copy one or compose one.
+#
+# BUT THIS LIST IS NOT EXHAUSTIVE, and cycle 1133 measured by how much. The
+# scan sees stvx128 with a resolvable index and stfs with a literal
+# displacement. It is blind to indexed stores, of which the binary has 1018:
+# stfsx 552, stvlx 218, stvewx 194, stvrx 54. A position written by stfsx with
+# a computed displacement passes under both scans.
 # columns: at function kind vector_source
 8209a728	Function_82099358@82099358	copy	lvx128
 820a1738	Function_820A15E0@820a15e0	copy	lvx128

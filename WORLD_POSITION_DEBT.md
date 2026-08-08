@@ -79,6 +79,8 @@ unit. So `PLAD` names **which route entry a player starts on**.
 | the `Maneuver` block at `+0x210` | no world-scale float in any of the 434 | 1126 |
 | the route's Param blocks | mode 0 everywhere, x ∈ [0, 60000], **y = 0 everywhere**, z ≈ 0 | 1127 |
 | `PLAD`'s three floats | read by nobody on the load path | 1131 |
+| every reachable `+0x50` write in the mission cluster | 26 copies, 1 matrix composition, 1 copy — none authored from data | 1132, 1133 |
+| `0x820F9168`'s `vupkd3d128` | unpacks a *zero* vector: an identity init, not decompressed data | 1133 |
 
 ## The instrument, and three ways it was wrong
 
@@ -95,6 +97,13 @@ transferable lesson:
 `tools/ghidra_scripts/Ac6TransformWrite.java` is the last one. A struct offset is
 not a handle until the idiom that writes it is known.
 
+And it is still not enough. Cycle 1133 measured the blind spot: the scans see
+`stvx128` with a resolvable index and `stfs` with a literal displacement, and are
+blind to indexed stores, of which the binary has **1018** — `stfsx` 552, `stvlx`
+218, `stvewx` 194, `stvrx` 54. So the classification below is exhaustive *for the
+idioms scanned*, and cycle 1132's stronger claim was an overclaim, corrected in
+1133.
+
 ## What remains
 
 No function has been found that gives a unit its first world position. The
@@ -105,8 +114,9 @@ sharpest remaining handles, in order:
 2. **What fills the objects of the manager at `context+0x2A0`,** the pristine
    set the mass transfer copies from. Selector 0 of `0x820A7070` is the only one
    of the three that runs two extra loops over its manager.
-3. **The 65 effective-offset writers of `+0x50`,** of which only a handful have
-   been read.
+3. **The 1018 indexed stores** the scans cannot see. Resolving `stfsx` needs
+   real value propagation for the index register, not just a constant `li`;
+   doing it badly would add a fourth false-positive class to cycle 1128's three.
 
 A working hypothesis worth stating so it can be killed: units may have no
 authored start position at all, taking their place from the route entry `PLAD`
