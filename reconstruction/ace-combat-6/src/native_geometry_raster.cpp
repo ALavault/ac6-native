@@ -199,6 +199,19 @@ bool NativeGeometryDatabase::load_verified_binary(
           // so 0x0611 puts UV at 20 and 0x0613 at 24. This read 16 and 20 -
           // four bytes early in both, which at stride 32 takes the last word of
           // COLOR and the first of TEXCOORD.
+          //
+          // The 12-byte element size is the whole of that correction, so cycle
+          // 1262 corroborated it from a second function in another subsystem.
+          // 0x821DE898 allocates a declaration object by walking the same array
+          // to D3DDECL_END and sizing it from the count:
+          //
+          //   821de8c0  addi   r10,r10,0xc      one element is TWELVE bytes
+          //   821de8cc  cmplwi cr6,r9,0xff      D3DDECL_END: stream 0xFF
+          //   821de8d4  mulli  r11,r11,0xc      count * 12
+          //   821de8d8  addi   r3,r11,0x38      plus a 0x38 header
+          //
+          // A stride can be misread once. Two functions in different subsystems
+          // do not agree on 0xc by accident.
           const std::size_t uv_offset = vertex_stride == 28u ? 20u : 24u;
           if (vertex_stride >= 28u) {
             std::uint32_t u_bits = 0, v_bits = 0;
