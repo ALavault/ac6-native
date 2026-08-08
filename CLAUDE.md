@@ -70,7 +70,18 @@ second verifies every `retail_addresses` entry is actually mentioned by one of
 that behaviour's own evidence files — a citation to nowhere is not a derivation.
 It caught its author three times on the day it was written.
 
-A third guards the documentation instead of the contracts:
+When a gate fails on `evidence size mismatch`, the fix is to re-pin the hashes,
+and there is a tool for it rather than a heredoc:
+
+    python3 tools/refresh_contract_evidence.py analysis/contracts/*.json -- <edited paths>
+
+It prints `sites=N changed=M` per contract and **fails on a path no contract
+cites**. Both matter: a heredoc version reported only the sites it visited, and
+"2 sites, 0 changed" was read as "the file I edited was refreshed" — for a file
+cited by neither contract. Run it after `ctest`, never before, for the reason
+above.
+
+A third checker guards the documentation instead of the contracts:
 
     python3 tools/audit_instrument_discipline_index.py INSTRUMENT_DISCIPLINE.md
 
