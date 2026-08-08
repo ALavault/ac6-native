@@ -108,7 +108,15 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    01 spans 66,000 units. Callers plotting the world now pass their own far
    plane, and `world-overview.png` shows all 57 distinguishable positions.
 
-   What remains is the player's spawn, and it is **not** in the container:
+   What remains is the player's spawn. Cycle 1177 exhausted `PLAD` — both its
+   accessors have exactly three call sites each, paired, and every getter reads
+   only word 3 — and cycle 1176 found the player also carries no model index,
+   where 149 other units do. The mission describes neither the player's aircraft
+   nor where it starts, which is consistent with the player choosing one before
+   the mission. Three searches of the container have come back empty; the next
+   one should be for the code that builds the player from the hangar's choice.
+
+   It is **not** in the container:
    cycle 1146 dumped the five root slots the parser does not consume (3, 4, 6,
    7, 8, 9) and none holds a float triple in world range. The only qualified
    camera is the
