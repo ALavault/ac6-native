@@ -402,6 +402,32 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    Retail does not parse an FHM container in this executable, so 2d is resolved
    negatively rather than left open, and the walker stays out permanently.
 
+   **And cycle 1246 decides what that means for the product, not just for the
+   derivation.** The temptation was to port the measured FHM walk anyway, or to
+   ship an extraction-side mapping — the first puts a measured format in the
+   product, the second is a manifest, and JF exists because manifests were
+   eliminated. Both are wrong for the same reason: **porting an FHM reader would
+   be porting something the shipped game does not do.**
+
+   What retail does instead: `0x820A7070` stores the directory result at
+   `object+0x15C` as a **handle**, held and flag-toggled (`0x82129D00`,
+   `0x82222F80`) and never walked, and resources are resolved **by integer id**
+   through the registries — textures in `0x828C8100` keyed by `GIDX+0x08`,
+   shaders in `0x828CCB80` — which `0x821D5EF8` fills at boot from the pack
+   mounts.
+
+   **So the product's boundary is NDXR bytes in, geometry out**, which is where
+   `NdxrContainer` already sits and which is the boundary retail itself has.
+   `ModelDirectory` stays: it resolves the index retail resolves, and must not go
+   further.
+
+   The real remaining work is therefore the **id path**, and it is harder than
+   step 6 originally implied: the registries are BSS, populated at runtime from
+   the packs (cycle 1209). Bridging means reproducing that population, or
+   accepting an extraction-side index **and declaring it in the contract with a
+   status that is not "derived"**. Cycle 1246 deliberately decides only the
+   negative.
+
    Cycle 1181's "registry entries are twelve bytes each" is also wrong:
    `0x82342D70` is a byte-size query, `n * 0xDC`, carved by `0x82342F68` into a
    `0xC0` pool, a `0x10` map and a `0xC` free list — the twelve bytes are one
