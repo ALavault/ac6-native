@@ -81,3 +81,58 @@ Two lessons, and the second is the one that generalises:
 - once fixed, it found something real: `mission01-native-gate.json`, the
   superseded v1 contract, cites **7 artefacts that no longer exist**. The live
   contracts — v2, v3, v4 — are clean at 17, 19 and 22.
+
+## A ninth instance, and it is a new shape: the true positive from dead code
+
+Cycle 1192 published a structure — the DPL member table, `{first member, member
+count}` u16 entries at `*0x8293BA38` into `0x44`-byte records at `*0x8293BA3C` —
+and cycle 1193 found that **none of that code runs in this build**. It is one
+side of a format switch on the byte at `0x8293BA18`, which `0x821D61F4` sets to a
+literal `2` immediately before the table is mounted; all three functions that
+test it route the other way.
+
+Every previous entry in this file is a **false negative** — a scan that returned
+nothing and was believed. This one is the opposite and is worse, because nothing
+about the output looked wrong. The scan for the two globals returned eleven rows,
+including both the writer at `821cc2e4` and the writer at `821cc304` twenty
+instructions later. Both were real instructions at real addresses storing real
+values. I read the first, followed it, and wrote it down.
+
+**A cross-reference tells you an instruction exists. It does not tell you the
+instruction executes.** The two are different claims and this repository's
+evidence standard only ever enforced the first.
+
+The check that would have caught it costs one step: **walk up from the hit to the
+nearest conditional and ask what selects it.** Here the branch was fourteen
+instructions above the write, in the same function, testing a byte with exactly
+one writer in the image — a literal. Reachability was cheap and I did not spend
+it.
+
+Two structural warnings this generalises to:
+
+- **A format switch reads as a discovery.** Both branches parse a plausible
+  container, both look like the format you were hunting, and the dead one is
+  often the more elaborate — `0x44`-byte records with a name field are more
+  interesting than sixteen anonymous bytes, which is part of why I stopped there.
+- **The independent control is the one that broke the tie**, and it was already
+  in hand. `DATA.TBL` is 14,824 bytes and `8 + 926 * 0x10` is 14,824 exactly,
+  while the `0x44` shape divides into nothing. Cycle 1192 had that arithmetic,
+  recorded that it did not fit, and filed the mismatch as an open question about
+  a missing build step rather than as evidence against the structure. **A control
+  that contradicts the finding is not an open question.**
+
+## The Xenon project has no reference database, and it fails silently
+
+`Ac6Xrefs.java` asks Ghidra's reference manager, and against
+`ghidra-projects-xenon/ac6-xenon` it returns **zero for everything** —
+`0x8293BA38`, and equally `0x82910C80`, which `0x8233BE20` demonstrably loads.
+The project was imported with analysis off, so data references were never built.
+
+The instrument is not wrong about a target; it is empty. Its own docstring warns
+that text matching misses references, which is true in the canonical project and
+irrelevant here, and the failure mode inverts: in this project the text scan is
+the only one that works and the reference query is the one that lies.
+
+Cycle 1193 caught it in one command by querying a global it knew was referenced.
+**Any zero from `Ac6Xrefs` against the Xenon project should be read as "the
+database is empty" until a known-good target says otherwise.**
