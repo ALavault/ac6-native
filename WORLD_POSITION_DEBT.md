@@ -139,9 +139,13 @@ it points at, 2,416 bytes, sat as data, and disassembling them produced the
 caller a sweep of 755,392 instructions had failed to find. The same trap, at
 473,484 bytes.
 
-So the next handle is not another scan: it is **shrinking the gaps** — disassemble
-unresolved jump-table targets, then re-run the five sweeps over the completed
-corpus. Mechanical, quantified, and it adds no hypothesis.
+Cycle 1141 did exactly that: 1,637 gaps disassembled in the scratch corpus,
+coverage 86.30% → 89.80%, **120,372 bytes** of code no sweep had ever read. The
+sweeps re-run over it return the same numbers — 34 staged writes, 21 indexed
+triples, 7 memcpy-into-a-row, and **zero new sites in the mission cluster**. So
+the missing mechanism is not in the newly decoded quarter of the gap either, and
+that hypothesis is retired. About 350,000 bytes remain undecoded, and they are
+where the disassembler produced nothing — by all appearances real data.
 
 ## What remains
 
