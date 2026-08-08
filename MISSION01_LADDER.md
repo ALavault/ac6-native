@@ -189,9 +189,17 @@ python3 tools/audit_ac6_mission01_native_gate.py \
 ```
 
 
-1. ~~**Fuse the halves.**~~ **Done, cycle 1144.** `RetailSession` draws the world
-   through the rasteriser's own projection. Diagnostic markers only — no
-   geometry, and no capture containing one may be offered as visual parity.
+1. ~~**Fuse the halves.**~~ **Done, cycle 1144 for the class and cycle 1269 for
+   the command.** `RetailSession` draws the world through the rasteriser's own
+   projection. Diagnostic markers only — no geometry, and no capture containing
+   one may be offered as visual parity.
+
+   Cycle 1269 found the second half: `render_world_markers` was exercised by the
+   tests and **never called by `run_retail_session`**, so the capture the CLI
+   produced was HUD-only for 125 cycles. It now draws 29 markers of the 95
+   placed units, with the far plane derived from the world's 66,456-unit extent
+   rather than left at the 4,096 default — which would have dropped nearly all
+   of them. 29 of 95 is a statement about the camera, which is item 3 below.
 2. ~~**The transform frame.**~~ **Done, cycle 1145**, and it settled the opposite
    question. The frame is `parent.translation + parent.basis * offset`, and
    `0x8229AF80` places nothing without a parent. Parents *are* assigned on the
