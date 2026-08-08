@@ -190,7 +190,16 @@ bool NativeGeometryDatabase::load_verified_binary(
           DecodedVertex value;
           if (!bef32(offset, value.x) || !bef32(offset + 4u, value.y) ||
               !bef32(offset + 8u, value.z)) return false;
-          const std::size_t uv_offset = vertex_stride == 28u ? 16u : 20u;
+          // Derived in cycle 1233 from the declaration element lists the
+          // renderer's own builder walks (0x82345100), 12-byte Xbox 360
+          // D3DVERTEXELEMENT9 records:
+          //   T8[6]  @0x8201140C : POSITION @0 (12) | NORMAL @12 (8)      -> 20
+          //   T18[1] @0x820111D8 : TEXCOORD @rel 0                        -> abs 20
+          //   T18[3] @0x820111FC : COLOR @rel 0 (4) | TEXCOORD @rel 4     -> abs 24
+          // so 0x0611 puts UV at 20 and 0x0613 at 24. This read 16 and 20 -
+          // four bytes early in both, which at stride 32 takes the last word of
+          // COLOR and the first of TEXCOORD.
+          const std::size_t uv_offset = vertex_stride == 28u ? 20u : 24u;
           if (vertex_stride >= 28u) {
             std::uint32_t u_bits = 0, v_bits = 0;
             if (!be32(offset + uv_offset, u_bits) || !be32(offset + uv_offset + 4u, v_bits)) return false;
