@@ -33,6 +33,7 @@ the repository's*.
 | your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
 | you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
+| two functions sit **next to each other** and seem related | *the refuted link* — image order is not evidence; the checkable forms are a shared member offset, an exclusive call site, a common caller, and none is visible from inside either function |
 | your offset **worked on every entry** of the file you derived it from | *an instrument calibrated on one specimen* — regular structures make wrong offsets self-consistent; find the container's own declared count or length and check it across files |
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
@@ -715,3 +716,35 @@ The corollary is about the shape of the corroboration. "All six entries agreed"
 is one specimen's internal consistency, and it is exactly what a wrong offset in
 a regular structure produces. Agreement **across** specimens is evidence;
 agreement **within** one is arithmetic.
+
+## The twenty-third shape: the refuted link, and what a real one would have looked like
+
+Cycle 1263 drafted a link between a table-clearing routine and the vertex stride
+rule: the clearer's loop nest is `3 × 6 × 8`, which is exactly the arity of the
+stride formula's two index spaces, and it sits four instructions before the
+stride builder. Then it tested the adjacency and refused it — the two functions
+have entirely separate single callers, and **image order is not evidence**.
+
+Two cycles later the link turned out to be real, on evidence of a completely
+different kind. The clearer's caller and the builder's caller are sibling
+functions over the same object, calling their respective routines on the same
+two members, `this+0x28` and `this+0x170`. One builds what the other clears.
+
+**The refutation was not wasted, and publishing the first argument would have
+been worse than being wrong.** Had cycle 1263 shipped the adjacency reading, the
+caller would have been found later and would have *agreed with it* — and the
+agreement would have retroactively licensed "these functions are near each
+other" as a way of arguing. The habit survives its bad instances by being
+confirmed in the good ones.
+
+### The rule
+
+**When a plausible link fails its test, the question to carry forward is not
+"is the link real" but "what would a real link look like".** Adjacency, similar
+names and similar constants are all unfalsifiable in the small; a shared member
+offset in a shared object, an exclusive call site, a common caller — those are
+checkable. Name the checkable form before looking for it, then look.
+
+The corollary is about where to look: cycle 1263 could not reach the answer
+because it never left the two functions it was comparing. **A relation between
+two things is often not visible from either of them.**
