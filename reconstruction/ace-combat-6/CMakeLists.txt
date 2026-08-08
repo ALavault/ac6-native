@@ -17,6 +17,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_mission_script.cpp src/retail_session.cpp
   src/retail_world_position.cpp
   src/ntxr_texture.cpp
+  src/retail_model_directory.cpp
   src/retail_bin_readers.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
@@ -160,6 +161,16 @@ add_test(NAME ac6-retail-session
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-session.json
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-native-captures/jf-retail-session)
 set_tests_properties(ac6-retail-session PROPERTIES SKIP_RETURN_CODE 77)
+
+# The model directory of 0x8228E988/0x8228E9A8/0x8228E9B8, over Mission 01's own
+# MDLP, plus the join from the scenario's model bytes to it.
+add_executable(ac6-retail-model-directory-tests tests/retail_model_directory_tests.cpp)
+target_link_libraries(ac6-retail-model-directory-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-model-directory
+  COMMAND ac6-retail-model-directory-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/001_MDLP.mdlp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin)
+set_tests_properties(ac6-retail-model-directory PROPERTIES SKIP_RETURN_CODE 77)
 
 # Visual inspection of the decoder's output. Not a test - it writes retail art,
 # which stays local and is never committed. See tools/ntxr_extract.cpp.
