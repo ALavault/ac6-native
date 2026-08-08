@@ -22,11 +22,21 @@ identity basis from `0x8204F7F0/F800/F810` into `+0x20/+0x30/+0x40` and zeroes
 `+0x50`, and the tag-2 order reads `+0x50` as the current position at
 `0x82295C48`.
 
+The constants that claim carries were read rather than assumed, after a review
+pass pointed out that they had not been: the value the constructor stores into
+`+0x50/+0x54/+0x58` is `DAT_820542B8` = **0.0**, and the two other constants used
+throughout are `DAT_8200082C` = **0.0** and `DAT_82001348` = **1.0**, the w
+component. So "born at the origin" is measured, not inferred from a register
+name.
+
 **Two families, not one.** `0x820A7070` builds one **unit** per record — 230,
 through `CX360UnitManager`'s virtual `+0x10` (`0x820A7F48`), inserted by
 `0x8226FEC0`, class `ACE6::CAce6UnitPlayer`, vtable `0x820568D4`, size `0x100` —
 and one **Obj entity** per `ObjBin` record — 434, from record word 2, class
-constructed by `0x8228F6B0`, vtable `0x82008F58`, size `0x340`. The order
+constructed by `0x8228F6B0`, vtable `0x82008F58`, size `0x340`. The loader's
+three calls differ: selectors 0 and 1 each build units into their own manager
+from the *same* slot 0, so both unit managers hold the same 230 records; selector
+2 sets `r16 = 0` at `0x820A760C` and builds **no** unit at all. The order
 program steers the *unit*: at `0x82295C0C` it reads `+0xE4`, a field only the
 unit carries.
 
