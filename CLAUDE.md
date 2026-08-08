@@ -52,3 +52,20 @@ report carries:
 `python3 tools/audit_ac6_mission01_native_gate.py analysis/contracts/mission01-final-gate-v3.json --artifact-root . --require JF`
 must exit 0, and `ctest` must pass, before any commit. Both are cheap; run them
 every time.
+
+Then **`git status` after `ctest`, not before**. The suite regenerates the metrics
+artefacts that contracts cite; if one comes back modified, the committed version
+described a different run and a fresh clone would disagree with this tree. That
+has happened once — a regenerated `ntxr-decode.json` was never staged while its
+hash was refreshed against disk — and the artefact checker cannot catch it,
+because it compares HEAD against the working tree and both were wrong together.
+
+Two more checkers exist and are as cheap:
+
+    python3 tools/audit_ac6_contract_artifacts.py --artifact-root=. analysis/contracts/*.json
+    python3 tools/audit_ac6_contract_addresses.py --artifact-root=. analysis/contracts/*.json
+
+The first verifies every cited artefact is in HEAD and matches the tree. The
+second verifies every `retail_addresses` entry is actually mentioned by one of
+that behaviour's own evidence files — a citation to nowhere is not a derivation.
+It caught its author three times on the day it was written.
