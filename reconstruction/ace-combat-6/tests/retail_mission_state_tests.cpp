@@ -65,6 +65,42 @@ void check_classification() {
   REQUIRE(!ac6::retail::classify_unit_record(2, std::uint8_t{9}, false).has_value());
 }
 
+// The ordinal rule, and the rival it replaced.
+//
+// Until cycle 1256 this consumer advanced the branch ordinal for EVERY record
+// whose faction side code was 0 or 3. Retail advances it only for class-0
+// records: arms 0 and 3 re-test the class byte at 820a73f8 and 820a74bc and
+// branch away from the participant-table walk - and from the bumps at
+// 820a748c and 820a7550 - when it is non-zero.
+//
+// Mission 01 cannot tell the two rules apart. It holds exactly one class-0
+// record and that record is index 0, so both rules give it ordinal 0 and the
+// retail half of this file passes either way. The discriminating cases are
+// therefore chosen values, and each one fails under the rival.
+void check_ordinal_rule() {
+  using ac6::retail::record_takes_ordinal;
+
+  // Class 0 on the two arms that keep an ordinal: the only records that count.
+  REQUIRE(record_takes_ordinal(0, std::uint8_t{0}));
+  REQUIRE(record_takes_ordinal(0, std::uint8_t{3}));
+
+  // THE DISCRIMINATOR. The rival returns true for all four of these, because
+  // it never looks at the class byte.
+  REQUIRE(!record_takes_ordinal(1, std::uint8_t{0}));
+  REQUIRE(!record_takes_ordinal(2, std::uint8_t{0}));
+  REQUIRE(!record_takes_ordinal(3, std::uint8_t{3}));
+  REQUIRE(!record_takes_ordinal(4, std::uint8_t{3}));
+
+  // Side codes 1, 2 and 4 to 8 never walk the table, so they keep no ordinal
+  // whatever the class byte. Both rules agree here; it is a control on the
+  // side-code half rather than on the class half.
+  REQUIRE(!record_takes_ordinal(0, std::uint8_t{1}));
+  REQUIRE(!record_takes_ordinal(0, std::uint8_t{6}));
+
+  // Modes other than 2 and 3 carry no faction table at all.
+  REQUIRE(!record_takes_ordinal(0, std::nullopt));
+}
+
 void check_unit_table() {
   RetailUnitTable table;
   REQUIRE(table.count() == 0);
@@ -324,6 +360,7 @@ int check_retail(const std::filesystem::path& payload_path,
 
 int main(int argc, char** argv) {
   check_classification();
+  check_ordinal_rule();
   check_unit_table();
   check_sequencer_on_a_chosen_script();
   check_counter_operations();

@@ -52,6 +52,30 @@ std::optional<UnitClassification> classify_unit_record(
     std::uint8_t class_byte, std::optional<std::uint8_t> side_code,
     bool is_local_player) noexcept;
 
+// Whether a record advances its branch's running ordinal.
+//
+// Derived in cycle 1256 from 0x820A7070, read exhaustively at 912 of 912
+// instructions. Side codes 0 and 3 reach arms that RE-TEST the class byte
+// before walking the 16-entry participant table:
+//
+//   820a73f8  lbz    r11,0x8(r11)       arm 0, the class byte again
+//   820a7400  cmplwi cr6,r11,0x0
+//   820a7404  bne    cr6,0x820a7584     class != 0 skips the walk entirely
+//   820a74bc  lbz    r11,0x8(r11)       arm 3, the same shape
+//   820a74c4  cmplwi cr6,r11,0x0
+//
+// and the two ordinals are bumped only inside the blocks those tests guard:
+//
+//   820a748c  addi r22,r22,0x1
+//   820a7550  addi r23,r23,0x1
+//
+// All four branches into each bump block originate downstream of the class
+// test, so a record with a non-zero class byte never advances the ordinal.
+// Mission 01 cannot distinguish this from "every side-code-0 record advances
+// it", because it holds exactly one class-0 record and it is record 0.
+bool record_takes_ordinal(std::uint8_t class_byte,
+                          std::optional<std::uint8_t> side_code) noexcept;
+
 // The CX360UnitManager's insertion target: 256 slots from +0x04 to +0x400 with
 // the count at +0x40C, as its base constructor lays them out.
 class RetailUnitTable final {

@@ -55,6 +55,16 @@ std::optional<UnitClassification> classify_unit_record(
   return UnitClassification{*category, *flags};
 }
 
+bool record_takes_ordinal(std::uint8_t class_byte,
+                          std::optional<std::uint8_t> side_code) noexcept {
+  // Only the two arms that walk the participant table keep an ordinal, and
+  // each re-tests the class byte before doing so - 820a73f8/820a7404 for side
+  // code 0, 820a74bc/820a74c4 for side code 3.
+  if (!side_code.has_value()) return false;
+  if (*side_code != 0 && *side_code != 3) return false;
+  return class_byte == 0;
+}
+
 // 0x8226FEC0: store at the incremented index, then bump the count.
 MissionArea normalise_area(float x0, float z0, float x1, float z1) noexcept {
   // FUN_82268B28 writes min(a,c) and max(a,c) for one axis and min(b,d),
@@ -119,7 +129,7 @@ std::optional<RetailUnitBuild> build_units(
     if (record.faction_byte >= factions.size()) return std::nullopt;
     const ScenarioFaction& faction = factions[record.faction_byte];
     bool is_local_player = false;
-    if (faction.side_code == 0 || faction.side_code == 3) {
+    if (record_takes_ordinal(record.class_byte, faction.side_code)) {
       const std::uint8_t branch = faction.side_code == 0 ? 0 : 1;
       const std::uint32_t ordinal = ordinals[branch]++;
       is_local_player = local_player.has_value() &&
