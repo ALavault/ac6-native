@@ -44,6 +44,17 @@ std::string format_float(float value) {
 
 }  // namespace
 
+// The coordinates the native runtime is given for a unit. Retail supplies none
+// on the load path - it builds every object at the origin (cycle 1124) and the
+// order program steers it from there (cycle 1125) - so these are the Obj
+// record's three scalars used as a stand-in, which is a native choice and not a
+// reading of the binary. The one line where that happens is this one.
+ScenarioVector position_placeholder(const ScenarioUnitRecord& record) {
+  if (record.obj_scalars.empty()) return {};
+  const ScenarioObjScalars& scalars = record.obj_scalars.front();
+  return {scalars.first, scalars.second, scalars.third};
+}
+
 std::optional<ScenarioPayload> ScenarioPayload::open(std::vector<std::uint8_t> bytes) {
   if (bytes.size() < 8) return std::nullopt;
   return ScenarioPayload(std::move(bytes));
@@ -160,7 +171,7 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         const std::optional<float> y = payload.f32(*object_data + 4);
         const std::optional<float> z = payload.f32(*object_data + 8);
         if (!x.has_value() || !y.has_value() || !z.has_value()) return std::nullopt;
-        record.objects.push_back({*x, *y, *z});
+        record.obj_scalars.push_back({*x, *y, *z});
       }
     }
     // The unit's Set -> Act -> Order program, kept only for the orders that
@@ -311,7 +322,7 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
 
 std::size_t MissionScenario::object_records() const noexcept {
   std::size_t total = 0;
-  for (const ScenarioUnitRecord& record : units_) total += record.objects.size();
+  for (const ScenarioUnitRecord& record : units_) total += record.obj_scalars.size();
   return total;
 }
 
@@ -320,7 +331,7 @@ std::string waves_manifest_rows(const MissionScenario& scenario,
   std::string text;
   for (const ScenarioUnitRecord& record : scenario.units()) {
     const ScenarioVector position =
-        record.objects.empty() ? ScenarioVector{} : record.objects.front();
+        position_placeholder(record);
     const std::uint32_t faction = record.faction_byte + 1u;
     text += std::to_string(mission_id);
     text += "\t1\t";                                    // one load-time pass

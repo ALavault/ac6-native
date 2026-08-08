@@ -134,7 +134,7 @@ std::optional<RetailUnitBuild> build_units(
     object.entity = kEntityBase + record.index;
     object.record_index = record.index;
     object.flags = classification->flags;
-    object.object_count = static_cast<std::uint32_t>(record.objects.size());
+    object.object_count = static_cast<std::uint32_t>(record.obj_scalars.size());
     object.category = classification->category;
     object.faction_byte = record.faction_byte;
 
@@ -275,8 +275,7 @@ std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
 
   for (const RetailUnitObject& object : world.build.objects) {
     const ScenarioUnitRecord& record = scenario.units()[object.record_index];
-    const ScenarioVector offset =
-        record.objects.empty() ? ScenarioVector{} : record.objects.front();
+    const ScenarioVector offset = position_placeholder(record);
     const std::uint32_t faction = object.faction_byte + 1u;
 
     UnitRecord unit;

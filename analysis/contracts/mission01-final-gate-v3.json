@@ -75,8 +75,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
-            "size": 12425,
+            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
+            "size": 12383,
             "claim": "src/retail_mission_state.cpp implements the classification, the insertion and the per-faction census"
           }
         ]
@@ -107,8 +107,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
-            "size": 12425,
+            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
+            "size": 12383,
             "claim": "src/retail_mission_state.cpp implements the sequencer with its bound, its cursor and its elapsed test"
           }
         ]
@@ -139,8 +139,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
-            "size": 12425,
+            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
+            "size": 12383,
             "claim": "src/retail_mission_state.cpp implements the four operations in retail's compute-store-then-stamp order"
           }
         ]
@@ -203,8 +203,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "b9a1ed1f9866ffbeb3ff16824bc84783d6419a1f496134a4ae97367d08ab7911",
-            "size": 12425,
+            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
+            "size": 12383,
             "claim": "normalise_area, area_contains and select_mission_area implement the three functions and cite them"
           }
         ]

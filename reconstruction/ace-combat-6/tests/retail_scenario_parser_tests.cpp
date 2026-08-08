@@ -243,8 +243,9 @@ void check_synthetic() {
   REQUIRE(record.faction_byte == 1);
   REQUIRE(record.object_category == 4);
   REQUIRE(record.has_behaviour_set);
-  REQUIRE(record.objects.size() == 1);
-  REQUIRE(record.objects.front() == (ac6::retail::ScenarioVector{1.5f, -2.0f, 3.25f}));
+  REQUIRE(record.obj_scalars.size() == 1);
+  REQUIRE(record.obj_scalars.front() ==
+          (ac6::retail::ScenarioObjScalars{1.5f, -2.0f, 3.25f}));
 
   REQUIRE(scenario->factions().size() == 1);
   REQUIRE(scenario->factions().front().side_code == 0);

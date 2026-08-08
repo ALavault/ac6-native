@@ -61,6 +61,15 @@ class ScenarioPayload final {
   std::vector<std::uint8_t> bytes_;
 };
 
+// The first three words of an Obj sub-record's data block: three independent
+// scalars, not a vector. See ScenarioUnitRecord::obj_scalars for the consumers.
+struct ScenarioObjScalars {
+  float first{};
+  float second{};
+  float third{};
+  bool operator==(const ScenarioObjScalars&) const = default;
+};
+
 // One element of the parsed 'Obj & Unit' slot, as 0x820A7070 reads it.
 struct ScenarioUnitRecord {
   std::uint32_t index{};
@@ -68,7 +77,22 @@ struct ScenarioUnitRecord {
   std::uint8_t faction_byte{};     // data +0x0D, the faction table index
   std::uint32_t object_category{}; // what 0x820A7F48 allocates for class_byte
   bool has_behaviour_set{};        // child 0, the Set -> Act -> Order program
-  std::vector<ScenarioVector> objects;  // the Obj sub-records' three floats
+  // The first three words of each Obj sub-record's data block. They were read
+  // as a position triple until cycle 1125 followed their consumers, and they
+  // are not one: every route that reaches them goes through the object's filed
+  // record at +0x180, and on every such route the three are read separately,
+  // each behind a different guard byte of the same block.
+  //
+  //   +0x00  0x8232E168, only when the byte at +0x51 is 1
+  //   +0x04  0x8229B3A8, beside the byte at +0x52
+  //   +0x08  0x8228FD90 and 0x82293570, both storing it into object+0x314
+  //          while decrementing a counter at object+0x310 - a period reloaded,
+  //          which no z coordinate would be
+  //
+  // Nothing loads them together, and this codebase loads positions with a
+  // single vector load. The type says three scalars because that is what they
+  // are.
+  std::vector<ScenarioObjScalars> obj_scalars;
   bool operator==(const ScenarioUnitRecord&) const = default;
 };
 
@@ -196,6 +220,10 @@ std::string waves_manifest_rows(const MissionScenario& scenario,
                                 std::uint32_t mission_id);
 std::string objectives_manifest_rows(const MissionScenario& scenario,
                                      std::uint32_t mission_id);
+
+// The coordinates the native runtime is handed for a unit. Named a placeholder
+// because that is what it is: retail places nothing on the load path.
+ScenarioVector position_placeholder(const ScenarioUnitRecord& record);
 
 // The native entity base. Retail element index 0 becomes entity 4097 because
 // the native registry rejects a unit whose id equals its owner id.
