@@ -374,7 +374,11 @@
      "0x82340870",
      "0x8234BEC8",
      "0x821DE898",
-     "0x820111C0"
+     "0x820111C0",
+     "0x821EC598",
+     "0x82068278",
+     "0x821DE790",
+     "0x821DE7A8"
     ],
     "evidence": [
      {
@@ -439,6 +443,13 @@
       "claim": "the vertex element layout derived from the declaration lists the renderer's builder walks - POSITION@0, NORMAL@12, COLOR@20, TEXCOORD@24 for format 0x0613 - correcting a product that read UV four bytes early on every vertex, with a corpus control scoring the derived offset at 99.8% plausible against 0.0% for both offsets the product had used",
       "sha256": "3eb7b73689802a86046c03367d7911e1f41c8c3281bddfb8bf89721a81ae8ae2",
       "size": 3740
+     },
+     {
+      "kind": "static",
+      "path": "reports/cycle-1245-the-type-codes-decode-and-the-product-is-right.md",
+      "claim": "the vertex element Type dword decoded as a Xenos vertex-fetch descriptor at 0x821EC598, with the format size table at 0x82068278 giving POSITION 12 bytes and TEXCOORD 8 - matching cycle 1233's independently derived offsets - and a control on NORMAL, a field the product never reads, scoring four float16 at 99.20% unit length against 0.00%, 0.68%, 3.90% and 0.00% for four rivals",
+      "sha256": "cc07d37c02377221ed58cca957556a8f1e54065fd41a1b7af929334555cbfa3a",
+      "size": 5452
      }
     ]
    }
