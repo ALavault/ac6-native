@@ -186,3 +186,53 @@ indistinguishable, from the inside, from an exhausted one — the evidence looks
 uniform precisely because the exception has not been reached yet. Enumerate
 completely, or state in the report that the enumeration is partial and how far it
 got.
+
+## The twelfth shape: the listing is not the code
+
+`Ac6XenonRefs` reports the number of instructions it scanned, and that number is
+**786,122**. `.text` runs `0x82090000`–`0x823D772C` and holds **859,595**
+instructions. **Every negative taken with this instrument in this repository has
+covered 91.5% of the code, not all of it.**
+
+This is not hypothetical. `0x82351070 b 0x82355998` — the branch that makes
+`0x82351060` reachable as a vtable draw slot, and therefore the entry to the
+whole NDXR render traversal — **is absent from Ghidra's listing.** It was found
+only by decoding every word of the image directly.
+
+The instrument reports its own denominator and nobody read it. `scanned_instructions
+786122` has been printed at the bottom of every scan output this session.
+
+### What this does and does not invalidate
+
+A byte-level scan of memory blocks does **not** go through the listing, so:
+
+- cycle 1192's "`46 48 4D` occurs zero times anywhere in the loaded image" stands;
+- cycle 1207's "`4d 41 54 45` occurs zero times" stands, with its
+  `GIDX`/`NDXR`/`NTXR` positive controls;
+- cycle 1205's zero `0x2005` records is a data census and is untouched.
+
+An instruction-text scan **does**, so:
+
+- "no instruction carries `0x4d20`" (cycle 1192) is weaker than it reads;
+- **every "N call sites" figure taken from `Ac6XenonRefs` is a lower bound, not a
+  census.**
+
+That last point compounds the corollary above it. There, seven of eight call
+sites supported a false conclusion because the eighth existed. Here, the eighth
+might never have been listed.
+
+### The rule
+
+**State the denominator with the negative.** A scan that finds nothing in 786,122
+of 859,595 instructions has found nothing in 91.5% of the code, and the honest
+sentence says so. When a negative is load-bearing, either raise it to a byte-level
+scan of the image or decode the range directly — Ghidra's listing is a view of
+the code, not the code.
+
+### And a note on the flat dump
+
+`analysis-input/ACE6_X360.exe` is a flat image: **file offset = VA − 0x82000000.**
+The PE section table's `PointerToRawData` values are the *packed* ones and are
+wrong — `.text` reads `0x8CA00` and actually sits at `0x90000`. A scan built on
+the header values returns empty for every known-good control, which is at least a
+loud failure; it was caught that way before anything was believed.
