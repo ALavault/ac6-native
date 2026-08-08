@@ -125,6 +125,22 @@ struct NdxrSections {
   std::size_t end{};     // this+0x90, and the string table base
 };
 
+// 0x8233EE40: one texture reference inside a material.
+struct NdxrTextureRef {
+  std::uint32_t texture_id{};  // +0x00, the key into registry 0x828C8100
+  bool resolved{};             // +0x0A bit 0x4000, expected false on disk
+};
+
+// 0x82355318: a material, reached through one of the four pointers at
+// sub+0x10..+0x1C. Cycle 1207 corrects cycles 1198/1199, which called these
+// vertex streams.
+struct NdxrMaterial {
+  std::uint32_t shader_id{};       // +0x00, the key into registry 0x828CCB80
+  std::uint16_t texture_count{};   // +0x0A
+  std::size_t offset{};            // where the material begins in the buffer
+  bool resolved{};                 // +0x08 bit 0x4000, expected false on disk
+};
+
 struct NdxrRecord {
   std::uint16_t index{};
   std::string_view name{};             // rec+0x20 resolved against the table
@@ -148,6 +164,34 @@ class NdxrContainer final {
   bool was_gidx_wrapped() const noexcept { return gidx_wrapped_; }
 
   std::optional<NdxrRecord> Record(std::uint16_t index) const noexcept;
+
+  // The material at one of a descriptor's four slots, or nullopt when the slot
+  // is null or the material does not fit. `descriptor_index` counts within the
+  // record, `slot` is 0..3.
+  //
+  // 0x82355468 relocates sub+0x10..+0x1C by the file base; this resolves
+  // instead, for the reason given at the top of this file.
+  std::optional<NdxrMaterial> Material(const NdxrRecord& record,
+                                       std::uint16_t descriptor_index,
+                                       unsigned slot) const noexcept;
+
+  // 0x82355318: texture records of stride 0x18 begin at material+0x20.
+  std::optional<NdxrTextureRef> TextureRef(const NdxrMaterial& material,
+                                           std::uint16_t index) const noexcept;
+
+  // 0x82355358/0x82355394: the parameter chain follows the texture array at
+  // material + 0x20 + 0x18*count, each node giving its own byte size at +0x00
+  // with zero terminating. Returns the node count, or nullopt when the chain
+  // leaves the buffer - which is the control that kills the rival strides.
+  std::optional<std::uint32_t> ParameterChainLength(
+      const NdxrMaterial& material) const noexcept;
+
+  static constexpr std::size_t kDescriptorStride = 0x30;
+  static constexpr std::size_t kMaterialSlotBase = 0x10;
+  static constexpr unsigned kMaterialSlots = 4;
+  static constexpr std::size_t kTextureRecordBase = 0x20;
+  static constexpr std::size_t kTextureRecordStride = 0x18;
+  static constexpr std::uint16_t kResolvedBit = 0x4000;
 
   static constexpr std::size_t kRecordStride = 0x30;
   static constexpr std::size_t kRecordArrayBase = 0x30;

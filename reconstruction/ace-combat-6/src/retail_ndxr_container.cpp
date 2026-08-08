@@ -157,4 +157,65 @@ std::optional<NdxrRecord> NdxrContainer::Record(
   return out;
 }
 
+std::optional<NdxrMaterial> NdxrContainer::Material(
+    const NdxrRecord& record, std::uint16_t descriptor_index,
+    unsigned slot) const noexcept {
+  if (bytes_ == nullptr || slot >= kMaterialSlots) return std::nullopt;
+  if (descriptor_index >= record.descriptor_count) return std::nullopt;
+
+  const std::uint64_t descriptor =
+      static_cast<std::uint64_t>(record.descriptor_offset) +
+      static_cast<std::uint64_t>(descriptor_index) * kDescriptorStride;
+  if (descriptor + kDescriptorStride > size_) return std::nullopt;
+
+  const std::uint32_t at = Be32(bytes_ + descriptor + kMaterialSlotBase + 4 * slot);
+  if (at == 0) return std::nullopt;  // an empty slot is not an error
+  if (static_cast<std::uint64_t>(at) + kTextureRecordBase > size_) return std::nullopt;
+
+  NdxrMaterial out;
+  out.offset = at;
+  out.shader_id = Be32(bytes_ + at);
+  out.texture_count = Be16(bytes_ + at + 0x0A);
+  out.resolved = (Be16(bytes_ + at + 0x08) & kResolvedBit) != 0;
+  return out;
+}
+
+std::optional<NdxrTextureRef> NdxrContainer::TextureRef(
+    const NdxrMaterial& material, std::uint16_t index) const noexcept {
+  if (bytes_ == nullptr || index >= material.texture_count) return std::nullopt;
+  const std::uint64_t at = static_cast<std::uint64_t>(material.offset) +
+                           kTextureRecordBase +
+                           static_cast<std::uint64_t>(index) * kTextureRecordStride;
+  if (at + kTextureRecordStride > size_) return std::nullopt;
+
+  NdxrTextureRef out;
+  out.texture_id = Be32(bytes_ + at);
+  out.resolved = (Be16(bytes_ + at + 0x0A) & kResolvedBit) != 0;
+  return out;
+}
+
+std::optional<std::uint32_t> NdxrContainer::ParameterChainLength(
+    const NdxrMaterial& material) const noexcept {
+  if (bytes_ == nullptr) return std::nullopt;
+  std::uint64_t at = static_cast<std::uint64_t>(material.offset) +
+                     kTextureRecordBase +
+                     static_cast<std::uint64_t>(material.texture_count) *
+                         kTextureRecordStride;
+  std::uint32_t nodes = 0;
+  // 0x8235539C advances by the node's own size and stops when it is zero. A
+  // wrong texture stride puts this cursor in the middle of something else, and
+  // the walk then runs out of the buffer instead of terminating - which is what
+  // separates stride 0x18 from the 0x10 and 0x20 rivals.
+  constexpr std::uint32_t kNodeCap = 4096;
+  while (nodes < kNodeCap) {
+    if (at + 12 > size_) return std::nullopt;
+    const std::uint32_t step = Be32(bytes_ + at);
+    if (step == 0) return nodes;
+    if (step > size_) return std::nullopt;
+    at += step;
+    ++nodes;
+  }
+  return std::nullopt;
+}
+
 }  // namespace ac6::retail

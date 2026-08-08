@@ -64,6 +64,37 @@ std::size_t PrintableStringLength(const std::vector<std::uint8_t>& bytes,
   return i - at;
 }
 
+// Cycle 1207's discriminating control, re-expressed here so it lives with the
+// code rather than only in a report: the texture-record stride separates from
+// its rivals on whether the parameter chain that follows the array terminates.
+// 0x10 is the stride of the MATE tables that bracket the material bodies, so it
+// is the natural wrong guess, and it must fail.
+//
+// HOW MUCH THIS CONTROL CAN PROVE DEPENDS ON THE CORPUS, and cycle 1211 found
+// that out the hard way. The chain begins at material + 0x20 + count*stride, so
+// the rivals are separated by count*(stride difference). Every material in the
+// standalone corpus has count == 1, which puts stride 0x20 only 8 bytes from
+// 0x18 - and it lands on a valid chain too, 13,014 times out of 13,014. In the
+// MDLP corpus 934 of 1,227 materials have count == 2 and the rival dies there.
+//
+// So this test asserts what THIS corpus can discriminate: 0x10 must fail, and
+// 0x20 is reported but not asserted. The count census is asserted instead, so
+// that if the corpus ever gains a material with count > 1 the reason this
+// exemption exists is visible rather than silently obsolete.
+std::uint32_t ChainLengthWithStride(const std::vector<std::uint8_t>& bytes,
+                                    std::size_t material, std::uint16_t count,
+                                    std::size_t stride) {
+  std::size_t at = material + 0x20 + static_cast<std::size_t>(count) * stride;
+  for (std::uint32_t nodes = 0; nodes < 4096; ++nodes) {
+    if (at + 12 > bytes.size()) return 0;
+    const std::uint32_t step = Be32(bytes.data() + at);
+    if (step == 0) return nodes + 1;
+    if (step > bytes.size()) return 0;
+    at += step;
+  }
+  return 0;
+}
+
 struct Totals {
   std::uint64_t opened = 0;
   std::uint64_t refused = 0;
@@ -72,6 +103,14 @@ struct Totals {
   std::uint64_t relocated = 0;
   std::uint64_t derived_named = 0;
   std::uint64_t rival_named = 0;
+  std::uint64_t materials = 0;
+  std::uint64_t material_resolved = 0;
+  std::uint64_t textures = 0;
+  std::uint64_t texture_resolved = 0;
+  std::uint64_t chain_ok = 0;
+  std::uint64_t chain_rival_10 = 0;
+  std::uint64_t chain_rival_20 = 0;
+  std::uint64_t single_texture = 0;
 };
 
 bool Check(bool condition, const char* what) {
@@ -142,6 +181,35 @@ int main(int argc, char** argv) {
       // field is not what the derivation says it is.
       if (record->relocated) ++totals.relocated;
       if (record->name.empty()) ++totals.unnamed;
+
+      // Cycle 1207: the four slots are MATERIALS. Only slot 0 is ever used in
+      // this corpus, so the loop covers all four and the count proves it.
+      for (std::uint16_t d = 0; d < record->descriptor_count; ++d) {
+        for (unsigned slot = 0; slot < 4; ++slot) {
+          const auto material = container->Material(*record, d, slot);
+          if (!material.has_value()) continue;
+          ++totals.materials;
+          if (material->texture_count == 1) ++totals.single_texture;
+          if (material->resolved) ++totals.material_resolved;
+          for (std::uint16_t k = 0; k < material->texture_count; ++k) {
+            const auto texture = container->TextureRef(*material, k);
+            if (!texture.has_value()) continue;
+            ++totals.textures;
+            if (texture->resolved) ++totals.texture_resolved;
+          }
+          if (container->ParameterChainLength(*material).has_value()) {
+            ++totals.chain_ok;
+          }
+          if (ChainLengthWithStride(bytes, material->offset,
+                                    material->texture_count, 0x10) != 0) {
+            ++totals.chain_rival_10;
+          }
+          if (ChainLengthWithStride(bytes, material->offset,
+                                    material->texture_count, 0x20) != 0) {
+            ++totals.chain_rival_20;
+          }
+        }
+      }
     }
 
     // THE DISCRIMINATING CONTROL, cycle 1196. The body base is
@@ -176,7 +244,38 @@ int main(int argc, char** argv) {
   std::printf("  rival base (no +0x30) likewise     : %llu (must be 0)\n",
               static_cast<unsigned long long>(totals.rival_named));
 
+  std::printf("  materials=%llu textures=%llu\n",
+              static_cast<unsigned long long>(totals.materials),
+              static_cast<unsigned long long>(totals.textures));
+  std::printf("  material/texture resolve bits set on disk : %llu / %llu\n",
+              static_cast<unsigned long long>(totals.material_resolved),
+              static_cast<unsigned long long>(totals.texture_resolved));
+  std::printf("  parameter chain terminates, stride 0x18   : %llu of %llu\n",
+              static_cast<unsigned long long>(totals.chain_ok),
+              static_cast<unsigned long long>(totals.materials));
+  std::printf("  materials with texture_count == 1         : %llu of %llu\n",
+              static_cast<unsigned long long>(totals.single_texture),
+              static_cast<unsigned long long>(totals.materials));
+  std::printf("  same, rival stride 0x10 / 0x20            : %llu / %llu\n",
+              static_cast<unsigned long long>(totals.chain_rival_10),
+              static_cast<unsigned long long>(totals.chain_rival_20));
+
   ok = Check(totals.refused == 0, "some files were refused") && ok;
+  ok = Check(totals.material_resolved == 0,
+             "a material carries the 0x4000 resolve bit on disk") && ok;
+  ok = Check(totals.texture_resolved == 0,
+             "a texture record carries the 0x4000 resolve bit on disk") && ok;
+  ok = Check(totals.chain_ok == totals.materials,
+             "the parameter chain did not terminate for every material") && ok;
+  // The rivals must lose. If either ever matches, stride 0x18 is no longer
+  // discriminated and cycle 1207's control is void.
+  ok = Check(totals.chain_rival_10 == 0, "rival stride 0x10 terminated") && ok;
+  // Deliberately NOT asserted: see the note on ChainLengthWithStride. Asserting
+  // it would mean weakening the test until it passed, which is the opposite of
+  // what a control is for.
+  ok = Check(totals.single_texture == totals.materials,
+             "a material has texture_count != 1, so the 0x20 exemption above is "
+             "stale and that rival should now be asserted") && ok;
   ok = Check(totals.unnamed == 0, "some records have no name") && ok;
   ok = Check(totals.relocated == 0,
              "the 0x8000 guard is set on disk in some record") && ok;
