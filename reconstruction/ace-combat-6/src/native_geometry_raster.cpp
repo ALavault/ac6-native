@@ -1,4 +1,5 @@
 #include "ac6/product_runtime.h"
+#include "ac6/retail_ndxr_container.h"
 #include "text_parse.h"
 
 #include <algorithm>
@@ -111,10 +112,16 @@ bool NativeGeometryDatabase::load_verified_binary(
               static_cast<std::uint64_t>(value.index_count) * 2u > polygon_size - value.index_offset) {
             return false;
           }
-          const std::uint32_t stride = value.format == 0x0611u ? 28u :
-                                       value.format == 0x0613u ? 32u :
-                                       value.format == 0x0711u ? 44u :
-                                       value.format == 0x0721u ? 52u : 0u;
+          // Was four measured constants - 0x0611->28, 0x0613->32, 0x0711->44,
+          // 0x0721->52 - which cycle 1189 flagged as citing no retail address
+          // and cycle 1203 could not settle. Cycle 1217 derived them: the
+          // renderer's declaration builder 0x82345100 sums the strides of two
+          // const .rdata tables, T8 at 0x820110F0 indexed by the format's high
+          // byte and T18 at 0x82011130 by its low byte. All four constants come
+          // back out of that formula, which was not fitted to them.
+          const std::uint32_t stride = ac6::retail::NdxrContainer::VertexStride(
+              static_cast<std::uint8_t>(value.format >> 8),
+              static_cast<std::uint8_t>(value.format & 0xFFu));
           if (stride == 0 || (vertex_stride != 0 && vertex_stride != stride)) return false;
           vertex_stride = stride;
           if (value.vertex_offset % stride != 0 || value.vertex_offset > vertex_size ||
