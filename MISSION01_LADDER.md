@@ -267,10 +267,27 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    scenario, 0 refused. It stops at the entry boundary, because the **FHM layout
    is measured, not derived** (cycle 1175): no instruction builds the `FHM `
    magic, the reader has not been found, and `tools/ac6_fhm.py`'s field offsets
-   rest on 94 of 94 bundles parsing cleanly. Importing a whole format on
-   measurement is how a port stops being a derivation, so the walker stays out
-   until its reader is followed out of the typed-resource dispatch at
-   `0x82343010` / `0x8234CB58`.
+   rest on 94 of 94 bundles parsing cleanly.
+
+   **And no reader will be found (cycle 1192).** The bytes `46 48 4D` occur
+   **zero times anywhere in the loaded image**, code or data, verified with a
+   scanner that finds `NDXR` at `0x8200A24C`, `GIDX` at `0x82067EC8` and `NTXR`
+   at `0x82067EC0`. There is no type registry to look in either: `0x82337BD8` is
+   `ResourceManager::init(1 MiB, 0x400 resources)` with one caller, and dispatch
+   at `0x8234CA28` / `0x8234CB58` is compiled in over three codes (1, 2, `0x200`).
+   Retail does not parse an FHM container in this executable, so 2d is resolved
+   negatively rather than left open, and the walker stays out permanently.
+
+   Cycle 1181's "registry entries are twelve bytes each" is also wrong:
+   `0x82342D70` is a byte-size query, `n * 0xDC`, carved by `0x82342F68` into a
+   `0xC0` pool, a `0x10` map and a `0xC` free list — the twelve bytes are one
+   array of three.
+
+   What retail walks instead is the **DPL archive layer**: `0x821CC4D0` reads a
+   `{first member, member count}` u16 index at `*0x8293BA38` into `0x44`-byte
+   member records at `*0x8293BA3C`, names at `+0x04`, over the `DATA.TBL` and two
+   PACs `0x821D5EF8` mounts. Open: where those two globals are filled from —
+   `DATA.TBL` on disk is 926 sixteen-byte records and is not that shape.
 
    **The gap is closed (cycle 1171), and cycle 1148 was wrong.** Byte `+0x61` is
    in the scenario container after all — on the Obj entry's **child[0]** data
