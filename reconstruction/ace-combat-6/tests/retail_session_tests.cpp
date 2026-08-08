@@ -22,7 +22,10 @@
 #include "ac6/retail_session.h"
 #include "test_fixtures.h"
 
+#include <algorithm>
 #include <cstdio>
+#include <set>
+#include <tuple>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -192,8 +195,84 @@ void write_capture_bundle(const std::filesystem::path& directory,
   // The two captures are different images, so neither is a copy of the other.
   REQUIRE(live_target.readback().color_hash != debrief_target.readback().color_hash);
 
+  // The overview. The session camera follows the player, and the player has no
+  // load-time position, so it sits at the origin while the 95 placed units are
+  // tens of thousands of units away - the live capture shows four of them.
+  //
+  // This third image exists to make the placement checkable rather than merely
+  // counted, and its camera is **chosen, not derived**: it is placed from the
+  // bounding box of the derived positions themselves, looking down at their
+  // centroid. That is legitimate here and nowhere else, because the marker lane
+  // is already declared diagnostic - no material, no texture, no topology, and
+  // no frame-parity claim. A capture that framed itself this way while claiming
+  // to be the retail camera would be worthless. This one claims to be a plot.
+  ac6::NativeRenderTarget overview;
+  REQUIRE(overview.resize(640, 360) && overview.clear(0xFF000000u, 1.0f));
+  float min_x = 0.0f, max_x = 0.0f, min_y = 0.0f, max_y = 0.0f, min_z = 0.0f, max_z = 0.0f;
+  bool first = true;
+  for (const ac6::CombatUnitState& unit : session->world().combat.snapshot_units()) {
+    if (std::find(session->world().placed.begin(), session->world().placed.end(),
+                  unit.entity) == session->world().placed.end()) {
+      continue;
+    }
+    if (first) {
+      min_x = max_x = unit.position.x;
+      min_y = max_y = unit.position.y;
+      min_z = max_z = unit.position.z;
+      first = false;
+      continue;
+    }
+    min_x = std::min(min_x, unit.position.x); max_x = std::max(max_x, unit.position.x);
+    min_y = std::min(min_y, unit.position.y); max_y = std::max(max_y, unit.position.y);
+    min_z = std::min(min_z, unit.position.z); max_z = std::max(max_z, unit.position.z);
+  }
+  REQUIRE(!first);
+  std::set<std::tuple<float, float, float>> distinct;
+  for (const ac6::CombatUnitState& unit : session->world().combat.snapshot_units()) {
+    if (std::find(session->world().placed.begin(), session->world().placed.end(),
+                  unit.entity) != session->world().placed.end()) {
+      distinct.insert({unit.position.x, unit.position.y, unit.position.z});
+    }
+  }
+  const std::size_t distinct_positions = distinct.size();
+  ac6::WorldFrame plot = frame.world;
+  plot.camera_target_x = 0.5f * (min_x + max_x);
+  plot.camera_target_y = 0.5f * (min_y + max_y);
+  plot.camera_target_z = 0.5f * (min_z + max_z);
+  // Far enough back that the whole extent fits the 60-degree fallback frustum,
+  // and above it, so the plot reads as a map.
+  const float extent = std::max({max_x - min_x, max_z - min_z, 1.0f});
+  plot.camera_x = plot.camera_target_x;
+  plot.camera_y = plot.camera_target_y + 0.62f * extent;
+  plot.camera_z = plot.camera_target_z - 0.006f * extent;
+  // The plot's own extent is its far plane: without it every marker beyond
+  // 4096 units normalises to depth 1.0 and the depth test drops all of them.
+  const std::size_t plotted =
+      session->render_world_markers(overview, plot, 4.0f * extent);
+
+  // Nearly all of the placed units must land, or the plot is not framing what
+  // it claims to frame. This is the assertion that makes the image evidence.
+  // 95 placed units occupy 59 distinct coordinates, and 54 of those reach a
+  // pixel of their own. Both gaps are real and neither is a defect here:
+  //
+  //   95 -> 59  retail spawns a formation's members at one point. Their
+  //             per-member separation is the Obj triple, which needs the parent
+  //             frame cycle 1145 showed is never assigned - so the same debt
+  //             surfaces again, this time as markers sitting on top of markers.
+  //   59 -> 57  at this zoom two distinct positions round onto a pixel another
+  //             marker already wrote.
+  //
+  // Asserted exactly, because a plot whose count drifts is a plot that stopped
+  // being evidence.
+  REQUIRE(distinct_positions == 59);
+  REQUIRE(plotted == 57);
+  REQUIRE(plotted <= distinct_positions);
+  REQUIRE(plotted <= session->world().placed.size());
+  REQUIRE(overview.readback().color_hash != live_target.readback().color_hash);
+
   REQUIRE(live_target.write_ppm(directory / "hud-live.ppm"));
   REQUIRE(debrief_target.write_ppm(directory / "hud-debrief.ppm"));
+  REQUIRE(overview.write_ppm(directory / "world-overview.ppm"));
   std::ofstream metrics(directory / "retail-session-hud.json");
   REQUIRE(static_cast<bool>(metrics));
   metrics << "{\n"
@@ -205,7 +284,16 @@ void write_capture_bundle(const std::filesystem::path& directory,
           << "  \"world_markers_live\": " << live_markers << ",\n"
           << "  \"world_markers_debrief\": " << debrief_markers << ",\n"
           << "  \"world_marker_writes\": " << live_target.world_marker_writes() << ",\n"
-          << "  \"world_markers_are_diagnostic\": true,\n";
+          << "  \"world_markers_are_diagnostic\": true,\n"
+          << "  \"units_placed\": " << session->world().placed.size() << ",\n"
+          << "  \"units_without_load_time_position\": " << session->world().unplaced.size()
+          << ",\n"
+          << "  \"overview_markers\": " << plotted << ",\n"
+          << "  \"distinct_spawn_positions\": " << distinct_positions << ",\n"
+          << "  \"overview_camera_is_chosen_not_derived\": true,\n"
+          << "  \"overview_bounds_x\": [" << min_x << ", " << max_x << "],\n"
+          << "  \"overview_bounds_y\": [" << min_y << ", " << max_y << "],\n"
+          << "  \"overview_bounds_z\": [" << min_z << ", " << max_z << "],\n";
   write_snapshot_json(metrics, "live", live, live_target.readback());
   metrics << ",\n";
   write_snapshot_json(metrics, "debrief", done, debrief_target.readback());

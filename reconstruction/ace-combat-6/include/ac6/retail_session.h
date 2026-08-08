@@ -84,8 +84,8 @@ class RetailSession final {
   // NativeRenderTarget::draw_world_marker. The retail session knows where 230
   // units are long before it knows what they look like, and this is what makes
   // the placement work checkable instead of merely asserted.
-  std::size_t render_world_markers(NativeRenderTarget& target,
-                                   const WorldFrame& frame) const noexcept;
+  std::size_t render_world_markers(NativeRenderTarget& target, const WorldFrame& frame,
+                                   float far_plane = 0.0f) const noexcept;
 
   MissionDebrief debrief() const { return execution_->debrief(); }
   ScenarioState state() const noexcept { return execution_->scenario().state(); }

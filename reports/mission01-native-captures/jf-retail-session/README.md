@@ -30,16 +30,31 @@ program, resolved by `0x822953F0`.
 
 So **95 of the 230 units now carry a real load-time position** and 135 carry
 none; a unit with none is not drawn, because the origin is not a fallback but a
-different claim. Of the 95, four are in frame: the rest are thousands of world
-units away, and the camera is still the rasteriser's hardcoded fallback sitting
-at the origin. The picture now shows a camera problem instead of a placement
-problem, which is progress in the only direction that can be checked.
+different claim. Four are in the live frame, because the session camera follows
+a player that has no load-time position and therefore sits at the origin.
+
+`world-overview.png` is the third image and it is a **plot, not a view**. Its
+camera is chosen rather than derived — placed from the bounding box of the
+derived positions, looking down at their centroid — which is legitimate only
+because the marker lane is already declared diagnostic. It exists so the
+placement can be checked rather than merely counted, and what it shows is a
+mission map: the factions occupy distinct regions, with one isolated group east
+of the main engagement.
+
+Cycle 1146 also found why the earlier captures were nearly empty, and it was
+not the camera. `project_point` normalises depth as `view_z / 4096`, so every
+point beyond 4,096 world units saturates to exactly 1.0 — the value the target
+is cleared to — and the depth test `depth >= stored` rejected all of them.
+Mission 01 spans 66,000 units. Callers that plot the world now pass their own
+far plane; the live view keeps the 4096 that suits content near the player.
 
 | | live (tick 900) | debrief (tick 1800) |
 |---|---:|---:|
 | world markers on screen | 4 | 4 |
 | active units | 230 | 230 |
 | units with a load-time position | 95 | 95 |
+| distinct spawn coordinates | 59 | 59 |
+| markers on the overview plot | 57 | 57 |
 | player entity | 4097 | 4097 |
 | objectives | 4 | 4 |
 | completed | 2 | 4 |

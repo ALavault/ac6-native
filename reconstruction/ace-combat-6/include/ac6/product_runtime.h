@@ -937,9 +937,15 @@ class NativeRenderTarget final {
   // be offered as visual parity. It exists because the retail-driven session
   // knows where 230 units are long before it knows what they look like, and a
   // position you cannot see is a position you cannot check.
+  // `far_plane` normalises the marker's depth on the fallback-camera path. Zero
+  // keeps the rasteriser's own 4096, which is right for content near the player
+  // and wrong for a whole mission map: beyond it every depth saturates to 1.0,
+  // the value the target is cleared to, and the depth test drops the marker.
+  // A caller plotting the world passes its extent.
   bool draw_world_marker(const WorldFrame& frame, const CombatVector& position,
                          std::uint32_t color, std::uint32_t radius,
-                         const MissionCameraDefinition* camera = nullptr) noexcept;
+                         const MissionCameraDefinition* camera = nullptr,
+                         float far_plane = 0.0f) noexcept;
   std::uint64_t world_marker_writes() const noexcept { return world_marker_writes_; }
   bool draw_world_asset(const WorldFrame& frame, const MissionDrawable& drawable,
                         std::uint32_t ordinal) noexcept;

@@ -242,16 +242,16 @@
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/retail-session-hud.json",
-            "sha256": "a07a10752570d00c158e2d0bda7de86e26f29e221af87f3574c930d38469d09d",
-            "size": 1227,
+            "sha256": "98f0cd9617f4704469e05b5490c020fd6c8c7021cb57a32d677e3688e09961e2",
+            "size": 1514,
             "claim": "the numbers the test asserted before either image was written - two captures at tick 900 and tick 1800, differing colour hashes, 1276 and 1521 HUD pixel writes, no fixture"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "3613fe6252ebd6fa642f6666fe1b07f3bf1499f42c7e9d2b9b6037d61edc4b28",
+            "sha256": "ed25550da2bcfb9e3b4956bcde86e9354a7f44a2dcac52e94fb66f668bc4d0a3",
             "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from 0x820A7420's category 2, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-            "size": 7065
+            "size": 7183
           }
         ]
       },

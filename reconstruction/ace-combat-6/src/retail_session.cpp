@@ -114,7 +114,8 @@ void RetailSession::track_objective(std::uint32_t sub_mission) noexcept {
 }
 
 std::size_t RetailSession::render_world_markers(NativeRenderTarget& target,
-                                                const WorldFrame& frame) const noexcept {
+                                                const WorldFrame& frame,
+                                                float far_plane) const noexcept {
   // The faction byte is the retail one, +1 as build_retail_world stores it, so
   // these colours partition the world exactly as the scenario's faction table
   // does - 140/42/48 on Mission 01. Nothing here is chosen per mission.
@@ -135,7 +136,8 @@ std::size_t RetailSession::render_world_markers(NativeRenderTarget& target,
     const std::uint32_t color = is_player
         ? 0xFFFFFFFFu
         : kFactionColor[unit.faction == 0 ? 3 : (unit.faction - 1) % 4];
-    if (target.draw_world_marker(frame, unit.position, color, is_player ? 3u : 1u)) {
+    if (target.draw_world_marker(frame, unit.position, color, is_player ? 3u : 1u,
+                                 nullptr, far_plane)) {
       drawn += 1;
     }
   }

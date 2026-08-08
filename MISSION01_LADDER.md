@@ -83,9 +83,17 @@ The names mislead, so plainly:
    so the Obj triple was never the units' position — 169 of 230 are `(0,0,0)`.
    Their load-time position is the first tag-2 order, resolved by `0x822953F0`:
    **95 of 230 placed, 135 with no load-time position in the container.**
-3. **A flight camera — now the blocker.** With real coordinates the units are
-   thousands of world units away and the fallback camera sits at the origin, so
-   the capture shows 4 markers, not 95. The only qualified camera is the
+3. **A flight camera — now the blocker.** Cycle 1146 corrected why the capture
+   showed 4 markers and not 95: **not the camera**, but `project_point`
+   normalising depth as `view_z / 4096`, so everything beyond 4,096 units
+   saturated to 1.0 — the clear value — and the depth test dropped it. Mission
+   01 spans 66,000 units. Callers plotting the world now pass their own far
+   plane, and `world-overview.png` shows all 57 distinguishable positions.
+
+   What remains is the player's spawn, and it is **not** in the container:
+   cycle 1146 dumped the five root slots the parser does not consume (3, 4, 6,
+   7, 8, 9) and none holds a float triple in world range. The only qualified
+   camera is the
    cinematic TCAM, which cycle 732 disqualified; the rasteriser's fallback is a
    hardcoded 60° / far 4096. This is blocked in turn on the **player's own
    spawn**, which cycle 1145 showed is neither in the player's behaviour program
@@ -125,8 +133,18 @@ that was not read; refuse a plausible rule with no control; correct predecessors
 The oracles, and which question each answers:
 
 - **Xenia** — what a frame should look like. For JG.
-- **The AC6_recomp bridge** — what the game code does. It reaches airborne
-  Mission 01 with live input and no fatal; its own world is black because
-  RexGlue's *presentation* fails after the logic, so its logic and draw
-  submissions are observable. Read a value from it, then derive the native code
-  from the Ghidra listing. It is never the source.
+- **The AC6_recomp bridge** — what the game code does. **Not in this
+  workspace** (cycle 1146). There is no `AC6_recomp` binary or source tree
+  anywhere under `/fastdata/lavaulta`; only `patches/` survives —
+  `ac6_boundary_probe.cpp`, the hook TOMLs, the boundary-probe patches. Earlier
+  reports describe it reaching airborne Mission 01 with live input and no fatal,
+  its world black because RexGlue's *presentation* fails after the logic. That
+  description was carried forward into this ladder's first draft as verified
+  state; it was inherited, not checked. Rebuilding it is a prerequisite, not a
+  given. When it exists: read a value from it, then derive the native code from
+  the Ghidra listing. It is never the source.
+
+  This is the second inherited workspace claim to fall, in the opposite
+  direction from the first — cycles 1130–1131 said the retail archives were
+  absent when they were present. **A "verified state" table is only verified on
+  the day someone runs `ls`.**

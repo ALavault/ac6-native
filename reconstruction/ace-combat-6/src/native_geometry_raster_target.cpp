@@ -127,7 +127,8 @@ bool project_clip_point(const MissionCameraDefinition& camera, Vec3 world,
 
 bool project_point(const NativeCameraProjection& projection, Vec3 world,
                    std::uint32_t width, std::uint32_t height,
-                   ScreenPoint& screen, bool clip_to_viewport = true) noexcept {
+                   ScreenPoint& screen, bool clip_to_viewport = true,
+                   float far_plane_override = 0.0f) noexcept {
   const Vec3 relative{world.x - projection.origin.x, world.y - projection.origin.y,
                       world.z - projection.origin.z};
   const float view_x = dot(relative, projection.right);
@@ -155,7 +156,19 @@ bool project_point(const NativeCameraProjection& projection, Vec3 world,
   // The fallback camera has no explicit far plane in its manifest. Keep its
   // depth contract identical to the qualified clip camera and normalize once
   // here, at the projection boundary.
-  constexpr float far_plane = 4096.0f;
+  //
+  // A caller that knows its content is further away than that says so, because
+  // the clamp is not harmless: every point beyond the far plane normalises to
+  // exactly 1.0, which is the value the target is cleared to, and a depth test
+  // written `depth >= stored` then rejects all of them. Cycle 1146 found the
+  // whole retail world disappearing that way - Mission 01 spans 66,000 units
+  // and this plane is 4,096 - and the effect looked exactly like a camera
+  // pointing the wrong way, which is what cycle 1145 wrongly called it.
+  constexpr float default_far_plane = 4096.0f;
+  const float far_plane =
+      (far_plane_override > 0.0f && std::isfinite(far_plane_override))
+          ? far_plane_override
+          : default_far_plane;
   screen.depth = std::clamp(view_z / far_plane, 0.0f, 1.0f);
   screen.ndc_x = ndc_x;
   screen.ndc_y = ndc_y;
@@ -302,7 +315,8 @@ bool NativeRenderTarget::mark_world_asset(const WorldFrame& frame, AssetId asset
 bool NativeRenderTarget::draw_world_marker(const WorldFrame& frame,
                                            const CombatVector& position,
                                            std::uint32_t color, std::uint32_t radius,
-                                           const MissionCameraDefinition* camera) noexcept {
+                                           const MissionCameraDefinition* camera,
+                                           float far_plane) noexcept {
   if (width_ == 0 || height_ == 0 || color_.empty() || depth_.empty()) return false;
   if (!std::isfinite(position.x) || !std::isfinite(position.y) ||
       !std::isfinite(position.z)) {
@@ -315,7 +329,9 @@ bool NativeRenderTarget::draw_world_marker(const WorldFrame& frame,
   } else {
     NativeCameraProjection projection;
     if (!make_projection(frame, width_, height_, projection)) return false;
-    if (!project_point(projection, world, width_, height_, screen)) return false;
+    if (!project_point(projection, world, width_, height_, screen, true, far_plane)) {
+      return false;
+    }
   }
   const float depth_value = std::clamp(screen.depth, 0.0f, 1.0f);
   const std::uint32_t span = std::min(radius, 64u);
