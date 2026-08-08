@@ -188,10 +188,12 @@ The names mislead, so plainly:
 
    Cycle 1148 said the binding needed "the external definition table identified
    and parsed first" and looked for it in the archives at large. It was in the
-   mission's own bundle the whole time. Still to derive: the FHM child layout,
-   the class-byte → entry-index join, and MATE material → texture id → GIDX.
-   The chunk counts above come from a regex sweep, which finds chunks without
-   proving containment or ordering.
+   mission's own bundle the whole time. Still to derive: the class-byte → entry-index join, and MATE material →
+   texture id → GIDX.
+   Walked with `tools/ac6_fhm.py` rather than regex-scanned: **94/94 parse with
+   zero parser notes**; 47 entries carry geometry, 46 of those pair NDXR 1:1
+   with MATE and entry 88 does not (9 NDXR, 5 MATE); 82 entries hold exactly one
+   NTXR, 2 hold two, 10 hold none.
 
    **Also present (cycle 1156 corrects 1155).**
    179 distinct NDXR models and Mission 01's own 29 MB `001_MDLP.mdlp` (94

@@ -91,6 +91,22 @@ The signature counts above come from a regex sweep, which finds chunks but does
 not prove containment or ordering. That is enough to say the data is there and
 not enough to parse it, and the distinction is deliberate.
 
+**Superseded within the cycle.** `tools/ac6_fhm.py` already parses FHM
+containers, so the sweep did not have to stand. Walking all 94 entries with it:
+**94 of 94 parse, with zero parser notes**, and the census below is by
+containment rather than by pattern.
+
+```
+entries with geometry                    47 of 94
+  of which NDXR count == MATE count      46 of 47
+  the exception, entry 88                 9 NDXR, 5 MATE
+NTXR per entry                            0 in 10, 1 in 82, 2 in 2
+```
+
+So a geometry bundle almost always carries one MATE per NDXR, and one entry
+does not. That single counterexample is why "one material per mesh" is written
+here as an observation with its exception named, and not as a rule.
+
 ## Decided rather than asked
 
 No FHM walker, no join, no parser. The temptation here is precisely the one the

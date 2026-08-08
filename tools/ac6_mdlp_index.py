@@ -16,14 +16,18 @@ three at once, which is why they are worth running rather than assuming.
 
 Retail bytes are inputs and are never committed; this prints, it does not copy.
 
-usage: ac6_mdlp_index.py MDLP [--census]
+usage: ac6_mdlp_index.py MDLP [--census|--walk]
 """
 
 import argparse
 import collections
+import os
 import re
 import struct
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from ac6_fhm import parse_fhm
 
 CHUNKS = (b"NDXR", b"NTXR", b"MATE", b"GIDX", b"NSXR")
 
@@ -36,7 +40,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mdlp")
     parser.add_argument("--census", action="store_true",
-                        help="scan every entry for chunk signatures")
+                        help="regex-scan every entry for chunk signatures")
+    parser.add_argument("--walk", action="store_true",
+                        help="parse every entry as an FHM and report its children; "
+                             "unlike --census this proves containment and order")
     args = parser.parse_args()
 
     with open(args.mdlp, "rb") as handle:
@@ -61,6 +68,38 @@ def main():
                  if base + o + 4 <= len(data) and data[base + o:base + o + 4] == b"FHM ")
     print(f"entries starting with 'FHM ': {signed}/{count}")
     print(f"offsets monotonic: {offsets == sorted(offsets)}")
+
+    if args.walk:
+        bounds = offsets + [declared - base]
+        parsed = 0
+        magics = collections.Counter()
+        notes = collections.Counter()
+        with_geometry = []
+        without = []
+        for index in range(count):
+            blob = data[base + bounds[index]:base + bounds[index + 1]]
+            children = parse_fhm(blob)
+            if children is None:
+                print(f"  entry {index}: NOT an FHM")
+                continue
+            parsed += 1
+            kinds = collections.Counter(child.magic.strip() for child in children)
+            for child in children:
+                magics[child.magic.strip()] += 1
+                notes.update(child.notes)
+            row = (index, kinds.get("NDXR", 0), kinds.get("MATE", 0), kinds.get("NTXR", 0))
+            (with_geometry if row[1] else without).append(row)
+        print(f"\nparsed as FHM: {parsed}/{count}   parser notes: {dict(notes)}")
+        print(f"child magics: {dict(magics.most_common(6))}")
+        paired = sum(1 for _, ndxr, mate, _ in with_geometry if ndxr == mate)
+        print(f"entries with geometry: {len(with_geometry)}, "
+              f"of which NDXR count == MATE count: {paired}")
+        for row in with_geometry:
+            if row[1] != row[2]:
+                print(f"  unpaired entry {row[0]}: NDXR={row[1]} MATE={row[2]}")
+        textures = collections.Counter(row[3] for row in with_geometry + without)
+        print(f"NTXR per entry: {dict(sorted(textures.items()))}")
+        return
 
     if not args.census:
         return
