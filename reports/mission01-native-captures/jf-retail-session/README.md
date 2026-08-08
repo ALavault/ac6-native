@@ -75,6 +75,7 @@ and none was used here.
 
 | artifact | SHA-256 |
 |---|---|
-| `retail-session-hud.json` | `6779d64be39c9a98131d1462f862816fe9557f5cd64b5d7f94081cfb0139cb99` |
-| `hud-live.png` | `a32f4e600523a2b09ec0ce47c71ddbf3d76cabad231c3dde4202976e057ac877` |
-| `hud-debrief.png` | `51bb2747c5759095c77e6d823cce96439608f538aaa65653904a2eeace427dd6` |
+| `retail-session-hud.json` | `98f0cd9617f4704469e05b5490c020fd6c8c7021cb57a32d677e3688e09961e2` |
+| `hud-live.png` | `f045cd0783ad0b6f8bba446f7d3d04d61d7f3fc8644d012c6d124e3a3ae43d16` |
+| `hud-debrief.png` | `7664a838e351970ebb46743bc39a93321203d1794a9239f7f7cf6d6dbcccd412` |
+| `world-overview.png` | `755b558f67fb42ff1777e542da90d707b1f156a52959d1c022fc6836adff2ee4` |

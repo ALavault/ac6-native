@@ -15,6 +15,11 @@ Exits 0 when every cited path is in HEAD and identical to the working tree, 1
 when any drifts or is missing, and 77 when this is not a git repository - the
 same skip convention the native tests use.
 
+It also checks the hash tables capture bundles write into their README - rows of
+the form `| `file` | `sha256` |`. Those index real artefacts and are audited by
+nothing else: a contract cites the JSON inside a bundle, not the README beside
+it, so a hand-edited digest in one can sit wrong indefinitely. One did.
+
 usage: audit_ac6_contract_artifacts.py CONTRACT [CONTRACT...]
 """
 
@@ -30,6 +35,27 @@ def cited_paths(contract: Path) -> set[str]:
     text = contract.read_text(encoding="utf-8")
     json.loads(text)  # a malformed contract is a failure, not a skip
     return {match.group(1) for match in re.finditer(r'"path": "([^"]+)"', text)}
+
+
+# `| `name` | `64 hex` |` - the row shape the capture bundles use.
+README_ROW = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*`([0-9a-f]{64})`\s*\|", re.M)
+
+
+def check_readme_tables(root: Path) -> tuple[int, list[str]]:
+    """Verify every `file -> sha256` row a bundle README declares."""
+    checked = 0
+    wrong: list[str] = []
+    for readme in sorted(root.glob("reports/**/README.md")):
+        text = readme.read_text(encoding="utf-8", errors="replace")
+        for name, digest in README_ROW.findall(text):
+            target = readme.parent / name
+            if not target.is_file():
+                continue  # rows naming external inputs are not this tool's business
+            checked += 1
+            actual = hashlib.sha256(target.read_bytes()).hexdigest()
+            if actual != digest:
+                wrong.append(f"{readme}: {name} declared {digest[:16]}... is {actual[:16]}...")
+    return checked, wrong
 
 
 def main() -> int:
@@ -69,7 +95,13 @@ def main() -> int:
         print(f"contract_artifacts=fail reason={why.replace(' ', '_')} path={path}")
     if drift or missing:
         return 1
-    print(f"contract_artifacts=pass cited={len(paths)} match_head={matched}")
+    rows, wrong = check_readme_tables(Path("."))
+    for line in wrong:
+        print(f"readme_hash=fail {line}")
+    if wrong:
+        return 1
+    print(f"contract_artifacts=pass cited={len(paths)} match_head={matched} "
+          f"readme_rows={rows}")
     return 0
 
 
