@@ -529,10 +529,30 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    hypothesis remain unexplained by any base found. A shape that looks like
    `base + index` is not evidence of `base + index`.
 
-   Still unattached: **no mount site has been tied to the 346-wrapper extraction
-   root**, so whether those two ids are mounted mode-1 (file ids discarded) or
-   mode-0 (file ids used) is unknown, and that is what the duplicate question
-   now reduces to.
+   **Cycle 1264 attached the chain, and settled one of the two.** Mission 01
+   reaches the mount through `0x82199F68` → `0x8219A120` → `0x821B83FC` →
+   `0x821B7DD8` → `0x821B7960`, whose two submit sites `0x821B7B74` and
+   `0x821B7B94` both carry `li r8,0x0` — **mode 0** — stored as the task's mode
+   by `821d20a0 stw r27,0x18(r11)`.
+
+   **The 28 copies of `0x0F000000` are an artefact.** Entry 9's children mount
+   through `0x821D18E8`, which calls the allocator `0x821AEB08` per child and
+   passes its result as the base on a hard-wired mode-1 mount. That allocator
+   returns `counter + 1` from `0x823FAA3C` and **resets to `0x0F000000`**
+   (`821aeb60 lis r3,0xf00`), so the value in the file is its seed — a
+   placeholder meaning "assign me", discarded before the registry sees it.
+
+   **The 115 copies of `0x08000000` are not settled.** PAC entries 199 and 210
+   carry all of them and no mount site was found: 39 `bl 0x821D1DD0` sites were
+   enumerated and neither `0xC7` nor `0xD2` appears as an immediate on any mount
+   path. Their shape matches the `0x0F000000` case exactly, which suggests the
+   same loop-mount — **and that suggestion has no control**, so it is recorded
+   as open. Of cycle 1256's 141 extra copies, 28 are explained and 113 are not.
+
+   A refinement to cycle 1260's wording: mode is the loop's 4th argument but the
+   **thunk's 3rd** (`82335f24 or r6,r5,r5`), so at a call site it is `r5`.
+   Reading `r5` at all 53 sites reproduces the published 16/36/1 split; reading
+   `r6` does not.
 
    **What stays open is applicability, not policy.** Cycle 1248 counted 847
    duplicates over 205 ids across 1052 packs from a script that was not kept,
