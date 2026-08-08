@@ -176,6 +176,47 @@ void write_capture_bundle(const std::filesystem::path& directory,
   REQUIRE(debrief_markers > 0 && debrief_markers <= 230);
   REQUIRE(live_target.world_marker_writes() > 0);
 
+  // Cycle 1146's lesson, held by a control instead of a comment.
+  //
+  // project_point normalises depth as view_z / far, so a caller that keeps the
+  // 4096 default loses every unit beyond 4,096 units: they saturate to 1.0,
+  // which is the clear value, and the depth test drops them. Mission 01 spans
+  // about 66,000 units, so the default silently discards most of the world and
+  // leaves a picture that looks deliberate.
+  //
+  // The two renders below differ ONLY in the far plane. If someone restores the
+  // default in a caller, or if project_point stops normalising by it, this
+  // stops discriminating and says so.
+  float ex_min = 0.0f, ex_max = 0.0f, ez_min = 0.0f, ez_max = 0.0f;
+  std::size_t placed_count = 0;
+  for (const ac6::CombatUnitState& unit : session->world().combat.snapshot_units()) {
+    const std::vector<ac6::EntityId>& placed = session->world().placed;
+    if (std::find(placed.begin(), placed.end(), unit.entity) == placed.end()) continue;
+    if (placed_count == 0) {
+      ex_min = ex_max = unit.position.x;
+      ez_min = ez_max = unit.position.z;
+    } else {
+      ex_min = std::min(ex_min, unit.position.x);
+      ex_max = std::max(ex_max, unit.position.x);
+      ez_min = std::min(ez_min, unit.position.z);
+      ez_max = std::max(ez_max, unit.position.z);
+    }
+    placed_count += 1;
+  }
+  REQUIRE(placed_count > 0);
+  const float placed_extent = std::max({ex_max - ex_min, ez_max - ez_min, 1.0f});
+  // Mission 01's own span, asserted so a parser regression that collapses the
+  // world cannot leave this control passing on a one-unit extent.
+  REQUIRE(placed_extent > 10000.0f);
+
+  ac6::NativeRenderTarget probe_default, probe_derived;
+  REQUIRE(probe_default.resize(640, 360) && probe_default.clear(0xFF000000u, 1.0f));
+  REQUIRE(probe_derived.resize(640, 360) && probe_derived.clear(0xFF000000u, 1.0f));
+  const std::size_t with_default = session->render_world_markers(probe_default, frame.world);
+  const std::size_t with_derived =
+      session->render_world_markers(probe_derived, frame.world, 4.0f * placed_extent);
+  REQUIRE(with_derived > with_default);
+
   const ac6::NativeHudSnapshot& live = live_hud.snapshot();
   REQUIRE(live.tick == 900);
   REQUIRE(live.pixel_writes > 0 && live.unique_pixels > 0);
