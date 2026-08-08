@@ -283,11 +283,23 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    `0xC0` pool, a `0x10` map and a `0xC` free list — the twelve bytes are one
    array of three.
 
-   What retail walks instead is the **DPL archive layer**: `0x821CC4D0` reads a
-   `{first member, member count}` u16 index at `*0x8293BA38` into `0x44`-byte
-   member records at `*0x8293BA3C`, names at `+0x04`, over the `DATA.TBL` and two
-   PACs `0x821D5EF8` mounts. Open: where those two globals are filled from —
-   `DATA.TBL` on disk is 926 sixteen-byte records and is not that shape.
+   What retail walks instead is the **DPL archive layer** — and **cycle 1193
+   corrects the shape cycle 1192 gave for it.** `0x8293BA38` / `0x8293BA3C` and
+   their `0x44`-byte records are the **dead branch** of a format switch: the byte
+   at `0x8293BA18` is set to **2** by `0x821D61F4` just before the table is
+   mounted, and all three functions that test it (`0x821CC250` `!= 0`,
+   `0x821CC4D0` `== 1`, `0x821CBFD0` `!= 0`) route away from that code.
+
+   The live path: `0x821CC250` reads `sim:DATA.TBL` and publishes
+   `*0x8293BA2C = file + 8` as the record base, `[file+0x00]` to `0x8293BA30` and
+   `[file+0x04]` to `0x8293BA34`. `0x821CBFD0` indexes it at `821cc1f0` with
+   `rlwinm r11,r11,0x4` — **records are 0x10 bytes** — reading `+0x0C` as a size
+   rounded up to 2048 and `+0x01` as a u8 selector. The file agrees on its own:
+   14,824 bytes, `[+0x00]` = 926, `8 + 926 * 0x10 = 14824` exactly, and `[+0x04]`
+   = 2 is the number of PACs `0x821D5EF8` mounts next.
+
+   Open: whether 926 is read as a bound, and the record's `+0x00`/`+0x04`/`+0x08`,
+   which `0x821CBFD0` does not touch.
 
    **The gap is closed (cycle 1171), and cycle 1148 was wrong.** Byte `+0x61` is
    in the scenario container after all — on the Obj entry's **child[0]** data
