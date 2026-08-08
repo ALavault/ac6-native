@@ -1,0 +1,8 @@
+quiet: true
+mutators:
+  - cxx_default
+includePaths:
+  - ".*/reconstruction/ace-combat-6/src/campaign_progression\\.cpp"
+parallelization:
+  workers: 2
+  executionWorkers: 2

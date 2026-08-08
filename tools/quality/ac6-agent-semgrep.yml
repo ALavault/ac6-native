@@ -1,0 +1,53 @@
+rules:
+  - id: ac6-overflow-prone-upper-bound-check
+    languages: [cpp]
+    severity: WARNING
+    message: >-
+      Addition in an upper-bound check can wrap before comparison; validate the
+      offset first and compare the length with size - offset.
+    patterns:
+      - pattern-either:
+          - pattern: $OFFSET + $LENGTH > $SIZE
+          - pattern: $OFFSET + $LENGTH >= $SIZE
+          - pattern: $SIZE < $OFFSET + $LENGTH
+          - pattern: $SIZE <= $OFFSET + $LENGTH
+      - metavariable-regex:
+          metavariable: $OFFSET
+          regex: '(?i)(?!kDataOffsetOffset$).*(offset|base|index|start|byte|vertex|child|cursor|row).*'
+      - metavariable-regex:
+          metavariable: $SIZE
+          regex: '(?i).*(size|bytes|count|length|end|capacity|limit|payload).*'
+
+  - id: ac6-guest-address-to-host-pointer
+    languages: [cpp]
+    severity: ERROR
+    message: >-
+      A guest/address-like value is converted directly to a host pointer;
+      resolve it through the qualified guest-memory boundary.
+    patterns:
+      - pattern-either:
+          - pattern: reinterpret_cast<$TYPE *>($ADDRESS)
+          - pattern: static_cast<$TYPE *>($ADDRESS)
+      - metavariable-regex:
+          metavariable: $ADDRESS
+          regex: '(?i).*(guest|address|addr).*'
+
+  - id: ac6-raw-multibyte-pointer-load
+    languages: [cpp]
+    severity: ERROR
+    message: >-
+      Raw multi-byte pointer loads depend on host alignment and endianness; use
+      an explicit qualified big- or little-endian reader.
+    pattern-regex: >-
+      \*\s*reinterpret_cast\s*<\s*(?:const\s+)?(?:std::)?u?int(?:16|32|64)_t\s*\*\s*>
+
+  - id: ac6-host-pointer-width-dependency
+    languages: [cpp]
+    severity: ERROR
+    message: >-
+      Host pointer width must not define Xbox 360 guest layout or serialized
+      sizes; guest pointers remain 32-bit.
+    pattern-either:
+      - pattern: sizeof(void *)
+      - pattern: sizeof(std::uintptr_t)
+      - pattern: sizeof(uintptr_t)

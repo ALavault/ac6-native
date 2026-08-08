@@ -51,7 +51,13 @@ DOC_ROOTS = ("reports/", "analysis/contracts/")
 DOC_FILES = ("CLAUDE.md", "AGENTS.md", "MISSION01_LADDER.md",
              "INSTRUMENT_DISCIPLINE.md")
 
-TOOL_PATH = re.compile(r"tools/[A-Za-z0-9_./-]+\.(?:py|java|sh)")
+# .yml and .yaml are in this list because leaving them out was a real miss:
+# reports/ac6-agent-quality-tooling-20260808.md cites three
+# tools/quality/*.yml rule files, and the first version of this checker --
+# written the same evening -- scanned only py/java/sh and reported pass over a
+# report whose entire reproduction section pointed at untracked files. A
+# configuration that decides what a scan reports is an instrument.
+TOOL_PATH = re.compile(r"tools/[A-Za-z0-9_./-]+\.(?:py|java|sh|yml|yaml)")
 
 
 def git(*args, root="."):
