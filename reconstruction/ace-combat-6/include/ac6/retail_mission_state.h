@@ -253,15 +253,22 @@ struct RetailWorld {
 // answer is sharper and less comfortable: it does not read these three floats
 // at all. Of the ObjBin data block it reads exactly three bytes - +0x56, the
 // factory key, and +0x61 and +0x62, two unit slots - and it hands the record
-// itself to the object, whose vtable slot +0x50 (0x8228F678) files it at
-// object+0x180 and touches no coordinate. Every one of the 434 records takes
-// that same path, and every object leaves the loader with the identity
-// transform and a translation of zero.
+// itself to the Obj entity, whose vtable slot +0x50 (0x8228F678) files it at
+// +0x180 and touches no coordinate. All 434 take that path and leave the loader
+// with the identity transform and a translation of zero.
+//
+// Cycle 1126 separated two things cycle 1124 had run together. 0x820A7070
+// builds one *unit* per record - 230, through the manager's virtual +0x10 at
+// 0x820A7638, inserted by 0x8226FEC0 - and one *Obj entity* per ObjBin record -
+// 434, from record word 2. It is the unit the order program steers, because at
+// 0x82295C0C the tag-2 order reads +0xE4, a field only the unit carries. And of
+// the unit, this function writes exactly +0x60, +0xD0, +0xD4, +0xD8, +0xDC,
+// +0xE0 and +0xE4. Never a position.
 //
 // So this field is not "a relative offset where a world coordinate should be".
 // It is a number retail does not consult on this path, filled because the
-// runtime needs a position and nothing derived is available. Who moves the
-// objects afterwards is not established.
+// runtime needs a position and nothing derived is available. What sets a unit's
+// first position is still not found; cycle 1126 lists where it is not.
 //
 // Durability has no source in the payload at all and is left at 1.
 std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
