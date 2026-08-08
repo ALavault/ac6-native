@@ -74,11 +74,19 @@
 // WHAT THIS DOES NOT DO, and why.
 //
 // It does not read the polygon descriptor. Retail reads +0x0C, +0x0E and four
-// stream pointers at +0x10..+0x1C, then resolves an integer id through a
-// resource map (0x8233EE40 / 0x8233EF88 into containers 0x828C8100 and
-// 0x828CCB80, whose manager sits at +0x80 and whose map is at manager+0x80).
-// Nothing inserts into those maps on any path yet read, so the vertices are
-// behind a resolution this port cannot perform. See cycles 1200-1203.
+// pointers at +0x10..+0x1C. Cycle 1207 corrects cycles 1198 and 1199 on what
+// those four are: they are MATERIAL pointers, not vertex streams. 0x82355318
+// visits a material - count at material+0x0A, texture records of stride 0x18 at
+// material+0x20 - and 0x8233EE40 resolves each record's u32 at +0x00 as a
+// texture id in registry 0x828C8100, the same registry the NTXR pack registrar
+// 0x82340870 / 0x8234BEC8 fills, keyed by GIDX+0x08.
+//
+// So the material -> texture -> NTXR link is derived, and it lands on the
+// decoder already ported in ntxr_texture.h. What is still missing is the
+// VERTEX data: no field read on the derived path has been shown to address it,
+// and cycle 1203 established that the product's existing reader and this
+// derivation disagree about +0x00/+0x04/+0x20 with neither mapping controlled.
+// See cycles 1200-1203 and 1207.
 //
 // It does not mutate the buffer. Retail relocates in place and guards with two
 // bits — 0x8000 for "pointers rebased", 0x4000 for "ids resolved". This reader
