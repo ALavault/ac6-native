@@ -16,6 +16,24 @@
 // the kind of partial coverage this file's other entries are about. Both counts
 // are reported.
 //
+// HITS INSIDE .pdata ARE COUNTED SEPARATELY, and that is not a refinement.
+// Cycle 1265 concluded that two functions are "reached through tables rather
+// than by call" because each appeared exactly once as an aligned word elsewhere
+// in the image. Both occurrences were the function's own exception record. The
+// table spans 0x82079E00..0x82089FB0 here — 8,246 entries of an address and a
+// packed prolog/length word — and dumped without context it reads exactly like
+// a dispatch table:
+//
+//   8233e580 40001903 8233e5e8 40002e03 8233e6b0 40001903 8233e718 40001905
+//
+// A function with an exception record appears once as data BY CONSTRUCTION, so
+// the raw count answers a different question from the one that gets asked of
+// it. The scan reports 1 either way and is right either way, which is why this
+// has to be in the output rather than in the reader's memory.
+//
+// Note that .pdata here is incomplete: 0x8234CDC0 has no row, which is the only
+// reason cycle 1255's "no indirect insert" negative survived.
+//
 // usage: Ac6XenonFindWord OUT hexvalue [more values...]
 //        e.g. Ac6XenonFindWord /tmp/out.txt 821b5808 821b54c0
 
@@ -46,6 +64,19 @@ public class Ac6XenonFindWord extends GhidraScript {
     long blocksScanned = 0;
     int[] alignedHits = new int[wanted.length];
     int[] unalignedHits = new int[wanted.length];
+    int[] pdataHits = new int[wanted.length];
+
+    // The exception table, located by block name where Ghidra has one and by
+    // its known extent otherwise. A hit here is the function existing, not a
+    // reference to it.
+    long pdataStart = 0x82079E00L;
+    long pdataEnd = 0x82089FB0L;
+    for (MemoryBlock named : memory.getBlocks()) {
+      if (".pdata".equals(named.getName())) {
+        pdataStart = named.getStart().getOffset();
+        pdataEnd = named.getEnd().getOffset() + 1;
+      }
+    }
 
     for (MemoryBlock block : memory.getBlocks()) {
       if (!block.isInitialized()) continue;
@@ -70,9 +101,14 @@ public class Ac6XenonFindWord extends GhidraScript {
             if (value != wanted[k]) continue;
             Address hit = at.add(i);
             boolean aligned = (hit.getOffset() & 3L) == 0;
-            if (aligned) alignedHits[k]++; else unalignedHits[k]++;
+            boolean inPdata = hit.getOffset() >= pdataStart && hit.getOffset() < pdataEnd;
+            if (inPdata) pdataHits[k]++;
+            else if (aligned) alignedHits[k]++;
+            else unalignedHits[k]++;
             out.println(args[k + 1] + "  at " + hit + "  in block " + block.getName() +
-                        (aligned ? "  aligned" : "  UNALIGNED"));
+                        (aligned ? "  aligned" : "  UNALIGNED") +
+                        (inPdata ? "  .pdata ROW - this is the function existing," +
+                                   " not a reference to it" : ""));
           }
         }
         bytesScanned += got;
@@ -82,11 +118,14 @@ public class Ac6XenonFindWord extends GhidraScript {
 
     StringBuilder summary = new StringBuilder();
     summary.append("blocks=").append(blocksScanned)
-           .append(" bytes=").append(bytesScanned);
+           .append(" bytes=").append(bytesScanned)
+           .append(" pdata=[").append(Long.toHexString(pdataStart))
+           .append(",").append(Long.toHexString(pdataEnd)).append(")");
     for (int k = 0; k < wanted.length; ++k) {
       summary.append("  ").append(args[k + 1]).append("=")
              .append(alignedHits[k]).append("aligned/")
-             .append(unalignedHits[k]).append("unaligned");
+             .append(unalignedHits[k]).append("unaligned/")
+             .append(pdataHits[k]).append("pdata");
     }
     out.println(summary);
     out.close();
