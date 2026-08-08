@@ -108,6 +108,21 @@ blind to indexed stores, of which the binary has **1018** — `stfsx` 552, `stvl
 idioms scanned*, and cycle 1132's stronger claim was an overclaim, corrected in
 1133.
 
+## The enumeration, closed per idiom (cycles 1136-1138)
+
+| idiom | sites | verdict |
+| --- | ---: | --- |
+| `stvx128`, ports `+0x50` and `+0xA0`, followable index | 108 | 74 copy, 34 assemble; 3 read a record — event stream, replay stream, a `0x2CF4` pool — none is the spawn |
+| `stfs`, literal displacement, distinct sources | 12 | all explained: memsets, constant tables, copies |
+| `stfsx`, indexed triple signature | 21 | none in the mission cluster |
+| `memcpy` (`0x82382F70`), transform-sized | 38 | one in the unit class (`0x822A6090`), and it writes `this+0x04`, not the transform |
+
+**No code in the mission cluster writes a unit's position from mission data, by
+any store idiom this campaign can enumerate.** Two readings remain, and both are
+written down: either the position is never authored — units are born at the
+origin and the order program steers them — or it is written by something still
+outside the list, such as a variable-size copy or a hand-written loop.
+
 ## What remains
 
 No function has been found that gives a unit its first world position. The
