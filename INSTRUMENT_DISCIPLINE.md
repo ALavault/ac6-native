@@ -221,6 +221,25 @@ That last point compounds the corollary above it. There, seven of eight call
 sites supported a false conclusion because the eighth existed. Here, the eighth
 might never have been listed.
 
+### The mechanism, found in cycle 1220
+
+The gap is not random coverage loss. **`Ac6XenonRefs` iterates
+`getListing().getInstructions(true)`, which yields only instructions Ghidra has
+already disassembled**, while `Ac6XenonDisasm` calls `disassemble(addr)` and
+creates them on demand. The 8.5% is precisely *every function auto-analysis never
+reached*, and the two scripts in this repository disagree about the program by
+exactly that set.
+
+Caught live: a substring search for `0x1ad8` returned **zero**, while
+`821b54c8  lwz r11,0x1ad8(r11)` exists and contains it — and a bare `1ad8` in the
+same run returned eleven hits, so the matcher was working. The instruction is
+simply not in the listing.
+
+**So the check is one command.** When a negative matters, run `Ac6XenonDisasm` on
+an address you expect to be involved: if it disassembles something the scan did
+not report, the scan was blind there and the negative is void. This costs
+nothing, and it had not been being done.
+
 ### The rule
 
 **State the denominator with the negative.** A scan that finds nothing in 786,122
