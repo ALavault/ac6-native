@@ -133,7 +133,29 @@ The names mislead, so plainly:
    - `+0x180`–`+0x194` are **floats on a different class** (`0x8229EAC0` clamps
      four of them between limits). They are not the unit class's `+0x184`
      pointer and `+0x188` parent, and cycle 1146 nearly read them as such.
-4. **Textures.** Port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, then close
+4. **Textures — not a porting job (cycle 1149).** `scripts/probe_ntxr_bc.py`
+   reads word 5 of the descriptor as `width = hi16, height = lo16` and word 8 as
+   the data offset. `NTXR_STRUCTURE_REPORT.md` explicitly refuses to name those
+   fields, and the script's own docstring calls itself diagnostic-only, gated on
+   visual proof. Promoting that interpretation into the product is anti-goal 2.
+
+   Cycle 1149 tried to earn the names by measurement over 692 wrappers and
+   **failed honestly**. If word 5 held the dimensions, `payload / (hi*lo)` would
+   be a clean multiple: it is, for 83%. But shuffling payloads against dimensions
+   scores **70.9% mean, 73.3% max over 200 trials** — the baseline is that high
+   because both are powers of two. 83% over a 71% floor is signal, not a name.
+   (Control: the same measure on word 0 scores 0%.) A second, non-visual
+   orientation test — wrong pitch should push tiled addresses past the payload —
+   returned **completely null: 148 of 148 non-square wrappers fit both ways**.
+
+   What it needs is the retail consumer. Concrete start: `0x8233EF48` tests
+   `0x4E445852` (`NDXR`) and `0x8233EF68` tests `0x47494458` (`GIDX`), same
+   shape. **No instruction in the image builds `0x4E54`**, the high half of
+   `NTXR` — so NTXR is recognised by container type code, not by signature, and
+   the descriptor consumer must be found through the resource system.
+
+   Then, once the descriptor is named: port BC3 + Xenos `Tiled2D` + 8-in-16 into
+   C++, and close
    MATE batch→material→texture→NTXR in the runtime.
 5. **Terrain.** Currently **fail-closed by policy**:
    `MISSION_VISUAL_BOOTSTRAP_REPORT.md` requires a proved Scene/CUT ownership
