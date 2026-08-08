@@ -138,9 +138,25 @@ The names mislead, so plainly:
 5. **Terrain.** Currently **fail-closed by policy**:
    `MISSION_VISUAL_BOOTSTRAP_REPORT.md` requires a proved Scene/CUT ownership
    edge before any static environment is drawn. Prove it; do not lift it.
-6. **Derived binding.** Unit class byte → object category → model must come from
-   retail data — the `+0x15C` MDLP resource pointer each object carries — not a
-   hand-written table. This is where JV would quietly become J1 again.
+6. **Derived binding — needs a second data source (cycle 1148).** Unit class
+   byte → object category → model must come from retail data, not a hand-written
+   table. `0x820A7070` fills `+0x15C` from two `0x8228E9B8` lookups keyed by
+   bytes `+0x61` and `+0x62` of the record at word 0 of the 0x20-byte array
+   (`r28`), with `0xFF` as the sentinel.
+
+   **That record is not in the scenario container.** Both candidate structures
+   were measured at those exact offsets — 230 unit record data blocks and 434
+   Obj node data blocks — and `+0x48`, `+0x56`, `+0x61`, `+0x62` are zero in
+   every one, never the `0xFF` the code tests. The reads were inside their
+   blocks: the smallest gap between consecutive Obj data blocks in the mission
+   is 352 bytes.
+
+   So the derived route needs the external definition table identified and
+   parsed first. The container supplies only the join key — class byte at data
+   `+0x08` (four distinct values on Mission 01) and faction at `+0x0D`. **This
+   is still where JV would quietly become J1 again, and more so now**: the
+   honest route just got longer, which makes a hand-written table more
+   tempting, not less.
 
 ## Evidence discipline
 
