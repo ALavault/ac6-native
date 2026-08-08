@@ -236,3 +236,52 @@ The PE section table's `PointerToRawData` values are the *packed* ones and are
 wrong — `.text` reads `0x8CA00` and actually sits at `0x90000`. A scan built on
 the header values returns empty for every known-good control, which is at least a
 loud failure; it was caught that way before anything was believed.
+
+## The thirteenth shape, and it is the mirror of everything above: reachability by `bl`
+
+Measured on this image:
+
+| | count |
+|---|---|
+| direct `bl 0x…` | 36,472 |
+| indirect `bctrl` | 7,827 |
+| tail `bctr` | 652 |
+| functions | 8,247 |
+| **reachable from `main` by direct `bl` alone** | **800** |
+
+**Direct-call reachability covers about 10% of this program.** It is an object
+graph with a message pump, not a call graph.
+
+Every entry above this one is about believing something that is false. This is
+the mirror: **declaring live code unreachable**, and it is available here at a hit
+rate of roughly nine in ten. Cycles 1193, 1195, 1196 and 1202 were burned by live
+code on a dead path. Cycle 1213 found the same binary will just as happily hide a
+live path behind a vtable slot — the NDXR loader, the Mission 01 texture mounts
+and the unit placement were all "unreachable" by `bl` and all run.
+
+**A `bl`-only reachability negative in this binary is not weak evidence. It is no
+evidence.** Do not write "no caller found" without saying which kind of caller was
+looked for.
+
+### The two techniques that do work
+
+1. **Vtable resolution.** Dump `.rdata` as words; find the function's address
+   inside a run of `.text` pointers; find code materialising a base inside that
+   run. That code is the constructor, and the delta from the run's start is the
+   slot index. This turns "vtable-only, nothing calls it" into a chain.
+2. **Receiver-offset matching.** When a virtual call loads its receiver at
+   `this + K`, and a constructor builds a sub-object with the vtable under test at
+   the same `K`, and *the same distinctive `addis`/`subi` pair appears on both
+   sides*, the identification is checkable and can fail. Cycle 1213 pinned three
+   classes this way on three different literal offsets — `+0x29520`, `+0x29130`,
+   `+0x35C00` — any one of which could have mismatched.
+
+### And the trap that sits on top of it
+
+Cycle 1213's texture mounts: the nine `0x82335F18` call sites sitting **directly**
+in the three mission-load functions all pass `mode = 1`. The six that matter are
+one level down, in a function reached only through a vtable slot. Searching the
+obvious function for the obvious argument returns a clean, complete, wrong answer
+— nine sites examined, none matching, conclusion drawn.
+
+**Where you look is a hypothesis too, and it needs the same control as the rest.**
