@@ -73,3 +73,30 @@ flagged, not applied.
 ctest --test-dir reconstruction/ace-combat-6/build   ->  26/26 (1 skipped, no DISPLAY)
 all four gates                                      ->  pass
 ```
+
+## Addendum — one bounded step, and a deliberate stop
+
+Searching for `+0xC0`'s consumers found two writers and no readers:
+
+```
+0x8229A510  stw  r30,0xc0(r31)   ; the object constructor 0x8229A470, r30 = 0
+0x8229DBB8  stfs f0,0xc0(r31)
+```
+
+The first ties the field to the object class whose constructor cycle 1145 read —
+the same one that zeroes `+0x184` and `+0x188`. So `+0xC0` is a vector slot on
+that class, zeroed at construction, written by the resolver.
+
+**No reader was found, and the search form is the reason to distrust that.** Two
+displacement spellings were tried. A vector slot is more likely read with
+`lvx128` against a computed base than with a literal `0xc0(rN)`, which is exactly
+the encoding-coverage gap that produced this session's `lwz r25,` miss and its
+`addi rX,rY,0x188` miss before that.
+
+So this is not "nothing reads `+0xC0`". It is "two spellings found nothing", and
+the distinction is the whole difference between cycle 1145's wrong claim and
+cycle 1171's correction of it.
+
+Stopping here on purpose. The remaining question — whether `+0xC0` feeds the live
+transform at load — needs a reader search with an instrument that resolves
+effective addresses, not another displacement guess.
