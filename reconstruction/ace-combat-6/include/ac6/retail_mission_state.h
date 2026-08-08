@@ -243,6 +243,15 @@ struct RetailWorld {
 // Positions come from the record's first Obj sub-record, which carries a
 // relative offset rather than a world coordinate; the field is filled because
 // the runtime needs one, and the distinction is stated here rather than hidden.
+//
+// Cycle 1122 read 0x822953F0 and found where the payload's world coordinates
+// live: not in the Obj sub-record, but in the tag-2 orders - 890 of them in
+// Mission 01, spanning tens of thousands of world units. See
+// retail_world_position.h. What that leaves open is precisely this field: the
+// Obj sub-record is a different record with a different layout, no mode byte and
+// no anchor pair, and no consumer of it has been read. So the spawn position
+// stays an offset, and now says what it is not rather than only what it is.
+//
 // Durability has no source in the payload at all and is left at 1.
 std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
                                               std::uint32_t mission_id,

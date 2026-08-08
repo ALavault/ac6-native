@@ -1,0 +1,16 @@
+{
+  "schema": "ac6.retail-world-position.v1",
+  "mission_id": 1,
+  "source": "retail scenario container only, no manifest",
+  "retail_function": "0x822953F0",
+  "call_site": "0x82295BF0",
+  "position_records": 890,
+  "absolute_mode_0": 811,
+  "anchored_mode_1": 79,
+  "height_flagged": 38,
+  "absolute_x": [-57600, 63000],
+  "absolute_z": [-63000, 55600],
+  "anchored_median": [0, 0, 0],
+  "absolute_inside_submission_0_rectangle": 758,
+  "spawn_positions_still_open": true
+}

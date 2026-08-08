@@ -15,6 +15,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/mission01_compare.cpp src/campaign_progression.cpp src/session_save.cpp
   src/retail_scenario.cpp src/retail_mission_state.cpp src/retail_state_machine.cpp
   src/retail_mission_script.cpp src/retail_session.cpp
+  src/retail_world_position.cpp
   src/retail_bin_readers.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
@@ -158,6 +159,15 @@ add_test(NAME ac6-retail-session
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-session.json
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-native-captures/jf-retail-session)
 set_tests_properties(ac6-retail-session PROPERTIES SKIP_RETURN_CODE 77)
+
+# The world-position resolver of 0x822953F0, read in the Xenon corpus.
+add_executable(ac6-retail-world-position-tests tests/retail_world_position_tests.cpp)
+target_link_libraries(ac6-retail-world-position-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-world-position
+  COMMAND ac6-retail-world-position-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-world-position.json)
+set_tests_properties(ac6-retail-world-position PROPERTIES SKIP_RETURN_CODE 77)
 
 # J2: every vtable of the binary named by RTTI in a versioned map.
 find_package(Python3 COMPONENTS Interpreter QUIET)

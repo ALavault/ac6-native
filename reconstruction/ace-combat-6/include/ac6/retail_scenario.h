@@ -91,6 +91,23 @@ struct ScenarioFlagOrder {
   bool operator==(const ScenarioFlagOrder&) const = default;
 };
 
+// A tag-2 order's position record, read at the offsets 0x822953F0 reads it.
+// This is the record the game resolves into a world position, and Mission 01
+// carries 890 of them - the only world-scale coordinates in the payload.
+struct ScenarioPositionRecord {
+  std::uint32_t unit_index{};
+  float x{};                  // +0x08
+  float y{};                  // +0x0C
+  float z{};                  // +0x10
+  std::uint16_t flags{};      // +0x40; bit 0 sends the y through a height query
+  std::uint8_t mode{};        // +0x42; 1 means the triple is anchor-relative
+  std::uint8_t anchor_a{};    // +0x43, the first argument of the unit lookup
+  std::uint8_t anchor_b{};    // +0x44, the second
+  std::uint8_t kind{};        // +0x45, the ten-way switch of 0x82295A88
+  std::uint8_t slot{};        // +0x46, 0xFF when the order names no unit slot
+  bool operator==(const ScenarioPositionRecord&) const = default;
+};
+
 // One entry of root slot 6: an area record keyed by the byte at +0xA6, whose
 // four floats 0x82268B28 normalises into the mission rectangle.
 struct ScenarioArea {
@@ -148,6 +165,9 @@ class MissionScenario final {
     return flag_orders_;
   }
   const std::vector<ScenarioArea>& areas() const noexcept { return areas_; }
+  const std::vector<ScenarioPositionRecord>& positions() const noexcept {
+    return positions_;
+  }
   std::size_t object_records() const noexcept;
 
   // The u16 count of root slot 1, from which the loader sizes the mission
@@ -160,6 +180,7 @@ class MissionScenario final {
   std::vector<ScenarioSubMission> sub_missions_;
   std::vector<ScenarioFlagOrder> flag_orders_;
   std::vector<ScenarioArea> areas_;
+  std::vector<ScenarioPositionRecord> positions_;
   std::uint16_t counter_capacity_{};
 };
 

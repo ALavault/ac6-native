@@ -24,6 +24,9 @@ constexpr std::size_t kUnitFactionByte = 0x0D;
 // The order tag whose payload writes a mission counter, and the payload's
 // three fields, read at 0x82296BC0 and 0x82267474.
 constexpr std::uint8_t kFlagOrderTag = 6;
+// The order 0x822969F8 sends to 0x82295A88, whose default sub-kind resolves a
+// world position through 0x822953F0.
+constexpr std::uint8_t kPositionOrderTag = 2;
 constexpr std::size_t kFlagOrderCounterId = 0x00;
 constexpr std::size_t kFlagOrderLiteral = 0x02;
 constexpr std::size_t kFlagOrderOperation = 0x04;
@@ -168,7 +171,33 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
           const std::optional<std::size_t> order_data = payload.resolve(order, 0);
           if (!order_data.has_value()) continue;
           const std::optional<std::uint8_t> tag = payload.u8(*order_data);
-          if (!tag.has_value() || *tag != kFlagOrderTag) continue;
+          if (!tag.has_value()) continue;
+          if (*tag == kPositionOrderTag) {
+            // 0x82295BF0 hands the order's own payload to 0x822953F0 as its
+            // third argument; these are the fields that function reads.
+            const std::vector<std::size_t> position_children = payload.children(order);
+            if (position_children.empty()) continue;
+            const std::optional<std::size_t> block =
+                payload.resolve(position_children[0], 0);
+            if (!block.has_value()) continue;
+            const std::optional<float> x = payload.f32(*block + 0x08);
+            const std::optional<float> y = payload.f32(*block + 0x0C);
+            const std::optional<float> z = payload.f32(*block + 0x10);
+            const std::optional<std::uint16_t> position_flags = payload.u16(*block + 0x40);
+            const std::optional<std::uint8_t> mode = payload.u8(*block + 0x42);
+            const std::optional<std::uint8_t> anchor_a = payload.u8(*block + 0x43);
+            const std::optional<std::uint8_t> anchor_b = payload.u8(*block + 0x44);
+            const std::optional<std::uint8_t> kind = payload.u8(*block + 0x45);
+            const std::optional<std::uint8_t> slot = payload.u8(*block + 0x46);
+            if (!x || !y || !z || !position_flags || !mode || !anchor_a || !anchor_b ||
+                !kind || !slot) {
+              return std::nullopt;
+            }
+            scenario.positions_.push_back({record.index, *x, *y, *z, *position_flags,
+                                           *mode, *anchor_a, *anchor_b, *kind, *slot});
+            continue;
+          }
+          if (*tag != kFlagOrderTag) continue;
           const std::vector<std::size_t> order_children = payload.children(order);
           if (order_children.empty() || !payload.present(order_children[0])) continue;
           const std::optional<std::size_t> flag = payload.resolve(order_children[0], 0);
