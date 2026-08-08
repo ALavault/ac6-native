@@ -161,7 +161,18 @@ The names mislead, so plainly:
    mismatches, 38 shapes of which 26 non-power-of-two** — the odd shapes are what
    make it a test, since `pad32` is a no-op on powers of two.
 
-   The **mip chain is still open**. Groups are internally consistent but the
+   The **mip chain is still open (cycle 1153)**. A model summing tile-padded
+   levels with a flat 512-block floor for levels at or below 32x32 matches
+   **212 of 360** multi-level wrappers exactly, including the whole 4096x4096
+   terrain group. It fails on 64x64/7-levels (144 wrappers) and two small
+   groups. The blocker underneath is a **name**: byte `+0x11` is called the mip
+   count here, but all `0x8234B128` and `0x8234AED8` establish is that value 1
+   selects the plain context. Nothing loops over it or bounds anything with it,
+   so a layout fitted to it as a level count may be fitting the wrong variable.
+   Read `0x8234FB08`'s load path - the mip-map sibling of `0x8234EC38` - before
+   fitting anything further.
+
+   Historical note. Groups are internally consistent but the
    naive per-level tile model overshoots: 512×512/10 levels holds 393,216 where
    it predicts 458,752, and 256×256/9 holds 131,072 against 196,608. The tails
    are exact powers of two, so levels below some threshold use a fixed

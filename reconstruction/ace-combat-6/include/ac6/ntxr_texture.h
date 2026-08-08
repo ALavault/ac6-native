@@ -126,7 +126,12 @@ struct NtxrDescriptor {
   std::uint16_t width{};        // file +0x24, via lhz descriptor+0x14
   std::uint16_t height{};       // file +0x26, via lhz descriptor+0x16
   std::uint8_t format_code{};   // file +0x23, < 47
-  std::uint8_t mip_count{};     // file +0x21
+  // file +0x21. 0x8234B128 reads it and 0x8234AED8 tests it against 1 to
+  // pick the plain context over the mip-mapped one. That it counts levels
+  // is a NAME, not a derivation (cycle 1153): nothing in the image loops
+  // over it. This decoder only ever compares it to 1, which is the part
+  // that is derived.
+  std::uint8_t mip_count{};
   bool cube_map{};              // file +0x2C bit 9
   std::uint32_t data_offset{};  // file +0x30, relative to file 0x10
   std::uint8_t xenos_format{};  // kXenosFormatTable[format_code]
