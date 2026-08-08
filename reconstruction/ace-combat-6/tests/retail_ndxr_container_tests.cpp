@@ -118,6 +118,39 @@ float BeFloat(const std::vector<std::uint8_t>& bytes, std::size_t at) {
   return value;
 }
 
+// Cycle 1243's control, and it is the strongest structural one available
+// without an oracle: every descriptor's vertex extent, taken together, must TILE
+// [0, [buf+0x18]) - no gap, no overlap, ending exactly on the block length.
+// Measured before it was written: 534 of 537 files tile exactly, 3 are
+// contiguous but eight bytes short (the same file in three copies), and ZERO
+// have a gap or an overlap.
+//
+// It is a joint constraint on every descriptor at once, where the max-extent
+// control above constrains only the furthest. It kills T8-alone and the
+// constants 16, 20, 28 and 36 at 0 files each.
+//
+// WHAT IT CANNOT DO, stated so nobody mistakes it for more: a constant stride of
+// 32 also tiles 534 files, because 12,978 of the corpus's 13,014 descriptors are
+// format 0x0613 and only 36 are 0x0611. The corpus is 99.7% one format, so this
+// control cannot separate the derived formula from that one constant. Same
+// limitation as the texture_count == 1 exemption above, from the same cause.
+struct Interval {
+  std::uint64_t begin = 0;
+  std::uint64_t end = 0;
+};
+
+bool TilesExactly(std::vector<Interval> intervals, std::uint64_t block_length) {
+  if (intervals.empty()) return false;
+  std::sort(intervals.begin(), intervals.end(),
+            [](const Interval& a, const Interval& b) { return a.begin < b.begin; });
+  std::uint64_t cursor = 0;
+  for (const Interval& span : intervals) {
+    if (span.begin != cursor) return false;  // a gap or an overlap
+    cursor = span.end;
+  }
+  return cursor == block_length;
+}
+
 struct Totals {
   std::uint64_t opened = 0;
   std::uint64_t refused = 0;
@@ -144,6 +177,11 @@ struct Totals {
   std::uint64_t uv_plausible_derived = 0;
   std::uint64_t uv_plausible_rival_20 = 0;
   std::uint64_t uv_plausible_rival_16 = 0;
+  std::uint64_t tiles_derived = 0;
+  std::uint64_t tiles_rival_t8 = 0;
+  std::uint64_t tiles_rival_16 = 0;
+  std::uint64_t tiles_rival_28 = 0;
+  std::uint64_t tiles_rival_36 = 0;
 };
 
 // The two terms of cycle 1217's rule, so the test can score the rivals that are
@@ -207,7 +245,15 @@ bool WriteMetrics(const char* path, std::size_t file_count,
                "  \"uv_sampled\": %llu,\n"
                "  \"uv_plausible_at_24_derived\": %llu,\n"
                "  \"uv_plausible_at_20_rival\": %llu,\n"
-               "  \"uv_plausible_at_16_rival\": %llu\n"
+               "  \"uv_plausible_at_16_rival\": %llu,\n"
+               "  \"files_vertex_extents_tile_derived\": %llu,\n"
+               "  \"files_tile_rival_t8\": %llu,\n"
+               "  \"files_tile_rival_16\": %llu,\n"
+               "  \"files_tile_rival_28\": %llu,\n"
+               "  \"files_tile_rival_36\": %llu,\n"
+               "  \"tiling_note\": \"no gap and no overlap in any file; a "
+               "constant 32 also tiles 534, because 12,978 of 13,014 "
+               "descriptors are format 0x0613 - not asserted\"\n"
                "}\n",
                file_count, static_cast<unsigned long long>(totals.opened),
                static_cast<unsigned long long>(totals.refused),
@@ -234,7 +280,12 @@ bool WriteMetrics(const char* path, std::size_t file_count,
                static_cast<unsigned long long>(totals.uv_sampled),
                static_cast<unsigned long long>(totals.uv_plausible_derived),
                static_cast<unsigned long long>(totals.uv_plausible_rival_20),
-               static_cast<unsigned long long>(totals.uv_plausible_rival_16));
+               static_cast<unsigned long long>(totals.uv_plausible_rival_16),
+               static_cast<unsigned long long>(totals.tiles_derived),
+               static_cast<unsigned long long>(totals.tiles_rival_t8),
+               static_cast<unsigned long long>(totals.tiles_rival_16),
+               static_cast<unsigned long long>(totals.tiles_rival_28),
+               static_cast<unsigned long long>(totals.tiles_rival_36));
   std::fclose(out);
   return true;
 }
@@ -249,7 +300,12 @@ void AccumulateDescriptors(const ac6::retail::NdxrContainer& container,
                            std::uint64_t* derived_extent,
                            std::uint64_t* t8_extent, std::uint64_t* t18_extent,
                            const std::vector<std::uint8_t>* bytes,
-                           std::size_t vertex_base) {
+                           std::size_t vertex_base,
+                           std::vector<Interval>* derived_spans,
+                           std::vector<Interval>* t8_spans,
+                           std::vector<Interval>* c16_spans,
+                           std::vector<Interval>* c28_spans,
+                           std::vector<Interval>* c36_spans) {
   for (std::uint16_t d = 0; d < record.descriptor_count; ++d) {
     const auto desc = container.Descriptor(record, d);
     if (!desc.has_value()) continue;
@@ -284,6 +340,20 @@ void AccumulateDescriptors(const ac6::retail::NdxrContainer& container,
         }
       }
     }
+    const std::uint64_t span_begin = desc->vertex_offset;
+    const std::uint64_t span_count = desc->vertex_count;
+    if (desc->vertex_stride != 0) {
+      derived_spans->push_back(
+          {span_begin, span_begin + span_count * desc->vertex_stride});
+    }
+    const std::uint32_t t8_stride = T8Only(desc->format_hi, desc->format_lo);
+    if (t8_stride != 0) {
+      t8_spans->push_back({span_begin, span_begin + span_count * t8_stride});
+    }
+    c16_spans->push_back({span_begin, span_begin + span_count * 16});
+    c28_spans->push_back({span_begin, span_begin + span_count * 28});
+    c36_spans->push_back({span_begin, span_begin + span_count * 36});
+
     *t18_extent = std::max(
         *t18_extent,
         desc->vertex_offset + count * T18Only(desc->format_hi, desc->format_lo));
@@ -298,6 +368,28 @@ bool Check(bool condition, const char* what) {
 // Lifted out of main for the 220-line per-function budget. Cycle 1233's control:
 // the derived UV offset must dominate and both rivals must collapse. If a rival
 // ever rises, the element-list reading behind it is wrong.
+// Lifted out of main for the 220-line budget. Cycle 1243's tiling control: the
+// derived stride must tile the vertex block for most of the corpus and each
+// rival must tile none. A rival that starts tiling means the stride rule behind
+// it has become indistinguishable, which is a finding, not a pass.
+bool CheckTilingControl(const Totals& totals) {
+  std::printf("  vertex extents TILE the block, derived    : %llu of %llu\n",
+              static_cast<unsigned long long>(totals.tiles_derived),
+              static_cast<unsigned long long>(totals.opened));
+  std::printf("    rivals T8 / 16 / 28 / 36               : %llu / %llu / %llu / %llu\n",
+              static_cast<unsigned long long>(totals.tiles_rival_t8),
+              static_cast<unsigned long long>(totals.tiles_rival_16),
+              static_cast<unsigned long long>(totals.tiles_rival_28),
+              static_cast<unsigned long long>(totals.tiles_rival_36));
+  bool ok = Check(totals.tiles_derived > totals.opened / 2,
+                  "the derived stride does not tile the vertex block");
+  ok = Check(totals.tiles_rival_t8 == 0, "rival T8-alone tiled") && ok;
+  ok = Check(totals.tiles_rival_16 == 0, "rival stride 16 tiled") && ok;
+  ok = Check(totals.tiles_rival_28 == 0, "rival stride 28 tiled") && ok;
+  ok = Check(totals.tiles_rival_36 == 0, "rival stride 36 tiled") && ok;
+  return ok;
+}
+
 bool CheckUvControl(const Totals& totals) {
   if (totals.uv_sampled == 0) return true;
   const double sampled = static_cast<double>(totals.uv_sampled);
@@ -363,6 +455,7 @@ int main(int argc, char** argv) {
     const std::uint64_t vertex_length =
         container->sections().end - container->sections().second;
     std::uint64_t derived_extent = 0, t8_extent = 0, t18_extent = 0;
+    std::vector<Interval> derived_spans, t8_spans, c16_spans, c28_spans, c36_spans;
 
     // Cycle 1195: every shipped file carries 0x200, which is why Open() serves
     // that code alone.
@@ -383,7 +476,8 @@ int main(int argc, char** argv) {
 
       AccumulateDescriptors(*container, *record, vertex_length, &totals,
                             &derived_extent, &t8_extent, &t18_extent, &bytes,
-                            container->sections().second);
+                            container->sections().second, &derived_spans,
+                            &t8_spans, &c16_spans, &c28_spans, &c36_spans);
 
       // Cycle 1207: the four slots are MATERIALS. Only slot 0 is ever used in
       // this corpus, so the loop covers all four and the count proves it.
@@ -414,6 +508,12 @@ int main(int argc, char** argv) {
         }
       }
     }
+
+    if (TilesExactly(derived_spans, vertex_length)) ++totals.tiles_derived;
+    if (TilesExactly(t8_spans, vertex_length)) ++totals.tiles_rival_t8;
+    if (TilesExactly(c16_spans, vertex_length)) ++totals.tiles_rival_16;
+    if (TilesExactly(c28_spans, vertex_length)) ++totals.tiles_rival_28;
+    if (TilesExactly(c36_spans, vertex_length)) ++totals.tiles_rival_36;
 
     if (derived_extent == vertex_length) ++totals.extent_exact_derived;
     if (t8_extent == vertex_length) ++totals.extent_exact_t8_only;
@@ -512,6 +612,7 @@ int main(int argc, char** argv) {
   ok = Check(totals.extent_exact_t8_only == 0, "rival T8-alone matched a file") && ok;
   ok = Check(totals.extent_exact_t18_only == 0, "rival T18-alone matched a file") && ok;
   ok = CheckUvControl(totals) && ok;
+  ok = CheckTilingControl(totals) && ok;
   ok = Check(totals.extent_exact_derived > totals.opened / 2,
              "the derived stride did not land exactly for most files") && ok;
 

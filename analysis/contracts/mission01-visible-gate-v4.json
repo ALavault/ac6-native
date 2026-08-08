@@ -394,9 +394,9 @@
      {
       "kind": "native-test",
       "path": "reports/mission01-retail/ndxr-container.json",
-      "sha256": "d5621b55b208f01ea154ed65b0f56ca6983c6ccb982b06d54fe7003869ac4955",
-      "size": 1040,
-      "claim": "537 files, 13,014 records, 13,014 materials and 13,014 texture references, 0 refused, 0 unnamed, every relocation and resolve guard clear on disk, every parameter chain terminating, the rival string base naming 0 files against the derived base naming 537, and the rival stride 0x10 terminating 0 times - with the 0x20 rival reported and explicitly NOT asserted, because at texture_count == 1 it is not discriminated"
+      "sha256": "68f2969c71c4d483389ced7387fc8ad027b71015c3bfc338979416370f4dad7a",
+      "size": 1351,
+      "claim": "537 files, 13,014 records, 13,014 materials and 13,014 descriptors, 0 refused, 0 unnamed, every relocation and resolve guard clear on disk, every parameter chain terminating; the rival string base naming 0 files against the derived base naming 537; the derived vertex stride tiling the block in 534 of 537 files with no gap or overlap anywhere while rivals T8-alone, 16, 28 and 36 tile none; and UV plausible at the derived +24 in 99.8% against 0.0% at both offsets the product used before cycle 1233 - with the rival stride 0x20 and a constant 32 reported and explicitly NOT asserted, because this corpus is 99.7% one format and cannot discriminate them"
      },
      {
       "kind": "derivation",

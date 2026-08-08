@@ -27,5 +27,11 @@
   "uv_sampled": 276159,
   "uv_plausible_at_24_derived": 275499,
   "uv_plausible_at_20_rival": 30,
-  "uv_plausible_at_16_rival": 30
+  "uv_plausible_at_16_rival": 30,
+  "files_vertex_extents_tile_derived": 534,
+  "files_tile_rival_t8": 0,
+  "files_tile_rival_16": 0,
+  "files_tile_rival_28": 0,
+  "files_tile_rival_36": 0,
+  "tiling_note": "no gap and no overlap in any file; a constant 32 also tiles 534, because 12,978 of 13,014 descriptors are format 0x0613 - not asserted"
 }
