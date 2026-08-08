@@ -113,6 +113,59 @@ struct Totals {
   std::uint64_t single_texture = 0;
 };
 
+// Lifted out of main to stay inside the repository's per-function line budget,
+// which ac6-cpp-complexity enforces at 220. Returns false on a write failure so
+// the caller can fail the run rather than report success with no artefact.
+bool WriteMetrics(const char* path, std::size_t file_count,
+                  const Totals& totals) {
+  std::FILE* out = std::fopen(path, "wb");
+  if (out == nullptr) {
+    std::fprintf(stderr, "cannot write %s\n", path);
+    return false;
+  }
+  std::fprintf(out,
+               "{\n"
+               "  \"files\": %zu,\n"
+               "  \"opened\": %llu,\n"
+               "  \"refused\": %llu,\n"
+               "  \"records\": %llu,\n"
+               "  \"unnamed_records\": %llu,\n"
+               "  \"relocation_guard_set_on_disk\": %llu,\n"
+               "  \"derived_string_base_named\": %llu,\n"
+               "  \"rival_string_base_named\": %llu,\n"
+               "  \"minimum_name_length\": %zu,\n"
+               "  \"materials\": %llu,\n"
+               "  \"texture_refs\": %llu,\n"
+               "  \"materials_texture_count_one\": %llu,\n"
+               "  \"resolve_guard_set_on_disk_material\": %llu,\n"
+               "  \"resolve_guard_set_on_disk_texture\": %llu,\n"
+               "  \"parameter_chain_terminates\": %llu,\n"
+               "  \"rival_stride_0x10_terminates\": %llu,\n"
+               "  \"rival_stride_0x20_terminates\": %llu,\n"
+               "  \"rival_stride_0x20_asserted\": false,\n"
+               "  \"rival_stride_0x20_note\": \"not discriminated at "
+               "texture_count == 1; see ChainLengthWithStride\"\n"
+               "}\n",
+               file_count, static_cast<unsigned long long>(totals.opened),
+               static_cast<unsigned long long>(totals.refused),
+               static_cast<unsigned long long>(totals.records),
+               static_cast<unsigned long long>(totals.unnamed),
+               static_cast<unsigned long long>(totals.relocated),
+               static_cast<unsigned long long>(totals.derived_named),
+               static_cast<unsigned long long>(totals.rival_named),
+               kMinimumNameLength,
+               static_cast<unsigned long long>(totals.materials),
+               static_cast<unsigned long long>(totals.textures),
+               static_cast<unsigned long long>(totals.single_texture),
+               static_cast<unsigned long long>(totals.material_resolved),
+               static_cast<unsigned long long>(totals.texture_resolved),
+               static_cast<unsigned long long>(totals.chain_ok),
+               static_cast<unsigned long long>(totals.chain_rival_10),
+               static_cast<unsigned long long>(totals.chain_rival_20));
+  std::fclose(out);
+  return true;
+}
+
 bool Check(bool condition, const char* what) {
   if (!condition) std::fprintf(stderr, "FAIL: %s\n", what);
   return condition;
@@ -286,6 +339,9 @@ int main(int argc, char** argv) {
   ok = Check(totals.rival_named == 0, "the rival base produced a name") && ok;
 
   if (!ok) return 1;
+
+  if (argc >= 3 && !WriteMetrics(argv[2], files.size(), totals)) return 1;
+
   std::printf("ndxr-container OK\n");
   return 0;
 }

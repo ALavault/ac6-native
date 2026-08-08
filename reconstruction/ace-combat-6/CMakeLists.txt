@@ -187,7 +187,8 @@ target_link_libraries(ac6-retail-ndxr-container-tests PRIVATE ac6_product_core)
 # 77 when it is absent, so a clean clone skips rather than fails.
 add_test(NAME ac6-retail-ndxr-container
   COMMAND ac6-retail-ndxr-container-tests
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/ndxr-container.json)
 set_tests_properties(ac6-retail-ndxr-container PROPERTIES SKIP_RETURN_CODE 77)
 
 add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)

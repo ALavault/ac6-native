@@ -1,0 +1,21 @@
+{
+  "files": 537,
+  "opened": 537,
+  "refused": 0,
+  "records": 13014,
+  "unnamed_records": 0,
+  "relocation_guard_set_on_disk": 0,
+  "derived_string_base_named": 537,
+  "rival_string_base_named": 0,
+  "minimum_name_length": 8,
+  "materials": 13014,
+  "texture_refs": 13014,
+  "materials_texture_count_one": 13014,
+  "resolve_guard_set_on_disk_material": 0,
+  "resolve_guard_set_on_disk_texture": 0,
+  "parameter_chain_terminates": 13014,
+  "rival_stride_0x10_terminates": 0,
+  "rival_stride_0x20_terminates": 13014,
+  "rival_stride_0x20_asserted": false,
+  "rival_stride_0x20_note": "not discriminated at texture_count == 1; see ChainLengthWithStride"
+}
