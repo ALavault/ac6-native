@@ -28,7 +28,7 @@ public class Ac6PosWriters extends GhidraScript {
         int vector = 0, triple = 0;
         for (int i = 0; i < all.size(); ++i) {
             Matcher base = ADDI.matcher(all.get(i).toString());
-            if (base.matches()) {
+            if (base.matches() && !base.group(2).equals("r1")) {
                 String pointer = base.group(1);
                 for (int k = i + 1; k < Math.min(i + 8, all.size()); ++k) {
                     Matcher store = STVX.matcher(all.get(k).toString());
@@ -41,7 +41,8 @@ public class Ac6PosWriters extends GhidraScript {
                 continue;
             }
             Matcher first = STFS.matcher(all.get(i).toString());
-            if (!first.matches() || !first.group(2).equals("0x50")) continue;
+            if (!first.matches() || !first.group(2).equals("0x50")
+                    || first.group(3).equals("r1")) continue;
             boolean has54 = false, has58 = false;
             for (int k = i + 1; k < Math.min(i + 10, all.size()); ++k) {
                 Matcher m = STFS.matcher(all.get(k).toString());
