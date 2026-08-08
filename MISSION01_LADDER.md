@@ -309,6 +309,13 @@ python3 tools/audit_ac6_mission01_native_gate.py \
 
 ## Evidence discipline
 
+Operational companion: `INSTRUMENT_DISCIPLINE.md`, written from eight
+instrument-scope failures in one session. All eight produced a *negative*, which
+is the direction nothing downstream catches. The technique that caught the only
+one spotted immediately: **before believing a zero, run the same search against a
+case whose answer you already know is not zero.**
+
+
 In `CLAUDE.md`, and it is the point of the whole campaign: never assert a value
 that was not read; refuse a plausible rule with no control; correct predecessors
 **and yourself**, by cycle number; measure the instrument before trusting it.
