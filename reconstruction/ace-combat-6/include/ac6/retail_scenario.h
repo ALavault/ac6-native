@@ -249,11 +249,28 @@ ScenarioVector position_placeholder(const ScenarioUnitRecord& record);
 //   against the parent's staging basis rows at +0x70/+0x80/+0x90, then
 //   0x8229B060-0x8229B080 add the parent's staging translation at
 //   +0xA0/+0xA4/+0xA8 - child_world = parent.translation + parent.basis * offset.
+//
 //   The constructor at 0x8229A5AC-0x8229A5B0 zeroes both +0x184 and +0x188, so
-//   a unit acquires a parent only if something assigns one, and nothing in the
-//   load path does. An unparented entity is therefore never placed by this
-//   route, and reading its triple as a world coordinate is reading a frame that
-//   was never applied.
+//   an entity has no parent until something assigns one. Cycle 1145 wrote that
+//   nothing on the load path does. **That was wrong, and cycle 1147 corrected
+//   it**: 0x820A7B2C, inside 0x820A7070 - the unit constructor this product
+//   ports - assigns the parent from byte +0x18 of the Obj record, using 0xFF as
+//   the sentinel for "none":
+//
+//       820a7b0c  lbz  r11,0x18(r27)     ; the parent's Obj index
+//       820a7b10  cmplwi cr6,r11,0xff    ; 0xFF -> leave +0x188 null
+//       820a7b18  subf r11,r24,r11       ; less this record's own index
+//       820a7b1c  add  r11,r11,r3        ; plus 0x8226F050's base
+//       820a7b24  rlwinm r11,r11,0x2,..  ; times four
+//       820a7b28  lwzx r11,r11,r30       ; the entity pointer array
+//       820a7b2c  stw  r11,0x188(r31)
+//
+//   So the mechanism is real. What makes the triple unusable as a world
+//   position is not its absence but its rarity, and that is measured: **27 of
+//   Mission 01's 434 Obj records name a parent and 407 carry the 0xFF
+//   sentinel**, including every record belonging to a unit whose first triple
+//   this function would otherwise return. For those, 0x8229AF80 places nothing,
+//   and reading the triple as a world coordinate reads a frame never applied.
 //
 //   The tag-2 order in the unit's Set -> Act -> Order program is a world
 //   position. 0x82295A88 switches on the record's +0x45 at 0x82295B6C-0x82295B74

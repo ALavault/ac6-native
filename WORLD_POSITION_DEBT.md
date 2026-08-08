@@ -14,11 +14,18 @@ parent.basis * offset`, taken from the parent's staging rows at
 `0x8229B004`–`0x8229B04C` dot; `0x8229B060`–`0x8229B080` add).
 
 But `0x8229AF80` returns 0 when `[entity+0x188]` is null (`0x8229AF9C` ->
-`0x8229B100`), the constructor `0x8229A470` zeroes `+0x184` and `+0x188`
-(`0x8229A5AC`/`0x8229A5B0`), and nothing on the load path assigns a parent. So
-that route places nothing for a unit, and the Obj triple is not a unit's world
-position. The measurement agrees: **169 of the 230 units have `(0,0,0)` as their
-first Obj triple.**
+`0x8229B100`) and the constructor `0x8229A470` zeroes `+0x184` and `+0x188`
+(`0x8229A5AC`/`0x8229A5B0`).
+
+**Correction (cycle 1147).** This section first said nothing on the load path
+assigns a parent. `0x820A7B2C`, inside `0x820A7070`, does — from byte `+0x18` of
+the Obj record, `0xFF` meaning none. The scan had found it; a region filter in
+the analysis threw the row away. What is true is measured rarity, not absence:
+**27 of the 434 Obj records name a parent and 407 carry the sentinel**, and every
+record belonging to a unit whose first triple would be used carries it. So that
+route still places nothing for those units, and the Obj triple is still not
+their world position. The measurement agrees: **169 of the 230 units have
+`(0,0,0)` as their first Obj triple.**
 
 The units' load-time position is the first tag-2 order of their `Set -> Act ->
 Order` program, which `0x82295A88` sends to `0x822953F0` through its default arm

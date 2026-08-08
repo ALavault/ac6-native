@@ -78,9 +78,11 @@ The names mislead, so plainly:
    through the rasteriser's own projection. Diagnostic markers only — no
    geometry, and no capture containing one may be offered as visual parity.
 2. ~~**The transform frame.**~~ **Done, cycle 1145**, and it settled the opposite
-   question. The frame is `parent.translation + parent.basis * offset`, but
-   `0x8229AF80` places nothing without a parent and the load path assigns none,
-   so the Obj triple was never the units' position — 169 of 230 are `(0,0,0)`.
+   question. The frame is `parent.translation + parent.basis * offset`, and
+   `0x8229AF80` places nothing without a parent. Parents *are* assigned on the
+   load path — cycle 1145 said otherwise and cycle 1147 corrected it — but only
+   for 27 of 434 Obj records, and never for the ones whose triple would be used,
+   so the Obj triple was never the units' position: 169 of 230 are `(0,0,0)`.
    Their load-time position is the first tag-2 order, resolved by `0x822953F0`:
    **95 of 230 placed, 135 with no load-time position in the container.**
 3. **A flight camera — now the blocker.** Cycle 1146 corrected why the capture
@@ -119,12 +121,18 @@ The names mislead, so plainly:
      against `+0xF4`. Finding the right one needs the **class** of the object
      at `global+0x12BC34`, which this search does not establish. That is the
      next question for this thread, and it is a bigger one than a scan.
+
+   - `+0x188` **is** assigned on the load path, by `0x820A7B2C` inside
+     `0x820A7070`, from byte `+0x18` of the Obj record with `0xFF` as the
+     sentinel. Cycle 1145 said nothing assigned it; cycle 1147 corrected that.
+     27 of Mission 01's 434 Obj records name a parent and 407 do not, so
+     parent-relative placement is a **bounded 27-record job**, not a missing
+     mechanism. It is deliberately not implemented yet: the child needs the
+     parent's staging transform populated when it is placed, and this port has
+     no staging/commit ordering.
    - `+0x180`–`+0x194` are **floats on a different class** (`0x8229EAC0` clamps
      four of them between limits). They are not the unit class's `+0x184`
-     pointer and `+0x188` parent. Both scans — literal displacement and
-     computed `addi rX,rY,0x188` — agree that nothing in the image originates a
-     non-null parent; the only non-zero write is the field-by-field clone at
-     `0x8226D0E0`, which copies one that already existed.
+     pointer and `+0x188` parent, and cycle 1146 nearly read them as such.
 4. **Textures.** Port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, then close
    MATE batch→material→texture→NTXR in the runtime.
 5. **Terrain.** Currently **fail-closed by policy**:
