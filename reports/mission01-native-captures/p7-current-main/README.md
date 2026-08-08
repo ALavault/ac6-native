@@ -37,7 +37,7 @@ not by itself qualify Mission 01 retail objectives or J1.
 | `depth-preview.png` | `c60764ff7aec0c6889d5ae4045fea248f4c2ce28cbadfaf905ffb3dfddf9d209` |
 | `wireframe.png` | `0621e30e5f2a8111e88220c9a213b4192d64ab7fa801e84cebe410dfcc2f9a2a7` |
 | `object-id.png` | `5c5bbd45a86873f9338aa9b2144ce1722c96590e66836d2fe9e80239c3308d34` |
-| `capture-metrics.json` | `ac67cd27b11555cc763d1f8601f866a72946014591b8b197dcc424ce3318397d` |
+| `capture-metrics.json` | `ac67cd27b11555cc763d1f8601f866a72946014566b8b197dcc424ce3318397d` |
 | `native-session.json` | `9175052f0505ab8943ed659e492c5228262e0d57fb59a37d4891c40c0598f77b` |
 | external `manifest.tsv` | `ddec953d1ae9b21d930f86fddedb71a73ff617de7e812a72e959b476b24e54bc` |
 | external replay | `5165237be95484cae21cf5a8b5d8166f5fc66c21e6b60670ddd510828cd734d4` |
