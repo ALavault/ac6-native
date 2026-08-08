@@ -136,3 +136,53 @@ the only one that works and the reference query is the one that lies.
 Cycle 1193 caught it in one command by querying a global it knew was referenced.
 **Any zero from `Ac6Xrefs` against the Xenon project should be read as "the
 database is empty" until a known-good target says otherwise.**
+
+## The eleventh shape, and it is the one that keeps recurring: querying only one side
+
+Three cycles in a single session — 1201→1202, 1203 caught in flight, and
+1208→1209 — failed the same way, and the shape is worth naming because it does
+not look like the others.
+
+| cycle | the claim | what broke it |
+|---|---|---|
+| 1201 | "two derivations meet at `+0x80`" | `0x8234AE00` adds `0x80` again; the map is one level deeper |
+| 1203 | "`% 28` holds for only 17%, so the product is wrong" | restricted to the 36 descriptors the product assigns 28 to, it is 100% |
+| 1208 | "the two id clusters are the two arms of the `0x10000000` branch" | 192 of 205 GIDX ids in the **texture** files are already below the threshold |
+
+None of these is a false negative, and none is a scan that returned nothing.
+Every one had **real evidence, correctly read, from one side of a join** — and in
+every case **the corpus that would have falsified it was already in the
+workspace and was not queried.**
+
+Cycle 1208 is the sharpest instance because it wrote, in its own text, "this is
+not a story fitted to the numbers." It was. A threshold existed in the code; two
+clusters straddled it; the identification followed. What was never asked was the
+only question that could have failed: *what do the texture files themselves say
+their ids are?* One scan, one minute, and the answer was 192 of 205 already below
+the threshold — so the clusters are one namespace and the branch is irrelevant to
+them.
+
+**The rule: before publishing a join, query it from the far side.** A rule
+derived from the consumer must be checked against the producer; a rule derived
+from the code must be checked against the files; a rule derived from one corpus
+must be checked against the other. If the far side cannot be queried, that is
+itself the finding and belongs in "not established" rather than in the
+conclusion.
+
+This is the same standard cycle 1198 wrote for controls — *a test that cannot
+fail proves nothing* — applied one level up. A control run only on the side that
+produced the hypothesis cannot fail either.
+
+## And a corollary about call sites
+
+`0x8233F250` has eight call sites. **Seven pass a negative literal id** with an
+`.rdata` blob — built-in resources that land in reserved slots where the insert
+is explicitly refused. Reading those seven supports a clean, well-controlled
+conclusion: *nothing in this image inserts a positive key into that map.* The
+eighth takes its id from its caller and is the entire population path.
+
+**Seven literals are not a census.** An unexhausted call-site list is
+indistinguishable, from the inside, from an exhausted one — the evidence looks
+uniform precisely because the exception has not been reached yet. Enumerate
+completely, or state in the report that the enumeration is partial and how far it
+got.
