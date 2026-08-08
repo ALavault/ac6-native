@@ -505,3 +505,54 @@ the sibling among them.
 A count of call sites is a statement about **one symbol**. Templates make one
 algorithm into many symbols, and nothing in a disassembly marks them as related
 except that their bodies match.
+
+## The eighteenth shape, and it is the one all the others are special cases of: a correct measurement, over-read
+
+Cycle 1192 scanned the loaded image for the bytes `46 48 4D` and found **zero**,
+with three positive controls in the same run (`NDXR` at `0x8200A24C`, `GIDX` at
+`0x82067EC8`, `NTXR` at `0x82067EC0`). The measurement was exact, controlled, and
+**true**. It is still true.
+
+The sentence it produced was *"retail does not parse an FHM container"*, and that
+sentence stood for fifty-six cycles, was carried into two more reports, and
+grounded a design decision about the product.
+
+Cycle 1248 found `0x82234C18`: a directory reader that takes a version byte, an
+endian byte and a table offset, and **never compares a magic**. Retail parses the
+format. It just never looks at its name.
+
+**The measurement licensed "the tag does not appear". The sentence said "the
+format is not read".** Those are different claims, and the gap between them is
+where fifty-six cycles of a wrong premise lived.
+
+### Why this is the general case
+
+Look back at the others with this in hand:
+
+- *the true positive from dead code* — "this instruction exists" read as "this
+  instruction runs";
+- *querying only one side* — "true of this corpus" read as "true";
+- *the listing is not the code* — "not in 786,122 instructions" read as "not in
+  the program";
+- *reachability by `bl`* — "no direct caller" read as "unreachable";
+- *the displacement collision* — "a store at this offset" read as "a store to
+  this field";
+- *the right search against a sibling* — "no caller of this symbol" read as "no
+  caller of this function".
+
+**Every one is a measurement whose scope was widened by the sentence that
+reported it.** The instrument was honest in all six.
+
+### The rule, and it is about writing rather than scanning
+
+**Write the measurement, then write the claim, then ask what stands between
+them.** If the answer is a step of reasoning, that step is a hypothesis and needs
+its own control — not the one that produced the measurement.
+
+Cycle 1192's missing control was cheap and available: *if the format is not
+parsed, then no function reads a structure at its layout.* One scan for the
+header's shape, over the 439 bundles, would have found `u16[+0x06] = 0x10`
+uniformly and sent someone looking for the reader.
+
+A zero tells you where something is not. It never tells you what is not
+happening.
