@@ -97,10 +97,24 @@ registries are BSS, populated at runtime. Measured now:
   extraction flattens membership, so those ids are not recoverable from the
   corpus even though the bases are literals.
 - **Pixels are located, not decoded.** Level-0 data lands at file offset 4096 in
-  1052 of 1052, but converting it needs `0x821FCA48`, the X360 tiler, unported
-  and with an unestablished contract. `remaining / (w × bpp × h)` clusters at
-  0.25, 1.0 and 4.0 — consistent with block compression and **not** with a naive
-  linear reading.
+  1052 of 1052. `remaining / (w × bpp × h)` clusters at 0.25, 1.0 and 4.0 —
+  consistent with block compression and **not** with a naive linear reading.
+
+  > **Correction, same session, by the cycle that wrote it.** This bullet
+  > continued: "converting it needs `0x821FCA48`, the X360 tiler, unported and
+  > with an unestablished contract." **That is false, and it was false when
+  > written.** `src/ntxr_texture.cpp` already untiles Xenos `Tiled2D`
+  > (`xenos_tiled_2d_offset`, `pad_to_tile` at 32 blocks) and decodes BC1/BC2/BC3
+  > under contract behaviour `texture_decode` — 692 wrappers, 668 decoded
+  > (656 BC3, 10 BC1, 2 BC2), 22 refused not-block-format, 2 refused cube-map,
+  > corpus pixel hash `8a7b59cbf13ba39b`, endianness control 468/170/30.
+  >
+  > The sentence came from a delegated investigation. It was true of what that
+  > agent had been shown and false of the repository, and I carried it into a
+  > report, a task list and `MISSION01_LADDER.md` without one `grep`. See the
+  > twentieth shape in `INSTRUMENT_DISCIPLINE.md`: *an agent's scope, written as
+  > the repository's*. What is still open here is the **binding** — which
+  > wrapper a material's texture id resolves to — not the decode.
 
 ## Verification
 

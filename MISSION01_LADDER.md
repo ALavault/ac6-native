@@ -443,11 +443,27 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    so on that path **pack grouping is irrelevant** and an offline index keys
    exactly as retail does.
 
-   Still open: **duplicate-mount policy** (first mount of an id wins, 847
-   duplicates over 205 ids, and a flat extraction does not record order), the
-   `mode = 1` packs whose ids are `base + index`, and the pixels — located at
-   file offset 4096 in 1052 of 1052, needing `0x821FCA48`, the X360 tiler, which
-   is unported.
+   Still open, and the list is **two items, not three**: **duplicate-mount
+   policy** (847 duplicates over 205 ids, and a flat extraction does not record
+   order) and the `mode = 1` packs whose ids are `base + index`.
+
+   Two corrections to the sentence that stood here:
+
+   - It said the pixels need `0x821FCA48`, the X360 tiler, "which is unported".
+     **False, and it was false when written.** `src/ntxr_texture.cpp` already
+     untiles Xenos `Tiled2D` (`xenos_tiled_2d_offset`, `pad_to_tile` at 32
+     blocks) and decodes BC1/BC2/BC3, under contract behaviour `texture_decode`:
+     692 wrappers, 668 decoded (656 BC3, 10 BC1, 2 BC2), 22 refused
+     not-block-format, 2 refused cube-map, corpus pixel hash `8a7b59cbf13ba39b`,
+     endianness control 468/170/30. The claim came from a delegated
+     investigation, was true of what that agent had been given, and was carried
+     into the roadmap unchecked. One `grep` refuted it. It is the twentieth
+     shape in `INSTRUMENT_DISCIPLINE.md`, and it survived one round of
+     correction here because the task list was fixed and this file was not.
+   - It said "first mount of an id wins" **and** listed duplicate-mount policy as
+     open, in the same sentence. Both cannot be true. The policy is **not
+     derived**; the parenthesis was a guess wearing a result's grammar. It is
+     removed until an instruction says otherwise.
 
    Cycle 1181's "registry entries are twelve bytes each" is also wrong:
    `0x82342D70` is a byte-size query, `n * 0xDC`, carved by `0x82342F68` into a
