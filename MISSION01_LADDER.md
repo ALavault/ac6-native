@@ -467,8 +467,32 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    exactly as retail does.
 
    Still open, and the list is **two items, not three**: **duplicate-mount
-   policy** (847 duplicates over 205 ids, and a flat extraction does not record
-   order) and the `mode = 1` packs whose ids are `base + index`.
+   policy** and the `mode = 1` packs whose ids are `base + index`.
+
+   **Cycle 1255 derived the policy: first-wins, enforced twice.** The map at
+   `registry+0x100` is 101 buckets of binary search trees, and the insert
+   `0x8234CDC0` refuses a key already present — `8234ce2c cmplw cr6,r11,r8` /
+   `8234ce30 bne cr6,0x8234cdd4` → `li r3,0x0; blr`, writing nothing — so no
+   two nodes can share a key and the lookup has no chain end to choose. The
+   caller `0x8234BEC8` also finds before creating (`8234bf20 bl 0x8233ebb0`,
+   `8234bf28 beq`). Exhaustiveness was measured **outside Ghidra**, by decoding
+   every `bl` in the flat image: two call sites, `0x82343320` and `0x8234AEB8`,
+   and **zero** occurrences of `0x8234CDC0` as aligned data, so no indirect
+   insert exists.
+
+   Three qualifications for the port: the id-biasing anti-collision mechanism
+   (`82340918 cmplw cr6,r5,r11` against `0x10000000`) is **off** in Mission 01
+   because the bias is zero; identity is first-wins but *content* may be
+   re-filled in place from a later pack when the incumbent reports state `-1`
+   (`8234bf78`); and a fully released id can be re-inserted after the erase
+   `0x8234CE70`.
+
+   **What stays open is applicability, not policy.** Cycle 1248 counted 847
+   duplicates over 205 ids across 1052 packs from a script that was not kept,
+   and no committed artefact carries an id. Recomputing it needs the per-entry
+   record layout derived from the NTXR reader `0x8234B300`: a "first word above
+   `0x10000000`" locator returns **five different offsets** over 346 count-1
+   wrappers and is finding sizes and flags as often as ids.
 
    Two corrections to the sentence that stood here:
 
