@@ -15,7 +15,11 @@ where do Mission 01's world coordinates actually come from?
 
 **The object layout.** An object's spatial state is a four-row transform at
 `+0x20`: X at `+0x20`, Y at `+0x30`, Z/forward at `+0x40`, **translation at
-`+0x50`**. A previous-frame copy sits at `+0x70..+0xA0`. Accessors take a
+`+0x50`**. A second four-row block sits at `+0x70..+0xA0` — cycle 1124 read it as
+a previous-frame copy, and cycle 1134 found it is also the **staging** area:
+`0x8229BE98` commits `+0x70..+0xA0` into `+0x20..+0x50` inside one object. **An
+authored position is written at `+0xA0`, not `+0x50`**, which is why ten cycles
+of scanning `+0x50` found only copies — the copies are the commit. Accessors take a
 pointer biased by `+0x10`, because `0x82270380` returns `object+0x10`
 (`0x82270434`). Established twice independently: the constructor writes the
 identity basis from `0x8204F7F0/F800/F810` into `+0x20/+0x30/+0x40` and zeroes

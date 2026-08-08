@@ -1,4 +1,11 @@
-# Every write to an object's translation row (effective offset +0x50), classified.
+# Every write to an object's LIVE translation row (effective offset +0x50).
+#
+# CYCLE 1134 SUPERSEDES THE READING OF THIS FILE. +0x50 is not the write port.
+# 0x8229BE98 reads +0x70/+0x80/+0x90/+0xA0 and writes +0x20/+0x30/+0x40/+0x50:
+# a commit, inside one object, of a transform staged at +0x70..+0xA0. So the
+# "copy" classification below is right about the instruction and wrong about
+# the meaning - an authored position never appears at +0x50 because it is
+# written at +0xA0 and then committed. Rebuild this table for +0xA0.
 # Produced by tools/ghidra_scripts/Ac6TransformWrite.java then Ac6Window.java,
 # read-only, against the non-canonical Xenon import. No oracle.
 #
