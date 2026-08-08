@@ -1,0 +1,19 @@
+{
+  "schema": "ac6.ntxr-decode.v1",
+  "source": "extracted NTXR wrappers, retail bytes never committed",
+  "wrappers": 692,
+  "decoded": 308,
+  "refused_mip_chain": 360,
+  "refused_not_block_format": 22,
+  "refused_cube_map": 2,
+  "refused_bad_header": 0,
+  "refused_payload_mismatch": 0,
+  "decoded_bc3": 300,
+  "decoded_bc1": 6,
+  "decoded_bc2": 2,
+  "distinct_shapes": 38,
+  "non_power_of_two_shapes": 26,
+  "mip_chains_are_not_addressed": true,
+  "endianness_control_is_visual": true,
+  "corpus_pixel_hash": "949b3bb0fb7dcdfb"
+}

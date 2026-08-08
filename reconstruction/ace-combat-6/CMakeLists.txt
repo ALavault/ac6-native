@@ -16,6 +16,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_scenario.cpp src/retail_mission_state.cpp src/retail_state_machine.cpp
   src/retail_mission_script.cpp src/retail_session.cpp
   src/retail_world_position.cpp
+  src/ntxr_texture.cpp
   src/retail_bin_readers.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
@@ -159,6 +160,17 @@ add_test(NAME ac6-retail-session
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-session.json
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-native-captures/jf-retail-session)
 set_tests_properties(ac6-retail-session PROPERTIES SKIP_RETURN_CODE 77)
+
+# The NTXR decoder, restricted to single-level block textures. The corpus is
+# the control: it must accept exactly the single-level block population and
+# refuse the rest with a named cause.
+add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)
+target_link_libraries(ac6-ntxr-texture-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-ntxr-texture
+  COMMAND ac6-ntxr-texture-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/ntxr-decode.json)
+set_tests_properties(ac6-ntxr-texture PROPERTIES SKIP_RETURN_CODE 77)
 
 # The world-position resolver of 0x822953F0, read in the Xenon corpus.
 add_executable(ac6-retail-world-position-tests tests/retail_world_position_tests.cpp)

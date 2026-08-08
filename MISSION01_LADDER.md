@@ -168,9 +168,14 @@ The names mislead, so plainly:
    granularity; a 32×16-block minimum fits the 256×256 tail and misses the
    512×512 one by a level, so no rule is asserted.
 
-   Mission 01's atlases are the single-level population, so a decoder restricted
-   to it is buildable now and would mis-address only the 4096×4096 terrain mip
-   tails — which is where JG will look.
+   **Written, cycle 1152**: `include/ac6/ntxr_texture.h` +
+   `src/ntxr_texture.cpp`, restricted to single-level block textures and
+   refusing everything else with a named cause. Over the 692-wrapper corpus:
+   **308 decoded** (300 BC3, 6 BC1, 2 BC2), 360 refused for a mip chain, 22 for
+   a non-block format, 2 for a cube map — **0 bad headers, 0 payload
+   mismatches**, and the four causes plus the decoded set account for all 692.
+   The measured surface rule is asserted inside the decoder, so a wrapper whose
+   payload disagrees is refused rather than mis-addressed.
 
    Then: port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, and close
    MATE batch→material→texture→NTXR in the runtime.
