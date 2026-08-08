@@ -178,7 +178,22 @@ The names mislead, so plainly:
 5. **Terrain.** Currently **fail-closed by policy**:
    `MISSION_VISUAL_BOOTSTRAP_REPORT.md` requires a proved Scene/CUT ownership
    edge before any static environment is drawn. Prove it; do not lift it.
-6. **Derived binding — the inputs are present (cycle 1156 corrects 1155).**
+6. **Derived binding — the data is Mission 01's own MDLP (cycle 1157).**
+   `idx_0009/001_MDLP.mdlp` is 29 MB indexing **94 `FHM ` bundles** — header
+   `+0x04` count, `+0x08` total size (equals the file size), `+0x0C` table at
+   `0x1000`, `+0x10` base at `0x2000`; 94/94 signatures, monotonic offsets. It
+   holds **292 NDXR, 381 MATE, 86 NTXR, 522 GIDX** for this mission, and it sits
+   in the same directory as the scenario container this product has parsed since
+   J2. Read it with `tools/ac6_mdlp_index.py`.
+
+   Cycle 1148 said the binding needed "the external definition table identified
+   and parsed first" and looked for it in the archives at large. It was in the
+   mission's own bundle the whole time. Still to derive: the FHM child layout,
+   the class-byte → entry-index join, and MATE material → texture id → GIDX.
+   The chunk counts above come from a regex sweep, which finds chunks without
+   proving containment or ordering.
+
+   **Also present (cycle 1156 corrects 1155).**
    179 distinct NDXR models and Mission 01's own 29 MB `001_MDLP.mdlp` (94
    entries) are extracted, in `idx_0009` beside the scenario container the
    session already reads. Cycle 1155 reported them absent from a `find` capped
