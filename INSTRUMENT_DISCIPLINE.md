@@ -246,11 +246,19 @@ Measured on this image:
 | direct `bl 0x…` | 36,472 |
 | indirect `bctrl` | 7,827 |
 | tail `bctr` | 652 |
-| functions | 8,247 |
-| **reachable from `main` by direct `bl` alone** | **800** |
+| functions | 8,247 (Ghidra) / **8,135** (`.pdata`, complete) |
+| reachable from `main` by direct `bl` alone | 800 — **measured on Ghidra's 91.5% listing, too low** |
+| **reachable by `bl` plus non-local `b`, 100% of `.text`** | **2,144 of 8,135, about 26%** (cycle 1218) |
 
-**Direct-call reachability covers about 10% of this program.** It is an object
-graph with a message pump, not a call graph.
+**Direct-call reachability covers about a quarter of this program**, not the 10%
+first published here. The first figure was itself taken with the instrument this
+file warns about two sections above — the listing that covers 91.5% of `.text` —
+and it is corrected rather than deleted because *the correction is the point*: a
+discipline file carrying a wrong margin teaches the wrong margin.
+
+The qualitative conclusion is unchanged. Three quarters of the program is still
+unreachable by direct call, and every finding cycle 1213 drew from this stands.
+It is an object graph with a message pump, not a call graph.
 
 Every entry above this one is about believing something that is false. This is
 the mirror: **declaring live code unreachable**, and it is available here at a hit
@@ -263,7 +271,7 @@ and the unit placement were all "unreachable" by `bl` and all run.
 evidence.** Do not write "no caller found" without saying which kind of caller was
 looked for.
 
-### The two techniques that do work
+### The four techniques that do work
 
 1. **Vtable resolution.** Dump `.rdata` as words; find the function's address
    inside a run of `.text` pointers; find code materialising a base inside that
@@ -274,7 +282,22 @@ looked for.
    the same `K`, and *the same distinctive `addis`/`subi` pair appears on both
    sides*, the identification is checkable and can fail. Cycle 1213 pinned three
    classes this way on three different literal offsets — `+0x29520`, `+0x29130`,
-   `+0x35C00` — any one of which could have mismatched.
+   `+0x35C00` — any one of which could have mismatched. Cycle 1218 sharpened it:
+   of **110** slot-`+0x2C` call sites in the image, **exactly one** loads its
+   receiver from `[rX+0x288]`. Zero would have meant the identification was
+   wrong; many would have meant it was useless.
+3. **MSVC RTTI recovery.** For each run of `.text` pointers, read the word at
+   `vtable − 4` as a `RTTICompleteObjectLocator`, follow `+0x0C` to the type
+   descriptor, and read the decorated name at `+8`. Cycle 1218 got **811 named
+   vtables** this way, independently matching the 811 figure this campaign has
+   carried since J2. It converts every "vtable-only" dead end into a class name
+   that can be checked against a constructor.
+4. **Tail calls through `bcctr`.** `CAce6TaskManager::Register` ends in `bcctr`,
+   **not** `bcctrl`, dispatching slot `+0x0C` of its argument. Every task
+   registration hook in this program — including the entry to the whole
+   mission-load chain — is reached only through that one tail call, and a scan
+   for `bcctrl` finds none of them. `.pdata` also yields a complete function list
+   (**8,168 entries, 8,135 unique starts**) where Ghidra's is short.
 
 ### And the trap that sits on top of it
 
