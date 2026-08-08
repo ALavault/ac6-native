@@ -49,3 +49,20 @@ audit_ac6_mission01_native_gate.py ... --require JF  ->  audit-valid JF=pass  (v
 ```
 
 No product code changed.
+
+## Addendum — two search forms tried, both empty
+
+Following the route named above, before it needs a fresh pass:
+
+- **The table-base computation.** An FHM reader taking offsets at `+0x14` would
+  form that base. No `addi rX,rX,0x14` exists anywhere in `0x8232xxxx`–
+  `0x8234xxxx`. Either the reader indexes without materialising the base, or it
+  is not in that region.
+- **The typed-resource entry point.** `0x82337C68`, the only caller of
+  `0x82343010`, passes a global registry at `0x82675B80` and nothing
+  FHM-specific. The dispatch is one level further in than this.
+
+Both are bounded negatives, recorded so the next pass starts after them rather
+than at them. The route is still the right one; it needs a reading of the
+registry at `0x82675B80` and of what `0x82343010` does with a type it has not
+seen, and that is a careful pass rather than another window.
