@@ -461,3 +461,47 @@ honestly; the reader chose the range.**
 Cycle 1223's case is the sharpest: it asked "does anything clear this byte",
 examined a function, answered "no, it sets", and the clearer was the next symbol
 in the file.
+
+## The seventeenth shape: the right search, run against a sibling
+
+Cycle 1244 could not find what starts the Set leader's FSM. The search was
+correct: `CFsm::SetInitialState` is `0x8219AAE8`, established in cycle 1218, and
+it has **five call sites in 100% of `.text`** counted with the force scan. All
+five install `CModeTaskGame` states. None belongs to the unit family.
+
+The answer was that `CFsm` is a **template instantiated twice**, and the two
+copies differ in exactly one instruction:
+
+```
+8219ab38  subi r3,r10,0x268     CFsm<CModeTaskGame>    owner at +0x268
+82295080  subi r3,r10,0xf0      CFsm<the unit class>   owner at +0xF0
+```
+
+Identical otherwise, instruction for instruction. The unit's pair is
+`0x82295030` / `0x822950A0`.
+
+**This is not a coverage failure.** The instrument was right, the denominator was
+100%, the count was exact, and the conclusion — *nothing in the unit family calls
+this* — was **true**. It was just not the question.
+
+### Why it is worth its own entry
+
+Every other shape here is about an instrument that under-reports. This one
+under-reports nothing: it answers precisely what was asked, and what was asked
+was one instantiation of a template whose other instantiation held the answer.
+
+### The tell, and it is cheap
+
+**When a C++ function you are chasing is generic — a container, a state machine,
+a handle, anything with an owner offset baked in — assume there are siblings and
+go find them before believing a call-site count.**
+
+The mechanical version: take the function's body, pick an instruction that
+encodes the *instance* rather than the algorithm (here the `subi` displacement),
+and search for the same body with a different value. In this image that was one
+force scan for `subi rD,rA,0xf0`, which returned 18 hits, 11 of them real, and
+the sibling among them.
+
+A count of call sites is a statement about **one symbol**. Templates make one
+algorithm into many symbols, and nothing in a disassembly marks them as related
+except that their bodies match.
