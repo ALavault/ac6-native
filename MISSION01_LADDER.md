@@ -230,6 +230,16 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    instruction by instruction in the header. It is the join, not the loader:
    nothing loads a model yet.
 
+   `ModelDirectory` (cycle 1174) ports the container and both accessors and
+   closes the join — 94 entries all beginning `FHM `, 311 model indices from the
+   scenario, 0 refused. It stops at the entry boundary, because the **FHM layout
+   is measured, not derived** (cycle 1175): no instruction builds the `FHM `
+   magic, the reader has not been found, and `tools/ac6_fhm.py`'s field offsets
+   rest on 94 of 94 bundles parsing cleanly. Importing a whole format on
+   measurement is how a port stops being a derivation, so the walker stays out
+   until its reader is followed out of the typed-resource dispatch at
+   `0x82343010` / `0x8234CB58`.
+
    **The gap is closed (cycle 1171), and cycle 1148 was wrong.** Byte `+0x61` is
    in the scenario container after all — on the Obj entry's **child[0]** data
    block, one node below where cycle 1148 measured. Over the 434 records it takes
