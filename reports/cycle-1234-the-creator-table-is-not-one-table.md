@@ -66,6 +66,12 @@ sub-lists.
 821a7a90  rlwinm r10,r4,0x2,0x0,0x1d
 821a7a94  addi   r11,r11,0x1b8c     ; 0x82691B8C — THIS CLASS'S OWN LIST
 821a7a98  lwzx   r11,r10,r11
+821a7a9c  lis    r10,-0x7d6c        ; CORRECTED (cycle 1240): this line was
+                                    ; omitted from the listing as first
+                                    ; published. Without it a reader
+                                    ; reconstructs r10 = k*4 feeding the load
+                                    ; below, which is nonsense. The manager is
+                                    ; the global *0x8293BA10.
 821a7aa0  lwz    r10,-0x45f0(r10)   ; the CTaskModeManager
 821a7aa4  stw    r11,0x10(r10)
 ```
