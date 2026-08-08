@@ -91,6 +91,22 @@ The names mislead, so plainly:
    spawn**, which cycle 1145 showed is neither in the player's behaviour program
    nor in `PLAD` — all three callers of `0x82249BC8` read only word 3, the route
    cursor, and none reads the record's floats.
+
+   The open lead is that cursor. PLAD word 3 is stored to `+0xF0` of the unit at
+   `manager+0x404` — the player — so the player's start is plausibly the first
+   point of the route it selects. Two warnings for whoever picks this up:
+
+   - `grep "0xf0(r"` does **not** find the readers. Most hits are vtable
+     dispatch (`lwz r11,0x0(r3)` then `lwz r11,0xf0(r11)` then `bctrl`), where
+     `+0xF0` is a method slot and not a field. Separating field reads from
+     virtual calls needs an instrument that knows which register holds the
+     object, not a text match. Cycle 1145 made this mistake and caught it.
+   - `+0x180`–`+0x194` are **floats on a different class** (`0x8229EAC0` clamps
+     four of them between limits). They are not the unit class's `+0x184`
+     pointer and `+0x188` parent. Both scans — literal displacement and
+     computed `addi rX,rY,0x188` — agree that nothing in the image originates a
+     non-null parent; the only non-zero write is the field-by-field clone at
+     `0x8226D0E0`, which copies one that already existed.
 4. **Textures.** Port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, then close
    MATE batch→material→texture→NTXR in the runtime.
 5. **Terrain.** Currently **fail-closed by policy**:
