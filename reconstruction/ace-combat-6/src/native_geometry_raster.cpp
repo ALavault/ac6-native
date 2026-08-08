@@ -69,32 +69,43 @@ bool NativeGeometryDatabase::load_verified_binary(
           std::memcpy(&value, &bits, sizeof(value));
           return std::isfinite(value);
         };
-        std::uint32_t declared_size = 0, header_size = 0, polygon_size = 0;
-        std::uint32_t vertex_size = 0, additional_size = 0;
-        std::uint16_t object_count = 0;
-        if (!be32(4, declared_size) || declared_size != raw.size() || !be16(0x0a, object_count) ||
-            object_count == 0 || !be32(0x10, header_size) ||
-            !be32(0x14, polygon_size) || !be32(0x18, vertex_size) ||
-            !be32(0x1c, additional_size)) return false;
-        const std::size_t object_table = 0x30u;
+        // The header was parsed inline here, correctly but without a single
+        // retail address behind it - cycle 1189's complaint about this file.
+        // NdxrContainer is the same read with the derivation attached
+        // (0x8234CA28 identity, 0x82350F08 sections, 0x823556E0 records) and
+        // under the v4 contract, so the duplicate is retired rather than
+        // annotated. It also validates before serving, which this did not.
+        ac6::retail::NdxrRefusal refusal = ac6::retail::NdxrRefusal::kNone;
+        const auto container =
+            ac6::retail::NdxrContainer::Open(raw.data(), raw.size(), &refusal);
+        if (!container) return false;
+
+        const std::uint16_t object_count = container->record_count();
+        const ac6::retail::NdxrSections& sections = container->sections();
+        // 0x82362190 binds section 1 as the index block and section 2 as the
+        // vertex block; these are those two, expressed as this function's
+        // existing locals.
+        const std::size_t polygon_base = sections.first;
+        const std::size_t vertex_base = sections.second;
+        const std::uint32_t polygon_size =
+            static_cast<std::uint32_t>(sections.second - sections.first);
+        const std::uint32_t vertex_size =
+            static_cast<std::uint32_t>(sections.end - sections.second);
+
+        const std::size_t object_table = ac6::retail::NdxrContainer::kRecordArrayBase;
         const std::size_t polygon_descriptors = object_table +
             static_cast<std::size_t>(object_count) * 0x30u;
-        if (polygon_descriptors > raw.size() || header_size > raw.size() - 0x30u) return false;
+        if (polygon_descriptors > raw.size()) return false;
         std::uint32_t polygon_count = 0;
-        for (std::uint32_t object = 0; object < object_count; ++object) {
-          std::uint16_t count = 0;
-          if (!be16(object_table + static_cast<std::size_t>(object) * 0x30u + 0x2au, count) ||
-              polygon_count > 100000u - count) return false;
-          polygon_count += count;
+        for (std::uint16_t object = 0; object < object_count; ++object) {
+          const auto record = container->Record(object);
+          if (!record.has_value() ||
+              polygon_count > 100000u - record->descriptor_count) return false;
+          polygon_count += record->descriptor_count;
         }
         const std::size_t polygon_descriptor_end = polygon_descriptors +
             static_cast<std::size_t>(polygon_count) * 0x30u;
-        const std::size_t polygon_base = 0x30u + static_cast<std::size_t>(header_size);
-        if (polygon_descriptor_end > polygon_base || polygon_base > raw.size() ||
-            polygon_size > raw.size() - polygon_base) return false;
-        const std::size_t vertex_base = polygon_base + polygon_size;
-        if (vertex_base > raw.size() || vertex_size > raw.size() - vertex_base ||
-            additional_size > raw.size() - vertex_base - vertex_size) return false;
+        if (polygon_descriptor_end > polygon_base) return false;
 
         struct Polygon { std::uint32_t index_offset{}, vertex_offset{}; std::uint16_t vertex_count{}, index_count{}, format{}; };
         std::vector<Polygon> polygons;
