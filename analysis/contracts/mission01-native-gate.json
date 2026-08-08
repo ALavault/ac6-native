@@ -1,5 +1,7 @@
 {
   "schema": "ac6.mission01-native-gate.v1",
+  "superseded_by": "analysis/contracts/mission01-native-gate-v2.json",
+  "superseded_note": "Historical. Superseded by the v2 contract, which the ladder's gate list runs; this file is not run by any gate. Seven of its eleven cited artefacts no longer exist anywhere in the tree - headless-p1-camera, headless-p3-runtime, headless-p4-retail-radio, headless-v2 and combat-v1.json - so it cannot pass and is not expected to. Found by tools/audit_ac6_contract_artifacts.py; kept rather than deleted because it is the record of what J0 and J1 were audited against at the time.",
   "provenance": {
     "repo_commit": "468c5123d9eb910ea83943193b800e402ed20093",
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
