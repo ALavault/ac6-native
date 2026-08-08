@@ -364,3 +364,45 @@ read past it until a `blr`, an unconditional forward `b`, or a backward branch i
 seen.** Cycle 1214 read its block from a second dump that began 0x1A0 bytes
 before it and stopped 0x8C bytes short of the answer, which is exactly the window
 where this fails silently.
+
+## The fifteenth shape: the displacement collision, and the four lines that settle it
+
+A scan for a field's displacement returns a clean, complete, plausible candidate
+list — and the candidates are a **different structure with a field at the same
+offset**. Three times this session:
+
+| cycle | displacement | the candidates were |
+|---|---|---|
+| 1220 | `0x1AD8` | a field on an object allocated two instructions earlier, not the creator table |
+| 1227 → 1228 | `0x1084` | a field-init block on some object, not the renderer's device pointer |
+| 1224 | `0x10` | genuinely the right structure — the shape does not always fire |
+
+The failure is not the scan. The scan did what it was asked. The failure is
+treating *"a store exists at this offset"* as *"a store exists to this field"*,
+which are different claims and only the second is ever what a cycle wants.
+
+### The tell, and it costs four lines
+
+**Read the neighbours.** A field belongs to the structure its neighbours belong
+to.
+
+- `0x1AD8` at `821c5ea0` sits two instructions after `bl 0x82222e98`, an
+  allocation, and stores its result. Whatever that object is, it was born on the
+  previous line.
+- `0x1084` at `822c52e4` sits in a run of `stfs f0,0x1058` / `stfs f13,0x105c` /
+  `stfs f13,0x1060` / `stfs f0,0x1068` / `stfs f0,0x1078`. **A device pointer does
+  not live in a block of single-precision floats.**
+
+Neither needed dataflow, register tracking, or a second tool. Both needed the
+four lines above and below the hit, which the scan output does not print and
+which I did not go and look at until the claim had already been written down
+once.
+
+### Why this deserves its own entry
+
+The rule that would have caught it — *walk up to the conditional, walk down to
+the back-edge* — is about **control flow**. This one is about **data**, and the
+two fail independently. Cycle 1214 had the control flow wrong with the data
+right; cycle 1227 had the data wrong with the control flow irrelevant.
+
+**Print context around every hit before believing what the hit is a hit on.**
