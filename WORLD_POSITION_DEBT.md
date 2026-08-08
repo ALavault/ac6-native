@@ -6,7 +6,33 @@ SHA-256 `acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde`) and
 the non-canonical VMX128 import `ghidra-projects-xenon/ac6-xenon`. No oracle has
 been used. Cycles 1122 and 1124 to 1131.
 
-## Answered (cycle 1142)
+## Closed (cycle 1145) — and the answer below is not the units' answer
+
+The frame `0x8229AF80` applies is `child_world = parent.translation +
+parent.basis * offset`, taken from the parent's staging rows at
+`+0x70/+0x80/+0x90` and translation at `+0xA0` (`0x8229AFC0` forms `parent+0x60`;
+`0x8229B004`–`0x8229B04C` dot; `0x8229B060`–`0x8229B080` add).
+
+But `0x8229AF80` returns 0 when `[entity+0x188]` is null (`0x8229AF9C` ->
+`0x8229B100`), the constructor `0x8229A470` zeroes `+0x184` and `+0x188`
+(`0x8229A5AC`/`0x8229A5B0`), and nothing on the load path assigns a parent. So
+that route places nothing for a unit, and the Obj triple is not a unit's world
+position. The measurement agrees: **169 of the 230 units have `(0,0,0)` as their
+first Obj triple.**
+
+The units' load-time position is the first tag-2 order of their `Set -> Act ->
+Order` program, which `0x82295A88` sends to `0x822953F0` through its default arm
+(every `+0x45` except 5, 8 and 9). `initial_world_position` ports that: **95 of
+230 placed, 135 with no load-time position at all**, and 94 of the 95 inside the
+union of the four sub-mission rectangles.
+
+`PLAD` is **not** the player's spawn. All three callers of the record getter
+`0x82249BC8` — `0x82097FC8`, `0x8219C840`, `0x821A0328` — read only `+0x0C` and
+store it to `+0xF0`, the route cursor. Nothing reads the three floats.
+
+Full account: `reports/cycle-1145-the-triple-was-never-a-position.md`.
+
+## Answered (cycle 1142) — superseded in part by the section above
 
 The initial placement is found, and it is five links from the payload to the
 live transform:

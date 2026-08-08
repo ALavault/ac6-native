@@ -20,16 +20,26 @@ gave it, the player larger and white. Markers are a diagnostic lane — no
 material, no texture, no topology — and no capture here may be offered as visual
 parity.
 
-The count is the point. **Ten of 230 units land on screen**, because their
-positions are still the unframed `Obj` offsets: cycle 1142 found the placement
-chain but not the frame it is relative to, so most units sit at or near the
-origin while the camera follows the player. The picture shows the defect the
-reports could only describe.
+The count is the point, and cycle 1145 moved it **down**. It was ten of 230,
+which looked like a framing defect; the ten were units drawn at the origin
+because the origin was what `position_placeholder` returned. Cycle 1145 showed
+the `Obj` triple is not a unit's world position at all — `0x8229AF80` places
+nothing without a parent and the load path assigns none, and 169 of the 230
+triples are `(0,0,0)` — and replaced it with the first tag-2 order of the unit's
+program, resolved by `0x822953F0`.
+
+So **95 of the 230 units now carry a real load-time position** and 135 carry
+none; a unit with none is not drawn, because the origin is not a fallback but a
+different claim. Of the 95, four are in frame: the rest are thousands of world
+units away, and the camera is still the rasteriser's hardcoded fallback sitting
+at the origin. The picture now shows a camera problem instead of a placement
+problem, which is progress in the only direction that can be checked.
 
 | | live (tick 900) | debrief (tick 1800) |
 |---|---:|---:|
-| world markers on screen | 10 | 11 |
+| world markers on screen | 4 | 4 |
 | active units | 230 | 230 |
+| units with a load-time position | 95 | 95 |
 | player entity | 4097 | 4097 |
 | objectives | 4 | 4 |
 | completed | 2 | 4 |

@@ -234,6 +234,13 @@ struct RetailWorld {
   SubMissionSequencer sequencer;
   RetailUnitBuild build;
   std::size_t published{};
+  // The units initial_world_position could answer for, and the ones it could
+  // not. An unplaced unit is in the world - the container built it - but the
+  // container gives it no load-time coordinate, so it has none here either. It
+  // is not drawn, because a unit drawn at the origin is a claim the payload
+  // does not support.
+  std::vector<EntityId> placed;
+  std::vector<EntityId> unplaced;
 };
 
 // Populates a world from a parsed scenario: one combat unit per record with its

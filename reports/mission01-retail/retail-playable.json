@@ -7,7 +7,9 @@
   "objectives": 4,
   "objectives_completed": 0,
   "counter_capacity": 339,
+  "units_placed": 95,
+  "units_without_load_time_position": 135,
   "ticks": 1800,
   "deterministic_replay": true,
-  "semantic_hash": "4efb07a0a1d370a6"
+  "semantic_hash": "6427d855ec021e08"
 }

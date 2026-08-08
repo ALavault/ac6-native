@@ -1,5 +1,7 @@
 #include "ac6/retail_scenario.h"
 
+#include "ac6/retail_world_position.h"
+
 #include <bit>
 #include <cstdio>
 #include <cstring>
@@ -54,6 +56,23 @@ ScenarioVector position_placeholder(const ScenarioUnitRecord& record) {
   if (record.obj_scalars.empty()) return {};
   const ScenarioObjScalars& scalars = record.obj_scalars.front();
   return {scalars.first, scalars.second, scalars.third};
+}
+
+std::optional<ScenarioVector> initial_world_position(const MissionScenario& scenario,
+                                                     const ScenarioUnitRecord& record) {
+  // The order the unit's program runs first. 0x82295A88 reaches 0x822953F0
+  // through its default arm, which is every +0x45 except 5, 8 and 9.
+  for (const ScenarioPositionRecord& position : scenario.positions()) {
+    if (position.unit_index != record.index) continue;
+    if (position.kind == 5 || position.kind == 8 || position.kind == 9) continue;
+    // No anchor and no queried height are supplied, so the resolver refuses
+    // mode 1 and the height flag. That refusal is the coverage boundary, and
+    // it is deliberate: this port has no unit manager to answer 0x82270380
+    // with at load time, and no object at global+0x36084 to answer the height
+    // query with.
+    return resolve_world_position(position);
+  }
+  return std::nullopt;
 }
 
 std::optional<ScenarioPayload> ScenarioPayload::open(std::vector<std::uint8_t> bytes) {

@@ -275,7 +275,7 @@ std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
 
   for (const RetailUnitObject& object : world.build.objects) {
     const ScenarioUnitRecord& record = scenario.units()[object.record_index];
-    const ScenarioVector offset = position_placeholder(record);
+    const std::optional<ScenarioVector> spawn = initial_world_position(scenario, record);
     const std::uint32_t faction = object.faction_byte + 1u;
 
     UnitRecord unit;
@@ -288,12 +288,14 @@ std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
     CombatUnitState combat;
     combat.entity = object.entity;
     combat.faction = faction;
-    combat.position = {offset.x, offset.y, offset.z};
+    combat.position = spawn.has_value() ? CombatVector{spawn->x, spawn->y, spawn->z}
+                                        : CombatVector{};
     combat.health = 1.0f;
     combat.max_health = 1.0f;
     combat.collision_radius = 1.0f;
     combat.active = true;
     if (!world.combat.add_unit(combat)) return std::nullopt;
+    (spawn.has_value() ? world.placed : world.unplaced).push_back(object.entity);
     world.published += 1;
   }
 

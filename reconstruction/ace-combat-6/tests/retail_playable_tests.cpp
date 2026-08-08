@@ -108,6 +108,14 @@ int main(int argc, char** argv) {
   REQUIRE(world->objectives.find_by_mission(kMissionId).size() == 4);
   REQUIRE(world->sequencer.counter_capacity() == 339);
 
+  // The placement partition. 95 units carry a tag-2 order 0x822953F0 resolves
+  // without an anchor; the other 135 have no load-time position in the
+  // container at all, and the world says so rather than putting them at the
+  // origin. Every unit is on exactly one side.
+  REQUIRE(world->placed.size() == 95);
+  REQUIRE(world->unplaced.size() == 135);
+  REQUIRE(world->placed.size() + world->unplaced.size() == world->published);
+
   // Deterministic: two independent builds and runs must agree exactly.
   std::optional<ac6::retail::RetailWorld> second = build(raw);
   REQUIRE(second.has_value());
@@ -155,6 +163,8 @@ int main(int argc, char** argv) {
            << ",\n"
            << "  \"objectives_completed\": 0,\n"
            << "  \"counter_capacity\": " << world->sequencer.counter_capacity() << ",\n"
+           << "  \"units_placed\": " << world->placed.size() << ",\n"
+           << "  \"units_without_load_time_position\": " << world->unplaced.size() << ",\n"
            << "  \"ticks\": " << kTicks << ",\n"
            << "  \"deterministic_replay\": true,\n"
            << "  \"semantic_hash\": \"" << std::hex << first_hash << std::dec << "\"\n"

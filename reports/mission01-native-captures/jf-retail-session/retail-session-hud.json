@@ -5,9 +5,9 @@
   "source": "retail scenario container only, no manifest",
   "width": 640,
   "height": 360,
-  "world_markers_live": 10,
-  "world_markers_debrief": 11,
-  "world_marker_writes": 130,
+  "world_markers_live": 4,
+  "world_markers_debrief": 4,
+  "world_marker_writes": 36,
   "world_markers_are_diagnostic": true,
   "live": {
     "tick": 900,
@@ -25,7 +25,7 @@
     "pixel_writes": 1276,
     "unique_pixels": 1276,
     "color_coverage": 230400,
-    "color_hash": 12870057613941610360
+    "color_hash": 2799845136624218196
   },
   "debrief": {
     "tick": 1800,
@@ -43,6 +43,6 @@
     "pixel_writes": 1521,
     "unique_pixels": 1521,
     "color_coverage": 230400,
-    "color_hash": 983116898018485126
+    "color_hash": 15326256782672071970
   }
 }

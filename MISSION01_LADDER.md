@@ -74,13 +74,23 @@ The names mislead, so plainly:
 
 ## JV — the visible world
 
-1. **Fuse the halves.** `RetailSession` drives the rasteriser and the present
-   path instead of writing a HUD-only PPM.
-2. **The transform frame.** Cycle 1142 found the placement chain for the 434
-   `Obj` entities; the frame it is relative to (`entity+0x188`) and the placement
-   of the 230 units are open. Without this every unit renders at the origin.
-3. **A flight camera.** The only qualified camera is the cinematic TCAM, which
-   cycle 732 disqualified. The rasteriser's fallback is a hardcoded 60° / far 4096.
+1. ~~**Fuse the halves.**~~ **Done, cycle 1144.** `RetailSession` draws the world
+   through the rasteriser's own projection. Diagnostic markers only — no
+   geometry, and no capture containing one may be offered as visual parity.
+2. ~~**The transform frame.**~~ **Done, cycle 1145**, and it settled the opposite
+   question. The frame is `parent.translation + parent.basis * offset`, but
+   `0x8229AF80` places nothing without a parent and the load path assigns none,
+   so the Obj triple was never the units' position — 169 of 230 are `(0,0,0)`.
+   Their load-time position is the first tag-2 order, resolved by `0x822953F0`:
+   **95 of 230 placed, 135 with no load-time position in the container.**
+3. **A flight camera — now the blocker.** With real coordinates the units are
+   thousands of world units away and the fallback camera sits at the origin, so
+   the capture shows 4 markers, not 95. The only qualified camera is the
+   cinematic TCAM, which cycle 732 disqualified; the rasteriser's fallback is a
+   hardcoded 60° / far 4096. This is blocked in turn on the **player's own
+   spawn**, which cycle 1145 showed is neither in the player's behaviour program
+   nor in `PLAD` — all three callers of `0x82249BC8` read only word 3, the route
+   cursor, and none reads the record's floats.
 4. **Textures.** Port BC3 + Xenos `Tiled2D` + 8-in-16 into C++, then close
    MATE batch→material→texture→NTXR in the runtime.
 5. **Terrain.** Currently **fail-closed by policy**:

@@ -1,5 +1,7 @@
 #include "ac6/retail_session.h"
 
+#include <algorithm>
+
 namespace ac6::retail {
 namespace {
 
@@ -122,9 +124,13 @@ std::size_t RetailSession::render_world_markers(NativeRenderTarget& target,
       0xFFB6F5A0u,  // faction 3
       0xFFD9D9D9u,  // any further faction the table declares
   };
+  // A unit the container gives no load-time position is not drawn at all. The
+  // origin is not a fallback, it is a different claim.
+  const std::vector<EntityId>& placed = world_->placed;
   std::size_t drawn = 0;
   for (const CombatUnitState& unit : world_->combat.snapshot_units()) {
     if (!unit.active) continue;
+    if (std::find(placed.begin(), placed.end(), unit.entity) == placed.end()) continue;
     const bool is_player = unit.entity == player_entity_;
     const std::uint32_t color = is_player
         ? 0xFFFFFFFFu

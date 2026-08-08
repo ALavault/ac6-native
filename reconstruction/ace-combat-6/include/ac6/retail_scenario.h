@@ -232,6 +232,47 @@ std::string objectives_manifest_rows(const MissionScenario& scenario,
 // because that is what it is: retail places nothing on the load path.
 ScenarioVector position_placeholder(const ScenarioUnitRecord& record);
 
+// The unit's load-time world position, or nothing when the container does not
+// give it one. Cycle 1145 replaced position_placeholder on the session path
+// after measuring what that function actually returns: 169 of Mission 01's 230
+// units have (0,0,0) as their first Obj triple, so for three quarters of the
+// world it was not an offset with the wrong frame, it was not a position at
+// all.
+//
+// The two candidate sources, and why only one of them is a world position:
+//
+//   The Obj triple reaches the transform through entity+0x184, and the only
+//   consumer that reads all three together is 0x8229AF80. That function opens
+//   by loading [entity+0x188] and returns 0 when it is null (0x8229AF9C ->
+//   0x8229B100), so it places nothing unless the entity has a parent. When it
+//   does, 0x8229AFC0 forms parent+0x60 and 0x8229B004-0x8229B04C dot the triple
+//   against the parent's staging basis rows at +0x70/+0x80/+0x90, then
+//   0x8229B060-0x8229B080 add the parent's staging translation at
+//   +0xA0/+0xA4/+0xA8 - child_world = parent.translation + parent.basis * offset.
+//   The constructor at 0x8229A5AC-0x8229A5B0 zeroes both +0x184 and +0x188, so
+//   a unit acquires a parent only if something assigns one, and nothing in the
+//   load path does. An unparented entity is therefore never placed by this
+//   route, and reading its triple as a world coordinate is reading a frame that
+//   was never applied.
+//
+//   The tag-2 order in the unit's Set -> Act -> Order program is a world
+//   position. 0x82295A88 switches on the record's +0x45 at 0x82295B6C-0x82295B74
+//   over ten arms; the arms for 5, 8 and 9 do their own arithmetic and every
+//   other value falls to the default arm, which calls 0x822953F0 at 0x82295BF0
+//   with the record as r5. That is the resolver this product already ports.
+//
+// Which leaves this function honest about its coverage rather than complete:
+// it answers for the units whose first tag-2 order 0x822953F0 can resolve
+// without an anchor, and refuses for the rest. On Mission 01 that is 95 of 230
+// - and 94 of those 95 land inside the union of the rectangles the four
+// sub-missions install, which is a cross-check and not a restatement, because
+// those rectangles are parsed from the sub-mission setup steps and these
+// coordinates from the behaviour programs. The remaining 135 have no load-time
+// position in the container and the session records them as unplaced; putting
+// them at the origin would be inventing one.
+std::optional<ScenarioVector> initial_world_position(const MissionScenario& scenario,
+                                                     const ScenarioUnitRecord& record);
+
 // The native entity base. Retail element index 0 becomes entity 4097 because
 // the native registry rejects a unit whose id equals its owner id.
 inline constexpr std::uint32_t kEntityBase = 4097;

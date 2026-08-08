@@ -35,9 +35,9 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-playable.json",
-            "sha256": "6528ad5443fa2f68dcdc2519fefc6b571e07c7b3b3f94690225d1a8058960330",
-            "size": 346,
-            "claim": "the world is built from the retail container alone, 230 units, 4 objectives, 1800 deterministic ticks"
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
           },
           {
             "kind": "derivation",
@@ -68,15 +68,15 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-playable.json",
-            "sha256": "6528ad5443fa2f68dcdc2519fefc6b571e07c7b3b3f94690225d1a8058960330",
-            "size": 346,
-            "claim": "the world is built from the retail container alone, 230 units, 4 objectives, 1800 deterministic ticks"
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
-            "size": 12383,
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
             "claim": "src/retail_mission_state.cpp implements the classification, the insertion and the per-faction census"
           }
         ]
@@ -100,15 +100,15 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-playable.json",
-            "sha256": "6528ad5443fa2f68dcdc2519fefc6b571e07c7b3b3f94690225d1a8058960330",
-            "size": 346,
-            "claim": "the world is built from the retail container alone, 230 units, 4 objectives, 1800 deterministic ticks"
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
-            "size": 12383,
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
             "claim": "src/retail_mission_state.cpp implements the sequencer with its bound, its cursor and its elapsed test"
           }
         ]
@@ -132,15 +132,15 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-playable.json",
-            "sha256": "6528ad5443fa2f68dcdc2519fefc6b571e07c7b3b3f94690225d1a8058960330",
-            "size": 346,
-            "claim": "the world is built from the retail container alone, 230 units, 4 objectives, 1800 deterministic ticks"
+            "sha256": "21f8fce700d6590656ee0042762d348c28a9733f65f98953a829fc0ec2c60192",
+            "size": 411,
+            "claim": "the world is built from the retail container alone, 230 units of which 95 carry a load-time position, 4 objectives, 1800 deterministic ticks"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
-            "size": 12383,
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
             "claim": "src/retail_mission_state.cpp implements the four operations in retail's compute-store-then-stamp order"
           }
         ]
@@ -203,8 +203,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "18fcc42971e8ddf57e6f7fa508bba7e679b363c640a215a10a93947c7aabf3e0",
-            "size": 12383,
+            "sha256": "599100c1c5c8f76d613844e8dd2badf8a753d0b9ffc09c14f10f2124099b47b7",
+            "size": 12580,
             "claim": "normalise_area, area_contains and select_mission_area implement the three functions and cite them"
           }
         ]
@@ -235,23 +235,23 @@
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/hud-debrief.png",
-            "sha256": "51bb2747c5759095c77e6d823cce96439608f538aaa65653904a2eeace427dd6",
-            "size": 959,
-            "claim": "the HUD over the retail-built world once the script has run out: outcome panel shown, 4 of 4 sub-missions complete, 230 units still active"
+            "sha256": "7664a838e351970ebb46743bc39a93321203d1794a9239f7f7cf6d6dbcccd412",
+            "size": 1018,
+            "claim": "the HUD over the retail-built world once the script has run out: outcome panel shown, 4 of 4 sub-missions complete, 230 units still active, 95 of them carrying a load-time position"
           },
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/retail-session-hud.json",
-            "sha256": "6779d64be39c9a98131d1462f862816fe9557f5cd64b5d7f94081cfb0139cb99",
-            "size": 1229,
+            "sha256": "a07a10752570d00c158e2d0bda7de86e26f29e221af87f3574c930d38469d09d",
+            "size": 1227,
             "claim": "the numbers the test asserted before either image was written - two captures at tick 900 and tick 1800, differing colour hashes, 1276 and 1521 HUD pixel writes, no fixture"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "9aa7f3ce8a217350b7dd73d5ade1e0167256960b13ada5b9c5d900c4a7cb7c08",
-            "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from 0x820A7420's category 2, and installs the container's own combat states instead of the developer spawn layout",
-            "size": 6764
+            "sha256": "3613fe6252ebd6fa642f6666fe1b07f3bf1499f42c7e9d2b9b6037d61edc4b28",
+            "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from 0x820A7420's category 2, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
+            "size": 7065
           }
         ]
       },
