@@ -33,6 +33,7 @@ the repository's*.
 | your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
 | you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
+| you scanned for a function address **as data** and found exactly one hit | *the `.pdata` row read as a dispatch slot* — the exception table spans 0x82079E00..0x82089FB0 and its `BeginAddress` fields look identical to a table slot; exclude that range, then say which side of it the address falls on |
 | two functions sit **next to each other** and seem related | *the refuted link* — image order is not evidence; the checkable forms are a shared member offset, an exclusive call site, a common caller, and none is visible from inside either function |
 | your offset **worked on every entry** of the file you derived it from | *an instrument calibrated on one specimen* — regular structures make wrong offsets self-consistent; find the container's own declared count or length and check it across files |
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
@@ -748,3 +749,38 @@ checkable. Name the checkable form before looking for it, then look.
 The corollary is about where to look: cycle 1263 could not reach the answer
 because it never left the two functions it was comparing. **A relation between
 two things is often not visible from either of them.**
+
+
+## The twenty-fourth shape: the `.pdata` row read as a dispatch slot
+
+Cycle 1265 concluded that two functions are "reached through tables rather than
+by call", because each appeared exactly once as an aligned 32-bit word elsewhere
+in the image. Both occurrences were the function's own **`.pdata` row**.
+
+The exception table spans `0x82079E00`…`0x82089FB0` — 8,246 entries of eight
+bytes, an address followed by a packed prolog/length word. Dumped without
+context it reads exactly like a dispatch table:
+
+```
+8233e580 40001903 8233e5e8 40002e03 8233e6b0 40001903 8233e718 40001905
+```
+
+and a scan for `0x8233E6B0` reports one hit, truthfully and uselessly. **A
+function with an exception record appears once as data by construction.**
+
+The same scan has carried two load-bearing negatives this session, and one of
+them survives only because its subject is not in the table: `0x8234CDC0`, the
+registry insert, has **no** `.pdata` row, so its zero data hits really did mean
+no vtable and no dispatch table reaches it. The scan did not know the
+difference. Neither did its author at the time.
+
+### The rule
+
+**Exclude `0x82079E00`…`0x82089FB0` before reporting a function address as
+data, and state which side of that line the address falls on.** One hit outside
+it is a reference; one hit inside it is the function existing.
+
+The general form is the eighteenth shape again — a correct measurement, over-read
+— but the specific trap is worth its own entry because the output is
+*indistinguishable*: the scan reports "1" in both cases, and the number is right
+in both cases.
