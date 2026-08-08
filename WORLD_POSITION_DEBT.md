@@ -127,9 +127,21 @@ group is `{class 1: 9, class 2: 113}` and the unrouted `{0: 1, 1: 31, 2: 75,
 4: 1}`. Seventy-five units of the *same* class as routed ones have no order and
 no position of any kind. There is no split, so the reading is refuted.
 
-What is left is the uncomfortable one: **the position is written by something
-still outside the enumerated list** — a variable-size copy, or a hand-written
-loop. Four idioms are closed and something is still missing.
+Cycle 1140 closed the fifth idiom too — memcpy filtered by *destination* rather
+than size, which catches a variable-size copy: 7 sites in the binary, none in the
+mission cluster.
+
+What is left is not a sixth idiom. **Every sweep in this series reads only
+decoded instructions, and 13.77% of `.text` is not decoded** — 473,484 bytes in
+6,144 gaps, measured in cycle 1122 and never connected to this search until now.
+Cycle 1122 hit exactly this trap on `0x822953F0`: its jump table and the bodies
+it points at, 2,416 bytes, sat as data, and disassembling them produced the
+caller a sweep of 755,392 instructions had failed to find. The same trap, at
+473,484 bytes.
+
+So the next handle is not another scan: it is **shrinking the gaps** — disassemble
+unresolved jump-table targets, then re-run the five sweeps over the completed
+corpus. Mechanical, quantified, and it adds no hypothesis.
 
 ## What remains
 
