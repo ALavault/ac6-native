@@ -19,6 +19,12 @@ and JF exists because manifests were eliminated.
 
 ## Why both are wrong, and the argument was already established
 
+**CORRECTED (cycle 1248): the premise below is wrong.** Retail *does* walk the
+FHM layout — through `0x82234C18`, a directory reader that reads a version byte,
+an endian byte and a table offset and **never compares a magic**. That is why the
+byte scan returns zero. The decision this report reaches still stands, on the
+remaining grounds in the next section, but it does not rest on this paragraph.
+
 **Retail does not parse an FHM container.** Cycle 1192: the bytes `46 48 4D`
 occur **zero times anywhere in the loaded image**, on a byte scan controlled by
 the same scanner finding `NDXR` at `0x8200A24C`, `GIDX` at `0x82067EC8` and
