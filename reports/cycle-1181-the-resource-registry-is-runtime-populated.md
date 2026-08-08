@@ -59,3 +59,30 @@ all four gates                                      ->  pass
 ```
 
 No product code changed.
+
+## Addendum — the registry is an array of 12-byte entries
+
+`0x82342D70(registry, index)`, read straight after the above:
+
+```
+82342d84  addi r3,r30,0x80    ; a sub-object at registry+0x80
+82342d88  bl   0x8234ad60     ;   -> r29, a base
+82342d94  addi r3,r30,0x4     ; a sub-object at registry+0x04
+82342d98  bl   0x8234cc80     ;   -> r3, an offset
+82342d9c  mulli r10,r31,0xc   ; index * 12
+82342da4  add  r3,r11,r10     ; return base + offset + index*12
+```
+
+So it is not a name lookup after all — the second argument is an **index**, and
+entries are **twelve bytes** each. The 0x40-byte buffer `0x82337BD8` fills before
+calling this is something else the caller wants, not the key.
+
+Twelve bytes is enough for a type code and two pointers, which is the shape a
+reader table would have. It is also enough for three of anything else, and the
+entries are zero in the image, so that is a note and not a claim.
+
+**The stopping point is here, and deliberately.** What remains for this thread is
+whichever of the seven API functions writes an entry — that is what would name
+the type codes and their readers. Reading it wants a fresh pass: three of this
+session's errors came from taking one more window on a spent context, and the
+next step is a register-tracking read of exactly the kind that produced them.
