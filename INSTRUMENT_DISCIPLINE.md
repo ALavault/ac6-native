@@ -33,6 +33,7 @@ the repository's*.
 | your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
 | you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
+| your offset **worked on every entry** of the file you derived it from | *an instrument calibrated on one specimen* — regular structures make wrong offsets self-consistent; find the container's own declared count or length and check it across files |
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 
@@ -680,3 +681,37 @@ argument semantics of a tool before reading a negative out of it.** Two hex
 values are a range in most tools here and are two starts in this one. The
 difference is invisible in the output, which is exactly why it belongs in the
 output.
+
+## The twenty-second shape: an instrument calibrated on one specimen, and it agreed with itself
+
+Cycle 1256 needed to read a resource id out of a container. It built the reader
+twice, from one file each time, and both readers were confidently wrong.
+
+The first anchored on a six-entry wrapper whose id was known from its filename:
+records at `0x10`, stride `0x50`, id at `+0x48`. **All six entries agreed**, and
+their ids came out consecutive — `0x10002215` through `0x1000221A` — which reads
+like corroboration and is not: consecutive ids are what that file has, not
+evidence about where ids live. Over the corpus the same reader produced 336
+distinct file contents carrying 33 distinct ids, and the value it was reading in
+a one-entry wrapper was the ASCII tag `GIDX` itself.
+
+The second, older, located the id as "the first word at or above `0x10000000`",
+borrowing the threshold from the mount code. It returned **five different
+offsets** over 346 files.
+
+Neither failure was subtle in hindsight, and neither was visible from the file
+it was built on. **A layout derived from one specimen is a description of that
+specimen.**
+
+### The rule
+
+**Before trusting a layout, find the control the container gives you about
+itself** — a declared count, a length field, a terminator, a magic. Here it was
+free and decisive: the number of `GIDX` chunks must equal the entry count the
+header declares, and it does in **346 of 346** wrappers. That control was
+available before either wrong reader was written, and it rejects both instantly.
+
+The corollary is about the shape of the corroboration. "All six entries agreed"
+is one specimen's internal consistency, and it is exactly what a wrong offset in
+a regular structure produces. Agreement **across** specimens is evidence;
+agreement **within** one is arithmetic.
