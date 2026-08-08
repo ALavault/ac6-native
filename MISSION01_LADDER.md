@@ -222,9 +222,12 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    payload-resident: `0x820A85E0` re-derives the loader's own node and descends
    by the hashed name `"DPL::[%#x,%#x]"` to chunk index 1.
 
-   The gap is now one record: byte `+0x61` is zero in all 230 unit records and
-   all 434 Obj node blocks (cycle 1148), so it lives on a third structure not yet
-   identified. Also still to derive: MATE material → texture id → GIDX, and the
+   **The gap is closed (cycle 1171), and cycle 1148 was wrong.** Byte `+0x61` is
+   in the scenario container after all — on the Obj entry's **child[0]** data
+   block, one node below where cycle 1148 measured. Over the 434 records it takes
+   38 non-sentinel values (0, 2, 4 … 74) with `0xFF` in 123, `+0x62 == +0x61+1`
+   in 281, and every value below the MDLP's 94 entries. The two bytes are a pair
+   of consecutive MDLP indices; what the second one is remains unestablished. Also still to derive: MATE material → texture id → GIDX, and the
    NTXR pack directory (measured in cycle 1163: 522 records of stride `0x50`,
    518 with `eXt`+`GIDX`, 494 decoding).
    Walked with `tools/ac6_fhm.py` rather than regex-scanned: **94/94 parse with
