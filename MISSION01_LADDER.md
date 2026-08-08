@@ -222,6 +222,14 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    payload-resident: `0x820A85E0` re-derives the loader's own node and descends
    by the hashed name `"DPL::[%#x,%#x]"` to chunk index 1.
 
+   **Ported, cycle 1172.** `ScenarioModelBinding` carries the pair per Obj
+   record; the parser test asserts 434 bindings, 123 sentinels, 309 secondaries,
+   281 consecutive pairs, 38 distinct primaries and a highest of 74 against the
+   directory's 94, plus the structural rule that a record without a primary
+   never carries a secondary. **No table was written** — the chain is cited
+   instruction by instruction in the header. It is the join, not the loader:
+   nothing loads a model yet.
+
    **The gap is closed (cycle 1171), and cycle 1148 was wrong.** Byte `+0x61` is
    in the scenario container after all — on the Obj entry's **child[0]** data
    block, one node below where cycle 1148 measured. Over the 434 records it takes
