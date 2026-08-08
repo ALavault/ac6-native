@@ -569,6 +569,15 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    same loop-mount — **and that suggestion has no control**, so it is recorded
    as open. Of cycle 1256's 141 extra copies, 28 are explained and 113 are not.
 
+   *The refused suggestion turned out to be true, and refusing it was still
+   right.* It was refused for having no control; the control arrived two cycles
+   later and it is a different thing from the resemblance that suggested it —
+   an SWG descriptor at child 0, a loop starting at child 1, and two counts that
+   match to the unit. A guess that is later confirmed was still a guess when it
+   was made, and the second time it would have been believed for the wrong
+   reason. This is the twenty-third shape, and it has now happened twice in one
+   session.
+
    A refinement to cycle 1260's wording: mode is the loop's 4th argument but the
    **thunk's 3rd** (`82335f24 or r6,r5,r5`), so at a call site it is `r5`.
    Reading `r5` at all 53 sites reproduces the published 16/36/1 split; reading
