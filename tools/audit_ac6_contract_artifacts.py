@@ -30,11 +30,35 @@ import subprocess
 import sys
 from pathlib import Path
 
+SHA256 = re.compile(r"[0-9a-f]{64}")
+
 
 def cited_paths(contract: Path) -> set[str]:
-    text = contract.read_text(encoding="utf-8")
-    json.loads(text)  # a malformed contract is a failure, not a skip
-    return {match.group(1) for match in re.finditer(r'"path": "([^"]+)"', text)}
+    """Paths of evidence entries only.
+
+    A contract carries `"path"` in places that are not artefacts - provenance
+    fields naming a workspace root, for instance. Scraping every `"path"` string
+    made this tool pass on three contracts and fail on the rest, which is the
+    same too-narrow-a-frame mistake it exists to catch. So walk the parsed
+    document and take only entries that look like evidence: a dict with both a
+    `path` and a `sha256`.
+    """
+    document = json.loads(contract.read_text(encoding="utf-8"))
+    found: set[str] = set()
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            path, digest = node.get("path"), node.get("sha256")
+            if isinstance(path, str) and isinstance(digest, str) and SHA256.fullmatch(digest):
+                found.add(path)
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+
+    walk(document)
+    return found
 
 
 # `| `name` | `64 hex` |` - the row shape the capture bundles use.
@@ -59,8 +83,18 @@ def check_readme_tables(root: Path) -> tuple[int, list[str]]:
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
-        print("usage: audit_ac6_contract_artifacts.py CONTRACT [CONTRACT...]", file=sys.stderr)
+    args = [a for a in sys.argv[1:] if not a.startswith("--artifact-root")]
+    roots = [a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--artifact-root=")]
+    # Older contracts cite paths relative to the capture directory rather than
+    # the repository root. The gate auditor takes --artifact-root for the same
+    # reason; this resolves against each candidate and takes the first that
+    # exists, so one invocation can cover contracts written to either
+    # convention. A path that resolves under none of them is a real failure.
+    roots = roots or ["."]
+    roots = roots + ["reports/mission01-native-captures"]
+    if not args:
+        print("usage: audit_ac6_contract_artifacts.py [--artifact-root=DIR] CONTRACT...",
+              file=sys.stderr)
         return 2
     if subprocess.run(["git", "rev-parse", "--git-dir"],
                       capture_output=True).returncode != 0:
@@ -68,14 +102,16 @@ def main() -> int:
         return 77
 
     paths: set[str] = set()
-    for name in sys.argv[1:]:
+    for name in args:
         paths |= cited_paths(Path(name))
 
     drift: list[str] = []
     missing: list[tuple[str, str]] = []
     matched = 0
     for path in sorted(paths):
-        target = Path(path)
+        target = next((Path(r) / path for r in roots if (Path(r) / path).exists()),
+                      Path(path))
+        path = str(target)
         if not target.exists():
             missing.append((path, "absent from the working tree"))
             continue

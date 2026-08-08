@@ -65,3 +65,19 @@ yet evidence. Say that in the report rather than banking it.
 Both were written after the failure they catch, and both were made to fail once
 on purpose before being trusted. **A checker that has never been seen to fail is
 not a checker.**
+
+And the artefact checker then made the mistake it exists to catch. It scraped
+every `"path"` string out of a contract, which worked on the three it was tested
+against and failed on the rest — provenance fields naming a workspace root are
+not artefacts, and older contracts cite paths relative to the capture directory
+rather than the repository root. Fixed to walk the parsed document and take only
+entries carrying both a `path` and a `sha256`, and to resolve against either
+root.
+
+Two lessons, and the second is the one that generalises:
+
+- **validating a tool on the cases you had in mind is not validating it**. Three
+  contracts passed; five existed.
+- once fixed, it found something real: `mission01-native-gate.json`, the
+  superseded v1 contract, cites **7 artefacts that no longer exist**. The live
+  contracts — v2, v3, v4 — are clean at 17, 19 and 22.
