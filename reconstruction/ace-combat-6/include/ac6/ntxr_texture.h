@@ -41,18 +41,38 @@
 // image and not inferred.
 //
 // ---------------------------------------------------------------------------
-// The data offset, measured with a control rather than derived
+// The data offset, and the descriptor base itself
 // ---------------------------------------------------------------------------
 //
-// The pixel pointer does NOT come from the descriptor in retail: it reaches
-// 0x8233EA78 as a separate argument and is stored at object+0x08, so the file
-// offset is a container convention this port has not read out of the image.
+// The pixel pointer does not reach the texture context from the descriptor:
+// it arrives at 0x8233EA78 as a separate argument and is stored at object+0x08.
+// So cycle 1152 could only justify the file offset with a control - using the
+// word at file +0x30 the surface rule held 308 of 308 wrappers, and using
+// +0x28, +0x2C, +0x34, +0x38 or +0x3C it held 0 of 308.
 //
-// It is the word at file +0x30, and the evidence is a control. Using it, the
-// single-level surface rule below holds for 308 of 308 wrappers; using the
-// word at +0x28, +0x2C, +0x34, +0x38 or +0x3C it holds for 0 of 308. A wrong
-// offset cannot produce 308 exact size matches across 26 distinct
-// non-power-of-two shapes.
+// Cycle 1165 replaced that control with a reading. 0x8234B268 resolves a
+// section of the wrapper:
+//
+//     8234b284  lwz r9,0x20(r10)   ; section 2 -> the word at descriptor +0x20
+//     8234b28c  lhz r9,0xc(r10)    ; section 1 -> the halfword at descriptor +0x0C
+//     8234b290  add r3,r9,r10      ; base = descriptor + that
+//
+// Descriptor +0x20 is file +0x30, and `descriptor + [+0x20]` is 0x1000 in 86 of
+// 86 texture packs. The control was right; it is no longer the evidence.
+//
+// The descriptor base is read too (cycle 1167). It had been 0x10 since cycle
+// 1152 on the strength of 0x8234B360's offsets fitting against it - an argument
+// from consistency. 0x8234B0C0 is the accessor that returns it, and 0x8234B0B8
+// its neighbour returning the texture count:
+//
+//     8234b0b8  lhz  r3,0x6(r3)    ; the texture count, file +0x06
+//     8234b0c0  addi r3,r3,0x10    ; the descriptor base, file + 0x10
+//
+// And 0x821D9478 is retail's own NTXR *writer*, which lays the chunk structure
+// out in immediates - +0x24 width, +0x26 height, +0x30 the data offset, 'eXt'
+// at +0x40 sized 0x20, 'GIDX' at +0x50 sized 0x10 with its identifier at +0x58.
+// A writer settles a layout question more firmly than a reader: a reader shows
+// what the code tolerates, a writer shows what the format is.
 //
 // ---------------------------------------------------------------------------
 // The surface rule, measured (cycle 1151)

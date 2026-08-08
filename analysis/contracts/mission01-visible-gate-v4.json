@@ -292,7 +292,7 @@
       },
       "texture_decode": {
         "status": "passed",
-        "statement": "the native product decodes the base level of the retail NTXR population from the descriptor fields retail itself reads, and refuses every wrapper it cannot address",
+        "statement": "the native product decodes the base level of the retail NTXR population from the descriptor fields retail itself reads, with the descriptor base, the data offset and the chunk layout all derived from the image rather than fitted, and refuses every wrapper it cannot address",
         "retail_addresses": [
           "0x8233EA78",
           "0x8234B360",
@@ -305,7 +305,12 @@
           "0x821DF838",
           "0x821DF958",
           "0x826767C0",
-          "0x8234B268"
+          "0x8234B268",
+          "0x8234B284",
+          "0x8234B28C",
+          "0x8234B0B8",
+          "0x8234B0C0",
+          "0x821D9478"
         ],
         "evidence": [
           {
@@ -325,9 +330,9 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/ntxr_texture.h",
-            "sha256": "8ee0b32ffa8bcf56322f1af6f17a132677881f26cfdd27385d4288627e0531fe",
-            "size": 10969,
-            "claim": "include/ac6/ntxr_texture.h carries the whole derivation - the descriptor fields from 0x8234B360, the level count from 0x8234B128, the cube flag from 0x8234B118, the context choice in 0x8234AED8, the field mapping in 0x8234AA68, and the surface arithmetic of 0x821DF838 and 0x821DF958 under XGSetTextureHeader at 0x821FBE30 - and states plainly what is not derived"
+            "sha256": "b571f8f8f6c367a94c47fb5f4942c182e12dc6546dbc68414de391c5010ff079",
+            "size": 12070,
+            "claim": "include/ac6/ntxr_texture.h carries the whole derivation and names what is not derived: the descriptor base and texture count from 0x8234B0C0/0x8234B0B8, the field layout from 0x8234B360, the level count from 0x8234B128, the cube flag from 0x8234B118, both section bases from 0x8234B284/0x8234B28C, the context choice in 0x8234AED8, the field mapping in 0x8234AA68, the surface arithmetic of 0x821DF838 and 0x821DF958 under XGSetTextureHeader at 0x821FBE30, and the chunk layout as retail's own writer 0x821D9478 emits it"
           }
         ]
       }
