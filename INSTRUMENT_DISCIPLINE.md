@@ -598,3 +598,37 @@ When a cycle describes several offsets on "the X", check that every one was read
 from the same register, and if it was not, say which class each belongs to. Cycle
 1250 needed a vtable length and an RTTI walk to separate two objects that four
 reports had been calling by the same word.
+
+## The twentieth shape: an agent's scope, written as the repository's
+
+A delegated investigation reported, correctly, that converting NTXR pixels *"needs
+`0x821FCA48`, the X360 tiler, which is not ported"*. That sentence was true of
+**what the agent had looked at**. It is false of the repository:
+`src/ntxr_texture.cpp` has untiled Xenos Tiled2D since long before — with
+`xenos_tiled_2d_offset`, `pad_to_tile` at 32 blocks, BC1/BC2/BC3 decoding, a
+corpus pixel hash and an endianness control scoring 468/170/30.
+
+I carried it into a task list before checking. One `grep` corrected it.
+
+### Why delegation makes this specific
+
+An agent is given a brief, a scratch directory and a question. It does not know
+what the product already contains unless the brief says so, and **a brief that
+listed everything the repository can do would be longer than the question**. So
+"not ported", "not available", "would need to be built" are, from an agent,
+always statements about the brief's horizon.
+
+The failure is not the agent's. It answered what it was asked, and said so. **The
+failure is incorporating the sentence at the scope it was written in.**
+
+### The rule
+
+**Before propagating a delegated "X does not exist" into a task, a report or a
+decision, grep for X.** It costs one command, and the alternative is a task list
+that describes work already done — which is worse than one that omits work,
+because it looks complete.
+
+This is the eighteenth shape — *a correct measurement, over-read* — with the
+measurement taken by somebody else. The widening happens at the hand-off rather
+than at the writing, and there is no instrument between the two except the
+reader.
