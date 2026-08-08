@@ -246,6 +246,29 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    the mission. Three searches of the container have come back empty; the next
    one should be for the code that builds the player from the hangar's choice.
 
+   **Cycle 1254 ran that search and it closed.** The player's unit is selected
+   by the Set's **class byte**, `820a72c0 lbz r11,0x8(r11)` on the resolved
+   payload, bounded `cmplwi r11,0x4` and dispatched through the table at
+   `0x820A72EC`. Class 0 sets `r15 = 1`, which selects factory slot `+0x10` on
+   `CX360UnitManager` (`820a7630`/`820a7638`) → `0x820A7F48` → `0x822A6560`,
+   which installs vtable `0x820568D4` — RTTI `.?AVCAce6UnitPlayer@ACE6@@`. The
+   aircraft comes from the profile via `0x820A8678` (`820a8820 stw r3,0x15c(r23)`),
+   never from the container, which is why three container searches found nothing.
+
+   **The Set index is an output of that identification, not an input.** Over
+   912 of 912 instructions of `0x820A7070`, `r21` occurs thirteen times and is
+   compared twice: once *after* `820a76e8 subi r21,r15,0x1` has overwritten it,
+   and once against the loop bound. It is written out at `820a7648
+   stw r21,0xd0(r16)` and `820a7a28 stw r10,0x170(r31)`.
+
+   So **"Set 0 is the player's Set" is not the code's rule** — *class byte 0*
+   is, and Set 0 satisfies it in 15 of 15 campaign containers. Over 38 scenario
+   containers and 4,591 Set records the class byte never leaves the switch's
+   `0..4` domain, and four containers carry class-0 records at non-contiguous
+   indices, which is the control an index rule cannot survive.
+   `(-2025, 1500, 1345)` now rests on a read instruction. **JV 2b unblocks, and
+   the change is still "applied at first update", never a load-time write.**
+
    It is **not** in the container:
    cycle 1146 dumped the five root slots the parser does not consume (3, 4, 6,
    7, 8, 9) and none holds a float triple in world range. The only qualified

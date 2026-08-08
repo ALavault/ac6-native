@@ -33,6 +33,7 @@ the repository's*.
 | your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
 | you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
+| your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 
 ## The pattern
@@ -645,3 +646,37 @@ This is the eighteenth shape — *a correct measurement, over-read* — with the
 measurement taken by somebody else. The widening happens at the hand-off rather
 than at the writing, and there is no instrument between the two except the
 reader.
+
+## The twenty-first shape: the instrument sampled a third of it, and said nothing
+
+`Ac6XenonDisasm` takes a list of **start addresses** and emits up to 300
+instructions from each. Cycle 1254 passed `820A7070 820A7EB0` meaning the range,
+and received two blocks: 300 instructions from the function's start, and 300
+more from an address past its end. Coverage of the intended range: **300 of
+912**.
+
+Nothing in the output said so. The first block ended on `lwz r16,...` — an
+ordinary instruction, no marker, no trailer — and a listing that stops on an
+ordinary instruction is indistinguishable from a function that ends there.
+
+The claim under test was a **negative**: "the Set index is never compared
+against a literal." Over 300 instructions it returned six occurrences of `r21`
+and no comparison. Over the corrected 912 it returns thirteen occurrences and
+**two** comparisons, and both turn out to be innocent for reasons that had to be
+read: one is on the register *after* `subi r21,r15,0x1` overwrites it, the other
+is the loop bound. The conclusion survived. The method did not — a third of a
+function was standing in for all of it, and the survival was luck.
+
+### The rule
+
+**An instrument that can truncate must say when it truncated.** `Ac6XenonRefs`
+prints its scanned count; `Ac6XenonForceScan` prints `scanned/already_listed/
+forced/undisassemblable/hits` precisely so a zero states its denominator.
+`Ac6XenonDisasm` printed nothing and was the one used for exhaustiveness claims.
+It now prints a per-block trailer naming the count and whether the cap cut it.
+
+The second half of the rule is narrower and cost the same hour: **check the
+argument semantics of a tool before reading a negative out of it.** Two hex
+values are a range in most tools here and are two starts in this one. The
+difference is invisible in the output, which is exactly why it belongs in the
+output.
