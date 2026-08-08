@@ -77,21 +77,28 @@ struct ScenarioUnitRecord {
   std::uint8_t faction_byte{};     // data +0x0D, the faction table index
   std::uint32_t object_category{}; // what 0x820A7F48 allocates for class_byte
   bool has_behaviour_set{};        // child 0, the Set -> Act -> Order program
-  // The first three words of each Obj sub-record's data block. They were read
-  // as a position triple until cycle 1125 followed their consumers, and they
-  // are not one: every route that reaches them goes through the object's filed
-  // record at +0x180, and on every such route the three are read separately,
-  // each behind a different guard byte of the same block.
+  // The first three words of each Obj sub-record's data block: the entity's
+  // initial position. Cycle 1142 read the chain end to end:
   //
-  //   +0x00  0x8232E168, only when the byte at +0x51 is 1
-  //   +0x04  0x8229B3A8, beside the byte at +0x52
-  //   +0x08  0x8228FD90 and 0x82293570, both storing it into object+0x314
-  //          while decrementing a counter at object+0x310 - a period reloaded,
-  //          which no z coordinate would be
+  //   0x8232F198  element+0x00 = this node's data pointer, in the 8-byte array
+  //               the Obj list builds beside the 0x20-byte ObjBin records
+  //   0x820A7A1C  entity+0x184 = that element word, at construction
+  //   0x8229AFD0  lfs +0x00/+0x04/+0x08 of [entity+0x184] onto the stack
+  //   0x8229B090  stvx128 -> entity+0xA0, the staging translation row
+  //   0x8229BE98  commits +0x70..+0xA0 into +0x20..+0x50, the live transform
   //
-  // Nothing loads them together, and this codebase loads positions with a
-  // single vector load. The type says three scalars because that is what they
-  // are.
+  // Cycle 1125 called these three unrelated scalars, because it followed
+  // entity+0x180 and found three consumers reading them one at a time behind
+  // different guard bytes - +0x00 under +0x51, +0x04 beside +0x52, +0x08
+  // reloaded into a countdown. Those consumers are real. The one that reads all
+  // three together goes through +0x184, the neighbouring field, which that
+  // cycle never looked at. "No route reads them together" was only true of the
+  // routes it had walked.
+  //
+  // The values are small - (-50, -6.25, 50), (0, -200, -1000) - so they are
+  // relative. 0x8229AF80 tests [entity+0x188] and a bit of its +0x118 before
+  // writing, so there is a parent; what it is, and how its transform enters,
+  // is not established.
   std::vector<ScenarioObjScalars> obj_scalars;
   bool operator==(const ScenarioUnitRecord&) const = default;
 };

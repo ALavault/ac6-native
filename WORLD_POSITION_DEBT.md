@@ -6,6 +6,28 @@ SHA-256 `acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde`) and
 the non-canonical VMX128 import `ghidra-projects-xenon/ac6-xenon`. No oracle has
 been used. Cycles 1122 and 1124 to 1131.
 
+## Answered (cycle 1142)
+
+The initial placement is found, and it is five links from the payload to the
+live transform:
+
+1. the ObjBin node's data block, first three floats at `+0x00/+0x04/+0x08`;
+2. `0x8232F198` — the Obj list builds an 8-byte element array beside the
+   `0x20`-byte record array, and each element's word 0 is its node's data
+   pointer;
+3. `0x820A7A1C` — at construction, `entity+0x184` = that element word;
+4. `0x8229AFD0`/`0x8229B090` — the three floats are read together and stored to
+   `entity+0xA0`, the staging translation;
+5. `0x8229BE98` — the commit of `+0x70..+0xA0` into `+0x20..+0x50`.
+
+Cycle 1125 had called those three floats unrelated scalars; it followed
+`entity+0x180` and never `+0x184`, the neighbouring field. Everything below
+remains the record of how the search ran, including the wrong turns.
+
+Still open: the frame. The values are relative — `(-50, -6.25, 50)` — and
+`0x8229AF80` tests `[entity+0x188]` before writing, so there is a parent whose
+identity is not established.
+
 ## The question
 
 `build_retail_world` gives each unit a position. The goal named that as a debt:

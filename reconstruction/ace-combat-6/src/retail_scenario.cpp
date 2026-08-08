@@ -44,11 +44,12 @@ std::string format_float(float value) {
 
 }  // namespace
 
-// The coordinates the native runtime is given for a unit. Retail supplies none
-// on the load path - it builds every object at the origin (cycle 1124) and the
-// order program steers it from there (cycle 1125) - so these are the Obj
-// record's three scalars used as a stand-in, which is a native choice and not a
-// reading of the binary. The one line where that happens is this one.
+// The entity's initial position, as retail reads it: the first three floats of
+// the Obj record's data block, which reach the live transform through
+// entity+0x184, 0x8229AF80 and the commit at 0x8229BE98 (cycle 1142). The name
+// stays `placeholder` for one honest reason - retail applies this triple
+// relative to a parent this port does not model, so the value is right and its
+// frame is not.
 ScenarioVector position_placeholder(const ScenarioUnitRecord& record) {
   if (record.obj_scalars.empty()) return {};
   const ScenarioObjScalars& scalars = record.obj_scalars.front();
