@@ -212,10 +212,31 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    Mission 1's `PLAD` row, in a second independent file, with mode 0 and `FF FF`
    anchors. Four controls hold across 230 units. It also suggests
    `initial_world_position` reads the wrong order: unit 9's first tag-2 triple is
-   shared with sixteen ground units, so it is a destination, not a spawn. **The
-   product is unchanged** — `0x822A23D8` has not been read (VMX128 halt), and
-   reversing a ported behaviour on correlation is what this campaign refuses.
-   Next read: `0x822A23D8` in the Xenon corpus.
+   shared with sixteen ground units, so it is a destination, not a spawn.
+
+   **`0x822A23D8` has since been read, and the picture is settled (cycles 1206,
+   1244).** It writes a 4×4 at `leader+0x80` — rotations at `+0x90/A0/B0` via
+   `0x822A1E80`, translation at `+0xC0` — and the per-unit `+0x184` record is a
+   **formation offset** rotated by that matrix and added, not a position. So
+   `world = SetMatrix · desc[+0x184] + SetTranslation`, and `8229ae7c` is the
+   only instruction in the image that ever writes `unit+0xA0`.
+
+   **But it does not happen at load, and that is proved rather than suspected.**
+   The placement is a parent-to-child push a Set leader performs from inside its
+   own order-execution FSM: `0x822A23D8` loops over `[leader+0xD8]` sending
+   `0x7D1` or `0x7D4` per child, and `0x8229C920` turns those into
+   `bl 0x8229adf8`. The census is complete rather than a lower bound — three
+   `li 0x7d1` and three `li 0x7d4` in 851,718 instructions, and **both codes
+   occur zero times as data across 11,117,714 bytes** with `0x8229C920` at 7 as
+   the control. `0x820A7070` wires every input the push needs, on the unit
+   (`+0x184`, `+0x170`, `+0x118`, `+0x188`) and on the leader (`+0xD8`, `+0xDC`,
+   `+0xE0`, `+0xE4`), and never fires it.
+
+   **So `initial_world_position` must not be "fixed" to apply this at load.** The
+   honest change is *applied at first update*, in the session loop — larger than
+   cycle 1182 contemplated. **The product stays unchanged**, now for a proved
+   reason rather than a cautious one. Single open hop: what starts the leader's
+   FSM (`0x82297540` has zero instruction references).
 
    What remains is the player's spawn. Cycle 1177 exhausted `PLAD` — both its
    accessors have exactly three call sites each, paired, and every getter reads
