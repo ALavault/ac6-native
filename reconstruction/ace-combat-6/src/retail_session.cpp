@@ -13,6 +13,11 @@ constexpr std::uint32_t kLocalPlayerCategory = 2;
 }  // namespace
 
 std::optional<EntityId> local_player_entity(const RetailUnitBuild& build) noexcept {
+  // The campaign arm carries no participant table, so category 2 is never
+  // produced there and the class-0 Set is the answer instead (cycle 1259).
+  if (build.campaign_player_entity.has_value()) {
+    return *build.campaign_player_entity;
+  }
   for (const RetailUnitObject& object : build.objects) {
     if (object.category == kLocalPlayerCategory) return object.entity;
   }
@@ -30,7 +35,9 @@ std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> byt
   // from the slots it just published. build_retail_world does that and then
   // runs 0x820A7070 over the unit slot.
   std::optional<RetailWorld> world =
-      build_retail_world(*scenario, config.mission_id, config.local_player);
+      build_retail_world(*scenario, config.mission_id,
+                         ac6::retail::kMissionManagerCampaign,
+                         config.local_player);
   if (!world.has_value()) return nullptr;
   const std::optional<EntityId> player = local_player_entity(world->build);
   if (!player.has_value()) return nullptr;

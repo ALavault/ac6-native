@@ -115,7 +115,7 @@ void RetailUnitTable::reset() noexcept {
 
 // The per-record loop of 0x820A7070: classify, construct, insert, count.
 std::optional<RetailUnitBuild> build_units(
-    const MissionScenario& scenario,
+    const MissionScenario& scenario, std::uint32_t manager_category,
     std::optional<LocalPlayerSlot> local_player) {
   const std::vector<ScenarioFaction>& factions = scenario.factions();
   if (factions.empty()) return std::nullopt;
@@ -125,19 +125,27 @@ std::optional<RetailUnitBuild> build_units(
   // The two running ordinals retail keeps, one per local-player branch.
   std::array<std::uint32_t, 2> ordinals{};
 
+  // Categories other than 2 and 3 never reach the faction switch, so the side
+  // code must not be handed to the classifier for them - 820a7380 branches past
+  // the whole block.
+  const bool faction_table = consults_faction_table(manager_category);
+
   for (const ScenarioUnitRecord& record : scenario.units()) {
     if (record.faction_byte >= factions.size()) return std::nullopt;
     const ScenarioFaction& faction = factions[record.faction_byte];
+    const std::optional<std::uint8_t> side_code =
+        faction_table ? std::optional<std::uint8_t>(faction.side_code)
+                      : std::nullopt;
     bool is_local_player = false;
-    if (record_takes_ordinal(record.class_byte, faction.side_code)) {
-      const std::uint8_t branch = faction.side_code == 0 ? 0 : 1;
+    if (record_takes_ordinal(record.class_byte, side_code)) {
+      const std::uint8_t branch = side_code == 0 ? 0 : 1;
       const std::uint32_t ordinal = ordinals[branch]++;
       is_local_player = local_player.has_value() &&
                         local_player->branch == branch &&
                         local_player->ordinal == ordinal;
     }
     const std::optional<UnitClassification> classification =
-        classify_unit_record(record.class_byte, faction.side_code, is_local_player);
+        classify_unit_record(record.class_byte, side_code, is_local_player);
     if (!classification.has_value()) return std::nullopt;
 
     RetailUnitObject object;
@@ -147,6 +155,13 @@ std::optional<RetailUnitBuild> build_units(
     object.object_count = static_cast<std::uint32_t>(record.obj_scalars.size());
     object.category = classification->category;
     object.faction_byte = record.faction_byte;
+
+    // On the campaign arm the class-0 Set is the one retail builds the player
+    // from. First match wins: a second would build a second player.
+    if (!faction_table && record.class_byte == 0 &&
+        !build.campaign_player_entity.has_value()) {
+      build.campaign_player_entity = object.entity;
+    }
 
     if (!build.table.insert(object.entity)) return std::nullopt;
     build.objects.push_back(object);
@@ -276,8 +291,10 @@ bool SubMissionSequencer::apply(std::uint16_t id, const CounterOperand& operand,
 // unit slot into objects, and root slot 1 sizes the counter table.
 std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
                                               std::uint32_t mission_id,
+                                              std::uint32_t manager_category,
                                               std::optional<LocalPlayerSlot> local_player) {
-  std::optional<RetailUnitBuild> build = build_units(scenario, local_player);
+  std::optional<RetailUnitBuild> build =
+      build_units(scenario, manager_category, local_player);
   if (!build.has_value()) return std::nullopt;
 
   RetailWorld world;

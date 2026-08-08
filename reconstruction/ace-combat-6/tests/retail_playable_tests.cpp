@@ -66,6 +66,7 @@ std::optional<ac6::retail::RetailWorld> build(const std::string& raw) {
       ac6::retail::MissionScenario::parse(*payload);
   if (!scenario.has_value()) return std::nullopt;
   return ac6::retail::build_retail_world(*scenario, kMissionId,
+                                    ac6::retail::kMissionManagerCampaign,
                                          ac6::retail::LocalPlayerSlot{0, 0});
 }
 

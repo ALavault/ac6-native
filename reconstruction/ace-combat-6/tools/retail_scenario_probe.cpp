@@ -93,7 +93,8 @@ int main(int argc, char** argv) {
   }
 
   const std::optional<ac6::retail::RetailUnitBuild> build =
-      ac6::retail::build_units(*scenario, ac6::retail::LocalPlayerSlot{0, 0});
+      ac6::retail::build_units(*scenario, ac6::retail::kMissionManagerCampaign,
+                          ac6::retail::LocalPlayerSlot{0, 0});
 
   // The readers, over every reachable Set and Obj node. This is where an
   // unmodelled descent would surface.

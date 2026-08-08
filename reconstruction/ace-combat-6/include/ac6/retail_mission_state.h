@@ -112,6 +112,29 @@ struct RetailUnitBuild {
   std::vector<RetailUnitObject> objects;
   RetailUnitTable table;
   std::vector<std::uint32_t> faction_census;  // context+0x58, field +0x24
+
+  // The entity retail builds the player's aircraft from on the CAMPAIGN arm,
+  // where there is no participant table to match an ordinal against.
+  //
+  // Derived in cycle 1254 from 0x820A7070: the Set's class byte selects the
+  // factory argument through the table at 0x820A72EC, and class 0 alone yields
+  // r15 = 1 (820a7300). r15 == 1 selects factory slot +0x10 on
+  // CX360UnitManager (820a7630 / 820a7638) = 0x820A7F48, which calls
+  // 0x822A6560, which installs vtable 0x820568D4 - RTTI
+  // .?AVCAce6UnitPlayer@ACE6@@, read from the flat image at vtable-4. That
+  // vtable is installed nowhere else in the image.
+  //
+  // Empty on the online arm, where the player is matched by participant
+  // ordinal instead and carries category 2.
+  //
+  // TWO BOUNDARIES. The Set INDEX is not the rule: over 912 of 912
+  // instructions it is compared only against the loop bound and against a
+  // register it has been overwritten with. "Set 0 is the player's Set" holds
+  // in 15 of 15 campaign containers as a property of the authored data, and
+  // four non-campaign containers carry class-0 records at non-contiguous
+  // indices. And retail builds the player from the Set's FIRST CHILD only
+  // (r30 = r15 iff r24 == 0); this layer identifies the Set, not the child.
+  std::optional<std::uint32_t> campaign_player_entity;
 };
 
 // Which record the local-player branch matches. Retail keeps two independent
@@ -124,11 +147,54 @@ struct LocalPlayerSlot {
   bool operator==(const LocalPlayerSlot&) const = default;
 };
 
+// The value the mission manager's virtual slot +0x04 returns, which decides
+// whether 0x820A7070 consults the faction table at all.
+//
+// Read from the vtables rather than named from context: each class's slot
+// +0x04 is a distinct function returning a distinct literal.
+//
+//   0x82054F7C  .?AVCAce6MissionManager@ACE6@@          -> 0x822663A8 -> 0
+//   0x82064264  .?AVCAce6MissionManagerCampaign@ACE6@@  -> 0x82266390 -> 1
+//   0x82055044  .?AVCAce6MissionManagerOnline@ACE6@@    -> 0x82093F48 -> 3 when
+//               byte +0x360 is zero, 2 otherwise
+//   0x820643EC  .?AVCAce6MissionManagerReplay@ACE6@@    -> 0x82199B70 -> 4
+inline constexpr std::uint32_t kMissionManagerBase = 0;
+inline constexpr std::uint32_t kMissionManagerCampaign = 1;
+inline constexpr std::uint32_t kMissionManagerOnlineRemote = 2;
+inline constexpr std::uint32_t kMissionManagerOnlineLocal = 3;
+inline constexpr std::uint32_t kMissionManagerReplay = 4;
+
+// Whether the faction table is consulted, derived in cycle 1258 from
+// 0x820A7070:
+//
+//   820a7348  cmpwi  cr6,r3,0x2
+//   820a734c  beq    cr6,0x820a7374     category 2 -> r11 = 1
+//   820a7368  cmpwi  cr6,r3,0x3
+//   820a736c  or     r11,r24,r24        r24 is zero, so r11 = 0
+//   820a7374  li     r11,0x1            category 2 or 3 -> r11 = 1
+//   820a737c  cmplwi cr6,r11,0x0
+//   820a7380  beq    cr6,0x820a7608     r11 == 0 -> the faction block is skipped
+//
+// Only 2 and 3 reach it. A campaign mission is category 1, so its units are
+// classified by the class byte alone and carry no side flags -- the class-byte
+// switch at 820a72c0 has already run by then and its result stands.
+constexpr bool consults_faction_table(std::uint32_t manager_category) noexcept {
+  return manager_category == kMissionManagerOnlineRemote ||
+         manager_category == kMissionManagerOnlineLocal;
+}
+
 // Runs the consumer over a parsed scenario: classify, construct, insert, and
 // increment the per-faction census the loader sizes from the faction table.
 // Fails when a record names a faction the table does not have, or when the
 // table fills up.
+//
+// `manager_category` is what the mission manager reports; pass
+// kMissionManagerCampaign for a campaign mission. It is explicit rather than
+// inferred from whether a LocalPlayerSlot was supplied, because those are two
+// different things: the slot answers WHICH participant is local, and the
+// category answers whether participants are consulted at all.
 std::optional<RetailUnitBuild> build_units(const MissionScenario& scenario,
+                                           std::uint32_t manager_category,
                                            std::optional<LocalPlayerSlot> local_player);
 
 // The value a time field carries until it is stamped. Retail compares against
@@ -304,6 +370,7 @@ struct RetailWorld {
 // Durability has no source in the payload at all and is left at 1.
 std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
                                               std::uint32_t mission_id,
+                                              std::uint32_t manager_category,
                                               std::optional<LocalPlayerSlot> local_player);
 
 }  // namespace ac6::retail

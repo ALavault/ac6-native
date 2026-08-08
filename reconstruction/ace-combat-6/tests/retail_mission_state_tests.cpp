@@ -225,13 +225,16 @@ int check_retail(const std::filesystem::path& payload_path,
   const std::optional<MissionScenario> scenario = MissionScenario::parse(*payload);
   REQUIRE(scenario.has_value());
 
-  // The local player is the first record of the side-code-0 branch. Every
-  // Mission 01 faction carries side code 0, so that ordinal is record 0.
+  // Mission 01 is a CAMPAIGN mission, so the manager reports category 1 and
+  // 820a7380 branches past the faction block entirely. The LocalPlayerSlot is
+  // still supplied to prove it is ignored on this arm.
+  //
   // Mission 01 has 230 records and a 256-slot table, so the whole scenario
   // fits with 26 slots to spare - which is why retail never trips its own
   // missing bounds check on this mission.
   const std::optional<ac6::retail::RetailUnitBuild> build =
-      ac6::retail::build_units(*scenario, ac6::retail::LocalPlayerSlot{0, 0});
+      ac6::retail::build_units(*scenario, ac6::retail::kMissionManagerCampaign,
+                               ac6::retail::LocalPlayerSlot{0, 0});
   REQUIRE(build.has_value());
   REQUIRE(build->objects.size() == 230);
   REQUIRE(build->table.count() == 230);
@@ -247,12 +250,51 @@ int check_retail(const std::filesystem::path& payload_path,
   REQUIRE(build->faction_census[2] == 48);
   REQUIRE(build->faction_census[3] == 0);
 
-  // All four Mission 01 faction entries carry side code 0, so every record
-  // takes the first side word and the local-player branch.
+  // On the campaign arm no side flag is written and the category comes from the
+  // class byte alone, through the table at 0x820A72EC: 0 -> 1, 1 -> 4, 2 -> 4,
+  // 3 -> 4, 4 -> 3.
+  //
+  // The expected distribution is DERIVED, not read back from this build: cycle
+  // 1254 measured Mission 01's class bytes as {0: 1, 1: 40, 2: 188, 4: 1},
+  // which maps to one unit at category 1, 40 + 188 = 228 at category 4, and one
+  // at category 3. Any drift in the class-byte reader shows up here.
+  std::map<std::uint32_t, std::size_t> per_category;
   for (const ac6::retail::RetailUnitObject& object : build->objects) {
+    REQUIRE(object.flags == 0u);
+    per_category[object.category] += 1;
+  }
+  REQUIRE(per_category.size() == 3);
+  REQUIRE(per_category[1] == 1);
+  REQUIRE(per_category[4] == 228);
+  REQUIRE(per_category[3] == 1);
+
+  // The player, on the campaign arm: the single class-0 Set. Mission 01 puts it
+  // at record 0, which is a property of the authored data and not the rule -
+  // the rule is the class byte, and check_ordinal_rule's chosen values are what
+  // hold that distinction in place.
+  REQUIRE(build->campaign_player_entity.has_value());
+  REQUIRE(*build->campaign_player_entity == ac6::retail::kEntityBase);
+
+  // THE CONTROL that separates the two arms, and the rival this replaced.
+  // Until cycle 1259 the product ran a campaign mission through the ONLINE arm.
+  // Building the same scenario as category 2 reproduces exactly what it used to
+  // assert - every unit carrying the first side word, and the local-player
+  // branch putting record 0 at category 2 and the rest at 1. Both halves must
+  // hold: the campaign arm is not the online arm, and the online arm still
+  // works.
+  const std::optional<ac6::retail::RetailUnitBuild> online =
+      ac6::retail::build_units(*scenario,
+                               ac6::retail::kMissionManagerOnlineRemote,
+                               ac6::retail::LocalPlayerSlot{0, 0});
+  REQUIRE(online.has_value());
+  REQUIRE(online->objects.size() == 230);
+  for (const ac6::retail::RetailUnitObject& object : online->objects) {
     REQUIRE(object.flags == ac6::retail::kSideFlagsFirst);
     REQUIRE(object.category == (object.record_index == 0 ? 2u : 1u));
   }
+  // and the online arm produces no campaign player at all: there the local
+  // participant is matched by ordinal and carries category 2 instead.
+  REQUIRE(!online->campaign_player_entity.has_value());
 
   // The counter-writing orders: every id the scenario names must land inside
   // the table the loader sizes from root slot 1.
