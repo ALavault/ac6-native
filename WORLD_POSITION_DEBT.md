@@ -118,10 +118,18 @@ idioms scanned*, and cycle 1132's stronger claim was an overclaim, corrected in
 | `memcpy` (`0x82382F70`), transform-sized | 38 | one in the unit class (`0x822A6090`), and it writes `this+0x04`, not the transform |
 
 **No code in the mission cluster writes a unit's position from mission data, by
-any store idiom this campaign can enumerate.** Two readings remain, and both are
-written down: either the position is never authored — units are born at the
-origin and the order program steers them — or it is written by something still
-outside the list, such as a variable-size copy or a hand-written loop.
+any store idiom this campaign can enumerate.**
+
+Two readings survived that, and cycle 1139 killed the first. If units took their
+place from their first tag-2 order, the 108 units without such an order could not
+be mobile — they would be fixed targets of another class. Measured: the routed
+group is `{class 1: 9, class 2: 113}` and the unrouted `{0: 1, 1: 31, 2: 75,
+4: 1}`. Seventy-five units of the *same* class as routed ones have no order and
+no position of any kind. There is no split, so the reading is refuted.
+
+What is left is the uncomfortable one: **the position is written by something
+still outside the enumerated list** — a variable-size copy, or a hand-written
+loop. Four idioms are closed and something is still missing.
 
 ## What remains
 
