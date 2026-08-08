@@ -1,8 +1,24 @@
 # Instrument discipline — the false negative, and how to catch it
 
 `CLAUDE.md` says *measure the instrument before trusting it*. This is what that
-means in practice, written from eight failures in one session rather than from
-first principles.
+means in practice, written from failures rather than from first principles —
+eight in the session that started it, and eight more in the session that doubled
+it.
+
+**If you are here mid-investigation, find your symptom:**
+
+| the shape you are in | section |
+|---|---|
+| a scan returned **nothing** and you are about to believe it | *The pattern*, *The specific traps* |
+| you found a **write / a branch / a table** and it looks decisive | *the true positive from dead code* — four findings this campaign were live code the build never reaches |
+| your rule is **right on the corpus you took it from** | *querying only one side* — check the producer against the consumer, the code against the files, one corpus against the other |
+| you counted **N call sites** | *the listing is not the code* — `Ac6XenonRefs` sees only what Ghidra already disassembled; use `Ac6XenonForceScan`, which prints its own denominator |
+| **nothing calls** the function you care about | *reachability by `bl`* — that covers about a quarter of this program; use `Ac6XenonFindWord` to find it as a vtable slot, and remember tail calls are `bcctr` |
+| you read the **conditional above** your block | *half a rule* — also read down to the back-edge; a guard tells you what selects a block, not how many times it runs |
+| a **displacement scan** gave you a clean candidate list | *the displacement collision* — read the four lines around each hit; a field belongs to the structure its neighbours belong to |
+| your dump ended at a **`blr`** | *stopping at a natural boundary* — disassemble the next address anyway; three cycles missed their answer by under twenty bytes |
+| you are about to add a **plausibility control** | it is only strong where the field borders a differently-encoded one; see cycle 1242 |
+| your **positive** result confirms what you hoped | `.pdata` is incomplete, and a false positive gets challenged far less than a false negative |
 
 ## The pattern
 
