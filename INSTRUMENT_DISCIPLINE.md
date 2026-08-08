@@ -18,6 +18,8 @@ it.
 | a **displacement scan** gave you a clean candidate list | *the displacement collision* — read the four lines around each hit; a field belongs to the structure its neighbours belong to |
 | your dump ended at a **`blr`** | *stopping at a natural boundary* — disassemble the next address anyway; three cycles missed their answer by under twenty bytes |
 | you are about to add a **plausibility control** | it is only strong where the field borders a differently-encoded one; see cycle 1242 |
+| **`Ac6Xrefs` returned 0** for something you know is referenced | *the Xenon project has no reference database* — it is empty for everything, including globals the code demonstrably loads; use a text or force scan instead |
+| you drew a conclusion from **seven of eight** call sites | *a corollary about call sites* — an unexhausted list is indistinguishable from an exhausted one, because the evidence looks uniform until the exception |
 | your **positive** result confirms what you hoped | `.pdata` is incomplete, and a false positive gets challenged far less than a false negative |
 
 ## The pattern
