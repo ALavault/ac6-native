@@ -89,8 +89,36 @@ stage. This one is genuinely in the container's neighbourhood.
 821fc0a4  cmpwi cr6,r3,0x2
 ```
 
-A switch over at least `{1, 2, 6, >6}` on a queried kind. **What kind was not
-established** — `0x821E4078` was not read.
+A switch over at least `{1, 2, 6, >6}` on a queried kind.
+
+> **Closed later in the same cycle.** `0x821E4078` was read, and it is a
+> **resource-type query**:
+>
+> ```
+> 821e4078  lwz    r10,0x0(r3)
+> 821e407c  rlwinm r11,r10,0x0,0x1c,0x1f   ; the low nibble of +0x00
+> 821e4080  cmplwi cr6,r11,0x3
+> 821e4084  bne    cr6,0x821e40d4
+> 821e4088  lwz    r10,0x30(r3)
+> 821e408c  rlwinm r10,r10,0x17,0x1e,0x1f  ; a two-bit field of +0x30
+> 821e4090  cmplwi cr6,r10,0x3
+> 821e4098  li     r11,0x12                ; 3 -> 0x12
+> 821e40a8  li     r11,0x11                ; 2 -> 0x11
+> 821e40b8  li     r11,0x14                ; 0 -> 0x14
+> 821e40c0  lwz    r10,0x20(r3)
+> 821e40c4  rlwinm. r10,r10,0x0,0x15,0x15  ; else one bit of +0x20
+> 821e40cc  li     r11,0x13
+> ```
+>
+> A low-nibble kind at `+0x00` selects a family, and a two-bit sub-kind at
+> `+0x30` narrows it to `0x11`–`0x14`. So `0x821FC070` **dispatches on a D3D
+> resource type**, which puts it with `0x821DE790` and `0x821DE898` rather than
+> with the container. Three of the four are now the same subsystem.
+>
+> Still not established: what the families and sub-kinds *are*. The values were
+> read; no control ties `0x11`–`0x14` to named resource types, and the arms of
+> `0x821FC070` at `{1, 2, 6}` come from the other return path at `0x821E40D4`,
+> which was not read.
 
 ## What this changes for the open decision
 
@@ -103,11 +131,12 @@ not container parsing and not texture decoding. If the behaviours are split,
 those two belong with the geometry path, beside the element-layout derivation
 they corroborate.
 
-`0x8233E6B0` belongs with the container. `0x821FC070` is still unattributed.
+`0x8233E6B0` belongs with the container. `0x821FC070` joined the device group
+once `0x821E4078` was read — **three of the four are the same subsystem**, and
+none of them is what the behaviour they are filed under does.
 
 ## Not established
 
-- **`0x821E4078`**, and therefore what `0x821FC070` dispatches on.
 - The `0x38` header of the declaration object, and the meaning of the `0x2480`
   allocation tag.
 - Which bit `oris r11,r11,0x8` names in the device's dirty mask — the bit is
