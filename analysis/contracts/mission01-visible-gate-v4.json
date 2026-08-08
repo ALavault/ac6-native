@@ -421,6 +421,13 @@
       "claim": "the vertex stride derived rather than corroborated: 0x828711F0 is field +0x170 of the renderer object, its writer 0x82345100 runs eight instructions before the device is published, and stride = T8[hi&0xF] + T18[((lo>>4)-1)*6+(lo&0xF)] from two const .rdata tables - reproducing all four constants the product carried, with both one-term-dropped rivals scoring 0 of 179 on the extent control",
       "sha256": "7be6fdb9b47d2694547f578ab7703ce2c87f76a85db2fb78c4e7dc8ec2905a17",
       "size": 5575
+     },
+     {
+      "kind": "static",
+      "path": "reports/cycle-1202-correcting-1201-the-map-is-one-level-deeper.md",
+      "claim": "the resource lookup one level deeper than cycle 1201 read it: 0x8233EBB0 adds 0x80 to reach a ResourceManager and 0x8234AE00 adds 0x80 again to reach the map at registry+0x100, with sixteen reserved ids at or above 0xFFFFFFF0 bypassing it into a 0x120-slot array - zero of 13,014 corpus ids are sentinels",
+      "sha256": "440918d86ecbd20152182d8952bd12e3cb3986508ce669aab3693cb9c8bc3ac1",
+      "size": 3768
      }
     ]
    }
