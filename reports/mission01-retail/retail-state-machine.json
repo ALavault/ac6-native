@@ -1,0 +1,10 @@
+{
+  "schema": "ac6.retail-state-machine.v1",
+  "states": 36,
+  "root": "0x822E39A8",
+  "acyclic": true,
+  "max_depth": 6,
+  "states_with_attributed_code": 11,
+  "state_code_0x822E7760": 8,
+  "transition_order": "exit nearest first, entry outermost first, nothing on the common ancestor"
+}

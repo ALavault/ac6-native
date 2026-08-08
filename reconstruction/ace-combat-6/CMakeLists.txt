@@ -13,7 +13,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/native_renderer.cpp
   src/native_hud.cpp
   src/mission01_compare.cpp src/campaign_progression.cpp src/session_save.cpp
-  src/retail_scenario.cpp src/retail_mission_state.cpp
+  src/retail_scenario.cpp src/retail_mission_state.cpp src/retail_state_machine.cpp
   src/retail_bin_readers.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
@@ -130,6 +130,13 @@ add_test(NAME ac6-retail-bin-readers-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/microexec/reader-digests.tsv
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin)
 set_tests_properties(ac6-retail-bin-readers-tests PROPERTIES SKIP_RETURN_CODE 77)
+
+# JF: the mission state machine, ported from 0x8219AD20 and the cycle-1112 tree.
+add_executable(ac6-retail-state-machine-tests tests/retail_state_machine_tests.cpp)
+target_link_libraries(ac6-retail-state-machine-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-state-machine
+  COMMAND ac6-retail-state-machine-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-state-machine.json)
 
 # J2: Mission 01 driven by the retail payload alone, no manifest.
 add_executable(ac6-retail-playable-tests tests/retail_playable_tests.cpp)

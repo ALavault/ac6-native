@@ -1,7 +1,7 @@
 {
   "schema": "ac6.mission01-final-gate.v3",
   "provenance": {
-    "repo_commit": "19a3252d804338b740a4818ddf7a1fb7c6e46a3b",
+    "repo_commit": "14c704f3c5fd5433b1ee266368dd653627e8370b",
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
     "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
     "mission_id": 1
@@ -146,14 +146,36 @@
         ]
       },
       "mission_state_machine": {
-        "status": "open",
-        "statement": "the mission runs on the hierarchical state machine the retail manager carries, not on an independent flow",
+        "status": "passed",
+        "statement": "the mission runs on the hierarchical state machine the retail manager carries: a transition exits up to the common ancestor and enters down to the target, over the tree the binary declares",
         "retail_addresses": [
           "0x8219AD20",
-          "0x822E7760"
+          "0x822E7760",
+          "0x822E39A8"
         ],
-        "evidence": [],
-        "open_because": "the transition engine is read (cycle 1109) and the state tree mapped (cycle 1112), but nothing of it is ported to native code"
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1112-state-hierarchy-complete.md",
+            "sha256": "b04bdb765b2e7c1cfe13351a73d76719f8e8d3cf066fa60458fdc5a5a9b65635",
+            "size": 4608,
+            "claim": "36 states, 36 parent edges, no cycle, one root, depth 6, and 0x822E7760 writing state code 8 on its entry branch"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-state-machine.json",
+            "sha256": "0423b583f31229e5f36ce2304a2795fb12583a4218be50576a4c5eb8392ec2e9",
+            "size": 289,
+            "claim": "the ported tree re-measured from the compiled table and the transition order checked step by step rather than by its result"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/src/retail_state_machine.cpp",
+            "sha256": "f862508d996e210aad53c4d33195570474fed36db4da587d9e8ea962eb196a77",
+            "size": 4646,
+            "claim": "plan_transition implements 0x8219AD20's exit-then-entry order and the table carries the 36 handler addresses with their superstates"
+          }
+        ]
       },
       "mission_area": {
         "status": "passed",
