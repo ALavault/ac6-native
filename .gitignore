@@ -120,3 +120,12 @@ reports/**/*.ppm
 reports/**/*.bin
 reports/**/*.capt
 ghidra-projects-xenon/
+
+# Test byproducts that ctest drops at the REPOSITORY ROOT, not under reports/.
+# The reports/** patterns above do not cover them, so before this a `git add -A`
+# would have committed rendered frames and a save file. Cycle 1215 found them
+# sitting untracked after a full suite run.
+/*.ppm
+/boot.log
+/ac6-test-session-save.ac6s
+/ac6-test-functional-catalog.tsv
