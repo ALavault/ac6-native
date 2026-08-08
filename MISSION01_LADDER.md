@@ -487,6 +487,29 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    (`8234bf78`); and a fully released id can be re-inserted after the erase
    `0x8234CE70`.
 
+   **Cycle 1256 measured the applicability, and it is narrow.** The id is not in
+   the entry record at all: `0x8234B300` is a nine-instruction validator (magic,
+   version byte `+0x04`, sub-version `+0x05`, count `u16` at `+0x06`) and
+   `0x8234B360` decodes format `+0x13` and width/height `+0x14`/`+0x16`. The id
+   lives in a **`GIDX` chunk**, read at `+0x08` — the registry key already
+   established. Structural control: the GIDX chunk count equals the declared
+   entry count in **346 of 346** wrappers, and the named calibration file returns
+   the id in its own filename.
+
+   Over one extraction root: **205 distinct ids over 346 entries**, reproducing
+   cycle 1248's 205 and cycle 1209's 192-below-threshold. **Only two ids repeat**
+   — `0x08000000` (115 entries) and `0x0F000000` (28) — and they account for all
+   141 extra copies. The 13 ids at or above `0x10000000`, the ones the mount
+   never biases, are **all unique**. So for 203 of 205 ids first-wins never fires
+   and mount order is not load-bearing. The two that collide sit in the biased
+   space, where the bias is the separating mechanism and Mission 01's bias is
+   zero — and the low ids run in consecutive blocks (`0x1049, 0x104a, …`), the
+   shape recorded for `mode = 1`. **The duplicate question and the `mode = 1`
+   question are one question.**
+
+   Cycle 1248's "847 duplicates over 1052 packs" counted **extraction replicas as
+   packs**: the tree holds 1,053 `.ntxr` files and 337 distinct contents.
+
    **What stays open is applicability, not policy.** Cycle 1248 counted 847
    duplicates over 205 ids across 1052 packs from a script that was not kept,
    and no committed artefact carries an id. Recomputing it needs the per-entry
