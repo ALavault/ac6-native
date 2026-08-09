@@ -1,0 +1,19 @@
+{
+  "schema": "ac6.slot-gather-microexec.v1",
+  "statement": "0x82211B40 executed over nine cases including a non-zero seed in the caller's word, which distinguishes the OR retail performs from an assignment",
+  "function": "0x82211B40",
+  "note": ".pdata has no row for this function",
+  "cases": 9,
+  "divergences": 0,
+  "case_names": [
+    "empty-flags",
+    "empty-flags-seeded",
+    "single",
+    "first-and-last",
+    "partial-overlap",
+    "no-overlap",
+    "seeded",
+    "all-slots",
+    "button-bits"
+  ]
+}

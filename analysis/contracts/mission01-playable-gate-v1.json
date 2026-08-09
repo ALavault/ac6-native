@@ -510,6 +510,46 @@
             "claim": "include/ac6/retail_slot_repeat.h carries the derivation, records that f1 survives 0x82211B40 and 0x82211C10 untouched before reaching 0x82211988, and states that the delay and interval are fields a port must not bake in"
           }
         ]
+      },
+      "retail_slot_gather": {
+        "status": "passed",
+        "statement": "the native product reproduces the active-slot gatherer 0x82211B40 -- the early return on a zero record flag word, and one output-slot bit per player mask word that intersects it -- joining the contracted record's flag word to the contracted binding layer's 32 masks",
+        "retail_addresses": [
+          "0x82211B40",
+          "0x82211DF8",
+          "0x82211C10",
+          "0x82211988"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1357-the-float-passes-two-more-functions.md",
+            "sha256": "71be1676763a44af07ec9f564d068ec8146d6549b748a8df1942b4a79a511ae4",
+            "size": 3177,
+            "claim": "0x82211B40 read whole: 51 instructions, no floating-point operation, an early return when record+0x08 is zero, and one bit per intersecting mask word among the 32 at player+0x08"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/cycle-1360-the-tick-is-complete.md",
+            "sha256": "c525056141df34781df6b5ade8dfb925fdbb4115512e5b2f5348301fd406e965",
+            "size": 2925,
+            "claim": "tests for the empty flag word, any-overlap rather than subset matching, the first and last slot, and agreement with the contracted record's slot rule and button remap"
+          },
+          {
+            "kind": "microexec",
+            "path": "reports/mission01-retail/slot-gather-microexec.json",
+            "sha256": "2b367808d618cebb605a679ec4c9491f12eae4b16cc7cf417c5fbf9345843c84",
+            "size": 516,
+            "claim": "0x82211B40 executed over nine cases including a non-zero seed in the caller's word, which distinguishes the OR retail performs from an assignment; .pdata has no row for this function"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_slot_gather.h",
+            "sha256": "6f1dbb9e08787f5e1449b4b382254a62eebdd6639de3fc05b466cb1b8e0667ce",
+            "size": 2170,
+            "claim": "include/ac6/retail_slot_gather.h carries the derivation, records that the function contains no floating-point instruction and that two cycles named it wrongly as the float's consumer, and warns that retail ORs rather than assigns"
+          }
+        ]
       }
     }
   }
