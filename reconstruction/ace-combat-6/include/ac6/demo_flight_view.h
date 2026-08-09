@@ -31,6 +31,7 @@
 // scene. Any caption that does not say all three is dishonest, and the
 // `caption()` below exists so that it is not left to a caption to remember.
 
+#include "ac6/retail_flight_step.h"
 #include "ac6/retail_transform.h"
 
 #include <cstdint>
@@ -61,7 +62,26 @@ struct DemoCamera {
 };
 
 // Draws the grid and horizon as seen from an aircraft whose attitude is
-// `basis`. The basis is retail's; everything else here is not.
+// `basis` and whose position is `position`. Both come from retail arithmetic --
+// the basis from the contracted rotation kernel, the position from the
+// contracted integrator 0x82303110 -- and everything else here is not.
+//
+// THE GRID SNAPS TO THE EYE. Without that an aircraft that actually moves flies
+// off a finite grid in about ten seconds. Quantising the grid origin to the
+// spacing makes it read as unbounded; it is a rendering choice and it changes
+// nothing about the position it is drawn from.
+//
+// The ground plane is world y = 0 and the eye sits at `position.at68` above it.
+// `at68` is retail's vertical component -- the only one carrying the 10.0 floor
+// and the only one the gravity bias touches (retail_flight_step.h) -- so the
+// altitude in these pictures is integrated, not chosen. Which of at64/at72 is
+// north and which is east remains unestablished and unclaimed.
+void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
+                      const DemoCamera& camera,
+                      const ac6::retail::FlightPosition& position) noexcept;
+
+// The stationary overload, kept because the still captures use it: the eye sits
+// at `invented_altitude` over the origin and nothing moves.
 void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
                       const DemoCamera& camera) noexcept;
 

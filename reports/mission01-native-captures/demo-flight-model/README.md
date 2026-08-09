@@ -1,5 +1,12 @@
 # A picture of the contracted flight model
 
+> **Its `CAPTION.txt` is the cycle-1409 sentence and no longer matches what
+> `caption()` emits.** That is deliberate, not drift: cycle 1416 updated the
+> caption for a demo where the aircraft MOVES, and this capture is the
+> stationary one — its frames come from `--emit-frames`, which still uses the
+> stationary overload and still regenerates byte-identical. The moving capture
+> is `../demo-bare-flight/`, and it carries the current sentence.
+
 Nine frames of a thirty-second manoeuvre: ten seconds of pitch command, ten of
 roll, ten centred, sampled every 200 frames at 1/60 s.
 

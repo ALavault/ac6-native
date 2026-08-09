@@ -94,30 +94,44 @@ bool Image::write_ppm(const char* path) const {
 }
 
 void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
-                      const DemoCamera& camera) noexcept {
+                      const DemoCamera& camera,
+                      const ac6::retail::FlightPosition& position) noexcept {
   image.clear(24, 32, 56);                       // sky, invented
 
-  const float half = camera.invented_grid_spacing *
+  // The eye, from the contracted integrator. at68 is the vertical one.
+  const Vec3 eye{position.at64, position.at68, position.at72};
+  const float spacing = camera.invented_grid_spacing;
+  const float half = spacing *
                      static_cast<float>(camera.invented_grid_lines - 1) * 0.5F;
-  const float ground = -camera.invented_altitude;
+
+  // THE GRID FOLLOWS THE EYE, snapped to the spacing so the lines do not crawl.
+  // A finite grid under a moving aircraft is empty in ten seconds; this is a
+  // rendering choice and it moves nothing but the lines.
+  const float centre_x = std::floor(eye.x / spacing) * spacing;
+  const float centre_z = std::floor(eye.z / spacing) * spacing;
+
+  // Every point is drawn RELATIVE TO THE EYE, which is what makes the aircraft
+  // move through the world rather than the world rotate around it.
+  const auto relative = [&eye](float x, float y, float z) {
+    return Vec3{x - eye.x, y - eye.y, z - eye.z};
+  };
 
   for (int i = 0; i < camera.invented_grid_lines; ++i) {
-    const float t = -half + camera.invented_grid_spacing * static_cast<float>(i);
-    // Lines along the forward axis, and lines across it. Both are drawn in
-    // segments so that a line crossing the near plane is clipped by the
-    // per-segment test rather than by projecting an endpoint behind the eye.
+    const float tx = centre_x - half + spacing * static_cast<float>(i);
+    const float tz = centre_z - half + spacing * static_cast<float>(i);
     for (int s = 0; s + 1 < camera.invented_grid_lines; ++s) {
-      const float u0 = -half + camera.invented_grid_spacing * static_cast<float>(s);
-      const float u1 = u0 + camera.invented_grid_spacing;
-      draw_segment(image, basis, camera, Vec3{t, ground, u0},
-                   Vec3{t, ground, u1}, 90, 130, 90);
-      draw_segment(image, basis, camera, Vec3{u0, ground, t},
-                   Vec3{u1, ground, t}, 70, 105, 70);
+      const float ax = centre_x - half + spacing * static_cast<float>(s);
+      const float az = centre_z - half + spacing * static_cast<float>(s);
+      draw_segment(image, basis, camera, relative(tx, 0.0F, az),
+                   relative(tx, 0.0F, az + spacing), 90, 130, 90);
+      draw_segment(image, basis, camera, relative(ax, 0.0F, tz),
+                   relative(ax + spacing, 0.0F, tz), 70, 105, 70);
     }
   }
 
-  // A horizon ring, far out, so that roll and pitch are readable even when the
-  // grid is out of frame.
+  // A horizon ring at eye level, far out, so that roll and pitch are readable
+  // even when the grid is out of frame. It is drawn relative to the eye and so
+  // never runs out.
   const float radius = 8000.0F;
   int previous_x = 0, previous_y = 0;
   bool have_previous = false;
@@ -134,21 +148,35 @@ void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
   }
 }
 
+void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
+                      const DemoCamera& camera) noexcept {
+  // The stationary overload: an eye `invented_altitude` over the origin, which
+  // is exactly what this function did before the position existed.
+  ac6::retail::FlightPosition fixed{};
+  fixed.at68 = camera.invented_altitude;
+  draw_flight_view(image, basis, camera, fixed);
+}
+
 std::string caption() noexcept {
-  // Updated at cycle 1409. Cycle 1408's version said "which controller axis
-  // feeds which input field" was invented; cycle 1409 contracted retail's own
-  // routing from the binding layer's six outputs to those fields, so what is
-  // left of that clause is one step earlier and one step smaller.
+  // Updated at cycle 1416. The aircraft MOVES now: cycle 1415 established that
+  // the integrator's rates are a unit direction and its scale is a speed, and
+  // wired the contracted integrator into the session. So the clause saying the
+  // position step is blocked is gone -- it named 0x823042D0, the live model's
+  // own step, which is a different function. What is blocked is the DIRECTION
+  // retail feeds the integrator, and that is what the caption now says.
   return "Attitude and control response: Ace Combat 6's own, from the "
          "controller record to the aeroplane's orientation, ported function by "
          "function and verified bit-for-bit against the retail instructions by "
-         "micro-execution -- 28 contracted behaviours. "
+         "micro-execution -- 29 contracted behaviours. "
          "Invented for this picture: the camera, the scene, which basis row is "
-         "which axis, and which controller axis feeds which binding slot. "
+         "which axis, which controller axis feeds which binding slot, and the "
+         "heading and speed the aircraft is flown at. "
          "Retail's gameplay camera uses estimate instructions whose exact "
          "results belong to the console, so it is not reproduced. "
-         "The aircraft changes attitude and does not move: its position step "
-         "depends on the same estimates.";
+         "The aircraft moves under retail's own integrator -- its 1/3.6 scale, "
+         "its 10.0 floor, its fused steps -- but the direction that integrator "
+         "is fed comes from a vector normalise seeded on the same estimates, "
+         "so the heading here is chosen and the flying of it is not.";
 }
 
 }  // namespace ac6::demo
