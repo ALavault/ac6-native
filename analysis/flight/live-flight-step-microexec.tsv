@@ -1,0 +1,10 @@
+# 0x82306A38 (slot 15, the LIVE flight model's step) micro-executed
+# with the real slot 30 reached through a real virtual dispatch,
+# against ac6::retail::apply_live_step_decays. The stubbed-call
+# count is part of the comparison: it differs per flag combination.
+# case	verdict	+408	+412	stubbed_calls	why the case exists
+plain	ok	0.4749999940395355	-0.23749999701976776	10	no flags: every virtual and every direct call runs
+skip-attitude	ok	0.4749999940395355	-0.23749999701976776	8	bit 7 skips slots 31, 32 and 39 -- and is ALSO slot 30's bypass, which dispatches slot 38
+slot39	ok	0.4749999940395355	-0.23749999701976776	9	bit 6 substitutes slot 39 for slot 31 and drops 0x82304AB8
+reset	ok	0.5	-0.25	11	bit 1 substitutes slot 33 for the two decays
+skip-and-reset	ok	0.5	-0.25	9	both, which is neither branch alone

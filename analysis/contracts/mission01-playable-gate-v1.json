@@ -804,6 +804,49 @@
             "claim": "include/ac6/retail_live_flight_axes.h carries the derivation, states that the two live-model headers together cover every store in the function, records that the drive curve reaches 4/3 so the limit rather than the curve stops it, and notes that +308's two halves are independent if/else pairs rather than a three-way branch"
           }
         ]
+      },
+      "retail_live_flight_step": {
+        "status": "passed",
+        "statement": "the native product reproduces the LIVE flight model's per-frame step 0x82306A38 -- slot 15 of 0x8200F310, the branch that overrides the base class's slot 11 with the empty blr and is the one the entity drives -- its bit 7 skipping the three attitude virtuals, bit 6 substituting slot 39 for slot 31, bit 1 substituting slot 33 for the two exponential decays at [+412] and [+408], and those decays running by value*step*3 ONLY while the magnitude is at or above 2^-16 rather than being snapped to zero below it",
+        "retail_addresses": [
+          "0x82306A38",
+          "0x8200F310",
+          "0x82303E68",
+          "0x82282938",
+          "0x82326FE8",
+          "0x8200134C",
+          "0x82283480"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1389-the-step-that-actually-runs.md",
+            "sha256": "02150d58ac0e473c93c73ec0408fd29dcc743156d44af66333e32c553427066f",
+            "size": 4530,
+            "claim": "0x82306A38 read whole: 123 instructions, no vector, the call order and the three flag bits, and the fact that it calls the performance lookup 0x82283480 every frame -- which cycle 1378 denied and cycle 1383 corrected"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_live_flight_step_tests.cpp",
+            "sha256": "041fd61dd7bd4e494b46832b35cb746fcd8804fe484c0db2a5d57b4e3606db8d",
+            "size": 3936,
+            "claim": "cases for the three bit positions, the exponential decay of both fields, a sub-epsilon value being LEFT ALONE rather than snapped to zero, the reset bit skipping both decays, and the other two bits not reaching them; with two controls both asserted not to fire"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/live-flight-step-microexec.tsv",
+            "sha256": "9b69f7472b3cc8473888059b49c06c4edf3e68a80a7fa5bb584eb3278821681b",
+            "size": 820,
+            "claim": "the second composite differential of the campaign: 0x82306A38 executed with the real slot 30 reached through a real virtual dispatch over a synthetic vtable holding genuine addresses, five flag combinations each with a DISTINCT stubbed-call count that is asserted, and both decay fields compared bit for bit"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_live_flight_step.h",
+            "sha256": "baef3975479d8e68066011336ee2d5e6b8deb670a34c7a9b7e87b5370fe73ca1",
+            "size": 3530,
+            "claim": "include/ac6/retail_live_flight_step.h carries the derivation, records the two calls this step shares with 0x82283898 and that both use bit 1 as the reset, and warns that the 2^-16 here SKIPS the decay whereas the same word in slot 30's axis blocks SELECTS the decay regime"
+          }
+        ]
       }
     }
   }
