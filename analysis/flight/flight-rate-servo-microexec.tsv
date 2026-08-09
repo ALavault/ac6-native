@@ -1,0 +1,12 @@
+# 0x822831E8, the rate servo, micro-executed against
+# ac6::retail::update_flight_rate_servo.
+# case	verdict	+144	+148	+152	why the case exists
+idle	ok	0.0	0.0	0.0	everything centred and at rest
+driven	ok	2.0899999141693115	2.0999999046325684	2.0799999237060547	all three driven, so all three gains are scaled
+centred-with-rate	ok	0.949999988079071	0.949999988079071	0.949999988079071	centred axes use the UNSCALED gain
+saturation-clamped	ok	5.0	0.0	0.0	|rate/limit| = 1 plus the bias exceeds 1
+degenerate-limit	ok	9.999999974752427e-07	0.0	0.0	|limit| < 2^-16 makes the magnitude zero
+rate-clamped	ok	5.0	-5.0	0.0	a huge step drives both signs onto the limits
+axis-isolation	ok	0.0833333358168602	0.0	0.0	the first axis must not reach the other two
+distinct-biases	ok	2.0899999141693115	2.0999999046325684	2.0799999237060547	equal inputs on all three must give three answers
+full-mantissas	ok	1.7095086574554443	-1.7000000476837158	0.9769901633262634	long binary expansions everywhere

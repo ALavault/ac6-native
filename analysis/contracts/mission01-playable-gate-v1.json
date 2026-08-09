@@ -847,6 +847,49 @@
             "claim": "include/ac6/retail_live_flight_step.h carries the derivation, records the two calls this step shares with 0x82283898 and that both use bit 1 as the reset, and warns that the 2^-16 here SKIPS the decay whereas the same word in slot 30's axis blocks SELECTS the decay regime"
           }
         ]
+      },
+      "retail_flight_rate_servo": {
+        "status": "passed",
+        "statement": "the native product reproduces the rate servo 0x822831E8 -- a direct call from the live flight model's step, and the first consumer of the control state, reading the three axes at +304/+308/+312 and writing three rates at +144/+148/+152 -- driving each rate toward axis*limit with a gain that is the DRIVEN gain scaled by clamp(|rate/limit| + bias, 0, 1) when the axis is deflected and the CENTRED gain unscaled when it is not, with three different biases 0.5, 0.8 and 0.4, all three saturations computed before any servo runs, and each rate clamped to its own limit",
+        "retail_addresses": [
+          "0x822831E8",
+          "0x82306A38",
+          "0x82001354",
+          "0x82069ECC",
+          "0x82069CB4",
+          "0x826EB940",
+          "0x82069C2C"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1390-the-first-consumer-of-the-control-state.md",
+            "sha256": "cb037e2717b7593748450896fb7d1df45bbfbf994c033eaffef5834be35f0e24",
+            "size": 4353,
+            "claim": "0x822831E8 read whole: 166 instructions, no call and no vector, a footprint of exactly three floats measured before it was read, and a degenerate-limit path that reads a sixteen-byte block at 0x826EB940 which is all zeros"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_rate_servo_tests.cpp",
+            "sha256": "460a115959c7f38c5da0221eea198a9c5b256ddf606675d2beb0ba2b9d247c67",
+            "size": 6371,
+            "claim": "cases for the three distinct biases, the centred gain being unscaled and the driven gain scaled, the saturation clamp, the degenerate limit, both rate clamps, axis isolation, and the saturations preceding the servos; with two controls both asserted to fire"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-rate-servo-microexec.tsv",
+            "sha256": "c3c3428e235350a16b846d209f314153de845d7cea8cec2619418c50a71897dd",
+            "size": 986,
+            "claim": "0x822831E8 executed from its own entry over 9 cases, 27 float values compared bit for bit, with nothing stubbed and nothing capped and callee_entries asserted zero"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_rate_servo.h",
+            "sha256": "a13c7420c27eed8fa0493b29475b7fc41c5230ce022e41260d68398d2a8a16dc",
+            "size": 3360,
+            "claim": "include/ac6/retail_flight_rate_servo.h carries the derivation, records that the gain switch reads the opposite way from the obvious guess, that the three biases are three constants and not one, that the fallback block is all zeros rather than a division guard, and that the step's r5 argument is passed and never used"
+          }
+        ]
       }
     }
   }
