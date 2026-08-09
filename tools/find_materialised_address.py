@@ -26,7 +26,7 @@ not yet a reading.
 Both high-half forms are tried: `ori` pairs with the plain high half, `addi`
 pairs with the high half plus the carry the sign-extended low half implies.
 
-usage: find_materialised_address.py IMAGE ADDRESS [ADDRESS...]
+usage: find_materialised_address.py IMAGE ADDRESS [ADDRESS...] [--lookahead N]
        find_materialised_address.py analysis-input/ACE6_X360.exe 82297540
 exit 0 always; this is a search, not a gate.
 """
@@ -36,6 +36,22 @@ import sys
 
 BASE = 0x82000000
 LOOKAHEAD = 12  # instructions between the lis and its completion
+
+# THE COUNT DEPENDS ON THIS WINDOW, and the tool used to print it without
+# saying so. Measured on two targets:
+#
+#   lookahead    0x0002D3B4    0x82297540
+#           4          138             6
+#           8          142             6
+#          12          144             6
+#          32          151             6
+#          64          157             8
+#
+# A wider window pairs a `lis` with an `ori` further away, which may be the
+# same materialisation split by scheduling or may be two unrelated uses of one
+# register. Neither 138 nor 144 is "correct": they are answers to different
+# questions, and a delegated agent and I reported both without either being
+# wrong. So the window is now printed with every result, and settable.
 
 
 def materialisations(data, target):
@@ -86,8 +102,15 @@ def materialisations(data, target):
 
 
 def main() -> int:
+    global LOOKAHEAD
+    arguments = sys.argv[1:]
+    if "--lookahead" in arguments:
+        index = arguments.index("--lookahead")
+        LOOKAHEAD = int(arguments[index + 1])
+        arguments = arguments[:index] + arguments[index + 2:]
+    sys.argv = [sys.argv[0]] + arguments
     if len(sys.argv) < 3:
-        print("usage: find_materialised_address.py IMAGE ADDRESS [ADDRESS...]")
+        print("usage: find_materialised_address.py IMAGE ADDRESS [ADDRESS...] [--lookahead N]")
         return 1
     try:
         with open(sys.argv[1], "rb") as handle:
@@ -96,11 +119,13 @@ def main() -> int:
         print("  UNREADABLE  %s  %s" % (sys.argv[1], exc))
         return 1
 
-    print("image %s, %d bytes, base 0x%08X" % (sys.argv[1], len(data), BASE))
+    print("image %s, %d bytes, base 0x%08X, lookahead %d instructions"
+          % (sys.argv[1], len(data), BASE, LOOKAHEAD))
     for argument in sys.argv[2:]:
         target = int(argument, 16)
         sites = materialisations(data, target)
-        print("  0x%08X materialised at %d site(s)" % (target, len(sites)))
+        print("  0x%08X materialised at %d site(s) WITHIN %d instructions"
+              % (target, len(sites), LOOKAHEAD))
         for site, form in sites:
             print("      0x%08X  lis + %s   <- a CANDIDATE; read the site" %
                   (site, form))
