@@ -712,14 +712,25 @@ Four things were wrong, three of them found only by using it:
 | 3 | `vs32+n` and `vrn` are **disjoint storage** where the hardware has one register | bridged, `alias on`, and it is what made the composite depend on its input at all |
 | 4 | `lvx128` omits the `(rA|0)` rule | measured; does not fire on the paths tested so far |
 
-**Unresolved, and it needs an oracle.** `vpermwi128`'s lane order is disputed:
-Xenia's code says the high bit-pair selects element 0, Xenia's own comment on the
-same function says the low pair does (PowerPC bit numbering), and the SLEIGH
-module follows the comment. Neither reading makes `0x822A1E80` return the
-identity at zero angles, and a census of **545 sites finds neither `0xE4` nor
-`0x1B`** — no identity swizzle is ever emitted, so the population cannot settle
-it. The harness runs either reading (`override ADDR vpermwi128` /
-`vpermwi128-lowfirst`) and asserts neither.
+**Resolved, cycle 1314, and it needed no oracle.** `vpermwi128` is a **word
+swizzle** — four 2-bit selectors, duplication allowed, so `0x00` gives
+`[x,x,x,x]` — and its lane order was disputed for nine cycles: Xenia's code says
+the high bit-pair selects element 0, Xenia's own comment on the same function
+says the low pair does, and the SLEIGH module follows the comment. The two
+immediates that would discriminate, `0x1B` and `0xE4`, occur in **none of the
+image's 545 sites**, so the population could not settle it either.
+
+XenonRecomp settles it. It generated C++ for this XEX and turned every one of
+those 545 into an `_mm_shuffle_epi32` whose immediate re-encodes the PPC one.
+`tools/audit_vpermwi128_crossmatch.py` scores the four candidate readings over
+all of them: **high-first with reversed storage explains 545/545, the best rival
+2/545.** That is arithmetic, and it is precisely the use this campaign allows for
+generated code — literal cross-match evidence about an *instruction's semantics*,
+never executed and never a source for native behaviour.
+
+The harness still runs either reading (`override ADDR vpermwi128` /
+`vpermwi128-lowfirst`); high-first is now the established one and the module's
+behaviour is pinned as a confirmed defect.
 
 **What the instrument is good for today.** Scalar and integer routines, and
 vector routines that stay inside one register family — `0x8209CB70` is

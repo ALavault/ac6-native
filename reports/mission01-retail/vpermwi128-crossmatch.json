@@ -1,0 +1,37 @@
+{
+  "schema": "ac6.vpermwi128-crossmatch.v1",
+  "statement": "over every vpermwi128 the recompiler emitted for this XEX, only one reading of the immediate reproduces the x86 shuffle it chose; the SLEIGH module uses the other",
+  "sites": 545,
+  "distinct_ppc_immediates": 33,
+  "scores": {
+    "high-first, reversed storage": 545,
+    "high-first, direct storage": 2,
+    "low-first, reversed storage": 1,
+    "low-first, direct storage": 0
+  },
+  "reading": "high-first, reversed storage",
+  "runner_up_hits": 2,
+  "evidence_class": "cross-match: generated C++ read as a re-encoding of an instruction's semantics, never executed and never a source for native behaviour",
+  "most_common_immediates": [
+    {
+      "ppc": "0x63",
+      "sites": 113
+    },
+    {
+      "ppc": "0x87",
+      "sites": 101
+    },
+    {
+      "ppc": "0xE3",
+      "sites": 35
+    },
+    {
+      "ppc": "0xDB",
+      "sites": 35
+    },
+    {
+      "ppc": "0xB7",
+      "sites": 35
+    }
+  ]
+}

@@ -143,12 +143,24 @@ MODULE_CASES = [
         "expect": VB_W[2] + VB_W[2] + VB_W[3] + VB_W[0],
         "module": True,
         # MEASURED, cycle 1297: the module returns the lane order REVERSED --
-        # {vB[0], vB[3], vB[2], vB[2]} where the spec says {vB[2], vB[2], vB[3],
+        # {vB[0], vB[3], vB[2], vB[2]} where the ISA says {vB[2], vB[2], vB[3],
         # vB[0]}. Pinned rather than left red, so this file states a defect it
         # has measured instead of an outage it cannot fix. If Ghidra ever
         # corrects the module, this case goes red and says so.
+        #
+        # CONFIRMED, cycle 1314, and it needed no oracle. Cycles 1305-1306 could
+        # not adjudicate: Xenia's code says the HIGH bit-pair selects element 0,
+        # its own comment says the low pair does, and the two immediates that
+        # discriminate -- 0x1B and 0xE4 -- occur in none of the image's 545
+        # sites. But XenonRecomp generated C++ for this XEX and turned every one
+        # of those 545 into an _mm_shuffle_epi32 whose immediate re-encodes the
+        # PPC one. tools/audit_vpermwi128_crossmatch.py scores the four candidate
+        # readings over all of them: high-first with reversed storage explains
+        # 545/545, the best rival 2/545. That is arithmetic, and it is the use
+        # CLAUDE.md allows for generated code -- literal cross-match evidence
+        # about an instruction's semantics, never executed and never a source
+        # for native behaviour.
         "module_defect_actual": VB_W[0] + VB_W[3] + VB_W[2] + VB_W[2],
-        "disputed": True,
     },
     {
         # vspltw vD,vB,uimm : every lane becomes vB.word[uimm]. Same family of
@@ -403,9 +415,7 @@ def check(workdir: Path) -> int:
         defect = case.get("module_defect_actual")
         if defect is not None:
             if got == "0x" + defect:
-                label = ("readings disagree" if case.get("disputed")
-                         else "module defect confirmed")
-                defects.append(f"{case['name']}: {label}, "
+                defects.append(f"{case['name']}: module defect confirmed, "
                                f"got {got} where this file's reading says {want}")
                 passed += 1
             elif got == want:
