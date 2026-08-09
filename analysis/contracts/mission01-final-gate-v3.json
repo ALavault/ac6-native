@@ -242,8 +242,8 @@
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/retail-session-hud.json",
-            "sha256": "98f0cd9617f4704469e05b5490c020fd6c8c7021cb57a32d677e3688e09961e2",
-            "size": 1514,
+            "sha256": "a57948002fd76c6b78c29670d17c18e00645cfee97343633f710cd92f6b34566",
+            "size": 1516,
             "claim": "the numbers the test asserted before either image was written - two captures at tick 900 and tick 1800, differing colour hashes, 1276 and 1521 HUD pixel writes, no fixture"
           },
           {
