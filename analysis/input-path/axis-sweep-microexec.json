@@ -1,0 +1,2064 @@
+{
+  "schema": "ac6.retail-input-axis-sweep.v1",
+  "statement": "each axis half driven through 0x821CAA50 on a built NU::Input service, and the float slot it fills read from the 0x00 poison pass",
+  "consumer": "0x821CAA50",
+  "sampling": {
+    "fine_half": "LY+",
+    "fine_points": 108,
+    "coarse_halves": [
+      "LX+",
+      "LX-",
+      "LY-",
+      "RX+",
+      "RX-",
+      "RY+",
+      "RY-"
+    ],
+    "coarse_points": 21,
+    "domain": 65536,
+    "note": "sampled, not exhaustive: one case is about 0.23 s of emulation and the full domain would be four hours per half. Boundaries are included by construction, never by a decimation stride."
+  },
+  "rule": "slot = -0.0 unconditionally, then overwritten with float32(float32(half) * float32(1/32767)) -- negated for a `-` half -- when int16(half) > 0. Multiply, not divide: they differ by one ulp at some inputs.",
+  "observations": [
+    {
+      "half": "LY+",
+      "value": 0,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 1,
+      "slot": "0x50",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 2,
+      "slot": "0x50",
+      "float": 6.103701889514923e-05,
+      "float_bits": "0x38800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 3,
+      "slot": "0x50",
+      "float": 9.155552834272385e-05,
+      "float_bits": "0x38C00180",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 4,
+      "slot": "0x50",
+      "float": 0.00012207403779029846,
+      "float_bits": "0x39000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 5,
+      "slot": "0x50",
+      "float": 0.00015259254723787308,
+      "float_bits": "0x39200140",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 7,
+      "slot": "0x50",
+      "float": 0.0002136295661330223,
+      "float_bits": "0x396001C0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 8,
+      "slot": "0x50",
+      "float": 0.0002441480755805969,
+      "float_bits": "0x39800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 9,
+      "slot": "0x50",
+      "float": 0.00027466658502817154,
+      "float_bits": "0x39900120",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 15,
+      "slot": "0x50",
+      "float": 0.00045777764171361923,
+      "float_bits": "0x39F001E0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 16,
+      "slot": "0x50",
+      "float": 0.0004882961511611938,
+      "float_bits": "0x3A000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 17,
+      "slot": "0x50",
+      "float": 0.0005188146606087685,
+      "float_bits": "0x3A080110",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 31,
+      "slot": "0x50",
+      "float": 0.0009460737928748131,
+      "float_bits": "0x3A7801F0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 32,
+      "slot": "0x50",
+      "float": 0.0009765923023223877,
+      "float_bits": "0x3A800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 33,
+      "slot": "0x50",
+      "float": 0.0010071108117699623,
+      "float_bits": "0x3A840108",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 63,
+      "slot": "0x50",
+      "float": 0.0019226660951972008,
+      "float_bits": "0x3AFC01F8",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 64,
+      "slot": "0x50",
+      "float": 0.0019531846046447754,
+      "float_bits": "0x3B000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 65,
+      "slot": "0x50",
+      "float": 0.00198370311409235,
+      "float_bits": "0x3B020104",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 127,
+      "slot": "0x50",
+      "float": 0.003875850699841976,
+      "float_bits": "0x3B7E01FC",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 128,
+      "slot": "0x50",
+      "float": 0.003906369209289551,
+      "float_bits": "0x3B800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 129,
+      "slot": "0x50",
+      "float": 0.003936887718737125,
+      "float_bits": "0x3B810102",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 255,
+      "slot": "0x50",
+      "float": 0.007782219909131527,
+      "float_bits": "0x3BFF01FE",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 256,
+      "slot": "0x50",
+      "float": 0.007812738418579102,
+      "float_bits": "0x3C000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 257,
+      "slot": "0x50",
+      "float": 0.007843256928026676,
+      "float_bits": "0x3C008101",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 511,
+      "slot": "0x50",
+      "float": 0.015594958327710629,
+      "float_bits": "0x3C7F81FF",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 512,
+      "slot": "0x50",
+      "float": 0.015625476837158203,
+      "float_bits": "0x3C800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 513,
+      "slot": "0x50",
+      "float": 0.015655994415283203,
+      "float_bits": "0x3C804100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 1023,
+      "slot": "0x50",
+      "float": 0.031220436096191406,
+      "float_bits": "0x3CFFC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 1024,
+      "slot": "0x50",
+      "float": 0.031250953674316406,
+      "float_bits": "0x3D000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 1025,
+      "slot": "0x50",
+      "float": 0.031281471252441406,
+      "float_bits": "0x3D002100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 2046,
+      "slot": "0x50",
+      "float": 0.06244087219238281,
+      "float_bits": "0x3D7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 2047,
+      "slot": "0x50",
+      "float": 0.06247138977050781,
+      "float_bits": "0x3D7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 2048,
+      "slot": "0x50",
+      "float": 0.06250190734863281,
+      "float_bits": "0x3D800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 2049,
+      "slot": "0x50",
+      "float": 0.06253242492675781,
+      "float_bits": "0x3D801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 2050,
+      "slot": "0x50",
+      "float": 0.06256294250488281,
+      "float_bits": "0x3D802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 3072,
+      "slot": "0x50",
+      "float": 0.09375286102294922,
+      "float_bits": "0x3DC00180",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 4095,
+      "slot": "0x50",
+      "float": 0.12497329711914062,
+      "float_bits": "0x3DFFF200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 4096,
+      "slot": "0x50",
+      "float": 0.12500381469726562,
+      "float_bits": "0x3E000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 4097,
+      "slot": "0x50",
+      "float": 0.12503433227539062,
+      "float_bits": "0x3E000900",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 5120,
+      "slot": "0x50",
+      "float": 0.15625476837158203,
+      "float_bits": "0x3E200140",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 6144,
+      "slot": "0x50",
+      "float": 0.18750572204589844,
+      "float_bits": "0x3E400180",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 7168,
+      "slot": "0x50",
+      "float": 0.21875667572021484,
+      "float_bits": "0x3E6001C0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 8191,
+      "slot": "0x50",
+      "float": 0.24997711181640625,
+      "float_bits": "0x3E7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 8192,
+      "slot": "0x50",
+      "float": 0.25000762939453125,
+      "float_bits": "0x3E800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 8193,
+      "slot": "0x50",
+      "float": 0.25003814697265625,
+      "float_bits": "0x3E800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 9216,
+      "slot": "0x50",
+      "float": 0.28125858306884766,
+      "float_bits": "0x3E900120",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 10240,
+      "slot": "0x50",
+      "float": 0.31250953674316406,
+      "float_bits": "0x3EA00140",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 11264,
+      "slot": "0x50",
+      "float": 0.34376049041748047,
+      "float_bits": "0x3EB00160",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 12288,
+      "slot": "0x50",
+      "float": 0.3750114440917969,
+      "float_bits": "0x3EC00180",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 13312,
+      "slot": "0x50",
+      "float": 0.4062623977661133,
+      "float_bits": "0x3ED001A0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 14336,
+      "slot": "0x50",
+      "float": 0.4375133514404297,
+      "float_bits": "0x3EE001C0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 15360,
+      "slot": "0x50",
+      "float": 0.4687643051147461,
+      "float_bits": "0x3EF001E0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 16383,
+      "slot": "0x50",
+      "float": 0.4999847412109375,
+      "float_bits": "0x3EFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 16384,
+      "slot": "0x50",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 16385,
+      "slot": "0x50",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 17408,
+      "slot": "0x50",
+      "float": 0.5312662124633789,
+      "float_bits": "0x3F080110",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 18432,
+      "slot": "0x50",
+      "float": 0.5625171661376953,
+      "float_bits": "0x3F100120",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 19456,
+      "slot": "0x50",
+      "float": 0.5937681198120117,
+      "float_bits": "0x3F180130",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 20480,
+      "slot": "0x50",
+      "float": 0.6250190734863281,
+      "float_bits": "0x3F200140",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 21504,
+      "slot": "0x50",
+      "float": 0.6562700271606445,
+      "float_bits": "0x3F280150",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 22528,
+      "slot": "0x50",
+      "float": 0.6875209808349609,
+      "float_bits": "0x3F300160",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 23552,
+      "slot": "0x50",
+      "float": 0.7187719345092773,
+      "float_bits": "0x3F380170",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 24576,
+      "slot": "0x50",
+      "float": 0.7500228881835938,
+      "float_bits": "0x3F400180",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 25600,
+      "slot": "0x50",
+      "float": 0.7812738418579102,
+      "float_bits": "0x3F480190",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 26624,
+      "slot": "0x50",
+      "float": 0.8125247955322266,
+      "float_bits": "0x3F5001A0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 27648,
+      "slot": "0x50",
+      "float": 0.843775749206543,
+      "float_bits": "0x3F5801B0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 28672,
+      "slot": "0x50",
+      "float": 0.8750267028808594,
+      "float_bits": "0x3F6001C0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 29696,
+      "slot": "0x50",
+      "float": 0.9062776565551758,
+      "float_bits": "0x3F6801D0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 30720,
+      "slot": "0x50",
+      "float": 0.9375286102294922,
+      "float_bits": "0x3F7001E0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 31744,
+      "slot": "0x50",
+      "float": 0.9687795639038086,
+      "float_bits": "0x3F7801F0",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 32766,
+      "slot": "0x50",
+      "float": 0.999969482421875,
+      "float_bits": "0x3F7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 32767,
+      "slot": "0x50",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 32768,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 32769,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 33792,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 34816,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 35840,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 36864,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 37888,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 38912,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 39936,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 40960,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 41984,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 43008,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 44032,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 45056,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 46080,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 47104,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 48128,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 49151,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 49152,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 50176,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 51200,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 52224,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 53248,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 54272,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 55296,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 56320,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 57344,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 58368,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 59392,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 60416,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 61440,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 62464,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 63488,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 64512,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 65534,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY+",
+      "value": 65535,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 0,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 1,
+      "slot": "0x4C",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 2046,
+      "slot": "0x4C",
+      "float": 0.06244087219238281,
+      "float_bits": "0x3D7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 2047,
+      "slot": "0x4C",
+      "float": 0.06247138977050781,
+      "float_bits": "0x3D7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 2048,
+      "slot": "0x4C",
+      "float": 0.06250190734863281,
+      "float_bits": "0x3D800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 2049,
+      "slot": "0x4C",
+      "float": 0.06253242492675781,
+      "float_bits": "0x3D801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 2050,
+      "slot": "0x4C",
+      "float": 0.06256294250488281,
+      "float_bits": "0x3D802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 8191,
+      "slot": "0x4C",
+      "float": 0.24997711181640625,
+      "float_bits": "0x3E7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 8192,
+      "slot": "0x4C",
+      "float": 0.25000762939453125,
+      "float_bits": "0x3E800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 8193,
+      "slot": "0x4C",
+      "float": 0.25003814697265625,
+      "float_bits": "0x3E800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 16383,
+      "slot": "0x4C",
+      "float": 0.4999847412109375,
+      "float_bits": "0x3EFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 16384,
+      "slot": "0x4C",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 16385,
+      "slot": "0x4C",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 32766,
+      "slot": "0x4C",
+      "float": 0.999969482421875,
+      "float_bits": "0x3F7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 32767,
+      "slot": "0x4C",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 32768,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 32769,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 49151,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 49152,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 65534,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX+",
+      "value": 65535,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 0,
+      "slot": "0x4C",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 1,
+      "slot": "0x4C",
+      "float": -3.0518509447574615e-05,
+      "float_bits": "0xB8000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 2046,
+      "slot": "0x4C",
+      "float": -0.06244087219238281,
+      "float_bits": "0xBD7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 2047,
+      "slot": "0x4C",
+      "float": -0.06247138977050781,
+      "float_bits": "0xBD7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 2048,
+      "slot": "0x4C",
+      "float": -0.06250190734863281,
+      "float_bits": "0xBD800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 2049,
+      "slot": "0x4C",
+      "float": -0.06253242492675781,
+      "float_bits": "0xBD801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 2050,
+      "slot": "0x4C",
+      "float": -0.06256294250488281,
+      "float_bits": "0xBD802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 8191,
+      "slot": "0x4C",
+      "float": -0.24997711181640625,
+      "float_bits": "0xBE7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 8192,
+      "slot": "0x4C",
+      "float": -0.25000762939453125,
+      "float_bits": "0xBE800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 8193,
+      "slot": "0x4C",
+      "float": -0.25003814697265625,
+      "float_bits": "0xBE800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 16383,
+      "slot": "0x4C",
+      "float": -0.4999847412109375,
+      "float_bits": "0xBEFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 16384,
+      "slot": "0x4C",
+      "float": -0.5000152587890625,
+      "float_bits": "0xBF000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 16385,
+      "slot": "0x4C",
+      "float": -0.5000457763671875,
+      "float_bits": "0xBF000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 32766,
+      "slot": "0x4C",
+      "float": -0.999969482421875,
+      "float_bits": "0xBF7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 32767,
+      "slot": "0x4C",
+      "float": -1.0,
+      "float_bits": "0xBF800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 32768,
+      "slot": "0x4C",
+      "float": 1.000030517578125,
+      "float_bits": "0x3F800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 32769,
+      "slot": "0x4C",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 49151,
+      "slot": "0x4C",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 49152,
+      "slot": "0x4C",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 65534,
+      "slot": "0x4C",
+      "float": 6.103701889514923e-05,
+      "float_bits": "0x38800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LX-",
+      "value": 65535,
+      "slot": "0x4C",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 0,
+      "slot": "0x50",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 1,
+      "slot": "0x50",
+      "float": -3.0518509447574615e-05,
+      "float_bits": "0xB8000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 2046,
+      "slot": "0x50",
+      "float": -0.06244087219238281,
+      "float_bits": "0xBD7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 2047,
+      "slot": "0x50",
+      "float": -0.06247138977050781,
+      "float_bits": "0xBD7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 2048,
+      "slot": "0x50",
+      "float": -0.06250190734863281,
+      "float_bits": "0xBD800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 2049,
+      "slot": "0x50",
+      "float": -0.06253242492675781,
+      "float_bits": "0xBD801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 2050,
+      "slot": "0x50",
+      "float": -0.06256294250488281,
+      "float_bits": "0xBD802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 8191,
+      "slot": "0x50",
+      "float": -0.24997711181640625,
+      "float_bits": "0xBE7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 8192,
+      "slot": "0x50",
+      "float": -0.25000762939453125,
+      "float_bits": "0xBE800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 8193,
+      "slot": "0x50",
+      "float": -0.25003814697265625,
+      "float_bits": "0xBE800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 16383,
+      "slot": "0x50",
+      "float": -0.4999847412109375,
+      "float_bits": "0xBEFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 16384,
+      "slot": "0x50",
+      "float": -0.5000152587890625,
+      "float_bits": "0xBF000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 16385,
+      "slot": "0x50",
+      "float": -0.5000457763671875,
+      "float_bits": "0xBF000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 32766,
+      "slot": "0x50",
+      "float": -0.999969482421875,
+      "float_bits": "0xBF7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 32767,
+      "slot": "0x50",
+      "float": -1.0,
+      "float_bits": "0xBF800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 32768,
+      "slot": "0x50",
+      "float": 1.000030517578125,
+      "float_bits": "0x3F800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 32769,
+      "slot": "0x50",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 49151,
+      "slot": "0x50",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 49152,
+      "slot": "0x50",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 65534,
+      "slot": "0x50",
+      "float": 6.103701889514923e-05,
+      "float_bits": "0x38800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "LY-",
+      "value": 65535,
+      "slot": "0x50",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 0,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 1,
+      "slot": "0x54",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 2046,
+      "slot": "0x54",
+      "float": 0.06244087219238281,
+      "float_bits": "0x3D7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 2047,
+      "slot": "0x54",
+      "float": 0.06247138977050781,
+      "float_bits": "0x3D7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 2048,
+      "slot": "0x54",
+      "float": 0.06250190734863281,
+      "float_bits": "0x3D800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 2049,
+      "slot": "0x54",
+      "float": 0.06253242492675781,
+      "float_bits": "0x3D801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 2050,
+      "slot": "0x54",
+      "float": 0.06256294250488281,
+      "float_bits": "0x3D802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 8191,
+      "slot": "0x54",
+      "float": 0.24997711181640625,
+      "float_bits": "0x3E7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 8192,
+      "slot": "0x54",
+      "float": 0.25000762939453125,
+      "float_bits": "0x3E800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 8193,
+      "slot": "0x54",
+      "float": 0.25003814697265625,
+      "float_bits": "0x3E800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 16383,
+      "slot": "0x54",
+      "float": 0.4999847412109375,
+      "float_bits": "0x3EFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 16384,
+      "slot": "0x54",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 16385,
+      "slot": "0x54",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 32766,
+      "slot": "0x54",
+      "float": 0.999969482421875,
+      "float_bits": "0x3F7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 32767,
+      "slot": "0x54",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 32768,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 32769,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 49151,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 49152,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 65534,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX+",
+      "value": 65535,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 0,
+      "slot": "0x54",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 1,
+      "slot": "0x54",
+      "float": -3.0518509447574615e-05,
+      "float_bits": "0xB8000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 2046,
+      "slot": "0x54",
+      "float": -0.06244087219238281,
+      "float_bits": "0xBD7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 2047,
+      "slot": "0x54",
+      "float": -0.06247138977050781,
+      "float_bits": "0xBD7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 2048,
+      "slot": "0x54",
+      "float": -0.06250190734863281,
+      "float_bits": "0xBD800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 2049,
+      "slot": "0x54",
+      "float": -0.06253242492675781,
+      "float_bits": "0xBD801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 2050,
+      "slot": "0x54",
+      "float": -0.06256294250488281,
+      "float_bits": "0xBD802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 8191,
+      "slot": "0x54",
+      "float": -0.24997711181640625,
+      "float_bits": "0xBE7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 8192,
+      "slot": "0x54",
+      "float": -0.25000762939453125,
+      "float_bits": "0xBE800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 8193,
+      "slot": "0x54",
+      "float": -0.25003814697265625,
+      "float_bits": "0xBE800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 16383,
+      "slot": "0x54",
+      "float": -0.4999847412109375,
+      "float_bits": "0xBEFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 16384,
+      "slot": "0x54",
+      "float": -0.5000152587890625,
+      "float_bits": "0xBF000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 16385,
+      "slot": "0x54",
+      "float": -0.5000457763671875,
+      "float_bits": "0xBF000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 32766,
+      "slot": "0x54",
+      "float": -0.999969482421875,
+      "float_bits": "0xBF7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 32767,
+      "slot": "0x54",
+      "float": -1.0,
+      "float_bits": "0xBF800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 32768,
+      "slot": "0x54",
+      "float": 1.000030517578125,
+      "float_bits": "0x3F800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 32769,
+      "slot": "0x54",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 49151,
+      "slot": "0x54",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 49152,
+      "slot": "0x54",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 65534,
+      "slot": "0x54",
+      "float": 6.103701889514923e-05,
+      "float_bits": "0x38800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RX-",
+      "value": 65535,
+      "slot": "0x54",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 0,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 1,
+      "slot": "0x58",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 2046,
+      "slot": "0x58",
+      "float": 0.06244087219238281,
+      "float_bits": "0x3D7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 2047,
+      "slot": "0x58",
+      "float": 0.06247138977050781,
+      "float_bits": "0x3D7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 2048,
+      "slot": "0x58",
+      "float": 0.06250190734863281,
+      "float_bits": "0x3D800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 2049,
+      "slot": "0x58",
+      "float": 0.06253242492675781,
+      "float_bits": "0x3D801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 2050,
+      "slot": "0x58",
+      "float": 0.06256294250488281,
+      "float_bits": "0x3D802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 8191,
+      "slot": "0x58",
+      "float": 0.24997711181640625,
+      "float_bits": "0x3E7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 8192,
+      "slot": "0x58",
+      "float": 0.25000762939453125,
+      "float_bits": "0x3E800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 8193,
+      "slot": "0x58",
+      "float": 0.25003814697265625,
+      "float_bits": "0x3E800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 16383,
+      "slot": "0x58",
+      "float": 0.4999847412109375,
+      "float_bits": "0x3EFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 16384,
+      "slot": "0x58",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 16385,
+      "slot": "0x58",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 32766,
+      "slot": "0x58",
+      "float": 0.999969482421875,
+      "float_bits": "0x3F7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 32767,
+      "slot": "0x58",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 32768,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 32769,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 49151,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 49152,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 65534,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY+",
+      "value": 65535,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 0,
+      "slot": "0x58",
+      "float": -0.0,
+      "float_bits": "0x80000000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 1,
+      "slot": "0x58",
+      "float": -3.0518509447574615e-05,
+      "float_bits": "0xB8000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 2046,
+      "slot": "0x58",
+      "float": -0.06244087219238281,
+      "float_bits": "0xBD7FC200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 2047,
+      "slot": "0x58",
+      "float": -0.06247138977050781,
+      "float_bits": "0xBD7FE200",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 2048,
+      "slot": "0x58",
+      "float": -0.06250190734863281,
+      "float_bits": "0xBD800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 2049,
+      "slot": "0x58",
+      "float": -0.06253242492675781,
+      "float_bits": "0xBD801100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 2050,
+      "slot": "0x58",
+      "float": -0.06256294250488281,
+      "float_bits": "0xBD802100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 8191,
+      "slot": "0x58",
+      "float": -0.24997711181640625,
+      "float_bits": "0xBE7FFA00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 8192,
+      "slot": "0x58",
+      "float": -0.25000762939453125,
+      "float_bits": "0xBE800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 8193,
+      "slot": "0x58",
+      "float": -0.25003814697265625,
+      "float_bits": "0xBE800500",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 16383,
+      "slot": "0x58",
+      "float": -0.4999847412109375,
+      "float_bits": "0xBEFFFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 16384,
+      "slot": "0x58",
+      "float": -0.5000152587890625,
+      "float_bits": "0xBF000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 16385,
+      "slot": "0x58",
+      "float": -0.5000457763671875,
+      "float_bits": "0xBF000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 32766,
+      "slot": "0x58",
+      "float": -0.999969482421875,
+      "float_bits": "0xBF7FFE00",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 32767,
+      "slot": "0x58",
+      "float": -1.0,
+      "float_bits": "0xBF800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 32768,
+      "slot": "0x58",
+      "float": 1.000030517578125,
+      "float_bits": "0x3F800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 32769,
+      "slot": "0x58",
+      "float": 1.0,
+      "float_bits": "0x3F800000",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 49151,
+      "slot": "0x58",
+      "float": 0.5000457763671875,
+      "float_bits": "0x3F000300",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 49152,
+      "slot": "0x58",
+      "float": 0.5000152587890625,
+      "float_bits": "0x3F000100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 65534,
+      "slot": "0x58",
+      "float": 6.103701889514923e-05,
+      "float_bits": "0x38800100",
+      "flags": "0x00000000"
+    },
+    {
+      "half": "RY-",
+      "value": 65535,
+      "slot": "0x58",
+      "float": 3.0518509447574615e-05,
+      "float_bits": "0x38000100",
+      "flags": "0x00000000"
+    }
+  ]
+}

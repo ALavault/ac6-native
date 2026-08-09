@@ -337,6 +337,53 @@
             "claim": "include/ac6/retail_input.h carries the derivation and names what is not ported: the wrapper, the two readers, the poll entry as DriverController vtable 0x820124F8 slot +0x10, the axis loop and its table, the button arithmetic, the accessor, the capability map, and the dispatch at 0x82343A30 with 0x82343838's return value"
           }
         ]
+      },
+      "retail_input_record": {
+        "status": "passed",
+        "statement": "the native product reproduces the per-controller input record 0x821CAA50 builds -- the fourteen-bit button remap, the two scalar slots and their separate flag gate, and the four axis slots with their negative-zero idle state -- with every rule produced by executing the retail function rather than by reading it, and 321 retail vectors reproduced bit for bit",
+        "retail_addresses": [
+          "0x821CAA50",
+          "0x821CAA88",
+          "0x821CA908",
+          "0x821CB5F0",
+          "0x821D7A90",
+          "0x821CB244",
+          "0x826EDB98",
+          "0x82069BFC",
+          "0x8234D0A0",
+          "0x8234D110",
+          "0x8201250C"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1320-the-behaviour-that-could-not-fire.md",
+            "sha256": "20544e8e22f4cbe4fabd38e8a39e3ada9e872731585834c2b7cdbfea6e6cebf2",
+            "size": 8901,
+            "claim": "0x821CAA50 executed to return in 4740 steps under three controller plans; the record base corrected from 0x826EDBA0 to 0x826EDB98, r20 settled at zero from the function and all three of its callers, and all four records shown to be filled from driver-pointer slot 0"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-input-record.json",
+            "sha256": "27bdf5126b6991d237115a09e158cbabc6ef97fe7bcb316a4bfb024c1757d2e6",
+            "size": 265,
+            "claim": "321 retail vectors compared bit for bit against build_input_record with no divergence, plus the named boundaries 0x07FF/0x0800/0x0801 and 0x4000/0x7FFF/0x8000/0xFFFF as separate expectations"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/input-path/axis-sweep-microexec.json",
+            "sha256": "e23c9cab3f7eac9295c142bfadff69f8d355a07f4a4322a9c3454d67b5f6d3b1",
+            "size": 44516,
+            "claim": "255 executions of 0x821CAA50 driving one axis half at a time -- 108 points on LY+ and every named boundary on the other seven -- all 255 reproduced by the composed rule, which the sweep produced rather than confirmed"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_input_record.h",
+            "sha256": "c09b3c7436442528cf37af82e0eff95dd5db142be158d941957d45ecf3bc67bd",
+            "size": 9344,
+            "claim": "include/ac6/retail_input_record.h carries the derivation and names what is not ported: the constant 3 at record+0x98, the zeros at +0x8C..+0x94, and the second normalisation at 0x821CB244 that no input yet found reaches"
+          }
+        ]
       }
     }
   }
