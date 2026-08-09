@@ -1,0 +1,21 @@
+# The snapshot NU::Input hands to gameplay, derived cycle 1310.
+# 0x8234D0A0 is memcpy(out, device + 0x04, 0x40), so out+N is device+(N+4).
+# The copy stops one byte before device+0x44, where XINPUT_STATE begins.
+# columns: out_off device_off width meaning
+0x04	0x08	4	connection state; 0 = valid, -1/-2 otherwise
+0x10	0x14	4	buttons pressed this frame  (prev ^ cur) & cur
+0x14	0x18	4	buttons released this frame (prev ^ cur) & ~cur
+0x18	0x1C	4	buttons currently held
+0x1C	0x20	4	complement of held
+0x24	0x28	2	LY positive half
+0x26	0x2A	2	LY negative half
+0x28	0x2C	2	LX negative half
+0x2A	0x2E	2	LX positive half
+0x2C	0x30	2	RY positive half
+0x2E	0x32	2	RY negative half
+0x30	0x34	2	RX negative half
+0x32	0x36	2	RX positive half
+0x38	0x3C	2	raw sThumbLX
+0x3A	0x3E	2	raw sThumbLY
+0x3C	0x40	2	raw sThumbRX
+0x3E	0x42	2	raw sThumbRY

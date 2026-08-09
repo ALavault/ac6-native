@@ -23,3 +23,12 @@
 0x821CA908	consumer	82 instructions, 1 site
 0x821CBB58	consumer	46 instructions, CDirtyDiscErrorCall vtable +0x04, not gameplay
 0x821D5EF8	boot resource mount	already in the ladder's hop table; inits input and reads once
+0x823437F0	API init target	one-time lock init via 0x823D6A9C, then 0x82343978
+0x82343838	locked read	0x82343A30, returns [out+0x04] == 0
+0x82343888	locked float call	0x82343A68, passes f1 through
+0x823438E0	locked call	0x82343A90 (unread)
+0x82343928	locked call	0x82343AD0 (unread), argument is the constant 7
+0x82343A30	driver dispatch	context+0x04 is five driver pointers, bound 5, virtual slot +0x0C
+0x82343A68	float path	driver[index], null-checked, tail-calls 0x8234D2B0 with f1
+0x8234D0A0	the accessor	memcpy(out, device+0x04, 0x40) -- DriverController vtable +0x0C
+0x8234D0B8	capability mapper	1->1 2->4 3->2 4->3 5->5 else 0, stored at device+0x10
