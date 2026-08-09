@@ -1,0 +1,55 @@
+# 0x822A6710 -- the ONE behavioural specialisation of a player unit. Cycle 1340.
+#
+# Slot +0x3C of ACE6::CAce6UnitPlayer and CAce6UnitOtherPlayer. ACE6::CAce6Unit
+# has the do-nothing `blr` stub there (0x822DDBE8), so this method exists only
+# for the two player kinds -- established by reading all 23 slots of all three
+# vtables (cycles 1337, 1338) and then reading the functions rather than diffing
+# the table (cycle 1339).
+#
+# WHAT IT DOES, after two calls: it COPIES A LOCATOR. Not builds one from angles
+# -- copies one, whole, from the unit's FIRST CHILD.
+#
+#   r9  = this + 0x80          the unit's own CGaLocator
+#   r11 = [this + 0xD8]        the child pointer array
+#   r11 = [r11 + 0]            child[0]
+#   r8  = child + 0x60         the CHILD's locator -- a different offset
+#   r10 = r8 + 0x10            child locator, row 0
+#   r11 = r9 + 0x10            unit  locator, row 0
+#
+#   lvx128 [child+0x70] -> stvx128 [this+0x90]      row 0
+#   lvx128 [child+0x80] -> stvx128 [this+0xA0]      row 1
+#   lvx128 [child+0x90] -> stvx128 [this+0xB0]      row 2
+#   lvx128 [child+0xA0] -> stvx128 [this+0xC0]      translation
+#
+# columns: source destination meaning
+child+0x70	this+0x90	locator row 0
+child+0x80	this+0xA0	locator row 1
+child+0x90	this+0xB0	locator row 2
+child+0xA0	this+0xC0	locator translation row
+#
+# THREE THINGS THIS CONFIRMS FROM A DIRECTION THAT NEVER RAN A ROTATION.
+#
+# 1. The locator's payload is exactly FOUR 16-byte rows at +0x10..+0x4F. A
+#    function whose whole job is to copy one copies precisely those four and
+#    nothing else.
+#
+# 2. It starts at +0x10 and NEVER TOUCHES +0x00. Cycle 1335 established that word
+#    is the vtable pointer and that writing it would destroy the object's type;
+#    here is a copier that agrees, without being asked.
+#
+# 3. The translation is the FOURTH ROW and travels with the basis as one block --
+#    cycle 1330 derived that from lane-3 values and cycle 1332 from the
+#    constructor's (0,0,0,1); this is a third derivation, from a bulk copy.
+#
+# THE CHILD'S LOCATOR IS AT +0x60, NOT +0x80. A unit's own is at +0x80 and it has
+# a second at +0x10. So the child is NOT a CAce6Unit -- its layout differs -- and
+# nothing here says what it is.
+#
+# BEFORE THE COPY:
+#   bl 0x822A2030 (this, 1)
+#   bl 0x822A1668 (this, f1, r5)          f1 is the method's float argument
+# and the whole body is skipped when [this+0xDC] -- the child count -- is zero.
+#
+# NOT ESTABLISHED: what 0x822A2030 and 0x822A1668 do; what the float is; what
+# class the children are; which of the four callers of the +0x3C slot supplies
+# what. The float is NOT called delta time here.
