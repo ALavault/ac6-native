@@ -10,6 +10,32 @@
 # word is the VTABLE POINTER. It is not that 0x822A1E80 happens not to write
 # there -- writing there would destroy the object's type.
 #
+# THE TYPE, READ OUT OF RTTI (cycle 1336). CGaLocator's vtable is ONE slot, its
+# destructor at 0x82093818, and its Complete Object Locator sits at vtable[-1]:
+#
+#   0x8206D844  COL         signature 0, offset 0, cdOffset 0
+#               typeDescriptor      0x8268F748
+#               classHierarchyDesc  0x8206D858
+#   0x8206D858  hierarchy   attributes 0 (single, non-virtual), numBaseClasses 1
+#               pBaseClassArray     0x8206D868
+#   0x8206D868  array       ONE entry -> 0x8206D870
+#   0x8206D870  base        typeDescriptor 0x8268F748 -- CGaLocator ITSELF
+#               numContainedBases 0, PMD (0, -1, 0), back-pointer 0x8206D858
+#
+# MSVC's base-class array includes the class itself, so one entry naming itself
+# with numContainedBases = 0 means CGaLocator HAS NO BASE CLASSES. It is a
+# standalone class with a single virtual method.
+#
+# The limit of that statement, stated: RTTI records what the compiler emitted for
+# THIS class. A class deriving FROM CGaLocator would record the relationship in
+# its own hierarchy descriptor, not here, so this says nothing about derived
+# classes -- only that CGaLocator derives from nothing.
+#
+# Consequence for a port: both locators a unit carries are the same type, with no
+# polymorphic variants to model, so what separates +0x10 from +0x80 is USAGE and
+# nothing else. `RetailBasis` in include/ac6/retail_transform.h being a plain
+# struct with free functions is retail's shape, not a simplification.
+#
 # 0x822A1E80 does `r31 = r3 + 0x80` and writes its three basis rows at
 # r31+0x10/+0x20/+0x30. Its caller 0x822A23D8 does `mr r3,r31` before the call
 # and `stvx128 v0,r31,r11` with r11 = 192 after building a vector -- so the
