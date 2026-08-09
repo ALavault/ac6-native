@@ -11,9 +11,11 @@ That happened once (the NTXR decode artefact, after the byte-swap control change
 what the test writes) and was caught by reading `git status`, not by the gate.
 This makes the check routine instead of lucky.
 
-Exits 0 when every cited path is in HEAD and identical to the working tree, 1
-when any drifts or is missing, and 77 when this is not a git repository - the
-same skip convention the native tests use.
+Exits 0 when every cited path in every current contract is in HEAD and identical
+to the working tree, 1 when any drifts or is missing, and 77 when this is not a
+git repository - the same skip convention the native tests use. A contract with
+``superseded_by`` is retained as history and excluded only after its replacement
+path has been resolved and parsed.
 
 It also checks the hash tables capture bundles write into their README - rows of
 the form `| `file` | `sha256` |`. Those index real artefacts and are audited by
@@ -24,16 +26,17 @@ usage: audit_ac6_contract_artifacts.py CONTRACT [CONTRACT...]
 """
 
 import hashlib
-import json
 import re
 import subprocess
 import sys
 from pathlib import Path
 
+from contract_audit_scope import ContractScopeError, current_contracts, print_superseded
+
 SHA256 = re.compile(r"[0-9a-f]{64}")
 
 
-def cited_paths(contract: Path) -> set[str]:
+def cited_paths(document: dict) -> set[str]:
     """Paths of evidence entries only.
 
     A contract carries `"path"` in places that are not artefacts - provenance
@@ -43,7 +46,6 @@ def cited_paths(contract: Path) -> set[str]:
     document and take only entries that look like evidence: a dict with both a
     `path` and a `sha256`.
     """
-    document = json.loads(contract.read_text(encoding="utf-8"))
     found: set[str] = set()
 
     def walk(node: object) -> None:
@@ -101,9 +103,16 @@ def main() -> int:
         print("contract_artifacts=skip reason=not a git repository")
         return 77
 
+    try:
+        active, superseded = current_contracts(args)
+    except ContractScopeError as exc:
+        print(f"contract_artifacts=fail reason=invalid_scope detail={exc}")
+        return 1
+    print_superseded(superseded)
+
     paths: set[str] = set()
-    for name in args:
-        paths |= cited_paths(Path(name))
+    for contract in active:
+        paths |= cited_paths(contract.document)
 
     drift: list[str] = []
     missing: list[tuple[str, str]] = []
@@ -136,8 +145,9 @@ def main() -> int:
         print(f"readme_hash=fail {line}")
     if wrong:
         return 1
-    print(f"contract_artifacts=pass cited={len(paths)} match_head={matched} "
-          f"readme_rows={rows}")
+    print(f"contract_artifacts=pass contracts={len(active)} "
+          f"superseded={len(superseded)} cited={len(paths)} "
+          f"match_head={matched} readme_rows={rows}")
     return 0
 
 

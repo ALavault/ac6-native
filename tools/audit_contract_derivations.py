@@ -24,15 +24,17 @@ This tool answers a different question from the gate's. It reports:
 
 It does not enforce anything the gate does not already enforce, so a green run
 here is not a substitute for the gate. It is the map you want in your hand
-before you start editing.
+before you start editing. Contracts carrying ``superseded_by`` are reported as
+historical and excluded only when their replacement resolves to readable JSON.
 
 usage: audit_contract_derivations.py CONTRACT [CONTRACT...]
 exit 0 when no gap and no multiple-derivation behaviour is found.
 """
 
-import json
 import os
 import sys
+
+from contract_audit_scope import ContractScopeError, current_contracts, print_superseded
 
 
 def behaviours(node, key=None, found=None):
@@ -60,13 +62,15 @@ def main() -> int:
     multiples = 0
     checked = 0
 
-    for contract in contracts:
-        try:
-            with open(contract, encoding="utf-8") as handle:
-                document = json.load(handle)
-        except (OSError, ValueError) as exc:
-            print("  UNREADABLE  %s  %s" % (contract, exc))
-            return 1
+    try:
+        active, superseded = current_contracts(contracts)
+    except ContractScopeError as exc:
+        print("contract_derivations=fail reason=invalid_scope detail=%s" % exc)
+        return 1
+    print_superseded(superseded)
+
+    for contract in active:
+        document = contract.document
 
         for name, record in behaviours(document):
             derivations = [item["path"] for item in record["evidence"]
@@ -80,7 +84,7 @@ def main() -> int:
                 multiples += 1
                 print("  MULTIPLE DERIVATIONS  %s.%s  (%d files, each of which "
                       "the gate requires to cite all %d addresses)"
-                      % (os.path.basename(contract), name, len(derivations),
+                      % (contract.path.name, name, len(derivations),
                          len(addresses)))
 
             for path in derivations:
@@ -89,7 +93,7 @@ def main() -> int:
                         text = handle.read().lower()
                 except OSError:
                     print("  UNREADABLE DERIVATION  %s.%s  %s"
-                          % (os.path.basename(contract), name, path))
+                          % (contract.path.name, name, path))
                     gaps += 1
                     continue
                 missing = [a for a in addresses
@@ -97,15 +101,16 @@ def main() -> int:
                 if missing:
                     gaps += 1
                     print("  %s.%s  %s cites %d of %d"
-                          % (os.path.basename(contract), name,
+                          % (contract.path.name, name,
                              os.path.basename(path),
                              len(addresses) - len(missing), len(addresses)))
                     for address in missing:
                         print("        uncited  %s" % address)
 
     status = "pass" if gaps == 0 and multiples == 0 else "fail"
-    print("contract_derivations=%s behaviours=%d gaps=%d multiple_derivations=%d"
-          % (status, checked, gaps, multiples))
+    print("contract_derivations=%s contracts=%d superseded=%d behaviours=%d "
+          "gaps=%d multiple_derivations=%d"
+          % (status, len(active), len(superseded), checked, gaps, multiples))
     return 0 if status == "pass" else 1
 
 

@@ -15,15 +15,11 @@ Exit 0 when every address is mentioned by at least one evidence file of its own
 behaviour, 1 otherwise.  Addresses are matched case-insensitively and in both
 `0x8234CA28` and bare `8234ca28` forms, because the reports use both.
 """
-import json
 import pathlib
 import re
 import sys
 
-
-def load(path):
-    with open(path, encoding="utf-8") as handle:
-        return json.load(handle)
+from contract_audit_scope import ContractScopeError, current_contracts, print_superseded
 
 
 def behaviours(document):
@@ -65,8 +61,15 @@ def main(argv):
     cited = 0
     supported = 0
     failures = []
-    for contract in contracts:
-        document = load(contract)
+    try:
+        active, superseded = current_contracts(contracts)
+    except ContractScopeError as exc:
+        print(f"contract_addresses=fail reason=invalid_scope detail={exc}")
+        return 1
+    print_superseded(superseded)
+
+    for contract in active:
+        document = contract.document
         for name, behaviour in behaviours(document).items():
             addresses = behaviour.get("retail_addresses", [])
             if not addresses:
@@ -78,12 +81,13 @@ def main(argv):
                 if bare in haystack or address.lower() in haystack:
                     supported += 1
                 else:
-                    failures.append((pathlib.Path(contract).name, name, address))
+                    failures.append((contract.path.name, name, address))
 
     for contract, name, address in failures:
         print(f"UNSUPPORTED {contract} {name} {address}")
     status = "pass" if not failures else "fail"
-    print(f"contract_addresses={status} cited={cited} supported={supported} "
+    print(f"contract_addresses={status} contracts={len(active)} "
+          f"superseded={len(superseded)} cited={cited} supported={supported} "
           f"unsupported={len(failures)}")
     return 0 if not failures else 1
 

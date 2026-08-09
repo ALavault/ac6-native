@@ -70,6 +70,11 @@ second verifies every `retail_addresses` entry is actually mentioned by one of
 that behaviour's own evidence files — a citation to nowhere is not a derivation.
 It caught its author three times on the day it was written.
 
+All three contract-wide audits classify a file carrying `superseded_by` as
+historical instead of applying the current gate to its retired evidence. The
+marker is fail-closed: its replacement must exist and parse as a contract, so a
+misspelled or self-referential marker cannot hide a live contract.
+
 When a gate fails on `evidence size mismatch`, the fix is to re-pin the hashes,
 and there is a tool for it rather than a heredoc:
 
