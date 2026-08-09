@@ -1,0 +1,27 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x822A1E80",
+    "case": "Rotation@node+0x0"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "Function_822A1E80",
+    "regions": [
+      {"name": "object", "base": "0xb4000000", "kind": "poison", "size": 512},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 4096}
+    ],
+    "steps": 16,
+    "callee_entries": 0,
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": "object 0 bytes"
+  },
+  "exit": {"kind": "fault", "detail": "Instruction decode failed (Unable to resolve constructor at 822a1ec0), PC=822a1ec0"},
+  "registers": {
+    "r3": "0xb4000000",
+    "f1": "0x3fe0000000000000"
+  },
+  "calls": [],
+  "memory_writes": []
+}
