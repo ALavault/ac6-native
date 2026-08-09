@@ -1,0 +1,480 @@
+{
+  "schema": "ac6.transform-kernel-microexec.v1",
+  "statement": "0x822A1E80 returns the identity at zero angles, and each of its three callees is an exact plane rotation fixing one row -- measured with the vpermwi128 immediate decoded from the instruction word, which is what changed",
+  "model": {
+    "0x820A99F8": {
+      "kept": 0,
+      "first": 1,
+      "second": 2,
+      "sign": 1
+    },
+    "0x820A9B30": {
+      "kept": 1,
+      "first": 0,
+      "second": 2,
+      "sign": -1
+    },
+    "0x82211828": {
+      "kept": 2,
+      "first": 0,
+      "second": 1,
+      "sign": 1
+    }
+  },
+  "tolerance": 2e-05,
+  "cases": [
+    {
+      "case": "identity-zero",
+      "exit": "return",
+      "steps": 547,
+      "overrides_fired": 6,
+      "poison_independent": true,
+      "head": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "case": "sentinel-0x820A9B30-+0p00",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0
+        ],
+        [
+          5.0,
+          6.0,
+          7.0,
+          8.0
+        ],
+        [
+          9.0,
+          10.0,
+          11.0,
+          12.0
+        ]
+      ],
+      "worst_deviation": 0.0,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x820A9B30-+0p25",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          -1.257723,
+          -0.536215,
+          0.185294,
+          0.906802
+        ],
+        [
+          5.0,
+          6.0,
+          7.0,
+          8.0
+        ],
+        [
+          8.967616,
+          10.183932,
+          11.400248,
+          12.616565
+        ]
+      ],
+      "worst_deviation": 5.165806626905578e-07,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x820A9B30--0p50",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          5.192412,
+          6.54942,
+          7.906428,
+          9.263436
+        ],
+        [
+          5.0,
+          6.0,
+          7.0,
+          8.0
+        ],
+        [
+          7.418818,
+          7.816976,
+          8.215133,
+          8.61329
+        ]
+      ],
+      "worst_deviation": 1.458304678791933e-06,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x820A9B30-+0p75",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          -5.40306,
+          -5.35301,
+          -5.30296,
+          -5.25291
+        ],
+        [
+          5.0,
+          6.0,
+          7.0,
+          8.0
+        ],
+        [
+          7.266839,
+          8.680166,
+          10.093493,
+          11.506821
+        ]
+      ],
+      "worst_deviation": 8.376820321842615e-07,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x820A99F8-+0p00",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0
+        ],
+        [
+          5.0,
+          6.0,
+          7.0,
+          8.0
+        ],
+        [
+          9.0,
+          10.0,
+          11.0,
+          12.0
+        ]
+      ],
+      "worst_deviation": 0.0,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x820A99F8-+0p25",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0
+        ],
+        [
+          7.071198,
+          8.287514,
+          9.50383,
+          10.720146
+        ],
+        [
+          7.483192,
+          8.2047,
+          8.926208,
+          9.647717
+        ]
+      ],
+      "worst_deviation": 9.240354312822774e-07,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x820A99F8--0p50",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0
+        ],
+        [
+          0.073083,
+          0.471241,
+          0.869398,
+          1.267555
+        ],
+        [
+          10.295371,
+          11.65238,
+          13.009388,
+          14.366396
+        ]
+      ],
+      "worst_deviation": 1.149471055228446e-06,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x820A99F8-+0p75",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0
+        ],
+        [
+          9.793194,
+          11.20652,
+          12.619848,
+          14.033176
+        ],
+        [
+          3.177006,
+          3.227056,
+          3.277106,
+          3.327156
+        ]
+      ],
+      "worst_deviation": 8.154208881450131e-07,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x82211828-+0p00",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          1.0,
+          2.0,
+          3.0,
+          4.0
+        ],
+        [
+          5.0,
+          6.0,
+          7.0,
+          8.0
+        ],
+        [
+          9.0,
+          10.0,
+          11.0,
+          12.0
+        ]
+      ],
+      "worst_deviation": 0.0,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x82211828-+0p25",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          2.205932,
+          3.422248,
+          4.638565,
+          5.854881
+        ],
+        [
+          4.597158,
+          5.318667,
+          6.040175,
+          6.761683
+        ],
+        [
+          9.0,
+          10.0,
+          11.0,
+          12.0
+        ]
+      ],
+      "worst_deviation": 5.989484268553724e-07,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x82211828--0p50",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          -1.519545,
+          -1.121388,
+          -0.723231,
+          -0.325074
+        ],
+        [
+          4.867339,
+          6.224347,
+          7.581355,
+          8.938363
+        ],
+        [
+          9.0,
+          10.0,
+          11.0,
+          12.0
+        ]
+      ],
+      "worst_deviation": 6.519439335050947e-07,
+      "matches_rotation": true
+    },
+    {
+      "case": "sentinel-0x82211828-+0p75",
+      "exit": "return",
+      "steps": 169,
+      "overrides_fired": 2,
+      "poison_independent": true,
+      "head": [
+        17.0,
+        29.0,
+        43.0,
+        61.0
+      ],
+      "rows": [
+        [
+          4.139883,
+          5.55321,
+          6.966538,
+          8.379866
+        ],
+        [
+          2.976806,
+          3.026855,
+          3.076905,
+          3.126956
+        ],
+        [
+          9.0,
+          10.0,
+          11.0,
+          12.0
+        ]
+      ],
+      "worst_deviation": 8.020467436864465e-07,
+      "matches_rotation": true
+    }
+  ]
+}

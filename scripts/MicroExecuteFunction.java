@@ -49,6 +49,14 @@
 //                              asserted semantics, because a supplied nothing is
 //                              not a supplied model
 //   alias on                   bridge the two vector register files (cycle 1301)
+//   dump NAME                  emit a region's FINAL BYTES, both poison passes,
+//                              under `region_dumps`. For a region seeded with
+//                              `bytes:` this is the only way to read it back --
+//                              write detection needs a poison fill, and a region
+//                              that has to be pre-filled cannot have one. The
+//                              two passes are emitted separately so a reader can
+//                              see for itself that a seeded region's result does
+//                              not depend on the poison, rather than trust it.
 //   override ADDR NAME         replace an instruction the module implements
 //                              wrongly; counted under asserted_semantics
 //   capture gpr:rN | fpr:fN | vec:NAME
@@ -107,6 +115,7 @@ public class MicroExecuteFunction extends GhidraScript {
     private final List<String> captureGpr = new ArrayList<>();
     private final List<String> captureFpr = new ArrayList<>();
     private final List<String> captureVec = new ArrayList<>();
+    private final List<String> dumpRegions = new ArrayList<>();
     private final List<String> calls = new ArrayList<>();
     private final Set<Long> stubbed = new LinkedHashSet<>();
 
@@ -664,6 +673,9 @@ public class MicroExecuteFunction extends GhidraScript {
                 case "override":
                     overrides.put(Long.decode(parts[1]) & 0xffffffffL, parts[2]);
                     break;
+                case "dump":
+                    dumpRegions.add(parts[1]);
+                    break;
                 case "alias":
                     aliasEnabled = "on".equals(parts[1]);
                     break;
@@ -854,7 +866,7 @@ public class MicroExecuteFunction extends GhidraScript {
 
             Map<String, byte[]> result = new LinkedHashMap<>();
             for (Region region : regions.values()) {
-                if ("poison".equals(region.kind)) {
+                if ("poison".equals(region.kind) || dumpRegions.contains(region.name)) {
                     result.put(region.name, emulator.readMemory(toAddr(region.base), region.size));
                 }
             }
@@ -945,6 +957,19 @@ public class MicroExecuteFunction extends GhidraScript {
         }
         poisonRegions.sort((left, right) -> Long.compareUnsigned(left.base, right.base));
 
+        List<String> dumps = new ArrayList<>();
+        for (String name : dumpRegions) {
+            Region region = regions.get(name);
+            if (region == null) {
+                throw new IllegalArgumentException("dump names no region: " + name);
+            }
+            dumps.add(String.format(
+                "{\"name\": \"%s\", \"base\": \"0x%08x\", \"size\": %d, "
+                + "\"after_hex\": \"%s\", \"after_hex_b\": \"%s\"}",
+                region.name, region.base, region.size,
+                hex(passA.get(region.name)), hex(passB.get(region.name))));
+        }
+
         List<String> writes = new ArrayList<>();
         StringBuilder writtenSummary = new StringBuilder();
         for (Region region : poisonRegions) {
@@ -1026,7 +1051,12 @@ public class MicroExecuteFunction extends GhidraScript {
         for (int index = 0; index < writes.size(); ++index) {
             json.append(index == 0 ? "\n    " : ",\n    ").append(writes.get(index));
         }
-        json.append(writes.isEmpty() ? "]" : "\n  ]").append("\n");
+        json.append(writes.isEmpty() ? "]," : "\n  ],").append("\n");
+        json.append("  \"region_dumps\": [");
+        for (int index = 0; index < dumps.size(); ++index) {
+            json.append(index == 0 ? "\n    " : ",\n    ").append(dumps.get(index));
+        }
+        json.append(dumps.isEmpty() ? "]" : "\n  ]").append("\n");
         json.append("}\n");
 
         try (PrintWriter out = new PrintWriter(outPath)) {
