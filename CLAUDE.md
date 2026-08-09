@@ -126,8 +126,15 @@ rests on, it needs a Ghidra pass so no gate runs it, and that is exactly why it
 rots:
 
     python3 tools/audit_microexec_harness_calibration.py --emit --workdir W
-    <analyzeHeadless ... --batch W/manifest>
+    ../../.tools/ghidra_12.1.2_PUBLIC/support/analyzeHeadless \
+      ghidra-projects ace-combat-6 -readOnly -noanalysis -process default.xex \
+      -scriptPath scripts -postScript MicroExecuteFunction.java --batch W/manifest
     python3 tools/audit_microexec_harness_calibration.py --check --workdir W
+
+The middle line used to read `<analyzeHeadless ...>`, and cycle 1457 spent the
+first part of a cycle reconstructing it from a report of cycle 70. It takes about
+four minutes. **Last actually run: cycle 1457 — `cases=138 equal=138
+failures=0`.** Before that, 1414.
 
 It reported **0 of 138 for 87 commits** while this file cited 138/138. Nothing
 was wrong with the harness: the `dump` directive added a `region_dumps` key the

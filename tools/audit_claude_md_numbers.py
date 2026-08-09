@@ -94,8 +94,18 @@ def main():
         bctr = int(m.group(1)) if m else None
     claim("0x82263A50 bctr", _word_to_int(text, r"`0x82263A50` has (\w+) `bctr`"), bctr)
 
-    print("  %-46s %s" % ("harness calibration 138/138",
-                          "UNCHECKED -- needs an analyzeHeadless pass"))
+    # The calibration cannot run from here, but WHEN IT LAST RAN can be read,
+    # and a stale date is the failure mode: it was 0 of 138 for 87 commits with
+    # nothing in the tree to say so.
+    m = re.search(r"Last actually run: cycle (\d+) — `cases=(\d+) equal=(\d+)", text)
+    if m:
+        print("  %-46s last run cycle %s, %s of %s -- rerun after touching "
+              "MicroExecuteFunction.java" % ("harness calibration", m.group(1),
+                                             m.group(3), m.group(2)))
+    else:
+        print("  %-46s %s" % ("harness calibration",
+                              "UNCHECKED and no run recorded -- see CLAUDE.md"))
+        failures.append("harness calibration has no recorded run")
 
     status = "pass" if not failures else "fail"
     print("claude_md_numbers=%s checked=%d mismatched=%d" % (status, checked, len(failures)))
