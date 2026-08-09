@@ -1,0 +1,40 @@
+# 0x82303110 -- the position integrator. Cycle 1368.
+# 359 instructions; .pdata declares 359 and short=0.
+#
+# HOW IT WAS FOUND, after A3.2 had eliminated six data-following approaches:
+#   cycle 1365  the naive vector signature matches 461 functions -- useless
+#   cycle 1366  li rN,64 + stvx128 + lvx128, with LIVENESS tracked -> 10
+#   cycle 1367  all ten read: nine copy a pose, one differences two. NONE integrates.
+#               So the vector form is ruled out over a complete population.
+#   cycle 1368  the SCALAR form -- lfs then fmadds then stfs at the same
+#               displacement -- gives 9, of which THREE touch all three components.
+#
+# THE STEP, read instruction by instruction:
+#
+#   lfs    f8,72(r30)               the current component
+#   fmuls  f9,f0,f31                a velocity term scaled by f31
+#   fmadds f9,f9,f13,f8             f9 * f13 + f8
+#   stfs   f9,72(r30)
+#   ... the same for 68(r30) and 64(r30)
+#
+# Three fmadds, one per component of a 3-vector at +0x40, +0x44, +0x48. That is an
+# Euler step: position += rate * factor.
+#
+# columns: what value note
+factor f13	0x82069B40 = 0.2777778	exactly 1/3.6
+floor clamp	0x82003214 = 10.0	applied to the MIDDLE component, +0x44, after the step
+components	+0x40, +0x44, +0x48	the locator translation row's first three floats
+#
+# 1/3.6 IS THE KM/H TO M/S FACTOR. That is an observation about the number, not a
+# claim about the game's units: what is measured is that the constant is
+# 0.2777777910232544 and that it multiplies a rate before it is added to a
+# position. f31 multiplies the rate first and is not established.
+#
+# The middle component alone gets a minimum of 10.0. It is NOT called altitude
+# here; what is measured is which component is clamped and to what.
+#
+# AFTER THE STEP the function normalises a vector with the vrsqrtefp
+# Newton-Raphson sequence and stores three floats to r31+0x80/+0x84/+0x88.
+#
+# NOT ESTABLISHED: what f31 is; what object r30 and r31 are; what the other two
+# all-three-component candidates (0x8222EC18 and 0x82304AB8) do.
