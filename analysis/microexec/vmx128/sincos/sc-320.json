@@ -1,0 +1,37 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x822A1E80",
+    "case": "sincos-probe:320"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "Function_822A1E80",
+    "regions": [
+      {"name": "object", "base": "0xb4000000", "kind": "poison", "size": 512},
+      {"name": "stack", "base": "0xc0000000", "kind": "poison", "size": 4096}
+    ],
+    "steps": 320,
+    "callee_entries": 4,
+    "asserted_semantics_enabled": true,
+    "asserted_semantics": {
+      "loadVectorLeftIndexed128": 6,
+      "vectorRotateLeftImmediateMaskInsert128": 3,
+      "vectorMergeHighWord": 13,
+      "vectorMergeLowWord": 4
+    },
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": "object 48 bytes, stack 160 bytes"
+  },
+  "exit": {"kind": "step_limit"},
+  "registers": {},
+  "calls": [],
+  "memory_writes": [
+    {"address": "0xb4000090", "size": 48, "after_hex": "000000003f80000000000000000000000000000000000000000000000000000000000000000000000000000000000000"},
+    {"address": "0xc0000cc0", "size": 100, "after_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003f780aa53f780aa53f780aa53f780aa53f7f55773f7f55773f7f55773f7f5577c0000d90"},
+    {"address": "0xc0000d70", "size": 28, "after_hex": "3f7f55773f780aa500000000bf7f557700000000b4000080822a1ef8"},
+    {"address": "0xc0000d90", "size": 4, "after_hex": "c0000e00"},
+    {"address": "0xc0000de0", "size": 28, "after_hex": "00000000000000000000000000000000000000000000000000dead00"}
+  ]
+}
