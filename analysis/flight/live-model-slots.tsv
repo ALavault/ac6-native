@@ -1,0 +1,53 @@
+# The live flight model's own slots 30 and 32, bounded before being read.
+#
+# Cycle 1384 established that the 0x8200F310 branch is the model that runs and
+# 0x8200F270's is never addressed. These are the two the live branch overrides
+# and that the campaign has NOT ported. Bounded by the recipe that made cycle
+# 1375 cheap: count the mnemonics, resolve the constants, measure the footprint
+# with a capsule, THEN read.
+#
+# slot	function	insns	vector	calls	verdict
+30	0x82303E68	282	0	0	PORTABLE AND DIFFERENTIABLE by the same method as 0x82302DB0
+32	0x82306038	639	246	19	orientation; calls the three contracted rotations and XMScalarSinCos twice
+#
+# SLOT 30 WRITES THE SAME INTERFACE AS THE CONTRACTED ONE. Its footprint,
+# measured by seeding the model with a per-offset pattern and dumping it back:
+#
+#   304 308 312 360 364 368 372 376   the eight fields retail_flight_controls
+#                                     already models
+#   1352 1356                         two more, which the F270 version does not
+#                                     touch
+#
+# Static and dynamic write sets are IDENTICAL, ten words each. It reads
+# 0, 36, 40, 44, 48, 52, 304, 308, 312, 332, 360, 364, 368, 372, 404, 952, 956,
+# 1224, 1352, 1356 -- the same five commands at +36..+52 and the same flag word
+# at +332, plus four inputs the F270 version has no use for.
+#
+# So the two are sibling implementations of ONE interface, and
+# ac6::retail::FlightControlState carries over unchanged. That is the useful
+# consequence of cycle 1384's bad news: the port that went to the wrong class
+# is not wasted structure, only wrong arithmetic.
+#
+# BUT THE TUNING IS DIFFERENT, and the constants say so before any code is read.
+# 0x82303E68 loads 0.0, 1.0 (from TWO addresses, 0x82008ACC and 0x82008AD0),
+# 2^-16, 1.0, -1.0, 1.5, 2/3 and 10.0. It loads NONE of the F270 version's
+# 10/3, 5/3, 2.5, 0.7, 0.99, 0.9, -0.9, 0.8 or 0.5. Same shape, different
+# numbers -- so a port cannot be adapted by renaming, and the differential is
+# what will say where the shapes diverge too.
+#
+# SLOT 32's constants include 0x8200F3C0 = 1.7999999523162842 (= 1.8) and
+# 0x8200F3C4 = 0.1591549515724182. That LOOKS like 1/(2*pi), and it is not:
+# float32(1/(2*pi)) is a different word. It is the seven-digit decimal literal
+# 0.15915495 -- exactly the trap cycle 1374 found at 0x82008AD8, where
+# 0.3183099 masquerades as 1/pi. Two of them now, in two classes, and a port
+# writing 1.0f/(2*M_PI) would be one ulp off on every use.
+#
+# Both sit just past the live class's 40-slot vtable (0x8200F310 + 160 =
+# 0x8200F3B0), which is the constant-pool-against-the-vtable handle cycle 1374
+# established -- now confirmed on a second class.
+#
+# It calls 0x820A99F8, 0x820A9B30 and 0x82211828 -- the three rotations already
+# ported and contracted under A3.1 -- and 0x8209CB70 twice, which is
+# XMScalarSinCos, certified exact at cycle 1307. So the shared kernel finding of
+# cycle 1376 holds for the live model too, and holds for the model that actually
+# flies rather than the one that does not.
