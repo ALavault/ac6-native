@@ -870,9 +870,14 @@ the whole corpus. Building that control is the work; there is no shortcut, and
 skipping it is how two readers were shipped in one cycle.
 
 *the displacement collision* and *the right search, run against a sibling* —
-both need the population established before the search, which means reading a
-vtable or an RTTI name first. Half an hour, and it is the half hour that decides
-whether the next four are wasted.
+both need the population established before the search. That is now a command:
+`tools/whose_vtable.py IMAGE ADDR` names every vtable holding an address,
+excluding `.pdata` and preferring `analysis/class-map.tsv` to a fresh RTTI walk.
+**It answers for 145 of 232 hits on a shared stub and for none of six on the
+unit family**, because `0x820078D0` holds zero at `vtable-4` and `0x82009440`
+holds a function address — neither is in the audited map. So the command settles
+the question where RTTI exists and tells you plainly where it does not, which is
+the part a hand walk got wrong once.
 
 *the refuted link* — no command; the discipline is to name the checkable form
 (shared member offset, exclusive call site, common caller) before looking for it.
