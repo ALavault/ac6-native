@@ -48,6 +48,7 @@ the repository's*.
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
 | you are about to publish that **two sources disagree** | *the unexamined contradiction* — a mismatch is a claim about two readings and needs both read; start with whichever came from someone else's transcription |
 | your statistic has a **null model and a huge margin** | *the right number, the wrong mechanism* — a null tests whether the pattern is real, never why; cycle 1451's R(4t)=0.9757 over 4,000 trials was a two-bit field, not an angle |
+| `whose_vtable.py` says a slot is **unnamed** | *the walk-back that stopped too soon* — its span was 64 words and 10 of 811 vtables are longer, the longest 148; 176 functions sit past that default and 29 are named in this campaign's own reports |
 | your scan came back **zero** for an address or a magic | *a rule that was written, correct, and unrunnable* — run `tools/find_materialised_address.py IMAGE ADDR`: a value built as `lis`+`ori`/`addi` is invisible to branch scans and data scans alike |
 | you scanned for a function address **as data** and found exactly one hit | *the `.pdata` row read as a dispatch slot* — the exception table spans 0x82079E00..0x82089FB0 and its `BeginAddress` fields look identical to a table slot; exclude that range, then say which side of it the address falls on |
 | two functions sit **next to each other** and seem related | *the refuted link* — image order is not evidence; the checkable forms are a shared member offset, an exclusive call site, a common caller, and none is visible from inside either function |
@@ -1650,3 +1651,40 @@ both candidates; 1453's rendered comparison was refuted when the same measure
 tracked model size; 1454 settled the question from the loader in one read. Each
 time, looking or fitting pointed one way and reading pointed the other, and
 reading was right.
+
+
+## the walk-back that stopped too soon
+
+`tools/whose_vtable.py` finds a function's class by scanning for aligned words
+equal to its address and walking **backwards** to the vtable start. Cycle 1463
+asked it about `0x82102E70` and got *unnamed*, then found the answer by hand:
+`0x8205CAE4` is `0x8205C9A4 + 0x140`, slot 80 of `CMapManager`. The walk-back
+span was **64 words**. The slot is 80.
+
+### Measuring it, and two wrong measures first
+
+How many vtables are longer than 64 slots? The distance to the next vtable in
+the class map says **34**, and its largest entry is 56,260 slots — data sits
+between tables, so the gap is an overestimate. The run of consecutive
+text-range pointers from the vtable start says **234**, and it counts straight
+through into the next table — `CEffectAssignTable` and `CEffectObserver` are 12
+bytes apart and both "433 slots".
+
+Bounded by **both**, the answer is **10 of 811, the longest 148**. Neither proxy
+alone was within an order of magnitude.
+
+### Why raising it is safe, and what it does cost
+
+The walk **breaks at the first match**, so a longer reach can only find a start
+it previously missed — never skip a nearer one. What it does risk is attributing
+a stray data word to some distant table, so the tool now flags any attribution
+past 148 words. Raised to 256, over twelve affected addresses it converts **213
+unnamed hits into named ones** and fires the flag **twice**, both on
+`swg::ButtonController` — the entry whose gap measure was 56,260.
+
+### The rule
+
+**A tool's default reach is a claim about the data, and it is usually the
+author's guess.** Measure the distribution before believing a negative the reach
+could have produced; the negative here was published as "not a vtable slot" and
+led to a dead-code hypothesis about live code.

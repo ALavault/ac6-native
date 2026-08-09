@@ -40,7 +40,22 @@ import sys
 BASE = 0x82000000
 PDATA_START = 0x82079E00
 PDATA_END = 0x82089FB0
-DEFAULT_SPAN = 64  # words to walk back looking for the vtable start
+# Words to walk back looking for the vtable start.
+#
+# This was 64, and cycle 1463 hit the wall: `0x82102E70` is slot `+0x140` of
+# `CMapManager`, 320 bytes in, and the tool called it unnamed. Cycle 1464
+# measured the whole class map -- bounding each vtable by BOTH its run of
+# text-range pointers and the distance to the next vtable, because either alone
+# overestimates badly -- and found **10 of 811 longer than 64 slots, the longest
+# 148**. 176 function addresses sit past the old default; 29 are mentioned
+# somewhere in this campaign's own reports.
+#
+# Raising it is safe because the walk BREAKS AT THE FIRST match: a longer reach
+# can only find a start it previously missed, never skip a nearer one. What it
+# does risk is attributing a stray data word to some distant vtable, so anything
+# resolved beyond the measured maximum is flagged rather than reported flat.
+DEFAULT_SPAN = 256
+LONGEST_KNOWN_VTABLE = 148  # slots; ACE6::CAce6EffectManager, measured at 1464
 CLASS_MAP = "analysis/class-map.tsv"
 
 
@@ -151,6 +166,11 @@ def main() -> int:
         for hit, (vtable, back, name) in resolved:
             print("    at 0x%08X   vtable 0x%08X slot +0x%02X   %s" %
                   (hit, vtable, back * 4, name))
+            if back > LONGEST_KNOWN_VTABLE:
+                print("      SUSPECT: %d words back, past the longest vtable "
+                      "measured in the class map (%d) -- this may be a stray "
+                      "word attributed to a distant table"
+                      % (back, LONGEST_KNOWN_VTABLE))
         if unresolved:
             print("    %d hit(s) with NO NAME within %d words -- neither the "
                   "class map nor an RTTI locator; several real vtables here have "
