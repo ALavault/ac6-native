@@ -16,15 +16,42 @@
 0x10	16	basis row 0	identity from 0x8204F7F0, then rotated
 0x20	16	basis row 1	identity from 0x8204F800, then rotated
 0x30	16	basis row 2	identity from 0x8204F810, then rotated
-0x40	16	a vector; lanes 1 and 2 are [r30+0x08] and [r30+0x0C], lane 3 a .rodata constant, lane 0 set earlier and not yet traced	0x822A23D8, stvx128 v0,r31,192
+0x40	16	([r30+0x04], [r30+0x08], [r30+0x0C], 1.0) -- the constant at 0x82001348 is 0x3F800000	0x822A23D8, stvx128 v0,r31,192
+#
+# +0x10..+0x4F IS A 4x4 WITH THE TRANSLATION IN THE LAST ROW, and that is
+# measured rather than chosen. The three basis rows are seeded from constants
+# whose lane 3 is 0.0, and the fourth vector's lane 3 is 1.0. Under a
+# column-major layout the translation would live in the last COLUMN -- lane 3 of
+# each basis row -- and those lanes hold zero. Cycle 1328 declined to write the
+# composition as a matrix product because the row-versus-column convention had
+# not been measured. This measures it.
 #
 # THE ANGLES, at the 0x822A23D8 call site:
 #   f1 = [r30+0x18]      applied SECOND, by 0x820A99F8, about row 0
 #   f2 = [r30+0x1C]      applied FIRST,  by 0x820A9B30, about row 1
-#   f3 = f31             applied THIRD,  by 0x82211828, about row 2
+#   f3 = 0.0             applied THIRD,  by 0x82211828, about row 2 -- so the
+#                        third rotation is the identity at this call site
 #
-# f3's origin is NOT traced. It is a non-volatile register set earlier in the
-# function and this cycle did not follow it.
+# f3 is `lfs f31,2092(r10)` with r10 = 0x82000000, i.e. the float at 0x8200082C,
+# which is 0x00000000. The SAME +2092 constant is loaded in 0x8230B030 and
+# 0x822955F0, from the same base.
+#
+# THE FOUR CALL SITES, and each drives a different subset:
+#
+#   caller      call site   f1 (row 0, 2nd)   f2 (row 1, 1st)   f3 (row 2, 3rd)
+#   0x822955F0  0x822957BC  live, negated     PATH-DEPENDENT    0.0
+#   0x82295A88  0x82295E60  live sum          live sum          live sum
+#   0x822A23D8  0x822A27F4  [r30+0x18]        [r30+0x1C]        0.0
+#   0x8230B030  0x8230B44C  0.0               live sum          0.0
+#
+# 0x822955F0's f2 IS NOT RESOLVED. f25 is set to the 0.0 constant at one point
+# and to -round(f1) at another, with branches between it and the call. Reading
+# only the first write would have made it look constant, and this file does not.
+#
+# What this does NOT show is a disagreement about convention. Every caller passes
+# the same argument in the same register to the same kernel, so f1 always means
+# "about row 0, applied second". Whether the SOURCE angles mean the same physical
+# thing per caller is a level above and is not established.
 #
 # r30 is read as floats at +0x04, +0x08, +0x0C, +0x10, +0x14, +0x18 and +0x1C.
 # WHAT r30 IS HAS NOT BEEN ESTABLISHED and it is not called a state, a pose or a
