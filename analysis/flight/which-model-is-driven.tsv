@@ -1,0 +1,55 @@
+# Which of the entity's two flight models is actually driven.
+#
+# THE QUESTION CYCLE 1379 ANSWERED TOO FAST. It concluded "the class this
+# campaign ported is genuinely a class that flies" because 0x8200F270 has a
+# non-empty slot 11 while the sibling branch overrides it with the empty blr.
+# That is an argument about the CLASS. It says nothing about whether the
+# INSTANCE is ever reached, and cycle 1384 finds it is not.
+#
+# MEASUREMENT 1 -- nothing addresses the +2224 subobject after construction.
+# A search over the whole corpus for any register that ever equals `base + 2224`,
+# following addi CHAINS from any base register rather than single displacements
+# off r3, returns exactly three sites:
+#
+#   0x8222BF94  sub_8222BEC8   the constructor
+#   0x82227BE4  sub_82227B08   the destructor
+#   0x821F5AE4  sub_821F5AD8   a STRING address, 0x820008B0, not a displacement
+#
+# No store of that value exists either: the entity's only flight-model pointer is
+# +4912, written twice in the whole corpus, both times in a constructor, and both
+# times with the OTHER object.
+#
+# MEASUREMENT 2 -- the +4912 object is driven, through three of its own slots.
+# Dataflow from `lwz rX,4912(rY)` to a virtual dispatch:
+#
+# slot	offset	what	sites on an object from +4912
+9	36	the data load 0x82303D18	1 (0x82230B40 in sub_82230AF8)
+15	60	the F310 step 0x82306A38	2 (0x822267B0, 0x822341A4)
+29	116	the reset 0x82303A20	1 (0x822331C8 in sub_82232B28)
+11	44	the base step 0x82283898	0
+#
+# AND THE ENTITY IS NOT A FLIGHT MODEL ITSELF. Its vtable 0x82007A10 runs to 89
+# slots and shares ZERO of 36 with the flight-model base, so there is no
+# inheritance path by which slot 11 could reach the model through the entity.
+#
+# THE CONCLUSION. For this entity, the live flight model is the 0x8200F310
+# branch, stepped through slot 15. The 0x8200F270 instance at +2224 is
+# constructed, destructed, and never addressed.
+#
+# WHAT THAT DOES AND DOES NOT MEAN.
+#
+#   The four contracted behaviours -- retail_flight_controls (0x82302DB0),
+#   retail_flight_step (0x82303110), retail_flight_orientation (0x82302C88) and
+#   retail_flight_step_driver (0x82283898) -- are faithful ports of real retail
+#   functions, each verified against the executed instructions. NOTHING here
+#   touches that, and their contract statements remain true as written.
+#
+#   What is now open is their RELEVANCE. They are 0x8200F270's implementations,
+#   and the live model uses 0x8200F310's: slots 30, 31 and 32 are 0x82303E68,
+#   0x823042D0 and 0x82306038, and the step is 0x82306A38 -- all different
+#   functions, none ported.
+#
+# NOT ESTABLISHED, and it is the question that now matters more than any of the
+# above: whether the player's aircraft is this entity at all. The 10,672-byte
+# object of sub_8222BEC8 comes from the factory sub_820A8138 on type ids 1..4,
+# and which id the player gets has never been read.

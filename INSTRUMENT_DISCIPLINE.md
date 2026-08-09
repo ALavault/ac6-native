@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| you are about to port a class's methods | *the class that flies and the instance nothing reaches* — a vtable proves capability, never invocation; search for anything that computes the subobject's address (following addi chains) or stores it, and treat an empty result as the answer rather than as a gap |
 | a captured value **equals one of the inputs** | *the wrong answer that names the register* — suspect the capture, not the arithmetic; a register still holding a step, limit or argument means execution stopped in the wrong place, and a stubbed call costs TWO steps because stubs key on the callee's entry |
 | you are about to **correct** an earlier claim | *the over-correction* — a correction takes the same evidence as any other claim and gets far less; if it says "in A, not B", enumerate ALL the sites, because one call site is not a survey |
 | you are substituting a **library function** for a retail routine | *the verdict that averages away a different function* — compare worst-case in ulp with no tolerance, then read each non-zero case; a handful of enormous gaps among exact matches is a subdomain guard, not rounding |
@@ -1404,3 +1405,49 @@ the claim.** Assert something that changes when it is wrong -- the number of
 calls reached, the exit kind, the PC -- so a miscount fails loudly instead of
 capturing a different register. Cycle 1373 learned this for `callee_entries`;
 this is the same rule for `steps` past a stub.
+
+## The thirty-seventh shape: the class that flies and the instance nothing reaches
+
+Cycle 1379 asked whether the flight model this campaign had ported was the one
+that flies, and answered yes: `0x8200F270` has a non-empty step at slot 11, while
+its siblings override that slot with an empty `blr`. The evidence was real and
+the reasoning was sound.
+
+It was about the **class**. Five cycles later, a stronger search showed that the
+only **instance** of that class -- a member subobject at `entity+2224` -- is
+constructed, destructed, and never addressed again by any code in the binary. The
+live model is the sibling, reached through a pointer field, stepped through a
+different slot.
+
+Six of the campaign's eight implementation cycles on that thread went into
+methods of an object nothing passes to anything.
+
+### Why "does this class fly?" is the wrong question
+
+Capability and invocation are different properties, and a vtable answers only the
+first. A class can have a complete, correct, non-empty implementation of every
+virtual it needs and still be instantiated once into a member slot that no code
+takes the address of. Nothing about the class is anomalous; the anomaly is in the
+containing object, which the class cannot tell you about.
+
+Worse, the shape hides behind a **true** statement. "This class implements the
+step and its siblings do not" stays true forever and is quoted forward, while the
+question it was standing in for -- "is this object ever driven?" -- never gets
+asked because it looks answered.
+
+### The rule
+
+**Before porting a class's methods, establish that some instance of it is
+reached.** Two searches, both cheap, and both must come back non-empty:
+
+1. does any code compute the subobject's address, following `addi` CHAINS from
+   any base register -- not just a single displacement off a tracked `this`?
+2. does any pointer field ever hold it?
+
+If the first returns only a constructor and a destructor, that is not "the object
+is reached some other way". That is the answer.
+
+Cycle 1370 ran the first search, got exactly three sites, and read it as "the
+component must be reached through a stored pointer". The search was right; the
+conclusion assumed reachability because the object existed. **An empty result for
+"who addresses this" is a finding, not a gap.**
