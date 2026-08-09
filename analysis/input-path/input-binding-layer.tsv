@@ -1,0 +1,55 @@
+# 0x82211C10 -- the input binding layer. Cycle 1353.
+# 121 instructions; .pdata declares 121 and listing_against_pdata reports short=0.
+#
+# Called once per player by 0x82211DF8 with:
+#   r3 = the player block   (this + 4 + 912 * i)
+#   r4 = THE INPUT RECORD   (0x826EDB98 + 0xA0 * i)
+#   r5 = a mask word        (this + 0xE44)
+#   r6..r9 = four output arrays (this + 0xE58, +0xED8, +0xF58, +0xFD8)
+#
+# IT READS THE RECORD WITH THE RULE THE PRODUCT ALREADY IMPLEMENTS:
+#
+#     addi   r11,r10,3
+#     rlwinm r11,r11,2,0,29        ->  r11 = (bit + 3) * 4
+#     lfsx   f13,r11,r4
+#
+# That is `float_slot_for_bit(bit) = (bit + 3) * 4` in
+# reconstruction/ace-combat-6/include/ac6/retail_input_record.h, derived at cycle
+# 1318 from the PRODUCER's bit-scan and ported at 1323. Here it is again, in the
+# CONSUMER, read from a function that shares nothing with that derivation.
+#
+# THE SHAPE: two nested loops of 32.
+#   outer r26 over 32 output slots, gated by [player+0x88] & (1 << r26)
+#   the mask for slot r26 is [player + 0x08 + 4*r26]
+#   inner r30 over the 32 bits of that mask -- each set bit names a RECORD bit
+#   the binding descriptor is 24 bytes at player + 24 * (bit + 6)
+#
+# columns: offset meaning
+binding+0x04	the processed value, written
+binding+0x08	the raw record value, written
+binding+0x0C	a second threshold, read
+binding+0x10	the deadzone, read
+binding+0x14	the scale, read
+#
+# THE AXIS RULE, read instruction by instruction:
+#   f0 = |value| - [binding+0x10]              deadzone subtracted
+#   if f0 < 0.0            -> f0 = 0.0
+#   else f0 = f0 * [binding+0x14]              scaled
+#        if f0 > 1.0       -> f0 = 1.0         clamped
+#   f13 = fsel(value, f0, -f0)                 the sign of the input restored
+#   [binding+0x04] = f13
+#
+# A SECOND OUTPUT, from the same record slot:
+#   f12 = |value|
+#   if f12 <  [binding+0x10] -> f0 = 0.0
+#   if f12 >  [binding+0x0C] -> f0 = fsel(value, 1.0, -1.0)
+#   so it is a three-state sign, not a magnitude.
+#
+# Then, when [player+0x8C] & (1 << r26), BOTH outputs are negated; they are
+# written into the caller's arrays at r31 and r31+r23; and [r5] |= (1 << r26).
+#
+# CONSTANTS, all read: -1.0 at 0x82069B28, 1.0 at 0x82001348, 0.0 at 0x8200082C.
+# The last two are the same words cycles 1330 and 1342 already identified.
+#
+# NOT ESTABLISHED: what the four output arrays are consumed by; what `this` is;
+# why the descriptor index starts at +6; whether all 32 output slots are used.
