@@ -1,0 +1,33 @@
+# 0x82302C88 -- slot 32 of the vtable 0x8200F270, the THIRD pure virtual the
+# base-class step 0x82283898 calls, with the same float and the same position
+# pointer it gives the integrator.
+#
+# IT IS THE ORIENTATION UPDATE, and it closes the loop with A3.1. The three
+# rotations it applies are the three that reconstruction/ace-combat-6/src/
+# retail_transform.cpp already ports, in the order retail_transform.h already
+# records (0x820A9B30 first, 0x820A99F8 second, 0x82211828 third).
+#
+# So the flight controller and the transform kernel are the same code, which is
+# what the campaign's steering required: one shared kernel, not two substitutes.
+#
+# THE THREE CONTROL AXES ARE THE THREE ANGLE SOURCES. Slot 30 (0x82302DB0,
+# ported as retail_flight_controls) writes +304, +308 and +312; each is the
+# multiplier of exactly one rotation. That assignment is derived here and was
+# not available from either function alone.
+#
+# step   what runs                                   angle
+# stage	function	axis	limit_field	scale	notes
+1	0x820A9B30 (rotate about row 1)	[model+308]	[model+1252]	1/15	angle = clamp(limit*step*(1/15)*axis, -limit, +limit) * pi/180
+2	0x820A99F8 (rotate about row 0, via 0x82302B78)	[model+304]	[model+1248]	1/f31	f31 is 1.0 unless bit 3 of [model+332] is set, when 0x822A6400 scales it; angle = min(limit*step*axis/f31, limit) * pi/180
+3	0x82211828 (rotate about row 2)	[model+312]	[model+1256]	2/3	angle = min(limit*step*(2/3)*axis, limit) * pi/180
+#
+# Then the Euler extraction, into three consecutive floats of the MODEL:
+# stage	function	source	destination	identity
+4	0x82380570	clamp([pos+52], -1, +1)	[model+16] = -result	asin -- measured identical to libm over 20 cases, 0 ulp
+5	0x820936E8 via 0x820B0B60	[pos+20], [pos+36]	[model+24]	atan2 with a both-below-2^-16 guard -- 22 cases, 0 ulp
+6	0x820936E8 via 0x82093808	[pos+48], [pos+56]	[model+20]	the same routine, different rows
+#
+# The measurements are in analysis/flight/flight-math-seams.tsv. The atan2 guard
+# is NOT cosmetic: std::atan2(1e-6, 1e-6) is pi/4 and retail is 0, so an
+# unguarded substitution puts a 45-degree error into the orientation on exactly
+# the frames where the aircraft is level.

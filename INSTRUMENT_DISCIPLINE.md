@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| you are substituting a **library function** for a retail routine | *the verdict that averages away a different function* — compare worst-case in ulp with no tolerance, then read each non-zero case; a handful of enormous gaps among exact matches is a subdomain guard, not rounding |
 | a differential fails by **one ulp**, on some cases only | *both sides right, disagreeing on the inputs* — build every candidate rule and run them together; if they all reproduce the oracle the fixture is feeding two different numbers, and the repair a green suite rewards is the wrong one |
 | your **controls** all pass, or you never asserted that they fail | *a domain that cannot express the difference* — coverage of the input space is not coverage of the distinctions; assert `disagreements > 0` per control, and for a rounding control use inputs with long binary expansions |
 | your fixture is **self-describing** — byte `k` holds `k`, field `n` holds `n` | *the fixture whose answer is its own input* — check what a null implementation (a copy of one operand, a no-op) would produce; if that also matches, the case proves nothing |
@@ -1263,3 +1264,47 @@ And the cheap move that made this a ten-minute cycle instead of a wrong commit:
 candidate reproduces the oracle, the disagreement is not in the rule, and that
 conclusion is only available if the candidates were compared side by side rather
 than tried one at a time until one passed.
+
+## The thirty-fourth shape: the verdict that averages away a different function
+
+Cycle 1376 measured `0x820936E8` against `atan2` and the first run printed:
+
+```
+atan2  cases=18  worst=1061752795 ulp
+```
+
+Sixteen of eighteen cases were **exact**. Two were not — the two where both
+arguments are tiny. The routine has a guard: when `|a|` and `|b|` are both below
+2⁻¹⁶ it returns **zero** rather than an angle, and `atan2(1e-6, 1e-6)` is π/4.
+
+That is not a rounding disagreement. It is **a different function on a
+subdomain**, and the subdomain is the common case: an aircraft flying level.
+Substituting `std::atan2` unguarded puts a 45-degree error into the orientation
+on exactly the frames where nothing looks wrong.
+
+### What made it visible, and what would have hidden it
+
+The comparison reported the **worst** case, in **ulp**, with no tolerance:
+
+- an **average** over 18 cases: 16 zeros and 2 large values still reads as
+  "close", and closer still if the two are reported as radians rather than ulp;
+- a **tolerance** — `abs(got - want) < 1e-3` — passes sixteen and fails two, and
+  two failures out of eighteen invites "an edge case, probably fine";
+- **ulp** makes the failure enormous and unignorable, because two floats either
+  are the same word or are not, and the distance between π/4 and 0 in float steps
+  is a nine-digit number.
+
+The large number is the useful part of the output. A metric that compresses a
+categorical difference into a small one has not measured anything.
+
+### The rule
+
+**When comparing a retail routine against a library function, report the worst
+case in ulp, never an average and never a tolerance.** Then read the cases that
+are not zero *individually* — a subdomain guard, a different branch, a different
+special-case convention will all show up as a handful of enormous gaps among a
+majority of exact matches, and that pattern is the signature of "same formula,
+different function" rather than "same function, different rounding".
+
+The instrument is `tools/audit_flight_math_seams.py`, which prints
+`identical` / `within N ulp` per routine and refuses to summarise further.
