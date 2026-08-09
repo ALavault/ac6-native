@@ -100,7 +100,7 @@ Before drawing a negative from a listing, check it is the whole function:
 `.pdata` declares each function's length in instructions, so the comparison is
 arithmetic. `Ac6XenonDisasm` caps at 300 per block and `exports/` silently
 truncates VMX128-heavy functions — `0x822A23D8` is 460 instructions and
-`exports/` recovers 6. The table is incomplete, so "no `.pdata` row" is a real
+`exports/` recovers 2. The table is incomplete, so "no `.pdata` row" is a real
 answer; the tool says so rather than guessing.
 
 And before believing you have read a dispatcher:
@@ -134,6 +134,16 @@ was wrong with the harness: the `dump` directive added a `region_dumps` key the
 specialised harness never had, and the comparator counted its absence as a
 semantic difference. Cycle 1414 fixed the comparator; cycle 1413 only found it
 because it was checking whether its own change had broken something.
+
+And one guards this file's own numbers, because two of them rotted:
+
+    python3 tools/audit_claude_md_numbers.py CLAUDE.md
+
+The figures here are quoted, not re-derived, which is the condition under which a
+number rots. `138/138` was **0 of 138 for 87 commits**; `exports/ recovers 6` was
+**2** when finally measured, and whether it was wrong when written or the export
+was regenerated since cannot be told from here. That is the point. Run it
+whenever you cite a number in this file.
 
 A third checker guards the documentation instead of the contracts:
 
