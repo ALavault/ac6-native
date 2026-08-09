@@ -1,0 +1,43 @@
+# The frame input tick, 0x821CA908, read whole. Cycle 1356.
+#
+# The ladder places this on 0x821D7A90, the frame update. It is the whole input
+# path in one function, and every piece below is already ported or contracted
+# except the last.
+#
+#   bl 0x821CB5F0                       one of the two callers of the producer
+#   [r30+0x19] = 0 ; [r30+0x1C] = 0
+#   r11 = [0x823F6DB8] ; call [r11+0x1C]     THE VIRTUAL THAT MAKES THE FLOAT
+#   f31 = f1                                 its return value
+#   for k in (17804, 22256, 26708, 31160):
+#       r3 = [0x826E4EB4] + 0x20000 + k
+#       f1 = f31
+#       bl 0x82211DF8
+#   r3 = r30 + 0x20 ; f1 = f31 ; bl 0x82211DF8
+#
+# TWO PREDICTIONS THE PLAN MADE, BOTH CONFIRMED HERE.
+#
+# "0x82211DF8 et le flottant qu'il recoit ; le virtuel +0x1C de [0x823F6DB8] qui
+# produit ce flottant" -- 0x823F6DB8 is exactly `lis -32193, addi 28088`, the
+# call is exactly `lwz r11,28(r11)` then bctrl, and its result goes straight into
+# f1 for all five calls.
+#
+# "la disposition a context+0x2458C (quatre objets, pas 0x1164, dans le contexte
+# [0x826E4EB4])" -- the four constants are context + 0x20000 + {17804, 22256,
+# 26708, 31160}, so the first is context+0x2458C and the stride is 4452 = 0x1164.
+#
+# columns: what value note
+float source	[0x823F6DB8] slot +0x1C	a virtual call; its return is f1 for every consumer call
+context	[0x826E4EB4]	the context the ladder already names
+first object	context + 0x2458C	as the plan named it
+object stride	0x1164	4452, three times over
+objects	4	plus a fifth call on r30 + 0x20
+#
+# THE FLOAT IS NOT NAMED HERE. It comes from a virtual call whose class has not
+# been read, and this campaign has spent four cycles on an unexamined premise of
+# that kind before. It is "the float the virtual at [0x823F6DB8]+0x1C returns",
+# and nothing else.
+#
+# AND 0x82211DF8 DOES RECEIVE IT. Cycle 1352 read its 45 instructions, found no
+# f1, and concluded it takes r3 alone. It forwards f1 untouched into its first
+# call, 0x82211B40, which is invisible in a single-function read -- the thirtieth
+# shape in INSTRUMENT_DISCIPLINE.md.

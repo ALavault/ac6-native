@@ -53,6 +53,7 @@ the repository's*.
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
 | your fixture is **self-describing** — byte `k` holds `k`, field `n` holds `n` | *the fixture whose answer is its own input* — check what a null implementation (a copy of one operand, a no-op) would produce; if that also matches, the case proves nothing |
 | you measured a **vtable's size** by reading until the words stop looking like code | *a vtable's extent read as a run of pointers* — MSVC puts each class's RTTI locator at `vtable[-1]`, so vtables are packed COL/slots/COL/slots; the class map has the boundary and "still a code pointer" cannot find it |
+| a register **never appears** in a function body, so you concluded it is not an argument | *the argument that passes straight through* — a volatile register forwarded untouched to the first call is invisible in the mnemonics; check whether anything writes it before that call, not whether it is mentioned |
 
 ## The pattern
 
@@ -985,6 +986,33 @@ vtable, so slot 0 usually names the class by materialising its base.
 This is the sibling of *stopping at a natural boundary* — there, a `blr` looked
 like an end and was not; here, a non-code word looked like an end and was
 somebody else's beginning.
+
+## The thirtieth shape: the argument that passes straight through
+
+Cycle 1352 read all 45 instructions of `0x82211DF8`, found no `f1` anywhere, and
+wrote: *"It receives no float. `0x82211DF8` takes `r3` alone."* It even flagged
+that as a plan prediction meeting a measurement and losing.
+
+**It receives `f1`.** Cycle 1356 read its caller, which does `fmr f1,f31` before
+each of the five calls, and `0x82211DF8` forwards that register untouched into
+`bl 0x82211B40` — its first call, reached before anything could clobber a
+volatile register.
+
+A pass-through argument **is invisible in the mnemonics**. Nothing mentions it
+precisely because nothing has to: the callee's ABI put it where the next callee's
+ABI expects it. Searching a body for a register name finds every *use* and no
+*forward*.
+
+### The rule
+
+**Absence from a body is not absence from a signature.** For a volatile argument
+register, the question is not "is it mentioned" but "is it written before the
+first call" — if it is not, it reaches that call as the caller left it.
+
+The cheap check is the caller, and it is the one direction a single-function read
+never covers. This is the sibling of *reachability by `bl`*: there, a function
+looked unreferenced because the reference was elsewhere; here, an argument looked
+absent because its use was one frame further down the stack.
 
 ## The audit this file owes itself
 
