@@ -1251,6 +1251,48 @@
             "claim": "include/ac6/retail_container_index.h carries the derivation, gives the header layout and the descriptor field by field including the +0x14 the parser never writes, records how the consumer was found through a linker-resolved global, states that array 1 is the length and that subtracting offsets counts the padding, and explains why the raw-count arithmetic on the swap path is reproduced"
           }
         ]
+      },
+      "retail_ndxr_geometry": {
+        "status": "passed",
+        "statement": "the native product decodes an NDXR polygon descriptor into positions and a triangle-strip index list: vertices at sections.second + vertex_offset with the stride NdxrContainer::VertexStride derives from 0x82345100's two tables, indices at sections.first + index_offset as 16-bit values relative to the descriptor's own vertices, and 0xFFFF preserved as a strip restart rather than resolved. index_offset is a byte offset whose >>1 is the StartIndex 0x823648C4 computes, and both arrays accumulate across a container's descriptors. The section assignment is established by cross-match at 1227 of 1227 descriptors -- against 974 and 907 for the vertex alternatives and 292 for the absolute index reading -- and corroborated by 0x82362190, which binds exactly two buffers from [container+0x10+116] and [container+0x10+120] using two DIFFERENT creators: 0x821FBB10 writes 2 at descriptor+0 and packs a 3-bit format selector, 0x821FBA78 writes 1 and packs a masked address with format bits. That the type words are D3D resource kinds is an external convention and is not derived here",
+        "retail_addresses": [
+          "0x82364518",
+          "0x823648C4",
+          "0x82345100",
+          "0x82362190",
+          "0x821FBB10",
+          "0x821FBA78"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1432-two-creators-two-sections.md",
+            "sha256": "6ad6065854d558eb5e46dad5a807bfd83b04ea3baf373b436a1128507b9d8667",
+            "size": 3969,
+            "claim": "both buffer creators read whole and shown not to be interchangeable: 2 against 1 at descriptor+0, a 3-bit format selector against a masked address with format bits, 10 callers against 41, and each fed from one of the two section fields in the order the arbitration assigns them"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_ndxr_geometry_tests.cpp",
+            "sha256": "746454ae89bc0aff06477a872c41722e3aa9e5ff95014d122274b35a4e1b4165",
+            "size": 4829,
+            "claim": "every descriptor of the real package decoded, with per-descriptor assertions that the vertex and index counts match the descriptor, the bounds are finite and ordered, and every non-restart index addresses that descriptor's own vertices; plus a CONTROL that the 0xFFFF restart actually occurs in the data, without which the sentinel branch would be untested"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/assets/ndxr-geometry-decode.tsv",
+            "sha256": "19b89f1fb6244fa9b75503be5b9b5e5836d16ec99be3d63d4ab2bb5aa942b629",
+            "size": 83159,
+            "claim": "the port run over all 1227 descriptors of Mission 01's package: 1227 decoded, no refusals, 44298 strip restarts, with each descriptor's stride, counts and bounds recorded. NOT a micro-execution and the claim says so -- this is a file format rather than an instruction sequence, so the evidence is the port's output over the whole corpus with a contracted behaviour on every hop above it"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_ndxr_geometry.h",
+            "sha256": "c9fa5321d132192be082201ea57c984b76bad2b69c5ca731bed4aaf7c97c6a48",
+            "size": 4759,
+            "claim": "include/ac6/retail_ndxr_geometry.h carries the derivation, gives the addressing with the scores that chose it, records that 0xFFFF is a restart and why three range tests failed before it was known, separates what the binder derives from what the D3D type words only suggest, and states that most of each vertex -- the 8 or 12 bytes past the position -- is discarded"
+          }
+        ]
       }
     }
   }

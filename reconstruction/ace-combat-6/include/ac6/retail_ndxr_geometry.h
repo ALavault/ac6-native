@@ -15,6 +15,10 @@
 //             from 0x82345100; zero for a code outside either table, and no
 //             descriptor in the package produces zero
 //
+// The descriptor itself is `NdxrDescriptor`, ported from the draw at 0x82364518
+// -- the loader never touches geometry, which is why cycle 1212 had to read the
+// field mapping out of the draw rather than out of the loader.
+//
 // `index_offset` is a BYTE offset; `>> 1` is the StartIndex 0x823648C4 computes.
 // Both arrays accumulate across a container's descriptors -- descriptor 1's
 // vertex_offset is exactly descriptor 0's vertex bytes.
@@ -24,13 +28,26 @@
 // `23 24 22 25 65535 56 54 55`. It is preserved in the index list rather than
 // resolved here, because a caller drawing strips needs to see the break.
 //
-// WHAT CORROBORATES THE SECTION ASSIGNMENT. 0x82362190 binds exactly two
-// buffers, from `[r31+116]` and `[r31+120]` where `r31` is the container plus
-// 0x10 -- so those are sections.first and sections.second, the same two the
-// arbitration chose between. The binder confirms there are two and which
-// fields hold them; the arbitration says which is vertices and which is
-// indices. Neither alone would have been enough and the pair is recorded that
-// way rather than as a single reading.
+// WHAT CORROBORATES THE SECTION ASSIGNMENT, and cycle 1432 closed it.
+// 0x82362190 binds exactly two buffers, from `[r31+116]` and `[r31+120]` where
+// `r31` is the container plus 0x10 -- so those are sections.first and
+// sections.second, the same two the arbitration chose between. And the two
+// creators are not interchangeable:
+//
+//   sections.first  -> 0x821FBB10, which writes 2 at descriptor+0 and packs a
+//                      3-bit field from its r5 (the call site passes 1) --
+//                      the shape of an INDEX FORMAT selector
+//   sections.second -> 0x821FBA78, which writes 1 at descriptor+0 and packs a
+//                      masked address plus format bits into +28
+//
+// So retail creates two DIFFERENT resource types, one per section, in the
+// order the arbitration assigns them. That the type words 2 and 1 are
+// D3DRTYPE_INDEXBUFFER and D3DRTYPE_VERTEXBUFFER is a reading of an external
+// convention and is NOT derived here; what is derived is that the two sections
+// take two different creators, and which section takes which.
+//
+// The pair is what carries the claim: 1227/1227 by cross-match, and a binder
+// that makes two distinct typed resources from exactly those two fields.
 //
 // WHAT THIS DOES NOT DECODE, and it is most of each vertex. The strides are 28
 // and 32 bytes; this reads the first twelve as three big-endian floats and
