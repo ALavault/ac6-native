@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
   std::vector<std::uint8_t> blob((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
   auto dir = ac6::retail::ModelDirectory::open(blob.data(), blob.size());
   int containers=0, records=0, descs=0, zero_stride=0, strip_ok=0;
+  long long declared_records=0, declared_descs=0; int refused_records=0, refused_descs=0, relocated=0;
   long long verts=0, idx=0;
   std::map<std::uint32_t,int> strides; std::map<std::uint32_t,int> formats;
   for (std::uint32_t id=0; id<dir->count(); ++id) {
@@ -29,11 +30,16 @@ int main(int argc, char** argv) {
       auto c = ac6::retail::NdxrContainer::Open(sub, len);
       if (!c) continue;
       ++containers;
+      declared_records += c->record_count();
       for (std::uint16_t r=0;r<c->record_count();++r) {
-        auto rec = c->Record(r); if (!rec) continue;
+        auto rec = c->Record(r);
+        if (!rec) { ++refused_records; continue; }
         ++records;
+        declared_descs += rec->descriptor_count;
+        if (rec->relocated) ++relocated;
         for (std::uint16_t k=0;k<rec->descriptor_count;++k) {
-          auto d = c->Descriptor(*rec,k); if (!d) continue;
+          auto d = c->Descriptor(*rec,k);
+          if (!d) { ++refused_descs; continue; }
           ++descs; verts += d->vertex_count; idx += d->index_count;
           strides[d->vertex_stride]++;
           formats[(std::uint32_t(d->format_hi)<<8)|d->format_lo]++;
@@ -43,7 +49,10 @@ int main(int argc, char** argv) {
       }
     }
   }
-  std::printf("containers opened %d, records %d, descriptors %d\n", containers, records, descs);
+  std::printf("containers opened %d\n", containers);
+  std::printf("  records:     declared %lld  served %d  REFUSED %d\n", declared_records, records, refused_records);
+  std::printf("  descriptors: declared %lld  served %d  REFUSED %d\n", declared_descs, descs, refused_descs);
+  std::printf("  records flagged relocated: %d\n", relocated);
   std::printf("  total vertices %lld, total indices %lld\n", verts, idx);
   std::printf("  descriptors with stride 0 (format outside the tables): %d\n", zero_stride);
   std::printf("  descriptors with >=3 indices (a strip can be drawn): %d\n", strip_ok);
