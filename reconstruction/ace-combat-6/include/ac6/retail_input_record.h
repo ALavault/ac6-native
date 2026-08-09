@@ -56,6 +56,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <vector>
 
 namespace ac6::retail {
 
@@ -184,5 +186,49 @@ InputRecord build_input_record(const std::uint8_t* snapshot) noexcept;
 inline constexpr std::uint32_t kUninterpretedWordAt0x98 = 3;
 std::array<std::uint8_t, kInputRecordBytes> encode_input_record(
     const InputRecord& record) noexcept;
+
+// ------------------------------------------------------------------- replay
+//
+// A7 criterion 7. `ac6::ReplayLog` already exists and is NOT this: it logs the
+// product's own InputFrame -- pitch, roll, yaw, throttle, buttons -- which is an
+// abstraction the product chose. This logs what RETAIL hands over, the 0x40
+// bytes 0x8234D0A0 copies, because that is the only point on this path where a
+// capture is a capture rather than an interpretation.
+//
+// Replay is a pure function of the log. `build_input_record` reads nothing but
+// its argument, has no state between calls and no floating-point mode
+// dependence, so a second pass over the same log must produce the same records
+// and the same digest. The test asserts that rather than assuming it.
+inline constexpr std::size_t kInputSnapshotStride = 0x40;
+
+class RetailInputLog final {
+ public:
+  // `snapshot` is the 0x40 bytes; they are copied, so the caller may reuse it.
+  void append(const std::uint8_t* snapshot);
+  std::size_t size() const noexcept { return frames_.size(); }
+  bool empty() const noexcept { return frames_.empty(); }
+  const std::uint8_t* frame(std::size_t index) const noexcept {
+    return frames_[index].data();
+  }
+  void clear() noexcept { frames_.clear(); }
+
+  bool write_file(const std::filesystem::path& path) const;
+  bool read_file(const std::filesystem::path& path);
+
+ private:
+  std::vector<std::array<std::uint8_t, kInputSnapshotStride>> frames_;
+};
+
+// FNV-1a 64 over every encoded record in order -- the same digest construction
+// tools/emit_ac6_reader_digests.py uses on micro-execution writes, so a
+// divergence anywhere in the sequence shows up as one number rather than as a
+// diff a human has to read.
+struct RetailInputReplay {
+  std::vector<InputRecord> records;
+  std::uint64_t digest{};
+  bool operator==(const RetailInputReplay&) const = default;
+};
+
+RetailInputReplay replay_input_log(const RetailInputLog& log);
 
 }  // namespace ac6::retail

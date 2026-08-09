@@ -1,6 +1,7 @@
 #include "ac6/retail_input_record.h"
 
 #include <cstring>
+#include <fstream>
 
 namespace ac6::retail {
 namespace {
@@ -122,6 +123,78 @@ std::array<std::uint8_t, kInputRecordBytes> encode_input_record(
   // Not interpreted, and reproduced rather than omitted: every run wrote 3 here.
   write_be32(bytes.data() + 0x98, kUninterpretedWordAt0x98);
   return bytes;
+}
+
+// ------------------------------------------------------------------- replay
+
+namespace {
+
+// The file carries the raw guest bytes verbatim. They are already big-endian and
+// are not reinterpreted, so a log written on one host reads identically on
+// another without a byte-order clause -- which is the point of logging the
+// snapshot rather than a decoded structure.
+constexpr std::array<char, 8> kLogMagic{{'A', 'C', '6', 'R', 'I', 'L', 'G', '1'}};
+
+}  // namespace
+
+void RetailInputLog::append(const std::uint8_t* snapshot) {
+  std::array<std::uint8_t, kInputSnapshotStride> frame{};
+  std::memcpy(frame.data(), snapshot, frame.size());
+  frames_.push_back(frame);
+}
+
+bool RetailInputLog::write_file(const std::filesystem::path& path) const {
+  std::ofstream file(path, std::ios::binary);
+  if (!file) {
+    return false;
+  }
+  file.write(kLogMagic.data(), static_cast<std::streamsize>(kLogMagic.size()));
+  for (const auto& frame : frames_) {
+    file.write(reinterpret_cast<const char*>(frame.data()),
+               static_cast<std::streamsize>(frame.size()));
+  }
+  return static_cast<bool>(file);
+}
+
+bool RetailInputLog::read_file(const std::filesystem::path& path) {
+  std::ifstream file(path, std::ios::binary);
+  if (!file) {
+    return false;
+  }
+  std::array<char, 8> magic{};
+  file.read(magic.data(), static_cast<std::streamsize>(magic.size()));
+  if (!file || magic != kLogMagic) {
+    return false;
+  }
+  std::vector<std::array<std::uint8_t, kInputSnapshotStride>> loaded;
+  std::array<std::uint8_t, kInputSnapshotStride> frame{};
+  while (file.read(reinterpret_cast<char*>(frame.data()),
+                   static_cast<std::streamsize>(frame.size()))) {
+    loaded.push_back(frame);
+  }
+  // A trailing partial frame is a truncated log, not a short one: accepting it
+  // would replay a record built from bytes that were never captured.
+  if (file.gcount() != 0) {
+    return false;
+  }
+  frames_ = std::move(loaded);
+  return true;
+}
+
+RetailInputReplay replay_input_log(const RetailInputLog& log) {
+  RetailInputReplay result;
+  result.records.reserve(log.size());
+  std::uint64_t digest = 0xCBF29CE484222325ULL;  // FNV-1a 64 offset basis
+  for (std::size_t index = 0; index < log.size(); ++index) {
+    const InputRecord record = build_input_record(log.frame(index));
+    result.records.push_back(record);
+    for (std::uint8_t byte : encode_input_record(record)) {
+      digest ^= byte;
+      digest *= 0x100000001B3ULL;
+    }
+  }
+  result.digest = digest;
+  return result;
 }
 
 }  // namespace ac6::retail

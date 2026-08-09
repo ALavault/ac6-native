@@ -340,7 +340,7 @@
       },
       "retail_input_record": {
         "status": "passed",
-        "statement": "the native product reproduces the per-controller input record 0x821CAA50 builds -- the fourteen-bit button remap, the two scalar slots and their separate flag gate, and the four axis slots with their negative-zero idle state -- with every rule produced by executing the retail function rather than by reading it, and 321 retail vectors reproduced bit for bit",
+        "statement": "the native product reproduces the per-controller input record 0x821CAA50 builds -- the fourteen-bit button remap, the two scalar slots and their separate flag gate, and the four axis slots with their negative-zero idle state -- with every rule produced by executing the retail function rather than by reading it, 321 retail vectors reproduced bit for bit, and the same snapshots replayed from a log to the same records and the same digest",
         "retail_addresses": [
           "0x821CAA50",
           "0x821CAA88",
@@ -365,9 +365,9 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-input-record.json",
-            "sha256": "27bdf5126b6991d237115a09e158cbabc6ef97fe7bcb316a4bfb024c1757d2e6",
-            "size": 265,
-            "claim": "321 retail vectors compared bit for bit against build_input_record with no divergence, plus the named boundaries 0x07FF/0x0800/0x0801 and 0x4000/0x7FFF/0x8000/0xFFFF as separate expectations"
+            "sha256": "16bb563e0024e20ddad95900b3dc86ce04dad54c3e3e3677b9cc7ac435d6933e",
+            "size": 451,
+            "claim": "321 retail vectors compared bit for bit against build_input_record with no divergence, the named boundaries 0x07FF/0x0800/0x0801 and 0x4000/0x7FFF/0x8000/0xFFFF as separate expectations, and a deterministic replay of the same 321 snapshots -- twice, and across a file round trip -- to digest 0x4b08109c2c631941, with a paired control showing the digest moves for a mapped device bit and does not for an unmapped one"
           },
           {
             "kind": "microexec",
@@ -379,8 +379,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_input_record.h",
-            "sha256": "c09b3c7436442528cf37af82e0eff95dd5db142be158d941957d45ecf3bc67bd",
-            "size": 9344,
+            "sha256": "189aa2f13c622279e2c62e2dd491974bbfbda7963a0500607fa70c826bef45d6",
+            "size": 11313,
             "claim": "include/ac6/retail_input_record.h carries the derivation and names what is not ported: the constant 3 at record+0x98, the zeros at +0x8C..+0x94, and the second normalisation at 0x821CB244 that no input yet found reaches"
           }
         ]

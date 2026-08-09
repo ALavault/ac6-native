@@ -15,6 +15,7 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -126,6 +127,80 @@ void test_button_remap() {
         "the top half of the held word is unmapped");
 }
 
+// --------------------------------------------------------------------- replay
+
+// A7 criterion 7. Determinism is asserted, not assumed: a second pass over the
+// same log must give the same records AND the same digest, and a round trip
+// through a file must not change either.
+//
+// The log is built from the retail vectors themselves, so the replay path and
+// the differential path see the same 321 snapshots. If replay ever diverges
+// from build_input_record, one of them changed and this catches it.
+std::uint64_t test_replay(const std::vector<std::array<std::uint8_t, 0x40>>& snapshots) {
+  ac6::retail::RetailInputLog log;
+  for (const auto& snapshot : snapshots) {
+    log.append(snapshot.data());
+  }
+  check(log.size() == snapshots.size(), "the log holds every appended frame");
+
+  const ac6::retail::RetailInputReplay first = ac6::retail::replay_input_log(log);
+  const ac6::retail::RetailInputReplay second = ac6::retail::replay_input_log(log);
+  check(first == second, "replaying the same log twice is identical");
+  check(first.records.size() == snapshots.size(), "replay produces one record per frame");
+
+  // Every replayed record must equal the one the differential built, frame for
+  // frame -- the two paths must not be able to drift apart.
+  for (std::size_t index = 0; index < snapshots.size(); ++index) {
+    if (!(first.records[index] ==
+          ac6::retail::build_input_record(snapshots[index].data()))) {
+      std::cerr << "FAIL replay record " << index << " differs from build_input_record\n";
+      ++failures;
+      break;
+    }
+  }
+
+  const std::filesystem::path path =
+      std::filesystem::temp_directory_path() / "ac6-retail-input-replay.bin";
+  check(log.write_file(path), "the log writes");
+  ac6::retail::RetailInputLog reloaded;
+  check(reloaded.read_file(path), "the log reads back");
+  check(reloaded.size() == log.size(), "the round trip keeps every frame");
+  check(ac6::retail::replay_input_log(reloaded) == first,
+        "a log round-tripped through a file replays identically");
+
+  // THE NEGATIVE CONTROL, AND ITS OWN CONTROL. A digest that cannot change is
+  // not a checkpoint, so one flipped bit in one snapshot of 321 must move it.
+  //
+  // The first attempt flipped the TOP byte of the held word and the test failed
+  // -- correctly. Device bits 16..31 are measured unmapped, so flipping bit 31
+  // changes no record byte and must not change the digest. That is now the
+  // second assertion here: the pair distinguishes "the digest is sensitive" from
+  // "the digest is sensitive to everything", and only the first is wanted.
+  auto with_flip = [&snapshots](std::size_t byte, std::uint8_t mask) {
+    ac6::retail::RetailInputLog mutated;
+    for (std::size_t index = 0; index < snapshots.size(); ++index) {
+      std::array<std::uint8_t, 0x40> frame = snapshots[index];
+      if (index == snapshots.size() / 2) {
+        frame[byte] ^= mask;
+      }
+      mutated.append(frame.data());
+    }
+    return ac6::retail::replay_input_log(mutated).digest;
+  };
+  if (!snapshots.empty()) {
+    const std::size_t held_at = 0x1C - 0x04;
+    check(with_flip(held_at + 3, 0x01) != first.digest,
+          "flipping device bit 0, which is mapped, moves the digest");
+    check(with_flip(held_at + 0, 0x01) == first.digest,
+          "flipping device bit 31, which is unmapped, does not");
+  }
+
+  std::filesystem::remove(path);
+  std::cout << "replay frames=" << first.records.size() << " digest=0x" << std::hex
+            << first.digest << std::dec << "\n";
+  return first.digest;
+}
+
 // ---------------------------------------------------------------- differential
 
 struct Vector {
@@ -155,6 +230,8 @@ const std::map<std::string, std::size_t>& half_offsets() {
       {"RX+", 0x36}, {"RX-", 0x34}, {"RY+", 0x30}, {"RY-", 0x32}};
   return offsets;
 }
+
+std::vector<std::array<std::uint8_t, 0x40>> differential_snapshots;
 
 int run_differential(const char* path) {
   std::ifstream file(path);
@@ -240,6 +317,7 @@ int run_differential(const char* path) {
         ++failures;
       }
     }
+    differential_snapshots.push_back(snapshot);
     ++compared;
   }
   std::cout << "differential vectors=" << compared << "\n";
@@ -257,6 +335,7 @@ int main(int argc, char** argv) {
   test_scalar_rules();
   test_button_remap();
   int compared = 0;
+  std::uint64_t replay_digest = 0;
   if (argc > 1) {
     compared = run_differential(argv[1]);
     if (compared < 0) {
@@ -266,6 +345,7 @@ int main(int argc, char** argv) {
     std::cerr << "FAIL no vector table given; the differential did not run\n";
     ++failures;
   }
+  replay_digest = test_replay(differential_snapshots);
   if (failures != 0) {
     std::cerr << failures << " failure(s)\n";
     return 1;
@@ -278,9 +358,14 @@ int main(int argc, char** argv) {
            << "  \"schema\": \"ac6.retail-input-record-test.v1\",\n"
            << "  \"vectors\": " << compared << ",\n"
            << "  \"divergences\": 0,\n"
+           << "  \"replay_frames\": " << compared << ",\n"
+           << "  \"replay_digest\": \"0x" << std::hex << replay_digest
+           << std::dec << "\",\n"
            << "  \"statement\": \"every retail vector of 0x821CAA50 reproduced "
               "bit for bit by build_input_record, plus the named boundaries "
-              "0x07FF/0x0800/0x0801 and 0x4000/0x7FFF/0x8000/0xFFFF\"\n"
+              "0x07FF/0x0800/0x0801 and 0x4000/0x7FFF/0x8000/0xFFFF; the same "
+              "snapshots replayed as a log reproduce the same records and the "
+              "same FNV-1a 64 digest, across a file round trip\"\n"
            << "}\n";
   }
   std::cout << "retail_input_record=pass\n";

@@ -2,5 +2,7 @@
   "schema": "ac6.retail-input-record-test.v1",
   "vectors": 321,
   "divergences": 0,
-  "statement": "every retail vector of 0x821CAA50 reproduced bit for bit by build_input_record, plus the named boundaries 0x07FF/0x0800/0x0801 and 0x4000/0x7FFF/0x8000/0xFFFF"
+  "replay_frames": 321,
+  "replay_digest": "0x4b08109c2c631941",
+  "statement": "every retail vector of 0x821CAA50 reproduced bit for bit by build_input_record, plus the named boundaries 0x07FF/0x0800/0x0801 and 0x4000/0x7FFF/0x8000/0xFFFF; the same snapshots replayed as a log reproduce the same records and the same FNV-1a 64 digest, across a file round trip"
 }
