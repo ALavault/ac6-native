@@ -35,8 +35,12 @@
 #include "ac6/retail_ndxr_geometry.h"
 #include "ac6/retail_transform.h"
 
+#include "ac6/retail_map_water.h"
+#include "ac6/retail_terrain_field.h"
+
 #include <cstdint>
 #include <string>
+
 #include <vector>
 
 namespace ac6::demo {
@@ -105,6 +109,31 @@ void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
 // at `invented_altitude` over the origin and nothing moves.
 void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
                       const DemoCamera& camera) noexcept;
+
+// The same view, over the map's real ground instead of the invented grid.
+//
+// Every height comes from `TerrainField`, whose derivation is `0x82102568`, and
+// every land/water decision from `MapWaterGrid`, whose derivation is
+// `0x82101EE8`. The aircraft's attitude is the contracted rotation kernel and
+// its position the contracted integrator, exactly as `draw_flight_view` uses
+// them.
+//
+// WHAT IS STILL INVENTED, and it is the same list as the grid overload: the
+// field of view, the colours, the light direction and the haze. And one more
+// that matters here -- **which of `at64` and `at72` is north** is unestablished
+// (see `draw_flight_view`), so this maps `at64` to world x and `at72` to world
+// z because it must pick something. A wrong choice mirrors the map; it does not
+// invent terrain.
+//
+// `water` may be null, in which case ground below `kSeaLevelForShading` is
+// shaded as sea. That is a proxy and a poor one -- cycle 1445 measured the
+// city's ground at exactly zero -- which is why the parameter exists.
+inline constexpr float kSeaLevelForShading = 0.5F;
+void draw_terrain_view(Image& image, const ac6::retail::RetailBasis& basis,
+                       const DemoCamera& camera,
+                       const ac6::retail::FlightPosition& position,
+                       const ac6::retail::TerrainField& field,
+                       const ac6::retail::MapWaterGrid* water) noexcept;
 
 // Draws a decoded NDXR mesh as a wireframe, seen from `basis` at `position`.
 //

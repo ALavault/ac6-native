@@ -477,3 +477,85 @@ std::string caption() noexcept {
 }
 
 }  // namespace ac6::demo
+
+namespace ac6::demo {
+
+void draw_terrain_view(Image& image, const ac6::retail::RetailBasis& basis,
+                       const DemoCamera& camera,
+                       const ac6::retail::FlightPosition& position,
+                       const ac6::retail::TerrainField& field,
+                       const ac6::retail::MapWaterGrid* water) noexcept {
+  using ac6::retail::kTerrainSampleUnits;
+  using ac6::retail::kTerrainWorldBias;
+  using ac6::retail::sample_is_present;
+
+  image.clear(150, 172, 198);                      // sky, invented
+  image.clear_depth();
+
+  // at64 -> x and at72 -> z. Which is north is unestablished; see the header.
+  const float eye_x = position.at64;
+  const float eye_y = position.at68;
+  const float eye_z = position.at72;
+
+  const float step = kTerrainSampleUnits;
+  const long side = static_cast<long>(ac6::retail::TerrainField::field_side()) - 1;
+  const long cx = static_cast<long>((eye_x + kTerrainWorldBias) / step);
+  const long cz = static_cast<long>((eye_z + kTerrainWorldBias) / step);
+  const long reach = 96;                           // samples, invented
+
+  auto place = [&](float wx, float wy, float wz, int& sx, int& sy, float& depth) {
+    const Vec3 c = to_camera(basis, Vec3{wx - eye_x, wy - eye_y, wz - eye_z});
+    depth = c.z;
+    return project(c, camera, image.width, image.height, sx, sy);
+  };
+
+  for (long z = cz - reach; z < cz + reach; ++z) {
+    if (z < 0 || z >= side) continue;
+    for (long x = cx - reach; x < cx + reach; ++x) {
+      if (x < 0 || x >= side) continue;
+      const float h[4] = {
+          field.sample(static_cast<std::size_t>(x), static_cast<std::size_t>(z)),
+          field.sample(static_cast<std::size_t>(x + 1), static_cast<std::size_t>(z)),
+          field.sample(static_cast<std::size_t>(x + 1), static_cast<std::size_t>(z + 1)),
+          field.sample(static_cast<std::size_t>(x), static_cast<std::size_t>(z + 1))};
+      bool present = true;
+      for (const float v : h) present = present && sample_is_present(v);
+      if (!present) continue;
+
+      const float wx = static_cast<float>(x) * step - kTerrainWorldBias;
+      const float wz = static_cast<float>(z) * step - kTerrainWorldBias;
+      const bool sea = water != nullptr
+                           ? water->is_water(wx + step * 0.5F, wz + step * 0.5F)
+                           : (h[0] <= kSeaLevelForShading && h[2] <= kSeaLevelForShading);
+
+      // A lambert term from the quad's own slope, light from the north-west.
+      const float nx = (h[0] - h[1]) / step, nz = (h[0] - h[3]) / step;
+      const float inv = 1.0F / std::sqrt(nx * nx + nz * nz + 1.0F);
+      float shade = (0.55F * nx + 0.35F * nz + 0.80F) * inv + 0.22F;
+      shade = shade < 0.30F ? 0.30F : (shade > 1.25F ? 1.25F : shade);
+      const int base_r = sea ? 44 : 96, base_g = sea ? 74 : 112, base_b = sea ? 116 : 72;
+
+      int px[4], py[4];
+      float pd[4];
+      bool ok = true;
+      const float corner[4][3] = {{wx, h[0], wz},
+                                  {wx + step, h[1], wz},
+                                  {wx + step, h[2], wz + step},
+                                  {wx, h[3], wz + step}};
+      for (int i = 0; i < 4 && ok; ++i) {
+        ok = place(corner[i][0], corner[i][1], corner[i][2], px[i], py[i], pd[i]);
+      }
+      if (!ok) continue;
+      const auto c = [&](int v) {
+        const float lit = static_cast<float>(v) * shade;
+        return static_cast<std::uint8_t>(lit > 255.0F ? 255.0F : lit);
+      };
+      image.triangle(px[0], py[0], pd[0], px[1], py[1], pd[1], px[2], py[2], pd[2],
+                     c(base_r), c(base_g), c(base_b));
+      image.triangle(px[0], py[0], pd[0], px[2], py[2], pd[2], px[3], py[3], pd[3],
+                     c(base_r), c(base_g), c(base_b));
+    }
+  }
+}
+
+}  // namespace ac6::demo
