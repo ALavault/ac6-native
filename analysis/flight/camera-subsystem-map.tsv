@@ -1,0 +1,69 @@
+# A3.3's opening map: the camera subsystem, bounded before anything is read.
+#
+# THE FIRST THING TO SAY IS THAT IT IS NAMED. Every class in the flight thread
+# was among the 306 vtables without RTTI; cycle 1385 called finding ONE named
+# class -- CX360UnitManager -- the thread's first anchor. The camera subsystem
+# is named throughout:
+#
+#   0x82054DA8   galib::CGaCamera
+#   0x82054F0C   ACE6::CAce6CameraManager
+#   0x820552AC   ACE6::CAce6ArmsCamera
+#   0x8205D814   CBriefingCamera
+#   0x8205D900   CDebriefingCamera
+#   0x8205DA0C   CSelectAircraftCamera
+#   0x8205D4E0   CDemoMoveCamera        (+ CDemoMoveRZCamera)
+#   0x8205641C   CX360CameraManagerGT
+#   0x82062C24.. eleven CX360ReplayCameraGeneralTuner* variants
+#
+# AND THE SECOND IS THAT IT IS NOT VIRTUAL-DISPATCH DRIVEN. Measured, not
+# assumed: each of the three core vtables holds exactly ONE slot.
+#
+# class	vtable	slots	slot 0
+galib::CGaCamera	0x82054DA8	1	0x82093A10, 21 insns
+ACE6::CAce6CameraManager	0x82054F0C	1	0x82094BE8, 32 insns
+ACE6::CAce6ArmsCamera	0x820552AC	1	0x82094518, 18 insns
+#
+# One slot is a destructor. So these are DATA classes, and the per-frame camera
+# work is in plain functions that operate on them -- the exact opposite of the
+# flight model, where every behaviour was a vtable slot of an unnamed class and
+# the whole difficulty was finding which slot ran.
+#
+# A3.3 therefore inverts A3.2's method. There is no "who calls slot N" to run.
+# The handle is instead: WHO BUILDS A CGaCamera. The vtable is materialised at
+# 29 sites in 27 distinct functions --
+#
+# function	insns	vector	callers	note
+0x820938B8	50	14	17	seventeen callers: this is the constructor
+0x82093A10	21	0	0	the destructor, slot 0
+0x82094BE8	32	0	0	CAce6CameraManager's slot 0
+0x82096FF0	136	0	2
+0x82099358	1846	100	0
+0x8209B398	400	14	1
+0x821455C8	111	0	5
+0x8219B948	136	0	1
+0x8219BB68	137	0	1
+0x8219DBD0	1846	100	0
+0x821A16B8	1856	100	0
+0x821A3B98	400	14	1
+0x821A4488	400	14	1
+0x821BDB18	104	0	1
+0x821BEF30	97	0	1
+0x82212868	33	0	5
+0x82212BD8	152	0	2
+0x82300C20	1985	422	1
+# (plus nine more of 24-35 instructions, each with 0-2 callers)
+#
+# TWO CANDIDATES FOR THE GAMEPLAY CAMERA, on position rather than on name:
+#
+#   0x82300C20 -- 1,985 instructions, 422 of them vector, ONE caller, and it
+#   sits at 0x8230xxxx, inside the same span as the flight model's slot 30
+#   (0x82303E68) and its step (0x82306A38). Size and neighbourhood both fit a
+#   per-frame camera that follows the aeroplane.
+#
+#   0x82212868 / 0x82212BD8 -- small, five and two callers, at 0x8221xxxx,
+#   which is where the contracted input consumer 0x82211C10 lives.
+#
+# NEITHER IS ESTABLISHED. Position in the image is not evidence -- cycle 1379's
+# twenty-fourth shape is exactly that, and the refuted-link shape before it.
+# What IS established is the population: 27 functions, sized, with their caller
+# counts, and a named class to anchor them to.
