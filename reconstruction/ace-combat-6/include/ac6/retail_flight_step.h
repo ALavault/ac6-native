@@ -31,8 +31,13 @@
 // the ONLY write to r30 in 359 instructions, so the integrated position is not a
 // field of the flight model at all: it lives at [model+112] + 96 + 64/68/72.
 //
-// THE CONSTANTS ARE TWO WORDS OF THE IMAGE, read rather than assumed:
-// 0x82069B40 = 0.2777777910232544 (exactly 1/3.6) and 0x82003214 = 10.0.
+// THE CONSTANTS ARE WORDS OF THE IMAGE, read rather than assumed. Cycle 1374
+// resolved all fifteen this function loads, into
+// analysis/flight/flight-integrator-constants.tsv; the four that matter here are
+// 0x82069B40 = 1/3.6, 0x82003214 = 10.0, 0x8200F308 = 9.8/3.6 and
+// 0x82069C2C = 2^-16. One of them is a trap: 0x82008AD8 is 0.3183099031448364,
+// which is the seven-digit DECIMAL LITERAL 0.3183099 and NOT float32(1/pi)
+// (0.31830987334251404). A port writing 1.0f/M_PI would be one ulp off.
 //
 // THE FUSED OPERATIONS MATTER. Retail integrates with `fmadds`, which rounds
 // once; `a * b + c` in C++ rounds twice and disagrees in the last ulp. Every
@@ -44,8 +49,10 @@
 namespace ac6::retail {
 
 // The three position components, at r5 + 64 / 68 / 72. Named by offset because
-// nothing in the binary names them: `mid` is the one carrying the 10.0 floor,
-// which is what an altitude would carry, but that reading is not derived.
+// nothing in the binary names them -- but `at68` is the vertical one, on the two
+// grounds set out under kGravityKmhPerSecond below. The offset names are kept
+// anyway: they are what the evidence is anchored to, and a rename would make the
+// derivation unreadable against the listing.
 struct FlightPosition {
   float at64{};
   float at68{};
@@ -69,13 +76,51 @@ inline constexpr float kRateToStep = 0.2777777910232544F;
 // 10.0 at 0x82003214, the floor applied to `at68` and to nothing else.
 inline constexpr float kMidFloor = 10.0F;
 
+// WHICH COMPONENT IS WHICH AXIS, and cycle 1372 wrote this as an open question.
+//
+// `at68` is the VERTICAL component. Two independent supports, neither of them a
+// name:
+//
+//   1. It is the only one carrying a floor, and the floor is 10.0 -- the shape
+//      of a minimum-altitude clamp and of nothing else in a position step.
+//   2. Its bias `mid_bias` is a GRAVITY term. `f25` is built at 0x82303300:
+//
+//          lfs   f0,344(r31)          a model field
+//          fcmpu cr6,f0,f26           against 0.0
+//          lfs   f25,-3320(r11)       9.8/3.6, at 0x8200F308
+//          beq   -> keep it
+//          fmuls f0,f0,30.0           otherwise scale by [model+344] * 30
+//          fmuls f25,f0,f25
+//
+//      and 0x8200F308 is float32(9.8/3.6) EXACTLY -- not float32(9.81/3.6),
+//      which is 2.7249999. Only the middle component has it subtracted.
+//
+// THIS ALSO SETTLES THE UNIT of the step. Cycle 1372 said of 1/3.6: "the
+// constant is measured, the unit assignment is not." The same function loads
+// 9.8/3.6 from the class's own constant pool, so the image carries g and the
+// km/h->m/s divisor as a matched pair: their ratio is 9.8. `step` is seconds
+// and the rates are km/h.
+inline constexpr float kGravityKmhPerSecond = 2.722222328186035F;
+
+// 2**-16 at 0x82069C2C. The epsilon deciding whether the vector normalise at
+// 0x823035EC runs: when all three scaled rates are below it in absolute value
+// the block is skipped. The normalise is still not ported -- but the threshold
+// is no longer unread, and cycle 1373's capsule seeded 1e30 in its place only to
+// force that branch, which its docstring states.
+inline constexpr float kNormaliseEpsilon = 1.52587890625e-05F;
+
 // UNRESOLVED, AND DELIBERATELY AN ARGUMENT RATHER THAN A GUESS.
 //
-//   rate_scale is [model+32], clamped just above at 0x82303548 against a value
-//   in f26 that this cycle did not read.
-//   mid_bias is the product f25*f24 in `fnmsubs f10,f25,f24,f10`, i.e. the
-//   middle rate has a correction subtracted before integration. Neither factor
-//   was traced to its source.
+//   rate_scale is [model+32]. Just above the window, 0x82303548 clamps it from
+//   below against f26 -- which cycle 1374 read: f26 is 0.0, from 0x8200082C. So
+//   retail's own rate_scale is never negative on entry to this window. The port
+//   does NOT enforce that, because the clamp is outside what it claims to port.
+//
+//   mid_bias is the product f25*f24 in `fnmsubs f10,f25,f24,f10`. Cycle 1374
+//   resolved f25: it is 9.8/3.6, scaled by [model+344] * 30 when that field is
+//   non-zero (0x82303300). f24 is `frsp(f1) * 0.3183099` at 0x82303278, where f1
+//   is returned by a call this cycle did not follow -- so the product is still an
+//   argument.
 //
 // Both are inputs here. A port that dropped them would silently be a different
 // function, and a port that invented values for them would be worse.
@@ -88,8 +133,10 @@ FlightPosition integrate_flight_position(FlightPosition position,
 // The scaled, bias-corrected rates the integrator also feeds to its direction
 // output at [model+128/132/136]. Exposed because the integration and the
 // direction share these three values, and computing them twice is how the two
-// drift apart. The direction write itself is NOT ported: it normalises unless
-// all three components fall below an epsilon held in f11, and f11 was not read.
+// drift apart. The direction write itself is NOT ported: it normalises with
+// vrsqrtefp unless all three components fall below kNormaliseEpsilon, and that
+// block is VMX128 -- outside what the micro-execution differential covers, which
+// tools/audit_flight_step_microexec.py states before it states anything else.
 FlightRates scaled_rates(FlightRates rates, float rate_scale,
                          float mid_bias) noexcept;
 

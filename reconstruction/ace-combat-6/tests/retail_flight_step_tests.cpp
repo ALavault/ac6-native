@@ -35,6 +35,8 @@ using ac6::retail::FlightPosition;
 using ac6::retail::FlightRates;
 using ac6::retail::integrate_flight_position;
 using ac6::retail::kMidFloor;
+using ac6::retail::kGravityKmhPerSecond;
+using ac6::retail::kNormaliseEpsilon;
 using ac6::retail::kRateToStep;
 using ac6::retail::scaled_rates;
 
@@ -94,6 +96,24 @@ void the_constants_are_the_words_of_the_image() {
   // -- it is what the image stores, so the two must agree exactly.
   check_bits(kRateToStep, static_cast<float>(1.0 / 3.6),
              "1/3.6 rounds to the stored word");
+}
+
+void the_paired_constants_carry_gravity_and_the_kmh_divisor() {
+  // 0x8200F308 and 0x82069B40. Their ratio is 9.8, which is the whole argument
+  // that `step` is seconds and the rates are km/h -- so it is pinned, not left
+  // in prose. A future edit that "simplifies" either constant breaks this.
+  check_bits(kGravityKmhPerSecond, 2.722222328186035F, "9.8/3.6 is the image's word");
+  check_bits(kGravityKmhPerSecond, static_cast<float>(9.8 / 3.6),
+             "and it is 9.8/3.6, not some nearby value");
+  check(kGravityKmhPerSecond != static_cast<float>(9.81 / 3.6),
+        "it is 9.8, not 9.81 -- those differ in float32");
+  const double ratio = static_cast<double>(kGravityKmhPerSecond) / kRateToStep;
+  check(ratio > 9.7999 && ratio < 9.8001, "the two constants are a matched pair");
+
+  // 2**-16 exactly, and exactly is the claim: a threshold written as 1e-5 would
+  // pass a tolerance check and be a different number.
+  check_bits(kNormaliseEpsilon, 1.52587890625e-05F, "the epsilon is 2^-16");
+  check_bits(kNormaliseEpsilon, 1.0F / 65536.0F, "and 2^-16 is exact in binary");
 }
 
 void a_zero_step_moves_nothing_except_through_the_floor() {
@@ -293,6 +313,7 @@ void scaled_rates_is_the_same_arithmetic_the_integrator_uses() {
 
 int main() {
   the_constants_are_the_words_of_the_image();
+  the_paired_constants_carry_gravity_and_the_kmh_divisor();
   a_zero_step_moves_nothing_except_through_the_floor();
   each_rate_reaches_its_own_component();
   the_bias_corrects_the_middle_rate_and_no_other();

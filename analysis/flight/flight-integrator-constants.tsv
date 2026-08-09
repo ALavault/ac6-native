@@ -1,0 +1,36 @@
+# Every float constant sub_82303110 loads from the image, in the order it loads them.
+#
+# Read by cycle 1374 by resolving each lfs against its lis/addi base. Two of
+# them settle questions earlier cycles left open, and one settles a reading
+# cycle 1372 explicitly refused to assert:
+#
+#   0x8200F308 is float32(9.8/3.6) EXACTLY, and is not float32(9.81/3.6).
+#   0x82069B40 is float32(1/3.6). Their ratio is 9.8 to within float precision.
+#   So the image carries g = 9.8 m/s^2 and the km/h->m/s divisor as a matched
+#   pair inside one function, which is what the km/h reading predicted.
+#
+#   0x82069C2C is 2**-16 exactly: the epsilon that decides whether the vector
+#   normalise at 0x823035EC runs. Cycle 1373's capsule seeded 1e30 in its place
+#   to force the branch, and said so; this is the real value.
+#
+# 0x8200F300, 0x8200F304 and 0x8200F308 are the three words IMMEDIATELY AFTER
+# the class's 36-slot vtable at 0x8200F270 (0x8200F270 + 0x90 = 0x8200F300):
+# the constant pool sits against the vtable it belongs to.
+#
+# address	value	identity	note	role
+address	value	identity	note	role
+0x82069E3C	0.03333333507180214	1/30	exact float32(1/30)	
+0x8200082C	0.0	0	the image's single zero, shared with cycles 1330/1342	
+0x82069CA0	0.20000000298023224	1/5	exact float32(0.2)	
+0x82007D5C	0.06666667014360428	1/15	exact float32(1/15)	
+0x82008AD8	0.3183099031448364	0.3183099	NOT float32(1/pi), which is 0.31830987334251404; this is the seven-digit DECIMAL LITERAL a programmer typed. A port using 1.0f/M_PI is one ulp off.	f29, the factor of f24
+0x82002FD4	0.10000000149011612	1/10	exact float32(0.1)	
+0x8200F300	0.1111111119389534	1/9	exact float32(1/9); IN THE CLASS'S OWN CONSTANT POOL	
+0x8200F304	-45.0	-45	IN THE CLASS'S OWN CONSTANT POOL	
+0x8200F308	2.722222328186035	9.8/3.6	exact float32(9.8/3.6), and NOT float32(9.81/3.6)=2.7249999. Gravity at 9.8 m/s^2 expressed in the same km/h-per-second units as 0x82069B40. IN THE CLASS'S OWN CONSTANT POOL.	f25, the gravity term
+0x82069C7C	30.0	30		
+0x82069E70	0.2617993950843811	pi/12	exact float32(pi/12) = 15 degrees in radians, correctly rounded -- unlike 0x82008AD8	
+0x8200134C	3.0	3		
+0x82069C2C	1.52587890625e-05	2**-16	exact. The epsilon f11 guarding the vector normalise at 0x823035EC.	f11
+0x82069B40	0.2777777910232544	1/3.6	exact float32(1/3.6), the km/h to m/s divisor	the integration factor
+0x82003214	10.0	10	the floor on the middle position component	the ground clamp

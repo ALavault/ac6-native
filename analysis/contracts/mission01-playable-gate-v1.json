@@ -587,8 +587,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_step.h",
-            "sha256": "d1f050e0bafd7d749d37fcd7e64fcaf6830c4f71beb0827bc48ec136dfd9c7e4",
-            "size": 4435,
+            "sha256": "4b396084e3b9fc2946fcf36516636919f46e6558e73ebb3a3893c53ca53d541b",
+            "size": 7147,
             "claim": "include/ac6/retail_flight_step.h carries the derivation, records that r30 is r5 and not `this` so the position is not a field of the flight model, and keeps rate_scale and mid_bias as arguments because f26 and the two factors of f25*f24 were not read"
           }
         ]
