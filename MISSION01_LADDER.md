@@ -245,7 +245,11 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    honest change is *applied at first update*, in the session loop — larger than
    cycle 1182 contemplated. **The product stays unchanged**, now for a proved
    reason rather than a cautious one. Single open hop: what starts the leader's
-   FSM (`0x82297540` has zero instruction references).
+   FSM. **Cycle 1275 corrected this: `0x82297540` has zero instruction
+   references and six `lis`+`addi` materialisations** — `0x82297A00`,
+   `0x82297AE0`, `0x82297D00`, `0x8229835C`, `0x822983A4`, `0x82298480` — which
+   no branch scan and no data scan can see. The hop is a reading problem now,
+   not a search problem.
 
    What remains is the player's spawn. Cycle 1177 exhausted `PLAD` — both its
    accessors have exactly three call sites each, paired, and every getter reads

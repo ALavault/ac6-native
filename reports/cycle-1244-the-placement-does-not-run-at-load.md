@@ -85,6 +85,15 @@ wrong.
 
 ## Not established, stated plainly
 
+> **Corrected by cycle 1275.** The item below is a **false negative**.
+> `0x82297540` is materialised in two instructions at six sites — `0x82297A00`,
+> `0x82297AE0`, `0x82297D00`, `0x8229835C`, `0x822983A4`, `0x82298480` — and at
+> the first of them (`82297a00 lis r11,-0x7dd7` / `82297a10 addi r11,r11,0x7540`
+> / `82297a1c stw r11,0x50(r1)`) the result is stored and passed on. No `bl`, no
+> `b` and no data word points at it, all three measured, and all three beside
+> the point. `tools/find_materialised_address.py` exists so the next such
+> sentence is checked before it is written.
+
 - **What starts the leader's FSM.** `0x82297540` has zero instruction references
   and appears in data only in `.pdata`; every path into it found is a transition
   from a sibling state. **This is the single open hop**, down from the four cycle
