@@ -37,6 +37,14 @@ python3 tools/audit_ac6_retail_content_cache.py CACHE_ROOT \
   --matrix-out reports/ac6-pal-campaign-import-matrix.json
 ```
 
+`RetailMission01SceneBundle` opens world entry 119 directly from that store.
+It validates the nested root/map/mapset FHM hierarchy, then opens terrain,
+water and all 4,318 map placements through the native readers. Its binding
+audit covers 178 NDXR files and resolves every one of their 4,326 material
+texture references by GIDX against the 192 NTXR wrappers in the same retail
+bundle. The explicit test-payload overload carries no store provenance and is
+not an accepted interactive content path.
+
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is
 marked playable-supported.

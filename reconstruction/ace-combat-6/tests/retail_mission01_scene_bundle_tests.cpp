@@ -1,0 +1,310 @@
+#include "ac6/retail_mission01_scene_bundle.h"
+#include "ac6/ntxr_texture.h"
+#include "ac6/retail_ndxr_container.h"
+
+#include <array>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <numeric>
+#include <span>
+#include <vector>
+
+namespace {
+
+int failures = 0;
+
+void check(bool condition, const char* message) {
+  if (!condition) {
+    std::printf("FAIL  %s\n", message);
+    ++failures;
+  }
+}
+
+void put16(std::vector<std::uint8_t>& bytes, std::size_t at,
+           std::uint16_t value) {
+  bytes[at] = static_cast<std::uint8_t>(value >> 8);
+  bytes[at + 1] = static_cast<std::uint8_t>(value);
+}
+
+void put32(std::vector<std::uint8_t>& bytes, std::size_t at,
+           std::uint32_t value) {
+  bytes[at] = static_cast<std::uint8_t>(value >> 24);
+  bytes[at + 1] = static_cast<std::uint8_t>(value >> 16);
+  bytes[at + 2] = static_cast<std::uint8_t>(value >> 8);
+  bytes[at + 3] = static_cast<std::uint8_t>(value);
+}
+
+std::vector<std::uint8_t> blob(std::size_t size, const char magic[4]) {
+  std::vector<std::uint8_t> bytes(size, 0);
+  std::memcpy(bytes.data(), magic, 4);
+  return bytes;
+}
+
+std::vector<std::uint8_t> make_fhm(
+    const std::vector<std::vector<std::uint8_t>>& children) {
+  const std::size_t table_end = 0x14 + children.size() * 16;
+  std::size_t total = table_end;
+  for (const std::vector<std::uint8_t>& child : children) total += child.size();
+  std::vector<std::uint8_t> bytes;
+  bytes.reserve(total);
+  bytes.resize(table_end, 0);
+  std::memcpy(bytes.data(), "FHM ", 4);
+  bytes[4] = 1;
+  bytes[5] = 1;
+  bytes[7] = 0x10;
+  put32(bytes, 0x10, static_cast<std::uint32_t>(children.size()));
+  for (std::size_t index = 0; index < children.size(); ++index) {
+    if (children[index].empty()) continue;
+    put32(bytes, 0x14 + index * 4, static_cast<std::uint32_t>(bytes.size()));
+    put32(bytes, 0x14 + children.size() * 4 + index * 4,
+          static_cast<std::uint32_t>(children[index].size()));
+    bytes.insert(bytes.end(), children[index].begin(), children[index].end());
+  }
+  return bytes;
+}
+
+std::vector<std::vector<std::uint8_t>> prefixed_children(
+    std::size_t count, std::size_t live, const char magic[4]) {
+  std::vector<std::vector<std::uint8_t>> children(count);
+  for (std::size_t index = 0; index < live; ++index) {
+    children[index] = blob(4, magic);
+  }
+  return children;
+}
+
+std::vector<std::uint8_t> valid_world() {
+  std::vector<std::vector<std::uint8_t>> map(17);
+  map[1] = blob(272, "MCA\0");
+  map[2] = blob(211472, "MCD\0");
+  map[3] = blob(9744, "MCI\0");
+  put16(map[2], 8, 413);
+  put16(map[3], 8, 4864);
+  map[4].resize(256, 0);
+  map[5].resize(1250604, 0);
+  map[9].resize(256, 0);
+  map[10].resize(12288, 0);
+  map[11].resize(73184, 0);
+  put32(map[11], 0, 4318);
+  put32(map[11], 4, 4096);
+  map[12].resize(145944, 0);
+  map[13].resize(197632, 0);
+  map[14] = make_fhm(prefixed_children(256, 170, "NDXR"));
+  map[15] = make_fhm(prefixed_children(256, 170, "NTXR"));
+  map[16] = make_fhm(prefixed_children(8, 7, "NTXR"));
+
+  std::vector<std::vector<std::uint8_t>> mapset(12);
+  mapset[5] = make_fhm(prefixed_children(8, 8, "NDXR"));
+  mapset[6] = make_fhm(prefixed_children(8, 8, "NTXR"));
+  for (std::size_t index = 7; index <= 11; ++index) {
+    mapset[index] = blob(4, "NTXR");
+  }
+
+  std::vector<std::vector<std::uint8_t>> root(23);
+  root[21] = make_fhm(map);
+  root[22] = make_fhm(mapset);
+  return make_fhm(root);
+}
+
+std::size_t descendant_offset(
+    std::vector<std::uint8_t>& world,
+    std::span<const std::uint32_t> path) {
+  const std::optional<ac6::retail::RetailFhmView> root =
+      ac6::retail::RetailFhmView::open(world);
+  if (!root.has_value()) return world.size();
+  const std::optional<std::span<const std::uint8_t>> child =
+      root->descendant(path);
+  return child.has_value()
+             ? static_cast<std::size_t>(child->data() - world.data())
+             : world.size();
+}
+
+void diagnose_model_bindings(const ac6::retail::RetailMission01SceneBundle& scene) {
+  using namespace ac6::retail;
+  const std::array<std::pair<const char*, std::optional<RetailFhmView>>, 2> sets{{
+      {"parts", scene.map_parts()}, {"mapset", scene.mapset_models()}}};
+  for (const auto& [label, models] : sets) {
+    if (!models.has_value()) {
+      std::printf("diagnostic missing model set %s\n", label);
+      continue;
+    }
+    const std::uint32_t live_models =
+        std::strcmp(label, "parts") == 0 ? 170 : models->child_count();
+    for (std::uint32_t model_index = 0; model_index < live_models;
+         ++model_index) {
+      const auto bytes = models->child(model_index);
+      const auto model = bytes.has_value()
+                             ? NdxrContainer::Open(bytes->data(), bytes->size())
+                             : std::nullopt;
+      if (!model.has_value()) {
+        std::printf("diagnostic NDXR refused %s/%u\n", label, model_index);
+        return;
+      }
+      for (std::uint16_t record_index = 0;
+           record_index < model->record_count(); ++record_index) {
+        const auto record = model->Record(record_index);
+        if (!record.has_value()) {
+          std::printf("diagnostic record refused %s/%u/%u\n", label,
+                      model_index, record_index);
+          return;
+        }
+        for (std::uint16_t descriptor_index = 0;
+             descriptor_index < record->descriptor_count;
+             ++descriptor_index) {
+          if (!model->Descriptor(*record, descriptor_index).has_value()) {
+            std::printf("diagnostic descriptor refused %s/%u/%u/%u\n", label,
+                        model_index, record_index, descriptor_index);
+            return;
+          }
+          for (unsigned slot = 0; slot < NdxrContainer::kMaterialSlots; ++slot) {
+            const auto material =
+                model->Material(*record, descriptor_index, slot);
+            if (!material.has_value()) continue;
+            for (std::uint16_t texture = 0; texture < material->texture_count;
+                 ++texture) {
+              if (!model->TextureRef(*material, texture).has_value()) {
+                std::printf(
+                    "diagnostic texture ref refused %s/%u/%u/%u/%u/%u\n",
+                    label, model_index, record_index, descriptor_index, slot,
+                    texture);
+                return;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  std::printf("diagnostic all model records and texture refs parse\n");
+}
+
+void check_synthetic_bundle() {
+  using namespace ac6::retail;
+  const std::vector<std::uint8_t> world = valid_world();
+  const std::optional<RetailMission01SceneBundle> scene =
+      RetailMission01SceneBundle::open_payload_for_testing(world);
+  check(scene.has_value(), "the complete synthetic entry-119 hierarchy opens");
+  if (!scene.has_value()) return;
+  check(!scene->store_backed(), "the test overload cannot claim retail provenance");
+  check(scene->terrain().patch_count() == 74, "the terrain has 74 bounded patches");
+  check(scene->water().group_count() == 4864 &&
+            scene->water().block_count() == 413,
+        "the MCA/MCI/MCD triple opens through the product reader");
+  check(scene->placement().instances().size() == 4318,
+        "the placement partition closes at 4318 records");
+  check(scene->map_parts().has_value() && scene->map_parts()->child_count() == 256,
+        "the parallel map-parts container retains all 256 slots");
+  check(scene->map_part_textures().has_value() &&
+            scene->map_part_textures()->child_count() == 256,
+        "the parallel map-texture container retains all 256 slots");
+  check(scene->terrain_atlas().has_value() &&
+            scene->terrain_atlas()->child_count() == 8,
+        "the seven-page terrain atlas retains its empty eighth slot");
+  check(scene->map_resource(Mission01MapResource::PlacedTrees).has_value() &&
+            scene->map_resource(Mission01MapResource::PlacedTrees)->size() == 145944,
+        "the placed-tree resource is addressed by retail index, not filename");
+
+  std::vector<std::uint8_t> invalid = world;
+  const std::array<std::uint32_t, 3> texture_path{21, 15, 0};
+  const std::size_t texture = descendant_offset(invalid, texture_path);
+  check(texture < invalid.size(), "the negative control found the texture child");
+  invalid[texture] = 'X';
+  check(!RetailMission01SceneBundle::open_payload_for_testing(invalid).has_value(),
+        "a map texture with the wrong identity fails closed");
+
+  invalid = world;
+  const std::array<std::uint32_t, 2> grid_path{21, 4};
+  const std::size_t grid = descendant_offset(invalid, grid_path);
+  check(grid < invalid.size(), "the negative control found the terrain grid");
+  invalid[grid] = 74;
+  check(!RetailMission01SceneBundle::open_payload_for_testing(invalid).has_value(),
+        "a terrain grid naming a missing patch fails closed");
+
+  invalid = world;
+  invalid.pop_back();
+  check(!RetailMission01SceneBundle::open_payload_for_testing(invalid).has_value(),
+        "a truncated nested world fails closed");
+}
+
+void check_qualified_cache(const char* cache_path) {
+  using namespace ac6::retail;
+  ac6::RetailContentStore store;
+  check(store.open(cache_path), "the qualified PAL cache opens");
+  if (!store.valid()) return;
+  const std::optional<RetailMission01SceneBundle> scene =
+      RetailMission01SceneBundle::open(store);
+  check(scene.has_value(), "the qualified entry-119 hierarchy opens");
+  if (!scene.has_value()) {
+    std::vector<std::uint8_t> payload;
+    if (store.read_payload(119, payload)) {
+      const std::optional<RetailMission01SceneBundle> diagnostic =
+          RetailMission01SceneBundle::open_payload_for_testing(payload);
+      const std::optional<Mission01TextureBindingReport> bindings =
+          diagnostic.has_value() ? diagnostic->audit_texture_bindings()
+                                 : std::nullopt;
+      if (bindings.has_value()) {
+        std::printf(
+            "refused bindings models=%zu records=%zu descriptors=%zu "
+            "materials=%zu refs=%zu unique=%zu textures=%zu missing=%zu "
+            "unbound=%zu complete=%d\n",
+            bindings->model_files, bindings->model_records,
+            bindings->descriptors, bindings->material_slots,
+            bindings->texture_references, bindings->unique_texture_references,
+            bindings->texture_wrappers, bindings->missing_texture_ids,
+            bindings->unbound_descriptors, bindings->complete ? 1 : 0);
+      } else {
+        std::printf("refused bindings report unavailable\n");
+        if (diagnostic.has_value()) diagnose_model_bindings(*diagnostic);
+      }
+    }
+    return;
+  }
+  check(scene->store_backed(), "the product path retains content provenance");
+  check(ac6::sha256_hex(scene->content_index_sha256()) ==
+            "349f5f49fe1acf19984c6470a5d3f16adf3029e36c93e24da8cb3ec58b4cdfd0",
+        "the scene carries the sealed cache generation identity");
+  check(scene->terrain().patch_count() == 74,
+        "the qualified terrain reader sees 74 patches");
+  check(scene->placement().instances().size() == 4318,
+        "the qualified placement reader sees 4318 instances");
+  check(scene->map_parts().has_value() && scene->map_parts()->child(169).has_value(),
+        "all 170 qualified map-part models are live");
+  check(scene->map_part_textures().has_value() &&
+            scene->map_part_textures()->child(169).has_value(),
+        "all 170 qualified map-part texture wrappers are live");
+  const std::optional<Mission01TextureBindingReport> bindings =
+      scene->audit_texture_bindings();
+  check(bindings.has_value() && bindings->complete,
+        "every NDXR material texture id resolves in the retail registry");
+  if (bindings.has_value()) {
+    check(bindings->model_files == 178 && bindings->texture_wrappers == 192,
+          "the binding audit covers all 178 NDXR and 192 NTXR resources");
+    check(bindings->model_records == 4326 && bindings->descriptors == 4326 &&
+              bindings->material_slots == 4326 &&
+              bindings->texture_references == 4326 &&
+              bindings->unique_texture_references == 178,
+          "the complete descriptor-to-texture population is pinned");
+    check(bindings->missing_texture_ids == 0 &&
+              bindings->unbound_descriptors == 0,
+          "no descriptor or referenced texture remains unbound");
+    const auto first_map_texture = scene->texture_by_gidx(4169);
+    check(first_map_texture.has_value() && first_map_texture->size() >= 4 &&
+              (*first_map_texture)[0] == 'N' && (*first_map_texture)[1] == 'T',
+          "a material GIDX resolves to its bounded NTXR wrapper");
+    std::printf(
+        "retail bindings models=%zu records=%zu descriptors=%zu materials=%zu "
+        "refs=%zu unique=%zu textures=%zu\n",
+        bindings->model_files, bindings->model_records, bindings->descriptors,
+        bindings->material_slots, bindings->texture_references,
+        bindings->unique_texture_references, bindings->texture_wrappers);
+  }
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+  check_synthetic_bundle();
+  if (argc >= 2) check_qualified_cache(argv[1]);
+  if (failures == 0) std::printf("retail Mission 01 scene bundle OK\n");
+  return failures == 0 ? 0 : 1;
+}

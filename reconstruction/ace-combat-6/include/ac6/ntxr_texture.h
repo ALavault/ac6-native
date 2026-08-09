@@ -221,6 +221,13 @@ struct NtxrDescriptor {
 std::optional<NtxrDescriptor> parse_ntxr_descriptor(const std::uint8_t* bytes,
                                                     std::size_t size) noexcept;
 
+// The registry key at GIDX+0x08. The variable-size descriptor is followed by
+// `eXt\0`, then exactly 0x10 bytes later by the 0x10-byte GIDX chunk; this
+// relative layout holds across the qualified wrapper corpus. Missing,
+// duplicated, zero or out-of-range chunks fail closed.
+std::optional<std::uint32_t> ntxr_gidx_identifier(
+    const std::uint8_t* bytes, std::size_t size) noexcept;
+
 // Bytes a single mip level occupies, by the measured rule. Zero when the
 // format is not one this decoder addresses.
 std::size_t single_level_surface_bytes(const NtxrDescriptor& descriptor) noexcept;

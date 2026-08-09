@@ -173,6 +173,30 @@ std::optional<NtxrDescriptor> parse_ntxr_descriptor(const std::uint8_t* bytes,
   return descriptor;
 }
 
+std::optional<std::uint32_t> ntxr_gidx_identifier(
+    const std::uint8_t* bytes, std::size_t size) noexcept {
+  const std::optional<NtxrDescriptor> descriptor =
+      parse_ntxr_descriptor(bytes, size);
+  if (!descriptor.has_value()) return std::nullopt;
+  const std::size_t payload = kDescriptorBase + descriptor->data_offset;
+  if (payload > size) return std::nullopt;
+
+  std::optional<std::uint32_t> identifier;
+  for (std::size_t offset = kDescriptorBase; offset + 0x20 <= payload;
+       offset += 0x10) {
+    if (std::memcmp(bytes + offset, "eXt\0", 4) != 0 ||
+        read_u32(bytes + offset + 4) != 0x20 ||
+        std::memcmp(bytes + offset + 0x10, "GIDX", 4) != 0 ||
+        read_u32(bytes + offset + 0x14) != 0x10) {
+      continue;
+    }
+    const std::uint32_t candidate = read_u32(bytes + offset + 0x18);
+    if (candidate == 0 || identifier.has_value()) return std::nullopt;
+    identifier = candidate;
+  }
+  return identifier;
+}
+
 std::size_t single_level_surface_bytes(const NtxrDescriptor& descriptor) noexcept {
   const std::uint32_t block_bytes = bytes_per_block(descriptor.xenos_format);
   if (block_bytes == 0 || descriptor.width == 0 || descriptor.height == 0) return 0;

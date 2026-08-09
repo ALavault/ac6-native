@@ -68,8 +68,10 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_flight_input_router.cpp
   src/retail_scalar_sin_cos.cpp
   src/retail_container_index.cpp
+  src/retail_fhm_view.cpp
   src/retail_campaign_bundle.cpp
   src/retail_camera_table.cpp
+  src/retail_mission01_scene_bundle.cpp
   src/retail_ndxr_geometry.cpp
   src/retail_terrain_field.cpp
   src/retail_map_placement.cpp
@@ -319,6 +321,10 @@ add_test(NAME ac6-ntxr-texture
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/ntxr-decode.json)
 set_tests_properties(ac6-ntxr-texture PROPERTIES SKIP_RETURN_CODE 77)
 
+add_executable(ac6-ntxr-gidx-tests tests/ntxr_gidx_tests.cpp)
+target_link_libraries(ac6-ntxr-gidx-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-ntxr-gidx COMMAND ac6-ntxr-gidx-tests)
+
 # The world-position resolver of 0x822953F0, read in the Xenon corpus.
 add_executable(ac6-retail-input-tests tests/retail_input_tests.cpp)
 target_link_libraries(ac6-retail-input-tests PRIVATE ac6_product_core)
@@ -352,6 +358,10 @@ add_executable(ac6-retail-container-index-tests tests/retail_container_index_tes
 target_link_libraries(ac6-retail-container-index-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-container-index COMMAND ac6-retail-container-index-tests)
 
+add_executable(ac6-retail-fhm-view-tests tests/retail_fhm_view_tests.cpp)
+target_link_libraries(ac6-retail-fhm-view-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-fhm-view COMMAND ac6-retail-fhm-view-tests)
+
 add_executable(ac6-retail-content-tests tests/retail_content_tests.cpp)
 target_link_libraries(ac6-retail-content-tests PRIVATE ac6_product_core ZLIB::ZLIB)
 add_test(NAME ac6-retail-content COMMAND ac6-retail-content-tests)
@@ -359,6 +369,12 @@ add_test(NAME ac6-retail-content COMMAND ac6-retail-content-tests)
 add_executable(ac6-retail-camera-table-tests tests/retail_camera_table_tests.cpp)
 target_link_libraries(ac6-retail-camera-table-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-camera-table COMMAND ac6-retail-camera-table-tests)
+
+add_executable(ac6-retail-mission01-scene-bundle-tests
+  tests/retail_mission01_scene_bundle_tests.cpp)
+target_link_libraries(ac6-retail-mission01-scene-bundle-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-mission01-scene-bundle
+  COMMAND ac6-retail-mission01-scene-bundle-tests)
 
 # A3.1/A3.2: XMScalarSinCos, the last unfaithful scalar seam in the chain.
 add_executable(ac6-retail-scalar-sin-cos-tests tests/retail_scalar_sin_cos_tests.cpp)
