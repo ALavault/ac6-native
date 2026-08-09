@@ -890,6 +890,48 @@
             "claim": "include/ac6/retail_flight_rate_servo.h carries the derivation, records that the gain switch reads the opposite way from the obvious guess, that the three biases are three constants and not one, that the fallback block is all zeros rather than a division guard, and that the step's r5 argument is passed and never used"
           }
         ]
+      },
+      "retail_control_blend": {
+        "status": "passed",
+        "statement": "the native product reproduces the blended control accessors 0x82281E10 and 0x82281EA8 -- slots 17 and 18 of the base vtable 0x82008B10, inherited unchanged by BOTH concrete flight-model branches -- which return the control axis clamped to [-1,+1], with the stored value at +408/+412 ADDED to it when bit 1 of [+332] is clear and its magnitude is at or above 2^-16, and with the rate at +144/+152 scaled by 0.6366198 or 0.3183099 REPLACING the axis when that bit is set and the scaled magnitude is strictly larger, the store happening BEFORE the clamp",
+        "retail_addresses": [
+          "0x82281E10",
+          "0x82281EA8",
+          "0x82008B10",
+          "0x82007F78",
+          "0x82008AD8",
+          "0x82069C2C"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1391-one-port-for-both-branches.md",
+            "sha256": "95b6542460ef366fd42842bb3d70bd274e3f33cb6bfd8401228909e79c477f55",
+            "size": 4925,
+            "claim": "found by bounding: readers of +144/148/152 are 100 functions unbounded and nine when filtered to this class family plus the contracted chain's callees; both accessors are 38 instructions with no call and no vector, and both constants are seven-digit decimal literals rather than the correctly rounded reciprocals of pi they resemble"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_control_blend_tests.cpp",
+            "sha256": "293565ee93eed779df0e4da62fb4cfff3acb73fce356c293b80ffcdecc760756",
+            "size": 5901,
+            "claim": "cases for the constants not being reciprocals, the additive path and its epsilon, the replacement path in both directions, an exact tie keeping the axis, the two-early-return clamp, a NaN passing through unclamped, and the two slots differing only by their constant; with two controls both asserted not to fire"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/control-blend-microexec.tsv",
+            "sha256": "69003ec954795c1dd0e553124664c8678e9bd90d1025b2b30b939a0a6b9d6ce6",
+            "size": 1675,
+            "claim": "both functions executed from their own entries over nine cases each, 36 values compared bit for bit -- the value returned in f1 AND the field stored, which differ whenever the clamp fires because the store precedes it"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_control_blend.h",
+            "sha256": "5e9baeebdff7e3aa004b3cdbc0cf80ab7a7be4c1ca9f76dca816d067af1b5ccc",
+            "size": 3065,
+            "claim": "include/ac6/retail_control_blend.h carries the derivation, records that one port covers both branches because the slots are inherited, that the replacement needs a strict greater-than so a tie keeps the axis, and that the non-reset path reads the stored field without writing it so a caller that always wrote back would overwrite the step's decay"
+          }
+        ]
       }
     }
   }

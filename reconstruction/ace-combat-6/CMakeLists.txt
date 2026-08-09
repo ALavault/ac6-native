@@ -33,7 +33,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_live_flight_ramps.cpp
   src/retail_live_flight_axes.cpp
   src/retail_live_flight_step.cpp
-  src/retail_flight_rate_servo.cpp)
+  src/retail_flight_rate_servo.cpp
+  src/retail_control_blend.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -233,6 +234,11 @@ add_test(NAME ac6-retail-input-record COMMAND ac6-retail-input-record-tests
 add_executable(ac6-retail-input-binding-tests tests/retail_input_binding_tests.cpp)
 target_link_libraries(ac6-retail-input-binding-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-input-binding COMMAND ac6-retail-input-binding-tests)
+
+# A3.2: the blended control accessors, slots 17 and 18.
+add_executable(ac6-retail-control-blend-tests tests/retail_control_blend_tests.cpp)
+target_link_libraries(ac6-retail-control-blend-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-control-blend COMMAND ac6-retail-control-blend-tests)
 
 # A3.2: the rate servo, the first consumer of the control state.
 add_executable(ac6-retail-flight-rate-servo-tests tests/retail_flight_rate_servo_tests.cpp)

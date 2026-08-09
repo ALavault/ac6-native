@@ -1,0 +1,22 @@
+# 0x82281E10 and 0x82281EA8, slots 17 and 18, micro-executed against
+# ac6::retail::blend_control_axis. Both the returned value and the
+# stored field are compared, and they differ when the clamp fires.
+# case	verdict	f1	stored	why the case exists
+slot17-idle	ok	0.0	0.0	everything zero
+slot17-add-stored	ok	0.75	0.5	off the bit the stored value is added
+slot17-sub-epsilon	ok	0.25	7.62939453125e-06	a stored value below 2^-16 contributes nothing
+slot17-reset-rate-wins	ok	0.6366198062896729	0.6366198062896729	on the bit a larger scaled rate replaces the axis
+slot17-reset-axis-wins	ok	0.8999999761581421	0.8999999761581421	a smaller one does not
+slot17-clamp-high	ok	1.0	0.8999999761581421	the sum clamps at +1
+slot17-clamp-low	ok	-1.0	-0.8999999761581421	and at -1
+slot17-mantissas	ok	0.5111111402511597	0.13333334028720856	full mantissas
+slot17-reset-mantissas	ok	1.0	1.0822536945343018	the STORE precedes the clamp: this returns 1.0 and stores 1.08
+slot18-idle	ok	0.0	0.0	everything zero
+slot18-add-stored	ok	0.75	0.5	off the bit the stored value is added
+slot18-sub-epsilon	ok	0.25	7.62939453125e-06	a stored value below 2^-16 contributes nothing
+slot18-reset-rate-wins	ok	0.3183099031448364	0.3183099031448364	on the bit a larger scaled rate replaces the axis
+slot18-reset-axis-wins	ok	0.8999999761581421	0.8999999761581421	a smaller one does not
+slot18-clamp-high	ok	1.0	0.8999999761581421	the sum clamps at +1
+slot18-clamp-low	ok	-1.0	-0.8999999761581421	and at -1
+slot18-mantissas	ok	0.5111111402511597	0.13333334028720856	full mantissas
+slot18-reset-mantissas	ok	0.5411268472671509	0.5411268472671509	the STORE precedes the clamp: this returns 1.0 and stores 1.08
