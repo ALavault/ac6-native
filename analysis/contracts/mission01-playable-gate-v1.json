@@ -1018,6 +1018,50 @@
             "claim": "include/ac6/retail_flight_command.h carries the derivation, records that the wrap is one step rather than a modulo and is reproduced rather than repaired, that retail returns 0 for changed so the bool is inverted, and that the accumulator crossing was met coming the other way from cycle 1388"
           }
         ]
+      },
+      "retail_flight_input_accumulators": {
+        "status": "passed",
+        "statement": "the native product reproduces the flight model's five input accumulators -- 0x82281FB0, 0x82282020, 0x82281FE8, 0x82281F40 and 0x82281F78, thirteen instructions each, called DIRECTLY rather than through a vtable and constituting the player's interface to the model as against the virtual setters' AI interface -- each adding its increment to a field and clamping to [lower, 1.0], with the intermediate stored before the clamp, the lower bound -1.0 for the three signed axis commands at +36/+40/+44 and 0.0 for the two hold inputs at +48/+52, and exactly 1.0 returned rather than re-stored",
+        "retail_addresses": [
+          "0x82281FB0",
+          "0x82282020",
+          "0x82281FE8",
+          "0x82281F40",
+          "0x82281F78",
+          "0x82001348",
+          "0x82069B28",
+          "0x8200082C"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1405-the-players-interface.md",
+            "sha256": "b1fa0689e305a840f4137e281a596adb2089c088a9181550d5d77fbc42b6fab8",
+            "size": 4216,
+            "claim": "found by filtering on the rarest field available rather than on slot numbers: only two functions in the corpus touch the contracted binding layer's output arrays, and only two read the entity fields they are copied into, which led to 0x82227E10 calling these five directly on entity+4912"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_input_accumulators_tests.cpp",
+            "sha256": "a48dec745c02c553e3e4bc060336115dafb063d95f7713ce16b2b28d1099416a",
+            "size": 4009,
+            "claim": "cases for accumulation in both directions, the two different lower bounds, both upper clamps, exactly +-1.0 passing through rather than being re-stored, a NaN emerging as the upper bound because neither blt nor ble is taken, and the increment being the first addend; with two controls both asserted not to fire"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-input-accumulators-microexec.tsv",
+            "sha256": "883e835204df8d644e401bb7ba34fc173c02a44d11f2f0ea5df47ca831b0a613",
+            "size": 957,
+            "claim": "all five functions executed from their own entries over eight cases each, 40 values compared bit for bit with nothing stubbed"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_input_accumulators.h",
+            "sha256": "1905495977388e6db161d7fcf53bf4ec5b65b7a49ceb17caa8b73f17f69dd1c5",
+            "size": 3187,
+            "claim": "include/ac6/retail_flight_input_accumulators.h carries the derivation, records the path from the entity frame through 0x82229250 and 0x82227E10 that leads to them, and states that these are a SECOND interface onto the same three command fields -- the player's -- alongside the virtual setters contracted at cycle 1393 as the AI's"
+          }
+        ]
       }
     }
   }

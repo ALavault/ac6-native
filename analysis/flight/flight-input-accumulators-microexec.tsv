@@ -1,0 +1,44 @@
+# 0x82281FB0, 0x82282020, 0x82281FE8, 0x82281F40 and 0x82281F78 -- the five
+# input accumulators -- micro-executed against
+# ac6::retail::accumulate_flight_input.
+# case	verdict	retail
+a36-mid	ok	0.5
+a36-neg	ok	0.25
+a36-low	ok	-1.0
+a36-high	ok	1.0
+a36-exact-hi	ok	1.0
+a36-exact-lo	ok	-1.0
+a36-zero-neg	ok	0.0
+a36-mantissas	ok	-0.25555524230003357
+a40-mid	ok	0.5
+a40-neg	ok	0.25
+a40-low	ok	-1.0
+a40-high	ok	1.0
+a40-exact-hi	ok	1.0
+a40-exact-lo	ok	-1.0
+a40-zero-neg	ok	0.0
+a40-mantissas	ok	-0.25555524230003357
+a44-mid	ok	0.5
+a44-neg	ok	0.25
+a44-low	ok	-1.0
+a44-high	ok	1.0
+a44-exact-hi	ok	1.0
+a44-exact-lo	ok	-1.0
+a44-zero-neg	ok	0.0
+a44-mantissas	ok	-0.25555524230003357
+a48-mid	ok	0.5
+a48-neg	ok	0.25
+a48-low	ok	0.0
+a48-high	ok	1.0
+a48-exact-hi	ok	1.0
+a48-exact-lo	ok	0.0
+a48-zero-neg	ok	0.0
+a48-mantissas	ok	0.0
+a52-mid	ok	0.5
+a52-neg	ok	0.25
+a52-low	ok	0.0
+a52-high	ok	1.0
+a52-exact-hi	ok	1.0
+a52-exact-lo	ok	0.0
+a52-zero-neg	ok	0.0
+a52-mantissas	ok	0.0
