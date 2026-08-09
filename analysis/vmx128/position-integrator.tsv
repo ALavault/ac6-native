@@ -38,3 +38,23 @@ components	+0x40, +0x44, +0x48	the locator translation row's first three floats
 #
 # NOT ESTABLISHED: what f31 is; what object r30 and r31 are; what the other two
 # all-three-component candidates (0x8222EC18 and 0x82304AB8) do.
+#
+# HOW IT IS REACHED, and why sixteen cycles of following data never got here.
+#
+# 0x82303110 has NO DIRECT CALLERS. Its only non-.pdata reference is a single
+# .rdata word at 0x8200F2EC, which is slot +0x7C -- index 31 -- of a 36-slot
+# vtable based at 0x8200F270.
+#
+# That vtable has ZERO at vtable-4, so it carries no Complete Object Locator and
+# is one of the 306 unnamed vtables cycle 1348 counted. Its class has no RTTI and
+# the class map cannot name it.
+#
+# So the integrator is a virtual method of an unnamed class, invoked only through
+# a vtable. Every approach that followed data from a named entry point was
+# structurally unable to arrive: there is no `bl` to follow.
+#
+# columns: what value
+vtable base	0x8200F270
+slots	36
+integrator slot	+0x7C (index 31)
+RTTI	none -- zero at vtable-4
