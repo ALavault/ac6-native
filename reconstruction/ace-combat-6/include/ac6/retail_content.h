@@ -15,6 +15,13 @@ namespace ac6 {
 inline constexpr std::array<std::uint32_t, 15> kPalCampaignDataTableEntries{
     9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
 
+// Entry 1 contains the common retail camera tables. Entry 119 is the qualified
+// Mission 01 world/map resource: terrain, placement, map parts, textures and
+// mapset. Both are selected outside the campaign payload.
+inline constexpr std::array<std::uint32_t, 17>
+    kPalRequiredDataTableEntries{
+        1, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 119};
+
 enum class RetailArchive : std::uint8_t { Data00 = 0, Data01 = 1 };
 enum class RetailStorageCodec : std::uint8_t {
   Mode1PiXorRawDeflate = 1,
@@ -100,7 +107,7 @@ class RetailContentImporter final {
   RetailImportReport run(const std::filesystem::path& source_root,
                          const std::filesystem::path& cache_root,
                          std::span<const std::uint32_t> data_table_entries =
-                             kPalCampaignDataTableEntries) const;
+                             kPalRequiredDataTableEntries) const;
 
  private:
   RetailIdentityPolicy policy_;

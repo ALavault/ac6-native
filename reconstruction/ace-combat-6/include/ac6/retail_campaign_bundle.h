@@ -16,6 +16,8 @@ class RetailCampaignBundle final {
  public:
   static std::optional<RetailCampaignBundle> open(
       const RetailContentStore& store, std::uint32_t mission_id);
+  static std::optional<RetailCampaignBundle> open_entry(
+      const RetailContentStore& store, std::uint32_t data_table_entry);
 
   std::uint32_t mission_id() const noexcept { return mission_id_; }
   std::uint32_t data_table_entry() const noexcept { return data_table_entry_; }

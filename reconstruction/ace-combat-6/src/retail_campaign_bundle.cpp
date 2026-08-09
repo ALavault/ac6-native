@@ -23,9 +23,19 @@ std::optional<RetailCampaignBundle> RetailCampaignBundle::open(
       mission_id > kPalCampaignDataTableEntries.size()) {
     return std::nullopt;
   }
+  std::optional<RetailCampaignBundle> bundle =
+      open_entry(store, kPalCampaignDataTableEntries[mission_id - 1]);
+  if (bundle.has_value()) bundle->mission_id_ = mission_id;
+  return bundle;
+}
+
+std::optional<RetailCampaignBundle> RetailCampaignBundle::open_entry(
+    const RetailContentStore& store, std::uint32_t data_table_entry) {
+  if (!store.valid() || store.find(data_table_entry) == nullptr) {
+    return std::nullopt;
+  }
   RetailCampaignBundle bundle;
-  bundle.mission_id_ = mission_id;
-  bundle.data_table_entry_ = kPalCampaignDataTableEntries[mission_id - 1];
+  bundle.data_table_entry_ = data_table_entry;
   bundle.content_index_sha256_ = store.index_sha256();
   if (!store.read_payload(bundle.data_table_entry_, bundle.bytes_) ||
       bundle.bytes_.size() < 8 ||

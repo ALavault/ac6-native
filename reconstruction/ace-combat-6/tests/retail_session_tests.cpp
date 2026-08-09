@@ -19,6 +19,7 @@
 // exit 77 means the retail payload was absent; it is never committed.
 
 #include "ac6/native_hud.h"
+#include "ac6/retail_camera_table.h"
 #include "ac6/retail_campaign_bundle.h"
 #include "ac6/retail_session.h"
 #include "test_fixtures.h"
@@ -213,7 +214,7 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
   ac6::RetailContentStore store;
   REQUIRE(store.open(cache));
   REQUIRE(ac6::sha256_hex(store.index_sha256()) ==
-          "3573d7db36e70cc1f106506ba3f25900b7c226c414b84c3a7f23c4f27079d1de");
+          "349f5f49fe1acf19984c6470a5d3f16adf3029e36c93e24da8cb3ec58b4cdfd0");
   for (std::uint32_t mission_id = 1; mission_id <= 15; ++mission_id) {
     const std::optional<ac6::retail::RetailCampaignBundle> bundle =
         ac6::retail::RetailCampaignBundle::open(store, mission_id);
@@ -225,6 +226,40 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     REQUIRE(mdlp->size() >= 4);
     REQUIRE((*mdlp)[0] == 'M' && (*mdlp)[1] == 'D' &&
             (*mdlp)[2] == 'L' && (*mdlp)[3] == 'P');
+  }
+  const std::optional<ac6::retail::RetailCampaignBundle> common =
+      ac6::retail::RetailCampaignBundle::open_entry(store, 1);
+  REQUIRE(common.has_value());
+  REQUIRE(common->child_count() == 55);
+  REQUIRE(common->child(35).has_value());
+  REQUIRE(common->child(35)->size() == 5184);
+  REQUIRE(common->child(36).has_value());
+  REQUIRE(common->child(36)->size() == 6480);
+  const std::optional<ac6::retail::RetailCameraTable> cameras =
+      ac6::retail::RetailCameraTable::open(*common);
+  REQUIRE(cameras.has_value());
+  const ac6::retail::RetailCameraRecord* first = cameras->record(0, 1);
+  REQUIRE(first != nullptr);
+  const std::optional<std::array<float, 4>> first_offset = first->offset(0);
+  REQUIRE(first_offset.has_value());
+  REQUIRE((*first_offset)[0] == 0.0F && (*first_offset)[1] == 3.0F &&
+          (*first_offset)[2] == 15.0F);
+  REQUIRE(first->ease_rate() == 7.0F);
+  REQUIRE(first->fov_radians() == 0.6632251143455505F);
+  REQUIRE(first->alternate_fov_radians() == 0.8028514385223389F);
+  const std::optional<ac6::retail::RetailCampaignBundle> world =
+      ac6::retail::RetailCampaignBundle::open_entry(store, 119);
+  REQUIRE(world.has_value());
+  REQUIRE(world->mission_id() == 0);
+  REQUIRE(world->data_table_entry() == 119);
+  REQUIRE(world->child_count() == 23);
+  for (const std::uint32_t index : {21u, 22u}) {
+    const std::optional<std::span<const std::uint8_t>> child =
+        world->child(index);
+    REQUIRE(child.has_value());
+    REQUIRE(child->size() >= 4);
+    REQUIRE((*child)[0] == 'F' && (*child)[1] == 'H' &&
+            (*child)[2] == 'M' && (*child)[3] == ' ');
   }
   const ac6::CampaignLoadout loadout{1, 1, true};
   std::unique_ptr<RetailSession> session =

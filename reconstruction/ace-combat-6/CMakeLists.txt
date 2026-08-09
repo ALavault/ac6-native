@@ -69,6 +69,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_scalar_sin_cos.cpp
   src/retail_container_index.cpp
   src/retail_campaign_bundle.cpp
+  src/retail_camera_table.cpp
   src/retail_ndxr_geometry.cpp
   src/retail_terrain_field.cpp
   src/retail_map_placement.cpp
@@ -354,6 +355,10 @@ add_test(NAME ac6-retail-container-index COMMAND ac6-retail-container-index-test
 add_executable(ac6-retail-content-tests tests/retail_content_tests.cpp)
 target_link_libraries(ac6-retail-content-tests PRIVATE ac6_product_core ZLIB::ZLIB)
 add_test(NAME ac6-retail-content COMMAND ac6-retail-content-tests)
+
+add_executable(ac6-retail-camera-table-tests tests/retail_camera_table_tests.cpp)
+target_link_libraries(ac6-retail-camera-table-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-camera-table COMMAND ac6-retail-camera-table-tests)
 
 # A3.1/A3.2: XMScalarSinCos, the last unfaithful scalar seam in the chain.
 add_executable(ac6-retail-scalar-sin-cos-tests tests/retail_scalar_sin_cos_tests.cpp)

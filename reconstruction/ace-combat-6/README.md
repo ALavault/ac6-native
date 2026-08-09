@@ -16,10 +16,11 @@ ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]
 
 The importer requires the qualified PAL `default.xex`, `DATA.TBL`,
 `DATA00.PAC` and `DATA01.PAC` identities. It parses the complete big-endian
-table with bounded 64-bit ranges, then descrambles and raw-DEFLATE decodes
-campaign entries 9–23. A wrong identity, duplicate request, truncated range,
-size-limit violation or decode error fails before a new generation is
-published.
+table with bounded 64-bit ranges, then descrambles and raw-DEFLATE decodes the
+common camera resource at entry 1, campaign entries 9–23 and the qualified
+Mission 01 world resource at entry 119. A wrong identity, duplicate request,
+truncated range, size-limit violation or decode error fails before a new
+generation is published.
 
 The default cache is `$XDG_CACHE_HOME/ac6-native`, or
 `$HOME/.cache/ac6-native` when the XDG path is absent. Payloads live under

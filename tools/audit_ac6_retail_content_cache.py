@@ -21,6 +21,34 @@ IDENTITY = {
     "data00": (2267086848, "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816"),
     "data01": (664141824, "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4"),
 }
+MISSION01_REQUIRED_ENTRIES = (
+    {
+        "data_table_entry_index": 1,
+        "role": "common_camera_tables",
+        "group": 0x00010000,
+        "archive": "DATA00.PAC",
+        "codec": "mode1_pi_xor_raw_deflate",
+        "source_offset": 3407872,
+        "stored_size": 10615729,
+        "expanded_size": 22421504,
+        "payload_size": 22421504,
+        "stored_sha256": "6b2965a5ca21d46df2dfe3e86e957b08e8ff3b90c64dde46816556520b44e046",
+        "payload_sha256": "e0739100b4fbf96b556920133d516200f11acf871d6d29837756856e71b58c1b",
+    },
+    {
+        "data_table_entry_index": 119,
+        "role": "mission01_world_mapset",
+        "group": 0x00010000,
+        "archive": "DATA00.PAC",
+        "codec": "mode1_pi_xor_raw_deflate",
+        "source_offset": 210927616,
+        "stored_size": 116266854,
+        "expanded_size": 165892096,
+        "payload_size": 165892096,
+        "stored_sha256": "c33dc3d9abd45293f3a1635534a7de099f84d7946d23d61e846dfa625bc1d142",
+        "payload_sha256": "e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd",
+    },
+)
 MAXIMUM_STORED_SIZE = 256 * 1024 * 1024
 MAXIMUM_EXPANDED_SIZE = 512 * 1024 * 1024
 MAXIMUM_TOTAL_EXPANDED_SIZE = 2 * 1024 * 1024 * 1024
@@ -63,7 +91,7 @@ def parse_index(raw: bytes) -> tuple[dict, list[dict]]:
         or version != 1
         or header_size != HEADER.size
         or record_size != RECORD.size
-        or count != 15
+        or count != 17
         or table_count != 926
         or pack_count != 2
         or len(raw) != HEADER.size + count * RECORD.size
@@ -129,8 +157,12 @@ def parse_index(raw: bytes) -> tuple[dict, list[dict]]:
                 "payload_sha256": payload_sha256.hex(),
             }
         )
-    if [record["data_table_entry_index"] for record in records] != list(range(9, 24)):
-        raise AuditError("index does not cover exactly DATA.TBL entries 9..23")
+    expected_entries = [1, *range(9, 24), 119]
+    if [record["data_table_entry_index"] for record in records] != expected_entries:
+        raise AuditError(
+            "index does not cover common entry 1, campaign entries 9..23 "
+            "and Mission 01 world entry 119"
+        )
     return identity, records
 
 
@@ -179,6 +211,27 @@ def cross_check_catalog(catalog: dict, records: list[dict]) -> dict[int, dict]:
     return by_entry
 
 
+def cross_check_mission01_resources(records: list[dict]) -> list[dict]:
+    checked = []
+    for requirement in MISSION01_REQUIRED_ENTRIES:
+        entry = requirement["data_table_entry_index"]
+        matching = [
+            record
+            for record in records
+            if record["data_table_entry_index"] == entry
+        ]
+        if len(matching) != 1:
+            raise AuditError(f"required Mission 01 entry {entry} is missing or duplicated")
+        record = matching[0]
+        for field, expected in requirement.items():
+            if field == "role":
+                continue
+            if record.get(field) != expected:
+                raise AuditError(f"required Mission 01 entry {entry} mismatch: {field}")
+        checked.append({**record, "role": requirement["role"]})
+    return checked
+
+
 def load_inventory(path: Path) -> tuple[dict[int, dict], list[dict]]:
     document = json.loads(path.read_text(encoding="utf-8"))
     missions = document.get("missions")
@@ -199,7 +252,11 @@ def build_matrix(
     catalog_path: Path,
     inventory_path: Path,
 ) -> dict:
-    by_catalog = cross_check_catalog(catalog, records)
+    campaign_records = [
+        record for record in records if 9 <= record["data_table_entry_index"] <= 23
+    ]
+    by_catalog = cross_check_catalog(catalog, campaign_records)
+    mission01_resources = cross_check_mission01_resources(records)
     by_inventory, contracts = load_inventory(inventory_path)
     unresolved = [
         contract["name"]
@@ -207,7 +264,7 @@ def build_matrix(
         if contract.get("status") != "observed_bounded"
     ]
     missions = []
-    for record in records:
+    for record in campaign_records:
         entry = record["data_table_entry_index"]
         catalog_mission = by_catalog[entry]
         inventory = by_inventory[entry]
@@ -249,7 +306,7 @@ def build_matrix(
         )
     return {
         "schema_version": 1,
-        "status": "campaign_payloads_imported",
+        "status": "campaign_payloads_and_mission01_resources_imported",
         "cache_index_sha256": index_sha256,
         "source_identity": identity,
         "sources": {
@@ -269,15 +326,21 @@ def build_matrix(
             "playable_missions_claimed": 1,
             "content_blobs": len(records),
             "payload_bytes": sum(record["payload_size"] for record in records),
+            "campaign_payload_bytes": sum(
+                record["payload_size"] for record in campaign_records
+            ),
             "stored_bytes_read": sum(record["stored_size"] for record in records),
             "unresolved_common_contracts": unresolved,
         },
+        "mission01_required_resources": mission01_resources,
         "missions": missions,
         "policy": {
             "retail_bytes_embedded": False,
             "cache_paths_embedded": False,
             "second_mission_playability_claimed": False,
             "unknown_bindings_fail_closed": True,
+            "common_camera_entry_imported": True,
+            "mission01_world_entry_imported": True,
         },
     }
 

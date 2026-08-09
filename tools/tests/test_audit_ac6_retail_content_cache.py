@@ -14,7 +14,9 @@ from audit_ac6_retail_content_cache import (
     CURRENT,
     HEADER,
     IDENTITY,
+    MISSION01_REQUIRED_ENTRIES,
     RECORD,
+    cross_check_mission01_resources,
     parse_index,
     read_current,
 )
@@ -29,32 +31,45 @@ def synthetic_index() -> bytes:
         1,
         HEADER.size,
         RECORD.size,
-        15,
+        17,
         926,
         2,
         *digests,
         *sizes,
     )
     records = []
+    index = 1
+    digest = bytes([index]) * 32
+    records.append(
+        RECORD.pack(index, 0, 0, 1, 0, index * 4096, 100, 200, 200, digest, digest)
+    )
     for index in range(9, 24):
         digest = bytes([index]) * 32
         records.append(
             RECORD.pack(index, 0, 0, 1, 0, index * 4096, 100, 200, 200, digest, digest)
         )
+    index = 119
+    digest = bytes([index]) * 32
+    records.append(
+        RECORD.pack(index, 0, 0, 1, 0, index * 4096, 100, 200, 200, digest, digest)
+    )
     return header + b"".join(records)
 
 
 class RetailCacheAuditTests(unittest.TestCase):
     def test_binary_index_shape_is_independently_readable(self) -> None:
         identity, records = parse_index(synthetic_index())
-        self.assertEqual(15, len(records))
-        self.assertEqual(list(range(9, 24)), [row["data_table_entry_index"] for row in records])
+        self.assertEqual(17, len(records))
+        self.assertEqual(
+            [1, *range(9, 24), 119],
+            [row["data_table_entry_index"] for row in records],
+        )
         self.assertEqual(IDENTITY["data00"][1], identity["data00"]["sha256"])
 
     def test_duplicate_or_truncated_index_fails(self) -> None:
         raw = bytearray(synthetic_index())
         second_record = HEADER.size + RECORD.size
-        raw[second_record : second_record + 4] = (9).to_bytes(4, "big")
+        raw[second_record : second_record + 4] = (1).to_bytes(4, "big")
         with self.assertRaises(AuditError):
             parse_index(bytes(raw))
         with self.assertRaises(AuditError):
@@ -71,6 +86,20 @@ class RetailCacheAuditTests(unittest.TestCase):
         raw[first_record + 28 : first_record + 36] = (201).to_bytes(8, "big")
         with self.assertRaises(AuditError):
             parse_index(bytes(raw))
+
+    def test_required_common_and_world_resources_are_exact(self) -> None:
+        records = [
+            {field: value for field, value in requirement.items() if field != "role"}
+            for requirement in MISSION01_REQUIRED_ENTRIES
+        ]
+        checked = cross_check_mission01_resources(records)
+        self.assertEqual(
+            ["common_camera_tables", "mission01_world_mapset"],
+            [record["role"] for record in checked],
+        )
+        records[0]["payload_size"] += 1
+        with self.assertRaises(AuditError):
+            cross_check_mission01_resources(records)
 
     def test_current_pointer_version_is_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

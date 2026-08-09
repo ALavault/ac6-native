@@ -1,5 +1,33 @@
 {
-  "cache_index_sha256": "3573d7db36e70cc1f106506ba3f25900b7c226c414b84c3a7f23c4f27079d1de",
+  "cache_index_sha256": "349f5f49fe1acf19984c6470a5d3f16adf3029e36c93e24da8cb3ec58b4cdfd0",
+  "mission01_required_resources": [
+    {
+      "archive": "DATA00.PAC",
+      "codec": "mode1_pi_xor_raw_deflate",
+      "data_table_entry_index": 1,
+      "expanded_size": 22421504,
+      "group": 65536,
+      "payload_sha256": "e0739100b4fbf96b556920133d516200f11acf871d6d29837756856e71b58c1b",
+      "payload_size": 22421504,
+      "role": "common_camera_tables",
+      "source_offset": 3407872,
+      "stored_sha256": "6b2965a5ca21d46df2dfe3e86e957b08e8ff3b90c64dde46816556520b44e046",
+      "stored_size": 10615729
+    },
+    {
+      "archive": "DATA00.PAC",
+      "codec": "mode1_pi_xor_raw_deflate",
+      "data_table_entry_index": 119,
+      "expanded_size": 165892096,
+      "group": 65536,
+      "payload_sha256": "e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd",
+      "payload_size": 165892096,
+      "role": "mission01_world_mapset",
+      "source_offset": 210927616,
+      "stored_sha256": "c33dc3d9abd45293f3a1635534a7de099f84d7946d23d61e846dfa625bc1d142",
+      "stored_size": 116266854
+    }
+  ],
   "missions": [
     {
       "archive": "DATA00.PAC",
@@ -1220,6 +1248,8 @@
   ],
   "policy": {
     "cache_paths_embedded": false,
+    "common_camera_entry_imported": true,
+    "mission01_world_entry_imported": true,
     "retail_bytes_embedded": false,
     "second_mission_playability_claimed": false,
     "unknown_bindings_fail_closed": true
@@ -1255,13 +1285,14 @@
       "size": 6215005
     }
   },
-  "status": "campaign_payloads_imported",
+  "status": "campaign_payloads_and_mission01_resources_imported",
   "summary": {
-    "content_blobs": 15,
+    "campaign_payload_bytes": 443168032,
+    "content_blobs": 17,
     "mission_payloads": 15,
-    "payload_bytes": 443168032,
+    "payload_bytes": 631481632,
     "playable_missions_claimed": 1,
-    "stored_bytes_read": 134114489,
+    "stored_bytes_read": 260997072,
     "unresolved_common_contracts": [
       "MATE -> NDXR -> NTXR",
       "Scene / TCAM",
