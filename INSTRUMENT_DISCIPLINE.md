@@ -52,6 +52,7 @@ the repository's*.
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
 | your fixture is **self-describing** — byte `k` holds `k`, field `n` holds `n` | *the fixture whose answer is its own input* — check what a null implementation (a copy of one operand, a no-op) would produce; if that also matches, the case proves nothing |
+| you measured a **vtable's size** by reading until the words stop looking like code | *a vtable's extent read as a run of pointers* — MSVC puts each class's RTTI locator at `vtable[-1]`, so vtables are packed COL/slots/COL/slots; the class map has the boundary and "still a code pointer" cannot find it |
 
 ## The pattern
 
@@ -934,6 +935,45 @@ Two of this file's other shapes are the same failure at a different scale. *An
 instrument calibrated on one specimen* is a fixture that agrees with itself;
 *fixtures that inherit the subject's convention* is a set of fixtures that agree
 with each other. This is one fixture that agrees with the null hypothesis.
+
+## The twenty-ninth shape: a vtable's extent read as a run of pointers
+
+Cycle 1334 wanted `galib::CGaLocator`'s interface, read its vtable, and stopped
+at the first word that was not a code pointer. **Ninety-one slots.** The class
+map's next named vtable begins **eight bytes** after the base.
+
+Cycle 1335 found the mechanism, and it is worse than "the run was too long".
+MSVC places each class's RTTI Complete Object Locator at `vtable[-1]`, so a
+`.rdata` region of vtables is packed
+
+```
+COL | slot | slot | ... | COL | slot | ... | COL | ...
+```
+
+and a COL is **data**. So the run does not merely fail to end where the object
+ends — it **alternates** code and data, and a terminator based on "does this word
+look like code" is answering a question about the section, not about the class.
+
+`CGaLocator`'s vtable turned out to be **one slot**: its destructor. The word
+after it is `CGaObjDesc`'s COL, whose type descriptor spells
+`.?AVCGaObjDesc@galib@@` — which is exactly what the class map already said sat
+at that address.
+
+### The rule
+
+**A vtable's extent comes from the class map, not from the bytes.** The next
+named vtable's base is the boundary, and `analysis/class-map.tsv` has 811 of
+them. Reading pointers until they stop looking like pointers measures the
+section.
+
+Two cheap confirmations when the map is silent: the COL sits at `vtable[-1]` and
+its type descriptor carries the mangled name, so a suspected boundary can be
+checked by decoding the word before it; and a destructor re-installs its own
+vtable, so slot 0 usually names the class by materialising its base.
+
+This is the sibling of *stopping at a natural boundary* — there, a `blr` looked
+like an end and was not; here, a non-code word looked like an end and was
+somebody else's beginning.
 
 ## The audit this file owes itself
 
