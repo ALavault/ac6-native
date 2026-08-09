@@ -1,0 +1,195 @@
+// The map with its own textures, its own sun and its own fog.
+//
+// Cycle 1473 drew flat grey buildings under a flat fill and a reviewer called it
+// what it was. Everything missing was already in the archive:
+//
+//   textures   Material -> TextureRef -> texture id -> the NTXR with that GIDX
+//   sun        .sky1.sun.lrx = 40, .sky1.sun.lry = 145
+//   fog        .sky1.fog.far = 24000, .sky1.fog.density = 0.014
+//   distances  .mapparts.distanceL/M/S = 16000 / 12000 / 10000
+//
+// The last three come from `022_FHM`'s mapset XML, which cycle 1474 opened. The
+// sky gradient is mine; the sun angle it is drawn around is not.
+#include "ac6/demo_flight_view.h"
+#include "ac6/ntxr_texture.h"
+#include "ac6/retail_flight_step.h"
+#include "ac6/retail_map_placement.h"
+#include "ac6/retail_map_water.h"
+#include "ac6/retail_ndxr_container.h"
+#include "ac6/retail_ndxr_geometry.h"
+#include "ac6/retail_terrain_field.h"
+#include "ac6/retail_transform.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <string>
+#include <vector>
+
+namespace {
+std::vector<std::uint8_t> R(const std::string& p) {
+  std::ifstream in(p, std::ios::binary);
+  return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+}
+struct Part { std::vector<float> xyz, uv; std::uint32_t texture = 0; };
+}  // namespace
+
+int main(int argc, char** argv) {
+  using namespace ac6::retail;
+  if (argc < 7) { std::fprintf(stderr, "usage: MAPDIR OUT.ppm x y z yawdeg\n"); return 2; }
+  const std::string dir = argv[1];
+  FlightPosition eye{};
+  eye.at64 = std::strtof(argv[3], nullptr);
+  eye.at68 = std::strtof(argv[4], nullptr);
+  eye.at72 = std::strtof(argv[5], nullptr);
+  const float yaw = std::strtof(argv[6], nullptr) * 3.14159265F / 180.0F;
+
+  const auto g = R(dir + "/004_00_01_02_03.bin"), p = R(dir + "/005_Bl_02_b8.bin");
+  const auto a = R(dir + "/001_MCA_00.bin"), i2 = R(dir + "/003_MCI_00.bin");
+  const auto m = R(dir + "/002_MCD_00.bin"), pdl = R(dir + "/011_00_00_00_00.bin");
+  const auto field = TerrainField::open(g.data(), g.size(), p.data(), p.size());
+  const auto water = MapWaterGrid::open(a.data(), a.size(), i2.data(), i2.size(),
+                                        m.data(), m.size());
+  const auto placement = MapPlacement::open(pdl.data(), pdl.size());
+  if (!field || !water || !placement) { std::fprintf(stderr, "refused\n"); return 1; }
+
+  // Every .ntxr beside the parts, by GIDX identifier.
+  std::map<std::uint32_t, std::vector<std::uint8_t>> wrappers;
+  // 015_FHM MIRRORS 014_FHM: 170 .ntxr against 170 .ndxr, 86 .bin against 86.
+  // Cycle 1474 looked for textures beside the models, found none, and listed
+  // "0 with a texture" -- the parallel container had been an open defect since
+  // 1445 and nothing had opened it.
+  for (const std::string sub : {"/015_FHM", "/016_FHM"})
+  for (const auto& e : std::filesystem::directory_iterator(dir + sub)) {
+    if (e.path().extension() != ".ntxr") continue;
+    auto blob = R(e.path().string());
+    for (std::size_t q = 0; q + 12 <= blob.size(); ++q) {
+      if (std::memcmp(blob.data() + q, "GIDX", 4) != 0) continue;
+      const std::uint32_t id = (std::uint32_t(blob[q + 8]) << 24) |
+                               (std::uint32_t(blob[q + 9]) << 16) |
+                               (std::uint32_t(blob[q + 10]) << 8) | blob[q + 11];
+      wrappers[id] = blob;
+      break;
+    }
+  }
+  std::map<std::uint32_t, DecodedTexture> textures;
+  auto texture_for = [&](std::uint32_t id) -> const DecodedTexture* {
+    auto it = textures.find(id);
+    if (it != textures.end()) return it->second.pixels.empty() ? nullptr : &it->second;
+    DecodedTexture out{};
+    const auto found = wrappers.find(id);
+    if (found != wrappers.end()) {
+      std::size_t span = found->second.size();
+      if (const auto d = parse_ntxr_descriptor(found->second.data(), span)) {
+        const std::size_t level = single_level_surface_bytes(*d);
+        if (level != 0 && 0x10u + d->data_offset + level <= span)
+          span = 0x10u + d->data_offset + level;
+      }
+      NtxrRefusal why{};
+      if (const auto dec = decode_ntxr_base_level(found->second.data(), span, true, &why))
+        out = *dec;
+    }
+    it = textures.emplace(id, std::move(out)).first;
+    return it->second.pixels.empty() ? nullptr : &it->second;
+  };
+
+  std::map<std::uint16_t, Part> parts;
+  auto part_for = [&](std::uint16_t id) -> const Part& {
+    auto it = parts.find(id);
+    if (it != parts.end()) return it->second;
+    Part part;
+    char name[64];
+    std::snprintf(name, sizeof(name), "/014_FHM/%03u_NDXR.ndxr", id);
+    const auto bytes = R(dir + name);
+    if (!bytes.empty()) {
+      if (const auto c = NdxrContainer::Open(bytes.data(), bytes.size())) {
+        for (std::uint16_t r = 0; r < c->record_count(); ++r) {
+          const auto rec = c->Record(r);
+          if (!rec) continue;
+          for (std::uint16_t k = 0; k < rec->descriptor_count; ++k) {
+            if (part.texture == 0) {
+              for (unsigned slot = 0; slot < 4 && part.texture == 0; ++slot) {
+                const auto mat = c->Material(*rec, k, slot);
+                if (!mat || mat->texture_count == 0) continue;
+                if (const auto ref = c->TextureRef(*mat, 0)) part.texture = ref->texture_id;
+              }
+            }
+            const auto d = c->Descriptor(*rec, k);
+            if (!d) continue;
+            const auto piece = decode_ndxr_descriptor(*c, bytes.data(), bytes.size(), *d);
+            if (!piece || piece->texcoords.size() < piece->positions.size()) continue;
+            for (std::size_t i = 2; i < piece->indices.size(); ++i) {
+              const std::uint16_t t0 = piece->indices[i - 2], t1 = piece->indices[i - 1],
+                                  t2 = piece->indices[i];
+              if (t0 == kStripRestart || t1 == kStripRestart || t2 == kStripRestart) continue;
+              if (t0 >= piece->positions.size() || t1 >= piece->positions.size() ||
+                  t2 >= piece->positions.size()) continue;
+              for (std::uint16_t idx : {t0, t1, t2}) {
+                const auto& q = piece->positions[idx];
+                part.xyz.push_back(q.x); part.xyz.push_back(q.y); part.xyz.push_back(q.z);
+                const auto& uvv = piece->texcoords[idx];
+                part.uv.push_back(uvv.u); part.uv.push_back(uvv.v);
+              }
+            }
+          }
+        }
+      }
+    }
+    return parts.emplace(id, std::move(part)).first->second;
+  };
+
+  ac6::demo::Image image;
+  image.width = 1280; image.height = 720;
+  image.rgb.assign(std::size_t(image.width) * image.height * 3, 0);
+  ac6::demo::DemoCamera camera{};
+  RetailBasis basis = identity_basis();
+  rotate_820A9B30(basis, yaw);
+
+  // The sky: a vertical gradient, mine, drawn around .sky1's sun angle.
+  const float lrx = 40.0F * 3.14159265F / 180.0F;
+  const float lry = 145.0F * 3.14159265F / 180.0F;
+  const float sun[3] = {std::cos(lrx) * std::sin(lry), std::sin(lrx),
+                        std::cos(lrx) * std::cos(lry)};
+  for (int y = 0; y < image.height; ++y) {
+    const float t = float(y) / float(image.height);
+    const std::uint8_t r = std::uint8_t(120 + 100 * t);
+    const std::uint8_t gg = std::uint8_t(150 + 80 * t);
+    const std::uint8_t b = std::uint8_t(205 + 40 * t);
+    for (int x = 0; x < image.width; ++x) {
+      const std::size_t o = (std::size_t(y) * image.width + x) * 3;
+      image.rgb[o] = r; image.rgb[o + 1] = gg; image.rgb[o + 2] = b;
+    }
+  }
+  image.clear_depth();
+  ac6::demo::draw_terrain_view_over(image, basis, camera, eye, *field, &water.value());
+
+  const float kFogFar = 24000.0F, kFogDensity = 0.014F, kDistanceL = 16000.0F;
+  std::size_t drawn = 0, textured = 0;
+  for (const MapInstance& q : placement->instances()) {
+    if (!q.accepted) continue;
+    const float dx = q.world_x - eye.at64, dz = q.world_z - eye.at72;
+    if (dx * dx + dz * dz > kDistanceL * kDistanceL) continue;
+    const Part& part = part_for(q.selector);
+    if (part.xyz.empty()) continue;
+    std::vector<float> world(part.xyz.size());
+    for (std::size_t i = 0; i + 2 < part.xyz.size(); i += 3) {
+      world[i] = q.world_x + part.xyz[i];
+      world[i + 1] = q.world_y + part.xyz[i + 1];
+      world[i + 2] = q.world_z + part.xyz[i + 2];
+    }
+    const DecodedTexture* tex = texture_for(part.texture);
+    if (tex) ++textured;
+    ac6::demo::draw_world_triangles_textured(
+        image, basis, camera, eye, world, part.uv,
+        tex ? tex->pixels.data() : nullptr, tex ? int(tex->width) : 0,
+        tex ? int(tex->height) : 0, sun, kFogFar, kFogDensity, 170, 190, 220);
+    ++drawn;
+  }
+  std::printf("%zu instances drawn, %zu with a texture; %zu textures decoded\n",
+              drawn, textured, textures.size());
+  return image.write_ppm(argv[2]) ? 0 : 1;
+}

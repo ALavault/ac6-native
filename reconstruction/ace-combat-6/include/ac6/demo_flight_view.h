@@ -129,6 +129,13 @@ void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
 // shaded as sea. That is a proxy and a poor one -- cycle 1445 measured the
 // city's ground at exactly zero -- which is why the parameter exists.
 inline constexpr float kSeaLevelForShading = 0.5F;
+// The same, without clearing: the caller has already drawn a sky.
+void draw_terrain_view_over(Image& image, const ac6::retail::RetailBasis& basis,
+                            const DemoCamera& camera,
+                            const ac6::retail::FlightPosition& position,
+                            const ac6::retail::TerrainField& field,
+                            const ac6::retail::MapWaterGrid* water) noexcept;
+
 void draw_terrain_view(Image& image, const ac6::retail::RetailBasis& basis,
                        const DemoCamera& camera,
                        const ac6::retail::FlightPosition& position,
@@ -150,6 +157,26 @@ void draw_world_triangles(Image& image, const ac6::retail::RetailBasis& basis,
                           const DemoCamera& camera,
                           const ac6::retail::FlightPosition& position,
                           const std::vector<float>& xyz) noexcept;
+
+// The same, textured: `uv` is six floats per triangle, `texels` is
+// `tw * th` in 0xAABBGGRR, and `sun` is a unit direction the caller supplies.
+//
+// The sun is not invented here. Mission 01's mapset carries `.sky1.sun.lrx` and
+// `.sky1.sun.lry` -- 40 and 145 degrees -- and `.sky1.fog.far` / `.density`;
+// `fog_far` and `fog_density` are those, and the fog colour is the caller's sky.
+// Cycle 1474 read them out of the archive's own XML, which is why this signature
+// has parameters where the earlier one had constants.
+void draw_world_triangles_textured(Image& image,
+                                   const ac6::retail::RetailBasis& basis,
+                                   const DemoCamera& camera,
+                                   const ac6::retail::FlightPosition& position,
+                                   const std::vector<float>& xyz,
+                                   const std::vector<float>& uv,
+                                   const std::uint32_t* texels, int tw, int th,
+                                   const float sun[3], float fog_far,
+                                   float fog_density,
+                                   std::uint8_t fog_r, std::uint8_t fog_g,
+                                   std::uint8_t fog_b) noexcept;
 
 // Draws a decoded NDXR mesh as a wireframe, seen from `basis` at `position`.
 //

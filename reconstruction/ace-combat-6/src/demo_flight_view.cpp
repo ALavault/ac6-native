@@ -491,6 +491,17 @@ void draw_terrain_view(Image& image, const ac6::retail::RetailBasis& basis,
 
   image.clear(150, 172, 198);                      // sky, invented
   image.clear_depth();
+  draw_terrain_view_over(image, basis, camera, position, field, water);
+}
+
+void draw_terrain_view_over(Image& image, const ac6::retail::RetailBasis& basis,
+                            const DemoCamera& camera,
+                            const ac6::retail::FlightPosition& position,
+                            const ac6::retail::TerrainField& field,
+                            const ac6::retail::MapWaterGrid* water) noexcept {
+  using ac6::retail::kTerrainSampleUnits;
+  using ac6::retail::kTerrainWorldBias;
+  using ac6::retail::sample_is_present;
 
   // at64 -> x and at72 -> z. Which is north is unestablished; see the header.
   const float eye_x = position.at64;
@@ -592,6 +603,68 @@ void draw_world_triangles(Image& image, const ac6::retail::RetailBasis& basis,
     };
     image.triangle(sx[0], sy[0], depth[0], sx[1], sy[1], depth[1],
                    sx[2], sy[2], depth[2], c(1.0F), c(0.96F), c(0.90F));
+  }
+}
+
+}  // namespace ac6::demo
+
+namespace ac6::demo {
+
+void draw_world_triangles_textured(Image& image,
+                                   const ac6::retail::RetailBasis& basis,
+                                   const DemoCamera& camera,
+                                   const ac6::retail::FlightPosition& position,
+                                   const std::vector<float>& xyz,
+                                   const std::vector<float>& uv,
+                                   const std::uint32_t* texels, int tw, int th,
+                                   const float sun[3], float fog_far,
+                                   float fog_density,
+                                   std::uint8_t fog_r, std::uint8_t fog_g,
+                                   std::uint8_t fog_b) noexcept {
+  const std::size_t triangles = xyz.size() / 9;
+  for (std::size_t t = 0; t < triangles; ++t) {
+    const float* v = xyz.data() + t * 9;
+    const float* w = uv.data() + t * 6;
+    int sx[3], sy[3];
+    float depth[3];
+    bool ok = true;
+    for (int i = 0; i < 3 && ok; ++i) {
+      const Vec3 c = to_camera(basis, Vec3{v[i * 3 + 0] - position.at64,
+                                           v[i * 3 + 1] - position.at68,
+                                           v[i * 3 + 2] - position.at72});
+      depth[i] = c.z;
+      ok = project(c, camera, image.width, image.height, sx[i], sy[i]);
+    }
+    if (!ok) continue;
+
+    const float ax = v[3] - v[0], ay = v[4] - v[1], az = v[5] - v[2];
+    const float bx = v[6] - v[0], by = v[7] - v[1], bz = v[8] - v[2];
+    float nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+    const float len = std::sqrt(nx * nx + ny * ny + nz * nz) + 1e-6F;
+    nx /= len; ny /= len; nz /= len;
+    float lit = 0.42F + 0.58F * std::fabs(nx * sun[0] + ny * sun[1] + nz * sun[2]);
+    if (lit > 1.0F) lit = 1.0F;
+
+    // The fog of .sky1: exponential in distance, saturating at fog.far.
+    const float d = depth[0] > 0.0F ? depth[0] : 0.0F;
+    float fog = 1.0F - std::exp(-fog_density * (d / (fog_far > 1.0F ? fog_far : 1.0F)) * 100.0F);
+    if (fog < 0.0F) fog = 0.0F;
+    if (fog > 1.0F) fog = 1.0F;
+
+    if (texels != nullptr && tw > 0 && th > 0) {
+      image.triangle_textured(sx[0], sy[0], depth[0], w[0], w[1],
+                              sx[1], sy[1], depth[1], w[2], w[3],
+                              sx[2], sy[2], depth[2], w[4], w[5],
+                              texels, tw, th, lit * (1.0F - fog));
+    } else {
+      const auto c = [&](float base) {
+        const float value = base * lit * (1.0F - fog);
+        return static_cast<std::uint8_t>(value > 255.0F ? 255.0F : value);
+      };
+      image.triangle(sx[0], sy[0], depth[0], sx[1], sy[1], depth[1],
+                     sx[2], sy[2], depth[2], c(200.0F), c(192.0F), c(180.0F));
+    }
+    (void)fog_r; (void)fog_g; (void)fog_b;
   }
 }
 
