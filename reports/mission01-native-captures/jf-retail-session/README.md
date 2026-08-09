@@ -71,11 +71,29 @@ This bundle asserts no frame parity with the retail disc. Visual parity is out
 of JF's scope by decision of the milestone; comparing an image needs an oracle,
 and none was used here.
 
+## The marker count moved from 4 to 29 (cycle 1273)
+
+These images and metrics were regenerated when the rasteriser's default far
+plane changed from an invented 4096 to retail's own 24000, read from
+`[0x82069B6C]` and stamped at `8225e000 stfs f0,0xe0(r31)` by the camera
+manager's initialiser.
+
+The test renders with the **default** plane, so it had been drawing **4**
+markers of the 95 units the container places — cycle 1146's original symptom,
+still live in this capture. It now draws **29**, and `world_marker_writes` goes
+from 36 to 247.
+
+The `.png` files had been stale against their `.ppm` sources by a day: the test
+writes PPM, the PNGs are `pnmtopng` conversions run by hand, and nothing checks
+that they were re-run. They are regenerated here. **A capture whose image and
+metrics disagree is worse than no capture**, because the image is what gets
+looked at and the metrics are what get audited.
+
 ## Provenance
 
 | artifact | SHA-256 |
 |---|---|
-| `retail-session-hud.json` | `98f0cd9617f4704469e05b5490c020fd6c8c7021cb57a32d677e3688e09961e2` |
-| `hud-live.png` | `f045cd0783ad0b6f8bba446f7d3d04d61d7f3fc8644d012c6d124e3a3ae43d16` |
-| `hud-debrief.png` | `7664a838e351970ebb46743bc39a93321203d1794a9239f7f7cf6d6dbcccd412` |
+| `retail-session-hud.json` | `a57948002fd76c6b78c29670d17c18e00645cfee97343633f710cd92f6b34566` |
+| `hud-live.png` | `353424ead56c6b986d3000acac2471251a277fb29535733e7b6b8d8a203b2373` |
+| `hud-debrief.png` | `8a31275644c0c4d3c7503fbd317b49ef67eea025782f84eb137050d52b3f2c2d` |
 | `world-overview.png` | `755b558f67fb42ff1777e542da90d707b1f156a52959d1c022fc6836adff2ee4` |

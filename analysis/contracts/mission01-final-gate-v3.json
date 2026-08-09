@@ -235,8 +235,8 @@
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/hud-debrief.png",
-            "sha256": "7664a838e351970ebb46743bc39a93321203d1794a9239f7f7cf6d6dbcccd412",
-            "size": 1018,
+            "sha256": "8a31275644c0c4d3c7503fbd317b49ef67eea025782f84eb137050d52b3f2c2d",
+            "size": 973,
             "claim": "the HUD over the retail-built world once the script has run out: outcome panel shown, 4 of 4 sub-missions complete, 230 units still active, 95 of them carrying a load-time position"
           },
           {
