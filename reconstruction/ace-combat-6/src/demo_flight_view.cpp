@@ -198,6 +198,25 @@ void draw_mesh_wireframe(Image& image, const ac6::retail::NdxrMesh& mesh,
   }
 }
 
+void draw_mesh_at(Image& image, const ac6::retail::NdxrMesh& mesh,
+                  const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
+                  float ox, float oy, float oz,
+                  std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept {
+  if (mesh.positions.empty() || mesh.indices.size() < 2) return;
+  const auto at = [&](std::uint16_t index) {
+    const ac6::retail::NdxrPosition& p = mesh.positions[index];
+    return Vec3{p.x + ox, p.y + oy, p.z + oz};
+  };
+  std::uint16_t previous = ac6::retail::kStripRestart;
+  for (const std::uint16_t index : mesh.indices) {
+    if (index == ac6::retail::kStripRestart) { previous = index; continue; }
+    if (previous != ac6::retail::kStripRestart) {
+      draw_segment(image, basis, camera, at(previous), at(index), r, g, b);
+    }
+    previous = index;
+  }
+}
+
 std::string caption() noexcept {
   // Updated at cycle 1416. The aircraft MOVES now: cycle 1415 established that
   // the integrator's rates are a unit direction and its scale is a speed, and

@@ -101,6 +101,19 @@ void draw_mesh_wireframe(Image& image, const ac6::retail::NdxrMesh& mesh,
                          const ac6::retail::RetailBasis& basis,
                          const DemoCamera& camera, float distance) noexcept;
 
+// Draws a mesh at a WORLD OFFSET from the eye, rather than centred in frame.
+//
+// `draw_mesh_wireframe` above frames one model against its own bounds, which is
+// right for a contact sheet and wrong for a scene: it would put every unit in
+// the middle. This takes the offset from the eye to the model's origin, in the
+// same axes the scenario's positions use, and leaves the framing to the caller.
+//
+// `image` is NOT cleared here -- a scene is many of these.
+void draw_mesh_at(Image& image, const ac6::retail::NdxrMesh& mesh,
+                  const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
+                  float ox, float oy, float oz,
+                  std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept;
+
 // The sentence that must accompany any picture this file produces. It is a
 // function rather than a comment so that a caller cannot forget it and a test
 // can assert it is present.
