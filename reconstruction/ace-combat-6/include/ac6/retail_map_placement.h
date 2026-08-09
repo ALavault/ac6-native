@@ -82,12 +82,21 @@
 // selector. `tag & 0xFFFF` is extracted separately at `0x821023B4` and used for
 // something else.
 //
-// `tools/mission01_city_render.cpp` selects models with `tag & 0xFFFF`. Every
-// instance resolved to a file, but there are 256 files and ids run 0..172, so
-// that was never evidence. The renders from cycles 1449-1451 may be drawing the
-// wrong buildings, and that is recorded rather than quietly fixed, because
-// which of the two fields names a model is not yet established -- only that
-// retail hands the nine-bit one to a table lookup.
+// AND NEITHER FIELD IS A MODEL ID ON ITS OWN. Cycle 1453 found that the pair
+// `(tag & 0xFFFF, selector)` is **unique across all 4,226 accepted instances** --
+// 173 distinct low values and 160 distinct selectors, 27,680 possible pairs, and
+// zero collisions where chance over 4,226 draws predicts about 323. Together
+// they are an instance key; separately each is a small repeated index.
+//
+// So which one names a model is NOT established, and the caution in cycle 1452
+// was only half right. The nine-bit field indexes `this->table[0x1B63 + i]` --
+// retail's own runtime table, built by a loader in whatever order that loader
+// chose. Nothing maps that order to `%03u_NDXR.ndxr`, so drawing with either
+// field is a guess. Cycle 1453 drew both: the nine-bit choice tiles identical
+// silos inland and marches identical warehouses out over the bay, and
+// `tag & 0xFFFF` gives a varied coastal city. That is a picture, not a
+// derivation, and the renders from cycles 1449 onward are recorded as
+// unjustified in their model choice rather than blessed by looking right.
 //
 // `part_id` -- `tag & 0xFFFF` -- is claimed only as
 // an identifier in 0..172 against 178 parts; which part each id names is not

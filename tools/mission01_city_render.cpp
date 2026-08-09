@@ -49,6 +49,10 @@ int main(int argc, char** argv) {
   const float pitch = std::strtof(argv[7], nullptr) * 3.14159265F / 180.0F;
   const float range = argc > 8 ? std::strtof(argv[8], nullptr) : 12000.0F;
   const float spin = argc > 9 ? std::strtof(argv[9], nullptr) : 0.0F;
+  // WHICH FIELD NAMES THE MODEL is not established (cycle 1452). 0 selects with
+  // `tag & 0xFFFF`, which is what cycles 1449-1451 drew; 1 selects with the
+  // nine-bit field retail hands to the resource table at vtable slot +0x5C.
+  const int selector_field = argc > 10 ? std::atoi(argv[10]) : 0;
 
   const auto grid = Read(dir + "/004_00_01_02_03.bin");
   const auto patches = Read(dir + "/005_Bl_02_b8.bin");
@@ -123,13 +127,17 @@ int main(int argc, char** argv) {
   // The parts, loaded by integer id -- retail's own `parts/%d`.
   std::map<std::uint16_t, std::vector<Tri>> cache;
   std::size_t drawn = 0, missing = 0;
+  std::size_t skipped = 0;
   for (const MapInstance& q : placement->instances()) {
+    // 0x82102350 skips every record whose kind is not 0 or 7.
+    if (!q.accepted) { ++skipped; continue; }
     const float dx = q.world_x - ex, dz = q.world_z - ez;
     if (dx * dx + dz * dz > range * range) continue;
-    auto it = cache.find(q.part_id);
+    const std::uint16_t model = selector_field ? q.selector : q.part_id;
+    auto it = cache.find(model);
     if (it == cache.end()) {
       char name[64];
-      std::snprintf(name, sizeof(name), "/014_FHM/%03u_NDXR.ndxr", q.part_id);
+      std::snprintf(name, sizeof(name), "/014_FHM/%03u_NDXR.ndxr", model);
       const auto bytes = Read(dir + name);
       std::vector<Tri> tris;
       if (!bytes.empty()) {
@@ -161,7 +169,7 @@ int main(int argc, char** argv) {
           }
         }
       }
-      it = cache.emplace(q.part_id, std::move(tris)).first;
+      it = cache.emplace(model, std::move(tris)).first;
     }
     if (it->second.empty()) { ++missing; continue; }
     const float theta = spin * 2.0F * 3.14159265F * float(q.tag_high) / 65536.0F;
@@ -183,7 +191,9 @@ int main(int argc, char** argv) {
       ++drawn;
     }
   }
-  std::printf("%zu triangles from %zu cached parts, %zu instances with no file\n",
-              drawn, cache.size(), missing);
+  std::printf("%zu triangles from %zu cached parts (field %s), %zu with no file, "
+              "%zu records skipped by retail's kind test\n",
+              drawn, cache.size(), selector_field ? "nine-bit" : "tag&0xFFFF",
+              missing, skipped);
   return image.write_ppm(argv[2]) ? 0 : 1;
 }

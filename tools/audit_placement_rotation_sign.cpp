@@ -16,6 +16,13 @@
 // sign beats the null, the footprint proxy is too blunt to decide and this tool
 // says so instead of picking a winner.
 //
+// CYCLE 1453 EXTENDS IT. The same footprint-over-water measure that could not
+// resolve a rotation sign does resolve WHICH FIELD NAMES A MODEL, because the
+// two readings differ by whole buildings rather than by a reflection: a wrong
+// model puts a warehouse where a tower belongs and marches it into the bay.
+// The instrument is the same; the question is coarser, and the null model is
+// there to show whether it has signal this time.
+//
 // usage: audit_placement_rotation_sign MAPDIR [samples_per_axis]
 #include "ac6/retail_map_placement.h"
 #include "ac6/retail_map_water.h"
@@ -102,6 +109,32 @@ int main(int argc, char** argv) {
   std::size_t coastal = 0;
   std::uint32_t seed = 987654321u;
   const float kPi = 3.14159265358979F;
+
+  // WHICH FIELD NAMES THE MODEL, measured before the rotation question.
+  {
+    struct S { std::size_t wet = 0, seen = 0; };
+    S by_low, by_nine;
+    for (const MapInstance& q : placement->instances()) {
+      if (!q.accepted) continue;
+      for (int which = 0; which < 2; ++which) {
+        const Footprint& f = footprint(which ? q.selector : q.part_id);
+        if (!f.valid) continue;
+        S& s = which ? by_nine : by_low;
+        for (const auto& pt : f.points) {
+          bool bit = false;
+          if (!water->query(q.world_x + pt.first, q.world_z + pt.second, &bit)) continue;
+          ++s.seen;
+          if (bit) ++s.wet;
+        }
+      }
+    }
+    std::printf("model selector, footprint over water:\n");
+    std::printf("  tag & 0xFFFF  %8zu of %8zu  %6.3f%%\n", by_low.wet, by_low.seen,
+                100.0 * by_low.wet / by_low.seen);
+    std::printf("  nine-bit      %8zu of %8zu  %6.3f%%\n", by_nine.wet, by_nine.seen,
+                100.0 * by_nine.wet / by_nine.seen);
+    std::printf("\n");
+  }
 
   for (const MapInstance& q : placement->instances()) {
     const Footprint& f = footprint(q.part_id);

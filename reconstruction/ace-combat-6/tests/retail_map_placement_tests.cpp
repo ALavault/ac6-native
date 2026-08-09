@@ -156,6 +156,26 @@ int main(int argc, char** argv) {
   check(mid_nonzero == 78,
         "bits 25..26 are zero on every accepted record and set on 78 skipped ones");
 
+  // NEITHER FIELD IS A MODEL ID ON ITS OWN: the pair is unique per instance.
+  // Asserted against the collision count chance would predict, because "all
+  // distinct" means nothing until you know how surprising that is.
+  std::set<std::uint32_t> pairs;
+  std::set<std::uint16_t> lows, sels;
+  for (const MapInstance& q : placement->instances()) {
+    if (!q.accepted) continue;
+    pairs.insert((static_cast<std::uint32_t>(q.part_id) << 16) | q.selector);
+    lows.insert(q.part_id);
+    sels.insert(q.selector);
+  }
+  check(pairs.size() == accepted, "every accepted instance has a distinct pair");
+  check(lows.size() == 173 && sels.size() == 160, "173 low values, 160 selectors");
+  {
+    const double cells = static_cast<double>(lows.size()) * sels.size();
+    const double expected = accepted * (accepted - 1) / (2.0 * cells);
+    check(expected > 50.0,
+          "and chance would have produced dozens of collisions, so zero is a fact");
+  }
+
   // The four-fold statistic of cycle 1451 is REAL and its mechanism is the
   // two-bit field above, not an angle. Kept under test because the number is
   // true; see the header for what it actually measures. Asserting the
