@@ -2,6 +2,7 @@
 // They verify that the picture responds to the contracted attitude, that it
 // carries its caption, and that it does not crash on hostile input.
 
+#include "ac6/demo_flight_input.h"
 #include "ac6/demo_flight_view.h"
 #include "ac6/retail_flight_session.h"
 
@@ -54,8 +55,13 @@ void the_caption_says_all_three_things() {
   const std::string text = caption();
   check(text.find("micro-execution") != std::string::npos,
         "the caption says the attitude is measured");
-  check(text.find("invented") != std::string::npos,
+  check(text.find("nvented") != std::string::npos,
         "the caption says the camera and scene are invented");
+  check(text.find("controller axis") != std::string::npos,
+        "and that the axis WIRING is what remains chosen, not the conversion");
+  check(text.find("full-scale") == std::string::npos,
+        "and no longer claims an invented conversion -- cycles 1405-1407 "
+        "contracted retail's own");
   check(text.find("does not move") != std::string::npos,
         "the caption says the aircraft does not move");
 }

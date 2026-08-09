@@ -135,12 +135,17 @@ void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
 }
 
 std::string caption() noexcept {
-  return "Attitude: Ace Combat 6's own flight model, ported function by "
+  // Updated at cycle 1408. The previous version had to say the stick-to-command
+  // CONVERSION was invented; cycles 1405-1407 contracted retail's own and
+  // deleted the invention, so that clause is gone and only the wiring remains.
+  return "Attitude and control response: Ace Combat 6's own, from the "
+         "controller record to the aeroplane's orientation, ported function by "
          "function and verified bit-for-bit against the retail instructions by "
-         "micro-execution (25 contracted behaviours). "
-         "Camera, scene, axis assignment and field of view: invented for this "
-         "picture. Retail's gameplay camera uses estimate instructions whose "
-         "exact results belong to the console, so it is not reproduced. "
+         "micro-execution -- 27 contracted behaviours. "
+         "Invented for this picture: the camera, the scene, which basis row is "
+         "which axis, and which controller axis feeds which input field. "
+         "Retail's gameplay camera uses estimate instructions whose exact "
+         "results belong to the console, so it is not reproduced. "
          "The aircraft changes attitude and does not move: its position step "
          "depends on the same estimates.";
 }

@@ -5,17 +5,28 @@ roll, ten centred, sampled every 200 frames at 1/60 s.
 
 ## What is retail's, and measured
 
-**The attitude, and only the attitude.** Every rule that turns a stick position
-into the orientation drawn here comes from `retail_flight_session`, which
-composes **twenty-five contracted behaviours**, each verified bit-for-bit against
-the retail instructions by micro-execution:
+**The whole path from the controller record to the orientation.** Regenerated at
+cycle 1408 through the contracted player path -- a controller record, the
+contracted binding layer, `0x82227E10`'s five increments, and the five clamped
+accumulators -- composing **twenty-seven contracted behaviours**, each verified
+bit-for-bit against the retail instructions by micro-execution:
 
 - the three command setters (slots 12/13/14) with their one-degree tolerance;
 - slot 30's first-order lag ramps and its quadratic axis curves;
 - the rate servo, with three different biases and a gain switch that reads the
   opposite way from the obvious guess;
 - the rotation angles, with one symmetric clamp and two one-sided ones;
-- the three rotations of A3.1's transform kernel, in A3.1's order.
+- the three rotations of A3.1's transform kernel, in A3.1's order;
+- and, since cycle 1408, the input path itself: `build_input_record`,
+  `apply_input_binding`, the five increments and the five accumulators.
+
+**The frames are byte-identical to the previous version, and that is a result
+rather than a failure.** The earlier capture drove the AI's setter interface with
+an increment of 1.0; this one drives the player's accumulators with a binding
+output of 0.72. Both saturate the accumulator's clamp within two frames, and the
+frames are sampled every 200, so from the first sample on the attitude is the
+same. At frame 0 the difference is a rotation of about 2.8e-05 radians --
+sub-pixel at 480x270. Two different retail interfaces, one physics.
 
 The aircraft's rate limits are the base constructor's own defaults — 5.0, 1.4 and
 5.4, read from the image at cycle 1377. They are a few degrees per second, which
@@ -31,6 +42,9 @@ is why the manoeuvre is thirty seconds and not three.
   and none is claimed; loading it is the JV decision, still open.
 - **which basis row is which axis.** Nothing established that row 0 is right,
   row 1 up and row 2 forward. It is assumed here to have something to draw.
+- **which controller axis feeds which input field.** Cycle 1404 established that
+  two of the six fields come from the binding layer's first two outputs; which
+  binding slots those are, and what fills the other four, is not established.
 - the field of view, the altitude, the grid spacing, the colours.
 
 ## What is absent
