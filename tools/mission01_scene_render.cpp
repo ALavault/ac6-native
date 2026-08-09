@@ -26,6 +26,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <string>
 #include <string>
@@ -65,6 +66,113 @@ static unsigned class_of(const std::string& name) {
   if (tok == "s") return 2;
   if (tok == "x") return 3;
   return 4;
+}
+}  // namespace
+
+namespace {
+// TEXTURED GROUND, extracted whole: the complexity gate caught main at 300
+// lines after this pass was added inline, exactly as it caught the placement
+// test at cycle 1480. The atlas indexing is cycle 1487's; see the comment at
+// the call site for what is retail's and what is a choice.
+void draw_textured_ground(ac6::demo::Image& image, const ac6::retail::RetailBasis& basis,
+                          const ac6::retail::FlightPosition& eye,
+                          const ac6::retail::TerrainField& field,
+                          const ac6::retail::MapWaterGrid& water,
+                          const std::vector<std::uint8_t>& mta,
+                          const std::vector<std::uint8_t>& mti,
+                          const std::function<const ac6::retail::DecodedTexture*(int)>& page_for) {
+  using namespace ac6::retail;
+    const float kTileUv = 0.06640625F;
+    const float kInner = 0.9393382F;
+    const float kInset = (1.0F - kInner) * 0.5F;
+    const float step = kTerrainSampleUnits;
+    const long side = static_cast<long>(TerrainField::field_side()) - 1;
+    const long cx0 = long((eye.at64 + kTerrainWorldBias) / step);
+    const long cz0 = long((eye.at72 + kTerrainWorldBias) / step);
+    const long reach = 128;
+    const float lrx40 = 40.0F * 3.14159265F / 180.0F;
+    for (long z = cz0 - reach; z < cz0 + reach; ++z) {
+      if (z < 0 || z >= side) continue;
+      for (long x = cx0 - reach; x < cx0 + reach; ++x) {
+        if (x < 0 || x >= side) continue;
+        const float h[4] = {field.sample(x, z), field.sample(x + 1, z),
+                            field.sample(x + 1, z + 1), field.sample(x, z + 1)};
+        bool present = true;
+        for (float v2 : h) present = present && sample_is_present(v2);
+        if (!present) continue;
+        const float wx = float(x) * step - kTerrainWorldBias;
+        const float wz = float(z) * step - kTerrainWorldBias;
+        const bool sea = water.is_water(wx + step * 0.5F, wz + step * 0.5F);
+
+        int sx[4], sy[4]; float dp[4]; bool ok = true;
+        const float corner[4][3] = {{wx, h[0], wz}, {wx + step, h[1], wz},
+                                    {wx + step, h[2], wz + step}, {wx, h[3], wz + step}};
+        auto project_pt = [&](const float* c3, int& px, int& py, float& pd) {
+          const float dx = c3[0] - eye.at64, dy = c3[1] - eye.at68, dz = c3[2] - eye.at72;
+          // row0 right, row1 up, row2 forward -- demo_flight_view's convention
+          const auto& r0 = basis.rows[0]; const auto& r1 = basis.rows[1];
+          const auto& r2 = basis.rows[2];
+          const float fx = dx * r0[0] + dy * r0[1] + dz * r0[2];
+          const float fy = dx * r1[0] + dy * r1[1] + dz * r1[2];
+          const float fw = dx * r2[0] + dy * r2[1] + dz * r2[2];
+          if (fw <= 1.0F) return false;
+          const float focal = 0.5F * image.height / std::tan(0.5F);
+          px = int(image.width * 0.5F + focal * fx / fw);
+          py = int(image.height * 0.5F - focal * fy / fw);
+          pd = fw;
+          return true;
+        };
+        for (int i = 0; i < 4 && ok; ++i) ok = project_pt(corner[i], sx[i], sy[i], dp[i]);
+        if (!ok) continue;
+
+        const float nx = (h[0] - h[1]) / step, nz = (h[0] - h[3]) / step;
+        const float inv = 1.0F / std::sqrt(nx * nx + nz * nz + 1.0F);
+        float lit = (0.55F * nx * std::cos(lrx40) + 0.35F * nz + 0.85F) * inv + 0.20F;
+        lit = lit < 0.35F ? 0.35F : (lit > 1.15F ? 1.15F : lit);
+        float fog = 1.0F - std::exp(-0.014F * (dp[0] / 24000.0F) * 100.0F);
+        if (fog > 1.0F) fog = 1.0F;
+        const float shade = lit * (1.0F - fog);
+
+        if (sea) {
+          const auto cch = [&](int v2) {
+            return std::uint8_t(v2 * shade > 255.0F ? 255 : int(v2 * shade));
+          };
+          image.triangle(sx[0], sy[0], dp[0], sx[1], sy[1], dp[1], sx[2], sy[2], dp[2],
+                         cch(44), cch(74), cch(116));
+          image.triangle(sx[0], sy[0], dp[0], sx[2], sy[2], dp[2], sx[3], sy[3], dp[3],
+                         cch(44), cch(74), cch(116));
+          continue;
+        }
+        // cell -> page/tile
+        const long gx = x >> 2, gz = z >> 2;
+        const int record = mta[std::size_t((gz >> 4) * 16 + (gx >> 4))];
+        const std::size_t mo = std::size_t(record) * 512 +
+                               std::size_t(((gz & 15) * 16 + (gx & 15)) * 2);
+        const int page = mti[mo], tile = mti[mo + 1];
+        const DecodedTexture* tex = page_for(page);
+        const int tcol = tile % 15, trow = tile / 15;
+        const float fx0 = float(x & 3) * 0.25F, fz0 = float(z & 3) * 0.25F;
+        auto uv_of = [&](float fx, float fz, float& u, float& v2) {
+          u = kTileUv * (float(tcol) + kInset + fx * kInner);
+          v2 = kTileUv * (float(trow) + kInset + fz * kInner);
+        };
+        float u0, v0, u1, v1, u2, v2c, u3, v3;
+        uv_of(fx0, fz0, u0, v0);
+        uv_of(fx0 + 0.25F, fz0, u1, v1);
+        uv_of(fx0 + 0.25F, fz0 + 0.25F, u2, v2c);
+        uv_of(fx0, fz0 + 0.25F, u3, v3);
+        if (tex != nullptr) {
+          image.triangle_textured(sx[0], sy[0], dp[0], u0, v0, sx[1], sy[1], dp[1], u1, v1,
+                                  sx[2], sy[2], dp[2], u2, v2c,
+                                  tex->pixels.data(), int(tex->width), int(tex->height),
+                                  shade);
+          image.triangle_textured(sx[0], sy[0], dp[0], u0, v0, sx[2], sy[2], dp[2], u2, v2c,
+                                  sx[3], sy[3], dp[3], u3, v3,
+                                  tex->pixels.data(), int(tex->width), int(tex->height),
+                                  shade);
+        }
+      }
+    }
 }
 }  // namespace
 
@@ -235,103 +343,7 @@ int main(int argc, char** argv) {
   }
   image.clear_depth();
 
-  // TEXTURED GROUND. One terrain cell (512 units, 4x4 sample quads) maps to one
-  // 272-pixel tile. The UV step 0.06640625 = 272/4096 is retail's; the inner
-  // fraction 0.9393382 at [this+0x6D80] is retail's; that the inset centres the
-  // remainder is MY reading of it. Orientation (x->u, z->v) is mine too.
-  {
-    const float kTileUv = 0.06640625F;
-    const float kInner = 0.9393382F;
-    const float kInset = (1.0F - kInner) * 0.5F;
-    const float step = kTerrainSampleUnits;
-    const long side = static_cast<long>(TerrainField::field_side()) - 1;
-    const long cx0 = long((eye.at64 + kTerrainWorldBias) / step);
-    const long cz0 = long((eye.at72 + kTerrainWorldBias) / step);
-    const long reach = 128;
-    const float lrx40 = 40.0F * 3.14159265F / 180.0F;
-    for (long z = cz0 - reach; z < cz0 + reach; ++z) {
-      if (z < 0 || z >= side) continue;
-      for (long x = cx0 - reach; x < cx0 + reach; ++x) {
-        if (x < 0 || x >= side) continue;
-        const float h[4] = {field->sample(x, z), field->sample(x + 1, z),
-                            field->sample(x + 1, z + 1), field->sample(x, z + 1)};
-        bool present = true;
-        for (float v2 : h) present = present && sample_is_present(v2);
-        if (!present) continue;
-        const float wx = float(x) * step - kTerrainWorldBias;
-        const float wz = float(z) * step - kTerrainWorldBias;
-        const bool sea = water->is_water(wx + step * 0.5F, wz + step * 0.5F);
-
-        int sx[4], sy[4]; float dp[4]; bool ok = true;
-        const float corner[4][3] = {{wx, h[0], wz}, {wx + step, h[1], wz},
-                                    {wx + step, h[2], wz + step}, {wx, h[3], wz + step}};
-        auto project_pt = [&](const float* c3, int& px, int& py, float& pd) {
-          const float dx = c3[0] - eye.at64, dy = c3[1] - eye.at68, dz = c3[2] - eye.at72;
-          // row0 right, row1 up, row2 forward -- demo_flight_view's convention
-          const auto& r0 = basis.rows[0]; const auto& r1 = basis.rows[1];
-          const auto& r2 = basis.rows[2];
-          const float fx = dx * r0[0] + dy * r0[1] + dz * r0[2];
-          const float fy = dx * r1[0] + dy * r1[1] + dz * r1[2];
-          const float fw = dx * r2[0] + dy * r2[1] + dz * r2[2];
-          if (fw <= 1.0F) return false;
-          const float focal = 0.5F * image.height / std::tan(0.5F);
-          px = int(image.width * 0.5F + focal * fx / fw);
-          py = int(image.height * 0.5F - focal * fy / fw);
-          pd = fw;
-          return true;
-        };
-        for (int i = 0; i < 4 && ok; ++i) ok = project_pt(corner[i], sx[i], sy[i], dp[i]);
-        if (!ok) continue;
-
-        const float nx = (h[0] - h[1]) / step, nz = (h[0] - h[3]) / step;
-        const float inv = 1.0F / std::sqrt(nx * nx + nz * nz + 1.0F);
-        float lit = (0.55F * nx * std::cos(lrx40) + 0.35F * nz + 0.85F) * inv + 0.20F;
-        lit = lit < 0.35F ? 0.35F : (lit > 1.15F ? 1.15F : lit);
-        float fog = 1.0F - std::exp(-0.014F * (dp[0] / 24000.0F) * 100.0F);
-        if (fog > 1.0F) fog = 1.0F;
-        const float shade = lit * (1.0F - fog);
-
-        if (sea) {
-          const auto cch = [&](int v2) {
-            return std::uint8_t(v2 * shade > 255.0F ? 255 : int(v2 * shade));
-          };
-          image.triangle(sx[0], sy[0], dp[0], sx[1], sy[1], dp[1], sx[2], sy[2], dp[2],
-                         cch(44), cch(74), cch(116));
-          image.triangle(sx[0], sy[0], dp[0], sx[2], sy[2], dp[2], sx[3], sy[3], dp[3],
-                         cch(44), cch(74), cch(116));
-          continue;
-        }
-        // cell -> page/tile
-        const long gx = x >> 2, gz = z >> 2;
-        const int record = mta[std::size_t((gz >> 4) * 16 + (gx >> 4))];
-        const std::size_t mo = std::size_t(record) * 512 +
-                               std::size_t(((gz & 15) * 16 + (gx & 15)) * 2);
-        const int page = mti[mo], tile = mti[mo + 1];
-        const DecodedTexture* tex = page_for(page);
-        const int tcol = tile % 15, trow = tile / 15;
-        const float fx0 = float(x & 3) * 0.25F, fz0 = float(z & 3) * 0.25F;
-        auto uv_of = [&](float fx, float fz, float& u, float& v2) {
-          u = kTileUv * (float(tcol) + kInset + fx * kInner);
-          v2 = kTileUv * (float(trow) + kInset + fz * kInner);
-        };
-        float u0, v0, u1, v1, u2, v2c, u3, v3;
-        uv_of(fx0, fz0, u0, v0);
-        uv_of(fx0 + 0.25F, fz0, u1, v1);
-        uv_of(fx0 + 0.25F, fz0 + 0.25F, u2, v2c);
-        uv_of(fx0, fz0 + 0.25F, u3, v3);
-        if (tex != nullptr) {
-          image.triangle_textured(sx[0], sy[0], dp[0], u0, v0, sx[1], sy[1], dp[1], u1, v1,
-                                  sx[2], sy[2], dp[2], u2, v2c,
-                                  tex->pixels.data(), int(tex->width), int(tex->height),
-                                  shade);
-          image.triangle_textured(sx[0], sy[0], dp[0], u0, v0, sx[2], sy[2], dp[2], u2, v2c,
-                                  sx[3], sy[3], dp[3], u3, v3,
-                                  tex->pixels.data(), int(tex->width), int(tex->height),
-                                  shade);
-        }
-      }
-    }
-  }
+  draw_textured_ground(image, basis, eye, *field, water.value(), mta, mti, page_for);
 
   const float kFogFar = 24000.0F, kFogDensity = 0.014F, kDistanceL = 16000.0F;
   std::size_t drawn = 0, textured = 0;

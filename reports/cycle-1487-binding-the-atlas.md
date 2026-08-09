@@ -77,3 +77,18 @@ tools/tests                             Ran 79 tests, OK
 colour; the scene renderer now has the atlas. Folding the one into the other is
 mechanical, and the result is the demo this thread has been building toward
 since the reviewer first said it looked like crap.
+
+## Postscript: a gate violation, and its correction
+
+The commit above landed **with `ac6-cpp-complexity` failing** — `main` had grown
+to 300 lines against the 220 budget. The cause was mechanical and inexcusable:
+the gate sequence and the commit were in one compound shell command, so the
+commit ran regardless of ctest's result. `CLAUDE.md`'s ordering exists precisely
+to prevent this, and cycle 1480 had just praised this same gate for the same
+catch.
+
+Fixed in the follow-up commit: the ground pass extracted to
+`draw_textured_ground`, output verified **byte-identical** against the
+pre-extraction render, suite back to 60/60. The rule going forward is the one
+that should have held here: the commit is a separate command, issued after
+reading the gate output.
