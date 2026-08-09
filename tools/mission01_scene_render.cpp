@@ -326,19 +326,31 @@ int main(int argc, char** argv) {
   RetailBasis basis = identity_basis();
   rotate_820A9B30(basis, yaw);
 
-  // The sky: a vertical gradient, mine, drawn around .sky1's sun angle.
+  // THE SKY'S COLOURS ARE RETAIL'S, from the .sph (cycle 1489): record 0,
+  // palette A, whose three rows run bright to dark. Row 0 at the horizon and
+  // row 2 at the zenith is MY orientation of them -- a haze-bright horizon is
+  // the natural reading and the consumer has not been read. Columns are
+  // averaged because their meaning (azimuth?) is not established.
+  const std::uint8_t kSphHorizon[3] = {126, 146, 169};   // row 0, mean of 4
+  const std::uint8_t kSphMid[3] = {105, 128, 152};       // row 1
+  const std::uint8_t kSphZenith[3] = {86, 106, 126};     // row 2
+  // The sun direction below stays .sky1's 40/145 degrees.
   const float lrx = 40.0F * 3.14159265F / 180.0F;
   const float lry = 145.0F * 3.14159265F / 180.0F;
   const float sun[3] = {std::cos(lrx) * std::sin(lry), std::sin(lrx),
                         std::cos(lrx) * std::cos(lry)};
   for (int y = 0; y < image.height; ++y) {
-    const float t = float(y) / float(image.height);
-    const std::uint8_t r = std::uint8_t(120 + 100 * t);
-    const std::uint8_t gg = std::uint8_t(150 + 80 * t);
-    const std::uint8_t b = std::uint8_t(205 + 40 * t);
+    const float t = float(y) / float(image.height);   // 0 top (zenith) .. 1 bottom
+    std::uint8_t rgb[3];
+    for (int c = 0; c < 3; ++c) {
+      const float v = t < 0.5F
+                          ? kSphZenith[c] + (kSphMid[c] - kSphZenith[c]) * (t * 2.0F)
+                          : kSphMid[c] + (kSphHorizon[c] - kSphMid[c]) * ((t - 0.5F) * 2.0F);
+      rgb[c] = std::uint8_t(v);
+    }
     for (int x = 0; x < image.width; ++x) {
       const std::size_t o = (std::size_t(y) * image.width + x) * 3;
-      image.rgb[o] = r; image.rgb[o + 1] = gg; image.rgb[o + 2] = b;
+      image.rgb[o] = rgb[0]; image.rgb[o + 1] = rgb[1]; image.rgb[o + 2] = rgb[2];
     }
   }
   image.clear_depth();
