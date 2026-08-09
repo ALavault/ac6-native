@@ -93,6 +93,17 @@ independently, which for a header/implementation pair forces either duplication
 or a false claim. Cycle 1261 fixed one address the gate named and found ten;
 nine were not missing citations at all.
 
+A capture's committed `.png` files are `pnmtopng` conversions run by hand, and
+nothing re-runs them. This connects them to the metrics beside them:
+
+    python3 tools/audit_capture_images_match_metrics.py reports/mission01-native-captures/*/
+
+It reproduces the renderer's FNV-1a colour hash from the PNG and compares it
+with the `color_hash` the metrics record. Cycle 1273 shipped a capture whose
+images showed 4 markers while its metrics said 29, and the contract pinned both
+— correctly, to different states of the same render. Run it whenever a capture
+is regenerated.
+
 A third checker guards the documentation instead of the contracts:
 
     python3 tools/audit_instrument_discipline_index.py INSTRUMENT_DISCIPLINE.md
