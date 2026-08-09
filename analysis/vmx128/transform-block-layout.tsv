@@ -1,0 +1,37 @@
+# The transform block 0x822A1E80 fills, and who fills it. Cycle 1329.
+#
+# 0x822A1E80 does `r31 = r3 + 0x80` and writes its three basis rows at
+# r31+0x10/+0x20/+0x30. Its caller 0x822A23D8 does `mr r3,r31` before the call
+# and `stvx128 v0,r31,r11` with r11 = 192 after building a vector -- so the
+# vector lands at r31+0xC0, which is transform+0x40, the SAME block.
+#
+# The whole 460-instruction stream of 0x822A23D8 is qualified against XenonRecomp
+# at 460/460 (tools/audit_recomp_vs_ghidra_listing.py), with two known
+# vpermwi128-immediate defects classified rather than equated. `.pdata` declares
+# 460 and the listing is complete -- which matters, because CLAUDE.md records
+# that `exports/` recovers 6 instructions of this function.
+#
+# columns: offset_in_block width contents source
+0x00	16	NOT WRITTEN by 0x822A1E80; a sentinel (17,29,43,61) placed there came back untouched in all fourteen runs	-
+0x10	16	basis row 0	identity from 0x8204F7F0, then rotated
+0x20	16	basis row 1	identity from 0x8204F800, then rotated
+0x30	16	basis row 2	identity from 0x8204F810, then rotated
+0x40	16	a vector; lanes 1 and 2 are [r30+0x08] and [r30+0x0C], lane 3 a .rodata constant, lane 0 set earlier and not yet traced	0x822A23D8, stvx128 v0,r31,192
+#
+# THE ANGLES, at the 0x822A23D8 call site:
+#   f1 = [r30+0x18]      applied SECOND, by 0x820A99F8, about row 0
+#   f2 = [r30+0x1C]      applied FIRST,  by 0x820A9B30, about row 1
+#   f3 = f31             applied THIRD,  by 0x82211828, about row 2
+#
+# f3's origin is NOT traced. It is a non-volatile register set earlier in the
+# function and this cycle did not follow it.
+#
+# r30 is read as floats at +0x04, +0x08, +0x0C, +0x10, +0x14, +0x18 and +0x1C.
+# WHAT r30 IS HAS NOT BEEN ESTABLISHED and it is not called a state, a pose or a
+# unit here. Cycle 1299 paid four cycles for an unexamined premise of that kind.
+#
+# THE OTHER THREE CALLERS ARE NOT ANALYSED. 0x822A1E80 has four call sites --
+# 0x822957BC and 0x82295E60 (in 0x822955F0 and 0x82295A88), 0x822A27F4 (this
+# one) and 0x8230B44C. The first of them applies `fneg f1,f1` before calling and
+# 0x8230B030 builds f2 by adding a .rodata constant, so the angle conventions may
+# differ per caller and nothing here says they do not.

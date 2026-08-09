@@ -59,14 +59,43 @@ def recomp_immediates(root: Path) -> dict[int, int]:
     return found
 
 
-def read_sites(path: Path) -> list[tuple[int, int, int]]:
+def read_sites(path: Path) -> tuple[list[tuple[int, int, int]], dict[int, tuple[int, int]]]:
     rows = []
+    registers: dict[int, tuple[int, int]] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line or line.startswith("#"):
             continue
         columns = line.split("\t")
-        rows.append((int(columns[0], 16), int(columns[1], 0), int(columns[2], 0)))
-    return rows
+        address = int(columns[0], 16)
+        rows.append((address, int(columns[1], 0), int(columns[2], 0)))
+        if len(columns) >= 5:
+            registers[address] = (int(re.sub(r"\D", "", columns[3])),
+                                  int(re.sub(r"\D", "", columns[4])))
+    return rows, registers
+
+
+# THE DECLARED LAYOUT, from Xenia's InstrData::VX128_P, in x86-style bit numbers
+# (bit 31 = most significant). It is written out as masks rather than copied as a
+# C++ bitfield, because bitfield placement is an ABI property and not an ISA one.
+#
+#   25..21 VD128l   20..16 PERMl   15..11 VB128l
+#   10 fixed 0   9 fixed 1   8..6 PERMh   5 fixed 0   4 fixed 1
+#   3..2 VD128h   1..0 VB128h
+#
+# THIS IS A SECOND, INDEPENDENT STATEMENT OF THE SAME LAYOUT. The derivation
+# below reconstructs the PERM bits from the corpus alone and never consults this;
+# `main` then checks that the two agree, and that the fixed bits really are
+# fixed. Two sources reached bit-for-bit the same answer, which is what makes it
+# qualified rather than fitted.
+def decode_declared(word: int) -> dict[str, int]:
+    return {
+        "opcode": word >> 26,
+        "fixed_10_9": (word >> 9) & 0b11,
+        "fixed_5_4": (word >> 4) & 0b11,
+        "vd": ((word >> 21) & 0x1F) | (((word >> 2) & 0x03) << 5),
+        "vb": ((word >> 11) & 0x1F) | ((word & 0x03) << 5),
+        "perm": ((word >> 16) & 0x1F) | (((word >> 6) & 0x07) << 5),
+    }
 
 
 def derive(samples: list[tuple[int, int]]) -> dict[int, list[int]]:
@@ -93,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report", type=Path)
     arguments = parser.parse_args(argv)
 
-    sites = read_sites(arguments.sites)
+    sites, registers = read_sites(arguments.sites)
     recomp = recomp_immediates(arguments.recomp_root)
     paired = [(address, word, ghidra, recomp[address])
               for address, word, ghidra in sites if address in recomp]
@@ -150,6 +179,31 @@ def main(argv: list[str] | None = None) -> int:
     ghidra_reproduced = sum(1 for _, word, ghidra, _ in paired if decode(word) == ghidra)
     print(f"derived_reproduces_recomp={reproduced}/{len(paired)}")
     print(f"derived_reproduces_ghidra={ghidra_reproduced}/{len(paired)}")
+
+    # The declared layout, checked over the same corpus -- including the parts the
+    # derivation never looked at. The fixed bits are the structural control: if
+    # the field positions were wrong, bits declared constant would not be.
+    declared_perm = declared_vd = declared_vb = 0
+    structural = 0
+    for _, word, _, other in paired:
+        fields = decode_declared(word)
+        declared_perm += fields["perm"] == other
+        structural += (fields["opcode"] == 0b000110
+                       and fields["fixed_10_9"] == 0b01
+                       and fields["fixed_5_4"] == 0b01)
+    ghidra_registers = 0
+    for address, word, _, _ in paired:
+        fields = decode_declared(word)
+        row = registers.get(address)
+        if row and row == (fields["vd"], fields["vb"]):
+            ghidra_registers += 1
+    print(f"declared_layout_reproduces_recomp={declared_perm}/{len(paired)}")
+    print(f"declared_layout_structural_bits={structural}/{len(paired)}")
+    print(f"ghidra_registers_match_declared={ghidra_registers}/{len(paired)}")
+    if declared_perm != len(paired) or structural != len(paired):
+        print("vpermwi128_immediate_decode=fail reason=declared_layout",
+              file=sys.stderr)
+        return 1
     if reproduced != len(paired):
         print("vpermwi128_immediate_decode=fail reason=derivation", file=sys.stderr)
         return 1
@@ -166,6 +220,15 @@ def main(argv: list[str] | None = None) -> int:
             "bit_map": {f"imm[{k}]": f"word[{v}]" for k, v in sorted(derived.items())},
             "derived_reproduces_recomp": reproduced,
             "derived_reproduces_ghidra": ghidra_reproduced,
+            "declared_layout": "Xenia InstrData::VX128_P, applied as masks: "
+                               "VD128l 25..21, PERMl 20..16, VB128l 15..11, "
+                               "PERMh 8..6, VD128h 3..2, VB128h 1..0, with bits "
+                               "10 and 5 fixed 0 and bits 9 and 4 fixed 1",
+            "declared_layout_reproduces_recomp": declared_perm,
+            "declared_layout_structural_bits": structural,
+            "ghidra_registers_match_declared": ghidra_registers,
+            "defect_scope": "the module decodes vD and vB correctly at every site; "
+                            "only the immediate is wrong",
             "evidence_class": "cross-match: generated C++ read as a re-encoding of an "
                               "instruction's operands, never executed",
         }, indent=2) + "\n", encoding="utf-8")

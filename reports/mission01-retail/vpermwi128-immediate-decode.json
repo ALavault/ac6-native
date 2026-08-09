@@ -15,5 +15,10 @@
   },
   "derived_reproduces_recomp": 545,
   "derived_reproduces_ghidra": 9,
+  "declared_layout": "Xenia InstrData::VX128_P, applied as masks: VD128l 25..21, PERMl 20..16, VB128l 15..11, PERMh 8..6, VD128h 3..2, VB128h 1..0, with bits 10 and 5 fixed 0 and bits 9 and 4 fixed 1",
+  "declared_layout_reproduces_recomp": 545,
+  "declared_layout_structural_bits": 545,
+  "ghidra_registers_match_declared": 545,
+  "defect_scope": "the module decodes vD and vB correctly at every site; only the immediate is wrong",
   "evidence_class": "cross-match: generated C++ read as a re-encoding of an instruction's operands, never executed"
 }
