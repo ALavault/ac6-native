@@ -1,0 +1,41 @@
+# 0x822A1668 -- what a player unit does with its float, one step before it copies
+# a pose. Cycle 1341. Fifty instructions, read whole.
+#
+# It computes nothing. It is a DISPATCH: for each enabled child, three
+# consecutive virtual calls carrying the float.
+#
+#   if ([this+0x60] & 0x4000) == 0            -> return
+#   if [this+0xDC] (child count) <= 0         -> return
+#   for i in 0 .. [this+0xDC]-1:
+#       child = [ [this+0xD8] + 4*i ]
+#       if ([child+0x118] & 1) == 0           -> skip this child
+#       child->vtable[+0xC0] (child, f1, r5)
+#       child->vtable[+0xC4] (child, f1, r5)
+#       child->vtable[+0xC8] (child, f1)          <- r5 is NOT passed here
+#
+# THE GATE IS BIT 0x4000 OF [this+0x60], and it survives the reset: 0x822A1F20
+# (slot +0x38) does `[this+0x60] &= 0x5E00`, and 0x5E00 contains 0x4000. Two
+# functions read at different cycles agree about which bits of that word live
+# across a reset.
+#
+# columns: what where note
+gate	this+0x60 bit 0x4000	whole body skipped when clear
+child array	this+0xD8	pointer array, stride 4
+child count	this+0xDC	loop bound
+child enable	child+0x118 bit 0	skips one child, not the loop
+update slot 1	child vtable +0xC0	receives the float and r5
+update slot 2	child vtable +0xC4	receives the float and r5
+update slot 3	child vtable +0xC8	receives the float ONLY
+#
+# So the child's vtable is at least 0xCC bytes -- 51 slots -- which already makes
+# it a different class from CAce6Unit's 23. Its locator is at child+0x60 where a
+# unit's is at +0x80 (cycle 1340). Two independent layout differences.
+#
+# WHAT THIS RELOCATES. Slots +0x34 and +0x44 of a unit BUILD a transform from
+# angles; slot +0x3C forwards a float to children and then COPIES child[0]'s pose
+# back into the unit. So on the player path the transform is not computed in
+# CAce6Unit at all -- the unit is a shell that drives children and harvests one.
+#
+# NOT ESTABLISHED: what class the children are; what the three slots do; what the
+# float is -- it is NOT called delta time here; what r5 is; why the third call
+# drops it.
