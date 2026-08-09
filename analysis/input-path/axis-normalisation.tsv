@@ -7,3 +7,8 @@ bias	0x4000	subtracted before the threshold test
 deadzone	0x800	2048 of 32767, about 6.25 percent; below it nothing is stored
 scale_biased	0x82069DF0	float32(1/16383) = 1/(0x4000-1)
 scale_half	0x82069BFC	float32(1/32767) = 1/(0x8000-1), the range split_axis produces
+# The analogue sources, read from a 0x40 snapshot buffer at r1+0x60 (cycle 1316):
+#   lhz 0x86(r1) = buffer+0x26 = LY negative half = device +0x2A
+#   lhz 0x88(r1) = buffer+0x28 = LX negative half = device +0x2C
+#   lhz 0x8a(r1) = buffer+0x2A = LX positive half = device +0x2E
+# Masks feeding the log2 loop: 0x4000, 0x8000, 0x10000, 0x20000 -> bits 14..17.
