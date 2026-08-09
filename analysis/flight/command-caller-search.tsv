@@ -122,3 +122,35 @@
 #
 # STILL NOT FOUND: whatever turns a stick into a command. Four candidates remain
 # unread (0x822911E8, 0x821405F8, 0x822389D8, and 0x82290500's non-zero site).
+#
+# ---------------------------------------------------------------------------
+# CYCLE 1402: the class map, run BEFORE reading.
+#
+# 0x821405F8 is slot +0x68 of CDebriefingManager -- the debriefing screen. Its
+# [+3032] is debriefing data and its offset-48 dispatch is on some other object
+# entirely. Refuted in ONE COMMAND, before reading 281 instructions.
+#
+# That is the discipline of cycle 1385 applied at the right moment for once:
+# whose_vtable.py first, the listing second. Cycle 1383 was caught not checking
+# what the repository already answers, and 1385 found a named class by finally
+# checking; this is the first time in the thread the check came before the work
+# rather than after the mistake.
+#
+# THE SAME LOOKUP ON ALL EIGHT, one command:
+#
+# function	class
+0x821222B0	CNuSound, slot +0x20            refuted at cycle 1399
+0x821405F8	CDebriefingManager, slot +0x68  refuted here
+0x82290E20	not in any vtable -- a direct-call function
+0x822911E8	not in any vtable
+0x82290500	not in any vtable
+0x82291A50	not in any vtable
+0x82292540	not in any vtable
+0x822389D8	not in any vtable
+#
+# So the two candidates the class map CAN name are both refuted, and the six it
+# cannot are direct-call functions in 0x8229xxxx and 0x8223xxxx. Three of those
+# six are the auto-level subsystem (cycles 1400, 1401).
+#
+# UNREAD: 0x822911E8 (538 insns, four callers, f2 from a field and a computed
+# value) and 0x822389D8 (589 insns, mixed). Those two are the search.
