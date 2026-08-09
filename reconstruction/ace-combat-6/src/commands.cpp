@@ -559,10 +559,59 @@ int run_retail_session(const std::filesystem::path& payload_path,
     placed_units += 1;
   }
   const float world_extent = std::max({max_x - min_x, max_z - min_z, 1.0f});
-  const std::size_t markers =
-      session->render_world_markers(target, frame.world, 4.0f * world_extent);
 
-  if (!hud.render(target, frame.world, session->execution())) return 115;
+  // The camera. Until now this capture had NONE: WorldFrame's camera fields are
+  // zero-initialised and nothing on the retail path wrote them, so eye and
+  // target were both the origin and the 29 markers it drew were whatever a
+  // degenerate camera at (0,0,0) happens to catch of a 66,456-unit world.
+  //
+  // Cycle 1283 derived retail's shape: camPos = playerPos + R_player . offset,
+  // with the basis taken from the player's own locator rows and the FOV eased
+  // toward a target field. What it also established is that the OFFSET AND FOV
+  // ARE NOT IN THE XEX -- they are fields of a 144-byte record copied every
+  // frame from a runtime-loaded per-aircraft table at [G+0x31070], and the
+  // 46 degrees the initialiser writes is only a fallback.
+  //
+  // So the shape is derived and the numbers are not. The offset below is
+  // CHOSEN, and the report says so in the same words the overview plot uses.
+  // A capture that silently invented a camera would be worse than one with
+  // none, because it would look deliberate.
+  ac6::WorldFrame view = frame.world;
+  const ac6::CombatUnitState* player = nullptr;
+  for (const ac6::CombatUnitState& unit : session->world().combat.snapshot_units()) {
+    if (unit.entity == session->player_entity()) player = &unit;
+  }
+  // The player must be PLACED, not merely present. Measured: it is not.
+  // Entity 4097's position reads (-1.1368e-26, 4.19661e-41, 0) -- denormal
+  // noise, never written -- because the class-0 Set is one of the 135 units the
+  // container gives no load-time position and the placement push runs at first
+  // update, from an FSM that construction installs dead (cycle 1279).
+  //
+  // Following an unplaced unit put the eye on that noise and drew ZERO of 95
+  // markers. render_world_markers already refuses to draw a unit the container
+  // did not place -- "the origin is not a fallback, it is a different claim" --
+  // and the camera owes the same refusal.
+  const std::vector<ac6::EntityId>& placed_list = session->world().placed;
+  const bool player_is_placed =
+      player != nullptr &&
+      std::find(placed_list.begin(), placed_list.end(), session->player_entity()) !=
+          placed_list.end();
+  const bool camera_follows_player = player_is_placed;
+  if (camera_follows_player) {
+    const float back = 0.02f * world_extent;
+    const float up = 0.008f * world_extent;
+    view.camera_target_x = player->position.x;
+    view.camera_target_y = player->position.y;
+    view.camera_target_z = player->position.z;
+    view.camera_x = player->position.x;
+    view.camera_y = player->position.y + up;
+    view.camera_z = player->position.z - back;
+  }
+
+  const std::size_t markers =
+      session->render_world_markers(target, view, 4.0f * world_extent);
+
+  if (!hud.render(target, view, session->execution())) return 115;
   const ac6::MissionDebrief debrief = session->debrief();
   if (!target.write_ppm(output_dir / "retail-session-hud.ppm")) return 116;
 
@@ -592,6 +641,11 @@ int run_retail_session(const std::filesystem::path& payload_path,
          << "  \"world_markers_drawn\": " << markers << ",\n"
          << "  \"world_units_placed\": " << placed_units << ",\n"
          << "  \"world_extent\": " << world_extent << ",\n"
+         << "  \"camera_follows_player\": "
+         << (camera_follows_player ? "true" : "false") << ",\n"
+         << "  \"camera_offset_is_chosen_not_derived\": true,\n"
+         << "  \"camera_refused_player_has_no_load_time_position\": "
+         << (camera_follows_player ? "false" : "true") << ",\n"
          << "  \"hud_pixel_writes\": " << hud.snapshot().pixel_writes << ",\n"
          << "  \"hud_objective_count\": " << hud.snapshot().objective_count << "\n"
          << "}\n";
