@@ -1,0 +1,49 @@
+# sub_82283480 -- where the flight model's three rate limits come from.
+#
+# Cycle 1376 left [model+1248/1252/1256] as "per-aircraft limits, source
+# unknown". They have FOUR writers, and only one of them is a lookup:
+#
+#   0x82282220  the base constructor -- defaults, three image words
+#   0x82283480  a speed-interpolated table lookup   <- this file
+#   0x822F2520  writes +1256 only
+#   0x82303D18  slot 9 of the sibling vtable 0x8200F310, writes all three
+#
+# THE DEFAULTS, read from the image rather than inferred:
+#   [+1248] = 5.0                  0x82069C50
+#   [+1252] = 1.399999976158142    0x82008B0C
+#   [+1256] = 5.400000095367432    0x82008B08
+# and immediately after them the base ctor writes 2000.0, 1800.0, 600.0, 200.0
+# and 150.0 into nearby fields (0x82069E68, 0x82008B04, 0x82069EB8, 0x82069E40,
+# 0x8200603C). Those are the magnitudes of aircraft speeds in km/h, which is the
+# unit cycle 1374 established from the 9.8/3.6 and 1/3.6 pair.
+#
+# THE LOOKUP. sub_82283480 takes the model in r3 and a speed in f1, and:
+#   1. searches a TEN-entry breakpoint table at [model+1076 .. +1112] for the
+#      bracket containing |f1| (0x82283488..0x822834C8);
+#   2. builds the interpolation weight 1/(hi-lo), guarded to 1.0 when the
+#      bracket is degenerate (0x82283518);
+#   3. interpolates between two SIXTEEN-BYTE records at [model+608 + index*16];
+#   4. scales the three limits by three image constants and stores them back.
+#
+# THE THREE SCALES, resolved:
+#   [+1248] *= 0.1666666716337204   0x82008BD8   = 1/6
+#   [+1252] *= 0.06666667014360428  0x82007D5C   = 1/15, the same word slot 32
+#                                                 uses for its own axis
+#   [+1256] *= 0.8333333134651184   0x820051B4   = 5/6
+#
+# THE FOOTPRINT, measured by capsule and not by reading: seeding the model with
+# a per-offset pattern and a monotone breakpoint table, then running it, changes
+# exactly nine words.
+#
+# offset	size	what
+160	16	a four-float vector, the interpolated record
+324	4	a float
+1248	4	the row-0 rate limit, used by 0x820A99F8 through 0x82302B78
+1252	4	the row-1 rate limit, used by 0x820A9B30
+1256	4	the row-2 rate limit, used by 0x82211828
+1260	4	written zero in this run
+#
+# NOT ESTABLISHED. The exact interpolation between the two 16-byte records --
+# steps 3 and 4 above are read as a shape, not instruction by instruction, and
+# this file says so rather than implying a derivation. The three callers are
+# 0x82303A20, 0x82306A38 and 0x82329968, none of them read.
