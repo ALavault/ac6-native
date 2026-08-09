@@ -1,0 +1,11 @@
+# 0x82227E10 from 0x82227E98, micro-executed with the five accumulators LIVE
+# and NOTHING stubbed, against apply_flight_input composed with
+# accumulate_flight_input. callee_entries is asserted at exactly 5 -- the
+# first run used steps 24, got through two of the five calls, and produced
+# garbage that the comparison caught.
+# case	verdict	+36	+40	+44	+48	+52
+plain	ok	0.30000001192092896	-0.4000000059604645	0.5	0.10000000149011612	0.20000000298023224
+difference-cancels	ok	0.25	0.0	0.0	0.0	0.0
+hold-floor	ok	-0.30000001192092896	0.0	0.0	0.0	0.0
+saturate	ok	1.0	1.0	1.0	1.0	1.0
+mantissas	ok	1.0	-0.899999737739563	1.0	0.7844444513320923	0.24666666984558105

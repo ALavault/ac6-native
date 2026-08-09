@@ -1062,6 +1062,49 @@
             "claim": "include/ac6/retail_flight_input_accumulators.h carries the derivation, records the path from the entity frame through 0x82229250 and 0x82227E10 that leads to them, and states that these are a SECOND interface onto the same three command fields -- the player's -- alongside the virtual setters contracted at cycle 1393 as the AI's"
           }
         ]
+      },
+      "retail_flight_input_apply": {
+        "status": "passed",
+        "statement": "the native product reproduces the tail of 0x82227E10, which carries the entity's per-frame input fields into the flight model's five accumulators: [+2096] to +48 and [+2100] to +52 as holds, [+2104] to +36 and [+2108] to +40 as axes passed straight through, and the DIFFERENCE [+2112] - [+2116] to +44, called in retail's order 48, 52, 36, 44, 40",
+        "retail_addresses": [
+          "0x82227E10",
+          "0x82281FB0",
+          "0x82282020",
+          "0x82281FE8",
+          "0x82281F40",
+          "0x82281F78",
+          "0x82229250"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1406-the-last-link.md",
+            "sha256": "c306bcd80f275133d774daef30ac8ca95912ed54193c1340a6463471e8d9e8bc",
+            "size": 3991,
+            "claim": "0x82227E98..0x82227EDC read whole: five loads, one subtraction and five direct calls on entity+4912, with each field passed through as the increment and no scaling or rate anywhere"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_input_apply_tests.cpp",
+            "sha256": "e0de7da856e776a6c37581019e1ff3e2e9b494a51d4b39604644021d13639833",
+            "size": 3554,
+            "claim": "cases for each field reaching exactly one accumulator, the difference for +44 including the case where equal fields cancel, the two lower bounds differing between holds and axes, and accumulation across frames to saturation; with two controls, one asserted to fire on 32 of 33 points and one not to"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-input-apply-microexec.tsv",
+            "sha256": "a2a3a26e577dcb9a2f6ac0936f841e90d55d80834ed97bc8f3e0be3022a05a09",
+            "size": 661,
+            "claim": "executed with all five accumulators LIVE and nothing stubbed, 5 cases and 25 values compared bit for bit, with callee_entries asserted at exactly 5 -- the first run used too few steps, entered two of the five callees and produced an accumulator holding 2.0, which the comparison caught"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_input_apply.h",
+            "sha256": "5f732eeffe83d5f7a135f9fe797810b2a116cb89db205a2e8328d0d7786afefc",
+            "size": 3201,
+            "claim": "include/ac6/retail_flight_input_apply.h carries the derivation, records that the difference for +44 is the one piece of arithmetic and what a tidied port would produce instead, preserves retail's call order with a note that it is not observable today, and states that only +2104 and +2108 are traced to the contracted binding layer"
+          }
+        ]
       }
     }
   }
