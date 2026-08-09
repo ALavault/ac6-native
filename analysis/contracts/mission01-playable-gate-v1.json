@@ -906,8 +906,8 @@
           {
             "kind": "static",
             "path": "reports/cycle-1391-one-port-for-both-branches.md",
-            "sha256": "95b6542460ef366fd42842bb3d70bd274e3f33cb6bfd8401228909e79c477f55",
-            "size": 4925,
+            "sha256": "1fd540fc029e5e21b06354537656e2f16c31829e99c701d19fd9c22f5b87f2b8",
+            "size": 5527,
             "claim": "found by bounding: readers of +144/148/152 are 100 functions unbounded and nine when filtered to this class family plus the contracted chain's callees; both accessors are 38 instructions with no call and no vector, and both constants are seven-digit decimal literals rather than the correctly rounded reciprocals of pi they resemble"
           },
           {
@@ -930,6 +930,48 @@
             "sha256": "5e9baeebdff7e3aa004b3cdbc0cf80ab7a7be4c1ca9f76dca816d067af1b5ccc",
             "size": 3065,
             "claim": "include/ac6/retail_control_blend.h carries the derivation, records that one port covers both branches because the slots are inherited, that the replacement needs a strict greater-than so a tie keeps the axis, and that the non-reset path reads the stored field without writing it so a caller that always wrote back would overwrite the step's decay"
+          }
+        ]
+      },
+      "retail_flight_export": {
+        "status": "passed",
+        "statement": "the native product reproduces the flight model's two export functions 0x82303898 and 0x82303940 -- slots 20 and 21 of the live vtable 0x8200F310, which the base leaves empty -- filling a caller-supplied buffer with slot 16's raw middle axis, slots 17 and 18's blended outer axes, and raw fields, with slot 20 calling the accessors in the order 16/17/18 but storing them at +12/+8/+16 and writing [+376] twice, and slot 21 writing four words of which +52 overlaps slot 20's from a different source",
+        "retail_addresses": [
+          "0x82303898",
+          "0x82303940",
+          "0x8200F310",
+          "0x822B65C8",
+          "0x82281E10",
+          "0x82281EA8"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1392-the-boundary-and-the-first-fully-live-composite.md",
+            "sha256": "7ea63435619441652dfd0c8df6855fd6397b39f36bcc336c0ead1bbc16264427",
+            "size": 4348,
+            "claim": "found by bounding: callers of slots 17 and 18 are 100 and 184 dispatches unbounded and two each inside this class family, and they are the same two functions; slot 16 is two instructions returning [+308] raw, which answers why only two of the three axes are blended"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_export_tests.cpp",
+            "sha256": "368ef9d19985ec0b1cd6242325a72fc30505ba62a3e428cd29374cdb6904c2bb",
+            "size": 4866,
+            "claim": "cases for the call order differing from the store order, the raw field copies, [+376] being written twice by slot 20, the words each exporter leaves untouched, and the two exporters disagreeing about +52; with two controls, one asserted to fire and one not"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-export-microexec.tsv",
+            "sha256": "9d26570b0985f2727a1748a4d93ee1d8276db77d169e5a46c53762687c1f1fff",
+            "size": 562,
+            "claim": "the campaign's first FULLY LIVE composite: slots 16, 17 and 18 run for real through real virtual dispatches with NOTHING stubbed and `calls` asserted empty, and the whole 128-byte buffer is compared including every offset the exporter does not write, which is seeded to -1.0"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_export.h",
+            "sha256": "9a30bedb9c9c81c46a7e8587e9a020b4e6f3852fc9a9bb6569faca1134011fe8",
+            "size": 3163,
+            "claim": "include/ac6/retail_flight_export.h carries the derivation, records that slot 16 exports the middle axis raw while the outer two are blended, that the call order and store order disagree, and that the buffer is passed in and returned so the offsets an exporter does not write keep what the caller had"
           }
         ]
       }

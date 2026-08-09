@@ -1,0 +1,10 @@
+# 0x82303898 and 0x82303940, slots 20 and 21, micro-executed with
+# slots 16, 17 and 18 running FOR REAL and nothing stubbed, against
+# ac6::retail::export_flight_state_slot20 / _slot21.
+# The whole 128-byte buffer is compared, including every offset the
+# exporter does not write, which is seeded to -1.0.
+# case	verdict	words_compared	why the case exists
+slot20-plain	ok	32	slot 20 with the reset bit clear
+slot20-reset	ok	32	slot 20 with it set, so the blends replace
+slot21-plain	ok	32	slot 21 with the reset bit clear
+slot21-reset	ok	32	slot 21 with it set
