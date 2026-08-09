@@ -68,7 +68,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_scalar_sin_cos.cpp
   src/retail_container_index.cpp
   src/retail_ndxr_geometry.cpp
-  src/retail_terrain_field.cpp)
+  src/retail_terrain_field.cpp
+  src/retail_map_placement.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -255,6 +256,14 @@ add_test(NAME ac6-retail-terrain-field
   COMMAND ac6-retail-terrain-field-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0119/021_FHM)
 set_tests_properties(ac6-retail-terrain-field PROPERTIES SKIP_RETURN_CODE 77)
+
+# B1: the .pdl placement list of 0x82102148, cross-checked against the heightfield.
+add_executable(ac6-retail-map-placement-tests tests/retail_map_placement_tests.cpp)
+target_link_libraries(ac6-retail-map-placement-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-map-placement
+  COMMAND ac6-retail-map-placement-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0119/021_FHM)
+set_tests_properties(ac6-retail-map-placement PROPERTIES SKIP_RETURN_CODE 77)
 
 add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)
 target_link_libraries(ac6-ntxr-texture-tests PRIVATE ac6_product_core)

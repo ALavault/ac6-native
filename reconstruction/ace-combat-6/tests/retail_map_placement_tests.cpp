@@ -1,0 +1,134 @@
+// The placement list, over Mission 01's real map container, cross-checked
+// against the ported heightfield.
+//
+// DATA DRIVEN, exiting 77 when the container is absent: the extracted corpus is
+// retail content and is never committed.
+#include "ac6/retail_map_placement.h"
+#include "ac6/retail_terrain_field.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <set>
+#include <vector>
+
+namespace {
+int failures = 0;
+void check(bool c, const char* w) {
+  if (!c) { std::printf("FAIL  %s\n", w); ++failures; }
+}
+std::vector<std::uint8_t> slurp(const std::filesystem::path& p) {
+  std::ifstream in(p, std::ios::binary);
+  return std::vector<std::uint8_t>((std::istreambuf_iterator<char>(in)),
+                                   std::istreambuf_iterator<char>());
+}
+// A deterministic generator, so the null model is the same on every machine.
+std::uint32_t next(std::uint32_t& s) { s = s * 1664525u + 1013904223u; return s; }
+}  // namespace
+
+int main(int argc, char** argv) {
+  using namespace ac6::retail;
+
+  // Pure checks first, so a clean clone still exercises something.
+  check(MapPlacement::open(nullptr, 4096) == std::nullopt, "a null list is refused");
+  const std::uint8_t four[4] = {0, 0, 0, 0};
+  check(MapPlacement::open(four, 4) == std::nullopt,
+        "a four-byte list is empty, per 0x820FBF5C");
+  check(MapPlacement::world_from_local(0, 0.0F) == -kPlacementOriginBias,
+        "cell 0 sits at -61440");
+  check(MapPlacement::world_from_local(8, 0.0F) == 8.0F * kPlacementCoarseUnits
+                                                   - kPlacementOriginBias,
+        "the transform is coarse * 8192 - 61440");
+  // A list whose header does not partition its body must be refused.
+  std::vector<std::uint8_t> bogus(kPlacementHeaderBytes + 32, 0);
+  bogus[3] = 99;                                        // cell 0 claims 99
+  bogus[7] = 0; bogus[6] = 0x10;                        // at offset 0x1000
+  check(MapPlacement::open(bogus.data(), bogus.size()) == std::nullopt,
+        "a header that does not partition the body is refused");
+
+  if (argc < 2) { std::fprintf(stderr, "usage: tests MAP_FHM_DIR\n"); return 77; }
+  const std::filesystem::path dir = argv[1];
+  const auto pdl_path = dir / "011_00_00_00_00.bin";
+  const auto grid_path = dir / "004_00_01_02_03.bin";
+  const auto patch_path = dir / "005_Bl_02_b8.bin";
+  for (const auto& p : {pdl_path, grid_path, patch_path}) {
+    if (!std::filesystem::exists(p)) {
+      std::fprintf(stderr, "no map container at %s — skipping\n",
+                   dir.string().c_str());
+      return failures == 0 ? 77 : 1;
+    }
+  }
+  const std::vector<std::uint8_t> pdl = slurp(pdl_path);
+  const auto placement = MapPlacement::open(pdl.data(), pdl.size());
+  check(placement.has_value(), "the placement list opens");
+  if (!placement) return 1;
+
+  check(placement->header_partitions_body(), "the header partitions the body");
+  check(placement->header_total() == 4318, "4318 instances by the header");
+  check(placement->instances().size() == 4318, "4318 instances decoded");
+
+  std::set<std::uint16_t> ids;
+  float min_x = 1e30F, max_x = -1e30F, min_z = 1e30F, max_z = -1e30F;
+  std::size_t zero_y = 0;
+  for (const MapInstance& q : placement->instances()) {
+    ids.insert(q.part_id);
+    min_x = std::fmin(min_x, q.world_x); max_x = std::fmax(max_x, q.world_x);
+    min_z = std::fmin(min_z, q.world_z); max_z = std::fmax(max_z, q.world_z);
+    if (q.world_y == 0.0F) ++zero_y;
+    // Every instance must land inside the cell the header filed it under.
+    const float cx0 = MapPlacement::world_from_local(q.coarse_x, 0.0F);
+    const float cz0 = MapPlacement::world_from_local(q.coarse_z, 0.0F);
+    check(std::fabs(q.world_x - cx0) <= kPlacementCoarseUnits * 0.5F + 1.0F &&
+          std::fabs(q.world_z - cz0) <= kPlacementCoarseUnits * 0.5F + 1.0F,
+          "an instance lies inside its own coarse cell");
+  }
+  check(ids.size() == 173 && *ids.begin() == 0 && *ids.rbegin() == 172,
+        "173 part ids, 0..172");
+  check(zero_y == 4138, "4138 instances sit at y exactly zero");
+  check(max_x - min_x < 40000.0F && max_z - min_z < 40000.0F,
+        "the instances are a city, not a scatter over a 131072-unit map");
+
+  // THE CONTROL: land them on the ported heightfield, which is a different file
+  // decoded from a different retail function, and score a null model of the same
+  // size. A wrong header reading scatters, and a scatter scores the null model.
+  const std::vector<std::uint8_t> grid = slurp(grid_path);
+  const std::vector<std::uint8_t> patches = slurp(patch_path);
+  const auto field =
+      TerrainField::open(grid.data(), grid.size(), patches.data(), patches.size());
+  check(field.has_value(), "the heightfield opens");
+  if (!field) return 1;
+
+  std::size_t placed_flat = 0, placed_seen = 0;
+  for (const MapInstance& q : placement->instances()) {
+    float h = 0.0F;
+    if (!field->height_at(q.world_x, q.world_z, &h)) continue;
+    ++placed_seen;
+    if (h < 1.0F) ++placed_flat;
+  }
+  std::uint32_t seed = 20240809u;
+  std::size_t null_flat = 0, null_seen = 0;
+  for (std::size_t i = 0; i < placement->instances().size(); ++i) {
+    const float x = static_cast<float>(next(seed) % 130000u) - 65000.0F;
+    const float z = static_cast<float>(next(seed) % 130000u) - 65000.0F;
+    float h = 0.0F;
+    if (!field->height_at(x, z, &h)) continue;
+    ++null_seen;
+    if (h < 1.0F) ++null_flat;
+  }
+  const double placed_rate = 100.0 * placed_flat / placed_seen;
+  const double null_rate = 100.0 * null_flat / null_seen;
+  check(placed_seen > 4000 && null_seen > 4000, "both populations are real");
+  check(placed_rate > 95.0, "the instances sit on flat ground");
+  check(null_rate < 70.0, "a random scatter does not");
+  check(placed_rate > null_rate + 25.0,
+        "and the gap is the finding, not the rate alone");
+
+  std::printf("instances %zu  ids %zu  x %.0f..%.0f  z %.0f..%.0f  "
+              "flat %.1f%% vs null %.1f%%\n",
+              placement->instances().size(), ids.size(), min_x, max_x, min_z,
+              max_z, placed_rate, null_rate);
+  if (failures == 0) std::printf("map placement OK\n");
+  return failures == 0 ? 0 : 1;
+}

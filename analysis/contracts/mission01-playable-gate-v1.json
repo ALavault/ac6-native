@@ -1328,6 +1328,40 @@
             "claim": "the header carries the derivation with every instruction address, states that it was read from the image because exports/82102568.json is a decompilation with thirty-three removed blocks, separates the ported early-out from the VMX128 remainder it does not claim, and records that the heightfield is not the MCA/MCI/MCD bit grid"
           }
         ]
+      },
+      "retail_map_placement": {
+        "status": "passed",
+        "statement": "the native product decodes retail's .pdl map-part placement list with the layout 0x82102148 uses: 256 sixteen-byte header records, one per coarse cell at coarse_z * 16 + coarse_x, then a body of sixteen-byte instances of three big-endian floats and a tag. The field is +0x28 of CMapManager and its size +0x5C, both assigned by the loader 0x820FBC28 from the name '%s.pdl' at 0x8205BDE8, and 0x820FBF5C establishes that a four-byte file means empty, so open refuses one rather than reporting zero. The header's count/offset reading is not assumed: open requires the 256 counts to sum to exactly (size - 4096) / 16 and refuses the file otherwise, which for Mission 01 is 4318 both ways. Positions are local and the world transform is coarse * 8192 - 61440 read from 0x8210220C..0x82102220, where 61440 is the 65536 world bias less half a coarse cell, so the local origin is the cell centre. tag & 0xFFFF is claimed only as an identifier in 0..172 against 178 parts; tag >> 16 and the header's third word are decoded and deliberately NOT named",
+        "retail_addresses": [
+          "0x82102148",
+          "0x820FBC28",
+          "0x82102240",
+          "0x82102220",
+          "0x820FBF5C"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1448-the-fields-have-names.md",
+            "sha256": "603d26354cb2254518e6013c0940686c9d343564b35470b0a1f748c52627f3a3",
+            "size": 5977,
+            "claim": "the loader read out of the image with every field named by its file extension, retail's own divisors 16900 and 4225 confirming the 65 x 65 lattice from a second function, and the .pdl consumer's header stride and world transform"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_map_placement_tests.cpp",
+            "sha256": "2ab271d3e49e89c2969535496cabd6ec6bb8c271f957e649eb940b467c3fab13",
+            "size": 6198,
+            "claim": "the real list decoded: the header partitions the body at 4318 both ways, 173 part ids in 0..172, every instance asserted to lie inside the coarse cell its header filed it under, and a CONTROL that lands all 4318 on the independently ported heightfield -- 98.5% on flat ground against 49.8% for a deterministic null model of the same size, with the gap itself asserted rather than the rate alone"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_map_placement.h",
+            "sha256": "99f58b8c6fa46fdbf6f62c083ae6d8f760ecfdb3f9868aebc48e4fd23e5cdc83",
+            "size": 5094,
+            "claim": "the header carries the derivation with the loader's field-to-extension table, the consumer's instruction addresses for the header stride and the world transform, the reason a four-byte file is refused, and an explicit statement of what is decoded but not named"
+          }
+        ]
       }
     }
   }
