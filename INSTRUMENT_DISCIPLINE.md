@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| you are about to **correct** an earlier claim | *the over-correction* — a correction takes the same evidence as any other claim and gets far less; if it says "in A, not B", enumerate ALL the sites, because one call site is not a survey |
 | you are substituting a **library function** for a retail routine | *the verdict that averages away a different function* — compare worst-case in ulp with no tolerance, then read each non-zero case; a handful of enormous gaps among exact matches is a subdomain guard, not rounding |
 | a differential fails by **one ulp**, on some cases only | *both sides right, disagreeing on the inputs* — build every candidate rule and run them together; if they all reproduce the oracle the fixture is feeding two different numbers, and the repair a green suite rewards is the wrong one |
 | your **controls** all pass, or you never asserted that they fail | *a domain that cannot express the difference* — coverage of the input space is not coverage of the distinctions; assert `disagreements > 0` per control, and for a rounding control use inputs with long binary expansions |
@@ -1308,3 +1309,38 @@ different function" rather than "same function, different rounding".
 
 The instrument is `tools/audit_flight_math_seams.py`, which prints
 `identical` / `within N ulp` per routine and refuses to summarise further.
+
+## The thirty-fifth shape: the over-correction
+
+Cycle 1377 wrote that the aircraft's handling is "a performance curve resampled
+by speed, not a static set of numbers". Cycle 1378 corrected it: the resampling
+belongs to the sibling class, and it is driven from slot 29, which is a **reset**.
+
+Slot 29 is a reset. The correction was still wrong. The sibling's own step at
+slot 15 calls the same lookup on **every frame**, so 1377's original sentence was
+right about the class it was actually describing, and 1378 replaced a true
+statement with a false one while sounding more careful.
+
+### Why this direction is easy to miss
+
+Every other shape in this file guards against a claim receiving too little
+scrutiny. A **correction** receives almost none. It arrives with the authority of
+having already caught something, it is written in the voice of someone being
+rigorous, and the reader who would have challenged the original assumes the
+challenge already happened.
+
+The 1378 correction was itself derived from real evidence -- slot 29 is genuinely
+a reset, and 0x8200F270 genuinely leaves it empty. It failed because it answered
+"where is the lookup called from?" with the first caller it found and stopped.
+An original claim with one supporting site would have been challenged; the same
+claim wearing the clothes of a correction was not.
+
+### The rule
+
+**A correction is a new claim and takes the same evidence as any other.** In
+particular, when the correction is "X happens in place A, not place B", the
+enumeration of *all* the places must be shown -- one call site is not a survey.
+
+The cheap check here was `callers of 0x82283480`: three of them, of which 1378
+read one. The tooling for this already exists and takes seconds; the failure was
+believing the search was finished because the answer was satisfying.

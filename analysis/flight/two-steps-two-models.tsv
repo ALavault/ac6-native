@@ -1,0 +1,44 @@
+# The entity carries TWO flight models with TWO different drivers.
+#
+# Cycle 1378 ended on a worry: the entity's +4912 pointer -- the one about a
+# hundred sites read for flags, speeds and limits -- is initialised to the
+# object at +3536 (class 0x8200F310) and never to the one at +2224 (class
+# 0x8200F270), which is the class whose integrator and control surfaces this
+# campaign has contracted. Only TWO stores to +4912 exist in the whole corpus,
+# both in constructors (0x8222BFB0, 0x82293C6C), so nothing repoints it later.
+#
+# THE WORRY IS ANSWERED, and being pointed at by +4912 is not what makes a model
+# fly. Having a non-empty step is.
+#
+# vtable	slots	slot 11 (0x2C)	slot 15 (0x3C)	what drives it
+0x82008B10 (base)	36	0x82283898	0x822DDBE8 (empty)	the base step
+0x8200F270	36	0x82283898 inherited	0x822DDBE8 (empty)	the base step
+0x8200F310	40	0x822DDBE8 (EMPTY)	0x82306A38	its own step
+0x8200FC28	40	0x822DDBE8 (EMPTY)	0x82329968	its own step
+#
+# 0x822DDBE8 is the shared empty virtual, a single blr (cycle 1371).
+#
+# So 0x8200F270 -- the +2224 object -- is stepped by the base's slot 11, which
+# calls its slots 30, 31 and 32: the control surfaces 0x82302DB0 (contracted),
+# the position integrator 0x82303110 (contracted) and the orientation update
+# 0x82302C88. The class the campaign ported is genuinely a class that flies.
+#
+# The 0x8200F310 branch is stepped by 0x82306A38 with the SAME signature
+# (this, f1 = step, r5 = position block). It calls slots 30/31/32 as well, plus
+# 0x82282938 and 0x82326FE8 -- both of which the base step also calls -- and
+# dispatches slot 39, which only exists on this branch.
+#
+# CORRECTING CYCLE 1378, which corrected cycle 1377 too far. 1377 said the
+# handling is "a performance curve resampled by speed". 1378 replied that this
+# is the sibling's behaviour and happens on reset, because slot 29 is a reset.
+# Slot 29 IS a reset -- but 0x82306A38 calls the lookup 0x82283480 at
+# 0x82306BDC on EVERY FRAME. 1377 was right about the sibling; 1378's "on reset"
+# was wrong, and the over-correction is the error to record.
+#
+# AND THE VTABLES ARE NOT ALL 36 SLOTS. Measured on each vtable's own words:
+# base and 0x8200F270 stop at 36; 0x8200F310 and 0x8200FC28 run to 40. Cycles
+# 1371 and 1375 said "36 slots" of all of them -- that was the base's extent
+# applied to its subclasses, and slot 39 at offset 156 is dispatched by
+# 0x82306AD8. The twenty-fifth shape (a vtable's extent read as a run of
+# pointers) in a new form: one stopping rule shared across vtables of different
+# lengths.
