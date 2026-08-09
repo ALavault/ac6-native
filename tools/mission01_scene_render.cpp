@@ -152,9 +152,13 @@ void draw_textured_ground(ac6::demo::Image& image, const ac6::retail::RetailBasi
         const DecodedTexture* tex = page_for(page);
         const int tcol = tile % 15, trow = tile / 15;
         const float fx0 = float(x & 3) * 0.25F, fz0 = float(z & 3) * 0.25F;
+        // Pixel-space over the page's OWN dimensions: page 6 is 4096 x 1024
+        // (three tile rows, tiles 0..39 in .mti), and dividing its rows by
+        // 4096 smeared them into the bottom edge -- the white shoreline
+        // patches of cycle 1487.
         auto uv_of = [&](float fx, float fz, float& u, float& v2) {
-          u = kTileUv * (float(tcol) + kInset + fx * kInner);
-          v2 = kTileUv * (float(trow) + kInset + fz * kInner);
+          u = 272.0F * (float(tcol) + kInset + fx * kInner) / float(tex->width);
+          v2 = 272.0F * (float(trow) + kInset + fz * kInner) / float(tex->height);
         };
         float u0, v0, u1, v1, u2, v2c, u3, v3;
         uv_of(fx0, fz0, u0, v0);
