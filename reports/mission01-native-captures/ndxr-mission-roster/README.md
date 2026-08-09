@@ -15,6 +15,57 @@ scenario: 230 units, 38 distinct primary model ids
 drew 38 of 38, 154351 vertices total
 ```
 
+## The models name themselves
+
+Cycle 1430 read the NDXR record names — `rec+0x20` against the string table —
+so the table below is **the file's own labels**, not a reading of a wireframe.
+`analysis/assets/mission01-model-names.txt` is the full listing.
+
+| id | name | used by |
+|---:|---|---:|
+| 0 | `o_e767` | 1 |
+| 2 | `hire01` | 1 |
+| 4 | `c_ftnk` | 11 |
+| 6 | `o_c17g` | 18 |
+| 8 | `c_apcr` | 16 |
+| 10 | `c_pcht` | 16 |
+| 12 | `c_arbn` | 10 |
+| 14 | `o_mr2k` | 34 |
+| 16 | `o_f16c` | 28 |
+| 18 | `mapobj_m01_l_brg1_b` | 1 |
+| 19 | `mapobj_m01_l_brg2_b` | 1 |
+| 20 | `o_b52h` | 10 |
+| 22 | `o_uh09` | 5 |
+| 24 | `o_f18f` | 24 |
+| 26 | `o_rflm` | 16 |
+| 28 | `o_f22a` | 1 |
+| 30 | `body` | 4 |
+| 32 | `f_aagn` | 4 |
+| 34 | `f_flgn` | 2 |
+| 36 | `f_nsam` | 2 |
+| 38 | `c_saag` | 29 |
+| 40 | `c_ssam` | 9 |
+| 43 | `canp` | 16 |
+| 45 | `o_ah64` | 3 |
+| 48 | `s_aegs` | 1 |
+| 50 | `s_aegg` | 2 |
+| 52 | `s_aegv` | 1 |
+| 54 | `s_aegw` | 1 |
+| 56 | `s_crsr` | 2 |
+| 58 | `s_crsg` | 2 |
+| 60 | `s_crsl` | 2 |
+| 62 | `s_crsv` | 2 |
+| 64 | `s_dstr` | 4 |
+| 66 | `s_dstg` | 4 |
+| 68 | `s_dsts` | 4 |
+| 70 | `s_ptrb` | 7 |
+| 72 | `o_su33` | 8 |
+| 74 | `o_umo` | 9 |
+
+Every model carries `_lod1` through `_lod4` and most carry `_crash1`..`_crash4`.
+**These pictures are `lod1` with the wrecks dropped** — a choice, since retail
+selects a level by distance and that rule is not read here.
+
 ## What is in it, by its own numbers
 
 | | extent | used |

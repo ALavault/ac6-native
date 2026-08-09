@@ -1,6 +1,6 @@
 {
   "schema": "ac6.ndxr-placed-capture.v1",
-  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, computed from the PPM the renderer wrote so that checking the PNG against it checks the pnmtopng conversion",
+  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, computed from the PPM the renderer wrote so that checking the PNG against it checks the pnmtopng conversion -- regenerated at lod1 with wrecks dropped (cycle 1430)",
   "units_placed": 95,
   "units_unplaced": 135,
   "distinct_models_placed": 16,
@@ -12,16 +12,16 @@
   "orbit_radius": 45,
   "frames": {
     "scene-00000": {
-      "color_hash": 8636269582875070497
+      "color_hash": 11774539509926700153
     },
     "scene-00030": {
-      "color_hash": 1543641514236801979
+      "color_hash": 12115005888739527753
     },
     "scene-00060": {
-      "color_hash": 16049678997102448259
+      "color_hash": 3396212798560909657
     },
     "scene-00090": {
-      "color_hash": 12982609085583414003
+      "color_hash": 9573437670017940769
     }
   }
 }

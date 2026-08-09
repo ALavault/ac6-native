@@ -1,0 +1,1 @@
+model 4: 7 pieces, 639 vertices, 837 indices, extent 5.40 x 4.56 x 14.52

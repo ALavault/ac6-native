@@ -21,9 +21,26 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <string_view>
 #include <vector>
 
 namespace {
+
+// LEVELS OF DETAIL, AND DESTROYED STATES, ARE SEPARATE RECORDS. Cycle 1430 read
+// the NDXR record names -- `rec+0x20` against the string table -- and found that
+// a model carries `..._lod1` through `..._lod4` and often `..._crash1..4` as
+// distinct records. The C-17 at id 6 is 1547, 629, 166 and 6 vertices across
+// four sub-entries, and 1547+629+166+6 is exactly the 2348 the earlier captures
+// drew: every LOD and every wreck superimposed.
+//
+// SELECTING lod1 IS A CHOICE. Retail picks a level by distance and that rule is
+// not read here; this takes the most detailed one and drops the wrecks, which is
+// right for a picture and is not a claim about what the game draws when.
+static bool WantedRecord(std::string_view name) {
+  if (name.find("crash") != std::string_view::npos) return false;
+  if (name.find("_lod") == std::string_view::npos) return true;   // no LODs: take it
+  return name.find("_lod1") != std::string_view::npos;
+}
 
 std::vector<std::uint8_t> Read(const char* path) {
   std::ifstream input(path, std::ios::binary);
@@ -59,6 +76,7 @@ bool LoadModel(const std::vector<std::uint8_t>& blob,
     for (std::uint16_t r = 0; r < container->record_count(); ++r) {
       const auto record = container->Record(r);
       if (!record) continue;
+      if (!WantedRecord(record->name)) continue;
       for (std::uint16_t k = 0; k < record->descriptor_count; ++k) {
         const auto descriptor = container->Descriptor(*record, k);
         if (!descriptor) continue;

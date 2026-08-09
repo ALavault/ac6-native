@@ -21,9 +21,26 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
+#include <string_view>
 #include <vector>
 
 namespace {
+
+// LEVELS OF DETAIL, AND DESTROYED STATES, ARE SEPARATE RECORDS. Cycle 1430 read
+// the NDXR record names -- `rec+0x20` against the string table -- and found that
+// a model carries `..._lod1` through `..._lod4` and often `..._crash1..4` as
+// distinct records. The C-17 at id 6 is 1547, 629, 166 and 6 vertices across
+// four sub-entries, and 1547+629+166+6 is exactly the 2348 the earlier captures
+// drew: every LOD and every wreck superimposed.
+//
+// SELECTING lod1 IS A CHOICE. Retail picks a level by distance and that rule is
+// not read here; this takes the most detailed one and drops the wrecks, which is
+// right for a picture and is not a claim about what the game draws when.
+static bool WantedRecord(std::string_view name) {
+  if (name.find("crash") != std::string_view::npos) return false;
+  if (name.find("_lod") == std::string_view::npos) return true;   // no LODs: take it
+  return name.find("_lod1") != std::string_view::npos;
+}
 
 std::vector<std::uint8_t> Read(const char* path) {
   std::ifstream input(path, std::ios::binary);
@@ -57,6 +74,7 @@ bool LoadModel(const std::vector<std::uint8_t>& blob,
     for (std::uint16_t r = 0; r < container->record_count(); ++r) {
       const auto record = container->Record(r);
       if (!record) continue;
+      if (!WantedRecord(record->name)) continue;
       for (std::uint16_t k = 0; k < record->descriptor_count; ++k) {
         const auto descriptor = container->Descriptor(*record, k);
         if (!descriptor) continue;
@@ -184,6 +202,20 @@ int main(int argc, char** argv) {
       }
       std::printf("  frame 0: %d of %zu units within %.0f of the eye\n",
                   near, placed.size(), radius * 3.0f);
+      for (const Placed& p : placed) {
+        const float dx = p.at.x - ex, dy = p.at.y - ey, dz = p.at.z - ez;
+        const float d2 = std::sqrt(dx*dx + dy*dy + dz*dz);
+        if (d2 >= radius * 3.0f) continue;
+        const ac6::retail::NdxrMesh& m = meshes[p.model];
+        float ax=1e30f,ay=1e30f,az=1e30f,bx=-1e30f,by=-1e30f,bz=-1e30f;
+        for (const auto& v : m.positions) {
+          ax=std::fmin(ax,v.x); ay=std::fmin(ay,v.y); az=std::fmin(az,v.z);
+          bx=std::fmax(bx,v.x); by=std::fmax(by,v.y); bz=std::fmax(bz,v.z);
+        }
+        std::printf("    near: model id %u at (%.0f,%.0f,%.0f) dist %.0f  "
+                    "extent %.2f x %.2f x %.2f\n",
+                    p.model, p.at.x, p.at.y, p.at.z, d2, bx-ax, by-ay, bz-az);
+      }
     }
     for (const Placed& p : placed) {
       const float dx = p.at.x - ex, dy = p.at.y - ey, dz = p.at.z - ez;
