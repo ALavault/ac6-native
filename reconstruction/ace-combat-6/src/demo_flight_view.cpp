@@ -157,6 +157,47 @@ void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
   draw_flight_view(image, basis, camera, fixed);
 }
 
+void draw_mesh_wireframe(Image& image, const ac6::retail::NdxrMesh& mesh,
+                         const ac6::retail::RetailBasis& basis,
+                         const DemoCamera& camera, float distance) noexcept {
+  image.clear(16, 18, 26);
+  if (mesh.positions.empty() || mesh.indices.size() < 2 || !mesh.bounds.valid) return;
+
+  // Framing is CHOSEN: centre the model on its own bounds and pull back by a
+  // multiple of its radius, so a 2-unit part and a 200-unit one both fill the
+  // frame. Nothing about the model's real scale is claimed by this.
+  const float cx = (mesh.bounds.min_x + mesh.bounds.max_x) * 0.5F;
+  const float cy = (mesh.bounds.min_y + mesh.bounds.max_y) * 0.5F;
+  const float cz = (mesh.bounds.min_z + mesh.bounds.max_z) * 0.5F;
+
+  // THE MODEL TURNS, NOT THE CAMERA. `basis` is applied to the point AFTER it
+  // is centred and BEFORE it is pushed away, so the mesh spins in place at a
+  // fixed distance. Handing the basis to `draw_segment` instead swings the model
+  // out of frame -- the first turntable drew 2738 pixels at frame 0 and zero at
+  // frames 30 and 60 for exactly that reason.
+  //
+  // +distance, not -: `project` refuses anything with z <= 1, so the forward
+  // axis is positive and the model has to be pushed away along it. The run
+  // before that one drew zero pixels everywhere.
+  const auto at = [&](std::uint16_t index) {
+    const ac6::retail::NdxrPosition& p = mesh.positions[index];
+    const Vec3 turned = to_camera(basis, Vec3{p.x - cx, p.y - cy, p.z - cz});
+    return Vec3{turned.x, turned.y, turned.z + distance};
+  };
+  const ac6::retail::RetailBasis fixed = ac6::retail::identity_basis();
+
+  // THE STRIP, walked with retail's restart. Every consecutive pair inside a
+  // run is an edge; 0xFFFF ends the run and the next two values start a new one.
+  std::uint16_t previous = ac6::retail::kStripRestart;
+  for (const std::uint16_t index : mesh.indices) {
+    if (index == ac6::retail::kStripRestart) { previous = index; continue; }
+    if (previous != ac6::retail::kStripRestart) {
+      draw_segment(image, fixed, camera, at(previous), at(index), 150, 200, 235);
+    }
+    previous = index;
+  }
+}
+
 std::string caption() noexcept {
   // Updated at cycle 1416. The aircraft MOVES now: cycle 1415 established that
   // the integrator's rates are a unit direction and its scale is a speed, and

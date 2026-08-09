@@ -66,7 +66,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_flight_input_apply.cpp
   src/retail_flight_input_router.cpp
   src/retail_scalar_sin_cos.cpp
-  src/retail_container_index.cpp)
+  src/retail_container_index.cpp
+  src/retail_ndxr_geometry.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -237,6 +238,14 @@ add_test(NAME ac6-retail-ndxr-container
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/ndxr-container.json)
 set_tests_properties(ac6-retail-ndxr-container PROPERTIES SKIP_RETURN_CODE 77)
+
+# B1: the descriptor decoder, over every descriptor of the real package.
+add_executable(ac6-retail-ndxr-geometry-tests tests/retail_ndxr_geometry_tests.cpp)
+target_link_libraries(ac6-retail-ndxr-geometry-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-ndxr-geometry
+  COMMAND ac6-retail-ndxr-geometry-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/001_MDLP.mdlp)
+set_tests_properties(ac6-retail-ndxr-geometry PROPERTIES SKIP_RETURN_CODE 77)
 
 add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)
 target_link_libraries(ac6-ntxr-texture-tests PRIVATE ac6_product_core)

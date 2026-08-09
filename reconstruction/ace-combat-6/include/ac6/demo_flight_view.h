@@ -32,6 +32,7 @@
 // `caption()` below exists so that it is not left to a caption to remember.
 
 #include "ac6/retail_flight_step.h"
+#include "ac6/retail_ndxr_geometry.h"
 #include "ac6/retail_transform.h"
 
 #include <cstdint>
@@ -84,6 +85,21 @@ void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
 // at `invented_altitude` over the origin and nothing moves.
 void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
                       const DemoCamera& camera) noexcept;
+
+// Draws a decoded NDXR mesh as a wireframe, seen from `basis` at `position`.
+//
+// THE MESH IS RETAIL'S AND THE REST OF THE PICTURE IS NOT. Every vertex comes
+// through contracted resolution -- ModelDirectory, ContainerIndex,
+// NdxrContainer -- and the strip is walked with retail's own 0xFFFF restart.
+// The camera, the framing and the colours are this file's.
+//
+// STRIPS ARE DRAWN AS EDGES, not filled. There is no material, no texture and
+// no winding rule here, and drawing triangles would imply all three; the
+// wireframe claims only the positions and the connectivity, which are what
+// cycle 1426 established.
+void draw_mesh_wireframe(Image& image, const ac6::retail::NdxrMesh& mesh,
+                         const ac6::retail::RetailBasis& basis,
+                         const DemoCamera& camera, float distance) noexcept;
 
 // The sentence that must accompany any picture this file produces. It is a
 // function rather than a comment so that a caller cannot forget it and a test

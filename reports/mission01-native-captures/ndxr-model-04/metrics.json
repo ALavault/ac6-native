@@ -1,0 +1,27 @@
+{
+  "schema": "ac6.ndxr-model-capture.v1",
+  "model_id": 4,
+  "pieces": 15,
+  "vertices": 1171,
+  "indices": 1528,
+  "extent": [
+    5.403,
+    4.5592,
+    14.5161
+  ],
+  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, written from the framebuffer so that checking a PNG against it checks the pnmtopng conversion too -- only the four committed stills are listed; the other 116 frames of the turntable are not kept",
+  "frames": {
+    "model-00000": {
+      "color_hash": 5767994874647612575
+    },
+    "model-00030": {
+      "color_hash": 17650513215344363760
+    },
+    "model-00060": {
+      "color_hash": 15752125133991389362
+    },
+    "model-00090": {
+      "color_hash": 14615061321936859847
+    }
+  }
+}
