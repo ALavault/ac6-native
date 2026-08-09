@@ -1,0 +1,109 @@
+// The contracted flight integrator, flown across the map's real terrain.
+//
+// THE QUESTION, from cycle 1467's "not established": do `at68` and the terrain
+// share an origin? `kMidFloor` is 10.0 at 0x82003214 and retail applies it to
+// `at68` and to nothing else -- a CONSTANT floor. This map's ground runs
+// 0.00 to 487.44.
+//
+// A constant floor cannot keep an aircraft above terrain that rises. So either
+// the integrator is not what keeps it there, or the two do not share an origin.
+// This flies the contracted integrator over the contracted heightfield and
+// measures how often the aircraft ends a tick below the ground under it. The
+// answer distinguishes nothing about the ORIGIN -- but it does establish, as a
+// number rather than an argument, that the integrator alone is insufficient.
+//
+// DATA DRIVEN, exiting 77 when the map container is absent.
+#include "ac6/retail_flight_session.h"
+#include "ac6/retail_flight_step.h"
+#include "ac6/retail_terrain_field.h"
+
+#include <cmath>
+#include <cstdio>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+
+namespace {
+int failures = 0;
+void check(bool c, const char* w) {
+  if (!c) { std::printf("FAIL  %s\n", w); ++failures; }
+}
+std::vector<std::uint8_t> slurp(const std::filesystem::path& p) {
+  std::ifstream in(p, std::ios::binary);
+  return std::vector<std::uint8_t>((std::istreambuf_iterator<char>(in)),
+                                   std::istreambuf_iterator<char>());
+}
+}  // namespace
+
+int main(int argc, char** argv) {
+  using namespace ac6::retail;
+  check(kMidFloor == 10.0F, "the floor is the constant 10.0 of 0x82003214");
+
+  if (argc < 2) { std::fprintf(stderr, "usage: tests MAP_FHM_DIR\n"); return 77; }
+  const std::filesystem::path dir = argv[1];
+  if (!std::filesystem::exists(dir / "005_Bl_02_b8.bin")) {
+    std::fprintf(stderr, "no map container — skipping\n");
+    return failures == 0 ? 77 : 1;
+  }
+  const auto grid = slurp(dir / "004_00_01_02_03.bin");
+  const auto patches = slurp(dir / "005_Bl_02_b8.bin");
+  const auto field =
+      TerrainField::open(grid.data(), grid.size(), patches.data(), patches.size());
+  check(field.has_value(), "the heightfield opens");
+  if (!field) return 1;
+
+  // A level run from the open sea, north across the coast and the city, into
+  // the hills. The rates are retail's units and the scale is the contracted
+  // kRateToStep; the heading and the altitude are mine.
+  //
+  // The first version of this flew inland from (-40000, -40000) and was below
+  // ground for all 1800 ticks -- true, and useless: that line never leaves
+  // high ground, so it could not show the crossing. This one starts over water.
+  FlightSessionState state{};
+  state.position.at64 = -1500.0F;
+  state.position.at68 = 60.0F;
+  state.position.at72 = 6000.0F;
+
+  FlightRates rates{};
+  rates.to64 = 0.0F;
+  rates.to68 = 0.0F;
+  rates.to72 = -5400.0F;                // north, toward the coast
+
+  // `rate_scale` is 1.0, NOT kRateToStep. The integrator applies kRateToStep
+  // itself; passing it again made the aircraft fly at 6.94 units a tick instead
+  // of 25, and the run -- which I had sized for 45,000 units -- covered 12,500
+  // and never left the water. The test reported "highest ground 0.00" twice
+  // before I printed the trajectory instead of adjusting the numbers.
+  const float rate_scale = 1.0F;
+
+  std::size_t ticks = 0, below = 0, off_map = 0, above = 0;
+  float lowest_clearance = 1e30F, highest_ground = -1e30F;
+  for (int i = 0; i < 1800; ++i) {      // 30 seconds at 60 Hz
+    integrate_session_position(state, rates, rate_scale, 0.0F, 1.0F / 60.0F);
+    float ground = 0.0F;
+    if (!field->height_at(state.position.at64, state.position.at72, &ground)) {
+      ++off_map;
+      continue;
+    }
+    ++ticks;
+    highest_ground = std::fmax(highest_ground, ground);
+    const float clearance = state.position.at68 - ground;
+    lowest_clearance = std::fmin(lowest_clearance, clearance);
+    if (clearance < 0.0F) ++below; else ++above;
+  }
+
+  check(ticks > 1000, "the run stayed on the map");
+  check(state.position.at68 >= kMidFloor, "the floor held the vertical");
+  check(highest_ground > 50.0F, "the run crossed ground higher than it flew");
+  check(above > 100, "the run spent real time clear of the ground");
+  check(below > 100,
+        "and real time BELOW it -- a constant floor does not follow terrain");
+
+  std::printf("ticks %zu (off map %zu)  at68 %.2f  highest ground %.2f  "
+              "lowest clearance %.2f  clear %zu  below %zu\n",
+              ticks, off_map, state.position.at68, highest_ground,
+              lowest_clearance, above, below);
+  if (failures == 0) std::printf("flight over terrain OK\n");
+  return failures == 0 ? 0 : 1;
+}

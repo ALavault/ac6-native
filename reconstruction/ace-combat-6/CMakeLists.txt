@@ -282,6 +282,14 @@ add_test(NAME ac6-demo-terrain-view
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0119/021_FHM)
 set_tests_properties(ac6-demo-terrain-view PROPERTIES SKIP_RETURN_CODE 77)
 
+# A3/B3: the contracted integrator flown over the contracted heightfield.
+add_executable(ac6-flight-over-terrain-tests tests/flight_over_terrain_tests.cpp)
+target_link_libraries(ac6-flight-over-terrain-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-flight-over-terrain
+  COMMAND ac6-flight-over-terrain-tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0119/021_FHM)
+set_tests_properties(ac6-flight-over-terrain PROPERTIES SKIP_RETURN_CODE 77)
+
 add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)
 target_link_libraries(ac6-ntxr-texture-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-ntxr-texture
