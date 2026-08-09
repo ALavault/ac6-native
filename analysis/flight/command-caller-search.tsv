@@ -82,3 +82,43 @@
 # Its only caller is 0x822931B0, unread.
 #
 # SEVEN OF THE EIGHT REMAIN. The demo's invented link is unchanged.
+#
+# ---------------------------------------------------------------------------
+# CYCLE 1401: the remaining seven, separated by what f2 carries.
+#
+# One line per candidate was the promised discriminator, and it splits them:
+#
+# function	f2 at its sites	reading
+0x82291A50	0.0	LEVEL ONLY -- the same auto-level subsystem as 0x82290E20
+0x82292540	0.0	LEVEL ONLY -- likewise, and likewise at 0x8229xxxx
+0x822911E8	field +100, computed, 0.0	carries a value
+0x82290500	-pi/2 (-1.5707963705062866), 0.0	carries a CONSTANT ATTITUDE
+0x821405F8	field +3032	carries a value; 281 insns, no callers, so a virtual
+0x822389D8	two unresolved, two 0.0	mixed
+0x82366AA0	field +44	a 33-instruction state machine -- see below
+#
+# THREE OF THE EIGHT ARE THE AUTO-LEVEL SUBSYSTEM, all in 0x8229xxxx, all
+# passing only zero. Whatever steers from a stick is not among them.
+#
+# 0x82290500 IS THE INTERESTING NEGATIVE: it passes -pi/2, a constant attitude,
+# not a stick-derived one. Ninety degrees is a commanded manoeuvre, not a
+# control input.
+#
+# 0x82366AA0 IS REFUTED BY ARGUMENT COUNT, and that is a discriminator worth
+# keeping. It reads a state at [+28], advances 9 -> 10, then dispatches offset
+# 52 with
+#
+#     lfs  f2,44(r31) ; lfs f1,36(r31) ; addi r4,r31,32 ; mr r3,r31
+#
+# -- FOUR arguments. The command setters take exactly (this, f1, f2); cycle
+# 1393's differential compared r3, the accumulator, the target field and the flag
+# byte across thirty cases and no fourth argument appears anywhere in their 45
+# instructions. So this dispatches a different class's slot 52, and its +36 and
+# +44 are that class's fields rather than the flight model's accumulators, which
+# happen to sit at the same displacements.
+#
+# The fifth displacement collision this thread has caught, and the first caught
+# by an ARGUMENT COUNT rather than by a class filter.
+#
+# STILL NOT FOUND: whatever turns a stick into a command. Four candidates remain
+# unread (0x822911E8, 0x821405F8, 0x822389D8, and 0x82290500's non-zero site).
