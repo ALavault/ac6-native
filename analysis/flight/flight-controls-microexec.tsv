@@ -1,0 +1,26 @@
+# 0x82302DB0 (slot 30 of 0x8200F270) micro-executed, against
+# ac6::retail::update_flight_controls.
+# case	verdict	+304	+308	+312	+360	+364	+368	+372	+376	why the case exists
+idle	ok	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	nothing held, nothing commanded, everything already zero
+ramp-rise	ok	0.0	0.0	0.0	0.0555555522441864	0.0	0.0	0.0	0.0555555522441864	hold48 raises at360 from zero
+ramp-decay	ok	0.0	0.0	0.0	0.4722222089767456	0.0	0.0	0.0	0.4722222089767456	at360 falls at half the rise rate when not held
+ramp-floor	ok	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	the decay stops at zero and does not go negative
+ramp-ceiling	ok	0.0	0.0	0.0	1.0	0.0	0.1666666567325592	0.0	1.0	the rise saturates at 1.0
+gate-open	ok	0.0	0.0	0.0	1.0	0.0	0.1666666567325592	0.0	1.0	at360 past 0.99 lets at368 rise
+gate-shut	ok	0.0	0.0	0.0	0.4722222089767456	0.0	0.0	0.0	0.4722222089767456	at360 below the gate ASSIGNS zero rather than decaying
+interlock	ok	0.0	0.0	0.0	1.0	1.0	0.0	0.0	0.0	BOTH primaries non-zero kills both secondaries
+interlock-one-zero	ok	0.0	0.0	0.0	1.0	0.0	0.5333333015441895	0.0	1.0	one primary at zero leaves the secondaries alone
+difference	ok	0.0	0.0	0.0	0.7222222089767456	0.2222222238779068	0.0	0.0	0.5	at376 is at360 - at364 after both are updated
+centre-positive	ok	0.48055556416511536	0.47083333134651184	0.48055556416511536	0.0	0.0	0.0	0.0	0.0	a positive axis is pulled toward zero
+centre-negative	ok	-0.48055556416511536	-0.47083333134651184	-0.48055556416511536	0.0	0.0	0.0	0.0	0.0	a negative axis is pulled toward zero
+centre-no-overshoot	ok	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	centring stops at zero, it does not cross
+cmd304-positive	ok	0.02222222089767456	0.0	0.0	0.0	0.0	0.0	0.0	0.0	gain 1.0 above zero
+cmd304-negative	ok	-0.019999997690320015	0.0	0.0	0.0	0.0	0.0	0.0	0.0	gain 0.9 below zero -- asymmetric
+cmd304-clamps	ok	-0.8999999761581421	0.0	0.0	0.0	0.0	0.0	0.0	0.0	the limits are +1.0 and -0.9, not symmetric
+cmd312	ok	0.0	0.0	0.20000000298023224	0.0	0.0	0.0	0.0	0.0	at312 scales its command by the rate
+cmd308-sign-only	ok	0.0	0.21250000596046448	0.0	0.0	0.0	0.0	0.0	0.0	at308 uses the SIGN of cmd44, not its magnitude
+cmd308-sign-only-large	ok	0.0	0.21250000596046448	0.0	0.0	0.0	0.0	0.0	0.0	the same output for a much larger command
+rate-scale-off	ok	0.0138888880610466	0.0416666641831398	0.0138888880610466	0.0	0.0	0.0	0.0	0.0	bit 2 clear leaves the rates alone
+rate-scale-on	ok	0.00033875336521305144	0.001016260008327663	0.00033875336521305144	0.0	0.0	0.0	0.0	0.0	bit 2 set divides all three by (f344+0.1)*10
+rate-scale-other-bits	ok	0.0138888880610466	0.0416666641831398	0.0138888880610466	0.0	0.0	0.0	0.0	0.0	only bit 2 matters, not the whole word
+full-mantissas	ok	0.1330977976322174	-0.2669956386089325	0.7323586344718933	1.0	0.43444445729255676	0.0	0.0	0.5655555725097656	long binary expansions everywhere -- the fused operations only differ here

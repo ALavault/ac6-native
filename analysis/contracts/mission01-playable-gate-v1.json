@@ -592,6 +592,48 @@
             "claim": "include/ac6/retail_flight_step.h carries the derivation, records that r30 is r5 and not `this` so the position is not a field of the flight model, and keeps rate_scale and mid_bias as arguments because f26 and the two factors of f25*f24 were not read"
           }
         ]
+      },
+      "retail_flight_controls": {
+        "status": "passed",
+        "statement": "the native product reproduces the flight control-surface update 0x82302DB0 -- slot 30 of the vtable 0x8200F270, the first pure virtual the base-class step 0x82283898 calls -- two primary ramps rising at 10/3 per second and falling at half that, two secondary ramps gated on 0.99 that are assigned zero rather than decayed when the gate shuts, an interlock at 0x82302EF8 that zeroes both secondaries only when NEITHER primary is zero, and three self-centring axes with distinct rates, command handling and clamps",
+        "retail_addresses": [
+          "0x82302DB0",
+          "0x82283898",
+          "0x8200F270",
+          "0x82007B90",
+          "0x82007B8C",
+          "0x82302EF8"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1375-the-control-surfaces-bounded-before-they-were-read.md",
+            "sha256": "71133bd2ca514e9bde06196e9282d91a23bd457c5e822cd71c6f31ff54b6e708",
+            "size": 5801,
+            "claim": "0x82302DB0 bounded before it was read: fourteen constants resolved in one pass, zero calls and zero vector instructions counted across 216 instructions, and a capsule footprint whose eight changed words match the eight stfs offsets in the listing exactly"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_controls_tests.cpp",
+            "sha256": "7b0b8ab71408ebc661ad4cc967752c80746c5e711f70534b1ca9ffd2f3b10195",
+            "size": 9563,
+            "claim": "cases for the ramp floor and ceiling, the assigned-zero shut gate, the interlock in both directions, centring without crossing zero, at304's asymmetric gain and -0.9 limit, at308 using only the sign of its command, and bit 2 of the flag word in isolation; with four controls, two asserted to fire and two asserted not to"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-controls-microexec.tsv",
+            "sha256": "da39268e26ab771198653f9ebd19c9e411abd1fb8d590e16a3bcc30a93ea9b38",
+            "size": 2861,
+            "claim": "0x82302DB0 executed from its own entry over 23 cases, 184 float values compared bit for bit; it needs no mid-function entry, no stub and no step cap because it calls nothing and contains no vector instruction, and callee_entries is asserted zero"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_controls.h",
+            "sha256": "fcaa9e392ab47d492dada5f2ed3643bcb0986f2d20e4c6c68079b0b5a253f1ab",
+            "size": 5812,
+            "claim": "include/ac6/retail_flight_controls.h carries the derivation, records the measured read and write footprint, notes that five of the eight written fields are the ones the step 0x82283898 clears on reset, and states why the offsets keep their numbers instead of being given guessed names"
+          }
+        ]
       }
     }
   }
