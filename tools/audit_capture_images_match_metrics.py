@@ -92,7 +92,14 @@ def main() -> int:
                 print("  UNREADABLE METRICS  %s  %s" % (path, exc))
                 return 1
         if not declared:
-            print("  NO color_hash IN  %s" % directory)
+            # AND ITS IMAGES STILL COUNT. Bailing here without counting them was
+            # the hole that let a whole capture directory report `pass
+            # compared=0 unmatched=0` -- no metrics, no images counted, nothing
+            # to distinguish it from a directory that had been checked.
+            loose = len(glob.glob(os.path.join(directory, "*.png")))
+            unmatched += loose
+            print("  NO color_hash IN  %s  (%d image(s) unchecked)"
+                  % (directory, loose))
             continue
 
         for png in sorted(glob.glob(os.path.join(directory, "*.png"))):
@@ -116,10 +123,26 @@ def main() -> int:
                 print("      metrics %-24s declares %d" % (key, declared[key]))
                 print("      the image itself hashes to %d" % actual)
 
-    status = "pass" if mismatched == 0 else "fail"
+    # A DIRECTORY WHERE NOTHING WAS COMPARED IS NOT A PASS, and until cycle 1417
+    # it reported as one. `p2-native-hud` returned `pass compared=0 unmatched=4`
+    # and the new bare-flight capture returned `pass compared=0 unmatched=0` --
+    # four unchecked images and a whole unchecked capture, both indistinguishable
+    # in the exit code from a directory this tool had verified.
+    #
+    # That is the same shape as the harness calibration of cycle 1414: a checker
+    # reporting success while checking nothing. The fix is the same in spirit --
+    # make the empty case visible -- and here it can be made to FAIL, because a
+    # capture with images and no metrics to check them against is exactly what
+    # this tool exists to refuse.
+    checked_nothing = compared == 0 and unmatched > 0
+    status = "fail" if (mismatched or checked_nothing) else "pass"
     print("capture_images_match_metrics=%s compared=%d mismatched=%d unmatched=%d"
           % (status, compared, mismatched, unmatched))
-    return 0 if mismatched == 0 else 1
+    if checked_nothing:
+        print("  NOTHING WAS COMPARED: %d image(s) carry no metrics to check them"
+              " against, so this directory is unverified rather than correct"
+              % unmatched)
+    return 0 if status == "pass" else 1
 
 
 if __name__ == "__main__":

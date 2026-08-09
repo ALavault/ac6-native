@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstdint>
 #include <string>
 
 namespace {
@@ -180,6 +181,16 @@ int main(int argc, char** argv) {
     FlightSessionState state{};
     state.position.at68 = 1000.0F;
     int written = 0;
+    char metrics_path[512];
+    std::snprintf(metrics_path, sizeof(metrics_path), "%s/metrics.json", base.c_str());
+    std::FILE* metrics = std::fopen(metrics_path, "w");
+    if (metrics != nullptr) {
+      std::fprintf(metrics, "{\n  \"schema\": \"ac6.demo-flight-capture.v1\",\n");
+      std::fprintf(metrics, "  \"note\": \"color_hash is the renderer's FNV-1a "
+                            "over 0xFFRRGGBB, written from the framebuffer so "
+                            "that checking a PNG against it checks the pnmtopng "
+                            "conversion too\",\n  \"frames\": {\n");
+    }
     for (int frame = 0; frame < 1800; ++frame) {
       FlightStick s{};
       // THE INCREMENT IS THE CONTROL, NOT THE TARGET. Retail's setters compare
@@ -204,8 +215,30 @@ int main(int argc, char** argv) {
         char path[512];
         std::snprintf(path, sizeof(path), "%s/flight-%05d.ppm", base.c_str(), written);
         image.write_ppm(path);
+        if (metrics != nullptr) {
+          // FNV-1a 64 over 0xFFRRGGBB per pixel -- the renderer's own hash, the
+          // one tools/audit_capture_images_match_metrics.py reproduces from the
+          // PNG. Emitting it HERE and not from the image is the point: the check
+          // then covers the hand-run pnmtopng conversion, which is the step
+          // nothing else guards and the one cycle 1273 was caught by.
+          std::uint64_t digest = 1469598103934665603ULL;
+          for (std::size_t i = 0; i + 2 < image.rgb.size(); i += 3) {
+            const std::uint32_t colour = 0xFF000000u |
+                (static_cast<std::uint32_t>(image.rgb[i]) << 16) |
+                (static_cast<std::uint32_t>(image.rgb[i + 1]) << 8) |
+                static_cast<std::uint32_t>(image.rgb[i + 2]);
+            digest = (digest ^ colour) * 1099511628211ULL;
+          }
+          std::fprintf(metrics, "%s    \"flight-%05d\": {\"color_hash\": %llu}",
+                       written == 0 ? "" : ",\n", written,
+                       static_cast<unsigned long long>(digest));
+        }
         ++written;
       }
+    }
+    if (metrics != nullptr) {
+      std::fprintf(metrics, "\n  }\n}\n");
+      std::fclose(metrics);
     }
     std::printf("frames=%d  final position  at64=%.3f at68=%.3f at72=%.3f\n",
                 written, state.position.at64, state.position.at68,

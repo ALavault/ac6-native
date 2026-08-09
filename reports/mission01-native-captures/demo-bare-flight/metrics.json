@@ -1,0 +1,27 @@
+{
+  "schema": "ac6.demo-flight-capture.v1",
+  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, written from the framebuffer so that checking a PNG against it checks the pnmtopng conversion too -- only the seven committed stills are listed; the other 893 frames of the video are not kept",
+  "frames": {
+    "flight-00000": {
+      "color_hash": 18001351351891760113
+    },
+    "flight-00150": {
+      "color_hash": 7302193182715990019
+    },
+    "flight-00300": {
+      "color_hash": 8276626517896450051
+    },
+    "flight-00450": {
+      "color_hash": 8359655610561096081
+    },
+    "flight-00600": {
+      "color_hash": 5236169093031899981
+    },
+    "flight-00750": {
+      "color_hash": 11936600045380918431
+    },
+    "flight-00899": {
+      "color_hash": 14801972417888654335
+    }
+  }
+}
