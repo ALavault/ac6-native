@@ -233,9 +233,16 @@ public class MicroExecuteFunction extends GhidraScript {
         if (instruction == null) {
             throw new IllegalStateException("no instruction at " + Long.toHexString(address));
         }
-        if (!"vpermwi128".equals(name)) {
+        if (!"vpermwi128".equals(name) && !"vpermwi128-lowfirst".equals(name)) {
             throw new IllegalArgumentException("no override implemented for " + name);
         }
+        // Two readings of one immediate, because the documentation carries both
+        // (cycle 1305). `vpermwi128` follows Xenia's CODE -- the high bit-pair
+        // selects element 0. `vpermwi128-lowfirst` follows Xenia's COMMENT read
+        // in PowerPC bit numbering, and the SLEIGH module -- the low pair does.
+        // Neither is asserted here; the spec chooses and the snapshot records
+        // which fired.
+        boolean lowFirst = name.endsWith("-lowfirst");
         // vpermwi128 vD, vB, uimm : VD.x = VB[uimm bits 6-7], VD.y = bits 4-5,
         // VD.z = bits 2-3, VD.w = bits 0-1. The HIGH pair selects the FIRST
         // word, which is the half the module has backwards.
@@ -252,7 +259,8 @@ public class MicroExecuteFunction extends GhidraScript {
         String input = "0".repeat(32 - bits.length()) + bits;
         StringBuilder output = new StringBuilder(32);
         for (int lane = 0; lane < 4; ++lane) {
-            int selector = (immediate >> (2 * (3 - lane))) & 3;
+            int selector = lowFirst ? (immediate >> (2 * lane)) & 3
+                                    : (immediate >> (2 * (3 - lane))) & 3;
             output.append(input, selector * 8, selector * 8 + 8);
         }
         emulator.writeRegister(destination.getName(), new BigInteger(output.toString(), 16));

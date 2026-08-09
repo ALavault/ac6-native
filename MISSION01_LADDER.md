@@ -691,6 +691,42 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    honest route just got longer, which makes a hand-written table more
    tempting, not less.
 
+## The micro-execution instrument, and its four defects
+
+Cycles 1294–1306 built the harness the gameplay work depends on and spent most
+of that time repairing it. `scripts/MicroExecuteFunction.java` executes retail
+instructions on a described synthetic state — named regions, integer and float
+arguments, register capture, batch mode — and is measured against the 138
+committed `*Bin` cases at **138/138 semantic payloads and 138/138 digests**
+(`tools/audit_microexec_harness_calibration.py`).
+
+`tools/audit_vmx128_behaviours.py` validates the vector layer one retail
+instruction at a time against hand-computed answers: **23 cases, 12 mnemonics**.
+
+Four things were wrong, three of them found only by using it:
+
+| # | what | status |
+|---|---|---|
+| 1 | the canonical Ghidra project does not decode VMX128 at all | use `ghidra-projects-xenon/ac6-xenon` |
+| 2 | 70 p-code operations have no emulation semantics | four supplied, `vmx on`, recorded as `asserted_semantics` |
+| 3 | `vs32+n` and `vrn` are **disjoint storage** where the hardware has one register | bridged, `alias on`, and it is what made the composite depend on its input at all |
+| 4 | `lvx128` omits the `(rA|0)` rule | measured; does not fire on the paths tested so far |
+
+**Unresolved, and it needs an oracle.** `vpermwi128`'s lane order is disputed:
+Xenia's code says the high bit-pair selects element 0, Xenia's own comment on the
+same function says the low pair does (PowerPC bit numbering), and the SLEIGH
+module follows the comment. Neither reading makes `0x822A1E80` return the
+identity at zero angles, and a census of **545 sites finds neither `0xE4` nor
+`0x1B`** — no identity swizzle is ever emitted, so the population cannot settle
+it. The harness runs either reading (`override ADDR vpermwi128` /
+`vpermwi128-lowfirst`) and asserts neither.
+
+**What the instrument is good for today.** Scalar and integer routines, and
+vector routines that stay inside one register family — `0x8209CB70` is
+reproduced exactly, `sin` and `cos` to the bit at seven angles including the
+argument reduction. What it cannot yet certify is a vector routine whose result
+depends on `vpermwi128`.
+
 ## Evidence discipline
 
 Operational companion: `INSTRUMENT_DISCIPLINE.md`, written from eight
