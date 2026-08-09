@@ -93,7 +93,7 @@ looked at and the metrics are what get audited.
 
 | artifact | SHA-256 |
 |---|---|
-| `retail-session-hud.json` | `a57948002fd76c6b78c29670d17c18e00645cfee97343633f710cd92f6b34566` |
+| `retail-session-hud.json` | `83caa48e0dcfb9b1aee61a382e167f2c7799fc00234e06dfb279a0befc45adab` |
 | `hud-live.png` | `353424ead56c6b986d3000acac2471251a277fb29535733e7b6b8d8a203b2373` |
 | `hud-debrief.png` | `8a31275644c0c4d3c7503fbd317b49ef67eea025782f84eb137050d52b3f2c2d` |
 | `world-overview.png` | `755b558f67fb42ff1777e542da90d707b1f156a52959d1c022fc6836adff2ee4` |

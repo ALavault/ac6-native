@@ -318,6 +318,9 @@ void write_capture_bundle(const std::filesystem::path& directory,
   REQUIRE(plotted <= distinct_positions);
   REQUIRE(plotted <= session->world().placed.size());
   REQUIRE(overview.readback().color_hash != live_target.readback().color_hash);
+  // The overview must actually contain something: an all-black frame would
+  // satisfy the inequality above and still be a picture of nothing.
+  REQUIRE(overview.readback().color_coverage > 0);
 
   REQUIRE(live_target.write_ppm(directory / "hud-live.ppm"));
   REQUIRE(debrief_target.write_ppm(directory / "hud-debrief.ppm"));
@@ -342,7 +345,18 @@ void write_capture_bundle(const std::filesystem::path& directory,
           << "  \"overview_camera_is_chosen_not_derived\": true,\n"
           << "  \"overview_bounds_x\": [" << min_x << ", " << max_x << "],\n"
           << "  \"overview_bounds_y\": [" << min_y << ", " << max_y << "],\n"
-          << "  \"overview_bounds_z\": [" << min_z << ", " << max_z << "],\n";
+          << "  \"overview_bounds_z\": [" << min_z << ", " << max_z << "],\n"
+          // The overview's own colour hash, recorded and not merely compared.
+          // Line 320 already asserts it differs from the live frame's; until
+          // cycle 1274 it was never written down, so world-overview.png was the
+          // one committed image nothing could be checked against. It is nested
+          // rather than flat so that the key path ends in "color_hash", which is
+          // what tools/audit_capture_images_match_metrics.py matches on.
+          << "  \"overview\": {\n"
+          << "    \"markers\": " << plotted << ",\n"
+          << "    \"color_coverage\": " << overview.readback().color_coverage << ",\n"
+          << "    \"color_hash\": " << overview.readback().color_hash << "\n"
+          << "  },\n";
   write_snapshot_json(metrics, "live", live, live_target.readback());
   metrics << ",\n";
   write_snapshot_json(metrics, "debrief", done, debrief_target.readback());

@@ -17,6 +17,11 @@
   "overview_bounds_x": [-50168, 16288],
   "overview_bounds_y": [0, 9000],
   "overview_bounds_z": [-16928, 2096],
+  "overview": {
+    "markers": 57,
+    "color_coverage": 230400,
+    "color_hash": 486889923018061463
+  },
   "live": {
     "tick": 900,
     "active_units": 230,
