@@ -103,6 +103,16 @@ def decode(word, addr):
     d = _simm(word)
     rc = word & 1
 
+    if op == 62:                                # std / stdu, and their update forms
+        ds = (word & 0xFFFC)
+        if ds & 0x8000:
+            ds -= 0x10000
+        return "%-8s r%d,%s(r%d)" % ("stdu" if word & 1 else "std", rd, _hexs(ds), ra)
+    if op == 58:                                # ld / ldu
+        ds = (word & 0xFFFC)
+        if ds & 0x8000:
+            ds -= 0x10000
+        return "%-8s r%d,%s(r%d)" % ("ldu" if word & 1 else "ld", rd, _hexs(ds), ra)
     if op in DFORM:
         return "%-8s r%d,%s(r%d)" % (DFORM[op], rd, _hexs(d), ra) if op < 48 \
             else "%-8s f%d,%s(r%d)" % (DFORM[op], rd, _hexs(d), ra)
