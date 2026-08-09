@@ -1,0 +1,43 @@
+# Which camera candidates are reachable by this instrument, counted BEFORE any
+# of them was read.
+#
+# Cycle 1395 ended on a warning: 0x82300C20 has 422 vector instructions, and if
+# the camera depends on the same ESTIMATE instructions that put the flight
+# model's position out of reach (cycle 1383), a faithful camera is out of reach
+# too. That is one count, and this is it.
+#
+# function	insns	vector	estimates	verdict
+0x82300C20	1985	422	14	BLOCKED -- vrefp x6, vrsqrtefp x8
+0x8209B398	400	14	0	reachable
+0x820938B8	50	14	0	reachable -- the CGaCamera constructor, 17 callers
+0x82212BD8	152	0	0	reachable
+0x82212868	33	0	0	reachable -- a constructor, not camera work
+0x82096FF0	136	0	0	reachable
+0x821455C8	111	0	0	reachable
+0x8219B948	136	0	0	reachable
+0x8219BB68	137	0	0	reachable
+0x821BDB18	104	0	0	reachable
+0x821BEF30	97	0	0	reachable
+#
+# TEN OF ELEVEN ARE REACHABLE, and the one that is not is the one that matters.
+#
+# 0x82300C20's ONLY caller is 0x82234040 -- the entity-level per-frame function
+# that cycle 1371's scan showed reads entity+4912, the live flight model
+# pointer, more often than any other function in the image. So 0x82300C20 is the
+# camera work of the frame that flies the aeroplane: the gameplay camera.
+#
+# And it is BLOCKED for exactly the reason the position integrator is. vrefp and
+# vrsqrtefp are specified only to a relative accuracy bound; their exact bits are
+# a property of the console. Cycle 1383 refused to model them rather than
+# approximate them, and that refusal stands here.
+#
+# THE DECISION THIS RECORDS. A bit-exact gameplay camera is not reachable by
+# micro-execution. A demo therefore uses a camera of its own, captioned as such,
+# exactly as the flight session already states that it produces attitude and not
+# position. The alternative -- modelling two estimate instructions and calling
+# the result retail's camera -- would put plausible numbers where measured ones
+# belong, in the one part of the product a viewer looks at directly.
+#
+# WHAT IS STILL WORTH PORTING. The other ten are reachable, and 0x8209B398 (400
+# instructions, 14 vector, none of them estimates) and 0x82212BD8 (152, scalar)
+# are the two largest. Neither has been read; both are bounded.
