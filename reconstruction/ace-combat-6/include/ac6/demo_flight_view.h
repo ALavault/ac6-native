@@ -1,0 +1,73 @@
+#pragma once
+
+// A picture of the contracted flight model. NOT A PORT OF ANYTHING.
+//
+// EVERYTHING IN THIS FILE IS MINE, and that is the point of putting it in a file
+// whose name starts with `demo_`. The campaign's rule is that no gameplay rule
+// is invented; this file invents a camera and a scene *on purpose*, so that the
+// rules that are not invented can be seen moving.
+//
+// WHAT IS RETAIL'S, MEASURED:
+//   the attitude. Every rule that turns a stick position into the basis this
+//   draws comes from retail_flight_session, which composes twenty-five
+//   contracted behaviours, each verified bit-for-bit against the retail
+//   instructions by micro-execution.
+//
+// WHAT IS MINE, INVENTED:
+//   - the camera. Cycle 1396 established that retail's gameplay camera,
+//     0x82300C20, uses vrefp and vrsqrtefp -- estimate instructions whose exact
+//     bits belong to the console -- so a faithful one is not reachable by this
+//     instrument and the campaign refuses to approximate it.
+//   - the scene: a ground grid and a horizon. There is no retail geometry here
+//     and none is claimed; loading it is the JV decision, still open.
+//   - WHICH BASIS ROW IS WHICH AXIS. Nothing in the campaign has established
+//     that row 0 is right, row 1 is up and row 2 is forward. This file assumes
+//     it to have something to draw. If the assignment is wrong the picture is
+//     wrong in a way the flight model is not, and that is a property of this
+//     file alone.
+//   - the field of view, the grid spacing, the altitude, the colours.
+//
+// So: a viewer sees retail's flight model through my camera, looking at my
+// scene. Any caption that does not say all three is dishonest, and the
+// `caption()` below exists so that it is not left to a caption to remember.
+
+#include "ac6/retail_transform.h"
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace ac6::demo {
+
+struct Image {
+  int width{};
+  int height{};
+  std::vector<std::uint8_t> rgb;   // width * height * 3
+
+  void clear(std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept;
+  void plot(int x, int y, std::uint8_t r, std::uint8_t g,
+            std::uint8_t b) noexcept;
+  void line(int x0, int y0, int x1, int y1, std::uint8_t r, std::uint8_t g,
+            std::uint8_t b) noexcept;
+  bool write_ppm(const char* path) const;
+};
+
+// Mine. The names say what they are.
+struct DemoCamera {
+  float invented_fov_y{1.0F};        // radians
+  float invented_altitude{120.0F};   // metres above the invented grid
+  float invented_grid_spacing{200.0F};
+  int invented_grid_lines{21};
+};
+
+// Draws the grid and horizon as seen from an aircraft whose attitude is
+// `basis`. The basis is retail's; everything else here is not.
+void draw_flight_view(Image& image, const ac6::retail::RetailBasis& basis,
+                      const DemoCamera& camera) noexcept;
+
+// The sentence that must accompany any picture this file produces. It is a
+// function rather than a comment so that a caller cannot forget it and a test
+// can assert it is present.
+std::string caption() noexcept;
+
+}  // namespace ac6::demo
