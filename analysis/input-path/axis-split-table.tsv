@@ -1,0 +1,7 @@
+# Axis split table, 0x8201250C, four entries of stride 0xC.
+# Read by 0x8234D110: each word is a halfword index, byte offset (index + 0x14) * 2.
+# columns: entry src_word pos_word neg_word src_off pos_off neg_off axis
+0	10	3	2	0x3C	0x2E	0x2C	LX
+1	11	0	1	0x3E	0x28	0x2A	LY
+2	12	7	6	0x40	0x36	0x34	RX
+3	13	4	5	0x42	0x30	0x32	RY
