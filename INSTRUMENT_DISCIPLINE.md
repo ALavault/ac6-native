@@ -966,6 +966,17 @@ named vtable's base is the boundary, and `analysis/class-map.tsv` has 811 of
 them. Reading pointers until they stop looking like pointers measures the
 section.
 
+**And that boundary is an UPPER bound, not the extent** — cycle 1338 corrected
+cycle 1337 on exactly this. `ACE6::CAce6UnitOtherPlayer` looked 31 slots wide
+because the next named vtable is 31 words away; eight of those words are the
+ASCII `"GeneralDataProcess"`, `"(isi)"`, `"fogParam"` and two pointers, a script
+binding table parked between two vtables. The class has 23 slots like its
+siblings.
+
+So the map says where the next vtable starts and nothing about where this one
+stops. A class that comes out **wider than the one it derives from** is the tell,
+and one byte dump settles it.
+
 Two cheap confirmations when the map is silent: the COL sits at `vtable[-1]` and
 its type descriptor carries the mangled name, so a suspected boundary can be
 checked by decoding the word before it; and a destructor re-installs its own
