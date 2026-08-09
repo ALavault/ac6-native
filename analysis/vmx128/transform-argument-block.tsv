@@ -1,0 +1,55 @@
+# The second argument of 0x822A23D8, laid out. Cycle 1331.
+#
+# HOW THE POPULATION WAS BOUND, before anything was scanned. 0x822A23D8 does
+# `mr r30,r4`, so the structure is PASSED IN and is not a member. It has exactly
+# three direct callers -- 0x82296FAC, 0x822A2B38, 0x822A2BD4 -- and
+# tools/FindDataPointersTo finds exactly one data reference to 0x822A23D8, a
+# .pdata row at 0x82082E00, which the tool labels as such. So it is NOT a vtable
+# slot, and the three call sites are the whole population.
+#
+# 0x822A2B50 (38 instructions) then answers the question outright: it BUILDS the
+# block on its own stack at r1+80 and calls. Every field is a store with a
+# visible source, so this table is read rather than inferred from uses.
+#
+# It follows that the block is a per-call ARGUMENT BLOCK, not a persistent
+# object. That is also why it has no vtable, and it is the reason this file does
+# not call it a state, a pose or a unit.
+#
+# columns: offset width value_at_0x822A2B50 note
+0x00	4	0.0	the constant at 0x8200082C
+0x04	4	[caller_r4 + 0x00]	lane 0 of the vector that reaches transform+0x40
+0x08	4	[caller_r4 + 0x04]	lane 1
+0x0C	4	[caller_r4 + 0x08]	lane 2
+0x10	4	0.0	read by 0x822A23D8 at index 104 (lfs f1,16(r30))
+0x14	4	0.0	read at index 118 (lfs f0,20(r30))
+0x18	4	the caller's f1	THE ANGLE applied SECOND, about basis row 0
+0x1C	4	the caller's f2	THE ANGLE applied FIRST, about basis row 1
+0x20	4	0.0	-
+0x24	2	0x0000	-
+0x26	2	0xFFFF	stored as li r10,-1 then sth
+0x28	1	0x00	-
+0x29	1	0xFF	-
+0x2A	1	0x00	SELECTOR: 0x822A23D8 does lbz r11,42(r30) and branches four ways on it
+0x2B	1	0x00	-
+0x2C	1	0xFF	read at index 24 (lbz r4,44(r30))
+0x2D	1	0xFF	read at index 22 (lbz r5,45(r30))
+0x2E	1	0x00	-
+#
+# 0x822A23D8's OWN float argument is separate from the block: 0x822A2B50 does
+# `fmr f1,f3`, so the third angle comes in as f1 of 0x822A23D8 while the first
+# two arrive inside the block at +0x18 and +0x1C.
+#
+# THE OTHER SMALL CALLER, 0x822A2B08, does not build a block -- it walks one out
+# of a table:
+#
+#     r9  = [r3 + 0xE0]
+#     r11 = [[r9 + 4] + r4 * 8]
+#     r11 = [[r11 + 4] + 4]
+#     r4  = [r11 + 0]
+#     f1  = 0.0
+#
+# so there the block is owned by something reached through r3+0xE0 and indexed by
+# the caller's r4. WHAT THAT CONTAINER IS HAS NOT BEEN ESTABLISHED.
+#
+# NOT ESTABLISHED: what +0x24..+0x2E mean; what the four branches on +0x2A do;
+# what 0x82296E40 (205 instructions, the third caller) passes.
