@@ -34,7 +34,9 @@ int main(int argc, char** argv) {
   if (!directory) return 1;
 
   std::size_t descriptors = 0, decoded = 0, restarts = 0;
-  std::size_t positions = 0;
+  std::size_t positions = 0, normals = 0, texcoords = 0, off_unit = 0, off_uv = 0;
+  std::size_t zero_normals = 0;
+  double worst_unit = 0.0;
   std::set<std::uint32_t> strides;
   for (std::uint32_t id = 0; id < directory->count(); ++id) {
     const auto entry = directory->entry(id);
@@ -78,6 +80,29 @@ int main(int argc, char** argv) {
           check(std::isfinite(mesh->bounds.min_x) && std::isfinite(mesh->bounds.max_x),
                 "and finite");
           check(mesh->bounds.min_x <= mesh->bounds.max_x, "and ordered");
+          // THE CONTROL ON THE COMPONENT TYPES. Cycle 1433 read the element
+          // tables for the offsets but measured the types: normals are four
+          // float16 and the first three must be a UNIT vector. Bytes read as
+          // the wrong type do not come out unit-length, so this fails loudly
+          // for any mis-reading of the layout.
+          for (const ac6::retail::NdxrPosition& n : mesh->normals) {
+            ++normals;
+            const double length = std::sqrt(double(n.x)*n.x + double(n.y)*n.y +
+                                            double(n.z)*n.z);
+            const double error = std::fabs(length - 1.0);
+            if (error > worst_unit) worst_unit = error;
+            if (length < 1e-6) { ++zero_normals; continue; }
+            if (error > 0.01) { ++off_unit;
+              if (off_unit <= 3)
+                std::printf("  off-unit normal: %.6f %.6f %.6f  |n| = %.6f\n",
+                            n.x, n.y, n.z, length); }
+          }
+          // And texture coordinates land in [0, 1]; a few models tile, so this
+          // counts rather than asserts, and the count is printed.
+          for (const ac6::retail::NdxrTexcoord& t : mesh->texcoords) {
+            ++texcoords;
+            if (t.u < -0.01f || t.u > 1.01f || t.v < -0.01f || t.v > 1.01f) ++off_uv;
+          }
           for (const std::uint16_t value : mesh->indices) {
             if (value == ac6::retail::kStripRestart) { ++restarts; continue; }
             check(value < descriptor->vertex_count,
@@ -90,6 +115,16 @@ int main(int argc, char** argv) {
 
   std::printf("descriptors %zu, decoded %zu, vertices %zu, restarts %zu, strides %zu\n",
               descriptors, decoded, positions, restarts, strides.size());
+  std::printf("normals %zu (zero: %zu, non-unit non-zero: %zu), "
+              "texcoords %zu (outside [0,1]: %zu)\n",
+              normals, zero_normals, off_unit, texcoords, off_uv);
+  check(normals == positions, "every vertex has a normal at these strides");
+  // EVERY NORMAL IS UNIT OR EXACTLY ZERO. The zeros are a property of the data
+  // -- degenerate vertices -- and are counted rather than tolerated silently.
+  // Anything neither unit nor zero would mean the float16 reading is wrong.
+  check(off_unit == 0, "every normal is unit length or exactly zero");
+  check(zero_normals * 200 < normals, "and the zeros are a small minority");
+  check(texcoords == positions, "and a texture coordinate");
   // EVERY descriptor must decode. A silent refusal would show as decoded <
   // descriptors, and the whole addressing was arbitrated on all 1227 of them.
   check(descriptors > 0, "the package yielded descriptors");

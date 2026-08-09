@@ -39,14 +39,29 @@ only after three arbitrations failed for rejecting it as an out-of-range index.
   this capture's.
 - the colours, the resolution, the field of view.
 
+## Lit by its own normals, since cycle 1433
+
+The segments are shaded by the vertex normal — four `float16` at `+12`, read
+after the element tables at `0x8201140C` and `0x820111D8` gave the offsets.
+**178,973 of the package's 179,322 normals are unit length and the other 349 are
+exactly zero; none is anything else**, which is the control on the reading.
+
+The light direction and the ramp are chosen. This is not shading a surface:
+there is no depth buffer and no fill, so a far edge draws over a near one.
+
 ## What is absent, and it is most of each vertex
 
-The strides are 28 and 32 bytes; the decoder reads the first twelve as three
-big-endian floats and **discards the rest**. Texture coordinates, normals and
-anything else live behind `T8`'s and `T18`'s element pointers, which are not
-read. That is why this is a **wireframe and not a surface**: there is no
-material, no texture and no winding rule here, and drawing filled triangles
-would imply all three.
+**Superseded at cycle 1433.** The element tables were read, so positions,
+normals and texture coordinates are all decoded: the stride-28 layout is
+POSITION at 0, NORMAL at 12, TEXCOORD0 at 20.
+
+What remains undecoded is the four-byte `COLOR` of the stride-32 format — eight
+descriptors of 1227 carry it — and the Xenos type words themselves, whose
+meaning was measured from the data rather than decoded from the code.
+
+It is still a **wireframe and not a surface**, but for a different reason: there
+is no depth buffer, no triangle fill and no texture sampling here, and no
+winding rule has been read. Filled triangles would imply all of those.
 
 The wireframe claims exactly what cycle 1426 established — the positions and the
 connectivity — and nothing further.

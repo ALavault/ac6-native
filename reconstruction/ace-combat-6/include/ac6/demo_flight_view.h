@@ -114,6 +114,18 @@ void draw_mesh_at(Image& image, const ac6::retail::NdxrMesh& mesh,
                   float ox, float oy, float oz,
                   std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept;
 
+// The same wireframe, with each segment lit by the vertex normal.
+//
+// The normals are retail's -- four float16 per vertex at +12, unit-length for
+// 178,973 of the package's 179,322 and exactly zero for the other 349. The
+// LIGHT DIRECTION is chosen, and so is the ramp from a dot product to a colour.
+// This is not shading a surface: there is no depth buffer and no fill, so a
+// far edge draws over a near one. It shows that the normals are real, which a
+// flat wireframe cannot.
+void draw_mesh_lit(Image& image, const ac6::retail::NdxrMesh& mesh,
+                   const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
+                   float distance) noexcept;
+
 // The sentence that must accompany any picture this file produces. It is a
 // function rather than a comment so that a caller cannot forget it and a test
 // can assert it is present.

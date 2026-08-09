@@ -49,12 +49,33 @@
 // The pair is what carries the claim: 1227/1227 by cross-match, and a binder
 // that makes two distinct typed resources from exactly those two fields.
 //
-// WHAT THIS DOES NOT DECODE, and it is most of each vertex. The strides are 28
-// and 32 bytes; this reads the first twelve as three big-endian floats and
-// discards the rest. The element layouts live behind T8's and T18's
-// `const elems*` pointers, which are not read -- so texture coordinates,
-// normals and anything else are NOT here. Cycle 1425 declared this cost when
-// the entry point's shape was settled; this is where it is paid.
+// THE REST OF THE VERTEX, read at cycle 1433. T8's and T18's records are
+// `{u16 stride; u16 count; const elems*}` and the elements are the Xenon
+// `D3DVERTEXELEMENT9`, twelve bytes each with a DWORD type:
+//
+//   T8[6]  @ 0x8201140C   offset  0  usage 0  POSITION
+//                         offset 12  usage 3  NORMAL
+//   T18[1] @ 0x820111D8   offset  0  usage 5  TEXCOORD0        -> stride 28
+//   T18[3] @ 0x820111FC   offset  0  usage 10 COLOR
+//                         offset  4  usage 5  TEXCOORD0        -> stride 32
+//
+// The T18 elements are appended after T8's stride, so for stride 28 the layout
+// is POSITION at 0, NORMAL at 12, TEXCOORD0 at 20.
+//
+// THE COMPONENT TYPES ARE MEASURED, NOT DECODED FROM THE TYPE WORD. The Xenos
+// format codes (0x002A23B9, 0x001A2360, 0x002C23A5) are not decoded here; what
+// each field is was settled by reading real vertices:
+//
+//   NORMAL    four float16 -- the first three are a UNIT vector to three
+//             decimals over the whole package, and the fourth is 1.0
+//   TEXCOORD  two big-endian float32, and they land in [0, 1]
+//
+// A wrong reading fails both tests loudly: bytes read as the wrong type do not
+// come out unit-length. The unit-length property is asserted as a control in
+// the tests rather than trusted.
+//
+// COLOR at stride 32 is four bytes and is NOT decoded -- eight descriptors of
+// 1227 carry it and nothing here needs it yet.
 //
 // The three floats being positions is itself evidence rather than assumption:
 // they are finite and inside a model-sized box for 1,227 of 1,227 descriptors,
@@ -86,11 +107,25 @@ struct NdxrBounds {
   bool valid{};
 };
 
+struct NdxrTexcoord {
+  float u{};
+  float v{};
+  bool operator==(const NdxrTexcoord&) const = default;
+};
+
 struct NdxrMesh {
   std::vector<NdxrPosition> positions;
+  // Parallel to `positions`. Empty when the stride has no room for them.
+  std::vector<NdxrPosition> normals;
+  std::vector<NdxrTexcoord> texcoords;
   std::vector<std::uint16_t> indices;  // 0xFFFF preserved
   NdxrBounds bounds{};
 };
+
+// Where each field sits, for the two strides Mission 01's package uses.
+inline constexpr std::size_t kNormalOffset = 12;
+inline constexpr std::size_t kTexcoordOffset28 = 20;
+inline constexpr std::size_t kTexcoordOffset32 = 24;
 
 // The value that breaks a strip rather than addressing a vertex.
 inline constexpr std::uint16_t kStripRestart = 0xFFFF;

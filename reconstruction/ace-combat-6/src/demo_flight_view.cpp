@@ -217,6 +217,49 @@ void draw_mesh_at(Image& image, const ac6::retail::NdxrMesh& mesh,
   }
 }
 
+void draw_mesh_lit(Image& image, const ac6::retail::NdxrMesh& mesh,
+                   const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
+                   float distance) noexcept {
+  image.clear(14, 16, 24);
+  if (mesh.positions.empty() || mesh.indices.size() < 2 || !mesh.bounds.valid) return;
+  if (mesh.normals.size() != mesh.positions.size()) {
+    draw_mesh_wireframe(image, mesh, basis, camera, distance);
+    return;
+  }
+  const float cx = (mesh.bounds.min_x + mesh.bounds.max_x) * 0.5F;
+  const float cy = (mesh.bounds.min_y + mesh.bounds.max_y) * 0.5F;
+  const float cz = (mesh.bounds.min_z + mesh.bounds.max_z) * 0.5F;
+  const auto at = [&](std::uint16_t index) {
+    const ac6::retail::NdxrPosition& p = mesh.positions[index];
+    const Vec3 turned = to_camera(basis, Vec3{p.x - cx, p.y - cy, p.z - cz});
+    return Vec3{turned.x, turned.y, turned.z + distance};
+  };
+  // CHOSEN: a light over the viewer's shoulder, and a ramp that keeps the
+  // unlit side visible rather than black.
+  const float lx = 0.4F, ly = 0.7F, lz = -0.6F;
+  const auto shade = [&](std::uint16_t index) {
+    const ac6::retail::NdxrPosition& n = mesh.normals[index];
+    const Vec3 t = to_camera(basis, Vec3{n.x, n.y, n.z});
+    const float d = t.x * lx + t.y * ly + t.z * lz;
+    return 0.35F + 0.65F * (d * 0.5F + 0.5F);
+  };
+  const ac6::retail::RetailBasis fixed = ac6::retail::identity_basis();
+  std::uint16_t previous = ac6::retail::kStripRestart;
+  for (const std::uint16_t index : mesh.indices) {
+    if (index == ac6::retail::kStripRestart) { previous = index; continue; }
+    if (previous != ac6::retail::kStripRestart) {
+      const float k = (shade(previous) + shade(index)) * 0.5F;
+      const auto channel = [&](float base) {
+        const float v = base * k;
+        return static_cast<std::uint8_t>(v < 0.0F ? 0.0F : (v > 255.0F ? 255.0F : v));
+      };
+      draw_segment(image, fixed, camera, at(previous), at(index),
+                   channel(210.0F), channel(226.0F), channel(255.0F));
+    }
+    previous = index;
+  }
+}
+
 std::string caption() noexcept {
   // Updated at cycle 1416. The aircraft MOVES now: cycle 1415 established that
   // the integrator's rates are a unit direction and its scale is a speed, and

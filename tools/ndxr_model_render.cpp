@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
     const std::uint16_t base = (std::uint16_t)all.positions.size();
     if (all.positions.size() + p.mesh.positions.size() > 60000) break;
     for (const auto& v : p.mesh.positions) all.positions.push_back(v);
+    for (const auto& n : p.mesh.normals) all.normals.push_back(n);
     all.indices.push_back(ac6::retail::kStripRestart);
     for (std::uint16_t i2 : p.mesh.indices)
       all.indices.push_back(i2 == ac6::retail::kStripRestart ? i2 : (std::uint16_t)(base + i2));
@@ -114,7 +115,7 @@ int main(int argc, char** argv) {
     const float turn = 6.2831853F * float(frame) / float(frames);
     ac6::retail::rotate_820A9B30(basis, turn);
     ac6::retail::rotate_820A99F8(basis, 0.45F);
-    ac6::demo::draw_mesh_wireframe(image, all, basis, ac6::demo::DemoCamera{}, radius * 1.6F);
+    ac6::demo::draw_mesh_lit(image, all, basis, ac6::demo::DemoCamera{}, radius * 1.6F);
     char path[512];
     std::snprintf(path, sizeof(path), "%s/model-%05d.ppm", argv[2], frame);
     image.write_ppm(path);

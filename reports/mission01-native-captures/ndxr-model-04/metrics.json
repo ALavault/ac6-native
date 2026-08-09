@@ -9,19 +9,19 @@
     4.5592,
     14.5161
   ],
-  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, written from the framebuffer so that checking a PNG against it checks the pnmtopng conversion too -- lod1 only, wrecks dropped (cycle 1430); only the four committed stills are listed",
+  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, written from the framebuffer so that checking a PNG against it checks the pnmtopng conversion too -- lit by the vertex normals (cycle 1433)",
   "frames": {
     "model-00000": {
-      "color_hash": 9086210745674292730
+      "color_hash": 4937334634439812789
     },
     "model-00030": {
-      "color_hash": 11740046704674719331
+      "color_hash": 11691498821352419548
     },
     "model-00060": {
-      "color_hash": 15172784706387792006
+      "color_hash": 12403133823581595183
     },
     "model-00090": {
-      "color_hash": 222245585019475932
+      "color_hash": 624348814649188876
     }
   }
 }

@@ -1274,8 +1274,8 @@
           {
             "kind": "native-test",
             "path": "reconstruction/ace-combat-6/tests/retail_ndxr_geometry_tests.cpp",
-            "sha256": "746454ae89bc0aff06477a872c41722e3aa9e5ff95014d122274b35a4e1b4165",
-            "size": 4829,
+            "sha256": "5786372b2cf4a2b5ab22f375070399b8fc45486659104906ae54476a33dd1b54",
+            "size": 6981,
             "claim": "every descriptor of the real package decoded, with per-descriptor assertions that the vertex and index counts match the descriptor, the bounds are finite and ordered, and every non-restart index addresses that descriptor's own vertices; plus a CONTROL that the 0xFFFF restart actually occurs in the data, without which the sentinel branch would be untested"
           },
           {
@@ -1288,8 +1288,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_ndxr_geometry.h",
-            "sha256": "c9fa5321d132192be082201ea57c984b76bad2b69c5ca731bed4aaf7c97c6a48",
-            "size": 4759,
+            "sha256": "0724ebe9042dfc2e2b35a92f853e96b19416c1d890328f2cce5cf6ef5e7c04ca",
+            "size": 6219,
             "claim": "include/ac6/retail_ndxr_geometry.h carries the derivation, gives the addressing with the scores that chose it, records that 0xFFFF is a restart and why three range tests failed before it was known, separates what the binder derives from what the D3D type words only suggest, and states that most of each vertex -- the 8 or 12 bytes past the position -- is discarded"
           }
         ]
