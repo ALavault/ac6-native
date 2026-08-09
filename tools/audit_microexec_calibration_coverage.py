@@ -49,6 +49,7 @@ usage: audit_microexec_calibration_coverage.py [--specs DIR]
 exit 0 while the ratchet holds, 1 when it slips.
 """
 
+import ast
 import os
 import re
 import sys
@@ -64,8 +65,8 @@ DIRECTIVE_RE = re.compile(
 # THE RATCHET. Measured at cycle 1458 against the 138-case corpus, and at 1459
 # against the live suites.
 COVERED = {"case", "function", "gpr", "region", "sp", "stub"}
-EXERCISED = {"alias", "capture", "fpr", "override", "steps", "vec"}
-NOWHERE = {"dump", "hint", "vmx"}
+EXERCISED = {"alias", "capture", "dump", "fpr", "override", "steps", "vec"}
+NOWHERE = {"hint", "vmx"}
 SUITES = "tools"
 
 
@@ -86,17 +87,36 @@ def spec_directives(root):
 
 
 def suite_directives(supported):
-    """Directives the live audit_*_microexec.py suites emit into their specs."""
+    """Directives the live suites emit, read out of their STRING LITERALS.
+
+    Two earlier versions of this got it wrong in opposite directions and both
+    published numbers. The first matched only a directive following an opening
+    quote, so it never saw a template spec -- and reported `dump` as exercised
+    nowhere when five suites already used it. The second also matched any
+    line-leading token, which catches `dump = next(...)`, ordinary Python.
+
+    Parsing the file and looking only inside string constants cannot do either.
+    A directive is spec text or it is nothing.
+    """
     used = set()
     for name in sorted(os.listdir(SUITES)):
         if not (name.startswith("audit_") and name.endswith(".py")):
             continue
         if "microexec" not in name and "vmx128" not in name:
             continue
-        text = open(os.path.join(SUITES, name), errors="replace").read()
-        for d in supported:
-            if re.search(r"""(["\'])\s*%s[ \n]""" % d, text):
-                used.add(d)
+        if name == os.path.basename(__file__):
+            continue        # this file's own docstring names every directive
+        try:
+            tree = ast.parse(open(os.path.join(SUITES, name), errors="replace").read())
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            if not (isinstance(node, ast.Constant) and isinstance(node.value, str)):
+                continue
+            for line in node.value.splitlines():
+                token = line.strip().split(" ")[0] if line.strip() else ""
+                if token in supported:
+                    used.add(token)
     return used
 
 

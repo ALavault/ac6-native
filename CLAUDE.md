@@ -133,8 +133,8 @@ rots:
 
 The middle line used to read `<analyzeHeadless ...>`, and cycle 1457 spent the
 first part of a cycle reconstructing it from a report of cycle 70. It takes about
-four minutes. **Last actually run: cycle 1457 — `cases=138 equal=138
-failures=0`.** Before that, 1414.
+four minutes. **Last actually run: cycle 1460 — `cases=138 equal=138
+failures=0`**, after that cycle changed the harness. Before that, 1457 and 1414.
 
 It reported **0 of 138 for 87 commits** while this file cited 138/138. Nothing
 was wrong with the harness: the `dump` directive added a `region_dumps` key the
@@ -143,14 +143,16 @@ semantic difference. Cycle 1414 fixed the comparator; cycle 1413 only found it
 because it was checking whether its own change had broken something.
 
 **And 138/138 is narrower than it sounds.** The 138 specs use six directives —
-`case function gpr region sp stub` — of the fifteen the harness implements. Six
-more — `alias capture fpr override steps vec` — are exercised by the live
-`audit_*_microexec.py` suites, which is weaker: those compare the port against
-the harness, so a harness regression moves both sides and cancels, except where
-the expectation is independent of it. **Three are exercised nowhere at all:
-`dump`, `hint`, `vmx`** — and `dump` is the directive whose `region_dumps` key
-broke the comparator for 87 commits. This measures all three tiers and ratchets
-them so the gap cannot widen unnoticed:
+`case function gpr region sp stub` — of the fifteen the harness implements. The
+other nine are exercised only by the live `audit_*_microexec.py` suites, which is
+weaker: those compare the port against the harness, so a harness regression moves
+both sides and cancels, except where the expectation is independent of it.
+
+Cycles 1458 and 1459 both published a count of directives "exercised nowhere" —
+nine, then three — and **both were artefacts of the detector**, which matched a
+directive only where it followed an opening quote and so never saw a
+template-style spec. The real figure is **zero**; the detector now reads string
+literals off the AST. Believe the tiers, not either of those cycles:
 
     python3 tools/audit_microexec_calibration_coverage.py --specs W/specs
 

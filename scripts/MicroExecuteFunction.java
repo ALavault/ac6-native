@@ -638,6 +638,13 @@ public class MicroExecuteFunction extends GhidraScript {
         aliasCopies = 0;
         assertedFired.clear();
         overrides.clear();
+        // Cycle 1460. This line was missing, and every other piece of per-case
+        // state above it was not. In --batch mode the list therefore grew: case
+        // one emitted two dumps, case two four, case three six -- each case
+        // re-emitting every earlier case's region names against its own memory.
+        // Nothing caught it because `dump` had no caller anywhere in the
+        // repository until the tool that found this was written.
+        dumpRegions.clear();
     }
 
     // ---------------------------------------------------------------- helpers
