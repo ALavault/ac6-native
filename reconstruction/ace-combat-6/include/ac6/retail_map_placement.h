@@ -82,21 +82,32 @@
 // selector. `tag & 0xFFFF` is extracted separately at `0x821023B4` and used for
 // something else.
 //
-// AND NEITHER FIELD IS A MODEL ID ON ITS OWN. Cycle 1453 found that the pair
-// `(tag & 0xFFFF, selector)` is **unique across all 4,226 accepted instances** --
-// 173 distinct low values and 160 distinct selectors, 27,680 possible pairs, and
-// zero collisions where chance over 4,226 draws predicts about 323. Together
-// they are an instance key; separately each is a small repeated index.
+// THE NINE-BIT FIELD IS THE MODEL INDEX, settled at cycle 1454 by the loader
+// rather than by looking. `0x820FC340`..`0x820FC42C` is a 256-iteration loop:
 //
-// So which one names a model is NOT established, and the caution in cycle 1452
-// was only half right. The nine-bit field indexes `this->table[0x1B63 + i]` --
-// retail's own runtime table, built by a loader in whatever order that loader
-// chose. Nothing maps that order to `%03u_NDXR.ndxr`, so drawing with either
-// field is a guess. Cycle 1453 drew both: the nine-bit choice tiles identical
-// silos inland and marches identical warehouses out over the bay, and
-// `tag & 0xFFFF` gives a varied coastal city. That is a picture, not a
-// derivation, and the renders from cycles 1449 onward are recorded as
-// unjustified in their model choice rather than blessed by looking right.
+//   0x820FC334  r19 = 0x8205BE24 = "parts/%d"
+//   0x820FC34C  sprintf(buf, "parts/%d", i)
+//   0x820FC36C  load(buf under the map path)  -> this[0x40B0 + i*4]
+//   0x820FC3A4  r20 = 0x8205BFD0 = "%s.nud"
+//   0x820FC3C8  load("parts/%d.nud")          -> this[0x6D8C + i*4]
+//   0x820FC404  ++this[0x74] when that load succeeded
+//   0x820FC428  while i < 0x100
+//
+// `this+0x6D8C` is exactly the table vtable slot `+0x5C` (`0x82100600`) indexes,
+// so the nine-bit field is the `parts/%d` number. Three independent facts agree:
+//
+//   - the loader keys both tables by that index;
+//   - the container holds **170** `NDXR` entries, ordinals 0..169, and 86
+//     `unknown.bin` after them -- and the nine-bit field runs **8..169**,
+//     entirely inside the models;
+//   - `tag & 0xFFFF` reaches **170, 171 and 172**, which are not models.
+//
+// So `tag & 0xFFFF` is NOT a model id, and cycle 1453's picture -- which leaned
+// the other way because the nine-bit render "looked wrong" -- was decided by
+// eye against three things that can be read. The pair of the two fields is still
+// unique per instance (4,226 instances, 27,680 possible pairs, zero collisions
+// where chance predicts about 323), so the low sixteen bits carry something; what
+// they carry is unread.
 //
 // `part_id` -- `tag & 0xFFFF` -- is claimed only as
 // an identifier in 0..172 against 178 parts; which part each id names is not
@@ -133,9 +144,9 @@ struct MapInstance {
   float world_x = 0.0F;
   float world_y = 0.0F;
   float world_z = 0.0F;
-  std::uint16_t part_id = 0;      // tag & 0xFFFF -- NOT shown to be the model
+  std::uint16_t part_id = 0;      // tag & 0xFFFF -- NOT the model; see above
   std::uint16_t tag_high = 0;     // the whole high half, kept for the statistic
-  std::uint16_t selector = 0;     // (tag >> 16) & 0x1FF -- 0x82102364
+  std::uint16_t selector = 0;     // (tag >> 16) & 0x1FF -- the parts/%d index
   std::uint8_t quadrant = 0;      // (tag >> 30) & 3
   std::uint8_t kind = 0;          // (tag >> 27) & 7; retail accepts 0 and 7
   bool accepted = false;          // 0x82102344..0x82102350

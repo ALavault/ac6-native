@@ -156,6 +156,33 @@ int main(int argc, char** argv) {
   check(mid_nonzero == 78,
         "bits 25..26 are zero on every accepted record and set on 78 skipped ones");
 
+  // THE NINE-BIT FIELD IS THE MODEL INDEX, and this is the falsifiable form:
+  // every selector must name a model file, and tag & 0xFFFF must not.
+  std::size_t sel_ok = 0, low_missing = 0;
+  for (std::uint16_t v : [&] {
+         std::set<std::uint16_t> u;
+         for (const MapInstance& q : placement->instances())
+           if (q.accepted) u.insert(q.selector);
+         return u;
+       }()) {
+    char n[64];
+    std::snprintf(n, sizeof(n), "014_FHM/%03u_NDXR.ndxr", v);
+    if (std::filesystem::exists(dir / n)) ++sel_ok;
+  }
+  for (std::uint16_t v : [&] {
+         std::set<std::uint16_t> u;
+         for (const MapInstance& q : placement->instances())
+           if (q.accepted) u.insert(q.part_id);
+         return u;
+       }()) {
+    char n[64];
+    std::snprintf(n, sizeof(n), "014_FHM/%03u_NDXR.ndxr", v);
+    if (!std::filesystem::exists(dir / n)) ++low_missing;
+  }
+  check(sel_ok == 160, "every one of the 160 selectors names a model file");
+  check(low_missing == 3,
+        "while three of the 173 low-sixteen values name no model at all");
+
   // NEITHER FIELD IS A MODEL ID ON ITS OWN: the pair is unique per instance.
   // Asserted against the collision count chance would predict, because "all
   // distinct" means nothing until you know how surprising that is.

@@ -49,10 +49,11 @@ int main(int argc, char** argv) {
   const float pitch = std::strtof(argv[7], nullptr) * 3.14159265F / 180.0F;
   const float range = argc > 8 ? std::strtof(argv[8], nullptr) : 12000.0F;
   const float spin = argc > 9 ? std::strtof(argv[9], nullptr) : 0.0F;
-  // WHICH FIELD NAMES THE MODEL is not established (cycle 1452). 0 selects with
-  // `tag & 0xFFFF`, which is what cycles 1449-1451 drew; 1 selects with the
-  // nine-bit field retail hands to the resource table at vtable slot +0x5C.
-  const int selector_field = argc > 10 ? std::atoi(argv[10]) : 0;
+  // The nine-bit field is the `parts/%d` index (cycle 1454, from the loader at
+  // 0x820FC340 and the container's 170 NDXR entries against a selector range of
+  // 8..169). It is the DEFAULT now; pass 0 to reproduce the wrong renders of
+  // cycles 1449-1453, which selected with `tag & 0xFFFF`.
+  const int selector_field = argc > 10 ? std::atoi(argv[10]) : 1;
 
   const auto grid = Read(dir + "/004_00_01_02_03.bin");
   const auto patches = Read(dir + "/005_Bl_02_b8.bin");
