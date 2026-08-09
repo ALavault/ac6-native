@@ -1,0 +1,227 @@
+{
+  "schema": "ac6.retail-input-consumer-microexec.v1",
+  "statement": "0x821CAA50 executed to return on a built NU::Input service under three controller plans -- one axis per controller, one value per controller, and one controller per driver-pointer slot -- so a record names its source by slot, by magnitude and by axis",
+  "finding": "all four records are filled from driver-pointer slot 0, under all three plans, at an identical 4740 steps: the other four slots are not read on this path. r20 is the index and it is zero (li r20,0x0 at 0x821CAA88, and none of the three callers writes or reads it).",
+  "record_base": "0x826EDB98",
+  "record_stride": "0xA0",
+  "base_correction": "cycle 1316 put record 0 at 0x826EDBA0; the run writes at 0x826EDB98 and only that base puts float32(30000/32767) in the +0x50 slot cycle 1318 derived for LY",
+  "consumer": "0x821CAA50",
+  "stubbed": [
+    "0x823D6A7C",
+    "0x823D6A8C",
+    "0x823D6A9C",
+    "0x821F3BB0"
+  ],
+  "hint_noops": [
+    "dataCacheBlockTouch",
+    "dataCacheBlockTouchForStore"
+  ],
+  "plans": {
+    "distinct-axes": [
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 30000,
+        "sign": 1
+      },
+      {
+        "axis": "LX",
+        "half": "LX-",
+        "value": 25000,
+        "sign": -1
+      },
+      {
+        "axis": "RX",
+        "half": "RX+",
+        "value": 20000,
+        "sign": 1
+      },
+      {
+        "axis": "RY",
+        "half": "RY-",
+        "value": 15000,
+        "sign": -1
+      }
+    ],
+    "same-axis": [
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 30000,
+        "sign": 1
+      },
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 25000,
+        "sign": 1
+      },
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 20000,
+        "sign": 1
+      },
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 15000,
+        "sign": 1
+      }
+    ],
+    "five-slots": [
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 30000,
+        "sign": 1
+      },
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 25000,
+        "sign": 1
+      },
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 20000,
+        "sign": 1
+      },
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 15000,
+        "sign": 1
+      },
+      {
+        "axis": "LY",
+        "half": "LY+",
+        "value": 10000,
+        "sign": 1
+      }
+    ]
+  },
+  "records": [
+    {
+      "case": "distinct-axes",
+      "record": 0,
+      "base": "0x826EDB98",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "distinct-axes",
+      "record": 1,
+      "base": "0x826EDC38",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "distinct-axes",
+      "record": 2,
+      "base": "0x826EDCD8",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "distinct-axes",
+      "record": 3,
+      "base": "0x826EDD78",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "same-axis",
+      "record": 0,
+      "base": "0x826EDB98",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "same-axis",
+      "record": 1,
+      "base": "0x826EDC38",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "same-axis",
+      "record": 2,
+      "base": "0x826EDCD8",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "same-axis",
+      "record": 3,
+      "base": "0x826EDD78",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "five-slots",
+      "record": 0,
+      "base": "0x826EDB98",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "five-slots",
+      "record": 1,
+      "base": "0x826EDC38",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "five-slots",
+      "record": 2,
+      "base": "0x826EDCD8",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    },
+    {
+      "case": "five-slots",
+      "record": 3,
+      "base": "0x826EDD78",
+      "flag_byte_0x0b_bits_set": "0x20",
+      "LX": -0.0,
+      "LY": 0.915555,
+      "RX": -0.0,
+      "RY": -0.0
+    }
+  ]
+}

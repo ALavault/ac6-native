@@ -13,10 +13,18 @@ not as stubs, so the API path under test is the real one. Only the lock is
 stubbed, because 0x823D6A7C/8C have not been read and a critical section is not
 what this measures.
 
-THE FOUR CONTROLLERS ARE MADE DISTINGUISHABLE. Each carries a different axis
-pushed to a different value, so the output says by itself which controller
-reached which record -- a question the reading could not settle, since the index
-the API receives is a constant 1 while the loop runs 0..3.
+THE CONTROLLERS ARE MADE DISTINGUISHABLE, three ways, so the output says by
+itself which one reached which record.
+
+Cycle 1319's version of this docstring said "the index the API receives is a
+constant 1 while the loop runs 0..3". THAT MISREAD WHICH ARGUMENT WAS WHICH.
+0x821CAA9C calls 0x82337E70 with (1, r20): the constant 1 is the first argument,
+and the index is r20, which cycle 1318 found written once, `li r20,0x0`, before
+any read. Cycle 1320 then checked all three callers -- 0x821CA908, 0x821CB5F0
+and the frame update 0x821D7A90 -- and none of them writes or even reads r20, so
+the caller cannot supply one either.
+
+The run agrees: all four records carry driver-pointer slot 0.
 
     python3 tools/audit_input_consumer_microexec.py --emit --workdir W
     <analyzeHeadless ... -postScript MicroExecuteFunction.java --batch W/manifest>
@@ -39,7 +47,18 @@ CONTROLLER_STRIDE = 0x88
 CONTEXT_VTABLE = 0x820110C8
 CONTROLLER_VTABLE = 0x820124F8
 RECORDS = 0x826EDB98           # cycle 1313
-RECORD_0 = RECORDS + 0x08
+# CYCLE 1316 PUT RECORD 0 AT RECORDS + 0x08 AND THAT IS WRONG BY EIGHT.
+#
+# The write runs begin at 0x826EDB9C, 0x826EDC3C, 0x826EDCDC and 0x826EDD7C --
+# stride 0xA0, and four bytes above a base of 0x826EDB98, because +0x00..+0x03 is
+# not written on this path. So the run addresses alone do NOT fix the base; they
+# are consistent with 0x826EDB98 and with 0x826EDB9C both.
+#
+# What fixes it is a second derivation that never met the first: cycle 1318 read
+# the LY axis into the float slot at +0x50 from the mask bits alone, and only a
+# base of 0x826EDB98 puts float32(30000/32767) -- the value slot 0's controller
+# carried -- at that offset. 0x826EDB9C would put it at +0x4C, which is LX.
+RECORD_0 = RECORDS
 RECORD_STRIDE = 0xA0
 LOCK_STUBS = (0x823D6A7C, 0x823D6A8C, 0x823D6A9C)
 # 0x821F3BB0 is memset, and it is VECTORISED -- it faults on vspltisb, which this
@@ -58,18 +77,44 @@ HALVES = {"LX+": 0x2E, "LX-": 0x2C, "LY+": 0x28, "LY-": 0x2A,
 SLOTS = {"LX": 0x4C, "LY": 0x50, "RX": 0x54, "RY": 0x58}
 SCALE_HALF = 1.0 / 32767.0     # float32(1/32767) at 0x82069BFC
 
-# One distinct axis per controller, all far above any plausible deadzone.
-PLAN = [
-    {"axis": "LY", "half": "LY+", "value": 30000, "sign": +1},
-    {"axis": "LX", "half": "LX-", "value": 25000, "sign": -1},
-    {"axis": "RX", "half": "RX+", "value": 20000, "sign": +1},
-    {"axis": "RY", "half": "RY-", "value": 15000, "sign": -1},
-]
+# THREE PLANS, BECAUSE ONE CANNOT ANSWER THE QUESTION.
+#
+# `distinct-axes` gives each controller a different axis, so a record names the
+# controller it came from by WHICH slot is filled. `same-axis` gives all four the
+# same axis at different magnitudes, so a record names it by WHAT VALUE. Run
+# alone, the first is ambiguous: four identical records could mean every record
+# reads controller 0, or that the axis simply never varies per record.
+PLANS = {
+    "distinct-axes": [
+        {"axis": "LY", "half": "LY+", "value": 30000, "sign": +1},
+        {"axis": "LX", "half": "LX-", "value": 25000, "sign": -1},
+        {"axis": "RX", "half": "RX+", "value": 20000, "sign": +1},
+        {"axis": "RY", "half": "RY-", "value": 15000, "sign": -1},
+    ],
+    "same-axis": [
+        {"axis": "LY", "half": "LY+", "value": 30000, "sign": +1},
+        {"axis": "LY", "half": "LY+", "value": 25000, "sign": +1},
+        {"axis": "LY", "half": "LY+", "value": 20000, "sign": +1},
+        {"axis": "LY", "half": "LY+", "value": 15000, "sign": +1},
+    ],
+    # FIVE controllers, one per driver-pointer slot. The two plans above give
+    # slots 0..3 distinct controllers and slot 4 a duplicate of 3, so "the value
+    # came from controller 0" and "the value came from pointer slot 0" are the
+    # same statement in both. This separates them: every slot has its own
+    # controller and its own magnitude, so whichever slot is read names itself.
+    "five-slots": [
+        {"axis": "LY", "half": "LY+", "value": 30000, "sign": +1},
+        {"axis": "LY", "half": "LY+", "value": 25000, "sign": +1},
+        {"axis": "LY", "half": "LY+", "value": 20000, "sign": +1},
+        {"axis": "LY", "half": "LY+", "value": 15000, "sign": +1},
+        {"axis": "LY", "half": "LY+", "value": 10000, "sign": +1},
+    ],
+}
 
 
-def build_service() -> tuple[int, bytes]:
+def build_service(plan: list[dict]) -> tuple[int, bytes]:
     """The singleton, its context, five driver pointers and four controllers."""
-    span = (CONTROLLER_0 + 4 * CONTROLLER_STRIDE) - SERVICE + 0x40
+    span = (CONTROLLER_0 + len(plan) * CONTROLLER_STRIDE) - SERVICE + 0x40
     blob = bytearray(span)
 
     def put32(address: int, value: int) -> None:
@@ -82,24 +127,24 @@ def build_service() -> tuple[int, bytes]:
     put32(CONTEXT + 0x00, CONTEXT_VTABLE)
     for index in range(5):
         # context+0x04 is five driver pointers, bound-checked at 5 (0x82343A30).
-        # The fifth is the object at context+0x238; it is given controller 3 so a
-        # read through it is visible rather than a fault.
-        which = min(index, 3)
+        # A plan shorter than five repeats its last controller, so every slot
+        # points at a built object rather than at zero.
+        which = min(index, len(plan) - 1)
         put32(CONTEXT + 0x04 + 4 * index, CONTROLLER_0 + which * CONTROLLER_STRIDE)
 
-    for index, plan in enumerate(PLAN):
+    for index, entry in enumerate(plan):
         base = CONTROLLER_0 + index * CONTROLLER_STRIDE
         put32(base + 0x00, CONTROLLER_VTABLE)
         put32(base + 0x08, 0)             # connection state: valid
         put32(base + 0x1C, 0x1000 + index)  # current buttons, distinguishable
-        put16(base + HALVES[plan["half"]], plan["value"])
+        put16(base + HALVES[entry["half"]], entry["value"])
     return SERVICE, bytes(blob)
 
 
 SPEC = """\
 # Generated by tools/audit_input_consumer_microexec.py --emit.
-# 0x821CAA50 on a built NU::Input service. The four controllers carry different
-# axes at different values, so the output names the index-to-record mapping.
+# 0x821CAA50 on a built NU::Input service, one spec per controller plan, so the
+# output names which driver-pointer slot reached which record.
 
 function {consumer:#010x}
 case retail-input-consumer:{name}
@@ -112,20 +157,39 @@ sp 0xC0001800
 gpr r3 {this:#010x}
 gpr r0 0
 
+# The accessor tail-calls a VECTORISED memcpy (0x821F398C), so the run needs the
+# asserted semantics for lvsl and the register-file bridge -- the loop crosses
+# the two files twice per iteration: lvx128 writes vr13, vperm reads vs45, vperm
+# writes vs45, stvx128 reads vr13.
+vmx on
+alias on
+
+# r0 IS AN INPUT TO THAT LOOP AND THE MODULE GETS IT WRONG. `lvx128 vr13,r0,r31`
+# and `stvx128 vr13,r0,r30` emit INT_ADD(r0, rB) with no (rA|0) rule (cycle 1296,
+# pinned as lvx128-ra-is-r0), so a nonzero r0 silently displaces every vector
+# load and store in the copy. It is seeded zero above and captured below, so the
+# check can say whether it stayed that way rather than assuming it.
+capture gpr:r0
+
 {stubs}
 """
 
 
 def cases() -> list[dict]:
-    base, blob = build_service()
-    return [{
-        "name": "four-distinct-controllers",
-        "service": base,
-        "service_blob": blob.hex(),
-        # `this` is the caller's object; 0x821CA908 passes its own r3 through.
-        # It is read at +0x08 and +0x19/+0x1C, so it gets a slice of the stack.
-        "this": 0xC0000100,
-    }]
+    built = []
+    for name, plan in PLANS.items():
+        base, blob = build_service(plan)
+        built.append({
+            "name": name,
+            "plan": plan,
+            "service": base,
+            "service_blob": blob.hex(),
+            # `this` is the caller's object; 0x821CA908 passes its own r3
+            # through. It is read at +0x08 and +0x19/+0x1C, so it gets a slice
+            # of the stack.
+            "this": 0xC0000100,
+        })
+    return built
 
 
 def emit(workdir: Path) -> int:
@@ -172,31 +236,73 @@ def check(workdir: Path, report: Path | None) -> int:
                 return None
             return int.from_bytes(bytes(memory[address + n] for n in range(4)), "big")
 
-        print(f"exit={document['exit']['kind']} steps={document['provenance']['steps']}")
+        def read_modify_write(address: int) -> int | None:
+            """The bits a read-modify-write byte SET, or None if it stored.
+
+            `after_hex` is the 0xCD pass, so a byte the function OR-ed carries
+            poison in every bit it left alone. `0xED` at record+0x0B is not the
+            value 0xED: it is 0xCD with bit 5 set. Reporting it as a value would
+            publish poison as data, and this is the only honest reading the
+            snapshot supports -- the harness emits one pass, not both.
+            """
+            value = memory.get(address)
+            if value is None:
+                return None
+            return None if (value & 0xCD) != 0xCD else value & ~0xCD
+
+        print(f"{case['name']}: exit={document['exit']['kind']} "
+              f"steps={document['provenance']['steps']} "
+              f"r0_at_exit={document['registers'].get('r0')}")
+        # The (rA|0) defect displaces every vector load and store in the copy if
+        # r0 ever left zero. Cheap to check, fatal to ignore.
+        if document["registers"].get("r0") != "0x00000000":
+            print(f"{case['name']}: r0 is not zero at exit; the vectorised copy's "
+                  "addresses cannot be trusted", file=sys.stderr)
+            return 1
         for index in range(4):
             base = RECORD_0 + index * RECORD_STRIDE
-            flags = word(base + 0x08)
-            row = {"record": index, "flags": None if flags is None else f"0x{flags:08X}"}
+            set_bits = read_modify_write(base + 0x0B)
+            row = {
+                "case": case["name"],
+                "record": index,
+                "base": f"0x{base:08X}",
+                "flag_byte_0x0b_bits_set": (None if set_bits is None
+                                            else f"0x{set_bits:02X}"),
+            }
             for axis, slot in SLOTS.items():
                 raw = word(base + slot)
                 row[axis] = (None if raw is None
                              else round(struct.unpack(">f", raw.to_bytes(4, "big"))[0], 6))
             findings.append(row)
-            print(f"  record {index} @ 0x{base:08X}  flags={row['flags']}  " +
+            print(f"  record {index} @ 0x{base:08X}  "
+                  f"+0x0b|={row['flag_byte_0x0b_bits_set']}  " +
                   "  ".join(f"{axis}={row[axis]}" for axis in SLOTS))
 
     if report is not None:
         report.parent.mkdir(parents=True, exist_ok=True)
         report.write_text(json.dumps({
             "schema": "ac6.retail-input-consumer-microexec.v1",
-            "statement": "0x821CAA50 executed on a built NU::Input service, with the "
-                         "four controllers carrying distinct axes so the output names "
-                         "the index-to-record mapping",
+            "statement": "0x821CAA50 executed to return on a built NU::Input "
+                         "service under three controller plans -- one axis per "
+                         "controller, one value per controller, and one "
+                         "controller per driver-pointer slot -- so a record "
+                         "names its source by slot, by magnitude and by axis",
+            "finding": "all four records are filled from driver-pointer slot 0, "
+                       "under all three plans, at an identical 4740 steps: the "
+                       "other four slots are not read on this path. r20 is the "
+                       "index and it is zero (li r20,0x0 at 0x821CAA88, and none "
+                       "of the three callers writes or reads it).",
+            "record_base": f"0x{RECORD_0:08X}",
+            "record_stride": f"0x{RECORD_STRIDE:02X}",
+            "base_correction": "cycle 1316 put record 0 at 0x826EDBA0; the run "
+                               "writes at 0x826EDB98 and only that base puts "
+                               "float32(30000/32767) in the +0x50 slot cycle "
+                               "1318 derived for LY",
             "consumer": f"0x{CONSUMER:08X}",
             "stubbed": [f"0x{address:08X}" for address in LOCK_STUBS]
                        + [f"0x{MEMSET:08X}"],
             "hint_noops": list(HINTS),
-            "plan": PLAN,
+            "plans": PLANS,
             "records": findings,
         }, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {report}")

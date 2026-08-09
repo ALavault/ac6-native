@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| your fixture is **self-describing** — byte `k` holds `k`, field `n` holds `n` | *the fixture whose answer is its own input* — check what a null implementation (a copy of one operand, a no-op) would produce; if that also matches, the case proves nothing |
 
 ## The pattern
 
@@ -889,6 +890,50 @@ Build at least one fixture from somewhere else. In this case the check took one
 run: seed a register under the AltiVec name, read it under the VMX128 name, and
 see whether the value is there. It was not, and that single crossing was worth
 more than the sixteen that did not.
+
+## The twenty-eighth shape: the fixture whose answer is its own input
+
+Cycle 1320 added two cases for `vperm`, and built their fixture the obvious way:
+the 32-byte concatenation with every byte distinct and **byte `k` equal to `k`**.
+Distinct bytes are the right instinct — a misplaced lane shows as a value rather
+than as a coincidence — and the identity is what makes the expectation readable.
+
+It also makes it worthless. Under `cat[k] = k`, the expected output is
+
+```
+out[i] = cat[control[i]] = control[i]
+```
+
+**the control vector itself.** So a hypothetical implementation that merely
+copied its third operand to the destination would pass both cases, and so would
+one that permuted correctly, and the fixture cannot separate them.
+
+Both cases did match on the first run — and the behaviour under test **never
+fired**. Ghidra's own `PPCEmulateInstructionStateModifier` implements
+`vectorPermute` a layer below SLEIGH and wins over a registered callback, so the
+value came from somewhere else entirely. The suite's `matched but no behaviour
+fired` guard is the only thing that saw it; on the value alone, both cases were
+green and both were empty.
+
+This is not the twenty-seventh wearing a new face. That one is about a fixture
+inheriting the subject's *convention*. This one is about a fixture whose right
+answer is a **copy of one of its own inputs**, so the null hypothesis — the
+instruction moved an operand, or did nothing at all — survives the test.
+
+### The rule
+
+**Before trusting a green case, ask what a null implementation would produce.**
+A copy of operand 1, a copy of operand 3, the destination unchanged, all zeros.
+If any of those equals the expectation, the case has no power against it.
+
+Here the fix cost one line: scramble the concatenation, `byte k = (7k + 0x13) &
+0xFF`, distinct over the range and equal to `k` for no `k`. Then the expected
+output is a value no operand holds, and only a real permute produces it.
+
+Two of this file's other shapes are the same failure at a different scale. *An
+instrument calibrated on one specimen* is a fixture that agrees with itself;
+*fixtures that inherit the subject's convention* is a set of fixtures that agree
+with each other. This is one fixture that agrees with the null hypothesis.
 
 ## The audit this file owes itself
 

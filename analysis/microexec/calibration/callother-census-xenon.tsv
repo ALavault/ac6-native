@@ -1,7 +1,16 @@
 # CALLOTHER p-code operations emitted over 82000000..82400000, 868523 instructions.
 # Produced by scripts/Ac6CallOtherCensus.java. Read-only, no oracle.
-# A name here is an instruction the emulator will refuse unless the
-# harness registers a behaviour for it.
+# A name here is a p-code operation the SLEIGH module emits without a body.
+#
+# THAT IS NOT THE SAME AS "the emulator will refuse it", which is what this
+# header said until cycle 1320 and is false for at least one row. `vectorPermute`
+# (161 sites) is implemented by ghidra.program.emulation.
+# PPCEmulateInstructionStateModifier, a layer below SLEIGH and outside this
+# census's reach, and it wins over a registered callback. Measured: 0x821F399C
+# returns the correct ISA permute with no behaviour registered at all.
+#
+# So this file censuses the LANGUAGE, not the emulator, and the only way to know
+# which rows the emulator already covers is to run one and look.
 # columns: pcodeop count first_site mnemonic
 vectorMergeHighWord	4228	820998e8	vmrghw
 vectorMergeLowWord	1542	820998f4	vmrglw

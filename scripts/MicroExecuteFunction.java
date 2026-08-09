@@ -125,7 +125,7 @@ public class MicroExecuteFunction extends GhidraScript {
     //
     // The Xenon SLEIGH module decodes VMX128 and gives part of it no executable
     // semantics, emitting a CALLOTHER the emulator refuses (cycle 1294: 70
-    // distinct operations, 15,945 sites). These supply four of them.
+    // distinct operations, 15,945 sites). These supply five of them.
     //
     // THIS IS A WEAKER KIND OF EVIDENCE AND THE SNAPSHOT SAYS SO. Everything
     // else the harness produces is retail instructions executing; this is my
@@ -142,6 +142,7 @@ public class MicroExecuteFunction extends GhidraScript {
     //   vectorMergeLowWord(vA:16, vB:16) -> vD:16
     //   loadVectorLeftIndexed128(rA:8, rB:8) -> vD:16
     //   vectorRotateLeftImmediateMaskInsert128(vD:16, vB:16, imm:1, z:1) -> vD:16
+    //   loadVectorForShiftLeft(rA:8, rB:8) -> vD:16
     //
     // Cross-references for the semantics themselves: the Cell BE SIMD PEM
     // (v2.07c) for lvlx, which is where the lvlx/lvrx family is documented at
@@ -404,6 +405,47 @@ public class MicroExecuteFunction extends GhidraScript {
         };
     }
 
+    /**
+     * Load Vector for Shift Left: sh = EA & 0xF, and the result is the byte
+     * sequence sh, sh+1, ... sh+15. It reads NO memory -- it builds the control
+     * vector `vperm` needs to gather one unaligned load out of two aligned ones,
+     * which is the shape of the vectorised memcpy at 0x821F398C.
+     */
+    private BreakCallBack loadVectorForShiftLeft() {
+        return new BreakCallBack() {
+            @Override
+            public boolean pcodeCallback(PcodeOpRaw op) {
+                MemoryState memory = emulate.getMemoryState();
+                long address = (baseRegisterValue(memory, op.getInput(1))
+                    + memory.getValue(op.getInput(2))) & 0xffffffffL;
+                int shift = (int) (address & 0xF);
+                byte[] out = new byte[16];
+                for (int index = 0; index < 16; ++index) {
+                    out[index] = (byte) (shift + index);
+                }
+                writeChunk(memory, op.getOutput(), out);
+                countFired("loadVectorForShiftLeft");
+                return true;
+            }
+        };
+    }
+
+    // NO `vectorPermute` BEHAVIOUR IS SUPPLIED HERE, AND ONE WAS WRITTEN FIRST.
+    //
+    // `vperm` emits CALLOTHER<vectorPermute> and appears in the CALLOTHER census
+    // beside the four above, so cycle 1320 implemented it. It never fired. The
+    // emulator already implements it, from a layer neither SLEIGH nor this
+    // harness: `ghidra.program.emulation.PPCEmulateInstructionStateModifier`
+    // registers a `vectorPermuteOpBehavior` for exactly this one op, and that
+    // registration wins over `registerCallOtherCallback`.
+    //
+    // Measured, not deduced: running 0x821F399C with `vmx` OFF -- no callback of
+    // ours registered at all -- still returns the correct ISA permute.
+    //
+    // So the model was deleted rather than left in place. An asserted behaviour
+    // that cannot fire is worse than none: the snapshot would carry it in
+    // `asserted_semantics_enabled` while the value came from somewhere else.
+
     private ghidra.program.model.address.AddressSpace defaultSpace() {
         return currentProgram.getAddressFactory().getDefaultAddressSpace();
     }
@@ -417,6 +459,8 @@ public class MicroExecuteFunction extends GhidraScript {
             loadVectorLeftIndexed());
         emulator.registerCallOtherCallback("vectorRotateLeftImmediateMaskInsert128",
             rotateLeftImmediateMaskInsert());
+        emulator.registerCallOtherCallback("loadVectorForShiftLeft",
+            loadVectorForShiftLeft());
     }
 
     /**

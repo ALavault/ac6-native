@@ -363,6 +363,139 @@ for _site, _imm in ((0x820A9AB8, 0xEC), (0x820A9ABC, 0xCC),
     })
 
 
+# lvsl and vperm, the vectorised memcpy's pair. 0x821F3978 is `lvsl v0,r0,r31`
+# and 0x821F399C is `vperm v13,v13,v12,v0` -- the two the input consumer's
+# differential stopped on at cycle 1319.
+#
+# The vperm fixture needs every byte across BOTH operands distinct, so a
+# misplaced lane shows as a value rather than as a coincidence.
+#
+# THE OBVIOUS FIXTURE IS SELF-CONFIRMING AND THIS CYCLE WROTE IT FIRST. Splitting
+# the 32-byte FIXTURE in half gives byte k == k, so the expected output is
+# `out[i] = cat[control[i]] = control[i]` -- literally the control vector. Both
+# cases matched on the first run while the behaviour never fired: something else
+# was putting the control vector in the destination, and a fixture whose right
+# answer is one of its own inputs cannot tell that apart from a permute. Only the
+# `matched but no behaviour fired` guard saw it.
+#
+# So the concatenation is scrambled: byte k = (7k + 0x13) & 0xFF, distinct over
+# k < 32 because 7 is odd, and equal to k for no k at all.
+def _scramble(index: int) -> int:
+    return (7 * index + 0x13) & 0xFF
+
+
+VPERM_A = "".join(f"{_scramble(k):02x}" for k in range(16))
+VPERM_B = "".join(f"{_scramble(k):02x}" for k in range(16, 32))
+
+
+def _control(selectors: list[int]) -> str:
+    return "".join(f"{value & 0xFF:02x}" for value in selectors)
+
+
+def _vperm_expect(selectors: list[int]) -> str:
+    return "".join(f"{_scramble(value & 0x1F):02x}" for value in selectors)
+
+
+# The realistic control: what lvsl produces for sh = 5, which gathers an
+# unaligned 16 bytes out of two aligned loads. It is what the memcpy runs.
+_SHIFT5 = [5 + i for i in range(16)]
+# The adversarial control: every other byte of the concatenation, so the gather
+# straddles both operands in a scattered order rather than a contiguous one.
+_ODD = [2 * i + 1 for i in range(16)]
+
+CASES += [
+    {
+        # lvsl reads no memory: the address only supplies sh = EA & 0xF. rA is
+        # r0 here, so the ISA reads it as the literal zero and EA = r31.
+        "name": "lvsl+5",
+        "function": 0x821F3978,
+        "gpr": {"r31": FIXTURE_BASE + 5, "r0": 0},
+        "capture": "vs32",
+        "expect": _control(_SHIFT5),
+    },
+    {
+        # THE (rA|0) PROBE, for my own behaviour this time. The module passes r0
+        # verbatim -- CALLOTHER<loadVectorForShiftLeft>(r0:8, r31:8) -- so the
+        # rule is applied inside the behaviour, and seeding r0 nonzero is the
+        # only thing that tests it. A behaviour that added r0 would give sh = 5
+        # + 0x10 & 0xF = 5 here by coincidence, so r0 is 0x13, not 0x10.
+        "name": "lvsl-ra-is-r0",
+        "function": 0x821F3978,
+        "gpr": {"r31": FIXTURE_BASE + 5, "r0": 0x13},
+        "capture": "vs32",
+        "expect": _control(_SHIFT5),
+    },
+    {
+        # vperm with the shift control. D == A at this site, so this is also the
+        # aliasing test: an implementation that wrote lane by lane while still
+        # reading vA would clobber itself.
+        #
+        # `module: True` -- AND THAT IS A CORRECTION THIS CYCLE MADE TO ITSELF.
+        # vperm emits CALLOTHER<vectorPermute> and sits in the CALLOTHER census,
+        # so a behaviour was written for it. It never fired: Ghidra's own
+        # PPCEmulateInstructionStateModifier registers a vectorPermuteOpBehavior
+        # for this one op, and it wins. Measured by running the site with `vmx`
+        # off entirely -- the permute still comes out right. The behaviour was
+        # deleted; these two cases test the emulator's implementation, which is
+        # the one that will actually run.
+        "name": "vperm-shift5",
+        "function": 0x821F399C,
+        "vec": {"vs45": VPERM_A, "vs44": VPERM_B, "vs32": _control(_SHIFT5)},
+        "capture": "vs45",
+        "expect": _vperm_expect(_SHIFT5),
+        "module": True,
+    },
+    {
+        "name": "vperm-scattered",
+        "function": 0x821F399C,
+        "vec": {"vs45": VPERM_A, "vs44": VPERM_B, "vs32": _control(_ODD)},
+        "capture": "vs45",
+        "expect": _vperm_expect(_ODD),
+        "module": True,
+    },
+]
+
+
+# THE REGISTER-FILE BRIDGE, which until now had no control of its own.
+#
+# Cycle 1301 measured the two vector files disjoint and cycle 1301's `alias on`
+# was written to bridge them -- but no committed case ever emitted `alias on`,
+# so the bridge was used in composites and never isolated. Cycle 1317 then named
+# "the harness setup" as one of two remaining explanations for 0x822A1E80, and
+# the bridge IS harness setup. An uncontrolled instrument under an open hunt is
+# the shape this campaign keeps paying for.
+#
+# Two cases, one per direction, each the exact counterpart of a pinned defect:
+# with the bridge off the alias reads zero, with it on the value is there.
+CASES += [
+    {
+        # vr -> vs. 0x821F398C is `lvx128 vr13,r0,r31`; v13 is vs45 and the two
+        # are DIFFERENT STORAGE (register:0x100d0 against register:0x42d0,
+        # neither a parent of the other -- measured this cycle from the language
+        # itself, not inferred from behaviour).
+        "name": "bridge-vr-to-vs",
+        "function": 0x821F398C,
+        "gpr": {"r31": FIXTURE_BASE, "r0": 0},
+        "alias": True,
+        "capture": "vs45",
+        "expect": FIXTURE[:32],
+        "module": True,
+    },
+    {
+        # vs -> vr, the same site as the pinned `register-file-alias` defect
+        # above, with the bridge on. That case and this one are one experiment
+        # run twice: the only difference is `alias on`.
+        "name": "bridge-vs-to-vr",
+        "function": 0x8209CC44,
+        "vec": {"vs45": VB},
+        "alias": True,
+        "capture": "vr5",
+        "expect": VB_W[2] * 4,
+        "module": True,
+    },
+]
+
+
 # vrlimi128 again, with the OTHER mask/rotate pair in the image. Nine sites: six
 # are 0x4/0x3, which case 3 covers, and three are 0x3/0x2 -- including
 # 0x820A9BC4, which builds the rotation row that cycle 1304 localised the
@@ -413,6 +546,8 @@ def emit(workdir: Path) -> int:
         if "override" in case:
             address, what = case["override"]
             lines.append(f"override {address:#010x} {what}")
+        if case.get("alias"):
+            lines.append("alias on")
         if "capture" in case:
             lines.append(f"capture vec:{case['capture']}")
         spec = workdir / "specs" / f"{case['name']}.spec"
