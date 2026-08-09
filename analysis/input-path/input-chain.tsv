@@ -39,3 +39,7 @@
 0x823F6DB8	float source	a pointer; virtual slot +0x1C returns the frame's float
 0x82211DF8	float consumer	called on context+0x2458C/+0x256F0/+0x26854/+0x279B8 (stride 0x1164) and this+0x20
 0x826E4EB4	game context global	already named by the ladder: mode = *([0x826E4EB4] + 0x78)
+0x821CAA50	the consumer	polls four pads into a 0x100 stack buffer at r1+0x140; writes only +0x8C and +0x90 of each record
+0x82069DF0	scale f30	float32(1/16383), the reciprocal of 0x4000-1
+0x82069BFC	scale f31	float32(1/32767), the reciprocal of 0x8000-1 and the exact range of the axis halves
+0x820542BC	constant f29	1.0; its neighbour 0x820542B8 is the 0.0 the sincos path stores

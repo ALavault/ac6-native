@@ -1,0 +1,9 @@
+# The axis-to-float conversion of 0x821CAA50, derived cycle 1315.
+# 821cb244 subi r9,r9,0x4000   bias
+# 821cb24c cmpwi cr6,r7,0x800  deadzone; at or below it the lane is not written
+# 821cb288 fmuls f0,f0,f30     scale
+# columns: name value note
+bias	0x4000	subtracted before the threshold test
+deadzone	0x800	2048 of 32767, about 6.25 percent; below it nothing is stored
+scale_biased	0x82069DF0	float32(1/16383) = 1/(0x4000-1)
+scale_half	0x82069BFC	float32(1/32767) = 1/(0x8000-1), the range split_axis produces
