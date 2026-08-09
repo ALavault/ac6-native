@@ -30,7 +30,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_flight_controls.cpp
   src/retail_flight_orientation.cpp
   src/retail_flight_step_driver.cpp
-  src/retail_live_flight_ramps.cpp)
+  src/retail_live_flight_ramps.cpp
+  src/retail_live_flight_axes.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -230,6 +231,11 @@ add_test(NAME ac6-retail-input-record COMMAND ac6-retail-input-record-tests
 add_executable(ac6-retail-input-binding-tests tests/retail_input_binding_tests.cpp)
 target_link_libraries(ac6-retail-input-binding-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-input-binding COMMAND ac6-retail-input-binding-tests)
+
+# A3.2: the LIVE model's axis update, the rest of slot 30.
+add_executable(ac6-retail-live-flight-axes-tests tests/retail_live_flight_axes_tests.cpp)
+target_link_libraries(ac6-retail-live-flight-axes-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-live-flight-axes COMMAND ac6-retail-live-flight-axes-tests)
 
 # A3.2: the LIVE model's ramp update, slot 30 of 0x8200F310.
 add_executable(ac6-retail-live-flight-ramps-tests tests/retail_live_flight_ramps_tests.cpp)

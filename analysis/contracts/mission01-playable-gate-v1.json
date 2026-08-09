@@ -749,10 +749,10 @@
           },
           {
             "kind": "microexec",
-            "path": "analysis/flight/live-flight-ramps-microexec.tsv",
-            "sha256": "4ae8034c9f2e835decfca66428eb8c74dd155a4f31608c3051d2e0bb10f7e59a",
-            "size": 1780,
-            "claim": "0x82303E68 executed from its own entry over 12 cases, 60 float values compared bit for bit on the five ramp fields; the five axis fields are recorded and explicitly NOT compared, and the stubbed-call count is asserted at one on the bypass path and zero elsewhere"
+            "path": "analysis/flight/live-flight-slot30-microexec.tsv",
+            "sha256": "feee7ed92899283a78d900d197ce33c883b28bf2657756ae77ca1a1118dd2c1b",
+            "size": 2487,
+            "claim": "0x82303E68 executed from its own entry over 17 cases, 170 float values compared bit for bit on ALL TEN words it writes, against update_live_flight_ramps composed with update_live_flight_axes; the stubbed-call count is asserted at one on the bypass path and zero elsewhere"
           },
           {
             "kind": "derivation",
@@ -760,6 +760,48 @@
             "sha256": "3ffe4be3538722e861258972653950b93b193ce67488ca7835c67162a5b091d7",
             "size": 3967,
             "claim": "include/ac6/retail_live_flight_ramps.h carries the derivation, states why this class rather than the contracted one, records that the ramp block is a complete unit because every store was listed in address order, and keeps the two 1.0 ceilings as separate constants because they come from separate addresses"
+          }
+        ]
+      },
+      "retail_live_flight_axes": {
+        "status": "passed",
+        "statement": "the native product reproduces the three axis blocks of 0x82303E68 -- the rest of slot 30 of the live flight model 0x8200F310 -- each axis choosing between a DRIVEN and a DECAY regime on |command| against 2^-16, +304 and +312 lagging 1.5 times the scaled gap toward a QUADRATIC target sign(cmd)*(|cmd|+cmd*cmd)*2/3 that reaches 4/3 at full deflection so the limit rather than the curve bounds it, +308 stepping by the SIGN of its command with no curve and no lag, and two per-direction hold timers at +1352 and +1356 accumulating the step while held and decaying at ten times it otherwise",
+        "retail_addresses": [
+          "0x82303E68",
+          "0x8200F310",
+          "0x82069C2C",
+          "0x82069C1C",
+          "0x82002FD8",
+          "0x82003214"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1388-the-rest-of-the-slot.md",
+            "sha256": "4c510011e4769b785e8991b048fbd0957a08f664f7ba1561dec74cb45c755135",
+            "size": 4489,
+            "claim": "0x82303FB0..0x823042B0 read whole: the rates come from two sixteen-byte blocks at [+576] and [+592], element i of the first being axis i's command rate and of the second its decay rate, with the fourth element of each copied and never used"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_live_flight_axes_tests.cpp",
+            "sha256": "0f5930154293af4ddf2aef340c36cc3f1332bc8a8fc80433954becb4df0b895f",
+            "size": 8376,
+            "claim": "cases for both regimes and the epsilon boundary one ulp either side, the decay stopping at zero, the quadratic target exceeding 1, the curve being odd, the unit clamps, at308 ignoring its command's magnitude, the timers running per direction and floored at zero, and the timers NOT moving when at308 is undriven; with three controls, one asserted to fire and two asserted not to"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/live-flight-slot30-microexec.tsv",
+            "sha256": "feee7ed92899283a78d900d197ce33c883b28bf2657756ae77ca1a1118dd2c1b",
+            "size": 2487,
+            "claim": "0x82303E68 executed from its own entry over 17 cases, 170 float values compared bit for bit on ALL TEN words it writes, against update_live_flight_ramps composed with update_live_flight_axes; the stubbed-call count is asserted at one on the bypass path and zero elsewhere"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_live_flight_axes.h",
+            "sha256": "513a714a286c0ce9c389d0ef34b15e54e739663107ad3c78cff588489c0264c1",
+            "size": 3620,
+            "claim": "include/ac6/retail_live_flight_axes.h carries the derivation, states that the two live-model headers together cover every store in the function, records that the drive curve reaches 4/3 so the limit rather than the curve stops it, and notes that +308's two halves are independent if/else pairs rather than a three-way branch"
           }
         ]
       }

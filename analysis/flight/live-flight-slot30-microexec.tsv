@@ -1,8 +1,8 @@
 # 0x82303E68 (slot 30 of the LIVE flight model 0x8200F310)
 # micro-executed, against ac6::retail::update_live_flight_ramps.
-# The five ramp columns are COMPARED; the five axis columns are
-# recorded and NOT compared -- that block is not ported yet.
-# case	verdict	+360	+364	+368	+372	+376	uncompared+304	uncompared+308	uncompared+312	uncompared+1352	uncompared+1356	why the case exists
+# ALL TEN written words are compared, against
+# update_live_flight_ramps composed with update_live_flight_axes.
+# case	verdict	+360	+364	+368	+372	+376	+304	+308	+312	+1352	+1356	why the case exists
 idle	ok	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	everything zero
 lag-from-zero	ok	0.05000000447034836	0.05000000447034836	0.01666666753590107	0.01666666753590107	0.0	0.0	0.0	0.0	0.0	0.0	a lag takes a fraction of the gap
 lag-at-target	ok	1.0	1.0	0.01666666753590107	0.01666666753590107	0.0	0.0	0.0	0.0	0.0	0.0	at the target the lag does not move
@@ -14,4 +14,9 @@ secondary-ceiling	ok	1.0	1.0	1.0	1.0	0.0	0.0	0.0	0.0	0.0	0.0	and stop at 1.0
 secondary-floor	ok	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	and at zero
 gate-clears-at368-only	ok	1.0	1.0	0.0	0.5166666507720947	0.0	0.0	0.0	0.0	0.0	0.0	a zero gate byte clears at368 and not at372
 bypass	ok	0.75	0.25	0.5	0.0	0.5	0.0	0.0	0.0	0.0	0.0	bit 7 skips the lags but at376 is still recomputed
-full-mantissas	ok	0.4157370328903198	-0.6038663387298584	0.15000000596046448	0.7166666388511658	1.0196033716201782	0.0	0.0	0.0	0.0	0.0	long binary expansions everywhere
+axis-drive	ok	0.0	0.0	0.0	0.0	0.0	0.0793333351612091	0.05000000447034836	-0.09916666150093079	0.01666666753590107	0.0	all three axes driven: curve on 304 and 312, sign on 308
+axis-decay	ok	0.0	0.0	0.0	0.0	0.0	0.46666666865348816	-0.4749999940395355	0.2083333283662796	0.25	0.25	commands below 2^-16: every axis decays
+axis-saturate	ok	0.0	0.0	0.0	0.0	0.0	1.0	1.0	-1.0	1000.0	0.0	a huge step drives all three onto their limits
+timers-per-direction	ok	0.0	0.0	0.0	0.0	0.0	0.0	0.05000000447034836	0.0	0.2666666805744171	0.0833333283662796	the held timer accumulates, the other decays
+axis-epsilon-edge	ok	0.0	0.0	0.0	0.0	0.0	0.4500010013580322	0.0	0.0	0.0	0.0	exactly 2^-16 is the driven regime
+full-mantissas	ok	0.4157370328903198	-0.6038663387298584	0.15000000596046448	0.7166666388511658	1.0196033716201782	0.1563020646572113	-0.3283333480358124	0.5447907447814941	0.21111111342906952	0.15000000596046448	long binary expansions everywhere

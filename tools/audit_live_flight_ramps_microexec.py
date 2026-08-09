@@ -43,7 +43,15 @@ SLOT38_STUB = 0x82282C50
 
 RAMPS = (360, 364, 368, 372, 376)
 AXES = (304, 308, 312, 1352, 1356)
-INPUTS = (48, 52, 404, 952, 956)
+INPUTS = (48, 52, 404, 952, 956, 36, 40, 44)
+# The two sixteen-byte rate blocks retail copies to the stack. Element i of the
+# first is axis i's command rate, element i of the second its decay rate.
+BLOCK_COMMAND = 576
+BLOCK_DECAY = 592
+EPSILON = 1.52587890625e-05
+CURVE = 0.6666666865348816
+LAG_GAIN = 1.5
+TIMER_DECAY = 10.0
 GATE = 1224
 FLAGS = 332
 BYPASS = 1 << 7
@@ -84,15 +92,81 @@ def expected(state, reads, gate, flags, step):
             s[368] = 0.0
         s[372] = secondary(s[372], s[364], CEILING)
     s[376] = f32(s[360] - s[364])
+
+    # --- the three axis blocks, 0x82303FB0..0x823042B0 -------------------
+    cmd_rate = [f32(r["c%d" % i] * step) for i in range(3)]
+    dec_rate = [f32(r["d%d" % i] * step) for i in range(3)]
+
+    def driven(command):
+        return not (abs(command) < EPSILON)
+
+    def decay_toward_zero(value, amount):
+        if value > 0.0:
+            value = f32(value - amount)
+            if value < 0.0:
+                value = 0.0
+        elif value < 0.0:
+            value = f32(value + amount)
+            if value > 0.0:
+                value = 0.0
+        return value
+
+    def lag_to_curve(value, command, rate):
+        shaped = 0.0
+        if command > 0.0:
+            shaped = fmaf(command, command, command)
+        elif command < 0.0:
+            shaped = fmaf(-command, command, command)
+        gap = f32(f32(shaped * CURVE) - value)
+        gap = f32(gap * rate)
+        out = fmaf(gap, LAG_GAIN, value)
+        if out < -1.0:
+            out = -1.0
+        elif out > 1.0:
+            out = 1.0
+        return out
+
+    s[304] = (lag_to_curve(s[304], r[36], cmd_rate[0]) if driven(r[36])
+              else decay_toward_zero(s[304], dec_rate[0]))
+
+    if driven(r[44]):
+        if r[44] > 0.0:
+            s[308] = f32(s[308] + cmd_rate[1])
+            s[1352] = f32(s[1352] + step)
+            if s[308] > 1.0:
+                s[308] = 1.0
+        else:
+            s[1352] = fmaf(-step, TIMER_DECAY, s[1352])
+            if s[1352] < 0.0:
+                s[1352] = 0.0
+        if r[44] < 0.0:
+            s[308] = f32(s[308] - cmd_rate[1])
+            s[1356] = f32(s[1356] + step)
+            if s[308] < -1.0:
+                s[308] = -1.0
+        else:
+            s[1356] = fmaf(-step, TIMER_DECAY, s[1356])
+            if s[1356] < 0.0:
+                s[1356] = 0.0
+    else:
+        s[308] = decay_toward_zero(s[308], dec_rate[1])
+
+    s[312] = (lag_to_curve(s[312], r[40], cmd_rate[2]) if driven(r[40])
+              else decay_toward_zero(s[312], dec_rate[2]))
     return s
 
 
 def case(name, why, step=0.016666668, flags=0, gate=1, **kwargs):
-    state = {f: 0.0 for f in RAMPS}
+    state = {f: 0.0 for f in RAMPS + AXES}
     reads = {f: 0.0 for f in INPUTS}
+    reads.update({"c0": 4.0, "c1": 3.0, "c2": 5.0,
+                  "d0": 2.0, "d1": 1.5, "d2": 2.5})
     for key, value in kwargs.items():
+        if key[0] in "cd":
+            reads[key] = value
+            continue
         field = int(key[1:])
-        (state if field in RAMPS else reads)[field] = value
+        (state if field in RAMPS + AXES else reads)[field] = value
     return {"name": name, "why": why, "step": step, "flags": flags,
             "gate": gate, "state": state, "reads": reads}
 
@@ -118,10 +192,23 @@ CASES = [
          gate=0, f360=1.0, f364=1.0, f368=0.5, f372=0.5, f404=0.5),
     case("bypass", "bit 7 skips the lags but at376 is still recomputed",
          flags=BYPASS, f360=0.75, f364=0.25, f368=0.5, f48=1.0, f952=3.0),
+    case("axis-drive", "all three axes driven: curve on 304 and 312, sign on 308",
+         f36=0.7, f40=-0.7, f44=1.0),
+    case("axis-decay", "commands below 2^-16: every axis decays",
+         f304=0.5, f308=-0.5, f312=0.25, f1352=0.25, f1356=0.25),
+    case("axis-saturate", "a huge step drives all three onto their limits",
+         f36=1.0, f40=-1.0, f44=1.0, step=1000.0),
+    case("timers-per-direction", "the held timer accumulates, the other decays",
+         f44=1.0, f1352=0.25, f1356=0.25),
+    case("axis-epsilon-edge", "exactly 2^-16 is the driven regime",
+         f36=1.52587890625e-05, f304=0.5),
     case("full-mantissas", "long binary expansions everywhere",
          f360=0.37777779, f364=-0.633333, f368=0.13333334, f372=0.7333333,
          f48=0.9933333, f52=0.4066667, f404=0.26666668, f952=3.7000001,
-         f956=1.7000001, step=0.016666668),
+         f956=1.7000001, f36=0.37777779, f40=-0.633333, f44=-0.1,
+         f304=0.13333334, f308=-0.26666668, f312=0.7333333, f1352=0.37777779,
+         f1356=0.13333334, c0=4.3000002, c1=3.7000001, c2=5.3000002,
+         d0=2.3000001, d1=1.7000001, d2=2.7000001, step=0.016666668),
 ]
 
 SPEC = """\
@@ -155,7 +242,11 @@ def model_bytes(entry) -> str:
     for field, value in entry["state"].items():
         struct.pack_into(">f", blob, field, f32(value))
     for field, value in entry["reads"].items():
-        struct.pack_into(">f", blob, field, f32(value))
+        if isinstance(field, str):
+            base = BLOCK_COMMAND if field[0] == "c" else BLOCK_DECAY
+            struct.pack_into(">f", blob, base + 4 * int(field[1]), f32(value))
+        else:
+            struct.pack_into(">f", blob, field, f32(value))
     struct.pack_into(">I", blob, FLAGS, entry["flags"])
     blob[GATE] = entry["gate"] & 0xFF
     struct.pack_into(">I", blob, 0, VTABLE)
@@ -211,28 +302,25 @@ def check(workdir: Path, report: Path | None) -> int:
         want = expected(entry["state"], entry["reads"], entry["gate"],
                         entry["flags"], entry["step"])
         bad, got = [], {}
-        for field in RAMPS:
+        for field in RAMPS + AXES:
             value = struct.unpack_from(">f", after, field)[0]
             got[field] = value
             compared += 1
             if struct.pack(">f", value) != struct.pack(">f", want[field]):
                 bad.append(f"+{field}: retail {value!r} port {want[field]!r}")
-        axes = {f: struct.unpack_from(">f", after, f)[0] for f in AXES}
         if bad:
             failures.append(f"{entry['name']}: " + "; ".join(bad))
         lines.append(f"{entry['name']}\t{'ok' if not bad else 'MISMATCH'}\t"
-                     + "\t".join(repr(got[f]) for f in RAMPS) + "\t"
-                     + "\t".join(repr(axes[f]) for f in AXES)
+                     + "\t".join(repr(got[f]) for f in RAMPS + AXES)
                      + f"\t{entry['why']}")
     if report is not None:
         report.parent.mkdir(parents=True, exist_ok=True)
         report.write_text(
             "# 0x82303E68 (slot 30 of the LIVE flight model 0x8200F310)\n"
             "# micro-executed, against ac6::retail::update_live_flight_ramps.\n"
-            "# The five ramp columns are COMPARED; the five axis columns are\n"
-            "# recorded and NOT compared -- that block is not ported yet.\n"
-            "# case\tverdict\t" + "\t".join(f"+{f}" for f in RAMPS) + "\t"
-            + "\t".join(f"uncompared+{f}" for f in AXES)
+            "# ALL TEN written words are compared, against\n"
+            "# update_live_flight_ramps composed with update_live_flight_axes.\n"
+            "# case\tverdict\t" + "\t".join(f"+{f}" for f in RAMPS + AXES)
             + "\twhy the case exists\n" + "\n".join(lines) + "\n",
             encoding="utf-8")
     for problem in failures:
