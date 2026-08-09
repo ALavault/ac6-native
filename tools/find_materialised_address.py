@@ -59,7 +59,19 @@ def materialisations(data, target):
             opcode = second >> 26
             if opcode not in (24, 14):  # ori, addi
                 continue
-            if ((second >> 16) & 0x1F) != destination:
+            # THE OPERAND FIELDS DIFFER BETWEEN THE TWO FORMS, and getting
+            # this wrong cost a 2.6x under-count that a delegated agent caught
+            # in cycle 1285.
+            #   addi rD,rA,SIMM : rD = bits 6..10, rA (the SOURCE) = bits 11..15
+            #   ori  rA,rS,UIMM : rA (the DEST) = bits 11..15, rS = bits 6..10
+            # So the register that must match the `lis` is bits 11..15 for addi
+            # and bits 6..10 for ori. Testing bits 11..15 for both works only
+            # when the pair reuses one register -- `lis r10,2 ; ori r10,r10,x`
+            # -- and silently drops every cross-register form such as
+            # `lis r10,2 ; ori r21,r10,0xD3B4`.
+            source = ((second >> 16) & 0x1F) if opcode == 14 else \
+                     ((second >> 21) & 0x1F)
+            if source != destination:
                 continue
             value = second & 0xFFFF
             if opcode == 24 and immediate == high and value == low:
