@@ -16,6 +16,7 @@
 #include "ac6/retail_flight_session.h"
 #include "ac6/retail_flight_step.h"
 #include "ac6/retail_terrain_field.h"
+#include "ac6/retail_transform.h"
 
 #include <cmath>
 #include <cstdio>
@@ -103,6 +104,61 @@ int main(int argc, char** argv) {
   check(above > 100, "the run spent real time clear of the ground");
   check(below > 100,
         "and real time BELOW it -- a constant floor does not follow terrain");
+
+  // AND A HEADING THAT IS NOT MINE. The direction above is a unit vector I
+  // chose. `step_flight_session` produces a basis from contracted arithmetic,
+  // and row 2 of that basis is a normalised forward -- the same shape the rates
+  // want. Feeding it in leaves only the speed invented.
+  {
+    FlightModelConfig config{};
+    config.limits = FlightRotationLimits{5.0F, 1.399999976158142F, 5.400000095367432F};
+    config.rates304 = LiveAxisRates{4.0F, 2.0F};
+    config.rates308 = LiveAxisRates{3.0F, 1.5F};
+    config.rates312 = LiveAxisRates{5.0F, 2.5F};
+    config.servo304 = RateServoAxis{0.0F, 0.0F, 2.0F, 3.0F};
+    config.servo308 = RateServoAxis{0.0F, 0.0F, 2.0F, 3.0F};
+    config.servo312 = RateServoAxis{0.0F, 0.0F, 2.0F, 3.0F};
+    config.rampRate952 = 3.0F;
+    config.rampRate956 = 3.0F;
+    config.rampThreshold404 = 0.5F;
+
+    FlightSessionState flown{};
+    flown.position.at64 = -1500.0F;
+    flown.position.at68 = 400.0F;
+    flown.position.at72 = 6000.0F;
+    FlightStick roll{};
+    roll.target14 = 0.35F;
+    roll.increment14 = 1.0F;
+
+    float worst_row_error = 0.0F;
+    std::size_t moved = 0;
+    const FlightPosition start = flown.position;
+    for (int i = 0; i < 3000; ++i) {
+      step_flight_session(flown, config, roll, 1.0F / 60.0F);
+      const auto& row = flown.basis.rows[2];
+      const float length =
+          std::sqrt(row[0] * row[0] + row[1] * row[1] + row[2] * row[2]);
+      worst_row_error = std::fmax(worst_row_error, std::fabs(length - 1.0F));
+      FlightRates heading{};
+      heading.to64 = row[0];
+      heading.to68 = row[1];
+      heading.to72 = row[2];
+      integrate_session_position(flown, heading, 1500.0F, 0.0F, 1.0F / 60.0F);
+    }
+    const float travelled =
+        std::sqrt((flown.position.at64 - start.at64) * (flown.position.at64 - start.at64) +
+                  (flown.position.at72 - start.at72) * (flown.position.at72 - start.at72));
+    if (flown.position.at64 != start.at64 || flown.position.at72 != start.at72) ++moved;
+    check(worst_row_error < 1e-3F,
+          "the basis's forward row is a unit vector, which is what the "
+          "integrator's direction parameter wants");
+    check(moved == 1 && travelled > 1000.0F,
+          "and flying along it moves the aircraft");
+    std::printf("basis-driven: forward |len-1| <= %.2e  travelled %.0f  "
+                "final (%.0f, %.0f, %.0f)\n",
+                worst_row_error, travelled, flown.position.at64,
+                flown.position.at68, flown.position.at72);
+  }
 
   std::printf("ticks %zu (off map %zu)  at68 %.2f  highest ground %.2f  "
               "lowest clearance %.2f  clear %zu  below %zu\n",
