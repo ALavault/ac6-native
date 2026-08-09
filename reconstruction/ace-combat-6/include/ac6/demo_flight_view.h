@@ -56,6 +56,17 @@ struct Image {
   void triangle(int x0, int y0, float z0, int x1, int y1, float z1,
                 int x2, int y2, float z2,
                 std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept;
+  // The same, sampling `texels` (width x height, 0xAABBGGRR) at barycentric
+  // texture coordinates and scaling by `shade`.
+  //
+  // AFFINE, NOT PERSPECTIVE-CORRECT. The interpolation is linear in screen
+  // space, which warps a texture across a triangle seen at a steep angle. It is
+  // wrong, it is cheap, and it is written down rather than discovered.
+  void triangle_textured(int x0, int y0, float z0, float u0, float v0,
+                         int x1, int y1, float z1, float u1, float v1,
+                         int x2, int y2, float z2, float u2, float v2,
+                         const std::uint32_t* texels, int tw, int th,
+                         float shade) noexcept;
   void plot(int x, int y, std::uint8_t r, std::uint8_t g,
             std::uint8_t b) noexcept;
   void line(int x0, int y0, int x1, int y1, std::uint8_t r, std::uint8_t g,
@@ -136,6 +147,19 @@ void draw_mesh_at(Image& image, const ac6::retail::NdxrMesh& mesh,
 void draw_mesh_solid(Image& image, const ac6::retail::NdxrMesh& mesh,
                      const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
                      float distance) noexcept;
+
+// The mesh as textured, depth-tested triangles.
+//
+// `texels` is a decoded NTXR base level -- 0xAABBGGRR, row-major. The texture
+// coordinates are the vertex ones, decoded at cycle 1433 and unused until now.
+// Shading is the same flat two-sided term as `draw_mesh_solid`, multiplied in.
+//
+// WRAPPING IS `repeat`, chosen: 2.7% of the package's coordinates fall outside
+// [0,1] and nothing has been read that says how retail wraps them.
+void draw_mesh_textured(Image& image, const ac6::retail::NdxrMesh& mesh,
+                        const ac6::retail::RetailBasis& basis,
+                        const DemoCamera& camera, float distance,
+                        const std::uint32_t* texels, int tw, int th) noexcept;
 
 // The same wireframe, with each segment lit by the vertex normal.
 //
