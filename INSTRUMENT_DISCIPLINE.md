@@ -28,6 +28,7 @@ the repository's*.
 
 | the shape you are in | section |
 |---|---|
+| your port calls **`std::cos`/`std::sin`/`std::sqrt`** where retail called its own | *the differential that passes on the library's behalf* — sweep the reachable domain and compare on the CALLER's output; `tools/audit_flight_axis_curve_microexec.py` is the model |
 | a scan returned **nothing** and you are about to believe it | *The pattern*, *The specific traps* |
 | you found a **write / a branch / a table** and it looks decisive | *the true positive from dead code* — four findings this campaign were live code the build never reaches |
 | your rule is **right on the corpus you took it from** | *querying only one side* — check the producer against the consumer, the code against the files, one corpus against the other |
@@ -1032,6 +1033,69 @@ The cheap check is the caller, and it is the one direction a single-function rea
 never covers. This is the sibling of *reachability by `bl`*: there, a function
 looked unreferenced because the reference was elsewhere; here, an argument looked
 absent because its use was one frame further down the stack.
+
+## The thirty-ninth shape: the differential that passes on the library's behalf
+
+Cycle 1410 read the layout-1 axis response curve at `0x82229470`. It is thirty-
+three instructions around one call, and the arithmetic is
+
+    t = 1.0 - float32(f(|x| * pi/2));  if (t > 0.9) t = 1.0;  x' = fsel(x, t, -t)
+
+The callee `0x82381068` is a 54-instruction leaf -- argument reduction by
+`fctid`, a quadrant parity, a minimax polynomial. Running it at seven angles
+where cosine and sine diverge named it: **cos**, matching `std::cos` bit-for-bit
+in the double at 3 of 7 and `std::sin` at 0 of 7.
+
+Then eight cases of the block itself, entered live with the callee unstubbed:
+**16 values, no tolerance, zero failures.** Against a port whose expectation was
+computed with `std::cos`.
+
+That result was worthless, and it took a second measurement to see it.
+
+### What the eight points were actually testing
+
+`std::cos` and `0x82381068` are **not the same function**. They agree in the
+double at three of seven angles and disagree in the last ulp at the rest. What
+hides it is `frsp`: the block rounds to float32 before using the value, and a
+one-ulp double difference usually vanishes there. *Usually* is not a
+verification, and eight hand-picked points cannot distinguish "the port is
+right" from "the eight points landed where the rounding happens to save it".
+
+So sweep the domain the block can actually reach -- `|x|` in [0, 1] maps to
+[0, pi/2] -- and measure on the **block's output**, not on the cosine's:
+
+```
+96 arguments: 7 split at the cosine, 1 SURVIVES the 0.9 snap
+  x=0.9263  retail=0.8845153450965881  std::cos=0.8845154047012329
+```
+
+Six of the seven fall where `t > 0.9` and the snap replaces the value with an
+exact `1.0`, which is why they cannot be seen downstream. **One does not.** So
+`std::cos` may not stand in, and the port is refused rather than shipped.
+
+### The two things that went wrong, and they are separable
+
+1. **The expectation was computed with a substitute for the thing under test.**
+   A differential whose oracle calls `std::cos` where retail calls its own
+   polynomial is testing the block *and* the substitution at once, and it reports
+   one verdict for two claims -- in the direction that passes. The fix is to feed
+   the differential the callee's **measured** return value, so it tests only the
+   arithmetic around the call; the substitution then needs its own measurement.
+2. **The seam was measured on the wrong quantity.** Measured at the cosine it
+   reads 7 of 96 and looks fatal; measured at the output it reads 1 of 96 and is
+   fatal. The first number would have provoked a port of the polynomial for six
+   cases that do not exist, and the second is the one that decides.
+
+### The rule
+
+**When a port replaces a retail routine with a library function, the
+substitution is a claim and needs its own control** -- a sweep of the domain the
+caller can reach, compared on the value the caller passes on. Chosen points test
+the code around the substitution, never the substitution.
+
+And the corollary that names the trap: **a differential that computes its
+expectation with the substitute cannot fail on the substitute.** Feed it the
+measured result instead.
 
 ## The audit this file owes itself
 
