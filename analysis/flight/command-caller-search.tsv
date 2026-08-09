@@ -49,3 +49,36 @@
 # 0x82290E20 is the strongest candidate on shape alone -- four sites across two
 # different setters, one caller -- and NONE of the eight has been read. The
 # invented link in demo_flight_input.h stays invented until one of them is.
+#
+# ---------------------------------------------------------------------------
+# CYCLE 1400: the first of the eight, read.
+#
+# 0x82290E20 IS A GENUINE CALLER. Its five dispatch sites have the setters'
+# signature exactly:
+#
+#     lwz  r10,0(r29)        the object's vtable
+#     fmr  f1,f31            the INCREMENT
+#     mr   r3,r29            this
+#     lfs  f2,2092(r11)      the TARGET
+#     lwz  r11,48(r10)       slot 12   (or 56, slot 14)
+#     mtctr / bctrl
+#     clrlwi r11,r3,24       the return code, tested
+#
+# which CONFIRMS CYCLE 1393 FROM THE CALLER'S SIDE. That cycle derived f1 =
+# increment and f2 = target by reading the setters; this reads a caller that
+# shares no code with them and agrees. Third mapping in this campaign met from
+# both ends, after float_slot_for_bit (1353) and the accumulator crossing (1393).
+#
+# BUT IT IS NOT THE INPUT PATH. Every one of its five sites passes
+#
+#     f2 = 0.0        (0x8200082C, the image's zero, via f30)
+#
+# so this function only ever commands LEVEL. It is a recovery or auto-level
+# behaviour, not stick steering, and on a changed return it increments a counter
+# at [r30+744]. Its constants fit that reading: pi/3 (0x82069C28, and it IS
+# float32(pi/3), not a decimal literal -- checked, unlike the four traps this
+# subsystem has produced), 0.95, 0.5 and 500.0 are thresholds.
+#
+# Its only caller is 0x822931B0, unread.
+#
+# SEVEN OF THE EIGHT REMAIN. The demo's invented link is unchanged.
