@@ -1,0 +1,46 @@
+# What stands between the campaign and a LIVE transform kernel in the emulator.
+#
+# Cycle 1381 predicted that running the flight step with slot 31 live "needs the
+# VMX128 register-file bridge that cycle 1301 built". THAT PREDICTION IS WRONG.
+# The run was made twice, identically except for `alias on`:
+#
+#   without the bridge   601 steps, 18 callees entered, fault
+#   with the bridge      601 steps, 18 callees entered, the SAME fault
+#
+# Same step count, same instruction, same message. The bridge is not the blocker
+# and was never exercised. What stops it is a single missing p-code operation --
+# and then three more behind it.
+#
+# WHERE IT STOPS. 0x820A9A64, inside sub_820A99F8, which is rotate_820A99F8 in
+# retail_transform.cpp. And the integrator 0x82303110 calls it DIRECTLY: the
+# rotation is not reached only through slot 32, which is stubbed in that run.
+#
+# The integrator's own fifteen vector mnemonics all execute. The four below are
+# what a rotation needs and the module does not supply.
+#
+# mnemonic	pcode_op	sites	kind	note
+lvlx	loadVectorLeftIndexed128	1167	load	EA to the next 16-byte boundary, left-justified, zero-filled
+vmrghw	vectorMergeHighWord	4228	permute	interleave the high words of two registers
+vmrglw	vectorMergeLowWord	1542	permute	interleave the low words
+vrlimi128	vectorRotateLeftImmediateMaskInsert128	734	permute	rotate by an immediate and insert under a mask
+#
+# TOTAL 7671 of the 15945 CALLOTHER sites in the image -- 48%.
+#
+# ALL FOUR ARE PURE DATA MOVEMENT. None performs arithmetic, so none can be
+# wrong in a way that produces a plausible number: an error shows up as bytes in
+# the wrong lane, not as a value one ulp out. That is the cheapest kind of
+# asserted semantics to control, and it is why this is worth doing rather than
+# routing around.
+#
+# THE STATUS THEY WOULD CARRY. Anything supplied through
+# registerCallOtherCallback is ASSERTED ISA SEMANTICS, not executed retail code,
+# and the harness already labels it that way (`asserted_semantics` in every
+# snapshot). The vpermwi128 override is the precedent, and the standard it set is
+# that each model is generated from a census of its own sites and validated
+# against every immediate the image actually uses.
+#
+# AND THE CONTROL IS AVAILABLE FOR FREE. rotate_820A9B30, rotate_820A99F8 and
+# rotate_82211828 are ALREADY PORTED and contracted under A3.1, and cycle 1381's
+# composite already knows the expected position block from the integrator's own
+# contracted differential. So the four models can be checked against a result
+# that was established without them.
