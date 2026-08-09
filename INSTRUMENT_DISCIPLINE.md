@@ -849,7 +849,8 @@ three-way split, which is the useful form.
 |---|---|
 | a rule that was written, correct, and unrunnable | `tools/find_materialised_address.py IMAGE ADDR` |
 | the `.pdata` row read as a dispatch slot | `Ac6XenonFindWord` — read the three-way `aligned/unaligned/pdata` count, not the total |
-| the instrument sampled a third of it | `Ac6XenonDisasm` — read the per-block trailer; it says whether the 300-cap truncated |
+| the instrument sampled a third of it | `tools/check_listing_against_pdata.py IMAGE ADDR --listing FILE` — `.pdata` declares the length, so the comparison is arithmetic, not judgement; and read `Ac6XenonDisasm`'s per-block trailer |
+| a dispatcher you believe you have read | `tools/count_indirect_branches.py IMAGE START END` — it counts the `bctr` and recovers each jump table; `0x82263A50` has three and was read twice as though it had one |
 | reachability by `bl` | `Ac6XenonForceScan` prints `scanned/already_listed/forced/undisassemblable/hits`; a zero without its denominator is not a negative |
 | an agent's scope, written as the repository's | `grep` for the thing the agent said does not exist, before propagating it |
 | a correct measurement, over-read | `tools/audit_contract_derivations.py` for the contract case; elsewhere, write the measurement and the claim on two lines and compare them |

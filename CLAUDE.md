@@ -93,6 +93,22 @@ independently, which for a header/implementation pair forces either duplication
 or a false claim. Cycle 1261 fixed one address the gate named and found ten;
 nine were not missing citations at all.
 
+Before drawing a negative from a listing, check it is the whole function:
+
+    python3 tools/check_listing_against_pdata.py analysis-input/ACE6_X360.exe ADDR --listing FILE
+
+`.pdata` declares each function's length in instructions, so the comparison is
+arithmetic. `Ac6XenonDisasm` caps at 300 per block and `exports/` silently
+truncates VMX128-heavy functions — `0x822A23D8` is 460 instructions and
+`exports/` recovers 6. The table is incomplete, so "no `.pdata` row" is a real
+answer; the tool says so rather than guessing.
+
+And before believing you have read a dispatcher:
+
+    python3 tools/count_indirect_branches.py analysis-input/ACE6_X360.exe START END
+
+`0x82263A50` has three `bctr` and was read twice as though it had one.
+
 A capture's committed `.png` files are `pnmtopng` conversions run by hand, and
 nothing re-runs them. This connects them to the metrics beside them:
 
