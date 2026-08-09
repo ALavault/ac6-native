@@ -1,0 +1,19 @@
+{
+  "schema": "ac6.slot-repeat-microexec.v1",
+  "statement": "0x82211988 executed on a seeded object over nine cases, all three edge words and all 32 (timer, limit) pairs compared bit for bit -- including the timer exactly at the limit, just under it, and a slot released",
+  "function": "0x82211988",
+  "note": ".pdata has no row for this function, so the differential is the only length-independent check the port has",
+  "cases": 9,
+  "divergences": 0,
+  "case_names": [
+    "idle",
+    "newly-active",
+    "held-under",
+    "held-equal",
+    "held-far-past",
+    "released",
+    "two-slots",
+    "high-slot",
+    "all-held"
+  ]
+}

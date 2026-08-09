@@ -470,6 +470,46 @@
             "claim": "include/ac6/retail_input_binding.h carries the derivation, states why an empty optional is not zero, and records that the layer is table-driven so a port must not hard-code any threshold"
           }
         ]
+      },
+      "retail_slot_repeat": {
+        "status": "passed",
+        "statement": "the native product reproduces the slot edge and auto-repeat bank 0x82211988 -- the two edge words, the triggered set that carries repeats, and 32 timer and limit pairs whose initial delay and repeat interval are fields rather than constants -- with equality firing, the reset preceding the add, and a release restoring the initial delay",
+        "retail_addresses": [
+          "0x82211988",
+          "0x82211DF8",
+          "0x82211B40",
+          "0x82211C10"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1358-the-float-drives-auto-repeat.md",
+            "sha256": "a7842111c3d6139a856ca59ab072df182c06e540858ad73c93dab2cf5eb11c03",
+            "size": 3310,
+            "claim": "0x82211988 read whole: 32 (timer, limit) pairs from this+0x1060, the delay at +0x1058 and the interval at +0x105C, and the float accumulated into the timers -- so its role is input auto-repeat and not flight integration"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/cycle-1359-the-thirteenth-behaviour.md",
+            "sha256": "189a635c186e50ead00f8d681d111d7f13aeccd103387c2c85a8329ec33326e1",
+            "size": 2943,
+            "claim": "boundary tests: equality fires, the reset precedes the add so a fired slot holds the elapsed time, a release restores the initial delay, and the edge words are asserted equal to button_edges' two sets"
+          },
+          {
+            "kind": "microexec",
+            "path": "reports/mission01-retail/slot-repeat-microexec.json",
+            "sha256": "ed5c9b78eff3e196f08848d9cf2ff098ea07ef35ad79d27b9efc61a7b194a400",
+            "size": 634,
+            "claim": "0x82211988 executed on a seeded object over nine cases with all three edge words and all 32 pairs compared bit for bit; .pdata has no row for this function, so this is the only length-independent check the port has"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_slot_repeat.h",
+            "sha256": "24c215bd7a41118b53349edf9c37173f35d8c862b8d74ab05163098796d5d57f",
+            "size": 3146,
+            "claim": "include/ac6/retail_slot_repeat.h carries the derivation, records that f1 survives 0x82211B40 and 0x82211C10 untouched before reaching 0x82211988, and states that the delay and interval are fields a port must not bake in"
+          }
+        ]
       }
     }
   }
