@@ -154,3 +154,49 @@
 #
 # UNREAD: 0x822911E8 (538 insns, four callers, f2 from a field and a computed
 # value) and 0x822389D8 (589 insns, mixed). Those two are the search.
+#
+# ---------------------------------------------------------------------------
+# CYCLE 1403: the search from the other end, and why it stops.
+#
+# 0x822911E8 dispatches slot 14 with
+#
+#     lwz r11,0(r31) ; lwz r10,672(r30) ; lwz r11,56(r11) ; lfs f2,36(r10)
+#
+# -- f1 = 1.0, f2 = a field of an object reached through [r30+672]. Data-driven,
+# and its constants are +-pi/6 and +-pi/12 (30 and 15 degrees) with 0.97, 0.9,
+# 400.0, 150.0 and 7200.0. Commanded attitude angles from a table: an AI or
+# navigation repertoire is at least as good a reading as a stick, and NOTHING
+# here distinguishes them.
+#
+# SO THE SEARCH WAS RUN FROM THE INPUT SIDE INSTEAD. The contracted input record
+# array is 0x826EDB98, materialised at nine sites in nine functions:
+#
+#   0x821CA908  0x821CAA50  0x821CB5F0  0x82211DF8  0x82229250
+#   0x82256228  0x822AA7E8  0x823D29E8  0x823D59F0
+#
+# Forward from all nine, following direct calls, four hops, 128 functions
+# explored: NO PATH to any of the eleven candidates.
+#
+# AND THAT NEGATIVE IS WEAK, for a reason this file must state rather than let a
+# reader over-read. Cycle 1218 measured that `bl` plus non-local `b` reaches
+# 2,144 of 8,135 functions -- ABOUT A QUARTER of this program. The thirteenth
+# shape. Everything else is reached through vtables, and the input path's own
+# consumer 0x82211C10 is called through one.
+#
+# So the search is blocked from BOTH ends by the same property: the setters are
+# dispatched virtually at slot numbers 78-151 unrelated functions share, and the
+# input side reaches its consumers virtually too. Neither end offers a handle
+# that a call-graph walk can follow.
+#
+# THE DECISION. The search stops here. The demo's link stays invented and its
+# header says so. What would resume it, in order of cost:
+#
+#   1. read 0x822389D8, the last unread candidate;
+#   2. micro-execute 0x822911E8 on a synthetic object and see whether [r30+672]
+#      can be made to point at anything input-shaped -- a capsule answers "what
+#      does this read" where a call graph cannot;
+#   3. accept that the player's commands may not pass through these setters at
+#      all, and look instead for a SECOND writer of [+36]/[+40]/[+44] outside the
+#      class family, which cycle 1393's search deliberately excluded.
+#
+# (3) is the one this file would bet on, and it is the one nobody has run.
