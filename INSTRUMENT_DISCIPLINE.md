@@ -43,6 +43,7 @@ the repository's*.
 | your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
 | you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
+| you are about to publish that **two sources disagree** | *the unexamined contradiction* — a mismatch is a claim about two readings and needs both read; start with whichever came from someone else's transcription |
 | your scan came back **zero** for an address or a magic | *a rule that was written, correct, and unrunnable* — run `tools/find_materialised_address.py IMAGE ADDR`: a value built as `lis`+`ori`/`addi` is invisible to branch scans and data scans alike |
 | you scanned for a function address **as data** and found exactly one hit | *the `.pdata` row read as a dispatch slot* — the exception table spans 0x82079E00..0x82089FB0 and its `BeginAddress` fields look identical to a table slot; exclude that range, then say which side of it the address falls on |
 | two functions sit **next to each other** and seem related | *the refuted link* — image order is not evidence; the checkable forms are a shared member offset, an exclusive call site, a common caller, and none is visible from inside either function |
@@ -903,3 +904,37 @@ they are used. A reader mid-investigation now knows, per symptom, whether they
 are one command away from an answer or an afternoon away — and that is the
 difference between a check that gets run and one that gets skipped exactly when
 it matters.
+
+## The twenty-sixth shape: the unexamined contradiction
+
+Cycle 1289 ended by naming a mismatch — the data puts a non-angle where the
+fallback initialiser puts 46° — and calling it *"the first thing to check before
+anyone treats the record layout as understood."* It was flagged as unresolved,
+not asserted, which is the only reason it cost one cycle.
+
+**It was not in the image.** The initialiser's store used a different register
+than the report said. Cycle 1283 had it one register wrong, and I repeated it
+without reading the loop.
+
+Every other shape in this file is about a **positive** claim receiving too
+little scrutiny. This is the mirror, and it is easier to fall into: a
+contradiction *feels* like the careful thing to say. Writing "these two
+disagree" reads as honesty, invites no challenge, and is filed as an open
+question rather than a finding — so it escapes the check that "these two agree"
+would have drawn.
+
+A mismatch is a claim about **two** readings, so it needs both of them read. It
+is strictly more work than an agreement, and it habitually gets less.
+
+### The rule
+
+**Before publishing a discrepancy, re-read the instruction that produced each
+side.** Not the report that quotes it, and not your own earlier summary — the
+instruction. If either side came from someone else's transcription, that is the
+side to read first: cycle 1285's operand-field bug, cycle 1277's off-by-one
+store address and this one all entered the same way.
+
+The command, where the sides are a listing and a constant:
+`tools/check_listing_against_pdata.py` for the listing's completeness, then read
+the store and its register by hand. There is no tool for "did you read the right
+register", and saying so is the point of the twenty-fifth shape.
