@@ -720,6 +720,48 @@
             "claim": "include/ac6/retail_flight_step_driver.h carries the derivation, records that one float reaches every stage unchanged, decodes rlwinm r11,r11,31,31,31 as bit 1 and says which cycles had it wrong, and states that the reset runs AFTER slot 30 with the three spared fields as the observable"
           }
         ]
+      },
+      "retail_live_flight_ramps": {
+        "status": "passed",
+        "statement": "the native product reproduces the ramp block of 0x82303E68 -- slot 30 of the vtable 0x8200F310, the flight model the entity actually drives, as against 0x8200F270 whose instance nothing addresses -- a first-order lag toward each command with a per-model coefficient and NO clamp, two secondary ramps moving a whole step against the threshold at [+404] and bounded to [0,1] by 0x82008ACC and 0x82008AD0, a byte gate at +1224 that clears +368 only, and a bypass on bit 7 of [+332] after which +376 is still recomputed",
+        "retail_addresses": [
+          "0x82303E68",
+          "0x8200F310",
+          "0x8200F270",
+          "0x82008ACC",
+          "0x82008AD0",
+          "0x82303FAC"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1386-the-live-model-bounded.md",
+            "sha256": "18761db649daf1d0d0b1e9db98c4cf392bc25749150236c1300bb20f68650cd9",
+            "size": 4512,
+            "claim": "0x82303E68 bounded before reading: 282 instructions, zero calls and zero vector, constants resolved, and a capsule footprint of ten words whose dynamic set equals the static set exactly; its eight shared offsets are the same the other class's slot 30 writes, and it loads none of that version's constants"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_live_flight_ramps_tests.cpp",
+            "sha256": "ced322285226c083b35ad09c827e697a828a0c1e09f3a79e7dd87cf18de3b154",
+            "size": 7170,
+            "claim": "cases for the lag fraction, arrival, the unclamped overshoot, command separation, both secondary directions and bounds, the gate reaching +368 and not +372, and the bypass still recomputing +376; with three controls, one asserted to fire and two asserted not to"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/live-flight-ramps-microexec.tsv",
+            "sha256": "4ae8034c9f2e835decfca66428eb8c74dd155a4f31608c3051d2e0bb10f7e59a",
+            "size": 1780,
+            "claim": "0x82303E68 executed from its own entry over 12 cases, 60 float values compared bit for bit on the five ramp fields; the five axis fields are recorded and explicitly NOT compared, and the stubbed-call count is asserted at one on the bypass path and zero elsewhere"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_live_flight_ramps.h",
+            "sha256": "3ffe4be3538722e861258972653950b93b193ce67488ca7835c67162a5b091d7",
+            "size": 3967,
+            "claim": "include/ac6/retail_live_flight_ramps.h carries the derivation, states why this class rather than the contracted one, records that the ramp block is a complete unit because every store was listed in address order, and keeps the two 1.0 ceilings as separate constants because they come from separate addresses"
+          }
+        ]
       }
     }
   }
