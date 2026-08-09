@@ -68,6 +68,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_flight_input_router.cpp
   src/retail_scalar_sin_cos.cpp
   src/retail_container_index.cpp
+  src/retail_campaign_bundle.cpp
   src/retail_ndxr_geometry.cpp
   src/retail_terrain_field.cpp
   src/retail_map_placement.cpp

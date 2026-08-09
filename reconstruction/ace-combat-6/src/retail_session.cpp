@@ -1,5 +1,7 @@
 #include "ac6/retail_session.h"
 
+#include "ac6/retail_campaign_bundle.h"
+
 #include <algorithm>
 
 namespace ac6::retail {
@@ -31,14 +33,17 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
       config.mission_id > kPalCampaignDataTableEntries.size()) {
     return nullptr;
   }
-  const std::uint32_t data_table_entry =
-      kPalCampaignDataTableEntries[config.mission_id - 1];
-  std::vector<std::uint8_t> payload;
-  if (!store.read_payload(data_table_entry, payload)) return nullptr;
-  std::unique_ptr<RetailSession> session = open(std::move(payload), config);
+  std::optional<RetailCampaignBundle> campaign =
+      RetailCampaignBundle::open(store, config.mission_id);
+  if (!campaign.has_value()) return nullptr;
+  const std::optional<std::span<const std::uint8_t>> scenario = campaign->child(0);
+  if (!scenario.has_value()) return nullptr;
+  std::vector<std::uint8_t> scenario_payload(scenario->begin(), scenario->end());
+  std::unique_ptr<RetailSession> session =
+      open(std::move(scenario_payload), config);
   if (session == nullptr) return nullptr;
   session->bundle_ = RetailSessionBundle{
-      data_table_entry, loadout, store.index_sha256()};
+      campaign->data_table_entry(), loadout, campaign->content_index_sha256()};
   return session;
 }
 

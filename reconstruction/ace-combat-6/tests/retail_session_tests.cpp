@@ -15,10 +15,11 @@
 // session whose script is never advanced must still be in gameplay at tick 1800
 // with nothing completed.
 //
-// usage: retail-session-tests PAYLOAD [REPORT_JSON] [CAPTURE_DIR]
+// usage: retail-session-tests PAYLOAD [REPORT_JSON] [CAPTURE_DIR] [RETAIL_CACHE]
 // exit 77 means the retail payload was absent; it is never committed.
 
 #include "ac6/native_hud.h"
+#include "ac6/retail_campaign_bundle.h"
 #include "ac6/retail_session.h"
 #include "test_fixtures.h"
 
@@ -90,18 +91,37 @@ void put_be32(std::vector<std::uint8_t>& bytes, std::size_t offset,
   bytes[offset + 3] = static_cast<std::uint8_t>(value);
 }
 
+void put_be16(std::vector<std::uint8_t>& bytes, std::size_t offset,
+              std::uint16_t value) {
+  bytes[offset] = static_cast<std::uint8_t>(value >> 8u);
+  bytes[offset + 1] = static_cast<std::uint8_t>(value);
+}
+
 ac6::RetailIdentityPolicy make_store_source(
     const std::filesystem::path& source,
-    const std::vector<std::uint8_t>& payload) {
-  REQUIRE(payload.size() <= UINT32_MAX - 9u);
+    const std::vector<std::uint8_t>& payload, bool invalid_child_range = false) {
+  REQUIRE(payload.size() <= UINT32_MAX - 48u);
   REQUIRE(std::filesystem::create_directories(source));
   const std::vector<std::uint8_t> xex{'X', 'E', 'X', '2'};
   const std::vector<std::uint8_t> data01{'P'};
-  std::vector<std::uint8_t> data00(9u + payload.size());
+  std::vector<std::uint8_t> campaign_payload(48u + payload.size(), 0);
+  const std::array<std::uint8_t, 4> fhm{'F', 'H', 'M', ' '};
+  std::copy(fhm.begin(), fhm.end(), campaign_payload.begin());
+  campaign_payload[4] = 1;
+  campaign_payload[5] = 1;
+  put_be16(campaign_payload, 6, 0x10);
+  put_be32(campaign_payload, 0x10, 1);
+  put_be32(campaign_payload, 0x14,
+           invalid_child_range ? UINT32_MAX - 15u : 48u);
+  put_be32(campaign_payload, 0x18,
+           static_cast<std::uint32_t>(payload.size()));
+  std::copy(payload.begin(), payload.end(), campaign_payload.begin() + 48);
+
+  std::vector<std::uint8_t> data00(9u + campaign_payload.size());
   for (std::size_t index = 0; index < 9; ++index) {
     data00[index] = static_cast<std::uint8_t>(index);
   }
-  std::copy(payload.begin(), payload.end(), data00.begin() + 9);
+  std::copy(campaign_payload.begin(), campaign_payload.end(), data00.begin() + 9);
   ac6::retail_mode1_xor(std::span<std::uint8_t>(data00).subspan(9), 9);
 
   std::vector<std::uint8_t> table(8u + 10u * 16u, 0);
@@ -118,9 +138,9 @@ ac6::RetailIdentityPolicy make_store_source(
   put_be32(table, mission_row, 0x00020000u);
   put_be32(table, mission_row + 4, 9);
   put_be32(table, mission_row + 8,
-           static_cast<std::uint32_t>(payload.size()));
+           static_cast<std::uint32_t>(campaign_payload.size()));
   put_be32(table, mission_row + 12,
-           static_cast<std::uint32_t>(payload.size()));
+           static_cast<std::uint32_t>(campaign_payload.size()));
 
   write_file(source / "default.xex", xex);
   write_file(source / "DATA.TBL", table);
@@ -154,6 +174,12 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload) {
 
   ac6::RetailContentStore store(policy);
   REQUIRE(store.open(cache));
+  const std::optional<ac6::retail::RetailCampaignBundle> bundle =
+      ac6::retail::RetailCampaignBundle::open(store, kMissionId);
+  REQUIRE(bundle.has_value());
+  REQUIRE(bundle->child_count() == 1);
+  REQUIRE(bundle->child(0).has_value());
+  REQUIRE(bundle->child(0)->size() == payload.size());
   const ac6::CampaignLoadout loadout{1, 1, true};
   std::unique_ptr<RetailSession> session =
       RetailSession::open(store, loadout, {kMissionId, {0, 0}});
@@ -166,6 +192,48 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload) {
           nullptr);
   REQUIRE(RetailSession::open(store, loadout, {0, {0, 0}}) == nullptr);
   REQUIRE(RetailSession::open(store, loadout, {16, {0, 0}}) == nullptr);
+
+  TempStoreRoot invalid_root;
+  const std::filesystem::path invalid_source = invalid_root.path() / "source";
+  const std::filesystem::path invalid_cache = invalid_root.path() / "cache";
+  const ac6::RetailIdentityPolicy invalid_policy =
+      make_store_source(invalid_source, payload, true);
+  REQUIRE(ac6::RetailContentImporter(invalid_policy)
+              .run(invalid_source, invalid_cache, selected)
+              .passed());
+  ac6::RetailContentStore invalid_store(invalid_policy);
+  REQUIRE(invalid_store.open(invalid_cache));
+  REQUIRE(!ac6::retail::RetailCampaignBundle::open(invalid_store, kMissionId)
+               .has_value());
+  REQUIRE(RetailSession::open(invalid_store, loadout,
+                              {kMissionId, {0, 0}}) == nullptr);
+}
+
+void check_qualified_store_backed_session(const std::filesystem::path& cache) {
+  ac6::RetailContentStore store;
+  REQUIRE(store.open(cache));
+  REQUIRE(ac6::sha256_hex(store.index_sha256()) ==
+          "3573d7db36e70cc1f106506ba3f25900b7c226c414b84c3a7f23c4f27079d1de");
+  for (std::uint32_t mission_id = 1; mission_id <= 15; ++mission_id) {
+    const std::optional<ac6::retail::RetailCampaignBundle> bundle =
+        ac6::retail::RetailCampaignBundle::open(store, mission_id);
+    REQUIRE(bundle.has_value());
+    REQUIRE(bundle->child_count() == 26);
+    REQUIRE(bundle->child(0).has_value());
+    const std::optional<std::span<const std::uint8_t>> mdlp = bundle->child(1);
+    REQUIRE(mdlp.has_value());
+    REQUIRE(mdlp->size() >= 4);
+    REQUIRE((*mdlp)[0] == 'M' && (*mdlp)[1] == 'D' &&
+            (*mdlp)[2] == 'L' && (*mdlp)[3] == 'P');
+  }
+  const ac6::CampaignLoadout loadout{1, 1, true};
+  std::unique_ptr<RetailSession> session =
+      RetailSession::open(store, loadout, {kMissionId, {0, 0}});
+  REQUIRE(session != nullptr);
+  REQUIRE(session->bundle().has_value());
+  REQUIRE(session->bundle()->data_table_entry == 9);
+  REQUIRE(session->world().published == 230);
+  REQUIRE(session->scenario().sub_missions().size() == 4);
 }
 
 // The same input every run: the session must be a function of the payload and
@@ -486,7 +554,9 @@ void write_capture_bundle(const std::filesystem::path& directory,
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::fprintf(stderr, "usage: %s PAYLOAD [REPORT_JSON] [CAPTURE_DIR]\n", argv[0]);
+    std::fprintf(stderr,
+                 "usage: %s PAYLOAD [REPORT_JSON] [CAPTURE_DIR] [RETAIL_CACHE]\n",
+                 argv[0]);
     return 2;
   }
   if (!std::filesystem::exists(argv[1])) {
@@ -502,6 +572,7 @@ int main(int argc, char** argv) {
   REQUIRE(probe != nullptr);
   REQUIRE(!probe->bundle().has_value());
   check_store_backed_session(payload);
+  if (argc >= 5) check_qualified_store_backed_session(argv[4]);
   const std::vector<ac6::retail::ScenarioSubMission>& sub_missions =
       probe->scenario().sub_missions();
   REQUIRE(sub_missions.size() == 4);
