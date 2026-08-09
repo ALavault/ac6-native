@@ -40,12 +40,14 @@ the repository's*.
 | your dump ended at a **`blr`** | *stopping at a natural boundary* — disassemble the next address anyway; three cycles missed their answer by under twenty bytes |
 | you are about to add a **plausibility control** | it is only strong where the field borders a differently-encoded one; see cycle 1242 |
 | **`Ac6Xrefs` returned 0** for something you know is referenced | *the Xenon project has no reference database* — it is empty for everything, including globals the code demonstrably loads; use a text or force scan instead |
+| you are about to bank a **zero-hit search** as a negative | *what made the eighth different* — run the same search against a case whose answer you already know is not zero; without one, the negative is not yet evidence |
 | you drew a conclusion from **seven of eight** call sites | *a corollary about call sites* — an unexhausted list is indistinguishable from an exhausted one, because the evidence looks uniform until the exception |
 | your **positive** result confirms what you hoped | `.pdata` is incomplete, and a false positive gets challenged far less than a false negative |
 | your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
 | you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
 | you are about to publish that **two sources disagree** | *the unexamined contradiction* — a mismatch is a claim about two readings and needs both read; start with whichever came from someone else's transcription |
+| your statistic has a **null model and a huge margin** | *the right number, the wrong mechanism* — a null tests whether the pattern is real, never why; cycle 1451's R(4t)=0.9757 over 4,000 trials was a two-bit field, not an angle |
 | your scan came back **zero** for an address or a magic | *a rule that was written, correct, and unrunnable* — run `tools/find_materialised_address.py IMAGE ADDR`: a value built as `lis`+`ori`/`addi` is invisible to branch scans and data scans alike |
 | you scanned for a function address **as data** and found exactly one hit | *the `.pdata` row read as a dispatch slot* — the exception table spans 0x82079E00..0x82089FB0 and its `BeginAddress` fields look identical to a table slot; exclude that range, then say which side of it the address falls on |
 | two functions sit **next to each other** and seem related | *the refuted link* — image order is not evidence; the checkable forms are a shared member offset, an exclusive call site, a common caller, and none is visible from inside either function |
@@ -1606,3 +1608,45 @@ cut 78/104/127 sites to thirteen in eight functions, excluded every switch arm
 automatically -- a jump table does not marshal arguments per arm -- and needed no
 class-map filter at all. A slot number is a coincidence waiting to happen; an
 argument list is a claim about the callee.
+
+
+## the right number, the wrong mechanism
+
+Cycle 1451 asked what `tag >> 16` was in the map placement record. Read as a
+fraction of a turn, the circular resultant of four times the angle over 4,318
+instances came out **0.9757**, against 0.68–0.70 at every other harmonic. Two
+null models, 2,000 trials each — uniform random fields, and reshuffles that keep
+the multiset structure and randomise only the angles — produced **zero** trials
+that reached it, the best uniform run being 0.0423. The three populated
+orientations sat 90.074 and 90.061 degrees apart.
+
+The cycle concluded: a right-angle street grid, rotated 79.33 degrees.
+
+Every number there is correct and reproducible. The conclusion is wrong. Cycle
+1452 read the instructions that consume the field — `0x82102340` masks three
+bits, `0x82102364` masks nine — and the four-fold structure is a **two-bit field
+in bits 30..31**, which moves `tag >> 16` by exactly `0x4000` per step. Four
+values of two bits are 90 degrees apart *by construction*. There is no angle, and
+the "79.33 degrees" was the mean of fourteen bits that mean nothing.
+
+### Why the nulls could not catch it
+
+A null model answers **"is this pattern real?"**. It cannot answer **"why is this
+pattern here?"**, and no number of trials converts one into the other. Both nulls
+were sound; both tested a question that was already settled. The margin — zero of
+4,000 — made the wrong explanation feel proportionally certain, which is exactly
+backwards: a huge margin means the *pattern* is solid and says nothing at all
+about the story attached to it.
+
+### The rule
+
+**A statistic with a null model establishes a pattern, never a mechanism.** When
+the mechanism matters — and it does whenever you are about to name a field —
+find the instructions that read it. The field's width is in the mask.
+
+Three cycles in a row then repeated the shape from the other side: 1452's
+water-overhang test was refuted as an instrument when a random-angle null beat
+both candidates; 1453's rendered comparison was refuted when the same measure
+tracked model size; 1454 settled the question from the loader in one read. Each
+time, looking or fitting pointed one way and reading pointed the other, and
+reading was right.

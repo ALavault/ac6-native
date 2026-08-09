@@ -38,6 +38,25 @@ DEFAULT_PATH = "INSTRUMENT_DISCIPLINE.md"
 # first heading in the file that is not part of the front matter.
 INDEX_END = "## The pattern"
 
+# STRUCTURAL sections, which carry no shape and are not expected in the index.
+# Everything else after the boundary IS a shape and must be indexed.
+#
+# The filter here used to be `"shape" in heading.lower()`, which is not a test of
+# whether a section is a shape -- it is a test of whether its author happened to
+# write the word. At cycle 1455 the file held 39 second-level headings and the
+# checker counted 31; of the eight it never looked at, three were shapes ("What
+# made the eighth different", "The Xenon project has no reference database", "And
+# a corollary about call sites") and one was the section being added at the time.
+# A checker that exists to catch an unindexed shape was blind to exactly the
+# shapes whose headings read naturally, and its own "shapes=31" was reporting a
+# word count. Naming the exemptions makes the default correct.
+STRUCTURAL = {
+    "the pattern",
+    "the specific traps in this repository",
+    "two checkers that exist because of this",
+    "the audit this file owes itself",
+}
+
 
 def short_name(heading: str) -> str:
     """The name the index is expected to point by.
@@ -46,7 +65,11 @@ def short_name(heading: str) -> str:
     settle it" -> "the displacement collision"
     """
     tail = heading.split(":")[-1]
-    return normalise(tail.split(",")[0])
+    name = normalise(tail.split(",")[0])
+    # A heading may open with a conjunction ("And a corollary about call sites")
+    # where the index entry naturally does not. That is a difference in prose,
+    # not a missing entry, and it hid a real shape until cycle 1455.
+    return name[4:] if name.startswith("and ") else name
 
 
 def normalise(text: str) -> str:
@@ -67,8 +90,9 @@ def main() -> int:
         return 1
 
     index = normalise(text[: text.index(INDEX_END)])
-    headings = [h for h in re.findall(r"^## (.+)$", text, re.M)
-                if "shape" in h.lower()]
+    after = text[text.index(INDEX_END):]
+    headings = [h for h in re.findall(r"^## (.+)$", after, re.M)
+                if normalise(h) not in STRUCTURAL]
 
     if not headings:
         print("instrument_discipline_index=error no shape headings found")
