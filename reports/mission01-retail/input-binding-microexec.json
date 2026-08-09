@@ -1,0 +1,33 @@
+{
+  "schema": "ac6.input-binding-microexec.v1",
+  "statement": "0x82211C10 executed on a synthetic player block and input record, both outputs compared bit for bit against the ported rule, over values chosen at the deadzone and threshold boundaries and including negative zero",
+  "function": "0x82211C10",
+  "record_bit": 17,
+  "record_slot": "0x50",
+  "deadzone": 0.25,
+  "scale": 2.0,
+  "threshold": 0.75,
+  "cases": 38,
+  "divergences": 0,
+  "values": [
+    0.0,
+    -0.0,
+    0.1,
+    -0.1,
+    0.25,
+    -0.25,
+    0.2500001,
+    0.3,
+    -0.3,
+    0.5,
+    -0.5,
+    0.75,
+    -0.75,
+    0.7500001,
+    0.9,
+    -0.9,
+    1.0,
+    -1.0,
+    2.0
+  ]
+}

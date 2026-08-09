@@ -21,11 +21,17 @@
 // stride 160 -- agree with the base and stride cycle 1320 measured by executing
 // the producer.
 //
+// THE CONSTANTS ARE THREE WORDS OF THE IMAGE, read rather than assumed: -1.0 at
+// 0x82069B28, 1.0 at 0x82001348 and 0.0 at 0x8200082C. The last two are the same
+// words cycles 1330 and 1342 identified for unrelated reasons; this image reuses
+// one zero and one one throughout.
+//
 // THE TABLE IS THE POINT. Every deadzone, scale and threshold is per binding, out
 // of a 24-byte descriptor, not a constant in the code. A port that hard-codes any
 // of them is not this function.
 
 #include <cstdint>
+#include <optional>
 
 namespace ac6::retail {
 
@@ -73,7 +79,22 @@ constexpr float select_ge_zero(float a, float b, float c) noexcept {
 //
 // so it is zero inside the deadzone, saturated beyond the threshold, and the
 // untouched input in between. Three regions, and only two of them are constant.
-BindingOutputs apply_input_binding(float value, const InputBinding& binding) noexcept;
+// AND IT MAY STORE NOTHING AT ALL. 0x82211D50 compares the processed value
+// against 0.0 and branches straight to the loop increment when they are equal:
+//
+//     fcmpu cr6,f13,f10
+//     beq   cr6,0x82211DD0
+//
+// so a binding whose value comes out exactly zero writes no value, no step and
+// no mask bit, and the caller's arrays keep whatever the previous frame left
+// there. The reading at cycle 1353 missed this; the differential at 1355 found
+// it on its first run, which is the whole reason the plan requires one.
+//
+// An empty optional is that case. It is not "zero" -- it is "the game did not
+// touch this slot", and a port that writes zero instead would clear a value
+// retail preserves.
+std::optional<BindingOutputs> apply_input_binding(float value,
+                                                  const InputBinding& binding) noexcept;
 
 // Both outputs are negated when the player's invert mask has the slot's bit.
 BindingOutputs invert_outputs(BindingOutputs outputs) noexcept;

@@ -428,6 +428,48 @@
             "claim": "include/ac6/retail_transform.h carries the derivation, states that there is ONE kernel for both paths and why, and names what is not ported: the object's first 16 bytes and the trigonometry of 0x8209CB70"
           }
         ]
+      },
+      "retail_input_binding": {
+        "status": "passed",
+        "statement": "the native product reproduces the input binding layer 0x82211C10 -- the deadzone, scale, clamp and sign restoration of one axis, the three-region step, the inversion mask, and the skip that stores NOTHING when the processed value is exactly zero -- reading the record with the same (bit + 3) * 4 rule the retail_input_record behaviour already carries",
+        "retail_addresses": [
+          "0x82211C10",
+          "0x82211DF8",
+          "0x826EDB98",
+          "0x82069B28",
+          "0x82001348",
+          "0x8200082C"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1353-the-consumer-uses-the-rule-the-product-implements.md",
+            "sha256": "c0ebb8f08dd29f22e07177ef256df7eb2e56a0e298683902973a9f0a7e8eaa85",
+            "size": 3975,
+            "claim": "0x82211C10 read whole against .pdata, with the (bit + 3) * 4 record access, the 24-byte descriptor at player + 24*(bit+6), and the three constants -1.0, 1.0 and 0.0 read rather than assumed"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/cycle-1354-a-port-and-a-contract-entry-withheld.md",
+            "sha256": "9e75894b2374730949d4e7b59f686bf8f6afaad43d299f936000df7573b98f5c",
+            "size": 3391,
+            "claim": "boundary tests at the deadzone and threshold exactly and either side, the clamp, both signs and negative zero, with two negative controls that fail on exactly the cases they should"
+          },
+          {
+            "kind": "microexec",
+            "path": "reports/mission01-retail/input-binding-microexec.json",
+            "sha256": "c9212dca8ea76b0ff9f0ccacf68401edf5e152ea41d7f9f9096ff699fd031388",
+            "size": 658,
+            "claim": "0x82211C10 executed on a synthetic player block and record over 38 cases, both outputs compared bit for bit, including negative zero and the values either side of both boundaries, no divergence"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_input_binding.h",
+            "sha256": "7afbfdb996987c0437d8455a90dfe2adb9969247977d97a0d3c1e48a1698959c",
+            "size": 4752,
+            "claim": "include/ac6/retail_input_binding.h carries the derivation, states why an empty optional is not zero, and records that the layer is table-driven so a port must not hard-code any threshold"
+          }
+        ]
       }
     }
   }

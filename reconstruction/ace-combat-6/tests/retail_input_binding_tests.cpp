@@ -35,6 +35,21 @@ void check_bits(float got, std::uint32_t want, const std::string& what) {
   }
 }
 
+// The layer stores nothing when the processed value is exactly zero, so a test
+// that wants a value has to say which case it is in. These two make that
+// explicit rather than letting an empty optional read as a pass.
+float value_of(float input, const ac6::retail::InputBinding& b) {
+  const auto out = ac6::retail::apply_input_binding(input, b);
+  check(out.has_value(), "expected the binding to store something");
+  return out ? out->value : 0.0F;
+}
+
+float step_of(float input, const ac6::retail::InputBinding& b) {
+  const auto out = ac6::retail::apply_input_binding(input, b);
+  check(out.has_value(), "expected the binding to store something");
+  return out ? out->step : 0.0F;
+}
+
 ac6::retail::InputBinding binding() {
   ac6::retail::InputBinding b;
   b.threshold = 0.75F;
@@ -49,11 +64,11 @@ void test_deadzone_boundary() {
   // takes the scale branch and still yields 0. Below it, the guard fires. Both
   // produce zero, and a rule with the comparison the other way round produces
   // zero too -- so the discriminating point is just above.
-  check_bits(ac6::retail::apply_input_binding(0.25F, b).value, 0x00000000U,
-             "value at the deadzone is +0");
-  check_bits(ac6::retail::apply_input_binding(0.20F, b).value, 0x00000000U,
-             "value below the deadzone is +0");
-  const float above = ac6::retail::apply_input_binding(0.30F, b).value;
+  check(!ac6::retail::apply_input_binding(0.25F, b).has_value(),
+        "at the deadzone the value is zero, so NOTHING is stored");
+  check(!ac6::retail::apply_input_binding(0.20F, b).has_value(),
+        "below the deadzone likewise");
+  const float above = value_of(0.30F, b);
   check(std::fabs(above - (0.30F - 0.25F) * 2.0F) < 1e-6F,
         "just above the deadzone the scale applies");
 }
@@ -61,14 +76,14 @@ void test_deadzone_boundary() {
 void test_clamp_and_sign() {
   const auto b = binding();
   // (1.0 - 0.25) * 2 = 1.5, clamped to 1.
-  check_bits(ac6::retail::apply_input_binding(1.0F, b).value, bits_of(1.0F),
+  check_bits(value_of(1.0F, b), bits_of(1.0F),
              "the scaled value clamps at 1");
-  check_bits(ac6::retail::apply_input_binding(-1.0F, b).value, bits_of(-1.0F),
+  check_bits(value_of(-1.0F, b), bits_of(-1.0F),
              "and the sign is restored after clamping");
   // The magnitude is taken first, so a negative input never reaches the clamp
   // as a negative -- a port that scaled the signed value would clamp only the
   // positive side.
-  const float negative = ac6::retail::apply_input_binding(-0.30F, b).value;
+  const float negative = value_of(-0.30F, b);
   check(std::fabs(negative + (0.30F - 0.25F) * 2.0F) < 1e-6F,
         "a negative input is processed by magnitude then re-signed");
 }
@@ -79,8 +94,8 @@ void test_negative_zero() {
   // against +0.0 and -0.0 >= 0.0 is true, so the positive branch is taken and
   // the output is POSITIVE zero.
   const auto b = binding();
-  check_bits(ac6::retail::apply_input_binding(-0.0F, b).value, 0x00000000U,
-             "an idle axis (-0.0) leaves the binding as +0.0, not -0.0");
+  check(!ac6::retail::apply_input_binding(-0.0F, b).has_value(),
+        "an idle axis stores nothing at all -- the slot keeps last frame's value");
   check_bits(ac6::retail::select_ge_zero(-0.0F, 1.0F, -1.0F), bits_of(1.0F),
              "select_ge_zero sends -0.0 down the positive branch");
   check_bits(ac6::retail::select_ge_zero(-1.0F, 1.0F, -1.0F), bits_of(-1.0F),
@@ -90,24 +105,26 @@ void test_negative_zero() {
 void test_step_has_three_regions() {
   const auto b = binding();
   // Inside the deadzone: zero.
-  check_bits(ac6::retail::apply_input_binding(0.10F, b).step, 0x00000000U,
-             "step is zero inside the deadzone");
+  check(!ac6::retail::apply_input_binding(0.10F, b).has_value(),
+        "inside the deadzone nothing is stored, step included");
   // Beyond the threshold: saturated.
-  check_bits(ac6::retail::apply_input_binding(0.90F, b).step, bits_of(1.0F),
+  check_bits(step_of(0.90F, b), bits_of(1.0F),
              "step saturates to +1 beyond the threshold");
-  check_bits(ac6::retail::apply_input_binding(-0.90F, b).step, bits_of(-1.0F),
+  check_bits(step_of(-0.90F, b), bits_of(-1.0F),
              "and to -1 on the other side");
   // BETWEEN them the RAW VALUE passes through. Cycle 1353 called this a
   // "three-state sign" and it is not; this case is the one that says so.
-  check_bits(ac6::retail::apply_input_binding(0.50F, b).step, bits_of(0.50F),
+  check_bits(step_of(0.50F, b), bits_of(0.50F),
              "step passes the input through between deadzone and threshold");
-  check_bits(ac6::retail::apply_input_binding(-0.50F, b).step, bits_of(-0.50F),
+  check_bits(step_of(-0.50F, b), bits_of(-0.50F),
              "including its sign");
   // The boundaries themselves: the guards are < and >, so equality falls in the
   // middle band on both sides.
-  check_bits(ac6::retail::apply_input_binding(0.25F, b).step, bits_of(0.25F),
-             "step at exactly the deadzone is the input, not zero");
-  check_bits(ac6::retail::apply_input_binding(0.75F, b).step, bits_of(0.75F),
+  // At exactly the deadzone the VALUE is zero, so the slot is skipped and the
+  // step never reaches an array -- the middle-band rule is shown just above it.
+  check(!ac6::retail::apply_input_binding(0.25F, b).has_value(),
+        "at exactly the deadzone the slot is skipped");
+  check_bits(step_of(0.75F, b), bits_of(0.75F),
              "step at exactly the threshold is the input, not one");
 }
 

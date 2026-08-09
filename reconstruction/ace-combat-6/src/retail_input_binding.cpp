@@ -4,8 +4,8 @@
 
 namespace ac6::retail {
 
-BindingOutputs apply_input_binding(float value,
-                                   const InputBinding& binding) noexcept {
+std::optional<BindingOutputs> apply_input_binding(
+    float value, const InputBinding& binding) noexcept {
   BindingOutputs outputs;
 
   // 0x82211D18..0x82211D40. The magnitude is taken first and the sign restored
@@ -20,6 +20,12 @@ BindingOutputs apply_input_binding(float value,
     }
   }
   outputs.value = select_ge_zero(value, scaled, -scaled);
+
+  // 0x82211D50. Exactly zero means the whole slot is skipped, including the
+  // mask bit. -0.0 compares equal to 0.0 here, so both zeros skip.
+  if (outputs.value == 0.0F) {
+    return std::nullopt;
+  }
 
   // 0x82211D7C..0x82211DA0. Three regions, and the middle one passes the input
   // through untouched -- see the header.
