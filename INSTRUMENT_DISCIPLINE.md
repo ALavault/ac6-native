@@ -52,6 +52,7 @@ the repository's*.
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
 | your fixture is **self-describing** — byte `k` holds `k`, field `n` holds `n` | *the fixture whose answer is its own input* — check what a null implementation (a copy of one operand, a no-op) would produce; if that also matches, the case proves nothing |
+| your filter returned **nothing, uniformly**, and "none of them" is a plausible answer | *a guard tighter than the data it filters* — a bound is a claim and needs a reason; run the filter against a case the repository has already named, and if a repository tool answers the question, call it instead of reimplementing it |
 | you measured a **vtable's size** by reading until the words stop looking like code | *a vtable's extent read as a run of pointers* — MSVC puts each class's RTTI locator at `vtable[-1]`, so vtables are packed COL/slots/COL/slots; the class map has the boundary and "still a code pointer" cannot find it |
 | a register **never appears** in a function body, so you concluded it is not an argument | *the argument that passes straight through* — a volatile register forwarded untouched to the first call is invisible in the mnemonics; check whether anything writes it before that call, not whether it is mentioned |
 
@@ -1114,3 +1115,51 @@ The command, where the sides are a listing and a constant:
 `tools/check_listing_against_pdata.py` for the listing's completeness, then read
 the store and its register by hand. There is no tool for "did you read the right
 register", and saying so is the point of the twenty-fifth shape.
+
+## The thirty-first shape: a guard tighter than the data it filters
+
+Cycle 1370 wrote a throwaway RTTI reader — vtable minus four gives the complete
+object locator, `+0x0C` gives the type descriptor, `+8` gives the name — and
+guarded each pointer with `0x82000000 <= p < 0x82400000`. Every class in the
+binary came back **unnamed**, including `galib::CGaLocator`, which the campaign
+has been naming correctly for twenty cycles.
+
+AC6's type descriptors live at **`0x8268F…`**. The guard was a sanity check
+written from the section bounds this campaign reads most often — `.rdata` ends at
+`0x82079DD3`, `.text` at `0x823D772B` — and the descriptors are in neither.
+
+The failure mode is what makes this a shape rather than a typo:
+
+- **It produced a uniform, plausible answer.** Not a crash, not a partial
+  result, not one odd row. "This binary has no RTTI" is a *thing that happens*,
+  and several classes here genuinely have no COL, so the false answer had
+  corroboration.
+- **The correct version was already in the repository.**
+  `tools/whose_vtable.py` guards with `BASE <= p < BASE + len(data)` and has
+  been right the whole time. The defect was introduced by re-implementing a
+  working instrument inline rather than calling it.
+- **It was one guard away from deleting a third of the class map.** Had the bad
+  reader been used to rebuild `analysis/class-map.tsv` instead of to answer one
+  question, 811 named vtables would have become 0 and the count of unnamed ones
+  would have "grown" from 306 to 1,117 with no error anywhere.
+
+### The rule
+
+**A bound is a claim, and it needs a reason.** `< 0x82400000` was not read from
+anything; it was a round number near where the sections this campaign usually
+reads happen to stop. When the filter's job is "is this a pointer into the
+image", the bound is the image — `BASE + len(data)` — and anything narrower must
+name the section it comes from and why that section is the right one.
+
+And the cheaper rule that would also have caught it: **if a repository tool
+already answers the question, call it.** The reimplementation is where the bound
+was invented; `whose_vtable.py` never had it.
+
+The control that catches this class of defect in one line is a **known-good
+positive**: run the filter against something whose answer you already know. Here
+that is any vtable in `class-map.tsv`. A filter that returns "nothing found" for
+a case the repository has already named is broken, not informative — which is the
+eighth entry of *The pattern* restated for guards instead of searches.
+
+The test is `test_a_descriptor_past_the_rdata_bound_is_still_read` in
+`tools/tests/test_ac6_static_tooling.py`.

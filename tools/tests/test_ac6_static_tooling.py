@@ -12,6 +12,7 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
+import map_object_layout
 from ac6_mode1_codec import descramble
 from ac6_fhm import parse_fhm
 from audit_ac6_mission01_native_gate import GateError, audit_contract, template
@@ -1472,3 +1473,128 @@ class ScenarioRoundTripTests(unittest.TestCase):
         walk2 = ScenarioWalk(NativePayload(bytes(raw)))
         self.assertEqual(walk2.tables[table], [])
         self.assertEqual(len(walk2.nodes), 1)     # the children are not reached
+
+
+class ObjectLayoutMapping(unittest.TestCase):
+    """`map_object_layout.py` -- the constructor-to-subobject tracer.
+
+    The failures it is built against are all real. Cycle 1370's throwaway version
+    guarded the type descriptor with `< 0x82400000` and so reported every AC6
+    class as unnamed, because the descriptors live at 0x8268F000. And the same
+    integer appears in this binary both as a displacement (`this + 2224`) and as
+    the low half of a string address (0x820008B0); telling them apart is the
+    whole reason constants and this-relative pointers are separate lattices.
+    """
+
+    def setUp(self):
+        self.corpus = tempfile.TemporaryDirectory()
+        self.addCleanup(self.corpus.cleanup)
+
+    def _corpus(self, functions):
+        """functions: {address: [(mnemonic, operands), ...]} -> a corpus dir."""
+        lines = []
+        for address, body in sorted(functions.items()):
+            lines.append("PPC_FUNC_IMPL(__imp__sub_%08X) {" % address)
+            for mnemonic, operands in body:
+                lines.append("\t// %s %s" % (mnemonic, operands))
+            lines.append("}")
+            lines.append("")
+        path = Path(self.corpus.name) / "ppc_recomp.0.cpp"
+        path.write_text("\n".join(lines) + "\n")
+        return self.corpus.name
+
+    @staticmethod
+    def _image_with_class(vtable, name):
+        """A flat image carrying one vtable with a working COL chain."""
+        data = bytearray(0x00090000)          # 0x82000000 .. 0x82090000
+
+        def put(address, word):
+            struct.pack_into(">I", data, address - 0x82000000, word)
+
+        locator = 0x82060000
+        descriptor = 0x82070000
+        put(vtable - 4, locator)
+        put(locator + 0x0C, descriptor)
+        encoded = name.encode("ascii") + b"\0"
+        start = descriptor + 8 - 0x82000000
+        data[start:start + len(encoded)] = encoded
+        return bytes(data)
+
+    def test_a_named_vtable_install_is_reported_at_its_this_offset(self):
+        vtable = 0x82054D94
+        corpus = self._corpus({0x82001000: [
+            ("mflr", "r12"),
+            ("mr", "r31,r3"),
+            ("lis", "r11,%d" % ((vtable >> 16) - 0x10000)),
+            ("addi", "r11,r11,%d" % (vtable & 0xFFFF)),
+            ("stw", "r11,4928(r31)"),
+        ]})
+        image = self._image_with_class(vtable, ".?AVCGaLocator@galib@@")
+        functions = map_object_layout.load_corpus(corpus)
+        installs, _, _ = map_object_layout.map_layout(functions, image, 0x82001000)
+        self.assertEqual(installs, [(0x82001010, 4928, vtable,
+                                     ".?AVCGaLocator@galib@@")])
+
+    def test_a_descriptor_past_the_rdata_bound_is_still_read(self):
+        # The exact defect of the throwaway version: AC6 keeps type descriptors
+        # far above every section this campaign usually reads. A guard tighter
+        # than the image renames every class to None and looks like a binary
+        # without RTTI.
+        data = bytearray(0x00700000)          # image runs to 0x82700000
+        vtable, locator, descriptor = 0x82054D94, 0x82060000, 0x8268F748
+
+        def put(address, word):
+            struct.pack_into(">I", data, address - 0x82000000, word)
+
+        put(vtable - 4, locator)
+        put(locator + 0x0C, descriptor)
+        encoded = b".?AVCAce6Thread@ACE6@@\0"
+        start = descriptor + 8 - 0x82000000
+        data[start:start + len(encoded)] = encoded
+        self.assertEqual(map_object_layout.rtti_name(bytes(data), vtable),
+                         ".?AVCAce6Thread@ACE6@@")
+
+    def test_a_string_address_is_not_read_as_a_displacement(self):
+        # `addi r10,r11,2224` off a CONSTANT base is 0x820008B0, a string.
+        # `addi r3,r31,2224` off `this` is the subobject at +2224. Same integer,
+        # and the tool must report exactly one of them.
+        corpus = self._corpus({0x82001000: [
+            ("mr", "r31,r3"),
+            ("lis", "r11,-32256"),
+            ("addi", "r10,r11,2224"),          # 0x820008B0 -- a string
+            ("addi", "r3,r31,2224"),           # this+2224  -- a subobject
+            ("bl", "0x82302b28"),
+        ]})
+        image = self._image_with_class(0x82054D94, ".?AVX@@")
+        functions = map_object_layout.load_corpus(corpus)
+        installs, calls, _ = map_object_layout.map_layout(functions, image, 0x82001000)
+        self.assertEqual(installs, [])
+        self.assertEqual(calls, [(0x82001010, 2224, 0x82302B28)])
+
+    def test_assigning_a_constant_clears_a_this_relative_binding(self):
+        # A register holds one kind of value at a time. If `mr` left the old
+        # relative binding in place, the later store would be attributed to an
+        # offset the code never computes.
+        corpus = self._corpus({0x82001000: [
+            ("mr", "r31,r3"),
+            ("addi", "r9,r31,64"),             # r9 is this+64
+            ("lis", "r9,-32256"),              # ... and now it is a constant
+            ("addi", "r9,r9,4"),
+            ("stw", "r9,8(r31)"),
+        ]})
+        image = self._image_with_class(0x82054D94, ".?AVX@@")
+        functions = map_object_layout.load_corpus(corpus)
+        installs, _, _ = map_object_layout.map_layout(functions, image, 0x82001000)
+        self.assertEqual([(offset, value) for _, offset, value, _ in installs],
+                         [(8, 0x82000004)])
+
+    def test_unfollowed_branches_are_counted_rather_than_hidden(self):
+        corpus = self._corpus({0x82001000: [
+            ("mr", "r31,r3"),
+            ("beq", "0x82001020"),
+            ("b", "0x82001030"),
+        ]})
+        image = self._image_with_class(0x82054D94, ".?AVX@@")
+        functions = map_object_layout.load_corpus(corpus)
+        _, _, branches = map_object_layout.map_layout(functions, image, 0x82001000)
+        self.assertEqual(branches, 2)
