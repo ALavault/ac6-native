@@ -1,0 +1,33 @@
+# Who reads the newly-active edge word at object+0xE4C. Cycle 1361.
+#
+# HOW THE POPULATION WAS NARROWED. Fourteen functions touch displacement 3660 on
+# a non-stack base -- the displacement collision again. The discriminator is that
+# a genuine reader must reach the SAME object 0x82211DF8 writes, which is
+# [0x826E4EB4] + 0x20000 + K for K in {17804, 22256, 26708, 31160}. Three
+# functions build exactly that address with exactly that arithmetic.
+#
+# EACH TESTS A SINGLE BIT, with `rlwinm rX,rX,0,N,N`, which keeps PPC bit N and
+# therefore slot 31-N.
+#
+# columns: function object slot_bits
+0x82191AE0	context+0x26854 (the third)	4
+0x82251918	context+0x279B8 (the fourth)	0, 2, 5, 7, 8, 9
+0x82276D68	context+0x279B8 (the fourth)	17
+#
+# So the four objects are NOT interchangeable: different subsystems read
+# different ones, and each cares about a handful of named slots.
+#
+# WHAT THIS MAKES THE CHAIN. device snapshot -> record -> per-binding deadzone and
+# scale -> active-slot mask -> edges and auto-repeat -> per-slot action. That is
+# an INPUT COMMAND system: "slot 5 was just pressed, do this", with auto-repeat
+# for held slots.
+#
+# AND THAT IS NOT THE FLIGHT CONTROLLER. Cycle 1358 established the float on this
+# path drives auto-repeat rather than integration; this cycle finds its consumers
+# testing single slot bits to trigger discrete actions. Nothing on this tick
+# integrates a position or an orientation.
+#
+# NOT ESTABLISHED: what the three consumers do with their bits; what the first two
+# objects (context+0x2458C and +0x256F0) are read by; whether the analogue values
+# the binding layer produces are consumed anywhere on this tick at all -- the
+# three consumers found here read only the EDGE word, not the value arrays.
