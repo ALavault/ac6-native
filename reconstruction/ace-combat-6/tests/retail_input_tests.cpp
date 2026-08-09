@@ -7,7 +7,7 @@
 // half is 0xFFFF because retail complements a zero-extended halfword and does
 // not tidy the result.
 //
-// usage: retail-input-tests
+// usage: retail-input-tests [REPORT_JSON]
 
 #include "ac6/retail_input.h"
 #include "test_fixtures.h"
@@ -159,12 +159,29 @@ void test_capability_code() {
 
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
   test_axis_table();
   test_axis_split();
   test_button_edges();
   test_decode();
   test_capability_code();
+  // Written before the numbers are read back, so the report cannot describe a
+  // run that did not happen.
+  if (argc > 1) {
+    std::FILE* report = std::fopen(argv[1], "w");
+    REQUIRE(report != nullptr);
+    std::fprintf(report,
+                 "{\n  \"schema\": \"ac6.retail-input.v1\",\n"
+                 "  \"statement\": \"the axis split, the button edges and the "
+                 "0x40-byte snapshot behave as 0x8234D110, 0x8234D378 and "
+                 "0x8234D0A0 compute them\",\n"
+                 "  \"axis_entries\": %zu,\n"
+                 "  \"snapshot_bytes\": %zu,\n"
+                 "  \"axis_split_inputs_exercised\": 65536,\n"
+                 "  \"capability_codes\": 5\n}\n",
+                 kAxisSplitTable.size(), kInputSnapshotBytes);
+    std::fclose(report);
+  }
   std::printf("retail_input=pass axes=%zu snapshot_bytes=%zu\n",
               kAxisSplitTable.size(), kInputSnapshotBytes);
   return 0;

@@ -1,0 +1,13 @@
+{
+  "schema": "ac6.retail-input-microexec.v1",
+  "statement": "the retail input stages executed on a synthetic device write what include/ac6/retail_input.h says they write",
+  "axis_stage": "0x8234D110",
+  "button_stage": "0x8234D378",
+  "cases": 12,
+  "passed": 12,
+  "fields_compared": 168,
+  "stubbed": [
+    "0x8234D1B8",
+    "0x8234D210"
+  ]
+}

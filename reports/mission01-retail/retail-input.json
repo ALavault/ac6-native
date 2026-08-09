@@ -1,0 +1,8 @@
+{
+  "schema": "ac6.retail-input.v1",
+  "statement": "the axis split, the button edges and the 0x40-byte snapshot behave as 0x8234D110, 0x8234D378 and 0x8234D0A0 compute them",
+  "axis_entries": 4,
+  "snapshot_bytes": 64,
+  "axis_split_inputs_exercised": 65536,
+  "capability_codes": 5
+}
