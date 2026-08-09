@@ -1,0 +1,13 @@
+# 0x82303110 from 0x82303558, micro-executed, against
+# ac6::retail::integrate_flight_position.
+# case	verdict	at64	at68	at72	why the case exists
+flight-step-0	ok	0.0	1000.0	0.0	everything idle: nothing may move
+flight-step-1	ok	110.0	2020.0	-19.999998092651367	distinct rate per axis: a crossed component shows here
+flight-step-2	ok	0.069768525660038	4115.916015625	0.008657408878207207	full mantissas: this is where fused and unfused disagree
+flight-step-3	ok	0.0	10.0	0.0	exactly the floor: bge is taken, so 10.0 is not rewritten
+flight-step-4	ok	0.0	10.0	0.0	just below the floor: lifted to 10.0
+flight-step-5	ok	0.0	10.0	0.0	driven below the floor by its own rate
+flight-step-6	ok	-1.0	3000.0	-1.0	at64 and at72 below 10 with no motion: the floor must NOT touch them
+flight-step-7	ok	27.77777862548828	2526.111083984375	27.77777862548828	equal rates, non-zero bias: only the middle may differ
+flight-step-8	ok	7.252638816833496	800.1744384765625	-3.2451250553131104	negative everything, including the step
+flight-step-9	ok	1234.5679931640625	4322.4560546875	-9.298583984375	the sweep's own shape, one point of it

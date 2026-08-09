@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| a differential fails by **one ulp**, on some cases only | *both sides right, disagreeing on the inputs* — build every candidate rule and run them together; if they all reproduce the oracle the fixture is feeding two different numbers, and the repair a green suite rewards is the wrong one |
 | your **controls** all pass, or you never asserted that they fail | *a domain that cannot express the difference* — coverage of the input space is not coverage of the distinctions; assert `disagreements > 0` per control, and for a rounding control use inputs with long binary expansions |
 | your fixture is **self-describing** — byte `k` holds `k`, field `n` holds `n` | *the fixture whose answer is its own input* — check what a null implementation (a copy of one operand, a no-op) would produce; if that also matches, the case proves nothing |
 | your filter returned **nothing, uniformly**, and "none of them" is a plausible answer | *a guard tighter than the data it filters* — a bound is a claim and needs a reason; run the filter against a case the repository has already named, and if a repository tool answers the question, call it instead of reimplementing it |
@@ -1211,3 +1212,54 @@ has a short binary expansion, no rounding control in that suite can ever fire.
 Generate the sweep from **one shared function** used by both the comparison and
 the controls. Two loops with hand-copied values drift, and the drift is invisible
 because both still pass.
+
+## The thirty-third shape: both sides right, disagreeing on the inputs
+
+Cycle 1373's differential for the flight integrator failed on two of ten cases,
+one ulp each, and only on the cases whose inputs had long decimals:
+
+```
++68: retail 4115.916015625        port 4115.91650390625
++72: retail 0.008657408878207207  port 0.008657407946884632
+```
+
+Every instinct points at the rule. A one-ulp gap on a fused multiply-add is what
+an un-fused port looks like, and the fix is one character.
+
+**The rule was correct.** All four candidate models — single-rounded or double
+intermediates, crossed with fused or unfused — reproduced retail exactly on both
+cases. What differed was the *fixture*: the emulator was seeded with
+`repr(float32(13.7))` and the Python oracle computed from the literal `13.7`,
+which is a **double**. Two correct implementations of one rule, fed different
+numbers.
+
+### Why it is worse than a wrong rule
+
+A wrong rule fails everywhere and gets found. This failed on **two cases out of
+ten**, in the direction a known real defect fails in, with a fix that makes the
+suite green. Un-fusing the port would have "worked", and the campaign would have
+shipped an integrator that disagrees with retail on every frame where the
+rounding matters — which cycle 1372 measured at about half a percent of a
+reasonable domain, i.e. often enough to drift and rarely enough never to be
+caught by inspection.
+
+The near-miss is the point: the repair that a green suite rewards is the wrong
+one.
+
+### The rule
+
+**Before changing the rule, prove the two sides received the same inputs.** A
+differential compares two computations *and* two input encodings, and only one of
+those is what the cycle is about. Concretely, where the sides are a Python oracle
+and a seeded emulator:
+
+- every literal the oracle uses must be rounded to the width the seed carries —
+  `f32(...)` on entry, once, not sprinkled through the arithmetic;
+- print or hash the inputs both sides actually used when a case fails, not just
+  the outputs.
+
+And the cheap move that made this a ten-minute cycle instead of a wrong commit:
+**build all the candidate rules at once and run them together.** When *every*
+candidate reproduces the oracle, the disagreement is not in the rule, and that
+conclusion is only available if the candidates were compared side by side rather
+than tried one at a time until one passed.
