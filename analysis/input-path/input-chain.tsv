@@ -1,0 +1,25 @@
+# The retail input chain, derived end to end, cycles 1307-1309. No bridge, no oracle.
+# columns: address role note
+0x823D737C	XamInputGetState import stub	tail-called by the wrapper
+0x823911C0	wrapper	or r5,r4,r4 / li r4,1 / b -- XamInputGetState(user, 1, pState)
+0x8234D3F0	connected reader	pState = this+0x44
+0x8234D478	reconnect reader	also queries capabilities into this+0x58
+0x8234D510	poll entry	DriverController vtable slot +0x10; dispatches on [this+0x08]
+0x8234D110	axis stage	copies the four thumbs to +0x3C..+0x42, splits via table 0x8201250C
+0x8234D378	button stage	+0x14 pressed, +0x18 released, +0x20 ~cur, +0x1C cur, +0x74 prev
+0x8234CFB0	DriverController ctor	writes vtable 0x820124F8, zeroes to +0x84; class is 0x88 bytes
+0x82343BB8	DriverContext ctor	four controllers at +0x18 stride 0x88, plus 0x8234D578 at +0x238
+0x8290DE00	input service singleton	+0x00 init flag, +0x24 the DriverContext
+0x8290DE3C	controller 0	then 0x8290DEC4, 0x8290DF4C, 0x8290DFD4
+0x82337E88	lazy initialiser	sets [svc+0x00] = 1
+0x823D39F0	static initialiser	registers an atexit via 0x82380040
+0x82337E18	API entry	(svc, 7) -> 0x82343928
+0x82337E28	API entry	(svc, a, b) -> 0x82343838
+0x82337E40	API entry	(svc, a, b) -> 0x82343888
+0x82337E58	API entry	(svc, a, b) -> 0x823438E0
+0x82337E70	API entry	(svc, a, b) -> 0x82343970
+0x82337ED0	API init	0x82337E88 then 0x823437F0(svc, 1)
+0x821CAA50	consumer	744 instructions, 7 of the 11 call sites
+0x821CA908	consumer	82 instructions, 1 site
+0x821CBB58	consumer	46 instructions, CDirtyDiscErrorCall vtable +0x04, not gameplay
+0x821D5EF8	boot resource mount	already in the ladder's hop table; inits input and reads once
