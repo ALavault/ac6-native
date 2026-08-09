@@ -1,0 +1,52 @@
+# The flight-model class family: base 0x82008B10 and its two concrete subclasses.
+#
+# Established by cycle 1371. Root ctor 0x823270E0; mid ctor 0x82282220 installs
+# 0x82008B10; the two subclasses are 0x82302B28 -> 0x8200F270 (constructed at
+# entity+2224) and 0x82306C28 -> 0x8200F310 (constructed at entity+3536).
+# The entity is the 10,672-byte object of sub_8222BEC8; see
+# analysis/flight/integrator-owner-layout.tsv.
+#
+# 0x82380428 is _purecall: it appears as an aligned word 357 times in the image
+# and its body loads a handler pointer, calls it, then `li r3,25` and aborts.
+# Slots 30, 31 and 32 hold it in the base, so they are PURE VIRTUAL and every
+# concrete subclass must override all three. 0x822DDBE8 is a single `blr`: the
+# shared empty virtual, which is how the sibling disables slot 11.
+#
+# slot  byte offset  the three implementations  relation
+slot	offset	base_82008B10	vt_8200F270	vt_8200F310	relation	note
+0	0	0x822823A0	0x82302C28	0x823039C0	all-differ	
+1	4	0x82281878	0x82281878	0x82281878	F270=base,F310=base	
+2	8	0x822815F0	0x822815F0	0x822815F0	F270=base,F310=base	
+3	12	0x822815F8	0x822815F8	0x822815F8	F270=base,F310=base	
+4	16	0x82281600	0x82281600	0x82281600	F270=base,F310=base	
+5	20	0x82281830	0x82281830	0x82281830	F270=base,F310=base	
+6	24	0x82281848	0x82281848	0x82281848	F270=base,F310=base	
+7	28	0x82281860	0x82281860	0x82281860	F270=base,F310=base	
+8	32	0x822815E8	0x822815E8	0x822815E8	F270=base,F310=base	
+9	36	0x82282408	0x82282408	0x82303D18	F270=base	
+10	40	0x822828E8	0x822828E8	0x822828E8	F270=base,F310=base	
+11	44	0x82283898	0x82283898	0x822DDBE8	F270=base	the step: threads one float to slots 30/31/32/33; F310 stubs it with the empty blr
+12	48	0x82281608	0x82281608	0x82281608	F270=base,F310=base	
+13	52	0x822816C0	0x822816C0	0x822816C0	F270=base,F310=base	
+14	56	0x82281778	0x82281778	0x82281778	F270=base,F310=base	
+15	60	0x822DDBE8	0x822DDBE8	0x82306A38	F270=base	
+16	64	0x822B65C8	0x822B65C8	0x822B65C8	F270=base,F310=base	
+17	68	0x82281E10	0x82281E10	0x82281E10	F270=base,F310=base	
+18	72	0x82281EA8	0x82281EA8	0x82281EA8	F270=base,F310=base	
+19	76	0x822DDBE8	0x822DDBE8	0x822DDBE8	F270=base,F310=base	
+20	80	0x822DDBE8	0x822DDBE8	0x82303898	F270=base	
+21	84	0x822DDBE8	0x822DDBE8	0x82303940	F270=base	
+22	88	0x822DDBE8	0x822DDBE8	0x82303BF0	F270=base	
+23	92	0x822DDBE8	0x822DDBE8	0x82303C90	F270=base	
+24	96	0x822DDBE8	0x822DDBE8	0x822DDBE8	F270=base,F310=base	
+25	100	0x822DDBE8	0x822DDBE8	0x82303CD0	F270=base	
+26	104	0x82282058	0x82282058	0x82282058	F270=base,F310=base	
+27	108	0x822DDBE8	0x822DDBE8	0x822DDBE8	F270=base,F310=base	
+28	112	0x822663A8	0x822663A8	0x823036C0	F270=base	
+29	116	0x822DDBE8	0x822DDBE8	0x82303A20	F270=base	
+30	120	0x82380428	0x82302DB0	0x82303E68	all-differ	pure virtual 1 of 3
+31	124	0x82380428	0x82303110	0x823042D0	all-differ	pure virtual 2 of 3 -- 0x82303110 IS THE POSITION INTEGRATOR
+32	128	0x82380428	0x82302C88	0x82306038	all-differ	pure virtual 3 of 3
+33	132	0x82282C50	0x82282C50	0x82282C50	F270=base,F310=base	
+34	136	0x822DDBE8	0x822DDBE8	0x822DDBE8	F270=base,F310=base	
+35	140	0x822DDBE8	0x822DDBE8	0x822DDBE8	F270=base,F310=base	
