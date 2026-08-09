@@ -148,6 +148,7 @@ MODULE_CASES = [
         # has measured instead of an outage it cannot fix. If Ghidra ever
         # corrects the module, this case goes red and says so.
         "module_defect_actual": VB_W[0] + VB_W[3] + VB_W[2] + VB_W[2],
+        "disputed": True,
     },
     {
         # vspltw vD,vB,uimm : every lane becomes vB.word[uimm]. Same family of
@@ -292,6 +293,27 @@ for _offset in (0, 4, 12):
 
 CASES += MODULE_CASES
 
+# THE OVERRIDE'S OWN IMMEDIATES. Cycle 1304 wrote "one immediate pair is not a
+# test of an immediate" about vrlimi128; the same applies to my own replacement
+# for vpermwi128, which until now was checked at 0xAC and nowhere else. The six
+# sites in the closure carry six different immediates, and vr13 -- the rotation
+# row the residual corruption localises to -- is produced by two of them.
+def _vpermwi_expect(imm: int) -> str:
+    return "".join(VB_W[(imm >> (2 * (3 - lane))) & 3] for lane in range(4))
+
+
+for _site, _imm in ((0x820A9AB8, 0xEC), (0x820A9ABC, 0xCC),
+                    (0x820A9BF0, 0x2C), (0x822118E0, 0x8C), (0x822118E4, 0x6C)):
+    CASES.append({
+        "name": f"vpermwi128-override-{_imm:02x}",
+        "function": _site,
+        "override": (_site, "vpermwi128"),
+        "vec": {"vr12": VB, "vr13": VB},
+        "capture": "vr13" if _site in (0x820A9AB8, 0x822118E0) else "vr12",
+        "expect": _vpermwi_expect(_imm),
+    })
+
+
 # vrlimi128 again, with the OTHER mask/rotate pair in the image. Nine sites: six
 # are 0x4/0x3, which case 3 covers, and three are 0x3/0x2 -- including
 # 0x820A9BC4, which builds the rotation row that cycle 1304 localised the
@@ -381,8 +403,10 @@ def check(workdir: Path) -> int:
         defect = case.get("module_defect_actual")
         if defect is not None:
             if got == "0x" + defect:
-                defects.append(f"{case['name']}: module defect confirmed, "
-                               f"got {got} where the ISA says {want}")
+                label = ("readings disagree" if case.get("disputed")
+                         else "module defect confirmed")
+                defects.append(f"{case['name']}: {label}, "
+                               f"got {got} where this file's reading says {want}")
                 passed += 1
             elif got == want:
                 failures.append(f"{case['name']}: module now CORRECT ({got}); "
