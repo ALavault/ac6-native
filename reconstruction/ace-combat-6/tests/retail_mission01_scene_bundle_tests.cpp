@@ -342,6 +342,14 @@ void check_qualified_cache(const char* cache_path) {
         "the persistent draw list retains the four accepted classes");
   check(render.vertices == 112719 && render.indices == 138610,
         "the immutable geometry population is pinned exactly");
+  check(render.terrain_patches == 74 &&
+            render.terrain_patch_samples == 74u * 65u * 65u &&
+            render.terrain_atlas_cells == 256u * 256u &&
+            render.terrain_atlas_bindings == 1390 &&
+            render.terrain_atlas_pages == 7,
+        "the compact terrain and complete page/tile binding are pinned");
+  check(render.water_lookup_entries == 4864 && render.water_blocks == 413,
+        "the persistent water upload retains every lookup and bit block");
   std::size_t resolved_draws = 0;
   for (const Mission01MapDrawInstance& draw : assets->draw_instances()) {
     if (assets->primitive_for(draw) != nullptr) ++resolved_draws;
@@ -362,12 +370,60 @@ void check_qualified_cache(const char* cache_path) {
   check(!assets->decode_texture(0xFFFFFFFFu, true, &refusal).has_value() &&
             refusal == NtxrRefusal::BadHeader,
         "an unregistered texture id fails closed");
+
+  const Mission01TerrainRenderResource& terrain = assets->terrain_resource();
+  check(terrain.patch_grid.size() == 256 &&
+            terrain.patch_samples.size() == 312650 &&
+            terrain.atlas_pages.size() == 7 &&
+            terrain.atlas_cells.size() == 65536,
+        "terrain upload sources remain compact and persistent");
+  std::array<std::size_t, 7> page_cells{};
+  for (const Mission01TerrainAtlasCell& cell : terrain.atlas_cells) {
+    if (cell.page < page_cells.size()) ++page_cells[cell.page];
+  }
+  check(page_cells ==
+            std::array<std::size_t, 7>{22183, 11095, 460, 31018, 245, 495, 40},
+        "all 65536 retail terrain-cell page bindings are retained");
+  check(terrain.atlas_pages[0].descriptor.width == 4096 &&
+            terrain.atlas_pages[0].descriptor.height == 4096 &&
+            terrain.atlas_pages[6].descriptor.width == 4096 &&
+            terrain.atlas_pages[6].descriptor.height == 1024,
+        "the quarter-height seventh atlas page keeps its own dimensions");
+  check(terrain.atlas_cell(255, 255) != nullptr &&
+            terrain.atlas_cell(256, 0) == nullptr,
+        "terrain atlas addressing is bounded at 256 cells per side");
+
+  const Mission01WaterRenderResource& water = assets->water_resource();
+  check(water.cell_blocks.size() == 4864 &&
+            water.block_bits.size() == 413u * 512u,
+        "the water upload uses the compact retail lookup representation");
+  std::size_t water_compared = 0;
+  for (std::size_t z = 0; z < 1024; z += 4) {
+    for (std::size_t x = 0; x < 1024; x += 4) {
+      const float world_x = static_cast<float>(x) * 128.0F - 65536.0F + 0.25F;
+      const float world_z = static_cast<float>(z) * 128.0F - 65536.0F + 0.25F;
+      bool source_bit = false;
+      bool upload_bit = false;
+      const bool source_ok = assets->scene().water().query(
+          world_x, world_z, &source_bit);
+      const bool upload_ok = water.query(world_x, world_z, &upload_bit);
+      if (source_ok == upload_ok && (!source_ok || source_bit == upload_bit)) {
+        ++water_compared;
+      }
+    }
+  }
+  check(water_compared == 256u * 256u,
+        "the upload water query matches all off-lattice source probes");
+  bool outside_bit = false;
+  check(!water.query(-70000.0F, 0.0F, &outside_bit),
+        "the persistent water resource preserves the retail bounds refusal");
   std::printf(
       "retail map assets models=%zu records=%zu vertices=%zu indices=%zu "
-      "textures=%zu draws=%zu skipped=%zu\n",
+      "textures=%zu draws=%zu skipped=%zu atlas=%zu water=%zu/%zu\n",
       render.model_files, render.source_records, render.vertices,
       render.indices, render.texture_assets, render.draw_instances,
-      render.skipped_instances);
+      render.skipped_instances, render.terrain_atlas_cells,
+      render.water_lookup_entries, render.water_blocks);
 }
 
 }  // namespace

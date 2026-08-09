@@ -59,6 +59,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace ac6::retail {
@@ -89,6 +90,9 @@ class MapWaterGrid {
 
   std::size_t group_count() const { return group_count_; }
   std::size_t block_count() const { return block_count_; }
+  std::span<const std::uint8_t> mca_bytes() const noexcept { return mca_; }
+  std::span<const std::uint8_t> mci_bytes() const noexcept { return mci_; }
+  std::span<const std::uint8_t> mcd_bytes() const noexcept { return mcd_; }
 
  private:
   std::vector<std::uint8_t> mca_, mci_, mcd_;

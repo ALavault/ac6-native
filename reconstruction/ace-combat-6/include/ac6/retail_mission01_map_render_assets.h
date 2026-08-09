@@ -46,6 +46,43 @@ struct Mission01MapTextureAsset final {
   std::span<const std::uint8_t> source;
 };
 
+struct Mission01TerrainAtlasCell final {
+  std::uint8_t page{};
+  std::uint8_t tile{};
+  bool operator==(const Mission01TerrainAtlasCell&) const = default;
+};
+
+struct Mission01TerrainAtlasPage final {
+  std::uint8_t page{};
+  std::uint32_t identifier{};
+  NtxrDescriptor descriptor{};
+  std::span<const std::uint8_t> source;
+};
+
+// Compact, persistent terrain upload sources. The 256-byte patch grid and 74
+// 65x65 sample blocks are the retail representation; no million-vertex CPU
+// expansion is rebuilt per frame. Atlas bindings stop at the exact page/tile
+// pair because UV orientation and gutter placement remain a JV boundary.
+struct Mission01TerrainRenderResource final {
+  std::span<const std::uint8_t> patch_grid;
+  std::span<const float> patch_samples;
+  std::vector<Mission01TerrainAtlasCell> atlas_cells;
+  std::vector<Mission01TerrainAtlasPage> atlas_pages;
+
+  const Mission01TerrainAtlasCell* atlas_cell(
+      std::size_t cell_x, std::size_t cell_z) const noexcept;
+};
+
+// Host-endian upload form of MCA/MCI/MCD. It retains the full 8-world-unit bit
+// resolution rather than classifying a 128-unit terrain quad at its centre.
+struct Mission01WaterRenderResource final {
+  std::array<std::uint8_t, 256> coarse_groups{};
+  std::vector<std::uint16_t> cell_blocks;
+  std::vector<std::uint8_t> block_bits;
+
+  bool query(float world_x, float world_z, bool* bit) const noexcept;
+};
+
 // A persistent draw command. `selector` chooses parts/%d and `record_index`
 // chooses exactly one NDXR record inside it. Translation is the complete
 // transform present in .pdl; the format contains no inferred rotation.
@@ -71,6 +108,13 @@ struct Mission01MapRenderAssetReport final {
   std::size_t draw_instances{};
   std::size_t skipped_instances{};
   std::array<std::size_t, 4> draw_classes{};
+  std::size_t terrain_patches{};
+  std::size_t terrain_patch_samples{};
+  std::size_t terrain_atlas_cells{};
+  std::size_t terrain_atlas_bindings{};
+  std::size_t terrain_atlas_pages{};
+  std::size_t water_lookup_entries{};
+  std::size_t water_blocks{};
   bool complete{};
 };
 
@@ -108,6 +152,12 @@ class RetailMission01MapRenderAssets final {
   const std::vector<Mission01MapDrawInstance>& draw_instances() const noexcept {
     return draw_instances_;
   }
+  const Mission01TerrainRenderResource& terrain_resource() const noexcept {
+    return terrain_resource_;
+  }
+  const Mission01WaterRenderResource& water_resource() const noexcept {
+    return water_resource_;
+  }
   const Mission01MapRenderAssetReport& report() const noexcept {
     return report_;
   }
@@ -127,12 +177,16 @@ class RetailMission01MapRenderAssets final {
   bool load_model(std::uint16_t selector,
                   std::span<const std::uint8_t> bytes);
   bool load_textures();
+  bool load_terrain();
+  bool load_water();
   bool bind_instances();
 
   RetailMission01SceneBundle scene_;
   std::vector<Mission01MapModel> models_;
   std::vector<Mission01MapTextureAsset> textures_;
   std::vector<Mission01MapDrawInstance> draw_instances_;
+  Mission01TerrainRenderResource terrain_resource_;
+  Mission01WaterRenderResource water_resource_;
   Mission01MapRenderAssetReport report_;
 };
 

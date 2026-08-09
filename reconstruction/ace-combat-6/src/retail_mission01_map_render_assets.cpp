@@ -14,6 +14,17 @@ constexpr std::size_t kMapModelCount = 170;
 constexpr std::size_t kMapRecordCount = 4318;
 constexpr std::size_t kAcceptedInstanceCount = 4226;
 constexpr std::size_t kSkippedInstanceCount = 92;
+constexpr std::size_t kTerrainAtlasSide = 256;
+constexpr std::size_t kTerrainAtlasRecordCount = 24;
+constexpr std::size_t kTerrainAtlasRecordBytes = 512;
+constexpr std::size_t kTerrainAtlasPageCount = 7;
+constexpr std::uint32_t kTerrainAtlasTilePixels = 272;
+constexpr std::uint32_t kTerrainAtlasColumns = 15;
+
+std::uint16_t be16(const std::uint8_t* bytes) noexcept {
+  return static_cast<std::uint16_t>(
+      (static_cast<std::uint16_t>(bytes[0]) << 8) | bytes[1]);
+}
 
 bool same_class(Mission01MapDrawClass left, std::uint8_t right) noexcept {
   return static_cast<std::uint8_t>(left) == right;
@@ -42,6 +53,49 @@ std::optional<Mission01MapDrawClass> mission01_map_draw_class(
   return std::nullopt;
 }
 
+const Mission01TerrainAtlasCell*
+Mission01TerrainRenderResource::atlas_cell(
+    std::size_t cell_x, std::size_t cell_z) const noexcept {
+  if (cell_x >= kTerrainAtlasSide || cell_z >= kTerrainAtlasSide ||
+      atlas_cells.size() != kTerrainAtlasSide * kTerrainAtlasSide) {
+    return nullptr;
+  }
+  return &atlas_cells[cell_z * kTerrainAtlasSide + cell_x];
+}
+
+bool Mission01WaterRenderResource::query(float world_x, float world_z,
+                                         bool* bit) const noexcept {
+  const long cell_x =
+      static_cast<long>((world_x + kWaterWorldBias) / kWaterCellUnits);
+  const long cell_z =
+      static_cast<long>((world_z + kWaterWorldBias) / kWaterCellUnits);
+  const long coarse_x = cell_x >> 4;
+  const long coarse_z = cell_z >> 4;
+  if (coarse_x < 0 || coarse_z < 0 ||
+      coarse_x >= static_cast<long>(kWaterCoarseSide) ||
+      coarse_z >= static_cast<long>(kWaterCoarseSide)) {
+    return false;
+  }
+  const std::size_t group = coarse_groups[
+      static_cast<std::size_t>(coarse_z) * kWaterCoarseSide +
+      static_cast<std::size_t>(coarse_x)];
+  const std::size_t lookup =
+      (group * 16 + static_cast<std::size_t>(cell_z & 15)) * 16 +
+      static_cast<std::size_t>(cell_x & 15);
+  if (lookup >= cell_blocks.size()) return false;
+  const std::size_t block = cell_blocks[lookup];
+  const long row = static_cast<long>(world_z / kWaterBitUnits) & 63;
+  const long column = static_cast<long>(world_x / kWaterBitUnits) & 63;
+  const long linear = (row << 6) | column;
+  const std::size_t byte =
+      block * kWaterBlockBytes + static_cast<std::size_t>(linear >> 3);
+  if (byte >= block_bits.size()) return false;
+  if (bit != nullptr) {
+    *bit = ((block_bits[byte] >> (7 - (linear & 7))) & 1u) != 0;
+  }
+  return true;
+}
+
 RetailMission01MapRenderAssets::RetailMission01MapRenderAssets(
     RetailMission01SceneBundle scene)
     : scene_(std::move(scene)) {}
@@ -64,6 +118,7 @@ std::optional<RetailMission01MapRenderAssets>
 RetailMission01MapRenderAssets::build(RetailMission01SceneBundle scene) {
   RetailMission01MapRenderAssets assets(std::move(scene));
   if (!assets.load_models() || !assets.load_textures() ||
+      !assets.load_terrain() || !assets.load_water() ||
       !assets.bind_instances()) {
     return std::nullopt;
   }
@@ -76,7 +131,14 @@ RetailMission01MapRenderAssets::build(RetailMission01SceneBundle scene) {
                     report.source_instances == kMapRecordCount &&
                     report.record_bindings == kMapRecordCount &&
                     report.draw_instances == kAcceptedInstanceCount &&
-                    report.skipped_instances == kSkippedInstanceCount;
+                    report.skipped_instances == kSkippedInstanceCount &&
+                    report.terrain_patches == 74 &&
+                    report.terrain_patch_samples == 74 * 65 * 65 &&
+                    report.terrain_atlas_cells == 256 * 256 &&
+                    report.terrain_atlas_bindings == 1390 &&
+                    report.terrain_atlas_pages == 7 &&
+                    report.water_lookup_entries == 4864 &&
+                    report.water_blocks == 413;
   return report.complete
              ? std::optional<RetailMission01MapRenderAssets>(std::move(assets))
              : std::nullopt;
@@ -168,6 +230,112 @@ bool RetailMission01MapRenderAssets::load_textures() {
   }
   if (textures_.size() != identifiers.size()) return false;
   report_.texture_assets = textures_.size();
+  return true;
+}
+
+bool RetailMission01MapRenderAssets::load_terrain() {
+  const TerrainField& terrain = scene_.terrain();
+  terrain_resource_.patch_grid = terrain.patch_grid();
+  terrain_resource_.patch_samples = terrain.patch_samples();
+  const std::optional<std::span<const std::uint8_t>> atlas_map =
+      scene_.map_resource(Mission01MapResource::TerrainAtlasMap);
+  const std::optional<std::span<const std::uint8_t>> atlas_index =
+      scene_.map_resource(Mission01MapResource::TerrainAtlasIndex);
+  const std::optional<RetailFhmView> atlas = scene_.terrain_atlas();
+  if (terrain_resource_.patch_grid.size() != 256 ||
+      terrain_resource_.patch_samples.size() != 74 * 65 * 65 ||
+      !atlas_map.has_value() || atlas_map->size() != 256 ||
+      !atlas_index.has_value() ||
+      atlas_index->size() !=
+          kTerrainAtlasRecordCount * kTerrainAtlasRecordBytes ||
+      !atlas.has_value() || atlas->child_count() != 8) {
+    return false;
+  }
+
+  terrain_resource_.atlas_pages.reserve(kTerrainAtlasPageCount);
+  for (std::uint8_t page = 0; page < kTerrainAtlasPageCount; ++page) {
+    const std::optional<std::span<const std::uint8_t>> source =
+        atlas->child(page);
+    const std::optional<NtxrDescriptor> descriptor =
+        source.has_value()
+            ? parse_ntxr_descriptor(source->data(), source->size())
+            : std::nullopt;
+    const std::optional<std::uint32_t> identifier =
+        source.has_value()
+            ? ntxr_gidx_identifier(source->data(), source->size())
+            : std::nullopt;
+    const std::uint16_t expected_height = page == 6 ? 1024 : 4096;
+    if (!source.has_value() || !descriptor.has_value() ||
+        !identifier.has_value() || descriptor->width != 4096 ||
+        descriptor->height != expected_height) {
+      return false;
+    }
+    terrain_resource_.atlas_pages.push_back(
+        {page, *identifier, *descriptor, *source});
+  }
+
+  std::set<std::uint16_t> distinct;
+  terrain_resource_.atlas_cells.reserve(
+      kTerrainAtlasSide * kTerrainAtlasSide);
+  for (std::size_t z = 0; z < kTerrainAtlasSide; ++z) {
+    for (std::size_t x = 0; x < kTerrainAtlasSide; ++x) {
+      const std::uint8_t record =
+          (*atlas_map)[(z >> 4) * 16 + (x >> 4)];
+      if (record >= kTerrainAtlasRecordCount) return false;
+      const std::size_t offset =
+          static_cast<std::size_t>(record) * kTerrainAtlasRecordBytes +
+          (((z & 15) * 16 + (x & 15)) * 2);
+      const std::uint8_t page = (*atlas_index)[offset];
+      const std::uint8_t tile = (*atlas_index)[offset + 1];
+      if (page >= terrain_resource_.atlas_pages.size()) return false;
+      const NtxrDescriptor& descriptor =
+          terrain_resource_.atlas_pages[page].descriptor;
+      const std::uint32_t column = tile % kTerrainAtlasColumns;
+      const std::uint32_t row = tile / kTerrainAtlasColumns;
+      if ((column + 1) * kTerrainAtlasTilePixels > descriptor.width ||
+          (row + 1) * kTerrainAtlasTilePixels > descriptor.height) {
+        return false;
+      }
+      terrain_resource_.atlas_cells.push_back({page, tile});
+      distinct.insert(static_cast<std::uint16_t>((page << 8) | tile));
+    }
+  }
+  report_.terrain_patches = terrain.patch_count();
+  report_.terrain_patch_samples = terrain_resource_.patch_samples.size();
+  report_.terrain_atlas_cells = terrain_resource_.atlas_cells.size();
+  report_.terrain_atlas_bindings = distinct.size();
+  report_.terrain_atlas_pages = terrain_resource_.atlas_pages.size();
+  return true;
+}
+
+bool RetailMission01MapRenderAssets::load_water() {
+  const MapWaterGrid& water = scene_.water();
+  const std::span<const std::uint8_t> mca = water.mca_bytes();
+  const std::span<const std::uint8_t> mci = water.mci_bytes();
+  const std::span<const std::uint8_t> mcd = water.mcd_bytes();
+  if (mca.size() != kWaterHeaderBytes + 256 ||
+      mci.size() < kWaterHeaderBytes ||
+      (mci.size() - kWaterHeaderBytes) % 2 != 0 ||
+      mcd.size() != kWaterHeaderBytes +
+                        water.block_count() * kWaterBlockBytes) {
+    return false;
+  }
+  std::copy_n(mca.begin() + kWaterHeaderBytes,
+              water_resource_.coarse_groups.size(),
+              water_resource_.coarse_groups.begin());
+  const std::size_t lookups = (mci.size() - kWaterHeaderBytes) / 2;
+  water_resource_.cell_blocks.reserve(lookups);
+  for (std::size_t index = 0; index < lookups; ++index) {
+    const std::uint16_t block =
+        be16(mci.data() + kWaterHeaderBytes + index * 2);
+    if (block >= water.block_count()) return false;
+    water_resource_.cell_blocks.push_back(block);
+  }
+  water_resource_.block_bits.assign(mcd.begin() + kWaterHeaderBytes,
+                                    mcd.end());
+  report_.water_lookup_entries = water_resource_.cell_blocks.size();
+  report_.water_blocks =
+      water_resource_.block_bits.size() / kWaterBlockBytes;
   return true;
 }
 

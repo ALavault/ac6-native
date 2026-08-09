@@ -65,6 +65,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace ac6::retail {
@@ -104,6 +105,8 @@ class TerrainField {
                                           std::size_t patches_size);
 
   std::size_t patch_count() const { return patches_.size() / kTerrainPatchSquared; }
+  std::span<const std::uint8_t> patch_grid() const noexcept { return grid_; }
+  std::span<const float> patch_samples() const noexcept { return patches_; }
 
   // 0x8210263C: the byte at coarse_z * 16 + coarse_x.
   std::uint8_t patch_id(std::size_t coarse_x, std::size_t coarse_z) const;

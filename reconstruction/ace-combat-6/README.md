@@ -54,6 +54,14 @@ commands after applying retail's 92 skips. Each command is a fail-closed
 4,318 records exactly once and their record-name class agrees with the `.pdl`
 class in every case. No rotation or substitute transform is invented.
 
+The same asset owner retains the compact 256-byte terrain patch grid, all 74
+65×65 height blocks, 65,536 terrain-cell atlas bindings and the seven NTXR
+atlas pages. It also decodes MCA/MCI/MCD into 4,864 host-endian lookup entries
+and 413 bit blocks, preserving the native eight-world-unit water resolution.
+The atlas binding intentionally stops at `(page, tile)`: UV orientation and
+gutter placement are not yet derived and therefore cannot enter an accepted JV
+frame.
+
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is
 marked playable-supported.
