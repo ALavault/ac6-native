@@ -1,0 +1,16 @@
+# NU::Input object model, derived cycle 1308.
+# vtable/table boundary at 0x8201250C: five code pointers then small integers.
+
+# columns: address word note
+0x820124F8	0x8234D940	DriverController vtable slot +0x00
+0x820124FC	0x8234CFE0	DriverController vtable slot +0x04
+0x82012500	0x8234D098	DriverController vtable slot +0x08
+0x82012504	0x8234D0A0	DriverController vtable slot +0x0C
+0x82012508	0x8234D510	DriverController vtable slot +0x10
+0x8201250C	0x0000000A	axis split table
+0x82012510	0x00000003	axis split table
+
+# DriverContext (vtable 0x820110C8), ctor 0x82343BB8:
+#   four DriverController at +0x18, stride 0x88 -> +0x18 +0xA0 +0x128 +0x1B0
+#   DriverController is 0x88 bytes; ctor 0x8234CFB0 zeroes up to +0x84
+#   a fifth object at +0x238 built by 0x8234D578 (unidentified)
