@@ -51,8 +51,12 @@
 
 import ghidra.app.emulator.EmulatorHelper;
 import ghidra.app.script.GhidraScript;
+import ghidra.pcode.emulate.BreakCallBack;
+import ghidra.pcode.memstate.MemoryState;
+import ghidra.pcode.pcoderaw.PcodeOpRaw;
 import ghidra.program.model.lang.Register;
 import ghidra.program.model.listing.Function;
+import ghidra.program.model.pcode.Varnode;
 import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -105,6 +109,161 @@ public class MicroExecuteFunction extends GhidraScript {
     private String lastExitDetail = "";
     private final Map<String, String> capturedValues = new LinkedHashMap<>();
 
+    // ------------------------------------------------------- asserted semantics
+    //
+    // The Xenon SLEIGH module decodes VMX128 and gives part of it no executable
+    // semantics, emitting a CALLOTHER the emulator refuses (cycle 1294: 70
+    // distinct operations, 15,945 sites). These supply four of them.
+    //
+    // THIS IS A WEAKER KIND OF EVIDENCE AND THE SNAPSHOT SAYS SO. Everything
+    // else the harness produces is retail instructions executing; this is my
+    // model of an instruction, from the architecture's documentation, standing
+    // in for one. A snapshot that used it records which operations fired and how
+    // often, under `asserted_semantics`, so no reader can mistake the two.
+    //
+    // The operand order of each is not taken from documentation - it is what
+    // this SLEIGH build passes, read out of the p-code with
+    // scripts/Ac6PcodeDump.java, because the module is free to choose and only
+    // the build in use can say what it chose:
+    //
+    //   vectorMergeHighWord(vA:16, vB:16) -> vD:16
+    //   vectorMergeLowWord(vA:16, vB:16) -> vD:16
+    //   loadVectorLeftIndexed128(rA:8, rB:8) -> vD:16
+    //   vectorRotateLeftImmediateMaskInsert128(vD:16, vB:16, imm:1, z:1) -> vD:16
+    //
+    // Cross-references for the semantics themselves: the Cell BE SIMD PEM
+    // (v2.07c) for lvlx, which is where the lvlx/lvrx family is documented at
+    // all, and Xenia's ppc_emit_altivec.cc for vrlimi128's mask and rotate
+    // encoding. Reading either for what an instruction means is documentation,
+    // not an oracle pass: no game code runs and no game behaviour is observed.
+
+    private boolean vmxEnabled;
+    private final Map<String, Integer> assertedFired = new LinkedHashMap<>();
+
+    private byte[] readChunk(MemoryState memory, Varnode node) {
+        byte[] bytes = new byte[node.getSize()];
+        memory.getChunk(bytes, node.getAddress().getAddressSpace(), node.getOffset(),
+            bytes.length, false);
+        return bytes;
+    }
+
+    private void writeChunk(MemoryState memory, Varnode node, byte[] bytes) {
+        memory.setChunk(bytes, node.getAddress().getAddressSpace(), node.getOffset(),
+            bytes.length);
+    }
+
+    /**
+     * The `(rA|0)` rule: in an indexed form, rA = r0 means the literal zero, not
+     * the contents of r0. This module passes rA verbatim rather than resolving
+     * it, so the rule is applied here, decided from the varnode's own identity.
+     */
+    private long baseRegisterValue(MemoryState memory, Varnode node) {
+        if (node.isConstant()) {
+            return node.getOffset();
+        }
+        Register register = currentProgram.getRegister(node.getAddress(), node.getSize());
+        if (register != null && "r0".equals(register.getName())) {
+            return 0;
+        }
+        return memory.getValue(node);
+    }
+
+    private void countFired(String name) {
+        assertedFired.merge(name, 1, Integer::sum);
+    }
+
+    /** vD.word[2i] = vA.word[i + half], vD.word[2i+1] = vB.word[i + half]. */
+    private BreakCallBack mergeWord(String name, int half) {
+        return new BreakCallBack() {
+            @Override
+            public boolean pcodeCallback(PcodeOpRaw op) {
+                MemoryState memory = emulate.getMemoryState();
+                byte[] left = readChunk(memory, op.getInput(1));
+                byte[] right = readChunk(memory, op.getInput(2));
+                byte[] out = new byte[16];
+                for (int word = 0; word < 2; ++word) {
+                    System.arraycopy(left, (word + half) * 4, out, word * 8, 4);
+                    System.arraycopy(right, (word + half) * 4, out, word * 8 + 4, 4);
+                }
+                writeChunk(memory, op.getOutput(), out);
+                countFired(name);
+                return true;
+            }
+        };
+    }
+
+    /**
+     * Load Vector Left Indexed: the bytes from EA to the end of EA's 16-byte
+     * block, left-justified, zero-filled. Reading `16 - eb` bytes at EA rather
+     * than 16 at the aligned base is the same result and touches strictly less
+     * memory, which matters when the state is a synthetic region.
+     */
+    private BreakCallBack loadVectorLeftIndexed() {
+        return new BreakCallBack() {
+            @Override
+            public boolean pcodeCallback(PcodeOpRaw op) {
+                MemoryState memory = emulate.getMemoryState();
+                long address = (baseRegisterValue(memory, op.getInput(1))
+                    + memory.getValue(op.getInput(2))) & 0xffffffffL;
+                int eb = (int) (address & 0xF);
+                byte[] out = new byte[16];
+                byte[] loaded = new byte[16 - eb];
+                memory.getChunk(loaded, defaultSpace(), address, loaded.length, false);
+                System.arraycopy(loaded, 0, out, 0, loaded.length);
+                writeChunk(memory, op.getOutput(), out);
+                countFired("loadVectorLeftIndexed128");
+                return true;
+            }
+        };
+    }
+
+    /**
+     * Rotate vB left by `z` words, then take element i from that when bit `3-i`
+     * of `imm` is set and from vD otherwise. The bit order is the one Xenia's
+     * InstrEmit_vrlimi128 encodes.
+     */
+    private BreakCallBack rotateLeftImmediateMaskInsert() {
+        return new BreakCallBack() {
+            @Override
+            public boolean pcodeCallback(PcodeOpRaw op) {
+                MemoryState memory = emulate.getMemoryState();
+                byte[] destination = readChunk(memory, op.getInput(1));
+                byte[] source = readChunk(memory, op.getInput(2));
+                int mask = (int) (memory.getValue(op.getInput(3)) & 0xF);
+                int rotate = (int) (memory.getValue(op.getInput(4)) & 0x3);
+                byte[] out = new byte[16];
+                for (int element = 0; element < 4; ++element) {
+                    boolean fromSource = ((mask >> (3 - element)) & 1) != 0;
+                    if (fromSource) {
+                        System.arraycopy(source, ((element + rotate) & 3) * 4, out,
+                            element * 4, 4);
+                    }
+                    else {
+                        System.arraycopy(destination, element * 4, out, element * 4, 4);
+                    }
+                }
+                writeChunk(memory, op.getOutput(), out);
+                countFired("vectorRotateLeftImmediateMaskInsert128");
+                return true;
+            }
+        };
+    }
+
+    private ghidra.program.model.address.AddressSpace defaultSpace() {
+        return currentProgram.getAddressFactory().getDefaultAddressSpace();
+    }
+
+    private void registerAssertedSemantics(EmulatorHelper emulator) {
+        emulator.registerCallOtherCallback("vectorMergeHighWord",
+            mergeWord("vectorMergeHighWord", 0));
+        emulator.registerCallOtherCallback("vectorMergeLowWord",
+            mergeWord("vectorMergeLowWord", 2));
+        emulator.registerCallOtherCallback("loadVectorLeftIndexed128",
+            loadVectorLeftIndexed());
+        emulator.registerCallOtherCallback("vectorRotateLeftImmediateMaskInsert128",
+            rotateLeftImmediateMaskInsert());
+    }
+
     /**
      * Every field a spec sets, cleared. Batch mode runs specs in one process,
      * so a case inheriting the previous case's region or stub would be a silent
@@ -128,6 +287,8 @@ public class MicroExecuteFunction extends GhidraScript {
         lastSteps = 0;
         lastExitKind = "return";
         lastExitDetail = "";
+        vmxEnabled = false;
+        assertedFired.clear();
     }
 
     // ---------------------------------------------------------------- helpers
@@ -241,6 +402,12 @@ public class MicroExecuteFunction extends GhidraScript {
                 case "sp":
                     stackSpec = parts[1];
                     break;
+                case "vmx":
+                    // Off unless a spec asks: a snapshot produced without it is
+                    // retail instructions only, and that is the default worth
+                    // having to opt out of.
+                    vmxEnabled = "on".equals(parts[1]);
+                    break;
                 case "stub":
                     stubs.put(Long.decode(parts[1]) & 0xffffffffL,
                         parts.length > 2 ? line.substring(line.indexOf(parts[2])) : "stubbed call");
@@ -306,6 +473,13 @@ public class MicroExecuteFunction extends GhidraScript {
             String pc = emulator.getPCRegister().getName();
             String lr = registerName("LR", "lr");
             String sp = registerName("r1");
+
+            // Cleared per pass, not per case: both poison passes execute the
+            // same instructions, so counting across them would report double.
+            assertedFired.clear();
+            if (vmxEnabled) {
+                registerAssertedSemantics(emulator);
+            }
 
             for (Region region : regions.values()) {
                 if ("file".equals(region.kind)) {
@@ -492,6 +666,18 @@ public class MicroExecuteFunction extends GhidraScript {
         json.append(regions.isEmpty() ? "]," : "\n    ],").append("\n");
         json.append(String.format("    \"steps\": %d,%n", lastSteps));
         json.append(String.format("    \"callee_entries\": %d,%n", calleeEntries));
+        // Deliberately loud. A snapshot that leaned on a hand-written
+        // instruction model is not the same claim as one that did not, and the
+        // difference has to survive being read quickly.
+        json.append(String.format("    \"asserted_semantics_enabled\": %s,%n", vmxEnabled));
+        json.append("    \"asserted_semantics\": {");
+        boolean firstOp = true;
+        for (Map.Entry<String, Integer> entry : assertedFired.entrySet()) {
+            json.append(firstOp ? "\n      " : ",\n      ");
+            firstOp = false;
+            json.append(String.format("\"%s\": %d", entry.getKey(), entry.getValue()));
+        }
+        json.append(assertedFired.isEmpty() ? "}," : "\n    },").append("\n");
         json.append("    \"write_detection\": \"union of two poison passes, 0xCD and 0x00\",\n");
         json.append(String.format("    \"written\": \"%s\"%n", writtenSummary));
         json.append("  },\n");

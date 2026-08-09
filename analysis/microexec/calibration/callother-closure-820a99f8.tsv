@@ -1,0 +1,9 @@
+# CALLOTHER p-code operations emitted over 820a99f8..820a9c60, 153 instructions.
+# Produced by scripts/Ac6CallOtherCensus.java. Read-only, no oracle.
+# A name here is an instruction the emulator will refuse unless the
+# harness registers a behaviour for it.
+# columns: pcodeop count first_site mnemonic
+vectorMergeHighWord	26	820a9a84	vmrghw
+loadVectorLeftIndexed128	8	820a9a64	lvlx
+vectorMergeLowWord	8	820a9a90	vmrglw
+vectorRotateLeftImmediateMaskInsert128	6	820a9a6c	vrlimi128
