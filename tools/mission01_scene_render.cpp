@@ -35,7 +35,14 @@ std::vector<std::uint8_t> R(const std::string& p) {
   std::ifstream in(p, std::ios::binary);
   return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
 }
-struct Part { std::vector<float> xyz, uv; std::uint32_t texture = 0; };
+// ONE GROUP PER DESCRIPTOR, not one texture per part. Cycle 1476 measured the
+// package: 4,318 descriptors, every one carrying exactly one texture in slot 0
+// and every one with texcoords. Taking the first descriptor's texture for the
+// whole model -- which cycle 1475 did -- draws most of a building with some
+// other building's skin, and the grey faces in that render were one particular
+// texture applied where it did not belong.
+struct Group { std::uint32_t texture = 0; std::vector<float> xyz, uv; };
+struct Part { std::vector<Group> groups; };
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -120,17 +127,19 @@ int main(int argc, char** argv) {
           const auto rec = c->Record(r);
           if (!rec) continue;
           for (std::uint16_t k = 0; k < rec->descriptor_count; ++k) {
-            if (part.texture == 0) {
-              for (unsigned slot = 0; slot < 4 && part.texture == 0; ++slot) {
-                const auto mat = c->Material(*rec, k, slot);
-                if (!mat || mat->texture_count == 0) continue;
-                if (const auto ref = c->TextureRef(*mat, 0)) part.texture = ref->texture_id;
-              }
+            std::uint32_t tex = 0;
+            for (unsigned slot = 0; slot < 4 && tex == 0; ++slot) {
+              const auto mat = c->Material(*rec, k, slot);
+              if (!mat || mat->texture_count == 0) continue;
+              if (const auto ref = c->TextureRef(*mat, 0)) tex = ref->texture_id;
             }
             const auto d = c->Descriptor(*rec, k);
             if (!d) continue;
             const auto piece = decode_ndxr_descriptor(*c, bytes.data(), bytes.size(), *d);
             if (!piece || piece->texcoords.size() < piece->positions.size()) continue;
+            Group* group = nullptr;
+            for (Group& g : part.groups) if (g.texture == tex) { group = &g; break; }
+            if (group == nullptr) { part.groups.push_back(Group{tex, {}, {}}); group = &part.groups.back(); }
             for (std::size_t i = 2; i < piece->indices.size(); ++i) {
               const std::uint16_t t0 = piece->indices[i - 2], t1 = piece->indices[i - 1],
                                   t2 = piece->indices[i];
@@ -139,9 +148,9 @@ int main(int argc, char** argv) {
                   t2 >= piece->positions.size()) continue;
               for (std::uint16_t idx : {t0, t1, t2}) {
                 const auto& q = piece->positions[idx];
-                part.xyz.push_back(q.x); part.xyz.push_back(q.y); part.xyz.push_back(q.z);
+                group->xyz.push_back(q.x); group->xyz.push_back(q.y); group->xyz.push_back(q.z);
                 const auto& uvv = piece->texcoords[idx];
-                part.uv.push_back(uvv.u); part.uv.push_back(uvv.v);
+                group->uv.push_back(uvv.u); group->uv.push_back(uvv.v);
               }
             }
           }
@@ -183,19 +192,21 @@ int main(int argc, char** argv) {
     const float dx = q.world_x - eye.at64, dz = q.world_z - eye.at72;
     if (dx * dx + dz * dz > kDistanceL * kDistanceL) continue;
     const Part& part = part_for(q.selector);
-    if (part.xyz.empty()) continue;
-    std::vector<float> world(part.xyz.size());
-    for (std::size_t i = 0; i + 2 < part.xyz.size(); i += 3) {
-      world[i] = q.world_x + part.xyz[i];
-      world[i + 1] = q.world_y + part.xyz[i + 1];
-      world[i + 2] = q.world_z + part.xyz[i + 2];
+    if (part.groups.empty()) continue;
+    for (const Group& gr : part.groups) {
+      std::vector<float> world(gr.xyz.size());
+      for (std::size_t i = 0; i + 2 < gr.xyz.size(); i += 3) {
+        world[i] = q.world_x + gr.xyz[i];
+        world[i + 1] = q.world_y + gr.xyz[i + 1];
+        world[i + 2] = q.world_z + gr.xyz[i + 2];
+      }
+      const DecodedTexture* tex = texture_for(gr.texture);
+      if (tex) ++textured;
+      ac6::demo::draw_world_triangles_textured(
+          image, basis, camera, eye, world, gr.uv,
+          tex ? tex->pixels.data() : nullptr, tex ? int(tex->width) : 0,
+          tex ? int(tex->height) : 0, sun, kFogFar, kFogDensity, 170, 190, 220);
     }
-    const DecodedTexture* tex = texture_for(part.texture);
-    if (tex) ++textured;
-    ac6::demo::draw_world_triangles_textured(
-        image, basis, camera, eye, world, part.uv,
-        tex ? tex->pixels.data() : nullptr, tex ? int(tex->width) : 0,
-        tex ? int(tex->height) : 0, sun, kFogFar, kFogDensity, 170, 190, 220);
     ++drawn;
   }
   std::printf("%zu instances drawn, %zu with a texture; %zu textures decoded\n",
