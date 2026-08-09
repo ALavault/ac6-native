@@ -164,7 +164,32 @@ bool project_point(const NativeCameraProjection& projection, Vec3 world,
   // whole retail world disappearing that way - Mission 01 spans 66,000 units
   // and this plane is 4,096 - and the effect looked exactly like a camera
   // pointing the wrong way, which is what cycle 1145 wrongly called it.
-  constexpr float default_far_plane = 4096.0f;
+  //
+  // The default is retail's own, derived in cycle 1273 rather than invented.
+  // ACE6::CAce6CameraManager lives at [[0x826E4EB4] + 0x2F9A0] (RTTI at
+  // 0x8268F47C, vtable 0x82054F0C) and its initialiser 0x8225DF88 stamps the
+  // four projection fields:
+  //
+  //   8225dfb0  lfs  f0,0x7f64(r11)    [0x82007F64] = 0.8028514 rad = 46.0000 deg
+  //   8225dfb8  stfs f0,0xd4(r31)      +0xD4 vertical FOV
+  //   8225dfc8  stfs f0,0xd8(r31)      +0xD8 aspect = 1.7777778 = 16/9
+  //   8225dfe4  stfs f30,0xdc(r31)     +0xDC near  = 1.0
+  //   8225e000  stfs f0,0xe0(r31)      +0xE0 far   = 24000.0
+  //
+  // and 0x8209B398 hands exactly those four to the perspective builder:
+  //
+  //   8209b42c  lfs f4,0xe0(r31)   8209b430  lfs f3,0xdc(r31)
+  //   8209b434  lfs f2,0xd8(r31)   8209b438  lfs f1,0xd4(r31)
+  //   8209b43c  bl 0x82271828
+  //
+  // WHAT IS IMPORTED IS THE NUMBER, NOT THE PROJECTION. Retail's builder
+  // 0x82339DB0 is right-handed (m23 = -1.0 read at [0x82069B28]) with depth
+  // running 1 at the near plane to 0 at the far one; this rasteriser keeps its
+  // own linear `view_z / far`. The 46-degree vertical FOV is also not applied
+  // here, and it is retail's INITIAL value in any case -- the per-frame camera
+  // behaviour overwrites +0xD4 every tick through the virtual at
+  // ArmsCamera+0x850, and that behaviour is not derived.
+  constexpr float default_far_plane = 24000.0f;
   const float far_plane =
       (far_plane_override > 0.0f && std::isfinite(far_plane_override))
           ? far_plane_override

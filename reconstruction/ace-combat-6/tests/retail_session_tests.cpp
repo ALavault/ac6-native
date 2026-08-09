@@ -209,13 +209,21 @@ void write_capture_bundle(const std::filesystem::path& directory,
   // world cannot leave this control passing on a one-unit extent.
   REQUIRE(placed_extent > 10000.0f);
 
-  ac6::NativeRenderTarget probe_default, probe_derived;
-  REQUIRE(probe_default.resize(640, 360) && probe_default.clear(0xFF000000u, 1.0f));
+  // The comparison is against an explicitly UNDERSIZED plane, not against the
+  // default. It used to be against the default, and cycle 1273 broke it by
+  // replacing that default with retail's own 24000 -- at which point the
+  // default is large enough and the strict inequality fails. That failure was
+  // correct and it said what the control had really been testing: "4096 is too
+  // small", not "the far plane matters". The fact worth holding is the second.
+  constexpr float kUndersizedFarPlane = 4096.0f;  // the product's former default
+  ac6::NativeRenderTarget probe_small, probe_derived;
+  REQUIRE(probe_small.resize(640, 360) && probe_small.clear(0xFF000000u, 1.0f));
   REQUIRE(probe_derived.resize(640, 360) && probe_derived.clear(0xFF000000u, 1.0f));
-  const std::size_t with_default = session->render_world_markers(probe_default, frame.world);
+  const std::size_t with_small =
+      session->render_world_markers(probe_small, frame.world, kUndersizedFarPlane);
   const std::size_t with_derived =
       session->render_world_markers(probe_derived, frame.world, 4.0f * placed_extent);
-  REQUIRE(with_derived > with_default);
+  REQUIRE(with_derived > with_small);
 
   const ac6::NativeHudSnapshot& live = live_hud.snapshot();
   REQUIRE(live.tick == 900);
