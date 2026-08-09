@@ -120,6 +120,21 @@ images showed 4 markers while its metrics said 29, and the contract pinned both
 — correctly, to different states of the same render. Run it whenever a capture
 is regenerated.
 
+**When you change `scripts/MicroExecuteFunction.java`, re-run the calibration in
+the same cycle.** It is the only check on the instrument every other measurement
+rests on, it needs a Ghidra pass so no gate runs it, and that is exactly why it
+rots:
+
+    python3 tools/audit_microexec_harness_calibration.py --emit --workdir W
+    <analyzeHeadless ... --batch W/manifest>
+    python3 tools/audit_microexec_harness_calibration.py --check --workdir W
+
+It reported **0 of 138 for 87 commits** while this file cited 138/138. Nothing
+was wrong with the harness: the `dump` directive added a `region_dumps` key the
+specialised harness never had, and the comparator counted its absence as a
+semantic difference. Cycle 1414 fixed the comparator; cycle 1413 only found it
+because it was checking whether its own change had broken something.
+
 A third checker guards the documentation instead of the contracts:
 
     python3 tools/audit_instrument_discipline_index.py INSTRUMENT_DISCIPLINE.md

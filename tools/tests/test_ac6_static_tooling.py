@@ -1598,3 +1598,36 @@ class ObjectLayoutMapping(unittest.TestCase):
         functions = map_object_layout.load_corpus(corpus)
         _, _, branches = map_object_layout.map_layout(functions, image, 0x82001000)
         self.assertEqual(branches, 2)
+
+
+class CalibrationNormalisationTests(unittest.TestCase):
+    """The exclusion that let the calibration report 0 of 138 for 87 commits.
+
+    `region_dumps` is emitted by the general harness always, as `[]` when no
+    spec asked for a dump, and the specialised harness that produced the 138
+    committed snapshots had no such key. Dropping it unconditionally would make
+    the calibration blind to a spec that gained a real dump, so it is dropped
+    only when empty -- and that distinction is what these two tests pin.
+    """
+
+    def _normalise(self):
+        import importlib.util
+        path = (Path(__file__).resolve().parents[1]
+                / "audit_microexec_harness_calibration.py")
+        spec = importlib.util.spec_from_file_location("calibration", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.normalise
+
+    def test_an_empty_region_dumps_is_dropped(self):
+        normalise = self._normalise()
+        reference = {"exit": {"kind": "return"}, "registers": {}}
+        candidate = {"exit": {"kind": "return"}, "registers": {}, "region_dumps": []}
+        self.assertEqual(normalise(reference), normalise(candidate))
+
+    def test_a_non_empty_region_dumps_is_kept_and_still_differs(self):
+        normalise = self._normalise()
+        reference = {"exit": {"kind": "return"}, "registers": {}}
+        candidate = {"exit": {"kind": "return"}, "registers": {},
+                     "region_dumps": [{"name": "out", "after_hex": "00"}]}
+        self.assertNotEqual(normalise(reference), normalise(candidate))
