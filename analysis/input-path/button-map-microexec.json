@@ -1,0 +1,128 @@
+{
+  "schema": "ac6.retail-input-button-map.v1",
+  "statement": "one device button bit set per run of 0x821CAA50, with a null control, read from the 0x00 poison pass because the flag word is accumulated with or/stw and the 0xCD pass hides every mask bit 0xCD already carries",
+  "consumer": "0x821CAA50",
+  "record": "0x826EDB98",
+  "record_stride": "0xA0",
+  "flag_word_offset": "0x08",
+  "null_control_flags": "0x00000000",
+  "device_words": {
+    "held": "device+0x1C",
+    "pressed": "device+0x14",
+    "released": "device+0x18"
+  },
+  "mapping": [
+    {
+      "device_word": "held",
+      "device_bit": 0,
+      "case": "held-bit00",
+      "record_flag_bits": [
+        0
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 1,
+      "case": "held-bit01",
+      "record_flag_bits": [
+        1
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 2,
+      "case": "held-bit02",
+      "record_flag_bits": [
+        2
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 3,
+      "case": "held-bit03",
+      "record_flag_bits": [
+        3
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 4,
+      "case": "held-bit04",
+      "record_flag_bits": [
+        10
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 5,
+      "case": "held-bit05",
+      "record_flag_bits": [
+        11
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 6,
+      "case": "held-bit06",
+      "record_flag_bits": [
+        12
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 7,
+      "case": "held-bit07",
+      "record_flag_bits": [
+        13
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 8,
+      "case": "held-bit08",
+      "record_flag_bits": [
+        8
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 9,
+      "case": "held-bit09",
+      "record_flag_bits": [
+        9
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 12,
+      "case": "held-bit12",
+      "record_flag_bits": [
+        5
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 13,
+      "case": "held-bit13",
+      "record_flag_bits": [
+        7
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 14,
+      "case": "held-bit14",
+      "record_flag_bits": [
+        6
+      ]
+    },
+    {
+      "device_word": "held",
+      "device_bit": 15,
+      "case": "held-bit15",
+      "record_flag_bits": [
+        4
+      ]
+    }
+  ]
+}

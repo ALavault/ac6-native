@@ -691,10 +691,21 @@ public class MicroExecuteFunction extends GhidraScript {
             }
             byte[] slice = new byte[index - start];
             System.arraycopy(valuesA, start, slice, 0, slice.length);
+            byte[] sliceB = new byte[index - start];
+            System.arraycopy(valuesB, start, sliceB, 0, sliceB.length);
             total += slice.length;
+            // BOTH PASSES, because `after_hex` alone cannot describe a
+            // read-modify-write. A byte the function OR-ed reads 0xCD|mask in
+            // pass A, so every mask bit that 0xCD already carries -- bits 0, 2,
+            // 3, 6 and 7 -- is invisible there and visible in pass B, where the
+            // byte reads the mask itself. Cycle 1320 reported "record+0x0B has
+            // bit 5 set and no other" from pass A alone and could not have seen
+            // those five. `after_hex_b` is additive: the digest in
+            // tools/emit_ac6_reader_digests.py is defined on `after_hex`.
             writes.add(String.format(
-                "{\"address\": \"0x%08x\", \"size\": %d, \"after_hex\": \"%s\"}",
-                region.base + start, slice.length, hex(slice)));
+                "{\"address\": \"0x%08x\", \"size\": %d, \"after_hex\": \"%s\", "
+                + "\"after_hex_b\": \"%s\"}",
+                region.base + start, slice.length, hex(slice), hex(sliceB)));
         }
         return total;
     }

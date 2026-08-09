@@ -132,6 +132,32 @@ def emit(root: Path, workdir: Path, payload: Path) -> int:
     return 0
 
 
+# THE COMPARISON IS ON THE SEMANTIC TRIPLE OF EACH WRITE RUN, NOT ON THE WHOLE
+# RECORD, and cycle 1321 loosened it deliberately rather than by accident.
+#
+# The committed snapshots came from the SPECIALISED harness, which emitted
+# {address, size, after_hex}. The general harness now also emits `after_hex_b`,
+# the second poison pass, because `after_hex` alone cannot describe a
+# read-modify-write. A field the old harness could not produce is not a semantic
+# difference, and comparing whole dicts made all 138 cases fail on it.
+#
+# What is NOT loosened: address, size and after_hex are still compared exactly,
+# run for run, in order. Those are what the digest is defined on and what a
+# regression in the harness would move. A run that gained or lost bytes, moved,
+# or changed a single byte of content still fails here.
+SEMANTIC_KEYS = ("address", "size", "after_hex")
+
+
+def normalise(document: dict) -> dict:
+    trimmed = {k: v for k, v in document.items() if k not in IGNORED}
+    if "memory_writes" in trimmed:
+        trimmed["memory_writes"] = [
+            {k: run[k] for k in SEMANTIC_KEYS if k in run}
+            for run in trimmed["memory_writes"]
+        ]
+    return trimmed
+
+
 def check(root: Path, workdir: Path) -> int:
     cases = committed_cases(root)
     equal = 0
@@ -147,8 +173,8 @@ def check(root: Path, workdir: Path) -> int:
         if candidate.get("identity", {}).get("case") != reference["identity"]["case"]:
             failures.append(f"{key}: case label differs")
             continue
-        left = {k: v for k, v in reference.items() if k not in IGNORED}
-        right = {k: v for k, v in candidate.items() if k not in IGNORED}
+        left = normalise(reference)
+        right = normalise(candidate)
         if left == right:
             equal += 1
             continue

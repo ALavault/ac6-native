@@ -1,0 +1,55 @@
+# Device button bit -> record flag bit, MEASURED by execution, cycle 1321.
+#
+# tools/audit_input_button_map_microexec.py runs 0x821CAA50 once per device bit
+# with that bit alone set, plus a null control. 101 cases, one Ghidra startup.
+#
+# The consumer does NOT copy the button word: bit 12 in gives bit 5 out. The
+# thirteen or/stw pairs at 0x821CABE0..0x821CAC4C are where the remap lives, and
+# this table is what they do rather than what they look like.
+#
+# The XInput column is the standard XINPUT_GAMEPAD_* assignment for that bit
+# position. It is a LABEL, not a measurement -- the run set a bit, not a button.
+#
+# Read from the 0x00 poison pass. The flag word is accumulated with lwz/or/stw,
+# so the 0xCD pass hides every mask bit 0xCD already carries. The 0x00 pass is
+# also the real precondition: the frame stage clears +0x00..+0x83 first.
+#
+# columns: device_bit xinput_label record_flag_bit
+0	DPAD_UP	0
+1	DPAD_DOWN	1
+2	DPAD_LEFT	2
+3	DPAD_RIGHT	3
+4	START	10
+5	BACK	11
+6	LEFT_THUMB	12
+7	RIGHT_THUMB	13
+8	LEFT_SHOULDER	8
+9	RIGHT_SHOULDER	9
+12	A	5
+13	B	7
+14	X	6
+15	Y	4
+#
+# NEGATIVES, each with a working positive control in the same batch -- the
+# fourteen rows above lit up in the same run, so a blank result here is the
+# absence of an effect and not a broken experiment:
+#
+#   held bits 10 and 11        no record bit. XInput leaves both unassigned.
+#   held bits 16..31           no record bit. The device word is 32 bits wide and
+#                              only its low 16 reach a record.
+#   pressed, all 32 bits       no record bit. The edge words at device+0x14 and
+#   released, all 32 bits      +0x18 are NOT folded into the record flag word.
+#   device+0x38, device+0x3A   no record bit. Cycle 1318 could not place these
+#                              two halfwords and they do not reach the flag word.
+#   device+0x4A, device+0x4B   no record bit. CYCLE 1318 GUESSED THE TRIGGERS FED
+#                              record bits 14 and 15. That guess is refuted; both
+#                              lie beyond device+0x43 and outside the snapshot
+#                              copy, and driving them to 0xFF changes nothing.
+#
+# So record flag bits 14 and 15 remain unexplained, with four candidates now
+# eliminated by execution rather than left standing as a guess.
+#
+# AND NO AXIS BIT APPEARS IN THIS WORD. A run with LY at 30000 fills the float
+# slot at +0x50 and leaves the flag word at 0x00000020 -- bit 17 is NOT set. The
+# masks 0x10000..0x80000 cycle 1318 paired with the axes select a slot; they are
+# not written into the record's flag word.

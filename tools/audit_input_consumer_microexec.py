@@ -225,10 +225,22 @@ def check(workdir: Path, report: Path | None) -> int:
             print(f"{case['name']}: no snapshot", file=sys.stderr)
             return 1
         document = json.loads(path.read_text(encoding="utf-8"))
+        # THE 0x00 PASS, NOT THE 0xCD PASS. Cycle 1320 read `after_hex` here
+        # and reported record+0x0B as "bit 5 set and no other" -- a claim that
+        # pass cannot support, because the flag word is accumulated with
+        # lwz/or/stw and every mask bit 0xCD already carries (bits 0, 2, 3, 6, 7
+        # of each byte) is hidden under the poison. `after_hex_b` is the run with
+        # the record region zeroed, which is also the frame stage's own
+        # precondition: 0x821CA908 clears +0x00..+0x83 before this runs.
         memory: dict[int, int] = {}
         for run in document.get("memory_writes", []):
             address = int(run["address"], 16)
-            for index, value in enumerate(bytes.fromhex(run["after_hex"])):
+            clean = run.get("after_hex_b")
+            if clean is None:
+                print(f"{case['name']}: snapshot predates after_hex_b; regenerate",
+                      file=sys.stderr)
+                return 1
+            for index, value in enumerate(bytes.fromhex(clean)):
                 memory[address + index] = value
 
         def word(address: int) -> int | None:
@@ -236,19 +248,17 @@ def check(workdir: Path, report: Path | None) -> int:
                 return None
             return int.from_bytes(bytes(memory[address + n] for n in range(4)), "big")
 
-        def read_modify_write(address: int) -> int | None:
-            """The bits a read-modify-write byte SET, or None if it stored.
+        def mask_word(address: int) -> int:
+            """A bitmask word, with undetected bytes read as zero.
 
-            `after_hex` is the 0xCD pass, so a byte the function OR-ed carries
-            poison in every bit it left alone. `0xED` at record+0x0B is not the
-            value 0xED: it is 0xCD with bit 5 set. Reporting it as a value would
-            publish poison as data, and this is the only honest reading the
-            snapshot supports -- the harness emits one pass, not both.
+            Legitimate here and nowhere else in this file. A byte is undetected
+            exactly when it equalled the poison in BOTH passes, so in the 0x00
+            pass it is zero -- for a mask that is a value, not an absence. The
+            float slots keep the strict reader above, where a missing byte would
+            otherwise read as 0.0 and look like a written zero.
             """
-            value = memory.get(address)
-            if value is None:
-                return None
-            return None if (value & 0xCD) != 0xCD else value & ~0xCD
+            return int.from_bytes(
+                bytes(memory.get(address + n, 0) for n in range(4)), "big")
 
         print(f"{case['name']}: exit={document['exit']['kind']} "
               f"steps={document['provenance']['steps']} "
@@ -261,13 +271,11 @@ def check(workdir: Path, report: Path | None) -> int:
             return 1
         for index in range(4):
             base = RECORD_0 + index * RECORD_STRIDE
-            set_bits = read_modify_write(base + 0x0B)
             row = {
                 "case": case["name"],
                 "record": index,
                 "base": f"0x{base:08X}",
-                "flag_byte_0x0b_bits_set": (None if set_bits is None
-                                            else f"0x{set_bits:02X}"),
+                "flag_word": f"0x{mask_word(base + 0x08):08X}",
             }
             for axis, slot in SLOTS.items():
                 raw = word(base + slot)
@@ -275,7 +283,7 @@ def check(workdir: Path, report: Path | None) -> int:
                              else round(struct.unpack(">f", raw.to_bytes(4, "big"))[0], 6))
             findings.append(row)
             print(f"  record {index} @ 0x{base:08X}  "
-                  f"+0x0b|={row['flag_byte_0x0b_bits_set']}  " +
+                  f"flags={row['flag_word']}  " +
                   "  ".join(f"{axis}={row[axis]}" for axis in SLOTS))
 
     if report is not None:

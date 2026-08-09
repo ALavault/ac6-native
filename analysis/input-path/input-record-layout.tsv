@@ -24,7 +24,7 @@
 # columns: offset width meaning derived_from
 0x04	4	written zero; not named by any read of cycle 1316	executed
 0x08	4	flag word, accumulated by thirteen or/stw pairs	0x821CABE0..0x821CAC4C
-0x0b	1	low byte of that word; the run sets bit 5 and no other	executed
+0x08	4	fourteen remapped HELD button bits and nothing else; see button-bit-map.tsv	executed
 0x0C	4*20	parallel float array; slot for bit b is (b + 3) * 4; reaches at least +0x5B (cycle 1318)	821caed4 addi r9,r10,0x3 / 821caedc rlwinm r9,0x2
 0x4C	4	LX, signed float	executed
 0x50	4	LY, signed float; float32(30000/32767) for a 30000 LY+ half	executed
@@ -34,6 +34,18 @@
 0x90	4	written once per pass, OUTSIDE the cleared range	0x821CB364 and three more at stride 0xA0
 0x94	1	written zero; contiguous with +0x8C..+0x93 in the run	executed
 0x98	4	written the constant 3	executed
+#
+# CYCLE 1320 SAID record+0x0B carries "bit 5 and no other". IT COULD NOT HAVE
+# KNOWN. It read the 0xCD poison pass, where a byte the function OR-ed reads
+# 0xCD|mask and every mask bit 0xCD already carries -- bits 0, 2, 3, 6 and 7 --
+# is invisible. The harness now emits `after_hex_b`, the 0x00 pass, in which the
+# byte reads the mask itself; the flag word is 0x00000020, and bit 5 happens to
+# be right. It was not established.
+#
+# NO AXIS BIT APPEARS IN THE FLAG WORD. A run with LY at 30000 fills +0x50 and
+# leaves the flag word at 0x00000020: bit 17 is not set. The masks 0x10000 to
+# 0x80000 that cycle 1318 paired with the four axes select a float slot; they are
+# not written here.
 #
 # AN UNTOUCHED AXIS READS NEGATIVE ZERO, NOT POSITIVE ZERO. All four slots the
 # run's single active half did not fill hold 0x80000000. It compares equal to
