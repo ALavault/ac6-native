@@ -271,6 +271,14 @@ public class MicroExecuteFunction extends GhidraScript {
         if (instruction == null) {
             throw new IllegalStateException("no instruction at " + Long.toHexString(address));
         }
+        if ("fctid".equals(name)) {
+            applyFctidOverride(instruction, emulator);
+            return;
+        }
+        if ("fmadd".equals(name) || "fnmsub".equals(name)) {
+            applyDoubleFmaOverride(name, instruction, emulator);
+            return;
+        }
         if (!"vpermwi128".equals(name) && !"vpermwi128-lowfirst".equals(name)) {
             throw new IllegalArgumentException("no override implemented for " + name);
         }
@@ -302,6 +310,96 @@ public class MicroExecuteFunction extends GhidraScript {
         }
         emulator.writeRegister(destination.getName(), new BigInteger(output.toString(), 16));
         countFired("override:" + name);
+    }
+
+    /**
+     * `fctid` -- convert to a 64-bit integer using FPSCR[RN], which is
+     * round-to-nearest-even at reset and which nothing in this program changes.
+     *
+     * THE MODULE TRUNCATES. Cycle 1413 measured it: at 3.683099 it yields 3 and
+     * at 6.866198 it yields 6, where the ISA yields 4 and 7. That is `fctidz`'s
+     * behaviour under `fctid`'s mnemonic, and the harness carries no FPSCR at
+     * all, so there is no rounding mode to set -- the defect is in the semantics
+     * and not in a register this script forgot to seed.
+     *
+     * The blast radius is small and was measured before this was written: TEN
+     * `fctid` in six functions across the whole corpus, against 979 `fctidz` and
+     * `fctiwz` which name their rounding in the mnemonic and are unaffected. No
+     * contracted behaviour cites any of the six.
+     *
+     * WHAT THIS IS. Asserted semantics, like the `vpermwi128` override and
+     * labelled the same way -- the snapshot records that it fired. Unlike that
+     * one there is no reading to arbitrate: `fctid` with RN=00 is round half to
+     * even, stated by the ISA and not inferred, and the control is that the
+     * routine it unblocks then agrees with a port derived independently from the
+     * listing.
+     */
+    private void applyFctidOverride(ghidra.program.model.listing.Instruction instruction,
+                                    EmulatorHelper emulator) throws Exception {
+        Register destination = (Register) instruction.getOpObjects(0)[0];
+        Register source = (Register) instruction.getOpObjects(1)[0];
+        BigInteger raw = emulator.readRegister(source.getName())
+            .and(new BigInteger("ffffffffffffffff", 16));
+        double value = Double.longBitsToDouble(raw.longValue());
+        long rounded;
+        if (Double.isNaN(value)) {
+            rounded = Long.MIN_VALUE;                       // the ISA's NaN result
+        } else if (value >= 9.223372036854776E18) {
+            rounded = Long.MAX_VALUE;
+        } else if (value <= -9.223372036854776E18) {
+            rounded = Long.MIN_VALUE;
+        } else {
+            rounded = (long) Math.rint(value);              // round half to EVEN
+        }
+        emulator.writeRegister(destination.getName(),
+            BigInteger.valueOf(rounded).and(new BigInteger("ffffffffffffffff", 16)));
+        countFired("override:fctid");
+    }
+
+    /**
+     * `fmadd` and `fnmsub` in DOUBLE precision -- fused, as the ISA defines them.
+     *
+     * THE MODULE DOES NOT FUSE THEM, and cycle 1413 measured it directly rather
+     * than inferring it from a fit. Running one `fmadd` in isolation at
+     * (0.1, 0.1, -0.01) yields 1.734723475976807e-18, which is the UNFUSED
+     * a*b+c; the fused answer is 9.020562075079397e-19. A second case at
+     * (1+2ulp, 1-1ulp, -1) yields exactly 0.0 where fusing gives -4.93e-32.
+     *
+     * THE SINGLE-PRECISION FORMS ARE CORRECT AND THAT IS WHY NOTHING SHIPPED IS
+     * AFFECTED. The same two controls against `fmadds` at 0x82096F04 both come
+     * back FUSED. The corpus has 1,959 single-precision fused multiplies
+     * (fmadds/fmsubs/fnmsubs/fnmadds) against 109 double ones, and every
+     * contracted behaviour in this campaign uses the single form -- which is
+     * also why the flight ports' std::fmaf calls have always agreed.
+     *
+     * fmadd  frT, frA, frC, frB :  frT = frA*frC + frB
+     * fnmsub frT, frA, frC, frB :  frT = -(frA*frC - frB) = frB - frA*frC
+     *
+     * The operand order is read back through the Instruction API, the same way
+     * the vpermwi128 override reads its registers, so a decode disagreement
+     * would show as an unseeded register rather than a plausible number.
+     */
+    private void applyDoubleFmaOverride(String name,
+                                        ghidra.program.model.listing.Instruction instruction,
+                                        EmulatorHelper emulator) throws Exception {
+        Register target = (Register) instruction.getOpObjects(0)[0];
+        Register a = (Register) instruction.getOpObjects(1)[0];
+        Register c = (Register) instruction.getOpObjects(2)[0];
+        Register b = (Register) instruction.getOpObjects(3)[0];
+        double va = readDouble(emulator, a);
+        double vc = readDouble(emulator, c);
+        double vb = readDouble(emulator, b);
+        double result = "fmadd".equals(name) ? Math.fma(va, vc, vb)
+                                             : Math.fma(-va, vc, vb);
+        emulator.writeRegister(target.getName(),
+            BigInteger.valueOf(Double.doubleToRawLongBits(result))
+                .and(new BigInteger("ffffffffffffffff", 16)));
+        countFired("override:" + name);
+    }
+
+    private double readDouble(EmulatorHelper emulator, Register register) throws Exception {
+        return Double.longBitsToDouble(emulator.readRegister(register.getName())
+            .and(new BigInteger("ffffffffffffffff", 16)).longValue());
     }
 
     /**

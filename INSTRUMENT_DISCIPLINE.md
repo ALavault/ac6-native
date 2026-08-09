@@ -28,6 +28,7 @@ the repository's*.
 
 | the shape you are in | section |
 |---|---|
+| your **port disagrees with the micro-execution** and you are about to fix the port | *the boring instruction nobody instrumented* — check which side is more accurate first; `fctid` truncates and double `fmadd` is unfused in this module |
 | your port calls **`std::cos`/`std::sin`/`std::sqrt`** where retail called its own | *the differential that passes on the library's behalf* — sweep the reachable domain and compare on the CALLER's output; `tools/audit_flight_axis_curve_microexec.py` is the model |
 | a scan returned **nothing** and you are about to believe it | *The pattern*, *The specific traps* |
 | you found a **write / a branch / a table** and it looks decisive | *the true positive from dead code* — four findings this campaign were live code the build never reaches |
@@ -1096,6 +1097,53 @@ the code around the substitution, never the substitution.
 And the corollary that names the trap: **a differential that computes its
 expectation with the substitute cannot fail on the substitute.** Feed it the
 measured result instead.
+
+## The fortieth shape: the boring instruction nobody instrumented
+
+Cycle 1413 built a port of `0x82381068` from its listing and the table at
+`0x8267A628`, and the port disagreed with the micro-execution at **163 of 178**
+values -- while agreeing with `math.cos` exactly.
+
+**A port that is more accurate than the routine it copies is not a port.** It
+says one side is being run wrong, and the side to suspect is the one nobody has
+measured.
+
+Two defects, each established by a direct control rather than by a fit:
+
+`fctid` **truncates**. At 3.683099 the module yields 3 and at 6.866198 it yields
+6, where the ISA yields 4 and 7 -- `fctidz`'s behaviour under `fctid`'s mnemonic.
+The harness carries no FPSCR at all, so this is not a rounding mode a spec forgot
+to seed.
+
+Double-precision `fmadd` **is not fused**. At `(0.1, 0.1, -0.01)` the module
+gives `1.7347e-18`, the unfused `a*b+c`; fused is `9.0206e-19`.
+
+### Why it had gone unnoticed for so long
+
+`vpermwi128` was suspected from the start because it is exotic. These two are
+ordinary scalar arithmetic -- no lanes, no asserted semantics, nothing that
+invites a control. **The boring case is where an instrument defect survives
+longest, because nobody instruments it.**
+
+The blast radius was measured before anything was concluded, and it is what made
+the finding safe to act on: 10 `fctid` in 6 functions against 979
+`fctidz`/`fctiwz`; 109 double fused-multiplies against **1,959 single-precision
+ones, which the same controls show ARE correctly fused**. Every contracted
+behaviour uses the single form. Nothing shipped was affected -- but three cycles
+of reasoning about one routine were.
+
+### The rule
+
+**When a port disagrees with the instrument, ask which of the two is more
+accurate before assuming the port is wrong.** If the port matches a
+well-understood reference and the instrument does not, instrument the
+instrument: run the single instruction in isolation, on inputs where the
+candidate readings visibly separate.
+
+And the cheaper companion: **a curve fit that names a reading is not a
+measurement of it.** "Unfused Horner scores 176/176" was right, and it was still
+worth two minutes to run one `fmadd` on two values and see the answer directly --
+because the fit could equally have been absorbing a different error.
 
 ## The audit this file owes itself
 
