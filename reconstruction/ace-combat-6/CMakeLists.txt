@@ -4,6 +4,28 @@ project(ac6_native LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# NO FLOATING-POINT CONTRACTION, ANYWHERE IN THIS PROJECT.
+#
+# Every port here reproduces a retail instruction sequence bit for bit, and it
+# does that by calling std::fmaf EXACTLY where retail fuses and using a plain
+# `a * b + c` where retail does not. GCC and Clang default to
+# -ffp-contract=fast, which fuses the second form as well -- silently changing
+# the last ulp of any expression the port deliberately left unfused.
+#
+# It bit at cycle 1412: retail_scalar_sin_cos rounds each of four lane products
+# before summing them, which was ARBITRATED against 412 executed values, and a
+# contracted build would fuse each product into the running sum and reproduce a
+# reading that lost 114 of them.
+#
+# Nothing in the product wants implicit contraction, so it is off globally
+# rather than per-file. The differentials are what would catch a regression,
+# but they need a Ghidra pass; this needs none.
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  add_compile_options(-ffp-contract=off)
+elseif(MSVC)
+  add_compile_options(/fp:precise)
+endif()
+
 option(AC6_BUILD_PLATFORM "Build the SDL3/Vulkan frontend" ON)
 
 add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cpp
@@ -42,7 +64,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/demo_flight_input.cpp
   src/retail_flight_input_accumulators.cpp
   src/retail_flight_input_apply.cpp
-  src/retail_flight_input_router.cpp)
+  src/retail_flight_input_router.cpp
+  src/retail_scalar_sin_cos.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -248,6 +271,11 @@ add_executable(ac6-retail-flight-input-apply-tests
   tests/retail_flight_input_apply_tests.cpp)
 target_link_libraries(ac6-retail-flight-input-apply-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-flight-input-apply COMMAND ac6-retail-flight-input-apply-tests)
+
+# A3.1/A3.2: XMScalarSinCos, the last unfaithful scalar seam in the chain.
+add_executable(ac6-retail-scalar-sin-cos-tests tests/retail_scalar_sin_cos_tests.cpp)
+target_link_libraries(ac6-retail-scalar-sin-cos-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-scalar-sin-cos COMMAND ac6-retail-scalar-sin-cos-tests)
 
 # A3.2: where the six input fields come from -- the binding layer's outputs.
 add_executable(ac6-retail-flight-input-router-tests

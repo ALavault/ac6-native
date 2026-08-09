@@ -416,8 +416,8 @@
           {
             "kind": "microexec",
             "path": "reports/mission01-retail/transform-kernel-microexec.json",
-            "sha256": "dee62a45fdbef70bfdc2be3435dd6bdd2ff4ceecb6e845543c9d8c1a45454143",
-            "size": 9020,
+            "sha256": "fa931c1aacf8f738eeb6b66e6b8791cebd57881cdb6fb14f0527c6bc8fe7a3c4",
+            "size": 9024,
             "claim": "0x822A1E80 and each of its three callees executed on an asymmetric sentinel basis at four angles, twelve rotation cases checked lane by lane against a stated model with a worst deviation of 1.5e-06 and exactly zero at every zero angle"
           },
           {
@@ -430,9 +430,9 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_transform.h",
-            "sha256": "6d410051d0f38c76b3b03ce5e29aef020699898a967759af634545af7bede43f",
-            "size": 6051,
-            "claim": "include/ac6/retail_transform.h carries the derivation, states that there is ONE kernel for both paths and why, and names what is not ported: the object's first 16 bytes and the trigonometry of 0x8209CB70 -- for which it now records a measured domain sweep, 206 angles over [-pi, pi] and 412 values, of which 170 are identical to std::sin/std::cos, 182 within 2 ulp and 60 worse, with a worst absolute error of 3.20e-07"
+            "sha256": "e8b0112987650534a61fffca17d4e037f1782d8ea5c7b2a50e760a411e548788",
+            "size": 6738,
+            "claim": "include/ac6/retail_transform.h carries the derivation, states that there is ONE kernel for both paths and why, and records that the trigonometry seam of 0x8209CB70 is CLOSED as of cycle 1412 -- retail_sin_cos calls the port, and this kernel's own differential fell from a worst deviation of 1.4583e-06 to 1.0027e-06 with its tolerance cut from 2e-5 to a measured 1.1e-6, the residue being float32 composition rather than trigonometry"
           }
         ]
       },
@@ -1156,6 +1156,53 @@
             "sha256": "b8293ac2b905cea5e495d1d14822748d220fd5da31fa624e1c7721264c68630b",
             "size": 5557,
             "claim": "include/ac6/retail_flight_input_router.h carries the derivation, gives the full three-arm table with the array slot or bit for each of the six fields, states the rlwinm bit numbering that makes MB=29 bit 2 and MB=26 bit 5, records that the first draft had the layout-1 bits wrong and what rejected it, and names the three things next to the block that are deliberately not ported"
+          }
+        ]
+      },
+      "retail_scalar_sin_cos": {
+        "status": "passed",
+        "statement": "the native product reproduces XMScalarSinCos at 0x8209CB70 bit for bit: the range reduction that builds copysign(pi, angle) by inserting 0x40490FDB's bits 1..31 over the argument's word at 0x8209CBE0, scales by float32(1/(2pi)) from 0x82069BEC, truncates toward zero with saturation, and subtracts q*float32(2pi) from 0x82069BF0 in ONE fused rounding at 0x8209CC1C; then the 23rd-order Taylor series built from the vector at 0x8209CC38 and evaluated as six four-lane dot products against the reciprocal-factorial vectors at 0x8204F6F0..0x8204F740, with the 1.0 at 0x820542BC in lane 0, summed high+mid then low across 0x8209CCB4..0x8209CCD8. vmsum4fp128's summation order was arbitrated by cross-match -- ((p0+p1)+p2)+p3 with each product rounded before the sum is the only one of eight candidate readings that reproduces all 412 values, the next best reaching 298 -- and the build disables floating-point contraction so the compiler cannot re-fuse those products",
+        "retail_addresses": [
+          "0x8209CB70",
+          "0x8209CBE0",
+          "0x8209CBEC",
+          "0x8209CBF0",
+          "0x8209CC1C",
+          "0x8209CC38",
+          "0x8209CCB4",
+          "0x8209CCD8",
+          "0x8204F6F0",
+          "0x8204F740",
+          "0x820542BC"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1412-the-only-reading-that-fits.md",
+            "sha256": "99ddaee3477a40259f83c1b1bcf56d5bd86e1460763934bddeed2423c1acf1b3",
+            "size": 6832,
+            "claim": "all 92 instructions read, the six coefficient vectors and three scalars resolved from the image and checked to be exact reciprocal factorials rather than decimal literals, and the eight candidate readings of vmsum4fp128 scored 412/298/292/226/223/188 against the executed result"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_scalar_sin_cos_tests.cpp",
+            "sha256": "afb4bb57bf3e5bf4d9f49ace7f353ce9358aa2f9ae2480e85d5a1f1b8826a8c6",
+            "size": 4992,
+            "claim": "eight anchors taken from the micro-execution and not from libm, including the three where they differ visibly; the oddness of sine and evenness of cosine asserted to the bit, which is what a floor(q+0.5) reduction would break; and a CONTROL asserting the port DISAGREES with std::sin/std::cos on at least four anchors, so a future simplification back to the library fails here"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/scalar-sin-cos-microexec.tsv",
+            "sha256": "54821a84e06faa4f7b4ef5622e25f0fc082a1c1d241abf8f83da4a94423f5602",
+            "size": 26758,
+            "claim": "206 angles over [-pi, pi], 412 values, compared bit for bit with no tolerance and zero failures, run with alias on and asserted_semantics empty so every one of the 92 instructions is retail's own p-code; an earlier draft that took the x^8 step from the squared vector instead of the base one was rejected at 336 of the 412"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_scalar_sin_cos.h",
+            "sha256": "32d14c8e92275be77e0a704e0614e71b2cc0d52eba1dd05c5d84af7104a30a0c",
+            "size": 4945,
+            "claim": "include/ac6/retail_scalar_sin_cos.h carries the derivation, gives the reduction as an integer insert rather than a copysign call and says why floor(q+0.5) is not a substitute, records the arbitration of vmsum4fp128 with its scores, and states plainly that what is established is agreement with the micro-execution and not with the console"
           }
         ]
       }

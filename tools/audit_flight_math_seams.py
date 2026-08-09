@@ -73,6 +73,13 @@ SWEEP = 192
 #            baseline, and prints the baseline every time so it cannot be
 #            forgotten.  A number in the output is harder to ignore than a
 #            comment in a header.
+#
+# CYCLE 1412 CLOSED THE sincos SEAM by porting 0x8209CB70 rather than
+# substituting for it, so the product no longer calls std::sin/std::cos on this
+# path at all. This entry stays `False` and the sweep stays, because the number
+# it prints is now the measurement of a gap the product does NOT have -- and if
+# someone ever "simplifies" retail_transform.cpp back to the library, that
+# number is what the gap would be again.
 SUBSTITUTABLE = {"asin": True, "atan2": True, "sincos": False}
 
 # Measured at cycle 1411 over 412 values: 170 exact, 182 within 2 ulp, 60 worse,
@@ -293,8 +300,9 @@ def check(workdir: Path, report: Path | None) -> int:
         print(f"  {kind:<6} cases={counts[kind]:<3} worst={worst[kind]} ulp"
               f"   -> {verdict}{flag}")
     print(f"  sincos worst absolute error {worst_abs:.6g} "
-          f"(baseline {SINCOS_BASELINE_ABS:.6g}) -- "
-          f"std::sin/std::cos are NOT 0x8209CB70 and the product knows it")
+          f"(baseline {SINCOS_BASELINE_ABS:.6g}) -- std::sin/std::cos are NOT "
+          f"0x8209CB70, which is why cycle 1412 ported it; the product no longer "
+          f"substitutes here, see retail_scalar_sin_cos.h")
     if report is not None:
         report.parent.mkdir(parents=True, exist_ok=True)
         report.write_text(

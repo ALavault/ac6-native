@@ -37,6 +37,10 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
+
+sys.path.insert(0, str(__import__("pathlib").Path(__file__).resolve().parent))
+from audit_scalar_sin_cos_microexec import model as scalar_sin_cos_model  # noqa: E402
 import struct
 import sys
 from pathlib import Path
@@ -89,7 +93,25 @@ ROTATION_MODEL = {
     # called third, with the caller's f3; row 2 is fixed
     "0x82211828": {"kept": 2, "first": 0, "second": 1, "sign": +1},
 }
-TOLERANCE = 2e-5
+# WAS 2e-5, AND THE REASON IS GONE. The expectation below used math.cos and
+# math.sin where retail calls 0x8209CB70, so the tolerance was measuring that
+# substitution and nothing else -- cycle 1411 put the gap at 3.20e-07 absolute
+# and cycle 1412 ported the routine. The expectation now calls the port's own
+# model, so the comparison is between two readings of the same arithmetic and
+# a tolerance would only hide a defect.
+#
+# It is not set to zero: the rotation itself is a vector composition this tool
+# models in float64 while retail runs it in float32, so a residue remains that
+# has nothing to do with the trigonometry. The bound is MEASURED, both before and
+# after, so the improvement is a number rather than a claim:
+#
+#     math.cos / math.sin      worst deviation 1.4583e-06
+#     the ported 0x8209CB70    worst deviation 1.0027e-06
+#
+# What is left is float32 composition. Modelling that in float32 too would drive
+# this to zero and is the obvious next step; until it is done, 1.1e-6 is the
+# smallest honest bound and it is set from the measurement, not chosen to pass.
+TOLERANCE = 1.1e-6
 
 
 def object_blob(seed_rows: bool) -> bytes:
@@ -254,7 +276,7 @@ def check(workdir: Path, report: Path | None) -> int:
             label = case["name"].split("-")[1]
             angle = case["floats"]["f1"]
             model = ROTATION_MODEL[label]
-            cosine, sine = math.cos(angle), math.sin(angle)
+            sine, cosine = scalar_sin_cos_model(angle)
             worst = 0.0
             for lane in range(4):
                 a = SENTINEL_ROWS[model["first"]][lane]

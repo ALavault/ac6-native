@@ -59,8 +59,19 @@ struct RetailBasis {
 // The identity 0x822A1E80 copies in, from the three constants named above.
 RetailBasis identity_basis() noexcept;
 
-// THE TRIGONOMETRY IS THE ONE SEAM THAT IS NOT BIT-QUALIFIED, AND IT IS NAMED
-// RATHER THAN HIDDEN.
+// THE TRIGONOMETRY WAS THE ONE SEAM THAT WAS NOT BIT-QUALIFIED. IT IS CLOSED.
+//
+// CYCLE 1412 PORTED 0x8209CB70. `retail_sin_cos` now calls
+// `ac6::retail::scalar_sin_cos`, which reproduces the micro-executed routine at
+// 412 of 412 values with no tolerance. The paragraphs below are kept because
+// they record what the seam WAS and how it was measured; the present tense in
+// them is historical.
+//
+// What the port bought, measured on this kernel's own differential rather than
+// argued: the worst deviation of the three rotations against retail fell from
+// 1.4583e-06 to 1.0027e-06, and `audit_transform_kernel_microexec.py`'s
+// tolerance fell from 2e-5 to 1.1e-6. The residue is no longer trigonometry --
+// it is that the tool models a float32 vector composition in float64.
 //
 // Retail reaches cosine and sine through `0x8209CB70`, identified as
 // XMScalarSinCos and reproduced by micro-execution including its argument

@@ -21,7 +21,7 @@
       "sign": 1
     }
   },
-  "tolerance": 2e-05,
+  "tolerance": 1.1e-06,
   "cases": [
     {
       "case": "assemble-mixed",
@@ -156,7 +156,7 @@
           12.616565
         ]
       ],
-      "worst_deviation": 5.165806626905578e-07,
+      "worst_deviation": 4.977245335879843e-07,
       "matches_rotation": true
     },
     {
@@ -191,7 +191,7 @@
           8.61329
         ]
       ],
-      "worst_deviation": 1.458304678791933e-06,
+      "worst_deviation": 9.428749088158384e-07,
       "matches_rotation": true
     },
     {
@@ -226,7 +226,7 @@
           11.506821
         ]
       ],
-      "worst_deviation": 8.376820321842615e-07,
+      "worst_deviation": 7.596321101033254e-07,
       "matches_rotation": true
     },
     {
@@ -296,7 +296,7 @@
           9.647717
         ]
       ],
-      "worst_deviation": 9.240354312822774e-07,
+      "worst_deviation": 1.0027332297823932e-06,
       "matches_rotation": true
     },
     {
@@ -331,7 +331,7 @@
           14.366396
         ]
       ],
-      "worst_deviation": 1.149471055228446e-06,
+      "worst_deviation": 7.852363594906819e-07,
       "matches_rotation": true
     },
     {
@@ -366,7 +366,7 @@
           3.327156
         ]
       ],
-      "worst_deviation": 8.154208881450131e-07,
+      "worst_deviation": 9.150314337347254e-07,
       "matches_rotation": true
     },
     {
@@ -436,7 +436,7 @@
           12.0
         ]
       ],
-      "worst_deviation": 5.989484268553724e-07,
+      "worst_deviation": 5.832595828536569e-07,
       "matches_rotation": true
     },
     {
@@ -471,7 +471,7 @@
           12.0
         ]
       ],
-      "worst_deviation": 6.519439335050947e-07,
+      "worst_deviation": 4.3202781707663007e-07,
       "matches_rotation": true
     },
     {
@@ -506,7 +506,7 @@
           12.0
         ]
       ],
-      "worst_deviation": 8.020467436864465e-07,
+      "worst_deviation": 6.677818298328475e-07,
       "matches_rotation": true
     }
   ]

@@ -1,5 +1,7 @@
 #include "ac6/retail_transform.h"
 
+#include "ac6/retail_scalar_sin_cos.h"
+
 #include <cmath>
 
 namespace ac6::retail {
@@ -15,8 +17,12 @@ RetailBasis identity_basis() noexcept {
 }
 
 SinCos retail_sin_cos(float angle) noexcept {
-  // The seam. See the header: 0x8209CB70 is XMScalarSinCos and is not ported.
-  return SinCos{std::sin(angle), std::cos(angle)};
+  // The seam is CLOSED as of cycle 1412. 0x8209CB70 is ported in
+  // retail_scalar_sin_cos.cpp and reproduces the micro-executed routine at 412
+  // of 412 values; this used to call std::sin/std::cos and differ from retail at
+  // 242 of them, worst absolute error 3.20e-07.
+  const ScalarSinCos pair = scalar_sin_cos(angle);
+  return SinCos{pair.sine, pair.cosine};
 }
 
 void rotate_basis(RetailBasis& basis, int kept, int sign, SinCos pair) noexcept {
