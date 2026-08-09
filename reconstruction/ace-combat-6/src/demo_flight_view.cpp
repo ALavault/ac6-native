@@ -676,3 +676,90 @@ void draw_world_triangles_textured(Image& image,
 }
 
 }  // namespace ac6::demo
+
+namespace ac6::demo {
+
+void apply_mapset_post(Image& image, const MapsetPost& post) noexcept {
+  const std::size_t pixels = static_cast<std::size_t>(image.width) * image.height;
+  if (image.rgb.size() < pixels * 3) return;
+
+  // 1. Bloom: a bright pass, blurred separably, added back. The threshold and
+  //    scale are retail's; the kernel is mine.
+  if (post.bloom) {
+    std::vector<float> bright(pixels * 3, 0.0F);
+    const float cut = post.bloom_threshold * 255.0F;
+    for (std::size_t i = 0; i < pixels; ++i) {
+      const float r = image.rgb[i * 3], g = image.rgb[i * 3 + 1], b = image.rgb[i * 3 + 2];
+      const float luma = 0.299F * r + 0.587F * g + 0.114F * b;
+      if (luma <= cut) continue;
+      const float k = (luma - cut) / 255.0F;
+      bright[i * 3] = r * k; bright[i * 3 + 1] = g * k; bright[i * 3 + 2] = b * k;
+    }
+    const int radius = static_cast<int>(post.bloom_sigma * 3.0F);
+    std::vector<float> pass(pixels * 3, 0.0F);
+    for (int axis = 0; axis < 2; ++axis) {
+      std::vector<float>& src = axis == 0 ? bright : pass;
+      std::vector<float>& dst = axis == 0 ? pass : bright;
+      for (int y = 0; y < image.height; ++y) {
+        for (int x = 0; x < image.width; ++x) {
+          float acc[3] = {0.0F, 0.0F, 0.0F};
+          float weight = 0.0F;
+          for (int t = -radius; t <= radius; ++t) {
+            const int sx = axis == 0 ? x + t : x;
+            const int sy = axis == 0 ? y : y + t;
+            if (sx < 0 || sy < 0 || sx >= image.width || sy >= image.height) continue;
+            const float w = std::exp(-0.5F * static_cast<float>(t * t) /
+                                     (post.bloom_sigma * post.bloom_sigma));
+            const std::size_t o = (static_cast<std::size_t>(sy) * image.width + sx) * 3;
+            acc[0] += src[o] * w; acc[1] += src[o + 1] * w; acc[2] += src[o + 2] * w;
+            weight += w;
+          }
+          const std::size_t o = (static_cast<std::size_t>(y) * image.width + x) * 3;
+          for (int c = 0; c < 3; ++c) dst[o + c] = weight > 0.0F ? acc[c] / weight : 0.0F;
+        }
+      }
+    }
+    for (std::size_t i = 0; i < pixels * 3; ++i) {
+      const float v = image.rgb[i] + bright[i] * post.bloom_scale;
+      image.rgb[i] = static_cast<std::uint8_t>(v > 255.0F ? 255.0F : v);
+    }
+  }
+
+  // 2. Levels, per channel, exactly as .LevelCorrection states them.
+  if (post.level_correction) {
+    for (std::size_t i = 0; i < pixels; ++i) {
+      for (int c = 0; c < 3; ++c) {
+        const float span = post.in_max[c] - post.in_min[c];
+        float t = span > 0.0F
+                      ? (static_cast<float>(image.rgb[i * 3 + c]) - post.in_min[c]) / span
+                      : 0.0F;
+        t = t < 0.0F ? 0.0F : (t > 1.0F ? 1.0F : t);
+        if (post.in_gamma[c] > 0.0F) t = std::pow(t, 1.0F / post.in_gamma[c]);
+        const float v = post.out_min[c] + (post.out_max[c] - post.out_min[c]) * t;
+        image.rgb[i * 3 + c] = static_cast<std::uint8_t>(v > 255.0F ? 255.0F : (v < 0.0F ? 0.0F : v));
+      }
+    }
+  }
+
+  // 3. Vignette, darkening beyond `fRadiusRatio` of the half-diagonal.
+  if (post.vignette) {
+    const float cx = image.width * 0.5F, cy = image.height * 0.5F;
+    const float half = std::sqrt(cx * cx + cy * cy);
+    for (int y = 0; y < image.height; ++y) {
+      for (int x = 0; x < image.width; ++x) {
+        const float dx = x - cx, dy = y - cy;
+        const float r = std::sqrt(dx * dx + dy * dy) / half;
+        if (r <= post.vignette_radius_ratio) continue;
+        const float t = (r - post.vignette_radius_ratio) /
+                        (1.0F - post.vignette_radius_ratio);
+        const float k = 1.0F - 0.55F * t * t;          // the falloff shape is mine
+        const std::size_t o = (static_cast<std::size_t>(y) * image.width + x) * 3;
+        for (int c = 0; c < 3; ++c) {
+          image.rgb[o + c] = static_cast<std::uint8_t>(image.rgb[o + c] * k);
+        }
+      }
+    }
+  }
+}
+
+}  // namespace ac6::demo

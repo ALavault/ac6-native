@@ -295,6 +295,11 @@ add_executable(ac6-flight-turn-mapping-tests tests/flight_turn_mapping_tests.cpp
 target_link_libraries(ac6-flight-turn-mapping-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-flight-turn-mapping COMMAND ac6-flight-turn-mapping-tests)
 
+# B3: the map's own post-process, from the mapset XML.
+add_executable(ac6-mapset-post-tests tests/mapset_post_tests.cpp)
+target_link_libraries(ac6-mapset-post-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-mapset-post COMMAND ac6-mapset-post-tests)
+
 add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)
 target_link_libraries(ac6-ntxr-texture-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-ntxr-texture

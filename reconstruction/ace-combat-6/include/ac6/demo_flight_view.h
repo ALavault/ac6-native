@@ -178,6 +178,37 @@ void draw_world_triangles_textured(Image& image,
                                    std::uint8_t fog_r, std::uint8_t fog_g,
                                    std::uint8_t fog_b) noexcept;
 
+// The map's own post-process, from the mapset XML cycle 1474 opened.
+//
+// EVERY NUMBER HERE IS RETAIL'S. `.LevelCorrection` gives a per-channel input
+// floor, gamma and ceiling and an output floor and ceiling; `.Vignetting` gives
+// `bEnable`, `fRadiusRatio` and `fFovRatio`; `.HDR` gives `bEnable`, a bright-pass
+// threshold and offset, a bloom sigma, brightness and scale. `.Saturation.Enable`
+// is **0** in Mission 01, so nothing here changes saturation -- honouring a
+// disabled effect is as much a reading as applying an enabled one.
+//
+// WHAT IS MINE: the curves. The file gives a gamma but not whether it is applied
+// as `x^g` or `x^(1/g)`; this uses `x^(1/g)`, the Photoshop-levels convention,
+// and says so. The vignette's falloff shape and the bloom's kernel are mine too.
+// The values are retail's, the interpretation of two of them is not.
+struct MapsetPost {
+  bool level_correction = true;
+  float in_min[3] = {13.0F, 7.0F, 13.0F};
+  float in_gamma[3] = {0.9F, 1.0F, 1.1F};
+  float in_max[3] = {229.0F, 245.0F, 255.0F};
+  float out_min[3] = {5.0F, 5.0F, 5.0F};
+  float out_max[3] = {235.0F, 235.0F, 235.0F};
+  bool vignette = true;
+  float vignette_radius_ratio = 0.610F;
+  bool bloom = true;
+  float bloom_threshold = 0.4F;     // .HDR.fBrightPassThreshold
+  float bloom_scale = 1.0F;         // .HDR.fBloomScale
+  float bloom_sigma = 2.0F;         // .HDR.fBloomSigma
+  bool saturation = false;          // .Saturation.Enable is 0
+};
+
+void apply_mapset_post(Image& image, const MapsetPost& post) noexcept;
+
 // Draws a decoded NDXR mesh as a wireframe, seen from `basis` at `position`.
 //
 // THE MESH IS RETAIL'S AND THE REST OF THE PICTURE IS NOT. Every vertex comes

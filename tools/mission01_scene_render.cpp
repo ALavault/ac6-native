@@ -236,6 +236,11 @@ int main(int argc, char** argv) {
     }
     ++drawn;
   }
+  // The map's own post-process, from 022_FHM's XML: per-channel levels, a
+  // vignette, and an HDR bloom. .Saturation.Enable is 0 and nothing here
+  // touches saturation.
+  ac6::demo::apply_mapset_post(image, ac6::demo::MapsetPost{});
+
   std::printf("%zu instances drawn, %zu with a texture; %zu textures decoded\n",
               drawn, textured, textures.size());
   return image.write_ppm(argv[2]) ? 0 : 1;
