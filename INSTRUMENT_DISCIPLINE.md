@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| you counted **several dispatch sites** in one function | *a jump table's arms look like call sites* — arms converge on one shared `bctrl`; check the branch target before counting, and prefer filtering by the callee's SIGNATURE (which registers are set) over its slot number |
 | you are about to port a class's methods | *the class that flies and the instance nothing reaches* — a vtable proves capability, never invocation; search for anything that computes the subobject's address (following addi chains) or stores it, and treat an empty result as the answer rather than as a gap |
 | a captured value **equals one of the inputs** | *the wrong answer that names the register* — suspect the capture, not the arithmetic; a register still holding a step, limit or argument means execution stopped in the wrong place, and a stubbed call costs TWO steps because stubs key on the callee's entry |
 | you are about to **correct** an earlier claim | *the over-correction* — a correction takes the same evidence as any other claim and gets far less; if it says "in A, not B", enumerate ALL the sites, because one call site is not a survey |
@@ -1451,3 +1452,45 @@ Cycle 1370 ran the first search, got exactly three sites, and read it as "the
 component must be reached through a stored pointer". The search was right; the
 conclusion assumed reachability because the object existed. **An empty result for
 "who addresses this" is a finding, not a gap.**
+
+## The thirty-eighth shape: a jump table's arms look like call sites
+
+Cycle 1399 looked for whatever calls the flight model's three command setters --
+virtual slots 12, 13 and 14, at offsets 48, 52 and 56. The obvious filter is
+"functions that dispatch all three", and it returned four candidates out of
+78/104/127. Requiring all three on the SAME object register returned the same
+four, which felt like confirmation.
+
+Two of the four were **switch statements**. `0x82220D20` compares a value and
+branches to one of
+
+    lwz r11,36(r11) / 40 / 44 / 48 / 52 / 56 / 60
+
+each followed by `b 0x822210AC`, a single shared `bctrl`. It does not call seven
+virtuals; it calls **one**, chosen from a menu. A third candidate reached the
+list the same way. The fourth passed no floats at all, where the setters take
+two.
+
+### Why the filter looked good
+
+A switch over virtual slots is textually indistinguishable from a caller of
+several of them: the same `lwz rX,0(obj)` / `lwz rY,OFF(rX)` pairs, the same
+offsets, the same object register. The "same object register" refinement makes
+it *more* convincing, because a switch naturally uses one object throughout.
+
+So the second filter did not test the first — it re-measured the same artefact
+and agreed with itself.
+
+### The rule
+
+**When several dispatch sites in one function share a branch target, they are a
+switch and not a sequence.** Check where each arm goes before counting it: arms
+converge on one `bctrl`, real calls each have their own.
+
+And the general form, which is cheaper still: **filter by the callee's
+SIGNATURE, not by its slot number.** These setters take `(this, float, float)`
+and return a code. Requiring both `f1` and `f2` to be set around the dispatch
+cut 78/104/127 sites to thirteen in eight functions, excluded every switch arm
+automatically -- a jump table does not marshal arguments per arm -- and needed no
+class-map filter at all. A slot number is a coincidence waiting to happen; an
+argument list is a claim about the callee.

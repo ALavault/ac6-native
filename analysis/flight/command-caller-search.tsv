@@ -1,0 +1,51 @@
+# Who calls the flight model's command setters -- a search, three refuted
+# filters, and the population that survived.
+#
+# THE QUESTION. Cycle 1393 contracted slots 12, 13 and 14 and established that
+# they take a TARGET ANGLE and an INCREMENT and are the only writers of the
+# model's commands. Cycle 1398 wired a demo controller to them through an
+# INVENTED conversion, because who calls them and with what was never searched.
+# This is that search.
+#
+# FILTER 1 -- the class-family filter that has worked all campaign. It returns
+# NOTHING, and correctly: the steering code is not a flight model, so filtering
+# to the flight-model family excludes exactly the callers being looked for. The
+# tool was right and the question was wrong for it.
+#
+#   slot 12 (offset 48)   98 dispatches, 0 in the family
+#   slot 13 (offset 52)  132 dispatches, 0 in the family
+#   slot 14 (offset 56)  151 dispatches, 0 in the family
+#
+# FILTER 2 -- "dispatches all three", then "all three on the SAME object
+# register". Both return the same FOUR functions, and all four are refuted by
+# reading them:
+#
+# function	why it is not the caller
+0x821222B0	slot +0x20 of CNuSound, and its 48/52/56 are arms of a SWITCH: it compares a value against r24..r28 and branches to one shared bctrl. One call chosen from a menu, not three calls.
+0x82220D20	the same shape and larger -- offsets 36, 40, 44, 48, 52, 56, 60 all branching to 0x822210AC. A jump table.
+0x822389D8	one site at offset 52 only; it reached the "all three" list through the same switch-arm miscount.
+0x822B7200	calls 52, 56 and 48 in sequence on r30 and passes NO FLOAT ARGUMENTS -- `mr r3,r30` straight to bctrl, returns tested as booleans. The setters take (this, f1, f2), so this dispatches a different class's slots.
+#
+# THE FLAW WAS THE FILTER. "Dispatches offsets 48, 52 and 56" counts the ARMS OF
+# A JUMP TABLE as separate call sites. A switch over virtual slots looks exactly
+# like a caller of several of them, and two of the four candidates were nothing
+# but that.
+#
+# FILTER 3 -- the setters' SIGNATURE, which should have been first: a dispatch at
+# 48, 52 or 56 with BOTH f1 and f2 set in the surrounding instructions. Thirteen
+# sites in eight functions, and none of them is a switch arm, because a jump
+# table does not set up arguments per arm.
+#
+# function	insns	sites	offsets	callers
+0x82290E20	241	4	48, 56	1
+0x822911E8	538	3	56	4
+0x82290500	423	1	56	3
+0x82291A50	366	1	56	1
+0x82292540	343	1	56	1
+0x821405F8	281	1	48	0
+0x822389D8	589	1	52	1
+0x82366AA0	33	1	52	1
+#
+# 0x82290E20 is the strongest candidate on shape alone -- four sites across two
+# different setters, one caller -- and NONE of the eight has been read. The
+# invented link in demo_flight_input.h stays invented until one of them is.
