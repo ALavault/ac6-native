@@ -16,14 +16,25 @@ int main(int argc, char** argv) {
   for (std::size_t i=0;i<offs.size();++i) {
     std::size_t a = data+offs[i];
     std::size_t b = (i+1<offs.size()) ? data+offs[i+1] : d.size();
-    for (std::size_t p=a; p+4<=b; ++p) {
-      if (!(d[p]=='N'&&d[p+1]=='D'&&d[p+2]=='X'&&d[p+3]=='R')) continue;
+    // BY INDEX, not by scanning. Cycle 1419 established the FHM's own table:
+    // count at +0x10, `count` offsets from +0x14, relative to the FHM base.
+    // The previous version searched the entry for the NDXR magic, which finds
+    // the same 292 containers and is a search rather than a resolution.
+    if (!(d[a]=='F'&&d[a+1]=='H'&&d[a+2]=='M'&&d[a+3]==' ')) continue;
+    std::uint32_t subs = be(a+0x10);
+    std::vector<std::size_t> sub;
+    for (std::uint32_t k=0;k<subs;++k) sub.push_back(be(a+0x14+4*k));
+    for (std::size_t k=0;k<sub.size();++k) {
+      std::size_t p = a + sub[k];
+      std::size_t stop = (k+1<sub.size()) ? a + sub[k+1] : b;
+      if (p+8>b || !(d[p]=='N'&&d[p+1]=='D'&&d[p+2]=='X'&&d[p+3]=='R')) continue;
+      (void)stop;
       ++tried;
       // TRIM TO THE CONTAINER'S OWN DECLARED LENGTH at +0x04. Open requires the
       // buffer to be exactly that long -- a guard the file itself says retail
       // does not have -- so an embedded container must be trimmed by its caller.
       std::size_t declared = (std::size_t)((std::uint32_t)d[p+4]<<24|(std::uint32_t)d[p+5]<<16|(std::uint32_t)d[p+6]<<8|d[p+7]);
-      std::size_t span = (declared && p+declared<=b) ? declared : (b-p);
+      std::size_t span = (declared && p+declared<=b) ? declared : (stop-p);
       ac6::retail::NdxrRefusal r{};
       auto c = ac6::retail::NdxrContainer::Open(&d[p], span, &r);
       if (c) { ++ok; why["OPENED"]++; }
