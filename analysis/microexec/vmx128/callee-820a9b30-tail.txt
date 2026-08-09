@@ -1,0 +1,119 @@
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bb8: vs42 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs43 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9bbc: vs40 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs34 (EmulatorHelper)  
+WARN  Uninitialized register read at 820a9c28: vs35 (EmulatorHelper)  
+820a9ba0 lvlx v13,r0,r5  
+820a9ba4 vrlimi128 vr13,vr9,0x4,0x3  
+820a9ba8 lvx128 vr10,r0,r9  
+820a9bac lvx128 vr9,r0,r11  
+820a9bb0 lis r9,-0x7dfb  
+820a9bb4 lvx128 vr8,r0,r10  
+820a9bb8 vmrghw v7,v9,v10  
+820a9bbc vmrghw v6,v11,v8  
+820a9bc0 subi r9,r9,0x800  
+820a9bc4 vrlimi128 vr13,vr12,0x3,0x2  
+820a9bc8 vmrglw v8,v11,v8  
+820a9bcc vmrglw v9,v9,v10  
+820a9bd0 vmrglw v11,v6,v7  
+820a9bd4 vor v12,v13,v13  
+820a9bd8 lvx128 vr0,r0,r9  
+820a9bdc vmrglw v10,v8,v9  
+820a9be0 vmrghw v9,v8,v9  
+820a9be4 vmrghw v8,v6,v7  
+820a9be8 vmsum4fp128 vr4,vr0,vr11  
+820a9bec vpermwi128 vr13,vr12,0xac  
+820a9bf0 vpermwi128 vr12,vr12,0x2c  
+820a9bf4 vmsum4fp128 vr3,vr0,vr9  
+820a9bf8 vmsum4fp128 vr2,vr0,vr8  
+820a9bfc vmsum4fp128 vr7,vr13,vr11  
+820a9c00 vmsum4fp128 vr6,vr13,vr10  
+820a9c04 vmsum4fp128 vr5,vr13,vr9  
+820a9c08 vmsum4fp128 vr13,vr13,vr8  
+820a9c0c vmsum4fp128 vr11,vr12,vr11  
+820a9c10 vmsum4fp128 vr9,vr12,vr9  
+820a9c14 vmrghw v7,v7,v6  
+820a9c18 vmsum4fp128 vr6,vr0,vr10  
+820a9c1c vmsum4fp128 vr10,vr12,vr10  
+820a9c20 vmsum4fp128 vr12,vr12,vr8  
+820a9c24 vmrghw v0,v13,v5  
+820a9c28 vmrghw v8,v2,v3  
+820a9c2c vmrghw v0,v0,v7  
+820a9c30 stvx128 vr0,r0,r31  
+820a9c34 vmrghw v13,v4,v6  
+820a9c38 vmrghw v11,v11,v10  
+820a9c3c vmrghw v12,v12,v9  
+820a9c40 vmrghw v13,v8,v13  
+820a9c44 vmrghw v12,v12,v11  
+820a9c48 stvx128 vr13,r0,r11  
+820a9c4c stvx128 vr12,r0,r10  
+820a9c50 addi r1,r1,0x70  
+820a9c54 lwz r12,-0x8(r1)  
+820a9c58 mtspr LR,r12  
+820a9c5c ld r31,-0x10(r1)  
+820a9c60 blr  
