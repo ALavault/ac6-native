@@ -68,7 +68,20 @@ def main(argv):
         grp = mca[(cz >> 4) * 16 + (cx >> 4)]
         blk = struct.unpack_from(">H", mci,
                                  (grp * 256 + (cz & 15) * 16 + (cx & 15)) * 2)[0]
-        lin = (((sz * 16) & 63) << 6) | ((sx * 16) & 63)  # 8 units per bit
+        # THE RAW COORDINATES, truncated toward zero. f10/f11 are loaded once at
+        # 0x82101EF4/F8 and never rewritten, and 0x821020EC multiplies those
+        # untouched registers by the 0.125 at 0x8200322C -- so the +65536 that
+        # forms the cell never reaches the bit index. Biasing first and flooring
+        # is a DIFFERENT index for negative non-integral positions.
+        #
+        # On this lattice the two are provably identical: the world coordinate
+        # is `s * 128 - 65536`, so `world / 8` is the exact integer `s * 16 -
+        # 8192` and 8192 is a multiple of 64. Off the lattice the bit differs at
+        # 0.02% of probes. Cycle 1450 found this while porting and it moved
+        # nothing here, which is why the number below is unchanged.
+        wx = sx * 128 - WORLD_BIAS
+        wz = sz * 128 - WORLD_BIAS
+        lin = ((int(wz / 8.0) & 63) << 6) | (int(wx / 8.0) & 63)
         return (mcd[blk * 512 + (lin >> 3)] >> (7 - (lin & 7))) & 1
 
     land = [[1 if height(x, z) > SEA_LEVEL else 0 for x in range(N)]

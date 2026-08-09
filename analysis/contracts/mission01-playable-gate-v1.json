@@ -1362,6 +1362,40 @@
             "claim": "the header carries the derivation with the loader's field-to-extension table, the consumer's instruction addresses for the header stride and the world transform, the reason a four-byte file is refused, and an explicit statement of what is decoded but not named"
           }
         ]
+      },
+      "retail_map_water": {
+        "status": "passed",
+        "statement": "the native product decodes retail's .mca/.mci/.mcd per-position bit with the chain 0x82101EE8 executes: cell = trunc((world + 65536) * 1/512), coarse = cell >> 4 bounds-checked 0..15, group = MCA[(coarse_z + 1) * 16 + coarse_x] refused unless below the u16 at MCI+8, block = MCI[((group*16 + (cell_z & 15))*16 + (cell_x & 15) + 8) * 2] refused unless below the u16 at MCD+8, and the bit at MCD + block * 512 + 16. The three fields are +0x34/+0x38/+0x3C, assigned by the loader 0x820FBC28 from the names at 0x8205BDF8 onward, and each blob's magic is validated byte by byte as retail does at 0x82101FC8 rather than as a 32-bit constant. THE BIT INDEX USES THE RAW COORDINATES: f10 and f11 are loaded once at 0x82101EF4/0x82101EF8 and never rewritten, and 0x821020EC multiplies those untouched registers by the 0.125 at 0x8200322C, so the +65536 never reaches the bit index and fctiwz truncates toward zero. That the bit means water is NOT retail's word for it: it is measured, and the test re-runs the measurement rather than citing it",
+        "retail_addresses": [
+          "0x82101EE8",
+          "0x8210209C",
+          "0x821020CC",
+          "0x8200322C",
+          "0x82101FC8"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1445-the-bit-is-water.md",
+            "sha256": "3dae36c39d78f39c59b31ddeb243d2c6181bd2aa851c9b605f23096a056712c0",
+            "size": 8798,
+            "claim": "the three-level chain read out of the image and the bit's meaning measured against an independently decoded heightfield over 1,048,576 samples, with the residual localised rather than dismissed"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_map_water_tests.cpp",
+            "sha256": "48c063a8b19fe3a8b38a2d8cc44515584d5625991d9850d4b4dd572c642707fd",
+            "size": 5083,
+            "claim": "the real triple decoded: MCI+8 = 4864 and MCD+8 = 413 read as the bound retail checks, refusals asserted for a missing magic and for positions outside the coarse grid, the 97.43% water measurement re-run over 262,144 samples with the residual required to be 90%+ flat ground, and a CONTROL that the open sea is set at 20480/20480 and the inland clear at 99.4% -- both of which a shifted index would blur"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_map_water.h",
+            "sha256": "759fb7130c9b75cb3358329a4ec57db6a47843c2b59b657b86f1b8183a2fa977",
+            "size": 5164,
+            "claim": "the header carries the derivation with every instruction address, states that the bit index uses the raw rather than the biased coordinates and what that changes, records that three earlier cycles used the biased form in tools and measures the consequence at 0.02% off-lattice and nil on-lattice, and separates the measured name is_water from what retail actually says, with a refutation condition"
+          }
+        ]
       }
     }
   }

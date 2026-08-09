@@ -14,6 +14,7 @@
 // usage: city_render MAPDIR OUT.ppm eye_x eye_y eye_z yaw pitch [range]
 #include "ac6/demo_flight_view.h"
 #include "ac6/retail_map_placement.h"
+#include "ac6/retail_map_water.h"
 #include "ac6/retail_ndxr_container.h"
 #include "ac6/retail_ndxr_geometry.h"
 #include "ac6/retail_terrain_field.h"
@@ -49,24 +50,16 @@ int main(int argc, char** argv) {
   const auto grid = Read(dir + "/004_00_01_02_03.bin");
   const auto patches = Read(dir + "/005_Bl_02_b8.bin");
   const auto pdl = Read(dir + "/011_00_00_00_00.bin");
-  // The water bit of 0x82101EE8, read directly: elevation is NOT the authority
-  // on water. Cycle 1445 measured the flat city ground at zero, so a
-  // height-based sea test paints the city blue -- which the first render did.
+  // The water bit, through the ported decoder. The first version of this file
+  // shaded the ground by elevation and painted the whole city blue: cycle 1445
+  // had already measured that the city's ground IS flat at zero and that only
+  // the bit separates it from the bay. Elevation is not the authority on water.
   const auto mca = Read(dir + "/001_MCA_00.bin");
   const auto mci = Read(dir + "/003_MCI_00.bin");
   const auto mcd = Read(dir + "/002_MCD_00.bin");
-  auto is_water = [&](float wx, float wz) {
-    const long cx = long((wx + 65536.0F) / 512.0F), cz = long((wz + 65536.0F) / 512.0F);
-    if (cx < 0 || cx > 255 || cz < 0 || cz > 255) return false;
-    const unsigned grp = mca[16 + (cz >> 4) * 16 + (cx >> 4)];
-    const std::size_t e = 16 + (grp * 256 + (cz & 15) * 16 + (cx & 15)) * 2;
-    const unsigned blk = (unsigned(mci[e]) << 8) | mci[e + 1];
-    const long bx = long((wx + 65536.0F) / 8.0F) & 63, bz = long((wz + 65536.0F) / 8.0F) & 63;
-    const long lin = bz * 64 + bx;
-    const std::size_t o = 16 + blk * 512 + (lin >> 3);
-    if (o >= mcd.size()) return false;
-    return ((mcd[o] >> (7 - (lin & 7))) & 1) != 0;
-  };
+  const auto water = MapWaterGrid::open(mca.data(), mca.size(), mci.data(),
+                                        mci.size(), mcd.data(), mcd.size());
+  if (!water) { std::fprintf(stderr, "the water grid refused\n"); return 1; }
   const auto field = TerrainField::open(grid.data(), grid.size(),
                                         patches.data(), patches.size());
   const auto placement = MapPlacement::open(pdl.data(), pdl.size());
@@ -117,7 +110,7 @@ int main(int argc, char** argv) {
       for (float v : h) ok = ok && sample_is_present(v);
       if (!ok) continue;
       const float wx = x * step - kTerrainWorldBias, wz = z * step - kTerrainWorldBias;
-      const bool sea = is_water(wx + step * 0.5F, wz + step * 0.5F);
+      const bool sea = water->is_water(wx + step * 0.5F, wz + step * 0.5F);
       const int r = sea ? 44 : 96, g = sea ? 74 : 108, b = sea ? 116 : 74;
       emit({{wx, wx + step, wx + step}, {h[0], h[1], h[2]}, {wz, wz, wz + step}}, r, g, b);
       emit({{wx, wx + step, wx}, {h[0], h[2], h[3]}, {wz, wz + step, wz + step}}, r, g, b);
