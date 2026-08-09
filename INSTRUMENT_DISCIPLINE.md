@@ -50,6 +50,7 @@ the repository's*.
 | your offset **worked on every entry** of the file you derived it from | *an instrument calibrated on one specimen* — regular structures make wrong offsets self-consistent; find the container's own declared count or length and check it across files |
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
+| your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
 
 ## The pattern
 
@@ -848,6 +849,46 @@ The corollary is a way to audit this file: **for each shape, name the command.**
 Where there is none, either write the tool or say plainly in the entry that the
 check is manual and expensive, so a reader knows the cost before deciding to
 skip it rather than discovering it afterwards.
+
+## The twenty-seventh shape: fixtures that inherit the subject's convention
+
+Cycles 1296 to 1299 built a validation suite for the vector layer: one retail
+instruction per case, every input seeded, the output captured, compared against a
+value worked out by hand. Sixteen cases, eleven mnemonics, 179 sites, all green.
+Cycle 1298 wrote *"every vector instruction in the closure is correct"* on the
+strength of it, and the composite those instructions make up was still producing
+an answer that did not depend on its input.
+
+**The fault was in the one place none of the sixteen could look.** On Xenon there
+are 128 vector registers and both instruction families address the same ones; in
+this SLEIGH module they are disjoint storage, so a value an AltiVec-form
+instruction writes is invisible to the VMX128-form instruction that reads it.
+
+Each case was written by reading the instruction's own p-code and seeding what it
+named: `vmrghw` at `vs42`/`vs40`, captured at `vs38`; `vmulfp128` at
+`vr0`/`vr13`, captured at `vr12`. **No case ever crossed between the two
+namings**, because no instruction's p-code ever asked it to.
+
+The cases were not weak individually. The flaw is that they were all built the
+same way, so their blind spot was shared instead of averaged out — sixteen
+independent measurements of the same thing, none of them independent of the
+convention under test.
+
+This is the mirror of *an instrument calibrated on one specimen* (the
+twenty-second). There, one specimen agreed with itself; here, sixteen specimens
+agree with each other because they were cut from the same template.
+
+### The rule
+
+**When a suite is green and the thing it validates is not, suspect the property
+every case shares.** A fixture derived from the subject's own description — its
+p-code, its header, its declared count — inherits whatever that description gets
+wrong, and no number of such fixtures adds an independent check.
+
+Build at least one fixture from somewhere else. In this case the check took one
+run: seed a register under the AltiVec name, read it under the VMX128 name, and
+see whether the value is there. It was not, and that single crossing was worth
+more than the sixteen that did not.
 
 ## The audit this file owes itself
 

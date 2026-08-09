@@ -1,0 +1,37 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x822A1E80",
+    "case": "Rotation-bridged@yaw"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "Function_822A1E80",
+    "regions": [
+      {"name": "object", "base": "0xb4000000", "kind": "poison", "size": 192},
+      {"name": "tail", "base": "0xb40000c0", "kind": "bytes", "size": 16, "sha256": "374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb"},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 4096}
+    ],
+    "steps": 547,
+    "callee_entries": 6,
+    "asserted_semantics_enabled": true,
+    "register_file_bridge": true,
+    "alias_copies": 408,
+    "asserted_semantics": {
+      "loadVectorLeftIndexed128": 12,
+      "vectorRotateLeftImmediateMaskInsert128": 9,
+      "vectorMergeHighWord": 39,
+      "vectorMergeLowWord": 12,
+      "override:vpermwi128": 6
+    },
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": "object 48 bytes"
+  },
+  "exit": {"kind": "return"},
+  "registers": {},
+  "calls": [],
+  "memory_writes": [
+    {"address": "0xb4000090", "size": 48, "after_hex": "3f0a51413fb0ddf20000000000000000bf576aa4be9a32c6000000000000000000000000000000000000000000000000"}
+  ]
+}

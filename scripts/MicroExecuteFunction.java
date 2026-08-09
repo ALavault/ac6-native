@@ -44,6 +44,7 @@
 //   vec NAME HEX               seed a vector register, 32 hex digits
 //   sp VALUE                   stack pointer; defaults to the top zero region
 //   stub ADDR NOTE             intercept the call, record it, return via LR
+//   alias on                   bridge the two vector register files (cycle 1301)
 //   override ADDR NAME         replace an instruction the module implements
 //                              wrongly; counted under asserted_semantics
 //   capture gpr:rN | fpr:fN | vec:NAME
@@ -167,6 +168,63 @@ public class MicroExecuteFunction extends GhidraScript {
     // in tools/audit_vmx128_behaviours.py is the control that covers the whole
     // chain, decode included, because a wrong register would read an unseeded
     // one and fail.
+
+    // ------------------------------------------------ the register-file bridge
+    //
+    // Cycle 1301: on Xenon there are 128 vector registers and both instruction
+    // families address the same ones -- the AltiVec forms as v0..v31, which this
+    // module calls `vsNN`, and the VMX128 forms as vr0..vr127. `vs32+n` and
+    // `vrn` are one storage on hardware and DISJOINT STORAGE in this module,
+    // measured: `vspltw v5,v13,0x2` puts its splat in vs37 and leaves vr5 zero.
+    //
+    // So every value an AltiVec-form instruction produces is invisible to the
+    // VMX128-form instruction that consumes it, and the dataflow of any real
+    // routine is cut at each crossing. This copies each write to its alias,
+    // which is what the hardware would have made unnecessary.
+    //
+    // Only the registers the instruction actually wrote are copied, taken from
+    // its own result objects rather than by diffing the file: a blind mirror
+    // would have to choose a direction and would get it wrong half the time.
+
+    private boolean aliasEnabled;
+    private int aliasCopies;
+
+    /** `vs32+n` <-> `vrn`, or null when the register is not one of the pair. */
+    private String aliasOf(String name) {
+        try {
+            if (name.startsWith("vs")) {
+                int index = Integer.parseInt(name.substring(2));
+                return (index >= 32 && index < 64) ? "vr" + (index - 32) : null;
+            }
+            if (name.startsWith("vr")) {
+                int index = Integer.parseInt(name.substring(2));
+                return (index >= 0 && index < 32) ? "vs" + (index + 32) : null;
+            }
+        }
+        catch (NumberFormatException ignored) {
+            return null;
+        }
+        return null;
+    }
+
+    private void mirrorWrites(ghidra.program.model.listing.Instruction instruction,
+            EmulatorHelper emulator) {
+        if (instruction == null) {
+            return;
+        }
+        for (Object result : instruction.getResultObjects()) {
+            if (!(result instanceof Register)) {
+                continue;
+            }
+            String name = ((Register) result).getName();
+            String alias = aliasOf(name);
+            if (alias == null || currentProgram.getLanguage().getRegister(alias) == null) {
+                continue;
+            }
+            emulator.writeRegister(alias, emulator.readRegister(name));
+            aliasCopies++;
+        }
+    }
 
     private void applyOverride(String name, long address, EmulatorHelper emulator)
             throws Exception {
@@ -351,6 +409,8 @@ public class MicroExecuteFunction extends GhidraScript {
         lastExitKind = "return";
         lastExitDetail = "";
         vmxEnabled = false;
+        aliasEnabled = false;
+        aliasCopies = 0;
         assertedFired.clear();
         overrides.clear();
     }
@@ -486,6 +546,9 @@ public class MicroExecuteFunction extends GhidraScript {
                 case "override":
                     overrides.put(Long.decode(parts[1]) & 0xffffffffL, parts[2]);
                     break;
+                case "alias":
+                    aliasEnabled = "on".equals(parts[1]);
+                    break;
                 case "vmx":
                     // Off unless a spec asks: a snapshot produced without it is
                     // retail instructions only, and that is the default worth
@@ -608,6 +671,9 @@ public class MicroExecuteFunction extends GhidraScript {
                 String override = overrides.get(here);
                 if (override != null) {
                     applyOverride(override, here, emulator);
+                    if (aliasEnabled) {
+                        mirrorWrites(getInstructionAt(toAddr(here)), emulator);
+                    }
                     emulator.writeRegister(pc, here + 4);
                     steps++;
                     continue;
@@ -634,10 +700,15 @@ public class MicroExecuteFunction extends GhidraScript {
                     // never compared.
                     calleeEntries++;
                 }
+                ghidra.program.model.listing.Instruction executed =
+                    aliasEnabled ? getInstructionAt(toAddr(here)) : null;
                 if (!emulator.step(monitor)) {
                     exitKind = "fault";
                     exitDetail = String.valueOf(emulator.getLastError());
                     break;
+                }
+                if (aliasEnabled) {
+                    mirrorWrites(executed, emulator);
                 }
                 steps++;
             }
@@ -779,6 +850,8 @@ public class MicroExecuteFunction extends GhidraScript {
         // instruction model is not the same claim as one that did not, and the
         // difference has to survive being read quickly.
         json.append(String.format("    \"asserted_semantics_enabled\": %s,%n", vmxEnabled));
+        json.append(String.format("    \"register_file_bridge\": %s,%n", aliasEnabled));
+        json.append(String.format("    \"alias_copies\": %d,%n", aliasCopies));
         json.append("    \"asserted_semantics\": {");
         boolean firstOp = true;
         for (Map.Entry<String, Integer> entry : assertedFired.entrySet()) {
