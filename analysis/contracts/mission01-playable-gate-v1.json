@@ -677,6 +677,49 @@
             "claim": "include/ac6/retail_flight_orientation.h carries the derivation, records that the three clamps are not alike, corrects cycle 1376's `bit 3` to bit 4 by decoding rlwinm r11,r10,28,31,31, and states that the Euler extraction is NOT ported and that 0x820936E8 returns zero below 2^-16 where std::atan2 does not"
           }
         ]
+      },
+      "retail_flight_step_driver": {
+        "status": "passed",
+        "statement": "the native product reproduces the flight model's per-frame step 0x82283898 -- slot 11 of the base vtable 0x82008B10, inherited by 0x8200F270 and the only reason that class flies -- which computes the position block as [this+112]+96, hands ONE unchanged float to slots 30, 31 and 32 in that order, and when bit 1 of [this+332] is set zeroes +360, +364, +304, +308 and +312 AFTER slot 30 has written them, sparing +368, +372 and +376",
+        "retail_addresses": [
+          "0x82283898",
+          "0x82008B10",
+          "0x8200F270",
+          "0x82302DB0",
+          "0x82282C50",
+          "0x82282938",
+          "0x82326FE8"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1381-the-first-composite-differential.md",
+            "sha256": "a81a73607b987d54bd2416b70cfdf7448b156f9181f152bca1f3cc792c907405",
+            "size": 5409,
+            "claim": "0x82283898 read whole: 59 instructions, no vector instruction, r5 = [this+112]+96, three vtable dispatches with f1 unchanged, and a reset keyed on bit 1 -- found by running flags 0,1,2,3 and counting stubbed calls before the rlwinm was decoded, correcting cycles 1371 and 1375 which both said bit 0"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_step_driver_tests.cpp",
+            "sha256": "073b0d3a44ff811997eb1ec2f6efc877256e62ceabbee0e4ceab5b189cb7765c",
+            "size": 5327,
+            "claim": "cases for the position-block arithmetic, bit 0 being inert, the step equalling slot 30 when the bit is clear, the reset clearing five fields and sparing three, and the ordering being observable through the survivors; with three controls each asserted to fire"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-step-driver-microexec.tsv",
+            "sha256": "18b410c8b5fd9a5266a00fe104eb5a019b50b73649461d1c506b3d360f109643",
+            "size": 1460,
+            "claim": "the first COMPOSITE differential of the campaign: 0x82283898 executed with the real slot 30 reached through a real virtual dispatch over a synthetic vtable holding genuine addresses, 8 cases and 64 float values compared bit for bit against the composed port, with the stubbed-call count asserted at four without the reset and five with it"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_step_driver.h",
+            "sha256": "92fb51808d38734f5ab5772f26a12500cbf28014b14c736f113b666f4b66be2d",
+            "size": 2793,
+            "claim": "include/ac6/retail_flight_step_driver.h carries the derivation, records that one float reaches every stage unchanged, decodes rlwinm r11,r11,31,31,31 as bit 1 and says which cycles had it wrong, and states that the reset runs AFTER slot 30 with the three spared fields as the observable"
+          }
+        ]
       }
     }
   }
