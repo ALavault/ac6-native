@@ -7,6 +7,6 @@
 #
 # columns: offset width meaning derived_from
 0x08	4	flag word, accumulated by thirteen or/stw pairs	0x821CABE0..0x821CAC4C
-0x0C	4*18	parallel float array; slot for bit b is (b + 3) * 4	821caed4 addi r9,r10,0x3 / 821caedc rlwinm r9,0x2
+0x0C	4*20	parallel float array; slot for bit b is (b + 3) * 4; reaches at least +0x5B (cycle 1318)	821caed4 addi r9,r10,0x3 / 821caedc rlwinm r9,0x2
 0x8C	1	written once per pass, OUTSIDE the cleared range	0x821CB34C and three more at stride 0xA0
 0x90	4	written once per pass, OUTSIDE the cleared range	0x821CB364 and three more at stride 0xA0

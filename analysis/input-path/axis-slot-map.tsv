@@ -1,0 +1,29 @@
+# The analogue map of 0x821CAA50, derived cycle 1318.
+#
+# r20 IS ZERO THROUGHOUT: `li r20,0x0` at 821caa88 is the only write to it in the
+# whole 744-instruction function -- the two other appearances, 821caabc and
+# 821cab8c, are stores OF r20, not to it -- and r20 is non-volatile, so the two
+# API callees must preserve it. Every slot offset below therefore reads
+# (bit + 3) * 4 with no base, which is what cycle 1316 assumed and could not check.
+#
+# Each axis owns ONE slot, shared by its two halves: the positive half is scaled
+# straight, the negative half is negated (821cb044 neg r9,r9). One signed float
+# per axis.
+#
+# columns: buffer_off device_off half mask bit slot read_at
+0x24	0x28	LY positive	0x20000	17	0x50	821cac78
+0x26	0x2A	LY negative	0x20000	17	0x50	821cacc4
+0x28	0x2C	LX negative	0x10000	16	0x4C	821cad4c
+0x2A	0x2E	LX positive	0x10000	16	0x4C	821cad08
+0x2C	0x30	RY positive	0x80000	19	0x58	821cad90
+0x2E	0x32	RY negative	0x80000	19	0x58	821cadd4
+0x30	0x34	RX negative	0x40000	18	0x54	821cae5c
+0x32	0x36	RX positive	0x40000	18	0x54	821cae18
+#
+# Two further masks appear earlier in the function -- 0x4000 (bit 14, slot 0x44)
+# and 0x8000 (bit 15, slot 0x48). Their sources are not these eight halves and
+# are not yet read; the triggers at device +0x4A/+0x4B are the obvious guess and
+# are recorded as a guess.
+#
+# The float array therefore reaches at least record+0x5B, which corrects cycle
+# 1316's estimate of +0x53. It is still inside the 0x84 the frame stage clears.
