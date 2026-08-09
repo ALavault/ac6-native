@@ -63,11 +63,30 @@ RetailBasis identity_basis() noexcept;
 // RATHER THAN HIDDEN.
 //
 // Retail reaches cosine and sine through `0x8209CB70`, identified as
-// XMScalarSinCos and reproduced exactly by micro-execution at seven angles
-// including its argument reduction. It has NOT been ported. This uses the host
-// library, so the native kernel agrees with retail to about 1e-06 and not to the
-// bit -- which is why the differential test carries a tolerance, and the
-// tolerance exists for this reason and no other.
+// XMScalarSinCos and reproduced by micro-execution including its argument
+// reduction. It has NOT been ported. This uses the host library, so the native
+// kernel does not agree with retail to the bit -- which is why the differential
+// test carries a tolerance, and the tolerance exists for this reason and no
+// other.
+//
+// HOW FAR OFF, MEASURED RATHER THAN ESTIMATED (cycle 1411). The claim used to be
+// "seven angles" and "about 1e-06". `tools/audit_flight_math_seams.py` now sweeps
+// 206 angles across the whole reachable domain [-pi, pi] -- the range the command
+// setters wrap to -- and compares both outputs:
+//
+//     412 values: 170 identical, 182 within 2 ulp, 60 worse
+//     worst absolute error 3.20e-07 (sine, near -pi); 2.98e-07 (cosine)
+//
+// The large ulp figures all sit where the true value is near zero, so ulp
+// exaggerates them and the absolute error is the figure that means anything.
+// Seven angles could not have found this and did not: a substitution needs a
+// sweep of the domain, not chosen points. (Cycle 1410 refused a different port
+// for the same reason, over one argument in 96.)
+//
+// The two other seams in this chain were swept at the same time and came back
+// IDENTICAL at 0 ulp -- 0x82380570 against std::asin over 212 arguments and
+// 0x820936E8 against a guarded std::atan2 over 214. So this one is the outlier,
+// not the norm, and porting it would close the last scalar gap in the kernel.
 //
 // It is a seam so that porting XMScalarSinCos later changes one function rather
 // than the kernel. A replay that must match retail bit for bit over many frames

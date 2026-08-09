@@ -421,11 +421,18 @@
             "claim": "0x822A1E80 and each of its three callees executed on an asymmetric sentinel basis at four angles, twelve rotation cases checked lane by lane against a stated model with a worst deviation of 1.5e-06 and exactly zero at every zero angle"
           },
           {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-math-seams.tsv",
+            "sha256": "c4cb292fe45c5805dccd5d5c7f8b3d348a4775425363b5c90ee7afb4769ee971",
+            "size": 76089,
+            "claim": "the three scalar math seams swept over their reachable domains rather than at chosen points: 0x82380570 against std::asin at 212 arguments and 0x820936E8 against a guarded std::atan2 at 214, both IDENTICAL at 0 ulp; and 0x8209CB70 against std::sin/std::cos at 206 angles over [-pi, pi], 412 values of which 170 are identical, 182 within 2 ulp and 60 worse, worst absolute error 3.20e-07 -- so the trigonometry this behaviour declares unported is quantified rather than estimated, and the sweep needed `alias on` because without the register-file bridge 0x8209CB70's first output is not sine at all"
+          },
+          {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_transform.h",
-            "sha256": "468df930c11b38deab81f2fcfb4491af0243f44e2a5defbcc82d56663e74a412",
-            "size": 4970,
-            "claim": "include/ac6/retail_transform.h carries the derivation, states that there is ONE kernel for both paths and why, and names what is not ported: the object's first 16 bytes and the trigonometry of 0x8209CB70"
+            "sha256": "6d410051d0f38c76b3b03ce5e29aef020699898a967759af634545af7bede43f",
+            "size": 6051,
+            "claim": "include/ac6/retail_transform.h carries the derivation, states that there is ONE kernel for both paths and why, and names what is not ported: the object's first 16 bytes and the trigonometry of 0x8209CB70 -- for which it now records a measured domain sweep, 206 angles over [-pi, pi] and 412 values, of which 170 are identical to std::sin/std::cos, 182 within 2 ulp and 60 worse, with a worst absolute error of 3.20e-07"
           }
         ]
       },
