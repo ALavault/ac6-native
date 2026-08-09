@@ -1,0 +1,34 @@
+# Who drives the transform's angles. Cycle 1364.
+#
+# 0x822A2B50 builds the argument block whose +0x18 and +0x1C become two of the
+# three angles 0x822A1E80 applies (cycles 1330, 1331). It has SIX call sites, in
+# six functions, and none of them is a vtable slot -- FindDataPointersTo returns
+# one .pdata row for each, which the tool labels.
+#
+# columns: call_site function f1 f2 f3
+0x822A2C60	sub_822A2BE8	[obj+0x10]	[obj+0x14]	f31
+0x822A2D58	sub_822A2C80	f3	f3	f3
+0x822E9C84	sub_822E9A30	[obj+0x14]	[obj+0x18]	-
+0x822EA518	sub_822EA220	-	[obj+0x24]	-
+0x822ECBE8	sub_822EC998	f31	f31	f31
+0x822ED2F8	sub_822ED070	f31	.rodata constant	f31
+#
+# sub_822A2C80 IS THE UNIT'S OWN VTABLE SLOT +0x44 (cycle 1337, one of the two
+# transform entry points a CAce6Unit exposes). It passes ONE incoming float three
+# times, so on that path all three rotations take the same angle.
+#
+# Four of the six take their target object as [[0x826E4EB4] + rN + 1028] -- from
+# the context, at +0x404, indexed by a register.
+#
+# THE FINDING: not one of the six reads anything from the input command path.
+# No 0x826EDB98, no command frame, no slot mask. The angles come from OBJECT
+# FIELDS at +0x10/+0x14, +0x14/+0x18 or +0x24, or from a register the caller
+# already held.
+#
+# So something between the input tick and the transform writes those fields, and
+# it is neither of the two ends this campaign has mapped: the tick is five
+# contracted behaviours and every float in it is a timer (cycle 1363), and the
+# transform is contracted as retail_transform (cycle 1328).
+#
+# NOT ESTABLISHED: what writes obj+0x10 and obj+0x14 for sub_822A2BE8's object;
+# what the four context-sourced objects are; what sub_822A2C80's single float is.
