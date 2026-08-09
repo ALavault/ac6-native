@@ -33,6 +33,7 @@ the repository's*.
 | your displacement scan returned a **clean, plausible** candidate list | *the displacement collision* — two class families here have different fields at the same offset; discriminate on the vtable or the `subi` before believing any of them |
 | you stopped reading at a `blr`, a `blt`, or the end of a listing | *stopping at a natural boundary* — three refutations this session sat within **twenty bytes** of where a cycle stopped; read past the boundary before publishing |
 | your search was **correct** and returned nothing useful | *the right search, run against a sibling* — 100% coverage of the wrong family is still zero evidence about yours; check the search's population, not its recall |
+| your scan came back **zero** for an address or a magic | *a rule that was written, correct, and unrunnable* — run `tools/find_materialised_address.py IMAGE ADDR`: a value built as `lis`+`ori`/`addi` is invisible to branch scans and data scans alike |
 | you scanned for a function address **as data** and found exactly one hit | *the `.pdata` row read as a dispatch slot* — the exception table spans 0x82079E00..0x82089FB0 and its `BeginAddress` fields look identical to a table slot; exclude that range, then say which side of it the address falls on |
 | two functions sit **next to each other** and seem related | *the refuted link* — image order is not evidence; the checkable forms are a shared member offset, an exclusive call site, a common caller, and none is visible from inside either function |
 | your offset **worked on every entry** of the file you derived it from | *an instrument calibrated on one specimen* — regular structures make wrong offsets self-consistent; find the container's own declared count or length and check it across files |
@@ -799,3 +800,88 @@ it counted, and without block names. **A scan re-expressed in another language
 is a new scan. It inherits the earlier one's arithmetic and none of its
 judgement**, which is the lesson the `PrintableStringLength` control taught about
 tests, arriving a second time about instruments.
+
+## The twenty-fifth shape: a rule that was written, correct, and unrunnable
+
+This file has warned about register-held materialisation since the `0x29c80`
+case: an offset built as `lis rX,0x2; ori rY,rX,0x9c80` is found by no text scan
+for `0x29c80`, and a zero from such a scan is void. The warning is right, it is
+indexed, and it has been read.
+
+It still cost thirty cycles. Cycle 1244 published *"`0x82297540` has zero
+instruction references"* and made it the placement chain's single open hop; the
+address is materialised at six sites, and 135 of Mission 01's 230 units stayed
+unplaced behind that sentence until cycle 1275.
+
+**The rule was unrunnable.** Following it meant hand-decoding `addis` immediates
+across seven megabytes and pairing each with a later `ori` or `addi` on the same
+register — an afternoon, for one address, with no tool. Every other scan here
+was one command. So the rule was obeyed where it was cheap and skipped where it
+was not, which is the same as not having it.
+
+### The rule about rules
+
+**A discipline entry that names a check without providing a way to run it is a
+warning, not a control.** It will be honoured on the days it is convenient and
+forgotten on the days it matters — and the days it matters are the ones where
+the obvious scan already returned a clean, plausible zero.
+
+When you write a shape, ask what command a reader runs to obey it. If the answer
+is "by hand", the entry is unfinished. `tools/find_materialised_address.py` is
+what finishes this one, five instrument-discipline sections after the warning
+was first written.
+
+The corollary is a way to audit this file: **for each shape, name the command.**
+Where there is none, either write the tool or say plainly in the entry that the
+check is manual and expensive, so a reader knows the cost before deciding to
+skip it rather than discovering it afterwards.
+
+## The audit this file owes itself
+
+The twenty-fifth shape says: for each shape, name the command. Run against this
+file, **fifteen of sixteen shapes named none.** That number is worse than the
+truth — several are reading disciplines that cannot have one — so here is the
+three-way split, which is the useful form.
+
+**Has a command, and it must be run.**
+
+| shape | command |
+|---|---|
+| a rule that was written, correct, and unrunnable | `tools/find_materialised_address.py IMAGE ADDR` |
+| the `.pdata` row read as a dispatch slot | `Ac6XenonFindWord` — read the three-way `aligned/unaligned/pdata` count, not the total |
+| the instrument sampled a third of it | `Ac6XenonDisasm` — read the per-block trailer; it says whether the 300-cap truncated |
+| reachability by `bl` | `Ac6XenonForceScan` prints `scanned/already_listed/forced/undisassemblable/hits`; a zero without its denominator is not a negative |
+| an agent's scope, written as the repository's | `grep` for the thing the agent said does not exist, before propagating it |
+| a correct measurement, over-read | `tools/audit_contract_derivations.py` for the contract case; elsewhere, write the measurement and the claim on two lines and compare them |
+
+**Manual, cheap, and therefore no excuse.**
+
+*stopping at a natural boundary* — read twenty bytes past where you stopped.
+*half a rule* — read the conditional above and the back-edge below.
+*the collision in the prose* — name the class, not the role.
+*querying only one side* — ask the other side the same question.
+
+**Manual and expensive, so the cost is stated rather than discovered.**
+
+*an instrument calibrated on one specimen* — needs a control the container gives
+about itself (a declared count, a length, a terminator) and then a run across
+the whole corpus. Building that control is the work; there is no shortcut, and
+skipping it is how two readers were shipped in one cycle.
+
+*the displacement collision* and *the right search, run against a sibling* —
+both need the population established before the search, which means reading a
+vtable or an RTTI name first. Half an hour, and it is the half hour that decides
+whether the next four are wasted.
+
+*the refuted link* — no command; the discipline is to name the checkable form
+(shared member offset, exclusive call site, common caller) before looking for it.
+
+*the true positive from dead code* and *the listing is not the code* — both are
+about `.pdata` and auto-analysis coverage, and both are checked by the
+denominators the two scans above already print.
+
+**What this audit changes**: nothing about the shapes, and everything about how
+they are used. A reader mid-investigation now knows, per symptom, whether they
+are one command away from an answer or an afternoon away — and that is the
+difference between a check that gets run and one that gets skipped exactly when
+it matters.
