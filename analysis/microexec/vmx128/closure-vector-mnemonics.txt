@@ -1,0 +1,11 @@
+     42 vmsum4fp128
+     39 vmrghw
+     28 lvx128
+     18 stvx128
+     12 vmrglw
+     12 lvlx
+      9 vrlimi128
+      7 vmulfp128
+      6 vpermwi128
+      3 vspltw
+      3 vor

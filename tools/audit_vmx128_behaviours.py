@@ -147,6 +147,45 @@ MODULE_CASES = [
         # corrects the module, this case goes red and says so.
         "module_defect_actual": VB_W[0] + VB_W[3] + VB_W[2] + VB_W[2],
     },
+    {
+        # vspltw vD,vB,uimm : every lane becomes vB.word[uimm]. Same family of
+        # risk as vpermwi128 -- a lane index the module may read from the wrong
+        # end. 0x8209CC44 is `vspltw v5,v13,0x2`.
+        "name": "vspltw",
+        "function": 0x8209CC44,
+        "vec": {"vs45": VB},          # v13
+        "capture": "vs37",            # v5
+        "expect": VB_W[2] * 4,
+        "module": True,
+    },
+    {
+        # vmulfp128 vD,vA,vB : lane-wise float multiply. No lane order to get
+        # wrong, which is exactly why it is worth checking -- it isolates
+        # whether the arithmetic itself survives.
+        # 0x8209CC54 is `vmulfp128 vr12,vr0,vr13`.
+        "name": "vmulfp128",
+        "function": 0x8209CC54,
+        "vec": {
+            "vr0":  "3f800000" "40000000" "40400000" "40800000",   # 1 2 3 4
+            "vr13": "41200000" "41a00000" "41f00000" "42200000",   # 10 20 30 40
+        },
+        "capture": "vr12",
+        # 10, 40, 90, 160
+        "expect": "41200000" "42200000" "42b40000" "43200000",
+        "module": True,
+    },
+    {
+        # The same site with the module's p-code bypassed at the address. This
+        # is the control for the override: it must produce the ISA answer, and
+        # it must produce it through the module's own DECODE -- a wrong register
+        # would read an unseeded one and the expectation would not match.
+        "name": "vpermwi128-override",
+        "function": 0x820A9BEC,
+        "override": (0x820A9BEC, "vpermwi128"),
+        "vec": {"vr12": VB},
+        "capture": "vr13",
+        "expect": VB_W[2] + VB_W[2] + VB_W[3] + VB_W[0],
+    },
 ]
 
 # 0x820A9B8C  lvlx v13,r0,r8 -> vs45 = CALLOTHER(r0, r8)
@@ -193,6 +232,9 @@ def emit(workdir: Path) -> int:
             lines.append(f"gpr {register} {value:#010x}")
         for register, value in case.get("vec", {}).items():
             lines.append(f"vec {register} {value}")
+        if "override" in case:
+            address, what = case["override"]
+            lines.append(f"override {address:#010x} {what}")
         lines.append(f"capture vec:{case['capture']}")
         spec = workdir / "specs" / f"{case['name']}.spec"
         out = workdir / "out" / f"{case['name']}.json"

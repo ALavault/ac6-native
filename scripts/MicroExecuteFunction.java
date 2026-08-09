@@ -44,6 +44,8 @@
 //   vec NAME HEX               seed a vector register, 32 hex digits
 //   sp VALUE                   stack pointer; defaults to the top zero region
 //   stub ADDR NOTE             intercept the call, record it, return via LR
+//   override ADDR NAME         replace an instruction the module implements
+//                              wrongly; counted under asserted_semantics
 //   capture gpr:rN | fpr:fN | vec:NAME
 //                              register recorded in `registers` and compared
 //
@@ -144,6 +146,60 @@ public class MicroExecuteFunction extends GhidraScript {
 
     private boolean vmxEnabled;
     private final Map<String, Integer> assertedFired = new LinkedHashMap<>();
+    private final Map<Long, String> overrides = new LinkedHashMap<>();
+
+    // ------------------------------------------------- instruction overrides
+    //
+    // A CALLOTHER can be replaced by registering a behaviour. An instruction the
+    // module implements ITSELF cannot: there is no hook, and cycle 1297 measured
+    // one such instruction returning the wrong answer -- `vpermwi128` permutes
+    // with its lane selection reversed against the ISA.
+    //
+    // So the p-code is bypassed at the address instead, the same way a stubbed
+    // call is: the step loop recognises the PC, runs this, and advances by four.
+    //
+    // WHAT IS REPLACED IS THE SEMANTICS, NOT THE DECODE. The module's decode is
+    // corroborated for this instruction -- its own p-code materialises the
+    // immediate as 0xac, and the register operands match the disassembly -- so
+    // the operands are read back through the Instruction API rather than
+    // re-derived from the encoding. Guessing the encoding by hand was tried and
+    // the VMX128 reference's PERM field would not reassemble; the isolation test
+    // in tools/audit_vmx128_behaviours.py is the control that covers the whole
+    // chain, decode included, because a wrong register would read an unseeded
+    // one and fail.
+
+    private void applyOverride(String name, long address, EmulatorHelper emulator)
+            throws Exception {
+        ghidra.program.model.listing.Instruction instruction =
+            getInstructionAt(toAddr(address));
+        if (instruction == null) {
+            throw new IllegalStateException("no instruction at " + Long.toHexString(address));
+        }
+        if (!"vpermwi128".equals(name)) {
+            throw new IllegalArgumentException("no override implemented for " + name);
+        }
+        // vpermwi128 vD, vB, uimm : VD.x = VB[uimm bits 6-7], VD.y = bits 4-5,
+        // VD.z = bits 2-3, VD.w = bits 0-1. The HIGH pair selects the FIRST
+        // word, which is the half the module has backwards.
+        Register destination = (Register) instruction.getOpObjects(0)[0];
+        Register source = (Register) instruction.getOpObjects(1)[0];
+        int immediate = (int) ((ghidra.program.model.scalar.Scalar)
+            instruction.getOpObjects(2)[0]).getUnsignedValue();
+
+        // read/writeRegister rather than the memory state: it is the same API the
+        // `vec` seeds and `capture vec:` use, so the byte order here is the one
+        // the endianness anchor in audit_vmx128_behaviours.py already measured.
+        String bits = emulator.readRegister(source.getName())
+            .and(new BigInteger("ff".repeat(16), 16)).toString(16);
+        String input = "0".repeat(32 - bits.length()) + bits;
+        StringBuilder output = new StringBuilder(32);
+        for (int lane = 0; lane < 4; ++lane) {
+            int selector = (immediate >> (2 * (3 - lane))) & 3;
+            output.append(input, selector * 8, selector * 8 + 8);
+        }
+        emulator.writeRegister(destination.getName(), new BigInteger(output.toString(), 16));
+        countFired("override:" + name);
+    }
 
     private byte[] readChunk(MemoryState memory, Varnode node) {
         byte[] bytes = new byte[node.getSize()];
@@ -296,6 +352,7 @@ public class MicroExecuteFunction extends GhidraScript {
         lastExitDetail = "";
         vmxEnabled = false;
         assertedFired.clear();
+        overrides.clear();
     }
 
     // ---------------------------------------------------------------- helpers
@@ -426,6 +483,9 @@ public class MicroExecuteFunction extends GhidraScript {
                 case "sp":
                     stackSpec = parts[1];
                     break;
+                case "override":
+                    overrides.put(Long.decode(parts[1]) & 0xffffffffL, parts[2]);
+                    break;
                 case "vmx":
                     // Off unless a spec asks: a snapshot produced without it is
                     // retail instructions only, and that is the default worth
@@ -544,6 +604,13 @@ public class MicroExecuteFunction extends GhidraScript {
                 long here = emulator.readRegister(pc).longValue() & 0xffffffffL;
                 if (here == RETURN_SENTINEL) {
                     break;
+                }
+                String override = overrides.get(here);
+                if (override != null) {
+                    applyOverride(override, here, emulator);
+                    emulator.writeRegister(pc, here + 4);
+                    steps++;
+                    continue;
                 }
                 String note = stubs.get(here);
                 if (note != null) {
