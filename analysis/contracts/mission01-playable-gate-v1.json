@@ -1100,9 +1100,55 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_input_apply.h",
-            "sha256": "5f732eeffe83d5f7a135f9fe797810b2a116cb89db205a2e8328d0d7786afefc",
-            "size": 3201,
-            "claim": "include/ac6/retail_flight_input_apply.h carries the derivation, records that the difference for +44 is the one piece of arithmetic and what a tidied port would produce instead, preserves retail's call order with a note that it is not observable today, and states that only +2104 and +2108 are traced to the contracted binding layer"
+            "sha256": "3b2cfa9604073b6d8b6e4b4b263cadcb6ebcd2667ad4f6b68c529563421bb69b",
+            "size": 3656,
+            "claim": "include/ac6/retail_flight_input_apply.h carries the derivation, records that the difference for +44 is the one piece of arithmetic and what a tidied port would produce instead, preserves retail's call order with a note that it is not observable today, and points at retail_flight_input_router for where all six fields come from with the warning that two of the three arms carry button bits rather than continuous values"
+          }
+        ]
+      },
+      "retail_flight_input_router": {
+        "status": "passed",
+        "statement": "the native product reproduces the routing block of 0x82229250 (0x82229310..0x8222946C), which fills the entity's six input fields from six consecutive floats of the binding layer's first output array at [binding+3672..3692]: array[0] and array[1] reach +2104 and +2108 on every arm, and the other four are routed by a device mode and the layout word at 0x826EDB5C -- digital device sends array[4]/array[5] to +2096/+2100 and bits 2/3 to +2112/+2116; analog layout 0 sends array[2]/array[3] to +2112/+2116 and bits 4/5 to +2096/+2100; analog layout 1 transposes both pairs and reverses each, sending array[3]/array[2] to +2096/+2100 and bits 5/4 to +2112/+2116; a set bit yields exactly 1.0 (0x82001348) and a clear one 0.0 (0x8200082C). The config chain producing the device mode, the +2096 suppression at 0x8222945C gated on 0x82228480, and the layout-1 response curve at 0x82229470 are outside the port and named as such",
+        "retail_addresses": [
+          "0x82229250",
+          "0x82229310",
+          "0x82229370",
+          "0x822293E0",
+          "0x82229460",
+          "0x82001348",
+          "0x8200082C",
+          "0x826EDB5C",
+          "0x82228480",
+          "0x82229470"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1409-six-consecutive-slots.md",
+            "sha256": "69752f43683e90f3e0ec97443ed444fca79c3782eae98ea24c0114c22212029b",
+            "size": 7333,
+            "claim": "every store of the six fields in 0x82229250 traced to its source register's provenance across the whole function; the fourteen [r11+2092] stores identified as the image's 0.0 and therefore clear-to-zero paths rather than sources; only three functions in the corpus write those offsets at all"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_input_router_tests.cpp",
+            "sha256": "eac38d803b098c42390ff9f53296ef03124a1dd534ce9f8303591577ced2b071",
+            "size": 6285,
+            "claim": "cases for the two fixed slots on every arm, the digital arm ignoring the layout, the bit that moves between +2100 and +2112 with the layout, and that layout 2 routes like layout 0 rather than like layout 1; with a CONTROL asserting the two analog arms disagree on all four moving fields, a control that bits outside 2..5 are not read, and one that a set bit is exactly 1.0 rather than a scaled mask"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-input-router-microexec.tsv",
+            "sha256": "2adb2c9a2dd36c3824071d723b6db32272c3667845555ece32c85bc34a5026ee",
+            "size": 3071,
+            "claim": "13 cases and 78 values compared bit for bit with no tolerance, each entered at its arm's own head with the step count computed by simulating the block's control flow so that exit == step_limit is an assertion; the first run rejected three values because the layout-1 bit pair had been copied from the digital arm as bits 2 and 3 when 0x822293F4 and 0x82229420 say bits 5 and 4"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_input_router.h",
+            "sha256": "b8293ac2b905cea5e495d1d14822748d220fd5da31fa624e1c7721264c68630b",
+            "size": 5557,
+            "claim": "include/ac6/retail_flight_input_router.h carries the derivation, gives the full three-arm table with the array slot or bit for each of the six fields, states the rlwinm bit numbering that makes MB=29 bit 2 and MB=26 bit 5, records that the first draft had the layout-1 bits wrong and what rejected it, and names the three things next to the block that are deliberately not ported"
           }
         ]
       }

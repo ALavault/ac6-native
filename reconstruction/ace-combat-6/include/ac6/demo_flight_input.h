@@ -17,15 +17,24 @@
 // CONTRACTED, MEASURED, end to end:
 //   build_input_record        0x821CAA50
 //   apply_input_binding       0x82211C10
+//   route_flight_input_fields 0x82229250  -- outputs to the six entity fields
 //   apply_flight_input        0x82227E10  -- the five increments
 //   accumulate_flight_input   five direct functions
 //   ...and the twenty-two behaviours of the flight chain after them.
 //
+// WHAT CHANGED AT CYCLE 1409. The invention shrank again. Cycle 1409 read the
+// whole of 0x82229250's routing block and found that ALL SIX entity fields come
+// from six consecutive floats of the binding layer's first output array, routed
+// by a device mode and a layout word. That routing is ported and contracted as
+// `route_flight_input_fields`, so the step from a binding OUTPUT to an entity
+// FIELD is no longer a choice.
+//
 // STILL INVENTED, and only this:
-//   WHICH CONTROLLER AXIS FEEDS WHICH ENTITY FIELD. Cycle 1404 established that
-//   0x82229250 copies the binding layer's first two output values into +2104 and
-//   +2108; it did NOT establish which binding slot those two are, nor what fills
-//   +2096, +2100, +2112 and +2116. So the map below is a choice.
+//   WHICH CONTROLLER AXIS FEEDS WHICH BINDING SLOT. The per-player table that
+//   decides it is loaded from data this campaign has not reached. A wrong choice
+//   here permutes the six slots; it cannot change what happens to them
+//   afterwards, because that part is retail's.
+//   Also chosen: that the demo drives the analog arm at layout 0.
 //
 // The difference from the old invention matters. Before, the ARITHMETIC was
 // mine, so the aeroplane could respond to a stick in a way retail never would.
@@ -34,6 +43,7 @@
 // than changing how the aircraft flies.
 
 #include "ac6/retail_flight_input_apply.h"
+#include "ac6/retail_flight_input_router.h"
 #include "ac6/retail_input_binding.h"
 #include "ac6/retail_input_record.h"
 

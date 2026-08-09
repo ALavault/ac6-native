@@ -8,7 +8,7 @@
 //
 //   build_input_record        0x821CAA50   retail_input_record
 //   apply_input_binding       0x82211C10   retail_input_binding
-//   [ the copy at 0x82229250, into entity+2104.. ]
+//   route_flight_input_fields 0x82229250   retail_flight_input_router
 //   THIS                      0x82227E10   the five increments
 //   accumulate_flight_input   five funcs   retail_flight_input_accumulators
 //   the whole flight chain                 twenty-five behaviours
@@ -35,11 +35,18 @@
 // observable through them. It is preserved anyway, because "not observable
 // today" is not "safe to reorder".
 //
-// WHERE THE FIELDS COME FROM. Cycle 1404 established that 0x82229250 copies the
-// contracted binding layer's first two output values -- [player+0xE58] and
-// [player+0xE5C] -- into +2104 and +2108. What fills +2096, +2100, +2112 and
-// +2116 is NOT established; 0x82229250 writes +2096 and +2116 on some paths and
-// this header does not claim to know from where.
+// WHERE THE FIELDS COME FROM, and this is settled. Cycle 1404 established that
+// 0x82229250 copies the contracted binding layer's first two output values --
+// [player+0xE58] and [player+0xE5C] -- into +2104 and +2108, and said of the
+// other four that it did not know. Cycle 1409 read the rest of the same
+// function: they are the SAME ARRAY, four slots further along, at
+// [player+0xE60 .. 0xE6C]. All six entity fields are the binding layer's first
+// six outputs, routed by a device mode and a layout word.
+//
+// `retail_flight_input_router.h` carries the table and the port. Note that on
+// two of the three arms some of these fields hold 1.0 or 0.0 from a button bit
+// rather than an analog value -- so a caller reading this header alone would be
+// wrong to assume all six are continuous.
 
 #include "ac6/retail_flight_input_accumulators.h"
 

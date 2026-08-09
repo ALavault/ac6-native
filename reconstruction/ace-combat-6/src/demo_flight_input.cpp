@@ -1,7 +1,9 @@
 // A controller wired to the contracted chain. Every rule is retail's; only the
-// wiring is mine.
+// wiring is mine -- and cycle 1409 made that wiring smaller.
 
 #include "ac6/demo_flight_input.h"
+
+#include "ac6/retail_flight_input_router.h"
 
 namespace ac6::demo {
 namespace {
@@ -34,22 +36,35 @@ StickBindings default_stick_bindings() noexcept {
 ac6::retail::FlightInputFields fields_from_record(
     const ac6::retail::InputRecord& record,
     const StickBindings& bindings) noexcept {
-  ac6::retail::FlightInputFields fields{};
-  // ESTABLISHED that these two are the binding layer's first two outputs
-  // (cycle 1404); CHOSEN that they are pitch and roll.
-  fields.at2104 = binding_value(record.axis_ly, bindings.pitch);
-  fields.at2108 = binding_value(record.axis_lx, bindings.roll);
-  // NOT ESTABLISHED at all: retail's +44 takes [+2112] - [+2116], a difference
-  // of two fields nothing has traced. Driving it from one signed axis split
-  // across the pair reproduces the arithmetic exactly while making no claim
-  // about where retail's two halves come from.
+  // CHOSEN: which controller axis fills which binding slot. Four raw axes into
+  // the first four slots of the binding layer's output array. The per-player
+  // table that decides this in retail is loaded from data this campaign has not
+  // reached, so it is a choice -- but it is now the ONLY choice in this file.
+  ac6::retail::FlightBindingOutputs outputs{};
+  outputs.value[0] = binding_value(record.axis_ly, bindings.pitch);
+  outputs.value[1] = binding_value(record.axis_lx, bindings.roll);
   const float yaw = binding_value(record.axis_rx, bindings.yaw);
-  fields.at2112 = yaw > 0.0F ? yaw : 0.0F;
-  fields.at2116 = yaw < 0.0F ? -yaw : 0.0F;
-  // The two holds. Their sources are unknown; the right trigger is a choice.
-  fields.at2096 = binding_value(record.axis_ry, bindings.throttle);
-  fields.at2100 = 0.0F;
-  return fields;
+  outputs.value[2] = yaw > 0.0F ? yaw : 0.0F;
+  outputs.value[3] = yaw < 0.0F ? -yaw : 0.0F;
+  outputs.value[4] = binding_value(record.axis_ry, bindings.throttle);
+  outputs.value[5] = 0.0F;
+
+  // ESTABLISHED, cycle 1409: everything from here to the entity's six fields is
+  // retail's own routing, ported from 0x82229310..0x8222946C and differentially
+  // verified. The demo picks the analog device and layout 0, which is the arm
+  // whose fields the layout-1 response curve does not touch -- so these six
+  // values are final rather than pre-curve.
+  //
+  // The holds at +2096 and +2100 take BUTTON BITS on this arm, not the analog
+  // trigger the previous version fed them. That was an invention this cycle
+  // deleted rather than confirmed; the trigger now reaches slot 4, which only
+  // the digital-device arm forwards.
+  std::uint32_t buttons = 0U;
+  if (outputs.value[4] > 0.5F) {
+    buttons |= 1U << ac6::retail::kAnalogHoldLowBit;  // CHOSEN: trigger as a hold
+  }
+  return ac6::retail::route_flight_input_fields(
+      outputs, buttons, ac6::retail::FlightInputDevice::kAnalog, 0U);
 }
 
 ac6::retail::FlightInputFields fields_from_snapshot(

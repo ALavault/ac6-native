@@ -41,7 +41,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/demo_flight_view.cpp
   src/demo_flight_input.cpp
   src/retail_flight_input_accumulators.cpp
-  src/retail_flight_input_apply.cpp)
+  src/retail_flight_input_apply.cpp
+  src/retail_flight_input_router.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -247,6 +248,12 @@ add_executable(ac6-retail-flight-input-apply-tests
   tests/retail_flight_input_apply_tests.cpp)
 target_link_libraries(ac6-retail-flight-input-apply-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-flight-input-apply COMMAND ac6-retail-flight-input-apply-tests)
+
+# A3.2: where the six input fields come from -- the binding layer's outputs.
+add_executable(ac6-retail-flight-input-router-tests
+  tests/retail_flight_input_router_tests.cpp)
+target_link_libraries(ac6-retail-flight-input-router-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-flight-input-router COMMAND ac6-retail-flight-input-router-tests)
 
 # A3.2: the flight model's INPUT accumulators -- the player's interface.
 add_executable(ac6-retail-flight-input-accumulators-tests
