@@ -1293,6 +1293,41 @@
             "claim": "include/ac6/retail_ndxr_geometry.h carries the derivation, gives the addressing with the scores that chose it, records that 0xFFFF is a restart and why three range tests failed before it was known, separates what the binder derives from what the D3D type words only suggest, and states that most of each vertex -- the 8 or 12 bytes past the position -- is discarded"
           }
         ]
+      },
+      "retail_terrain_field": {
+        "status": "passed",
+        "statement": "the native product decodes the map's terrain heightfield with the addressing 0x82102568 uses: a 16 x 16 byte grid of patch ids at [this+0x0C] indexed coarse_z * 16 + coarse_x, a patch array at [this+0x10] of 0x4204-byte records, and within a patch a row step of 0x104 = 65 floats, which makes a patch 65 x 65 -- sixteen cells of four samples plus a shared edge. One cell is 512 world units because 0x82069BB4 is 0.001953125, so one sample is 128 units and the 1025-sample lattice spans exactly the +/-65536 that 0x82069BB8 implies; that span was not fitted. 0x82069BC0 = 9990.0 is the absent-sample sentinel and an unordered compare bails with it, which is what a patch of 0xFF means. The 65 x 65 reading is established by a control the test re-runs rather than cites: a patch's column 64 equals its right neighbour's column 0 for all 31200 edge samples at 0.0000, while unrelated patches compared identically mostly disagree. segment_may_reach_terrain ports only the early-out of 0x82102568 -- the maximum over the six-by-five neighbourhood against both endpoints' y -- and stops there, because the rest of that function is VMX128 that was not read",
+        "retail_addresses": [
+          "0x82102568",
+          "0x82102648",
+          "0x821027C0",
+          "0x82069BB4",
+          "0x82069BB8",
+          "0x82069BC0"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1445-the-bit-is-water.md",
+            "sha256": "3dae36c39d78f39c59b31ddeb243d2c6181bd2aa851c9b605f23096a056712c0",
+            "size": 8798,
+            "claim": "the heightfield read instruction by instruction out of the flat image, with the shared-edge control at 31200/31200 against random block pairs mismatching 9264 of 13000"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_terrain_field_tests.cpp",
+            "sha256": "1d35132389c8467c2d6d50f96d9b3296ce752ef8fa6b603363614c164cebcd0b",
+            "size": 6871,
+            "claim": "the real map container decoded: 74 patches, the shared-edge control re-run in the test at 31200/31200 with worst difference 0.0000, a CONTROL that unrelated patches mostly disagree so agreement is not the default, the lattice span checked against the query's own bias, and a 900-position sweep in which a segment below the local ground never reports a miss"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_terrain_field.h",
+            "sha256": "2699f53f94f65985a89d5ccae92fd07f319f5e8f2637206d110a3cb7fc407011",
+            "size": 6800,
+            "claim": "the header carries the derivation with every instruction address, states that it was read from the image because exports/82102568.json is a decompilation with thirty-three removed blocks, separates the ported early-out from the VMX128 remainder it does not claim, and records that the heightfield is not the MCA/MCI/MCD bit grid"
+          }
+        ]
       }
     }
   }
