@@ -67,11 +67,67 @@ SWEEPS = {"held": HELD, "pressed": PRESSED, "released": RELEASED}
 # beyond device+0x43 and are therefore OUTSIDE the 0x40-byte snapshot copy -- so
 # if they reach a record at all, the consumer read the device directly.
 FIELD_SWEEPS = [
+    # device+0x38 and +0x3A ARE the feed for record flag bits 14 and 15 -- they
+    # fill the float slots at +0x44 and +0x48, which is (14+3)*4 and (15+3)*4.
+    # Cycle 1318 found these two halfwords between the axis halves and the raw
+    # thumbs, could not place them, and guessed the triggers instead.
+    #
+    # Three values each, because one value cannot distinguish a rule. 0xFFFF is
+    # int16 -1 and gives -1/32767, which already rules out the split-halves rule
+    # the eight axis halves take: that would read 0xFFFF as a magnitude and give
+    # -2.0, or as a half-pair and give zero.
     ("dev38", 0x38, 2, 0xFFFF),
     ("dev3a", 0x3A, 2, 0xFFFF),
+    ("dev38-pos", 0x38, 2, 20000),
+    ("dev3a-pos", 0x3A, 2, 20000),
+    ("dev38-min", 0x38, 2, 0x8000),
+    ("dev3a-min", 0x3A, 2, 0x8000),
+    ("dev38-small", 0x38, 2, 0x100),
+    # THE FLAG BIT IS NOT THE SLOT. The slot at +0x44 is written for every value
+    # above, negative ones included; the flag bit is set for +20000 and +256 and
+    # NOT for -1 or -32768. So it is not the 0x800 deadzone cycle 1315 read on
+    # the other path -- 0x100 is well under that and still sets it. These two
+    # bracket the boundary: the smallest positive value, and a negative one big
+    # enough that a magnitude test would pass.
+    ("dev38-one", 0x38, 2, 1),
+    ("dev38-neg", 0x38, 2, 0xFF00),
+] + [
+    # AND IT IS NOT A SIGN TEST EITHER. +1 does not set the flag bit and +256
+    # does, so there is a threshold strictly between them. A bracket rather than
+    # a guess: nine powers of two, one case each, in the same batch.
+    (f"dev38-t{value:05d}", 0x38, 2, value)
+    for value in (2, 4, 8, 16, 17, 18, 20, 24, 28, 29, 30, 31, 32, 64, 128, 192, 255)
+] + [
     ("trigL", 0x4A, 1, 0xFF),
     ("trigR", 0x4B, 1, 0xFF),
+    # THE RAW THUMBS. 0x8234D110 copies the four XINPUT_STATE thumbs verbatim to
+    # device+0x3C..+0x42 alongside the split halves, so the consumer sees both
+    # forms of the same stick. Nothing had asked what it does with the raw ones.
+    #
+    # There is a reason to ask. Cycle 1315 read a SECOND normalisation at
+    # 0x821CB244 -- `subi r9,r9,0x4000` then a 0x800 threshold then a multiply by
+    # float32(1/16383) -- which is not the one the axis stage takes: the executed
+    # run put 30000 through float32(1/32767) and landed on 0.915555 exactly. The
+    # biased path is later in the function and has never been reached.
+    #
+    # 0x7FFF - 0x4000 = 0x3FFF = 16383, so the biased path maps a full-scale raw
+    # thumb onto exactly 1.0. That is a hypothesis, and these four cases are what
+    # it takes to stop it being one.
+    ("rawLX", 0x3C, 2, 0x7FFF),
+    ("rawLY", 0x3E, 2, 0x7FFF),
+    ("rawRX", 0x40, 2, 0x7FFF),
+    ("rawRY", 0x42, 2, 0x7FFF),
+    # A POSITIVE CONTROL FOR THE FLOAT READER BELOW. The LY positive half is
+    # known to fill the slot at +0x50; if it does not show up here, the reader is
+    # broken and every blank result above is worthless.
+    ("halfLY", 0x28, 2, 30000),
 ]
+
+# The float array: slot for flag bit b is (b + 3) * 4, so bits 0..31 would span
+# +0x0C..+0x88. Only +0x0C..+0x5B has ever been seen written; the window read
+# here is deliberately wider than that.
+FLOAT_FIRST = 0x0C
+FLOAT_LAST = 0x88
 
 
 def build_service(word_offset: int | None, bit: int | None,
@@ -171,8 +227,8 @@ def emit(workdir: Path) -> int:
     return 0
 
 
-def flag_word(document: dict) -> int | None:
-    """The record-0 flag word as the 0x00 pass left it -- the mask, not poison."""
+def clean_memory(document: dict) -> dict[int, int] | None:
+    """Record bytes as the 0x00 poison pass left them, keyed by address."""
     memory: dict[int, int] = {}
     for run in document.get("memory_writes", []):
         address = int(run["address"], 16)
@@ -181,13 +237,37 @@ def flag_word(document: dict) -> int | None:
             return None
         for index, value in enumerate(bytes.fromhex(clean)):
             memory[address + index] = value
+    return memory
+
+
+def flag_word(memory: dict[int, int]) -> int:
     base = RECORD_0 + 0x08
     return int.from_bytes(bytes(memory.get(base + n, 0) for n in range(4)), "big")
+
+
+def float_slots(memory: dict[int, int]) -> dict[int, float]:
+    """Every float slot the run WROTE, by record offset.
+
+    Strict: a slot whose four bytes are not all present was not written, and is
+    left out rather than read as 0.0. That is the opposite of the flag word's
+    reader and for the opposite reason -- a mask byte of zero is a value, a
+    float of +0.0 written is not distinguishable from one not written, so this
+    reader refuses to guess.
+    """
+    found: dict[int, float] = {}
+    for offset in range(FLOAT_FIRST, FLOAT_LAST, 4):
+        address = RECORD_0 + offset
+        if any(address + n not in memory for n in range(4)):
+            continue
+        raw = bytes(memory[address + n] for n in range(4))
+        found[offset] = struct.unpack(">f", raw)[0]
+    return found
 
 
 def check(workdir: Path, report: Path | None) -> int:
     rows: list[dict] = []
     baseline: int | None = None
+    baseline_slots: dict[int, float] = {}
     stale = []
     for case in cases():
         path = workdir / "out" / f"{case['name']}.json"
@@ -198,16 +278,20 @@ def check(workdir: Path, report: Path | None) -> int:
         if document["exit"]["kind"] != "return":
             print(f"{case['name']}: exit={document['exit']}", file=sys.stderr)
             return 1
-        word = flag_word(document)
-        if word is None:
+        memory = clean_memory(document)
+        if memory is None:
             stale.append(case["name"])
             continue
+        word = flag_word(memory)
+        slots = float_slots(memory)
         if case["name"] == "null":
             baseline = word
-            print(f"null control: flag word 0x{word:08X}")
+            baseline_slots = slots
+            print(f"null control: flag word 0x{word:08X}  "
+                  f"float slots {{{', '.join(f'0x{o:02X}={v:g}' for o, v in slots.items())}}}")
             continue
         rows.append({"sweep": case["sweep"], "bit": case["bit"], "flags": word,
-                     "name": case["name"]})
+                     "name": case["name"], "slots": slots})
 
     if stale:
         print(f"{len(stale)} snapshots carry no after_hex_b; regenerate them with "
@@ -230,7 +314,20 @@ def check(workdir: Path, report: Path | None) -> int:
                 "record_flag_bits": [b for b in range(32) if added >> b & 1],
             })
 
-    print(f"cases={len(rows)} baseline=0x{baseline:08X} mapped={len(mapping)}")
+    # A slot whose value differs from the null run's is this input's doing.
+    slot_effects = []
+    for row in rows:
+        changed = {offset: value for offset, value in row["slots"].items()
+                   if baseline_slots.get(offset) != value}
+        if changed:
+            slot_effects.append({"case": row["name"], "slots": {
+                f"0x{o:02X}": round(v, 6) for o, v in sorted(changed.items())}})
+
+    print(f"cases={len(rows)} baseline=0x{baseline:08X} mapped={len(mapping)} "
+          f"slot_effects={len(slot_effects)}")
+    for effect in slot_effects:
+        print(f"  {effect['case']:16s} -> " +
+              "  ".join(f"{o}={v}" for o, v in effect["slots"].items()))
     for entry in mapping:
         bits = ",".join(str(b) for b in entry["record_flag_bits"])
         which = ("bit --" if entry["device_bit"] is None
@@ -254,6 +351,7 @@ def check(workdir: Path, report: Path | None) -> int:
             "device_words": {name: f"device+0x{offset:02X}"
                              for name, offset in SWEEPS.items()},
             "mapping": mapping,
+            "float_slot_effects": slot_effects,
         }, indent=2) + "\n", encoding="utf-8")
         print(f"wrote {report}")
     return 0

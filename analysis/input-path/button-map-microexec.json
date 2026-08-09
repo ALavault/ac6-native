@@ -123,6 +123,242 @@
       "record_flag_bits": [
         4
       ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-pos",
+      "record_flag_bits": [
+        14
+      ]
+    },
+    {
+      "device_word": "device+0x3A",
+      "device_bit": null,
+      "case": "field-dev3a-pos",
+      "record_flag_bits": [
+        15
+      ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-small",
+      "record_flag_bits": [
+        14
+      ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-t00031",
+      "record_flag_bits": [
+        14
+      ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-t00032",
+      "record_flag_bits": [
+        14
+      ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-t00064",
+      "record_flag_bits": [
+        14
+      ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-t00128",
+      "record_flag_bits": [
+        14
+      ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-t00192",
+      "record_flag_bits": [
+        14
+      ]
+    },
+    {
+      "device_word": "device+0x38",
+      "device_bit": null,
+      "case": "field-dev38-t00255",
+      "record_flag_bits": [
+        14
+      ]
+    }
+  ],
+  "float_slot_effects": [
+    {
+      "case": "field-dev38",
+      "slots": {
+        "0x44": -3.1e-05
+      }
+    },
+    {
+      "case": "field-dev3a",
+      "slots": {
+        "0x48": -3.1e-05
+      }
+    },
+    {
+      "case": "field-dev38-pos",
+      "slots": {
+        "0x44": 0.61037
+      }
+    },
+    {
+      "case": "field-dev3a-pos",
+      "slots": {
+        "0x48": 0.61037
+      }
+    },
+    {
+      "case": "field-dev38-min",
+      "slots": {
+        "0x44": -1.000031
+      }
+    },
+    {
+      "case": "field-dev3a-min",
+      "slots": {
+        "0x48": -1.000031
+      }
+    },
+    {
+      "case": "field-dev38-small",
+      "slots": {
+        "0x44": 0.007813
+      }
+    },
+    {
+      "case": "field-dev38-one",
+      "slots": {
+        "0x44": 3.1e-05
+      }
+    },
+    {
+      "case": "field-dev38-neg",
+      "slots": {
+        "0x44": -0.007813
+      }
+    },
+    {
+      "case": "field-dev38-t00002",
+      "slots": {
+        "0x44": 6.1e-05
+      }
+    },
+    {
+      "case": "field-dev38-t00004",
+      "slots": {
+        "0x44": 0.000122
+      }
+    },
+    {
+      "case": "field-dev38-t00008",
+      "slots": {
+        "0x44": 0.000244
+      }
+    },
+    {
+      "case": "field-dev38-t00016",
+      "slots": {
+        "0x44": 0.000488
+      }
+    },
+    {
+      "case": "field-dev38-t00017",
+      "slots": {
+        "0x44": 0.000519
+      }
+    },
+    {
+      "case": "field-dev38-t00018",
+      "slots": {
+        "0x44": 0.000549
+      }
+    },
+    {
+      "case": "field-dev38-t00020",
+      "slots": {
+        "0x44": 0.00061
+      }
+    },
+    {
+      "case": "field-dev38-t00024",
+      "slots": {
+        "0x44": 0.000732
+      }
+    },
+    {
+      "case": "field-dev38-t00028",
+      "slots": {
+        "0x44": 0.000855
+      }
+    },
+    {
+      "case": "field-dev38-t00029",
+      "slots": {
+        "0x44": 0.000885
+      }
+    },
+    {
+      "case": "field-dev38-t00030",
+      "slots": {
+        "0x44": 0.000916
+      }
+    },
+    {
+      "case": "field-dev38-t00031",
+      "slots": {
+        "0x44": 0.000946
+      }
+    },
+    {
+      "case": "field-dev38-t00032",
+      "slots": {
+        "0x44": 0.000977
+      }
+    },
+    {
+      "case": "field-dev38-t00064",
+      "slots": {
+        "0x44": 0.001953
+      }
+    },
+    {
+      "case": "field-dev38-t00128",
+      "slots": {
+        "0x44": 0.003906
+      }
+    },
+    {
+      "case": "field-dev38-t00192",
+      "slots": {
+        "0x44": 0.00586
+      }
+    },
+    {
+      "case": "field-dev38-t00255",
+      "slots": {
+        "0x44": 0.007782
+      }
+    },
+    {
+      "case": "field-halfLY",
+      "slots": {
+        "0x50": 0.915555
+      }
     }
   ]
 }

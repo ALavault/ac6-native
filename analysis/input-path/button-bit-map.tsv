@@ -39,15 +39,53 @@
 #                              only its low 16 reach a record.
 #   pressed, all 32 bits       no record bit. The edge words at device+0x14 and
 #   released, all 32 bits      +0x18 are NOT folded into the record flag word.
-#   device+0x38, device+0x3A   no record bit. Cycle 1318 could not place these
-#                              two halfwords and they do not reach the flag word.
+#   device+0x38, device+0x3A   THIS ONE WAS WRONG AND CYCLE 1322 CORRECTED IT.
+#                              They set flag bits 14 and 15 and fill the float
+#                              slots at +0x44 and +0x48 -- see below. Cycle 1321
+#                              drove them to 0xFFFF, which is int16 -1, and a
+#                              NEGATIVE value never sets the bit. One value is
+#                              not a test of a field.
 #   device+0x4A, device+0x4B   no record bit. CYCLE 1318 GUESSED THE TRIGGERS FED
 #                              record bits 14 and 15. That guess is refuted; both
 #                              lie beyond device+0x43 and outside the snapshot
 #                              copy, and driving them to 0xFF changes nothing.
+#   device+0x3C..+0x42         no record bit and no float slot. THE FOUR RAW
+#                              THUMBS REACH NOTHING from this function. Cycle
+#                              1322 proposed them as the feed for the second
+#                              normalisation at 0x821CB244 -- bias 0x4000 then
+#                              float32(1/16383), which maps a full-scale thumb
+#                              onto exactly 1.0 -- and its own control refuted
+#                              the hypothesis in the same batch.
 #
-# So record flag bits 14 and 15 remain unexplained, with four candidates now
-# eliminated by execution rather than left standing as a guess.
+# RECORD FLAG BITS 14 AND 15, SETTLED. device+0x38 owns bit 14 and the float slot
+# at +0x44; device+0x3A owns bit 15 and +0x48. Both are (b + 3) * 4, the same rule
+# the four axes follow.
+#
+# The slot rule is NOT the split-halves rule the eight axis halves take. Four
+# values, one per case:
+#
+#   0xFFFF  int16     -1  ->  -0.000031  =      -1 / 32767
+#   0x4E20  int16  20000  ->   0.610370  =   20000 / 32767
+#   0x8000  int16 -32768  ->  -1.000031  =  -32768 / 32767
+#   0x0100  int16    256  ->   0.007813  =     256 / 32767
+#
+# so slot = float(int16(field)) / 32767, sign-extended, no bias and no split.
+# -1.000031 is the tell: a clamped or half-range normalisation could not produce
+# a magnitude above 1.
+#
+# THE FLAG BIT IS NOT THE SLOT, and this is the part a reading would have missed.
+# The slot is written for EVERY value above, negative ones included. The flag bit
+# is set only for positive values at or above 31:
+#
+#   value  30 -> slot 0.000916, flag bit NOT set
+#   value  31 -> slot 0.000946, flag bit SET
+#   value -32768 -> slot -1.000031, flag bit NOT set
+#
+# Bracketed by seventeen cases between 1 and 255. Whether the comparison is an
+# integer test against 30 or a float test against a constant somewhere in
+# (0.000916, 0.000946] is NOT established -- both fit every value measured. What
+# is established is that it is neither a sign test (1 does not set it) nor the
+# 0x800 deadzone of the other path (256 does).
 #
 # AND NO AXIS BIT APPEARS IN THIS WORD. A run with LY at 30000 fills the float
 # slot at +0x50 and leaves the flag word at 0x00000020 -- bit 17 is NOT set. The

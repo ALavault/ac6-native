@@ -26,6 +26,8 @@
 0x08	4	flag word, accumulated by thirteen or/stw pairs	0x821CABE0..0x821CAC4C
 0x08	4	fourteen remapped HELD button bits and nothing else; see button-bit-map.tsv	executed
 0x0C	4*20	parallel float array; slot for bit b is (b + 3) * 4; reaches at least +0x5B (cycle 1318)	821caed4 addi r9,r10,0x3 / 821caedc rlwinm r9,0x2
+0x44	4	device+0x38 as int16 / 32767; flag bit 14 set only when >= 31	executed
+0x48	4	device+0x3A as int16 / 32767; flag bit 15 set only when >= 31	executed
 0x4C	4	LX, signed float	executed
 0x50	4	LY, signed float; float32(30000/32767) for a 30000 LY+ half	executed
 0x54	4	RX, signed float	executed
