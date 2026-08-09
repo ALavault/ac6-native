@@ -66,6 +66,17 @@ struct Image {
   // AFFINE, NOT PERSPECTIVE-CORRECT. The interpolation is linear in screen
   // space, which warps a texture across a triangle seen at a steep angle. It is
   // wrong, it is cheap, and it is written down rather than discovered.
+  // The same, blending the lit texel toward a FOG COLOUR by `fog` in [0,1].
+  // Cycle 1487 named the defect this exists for: multiplying by a shade makes
+  // distance go to black, when the mapset's own .sky1.fog says it goes to
+  // haze. The factor and the colour are the caller's; this only blends, and at
+  // fog == 0 it is the plain textured triangle exactly.
+  void triangle_textured_fogged(int x0, int y0, float z0, float u0, float v0,
+                                int x1, int y1, float z1, float u1, float v1,
+                                int x2, int y2, float z2, float u2, float v2,
+                                const std::uint32_t* texels, int tw, int th,
+                                float lit, float fog, std::uint8_t fog_r,
+                                std::uint8_t fog_g, std::uint8_t fog_b) noexcept;
   void triangle_textured(int x0, int y0, float z0, float u0, float v0,
                          int x1, int y1, float z1, float u1, float v1,
                          int x2, int y2, float z2, float u2, float v2,

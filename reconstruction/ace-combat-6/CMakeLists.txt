@@ -300,6 +300,11 @@ add_executable(ac6-mapset-post-tests tests/mapset_post_tests.cpp)
 target_link_libraries(ac6-mapset-post-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-mapset-post COMMAND ac6-mapset-post-tests)
 
+# B3: fog as a colour, not a multiplier.
+add_executable(ac6-fogged-triangle-tests tests/fogged_triangle_tests.cpp)
+target_link_libraries(ac6-fogged-triangle-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-fogged-triangle COMMAND ac6-fogged-triangle-tests)
+
 add_executable(ac6-ntxr-texture-tests tests/ntxr_texture_tests.cpp)
 target_link_libraries(ac6-ntxr-texture-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-ntxr-texture

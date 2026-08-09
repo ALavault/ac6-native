@@ -139,6 +139,64 @@ void Image::triangle_textured(int x0, int y0, float z0, float u0, float v0,
   }
 }
 
+void Image::triangle_textured_fogged(int x0, int y0, float z0, float u0, float v0,
+                              int x1, int y1, float z1, float u1, float v1,
+                              int x2, int y2, float z2, float u2, float v2,
+                              const std::uint32_t* texels, int tw, int th,
+                              float lit, float fog, std::uint8_t fog_r,
+                              std::uint8_t fog_g, std::uint8_t fog_b) noexcept {
+  if (fog < 0.0F) fog = 0.0F;
+  if (fog > 1.0F) fog = 1.0F;
+  if (depth.size() != static_cast<std::size_t>(width) * height) return;
+  if (texels == nullptr || tw <= 0 || th <= 0) return;
+  const int min_x = std::max(0, std::min(x0, std::min(x1, x2)));
+  const int max_x = std::min(width - 1, std::max(x0, std::max(x1, x2)));
+  const int min_y = std::max(0, std::min(y0, std::min(y1, y2)));
+  const int max_y = std::min(height - 1, std::max(y0, std::max(y1, y2)));
+  if (min_x > max_x || min_y > max_y) return;
+  const float area = static_cast<float>((x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0));
+  if (area == 0.0F) return;
+  for (int y = min_y; y <= max_y; ++y) {
+    for (int x = min_x; x <= max_x; ++x) {
+      const float w0 = static_cast<float>((x1 - x) * (y2 - y) - (x2 - x) * (y1 - y)) / area;
+      const float w1 = static_cast<float>((x2 - x) * (y0 - y) - (x0 - x) * (y2 - y)) / area;
+      const float w2 = 1.0F - w0 - w1;
+      if ((w0 < 0.0F || w1 < 0.0F || w2 < 0.0F) &&
+          (w0 > 0.0F || w1 > 0.0F || w2 > 0.0F)) continue;
+      const float z = w0 * z0 + w1 * z1 + w2 * z2;
+      const std::size_t at = static_cast<std::size_t>(y) * width + x;
+      if (!(z < depth[at])) continue;
+      // repeat wrapping, chosen -- see the header.
+      float u = w0 * u0 + w1 * u1 + w2 * u2;
+      float v = w0 * v0 + w1 * v1 + w2 * v2;
+      u -= std::floor(u);
+      v -= std::floor(v);
+      int tx = static_cast<int>(u * static_cast<float>(tw));
+      int ty = static_cast<int>(v * static_cast<float>(th));
+      if (tx < 0) tx = 0; if (tx >= tw) tx = tw - 1;
+      if (ty < 0) ty = 0; if (ty >= th) ty = th - 1;
+      const std::uint32_t texel = texels[static_cast<std::size_t>(ty) * tw + tx];
+      // ALPHA TEST. Cycle 1478 measured the map package: 28 of 170 models carry
+      // a texture with more than 2% of its texels below alpha 128, and one is
+      // 93.4% transparent. Drawing those opaque turns a lattice -- a bridge's
+      // hangers, a fence, a tree -- into a solid slab, which is exactly what the
+      // grey faces in cycles 1475-1477 were. The cutoff is mine; the alpha is
+      // retail's, and 0xAABBGGRR is the decoder's own byte order.
+      if ((texel >> 24) < 128) continue;
+      const auto ch = [&](std::uint32_t v8, std::uint8_t fc) {
+        const float shaded = static_cast<float>(v8) * lit;
+        const float out = shaded + (static_cast<float>(fc) - shaded) * fog;
+        return static_cast<std::uint8_t>(out < 0.0F ? 0.0F
+                                                    : (out > 255.0F ? 255.0F : out));
+      };
+      depth[at] = z;
+      rgb[at * 3] = ch(texel & 0xFF, fog_r);       // 0xAABBGGRR -> R is low
+      rgb[at * 3 + 1] = ch((texel >> 8) & 0xFF, fog_g);
+      rgb[at * 3 + 2] = ch((texel >> 16) & 0xFF, fog_b);
+    }
+  }
+}
+
 void Image::clear(std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept {
   rgb.assign(static_cast<std::size_t>(width) * height * 3, 0);
   for (std::size_t i = 0; i + 2 < rgb.size(); i += 3) {
