@@ -42,13 +42,14 @@ struct Wrapper { const std::uint8_t* bytes; std::size_t length; };
 }  // namespace
 
 int main(int argc, char** argv) {
-  if (argc < 4) { std::printf("usage: textured MDLP OUTDIR ID [frames] [tilt]\n"); return 2; }
+  if (argc < 4) { std::printf("usage: textured MDLP OUTDIR ID [frames] [tilt] [name]\n"); return 2; }
   const std::vector<std::uint8_t> blob = Read(argv[1]);
   const auto directory = ac6::retail::ModelDirectory::open(blob.data(), blob.size());
   if (!directory) { std::printf("not a directory\n"); return 1; }
   const std::uint32_t want = std::strtoul(argv[3], nullptr, 0);
   const int frames = argc >= 5 ? std::atoi(argv[4]) : 120;
   const float tilt = argc >= 6 ? static_cast<float>(std::atof(argv[5])) : 0.42F;
+  const char* only = argc >= 7 ? argv[6] : nullptr;
 
   // Every NTXR in the package, by its GIDX identifier.
   std::map<std::uint32_t, Wrapper> textures;
@@ -98,6 +99,11 @@ int main(int argc, char** argv) {
           if (name.find("crash") != std::string::npos) continue;
           if (name.find("_lod") != std::string::npos &&
               name.find("_lod1") == std::string::npos) continue;
+          // OPTIONAL NAME FILTER. Cycle 1437 found that entry 2 is one terrain
+          // record plus 368 `nmbs###` props that ALL sit at the same local
+          // origin -- so drawing every record of a model stacks them. Until the
+          // per-record transform is read, a caller can name the record it wants.
+          if (only != nullptr && name.find(only) == std::string::npos) continue;
         }
         for (std::uint16_t k = 0; k < record->descriptor_count; ++k) {
           if (chosen_texture == 0) {
