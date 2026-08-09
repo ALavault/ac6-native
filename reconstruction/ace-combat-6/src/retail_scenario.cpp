@@ -194,7 +194,10 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         const std::optional<float> y = payload.f32(*object_data + 4);
         const std::optional<float> z = payload.f32(*object_data + 8);
         if (!x.has_value() || !y.has_value() || !z.has_value()) return std::nullopt;
-        record.obj_scalars.push_back({*x, *y, *z});
+        // +0x10, the heading. Absent is 0, which is also retail's "do not
+        // rotate" -- 0x8229B0B8 compares it against zero before calling.
+        const std::optional<float> heading = payload.f32(*object_data + 16);
+        record.obj_scalars.push_back({*x, *y, *z, heading.value_or(0.0F)});
 
         // The model indices are not on this node. 0x82330158 stores the Obj
         // entry's child[0] data block into the 0x20-byte record, and 0x820A7944

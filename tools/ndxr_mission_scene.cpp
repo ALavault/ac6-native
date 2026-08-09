@@ -110,19 +110,23 @@ int main(int argc, char** argv) {
   if (!scenario) { std::printf("cannot parse the scenario\n"); return 1; }
   const int frames = argc >= 5 ? std::atoi(argv[4]) : 120;
 
-  struct Placed { std::uint8_t model; ac6::retail::ScenarioVector at; };
+  struct Placed { std::uint8_t model; ac6::retail::ScenarioVector at; float heading; };
   std::vector<Placed> placed;
   std::map<std::uint8_t, ac6::retail::NdxrMesh> meshes;
   for (const auto& unit : scenario->units()) {
     const auto where = ac6::retail::initial_world_position(*scenario, unit);
     if (!where) continue;                       // UNPLACED: not drawn, not invented
+    std::size_t which = 0;
     for (const auto& binding : unit.model_bindings) {
+      const float heading = which < unit.obj_scalars.size()
+                                ? unit.obj_scalars[which].heading : 0.0f;
+      ++which;
       if (!binding.has_model()) continue;
       if (meshes.find(binding.primary) == meshes.end()) {
         ac6::retail::NdxrMesh mesh;
         if (LoadModel(blob, *directory, binding.primary, mesh)) meshes[binding.primary] = mesh;
       }
-      if (meshes.count(binding.primary)) placed.push_back({binding.primary, *where});
+      if (meshes.count(binding.primary)) placed.push_back({binding.primary, *where, heading});
       break;
     }
   }
@@ -224,8 +228,25 @@ int main(int argc, char** argv) {
       // skipped rather than drawn as noise. The cut is a rendering choice and
       // the count of what it drops is printed.
       if (dx*dx + dy*dy + dz*dz > (radius * 12.0f) * (radius * 12.0f)) continue;
+      // THE UNIT'S OWN HEADING, through retail's own rotation. 0x8229B0C4 hands
+      // it to 0x820A9B30 on the entity's transform; this composes it into the
+      // camera basis, which is the same rotation applied to the same vertices.
+      ac6::retail::RetailBasis oriented = basis;
+      if (p.heading != 0.0f) {
+        ac6::retail::RetailBasis spin = ac6::retail::identity_basis();
+        ac6::retail::rotate_820A9B30(spin, p.heading);
+        ac6::retail::RetailBasis composed = basis;
+        for (int row = 0; row < 3; ++row) {
+          for (int col = 0; col < 3; ++col) {
+            composed.rows[row][col] = basis.rows[row][0] * spin.rows[0][col] +
+                                      basis.rows[row][1] * spin.rows[1][col] +
+                                      basis.rows[row][2] * spin.rows[2][col];
+          }
+        }
+        oriented = composed;
+      }
       const ac6::retail::NdxrMesh& mesh = meshes[p.model];
-      ac6::demo::draw_mesh_at(image, mesh, basis, ac6::demo::DemoCamera{},
+      ac6::demo::draw_mesh_at(image, mesh, oriented, ac6::demo::DemoCamera{},
                               dx, dy, dz, 140, 190, 230);
     }
     char path[512];

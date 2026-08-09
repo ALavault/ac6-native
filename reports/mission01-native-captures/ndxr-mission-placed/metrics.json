@@ -1,6 +1,6 @@
 {
   "schema": "ac6.ndxr-placed-capture.v1",
-  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, computed from the PPM the renderer wrote so that checking the PNG against it checks the pnmtopng conversion -- regenerated at lod1 with wrecks dropped (cycle 1430)",
+  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, computed from the PPM the renderer wrote so that checking the PNG against it checks the pnmtopng conversion -- regenerated at lod1 with wrecks dropped (cycle 1430) -- per-unit headings applied (cycle 1431); 3 of the 95 placed units carry one",
   "units_placed": 95,
   "units_unplaced": 135,
   "distinct_models_placed": 16,
@@ -23,5 +23,6 @@
     "scene-00090": {
       "color_hash": 9573437670017940769
     }
-  }
+  },
+  "units_with_heading": 3
 }

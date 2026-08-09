@@ -70,6 +70,25 @@ struct ScenarioObjScalars {
   float first{};
   float second{};
   float third{};
+  // The heading, at +0x10 of the same block. Cycle 1431 read the consumer:
+  //
+  //   0x8229B0B0  lwz   r11,388(r3)     the Obj data block, entity+0x184
+  //   0x8229B0B4  lfs   f1,16(r11)      THIS
+  //   0x8229B0B8  fcmpu cr6,f1,f0       against 0.0
+  //   0x8229B0BC  beq   -> skip         zero means NO ROTATION, explicitly
+  //   0x8229B0C0  addi  r3,r3,96        the entity's transform
+  //   0x8229B0C4  bl    0x820A9B30      rotate_820A9B30 -- already contracted
+  //
+  // So it is a yaw applied through A3.1's own rotation kernel, and which axis
+  // it turns about is settled by which of the three rotations retail passes it
+  // to rather than by a guess.
+  //
+  // It is the MIDDLE of a triple: 0x8229ADF8 reads +0x0C, +0x10 and +0x14
+  // together at 0x8229AF50..0x8229AF60. In Mission 01 the outer two are zero in
+  // every one of the 434 Obj records and only 52 carry a non-zero middle, whose
+  // fourteen distinct values are all clean radians -- +-pi, +-pi/2, +-pi/4,
+  // +-pi/6, and degree-round angles like -80 and -50 degrees.
+  float heading{};
   bool operator==(const ScenarioObjScalars&) const = default;
 };
 

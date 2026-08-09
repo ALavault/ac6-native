@@ -54,9 +54,15 @@ this is the second.
 
 ## What is absent
 
-- **No orientation.** Every unit is drawn axis-aligned. The scenario carries
-  headings and this does not read them, so a transport and a tank both face the
-  same way — which is wrong and visible.
+- ~~No orientation.~~ **Fixed at cycle 1431, and the fix is smaller than the
+  complaint.** The heading is at `+0x10` of the Obj data block; retail reads it
+  at `0x8229B0B4`, compares it against zero, and hands it to `0x820A9B30` —
+  A3.1's own contracted rotation. This applies the same rotation to the same
+  vertices.
+  **But only 3 of the 95 placed units carry a non-zero heading.** The other 49
+  of the mission's 52 belong to units with no load-time position. So "they all
+  face the same way" was mostly retail's arrangement and not this renderer's
+  omission, which is the opposite of what cycle 1429 assumed.
 - Positions and connectivity only: no materials, textures or winding, for the
   reason `ndxr-model-04/README.md` gives.
 - The 135 unplaced units, above.
