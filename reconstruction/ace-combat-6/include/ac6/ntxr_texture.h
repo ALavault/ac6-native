@@ -74,6 +74,27 @@
 // A writer settles a layout question more firmly than a reader: a reader shows
 // what the code tolerates, a writer shows what the format is.
 //
+// MEASURED AGAINST THE CORPUS (cycle 1272), and the boundary matters: those
+// fixed offsets hold in 165 of 346 wrappers, not all of them. The per-entry
+// descriptor is variable-length - 0x30, 0x40, 0x50, 0x60 or 0x70 bytes from the
+// 0x10 base (165, 2, 117, 55 and 7 files) - so 'eXt' sits at 0x40 only when the
+// descriptor is 0x30 long, which is what that writer emits.
+//
+// What holds in 346 of 346 is the RELATIVE structure:
+//
+//     'eXt' immediately follows the descriptor
+//     'GIDX' is exactly 0x10 after 'eXt'
+//     the identifier is at GIDX+0x08
+//
+// And a trap sits inside it: the 'eXt' size word reads 0x20 in all 346 wrappers
+// while the next chunk begins 0x10 later. THE SIZE FIELD IS NOT A STRIDE. A
+// parser that walks chunks by adding it lands 0x10 past GIDX and reads whatever
+// follows as an identifier.
+//
+// So the writer's argument has a boundary worth stating plainly: a writer shows
+// what the format is FOR WHAT THAT WRITER WROTE. Locating a chunk by its tag is
+// the general instrument; the fixed offsets are the special case.
+//
 // ---------------------------------------------------------------------------
 // The surface rule, measured (cycle 1151)
 // ---------------------------------------------------------------------------

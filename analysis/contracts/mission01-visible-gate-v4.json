@@ -330,8 +330,8 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/include/ac6/ntxr_texture.h",
-      "sha256": "bf03ff274ec796fa753b3f61319786c57ee9b4c1797af70a12e865a1abd7fa9f",
-      "size": 12627,
+      "sha256": "c328597e46e8135ee8cf21ee251fa43b5da680888118fbec73b05ab3b37f5b88",
+      "size": 13699,
       "claim": "include/ac6/ntxr_texture.h carries the whole derivation and names what is not derived: the descriptor base and texture count from 0x8234B0C0/0x8234B0B8, the field layout from 0x8234B360, the level count from 0x8234B128, the cube flag from 0x8234B118, both section bases from 0x8234B284/0x8234B28C, the context choice in 0x8234AED8, the field mapping in 0x8234AA68, the surface arithmetic of 0x821DF838 and 0x821DF958 under XGSetTextureHeader at 0x821FBE30, and the chunk layout as retail's own writer 0x821D9478 emits it"
      }
     ]
