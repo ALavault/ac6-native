@@ -2,8 +2,8 @@
   "schema": "ac6.function-snapshot.v1",
   "identity": {
     "implementation": "ppc-pcode",
-    "function": "0x820A9BEC",
-    "case": "vmx128:vpermwi128-override"
+    "function": "0x822A1EC0",
+    "case": "vmx128:lvx128-masked"
   },
   "provenance": {
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
@@ -16,15 +16,13 @@
     "steps": 1,
     "callee_entries": 0,
     "asserted_semantics_enabled": true,
-    "asserted_semantics": {
-      "override:vpermwi128": 1
-    },
+    "asserted_semantics": {},
     "write_detection": "union of two poison passes, 0xCD and 0x00",
     "written": "target 0 bytes"
   },
   "exit": {"kind": "step_limit"},
   "registers": {
-    "vr13": "0x0706050407060504030201000f0e0d0c"
+    "vr0": "0x101112131415161718191a1b1c1d1e1f"
   },
   "calls": [],
   "memory_writes": []

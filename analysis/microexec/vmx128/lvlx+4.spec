@@ -7,6 +7,7 @@ case vmx128:lvlx+4
 steps 1
 
 region fixture 0xb6000000 bytes:000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+region target  0xb7000000 poison:0x40
 region stack   0xC0000000 zero:0x1000
 sp 0xC0000E00
 

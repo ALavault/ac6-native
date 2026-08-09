@@ -47,6 +47,8 @@ from pathlib import Path
 # a value rather than as a coincidence.
 FIXTURE = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
 FIXTURE_BASE = 0xB6000000
+# A separate, poison-filled region for the one case that tests a store.
+TARGET_BASE = 0xB7000000
 
 # Two vectors whose words are all distinct and not palindromic, for the same
 # reason. VA reads forward, VB backward.
@@ -175,6 +177,66 @@ MODULE_CASES = [
         "module": True,
     },
     {
+        # lvx128 vD,rA,rB : EA = (rA|0) + rB, then EA &= ~0xF, load 16 bytes.
+        # 0x822A1EC0 is `lvx128 vr0,r0,r11`, so rA is r0 and the ISA reads it as
+        # the literal zero.
+        "name": "lvx128-aligned",
+        "function": 0x822A1EC0,
+        "gpr": {"r11": FIXTURE_BASE, "r0": 0},
+        "capture": "vr0",
+        "expect": FIXTURE[:32],
+        "module": True,
+    },
+    {
+        # The ~0xF mask: an address inside the second block must still load the
+        # whole of that block from its start.
+        "name": "lvx128-masked",
+        "function": 0x822A1EC0,
+        "gpr": {"r11": FIXTURE_BASE + 0x14, "r0": 0},
+        "capture": "vr0",
+        "expect": FIXTURE[32:],
+        "module": True,
+    },
+    {
+        # THE (rA|0) PROBE. Cycle 1296 read this module emitting
+        # INT_ADD(r0, rB) with no (rA|0) rule and recorded it as latent because
+        # r0 was zero on the path. Seeding r0 nonzero turns latent into measured:
+        # the ISA ignores r0 entirely and must still load the first block.
+        "name": "lvx128-ra-is-r0",
+        "function": 0x822A1EC0,
+        "gpr": {"r11": FIXTURE_BASE, "r0": 0x10},
+        "capture": "vr0",
+        "expect": FIXTURE[:32],
+        "module": True,
+        # If the module adds r0, it lands on the second block instead.
+        "module_defect_actual": FIXTURE[32:],
+    },
+    {
+        # vor vD,vA,vB with vA == vB is a register move. A weak test of the
+        # operation and a real one of the byte order, which is why it is here.
+        # 0x820A9AA4 is `vor v12,v13,v13`.
+        "name": "vor",
+        "function": 0x820A9AA4,
+        "vec": {"vs45": VB},   # v13
+        "capture": "vs44",     # v12
+        "expect": VB,
+        "module": True,
+    },
+    {
+        # stvx128 vS,rA,rB : EA = (rA|0) + rB, EA &= ~0xF, store 16 bytes.
+        # The only store in the closure, and the only case here checked through
+        # memory_writes rather than a register. 0x822A1ECC is
+        # `stvx128 vr0,r0,r11`; r11 points into a poison region so the write is
+        # detected the same way every other write in this harness is.
+        "name": "stvx128",
+        "function": 0x822A1ECC,
+        "gpr": {"r11": TARGET_BASE, "r0": 0},
+        "vec": {"vr0": VB},
+        "target": TARGET_BASE,
+        "expect_write": VB,
+        "module": True,
+    },
+    {
         # The same site with the module's p-code bypassed at the address. This
         # is the control for the override: it must produce the ISA answer, and
         # it must produce it through the module's own DECODE -- a wrong register
@@ -212,6 +274,7 @@ case vmx128:{name}
 steps 1
 
 region fixture {fixture_base:#010x} bytes:{fixture}
+region target  {target_base:#010x} poison:0x40
 region stack   0xC0000000 zero:0x1000
 sp 0xC0000E00
 
@@ -225,9 +288,10 @@ def emit(workdir: Path) -> int:
     (workdir / "out").mkdir(exist_ok=True)
     manifest = []
     for case in CASES:
-        lines = [SPEC_HEADER.format(expect=case["expect"], function=case["function"],
+        lines = [SPEC_HEADER.format(expect=case.get("expect", case.get("expect_write")), function=case["function"],
                                     name=case["name"], fixture=FIXTURE,
-                                    fixture_base=FIXTURE_BASE)]
+                                    fixture_base=FIXTURE_BASE,
+                                    target_base=TARGET_BASE)]
         for register, value in case.get("gpr", {}).items():
             lines.append(f"gpr {register} {value:#010x}")
         for register, value in case.get("vec", {}).items():
@@ -235,7 +299,8 @@ def emit(workdir: Path) -> int:
         if "override" in case:
             address, what = case["override"]
             lines.append(f"override {address:#010x} {what}")
-        lines.append(f"capture vec:{case['capture']}")
+        if "capture" in case:
+            lines.append(f"capture vec:{case['capture']}")
         spec = workdir / "specs" / f"{case['name']}.spec"
         out = workdir / "out" / f"{case['name']}.json"
         spec.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -255,6 +320,19 @@ def check(workdir: Path) -> int:
             continue
         document = json.loads(path.read_text(encoding="utf-8"))
         fired = document["provenance"].get("asserted_semantics", {})
+        if "expect_write" in case:
+            runs = [w for w in document.get("memory_writes", [])
+                    if int(w["address"], 16) == case["target"]]
+            got_write = runs[0]["after_hex"] if runs else "<no write at the target>"
+            if got_write != case["expect_write"]:
+                failures.append(f"{case['name']}: wrote {got_write} "
+                                f"want {case['expect_write']}")
+                continue
+            if fired:
+                failures.append(f"{case['name']}: module case but a behaviour fired: {fired}")
+                continue
+            passed += 1
+            continue
         got = document.get("registers", {}).get(case["capture"], "")
         want = "0x" + case["expect"]
         defect = case.get("module_defect_actual")
