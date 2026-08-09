@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <algorithm>
 #include <set>
 #include <vector>
 
@@ -125,7 +126,39 @@ int main(int argc, char** argv) {
   check(placed_rate > null_rate + 25.0,
         "and the gap is the finding, not the rate alone");
 
-  // tag >> 16 IS AN ANGLE: the 4th harmonic and only the 4th. Asserting the
+  // THE TAG'S FIELDS, as 0x82102340..0x82102364 mask them.
+  std::size_t accepted = 0, kind7 = 0;
+  std::size_t quad[4] = {0, 0, 0, 0};
+  std::uint16_t sel_min = 0xFFFF, sel_max = 0;
+  std::size_t mid_nonzero = 0;
+  // The populations are kept apart deliberately: the 92 records retail skips
+  // carry different field values, and averaging them in is how the first
+  // version of these three assertions came out wrong.
+  for (const MapInstance& q : placement->instances()) {
+    if (!q.accepted) {
+      if (((q.tag_high >> 9) & 3) != 0) ++mid_nonzero;
+      continue;
+    }
+    ++accepted;
+    if (q.kind == 7) ++kind7;
+    ++quad[q.quadrant];
+    sel_min = std::min(sel_min, q.selector);
+    sel_max = std::max(sel_max, q.selector);
+  }
+  check(accepted == 4226 && kind7 == 4226,
+        "4226 records carry 7 in the three-bit field and retail accepts those");
+  check(placement->instances().size() - accepted == 92,
+        "and skips the other 92, per 0x82102350");
+  check(quad[0] == 345 && quad[1] == 584 && quad[2] == 3277 && quad[3] == 20,
+        "the two-bit field takes all four values over the accepted records");
+  check(sel_min == 8 && sel_max == 169,
+        "the nine-bit selector runs 8..169 over the accepted records");
+  check(mid_nonzero == 78,
+        "bits 25..26 are zero on every accepted record and set on 78 skipped ones");
+
+  // The four-fold statistic of cycle 1451 is REAL and its mechanism is the
+  // two-bit field above, not an angle. Kept under test because the number is
+  // true; see the header for what it actually measures. Asserting the
   // comparison, not just the value, because a single number cannot show that
   // the structure is specifically four-fold.
   const double r4 = placement->four_fold_resultant(4);

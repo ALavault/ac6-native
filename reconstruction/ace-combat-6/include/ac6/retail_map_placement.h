@@ -42,28 +42,52 @@
 // cell. The local origin is therefore the cell's CENTRE, and cycle 1447 inferred
 // that from the +/-4096 range before this instruction was read.
 //
-// `tag >> 16` IS AN ANGLE, and cycle 1451 measured it rather than assuming it.
-// Reading the u16 as a fraction of a turn, the circular resultant of four times
-// the angle over all 4318 instances is
+// THE TAG IS FOUR FIELDS, read out of `0x82102340`..`0x82102378` at cycle 1452:
 //
-//     R(1t) 0.7035   R(2t) 0.7020   R(3t) 0.6913
-//     R(4t) 0.9757   R(5t) 0.6822   R(6t) 0.6839
+//   bits  0..15   a 16-bit value, 0..172 over Mission 01
+//   bits 16..24   NINE bits, 8..169, 160 distinct
+//   bits 25..26   zero on every accepted record
+//   bits 27..29   `(tag >> 27) & 7`; retail continues ONLY on 0 or 7
+//   bits 30..31   two bits, counts 345 / 584 / 3277 / 20
 //
-// The 4th harmonic and only the 4th. Against two null models -- 2000 uniform
-// random fields, and 2000 reshufflings that keep the multiset structure and
-// randomise only the angles -- **zero** reached 0.9757, the best uniform trial
-// being 0.0423. The three populated orientations sit at 79.08, 169.16 and
-// 259.22 degrees: gaps of 90.074 and 90.061. That is a right-angle street grid
-// rotated 79.33 degrees, which is what a city is and what a random field is not.
-// `four_fold_resultant` re-runs it so the test asserts it.
+// `0x82102340` masks three bits and `0x82102364` masks NINE -- `rlwinm
+// r29,r30,16,23,31` -- so the high half is not one number. 4,226 of 4,318
+// records carry 7 in the three-bit field and 92 carry 1, 2, 5 or 6, and
+// `0x82102350` SKIPS those 92.
 //
-// WHAT IS STILL NOT CLAIMED. The **sign** is not established. Both `+theta` and
-// `-theta` produce a 4-fold set, so the distribution cannot choose between them,
-// and cycle 1451 rendered the city three ways -- unrotated, `+`, `-` -- and the
-// pictures did not discriminate either. Nor is the scale forced: any reading
-// under which the data is 4-fold works, and "65536 is one turn" is the standard
-// convention rather than a derivation. So `tag_high` stays raw and no rotation
-// is applied anywhere in the product.
+// CORRECTING CYCLE 1451, WHICH GOT THE MECHANISM WRONG. That cycle measured the
+// circular resultant of `tag >> 16` read as a fraction of a turn and found
+// R(4t) = 0.9757 against 0.68-0.70 elsewhere, with zero of 2000 trials reaching
+// it under either null model. The statistic is real and reproducible. Its
+// explanation is not an angle: **the four-fold structure is the two-bit field in
+// bits 30..31**, which moves `tag >> 16` by exactly 0x4000 -- a quarter turn in
+// that reading -- per step. Four values of two bits, spaced 90 degrees by
+// construction. The "street grid rotated 79.33 degrees" was the average of the
+// remaining fourteen bits and means nothing.
+//
+// It is the shape cycle 1440 warned about: a statistic with a null model can
+// still be explained by the wrong mechanism, and the fix was not a better null
+// but reading the instructions that consume the field. The water-overhang test
+// cycle 1451 proposed as the next step was built and REFUTED as an instrument in
+// the same cycle -- a random-angle null scored better than either sign -- which
+// is what sent the search back to the code.
+//
+// `four_fold_resultant` is kept because the number is true and the test asserts
+// it; what it measures is a two-bit field, and this comment is the difference.
+//
+// WHAT THE NINE-BIT FIELD IS FOR. `0x82102378` passes it as `r4` to vtable slot
+// `+0x5C` (`0x82100600`), which is `this->table[0x1B63 + index]` bounds-checked
+// against the count at `this+0x74` -- a resource table, and `parts/%d` is in the
+// same string table as the `.pdl` name. So the NINE-BIT FIELD is retail's part
+// selector. `tag & 0xFFFF` is extracted separately at `0x821023B4` and used for
+// something else.
+//
+// `tools/mission01_city_render.cpp` selects models with `tag & 0xFFFF`. Every
+// instance resolved to a file, but there are 256 files and ids run 0..172, so
+// that was never evidence. The renders from cycles 1449-1451 may be drawing the
+// wrong buildings, and that is recorded rather than quietly fixed, because
+// which of the two fields names a model is not yet established -- only that
+// retail hands the nine-bit one to a table lookup.
 //
 // `part_id` -- `tag & 0xFFFF` -- is claimed only as
 // an identifier in 0..172 against 178 parts; which part each id names is not
@@ -100,8 +124,12 @@ struct MapInstance {
   float world_x = 0.0F;
   float world_y = 0.0F;
   float world_z = 0.0F;
-  std::uint16_t part_id = 0;      // tag & 0xFFFF
-  std::uint16_t tag_high = 0;     // NOT named; see the header comment
+  std::uint16_t part_id = 0;      // tag & 0xFFFF -- NOT shown to be the model
+  std::uint16_t tag_high = 0;     // the whole high half, kept for the statistic
+  std::uint16_t selector = 0;     // (tag >> 16) & 0x1FF -- 0x82102364
+  std::uint8_t quadrant = 0;      // (tag >> 30) & 3
+  std::uint8_t kind = 0;          // (tag >> 27) & 7; retail accepts 0 and 7
+  bool accepted = false;          // 0x82102344..0x82102350
   std::uint8_t coarse_x = 0;
   std::uint8_t coarse_z = 0;
 };
