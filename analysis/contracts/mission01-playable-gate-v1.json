@@ -1205,6 +1205,52 @@
             "claim": "include/ac6/retail_scalar_sin_cos.h carries the derivation, gives the reduction as an integer insert rather than a copysign call and says why floor(q+0.5) is not a substitute, records the arbitration of vmsum4fp128 with its scores, and states plainly that what is established is agreement with the micro-execution and not with the console"
           }
         ]
+      },
+      "retail_container_index": {
+        "status": "passed",
+        "statement": "the native product reproduces retail's container header parser 0x82234C18 and its getter 0x82234DD0, the last hop between a mission's model byte and an NDXR span: the version at file+4, the endian flag at file+5, the u16 header size at file+6 swapped when that flag is not 1, and at file+header_size a count followed by four parallel arrays of that many dwords whose pointers land at descriptor +0x0C, +0x10, +0x18 and +0x1C. On the byte-swapped path those pointers are derived at 0x82234C7C from the RAW count and only afterwards, at 0x82234CD0, is the swapped count written to +0x00 -- reproduced rather than corrected. The getter returns base+offset, or zero when the index is at or above the count or when the table entry is itself zero at 0x82234DF0, so a zero entry is a null and not the start of the file. Array 1 is the sub-entry's exact length and agrees with each NDXR container's own declared size at 292 of 292 in Mission 01's package, where the consumer is the singleton CX360ActorModelSetup at 0x826A0708, reached through the linker-resolved global 0x826A0728, whose vtable 0x820674D8 dispatches 0x821C1748 on entries served by 0x8228E9B8",
+        "retail_addresses": [
+          "0x82234C18",
+          "0x82234DD0",
+          "0x82234C7C",
+          "0x82234CD0",
+          "0x82234DF0",
+          "0x821C1748",
+          "0x826A0708",
+          "0x826A0728",
+          "0x820674D8",
+          "0x8228E9B8"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1423-the-last-hop.md",
+            "sha256": "40a693d7c9eb98ca09cb88ded62ddfc42fc884193b27fc0fcea24ae2889a6707",
+            "size": 4906,
+            "claim": "both functions read whole, the consumer traced from 0x820A7070 through a statically initialised global to a named singleton and its vtable slots, and the header's four fields confirmed uniform across all 94 FHMs of the package"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_container_index_tests.cpp",
+            "sha256": "cc58836544ea5011ff0396ff4f5c515c79663602df55553cef74ecf583c33bdd",
+            "size": 4902,
+            "claim": "the header fields against their source bytes, the four arrays consecutive, the getter returning addresses and refusing both an out-of-range index and a ZERO table entry, and the byte-swapped case asserting the raw-count arithmetic; with a CONTROL that subtracting neighbouring offsets DISAGREES with array 1, which is the mistake cycle 1419 made across 292 containers"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/assets/container-index-microexec.tsv",
+            "sha256": "85b193b04b52d07efc00f36e4d805592fb076ddbb3d93a63bbbe90ab35aa36ec",
+            "size": 1351,
+            "claim": "8 cases and 32 values compared bit for bit with no tolerance and zero failures, nothing stubbed and no asserted semantics; the synthetic byte-swapped case rejected a tidied port at exactly three fields -- array1 retail 0xF8000014 against a corrected 0xB000005C -- and no shipped file reaches that path, so only a synthetic case could have found it"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_container_index.h",
+            "sha256": "faae0557e6d1d2a3f42e3151fe14bef876ed7a9a3f19d37e2365d14e0a5a8e5d",
+            "size": 5309,
+            "claim": "include/ac6/retail_container_index.h carries the derivation, gives the header layout and the descriptor field by field including the +0x14 the parser never writes, records how the consumer was found through a linker-resolved global, states that array 1 is the length and that subtracting offsets counts the padding, and explains why the raw-count arithmetic on the swap path is reproduced"
+          }
+        ]
       }
     }
   }

@@ -65,7 +65,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_flight_input_accumulators.cpp
   src/retail_flight_input_apply.cpp
   src/retail_flight_input_router.cpp
-  src/retail_scalar_sin_cos.cpp)
+  src/retail_scalar_sin_cos.cpp
+  src/retail_container_index.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -271,6 +272,12 @@ add_executable(ac6-retail-flight-input-apply-tests
   tests/retail_flight_input_apply_tests.cpp)
 target_link_libraries(ac6-retail-flight-input-apply-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-flight-input-apply COMMAND ac6-retail-flight-input-apply-tests)
+
+# B1: retail's container header parser and getter -- the last hop from a model
+# byte to an NDXR span.
+add_executable(ac6-retail-container-index-tests tests/retail_container_index_tests.cpp)
+target_link_libraries(ac6-retail-container-index-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-container-index COMMAND ac6-retail-container-index-tests)
 
 # A3.1/A3.2: XMScalarSinCos, the last unfaithful scalar seam in the chain.
 add_executable(ac6-retail-scalar-sin-cos-tests tests/retail_scalar_sin_cos_tests.cpp)
