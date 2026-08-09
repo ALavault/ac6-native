@@ -1,0 +1,43 @@
+# 0x82211B40 and 0x82211988 -- the slot masks around the binding layer. Cycle 1357.
+#
+# `.pdata` has NO ROW for 0x82211B40; check_listing_against_pdata says so rather
+# than guessing, so its 51 instructions are read without a length control.
+#
+# 0x82211B40 (r3 = player block, r4 = record base, r5 = the mask word) uses NO
+# FLOATING-POINT INSTRUCTION AT ALL. It gathers a mask:
+#
+#   if [r4 + 0x08] == 0 -> return            THE RECORD'S FLAG WORD
+#   r9 = r3 + 12 ; r11 = 2
+#   loop until r11 - 2 >= 32:
+#       for d, bit in ((-4, r11-2), (0, r11-1), (4, r11), (8, r11+1)):
+#           if [r9 + d] & [r4 + 0x08] : [r5] |= 1 << bit
+#       r11 += 4 ; r9 += 16
+#
+# So it sets one bit per player-block mask word that INTERSECTS the record's flag
+# word -- the same 32 mask words at player+0x08 that 0x82211C10 walks, and the
+# same flag word `retail_input_record` already ports at record+0x08.
+#
+# 0x82211988 then reads the pair 0x82211DF8 set up and computes EDGES:
+#
+#   r9 = [this + 0xE44]      this frame's mask
+#   r10 = [this + 0xE48]     last frame's, saved by 0x82211DF8
+#   [this + 0xE4C] = r9 & ~r10           newly active
+#   [this + 0xE50] = r10 & ~r9           newly inactive
+#   [this + 0xE54] = r9 & ~r10
+#
+# THAT IS THE SAME ALGEBRA `button_edges` ALREADY PORTS, one level up. retail_input
+# computes (prev ^ cur) & cur and (prev ^ cur) & ~cur on device buttons; this
+# computes cur & ~prev and prev & ~cur on SLOTS. The two forms are equal, and the
+# second was read from a function that shares nothing with the first.
+#
+# columns: offset meaning
+this+0xE44	the active-slot mask for this frame, built by 0x82211B40 and 0x82211C10
+this+0xE48	the previous frame's, saved at the top of 0x82211DF8
+this+0xE4C	newly active slots
+this+0xE50	newly inactive slots
+this+0xE54	newly active again, a second copy
+#
+# AND THE FLOAT PASSES ALL OF THIS BY. f1 enters 0x82211DF8, survives 0x82211B40
+# and 0x82211C10 -- neither has a single floating-point instruction -- and is
+# consumed by 0x82211988, the third call. Cycle 1356 named 0x82211B40 as "the only
+# consumer of that float"; it is not a consumer at all.

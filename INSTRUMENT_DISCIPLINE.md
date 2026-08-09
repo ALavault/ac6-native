@@ -1006,8 +1006,19 @@ ABI expects it. Searching a body for a register name finds every *use* and no
 ### The rule
 
 **Absence from a body is not absence from a signature.** For a volatile argument
-register, the question is not "is it mentioned" but "is it written before the
-first call" — if it is not, it reaches that call as the caller left it.
+register, the question is not "is it mentioned" but "who writes it first" — and
+that search does not stop at the first call.
+
+**Cycle 1357 corrected this rule one cycle after it was written.** It said the
+argument reaches "that call", meaning the first one. `f1` reaches `0x82211DF8`,
+survives `0x82211B40` (51 instructions, no floating-point operation at all),
+survives `0x82211C10` (121 instructions, likewise), and is consumed by
+`0x82211988` — the **third** call. A volatile register survives every callee that
+does not write it, so the destination can be arbitrarily far down the chain.
+
+The rule is therefore: **follow the register forward through the callees, testing
+each for a write, until one uses it.** Stopping at the first call finds the wrong
+consumer as confidently as reading one body finds none.
 
 The cheap check is the caller, and it is the one direction a single-function read
 never covers. This is the sibling of *reachability by `bl`*: there, a function
