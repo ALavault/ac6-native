@@ -65,21 +65,25 @@ int main(int argc, char** argv) {
   state.position.at68 = 60.0F;
   state.position.at72 = 6000.0F;
 
+  // RATES ARE A DIRECTION AND rate_scale IS THE SPEED. retail_flight_session.h
+  // says so, from cycle 1415: the three rates come from a vector normalise the
+  // campaign refuses to approximate, and `rate_scale` is [model+32], clamped
+  // against [model+1264]. Cycle 1468 passed a magnitude-5400 "direction" and
+  // kRateToStep as the "scale", which is neither, and then recorded "what
+  // rate_scale is for" as not established -- in a header that explains it.
   FlightRates rates{};
   rates.to64 = 0.0F;
   rates.to68 = 0.0F;
-  rates.to72 = -5400.0F;                // north, toward the coast
+  rates.to72 = -1.0F;                   // north: a unit direction
 
-  // `rate_scale` is 1.0, NOT kRateToStep. The integrator applies kRateToStep
-  // itself; passing it again made the aircraft fly at 6.94 units a tick instead
-  // of 25, and the run -- which I had sized for 45,000 units -- covered 12,500
-  // and never left the water. The test reported "highest ground 0.00" twice
-  // before I printed the trajectory instead of adjusting the numbers.
-  const float rate_scale = 1.0F;
+  // 1500 in retail's units, which kRateToStep divides by 3.6 -- so about 417
+  // world units a second, and 6.94 a tick at 60 Hz. 6000 ticks is 100 seconds
+  // and covers 41,600 units: sea, coast, city and hills.
+  const float rate_scale = 1500.0F;
 
   std::size_t ticks = 0, below = 0, off_map = 0, above = 0;
   float lowest_clearance = 1e30F, highest_ground = -1e30F;
-  for (int i = 0; i < 1800; ++i) {      // 30 seconds at 60 Hz
+  for (int i = 0; i < 6000; ++i) {      // 100 seconds at 60 Hz
     integrate_session_position(state, rates, rate_scale, 0.0F, 1.0F / 60.0F);
     float ground = 0.0F;
     if (!field->height_at(state.position.at64, state.position.at72, &ground)) {
@@ -93,7 +97,7 @@ int main(int argc, char** argv) {
     if (clearance < 0.0F) ++below; else ++above;
   }
 
-  check(ticks > 1000, "the run stayed on the map");
+  check(ticks > 5000, "the run stayed on the map");
   check(state.position.at68 >= kMidFloor, "the floor held the vertical");
   check(highest_ground > 50.0F, "the run crossed ground higher than it flew");
   check(above > 100, "the run spent real time clear of the ground");
