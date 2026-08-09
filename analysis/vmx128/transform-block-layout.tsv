@@ -1,4 +1,14 @@
-# The transform block 0x822A1E80 fills, and who fills it. Cycle 1329.
+# The transform block 0x822A1E80 fills, and who fills it. Cycle 1329, NAMED 1332.
+#
+# THE BLOCK IS A `galib::CGaLocator`, named from its RTTI locator via
+# analysis/class-map.tsv rather than from its shape. ACE6::CAce6Unit's
+# constructor at 0x822A2330 installs vtable 0x82054D94 -- CGaLocator -- at BOTH
+# this+0x10 and this+0x80, so a unit carries two of them, and 0x822A1E80 is
+# handed the one at +0x80 by its callers.
+#
+# THAT ALSO ANSWERS WHAT OCCUPIES +0x00..+0x0F, open since cycle 1327: the first
+# word is the VTABLE POINTER. It is not that 0x822A1E80 happens not to write
+# there -- writing there would destroy the object's type.
 #
 # 0x822A1E80 does `r31 = r3 + 0x80` and writes its three basis rows at
 # r31+0x10/+0x20/+0x30. Its caller 0x822A23D8 does `mr r3,r31` before the call
@@ -12,11 +22,17 @@
 # that `exports/` recovers 6 instructions of this function.
 #
 # columns: offset_in_block width contents source
-0x00	16	NOT WRITTEN by 0x822A1E80; a sentinel (17,29,43,61) placed there came back untouched in all fourteen runs	-
+0x00	4	the CGaLocator vtable, 0x82054D94, installed by 0x822A2330	construction
+0x04	12	not written by 0x822A1E80; the sentinel bytes placed there survived all fourteen runs	-
 0x10	16	basis row 0	identity from 0x8204F7F0, then rotated
 0x20	16	basis row 1	identity from 0x8204F800, then rotated
 0x30	16	basis row 2	identity from 0x8204F810, then rotated
 0x40	16	([r30+0x04], [r30+0x08], [r30+0x0C], 1.0) -- the constant at 0x82001348 is 0x3F800000	0x822A23D8, stvx128 v0,r31,192
+#
+# THE CONSTRUCTOR CONFIRMS THE ROW READING INDEPENDENTLY. 0x822A2330 initialises
+# each locator's +0x40..+0x4C to (0.0, 0.0, 0.0, 1.0) -- three zeros from
+# 0x8200082C and a one from 0x82001348 -- before any transform runs. A column
+# layout would put that 1.0 somewhere else entirely.
 #
 # +0x10..+0x4F IS A 4x4 WITH THE TRANSLATION IN THE LAST ROW, and that is
 # measured rather than chosen. The three basis rows are seeded from constants
