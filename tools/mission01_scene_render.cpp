@@ -28,6 +28,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <string>
 #include <vector>
 
 namespace {
@@ -42,7 +43,29 @@ std::vector<std::uint8_t> R(const std::string& p) {
 // other building's skin, and the grey faces in that render were one particular
 // texture applied where it did not belong.
 struct Group { std::uint32_t texture = 0; std::vector<float> xyz, uv; };
-struct Part { std::vector<Group> groups; };
+// ONE PART PER (model, CLASS). A reviewer saw the bridge stacked the way the
+// aircraft were at cycle 1430, and the counts agree exactly: the package holds
+// 4,318 records and the placement list holds 4,318 instances, and the record
+// name's class token after `_m01_` histograms as l=289 m=584 s=3277 x=112
+// airport=56 -- against the tag's bits 30..31 at 345/584/3277/112, with
+// l+airport = 345 and x-skipped = 20 matching to the unit.
+//
+// So bits 30..31 select a DRAW-DISTANCE CLASS, the same l/m/s the mapset's
+// .mapparts.distanceL/M/S = 16000/12000/10000 name -- not the rotation quadrant
+// cycle 1452 read them as. Drawing every record of a model at every instance
+// draws each building as a pile of every variant of itself.
+struct Part { std::map<unsigned, std::vector<Group>> by_class; };
+static unsigned class_of(const std::string& name) {
+  const auto p = name.find("_m01_");
+  if (p == std::string::npos) return 4;
+  const auto q = name.find('_', p + 5);
+  const std::string tok = name.substr(p + 5, q - (p + 5));
+  if (tok == "l" || tok == "airport") return 0;
+  if (tok == "m") return 1;
+  if (tok == "s") return 2;
+  if (tok == "x") return 3;
+  return 4;
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -126,6 +149,8 @@ int main(int argc, char** argv) {
         for (std::uint16_t r = 0; r < c->record_count(); ++r) {
           const auto rec = c->Record(r);
           if (!rec) continue;
+          const unsigned klass = class_of(std::string(rec->name));
+          std::vector<Group>& groups = part.by_class[klass];
           for (std::uint16_t k = 0; k < rec->descriptor_count; ++k) {
             std::uint32_t tex = 0;
             for (unsigned slot = 0; slot < 4 && tex == 0; ++slot) {
@@ -138,8 +163,8 @@ int main(int argc, char** argv) {
             const auto piece = decode_ndxr_descriptor(*c, bytes.data(), bytes.size(), *d);
             if (!piece || piece->texcoords.size() < piece->positions.size()) continue;
             Group* group = nullptr;
-            for (Group& g : part.groups) if (g.texture == tex) { group = &g; break; }
-            if (group == nullptr) { part.groups.push_back(Group{tex, {}, {}}); group = &part.groups.back(); }
+            for (Group& g : groups) if (g.texture == tex) { group = &g; break; }
+            if (group == nullptr) { groups.push_back(Group{tex, {}, {}}); group = &groups.back(); }
             for (std::size_t i = 2; i < piece->indices.size(); ++i) {
               const std::uint16_t t0 = piece->indices[i - 2], t1 = piece->indices[i - 1],
                                   t2 = piece->indices[i];
@@ -192,8 +217,10 @@ int main(int argc, char** argv) {
     const float dx = q.world_x - eye.at64, dz = q.world_z - eye.at72;
     if (dx * dx + dz * dz > kDistanceL * kDistanceL) continue;
     const Part& part = part_for(q.selector);
-    if (part.groups.empty()) continue;
-    for (const Group& gr : part.groups) {
+    const unsigned klass = (static_cast<std::uint32_t>(q.tag_high) >> 14) & 3u;
+    const auto found_class = part.by_class.find(klass);
+    if (found_class == part.by_class.end()) continue;
+    for (const Group& gr : found_class->second) {
       std::vector<float> world(gr.xyz.size());
       for (std::size_t i = 0; i + 2 < gr.xyz.size(); i += 3) {
         world[i] = q.world_x + gr.xyz[i];
