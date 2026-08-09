@@ -1,0 +1,43 @@
+# Who fills the flight model's performance tables, and which class uses them.
+#
+# Cycle 1377 found the tables: a ten-entry speed breakpoint table at
+# [model+1076..1112] and ten sixteen-byte records at [model+608 + i*16], read by
+# sub_82283480 to produce the three rate limits at [+1248/1252/1256].
+#
+# BOUNDING THE POPULATION FIRST, because the naive searches are useless here:
+#   stores into [+608..+767] or [+1076..+1112]   -> 58 functions
+#   `addi rX,rY,608` or `,1076`                  -> 104 sites, nearly all frames
+# 608 is a common stack-frame size AND a common field offset. Filtering to
+# methods of THIS class family (the 36 slots of 0x82008B10 / 0x8200F270 /
+# 0x8200F310) leaves exactly ONE.
+#
+# A REFUTATION THAT THE FILTER PRODUCED. sub_8225CB20 stores to +1076, +1080,
+# +1088, +1092, +1096 and +1104 -- a perfect match for the breakpoint table, and
+# it is NOT in this family and is not called by it. It is a different class's
+# field at the same displacement. Without the filter it would have been the
+# answer, and it would have been wrong. Fifteenth displacement collision this
+# campaign.
+#
+# slot	function	class	role
+9	0x82282408	base 0x82008B10, INHERITED by 0x8200F270	fills the record table -- 311 instructions, 40 stores into +608..+767
+9	0x82303D18	0x8200F310 overrides	chains to 0x82282408, then writes +1248/1252/1256 itself
+29	0x822DDBE8	base AND 0x8200F270	THE SHARED EMPTY VIRTUAL -- a single blr
+29	0x82303A20	0x8200F310 overrides	calls the speed lookup 0x82283480, and holds the family's only slot-9 dispatch
+#
+# THE ASYMMETRY, and it is the finding. Slot 29 is where the speed-interpolated
+# lookup is driven from. 0x8200F270 -- the class that owns the position
+# integrator 0x82303110 and the control surfaces 0x82302DB0 -- leaves slot 29 as
+# the EMPTY virtual. Only the sibling 0x8200F310, whose own slot 31 is 505
+# instructions of vector aerodynamics, resamples the table.
+#
+# So the two flight models in one entity differ in kind, not only in code: one
+# takes its rate limits from whatever slot 9 established and keeps them; the
+# other re-derives them from a performance curve every time slot 29 runs.
+#
+# NOT ESTABLISHED. A capsule on 0x82282408 seeded with a flat per-offset pattern
+# faults after 79 of 311 steps, having written 53 words in seven runs (+16..+35,
+# +128..+139, +144..+255, +320..+351, +356..+383, +420..+423, +1296..+1299) and
+# NONE of them in the record table. It needs a richer environment than a flat
+# pattern -- it reads pointers -- and where its data comes from is open.
+# Its only direct caller is 0x82303D18; the lookup's are 0x82303A20, 0x82306A38
+# and 0x82329968.
