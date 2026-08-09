@@ -1,46 +1,53 @@
-# What stands between the campaign and a LIVE transform kernel in the emulator.
+# What stands between the campaign and a LIVE flight step in the emulator.
 #
-# Cycle 1381 predicted that running the flight step with slot 31 live "needs the
-# VMX128 register-file bridge that cycle 1301 built". THAT PREDICTION IS WRONG.
-# The run was made twice, identically except for `alias on`:
+# CYCLE 1383 REWRITES THIS FILE. Cycle 1382 wrote it saying four p-code
+# operations "must be supplied". They were already supplied. MicroExecuteFunction
+# has had models for vmrghw, vmrglw, lvlx and vrlimi128 all along, gated behind
+# the `vmx on` directive, which is off by default so that a snapshot without it
+# contains retail instructions only. The failing spec simply never said `vmx on`.
 #
-#   without the bridge   601 steps, 18 callees entered, fault
-#   with the bridge      601 steps, 18 callees entered, the SAME fault
+# That is the fourth time this session a wrong conclusion came from not checking
+# what the repository already has -- the thirty-first shape. The measurement that
+# settled it: adding one line took the run from 601 steps to 1034, through both
+# rotations, with no other change.
 #
-# Same step count, same instruction, same message. The bridge is not the blocker
-# and was never exercised. What stops it is a single missing p-code operation --
-# and then three more behind it.
+# WHAT ACTUALLY REMAINS, measured by running rather than by reading:
 #
-# WHERE IT STOPS. 0x820A9A64, inside sub_820A99F8, which is rotate_820A99F8 in
-# retail_transform.cpp. And the integrator 0x82303110 calls it DIRECTLY: the
-# rotation is not reached only through slot 32, which is stubbed in that run.
+# mnemonic	pcode_op	sites	kind	can it be asserted?
+vcfsx	vectorConvertFromSignedFixedPointWord	591	convert	yes -- exact, a shift and a convert
+vcmpeqfp	vectorCompareEqualToFloatingPoint	442	compare	yes -- exact
+vsel	vectorConditionalSelect	514	select	yes -- pure data movement
+vupkd3d128	vectorUnpackD3D128	264	unpack	yes -- pure data movement
+vmaddfp	vectorMultiplyAddFloatingPoint	1096	arithmetic	yes, but it is arithmetic: a wrong model gives a plausible number
+vnmsubfp	vectorNegativeMultiplySubtractFloatingPoint	708	arithmetic	same
+vrefp	vectorReciprocalEstimateFloatingPoint	244	ESTIMATE	NO -- implementation-defined
+vrsqrtefp	vectorReciprocalSquareRootEstimateFloatingPoint	274	ESTIMATE	NO -- implementation-defined
 #
-# The integrator's own fifteen vector mnemonics all execute. The four below are
-# what a rotation needs and the module does not supply.
+# THE TWO ESTIMATES ARE THE BOUNDARY. vrefp and vrsqrtefp are specified only to
+# a relative accuracy bound; their exact bits are a property of the hardware.
+# A model for them would return plausible numbers that are not the console's,
+# and every value downstream would be plausible and wrong -- the failure mode
+# this campaign is built to avoid. They are refused, not deferred.
 #
-# mnemonic	pcode_op	sites	kind	note
-lvlx	loadVectorLeftIndexed128	1167	load	EA to the next 16-byte boundary, left-justified, zero-filled
-vmrghw	vectorMergeHighWord	4228	permute	interleave the high words of two registers
-vmrglw	vectorMergeLowWord	1542	permute	interleave the low words
-vrlimi128	vectorRotateLeftImmediateMaskInsert128	734	permute	rotate by an immediate and insert under a mask
+# AND THE INTEGRATOR ALWAYS REACHES THEM. Its vector normalise at 0x823035EC is
+# guarded on all three scaled rates being below 2^-16, so setting the rate scale
+# [model+32] to zero ought to skip it. It does not. CONTROL, two runs identical
+# except for the bias registers:
 #
-# TOTAL 7671 of the 15945 CALLOTHER sites in the image -- 48%.
+#   f25 = f24 = 0            60 steps, step_limit, no fault      normalise SKIPPED
+#   f25 = 9.8/3.6, f24 = 1/pi  36 steps, fault at 0x823035F8     normalise ENTERED
 #
-# ALL FOUR ARE PURE DATA MOVEMENT. None performs arithmetic, so none can be
-# wrong in a way that produces a plausible number: an error shows up as bytes in
-# the wrong lane, not as a value one ulp out. That is the cheapest kind of
-# asserted semantics to control, and it is why this is worth doing rather than
-# routing around.
+# The fused gravity bias at 0x82303584 makes the middle component non-zero on its
+# own, and f25 is 9.8/3.6 whenever gravity is active -- which is every frame.
 #
-# THE STATUS THEY WOULD CARRY. Anything supplied through
-# registerCallOtherCallback is ASSERTED ISA SEMANTICS, not executed retail code,
-# and the harness already labels it that way (`asserted_semantics` in every
-# snapshot). The vpermwi128 override is the precedent, and the standard it set is
-# that each model is generated from a census of its own sites and validated
-# against every immediate the image actually uses.
+# WHAT THIS DOES **NOT** INVALIDATE, and the distinction is the whole point.
+# The normalise block writes only the stack vector and then [model+128/132/136].
+# It never touches r30, the position block. The three position stores at
+# 0x82303598, 0x823035AC and 0x823035B8 all precede it, and the 10.0 floor that
+# follows reads the position back from memory. So the arithmetic
+# retail_flight_step contracts is IDENTICAL on both paths, and cycle 1373's
+# differential -- which forces the skip by seeding f11 -- measures a real branch
+# of the function whose result the other branch shares.
 #
-# AND THE CONTROL IS AVAILABLE FOR FREE. rotate_820A9B30, rotate_820A99F8 and
-# rotate_82211828 are ALREADY PORTED and contracted under A3.1, and cycle 1381's
-# composite already knows the expected position block from the integrator's own
-# contracted differential. So the four models can be checked against a result
-# that was established without them.
+# Out of reach: the DIRECTION output at [model+128/132/136], which is not ported
+# and whose header says so.

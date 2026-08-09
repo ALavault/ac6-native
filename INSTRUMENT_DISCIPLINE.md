@@ -1148,6 +1148,24 @@ The failure mode is what makes this a shape rather than a typo:
   question, 811 named vtables would have become 0 and the count of unnamed ones
   would have "grown" from 306 to 1,117 with no error anywhere.
 
+### A companion the shape needed, added at cycle 1383
+
+Three days after this was written, its author concluded that four p-code
+operations "must be supplied" to the emulator, costed them, and argued for
+implementing them. **All four were already implemented**, behind a `vmx on`
+directive that is off by default and that the failing spec never set. One line
+took the run from 601 steps to 1034.
+
+So the rule below is necessary and not sufficient. Calling the repository's tools
+is not enough when the tool is *already the one you are running* and the missing
+piece is a directive it accepts. The companion:
+
+**Before concluding an instrument cannot do something, read its own directive
+list.** `MicroExecuteFunction.java` documents every spec keyword in its header
+comment; the answer was thirty lines above the code being read. The failure was
+not ignorance of the harness but confidence that the error message named a
+capability rather than a switch.
+
 ### The rule
 
 **A bound is a claim, and it needs a reason.** `< 0x82400000` was not read from
