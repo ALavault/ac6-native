@@ -143,13 +143,14 @@ semantic difference. Cycle 1414 fixed the comparator; cycle 1413 only found it
 because it was checking whether its own change had broken something.
 
 **And 138/138 is narrower than it sounds.** The 138 specs use six directives —
-`case function gpr region sp stub` — of the fifteen the harness implements. The
-nine it never exercises are `alias capture dump fpr hint override steps vec vmx`:
-every directive added since the corpus was captured, including `dump`, whose
-`region_dumps` key is the one that broke the comparator. A passing calibration
-says the integer and memory path is unchanged; it says nothing about the vector
-path, the float path, the overrides or the bridge. This measures that, and
-ratchets it so the gap cannot widen unnoticed:
+`case function gpr region sp stub` — of the fifteen the harness implements. Six
+more — `alias capture fpr override steps vec` — are exercised by the live
+`audit_*_microexec.py` suites, which is weaker: those compare the port against
+the harness, so a harness regression moves both sides and cancels, except where
+the expectation is independent of it. **Three are exercised nowhere at all:
+`dump`, `hint`, `vmx`** — and `dump` is the directive whose `region_dumps` key
+broke the comparator for 87 commits. This measures all three tiers and ratchets
+them so the gap cannot widen unnoticed:
 
     python3 tools/audit_microexec_calibration_coverage.py --specs W/specs
 
