@@ -974,6 +974,50 @@
             "claim": "include/ac6/retail_flight_export.h carries the derivation, records that slot 16 exports the middle axis raw while the outer two are blended, that the call order and store order disagree, and that the buffer is passed in and returned so the offsets an exporter does not write keep what the caller had"
           }
         ]
+      },
+      "retail_flight_command": {
+        "status": "passed",
+        "statement": "the native product reproduces the flight model's command input API -- 0x82281608, 0x822816C0 and 0x82281778, slots 12, 13 and 14 of the base vtable 0x82008B10 inherited by every branch and the only members of the family that write the commands at [+36], [+40] and [+44] -- wrapping the target angle into [-pi,+pi] by ONE step, discarding any command within pi/180 of the current angle together with its increment, taking the sign of the current angle when the wrapped target is exactly pi with -0.0 counting as positive, and on a change storing the target, setting a flag BYTE and adding the increment to an accumulator whose offset is not in slot order",
+        "retail_addresses": [
+          "0x82281608",
+          "0x822816C0",
+          "0x82281778",
+          "0x82008B10",
+          "0x82069BB0",
+          "0x8206A044",
+          "0x82069BF0",
+          "0x82675554"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1393-how-the-game-flies-the-aeroplane.md",
+            "sha256": "b9a93afe8a642dd27ce9124b34a1cd494ca63408025be73aa978f99efb7d5007",
+            "size": 4871,
+            "claim": "writers of the three command fields are 487 functions unbounded and nine inside this class family, of which these three are one-store setters on the base vtable; and their accumulator crossing 36/44/40 matches the crossing cycle 1388 derived independently from the consumer side"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_command_tests.cpp",
+            "sha256": "de9ab976c64807bba5a259da54c8e627528c4e1cf37df96ae0b58a5473b3c1d8",
+            "size": 5375,
+            "claim": "cases for the one-degree tolerance discarding the increment, the strict boundary, the one-step wrap in both directions, a far target staying out of range, exactly pi taking the current angle's sign, negative zero taking the positive branch, and the accumulators not being in slot order; with three controls all asserted not to fire"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-command-microexec.tsv",
+            "sha256": "1d38bb80b26fdfcf7c8249c2a4932c95d356ec705f55950432e6cdf32f18ba78",
+            "size": 2720,
+            "claim": "all three setters executed from their own entries over ten cases each, 120 values compared -- the return code in r3, the accumulator, the target field and the flag BYTE, four per case, so a port that stored the target without the flag fails here and nowhere else"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_command.h",
+            "sha256": "5b2fbee44d0a767608e07a75282b3d8a4420ae5b34c1192886ef3ec798c0e881",
+            "size": 3590,
+            "claim": "include/ac6/retail_flight_command.h carries the derivation, records that the wrap is one step rather than a modulo and is reproduced rather than repaired, that retail returns 0 for changed so the bool is inverted, and that the accumulator crossing was met coming the other way from cycle 1388"
+          }
+        ]
       }
     }
   }

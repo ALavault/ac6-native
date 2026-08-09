@@ -1,0 +1,35 @@
+# 0x82281608, 0x822816C0 and 0x82281778 -- slots 12, 13, 14, the
+# flight model's command input API -- micro-executed against
+# ac6::retail::set_flight_command. Four things per case: the return
+# code, the accumulator, the target field and the FLAG BYTE.
+# case	verdict	r3	accumulator	target	flag	why the case exists
+slot12-unchanged	ok	1	5.0	-99.0	0	half a degree: discarded, increment and all
+slot12-changed	ok	0	6.0	0.5349065661430359	1	two degrees: taken
+slot12-boundary	ok	0	6.0	0.5174533128738403	1	exactly one degree -- the comparison is strict
+slot12-wrap-low	ok	0	6.0	2.141592502593994	1	below -pi wraps up once
+slot12-wrap-high	ok	0	6.0	-2.141592502593994	1	above +pi wraps down once
+slot12-far	ok	0	6.0	15.707963943481445	1	three turns out stays out: one step, not a modulo
+slot12-pi-positive	ok	0	6.0	3.1415927410125732	1	exactly pi takes the sign of the current angle
+slot12-pi-negative	ok	0	6.0	-3.1415927410125732	1	and flips for a negative one
+slot12-pi-negzero	ok	0	6.0	3.1415927410125732	1	NEGATIVE ZERO takes the positive branch -- fsel
+slot12-mantissas	ok	0	6.0	1.7000000476837158	1	full mantissas
+slot13-unchanged	ok	1	5.0	-99.0	0	half a degree: discarded, increment and all
+slot13-changed	ok	0	6.0	0.5349065661430359	1	two degrees: taken
+slot13-boundary	ok	0	6.0	0.5174533128738403	1	exactly one degree -- the comparison is strict
+slot13-wrap-low	ok	0	6.0	2.141592502593994	1	below -pi wraps up once
+slot13-wrap-high	ok	0	6.0	-2.141592502593994	1	above +pi wraps down once
+slot13-far	ok	0	6.0	15.707963943481445	1	three turns out stays out: one step, not a modulo
+slot13-pi-positive	ok	0	6.0	3.1415927410125732	1	exactly pi takes the sign of the current angle
+slot13-pi-negative	ok	0	6.0	-3.1415927410125732	1	and flips for a negative one
+slot13-pi-negzero	ok	0	6.0	3.1415927410125732	1	NEGATIVE ZERO takes the positive branch -- fsel
+slot13-mantissas	ok	0	6.0	1.7000000476837158	1	full mantissas
+slot14-unchanged	ok	1	5.0	-99.0	0	half a degree: discarded, increment and all
+slot14-changed	ok	0	6.0	0.5349065661430359	1	two degrees: taken
+slot14-boundary	ok	0	6.0	0.5174533128738403	1	exactly one degree -- the comparison is strict
+slot14-wrap-low	ok	0	6.0	2.141592502593994	1	below -pi wraps up once
+slot14-wrap-high	ok	0	6.0	-2.141592502593994	1	above +pi wraps down once
+slot14-far	ok	0	6.0	15.707963943481445	1	three turns out stays out: one step, not a modulo
+slot14-pi-positive	ok	0	6.0	3.1415927410125732	1	exactly pi takes the sign of the current angle
+slot14-pi-negative	ok	0	6.0	-3.1415927410125732	1	and flips for a negative one
+slot14-pi-negzero	ok	0	6.0	3.1415927410125732	1	NEGATIVE ZERO takes the positive branch -- fsel
+slot14-mantissas	ok	0	6.0	1.7000000476837158	1	full mantissas

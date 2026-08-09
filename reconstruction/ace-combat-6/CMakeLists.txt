@@ -35,7 +35,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_live_flight_step.cpp
   src/retail_flight_rate_servo.cpp
   src/retail_control_blend.cpp
-  src/retail_flight_export.cpp)
+  src/retail_flight_export.cpp
+  src/retail_flight_command.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -235,6 +236,11 @@ add_test(NAME ac6-retail-input-record COMMAND ac6-retail-input-record-tests
 add_executable(ac6-retail-input-binding-tests tests/retail_input_binding_tests.cpp)
 target_link_libraries(ac6-retail-input-binding-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-input-binding COMMAND ac6-retail-input-binding-tests)
+
+# A3.2: the command input API, slots 12, 13 and 14 -- how the game flies.
+add_executable(ac6-retail-flight-command-tests tests/retail_flight_command_tests.cpp)
+target_link_libraries(ac6-retail-flight-command-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-flight-command COMMAND ac6-retail-flight-command-tests)
 
 # A3.2: the export functions, slots 20 and 21.
 add_executable(ac6-retail-flight-export-tests tests/retail_flight_export_tests.cpp)
