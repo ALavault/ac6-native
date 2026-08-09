@@ -1,0 +1,29 @@
+# The rotation angles of 0x82302C88 and its helper 0x82302B78,
+# micro-executed, against ac6::retail::flight_rotation_angles.
+# Row 0 runs the helper whole; row 1 stops at the instruction that
+# consumes it, with the reached-call count asserted zero.
+# case	verdict	retail_radians	why the case exists
+row0-0	ok	0.0	everything idle
+row1-0	ok	0.0	everything idle
+row2-0	ok	0.0	everything idle
+row0-1	ok	0.00020777730969712138	one frame at full deflection
+row1-1	ok	2.714956644922495e-05	one frame at full deflection
+row2-1	ok	0.0010471976129338145	one frame at full deflection
+row0-2	ok	-0.00020777730969712138	and the same negative
+row1-2	ok	-2.714956644922495e-05	and the same negative
+row2-2	ok	-0.0010471976129338145	and the same negative
+row0-3	ok	0.0872664600610733	every angle saturates high
+row1-3	ok	0.024434609338641167	every angle saturates high
+row2-3	ok	0.09424778074026108	every angle saturates high
+row0-4	ok	-12.46663761138916	row 1 saturates low; rows 0 and 2 have NO lower clamp and run past it
+row1-4	ok	-0.024434609338641167	row 1 saturates low; rows 0 and 2 have NO lower clamp and run past it
+row2-4	ok	-62.831851959228516	row 1 saturates low; rows 0 and 2 have NO lower clamp and run past it
+row0-5	ok	7.8493649198208e-05	full mantissas
+row1-5	ok	1.0256503628625069e-05	full mantissas
+row2-5	ok	0.0003956079890485853	full mantissas
+row0-6	ok	-1.2964227199554443	limits permuted, so a port that crossed two limits fails here
+row1-6	ok	0.09424778074026108	limits permuted, so a port that crossed two limits fails here
+row2-6	ok	-21.607046127319336	limits permuted, so a port that crossed two limits fails here
+row0-7	not-compared	0.006233318243175745	bit 4 set: 0x822A6400 is stubbed, so row 0 is reported and not compared
+row1-7	ok	1.3574783224612474e-05	bit 4 set: 0x822A6400 is stubbed, so row 0 is reported and not compared
+row2-7	ok	0.0005235988064669073	bit 4 set: 0x822A6400 is stubbed, so row 0 is reported and not compared

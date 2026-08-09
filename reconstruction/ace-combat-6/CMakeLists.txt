@@ -27,7 +27,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_slot_repeat.cpp
   src/retail_slot_gather.cpp
   src/retail_flight_step.cpp
-  src/retail_flight_controls.cpp)
+  src/retail_flight_controls.cpp
+  src/retail_flight_orientation.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -227,6 +228,11 @@ add_test(NAME ac6-retail-input-record COMMAND ac6-retail-input-record-tests
 add_executable(ac6-retail-input-binding-tests tests/retail_input_binding_tests.cpp)
 target_link_libraries(ac6-retail-input-binding-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-input-binding COMMAND ac6-retail-input-binding-tests)
+
+# A3.2: the orientation angles, slot 32 of 0x8200F270.
+add_executable(ac6-retail-flight-orientation-tests tests/retail_flight_orientation_tests.cpp)
+target_link_libraries(ac6-retail-flight-orientation-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-flight-orientation COMMAND ac6-retail-flight-orientation-tests)
 
 # A3.2: the flight control surfaces, slot 30 of 0x8200F270.
 add_executable(ac6-retail-flight-controls-tests tests/retail_flight_controls_tests.cpp)

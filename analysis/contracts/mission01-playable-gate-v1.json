@@ -634,6 +634,49 @@
             "claim": "include/ac6/retail_flight_controls.h carries the derivation, records the measured read and write footprint, notes that five of the eight written fields are the ones the step 0x82283898 clears on reset, and states why the offsets keep their numbers instead of being given guessed names"
           }
         ]
+      },
+      "retail_flight_orientation": {
+        "status": "passed",
+        "statement": "the native product reproduces the three rotation angles of the orientation update 0x82302C88 -- slot 32 of the vtable 0x8200F270, the third pure virtual the step 0x82283898 calls -- each built from one control axis and one per-aircraft limit, scaled by 1/15, 1/7 and 2/3 respectively and converted by pi/180 at 0x82069BF4, with the row-1 clamp SYMMETRIC and the row-0 and row-2 clamps upper-bounded only",
+        "retail_addresses": [
+          "0x82302C88",
+          "0x82302B78",
+          "0x8200F270",
+          "0x82069BF4",
+          "0x82007D5C",
+          "0x82069C1C",
+          "0x82069D1C"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1376-the-controller-and-the-kernel-are-the-same-code.md",
+            "sha256": "f942baf0c1a40ee52e1b14bc6b7d33d71acd3d341df03b695643c49b49a89055",
+            "size": 5881,
+            "claim": "0x82302C88 applies exactly the three rotations retail_transform.cpp already ports, in the order retail_transform.h records, each driven by one of the three control axes slot 30 writes with its own limit at [model+1248/1252/1256]; and its two Euler-extraction routines are measured identical to libm at 0 ulp over 42 cases"
+          },
+          {
+            "kind": "native-test",
+            "path": "reconstruction/ace-combat-6/tests/retail_flight_orientation_tests.cpp",
+            "sha256": "f98c3d3203d57659c1128ca3289a9357e83f75be3628f0f8fae35219259fc7c5",
+            "size": 8212,
+            "claim": "cases for the image constants, per-axis isolation, retail's product order, the symmetric row-1 clamp, the one-sided row-0 and row-2 clamps, and the divisor affecting row 0 alone; with three controls asserted to fire, one of which needed a larger step because a frame-sized domain never reaches the clamp"
+          },
+          {
+            "kind": "microexec",
+            "path": "analysis/flight/flight-orientation-microexec.tsv",
+            "sha256": "9243da5847c6ed7de58ade352a41268bc689058333cccfd2515eb83d02f99373",
+            "size": 1951,
+            "claim": "all three angles executed and captured from f1 -- row 0 by running 0x82302B78 whole with its rotation stubbed, rows 1 and 2 by stopping at the instruction that consumes them with the reached-call count asserted; 8 cases, 23 values compared bit for bit, and the bit-4 divisor case reported and explicitly not compared because 0x822A6400 is stubbed"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_orientation.h",
+            "sha256": "7c3a2a031ab71f2ff3e11a9e65493d61e5f283efe7751467d9c5c0eaa8fdc064",
+            "size": 5112,
+            "claim": "include/ac6/retail_flight_orientation.h carries the derivation, records that the three clamps are not alike, corrects cycle 1376's `bit 3` to bit 4 by decoding rlwinm r11,r10,28,31,31, and states that the Euler extraction is NOT ported and that 0x820936E8 returns zero below 2^-16 where std::atan2 does not"
+          }
+        ]
       }
     }
   }

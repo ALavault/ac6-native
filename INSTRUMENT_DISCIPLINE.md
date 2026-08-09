@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| a captured value **equals one of the inputs** | *the wrong answer that names the register* — suspect the capture, not the arithmetic; a register still holding a step, limit or argument means execution stopped in the wrong place, and a stubbed call costs TWO steps because stubs key on the callee's entry |
 | you are about to **correct** an earlier claim | *the over-correction* — a correction takes the same evidence as any other claim and gets far less; if it says "in A, not B", enumerate ALL the sites, because one call site is not a survey |
 | you are substituting a **library function** for a retail routine | *the verdict that averages away a different function* — compare worst-case in ulp with no tolerance, then read each non-zero case; a handful of enormous gaps among exact matches is a subdomain guard, not rounding |
 | a differential fails by **one ulp**, on some cases only | *both sides right, disagreeing on the inputs* — build every candidate rule and run them together; if they all reproduce the oracle the fixture is feeding two different numbers, and the repair a green suite rewards is the wrong one |
@@ -1344,3 +1345,44 @@ enumeration of *all* the places must be shown -- one call site is not a survey.
 The cheap check here was `callers of 0x82283480`: three of them, of which 1378
 read one. The tooling for this already exists and takes seconds; the failure was
 believing the search was finished because the answer was satisfying.
+
+## The thirty-sixth shape: the wrong answer that names the register
+
+Cycle 1380 captured a mid-function value by stopping the emulator with `steps`
+at the instruction that would consume it. Row 2 failed on all eight cases, and
+the "retail" column read **0.016666667, 1000.0, 100.377** -- in each case exactly
+the *step* that case had been given.
+
+Not a plausible angle. Not eight wrong numbers. Eight copies of one input.
+
+The window had stopped eleven instructions early, and `f1` still held what
+`fmr f1,f30` put there. The cause was in the harness rather than the target:
+**stubs are keyed on the callee's entry address**, so a stubbed call costs TWO
+steps -- the `bl`, then the stub firing at the callee's first instruction and
+setting `PC = LR`. Row 1 passed through no calls and was exact from the first
+run; row 2 passed through two.
+
+### Why the failure was cheap, and when it would not have been
+
+The disagreement was **categorical**: the captured values were not near the
+expected ones, they were identical to a known input. One glance at the column
+identified the register and therefore the stopping point.
+
+Had the window stopped one instruction early instead of eleven, `f1` would have
+held a partial product -- a plausible-looking number in the right range -- and
+the natural reading would have been "the multiply order is wrong", sending the
+cycle to re-read arithmetic that was already correct.
+
+### The rule
+
+**When a captured value equals one of the inputs, suspect the capture, not the
+arithmetic.** A register that still holds an argument, a step, a limit or a
+constant is the signature of stopping in the wrong place, and it is checkable in
+one line: compare the result against every input before comparing it against the
+expectation.
+
+And for any technique that stops execution by counting: **the count is part of
+the claim.** Assert something that changes when it is wrong -- the number of
+calls reached, the exit kind, the PC -- so a miscount fails loudly instead of
+capturing a different register. Cycle 1373 learned this for `callee_entries`;
+this is the same rule for `steps` past a stub.
