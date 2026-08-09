@@ -1,0 +1,52 @@
+# 0x82211DF8 -- where the input records reach gameplay. Cycle 1352.
+#
+# 45 instructions, .pdata declares 45, listing_against_pdata short=0.
+#
+# THE CONSTANT IS THE ONE ALREADY UNDER CONTRACT. `lis r10,-32145` then
+# `addi r30,r10,-9320` is 0x826F0000 - 0x2468 = 0x826EDB98 -- the input record
+# array of analysis/input-path/input-record-layout.tsv and of the
+# `retail_input_record` behaviour in mission01-playable-gate-v1.json.
+#
+# The loop bound is r30 + 640 with a stride of 160, so it walks EXACTLY the four
+# 0xA0-byte records. Two derivations that never met: cycle 1320 established base
+# and stride by micro-executing the producer, and this is the consumer, read.
+#
+#   r29 = this + 0xED8
+#   32 iterations: [r11 - 0x80] = 0.0 ; [r11] = 0.0 ; r11 += 4
+#       -> two 128-byte float arrays cleared, at this+0xE58 and this+0xED8
+#
+#   [this+0xE48] = [this+0xE44]        the old value is kept one slot up
+#   [this+0xE44] = 0
+#   [this+0xE4C] = [this+0xE50] = [this+0xE54] = 0
+#
+#   if [this+0x08] == 0 -> skip the body
+#   bl 0x82211B40 (r3 = this+4, r4 = 0x826EDB98, r5 = this+0xE44)
+#
+#   for i in 0..3:
+#       r3 = this + 4    + 912 * i
+#       r4 = 0x826EDB98  + 160 * i        <- THE INPUT RECORD
+#       r6 = this + 0xE58
+#       r7 = this + 0xED8
+#       r8 = this + 0xF58
+#       r9 = this + 0xFD8
+#       bl 0x82211C10
+#
+#   bl 0x82211988 (this)
+#
+# columns: what value note
+record array	0x826EDB98	same constant as the contracted producer
+record stride	0xA0	160, and the loop bound is base + 640
+records walked	4	640 / 160
+per-player stride	912	0x390, on the this+4 side
+gate	[this+0x08]	zero skips the whole body
+#
+# WHAT THIS SETTLES, and it answers a question cycle 1320 left open. The producer
+# 0x821CAA50 fills all four records from driver-pointer slot 0 -- measured under
+# three controller plans. THIS is the consumer, and it hands record i to player
+# block i. So the four records are per-player by construction on the consuming
+# side, whatever the producer did on the synthetic service the harness built.
+#
+# NOT ESTABLISHED: what 0x82211B40, 0x82211C10 and 0x82211988 do; what `this` is;
+# what the four arrays at this+0xE58, +0xED8, +0xF58 and +0xFD8 hold. The float
+# the plan expected this function to receive is NOT an argument -- 0x82211DF8
+# takes only r3.
