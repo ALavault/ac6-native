@@ -44,6 +44,10 @@
 //   vec NAME HEX               seed a vector register, 32 hex digits
 //   sp VALUE                   stack pointer; defaults to the top zero region
 //   stub ADDR NOTE             intercept the call, record it, return via LR
+//   hint NAME                  a p-code op with no architectural effect (dcbt and
+//                              friends) becomes a no-op; counted apart from
+//                              asserted semantics, because a supplied nothing is
+//                              not a supplied model
 //   alias on                   bridge the two vector register files (cycle 1301)
 //   override ADDR NAME         replace an instruction the module implements
 //                              wrongly; counted under asserted_semantics
@@ -147,6 +151,30 @@ public class MicroExecuteFunction extends GhidraScript {
 
     private boolean vmxEnabled;
     private final Map<String, Integer> assertedFired = new LinkedHashMap<>();
+
+    // ---------------------------------------------------------------- hints
+    //
+    // A cache hint is not asserted semantics. `dcbt` and its siblings are defined
+    // by the architecture to have NO effect on program state -- they are
+    // prefetches -- so a no-op reproduces them exactly rather than modelling
+    // them. The emulator still refuses them, because the module emits a
+    // CALLOTHER and gives it no behaviour.
+    //
+    // They are counted separately from `asserted_semantics` for that reason: a
+    // reader must be able to tell a supplied instruction model from a supplied
+    // nothing.
+    private final Set<String> hintOps = new LinkedHashSet<>();
+    private final Map<String, Integer> hintsFired = new LinkedHashMap<>();
+
+    private BreakCallBack noOperation(String name) {
+        return new BreakCallBack() {
+            @Override
+            public boolean pcodeCallback(PcodeOpRaw op) {
+                hintsFired.merge(name, 1, Integer::sum);
+                return true;
+            }
+        };
+    }
     private final Map<Long, String> overrides = new LinkedHashMap<>();
 
     // ------------------------------------------------- instruction overrides
@@ -417,6 +445,8 @@ public class MicroExecuteFunction extends GhidraScript {
         lastExitKind = "return";
         lastExitDetail = "";
         vmxEnabled = false;
+        hintOps.clear();
+        hintsFired.clear();
         aliasEnabled = false;
         aliasCopies = 0;
         assertedFired.clear();
@@ -557,6 +587,9 @@ public class MicroExecuteFunction extends GhidraScript {
                 case "alias":
                     aliasEnabled = "on".equals(parts[1]);
                     break;
+                case "hint":
+                    hintOps.add(parts[1]);
+                    break;
                 case "vmx":
                     // Off unless a spec asks: a snapshot produced without it is
                     // retail instructions only, and that is the default worth
@@ -635,8 +668,12 @@ public class MicroExecuteFunction extends GhidraScript {
             // Cleared per pass, not per case: both poison passes execute the
             // same instructions, so counting across them would report double.
             assertedFired.clear();
+            hintsFired.clear();
             if (vmxEnabled) {
                 registerAssertedSemantics(emulator);
+            }
+            for (String hint : hintOps) {
+                emulator.registerCallOtherCallback(hint, noOperation(hint));
             }
 
             for (Region region : regions.values()) {
@@ -858,6 +895,14 @@ public class MicroExecuteFunction extends GhidraScript {
         // instruction model is not the same claim as one that did not, and the
         // difference has to survive being read quickly.
         json.append(String.format("    \"asserted_semantics_enabled\": %s,%n", vmxEnabled));
+        json.append("    \"hint_noops\": {");
+        boolean firstHint = true;
+        for (Map.Entry<String, Integer> entry : hintsFired.entrySet()) {
+            json.append(firstHint ? "\n      " : ",\n      ");
+            firstHint = false;
+            json.append(String.format("\"%s\": %d", entry.getKey(), entry.getValue()));
+        }
+        json.append(hintsFired.isEmpty() ? "}," : "\n    },").append("\n");
         json.append(String.format("    \"register_file_bridge\": %s,%n", aliasEnabled));
         json.append(String.format("    \"alias_copies\": %d,%n", aliasCopies));
         json.append("    \"asserted_semantics\": {");

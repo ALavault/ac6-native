@@ -1,6 +1,9 @@
 # The per-controller input record, derived cycle 1316.
 # Four records at 0x826EDBA0, stride 0xA0, inside the DriverContext-fed array
-# whose base 0x826EDB98 is materialised at nine sites and nowhere else.
+# whose base 0x826EDB98 is materialised at nine sites. No DIRECT absolute
+# materialisation of a record address was observed; accesses may still be derived
+# from the base or from a record pointer passed in, which a materialisation scan
+# cannot see.
 #
 # The frame stage 0x821CA908 clears +0x00..+0x83 of each record every frame.
 # That width is not arbitrary: it is exactly the flag word plus the float array.

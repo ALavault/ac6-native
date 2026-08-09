@@ -3,10 +3,9 @@
 
 Cycles 1297-1306 left this open. The SLEIGH module assigns the LOW bit-pair of
 the immediate to destination element 0; Xenia's emitter assigns the HIGH pair.
-Xenia's own comment contradicts its code, no conformance test for the
-instruction exists, and the two immediates that would discriminate -- 0x1B and
-0xE4 -- occur in none of the image's 545 sites. Cycle 1306 concluded it needed an
-execution oracle.
+Xenia's own comment contradicts its code, and the two immediates that would
+discriminate -- 0x1B and 0xE4 -- occur in none of the image's 545 sites, so the
+image cannot run them. Cycle 1306 concluded it needed an execution oracle.
 
 It does not. XenonRecomp generated C++ for THIS XEX, and every vpermwi128 became
 an `_mm_shuffle_epi32` whose immediate is a re-encoding of the PPC one. The
@@ -71,6 +70,37 @@ def collect(root: Path) -> list[tuple[int, int]]:
     return pairs
 
 
+# Xenia's own conformance vectors, at
+# src/xenia/cpu/ppc/testing/instr_vpermwi128.s -- four cases with the source
+# [00010203, 04050607, 08090A0B, 0C0D0E0F].
+#
+# CYCLES 1309 AND 1314 SAID THIS FILE DID NOT EXIST. It does. The grep that
+# "proved" otherwise searched src/xenia/cpu/testing/, one directory too shallow;
+# the per-instruction tests live under ppc/testing/ and there are 167 of them.
+# A negative from a search whose population was never checked -- the seventeenth
+# shape, and it stood for five cycles.
+#
+# They are checked here in Python, not through the harness, because 0x1B and 0xE4
+# occur at none of the image's 545 sites: the image cannot run them.
+CONFORMANCE = {
+    0x1B: (0, 1, 2, 3),   # identity
+    0xE4: (3, 2, 1, 0),   # reverse
+    0x00: (0, 0, 0, 0),   # broadcast of x
+    0xFF: (3, 3, 3, 3),   # broadcast of w
+}
+
+
+def check_conformance() -> list[str]:
+    """The reading this file concludes, against Xenia's four published vectors."""
+    failures = []
+    for immediate, expected in CONFORMANCE.items():
+        got = tuple((immediate >> (2 * (3 - lane))) & 3 for lane in range(4))
+        if got != expected:
+            failures.append(f"0x{immediate:02X}: high-first gives {got}, "
+                            f"Xenia's test says {expected}")
+    return failures
+
+
 READINGS = {
     "high-first, reversed storage": (True, True),
     "high-first, direct storage": (True, False),
@@ -85,6 +115,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("root", type=Path)
     parser.add_argument("--report", type=Path)
     arguments = parser.parse_args(argv)
+
+    conformance = check_conformance()
+    print(f"xenia_conformance_vectors={len(CONFORMANCE)} "
+          f"disagreements={len(conformance)}")
+    for line in conformance:
+        print(f"  {line}", file=sys.stderr)
+    if conformance:
+        print("vpermwi128_crossmatch=fail reason=conformance", file=sys.stderr)
+        return 1
 
     pairs = collect(arguments.root)
     if not pairs:
@@ -122,6 +161,8 @@ def main(argv: list[str] | None = None) -> int:
             "scores": scores,
             "reading": winners[0],
             "runner_up_hits": runner_up,
+            "xenia_conformance_vectors": {f"0x{k:02X}": list(v)
+                                          for k, v in CONFORMANCE.items()},
             "evidence_class": "cross-match: generated C++ read as a re-encoding of an "
                               "instruction's semantics, never executed and never a "
                               "source for native behaviour",

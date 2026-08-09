@@ -4,7 +4,7 @@
 # 821cb288 fmuls f0,f0,f30     scale
 # columns: name value note
 bias	0x4000	subtracted before the threshold test
-deadzone	0x800	2048 of 32767, about 6.25 percent; below it nothing is stored
+deadzone	0x800	2048 of 32767, about 6.25 percent; below it nothing is stored, and the slot is therefore ZERO -- it sits inside the 0x84 the frame stage clears every frame, so a skipped lane reads as zero rather than as stale state
 scale_biased	0x82069DF0	float32(1/16383) = 1/(0x4000-1)
 scale_half	0x82069BFC	float32(1/32767) = 1/(0x8000-1), the range split_axis produces
 # The analogue sources, read from a 0x40 snapshot buffer at r1+0x60 (cycle 1316):

@@ -11,6 +11,32 @@
   },
   "reading": "high-first, reversed storage",
   "runner_up_hits": 2,
+  "xenia_conformance_vectors": {
+    "0x1B": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "0xE4": [
+      3,
+      2,
+      1,
+      0
+    ],
+    "0x00": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "0xFF": [
+      3,
+      3,
+      3,
+      3
+    ]
+  },
   "evidence_class": "cross-match: generated C++ read as a re-encoding of an instruction's semantics, never executed and never a source for native behaviour",
   "most_common_immediates": [
     {
