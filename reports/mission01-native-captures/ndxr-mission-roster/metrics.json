@@ -1,0 +1,12 @@
+{
+  "schema": "ac6.ndxr-roster-capture.v1",
+  "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, computed from the PPM the renderer wrote so that checking the PNG against it checks the pnmtopng conversion",
+  "distinct_primary_model_ids": 38,
+  "units": 230,
+  "vertices": 154351,
+  "frames": {
+    "roster": {
+      "color_hash": 4490925836089590315
+    }
+  }
+}
