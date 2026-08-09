@@ -200,3 +200,51 @@
 #      class family, which cycle 1393's search deliberately excluded.
 #
 # (3) is the one this file would bet on, and it is the one nobody has run.
+#
+# ---------------------------------------------------------------------------
+# CYCLE 1404: the data-side search, and the bridge it found.
+#
+# Cycle 1403 bet on "a second writer of +36/+40/+44 outside the class family".
+# The bet was half right and the reasoning was wrong.
+#
+# WRITERS OF ALL THREE: 142 functions. Useless -- +36/+40/+44 are three
+# consecutive floats, so every vec3 setter in the image matches. The same
+# collision that has defeated every offset-based filter in this thread.
+#
+# THE FILTER THAT WORKED was the other half of 1403's sentence: functions that
+# also touch what the CONTRACTED BINDING LAYER PRODUCES. Cycle 1352 established
+# that 0x82211DF8 hands 0x82211C10 four output arrays at this+0xE58, +0xED8,
+# +0xF58 and +0xFD8 -- 3672, 3800, 3928, 4056.
+#
+# TWO functions in the entire corpus touch any of those four displacements:
+#
+#   sub_820CC918   243 insns
+#   sub_82229250   367 insns
+#
+# Two, out of ~8,000. That is not a collision; that is a field nobody else uses.
+#
+# AND 0x82229250 IS ON THE INPUT PATH FROM BOTH SIDES:
+#   - it materialises 0x826EDB98, the contracted input record array (one of the
+#     nine sites cycle 1403 enumerated);
+#   - it touches the binding layer's output arrays;
+#   - its only caller is 0x82234040, the entity per-frame function that cycle
+#     1396 showed reads entity+4912 -- the live flight model pointer -- seventeen
+#     times, more than any other function in the image;
+#   - it calls 0x82228480, which cycle 1371's scan recorded reading
+#     entity+4912 at 0x822284B8 and dispatching a slot on it.
+#
+# So the shape is
+#
+#     0x82234040   the entity's frame
+#       -> 0x82229250   reads the input records and the binding outputs
+#         -> 0x82228480 reads entity+4912 and dispatches into the flight model
+#
+# NONE OF THIS IS THE SETTER CALL YET. 0x82229250 writes none of +36/+40/+44 and
+# its eight virtual dispatches are all at offset 32, which is generic. What it
+# is, is the first function established to sit on BOTH sides of the boundary the
+# demo's invented link spans -- and it was found by filtering on a field that two
+# functions use rather than on a slot that 151 share.
+#
+# THE LESSON, and it is the fifth filter this search has tried: filter on the
+# RAREST thing you know. A slot number is shared by 151 functions, a vec3
+# displacement by 142, and the binding layer's output array by TWO.
