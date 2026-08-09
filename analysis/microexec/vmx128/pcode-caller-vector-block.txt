@@ -1,0 +1,42 @@
+# Raw p-code over 822a1ebc..822a1ef0
+# Produced by scripts/Ac6PcodeDump.java. Read-only, no oracle.
+822a1ebc  li r8,0x20
+    r8:8 = COPY(0x20:8)
+822a1ec0  lvx128 vr0,r0,r11
+    unique[0x79080]:8 = INT_ADD(r0:8, r11:8)
+    unique[0x79180]:8 = INT_AND(unique[0x79080]:8, 0xfffffffffffffff0:8)
+    vr0:16 = LOAD(0x1a1:8, unique[0x79180]:8)
+822a1ec4  addi r11,r31,0x10
+    r11:8 = INT_ADD(r31:8, 0x10:8)
+822a1ec8  or r3,r31,r31
+    r3:8 = INT_OR(r31:8, r31:8)
+822a1ecc  stvx128 vr0,r0,r11
+    unique[0x79480]:8 = INT_ADD(r0:8, r11:8)
+    unique[0x79580]:8 = INT_AND(unique[0x79480]:8, 0xfffffffffffffff0:8)
+    - = STORE(0x1a1:8, unique[0x79580]:8, vr0:16)
+822a1ed0  lvx128 vr0,r0,r10
+    unique[0x79080]:8 = INT_ADD(r0:8, r10:8)
+    unique[0x79180]:8 = INT_AND(unique[0x79080]:8, 0xfffffffffffffff0:8)
+    vr0:16 = LOAD(0x1a1:8, unique[0x79180]:8)
+822a1ed4  lis r10,-0x7dfb
+    r10:8 = INT_LEFT(0xffffffffffff8205:8, 0x10:4)
+822a1ed8  stvx128 vr0,r11,r9
+    unique[0x79480]:8 = INT_ADD(r11:8, r9:8)
+    unique[0x79580]:8 = INT_AND(unique[0x79480]:8, 0xfffffffffffffff0:8)
+    - = STORE(0x1a1:8, unique[0x79580]:8, vr0:16)
+822a1edc  subi r10,r10,0x7f0
+    r10:8 = INT_ADD(r10:8, 0xfffffffffffff810:8)
+822a1ee0  lvx128 vr0,r0,r10
+    unique[0x79080]:8 = INT_ADD(r0:8, r10:8)
+    unique[0x79180]:8 = INT_AND(unique[0x79080]:8, 0xfffffffffffffff0:8)
+    vr0:16 = LOAD(0x1a1:8, unique[0x79180]:8)
+822a1ee4  stvx128 vr0,r11,r8
+    unique[0x79480]:8 = INT_ADD(r11:8, r8:8)
+    unique[0x79580]:8 = INT_AND(unique[0x79480]:8, 0xfffffffffffffff0:8)
+    - = STORE(0x1a1:8, unique[0x79580]:8, vr0:16)
+822a1ee8  bl 0x820a9b30
+    r2Save:8 = COPY(r2:8)
+    LR:8 = COPY(0x822a1eec:8)
+    - = CALL(ram[0x820a9b30]:4)
+822a1eec  or r3,r31,r31
+    r3:8 = INT_OR(r31:8, r31:8)

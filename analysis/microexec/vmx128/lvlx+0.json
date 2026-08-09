@@ -1,0 +1,30 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x820A9B8C",
+    "case": "vmx128:lvlx+0"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "<no function>",
+    "regions": [
+      {"name": "fixture", "base": "0xb6000000", "kind": "bytes", "size": 32, "sha256": "630dcd2966c4336691125448bbb25b4ff412a49c732db2c8abc1b8581bd710dd"},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 4096}
+    ],
+    "steps": 1,
+    "callee_entries": 0,
+    "asserted_semantics_enabled": true,
+    "asserted_semantics": {
+      "loadVectorLeftIndexed128": 1
+    },
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": ""
+  },
+  "exit": {"kind": "step_limit"},
+  "registers": {
+    "vs45": "0x000102030405060708090a0b0c0d0e0f"
+  },
+  "calls": [],
+  "memory_writes": []
+}

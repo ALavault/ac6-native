@@ -38,11 +38,14 @@
 //   case TEXT                  the case label; both sides must spell it alike
 //   steps N                    step ceiling (default 400000)
 //   region NAME BASE KIND      KIND is file:PATH | poison:SIZE | zero:SIZE
+//                              | bytes:HEX, an inline literal for small fixtures
 //   gpr rN VALUE               integer argument or seed register
 //   fpr fN VALUE               float argument; f:<double> or raw 0x... bits
+//   vec NAME HEX               seed a vector register, 32 hex digits
 //   sp VALUE                   stack pointer; defaults to the top zero region
 //   stub ADDR NOTE             intercept the call, record it, return via LR
-//   capture gpr:rN | fpr:fN    register recorded in `registers` and compared
+//   capture gpr:rN | fpr:fN | vec:NAME
+//                              register recorded in `registers` and compared
 //
 // VALUE accepts `0x...`, a decimal integer, or `REGION+0x...` / `REGION` to
 // name a region base. Only `poison:` regions are write-detected: a region the
@@ -92,9 +95,11 @@ public class MicroExecuteFunction extends GhidraScript {
     private final Map<String, Region> regions = new LinkedHashMap<>();
     private final Map<String, String> gprSeeds = new LinkedHashMap<>();
     private final Map<String, String> fprSeeds = new LinkedHashMap<>();
+    private final Map<String, String> vecSeeds = new LinkedHashMap<>();
     private final Map<Long, String> stubs = new LinkedHashMap<>();
     private final List<String> captureGpr = new ArrayList<>();
     private final List<String> captureFpr = new ArrayList<>();
+    private final List<String> captureVec = new ArrayList<>();
     private final List<String> calls = new ArrayList<>();
     private final Set<Long> stubbed = new LinkedHashSet<>();
 
@@ -273,9 +278,11 @@ public class MicroExecuteFunction extends GhidraScript {
         regions.clear();
         gprSeeds.clear();
         fprSeeds.clear();
+        vecSeeds.clear();
         stubs.clear();
         captureGpr.clear();
         captureFpr.clear();
+        captureVec.clear();
         calls.clear();
         stubbed.clear();
         capturedValues.clear();
@@ -387,6 +394,20 @@ public class MicroExecuteFunction extends GhidraScript {
                     else if ("poison".equals(region.kind) || "zero".equals(region.kind)) {
                         region.size = Integer.decode(argument);
                     }
+                    else if ("bytes".equals(region.kind)) {
+                        // A fixture small enough to read in the spec beats one in
+                        // a file the reader has to go and open.
+                        if ((argument.length() & 1) != 0) {
+                            throw new IllegalArgumentException("odd hex length: " + argument);
+                        }
+                        region.contents = new byte[argument.length() / 2];
+                        for (int i = 0; i < region.contents.length; ++i) {
+                            region.contents[i] = (byte) Integer.parseInt(
+                                argument.substring(i * 2, i * 2 + 2), 16);
+                        }
+                        region.size = region.contents.length;
+                        region.sha256 = sha256(region.contents);
+                    }
                     else {
                         throw new IllegalArgumentException("unknown region kind: " + region.kind);
                     }
@@ -398,6 +419,9 @@ public class MicroExecuteFunction extends GhidraScript {
                     break;
                 case "fpr":
                     fprSeeds.put(parts[1], parts[2]);
+                    break;
+                case "vec":
+                    vecSeeds.put(parts[1], parts[2]);
                     break;
                 case "sp":
                     stackSpec = parts[1];
@@ -420,6 +444,9 @@ public class MicroExecuteFunction extends GhidraScript {
                         }
                         else if (what.startsWith("fpr:")) {
                             captureFpr.add(what.substring(4));
+                        }
+                        else if (what.startsWith("vec:")) {
+                            captureVec.add(what.substring(4));
                         }
                         else {
                             throw new IllegalArgumentException("unknown capture: " + what);
@@ -482,7 +509,7 @@ public class MicroExecuteFunction extends GhidraScript {
             }
 
             for (Region region : regions.values()) {
-                if ("file".equals(region.kind)) {
+                if (region.contents != null) {
                     emulator.writeMemory(toAddr(region.base), region.contents);
                 }
                 else {
@@ -501,6 +528,11 @@ public class MicroExecuteFunction extends GhidraScript {
             for (Map.Entry<String, String> seed : fprSeeds.entrySet()) {
                 emulator.writeRegister(registerName(seed.getKey(),
                     seed.getKey().toUpperCase()), resolveFloat(seed.getValue()));
+            }
+            for (Map.Entry<String, String> seed : vecSeeds.entrySet()) {
+                emulator.writeRegister(registerName(seed.getKey(),
+                    seed.getKey().toUpperCase()),
+                    new BigInteger(seed.getValue().trim(), 16));
             }
             emulator.writeRegister(lr, RETURN_SENTINEL);
             emulator.writeRegister(pc, functionAddress);
@@ -560,6 +592,16 @@ public class MicroExecuteFunction extends GhidraScript {
                 for (String name : captureGpr) {
                     capturedValues.put(name, String.format("0x%08x",
                         emulator.readRegister(name).longValue() & 0xffffffffL));
+                }
+                for (String name : captureVec) {
+                    // Sixteen bytes, zero-padded: a BigInteger drops leading
+                    // zeros and a vector whose top word is zero would then
+                    // compare unequal to itself written differently.
+                    String resolved = registerName(name, name.toUpperCase());
+                    String bits = emulator.readRegister(resolved)
+                        .and(new BigInteger("ff".repeat(16), 16)).toString(16);
+                    capturedValues.put(name,
+                        "0x" + "0".repeat(32 - bits.length()) + bits);
                 }
                 for (String name : captureFpr) {
                     // Raw bits, not a decoded double: a formatted double is a

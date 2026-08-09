@@ -1,0 +1,40 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x822A1E80",
+    "case": "Rotation@node+0x0"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "Function_822A1E80",
+    "regions": [
+      {"name": "object", "base": "0xb4000000", "kind": "poison", "size": 512},
+      {"name": "stack", "base": "0xc0000000", "kind": "poison", "size": 4096}
+    ],
+    "steps": 547,
+    "callee_entries": 6,
+    "asserted_semantics_enabled": true,
+    "asserted_semantics": {
+      "loadVectorLeftIndexed128": 12,
+      "vectorRotateLeftImmediateMaskInsert128": 9,
+      "vectorMergeHighWord": 39,
+      "vectorMergeLowWord": 12
+    },
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": "object 48 bytes, stack 160 bytes"
+  },
+  "exit": {"kind": "return"},
+  "registers": {
+    "r3": "0xc0000d70",
+    "f1": "0x3fe8000000000000"
+  },
+  "calls": [],
+  "memory_writes": [
+    {"address": "0xb4000090", "size": 48, "after_hex": "00000000000000003f800000000000000000000000000000000000000000000000000000000000000000000000000000"},
+    {"address": "0xc0000cc0", "size": 100, "after_hex": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003f3b4fcd3f3b4fcd3f3b4fcd3f3b4fcd3f6e60393f6e60393f6e60393f6e6039c0000d90"},
+    {"address": "0xc0000d70", "size": 28, "after_hex": "3f6e60393f3b4fcd00000000bf6e603900000000b4000080822a1f04"},
+    {"address": "0xc0000d90", "size": 4, "after_hex": "c0000e00"},
+    {"address": "0xc0000de0", "size": 28, "after_hex": "00000000000000000000000000000000000000000000000000dead00"}
+  ]
+}
