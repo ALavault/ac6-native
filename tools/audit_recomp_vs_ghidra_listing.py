@@ -101,6 +101,18 @@ def normalise(mnemonic: str, operands: str) -> str:
         _count("or rA,rB,rB -> mr")
         return f"mr {moved.group(1)},{moved.group(2)}"
 
+    # 4d. `rotlwi rA,rS,n` IS `rlwinm rA,rS,n,0,31` -- a rotate with a full mask.
+    moved = re.fullmatch(r"rotlwi (r\d+),(r\d+),(\d+)", text)
+    if moved:
+        _count("rotlwi -> rlwinm")
+        return f"rlwinm {moved.group(1)},{moved.group(2)},{moved.group(3)},0,31"
+
+    # 4c. `clrldi rA,rS,n` IS `rldicl rA,rS,0,n`, same encoding, 64-bit form.
+    moved = re.fullmatch(r"clrldi (r\d+),(r\d+),(\d+)", text)
+    if moved:
+        _count("clrldi -> rldicl")
+        return f"rldicl {moved.group(1)},{moved.group(2)},0,{moved.group(3)}"
+
     # 4b. `clrlwi rA,rS,n` IS `rlwinm rA,rS,0,n,31`, same encoding.
     moved = re.fullmatch(r"clrlwi (r\d+),(r\d+),(\d+)", text)
     if moved:
