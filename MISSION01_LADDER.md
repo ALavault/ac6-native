@@ -245,7 +245,16 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    honest change is *applied at first update*, in the session loop — larger than
    cycle 1182 contemplated. **The product stays unchanged**, now for a proved
    reason rather than a cautious one. Single open hop: what starts the leader's
-   FSM. **Cycle 1275 corrected this: `0x82297540` has zero instruction
+   FSM. **Cycles 1275 and 1279 closed it.** The initial state is chosen on the
+   child count — `822980ec lwz r7,0xdc(r31)` / `822980f8 cmpwi cr6,r7,0x0` /
+   `8229814c ble cr6,0x82298164` — and the constructor zeroes that field
+   (`822a23ac stw r9,0xdc(r31)`) with nothing writing it before
+   `0x822980C8` runs. **Construction installs the NULL state**, which is why the
+   placement does not run at load: not a policy, an empty child list. The gap is
+   now *who writes `[unit+0xD8]`/`[unit+0xDC]` and who invokes slot `+0x38` or
+   `+0x40` afterwards*.
+
+   Cycle 1275's step: **`0x82297540` has zero instruction
    references and six `lis`+`addi` materialisations** — `0x82297A00`,
    `0x82297AE0`, `0x82297D00`, `0x8229835C`, `0x822983A4`, `0x82298480` — which
    no branch scan and no data scan can see. The hop is a reading problem now,
