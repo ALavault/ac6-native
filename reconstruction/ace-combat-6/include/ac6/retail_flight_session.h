@@ -38,6 +38,7 @@
 
 #include "ac6/retail_control_blend.h"
 #include "ac6/retail_flight_command.h"
+#include "ac6/retail_flight_input_apply.h"
 #include "ac6/retail_flight_export.h"
 #include "ac6/retail_flight_orientation.h"
 #include "ac6/retail_flight_rate_servo.h"
@@ -86,9 +87,11 @@ struct FlightSessionState {
   float current16{};      // the three angles the setters compare against
   float current20{};
   float current24{};
-  float command36{};      // the accumulators the setters write
-  float command40{};
-  float command44{};
+  // The five accumulators. Two interfaces write them: the virtual setters
+  // (retail_flight_command, the AI's) and the five direct accumulators
+  // (retail_flight_input_accumulators, the player's). Both are contracted, and
+  // the session offers a step for each.
+  FlightInputAccumulators accumulators{};
   LiveRampState ramps{};
   LiveAxisState axes{};
   FlightRates3 rates{};
@@ -112,9 +115,20 @@ struct FlightFrame {
 // Steps the chain once. The basis is rotated in A3.1's order -- row 1, then
 // row 0, then row 2 -- which cycle 1376 showed slot 32 uses and which A3.1
 // derived from a different caller entirely.
+// The AI's interface: three target angles with increments, through the virtual
+// setters. Anything within a degree of the model's current angle is discarded.
 FlightFrame step_flight_session(FlightSessionState& state,
                                 const FlightModelConfig& config,
                                 const FlightStick& stick, float step) noexcept;
+
+// The PLAYER's interface, and the one a controller actually drives: six entity
+// fields, through 0x82227E10's five loads and one subtraction into the five
+// clamped accumulators. Cycle 1405 established these are different interfaces
+// onto the same fields, not two names for one.
+FlightFrame step_flight_session(FlightSessionState& state,
+                                const FlightModelConfig& config,
+                                const FlightInputFields& fields,
+                                float step) noexcept;
 
 // A 64-bit FNV-1a over the whole state, so a replay can be pinned to one number.
 // The same digest the input log uses, for the same reason: a trajectory that

@@ -27,21 +27,21 @@ bool apply_command(float& current, float& accumulator, float target,
 
 }  // namespace
 
-FlightFrame step_flight_session(FlightSessionState& state,
+namespace {
+
+// Everything after the commands are in place. Both entry points share it, which
+// is the point: the two interfaces differ only in how the accumulators are
+// written.
+FlightFrame step_after_commands(FlightSessionState& state,
                                 const FlightModelConfig& config,
-                                const FlightStick& stick, float step) noexcept {
-  FlightFrame frame{};
-
-  // 1. the three command setters, slots 12, 13 and 14.
-  frame.accepted12 = apply_command(state.current16, state.command36,
-                                   stick.target12, stick.increment12);
-  frame.accepted13 = apply_command(state.current20, state.command44,
-                                   stick.target13, stick.increment13);
-  frame.accepted14 = apply_command(state.current24, state.command40,
-                                   stick.target14, stick.increment14);
-
+                                FlightFrame frame, float step) noexcept {
   // 2. slot 30 -- the ramps first, then the axes, as the listing has them.
   LiveRampInputs ramp_inputs{};
+  // THE HOLDS, which the first version of this file never fed. +48 and +52 are
+  // accumulators like the three axes, and retail_live_flight_ramps reads them as
+  // its two targets; leaving them zero made both ramps decay for ever.
+  ramp_inputs.cmd48 = state.accumulators.at48;
+  ramp_inputs.cmd52 = state.accumulators.at52;
   ramp_inputs.rate952 = config.rampRate952;
   ramp_inputs.rate956 = config.rampRate956;
   ramp_inputs.threshold404 = config.rampThreshold404;
@@ -50,9 +50,9 @@ FlightFrame step_flight_session(FlightSessionState& state,
   state.ramps = update_live_flight_ramps(state.ramps, ramp_inputs, step);
 
   LiveAxisInputs axis_inputs{};
-  axis_inputs.cmd36 = state.command36;
-  axis_inputs.cmd44 = state.command44;
-  axis_inputs.cmd40 = state.command40;
+  axis_inputs.cmd36 = state.accumulators.at36;
+  axis_inputs.cmd44 = state.accumulators.at44;
+  axis_inputs.cmd40 = state.accumulators.at40;
   axis_inputs.rates304 = config.rates304;
   axis_inputs.rates308 = config.rates308;
   axis_inputs.rates312 = config.rates312;
@@ -93,15 +93,39 @@ FlightFrame step_flight_session(FlightSessionState& state,
       blend_control_axis(state.axes.at312, state.rates.at152, state.decays.at412,
                          state.flags332, kSlot18Scale).value;
 
-  FlightExportFields fields{};
-  fields.at32 = 0.0F;
-  fields.at356 = 0.0F;
-  fields.at368 = state.ramps.at368;
-  fields.at372 = state.ramps.at372;
-  fields.at376 = state.ramps.at376;
+  FlightExportFields export_fields{};
+  export_fields.at32 = 0.0F;
+  export_fields.at356 = 0.0F;
+  export_fields.at368 = state.ramps.at368;
+  export_fields.at372 = state.ramps.at372;
+  export_fields.at376 = state.ramps.at376;
   frame.exported = export_flight_state_slot20(frame.exported, frame.accessors,
-                                              fields);
+                                              export_fields);
   return frame;
+}
+
+}  // namespace
+
+FlightFrame step_flight_session(FlightSessionState& state,
+                                const FlightModelConfig& config,
+                                const FlightStick& stick, float step) noexcept {
+  FlightFrame frame{};
+  frame.accepted12 = apply_command(state.current16, state.accumulators.at36,
+                                   stick.target12, stick.increment12);
+  frame.accepted13 = apply_command(state.current20, state.accumulators.at44,
+                                   stick.target13, stick.increment13);
+  frame.accepted14 = apply_command(state.current24, state.accumulators.at40,
+                                   stick.target14, stick.increment14);
+  return step_after_commands(state, config, frame, step);
+}
+
+FlightFrame step_flight_session(FlightSessionState& state,
+                                const FlightModelConfig& config,
+                                const FlightInputFields& fields,
+                                float step) noexcept {
+  FlightFrame frame{};
+  state.accumulators = apply_flight_input(state.accumulators, fields);
+  return step_after_commands(state, config, frame, step);
 }
 
 std::uint64_t digest_flight_state(const FlightSessionState& state) noexcept {

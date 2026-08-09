@@ -14,6 +14,13 @@ namespace {
 int failures = 0;
 void check(bool c, const char* w) { if (!c) { std::printf("FAIL  %s\n", w); ++failures; } }
 
+void check_bits(float a, float b, const char* w) {
+  if (std::signbit(a) != std::signbit(b) || !(a == b)) {
+    std::printf("FAIL  %s  (got %.9g, want %.9g)\n", w, a, b);
+    ++failures;
+  }
+}
+
 using namespace ac6::retail;
 
 constexpr float kFrame = 0.016666668F;
@@ -47,7 +54,7 @@ void a_neutral_stick_leaves_the_basis_alone() {
     step_flight_session(state, config(), FlightStick{}, kFrame);
   }
   check(state.basis == before, "sixty idle frames do not move the attitude");
-  check(state.command36 == 0.0F, "and nothing accumulates");
+  check(state.accumulators.at36 == 0.0F, "and nothing accumulates");
 }
 
 void a_command_within_a_degree_never_reaches_the_attitude() {
@@ -66,7 +73,7 @@ void a_real_command_reaches_the_attitude() {
   const FlightFrame first = step_flight_session(state, config(), pitch(0.5F),
                                                 kFrame);
   check(first.accepted12, "half a radian is accepted");
-  check(state.command36 != 0.0F, "the accumulator moves");
+  check(state.accumulators.at36 != 0.0F, "the accumulator moves");
   for (int i = 0; i < 30; ++i) {
     step_flight_session(state, config(), pitch(0.5F), kFrame);
   }
@@ -91,9 +98,9 @@ void each_stick_axis_reaches_its_own_accumulator() {
   s.target13 = 0.5F;
   s.increment13 = 1.0F;
   step_flight_session(state, config(), s, kFrame);
-  check(state.command44 != 0.0F, "slot 13 accumulates at command44");
-  check(state.command36 == 0.0F, "and not at command36");
-  check(state.command40 == 0.0F, "nor at command40");
+  check(state.accumulators.at44 != 0.0F, "slot 13 accumulates at command44");
+  check(state.accumulators.at36 == 0.0F, "and not at command36");
+  check(state.accumulators.at40 == 0.0F, "nor at command40");
 }
 
 void the_export_block_carries_the_accessors() {
@@ -169,7 +176,7 @@ void emit_trajectory(const char* path) {
     else if (frame < 120) { s.target14 = -0.6F; s.increment14 = 1.0F; }
     step_flight_session(state, config(), s, kFrame);
     std::fprintf(out, "%d\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g\t%.9g",
-                 frame, state.command36, state.command44, state.command40,
+                 frame, state.accumulators.at36, state.accumulators.at44, state.accumulators.at40,
                  state.axes.at304, state.axes.at308, state.axes.at312,
                  state.rates.at144);
     for (const auto& row : state.basis.rows) {
@@ -182,6 +189,41 @@ void emit_trajectory(const char* path) {
   std::fclose(out);
 }
 
+void the_player_interface_drives_the_same_state() {
+  // The two interfaces onto the same accumulators, cycle 1405. A field passed
+  // through apply_flight_input must reach the axes exactly as a stick command
+  // reaches them -- and it must NOT go through the one-degree tolerance, which
+  // is the setters' rule and not the accumulators'.
+  FlightSessionState viaFields{};
+  FlightInputFields f{};
+  f.at2104 = kOneDegree * 0.25F;     // a quarter of a degree
+  for (int i = 0; i < 60; ++i) {
+    step_flight_session(viaFields, config(), f, kFrame);
+  }
+  check(viaFields.accumulators.at36 > 0.0F,
+        "the player path accumulates a command the setters would discard");
+
+  FlightSessionState viaStick{};
+  for (int i = 0; i < 60; ++i) {
+    step_flight_session(viaStick, config(), pitch(kOneDegree * 0.25F), kFrame);
+  }
+  check_bits(viaStick.accumulators.at36, 0.0F,
+             "and the AI path discards it, as cycle 1393 measured");
+}
+
+void the_holds_reach_the_ramps() {
+  // +48 and +52 are accumulators, and retail_live_flight_ramps reads them as its
+  // two targets. The first version of this file never fed them, so both ramps
+  // decayed for ever whatever the input.
+  FlightSessionState state{};
+  FlightInputFields f{};
+  f.at2096 = 1.0F;
+  for (int i = 0; i < 30; ++i) { step_flight_session(state, config(), f, kFrame); }
+  check(state.accumulators.at48 > 0.0F, "+2096 accumulates into +48");
+  check(state.ramps.at360 > 0.0F, "and the ramp follows it");
+  check_bits(state.ramps.at364, 0.0F, "while the other ramp stays put");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -190,6 +232,8 @@ int main(int argc, char** argv) {
     return 0;
   }
   a_neutral_stick_leaves_the_basis_alone();
+  the_player_interface_drives_the_same_state();
+  the_holds_reach_the_ramps();
   a_command_within_a_degree_never_reaches_the_attitude();
   a_real_command_reaches_the_attitude();
   the_state_carries_between_frames();

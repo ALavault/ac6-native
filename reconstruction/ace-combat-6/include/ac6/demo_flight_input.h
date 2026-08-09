@@ -2,33 +2,38 @@
 
 // A controller, wired to the contracted flight chain.
 //
-// TWO HALVES, AND ONLY ONE OF THEM IS RETAIL'S.
+// WHAT CHANGED AT CYCLE 1407. This file used to invent the conversion from a
+// binding output to a flight command -- a "full-scale angle" and an "increment
+// rate" it made up, feeding the virtual setters. Cycles 1405 and 1406 found
+// retail's actual player path and contracted it, and it has none of those
+// things:
 //
-// **Contracted, measured**: a controller snapshot becomes an `InputRecord` by
-// `build_input_record` (0x821CAA50, contracted as `retail_input_record`), and
-// each axis becomes a value and a step by `apply_input_binding` (0x82211C10,
-// contracted as `retail_input_binding`). Both were verified against the retail
-// instructions by micro-execution, including the details that decide branches:
-// an idle axis leaves NEGATIVE ZERO in the record, and a binding whose processed
-// value is exactly zero writes nothing at all.
+//     the entity's field  ->  accumulator += field, clamped
 //
-// **Invented, and this file is named `demo_` for it**: the map from a binding's
-// output to the flight model's command setters. Cycle 1393 established that
-// slots 12, 13 and 14 take a TARGET ANGLE and an INCREMENT, and that they are
-// the only writers of the model's commands. What it did NOT establish is who
-// calls them, or with what -- that search was never run. So the conversion below
-// is mine:
+// straight through, except one axis which takes a difference. So the invented
+// conversion is DELETED, not reduced. What remains invented is smaller and
+// different in kind, and it is listed below rather than described.
 //
-//     target    = axis value * a chosen full-scale angle
-//     increment = |axis value| * a chosen rate
+// CONTRACTED, MEASURED, end to end:
+//   build_input_record        0x821CAA50
+//   apply_input_binding       0x82211C10
+//   apply_flight_input        0x82227E10  -- the five increments
+//   accumulate_flight_input   five direct functions
+//   ...and the twenty-two behaviours of the flight chain after them.
 //
-// If retail feeds those setters differently -- and it may well, since the
-// setters compare a target against the model's CURRENT angle and discard
-// anything within a degree -- then the stick will feel different from the game
-// while every rule downstream of it stays exact. That is a sharp and honest
-// division, and it is the last invented link in the chain.
+// STILL INVENTED, and only this:
+//   WHICH CONTROLLER AXIS FEEDS WHICH ENTITY FIELD. Cycle 1404 established that
+//   0x82229250 copies the binding layer's first two output values into +2104 and
+//   +2108; it did NOT establish which binding slot those two are, nor what fills
+//   +2096, +2100, +2112 and +2116. So the map below is a choice.
+//
+// The difference from the old invention matters. Before, the ARITHMETIC was
+// mine, so the aeroplane could respond to a stick in a way retail never would.
+// Now only the WIRING is mine: every number that reaches the flight model has
+// been through retail's own rules, and a wrong choice here swaps two axes rather
+// than changing how the aircraft flies.
 
-#include "ac6/retail_flight_session.h"
+#include "ac6/retail_flight_input_apply.h"
 #include "ac6/retail_input_binding.h"
 #include "ac6/retail_input_record.h"
 
@@ -36,31 +41,27 @@
 
 namespace ac6::demo {
 
-// The four bindings a stick needs, and the two chosen numbers. The bindings are
-// retail's own 24-byte descriptor type; their CONTENTS here are chosen, because
-// the per-player table that fills them is loaded from data this campaign has not
-// reached.
+// The bindings a stick needs. The descriptor type is retail's; its CONTENTS are
+// chosen, because the per-player table that fills them is loaded from data this
+// campaign has not reached.
 struct StickBindings {
   ac6::retail::InputBinding pitch{};
   ac6::retail::InputBinding roll{};
   ac6::retail::InputBinding yaw{};
-  float invented_full_scale_angle{1.2F};   // radians at full deflection
-  float invented_increment_rate{1.0F};
+  ac6::retail::InputBinding throttle{};
+  bool operator==(const StickBindings&) const = default;
 };
 
-// A reasonable set: a deadzone of about 8%, unit scale, a threshold at half.
-// Chosen, not read -- retail's live values come from the binding table.
+// A deadzone of about 8%, unit scale, a threshold at half. Chosen, not read.
 StickBindings default_stick_bindings() noexcept;
 
-// The contracted path: snapshot -> record -> bindings -> a stick for the
-// contracted flight session. `snapshot` is the 0x40 bytes retail copies, so
-// snapshot[n] is device[n+4] -- the convention retail_input_record.h fixes.
-ac6::retail::FlightStick stick_from_snapshot(const std::uint8_t* snapshot,
-                                             const StickBindings& bindings) noexcept;
-
-// The same, from an already-built record, for a caller that has one.
-ac6::retail::FlightStick stick_from_record(
+// Contracted path, chosen wiring: snapshot -> record -> bindings -> the six
+// entity fields 0x82227E10 reads.
+ac6::retail::FlightInputFields fields_from_record(
     const ac6::retail::InputRecord& record,
     const StickBindings& bindings) noexcept;
+
+ac6::retail::FlightInputFields fields_from_snapshot(
+    const std::uint8_t* snapshot, const StickBindings& bindings) noexcept;
 
 }  // namespace ac6::demo
