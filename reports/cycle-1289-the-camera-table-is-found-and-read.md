@@ -85,9 +85,14 @@ Two things the fallback did not say:
 - **Array A** — child 35, 27 × 192 — read by the function around `0x8225DF08`.
   Untouched.
 - **Most record fields.** `+0x60/+0x64` is 7.0 in view-0 records and 0.35 in the
-  others, so it is not an angle in general, while the fallback puts 46° at the
-  manager offsets those fields land on. **That mismatch is unresolved** and is
-  the first thing to check before anyone treats the record layout as understood.
+  others, so it is not an angle in general.
+
+  > **Corrected by cycle 1290.** This bullet continued: "while the fallback puts
+  > 46° at the manager offsets those fields land on. That mismatch is
+  > unresolved." **There is no mismatch.** The initialiser's `-0x8(r11)` store
+  > uses `f13 = [0x82002FD4] = 0.1`, not `f12`; only `+0x378/+0x37C` receives the
+  > 46°. The claim came from cycle 1283 being one register wrong and from me
+  > repeating it without reading the loop.
 - Whether a per-mission write overrides the table. Nothing else calls the
   setters and nothing else writes the range by a statically computable form; a
   runtime write through a captured pointer is not excluded.
