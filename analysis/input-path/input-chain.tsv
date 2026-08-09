@@ -32,3 +32,10 @@
 0x82343A68	float path	driver[index], null-checked, tail-calls 0x8234D2B0 with f1
 0x8234D0A0	the accessor	memcpy(out, device+0x04, 0x40) -- DriverController vtable +0x0C
 0x8234D0B8	capability mapper	1->1 2->4 3->2 4->3 5->5 else 0, stored at device+0x10
+0x821D7A90	frame update	the ladder's hop table; calls 0x821CA908 at 821d7ae8
+0x821CA908	frame input stage	82 instructions, one caller; clears four 0xA0 records at 0x826EDBA0
+0x826EDB98	record array base	four records at +0x08, stride 0xA0, bound +0x288
+0x821CB5F0	edge handler	run when a record's word 0 meets [this+0x1C]; also calls 0x821CAA50
+0x823F6DB8	float source	a pointer; virtual slot +0x1C returns the frame's float
+0x82211DF8	float consumer	called on context+0x2458C/+0x256F0/+0x26854/+0x279B8 (stride 0x1164) and this+0x20
+0x826E4EB4	game context global	already named by the ladder: mode = *([0x826E4EB4] + 0x78)
