@@ -51,6 +51,7 @@ the repository's*.
 | your listing **ended on an ordinary instruction** and you called it the function | *the instrument sampled a third of it* — a tool that can truncate must say so; check whether two hex arguments mean a range or two starts |
 | every offset in your sentence was read, and the sentence is still wrong | *the collision in the prose* — one word ("unit", "the object") naming two hierarchies; name the class, not the role |
 | your **whole suite** passes and the composite is still wrong | *fixtures that inherit the subject's convention* — a case built from the p-code's own naming cannot test that naming; construct one fixture a different way and see if it still agrees |
+| your **controls** all pass, or you never asserted that they fail | *a domain that cannot express the difference* — coverage of the input space is not coverage of the distinctions; assert `disagreements > 0` per control, and for a rounding control use inputs with long binary expansions |
 | your fixture is **self-describing** — byte `k` holds `k`, field `n` holds `n` | *the fixture whose answer is its own input* — check what a null implementation (a copy of one operand, a no-op) would produce; if that also matches, the case proves nothing |
 | your filter returned **nothing, uniformly**, and "none of them" is a plausible answer | *a guard tighter than the data it filters* — a bound is a claim and needs a reason; run the filter against a case the repository has already named, and if a repository tool answers the question, call it instead of reimplementing it |
 | you measured a **vtable's size** by reading until the words stop looking like code | *a vtable's extent read as a run of pointers* — MSVC puts each class's RTTI locator at `vtable[-1]`, so vtables are packed COL/slots/COL/slots; the class map has the boundary and "still a code pointer" cannot find it |
@@ -1163,3 +1164,50 @@ eighth entry of *The pattern* restated for guards instead of searches.
 
 The test is `test_a_descriptor_past_the_rdata_bound_is_still_read` in
 `tools/tests/test_ac6_static_tooling.py`.
+
+## The thirty-second shape: a domain that cannot express the difference
+
+Cycle 1372's first test run for the flight integrator:
+
+```
+controls: unfused=0 floor-on-all=1215 double-precision=0
+```
+
+Two of three controls — multiply-then-add instead of a fused `fmadds`, and
+double precision instead of single — **agreed with the reference on all 1,215
+sweep points**. Nine behavioural cases passed. The port was correct, and the
+suite proved nothing about the arithmetic the fused forms exist for.
+
+The cause is not a self-describing fixture (the twenty-eighth shape) and not a
+fixture inheriting the subject's convention (the twenty-third). Every input was
+**exactly representable in binary** — `13.0F`, `0.25F`, `100.0F`, `4000.0F` —
+so the product had no bits below the sum's ulp, and fusing had nothing to round
+away. The domain was fine for the branch cases and empty for the rounding cases.
+
+### Why it is easy to walk into
+
+A sweep of round numbers looks *more* rigorous than a handful of odd ones: 1,215
+points, three axes, positive and negative. Coverage of the input space and
+coverage of the *distinctions* are different quantities, and only the second one
+is what a control measures.
+
+Fused and unfused agree almost everywhere. After the fix — `0.1F`, `13.7F`,
+`907.3F`, positions near 4·10³ — the counts were **6 and 5 out of 1,215**. The
+difference the whole port turns on shows up in half a percent of a reasonable
+domain, so it has to be hunted rather than expected to appear.
+
+### The rule
+
+**Every control asserts that it disagrees.** Not "the port matches the
+reference" — that is the test. The control's own assertion is
+`check(disagreements > 0, "CONTROL ... must disagree")`, and it is the only thing
+that can distinguish a suite that verifies a rule from a suite that verifies an
+identity.
+
+And when a control is about **rounding**, the domain needs values that are not
+exactly representable. A quick test of the fixture itself: if every literal in it
+has a short binary expansion, no rounding control in that suite can ever fire.
+
+Generate the sweep from **one shared function** used by both the comparison and
+the controls. Two loops with hand-copied values drift, and the drift is invisible
+because both still pass.
