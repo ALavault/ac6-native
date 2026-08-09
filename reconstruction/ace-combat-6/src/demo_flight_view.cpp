@@ -120,6 +120,13 @@ void Image::triangle_textured(int x0, int y0, float z0, float u0, float v0,
       if (tx < 0) tx = 0; if (tx >= tw) tx = tw - 1;
       if (ty < 0) ty = 0; if (ty >= th) ty = th - 1;
       const std::uint32_t texel = texels[static_cast<std::size_t>(ty) * tw + tx];
+      // ALPHA TEST. Cycle 1478 measured the map package: 28 of 170 models carry
+      // a texture with more than 2% of its texels below alpha 128, and one is
+      // 93.4% transparent. Drawing those opaque turns a lattice -- a bridge's
+      // hangers, a fence, a tree -- into a solid slab, which is exactly what the
+      // grey faces in cycles 1475-1477 were. The cutoff is mine; the alpha is
+      // retail's, and 0xAABBGGRR is the decoder's own byte order.
+      if ((texel >> 24) < 128) continue;
       const auto ch = [&](std::uint32_t v8) {
         const float f = static_cast<float>(v8) * shade;
         return static_cast<std::uint8_t>(f < 0.0F ? 0.0F : (f > 255.0F ? 255.0F : f));
