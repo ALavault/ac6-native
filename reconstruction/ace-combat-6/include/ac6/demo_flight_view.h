@@ -135,6 +135,22 @@ void draw_terrain_view(Image& image, const ac6::retail::RetailBasis& basis,
                        const ac6::retail::TerrainField& field,
                        const ac6::retail::MapWaterGrid* water) noexcept;
 
+// Draws world-space triangles into the same view, depth-tested against whatever
+// is already there -- so a caller draws the ground first and the buildings on
+// top, and the depth buffer sorts them.
+//
+// `xyz` is nine floats per triangle, already in world coordinates. Flattening
+// the parts is the caller's job because the placement, the model cache and the
+// culling all belong to it; what belongs here is the projection, and it is the
+// same `to_camera`/`project` pair everything else in this file uses.
+//
+// Each triangle is shaded by its own normal against a fixed light. That light is
+// invented, like every other light in this file.
+void draw_world_triangles(Image& image, const ac6::retail::RetailBasis& basis,
+                          const DemoCamera& camera,
+                          const ac6::retail::FlightPosition& position,
+                          const std::vector<float>& xyz) noexcept;
+
 // Draws a decoded NDXR mesh as a wireframe, seen from `basis` at `position`.
 //
 // THE MESH IS RETAIL'S AND THE REST OF THE PICTURE IS NOT. Every vertex comes

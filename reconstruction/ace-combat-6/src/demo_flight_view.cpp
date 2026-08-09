@@ -559,3 +559,40 @@ void draw_terrain_view(Image& image, const ac6::retail::RetailBasis& basis,
 }
 
 }  // namespace ac6::demo
+
+namespace ac6::demo {
+
+void draw_world_triangles(Image& image, const ac6::retail::RetailBasis& basis,
+                          const DemoCamera& camera,
+                          const ac6::retail::FlightPosition& position,
+                          const std::vector<float>& xyz) noexcept {
+  for (std::size_t t = 0; t + 8 < xyz.size(); t += 9) {
+    const float* v = xyz.data() + t;
+    int sx[3], sy[3];
+    float depth[3];
+    bool ok = true;
+    for (int i = 0; i < 3 && ok; ++i) {
+      const Vec3 c = to_camera(basis, Vec3{v[i * 3 + 0] - position.at64,
+                                           v[i * 3 + 1] - position.at68,
+                                           v[i * 3 + 2] - position.at72});
+      depth[i] = c.z;
+      ok = project(c, camera, image.width, image.height, sx[i], sy[i]);
+    }
+    if (!ok) continue;
+    const float ax = v[3] - v[0], ay = v[4] - v[1], az = v[5] - v[2];
+    const float bx = v[6] - v[0], by = v[7] - v[1], bz = v[8] - v[2];
+    const float nx = ay * bz - az * by;
+    const float ny = az * bx - ax * bz;
+    const float nz = ax * by - ay * bx;
+    const float len = std::sqrt(nx * nx + ny * ny + nz * nz) + 1e-6F;
+    const float lit = 0.45F + 0.55F * std::fabs(ny / len);   // light, invented
+    const auto c = [&](float k) {
+      const float value = 205.0F * lit * k;
+      return static_cast<std::uint8_t>(value > 255.0F ? 255.0F : value);
+    };
+    image.triangle(sx[0], sy[0], depth[0], sx[1], sy[1], depth[1],
+                   sx[2], sy[2], depth[2], c(1.0F), c(0.96F), c(0.90F));
+  }
+}
+
+}  // namespace ac6::demo
