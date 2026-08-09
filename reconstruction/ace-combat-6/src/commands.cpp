@@ -2,6 +2,7 @@
 #include "ac6/product_runtime.h"
 #include "ac6/mission01_compare.h"
 #include "ac6/native_hud.h"
+#include "ac6/retail_content.h"
 #include "ac6/retail_session.h"
 #include "ac6/sdl_input.h"
 #include "ac6/interactive.h"
@@ -24,6 +25,59 @@
 #include <vector>
 
 namespace {
+
+int run_import_command(int argc, char** argv) {
+  std::filesystem::path source;
+  std::filesystem::path cache;
+  for (int index = 2; index < argc; index += 2) {
+    if (index + 1 >= argc) {
+      std::fprintf(stderr,
+                   "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]\n");
+      return 2;
+    }
+    const std::string_view option(argv[index]);
+    if (option == "--source" && source.empty()) {
+      source = argv[index + 1];
+    } else if (option == "--cache" && cache.empty()) {
+      cache = argv[index + 1];
+    } else {
+      std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_or_duplicate_option\n");
+      return 2;
+    }
+  }
+  if (source.empty()) {
+    std::fprintf(stderr,
+                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]\n");
+    return 2;
+  }
+  if (cache.empty()) cache = ac6::default_retail_cache_root();
+  if (cache.empty()) {
+    std::fprintf(stderr,
+                 "ac6_import=fail error=invalid_argument detail=no_absolute_XDG_or_HOME_cache_root\n");
+    return 2;
+  }
+  const ac6::RetailImportReport report =
+      ac6::RetailContentImporter{}.run(source, cache);
+  if (!report.passed()) {
+    std::fprintf(stderr, "ac6_import=fail error=%s detail=%s\n",
+                 ac6::retail_content_error_name(report.error), report.detail.c_str());
+    return 3;
+  }
+  ac6::RetailContentStore store;
+  if (!store.open(cache) || store.index_sha256() != report.index_sha256 ||
+      store.records().size() != report.imported_records) {
+    std::fprintf(stderr, "ac6_import=fail error=%s detail=%s\n",
+                 ac6::retail_content_error_name(store.error()),
+                 store.detail().c_str());
+    return 3;
+  }
+  std::fprintf(stdout,
+               "ac6_import=pass records=%zu bytes=%llu index_sha256=%s cache=%s\n",
+               report.imported_records,
+               static_cast<unsigned long long>(report.imported_bytes),
+               ac6::sha256_hex(report.index_sha256).c_str(), cache.c_str());
+  return 0;
+}
 
 bool same_world_frame(const ac6::WorldFrame& a, const ac6::WorldFrame& b) {
   return a.tick == b.tick && a.mission_id == b.mission_id &&
@@ -939,6 +993,9 @@ int run_present_manifest(int argc, char** argv) {
 }  // namespace
 
 int run_commands(int argc, char** argv) {
+  if (argc >= 2 && std::string_view(argv[1]) == "import") {
+    return run_import_command(argc, argv);
+  }
   ac6::MissionRuntime runtime(1);
   const auto frame = runtime.tick(1.0f / 60.0f, {});
   if (argc == 4 && std::string_view(argv[1]) == "--play") {

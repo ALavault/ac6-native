@@ -4,9 +4,41 @@ This package contains only the native Linux runtime boundary and headers. It
 does **not** contain retail archives, extracted assets, or an assertion of
 frame parity with the PAL disc.
 
-The PAC/DATA archives are not runtime inputs and are not required by the
-Mission 01 comparison lane. That lane consumes only bounded, content-addressed
-buffers plus a local oracle reference pack; neither is installed by CPack.
+The PAC/DATA archives are import-time inputs only. They are never installed or
+opened by the existing Mission 01 comparison lane, which consumes bounded,
+content-addressed buffers plus a local reference pack.
+
+## Retail import and sealed cache
+
+```sh
+ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]
+```
+
+The importer requires the qualified PAL `default.xex`, `DATA.TBL`,
+`DATA00.PAC` and `DATA01.PAC` identities. It parses the complete big-endian
+table with bounded 64-bit ranges, then descrambles and raw-DEFLATE decodes
+campaign entries 9–23. A wrong identity, duplicate request, truncated range,
+size-limit violation or decode error fails before a new generation is
+published.
+
+The default cache is `$XDG_CACHE_HOME/ac6-native`, or
+`$HOME/.cache/ac6-native` when the XDG path is absent. Payloads live under
+`blobs/sha256/HH/DIGEST`; a versioned binary index retains source ranges,
+storage/payload sizes and both SHA-256 identities. `current` is replaced only
+after every blob and the index have been written and synced. Abandoned
+`.staging` content is never a published generation.
+
+Audit an imported 15-mission cache against the durable campaign catalog and
+dependency inventory with:
+
+```sh
+python3 tools/audit_ac6_retail_content_cache.py CACHE_ROOT \
+  --matrix-out reports/ac6-pal-campaign-import-matrix.json
+```
+
+The matrix contains identities, ranges, hashes, observed formats and remaining
+boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is
+marked playable-supported.
 
 ## Retail session
 

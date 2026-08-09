@@ -19,7 +19,9 @@
 // about the *outcome* depends on it: the trace of executed steps and the tick at
 // which the script runs out are the same for any cadence.
 
+#include "ac6/campaign_progression.h"
 #include "ac6/product_runtime.h"
+#include "ac6/retail_content.h"
 #include "ac6/retail_mission_script.h"
 #include "ac6/retail_mission_state.h"
 
@@ -46,6 +48,16 @@ struct RetailSessionFrame {
   bool player_inside_area{};  // FUN_82268BA0 against this sub-mission's rectangle
 };
 
+// Provenance retained when a session is opened through the sealed retail
+// content store. The payload-only overload intentionally has no provenance:
+// it exists for bounded parser/runtime tests, not for a product launch.
+struct RetailSessionBundle final {
+  std::uint32_t data_table_entry{};
+  CampaignLoadout loadout{};
+  Sha256Digest content_index_sha256{};
+  bool operator==(const RetailSessionBundle&) const = default;
+};
+
 class RetailSession final {
  public:
   // Opens the payload and builds everything the session needs from it. Fails
@@ -55,12 +67,22 @@ class RetailSession final {
   static std::unique_ptr<RetailSession> open(std::vector<std::uint8_t> payload,
                                              RetailSessionConfig config);
 
+  // Product entry point. Mission ids 1..15 map to the qualified PAL campaign
+  // entries 9..23. A store that is incomplete/incompatible or a loadout with
+  // unresolved capability data is rejected before the payload is parsed.
+  static std::unique_ptr<RetailSession> open(const RetailContentStore& store,
+                                             CampaignLoadout loadout,
+                                             RetailSessionConfig config);
+
   const MissionScenario& scenario() const noexcept { return *scenario_; }
   const RetailWorld& world() const noexcept { return *world_; }
   const MissionScriptRunner& script() const noexcept { return script_; }
   MissionExecution& execution() noexcept { return *execution_; }
   const MissionExecution& execution() const noexcept { return *execution_; }
   EntityId player_entity() const noexcept { return player_entity_; }
+  const std::optional<RetailSessionBundle>& bundle() const noexcept {
+    return bundle_;
+  }
 
   // The rectangle this sub-mission installs, normalised by the port of
   // FUN_82268B28. None when the sub-mission has no tag-0 step.
@@ -104,6 +126,7 @@ class RetailSession final {
   std::unique_ptr<MissionAssetDatabase> assets_;
   std::unique_ptr<MissionExecution> execution_;
   MissionScriptRunner script_;
+  std::optional<RetailSessionBundle> bundle_;
   EntityId player_entity_{};
   std::uint32_t mission_id_{};
   std::uint64_t tick_{};

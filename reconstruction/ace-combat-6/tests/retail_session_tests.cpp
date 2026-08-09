@@ -23,14 +23,18 @@
 #include "test_fixtures.h"
 
 #include <algorithm>
+#include <array>
+#include <atomic>
 #include <cstdio>
 #include <set>
 #include <tuple>
 #include <filesystem>
 #include <fstream>
+#include <span>
 #include <sstream>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 namespace {
 
@@ -48,6 +52,120 @@ std::vector<std::uint8_t> read_file(const std::filesystem::path& path) {
   buffer << input.rdbuf();
   const std::string text = buffer.str();
   return std::vector<std::uint8_t>(text.begin(), text.end());
+}
+
+class TempStoreRoot final {
+ public:
+  TempStoreRoot() {
+    static std::atomic<unsigned> next{};
+    path_ = std::filesystem::temp_directory_path() /
+            ("ac6-retail-session-store-" + std::to_string(::getpid()) + "-" +
+             std::to_string(next++));
+    REQUIRE(std::filesystem::create_directories(path_));
+  }
+  ~TempStoreRoot() {
+    std::error_code ignored;
+    std::filesystem::remove_all(path_, ignored);
+  }
+  const std::filesystem::path& path() const noexcept { return path_; }
+
+ private:
+  std::filesystem::path path_;
+};
+
+void write_file(const std::filesystem::path& path,
+                std::span<const std::uint8_t> bytes) {
+  std::ofstream output(path, std::ios::binary | std::ios::trunc);
+  REQUIRE(static_cast<bool>(output));
+  output.write(reinterpret_cast<const char*>(bytes.data()),
+               static_cast<std::streamsize>(bytes.size()));
+  REQUIRE(static_cast<bool>(output));
+}
+
+void put_be32(std::vector<std::uint8_t>& bytes, std::size_t offset,
+              std::uint32_t value) {
+  bytes[offset] = static_cast<std::uint8_t>(value >> 24u);
+  bytes[offset + 1] = static_cast<std::uint8_t>(value >> 16u);
+  bytes[offset + 2] = static_cast<std::uint8_t>(value >> 8u);
+  bytes[offset + 3] = static_cast<std::uint8_t>(value);
+}
+
+ac6::RetailIdentityPolicy make_store_source(
+    const std::filesystem::path& source,
+    const std::vector<std::uint8_t>& payload) {
+  REQUIRE(payload.size() <= UINT32_MAX - 9u);
+  REQUIRE(std::filesystem::create_directories(source));
+  const std::vector<std::uint8_t> xex{'X', 'E', 'X', '2'};
+  const std::vector<std::uint8_t> data01{'P'};
+  std::vector<std::uint8_t> data00(9u + payload.size());
+  for (std::size_t index = 0; index < 9; ++index) {
+    data00[index] = static_cast<std::uint8_t>(index);
+  }
+  std::copy(payload.begin(), payload.end(), data00.begin() + 9);
+  ac6::retail_mode1_xor(std::span<std::uint8_t>(data00).subspan(9), 9);
+
+  std::vector<std::uint8_t> table(8u + 10u * 16u, 0);
+  put_be32(table, 0, 10);
+  put_be32(table, 4, 2);
+  for (std::uint32_t index = 0; index < 9; ++index) {
+    const std::size_t row = 8u + index * 16u;
+    put_be32(table, row, 0x00020000u);
+    put_be32(table, row + 4, index);
+    put_be32(table, row + 8, 1);
+    put_be32(table, row + 12, 1);
+  }
+  const std::size_t mission_row = 8u + 9u * 16u;
+  put_be32(table, mission_row, 0x00020000u);
+  put_be32(table, mission_row + 4, 9);
+  put_be32(table, mission_row + 8,
+           static_cast<std::uint32_t>(payload.size()));
+  put_be32(table, mission_row + 12,
+           static_cast<std::uint32_t>(payload.size()));
+
+  write_file(source / "default.xex", xex);
+  write_file(source / "DATA.TBL", table);
+  write_file(source / "DATA00.PAC", data00);
+  write_file(source / "DATA01.PAC", data01);
+
+  ac6::RetailIdentityPolicy policy;
+  policy.data_table_entries = 10;
+  policy.pack_count = 2;
+  policy.identity.xex_size = xex.size();
+  policy.identity.data_table_size = table.size();
+  policy.identity.data00_size = data00.size();
+  policy.identity.data01_size = data01.size();
+  REQUIRE(ac6::sha256_file(source / "default.xex", policy.identity.xex_sha256));
+  REQUIRE(ac6::sha256_file(source / "DATA.TBL", policy.identity.data_table_sha256));
+  REQUIRE(ac6::sha256_file(source / "DATA00.PAC", policy.identity.data00_sha256));
+  REQUIRE(ac6::sha256_file(source / "DATA01.PAC", policy.identity.data01_sha256));
+  return policy;
+}
+
+void check_store_backed_session(const std::vector<std::uint8_t>& payload) {
+  TempStoreRoot root;
+  const std::filesystem::path source = root.path() / "source";
+  const std::filesystem::path cache = root.path() / "cache";
+  const ac6::RetailIdentityPolicy policy = make_store_source(source, payload);
+  const std::array<std::uint32_t, 1> selected{9};
+  const ac6::RetailImportReport imported =
+      ac6::RetailContentImporter(policy).run(source, cache, selected);
+  REQUIRE(imported.passed());
+  REQUIRE(imported.imported_records == 1);
+
+  ac6::RetailContentStore store(policy);
+  REQUIRE(store.open(cache));
+  const ac6::CampaignLoadout loadout{1, 1, true};
+  std::unique_ptr<RetailSession> session =
+      RetailSession::open(store, loadout, {kMissionId, {0, 0}});
+  REQUIRE(session != nullptr);
+  REQUIRE(session->bundle().has_value());
+  REQUIRE(session->bundle()->data_table_entry == 9);
+  REQUIRE(session->bundle()->loadout == loadout);
+  REQUIRE(session->bundle()->content_index_sha256 == store.index_sha256());
+  REQUIRE(RetailSession::open(store, {1, 1, false}, {kMissionId, {0, 0}}) ==
+          nullptr);
+  REQUIRE(RetailSession::open(store, loadout, {0, {0, 0}}) == nullptr);
+  REQUIRE(RetailSession::open(store, loadout, {16, {0, 0}}) == nullptr);
 }
 
 // The same input every run: the session must be a function of the payload and
@@ -382,6 +500,8 @@ int main(int argc, char** argv) {
   // the second.
   std::unique_ptr<RetailSession> probe = RetailSession::open(payload, {kMissionId, {0, 0}});
   REQUIRE(probe != nullptr);
+  REQUIRE(!probe->bundle().has_value());
+  check_store_backed_session(payload);
   const std::vector<ac6::retail::ScenarioSubMission>& sub_missions =
       probe->scenario().sub_missions();
   REQUIRE(sub_missions.size() == 4);

@@ -24,6 +24,24 @@ std::optional<EntityId> local_player_entity(const RetailUnitBuild& build) noexce
   return std::nullopt;
 }
 
+std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& store,
+                                                   CampaignLoadout loadout,
+                                                   RetailSessionConfig config) {
+  if (!store.valid() || !loadout.valid() || config.mission_id == 0 ||
+      config.mission_id > kPalCampaignDataTableEntries.size()) {
+    return nullptr;
+  }
+  const std::uint32_t data_table_entry =
+      kPalCampaignDataTableEntries[config.mission_id - 1];
+  std::vector<std::uint8_t> payload;
+  if (!store.read_payload(data_table_entry, payload)) return nullptr;
+  std::unique_ptr<RetailSession> session = open(std::move(payload), config);
+  if (session == nullptr) return nullptr;
+  session->bundle_ = RetailSessionBundle{
+      data_table_entry, loadout, store.index_sha256()};
+  return session;
+}
+
 std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> bytes,
                                                    RetailSessionConfig config) {
   std::optional<ScenarioPayload> payload = ScenarioPayload::open(std::move(bytes));

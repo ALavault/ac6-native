@@ -27,6 +27,7 @@ elseif(MSVC)
 endif()
 
 option(AC6_BUILD_PLATFORM "Build the SDL3/Vulkan frontend" ON)
+find_package(ZLIB REQUIRED)
 
 add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cpp
   src/render_manifest.cpp src/frontend_runtime.cpp src/combat_scenario_frontend.cpp
@@ -70,9 +71,12 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_ndxr_geometry.cpp
   src/retail_terrain_field.cpp
   src/retail_map_placement.cpp
-  src/retail_map_water.cpp)
+  src/retail_map_water.cpp
+  src/sha256.cpp
+  src/retail_content.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
+target_link_libraries(ac6_product_core PRIVATE ZLIB::ZLIB)
 
 if(AC6_BUILD_PLATFORM)
   find_package(PkgConfig REQUIRED)
@@ -346,6 +350,10 @@ add_executable(ac6-retail-container-index-tests tests/retail_container_index_tes
 target_link_libraries(ac6-retail-container-index-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-container-index COMMAND ac6-retail-container-index-tests)
 
+add_executable(ac6-retail-content-tests tests/retail_content_tests.cpp)
+target_link_libraries(ac6-retail-content-tests PRIVATE ac6_product_core ZLIB::ZLIB)
+add_test(NAME ac6-retail-content COMMAND ac6-retail-content-tests)
+
 # A3.1/A3.2: XMScalarSinCos, the last unfaithful scalar seam in the chain.
 add_executable(ac6-retail-scalar-sin-cos-tests tests/retail_scalar_sin_cos_tests.cpp)
 target_link_libraries(ac6-retail-scalar-sin-cos-tests PRIVATE ac6_product_core)
@@ -494,6 +502,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/seal_mission01_reference.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_native_package.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_campaign_catalog.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_retail_content_cache.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_campaign_manifest.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_code_reachability.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/probe_ntxr_bc.py
