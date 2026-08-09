@@ -125,6 +125,20 @@ int main(int argc, char** argv) {
   check(placed_rate > null_rate + 25.0,
         "and the gap is the finding, not the rate alone");
 
+  // tag >> 16 IS AN ANGLE: the 4th harmonic and only the 4th. Asserting the
+  // comparison, not just the value, because a single number cannot show that
+  // the structure is specifically four-fold.
+  const double r4 = placement->four_fold_resultant(4);
+  check(r4 > 0.95, "the 4th harmonic resultant is near 1");
+  for (int h : {1, 2, 3, 5, 6}) {
+    check(placement->four_fold_resultant(h) < r4 - 0.2,
+          "and it stands well clear of every neighbouring harmonic");
+  }
+  std::printf("R(4t) %.4f  vs 1t %.4f 2t %.4f 3t %.4f 5t %.4f 6t %.4f\n", r4,
+              placement->four_fold_resultant(1), placement->four_fold_resultant(2),
+              placement->four_fold_resultant(3), placement->four_fold_resultant(5),
+              placement->four_fold_resultant(6));
+
   std::printf("instances %zu  ids %zu  x %.0f..%.0f  z %.0f..%.0f  "
               "flat %.1f%% vs null %.1f%%\n",
               placement->instances().size(), ids.size(), min_x, max_x, min_z,

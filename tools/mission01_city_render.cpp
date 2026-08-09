@@ -6,10 +6,12 @@
 // `decode_ndxr_descriptor` for the geometry. The camera, the palette and the
 // light are mine and are not claimed to be retail's.
 //
-// NO ROTATION IS APPLIED. `tag >> 16` is decoded and deliberately unnamed
-// (retail_map_placement.h), so every part is drawn axis-aligned. Buildings that
-// should face along a street will not, and that is a known gap rather than a
-// surprise.
+// ROTATION. `tag >> 16` is 4-fold periodic in u16 space at R(4*theta) = 0.9757,
+// against ~0.69 at every other harmonic and 0 of 2000 random fields under two
+// null models (cycle 1451) -- a right-angle street grid at 79.33 degrees. Pass
+// a trailing `+1` or `-1` to apply it with that sign, or `0` to draw
+// axis-aligned as cycle 1449 did. The SIGN is not derived; it is chosen by
+// looking at the two renders, and the report says so.
 //
 // usage: city_render MAPDIR OUT.ppm eye_x eye_y eye_z yaw pitch [range]
 #include "ac6/demo_flight_view.h"
@@ -46,6 +48,7 @@ int main(int argc, char** argv) {
   const float yaw = std::strtof(argv[6], nullptr) * 3.14159265F / 180.0F;
   const float pitch = std::strtof(argv[7], nullptr) * 3.14159265F / 180.0F;
   const float range = argc > 8 ? std::strtof(argv[8], nullptr) : 12000.0F;
+  const float spin = argc > 9 ? std::strtof(argv[9], nullptr) : 0.0F;
 
   const auto grid = Read(dir + "/004_00_01_02_03.bin");
   const auto patches = Read(dir + "/005_Bl_02_b8.bin");
@@ -161,6 +164,8 @@ int main(int argc, char** argv) {
       it = cache.emplace(q.part_id, std::move(tris)).first;
     }
     if (it->second.empty()) { ++missing; continue; }
+    const float theta = spin * 2.0F * 3.14159265F * float(q.tag_high) / 65536.0F;
+    const float ct = std::cos(theta), st = std::sin(theta);
     for (const Tri& t : it->second) {
       const float ax = t.x[1] - t.x[0], ay = t.y[1] - t.y[0], az = t.z[1] - t.z[0];
       const float bx = t.x[2] - t.x[0], by = t.y[2] - t.y[0], bz = t.z[2] - t.z[0];
@@ -168,10 +173,13 @@ int main(int argc, char** argv) {
       const float len = std::sqrt(nx * nx + ny * ny + nz * nz) + 1e-6F;
       const float lit = 0.45F + 0.55F * std::fabs(ny / len);
       const int v = int(200 * lit);
-      emit({{q.world_x + t.x[0], q.world_x + t.x[1], q.world_x + t.x[2]},
-            {q.world_y + t.y[0], q.world_y + t.y[1], q.world_y + t.y[2]},
-            {q.world_z + t.z[0], q.world_z + t.z[1], q.world_z + t.z[2]}},
-           v, int(v * 0.95F), int(v * 0.88F));
+      Tri w;
+      for (int i = 0; i < 3; ++i) {
+        w.x[i] = q.world_x + t.x[i] * ct - t.z[i] * st;
+        w.y[i] = q.world_y + t.y[i];
+        w.z[i] = q.world_z + t.x[i] * st + t.z[i] * ct;
+      }
+      emit(w, v, int(v * 0.95F), int(v * 0.88F));
       ++drawn;
     }
   }

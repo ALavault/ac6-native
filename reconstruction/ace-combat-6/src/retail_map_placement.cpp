@@ -1,5 +1,6 @@
 #include "ac6/retail_map_placement.h"
 
+#include <cmath>
 #include <cstring>
 
 namespace ac6::retail {
@@ -64,6 +65,17 @@ std::optional<MapPlacement> MapPlacement::open(const std::uint8_t* pdl,
     }
   }
   return out;
+}
+
+double MapPlacement::four_fold_resultant(int harmonic) const {
+  if (instances_.empty()) return 0.0;
+  double sn = 0.0, cs = 0.0;
+  for (const MapInstance& q : instances_) {
+    const double a = harmonic * 2.0 * 3.14159265358979323846 * q.tag_high / 65536.0;
+    sn += std::sin(a);
+    cs += std::cos(a);
+  }
+  return std::hypot(sn, cs) / static_cast<double>(instances_.size());
 }
 
 const PlacementCell& MapPlacement::cell(std::size_t coarse_x,

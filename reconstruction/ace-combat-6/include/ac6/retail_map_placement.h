@@ -42,10 +42,30 @@
 // cell. The local origin is therefore the cell's CENTRE, and cycle 1447 inferred
 // that from the +/-4096 range before this instruction was read.
 //
-// WHAT IS NOT CLAIMED. `tag >> 16` varies over 171 values across Mission 01 and
-// is left as `tag_high`. A rotation is the obvious reading; cycles 1428, 1440
-// and 1441 are each a case of the obvious reading being wrong here, and no
-// control has been run on it. `part_id` -- `tag & 0xFFFF` -- is claimed only as
+// `tag >> 16` IS AN ANGLE, and cycle 1451 measured it rather than assuming it.
+// Reading the u16 as a fraction of a turn, the circular resultant of four times
+// the angle over all 4318 instances is
+//
+//     R(1t) 0.7035   R(2t) 0.7020   R(3t) 0.6913
+//     R(4t) 0.9757   R(5t) 0.6822   R(6t) 0.6839
+//
+// The 4th harmonic and only the 4th. Against two null models -- 2000 uniform
+// random fields, and 2000 reshufflings that keep the multiset structure and
+// randomise only the angles -- **zero** reached 0.9757, the best uniform trial
+// being 0.0423. The three populated orientations sit at 79.08, 169.16 and
+// 259.22 degrees: gaps of 90.074 and 90.061. That is a right-angle street grid
+// rotated 79.33 degrees, which is what a city is and what a random field is not.
+// `four_fold_resultant` re-runs it so the test asserts it.
+//
+// WHAT IS STILL NOT CLAIMED. The **sign** is not established. Both `+theta` and
+// `-theta` produce a 4-fold set, so the distribution cannot choose between them,
+// and cycle 1451 rendered the city three ways -- unrotated, `+`, `-` -- and the
+// pictures did not discriminate either. Nor is the scale forced: any reading
+// under which the data is 4-fold works, and "65536 is one turn" is the standard
+// convention rather than a derivation. So `tag_high` stays raw and no rotation
+// is applied anywhere in the product.
+//
+// `part_id` -- `tag & 0xFFFF` -- is claimed only as
 // an identifier in 0..172 against 178 parts; which part each id names is not
 // established, and neither is the third word of the header record.
 //
@@ -104,6 +124,10 @@ class MapPlacement {
     return static_cast<float>(coarse) * kPlacementCoarseUnits - kPlacementOriginBias
            + local;
   }
+
+  // The circular resultant of `harmonic * theta`, reading tag_high as a
+  // fraction of a turn. 1.0 is perfect alignment, 0.0 is uniform.
+  double four_fold_resultant(int harmonic = 4) const;
 
   std::size_t header_total() const { return header_total_; }
   std::size_t body_records() const { return body_records_; }

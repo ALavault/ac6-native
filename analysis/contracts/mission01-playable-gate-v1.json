@@ -1331,7 +1331,7 @@
       },
       "retail_map_placement": {
         "status": "passed",
-        "statement": "the native product decodes retail's .pdl map-part placement list with the layout 0x82102148 uses: 256 sixteen-byte header records, one per coarse cell at coarse_z * 16 + coarse_x, then a body of sixteen-byte instances of three big-endian floats and a tag. The field is +0x28 of CMapManager and its size +0x5C, both assigned by the loader 0x820FBC28 from the name '%s.pdl' at 0x8205BDE8, and 0x820FBF5C establishes that a four-byte file means empty, so open refuses one rather than reporting zero. The header's count/offset reading is not assumed: open requires the 256 counts to sum to exactly (size - 4096) / 16 and refuses the file otherwise, which for Mission 01 is 4318 both ways. Positions are local and the world transform is coarse * 8192 - 61440 read from 0x8210220C..0x82102220, where 61440 is the 65536 world bias less half a coarse cell, so the local origin is the cell centre. tag & 0xFFFF is claimed only as an identifier in 0..172 against 178 parts; tag >> 16 and the header's third word are decoded and deliberately NOT named",
+        "statement": "the native product decodes retail's .pdl map-part placement list with the layout 0x82102148 uses: 256 sixteen-byte header records, one per coarse cell at coarse_z * 16 + coarse_x, then a body of sixteen-byte instances of three big-endian floats and a tag. The field is +0x28 of CMapManager and its size +0x5C, both assigned by the loader 0x820FBC28 from the name '%s.pdl' at 0x8205BDE8, and 0x820FBF5C establishes that a four-byte file means empty, so open refuses one rather than reporting zero. The header's count/offset reading is not assumed: open requires the 256 counts to sum to exactly (size - 4096) / 16 and refuses the file otherwise, which for Mission 01 is 4318 both ways. Positions are local and the world transform is coarse * 8192 - 61440 read from 0x8210220C..0x82102220, where 61440 is the 65536 world bias less half a coarse cell, so the local origin is the cell centre. tag & 0xFFFF is claimed only as an identifier in 0..172 against 178 parts. tag >> 16 is an ANGLE, measured not assumed: reading the u16 as a fraction of a turn, the circular resultant of four times the angle over all 4318 instances is 0.9757 against 0.68-0.70 at every other harmonic, and zero of 2000 uniform random fields and zero of 2000 structure-preserving reshuffles reached it; the three populated orientations sit 90.074 and 90.061 degrees apart, a right-angle street grid at 79.33 degrees. Neither the SIGN nor the scale is established -- both +theta and -theta give a four-fold set and three renders did not discriminate -- so the field stays raw and no rotation is applied anywhere in the product. The header's third word is decoded and not named",
         "retail_addresses": [
           "0x82102148",
           "0x820FBC28",
@@ -1350,15 +1350,15 @@
           {
             "kind": "native-test",
             "path": "reconstruction/ace-combat-6/tests/retail_map_placement_tests.cpp",
-            "sha256": "2ab271d3e49e89c2969535496cabd6ec6bb8c271f957e649eb940b467c3fab13",
-            "size": 6198,
-            "claim": "the real list decoded: the header partitions the body at 4318 both ways, 173 part ids in 0..172, every instance asserted to lie inside the coarse cell its header filed it under, and a CONTROL that lands all 4318 on the independently ported heightfield -- 98.5% on flat ground against 49.8% for a deterministic null model of the same size, with the gap itself asserted rather than the rate alone"
+            "sha256": "af9eb271a4776a3b193eb3a747f1dfe1f23009ae32def6022083bad1a5e5e87f",
+            "size": 6975,
+            "claim": "the real list decoded: the header partitions the body at 4318 both ways, 173 part ids in 0..172, every instance asserted to lie inside the coarse cell its header filed it under, and a CONTROL that lands all 4318 on the independently ported heightfield -- 98.5% on flat ground against 49.8% for a deterministic null model of the same size, with the gap itself asserted rather than the rate alone; and the four-fold statistic re-run in the test, asserting not just that R(4t) exceeds 0.95 but that it stands clear of all five neighbouring harmonics, because one number cannot show the structure is specifically four-fold"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_map_placement.h",
-            "sha256": "99f58b8c6fa46fdbf6f62c083ae6d8f760ecfdb3f9868aebc48e4fd23e5cdc83",
-            "size": 5094,
+            "sha256": "eb5d0f75d16deb81a8491867b95c9b308e1399b334172fa53ab00d29fb7ec14d",
+            "size": 6392,
             "claim": "the header carries the derivation with the loader's field-to-extension table, the consumer's instruction addresses for the header stride and the world transform, the reason a four-byte file is refused, and an explicit statement of what is decoded but not named"
           }
         ]
