@@ -305,6 +305,43 @@ for _offset in (0, 4, 12):
 
 CASES += MODULE_CASES
 
+# ALIASING. Every case above uses distinct registers for destination and sources,
+# and the real code does not: 0x820A9C2C is `vmrghw v0,v0,v7` (D == A),
+# 0x820A9BC8 is `vmrglw v8,v11,v8` (D == B) and 0x820A9BF0 is
+# `vpermwi128 vr12,vr12,0x2c` (D == B). An implementation that writes the
+# destination lane by lane while still reading a source clobbers itself, and a
+# suite that never aliases cannot see it -- the twenty-seventh shape wearing a
+# different face. These three are real sites, so the aliasing under test is the
+# aliasing the harness will meet.
+CASES += [
+    {
+        "name": "vmrghw-aliased-dest-is-A",
+        "function": 0x820A9C2C,
+        "vec": {"vs32": VA, "vs39": VB},   # v0, v7
+        "capture": "vs32",
+        "expect": EXPECT_MRGHW,
+    },
+    {
+        "name": "vmrglw-aliased-dest-is-B",
+        "function": 0x820A9BC8,
+        "vec": {"vs43": VA, "vs40": VB},   # v11, v8
+        "capture": "vs40",
+        "expect": EXPECT_MRGLW,
+    },
+    {
+        # The module's own implementation, aliased. uimm 0x2C low-first (what the
+        # module does) selects 0, 3, 2, 0; high-first selects 0, 2, 3, 0.
+        "name": "vpermwi128-aliased-module",
+        "function": 0x820A9BF0,
+        "vec": {"vr12": VB},
+        "capture": "vr12",
+        "expect": VB_W[0] + VB_W[2] + VB_W[3] + VB_W[0],
+        "module": True,
+        "module_defect_actual": VB_W[0] + VB_W[3] + VB_W[2] + VB_W[0],
+    },
+]
+
+
 # THE OVERRIDE'S OWN IMMEDIATES. Cycle 1304 wrote "one immediate pair is not a
 # test of an immediate" about vrlimi128; the same applies to my own replacement
 # for vpermwi128, which until now was checked at 0xAC and nowhere else. The six
