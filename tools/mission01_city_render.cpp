@@ -134,7 +134,8 @@ int main(int argc, char** argv) {
     if (!q.accepted) { ++skipped; continue; }
     const float dx = q.world_x - ex, dz = q.world_z - ez;
     if (dx * dx + dz * dz > range * range) continue;
-    const std::uint16_t model = selector_field ? q.selector : q.part_id;
+    const std::uint16_t model =
+        selector_field ? q.selector : q.record_index;
     auto it = cache.find(model);
     if (it == cache.end()) {
       char name[64];

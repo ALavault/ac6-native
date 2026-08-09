@@ -45,6 +45,15 @@ texture references by GIDX against the 192 NTXR wrappers in the same retail
 bundle. The explicit test-payload overload carries no store provenance and is
 not an accepted interactive content path.
 
+`RetailMission01MapRenderAssets` turns the placed-city branch into persistent
+CPU resources without extracted filenames. It decodes 4,318 NDXR record
+primitives once (112,719 vertices and 138,610 strip indices), retains the 170
+referenced NTXR wrappers for explicit one-time upload, and builds 4,226 draw
+commands after applying retail's 92 skips. Each command is a fail-closed
+`(model selector, record index)` binding; the 4,318 source pairs cover the
+4,318 records exactly once and their record-name class agrees with the `.pdl`
+class in every case. No rotation or substitute transform is invented.
+
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is
 marked playable-supported.

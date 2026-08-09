@@ -208,6 +208,18 @@ RetailMission01SceneBundle::texture_by_gidx(std::uint32_t identifier) const {
              : std::optional<std::span<const std::uint8_t>>(found->second);
 }
 
+std::optional<std::vector<Mission01TextureResourceView>>
+RetailMission01SceneBundle::texture_resources() const {
+  const std::optional<TextureRegistry> registry = texture_registry();
+  if (!registry.has_value()) return std::nullopt;
+  std::vector<Mission01TextureResourceView> resources;
+  resources.reserve(registry->size());
+  for (const auto& [identifier, bytes] : *registry) {
+    resources.push_back({identifier, bytes});
+  }
+  return resources;
+}
+
 std::optional<Mission01TextureBindingReport>
 RetailMission01SceneBundle::audit_texture_bindings() const {
   const std::optional<TextureRegistry> registry = texture_registry();

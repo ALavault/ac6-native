@@ -127,16 +127,19 @@
 //     entirely inside the models;
 //   - `tag & 0xFFFF` reaches **170, 171 and 172**, which are not models.
 //
-// So `tag & 0xFFFF` is NOT a model id, and cycle 1453's picture -- which leaned
-// the other way because the nine-bit render "looked wrong" -- was decided by
-// eye against three things that can be read. The pair of the two fields is still
-// unique per instance (4,226 instances, 27,680 possible pairs, zero collisions
-// where chance predicts about 323), so the low sixteen bits carry something; what
-// they carry is unread.
+// So `tag & 0xFFFF` is NOT a model id. It is the RECORD INDEX INSIDE the model
+// selected by the nine-bit field. This is a complete cross-file join, not a
+// picture: `(selector, tag & 0xFFFF)` addresses an in-range NDXR record for
+// 4,318 of 4,318 instances, the 4,318 pairs are unique, every one of the 4,318
+// records is referenced once, and the record-name class agrees with bits
+// 30..31 for all 4,318. The accepted subset is 4,226; the other 92 retain the
+// same exact binding but are skipped by `0x82102350`.
 //
-// `part_id` -- `tag & 0xFFFF` -- is claimed only as
-// an identifier in 0..172 against 178 parts; which part each id names is not
-// established, and neither is the third word of the header record.
+// `0x821023B4` also passes this value beside the `.nud` resource selected by
+// the nine-bit field to `0x822C2868`. That consumer is the placed-part segment
+// query, not the renderer, so the native rendering claim rests on the exact
+// NDXR/placement bijection rather than assigning unproved draw semantics to
+// the query. The third word of the header record remains unestablished.
 //
 // THE CONTROLS live in the test, because a placement is only as good as what it
 // lands on. `retail_map_placement_tests` puts every instance on the ported
@@ -169,7 +172,7 @@ struct MapInstance {
   float world_x = 0.0F;
   float world_y = 0.0F;
   float world_z = 0.0F;
-  std::uint16_t part_id = 0;      // tag & 0xFFFF -- NOT the model; see above
+  std::uint16_t record_index = 0; // tag & 0xFFFF within `selector`; see above
   std::uint16_t tag_high = 0;     // the whole high half, kept for the statistic
   std::uint16_t selector = 0;     // (tag >> 16) & 0x1FF -- the parts/%d index
   std::uint8_t draw_class = 0;    // (tag >> 30) & 3 -- l/m/s/x, see above

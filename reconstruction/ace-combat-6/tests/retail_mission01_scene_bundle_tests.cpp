@@ -1,4 +1,5 @@
 #include "ac6/retail_mission01_scene_bundle.h"
+#include "ac6/retail_mission01_map_render_assets.h"
 #include "ac6/ntxr_texture.h"
 #include "ac6/retail_ndxr_container.h"
 
@@ -8,6 +9,7 @@
 #include <cstring>
 #include <numeric>
 #include <span>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -180,6 +182,20 @@ void diagnose_model_bindings(const ac6::retail::RetailMission01SceneBundle& scen
 
 void check_synthetic_bundle() {
   using namespace ac6::retail;
+  check(mission01_map_draw_class("mapparts_m01_l_0001") ==
+            Mission01MapDrawClass::Large &&
+            mission01_map_draw_class("mapparts_m01_airport_0001") ==
+                Mission01MapDrawClass::Large &&
+            mission01_map_draw_class("mapparts_m01_m_0001") ==
+                Mission01MapDrawClass::Medium &&
+            mission01_map_draw_class("mapparts_m01_s_0001") ==
+                Mission01MapDrawClass::Small &&
+            mission01_map_draw_class("mapparts_m01_x_0001") ==
+                Mission01MapDrawClass::Extra,
+        "the five qualified record-name tokens map to four draw classes");
+  check(!mission01_map_draw_class("mapparts_m01_unknown_0001").has_value() &&
+            !mission01_map_draw_class("mapparts_m01_l").has_value(),
+        "an unknown or unterminated record-name token fails closed");
   const std::vector<std::uint8_t> world = valid_world();
   const std::optional<RetailMission01SceneBundle> scene =
       RetailMission01SceneBundle::open_payload_for_testing(world);
@@ -203,6 +219,13 @@ void check_synthetic_bundle() {
   check(scene->map_resource(Mission01MapResource::PlacedTrees).has_value() &&
             scene->map_resource(Mission01MapResource::PlacedTrees)->size() == 145944,
         "the placed-tree resource is addressed by retail index, not filename");
+  const std::optional<RetailMission01SceneBundle> placeholder_scene =
+      RetailMission01SceneBundle::open_payload_for_testing(world);
+  check(placeholder_scene.has_value() &&
+            !RetailMission01MapRenderAssets::build_for_testing(
+                 std::move(*placeholder_scene))
+                 .has_value(),
+        "placeholder NDXR payloads cannot become render assets");
 
   std::vector<std::uint8_t> invalid = world;
   const std::array<std::uint32_t, 3> texture_path{21, 15, 0};
@@ -298,6 +321,53 @@ void check_qualified_cache(const char* cache_path) {
         bindings->material_slots, bindings->texture_references,
         bindings->unique_texture_references, bindings->texture_wrappers);
   }
+
+  const std::optional<RetailMission01MapRenderAssets> assets =
+      RetailMission01MapRenderAssets::open(store);
+  check(assets.has_value(),
+        "the qualified map bundle builds immutable render assets");
+  if (!assets.has_value()) return;
+  const Mission01MapRenderAssetReport& render = assets->report();
+  check(assets->store_backed() && render.complete,
+        "the render assets retain the sealed content generation");
+  check(render.model_files == 170 && render.source_records == 4318 &&
+            render.decoded_primitives == 4318,
+        "all 170 models and 4318 record primitives decode once");
+  check(render.texture_references == 4318 && render.texture_assets == 170,
+        "the primitives close on the 170 map-part texture assets");
+  check(render.source_instances == 4318 && render.record_bindings == 4318 &&
+            render.draw_instances == 4226 && render.skipped_instances == 92,
+        "the exact placement-to-record bijection excludes only retail's skips");
+  check(render.draw_classes == std::array<std::size_t, 4>{345, 584, 3277, 20},
+        "the persistent draw list retains the four accepted classes");
+  check(render.vertices == 112719 && render.indices == 138610,
+        "the immutable geometry population is pinned exactly");
+  std::size_t resolved_draws = 0;
+  for (const Mission01MapDrawInstance& draw : assets->draw_instances()) {
+    if (assets->primitive_for(draw) != nullptr) ++resolved_draws;
+  }
+  check(resolved_draws == 4226,
+        "every persistent draw command resolves one immutable primitive");
+  Mission01MapDrawInstance invalid = assets->draw_instances().front();
+  invalid.record_index = 0xFFFF;
+  check(assets->primitive_for(invalid) == nullptr,
+        "an out-of-range draw command cannot alias another primitive");
+  NtxrRefusal refusal = NtxrRefusal::BadHeader;
+  const std::optional<DecodedTexture> texture =
+      assets->decode_texture(4169, true, &refusal);
+  check(texture.has_value() && refusal == NtxrRefusal::None &&
+            texture->width == 512 && texture->height == 512 &&
+            texture->pixels.size() == 512u * 512u,
+        "a persistent map texture decodes explicitly for one-time upload");
+  check(!assets->decode_texture(0xFFFFFFFFu, true, &refusal).has_value() &&
+            refusal == NtxrRefusal::BadHeader,
+        "an unregistered texture id fails closed");
+  std::printf(
+      "retail map assets models=%zu records=%zu vertices=%zu indices=%zu "
+      "textures=%zu draws=%zu skipped=%zu\n",
+      render.model_files, render.source_records, render.vertices,
+      render.indices, render.texture_assets, render.draw_instances,
+      render.skipped_instances);
 }
 
 }  // namespace

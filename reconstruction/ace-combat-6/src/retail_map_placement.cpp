@@ -57,7 +57,7 @@ std::optional<MapPlacement> MapPlacement::open(const std::uint8_t* pdl,
       instance.world_x = world_from_local(cx, be_float(r));
       instance.world_y = be_float(r + 4);
       instance.world_z = world_from_local(cz, be_float(r + 8));
-      instance.part_id = static_cast<std::uint16_t>(tag & 0xFFFFu);
+      instance.record_index = static_cast<std::uint16_t>(tag & 0xFFFFu);
       instance.tag_high = static_cast<std::uint16_t>(tag >> 16);
       instance.selector = static_cast<std::uint16_t>((tag >> 16) & 0x1FFu);
       instance.draw_class = static_cast<std::uint8_t>((tag >> 30) & 3u);

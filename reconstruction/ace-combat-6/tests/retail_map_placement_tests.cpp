@@ -4,6 +4,7 @@
 // DATA DRIVEN, exiting 77 when the container is absent: the extracted corpus is
 // retail content and is never committed.
 #include "ac6/retail_map_placement.h"
+#include "ac6/retail_mission01_map_render_assets.h"
 #include "ac6/retail_ndxr_container.h"
 #include "ac6/retail_terrain_field.h"
 
@@ -31,16 +32,18 @@ std::vector<std::uint8_t> slurp(const std::filesystem::path& p) {
 // A deterministic generator, so the null model is the same on every machine.
 std::uint32_t next(std::uint32_t& s) { s = s * 1664525u + 1013904223u; return s; }
 
-// THE DRAW CLASS, JOINED AGAINST THE PACKAGE'S OWN RECORD NAMES.
+// THE RECORD BINDING, JOINED AGAINST THE PACKAGE'S OWN RECORD ARRAY.
 //
-// Each record name carries a class token after `_m01_`. If bits 30..31 are that
-// class, the two histograms must agree -- and they do, to the unit, across four
-// buckets and 4,318 records. Nothing is fitted: the tag counts come from the
-// placement list and the name counts from the models, which are different files
-// parsed by different code.
-void check_class_join(const std::filesystem::path& dir, const std::size_t quad[4],
-                      std::size_t skipped) {
+// The nine-bit selector chooses the NDXR file and bits 0..15 choose its record.
+// Every pair must be in range, unique and exhaustive; its name's class must
+// independently agree with bits 30..31. This is stronger than the four global
+// histograms because it closes each of the 4,318 individual bindings.
+void check_record_join(const std::filesystem::path& dir,
+                       const ac6::retail::MapPlacement& placement,
+                       const std::size_t quad[4], std::size_t skipped) {
+    using namespace ac6::retail;
     std::map<std::string, std::size_t> tokens;
+    std::vector<std::vector<Mission01MapDrawClass>> classes(170);
     std::size_t records = 0;
     for (int id = 0; id < 170; ++id) {
       char name[64];
@@ -55,6 +58,9 @@ void check_class_join(const std::filesystem::path& dir, const std::size_t quad[4
         if (!record) continue;
         ++records;
         const std::string text(record->name);
+        const auto draw_class = mission01_map_draw_class(text);
+        check(draw_class.has_value(), "every map record has a known draw class");
+        if (draw_class) classes[id].push_back(*draw_class);
         const auto at = text.find("_m01_");
         if (at == std::string::npos) continue;
         const auto end = text.find('_', at + 5);
@@ -68,9 +74,48 @@ void check_class_join(const std::filesystem::path& dir, const std::size_t quad[4
     // class 3 counts only the ACCEPTED records; x includes the 92 retail skips.
     check(tokens["x"] == quad[3] + skipped,
           "class 3 is x, less the records retail skips");
+
+    std::set<std::uint32_t> all_pairs, accepted_pairs;
+    std::set<std::uint16_t> record_indices, selectors;
+    std::size_t in_range = 0, class_matches = 0;
+    for (const MapInstance& instance : placement.instances()) {
+      if (instance.selector >= classes.size() ||
+          instance.record_index >= classes[instance.selector].size()) {
+        continue;
+      }
+      ++in_range;
+      if (static_cast<std::uint8_t>(
+              classes[instance.selector][instance.record_index]) ==
+          instance.draw_class) {
+        ++class_matches;
+      }
+      const std::uint32_t pair =
+          (static_cast<std::uint32_t>(instance.selector) << 16) |
+          instance.record_index;
+      all_pairs.insert(pair);
+      if (!instance.accepted) continue;
+      accepted_pairs.insert(pair);
+      record_indices.insert(instance.record_index);
+      selectors.insert(instance.selector);
+    }
+    check(in_range == 4318, "every placement selects an in-range NDXR record");
+    check(class_matches == 4318, "every selected record has the placement class");
+    check(all_pairs.size() == 4318 && all_pairs.size() == records,
+          "the placement pairs cover every NDXR record exactly once");
+    check(accepted_pairs.size() == 4226,
+          "every accepted placement retains a unique record binding");
+    check(record_indices.size() == 173 && selectors.size() == 160,
+          "173 record indices and 160 model selectors remain distinct");
+    const double cells =
+        static_cast<double>(record_indices.size()) * selectors.size();
+    const double expected = 4226.0 * 4225.0 / (2.0 * cells);
+    check(expected > 50.0,
+          "chance would have produced dozens of accepted-pair collisions");
     std::printf("class join: l+airport %zu/%zu  m %zu/%zu  s %zu/%zu  x %zu/%zu\n",
                 tokens["l"] + tokens["airport"], quad[0], tokens["m"], quad[1],
                 tokens["s"], quad[2], tokens["x"], quad[3]);
+    std::printf("record join: in-range %zu, class %zu, unique %zu/%zu\n",
+                in_range, class_matches, all_pairs.size(), records);
 }
 
 }  // namespace
@@ -120,7 +165,7 @@ int main(int argc, char** argv) {
   float min_x = 1e30F, max_x = -1e30F, min_z = 1e30F, max_z = -1e30F;
   std::size_t zero_y = 0;
   for (const MapInstance& q : placement->instances()) {
-    ids.insert(q.part_id);
+    ids.insert(q.record_index);
     min_x = std::fmin(min_x, q.world_x); max_x = std::fmax(max_x, q.world_x);
     min_z = std::fmin(min_z, q.world_z); max_z = std::fmax(max_z, q.world_z);
     if (q.world_y == 0.0F) ++zero_y;
@@ -218,7 +263,7 @@ int main(int argc, char** argv) {
   for (std::uint16_t v : [&] {
          std::set<std::uint16_t> u;
          for (const MapInstance& q : placement->instances())
-           if (q.accepted) u.insert(q.part_id);
+           if (q.accepted) u.insert(q.record_index);
          return u;
        }()) {
     char n[64];
@@ -229,27 +274,8 @@ int main(int argc, char** argv) {
   check(low_missing == 3,
         "while three of the 173 low-sixteen values name no model at all");
 
-  check_class_join(dir, quad, placement->instances().size() - accepted);
-
-  // NEITHER FIELD IS A MODEL ID ON ITS OWN: the pair is unique per instance.
-  // Asserted against the collision count chance would predict, because "all
-  // distinct" means nothing until you know how surprising that is.
-  std::set<std::uint32_t> pairs;
-  std::set<std::uint16_t> lows, sels;
-  for (const MapInstance& q : placement->instances()) {
-    if (!q.accepted) continue;
-    pairs.insert((static_cast<std::uint32_t>(q.part_id) << 16) | q.selector);
-    lows.insert(q.part_id);
-    sels.insert(q.selector);
-  }
-  check(pairs.size() == accepted, "every accepted instance has a distinct pair");
-  check(lows.size() == 173 && sels.size() == 160, "173 low values, 160 selectors");
-  {
-    const double cells = static_cast<double>(lows.size()) * sels.size();
-    const double expected = accepted * (accepted - 1) / (2.0 * cells);
-    check(expected > 50.0,
-          "and chance would have produced dozens of collisions, so zero is a fact");
-  }
+  check_record_join(dir, *placement, quad,
+                    placement->instances().size() - accepted);
 
   // The four-fold statistic of cycle 1451 is REAL and its mechanism is the
   // two-bit field above, not an angle. Kept under test because the number is

@@ -41,6 +41,11 @@ struct Mission01TextureBindingReport final {
   bool complete{};
 };
 
+struct Mission01TextureResourceView final {
+  std::uint32_t identifier{};
+  std::span<const std::uint8_t> bytes;
+};
+
 // The qualified entry-119 hierarchy and the common readers that can already be
 // opened without a filename manifest. Raw spans remain owned by this object.
 class RetailMission01SceneBundle final {
@@ -67,6 +72,8 @@ class RetailMission01SceneBundle final {
   std::optional<RetailFhmView> mapset_models() const noexcept;
   std::optional<RetailFhmView> mapset_textures() const noexcept;
   std::optional<Mission01TextureBindingReport> audit_texture_bindings()
+      const;
+  std::optional<std::vector<Mission01TextureResourceView>> texture_resources()
       const;
   std::optional<std::span<const std::uint8_t>> texture_by_gidx(
       std::uint32_t identifier) const;

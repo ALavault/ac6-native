@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     for (const MapInstance& q : placement->instances()) {
       if (!q.accepted) continue;
       for (int which = 0; which < 2; ++which) {
-        const Footprint& f = footprint(which ? q.selector : q.part_id);
+        const Footprint& f = footprint(which ? q.selector : q.record_index);
         if (!f.valid) continue;
         S& s = which ? by_nine : by_low;
         for (const auto& pt : f.points) {
@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
   }
 
   for (const MapInstance& q : placement->instances()) {
-    const Footprint& f = footprint(q.part_id);
+    const Footprint& f = footprint(q.record_index);
     if (!f.valid) continue;
     const float theta = 2.0F * kPi * static_cast<float>(q.tag_high) / 65536.0F;
     const float random_theta =
