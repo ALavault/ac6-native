@@ -1,0 +1,39 @@
+# 0x82229250 -- the first consumer of the analogue values. Cycle 1362.
+# 367 instructions; .pdata declares 367 and short=0.
+#
+# Cycle 1361 found that all three edge-word consumers read only the EDGE word and
+# none read the value arrays retail_input_binding fills, and named that gap as the
+# one thread still pointing at a flight model. This is what fills it.
+#
+#   sub_82229250(r3 = destination, r4 = the input command object)
+#
+# It CLEARS its destination fields first, then fills them:
+#
+#   [dst+0x838] = [src+0xE58 + 0]        analogue slot 0
+#   [dst+0x83C] = [src+0xE58 + 4]        analogue slot 1
+#   [dst+0x84C] = edge bit for slot 9, from +0xE50 -- newly INACTIVE
+#   [dst+0x854] = edge bit for slot 7, from +0xE4C
+#   [dst+0x858] = edge bit for slot 8, from +0xE4C
+#   and slot 6 of +0xE4C gates an indirect call
+#
+# columns: destination source meaning
+dst+0x838	value array slot 0	an analogue axis
+dst+0x83C	value array slot 1	the second analogue axis
+dst+0x840	cleared at entry	a third float, not filled on the path read
+dst+0x84C	+0xE50 slot 9	a released edge, stored as a word
+dst+0x854	+0xE4C slot 7	a pressed edge
+dst+0x858	+0xE4C slot 8	a pressed edge
+#
+# TWO ANALOGUE AXES AND A HANDFUL OF DISCRETE BITS, assembled per tick into one
+# structure. retail_input_binding produces exactly two floats per slot and this
+# takes slots 0 and 1 of the value array -- the first use of that array found
+# anywhere.
+#
+# ONE CALLER: 0x8223408C, inside sub_82234040 (742 instructions). It is NOT a
+# vtable slot -- FindDataPointersTo returns one hit and it is a .pdata row, which
+# the tool labels.
+#
+# NOT ESTABLISHED: what the destination structure is; what sub_82234040 does with
+# it; what fills dst+0x840. The two axes are NOT named pitch and roll here -- the
+# slots are 0 and 1 of a table-driven binding layer and nothing read says which
+# physical control feeds them.
