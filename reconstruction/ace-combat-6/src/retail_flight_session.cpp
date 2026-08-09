@@ -128,6 +128,15 @@ FlightFrame step_flight_session(FlightSessionState& state,
   return step_after_commands(state, config, frame, step);
 }
 
+void integrate_session_position(FlightSessionState& state,
+                                FlightRates rates,
+                                float rate_scale,
+                                float mid_bias,
+                                float step) noexcept {
+  state.position = integrate_flight_position(state.position, rates, rate_scale,
+                                             mid_bias, step);
+}
+
 std::uint64_t digest_flight_state(const FlightSessionState& state) noexcept {
   // FNV-1a 64 over the raw bytes, the same as RetailInputLog. Floats are hashed
   // as bytes deliberately: two states that differ in the last bit are two

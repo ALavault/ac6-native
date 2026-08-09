@@ -137,6 +137,59 @@ void the_basis_stays_finite_over_a_long_run() {
         "and so do the rates and axes");
 }
 
+void the_position_integrates_and_the_floor_holds() {
+  // The integration is retail's; the rates are this test's. One second of level
+  // flight at 360 km/h along the first component: 360 * (1/3.6) = 100 units.
+  FlightSessionState state{};
+  state.position.at64 = 0.0F;
+  state.position.at68 = 500.0F;
+  state.position.at72 = 0.0F;
+  FlightRates rates{};
+  rates.to64 = 1.0F;
+  for (int frame = 0; frame < 60; ++frame) {
+    integrate_session_position(state, rates, 360.0F, 0.0F, kFrame);
+  }
+  check(state.position.at64 > 99.0F && state.position.at64 < 101.0F,
+        "360 km/h for a second moves about 100 units");
+  check_bits(state.position.at68, 500.0F, "and nothing moves the other two");
+  check_bits(state.position.at72, 0.0F, "");
+
+  // THE FLOOR IS RETAIL'S AND IT IS ON at68 ALONE. 10.0 at 0x82003214.
+  FlightSessionState low{};
+  low.position.at68 = 12.0F;
+  FlightRates down{};
+  down.to68 = -1.0F;
+  for (int frame = 0; frame < 600; ++frame) {
+    integrate_session_position(low, down, 360.0F, 0.0F, kFrame);
+  }
+  check_bits(low.position.at68, 10.0F, "the vertical component floors at 10.0");
+
+  // CONTROL: the same descent on another component must NOT floor, or the port
+  // has spread a clamp retail applies to one axis across all three.
+  FlightSessionState side{};
+  side.position.at64 = 12.0F;
+  FlightRates sideways{};
+  sideways.to64 = -1.0F;
+  for (int frame = 0; frame < 600; ++frame) {
+    integrate_session_position(side, sideways, 360.0F, 0.0F, kFrame);
+  }
+  check(side.position.at64 < 0.0F, "at64 has no floor -- the clamp is at68's alone");
+}
+
+void the_gravity_bias_only_touches_the_vertical() {
+  FlightSessionState with{};
+  with.position.at68 = 1000.0F;
+  FlightSessionState without = with;
+  const FlightRates level{};
+  for (int frame = 0; frame < 60; ++frame) {
+    integrate_session_position(with, level, 1.0F, kGravityKmhPerSecond, kFrame);
+    integrate_session_position(without, level, 1.0F, 0.0F, kFrame);
+  }
+  check(with.position.at68 < without.position.at68, "the bias pulls at68 down");
+  check_bits(with.position.at64, without.position.at64, "and leaves at64 alone");
+  check_bits(with.position.at72, without.position.at72, "and at72");
+}
+
 void the_digest_moves_with_the_state() {
   FlightSessionState a{};
   FlightSessionState b{};
@@ -162,10 +215,18 @@ void emit_trajectory(const char* path) {
       "# defaults and the gains are chosen. What IS retail is every rule the\n"
       "# chain applies to them, each with its own micro-execution differential.\n"
       "#\n"
-      "# POSITION IS ABSENT, and not by omission: the live model's position step\n"
-      "# is 0x823042D0, which cycle 1383 showed depends on vrefp and vrsqrtefp,\n"
-      "# estimate instructions whose exact bits belong to the console. The\n"
-      "# aeroplane changes attitude here; it does not move.\n"
+      "# POSITION IS PRESENT AND ITS DIRECTION IS INVENTED, which cycle 1415\n"
+      "# separated. The integrator 0x82303110 is contracted -- the 1/3.6 scale,\n"
+      "# the 10.0 floor on the vertical component, the gravity bias and the\n"
+      "# fusing are all retail's. What is NOT available is its INPUT: the three\n"
+      "# rates come off stack slots 80/84/88 that a vector normalise fills, and\n"
+      "# that normalise seeds on vrsqrtefp (0x823034CC) and vrefp (0x823034FC),\n"
+      "# estimate instructions this campaign refuses to approximate. So retail\n"
+      "# supplies a unit DIRECTION there and [model+32] supplies the SPEED.\n"
+      "# The direction below is a basis row and the speed is a number, both\n"
+      "# chosen here. Earlier versions of this file said position was absent\n"
+      "# because 0x823042D0 was blocked; that is the live model's own step and\n"
+      "# a different function from the contracted integrator.\n"
       "#\n"
       "# frame\tcmd36\tcmd44\tcmd40\tat304\tat308\tat312\trate144\t"
       "row0x\trow0y\trow0z\trow1x\trow1y\trow1z\trow2x\trow2y\trow2z\n");
@@ -241,6 +302,8 @@ int main(int argc, char** argv) {
   the_export_block_carries_the_accessors();
   the_basis_stays_finite_over_a_long_run();
   the_digest_moves_with_the_state();
+  the_position_integrates_and_the_floor_holds();
+  the_gravity_bias_only_touches_the_vertical();
   if (failures != 0) {
     std::printf("retail_flight_session: %d failure(s)\n", failures);
     return 1;

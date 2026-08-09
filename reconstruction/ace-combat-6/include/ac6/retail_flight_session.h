@@ -42,6 +42,7 @@
 #include "ac6/retail_flight_export.h"
 #include "ac6/retail_flight_orientation.h"
 #include "ac6/retail_flight_rate_servo.h"
+#include "ac6/retail_flight_step.h"
 #include "ac6/retail_live_flight_axes.h"
 #include "ac6/retail_live_flight_ramps.h"
 #include "ac6/retail_live_flight_step.h"
@@ -97,6 +98,10 @@ struct FlightSessionState {
   FlightRates3 rates{};
   LiveStepDecays decays{};
   RetailBasis basis{identity_basis()};
+  // The integrated position, at [model+112]+96+64/68/72 in retail. `at68` is the
+  // vertical one -- it is the only component carrying the 10.0 floor and the only
+  // one the gravity bias is subtracted from (retail_flight_step.h).
+  FlightPosition position{};
   std::uint32_t flags332{};
   bool operator==(const FlightSessionState&) const = default;
 };
@@ -128,6 +133,38 @@ FlightFrame step_flight_session(FlightSessionState& state,
 FlightFrame step_flight_session(FlightSessionState& state,
                                 const FlightModelConfig& config,
                                 const FlightInputFields& fields,
+                                float step) noexcept;
+
+// ------------------------------------------------------------------ position
+//
+// SEPARATE FROM THE STEP ABOVE, AND ON PURPOSE. Everything `step_flight_session`
+// composes is contracted retail arithmetic driven by contracted retail inputs.
+// This is not, and the difference is the whole reason it is a second call with
+// its own arguments rather than a line inside the first.
+//
+// `integrate_flight_position` (0x82303110) IS contracted. What is not available
+// is what feeds it. Cycle 1415 read the window: the three rates are loaded from
+// stack slots 80/84/88 at 0x82303524..0x8230352C, and those slots hold the
+// output of a VECTOR NORMALISE at 0x823034AC..0x82303520 whose seeds are
+// `vrsqrtefp` (0x823034CC) and `vrefp` (0x823034FC) -- both estimate
+// instructions, specified only to a relative accuracy bound, and refused by this
+// campaign rather than approximated.
+//
+// So retail's rates are a DIRECTION, normalised to unit length behind that
+// boundary, and `rate_scale` -- [model+32], clamped against [model+1264] above
+// and 0.0 below at 0x82303530..0x82303554 -- is the SPEED that scales it.
+//
+// A caller therefore has to supply the direction and the speed itself. Doing so
+// is an invention and the caller must say so; what it gets in exchange is that
+// the integration, the floor, the gravity bias and the fusing are retail's.
+//
+// `mid_bias` is retail's f25*f24. f25 is 9.8/3.6 scaled by [model+344]*30 when
+// that field is non-zero; f24 is unresolved (retail_flight_step.h). Passing 0.0
+// integrates without gravity, which is a choice and not a reading.
+void integrate_session_position(FlightSessionState& state,
+                                FlightRates rates,
+                                float rate_scale,
+                                float mid_bias,
                                 float step) noexcept;
 
 // A 64-bit FNV-1a over the whole state, so a replay can be pinned to one number.
