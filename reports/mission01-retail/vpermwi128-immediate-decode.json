@@ -1,0 +1,19 @@
+{
+  "schema": "ac6.vpermwi128-immediate-decode.v1",
+  "statement": "vpermwi128's immediate field layout derived from the whole corpus rather than assumed, by asking which instruction-word bit agrees with each immediate bit at every site",
+  "paired_sites": 545,
+  "engines_agree": 9,
+  "bit_map": {
+    "imm[0]": "word[15]",
+    "imm[1]": "word[14]",
+    "imm[2]": "word[13]",
+    "imm[3]": "word[12]",
+    "imm[4]": "word[11]",
+    "imm[5]": "word[25]",
+    "imm[6]": "word[24]",
+    "imm[7]": "word[23]"
+  },
+  "derived_reproduces_recomp": 545,
+  "derived_reproduces_ghidra": 9,
+  "evidence_class": "cross-match: generated C++ read as a re-encoding of an instruction's operands, never executed"
+}

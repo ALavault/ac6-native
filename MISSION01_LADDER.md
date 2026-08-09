@@ -691,7 +691,7 @@ python3 tools/audit_ac6_mission01_native_gate.py \
    honest route just got longer, which makes a hand-written table more
    tempting, not less.
 
-## The micro-execution instrument, and its four defects
+## The micro-execution instrument, and its five defects
 
 Cycles 1294–1306 built the harness the gameplay work depends on and spent most
 of that time repairing it. `scripts/MicroExecuteFunction.java` executes retail
@@ -701,9 +701,9 @@ committed `*Bin` cases at **138/138 semantic payloads and 138/138 digests**
 (`tools/audit_microexec_harness_calibration.py`).
 
 `tools/audit_vmx128_behaviours.py` validates the vector layer one retail
-instruction at a time against hand-computed answers: **23 cases, 12 mnemonics**.
+instruction at a time against hand-computed answers: **32 cases, 12 mnemonics**.
 
-Four things were wrong, three of them found only by using it:
+Five things were wrong, four of them found only by using it:
 
 | # | what | status |
 |---|---|---|
@@ -711,6 +711,7 @@ Four things were wrong, three of them found only by using it:
 | 2 | 70 p-code operations have no emulation semantics | four supplied, `vmx on`, recorded as `asserted_semantics` |
 | 3 | `vs32+n` and `vrn` are **disjoint storage** where the hardware has one register | bridged, `alias on`, and it is what made the composite depend on its input at all |
 | 4 | `lvx128` omits the `(rA|0)` rule | measured; does not fire on the paths tested so far |
+| 5 | **`vpermwi128`'s IMMEDIATE is decoded wrong** — the module agrees with XenonRecomp at **9 of 545 sites** | the harness decodes it from the instruction word instead (cycle 1326) |
 
 **Resolved, cycle 1314, and it needed no oracle.** `vpermwi128` is a **word
 swizzle** — four 2-bit selectors, duplication allowed, so `0x00` gives
@@ -732,11 +733,27 @@ The harness still runs either reading (`override ADDR vpermwi128` /
 `vpermwi128-lowfirst`); high-first is now the established one and the module's
 behaviour is pinned as a confirmed defect.
 
+**And the lane order was only half of it.** Cycle 1325 found the two engines
+decoding different *immediates* from the same instruction word, and cycle 1326
+graded them over the corpus: the module agrees with XenonRecomp at **9 of 545
+sites**. `tools/audit_vpermwi128_immediate_decode.py` derives the field layout
+rather than assuming one — for each of the eight immediate bits it asks which of
+the 32 word bits agrees with it at *every* site, each has exactly one answer, and
+the result reproduces XenonRecomp 545/545 and the module 9/545:
+
+    imm[7..5] = word[23], word[24], word[25]      (PERMh)
+    imm[4..0] = word[11..15]                      (PERMl)
+
+The override now decodes from the word. It had been reading the module's operand
+— correcting a semantics defect using an input from the same defective source —
+and the suite could not see it, because its expectation came from that operand
+too.
+
 **What the instrument is good for today.** Scalar and integer routines, and
 vector routines that stay inside one register family — `0x8209CB70` is
 reproduced exactly, `sin` and `cos` to the bit at seven angles including the
 argument reduction. What it cannot yet certify is a vector routine whose result
-depends on `vpermwi128`.
+depends on `vpermwi128` at a site the spec forgot to list.
 
 ## Evidence discipline
 

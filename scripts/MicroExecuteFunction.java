@@ -277,8 +277,7 @@ public class MicroExecuteFunction extends GhidraScript {
         // word, which is the half the module has backwards.
         Register destination = (Register) instruction.getOpObjects(0)[0];
         Register source = (Register) instruction.getOpObjects(1)[0];
-        int immediate = (int) ((ghidra.program.model.scalar.Scalar)
-            instruction.getOpObjects(2)[0]).getUnsignedValue();
+        int immediate = vpermwi128Immediate(instruction);
 
         // read/writeRegister rather than the memory state: it is the same API the
         // `vec` seeds and `capture vec:` use, so the byte order here is the one
@@ -294,6 +293,43 @@ public class MicroExecuteFunction extends GhidraScript {
         }
         emulator.writeRegister(destination.getName(), new BigInteger(output.toString(), 16));
         countFired("override:" + name);
+    }
+
+    /**
+     * `vpermwi128`'s immediate, decoded from the instruction word.
+     *
+     * IT IS NOT TAKEN FROM THE MODULE, AND UNTIL CYCLE 1326 IT WAS. This
+     * override existed to correct a lane order and read its immediate from
+     * `Instruction.getOpObjects(2)` -- from the same module whose semantics it
+     * was correcting. Cycle 1325 found the two decodes differing at three sites
+     * and cycle 1326 graded them over the whole corpus: the module agrees with
+     * XenonRecomp at **9 of 545 sites**.
+     *
+     * The layout is derived, not assumed. tools/audit_vpermwi128_immediate_decode.py
+     * asks, for each of the eight immediate bits, which of the 32 instruction-word
+     * bits agrees with it at EVERY site; each has exactly one answer, and the
+     * result reproduces XenonRecomp 545/545 and the module 9/545:
+     *
+     *     imm[7..5] = word[23], word[24], word[25]      (PERMh)
+     *     imm[4..0] = word[11..15]                      (PERMl)
+     *
+     * Word bits are numbered PowerPC style, 0 = most significant.
+     */
+    private static final int[] VPERMWI_IMMEDIATE_BITS = {15, 14, 13, 12, 11, 25, 24, 23};
+
+    private int vpermwi128Immediate(ghidra.program.model.listing.Instruction instruction)
+            throws Exception {
+        byte[] bytes = instruction.getBytes();
+        long word = 0;
+        for (byte value : bytes) {
+            word = (word << 8) | (value & 0xFFL);
+        }
+        int immediate = 0;
+        for (int index = 0; index < VPERMWI_IMMEDIATE_BITS.length; ++index) {
+            long bit = (word >> (31 - VPERMWI_IMMEDIATE_BITS[index])) & 1L;
+            immediate |= (int) bit << index;
+        }
+        return immediate;
     }
 
     private byte[] readChunk(MemoryState memory, Varnode node) {

@@ -130,17 +130,30 @@ MODULE_CASES = [
         "module": True,
     },
     {
-        # 0x820A9BEC  vpermwi128 vr13,vr12,0xac
+        # 0x820A9BEC  vpermwi128 vr13,vr12,0xB7
+        #
+        # THE IMMEDIATE IS 0xB7 AND NOT 0xAC, AND THIS FILE SAID 0xAC UNTIL CYCLE
+        # 1326. 0xAC is what the SLEIGH module decodes; the instruction word is
+        # 0x19B76350 and its PERM fields say 0xB7. The module agrees with
+        # XenonRecomp at 9 of 545 sites -- see
+        # tools/audit_vpermwi128_immediate_decode.py, which derives the field
+        # layout from the corpus instead of assuming it.
+        #
+        # This case could not have caught that on its own: it took its expected
+        # value from the same module operand the override read. Fixture and
+        # subject shared a source. The immediates below now come from the derived
+        # decode, which the override also uses -- so the INDEPENDENT check is the
+        # corpus tool, and it is cited here rather than reimplemented.
         #
         # The VMX128 reference gives the encoding but not the lane order; Xenia's
         # InstrEmit_vpermwi128 gives it: VD.x = VB[uimm bits 6-7], VD.y = bits
         # 4-5, VD.z = bits 2-3, VD.w = bits 0-1. So the HIGH bit-pair selects the
-        # FIRST word. uimm = 0xAC = 0b10101100 -> selectors 2, 2, 3, 0.
+        # FIRST word. uimm = 0xB7 = 0b10110111 -> selectors 2, 3, 1, 3.
         "name": "vpermwi128",
         "function": 0x820A9BEC,
         "vec": {"vr12": VB},
         "capture": "vr13",
-        "expect": VB_W[2] + VB_W[2] + VB_W[3] + VB_W[0],
+        "expect": VB_W[2] + VB_W[3] + VB_W[1] + VB_W[3],
         "module": True,
         # MEASURED, cycle 1297: the module returns the lane order REVERSED --
         # {vB[0], vB[3], vB[2], vB[2]} where the ISA says {vB[2], vB[2], vB[3],
@@ -160,6 +173,9 @@ MODULE_CASES = [
         # CLAUDE.md allows for generated code -- literal cross-match evidence
         # about an instruction's semantics, never executed and never a source
         # for native behaviour.
+        # The module's answer compounds TWO defects now: it reads 0xAC where the
+        # word says 0xB7, and it assigns the low pair to element 0. 0xAC low-first
+        # is selectors 0, 3, 2, 2.
         "module_defect_actual": VB_W[0] + VB_W[3] + VB_W[2] + VB_W[2],
     },
     {
@@ -287,7 +303,9 @@ MODULE_CASES = [
         "override": (0x820A9BEC, "vpermwi128"),
         "vec": {"vr12": VB},
         "capture": "vr13",
-        "expect": VB_W[2] + VB_W[2] + VB_W[3] + VB_W[0],
+        # 0xB7 high-first -> selectors 2, 3, 1, 3. The old expectation here was
+        # built on the module's 0xAC and passed for two cycles.
+        "expect": VB_W[2] + VB_W[3] + VB_W[1] + VB_W[3],
     },
 ]
 
@@ -329,13 +347,15 @@ CASES += [
         "expect": EXPECT_MRGLW,
     },
     {
-        # The module's own implementation, aliased. uimm 0x2C low-first (what the
-        # module does) selects 0, 3, 2, 0; high-first selects 0, 2, 3, 0.
+        # The module's own implementation, aliased. The word at 0x820A9BF0 is
+        # 0x199B6250 and its PERM fields say 0x3B = 0b00111011 -> high-first
+        # selectors 0, 3, 2, 3. The module reads 0x2C instead and applies it
+        # low-first, giving 0, 3, 2, 0.
         "name": "vpermwi128-aliased-module",
         "function": 0x820A9BF0,
         "vec": {"vr12": VB},
         "capture": "vr12",
-        "expect": VB_W[0] + VB_W[2] + VB_W[3] + VB_W[0],
+        "expect": VB_W[0] + VB_W[3] + VB_W[2] + VB_W[3],
         "module": True,
         "module_defect_actual": VB_W[0] + VB_W[3] + VB_W[2] + VB_W[0],
     },
@@ -351,8 +371,19 @@ def _vpermwi_expect(imm: int) -> str:
     return "".join(VB_W[(imm >> (2 * (3 - lane))) & 3] for lane in range(4))
 
 
-for _site, _imm in ((0x820A9AB8, 0xEC), (0x820A9ABC, 0xCC),
-                    (0x820A9BF0, 0x2C), (0x822118E0, 0x8C), (0x822118E4, 0x6C)):
+# THE IMMEDIATES ARE DECODED FROM THE INSTRUCTION WORD, NOT READ OFF THE MODULE.
+# Cycle 1304 wrote "one immediate pair is not a test of an immediate"; cycle 1326
+# adds that an immediate read from the subject is not a test of anything. These
+# five are what tools/audit_vpermwi128_immediate_decode.py derives from the words
+# at those addresses, and the module disagrees with every one of them:
+#
+#   0x820A9AB8  word 0x19A363D0  module 0xEC  word says 0xE3
+#   0x820A9ABC  word 0x199B6390  module 0xCC  word says 0xDB
+#   0x820A9BF0  word 0x199B6250  module 0x2C  word says 0x3B
+#   0x822118E0  word 0x19AF6310  module 0x8C  word says 0x8F
+#   0x822118E4  word 0x198F62D0  module 0x6C  word says 0x6F
+for _site, _imm in ((0x820A9AB8, 0xE3), (0x820A9ABC, 0xDB),
+                    (0x820A9BF0, 0x3B), (0x822118E0, 0x8F), (0x822118E4, 0x6F)):
     CASES.append({
         "name": f"vpermwi128-override-{_imm:02x}",
         "function": _site,
