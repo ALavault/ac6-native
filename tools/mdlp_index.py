@@ -1,14 +1,27 @@
 #!/usr/bin/env python3
 """Read 001_MDLP.mdlp's entry table -- the integer-indexed array Thread B needs.
 
-WHY THIS EXISTS. The plan's first Thread B decision is how a model is loaded.
-Cycle 1246 established that retail resolves assets BY INTEGER ID through
-registries and never walks the directory, so porting an FHM directory walk would
-be porting something the game does not do, and an offline extraction is a
-manifest under another name.
+CORRECTION, CYCLE 1420: THE TOP TWO LEVELS OF THIS WERE ALREADY PORTED.
+`reconstruction/ace-combat-6/include/ac6/retail_model_directory.h` derives the
+MDLP layout below from retail's own getter at 0x8228E9B8 -- `entry = base +
+table[index]` -- and states in its own comment that Mission 01's file is 94
+entries, table at 0x1000, base at 0x2000, every entry on `FHM `. Cycle 1418
+re-derived all of that from the file without checking, and
+`retail_model_directory_tests.cpp` had already tested the join to mission ids:
+311 bindings resolved, 38 distinct primaries, every one addressing a served
+entry.
 
-Cycle 1418 found that the question largely answers itself, because the file
-format IS an array:
+So this tool is NOT the answer to "how is a model loaded" -- that was answered
+and ported. What it adds is the level BELOW an entry, which `ModelDirectory`
+explicitly does not know about, plus a census and the controls on it.
+
+The layout below is kept because a tool that reads the file is still useful
+against a tool that reads the port; it is a cross-check, not a discovery.
+
+The original framing, kept so the correction is legible: the plan's first
+Thread B decision is how a model is loaded, cycle 1246 established that retail
+resolves BY INTEGER ID and never walks the directory, and the file format is an
+array:
 
     +0x00  "MDLP"
     +0x04  entry count            94 for Mission 01
