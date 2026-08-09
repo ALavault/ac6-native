@@ -142,6 +142,17 @@ specialised harness never had, and the comparator counted its absence as a
 semantic difference. Cycle 1414 fixed the comparator; cycle 1413 only found it
 because it was checking whether its own change had broken something.
 
+**And 138/138 is narrower than it sounds.** The 138 specs use six directives —
+`case function gpr region sp stub` — of the fifteen the harness implements. The
+nine it never exercises are `alias capture dump fpr hint override steps vec vmx`:
+every directive added since the corpus was captured, including `dump`, whose
+`region_dumps` key is the one that broke the comparator. A passing calibration
+says the integer and memory path is unchanged; it says nothing about the vector
+path, the float path, the overrides or the bridge. This measures that, and
+ratchets it so the gap cannot widen unnoticed:
+
+    python3 tools/audit_microexec_calibration_coverage.py --specs W/specs
+
 And one guards this file's own numbers, because two of them rotted:
 
     python3 tools/audit_claude_md_numbers.py CLAUDE.md
