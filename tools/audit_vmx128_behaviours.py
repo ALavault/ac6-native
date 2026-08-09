@@ -237,6 +237,34 @@ MODULE_CASES = [
         "module": True,
     },
     {
+        # THE REGISTER-FILE ALIAS. On Xenon there are 128 vector registers and
+        # both instruction families address the same ones: the AltiVec forms
+        # (vmrghw, vspltw, vor, lvlx) name them v0..v31 and the module calls
+        # those `vsNN`, while the VMX128 forms (vmulfp128, vmsum4fp128, lvx128)
+        # name them vr0..vr127. vs32+n and vrn MUST be one storage.
+        #
+        # 0x8209CC44 is `vspltw v5,v13,0x2`, whose p-code output is vs37 = v5.
+        # Seed v13 and read vr5: if the files alias, the splat is there.
+        #
+        # MEASURED, cycle 1301: it is NOT. vs37 holds the splat and vr5 stays
+        # zero. The two families are disjoint storage in this module, so every
+        # value an AltiVec-form instruction produces is invisible to the VMX128
+        # forms that consume it -- which severs the dataflow of any real routine
+        # and is why cycle 1300 found cos right (a pure-vr chain) and sin wrong
+        # (a chain that crosses through vspltw).
+        #
+        # THIS IS ALSO WHY THE SIXTEEN CASES ABOVE ALL PASSED. Each seeds and
+        # captures within one family, because that is the naming its own p-code
+        # uses. They were structurally incapable of seeing the boundary.
+        "name": "register-file-alias",
+        "function": 0x8209CC44,
+        "vec": {"vs45": VB},
+        "capture": "vr5",
+        "expect": VB_W[2] * 4,
+        "module": True,
+        "module_defect_actual": "00000000" * 4,
+    },
+    {
         # The same site with the module's p-code bypassed at the address. This
         # is the control for the override: it must produce the ISA answer, and
         # it must produce it through the module's own DECODE -- a wrong register

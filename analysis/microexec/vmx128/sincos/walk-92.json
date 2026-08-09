@@ -1,0 +1,29 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x8209CB70",
+    "case": "walk:92"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "FUN_8209cb70",
+    "regions": [
+      {"name": "out", "base": "0xb4000000", "kind": "poison", "size": 64},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 4096}
+    ],
+    "steps": 92,
+    "callee_entries": 0,
+    "asserted_semantics_enabled": true,
+    "asserted_semantics": {},
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": "out 8 bytes"
+  },
+  "exit": {"kind": "step_limit"},
+  "registers": {},
+  "calls": [],
+  "memory_writes": [
+    {"address": "0xb4000000", "size": 4, "after_hex": "3f7ab32d"},
+    {"address": "0xb4000010", "size": 4, "after_hex": "3f60a93f"}
+  ]
+}
