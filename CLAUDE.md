@@ -131,6 +131,16 @@ rots:
       -scriptPath scripts -postScript MicroExecuteFunction.java --batch W/manifest
     python3 tools/audit_microexec_harness_calibration.py --check --workdir W
 
+And this one needs no Ghidra pass at all, so run it first — it is instant and it
+catches the class of defect that cost cycle 1460 a headless run to find:
+
+    python3 tools/audit_microexec_reset_completeness.py
+
+`resetCase()` cleared twenty-two fields and not `dumpRegions`, so batched dumps
+accumulated across cases. Every per-case field must be cleared; the checker
+compares the class's instance fields against that method's body and ignores
+`static final` constants by their modifier rather than by a list.
+
 The middle line used to read `<analyzeHeadless ...>`, and cycle 1457 spent the
 first part of a cycle reconstructing it from a report of cycle 70. It takes about
 four minutes. **Last actually run: cycle 1460 — `cases=138 equal=138
