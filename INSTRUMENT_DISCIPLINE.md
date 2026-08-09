@@ -583,7 +583,9 @@ Cycle 1244 wrote that `0x820A7070` writes *"on each unit `+0x184`, `+0x170`,
 Every offset is right. Every one was read from an instruction. And the sentence
 is wrong, because **"unit" names two different class hierarchies**:
 
-- the loop's `r31`, from factory slot `+0x14`, is a **`galib::CGaObj`** — it gets
+- the loop's `r31`, from factory slot `+0x14`, has vtable **`0x820078D0`** (called
+  a `galib::CGaObj` until cycle 1281 showed the real one is `0x820572C0`; the two
+  share 11 of 96 slots) — it gets
   the parent pointer at `+0x188`;
 - `r16`, from slot `+0x10` and the only object the function registers, is an
   **`ACE6::CAce6Unit`** — it gets the child array and the order FSM.
