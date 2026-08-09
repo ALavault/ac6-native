@@ -1,0 +1,47 @@
+# 0x82211988 -- what the float the whole tick carries actually does. Cycle 1358.
+#
+# `.pdata` has NO ROW for this function; check_listing_against_pdata says so, so
+# its 109 instructions are read without a length control.
+#
+# ENTRY, from the pair 0x82211DF8 saved:
+#   r9  = [this+0xE44]   this frame's active-slot mask
+#   r10 = [this+0xE48]   last frame's
+#   [this+0xE4C] = r9 & ~r10          newly active
+#   [this+0xE50] = r10 & ~r9          newly inactive
+#   [this+0xE54] = r9 & ~r10          newly active, a SECOND copy
+#
+# THE LOOP, 32 slots, an 8-byte (timer, limit) pair each from this+0x1060:
+#
+#   if [this+0xE44] & (1 << slot):
+#       if *timer >= *limit:
+#           [this+0xE54] |= 1 << slot        the slot FIRES
+#           *limit = [this+0x105C]           the repeat interval
+#           *timer = 0.0
+#       *timer += f1                          <- THE FLOAT, ACCUMULATED
+#   else:
+#       *timer = 0.0
+#       *limit = [this+0x1058]                the initial delay
+#
+# THAT IS AUTO-REPEAT. Hold a slot: it appears once in the "newly active" edge,
+# then fires again after [this+0x1058], then every [this+0x105C]. Release it and
+# both the timer and the limit reset.
+#
+# columns: offset meaning
+this+0x1058	the initial delay, loaded when a slot is inactive
+this+0x105C	the repeat interval, loaded the moment a slot fires
+this+0x1060	32 pairs of (timer, limit), 8 bytes each
+this+0xE4C	newly active only
+this+0xE54	newly active PLUS every repeat -- the triggered set
+#
+# AND IT ANSWERS CYCLE 1357'S OPEN QUESTION. That cycle asked why +0xE4C and
+# +0xE54 receive the same value at entry. They start equal and diverge here:
+# +0xE4C keeps the edge, +0xE54 accumulates the repeats.
+#
+# WHAT THE FLOAT IS, from its use rather than its name. It is summed into per-slot
+# timers that are compared against a delay and a repeat rate, so for THIS consumer
+# it is an elapsed time per frame. Eleven cycles of this thread declined to call it
+# delta time; this is the first evidence of its role, and it is input auto-repeat,
+# NOT flight integration.
+#
+# NOT ESTABLISHED: whether the same virtual's return is used as a physics delta
+# elsewhere. Nothing here says it is, and nothing says it is not.
