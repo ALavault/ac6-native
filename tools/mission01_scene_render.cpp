@@ -83,10 +83,19 @@ int main(int argc, char** argv) {
     DecodedTexture out{};
     const auto found = wrappers.find(id);
     if (found != wrappers.end()) {
+      // DO NOT TRIM A WRAPPER THAT HAS A MIP CHAIN. The rule
+      // `0x10 + data_offset + single_level_surface_bytes` comes from cycle
+      // 1435 and is right for a single-level wrapper whose array 1 is padded.
+      // Every one of the map's 177 wrappers declares seven levels, and trimming
+      // to the base surface cuts the chain off -- so the decoder's own check
+      // `base + chain == payload` fails and refuses all 177.
+      //
+      // Measured: untrimmed 177 of 177 decode, trimmed 0 of 177. The decoder
+      // was right the whole time and the caller was wrong.
       std::size_t span = found->second.size();
       if (const auto d = parse_ntxr_descriptor(found->second.data(), span)) {
         const std::size_t level = single_level_surface_bytes(*d);
-        if (level != 0 && 0x10u + d->data_offset + level <= span)
+        if (d->mip_count <= 1 && level != 0 && 0x10u + d->data_offset + level <= span)
           span = 0x10u + d->data_offset + level;
       }
       NtxrRefusal why{};

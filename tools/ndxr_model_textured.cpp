@@ -155,8 +155,13 @@ int main(int argc, char** argv) {
   if (found != textures.end()) {
     std::size_t span = found->second.length;
     if (const auto desc = ac6::retail::parse_ntxr_descriptor(found->second.bytes, span)) {
+      // ONLY FOR A SINGLE-LEVEL WRAPPER. Cycle 1475: trimming to the base
+      // surface cuts off a mip chain, and then the decoder's own
+      // `base + chain == payload` check refuses the file. Every one of the
+      // map's 177 wrappers declares seven levels; untrimmed 177 of 177 decode,
+      // trimmed 0 of 177.
       const std::size_t level = ac6::retail::single_level_surface_bytes(*desc);
-      if (level != 0 && 0x10u + desc->data_offset + level <= span)
+      if (desc->mip_count <= 1 && level != 0 && 0x10u + desc->data_offset + level <= span)
         span = 0x10u + desc->data_offset + level;
     }
     ac6::retail::NtxrRefusal why{};
