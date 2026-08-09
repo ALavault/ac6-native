@@ -42,7 +42,7 @@ struct Wrapper { const std::uint8_t* bytes; std::size_t length; };
 }  // namespace
 
 int main(int argc, char** argv) {
-  if (argc < 4) { std::printf("usage: textured MDLP OUTDIR ID [frames] [tilt] [name]\n"); return 2; }
+  if (argc < 4) { std::printf("usage: textured MDLP OUTDIR ID [frames] [tilt] [name] [w] [h]\n"); return 2; }
   const std::vector<std::uint8_t> blob = Read(argv[1]);
   const auto directory = ac6::retail::ModelDirectory::open(blob.data(), blob.size());
   if (!directory) { std::printf("not a directory\n"); return 1; }
@@ -50,6 +50,11 @@ int main(int argc, char** argv) {
   const int frames = argc >= 5 ? std::atoi(argv[4]) : 120;
   const float tilt = argc >= 6 ? static_cast<float>(std::atof(argv[5])) : 0.42F;
   const char* only = argc >= 7 ? argv[6] : nullptr;
+  // THE LIMITING INSTRUMENT, until cycle 1438. Every picture before it was
+  // 480x270, and the open question about entry 2 was what a 2.4-kilometre mesh
+  // depicts -- which a thumbnail cannot answer whatever the geometry does.
+  const int out_w = argc >= 8 ? std::atoi(argv[7]) : 480;
+  const int out_h = argc >= 9 ? std::atoi(argv[8]) : 270;
 
   // Every NTXR in the package, by its GIDX identifier.
   std::map<std::uint32_t, Wrapper> textures;
@@ -179,8 +184,8 @@ int main(int argc, char** argv) {
   const float radius = std::fmax(rx, std::fmax(ry, rz));
   for (int frame = 0; frame < frames; ++frame) {
     ac6::demo::Image image;
-    image.width = 480; image.height = 270;
-    image.rgb.assign(std::size_t(480) * 270 * 3, 0);
+    image.width = out_w; image.height = out_h;
+    image.rgb.assign(std::size_t(out_w) * out_h * 3, 0);
     ac6::retail::RetailBasis basis = ac6::retail::identity_basis();
     ac6::retail::rotate_820A9B30(basis, 6.2831853F * float(frame) / float(frames));
     // The tilt is a camera choice and terrain needs a steeper one: a 2.4 km

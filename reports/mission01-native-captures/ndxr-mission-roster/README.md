@@ -70,7 +70,7 @@ selects a level by distance and that rule is not read here.
 
 | | extent | used |
 |---|---|---:|
-| terrain (id 2) | 2409 × 170 × 1083, 373 pieces, 41,868 verts | 1 |
+| **id 2 — NOT terrain** (see `../ndxr-aigaion/`) | 2409 × 170 × 1083, 373 pieces | 1 |
 | two long strips (18, 19) | ~1480 × ~100 × 435 / 187 | 1 each |
 | fighters (14, 16, 24, 26, 30, 43, 72) | ~10–15 × ~4.5 × 14–25 | 34, 28, 24, 16, 4, 16, 8 |
 | a tank (4) | 5.40 × 4.56 × 14.52 | 11 |
@@ -82,6 +82,12 @@ selects a level by distance and that rule is not read here.
 Nothing here named any of those. The categories are what the wireframes show
 and the extents agree with them; the *labels* in that table are mine, and the
 numbers beside them are the file's.
+
+**And one of those labels was wrong.** "terrain (id 2)" was inferred from size
+alone and repeated for three cycles. Cycle 1438 read the record name and looked
+at it at 1600×900: `o_1112_lod1`, a 2.4-kilometre flying wing. Mission 01's
+package has **no terrain model in this roster**. The corrected entry is above
+and `../ndxr-aigaion/` carries the picture.
 
 ## What is retail's
 

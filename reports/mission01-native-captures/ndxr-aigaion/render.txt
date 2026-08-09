@@ -1,0 +1,2 @@
+  merged bounds x[-1204.7 1204.7] y[-95.8 74.1] z[-768.6 313.5], indices 35811
+model 2: 4 pieces, 25817 verts, texture 268442043 -> 2048x2048
