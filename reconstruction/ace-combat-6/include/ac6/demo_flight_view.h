@@ -45,8 +45,17 @@ struct Image {
   int width{};
   int height{};
   std::vector<std::uint8_t> rgb;   // width * height * 3
+  // Depth, one float per pixel, larger is farther. Sized on the first
+  // `clear_depth`; the wireframe drawing paths never touch it.
+  std::vector<float> depth;
 
   void clear(std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept;
+  void clear_depth() noexcept;
+  // A depth-tested, flat-shaded triangle in SCREEN space, with `z` the camera
+  // depth at each corner. Does nothing when the depth buffer is unsized.
+  void triangle(int x0, int y0, float z0, int x1, int y1, float z1,
+                int x2, int y2, float z2,
+                std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept;
   void plot(int x, int y, std::uint8_t r, std::uint8_t g,
             std::uint8_t b) noexcept;
   void line(int x0, int y0, int x1, int y1, std::uint8_t r, std::uint8_t g,
@@ -113,6 +122,20 @@ void draw_mesh_at(Image& image, const ac6::retail::NdxrMesh& mesh,
                   const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
                   float ox, float oy, float oz,
                   std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept;
+
+// The mesh as filled, depth-tested triangles, flat-shaded by the face's own
+// vertex normals.
+//
+// NO BACKFACE CULLING, and that is a claim this cannot make: no winding rule has
+// been read out of retail, so discarding a face by its orientation would be
+// inventing one. Both sides are drawn and the shade uses the absolute value of
+// the light dot, which is what a two-sided surface looks like.
+//
+// The strip is walked with retail's 0xFFFF restart, and the winding alternates
+// every triangle as a strip's does -- that part is the format's, not a choice.
+void draw_mesh_solid(Image& image, const ac6::retail::NdxrMesh& mesh,
+                     const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
+                     float distance) noexcept;
 
 // The same wireframe, with each segment lit by the vertex normal.
 //

@@ -59,9 +59,10 @@ What remains undecoded is the four-byte `COLOR` of the stride-32 format — eigh
 descriptors of 1227 carry it — and the Xenos type words themselves, whose
 meaning was measured from the data rather than decoded from the code.
 
-It is still a **wireframe and not a surface**, but for a different reason: there
-is no depth buffer, no triangle fill and no texture sampling here, and no
-winding rule has been read. Filled triangles would imply all of those.
+**Superseded again at cycle 1434**: the demo gained a depth buffer and a
+triangle fill, so this is a solid surface now. What is still absent is the
+texture — the coordinates are decoded and nothing samples with them — and any
+winding rule, which is why neither face is culled.
 
 The wireframe claims exactly what cycle 1426 established — the positions and the
 connectivity — and nothing further.

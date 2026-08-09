@@ -1,27 +1,27 @@
 {
   "schema": "ac6.ndxr-model-capture.v1",
-  "model_id": 4,
-  "pieces": 7,
-  "vertices": 639,
-  "indices": 837,
+  "model_id": 6,
+  "pieces": 1,
+  "vertices": 1547,
+  "indices": 2797,
   "extent": [
-    5.403,
-    4.5592,
-    14.5161
+    53.0191,
+    17.0251,
+    50.372
   ],
   "note": "color_hash is the renderer's FNV-1a over 0xFFRRGGBB, written from the framebuffer so that checking a PNG against it checks the pnmtopng conversion too -- solid, depth-tested, flat-shaded by the retail normals (cycle 1434)",
   "frames": {
     "model-00000": {
-      "color_hash": 11387941409218412997
+      "color_hash": 6679246547654432501
     },
     "model-00030": {
-      "color_hash": 9729515516511711290
+      "color_hash": 1019528148285812444
     },
     "model-00060": {
-      "color_hash": 17051656952774349528
+      "color_hash": 5250433885490749146
     },
     "model-00090": {
-      "color_hash": 10532031762003139206
+      "color_hash": 18254754208584522959
     }
   }
 }

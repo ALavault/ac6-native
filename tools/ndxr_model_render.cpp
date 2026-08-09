@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     const float turn = 6.2831853F * float(frame) / float(frames);
     ac6::retail::rotate_820A9B30(basis, turn);
     ac6::retail::rotate_820A99F8(basis, 0.45F);
-    ac6::demo::draw_mesh_lit(image, all, basis, ac6::demo::DemoCamera{}, radius * 1.6F);
+    ac6::demo::draw_mesh_solid(image, all, basis, ac6::demo::DemoCamera{}, radius * 1.6F);
     char path[512];
     std::snprintf(path, sizeof(path), "%s/model-%05d.ppm", argv[2], frame);
     image.write_ppm(path);

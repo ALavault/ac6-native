@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <cstdio>
 
 namespace ac6::demo {
@@ -50,6 +51,40 @@ void draw_segment(Image& image, const ac6::retail::RetailBasis& basis,
 }
 
 }  // namespace
+
+void Image::clear_depth() noexcept {
+  depth.assign(static_cast<std::size_t>(width) * height,
+               std::numeric_limits<float>::infinity());
+}
+
+void Image::triangle(int x0, int y0, float z0, int x1, int y1, float z1,
+                     int x2, int y2, float z2,
+                     std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept {
+  if (depth.size() != static_cast<std::size_t>(width) * height) return;
+  const int min_x = std::max(0, std::min(x0, std::min(x1, x2)));
+  const int max_x = std::min(width - 1, std::max(x0, std::max(x1, x2)));
+  const int min_y = std::max(0, std::min(y0, std::min(y1, y2)));
+  const int max_y = std::min(height - 1, std::max(y0, std::max(y1, y2)));
+  if (min_x > max_x || min_y > max_y) return;
+  const float area = static_cast<float>((x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0));
+  if (area == 0.0F) return;                     // degenerate, and strips make many
+  for (int y = min_y; y <= max_y; ++y) {
+    for (int x = min_x; x <= max_x; ++x) {
+      const float w0 = static_cast<float>((x1 - x) * (y2 - y) - (x2 - x) * (y1 - y)) / area;
+      const float w1 = static_cast<float>((x2 - x) * (y0 - y) - (x0 - x) * (y2 - y)) / area;
+      const float w2 = 1.0F - w0 - w1;
+      // Both signs accepted: no winding rule is read, so a face is not
+      // discarded for facing away.
+      if ((w0 < 0.0F || w1 < 0.0F || w2 < 0.0F) &&
+          (w0 > 0.0F || w1 > 0.0F || w2 > 0.0F)) continue;
+      const float z = w0 * z0 + w1 * z1 + w2 * z2;
+      const std::size_t at = static_cast<std::size_t>(y) * width + x;
+      if (!(z < depth[at])) continue;
+      depth[at] = z;
+      rgb[at * 3] = r; rgb[at * 3 + 1] = g; rgb[at * 3 + 2] = b;
+    }
+  }
+}
 
 void Image::clear(std::uint8_t r, std::uint8_t g, std::uint8_t b) noexcept {
   rgb.assign(static_cast<std::size_t>(width) * height * 3, 0);
@@ -214,6 +249,63 @@ void draw_mesh_at(Image& image, const ac6::retail::NdxrMesh& mesh,
       draw_segment(image, basis, camera, at(previous), at(index), r, g, b);
     }
     previous = index;
+  }
+}
+
+void draw_mesh_solid(Image& image, const ac6::retail::NdxrMesh& mesh,
+                     const ac6::retail::RetailBasis& basis, const DemoCamera& camera,
+                     float distance) noexcept {
+  image.clear(14, 16, 24);
+  image.clear_depth();
+  if (mesh.positions.empty() || mesh.indices.size() < 3 || !mesh.bounds.valid) return;
+  const bool lit = mesh.normals.size() == mesh.positions.size();
+
+  const float cx = (mesh.bounds.min_x + mesh.bounds.max_x) * 0.5F;
+  const float cy = (mesh.bounds.min_y + mesh.bounds.max_y) * 0.5F;
+  const float cz = (mesh.bounds.min_z + mesh.bounds.max_z) * 0.5F;
+  const auto at = [&](std::uint16_t index) {
+    const ac6::retail::NdxrPosition& p = mesh.positions[index];
+    const Vec3 turned = to_camera(basis, Vec3{p.x - cx, p.y - cy, p.z - cz});
+    return Vec3{turned.x, turned.y, turned.z + distance};
+  };
+  const float lx = 0.4F, ly = 0.7F, lz = -0.6F;
+  const auto shade = [&](std::uint16_t index) {
+    if (!lit) return 0.7F;
+    const ac6::retail::NdxrPosition& n = mesh.normals[index];
+    const Vec3 t = to_camera(basis, Vec3{n.x, n.y, n.z});
+    const float d = t.x * lx + t.y * ly + t.z * lz;
+    return 0.25F + 0.75F * std::fabs(d);        // two-sided: no winding is read
+  };
+
+  std::uint16_t a = ac6::retail::kStripRestart;
+  std::uint16_t bb = ac6::retail::kStripRestart;
+  int parity = 0;
+  for (const std::uint16_t index : mesh.indices) {
+    if (index == ac6::retail::kStripRestart) {
+      a = bb = ac6::retail::kStripRestart; parity = 0; continue;
+    }
+    if (a != ac6::retail::kStripRestart && bb != ac6::retail::kStripRestart) {
+      // The strip's alternating winding. It changes nothing here because
+      // neither side is culled, and it is kept because the format has it.
+      const std::uint16_t i0 = a;
+      const std::uint16_t i1 = (parity == 0) ? bb : index;
+      const std::uint16_t i2 = (parity == 0) ? index : bb;
+      int ax = 0, ay = 0, bx = 0, by = 0, cx2 = 0, cy2 = 0;
+      const Vec3 pa = at(i0), pb = at(i1), pc = at(i2);
+      if (project(pa, camera, image.width, image.height, ax, ay) &&
+          project(pb, camera, image.width, image.height, bx, by) &&
+          project(pc, camera, image.width, image.height, cx2, cy2)) {
+        const float k = (shade(i0) + shade(i1) + shade(i2)) / 3.0F;
+        const auto ch = [&](float base) {
+          const float v = base * k;
+          return static_cast<std::uint8_t>(v < 0.0F ? 0.0F : (v > 255.0F ? 255.0F : v));
+        };
+        image.triangle(ax, ay, pa.z, bx, by, pb.z, cx2, cy2, pc.z,
+                       ch(205.0F), ch(220.0F), ch(245.0F));
+      }
+      parity ^= 1;
+    }
+    a = bb; bb = index;
   }
 }
 
