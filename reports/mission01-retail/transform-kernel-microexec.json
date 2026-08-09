@@ -24,6 +24,39 @@
   "tolerance": 2e-05,
   "cases": [
     {
+      "case": "assemble-mixed",
+      "exit": "return",
+      "steps": 547,
+      "overrides_fired": 6,
+      "poison_independent": true,
+      "head": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rows": [
+        [
+          0.561267,
+          0.660448,
+          0.498786,
+          0.0
+        ],
+        [
+          -0.684981,
+          0.708942,
+          -0.167933,
+          0.0
+        ],
+        [
+          -0.464521,
+          -0.247404,
+          0.850301,
+          0.0
+        ]
+      ]
+    },
+    {
       "case": "identity-zero",
       "exit": "return",
       "steps": 547,

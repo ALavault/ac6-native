@@ -1,0 +1,8 @@
+{
+  "schema": "ac6.retail-transform-test.v1",
+  "vectors": 14,
+  "divergences": 0,
+  "zero_angle_cases": "required bit-exact",
+  "turned_case_tolerance": 2e-5,
+  "statement": "every micro-executed vector of 0x822A1E80 and its three rotations reproduced; zero-angle cases bit for bit, turned cases within a tolerance that exists only because 0x8209CB70 (XMScalarSinCos) is not ported and the host library stands in for it"
+}

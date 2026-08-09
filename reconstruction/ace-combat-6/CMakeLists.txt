@@ -21,7 +21,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_ndxr_container.cpp
   src/retail_bin_readers.cpp
   src/retail_input.cpp
-  src/retail_input_record.cpp)
+  src/retail_input_record.cpp
+  src/retail_transform.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 
@@ -214,6 +215,14 @@ target_link_libraries(ac6-retail-input-record-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-input-record COMMAND ac6-retail-input-record-tests
   ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/input-path/input-record-vectors.tsv
   ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-input-record.json)
+
+# A3.1: the one transform kernel, against thirteen micro-executions of
+# 0x822A1E80 and its three rotations.
+add_executable(ac6-retail-transform-tests tests/retail_transform_tests.cpp)
+target_link_libraries(ac6-retail-transform-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-transform COMMAND ac6-retail-transform-tests
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/vmx128/transform-kernel-vectors.tsv
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/mission01-retail/retail-transform.json)
 
 add_executable(ac6-retail-world-position-tests tests/retail_world_position_tests.cpp)
 target_link_libraries(ac6-retail-world-position-tests PRIVATE ac6_product_core)

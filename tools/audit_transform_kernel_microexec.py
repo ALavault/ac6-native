@@ -143,6 +143,20 @@ def vpermwi_sites(path: Path) -> dict[int, int]:
 
 def cases(sites: dict[int, int]) -> list[dict]:
     built = [{
+        # THE ORDER CASE, AND THE DIFFERENTIAL WAS BLIND WITHOUT IT. Cycle 1328
+        # swapped the two composition steps in the native port and all thirteen
+        # vectors still passed: the only `assemble` case was at zero angles,
+        # where the order cannot matter. Three distinct non-zero angles make it
+        # observable, and the port's control now fails when the order is wrong.
+        "name": "assemble-mixed",
+        "function": ASSEMBLER,
+        "r3": OBJECT,
+        "rows": ASSEMBLER_ROWS,
+        "seed_rows": False,
+        "floats": {"f1": 0.25, "f2": -0.5, "f3": 0.75},
+        "note": "0x822A1E80 with three distinct non-zero angles, so the "
+                "composition order f2, f1, f3 is visible in the result",
+    }, {
         "name": "identity-zero",
         "function": ASSEMBLER,
         "r3": OBJECT,

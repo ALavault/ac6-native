@@ -384,6 +384,50 @@
             "claim": "include/ac6/retail_input_record.h carries the derivation and names what is not ported: the constant 3 at record+0x98, the zeros at +0x8C..+0x94, and the second normalisation at 0x821CB244 that no input yet found reaches"
           }
         ]
+      },
+      "retail_transform": {
+        "status": "passed",
+        "statement": "the native product reproduces the transform kernel 0x822A1E80 and its three rotations in ONE implementation shared by flight orientation and rendered-unit orientation -- the identity basis it copies from .rodata, the three plane rotations each fixing one row, and the composition order f2, f1, f3 which is not the argument order",
+        "retail_addresses": [
+          "0x822A1E80",
+          "0x820A9B30",
+          "0x820A99F8",
+          "0x82211828",
+          "0x8204F7F0",
+          "0x8204F800",
+          "0x8204F810",
+          "0x8209CB70"
+        ],
+        "evidence": [
+          {
+            "kind": "static",
+            "path": "reports/cycle-1325-it-was-never-a-matrix-builder.md",
+            "sha256": "02648fb1f6356e4f530b27d5f75d67e093d5b70f917d67780bd69de821680aa7",
+            "size": 7210,
+            "claim": "0x822A1E80 read end to end: 40 instructions, no vector arithmetic, three .rodata constants copied to object+0x10/+0x20/+0x30 and three calls, with the two engines agreeing on all 40 instructions"
+          },
+          {
+            "kind": "native-test",
+            "path": "reports/mission01-retail/retail-transform.json",
+            "sha256": "4bdd569798fd4adc5bb70c2f951c871488cf343db799a58d1b0b7761e29c8ca2",
+            "size": 424,
+            "claim": "14 retail vectors reproduced, zero-angle cases bit for bit and turned cases within a tolerance that exists only because XMScalarSinCos is not ported"
+          },
+          {
+            "kind": "microexec",
+            "path": "reports/mission01-retail/transform-kernel-microexec.json",
+            "sha256": "dee62a45fdbef70bfdc2be3435dd6bdd2ff4ceecb6e845543c9d8c1a45454143",
+            "size": 9020,
+            "claim": "0x822A1E80 and each of its three callees executed on an asymmetric sentinel basis at four angles, twelve rotation cases checked lane by lane against a stated model with a worst deviation of 1.5e-06 and exactly zero at every zero angle"
+          },
+          {
+            "kind": "derivation",
+            "path": "reconstruction/ace-combat-6/include/ac6/retail_transform.h",
+            "sha256": "468df930c11b38deab81f2fcfb4491af0243f44e2a5defbcc82d56663e74a412",
+            "size": 4970,
+            "claim": "include/ac6/retail_transform.h carries the derivation, states that there is ONE kernel for both paths and why, and names what is not ported: the object's first 16 bytes and the trigonometry of 0x8209CB70"
+          }
+        ]
       }
     }
   }
