@@ -5,6 +5,16 @@ means in practice, written from failures rather than from first principles —
 eight in the session that started it, and eight more in the session that doubled
 it.
 
+**A vtable prefix is not an identity.** `0x822663A8`, a `li r3,0 ; blr` stub,
+fills slot `+0x04` in 27 of the 811 named vtables and `+0x08` in 24, and **261
+of the 811 share their `+0x04`…`+0x14` with at least one other table**. So a
+six-slot comparison is not weak evidence of relatedness — it is none. Name a
+class from `analysis/class-map.tsv` or from an RTTI locator at `vtable-4`, and
+where there is neither, say "the object whose vtable is 0x…" and stop. Cycles
+1281 and 1282 found both of this campaign's most-used family labels attached
+that way: `0x820078D0` shares 11 of 96 slots with the real `galib::CGaObj`, and
+`0x82009440` shares 9 of 96 with the real `ACE6::CAce6Unit`.
+
 **Before anything else — the general case.** Every shape below is an instance of
 *a correct measurement whose reporting sentence widened its scope*: "this
 instruction exists" written as "it runs", "true of this corpus" as "true", "not
