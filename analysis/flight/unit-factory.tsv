@@ -1,0 +1,38 @@
+# sub_820A8138 -- the unit factory, and which kind carries a flight model.
+#
+# IT HAS NO DIRECT CALLERS, like the integrator and for the same reason: it is a
+# virtual method. tools/whose_vtable.py places it at slot +0x14 of the vtable
+# 0x82055190, and that vtable IS NAMED in analysis/class-map.tsv:
+#
+#     ACE6 CX360UnitManager
+#
+# The first named anchor this thread has had. Everything below it -- the entity,
+# both flight models, the integrator, the control surfaces -- is unnamed.
+#
+# THE FOUR KINDS. r4 selects through a jump table at 0x820A832C, decoded from the
+# image rather than from the disassembly, which renders those four data words as
+# `lwz r16,...`:
+#
+# r4	branch	constructor	size	note
+1	0x820A833C	0x8222BEC8	10672	the entity with two flight models; if [x+19568] is non-zero it builds 0x82293C28 instead
+1	0x820A833C	0x82293C28	12160	the derived entity, which repoints +4912 at a third model
+2	0x820A8470	0x8229D9B0	592	no flight model -- far too small
+3	0x820A84F0	0x822A47E8	928	no flight model
+4	0x820A8570	(table)	-	a search over fifteen {key, fn, extra} rows keyed on r5, calling row.fn and storing row.extra at result+184
+#
+# THE FIFTEEN-ROW TABLE lives in BSS at 0x82A218A0 and is filled by this same
+# function on its first call, guarded by bit 0 of a flag word. Its keys are 0..14
+# and its `extra` column is 4, 5, 10, 6, 8, 7, 9, 2, 13, 14, 15, 16, 17, 6, 4.
+# That is the integer-keyed registrar shape the campaign's JV decision describes,
+# in a different subsystem.
+#
+# THE CONCLUSION THAT MATTERS. Only kind 1 builds an object large enough to carry
+# a flight model, and it is the object cycle 1384 examined. So the finding there
+# applies to the player's aircraft and not to some side case: the live flight
+# model is the 0x8200F310 branch, stepped through slot 15 by 0x82306A38, and the
+# 0x8200F270 instance at +2224 is never addressed.
+#
+# NOT ESTABLISHED. Which kind the PLAYER specifically gets, as opposed to the AI
+# units -- kind 1 is the only candidate that can fly, but "can" is what cycle
+# 1384 was caught by, and this file will not repeat it. What is established is
+# that kinds 2, 3 and 4 cannot carry one.
