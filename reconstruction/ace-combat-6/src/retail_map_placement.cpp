@@ -60,7 +60,7 @@ std::optional<MapPlacement> MapPlacement::open(const std::uint8_t* pdl,
       instance.part_id = static_cast<std::uint16_t>(tag & 0xFFFFu);
       instance.tag_high = static_cast<std::uint16_t>(tag >> 16);
       instance.selector = static_cast<std::uint16_t>((tag >> 16) & 0x1FFu);
-      instance.quadrant = static_cast<std::uint8_t>((tag >> 30) & 3u);
+      instance.draw_class = static_cast<std::uint8_t>((tag >> 30) & 3u);
       instance.kind = static_cast<std::uint8_t>((tag >> 27) & 7u);
       // 0x82102344..0x82102350: 0 or 7 continue, 1..6 are skipped.
       instance.accepted = instance.kind == 0 || instance.kind == 7;

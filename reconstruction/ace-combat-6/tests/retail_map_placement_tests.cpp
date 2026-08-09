@@ -4,6 +4,7 @@
 // DATA DRIVEN, exiting 77 when the container is absent: the extracted corpus is
 // retail content and is never committed.
 #include "ac6/retail_map_placement.h"
+#include "ac6/retail_ndxr_container.h"
 #include "ac6/retail_terrain_field.h"
 
 #include <cmath>
@@ -12,7 +13,9 @@
 #include <filesystem>
 #include <fstream>
 #include <algorithm>
+#include <map>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace {
@@ -27,6 +30,49 @@ std::vector<std::uint8_t> slurp(const std::filesystem::path& p) {
 }
 // A deterministic generator, so the null model is the same on every machine.
 std::uint32_t next(std::uint32_t& s) { s = s * 1664525u + 1013904223u; return s; }
+
+// THE DRAW CLASS, JOINED AGAINST THE PACKAGE'S OWN RECORD NAMES.
+//
+// Each record name carries a class token after `_m01_`. If bits 30..31 are that
+// class, the two histograms must agree -- and they do, to the unit, across four
+// buckets and 4,318 records. Nothing is fitted: the tag counts come from the
+// placement list and the name counts from the models, which are different files
+// parsed by different code.
+void check_class_join(const std::filesystem::path& dir, const std::size_t quad[4],
+                      std::size_t skipped) {
+    std::map<std::string, std::size_t> tokens;
+    std::size_t records = 0;
+    for (int id = 0; id < 170; ++id) {
+      char name[64];
+      std::snprintf(name, sizeof(name), "014_FHM/%03d_NDXR.ndxr", id);
+      const auto path = dir / name;
+      if (!std::filesystem::exists(path)) continue;
+      const std::vector<std::uint8_t> blob = slurp(path);
+      const auto container = ac6::retail::NdxrContainer::Open(blob.data(), blob.size());
+      if (!container) continue;
+      for (std::uint16_t r = 0; r < container->record_count(); ++r) {
+        const auto record = container->Record(r);
+        if (!record) continue;
+        ++records;
+        const std::string text(record->name);
+        const auto at = text.find("_m01_");
+        if (at == std::string::npos) continue;
+        const auto end = text.find('_', at + 5);
+        ++tokens[text.substr(at + 5, end - (at + 5))];
+      }
+    }
+    check(records == 4318, "the package holds one record per instance");
+    check(tokens["l"] + tokens["airport"] == quad[0], "class 0 is l and airport");
+    check(tokens["m"] == quad[1], "class 1 is m");
+    check(tokens["s"] == quad[2], "class 2 is s");
+    // class 3 counts only the ACCEPTED records; x includes the 92 retail skips.
+    check(tokens["x"] == quad[3] + skipped,
+          "class 3 is x, less the records retail skips");
+    std::printf("class join: l+airport %zu/%zu  m %zu/%zu  s %zu/%zu  x %zu/%zu\n",
+                tokens["l"] + tokens["airport"], quad[0], tokens["m"], quad[1],
+                tokens["s"], quad[2], tokens["x"], quad[3]);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -141,7 +187,7 @@ int main(int argc, char** argv) {
     }
     ++accepted;
     if (q.kind == 7) ++kind7;
-    ++quad[q.quadrant];
+    ++quad[q.draw_class];
     sel_min = std::min(sel_min, q.selector);
     sel_max = std::max(sel_max, q.selector);
   }
@@ -150,7 +196,7 @@ int main(int argc, char** argv) {
   check(placement->instances().size() - accepted == 92,
         "and skips the other 92, per 0x82102350");
   check(quad[0] == 345 && quad[1] == 584 && quad[2] == 3277 && quad[3] == 20,
-        "the two-bit field takes all four values over the accepted records");
+        "the draw class takes all four values over the accepted records");
   check(sel_min == 8 && sel_max == 169,
         "the nine-bit selector runs 8..169 over the accepted records");
   check(mid_nonzero == 78,
@@ -182,6 +228,8 @@ int main(int argc, char** argv) {
   check(sel_ok == 160, "every one of the 160 selectors names a model file");
   check(low_missing == 3,
         "while three of the 173 low-sixteen values name no model at all");
+
+  check_class_join(dir, quad, placement->instances().size() - accepted);
 
   // NEITHER FIELD IS A MODEL ID ON ITS OWN: the pair is unique per instance.
   // Asserted against the collision count chance would predict, because "all

@@ -48,12 +48,37 @@
 //   bits 16..24   NINE bits, 8..169, 160 distinct
 //   bits 25..26   zero on every accepted record
 //   bits 27..29   `(tag >> 27) & 7`; retail continues ONLY on 0 or 7
-//   bits 30..31   two bits, counts 345 / 584 / 3277 / 20
+//   bits 30..31   the DRAW-DISTANCE CLASS; see below
 //
 // `0x82102340` masks three bits and `0x82102364` masks NINE -- `rlwinm
 // r29,r30,16,23,31` -- so the high half is not one number. 4,226 of 4,318
 // records carry 7 in the three-bit field and 92 carry 1, 2, 5 or 6, and
 // `0x82102350` SKIPS those 92.
+//
+// BITS 30..31 ARE THE DRAW-DISTANCE CLASS, and cycle 1479 settled it with a
+// join no earlier cycle had: the package's record names carry a class token
+// after `_m01_`, and its histogram matches the field's exactly.
+//
+//     l + airport   345   vs   class 0   345
+//     m             584   vs   class 1   584
+//     s            3277   vs   class 2  3277
+//     x             112   vs   class 3   112
+//
+// Four for four, to the unit -- and `x` minus the 92 records `0x82102350` skips
+// is 20, exactly the accepted count in class 3. The package holds 4,318 records
+// and the placement list 4,318 instances.
+//
+// These are the classes the mapset names: `.mapparts.distanceL` = 16000,
+// `.distanceM` = 12000, `.distanceS` = 10000, read from the archive's own XML at
+// cycle 1474. So an instance's class chooses which record of its model to draw
+// and how far away it stays visible.
+//
+// THREE READINGS OF THE SAME FOUR VALUES. Cycle 1451 measured a four-fold
+// structure and called it a street grid at 79.33 degrees; cycle 1452 corrected
+// the mechanism to "a two-bit field" and left the meaning open; this is the
+// first reading an independent count agrees with. The lesson is 1452's own and
+// it applies to 1452: a statistic establishes a pattern, never a mechanism, and
+// a mechanism is not a meaning either.
 //
 // CORRECTING CYCLE 1451, WHICH GOT THE MECHANISM WRONG. That cycle measured the
 // circular resultant of `tag >> 16` read as a fraction of a turn and found
@@ -147,7 +172,7 @@ struct MapInstance {
   std::uint16_t part_id = 0;      // tag & 0xFFFF -- NOT the model; see above
   std::uint16_t tag_high = 0;     // the whole high half, kept for the statistic
   std::uint16_t selector = 0;     // (tag >> 16) & 0x1FF -- the parts/%d index
-  std::uint8_t quadrant = 0;      // (tag >> 30) & 3
+  std::uint8_t draw_class = 0;    // (tag >> 30) & 3 -- l/m/s/x, see above
   std::uint8_t kind = 0;          // (tag >> 27) & 7; retail accepts 0 and 7
   bool accepted = false;          // 0x82102344..0x82102350
   std::uint8_t coarse_x = 0;
