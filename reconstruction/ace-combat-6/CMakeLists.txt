@@ -71,6 +71,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_fhm_view.cpp
   src/retail_campaign_bundle.cpp
   src/retail_camera_table.cpp
+  src/retail_mode2_camera.cpp
   src/retail_mission01_scene_bundle.cpp
   src/retail_mission01_map_render_assets.cpp
   src/retail_mission01_cpu_compositor.cpp
@@ -371,6 +372,11 @@ add_test(NAME ac6-retail-content COMMAND ac6-retail-content-tests)
 add_executable(ac6-retail-camera-table-tests tests/retail_camera_table_tests.cpp)
 target_link_libraries(ac6-retail-camera-table-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-camera-table COMMAND ac6-retail-camera-table-tests)
+
+add_executable(ac6-retail-mode2-camera-tests
+  tests/retail_mode2_camera_tests.cpp)
+target_link_libraries(ac6-retail-mode2-camera-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-mode2-camera COMMAND ac6-retail-mode2-camera-tests)
 
 add_executable(ac6-retail-mission01-scene-bundle-tests
   tests/retail_mission01_scene_bundle_tests.cpp)

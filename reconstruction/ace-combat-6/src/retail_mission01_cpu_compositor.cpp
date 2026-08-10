@@ -69,14 +69,33 @@ struct CameraProjection final {
   std::uint32_t width{};
   std::uint32_t height{};
 
-  static std::optional<CameraProjection>
-  make(const Mission01CpuFrameRequest &request, float fov_radians) noexcept {
+  static bool request_is_bounded(const Mission01CpuFrameRequest &request,
+                                 float fov_radians) noexcept {
     if (request.width == 0 || request.width > kMaxWidth ||
         request.height == 0 || request.height > kMaxHeight ||
         !std::isfinite(fov_radians) || fov_radians <= 0.0F ||
         fov_radians >= 3.14159265358979323846F) {
-      return std::nullopt;
+      return false;
     }
+    return true;
+  }
+
+  bool finish(const Mission01CpuFrameRequest &request,
+              float fov_radians) noexcept {
+    tan_half_y = std::tan(fov_radians * 0.5F);
+    tan_half_x = tan_half_y * (static_cast<float>(request.width) /
+                               static_cast<float>(request.height));
+    width = request.width;
+    height = request.height;
+    return std::isfinite(tan_half_x) && std::isfinite(tan_half_y) &&
+           tan_half_x > 0.0F && tan_half_y > 0.0F;
+  }
+
+  static std::optional<CameraProjection>
+  make_external(const Mission01CpuFrameRequest &request,
+                float fov_radians) noexcept {
+    if (!request_is_bounded(request, fov_radians))
+      return std::nullopt;
     CameraProjection camera;
     camera.eye = from_array(request.pose.eye);
     camera.forward = from_array(request.pose.target) - camera.eye;
@@ -90,18 +109,46 @@ struct CameraProjection final {
     camera.up = cross(camera.right, camera.forward);
     if (!normalize(camera.up))
       return std::nullopt;
-    camera.tan_half_y = std::tan(fov_radians * 0.5F);
-    camera.tan_half_x =
-        camera.tan_half_y * (static_cast<float>(request.width) /
-                             static_cast<float>(request.height));
-    camera.width = request.width;
-    camera.height = request.height;
-    if (!std::isfinite(camera.tan_half_x) ||
-        !std::isfinite(camera.tan_half_y) || camera.tan_half_x <= 0.0F ||
-        camera.tan_half_y <= 0.0F) {
+    return camera.finish(request, fov_radians)
+               ? std::optional<CameraProjection>(camera)
+               : std::nullopt;
+  }
+
+  static std::optional<CameraProjection>
+  make_mode2(const Mission01CpuFrameRequest &request, float fov_radians,
+             const RetailMode2CameraLocator &locator) noexcept {
+    if (!request_is_bounded(request, fov_radians))
+      return std::nullopt;
+    CameraProjection camera;
+    camera.eye = from_array(locator.position);
+    camera.right = {locator.basis.rows[0][0], locator.basis.rows[0][1],
+                    locator.basis.rows[0][2]};
+    camera.up = {locator.basis.rows[1][0], locator.basis.rows[1][1],
+                 locator.basis.rows[1][2]};
+    camera.forward = {locator.basis.rows[2][0], locator.basis.rows[2][1],
+                      locator.basis.rows[2][2]};
+    const float right_length = dot(camera.right, camera.right);
+    const float up_length = dot(camera.up, camera.up);
+    const float forward_length = dot(camera.forward, camera.forward);
+    const float right_up = dot(camera.right, camera.up);
+    const float right_forward = dot(camera.right, camera.forward);
+    const float up_forward = dot(camera.up, camera.forward);
+    if (!std::isfinite(camera.eye.x) || !std::isfinite(camera.eye.y) ||
+        !std::isfinite(camera.eye.z) || !std::isfinite(right_length) ||
+        !std::isfinite(up_length) || !std::isfinite(forward_length) ||
+        !std::isfinite(right_up) || !std::isfinite(right_forward) ||
+        !std::isfinite(up_forward) || right_length < 0.99F ||
+        right_length > 1.01F || up_length < 0.99F || up_length > 1.01F ||
+        forward_length < 0.99F || forward_length > 1.01F ||
+        std::abs(right_up) > 0.001F || std::abs(right_forward) > 0.001F ||
+        std::abs(up_forward) > 0.001F) {
       return std::nullopt;
     }
-    return camera;
+    // Preserve the retail rows exactly. They are validated, not normalized or
+    // rebuilt through a host cross product.
+    return camera.finish(request, fov_radians)
+               ? std::optional<CameraProjection>(camera)
+               : std::nullopt;
   }
 
   Vec3 view(Vec3 world) const noexcept {
@@ -520,11 +567,13 @@ bool Mission01CpuFrameReport::jv_eligible() const noexcept {
          terrain_uv_retail && water_mask_retail && city_geometry_retail &&
          city_binding_retail && city_transform_retail && camera_group_retail &&
          camera_fov_retail && camera_mode_selection_retail &&
-         camera_pose_retail && clip_pipeline_retail &&
-         map_distance_policy_retail && texture_byte_swap_retail &&
-         mip_policy_retail && sampler_state_retail && alpha_state_retail &&
-         water_material_retail && sky_retail && vegetation_retail &&
-         active_units_retail && depth_coverage != 0;
+         camera_mode2_base_transform_retail && camera_dynamic_offset_retail &&
+         camera_runtime_state_retail && camera_pose_retail &&
+         clip_pipeline_retail && map_distance_policy_retail &&
+         texture_byte_swap_retail && mip_policy_retail &&
+         sampler_state_retail && alpha_state_retail && water_material_retail &&
+         sky_retail && vegetation_retail && active_units_retail &&
+         depth_coverage != 0;
 }
 
 bool Mission01CpuFrame::write_ppm(
@@ -555,7 +604,7 @@ bool Mission01CpuFrame::write_report_json(
   if (!output)
     return false;
   output << "{\n"
-         << "  \"schema\": \"ac6.mission01-cpu-frame.v1\",\n"
+         << "  \"schema\": \"ac6.mission01-cpu-frame.v2\",\n"
          << "  \"content_index_sha256\": \""
          << sha256_hex(report_.content_index_sha256) << "\",\n"
          << "  \"width\": " << report_.width << ",\n"
@@ -568,6 +617,10 @@ bool Mission01CpuFrame::write_report_json(
          << ",\n"
          << "  \"near_plane\": " << report_.near_plane << ",\n"
          << "  \"far_plane\": " << report_.far_plane << ",\n"
+         << "  \"camera_source\": \""
+         << (report_.uses_external_camera_pose ? "external_pose"
+                                               : "retail_mode2_base")
+         << "\",\n"
          << "  \"camera_eye\": [" << report_.camera_pose.eye[0] << ", "
          << report_.camera_pose.eye[1] << ", " << report_.camera_pose.eye[2]
          << "],\n"
@@ -622,6 +675,13 @@ bool Mission01CpuFrame::write_report_json(
          << "  \"depth_hash\": \"0x" << report_.depth_hash << std::dec
          << "\",\n"
          << "  \"marker_writes\": " << report_.marker_writes << ",\n"
+         << "  \"camera_mode2_base_transform_retail\": "
+         << (report_.camera_mode2_base_transform_retail ? "true" : "false")
+         << ",\n"
+         << "  \"camera_dynamic_offset_retail\": "
+         << (report_.camera_dynamic_offset_retail ? "true" : "false") << ",\n"
+         << "  \"camera_runtime_state_retail\": "
+         << (report_.camera_runtime_state_retail ? "true" : "false") << ",\n"
          << "  \"decoded_atlas_pages\": [";
   for (std::size_t index = 0; index < report_.decoded_atlas_pages.size();
        ++index) {
@@ -644,8 +704,13 @@ bool Mission01CpuFrame::write_report_json(
          << "  \"closed_domains\": [\"terrain_geometry\", "
             "\"terrain_uv\", \"water_mask\", \"city_geometry\", "
             "\"city_binding\", \"city_transform\", \"camera_group\", "
-            "\"camera_fov\"],\n"
+            "\"camera_fov\"";
+  if (report_.camera_mode2_base_transform_retail) {
+    output << ", \"camera_mode2_base_transform\"";
+  }
+  output << "],\n"
          << "  \"open_boundaries\": [\"camera_mode_selection\", "
+            "\"camera_dynamic_offset\", \"camera_runtime_state\", "
             "\"camera_pose\", "
             "\"clip_pipeline\", \"map_distance_policy\", "
             "\"texture_byte_swap\", \"mip_policy\", \"sampler_state\", "
@@ -742,8 +807,19 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   const float fov = request.alternate_fov
                         ? camera_record->alternate_fov_radians()
                         : camera_record->fov_radians();
+  std::optional<RetailMode2CameraLocator> mode2_locator;
+  if (request.mode2_camera_state.has_value()) {
+    if (request.view_mode != 2)
+      return std::nullopt;
+    mode2_locator = resolve_mode2_base_camera_locator(
+        *camera_record, *request.mode2_camera_state);
+    if (!mode2_locator.has_value())
+      return std::nullopt;
+  }
   const std::optional<CameraProjection> camera =
-      CameraProjection::make(request, fov);
+      mode2_locator.has_value()
+          ? CameraProjection::make_mode2(request, fov, *mode2_locator)
+          : CameraProjection::make_external(request, fov);
   if (!camera.has_value())
     return std::nullopt;
 
@@ -766,7 +842,17 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   report.fov_radians = fov;
   report.near_plane = kNearPlane;
   report.far_plane = kFarPlane;
-  report.camera_pose = request.pose;
+  report.uses_external_camera_pose = !mode2_locator.has_value();
+  if (mode2_locator.has_value()) {
+    report.camera_pose.eye = mode2_locator->position;
+    for (std::size_t lane = 0; lane < 3; ++lane) {
+      report.camera_pose.target[lane] =
+          mode2_locator->position[lane] + mode2_locator->basis.rows[2][lane];
+      report.camera_pose.up[lane] = mode2_locator->basis.rows[1][lane];
+    }
+  } else {
+    report.camera_pose = request.pose;
+  }
   report.texture_swap_16 = request.texture_swap_16;
   report.sampler_address = request.sampler_address;
   report.clear_color = request.clear_color;
@@ -781,6 +867,7 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   report.city_transform_retail = true;
   report.camera_group_retail = true;
   report.camera_fov_retail = true;
+  report.camera_mode2_base_transform_retail = mode2_locator.has_value();
 
   std::set<std::uint8_t> atlas_pages;
   std::set<std::uint32_t> map_textures;

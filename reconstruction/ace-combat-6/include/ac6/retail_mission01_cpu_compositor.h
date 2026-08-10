@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ac6/retail_camera_table.h"
 #include "ac6/retail_mission01_map_render_assets.h"
+#include "ac6/retail_mode2_camera.h"
 
 #include <array>
 #include <cstdint>
@@ -32,6 +32,10 @@ struct Mission01CpuFrameRequest final {
   CampaignLoadout loadout{};
   std::uint32_t view_mode{};
   bool alternate_fov{};
+  // When present, mode 2 uses the qualified retail base-locator transform.
+  // The external pose is ignored. The live dynamic-offset producer remains a
+  // separately reported boundary and is never synthesized here.
+  std::optional<RetailMode2CameraState> mode2_camera_state;
   Mission01CpuCameraPose pose{};
   bool texture_swap_16{};
   Mission01CpuSamplerAddress sampler_address{Mission01CpuSamplerAddress::Clamp};
@@ -52,6 +56,7 @@ struct Mission01CpuFrameReport final {
   float near_plane{};
   float far_plane{};
   Mission01CpuCameraPose camera_pose{};
+  bool uses_external_camera_pose{};
   bool texture_swap_16{};
   Mission01CpuSamplerAddress sampler_address{Mission01CpuSamplerAddress::Clamp};
   std::uint32_t clear_color{};
@@ -88,6 +93,9 @@ struct Mission01CpuFrameReport final {
   bool camera_group_retail{};
   bool camera_fov_retail{};
   bool camera_mode_selection_retail{};
+  bool camera_mode2_base_transform_retail{};
+  bool camera_dynamic_offset_retail{};
+  bool camera_runtime_state_retail{};
   bool camera_pose_retail{};
   bool clip_pipeline_retail{};
   bool map_distance_policy_retail{};
@@ -128,9 +136,10 @@ private:
 // bindings and textures remain persistent across frames; texture surfaces are
 // decoded lazily once per byte-swap choice.
 //
-// This class deliberately does not claim JV: opening camera mode/pose,
-// sampler/alpha state, water material, sky, vegetation and active-unit geometry
-// are reported false until their own retail consumers are joined.
+// This class deliberately does not claim JV: opening camera mode, the mode-2
+// dynamic offset/live state, complete pose, sampler/alpha state, water
+// material, sky, vegetation and active-unit geometry are reported false until
+// their own retail consumers are joined.
 class RetailMission01CpuCompositor final {
 public:
   RetailMission01CpuCompositor(const RetailMission01CpuCompositor &) = delete;
