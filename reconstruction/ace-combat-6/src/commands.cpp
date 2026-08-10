@@ -7,11 +7,8 @@
 #include "ac6/retail_session.h"
 #include "ac6/sdl_input.h"
 #include "ac6/interactive.h"
-
 #define parse_u32 ac6::parse_u32
-
 #include <SDL3/SDL.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
@@ -24,19 +21,26 @@
 #include <string_view>
 #include <thread>
 #include <vector>
-
 namespace {
-
 int run_import_command(int argc, char** argv) {
   std::filesystem::path source;
   std::filesystem::path cache;
-  for (int index = 2; index < argc; index += 2) {
+  bool frontend = false;
+  for (int index = 2; index < argc; ++index) {
+    const std::string_view option(argv[index]);
+    if (option == "--frontend") {
+      if (frontend) {
+        std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_or_duplicate_option\n");
+        return 2;
+      }
+      frontend = true;
+      continue;
+    }
     if (index + 1 >= argc) {
       std::fprintf(stderr,
-                   "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]\n");
+                   "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n");
       return 2;
     }
-    const std::string_view option(argv[index]);
     if (option == "--source" && source.empty()) {
       source = argv[index + 1];
     } else if (option == "--cache" && cache.empty()) {
@@ -45,10 +49,11 @@ int run_import_command(int argc, char** argv) {
       std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_or_duplicate_option\n");
       return 2;
     }
+    ++index;
   }
   if (source.empty()) {
     std::fprintf(stderr,
-                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]\n");
+                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n");
     return 2;
   }
   if (cache.empty()) cache = ac6::default_retail_cache_root();
@@ -57,8 +62,16 @@ int run_import_command(int argc, char** argv) {
                  "ac6_import=fail error=invalid_argument detail=no_absolute_XDG_or_HOME_cache_root\n");
     return 2;
   }
+  std::vector<std::uint32_t> selected(ac6::kPalRequiredDataTableEntries.begin(),
+                                      ac6::kPalRequiredDataTableEntries.end());
+  if (frontend) {
+    selected.insert(selected.end(), ac6::kPalFrontendFontDataTableEntries.begin(),
+                    ac6::kPalFrontendFontDataTableEntries.end());
+    std::sort(selected.begin(), selected.end());
+    selected.erase(std::unique(selected.begin(), selected.end()), selected.end());
+  }
   const ac6::RetailImportReport report =
-      ac6::RetailContentImporter{}.run(source, cache);
+      ac6::RetailContentImporter{}.run(source, cache, selected);
   if (!report.passed()) {
     std::fprintf(stderr, "ac6_import=fail error=%s detail=%s\n",
                  ac6::retail_content_error_name(report.error), report.detail.c_str());
@@ -73,13 +86,13 @@ int run_import_command(int argc, char** argv) {
     return 3;
   }
   std::fprintf(stdout,
-               "ac6_import=pass records=%zu bytes=%llu index_sha256=%s cache=%s\n",
+               "ac6_import=pass records=%zu bytes=%llu frontend=%s index_sha256=%s cache=%s\n",
                report.imported_records,
                static_cast<unsigned long long>(report.imported_bytes),
+               frontend ? "true" : "false",
                ac6::sha256_hex(report.index_sha256).c_str(), cache.c_str());
   return 0;
 }
-
 bool same_world_frame(const ac6::WorldFrame& a, const ac6::WorldFrame& b) {
   return a.tick == b.tick && a.mission_id == b.mission_id &&
       a.mission_ready == b.mission_ready && a.position_x == b.position_x &&
@@ -90,13 +103,11 @@ bool same_world_frame(const ac6::WorldFrame& a, const ac6::WorldFrame& b) {
       a.camera_target_x == b.camera_target_x && a.camera_target_y == b.camera_target_y &&
       a.camera_target_z == b.camera_target_z && a.input == b.input;
 }
-
 std::filesystem::path resolve_manifest_path(std::filesystem::path path) {
   std::error_code error;
   if (std::filesystem::is_directory(path, error)) path /= "manifest.tsv";
   return path;
 }
-
 struct PlayAssets final {
   ac6::MissionManifestLoader loader;
   ac6::MissionManifestPaths paths;
@@ -123,7 +134,6 @@ struct PlayAssets final {
   const ac6::MissionRenderDefinition* render_definition{};
   const ac6::MissionRenderPass* world_pass{};
   const ac6::MissionRenderTargetDefinition* color_target{};
-
   bool load(const std::filesystem::path& input, std::uint32_t requested_mission) {
     mission_id = requested_mission;
     const std::filesystem::path manifest = resolve_manifest_path(input);
@@ -143,7 +153,6 @@ struct PlayAssets final {
     color_target = targets.find(mission_id, world_pass->color_target);
     return color_target != nullptr && color_target->width != 0 && color_target->height != 0;
   }
-
   ac6::VulkanRenderer::RenderAssets render_assets() const noexcept {
     return {&assets, render_definition, &drawables, &buffers, &geometries, &transforms,
             &materials, &textures, &shaders, &targets, &passes, &resolves,
@@ -160,7 +169,6 @@ struct NativeGraphics final {
   ac6::VulkanDevice device;
   ac6::VulkanSwapchain swapchain;
   ac6::VulkanFramePresenter presenter;
-
   bool initialize(std::uint32_t width, std::uint32_t height, bool hidden) noexcept {
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
     video_initialized = true;
@@ -176,11 +184,9 @@ struct NativeGraphics final {
     }
     return true;
   }
-
   bool present(const ac6::NativeRenderTarget& target) noexcept {
     return presenter.valid() && presenter.present_frame(target);
   }
-
   void shutdown() noexcept {
     presenter.destroy();
     swapchain.destroy();
@@ -197,7 +203,6 @@ struct NativeGraphics final {
       video_initialized = false;
     }
   }
-
   ~NativeGraphics() { shutdown(); }
 };
 
@@ -216,7 +221,6 @@ bool render_and_present(PlayAssets& assets, NativeGraphics& graphics,
   if (execution != nullptr && hud != nullptr && !hud->render(target, frame, *execution)) return false;
   return graphics.present(target);
 }
-
 void hash_bytes(std::uint64_t& hash, const void* data, std::size_t size) noexcept {
   const auto* bytes = static_cast<const std::uint8_t*>(data);
   for (std::size_t index = 0; index < size; ++index) {
@@ -224,12 +228,10 @@ void hash_bytes(std::uint64_t& hash, const void* data, std::size_t size) noexcep
     hash *= 1099511628211ull;
   }
 }
-
 template <typename T>
 void hash_value(std::uint64_t& hash, const T& value) noexcept {
   hash_bytes(hash, &value, sizeof(value));
 }
-
 std::uint64_t semantic_hash(const ac6::WorldFrame& frame,
                             const ac6::RenderReadback& readback) noexcept {
   std::uint64_t hash = 1469598103934665603ull;
@@ -264,7 +266,6 @@ std::uint64_t semantic_hash(const ac6::WorldFrame& frame,
   hash_value(hash, readback.depth_hash);
   return hash;
 }
-
 bool same_readback(const ac6::RenderReadback& left,
                    const ac6::RenderReadback& right) noexcept {
   return left.width == right.width && left.height == right.height &&
@@ -280,7 +281,6 @@ ac6::InputFrame generated_headless_input(std::size_t tick) noexcept {
   input.throttle = static_cast<std::uint8_t>(160u + (tick % 64u));
   return input;
 }
-
 bool write_headless_report(const std::filesystem::path& output_dir,
                            std::uint32_t mission_id,
                            const ac6::WorldFrame& frame,
@@ -1001,9 +1001,10 @@ int run_present_manifest(int argc, char** argv) {
 int run_commands(int argc, char** argv) {
   if (argc >= 2 && std::string_view(argv[1]) == "--help") {
     std::fprintf(stdout,
-                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]\n"
+                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n"
                  "       ac6-native play --cache CACHE_ROOT [--save SAVE_PATH]\n"
-                 "                       [--replay REPLAY_FILE] [--aircraft ID] [--weapon ID]\n"
+                 "                       [--replay REPLAY_FILE] [--capture PPM]\n"
+                 "                       [--frames COUNT] [--aircraft ID] [--weapon ID]\n"
                  "       ac6-native replay --cache CACHE_ROOT --replay FILE --report OUTPUT_DIR\n");
     return 0;
   }

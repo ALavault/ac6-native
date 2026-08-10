@@ -91,7 +91,7 @@ def parse_index(raw: bytes) -> tuple[dict, list[dict]]:
         or version != 1
         or header_size != HEADER.size
         or record_size != RECORD.size
-        or count != 17
+        or count not in (17, 24)
         or table_count != 926
         or pack_count != 2
         or len(raw) != HEADER.size + count * RECORD.size
@@ -157,11 +157,12 @@ def parse_index(raw: bytes) -> tuple[dict, list[dict]]:
                 "payload_sha256": payload_sha256.hex(),
             }
         )
-    expected_entries = [1, *range(9, 24), 119]
+    expected_entries = ([1, *range(2, 24), 119] if count == 24
+                        else [1, *range(9, 24), 119])
     if [record["data_table_entry_index"] for record in records] != expected_entries:
         raise AuditError(
-            "index does not cover common entry 1, campaign entries 9..23 "
-            "and Mission 01 world entry 119"
+            "index does not cover the selected common/frontend entries, "
+            "campaign entries 9..23 and Mission 01 world entry 119"
         )
     return identity, records
 
@@ -325,6 +326,9 @@ def build_matrix(
             "mission_payloads": len(missions),
             "playable_missions_claimed": 1,
             "content_blobs": len(records),
+            "frontend_font_blobs": sum(
+                record["data_table_entry_index"] in range(2, 9) for record in records
+            ),
             "payload_bytes": sum(record["payload_size"] for record in records),
             "campaign_payload_bytes": sum(
                 record["payload_size"] for record in campaign_records
@@ -340,6 +344,10 @@ def build_matrix(
             "second_mission_playability_claimed": False,
             "unknown_bindings_fail_closed": True,
             "common_camera_entry_imported": True,
+            "frontend_font_entries_imported": all(
+                any(record["data_table_entry_index"] == entry for record in records)
+                for entry in range(2, 9)
+            ),
             "mission01_world_entry_imported": True,
         },
     }

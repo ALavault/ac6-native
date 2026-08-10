@@ -1,5 +1,5 @@
 {
-  "cache_index_sha256": "349f5f49fe1acf19984c6470a5d3f16adf3029e36c93e24da8cb3ec58b4cdfd0",
+  "cache_index_sha256": "ca25a10fc9dbf1987d34fd755c9d842c887273e5083e8b4d644339b5a156bbde",
   "mission01_required_resources": [
     {
       "archive": "DATA00.PAC",
@@ -1249,6 +1249,7 @@
   "policy": {
     "cache_paths_embedded": false,
     "common_camera_entry_imported": true,
+    "frontend_font_entries_imported": true,
     "mission01_world_entry_imported": true,
     "retail_bytes_embedded": false,
     "second_mission_playability_claimed": false,
@@ -1288,11 +1289,12 @@
   "status": "campaign_payloads_and_mission01_resources_imported",
   "summary": {
     "campaign_payload_bytes": 443168032,
-    "content_blobs": 17,
+    "content_blobs": 24,
+    "frontend_font_blobs": 7,
     "mission_payloads": 15,
-    "payload_bytes": 631481632,
+    "payload_bytes": 647199600,
     "playable_missions_claimed": 1,
-    "stored_bytes_read": 260997072,
+    "stored_bytes_read": 263776966,
     "unresolved_common_contracts": [
       "MATE -> NDXR -> NTXR",
       "Scene / TCAM",

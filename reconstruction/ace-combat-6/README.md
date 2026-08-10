@@ -11,7 +11,7 @@ content-addressed buffers plus a local reference pack.
 ## Retail import and sealed cache
 
 ```sh
-ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]
+ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]
 ```
 
 The importer requires the qualified PAL `default.xex`, `DATA.TBL`,
@@ -21,6 +21,11 @@ common camera resource at entry 1, campaign entries 9–23 and the qualified
 Mission 01 world resource at entry 119. A wrong identity, duplicate request,
 truncated range, size-limit violation or decode error fails before a new
 generation is published.
+
+For the product frontend, pass `--frontend`: entries 2–8 are then imported as
+the PAL font/glyph closure (five locale slots plus the Japanese companion
+pack). The public `play` and `replay` commands reject a cache that lacks this
+complete closure instead of falling back to invented UI text.
 
 The default cache is `$XDG_CACHE_HOME/ac6-native`, or
 `$HOME/.cache/ac6-native` when the XDG path is absent. Payloads live under
@@ -98,6 +103,19 @@ mip/sampler/alpha state, water material, sky, vegetation and active-unit
 geometry. Consequently the reference image is auditable and marker-free but
 reports `jv_eligible=false`; it cannot be used to claim JV until those fields
 are closed.
+
+The public cache-bound play command can emit a bounded screenshot of the
+interactive Vulkan lane without leaving the cache or importing a manifest:
+
+```sh
+SDL_AUDIODRIVER=dummy xvfb-run -a ac6-native play \
+  --cache CACHE_ROOT --capture /tmp/ac6-frame.ppm --frames 1
+```
+
+`--frames` is a fixed 60 Hz simulation count (maximum 600,000). The capture is
+the actual presented native target, not a parity claim; until the remaining
+camera/scene bindings are qualified it may still contain the explicitly
+diagnostic world-marker lane. Omitting `--frames` keeps `play` interactive.
 
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is

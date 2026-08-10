@@ -15,6 +15,15 @@ namespace ac6 {
 inline constexpr std::array<std::uint32_t, 15> kPalCampaignDataTableEntries{
     9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
 
+// DATA.TBL entries 2..8 are the PAL frontend font/glyph packs.  They are
+// optional for the scenario-only diagnostic lane but required by the product
+// frontend; keeping the selection separate lets old bounded tests continue to
+// exercise a one-payload importer without silently manufacturing UI text.
+inline constexpr std::array<std::uint32_t, 7> kPalFrontendFontDataTableEntries{
+    2, 3, 4, 5, 6, 7, 8};
+inline constexpr std::array<std::uint32_t, 5> kPalFrontendLocaleDataTableEntries{
+    3, 4, 5, 6, 7};
+
 // Entry 1 contains the common retail camera tables. Entry 119 is the qualified
 // Mission 01 world/map resource: terrain, placement, map parts, textures and
 // mapset. Both are selected outside the campaign payload.

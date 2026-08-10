@@ -19,6 +19,29 @@ int main() {
   REQUIRE(frontend.advance());
   REQUIRE(frontend.state() == ac6::FrontendState::Mission);
   REQUIRE(!frontend.advance());
+  REQUIRE(frontend.pause());
+  REQUIRE(frontend.state() == ac6::FrontendState::Pause);
+  REQUIRE(!frontend.pause());
+  REQUIRE(!frontend.advance());
+  REQUIRE(frontend.resume());
+  REQUIRE(frontend.state() == ac6::FrontendState::Mission);
+  REQUIRE(!frontend.resume());
+  REQUIRE(frontend.fail());
+  REQUIRE(frontend.state() == ac6::FrontendState::Error);
+  REQUIRE(!frontend.fail());
+  REQUIRE(frontend.recover());
+  REQUIRE(frontend.state() == ac6::FrontendState::Title);
+  REQUIRE(frontend.selected_mission() == 0);
+  REQUIRE(frontend.configure({ac6::FrontendDifficulty::Normal,
+                               ac6::FrontendControls::Normal,
+                               ac6::FrontendLanguage::English}));
+  REQUIRE(frontend.select_mission(catalog, 1));
+  REQUIRE(frontend.advance());
+  REQUIRE(frontend.advance());
+  REQUIRE(frontend.advance());
+  REQUIRE(frontend.advance());
+  REQUIRE(frontend.advance());
+  REQUIRE(frontend.state() == ac6::FrontendState::Mission);
 
   ac6::MissionObjectiveDatabase objectives;
   REQUIRE(objectives.add({1, {1, "frontend_terminal_fixture", true,

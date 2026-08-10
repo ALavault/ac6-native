@@ -5,6 +5,7 @@
 #include "ac6/retail_campaign_bundle.h"
 #include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
+#include "ac6/retail_frontend_resources.h"
 #include "ac6/retail_session.h"
 #include "ac6/retail_session_replay.h"
 #include "ac6/sdl_input.h"
@@ -31,8 +32,10 @@ struct Options final {
   std::filesystem::path save;
   std::filesystem::path replay;
   std::filesystem::path report;
+  std::filesystem::path capture;
   std::uint32_t aircraft{1};
   std::uint32_t weapon{1};
+  std::uint32_t frames{};
 };
 
 bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
@@ -51,6 +54,7 @@ bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
 bool parse_play_options(int argc, char** argv, Options& options) {
   bool aircraft_seen = false;
   bool weapon_seen = false;
+  bool frames_seen = false;
   for (int index = 2; index < argc; ++index) {
     const std::string_view option(argv[index]);
     if (index + 1 >= argc) return false;
@@ -58,6 +62,13 @@ bool parse_play_options(int argc, char** argv, Options& options) {
     if (option == "--cache" && options.cache.empty()) options.cache = value;
     else if (option == "--save" && options.save.empty()) options.save = value;
     else if (option == "--replay" && options.replay.empty()) options.replay = value;
+    else if (option == "--capture" && options.capture.empty()) options.capture = value;
+    else if (option == "--frames" && !frames_seen) {
+      if (!parse_u32(value.string(), options.frames) || options.frames > 600000u) {
+        return false;
+      }
+      frames_seen = true;
+    }
     else if (option == "--aircraft" && !aircraft_seen) {
       if (!parse_u32(value.string(), options.aircraft)) return false;
       aircraft_seen = true;
@@ -92,6 +103,10 @@ bool open_store(const std::filesystem::path& cache, RetailContentStore& store) {
     return false;
   }
   return true;
+}
+
+bool frontend_resources_qualified(const RetailContentStore& store) {
+  return retail::RetailFrontendResources::open(store).has_value();
 }
 
 bool loadout_qualified(const RetailContentStore& store,
@@ -157,27 +172,32 @@ bool render_frame(NativeGraphics& graphics, NativeRenderTarget& target,
 int run_play_impl(const Options& options) {
   RetailContentStore store;
   if (!open_store(options.cache, store)) return 120;
+  if (!frontend_resources_qualified(store)) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=cache_incomplete detail=frontend_font_resources\n");
+    return 121;
+  }
   const CampaignLoadout loadout{options.aircraft, options.weapon, true};
-  if (!loadout.valid()) return 121;
+  if (!loadout.valid()) return 122;
   if (!loadout_qualified(store, loadout)) {
     std::fprintf(stderr,
                  "ac6_retail=fail error=cache_incomplete detail=loadout_capability_table\n");
-    return 122;
+    return 123;
   }
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, loadout, {1, {0, 0}});
-  if (session == nullptr) return 123;
+  if (session == nullptr) return 124;
   NativeGraphics graphics;
   if (!graphics.initialize(1280, 720)) {
     std::fprintf(stderr,
                  "ac6_retail=fail error=vulkan_unavailable detail=interactive_backend\n");
-    return 124;
+    return 125;
   }
   NativeRenderTarget target;
-  if (!target.resize(1280, 720)) return 125;
+  if (!target.resize(1280, 720)) return 126;
   NativeHudRenderer hud;
   SdlEventPump pump;
-  if (!pump.initialize()) return 126;
+  if (!pump.initialize()) return 127;
   SdlInputAdapter input_adapter;
   InputMappingDatabase mappings;
   InputFrame input_frame{};
@@ -189,11 +209,22 @@ int run_play_impl(const Options& options) {
   replay.loadout = loadout;
   replay.content_index_sha256 = store.index_sha256();
   retail::RetailSessionFrame frame = session->tick(1.0f / 60.0f, input_frame);
-  if (!render_frame(graphics, target, hud, *session, frame)) return 127;
+  if (!render_frame(graphics, target, hud, *session, frame)) return 128;
+  bool capture_written = false;
+  const auto capture = [&]() -> bool {
+    if (options.capture.empty() || capture_written) return true;
+    std::error_code error;
+    const std::filesystem::path parent = options.capture.parent_path();
+    if (!parent.empty()) std::filesystem::create_directories(parent, error);
+    if (error || !target.write_ppm(options.capture)) return false;
+    capture_written = true;
+    return true;
+  };
+  if (!capture()) return 129;
   using Clock = std::chrono::steady_clock;
   auto previous = Clock::now();
   double accumulator = 0.0;
-  while (!quit) {
+  while (!quit && (options.frames == 0 || replay.frames.size() < options.frames)) {
     events.clear();
     (void)pump.pump(input_adapter, input_frame, buttons, mappings,
                     session->player_entity(), events, quit);
@@ -211,15 +242,16 @@ int run_play_impl(const Options& options) {
       stepped = true;
     }
     if (stepped && !render_frame(graphics, target, hud, *session, frame)) return 128;
+    if (stepped && !capture()) return 129;
     SDL_Delay(1);
   }
-  if (!options.replay.empty() && !replay.write_file(options.replay)) return 129;
+  if (!options.replay.empty() && !replay.write_file(options.replay)) return 130;
   if (!options.save.empty()) {
     SessionSaveStore saves;
     MissionExecution::Checkpoint checkpoint;
     if (!session->execution().save_checkpoint(checkpoint) ||
         !saves.save(1, {1, session->execution().snapshot(), {}, checkpoint}) ||
-        !saves.write_file(options.save)) return 130;
+        !saves.write_file(options.save)) return 131;
   }
   std::fprintf(stdout,
                "ac6_retail=pass command=play mission=1 ticks=%llu replay_frames=%zu "
@@ -313,23 +345,28 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
 int run_replay_impl(const Options& options) {
   RetailContentStore store;
   if (!open_store(options.cache, store)) return 131;
+  if (!frontend_resources_qualified(store)) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=cache_incomplete detail=frontend_font_resources\n");
+    return 132;
+  }
   retail::RetailSessionReplay replay;
-  if (!replay.read_file(options.replay)) return 132;
-  if (replay.content_index_sha256 != store.index_sha256()) return 133;
-  if (!loadout_qualified(store, replay.loadout)) return 134;
+  if (!replay.read_file(options.replay)) return 133;
+  if (replay.content_index_sha256 != store.index_sha256()) return 134;
+  if (!loadout_qualified(store, replay.loadout)) return 135;
   const std::optional<ReplayRun> first = replay_once(store, replay);
   const std::optional<ReplayRun> second = replay_once(store, replay);
-  if (!first.has_value() || !second.has_value()) return 135;
+  if (!first.has_value() || !second.has_value()) return 136;
   const bool deterministic = same_world_frame(first->final_frame, second->final_frame) &&
       first->sub_mission == second->sub_mission && first->step == second->step &&
       first->script_ended == second->script_ended &&
       first->semantic_hash == second->semantic_hash;
   std::error_code error;
   std::filesystem::create_directories(options.report, error);
-  if (error) return 136;
+  if (error) return 137;
   const std::filesystem::path report = options.report / "retail-replay.json";
   std::ofstream output(report, std::ios::trunc);
-  if (!output) return 137;
+  if (!output) return 138;
   output << "{\n"
          << "  \"schema\": \"ac6.native-retail-replay.v1\",\n"
          << "  \"mission_id\": " << replay.mission_id << ",\n"
@@ -347,7 +384,7 @@ int run_replay_impl(const Options& options) {
          << "  \"deterministic\": " << (deterministic ? "true" : "false") << ",\n"
          << "  \"semantic_hash\": \"0x" << std::hex << first->semantic_hash << std::dec << "\"\n"
          << "}\n";
-  if (!output || !deterministic) return 138;
+  if (!output || !deterministic) return 139;
   std::fprintf(stdout, "ac6_retail=pass command=replay mission=%u frames=%zu "
                       "deterministic=true semantic_hash=0x%llx report=%s\n",
                replay.mission_id, replay.frames.size(),

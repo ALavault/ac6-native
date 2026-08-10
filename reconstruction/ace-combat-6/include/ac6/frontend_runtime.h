@@ -2,9 +2,23 @@
 
 #include "ac6/product_runtime.h"
 
+namespace ac6::retail {
+class RetailFrontendResources;
+}
+
 namespace ac6 {
 
-enum class FrontendState : std::uint8_t { Title, NewGame, Briefing, Hangar, Loading, Mission, Debrief };
+enum class FrontendState : std::uint8_t {
+  Title,
+  NewGame,
+  Briefing,
+  Hangar,
+  Loading,
+  Mission,
+  Pause,
+  Debrief,
+  Error,
+};
 enum class FrontendDifficulty : std::uint8_t { Normal, Easy, Hard };
 enum class FrontendControls : std::uint8_t { Normal, Expert };
 enum class FrontendLanguage : std::uint8_t { English, French, German, Italian, Spanish };
@@ -25,6 +39,8 @@ class FrontendController final {
   std::uint32_t selected_mission() const noexcept { return selected_mission_; }
   const FrontendSettings& settings() const noexcept { return settings_; }
   bool configure(FrontendSettings settings) noexcept;
+  bool configure(FrontendSettings settings,
+                 const retail::RetailFrontendResources& resources) noexcept;
   void set_campaign(CampaignProgression* campaign) noexcept { campaign_ = campaign; }
   bool select_mission(const MissionCatalog& catalog, std::uint32_t mission_id) noexcept;
   bool set_loadout(CampaignLoadout loadout) noexcept;
@@ -33,6 +49,10 @@ class FrontendController final {
                        MissionExecution& execution) const noexcept;
   bool enter_debrief(const MissionExecution& execution) noexcept;
   bool return_to_campaign() noexcept;
+  bool pause() noexcept;
+  bool resume() noexcept;
+  bool fail() noexcept;
+  bool recover() noexcept;
   const MissionDebrief* debrief() const noexcept {
     return debrief_.has_value() ? &*debrief_ : nullptr;
   }

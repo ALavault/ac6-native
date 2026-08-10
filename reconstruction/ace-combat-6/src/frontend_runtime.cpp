@@ -1,4 +1,5 @@
 #include "ac6/product_runtime.h"
+#include "ac6/retail_frontend_resources.h"
 
 #include <algorithm>
 #include <array>
@@ -33,7 +34,9 @@ bool FrontendController::advance() noexcept {
       break;
     case FrontendState::Loading: state_ = FrontendState::Mission; break;
     case FrontendState::Mission:
+    case FrontendState::Pause:
     case FrontendState::Debrief:
+    case FrontendState::Error:
       return false;
   }
   return true;
@@ -41,6 +44,21 @@ bool FrontendController::advance() noexcept {
 
 bool FrontendController::configure(FrontendSettings settings) noexcept {
   if (state_ != FrontendState::Title || !settings.valid()) return false;
+  if (settings.language != FrontendLanguage::English) return false;
+  settings_ = settings;
+  return true;
+}
+
+bool FrontendController::configure(
+    FrontendSettings settings,
+    const retail::RetailFrontendResources& resources) noexcept {
+  if (state_ != FrontendState::Title ||
+      settings.difficulty != FrontendDifficulty::Normal ||
+      settings.controls != FrontendControls::Normal ||
+      !resources.complete() ||
+      !resources.has_locale_slot(static_cast<std::uint32_t>(settings.language))) {
+    return false;
+  }
   settings_ = settings;
   return true;
 }
@@ -49,9 +67,14 @@ bool FrontendController::dispatch(Event event) noexcept {
   switch (event.type) {
     case EventType::StartMission:
       return advance();
+    case EventType::Pause:
+      return pause();
+    case EventType::Resume:
+      return resume();
     case EventType::Abort:
       state_ = FrontendState::Title;
       selected_mission_ = 0;
+      debrief_.reset();
       return true;
     default:
       return false;
@@ -117,6 +140,32 @@ bool FrontendController::enter_debrief(const MissionExecution& execution) noexce
 bool FrontendController::return_to_campaign() noexcept {
   if (state_ != FrontendState::Debrief || !debrief_.has_value()) return false;
   state_ = FrontendState::NewGame;
+  selected_mission_ = 0;
+  debrief_.reset();
+  return true;
+}
+
+bool FrontendController::pause() noexcept {
+  if (state_ != FrontendState::Mission) return false;
+  state_ = FrontendState::Pause;
+  return true;
+}
+
+bool FrontendController::resume() noexcept {
+  if (state_ != FrontendState::Pause) return false;
+  state_ = FrontendState::Mission;
+  return true;
+}
+
+bool FrontendController::fail() noexcept {
+  if (state_ == FrontendState::Error) return false;
+  state_ = FrontendState::Error;
+  return true;
+}
+
+bool FrontendController::recover() noexcept {
+  if (state_ != FrontendState::Error) return false;
+  state_ = FrontendState::Title;
   selected_mission_ = 0;
   debrief_.reset();
   return true;
