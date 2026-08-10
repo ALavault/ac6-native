@@ -180,6 +180,8 @@ public:
   const RetailMission01MapRenderAssets &assets() const noexcept {
     return assets_;
   }
+  const RetailCameraRecord *camera_record(const CampaignLoadout &loadout,
+                                          std::uint32_t view_mode) const noexcept;
 
 private:
   RetailMission01CpuCompositor(RetailMission01MapRenderAssets assets,

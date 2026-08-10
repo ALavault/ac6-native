@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <iosfwd>
 #include <optional>
+#include <span>
 #include <vector>
 
 #include "ac6/campaign_progression.h"
@@ -965,6 +966,13 @@ class NativeRenderTarget final {
                            std::uint32_t ordinal);
   RenderReadback readback() const noexcept;
   bool copy_rgba8(std::vector<std::uint8_t>& pixels) const;
+  // Imports a CPU reference frame into the same target that the Vulkan
+  // presenter consumes. The pixels are 0xAARRGGBB and the depth plane is in
+  // camera-space units; this is an explicit diagnostic bridge, not an
+  // interactive renderer fallback.
+  bool blit_argb32(std::uint32_t source_width, std::uint32_t source_height,
+                   std::span<const std::uint32_t> pixels,
+                   std::span<const float> depth, float far_plane) noexcept;
   bool copy_depth(std::vector<float>& depth) const;
   bool copy_object_id(std::vector<std::uint32_t>& object_ids) const;
   // Verification-only export; the product runtime does not present this file.

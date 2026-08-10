@@ -6,6 +6,7 @@
 #include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
 #include "ac6/retail_frontend_resources.h"
+#include "ac6/retail_mission01_cpu_compositor.h"
 #include "ac6/retail_session.h"
 #include "ac6/retail_session_replay.h"
 #include "ac6/sdl_input.h"
@@ -13,6 +14,7 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
@@ -21,6 +23,7 @@
 #include <iomanip>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string_view>
 #include <vector>
 
@@ -33,6 +36,8 @@ struct Options final {
   std::filesystem::path replay;
   std::filesystem::path report;
   std::filesystem::path capture;
+  std::filesystem::path scene_capture;
+  std::filesystem::path scene_report;
   std::uint32_t aircraft{1};
   std::uint32_t weapon{1};
   std::uint32_t frames{};
@@ -63,6 +68,11 @@ bool parse_play_options(int argc, char** argv, Options& options) {
     else if (option == "--save" && options.save.empty()) options.save = value;
     else if (option == "--replay" && options.replay.empty()) options.replay = value;
     else if (option == "--capture" && options.capture.empty()) options.capture = value;
+    else if (option == "--scene-capture" && options.scene_capture.empty()) {
+      options.scene_capture = value;
+    } else if (option == "--scene-report" && options.scene_report.empty()) {
+      options.scene_report = value;
+    }
     else if (option == "--frames" && !frames_seen) {
       if (!parse_u32(value.string(), options.frames) || options.frames > 600000u) {
         return false;
@@ -79,7 +89,8 @@ bool parse_play_options(int argc, char** argv, Options& options) {
       return false;
     }
   }
-  return !options.cache.empty();
+  return !options.cache.empty() &&
+      (options.scene_report.empty() || !options.scene_capture.empty());
 }
 
 bool parse_replay_options(int argc, char** argv, Options& options) {
@@ -169,6 +180,66 @@ bool render_frame(NativeGraphics& graphics, NativeRenderTarget& target,
   return hud.render(target, frame.world, session.execution()) && graphics.present(target);
 }
 
+std::optional<retail::Mission01CpuFrame> render_retail_scene(
+    retail::RetailMission01CpuCompositor& compositor,
+    const CampaignLoadout& loadout) {
+  // This stable map view uses the validated mode-2 base offset only. The live
+  // player pose/camera producers are not qualified yet, so this is explicitly
+  // a diagnostic scene capture and never an accepted JV frame.
+  constexpr std::array<float, 3> kSceneEye{1000.0F, 420.0F, -24000.0F};
+  retail::Mission01CpuFrameRequest request;
+  request.width = 1280;
+  request.height = 720;
+  request.loadout = loadout;
+  request.view_mode = 2;
+  request.camera_mode_selection = retail::resolve_retail_camera_mode(2);
+  const retail::RetailCameraRecord* camera =
+      compositor.camera_record(loadout, request.view_mode);
+  if (camera == nullptr) return std::nullopt;
+  const std::optional<std::array<float, 4>> offset = camera->offset(0);
+  if (!offset.has_value()) return std::nullopt;
+
+  retail::RetailMode2CameraState camera_state;
+  camera_state.player_basis = retail::identity_basis();
+  for (std::size_t lane = 0; lane < kSceneEye.size(); ++lane) {
+    camera_state.player_position[lane] = kSceneEye[lane] - (*offset)[lane];
+  }
+  request.mode2_camera_state = camera_state;
+  request.texture_swap_16 = true;
+  request.sampler_address = retail::Mission01CpuSamplerAddress::Repeat;
+  return compositor.render(request);
+}
+
+bool present_retail_scene_capture(
+    NativeGraphics& graphics, NativeRenderTarget& target, NativeHudRenderer& hud,
+    const retail::RetailSession& session,
+    const retail::RetailSessionFrame& session_frame,
+    retail::RetailMission01CpuCompositor& compositor,
+    const CampaignLoadout& loadout, const std::filesystem::path& capture,
+    const std::filesystem::path& report) {
+  const std::optional<retail::Mission01CpuFrame> scene =
+      render_retail_scene(compositor, loadout);
+  if (!scene.has_value() ||
+      !target.blit_argb32(
+          scene->report().width, scene->report().height,
+          std::span<const std::uint32_t>(scene->pixels()),
+          std::span<const float>(scene->depth()), scene->report().far_plane)) {
+    return false;
+  }
+  if (!report.empty()) {
+    std::error_code error;
+    const std::filesystem::path parent = report.parent_path();
+    if (!parent.empty()) std::filesystem::create_directories(parent, error);
+    if (error || !scene->write_report_json(report)) return false;
+  }
+  if (!hud.render(target, session_frame.world, session.execution())) return false;
+  std::error_code error;
+  const std::filesystem::path parent = capture.parent_path();
+  if (!parent.empty()) std::filesystem::create_directories(parent, error);
+  if (error || !target.write_ppm(capture)) return false;
+  return graphics.present(target);
+}
+
 int run_play_impl(const Options& options) {
   RetailContentStore store;
   if (!open_store(options.cache, store)) return 120;
@@ -184,9 +255,19 @@ int run_play_impl(const Options& options) {
                  "ac6_retail=fail error=cache_incomplete detail=loadout_capability_table\n");
     return 123;
   }
+  std::optional<retail::RetailMission01CpuCompositor> scene_compositor;
+  if (!options.scene_capture.empty()) {
+    scene_compositor = retail::RetailMission01CpuCompositor::open(store);
+    if (!scene_compositor.has_value()) {
+      std::fprintf(stderr,
+                   "ac6_retail=fail error=scene_resources_unavailable "
+                   "detail=mission01_cpu_compositor\n");
+      return 124;
+    }
+  }
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, loadout, {1, {0, 0}});
-  if (session == nullptr) return 124;
+  if (session == nullptr) return 125;
   NativeGraphics graphics;
   if (!graphics.initialize(1280, 720)) {
     std::fprintf(stderr,
@@ -209,7 +290,13 @@ int run_play_impl(const Options& options) {
   replay.loadout = loadout;
   replay.content_index_sha256 = store.index_sha256();
   retail::RetailSessionFrame frame = session->tick(1.0f / 60.0f, input_frame);
-  if (!render_frame(graphics, target, hud, *session, frame)) return 128;
+  if (options.scene_capture.empty()) {
+    if (!render_frame(graphics, target, hud, *session, frame)) return 128;
+  } else if (!present_retail_scene_capture(
+                 graphics, target, hud, *session, frame, *scene_compositor,
+                 loadout, options.scene_capture, options.scene_report)) {
+    return 128;
+  }
   bool capture_written = false;
   const auto capture = [&]() -> bool {
     if (options.capture.empty() || capture_written) return true;
@@ -221,10 +308,15 @@ int run_play_impl(const Options& options) {
     return true;
   };
   if (!capture()) return 129;
+  const std::uint32_t requested_frames =
+      options.scene_capture.empty()
+          ? options.frames
+          : (options.frames == 0 ? 1u : options.frames);
   using Clock = std::chrono::steady_clock;
   auto previous = Clock::now();
   double accumulator = 0.0;
-  while (!quit && (options.frames == 0 || replay.frames.size() < options.frames)) {
+  while (!quit &&
+         (requested_frames == 0 || replay.frames.size() < requested_frames)) {
     events.clear();
     (void)pump.pump(input_adapter, input_frame, buttons, mappings,
                     session->player_entity(), events, quit);

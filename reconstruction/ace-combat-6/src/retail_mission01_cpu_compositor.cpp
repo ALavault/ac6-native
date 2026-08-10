@@ -867,6 +867,11 @@ RetailMission01CpuCompositor::atlas_texture(std::uint8_t page, bool swap_16) {
   return found->second.pixels.empty() ? nullptr : &found->second;
 }
 
+const RetailCameraRecord *RetailMission01CpuCompositor::camera_record(
+    const CampaignLoadout &loadout, std::uint32_t view_mode) const noexcept {
+  return camera_table_.record_for_loadout(loadout, view_mode);
+}
+
 std::optional<Mission01CpuFrame>
 RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   std::uint32_t view_mode = request.view_mode;

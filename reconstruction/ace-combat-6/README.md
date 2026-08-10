@@ -117,6 +117,20 @@ the actual presented native target, not a parity claim; until the remaining
 camera/scene bindings are qualified it may still contain the explicitly
 diagnostic world-marker lane. Omitting `--frames` keeps `play` interactive.
 
+For a marker-free inspection of the retail terrain/city/water composition in
+the same presented Vulkan target, request the explicit diagnostic scene lane:
+
+```sh
+SDL_AUDIODRIVER=dummy xvfb-run -a ac6-native play \
+  --cache CACHE_ROOT --scene-capture /tmp/ac6-retail-scene.ppm \
+  --scene-report /tmp/ac6-retail-scene.json
+```
+
+This one-shot view uses the qualified mode-2 base offset and a fixed inspection
+pose because the live player pose/camera producers remain open. Its report
+therefore must say `marker_free=true` and `jv_eligible=false`; it is evidence
+that sealed retail scene bytes reach the same target, not a JV claim.
+
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is
 marked playable-supported.

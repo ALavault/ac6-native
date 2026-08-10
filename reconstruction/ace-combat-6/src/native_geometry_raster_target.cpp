@@ -858,6 +858,41 @@ bool NativeRenderTarget::copy_rgba8(std::vector<std::uint8_t>& pixels) const {
   return true;
 }
 
+bool NativeRenderTarget::blit_argb32(
+    std::uint32_t source_width, std::uint32_t source_height,
+    std::span<const std::uint32_t> pixels, std::span<const float> depth,
+    float far_plane) noexcept {
+  if (source_width == 0 || source_height == 0 || width_ != source_width ||
+      height_ != source_height || pixels.size() !=
+          static_cast<std::size_t>(source_width) * source_height ||
+      depth.size() != pixels.size() || !std::isfinite(far_plane) ||
+      far_plane <= 0.0F || color_.size() != pixels.size() ||
+      depth_.size() != pixels.size()) {
+    return false;
+  }
+  std::copy(pixels.begin(), pixels.end(), color_.begin());
+  for (std::size_t index = 0; index < depth.size(); ++index) {
+    const float value = depth[index];
+    depth_[index] = std::isfinite(value)
+                        ? std::clamp(value / far_plane, 0.0F, 1.0F)
+                        : 1.0F;
+  }
+  std::fill(object_ids_.begin(), object_ids_.end(), 0);
+  std::fill(pixel_stamps_.begin(), pixel_stamps_.end(), 0);
+  std::fill(hud_pixel_stamps_.begin(), hud_pixel_stamps_.end(), 0);
+  geometry_calls_ = 0;
+  raster_triangles_ = 0;
+  raster_writes_ = 0;
+  diagnostic_point_writes_ = 0;
+  filled_fragment_writes_ = 0;
+  raster_stamp_ = 0;
+  hud_stamp_ = 0;
+  hud_pixel_writes_ = 0;
+  hud_unique_pixels_ = 0;
+  raster_metrics_.clear();
+  return true;
+}
+
 bool NativeRenderTarget::copy_depth(std::vector<float>& depth) const {
   if (width_ == 0 || height_ == 0 ||
       depth_.size() != static_cast<std::size_t>(width_) * height_) return false;

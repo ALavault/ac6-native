@@ -1004,6 +1004,7 @@ int run_commands(int argc, char** argv) {
                  "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n"
                  "       ac6-native play --cache CACHE_ROOT [--save SAVE_PATH]\n"
                  "                       [--replay REPLAY_FILE] [--capture PPM]\n"
+                 "                       [--scene-capture PPM] [--scene-report JSON]\n"
                  "                       [--frames COUNT] [--aircraft ID] [--weapon ID]\n"
                  "       ac6-native replay --cache CACHE_ROOT --replay FILE --report OUTPUT_DIR\n");
     return 0;
