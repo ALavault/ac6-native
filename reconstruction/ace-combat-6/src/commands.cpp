@@ -695,6 +695,11 @@ int run_retail_session(const std::filesystem::path& payload_path,
          << "  \"world_markers_drawn\": " << markers << ",\n"
          << "  \"world_units_placed\": " << placed_units << ",\n"
          << "  \"world_extent\": " << world_extent << ",\n"
+         << "  \"camera_mode_word\": " << session->camera_mode().raw_mode
+         << ",\n"
+         << "  \"camera_view_mode\": " << session->camera_mode().view_mode
+         << ",\n"
+         << "  \"camera_mode_selection_retail\": true,\n"
          << "  \"camera_follows_player\": "
          << (camera_follows_player ? "true" : "false") << ",\n"
          << "  \"camera_offset_is_chosen_not_derived\": true,\n"

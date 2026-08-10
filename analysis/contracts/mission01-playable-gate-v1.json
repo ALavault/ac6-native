@@ -228,7 +228,7 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-session.json",
-            "sha256": "064fd07f4bebbb8ee5d8599f2bc9ea67e3eb0ca4a96eb67c54ba1f99ce788e12",
+            "sha256": "1cc86ea1601cda9e4e71e34cbe9d13e4f6c20778d81071e82c8665607c104973",
             "claim": "1800 fixed ticks over the world the container built: 230 units, the player the faction switch classified, the camera at the runtime's fixed offset, deterministic across runs and different under a different input stream",
             "size": 805
           },
@@ -249,9 +249,9 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "e3260835dd223fce4ced75eaafc7eb65d5c96626106cf801c8aebaf373a544dd",
+            "sha256": "f38100496630b0c664524cb1d5afa5a4626a89286bc11b4cbb1ca5394da0e8b2",
             "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from the class-0 Set on the campaign arm (820a72c0, 0x820A72EC, vtable 0x820568D4 = CAce6UnitPlayer) and from category 2 only on the online arm, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-            "size": 8601
+            "size": 8847
           }
         ]
       },
@@ -277,7 +277,7 @@
           {
             "kind": "native-test",
             "path": "reports/mission01-retail/retail-session.json",
-            "sha256": "064fd07f4bebbb8ee5d8599f2bc9ea67e3eb0ca4a96eb67c54ba1f99ce788e12",
+            "sha256": "1cc86ea1601cda9e4e71e34cbe9d13e4f6c20778d81071e82c8665607c104973",
             "claim": "the predicted trace measured at three cadences, identical each time; the debrief reached with 4 of 4 sub-missions behind the cursor; and a session whose script never advances still in gameplay at tick 1800 with nothing completed",
             "size": 805
           },

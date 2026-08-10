@@ -21,6 +21,7 @@
 
 #include "ac6/campaign_progression.h"
 #include "ac6/product_runtime.h"
+#include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
 #include "ac6/retail_mission_script.h"
 #include "ac6/retail_mission_state.h"
@@ -36,12 +37,16 @@ struct RetailSessionConfig {
   std::uint32_t mission_id{1};
   // Which record the local-player branch matches, as 0x820A7420 resolves it.
   LocalPlayerSlot local_player{0, 0};
+  // Raw player camera selector consumed by 0x82226D80. The campaign opening
+  // path is the qualified zero word, which 0x82223AC0 maps to view 1.
+  std::uint32_t camera_mode_word{kRetailOpeningCameraModeWord};
 };
 
 // One frame of the session, as the product's runtime produced it, plus where
 // the sub-mission script stands.
 struct RetailSessionFrame {
   WorldFrame world;
+  RetailCameraModeSelection camera_mode{retail_opening_camera_mode()};
   std::uint32_t sub_mission{};
   std::uint32_t step{};
   bool script_ended{};
@@ -82,6 +87,9 @@ class RetailSession final {
   EntityId player_entity() const noexcept { return player_entity_; }
   const std::optional<RetailSessionBundle>& bundle() const noexcept {
     return bundle_;
+  }
+  const RetailCameraModeSelection& camera_mode() const noexcept {
+    return camera_mode_;
   }
 
   // The rectangle this sub-mission installs, normalised by the port of
@@ -129,6 +137,7 @@ class RetailSession final {
   std::optional<RetailSessionBundle> bundle_;
   EntityId player_entity_{};
   std::uint32_t mission_id_{};
+  RetailCameraModeSelection camera_mode_{retail_opening_camera_mode()};
   std::uint64_t tick_{};
 };
 

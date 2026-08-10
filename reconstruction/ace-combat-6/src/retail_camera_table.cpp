@@ -29,6 +29,18 @@ bool record_is_bounded(const RetailCameraRecord& record) noexcept {
 
 }  // namespace
 
+std::optional<RetailCameraModeSelection>
+resolve_retail_camera_mode(std::uint32_t raw_mode) noexcept {
+  if (raw_mode > kRetailCameraViews) return std::nullopt;
+  const std::uint32_t view_mode =
+      raw_mode == 2 ? 2u : (raw_mode == 3 ? 3u : 1u);
+  return RetailCameraModeSelection{raw_mode, view_mode};
+}
+
+RetailCameraModeSelection retail_opening_camera_mode() noexcept {
+  return *resolve_retail_camera_mode(kRetailOpeningCameraModeWord);
+}
+
 std::optional<std::array<float, 4>> RetailCameraRecord::offset(
     std::size_t stage) const noexcept {
   if (stage >= 4) return std::nullopt;

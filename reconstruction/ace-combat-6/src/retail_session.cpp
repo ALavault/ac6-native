@@ -49,6 +49,9 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
 
 std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> bytes,
                                                    RetailSessionConfig config) {
+  const std::optional<RetailCameraModeSelection> camera_mode =
+      resolve_retail_camera_mode(config.camera_mode_word);
+  if (!camera_mode.has_value()) return nullptr;
   std::optional<ScenarioPayload> payload = ScenarioPayload::open(std::move(bytes));
   if (!payload.has_value()) return nullptr;
   std::optional<MissionScenario> scenario = MissionScenario::parse(*payload);
@@ -67,6 +70,7 @@ std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> byt
 
   std::unique_ptr<RetailSession> session(new RetailSession);
   session->mission_id_ = config.mission_id;
+  session->camera_mode_ = *camera_mode;
   session->player_entity_ = *player;
   session->payload_ = std::make_unique<ScenarioPayload>(std::move(*payload));
   session->scenario_ = std::make_unique<MissionScenario>(std::move(*scenario));
@@ -116,6 +120,7 @@ std::optional<MissionArea> RetailSession::current_area() const noexcept {
 RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcept {
   RetailSessionFrame frame;
   frame.world = execution_->tick(fixed_dt, input);
+  frame.camera_mode = camera_mode_;
   tick_ = frame.world.tick;
   frame.sub_mission = script_.sub_mission();
   frame.step = script_.step();

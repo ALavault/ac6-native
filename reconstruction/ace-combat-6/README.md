@@ -69,8 +69,12 @@ world X maps to U, world Z maps to V, and the 272-pixel tile is contracted to a
 own 4096×1024 vertical step. The common camera table is selected directly by
 the loadout's retail aircraft ordinal for all 15 aircraft and three view modes;
 the public native ID is that ordinal plus one because zero means unset. The
-opening view and final scene composition, rather than camera-group or UV
-selection, now remain the accepted-JV boundary.
+opening selector is now a qualified product value: the canonical PAL campaign
+starts with raw word `0`, which `0x82223AC0` maps to table view `1`. The session
+carries that mapping and the compositor refuses a raw selector whose mapped
+view does not agree with the selected table record. Final scene composition,
+rather than camera-group, UV or opening-mode selection, remains the accepted-JV
+boundary.
 
 The mode-2 locator is also a typed product path. It copies the selected
 record's stage-zero offset, executes the four guarded branches of the dynamic
@@ -79,8 +83,8 @@ then transforms the adjusted offset through the live player's basis and
 position before applying manager rotations `+0x3a4` and `+0x3a0` in retail
 order. Results of the retail RNG call are injected as two auditable 15-bit
 draws, so replay owns their sequence and the camera code does not invent a
-second global RNG. Opening-mode selection and the producer of the live
-camera-manager/player fields remain open.
+second global RNG. The producer of the live camera-manager/player fields
+remains open.
 
 `RetailMission01CpuCompositor` is the first marker-free product composition
 lane over that store boundary. It depth-rasterises the persistent terrain fans,
@@ -89,7 +93,7 @@ placed-city NDXR primitives with their GIDX-selected NTXR textures. Camera group
 and FOV come from the loadout-selected retail record. Its JSON report keeps the
 remaining choices explicit as JV blockers: external camera pose,
 or a mode-2 locator without a live-state source;
-opening camera mode/FOV-variant selection, clip/cull policy, byte swap,
+the FOV-variant choice, clip/cull policy, byte swap,
 mip/sampler/alpha state, water material, sky, vegetation and active-unit
 geometry. Consequently the reference image is auditable and marker-free but
 reports `jv_eligible=false`; it cannot be used to claim JV until those fields

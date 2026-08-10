@@ -20,5 +20,5 @@
   "mission_area_x": [-50000, 50000],
   "mission_area_z": [-50000, 50000],
   "deterministic_replay": true,
-  "session_hash": "4026da923357b584"
+  "session_hash": "ef38bc0045607a32"
 }

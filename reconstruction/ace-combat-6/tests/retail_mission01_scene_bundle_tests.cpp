@@ -423,6 +423,8 @@ void check_qualified_cpu_composition(
   request.height = 180;
   request.loadout = {1, 1, true};
   request.view_mode = 2;
+  request.camera_mode_selection =
+      resolve_retail_camera_mode(2);
   const RetailCameraRecord* selected_camera =
       cameras->record_for_loadout(request.loadout, request.view_mode);
   const std::optional<std::array<float, 4>> base_offset =
@@ -499,7 +501,7 @@ void check_qualified_cpu_composition(
             frame.water_mask_retail && frame.city_geometry_retail &&
             frame.city_binding_retail && frame.city_transform_retail &&
             frame.camera_group_retail && frame.camera_fov_retail &&
-            !frame.camera_mode_selection_retail &&
+            frame.camera_mode_selection_retail &&
             frame.camera_mode2_base_transform_retail &&
             frame.camera_dynamic_offset_retail &&
             frame.camera_dynamic_branch == RetailMode2DynamicBranch::Reset &&
@@ -531,6 +533,7 @@ void check_qualified_cpu_composition(
         "an excessive CPU target fails closed before allocation");
   invalid = request;
   invalid.view_mode = 0;
+  invalid.camera_mode_selection.reset();
   check(!compositor->render(invalid).has_value(),
         "a view outside the retail table fails closed");
   invalid = request;

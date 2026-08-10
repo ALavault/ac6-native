@@ -51,6 +51,18 @@ std::vector<std::uint8_t> valid_table() {
 int main() {
   using namespace ac6::retail;
 
+  const RetailCameraModeSelection opening = retail_opening_camera_mode();
+  check(opening.raw_mode == 0 && opening.view_mode == 1,
+        "the qualified campaign opening selector maps raw zero to view one");
+  for (const RetailCameraModeSelection expected : {
+           RetailCameraModeSelection{0, 1}, RetailCameraModeSelection{1, 1},
+           RetailCameraModeSelection{2, 2}, RetailCameraModeSelection{3, 3}}) {
+    check(resolve_retail_camera_mode(expected.raw_mode) == expected,
+          "the retail raw camera selector maps to its table view");
+  }
+  check(!resolve_retail_camera_mode(4).has_value(),
+        "an unsupported raw camera selector fails closed");
+
   const std::vector<std::uint8_t> bytes = valid_table();
   const std::optional<RetailCameraTable> table = RetailCameraTable::open(bytes);
   check(table.has_value(), "a bounded 15 x 3 table opens");

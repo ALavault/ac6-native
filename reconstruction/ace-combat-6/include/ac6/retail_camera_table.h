@@ -17,6 +17,28 @@ inline constexpr std::size_t kRetailCameraGroups = 15;
 inline constexpr std::size_t kRetailCameraViews = 3;
 inline constexpr std::size_t kRetailCameraRecordBytes = 144;
 
+// The camera selector is stored as a raw word on the player, then translated
+// by 0x82223AC0 before the 15 x 3 table is indexed.  The normal campaign
+// constructor (0x82230AF8) starts with raw word 0; the canonical PAL image's
+// per-player selector table is also zero-initialised at
+// [0x826E4EB4]+0x70+0x4C68 for all three records.
+struct RetailCameraModeSelection final {
+  std::uint32_t raw_mode{};
+  std::uint32_t view_mode{};
+  bool operator==(const RetailCameraModeSelection &) const = default;
+};
+
+inline constexpr std::uint32_t kRetailOpeningCameraModeWord = 0;
+
+// 0x82223AC0 maps raw 2 -> view 2, raw 3 -> view 3, and every other
+// supported initial value -> view 1.  Values above 3 are intentionally
+// rejected here: the native table has no corresponding retail view and the
+// caller must not silently choose one.
+std::optional<RetailCameraModeSelection>
+resolve_retail_camera_mode(std::uint32_t raw_mode) noexcept;
+
+RetailCameraModeSelection retail_opening_camera_mode() noexcept;
+
 // One on-disc camera record. Fields without a derived semantic name remain
 // addressable as raw floats instead of acquiring an invented meaning.
 struct RetailCameraRecord final {

@@ -615,6 +615,7 @@ bool Mission01CpuFrame::write_report_json(
          << "  \"height\": " << report_.height << ",\n"
          << "  \"camera_group\": " << report_.camera_group << ",\n"
          << "  \"view_mode\": " << report_.view_mode << ",\n"
+         << "  \"camera_mode_word\": " << report_.camera_mode_word << ",\n"
          << "  \"alternate_fov\": "
          << (report_.alternate_fov ? "true" : "false") << ",\n"
          << "  \"fov_radians\": " << std::setprecision(9) << report_.fov_radians
@@ -687,6 +688,9 @@ bool Mission01CpuFrame::write_report_json(
          << ",\n"
          << "  \"camera_dynamic_offset_retail\": "
          << (report_.camera_dynamic_offset_retail ? "true" : "false") << ",\n"
+         << "  \"camera_mode_selection_retail\": "
+         << (report_.camera_mode_selection_retail ? "true" : "false")
+         << ",\n"
          << "  \"camera_dynamic_branch\": ";
   if (report_.camera_dynamic_offset_retail) {
     output << '"' << mode2_dynamic_branch_name(report_.camera_dynamic_branch)
@@ -739,6 +743,9 @@ bool Mission01CpuFrame::write_report_json(
             "\"terrain_uv\", \"water_mask\", \"city_geometry\", "
             "\"city_binding\", \"city_transform\", \"camera_group\", "
             "\"camera_fov\"";
+  if (report_.camera_mode_selection_retail) {
+    output << ", \"camera_mode_selection\"";
+  }
   if (report_.camera_mode2_base_transform_retail) {
     output << ", \"camera_mode2_base_transform\"";
   }
@@ -746,11 +753,19 @@ bool Mission01CpuFrame::write_report_json(
     output << ", \"camera_dynamic_offset\"";
   }
   output << "],\n"
-         << "  \"open_boundaries\": [\"camera_mode_selection\"";
-  if (!report_.camera_dynamic_offset_retail) {
-    output << ", \"camera_dynamic_offset\"";
+         << "  \"open_boundaries\": [";
+  bool first_open_boundary = true;
+  if (!report_.camera_mode_selection_retail) {
+    output << "\"camera_mode_selection\"";
+    first_open_boundary = false;
   }
-  output << ", \"camera_runtime_state\", \"camera_pose\", "
+  if (!report_.camera_dynamic_offset_retail) {
+    if (!first_open_boundary) output << ", ";
+    output << "\"camera_dynamic_offset\"";
+    first_open_boundary = false;
+  }
+  if (!first_open_boundary) output << ", ";
+  output << "\"camera_runtime_state\", \"camera_pose\", "
             "\"clip_pipeline\", \"map_distance_policy\", "
             "\"texture_byte_swap\", \"mip_policy\", \"sampler_state\", "
             "\"alpha_state\", \"water_material\", \"sky\", "
@@ -832,10 +847,23 @@ RetailMission01CpuCompositor::atlas_texture(std::uint8_t page, bool swap_16) {
 
 std::optional<Mission01CpuFrame>
 RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
+  std::uint32_t view_mode = request.view_mode;
+  bool camera_mode_selection_retail = false;
+  if (request.camera_mode_selection.has_value()) {
+    const std::optional<RetailCameraModeSelection> resolved =
+        resolve_retail_camera_mode(request.camera_mode_selection->raw_mode);
+    if (!resolved.has_value() ||
+        *resolved != *request.camera_mode_selection ||
+        (view_mode != 0 && view_mode != resolved->view_mode)) {
+      return std::nullopt;
+    }
+    view_mode = resolved->view_mode;
+    camera_mode_selection_retail = true;
+  }
   const std::optional<std::uint32_t> group =
       RetailCameraTable::group_for_loadout(request.loadout);
   const RetailCameraRecord *camera_record =
-      camera_table_.record_for_loadout(request.loadout, request.view_mode);
+      camera_table_.record_for_loadout(request.loadout, view_mode);
   if (!group.has_value() || camera_record == nullptr ||
       (request.sampler_address != Mission01CpuSamplerAddress::Clamp &&
        request.sampler_address != Mission01CpuSamplerAddress::Repeat) ||
@@ -853,7 +881,7 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
     return std::nullopt;
   }
   if (request.mode2_camera_state.has_value()) {
-    if (request.view_mode != 2)
+    if (view_mode != 2)
       return std::nullopt;
     const std::optional<std::array<float, 4>> base_offset =
         camera_record->offset(0);
@@ -893,7 +921,10 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   report.width = request.width;
   report.height = request.height;
   report.camera_group = *group;
-  report.view_mode = request.view_mode;
+  report.view_mode = view_mode;
+  report.camera_mode_word = request.camera_mode_selection.has_value()
+                                ? request.camera_mode_selection->raw_mode
+                                : 0;
   report.alternate_fov = request.alternate_fov;
   report.fov_radians = fov;
   report.near_plane = kNearPlane;
@@ -923,6 +954,7 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   report.city_transform_retail = true;
   report.camera_group_retail = true;
   report.camera_fov_retail = true;
+  report.camera_mode_selection_retail = camera_mode_selection_retail;
   report.camera_mode2_base_transform_retail = mode2_locator.has_value();
   report.camera_dynamic_offset_retail = mode2_dynamic.has_value();
   if (mode2_dynamic.has_value()) {

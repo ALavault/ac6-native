@@ -31,6 +31,10 @@ struct Mission01CpuFrameRequest final {
   std::uint32_t height{};
   CampaignLoadout loadout{};
   std::uint32_t view_mode{};
+  // When present, this is the raw player selector that retail maps to
+  // view_mode. A zero view_mode is allowed only with this qualified selector;
+  // the mapped table view is then used.
+  std::optional<RetailCameraModeSelection> camera_mode_selection;
   bool alternate_fov{};
   // When present, mode 2 uses the qualified retail base-locator transform.
   // The external pose is ignored.
@@ -54,6 +58,7 @@ struct Mission01CpuFrameReport final {
   std::uint32_t height{};
   std::uint32_t camera_group{};
   std::uint32_t view_mode{};
+  std::uint32_t camera_mode_word{};
   bool alternate_fov{};
   float fov_radians{};
   float near_plane{};

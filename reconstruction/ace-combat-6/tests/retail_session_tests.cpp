@@ -193,6 +193,7 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload) {
           nullptr);
   REQUIRE(RetailSession::open(store, loadout, {0, {0, 0}}) == nullptr);
   REQUIRE(RetailSession::open(store, loadout, {16, {0, 0}}) == nullptr);
+  REQUIRE(RetailSession::open(store, loadout, {kMissionId, {0, 0}, 4}) == nullptr);
 
   TempStoreRoot invalid_root;
   const std::filesystem::path invalid_source = invalid_root.path() / "source";
@@ -270,6 +271,8 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
   REQUIRE(session != nullptr);
   REQUIRE(session->bundle().has_value());
   REQUIRE(session->bundle()->data_table_entry == 9);
+  REQUIRE(session->camera_mode().raw_mode == 0 &&
+          session->camera_mode().view_mode == 1);
   REQUIRE(session->world().published == 230);
   REQUIRE(session->scenario().sub_missions().size() == 4);
 }
@@ -296,8 +299,9 @@ ac6::InputFrame mirrored_input(std::size_t tick) noexcept {
 
 std::uint64_t frame_hash(const ac6::retail::RetailSessionFrame& frame) {
   char row[256];
-  std::snprintf(row, sizeof(row), "%llu:%u:%d:%.5f:%.5f:%.5f:%.5f:%.5f:%.5f:%.5f:%u:%u:%u:%u:%d:%d",
+  std::snprintf(row, sizeof(row), "%llu:%u:%u:%u:%d:%.5f:%.5f:%.5f:%.5f:%.5f:%.5f:%.5f:%u:%u:%u:%u:%d:%d",
                 static_cast<unsigned long long>(frame.world.tick), frame.world.mission_id,
+                frame.camera_mode.raw_mode, frame.camera_mode.view_mode,
                 frame.world.mission_ready ? 1 : 0, frame.world.position_x, frame.world.position_y,
                 frame.world.position_z, frame.world.camera_x, frame.world.camera_y,
                 frame.world.camera_z, frame.world.speed, frame.world.active_units,
@@ -332,6 +336,8 @@ SessionRun run_session(const std::vector<std::uint8_t>& payload, std::size_t cad
       if (session->advance_script() == ScriptAdvance::Exhausted) run.ended_at_tick = tick;
     }
     run.last = session->tick(kFixedDt, input(tick));
+    REQUIRE(run.last.camera_mode.raw_mode == 0 &&
+            run.last.camera_mode.view_mode == 1);
     run.hash ^= frame_hash(run.last) * 1099511628211ull;
   }
   run.trace = session->script().executed();
