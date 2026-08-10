@@ -59,6 +59,39 @@ struct Mission01TerrainAtlasPage final {
   std::span<const std::uint8_t> source;
 };
 
+// 0x820FD768 builds this exact local vertex stream once: four ten-vertex
+// triangle fans cover the four 2x2 quadrants of a 4x4-sample terrain cell.
+// 0x820FD930..0x820FDA54 builds the matching sequential indices in 256-cell
+// batches, with 0xFFFF terminating each fan. 0x820FD418 submits primitive 5,
+// which the provenance-checked Xenos catalog identifies as TriangleFan.
+inline constexpr std::uint16_t kMission01TerrainRestartIndex = 0xFFFF;
+
+struct Mission01TerrainLocalVertex final {
+  std::uint8_t x{};
+  std::uint8_t z{};
+  bool operator==(const Mission01TerrainLocalVertex&) const = default;
+};
+
+struct Mission01TerrainCellTopology final {
+  std::array<Mission01TerrainLocalVertex, 40> vertices{};
+  std::array<std::uint16_t, 44> fan_indices{};
+};
+
+// One native instance replaces retail's repeated 40-vertex cell copies while
+// retaining the same sample base and atlas binding. `patch_sample_base` names
+// local sample (0,0); topology coordinates add rows of 65 samples.
+struct Mission01TerrainCellInstance final {
+  std::uint16_t cell_x{};
+  std::uint16_t cell_z{};
+  std::uint32_t patch_sample_base{};
+  Mission01TerrainAtlasCell atlas{};
+};
+
+struct Mission01TerrainResolvedVertex final {
+  std::array<float, 3> world{};
+  std::array<float, 2> uv{};
+};
+
 // Retail's vertex shaders for contexts 0x04100113 and 0x04100114 map local
 // world X to U and local world Z to V. They contract each 272-pixel tile about
 // its centre by float bits 0x3F707878 before applying the page-specific steps.
@@ -84,11 +117,16 @@ struct Mission01TerrainRenderResource final {
   std::span<const float> patch_samples;
   std::vector<Mission01TerrainAtlasCell> atlas_cells;
   std::vector<Mission01TerrainAtlasPage> atlas_pages;
+  Mission01TerrainCellTopology topology;
+  std::vector<Mission01TerrainCellInstance> draw_instances;
 
   const Mission01TerrainAtlasCell* atlas_cell(
       std::size_t cell_x, std::size_t cell_z) const noexcept;
   std::optional<Mission01TerrainAtlasUvTransform> atlas_uv_transform(
       std::size_t cell_x, std::size_t cell_z) const noexcept;
+  std::optional<Mission01TerrainResolvedVertex> resolve_vertex(
+      std::size_t instance_index,
+      std::size_t topology_vertex_index) const noexcept;
 };
 
 // Host-endian upload form of MCA/MCI/MCD. It retains the full 8-world-unit bit
@@ -132,6 +170,12 @@ struct Mission01MapRenderAssetReport final {
   std::size_t terrain_atlas_bindings{};
   std::size_t terrain_atlas_pages{};
   std::size_t terrain_atlas_uv_transforms{};
+  std::size_t terrain_topology_vertices{};
+  std::size_t terrain_topology_indices{};
+  std::size_t terrain_topology_fans{};
+  std::size_t terrain_topology_triangles{};
+  std::size_t terrain_draw_instances{};
+  std::size_t terrain_retail_batch_cells{};
   std::size_t water_lookup_entries{};
   std::size_t water_blocks{};
   bool complete{};

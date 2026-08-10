@@ -58,6 +58,11 @@ The same asset owner retains the compact 256-byte terrain patch grid, all 74
 65×65 height blocks, 65,536 terrain-cell atlas bindings and the seven NTXR
 atlas pages. It also decodes MCA/MCI/MCD into 4,864 host-endian lookup entries
 and 413 bit blocks, preserving the native eight-world-unit water resolution.
+The terrain draw source carries retail's exact four restart-terminated
+ten-vertex fans (40 local vertices, 44 indices and 32 triangles) once, then
+binds that topology to 65,536 persistent cell instances and their exact height
+sample bases. This replaces retail's repeated 256-cell index batches without
+changing their topology or expanding 2,621,440 vertices at load time.
 The atlas binding includes retail's two terrain-vertex-shader UV transforms:
 world X maps to U, world Z maps to V, and the 272-pixel tile is contracted to a
 255.5-pixel inner span about its centre (8.25 pixels per edge). Page 7 keeps its

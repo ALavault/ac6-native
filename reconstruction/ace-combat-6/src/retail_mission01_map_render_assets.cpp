@@ -21,11 +21,47 @@ constexpr std::size_t kTerrainAtlasRecordBytes = 512;
 constexpr std::size_t kTerrainAtlasPageCount = 7;
 constexpr std::uint32_t kTerrainAtlasTilePixels = 272;
 constexpr std::uint32_t kTerrainAtlasColumns = 15;
+constexpr std::size_t kTerrainCellFanCount = 4;
+constexpr std::size_t kTerrainFanVertexCount = 10;
+constexpr std::size_t kTerrainRetailBatchCells = 256;
 // 0x820FAE50 stores 0x3F707878 at owner+0x6D80. 0x820FD560 sends it
 // to vertex constant c65; entry-163 NSXR contexts 0x04100113/0x04100114 use
 // (local - 0.5) * scale + 0.5 before the page-specific c64 atlas step.
 constexpr float kTerrainAtlasInnerScale =
     std::bit_cast<float>(std::uint32_t{0x3F707878});
+
+Mission01TerrainCellTopology make_terrain_cell_topology() noexcept {
+  // 0x820FD79C..0x820FD7BC seeds (0,0), (0,2), (2,0), (2,2).
+  constexpr std::array<Mission01TerrainLocalVertex, 4> bases{{
+      {0, 0}, {0, 2}, {2, 0}, {2, 2}}};
+  // 0x820FD7D0..0x820FD8FC writes this ten-vertex fan from each quadrant's
+  // centre around its perimeter. 0x820FD418 submits Xenos primitive 5
+  // (TriangleFan), so the four fans contain eight triangles each.
+  constexpr std::array<Mission01TerrainLocalVertex, 10> relative{{
+      {1, 1}, {2, 2}, {2, 1}, {2, 0}, {1, 0},
+      {0, 0}, {0, 1}, {0, 2}, {1, 2}, {2, 2}}};
+  Mission01TerrainCellTopology topology;
+  std::size_t vertex = 0;
+  for (const Mission01TerrainLocalVertex base : bases) {
+    for (const Mission01TerrainLocalVertex offset : relative) {
+      topology.vertices[vertex++] = {
+          static_cast<std::uint8_t>(base.x + offset.x),
+          static_cast<std::uint8_t>(base.z + offset.z)};
+    }
+  }
+  // 0x820FD930..0x820FDA54 emits ten sequential u16 indices and 0xFFFF per
+  // fan. Retail repeats that 0x58-byte cell record 256 times (0x5800).
+  for (std::size_t fan = 0; fan < kTerrainCellFanCount; ++fan) {
+    const std::size_t out = fan * (kTerrainFanVertexCount + 1);
+    for (std::size_t index = 0; index < kTerrainFanVertexCount; ++index) {
+      topology.fan_indices[out + index] = static_cast<std::uint16_t>(
+          fan * kTerrainFanVertexCount + index);
+    }
+    topology.fan_indices[out + kTerrainFanVertexCount] =
+        kMission01TerrainRestartIndex;
+  }
+  return topology;
+}
 
 std::uint16_t be16(const std::uint8_t* bytes) noexcept {
   return static_cast<std::uint16_t>(
@@ -96,6 +132,44 @@ Mission01TerrainRenderResource::atlas_uv_transform(
       static_cast<float>(kTerrainAtlasTilePixels) / width,
       static_cast<float>(kTerrainAtlasTilePixels) / height,
       kTerrainAtlasInnerScale};
+}
+
+std::optional<Mission01TerrainResolvedVertex>
+Mission01TerrainRenderResource::resolve_vertex(
+    std::size_t instance_index,
+    std::size_t topology_vertex_index) const noexcept {
+  if (instance_index >= draw_instances.size() ||
+      topology_vertex_index >= topology.vertices.size()) {
+    return std::nullopt;
+  }
+  const Mission01TerrainCellInstance& instance =
+      draw_instances[instance_index];
+  const Mission01TerrainAtlasCell* cell =
+      atlas_cell(instance.cell_x, instance.cell_z);
+  if (cell == nullptr || !(*cell == instance.atlas)) return std::nullopt;
+  const Mission01TerrainLocalVertex local =
+      topology.vertices[topology_vertex_index];
+  const std::size_t sample = instance.patch_sample_base +
+      static_cast<std::size_t>(local.z) * kTerrainPatchSide + local.x;
+  if (sample >= patch_samples.size() ||
+      !sample_is_present(patch_samples[sample])) {
+    return std::nullopt;
+  }
+  const std::optional<Mission01TerrainAtlasUvTransform> transform =
+      atlas_uv_transform(instance.cell_x, instance.cell_z);
+  if (!transform.has_value()) return std::nullopt;
+  const std::array<float, 2> uv = transform->map_local_fraction(
+      static_cast<float>(local.x) / 4.0F,
+      static_cast<float>(local.z) / 4.0F);
+  return Mission01TerrainResolvedVertex{
+      {static_cast<float>(instance.cell_x) * kTerrainCellUnits -
+           kTerrainWorldBias + static_cast<float>(local.x) *
+               kTerrainSampleUnits,
+       patch_samples[sample],
+       static_cast<float>(instance.cell_z) * kTerrainCellUnits -
+           kTerrainWorldBias + static_cast<float>(local.z) *
+               kTerrainSampleUnits},
+      uv};
 }
 
 bool Mission01WaterRenderResource::query(float world_x, float world_z,
@@ -173,6 +247,12 @@ RetailMission01MapRenderAssets::build(RetailMission01SceneBundle scene) {
                     report.terrain_atlas_bindings == 1390 &&
                     report.terrain_atlas_pages == 7 &&
                     report.terrain_atlas_uv_transforms == 256 * 256 &&
+                    report.terrain_topology_vertices == 40 &&
+                    report.terrain_topology_indices == 44 &&
+                    report.terrain_topology_fans == 4 &&
+                    report.terrain_topology_triangles == 32 &&
+                    report.terrain_draw_instances == 256 * 256 &&
+                    report.terrain_retail_batch_cells == 256 &&
                     report.water_lookup_entries == 4864 &&
                     report.water_blocks == 413;
   return report.complete
@@ -313,6 +393,9 @@ bool RetailMission01MapRenderAssets::load_terrain() {
   std::set<std::uint16_t> distinct;
   terrain_resource_.atlas_cells.reserve(
       kTerrainAtlasSide * kTerrainAtlasSide);
+  terrain_resource_.topology = make_terrain_cell_topology();
+  terrain_resource_.draw_instances.reserve(
+      kTerrainAtlasSide * kTerrainAtlasSide);
   for (std::size_t z = 0; z < kTerrainAtlasSide; ++z) {
     for (std::size_t x = 0; x < kTerrainAtlasSide; ++x) {
       const std::uint8_t record =
@@ -333,6 +416,14 @@ bool RetailMission01MapRenderAssets::load_terrain() {
         return false;
       }
       terrain_resource_.atlas_cells.push_back({page, tile});
+      const std::size_t fine_x = (x & 15) * 4;
+      const std::size_t fine_z = (z & 15) * 4;
+      const std::size_t patch = terrain.patch_id(x >> 4, z >> 4);
+      const std::size_t sample_base = patch * kTerrainPatchSide *
+          kTerrainPatchSide + fine_z * kTerrainPatchSide + fine_x;
+      terrain_resource_.draw_instances.push_back(
+          {static_cast<std::uint16_t>(x), static_cast<std::uint16_t>(z),
+           static_cast<std::uint32_t>(sample_base), {page, tile}});
       distinct.insert(static_cast<std::uint16_t>((page << 8) | tile));
     }
   }
@@ -341,6 +432,15 @@ bool RetailMission01MapRenderAssets::load_terrain() {
   report_.terrain_atlas_cells = terrain_resource_.atlas_cells.size();
   report_.terrain_atlas_bindings = distinct.size();
   report_.terrain_atlas_pages = terrain_resource_.atlas_pages.size();
+  report_.terrain_topology_vertices =
+      terrain_resource_.topology.vertices.size();
+  report_.terrain_topology_indices =
+      terrain_resource_.topology.fan_indices.size();
+  report_.terrain_topology_fans = kTerrainCellFanCount;
+  report_.terrain_topology_triangles =
+      kTerrainCellFanCount * (kTerrainFanVertexCount - 2);
+  report_.terrain_draw_instances = terrain_resource_.draw_instances.size();
+  report_.terrain_retail_batch_cells = kTerrainRetailBatchCells;
   for (std::size_t z = 0; z < kTerrainAtlasSide; ++z) {
     for (std::size_t x = 0; x < kTerrainAtlasSide; ++x) {
       if (!terrain_resource_.atlas_uv_transform(x, z).has_value()) return false;

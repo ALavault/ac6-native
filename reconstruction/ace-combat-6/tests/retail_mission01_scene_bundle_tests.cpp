@@ -300,6 +300,101 @@ void check_qualified_uvs(
         "out-of-range terrain cells cannot acquire an atlas transform");
 }
 
+void check_qualified_topology(
+    const ac6::retail::RetailMission01MapRenderAssets& assets) {
+  using namespace ac6::retail;
+  constexpr std::array<Mission01TerrainLocalVertex, 40> expected{{
+      {1, 1}, {2, 2}, {2, 1}, {2, 0}, {1, 0},
+      {0, 0}, {0, 1}, {0, 2}, {1, 2}, {2, 2},
+      {1, 3}, {2, 4}, {2, 3}, {2, 2}, {1, 2},
+      {0, 2}, {0, 3}, {0, 4}, {1, 4}, {2, 4},
+      {3, 1}, {4, 2}, {4, 1}, {4, 0}, {3, 0},
+      {2, 0}, {2, 1}, {2, 2}, {3, 2}, {4, 2},
+      {3, 3}, {4, 4}, {4, 3}, {4, 2}, {3, 2},
+      {2, 2}, {2, 3}, {2, 4}, {3, 4}, {4, 4}}};
+  const Mission01TerrainRenderResource& terrain = assets.terrain_resource();
+  check(terrain.topology.vertices == expected,
+        "the four retail ten-vertex terrain fans retain exact local order");
+  std::size_t sequential_indices = 0;
+  std::size_t restart_indices = 0;
+  for (std::size_t fan = 0; fan < 4; ++fan) {
+    for (std::size_t index = 0; index < 10; ++index) {
+      if (terrain.topology.fan_indices[fan * 11 + index] ==
+          fan * 10 + index) {
+        ++sequential_indices;
+      }
+    }
+    if (terrain.topology.fan_indices[fan * 11 + 10] ==
+        kMission01TerrainRestartIndex) {
+      ++restart_indices;
+    }
+  }
+  check(sequential_indices == 40 && restart_indices == 4,
+        "the shared index upload has four exact restart-terminated fans");
+  std::size_t fan_triangles = 0;
+  std::size_t covered_half_quads = 0;
+  for (std::size_t fan = 0; fan < 4; ++fan) {
+    const Mission01TerrainLocalVertex centre = expected[fan * 10];
+    for (std::size_t edge = 1; edge + 1 < 10; ++edge) {
+      const Mission01TerrainLocalVertex a = expected[fan * 10 + edge];
+      const Mission01TerrainLocalVertex b = expected[fan * 10 + edge + 1];
+      const int twice_area =
+          (static_cast<int>(a.x) - centre.x) *
+              (static_cast<int>(b.z) - centre.z) -
+          (static_cast<int>(a.z) - centre.z) *
+              (static_cast<int>(b.x) - centre.x);
+      if (std::abs(twice_area) == 1) ++covered_half_quads;
+      ++fan_triangles;
+    }
+  }
+  check(fan_triangles == 32 && covered_half_quads == 32,
+        "the four fans cover the 4x4 cell with 32 nondegenerate triangles");
+
+  const TerrainField& source = assets.scene().terrain();
+  std::size_t bound_instances = 0;
+  std::size_t resolved_vertices = 0;
+  std::size_t source_matches = 0;
+  for (std::size_t instance_index = 0;
+       instance_index < terrain.draw_instances.size(); ++instance_index) {
+    const Mission01TerrainCellInstance& instance =
+        terrain.draw_instances[instance_index];
+    const std::size_t cell_x = instance_index % 256;
+    const std::size_t cell_z = instance_index / 256;
+    const std::size_t patch = source.patch_id(cell_x >> 4, cell_z >> 4);
+    const std::size_t expected_base = patch * 65 * 65 +
+        ((cell_z & 15) * 4) * 65 + (cell_x & 15) * 4;
+    const Mission01TerrainAtlasCell* atlas =
+        terrain.atlas_cell(cell_x, cell_z);
+    if (instance.cell_x == cell_x && instance.cell_z == cell_z &&
+        instance.patch_sample_base == expected_base && atlas != nullptr &&
+        instance.atlas == *atlas) {
+      ++bound_instances;
+    }
+    for (std::size_t vertex_index = 0; vertex_index < 40; ++vertex_index) {
+      const std::optional<Mission01TerrainResolvedVertex> vertex =
+          terrain.resolve_vertex(instance_index, vertex_index);
+      if (!vertex.has_value()) continue;
+      ++resolved_vertices;
+      const Mission01TerrainLocalVertex local = expected[vertex_index];
+      const float world_x = static_cast<float>(cell_x) * 512.0F -
+          65536.0F + static_cast<float>(local.x) * 128.0F;
+      const float world_z = static_cast<float>(cell_z) * 512.0F -
+          65536.0F + static_cast<float>(local.z) * 128.0F;
+      const float height = source.sample(cell_x * 4 + local.x,
+                                         cell_z * 4 + local.z);
+      if (vertex->world == std::array<float, 3>{world_x, height, world_z}) {
+        ++source_matches;
+      }
+    }
+  }
+  check(bound_instances == 65536 && resolved_vertices == 65536u * 40u &&
+            source_matches == resolved_vertices,
+        "all terrain instances resolve exact retail samples without expansion");
+  check(!terrain.resolve_vertex(65536, 0).has_value() &&
+            !terrain.resolve_vertex(0, 40).has_value(),
+        "terrain topology and instance lookups fail closed at both bounds");
+}
+
 void check_qualified_cache(const char* cache_path) {
   using namespace ac6::retail;
   ac6::RetailContentStore store;
@@ -400,6 +495,13 @@ void check_qualified_cache(const char* cache_path) {
             render.terrain_atlas_pages == 7 &&
             render.terrain_atlas_uv_transforms == 256u * 256u,
         "the compact terrain and complete page/tile/UV binding are pinned");
+  check(render.terrain_topology_vertices == 40 &&
+            render.terrain_topology_indices == 44 &&
+            render.terrain_topology_fans == 4 &&
+            render.terrain_topology_triangles == 32 &&
+            render.terrain_draw_instances == 65536 &&
+            render.terrain_retail_batch_cells == 256,
+        "retail terrain topology is shared by all persistent cell instances");
   check(render.water_lookup_entries == 4864 && render.water_blocks == 413,
         "the persistent water upload retains every lookup and bit block");
   std::size_t resolved_draws = 0;
@@ -445,6 +547,7 @@ void check_qualified_cache(const char* cache_path) {
             terrain.atlas_cell(256, 0) == nullptr,
         "terrain atlas addressing is bounded at 256 cells per side");
   check_qualified_uvs(terrain);
+  check_qualified_topology(*assets);
 
   const Mission01WaterRenderResource& water = assets->water_resource();
   check(water.cell_blocks.size() == 4864 &&
@@ -472,11 +575,13 @@ void check_qualified_cache(const char* cache_path) {
         "the persistent water resource preserves the retail bounds refusal");
   std::printf(
       "retail map assets models=%zu records=%zu vertices=%zu indices=%zu "
-      "textures=%zu draws=%zu skipped=%zu atlas=%zu uv=%zu water=%zu/%zu\n",
+      "textures=%zu draws=%zu skipped=%zu atlas=%zu uv=%zu terrain=%zu/%zu "
+      "water=%zu/%zu\n",
       render.model_files, render.source_records, render.vertices,
       render.indices, render.texture_assets, render.draw_instances,
       render.skipped_instances, render.terrain_atlas_cells,
-      render.terrain_atlas_uv_transforms, render.water_lookup_entries,
+      render.terrain_atlas_uv_transforms, render.terrain_draw_instances,
+      render.terrain_topology_triangles, render.water_lookup_entries,
       render.water_blocks);
 }
 
