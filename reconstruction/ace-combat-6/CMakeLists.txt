@@ -73,6 +73,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_camera_table.cpp
   src/retail_mission01_scene_bundle.cpp
   src/retail_mission01_map_render_assets.cpp
+  src/retail_mission01_cpu_compositor.cpp
   src/retail_ndxr_geometry.cpp
   src/retail_terrain_field.cpp
   src/retail_map_placement.cpp

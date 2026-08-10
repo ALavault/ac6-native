@@ -72,6 +72,18 @@ the public native ID is that ordinal plus one because zero means unset. The
 opening view and final scene composition, rather than camera-group or UV
 selection, now remain the accepted-JV boundary.
 
+`RetailMission01CpuCompositor` is the first marker-free product composition
+lane over that store boundary. It depth-rasterises the persistent terrain fans,
+queries the eight-unit water mask per covered fragment, and draws the bound
+placed-city NDXR primitives with their GIDX-selected NTXR textures. Camera group
+and FOV come from the loadout-selected retail record. Its JSON report keeps the
+remaining choices explicit as JV blockers: external camera pose,
+opening camera mode/FOV-variant selection, clip/cull policy, byte swap,
+mip/sampler/alpha state, water material, sky, vegetation and active-unit
+geometry. Consequently the reference image is auditable and marker-free but
+reports `jv_eligible=false`; it cannot be used to claim JV until those fields
+are closed.
+
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is
 marked playable-supported.

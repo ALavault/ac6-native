@@ -1,4 +1,5 @@
 #include "ac6/retail_mission01_scene_bundle.h"
+#include "ac6/retail_mission01_cpu_compositor.h"
 #include "ac6/retail_mission01_map_render_assets.h"
 #include "ac6/ntxr_texture.h"
 #include "ac6/retail_ndxr_container.h"
@@ -9,6 +10,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <numeric>
 #include <span>
 #include <utility>
@@ -395,7 +397,147 @@ void check_qualified_topology(
         "terrain topology and instance lookups fail closed at both bounds");
 }
 
-void check_qualified_cache(const char* cache_path) {
+void check_qualified_cpu_composition(
+    ac6::RetailContentStore &store,
+    ac6::retail::RetailMission01MapRenderAssets assets,
+    const char *output_dir) {
+  using namespace ac6::retail;
+  const std::optional<RetailCampaignBundle> common =
+      RetailCampaignBundle::open_entry(store, kRetailCameraTableEntry);
+  const std::optional<RetailCameraTable> cameras =
+      common.has_value() ? RetailCameraTable::open(*common) : std::nullopt;
+  check(common.has_value() && cameras.has_value(),
+        "the compositor receives the common retail camera table");
+  if (!common.has_value() || !cameras.has_value())
+    return;
+  std::optional<RetailMission01CpuCompositor> compositor =
+      RetailMission01CpuCompositor::assemble(std::move(assets), *cameras,
+                                             common->content_index_sha256());
+  check(compositor.has_value(),
+        "store-backed map and camera resources assemble transactionally");
+  if (!compositor.has_value())
+    return;
+
+  Mission01CpuFrameRequest request;
+  request.width = 320;
+  request.height = 180;
+  request.loadout = {1, 1, true};
+  request.view_mode = 2;
+  request.pose.eye = {1000.0F, 420.0F, -24000.0F};
+  request.pose.target = {1000.0F, 0.0F, 0.0F};
+  request.texture_swap_16 = true;
+  request.sampler_address = Mission01CpuSamplerAddress::Repeat;
+  std::optional<Mission01CpuFrame> first = compositor->render(request);
+  check(first.has_value(),
+        "the sealed store produces a marker-free CPU reference frame");
+  if (!first.has_value())
+    return;
+  const Mission01CpuFrameReport &frame = first->report();
+  check(frame.store_backed && frame.marker_free() && !frame.jv_eligible() &&
+            frame.camera_group == 0 && frame.view_mode == 2 &&
+            frame.fov_radians == 0.8028514385223389F,
+        "the frame reports retail provenance/FOV without promoting open JV "
+        "domains");
+  check(frame.terrain_instances_considered == 65536 &&
+            frame.terrain_instances_visible != 0 &&
+            frame.terrain_instances_rasterized != 0 &&
+            frame.terrain_rasterized_triangles != 0 &&
+            frame.terrain_fragment_writes != 0,
+        "persistent retail terrain fans reach the depth-tested frame");
+  check(frame.city_instances_considered == 4226 &&
+            frame.city_instances_visible != 0 &&
+            frame.city_instances_rasterized != 0 &&
+            frame.city_rasterized_triangles != 0 &&
+            frame.city_fragment_writes != 0,
+        "bound placed-city primitives reach the same frame");
+  check(
+      frame.water_queries != 0 && frame.water_fragment_writes != 0 &&
+          !frame.decoded_atlas_pages.empty() &&
+          !frame.decoded_map_texture_ids.empty() && frame.color_coverage != 0 &&
+          frame.depth_coverage != 0,
+      "the exact water mask and retail textures contribute auditable coverage");
+  check(frame.terrain_instances_visible == 1817 &&
+            frame.terrain_instances_rasterized == 444 &&
+            frame.terrain_rasterized_triangles == 3930 &&
+            frame.city_instances_visible == 2720 &&
+            frame.city_instances_rasterized == 471 &&
+            frame.city_rasterized_triangles == 805 &&
+            frame.terrain_fragment_writes == 28770 &&
+            frame.water_fragment_writes == 136 &&
+            frame.city_fragment_writes == 852 &&
+            frame.depth_coverage == 28949 &&
+            frame.color_hash == 0xC3AFE49A56218126ULL &&
+            frame.depth_hash == 0x6999A5E0C126F899ULL &&
+            frame.decoded_atlas_pages ==
+                std::vector<std::uint8_t>{0, 1, 2, 3, 4, 5} &&
+            frame.decoded_map_texture_ids.size() == 136,
+        "the qualified CPU reference metrics and frame digests are pinned");
+  check(frame.terrain_geometry_retail && frame.terrain_uv_retail &&
+            frame.water_mask_retail && frame.city_geometry_retail &&
+            frame.city_binding_retail && frame.city_transform_retail &&
+            frame.camera_group_retail && frame.camera_fov_retail &&
+            !frame.camera_mode_selection_retail && !frame.camera_pose_retail &&
+            !frame.clip_pipeline_retail && !frame.map_distance_policy_retail &&
+            !frame.texture_byte_swap_retail && !frame.mip_policy_retail &&
+            !frame.sampler_state_retail && !frame.alpha_state_retail &&
+            !frame.water_material_retail && !frame.sky_retail &&
+            !frame.vegetation_retail && !frame.active_units_retail,
+        "closed and open JV domains remain mechanically distinct");
+
+  Mission01CpuFrameRequest invalid = request;
+  invalid.width = 0;
+  check(!compositor->render(invalid).has_value(),
+        "an empty CPU target fails closed");
+  invalid = request;
+  invalid.loadout.aircraft_id = 16;
+  check(!compositor->render(invalid).has_value(),
+        "a camera group outside the retail table fails closed");
+  invalid = request;
+  invalid.sampler_address = static_cast<Mission01CpuSamplerAddress>(0xFF);
+  check(!compositor->render(invalid).has_value(),
+        "an unsupported sampler choice fails closed");
+  invalid = request;
+  invalid.width = 4097;
+  check(!compositor->render(invalid).has_value(),
+        "an excessive CPU target fails closed before allocation");
+  invalid = request;
+  invalid.view_mode = 0;
+  check(!compositor->render(invalid).has_value(),
+        "a view outside the retail table fails closed");
+  invalid = request;
+  invalid.pose.target = invalid.pose.eye;
+  check(!compositor->render(invalid).has_value(),
+        "a degenerate external camera pose fails closed");
+  invalid = request;
+  invalid.clear_color &= 0x00FFFFFFu;
+  check(!compositor->render(invalid).has_value(),
+        "a non-opaque approximation colour fails closed");
+
+  const std::optional<Mission01CpuFrame> second = compositor->render(request);
+  check(second.has_value() && second->pixels() == first->pixels() &&
+            second->report().color_hash == frame.color_hash &&
+            second->report().depth_hash == frame.depth_hash,
+        "persistent texture caches reproduce the CPU frame bit for bit");
+  if (output_dir != nullptr && *output_dir != '\0') {
+    const std::filesystem::path directory(output_dir);
+    std::error_code error;
+    std::filesystem::create_directories(directory, error);
+    check(!error &&
+              first->write_ppm(directory / "mission01-cpu-reference.ppm") &&
+              first->write_report_json(directory /
+                                       "mission01-cpu-reference.json"),
+          "the reference capture and audit report write together");
+  }
+  std::printf("retail CPU frame terrain=%zu/%zu city=%zu/%zu water=%zu "
+              "coverage=%u hash=%016llx\n",
+              frame.terrain_instances_rasterized,
+              frame.terrain_rasterized_triangles,
+              frame.city_instances_rasterized, frame.city_rasterized_triangles,
+              frame.water_fragment_writes, frame.depth_coverage,
+              static_cast<unsigned long long>(frame.color_hash));
+}
+
+void check_qualified_cache(const char* cache_path, const char* output_dir) {
   using namespace ac6::retail;
   ac6::RetailContentStore store;
   check(store.open(cache_path), "the qualified PAL cache opens");
@@ -468,7 +610,7 @@ void check_qualified_cache(const char* cache_path) {
         bindings->unique_texture_references, bindings->texture_wrappers);
   }
 
-  const std::optional<RetailMission01MapRenderAssets> assets =
+  std::optional<RetailMission01MapRenderAssets> assets =
       RetailMission01MapRenderAssets::open(store);
   check(assets.has_value(),
         "the qualified map bundle builds immutable render assets");
@@ -583,13 +725,14 @@ void check_qualified_cache(const char* cache_path) {
       render.terrain_atlas_uv_transforms, render.terrain_draw_instances,
       render.terrain_topology_triangles, render.water_lookup_entries,
       render.water_blocks);
+  check_qualified_cpu_composition(store, std::move(*assets), output_dir);
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
   check_synthetic_bundle();
-  if (argc >= 2) check_qualified_cache(argv[1]);
+  if (argc >= 2) check_qualified_cache(argv[1], argc >= 3 ? argv[2] : nullptr);
   if (failures == 0) std::printf("retail Mission 01 scene bundle OK\n");
   return failures == 0 ? 0 : 1;
 }
