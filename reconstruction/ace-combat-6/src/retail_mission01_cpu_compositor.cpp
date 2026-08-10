@@ -688,6 +688,9 @@ bool Mission01CpuFrame::write_report_json(
          << ",\n"
          << "  \"camera_dynamic_offset_retail\": "
          << (report_.camera_dynamic_offset_retail ? "true" : "false") << ",\n"
+         << "  \"camera_rotation_core_retail\": "
+         << (report_.camera_rotation_core_retail ? "true" : "false")
+         << ",\n"
          << "  \"camera_mode_selection_retail\": "
          << (report_.camera_mode_selection_retail ? "true" : "false")
          << ",\n"
@@ -714,6 +717,17 @@ bool Mission01CpuFrame::write_report_json(
     output << ", \"velocity\": ";
     write_float4(state.velocity);
     output << ", \"elapsed\": " << state.elapsed << '}';
+  } else {
+    output << "null";
+  }
+  output << ",\n"
+         << "  \"camera_next_rotation_state\": ";
+  if (report_.next_mode2_rotation_state.has_value()) {
+    const RetailMode2RotationState &state =
+        *report_.next_mode2_rotation_state;
+    output << "{\"rotation_at_3a0\": " << state.rotation_at_3a0
+           << ", \"rotation_at_3a4\": " << state.rotation_at_3a4
+           << ", \"rotation_at_3a8\": " << state.rotation_at_3a8 << '}';
   } else {
     output << "null";
   }
@@ -752,6 +766,9 @@ bool Mission01CpuFrame::write_report_json(
   if (report_.camera_dynamic_offset_retail) {
     output << ", \"camera_dynamic_offset\"";
   }
+  if (report_.camera_rotation_core_retail) {
+    output << ", \"camera_rotation_core\"";
+  }
   output << "],\n"
          << "  \"open_boundaries\": [";
   bool first_open_boundary = true;
@@ -762,6 +779,11 @@ bool Mission01CpuFrame::write_report_json(
   if (!report_.camera_dynamic_offset_retail) {
     if (!first_open_boundary) output << ", ";
     output << "\"camera_dynamic_offset\"";
+    first_open_boundary = false;
+  }
+  if (!report_.camera_rotation_core_retail) {
+    if (!first_open_boundary) output << ", ";
+    output << "\"camera_rotation_core\"";
     first_open_boundary = false;
   }
   if (!first_open_boundary) output << ", ";
@@ -876,7 +898,12 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
                         : camera_record->fov_radians();
   std::optional<RetailMode2CameraLocator> mode2_locator;
   std::optional<RetailMode2DynamicResult> mode2_dynamic;
+  std::optional<RetailMode2RotationState> mode2_rotation;
   if (request.mode2_dynamic_input.has_value() &&
+      !request.mode2_camera_state.has_value()) {
+    return std::nullopt;
+  }
+  if (request.mode2_rotation_input.has_value() &&
       !request.mode2_camera_state.has_value()) {
     return std::nullopt;
   }
@@ -895,8 +922,24 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
         return std::nullopt;
       local_offset = mode2_dynamic->local_offset;
     }
+    RetailMode2CameraState camera_state = *request.mode2_camera_state;
+    if (request.mode2_rotation_input.has_value()) {
+      const RetailMode2RotationInput &rotation_input =
+          *request.mode2_rotation_input;
+      if (rotation_input.current.rotation_at_3a0 !=
+              camera_state.rotation_at_3a0 ||
+          rotation_input.current.rotation_at_3a4 !=
+              camera_state.rotation_at_3a4) {
+        return std::nullopt;
+      }
+      mode2_rotation = step_mode2_camera_rotation(rotation_input);
+      if (!mode2_rotation.has_value())
+        return std::nullopt;
+      camera_state.rotation_at_3a0 = mode2_rotation->rotation_at_3a0;
+      camera_state.rotation_at_3a4 = mode2_rotation->rotation_at_3a4;
+    }
     mode2_locator = transform_mode2_camera_locator(
-        *request.mode2_camera_state, local_offset);
+        camera_state, local_offset);
     if (!mode2_locator.has_value())
       return std::nullopt;
   }
@@ -957,12 +1000,14 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   report.camera_mode_selection_retail = camera_mode_selection_retail;
   report.camera_mode2_base_transform_retail = mode2_locator.has_value();
   report.camera_dynamic_offset_retail = mode2_dynamic.has_value();
+  report.camera_rotation_core_retail = mode2_rotation.has_value();
   if (mode2_dynamic.has_value()) {
     report.camera_dynamic_branch = mode2_dynamic->branch;
     report.camera_random_draws_consumed =
         mode2_dynamic->random_draws_consumed;
     report.next_mode2_shake_state = mode2_dynamic->shake;
   }
+  report.next_mode2_rotation_state = mode2_rotation;
 
   std::set<std::uint8_t> atlas_pages;
   std::set<std::uint32_t> map_textures;

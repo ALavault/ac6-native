@@ -43,6 +43,10 @@ struct Mission01CpuFrameRequest final {
   // shake state and applies its result before the locator transform. The next
   // state is returned in the frame report for deterministic 60 Hz carry-over.
   std::optional<RetailMode2DynamicInput> mode2_dynamic_input;
+  // When present with mode2_camera_state, advances the qualified scalar
+  // rotation core from 0x82262A28 before the locator transform. The caller
+  // owns the unresolved target-selection inputs and carries the returned state.
+  std::optional<RetailMode2RotationInput> mode2_rotation_input;
   Mission01CpuCameraPose pose{};
   bool texture_swap_16{};
   Mission01CpuSamplerAddress sampler_address{Mission01CpuSamplerAddress::Clamp};
@@ -103,10 +107,12 @@ struct Mission01CpuFrameReport final {
   bool camera_mode_selection_retail{};
   bool camera_mode2_base_transform_retail{};
   bool camera_dynamic_offset_retail{};
+  bool camera_rotation_core_retail{};
   RetailMode2DynamicBranch camera_dynamic_branch{
       RetailMode2DynamicBranch::GuardedOut};
   std::uint8_t camera_random_draws_consumed{};
   std::optional<RetailMode2ShakeState> next_mode2_shake_state;
+  std::optional<RetailMode2RotationState> next_mode2_rotation_state;
   bool camera_runtime_state_retail{};
   bool camera_pose_retail{};
   bool clip_pipeline_retail{};

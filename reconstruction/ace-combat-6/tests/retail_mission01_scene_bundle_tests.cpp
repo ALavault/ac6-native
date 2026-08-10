@@ -443,6 +443,9 @@ void check_qualified_cpu_composition(
   dynamic_camera.player_is_current = true;
   dynamic_camera.frame_delta = 1.0F / 60.0F;
   request.mode2_dynamic_input = dynamic_camera;
+  RetailMode2RotationInput rotation_camera;
+  rotation_camera.response = 1.0F;
+  request.mode2_rotation_input = rotation_camera;
   request.pose.eye = {1000.0F, 420.0F, -24000.0F};
   request.pose.target = {1000.0F, 0.0F, 0.0F};
   request.texture_swap_16 = true;
@@ -507,6 +510,8 @@ void check_qualified_cpu_composition(
             frame.camera_dynamic_branch == RetailMode2DynamicBranch::Reset &&
             frame.camera_random_draws_consumed == 0 &&
             frame.next_mode2_shake_state == RetailMode2ShakeState{} &&
+            frame.camera_rotation_core_retail &&
+            frame.next_mode2_rotation_state == RetailMode2RotationState{} &&
             !frame.camera_runtime_state_retail && !frame.camera_pose_retail &&
             !frame.clip_pipeline_retail && !frame.map_distance_policy_retail &&
             !frame.texture_byte_swap_retail && !frame.mip_policy_retail &&
@@ -540,6 +545,7 @@ void check_qualified_cpu_composition(
   invalid.pose.target = invalid.pose.eye;
   invalid.mode2_camera_state.reset();
   invalid.mode2_dynamic_input.reset();
+  invalid.mode2_rotation_input.reset();
   check(!compositor->render(invalid).has_value(),
         "a degenerate external camera pose fails closed");
   invalid = request;
@@ -554,6 +560,11 @@ void check_qualified_cpu_composition(
   invalid.mode2_camera_state.reset();
   check(!compositor->render(invalid).has_value(),
         "dynamic mode-2 input without its locator state fails closed");
+  invalid = request;
+  invalid.mode2_camera_state.reset();
+  invalid.mode2_dynamic_input.reset();
+  check(!compositor->render(invalid).has_value(),
+        "rotation mode-2 input without its locator state fails closed");
   invalid = request;
   invalid.mode2_dynamic_input->random_draws[0] = 32768u;
   check(!compositor->render(invalid).has_value(),

@@ -5,6 +5,7 @@
 
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <limits>
@@ -202,6 +203,53 @@ void check_dynamic_refusals() {
         "overflow while adding the dynamic output fails closed");
 }
 
+void check_rotation_core() {
+  using namespace ac6::retail;
+  RetailMode2RotationInput input;
+  input.target_at_3a0 = 0.5F;
+  input.target_at_3a4 = -0.75F;
+  input.target_at_3a8 = 0.25F;
+  input.response = 0.5F;
+  const std::optional<RetailMode2RotationState> result =
+      step_mode2_camera_rotation(input);
+  check(result.has_value(), "the bounded camera rotation core accepts finite state");
+  if (result.has_value()) {
+    check_bits(result->rotation_at_3a0, 0x3E800000u,
+               "rotation +0x3A0 uses the retail fused interpolation");
+    check_bits(result->rotation_at_3a4, 0xBEC00000u,
+               "rotation +0x3A4 uses the retail fused interpolation");
+    check_bits(result->rotation_at_3a8, 0x3E000000u,
+               "rotation +0x3A8 uses the retail fused interpolation");
+  }
+
+  RetailMode2RotationInput wrapped;
+  wrapped.current.rotation_at_3a4 = 3.0F;
+  wrapped.target_at_3a4 = -3.0F;
+  wrapped.response = 0.5F;
+  wrapped.wrap_at_3a4 = true;
+  const auto wrapped_result = step_mode2_camera_rotation(wrapped);
+  check(wrapped_result.has_value() &&
+            std::fabs(wrapped_result->rotation_at_3a4) <= 3.1415928F,
+        "rotation +0x3A4 follows the shortest wrapped path");
+
+  RetailMode2RotationInput snapped;
+  snapped.target_at_3a0 = 0.0005F;
+  snapped.target_at_3a4 = -0.0005F;
+  snapped.target_at_3a8 = 0.0005F;
+  snapped.response = 1.0F;
+  const auto snapped_result = step_mode2_camera_rotation(snapped);
+  check(snapped_result.has_value() &&
+            snapped_result->rotation_at_3a0 == 0.0F &&
+            snapped_result->rotation_at_3a4 == 0.0F &&
+            snapped_result->rotation_at_3a8 == 0.0005F,
+        "the retail 0x001 snap clears only +0x3A0/+0x3A4");
+
+  RetailMode2RotationInput invalid;
+  invalid.current.rotation_at_3a0 = std::numeric_limits<float>::infinity();
+  check(!step_mode2_camera_rotation(invalid).has_value(),
+        "non-finite camera rotation state fails closed");
+}
+
 void check_unit_transform() {
   using namespace ac6::retail;
   RetailMode2CameraState state;
@@ -328,6 +376,7 @@ int main(int argc, char **argv) {
   check_shake_integrator();
   check_dynamic_branches();
   check_dynamic_refusals();
+  check_rotation_core();
   check_unit_transform();
   check_transposed_dot_products();
   check_rotation_order();

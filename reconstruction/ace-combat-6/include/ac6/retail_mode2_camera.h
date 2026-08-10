@@ -82,6 +82,36 @@ struct RetailMode2DynamicResult final {
   bool operator==(const RetailMode2DynamicResult &) const = default;
 };
 
+// The scalar rotation state written by 0x82262A28.  These are deliberately
+// kept separate from RetailMode2CameraState: mode 2's locator transform
+// consumes +0x3A0/+0x3A4, while the producer also carries +0x3A8 for the
+// manager's other camera paths.
+struct RetailMode2RotationState final {
+  float rotation_at_3a0{};
+  float rotation_at_3a4{};
+  float rotation_at_3a8{};
+  bool operator==(const RetailMode2RotationState &) const = default;
+};
+
+// Inputs after the upstream target-selection block in 0x82262A28.  The
+// target fields are the values arriving at the inner fmsubs/fmadds block; the
+// selector's aircraft/player reads remain outside this bounded transition.
+struct RetailMode2RotationInput final {
+  RetailMode2RotationState current{};
+  float target_at_3a0{};
+  float target_at_3a4{};
+  float target_at_3a8{};
+  float response{};  // manager+0x368 multiplied by the frame delta
+  bool wrap_at_3a4{};  // mode 1/2 + manager+0x4A8 branch
+  bool operator==(const RetailMode2RotationInput &) const = default;
+};
+
+// 0x82262E68..0x82262F84, the state-writing core of 0x82262A28.  It keeps
+// retail's fused interpolation, shortest-path wrap for +0x3A4, final angle
+// normalisation, and the 0x001 snap.  Invalid arithmetic fails closed.
+std::optional<RetailMode2RotationState>
+step_mode2_camera_rotation(const RetailMode2RotationInput &input) noexcept;
+
 // 0x8225D0A8 with 0x8225C178 inlined as an injected-RNG boundary. Retail's
 // vector/scalar grouping and fused output updates are retained. The result is
 // pure: callers explicitly carry the returned state into the next 60 Hz tick.

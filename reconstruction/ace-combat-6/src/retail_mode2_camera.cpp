@@ -50,6 +50,12 @@ constexpr float kPlayerScale =
     std::bit_cast<float>(std::uint32_t{0x3F6A64C3});
 constexpr float kRandomScale =
     std::bit_cast<float>(std::uint32_t{0x38800100});
+constexpr float kRotationSnap =
+    std::bit_cast<float>(std::uint32_t{0x3A83126F});
+constexpr float kPi = std::bit_cast<float>(std::uint32_t{0x40490FDB});
+constexpr float kTwoPi = std::bit_cast<float>(std::uint32_t{0x40C90FDB});
+constexpr float kNegativePi =
+    std::bit_cast<float>(std::uint32_t{0xC0490FDB});
 
 float retail_unit_clamp(float value) noexcept {
   // 0x8225DB04..0x8225DB20: the two comparisons are ordered and the selected
@@ -82,7 +88,69 @@ float transform_component(const RetailBasis &basis,
   return pair + basis.rows[2][lane] * offset[2];
 }
 
+bool finite_rotation(const RetailMode2RotationState &state) noexcept {
+  return std::isfinite(state.rotation_at_3a0) &&
+         std::isfinite(state.rotation_at_3a4) &&
+         std::isfinite(state.rotation_at_3a8);
+}
+
+float interpolate_rotation(float current, float target, float response) noexcept {
+  // The retail block uses fmsubs followed by fmadds. Expressing both as fma
+  // preserves the single-rounding subtraction/addition grouping on hosts
+  // that provide it, while keeping the state transition explicit.
+  const float delta = std::fmaf(target, 1.0F, -current);
+  return std::fmaf(delta, response, current);
+}
+
+float normalise_rotation(float value, bool snap) noexcept {
+  if (snap && std::fabs(value) < kRotationSnap)
+    value = 0.0F;
+  if (value > kPi)
+    value -= kTwoPi;
+  else if (value < kNegativePi)
+    value += kTwoPi;
+  return value;
+}
+
 } // namespace
+
+std::optional<RetailMode2RotationState> step_mode2_camera_rotation(
+    const RetailMode2RotationInput &input) noexcept {
+  if (!finite_rotation(input.current) ||
+      !std::isfinite(input.target_at_3a0) ||
+      !std::isfinite(input.target_at_3a4) ||
+      !std::isfinite(input.target_at_3a8) ||
+      !std::isfinite(input.response)) {
+    return std::nullopt;
+  }
+
+  RetailMode2RotationState result = input.current;
+  float target_at_3a4 = input.target_at_3a4;
+  if (input.wrap_at_3a4) {
+    float delta = std::fmaf(target_at_3a4, 1.0F, -result.rotation_at_3a4);
+    if (std::fabs(delta) > kPi) {
+      if (delta < 0.0F)
+        target_at_3a4 += kTwoPi;
+      else
+        target_at_3a4 -= kTwoPi;
+    }
+  }
+
+  // 0x82262E90 stores +0x3A4 first, then +0x3A0. The final +0x3A8 update
+  // follows the snap and normalisation of those fields.
+  result.rotation_at_3a4 = interpolate_rotation(
+      result.rotation_at_3a4, target_at_3a4, input.response);
+  result.rotation_at_3a0 = interpolate_rotation(
+      result.rotation_at_3a0, input.target_at_3a0, input.response);
+  result.rotation_at_3a4 = normalise_rotation(result.rotation_at_3a4, true);
+  result.rotation_at_3a0 = normalise_rotation(result.rotation_at_3a0, true);
+  result.rotation_at_3a8 = interpolate_rotation(
+      result.rotation_at_3a8, input.target_at_3a8, input.response);
+  // Retail does not apply the 0x001 snap to +0x3A8; it only wraps that field.
+  result.rotation_at_3a8 = normalise_rotation(result.rotation_at_3a8, false);
+
+  return finite_rotation(result) ? std::optional(result) : std::nullopt;
+}
 
 std::optional<RetailMode2ShakeStepResult> step_mode2_camera_shake(
     const RetailMode2ShakeState &state, float period, float amplitude,
