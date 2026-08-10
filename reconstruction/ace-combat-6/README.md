@@ -72,12 +72,15 @@ the public native ID is that ordinal plus one because zero means unset. The
 opening view and final scene composition, rather than camera-group or UV
 selection, now remain the accepted-JV boundary.
 
-The mode-2 base locator is also a typed product path. It copies the selected
-record's stage-zero offset, transforms it through the live player's three
-basis rows and position, then applies the manager's `+0x3a4` and `+0x3a0`
-rotations in retail call order. It deliberately stops before the dynamic
-offset adjustment at `0x8225D9F0`; opening-mode selection and the source of the
-live camera-manager/player state remain open.
+The mode-2 locator is also a typed product path. It copies the selected
+record's stage-zero offset, executes the four guarded branches of the dynamic
+adjustment at `0x8225D9F0`, advances its `+0x1c0` state through `0x8225D0A8`,
+then transforms the adjusted offset through the live player's basis and
+position before applying manager rotations `+0x3a4` and `+0x3a0` in retail
+order. Results of the retail RNG call are injected as two auditable 15-bit
+draws, so replay owns their sequence and the camera code does not invent a
+second global RNG. Opening-mode selection and the producer of the live
+camera-manager/player fields remain open.
 
 `RetailMission01CpuCompositor` is the first marker-free product composition
 lane over that store boundary. It depth-rasterises the persistent terrain fans,
@@ -85,7 +88,7 @@ queries the eight-unit water mask per covered fragment, and draws the bound
 placed-city NDXR primitives with their GIDX-selected NTXR textures. Camera group
 and FOV come from the loadout-selected retail record. Its JSON report keeps the
 remaining choices explicit as JV blockers: external camera pose,
-or a mode-2 base locator with an unresolved dynamic offset/live-state source;
+or a mode-2 locator without a live-state source;
 opening camera mode/FOV-variant selection, clip/cull policy, byte swap,
 mip/sampler/alpha state, water material, sky, vegetation and active-unit
 geometry. Consequently the reference image is auditable and marker-free but

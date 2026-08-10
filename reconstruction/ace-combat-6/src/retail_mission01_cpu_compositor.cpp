@@ -603,8 +603,12 @@ bool Mission01CpuFrame::write_report_json(
   std::ofstream output(path, std::ios::trunc);
   if (!output)
     return false;
+  const auto write_float4 = [&output](const std::array<float, 4> &values) {
+    output << '[' << values[0] << ", " << values[1] << ", " << values[2]
+           << ", " << values[3] << ']';
+  };
   output << "{\n"
-         << "  \"schema\": \"ac6.mission01-cpu-frame.v2\",\n"
+         << "  \"schema\": \"ac6.mission01-cpu-frame.v3\",\n"
          << "  \"content_index_sha256\": \""
          << sha256_hex(report_.content_index_sha256) << "\",\n"
          << "  \"width\": " << report_.width << ",\n"
@@ -618,8 +622,11 @@ bool Mission01CpuFrame::write_report_json(
          << "  \"near_plane\": " << report_.near_plane << ",\n"
          << "  \"far_plane\": " << report_.far_plane << ",\n"
          << "  \"camera_source\": \""
-         << (report_.uses_external_camera_pose ? "external_pose"
-                                               : "retail_mode2_base")
+         << (report_.uses_external_camera_pose
+                 ? "external_pose"
+                 : (report_.camera_dynamic_offset_retail
+                        ? "retail_mode2_dynamic"
+                        : "retail_mode2_base"))
          << "\",\n"
          << "  \"camera_eye\": [" << report_.camera_pose.eye[0] << ", "
          << report_.camera_pose.eye[1] << ", " << report_.camera_pose.eye[2]
@@ -680,6 +687,33 @@ bool Mission01CpuFrame::write_report_json(
          << ",\n"
          << "  \"camera_dynamic_offset_retail\": "
          << (report_.camera_dynamic_offset_retail ? "true" : "false") << ",\n"
+         << "  \"camera_dynamic_branch\": ";
+  if (report_.camera_dynamic_offset_retail) {
+    output << '"' << mode2_dynamic_branch_name(report_.camera_dynamic_branch)
+           << '"';
+  } else {
+    output << "null";
+  }
+  output << ",\n"
+         << "  \"camera_random_draws_consumed\": "
+         << static_cast<unsigned>(report_.camera_random_draws_consumed)
+         << ",\n"
+         << "  \"camera_next_shake_state\": ";
+  if (report_.next_mode2_shake_state.has_value()) {
+    const RetailMode2ShakeState &state = *report_.next_mode2_shake_state;
+    output << "{\"start\": ";
+    write_float4(state.start);
+    output << ", \"target\": ";
+    write_float4(state.target);
+    output << ", \"output\": ";
+    write_float4(state.output);
+    output << ", \"velocity\": ";
+    write_float4(state.velocity);
+    output << ", \"elapsed\": " << state.elapsed << '}';
+  } else {
+    output << "null";
+  }
+  output << ",\n"
          << "  \"camera_runtime_state_retail\": "
          << (report_.camera_runtime_state_retail ? "true" : "false") << ",\n"
          << "  \"decoded_atlas_pages\": [";
@@ -708,10 +742,15 @@ bool Mission01CpuFrame::write_report_json(
   if (report_.camera_mode2_base_transform_retail) {
     output << ", \"camera_mode2_base_transform\"";
   }
+  if (report_.camera_dynamic_offset_retail) {
+    output << ", \"camera_dynamic_offset\"";
+  }
   output << "],\n"
-         << "  \"open_boundaries\": [\"camera_mode_selection\", "
-            "\"camera_dynamic_offset\", \"camera_runtime_state\", "
-            "\"camera_pose\", "
+         << "  \"open_boundaries\": [\"camera_mode_selection\"";
+  if (!report_.camera_dynamic_offset_retail) {
+    output << ", \"camera_dynamic_offset\"";
+  }
+  output << ", \"camera_runtime_state\", \"camera_pose\", "
             "\"clip_pipeline\", \"map_distance_policy\", "
             "\"texture_byte_swap\", \"mip_policy\", \"sampler_state\", "
             "\"alpha_state\", \"water_material\", \"sky\", "
@@ -808,11 +847,28 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
                         ? camera_record->alternate_fov_radians()
                         : camera_record->fov_radians();
   std::optional<RetailMode2CameraLocator> mode2_locator;
+  std::optional<RetailMode2DynamicResult> mode2_dynamic;
+  if (request.mode2_dynamic_input.has_value() &&
+      !request.mode2_camera_state.has_value()) {
+    return std::nullopt;
+  }
   if (request.mode2_camera_state.has_value()) {
     if (request.view_mode != 2)
       return std::nullopt;
-    mode2_locator = resolve_mode2_base_camera_locator(
-        *camera_record, *request.mode2_camera_state);
+    const std::optional<std::array<float, 4>> base_offset =
+        camera_record->offset(0);
+    if (!base_offset.has_value())
+      return std::nullopt;
+    std::array<float, 4> local_offset = *base_offset;
+    if (request.mode2_dynamic_input.has_value()) {
+      mode2_dynamic = apply_mode2_dynamic_offset(
+          local_offset, *request.mode2_dynamic_input);
+      if (!mode2_dynamic.has_value())
+        return std::nullopt;
+      local_offset = mode2_dynamic->local_offset;
+    }
+    mode2_locator = transform_mode2_camera_locator(
+        *request.mode2_camera_state, local_offset);
     if (!mode2_locator.has_value())
       return std::nullopt;
   }
@@ -868,6 +924,13 @@ RetailMission01CpuCompositor::render(const Mission01CpuFrameRequest &request) {
   report.camera_group_retail = true;
   report.camera_fov_retail = true;
   report.camera_mode2_base_transform_retail = mode2_locator.has_value();
+  report.camera_dynamic_offset_retail = mode2_dynamic.has_value();
+  if (mode2_dynamic.has_value()) {
+    report.camera_dynamic_branch = mode2_dynamic->branch;
+    report.camera_random_draws_consumed =
+        mode2_dynamic->random_draws_consumed;
+    report.next_mode2_shake_state = mode2_dynamic->shake;
+  }
 
   std::set<std::uint8_t> atlas_pages;
   std::set<std::uint32_t> map_textures;

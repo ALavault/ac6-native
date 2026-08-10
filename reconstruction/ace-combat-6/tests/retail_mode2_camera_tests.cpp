@@ -4,9 +4,12 @@
 #include "ac6/retail_content.h"
 
 #include <array>
+#include <bit>
+#include <cstdint>
 #include <cstdio>
 #include <limits>
 #include <optional>
+#include <string_view>
 
 namespace {
 
@@ -17,6 +20,186 @@ void check(bool condition, const char *message) {
     std::printf("FAIL  %s\n", message);
     ++failures;
   }
+}
+
+void check_bits(float value, std::uint32_t expected, const char *message) {
+  check(std::bit_cast<std::uint32_t>(value) == expected, message);
+}
+
+ac6::retail::RetailMode2ShakeState shake_fixture(bool nonzero_z = true) {
+  ac6::retail::RetailMode2ShakeState state;
+  state.start = {1.0F, 2.0F, nonzero_z ? 3.0F : 0.0F, 0.0F};
+  state.target = {5.0F, 8.0F, nonzero_z ? 11.0F : 0.0F, 0.0F};
+  state.output = {0.2F, 0.3F, nonzero_z ? 0.4F : 0.0F, 0.0F};
+  state.velocity = {0.1F, 0.2F, nonzero_z ? 0.3F : 0.0F, 0.0F};
+  state.elapsed = 0.05F;
+  return state;
+}
+
+ac6::retail::RetailMode2DynamicInput reset_input() {
+  ac6::retail::RetailMode2DynamicInput input;
+  input.player_present = true;
+  input.player_is_current = true;
+  input.frame_delta = 1.0F / 60.0F;
+  input.shake = shake_fixture(false);
+  return input;
+}
+
+void check_shake_integrator() {
+  using namespace ac6::retail;
+  const std::array<std::uint16_t, 2> draws{123u, 456u};
+  const std::optional<RetailMode2ShakeStepResult> low =
+      step_mode2_camera_shake(shake_fixture(), 0.1F, 2.0F, 0.01F, draws);
+  check(low.has_value() && low->random_draws_consumed == 0,
+        "the low-phase shake step consumes no random draw");
+  if (low.has_value()) {
+    check_bits(low->state.velocity[0], 0x3E0F5C29u,
+               "low phase velocity x keeps retail multiply/add rounds");
+    check_bits(low->state.velocity[1], 0x3E851EB8u,
+               "low phase velocity y keeps retail multiply/add rounds");
+    check_bits(low->state.output[0], 0x3E4E3BCDu,
+               "low phase output x is the fused retail integration");
+    check_bits(low->state.output[1], 0x3E9AEE64u,
+               "low phase output y is the fused retail integration");
+    check_bits(low->state.output[2], 0x41000000u,
+               "the output z lane retains target minus start");
+    check_bits(low->state.velocity[2], 0x00000000u,
+               "retail explicitly clears velocity z");
+    check_bits(low->state.elapsed, 0x3D75C290u,
+               "elapsed advances after the output update");
+  }
+
+  RetailMode2ShakeState high_state = shake_fixture();
+  high_state.elapsed = 0.075F;
+  const std::optional<RetailMode2ShakeStepResult> high =
+      step_mode2_camera_shake(high_state, 0.1F, 2.0F, 0.01F, draws);
+  check(high.has_value() && high->random_draws_consumed == 0,
+        "the high-phase shake step consumes no random draw");
+  if (high.has_value()) {
+    check_bits(high->state.velocity[0], 0x3CA3D70Cu,
+               "high phase doubles/scales/subtracts velocity x");
+    check_bits(high->state.velocity[1], 0x3DA3D70Bu,
+               "high phase doubles/scales/subtracts velocity y");
+    check_bits(high->state.output[0], 0x3E4D013Bu,
+               "high phase output x is pinned");
+    check_bits(high->state.output[1], 0x3E9A0276u,
+               "high phase output y is pinned");
+  }
+
+  RetailMode2ShakeState refresh_state = shake_fixture(false);
+  refresh_state.elapsed = 0.11F;
+  const std::optional<RetailMode2ShakeStepResult> refreshed =
+      step_mode2_camera_shake(refresh_state, 0.1F, 2.0F, 0.01F,
+                              {0u, 32767u});
+  check(refreshed.has_value() && refreshed->random_draws_consumed == 2,
+        "elapsed strictly above the period consumes exactly two RNG draws");
+  if (refreshed.has_value()) {
+    check(refreshed->state.start == refresh_state.target &&
+              refreshed->state.target ==
+                  std::array<float, 4>{-2.0F, 2.0F, 0.0F, 0.0F},
+          "0x8225C178 maps the two injected endpoint draws exactly");
+    check_bits(refreshed->state.output[0], 0x3E4C154Du,
+               "refreshed target produces the pinned x output");
+    check_bits(refreshed->state.output[1], 0x3E994AF5u,
+               "refreshed target produces the pinned y output");
+  }
+
+  const std::optional<RetailMode2ShakeStepResult> inert =
+      step_mode2_camera_shake(shake_fixture(), 0.0F, 2.0F, 0.01F, draws);
+  check(inert.has_value() && inert->state == shake_fixture() &&
+            inert->random_draws_consumed == 0,
+        "a sub-epsilon period returns the state unchanged");
+}
+
+void check_dynamic_branches() {
+  using namespace ac6::retail;
+  const std::array<float, 4> base{1.0F, 2.0F, 3.0F, 4.0F};
+
+  RetailMode2DynamicInput guarded = reset_input();
+  guarded.player_present = false;
+  const auto guard_result = apply_mode2_dynamic_offset(base, guarded);
+  check(guard_result.has_value() &&
+            guard_result->branch == RetailMode2DynamicBranch::GuardedOut &&
+            guard_result->local_offset == base &&
+            guard_result->shake == guarded.shake,
+        "a missing current player leaves offset and shake state unchanged");
+
+  RetailMode2DynamicInput reset = reset_input();
+  const auto reset_result = apply_mode2_dynamic_offset(base, reset);
+  check(reset_result.has_value() &&
+            reset_result->branch == RetailMode2DynamicBranch::Reset &&
+            reset_result->local_offset == base &&
+            reset_result->shake == RetailMode2ShakeState{},
+        "the low player field branch clears every qualified shake field");
+
+  RetailMode2DynamicInput direct = reset_input();
+  direct.player_at_8a0 = 0.5F;
+  direct.manager_at_370 = 4.0F;
+  direct.frame_delta = 0.01F;
+  const auto direct_result = apply_mode2_dynamic_offset(base, direct);
+  check(direct_result.has_value() &&
+            direct_result->branch == RetailMode2DynamicBranch::Direct &&
+            direct_result->random_draws_consumed == 0,
+        "a non-trivial +0x8A0 field selects the direct-amplitude branch");
+  if (direct_result.has_value()) {
+    check_bits(direct_result->local_offset[0], 0x3F99C77Au,
+               "direct branch adds the retail x output to the base offset");
+    check_bits(direct_result->local_offset[1], 0x40135DCCu,
+               "direct branch adds the retail y output to the base offset");
+    check_bits(direct_result->local_offset[2], 0x40400000u,
+               "direct branch keeps the invariant zero z output");
+  }
+
+  RetailMode2DynamicInput scaled = reset_input();
+  scaled.player_at_890 = 10.0F;
+  scaled.player_at_894 = 10.0F;
+  scaled.player_at_898 = 12.0F;
+  scaled.manager_at_374 = 3.0F;
+  scaled.shake = {};
+  const auto scaled_result = apply_mode2_dynamic_offset(base, scaled);
+  check(scaled_result.has_value() &&
+            scaled_result->branch == RetailMode2DynamicBranch::Scaled &&
+            scaled_result->local_offset == base,
+        "the +0x890 threshold selects and executes the scaled branch");
+
+  check(std::string_view(mode2_dynamic_branch_name(
+            RetailMode2DynamicBranch::GuardedOut)) == "guarded_out" &&
+            std::string_view(mode2_dynamic_branch_name(
+                RetailMode2DynamicBranch::Reset)) == "reset" &&
+            std::string_view(mode2_dynamic_branch_name(
+                RetailMode2DynamicBranch::Direct)) == "direct" &&
+            std::string_view(mode2_dynamic_branch_name(
+                RetailMode2DynamicBranch::Scaled)) == "scaled",
+        "all dynamic branches have stable audit names");
+}
+
+void check_dynamic_refusals() {
+  using namespace ac6::retail;
+  const std::array<float, 4> base{};
+  RetailMode2DynamicInput invalid = reset_input();
+  invalid.player_at_890 = std::numeric_limits<float>::quiet_NaN();
+  check(!apply_mode2_dynamic_offset(base, invalid).has_value(),
+        "non-finite dynamic input fails closed");
+  invalid = reset_input();
+  invalid.random_draws[1] = 32768u;
+  check(!apply_mode2_dynamic_offset(base, invalid).has_value(),
+        "an RNG result outside the retail 15-bit range fails closed");
+  RetailMode2ShakeState invalid_shake = shake_fixture();
+  invalid_shake.output[0] = std::numeric_limits<float>::infinity();
+  check(!step_mode2_camera_shake(invalid_shake, 0.1F, 2.0F, 0.01F,
+                                 {0u, 0u})
+             .has_value(),
+        "non-finite carried shake state fails closed");
+
+  invalid = reset_input();
+  invalid.player_at_8a0 = 1.0F;
+  invalid.manager_at_370 = std::numeric_limits<float>::max();
+  invalid.shake = {};
+  invalid.shake.output[0] = std::numeric_limits<float>::max();
+  const std::array<float, 4> huge_base{
+      std::numeric_limits<float>::max(), 0.0F, 0.0F, 0.0F};
+  check(!apply_mode2_dynamic_offset(huge_base, invalid).has_value(),
+        "overflow while adding the dynamic output fails closed");
 }
 
 void check_unit_transform() {
@@ -111,15 +294,23 @@ void check_qualified_cache(const char *cache_path) {
   RetailMode2CameraState state;
   state.player_basis = identity_basis();
   std::size_t resolved = 0;
+  const RetailMode2DynamicInput dynamic = reset_input();
   for (std::uint32_t group = 0; group < kRetailCameraGroups; ++group) {
     const RetailCameraRecord *record = cameras->record(group, 2);
-    if (record != nullptr &&
-        resolve_mode2_base_camera_locator(*record, state).has_value()) {
+    const std::optional<std::array<float, 4>> base =
+        record != nullptr ? record->offset(0) : std::nullopt;
+    const std::optional<RetailMode2DynamicResult> adjusted =
+        base.has_value() ? apply_mode2_dynamic_offset(*base, dynamic)
+                         : std::nullopt;
+    if (adjusted.has_value() &&
+        adjusted->branch == RetailMode2DynamicBranch::Reset &&
+        transform_mode2_camera_locator(state, adjusted->local_offset)
+            .has_value()) {
       ++resolved;
     }
   }
   check(resolved == kRetailCameraGroups,
-        "mode-2 base locators resolve for all 15 retail aircraft groups");
+        "mode-2 dynamic reset and locators resolve for all 15 retail groups");
   const RetailCameraRecord *first = cameras->record(0, 2);
   const auto offset = first != nullptr ? first->offset(0) : std::nullopt;
   check(offset.has_value() &&
@@ -134,6 +325,9 @@ void check_qualified_cache(const char *cache_path) {
 } // namespace
 
 int main(int argc, char **argv) {
+  check_shake_integrator();
+  check_dynamic_branches();
+  check_dynamic_refusals();
   check_unit_transform();
   check_transposed_dot_products();
   check_rotation_order();

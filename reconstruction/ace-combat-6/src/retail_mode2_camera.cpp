@@ -1,7 +1,9 @@
 #include "ac6/retail_mode2_camera.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 
 namespace ac6::retail {
 namespace {
@@ -22,6 +24,52 @@ bool finite_state(const RetailMode2CameraState &state) noexcept {
          std::isfinite(state.rotation_at_3a4);
 }
 
+bool finite_vector(const std::array<float, 4> &values) noexcept {
+  return std::all_of(values.begin(), values.end(),
+                     [](float value) { return std::isfinite(value); });
+}
+
+bool finite_shake(const RetailMode2ShakeState &state) noexcept {
+  return finite_vector(state.start) && finite_vector(state.target) &&
+         finite_vector(state.output) && finite_vector(state.velocity) &&
+         std::isfinite(state.elapsed);
+}
+
+bool valid_draws(const std::array<std::uint16_t, 2> &draws) noexcept {
+  return std::all_of(draws.begin(), draws.end(),
+                     [](std::uint16_t draw) { return draw <= 0x7FFFu; });
+}
+
+constexpr float kEpsilon =
+    std::bit_cast<float>(std::uint32_t{0x37800000});
+constexpr float kShakePeriod =
+    std::bit_cast<float>(std::uint32_t{0x3DCCCCCD});
+constexpr float kPhaseTurn =
+    std::bit_cast<float>(std::uint32_t{0x3F266666});
+constexpr float kPlayerScale =
+    std::bit_cast<float>(std::uint32_t{0x3F6A64C3});
+constexpr float kRandomScale =
+    std::bit_cast<float>(std::uint32_t{0x38800100});
+
+float retail_unit_clamp(float value) noexcept {
+  // 0x8225DB04..0x8225DB20: the two comparisons are ordered and the selected
+  // bound is loaded before the shared assignment.
+  if (value < 0.0F)
+    return 0.0F;
+  if (value > 1.0F)
+    return 1.0F;
+  return value;
+}
+
+float retail_amplitude_clamp(float value, float amplitude) noexcept {
+  const float lower = -amplitude;
+  if (value < lower)
+    return lower;
+  if (value > amplitude)
+    return amplitude;
+  return value;
+}
+
 float transform_component(const RetailBasis &basis,
                           const std::array<float, 4> &offset,
                           std::size_t lane) noexcept {
@@ -35,6 +83,146 @@ float transform_component(const RetailBasis &basis,
 }
 
 } // namespace
+
+std::optional<RetailMode2ShakeStepResult> step_mode2_camera_shake(
+    const RetailMode2ShakeState &state, float period, float amplitude,
+    float frame_delta,
+    const std::array<std::uint16_t, 2> &random_draws) noexcept {
+  if (!finite_shake(state) || !std::isfinite(period) ||
+      !std::isfinite(amplitude) || !std::isfinite(frame_delta) ||
+      !valid_draws(random_draws)) {
+    return std::nullopt;
+  }
+
+  RetailMode2ShakeStepResult result;
+  result.state = state;
+  if (std::fabs(period) < kEpsilon)
+    return result;
+
+  // 0x8225D108..0x8225D140. The refresh comparison is strictly greater.
+  if (result.state.elapsed > period) {
+    result.state.elapsed = 0.0F;
+    result.state.velocity = {};
+    result.state.start = result.state.target;
+    const float scale = amplitude * kRandomScale;
+    result.state.target[0] =
+        std::fmaf(static_cast<float>(random_draws[0]), scale, -amplitude);
+    result.state.target[1] =
+        std::fmaf(static_cast<float>(random_draws[1]), scale, -amplitude);
+    result.state.target[2] = 0.0F;
+    result.random_draws_consumed = 2;
+  }
+
+  float phase = result.state.elapsed / period;
+  phase = retail_unit_clamp(phase);
+  std::array<float, 4> delta{};
+  for (std::size_t lane = 0; lane < delta.size(); ++lane)
+    delta[lane] = result.state.target[lane] - result.state.start[lane];
+
+  if (phase < kPhaseTurn) {
+    // 0x8225D1D0..0x8225D228 updates xyz with separate multiply/add rounds.
+    for (std::size_t lane = 0; lane < 3; ++lane) {
+      const float increment = delta[lane] * frame_delta;
+      result.state.velocity[lane] += increment;
+    }
+  } else {
+    // 0x8225D230..0x8225D2D4 doubles, scales, then vector-subtracts all lanes.
+    for (std::size_t lane = 0; lane < delta.size(); ++lane) {
+      const float doubled = delta[lane] * 2.0F;
+      const float scaled = doubled * frame_delta;
+      result.state.velocity[lane] -= scaled;
+    }
+  }
+
+  // 0x8225D2D8..0x8225D368: x/y are fused integrations and clamped; z is
+  // explicitly cleared in velocity. The output vector's z/w retain the delta
+  // lanes copied to the stack (normally zero under the retail state invariant).
+  const float next_x = std::fmaf(
+      frame_delta, result.state.velocity[0], result.state.output[0]);
+  const float next_y = std::fmaf(
+      result.state.velocity[1], frame_delta, result.state.output[1]);
+  result.state.velocity[2] = 0.0F;
+  result.state.output = delta;
+  result.state.output[0] = retail_amplitude_clamp(next_x, amplitude);
+  result.state.output[1] = retail_amplitude_clamp(next_y, amplitude);
+  result.state.elapsed += frame_delta;
+  return finite_shake(result.state) ? std::optional(result) : std::nullopt;
+}
+
+std::optional<RetailMode2DynamicResult> apply_mode2_dynamic_offset(
+    const std::array<float, 4> &base_offset,
+    const RetailMode2DynamicInput &input) noexcept {
+  if (!finite_vector(base_offset) || !finite_shake(input.shake) ||
+      !valid_draws(input.random_draws) ||
+      !std::isfinite(input.player_at_890) ||
+      !std::isfinite(input.player_at_894) ||
+      !std::isfinite(input.player_at_898) ||
+      !std::isfinite(input.player_at_8a0) ||
+      !std::isfinite(input.manager_at_370) ||
+      !std::isfinite(input.manager_at_374) ||
+      !std::isfinite(input.frame_delta)) {
+    return std::nullopt;
+  }
+
+  RetailMode2DynamicResult result;
+  result.local_offset = base_offset;
+  result.shake = input.shake;
+  if (!input.player_present || !input.player_is_current ||
+      (input.player_flags_at_88c & 0x2u) != 0) {
+    return result;
+  }
+
+  const float scaled = input.player_at_894 * kPlayerScale;
+  if (!std::isfinite(scaled))
+    return std::nullopt;
+
+  std::optional<RetailMode2ShakeStepResult> stepped;
+  if (std::fabs(input.player_at_8a0) >= kEpsilon) {
+    result.branch = RetailMode2DynamicBranch::Direct;
+    const float amplitude = input.manager_at_370 * input.player_at_8a0;
+    stepped = step_mode2_camera_shake(input.shake, kShakePeriod, amplitude,
+                                      input.frame_delta, input.random_draws);
+  } else if (input.player_at_890 > scaled) {
+    result.branch = RetailMode2DynamicBranch::Scaled;
+    const float numerator = input.player_at_890 - scaled;
+    const float denominator =
+        std::fmaf(input.player_at_898, kPlayerScale, -scaled);
+    float ratio = (numerator / denominator) * 2.0F;
+    ratio = retail_unit_clamp(ratio);
+    const float amplitude = input.manager_at_374 * ratio;
+    stepped = step_mode2_camera_shake(input.shake, kShakePeriod, amplitude,
+                                      input.frame_delta, input.random_draws);
+  } else {
+    result.branch = RetailMode2DynamicBranch::Reset;
+    result.shake = {};
+    return result;
+  }
+
+  if (!stepped.has_value())
+    return std::nullopt;
+  result.shake = stepped->state;
+  result.random_draws_consumed = stepped->random_draws_consumed;
+  for (std::size_t lane = 0; lane < 3; ++lane) {
+    result.local_offset[lane] += result.shake.output[lane];
+  }
+  return finite_vector(result.local_offset) ? std::optional(result)
+                                             : std::nullopt;
+}
+
+const char *mode2_dynamic_branch_name(
+    RetailMode2DynamicBranch branch) noexcept {
+  switch (branch) {
+  case RetailMode2DynamicBranch::GuardedOut:
+    return "guarded_out";
+  case RetailMode2DynamicBranch::Reset:
+    return "reset";
+  case RetailMode2DynamicBranch::Direct:
+    return "direct";
+  case RetailMode2DynamicBranch::Scaled:
+    return "scaled";
+  }
+  return "invalid";
+}
 
 std::optional<RetailMode2CameraLocator> transform_mode2_camera_locator(
     const RetailMode2CameraState &state,

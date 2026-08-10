@@ -33,9 +33,12 @@ struct Mission01CpuFrameRequest final {
   std::uint32_t view_mode{};
   bool alternate_fov{};
   // When present, mode 2 uses the qualified retail base-locator transform.
-  // The external pose is ignored. The live dynamic-offset producer remains a
-  // separately reported boundary and is never synthesized here.
+  // The external pose is ignored.
   std::optional<RetailMode2CameraState> mode2_camera_state;
+  // When present with mode2_camera_state, 0x8225D9F0 advances the supplied
+  // shake state and applies its result before the locator transform. The next
+  // state is returned in the frame report for deterministic 60 Hz carry-over.
+  std::optional<RetailMode2DynamicInput> mode2_dynamic_input;
   Mission01CpuCameraPose pose{};
   bool texture_swap_16{};
   Mission01CpuSamplerAddress sampler_address{Mission01CpuSamplerAddress::Clamp};
@@ -95,6 +98,10 @@ struct Mission01CpuFrameReport final {
   bool camera_mode_selection_retail{};
   bool camera_mode2_base_transform_retail{};
   bool camera_dynamic_offset_retail{};
+  RetailMode2DynamicBranch camera_dynamic_branch{
+      RetailMode2DynamicBranch::GuardedOut};
+  std::uint8_t camera_random_draws_consumed{};
+  std::optional<RetailMode2ShakeState> next_mode2_shake_state;
   bool camera_runtime_state_retail{};
   bool camera_pose_retail{};
   bool clip_pipeline_retail{};
@@ -136,10 +143,10 @@ private:
 // bindings and textures remain persistent across frames; texture surfaces are
 // decoded lazily once per byte-swap choice.
 //
-// This class deliberately does not claim JV: opening camera mode, the mode-2
-// dynamic offset/live state, complete pose, sampler/alpha state, water
-// material, sky, vegetation and active-unit geometry are reported false until
-// their own retail consumers are joined.
+// This class deliberately does not claim JV: opening camera mode, live camera
+// state, complete pose, sampler/alpha state, water material, sky, vegetation
+// and active-unit geometry are reported false until their retail consumers are
+// joined.
 class RetailMission01CpuCompositor final {
 public:
   RetailMission01CpuCompositor(const RetailMission01CpuCompositor &) = delete;

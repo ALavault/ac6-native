@@ -436,6 +436,11 @@ void check_qualified_cpu_composition(
                                   420.0F - (*base_offset)[1],
                                   -24000.0F - (*base_offset)[2]};
   request.mode2_camera_state = camera_state;
+  RetailMode2DynamicInput dynamic_camera;
+  dynamic_camera.player_present = true;
+  dynamic_camera.player_is_current = true;
+  dynamic_camera.frame_delta = 1.0F / 60.0F;
+  request.mode2_dynamic_input = dynamic_camera;
   request.pose.eye = {1000.0F, 420.0F, -24000.0F};
   request.pose.target = {1000.0F, 0.0F, 0.0F};
   request.texture_swap_16 = true;
@@ -496,7 +501,10 @@ void check_qualified_cpu_composition(
             frame.camera_group_retail && frame.camera_fov_retail &&
             !frame.camera_mode_selection_retail &&
             frame.camera_mode2_base_transform_retail &&
-            !frame.camera_dynamic_offset_retail &&
+            frame.camera_dynamic_offset_retail &&
+            frame.camera_dynamic_branch == RetailMode2DynamicBranch::Reset &&
+            frame.camera_random_draws_consumed == 0 &&
+            frame.next_mode2_shake_state == RetailMode2ShakeState{} &&
             !frame.camera_runtime_state_retail && !frame.camera_pose_retail &&
             !frame.clip_pipeline_retail && !frame.map_distance_policy_retail &&
             !frame.texture_byte_swap_retail && !frame.mip_policy_retail &&
@@ -528,6 +536,7 @@ void check_qualified_cpu_composition(
   invalid = request;
   invalid.pose.target = invalid.pose.eye;
   invalid.mode2_camera_state.reset();
+  invalid.mode2_dynamic_input.reset();
   check(!compositor->render(invalid).has_value(),
         "a degenerate external camera pose fails closed");
   invalid = request;
@@ -538,6 +547,14 @@ void check_qualified_cpu_composition(
   invalid.view_mode = 1;
   check(!compositor->render(invalid).has_value(),
         "mode-2 state cannot be applied to another retail view");
+  invalid = request;
+  invalid.mode2_camera_state.reset();
+  check(!compositor->render(invalid).has_value(),
+        "dynamic mode-2 input without its locator state fails closed");
+  invalid = request;
+  invalid.mode2_dynamic_input->random_draws[0] = 32768u;
+  check(!compositor->render(invalid).has_value(),
+        "an invalid dynamic RNG draw fails closed before composition");
   invalid = request;
   invalid.clear_color &= 0x00FFFFFFu;
   check(!compositor->render(invalid).has_value(),
