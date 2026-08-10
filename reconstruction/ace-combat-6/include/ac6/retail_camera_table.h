@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ac6/campaign_progression.h"
 #include "ac6/retail_campaign_bundle.h"
 
 #include <array>
@@ -32,9 +33,10 @@ struct RetailCameraRecord final {
 
 // 0x821D5EF8 loads DATA.TBL[1] and sends FHM child 36 to 0x8225C478.
 // 0x8225C4A0 indexes its 144-byte records as 15 groups x three retail view
-// modes, while 0x8225C510 copies the fields into the camera manager. The
-// aircraft-to-group binding is intentionally outside this reader until its
-// selector is derived; callers must provide both indices explicitly.
+// modes, while 0x8225C510 copies the fields into the camera manager.
+// 0x82276610 passes the zero-based aircraft ordinal returned by 0x82090438
+// directly as that group. CampaignLoadout exposes the same value plus one so
+// that zero can remain its fail-closed "not selected" sentinel.
 class RetailCameraTable final {
  public:
   static std::optional<RetailCameraTable> open(
@@ -44,6 +46,11 @@ class RetailCameraTable final {
 
   const RetailCameraRecord* record(std::uint32_t group,
                                    std::uint32_t view_mode) const noexcept;
+  static std::optional<std::uint32_t> group_for_loadout(
+      const CampaignLoadout& loadout) noexcept;
+  const RetailCameraRecord* record_for_loadout(
+      const CampaignLoadout& loadout,
+      std::uint32_t view_mode) const noexcept;
 
  private:
   std::array<RetailCameraRecord, kRetailCameraGroups * kRetailCameraViews>

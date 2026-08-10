@@ -66,8 +66,11 @@ changing their topology or expanding 2,621,440 vertices at load time.
 The atlas binding includes retail's two terrain-vertex-shader UV transforms:
 world X maps to U, world Z maps to V, and the 272-pixel tile is contracted to a
 255.5-pixel inner span about its centre (8.25 pixels per edge). Page 7 keeps its
-own 4096×1024 vertical step. Terrain draw composition and camera selection,
-rather than UV convention, now remain the accepted-JV boundary.
+own 4096×1024 vertical step. The common camera table is selected directly by
+the loadout's retail aircraft ordinal for all 15 aircraft and three view modes;
+the public native ID is that ordinal plus one because zero means unset. The
+opening view and final scene composition, rather than camera-group or UV
+selection, now remain the accepted-JV boundary.
 
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is

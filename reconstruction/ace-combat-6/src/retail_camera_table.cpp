@@ -77,4 +77,18 @@ const RetailCameraRecord* RetailCameraTable::record(
   return &records_[group * kRetailCameraViews + (view_mode - 1)];
 }
 
+std::optional<std::uint32_t> RetailCameraTable::group_for_loadout(
+    const CampaignLoadout& loadout) noexcept {
+  if (!loadout.valid() || loadout.aircraft_id > kRetailCameraGroups) {
+    return std::nullopt;
+  }
+  return loadout.aircraft_id - 1;
+}
+
+const RetailCameraRecord* RetailCameraTable::record_for_loadout(
+    const CampaignLoadout& loadout, std::uint32_t view_mode) const noexcept {
+  const std::optional<std::uint32_t> group = group_for_loadout(loadout);
+  return group.has_value() ? record(*group, view_mode) : nullptr;
+}
+
 }  // namespace ac6::retail

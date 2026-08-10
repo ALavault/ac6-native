@@ -72,6 +72,31 @@ int main() {
   check(table->record(0, 0) == nullptr, "view mode 0 fails closed");
   check(table->record(0, 4) == nullptr, "view mode 4 fails closed");
 
+  for (std::uint32_t aircraft_id = 1; aircraft_id <= kRetailCameraGroups;
+       ++aircraft_id) {
+    const ac6::CampaignLoadout loadout{aircraft_id, 1, true};
+    const std::optional<std::uint32_t> group =
+        RetailCameraTable::group_for_loadout(loadout);
+    check(group.has_value() && *group == aircraft_id - 1,
+          "one-based native aircraft ID maps to its retail ordinal");
+    for (std::uint32_t view_mode = 1; view_mode <= kRetailCameraViews;
+         ++view_mode) {
+      check(table->record_for_loadout(loadout, view_mode) ==
+                table->record(aircraft_id - 1, view_mode),
+            "loadout selects the direct retail camera group");
+    }
+  }
+  check(!RetailCameraTable::group_for_loadout({0, 1, true}).has_value(),
+        "unset aircraft fails closed");
+  check(!RetailCameraTable::group_for_loadout({16, 1, true}).has_value(),
+        "aircraft outside the retail table fails closed");
+  check(!RetailCameraTable::group_for_loadout({1, 0, true}).has_value(),
+        "an incomplete loadout fails closed");
+  check(!RetailCameraTable::group_for_loadout({1, 1, false}).has_value(),
+        "loadout without capability data fails closed");
+  check(table->record_for_loadout({1, 1, true}, 0) == nullptr,
+        "loadout does not relax the retail view bounds");
+
   check(!RetailCameraTable::open(
              std::span<const std::uint8_t>(bytes).first(bytes.size() - 1))
              .has_value(),

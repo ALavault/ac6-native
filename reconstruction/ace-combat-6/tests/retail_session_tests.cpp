@@ -238,7 +238,8 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
   const std::optional<ac6::retail::RetailCameraTable> cameras =
       ac6::retail::RetailCameraTable::open(*common);
   REQUIRE(cameras.has_value());
-  const ac6::retail::RetailCameraRecord* first = cameras->record(0, 1);
+  const ac6::retail::RetailCameraRecord* first =
+      cameras->record_for_loadout({1, 1, true}, 1);
   REQUIRE(first != nullptr);
   const std::optional<std::array<float, 4>> first_offset = first->offset(0);
   REQUIRE(first_offset.has_value());
@@ -247,6 +248,8 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
   REQUIRE(first->ease_rate() == 7.0F);
   REQUIRE(first->fov_radians() == 0.6632251143455505F);
   REQUIRE(first->alternate_fov_radians() == 0.8028514385223389F);
+  REQUIRE(cameras->record_for_loadout({15, 1, true}, 3) ==
+          cameras->record(14, 3));
   const std::optional<ac6::retail::RetailCampaignBundle> world =
       ac6::retail::RetailCampaignBundle::open_entry(store, 119);
   REQUIRE(world.has_value());

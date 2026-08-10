@@ -18,6 +18,9 @@ struct CampaignResourceRoute {
 };
 
 struct CampaignLoadout {
+  // Public native aircraft IDs are the one-based form of the zero-based
+  // retail aircraft ordinal. Zero remains the persistent "not selected"
+  // sentinel used by saves and frontend state.
   std::uint32_t aircraft_id{};
   std::uint32_t weapon_id{};
   bool capability_data_valid{};
