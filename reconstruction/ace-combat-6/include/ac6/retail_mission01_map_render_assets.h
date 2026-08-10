@@ -59,10 +59,26 @@ struct Mission01TerrainAtlasPage final {
   std::span<const std::uint8_t> source;
 };
 
+// Retail's vertex shaders for contexts 0x04100113 and 0x04100114 map local
+// world X to U and local world Z to V. They contract each 272-pixel tile about
+// its centre by float bits 0x3F707878 before applying the page-specific steps.
+// The resulting inner span is 255.5 pixels with an 8.25-pixel inset per edge.
+struct Mission01TerrainAtlasUvTransform final {
+  std::uint8_t page{};
+  float u_origin{};
+  float v_origin{};
+  float u_step{};
+  float v_step{};
+  float inner_scale{};
+
+  std::array<float, 2> map_local_fraction(float local_x,
+                                          float local_z) const noexcept;
+};
+
 // Compact, persistent terrain upload sources. The 256-byte patch grid and 74
 // 65x65 sample blocks are the retail representation; no million-vertex CPU
-// expansion is rebuilt per frame. Atlas bindings stop at the exact page/tile
-// pair because UV orientation and gutter placement remain a JV boundary.
+// expansion is rebuilt per frame. Atlas UVs preserve the two retail vertex
+// shader variants' centred contraction and X->U / Z->V orientation.
 struct Mission01TerrainRenderResource final {
   std::span<const std::uint8_t> patch_grid;
   std::span<const float> patch_samples;
@@ -70,6 +86,8 @@ struct Mission01TerrainRenderResource final {
   std::vector<Mission01TerrainAtlasPage> atlas_pages;
 
   const Mission01TerrainAtlasCell* atlas_cell(
+      std::size_t cell_x, std::size_t cell_z) const noexcept;
+  std::optional<Mission01TerrainAtlasUvTransform> atlas_uv_transform(
       std::size_t cell_x, std::size_t cell_z) const noexcept;
 };
 
@@ -113,6 +131,7 @@ struct Mission01MapRenderAssetReport final {
   std::size_t terrain_atlas_cells{};
   std::size_t terrain_atlas_bindings{};
   std::size_t terrain_atlas_pages{};
+  std::size_t terrain_atlas_uv_transforms{};
   std::size_t water_lookup_entries{};
   std::size_t water_blocks{};
   bool complete{};

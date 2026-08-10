@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <set>
 #include <utility>
 
@@ -20,6 +21,11 @@ constexpr std::size_t kTerrainAtlasRecordBytes = 512;
 constexpr std::size_t kTerrainAtlasPageCount = 7;
 constexpr std::uint32_t kTerrainAtlasTilePixels = 272;
 constexpr std::uint32_t kTerrainAtlasColumns = 15;
+// 0x820FAE50 stores 0x3F707878 at owner+0x6D80. 0x820FD560 sends it
+// to vertex constant c65; entry-163 NSXR contexts 0x04100113/0x04100114 use
+// (local - 0.5) * scale + 0.5 before the page-specific c64 atlas step.
+constexpr float kTerrainAtlasInnerScale =
+    std::bit_cast<float>(std::uint32_t{0x3F707878});
 
 std::uint16_t be16(const std::uint8_t* bytes) noexcept {
   return static_cast<std::uint16_t>(
@@ -61,6 +67,35 @@ Mission01TerrainRenderResource::atlas_cell(
     return nullptr;
   }
   return &atlas_cells[cell_z * kTerrainAtlasSide + cell_x];
+}
+
+std::array<float, 2> Mission01TerrainAtlasUvTransform::map_local_fraction(
+    float local_x, float local_z) const noexcept {
+  const float inner_x = (local_x - 0.5F) * inner_scale + 0.5F;
+  const float inner_z = (local_z - 0.5F) * inner_scale + 0.5F;
+  return {u_origin + inner_x * u_step, v_origin + inner_z * v_step};
+}
+
+std::optional<Mission01TerrainAtlasUvTransform>
+Mission01TerrainRenderResource::atlas_uv_transform(
+    std::size_t cell_x, std::size_t cell_z) const noexcept {
+  const Mission01TerrainAtlasCell* cell = atlas_cell(cell_x, cell_z);
+  if (cell == nullptr || cell->page >= atlas_pages.size()) return std::nullopt;
+  const Mission01TerrainAtlasPage& page = atlas_pages[cell->page];
+  if (page.descriptor.width == 0 || page.descriptor.height == 0) {
+    return std::nullopt;
+  }
+  const std::uint32_t column = cell->tile % kTerrainAtlasColumns;
+  const std::uint32_t row = cell->tile / kTerrainAtlasColumns;
+  const float width = static_cast<float>(page.descriptor.width);
+  const float height = static_cast<float>(page.descriptor.height);
+  return Mission01TerrainAtlasUvTransform{
+      cell->page,
+      static_cast<float>(column * kTerrainAtlasTilePixels) / width,
+      static_cast<float>(row * kTerrainAtlasTilePixels) / height,
+      static_cast<float>(kTerrainAtlasTilePixels) / width,
+      static_cast<float>(kTerrainAtlasTilePixels) / height,
+      kTerrainAtlasInnerScale};
 }
 
 bool Mission01WaterRenderResource::query(float world_x, float world_z,
@@ -137,6 +172,7 @@ RetailMission01MapRenderAssets::build(RetailMission01SceneBundle scene) {
                     report.terrain_atlas_cells == 256 * 256 &&
                     report.terrain_atlas_bindings == 1390 &&
                     report.terrain_atlas_pages == 7 &&
+                    report.terrain_atlas_uv_transforms == 256 * 256 &&
                     report.water_lookup_entries == 4864 &&
                     report.water_blocks == 413;
   return report.complete
@@ -305,6 +341,12 @@ bool RetailMission01MapRenderAssets::load_terrain() {
   report_.terrain_atlas_cells = terrain_resource_.atlas_cells.size();
   report_.terrain_atlas_bindings = distinct.size();
   report_.terrain_atlas_pages = terrain_resource_.atlas_pages.size();
+  for (std::size_t z = 0; z < kTerrainAtlasSide; ++z) {
+    for (std::size_t x = 0; x < kTerrainAtlasSide; ++x) {
+      if (!terrain_resource_.atlas_uv_transform(x, z).has_value()) return false;
+      ++report_.terrain_atlas_uv_transforms;
+    }
+  }
   return true;
 }
 

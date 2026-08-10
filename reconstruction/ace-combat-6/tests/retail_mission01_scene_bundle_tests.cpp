@@ -4,6 +4,8 @@
 #include "ac6/retail_ndxr_container.h"
 
 #include <array>
+#include <bit>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -249,6 +251,55 @@ void check_synthetic_bundle() {
         "a truncated nested world fails closed");
 }
 
+void check_qualified_uvs(
+    const ac6::retail::Mission01TerrainRenderResource& terrain) {
+  using namespace ac6::retail;
+  std::size_t uv_transforms = 0;
+  std::size_t oriented_uvs = 0;
+  std::size_t centred_uvs = 0;
+  bool quarter_page_step = false;
+  for (std::size_t z = 0; z < 256; ++z) {
+    for (std::size_t x = 0; x < 256; ++x) {
+      const std::optional<Mission01TerrainAtlasUvTransform> transform =
+          terrain.atlas_uv_transform(x, z);
+      if (!transform.has_value()) continue;
+      ++uv_transforms;
+      const auto uv00 = transform->map_local_fraction(0.0F, 0.0F);
+      const auto uv10 = transform->map_local_fraction(1.0F, 0.0F);
+      const auto uv01 = transform->map_local_fraction(0.0F, 1.0F);
+      const Mission01TerrainAtlasPage& page =
+          terrain.atlas_pages[transform->page];
+      const float width = static_cast<float>(page.descriptor.width);
+      const float height = static_cast<float>(page.descriptor.height);
+      if (std::abs(uv10[1] - uv00[1]) < 1.0e-7F &&
+          std::abs(uv01[0] - uv00[0]) < 1.0e-7F && uv10[0] > uv00[0] &&
+          uv01[1] > uv00[1]) {
+        ++oriented_uvs;
+      }
+      const float inset_u = (uv00[0] - transform->u_origin) * width;
+      const float inset_v = (uv00[1] - transform->v_origin) * height;
+      const float span_u = (uv10[0] - uv00[0]) * width;
+      const float span_v = (uv01[1] - uv00[1]) * height;
+      if (std::abs(inset_u - 8.25F) < 0.001F &&
+          std::abs(inset_v - 8.25F) < 0.001F &&
+          std::abs(span_u - 255.5F) < 0.001F &&
+          std::abs(span_v - 255.5F) < 0.001F &&
+          std::bit_cast<std::uint32_t>(transform->inner_scale) == 0x3F707878u) {
+        ++centred_uvs;
+      }
+      if (transform->page == 6 &&
+          std::abs(transform->v_step - 272.0F / 1024.0F) < 1.0e-7F) {
+        quarter_page_step = true;
+      }
+    }
+  }
+  check(uv_transforms == 65536 && oriented_uvs == 65536 &&
+            centred_uvs == 65536 && quarter_page_step,
+        "retail shader UVs map X to U and Z to V with 8.25-pixel gutters");
+  check(!terrain.atlas_uv_transform(256, 0).has_value(),
+        "out-of-range terrain cells cannot acquire an atlas transform");
+}
+
 void check_qualified_cache(const char* cache_path) {
   using namespace ac6::retail;
   ac6::RetailContentStore store;
@@ -346,8 +397,9 @@ void check_qualified_cache(const char* cache_path) {
             render.terrain_patch_samples == 74u * 65u * 65u &&
             render.terrain_atlas_cells == 256u * 256u &&
             render.terrain_atlas_bindings == 1390 &&
-            render.terrain_atlas_pages == 7,
-        "the compact terrain and complete page/tile binding are pinned");
+            render.terrain_atlas_pages == 7 &&
+            render.terrain_atlas_uv_transforms == 256u * 256u,
+        "the compact terrain and complete page/tile/UV binding are pinned");
   check(render.water_lookup_entries == 4864 && render.water_blocks == 413,
         "the persistent water upload retains every lookup and bit block");
   std::size_t resolved_draws = 0;
@@ -392,6 +444,7 @@ void check_qualified_cache(const char* cache_path) {
   check(terrain.atlas_cell(255, 255) != nullptr &&
             terrain.atlas_cell(256, 0) == nullptr,
         "terrain atlas addressing is bounded at 256 cells per side");
+  check_qualified_uvs(terrain);
 
   const Mission01WaterRenderResource& water = assets->water_resource();
   check(water.cell_blocks.size() == 4864 &&
@@ -419,11 +472,12 @@ void check_qualified_cache(const char* cache_path) {
         "the persistent water resource preserves the retail bounds refusal");
   std::printf(
       "retail map assets models=%zu records=%zu vertices=%zu indices=%zu "
-      "textures=%zu draws=%zu skipped=%zu atlas=%zu water=%zu/%zu\n",
+      "textures=%zu draws=%zu skipped=%zu atlas=%zu uv=%zu water=%zu/%zu\n",
       render.model_files, render.source_records, render.vertices,
       render.indices, render.texture_assets, render.draw_instances,
       render.skipped_instances, render.terrain_atlas_cells,
-      render.water_lookup_entries, render.water_blocks);
+      render.terrain_atlas_uv_transforms, render.water_lookup_entries,
+      render.water_blocks);
 }
 
 }  // namespace

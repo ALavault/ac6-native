@@ -58,9 +58,11 @@ The same asset owner retains the compact 256-byte terrain patch grid, all 74
 65×65 height blocks, 65,536 terrain-cell atlas bindings and the seven NTXR
 atlas pages. It also decodes MCA/MCI/MCD into 4,864 host-endian lookup entries
 and 413 bit blocks, preserving the native eight-world-unit water resolution.
-The atlas binding intentionally stops at `(page, tile)`: UV orientation and
-gutter placement are not yet derived and therefore cannot enter an accepted JV
-frame.
+The atlas binding includes retail's two terrain-vertex-shader UV transforms:
+world X maps to U, world Z maps to V, and the 272-pixel tile is contracted to a
+255.5-pixel inner span about its centre (8.25 pixels per edge). Page 7 keeps its
+own 4096×1024 vertical step. Terrain draw composition and camera selection,
+rather than UV convention, now remain the accepted-JV boundary.
 
 The matrix contains identities, ranges, hashes, observed formats and remaining
 boundaries, but no retail bytes or machine-local cache path. Only Mission 01 is
