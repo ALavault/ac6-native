@@ -1,0 +1,372 @@
+#include "ac6/retail_commands.h"
+
+#include "ac6/campaign_progression.h"
+#include "ac6/native_hud.h"
+#include "ac6/retail_campaign_bundle.h"
+#include "ac6/retail_camera_table.h"
+#include "ac6/retail_content.h"
+#include "ac6/retail_session.h"
+#include "ac6/retail_session_replay.h"
+#include "ac6/sdl_input.h"
+
+#include <SDL3/SDL.h>
+
+#include <algorithm>
+#include <chrono>
+#include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <memory>
+#include <optional>
+#include <string_view>
+#include <vector>
+
+namespace ac6::retail_cli {
+namespace {
+
+struct Options final {
+  std::filesystem::path cache;
+  std::filesystem::path save;
+  std::filesystem::path replay;
+  std::filesystem::path report;
+  std::uint32_t aircraft{1};
+  std::uint32_t weapon{1};
+};
+
+bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
+  if (text.empty()) return false;
+  std::uint32_t parsed = 0;
+  for (const char digit : text) {
+    if (digit < '0' || digit > '9' || parsed > (UINT32_MAX - static_cast<std::uint32_t>(digit - '0')) / 10u) {
+      return false;
+    }
+    parsed = parsed * 10u + static_cast<std::uint32_t>(digit - '0');
+  }
+  value = parsed;
+  return true;
+}
+
+bool parse_play_options(int argc, char** argv, Options& options) {
+  bool aircraft_seen = false;
+  bool weapon_seen = false;
+  for (int index = 2; index < argc; ++index) {
+    const std::string_view option(argv[index]);
+    if (index + 1 >= argc) return false;
+    const std::filesystem::path value(argv[++index]);
+    if (option == "--cache" && options.cache.empty()) options.cache = value;
+    else if (option == "--save" && options.save.empty()) options.save = value;
+    else if (option == "--replay" && options.replay.empty()) options.replay = value;
+    else if (option == "--aircraft" && !aircraft_seen) {
+      if (!parse_u32(value.string(), options.aircraft)) return false;
+      aircraft_seen = true;
+    } else if (option == "--weapon" && !weapon_seen) {
+      if (!parse_u32(value.string(), options.weapon)) return false;
+      weapon_seen = true;
+    } else {
+      return false;
+    }
+  }
+  return !options.cache.empty();
+}
+
+bool parse_replay_options(int argc, char** argv, Options& options) {
+  for (int index = 2; index < argc; ++index) {
+    const std::string_view option(argv[index]);
+    if (index + 1 >= argc) return false;
+    const std::filesystem::path value(argv[++index]);
+    if (option == "--cache" && options.cache.empty()) options.cache = value;
+    else if (option == "--replay" && options.replay.empty()) options.replay = value;
+    else if (option == "--report" && options.report.empty()) options.report = value;
+    else return false;
+  }
+  return !options.cache.empty() && !options.replay.empty() && !options.report.empty();
+}
+
+bool open_store(const std::filesystem::path& cache, RetailContentStore& store) {
+  if (cache.empty() || !store.open(cache)) {
+    std::fprintf(stderr, "ac6_retail=fail error=%s detail=%s cache=%s\n",
+                 retail_content_error_name(store.error()), store.detail().c_str(),
+                 cache.string().c_str());
+    return false;
+  }
+  return true;
+}
+
+bool loadout_qualified(const RetailContentStore& store,
+                       const CampaignLoadout& loadout) {
+  const std::optional<retail::RetailCampaignBundle> common =
+      retail::RetailCampaignBundle::open_entry(store, retail::kRetailCameraTableEntry);
+  if (!common.has_value()) return false;
+  const std::optional<retail::RetailCameraTable> cameras =
+      retail::RetailCameraTable::open(*common);
+  return cameras.has_value() && cameras->record_for_loadout(loadout, 1u) != nullptr;
+}
+
+struct NativeGraphics final {
+  bool video_initialized{};
+  bool vulkan_loaded{};
+  VulkanInstance instance;
+  SdlWindow window;
+  SdlVulkanSurface surface;
+  VulkanDevice device;
+  VulkanSwapchain swapchain;
+  VulkanFramePresenter presenter;
+
+  bool initialize(std::uint32_t width, std::uint32_t height) noexcept {
+    if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
+    video_initialized = true;
+    if (!SDL_Vulkan_LoadLibrary(nullptr)) return false;
+    vulkan_loaded = true;
+    std::vector<const char*> extensions;
+    if (!SdlVulkanSurface::required_instance_extensions(extensions) ||
+        !instance.create(extensions) ||
+        !window.create("ac6-native", width, height, true, false) ||
+        !surface.create(window, instance.handle()) ||
+        !device.create(instance.handle(), surface.handle()) ||
+        !swapchain.create(device, surface.handle(), width, height) ||
+        !presenter.create(device, swapchain)) return false;
+    return true;
+  }
+
+  bool present(const NativeRenderTarget& target) noexcept {
+    return presenter.valid() && presenter.present_frame(target);
+  }
+
+  ~NativeGraphics() {
+    presenter.destroy();
+    swapchain.destroy();
+    device.destroy();
+    surface.destroy();
+    window.destroy();
+    instance.destroy();
+    if (vulkan_loaded) SDL_Vulkan_UnloadLibrary();
+    if (video_initialized) SDL_QuitSubSystem(SDL_INIT_VIDEO);
+  }
+};
+
+bool render_frame(NativeGraphics& graphics, NativeRenderTarget& target,
+                  NativeHudRenderer& hud, const retail::RetailSession& session,
+                  const retail::RetailSessionFrame& frame) {
+  if (!target.clear(0xFF071018u, 1.0f)) return false;
+  (void)session.render_world_markers(target, frame.world, 0.0f);
+  return hud.render(target, frame.world, session.execution()) && graphics.present(target);
+}
+
+int run_play_impl(const Options& options) {
+  RetailContentStore store;
+  if (!open_store(options.cache, store)) return 120;
+  const CampaignLoadout loadout{options.aircraft, options.weapon, true};
+  if (!loadout.valid()) return 121;
+  if (!loadout_qualified(store, loadout)) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=cache_incomplete detail=loadout_capability_table\n");
+    return 122;
+  }
+  std::unique_ptr<retail::RetailSession> session =
+      retail::RetailSession::open(store, loadout, {1, {0, 0}});
+  if (session == nullptr) return 123;
+  NativeGraphics graphics;
+  if (!graphics.initialize(1280, 720)) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=vulkan_unavailable detail=interactive_backend\n");
+    return 124;
+  }
+  NativeRenderTarget target;
+  if (!target.resize(1280, 720)) return 125;
+  NativeHudRenderer hud;
+  SdlEventPump pump;
+  if (!pump.initialize()) return 126;
+  SdlInputAdapter input_adapter;
+  InputMappingDatabase mappings;
+  InputFrame input_frame{};
+  std::uint16_t buttons = 0;
+  std::vector<Event> events;
+  bool quit = false;
+  retail::RetailSessionReplay replay;
+  replay.mission_id = 1;
+  replay.loadout = loadout;
+  replay.content_index_sha256 = store.index_sha256();
+  retail::RetailSessionFrame frame = session->tick(1.0f / 60.0f, input_frame);
+  if (!render_frame(graphics, target, hud, *session, frame)) return 127;
+  using Clock = std::chrono::steady_clock;
+  auto previous = Clock::now();
+  double accumulator = 0.0;
+  while (!quit) {
+    events.clear();
+    (void)pump.pump(input_adapter, input_frame, buttons, mappings,
+                    session->player_entity(), events, quit);
+    for (const Event event : events) (void)session->execution().dispatch(event);
+    const auto now = Clock::now();
+    accumulator = std::min(accumulator +
+                               std::chrono::duration<double>(now - previous).count(),
+                           0.25);
+    previous = now;
+    bool stepped = false;
+    while (accumulator >= 1.0 / 60.0) {
+      frame = session->tick(1.0f / 60.0f, input_frame);
+      replay.frames.push_back(input_frame);
+      accumulator -= 1.0 / 60.0;
+      stepped = true;
+    }
+    if (stepped && !render_frame(graphics, target, hud, *session, frame)) return 128;
+    SDL_Delay(1);
+  }
+  if (!options.replay.empty() && !replay.write_file(options.replay)) return 129;
+  if (!options.save.empty()) {
+    SessionSaveStore saves;
+    MissionExecution::Checkpoint checkpoint;
+    if (!session->execution().save_checkpoint(checkpoint) ||
+        !saves.save(1, {1, session->execution().snapshot(), {}, checkpoint}) ||
+        !saves.write_file(options.save)) return 130;
+  }
+  std::fprintf(stdout,
+               "ac6_retail=pass command=play mission=1 ticks=%llu replay_frames=%zu "
+               "cache_index_sha256=%s\n",
+               static_cast<unsigned long long>(frame.world.tick), replay.frames.size(),
+               sha256_hex(store.index_sha256()).c_str());
+  return 0;
+}
+
+bool same_world_frame(const WorldFrame& a, const WorldFrame& b) {
+  return a.tick == b.tick && a.mission_id == b.mission_id &&
+      a.mission_ready == b.mission_ready && a.position_x == b.position_x &&
+      a.position_y == b.position_y && a.position_z == b.position_z &&
+      a.pitch == b.pitch && a.roll == b.roll && a.yaw == b.yaw &&
+      a.speed == b.speed && a.active_units == b.active_units &&
+      a.player_entity == b.player_entity && a.camera_x == b.camera_x &&
+      a.camera_y == b.camera_y && a.camera_z == b.camera_z &&
+      a.camera_target_x == b.camera_target_x &&
+      a.camera_target_y == b.camera_target_y &&
+      a.camera_target_z == b.camera_target_z && a.input == b.input;
+}
+
+void hash_u32(std::uint64_t& hash, std::uint32_t value) noexcept {
+  for (unsigned shift = 0; shift < 32u; shift += 8u) {
+    hash ^= static_cast<std::uint8_t>(value >> shift);
+    hash *= 1099511628211ull;
+  }
+}
+
+void hash_u64(std::uint64_t& hash, std::uint64_t value) noexcept {
+  for (unsigned shift = 0; shift < 64u; shift += 8u) {
+    hash ^= static_cast<std::uint8_t>(value >> shift);
+    hash *= 1099511628211ull;
+  }
+}
+
+void hash_float(std::uint64_t& hash, float value) noexcept {
+  std::uint32_t bits = 0;
+  std::memcpy(&bits, &value, sizeof(bits));
+  hash_u32(hash, bits);
+}
+
+std::uint64_t hash_frame(std::uint64_t hash, const WorldFrame& frame) noexcept {
+  hash_u64(hash, frame.tick);
+  hash_u32(hash, frame.mission_id);
+  hash_u32(hash, frame.mission_ready ? 1u : 0u);
+  for (const float value : {frame.position_x, frame.position_y, frame.position_z,
+                            frame.pitch, frame.roll, frame.yaw, frame.speed,
+                            frame.camera_x, frame.camera_y, frame.camera_z,
+                            frame.camera_target_x, frame.camera_target_y,
+                            frame.camera_target_z}) hash_float(hash, value);
+  hash_u32(hash, frame.active_units);
+  hash_u32(hash, frame.player_entity);
+  hash_u32(hash, static_cast<std::uint16_t>(frame.input.pitch));
+  hash_u32(hash, static_cast<std::uint16_t>(frame.input.roll));
+  hash_u32(hash, static_cast<std::uint16_t>(frame.input.yaw));
+  hash_u32(hash, frame.input.throttle);
+  hash_u32(hash, frame.input.buttons);
+  return hash;
+}
+
+struct ReplayRun final {
+  WorldFrame final_frame{};
+  std::uint32_t sub_mission{};
+  std::uint32_t step{};
+  bool script_ended{};
+  std::uint64_t semantic_hash{1469598103934665603ull};
+};
+
+std::optional<ReplayRun> replay_once(const RetailContentStore& store,
+                                     const retail::RetailSessionReplay& replay) {
+  std::unique_ptr<retail::RetailSession> session =
+      retail::RetailSession::open(store, replay.loadout,
+                                  {replay.mission_id, {0, 0}});
+  if (session == nullptr) return std::nullopt;
+  ReplayRun result;
+  for (const InputFrame input : replay.frames) {
+    const retail::RetailSessionFrame frame = session->tick(1.0f / 60.0f, input);
+    result.final_frame = frame.world;
+    result.sub_mission = frame.sub_mission;
+    result.step = frame.step;
+    result.script_ended = frame.script_ended;
+    result.semantic_hash = hash_frame(result.semantic_hash, frame.world);
+    hash_u32(result.semantic_hash, frame.sub_mission);
+    hash_u32(result.semantic_hash, frame.step);
+    hash_u32(result.semantic_hash, frame.script_ended ? 1u : 0u);
+  }
+  return result;
+}
+
+int run_replay_impl(const Options& options) {
+  RetailContentStore store;
+  if (!open_store(options.cache, store)) return 131;
+  retail::RetailSessionReplay replay;
+  if (!replay.read_file(options.replay)) return 132;
+  if (replay.content_index_sha256 != store.index_sha256()) return 133;
+  if (!loadout_qualified(store, replay.loadout)) return 134;
+  const std::optional<ReplayRun> first = replay_once(store, replay);
+  const std::optional<ReplayRun> second = replay_once(store, replay);
+  if (!first.has_value() || !second.has_value()) return 135;
+  const bool deterministic = same_world_frame(first->final_frame, second->final_frame) &&
+      first->sub_mission == second->sub_mission && first->step == second->step &&
+      first->script_ended == second->script_ended &&
+      first->semantic_hash == second->semantic_hash;
+  std::error_code error;
+  std::filesystem::create_directories(options.report, error);
+  if (error) return 136;
+  const std::filesystem::path report = options.report / "retail-replay.json";
+  std::ofstream output(report, std::ios::trunc);
+  if (!output) return 137;
+  output << "{\n"
+         << "  \"schema\": \"ac6.native-retail-replay.v1\",\n"
+         << "  \"mission_id\": " << replay.mission_id << ",\n"
+         << "  \"aircraft_id\": " << replay.loadout.aircraft_id << ",\n"
+         << "  \"weapon_id\": " << replay.loadout.weapon_id << ",\n"
+         << "  \"cache_index_sha256\": \"" << sha256_hex(store.index_sha256()) << "\",\n"
+         << "  \"replay_frames\": " << replay.frames.size() << ",\n"
+         << "  \"final_tick\": " << first->final_frame.tick << ",\n"
+         << "  \"final_player_entity\": " << first->final_frame.player_entity << ",\n"
+         << "  \"sub_mission\": " << first->sub_mission << ",\n"
+         << "  \"step\": " << first->step << ",\n"
+         << "  \"script_ended\": " << (first->script_ended ? "true" : "false") << ",\n"
+         << "  \"forced_progression\": false,\n"
+         << "  \"simulation_hz\": 60,\n"
+         << "  \"deterministic\": " << (deterministic ? "true" : "false") << ",\n"
+         << "  \"semantic_hash\": \"0x" << std::hex << first->semantic_hash << std::dec << "\"\n"
+         << "}\n";
+  if (!output || !deterministic) return 138;
+  std::fprintf(stdout, "ac6_retail=pass command=replay mission=%u frames=%zu "
+                      "deterministic=true semantic_hash=0x%llx report=%s\n",
+               replay.mission_id, replay.frames.size(),
+               static_cast<unsigned long long>(first->semantic_hash), report.string().c_str());
+  return 0;
+}
+
+}  // namespace
+
+int run_play(int argc, char** argv) {
+  Options options;
+  if (!parse_play_options(argc, argv, options)) return 120;
+  return run_play_impl(options);
+}
+
+int run_replay(int argc, char** argv) {
+  Options options;
+  if (!parse_replay_options(argc, argv, options)) return 130;
+  return run_replay_impl(options);
+}
+
+}  // namespace ac6::retail_cli

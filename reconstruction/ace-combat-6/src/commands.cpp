@@ -3,6 +3,7 @@
 #include "ac6/mission01_compare.h"
 #include "ac6/native_hud.h"
 #include "ac6/retail_content.h"
+#include "ac6/retail_commands.h"
 #include "ac6/retail_session.h"
 #include "ac6/sdl_input.h"
 #include "ac6/interactive.h"
@@ -998,8 +999,33 @@ int run_present_manifest(int argc, char** argv) {
 }  // namespace
 
 int run_commands(int argc, char** argv) {
+  if (argc >= 2 && std::string_view(argv[1]) == "--help") {
+    std::fprintf(stdout,
+                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT]\n"
+                 "       ac6-native play --cache CACHE_ROOT [--save SAVE_PATH]\n"
+                 "                       [--replay REPLAY_FILE] [--aircraft ID] [--weapon ID]\n"
+                 "       ac6-native replay --cache CACHE_ROOT --replay FILE --report OUTPUT_DIR\n");
+    return 0;
+  }
   if (argc >= 2 && std::string_view(argv[1]) == "import") {
     return run_import_command(argc, argv);
+  }
+  if (argc >= 2 && std::string_view(argv[1]) == "play") {
+    if (argc < 3) {
+      std::fprintf(stderr,
+                   "usage: ac6-native play --cache CACHE_ROOT [--save SAVE_PATH]\n");
+      return 120;
+    }
+    return ac6::retail_cli::run_play(argc, argv);
+  }
+  if (argc >= 2 && std::string_view(argv[1]) == "replay") {
+    if (argc < 3) {
+      std::fprintf(stderr,
+                   "usage: ac6-native replay --cache CACHE_ROOT --replay FILE "
+                   "--report OUTPUT_DIR\n");
+      return 130;
+    }
+    return ac6::retail_cli::run_replay(argc, argv);
   }
   ac6::MissionRuntime runtime(1);
   const auto frame = runtime.tick(1.0f / 60.0f, {});

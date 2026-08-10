@@ -1,6 +1,7 @@
 #include "ac6/retail_session.h"
 
 #include "ac6/retail_campaign_bundle.h"
+#include "ac6/retail_camera_table.h"
 
 #include <algorithm>
 
@@ -32,6 +33,23 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
   if (!store.valid() || !loadout.valid() || config.mission_id == 0 ||
       config.mission_id > kPalCampaignDataTableEntries.size()) {
     return nullptr;
+  }
+  // The common camera table is the first retail capability table already
+  // imported into the sealed cache.  Qualify the aircraft ordinal against it
+  // before opening the mission payload; an arbitrary non-zero loadout must
+  // not masquerade as a hangar-resolved aircraft.
+  // Bounded parser/session fixtures may intentionally import only the
+  // selected campaign entry.  A product launch (the public commands) imports
+  // the common table and is checked here when it is present; the payload-only
+  // fixture remains a valid test overload without claiming a hangar model.
+  if (store.find(kRetailCameraTableEntry) != nullptr) {
+    const std::optional<RetailCampaignBundle> common =
+        RetailCampaignBundle::open_entry(store, kRetailCameraTableEntry);
+    if (!common.has_value()) return nullptr;
+    const std::optional<RetailCameraTable> cameras = RetailCameraTable::open(*common);
+    if (!cameras.has_value() || cameras->record_for_loadout(loadout, 1u) == nullptr) {
+      return nullptr;
+    }
   }
   std::optional<RetailCampaignBundle> campaign =
       RetailCampaignBundle::open(store, config.mission_id);

@@ -38,6 +38,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/mission01_compare.cpp src/campaign_progression.cpp src/session_save.cpp
   src/retail_scenario.cpp src/retail_mission_state.cpp src/retail_state_machine.cpp
   src/retail_mission_script.cpp src/retail_session.cpp
+  src/retail_session_replay.cpp
   src/retail_world_position.cpp
   src/ntxr_texture.cpp
   src/retail_model_directory.cpp
@@ -95,7 +96,8 @@ if(AC6_BUILD_PLATFORM)
   target_link_libraries(ac6_platform PUBLIC ac6_product_core PkgConfig::SDL3 Vulkan::Vulkan)
   target_compile_features(ac6_platform PUBLIC cxx_std_20)
 
-  add_executable(ac6-native src/main.cpp src/commands.cpp src/cli.cpp src/interactive.cpp)
+  add_executable(ac6-native src/main.cpp src/commands.cpp src/retail_commands.cpp
+    src/cli.cpp src/interactive.cpp)
   target_link_libraries(ac6-native PRIVATE ac6_platform)
 endif()
 
@@ -161,6 +163,10 @@ add_test(NAME ac6-campaign-progression-tests COMMAND ac6-campaign-progression-te
 add_executable(ac6-session-save-tests tests/session_save_tests.cpp)
 target_link_libraries(ac6-session-save-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-session-save-tests COMMAND ac6-session-save-tests)
+
+add_executable(ac6-retail-session-replay-tests tests/retail_session_replay_tests.cpp)
+target_link_libraries(ac6-retail-session-replay-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-session-replay-tests COMMAND ac6-retail-session-replay-tests)
 
 # Consumes the committed Mission 01 retail manifests, not a fixture.
 add_executable(ac6-retail-scenario-tests tests/retail_scenario_tests.cpp)
