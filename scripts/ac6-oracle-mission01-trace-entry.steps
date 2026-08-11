@@ -1,5 +1,6 @@
 # Trace-only derivative of the checkpoint-2 fresh-profile route. It stops at
 # the deploy prompt so the trace route can gate launch on an executed boundary.
+wait	AC6 oracle frontier reached: 0x8237C828	60
 key	Escape	0.1
 sleep	2
 key	space	0.1
