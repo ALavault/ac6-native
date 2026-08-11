@@ -202,6 +202,11 @@ aligné et le natif démarre dans son propre état de mission (`state=2`,
 mise en place doit être fermée avant de comparer les transforms, objectifs ou
 draws ; aucun rendu direct ne doit être déclaré parité sur ce rapport.
 
+La comparaison restreinte au domaine `controller_input` est toutefois égale
+sur les 3 600 ticks. Le replay transporte donc exactement la séquence d'entrée
+de la capture A ; la divergence restante est bien dans la construction du
+snapshot/état natif, et non dans le convertisseur de manette.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
