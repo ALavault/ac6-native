@@ -28,8 +28,12 @@ struct FrontendSettings {
   FrontendControls controls{FrontendControls::Normal};
   FrontendLanguage language{FrontendLanguage::English};
   bool valid() const noexcept {
-    return difficulty == FrontendDifficulty::Normal && controls == FrontendControls::Normal &&
-           language == FrontendLanguage::English;
+    return static_cast<std::uint8_t>(difficulty) <=
+               static_cast<std::uint8_t>(FrontendDifficulty::Hard) &&
+           static_cast<std::uint8_t>(controls) <=
+               static_cast<std::uint8_t>(FrontendControls::Expert) &&
+           static_cast<std::uint8_t>(language) <=
+               static_cast<std::uint8_t>(FrontendLanguage::Spanish);
   }
 };
 

@@ -6,6 +6,14 @@ int main() {
   REQUIRE(frontend.configure({ac6::FrontendDifficulty::Normal,
                                ac6::FrontendControls::Normal,
                                ac6::FrontendLanguage::English}));
+  const ac6::FrontendSettings all_pal_settings{
+      ac6::FrontendDifficulty::Hard, ac6::FrontendControls::Expert,
+      ac6::FrontendLanguage::Spanish};
+  REQUIRE(all_pal_settings.valid());
+  const ac6::FrontendSettings invalid_difficulty{
+      static_cast<ac6::FrontendDifficulty>(3), ac6::FrontendControls::Normal,
+      ac6::FrontendLanguage::English};
+  REQUIRE(!invalid_difficulty.valid());
   const ac6::MissionCatalog catalog = ac6_test::catalog_fixture();
   REQUIRE(frontend.select_mission(catalog, 1));
   REQUIRE(frontend.advance());

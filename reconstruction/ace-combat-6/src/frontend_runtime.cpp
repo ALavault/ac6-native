@@ -52,10 +52,10 @@ bool FrontendController::configure(FrontendSettings settings) noexcept {
 bool FrontendController::configure(
     FrontendSettings settings,
     const retail::RetailFrontendResources& resources) noexcept {
-  if (state_ != FrontendState::Title ||
-      settings.difficulty != FrontendDifficulty::Normal ||
-      settings.controls != FrontendControls::Normal ||
-      !resources.complete() ||
+  // The resource-qualified path is the only path allowed to select PAL
+  // locale/difficulty/control variants.  It does not collapse them to the
+  // legacy English/Normal/Normal diagnostic defaults.
+  if (state_ != FrontendState::Title || !settings.valid() || !resources.complete() ||
       !resources.has_locale_slot(static_cast<std::uint32_t>(settings.language))) {
     return false;
   }

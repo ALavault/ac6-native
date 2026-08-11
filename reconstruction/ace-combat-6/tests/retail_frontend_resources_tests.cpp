@@ -17,11 +17,20 @@ int main() {
   if (!resources.has_value() || !resources->complete()) return 2;
   for (std::uint32_t slot = 0; slot < 5u; ++slot) {
     if (!resources->has_locale_slot(slot)) return 3;
-    ac6::FrontendController frontend;
-    if (!frontend.configure(
-            {ac6::FrontendDifficulty::Normal, ac6::FrontendControls::Normal,
-             static_cast<ac6::FrontendLanguage>(slot)}, *resources)) {
-      return 4;
+    for (std::uint32_t difficulty = 0; difficulty <=
+             static_cast<std::uint32_t>(ac6::FrontendDifficulty::Hard);
+         ++difficulty) {
+      for (std::uint32_t controls = 0; controls <=
+               static_cast<std::uint32_t>(ac6::FrontendControls::Expert);
+           ++controls) {
+        ac6::FrontendController frontend;
+        if (!frontend.configure(
+                {static_cast<ac6::FrontendDifficulty>(difficulty),
+                 static_cast<ac6::FrontendControls>(controls),
+                 static_cast<ac6::FrontendLanguage>(slot)}, *resources)) {
+          return 4;
+        }
+      }
     }
   }
   std::fprintf(stdout, "frontend_fonts=pass entries=7 locales=5 index_sha256=%s\n",
