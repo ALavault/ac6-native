@@ -18,8 +18,55 @@ Validate the full local qualification before a capture:
 ```sh
 python3 tools/audit_ac6_oracle_manifest.py \
   analysis/oracle/ac6-recomp-dcd41b/manifest.json \
-  --artifact-root . --oracle-root AC6_ORACLE_WORKTREE --xex PAL_DEFAULT_XEX
+  --artifact-root . --oracle-root AC6_ORACLE_WORKTREE \
+  --patched-oracle-root AC6_RUNTIME_WORKTREE --xex PAL_DEFAULT_XEX \
+  --overlay-archive SIMDE_OVERLAY.tar \
+  --generated-root AC6_ORACLE_WORKTREE/generated \
+  --runtime-binary AC6_RUNTIME_WORKTREE/out/build/linux-amd64-release/ac6recomp
 ```
+
+The pinned SDK accidentally omits the vendored SIMDe x86 subtree. The manifest
+therefore qualifies an immutable, include-only overlay by source commit, Git
+tree and archive SHA-256. Extract that archive outside both repositories and
+configure with the literal manifest recipe, replacing
+`${SIMDE_OVERLAY_ROOT}` with the extracted root. The overlay is authorized only
+for compiling this oracle; it does not alter the clean detached worktree and
+has no product role.
+
+The qualified codegen result comprises 56 files. Its file names and contents
+are covered by `codegen.generated_tree_sha256`; the auditor also checks the
+total file and byte counts. The generated directory remains ignored external
+evidence and must never be copied into the native source tree or package.
+
+The committed function-start list contains only boundaries proved against the
+canonical PAL Ghidra project. Reproduce its second-worktree configuration with:
+
+```sh
+python3 tools/apply_ac6_oracle_boundary_corrections.py \
+  analysis/oracle/ac6-recomp-dcd41b/manifest.json \
+  AC6_ORACLE_WORKTREE/ac6recomp_config.toml \
+  AC6_RUNTIME_WORKTREE/ac6recomp_config.toml
+git -C AC6_RUNTIME_WORKTREE apply --unidiff-zero \
+  PROJECT_ROOT/analysis/oracle/ac6-recomp-dcd41b/patches/remove-false-vertex-declaration-hook.patch
+```
+
+The small host patch removes the old `0x821DE7D0` vertex-declaration hook. The
+qualified Ghidra contract proves that address is internal to `0x821DE7A8`, not
+a device bind or independent ABI entry. Both modifications are oracle-only;
+neither has a product role.
+
+The bounded Linux smoke must place `timeout` inside `xvfb-run` and retain the
+qualified dummy audio driver:
+
+```sh
+SDL_AUDIODRIVER=dummy xvfb-run -a \
+  timeout --signal=INT --kill-after=3s 15s \
+  AC6_RUNTIME_WORKTREE/out/build/linux-amd64-release/ac6recomp GAME_FILES
+```
+
+The current build initializes the qualified XEX, Vulkan device and 1280x720
+swapchain, then stops at the recorded unresolved branch
+`0x8234530C -> 0x8234524C`. This is a discovery frontier, not gate evidence.
 
 Each capture must use a named, hashed probe contract. The probe emits bounded
 JSON Lines; normalize it before review:

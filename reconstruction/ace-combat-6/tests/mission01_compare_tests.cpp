@@ -88,6 +88,7 @@ int main() {
   REQUIRE(pass.color_ssim >= 0.999f);
   REQUIRE(pass.coverage_iou == 1.0f);
   REQUIRE(pass.depth_rmse == 0.0f);
+  REQUIRE(pass.first_divergence_domain.empty());
   REQUIRE(std::filesystem::is_regular_file(output_dir / "native-color.ppm"));
   REQUIRE(std::filesystem::is_regular_file(output_dir / "color-diff.ppm"));
   REQUIRE(std::filesystem::is_regular_file(output_dir / "native-depth.f32"));
@@ -99,6 +100,23 @@ int main() {
   REQUIRE(!fail.passed());
   REQUIRE(!fail.simulation_pass);
   REQUIRE(fail.failure == "simulation_threshold");
+  REQUIRE(fail.first_divergence_checkpoint == 4);
+  REQUIRE(fail.first_divergence_tick == 1800);
+  REQUIRE(fail.first_divergence_domain == "position");
+
+  observed = {};
+  for (const ac6::Mission01Checkpoint& checkpoint : reference.checkpoints()) {
+    observed.push_back(checkpoint.frame);
+  }
+  observed[1].camera_x = 1.0f;
+  observed.back().position_x = 2.0f;
+  const ac6::Mission01ComparisonResult first_fail =
+      ac6::Mission01Comparator{}.compare(reference, observed, target, true,
+                                         output_dir / "first-failed");
+  REQUIRE(!first_fail.passed());
+  REQUIRE(first_fail.first_divergence_checkpoint == 1);
+  REQUIRE(first_fail.first_divergence_tick == 60);
+  REQUIRE(first_fail.first_divergence_domain == "camera");
 
   std::filesystem::remove(reference_dir / "oracle-depth.f32");
   ac6::Mission01Reference incomplete;

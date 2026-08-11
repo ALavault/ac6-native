@@ -1,0 +1,25 @@
+diff --git a/src/d3d_hooks.cpp b/src/d3d_hooks.cpp
+index 5c4a4b48..3ce90d4e 100644
+--- a/src/d3d_hooks.cpp
++++ b/src/d3d_hooks.cpp
+@@ -412,20 +411,0 @@ PPC_FUNC_IMPL(rex_sub_821D9D38) {
+-// D3DDevice_SetVertexDeclaration (0x821DE7D0)
+-PPC_FUNC_IMPL(rex_sub_821DE7D0) {
+-    PPC_FUNC_PROLOGUE();
+-
+-    uint32_t decl = ctx.r4.u32;
+-    RememberDevice(ctx.r3.u32);
+-    {
+-        std::unique_lock<std::shared_mutex> lock(g_shadow_mutex);
+-        g_shadow.vertex_declaration = decl;
+-    }
+-    g_live_stats.set_vertex_decl_calls.fetch_add(1, std::memory_order_relaxed);
+-
+-    if (REXCVAR_GET(ac6_d3d_trace)) {
+-        REXLOG_CAT_TRACE(kLogGPU,
+-            "SetVertexDeclaration: decl=0x{:08X}", decl);
+-    }
+-
+-    __imp__rex_sub_821DE7D0(ctx, base);
+-}
+-

@@ -60,6 +60,27 @@ The machine-readable template is `analysis/templates/mission-gate-template.json`
 Current support state is `analysis/mission-capability-matrix.tsv`; both are
 checked by `tools/audit_ac6_global_ladder.py`.
 
+## Mission 01 execution spine
+
+`analysis/mission01-execution-spine.json` is the live, ordered vertical slice:
+retail load, controlled sortie, first objective, debrief, deterministic replay,
+then parity. It limits feature work to the executed Mission 01 dependency cone
+while retaining the fifteen-mission corpus requirement for shared readers.
+The same global-ladder auditor checks its evidence hashes, prerequisite order,
+three work lanes and oracle capture qualification. The mission matrix cannot
+advance beyond this spine.
+
+Normalized oracle and native event traces are compared with:
+
+```sh
+python3 tools/compare_ac6_execution_traces.py ORACLE.json NATIVE.json \
+  --report first-divergence.json
+```
+
+The report identifies the first sequence, tick and structured field that
+differs; later mismatches are deliberately ignored until that first divergence
+is closed.
+
 ## Checkpoint closure
 
 Each checkpoint requires a durable report, an isolated commit, JF, CTest,

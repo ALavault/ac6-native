@@ -1,0 +1,127 @@
+{
+  "schema": "ac6.mission01-execution-spine.v1",
+  "mission": "M01",
+  "target": {
+    "platform": "Xbox 360 PAL",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "simulation_hz": 60
+  },
+  "focus_policy": {
+    "active_scope": "mission01-executed-dependency-cone",
+    "defer_other_missions": true,
+    "shared_reader_changes_require_15_mission_corpus": true,
+    "new_report_requires_durable_test_contract_or_invariant": true,
+    "product_must_not_depend_on_oracle": true
+  },
+  "oracle": {
+    "manifest": "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
+    "required_capture_status_for_runtime_gates": "captured",
+    "current_runtime_frontier": {
+      "source": "0x8234530C",
+      "target": "0x8234524C",
+      "classification": "unresolved-branch",
+      "gate_evidence": false
+    }
+  },
+  "lanes": [
+    {
+      "id": "simulation",
+      "exit": "the qualified input replay reproduces mission state, objectives, outcome and save digests at every spine checkpoint"
+    },
+    {
+      "id": "renderer",
+      "exit": "typed retail DrawPacket streams render directly through Vulkan with no interactive CPU raster fallback"
+    },
+    {
+      "id": "platform",
+      "exit": "cache load, SDL input, audio events, pause, restart, save and debrief complete through native product commands"
+    }
+  ],
+  "phases": [
+    {
+      "id": "M01-A-load",
+      "status": "passed",
+      "requires": [],
+      "product_gates": ["JF"],
+      "oracle_capture_required": false,
+      "closure": "the qualified retail cache constructs Mission 01 state and advances a 60 Hz native session",
+      "evidence": [
+        {
+          "path": "reports/mission01-retail/retail-session.json",
+          "sha256": "1cc86ea1601cda9e4e71e34cbe9d13e4f6c20778d81071e82c8665607c104973",
+          "size": 805
+        }
+      ]
+    },
+    {
+      "id": "M01-B-controlled-sortie",
+      "status": "open",
+      "requires": ["M01-A-load"],
+      "product_gates": ["JV", "JP"],
+      "oracle_capture_required": true,
+      "closure": "one qualified controller replay flies the retail player for 3600 deterministic ticks in the complete directly rendered retail world",
+      "blockers": [
+        "qualified mission input replay",
+        "live retail player and camera producers",
+        "direct Vulkan terrain, sky, player and HUD composition"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "M01-C-first-objective",
+      "status": "open",
+      "requires": ["M01-B-controlled-sortie"],
+      "product_gates": ["JF", "JP"],
+      "oracle_capture_required": true,
+      "closure": "the first retail objective activates and completes from player actions with matching counter and event ticks",
+      "blockers": [
+        "executed objective dependency cone",
+        "unit AI and weapon effects on retail objective counters"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "M01-D-debrief",
+      "status": "open",
+      "requires": ["M01-C-first-objective"],
+      "product_gates": ["JF", "JP"],
+      "oracle_capture_required": true,
+      "closure": "Normal/Normal Mission 01 reaches success or failure debrief without forced counters or scripted completion",
+      "blockers": [
+        "remaining objective and mission transition producers",
+        "radio or subtitle event path",
+        "native result and debrief integration"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "M01-E-replay",
+      "status": "open",
+      "requires": ["M01-D-debrief"],
+      "product_gates": ["JP"],
+      "oracle_capture_required": true,
+      "closure": "the complete input replay reproduces all checkpoint, event, outcome and save digests across render configurations",
+      "blockers": [
+        "qualified full-mission oracle trace",
+        "per-checkpoint first-divergence comparison",
+        "complete native deterministic state digest"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "M01-F-parity",
+      "status": "open",
+      "requires": ["M01-E-replay"],
+      "product_gates": ["JG"],
+      "oracle_capture_required": true,
+      "closure": "three qualified captures pass contracted visual, audio and timing thresholds",
+      "blockers": [
+        "complete Vulkan material and post-processing coverage",
+        "qualified audio event and level comparison",
+        "three stable oracle captures"
+      ],
+      "evidence": []
+    }
+  ]
+}

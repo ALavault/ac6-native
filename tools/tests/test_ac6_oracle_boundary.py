@@ -16,7 +16,8 @@ sys.path.insert(0, str(TOOLS))
 
 import audit_ac6_product_boundary as boundary
 import audit_native_package
-from audit_ac6_oracle_manifest import ManifestError, validate_document
+from audit_ac6_oracle_manifest import ManifestError, tree_sha256, validate_document
+from apply_ac6_oracle_boundary_corrections import CorrectionError, correct_configuration
 from normalize_ac6_recomp_trace import TraceError, load_events
 
 MANIFEST = ROOT / "analysis/oracle/ac6-recomp-dcd41b/manifest.json"
@@ -33,6 +34,49 @@ class OracleManifestTests(unittest.TestCase):
         document["oracle"]["commit"] = "0" * 40
         with self.assertRaises(ManifestError):
             validate_document(document, ROOT)
+
+    def test_wrong_overlay_tree_is_rejected(self) -> None:
+        document = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        document["build_overlay"]["tree_sha1"] = "0" * 40
+        with self.assertRaises(ManifestError):
+            validate_document(document, ROOT)
+
+    def test_wrong_boundary_transformer_is_rejected(self) -> None:
+        document = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        document["boundary_correction"]["transformer_sha256"] = "0" * 64
+        with self.assertRaises(ManifestError):
+            validate_document(document, ROOT)
+
+    def test_generated_tree_digest_covers_names_and_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "a").write_bytes(b"bc")
+            before = tree_sha256(root)
+            (root / "a").rename(root / "b")
+            after = tree_sha256(root)
+            self.assertEqual(before[:2], after[:2])
+            self.assertNotEqual(before[2], after[2])
+
+
+class OracleBoundaryCorrectionTests(unittest.TestCase):
+    def test_exact_entries_are_removed_without_other_rewrite(self) -> None:
+        source = (
+            b'[functions]\n'
+            b'0x82000000 = { name = "rex_sub_82000000" }\n'
+            b'keep = "literal"\n'
+            b'0x82000004 = { name = "rex_sub_82000004" }\n'
+        )
+        corrected = correct_configuration(source, ["0x82000000", "0x82000004"])
+        self.assertEqual(corrected, b'[functions]\nkeep = "literal"\n')
+
+    def test_missing_entry_is_rejected(self) -> None:
+        with self.assertRaises(CorrectionError):
+            correct_configuration(b"[functions]\n", ["0x82000000"])
+
+    def test_duplicate_address_is_rejected(self) -> None:
+        source = b'0x82000000 = { name = "rex_sub_82000000" }\n'
+        with self.assertRaises(CorrectionError):
+            correct_configuration(source, ["0x82000000", "0x82000000"])
 
 
 class OracleTraceTests(unittest.TestCase):

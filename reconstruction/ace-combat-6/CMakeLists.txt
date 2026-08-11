@@ -534,6 +534,9 @@ if(Python3_Interpreter_FOUND)
       ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_oracle_manifest.py
       ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/oracle/ac6-recomp-dcd41b/manifest.json
       --artifact-root ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+  add_test(NAME ac6-global-ladder-contract
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_global_ladder.py)
   add_test(NAME ac6-product-boundary-source
     COMMAND ${Python3_EXECUTABLE}
       ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_product_boundary.py

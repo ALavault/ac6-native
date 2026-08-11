@@ -262,14 +262,43 @@ Mission01ComparisonResult Mission01Comparator::compare(
     const std::filesystem::path& output_directory) const {
   Mission01ComparisonResult result;
   result.deterministic = deterministic;
-  if (observed.size() != reference.checkpoints().size()) result.failure = "checkpoint_count";
+  const auto note_divergence = [&result](std::size_t checkpoint, std::uint64_t tick,
+                                         const char* domain) {
+    if (!result.first_divergence_domain.empty()) return;
+    result.first_divergence_checkpoint = static_cast<std::uint32_t>(checkpoint);
+    result.first_divergence_tick = tick;
+    result.first_divergence_domain = domain;
+  };
+  if (observed.size() != reference.checkpoints().size()) {
+    result.failure = "checkpoint_count";
+    const std::size_t checkpoint = std::min(observed.size(), reference.checkpoints().size());
+    const std::uint64_t tick = checkpoint < reference.checkpoints().size()
+        ? reference.checkpoints()[checkpoint].frame.tick
+        : (checkpoint < observed.size() ? observed[checkpoint].tick : 0u);
+    note_divergence(checkpoint, tick, "checkpoint_count");
+  }
   for (std::size_t i = 0; i < std::min(observed.size(), reference.checkpoints().size()); ++i) {
     const WorldFrame& expected = reference.checkpoints()[i].frame;
     const WorldFrame& actual = observed[i];
-    if (actual.tick != expected.tick) { result.failure = "checkpoint_tick"; break; }
-    result.maximum_position_error = std::max(result.maximum_position_error, position_error(actual, expected));
-    result.maximum_orientation_error = std::max(result.maximum_orientation_error, orientation_error(actual, expected));
-    result.maximum_camera_error = std::max(result.maximum_camera_error, camera_error(actual, expected));
+    if (actual.tick != expected.tick) {
+      result.failure = "checkpoint_tick";
+      note_divergence(i, expected.tick, "tick");
+      break;
+    }
+    const float current_position_error = position_error(actual, expected);
+    const float current_orientation_error = orientation_error(actual, expected);
+    const float current_camera_error = camera_error(actual, expected);
+    result.maximum_position_error = std::max(result.maximum_position_error, current_position_error);
+    result.maximum_orientation_error =
+        std::max(result.maximum_orientation_error, current_orientation_error);
+    result.maximum_camera_error = std::max(result.maximum_camera_error, current_camera_error);
+    if (current_position_error > thresholds_.position_m) {
+      note_divergence(i, expected.tick, "position");
+    } else if (current_orientation_error > thresholds_.orientation_deg) {
+      note_divergence(i, expected.tick, "orientation");
+    } else if (current_camera_error > thresholds_.camera_absolute) {
+      note_divergence(i, expected.tick, "camera");
+    }
     if (i > 0) {
       const WorldFrame& previous_expected = reference.checkpoints()[i - 1].frame;
       const WorldFrame& previous_actual = observed[i - 1];
@@ -280,8 +309,12 @@ Mission01ComparisonResult Mission01Comparator::compare(
                        (expected.position_y - previous_expected.position_y);
       const float dz = (actual.position_z - previous_actual.position_z) -
                        (expected.position_z - previous_expected.position_z);
+      const float current_velocity_error = std::sqrt(dx * dx + dy * dy + dz * dz) / seconds;
       result.maximum_velocity_error = std::max(result.maximum_velocity_error,
-          std::sqrt(dx * dx + dy * dy + dz * dz) / seconds);
+                                                current_velocity_error);
+      if (current_velocity_error > thresholds_.velocity_mps) {
+        note_divergence(i, expected.tick, "velocity");
+      }
     }
   }
   result.simulation_pass = result.failure.empty() &&
@@ -296,6 +329,9 @@ Mission01ComparisonResult Mission01Comparator::compare(
   if (target.width() != reference.width() || target.height() != reference.height() ||
       !target.copy_rgba8(native_rgba) || !target.copy_depth(native_depth)) {
     if (result.failure.empty()) result.failure = "render_dimensions";
+    const std::uint64_t tick = reference.checkpoints().empty()
+        ? 0u : reference.checkpoints().back().frame.tick;
+    note_divergence(reference.checkpoints().size(), tick, "render_dimensions");
     return result;
   }
   result.color_ssim = global_ssim(native_rgba, reference.oracle_rgba());
@@ -304,8 +340,22 @@ Mission01ComparisonResult Mission01Comparator::compare(
   result.render_pass = result.color_ssim >= thresholds_.minimum_ssim &&
       result.coverage_iou >= thresholds_.minimum_coverage_iou &&
       result.depth_rmse <= thresholds_.maximum_depth_rmse;
-  if (!result.render_pass && result.failure.empty()) result.failure = "render_threshold";
-  if (!deterministic && result.failure.empty()) result.failure = "nondeterministic_replay";
+  const std::uint64_t final_tick = reference.checkpoints().empty()
+      ? 0u : reference.checkpoints().back().frame.tick;
+  if (!result.render_pass) {
+    if (result.failure.empty()) result.failure = "render_threshold";
+    if (result.color_ssim < thresholds_.minimum_ssim) {
+      note_divergence(reference.checkpoints().size(), final_tick, "color_ssim");
+    } else if (result.coverage_iou < thresholds_.minimum_coverage_iou) {
+      note_divergence(reference.checkpoints().size(), final_tick, "coverage_iou");
+    } else {
+      note_divergence(reference.checkpoints().size(), final_tick, "depth_rmse");
+    }
+  }
+  if (!deterministic) {
+    if (result.failure.empty()) result.failure = "nondeterministic_replay";
+    note_divergence(reference.checkpoints().size(), final_tick, "replay_determinism");
+  }
 
   std::error_code error;
   std::filesystem::create_directories(output_directory, error);
@@ -331,6 +381,15 @@ Mission01ComparisonResult Mission01Comparator::compare(
          << ",\n  \"color_ssim\": " << result.color_ssim
          << ",\n  \"coverage_iou\": " << result.coverage_iou
          << ",\n  \"depth_rmse\": " << result.depth_rmse
+         << ",\n  \"first_divergence\": ";
+  if (result.first_divergence_domain.empty()) {
+    report << "null";
+  } else {
+    report << "{\"checkpoint\": " << result.first_divergence_checkpoint
+           << ", \"tick\": " << result.first_divergence_tick
+           << ", \"domain\": \"" << result.first_divergence_domain << "\"}";
+  }
+  report
          << ",\n  \"failure\": \"" << result.failure << "\"\n}\n";
   return result;
 }

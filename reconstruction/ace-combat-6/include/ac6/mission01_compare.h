@@ -50,6 +50,9 @@ struct Mission01ComparisonResult {
   float color_ssim{};
   float coverage_iou{};
   float depth_rmse{};
+  std::uint64_t first_divergence_tick{};
+  std::uint32_t first_divergence_checkpoint{};
+  std::string first_divergence_domain;
   std::string failure;
   bool passed() const noexcept { return deterministic && simulation_pass && render_pass; }
 };
