@@ -102,6 +102,10 @@ manifeste `2f0e8ef2d5841b5ea2e3b504bfa65687d2c2f9ac828c3bbb3310e4b54c60db2f`.
 Sous `SDL_AUDIODRIVER=dummy`, cela qualifie le gel visuel et la frontière
 d'exécution, pas l'audibilité elle-même ; le dialogue audible reste donc
 l'observation interactive historique, déjà documentée.
+U ne crée pas non plus `mission01-frame.raw.jsonl` : aucune soumission de
+frame n'est demandée après le lancement, ce qui recoupe la mesure historique
+du cycle 316 (invité qui cesse d'appeler `VdSwap`) et écarte à nouveau un défaut
+de présentation hôte.
 
 ## Frontière dynamique
 
