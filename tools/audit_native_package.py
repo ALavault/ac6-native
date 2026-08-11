@@ -7,12 +7,18 @@ import re
 import tarfile
 from pathlib import Path
 
-FORBIDDEN_NAMES = re.compile(r"(DATA\d*\.PAC|\.xex$|oracle|\.ntxr$|\.f32$|\.ppm$)", re.I)
+FORBIDDEN_NAMES = re.compile(
+    r"(DATA\d*\.PAC|\.xex$|oracle|\.ntxr$|\.f32$|\.ppm$|"
+    r"(?:^|/)(?:\.tools|generated|rexglue|ac6_recomp)(?:/|$)|\brex_[A-Za-z0-9_]*)",
+    re.I,
+)
 ELF_MAGIC = b"\x7fELF"
-# Scan printable marker words in shipped binaries only.  Mangled C++ symbols
-# such as ``...EiPPc`` are not evidence of a PPC/Xenon dependency.
+# Scan oracle/runtime coupling markers in shipped binaries only. Xbox, XAM and
+# XMA are native product domains and must not be confused with a dependency on
+# the evidence runtime.
 FORBIDDEN_BYTES = re.compile(
-    rb"(?<![A-Za-z0-9_])(?:xbox|xam|xma|xenia|rexglue|xenonrecomp|ppc)(?![A-Za-z0-9_])",
+    rb"(?<![A-Za-z0-9_])(?:xenia|rexglue|rex_[A-Za-z0-9_]*|ac6_recomp|"
+    rb"xenonrecomp|generated/|/\.tools/)(?![A-Za-z0-9_])",
     re.I,
 )
 

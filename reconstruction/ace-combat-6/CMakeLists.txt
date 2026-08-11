@@ -529,6 +529,15 @@ if(Python3_Interpreter_FOUND)
       ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map.tsv
       --rejects ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map-rejects.tsv
       --require J2)
+  add_test(NAME ac6-oracle-manifest-contract
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_oracle_manifest.py
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/oracle/ac6-recomp-dcd41b/manifest.json
+      --artifact-root ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+  add_test(NAME ac6-product-boundary-source
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_product_boundary.py
+      --source-root ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
 # Points the same reader at a payload that is not committed - another mission,
@@ -538,6 +547,13 @@ target_link_libraries(ac6-retail-scenario-probe PRIVATE ac6_product_core)
 
 if(AC6_BUILD_PLATFORM)
   add_test(NAME ac6-native-headless COMMAND ac6-native)
+
+  if(Python3_Interpreter_FOUND)
+    add_test(NAME ac6-product-boundary-binary
+      COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_product_boundary.py
+        --binary $<TARGET_FILE:ac6-native>)
+  endif()
 
   add_executable(ac6-vulkan-surface-smoke tests/vulkan_surface_smoke.cpp)
   target_link_libraries(ac6-vulkan-surface-smoke PRIVATE ac6_platform)
@@ -557,6 +573,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/make_mission01_native_manifest.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/seal_mission01_reference.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_native_package.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_product_boundary.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_campaign_catalog.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_retail_content_cache.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_campaign_manifest.py

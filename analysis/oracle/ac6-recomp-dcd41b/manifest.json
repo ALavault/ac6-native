@@ -1,0 +1,48 @@
+{
+  "schema": "ac6.recomp-oracle-manifest.v1",
+  "oracle": {
+    "repository": "https://github.com/sal063/AC6_recomp.git",
+    "commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+    "required_worktree_state": "clean-detached",
+    "product_role": "qualified control-flow, ABI and bounded-capture oracle only"
+  },
+  "sdk": {
+    "repository": "https://github.com/rapidsamphire/rexglue-sdk.git",
+    "declared_branch": "ac6recomp-fixes",
+    "integration": "vendored-tree",
+    "vendor_commit": "06d1f5785153cd57c0e6b289f587adca67859714",
+    "tree_sha1": "741541d6035616dc406f7d74c2fe8f155913c77b",
+    "qualification": "The upstream commit was not retained by this vendored integration; the last AC6_recomp commit changing the SDK and its exact Git tree are authoritative."
+  },
+  "configuration": {
+    "path": "ac6recomp_config.toml",
+    "sha256": "bbc441bbeb793dfd5d9bee403b69d39a68efcf59e808fe96f05dee6688951c4c",
+    "generated_output": "generated",
+    "generated_output_is_product": false
+  },
+  "target": {
+    "target_id": "ac6-pal-default-xex",
+    "platform": "Xbox 360 PAL",
+    "module": "default.xex",
+    "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "size": 7483392,
+    "ghidra_project": "ghidra-projects/ace-combat-6"
+  },
+  "host_tools": [
+    {"name": "cmake", "version": "4.2.3"},
+    {"name": "c++", "version": "Ubuntu 15.2.0"},
+    {"name": "python", "version": "3.14.4"},
+    {"name": "git", "version": "2.53.0"},
+    {"name": "vulkan-loader", "version": "1.4.341"}
+  ],
+  "probes": [
+    {
+      "name": "mission01-frame",
+      "contract": "analysis/oracle/ac6-recomp-dcd41b/probes/mission01-frame.json",
+      "sha256": "d3890f35c8fc52041e07a2300fe04389c66340b39dcfb72ae767e10c192c0076"
+    }
+  ],
+  "trace_schema": "ac6.recomp-oracle-trace.v1",
+  "capture_status": "not-captured",
+  "acceptance": "No trace may close a gate unless this manifest, clean detached worktree, XEX identity and probe contract all validate."
+}

@@ -1,0 +1,39 @@
+{
+  "schema": "ac6.recomp-oracle-probe.v1",
+  "name": "mission01-frame",
+  "purpose": "Bounded Mission 01 control-flow, input and graphics-state observation; no captured byte is product input.",
+  "authority": {
+    "ghidra_project": "ghidra-projects/ace-combat-6",
+    "target_id": "ac6-pal-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "bounds": {
+    "max_ticks": 1800,
+    "max_events": 20000,
+    "max_output_bytes": 16777216
+  },
+  "required_event_fields": [
+    "guest_address",
+    "tick",
+    "input",
+    "graphics",
+    "output_hashes"
+  ],
+  "initial_addresses": [
+    {
+      "guest_address": "0x82267370",
+      "purpose": "retail sub-mission scheduler entry"
+    }
+  ],
+  "accepted_use": [
+    "literal control-flow cross-match",
+    "ABI cross-match",
+    "bounded draw/state/input inventory"
+  ],
+  "rejected_use": [
+    "native semantics inferred from generated names",
+    "generated function boundaries overriding canonical Ghidra",
+    "copying generated code into the product"
+  ]
+}
