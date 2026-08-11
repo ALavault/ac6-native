@@ -88,6 +88,8 @@ n'est justifié avant cette première divergence exécutée.
 ## Gardes passées
 
 - `ac6_decimal_parse_test` et `ac6_audio_startup_pacing_test` : pass ;
-- tests runner/trace/replay/oracle ciblés : 46 passés, 8 sous-tests ;
+- CTest produit : 73 tests passés, 1 test de ressources frontend explicitement
+  sauté par son contrat d'absence d'artefact ;
+- tests Python runner/trace/replay/oracle ciblés : 37 passés, 8 sous-tests ;
 - application propre et correspondance du profil capture : pass ;
 - `git diff --check` : pass sur le périmètre conservé.
