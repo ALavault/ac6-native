@@ -1,0 +1,511 @@
+{
+  "schema": "ac6.vulkan-backend-recovery.v1",
+  "created_at": "2026-08-11",
+  "policy": {
+    "product_boundary": "Linux x86-64 handwritten AC6-owned Vulkan; no guest memory and no generated/runtime bridge dependency.",
+    "evidence_rule": "A historical report without a current reproducible artifact closes no gate.",
+    "source_snapshot_rule": "The origin directory is not a Git checkout; qualification is content-addressed only."
+  },
+  "source_snapshot": {
+    "root_hint": "/fastdata/lavaulta/auto-re-agent/reconstruction/ace-combat-6",
+    "provenance": "unmanaged filesystem snapshot",
+    "git_commit": null,
+    "files": [
+      {
+        "path": "include/ac6/vulkan_backend.h",
+        "size": 13818,
+        "sha256": "55be1188e6e489a07500b02aca77a284bbeb1e8e49cbc86f6400e8605e996895"
+      },
+      {
+        "path": "include/ac6/vulkan_material.h",
+        "size": 4785,
+        "sha256": "e6a3904cd2520ad1d03fa5de8fe6fee8039d869327c027dc777c16c1cef27ee2"
+      },
+      {
+        "path": "include/ac6/campaign_vulkan_frontend.h",
+        "size": 1690,
+        "sha256": "b7e4f9bea904899ce6d9170a82c3b02657c3ebc63ca765d87cad93547f8f84cb"
+      },
+      {
+        "path": "include/ac6/campaign_vulkan_lifetime.h",
+        "size": 1890,
+        "sha256": "8a20a8354df9d7ea2cf5fb9ffb16bc464c5abf0980292e4d7f90e10cb5d99653"
+      },
+      {
+        "path": "src/vulkan_backend.cpp",
+        "size": 120154,
+        "sha256": "30a5df60642a0e044d3f03f7790df85c98b750c043fd1d647f51d9a7cd105642"
+      },
+      {
+        "path": "src/vulkan_material.cpp",
+        "size": 3544,
+        "sha256": "c9ac4366d1b3fcbe39d6090bb7d1869142d4b998286b397d1961b3d2aab070ab"
+      },
+      {
+        "path": "src/campaign_vulkan_frontend.cpp",
+        "size": 3310,
+        "sha256": "e230216f870dd175759244d196446364b04b279bdcb1bdf59d5eadecfc030c8a"
+      },
+      {
+        "path": "src/campaign_vulkan_lifetime.cpp",
+        "size": 2443,
+        "sha256": "5e26d013aa0ed6b074a2ad9604c3f33d348c03ea0531ec24edc86d1a35ef6ad9"
+      },
+      {
+        "path": "tests/vulkan_backend_tests.cpp",
+        "size": 26903,
+        "sha256": "2d3ec775000d2fd71d7711fd669f0ce39adab52a87a6f0270c312a8d27b89877"
+      },
+      {
+        "path": "tests/campaign_vulkan_retail_frame_tests.cpp",
+        "size": 24122,
+        "sha256": "82dc9782b7b66942d1d73b614caf6590b6baddff754cc662f17cc499a4325880"
+      },
+      {
+        "path": "tests/vulkan_sdl_window_tests.cpp",
+        "size": 3654,
+        "sha256": "cf427b847902b214744b6b5b6f849e185f948c2aaf5a23a07683ed68fba1a36c"
+      },
+      {
+        "path": "tests/campaign_vulkan_sdl_present_tests.cpp",
+        "size": 37768,
+        "sha256": "ca9edffd6b0544792708885dd8b29913c1efb0fe06c9d1d8c7e1e8b47ca15c45"
+      },
+      {
+        "path": "tests/fixtures/vulkan_triangle_spirv.h",
+        "size": 3999,
+        "sha256": "f51331ab6b6c9d1cb55769f295e3258071f31f9dad68bed436e0279f5c9b910c"
+      },
+      {
+        "path": "tests/fixtures/vulkan_mesh_spirv.h",
+        "size": 3098,
+        "sha256": "330c0b72b9c2169820a45dd9fe8d83951db8cb1ebe52c45e3039e3141f089649"
+      },
+      {
+        "path": "tests/fixtures/vulkan_clip_mesh_spirv.h",
+        "size": 2754,
+        "sha256": "64e890290b2243afe63a85b89d5f54d5dfb924e9ba697bd7e83a7a07144cc035"
+      }
+    ]
+  },
+  "imported": [
+    {
+      "origin_path": "tests/fixtures/vulkan_triangle_spirv.h",
+      "current_path": "reconstruction/ace-combat-6/tests/fixtures/vulkan_triangle_spirv.h",
+      "sha256": "f51331ab6b6c9d1cb55769f295e3258071f31f9dad68bed436e0279f5c9b910c",
+      "purpose": "Exact descriptor-free triangle test fixture."
+    }
+  ],
+  "adapted_mechanisms": [
+    {
+      "responsibility": "device",
+      "paths": [
+        "reconstruction/ace-combat-6/src/vulkan_device.cpp"
+      ]
+    },
+    {
+      "responsibility": "resources",
+      "paths": [
+        "reconstruction/ace-combat-6/src/vulkan_resources.cpp"
+      ]
+    },
+    {
+      "responsibility": "pipelines",
+      "paths": [
+        "reconstruction/ace-combat-6/src/vulkan_pipelines.cpp"
+      ]
+    },
+    {
+      "responsibility": "commands",
+      "paths": [
+        "reconstruction/ace-combat-6/src/vulkan_commands.cpp"
+      ]
+    },
+    {
+      "responsibility": "readback",
+      "paths": [
+        "reconstruction/ace-combat-6/src/vulkan_readback.cpp"
+      ]
+    },
+    {
+      "responsibility": "surface",
+      "paths": [
+        "reconstruction/ace-combat-6/src/vulkan_surface.cpp"
+      ]
+    },
+    {
+      "responsibility": "swapchain",
+      "paths": [
+        "reconstruction/ace-combat-6/src/vulkan_swapchain.cpp"
+      ]
+    }
+  ],
+  "excluded_contracts": [
+    "include/ac6/campaign_vulkan_frontend.h",
+    "include/ac6/campaign_vulkan_lifetime.h",
+    "src/campaign_vulkan_frontend.cpp",
+    "src/campaign_vulkan_lifetime.cpp",
+    "tests/campaign_vulkan_retail_frame_tests.cpp",
+    "tests/campaign_vulkan_sdl_present_tests.cpp"
+  ],
+  "current_validation": {
+    "test_source": "reconstruction/ace-combat-6/tests/vulkan_backend_tests.cpp",
+    "ctest_names": [
+      "ac6-vulkan-backend",
+      "ac6-vulkan-surface-smoke"
+    ],
+    "qualified_audio_environment": "SDL_AUDIODRIVER=dummy"
+  },
+  "historical_reports": [
+    {
+      "cycle": "1511",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-1511-frontend-closure-and-vulkan-capture.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "1512",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-1512-retail-scene-to-vulkan-capture.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "675-676",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-675-676-vulkan-pass-frontier.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "689",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-689-native-vulkan-campaign-submission.json",
+        "reports/cycle-689-native-vulkan-campaign-submission.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "691",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-691-native-vulkan-resource-lifetime.json",
+        "reports/cycle-691-native-vulkan-resource-lifetime.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "692",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-692-vulkan-headless-backend.json",
+        "reports/cycle-692-vulkan-headless-backend.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "693",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-693-vulkan-ntxr-upload.json",
+        "reports/cycle-693-vulkan-ntxr-upload.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "694",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-694-vulkan-ntxr-descriptor.json",
+        "reports/cycle-694-vulkan-ntxr-descriptor.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "695",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-695-vulkan-headless-render-target.json",
+        "reports/cycle-695-vulkan-headless-render-target.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "696",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-696-vulkan-upload-readiness.json",
+        "reports/cycle-696-vulkan-upload-readiness.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "697",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-697-vulkan-readback-entry10.json",
+        "reports/cycle-697-vulkan-readback-entry10.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "698",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-698-vulkan-triangle-draw.json",
+        "reports/cycle-698-vulkan-triangle-draw.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "699",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-699-vulkan-textured-draw.json",
+        "reports/cycle-699-vulkan-textured-draw.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "700",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-700-vulkan-bc1-bc3-upload.json",
+        "reports/cycle-700-vulkan-bc1-bc3-upload.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "703",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-703-vulkan-mip-chain-contract.json",
+        "reports/cycle-703-vulkan-mip-chain-contract.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "705",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-705-vulkan-indexed-mesh-draw.json",
+        "reports/cycle-705-vulkan-indexed-mesh-draw.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "706",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-706-vulkan-mesh-vertex-layout.json",
+        "reports/cycle-706-vulkan-mesh-vertex-layout.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "707",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-707-campaign-mesh-vulkan-adapter.json",
+        "reports/cycle-707-campaign-mesh-vulkan-adapter.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "709",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-709-vulkan-clip-depth-seam.json",
+        "reports/cycle-709-vulkan-clip-depth-seam.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "710",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-710-vulkan-batched-depth-and-retail-material-audit.json",
+        "reports/cycle-710-vulkan-batched-depth-and-retail-material-audit.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "711",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-711-vulkan-material-upload-identity.json",
+        "reports/cycle-711-vulkan-material-upload-identity.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "712",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-712-vulkan-retail-shader-frame-seam.json",
+        "reports/cycle-712-vulkan-retail-shader-frame-seam.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "713",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-713-vulkan-persistent-frame.json",
+        "reports/cycle-713-vulkan-persistent-frame.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "715",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-715-vulkan-headless-presentation-boundary.json",
+        "reports/cycle-715-vulkan-headless-presentation-boundary.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "718",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-718-sdl-vulkan-presentation-seam.json",
+        "reports/cycle-718-sdl-vulkan-presentation-seam.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "719",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-719-native-frame-hud-submit.json",
+        "reports/cycle-719-native-frame-hud-submit.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "720",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-720-retail-frame-asset-to-vulkan.json",
+        "reports/cycle-720-retail-frame-asset-to-vulkan.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "721",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-721-tcam-cut-to-vulkan.json",
+        "reports/cycle-721-tcam-cut-to-vulkan.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "722",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-722-standby-runtime-to-vulkan.json",
+        "reports/cycle-722-standby-runtime-to-vulkan.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "723",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-723-world-batch-and-solid-fallback.json",
+        "reports/cycle-723-world-batch-and-solid-fallback.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "726",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-726-pal-campaign-sdl-vulkan-presentation.json",
+        "reports/cycle-726-pal-campaign-sdl-vulkan-presentation.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "731",
+      "status": "indice",
+      "paths": [
+        "reports/cycle-731-visible-sdl-vulkan-screencap.json",
+        "reports/cycle-731-visible-sdl-vulkan-screencap.md"
+      ],
+      "reason": "Observation ou mécanisme spécialisé utile à la suite, mais non reproduit par un artefact courant équivalent; ne ferme aucun gate."
+    },
+    {
+      "cycle": "734",
+      "status": "superseded",
+      "paths": [
+        "reports/cycle-734-qualified-vulkan-baseline.json",
+        "reports/cycle-734-qualified-vulkan-baseline.md"
+      ],
+      "reason": "Dépend de l’ancien runtime Campaign* ou d’un contrat de capture obsolète; conservé comme historique et exclu de l’autorité produit."
+    },
+    {
+      "cycle": "852",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-852-sdl-vulkan-surface-seam.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "853",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-853-vulkan-instance-surface-positive.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "854",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-854-vulkan-device-queue.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "855",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-855-vulkan-swapchain.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "856",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-856-vulkan-present-clear.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "866",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-866-vulkan-transfer-present.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    },
+    {
+      "cycle": "880",
+      "status": "reproduit",
+      "paths": [
+        "reports/cycle-880-vulkan-per-image-layout.md"
+      ],
+      "reason": "Mécanisme générique couvert par les tests Vulkan headless/surface courants; seules ces validations actuelles ferment le checkpoint transport."
+    }
+  ]
+}

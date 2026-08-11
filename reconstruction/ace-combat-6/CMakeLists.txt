@@ -98,9 +98,27 @@ if(AC6_BUILD_PLATFORM)
   find_package(Vulkan REQUIRED)
   pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
 
-  add_library(ac6_platform STATIC src/sdl_input.cpp)
+  add_library(ac6_vulkan_backend STATIC
+    src/vulkan_device.cpp
+    src/vulkan_resources.cpp
+    src/vulkan_pipelines.cpp
+    src/vulkan_commands.cpp
+    src/vulkan_readback.cpp)
+  target_include_directories(ac6_vulkan_backend PUBLIC include)
+  target_link_libraries(ac6_vulkan_backend PUBLIC Vulkan::Vulkan)
+  target_compile_features(ac6_vulkan_backend PUBLIC cxx_std_20)
+  if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(ac6_vulkan_backend PRIVATE
+      -Wall -Wextra -Wpedantic -Wconversion)
+  endif()
+
+  add_library(ac6_platform STATIC
+    src/sdl_input.cpp
+    src/vulkan_surface.cpp
+    src/vulkan_swapchain.cpp)
   target_include_directories(ac6_platform PUBLIC include)
-  target_link_libraries(ac6_platform PUBLIC ac6_product_core PkgConfig::SDL3 Vulkan::Vulkan)
+  target_link_libraries(ac6_platform PUBLIC ac6_product_core ac6_vulkan_backend
+    PkgConfig::SDL3 Vulkan::Vulkan)
   target_compile_features(ac6_platform PUBLIC cxx_std_20)
 
   add_executable(ac6-native src/main.cpp src/commands.cpp src/retail_commands.cpp
@@ -541,6 +559,11 @@ if(Python3_Interpreter_FOUND)
     COMMAND ${Python3_EXECUTABLE}
       ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_product_boundary.py
       --source-root ${CMAKE_CURRENT_SOURCE_DIR})
+  add_test(NAME ac6-vulkan-backend-recovery-manifest
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_vulkan_backend_recovery.py
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/vulkan/backend-recovery-v1.json
+      --artifact-root ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 endif()
 
 # Points the same reader at a payload that is not committed - another mission,
@@ -550,6 +573,11 @@ target_link_libraries(ac6-retail-scenario-probe PRIVATE ac6_product_core)
 
 if(AC6_BUILD_PLATFORM)
   add_test(NAME ac6-native-headless COMMAND ac6-native)
+
+  add_executable(ac6-vulkan-backend-tests tests/vulkan_backend_tests.cpp)
+  target_link_libraries(ac6-vulkan-backend-tests PRIVATE ac6_vulkan_backend)
+  add_test(NAME ac6-vulkan-backend COMMAND ac6-vulkan-backend-tests)
+  set_tests_properties(ac6-vulkan-backend PROPERTIES SKIP_RETURN_CODE 77)
 
   if(Python3_Interpreter_FOUND)
     add_test(NAME ac6-product-boundary-binary
