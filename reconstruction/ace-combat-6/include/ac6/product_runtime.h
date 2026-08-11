@@ -13,6 +13,7 @@
 
 #include "ac6/campaign_progression.h"
 #include "ac6/native_geometry.h"
+#include "ac6/sha256.h"
 
 namespace ac6 {
 
@@ -1156,6 +1157,9 @@ class SaveStore final {
 
 struct SessionSaveSnapshot {
   std::uint32_t mission_id{};
+  // Zero denotes a legacy/manifest save. Retail commands fill this with the
+  // sealed content-index digest before writing a product save.
+  Sha256Digest content_index_sha256{};
   RuntimeSnapshot flight{};
   CampaignSaveSnapshot campaign;
   std::optional<MissionExecution::Checkpoint> checkpoint;

@@ -480,7 +480,7 @@ int run_play_headless(const std::filesystem::path& manifest_input,
   if (!render_and_present(assets, graphics, target, first_frame, first.get(), &hud)) return 68;
   const ac6::RenderReadback first_readback = target.readback();
   ac6::SessionSaveStore save_store;
-  if (!save_store.save(1, {mission_id, first->snapshot(), {}, checkpoint}) ||
+  if (!save_store.save(1, {mission_id, {}, first->snapshot(), {}, checkpoint}) ||
       !save_store.write_file(output_dir / "session.save")) return 70;
 
   auto replay_execution = [&](ac6::WorldFrame& final_frame,

@@ -18,6 +18,7 @@ void require(bool condition, const char* expression, int line) {
 int main() {
   ac6::SessionSaveSnapshot snapshot{};
   snapshot.mission_id = 1;
+  snapshot.content_index_sha256.fill(0x4a);
   snapshot.flight = {120, 1.0f, 2.0f, 3.0f, 0.1f, -0.2f, 0.3f, 0.001f};
   snapshot.campaign.completed.push_back({1, 1, ac6::CampaignMissionState::Active, {7, 8, true}});
   ac6::MissionExecution::Checkpoint mission_checkpoint;

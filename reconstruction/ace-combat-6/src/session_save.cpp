@@ -495,7 +495,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 9);
+  write_u32(output, 10);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -508,6 +508,8 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
     const SessionSaveSnapshot& snapshot = slots_.at(slot);
     write_u32(output, slot);
     write_u32(output, snapshot.mission_id);
+    output.write(reinterpret_cast<const char*>(snapshot.content_index_sha256.data()),
+                 static_cast<std::streamsize>(snapshot.content_index_sha256.size()));
     write_flight(output, snapshot.flight);
     write_u32(output, static_cast<std::uint32_t>(snapshot.campaign.completed.size()));
     for (const CampaignSaveSnapshot::Record record : snapshot.campaign.completed) {
@@ -548,7 +550,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   std::uint32_t count = 0;
   if (!read_u32(input, version) || !read_u32(input, count) ||
       (version != 1 && version != 2 && version != 3 && version != 4 && version != 5 &&
-       version != 6 && version != 7 && version != 8 && version != 9) ||
+       version != 6 && version != 7 && version != 8 && version != 9 && version != 10) ||
       count > 1024) {
     return false;
   }
@@ -558,7 +560,11 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
     SessionSaveSnapshot snapshot;
     std::uint32_t record_count = 0;
     if (!read_u32(input, slot) || !read_u32(input, snapshot.mission_id) || slot == 0 ||
-        loaded.find(slot) != loaded.end() || !read_flight(input, snapshot.flight) ||
+        loaded.find(slot) != loaded.end() ||
+        (version >= 10 && (!input.read(
+            reinterpret_cast<char*>(snapshot.content_index_sha256.data()),
+            static_cast<std::streamsize>(snapshot.content_index_sha256.size())))) ||
+        !read_flight(input, snapshot.flight) ||
         !read_u32(input, record_count) || record_count > 1024) return false;
     snapshot.campaign.completed.reserve(record_count);
     for (std::uint32_t record_index = 0; record_index < record_count; ++record_index) {

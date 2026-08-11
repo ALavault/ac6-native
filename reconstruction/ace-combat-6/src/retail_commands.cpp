@@ -355,7 +355,7 @@ int run_play_impl(const Options& options) {
     SessionSaveStore saves;
     MissionExecution::Checkpoint checkpoint;
     if (!session->execution().save_checkpoint(checkpoint) ||
-        !saves.save(1, {1, session->execution().snapshot(), {}, checkpoint}) ||
+        !saves.save(1, {1, store.index_sha256(), session->execution().snapshot(), {}, checkpoint}) ||
         !saves.write_file(options.save)) return 131;
   }
   std::fprintf(stdout,
