@@ -32,7 +32,7 @@ alias. Paths follow XDG.
 | checkpoint | exit condition | state |
 |---|---|---|
 | 0 — baseline and global contract | baseline passes; historical contracts are fail-closed; mission contract template and 15-mission matrix exist | **passed** |
-| 1 — complete offline import | atomic RetailContentStore v2 contains the qualified offline closure; no source PAC access after import | pending |
+| 1 — complete offline import | atomic RetailContentStore v2 contains the qualified offline closure; no source PAC access after import | **passed** |
 | 2 — structural blockers | VMX position, Scene/TCAM/MDLP/MATE/NDXR/NTXR, objective progression, and XMA/ASF are proved and tested across 15 payloads | pending |
 | 3 — complete Mission 01 vertical | M01 passes JF, JV, JP, and JG at 720p30 with exact 60 Hz simulation | pending |
 | 4 — standard missions | M02–06, M08, M10–12, and M14 each pass JF→JV→JP→JG | pending |

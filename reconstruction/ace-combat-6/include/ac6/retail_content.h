@@ -7,11 +7,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <memory>
 #include <span>
 #include <string>
 #include <vector>
 
 namespace ac6 {
+
+class RetailResourceGraph;
 
 inline constexpr std::array<std::uint32_t, 15> kPalCampaignDataTableEntries{
     9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
@@ -107,6 +110,7 @@ struct RetailImportReport final {
   RetailContentError error{RetailContentError::None};
   std::string detail;
   Sha256Digest index_sha256{};
+  Sha256Digest graph_manifest_sha256{};
   std::size_t imported_records{};
   std::uint64_t imported_bytes{};
   bool passed() const noexcept { return error == RetailContentError::None; }
@@ -133,6 +137,7 @@ class RetailContentStore final {
   explicit RetailContentStore(
       RetailIdentityPolicy policy = RetailIdentityPolicy::pal(),
       RetailImportLimits limits = {});
+  ~RetailContentStore();
 
   bool open(const std::filesystem::path& cache_root);
   void close() noexcept;
@@ -142,6 +147,9 @@ class RetailContentStore final {
   const RetailSourceIdentity& identity() const noexcept { return identity_; }
   const Sha256Digest& index_sha256() const noexcept { return index_sha256_; }
   const RetailMediaStore& media() const noexcept { return media_; }
+  const RetailResourceGraph* resource_graph() const noexcept {
+    return graph_.get();
+  }
   const std::vector<RetailContentRecord>& records() const noexcept { return records_; }
   const RetailContentRecord* find(std::uint32_t data_table_index) const noexcept;
   bool read_payload(std::uint32_t data_table_index,
@@ -156,6 +164,7 @@ class RetailContentStore final {
   RetailSourceIdentity identity_{};
   Sha256Digest index_sha256_{};
   RetailMediaStore media_{};
+  std::unique_ptr<RetailResourceGraph> graph_;
   std::vector<RetailContentRecord> records_;
   RetailContentError error_{RetailContentError::CacheIncomplete};
   std::string detail_;

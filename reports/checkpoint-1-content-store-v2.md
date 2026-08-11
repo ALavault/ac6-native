@@ -45,10 +45,19 @@ complete expanded DATA.TBL closure is about 5.42 GiB; the per-payload cap stays
   reproducibility, range bounds, blob corruption, and v1 rejection.
 - Full PAL smoke import: pass, 926 records and all six media files.
 
+The resource graph is now materialized before the index pointer is published.
+The smoke cache contains 46,236 nodes rooted at all 926 entries, with 6,361
+FHM containers, 1,549 NFIC nodes, 1,293 Scene nodes, 150 SWG nodes, 733 MATE
+nodes, 2,228 NDXR nodes, 8,006 NTXR nodes, and 7,493 non-zero GIDX keys. Every
+node carries its parent, child slot, depth, type, and relative byte range; NTXR
+nodes carry the qualified GIDX identifier. The graph also contains 55,743
+NDXR material-to-texture relations; all 55,743 texture IDs resolve to an NTXR
+GIDX node in the qualified corpus. Empty retail FHM sentinels are
+recorded as leaves and never assigned invented child semantics.
+
 ## Open boundary
 
-This checkpoint is not yet closed: the index currently records qualified
-ranges and payload digests, but the logical resource graph (GIDX relations,
-parent/model/material/texture links, language/media role records) is not yet
-materialized in the cache. The next change must add that graph and verify it
-against all 926 entries before marking checkpoint 1 passed.
+The graph now closes structural resource identity, parent/child/GIDX links, and
+the NDXR material-to-texture registry relation. Semantic material parameter
+decoding and language/media cue decoding remain checkpoint 2/6 work; they are
+deliberately not claimed by this import gate.

@@ -1,4 +1,5 @@
 #include "ac6/retail_content.h"
+#include "ac6/retail_resource_graph.h"
 
 #include <zlib.h>
 
@@ -864,6 +865,13 @@ RetailImportReport RetailContentImporter::run(
   const std::vector<std::uint8_t> index = make_index(policy_, records,
                                                      media_manifest_sha256);
   report.index_sha256 = sha256_bytes(index);
+  if (policy_.media.required &&
+      !publish_retail_resource_graph(cache_root, staging.path(), report.index_sha256,
+                                     records, report.graph_manifest_sha256,
+                                     report.detail)) {
+    return fail(RetailContentError::CacheIoFailed,
+                report.detail.empty() ? "cannot publish resource graph" : report.detail);
+  }
   if (!publish_index(cache_root, staging.path(), index, report.index_sha256)) {
     return fail(RetailContentError::CacheIoFailed,
                 "cannot atomically publish content index");
@@ -875,7 +883,10 @@ RetailImportReport RetailContentImporter::run(
 
 RetailContentStore::RetailContentStore(RetailIdentityPolicy policy,
                                        RetailImportLimits limits)
-    : policy_(std::move(policy)), limits_(limits) {}
+    : policy_(std::move(policy)), limits_(limits),
+      graph_(std::make_unique<RetailResourceGraph>()) {}
+
+RetailContentStore::~RetailContentStore() = default;
 
 bool RetailContentStore::fail(RetailContentError error, std::string detail) {
   records_.clear();
@@ -890,6 +901,7 @@ void RetailContentStore::close() noexcept {
   index_sha256_ = {};
   records_.clear();
   media_ = RetailMediaStore{};
+  graph_ = std::make_unique<RetailResourceGraph>();
   error_ = RetailContentError::CacheIncomplete;
   detail_.clear();
 }
@@ -930,6 +942,10 @@ bool RetailContentStore::open(const std::filesystem::path& cache_root) {
         media_.manifest_sha256() != media_manifest_sha256) {
       return fail(RetailContentError::CacheIncomplete,
                   "content index references an unavailable media manifest");
+    }
+    if (graph_ == nullptr || !graph_->open(cache_root, index_digest)) {
+      return fail(RetailContentError::CacheIncomplete,
+                  "content index references an unavailable resource graph");
     }
   } else if (media_manifest_sha256 != Sha256Digest{}) {
     return fail(RetailContentError::CacheIncompatible,

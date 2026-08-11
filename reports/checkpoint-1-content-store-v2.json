@@ -7,6 +7,12 @@
   "media_blobs": 6,
   "index_sha256": "cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85",
   "media_manifest_sha256": "43abbdb317d1c2d202a9df81b42657be750f31eaf37d8cac76ac738b476f24d7",
+  "graph_manifest_sha256": "5b550a18f5a8fdc81ad07c9b1f0eb4e41b0c1390771a2d30baf84a43ba8bf82d",
+  "graph_nodes": 46236,
+  "graph_roots": 926,
+  "graph_gidx_nonzero": 7493,
+  "graph_relations": 55743,
+  "graph_unresolved_relations": 0,
   "media": {
     "bgmpack.bin": {"size": 724762624, "sha256": "78db61397696a5c98decc83052a1c36db8f816405b49c9910b689f8ad52c86fa"},
     "demopack_eng.bin": {"size": 234217472, "sha256": "31aae3a752b01553f42e63d6654ba0e45867e6962360a2fa5dc7cf3c4392c589"},
@@ -15,5 +21,5 @@
     "voicepack_eng.bin": {"size": 279078912, "sha256": "3e1c358714617337e30aef9ebae0b5bf43a7b84342f9d31093b8ec18296e8726"},
     "voicepack_jpn.bin": {"size": 327245824, "sha256": "82af039f582d741c574f62060adb1170ee087a2a0fa00fa241d18b846b03adcd"}
   },
-  "graph": "open"
+  "graph": "passed"
 }
