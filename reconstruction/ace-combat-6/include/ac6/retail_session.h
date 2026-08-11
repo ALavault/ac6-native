@@ -122,6 +122,13 @@ class RetailSession final {
   std::size_t render_world_markers(NativeRenderTarget& target, const WorldFrame& frame,
                                    float far_plane = 0.0f) const noexcept;
 
+  // Executes one authored OrderFlagBin through the qualified counter writer.
+  // The behaviour scheduler owns when an order is reached; this explicit
+  // boundary keeps that timing separate from the byte-accurate operation.
+  bool apply_flag_order(std::size_t order_index, float now,
+                        std::uint32_t random) noexcept;
+  std::optional<std::int32_t> counter(std::uint16_t id) const noexcept;
+
   MissionDebrief debrief() const { return execution_->debrief(); }
   ScenarioState state() const noexcept { return execution_->scenario().state(); }
 

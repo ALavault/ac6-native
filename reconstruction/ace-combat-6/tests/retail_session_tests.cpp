@@ -738,6 +738,17 @@ int main(int argc, char** argv) {
   // faction switch classified, not a chosen index.
   REQUIRE(probe->world().published == 230);
   REQUIRE(probe->player_entity() != 0);
+  REQUIRE(!probe->scenario().flag_orders().empty());
+  const ac6::retail::ScenarioFlagOrder& first_flag =
+      probe->scenario().flag_orders().front();
+  REQUIRE(probe->apply_flag_order(0, 1.0F, 0u));
+  const std::optional<std::int32_t> first_counter =
+      probe->counter(first_flag.counter_id);
+  REQUIRE(first_counter.has_value());
+  if (first_flag.operation == 0u) {
+    REQUIRE(*first_counter == static_cast<std::int16_t>(first_flag.literal));
+  }
+  REQUIRE(!probe->apply_flag_order(probe->scenario().flag_orders().size(), 1.0F, 0u));
   // Sub-mission 0's tag-0 step installs a rectangle; the port of FUN_82268B28
   // normalises it and FUN_82268BA0 answers on x and z only.
   const std::optional<ac6::retail::MissionArea> area = probe->current_area();

@@ -209,6 +209,26 @@ std::size_t RetailSession::render_world_markers(NativeRenderTarget& target,
   return drawn;
 }
 
+bool RetailSession::apply_flag_order(std::size_t order_index, float now,
+                                     std::uint32_t random) noexcept {
+  if (scenario_ == nullptr || world_ == nullptr ||
+      order_index >= scenario_->flag_orders().size()) {
+    return false;
+  }
+  const ScenarioFlagOrder& order = scenario_->flag_orders()[order_index];
+  if (order.operation > static_cast<std::uint8_t>(CounterOperation::SumOfTwo)) {
+    return false;
+  }
+  const CounterOperand operand{
+      static_cast<std::int16_t>(order.literal), 0xFFFFu, 0xFFFFu,
+      static_cast<CounterOperation>(order.operation)};
+  return world_->sequencer.apply(order.counter_id, operand, now, random);
+}
+
+std::optional<std::int32_t> RetailSession::counter(std::uint16_t id) const noexcept {
+  return world_ == nullptr ? std::nullopt : world_->sequencer.counter(id);
+}
+
 ScriptAdvance RetailSession::advance_script() noexcept {
   const std::uint32_t before = script_.sub_mission();
   ScriptAdvance result = script_.drive_frame();
