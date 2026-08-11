@@ -14,6 +14,7 @@ from pathlib import Path
 
 CURRENT = struct.Struct(">8sII32s")
 HEADER = struct.Struct(">8s6I32s32s32s32sQQQQ")
+V2_HEADER = struct.Struct(">8s6I32s32s32s32sQQQQ32s")
 RECORD = struct.Struct(">IIBBHQQQQ32s32s")
 IDENTITY = {
     "xex": (7483392, "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"),
@@ -52,6 +53,7 @@ MISSION01_REQUIRED_ENTRIES = (
 MAXIMUM_STORED_SIZE = 256 * 1024 * 1024
 MAXIMUM_EXPANDED_SIZE = 512 * 1024 * 1024
 MAXIMUM_TOTAL_EXPANDED_SIZE = 2 * 1024 * 1024 * 1024
+V2_MAXIMUM_TOTAL_EXPANDED_SIZE = 8 * 1024 * 1024 * 1024
 
 
 class AuditError(ValueError):
@@ -74,12 +76,143 @@ def read_current(cache: Path) -> str:
     if len(raw) != CURRENT.size:
         raise AuditError("current record size mismatch")
     magic, version, size, digest = CURRENT.unpack(raw)
-    if magic != b"AC6RCUR\0" or version != 1 or size != CURRENT.size:
+    if magic != b"AC6RCUR\0" or version not in (1, 2) or size != CURRENT.size:
         raise AuditError("current record incompatible")
     return digest.hex()
 
 
+def _identity_from_header(digests: tuple[bytes, ...], sizes: tuple[int, ...]) -> dict:
+    labels = ("xex", "data_tbl", "data00", "data01")
+    identity = {}
+    for label, digest, size in zip(labels, digests, sizes, strict=True):
+        expected_size, expected_digest = IDENTITY[label]
+        if size != expected_size or digest.hex() != expected_digest:
+            raise AuditError(f"index {label} identity mismatch")
+        identity[label] = {"size": size, "sha256": digest.hex()}
+    return identity
+
+
+def _parse_records(
+    raw: bytes,
+    offset: int,
+    count: int,
+    table_count: int,
+    sizes: tuple[int, ...],
+    maximum_total_expanded_size: int,
+) -> list[dict]:
+    if len(raw) != offset + count * RECORD.size:
+        raise AuditError("index record extent mismatch")
+    records = []
+    previous = -1
+    source_ranges: set[tuple[int, int, int]] = set()
+    total_expanded = 0
+    for ordinal in range(count):
+        row = RECORD.unpack_from(raw, offset + ordinal * RECORD.size)
+        index, group, archive, codec, reserved = row[:5]
+        source_offset, stored_size, expanded_size, payload_size = row[5:9]
+        stored_sha256, payload_sha256 = row[9:11]
+        archive_size = sizes[2 + archive] if archive in (0, 1) else 0
+        source_range = (archive, source_offset, stored_size)
+        expected_archive = 1 if group & 0x01000000 else 0
+        expected_codec = 2 if group & 0x00020000 else 1
+        if (
+            reserved != 0
+            or archive not in (0, 1)
+            or codec not in (1, 2)
+            or index >= table_count
+            or index <= previous
+            or stored_size <= 0
+            or expanded_size <= 0
+            or payload_size <= 0
+            or stored_size > MAXIMUM_STORED_SIZE
+            or expanded_size > MAXIMUM_EXPANDED_SIZE
+            or expanded_size != payload_size
+            or total_expanded + payload_size > maximum_total_expanded_size
+            or source_offset + stored_size > archive_size
+            or archive != expected_archive
+            or codec != expected_codec
+            or (codec == 2 and stored_size != expanded_size)
+            or source_range in source_ranges
+        ):
+            raise AuditError(f"invalid index record at ordinal {ordinal}")
+        previous = index
+        source_ranges.add(source_range)
+        total_expanded += payload_size
+        records.append(
+            {
+                "data_table_entry_index": index,
+                "group": group,
+                "archive": "DATA00.PAC" if archive == 0 else "DATA01.PAC",
+                "codec": (
+                    "mode1_pi_xor_raw_deflate" if codec == 1 else "mode1_pi_xor_raw"
+                ),
+                "source_offset": source_offset,
+                "stored_size": stored_size,
+                "expanded_size": expanded_size,
+                "payload_size": payload_size,
+                "stored_sha256": stored_sha256.hex(),
+                "payload_sha256": payload_sha256.hex(),
+            }
+        )
+    return records
+
+
+def _parse_v2_index(raw: bytes) -> tuple[dict, list[dict]]:
+    if len(raw) < V2_HEADER.size:
+        raise AuditError("index is truncated")
+    unpacked = V2_HEADER.unpack_from(raw)
+    (
+        magic,
+        version,
+        header_size,
+        record_size,
+        count,
+        table_count,
+        pack_count,
+        xex_digest,
+        table_digest,
+        data00_digest,
+        data01_digest,
+        xex_size,
+        table_size,
+        data00_size,
+        data01_size,
+        _media_manifest_digest,
+    ) = unpacked
+    if (
+        magic != b"AC6RIDX\0"
+        or version != 2
+        or header_size != V2_HEADER.size
+        or record_size != RECORD.size
+        or count != table_count
+        or count != 926
+        or table_count != 926
+        or pack_count != 2
+    ):
+        raise AuditError("v2 index header or extent mismatch")
+    identity = _identity_from_header(
+        (xex_digest, table_digest, data00_digest, data01_digest),
+        (xex_size, table_size, data00_size, data01_size),
+    )
+    records = _parse_records(
+        raw,
+        V2_HEADER.size,
+        count,
+        table_count,
+        (xex_size, table_size, data00_size, data01_size),
+        V2_MAXIMUM_TOTAL_EXPANDED_SIZE,
+    )
+    expected_entries = list(range(926))
+    if [record["data_table_entry_index"] for record in records] != expected_entries:
+        raise AuditError("v2 index does not cover the complete DATA.TBL closure")
+    return identity, records
+
+
 def parse_index(raw: bytes) -> tuple[dict, list[dict]]:
+    if len(raw) >= 12 and raw[:8] == b"AC6RIDX\0":
+        version = struct.unpack_from(">I", raw, 8)[0]
+        if version == 2:
+            return _parse_v2_index(raw)
     if len(raw) < HEADER.size:
         raise AuditError("index is truncated")
     unpacked = HEADER.unpack_from(raw)
@@ -97,13 +230,7 @@ def parse_index(raw: bytes) -> tuple[dict, list[dict]]:
         or len(raw) != HEADER.size + count * RECORD.size
     ):
         raise AuditError("index header or extent mismatch")
-    labels = ("xex", "data_tbl", "data00", "data01")
-    identity = {}
-    for label, digest, size in zip(labels, digests, sizes, strict=True):
-        expected_size, expected_digest = IDENTITY[label]
-        if size != expected_size or digest.hex() != expected_digest:
-            raise AuditError(f"index {label} identity mismatch")
-        identity[label] = {"size": size, "sha256": digest.hex()}
+    identity = _identity_from_header(digests, sizes)
 
     records = []
     previous = -1
@@ -233,6 +360,19 @@ def cross_check_mission01_resources(records: list[dict]) -> list[dict]:
     return checked
 
 
+def cross_check_campaign_world_closure(records: list[dict]) -> list[dict]:
+    """Require every PAL campaign world only for a complete v2 closure."""
+    by_entry = {record["data_table_entry_index"]: record for record in records}
+    expected = range(119, 134) if len(records) == 926 else (119,)
+    worlds = []
+    for entry in expected:
+        record = by_entry.get(entry)
+        if record is None:
+            raise AuditError(f"required campaign world entry {entry} is missing")
+        worlds.append({**record, "mission_id": entry - 118})
+    return worlds
+
+
 def load_inventory(path: Path) -> tuple[dict[int, dict], list[dict]]:
     document = json.loads(path.read_text(encoding="utf-8"))
     missions = document.get("missions")
@@ -258,6 +398,7 @@ def build_matrix(
     ]
     by_catalog = cross_check_catalog(catalog, campaign_records)
     mission01_resources = cross_check_mission01_resources(records)
+    campaign_worlds = cross_check_campaign_world_closure(records)
     by_inventory, contracts = load_inventory(inventory_path)
     unresolved = [
         contract["name"]
@@ -337,6 +478,7 @@ def build_matrix(
             "unresolved_common_contracts": unresolved,
         },
         "mission01_required_resources": mission01_resources,
+        "campaign_world_entries": campaign_worlds,
         "missions": missions,
         "policy": {
             "retail_bytes_embedded": False,
@@ -349,6 +491,7 @@ def build_matrix(
                 for entry in range(2, 9)
             ),
             "mission01_world_entry_imported": True,
+            "campaign_world_entries_imported": len(campaign_worlds) == 15,
         },
     }
 

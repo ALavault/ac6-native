@@ -26,8 +26,8 @@ reconstruction/ace-combat-6/build/ac6-retail-mission-world-bundle-tests \
 retail mission world bundle missions=15
 ```
 
-The cache index remains the qualified PAL index
-`ca25a10fc9dbf1987d34fd755c9d842c887273e5083e8b4d644339b5a156bbde`.
+The qualified full cache used for the fifteen-world run has index SHA-256
+`cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85`.
 
 ## Boundary retained
 

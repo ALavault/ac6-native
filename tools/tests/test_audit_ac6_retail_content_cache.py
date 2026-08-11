@@ -16,6 +16,7 @@ from audit_ac6_retail_content_cache import (
     IDENTITY,
     MISSION01_REQUIRED_ENTRIES,
     RECORD,
+    V2_HEADER,
     cross_check_mission01_resources,
     parse_index,
     read_current,
@@ -56,6 +57,31 @@ def synthetic_index() -> bytes:
     return header + b"".join(records)
 
 
+def synthetic_v2_index() -> bytes:
+    labels = ("xex", "data_tbl", "data00", "data01")
+    digests = [bytes.fromhex(IDENTITY[label][1]) for label in labels]
+    sizes = [IDENTITY[label][0] for label in labels]
+    header = V2_HEADER.pack(
+        b"AC6RIDX\0",
+        2,
+        V2_HEADER.size,
+        RECORD.size,
+        926,
+        926,
+        2,
+        *digests,
+        *sizes,
+        bytes.fromhex("ab" * 32),
+    )
+    records = []
+    for index in range(926):
+        digest = bytes([index & 0xFF]) * 32
+        records.append(
+            RECORD.pack(index, 0, 0, 1, 0, index * 4096, 100, 200, 200, digest, digest)
+        )
+    return header + b"".join(records)
+
+
 class RetailCacheAuditTests(unittest.TestCase):
     def test_binary_index_shape_is_independently_readable(self) -> None:
         identity, records = parse_index(synthetic_index())
@@ -65,6 +91,12 @@ class RetailCacheAuditTests(unittest.TestCase):
             [row["data_table_entry_index"] for row in records],
         )
         self.assertEqual(IDENTITY["data00"][1], identity["data00"]["sha256"])
+
+    def test_v2_index_covers_complete_closure(self) -> None:
+        identity, records = parse_index(synthetic_v2_index())
+        self.assertEqual(926, len(records))
+        self.assertEqual(925, records[-1]["data_table_entry_index"])
+        self.assertEqual(IDENTITY["xex"][1], identity["xex"]["sha256"])
 
     def test_duplicate_or_truncated_index_fails(self) -> None:
         raw = bytearray(synthetic_index())
@@ -101,13 +133,15 @@ class RetailCacheAuditTests(unittest.TestCase):
         with self.assertRaises(AuditError):
             cross_check_mission01_resources(records)
 
-    def test_current_pointer_version_is_fail_closed(self) -> None:
+    def test_current_pointer_accepts_qualified_versions_and_rejects_unknown(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             cache = Path(temporary)
             digest = bytes.fromhex("12" * 32)
             (cache / "current").write_bytes(CURRENT.pack(b"AC6RCUR\0", 1, CURRENT.size, digest))
             self.assertEqual(digest.hex(), read_current(cache))
             (cache / "current").write_bytes(CURRENT.pack(b"AC6RCUR\0", 2, CURRENT.size, digest))
+            self.assertEqual(digest.hex(), read_current(cache))
+            (cache / "current").write_bytes(CURRENT.pack(b"AC6RCUR\0", 3, CURRENT.size, digest))
             with self.assertRaises(AuditError):
                 read_current(cache)
 
