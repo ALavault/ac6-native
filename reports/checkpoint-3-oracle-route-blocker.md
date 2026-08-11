@@ -181,6 +181,27 @@ son invariance oracle. Aucun rapport oracle↔natif ni portage renderer ne doit
 être déduit de ces captures tant que cette première divergence n'est pas
 expliquée ou que la route n'impose pas un replay d'entrée déterministe.
 
+## Premier rapport oracle↔natif
+
+La même entrée a été convertie en replay retail v2 (`7 200` frames, digest
+`e0147186969a3271c0b1e6b591323cdc842c5539c75edaca1097132443a7931e`) puis
+rejouée deux fois par `reconstruction/ace-combat-6/build/ac6-native` avec le
+cache scellé `cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85`.
+Le rapport natif est déterministe (`final_tick=6`, `script_ended=true`, sans
+progression forcée), et la trace native contient bien 3 600 ticks / 18 000
+événements ; elle vaut
+`34fdf4ab3024634d9dafdd39587804208b44f55567d2babdf45e8082cc8dfc60`.
+
+Le comparateur v2 donne une première divergence à la séquence 1, tick 1,
+domaine `simulation_snapshot`, chemin `payload.active_units` : le natif
+publie `230`, tandis que l'oracle ne publie pas encore ce champ. Ce n'est pas
+encore une divergence de vol exploitable : le contrat de snapshot n'est pas
+aligné et le natif démarre dans son propre état de mission (`state=2`,
+`sub_mission=1`, `step=0`) alors que l'oracle est au manager de campagne
+(`campaign_phase=0`, `campaign_step=3`, `manager_state=1`). Cette frontière de
+mise en place doit être fermée avant de comparer les transforms, objectifs ou
+draws ; aucun rendu direct ne doit être déclaré parité sur ce rapport.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
