@@ -1,0 +1,193 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -56,3 +56,10 @@ if(AC6_BUILD_TESTING)
+     target_include_directories(ac6_decimal_parse_test PRIVATE src)
+     add_test(NAME ac6_decimal_parse_test COMMAND ac6_decimal_parse_test)
++    add_executable(ac6_audio_startup_pacing_test
++        tests/ac6_audio_startup_pacing_test.cpp
++    )
++    target_include_directories(ac6_audio_startup_pacing_test PRIVATE
++        thirdparty/rexglue-sdk/include
++    )
++    add_test(NAME ac6_audio_startup_pacing_test COMMAND ac6_audio_startup_pacing_test)
+ endif()
+--- a/thirdparty/rexglue-sdk/include/native/audio/audio_client.h
++++ b/thirdparty/rexglue-sdk/include/native/audio/audio_client.h
+@@ -62,6 +62,7 @@ struct AudioClientState {
+   uint32_t callback_arg{0};
+   uint32_t wrapped_callback_arg{0};
+   uint64_t next_sequence_number{1};
++  uint64_t queued_played_frames{0};
+   AudioDriverTelemetry telemetry{};
+   AudioClock clock{};
+   AudioDriver* driver{nullptr};
+--- a/thirdparty/rexglue-sdk/include/native/audio/audio_runtime.h
++++ b/thirdparty/rexglue-sdk/include/native/audio/audio_runtime.h
+@@ -51,6 +51,7 @@ struct AudioTelemetrySnapshot {
+ struct AudioClientTimingSnapshot {
+   uint64_t consumed_samples{0};
+   uint64_t consumed_frames{0};
++  uint64_t queued_played_frames{0};
+   uint64_t submitted_tic{0};
+   uint64_t startup_cap_tic{0};
+   uint64_t synthetic_startup_tic{0};
+--- /dev/null
++++ b/thirdparty/rexglue-sdk/include/native/audio/startup_pacing.h
+@@ -0,0 +1,13 @@
++#pragma once
++
++#include <cstdint>
++
++namespace rex::audio {
++
++// Host-injected underrun silence advances the audio clock but is not evidence
++// that the render driver has consumed a queued guest frame.
++constexpr bool HasObservedQueuedPlayback(uint64_t queued_played_frames) noexcept {
++  return queued_played_frames != 0;
++}
++
++}  // namespace rex::audio
+--- a/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_audio.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_audio.cpp
+@@ -185,13 +185,14 @@ ppc_u32_result_t XAudioGetRenderDriverTic_entry(ppc_pvoid_t driver_ptr) {
+       REXKRNL_DEBUG(
+           "XAudioGetRenderDriverTic driver={:08X} guest_tic=0 internal_tic={} "
+           "submitted={} consumed={} queued_depth={} underruns={} callbacks={} "
+-          "callback_throttles={} clock_samples={} clock_frames={} submitted_tic={} "
++          "callback_throttles={} clock_samples={} clock_frames={} queued_played={} submitted_tic={} "
+           "synthetic_tic={} startup_cap_tic={} startup_inflight={} callback_floor_tic={} "
+           "host_elapsed_tic={}",
+           driver_handle, internal_tic, telemetry.submitted_frames,
+           telemetry.consumed_frames, telemetry.queued_depth, telemetry.underrun_count,
+           telemetry.callback_dispatch_count, telemetry.callback_throttle_count,
+-          timing.consumed_samples, timing.consumed_frames, timing.submitted_tic,
++          timing.consumed_samples, timing.consumed_frames, timing.queued_played_frames,
++          timing.submitted_tic,
+           timing.synthetic_startup_tic, timing.startup_cap_tic,
+           timing.startup_inflight_frames, timing.callback_floor_tic,
+           timing.host_elapsed_tic);
+--- a/thirdparty/rexglue-sdk/src/native/audio/audio_runtime.cpp
++++ b/thirdparty/rexglue-sdk/src/native/audio/audio_runtime.cpp
+@@ -11,6 +11,7 @@
+ #include <memory>
+
+ #include <native/audio/audio_runtime.h>
++#include <native/audio/startup_pacing.h>
+
+ #if defined(_WIN32)
+ #include <native/audio/wasapi/wasapi_audio_driver.h>
+@@ -136,8 +137,8 @@ AudioDriverTelemetry MergeDriverTelemetry(const AudioClientState& client) {
+   return merged;
+ }
+
+-bool StartupConsumptionObserved(const AudioClientState& client) {
+-  return client.clock.consumed_samples() != 0;
++bool QueuedPlaybackObserved(const AudioClientState& client) {
++  return HasObservedQueuedPlayback(client.queued_played_frames);
+ }
+
+ uint32_t StartupInflightFrames(const AudioClientState& client) {
+@@ -179,7 +180,9 @@ bool ShouldThrottleStartupCallback(const AudioClientState& client,
+     *out_spacing_remaining_ms = 0;
+   }
+
+-  if (StartupConsumptionObserved(client)) {
++  // Keep serialization active until the host has drained a queued guest frame.
++  // Underrun silence advances the clock, but must not release movie workers.
++  if (QueuedPlaybackObserved(client)) {
+     return false;
+   }
+
+@@ -244,6 +247,7 @@ AudioClientTimingSnapshot BuildTimingSnapshot(const AudioClientState& client) {
+   AudioClientTimingSnapshot snapshot;
+   snapshot.consumed_samples = client.clock.consumed_samples();
+   snapshot.consumed_frames = client.clock.consumed_frames();
++  snapshot.queued_played_frames = client.queued_played_frames;
+   snapshot.submitted_tic = SubmittedTicSamples(client);
+   snapshot.startup_cap_tic = StartupTicCapSamples(client);
+   snapshot.synthetic_startup_tic = ComputeStartupSyntheticTic(client);
+@@ -562,6 +566,7 @@ bool AudioRuntime::ConsumeNextFrameForClient(const size_t index, AudioFrame* out
+
+   AudioFrame frame = client.queued_frames.front();
+   client.queued_frames.pop_front();
++  ++client.queued_played_frames;
+   client.telemetry.queued_depth = static_cast<uint32_t>(client.queued_frames.size());
+   trace_buffer_.Record(AudioTraceSubsystem::kCore, AudioTraceEventType::kFrameConsumed,
+                        static_cast<uint32_t>(index), frame.guest_submit_ptr,
+@@ -765,6 +770,7 @@ size_t AudioRuntime::ConsumeQueuedFramesForClient(const size_t index, const size
+   while (consumed < max_frames && !client.queued_frames.empty()) {
+     const AudioFrame frame = client.queued_frames.front();
+     client.queued_frames.pop_front();
++    ++client.queued_played_frames;
+     client.telemetry.last_consume_ticks = static_cast<uint64_t>(NextTickLocked());
+     client.telemetry.queued_depth = static_cast<uint32_t>(client.queued_frames.size());
+     client.telemetry.consumed_frames =
+@@ -823,9 +829,9 @@ void AudioRuntime::WorkerThreadMain() {
+
+     // Check each active client and dispatch callbacks to fill queue to target
+     for (size_t i = 0; i < clients_.size(); ++i) {
+-      // Before the first real playback consumption, keep callback lead tightly
+-      // serialized so guest-side movie/cutscene workers cannot sprint ahead of
+-      // the render driver on timeout wakes alone.
++      // Before the host drains the first queued render-driver frame, keep
++      // callback lead tightly serialized so guest-side movie/cutscene workers
++      // cannot sprint ahead on timeout wakes or underrun-silence progress alone.
+       uint32_t dispatch = 0;
+       while (true) {
+         uint32_t client_callback = 0;
+@@ -846,7 +852,7 @@ void AudioRuntime::WorkerThreadMain() {
+             break;
+           }
+           target = EffectiveCallbackTargetQueueDepth(clients_[i]);
+-          startup_mode = clients_[i].telemetry.callback_dispatch_count == 0;
++          startup_mode = !QueuedPlaybackObserved(clients_[i]);
+           callback_limit = startup_mode ? 1u : target;
+           if (dispatch >= callback_limit) {
+             break;
+@@ -981,13 +987,14 @@ void AudioRuntime::WorkerThreadMain() {
+         const auto& c = clients_[i];
+         REXAPU_INFO(
+             "AudioRuntime startup: iter={} client={} queued={} target={} low_water={} "
+-            "submitted={} consumed={} underruns={} callbacks={} tic={} synthetic_tic={} "
++            "submitted={} consumed={} queued_played={} underruns={} callbacks={} tic={} synthetic_tic={} "
+             "submitted_tic={} startup_cap_tic={} startup_inflight={} callback_throttles={} "
+             "callback_empty={} last_callback_frames={} last_callback_us={} peak={} drift_ms={:.1f}",
+             worker_iteration_count_, i, c.queued_frames.size(),
+             EffectiveCallbackTargetQueueDepth(c), EffectiveCallbackLowWaterFrames(c),
+-            c.telemetry.submitted_frames, c.telemetry.consumed_frames, c.telemetry.underrun_count,
+-            c.telemetry.callback_dispatch_count, ComputeRenderDriverTic(c),
++            c.telemetry.submitted_frames, c.telemetry.consumed_frames, c.queued_played_frames,
++            c.telemetry.underrun_count, c.telemetry.callback_dispatch_count,
++            ComputeRenderDriverTic(c),
+             ComputeStartupSyntheticTic(c), SubmittedTicSamples(c), StartupTicCapSamples(c),
+             StartupInflightFrames(c), c.telemetry.callback_throttle_count,
+             c.telemetry.callback_empty_count, c.telemetry.last_callback_produced_frames,
+@@ -1005,12 +1012,12 @@ void AudioRuntime::WorkerThreadMain() {
+         const auto& c = clients_[i];
+         REXAPU_DEBUG(
+             "AudioRuntime periodic: client={} queued={} target={} low_water={} submitted={} "
+-            "consumed={} underruns={} callbacks={} tic={} synthetic_tic={} submitted_tic={} "
++            "consumed={} queued_played={} underruns={} callbacks={} tic={} synthetic_tic={} submitted_tic={} "
+             "startup_cap_tic={} startup_inflight={} callback_throttles={} callback_empty={} "
+             "last_callback_frames={} last_callback_us={} peak={} drift_ms={:.1f}",
+             i, c.queued_frames.size(), EffectiveCallbackTargetQueueDepth(c),
+             EffectiveCallbackLowWaterFrames(c), c.telemetry.submitted_frames,
+-            c.telemetry.consumed_frames, c.telemetry.underrun_count,
++            c.telemetry.consumed_frames, c.queued_played_frames, c.telemetry.underrun_count,
+             c.telemetry.callback_dispatch_count, ComputeRenderDriverTic(c),
+             ComputeStartupSyntheticTic(c), SubmittedTicSamples(c), StartupTicCapSamples(c),
+             StartupInflightFrames(c), c.telemetry.callback_throttle_count,
+--- /dev/null
++++ b/tests/ac6_audio_startup_pacing_test.cpp
+@@ -0,0 +1,11 @@
++#include <native/audio/startup_pacing.h>
++
++#include <cassert>
++
++int main() {
++  using rex::audio::HasObservedQueuedPlayback;
++  assert(!HasObservedQueuedPlayback(0));
++  assert(HasObservedQueuedPlayback(1));
++  assert(HasObservedQueuedPlayback(42));
++  return 0;
++}
