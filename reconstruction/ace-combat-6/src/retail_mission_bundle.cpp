@@ -29,6 +29,14 @@ std::optional<RetailMissionBundle> RetailMissionBundle::open(
   result.bundle_ = std::move(*campaign);
   result.scenario_payload_ = std::move(*scenario_payload);
   result.scenario_ = std::move(*scenario);
+  if (const std::optional<std::uint32_t> world_entry =
+          mission_world_data_table_entry(config.mission_id);
+      world_entry.has_value() && store.find(*world_entry) != nullptr) {
+    std::optional<RetailMissionWorldBundle> world =
+        RetailMissionWorldBundle::open(store, config.mission_id);
+    if (!world.has_value()) return std::nullopt;
+    result.world_ = std::move(*world);
+  }
   return result;
 }
 

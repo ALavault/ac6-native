@@ -2,6 +2,7 @@
 
 #include "ac6/campaign_progression.h"
 #include "ac6/retail_campaign_bundle.h"
+#include "ac6/retail_mission_world_bundle.h"
 #include "ac6/retail_scenario.h"
 
 #include <cstdint>
@@ -51,12 +52,18 @@ class RetailMissionBundle final {
     return scenario_payload_;
   }
   const std::optional<MissionScenario>& scenario() const noexcept { return scenario_; }
+  // Full product caches carry the matching world entry. Bounded scenario
+  // fixtures may omit it; they remain valid for parser tests only.
+  const std::optional<RetailMissionWorldBundle>& world() const noexcept {
+    return world_;
+  }
 
  private:
   RetailMissionBundleConfig config_{};
   std::optional<RetailCampaignBundle> bundle_;
   std::optional<ScenarioPayload> scenario_payload_;
   std::optional<MissionScenario> scenario_;
+  std::optional<RetailMissionWorldBundle> world_;
 };
 
 }  // namespace ac6::retail

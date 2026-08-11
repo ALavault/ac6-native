@@ -254,6 +254,12 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     // session product must not re-open an arbitrary child after this boundary.
     REQUIRE(mission->scenario_payload().has_value());
     REQUIRE(mission->scenario().has_value());
+    const std::optional<std::uint32_t> world_entry =
+        ac6::retail::mission_world_data_table_entry(mission_id);
+    if (world_entry.has_value() && store.find(*world_entry) != nullptr) {
+      REQUIRE(mission->world().has_value());
+      REQUIRE(mission->world()->data_table_entry() == *world_entry);
+    }
     const std::optional<std::span<const std::uint8_t>> scenario_bytes = mission->child(0);
     REQUIRE(scenario_bytes.has_value());
     std::vector<std::uint8_t> scenario_copy(scenario_bytes->begin(), scenario_bytes->end());
