@@ -23,10 +23,17 @@ struct RenderDeviceCaps {
   std::uint32_t vendor_id{};
   std::uint32_t device_id{};
   std::uint32_t max_image_dimension_2d{};
+  std::uint32_t max_color_sample_count{1};
   float max_sampler_anisotropy{1.0F};
   bool discrete_gpu{};
   bool depth_d32{};
   bool sampler_anisotropy{};
+  bool color_rgba8_unorm{};
+  bool color_bgra8_unorm{};
+  // Surface-specific modes remain false until a swapchain query qualifies
+  // them; the headless transport never invents presentation support.
+  bool presentation_fifo{};
+  bool presentation_mailbox{};
   std::string device_name;
 };
 

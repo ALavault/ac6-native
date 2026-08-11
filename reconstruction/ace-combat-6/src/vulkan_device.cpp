@@ -203,15 +203,33 @@ VulkanBackendCreateResult VulkanBackend::create() {
   VkPhysicalDeviceProperties properties{};
   VkPhysicalDeviceFeatures features{};
   VkFormatProperties depth_properties{};
+  VkFormatProperties rgba8_properties{};
+  VkFormatProperties bgra8_properties{};
   vkGetPhysicalDeviceProperties(state->physical_device, &properties);
   vkGetPhysicalDeviceFeatures(state->physical_device, &features);
   vkGetPhysicalDeviceFormatProperties(state->physical_device,
                                       VK_FORMAT_D32_SFLOAT,
                                       &depth_properties);
+  vkGetPhysicalDeviceFormatProperties(state->physical_device,
+                                      VK_FORMAT_R8G8B8A8_UNORM,
+                                      &rgba8_properties);
+  vkGetPhysicalDeviceFormatProperties(state->physical_device,
+                                      VK_FORMAT_B8G8R8A8_UNORM,
+                                      &bgra8_properties);
   state->caps.api_version = properties.apiVersion;
   state->caps.vendor_id = properties.vendorID;
   state->caps.device_id = properties.deviceID;
   state->caps.max_image_dimension_2d = properties.limits.maxImageDimension2D;
+  const VkSampleCountFlags sample_counts =
+      properties.limits.framebufferColorSampleCounts;
+  for (const auto sample_count : {VK_SAMPLE_COUNT_64_BIT, VK_SAMPLE_COUNT_32_BIT,
+                                  VK_SAMPLE_COUNT_16_BIT, VK_SAMPLE_COUNT_8_BIT,
+                                  VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_2_BIT}) {
+    if ((sample_counts & sample_count) != 0U) {
+      state->caps.max_color_sample_count = static_cast<std::uint32_t>(sample_count);
+      break;
+    }
+  }
   state->caps.max_sampler_anisotropy = properties.limits.maxSamplerAnisotropy;
   state->caps.discrete_gpu =
       properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
@@ -219,6 +237,10 @@ VulkanBackendCreateResult VulkanBackend::create() {
       (depth_properties.optimalTilingFeatures &
        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0U;
   state->caps.sampler_anisotropy = features.samplerAnisotropy != VK_FALSE;
+  state->caps.color_rgba8_unorm =
+      (rgba8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0U;
+  state->caps.color_bgra8_unorm =
+      (bgra8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0U;
   state->caps.device_name = properties.deviceName;
 
   result.backend = std::unique_ptr<VulkanBackend>(new VulkanBackend(std::move(state)));
