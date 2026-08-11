@@ -116,6 +116,13 @@ class RetailSession final {
   // has its objective activated.
   ScriptAdvance advance_script() noexcept;
 
+  // Save/restore the execution and retail script cursor as one product
+  // boundary. A retail save must carry the sealed cache identity; legacy
+  // manifest saves are intentionally rejected here.
+  bool save_checkpoint(MissionExecution::Checkpoint& checkpoint) const noexcept;
+  bool restore_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept;
+  bool restore_save(const SessionSaveSnapshot& snapshot) noexcept;
+
   // Draws the world the container built: one marker per active unit, coloured
   // by the faction byte the retail faction table gave it, the local player
   // distinguished. Returns how many landed on screen.

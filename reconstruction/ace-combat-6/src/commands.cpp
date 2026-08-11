@@ -1001,7 +1001,7 @@ int run_commands(int argc, char** argv) {
   if (argc >= 2 && std::string_view(argv[1]) == "--help") {
     std::fprintf(stdout,
                  "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n"
-                 "       ac6-native play --cache CACHE_ROOT [--save SAVE_PATH]\n"
+                 "       ac6-native play --cache CACHE_ROOT [--save SAVE_PATH] [--resume SAVE_PATH]\n"
                  "                       [--replay REPLAY_FILE] [--capture PPM]\n"
                  "                       [--scene-capture PPM] [--scene-report JSON]\n"
                  "                       [--frames COUNT] [--aircraft ID] [--weapon ID]\n"
@@ -1015,7 +1015,7 @@ int run_commands(int argc, char** argv) {
   if (argc >= 2 && std::string_view(argv[1]) == "play") {
     if (argc < 3) {
       std::fprintf(stderr,
-                   "usage: ac6-native play --cache CACHE_ROOT [--save SAVE_PATH]\n");
+                   "usage: ac6-native play --cache CACHE_ROOT [--save SAVE_PATH] [--resume SAVE_PATH]\n");
       return 120;
     }
     return ac6::retail_cli::run_play(argc, argv);

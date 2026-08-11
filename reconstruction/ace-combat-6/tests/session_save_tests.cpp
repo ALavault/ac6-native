@@ -48,6 +48,10 @@ int main() {
   mission_checkpoint.waves.entries = {
       {{1, 3, {5000, 2, 119, false},
         {5000, 2, {25.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}}, false}};
+  mission_checkpoint.retail_script_state_valid = true;
+  mission_checkpoint.retail_script_sub_mission = 2;
+  mission_checkpoint.retail_script_step = 1;
+  mission_checkpoint.retail_script_end_code = 0;
   snapshot.checkpoint = mission_checkpoint;
   ac6::SessionSaveStore store;
   REQUIRE(store.save(2, snapshot));
@@ -123,6 +127,10 @@ int main() {
   }
   REQUIRE(loaded.read_file(v5_path));
   REQUIRE(loaded.load(4) != nullptr && !loaded.load(4)->checkpoint.has_value());
+  auto invalid = snapshot;
+  invalid.checkpoint->retail_script_state_valid = false;
+  invalid.checkpoint->retail_script_sub_mission = 1;
+  REQUIRE(!store.save(3, invalid));
   std::remove(path);
   std::remove(bad_path);
   std::remove(v1_path);

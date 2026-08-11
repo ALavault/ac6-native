@@ -1103,6 +1103,11 @@ class MissionExecution final {
     MissionWaveSnapshot waves;
     MissionSequenceSnapshot sequence;
     RadioPlaybackSnapshot radio_playback;
+    // RetailSession owns this cursor; generic checkpoints leave it clear.
+    bool retail_script_state_valid{};
+    std::uint32_t retail_script_sub_mission{};
+    std::uint32_t retail_script_step{};
+    std::int32_t retail_script_end_code{};
     bool operator==(const Checkpoint&) const = default;
   };
   bool save_checkpoint(Checkpoint& checkpoint) const noexcept;

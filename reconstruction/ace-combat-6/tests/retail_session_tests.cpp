@@ -324,6 +324,32 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
                 mission_id, qualified_session->script().executed().size(),
                 qualified_session->script().ended() ? 1u : 0u,
                 static_cast<unsigned>(qualified_session->state()));
+    if (mission_id == 1) {
+      ac6::MissionExecution::Checkpoint checkpoint;
+      REQUIRE(qualified_session->save_checkpoint(checkpoint));
+      ac6::SessionSaveSnapshot snapshot{
+          mission_id, store.index_sha256(), qualified_session->execution().snapshot(), {},
+          checkpoint};
+      ac6::SessionSaveStore saves;
+      REQUIRE(saves.save(1, snapshot));
+      const std::filesystem::path save_path =
+          std::filesystem::temp_directory_path() /
+          ("ac6-retail-resume-" + std::to_string(::getpid()) + ".ac6s");
+      REQUIRE(saves.write_file(save_path));
+      ac6::SessionSaveStore loaded;
+      REQUIRE(loaded.read_file(save_path));
+      std::unique_ptr<RetailSession> resumed = RetailSession::open(
+          store, {1, 1, true},
+          {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+           ac6::retail::RetailDifficulty::Normal, true});
+      REQUIRE(resumed != nullptr && loaded.load(1) != nullptr);
+      REQUIRE(resumed->restore_save(*loaded.load(1)));
+      ac6::SessionSaveSnapshot wrong = *loaded.load(1);
+      wrong.content_index_sha256[0] ^= 0xffu;
+      REQUIRE(!resumed->restore_save(wrong));
+      std::error_code ignored;
+      std::filesystem::remove(save_path, ignored);
+    }
     REQUIRE(qualified_frame.world.mission_id == mission_id);
     const auto mission_objectives =
         qualified_session->world().objectives.find_by_mission(mission_id);
@@ -834,6 +860,28 @@ int main(int argc, char** argv) {
   REQUIRE(scheduled->debrief().completed_objectives == 4);
   REQUIRE(scheduled->debrief().failed_objectives == 0);
   REQUIRE(scheduled_frame.script_ended);
+
+  // A retail cursor must survive a checkpoint and produce the same next
+  // frame; restoring only MissionExecution would restart the authored script
+  // at step zero and diverge here.
+  std::unique_ptr<RetailSession> checkpoint_source = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal, true});
+  std::unique_ptr<RetailSession> checkpoint_target = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal, true});
+  REQUIRE(checkpoint_source != nullptr && checkpoint_target != nullptr);
+  (void)checkpoint_source->tick(kFixedDt, session_input(1));
+  (void)checkpoint_source->tick(kFixedDt, session_input(2));
+  ac6::MissionExecution::Checkpoint retail_checkpoint;
+  REQUIRE(checkpoint_source->save_checkpoint(retail_checkpoint));
+  REQUIRE(retail_checkpoint.retail_script_state_valid);
+  REQUIRE(checkpoint_target->restore_checkpoint(retail_checkpoint));
+  const ac6::retail::RetailSessionFrame source_next =
+      checkpoint_source->tick(kFixedDt, session_input(3));
+  const ac6::retail::RetailSessionFrame target_next =
+      checkpoint_target->tick(kFixedDt, session_input(3));
+  REQUIRE(frame_hash(source_next) == frame_hash(target_next));
 
   // The session loop is a session loop: the flight integrator moved the player
   // off the origin, the camera follows it at the runtime's fixed offset, and

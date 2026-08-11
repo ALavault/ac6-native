@@ -249,9 +249,9 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-      "sha256": "958ee7455886e0a4b71d5352a4e7161dd18675f11ff31237449c00f19ad1f7a2",
+      "sha256": "dd830dbbebb92e5ab9144b77ed50565f337a42b957a86bf48d4f0ec18a50df6c",
       "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from the class-0 Set on the campaign arm (820a72c0, 0x820A72EC, vtable 0x820568D4 = CAce6UnitPlayer) and from category 2 only on the online arm, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-      "size": 13282
+      "size": 14842
      }
     ]
    },
@@ -284,9 +284,9 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/src/retail_mission_script.cpp",
-      "sha256": "c88d2aa04ceaf92748be4f5a679a042e755f6a119953e4f6877f6b8e75ec5623",
+      "sha256": "5aac13264bdc59e97363333976f099062d3a542214ca58c4cec7b40235560cdb",
       "claim": "src/retail_mission_script.cpp implements the advance in 0x82267370's own order, its three-way entry guard, the payload step-count bound, the exhaustion return and the end code 0x82266710 writes",
-      "size": 4744
+      "size": 5851
      }
     ]
    },

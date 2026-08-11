@@ -33,6 +33,7 @@ namespace {
 struct Options final {
   std::filesystem::path cache;
   std::filesystem::path save;
+  std::filesystem::path resume;
   std::filesystem::path replay;
   std::filesystem::path report;
   std::filesystem::path capture;
@@ -68,6 +69,7 @@ bool parse_play_options(int argc, char** argv, Options& options) {
     const std::filesystem::path value(argv[++index]);
     if (option == "--cache" && options.cache.empty()) options.cache = value;
     else if (option == "--save" && options.save.empty()) options.save = value;
+    else if (option == "--resume" && options.resume.empty()) options.resume = value;
     else if (option == "--replay" && options.replay.empty()) options.replay = value;
     else if (option == "--capture" && options.capture.empty()) options.capture = value;
     else if (option == "--scene-capture" && options.scene_capture.empty()) {
@@ -280,6 +282,16 @@ int run_play_impl(const Options& options) {
                                   {1, {0, 0}, retail::kRetailOpeningCameraModeWord,
                                    options.difficulty, true});
   if (session == nullptr) return 125;
+  if (!options.resume.empty()) {
+    SessionSaveStore saves;
+    const SessionSaveSnapshot* snapshot = nullptr;
+    if (!saves.read_file(options.resume) || (snapshot = saves.load(1)) == nullptr ||
+        !session->restore_save(*snapshot)) {
+      std::fprintf(stderr,
+                   "ac6_retail=fail error=save_incompatible detail=cache_or_script_state\n");
+      return 132;
+    }
+  }
   NativeGraphics graphics;
   if (!graphics.initialize(1280, 720)) {
     std::fprintf(stderr,
@@ -361,7 +373,7 @@ int run_play_impl(const Options& options) {
   if (!options.save.empty()) {
     SessionSaveStore saves;
     MissionExecution::Checkpoint checkpoint;
-    if (!session->execution().save_checkpoint(checkpoint) ||
+    if (!session->save_checkpoint(checkpoint) ||
         !saves.save(1, {1, store.index_sha256(), session->execution().snapshot(), {}, checkpoint}) ||
         !saves.write_file(options.save)) return 131;
   }

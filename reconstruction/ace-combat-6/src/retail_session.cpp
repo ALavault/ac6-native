@@ -251,6 +251,44 @@ ScriptAdvance RetailSession::advance_script() noexcept {
   return result;
 }
 
+bool RetailSession::save_checkpoint(MissionExecution::Checkpoint& checkpoint) const noexcept {
+  if (execution_ == nullptr || !execution_->save_checkpoint(checkpoint)) return false;
+  checkpoint.retail_script_state_valid = true;
+  checkpoint.retail_script_sub_mission = script_.sub_mission();
+  checkpoint.retail_script_step = script_.step();
+  checkpoint.retail_script_end_code = script_.end_code();
+  return true;
+}
+
+bool RetailSession::restore_checkpoint(
+    const MissionExecution::Checkpoint& checkpoint) noexcept {
+  if (execution_ == nullptr || !checkpoint.retail_script_state_valid) return false;
+  MissionScriptRunner previous_script = script_;
+  if (!script_.restore_cursor(checkpoint.retail_script_sub_mission,
+                              checkpoint.retail_script_step,
+                              checkpoint.retail_script_end_code)) {
+    return false;
+  }
+  if (!execution_->restore_checkpoint(checkpoint)) {
+    script_ = std::move(previous_script);
+    return false;
+  }
+  tick_ = checkpoint.flight.tick;
+  return true;
+}
+
+bool RetailSession::restore_save(const SessionSaveSnapshot& snapshot) noexcept {
+  if (!bundle_.has_value() || snapshot.mission_id != mission_id_ ||
+      !snapshot.checkpoint.has_value() ||
+      std::all_of(snapshot.content_index_sha256.begin(),
+                  snapshot.content_index_sha256.end(),
+                  [](std::uint8_t byte) { return byte == 0; }) ||
+      snapshot.content_index_sha256 != bundle_->content_index_sha256) {
+    return false;
+  }
+  return restore_checkpoint(*snapshot.checkpoint);
+}
+
 ScriptAdvance RetailSession::resolve_tag7_conditions() noexcept {
   // A target can itself dispatch another tag-7 step. Retail follows that
   // dispatch synchronously; retain the same property while bounding malformed

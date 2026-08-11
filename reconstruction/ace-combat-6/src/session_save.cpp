@@ -60,7 +60,14 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
       checkpoint.scenario.radio_history.size() > 65536 || checkpoint.combat_units.empty() ||
       checkpoint.unit_records.size() > 4096 || checkpoint.combat_units.size() > 4096 ||
       checkpoint.resource_identities.size() > 4096 || checkpoint.waves.entries.size() > 4096 ||
-      checkpoint.sequence.entries.size() > 4096) return false;
+      checkpoint.sequence.entries.size() > 4096 ||
+      (!checkpoint.retail_script_state_valid &&
+       (checkpoint.retail_script_sub_mission != 0 || checkpoint.retail_script_step != 0 ||
+        checkpoint.retail_script_end_code != 0)) ||
+      (checkpoint.retail_script_state_valid &&
+       checkpoint.retail_script_end_code != 0 && checkpoint.retail_script_end_code != 1)) {
+    return false;
+  }
   std::uint32_t previous_objective = 0;
   for (const ObjectiveRecord& objective : checkpoint.scenario.objectives) {
     if (!objective.valid() || objective.id <= previous_objective ||
@@ -351,12 +358,18 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
   write_f32(output, checkpoint.radio_playback.duration_seconds);
   write_u32(output, static_cast<std::uint32_t>(checkpoint.radio_playback.state));
   write_wave_snapshot(output, checkpoint.waves);
+  write_u32(output, checkpoint.retail_script_state_valid ? 1u : 0u);
+  if (checkpoint.retail_script_state_valid) {
+    write_u32(output, checkpoint.retail_script_sub_mission);
+    write_u32(output, checkpoint.retail_script_step);
+    write_u32(output, static_cast<std::uint32_t>(checkpoint.retail_script_end_code));
+  }
 }
 
 bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint,
                      bool has_sequence, bool has_radio, bool has_resources,
                      bool has_resource_contract, bool has_unit_records, bool has_waves,
-                     bool has_objective_conditions) {
+                     bool has_objective_conditions, bool has_retail_script) {
   std::uint32_t state = 0;
   std::uint32_t objective_count = 0;
   std::uint32_t radio_count = 0;
@@ -465,6 +478,19 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
     checkpoint.radio_playback.state = static_cast<RadioPlaybackState>(radio_state);
   }
   if (has_waves && !read_wave_snapshot(input, checkpoint.waves)) return false;
+  if (has_retail_script) {
+    std::uint32_t state_valid = 0;
+    std::uint32_t end_code = 0;
+    if (!read_u32(input, state_valid) || state_valid > 1) return false;
+    checkpoint.retail_script_state_valid = state_valid != 0;
+    if (checkpoint.retail_script_state_valid &&
+        (!read_u32(input, checkpoint.retail_script_sub_mission) ||
+         !read_u32(input, checkpoint.retail_script_step) ||
+         !read_u32(input, end_code))) {
+      return false;
+    }
+    checkpoint.retail_script_end_code = static_cast<std::int32_t>(end_code);
+  }
   return valid_checkpoint(checkpoint);
 }
 
@@ -495,7 +521,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 10);
+  write_u32(output, 11);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -550,7 +576,8 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   std::uint32_t count = 0;
   if (!read_u32(input, version) || !read_u32(input, count) ||
       (version != 1 && version != 2 && version != 3 && version != 4 && version != 5 &&
-       version != 6 && version != 7 && version != 8 && version != 9 && version != 10) ||
+       version != 6 && version != 7 && version != 8 && version != 9 && version != 10 &&
+       version != 11) ||
       count > 1024) {
     return false;
   }
@@ -589,7 +616,8 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
       if (has_checkpoint != 0) {
         MissionExecution::Checkpoint checkpoint;
         if (!read_checkpoint(input, checkpoint, version >= 3, version >= 4, version >= 6,
-                             version >= 7, version >= 8, version >= 8, version >= 9)) return false;
+                             version >= 7, version >= 8, version >= 8, version >= 9,
+                             version >= 11)) return false;
         snapshot.checkpoint = std::move(checkpoint);
       }
     }

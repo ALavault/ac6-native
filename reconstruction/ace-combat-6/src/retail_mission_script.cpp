@@ -82,6 +82,37 @@ ScriptAdvance MissionScriptRunner::select(std::uint32_t sub_mission) noexcept {
   return dispatch_step();
 }
 
+bool MissionScriptRunner::restore_cursor(std::uint32_t sub_mission,
+                                         std::uint32_t step,
+                                         std::int32_t end_code) noexcept {
+  if (end_code != 0 && end_code != kMissionEndByScript) return false;
+  if (end_code != 0) {
+    if (sub_mission > steps_.size()) return false;
+    if (sub_mission == steps_.size() && step != 0) return false;
+    if (sub_mission < steps_.size() &&
+        (sub_mission >= step_bounds_.size() ||
+         step >= step_bounds_[sub_mission] || step >= steps_[sub_mission].size())) {
+      return false;
+    }
+    sub_mission_ = sub_mission;
+    step_ = step;
+    current_.reset();
+    executed_.clear();
+    end_code_ = end_code;
+    return true;
+  }
+  if (sub_mission >= steps_.size() || sub_mission >= step_bounds_.size() ||
+      step >= step_bounds_[sub_mission] || step >= steps_[sub_mission].size()) {
+    return false;
+  }
+  sub_mission_ = sub_mission;
+  step_ = step;
+  current_ = ScriptStepRun{sub_mission, step, steps_[sub_mission][step]};
+  executed_.clear();
+  end_code_ = 0;
+  return true;
+}
+
 // 0x8226E158, reduced to the cursor's view of it: publish the current step to
 // context+0x268, then let the tag decide whether control returns to the advance.
 ScriptAdvance MissionScriptRunner::dispatch_step() noexcept {

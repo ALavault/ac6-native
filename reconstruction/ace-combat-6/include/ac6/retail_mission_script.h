@@ -119,6 +119,13 @@ class MissionScriptRunner final {
   std::int32_t end_code() const noexcept { return end_code_; }
   bool ended() const noexcept { return end_code_ != 0; }
 
+  // Restore only the cursor owned by this runner. The mission execution
+  // checkpoint is restored separately; keeping this operation explicit avoids
+  // treating an objective snapshot as proof that the retail script position
+  // was also persisted.
+  bool restore_cursor(std::uint32_t sub_mission, std::uint32_t step,
+                      std::int32_t end_code) noexcept;
+
  private:
   // 0x8226E158's step dispatch, reduced to what the cursor needs: which tag is
   // current, and whether that tag hands control back to the advance.
