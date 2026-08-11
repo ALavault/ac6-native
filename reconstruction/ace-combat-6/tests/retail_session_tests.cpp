@@ -250,6 +250,10 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
             store, {mission_id, ac6::retail::RetailDifficulty::Normal,
                     {1, 1, true}});
     REQUIRE(mission.has_value());
+    // RetailMissionBundle qualifies and retains the parsed scenario; the
+    // session product must not re-open an arbitrary child after this boundary.
+    REQUIRE(mission->scenario_payload().has_value());
+    REQUIRE(mission->scenario().has_value());
     const std::optional<std::span<const std::uint8_t>> scenario_bytes = mission->child(0);
     REQUIRE(scenario_bytes.has_value());
     std::vector<std::uint8_t> scenario_copy(scenario_bytes->begin(), scenario_bytes->end());

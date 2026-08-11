@@ -2,6 +2,7 @@
 
 #include "ac6/campaign_progression.h"
 #include "ac6/retail_campaign_bundle.h"
+#include "ac6/retail_scenario.h"
 
 #include <cstdint>
 #include <optional>
@@ -43,10 +44,19 @@ class RetailMissionBundle final {
   std::optional<std::span<const std::uint8_t>> child(std::uint32_t index) const noexcept {
     return bundle_->child(index);
   }
+  // The scenario is qualified once at the product boundary.  Keeping both
+  // views here prevents a store-backed launch from silently reparsing an
+  // arbitrary child payload after the bundle has been accepted.
+  const std::optional<ScenarioPayload>& scenario_payload() const noexcept {
+    return scenario_payload_;
+  }
+  const std::optional<MissionScenario>& scenario() const noexcept { return scenario_; }
 
  private:
   RetailMissionBundleConfig config_{};
   std::optional<RetailCampaignBundle> bundle_;
+  std::optional<ScenarioPayload> scenario_payload_;
+  std::optional<MissionScenario> scenario_;
 };
 
 }  // namespace ac6::retail

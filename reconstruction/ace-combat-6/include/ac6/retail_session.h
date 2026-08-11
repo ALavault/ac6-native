@@ -130,6 +130,9 @@ class RetailSession final {
 
  private:
   RetailSession() = default;
+  static std::unique_ptr<RetailSession> open_parsed(ScenarioPayload payload,
+                                                    MissionScenario scenario,
+                                                    RetailSessionConfig config);
   void track_objective(std::uint32_t sub_mission) noexcept;
   // Resolve tag-7 steps at the same dispatch boundary as retail. A satisfied
   // condition selects its target; an unsatisfied or sentinel condition calls

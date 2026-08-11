@@ -51,14 +51,14 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
       return nullptr;
     }
   }
-  const std::optional<RetailMissionBundle> mission = RetailMissionBundle::open(
+  std::optional<RetailMissionBundle> mission = RetailMissionBundle::open(
       store, {config.mission_id, config.difficulty, loadout});
   if (!mission.has_value()) return nullptr;
-  const std::optional<std::span<const std::uint8_t>> scenario = mission->child(0);
-  if (!scenario.has_value()) return nullptr;
-  std::vector<std::uint8_t> scenario_payload(scenario->begin(), scenario->end());
-  std::unique_ptr<RetailSession> session =
-      open(std::move(scenario_payload), config);
+  if (!mission->scenario_payload().has_value() || !mission->scenario().has_value()) {
+    return nullptr;
+  }
+  std::unique_ptr<RetailSession> session = open_parsed(
+      std::move(*mission->scenario_payload()), std::move(*mission->scenario()), config);
   if (session == nullptr) return nullptr;
   session->bundle_ = RetailSessionBundle{
       mission->data_table_entry(), loadout, mission->content_index_sha256(),
@@ -75,12 +75,21 @@ std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> byt
   if (!payload.has_value()) return nullptr;
   std::optional<MissionScenario> scenario = MissionScenario::parse(*payload);
   if (!scenario.has_value()) return nullptr;
+  return open_parsed(std::move(*payload), std::move(*scenario), config);
+}
+
+std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payload,
+                                                           MissionScenario scenario,
+                                                           RetailSessionConfig config) {
+  const std::optional<RetailCameraModeSelection> camera_mode =
+      resolve_retail_camera_mode(config.camera_mode_word);
+  if (!camera_mode.has_value()) return nullptr;
   // 0x8219BDD8's order: read the container, publish it at context+0x264, then
   // size the counter table, the sub-mission timestamps and the faction census
   // from the slots it just published. build_retail_world does that and then
   // runs 0x820A7070 over the unit slot.
   std::optional<RetailWorld> world =
-      build_retail_world(*scenario, config.mission_id,
+      build_retail_world(scenario, config.mission_id,
                          ac6::retail::kMissionManagerCampaign,
                          config.local_player);
   if (!world.has_value()) return nullptr;
@@ -91,8 +100,8 @@ std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> byt
   session->mission_id_ = config.mission_id;
   session->camera_mode_ = *camera_mode;
   session->player_entity_ = *player;
-  session->payload_ = std::make_unique<ScenarioPayload>(std::move(*payload));
-  session->scenario_ = std::make_unique<MissionScenario>(std::move(*scenario));
+  session->payload_ = std::make_unique<ScenarioPayload>(std::move(payload));
+  session->scenario_ = std::make_unique<MissionScenario>(std::move(scenario));
   session->world_ = std::make_unique<RetailWorld>(std::move(*world));
   session->script_ = MissionScriptRunner::from(*session->scenario_);
 
