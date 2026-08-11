@@ -1,0 +1,216 @@
+--- a/src/ac6_oracle_probe.cpp
++++ b/src/ac6_oracle_probe.cpp
+@@ -1,6 +1,7 @@
+ #include <array>
+ #include <atomic>
+ #include <cstdint>
++#include <filesystem>
+ #include <fstream>
+ #include <iomanip>
+ #include <mutex>
+@@ -12,18 +13,25 @@
+ #include <rex/crypto/sha256.h>
+ #include <rex/cvar.h>
+ #include <rex/logging.h>
++#include <rex/memory.h>
+ #include <rex/ppc.h>
+
+ #include "d3d_hooks.h"
+
+ REXCVAR_DEFINE_STRING(ac6_oracle_probe_path, "", "AC6/Oracle",
+                       "Capture-only Mission 01 JSONL probe output path");
++REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_path, "", "AC6/Oracle",
++                      "Capture-only five-domain execution trace JSONL path");
++REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_arm_path, "", "AC6/Oracle",
++                      "File whose presence arms the Mission 01 execution window");
+
+ namespace ac6::oracle {
+ namespace {
+
+ constexpr uint64_t kMaxEvents = 1800;
+ constexpr uint64_t kMaxOutputBytes = 16 * 1024 * 1024;
++constexpr uint64_t kTraceV2Ticks = 3600;
++constexpr uint64_t kTraceV2MaxOutputBytes = 32 * 1024 * 1024;
+
+ struct InputSnapshot {
+   uint32_t packet_number{0};
+@@ -46,6 +54,17 @@
+ uint64_t g_output_bytes = 0;
+ bool g_output_failed = false;
+
++std::mutex g_trace_v2_mutex;
++std::ofstream g_trace_v2_output;
++std::string g_trace_v2_output_path;
++uint64_t g_trace_v2_tick_count = 0;
++uint64_t g_trace_v2_sequence = 0;
++uint64_t g_trace_v2_output_bytes = 0;
++bool g_trace_v2_failed = false;
++bool g_trace_v2_complete = false;
++std::atomic<uint32_t> g_gameplay_manager{0};
++std::atomic<bool> g_player_update_reported{false};
++
+ InputSnapshot SnapshotInput() {
+   std::lock_guard<std::mutex> lock(g_input_mutex);
+   return g_input;
+@@ -103,6 +122,140 @@
+   return rex::crypto::sha256(payload.str());
+ }
+
++uint32_t GuestWord(uint8_t* base, uint32_t address) {
++  return address ? rex::memory::load_and_swap<uint32_t>(base + address) : 0;
++}
++
++uint32_t GuestField(uint8_t* base, uint32_t object, uint32_t offset) {
++  return object ? GuestWord(base, object + offset) : 0;
++}
++
++bool EnsureTraceV2Output(const std::string& path) {
++  if (g_trace_v2_output.is_open() && path == g_trace_v2_output_path) {
++    return true;
++  }
++  if (g_trace_v2_output.is_open()) {
++    g_trace_v2_output.close();
++  }
++  g_trace_v2_output.open(path, std::ios::out | std::ios::trunc);
++  g_trace_v2_output_path = path;
++  g_trace_v2_tick_count = 0;
++  g_trace_v2_sequence = 0;
++  g_trace_v2_output_bytes = 0;
++  g_trace_v2_failed = !g_trace_v2_output.is_open();
++  g_trace_v2_complete = false;
++  if (g_trace_v2_failed) {
++    REXLOG_ERROR("AC6 oracle trace v2 could not open its bounded output");
++    return false;
++  }
++  REXLOG_INFO("AC6 oracle trace v2 armed at the gameplay player-update boundary");
++  return true;
++}
++
++bool EmitTraceV2Domain(uint64_t tick, std::string_view domain,
++                       std::string_view payload) {
++  std::ostringstream event;
++  event << "{\"sequence\":" << g_trace_v2_sequence << ",\"tick\":" << tick
++        << ",\"domain\":\"" << domain << "\",\"payload\":" << payload
++        << "}\n";
++  const std::string line = event.str();
++  if (g_trace_v2_output_bytes + line.size() > kTraceV2MaxOutputBytes) {
++    g_trace_v2_failed = true;
++    return false;
++  }
++  g_trace_v2_output << line;
++  if (!g_trace_v2_output.good()) {
++    g_trace_v2_failed = true;
++    return false;
++  }
++  g_trace_v2_output_bytes += line.size();
++  ++g_trace_v2_sequence;
++  return true;
++}
++
++void EmitExecutionTick(uint8_t* base, uint32_t player) {
++  const std::string path = REXCVAR_GET(ac6_oracle_trace_v2_path);
++  const std::string arm = REXCVAR_GET(ac6_oracle_trace_v2_arm_path);
++  if (path.empty() || arm.empty() || !std::filesystem::is_regular_file(arm)) {
++    return;
++  }
++  const InputSnapshot input = SnapshotInput();
++  const ac6::d3d::FrameCaptureSummary graphics = ac6::d3d::GetFrameCaptureSummary();
++  const int32_t yaw = (input.buttons & 0x0100u) != 0
++                          ? -32768
++                          : ((input.buttons & 0x0200u) != 0 ? 32767
++                                                            : input.thumb_rx);
++  std::ostringstream controller;
++  controller << "{\"pitch\":" << input.thumb_ly
++             << ",\"roll\":" << input.thumb_lx << ",\"yaw\":" << yaw
++             << ",\"throttle\":" << static_cast<uint32_t>(input.right_trigger)
++             << ",\"buttons\":" << input.buttons << '}';
++
++  const uint32_t child_list = GuestField(base, player, 216u);
++  const uint32_t child_count = GuestField(base, player, 220u);
++  const uint32_t child = child_list && child_count ? GuestWord(base, child_list) : 0;
++  std::ostringstream simulation;
++  simulation << "{\"player_transform_words\":[" << GuestField(base, player, 144u)
++             << ',' << GuestField(base, player, 160u) << ','
++             << GuestField(base, player, 176u) << ','
++             << GuestField(base, player, 192u)
++             << "],\"child_transform_words\":[" << GuestField(base, child, 112u)
++             << ',' << GuestField(base, child, 128u) << ','
++             << GuestField(base, child, 144u) << ','
++             << GuestField(base, child, 160u) << "]}";
++
++  constexpr uint32_t kCampaignGlobalsPointer = 0x8293BA10u;
++  const uint32_t campaign = GuestWord(base, kCampaignGlobalsPointer);
++  const uint32_t manager = g_gameplay_manager.load(std::memory_order_relaxed);
++  std::ostringstream mission;
++  mission << "{\"campaign_phase\":" << GuestField(base, campaign, 24u)
++          << ",\"campaign_step\":" << GuestField(base, campaign, 28u)
++          << ",\"manager_state\":" << GuestField(base, manager, 12u)
++          << ",\"objectives\":[]}";
++
++  std::ostringstream graphics_payload;
++  graphics_payload << "{\"draw_calls\":" << graphics.draw_count
++                   << ",\"clear_calls\":" << graphics.clear_count
++                   << ",\"resolve_calls\":" << graphics.resolve_count
++                   << ",\"record_signature\":" << graphics.record_signature << '}';
++  const std::string controller_json = controller.str();
++  const std::string simulation_json = simulation.str();
++  const std::string mission_json = mission.str();
++  const std::string graphics_json = graphics_payload.str();
++  std::ostringstream hashes;
++  hashes << "{\"simulation_snapshot\":\""
++         << rex::crypto::sha256(simulation_json)
++         << "\",\"mission_objectives\":\"" << rex::crypto::sha256(mission_json)
++         << "\",\"graphics_submission\":\"" << rex::crypto::sha256(graphics_json)
++         << "\"}";
++
++  std::lock_guard<std::mutex> lock(g_trace_v2_mutex);
++  if (g_trace_v2_failed || g_trace_v2_complete || !EnsureTraceV2Output(path)) {
++    return;
++  }
++  const uint64_t tick = g_trace_v2_tick_count + 1u;
++  if (!EmitTraceV2Domain(tick, "controller_input", controller_json) ||
++      !EmitTraceV2Domain(tick, "simulation_snapshot", simulation_json) ||
++      !EmitTraceV2Domain(tick, "mission_objectives", mission_json) ||
++      !EmitTraceV2Domain(tick, "graphics_submission", graphics_json) ||
++      !EmitTraceV2Domain(tick, "output_hashes", hashes.str())) {
++    REXLOG_ERROR("AC6 oracle trace v2 write failed");
++    return;
++  }
++  ++g_trace_v2_tick_count;
++  g_trace_v2_output.flush();
++  if (g_trace_v2_tick_count == kTraceV2Ticks) {
++    g_trace_v2_complete = true;
++    REXLOG_INFO("AC6 oracle trace v2 complete: 3600 gameplay ticks");
++  }
++}
++
++void ReportPlayerUpdateReady() {
++  if (!g_player_update_reported.exchange(true)) {
++    REXLOG_INFO("AC6 oracle Mission 01 player-update boundary reached at 0x822A6710");
++  }
++}
++
+ bool EnsureOutput(const std::string& path) {
+   if (g_output.is_open() && path == g_output_path) {
+     return true;
+@@ -219,3 +372,20 @@
+   }
+   __imp__sub_8237C828(ctx, base);
+ }
++
++PPC_EXTERN_FUNC(__imp__rex_sub_8226D1C8);
++PPC_EXTERN_FUNC(__imp__rex_sub_822A6710);
++
++PPC_FUNC_IMPL(rex_sub_8226D1C8) {
++  PPC_FUNC_PROLOGUE();
++  ac6::oracle::g_gameplay_manager.store(ctx.r3.u32, std::memory_order_relaxed);
++  __imp__rex_sub_8226D1C8(ctx, base);
++}
++
++PPC_FUNC_IMPL(rex_sub_822A6710) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t player = ctx.r3.u32;
++  __imp__rex_sub_822A6710(ctx, base);
++  ac6::oracle::ReportPlayerUpdateReady();
++  ac6::oracle::EmitExecutionTick(base, player);
++}

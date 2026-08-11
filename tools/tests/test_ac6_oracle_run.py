@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -8,6 +9,7 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "ac6-oracle-run.py"
+sys.path.insert(0, str(SCRIPT.parent))
 SPEC = importlib.util.spec_from_file_location("ac6_oracle_run", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 RUNNER = importlib.util.module_from_spec(SPEC)
@@ -63,6 +65,38 @@ class OracleDisplayTests(unittest.TestCase):
             self.assertTrue(retained.exists())
             self.assertFalse(created.exists())
             self.assertTrue(unrelated.exists())
+
+    def test_route_include_is_expanded_and_bounded_to_project(self) -> None:
+        with tempfile.TemporaryDirectory(dir=RUNNER.ROOT / "scripts") as temporary:
+            root = Path(temporary)
+            child = root / "child.steps"
+            route = root / "route.steps"
+            child.write_text("sleep\t1\n", encoding="utf-8")
+            route.write_text("include\tchild.steps\ncapture\tend\n", encoding="utf-8")
+            self.assertEqual(
+                RUNNER.parse_steps(route),
+                [("sleep", "1", ""), ("capture", "end", "")],
+            )
+            child.write_text("include\troute.steps\n", encoding="utf-8")
+            with self.assertRaises(RUNNER.RunError):
+                RUNNER.parse_steps(route)
+
+    def test_arm_trace_creates_one_owned_signal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            runner = RUNNER.OracleRun(
+                SimpleNamespace(duration=10, display=":210", output=output)
+            )
+            runner.execute([("arm-trace", "", "")])
+            self.assertTrue((output / "mission01-execution-v2.arm").is_file())
+            with self.assertRaises(RUNNER.RunError):
+                runner.execute([("arm-trace", "", "")])
+
+    def test_trace_route_rejects_startup_fps_unlock(self) -> None:
+        steps = [("sleep", "1", ""), ("arm-trace", "", "")]
+        RUNNER.validate_trace_timing(steps, False)
+        with self.assertRaisesRegex(RUNNER.RunError, "at arm time"):
+            RUNNER.validate_trace_timing(steps, True)
 
 
 if __name__ == "__main__":

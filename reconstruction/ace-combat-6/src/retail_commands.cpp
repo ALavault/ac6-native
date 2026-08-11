@@ -1,6 +1,7 @@
 #include "ac6/retail_commands.h"
 
 #include "ac6/campaign_progression.h"
+#include "ac6/execution_trace.h"
 #include "ac6/native_hud.h"
 #include "ac6/retail_campaign_bundle.h"
 #include "ac6/retail_camera_table.h"
@@ -39,6 +40,7 @@ struct Options final {
   std::filesystem::path capture;
   std::filesystem::path scene_capture;
   std::filesystem::path scene_report;
+  std::filesystem::path trace;
   std::uint32_t aircraft{1};
   std::uint32_t weapon{1};
   retail::RetailDifficulty difficulty{retail::RetailDifficulty::Normal};
@@ -113,6 +115,7 @@ bool parse_replay_options(int argc, char** argv, Options& options) {
     if (option == "--cache" && options.cache.empty()) options.cache = value;
     else if (option == "--replay" && options.replay.empty()) options.replay = value;
     else if (option == "--report" && options.report.empty()) options.report = value;
+    else if (option == "--trace" && options.trace.empty()) options.trace = value;
     else return false;
   }
   return !options.cache.empty() && !options.replay.empty() && !options.report.empty();
@@ -444,18 +447,31 @@ struct ReplayRun final {
   std::uint32_t step{};
   bool script_ended{};
   std::uint64_t semantic_hash{1469598103934665603ull};
+  std::uint64_t trace_events{};
+  std::uint64_t trace_samples{};
 };
 
 std::optional<ReplayRun> replay_once(const RetailContentStore& store,
-                                     const retail::RetailSessionReplay& replay) {
+                                     const retail::RetailSessionReplay& replay,
+                                     const std::filesystem::path& trace = {}) {
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, replay.loadout,
                                   {replay.mission_id, {0, 0},
                                    retail::kRetailOpeningCameraModeWord,
                                    replay.difficulty, true});
   if (session == nullptr) return std::nullopt;
+  ExecutionTraceJsonlWriter trace_writer;
+  const bool tracing = !trace.empty();
+  if (tracing && replay.frames.size() % 2u != 0u) return std::nullopt;
+  if (tracing) {
+    std::error_code error;
+    const std::filesystem::path parent = trace.parent_path();
+    if (!parent.empty()) std::filesystem::create_directories(parent, error);
+    if (error || !trace_writer.open(trace)) return std::nullopt;
+  }
   ReplayRun result;
-  for (const InputFrame input : replay.frames) {
+  for (std::size_t index = 0; index < replay.frames.size(); ++index) {
+    const InputFrame input = replay.frames[index];
     const retail::RetailSessionFrame frame = session->tick(1.0f / 60.0f, input);
     result.final_frame = frame.world;
     result.sub_mission = frame.sub_mission;
@@ -465,7 +481,19 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
     hash_u32(result.semantic_hash, frame.sub_mission);
     hash_u32(result.semantic_hash, frame.step);
     hash_u32(result.semantic_hash, frame.script_ended ? 1u : 0u);
+    if (tracing && index % 2u == 1u) {
+      if (input != replay.frames[index - 1u] || !trace_writer.append(
+              (index + 1u) / 2u, input, frame.world,
+              {session->state(), frame.sub_mission, frame.step, frame.script_ended,
+               session->execution().scenario().objectives().snapshot()},
+              {TraceGraphicsBackend::Headless, 0, false})) {
+        return std::nullopt;
+      }
+    }
   }
+  if (tracing && !trace_writer.close()) return std::nullopt;
+  result.trace_events = tracing ? trace_writer.event_count() : 0;
+  result.trace_samples = tracing ? replay.frames.size() / 2u : 0;
   return result;
 }
 
@@ -485,13 +513,17 @@ int run_replay_impl(const Options& options) {
     return 134;
   }
   if (!loadout_qualified(store, replay.loadout)) return 135;
-  const std::optional<ReplayRun> first = replay_once(store, replay);
+  const std::optional<ReplayRun> first = replay_once(store, replay, options.trace);
   const std::optional<ReplayRun> second = replay_once(store, replay);
   if (!first.has_value() || !second.has_value()) return 136;
   const bool deterministic = same_world_frame(first->final_frame, second->final_frame) &&
       first->sub_mission == second->sub_mission && first->step == second->step &&
       first->script_ended == second->script_ended &&
       first->semantic_hash == second->semantic_hash;
+  const bool trace_complete =
+      options.trace.empty() ||
+      (first->trace_samples == replay.frames.size() / 2u &&
+       first->trace_events == first->trace_samples * 5u);
   std::error_code error;
   std::filesystem::create_directories(options.report, error);
   if (error) return 137;
@@ -521,9 +553,11 @@ int run_replay_impl(const Options& options) {
          << "  \"forced_progression\": false,\n"
          << "  \"simulation_hz\": 60,\n"
          << "  \"deterministic\": " << (deterministic ? "true" : "false") << ",\n"
-         << "  \"semantic_hash\": \"0x" << std::hex << first->semantic_hash << std::dec << "\"\n"
+         << "  \"semantic_hash\": \"0x" << std::hex << first->semantic_hash << std::dec << "\",\n"
+         << "  \"trace_samples\": " << first->trace_samples << ",\n"
+         << "  \"trace_events\": " << first->trace_events << "\n"
          << "}\n";
-  if (!output || !deterministic) return 139;
+  if (!output || !deterministic || !trace_complete) return 139;
   std::fprintf(stdout, "ac6_retail=pass command=replay mission=%u frames=%zu "
                       "deterministic=true semantic_hash=0x%llx report=%s\n",
                replay.mission_id, replay.frames.size(),

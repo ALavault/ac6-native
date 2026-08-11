@@ -1,0 +1,15 @@
+# Reuse the qualified fresh-profile route, then arm exactly one 3600-tick
+# gameplay window. The include and this file are both hashed by the run report.
+include	ac6-oracle-mission01-route.steps
+wait	AC6 oracle Mission 01 player-update boundary reached at 0x822A6710	60
+arm-trace
+key	w	5.0
+sleep	5
+key	d	5.0
+sleep	5
+key	q	5.0
+sleep	5
+mouse	1	5.0
+sleep	5
+wait	AC6 oracle trace v2 complete: 3600 gameplay ticks	180
+capture	controlled-sortie-end

@@ -1,0 +1,73 @@
+{
+  "schema": "ac6.execution-probe.v2",
+  "id": "mission01-controlled-sortie",
+  "purpose": "Read-only five-domain capture of the first 3600 airborne Mission 01 player updates.",
+  "authority": {
+    "ghidra_project": "ghidra-projects/ace-combat-6",
+    "target_id": "ac6-pal-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "clock": {
+    "oracle_update_hz": 30,
+    "native_simulation_hz": 60,
+    "cadence_mapping": "zero-order hold each oracle input for two native ticks and compare every second native snapshot",
+    "runtime_correction": "disabled: the existing 60 Hz presentation hook crashes the executed flight cone at guest address 0x7E980000",
+    "tick_boundary": "0x822A6710 return",
+    "arm": "owned file created after the qualified flight HUD capture and an explicit 0x822A6710 readiness event",
+    "ticks": 3600
+  },
+  "boundaries": [
+    {
+      "address": "0x8226D1C8",
+      "role": "read current gameplay manager state",
+      "evidence": [
+        "reports/cycle-779-player-child-transform.md",
+        "reports/cycle-1010-bridge-gameplay-black-world.md",
+        "reports/cycle-1080-bridge-airborne-owner-boundary.md"
+      ]
+    },
+    {
+      "address": "0x822A6710",
+      "role": "one event group after each airborne player update",
+      "evidence": [
+        "reports/cycle-779-player-child-transform.md",
+        "reports/cycle-1010-bridge-gameplay-black-world.md",
+        "reports/cycle-1080-bridge-airborne-owner-boundary.md"
+      ]
+    }
+  ],
+  "controller_normalization": {
+    "pitch": "XInput thumb_ly",
+    "roll": "XInput thumb_lx",
+    "yaw": "left shoulder=-32768, right shoulder=32767, otherwise thumb_rx",
+    "throttle": "XInput right_trigger",
+    "buttons": "unmodified XInput button mask",
+    "qualification": "route-harness mapping only; it assigns no semantic name to the guest input aggregate fields"
+  },
+  "domains": [
+    "controller_input",
+    "simulation_snapshot",
+    "mission_objectives",
+    "graphics_submission",
+    "output_hashes"
+  ],
+  "bounds": {
+    "max_ticks": 3600,
+    "events_per_tick": 5,
+    "max_events": 18000,
+    "max_output_bytes": 33554432
+  },
+  "fail_closed": [
+    "missing or repeated sequence",
+    "non-contiguous tick",
+    "missing or reordered domain",
+    "short or overlong window",
+    "write beyond byte bound"
+  ],
+  "limitations": [
+    "player and child transform words are raw qualified guest fields, not native semantic names",
+    "the empty objective list states that no executed objective registry boundary is qualified yet",
+    "graphics records describe submissions even when the retail world output is black"
+  ]
+}

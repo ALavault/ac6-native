@@ -1006,7 +1006,8 @@ int run_commands(int argc, char** argv) {
                  "                       [--scene-capture PPM] [--scene-report JSON]\n"
                  "                       [--frames COUNT] [--aircraft ID] [--weapon ID]\n"
                  "                       [--difficulty 0..4]\n"
-                 "       ac6-native replay --cache CACHE_ROOT --replay FILE --report OUTPUT_DIR\n");
+                 "       ac6-native replay --cache CACHE_ROOT --replay FILE --report OUTPUT_DIR\n"
+                 "                         [--trace RAW_JSONL]\n");
     return 0;
   }
   if (argc >= 2 && std::string_view(argv[1]) == "import") {
@@ -1024,7 +1025,7 @@ int run_commands(int argc, char** argv) {
     if (argc < 3) {
       std::fprintf(stderr,
                    "usage: ac6-native replay --cache CACHE_ROOT --replay FILE "
-                   "--report OUTPUT_DIR\n");
+                   "--report OUTPUT_DIR [--trace RAW_JSONL]\n");
       return 130;
     }
     return ac6::retail_cli::run_replay(argc, argv);

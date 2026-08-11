@@ -14,6 +14,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from build_ac6_execution_trace_v2 import TraceV2Error, load_jsonl
+
 ROOT = Path(__file__).resolve().parents[1]
 XEX_SHA256 = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
 FATAL = re.compile(
@@ -98,7 +100,13 @@ def terminate_owned(process: subprocess.Popen[bytes] | None) -> int | None:
     return process.poll()
 
 
-def parse_steps(path: Path) -> list[tuple[str, str, str]]:
+def parse_steps(path: Path, stack: tuple[Path, ...] = (),
+                sources: list[Path] | None = None) -> list[tuple[str, str, str]]:
+    path = path.resolve()
+    if path in stack or len(stack) >= 8:
+        raise RunError("recursive or over-deep route include")
+    if sources is not None and path not in sources:
+        sources.append(path)
     steps = []
     for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         if not line or line.startswith("#"):
@@ -107,10 +115,27 @@ def parse_steps(path: Path) -> list[tuple[str, str, str]]:
         if len(fields) > 3 or not fields[0]:
             raise RunError(f"malformed route line {line_number}")
         fields += [""] * (3 - len(fields))
+        if fields[0] == "include":
+            if not fields[1] or fields[2]:
+                raise RunError(f"malformed route include at line {line_number}")
+            included = (path.parent / fields[1]).resolve()
+            try:
+                included.relative_to(ROOT)
+            except ValueError as error:
+                raise RunError("route include outside project") from error
+            steps.extend(parse_steps(included, (*stack, path), sources))
+            continue
         steps.append((fields[0], fields[1], fields[2]))
     if not steps:
         raise RunError("empty route")
     return steps
+
+
+def validate_trace_timing(steps: list[tuple[str, str, str]], unlock_fps: bool) -> None:
+    if unlock_fps and any(operation == "arm-trace" for operation, _, _ in steps):
+        raise RunError(
+            "trace routes must enable the 60 Hz correction at arm time, after startup"
+        )
 
 
 class OracleRun:
@@ -126,6 +151,7 @@ class OracleRun:
         self.console_offset = 0
         self.captures: list[dict[str, object]] = []
         self.executed_steps = 0
+        self.trace_v2_armed = False
 
     @property
     def log_path(self) -> Path:
@@ -259,6 +285,13 @@ class OracleRun:
                     self.sleep(0.2)
                 if self.present_count() < target:
                     raise RunError("presentation predicate not reached")
+            elif operation == "arm-trace":
+                if argument or limit or self.trace_v2_armed:
+                    raise RunError("invalid trace arm step")
+                (self.args.output / "mission01-execution-v2.arm").write_text(
+                    "armed\n", encoding="utf-8"
+                )
+                self.trace_v2_armed = True
             else:
                 raise RunError(f"unknown route operation: {operation}")
 
@@ -280,6 +313,11 @@ class OracleRun:
             f"--log_file={self.log_path}",
             f"--user_data_root={self.args.output / 'user-data'}",
             f"--ac6_oracle_probe_path={self.args.output / 'mission01-frame.raw.jsonl'}",
+            f"--ac6_oracle_trace_v2_path={self.args.output / 'mission01-execution-v2.raw.jsonl'}",
+            f"--ac6_oracle_trace_v2_arm_path={self.args.output / 'mission01-execution-v2.arm'}",
+            f"--ac6_unlock_fps={'true' if self.args.unlock_fps else 'false'}",
+            "--audio_trace_telemetry=true",
+            "--audio_trace_render_driver_verbose=true",
             "--ac6_render_capture=true",
             "--ac6_native_graphics_enabled=false",
         ]
@@ -305,6 +343,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--duration", type=int, default=900)
     parser.add_argument("--display", default=":120")
+    parser.add_argument("--unlock-fps", action="store_true")
     return parser.parse_args()
 
 
@@ -329,7 +368,12 @@ def main() -> int:
     for tool in ("Xvfb", "xdotool", "import"):
         if shutil.which(tool) is None:
             raise SystemExit(f"oracle runner: missing tool {tool}")
-    steps = parse_steps(arguments.route)
+    route_sources: list[Path] = []
+    steps = parse_steps(arguments.route, sources=route_sources)
+    try:
+        validate_trace_timing(steps, arguments.unlock_fps)
+    except RunError as error:
+        raise SystemExit(f"oracle runner: {error}") from error
     arguments.output.mkdir(parents=True)
     (arguments.output / "user-data").mkdir()
 
@@ -360,15 +404,32 @@ def main() -> int:
     console_text = console_path.read_text(encoding="utf-8", errors="replace") \
         if console_path.is_file() else ""
     fatal_matches = sorted(set(FATAL.findall(log_text + "\n" + console_text)))
+    trace_v2: dict[str, object] | None = None
+    if runner.trace_v2_armed:
+        trace_path = arguments.output / "mission01-execution-v2.raw.jsonl"
+        try:
+            events = load_jsonl(trace_path, 1, 3600)
+            trace_v2 = {
+                "path": trace_path.name,
+                "sha256": sha256(trace_path),
+                "ticks": 3600,
+                "events": len(events),
+            }
+        except (OSError, TraceV2Error) as caught:
+            cleanup_error = cleanup_error or f"trace v2: {caught}"
     manifest = {
         "schema": "ac6.recomp-oracle-run.v1",
         "binary": {"path": str(arguments.binary), "sha256": sha256(arguments.binary)},
         "target": {"module": "default.xex", "sha256": XEX_SHA256},
         "route": {"path": str(arguments.route), "sha256": sha256(arguments.route),
+                  "sources": [{"path": str(path), "sha256": sha256(path)}
+                              for path in route_sources],
                   "steps": len(steps), "executed_steps": runner.executed_steps},
         "duration_seconds": time.time() - started,
         "display": arguments.display,
         "audio_driver": "dummy",
+        "audio_trace_telemetry": True,
+        "unlock_fps": arguments.unlock_fps,
         "game_status": game_status,
         "xvfb_status": xvfb_status,
         "error": error,
@@ -378,6 +439,7 @@ def main() -> int:
         "shared_memory_after_termination": after_termination,
         "shared_memory_cleaned": cleaned_shared_memory,
         "shared_memory_after": after,
+        "trace_v2": trace_v2,
     }
     (arguments.output / "manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"

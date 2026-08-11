@@ -12,6 +12,16 @@
       "address": "0x82159350",
       "name": "rex_sub_82159350",
       "evidence": "Canonical vtable 0x8205DF4C slot +0x08 and executed M350 broadcast from LR 0x820F6460."
+    },
+    {
+      "address": "0x8226D1C8",
+      "name": "rex_sub_8226D1C8",
+      "evidence": "Canonical gameplay manager update boundary; read-only runtime observations in cycles 779, 1010 and 1080 consistently place the Mission 01 UpHud tick here."
+    },
+    {
+      "address": "0x822A6710",
+      "name": "rex_sub_822A6710",
+      "evidence": "Canonical player update boundary; cycles 779, 1010 and 1080 join its live player transform writes to the airborne Mission 01 gameplay cone."
     }
   ]
 }
