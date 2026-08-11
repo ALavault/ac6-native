@@ -1,0 +1,5 @@
+# Capture-only diagnostic: qualify the video/launch frontier without arming
+# the 3,600-tick trace or injecting flight input after the deploy prompt.
+include	ac6-oracle-mission01-trace-entry.steps
+sleep	5
+capture	video-frontier-after-deploy

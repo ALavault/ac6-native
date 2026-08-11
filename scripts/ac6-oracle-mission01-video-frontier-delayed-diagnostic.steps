@@ -1,0 +1,6 @@
+# Capture-only A/B diagnostic: retain the one-second scheduler settle that
+# produced the qualified U witness, then stop before any flight trace.
+sleep	1
+include	ac6-oracle-mission01-trace-entry.steps
+sleep	5
+capture	video-frontier-delayed-after-deploy

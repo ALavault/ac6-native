@@ -1,0 +1,60 @@
+{
+  "schema": "ac6.oracle-video-frontier-debug.v1",
+  "purpose": "Read-only debug-level A/B at the Mission 01 video/deploy frontier; no trace arm or flight input.",
+  "authority": {
+    "ghidra_project": "ghidra-projects/ace-combat-6",
+    "target_id": "ac6-pal-default-xex",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "binary_sha256": "37e0c88d73b917a3b10a11bed44d5c42908032a3a1a0949a652abdec6d6432e7"
+  },
+  "negative": {
+    "route": "scripts/ac6-oracle-mission01-video-frontier-diagnostic.steps",
+    "route_sha256": "32f9116902d879d80c9814affdc99f8f5dab57d30126d5b12461cf08cbdb6a3f",
+    "manifest_sha256": "b170dbfc18453669fa272aa23d7d3dd25914f4605e08034b947fef093d60b869",
+    "log_sha256": "e6afa3d715aac3c3ad92c4e5d788ea514655c0075365f72d2497b1f59d28801b",
+    "duration_seconds": 306.97814536094666,
+    "executed_steps": 5,
+    "frontier": "no campaign transition and no 0x82267370 frame probe before timeout",
+    "audio_sample": {
+      "submitted": 27660,
+      "consumed": 27659,
+      "queued_played": 27659,
+      "queued_depth": 1,
+      "underruns": 9241,
+      "silence_injections": 9241
+    },
+    "present_count": 1144,
+    "fatal_matches": []
+  },
+  "positive": {
+    "route": "scripts/ac6-oracle-mission01-video-frontier-delayed-diagnostic.steps",
+    "route_sha256": "daa4d5e9e0800cbf0af64f8feff7c27e150a1bb5735b1b7b08380b4a0ef54ced",
+    "manifest_sha256": "8435a02d589a96f4e18fc2728bec85eb0e1d5a3c448ed7707b2c0749d449b7d4",
+    "log_sha256": "08fdd33947fc710d56cbe0a4889cceb3b8c4d61793a48c95beab2598abc53335",
+    "duration_seconds": 195.23524928092957,
+    "executed_steps": 77,
+    "frontier": "campaign state 0->1->2, deploy capture, no flight trace arm",
+    "transition_timestamps": [
+      "2026-08-12 00:34:57.611",
+      "2026-08-12 00:35:06.445"
+    ],
+    "audio_sample": {
+      "submitted": 23360,
+      "consumed": 23357,
+      "queued_played": 23357,
+      "queued_depth": 3,
+      "underruns": 0,
+      "silence_injections": 0
+    },
+    "present_count": 9913,
+    "final_capture_sha256": "e2be0487deb99266c66ef941767cca0f1a2905f79b9a035ec1a565dc8d460653",
+    "fatal_matches": []
+  },
+  "interpretation": [
+    "The audio worker continues submitting and consuming queued frames in both observations; queued_played is not a video-completion signal.",
+    "The qualified visual freeze remains an intermittent guest frontier: the negative route stops before the frame scheduler, while the delayed route presents continuously through deploy.",
+    "SDL_AUDIODRIVER=dummy proves liveness and queue accounting only; it does not qualify audible dialogue."
+  ],
+  "raw_capture_policy": "Raw debug logs and screenshots remain outside the product tree; this manifest records their hashes and bounded extracted counters."
+}

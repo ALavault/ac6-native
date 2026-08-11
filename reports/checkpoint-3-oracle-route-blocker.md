@@ -107,6 +107,33 @@ frame n'est demandée après le lancement, ce qui recoupe la mesure historique
 du cycle 316 (invité qui cesse d'appeler `VdSwap`) et écarte à nouveau un défaut
 de présentation hôte.
 
+## A/B audio–présentation en niveau debug
+
+Les journaux U précédents étaient au niveau `info` et ne rendaient pas les
+compteurs XAudio. Deux routes capture-only ont donc été rejouées avec
+`REX_LOG_LEVEL=debug`; leurs routes, manifestes, journaux et compteurs bornés
+sont consignés dans
+`analysis/oracle/ac6-recomp-dcd41b/probes/video-frontier-debug.json`.
+
+Le négatif `video-frontier-diagnostic` expire après 306,98 s et cinq étapes,
+avant toute transition de campagne ou appel `0x82267370`. Pourtant le worker
+audio soumet 27 660 trames, en consomme 27 659 (`queued_played=27 659`) et
+reste à profondeur 1 ; les 9 241 underruns sont des injections de silence du
+périphérique dummy. La présentation n'est donc pas bloquée par une absence
+de client audio.
+
+La variante temporisée, qui reprend la seconde d'attente du témoin U, est
+positive : 77 étapes en 195,24 s, transitions `0→1` à `00:34:57.611` et
+`1→2` à `00:35:06.445`, 9 913 `PRESENT` et capture finale
+`e2be0487deb99266c66ef941767cca0f1a2905f79b9a035ec1a565dc8d460653`. Au
+prélèvement audio, 23 360 trames sont soumises, 23 357 consommées et la file
+reste à trois éléments ; ce passage ne gèle donc pas l'image vidéo.
+
+Cette paire ferme seulement une confusion : la consommation audio et la
+progression de présentation sont indépendantes dans le backend dummy. Elle
+ne transforme pas le dialogue audible en preuve sous SDL dummy et ne fournit
+toujours pas la fenêtre de trace 3 600 ticks.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
