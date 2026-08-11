@@ -1,0 +1,729 @@
+{
+  "schema": "ac6.recomp-oracle-run.v1",
+  "binary": {
+    "path": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-recomp-oracle-capture-dcd41b/out/build/linux-amd64-release/ac6recomp",
+    "sha256": "0899bb3d1ae9ad1701d700bcbc2906607a4a63e6c5b4811d3a7fbff87754b96f"
+  },
+  "target": {
+    "module": "default.xex",
+    "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "route": {
+    "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/scripts/ac6-oracle-mission01-route.steps",
+    "sha256": "12b98d7f093ac67742865498094b966b4d4c6c15df4e24bfadc764753fa94823",
+    "steps": 96,
+    "executed_steps": 96
+  },
+  "duration_seconds": 263.0053868293762,
+  "display": ":137",
+  "audio_driver": "dummy",
+  "game_status": -9,
+  "xvfb_status": 0,
+  "error": "",
+  "fatal_matches": [],
+  "captures": [
+    {
+      "path": "step-13-game-data-browser.png",
+      "bytes": 201745,
+      "sha256": "02cf05e592618c40f6dbaacde459671a55501cc31d10f08777c0ee98799f2598"
+    },
+    {
+      "path": "step-17-post-browser-cancel.png",
+      "bytes": 207220,
+      "sha256": "409397d51adf5476f669dac82ce5121e99417f3df2d1fa3ed8611fdb70757ca1"
+    },
+    {
+      "path": "step-21-create-game-data-prompt.png",
+      "bytes": 236313,
+      "sha256": "5dbf91e9623232f88a6995a29450ae7c22fd27020998d284bb8bda2bd312c23b"
+    },
+    {
+      "path": "step-24-post-create-confirm.png",
+      "bytes": 197623,
+      "sha256": "005ef11a91e86d0a14700fa3d7e6bd8bf7f0ca845dd11f285d4ddc54ea2bed61"
+    },
+    {
+      "path": "step-27-post-file-selection.png",
+      "bytes": 210407,
+      "sha256": "994147ffccc926aa72d2d7c40cbffb96ebb37bd79ce3786fdc1adeec75502609"
+    },
+    {
+      "path": "step-30-slot-create-prompt-ready.png",
+      "bytes": 210518,
+      "sha256": "ecce01607b20658ba3bcdd65768b4287d0c3761ea047e34fee345ea9e934ae46"
+    },
+    {
+      "path": "step-38-post-slot-create-confirm.png",
+      "bytes": 261777,
+      "sha256": "6b06e53efec5cb25772d8acf53dc277103dfea28e98536e9e9b0ef05b8d629d7"
+    },
+    {
+      "path": "step-41-campaign-new-game.png",
+      "bytes": 168379,
+      "sha256": "60760c2e4f63833b6138093002d7167774a16dc53173833828c72cef3b4abe39"
+    },
+    {
+      "path": "step-44-difficulty.png",
+      "bytes": 198170,
+      "sha256": "f144f3883456316f9eaac2c394e65bc00d8edb3fca3377d33a7b3f19dae86999"
+    },
+    {
+      "path": "step-47-controls.png",
+      "bytes": 210243,
+      "sha256": "73eec448ff7f1b793165cd3d6f992a1b278b5b78701bd19828295ecf9e362ddc"
+    },
+    {
+      "path": "step-50-language.png",
+      "bytes": 282618,
+      "sha256": "438934001d61d56b139f01d23c9885a38512ece3ff97c4599cfa7941668aaa44"
+    },
+    {
+      "path": "step-53-post-language-first-a.png",
+      "bytes": 195493,
+      "sha256": "ce6bb5eaa5f48508e5fc9fa5007653d53a8aca3d18d270e18aef20a5fac71ff6"
+    },
+    {
+      "path": "step-56-campaign-intro.png",
+      "bytes": 89785,
+      "sha256": "e5427ba1c9a2d70a9af152bded990426392ac35c2a1831fbf5f5fb7e4bc9bf3b"
+    },
+    {
+      "path": "step-58-post-campaign-intro-skip.png",
+      "bytes": 202454,
+      "sha256": "f3d76b371befcd5ed5647f39f947690a930abf2fb209563367b0320d28c2b81f"
+    },
+    {
+      "path": "step-60-mission-01-start.png",
+      "bytes": 205071,
+      "sha256": "22c30e33d35117ad71da76e16a444645cdb403c9c503d582e2ce304ef431c9d1"
+    },
+    {
+      "path": "step-63-post-start-a.png",
+      "bytes": 1288094,
+      "sha256": "2201f7385bc1ee352ffa8b0b7272466fb541e5fb1c4e0fc5c378808bd547f29b"
+    },
+    {
+      "path": "step-66-post-start-b.png",
+      "bytes": 1272111,
+      "sha256": "3db0e9dc4424e41630669eb762e17bc7466f99fd7fbb81cc71be5a6a566bb80d"
+    },
+    {
+      "path": "step-69-post-weapon-confirm.png",
+      "bytes": 1329030,
+      "sha256": "7e4df608c7d666a3ef16bd039e6a0e40650e762340f6b2128da568237b8d8843"
+    },
+    {
+      "path": "step-72-mission-submenu-ready.png",
+      "bytes": 1274155,
+      "sha256": "bc7e815b0aaf8804d34c9ff67b45e8ec52c66dc0b473ea5abf441ad72d703646"
+    },
+    {
+      "path": "step-75-mission-launch.png",
+      "bytes": 1249538,
+      "sha256": "48ddb011989ff1d45f33a23b0f9edc9505437d84cfee8978285566ae93c38d09"
+    },
+    {
+      "path": "step-78-mission-flight-candidate.png",
+      "bytes": 317975,
+      "sha256": "6474c918a597de234dfa968eea9974a44c2883e801ec317360d0146d5f8486c9"
+    },
+    {
+      "path": "step-81-post-objective-confirm.png",
+      "bytes": 921381,
+      "sha256": "06d87b78473edcf818e5274dcced40a2a97cc335a2ff1aaf06f64c52eb27c6df"
+    },
+    {
+      "path": "step-84-flight-hud-baseline.png",
+      "bytes": 9212,
+      "sha256": "2239efbb6056f7078c19026f1aba905b004ee307a8e38c8809914231e29bdfd8"
+    },
+    {
+      "path": "step-87-flight-pitch.png",
+      "bytes": 8811,
+      "sha256": "0d0bce41aaf36b8923e9d55b8eada8ede81fa330fcb0b1e2496d77a6ab8176b2"
+    },
+    {
+      "path": "step-90-flight-roll.png",
+      "bytes": 8887,
+      "sha256": "4637af03f5c4a27cd38b428a790861f46cb61b4ef92b0ad0b7e505223d4ecf6a"
+    },
+    {
+      "path": "step-93-flight-yaw.png",
+      "bytes": 6220,
+      "sha256": "1642fb5fde7ab488e5f04e35e21a8960c92743140b28bf3c0043a154d5bea3b5"
+    },
+    {
+      "path": "step-96-flight-throttle.png",
+      "bytes": 6220,
+      "sha256": "4d700c4a5189168e0ab5786e33844dc34499ec55abf36d36b53c5816cee50026"
+    }
+  ],
+  "shared_memory_before": [
+    {
+      "name": "rexglue_memory_441776357641909",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_442485797841014",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_444746570463860",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_450643187421647",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_450882430645583",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451157954141272",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451251831715011",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451474851405137",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451998884621538",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453542226073002",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453661780112400",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453793220112698",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_454142671705403",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_454211118357138",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_455696323544681",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456059443868776",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456592623112058",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456994033287357",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457293708855541",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457383714671242",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457623203640674",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457727596105490",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457783533251529",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458090769203782",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458368275293768",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458595912363818",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458749274604724",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459022212031166",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459152905244351",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459564421893109",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460355094442668",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460508360477798",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460826541452790",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460954730369824",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461063485342193",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461142457272938",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461242916735606",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461350614791325",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461447849893315",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461613683642559",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461927323862292",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_462731762211229",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_463604179327415",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_463791870354053",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_464449204868210",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_464612626055800",
+      "bytes": 4831838207
+    }
+  ],
+  "shared_memory_after_termination": [
+    {
+      "name": "rexglue_memory_441776357641909",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_442485797841014",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_444746570463860",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_450643187421647",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_450882430645583",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451157954141272",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451251831715011",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451474851405137",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451998884621538",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453542226073002",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453661780112400",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453793220112698",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_454142671705403",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_454211118357138",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_455696323544681",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456059443868776",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456592623112058",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456994033287357",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457293708855541",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457383714671242",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457623203640674",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457727596105490",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457783533251529",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458090769203782",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458368275293768",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458595912363818",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458749274604724",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459022212031166",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459152905244351",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459564421893109",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460355094442668",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460508360477798",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460826541452790",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460954730369824",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461063485342193",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461142457272938",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461242916735606",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461350614791325",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461447849893315",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461613683642559",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461927323862292",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_462731762211229",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_463604179327415",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_463791870354053",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_464449204868210",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_464612626055800",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_465793385153172",
+      "bytes": 4831838207
+    }
+  ],
+  "shared_memory_cleaned": [
+    {
+      "name": "rexglue_memory_465793385153172",
+      "bytes": 4831838207
+    }
+  ],
+  "shared_memory_after": [
+    {
+      "name": "rexglue_memory_441776357641909",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_442485797841014",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_444746570463860",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_450643187421647",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_450882430645583",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451157954141272",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451251831715011",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451474851405137",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_451998884621538",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453542226073002",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453661780112400",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_453793220112698",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_454142671705403",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_454211118357138",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_455696323544681",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456059443868776",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456592623112058",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_456994033287357",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457293708855541",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457383714671242",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457623203640674",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457727596105490",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_457783533251529",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458090769203782",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458368275293768",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458595912363818",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_458749274604724",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459022212031166",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459152905244351",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_459564421893109",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460355094442668",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460508360477798",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460826541452790",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_460954730369824",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461063485342193",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461142457272938",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461242916735606",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461350614791325",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461447849893315",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461613683642559",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_461927323862292",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_462731762211229",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_463604179327415",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_463791870354053",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_464449204868210",
+      "bytes": 4831838207
+    },
+    {
+      "name": "rexglue_memory_464612626055800",
+      "bytes": 4831838207
+    }
+  ]
+}

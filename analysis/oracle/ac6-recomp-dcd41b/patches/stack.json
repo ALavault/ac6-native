@@ -1,0 +1,75 @@
+{
+  "schema": "ac6.oracle-host-patch-stack.v1",
+  "base_commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+  "application": "ordered",
+  "patches": [
+    {
+      "order": 1,
+      "path": "patches/rexglue-unresolved-branch-gapfill-retracer-20260726.patch",
+      "sha256": "702e3b3b903869ecd1a3d2659a8b2a7c920dde6abbefdf3c9618fc3faf392225",
+      "reason": "Iterative GapFill recovery required by the executed PAL control-flow cone.",
+      "validation": "Codegen reaches 21675 functions and reports all direct calls resolved."
+    },
+    {
+      "order": 2,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/bctr-dispatch-after-gapfill.patch",
+      "sha256": "3d4ecf64cf00a7d629ba8d3ba76bb588d7728aa677ed8291e437b644b6b04781",
+      "reason": "Preserve runtime dispatch for unresolved computed bctr after GapFill.",
+      "validation": "Codegen completes with only the 15 recorded bdnz diagnostics."
+    },
+    {
+      "order": 3,
+      "path": "patches/rexglue-auto-reset-event-nt-ordered-release-20260730.patch",
+      "sha256": "cccfdc79bc8416513bef0a361282cc6fcf0cd03bafac7284121f1cb015357106",
+      "reason": "Match Xbox auto-reset event release ordering on the POSIX host.",
+      "validation": "Fresh-profile save and campaign route completes without guest wait stall."
+    },
+    {
+      "order": 4,
+      "path": "patches/rexglue-guest-socket-privileged-port-and-fionbio-20260730.patch",
+      "sha256": "684228323b63c659c42508feaffe58f9b9fbdcf82bfeb9836883dd9c037cc746",
+      "reason": "Translate Xbox privileged-port and FIONBIO behavior without host privilege.",
+      "validation": "Frame loop remains live through both 96-step qualified runs."
+    },
+    {
+      "order": 5,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/enable-sdl-dummy-audio.patch",
+      "sha256": "83004ce13cfa8908fa25ec9d1ac0205d5fc23aae79de35875773fd612d51d26a",
+      "reason": "Provide the project-qualified headless audio backend.",
+      "validation": "Both runs start with SDL_AUDIODRIVER=dummy and reach the flight HUD."
+    },
+    {
+      "order": 6,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/remove-false-vertex-declaration-hook.patch",
+      "sha256": "75b228bb883052874f441f3600cf7406f1d148d605f3994316630af18ca9c88f",
+      "apply_args": ["--unidiff-zero"],
+      "reason": "Remove a host hook at an address canonical Ghidra proves is not a function boundary.",
+      "validation": "Runtime config and generated calls retain no independent 0x821DE7D0 function start."
+    },
+    {
+      "order": 7,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/mission01-frame-instrumentation.patch",
+      "sha256": "8a1023030c4e57c690bd36bc7bb7c0859e3d531737ba9f77bddac5e5a73ed4c1",
+      "reason": "Add bounded input/frame/route probes plus the qualified atoi and 0x820F6180 PAL corrections.",
+      "validation": "ac6_decimal_parse_test passes; route runs ay and az pass 96/96 with identical guest hashes."
+    },
+    {
+      "order": 8,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/capture-indirect-diagnostics.patch",
+      "sha256": "a6ca39a202ede12da5fbeafdf4df8f19f4a018ddb0df1accfb3f58390d0b82f1",
+      "reason": "Turn null indirect calls and SIGTRAP into explicit capture-only addresses.",
+      "validation": "No fatal diagnostic occurs in either qualified route run."
+    }
+  ],
+  "configuration": {
+    "runtime_sha256": "6f43396da64a08df61423a8cce57605ac8154dbf0b9ac8f05fd563c94f08e868",
+    "capture_sha256": "63049f034fd12767dfb0737cb098969fb33dd01b7ea11e0ede056b26993be562",
+    "source": "canonical Ghidra export plus capture-overrides.json"
+  },
+  "qualification": {
+    "clean_application_pass": true,
+    "changed_file_count": 21,
+    "changed_tree_sha256": "5e6b4e0b8194fc85f842e7bc98f03d69bcc1141fcb998650973dd669390fcbb8",
+    "capture_profile_byte_match": true
+  }
+}

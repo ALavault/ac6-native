@@ -1,0 +1,28 @@
+{
+  "schema": "ac6.oracle-midasm-hook-policy.v1",
+  "input_configuration_sha256": "af17bd759eee96bea4c8b81b3a976848ef4c09b805cfe35ea35737e49739b2b8",
+  "hooks": [
+    {"address": "0x821EEBE4", "name": "ac6FlipIntervalHook", "disposition": "retain", "reason": "Defined in the pinned host source and inert while ac6_unlock_fps is false."},
+    {"address": "0x821EFD38", "name": "ac6DeltaDivisorHook", "disposition": "retain", "reason": "Defined in the pinned host source and inert while ac6_unlock_fps is false."},
+    {"address": "0x821EFD74", "name": "ac6DeltaPrecisionHook", "disposition": "disable", "reason": "Obsolete unlocked-FPS diagnostic absent from the fresh dcd41b capture source."},
+    {"address": "0x82304F40", "name": "ac6PathDropHook", "disposition": "disable", "reason": "Obsolete unlocked-FPS diagnostic absent from the fresh dcd41b capture source."},
+    {"address": "0x821F05F8", "name": "ac6PresentTimingHook", "disposition": "retain", "reason": "Defined in the pinned host source and provides the current host frame boundary."},
+    {"address": "0x821EFF30", "name": "ac6PresentIntervalHook", "disposition": "retain", "reason": "Defined in the pinned host source and inert while ac6_unlock_fps is false."},
+    {"address": "0x82184460", "name": "ac6CinematicTickHook", "disposition": "disable", "reason": "Obsolete cutscene diagnostic absent from the fresh dcd41b capture source."},
+    {"address": "0x821856F8", "name": "ac6CinematicTickHook", "disposition": "disable", "reason": "Obsolete cutscene diagnostic absent from the fresh dcd41b capture source."},
+    {"address": "0x82343E78", "name": "ac6PacWorkerDispatchHook", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x82345660", "name": "ac6PacWorkerL2DispatchHook", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x82345780", "name": "ac6PacWorkerL2DispatchHook", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x823458C4", "name": "ac6PacWorkerL2DispatchHook", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x82345A50", "name": "ac6PacWorkerL2DispatchHook", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x82345B70", "name": "ac6PacWorkerL2DispatchHook", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x822CF510", "name": "ac6PacCodecDispatchProbe", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x822CF2F8", "name": "ac6PacMode1EntryProbe", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x822CCB50", "name": "ac6PacBitFetcherProbe", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x822CEAC0", "name": "ac6PacDynamicHeaderProbe", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x822CDB38", "name": "ac6PacTreeBuilderProbe", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x822CD068", "name": "ac6PacBlockConsumerProbe", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x822CD758", "name": "ac6PacBlockConsumerProbe", "disposition": "disable", "reason": "Historical PAC probe absent from the fresh dcd41b capture source."},
+    {"address": "0x82364B44", "name": "ac6MateDrawRequestHook", "disposition": "disable", "reason": "Historical draw diagnostic absent from the fresh dcd41b capture source."}
+  ]
+}

@@ -1,0 +1,13 @@
+diff --git a/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt b/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt
+index 05884256..df18905f 100644
+--- a/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt
++++ b/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt
+@@ -255,7 +255,7 @@ set(SDL_METAL OFF CACHE BOOL "" FORCE)
+
+ # Disable dummy drivers
+ set(SDL_DISKAUDIO OFF CACHE BOOL "" FORCE)
+-set(SDL_DUMMYAUDIO OFF CACHE BOOL "" FORCE)
++set(SDL_DUMMYAUDIO ON CACHE BOOL "" FORCE)
+ set(SDL_DUMMYVIDEO OFF CACHE BOOL "" FORCE)
+
+ add_subdirectory(sdl3)

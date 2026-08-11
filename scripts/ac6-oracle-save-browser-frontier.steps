@@ -1,0 +1,17 @@
+# Qualified PAL fresh-profile prefix through the guest-owned save dialogs.
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+capture	save-modal
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=37	20
+capture	create-complete
+key	space	0.1
+wait	type28=35	20
+capture	storage-complete
+key	space	0.1
+wait	selector44=3	20
+capture	file-browser

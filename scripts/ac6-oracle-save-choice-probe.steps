@@ -1,0 +1,16 @@
+# Isolate the first fresh-profile binary choice.  Captures bracket the D-pad
+# selection and confirm edge so rendering and guest state can be correlated.
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+sleep	2
+capture	choice-default
+key	Left	0.1
+sleep	2
+capture	choice-left
+key	space	0.1
+sleep	2
+capture	choice-after-a
+wait	type28=37	10
+capture	create-complete

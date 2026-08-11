@@ -1,0 +1,49 @@
+diff --git a/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp b/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp
+index ba8ef412..8dafac3d 100644
+--- a/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp
++++ b/thirdparty/rexglue-sdk/src/codegen/builders/control_flow.cpp
+@@ -9,6 +9,8 @@
+  *              See LICENSE file in the project root for full license text.
+  */
+
++#include <set>
++
+ #include "builder_context.h"
+ #include "helpers.h"
+
+@@ -125,18 +127,17 @@ bool build_bctr(BuilderContext& ctx) {
+   }
+
+   if (jt) {
+-    ctx.println("\tswitch ({}.u32) {{", ctx.r(jt->indexRegister));
++    // CTR is the computed branch target. It remains valid when the table-load
++    // instruction overwrites the scanner's inferred index register.
++    ctx.println("\tswitch ({}.u32) {{", ctx.ctr());
+
++    std::set<uint32_t> emitted_labels;
+     for (size_t i = 0; i < jt->targets.size(); i++) {
+-      ctx.println("\tcase {}:", i);
+       auto label = jt->targets[i];
+-
+-      // TODO(tomc): Figure out if this actually is triggered on real hardware and what would
+-      // happen?
+-      if (label == 0) {
+-        ctx.println("\t\t__builtin_trap(); // ERROR - detected jump to null value");
++      if (label == 0 || !emitted_labels.insert(label).second) {
+         continue;
+       }
++      ctx.println("\tcase 0x{:X}:", label);
+
+       auto kind = ctx.graph().classifyTarget(label, ctx.fn, false);
+       switch (kind) {
+@@ -166,7 +165,9 @@ bool build_bctr(BuilderContext& ctx) {
+     }
+
+     ctx.println("\tdefault:");
+-    ctx.println("\t\t__builtin_trap(); // Switch case out of range");
++    ctx.println(
++        "\t\tREX_FATAL(\"Unlisted jump-table target {{:#010x}} at bctr 0x{:08X}\", {}.u32);",
++        ctx.base, ctx.ctr());
+     ctx.println("\t}}");
+
+     ctx.reset_switch_table();

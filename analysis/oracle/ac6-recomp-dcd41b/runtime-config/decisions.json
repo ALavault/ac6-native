@@ -1,0 +1,179 @@
+{
+  "schema": "ac6.oracle-runtime-config-decisions.v1",
+  "input_configuration": "patches/ac6recomp_config_restgprlr16_fix_20260727.toml",
+  "input_configuration_sha256": "af17bd759eee96bea4c8b81b3a976848ef4c09b805cfe35ea35737e49739b2b8",
+  "hook_policy": "analysis/oracle/ac6-recomp-dcd41b/runtime-config/hook-policy.json",
+  "hook_policy_sha256": "d38109b8ecb77ae653788bc65c5103042dcfab99f0b44e89a645a6aff1c467f6",
+  "boundary_export": "analysis/oracle/ac6-recomp-dcd41b/ghidra/function-boundaries.json",
+  "boundary_export_sha256": "5e7119fa582656e17432d84bb202e03f54c15052cde2920b93115a173f6284f1",
+  "switch_tables": "analysis/oracle/ac6-recomp-dcd41b/ghidra/switch-tables.json",
+  "switch_tables_sha256": "2ca93685a182fea2ad144dbbf201c77fe66de1f5c289169e2a4fca6eaaa23a25",
+  "function_starts": 8576,
+  "retained_midasm_hooks": [
+    {
+      "address": 2183064548,
+      "name": "ac6FlipIntervalHook",
+      "disposition": "retain",
+      "reason": "Defined in the pinned host source and inert while ac6_unlock_fps is false."
+    },
+    {
+      "address": 2183068984,
+      "name": "ac6DeltaDivisorHook",
+      "disposition": "retain",
+      "reason": "Defined in the pinned host source and inert while ac6_unlock_fps is false."
+    },
+    {
+      "address": 2183071224,
+      "name": "ac6PresentTimingHook",
+      "disposition": "retain",
+      "reason": "Defined in the pinned host source and provides the current host frame boundary."
+    },
+    {
+      "address": 2183069488,
+      "name": "ac6PresentIntervalHook",
+      "disposition": "retain",
+      "reason": "Defined in the pinned host source and inert while ac6_unlock_fps is false."
+    }
+  ],
+  "disabled_midasm_hooks": [
+    {
+      "address": 2183069044,
+      "name": "ac6DeltaPrecisionHook",
+      "disposition": "disable",
+      "reason": "Obsolete unlocked-FPS diagnostic absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184204096,
+      "name": "ac6PathDropHook",
+      "disposition": "disable",
+      "reason": "Obsolete unlocked-FPS diagnostic absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2182628448,
+      "name": "ac6CinematicTickHook",
+      "disposition": "disable",
+      "reason": "Obsolete cutscene diagnostic absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2182633208,
+      "name": "ac6CinematicTickHook",
+      "disposition": "disable",
+      "reason": "Obsolete cutscene diagnostic absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184461944,
+      "name": "ac6PacWorkerDispatchHook",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184468064,
+      "name": "ac6PacWorkerL2DispatchHook",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184468352,
+      "name": "ac6PacWorkerL2DispatchHook",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184468676,
+      "name": "ac6PacWorkerL2DispatchHook",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184469072,
+      "name": "ac6PacWorkerL2DispatchHook",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184469360,
+      "name": "ac6PacWorkerL2DispatchHook",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2183984400,
+      "name": "ac6PacCodecDispatchProbe",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2183983864,
+      "name": "ac6PacMode1EntryProbe",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2183973712,
+      "name": "ac6PacBitFetcherProbe",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2183981760,
+      "name": "ac6PacDynamicHeaderProbe",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2183977784,
+      "name": "ac6PacTreeBuilderProbe",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2183975016,
+      "name": "ac6PacBlockConsumerProbe",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2183976792,
+      "name": "ac6PacBlockConsumerProbe",
+      "disposition": "disable",
+      "reason": "Historical PAC probe absent from the fresh dcd41b capture source."
+    },
+    {
+      "address": 2184596292,
+      "name": "ac6MateDrawRequestHook",
+      "disposition": "disable",
+      "reason": "Historical draw diagnostic absent from the fresh dcd41b capture source."
+    }
+  ],
+  "runtime_measured_switch_tables": [
+    {
+      "address": "0x8237BF30",
+      "owner": "0x8237BF08",
+      "register": 10,
+      "labels": [
+        "0x8237BF08",
+        "0x8237C688",
+        "0x8237C878",
+        "0x8237C688",
+        "0x8237BF38",
+        "0x8237C6A0"
+      ],
+      "evidence": "reports/cycle-330-the-jump-table-was-truncated.md#4"
+    },
+    {
+      "address": "0x8237C850",
+      "owner": "0x8237C828",
+      "register": 10,
+      "labels": [
+        "0x8237C828",
+        "0x8237C828",
+        "0x8237C640",
+        "0x8237C658",
+        "0x8237C670",
+        "0x8237C670"
+      ],
+      "evidence": "reports/cycle-330-the-jump-table-was-truncated.md#4"
+    }
+  ],
+  "output_configuration_sha256": "6f43396da64a08df61423a8cce57605ac8154dbf0b9ac8f05fd563c94f08e868"
+}

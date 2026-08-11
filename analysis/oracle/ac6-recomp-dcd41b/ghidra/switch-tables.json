@@ -1,0 +1,37 @@
+{
+  "schema": "ac6.oracle-switch-tables.v1",
+  "project": "ace-combat-6",
+  "program": "default.xex",
+  "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+  "qualification": "The branch sites and targets are checked against canonical Ghidra function bodies. Table contents are runtime measurements, not function-boundary evidence.",
+  "switch_tables": [
+    {
+      "address": "0x8237BF30",
+      "owner": "0x8237BF08",
+      "register": 10,
+      "labels": [
+        "0x8237BF08",
+        "0x8237C688",
+        "0x8237C878",
+        "0x8237C688",
+        "0x8237BF38",
+        "0x8237C6A0"
+      ],
+      "evidence": "reports/cycle-330-the-jump-table-was-truncated.md#4"
+    },
+    {
+      "address": "0x8237C850",
+      "owner": "0x8237C828",
+      "register": 10,
+      "labels": [
+        "0x8237C828",
+        "0x8237C828",
+        "0x8237C640",
+        "0x8237C658",
+        "0x8237C670",
+        "0x8237C670"
+      ],
+      "evidence": "reports/cycle-330-the-jump-table-was-truncated.md#4"
+    }
+  ]
+}

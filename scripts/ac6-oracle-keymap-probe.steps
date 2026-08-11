@@ -1,0 +1,17 @@
+# Reach the guest-owned save modal, let the boot pulses settle, then sample each
+# directional binding independently.  No accept button is sent after type28=30.
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+sleep	2
+capture	save-modal-settled
+key	Left	0.1
+sleep	2
+key	Right	0.1
+sleep	2
+key	Up	0.1
+sleep	2
+key	Down	0.1
+sleep	2
+capture	keymap-end

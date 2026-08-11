@@ -1,0 +1,165 @@
+diff --git a/thirdparty/rexglue-sdk/include/rex/ppc/context.h b/thirdparty/rexglue-sdk/include/rex/ppc/context.h
+index fe3306ae..9c06fbab 100644
+--- a/thirdparty/rexglue-sdk/include/rex/ppc/context.h
++++ b/thirdparty/rexglue-sdk/include/rex/ppc/context.h
+@@ -18,6 +18,7 @@
+ #include <cassert>
+ #include <csetjmp>
+ #include <cstdint>
++#include <cstdio>
+ #include <cstdlib>
+ #include <stdexcept>
+ #include <unordered_map>
+@@ -124,7 +125,24 @@ using PPCFunc = void(PPCContext& ctx, uint8_t* base);
+   (*(PPCFunc**)(x + PPC_IMAGE_BASE + PPC_IMAGE_SIZE + (uint64_t(uint32_t(y) - PPC_CODE_BASE) * 2)))
+
+ #undef PPC_CALL_INDIRECT_FUNC
+-#define PPC_CALL_INDIRECT_FUNC(x) PPC_LOOKUP_FUNC(base, x)(ctx, base);
++#define PPC_CALL_INDIRECT_FUNC(x)                                           \
++  do {                                                                      \
++    const uint32_t ppc_indirect_target = static_cast<uint32_t>(x);          \
++    PPCFunc* ppc_indirect_function =                                       \
++        PPC_LOOKUP_FUNC(base, ppc_indirect_target);                         \
++    if (ppc_indirect_function == nullptr) {                                 \
++      std::fprintf(stderr,                                                  \
++                   "[ac6-oracle-indirect-miss] target=0x%08X "             \
++                   "caller=0x%08X\n",                                     \
++                   ppc_indirect_target, static_cast<uint32_t>(ctx.lr));     \
++      std::fflush(stderr);                                                  \
++      REXLOG_ERROR(                                                         \
++          "[ac6-oracle-indirect-miss] target=0x{:08X} caller=0x{:08X}",   \
++          ppc_indirect_target, ctx.lr);                                     \
++      __builtin_debugtrap();                                                \
++    }                                                                       \
++    ppc_indirect_function(ctx, base);                                       \
++  } while (0)
+
+ #endif  // PPC_CONFIG_H_INCLUDED
+
+diff --git a/thirdparty/rexglue-sdk/src/core/exception_handler_posix.cpp b/thirdparty/rexglue-sdk/src/core/exception_handler_posix.cpp
+index 8aced51f..8d98504c 100644
+--- a/thirdparty/rexglue-sdk/src/core/exception_handler_posix.cpp
++++ b/thirdparty/rexglue-sdk/src/core/exception_handler_posix.cpp
+@@ -15,8 +15,10 @@
+
+ #include <signal.h>
+
++#include <cstdio>
+ #include <cstdint>
+ #include <cstring>
++#include <dlfcn.h>
+
+ #include <rex/assert.h>
+ #include <rex/logging.h>
+@@ -30,6 +32,7 @@ namespace rex::arch {
+ bool signal_handlers_installed_ = false;
+ struct sigaction original_sigill_handler_;
+ struct sigaction original_sigsegv_handler_;
++struct sigaction original_sigtrap_handler_;
+
+ // This can be as large as needed, but isn't often needed.
+ // As we will be sometimes firing many exceptions we want to avoid having to
+@@ -44,6 +47,36 @@ static void ExceptionHandlerCallback(int signal_number, siginfo_t* signal_info,
+                                      void* signal_context) {
+   mcontext_t& mcontext = reinterpret_cast<ucontext_t*>(signal_context)->uc_mcontext;
+
++  if (signal_number == SIGTRAP) {
++#if REX_ARCH_AMD64
++    const uint64_t pc = uint64_t(mcontext.gregs[REG_RIP]);
++#elif REX_ARCH_ARM64
++    const uint64_t pc = uint64_t(mcontext.pc);
++#else
++    const uint64_t pc = 0;
++#endif
++    Dl_info info{};
++    const bool resolved = dladdr(reinterpret_cast<void*>(pc), &info) != 0;
++    const uint64_t module_offset = resolved
++        ? pc - reinterpret_cast<uint64_t>(info.dli_fbase)
++        : 0;
++    const uint64_t symbol_offset = resolved && info.dli_saddr
++        ? pc - reinterpret_cast<uint64_t>(info.dli_saddr)
++        : 0;
++    std::fprintf(stderr,
++                 "[ac6-oracle-host-trap] pc=0x%016lX module_offset=0x%lX "
++                 "symbol=%s symbol_offset=0x%lX\n",
++                 pc, module_offset,
++                 resolved && info.dli_sname ? info.dli_sname : "unknown",
++                 symbol_offset);
++    std::fflush(stderr);
++    struct sigaction default_action{};
++    default_action.sa_handler = SIG_DFL;
++    sigaction(SIGTRAP, &default_action, nullptr);
++    raise(SIGTRAP);
++    return;
++  }
++
+   HostThreadContext thread_context;
+
+ #if REX_ARCH_AMD64
+@@ -205,6 +238,46 @@ static void ExceptionHandlerCallback(int signal_number, siginfo_t* signal_info,
+       return;
+     }
+   }
++
++  // No handler claimed this fault. Returning here resumes the thread at the
++  // *same* instruction, because nothing advanced the program counter -- so the
++  // faulting instruction re-executes, faults again, and the thread spins in a
++  // signal storm forever at 100% CPU without ever crashing.
++  //
++  // That is not hypothetical. AC6's main guest thread was measured doing
++  // exactly this: 100.00% of its samples landed on a single `ud2`, emitted by
++  // the recompiler as __builtin_trap() for a jump-table `bctr` it could not
++  // resolve. The process looked alive, burned a core, presented no frames, and
++  // gave no diagnostic at all. Locating it cost a profile and an annotate pass;
++  // it should have cost one line of log.
++  //
++  // Failing loudly here is strictly better than looping silently: restore the
++  // default disposition and re-raise, so the process dies at the faulting
++  // instruction with a usable core and a named address.
++  const char* signal_name = signal_number == SIGILL    ? "SIGILL (illegal instruction)"
++                            : signal_number == SIGSEGV ? "SIGSEGV (access violation)"
++                                                       : "unknown signal";
++  REXLOG_ERROR(
++      "Unhandled {} at host pc {:#018x}, faulting address {:#018x}. No installed handler claimed "
++      "it. Re-raising instead of resuming: resuming would re-execute the same instruction "
++      "forever. If the pc is inside a recompiled guest function, this is an unresolved indirect "
++      "branch the code generator turned into a trap.",
++      signal_name,
++#if REX_ARCH_AMD64
++      uint64_t(mcontext.gregs[REG_RIP]),
++#elif REX_ARCH_ARM64
++      uint64_t(mcontext.pc),
++#else
++      uint64_t(0),
++#endif  // REX_ARCH
++      reinterpret_cast<uint64_t>(signal_info->si_addr));
++
++  struct sigaction default_action;
++  std::memset(&default_action, 0, sizeof(default_action));
++  default_action.sa_handler = SIG_DFL;
++  sigaction(signal_number, &default_action, nullptr);
++  // Returning now re-executes the faulting instruction, which this time is
++  // taken by the default disposition and terminates the process.
+ }
+
+ void ExceptionHandler::Install(Handler fn, void* data) {
+@@ -221,6 +294,9 @@ void ExceptionHandler::Install(Handler fn, void* data) {
+     if (sigaction(SIGSEGV, &signal_handler, &original_sigsegv_handler_) != 0) {
+       assert_always("Failed to install new SIGSEGV handler");
+     }
++    if (sigaction(SIGTRAP, &signal_handler, &original_sigtrap_handler_) != 0) {
++      assert_always("Failed to install new SIGTRAP handler");
++    }
+     signal_handlers_installed_ = true;
+   }
+
+@@ -261,6 +337,9 @@ void ExceptionHandler::Uninstall(Handler fn, void* data) {
+       if (sigaction(SIGSEGV, &original_sigsegv_handler_, NULL) != 0) {
+         assert_always("Failed to restore original SIGSEGV handler");
+       }
++      if (sigaction(SIGTRAP, &original_sigtrap_handler_, NULL) != 0) {
++        assert_always("Failed to restore original SIGTRAP handler");
++      }
+       signal_handlers_installed_ = false;
+     }
+   }

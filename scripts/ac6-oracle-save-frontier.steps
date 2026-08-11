@@ -1,0 +1,7 @@
+# Reach the first post-title save modal using the historically qualified
+# Start+A pulse. The read-only route probe publishes the guest-owned state.
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+capture	save-modal

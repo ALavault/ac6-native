@@ -1,0 +1,19 @@
+{
+  "schema": "ac6.oracle-capture-config-decisions.v1",
+  "input_configuration_sha256": "6f43396da64a08df61423a8cce57605ac8154dbf0b9ac8f05fd563c94f08e868",
+  "boundary_export_sha256": "5e7119fa582656e17432d84bb202e03f54c15052cde2920b93115a173f6284f1",
+  "policy_sha256": "e470b727327312ba8afed94e6a484da81c94e8ab557114edb569e91d8c14ac58",
+  "overrides": [
+    {
+      "address": "0x820F6180",
+      "name": "rex_sub_820F6180",
+      "evidence": "Canonical 16-byte vtable thunk SHA-256 829ec6aaa88b2ebb142acfd3ec48057553b05b59a7ef3254f8ba632b086825c9, executed as target from bctrl 0x820E1854."
+    },
+    {
+      "address": "0x82159350",
+      "name": "rex_sub_82159350",
+      "evidence": "Canonical vtable 0x8205DF4C slot +0x08 and executed M350 broadcast from LR 0x820F6460."
+    }
+  ],
+  "output_configuration_sha256": "63049f034fd12767dfb0737cb098969fb33dd01b7ea11e0ede056b26993be562"
+}

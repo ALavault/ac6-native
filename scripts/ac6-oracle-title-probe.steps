@@ -1,0 +1,19 @@
+# Bounded visual qualification of the deterministic title/menu prefix.
+sleep	8
+capture	boot
+key	Escape	0.1
+sleep	3
+capture	post-start
+key	space	0.1
+sleep	5
+capture	post-first-a
+key	Escape	0.1
+sleep	2
+key	space	0.1
+sleep	5
+capture	post-pulse-1
+key	Escape	0.1
+sleep	2
+key	space	0.1
+sleep	5
+capture	post-pulse-2

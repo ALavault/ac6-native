@@ -1,0 +1,27 @@
+{
+  "schema": "ac6.oracle-host-interceptions.v1",
+  "project": "ace-combat-6",
+  "program": "default.xex",
+  "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+  "qualification": "These capture-only host interceptions are internal to their canonical owners. They are not guest function starts and have no boundary authority.",
+  "interceptions": [
+    {"candidate": "0x821D95C8", "owner": "0x821D9588", "symbol": "rex_sub_821D95C8"},
+    {"candidate": "0x821D9D38", "owner": "0x821D9CF8", "symbol": "rex_sub_821D9D38"},
+    {"candidate": "0x821DA698", "owner": "0x821DA658", "symbol": "rex_sub_821DA698"},
+    {"candidate": "0x821DBAF8", "owner": "0x821DBAD8", "symbol": "rex_sub_821DBAF8"},
+    {"candidate": "0x821DC538", "owner": "0x821DC4F8", "symbol": "rex_sub_821DC538"},
+    {"candidate": "0x821DC6C8", "owner": "0x821DC688", "symbol": "rex_sub_821DC6C8"},
+    {"candidate": "0x821DC9C0", "owner": "0x821DC980", "symbol": "rex_sub_821DC9C0"},
+    {"candidate": "0x821DCA68", "owner": "0x821DCA28", "symbol": "rex_sub_821DCA68"},
+    {"candidate": "0x821DCB08", "owner": "0x821DCAC8", "symbol": "rex_sub_821DCB08"},
+    {"candidate": "0x821DCB88", "owner": "0x821DCB48", "symbol": "rex_sub_821DCB88"},
+    {"candidate": "0x821DD0A8", "owner": "0x821DD068", "symbol": "rex_sub_821DD0A8"},
+    {"candidate": "0x821DD1C8", "owner": "0x821DD188", "symbol": "rex_sub_821DD1C8"},
+    {"candidate": "0x821DEA48", "owner": "0x821DEA08", "symbol": "rex_sub_821DEA48"},
+    {"candidate": "0x821DEF18", "owner": "0x821DEED8", "symbol": "rex_sub_821DEF18"},
+    {"candidate": "0x821DF300", "owner": "0x821DF2C0", "symbol": "rex_sub_821DF300"},
+    {"candidate": "0x821E10C8", "owner": "0x821E1088", "symbol": "rex_sub_821E10C8"},
+    {"candidate": "0x821E2380", "owner": "0x821E2340", "symbol": "rex_sub_821E2380"},
+    {"candidate": "0x821E2BB8", "owner": "0x821E2B78", "symbol": "rex_sub_821E2BB8"}
+  ]
+}

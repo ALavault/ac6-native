@@ -1,0 +1,771 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ca45c57e..a283812b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,6 +18,10 @@ endif()
+ # Sources
+ set(AC6RECOMP_SOURCES
+     src/main.cpp
++    src/ac6_decimal_parse.cpp
++    src/ac6_oracle_probe.cpp
++    src/ac6_oracle_route_probe.cpp
++    src/ac6_oracle_runtime_fixes.cpp
+     src/d3d_hooks.cpp
+     src/render_hooks.cpp
+     src/ac6_native_graphics.cpp
+@@ -41,3 +45,14 @@ else()
+ endif()
+
+ rexglue_setup_target(ac6recomp)
++
++option(AC6_BUILD_TESTING "Build AC6 oracle host tests" ON)
++if(AC6_BUILD_TESTING)
++    enable_testing()
++    add_executable(ac6_decimal_parse_test
++        tests/ac6_decimal_parse_test.cpp
++        src/ac6_decimal_parse.cpp
++    )
++    target_include_directories(ac6_decimal_parse_test PRIVATE src)
++    add_test(NAME ac6_decimal_parse_test COMMAND ac6_decimal_parse_test)
++endif()
+diff --git a/src/ac6_decimal_parse.cpp b/src/ac6_decimal_parse.cpp
+new file mode 100644
+index 00000000..6a587aac
+--- /dev/null
++++ b/src/ac6_decimal_parse.cpp
+@@ -0,0 +1,53 @@
++#include "ac6_decimal_parse.h"
++
++#include <limits>
++
++namespace ac6::decimal_parse {
++namespace {
++
++bool IsAsciiSpace(char value) {
++  return value == ' ' || (value >= '\t' && value <= '\r');
++}
++
++}  // namespace
++
++int32_t ParseAtoi(std::string_view input) {
++  size_t index = 0;
++  while (index < input.size() && IsAsciiSpace(input[index])) {
++    ++index;
++  }
++
++  bool negative = false;
++  if (index < input.size() && (input[index] == '+' || input[index] == '-')) {
++    negative = input[index] == '-';
++    ++index;
++  }
++
++  constexpr uint64_t kPositiveLimit =
++      static_cast<uint64_t>(std::numeric_limits<int32_t>::max());
++  constexpr uint64_t kNegativeLimit = kPositiveLimit + 1u;
++  const uint64_t limit = negative ? kNegativeLimit : kPositiveLimit;
++  uint64_t value = 0;
++  for (; index < input.size(); ++index) {
++    const unsigned char current = static_cast<unsigned char>(input[index]);
++    if (current < '0' || current > '9') {
++      break;
++    }
++    const uint32_t digit = current - '0';
++    if (value > (limit - digit) / 10u) {
++      value = limit;
++      break;
++    }
++    value = value * 10u + digit;
++  }
++
++  if (negative) {
++    if (value == kNegativeLimit) {
++      return std::numeric_limits<int32_t>::min();
++    }
++    return -static_cast<int32_t>(value);
++  }
++  return static_cast<int32_t>(value);
++}
++
++}  // namespace ac6::decimal_parse
+diff --git a/src/ac6_decimal_parse.h b/src/ac6_decimal_parse.h
+new file mode 100644
+index 00000000..e0b62ea3
+--- /dev/null
++++ b/src/ac6_decimal_parse.h
+@@ -0,0 +1,10 @@
++#pragma once
++
++#include <cstdint>
++#include <string_view>
++
++namespace ac6::decimal_parse {
++
++int32_t ParseAtoi(std::string_view input);
++
++}  // namespace ac6::decimal_parse
+diff --git a/src/ac6_oracle_probe.cpp b/src/ac6_oracle_probe.cpp
+new file mode 100644
+index 00000000..d9256172
+--- /dev/null
++++ b/src/ac6_oracle_probe.cpp
+@@ -0,0 +1,221 @@
++#include <array>
++#include <atomic>
++#include <cstdint>
++#include <fstream>
++#include <iomanip>
++#include <mutex>
++#include <sstream>
++#include <string>
++#include <string_view>
++
++#include <rex/ac6_oracle_probe.h>
++#include <rex/crypto/sha256.h>
++#include <rex/cvar.h>
++#include <rex/logging.h>
++#include <rex/ppc.h>
++
++#include "d3d_hooks.h"
++
++REXCVAR_DEFINE_STRING(ac6_oracle_probe_path, "", "AC6/Oracle",
++                      "Capture-only Mission 01 JSONL probe output path");
++
++namespace ac6::oracle {
++namespace {
++
++constexpr uint64_t kMaxEvents = 1800;
++constexpr uint64_t kMaxOutputBytes = 16 * 1024 * 1024;
++
++struct InputSnapshot {
++  uint32_t packet_number{0};
++  uint16_t buttons{0};
++  uint8_t left_trigger{0};
++  uint8_t right_trigger{0};
++  int16_t thumb_lx{0};
++  int16_t thumb_ly{0};
++  int16_t thumb_rx{0};
++  int16_t thumb_ry{0};
++};
++
++std::mutex g_input_mutex;
++InputSnapshot g_input;
++
++std::mutex g_output_mutex;
++std::ofstream g_output;
++std::string g_output_path;
++uint64_t g_event_count = 0;
++uint64_t g_output_bytes = 0;
++bool g_output_failed = false;
++
++InputSnapshot SnapshotInput() {
++  std::lock_guard<std::mutex> lock(g_input_mutex);
++  return g_input;
++}
++
++std::string ButtonArray(uint16_t mask) {
++  struct Button {
++    uint16_t mask;
++    std::string_view name;
++  };
++  static constexpr std::array<Button, 15> kButtons{{
++      {0x0001, "dpad_up"},       {0x0002, "dpad_down"},
++      {0x0004, "dpad_left"},     {0x0008, "dpad_right"},
++      {0x0010, "start"},         {0x0020, "back"},
++      {0x0040, "left_thumb"},    {0x0080, "right_thumb"},
++      {0x0100, "left_shoulder"}, {0x0200, "right_shoulder"},
++      {0x0400, "guide"},         {0x1000, "a"},
++      {0x2000, "b"},             {0x4000, "x"},
++      {0x8000, "y"},
++  }};
++  std::ostringstream output;
++  output << '[';
++  bool first = true;
++  for (const Button& button : kButtons) {
++    if ((mask & button.mask) == 0) {
++      continue;
++    }
++    output << (first ? "\"" : ",\"") << button.name << '\"';
++    first = false;
++  }
++  output << ']';
++  return output.str();
++}
++
++std::string RegisterDigest(const PPCContext& ctx) {
++  std::ostringstream payload;
++  payload << std::hex << std::setfill('0');
++  const std::array<uint64_t, 10> values{{
++      ctx.r3.u64, ctx.r4.u64, ctx.r5.u64, ctx.r6.u64, ctx.r7.u64,
++      ctx.r8.u64, ctx.r9.u64, ctx.r10.u64, ctx.lr, ctx.ctr.u64,
++  }};
++  for (uint64_t value : values) {
++    payload << std::setw(16) << value;
++  }
++  return rex::crypto::sha256(payload.str());
++}
++
++std::string GraphicsDigest(const ac6::d3d::FrameCaptureSummary& graphics) {
++  std::ostringstream payload;
++  payload << graphics.frame_index << ':' << graphics.draw_count << ':'
++          << graphics.clear_count << ':' << graphics.resolve_count << ':'
++          << graphics.record_signature << ':' << graphics.frame_end_render_target_0 << ':'
++          << graphics.frame_end_depth_stencil << ':' << graphics.frame_end_viewport_width << ':'
++          << graphics.frame_end_viewport_height;
++  return rex::crypto::sha256(payload.str());
++}
++
++bool EnsureOutput(const std::string& path) {
++  if (g_output.is_open() && path == g_output_path) {
++    return true;
++  }
++  if (g_output.is_open()) {
++    g_output.close();
++  }
++  g_output.open(path, std::ios::out | std::ios::trunc);
++  g_output_path = path;
++  g_event_count = 0;
++  g_output_bytes = 0;
++  g_output_failed = !g_output.is_open();
++  if (g_output_failed) {
++    REXLOG_ERROR("AC6 oracle probe could not open its bounded output");
++    return false;
++  }
++  REXLOG_INFO("AC6 oracle Mission 01 probe enabled");
++  return true;
++}
++
++void EmitSchedulerEvent(const PPCContext& ctx) {
++  const std::string path = REXCVAR_GET(ac6_oracle_probe_path);
++  if (path.empty()) {
++    return;
++  }
++  const InputSnapshot input = SnapshotInput();
++  const ac6::d3d::FrameCaptureSummary graphics = ac6::d3d::GetFrameCaptureSummary();
++  const std::string register_digest = RegisterDigest(ctx);
++  const std::string graphics_digest = GraphicsDigest(graphics);
++
++  std::lock_guard<std::mutex> lock(g_output_mutex);
++  if (g_output_failed || !EnsureOutput(path) || g_event_count >= kMaxEvents) {
++    return;
++  }
++
++  std::ostringstream event;
++  event << "{\"guest_address\":\"0x82267370\",\"tick\":" << g_event_count
++        << ",\"input\":{\"axes\":{\"lx\":" << input.thumb_lx
++        << ",\"ly\":" << input.thumb_ly << ",\"rx\":" << input.thumb_rx
++        << ",\"ry\":" << input.thumb_ry << "},\"triggers\":{\"left\":"
++        << static_cast<uint32_t>(input.left_trigger) << ",\"right\":"
++        << static_cast<uint32_t>(input.right_trigger) << "},\"buttons\":"
++        << ButtonArray(input.buttons) << "},\"graphics\":{\"frame_index\":"
++        << graphics.frame_index << ",\"draw_calls\":" << graphics.draw_count
++        << ",\"clear_calls\":" << graphics.clear_count << ",\"resolve_calls\":"
++        << graphics.resolve_count << ",\"record_signature\":"
++        << graphics.record_signature << ",\"state_digest\":\"" << graphics_digest
++        << "\"},\"output_hashes\":{\"graphics\":\"" << graphics_digest
++        << "\",\"scheduler_registers\":\"" << register_digest << "\"}}\n";
++  const std::string line = event.str();
++  if (g_output_bytes + line.size() > kMaxOutputBytes) {
++    return;
++  }
++  g_output << line;
++  g_output.flush();
++  if (!g_output.good()) {
++    g_output_failed = true;
++    REXLOG_ERROR("AC6 oracle probe write failed");
++    return;
++  }
++  g_output_bytes += line.size();
++  ++g_event_count;
++}
++
++}  // namespace
++
++void PublishInputState(uint32_t user_index, uint32_t packet_number, uint16_t buttons,
++                       uint8_t left_trigger, uint8_t right_trigger, int16_t thumb_lx,
++                       int16_t thumb_ly, int16_t thumb_rx, int16_t thumb_ry) {
++  if (user_index != 0 || std::string(REXCVAR_GET(ac6_oracle_probe_path)).empty()) {
++    return;
++  }
++  std::lock_guard<std::mutex> lock(g_input_mutex);
++  static std::atomic<uint32_t> transition_lines{0};
++  if (buttons != g_input.buttons &&
++      transition_lines.fetch_add(1, std::memory_order_relaxed) < 512) {
++    REXLOG_INFO(
++        "[ac6-oracle-input] packet={} buttons=0x{:04X}->0x{:04X} "
++        "axes={},{},{},{} triggers={},{}",
++        packet_number, g_input.buttons, buttons, thumb_lx, thumb_ly,
++        thumb_rx, thumb_ry, left_trigger, right_trigger);
++  }
++  g_input = {packet_number, buttons, left_trigger, right_trigger,
++             thumb_lx, thumb_ly, thumb_rx, thumb_ry};
++}
++
++}  // namespace ac6::oracle
++
++PPC_EXTERN_FUNC(__imp__sub_82267370);
++
++PPC_FUNC_IMPL(sub_82267370) {
++  PPC_FUNC_PROLOGUE();
++  __imp__sub_82267370(ctx, base);
++  ac6::oracle::EmitSchedulerEvent(ctx);
++}
++
++PPC_EXTERN_FUNC(__imp__sub_8237BF08);
++PPC_EXTERN_FUNC(__imp__sub_8237C828);
++
++PPC_FUNC_IMPL(sub_8237BF08) {
++  PPC_FUNC_PROLOGUE();
++  static std::atomic_flag logged = ATOMIC_FLAG_INIT;
++  if (!logged.test_and_set()) {
++    REXLOG_INFO("AC6 oracle frontier reached: 0x8237BF08");
++  }
++  __imp__sub_8237BF08(ctx, base);
++}
++
++PPC_FUNC_IMPL(sub_8237C828) {
++  PPC_FUNC_PROLOGUE();
++  static std::atomic_flag logged = ATOMIC_FLAG_INIT;
++  if (!logged.test_and_set()) {
++    REXLOG_INFO("AC6 oracle frontier reached: 0x8237C828");
++  }
++  __imp__sub_8237C828(ctx, base);
++}
+diff --git a/src/ac6_oracle_route_probe.cpp b/src/ac6_oracle_route_probe.cpp
+new file mode 100644
+index 00000000..51f4a991
+--- /dev/null
++++ b/src/ac6_oracle_route_probe.cpp
+@@ -0,0 +1,266 @@
++#include <atomic>
++#include <cstdint>
++
++#include <rex/logging.h>
++#include <rex/memory.h>
++#include <rex/ppc/function.h>
++
++// Read-only route synchronization for the qualified PAL default.xex. These
++// wrappers call the generated implementation unchanged and only publish state
++// transitions needed by the bounded Mission 01 input recipe.
++
++PPC_EXTERN_FUNC(__imp__sub_820D8FE0);
++PPC_EXTERN_FUNC(__imp__sub_820F63D0);
++PPC_EXTERN_FUNC(__imp__sub_8218F4C8);
++PPC_EXTERN_FUNC(__imp__rex_sub_82159350);
++PPC_EXTERN_FUNC(__imp__sub_821C37E0);
++PPC_EXTERN_FUNC(__imp__sub_821C5258);
++PPC_EXTERN_FUNC(__imp__sub_821C56F8);
++PPC_EXTERN_FUNC(__imp__sub_8234D210);
++
++namespace {
++
++std::atomic<uint32_t> g_save_screen{0};
++std::atomic<uint32_t> g_guest_edge{0};
++
++uint32_t GuestWord(uint8_t* base, uint32_t address) {
++  return address ? rex::memory::load_and_swap<uint32_t>(base + address) : 0;
++}
++
++struct SaveSnapshot {
++  uint32_t state;
++  uint32_t selector;
++  uint32_t response;
++  uint32_t type;
++  uint32_t result;
++
++  bool operator==(const SaveSnapshot&) const = default;
++};
++
++SaveSnapshot ReadSaveSnapshot(uint8_t* base, uint32_t screen) {
++  return {
++      GuestWord(base, screen + 40),
++      GuestWord(base, screen + 44),
++      GuestWord(base, screen + 12),
++      GuestWord(base, screen + 28),
++      GuestWord(base, screen + 36),
++  };
++}
++
++}  // namespace
++
++PPC_FUNC_IMPL(sub_8234D210) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t input = ctx.r3.u32;
++  const uint32_t caller = ctx.lr;
++  __imp__sub_8234D210(ctx, base);
++  if (!input) {
++    return;
++  }
++
++  const uint32_t pressed = GuestWord(base, input + 20);
++  const uint32_t current = GuestWord(base, input + 28);
++  const uint32_t repeat = GuestWord(base, input + 36);
++  g_guest_edge.store(pressed, std::memory_order_relaxed);
++  static std::atomic<uint32_t> lines{0};
++  if ((pressed || repeat) &&
++      lines.fetch_add(1, std::memory_order_relaxed) < 256) {
++    REXLOG_INFO(
++        "[ac6-guest-edge] input=0x{:08X} caller=0x{:08X} "
++        "pressed=0x{:04X} repeat=0x{:04X} current=0x{:04X}",
++        input, caller, pressed, repeat, current);
++  }
++}
++
++PPC_FUNC_IMPL(sub_820F63D0) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t descriptor = ctx.r6.u32;
++  const uint32_t message = GuestWord(base, descriptor);
++  const uint32_t argument = GuestWord(base, descriptor + 4);
++  const uint32_t screen = g_save_screen.load(std::memory_order_relaxed);
++  const uint32_t response_before = screen ? GuestWord(base, screen + 12) : 0;
++  const uint32_t edge = g_guest_edge.load(std::memory_order_relaxed);
++  const uint32_t caller = ctx.lr;
++  if (edge && message &&
++      rex::memory::load_and_swap<uint8_t>(base + message + 0) == 'M' &&
++      rex::memory::load_and_swap<uint8_t>(base + message + 1) == '3' &&
++      rex::memory::load_and_swap<uint8_t>(base + message + 2) == '5' &&
++      rex::memory::load_and_swap<uint8_t>(base + message + 3) == '0') {
++    static std::atomic<uint32_t> registry_lines{0};
++    constexpr uint32_t kListenerRegistry = 0x8293B800u;
++    for (uint32_t slot = 0; slot < 16; ++slot) {
++      const uint32_t listener = GuestWord(base, kListenerRegistry + slot * 4);
++      if (!listener ||
++          registry_lines.fetch_add(1, std::memory_order_relaxed) >= 128) {
++        continue;
++      }
++      const uint32_t vtable = GuestWord(base, listener);
++      const uint32_t callback = GuestWord(base, vtable + 8);
++      REXLOG_INFO(
++          "[ac6-message-listener] edge=0x{:04X} slot={} "
++          "listener=0x{:08X} vtable=0x{:08X} callback=0x{:08X}",
++          edge, slot, listener, vtable, callback);
++    }
++  }
++  __imp__sub_820F63D0(ctx, base);
++  if (!edge) {
++    return;
++  }
++
++  const uint32_t response_after = screen ? GuestWord(base, screen + 12) : 0;
++  static std::atomic<uint32_t> lines{0};
++  if (lines.fetch_add(1, std::memory_order_relaxed) < 256) {
++    REXLOG_INFO(
++        "[ac6-message-edge] edge=0x{:04X} caller=0x{:08X} "
++        "descriptor=0x{:08X} message=0x{:08X} bytes={:02X}{:02X}{:02X}{:02X} "
++        "argument=0x{:08X} response12={}->{}",
++        edge, caller, descriptor, message,
++        message ? rex::memory::load_and_swap<uint8_t>(base + message + 0) : 0,
++        message ? rex::memory::load_and_swap<uint8_t>(base + message + 1) : 0,
++        message ? rex::memory::load_and_swap<uint8_t>(base + message + 2) : 0,
++        message ? rex::memory::load_and_swap<uint8_t>(base + message + 3) : 0,
++        argument, response_before, response_after);
++  }
++}
++
++PPC_FUNC_IMPL(rex_sub_82159350) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t listener = ctx.r3.u32;
++  const uint32_t message = ctx.r4.u32;
++  const uint32_t argument = ctx.r5.u32;
++  const uint32_t screen = g_save_screen.load(std::memory_order_relaxed);
++  const uint32_t response_before = screen ? GuestWord(base, screen + 12) : 0;
++  const uint32_t gate_before = screen ? GuestWord(base, screen + 24) : 0;
++  const uint32_t type_before = screen ? GuestWord(base, screen + 28) : 0;
++  const uint32_t ready_before = screen ? GuestWord(base, screen + 32) : 0;
++  static std::atomic<uint32_t> lines{0};
++  const bool publish = lines.fetch_add(1, std::memory_order_relaxed) < 128;
++  if (publish) {
++    REXLOG_INFO(
++        "[ac6-message-callback-enter] listener=0x{:08X} message={} "
++        "argument={} caller=0x{:08X}",
++        listener, message, argument, ctx.lr);
++  }
++  __imp__rex_sub_82159350(ctx, base);
++  if (!publish || message != 350) {
++    return;
++  }
++  REXLOG_INFO(
++      "[ac6-message-callback] listener=0x{:08X} message={} argument={} "
++      "screen=0x{:08X} gate24={}->{} type28={}->{} response12={}->{} "
++      "ready32={}->{}",
++      listener, message, argument, screen, gate_before,
++      screen ? GuestWord(base, screen + 24) : 0, type_before,
++      screen ? GuestWord(base, screen + 28) : 0, response_before,
++      screen ? GuestWord(base, screen + 12) : 0, ready_before,
++      screen ? GuestWord(base, screen + 32) : 0);
++}
++
++PPC_FUNC_IMPL(sub_821C37E0) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t screen = ctx.r3.u32;
++  g_save_screen.store(screen, std::memory_order_relaxed);
++  __imp__sub_821C37E0(ctx, base);
++  if (!screen) {
++    return;
++  }
++
++  const SaveSnapshot snapshot = ReadSaveSnapshot(base, screen);
++  static thread_local uint32_t last_screen = 0;
++  static thread_local SaveSnapshot last{};
++  static thread_local bool primed = false;
++  static std::atomic<uint32_t> lines{0};
++  if ((!primed || screen != last_screen || !(snapshot == last)) &&
++      lines.fetch_add(1, std::memory_order_relaxed) < 256) {
++    REXLOG_INFO(
++        "[ac6-save-route] screen=0x{:08X} state40={} selector44={} "
++        "response12={} type28={} result36={}",
++        screen, static_cast<int32_t>(snapshot.state),
++        static_cast<int32_t>(snapshot.selector),
++        static_cast<int32_t>(snapshot.response),
++        static_cast<int32_t>(snapshot.type),
++        static_cast<int32_t>(snapshot.result));
++    last_screen = screen;
++    last = snapshot;
++    primed = true;
++  }
++}
++
++PPC_FUNC_IMPL(sub_821C5258) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t screen = ctx.r3.u32;
++  const SaveSnapshot before = screen ? ReadSaveSnapshot(base, screen) : SaveSnapshot{};
++  const uint32_t inner_before = screen ? GuestWord(base, screen + 68) : 0;
++  __imp__sub_821C5258(ctx, base);
++  if (!screen) {
++    return;
++  }
++  const SaveSnapshot after = ReadSaveSnapshot(base, screen);
++  const uint32_t inner_after = GuestWord(base, screen + 68);
++  if (!(before == after) || inner_before != inner_after) {
++    REXLOG_INFO(
++        "[ac6-save-task] screen=0x{:08X} inner68={}->{} selector44={}->{} "
++        "response12={}->{} type28={}->{} result36={}->{} return={}",
++        screen, inner_before, inner_after, before.selector, after.selector,
++        before.response, after.response, before.type, after.type,
++        before.result, after.result, ctx.r3.s32);
++  }
++}
++
++PPC_FUNC_IMPL(sub_821C56F8) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t screen = ctx.r3.u32;
++  const SaveSnapshot before = screen ? ReadSaveSnapshot(base, screen) : SaveSnapshot{};
++  const uint32_t inner_before = screen ? GuestWord(base, screen + 68) : 0;
++  __imp__sub_821C56F8(ctx, base);
++  if (!screen) {
++    return;
++  }
++  const SaveSnapshot after = ReadSaveSnapshot(base, screen);
++  const uint32_t inner_after = GuestWord(base, screen + 68);
++  if (!(before == after) || inner_before != inner_after) {
++    REXLOG_INFO(
++        "[ac6-save-state] screen=0x{:08X} inner68={}->{} selector44={}->{} "
++        "response12={}->{} type28={}->{} result36={}->{} return={}",
++        screen, inner_before, inner_after, before.selector, after.selector,
++        before.response, after.response, before.type, after.type,
++        before.result, after.result, ctx.r3.s32);
++  }
++}
++
++PPC_FUNC_IMPL(sub_8218F4C8) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t self = ctx.r3.u32;
++  const uint32_t before_state = self ? GuestWord(base, self + 12) : UINT32_MAX;
++  const uint32_t before_timer = self ? GuestWord(base, self + 72) : 0;
++  __imp__sub_8218F4C8(ctx, base);
++  if (!self) {
++    return;
++  }
++  const uint32_t after_state = GuestWord(base, self + 12);
++  const uint32_t after_timer = GuestWord(base, self + 72);
++  if (before_state != after_state) {
++    REXLOG_INFO(
++        "[ac6-campaign-transition] self=0x{:08X} state={}->{} timer={}->{}",
++        self, before_state, after_state, before_timer, after_timer);
++  }
++}
++
++PPC_FUNC_IMPL(sub_820D8FE0) {
++  PPC_FUNC_PROLOGUE();
++  constexpr uint32_t kCampaignTaskCaller = 0x8218F5A4u;
++  const uint32_t task = ctx.r3.u32;
++  const uint32_t caller = ctx.lr;
++  const uint32_t owner = task ? GuestWord(base, task + 4) : 0;
++  const uint32_t payload = task ? GuestWord(base, task + 24) : 0;
++  __imp__sub_820D8FE0(ctx, base);
++
++  static std::atomic<uint32_t> last_task{0};
++  if (caller == kCampaignTaskCaller && task &&
++      last_task.exchange(task, std::memory_order_relaxed) != task) {
++    REXLOG_INFO(
++        "[ac6-first-mission-task] task=0x{:08X} owner=0x{:08X} "
++        "payload=0x{:08X} caller=0x{:08X}",
++        task, owner, payload, caller);
++  }
++}
+diff --git a/src/ac6_oracle_runtime_fixes.cpp b/src/ac6_oracle_runtime_fixes.cpp
+new file mode 100644
+index 00000000..87c0f91f
+--- /dev/null
++++ b/src/ac6_oracle_runtime_fixes.cpp
+@@ -0,0 +1,79 @@
++#include "generated/ac6recomp_config.h"
++
++#include <array>
++#include <atomic>
++#include <cstdio>
++#include <string_view>
++
++#include <rex/ppc/function.h>
++
++#include "ac6_decimal_parse.h"
++
++#ifndef PPC_CONFIG_H_INCLUDED
++#error "AC6 oracle PPC wrappers require generated/ac6recomp_config.h first"
++#endif
++
++PPC_EXTERN_FUNC(__imp__sub_820E7F80);
++
++// Qualified PAL default.xex thunk:
++//   0x82382480 li r5,10
++//   0x82382484 li r4,0
++//   0x82382488 b 0x823821D0
++// The pinned ReXGlue CRT map misidentifies the shared worker as strcpy_s and
++// returns EINVAL (22). Keep the correction at the public atoi boundary.
++PPC_FUNC_IMPL(sub_82382480) {
++  PPC_FUNC_PROLOGUE();
++  std::array<char, 128> input{};
++  size_t length = 0;
++  if (ctx.r3.u32 != 0) {
++    for (; length + 1 < input.size(); ++length) {
++      input[length] = static_cast<char>(PPC_LOAD_U8(ctx.r3.u32 + length));
++      if (input[length] == '\0') {
++        break;
++      }
++    }
++  }
++  ctx.r3.s64 = ac6::decimal_parse::ParseAtoi(
++      std::string_view(input.data(), length));
++}
++
++// Qualified PAL default.xex vtable thunk, body SHA-256
++// 829ec6aaa88b2ebb142acfd3ec48057553b05b59a7ef3254f8ba632b086825c9:
++//   0x820F6180 lwz r12,0(r3)
++//   0x820F6184 lwz r11,0x74(r12)
++//   0x820F6188 mtctr r11
++//   0x820F618C bctr
++// It is a canonical function boundary missing from the pinned generated tree.
++PPC_FUNC_IMPL(rex_sub_820F6180) {
++  PPC_FUNC_PROLOGUE();
++  ctx.r12.u64 = PPC_LOAD_U32(ctx.r3.u32);
++  ctx.r11.u64 = PPC_LOAD_U32(ctx.r12.u32 + 0x74);
++  ctx.ctr.u64 = ctx.r11.u64;
++  static std::atomic<uint32_t> lines{0};
++  if (lines.fetch_add(1, std::memory_order_relaxed) < 8) {
++    std::fprintf(stderr,
++                 "[ac6-oracle-indirect-dispatch] thunk=0x820F6180 "
++                 "target=0x%08X caller=0x%08X\n",
++                 ctx.ctr.u32, static_cast<uint32_t>(ctx.lr));
++    std::fflush(stderr);
++  }
++  PPC_CALL_INDIRECT_FUNC(ctx.ctr.u32);
++}
++
++// Capture-only visibility for the next virtual dispatch reached by the
++// qualified 0x820F6180 thunk. The generated implementation remains intact.
++PPC_FUNC_IMPL(sub_820E7F80) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t object = ctx.r4.u32;
++  const uint32_t vtable = object == 0 ? 0 : PPC_LOAD_U32(object);
++  const uint32_t target = vtable == 0 ? 0 : PPC_LOAD_U32(vtable + 0x60);
++  static std::atomic<uint32_t> lines{0};
++  if (lines.fetch_add(1, std::memory_order_relaxed) < 8) {
++    std::fprintf(stderr,
++                 "[ac6-oracle-indirect-dispatch] caller=0x820E7FA8 "
++                 "object=0x%08X vtable=0x%08X target=0x%08X\n",
++                 object, vtable, target);
++    std::fflush(stderr);
++  }
++  __imp__sub_820E7F80(ctx, base);
++}
+diff --git a/tests/ac6_decimal_parse_test.cpp b/tests/ac6_decimal_parse_test.cpp
+new file mode 100644
+index 00000000..b91d224d
+--- /dev/null
++++ b/tests/ac6_decimal_parse_test.cpp
+@@ -0,0 +1,17 @@
++#include "ac6_decimal_parse.h"
++
++#include <cassert>
++#include <limits>
++
++int main() {
++  using ac6::decimal_parse::ParseAtoi;
++  assert(ParseAtoi("350") == 350);
++  assert(ParseAtoi("500_briefing_Main") == 500);
++  assert(ParseAtoi("  \t-42x") == -42);
++  assert(ParseAtoi("+17") == 17);
++  assert(ParseAtoi("x17") == 0);
++  assert(ParseAtoi("") == 0);
++  assert(ParseAtoi("2147483648") == std::numeric_limits<int32_t>::max());
++  assert(ParseAtoi("-2147483649") == std::numeric_limits<int32_t>::min());
++  return 0;
++}
+diff --git a/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h b/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h
+new file mode 100644
+index 00000000..a6501e5d
+--- /dev/null
++++ b/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h
+@@ -0,0 +1,11 @@
++#pragma once
++
++#include <cstdint>
++
++namespace ac6::oracle {
++
++void PublishInputState(uint32_t user_index, uint32_t packet_number, uint16_t buttons,
++                       uint8_t left_trigger, uint8_t right_trigger, int16_t thumb_lx,
++                       int16_t thumb_ly, int16_t thumb_rx, int16_t thumb_ry);
++
++}  // namespace ac6::oracle
+diff --git a/thirdparty/rexglue-sdk/src/input/input_system.cpp b/thirdparty/rexglue-sdk/src/input/input_system.cpp
+index e132acb0..1a149796 100644
+--- a/thirdparty/rexglue-sdk/src/input/input_system.cpp
++++ b/thirdparty/rexglue-sdk/src/input/input_system.cpp
+@@ -13,6 +13,7 @@
+ #include <cmath>
+
+ #include <rex/dbg.h>
++#include <rex/ac6_oracle_probe.h>
+ #include <rex/input/flags.h>
+ #include <rex/input/input_driver.h>
+ #include <rex/input/input_system.h>
+@@ -123,6 +124,13 @@ X_RESULT InputSystem::GetState(uint32_t user_index, X_INPUT_STATE* out_state) {
+   if (out_state) {
+     *out_state = merged;
+   }
++  ac6::oracle::PublishInputState(
++      user_index, static_cast<uint32_t>(merged.packet_number),
++      static_cast<uint16_t>(merged.gamepad.buttons), merged.gamepad.left_trigger,
++      merged.gamepad.right_trigger, static_cast<int16_t>(merged.gamepad.thumb_lx),
++      static_cast<int16_t>(merged.gamepad.thumb_ly),
++      static_cast<int16_t>(merged.gamepad.thumb_rx),
++      static_cast<int16_t>(merged.gamepad.thumb_ry));
+   return X_ERROR_SUCCESS;
+ }
+
+diff --git a/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp b/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp
+index b8eae3cc..3e0f2803 100644
+--- a/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp
++++ b/thirdparty/rexglue-sdk/src/input/mnk/mnk_input_driver.cpp
+@@ -300,6 +300,11 @@ void MnkInputDriver::UpdateMouseCapture() {
+ }
+
+ void MnkInputDriver::SetKeyState(uint16_t vk, bool down) {
++  static uint32_t logged_edges = 0;
++  if (logged_edges < 256) {
++    REXLOG_INFO("[ac6-oracle-key] virtual=0x{:04X} down={}", vk, down);
++    ++logged_edges;
++  }
+   if (vk < 256) {
+     key_down_[vk] = down;
+   }

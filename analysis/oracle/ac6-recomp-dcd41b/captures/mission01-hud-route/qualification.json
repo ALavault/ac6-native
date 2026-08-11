@@ -1,0 +1,60 @@
+{
+  "schema": "ac6.oracle-route-qualification.v1",
+  "scope": "fresh-profile through Mission 01 flight HUD and bounded control inputs",
+  "target": {
+    "module": "default.xex",
+    "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "oracle_commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+  "canonical_boundaries": {
+    "project": "ghidra-projects/ace-combat-6",
+    "function_count": 10645,
+    "sha256": "5e7119fa582656e17432d84bb202e03f54c15052cde2920b93115a173f6284f1"
+  },
+  "capture_configuration_sha256": "63049f034fd12767dfb0737cb098969fb33dd01b7ea11e0ede056b26993be562",
+  "binary_sha256": "0899bb3d1ae9ad1701d700bcbc2906607a4a63e6c5b4811d3a7fbff87754b96f",
+  "route": {
+    "path": "scripts/ac6-oracle-mission01-route.steps",
+    "sha256": "12b98d7f093ac67742865498094b966b4d4c6c15df4e24bfadc764753fa94823",
+    "steps": 96
+  },
+  "runs": [
+    {
+      "id": "ay",
+      "manifest": "ay-manifest.json",
+      "manifest_sha256": "ec81913a7df146efeff86c222e9d1f68f8e14637ceb0bbec34e781122047ae0a",
+      "raw_trace": "ay.raw.jsonl",
+      "raw_trace_sha256": "c2a6abf3c83f29894ff78e8bb132f8b91e44451d3ed954ba922bd21dc58c7388",
+      "result": "pass"
+    },
+    {
+      "id": "az",
+      "manifest": "az-manifest.json",
+      "manifest_sha256": "b89bb37110f0620626048cf1d1696109aeb91699645b82aa4313941aa57a560a",
+      "raw_trace": "az.raw.jsonl",
+      "raw_trace_sha256": "38c63e19bbca20574fa2214d345103ebee2b41f9917bf67a343eb67e82dd5b58",
+      "result": "pass"
+    }
+  ],
+  "reproduced": {
+    "executed_steps": [96, 96],
+    "fatal_matches": [[], []],
+    "residual_processes": 0,
+    "shared_memory_restored_to_baseline": [true, true],
+    "scheduler_register_hashes": [
+      "3afc3520a18caa0a933d31ed0a68387652779f6cd3c74ad33907a5b68c28ba4f",
+      "f8fa67c1799aa2e5c8d93331eeef4ae15979fc48f8142720830290c2342e6089",
+      "fb98b77bc131a72a45e6ac16cc4489e8a22c5b040a6735e7fc5bc17fba6af7df"
+    ],
+    "scheduler_register_hashes_equal": true,
+    "normalized_inputs_equal": true,
+    "flight_hud_sha256": "2239efbb6056f7078c19026f1aba905b004ee307a8e38c8809914231e29bdfd8",
+    "flight_throttle_sha256": "4d700c4a5189168e0ab5786e33844dc34499ec55abf36d36b53c5816cee50026"
+  },
+  "limitations": [
+    "The v1 probe emits only three scheduler events on this route; it is not the required 3600-tick v2 window.",
+    "Host presentation frame indices differ and are currently included in the graphics digest.",
+    "The retail world remains black behind the flight HUD.",
+    "SDL_AUDIODRIVER=dummy qualifies startup only and cannot qualify audible movie dialogue."
+  ]
+}
