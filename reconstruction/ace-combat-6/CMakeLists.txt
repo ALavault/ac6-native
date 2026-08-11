@@ -28,6 +28,8 @@ endif()
 
 option(AC6_BUILD_PLATFORM "Build the SDL3/Vulkan frontend" ON)
 find_package(ZLIB REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavformat libavcodec libavutil)
 
 add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cpp
   src/render_manifest.cpp src/frontend_runtime.cpp src/combat_scenario_frontend.cpp
@@ -87,10 +89,9 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_resource_graph.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
-target_link_libraries(ac6_product_core PRIVATE ZLIB::ZLIB)
+target_link_libraries(ac6_product_core PUBLIC ZLIB::ZLIB PkgConfig::FFMPEG)
 
 if(AC6_BUILD_PLATFORM)
-  find_package(PkgConfig REQUIRED)
   find_package(Vulkan REQUIRED)
   pkg_check_modules(SDL3 REQUIRED IMPORTED_TARGET sdl3)
 

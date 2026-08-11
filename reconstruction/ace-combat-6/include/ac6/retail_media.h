@@ -5,6 +5,7 @@
 #include <array>
 #include <cstdint>
 #include <filesystem>
+#include <string>
 #include <vector>
 
 namespace ac6 {
@@ -53,6 +54,8 @@ class RetailMediaStore final {
   }
   bool read_range(RetailMediaAsset asset, std::uint64_t offset,
                   std::uint64_t size, std::vector<std::uint8_t>& output) const;
+  std::filesystem::path compressed_path(RetailMediaAsset asset) const;
+  std::uint64_t size(RetailMediaAsset asset) const noexcept;
   const Sha256Digest& manifest_sha256() const noexcept { return manifest_sha256_; }
 
  private:
@@ -61,6 +64,20 @@ class RetailMediaStore final {
   Sha256Digest manifest_sha256_{};
   const char* detail_{"media store is not open"};
   bool valid_{};
+};
+
+struct RetailDecodedAudio final {
+  std::uint32_t sample_rate{};
+  std::uint32_t channels{};
+  std::vector<float> pcm;
+  Sha256Digest pcm_sha256{};
+  std::string decoder_version;
+};
+
+class RetailMediaDecoder final {
+ public:
+  static bool decode_audio(const RetailMediaStore& store, RetailMediaAsset asset,
+                           RetailDecodedAudio& output, std::string& detail);
 };
 
 // Copies the compressed media assets into a staged, content-addressed cache

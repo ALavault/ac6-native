@@ -440,6 +440,25 @@ void media_manifest_is_atomic_reproducible_and_fail_closed() {
   REQUIRE(!store.open(cache_a, policy));
 }
 
+void optional_ffmpeg_media_decode_smoke() {
+  const char* cache_name = std::getenv("AC6_MEDIA_CACHE");
+  if (cache_name == nullptr || *cache_name == '\0') return;
+  ac6::RetailContentStore store;
+  REQUIRE(store.open(cache_name));
+  ac6::RetailDecodedAudio decoded;
+  std::string detail;
+  REQUIRE(ac6::RetailMediaDecoder::decode_audio(
+      store.media(), ac6::RetailMediaAsset::Bgm, decoded, detail));
+  REQUIRE(decoded.sample_rate == 48000);
+  REQUIRE(decoded.channels == 6);
+  REQUIRE(!decoded.pcm.empty());
+  REQUIRE(!decoded.decoder_version.empty());
+  REQUIRE(decoded.pcm_sha256 != ac6::Sha256Digest{});
+  std::fprintf(stdout, "media_decode=pass decoder=%s pcm_sha256=%s samples=%zu\n",
+               decoded.decoder_version.c_str(),
+               ac6::sha256_hex(decoded.pcm_sha256).c_str(), decoded.pcm.size());
+}
+
 }  // namespace
 
 int main() {
@@ -453,6 +472,7 @@ int main() {
   abandoned_staging_is_not_a_published_generation();
   incompatible_current_and_corrupt_index_are_distinct_failures();
   media_manifest_is_atomic_reproducible_and_fail_closed();
+  optional_ffmpeg_media_decode_smoke();
   inconsistent_index_metadata_is_rejected_after_digest_verification();
   std::puts("retail_content: all checks passed");
   return 0;

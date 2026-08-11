@@ -2,6 +2,13 @@
 
 #include "ac6/sha256.h"
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/channel_layout.h>
+#include <libavutil/samplefmt.h>
+}
+
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -223,6 +230,128 @@ bool RetailMediaStore::read_range(RetailMediaAsset asset, std::uint64_t offset,
   const auto& record = records_[static_cast<std::size_t>(asset)];
   if (offset > record.size || size > record.size - offset) return false;
   return read_exact(media_blob(cache_root_, record.sha256), offset, size, output);
+}
+
+std::filesystem::path RetailMediaStore::compressed_path(RetailMediaAsset asset) const {
+  if (!valid_ || static_cast<std::size_t>(asset) >= records_.size()) return {};
+  return media_blob(cache_root_, records_[static_cast<std::size_t>(asset)].sha256);
+}
+
+std::uint64_t RetailMediaStore::size(RetailMediaAsset asset) const noexcept {
+  if (!valid_ || static_cast<std::size_t>(asset) >= records_.size()) return 0;
+  return records_[static_cast<std::size_t>(asset)].size;
+}
+
+namespace {
+
+struct MediaFileReader final {
+  std::ifstream input;
+  std::uint64_t size{};
+};
+
+int read_packet(void* opaque, unsigned char* buffer, int buffer_size) {
+  auto* reader = static_cast<MediaFileReader*>(opaque);
+  if (buffer_size <= 0 || !reader->input) return AVERROR_EOF;
+  reader->input.read(reinterpret_cast<char*>(buffer), buffer_size);
+  const std::streamsize count = reader->input.gcount();
+  return count > 0 ? static_cast<int>(count) : AVERROR_EOF;
+}
+
+int64_t seek_packet(void* opaque, int64_t offset, int whence) {
+  auto* reader = static_cast<MediaFileReader*>(opaque);
+  if ((whence & AVSEEK_SIZE) != 0) return static_cast<int64_t>(reader->size);
+  const int mode = whence & ~AVSEEK_FORCE;
+  std::ios_base::seekdir direction = std::ios::beg;
+  if (mode == SEEK_CUR) direction = std::ios::cur;
+  else if (mode == SEEK_END) direction = std::ios::end;
+  else if (mode != SEEK_SET) return AVERROR(EINVAL);
+  reader->input.clear();
+  reader->input.seekg(offset, direction);
+  return reader->input ? static_cast<int64_t>(reader->input.tellg()) : AVERROR(EIO);
+}
+
+}  // namespace
+
+bool RetailMediaDecoder::decode_audio(const RetailMediaStore& store,
+                                       RetailMediaAsset asset,
+                                       RetailDecodedAudio& output,
+                                       std::string& detail) {
+  output = {};
+  detail.clear();
+  const auto path = store.compressed_path(asset);
+  if (path.empty() || store.size(asset) == 0) {
+    detail = "media store is not open";
+    return false;
+  }
+  MediaFileReader reader;
+  reader.input.open(path, std::ios::binary);
+  reader.size = store.size(asset);
+  if (!reader.input) { detail = "compressed media blob cannot be opened"; return false; }
+  constexpr int kIoBufferSize = 64 * 1024;
+  unsigned char* io_buffer = static_cast<unsigned char*>(av_malloc(kIoBufferSize));
+  if (io_buffer == nullptr) { detail = "FFmpeg IO buffer allocation failed"; return false; }
+  AVIOContext* io = avio_alloc_context(io_buffer, kIoBufferSize,
+                                       0, &reader, read_packet, nullptr, seek_packet);
+  if (io == nullptr) { av_free(io_buffer); detail = "FFmpeg AVIO allocation failed"; return false; }
+  AVFormatContext* format = avformat_alloc_context();
+  if (format == nullptr) { avio_context_free(&io); detail = "FFmpeg format allocation failed"; return false; }
+  format->pb = io;
+  format->flags |= AVFMT_FLAG_CUSTOM_IO;
+  if (avformat_open_input(&format, nullptr, nullptr, nullptr) < 0 ||
+      avformat_find_stream_info(format, nullptr) < 0) {
+    avformat_close_input(&format); detail = "FFmpeg cannot probe media stream"; return false;
+  }
+  const int stream_index = av_find_best_stream(format, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
+  if (stream_index < 0) { avformat_close_input(&format); detail = "media has no audio stream"; return false; }
+  AVStream* stream = format->streams[stream_index];
+  const AVCodec* codec = avcodec_find_decoder(stream->codecpar->codec_id);
+  if (codec == nullptr) { avformat_close_input(&format); detail = "FFmpeg decoder unavailable"; return false; }
+  AVCodecContext* context = avcodec_alloc_context3(codec);
+  if (context == nullptr || avcodec_parameters_to_context(context, stream->codecpar) < 0 ||
+      avcodec_open2(context, codec, nullptr) < 0) {
+    avcodec_free_context(&context); avformat_close_input(&format);
+    detail = "FFmpeg decoder initialization failed"; return false;
+  }
+  output.sample_rate = static_cast<std::uint32_t>(context->sample_rate);
+  output.channels = static_cast<std::uint32_t>(context->ch_layout.nb_channels);
+  AVPacket* packet = av_packet_alloc();
+  AVFrame* frame = av_frame_alloc();
+  bool ok = packet != nullptr && frame != nullptr;
+  while (ok && av_read_frame(format, packet) >= 0) {
+    if (packet->stream_index == stream_index && avcodec_send_packet(context, packet) >= 0) {
+      while (avcodec_receive_frame(context, frame) >= 0) {
+        if (frame->format != AV_SAMPLE_FMT_FLT && frame->format != AV_SAMPLE_FMT_FLTP) {
+          ok = false; detail = "unsupported decoded PCM sample format"; break;
+        }
+        const std::size_t samples = static_cast<std::size_t>(frame->nb_samples) * output.channels;
+        const std::size_t base = output.pcm.size(); output.pcm.resize(base + samples);
+        if (frame->format == AV_SAMPLE_FMT_FLT) {
+          std::memcpy(output.pcm.data() + base, frame->data[0], samples * sizeof(float));
+        } else {
+          for (int sample = 0; sample < frame->nb_samples; ++sample) {
+            for (std::uint32_t channel = 0; channel < output.channels; ++channel) {
+              output.pcm[base + static_cast<std::size_t>(sample) * output.channels + channel] =
+                  reinterpret_cast<const float*>(frame->extended_data[channel])[sample];
+            }
+          }
+        }
+      }
+    }
+    av_packet_unref(packet);
+  }
+  if (ok && avcodec_send_packet(context, nullptr) >= 0) {
+    while (avcodec_receive_frame(context, frame) >= 0) { /* EOF drain is uncommon for XMA. */ }
+  }
+  if (ok) {
+    output.pcm_sha256 = sha256_bytes(std::span<const std::uint8_t>(
+        reinterpret_cast<const std::uint8_t*>(output.pcm.data()),
+        output.pcm.size() * sizeof(float)));
+    output.decoder_version = av_version_info();
+  }
+  av_frame_free(&frame); av_packet_free(&packet); avcodec_free_context(&context);
+  avformat_close_input(&format);
+  if (!ok) { output = {}; return false; }
+  return true;
 }
 
 bool import_retail_media(const std::filesystem::path& source_root,
