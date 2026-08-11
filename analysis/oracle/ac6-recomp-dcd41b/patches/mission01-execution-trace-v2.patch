@@ -34,7 +34,7 @@
 
  struct InputSnapshot {
    uint32_t packet_number{0};
-@@ -46,6 +54,17 @@
+@@ -46,6 +54,19 @@
  uint64_t g_output_bytes = 0;
  bool g_output_failed = false;
 
@@ -47,12 +47,14 @@
 +bool g_trace_v2_failed = false;
 +bool g_trace_v2_complete = false;
 +std::atomic<uint32_t> g_gameplay_manager{0};
++std::atomic<uint32_t> g_gameplay_player{0};
 +std::atomic<bool> g_player_update_reported{false};
++std::atomic<bool> g_mission_tick_reported{false};
 +
  InputSnapshot SnapshotInput() {
    std::lock_guard<std::mutex> lock(g_input_mutex);
    return g_input;
-@@ -103,6 +122,140 @@
+@@ -103,6 +124,148 @@
    return rex::crypto::sha256(payload.str());
  }
 
@@ -82,7 +84,7 @@
 +    REXLOG_ERROR("AC6 oracle trace v2 could not open its bounded output");
 +    return false;
 +  }
-+  REXLOG_INFO("AC6 oracle trace v2 armed at the gameplay player-update boundary");
++  REXLOG_INFO("AC6 oracle trace v2 armed at the Mission 01 manager-tick boundary");
 +  return true;
 +}
 +
@@ -190,10 +192,18 @@
 +  }
 +}
 +
++void ReportMissionTickReady() {
++  if (!g_mission_tick_reported.exchange(true)) {
++    REXLOG_INFO(
++        "AC6 oracle Mission 01 manager-tick boundary reached at 0x8226D1C8 "
++        "with player from 0x822A6710");
++  }
++}
++
  bool EnsureOutput(const std::string& path) {
    if (g_output.is_open() && path == g_output_path) {
      return true;
-@@ -219,3 +372,20 @@
+@@ -219,3 +382,26 @@
    }
    __imp__sub_8237C828(ctx, base);
  }
@@ -205,12 +215,18 @@
 +  PPC_FUNC_PROLOGUE();
 +  ac6::oracle::g_gameplay_manager.store(ctx.r3.u32, std::memory_order_relaxed);
 +  __imp__rex_sub_8226D1C8(ctx, base);
++  const uint32_t player =
++      ac6::oracle::g_gameplay_player.load(std::memory_order_relaxed);
++  if (player != 0) {
++    ac6::oracle::ReportMissionTickReady();
++    ac6::oracle::EmitExecutionTick(base, player);
++  }
 +}
 +
 +PPC_FUNC_IMPL(rex_sub_822A6710) {
 +  PPC_FUNC_PROLOGUE();
 +  const uint32_t player = ctx.r3.u32;
 +  __imp__rex_sub_822A6710(ctx, base);
++  ac6::oracle::g_gameplay_player.store(player, std::memory_order_relaxed);
 +  ac6::oracle::ReportPlayerUpdateReady();
-+  ac6::oracle::EmitExecutionTick(base, player);
 +}

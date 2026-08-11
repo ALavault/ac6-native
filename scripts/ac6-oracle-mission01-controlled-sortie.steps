@@ -1,7 +1,9 @@
-# Reuse the qualified fresh-profile route, then arm exactly one 3600-tick
-# gameplay window. The include and this file are both hashed by the run report.
-include	ac6-oracle-mission01-route.steps
-wait	AC6 oracle Mission 01 player-update boundary reached at 0x822A6710	60
+# Reach the deploy prompt, then pulse A until the executed player boundary
+# proves gameplay instead of trusting presentation delays.
+include	ac6-oracle-mission01-trace-entry.steps
+wait-pulse	AC6 oracle Mission 01 player-update boundary reached at 0x822A6710	space
+wait	AC6 oracle Mission 01 manager-tick boundary reached at 0x8226D1C8 with player from 0x822A6710	60
+capture	flight-entry-qualified
 arm-trace
 key	w	1.0
 sleep	5

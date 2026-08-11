@@ -63,9 +63,9 @@
     {
       "order": 9,
       "path": "analysis/oracle/ac6-recomp-dcd41b/patches/mission01-execution-trace-v2.patch",
-      "sha256": "9bef0c0c21a42432f0d564184bbbce2a0b22d5fa5a16176989e170804837d17a",
+      "sha256": "2bfb52a0f73836649787e80ef973961a4c761bb4d4a0e4dda4fb18c41a967d79",
       "reason": "Emit the bounded five-domain Mission 01 execution window at canonical PAL player-update and gameplay-manager boundaries.",
-      "validation": "Full oracle build and ac6_decimal_parse_test pass; public hook and generated implementation symbols are both strong and linked; the route waits for an explicit 0x822A6710 readiness event before arming; the native replay will hold each observed 30 Hz input for two 60 Hz ticks because the historical presentation unlock crashes this flight cone at guest address 0x7E980000."
+      "validation": "Full oracle build and ac6_decimal_parse_test pass; public hook and generated implementation symbols are both strong and linked; the five-domain clock runs after the qualified 0x8226D1C8 Mission 01 manager tick while 0x822A6710 supplies the live player; the native replay holds each observed 30 Hz input for two 60 Hz ticks because the historical presentation unlock crashes this flight cone at guest address 0x7E980000."
     },
     {
       "order": 10,
@@ -84,7 +84,7 @@
     "clean_application_pass": true,
     "changed_file_count": 27,
     "changed_tree_algorithm": "sha256(sorted(path + NUL + bytes + NUL))",
-    "changed_tree_sha256": "7bc36a800df6fdfe9d981aca566a9804b27e8ea09e0175e055ec3911776f50ad",
+    "changed_tree_sha256": "46d98fe52edba09fb28c1ae1528aa5f1b1d92987b09b2d29999a44d5f57dde81",
     "capture_profile_byte_match": true
   }
 }
