@@ -246,6 +246,20 @@ struct ScenarioSubMissionSetup {
   bool operator==(const ScenarioSubMissionSetup&) const = default;
 };
 
+// The condition record consumed by a tag-7 script step.  The first child of
+// the step is read as six bytes by 0x8226E158:
+//   +0x00 u16 counter id, +0x02 s16 threshold,
+//   +0x04 u8 comparison (0 ==, 1 <=, 2 >=), +0x05 u8 target sub-mission.
+// IDs 0 and 0xFFFF are retail's explicit "no condition" sentinels and are
+// represented by an empty optional in ScenarioSubMission::step_conditions.
+struct ScenarioStepCondition {
+  std::uint16_t counter_id{};
+  std::int16_t threshold{};
+  std::uint8_t comparison{};
+  std::uint8_t target_sub_mission{};
+  bool operator==(const ScenarioStepCondition&) const = default;
+};
+
 // One entry of root slot 2, with the script 0x8226E158 steps through.
 struct ScenarioSubMission {
   std::uint32_t index{};
@@ -255,6 +269,10 @@ struct ScenarioSubMission {
   // parsed independently on purpose: a payload where they disagree would tell
   // us the model is wrong, and the runner uses this one because retail does.
   std::uint8_t step_count_byte{};
+  // One optional condition for every step tag.  Only tag 7 has a payload;
+  // non-tag-7 entries are empty.  Keeping this vector parallel to step_tags
+  // prevents a condition from being detached from its retail cursor index.
+  std::vector<std::optional<ScenarioStepCondition>> step_conditions;
   // The setup of this sub-mission's first tag-0 step, if it has one.
   ScenarioSubMissionSetup setup;
   bool operator==(const ScenarioSubMission&) const = default;

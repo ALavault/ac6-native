@@ -47,6 +47,32 @@ std::string format_float(float value) {
   return text;
 }
 
+bool parse_tag7_condition(const ScenarioPayload& payload, std::size_t step,
+                          std::optional<ScenarioStepCondition>& condition) {
+  // 0x8226E158 obtains pas[8], then dereferences the first child data block
+  // as the six-byte condition record. A missing/truncated record is not a
+  // no-op: accepting it would silently change a conditional objective into an
+  // unconditional one.
+  const std::vector<std::size_t> children = payload.children(step);
+  if (children.empty()) return false;
+  const std::optional<std::size_t> data = payload.resolve(children.front(), 0);
+  if (!data.has_value()) return false;
+  const std::optional<std::uint16_t> counter_id = payload.u16(*data);
+  const std::optional<std::uint16_t> threshold_bits = payload.u16(*data + 0x02);
+  const std::optional<std::uint8_t> comparison = payload.u8(*data + 0x04);
+  const std::optional<std::uint8_t> target = payload.u8(*data + 0x05);
+  if (!counter_id.has_value() || !threshold_bits.has_value() ||
+      !comparison.has_value() || !target.has_value() || *comparison > 2) {
+    return false;
+  }
+  if (*counter_id != 0 && *counter_id != 0xFFFFu) {
+    condition = ScenarioStepCondition{
+        *counter_id, static_cast<std::int16_t>(*threshold_bits), *comparison,
+        *target};
+  }
+  return true;
+}
+
 }  // namespace
 
 // The entity's initial position, as retail reads it: the first three floats of
@@ -337,6 +363,11 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         const std::optional<std::uint8_t> tag = payload.u8(*data);
         if (!tag.has_value()) return std::nullopt;
         sub_mission.step_tags.push_back(*tag);
+        std::optional<ScenarioStepCondition> condition;
+        if (*tag == 7 && !parse_tag7_condition(payload, step, condition)) {
+          return std::nullopt;
+        }
+        sub_mission.step_conditions.push_back(condition);
         if (*tag != 0 || sub_mission.setup.present) continue;
         // 0x8226E2A0: pfVar3 = **(float ***)(step + 4) - the step's first
         // child's data block, which is where the sub-mission's rectangle, its

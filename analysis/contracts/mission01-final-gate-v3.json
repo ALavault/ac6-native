@@ -284,9 +284,9 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_script.cpp",
-            "sha256": "9aa82a457d3ff7dbeed7262584ed5eb3ada1d2bb5a6ad7b8e9c0851e249c607d",
+            "sha256": "c88d2aa04ceaf92748be4f5a679a042e755f6a119953e4f6877f6b8e75ec5623",
             "claim": "src/retail_mission_script.cpp implements the advance in 0x82267370's own order, its three-way entry guard, the payload step-count bound, the exhaustion return and the end code 0x82266710 writes",
-            "size": 4195
+            "size": 4744
           }
         ]
       }

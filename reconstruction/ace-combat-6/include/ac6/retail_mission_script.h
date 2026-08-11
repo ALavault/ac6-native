@@ -108,6 +108,9 @@ class MissionScriptRunner final {
   std::uint32_t step() const noexcept { return step_; }
   bool step_current() const noexcept { return current_.has_value(); }
   std::optional<ScriptStepRun> current_step() const noexcept { return current_; }
+  // The tag-7 payload attached to the current step, if it has one.  The
+  // caller owns counter state and decides when a condition is evaluated.
+  std::optional<ScenarioStepCondition> current_condition() const noexcept;
   const std::vector<ScriptStepRun>& executed() const noexcept { return executed_; }
   std::size_t sub_mission_count() const noexcept { return steps_.size(); }
 
@@ -122,6 +125,7 @@ class MissionScriptRunner final {
   ScriptAdvance dispatch_step() noexcept;
 
   std::vector<std::vector<std::uint8_t>> steps_;  // tags, by sub-mission
+  std::vector<std::vector<std::optional<ScenarioStepCondition>>> conditions_;
   std::vector<std::uint8_t> step_bounds_;         // the count byte per sub-mission
   std::vector<ScriptStepRun> executed_;
   std::optional<ScriptStepRun> current_;          // context+0x268

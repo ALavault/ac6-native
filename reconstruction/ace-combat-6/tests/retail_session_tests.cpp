@@ -256,7 +256,41 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     const std::optional<ac6::retail::ScenarioPayload> scenario_payload =
         ac6::retail::ScenarioPayload::open(std::move(scenario_copy));
     REQUIRE(scenario_payload.has_value());
-    REQUIRE(ac6::retail::MissionScenario::parse(*scenario_payload).has_value());
+    const std::optional<ac6::retail::MissionScenario> parsed_scenario =
+        ac6::retail::MissionScenario::parse(*scenario_payload);
+    REQUIRE(parsed_scenario.has_value());
+    if (mission_id == 7) {
+      // Mission 07 is the qualified tag-7 corpus.  These are the six-byte
+      // records at the first child of its four conditional steps, not values
+      // inferred from generated code or from a mission manifest.
+      const auto& sub_missions = parsed_scenario->sub_missions();
+      REQUIRE(sub_missions.size() == 6);
+      // The first three sub-missions contain the four tag-7 records; the
+      // fourth, fifth and sixth carry only their non-conditional steps.
+      REQUIRE(sub_missions[0].step_conditions.size() == 4);
+      REQUIRE(sub_missions[1].step_conditions.size() == 2);
+      REQUIRE(sub_missions[2].step_conditions.size() == 2);
+      const std::optional<ac6::retail::ScenarioStepCondition> condition263 =
+          ac6::retail::ScenarioStepCondition{263, 1, 0, 1};
+      const std::optional<ac6::retail::ScenarioStepCondition> condition264 =
+          ac6::retail::ScenarioStepCondition{264, 1, 0, 2};
+      const std::optional<ac6::retail::ScenarioStepCondition> condition97 =
+          ac6::retail::ScenarioStepCondition{97, 1, 0, 3};
+      REQUIRE(sub_missions[0].step_conditions[0] == std::nullopt);
+      REQUIRE(sub_missions[0].step_conditions[1] == std::nullopt);
+      REQUIRE(sub_missions[0].step_conditions[2] == condition263);
+      REQUIRE(sub_missions[0].step_conditions[3] == condition264);
+      REQUIRE(sub_missions[1].step_conditions[0] == std::nullopt);
+      REQUIRE(sub_missions[1].step_conditions[1] == condition97);
+      REQUIRE(sub_missions[2].step_conditions[0] == std::nullopt);
+      REQUIRE(sub_missions[2].step_conditions[1] == condition97);
+      REQUIRE(sub_missions[3].step_conditions.size() == 1);
+      REQUIRE(sub_missions[4].step_conditions.size() == 1);
+      REQUIRE(sub_missions[5].step_conditions.size() == 1);
+      REQUIRE(sub_missions[3].step_conditions[0] == std::nullopt);
+      REQUIRE(sub_missions[4].step_conditions[0] == std::nullopt);
+      REQUIRE(sub_missions[5].step_conditions[0] == std::nullopt);
+    }
 
     // The product boundary must also construct each campaign world through
     // RetailMissionBundle; a parser-only corpus would miss a mission-specific

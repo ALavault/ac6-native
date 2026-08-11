@@ -25,8 +25,20 @@ MissionScriptRunner MissionScriptRunner::from(const MissionScenario& scenario) {
   for (const ScenarioSubMission& sub_mission : scenario.sub_missions()) {
     runner.steps_.push_back(sub_mission.step_tags);
     runner.step_bounds_.push_back(sub_mission.step_count_byte);
+    runner.conditions_.push_back(sub_mission.step_conditions);
+    if (runner.conditions_.back().size() < sub_mission.step_tags.size()) {
+      runner.conditions_.back().resize(sub_mission.step_tags.size());
+    }
   }
   return runner;
+}
+
+std::optional<ScenarioStepCondition> MissionScriptRunner::current_condition() const noexcept {
+  if (!current_.has_value() || current_->sub_mission >= conditions_.size() ||
+      current_->step >= conditions_[current_->sub_mission].size()) {
+    return std::nullopt;
+  }
+  return conditions_[current_->sub_mission][current_->step];
 }
 
 // 0x82267370, in its own order.
