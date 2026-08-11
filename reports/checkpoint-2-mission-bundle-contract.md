@@ -14,3 +14,8 @@ The qualified-cache session test now opens the bundle and runs the shared
 `ScenarioPayload`/`MissionScenario` readers for all 15 campaign payloads before
 the Mission 01 runtime assertions. The PAL cache identity used by this corpus
 is `cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85`.
+
+The same qualified run now constructs a `RetailSession` and executes one fixed
+1/60-second tick for every mission id 1–15. This is a bootstrap guard only: it
+proves common bundle/world/camera construction, not mission objectives, AI,
+render parity, or completion semantics.
