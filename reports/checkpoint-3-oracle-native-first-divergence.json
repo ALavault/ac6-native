@@ -1,0 +1,69 @@
+{
+  "schema": "ac6.checkpoint-3-oracle-native-first-divergence.v1",
+  "target": {
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "replay": {
+    "path": "/tmp/ac6-mission01-oracle-a.replay",
+    "sha256": "a04dccbfb8f032e6747fb96a643afd1b4824ebd4458f72de10471679ca796d07",
+    "frames": 7200,
+    "input_digest": "e0147186969a3271c0b1e6b591323cdc842c5539c75edaca1097132443a7931e"
+  },
+  "oracle": {
+    "role": "oracle",
+    "binary_sha256": "37e0c88d73b917a3b10a11bed44d5c42908032a3a1a0949a652abdec6d6432e7",
+    "raw_trace": {
+      "path": "/tmp/ac6-controlled-sortie-delayed-v2-20260812/mission01-execution-v2.raw.jsonl",
+      "sha256": "913f93414852ddb60f6eb6b8956cd7c5363f13bf07c40d52f3d1e40a0248c9e0"
+    },
+    "sealed_trace": {
+      "path": "/tmp/ac6-oracle-a.execution-trace.v2.json",
+      "sha256": "97cad5d9e5ebeca367c19c4decca40afe8e0628c7a8c83d70e487eebb8a5abf5"
+    },
+    "ticks": 3600,
+    "events": 18000
+  },
+  "native": {
+    "role": "native",
+    "binary_sha256": "17e7c18a444309a8ee7e5bbc0759d72ddbff31f9dc8e801a77d97abd7abc6b7e",
+    "raw_trace": {
+      "path": "/tmp/ac6-native-replay-oracle-a.trace.jsonl",
+      "sha256": "34fdf4ab3024634d9dafdd39587804208b44f55567d2babdf45e8082cc8dfc60"
+    },
+    "sealed_trace": {
+      "path": "/tmp/ac6-native-a.execution-trace.v2.json",
+      "sha256": "ea6535b34e8755dbd300318a370899d273346b73d451c5b1d023edc998152c27"
+    },
+    "ticks": 3600,
+    "events": 18000,
+    "replay_deterministic": true,
+    "final_tick": 6,
+    "script_ended": true,
+    "cache_index_sha256": "cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85"
+  },
+  "input_comparison": {
+    "domains": ["controller_input"],
+    "equal": true,
+    "events": 3600
+  },
+  "full_comparison": {
+    "domains": [
+      "controller_input",
+      "simulation_snapshot",
+      "mission_objectives",
+      "graphics_submission",
+      "output_hashes"
+    ],
+    "equal": false,
+    "first_divergence": {
+      "sequence": 1,
+      "tick": 1,
+      "domain": "simulation_snapshot",
+      "path": "events[1].payload.active_units",
+      "oracle": "<missing>",
+      "native": 230
+    }
+  },
+  "status": "snapshot-contract-open"
+}
