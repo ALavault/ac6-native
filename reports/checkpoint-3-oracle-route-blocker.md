@@ -63,6 +63,13 @@ sur R est l'anomalie déjà séparée par les cycles 434/437 : elle concerne un
 autre `overlapped` que le sélecteur et ne peut pas être retenue comme cause
 sans un lien dynamique nouveau. Elle reste un indice, pas un correctif.
 
+Le probe de scheduler confirme la coupure : R ne crée même pas
+`mission01-frame.raw.jsonl`, alors que H/I publient les trois événements
+`0x82267370` attendus avant leur fenêtre de trace. La première divergence
+qualifiée de R est donc antérieure au scheduler de frame, après la fin du
+gestionnaire de sauvegarde ; elle n'est pas une absence de soumission Vulkan
+ou un défaut du raster.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
