@@ -343,6 +343,11 @@ int run_play_impl(const Options& options) {
     while (accumulator >= 1.0 / 60.0) {
       frame = session->tick(1.0f / 60.0f, input_frame);
       replay.frames.push_back(input_frame);
+      if (replay.frames.size() % 600u == 0u) {
+        const auto frame_index = static_cast<std::uint32_t>(replay.frames.size());
+        replay.checkpoints.push_back(
+            {frame_index, replay.input_digest(frame_index)});
+      }
       accumulator -= 1.0 / 60.0;
       stepped = true;
     }
@@ -350,6 +355,8 @@ int run_play_impl(const Options& options) {
     if (stepped && !capture()) return 129;
     SDL_Delay(1);
   }
+  replay.final_tick = replay.frames.size();
+  replay.final_digest = replay.input_digest();
   if (!options.replay.empty() && !replay.write_file(options.replay)) return 130;
   if (!options.save.empty()) {
     SessionSaveStore saves;
@@ -461,6 +468,10 @@ int run_replay_impl(const Options& options) {
   retail::RetailSessionReplay replay;
   if (!replay.read_file(options.replay)) return 133;
   if (replay.content_index_sha256 != store.index_sha256()) return 134;
+  if (replay.final_tick != replay.frames.size() ||
+      replay.final_digest != replay.input_digest()) {
+    return 134;
+  }
   if (!loadout_qualified(store, replay.loadout)) return 135;
   const std::optional<ReplayRun> first = replay_once(store, replay);
   const std::optional<ReplayRun> second = replay_once(store, replay);
@@ -476,7 +487,7 @@ int run_replay_impl(const Options& options) {
   std::ofstream output(report, std::ios::trunc);
   if (!output) return 138;
   output << "{\n"
-         << "  \"schema\": \"ac6.native-retail-replay.v1\",\n"
+         << "  \"schema\": \"ac6.native-retail-replay.v3\",\n"
          << "  \"mission_id\": " << replay.mission_id << ",\n"
          << "  \"difficulty\": "
          << static_cast<unsigned>(replay.difficulty) << ",\n"
@@ -484,6 +495,12 @@ int run_replay_impl(const Options& options) {
          << "  \"weapon_id\": " << replay.loadout.weapon_id << ",\n"
          << "  \"cache_index_sha256\": \"" << sha256_hex(store.index_sha256()) << "\",\n"
          << "  \"replay_frames\": " << replay.frames.size() << ",\n"
+         << "  \"random_seed\": " << replay.random_seed << ",\n"
+         << "  \"replay_final_tick\": " << replay.final_tick << ",\n"
+         << "  \"checkpoint_count\": " << replay.checkpoints.size() << ",\n"
+         << "  \"input_digest\": \"" << sha256_hex(replay.input_digest()) << "\",\n"
+         << "  \"final_digest\": \"" << sha256_hex(replay.final_digest) << "\",\n"
+         << "  \"final_digest_basis\": \"input_frames_le_v1\",\n"
          << "  \"final_tick\": " << first->final_frame.tick << ",\n"
          << "  \"final_player_entity\": " << first->final_frame.player_entity << ",\n"
          << "  \"sub_mission\": " << first->sub_mission << ",\n"

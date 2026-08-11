@@ -249,9 +249,9 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "c56ddfae3ea804bd1c469945502df831ce33a8c944020322025d6d516650ff7b",
+            "sha256": "b14ea9846706a79e74f5d09131332bd583c4d13bdacb5648af5e21e3f6600edc",
             "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from the class-0 Set on the campaign arm (820a72c0, 0x820A72EC, vtable 0x820568D4 = CAce6UnitPlayer) and from category 2 only on the online arm, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-            "size": 12051
+            "size": 12894
           }
         ]
       },
