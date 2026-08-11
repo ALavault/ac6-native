@@ -51,17 +51,18 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
       return nullptr;
     }
   }
-  std::optional<RetailCampaignBundle> campaign =
-      RetailCampaignBundle::open(store, config.mission_id);
-  if (!campaign.has_value()) return nullptr;
-  const std::optional<std::span<const std::uint8_t>> scenario = campaign->child(0);
+  const std::optional<RetailMissionBundle> mission = RetailMissionBundle::open(
+      store, {config.mission_id, config.difficulty, loadout});
+  if (!mission.has_value()) return nullptr;
+  const std::optional<std::span<const std::uint8_t>> scenario = mission->child(0);
   if (!scenario.has_value()) return nullptr;
   std::vector<std::uint8_t> scenario_payload(scenario->begin(), scenario->end());
   std::unique_ptr<RetailSession> session =
       open(std::move(scenario_payload), config);
   if (session == nullptr) return nullptr;
   session->bundle_ = RetailSessionBundle{
-      campaign->data_table_entry(), loadout, campaign->content_index_sha256()};
+      mission->data_table_entry(), loadout, mission->difficulty(),
+      mission->content_index_sha256()};
   return session;
 }
 

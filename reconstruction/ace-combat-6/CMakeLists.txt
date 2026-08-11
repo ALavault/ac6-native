@@ -73,6 +73,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_container_index.cpp
   src/retail_fhm_view.cpp
   src/retail_campaign_bundle.cpp
+  src/retail_mission_bundle.cpp
   src/retail_frontend_resources.cpp
   src/retail_camera_table.cpp
   src/retail_mode2_camera.cpp

@@ -182,12 +182,27 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload) {
   REQUIRE(bundle->child(0).has_value());
   REQUIRE(bundle->child(0)->size() == payload.size());
   const ac6::CampaignLoadout loadout{1, 1, true};
+  const ac6::retail::RetailMissionBundleConfig mission_config{
+      kMissionId, ac6::retail::RetailDifficulty::Ace, loadout};
+  const std::optional<ac6::retail::RetailMissionBundle> mission =
+      ac6::retail::RetailMissionBundle::open(store, mission_config);
+  REQUIRE(mission.has_value());
+  REQUIRE(mission->difficulty() == ac6::retail::RetailDifficulty::Ace);
+  REQUIRE(mission->loadout() == loadout);
+  REQUIRE(!ac6::retail::RetailMissionBundle::open(
+               store, {kMissionId, static_cast<ac6::retail::RetailDifficulty>(5),
+                       loadout})
+               .has_value());
   std::unique_ptr<RetailSession> session =
-      RetailSession::open(store, loadout, {kMissionId, {0, 0}});
+      RetailSession::open(store, loadout,
+                          {kMissionId, {0, 0},
+                           ac6::retail::kRetailOpeningCameraModeWord,
+                           ac6::retail::RetailDifficulty::Ace});
   REQUIRE(session != nullptr);
   REQUIRE(session->bundle().has_value());
   REQUIRE(session->bundle()->data_table_entry == 9);
   REQUIRE(session->bundle()->loadout == loadout);
+  REQUIRE(session->bundle()->difficulty == ac6::retail::RetailDifficulty::Ace);
   REQUIRE(session->bundle()->content_index_sha256 == store.index_sha256());
   REQUIRE(RetailSession::open(store, {1, 1, false}, {kMissionId, {0, 0}}) ==
           nullptr);

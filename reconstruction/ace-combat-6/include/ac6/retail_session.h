@@ -24,6 +24,7 @@
 #include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
 #include "ac6/retail_mission_script.h"
+#include "ac6/retail_mission_bundle.h"
 #include "ac6/retail_mission_state.h"
 
 #include <cstdint>
@@ -40,6 +41,7 @@ struct RetailSessionConfig {
   // Raw player camera selector consumed by 0x82226D80. The campaign opening
   // path is the qualified zero word, which 0x82223AC0 maps to view 1.
   std::uint32_t camera_mode_word{kRetailOpeningCameraModeWord};
+  RetailDifficulty difficulty{RetailDifficulty::Normal};
 };
 
 // One frame of the session, as the product's runtime produced it, plus where
@@ -59,6 +61,7 @@ struct RetailSessionFrame {
 struct RetailSessionBundle final {
   std::uint32_t data_table_entry{};
   CampaignLoadout loadout{};
+  RetailDifficulty difficulty{RetailDifficulty::Normal};
   Sha256Digest content_index_sha256{};
   bool operator==(const RetailSessionBundle&) const = default;
 };
