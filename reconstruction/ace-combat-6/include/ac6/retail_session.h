@@ -10,16 +10,15 @@
 // hands that world to the product's own runtime, and runs the session loop -
 // input, flight integration, camera, HUD - over it.
 //
-// What the session does NOT do is decide when the mission ends. That belongs to
-// the sub-mission script, and the script advances only when the caller says so,
-// because the gate retail uses is not modelled: 0x822ED708 tests context+0x820
-// and the low six bits of FUN_82268C58()'s +0x124 before every advance, and
-// neither field has a native counterpart yet. Tag-7 counter conditions are
+// The product scheduler reaches the script's signal -2 branch once per fixed
+// tick. The native session now owns that cadence when its product-facing
+// configuration enables it; payload-only fixtures can still call
+// advance_script explicitly to measure alternate cadences. The guard retail
+// uses before that branch (context+0x820 and the low six bits of
+// FUN_82268C58()'s +0x124) remains an explicit boundary because those runtime
+// objects have no qualified native counterpart yet. Tag-7 conditions are
 // evaluated when their step becomes current; their counter producers remain a
-// separate boundary. The cadence is therefore the caller's, and it is stated
-// as such rather than dressed up as derived. Nothing about the *outcome*
-// depends on it: the trace of executed steps and the tick at which the script
-// runs out are the same for any cadence.
+// separate boundary rather than being synthesized here.
 
 #include "ac6/campaign_progression.h"
 #include "ac6/product_runtime.h"
@@ -44,6 +43,10 @@ struct RetailSessionConfig {
   // path is the qualified zero word, which 0x82223AC0 maps to view 1.
   std::uint32_t camera_mode_word{kRetailOpeningCameraModeWord};
   RetailDifficulty difficulty{RetailDifficulty::Normal};
+  // Product sessions receive signal -2 once per fixed simulation tick. Keep
+  // this opt-in for the payload-only parser/runtime fixtures, whose callers
+  // intentionally probe alternate script cadences.
+  bool advance_script_each_tick{};
 };
 
 // One frame of the session, as the product's runtime produced it, plus where
@@ -101,14 +104,16 @@ class RetailSession final {
   // FUN_82268B28. None when the sub-mission has no tag-0 step.
   std::optional<MissionArea> current_area() const noexcept;
 
-  // One session frame: input, flight, camera, HUD state. Does not advance the
-  // script.
+  // One session frame: input, flight, camera, HUD state. Product sessions may
+  // advance the retail script immediately before the fixed-step world tick;
+  // payload-only fixtures can retain explicit caller-owned advancement.
   RetailSessionFrame tick(float fixed_dt, InputFrame input) noexcept;
 
-  // One call of 0x82267370 through 0x822ED708's update branch. The sub-mission
-  // the cursor leaves has its objective completed and the one it arrives on has
-  // its objective activated - that is the only thing in this product that
-  // moves an objective, and the retail cursor is what drives it.
+  // One call of 0x82267370 through 0x822ED708's update branch. The product
+  // scheduler invokes this from tick(); callers may invoke it directly only
+  // when the config leaves automatic progression disabled. The sub-mission
+  // the cursor leaves has its objective completed and the one it arrives on
+  // has its objective activated.
   ScriptAdvance advance_script() noexcept;
 
   // Draws the world the container built: one marker per active unit, coloured
@@ -159,6 +164,7 @@ class RetailSession final {
   std::uint32_t mission_id_{};
   RetailCameraModeSelection camera_mode_{retail_opening_camera_mode()};
   std::uint64_t tick_{};
+  bool advance_script_each_tick_{};
 };
 
 // The entity 0x820A7420 classified as the local player: the one record whose

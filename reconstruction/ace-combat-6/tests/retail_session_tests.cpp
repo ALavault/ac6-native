@@ -309,10 +309,21 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     const std::unique_ptr<RetailSession> qualified_session = RetailSession::open(
         store, {1, 1, true},
         {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-         ac6::retail::RetailDifficulty::Normal});
+         ac6::retail::RetailDifficulty::Normal, true});
     REQUIRE(qualified_session != nullptr);
-    const ac6::retail::RetailSessionFrame qualified_frame =
+    ac6::retail::RetailSessionFrame qualified_frame =
         qualified_session->tick(kFixedDt, {});
+    for (std::size_t tick = 1; tick < 8; ++tick) {
+      qualified_frame = qualified_session->tick(kFixedDt, {});
+    }
+    // A short authored mission may complete before the eight-tick probe; the
+    // runtime intentionally stops simulation after the terminal transition.
+    REQUIRE(qualified_frame.world.tick > 0 && qualified_frame.world.tick <= 8);
+    REQUIRE(qualified_session->script().executed().size() <= 4096);
+    std::printf("retail_scheduler mission=%u ticks=8 executed=%zu ended=%u state=%u\n",
+                mission_id, qualified_session->script().executed().size(),
+                qualified_session->script().ended() ? 1u : 0u,
+                static_cast<unsigned>(qualified_session->state()));
     REQUIRE(qualified_frame.world.mission_id == mission_id);
     const auto mission_objectives =
         qualified_session->world().objectives.find_by_mission(mission_id);
@@ -800,6 +811,29 @@ int main(int argc, char** argv) {
   // archives stay outside the runtime and visual parity is out of JF's scope.
   // Asserting it true would mean fabricating asset records. Assert the truth.
   REQUIRE(!idle.last.world.mission_ready);
+
+  // The product-facing store/session path owns the signal -2 cadence. The
+  // payload-only fixture above deliberately keeps caller-owned cadence, while
+  // this mode must exhaust the authored six-step Mission 01 script at the
+  // sixth fixed tick and complete all four objectives without a forced event.
+  std::unique_ptr<RetailSession> scheduled = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal, true});
+  REQUIRE(scheduled != nullptr);
+  ac6::retail::RetailSessionFrame scheduled_frame;
+  std::size_t scheduled_end_tick = 0;
+  for (std::size_t tick = 1; tick <= 32; ++tick) {
+    scheduled_frame = scheduled->tick(kFixedDt, session_input(tick));
+    if (scheduled_frame.script_ended && scheduled_end_tick == 0) {
+      scheduled_end_tick = tick;
+    }
+  }
+  REQUIRE(scheduled_end_tick == 6);
+  REQUIRE(scheduled->state() == ac6::ScenarioState::Complete);
+  REQUIRE(scheduled->debrief().outcome == ac6::MissionOutcome::Success);
+  REQUIRE(scheduled->debrief().completed_objectives == 4);
+  REQUIRE(scheduled->debrief().failed_objectives == 0);
+  REQUIRE(scheduled_frame.script_ended);
 
   // The session loop is a session loop: the flight integrator moved the player
   // off the origin, the camera follows it at the runtime's fixed offset, and

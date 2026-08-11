@@ -278,7 +278,7 @@ int run_play_impl(const Options& options) {
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, loadout,
                                   {1, {0, 0}, retail::kRetailOpeningCameraModeWord,
-                                   options.difficulty});
+                                   options.difficulty, true});
   if (session == nullptr) return 125;
   NativeGraphics graphics;
   if (!graphics.initialize(1280, 720)) {
@@ -440,7 +440,7 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
       retail::RetailSession::open(store, replay.loadout,
                                   {replay.mission_id, {0, 0},
                                    retail::kRetailOpeningCameraModeWord,
-                                   replay.difficulty});
+                                   replay.difficulty, true});
   if (session == nullptr) return std::nullopt;
   ReplayRun result;
   for (const InputFrame input : replay.frames) {
