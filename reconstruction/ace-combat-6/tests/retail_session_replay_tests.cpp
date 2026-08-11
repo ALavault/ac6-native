@@ -15,6 +15,7 @@ int check(bool condition, const char* message) {
 ac6::retail::RetailSessionReplay fixture() {
   ac6::retail::RetailSessionReplay replay;
   replay.mission_id = 1;
+  replay.difficulty = ac6::retail::RetailDifficulty::Ace;
   replay.loadout = {1, 1, true};
   replay.content_index_sha256.fill(0x5a);
   replay.frames = {{1200, -2300, 3400, 200, 0x0010},
@@ -27,6 +28,7 @@ ac6::retail::RetailSessionReplay fixture() {
 int main() {
   const char* path = "ac6-test-retail-session.ac6rply";
   const char* bad_path = "ac6-test-retail-session-bad.ac6rply";
+  const char* legacy_path = "ac6-test-retail-session-v1.ac6rply";
   const auto original = fixture();
   int failures = 0;
   failures += check(original.valid(), "fixture is valid");
@@ -36,6 +38,7 @@ int main() {
   failures += check(loaded.read_file(path), "replay round-trips");
   failures += check(loaded.version == original.version &&
                         loaded.mission_id == original.mission_id &&
+                        loaded.difficulty == original.difficulty &&
                         loaded.loadout == original.loadout &&
                         loaded.content_index_sha256 == original.content_index_sha256 &&
                         loaded.frames == original.frames,
@@ -49,6 +52,38 @@ int main() {
   failures += check(loaded.mission_id == original.mission_id,
                     "failed read does not destroy previous state");
 
+  {
+    std::ofstream output(legacy_path, std::ios::binary | std::ios::trunc);
+    auto u32 = [&output](std::uint32_t value) {
+      const char bytes[4]{static_cast<char>(value), static_cast<char>(value >> 8u),
+                          static_cast<char>(value >> 16u), static_cast<char>(value >> 24u)};
+      output.write(bytes, sizeof(bytes));
+    };
+    output.write("AC6RTPLY\0", 9);
+    u32(1);  // v1 had no difficulty field; read migration supplies Normal.
+    u32(1);
+    u32(1);
+    u32(1);
+    u32(1);
+    const std::array<unsigned char, 32> digest{};
+    output.write(reinterpret_cast<const char*>(digest.data()), digest.size());
+    u32(1);
+    const std::array<unsigned char, 9> frame{0, 0, 0, 0, 0, 0, 0, 0, 0};
+    output.write(reinterpret_cast<const char*>(frame.data()), frame.size());
+  }
+  // Make the legacy digest non-zero without changing the fixture identity
+  // used by the current-format checks above.
+  {
+    std::fstream legacy(legacy_path, std::ios::binary | std::ios::in | std::ios::out);
+    legacy.seekp(9 + 4 * 5);
+    const char byte = static_cast<char>(0x5a);
+    legacy.write(&byte, 1);
+  }
+  failures += check(loaded.read_file(legacy_path), "v1 replay migrates");
+  failures += check(loaded.version == ac6::retail::RetailSessionReplay::kCurrentVersion &&
+                        loaded.difficulty == ac6::retail::RetailDifficulty::Normal,
+                    "v1 replay defaults difficulty to Normal");
+
   auto invalid = original;
   invalid.content_index_sha256.fill(0);
   failures += check(!invalid.valid() && !invalid.write_file(path),
@@ -60,5 +95,6 @@ int main() {
 
   std::remove(path);
   std::remove(bad_path);
+  std::remove(legacy_path);
   return failures == 0 ? 0 : 1;
 }

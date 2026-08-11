@@ -63,7 +63,9 @@ bool nonzero_digest(const Sha256Digest& digest) noexcept {
 
 bool RetailSessionReplay::valid() const noexcept {
   return version == kCurrentVersion && mission_id != 0 &&
-      mission_id <= kMaximumMission && loadout.valid() &&
+      mission_id <= kMaximumMission &&
+      static_cast<std::uint8_t>(difficulty) <=
+          static_cast<std::uint8_t>(RetailDifficulty::Ace) && loadout.valid() &&
       nonzero_digest(content_index_sha256) && !frames.empty() &&
       frames.size() <= kMaximumFrames;
 }
@@ -79,6 +81,7 @@ bool RetailSessionReplay::write_file(const std::filesystem::path& path) const {
   output.write(kMagic, static_cast<std::streamsize>(kMagicSize));
   write_u32(output, version);
   write_u32(output, mission_id);
+  write_u32(output, static_cast<std::uint32_t>(difficulty));
   write_u32(output, loadout.aircraft_id);
   write_u32(output, loadout.weapon_id);
   write_u32(output, loadout.capability_data_valid ? 1u : 0u);
@@ -116,9 +119,20 @@ bool RetailSessionReplay::read_file(const std::filesystem::path& path) {
       std::memcmp(magic.data(), kMagic, kMagicSize) != 0) return false;
 
   RetailSessionReplay parsed;
+  std::uint32_t file_version = 0;
   std::uint32_t capability = 0;
   std::uint32_t count = 0;
-  if (!read_u32(input, parsed.version) || !read_u32(input, parsed.mission_id) ||
+  if (!read_u32(input, file_version) || !read_u32(input, parsed.mission_id) ||
+      (file_version != 1 && file_version != kCurrentVersion) ||
+      (file_version == kCurrentVersion && [&]() {
+        std::uint32_t raw_difficulty = 0;
+        if (!read_u32(input, raw_difficulty) ||
+            raw_difficulty > static_cast<std::uint32_t>(RetailDifficulty::Ace)) {
+          return true;
+        }
+        parsed.difficulty = static_cast<RetailDifficulty>(raw_difficulty);
+        return false;
+      }()) ||
       !read_u32(input, parsed.loadout.aircraft_id) ||
       !read_u32(input, parsed.loadout.weapon_id) || !read_u32(input, capability) ||
       !read_exact(input, parsed.content_index_sha256.data(),
@@ -126,6 +140,7 @@ bool RetailSessionReplay::read_file(const std::filesystem::path& path) {
       !read_u32(input, count) || count > kMaximumFrames) {
     return false;
   }
+  parsed.version = kCurrentVersion;
   parsed.loadout.capability_data_valid = capability != 0;
   parsed.frames.reserve(count);
   for (std::uint32_t index = 0; index < count; ++index) {

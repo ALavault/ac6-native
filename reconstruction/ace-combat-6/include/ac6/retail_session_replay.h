@@ -2,6 +2,7 @@
 
 #include "ac6/campaign_progression.h"
 #include "ac6/product_runtime.h"
+#include "ac6/retail_mission_bundle.h"
 #include "ac6/sha256.h"
 
 #include <cstdint>
@@ -14,11 +15,12 @@ namespace ac6::retail {
 // part of the file, rather than a sidecar selected by the caller, so replay
 // cannot silently run against another import or another loadout.
 struct RetailSessionReplay final {
-  static constexpr std::uint32_t kCurrentVersion = 1;
+  static constexpr std::uint32_t kCurrentVersion = 2;
   static constexpr std::size_t kMaximumFrames = 1'000'000;
 
   std::uint32_t version{kCurrentVersion};
   std::uint32_t mission_id{};
+  RetailDifficulty difficulty{RetailDifficulty::Normal};
   CampaignLoadout loadout{};
   Sha256Digest content_index_sha256{};
   std::vector<InputFrame> frames;

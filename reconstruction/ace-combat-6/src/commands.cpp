@@ -1005,6 +1005,7 @@ int run_commands(int argc, char** argv) {
                  "                       [--replay REPLAY_FILE] [--capture PPM]\n"
                  "                       [--scene-capture PPM] [--scene-report JSON]\n"
                  "                       [--frames COUNT] [--aircraft ID] [--weapon ID]\n"
+                 "                       [--difficulty 0..4]\n"
                  "       ac6-native replay --cache CACHE_ROOT --replay FILE --report OUTPUT_DIR\n");
     return 0;
   }

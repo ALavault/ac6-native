@@ -40,6 +40,7 @@ struct Options final {
   std::filesystem::path scene_report;
   std::uint32_t aircraft{1};
   std::uint32_t weapon{1};
+  retail::RetailDifficulty difficulty{retail::RetailDifficulty::Normal};
   std::uint32_t frames{};
 };
 
@@ -59,6 +60,7 @@ bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
 bool parse_play_options(int argc, char** argv, Options& options) {
   bool aircraft_seen = false;
   bool weapon_seen = false;
+  bool difficulty_seen = false;
   bool frames_seen = false;
   for (int index = 2; index < argc; ++index) {
     const std::string_view option(argv[index]);
@@ -85,6 +87,14 @@ bool parse_play_options(int argc, char** argv, Options& options) {
     } else if (option == "--weapon" && !weapon_seen) {
       if (!parse_u32(value.string(), options.weapon)) return false;
       weapon_seen = true;
+    } else if (option == "--difficulty" && !difficulty_seen) {
+      std::uint32_t raw = 0;
+      if (!parse_u32(value.string(), raw) ||
+          raw > static_cast<std::uint32_t>(retail::RetailDifficulty::Ace)) {
+        return false;
+      }
+      options.difficulty = static_cast<retail::RetailDifficulty>(raw);
+      difficulty_seen = true;
     } else {
       return false;
     }
@@ -266,7 +276,9 @@ int run_play_impl(const Options& options) {
     }
   }
   std::unique_ptr<retail::RetailSession> session =
-      retail::RetailSession::open(store, loadout, {1, {0, 0}});
+      retail::RetailSession::open(store, loadout,
+                                  {1, {0, 0}, retail::kRetailOpeningCameraModeWord,
+                                   options.difficulty});
   if (session == nullptr) return 125;
   NativeGraphics graphics;
   if (!graphics.initialize(1280, 720)) {
@@ -287,6 +299,7 @@ int run_play_impl(const Options& options) {
   bool quit = false;
   retail::RetailSessionReplay replay;
   replay.mission_id = 1;
+  replay.difficulty = options.difficulty;
   replay.loadout = loadout;
   replay.content_index_sha256 = store.index_sha256();
   retail::RetailSessionFrame frame = session->tick(1.0f / 60.0f, input_frame);
@@ -347,8 +360,9 @@ int run_play_impl(const Options& options) {
   }
   std::fprintf(stdout,
                "ac6_retail=pass command=play mission=1 ticks=%llu replay_frames=%zu "
-               "cache_index_sha256=%s\n",
+               "difficulty=%u cache_index_sha256=%s\n",
                static_cast<unsigned long long>(frame.world.tick), replay.frames.size(),
+               static_cast<unsigned>(options.difficulty),
                sha256_hex(store.index_sha256()).c_str());
   return 0;
 }
@@ -417,7 +431,9 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
                                      const retail::RetailSessionReplay& replay) {
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, replay.loadout,
-                                  {replay.mission_id, {0, 0}});
+                                  {replay.mission_id, {0, 0},
+                                   retail::kRetailOpeningCameraModeWord,
+                                   replay.difficulty});
   if (session == nullptr) return std::nullopt;
   ReplayRun result;
   for (const InputFrame input : replay.frames) {
@@ -462,6 +478,8 @@ int run_replay_impl(const Options& options) {
   output << "{\n"
          << "  \"schema\": \"ac6.native-retail-replay.v1\",\n"
          << "  \"mission_id\": " << replay.mission_id << ",\n"
+         << "  \"difficulty\": "
+         << static_cast<unsigned>(replay.difficulty) << ",\n"
          << "  \"aircraft_id\": " << replay.loadout.aircraft_id << ",\n"
          << "  \"weapon_id\": " << replay.loadout.weapon_id << ",\n"
          << "  \"cache_index_sha256\": \"" << sha256_hex(store.index_sha256()) << "\",\n"
