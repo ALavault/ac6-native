@@ -257,6 +257,19 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
         ac6::retail::ScenarioPayload::open(std::move(scenario_copy));
     REQUIRE(scenario_payload.has_value());
     REQUIRE(ac6::retail::MissionScenario::parse(*scenario_payload).has_value());
+
+    // The product boundary must also construct each campaign world through
+    // RetailMissionBundle; a parser-only corpus would miss a mission-specific
+    // assumption in unit classification, camera selection, or the fixed-step
+    // session bootstrap.
+    const std::unique_ptr<RetailSession> qualified_session = RetailSession::open(
+        store, {1, 1, true},
+        {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+         ac6::retail::RetailDifficulty::Normal});
+    REQUIRE(qualified_session != nullptr);
+    const ac6::retail::RetailSessionFrame qualified_frame =
+        qualified_session->tick(kFixedDt, {});
+    REQUIRE(qualified_frame.world.mission_id == mission_id);
   }
   const std::optional<ac6::retail::RetailCampaignBundle> common =
       ac6::retail::RetailCampaignBundle::open_entry(store, 1);
