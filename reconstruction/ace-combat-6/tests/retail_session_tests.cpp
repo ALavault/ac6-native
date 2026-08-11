@@ -304,6 +304,14 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     const ac6::retail::RetailSessionFrame qualified_frame =
         qualified_session->tick(kFixedDt, {});
     REQUIRE(qualified_frame.world.mission_id == mission_id);
+    const auto mission_objectives =
+        qualified_session->world().objectives.find_by_mission(mission_id);
+    REQUIRE(!mission_objectives.empty());
+    const std::string expected_stable_id =
+        std::string("mission") + (mission_id < 10 ? "0" : "") +
+        std::to_string(mission_id) +
+        "-submission-0";
+    REQUIRE(mission_objectives.front()->stable_id == expected_stable_id);
     if (mission_id == 7) {
       // With a freshly opened mission all counters are zero, so the four
       // equality conditions are false. The session must therefore take the

@@ -75,8 +75,8 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-      "sha256": "b4244baff126dada30856df0c2599a6f05572201455c531999303ff993bd8836",
-      "size": 13884,
+      "sha256": "02473781f2c310dfa90c4f5f09cfe4dcacfb6779cb2e4a0183c7b889502bf7a6",
+      "size": 13968,
       "claim": "src/retail_mission_state.cpp implements the classification, the insertion and the per-faction census"
      }
     ]
@@ -139,8 +139,8 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-      "sha256": "b4244baff126dada30856df0c2599a6f05572201455c531999303ff993bd8836",
-      "size": 13884,
+      "sha256": "02473781f2c310dfa90c4f5f09cfe4dcacfb6779cb2e4a0183c7b889502bf7a6",
+      "size": 13968,
       "claim": "src/retail_mission_state.cpp implements the four operations in retail's compute-store-then-stamp order"
      }
     ]
@@ -203,8 +203,8 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-      "sha256": "b4244baff126dada30856df0c2599a6f05572201455c531999303ff993bd8836",
-      "size": 13884,
+      "sha256": "02473781f2c310dfa90c4f5f09cfe4dcacfb6779cb2e4a0183c7b889502bf7a6",
+      "size": 13968,
       "claim": "normalise_area, area_contains and select_mission_area implement the three functions and cite them"
      }
     ]

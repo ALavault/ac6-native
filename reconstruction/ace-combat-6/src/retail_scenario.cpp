@@ -47,6 +47,14 @@ std::string format_float(float value) {
   return text;
 }
 
+std::string submission_stable_id(std::uint32_t mission_id,
+                                 std::uint32_t sub_mission) {
+  char text[64];
+  std::snprintf(text, sizeof(text), "mission%02u-submission-%u", mission_id,
+                sub_mission);
+  return text;
+}
+
 bool parse_tag7_condition(const ScenarioPayload& payload, std::size_t step,
                           std::optional<ScenarioStepCondition>& condition) {
   // 0x8226E158 obtains pas[8], then dereferences the first child data block
@@ -427,7 +435,7 @@ std::string objectives_manifest_rows(const MissionScenario& scenario,
   for (const ScenarioSubMission& sub_mission : scenario.sub_missions()) {
     text += std::to_string(mission_id);
     text += "\t" + std::to_string(sub_mission.index + 1);
-    text += "\tmission01-submission-" + std::to_string(sub_mission.index);
+    text += "\t" + submission_stable_id(mission_id, sub_mission.index);
     text += "\t1\n";
   }
   return text;

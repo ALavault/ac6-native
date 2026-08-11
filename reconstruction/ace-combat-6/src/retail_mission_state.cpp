@@ -330,8 +330,9 @@ std::optional<RetailWorld> build_retail_world(const MissionScenario& scenario,
     MissionObjectiveDefinition definition;
     definition.mission_id = mission_id;
     definition.objective.id = sub_mission.index + 1;
-    definition.objective.stable_id =
-        "mission01-submission-" + std::to_string(sub_mission.index);
+    definition.objective.stable_id = std::string("mission") +
+        (mission_id < 10 ? "0" : "") + std::to_string(mission_id) +
+        "-submission-" + std::to_string(sub_mission.index);
     definition.objective.required = true;
     if (!world.objectives.add(std::move(definition))) return std::nullopt;
   }
