@@ -1,0 +1,6 @@
+# Capture-only derivative: reach the campaign-intro boundary, then leave the
+# guest untouched long enough to separate a delayed video completion from an
+# input-induced transition loop.
+include	ac6-oracle-mission01-trace-entry.steps
+sleep	45
+capture	campaign-intro-after-settle

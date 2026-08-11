@@ -70,6 +70,18 @@ qualifiée de R est donc antérieure au scheduler de frame, après la fin du
 gestionnaire de sauvegarde ; elle n'est pas une absence de soumission Vulkan
 ou un défaut du raster.
 
+Le témoin positif S empêche toutefois de transformer cette coupure en cause
+générale. Avec le même binaire, le même profil frais et la même
+`trace-entry`, S franchit `state0→1` à `00:00:09.175`, `state1→2` à
+`00:00:17.988` et atteint le prompt de déploiement. Le run est qualifié
+(`oracle_run=pass`, 76 étapes, 234,15 s, aucun fatal, `/dev/shm` identique
+avant/après) ; son binaire vaut `37e0c88d…`, son log
+`e02acd27266d11250bc5aeb615143670cb6f04d59e220ab4df1d8078783f5d1e`, son
+manifeste `bdb3fb92e752e5d05be8f92396627a20f486c253b528e476f87add53b2d7780e`
+et sa capture finale de briefing `41fe632add7bea595cbcfc63825e8ca1c7c6dcad4fb737af80036e6ff7c61057`.
+La frontière est donc intermittente ; aucune nouvelle correction audio ou
+Vulkan ne doit être déduite de R seul.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
