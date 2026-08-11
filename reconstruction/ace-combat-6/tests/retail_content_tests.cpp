@@ -1,4 +1,5 @@
 #include "ac6/retail_content.h"
+#include "ac6/retail_asf_index.h"
 
 #include <zlib.h>
 
@@ -443,6 +444,7 @@ void media_manifest_is_atomic_reproducible_and_fail_closed() {
 void optional_ffmpeg_media_decode_smoke() {
   const char* cache_name = std::getenv("AC6_MEDIA_CACHE");
   if (cache_name == nullptr || *cache_name == '\0') return;
+  if (std::getenv("AC6_SKIP_MEDIA_DECODE") != nullptr) return;
   ac6::RetailContentStore store;
   REQUIRE(store.open(cache_name));
   ac6::RetailDecodedAudio decoded;
@@ -459,6 +461,94 @@ void optional_ffmpeg_media_decode_smoke() {
                ac6::sha256_hex(decoded.pcm_sha256).c_str(), decoded.pcm.size());
 }
 
+void asf_index_parser_is_bounded_and_rejects_truncation() {
+  constexpr std::array<std::uint8_t, 16> header_guid{
+      0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11,
+      0xa6, 0xd9, 0x00, 0xaa, 0x00, 0x62, 0xce, 0x6c};
+  constexpr std::array<std::uint8_t, 16> file_guid{
+      0xa1, 0xdc, 0xab, 0x8c, 0x47, 0xa9, 0xcf, 0x11,
+      0x8e, 0xe4, 0x00, 0xc0, 0x0c, 0x20, 0x53, 0x65};
+  constexpr std::array<std::uint8_t, 16> extension_guid{
+      0xb5, 0x03, 0xbf, 0x5f, 0x2e, 0xa9, 0xcf, 0x11,
+      0x8e, 0xe3, 0x00, 0xc0, 0x0c, 0x20, 0x53, 0x65};
+  auto put_le32 = [](std::vector<std::uint8_t>& bytes, std::size_t offset,
+                     std::uint32_t value) {
+    bytes[offset] = static_cast<std::uint8_t>(value);
+    bytes[offset + 1] = static_cast<std::uint8_t>(value >> 8u);
+    bytes[offset + 2] = static_cast<std::uint8_t>(value >> 16u);
+    bytes[offset + 3] = static_cast<std::uint8_t>(value >> 24u);
+  };
+  auto put_le64 = [&put_le32](std::vector<std::uint8_t>& bytes, std::size_t offset,
+                              std::uint64_t value) {
+    put_le32(bytes, offset, static_cast<std::uint32_t>(value));
+    put_le32(bytes, offset + 4, static_cast<std::uint32_t>(value >> 32u));
+  };
+  auto bank = [&](std::vector<std::uint8_t>& bytes, std::size_t base,
+                  std::uint8_t tag) {
+    std::copy(header_guid.begin(), header_guid.end(), bytes.begin() + base);
+    put_le32(bytes, base + 16, 0x1234u);
+    bytes[base + 20] = 'B';
+    bytes[base + 21] = 'N';
+    bytes[base + 22] = 'K';
+    bytes[base + 23] = tag;
+    put_le32(bytes, base + 24, 7u);
+    bytes[base + 28] = 1;
+    bytes[base + 29] = 2;
+    constexpr std::size_t file_offset = 30;
+    std::copy(file_guid.begin(), file_guid.end(), bytes.begin() + base + file_offset);
+    put_le64(bytes, base + file_offset + 16, 104u);
+    constexpr std::size_t extension_offset = file_offset + 104;
+    std::copy(extension_guid.begin(), extension_guid.end(),
+              bytes.begin() + base + extension_offset);
+    put_le64(bytes, base + extension_offset + 16, 40u);
+    constexpr std::size_t index_offset = extension_offset + 40;
+    put_le32(bytes, base + index_offset, 200u);
+    put_le32(bytes, base + index_offset + 4, 300u);
+    put_le32(bytes, base + index_offset + 8, 400u);
+    put_le32(bytes, base + index_offset + 12, 11u);
+    put_le32(bytes, base + index_offset + 16, 22u);
+  };
+
+  std::vector<std::uint8_t> bytes(1024, 0);
+  bank(bytes, 0, 0x0e);
+  bank(bytes, 512, 0x21);
+  std::string detail;
+  const auto parsed = ac6::RetailAsfIndex::open(bytes, detail);
+  REQUIRE(parsed.has_value());
+  REQUIRE(parsed->bank_count() == 2);
+  REQUIRE(parsed->bank(0).size == 512);
+  REQUIRE(parsed->bank(0).bank_tag == 0x0e);
+  REQUIRE(parsed->bank(0).index_offset == 174);
+  REQUIRE(parsed->bank(0).index_count == 3);
+  REQUIRE(parsed->bank(0).first_index == 200);
+  REQUIRE(parsed->bank(0).last_index == 400);
+  REQUIRE(parsed->bank(1).offset == 512);
+  REQUIRE(parsed->bank(1).bank_tag == 0x21);
+
+  put_le32(bytes, 174, 512);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  bytes.resize(600);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+
+  const char* cache_name = std::getenv("AC6_MEDIA_CACHE");
+  if (cache_name == nullptr || *cache_name == '\0') return;
+  ac6::RetailContentStore store;
+  REQUIRE(store.open(cache_name));
+  const auto retail = ac6::RetailAsfIndex::open(
+      store.media(), ac6::RetailMediaAsset::Movie, detail);
+  if (!retail.has_value()) std::fprintf(stderr, "asf_index detail=%s\n", detail.c_str());
+  REQUIRE(retail.has_value());
+  REQUIRE(retail->bank_count() == 2);
+  REQUIRE(retail->bank(0).size == 164638720u);
+  REQUIRE(retail->bank(1).size == 183668736u);
+  REQUIRE(retail->bank(0).index_count == 2630);
+  REQUIRE(retail->bank(1).index_count == 2819);
+  std::fprintf(stdout, "asf_index=pass banks=%zu entries=%u,%u\n",
+               retail->bank_count(), retail->bank(0).index_count,
+               retail->bank(1).index_count);
+}
+
 }  // namespace
 
 int main() {
@@ -473,6 +563,7 @@ int main() {
   incompatible_current_and_corrupt_index_are_distinct_failures();
   media_manifest_is_atomic_reproducible_and_fail_closed();
   optional_ffmpeg_media_decode_smoke();
+  asf_index_parser_is_bounded_and_rejects_truncation();
   inconsistent_index_metadata_is_rejected_after_digest_verification();
   std::puts("retail_content: all checks passed");
   return 0;

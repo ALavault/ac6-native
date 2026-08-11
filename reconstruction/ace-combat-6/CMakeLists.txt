@@ -87,6 +87,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/sha256.cpp
   src/retail_content.cpp
   src/retail_media.cpp
+  src/retail_asf_index.cpp
   src/retail_resource_graph.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
