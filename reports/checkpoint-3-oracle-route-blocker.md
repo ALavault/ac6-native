@@ -146,6 +146,14 @@ et journal `bbc0fc156dc89be8b74572aae9b629ea03460ed1ce9549f57b10fafcdd9a6994`.
 Cette route ferme donc le même front post‑transition avec une séquence d'entrée
 différente ; elle ne justifie toujours pas une divergence native.
 
+Les avertissements XMA du même journal sont postérieurs à cette frontière :
+`state1→2` survient à `00:42:58.051`, tandis que le premier
+`missing-next-packet-for-split-frame` apparaît à `00:44:57.212`, puis se répète
+à intervalles d'environ 7, 64 et 65 secondes. La scène est déjà figée depuis
+plus de 119 secondes quand le premier avertissement est émis. Il s'agit donc
+d'un indice de fin de flux audio à qualifier séparément, pas d'une cause
+dynamique du gel vidéo ni d'une correction recevable pour ce checkpoint.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
