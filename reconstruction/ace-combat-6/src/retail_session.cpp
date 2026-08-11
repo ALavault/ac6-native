@@ -61,8 +61,8 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
       open(std::move(scenario_payload), config);
   if (session == nullptr) return nullptr;
   session->bundle_ = RetailSessionBundle{
-      mission->data_table_entry(), loadout, mission->difficulty(),
-      mission->content_index_sha256()};
+      mission->data_table_entry(), loadout, mission->content_index_sha256(),
+      mission->difficulty()};
   return session;
 }
 

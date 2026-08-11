@@ -20,10 +20,10 @@ struct RetailSessionReplay final {
 
   std::uint32_t version{kCurrentVersion};
   std::uint32_t mission_id{};
-  RetailDifficulty difficulty{RetailDifficulty::Normal};
   CampaignLoadout loadout{};
   Sha256Digest content_index_sha256{};
   std::vector<InputFrame> frames;
+  RetailDifficulty difficulty{RetailDifficulty::Normal};
 
   bool valid() const noexcept;
   bool write_file(const std::filesystem::path& path) const;

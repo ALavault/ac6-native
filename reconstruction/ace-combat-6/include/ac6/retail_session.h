@@ -61,8 +61,8 @@ struct RetailSessionFrame {
 struct RetailSessionBundle final {
   std::uint32_t data_table_entry{};
   CampaignLoadout loadout{};
-  RetailDifficulty difficulty{RetailDifficulty::Normal};
   Sha256Digest content_index_sha256{};
+  RetailDifficulty difficulty{RetailDifficulty::Normal};
   bool operator==(const RetailSessionBundle&) const = default;
 };
 
