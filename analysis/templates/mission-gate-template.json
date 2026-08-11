@@ -1,0 +1,37 @@
+{
+  "schema": "ac6.offline-mission-gate.v1",
+  "contract_id": "Mxx-JF-JV-JP-JG",
+  "provenance": {
+    "ghidra_project": "ace-combat-6",
+    "target": "PAL default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "module": "default.xex",
+    "mission_id": "Mxx",
+    "content_store_version": 2,
+    "content_identity": "REPLACE_WITH_CACHE_DIGEST"
+  },
+  "gates": {
+    "JF": {"status": "open", "evidence": []},
+    "JV": {"status": "open", "evidence": []},
+    "JP": {"status": "open", "evidence": []},
+    "JG": {"status": "open", "evidence": []}
+  },
+  "required_scenarios": [
+    "success", "failure", "out_of_bounds", "blocked_target",
+    "death_or_crash", "pause_resume", "restart", "save_resume"
+  ],
+  "performance": {
+    "resolution": "1280x720",
+    "simulation_hz": 60,
+    "warmup_seconds": 10,
+    "sample_seconds": 120,
+    "minimum_fps_per_10s_window": 30,
+    "p95_frame_ms_max": 33.3
+  },
+  "policy": {
+    "native_derivations_only": true,
+    "generated_code_is_cross_match_only": true,
+    "xenia_is_oracle_only": true,
+    "all_gates_required_for_support": true
+  }
+}

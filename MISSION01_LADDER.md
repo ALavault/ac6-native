@@ -1,7 +1,7 @@
-# Mission 01 — the live ladder
+# Mission 01 — detailed ladder
 
-The single roadmap. Six older planning documents at the repo root describe
-superseded ladders and are bannered as such; plan from this file.
+> Scope and checkpoint order moved to `GLOBAL_OFFLINE_LADDER.md`. This document
+> remains the detailed Mission 01 evidence ledger for checkpoint 3.
 
 ## The product
 
