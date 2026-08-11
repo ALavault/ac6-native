@@ -32,6 +32,8 @@ The all-15 qualified session bootstrap parses this payload before constructing t
 
 This closes the condition reader and dispatch boundary only.  The meanings and producers of the 339 counters, AI/event timing, and the events that make a condition true remain open; no counter is fabricated and no mission is marked complete by this report.
 
+Objective stable IDs are now derived from the mission id (`mission01-submission-0` … `mission15-submission-N`) in both the manifest projection and the retail world builder.  Mission 01's existing rows are byte-for-byte unchanged; the all-15 session corpus asserts the mission-specific prefix.
+
 ## Validation
 
 `cmake --build reconstruction/ace-combat-6/build -j16` passed after the parser and session change.  The qualified all-15 session corpus passed, including Mission 07's zero-counter fall-through/exhaustion check; the existing synthetic parser tests continue to cover non-tag-7 scenarios.
