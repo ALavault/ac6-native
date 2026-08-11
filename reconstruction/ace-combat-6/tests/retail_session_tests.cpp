@@ -230,7 +230,7 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
   ac6::RetailContentStore store;
   REQUIRE(store.open(cache));
   REQUIRE(ac6::sha256_hex(store.index_sha256()) ==
-          "349f5f49fe1acf19984c6470a5d3f16adf3029e36c93e24da8cb3ec58b4cdfd0");
+          "cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85");
   for (std::uint32_t mission_id = 1; mission_id <= 15; ++mission_id) {
     const std::optional<ac6::retail::RetailCampaignBundle> bundle =
         ac6::retail::RetailCampaignBundle::open(store, mission_id);
@@ -242,6 +242,21 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     REQUIRE(mdlp->size() >= 4);
     REQUIRE((*mdlp)[0] == 'M' && (*mdlp)[1] == 'D' &&
             (*mdlp)[2] == 'L' && (*mdlp)[3] == 'P');
+
+    // The common scenario reader is exercised over every qualified campaign
+    // payload before any mission-specific product code consumes it.
+    const std::optional<ac6::retail::RetailMissionBundle> mission =
+        ac6::retail::RetailMissionBundle::open(
+            store, {mission_id, ac6::retail::RetailDifficulty::Normal,
+                    {1, 1, true}});
+    REQUIRE(mission.has_value());
+    const std::optional<std::span<const std::uint8_t>> scenario_bytes = mission->child(0);
+    REQUIRE(scenario_bytes.has_value());
+    std::vector<std::uint8_t> scenario_copy(scenario_bytes->begin(), scenario_bytes->end());
+    const std::optional<ac6::retail::ScenarioPayload> scenario_payload =
+        ac6::retail::ScenarioPayload::open(std::move(scenario_copy));
+    REQUIRE(scenario_payload.has_value());
+    REQUIRE(ac6::retail::MissionScenario::parse(*scenario_payload).has_value());
   }
   const std::optional<ac6::retail::RetailCampaignBundle> common =
       ac6::retail::RetailCampaignBundle::open_entry(store, 1);

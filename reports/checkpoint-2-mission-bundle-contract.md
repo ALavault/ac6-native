@@ -9,3 +9,8 @@ still present only for parser/runtime tests.
 The retail session opens this bundle before parsing the scenario. Invalid
 mission IDs, unresolved loadouts, or out-of-range difficulties fail before a
 world is constructed. Existing retail session and replay tests pass unchanged.
+
+The qualified-cache session test now opens the bundle and runs the shared
+`ScenarioPayload`/`MissionScenario` readers for all 15 campaign payloads before
+the Mission 01 runtime assertions. The PAL cache identity used by this corpus
+is `cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85`.

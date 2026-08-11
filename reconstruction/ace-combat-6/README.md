@@ -15,17 +15,16 @@ ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]
 ```
 
 The importer requires the qualified PAL `default.xex`, `DATA.TBL`,
-`DATA00.PAC` and `DATA01.PAC` identities. It parses the complete big-endian
-table with bounded 64-bit ranges, then descrambles and raw-DEFLATE decodes the
-common camera resource at entry 1, campaign entries 9–23 and the qualified
-Mission 01 world resource at entry 119. A wrong identity, duplicate request,
-truncated range, size-limit violation or decode error fails before a new
-generation is published.
+`DATA00.PAC` and `DATA01.PAC` identities. It parses all 926 big-endian table
+rows with bounded 64-bit ranges, then descrambles and raw-DEFLATE decodes the
+complete offline closure into a version-2 content/resource graph. A wrong
+identity, duplicate request, truncated range, size-limit violation or decode
+error fails before a new generation is published.
 
-For the product frontend, pass `--frontend`: entries 2–8 are then imported as
-the PAL font/glyph closure (five locale slots plus the Japanese companion
-pack). The public `play` and `replay` commands reject a cache that lacks this
-complete closure instead of falling back to invented UI text.
+`--frontend` remains accepted for compatibility; the qualified product import
+already includes entries 1–926 and the six PAL media blobs. The public `play`
+and `replay` commands reject a cache that lacks the complete frontend/media
+closure instead of falling back to invented UI text.
 
 The default cache is `$XDG_CACHE_HOME/ac6-native`, or
 `$HOME/.cache/ac6-native` when the XDG path is absent. Payloads live under
@@ -112,7 +111,9 @@ SDL_AUDIODRIVER=dummy xvfb-run -a ac6-native play \
   --cache CACHE_ROOT --capture /tmp/ac6-frame.ppm --frames 1
 ```
 
-`--frames` is a fixed 60 Hz simulation count (maximum 600,000). The capture is
+`--frames` is a fixed 60 Hz simulation count (maximum 600,000). `--difficulty`
+uses the retail order `0=Easy`, `1=Normal`, `2=Hard`, `3=Expert`, `4=Ace` and
+is sealed into replay files. The capture is
 the actual presented native target, not a parity claim; until the remaining
 camera/scene bindings are qualified it may still contain the explicitly
 diagnostic world-marker lane. Omitting `--frames` keeps `play` interactive.
