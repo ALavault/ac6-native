@@ -82,6 +82,14 @@ et sa capture finale de briefing `41fe632add7bea595cbcfc63825e8ca1c7c6dcad4fb737
 La frontière est donc intermittente ; aucune nouvelle correction audio ou
 Vulkan ne doit être déduite de R seul.
 
+Le run T de la route contrôlée confirme la non-déterminisme en amont : même
+SHA binaire `37e0c88d…`, mais interruption après 204,49 s et seulement cinq
+étapes, avant tout `ac6-save-route`, sans fatal. Son log vaut
+`d96c0ab13142fb5b5eed2f68d00b621143a332849d3f68ff44e75ef3df068955` et son
+manifeste `6f0bc60787b31c13f96ee253367d0f7d3d28f8325ac18ce5397755148f546e83`.
+Ce négatif n'est pas fusionné avec S : il ne ferme aucune divergence native et
+ne fournit pas de fenêtre de trace.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
