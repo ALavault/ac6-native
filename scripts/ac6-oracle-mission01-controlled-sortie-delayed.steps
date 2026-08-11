@@ -1,0 +1,4 @@
+# A/B route: give the qualified scheduler frontier one host second before the
+# first menu edge; the canonical controlled route remains unchanged.
+sleep	1
+include	ac6-oracle-mission01-controlled-sortie.steps

@@ -90,6 +90,19 @@ manifeste `6f0bc60787b31c13f96ee253367d0f7d3d28f8325ac18ce5397755148f546e83`.
 Ce négatif n'est pas fusionné avec S : il ne ferme aucune divergence native et
 ne fournit pas de fenêtre de trace.
 
+Le variant U, qui ajoute une seconde après la barrière scheduler initiale,
+réduit le faux départ et atteint `state0→1`, `state1→2`, le briefing et le
+prompt de déploiement. Il retombe ensuite sur la frontière vidéo connue : les
+captures `post-start-a`, `post-start-b`, `post-weapon-confirm` et
+`deploy-prompt` ont toutes le SHA `9344481fe6bb8f2172047c98d5d0fd65e399232d293ed84547e3655ab3112b96`
+(écran noir avec l'overlay), sans frontière joueur/manager ni trace armée.
+Après 280,96 s, l'interruption est propre, sans fatal et avec un seul segment
+créé puis nettoyé ; log `a7d4b54218eca49667a77f25b3ffbdf3b1a6b0cb378d693240f955d3aa5a7b2c`,
+manifeste `2f0e8ef2d5841b5ea2e3b504bfa65687d2c2f9ac828c3bbb3310e4b54c60db2f`.
+Sous `SDL_AUDIODRIVER=dummy`, cela qualifie le gel visuel et la frontière
+d'exécution, pas l'audibilité elle-même ; le dialogue audible reste donc
+l'observation interactive historique, déjà documentée.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
