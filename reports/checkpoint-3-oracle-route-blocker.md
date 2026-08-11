@@ -154,6 +154,33 @@ plus de 119 secondes quand le premier avertissement est émis. Il s'agit donc
 d'un indice de fin de flux audio à qualifier séparément, pas d'une cause
 dynamique du gel vidéo ni d'une correction recevable pour ce checkpoint.
 
+## Capture v2 complète et répétition
+
+Une route différée a finalement franchi la frontière joueur puis le tick
+manager, armé la fenêtre et produit une capture complète : 3 600 ticks,
+18 000 événements, 377,62 s, aucun fatal et restauration exacte de
+`/dev/shm`. Le binaire et le XEX restent respectivement
+`37e0c88d73b917a3b10a11bed44d5c42908032a3a1a0949a652abdec6d6432e7` et
+`acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde` ; la
+capture brute vaut
+`913f93414852ddb60f6eb6b8956cd7c5363f13bf07c40d52f3d1e40a0248c9e0`.
+
+La répétition exacte de la même route et du même binaire est elle aussi
+complète (3 600 ticks, 18 000 événements, 377,75 s, aucun fatal, `/dev/shm`
+identique), mais sa capture vaut
+`40fa3bfd0ddf9f715f70dcfe3908ad3c5fccc0049ad99051d1b9015d49d4e7a` : elle
+n'est pas byte-identique. La première divergence arrive dès le tick 1, dans
+`simulation_snapshot.player_transform_words[3]` (`3304880076` contre
+`3304879704`). La première différence d'entrée n'apparaît qu'au tick 119
+(roll `0` contre `32767`) ; les 3 600 objectifs et les 3 600 soumissions
+graphiques restent identiques, tandis que les hashes de sortie suivent la
+différence de transform.
+
+Cette paire ferme la présence et la forme de la fenêtre v2, mais pas encore
+son invariance oracle. Aucun rapport oracle↔natif ni portage renderer ne doit
+être déduit de ces captures tant que cette première divergence n'est pas
+expliquée ou que la route n'impose pas un replay d'entrée déterministe.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
