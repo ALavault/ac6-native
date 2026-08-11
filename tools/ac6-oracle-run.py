@@ -149,6 +149,7 @@ class OracleRun:
         self.console = None
         self.log_offset = 0
         self.console_offset = 0
+        self.pending_log_text = ""
         self.captures: list[dict[str, object]] = []
         self.executed_steps = 0
         self.trace_v2_armed = False
@@ -228,11 +229,12 @@ class OracleRun:
     def wait_log(self, pattern: str, timeout: float, pulse: str = "") -> None:
         expression = re.compile(pattern)
         end = min(self.deadline, time.monotonic() + timeout)
-        pending = ""
         while time.monotonic() < end:
             self.require_time()
-            pending += self.new_log_text()
-            if expression.search(pending):
+            self.pending_log_text += self.new_log_text()
+            match = expression.search(self.pending_log_text)
+            if match:
+                self.pending_log_text = self.pending_log_text[match.end():]
                 return
             if pulse:
                 for key in parse_pulse_keys(pulse):
@@ -242,8 +244,10 @@ class OracleRun:
                     # Settle before the next key so a late pulse cannot accept
                     # the following dialog.
                     self.sleep(4)
-                    pending += self.new_log_text()
-                    if expression.search(pending):
+                    self.pending_log_text += self.new_log_text()
+                    match = expression.search(self.pending_log_text)
+                    if match:
+                        self.pending_log_text = self.pending_log_text[match.end():]
                         return
             else:
                 self.sleep(1)

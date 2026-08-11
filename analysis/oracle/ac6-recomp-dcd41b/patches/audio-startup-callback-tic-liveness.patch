@@ -1,0 +1,67 @@
+--- a/thirdparty/rexglue-sdk/include/native/audio/startup_pacing.h
++++ b/thirdparty/rexglue-sdk/include/native/audio/startup_pacing.h
+@@ -9,4 +9,9 @@ constexpr bool HasObservedQueuedPlayback(uint64_t queued_played_frames) noexcept {
+   return queued_played_frames != 0;
+ }
+
++constexpr uint64_t RenderTicWithHostProgress(uint64_t observed_tic,
++                                             uint64_t host_elapsed_tic) noexcept {
++  return observed_tic > host_elapsed_tic ? observed_tic : host_elapsed_tic;
++}
++
+ }  // namespace rex::audio
+--- a/thirdparty/rexglue-sdk/src/native/audio/audio_runtime.cpp
++++ b/thirdparty/rexglue-sdk/src/native/audio/audio_runtime.cpp
+@@ -214,27 +214,21 @@ uint64_t ComputeStartupSyntheticTic(const AudioClientState& client) {
+     return 0;
+   }
+
+-  const uint64_t submitted_samples = SubmittedTicSamples(client);
+-  if (submitted_samples != 0) {
+-    return submitted_samples;
+-  }
+-
+-  // When no frames have been submitted yet, grow the synthetic tic
+-  // proportionally to dispatched callbacks so the game gets a realistic
+-  // sense of elapsed audio-time during startup instead of being stuck at
+-  // a single-frame cap that can cause dialogue timing desyncs.
+-  return static_cast<uint64_t>(client.telemetry.callback_dispatch_count) *
+-         kRenderDriverTicSamplesPerFrame;
++  // A guest callback may wait for the render tic before it can submit its next
++  // frame. Underrun silence advances the device clock, so keep that callback
++  // live on host time while callback dispatch remains queue-depth paced.
++  const uint64_t callback_floor =
++      static_cast<uint64_t>(client.telemetry.callback_dispatch_count) *
++      kRenderDriverTicSamplesPerFrame;
++  const uint64_t observed_tic = std::max(SubmittedTicSamples(client), callback_floor);
++  const uint64_t host_elapsed =
++      ElapsedSamplesSince(client.first_callback_dispatch_time, AudioClock::clock_type::now());
++  return RenderTicWithHostProgress(observed_tic, host_elapsed);
+ }
+
+ uint32_t ComputeRenderDriverTic(const AudioClientState& client) {
+-  uint64_t tic = client.clock.consumed_samples();
+-
+-  // Keep startup liveness bounded to actual queued/submitted audio instead of
+-  // deriving progress from wall clock time alone.
+-  if (tic == 0) {
+-    tic = ComputeStartupSyntheticTic(client);
+-  }
++  const uint64_t tic =
++      std::max(client.clock.consumed_samples(), ComputeStartupSyntheticTic(client));
+
+   return tic > std::numeric_limits<uint32_t>::max() ? std::numeric_limits<uint32_t>::max()
+                                                     : static_cast<uint32_t>(tic);
+--- a/tests/ac6_audio_startup_pacing_test.cpp
++++ b/tests/ac6_audio_startup_pacing_test.cpp
+@@ -7,5 +7,10 @@ int main() {
+   assert(!HasObservedQueuedPlayback(0));
+   assert(HasObservedQueuedPlayback(1));
+   assert(HasObservedQueuedPlayback(42));
++  using rex::audio::RenderTicWithHostProgress;
++  assert(RenderTicWithHostProgress(0, 0) == 0);
++  assert(RenderTicWithHostProgress(256, 128) == 256);
++  assert(RenderTicWithHostProgress(256, 384) == 384);
++  assert(RenderTicWithHostProgress(256, 4096) == 4096);
+   return 0;
+ }

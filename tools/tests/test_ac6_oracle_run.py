@@ -48,6 +48,17 @@ class OracleDisplayTests(unittest.TestCase):
 
         self.assertEqual(keys, ["Escape"])
 
+    def test_sequential_waits_preserve_same_chunk_suffix(self) -> None:
+        runner = RUNNER.OracleRun(SimpleNamespace(duration=10, display=":210"))
+        reads = iter(("player-ready\nmanager-ready\n", ""))
+        runner.new_log_text = lambda: next(reads, "")
+        runner.sleep = lambda seconds: None
+
+        runner.wait_log("player-ready", 2)
+        runner.wait_log("manager-ready", 2)
+
+        self.assertEqual(runner.pending_log_text, "\n")
+
     def test_cleanup_removes_only_current_owned_rexglue_segment(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

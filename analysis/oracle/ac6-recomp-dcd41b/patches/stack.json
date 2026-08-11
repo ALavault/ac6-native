@@ -73,6 +73,13 @@
       "sha256": "34227e868a4c9a78ab76439b0d0c359faa85fe31c0663481ffdafec326429f4d",
       "reason": "Keep movie-worker callback pacing serialized until SDL consumes a queued guest frame; injected underrun silence is not playback evidence.",
       "validation": "ac6_audio_startup_pacing_test distinguishes zero queued playback from real consumption; the corrected dcd41b binary exits the previously frozen intro video and reaches the Mission 01 player-update boundary."
+    },
+    {
+      "order": 11,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/audio-startup-callback-tic-liveness.patch",
+      "sha256": "13a5ad39755de865c1333710c3f21249208776983396c4ab6a0cefe5b16a001f",
+      "reason": "Keep the dummy device render tic monotone on host time through underruns while retaining serialized callback dispatch until queued guest playback is observed.",
+      "validation": "ac6_audio_startup_pacing_test covers zero, observed-tic floor, and host-clock progression; fresh controlled-sortie qualification remains required."
     }
   ],
   "configuration": {
@@ -81,10 +88,11 @@
     "source": "canonical Ghidra export plus capture-overrides.json"
   },
   "qualification": {
+    "qualified_patch_count": 11,
     "clean_application_pass": true,
     "changed_file_count": 27,
     "changed_tree_algorithm": "sha256(sorted(path + NUL + bytes + NUL))",
-    "changed_tree_sha256": "46d98fe52edba09fb28c1ae1528aa5f1b1d92987b09b2d29999a44d5f57dde81",
+    "changed_tree_sha256": "9cbce31057b6a52c010fee763b8a38e877890ce85651ce1037ad8ac6af22fa5b",
     "capture_profile_byte_match": true
   }
 }
