@@ -207,6 +207,26 @@ sur les 3 600 ticks. Le replay transporte donc exactement la séquence d'entrée
 de la capture A ; la divergence restante est bien dans la construction du
 snapshot/état natif, et non dans le convertisseur de manette.
 
+## Contrat natif de snapshot et de scène
+
+Cette divergence a maintenant une frontière produit explicite dans
+`reconstruction/ace-combat-6/include/ac6/render_scene.h`. `SimulationSnapshot`
+possède le tick, la mission, le joueur, la caméra, l'état de mission, le curseur
+de script, les objectifs et un digest SHA-256 calculé sur une représentation
+canonique ; `make_simulation_snapshot` est l'adaptateur unique depuis le
+`WorldFrame` de compatibilité. `RenderScene` possède la caméra, les exigences de
+surface, les passes ordonnées, les `MaterialPipeline`, les `DrawPacket` (mesh,
+matériau, textures, transform, plage indexée, topologie et états depth/blend/
+raster) et le HUD. Les identifiants sont des chaînes possédées, sans pointeur
+vers la mémoire invitée. Les digests sont invalidés puis recalculés
+explicitement par `refresh_digest`.
+
+Le contrat est vérifié par `ac6-render-scene-contract-tests` ; le CTest complet
+reste à `74/74` (un test de ressources frontend sauté par contrat). Cette étape
+ne prétend pas rendre le monde directement : le renderer CPU et `WorldFrame`
+restent les chemins de compatibilité jusqu'à ce qu'une divergence de draw ferme
+le mapping de ressources et de shaders.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :

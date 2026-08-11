@@ -65,5 +65,12 @@
       "native": 230
     }
   },
+  "snapshot_contract": {
+    "header": "reconstruction/ace-combat-6/include/ac6/render_scene.h",
+    "simulation_digest": "sha256-canonical-owned-fields",
+    "render_scene_digest": "sha256-canonical-owned-fields",
+    "world_frame_role": "compatibility-adapter-only",
+    "direct_vulkan_rendering": false
+  },
   "status": "snapshot-contract-open"
 }

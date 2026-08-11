@@ -33,6 +33,7 @@ pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavformat libavcodec libavut
 
 add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cpp
   src/execution_trace.cpp
+  src/render_scene.cpp
   src/render_manifest.cpp src/frontend_runtime.cpp src/combat_scenario_frontend.cpp
   src/native_geometry_raster.cpp
   src/native_geometry_raster_target.cpp
@@ -197,6 +198,10 @@ add_test(NAME ac6-retail-session-replay-tests COMMAND ac6-retail-session-replay-
 add_executable(ac6-execution-trace-tests tests/execution_trace_tests.cpp)
 target_link_libraries(ac6-execution-trace-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-execution-trace-tests COMMAND ac6-execution-trace-tests)
+
+add_executable(ac6-render-scene-contract-tests tests/render_scene_contract_tests.cpp)
+target_link_libraries(ac6-render-scene-contract-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-render-scene-contract-tests COMMAND ac6-render-scene-contract-tests)
 
 # Consumes the committed Mission 01 retail manifests, not a fixture.
 add_executable(ac6-retail-scenario-tests tests/retail_scenario_tests.cpp)
