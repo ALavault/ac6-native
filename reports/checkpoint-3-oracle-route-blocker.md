@@ -47,6 +47,22 @@ interactive. Les runs H/I ont franchi la vidéo après la première correction d
 cadence audio, ce qui prouve que le défaut est intermittent et que ce patch
 n'est pas encore une garde de reproductibilité.
 
+Le run R, avec le même binaire `37e0c88d…` et la nouvelle barrière
+`0x8237C828`, apporte une frontière différente : la route atteint bien la fin
+du gestionnaire de sauvegarde (`state40=0`, `selector44=0`, `type28=10`), crée
+les pipelines de l'écran suivant, puis reste sur `LOADING`. Aucun marqueur
+`ac6-campaign-transition` ni `ac6-first-mission-task` n'est émis. Après
+421,5 secondes et 58 étapes, la capture Loading est stable
+(`162d7cbd472d5c90d41a72b2203323ebae523a0ed5a6934bf54303bd32a16f7c`), sans
+fatal et sans fuite `/dev/shm`. Le worker audio est à nouveau dans une attente
+conditionnelle au prélèvement GDB, donc ce run ne justifie pas une nouvelle
+correction audio.
+
+Le warning `CompleteOverlappedEx: missing XEvent for handle FEFEFEFE` observé
+sur R est l'anomalie déjà séparée par les cycles 434/437 : elle concerne un
+autre `overlapped` que le sélecteur et ne peut pas être retenue comme cause
+sans un lien dynamique nouveau. Elle reste un indice, pas un correctif.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
