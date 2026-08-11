@@ -1,5 +1,6 @@
 #include "ac6/retail_media.h"
 
+#include "ac6/retail_asf_index.h"
 #include "ac6/sha256.h"
 
 extern "C" {
@@ -15,6 +16,7 @@ extern "C" {
 #include <fstream>
 #include <limits>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <unistd.h>
 #include <fcntl.h>
@@ -216,8 +218,27 @@ bool RetailMediaStore::open(const std::filesystem::path& cache_root,
       return false;
     }
   }
+  // The bounded ASF reader uses read_range(), so expose the already verified
+  // blobs while the final structural qualification runs. Any failure below
+  // clears this provisional state before returning.
   cache_root_ = cache_root;
   valid_ = true;
+  // PAL movie packs are an ASF-compatible bank format with a bounded index.
+  // Qualify that index while the cache is opened so a current media manifest
+  // cannot hide a truncated or structurally unrelated movie blob. Synthetic
+  // policies used by unit tests may use another container label and retain the
+  // media-store-only contract.
+  const std::size_t movie = static_cast<std::size_t>(RetailMediaAsset::Movie);
+  if (policy.assets[movie].container != nullptr &&
+      std::string_view(policy.assets[movie].container) == "ASF") {
+    std::string asf_detail;
+    if (!RetailAsfIndex::open(*this, RetailMediaAsset::Movie, asf_detail)) {
+      cache_root_.clear();
+      valid_ = false;
+      detail_ = "ASF movie index is invalid";
+      return false;
+    }
+  }
   detail_ = "media store is valid";
   return true;
 }

@@ -33,6 +33,9 @@ bank_0 offset=0 size=164638720 index_offset=4356 first=28142156 last=164634736
 bank_1 offset=164638720 size=183668736 index_offset=164643076 first=28876056 last=183665040
 ```
 
-Synthetic coverage rejects an out-of-bank offset and a truncated bank. The
-remaining boundary is codec/container decoding and audio/video
-synchronisation, not resource discovery.
+`RetailMediaStore::open` now requires this ASF index whenever the qualified
+policy labels the movie asset `ASF`; a current manifest therefore cannot make a
+malformed movie blob readable. Synthetic coverage rejects an out-of-bank offset,
+a truncated bank, and an ASF-labelled non-ASF blob. The remaining boundary is
+codec/container decoding and audio/video synchronisation, not resource
+discovery.

@@ -159,6 +159,7 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
 std::vector<std::uint64_t> find_headers(std::span<const std::uint8_t> bytes) {
   std::vector<std::uint64_t> offsets;
   for (std::size_t cursor = 0; cursor + kAsfHeaderGuid.size() <= bytes.size(); ++cursor) {
+    if (bytes[cursor] != kAsfHeaderGuid[0]) continue;
     if (has_guid(bytes, cursor, kAsfHeaderGuid)) offsets.push_back(cursor);
   }
   return offsets;
@@ -215,6 +216,7 @@ std::optional<RetailAsfIndex> RetailAsfIndex::open(const RetailMediaStore& store
     }
     for (std::size_t cursor = 0;
          cursor + kAsfHeaderGuid.size() <= chunk.size(); ++cursor) {
+      if (chunk[cursor] != kAsfHeaderGuid[0]) continue;
       if (has_guid(chunk, cursor, kAsfHeaderGuid)) {
         const std::uint64_t found = offset + cursor;
         if (starts.empty() || starts.back() != found) starts.push_back(found);

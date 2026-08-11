@@ -433,6 +433,10 @@ void media_manifest_is_atomic_reproducible_and_fail_closed() {
   std::vector<std::uint8_t> range;
   REQUIRE(store.read_range(ac6::RetailMediaAsset::Movie, 1, 3, range));
   REQUIRE(range == std::vector<std::uint8_t>({0x41, 0x43, 0x36}));
+  ac6::RetailMediaPolicy asf_policy = policy;
+  asf_policy.assets[static_cast<std::size_t>(ac6::RetailMediaAsset::Movie)].container = "ASF";
+  ac6::RetailMediaStore asf_store;
+  REQUIRE(!asf_store.open(cache_a, asf_policy));
   const std::string hex = ac6::sha256_hex(policy.assets[0].sha256);
   const auto blob = cache_a / "media/blobs/sha256" / hex.substr(0, 2) / hex;
   std::vector<std::uint8_t> corrupt = read_file(blob);
