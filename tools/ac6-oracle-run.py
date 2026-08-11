@@ -385,6 +385,8 @@ def main() -> int:
     try:
         runner.start()
         runner.execute(steps)
+    except KeyboardInterrupt:
+        error = "interrupted"
     except (RunError, OSError, subprocess.SubprocessError, ValueError) as caught:
         error = str(caught)
     finally:
