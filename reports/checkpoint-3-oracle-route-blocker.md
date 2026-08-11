@@ -134,6 +134,18 @@ progression de présentation sont indépendantes dans le backend dummy. Elle
 ne transforme pas le dialogue audible en preuve sous SDL dummy et ne fournit
 toujours pas la fenêtre de trace 3 600 ticks.
 
+La route complète historique a ensuite été rejouée avec le binaire final
+`37e0c88d…`, puis la trace armée seulement après les captures HUD. Elle
+atteint bien les étapes de lancement, mais les huit captures de
+`mission-launch` à `flight-throttle` sont identiques
+(`d31aab0a5303258ff36ba2588e16fefa750dbb93437cbdfbf4102117dcdd549b`) et
+aucun `mission01-frame.raw.jsonl` ou événement `0x82267370` n'est créé. Après
+461,92 s, le wait `AC6 oracle trace v2 complete: 3600 gameplay ticks` expire
+sans fatal ; manifeste `46a738fe70025bb3ff14da277cf2a74bc913fa2511ca54e08a172989c12b663d`
+et journal `bbc0fc156dc89be8b74572aae9b629ea03460ed1ce9549f57b10fafcdd9a6994`.
+Cette route ferme donc le même front post‑transition avec une séquence d'entrée
+différente ; elle ne justifie toujours pas une divergence native.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :

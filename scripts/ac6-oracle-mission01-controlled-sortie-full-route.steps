@@ -1,0 +1,6 @@
+# Full historical Mission 01 route: arm the v2 window only after the known
+# flight-HUD boundary, so campaign-video timing cannot contaminate the trace.
+include	ac6-oracle-mission01-route.steps
+arm-trace
+wait	AC6 oracle trace v2 complete: 3600 gameplay ticks	180
+capture	controlled-sortie-full-route-end
