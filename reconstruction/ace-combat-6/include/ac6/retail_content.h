@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ac6/sha256.h"
+#include "ac6/retail_media.h"
 
 #include <array>
 #include <cstddef>
@@ -51,6 +52,7 @@ struct RetailSourceIdentity final {
 
 struct RetailIdentityPolicy final {
   RetailSourceIdentity identity{};
+  RetailMediaPolicy media{};
   std::uint32_t data_table_entries{};
   std::uint32_t pack_count{};
 
@@ -62,7 +64,10 @@ struct RetailImportLimits final {
   std::uint64_t maximum_table_size{16u * 1024u * 1024u};
   std::uint64_t maximum_stored_size{256u * 1024u * 1024u};
   std::uint64_t maximum_expanded_size{512u * 1024u * 1024u};
-  std::uint64_t maximum_total_expanded_size{2ull * 1024ull * 1024ull * 1024ull};
+  // The complete PAL table expands to more than 5 GiB across independent
+  // payloads. Each payload remains bounded separately; this cap bounds the
+  // generation rather than silently truncating the offline closure.
+  std::uint64_t maximum_total_expanded_size{8ull * 1024ull * 1024ull * 1024ull};
 };
 
 struct RetailContentRecord final {
@@ -116,7 +121,7 @@ class RetailContentImporter final {
   RetailImportReport run(const std::filesystem::path& source_root,
                          const std::filesystem::path& cache_root,
                          std::span<const std::uint32_t> data_table_entries =
-                             kPalRequiredDataTableEntries) const;
+                             std::span<const std::uint32_t>{}) const;
 
  private:
   RetailIdentityPolicy policy_;
@@ -136,6 +141,7 @@ class RetailContentStore final {
   const std::string& detail() const noexcept { return detail_; }
   const RetailSourceIdentity& identity() const noexcept { return identity_; }
   const Sha256Digest& index_sha256() const noexcept { return index_sha256_; }
+  const RetailMediaStore& media() const noexcept { return media_; }
   const std::vector<RetailContentRecord>& records() const noexcept { return records_; }
   const RetailContentRecord* find(std::uint32_t data_table_index) const noexcept;
   bool read_payload(std::uint32_t data_table_index,
@@ -149,6 +155,7 @@ class RetailContentStore final {
   std::filesystem::path cache_root_;
   RetailSourceIdentity identity_{};
   Sha256Digest index_sha256_{};
+  RetailMediaStore media_{};
   std::vector<RetailContentRecord> records_;
   RetailContentError error_{RetailContentError::CacheIncomplete};
   std::string detail_;

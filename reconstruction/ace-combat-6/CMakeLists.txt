@@ -82,7 +82,8 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_map_placement.cpp
   src/retail_map_water.cpp
   src/sha256.cpp
-  src/retail_content.cpp)
+  src/retail_content.cpp
+  src/retail_media.cpp)
 target_include_directories(ac6_product_core PUBLIC include)
 target_compile_features(ac6_product_core PUBLIC cxx_std_20)
 target_link_libraries(ac6_product_core PRIVATE ZLIB::ZLIB)

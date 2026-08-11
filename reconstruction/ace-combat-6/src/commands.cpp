@@ -18,6 +18,7 @@
 #include <fstream>
 #include <iomanip>
 #include <memory>
+#include <numeric>
 #include <string_view>
 #include <thread>
 #include <vector>
@@ -62,14 +63,12 @@ int run_import_command(int argc, char** argv) {
                  "ac6_import=fail error=invalid_argument detail=no_absolute_XDG_or_HOME_cache_root\n");
     return 2;
   }
-  std::vector<std::uint32_t> selected(ac6::kPalRequiredDataTableEntries.begin(),
-                                      ac6::kPalRequiredDataTableEntries.end());
-  if (frontend) {
-    selected.insert(selected.end(), ac6::kPalFrontendFontDataTableEntries.begin(),
-                    ac6::kPalFrontendFontDataTableEntries.end());
-    std::sort(selected.begin(), selected.end());
-    selected.erase(std::unique(selected.begin(), selected.end()), selected.end());
-  }
+  // A product import seals the complete DATA.TBL closure. `--frontend` is
+  // retained as a compatibility spelling; the frontend resources are already
+  // part of the same generation and are never imported as a partial cache.
+  const ac6::RetailIdentityPolicy policy = ac6::RetailIdentityPolicy::pal();
+  std::vector<std::uint32_t> selected(policy.data_table_entries);
+  std::iota(selected.begin(), selected.end(), 0u);
   const ac6::RetailImportReport report =
       ac6::RetailContentImporter{}.run(source, cache, selected);
   if (!report.passed()) {

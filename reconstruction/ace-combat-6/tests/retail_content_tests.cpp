@@ -338,7 +338,7 @@ void inconsistent_index_metadata_is_rejected_after_digest_verification() {
   std::vector<std::uint8_t> current(48, 0);
   const std::array<std::uint8_t, 8> magic{'A', 'C', '6', 'R', 'C', 'U', 'R', 0};
   std::copy(magic.begin(), magic.end(), current.begin());
-  put_be32(current, 8, 1);
+  put_be32(current, 8, 2);
   put_be32(current, 12, static_cast<std::uint32_t>(current.size()));
   std::copy(digest.begin(), digest.end(), current.begin() + 16);
   write_file(cache / "current", current);
@@ -377,9 +377,14 @@ void incompatible_current_and_corrupt_index_are_distinct_failures() {
       fixture.source, incompatible, entries);
   REQUIRE(report.passed());
   std::vector<std::uint8_t> current = read_file(incompatible / "current");
-  current[11] = 2;
+  current[11] = 1;  // v1 caches require an explicit re-import.
   write_file(incompatible / "current", current);
   ac6::RetailContentStore store(fixture.policy);
+  REQUIRE(!store.open(incompatible));
+  REQUIRE(store.error() == ac6::RetailContentError::CacheIncompatible);
+  current = read_file(incompatible / "current");
+  current[11] = 3;
+  write_file(incompatible / "current", current);
   REQUIRE(!store.open(incompatible));
   REQUIRE(store.error() == ac6::RetailContentError::CacheIncompatible);
 
@@ -394,6 +399,47 @@ void incompatible_current_and_corrupt_index_are_distinct_failures() {
   REQUIRE(store.error() == ac6::RetailContentError::CacheDigestMismatch);
 }
 
+void media_manifest_is_atomic_reproducible_and_fail_closed() {
+  TempRoot root;
+  ac6::RetailMediaPolicy policy;
+  policy.required = true;
+  constexpr std::array<const char*, ac6::kRetailMediaAssetCount> names{
+      "media0.bin", "media1.bin", "media2.bin", "media3.bin", "media4.bin", "media5.bin"};
+  for (std::size_t index = 0; index < names.size(); ++index) {
+    const std::vector<std::uint8_t> bytes{
+        static_cast<std::uint8_t>(index), 0x41, 0x43, 0x36,
+        static_cast<std::uint8_t>(index + 1)};
+    write_file(root.path() / names[index], bytes);
+    policy.assets[index].filename = names[index];
+    policy.assets[index].container = "test";
+    policy.assets[index].size = bytes.size();
+    policy.assets[index].sha256 = ac6::sha256_bytes(bytes);
+  }
+  const auto source = root.path();
+  const auto cache_a = root.path() / "media-a";
+  const auto cache_b = root.path() / "media-b";
+  REQUIRE(std::filesystem::create_directories(cache_a / ".staging" / "one"));
+  REQUIRE(std::filesystem::create_directories(cache_b / ".staging" / "two"));
+  ac6::Sha256Digest digest_a{}, digest_b{};
+  std::string detail;
+  REQUIRE(ac6::import_retail_media(source, cache_a, cache_a / ".staging" / "one",
+                                    policy, digest_a, detail));
+  REQUIRE(ac6::import_retail_media(source, cache_b, cache_b / ".staging" / "two",
+                                    policy, digest_b, detail));
+  REQUIRE(digest_a == digest_b);
+  ac6::RetailMediaStore store;
+  REQUIRE(store.open(cache_a, policy));
+  std::vector<std::uint8_t> range;
+  REQUIRE(store.read_range(ac6::RetailMediaAsset::Movie, 1, 3, range));
+  REQUIRE(range == std::vector<std::uint8_t>({0x41, 0x43, 0x36}));
+  const std::string hex = ac6::sha256_hex(policy.assets[0].sha256);
+  const auto blob = cache_a / "media/blobs/sha256" / hex.substr(0, 2) / hex;
+  std::vector<std::uint8_t> corrupt = read_file(blob);
+  corrupt[0] ^= 0xffu;
+  write_file(blob, corrupt);
+  REQUIRE(!store.open(cache_a, policy));
+}
+
 }  // namespace
 
 int main() {
@@ -406,6 +452,7 @@ int main() {
   decode_failure_after_a_blob_never_publishes_an_index();
   abandoned_staging_is_not_a_published_generation();
   incompatible_current_and_corrupt_index_are_distinct_failures();
+  media_manifest_is_atomic_reproducible_and_fail_closed();
   inconsistent_index_metadata_is_rejected_after_digest_verification();
   std::puts("retail_content: all checks passed");
   return 0;

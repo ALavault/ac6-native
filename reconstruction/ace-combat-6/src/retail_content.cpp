@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <string_view>
 #include <system_error>
@@ -20,8 +21,8 @@ namespace {
 
 constexpr std::array<std::uint8_t, 8> kIndexMagic{'A', 'C', '6', 'R', 'I', 'D', 'X', 0};
 constexpr std::array<std::uint8_t, 8> kCurrentMagic{'A', 'C', '6', 'R', 'C', 'U', 'R', 0};
-constexpr std::uint32_t kIndexVersion = 1;
-constexpr std::uint32_t kIndexHeaderSize = 192;
+constexpr std::uint32_t kIndexVersion = 2;
+constexpr std::uint32_t kIndexHeaderSize = 224;
 constexpr std::uint32_t kIndexRecordSize = 108;
 constexpr std::uint32_t kCurrentSize = 48;
 
@@ -203,6 +204,19 @@ RetailContentError qualify_source_files(const std::filesystem::path& source,
                       qualified.second.second, actual)) {
       detail = "retail identity mismatch: " + qualified.first.filename().string();
       return RetailContentError::SourceIdentityMismatch;
+    }
+  }
+  if (policy.media.required) {
+    for (const auto& asset : policy.media.assets) {
+      if (asset.filename == nullptr || asset.size == 0 || asset.sha256 == Sha256Digest{}) {
+        detail = "media policy contains an unresolved identity";
+        return RetailContentError::SourceIdentityMismatch;
+      }
+      const auto path = source / asset.filename;
+      if (!qualify_file(path, asset.size, asset.sha256, actual)) {
+        detail = "retail media identity mismatch: " + path.filename().string();
+        return RetailContentError::SourceIdentityMismatch;
+      }
     }
   }
   return RetailContentError::None;
@@ -441,7 +455,8 @@ bool publish_blob(const std::filesystem::path& cache,
 }
 
 std::vector<std::uint8_t> make_index(const RetailIdentityPolicy& policy,
-                                     const std::vector<RetailContentRecord>& records) {
+                                     const std::vector<RetailContentRecord>& records,
+                                     const Sha256Digest& media_manifest_sha256) {
   std::vector<std::uint8_t> bytes;
   bytes.reserve(kIndexHeaderSize + records.size() * kIndexRecordSize);
   bytes.insert(bytes.end(), kIndexMagic.begin(), kIndexMagic.end());
@@ -459,6 +474,7 @@ std::vector<std::uint8_t> make_index(const RetailIdentityPolicy& policy,
   append_u64(bytes, policy.identity.data_table_size);
   append_u64(bytes, policy.identity.data00_size);
   append_u64(bytes, policy.identity.data01_size);
+  append_digest(bytes, media_manifest_sha256);
   for (const RetailContentRecord& record : records) {
     append_u32(bytes, record.data_table_index);
     append_u32(bytes, record.group);
@@ -580,6 +596,7 @@ bool parse_index(std::span<const std::uint8_t> bytes,
                  const RetailIdentityPolicy& policy,
                  const RetailImportLimits& limits,
                  RetailSourceIdentity& identity,
+                 Sha256Digest& media_manifest_sha256,
                  std::vector<RetailContentRecord>& records,
                  std::string& detail) {
   BinaryReader reader(bytes);
@@ -601,6 +618,7 @@ bool parse_index(std::span<const std::uint8_t> bytes,
       !reader.digest(identity.data01_sha256) ||
       !reader.u64(identity.xex_size) || !reader.u64(identity.data_table_size) ||
       !reader.u64(identity.data00_size) || !reader.u64(identity.data01_size) ||
+      !reader.digest(media_manifest_sha256) ||
       identity != policy.identity ||
       reader.remaining() != static_cast<std::size_t>(record_count) * record_size) {
     detail = "content index retail identity or size mismatch";
@@ -679,6 +697,7 @@ RetailIdentityPolicy RetailIdentityPolicy::pal() {
   policy.identity.data01_size = 664141824ull;
   policy.data_table_entries = 926;
   policy.pack_count = 2;
+  policy.media = RetailMediaPolicy::pal();
   (void)parse_sha256("acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
                      policy.identity.xex_sha256);
   (void)parse_sha256("82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
@@ -759,6 +778,12 @@ RetailImportReport RetailContentImporter::run(
                        : RetailContentError::DataTableInvalid;
     return report;
   }
+  std::vector<std::uint32_t> complete_entries;
+  if (data_table_entries.empty()) {
+    complete_entries.resize(table.size());
+    std::iota(complete_entries.begin(), complete_entries.end(), 0u);
+    data_table_entries = complete_entries;
+  }
   std::vector<TableEntry> selected;
   if (!select_entries(table, data_table_entries, limits_, selected,
                       report.detail)) {
@@ -784,6 +809,12 @@ RetailImportReport RetailContentImporter::run(
   }
 
   std::vector<RetailContentRecord> records;
+  Sha256Digest media_manifest_sha256{};
+  if (!import_retail_media(source_root, cache_root, staging.path(), policy_.media,
+                           media_manifest_sha256, report.detail)) {
+    report.error = RetailContentError::CacheIoFailed;
+    return report;
+  }
   records.reserve(selected.size());
   for (const TableEntry& entry : selected) {
     std::vector<std::uint8_t> stored;
@@ -830,7 +861,8 @@ RetailImportReport RetailContentImporter::run(
     return report;
   }
 
-  const std::vector<std::uint8_t> index = make_index(policy_, records);
+  const std::vector<std::uint8_t> index = make_index(policy_, records,
+                                                     media_manifest_sha256);
   report.index_sha256 = sha256_bytes(index);
   if (!publish_index(cache_root, staging.path(), index, report.index_sha256)) {
     return fail(RetailContentError::CacheIoFailed,
@@ -857,6 +889,7 @@ void RetailContentStore::close() noexcept {
   identity_ = {};
   index_sha256_ = {};
   records_.clear();
+  media_ = RetailMediaStore{};
   error_ = RetailContentError::CacheIncomplete;
   detail_.clear();
 }
@@ -887,8 +920,20 @@ bool RetailContentStore::open(const std::filesystem::path& cache_root) {
     return fail(RetailContentError::CacheDigestMismatch,
                 "content index digest mismatch");
   }
-  if (!parse_index(index, policy_, limits_, identity_, records_, detail_)) {
+  Sha256Digest media_manifest_sha256{};
+  if (!parse_index(index, policy_, limits_, identity_, media_manifest_sha256,
+                   records_, detail_)) {
     return fail(RetailContentError::CacheIncompatible, detail_);
+  }
+  if (policy_.media.required) {
+    if (!media_.open(cache_root, policy_.media) ||
+        media_.manifest_sha256() != media_manifest_sha256) {
+      return fail(RetailContentError::CacheIncomplete,
+                  "content index references an unavailable media manifest");
+    }
+  } else if (media_manifest_sha256 != Sha256Digest{}) {
+    return fail(RetailContentError::CacheIncompatible,
+                "optional media policy cannot open a media-bound index");
   }
   for (const RetailContentRecord& record : records_) {
     if (!verified_file(blob_path(cache_root, record.payload_sha256),
