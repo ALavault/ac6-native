@@ -1196,5 +1196,4 @@ class ReplayLog final {
 };
 
 }  // namespace ac6
-#include "ac6/native_renderer.h"
 #include "ac6/frontend_runtime.h"

@@ -70,7 +70,13 @@
     "simulation_digest": "sha256-canonical-owned-fields",
     "render_scene_digest": "sha256-canonical-owned-fields",
     "world_frame_role": "compatibility-adapter-only",
-    "direct_vulkan_rendering": false
+    "direct_vulkan_rendering": false,
+    "scene_builder": {
+      "api": "VulkanRenderer::build_scene",
+      "resource_gate": "verified-buffers-and-decoded-geometry",
+      "compatibility_raster_validation": true,
+      "retail_spirv": false
+    }
   },
   "status": "snapshot-contract-open"
 }

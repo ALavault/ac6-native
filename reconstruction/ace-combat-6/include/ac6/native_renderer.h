@@ -1,6 +1,9 @@
 #pragma once
 
 #include "ac6/product_runtime.h"
+#include "ac6/render_scene.h"
+
+#include <optional>
 
 namespace ac6 {
 
@@ -23,6 +26,13 @@ class VulkanRenderer final {
     bool has(AssetId id) const noexcept;
     bool ready_for(const WorldFrame& frame) const noexcept;
   };
+
+  // Builds the owned scene contract from a qualified resource set.  This is
+  // a metadata boundary only: it does not rasterize and it never falls back
+  // to markers or guessed transforms when a cache resource is missing.
+  [[nodiscard]] std::optional<RenderScene> build_scene(
+      const SimulationSnapshot& snapshot, RenderAssets assets,
+      std::uint32_t width = 0, std::uint32_t height = 0) const;
 
   bool render(const WorldFrame& frame, RenderAssets assets, NativeRenderTarget* target = nullptr) noexcept;
   std::uint64_t submitted_frames() const noexcept { return submitted_frames_; }

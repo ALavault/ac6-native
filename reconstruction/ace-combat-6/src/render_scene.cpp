@@ -313,7 +313,9 @@ bool render_scene_supported(const RenderScene& scene, const RenderDeviceCaps& ca
     return false;
   }
   if (scene.surface.depth_format == "d32_sfloat" && !caps.depth_d32) return false;
-  if (scene.surface.depth_format != "d32_sfloat") return false;
+  if (scene.surface.depth_format != "d32_sfloat" && scene.surface.depth_format != "none") {
+    return false;
+  }
   switch (scene.surface.present_mode) {
     case RenderSurfaceRequirements::PresentMode::Headless:
       break;

@@ -1,4 +1,4 @@
-#include "ac6/render_scene.h"
+#include "ac6/native_renderer.h"
 
 #include <iostream>
 
@@ -30,6 +30,16 @@ int main() {
       frame, ac6::ScenarioState::Gameplay, 1, 0, false, {&objective, 1});
   failures += check(snapshot.valid(), "simulation snapshot is sealed");
   failures += check(snapshot.digest_matches(), "simulation digest matches");
+
+  ac6::MissionAssetDatabase incomplete_assets;
+  failures += check(incomplete_assets.add({9, "sealed/mesh.ndxr", "hash", 1, {}}),
+                    "incomplete asset fixture");
+  ac6::MissionRenderDefinition incomplete_definition{1, {9}};
+  ac6::VulkanRenderer renderer;
+  const ac6::VulkanRenderer::RenderAssets incomplete_render_assets{
+      &incomplete_assets, &incomplete_definition};
+  failures += check(!renderer.build_scene(snapshot, incomplete_render_assets).has_value(),
+                    "incomplete resources fail scene build explicitly");
 
   ac6::RenderScene scene;
   scene.tick = snapshot.tick;

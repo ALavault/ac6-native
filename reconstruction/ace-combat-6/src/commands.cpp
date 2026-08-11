@@ -1,5 +1,6 @@
 #include "ac6/cli.h"
 #include "ac6/product_runtime.h"
+#include "ac6/native_renderer.h"
 #include "ac6/mission01_compare.h"
 #include "ac6/native_hud.h"
 #include "ac6/retail_content.h"

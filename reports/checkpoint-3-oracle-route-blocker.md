@@ -227,6 +227,15 @@ ne prétend pas rendre le monde directement : le renderer CPU et `WorldFrame`
 restent les chemins de compatibilité jusqu'à ce qu'une divergence de draw ferme
 le mapping de ressources et de shaders.
 
+`VulkanRenderer::build_scene` consomme désormais ce contrat lorsqu'un jeu de
+ressources géométriques complet est fourni. Il exige les buffers vérifiés, la
+géométrie décodée, les transforms, matériaux, textures, permutations et
+passes/targets/resolves ; une absence renvoie explicitement `nullopt`. Le
+chemin `render(WorldFrame, ...)` valide cette scène avant de conserver le
+rasteriseur CPU de compatibilité. Les hashes de pipeline produits à ce stade
+sont des identifiants stables de permutation, pas encore des SPIR-V retail :
+aucune parité Vulkan directe n'est revendiquée.
+
 ## Frontière dynamique
 
 Un arrêt GDB borné sur M exclut deux explications trop larges :
