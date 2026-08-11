@@ -54,6 +54,21 @@ int main(int argc, char** argv) {
     check(map.has_value() && map->child_count() == 17 && mapset.has_value() &&
               mapset->child_count() == 12,
           "map and mapset FHM tables retain the common PAL shape");
+    if (!map.has_value() || !mapset.has_value()) continue;
+    const std::optional<ac6::retail::RetailFhmView> map_parts = map->nested(14);
+    const std::optional<ac6::retail::RetailFhmView> map_part_textures =
+        map->nested(15);
+    const std::optional<ac6::retail::RetailFhmView> terrain_atlas = map->nested(16);
+    const std::optional<ac6::retail::RetailFhmView> mapset_models = mapset->nested(5);
+    const std::optional<ac6::retail::RetailFhmView> mapset_textures =
+        mapset->nested(6);
+    check(map_parts.has_value() && map_parts->child_count() == 256 &&
+              map_part_textures.has_value() &&
+              map_part_textures->child_count() == 256 &&
+              terrain_atlas.has_value() && terrain_atlas->child_count() == 8 &&
+              mapset_models.has_value() && mapset_models->child_count() == 8 &&
+              mapset_textures.has_value() && mapset_textures->child_count() == 8,
+          "map/model/texture FHM tables retain the common PAL shape");
     check(magic(world->map_resource(1), {'M', 'C', 'A', 0}) &&
               magic(world->map_resource(2), {'M', 'C', 'D', 0}) &&
               magic(world->map_resource(3), {'M', 'C', 'I', 0}),

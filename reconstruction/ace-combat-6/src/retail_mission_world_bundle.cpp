@@ -37,13 +37,19 @@ bool qualified_layout(const RetailCampaignBundle& bundle) noexcept {
       !has_magic(map->child(3), kMciMagic)) {
     return false;
   }
-  for (const std::uint32_t index : {14u, 15u, 16u}) {
+  for (const auto [index, expected_count] :
+       {std::pair{14u, 256u}, std::pair{15u, 256u}, std::pair{16u, 8u}}) {
     const std::optional<std::span<const std::uint8_t>> bytes = map->child(index);
-    if (!bytes.has_value() || !RetailFhmView::open(*bytes).has_value()) return false;
+    const std::optional<RetailFhmView> nested =
+        bytes.has_value() ? RetailFhmView::open(*bytes) : std::nullopt;
+    if (!nested.has_value() || nested->child_count() != expected_count) return false;
   }
-  for (const std::uint32_t index : {5u, 6u}) {
+  for (const auto [index, expected_count] :
+       {std::pair{5u, 8u}, std::pair{6u, 8u}}) {
     const std::optional<std::span<const std::uint8_t>> bytes = mapset->child(index);
-    if (!bytes.has_value() || !RetailFhmView::open(*bytes).has_value()) return false;
+    const std::optional<RetailFhmView> nested =
+        bytes.has_value() ? RetailFhmView::open(*bytes) : std::nullopt;
+    if (!nested.has_value() || nested->child_count() != expected_count) return false;
   }
   for (std::uint32_t index = 7; index <= 11; ++index) {
     if (!has_magic(mapset->child(index), kNtxrMagic)) return false;

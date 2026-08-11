@@ -6,7 +6,8 @@
   119–133 (one entry per campaign mission).
 - The reader qualifies only the common bytes observed in all fifteen payloads:
   a 23-child root, map/mapset FHM children 21/22, MCA/MCD/MCI map resources,
-  nested FHM map resources, and mapset NTXR resources 7–11.
+  nested FHM map resources (map 14/15/16 = 256/256/8 children,
+  mapset 5/6 = 8/8), and mapset NTXR resources 7–11.
 - `RetailMissionBundle` now retains the matching world bundle when the entry
   exists in a full cache. Bounded scenario fixtures may still omit worlds so
   parser tests do not gain an implicit retail dependency.
