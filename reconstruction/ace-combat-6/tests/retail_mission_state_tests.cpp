@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <vector>
@@ -146,6 +147,18 @@ void check_sequencer_on_a_chosen_script() {
   REQUIRE(!sequencer.evaluate({3, 4, CounterComparison::AtMost, 1}).has_value());
   REQUIRE(sequencer.evaluate({3, 5, CounterComparison::AtLeast, 0}) == 0u);
   REQUIRE(!sequencer.evaluate({3, 6, CounterComparison::AtLeast, 0}).has_value());
+
+  // Save state owns counters as well as the cursor. A clean sequencer restored
+  // from it must reproduce the exact state, while a differently-sized counter
+  // table is an incompatible scenario rather than a partial restore.
+  const ac6::retail::SubMissionSequencerSnapshot snapshot = sequencer.snapshot();
+  SubMissionSequencer restored = SubMissionSequencer::from(scenario, 8);
+  REQUIRE(restored.restore(snapshot));
+  REQUIRE(restored.snapshot() == snapshot);
+  auto wrong_shape = snapshot;
+  wrong_shape.counters.pop_back();
+  REQUIRE(!restored.restore(wrong_shape));
+  REQUIRE(restored.snapshot() == snapshot);
 }
 
 void check_counter_operations() {
@@ -367,6 +380,21 @@ int check_retail(const std::filesystem::path& payload_path,
   REQUIRE(sequencer.elapsed_at_least(5.0f, 14.0f) == false);
   REQUIRE(sequencer.select(1, 20.0f) == SubMissionStatus::Running);
   REQUIRE(!sequencer.advance_step());       // sub-mission 1 has one step
+
+  // Timestamps, counter values/stamps and the selected sub-mission round-trip
+  // together. Non-finite state is refused without mutating the target.
+  REQUIRE(sequencer.apply(7, {1, 0xFFFF, 0xFFFF,
+                              CounterOperation::SetLiteral}, 21.0f, 0));
+  const ac6::retail::SubMissionSequencerSnapshot live_snapshot = sequencer.snapshot();
+  SubMissionSequencer restored = SubMissionSequencer::from(*scenario, 339);
+  REQUIRE(restored.restore(live_snapshot));
+  REQUIRE(restored.snapshot() == live_snapshot);
+  REQUIRE(restored.elapsed_at_least(5.0f, 26.0f) == true);
+  REQUIRE(restored.counter(7) == 1);
+  auto non_finite = live_snapshot;
+  non_finite.started_at[1] = std::numeric_limits<float>::quiet_NaN();
+  REQUIRE(!restored.restore(non_finite));
+  REQUIRE(restored.snapshot() == live_snapshot);
   REQUIRE(sequencer.select(4, 30.0f) == SubMissionStatus::Finished);
 
   if (!report_path.empty()) {

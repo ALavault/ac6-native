@@ -1108,6 +1108,7 @@ class MissionExecution final {
     std::uint32_t retail_script_sub_mission{};
     std::uint32_t retail_script_step{};
     std::int32_t retail_script_end_code{};
+    std::vector<std::uint8_t> retail_sequencer_state;
     bool operator==(const Checkpoint&) const = default;
   };
   bool save_checkpoint(Checkpoint& checkpoint) const noexcept;
@@ -1195,6 +1196,5 @@ class ReplayLog final {
 };
 
 }  // namespace ac6
-
 #include "ac6/native_renderer.h"
 #include "ac6/frontend_runtime.h"

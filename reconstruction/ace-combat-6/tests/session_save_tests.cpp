@@ -52,6 +52,8 @@ int main() {
   mission_checkpoint.retail_script_sub_mission = 2;
   mission_checkpoint.retail_script_step = 1;
   mission_checkpoint.retail_script_end_code = 0;
+  mission_checkpoint.retail_sequencer_state = {
+      'R', 'S', 'Q', '1', 1, 0, 0, 0, 2, 0, 0, 0};
   snapshot.checkpoint = mission_checkpoint;
   ac6::SessionSaveStore store;
   REQUIRE(store.save(2, snapshot));
@@ -129,7 +131,9 @@ int main() {
   REQUIRE(loaded.load(4) != nullptr && !loaded.load(4)->checkpoint.has_value());
   auto invalid = snapshot;
   invalid.checkpoint->retail_script_state_valid = false;
-  invalid.checkpoint->retail_script_sub_mission = 1;
+  invalid.checkpoint->retail_script_sub_mission = 0;
+  invalid.checkpoint->retail_script_step = 0;
+  invalid.checkpoint->retail_script_end_code = 0;
   REQUIRE(!store.save(3, invalid));
   std::remove(path);
   std::remove(bad_path);

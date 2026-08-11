@@ -271,6 +271,15 @@ struct CounterOperand {
   CounterOperation operation{CounterOperation::SetLiteral};
 };
 
+struct SubMissionSequencerSnapshot final {
+  std::vector<std::uint32_t> step_counts;
+  std::vector<float> started_at;
+  std::vector<MissionCounter> counters;
+  std::uint32_t sub_mission{};
+  std::uint32_t step{};
+  bool operator==(const SubMissionSequencerSnapshot&) const = default;
+};
+
 class SubMissionSequencer final {
  public:
   // Snapshots the counts the loader derives from the payload: the number of
@@ -305,6 +314,9 @@ class SubMissionSequencer final {
   // literal - retail would divide by zero there.
   bool apply(std::uint16_t id, const CounterOperand& operand, float now,
              std::uint32_t random) noexcept;
+
+  SubMissionSequencerSnapshot snapshot() const;
+  bool restore(const SubMissionSequencerSnapshot& snapshot) noexcept;
 
  private:
   std::vector<std::uint32_t> step_counts_;

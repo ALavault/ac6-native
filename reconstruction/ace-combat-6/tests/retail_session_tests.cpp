@@ -92,6 +92,18 @@ void put_be32(std::vector<std::uint8_t>& bytes, std::size_t offset,
   bytes[offset + 3] = static_cast<std::uint8_t>(value);
 }
 
+void require_mismatched_sequencer_rejected(
+    RetailSession& target, const ac6::MissionExecution::Checkpoint& checkpoint) {
+  ac6::MissionExecution::Checkpoint mismatched = checkpoint;
+  REQUIRE(mismatched.retail_sequencer_state.size() >= 20);
+  const std::uint32_t other = checkpoint.retail_script_sub_mission == 0 ? 1u : 0u;
+  for (unsigned int byte = 0; byte < 4; ++byte) {
+    mismatched.retail_sequencer_state[16 + byte] =
+        static_cast<std::uint8_t>((other >> (byte * 8u)) & 0xffu);
+  }
+  REQUIRE(!target.restore_checkpoint(mismatched));
+}
+
 void put_be16(std::vector<std::uint8_t>& bytes, std::size_t offset,
               std::uint16_t value) {
   bytes[offset] = static_cast<std::uint8_t>(value >> 8u);
@@ -876,6 +888,11 @@ int main(int argc, char** argv) {
   ac6::MissionExecution::Checkpoint retail_checkpoint;
   REQUIRE(checkpoint_source->save_checkpoint(retail_checkpoint));
   REQUIRE(retail_checkpoint.retail_script_state_valid);
+  REQUIRE(!retail_checkpoint.retail_sequencer_state.empty());
+
+  // The script and counter sequencer are one authored state. A well-formed
+  // blob naming another sub-mission must not be combined with this cursor.
+  require_mismatched_sequencer_rejected(*checkpoint_target, retail_checkpoint);
   REQUIRE(checkpoint_target->restore_checkpoint(retail_checkpoint));
   const ac6::retail::RetailSessionFrame source_next =
       checkpoint_source->tick(kFixedDt, session_input(3));

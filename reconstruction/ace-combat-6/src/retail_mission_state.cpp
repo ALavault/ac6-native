@@ -1,5 +1,7 @@
 #include "ac6/retail_mission_state.h"
 
+#include <cmath>
+
 namespace ac6::retail {
 namespace {
 
@@ -180,6 +182,31 @@ SubMissionSequencer SubMissionSequencer::from(const MissionScenario& scenario,
   sequencer.started_at_.assign(sequencer.step_counts_.size(), 0.0f);
   sequencer.counters_.assign(counter_count, MissionCounter{});
   return sequencer;
+}
+
+SubMissionSequencerSnapshot SubMissionSequencer::snapshot() const {
+  return {step_counts_, started_at_, counters_, sub_mission_, step_};
+}
+
+bool SubMissionSequencer::restore(const SubMissionSequencerSnapshot& snapshot) noexcept {
+  if (snapshot.step_counts != step_counts_ || snapshot.started_at.size() != started_at_.size() ||
+      snapshot.counters.size() != counters_.size() || snapshot.sub_mission > step_counts_.size() ||
+      (snapshot.sub_mission == step_counts_.size() && snapshot.step != 0) ||
+      (snapshot.sub_mission < step_counts_.size() &&
+       snapshot.step >= step_counts_[snapshot.sub_mission])) {
+    return false;
+  }
+  for (const float started_at : snapshot.started_at) {
+    if (!std::isfinite(started_at)) return false;
+  }
+  for (const MissionCounter& counter : snapshot.counters) {
+    if (!std::isfinite(counter.reached_one_at)) return false;
+  }
+  started_at_ = snapshot.started_at;
+  counters_ = snapshot.counters;
+  sub_mission_ = snapshot.sub_mission;
+  step_ = snapshot.step;
+  return true;
 }
 
 // 0x8226E908: bound the index by the parsed count, reset the step, timestamp.

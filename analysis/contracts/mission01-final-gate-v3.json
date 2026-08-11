@@ -75,8 +75,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "02473781f2c310dfa90c4f5f09cfe4dcacfb6779cb2e4a0183c7b889502bf7a6",
-            "size": 13968,
+            "sha256": "01ae86e8c74e279cac9f2806d5fa8545c552b33773c4a480b6cc08aea71c5c11",
+            "size": 15017,
             "claim": "src/retail_mission_state.cpp implements the classification, the insertion and the per-faction census"
           }
         ]
@@ -107,8 +107,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "02473781f2c310dfa90c4f5f09cfe4dcacfb6779cb2e4a0183c7b889502bf7a6",
-            "size": 13968,
+            "sha256": "01ae86e8c74e279cac9f2806d5fa8545c552b33773c4a480b6cc08aea71c5c11",
+            "size": 15017,
             "claim": "src/retail_mission_state.cpp implements the sequencer with its bound, its cursor and its elapsed test"
           }
         ]
@@ -139,8 +139,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "02473781f2c310dfa90c4f5f09cfe4dcacfb6779cb2e4a0183c7b889502bf7a6",
-            "size": 13968,
+            "sha256": "01ae86e8c74e279cac9f2806d5fa8545c552b33773c4a480b6cc08aea71c5c11",
+            "size": 15017,
             "claim": "src/retail_mission_state.cpp implements the four operations in retail's compute-store-then-stamp order"
           }
         ]
@@ -203,8 +203,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_mission_state.cpp",
-            "sha256": "02473781f2c310dfa90c4f5f09cfe4dcacfb6779cb2e4a0183c7b889502bf7a6",
-            "size": 13968,
+            "sha256": "01ae86e8c74e279cac9f2806d5fa8545c552b33773c4a480b6cc08aea71c5c11",
+            "size": 15017,
             "claim": "normalise_area, area_contains and select_mission_area implement the three functions and cite them"
           }
         ]
@@ -249,9 +249,9 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "dd830dbbebb92e5ab9144b77ed50565f337a42b957a86bf48d4f0ec18a50df6c",
+            "sha256": "6abfc636be9ba922ea9be6140f0a36ed004b239874f1176d1f460a7a70760e5c",
             "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from the class-0 Set on the campaign arm (820a72c0, 0x820A72EC, vtable 0x820568D4 = CAce6UnitPlayer) and from category 2 only on the online arm, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-            "size": 14842
+            "size": 19947
           }
         ]
       },

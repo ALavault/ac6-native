@@ -4,6 +4,10 @@
 #include "ac6/retail_camera_table.h"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstring>
+#include <span>
 
 namespace ac6::retail {
 namespace {
@@ -12,6 +16,111 @@ namespace {
 // matched as the local player, and 1 for every other friendly. At most one
 // record can match, because at most one ordinal can.
 constexpr std::uint32_t kLocalPlayerCategory = 2;
+
+constexpr std::array<std::uint8_t, 4> kRetailSequencerMagic{{'R', 'S', 'Q', '1'}};
+constexpr std::uint32_t kRetailSequencerVersion = 1;
+constexpr std::size_t kRetailSequencerMaximumEntries = 4096;
+
+void append_u32(std::vector<std::uint8_t>& bytes, std::uint32_t value) {
+  for (unsigned int shift = 0; shift < 32; shift += 8) {
+    bytes.push_back(static_cast<std::uint8_t>((value >> shift) & 0xffu));
+  }
+}
+
+void append_f32(std::vector<std::uint8_t>& bytes, float value) {
+  std::uint32_t raw = 0;
+  std::memcpy(&raw, &value, sizeof(raw));
+  append_u32(bytes, raw);
+}
+
+bool take_u32(std::span<const std::uint8_t> bytes, std::size_t& offset,
+              std::uint32_t& value) noexcept {
+  if (offset > bytes.size() || bytes.size() - offset < sizeof(value)) return false;
+  value = static_cast<std::uint32_t>(bytes[offset]) |
+          (static_cast<std::uint32_t>(bytes[offset + 1]) << 8u) |
+          (static_cast<std::uint32_t>(bytes[offset + 2]) << 16u) |
+          (static_cast<std::uint32_t>(bytes[offset + 3]) << 24u);
+  offset += sizeof(value);
+  return true;
+}
+
+bool take_f32(std::span<const std::uint8_t> bytes, std::size_t& offset,
+              float& value) noexcept {
+  std::uint32_t raw = 0;
+  if (!take_u32(bytes, offset, raw)) return false;
+  std::memcpy(&value, &raw, sizeof(value));
+  return std::isfinite(value);
+}
+
+bool encode_sequencer(const SubMissionSequencerSnapshot& snapshot,
+                      std::vector<std::uint8_t>& bytes) {
+  if (snapshot.step_counts.size() > kRetailSequencerMaximumEntries ||
+      snapshot.started_at.size() != snapshot.step_counts.size() ||
+      snapshot.counters.size() > kRetailSequencerMaximumEntries) {
+    return false;
+  }
+  for (const float started_at : snapshot.started_at) {
+    if (!std::isfinite(started_at)) return false;
+  }
+  for (const MissionCounter& counter : snapshot.counters) {
+    if (!std::isfinite(counter.reached_one_at)) return false;
+  }
+  bytes.clear();
+  bytes.reserve(32 + snapshot.step_counts.size() * 8 + snapshot.counters.size() * 12);
+  bytes.insert(bytes.end(), kRetailSequencerMagic.begin(), kRetailSequencerMagic.end());
+  append_u32(bytes, kRetailSequencerVersion);
+  append_u32(bytes, static_cast<std::uint32_t>(snapshot.step_counts.size()));
+  append_u32(bytes, static_cast<std::uint32_t>(snapshot.counters.size()));
+  append_u32(bytes, snapshot.sub_mission);
+  append_u32(bytes, snapshot.step);
+  for (const std::uint32_t count : snapshot.step_counts) append_u32(bytes, count);
+  for (const float started_at : snapshot.started_at) append_f32(bytes, started_at);
+  for (const MissionCounter& counter : snapshot.counters) {
+    append_u32(bytes, static_cast<std::uint32_t>(counter.value));
+    append_f32(bytes, counter.reached_one_at);
+    append_u32(bytes, counter.bits);
+  }
+  return bytes.size() <= 1u << 20;
+}
+
+bool decode_sequencer(std::span<const std::uint8_t> bytes,
+                      SubMissionSequencerSnapshot& snapshot) noexcept {
+  std::size_t offset = 0;
+  if (bytes.size() < kRetailSequencerMagic.size() ||
+      !std::equal(kRetailSequencerMagic.begin(), kRetailSequencerMagic.end(), bytes.begin())) {
+    return false;
+  }
+  offset = kRetailSequencerMagic.size();
+  std::uint32_t version = 0;
+  std::uint32_t sub_count = 0;
+  std::uint32_t counter_count = 0;
+  if (!take_u32(bytes, offset, version) || version != kRetailSequencerVersion ||
+      !take_u32(bytes, offset, sub_count) || !take_u32(bytes, offset, counter_count) ||
+      !take_u32(bytes, offset, snapshot.sub_mission) ||
+      !take_u32(bytes, offset, snapshot.step) ||
+      sub_count > kRetailSequencerMaximumEntries ||
+      counter_count > kRetailSequencerMaximumEntries) {
+    return false;
+  }
+  snapshot.step_counts.resize(sub_count);
+  snapshot.started_at.resize(sub_count);
+  snapshot.counters.resize(counter_count);
+  for (std::uint32_t& count : snapshot.step_counts) {
+    if (!take_u32(bytes, offset, count)) return false;
+  }
+  for (float& started_at : snapshot.started_at) {
+    if (!take_f32(bytes, offset, started_at)) return false;
+  }
+  for (MissionCounter& counter : snapshot.counters) {
+    std::uint32_t value = 0;
+    if (!take_u32(bytes, offset, value) || !take_f32(bytes, offset, counter.reached_one_at) ||
+        !take_u32(bytes, offset, counter.bits)) {
+      return false;
+    }
+    std::memcpy(&counter.value, &value, sizeof(counter.value));
+  }
+  return offset == bytes.size();
+}
 
 }  // namespace
 
@@ -253,6 +362,9 @@ ScriptAdvance RetailSession::advance_script() noexcept {
 
 bool RetailSession::save_checkpoint(MissionExecution::Checkpoint& checkpoint) const noexcept {
   if (execution_ == nullptr || !execution_->save_checkpoint(checkpoint)) return false;
+  if (!encode_sequencer(world_->sequencer.snapshot(), checkpoint.retail_sequencer_state)) {
+    return false;
+  }
   checkpoint.retail_script_state_valid = true;
   checkpoint.retail_script_sub_mission = script_.sub_mission();
   checkpoint.retail_script_step = script_.step();
@@ -262,15 +374,24 @@ bool RetailSession::save_checkpoint(MissionExecution::Checkpoint& checkpoint) co
 
 bool RetailSession::restore_checkpoint(
     const MissionExecution::Checkpoint& checkpoint) noexcept {
-  if (execution_ == nullptr || !checkpoint.retail_script_state_valid) return false;
+  if (execution_ == nullptr || !checkpoint.retail_script_state_valid ||
+      checkpoint.retail_sequencer_state.empty()) {
+    return false;
+  }
+  SubMissionSequencerSnapshot sequencer_snapshot;
+  if (!decode_sequencer(checkpoint.retail_sequencer_state, sequencer_snapshot)) return false;
+  if (sequencer_snapshot.sub_mission != checkpoint.retail_script_sub_mission) return false;
   MissionScriptRunner previous_script = script_;
+  SubMissionSequencer previous_sequencer = world_->sequencer;
   if (!script_.restore_cursor(checkpoint.retail_script_sub_mission,
                               checkpoint.retail_script_step,
                               checkpoint.retail_script_end_code)) {
     return false;
   }
-  if (!execution_->restore_checkpoint(checkpoint)) {
+  if (!world_->sequencer.restore(sequencer_snapshot) ||
+      !execution_->restore_checkpoint(checkpoint)) {
     script_ = std::move(previous_script);
+    world_->sequencer = std::move(previous_sequencer);
     return false;
   }
   tick_ = checkpoint.flight.tick;
@@ -280,6 +401,7 @@ bool RetailSession::restore_checkpoint(
 bool RetailSession::restore_save(const SessionSaveSnapshot& snapshot) noexcept {
   if (!bundle_.has_value() || snapshot.mission_id != mission_id_ ||
       !snapshot.checkpoint.has_value() ||
+      snapshot.checkpoint->retail_sequencer_state.empty() ||
       std::all_of(snapshot.content_index_sha256.begin(),
                   snapshot.content_index_sha256.end(),
                   [](std::uint8_t byte) { return byte == 0; }) ||

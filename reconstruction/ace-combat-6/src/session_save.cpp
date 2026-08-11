@@ -63,7 +63,8 @@ bool valid_checkpoint(const MissionExecution::Checkpoint& checkpoint) noexcept {
       checkpoint.sequence.entries.size() > 4096 ||
       (!checkpoint.retail_script_state_valid &&
        (checkpoint.retail_script_sub_mission != 0 || checkpoint.retail_script_step != 0 ||
-        checkpoint.retail_script_end_code != 0)) ||
+        checkpoint.retail_script_end_code != 0 || !checkpoint.retail_sequencer_state.empty())) ||
+      checkpoint.retail_sequencer_state.size() > (1u << 20) ||
       (checkpoint.retail_script_state_valid &&
        checkpoint.retail_script_end_code != 0 && checkpoint.retail_script_end_code != 1)) {
     return false;
@@ -364,12 +365,16 @@ void write_checkpoint(std::ostream& output, const MissionExecution::Checkpoint& 
     write_u32(output, checkpoint.retail_script_step);
     write_u32(output, static_cast<std::uint32_t>(checkpoint.retail_script_end_code));
   }
+  write_u32(output, static_cast<std::uint32_t>(checkpoint.retail_sequencer_state.size()));
+  output.write(reinterpret_cast<const char*>(checkpoint.retail_sequencer_state.data()),
+               static_cast<std::streamsize>(checkpoint.retail_sequencer_state.size()));
 }
 
 bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoint,
                      bool has_sequence, bool has_radio, bool has_resources,
                      bool has_resource_contract, bool has_unit_records, bool has_waves,
-                     bool has_objective_conditions, bool has_retail_script) {
+                     bool has_objective_conditions, bool has_retail_script,
+                     bool has_retail_sequencer) {
   std::uint32_t state = 0;
   std::uint32_t objective_count = 0;
   std::uint32_t radio_count = 0;
@@ -491,6 +496,14 @@ bool read_checkpoint(std::istream& input, MissionExecution::Checkpoint& checkpoi
     }
     checkpoint.retail_script_end_code = static_cast<std::int32_t>(end_code);
   }
+  if (has_retail_sequencer) {
+    std::uint32_t state_size = 0;
+    if (!read_u32(input, state_size) || state_size > (1u << 20)) return false;
+    checkpoint.retail_sequencer_state.resize(state_size);
+    input.read(reinterpret_cast<char*>(checkpoint.retail_sequencer_state.data()),
+               static_cast<std::streamsize>(state_size));
+    if (!input) return false;
+  }
   return valid_checkpoint(checkpoint);
 }
 
@@ -521,7 +534,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
   std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
   if (!output) return false;
   output.write(kMagic.data(), static_cast<std::streamsize>(kMagic.size()));
-  write_u32(output, 11);
+  write_u32(output, 12);
   write_u32(output, static_cast<std::uint32_t>(slots_.size()));
   std::vector<std::uint32_t> slots;
   slots.reserve(slots_.size());
@@ -577,7 +590,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
   if (!read_u32(input, version) || !read_u32(input, count) ||
       (version != 1 && version != 2 && version != 3 && version != 4 && version != 5 &&
        version != 6 && version != 7 && version != 8 && version != 9 && version != 10 &&
-       version != 11) ||
+       version != 11 && version != 12) ||
       count > 1024) {
     return false;
   }
@@ -617,7 +630,7 @@ bool SessionSaveStore::read_file(const std::filesystem::path& path) {
         MissionExecution::Checkpoint checkpoint;
         if (!read_checkpoint(input, checkpoint, version >= 3, version >= 4, version >= 6,
                              version >= 7, version >= 8, version >= 8, version >= 9,
-                             version >= 11)) return false;
+                             version >= 11, version >= 12)) return false;
         snapshot.checkpoint = std::move(checkpoint);
       }
     }
