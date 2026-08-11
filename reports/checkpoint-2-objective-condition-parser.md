@@ -28,8 +28,10 @@ Mission 07 is the only campaign scenario currently carrying tag 7.  Its four non
 | 1 | 1 | 97 | 1 | `==` | 3 |
 | 2 | 1 | 97 | 1 | `==` | 3 |
 
-The all-15 qualified session bootstrap parses this payload before constructing the product session and asserts these exact records.  This closes the binary reader boundary only.  The meanings and producers of the 339 counters, AI/event timing, and the runtime jump path remain open; no counter is fabricated and no mission is marked complete by this report.
+The all-15 qualified session bootstrap parses this payload before constructing the product session and asserts these exact records.  The session now consumes the records at dispatch time: with a fresh mission all counters are zero, so the qualified Mission 07 run falls through all four equality tests and still exhausts its script.  A satisfied record selects its encoded target through the existing `SubMissionSequencer`.
+
+This closes the condition reader and dispatch boundary only.  The meanings and producers of the 339 counters, AI/event timing, and the events that make a condition true remain open; no counter is fabricated and no mission is marked complete by this report.
 
 ## Validation
 
-`cmake --build reconstruction/ace-combat-6/build -j16` passed after the parser change.  The qualified all-15 CTest/session corpus is the required follow-up gate; the existing synthetic parser tests continue to cover non-tag-7 scenarios.
+`cmake --build reconstruction/ace-combat-6/build -j16` passed after the parser and session change.  The qualified all-15 session corpus passed, including Mission 07's zero-counter fall-through/exhaustion check; the existing synthetic parser tests continue to cover non-tag-7 scenarios.

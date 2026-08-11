@@ -304,6 +304,19 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     const ac6::retail::RetailSessionFrame qualified_frame =
         qualified_session->tick(kFixedDt, {});
     REQUIRE(qualified_frame.world.mission_id == mission_id);
+    if (mission_id == 7) {
+      // With a freshly opened mission all counters are zero, so the four
+      // equality conditions are false. The session must therefore take the
+      // ordinary fall-through path through every tag-7 step and still end,
+      // rather than silently treating the condition as unconditional.
+      std::size_t advances = 0;
+      while (!qualified_session->script().ended() && advances < 128) {
+        (void)qualified_session->advance_script();
+        ++advances;
+      }
+      REQUIRE(qualified_session->script().ended());
+      REQUIRE(advances < 128);
+    }
   }
   const std::optional<ac6::retail::RetailCampaignBundle> common =
       ac6::retail::RetailCampaignBundle::open_entry(store, 1);

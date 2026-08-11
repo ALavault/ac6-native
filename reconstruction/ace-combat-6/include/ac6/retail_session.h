@@ -14,10 +14,12 @@
 // the sub-mission script, and the script advances only when the caller says so,
 // because the gate retail uses is not modelled: 0x822ED708 tests context+0x820
 // and the low six bits of FUN_82268C58()'s +0x124 before every advance, and
-// neither field has a native counterpart yet. The cadence is therefore the
-// caller's, and it is stated as such rather than dressed up as derived. Nothing
-// about the *outcome* depends on it: the trace of executed steps and the tick at
-// which the script runs out are the same for any cadence.
+// neither field has a native counterpart yet. Tag-7 counter conditions are
+// evaluated when their step becomes current; their counter producers remain a
+// separate boundary. The cadence is therefore the caller's, and it is stated
+// as such rather than dressed up as derived. Nothing about the *outcome*
+// depends on it: the trace of executed steps and the tick at which the script
+// runs out are the same for any cadence.
 
 #include "ac6/campaign_progression.h"
 #include "ac6/product_runtime.h"
@@ -129,6 +131,11 @@ class RetailSession final {
  private:
   RetailSession() = default;
   void track_objective(std::uint32_t sub_mission) noexcept;
+  // Resolve tag-7 steps at the same dispatch boundary as retail. A satisfied
+  // condition selects its target; an unsatisfied or sentinel condition calls
+  // the normal script advance. The loop is bounded so a malformed self-jump
+  // cannot hang the native session.
+  ScriptAdvance resolve_tag7_conditions() noexcept;
 
   std::unique_ptr<ScenarioPayload> payload_;
   std::unique_ptr<MissionScenario> scenario_;

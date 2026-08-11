@@ -122,6 +122,8 @@ std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> byt
   // advance itself, and the guard in 0x82267370 is what makes it run step 0
   // rather than skip it.
   session->script_.start();
+  (void)session->world_->sequencer.select(session->script_.sub_mission(), 0.0f);
+  (void)session->resolve_tag7_conditions();
   session->track_objective(session->script_.sub_mission());
   return session;
 }
@@ -200,13 +202,49 @@ std::size_t RetailSession::render_world_markers(NativeRenderTarget& target,
 
 ScriptAdvance RetailSession::advance_script() noexcept {
   const std::uint32_t before = script_.sub_mission();
-  const ScriptAdvance result = script_.drive_frame();
+  ScriptAdvance result = script_.drive_frame();
+  if (result == ScriptAdvance::Ran) {
+    result = resolve_tag7_conditions();
+  }
   const std::uint32_t after = script_.sub_mission();
   if (after != before) {
+    (void)world_->sequencer.select(after, static_cast<float>(tick_) / 60.0f);
     (void)execution_->complete_objective(before + 1);
     track_objective(after);
   }
   return result;
+}
+
+ScriptAdvance RetailSession::resolve_tag7_conditions() noexcept {
+  // A target can itself dispatch another tag-7 step. Retail follows that
+  // dispatch synchronously; retain the same property while bounding malformed
+  // self-jumps from untrusted cache bytes.
+  constexpr std::size_t kMaxHops = 4096;
+  for (std::size_t hop = 0; hop < kMaxHops; ++hop) {
+    const std::optional<ScriptStepRun> current = script_.current_step();
+    if (!current.has_value() || current->tag != 7) return ScriptAdvance::Ran;
+
+    const std::optional<ScenarioStepCondition> raw = script_.current_condition();
+    ScriptAdvance result = ScriptAdvance::Ran;
+    if (!raw.has_value()) {
+      result = script_.advance();
+    } else {
+      const CounterCondition condition{
+          raw->counter_id, raw->threshold,
+          static_cast<CounterComparison>(raw->comparison),
+          raw->target_sub_mission};
+      const std::optional<std::uint32_t> target = world_->sequencer.evaluate(condition);
+      result = target.has_value() ? script_.select(*target) : script_.advance();
+    }
+    if (result == ScriptAdvance::Exhausted) {
+      script_.end_by_script();
+      return result;
+    }
+  }
+
+  // Retail would keep following a self-jump. The native boundary refuses to
+  // spin forever and leaves the mission running at the last dispatched step.
+  return ScriptAdvance::Ran;
 }
 
 }  // namespace ac6::retail
