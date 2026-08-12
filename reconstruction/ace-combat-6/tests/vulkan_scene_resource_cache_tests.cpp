@@ -1,5 +1,6 @@
 #include "ac6/vulkan_scene_resource_cache.h"
 #include "fixtures/vulkan_triangle_spirv.h"
+#include "fixtures/vulkan_textured_triangle_spirv.h"
 
 #include <array>
 #include <cstdint>
@@ -92,6 +93,54 @@ int main() {
       cache.live_pipeline_count() != 0U || backend.live_mesh_count() != 0U ||
       backend.live_pipeline_count() != 0U) {
     return fail("reset");
+  }
+
+  ac6::RenderScene textured_scene = scene_fixture();
+  textured_scene.materials[0].texture_bindings.push_back({0U, "texture"});
+  textured_scene.draw_packets[0].texture_ids.push_back("texture");
+  textured_scene.refresh_digest();
+  const std::array<ac6::VulkanTexturedVertex, 3> textured_vertices{{
+      {-0.8F, -0.8F, 0.0F, 0.0F},
+      {0.8F, -0.8F, 1.0F, 0.0F},
+      {0.0F, 0.8F, 0.5F, 1.0F},
+  }};
+  const std::array<std::uint8_t, 4U * 4U * 4U> texture_pixels = [] {
+    std::array<std::uint8_t, 4U * 4U * 4U> pixels{};
+    for (std::size_t index = 0U; index < pixels.size(); index += 4U) {
+      pixels[index] = 255U;
+      pixels[index + 3U] = 255U;
+    }
+    return pixels;
+  }();
+  const std::array<ac6::VulkanSceneTexturedMeshUpload, 1> textured_mesh_uploads{{
+      {"mesh", textured_vertices, indices}}};
+  const std::array<ac6::VulkanSceneTexturedMaterialUpload, 1>
+      textured_material_uploads{{
+          {"material", ac6_test::kTexturedTriangleVertexSpirv,
+           ac6_test::kTexturedTriangleFragmentSpirv, {}, true}}};
+  const std::array<ac6::VulkanSceneTextureUpload, 1> texture_uploads{{
+      {"texture", 4U, 4U, texture_pixels}}};
+  if (!cache.build_textured(textured_scene, target, textured_mesh_uploads,
+                            textured_material_uploads, texture_uploads) ||
+      !cache.ready() || cache.live_mesh_count() != 1U ||
+      cache.live_pipeline_count() != 1U || cache.live_texture_count() != 1U ||
+      !cache.render(textured_scene)) {
+    return fail("textured_persistent_build");
+  }
+  const auto textured_readback = backend.readback_rgba8(target);
+  const std::size_t textured_center = (8U * 16U + 8U) * 4U;
+  if (textured_readback.size() != 16U * 16U * 4U ||
+      textured_readback[textured_center] != 255U ||
+      textured_readback[textured_center + 1U] != 0U ||
+      textured_readback[textured_center + 2U] != 0U ||
+      textured_readback[textured_center + 3U] != 255U) {
+    return fail("textured_persistent_readback");
+  }
+  cache.reset();
+  if (cache.live_mesh_count() != 0U || cache.live_pipeline_count() != 0U ||
+      cache.live_texture_count() != 0U || backend.live_texture_count() != 0U ||
+      backend.live_textured_mesh_count() != 0U) {
+    return fail("textured_reset");
   }
 
   const std::array<ac6::VulkanSceneMaterialUpload, 0> missing_materials{};

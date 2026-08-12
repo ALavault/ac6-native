@@ -25,6 +25,24 @@ struct VulkanSceneMaterialBinding final {
   bool textures_resolved{};
 };
 
+struct VulkanSceneTexturedMeshBinding final {
+  std::string_view mesh_id;
+  VulkanTexturedMeshHandle mesh{};
+  std::uint32_t index_count{};
+};
+
+struct VulkanSceneTextureBinding final {
+  std::string_view texture_id;
+  VulkanTextureHandle texture{};
+};
+
+struct VulkanSceneTexturedMaterialBinding final {
+  std::string_view material_id;
+  VulkanPipelineHandle pipeline{};
+  VulkanPipelineState state{};
+  bool textures_resolved{};
+};
+
 class VulkanSceneRenderer final {
  public:
   explicit VulkanSceneRenderer(VulkanBackend& backend) noexcept : backend_(backend) {}
@@ -38,6 +56,15 @@ class VulkanSceneRenderer final {
       const RenderScene& scene, VulkanRenderTargetHandle target,
       std::span<const VulkanSceneMeshBinding> meshes,
       std::span<const VulkanSceneMaterialBinding> materials) noexcept;
+
+  // Bounded textured variant: exactly one RGBA8 texture per draw packet, no
+  // transforms/HUD/depth yet. It still submits directly to Vulkan and never
+  // falls back to NativeRenderTarget.
+  [[nodiscard]] bool render_textured(
+      const RenderScene& scene, VulkanRenderTargetHandle target,
+      std::span<const VulkanSceneTexturedMeshBinding> meshes,
+      std::span<const VulkanSceneTexturedMaterialBinding> materials,
+      std::span<const VulkanSceneTextureBinding> textures) noexcept;
 
  private:
   VulkanBackend& backend_;
