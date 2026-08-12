@@ -11,9 +11,13 @@ from typing import Any
 
 from build_ac6_execution_trace_v2 import (
     DOMAINS,
+    MAX_PROJECTED_FRAMES,
     TRACE_SCHEMA,
     TraceV2Error,
+    validate_cadence,
+    validate_controller_replay_contract,
     validate_events,
+    validate_observation,
 )
 
 
@@ -23,6 +27,8 @@ XEX_SHA256 = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
 SHA256 = re.compile(r"[0-9a-f]{64}")
 COMMIT = re.compile(r"[0-9a-f]{40}")
 ARTIFACT_KEYS = {"path", "sha256"}
+LEGACY_WINDOW_KEYS = {"id", "start_tick", "tick_count", "sample_hz", "cadence", "domains"}
+RECEIPT_WINDOW_KEYS = LEGACY_WINDOW_KEYS | {"controller_replay", "observation"}
 
 
 class ComparisonError(ValueError):
@@ -78,21 +84,44 @@ def validate_trace(document: object, role: str,
     validate_artifact({"path": probe.get("path"), "sha256": probe.get("sha256")},
                       f"{role} probe artifact")
     window = header["window"]
-    if (not isinstance(window, dict) or set(window) != {
-            "id", "start_tick", "tick_count", "sample_hz", "cadence", "domains"} or
+    if (not isinstance(window, dict) or frozenset(window) not in {
+            frozenset(LEGACY_WINDOW_KEYS), frozenset(RECEIPT_WINDOW_KEYS)} or
             not isinstance(window["id"], str) or not window["id"] or
             not isinstance(window["start_tick"], int) or isinstance(window["start_tick"], bool) or
             not isinstance(window["tick_count"], int) or isinstance(window["tick_count"], bool) or
-            window["tick_count"] <= 0 or window["sample_hz"] != 30 or
-            window["cadence"] != {
-                "oracle_update_hz": 30,
-                "native_simulation_hz": 60,
-                "native_ticks_per_sample": 2,
-                "input_resampling": "zero_order_hold",
-                "snapshot_sampling": "last_native_tick_in_sample",
-            } or
+            window["start_tick"] < 0 or window["tick_count"] <= 0 or
+            window["tick_count"] > MAX_PROJECTED_FRAMES or
             window["domains"] != list(DOMAINS)):
         raise ComparisonError(f"{role} window")
+    try:
+        cadence = validate_cadence(window["cadence"], f"{role} cadence")
+    except TraceV2Error as error:
+        raise ComparisonError(str(error)) from error
+    if window["sample_hz"] != cadence["oracle_update_hz"]:
+        raise ComparisonError(f"{role} window sample hz")
+    if "controller_replay" in window:
+        try:
+            replay_contract = validate_controller_replay_contract(
+                window["controller_replay"], f"{role} controller replay"
+            )
+            source_markers = replay_contract["parent_window"]["marker_count"]
+            validate_observation(
+                window["observation"], cadence, source_markers, f"{role} observation"
+            )
+        except TraceV2Error as error:
+            raise ComparisonError(str(error)) from error
+        if header["replay"]["sha256"] != replay_contract["projected_replay_sha256"]:
+            raise ComparisonError(f"{role} replay receipt mismatch")
+        if window["start_tick"] < 1 or window["start_tick"] > source_markers - window["tick_count"] + 1:
+            raise ComparisonError(f"{role} window bounds")
+    elif cadence != {
+        "oracle_update_hz": 30,
+        "native_simulation_hz": 60,
+        "native_ticks_per_sample": 2,
+        "input_resampling": "zero_order_hold",
+        "snapshot_sampling": "last_native_tick_in_sample",
+    }:
+        raise ComparisonError(f"{role} unreceipted cadence")
     events = document["events"]
     if (not isinstance(document["event_count"], int) or
             document["event_count"] != len(events) or len(events) > maximum_events):
