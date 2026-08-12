@@ -11,6 +11,7 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace {
@@ -80,40 +81,59 @@ std::string receipt_for(const RetailSessionReplay &replay,
   const std::string final = ac6::sha256_hex(replay.final_digest);
   const std::string output = ac6::sha256_hex(replay_sha);
   std::ostringstream json;
-  json << "{\"cache_index_sha256\":\"" << cache
-       << "\",\"cadence\":{\"hold\":2,\"native_hz\":60,"
-          "\"resampling\":\"zero_order_hold\",\"source_hz\":30},"
-          "\"kind\":\"native_projection_receipt\",\"mapping\":{"
-          "\"buttons\":\"raw_xinput_buttons\",\"pitch\":\"thumb_ly\","
-          "\"roll\":\"thumb_lx\",\"throttle\":\"right_trigger\","
-          "\"yaw\":\"left_shoulder=-32768;right_shoulder=32767;otherwise="
-          "thumb_rx;left_precedes_right\"},\"output\":{"
-          "\"aircraft_id\":"
-       << replay.loadout.aircraft_id << ",\"capability_data_valid\":"
-       << (replay.loadout.capability_data_valid ? "true" : "false")
-       << ",\"checkpoint_count\":" << replay.checkpoints.size()
-       << ",\"difficulty\":" << static_cast<unsigned>(replay.difficulty)
-       << ",\"difficulty_name\":\"Normal\",\"final_digest_sha256\":\"" << final
-       << "\",\"final_tick\":" << replay.final_tick
-       << ",\"format\":\"AC6RTPLY\",\"frame_count\":" << replay.frames.size()
-       << ",\"input_digest_sha256\":\"" << input
-       << "\",\"mission_id\":" << replay.mission_id << ",\"output_sha256\":\""
-       << output << "\",\"random_seed\":" << replay.random_seed
-       << ",\"source_marker_count\":2,\"version\":" << replay.version
-       << ",\"weapon_id\":" << replay.loadout.weapon_id
-       << "},\"schema\":\"ac6.native-controller-projection-receipt.v1\","
-          "\"source\":{\"parent_payload_sha256\":\""
-       << repeat('9', 64) << "\",\"parent_replay_sha256\":\"" << repeat('8', 64)
-       << "\",\"parent_window\":{\"marker_count\":2,\"start_marker\":1},"
-          "\"raw_payload_sha256\":\""
-       << repeat('7', 64) << "\",\"raw_replay_sha256\":\"" << repeat('6', 64)
-       << "\"},\"target\":{\"base_version\":\"v0.0.0.11\","
-          "\"marker_address\":\"821CA908\",\"marker_code_sha256\":\""
-       << repeat('2', 64)
-       << "\",\"media_id\":\"0379EFB3\",\"module\":\"default.xex\","
-          "\"module_xxh3\":\"0123456789abcdef\",\"title_id\":\"4E4D07D1\","
-          "\"xex_sha256\":\""
-       << repeat('1', 64) << "\",\"xex_version\":\"v0.0.0.11\"}}\n";
+  json
+      << "{\"cache_index_sha256\":\"" << cache
+      << "\",\"cadence\":{\"census\":{\"file_sha256\":\"" << repeat('a', 64)
+      << "\",\"integrity_level\":\"integrity_only_runtime_census\","
+         "\"interval_count\":1,\"method\":\"uniform_marker_interval_v1\","
+         "\"payload_sha256\":\""
+      << repeat('b', 64)
+      << "\",\"record_count\":2,\"schema\":"
+         "\"ac6.controller-cadence-census.v1\"},\"hold\":2,"
+         "\"integrity_level\":\"integrity_only_runtime_census\","
+         "\"marker_contract\":{\"address\":\"821CA908\","
+         "\"code\":{\"length\":16,\"offset\":1878280,\"sha256\":\""
+      << repeat('2', 64)
+      << "\"},\"phase\":\"before_input\",\"role\":"
+         "\"ac6_frame_input_stage\"},\"native_clock\":{"
+         "\"clock_id\":\"ac6_native_fixed_step\",\"frequency\":{"
+         "\"denominator\":1,\"numerator\":60},\"schema\":"
+         "\"ac6.native-simulation-clock.v1\",\"tick_semantics\":"
+         "\"one_simulation_step\"},\"native_hz\":60,"
+         "\"resampling\":\"zero_order_hold\",\"source_hz\":30},"
+         "\"kind\":\"native_projection_receipt\",\"mapping\":{"
+         "\"buttons\":\"raw_xinput_buttons\",\"pitch\":\"thumb_ly\","
+         "\"roll\":\"thumb_lx\",\"throttle\":\"right_trigger\","
+         "\"yaw\":\"left_shoulder=-32768;right_shoulder=32767;otherwise="
+         "thumb_rx;left_precedes_right\"},\"output\":{"
+         "\"aircraft_id\":"
+      << replay.loadout.aircraft_id << ",\"capability_data_valid\":"
+      << (replay.loadout.capability_data_valid ? "true" : "false")
+      << ",\"checkpoint_count\":" << replay.checkpoints.size()
+      << ",\"difficulty\":" << static_cast<unsigned>(replay.difficulty)
+      << ",\"difficulty_name\":\"Normal\",\"final_digest_sha256\":\"" << final
+      << "\",\"final_tick\":" << replay.final_tick
+      << ",\"format\":\"AC6RTPLY\",\"frame_count\":" << replay.frames.size()
+      << ",\"input_digest_sha256\":\"" << input
+      << "\",\"mission_id\":" << replay.mission_id << ",\"output_sha256\":\""
+      << output << "\",\"random_seed\":" << replay.random_seed
+      << ",\"source_marker_count\":2,\"version\":" << replay.version
+      << ",\"weapon_id\":" << replay.loadout.weapon_id
+      << "},\"schema\":\"ac6.native-controller-projection-receipt.v3\","
+         "\"source\":{\"parent_payload_sha256\":\""
+      << repeat('9', 64) << "\",\"parent_replay_sha256\":\"" << repeat('8', 64)
+      << "\",\"parent_window\":{\"marker_count\":2,\"start_marker\":1},"
+         "\"raw_payload_sha256\":\""
+      << repeat('7', 64) << "\",\"raw_replay_sha256\":\"" << repeat('6', 64)
+      << "\"},\"target\":{\"base_version\":\"v0.0.0.11\","
+         "\"marker_address\":\"821CA908\",\"marker_code_length\":16,"
+         "\"marker_code_offset\":1878280,\"marker_code_sha256\":\""
+      << repeat('2', 64)
+      << "\",\"media_id\":\"0379EFB3\",\"module\":\"default.xex\","
+         "\"module_xxh3\":\"0123456789abcdef\",\"title_id\":\"4E4D07D1\","
+         "\"xex_sha256\":"
+         "\"acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde\","
+         "\"xex_version\":\"v0.0.0.11\"}}\n";
   return json.str();
 }
 
@@ -177,6 +197,136 @@ int metadata_mutations(const std::filesystem::path &receipt_path,
   return failures;
 }
 
+int contract_mutations(const std::filesystem::path &receipt_path,
+                       const std::filesystem::path &replay_path,
+                       const RetailSessionReplay &replay,
+                       std::string_view canonical) {
+  constexpr std::array<std::pair<std::string_view, std::string_view>, 8>
+      replacements{{
+          {"ac6.native-controller-projection-receipt.v3",
+           "ac6.native-controller-projection-receipt.v1"},
+          {"ac6.native-controller-projection-receipt.v3",
+           "ac6.native-controller-projection-receipt.v2"},
+          {"ac6.controller-cadence-census.v1",
+           "ac6.controller-cadence-census.v2"},
+          {"uniform_marker_interval_v1", "uniform_marker_interval_v2"},
+          {"integrity_only_runtime_census", "runner_attested"},
+          {"before_input", "invalid_phase"},
+          {"ac6_frame_input_stage", "unknown_marker_role"},
+          {"\"address\":\"821CA908\"", "\"address\":\"8226D1C8\""},
+      }};
+  int failures = 0;
+  for (const auto &[old_value, new_value] : replacements) {
+    std::string mutated(canonical);
+    failures += check(replace_once(mutated, old_value, new_value),
+                      "v3 contract mutation locates its field");
+    write_text(receipt_path, mutated);
+    failures += check(
+        run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+            RetailProjectionReceiptError::SchemaMismatch,
+        "v3 contract mutation fails closed");
+  }
+
+  std::string top_level_relabel(canonical);
+  failures += check(
+      replace_once(top_level_relabel,
+                   "\"hold\":2,\"integrity_level\":"
+                   "\"integrity_only_runtime_census\",\"marker_contract\"",
+                   "\"hold\":2,\"integrity_level\":\"runner_attested\","
+                   "\"marker_contract\""),
+      "top-level integrity relabel locates its field");
+  write_text(receipt_path, top_level_relabel);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "top-level runner label without attestation is rejected");
+
+  std::string boolean_native_clock(canonical);
+  failures += check(replace_once(boolean_native_clock,
+                                 "\"denominator\":1,\"numerator\":60",
+                                 "\"denominator\":true,\"numerator\":60"),
+                    "boolean native clock mutation locates its field");
+  write_text(receipt_path, boolean_native_clock);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "boolean native clock integer is rejected");
+
+  std::string evidence_digest(canonical);
+  failures +=
+      check(replace_once(evidence_digest,
+                         "\"file_sha256\":\"" + repeat('a', 64) + "\"",
+                         "\"file_sha256\":\"g" + repeat('a', 63) + "\""),
+            "cadence census digest mutation locates its field");
+  write_text(receipt_path, evidence_digest);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "invalid cadence census digest is rejected");
+
+  std::string census_window_count(canonical);
+  failures += check(replace_once(census_window_count, "\"interval_count\":1",
+                                 "\"interval_count\":2") &&
+                        replace_once(census_window_count, "\"record_count\":2",
+                                     "\"record_count\":3"),
+                    "cadence census count mutation locates its fields");
+  write_text(receipt_path, census_window_count);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "internally consistent census count must match the parent window");
+
+  std::string marker_digest(canonical);
+  failures += check(
+      replace_once(marker_digest,
+                   "\"offset\":1878280,\"sha256\":\"" + repeat('2', 64) + "\"",
+                   "\"offset\":1878280,\"sha256\":\"" + repeat('3', 64) + "\""),
+      "marker code mutation locates its field");
+  write_text(receipt_path, marker_digest);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "marker code mismatch with target is rejected");
+
+  std::string marker_offset(canonical);
+  failures +=
+      check(replace_once(marker_offset, "\"length\":16,\"offset\":1878280",
+                         "\"length\":16,\"offset\":1878281"),
+            "marker offset mutation locates its field");
+  write_text(receipt_path, marker_offset);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "marker offset mismatch with target is rejected");
+
+  std::string window_overflow(canonical);
+  failures += check(
+      replace_once(window_overflow,
+                   "\"parent_window\":{\"marker_count\":2,\"start_marker\":1}",
+                   "\"parent_window\":{\"marker_count\":2,"
+                   "\"start_marker\":500000}"),
+      "parent window overflow mutation locates its field");
+  write_text(receipt_path, window_overflow);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "parent start plus count overflow is rejected");
+
+  std::string target_identity(canonical);
+  failures += check(
+      replace_once(
+          target_identity,
+          "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+          repeat('1', 64)),
+      "PAL XEX mutation locates its field");
+  write_text(receipt_path, target_identity);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "non-PAL target identity is rejected");
+  return failures;
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -218,6 +368,7 @@ int main(int argc, char **argv) {
   failures +=
       check(accepted.detail.find("lineage unverified") != std::string::npos,
             "success keeps raw/parent lineage boundary explicit");
+  failures += contract_mutations(receipt_path, replay_path, replay, canonical);
   failures += metadata_mutations(receipt_path, replay_path, replay, canonical);
 
   std::string digest_mutation = canonical;
@@ -324,6 +475,14 @@ int main(int argc, char **argv) {
       run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
           RetailProjectionReceiptError::ReceiptByteBound,
       "receipt byte bound is enforced before parsing");
+
+  const auto fifo_path = root.path() / "receipt.fifo";
+  failures += check(::mkfifo(fifo_path.c_str(), 0600) == 0,
+                    "receipt FIFO fixture is created");
+  failures += check(
+      run(fifo_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::ReceiptUnreadable,
+      "non-regular receipt is rejected without blocking");
 
   write_text(receipt_path, canonical);
   {

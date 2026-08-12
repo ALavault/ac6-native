@@ -13,19 +13,34 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from build_ac6_execution_trace_v2 import (  # noqa: E402
+    CADENCE_CENSUS_SCHEMA,
+    CADENCE_METHOD,
     CONTROLLER_MAPPING,
     DOMAINS,
+    INTEGRITY_ONLY_CENSUS,
+    MAX_TRACE_TICKS,
+    NATIVE_CLOCK_CONTRACT,
     PROJECTION_RECEIPT_SCHEMA,
+    RUNNER_ATTESTED,
     TRACE_SCHEMA,
     TraceV2Error,
+    _derive_receipt_events,
+    _projected_replay_frames,
     build_trace,
+    load_jsonl_bytes,
+    load_projection_receipt,
+    main as build_trace_main,
     validate_events,
 )
+import build_ac6_execution_trace_v2 as trace_builder  # noqa: E402
+import compare_ac6_execution_traces as compare_module  # noqa: E402
 from compare_ac6_execution_traces import (  # noqa: E402
     ComparisonError,
     ORACLE_COMMIT,
     XEX_SHA256,
+    _read_trace_snapshot,
     compare_documents,
+    main as compare_trace_main,
 )
 
 
@@ -50,12 +65,14 @@ def events(ticks: int = 2) -> list[dict]:
     result = []
     for tick in range(1, ticks + 1):
         for domain in DOMAINS:
-            result.append({
-                "sequence": len(result),
-                "tick": tick,
-                "domain": domain,
-                "payload": payload(domain, tick),
-            })
+            result.append(
+                {
+                    "sequence": len(result),
+                    "tick": tick,
+                    "domain": domain,
+                    "payload": payload(domain, tick),
+                }
+            )
     return result
 
 
@@ -69,7 +86,11 @@ def events_with_inputs(inputs: list[dict], logical_ticks: list[int]) -> list[dic
                     "sequence": len(result),
                     "tick": raw_tick,
                     "domain": domain,
-                    "payload": dict(controller) if domain == "controller_input" else payload(domain, logical_tick),
+                    "payload": (
+                        dict(controller)
+                        if domain == "controller_input"
+                        else payload(domain, logical_tick, f"{logical_tick:x}")
+                    ),
                 }
             )
     return result
@@ -93,6 +114,7 @@ def input_bytes(controller: dict) -> bytes:
 def projection_fixture(
     tmp_path: Path, source_inputs: list[dict], source_hz: int, native_hz: int
 ) -> tuple[Path, Path, list[Path]]:
+    assert native_hz == NATIVE_CLOCK_CONTRACT["frequency"]["numerator"]
     hold = native_hz // source_hz
     frames = b"".join(input_bytes(controller) * hold for controller in source_inputs)
     input_digest = hashlib.sha256(frames).digest()
@@ -127,13 +149,36 @@ def projection_fixture(
             "base_version": "v0.0.0.11",
             "module_xxh3": "abcdef0123456789",
             "marker_address": "8226D1C8",
+            "marker_code_offset": 0x26D1C8,
+            "marker_code_length": 16,
             "marker_code_sha256": "5" * 64,
         },
         "cadence": {
+            "integrity_level": INTEGRITY_ONLY_CENSUS,
             "source_hz": source_hz,
             "native_hz": native_hz,
             "resampling": "identity" if hold == 1 else "zero_order_hold",
             "hold": hold,
+            "census": {
+                "schema": CADENCE_CENSUS_SCHEMA,
+                "file_sha256": "6" * 64,
+                "payload_sha256": "7" * 64,
+                "integrity_level": INTEGRITY_ONLY_CENSUS,
+                "method": CADENCE_METHOD,
+                "record_count": len(source_inputs),
+                "interval_count": len(source_inputs) - 1,
+            },
+            "marker_contract": {
+                "role": "mission_manager_tick",
+                "address": "8226D1C8",
+                "phase": "after_input",
+                "code": {
+                    "offset": 0x26D1C8,
+                    "length": 16,
+                    "sha256": "5" * 64,
+                },
+            },
+            "native_clock": NATIVE_CLOCK_CONTRACT,
         },
         "mapping": CONTROLLER_MAPPING,
         "cache_index_sha256": cache_digest,
@@ -157,46 +202,13 @@ def projection_fixture(
         },
     }
     receipt_path = tmp_path / f"receipt-{source_hz}.json"
-    receipt_path.write_text(
-        json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8"
-    )
+    receipt_path.write_text(json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
     artifacts = []
     for name in ("stack", "oracle-binary", "native-binary", "probe"):
         path = tmp_path / f"{name}-{source_hz}"
         path.write_bytes(name.encode())
         artifacts.append(path)
     return replay, receipt_path, artifacts
-
-
-def build_receipted_pair(
-    tmp_path: Path, source_hz: int
-) -> tuple[dict, dict, Path, Path]:
-    replay, receipt, artifacts = projection_fixture(tmp_path, [INPUT_A, INPUT_B], source_hz, 60)
-    hold = 60 // source_hz
-    oracle_raw = tmp_path / f"oracle-{source_hz}.jsonl"
-    native_raw = tmp_path / f"native-{source_hz}.jsonl"
-    write_jsonl(oracle_raw, events_with_inputs([INPUT_A, INPUT_B], [1, 2]))
-    native_inputs = [controller for controller in (INPUT_A, INPUT_B) for _ in range(hold)]
-    native_ticks = [tick for tick in (1, 2) for _ in range(hold)]
-    write_jsonl(native_raw, events_with_inputs(native_inputs, native_ticks))
-    common = (
-        ORACLE_COMMIT,
-        NATIVE_COMMIT,
-        artifacts[0],
-        replay,
-        artifacts[3],
-        "mission01-controlled-sortie",
-        "controlled-sortie",
-        1,
-        2,
-        source_hz,
-        60,
-        hold,
-        receipt,
-    )
-    oracle = build_trace(oracle_raw, "oracle", common[0], common[1], common[2], artifacts[1], *common[3:])
-    native = build_trace(native_raw, "native", common[0], common[1], common[2], artifacts[2], *common[3:])
-    return oracle, native, receipt, native_raw
 
 
 def artifact(digest: str) -> dict:
@@ -235,9 +247,19 @@ def trace(role: str, ticks: int = 2) -> dict:
     }
 
 
+def diagnostic_compare(reference: dict, candidate: dict, domains: tuple[str, ...] = DOMAINS) -> dict:
+    return compare_documents(reference, candidate, domains, allow_legacy_diagnostic=True)
+
+
+def test_comparison_is_disabled_as_a_gate_without_runner_attestation() -> None:
+    with pytest.raises(ComparisonError, match="gate is disabled"):
+        compare_documents(trace("oracle"), trace("native"))
+
+
 def test_equal_cross_implementation_trace() -> None:
-    report = compare_documents(trace("oracle"), trace("native"))
+    report = diagnostic_compare(trace("oracle"), trace("native"))
     assert report["equal"] is True
+    assert report["proof_level"] == "structural_diagnostic"
     assert report["compared_events"] == 10
     assert report["first_divergence"] is None
 
@@ -245,7 +267,7 @@ def test_equal_cross_implementation_trace() -> None:
 def test_first_domain_divergence_is_precise() -> None:
     candidate = trace("native")
     candidate["events"][6]["payload"]["position"][1] = 9.0
-    report = compare_documents(trace("oracle"), candidate)
+    report = diagnostic_compare(trace("oracle"), candidate)
     assert report["equal"] is False
     assert report["first_divergence"] == {
         "path": "events[6].payload.position[1]",
@@ -260,9 +282,7 @@ def test_first_domain_divergence_is_precise() -> None:
 def test_selected_domains_can_isolate_simulation() -> None:
     candidate = trace("native")
     candidate["events"][3]["payload"]["draw_packets"] = 99
-    report = compare_documents(
-        trace("oracle"), candidate, ("simulation_snapshot", "output_hashes")
-    )
+    report = diagnostic_compare(trace("oracle"), candidate, ("simulation_snapshot", "output_hashes"))
     assert report["equal"] is True
     assert report["compared_events"] == 4
 
@@ -274,37 +294,158 @@ def test_wrong_domain_order_is_rejected() -> None:
         validate_events(malformed, 1, 1)
 
 
+@pytest.mark.parametrize("invalid_events", (None, 1, {}))
+def test_comparator_rejects_non_list_events(invalid_events: object) -> None:
+    malformed = trace("native")
+    malformed["events"] = invalid_events
+    with pytest.raises(ComparisonError, match="native event count"):
+        diagnostic_compare(trace("oracle"), malformed)
+
+
 def test_capture_contract_mismatch_is_rejected() -> None:
     candidate = trace("native")
     candidate["header"]["replay"]["sha256"] = "8" * 64
     with pytest.raises(ComparisonError, match="capture contract mismatch: replay"):
-        compare_documents(trace("oracle"), candidate)
+        diagnostic_compare(trace("oracle"), candidate)
 
 
 def test_builder_seals_all_artifacts(tmp_path: Path) -> None:
     raw = tmp_path / "raw.jsonl"
-    raw.write_text("".join(json.dumps(event) + "\n" for event in events(1)),
-                   encoding="utf-8")
+    raw.write_text("".join(json.dumps(event) + "\n" for event in events(1)), encoding="utf-8")
     artifacts = []
     for name in ("stack", "binary", "replay", "probe"):
         path = tmp_path / name
         path.write_bytes(name.encode())
         artifacts.append(path)
     document = build_trace(
-        raw, "oracle", ORACLE_COMMIT, NATIVE_COMMIT,
-        artifacts[0], artifacts[1], artifacts[2], artifacts[3],
-        "mission01-controlled-sortie", "controlled-sortie", 1, 1, 30, 60, 2,
+        raw,
+        "oracle",
+        ORACLE_COMMIT,
+        NATIVE_COMMIT,
+        artifacts[0],
+        artifacts[1],
+        artifacts[2],
+        artifacts[3],
+        "mission01-controlled-sortie",
+        "controlled-sortie",
+        1,
+        1,
+        30,
     )
     assert document["event_count"] == len(DOMAINS)
-    assert document["header"]["capture"]["sha256"] == hashlib.sha256(
-        raw.read_bytes()).hexdigest()
-    assert document["header"]["binary"]["sha256"] == hashlib.sha256(
-        b"binary").hexdigest()
+    assert document["header"]["capture"]["sha256"] == hashlib.sha256(raw.read_bytes()).hexdigest()
+    assert document["header"]["binary"]["sha256"] == hashlib.sha256(b"binary").hexdigest()
+
+
+def test_builder_refuses_unreceipted_native_capture(tmp_path: Path) -> None:
+    raw = tmp_path / "native-raw.jsonl"
+    raw.write_text("".join(json.dumps(event) + "\n" for event in events(1)), encoding="utf-8")
+    artifacts = []
+    for name in ("stack", "binary", "replay", "probe"):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        artifacts.append(path)
+    with pytest.raises(TraceV2Error, match="native trace requires a projection receipt"):
+        build_trace(
+            raw,
+            "native",
+            ORACLE_COMMIT,
+            NATIVE_COMMIT,
+            artifacts[0],
+            artifacts[1],
+            artifacts[2],
+            artifacts[3],
+            "mission01-controlled-sortie",
+            "controlled-sortie",
+            1,
+            1,
+            30,
+        )
+
+
+def test_trace_windows_and_payloads_are_bounded_before_comparison(tmp_path: Path) -> None:
+    raw = tmp_path / "raw.jsonl"
+    write_jsonl(raw, events(2))
+    artifacts = []
+    for name in ("stack", "binary", "replay", "probe"):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        artifacts.append(path)
+    with pytest.raises(TraceV2Error, match="window bounds"):
+        build_trace(
+            raw,
+            "oracle",
+            ORACLE_COMMIT,
+            NATIVE_COMMIT,
+            *artifacts,
+            "mission01-controlled-sortie",
+            "controlled-sortie",
+            MAX_TRACE_TICKS,
+            2,
+            30,
+        )
+
+    out_of_range = trace("oracle")
+    out_of_range["header"]["window"]["start_tick"] = MAX_TRACE_TICKS
+    with pytest.raises(ComparisonError, match="oracle window"):
+        diagnostic_compare(out_of_range, trace("native"))
+
+    non_finite = events(1)
+    non_finite[0]["payload"]["value"] = float("nan")
+    with pytest.raises(TraceV2Error, match="non-finite"):
+        validate_events(non_finite, 1, 1)
+    raw_nan = "".join(json.dumps(event) + "\n" for event in non_finite).encode()
+    with pytest.raises(TraceV2Error, match="non-finite"):
+        load_jsonl_bytes(raw_nan, 1, 1)
+
+    huge_integer = (
+        json.dumps(events(1)[0]).replace('"tick": 1', '"tick": ' + "9" * 5000)
+        + "\n"
+        + "".join(json.dumps(event) + "\n" for event in events(1)[1:])
+    ).encode()
+    with pytest.raises(TraceV2Error, match="JSON integer bound"):
+        load_jsonl_bytes(huge_integer, 1, 1)
+
+    nested: object = 0
+    for _ in range(65):
+        nested = [nested]
+    deep = trace("native", 1)
+    deep["events"][0]["payload"] = {"nested": nested}
+    with pytest.raises(ComparisonError, match="depth bound"):
+        diagnostic_compare(trace("oracle", 1), deep)
+
+    encoded = b"[" * 65 + b"0" + b"]" * 65
+    deep_path = tmp_path / "deep.json"
+    deep_path.write_bytes(encoded)
+    with pytest.raises(ComparisonError, match="depth bound"):
+        _read_trace_snapshot(deep_path, "deep")
+
+    integer_path = tmp_path / "huge-integer.json"
+    integer_path.write_bytes(b'{"x":' + b"9" * 5000 + b"}")
+    with pytest.raises(ComparisonError, match="JSON integer bound"):
+        _read_trace_snapshot(integer_path, "integer")
 
 
 def test_receipted_30_to_60_selects_ticks_two_and_four(tmp_path: Path) -> None:
-    oracle, native, _, _ = build_receipted_pair(tmp_path, 30)
-    assert native["header"]["window"]["observation"]["native"] == {
+    replay_path, receipt_path, _ = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 30, 60)
+    receipt = load_projection_receipt(receipt_path)
+    projected_frames = _projected_replay_frames(replay_path, receipt)
+    native_raw = tmp_path / "native-30.jsonl"
+    write_jsonl(
+        native_raw,
+        events_with_inputs([INPUT_A, INPUT_A, INPUT_B, INPUT_B], [1, 2, 3, 4]),
+    )
+
+    selected, observation = _derive_receipt_events(
+        native_raw,
+        "native",
+        receipt,
+        1,
+        2,
+        60,
+        projected_frames,
+    )
+    assert observation["native"] == {
         "raw_sample_hz": 60,
         "raw_start_tick": 1,
         "raw_tick_count": 4,
@@ -312,108 +453,377 @@ def test_receipted_30_to_60_selects_ticks_two_and_four(tmp_path: Path) -> None:
         "selected_tick_stride": 2,
         "selected_tick_phase": 2,
     }
-    assert [
-        event["payload"]["tick"]
-        for event in native["events"]
-        if event["domain"] == "simulation_snapshot"
-    ] == [1, 2]
-    assert compare_documents(oracle, native)["equal"] is True
+    assert [event["payload"]["tick"] for event in selected if event["domain"] == "simulation_snapshot"] == [
+        2,
+        4,
+    ]
+    selected_hashes = [event["payload"]["simulation"] for event in selected if event["domain"] == "output_hashes"]
+    assert selected_hashes == ["2" * 64, "4" * 64]
+    assert not {"1" * 64, "3" * 64}.intersection(selected_hashes)
 
 
 def test_receipted_60_to_60_is_identity_and_needs_no_equal_pairs(tmp_path: Path) -> None:
-    oracle, native, _, _ = build_receipted_pair(tmp_path, 60)
-    assert native["events"][0]["payload"] == INPUT_A
-    assert native["events"][len(DOMAINS)]["payload"] == INPUT_B
-    assert native["header"]["window"]["observation"]["native"]["selection"] == "identity"
-    assert native["header"]["window"]["observation"]["native"]["selected_tick_stride"] == 1
-    assert compare_documents(oracle, native)["equal"] is True
+    replay_path, receipt_path, _ = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 60, 60)
+    receipt = load_projection_receipt(receipt_path)
+    raw = tmp_path / "native-60.jsonl"
+    write_jsonl(raw, events_with_inputs([INPUT_A, INPUT_B], [1, 2]))
+    selected, observation = _derive_receipt_events(
+        raw,
+        "native",
+        receipt,
+        1,
+        2,
+        60,
+        _projected_replay_frames(replay_path, receipt),
+    )
+    assert selected[0]["payload"] == INPUT_A
+    assert selected[len(DOMAINS)]["payload"] == INPUT_B
+    assert observation["native"]["selection"] == "identity"
+    assert observation["native"]["selected_tick_stride"] == 1
 
 
 def test_projection_receipt_cadence_mutation_fails_closed(tmp_path: Path) -> None:
-    _, _, receipt_path, native_raw = build_receipted_pair(tmp_path, 30)
+    _, receipt_path, _ = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 30, 60)
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     receipt["cadence"]["hold"] = 1
     mutated = tmp_path / "mutated-receipt.json"
-    mutated.write_text(
-        json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8"
-    )
-    replay = tmp_path / "projected-30.ac6rpl"
+    mutated.write_text(json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
     with pytest.raises(TraceV2Error, match="projection cadence unsupported"):
+        load_projection_receipt(mutated)
+
+
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    (
+        (
+            lambda receipt: receipt.update(schema="ac6.native-controller-projection-receipt.v1"),
+            "projection receipt identity",
+        ),
+        (
+            lambda receipt: receipt.update(schema="ac6.native-controller-projection-receipt.v2"),
+            "projection receipt identity",
+        ),
+        (
+            lambda receipt: receipt["cadence"]["census"].update(method="asserted_hz"),
+            "projection cadence census identity",
+        ),
+        (
+            lambda receipt: receipt["cadence"]["census"].update(interval_count=2),
+            "projection cadence census identity",
+        ),
+        (
+            lambda receipt: receipt["cadence"]["marker_contract"].update(address="821CA908"),
+            "projection marker contract identity",
+        ),
+        (
+            lambda receipt: receipt["cadence"]["marker_contract"]["code"].update(sha256="8" * 64),
+            "projection marker contract code mismatch",
+        ),
+        (
+            lambda receipt: receipt["cadence"]["native_clock"]["frequency"].update(numerator=30),
+            "projection native clock contract",
+        ),
+        (
+            lambda receipt: receipt["cadence"]["native_clock"]["frequency"].update(denominator=True),
+            "projection native clock denominator range",
+        ),
+    ),
+)
+def test_projection_receipt_v3_contract_mutations_fail_closed(
+    tmp_path: Path,
+    mutation: object,
+    message: str,
+) -> None:
+    _, receipt_path, _ = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 30, 60)
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    mutation(receipt)
+    receipt_path.write_text(
+        json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(TraceV2Error, match=message):
+        load_projection_receipt(receipt_path)
+
+
+def test_integrity_only_receipt_is_not_trace_grade(tmp_path: Path) -> None:
+    replay, receipt_path, artifacts = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 30, 60)
+    raw = tmp_path / "native-integrity-only.jsonl"
+    write_jsonl(raw, events_with_inputs([INPUT_A, INPUT_A, INPUT_B, INPUT_B], [1, 2, 3, 4]))
+    with pytest.raises(TraceV2Error, match="integrity-only runtime census is not trace-grade evidence"):
         build_trace(
-            native_raw,
+            raw,
             "native",
             ORACLE_COMMIT,
             NATIVE_COMMIT,
-            tmp_path / "stack-30",
-            tmp_path / "native-binary-30",
+            artifacts[0],
+            artifacts[2],
             replay,
-            tmp_path / "probe-30",
+            artifacts[3],
             "mission01-controlled-sortie",
             "controlled-sortie",
             1,
             2,
             30,
-            60,
+            receipt_path,
+        )
+
+
+def test_relabel_reseal_cannot_forge_trace_grade_receipt(tmp_path: Path) -> None:
+    replay, receipt_path, artifacts = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 30, 60)
+    receipt = json.loads(receipt_path.read_bytes())
+    receipt["cadence"]["integrity_level"] = RUNNER_ATTESTED
+    receipt_path.write_bytes((json.dumps(receipt, sort_keys=True, separators=(",", ":")) + "\n").encode())
+    with pytest.raises(TraceV2Error, match="runner attestation verification is unavailable"):
+        load_projection_receipt(receipt_path)
+
+    raw = tmp_path / "native-relabelled.jsonl"
+    write_jsonl(raw, events_with_inputs([INPUT_A, INPUT_A, INPUT_B, INPUT_B], [1, 2, 3, 4]))
+    with pytest.raises(TraceV2Error, match="runner attestation verification is unavailable"):
+        build_trace(
+            raw,
+            "native",
+            ORACLE_COMMIT,
+            NATIVE_COMMIT,
+            artifacts[0],
+            artifacts[2],
+            replay,
+            artifacts[3],
+            "mission01-controlled-sortie",
+            "controlled-sortie",
+            1,
             2,
-            mutated,
+            30,
+            receipt_path,
         )
 
 
 def test_native_capture_must_match_every_receipted_held_frame(tmp_path: Path) -> None:
-    _, _, receipt, native_raw = build_receipted_pair(tmp_path, 30)
+    replay_path, receipt_path, _ = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 30, 60)
+    receipt = load_projection_receipt(receipt_path)
+    native_raw = tmp_path / "native-malformed.jsonl"
     malformed = events_with_inputs([INPUT_A, INPUT_B, INPUT_B, INPUT_B], [1, 1, 2, 2])
     write_jsonl(native_raw, malformed)
     with pytest.raises(TraceV2Error, match="raw native frame 2 controller mismatch"):
-        build_trace(
+        _derive_receipt_events(
             native_raw,
             "native",
-            ORACLE_COMMIT,
-            NATIVE_COMMIT,
-            tmp_path / "stack-30",
-            tmp_path / "native-binary-30",
-            tmp_path / "projected-30.ac6rpl",
-            tmp_path / "probe-30",
-            "mission01-controlled-sortie",
-            "controlled-sortie",
+            receipt,
             1,
             2,
-            30,
             60,
-            2,
-            receipt,
+            _projected_replay_frames(replay_path, receipt),
         )
-
-
-def test_comparison_rejects_receipt_and_window_mutations(tmp_path: Path) -> None:
-    oracle, native, _, _ = build_receipted_pair(tmp_path, 30)
-    native["header"]["window"]["controller_replay"]["receipt"]["sha256"] = "f" * 64
-    with pytest.raises(ComparisonError, match="capture contract mismatch: window"):
-        compare_documents(oracle, native)
-
-    oracle, native, _, _ = build_receipted_pair(tmp_path, 60)
-    native["header"]["window"]["start_tick"] = 2
-    with pytest.raises(ComparisonError, match="native window bounds|capture contract mismatch: window"):
-        compare_documents(oracle, native)
 
 
 def test_receipted_window_bounds_fail_before_derivation(tmp_path: Path) -> None:
-    _, _, receipt, native_raw = build_receipted_pair(tmp_path, 60)
+    replay_path, receipt_path, _ = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 60, 60)
+    receipt = load_projection_receipt(receipt_path)
+    native_raw = tmp_path / "native-window.jsonl"
+    write_jsonl(native_raw, events_with_inputs([INPUT_A, INPUT_B], [1, 2]))
     with pytest.raises(TraceV2Error, match="receipt window bounds"):
-        build_trace(
+        _derive_receipt_events(
             native_raw,
             "native",
+            receipt,
+            2,
+            2,
+            60,
+            _projected_replay_frames(replay_path, receipt),
+        )
+
+
+def test_builder_bounds_each_artifact_and_total_input(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    raw = tmp_path / "bounded.jsonl"
+    write_jsonl(raw, events(1))
+    artifacts = []
+    for name in ("stack", "binary", "replay", "probe"):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        artifacts.append(path)
+
+    monkeypatch.setattr(trace_builder, "MAX_ARTIFACT_BYTES", 4)
+    with pytest.raises(TraceV2Error, match="patch stack byte bound"):
+        build_trace(
+            raw,
+            "oracle",
             ORACLE_COMMIT,
             NATIVE_COMMIT,
-            tmp_path / "stack-60",
-            tmp_path / "native-binary-60",
-            tmp_path / "projected-60.ac6rpl",
-            tmp_path / "probe-60",
+            *artifacts,
             "mission01-controlled-sortie",
             "controlled-sortie",
-            2,
-            2,
-            60,
-            60,
             1,
-            receipt,
+            1,
+            30,
         )
+
+    monkeypatch.setattr(trace_builder, "MAX_ARTIFACT_BYTES", 1024 * 1024)
+    total = len(raw.read_bytes()) + sum(len(path.read_bytes()) for path in artifacts)
+    monkeypatch.setattr(trace_builder, "MAX_TOTAL_INPUT_BYTES", total - 1)
+    with pytest.raises(TraceV2Error, match="total input byte bound"):
+        build_trace(
+            raw,
+            "oracle",
+            ORACLE_COMMIT,
+            NATIVE_COMMIT,
+            *artifacts,
+            "mission01-controlled-sortie",
+            "controlled-sortie",
+            1,
+            1,
+            30,
+        )
+
+
+def test_comparator_bounds_input_and_refuses_report_alias(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    reference_path = tmp_path / "oracle.json"
+    candidate_path = tmp_path / "native.json"
+    reference_data = (json.dumps(trace("oracle"), sort_keys=True) + "\n").encode()
+    candidate_data = (json.dumps(trace("native"), sort_keys=True) + "\n").encode()
+    reference_path.write_bytes(reference_data)
+    candidate_path.write_bytes(candidate_data)
+
+    monkeypatch.setattr(compare_module, "MAX_TRACE_BYTES", len(reference_data) - 1)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["compare_ac6_execution_traces.py", str(reference_path), str(candidate_path)],
+    )
+    assert compare_trace_main() == 2
+    assert "reference byte bound" in capsys.readouterr().out
+
+    monkeypatch.setattr(compare_module, "MAX_TRACE_BYTES", 1024 * 1024)
+    monkeypatch.setattr(
+        compare_module,
+        "MAX_TOTAL_TRACE_BYTES",
+        len(reference_data) + len(candidate_data) - 1,
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["compare_ac6_execution_traces.py", str(reference_path), str(candidate_path)],
+    )
+    assert compare_trace_main() == 2
+    assert "comparison total byte bound" in capsys.readouterr().out
+
+    monkeypatch.setattr(compare_module, "MAX_TOTAL_TRACE_BYTES", 1024 * 1024)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "compare_ac6_execution_traces.py",
+            str(reference_path),
+            str(candidate_path),
+            "--report",
+            str(reference_path),
+        ],
+    )
+    assert compare_trace_main() == 2
+    assert "report aliases an input" in capsys.readouterr().out
+    assert reference_path.read_bytes() == reference_data
+
+    report_alias = tmp_path / "report-hardlink.json"
+    report_alias.hardlink_to(reference_path)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "compare_ac6_execution_traces.py",
+            str(reference_path),
+            str(candidate_path),
+            "--report",
+            str(report_alias),
+        ],
+    )
+    assert compare_trace_main() == 2
+    assert "report aliases an input" in capsys.readouterr().out
+    assert reference_path.read_bytes() == reference_data
+
+
+def test_cli_outputs_are_atomic_and_builder_refuses_input_alias(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    reference_path = tmp_path / "oracle.json"
+    candidate_path = tmp_path / "native.json"
+    report_path = tmp_path / "report.json"
+    reference_path.write_text(json.dumps(trace("oracle")), encoding="utf-8")
+    candidate_path.write_text(json.dumps(trace("native")), encoding="utf-8")
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "compare_ac6_execution_traces.py",
+            str(reference_path),
+            str(candidate_path),
+            "--allow-legacy-diagnostic",
+            "--report",
+            str(report_path),
+        ],
+    )
+    assert compare_trace_main() == 0
+    assert json.loads(report_path.read_bytes())["equal"] is True
+    assert not list(tmp_path.glob(".*.tmp"))
+    capsys.readouterr()
+
+    raw = tmp_path / "raw.jsonl"
+    raw_data = "".join(json.dumps(event) + "\n" for event in events(1)).encode()
+    raw.write_bytes(raw_data)
+    artifacts = []
+    for name in ("stack", "binary", "replay", "probe"):
+        path = tmp_path / name
+        path.write_bytes(name.encode())
+        artifacts.append(path)
+    build_arguments = [
+        "build_ac6_execution_trace_v2.py",
+        str(raw),
+        str(raw),
+        "--role",
+        "oracle",
+        "--oracle-commit",
+        ORACLE_COMMIT,
+        "--native-commit",
+        NATIVE_COMMIT,
+        "--patch-stack",
+        str(artifacts[0]),
+        "--binary",
+        str(artifacts[1]),
+        "--replay",
+        str(artifacts[2]),
+        "--probe",
+        str(artifacts[3]),
+        "--probe-id",
+        "mission01-controlled-sortie",
+        "--window",
+        "controlled-sortie",
+        "--start-tick",
+        "1",
+        "--tick-count",
+        "1",
+    ]
+    monkeypatch.setattr(sys, "argv", build_arguments)
+    assert build_trace_main() == 1
+    assert "output aliases an input" in capsys.readouterr().out
+    assert raw.read_bytes() == raw_data
+
+    raw_alias = tmp_path / "raw-hardlink.jsonl"
+    raw_alias.hardlink_to(raw)
+    build_arguments[2] = str(raw_alias)
+    monkeypatch.setattr(sys, "argv", build_arguments)
+    assert build_trace_main() == 1
+    assert "output aliases an input" in capsys.readouterr().out
+    assert raw.read_bytes() == raw_data
+
+    output_path = tmp_path / "trace.json"
+    build_arguments[2] = str(output_path)
+    monkeypatch.setattr(sys, "argv", build_arguments)
+    assert build_trace_main() == 0
+    assert json.loads(output_path.read_bytes())["schema"] == TRACE_SCHEMA
+    assert not list(tmp_path.glob(".*.tmp"))

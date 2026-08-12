@@ -159,7 +159,6 @@ struct PlayAssets final {
             cameras.find(mission_id)};
   }
 };
-
 struct NativeGraphics final {
   bool video_initialized{};
   bool vulkan_loaded{};

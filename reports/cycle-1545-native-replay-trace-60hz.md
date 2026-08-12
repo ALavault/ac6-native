@@ -28,5 +28,10 @@ reçu de projection. Pour un reçu `hold=2`, le scelleur recoupe d'abord chaque
 input brut avec les frames `AC6RTPLY`, puis sélectionne les snapshots natifs
 aux ticks 2, 4, … ; pour `hold=1`, il conserve chaque tick. Le plan
 d'observation, le reçu, sa filiation et son SHA sont inscrits dans les deux
-traces comparées. Le contrat historique 30/2 reste lisible sans reçu, mais
-aucune nouvelle trace 60/1 ne peut emprunter cette voie legacy.
+traces comparées. Le constructeur refuse désormais toute nouvelle trace de
+rôle `native` sans reçu, puis refuse aussi le niveau provisoire tant qu'une
+attestation runner n'est pas vérifiable. Le comparateur refuse toute gate dans
+ce même état. La lecture des artefacts legacy 30/2 ne subsiste qu'avec
+`--allow-legacy-diagnostic` et porte explicitement
+`proof_level=structural_diagnostic`; aucune capture native 60/1 ne peut ainsi
+être promue en parité 30/2.

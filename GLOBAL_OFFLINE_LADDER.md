@@ -79,12 +79,13 @@ Normalized oracle and native event traces are compared with:
 
 ```sh
 python3 tools/compare_ac6_execution_traces.py ORACLE.json NATIVE.json \
-  --report first-divergence.json
+  --allow-legacy-diagnostic --report first-divergence.json
 ```
 
 The report identifies the first sequence, tick and structured field that
 differs; later mismatches are deliberately ignored until that first divergence
-is closed.
+is closed. This command is currently diagnostic only. The comparator refuses a
+parity gate until a runner-attested receipt has a verified implementation.
 
 ## Checkpoint closure
 

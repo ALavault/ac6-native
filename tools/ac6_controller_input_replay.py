@@ -13,8 +13,10 @@ import argparse
 import copy
 import hashlib
 import json
+import math
 import os
 import re
+import stat
 import struct
 import tempfile
 from dataclasses import dataclass
@@ -22,7 +24,25 @@ from pathlib import Path
 from typing import Any, Iterator, Sequence
 
 
-SCHEMA = "ac6.controller-input-replay.v1"
+SCHEMA = "ac6.controller-input-replay.v3"
+CADENCE_CENSUS_SCHEMA = "ac6.controller-cadence-census.v1"
+REFERENCE_CLOCK_SCHEMA = "ac6.fixed-rate-reference-clock.v1"
+NATIVE_CLOCK_SCHEMA = "ac6.native-simulation-clock.v1"
+NATIVE_CLOCK_CONTRACT = {
+    "schema": NATIVE_CLOCK_SCHEMA,
+    "clock_id": "ac6_native_fixed_step",
+    "frequency": {"numerator": 60, "denominator": 1},
+    "tick_semantics": "one_simulation_step",
+}
+SUPPORTED_CADENCES = {(30, 60, 2), (60, 60, 1)}
+PAL_TARGET_IDENTITY = {
+    "title_id": "4E4D07D1",
+    "media_id": "0379EFB3",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "xex_version": "v0.0.0.11",
+    "base_version": "v0.0.0.11",
+}
 PRIMARY_SYNC_KEY = "poll_index"
 SHA256 = re.compile(r"[0-9a-f]{64}")
 COMMIT = re.compile(r"[0-9a-f]{40}")
@@ -34,7 +54,9 @@ SEGMENT_ORIGINS = {"clean_boot", "sealed_retail_save"}
 SEGMENT_KINDS = {"full_recording", "marker_window"}
 MARKER_ROLES = {"ac6_frame_input_stage", "mission_manager_tick"}
 MARKER_PHASES = {"before_input", "after_input"}
-CADENCE_STATUSES = {"unqualified", "measured"}
+CADENCE_STATUSES = {"unqualified", "derived"}
+CADENCE_INTEGRITY_LEVEL = "integrity_only_runtime_census"
+CADENCE_METHOD = "uniform_marker_interval_v1"
 RESAMPLING_POLICIES = {"refuse", "identity", "zero_order_hold"}
 PROJECTION = "unique_successful_user0_poll"
 MAX_REPLAY_BYTES = 128 * 1024 * 1024
@@ -45,9 +67,14 @@ MAX_PROJECTED_FRAMES = 1_000_000
 MAX_PROJECTED_TSV_BYTES = 128 * 1024 * 1024
 MAX_CACHE_INDEX_BYTES = 128 * 1024 * 1024
 MAX_RECEIPT_BYTES = 64 * 1024
+MAX_CADENCE_CENSUS_BYTES = 16 * 1024 * 1024
+MAX_CADENCE_RECORDS = MAX_MARKERS
+MAX_MARKER_CODE_BYTES = 4096
 MAX_PLATFORM_LENGTH = 128
 MAX_MODULE_LENGTH = 128
 MAX_LINE_BYTES = 1024 * 1024
+MAX_JSON_DEPTH = 64
+MAX_JSON_INTEGER_DIGITS = 20
 INPUT_FRAME_BYTES = 9
 AC6RTPLY_HEADER_BYTES = 121
 MAX_AC6RTPLY_BYTES = AC6RTPLY_HEADER_BYTES + MAX_PROJECTED_FRAMES * INPUT_FRAME_BYTES
@@ -61,7 +88,7 @@ AC6RTPLY_RANDOM_SEED = 0xAC60000000000001
 CACHE_CURRENT_MAGIC = b"AC6RCUR\0"
 CACHE_CURRENT_VERSION = 2
 CACHE_CURRENT_SIZE = 48
-PROJECTION_RECEIPT_SCHEMA = "ac6.native-controller-projection-receipt.v1"
+PROJECTION_RECEIPT_SCHEMA = "ac6.native-controller-projection-receipt.v3"
 CONTROLLER_MAPPING = {
     "pitch": "thumb_ly",
     "roll": "thumb_lx",
@@ -71,7 +98,7 @@ CONTROLLER_MAPPING = {
 }
 
 HEADER_KEYS = {"kind", "schema", "producer", "target", "session", "segment", "sync"}
-PRODUCER_KEYS = {"lane", "implementation_commit", "binary_sha256", "platform"}
+PRODUCER_KEYS = {"lane", "implementation_commit", "binary_sha256", "build_sha256", "platform"}
 TARGET_KEYS = {
     "title_id",
     "media_id",
@@ -81,6 +108,8 @@ TARGET_KEYS = {
     "base_version",
     "module_xxh3",
     "marker_address",
+    "marker_code_offset",
+    "marker_code_length",
     "marker_code_sha256",
 }
 SESSION_KEYS = {
@@ -117,7 +146,48 @@ PORTABLE_GUARDS = (
 )
 LANE_LOCAL_DIAGNOSTICS = ("thread_id", "state_ptr")
 TELEMETRY = ("guest_tick", "present_index")
-CADENCE_KEYS = {"status", "source_hz", "native_hz", "resampling", "projection"}
+CADENCE_KEYS = {
+    "status",
+    "integrity_level",
+    "source_hz",
+    "native_hz",
+    "resampling",
+    "projection",
+    "census",
+    "native_clock",
+}
+CENSUS_REFERENCE_KEYS = {
+    "schema",
+    "file_sha256",
+    "payload_sha256",
+    "integrity_level",
+    "method",
+    "record_count",
+    "interval_count",
+}
+CENSUS_KEYS = {
+    "kind",
+    "schema",
+    "integrity_level",
+    "producer",
+    "configuration",
+    "parent",
+    "target",
+    "marker_contract",
+    "clock",
+    "records",
+    "payload_sha256",
+}
+CENSUS_BODY_KEYS = CENSUS_KEYS - {"payload_sha256"}
+CENSUS_CONFIGURATION_KEYS = {"runtime_config_sha256", "behavior_config_sha256"}
+CENSUS_PARENT_KEYS = {"replay_sha256", "payload_sha256", "window"}
+CENSUS_WINDOW_KEYS = {"start_marker", "marker_count"}
+MARKER_CONTRACT_KEYS = {"role", "address", "phase", "code"}
+MARKER_CODE_KEYS = {"offset", "length", "sha256"}
+REFERENCE_CLOCK_KEYS = {"schema", "clock_id", "frequency", "counter_bits", "read_semantics"}
+NATIVE_CLOCK_KEYS = {"schema", "clock_id", "frequency", "tick_semantics"}
+CENSUS_RECORD_KEYS = {"sequence", "parent_marker_index", "event_sequence", "reference_tick"}
+RATIONAL_KEYS = {"numerator", "denominator"}
 MARKER_KEYS = {
     "kind",
     "sequence",
@@ -167,6 +237,49 @@ class ReplayError(ValueError):
     pass
 
 
+def _parse_json_int(value: str) -> int:
+    if len(value.removeprefix("-")) > MAX_JSON_INTEGER_DIGITS:
+        raise ReplayError("JSON integer bound")
+    return int(value)
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ReplayError(f"non-finite JSON number: {value}")
+
+
+def _strict_json_loads(data: bytes, where: str) -> object:
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in data:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:
+                escaped = True
+            elif byte == 0x22:
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x5B, 0x7B):
+            depth += 1
+            if depth > MAX_JSON_DEPTH:
+                raise ReplayError(f"{where} JSON depth bound")
+        elif byte in (0x5D, 0x7D):
+            depth -= 1
+            if depth < 0:
+                raise ReplayError(f"{where} JSON nesting")
+    if in_string or depth != 0:
+        raise ReplayError(f"{where} JSON nesting")
+    try:
+        return json.loads(data, parse_int=_parse_json_int, parse_constant=_reject_json_constant)
+    except ReplayError:
+        raise
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError) as error:
+        raise ReplayError(f"{where} JSON") from error
+
+
 @dataclass(frozen=True)
 class ReplayDocument:
     header: dict[str, Any]
@@ -174,28 +287,43 @@ class ReplayDocument:
     footer: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class CadenceCensus:
+    document: dict[str, Any]
+    file_sha256: str
+    payload_sha256: str
+    source_hz: int
+    native_hz: int
+    hold: int
+    record_count: int
+    interval_count: int
+
+
 def canonical_line(record: dict[str, Any]) -> bytes:
     return (json.dumps(record, sort_keys=True, separators=(",", ":")) + "\n").encode()
 
 
-def _sha256_file_bounded(path: Path, maximum_bytes: int, where: str) -> str:
+def _read_regular_bounded(path: Path, maximum_bytes: int, where: str) -> bytes:
+    descriptor = -1
     try:
-        size = path.stat().st_size
-        if size < 0 or size > maximum_bytes:
-            raise ReplayError(f"{where} byte bound")
-        digest = hashlib.sha256()
-        total = 0
-        with path.open("rb") as source:
-            for chunk in iter(lambda: source.read(1024 * 1024), b""):
-                total += len(chunk)
-                if total > maximum_bytes:
-                    raise ReplayError(f"{where} byte bound")
-                digest.update(chunk)
-        if total != size:
-            raise ReplayError(f"{where} changed while hashing")
-        return digest.hexdigest()
+        descriptor = os.open(path, os.O_RDONLY | os.O_CLOEXEC | os.O_NONBLOCK)
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ReplayError(f"{where} is not a regular file")
+        with os.fdopen(descriptor, "rb") as source:
+            descriptor = -1
+            data = source.read(maximum_bytes + 1)
+            if len(data) > maximum_bytes or source.read(1):
+                raise ReplayError(f"{where} byte bound")
+        return data
     except OSError as error:
         raise ReplayError(f"{where} unreadable: {error}") from error
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
+def _sha256_file_bounded(path: Path, maximum_bytes: int, where: str) -> str:
+    return hashlib.sha256(_read_regular_bounded(path, maximum_bytes, where)).hexdigest()
 
 
 def _prepare_atomic_file(path: Path, data: bytes, maximum_bytes: int) -> Path:
@@ -220,7 +348,27 @@ def _prepare_atomic_file(path: Path, data: bytes, maximum_bytes: int) -> Path:
         raise ReplayError(f"output preparation failed: {error}") from error
 
 
+def _fsync_directory(path: Path) -> None:
+    descriptor = -1
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_CLOEXEC | os.O_DIRECTORY)
+        os.fsync(descriptor)
+    except OSError as error:
+        raise ReplayError(f"output directory sync failed: {error}") from error
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
 def _publish_atomic_files(files: Sequence[tuple[Path, bytes, int]]) -> None:
+    """Publish ordered, individually atomic files without overwriting.
+
+    For the projection pair the replay is first and the receipt is last.  Each
+    destination directory is synced before the next link, so a durable receipt
+    is a commit marker for an already durable replay.  A process crash may
+    leave an uncommitted replay orphan; two independent pathnames cannot form a
+    single filesystem transaction.
+    """
     if not files:
         raise ReplayError("no outputs")
     destinations = [path.resolve(strict=False) for path, _, _ in files]
@@ -238,13 +386,20 @@ def _publish_atomic_files(files: Sequence[tuple[Path, bytes, int]]) -> None:
             except FileExistsError as error:
                 raise ReplayError(f"output already exists: {destination}") from error
             published.append(destination)
+            _fsync_directory(destination.parent)
         for _, temporary in prepared:
             temporary.unlink()
+        for directory in {temporary.parent for _, temporary in prepared}:
+            _fsync_directory(directory)
     except BaseException:
         for destination in published:
             destination.unlink(missing_ok=True)
+        for directory in {destination.parent for destination in published}:
+            _fsync_directory(directory)
         for _, temporary in prepared:
             temporary.unlink(missing_ok=True)
+        for directory in {temporary.parent for _, temporary in prepared}:
+            _fsync_directory(directory)
         raise
 
 
@@ -282,6 +437,76 @@ def require_bounded_string(value: object, maximum: int, where: str) -> str:
     return value
 
 
+def validate_target(value: object, where: str = "target") -> dict[str, Any]:
+    target = require_dict(value, TARGET_KEYS, where)
+    if not isinstance(target["title_id"], str) or HEX32.fullmatch(target["title_id"]) is None:
+        raise ReplayError(f"{where} title_id")
+    if not isinstance(target["media_id"], str) or HEX32.fullmatch(target["media_id"]) is None:
+        raise ReplayError(f"{where} media_id")
+    module = require_bounded_string(target["module"], MAX_MODULE_LENGTH, f"{where} module")
+    if "/" in module or "\\" in module:
+        raise ReplayError(f"{where} module basename")
+    require_sha256(target["xex_sha256"], f"{where} xex")
+    for field in ("xex_version", "base_version"):
+        if not isinstance(target[field], str) or XEX_VERSION.fullmatch(target[field]) is None:
+            raise ReplayError(f"{where} {field}")
+    if not isinstance(target["module_xxh3"], str) or HEX64.fullmatch(target["module_xxh3"]) is None:
+        raise ReplayError(f"{where} module_xxh3")
+    if not isinstance(target["marker_address"], str) or HEX32.fullmatch(target["marker_address"]) is None:
+        raise ReplayError(f"{where} marker_address")
+    code_offset = require_uint(target["marker_code_offset"], 0xFFFFFFFF, f"{where} marker_code_offset")
+    code_length = require_uint(target["marker_code_length"], MAX_MARKER_CODE_BYTES, f"{where} marker_code_length")
+    if code_length == 0 or code_offset > 0xFFFFFFFF - code_length + 1:
+        raise ReplayError(f"{where} marker code range")
+    require_sha256(target["marker_code_sha256"], f"{where} marker code")
+    for field, expected in PAL_TARGET_IDENTITY.items():
+        if target[field] != expected:
+            raise ReplayError(f"{where} PAL {field}")
+    return target
+
+
+def _require_reduced_rational(value: object, where: str) -> tuple[int, int]:
+    rational = require_dict(value, RATIONAL_KEYS, where)
+    numerator = require_uint(rational["numerator"], 0xFFFFFFFFFFFFFFFF, f"{where} numerator")
+    denominator = require_uint(rational["denominator"], 0xFFFFFFFFFFFFFFFF, f"{where} denominator")
+    if numerator == 0 or denominator == 0 or math.gcd(numerator, denominator) != 1:
+        raise ReplayError(f"{where} canonical rational")
+    return numerator, denominator
+
+
+def _reduced_rational(numerator: int, denominator: int) -> tuple[int, int]:
+    divisor = math.gcd(numerator, denominator)
+    return numerator // divisor, denominator // divisor
+
+
+def _native_clock_contract(value: object, where: str) -> dict[str, Any]:
+    contract = require_dict(value, NATIVE_CLOCK_KEYS, where)
+    frequency = contract["frequency"]
+    numerator, denominator = _require_reduced_rational(frequency, f"{where} frequency")
+    if (
+        contract["schema"] != NATIVE_CLOCK_SCHEMA
+        or contract["clock_id"] != "ac6_native_fixed_step"
+        or contract["tick_semantics"] != "one_simulation_step"
+        or numerator != 60
+        or denominator != 1
+    ):
+        raise ReplayError(f"{where} identity")
+    return contract
+
+
+def _marker_contract(header: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "role": header["sync"]["marker_role"],
+        "address": header["target"]["marker_address"],
+        "phase": header["sync"]["marker_phase"],
+        "code": {
+            "offset": header["target"]["marker_code_offset"],
+            "length": header["target"]["marker_code_length"],
+            "sha256": header["target"]["marker_code_sha256"],
+        },
+    }
+
+
 def validate_header(header: object) -> dict[str, Any]:
     result = require_dict(header, HEADER_KEYS, "header")
     if result["kind"] != "header" or result["schema"] != SCHEMA:
@@ -295,25 +520,10 @@ def validate_header(header: object) -> dict[str, Any]:
     ):
         raise ReplayError("producer commit")
     require_sha256(producer["binary_sha256"], "producer binary")
+    require_sha256(producer["build_sha256"], "producer build")
     require_bounded_string(producer["platform"], MAX_PLATFORM_LENGTH, "producer platform")
 
-    target = require_dict(result["target"], TARGET_KEYS, "target")
-    if not isinstance(target["title_id"], str) or HEX32.fullmatch(target["title_id"]) is None:
-        raise ReplayError("target title_id")
-    if not isinstance(target["media_id"], str) or HEX32.fullmatch(target["media_id"]) is None:
-        raise ReplayError("target media_id")
-    module = require_bounded_string(target["module"], MAX_MODULE_LENGTH, "target module")
-    if "/" in module or "\\" in module:
-        raise ReplayError("target module basename")
-    require_sha256(target["xex_sha256"], "target xex")
-    for field in ("xex_version", "base_version"):
-        if not isinstance(target[field], str) or XEX_VERSION.fullmatch(target[field]) is None:
-            raise ReplayError(f"target {field}")
-    if not isinstance(target["module_xxh3"], str) or HEX64.fullmatch(target["module_xxh3"]) is None:
-        raise ReplayError("target module_xxh3")
-    if not isinstance(target["marker_address"], str) or HEX32.fullmatch(target["marker_address"]) is None:
-        raise ReplayError("target marker_address")
-    require_sha256(target["marker_code_sha256"], "target marker code")
+    validate_target(result["target"])
 
     session = require_dict(result["session"], SESSION_KEYS, "session")
     for field in (
@@ -342,9 +552,9 @@ def validate_header(header: object) -> dict[str, Any]:
     else:
         require_sha256(segment["parent_replay_sha256"], "segment parent replay")
         require_sha256(segment["parent_payload_sha256"], "segment parent payload")
-        require_uint(segment["parent_start_marker"], MAX_MARKERS, "segment parent_start_marker")
+        parent_start = require_uint(segment["parent_start_marker"], MAX_MARKERS, "segment parent_start_marker")
         marker_count = require_uint(segment["parent_marker_count"], MAX_MARKERS, "segment parent_marker_count")
-        if segment["parent_start_marker"] == 0 or marker_count == 0:
+        if parent_start == 0 or marker_count == 0 or parent_start > MAX_MARKERS - marker_count + 1:
             raise ReplayError("segment parent marker window")
 
     sync = require_dict(result["sync"], SYNC_KEYS, "sync")
@@ -363,25 +573,51 @@ def validate_header(header: object) -> dict[str, Any]:
     cadence = require_dict(sync["cadence"], CADENCE_KEYS, "sync cadence")
     status = cadence["status"]
     source_hz = cadence["source_hz"]
-    native_hz = require_uint(cadence["native_hz"], 1000, "sync cadence native_hz")
-    if native_hz == 0 or cadence["projection"] != PROJECTION:
+    if cadence["projection"] != PROJECTION:
         raise ReplayError("sync cadence projection")
     if status not in CADENCE_STATUSES or cadence["resampling"] not in RESAMPLING_POLICIES:
         raise ReplayError("sync cadence policy")
     if status == "unqualified":
-        if source_hz is not None or cadence["resampling"] != "refuse":
+        if source_hz is not None or cadence["native_hz"] is not None or cadence["resampling"] != "refuse":
             raise ReplayError("sync unqualified cadence")
+        if (
+            cadence["integrity_level"] is not None
+            or cadence["census"] is not None
+            or cadence["native_clock"] is not None
+        ):
+            raise ReplayError("sync unqualified cadence metadata")
     else:
+        if cadence["integrity_level"] != CADENCE_INTEGRITY_LEVEL:
+            raise ReplayError("sync cadence integrity level")
         source_hz = require_uint(source_hz, 1000, "sync cadence source_hz")
-        if source_hz == 0:
+        native_hz = require_uint(cadence["native_hz"], 1000, "sync cadence native_hz")
+        if source_hz == 0 or native_hz == 0:
             raise ReplayError("sync cadence source_hz")
         expected_resampling = "identity" if source_hz == native_hz else "zero_order_hold"
         if cadence["resampling"] != expected_resampling or native_hz < source_hz or native_hz % source_hz != 0:
-            raise ReplayError("sync measured cadence")
+            raise ReplayError("sync derived cadence")
+        census = require_dict(cadence["census"], CENSUS_REFERENCE_KEYS, "sync cadence census")
+        if census["schema"] != CADENCE_CENSUS_SCHEMA:
+            raise ReplayError("sync cadence census schema")
+        require_sha256(census["file_sha256"], "sync cadence census file")
+        require_sha256(census["payload_sha256"], "sync cadence census payload")
+        if census["integrity_level"] != CADENCE_INTEGRITY_LEVEL or census["method"] != CADENCE_METHOD:
+            raise ReplayError("sync cadence census identity")
+        record_count = require_uint(census["record_count"], MAX_CADENCE_RECORDS, "sync cadence record_count")
+        interval_count = require_uint(census["interval_count"], MAX_CADENCE_RECORDS - 1, "sync cadence interval_count")
+        if (
+            record_count < 2
+            or interval_count != record_count - 1
+            or (segment["kind"] == "marker_window" and record_count != segment["parent_marker_count"])
+        ):
+            raise ReplayError("sync cadence census intervals")
+        native_clock = _native_clock_contract(cadence["native_clock"], "sync native clock")
+        if native_hz != native_clock["frequency"]["numerator"]:
+            raise ReplayError("sync native cadence")
     if segment["kind"] == "full_recording" and status != "unqualified":
         raise ReplayError("full recording cadence must be unqualified")
-    if segment["kind"] == "marker_window" and status != "measured":
-        raise ReplayError("marker window cadence must be measured")
+    if segment["kind"] == "marker_window" and status != "derived":
+        raise ReplayError("marker window cadence must be derived")
     return result
 
 
@@ -416,11 +652,11 @@ def validate_events(events: Sequence[object], marker_phase: str) -> tuple[dict[s
         kind = event_value.get("kind")
         if kind == "marker":
             event = require_dict(event_value, MARKER_KEYS, f"event {sequence} marker")
-            if event["sequence"] != sequence:
+            if require_uint(event["sequence"], MAX_EVENTS - 1, f"event {sequence} sequence") != sequence:
                 raise ReplayError(f"event {sequence} sequence")
-            if event["marker_index"] != expected_marker:
+            if require_uint(event["marker_index"], MAX_MARKERS, f"event {sequence} marker_index") != expected_marker:
                 raise ReplayError(f"event {sequence} marker_index")
-            if event["poll_index"] != expected_poll:
+            if require_uint(event["poll_index"], MAX_POLLS, f"event {sequence} poll_index") != expected_poll:
                 raise ReplayError(f"event {sequence} marker poll_index")
             if marker_phase == "before_input":
                 if marker_count and expected_poll_in_marker == 0:
@@ -436,13 +672,16 @@ def validate_events(events: Sequence[object], marker_phase: str) -> tuple[dict[s
             expected_poll_in_marker = 0
         elif kind == "poll":
             event = require_dict(event_value, POLL_KEYS, f"event {sequence} poll")
-            if event["sequence"] != sequence:
+            if require_uint(event["sequence"], MAX_EVENTS - 1, f"event {sequence} sequence") != sequence:
                 raise ReplayError(f"event {sequence} sequence")
-            if event["poll_index"] != expected_poll:
+            if require_uint(event["poll_index"], MAX_POLLS - 1, f"event {sequence} poll_index") != expected_poll:
                 raise ReplayError(f"event {sequence} poll_index")
-            if event["marker_index"] != current_marker:
+            if require_uint(event["marker_index"], MAX_MARKERS, f"event {sequence} marker_index") != current_marker:
                 raise ReplayError(f"event {sequence} poll marker_index")
-            if event["poll_in_marker"] != expected_poll_in_marker:
+            if (
+                require_uint(event["poll_in_marker"], MAX_POLLS - 1, f"event {sequence} poll_in_marker")
+                != expected_poll_in_marker
+            ):
                 raise ReplayError(f"event {sequence} poll_in_marker")
             require_uint(event["thread_id"], 0xFFFFFFFF, f"event {sequence} thread_id")
             require_uint(event["caller_lr"], 0xFFFFFFFF, f"event {sequence} caller_lr")
@@ -537,10 +776,7 @@ def _load_replay_lines(raw_lines: Sequence[bytes], expected_header: dict[str, An
         raise ReplayError("file record count")
     records: list[dict[str, Any]] = []
     for line_number, raw_line in enumerate(raw_lines, 1):
-        try:
-            record = json.loads(raw_line)
-        except (UnicodeDecodeError, json.JSONDecodeError) as error:
-            raise ReplayError(f"line {line_number} JSON") from error
+        record = _strict_json_loads(raw_line, f"line {line_number}")
         if not isinstance(record, dict) or canonical_line(record) != raw_line:
             raise ReplayError(f"line {line_number} canonical encoding")
         records.append(record)
@@ -620,25 +856,235 @@ def _require_marker_window(start_marker: int, marker_count: int, where: str) -> 
     return start_marker, start_marker + marker_count
 
 
+def _validate_cadence_census_document(value: object, file_sha256: str) -> CadenceCensus:
+    census = require_dict(value, CENSUS_KEYS, "cadence census")
+    if census["kind"] != "cadence_census" or census["schema"] != CADENCE_CENSUS_SCHEMA:
+        raise ReplayError("cadence census identity")
+    if census["integrity_level"] != CADENCE_INTEGRITY_LEVEL:
+        raise ReplayError("cadence census integrity level")
+    require_sha256(census["payload_sha256"], "cadence census payload")
+    body = {key: census[key] for key in CENSUS_BODY_KEYS}
+    payload_sha256 = hashlib.sha256(canonical_line(body)).hexdigest()
+    if census["payload_sha256"] != payload_sha256:
+        raise ReplayError("cadence census payload_sha256")
+
+    producer = require_dict(census["producer"], PRODUCER_KEYS, "cadence census producer")
+    if producer["lane"] not in LANES:
+        raise ReplayError("cadence census producer lane")
+    if (
+        not isinstance(producer["implementation_commit"], str)
+        or COMMIT.fullmatch(producer["implementation_commit"]) is None
+    ):
+        raise ReplayError("cadence census producer commit")
+    require_sha256(producer["binary_sha256"], "cadence census producer binary")
+    require_sha256(producer["build_sha256"], "cadence census producer build")
+    require_bounded_string(producer["platform"], MAX_PLATFORM_LENGTH, "cadence census producer platform")
+
+    configuration = require_dict(census["configuration"], CENSUS_CONFIGURATION_KEYS, "cadence census configuration")
+    require_sha256(configuration["runtime_config_sha256"], "cadence census runtime configuration")
+    require_sha256(configuration["behavior_config_sha256"], "cadence census behavior configuration")
+
+    parent = require_dict(census["parent"], CENSUS_PARENT_KEYS, "cadence census parent")
+    require_sha256(parent["replay_sha256"], "cadence census parent replay")
+    require_sha256(parent["payload_sha256"], "cadence census parent payload")
+    window = require_dict(parent["window"], CENSUS_WINDOW_KEYS, "cadence census parent window")
+    start_marker = require_uint(window["start_marker"], MAX_MARKERS, "cadence census start_marker")
+    marker_count = require_uint(window["marker_count"], MAX_MARKERS, "cadence census marker_count")
+    _require_marker_window(start_marker, marker_count, "cadence census")
+
+    target = validate_target(census["target"], "cadence census target")
+    marker = require_dict(census["marker_contract"], MARKER_CONTRACT_KEYS, "cadence census marker contract")
+    if marker["role"] not in MARKER_ROLES or marker["phase"] not in MARKER_PHASES:
+        raise ReplayError("cadence census marker role/phase")
+    if not isinstance(marker["address"], str) or HEX32.fullmatch(marker["address"]) is None:
+        raise ReplayError("cadence census marker address")
+    code = require_dict(marker["code"], MARKER_CODE_KEYS, "cadence census marker code")
+    code_offset = require_uint(code["offset"], 0xFFFFFFFF, "cadence census marker code offset")
+    code_length = require_uint(code["length"], MAX_MARKER_CODE_BYTES, "cadence census marker code length")
+    require_sha256(code["sha256"], "cadence census marker code")
+    if code_length == 0 or code_offset > 0xFFFFFFFF - code_length + 1:
+        raise ReplayError("cadence census marker code range")
+    if (
+        marker["address"] != target["marker_address"]
+        or code["offset"] != target["marker_code_offset"]
+        or code["length"] != target["marker_code_length"]
+        or code["sha256"] != target["marker_code_sha256"]
+    ):
+        raise ReplayError("cadence census marker target mismatch")
+
+    clock = require_dict(census["clock"], REFERENCE_CLOCK_KEYS, "cadence census clock")
+    if (
+        clock["schema"] != REFERENCE_CLOCK_SCHEMA
+        or clock["counter_bits"] != 64
+        or clock["read_semantics"] != "monotonic_snapshot_before_marker"
+    ):
+        raise ReplayError("cadence census clock identity")
+    require_bounded_string(clock["clock_id"], MAX_PLATFORM_LENGTH, "cadence census clock id")
+    reference_hz_numerator, reference_hz_denominator = _require_reduced_rational(
+        clock["frequency"], "cadence census clock frequency"
+    )
+    if reference_hz_numerator > 1_000_000_000 or reference_hz_denominator > 1_000_000_000:
+        raise ReplayError("cadence census clock frequency bound")
+
+    records = census["records"]
+    if not isinstance(records, list) or not 2 <= len(records) <= MAX_CADENCE_RECORDS:
+        raise ReplayError("cadence census record count")
+    if len(records) != marker_count:
+        raise ReplayError("cadence census record/window mismatch")
+    ticks: list[int] = []
+    previous_event_sequence = -1
+    for sequence, record_value in enumerate(records):
+        record = require_dict(record_value, CENSUS_RECORD_KEYS, f"cadence census record {sequence}")
+        parent_marker_index = start_marker + sequence
+        record_sequence = require_uint(
+            record["sequence"], MAX_CADENCE_RECORDS - 1, f"cadence census record {sequence} sequence"
+        )
+        observed_parent_marker = require_uint(
+            record["parent_marker_index"], MAX_MARKERS, f"cadence census record {sequence} parent_marker_index"
+        )
+        if record_sequence != sequence or observed_parent_marker != parent_marker_index:
+            raise ReplayError(f"cadence census record {sequence} identity")
+        event_sequence = require_uint(
+            record["event_sequence"], MAX_EVENTS - 1, f"cadence census record {sequence} event_sequence"
+        )
+        reference_tick = require_uint(
+            record["reference_tick"], 0xFFFFFFFFFFFFFFFF, f"cadence census record {sequence} reference_tick"
+        )
+        if event_sequence <= previous_event_sequence or (ticks and reference_tick <= ticks[-1]):
+            raise ReplayError(f"cadence census record {sequence} order")
+        previous_event_sequence = event_sequence
+        ticks.append(reference_tick)
+
+    interval_count = len(ticks) - 1
+    intervals = [right - left for left, right in zip(ticks, ticks[1:])]
+    if not intervals or any(interval != intervals[0] for interval in intervals[1:]):
+        raise ReplayError("cadence census non-uniform intervals")
+    elapsed_ticks = ticks[-1] - ticks[0]
+    source_numerator = reference_hz_numerator * interval_count
+    source_denominator = reference_hz_denominator * elapsed_ticks
+    source_numerator, source_denominator = _reduced_rational(source_numerator, source_denominator)
+    if source_denominator != 1 or not 0 < source_numerator <= 1000:
+        raise ReplayError("cadence census non-integral source rate")
+    source_hz = source_numerator
+
+    native_frequency = NATIVE_CLOCK_CONTRACT["frequency"]
+    native_numerator, native_denominator = _require_reduced_rational(
+        native_frequency, "native simulation clock frequency"
+    )
+    if native_denominator != 1:
+        raise ReplayError("native simulation clock non-integral rate")
+    native_hz = native_numerator
+    if native_hz < source_hz or native_hz % source_hz != 0:
+        raise ReplayError("cadence census unsupported native ratio")
+    hold = native_hz // source_hz
+    if (source_hz, native_hz, hold) not in SUPPORTED_CADENCES:
+        raise ReplayError("cadence census unsupported rate")
+
+    require_sha256(file_sha256, "cadence census file")
+    return CadenceCensus(
+        census,
+        file_sha256,
+        payload_sha256,
+        source_hz,
+        native_hz,
+        hold,
+        len(records),
+        interval_count,
+    )
+
+
+def seal_cadence_census(body: dict[str, Any]) -> bytes:
+    require_dict(body, CENSUS_BODY_KEYS, "cadence census body")
+    census = copy.deepcopy(body)
+    census["payload_sha256"] = hashlib.sha256(canonical_line(census)).hexdigest()
+    data = canonical_line(census)
+    if len(data) > MAX_CADENCE_CENSUS_BYTES:
+        raise ReplayError("cadence census byte bound")
+    _validate_cadence_census_document(census, hashlib.sha256(data).hexdigest())
+    return data
+
+
+def load_cadence_census_bytes(data: bytes) -> CadenceCensus:
+    if not data or len(data) > MAX_CADENCE_CENSUS_BYTES:
+        raise ReplayError("cadence census byte bound")
+    if not data.endswith(b"\n") or b"\r" in data or data.count(b"\n") != 1:
+        raise ReplayError("cadence census framing")
+    value = _strict_json_loads(data, "cadence census")
+    if not isinstance(value, dict) or canonical_line(value) != data:
+        raise ReplayError("cadence census canonical encoding")
+    return _validate_cadence_census_document(value, hashlib.sha256(data).hexdigest())
+
+
+def _require_census_contract(census: CadenceCensus, header: dict[str, Any]) -> None:
+    if census.document["producer"] != header["producer"]:
+        raise ReplayError("cadence census producer mismatch")
+    expected_configuration = {
+        "runtime_config_sha256": header["session"]["runtime_config_sha256"],
+        "behavior_config_sha256": header["session"]["behavior_config_sha256"],
+    }
+    if census.document["configuration"] != expected_configuration:
+        raise ReplayError("cadence census configuration mismatch")
+    if census.document["target"] != header["target"]:
+        raise ReplayError("cadence census target mismatch")
+    if census.document["marker_contract"] != _marker_contract(header):
+        raise ReplayError("cadence census marker contract mismatch")
+
+
+def _require_census_records_for_parent(census: CadenceCensus, parent: ReplayDocument) -> None:
+    window = census.document["parent"]["window"]
+    start_marker, end_marker = _require_marker_window(
+        window["start_marker"], window["marker_count"], "cadence census records"
+    )
+    markers = [
+        event
+        for event in parent.events
+        if event["kind"] == "marker" and start_marker <= event["marker_index"] < end_marker
+    ]
+    if len(markers) != census.record_count:
+        raise ReplayError("cadence census parent marker coverage")
+    for record, marker in zip(census.document["records"], markers):
+        if record["parent_marker_index"] != marker["marker_index"] or record["event_sequence"] != marker["sequence"]:
+            raise ReplayError("cadence census parent event mismatch")
+
+
+def _census_reference(census: CadenceCensus) -> dict[str, Any]:
+    return {
+        "schema": CADENCE_CENSUS_SCHEMA,
+        "file_sha256": census.file_sha256,
+        "payload_sha256": census.payload_sha256,
+        "integrity_level": CADENCE_INTEGRITY_LEVEL,
+        "method": CADENCE_METHOD,
+        "record_count": census.record_count,
+        "interval_count": census.interval_count,
+    }
+
+
 def slice_replay(
     parent_replay: bytes,
     start_marker: int,
     marker_count: int,
-    source_hz: int,
-    native_hz: int,
-    expected_header: dict[str, Any] | None = None,
+    cadence_census: bytes,
+    expected_header: dict[str, Any] | None,
 ) -> bytes:
     if len(parent_replay) > MAX_REPLAY_BYTES:
         raise ReplayError("parent replay byte bound")
+    if expected_header is None:
+        raise ReplayError("slice requires an expected-header marker contract")
     parent = load_replay_bytes(parent_replay, expected_header)
     if parent.header["segment"]["kind"] != "full_recording":
         raise ReplayError("slice parent must be a full recording")
     parent_replay_sha256 = hashlib.sha256(parent_replay).hexdigest()
     start_marker, end_marker = _require_marker_window(start_marker, marker_count, "slice")
-    source_hz = require_uint(source_hz, 1000, "slice source_hz")
-    native_hz = require_uint(native_hz, 1000, "slice native_hz")
-    if source_hz == 0 or native_hz == 0 or native_hz < source_hz or native_hz % source_hz != 0:
-        raise ReplayError("slice cadence")
+    census = load_cadence_census_bytes(cadence_census)
+    _require_census_contract(census, parent.header)
+    census_parent = census.document["parent"]
+    if census_parent["replay_sha256"] != parent_replay_sha256:
+        raise ReplayError("cadence census parent replay mismatch")
+    if census_parent["payload_sha256"] != parent.footer["payload_sha256"]:
+        raise ReplayError("cadence census parent payload mismatch")
+    if census_parent["window"] != {"start_marker": start_marker, "marker_count": marker_count}:
+        raise ReplayError("cadence census parent window mismatch")
+    _require_census_records_for_parent(census, parent)
 
     marker_ids = {
         event["marker_index"]
@@ -680,13 +1126,42 @@ def slice_replay(
         "parent_marker_count": marker_count,
     }
     sliced_header["sync"]["cadence"] = {
-        "status": "measured",
-        "source_hz": source_hz,
-        "native_hz": native_hz,
-        "resampling": "identity" if source_hz == native_hz else "zero_order_hold",
+        "status": "derived",
+        "integrity_level": CADENCE_INTEGRITY_LEVEL,
+        "source_hz": census.source_hz,
+        "native_hz": census.native_hz,
+        "resampling": "identity" if census.hold == 1 else "zero_order_hold",
         "projection": PROJECTION,
+        "census": _census_reference(census),
+        "native_clock": copy.deepcopy(NATIVE_CLOCK_CONTRACT),
     }
     return seal_replay(sliced_header, sliced_events)
+
+
+def _require_census_for_window(census: CadenceCensus, document: ReplayDocument) -> None:
+    _require_census_contract(census, document.header)
+    segment = document.header["segment"]
+    census_parent = census.document["parent"]
+    expected_parent = {
+        "replay_sha256": segment["parent_replay_sha256"],
+        "payload_sha256": segment["parent_payload_sha256"],
+        "window": {
+            "start_marker": segment["parent_start_marker"],
+            "marker_count": segment["parent_marker_count"],
+        },
+    }
+    if census_parent != expected_parent:
+        raise ReplayError("cadence census window lineage mismatch")
+    cadence = document.header["sync"]["cadence"]
+    if cadence["census"] != _census_reference(census):
+        raise ReplayError("cadence census reference mismatch")
+    if (
+        cadence["integrity_level"] != CADENCE_INTEGRITY_LEVEL
+        or cadence["native_clock"] != NATIVE_CLOCK_CONTRACT
+        or cadence["source_hz"] != census.source_hz
+        or cadence["native_hz"] != census.native_hz
+    ):
+        raise ReplayError("cadence census computed contract mismatch")
 
 
 def poll_events(document: ReplayDocument) -> Iterator[dict[str, Any]]:
@@ -704,7 +1179,7 @@ def _projected_controller_frames(
 ) -> tuple[list[tuple[int, int, int, int, int]], int]:
     start_marker, end_marker = _require_marker_window(start_marker, marker_count, "projection")
     cadence = document.header["sync"]["cadence"]
-    if cadence["status"] != "measured":
+    if cadence["status"] != "derived" or cadence["integrity_level"] != CADENCE_INTEGRITY_LEVEL:
         raise ReplayError("controller projection cadence is unqualified")
     source_hz = cadence["source_hz"]
     native_hz = cadence["native_hz"]
@@ -734,7 +1209,16 @@ def _projected_controller_frames(
     return source_frames, hold
 
 
-def export_controller_tsv(document: ReplayDocument, start_marker: int, marker_count: int) -> str:
+def export_controller_tsv(
+    document: ReplayDocument,
+    start_marker: int,
+    marker_count: int,
+    cadence_census: bytes,
+) -> str:
+    if document.header["segment"]["kind"] != "marker_window":
+        raise ReplayError("controller export requires a resealed marker window")
+    census = load_cadence_census_bytes(cadence_census)
+    _require_census_for_window(census, document)
     source_frames, hold = _projected_controller_frames(document, start_marker, marker_count)
     rows: list[str] = []
     output_tick = 1
@@ -752,13 +1236,7 @@ def export_controller_tsv(document: ReplayDocument, start_marker: int, marker_co
 
 def read_cache_identity(cache: Path) -> str:
     current = cache / "current"
-    try:
-        if current.stat().st_size != CACHE_CURRENT_SIZE:
-            raise ReplayError("cache current record shape")
-        with current.open("rb") as source:
-            data = source.read(CACHE_CURRENT_SIZE + 1)
-    except OSError as error:
-        raise ReplayError("cache current record is absent") from error
+    data = _read_regular_bounded(current, CACHE_CURRENT_SIZE, "cache current record")
     if len(data) != CACHE_CURRENT_SIZE or data[:8] != CACHE_CURRENT_MAGIC:
         raise ReplayError("cache current record shape")
     version, size = struct.unpack_from(">II", data, 8)
@@ -774,6 +1252,7 @@ def read_cache_identity(cache: Path) -> str:
 def build_ac6rtply_v3(
     raw_replay: bytes,
     cache_index_sha256: str,
+    cadence_census: bytes,
     expected_header: dict[str, Any] | None = None,
 ) -> tuple[bytes, dict[str, Any]]:
     if len(raw_replay) > MAX_REPLAY_BYTES:
@@ -786,6 +1265,8 @@ def build_ac6rtply_v3(
     segment = document.header["segment"]
     if segment["kind"] != "marker_window":
         raise ReplayError("AC6RTPLY projection requires a resealed marker window")
+    census = load_cadence_census_bytes(cadence_census)
+    _require_census_for_window(census, document)
 
     marker_count = document.footer["marker_count"]
     source_frames, hold = _projected_controller_frames(document, 1, marker_count)
@@ -839,10 +1320,14 @@ def build_ac6rtply_v3(
         },
         "target": copy.deepcopy(document.header["target"]),
         "cadence": {
+            "integrity_level": CADENCE_INTEGRITY_LEVEL,
             "source_hz": cadence["source_hz"],
             "native_hz": cadence["native_hz"],
             "resampling": cadence["resampling"],
             "hold": hold,
+            "census": copy.deepcopy(cadence["census"]),
+            "marker_contract": copy.deepcopy(census.document["marker_contract"]),
+            "native_clock": copy.deepcopy(NATIVE_CLOCK_CONTRACT),
         },
         "mapping": copy.deepcopy(CONTROLLER_MAPPING),
         "cache_index_sha256": cache_index_sha256,
@@ -1021,12 +1506,16 @@ def compare_runs(recorded: ReplayDocument, replayed: ReplayDocument) -> dict[str
 def _read_json(path: Path) -> dict[str, Any]:
     try:
         lines = _read_bounded_binary_lines(path, MAX_EVENTS + 2)
-        value = json.loads(b"".join(lines))
-    except (OSError, json.JSONDecodeError) as error:
+        value = _strict_json_loads(b"".join(lines), "input")
+    except (OSError, ReplayError) as error:
         raise ReplayError(f"JSON unreadable: {path}") from error
     if not isinstance(value, dict):
         raise ReplayError(f"JSON object required: {path}")
     return value
+
+
+def _read_bounded_file_bytes(path: Path, maximum_bytes: int, where: str) -> bytes:
+    return _read_regular_bounded(path, maximum_bytes, where)
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -1035,30 +1524,23 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
         for line_number, raw_line in enumerate(_read_bounded_binary_lines(path, MAX_EVENTS), 1):
             if not raw_line.strip():
                 continue
-            value = json.loads(raw_line)
+            value = _strict_json_loads(raw_line, f"event line {line_number}")
             if not isinstance(value, dict):
                 raise ReplayError(f"event line {line_number} shape")
             values.append(value)
-    except (OSError, json.JSONDecodeError) as error:
+    except (OSError, ReplayError) as error:
         raise ReplayError(f"events unreadable: {path}") from error
     return values
 
 
 def _read_bounded_binary_lines(path: Path, maximum_records: int) -> list[bytes]:
-    if path.stat().st_size > MAX_REPLAY_BYTES:
-        raise ReplayError(f"input exceeds byte bound: {path}")
-    lines: list[bytes] = []
-    total = 0
-    with path.open("rb") as source:
-        for line_number, raw_line in enumerate(source, 1):
-            total += len(raw_line)
-            if total > MAX_REPLAY_BYTES:
-                raise ReplayError(f"input exceeds byte bound: {path}")
-            if len(raw_line) > MAX_LINE_BYTES:
-                raise ReplayError(f"input line {line_number} exceeds byte bound")
-            if line_number > maximum_records:
-                raise ReplayError(f"input exceeds record bound: {path}")
-            lines.append(raw_line)
+    data = _read_regular_bounded(path, MAX_REPLAY_BYTES, "input")
+    lines = data.splitlines(keepends=True)
+    for line_number, raw_line in enumerate(lines, 1):
+        if len(raw_line) > MAX_LINE_BYTES:
+            raise ReplayError(f"input line {line_number} exceeds byte bound")
+        if line_number > maximum_records:
+            raise ReplayError(f"input exceeds record bound: {path}")
     return lines
 
 
@@ -1076,10 +1558,9 @@ def main() -> int:
     slice_parser.add_argument("replay", type=Path)
     slice_parser.add_argument("output", type=Path)
     slice_parser.add_argument("--expected-header", type=Path, required=True)
+    slice_parser.add_argument("--cadence-census", type=Path, required=True)
     slice_parser.add_argument("--start-marker", type=int, required=True)
     slice_parser.add_argument("--marker-count", type=int, required=True)
-    slice_parser.add_argument("--source-hz", type=int, required=True)
-    slice_parser.add_argument("--native-hz", type=int, default=60)
 
     verify_parser = subparsers.add_parser("verify")
     verify_parser.add_argument("replay", type=Path)
@@ -1089,6 +1570,7 @@ def main() -> int:
     export_parser.add_argument("replay", type=Path)
     export_parser.add_argument("output", type=Path)
     export_parser.add_argument("--expected-header", type=Path, required=True)
+    export_parser.add_argument("--cadence-census", type=Path, required=True)
     export_parser.add_argument("--start-marker", type=int, default=1)
     export_parser.add_argument("--marker-count", type=int, required=True)
 
@@ -1098,6 +1580,7 @@ def main() -> int:
     project_parser.add_argument("output", type=Path)
     project_parser.add_argument("receipt", type=Path)
     project_parser.add_argument("--expected-header", type=Path, required=True)
+    project_parser.add_argument("--cadence-census", type=Path, required=True)
 
     compare_parser = subparsers.add_parser("compare")
     compare_parser.add_argument("recorded", type=Path)
@@ -1123,8 +1606,7 @@ def main() -> int:
                 parent_data,
                 arguments.start_marker,
                 arguments.marker_count,
-                arguments.source_hz,
-                arguments.native_hz,
+                _read_bounded_file_bytes(arguments.cadence_census, MAX_CADENCE_CENSUS_BYTES, "cadence census"),
                 expected_header,
             )
             _atomic_write_new(arguments.output, data, MAX_REPLAY_BYTES)
@@ -1145,7 +1627,12 @@ def main() -> int:
             )
         elif arguments.command == "export-controller-tsv":
             document = load_replay(arguments.replay, _read_json(arguments.expected_header))
-            output = export_controller_tsv(document, arguments.start_marker, arguments.marker_count)
+            output = export_controller_tsv(
+                document,
+                arguments.start_marker,
+                arguments.marker_count,
+                _read_bounded_file_bytes(arguments.cadence_census, MAX_CADENCE_CENSUS_BYTES, "cadence census"),
+            )
             output_bytes = output.encode()
             _atomic_write_new(arguments.output, output_bytes, MAX_PROJECTED_TSV_BYTES)
             print(
@@ -1157,7 +1644,12 @@ def main() -> int:
             expected_header = _read_json(arguments.expected_header)
             raw_data, _ = _load_replay_file_bytes(arguments.replay, expected_header)
             cache_index_sha256 = read_cache_identity(arguments.cache)
-            output, receipt = build_ac6rtply_v3(raw_data, cache_index_sha256, expected_header)
+            output, receipt = build_ac6rtply_v3(
+                raw_data,
+                cache_index_sha256,
+                _read_bounded_file_bytes(arguments.cadence_census, MAX_CADENCE_CENSUS_BYTES, "cadence census"),
+                expected_header,
+            )
             receipt_bytes = canonical_line(receipt)
             _publish_atomic_files(
                 (
