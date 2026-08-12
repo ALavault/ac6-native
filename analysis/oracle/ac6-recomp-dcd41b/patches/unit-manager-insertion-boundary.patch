@@ -1,0 +1,140 @@
+--- a/src/ac6_oracle_probe.cpp
++++ b/src/ac6_oracle_probe.cpp
+@@ -27,6 +27,8 @@
+                       "File whose presence arms the Mission 01 execution window");
+ REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_input_path, "", "AC6/Oracle",
+                       "Capture-only per-manager-tick controller replay TSV");
++REXCVAR_DEFINE_STRING(ac6_oracle_unit_boundary_path, "", "AC6/Oracle",
++                      "Capture-only CX360UnitManager insertion JSONL path");
+ 
+ namespace ac6::oracle {
+ namespace {
+@@ -69,6 +71,18 @@
+ std::atomic<uint32_t> g_gameplay_player{0};
+ std::atomic<bool> g_player_update_reported{false};
+ std::atomic<bool> g_mission_tick_reported{false};
++std::atomic<uint64_t> g_trace_v2_tick_atomic{0};
++
++std::mutex g_unit_boundary_mutex;
++std::ofstream g_unit_boundary_output;
++std::string g_unit_boundary_output_path;
++uint64_t g_unit_boundary_sequence = 0;
++uint64_t g_unit_boundary_output_bytes = 0;
++bool g_unit_boundary_failed = false;
++
++constexpr uint64_t kUnitBoundaryMaxEvents = 1024;
++constexpr uint64_t kUnitBoundaryMaxOutputBytes = 16 * 1024 * 1024;
++
+ std::mutex g_replay_input_mutex;
+ std::string g_replay_input_path;
+ std::vector<InputSnapshot> g_replay_inputs;
+@@ -211,6 +225,7 @@
+   g_trace_v2_output_bytes = 0;
+   g_trace_v2_failed = !g_trace_v2_output.is_open();
+   g_trace_v2_complete = false;
++  g_trace_v2_tick_atomic.store(0, std::memory_order_relaxed);
+   if (g_trace_v2_failed) {
+     REXLOG_ERROR("AC6 oracle trace v2 could not open its bounded output");
+     return false;
+@@ -310,6 +325,7 @@
+     return;
+   }
+   ++g_trace_v2_tick_count;
++  g_trace_v2_tick_atomic.store(g_trace_v2_tick_count, std::memory_order_relaxed);
+   g_trace_v2_output.flush();
+   if (g_trace_v2_tick_count == kTraceV2Ticks) {
+     g_trace_v2_complete = true;
+@@ -317,6 +333,70 @@
+   }
+ }
+ 
++bool EnsureUnitBoundaryOutput(const std::string& path) {
++  if (g_unit_boundary_output.is_open() && path == g_unit_boundary_output_path) {
++    return true;
++  }
++  if (g_unit_boundary_output.is_open()) {
++    g_unit_boundary_output.close();
++  }
++  g_unit_boundary_output.open(path, std::ios::out | std::ios::trunc);
++  g_unit_boundary_output_path = path;
++  g_unit_boundary_sequence = 0;
++  g_unit_boundary_output_bytes = 0;
++  g_unit_boundary_failed = !g_unit_boundary_output.is_open();
++  if (g_unit_boundary_failed) {
++    REXLOG_ERROR("AC6 oracle unit boundary could not open its bounded output");
++    return false;
++  }
++  REXLOG_INFO("AC6 oracle CX360UnitManager insertion boundary enabled");
++  return true;
++}
++
++void EmitUnitBoundary(uint8_t* base, uint32_t manager, uint32_t unit,
++                      uint32_t count_before, uint32_t count_after,
++                      uint32_t return_value) {
++  const std::string path = REXCVAR_GET(ac6_oracle_unit_boundary_path);
++  if (path.empty()) return;
++  std::lock_guard<std::mutex> lock(g_unit_boundary_mutex);
++  if (g_unit_boundary_failed || g_unit_boundary_sequence >= kUnitBoundaryMaxEvents ||
++      !EnsureUnitBoundaryOutput(path)) {
++    return;
++  }
++  const uint32_t trace_tick =
++      g_trace_v2_tick_atomic.load(std::memory_order_relaxed);
++  const uint32_t record_index = GuestField(base, unit, 0xD0u);
++  const uint32_t flags = GuestField(base, unit, 0xD4u);
++  const uint32_t object_count = GuestField(base, unit, 0xDCu);
++  const uint32_t inserted_index = count_after == 0 ? 0 : count_after - 1u;
++  std::ostringstream event;
++  event << "{\"sequence\":" << g_unit_boundary_sequence
++        << ",\"trace_tick\":" << trace_tick
++        << ",\"guest_address\":\"0x8226FEC0\""
++        << ",\"manager\":" << manager
++        << ",\"unit\":" << unit
++        << ",\"count_before\":" << count_before
++        << ",\"count_after\":" << count_after
++        << ",\"inserted_index\":" << inserted_index
++        << ",\"record_index\":" << record_index
++        << ",\"flags\":" << flags
++        << ",\"object_count\":" << object_count
++        << ",\"return_value\":" << return_value << "}\n";
++  const std::string line = event.str();
++  if (g_unit_boundary_output_bytes + line.size() > kUnitBoundaryMaxOutputBytes) {
++    g_unit_boundary_failed = true;
++    return;
++  }
++  g_unit_boundary_output << line;
++  if (!g_unit_boundary_output.good()) {
++    g_unit_boundary_failed = true;
++    return;
++  }
++  g_unit_boundary_output_bytes += line.size();
++  ++g_unit_boundary_sequence;
++  g_unit_boundary_output.flush();
++}
++
+ void ReportPlayerUpdateReady() {
+   if (!g_player_update_reported.exchange(true)) {
+     REXLOG_INFO("AC6 oracle Mission 01 player-update boundary reached at 0x822A6710");
+@@ -479,6 +559,7 @@
+ 
+ PPC_EXTERN_FUNC(__imp__rex_sub_8226D1C8);
+ PPC_EXTERN_FUNC(__imp__rex_sub_822A6710);
++PPC_EXTERN_FUNC(__imp__rex_sub_8226FEC0);
+ 
+ PPC_FUNC_IMPL(rex_sub_8226D1C8) {
+   PPC_FUNC_PROLOGUE();
+@@ -499,3 +580,14 @@
+   ac6::oracle::g_gameplay_player.store(player, std::memory_order_relaxed);
+   ac6::oracle::ReportPlayerUpdateReady();
+ }
++
++PPC_FUNC_IMPL(rex_sub_8226FEC0) {
++  PPC_FUNC_PROLOGUE();
++  const uint32_t manager = ctx.r3.u32;
++  const uint32_t unit = ctx.r4.u32;
++  const uint32_t count_before = ac6::oracle::GuestField(base, manager, 1036u);
++  __imp__rex_sub_8226FEC0(ctx, base);
++  const uint32_t count_after = ac6::oracle::GuestField(base, manager, 1036u);
++  ac6::oracle::EmitUnitBoundary(base, manager, unit, count_before, count_after,
++                                ctx.r3.u32);
++}

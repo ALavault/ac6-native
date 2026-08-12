@@ -87,6 +87,13 @@
       "sha256": "a0ab1b1f65208c458b4d77e2ae957aa27c8a16de9a0ffc9658b4266f8efc93b7",
       "reason": "Add a capture-only, arm-gated per-manager-tick controller replay lane so oracle reruns can separate setup timing from Mission 01 input divergence.",
       "validation": "Clean external build of ac6recomp succeeds; TSV parser rejects malformed, out-of-range, non-sequential, or non-3600-row input. End-to-end replay remains unqualified while the setup route is still timing-sensitive before arm-trace."
+    },
+    {
+      "order": 13,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/unit-manager-insertion-boundary.patch",
+      "sha256": "96840055187c005760c2466f78146cbe5d9a036a15b08a3b939117b9279e8234",
+      "reason": "Capture-only insertion census at the qualified CX360UnitManager boundary 0x8226FEC0; separates construction from later publication without altering the five-domain trace.",
+      "validation": "Capture checkout compiles; route stopped before Mission 01, so no gate is closed and no capture is qualified."
     }
   ],
   "configuration": {

@@ -328,6 +328,9 @@ class OracleRun:
         trace_input = getattr(self.args, "trace_input", None)
         if trace_input:
             command.append(f"--ac6_oracle_trace_v2_input_path={trace_input}")
+        unit_boundary_output = getattr(self.args, "unit_boundary_output", None)
+        if unit_boundary_output:
+            command.append(f"--ac6_oracle_unit_boundary_path={unit_boundary_output}")
         self.console = self.console_path.open("wb")
         self.game = subprocess.Popen(
             command, cwd=self.args.binary.parent, env=self.display_env,
@@ -354,6 +357,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--trace-input", type=Path, default=None,
         help="replay the qualified controller_input rows from a trace-v2 TSV",
+    )
+    parser.add_argument(
+        "--unit-boundary-output", type=Path, default=None,
+        help="capture-only CX360UnitManager insertion JSONL path",
     )
     return parser.parse_args()
 
