@@ -12,8 +12,11 @@ jouable ou une release ne qualifie aucune sémantique AC6 PAL par transitivité.
 Les deltas intéressants doivent être isolés, testés et requalifiés dans le cône
 M01 atteint.
 
-Quinze projets ont été vérifiés par lecture de leur HEAD public. Skate 3 et
-Sonic Unleashed, déjà revus aux cycles 1542–1544, ne sont pas recomptés.
+Quinze projets ont constitué le triage initial par lecture de leur HEAD public.
+Sept revues profondes supplémentaires couvrent désormais Forza Horizon,
+Fable II, Skate 2, reNut, PGR4, Midnight Club: Los Angeles et Hydro Thunder.
+Skate 3 et Sonic Unleashed, déjà revus aux cycles 1542–1544, ne sont pas
+recomptés.
 
 ## Matrice vérifiée et priorisée
 
@@ -26,14 +29,17 @@ Sonic Unleashed, déjà revus aux cycles 1542–1544, ne sont pas recomptés.
 | A5 | Banjo-Tooie XBLA `87eb2e0fd046a8c1e21765ddd6c6755bac2e0d9b` + SDK `035aa253bdf8ad5bbf419b5b150a7be35189bf4f` | ReXGlue forké | SDL audio dummy drainé au temps réel, GetKeystroke, XContent/licence, Linux Vulkan | projet sans licence ; tests SDK désactivés et absents des workflows |
 | B1 | ReOdyssey `803294cb9d74e9509b3576e3c4c08de9bbe6a627` | hybride ReXGlue + Plume + XenosRecomp | remplacement progressif par hooks D3D haut niveau et cache DXIL/SPIR-V | fences et synchronisation encore no-op ; aucun test/CI |
 | B2 | Crazy Taxi XBLA `23cce0a46cbc42bde0ecf6df80e568f83772f5ba` | XenonRecomp PPC + runtime ReXGlue | cas de migration et cas négatif XMA/ADX/content | aucune licence/CI ; audio gameplay incomplet |
-| B3 | Forza Horizon `80a25bed26ef231ea086a87235cd46aedae38120` | scaffold ReXGlue, multi-XEX WIP | cas négatif : `LoadUserModule` seul ne constitue pas un registre de modules recompilés | aucune licence/test ; checkout contenant beaucoup d'artefacts générés |
-| B4 | Fable II `1e25911172f8e30458099eda96a1ad7b8992ed60` | scaffold `rexglue migrate` | forme moderne de migration et heap natif | aucune exécution démontrée ; provenance mixte à réconcilier |
+| B3 | Forza Horizon `80a25bed26ef231ea086a87235cd46aedae38120` | ReXGlue v0.2.2, seul `default.xex` recompilé ; deux images secondaires seulement chargées | cas négatif : transaction identité/plages/imports/TLS/attach avant publication d'un module | heap global réinitialisé au chargement ; aucun code hôte secondaire, licence ou test |
+| B4 | Fable II `1e25911172f8e30458099eda96a1ad7b8992ed60` | reset de l'ancien arbre XenonRecomp vers un shell `rexglue migrate` | ordre lifecycle provisoire et gardes de provenance/codegen | SDK externe non épinglé, aucun reçu XEX ni exécution démontrée |
 | B5 | GoldenEye `fdee4d1f750aff4c3b5c6ba3d60f20281c21447d` | ReXGlue direct | hooks input/souris/XAM UI | réseau revendiqué mais aucun transport public auditable |
+| B6 | reNut `ef74a036676db6a71c3e2e93bd770e64cf539e5a` | ReXGlue, branche Linux et releases non reliées par reçu | capture oracle : shader sync/warm-up, watchdog et `PRESENT` télémétrique | code PPC de secours suivi ; build Linux issu de fichiers ignorés et SDK ambigu |
+| B7 | MCLA `cdfea396e487a3f4b03053827ffa1eda0e3b1e39` + deux implémentations publiques | ReXGlue, ville/rendu confiés au runtime commun | garde dialecte/opcode VMX128 ; seam VFS `t:` ; census secteurs/textures à requalifier | aucune identité XEX/replay/test ; preuves réparties entre trois dépôts |
+| B8 | Hydro Thunder `0216dae319eb5b61a7f1553d74529ca9e4ad55c5` + SDK `34b11ee6aed9d4ef914e49e6d8a8a092b02ced36` | pack ReXGlue minimal dans un monorepo | test Xenos `exp_adjust` signé dans dword 3, indépendant de `lod_bias` | scaffold Daytona/OutRun, aucune preuve eau/reflet/input ou XEX qualifié |
 | C1 | Army of Two `75432a71565cc4a33b12a10a092b67ede3f1aaa4` | ancien Unleashed/XenonRecomp/XenosRecomp | historique seulement | audio/input/save non implémentés, texture bloquante ; inventaire « vidéos » non confirmé |
-| C2 | Skate 2 `63ef2e191a493348063c55001838b9c7d86100fe` | XenonRecomp + runtime D3D9/FFmpeg | hooks historiques XMA/D3D | projet abandonné, aucune licence/test/CI |
+| C2 | Skate 2 `63ef2e191a493348063c55001838b9c7d86100fe` | squelette XenonRecomp autonome D3D9/FFmpeg | seam ABI guest/host et structures big-endian comme contre-exemples | générateur/corpus PPC/shaders absents ; aucune licence, preuve XEX, test ou CI |
 | C3 | TDURecomp `c042612f9d2f73b68e150cbd87c586f6873607bd` | copie inachevée Unleashed/reblue | aucun apport fiable | cible/configs incohérentes et provenance non assainie |
 | C4 | Re-Cherry `4f8f82028c02e25a32402b4de96f9c23e2f3b7c5` | petit projet ReXGlue migré | quelques hooks FPS/Xbox Live | aucune licence/test/CI, binaire 91 MiB suivi, complétude non documentée |
-| C5 | PGR4 `57a97dc735f8ca73435e8372a06740219c8fe4e2` | documentation seulement dans le dépôt | aucun code réutilisable vérifiable | six fichiers Markdown, aucune source/build/config |
+| C5 | PGR4 `57a97dc735f8ca73435e8372a06740219c8fe4e2` | dépôt documentaire + binaires de release ReXGlue 0.8.0 | A/B `execute_unclipped_draw_vs_on_cpu` pour extent/aliasing EDRAM | aucun source/build/test ; diagnostic CPU-VS seulement, pas renderer natif |
 
 Pins transitifs utiles :
 
@@ -47,6 +53,11 @@ Pins transitifs utiles :
   XenosRecomp `fb32631ee398e46f2a113d8f9103201dbaa000b4` ;
 - ReOdyssey : XenosRecomp `c1891538e9ec69819bb70fb3cc123cf65c5f6da2`,
   Plume `561428b7d0499eaf96b17d04bd6aa594d3b1260f`.
+- MCLA : SDK principal annoncé `cd778a8b0645753d130a59f4283d46352f955789`,
+  correctif de dialecte VMX128 `fb2773781ad4ec562c4a1c5d36a00195ccb199b1` ;
+- Hydro Thunder : fork SDK `34b11ee6aed9d4ef914e49e6d8a8a092b02ced36` ;
+- reNut Linux : tag SDK résolu vers
+  `f5c85215174c9dcd67b4c77227a979c4fc33197a`, sans reçu le liant au binaire.
 
 ## Résultats par besoin M01
 
@@ -88,6 +99,14 @@ Le README Downpour affirme que les commandes « Case A » sont batchées jusqu'�
 faire et emprunte encore le full path. Cette fonctionnalité est classée
 `documented-unmatched`, jamais `provisional-rexglue`, jusqu'à identification du
 source exact de la release.
+
+PGR4 ajoute un test diagnostic ciblé : les draws HUD/fullscreen non clippés
+doivent borner explicitement leur extent et leurs plages EDRAM ; l'interpréteur
+VS CPU reste hors produit. MCLA impose une garde de dialecte avant toute
+sémantique VMX128, après qu'un `vsldoi128` public a été pris pour `mullhwu.`.
+Hydro corrobore que `exp_adjust` est un signé six bits du dword 3, distinct du
+`lod_bias` du dword 4. Ces trois constats restent provisoires jusqu'à un paquet
+et un contrôle image M01 PAL positifs.
 
 ### VFS, saves et contenu
 
@@ -173,6 +192,28 @@ gardes négatives de paquet, identité XEX, couverture des seams et refus des
 fallbacks Release. Le dépôt suit directement un XEX retail et environ 270 Mo
 de C++ PPC généré.
 
+Audits B3/B4/C2 terminés : `cycle-1557-forza-horizon-multixex-review.md`,
+`cycle-1558-fable2-migration-review.md` et
+`cycle-1560-skate2-legacy-runtime-review.md`. Ils ferment trois raccourcis :
+charger une image secondaire n'enregistre pas son code recompilé, une commande
+`rexglue migrate` ne prouve pas une migration sémantique, et un ancien runtime
+XenonRecomp incomplet ne qualifie ni ABI, ni XMA, ni renderer par son seul
+codegen.
+
+Audit reNut terminé : `cycle-1562-renut-rexglue-release-review.md`. Il retient
+`async_shader_compilation=false` ou un warm-up mesuré pour toute capture oracle,
+et maintient `PRESENT` comme télémétrie. Les releases Linux ne sont pas reliées
+à leur source/SDK et le corpus PPC de secours reste interdit au produit.
+
+Audit C5 terminé : `cycle-1563-pgr4-rexglue-renderer-review.md`. Le correctif
+UI public active l'interprétation CPU du VS pour estimer l'extent EDRAM ; il
+fournit une forme de test aliasing/ownership, pas un renderer à reprendre.
+
+Audits B7/B8 terminés : `cycle-1564-mcla-openworld-rexglue-review.md` et
+`cycle-1565-hydro-thunder-water-renderer-review.md`. MCLA apporte la garde
+VMX128 et un seam VFS, Hydro un test `exp_adjust`; aucun des deux ne ferme une
+lane Scene, Xenos, input, audio ou gameplay AC6.
+
 ## Entrées non vérifiables dans cette passe
 
 KinectSportsRecomp `0fe6ed940c43f1ea277ce65eaa50713b3037bb9b`
@@ -184,8 +225,9 @@ Ops II ou UFC 3 ; ces lignes restent `unverified-url`, pas « inexistantes ».
 
 ## Validation et provenance
 
-Les HEAD ont été relus puis revérifiés par `git ls-remote`. Dix-sept clones
-temporaires propres ont été utilisés. Le catalogue local d'architecture Xbox
-360 a été consulté et ses pins XenonRecomp/XenosRecomp/Xenia recoupés. Aucun
-build, XEX ou actif retail n'a été ouvert. Les statuts jouables demeurent des
-affirmations des mainteneurs sauf lorsqu'un test de code public est cité.
+Les HEAD ont été relus puis revérifiés par `git ls-remote`. Les clones
+temporaires, pins transitifs, releases et contrôles de liens sont consignés par
+rapport. Le catalogue local d'architecture Xbox 360 a été consulté et ses pins
+XenonRecomp/XenosRecomp/Xenia recoupés. Aucun XEX ni actif retail n'a été
+ouvert. Les statuts jouables demeurent des affirmations des mainteneurs sauf
+lorsqu'un test de code public est cité.
