@@ -13,8 +13,9 @@ Les deltas intéressants doivent être isolés, testés et requalifiés dans le 
 M01 atteint.
 
 Quinze projets ont constitué le triage initial par lecture de leur HEAD public.
-Sept revues profondes supplémentaires couvrent désormais Forza Horizon,
-Fable II, Skate 2, reNut, PGR4, Midnight Club: Los Angeles et Hydro Thunder.
+Onze revues profondes supplémentaires couvrent désormais Forza Horizon,
+Fable II, Skate 2, reNut, PGR4, Midnight Club: Los Angeles, Hydro Thunder,
+GTA IV, Black Ops II, PGR3 et Diablo III.
 Skate 3 et Sonic Unleashed, déjà revus aux cycles 1542–1544, ne sont pas
 recomptés.
 
@@ -35,11 +36,15 @@ recomptés.
 | B6 | reNut `ef74a036676db6a71c3e2e93bd770e64cf539e5a` | ReXGlue, branche Linux et releases non reliées par reçu | capture oracle : shader sync/warm-up, watchdog et `PRESENT` télémétrique | code PPC de secours suivi ; build Linux issu de fichiers ignorés et SDK ambigu |
 | B7 | MCLA `cdfea396e487a3f4b03053827ffa1eda0e3b1e39` + deux implémentations publiques | ReXGlue, ville/rendu confiés au runtime commun | garde dialecte/opcode VMX128 ; seam VFS `t:` ; census secteurs/textures à requalifier | aucune identité XEX/replay/test ; preuves réparties entre trois dépôts |
 | B8 | Hydro Thunder `0216dae319eb5b61a7f1553d74529ca9e4ad55c5` + SDK `34b11ee6aed9d4ef914e49e6d8a8a092b02ced36` | pack ReXGlue minimal dans un monorepo | test Xenos `exp_adjust` signé dans dword 3, indépendant de `lod_bias` | scaffold Daytona/OutRun, aucune preuve eau/reflet/input ou XEX qualifié |
+| B9 | GTA IV `3e98ca9d392a4b5618243e275469ac9cd7918e99` (`beta`) | ReXGlue vendored 0.7.5 ; migration 0.8.0 plus récente sans généré | timebase Xenon 50 MHz, montage VFS ordonné et instrumentation du streaming | XEX/SDK exacts non scellés ; renderer/imports divergents ; claims gameplay non appariés |
+| B10 | Black Ops II `c096a06b1fee4925482e37870c2e54c82e3fd9b6` (renderer WIP) | ReXGlue + XenosRecomp `990d03b28a27b50277ee5d8d942e1c5f873869d1` | trace ordonnée command processor/VdSwap avec compteurs de pertes/fallback | dépend d'un SDK renderer privé introuvable ; input/cadence/renderer divergents |
+| B11 | PGR3 `0216dae319eb5b61a7f1553d74529ca9e4ad55c5` + SDK `34b11ee6aed9d4ef914e49e6d8a8a092b02ced36` | scaffold ReXGlue, plugin Xenos Vulkan | fixtures négatives EDRAM 2xMSAA, depth/coverage, resolve cubemap et placeholder shader | aucun renderer PGR3 natif ni XEX/capture qualifié ; pack Linux non reproductible |
 | C1 | Army of Two `75432a71565cc4a33b12a10a092b67ede3f1aaa4` | ancien Unleashed/XenonRecomp/XenosRecomp | historique seulement | audio/input/save non implémentés, texture bloquante ; inventaire « vidéos » non confirmé |
 | C2 | Skate 2 `63ef2e191a493348063c55001838b9c7d86100fe` | squelette XenonRecomp autonome D3D9/FFmpeg | seam ABI guest/host et structures big-endian comme contre-exemples | générateur/corpus PPC/shaders absents ; aucune licence, preuve XEX, test ou CI |
 | C3 | TDURecomp `c042612f9d2f73b68e150cbd87c586f6873607bd` | copie inachevée Unleashed/reblue | aucun apport fiable | cible/configs incohérentes et provenance non assainie |
 | C4 | Re-Cherry `4f8f82028c02e25a32402b4de96f9c23e2f3b7c5` | petit projet ReXGlue migré | quelques hooks FPS/Xbox Live | aucune licence/test/CI, binaire 91 MiB suivi, complétude non documentée |
 | C5 | PGR4 `57a97dc735f8ca73435e8372a06740219c8fe4e2` | dépôt documentaire + binaires de release ReXGlue 0.8.0 | A/B `execute_unclipped_draw_vs_on_cpu` pour extent/aliasing EDRAM | aucun source/build/test ; diagnostic CPU-VS seulement, pas renderer natif |
+| C6 | Diablo III `11650aec28bc1d86c221da4992bff3b4b5778ccb` + SDK `f22cd9dc360dda5700358f7452230af24c2c2e69` | patch ReXGlue et releases installables non attestées | formes de tests save/XAM/pads, cadence et alias couleur/profondeur | closure source cassée (`slot_arbiter.h` absent), XEX/généré/logs privés |
 
 Pins transitifs utiles :
 
@@ -58,6 +63,11 @@ Pins transitifs utiles :
 - Hydro Thunder : fork SDK `34b11ee6aed9d4ef914e49e6d8a8a092b02ced36` ;
 - reNut Linux : tag SDK résolu vers
   `f5c85215174c9dcd67b4c77227a979c4fc33197a`, sans reçu le liant au binaire.
+- GTA IV `beta` : XenonRecomp `c3714b8d7d35d202df293c4965b52bd74ae9df02`
+  et XenosRecomp `811240b0137dc9806ae1480d96314cf43941c4b9`,
+  mais le vendor ReXGlue n'est identifié que par arbre ;
+- Diablo III : patch applicable uniquement à ReXGlue
+  `f22cd9dc360dda5700358f7452230af24c2c2e69`, pas à v0.9.0 ni au HEAD.
 
 ## Résultats par besoin M01
 
@@ -85,6 +95,13 @@ pas à conclure que XMA gameplay est couvert.
 - Banjo corrige la queue `GetKeystroke`, XAM content/licence et l'auto-dismiss.
 - GoldenEye expose des hooks input/UI, mais aucune preuve réseau réutilisable.
 
+Black Ops II confirme l'intérêt d'ordonner les événements à la frontière
+invitée et de compter explicitement pertes, files pleines et fallback. Son
+chemin public remplace toutefois l'état invité par une file hôte et ne fournit
+ni poll-exact, ni cadence qualifiée : c'est un contre-exemple, pas le producteur
+de notre replay. Diablo III ne publie aucun artefact reliant ses correctifs de
+slots pads à un XEX ou à une séquence reproductible.
+
 ### Xenos et renderer
 
 Gears 1 est la seule alternative basse couche réellement substantielle de cet
@@ -108,6 +125,13 @@ Hydro corrobore que `exp_adjust` est un signé six bits du dword 3, distinct du
 `lod_bias` du dword 4. Ces trois constats restent provisoires jusqu'à un paquet
 et un contrôle image M01 PAL positifs.
 
+PGR3 ajoute des cas négatifs plus bas niveau : surface couleur/depth aliasée,
+2xMSAA, couverture par sample et resolve vers une face de cubemap. Ses deux
+chemins FBO/FSI se contredisent visuellement et ne permettent donc de copier
+aucun résultat ; seule la forme de la fixture est retenue. Le renderer Black
+Ops II ne se reconstruit pas avec les SDK publics et son backend D3D12 partiel
+reste hors cible Vulkan Linux.
+
 ### VFS, saves et contenu
 
 - Downpour implémente un cache de résolutions négatives avec invalidation
@@ -117,6 +141,13 @@ et un contrôle image M01 PAL positifs.
 - Marathon fournit VFS ISO/XContent/directory et mode portable.
 - L'extracteur STFS Banjo ne vérifie ni signatures ni hashes et ne gère pas les
   répertoires ; il reste un cas négatif pour notre import fail-closed.
+
+GTA IV suggère de monter les caches VFS dans un ordre explicite et d'attacher à
+chaque requête de streaming l'identité logique, l'offset, la taille, le résultat
+et le tick invité. Cette instrumentation est réutilisable ; ses imports
+fabriqués et son renderer ne le sont pas. Les scénarios save/restart décrits par
+Diablo III deviennent une checklist, sans promotion tant que sa release n'est
+pas reproductible depuis la source publiée.
 
 ### Multi-XEX
 
