@@ -1,6 +1,7 @@
 #include "ac6/vulkan_backend.h"
 #include "fixtures/vulkan_triangle_spirv.h"
 #include "fixtures/vulkan_textured_triangle_spirv.h"
+#include "fixtures/vulkan_clip_mesh_spirv.h"
 
 #include <array>
 #include <cstddef>
@@ -144,6 +145,30 @@ int main() {
       backend.live_textured_mesh_count() != 0U ||
       backend.has_texture(texture) || backend.has_textured_mesh(textured_mesh)) {
     return fail("textured_release");
+  }
+
+  const std::array<ac6::VulkanClipTexturedVertex, 3> clip_vertices{{
+      {-0.8F, -0.8F, 0.0F, 1.0F, 0.0F, 0.0F},
+      {0.8F, -0.8F, 0.0F, 1.0F, 1.0F, 0.0F},
+      {0.0F, 0.8F, 0.0F, 1.0F, 0.5F, 1.0F},
+  }};
+  const ac6::VulkanClipTexturedMeshHandle clip_mesh =
+      backend.create_clip_textured_mesh(clip_vertices, indices);
+  const ac6::VulkanTextureHandle clip_texture =
+      backend.create_texture_rgba8(4U, 4U, texture_pixels);
+  const ac6::VulkanPipelineHandle clip_pipeline = backend.create_clip_textured_pipeline(
+      target, ac6_test::kClipMeshVertexSpirv,
+      ac6_test::kTexturedTriangleFragmentSpirv, {});
+  if (!clip_mesh || !clip_texture || !clip_pipeline ||
+      !backend.draw_clip_textured_indexed(target, clip_pipeline, clip_mesh,
+                                          clip_texture)) {
+    return fail("clip_textured_draw");
+  }
+  backend.release_pipeline(clip_pipeline);
+  backend.release_texture(clip_texture);
+  backend.release_clip_textured_mesh(clip_mesh);
+  if (backend.live_clip_textured_mesh_count() != 0U) {
+    return fail("clip_textured_release");
   }
 
   backend.release_pipeline(pipeline);

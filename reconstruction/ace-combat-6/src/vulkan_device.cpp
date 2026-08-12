@@ -118,6 +118,11 @@ VulkanBackend::~VulkanBackend() {
       destroy_vulkan_buffer(*state_, mesh.vertex_buffer, mesh.vertex_memory);
       destroy_vulkan_buffer(*state_, mesh.index_buffer, mesh.index_memory);
     }
+    for (auto& [unused, mesh] : state_->clip_textured_meshes) {
+      static_cast<void>(unused);
+      destroy_vulkan_buffer(*state_, mesh.vertex_buffer, mesh.vertex_memory);
+      destroy_vulkan_buffer(*state_, mesh.index_buffer, mesh.index_memory);
+    }
     for (auto& [unused, texture] : state_->textures) {
       static_cast<void>(unused);
       destroy_vulkan_texture(*state_, texture);
@@ -280,6 +285,10 @@ std::size_t VulkanBackend::live_mesh_count() const noexcept {
 
 std::size_t VulkanBackend::live_textured_mesh_count() const noexcept {
   return state_->textured_meshes.size();
+}
+
+std::size_t VulkanBackend::live_clip_textured_mesh_count() const noexcept {
+  return state_->clip_textured_meshes.size();
 }
 
 std::size_t VulkanBackend::live_texture_count() const noexcept {

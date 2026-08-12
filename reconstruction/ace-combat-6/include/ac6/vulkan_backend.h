@@ -53,6 +53,18 @@ struct VulkanTexturedVertex {
   float v{};
 };
 
+// Clip-space layout recovered as a generic transport mechanism.  It is kept
+// separate from the 2D position/UV layout so a caller cannot accidentally
+// submit world-space coordinates without an explicitly qualified projection.
+struct VulkanClipTexturedVertex {
+  float x{};
+  float y{};
+  float z{};
+  float w{1.0F};
+  float u{};
+  float v{};
+};
+
 struct VulkanMeshHandle {
   std::uint64_t value{};
   [[nodiscard]] explicit operator bool() const noexcept { return value != 0U; }
@@ -64,6 +76,13 @@ struct VulkanTexturedMeshHandle {
   [[nodiscard]] explicit operator bool() const noexcept { return value != 0U; }
   friend bool operator==(VulkanTexturedMeshHandle,
                          VulkanTexturedMeshHandle) = default;
+};
+
+struct VulkanClipTexturedMeshHandle {
+  std::uint64_t value{};
+  [[nodiscard]] explicit operator bool() const noexcept { return value != 0U; }
+  friend bool operator==(VulkanClipTexturedMeshHandle,
+                         VulkanClipTexturedMeshHandle) = default;
 };
 
 struct VulkanTextureHandle {
@@ -118,6 +137,13 @@ class VulkanBackend final {
   void release_textured_mesh(VulkanTexturedMeshHandle mesh) noexcept;
   [[nodiscard]] bool has_textured_mesh(VulkanTexturedMeshHandle mesh) const noexcept;
 
+  [[nodiscard]] VulkanClipTexturedMeshHandle create_clip_textured_mesh(
+      std::span<const VulkanClipTexturedVertex> vertices,
+      std::span<const std::uint16_t> indices) noexcept;
+  void release_clip_textured_mesh(VulkanClipTexturedMeshHandle mesh) noexcept;
+  [[nodiscard]] bool has_clip_textured_mesh(
+      VulkanClipTexturedMeshHandle mesh) const noexcept;
+
   // Uploads a persistent RGBA8 texture.  The caller owns the source bytes;
   // the backend copies them into a device-local image before returning.
   [[nodiscard]] VulkanTextureHandle create_texture_rgba8(
@@ -141,6 +167,11 @@ class VulkanBackend final {
       std::span<const std::uint32_t> vertex_spirv,
       std::span<const std::uint32_t> fragment_spirv,
       VulkanPipelineState state = {}) noexcept;
+  [[nodiscard]] VulkanPipelineHandle create_clip_textured_pipeline(
+      VulkanRenderTargetHandle target,
+      std::span<const std::uint32_t> vertex_spirv,
+      std::span<const std::uint32_t> fragment_spirv,
+      VulkanPipelineState state = {}) noexcept;
   void release_pipeline(VulkanPipelineHandle pipeline) noexcept;
   [[nodiscard]] bool has_pipeline(VulkanPipelineHandle pipeline) const noexcept;
 
@@ -153,11 +184,15 @@ class VulkanBackend final {
   [[nodiscard]] bool draw_textured_indexed(
       VulkanRenderTargetHandle target, VulkanPipelineHandle pipeline,
       VulkanTexturedMeshHandle mesh, VulkanTextureHandle texture) noexcept;
+  [[nodiscard]] bool draw_clip_textured_indexed(
+      VulkanRenderTargetHandle target, VulkanPipelineHandle pipeline,
+      VulkanClipTexturedMeshHandle mesh, VulkanTextureHandle texture) noexcept;
   [[nodiscard]] std::vector<std::uint8_t> readback_rgba8(
       VulkanRenderTargetHandle target) noexcept;
 
   [[nodiscard]] std::size_t live_mesh_count() const noexcept;
   [[nodiscard]] std::size_t live_textured_mesh_count() const noexcept;
+  [[nodiscard]] std::size_t live_clip_textured_mesh_count() const noexcept;
   [[nodiscard]] std::size_t live_texture_count() const noexcept;
   [[nodiscard]] std::size_t live_render_target_count() const noexcept;
   [[nodiscard]] std::size_t live_pipeline_count() const noexcept;
@@ -166,7 +201,7 @@ class VulkanBackend final {
   [[nodiscard]] VulkanPipelineHandle create_pipeline_impl(
       VulkanRenderTargetHandle target, std::span<const std::uint32_t> vertex_spirv,
       std::span<const std::uint32_t> fragment_spirv, VulkanPipelineState state,
-      bool textured) noexcept;
+      bool textured, bool clip_space) noexcept;
   explicit VulkanBackend(std::unique_ptr<VulkanBackendState> state) noexcept;
   std::unique_ptr<VulkanBackendState> state_;
 };

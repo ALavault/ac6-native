@@ -463,6 +463,81 @@ bool VulkanBackend::has_textured_mesh(
   return mesh && state_->textured_meshes.contains(mesh.value);
 }
 
+VulkanClipTexturedMeshHandle VulkanBackend::create_clip_textured_mesh(
+    const std::span<const VulkanClipTexturedVertex> vertices,
+    const std::span<const std::uint16_t> indices) noexcept {
+  if (vertices.empty() || indices.empty() || indices.size() % 3U != 0U ||
+      indices.size() > std::numeric_limits<std::uint32_t>::max()) {
+    return {};
+  }
+  for (const auto& vertex : vertices) {
+    if (!std::isfinite(vertex.x) || !std::isfinite(vertex.y) ||
+        !std::isfinite(vertex.z) || !std::isfinite(vertex.w) ||
+        !std::isfinite(vertex.u) || !std::isfinite(vertex.v) ||
+        vertex.w == 0.0F) {
+      return {};
+    }
+  }
+  for (const std::uint16_t index : indices) {
+    if (index >= vertices.size()) return {};
+  }
+  VulkanClipTexturedMeshResource resource;
+  if (!create_vulkan_buffer(*state_, vertices.size_bytes(),
+                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                            resource.vertex_buffer, resource.vertex_memory) ||
+      !create_vulkan_buffer(*state_, indices.size_bytes(),
+                            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                            resource.index_buffer, resource.index_memory)) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  void* mapped = nullptr;
+  if (vkMapMemory(state_->device, resource.vertex_memory, 0U,
+                  vertices.size_bytes(), 0U, &mapped) != VK_SUCCESS) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  std::memcpy(mapped, vertices.data(), vertices.size_bytes());
+  vkUnmapMemory(state_->device, resource.vertex_memory);
+  if (vkMapMemory(state_->device, resource.index_memory, 0U,
+                  indices.size_bytes(), 0U, &mapped) != VK_SUCCESS) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  std::memcpy(mapped, indices.data(), indices.size_bytes());
+  vkUnmapMemory(state_->device, resource.index_memory);
+  resource.index_count = static_cast<std::uint32_t>(indices.size());
+  const std::uint64_t handle = state_->next_handle++;
+  state_->clip_textured_meshes.emplace(handle, resource);
+  return {handle};
+}
+
+void VulkanBackend::release_clip_textured_mesh(
+    const VulkanClipTexturedMeshHandle mesh) noexcept {
+  const auto found = state_->clip_textured_meshes.find(mesh.value);
+  if (found == state_->clip_textured_meshes.end()) return;
+  static_cast<void>(vkDeviceWaitIdle(state_->device));
+  destroy_vulkan_buffer(*state_, found->second.vertex_buffer,
+                        found->second.vertex_memory);
+  destroy_vulkan_buffer(*state_, found->second.index_buffer,
+                        found->second.index_memory);
+  state_->clip_textured_meshes.erase(found);
+}
+
+bool VulkanBackend::has_clip_textured_mesh(
+    const VulkanClipTexturedMeshHandle mesh) const noexcept {
+  return mesh && state_->clip_textured_meshes.contains(mesh.value);
+}
+
 VulkanTextureHandle VulkanBackend::create_texture_rgba8(
     const std::uint32_t width, const std::uint32_t height,
     const std::span<const std::uint8_t> rgba8) noexcept {
