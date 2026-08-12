@@ -116,6 +116,15 @@ int main(int argc, char** argv) {
   REQUIRE(world->placed.size() == 95);
   REQUIRE(world->unplaced.size() == 135);
   REQUIRE(world->placed.size() + world->unplaced.size() == world->published);
+  const ac6::retail::RetailPopulationSnapshot population =
+      world->population_snapshot();
+  REQUIRE(population.construction_consistent());
+  REQUIRE(population.constructed == 230);
+  REQUIRE(population.registered == 230);
+  REQUIRE(population.registry_active == 230);
+  REQUIRE(population.combat_active == 230);
+  REQUIRE(population.placed == 95);
+  REQUIRE(population.unplaced == 135);
 
   // Deterministic: two independent builds and runs must agree exactly.
   std::optional<ac6::retail::RetailWorld> second = build(raw);

@@ -137,6 +137,21 @@ struct RetailUnitBuild {
   std::optional<std::uint32_t> campaign_player_entity;
 };
 
+// Counts kept separate because the retail loader's 230-entry construction is
+// not evidence that every entry has been activated by the mission FSM.
+struct RetailPopulationSnapshot {
+  std::size_t constructed{};
+  std::size_t registered{};
+  std::size_t registry_active{};
+  std::size_t combat_active{};
+  std::size_t placed{};
+  std::size_t unplaced{};
+
+  bool construction_consistent() const noexcept {
+    return constructed == registered && constructed == placed + unplaced;
+  }
+};
+
 // Which record the local-player branch matches. Retail keeps two independent
 // running ordinals - one for side code 0, one for side code 3 - and compares
 // the ordinal, not the record index, against a 16-entry table. `branch` is 0
@@ -343,6 +358,15 @@ struct RetailWorld {
   // does not support.
   std::vector<EntityId> placed;
   std::vector<EntityId> unplaced;
+
+  RetailPopulationSnapshot population_snapshot() const noexcept {
+    return {published,
+            units.size(),
+            units.active_count(),
+            combat.active_units(),
+            placed.size(),
+            unplaced.size()};
+  }
 };
 
 // Populates a world from a parsed scenario: one combat unit per record with its
