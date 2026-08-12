@@ -176,6 +176,7 @@ def audit_document(document: dict) -> None:
             "python3 tools/audit_ac6_global_ladder.py",
             "python3 tools/audit_ac6_global_checkpoint2.py",
             "python3 tools/audit_ac6_oracle_reproducibility.py",
+            "python3 tools/audit_ac6_camera_selector_microexec.py",
             "git diff --check",
         }.issubset(commands),
         "checkpoint validation commands",

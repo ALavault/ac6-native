@@ -1,0 +1,48 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x82262A28",
+    "case": "camera-mode2-direct-selector"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "Function_82262A28",
+    "regions": [
+      {"name": "manager_base", "base": "0xb4000000", "kind": "zero", "size": 4},
+      {"name": "manager_mode", "base": "0xb4000190", "kind": "bytes", "size": 4, "sha256": "83440636eff7b2ec0f78ef7b8e480a033e8aeb67e6ecb657ce9bcdfdb21aa744"},
+      {"name": "manager_identity", "base": "0xb400019c", "kind": "bytes", "size": 4, "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"},
+      {"name": "manager_gain_360", "base": "0xb4000360", "kind": "bytes", "size": 4, "sha256": "c31425b44a7ed682a3356bf6820141e1584a15c43b6d6793f552e5d4621586f7"},
+      {"name": "manager_gain_364", "base": "0xb4000364", "kind": "bytes", "size": 4, "sha256": "1b9e0fe7b740b4e583727aa1c9d27ff8c01491f911d2de0747f8c997ef6b3498"},
+      {"name": "manager_rate_368", "base": "0xb4000368", "kind": "bytes", "size": 4, "sha256": "9fa19f3d2af14b74a561e94d6f080c015d9a963c89737bd362bec36dd44e344f"},
+      {"name": "manager_rotations", "base": "0xb40003a0", "kind": "bytes", "size": 12, "sha256": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b"},
+      {"name": "manager_gate_3c4", "base": "0xb40003c4", "kind": "bytes", "size": 4, "sha256": "b40711a88c7039756fb8a73827eabe2c0fe5a0346ca7e0a104adc0fc764f528d"},
+      {"name": "manager_gate_4a0", "base": "0xb40004a0", "kind": "bytes", "size": 1, "sha256": "4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a"},
+      {"name": "manager_gate_4a8", "base": "0xb40004a8", "kind": "bytes", "size": 1, "sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d"},
+      {"name": "manager_state_df0", "base": "0xb4000df0", "kind": "bytes", "size": 4, "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"},
+      {"name": "manager_state_df4", "base": "0xb4000df4", "kind": "bytes", "size": 4, "sha256": "433ebf5bc03dffa38536673207a21281612cef5faa9bc7a4d5b9be2fdb12cf1a"},
+      {"name": "target_base", "base": "0xb5000000", "kind": "zero", "size": 4},
+      {"name": "target_axes", "base": "0xb5000e88", "kind": "bytes", "size": 8, "sha256": "f5e9e439998cc2dc1e64142794b1db9cd8dd8b1f4ab07efa20298280850622dc"},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 8192}
+    ],
+    "steps": 217,
+    "callee_entries": 20,
+    "asserted_semantics_enabled": false,
+    "hint_noops": {},
+    "register_file_bridge": false,
+    "alias_copies": 0,
+    "asserted_semantics": {},
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": ""
+  },
+  "exit": {"kind": "return"},
+  "registers": {
+    "r3": "0x00000002",
+    "f1": "0x3ff0000000000000"
+  },
+  "calls": [],
+  "memory_writes": [],
+  "region_dumps": [
+    {"name": "manager_rotations", "base": "0xb40003a0", "size": 12, "after_hex": "3e800000bd0000003e800000", "after_hex_b": "3e800000bd0000003e800000"}
+  ]
+}

@@ -75,14 +75,14 @@
       "state": "open",
       "closure": "Scene selection, every TCAM variant, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested for all fifteen missions.",
       "blockers": [
-        "The target-selection block feeding f25/f28/f29/f31/f24 in canonical function 0x82262A28 is not yet ported.",
+        "The direct mode-2 target path and the mode-3 cubic gain are ported; the manager+0x4A8 path, mode-1 heading correction/override, 0x82281198 query producer, and their remaining 0x82262A28 joins are still open.",
         "The live player locator producer and full fifteen-payload Scene/TCAM variant census remain open."
       ],
       "evidence": [
         {
-          "path": "reports/cycle-1508-the-camera-rotation-core-is-retail-bounded.md",
-          "size": 3479,
-          "sha256": "c13e94adbedd30f51f094fd0f45442673c92bc1e0d6e8828f57e73b37fae0969"
+          "path": "reports/cycle-1524-the-direct-camera-target-is-executed.md",
+          "size": 4765,
+          "sha256": "f710292b66ffee88f126c248faa471c8a1e2278577fd1ca6172ba499c06ff3a5"
         }
       ]
     },
@@ -167,6 +167,7 @@
     "python3 tools/audit_ac6_global_ladder.py",
     "python3 tools/audit_ac6_global_checkpoint2.py",
     "python3 tools/audit_ac6_oracle_reproducibility.py",
+    "python3 tools/audit_ac6_camera_selector_microexec.py",
     "git diff --check"
   ]
 }

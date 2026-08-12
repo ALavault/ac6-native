@@ -250,6 +250,112 @@ void check_rotation_core() {
         "non-finite camera rotation state fails closed");
 }
 
+void check_direct_target_selector() {
+  using namespace ac6::retail;
+
+  // This fixture is also micro-executed from canonical PAL 0x82262A28 in
+  // analysis/microexec/camera/mode2-target-selector-direct.ppc.json.
+  RetailMode2DirectTargetInput direct;
+  direct.target_present = true;
+  direct.manager_accepts_target = true;
+  direct.target_at_e88 = 0.5F;
+  direct.target_at_e8c = 0.25F;
+  direct.gain_at_350 = 1.0F;
+  direct.gain_at_360 = 2.0F;
+  direct.gain_at_364 = 0.5F;
+  direct.response_rate_at_368 = 0.25F;
+  direct.frame_delta = 1.0F;
+  const auto selected = select_mode2_direct_camera_rotation(direct);
+  check(selected.has_value(),
+        "the direct mode-2 target selector accepts retail fields");
+  if (selected.has_value()) {
+    check_bits(selected->target_at_3a0, 0x3F800000u,
+               "positive +0xE88 selects manager+0x360");
+    check_bits(selected->target_at_3a4, 0xBE000000u,
+               "manager+0x364 scales the negated +0xE8C axis");
+    check_bits(selected->target_at_3a8, 0x3F800000u,
+               "mode 2 shares the selected gain for +0x3A8");
+    check_bits(selected->response, 0x3E800000u,
+               "manager+0x368 is multiplied by frame delta");
+    check(!selected->wrap_at_3a4,
+          "the direct manager+0x4A8 == 0 path does not request wrapping");
+    const auto stepped = step_mode2_camera_rotation(*selected);
+    check(stepped.has_value(),
+          "the selected targets compose with the rotation core");
+    if (stepped.has_value()) {
+      check_bits(stepped->rotation_at_3a0, 0x3E800000u,
+                 "native +0x3A0 matches the retail micro-execution");
+      check_bits(stepped->rotation_at_3a4, 0xBD000000u,
+                 "native +0x3A4 matches the retail micro-execution");
+      check_bits(stepped->rotation_at_3a8, 0x3E800000u,
+                 "native +0x3A8 matches the retail micro-execution");
+    }
+  }
+
+  RetailMode2DirectTargetInput negative = direct;
+  negative.target_at_e88 = -2.0F;
+  negative.target_at_e8c = -3.0F;
+  const auto clamped = select_mode2_direct_camera_rotation(negative);
+  check(clamped.has_value(), "finite out-of-range target axes are clamped");
+  if (clamped.has_value()) {
+    check_bits(clamped->target_at_3a0, 0xBF800000u,
+               "negative +0xE88 selects +0x350 then clamps to -1");
+    check_bits(clamped->target_at_3a4, 0x3F000000u,
+               "negated +0xE8C clamps to +1 before scaling");
+  }
+
+  RetailMode2DirectTargetInput absent = direct;
+  absent.target_present = false;
+  const auto absent_result = select_mode2_direct_camera_rotation(absent);
+  check(absent_result.has_value() && absent_result->target_at_3a0 == 0.0F &&
+            absent_result->target_at_3a4 == 0.0F &&
+            absent_result->target_at_3a8 == 0.0F,
+        "an absent target preserves the retail zero-axis path");
+
+  RetailMode2DirectTargetInput refused = direct;
+  refused.manager_accepts_target = false;
+  const auto refused_result = select_mode2_direct_camera_rotation(refused);
+  check(refused_result.has_value() && refused_result->target_at_3a0 == 0.0F &&
+            refused_result->target_at_3a4 == 0.0F,
+        "manager+0x4A0 gates the target reads");
+
+  RetailMode2DirectTargetInput suppressed = direct;
+  suppressed.suppress_axes = true;
+  const auto suppressed_result =
+      select_mode2_direct_camera_rotation(suppressed);
+  check(suppressed_result.has_value() &&
+            suppressed_result->target_at_3a0 == 0.0F &&
+            suppressed_result->target_at_3a4 == 0.0F &&
+            suppressed_result->target_at_3a8 == 0.0F,
+        "the later identity query can suppress both axes");
+
+  RetailMode2DirectTargetInput invalid = direct;
+  invalid.gain_at_360 = std::numeric_limits<float>::infinity();
+  check(!select_mode2_direct_camera_rotation(invalid).has_value(),
+        "non-finite direct selector state fails closed");
+}
+
+void check_mode3_gain_curve() {
+  using namespace ac6::retail;
+  constexpr std::array<float, 4> coefficients{1.0F, 2.0F, 4.0F, 8.0F};
+  const auto quarter = evaluate_mode3_camera_gain_curve(coefficients, 0.25F);
+  check(quarter.has_value(), "the mode-3 cubic gain accepts finite state");
+  if (quarter.has_value()) {
+    check_bits(
+        *quarter, 0x3FFA0000u,
+        "the native cubic gain matches retail 0x8225D660 micro-execution");
+  }
+  const auto below = evaluate_mode3_camera_gain_curve(coefficients, -2.0F);
+  const auto above = evaluate_mode3_camera_gain_curve(coefficients, 3.0F);
+  check(below.has_value() && *below == coefficients.front() &&
+            above.has_value() && *above == coefficients.back(),
+        "the cubic parameter is clamped to the retail endpoints");
+  auto invalid = coefficients;
+  invalid[2] = std::numeric_limits<float>::quiet_NaN();
+  check(!evaluate_mode3_camera_gain_curve(invalid, 0.5F).has_value(),
+        "non-finite cubic state fails closed");
+}
+
 void check_unit_transform() {
   using namespace ac6::retail;
   RetailMode2CameraState state;
@@ -377,6 +483,8 @@ int main(int argc, char **argv) {
   check_dynamic_branches();
   check_dynamic_refusals();
   check_rotation_core();
+  check_direct_target_selector();
+  check_mode3_gain_curve();
   check_unit_transform();
   check_transposed_dot_products();
   check_rotation_order();

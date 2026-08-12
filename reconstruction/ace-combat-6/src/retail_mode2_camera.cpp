@@ -94,7 +94,16 @@ bool finite_rotation(const RetailMode2RotationState &state) noexcept {
          std::isfinite(state.rotation_at_3a8);
 }
 
-float interpolate_rotation(float current, float target, float response) noexcept {
+float clamp_signed_unit(float value) noexcept {
+  if (value < -1.0F)
+    return -1.0F;
+  if (value > 1.0F)
+    return 1.0F;
+  return value;
+}
+
+float interpolate_rotation(float current, float target,
+                           float response) noexcept {
   // The retail block uses fmsubs followed by fmadds. Expressing both as fma
   // preserves the single-rounding subtraction/addition grouping on hosts
   // that provide it, while keeping the state transition explicit.
@@ -113,6 +122,83 @@ float normalise_rotation(float value, bool snap) noexcept {
 }
 
 } // namespace
+
+std::optional<RetailMode2RotationInput> select_mode2_direct_camera_rotation(
+    const RetailMode2DirectTargetInput &input) noexcept {
+  if (!finite_rotation(input.current) || !std::isfinite(input.target_at_e88) ||
+      !std::isfinite(input.target_at_e8c) ||
+      !std::isfinite(input.gain_at_350) || !std::isfinite(input.gain_at_360) ||
+      !std::isfinite(input.gain_at_364) ||
+      !std::isfinite(input.response_rate_at_368) ||
+      !std::isfinite(input.frame_delta)) {
+    return std::nullopt;
+  }
+
+  // 0x82262A4C..0x82262AB4. f29/f31 start at zero. The direct path reads the
+  // two target fields only when both the pointer and manager+0x4A0 admit it.
+  float first_axis = 0.0F;
+  float second_axis = 0.0F;
+  if (input.target_present && input.manager_accepts_target) {
+    first_axis = input.target_at_e88;
+    second_axis = -input.target_at_e8c;
+  }
+
+  // In mode 2, 0x82262AE8 selects +0x360 only for a strictly positive first
+  // axis; zero and negative values select +0x350 at 0x82262B04.
+  const float selected_gain =
+      first_axis > 0.0F ? input.gain_at_360 : input.gain_at_350;
+
+  // 0x82262D60..0x82262DA0 clamps both axes before the optional suppression
+  // query. Suppression clears only the axes; the selected gain remains the one
+  // chosen above, exactly as in the retail ordering.
+  first_axis = clamp_signed_unit(first_axis);
+  second_axis = clamp_signed_unit(second_axis);
+  if (input.suppress_axes) {
+    first_axis = 0.0F;
+    second_axis = 0.0F;
+  }
+
+  RetailMode2RotationInput result;
+  result.current = input.current;
+  result.target_at_3a4 = input.gain_at_364 * second_axis;
+  result.target_at_3a0 = selected_gain * first_axis;
+  result.target_at_3a8 = selected_gain * first_axis;
+  result.response = input.response_rate_at_368 * input.frame_delta;
+  result.wrap_at_3a4 = false;
+  if (!std::isfinite(result.target_at_3a0) ||
+      !std::isfinite(result.target_at_3a4) ||
+      !std::isfinite(result.target_at_3a8) || !std::isfinite(result.response)) {
+    return std::nullopt;
+  }
+  return result;
+}
+
+std::optional<float>
+evaluate_mode3_camera_gain_curve(const std::array<float, 4> &coefficients,
+                                 float parameter) noexcept {
+  if (!finite_vector(coefficients) || !std::isfinite(parameter))
+    return std::nullopt;
+
+  // 0x8225D680..0x8225D6E8 is the cubic Bernstein form. The image computes
+  // the two t^2 values independently and rounds the scalar products before
+  // the three fused coefficient accumulations; preserve that grouping.
+  const float t = std::clamp(parameter, 0.0F, 1.0F);
+  const float t_squared = t * t;
+  const float one_minus_t = 1.0F - t;
+  const float second_t_squared = t * t;
+  const float t_cubed = t_squared * t;
+  const float one_minus_squared = one_minus_t * one_minus_t;
+  float right_middle = second_t_squared * one_minus_t;
+  float left_middle = one_minus_squared * t;
+  const float left_edge = one_minus_squared * one_minus_t;
+  right_middle *= 3.0F;
+  left_middle *= 3.0F;
+  const float left_middle_term = coefficients[1] * left_middle;
+  float result = std::fmaf(coefficients[0], left_edge, left_middle_term);
+  result = std::fmaf(coefficients[2], right_middle, result);
+  result = std::fmaf(coefficients[3], t_cubed, result);
+  return std::isfinite(result) ? std::optional(result) : std::nullopt;
+}
 
 std::optional<RetailMode2RotationState> step_mode2_camera_rotation(
     const RetailMode2RotationInput &input) noexcept {

@@ -106,6 +106,40 @@ struct RetailMode2RotationInput final {
   bool operator==(const RetailMode2RotationInput &) const = default;
 };
 
+// Live scalar fields consumed by the direct mode-2 target branch of
+// 0x82262A28. This is the manager+0x4A8 == 0 path: when a target is admitted,
+// +0xE88 supplies the first axis and the negated +0xE8C supplies the second.
+// The alternate +0x4A8 path and modes 1/3 deliberately remain separate.
+struct RetailMode2DirectTargetInput final {
+  RetailMode2RotationState current{};
+  bool target_present{};
+  bool manager_accepts_target{}; // manager+0x4A0
+  float target_at_e88{};
+  float target_at_e8c{};
+  float gain_at_350{};
+  float gain_at_360{};
+  float gain_at_364{};
+  float response_rate_at_368{};
+  float frame_delta{};
+  // Result of the later retail identity/query guard. Ownership of that global
+  // query stays outside this scalar selector until its producer lands.
+  bool suppress_axes{};
+  bool operator==(const RetailMode2DirectTargetInput &) const = default;
+};
+
+// 0x82262A4C..0x82262E64 for mode 2 with manager+0x4A8 == 0, excluding only
+// the externally-owned identity/query result represented by suppress_axes.
+// Produces the exact inputs consumed by step_mode2_camera_rotation().
+std::optional<RetailMode2RotationInput> select_mode2_direct_camera_rotation(
+    const RetailMode2DirectTargetInput &input) noexcept;
+
+// 0x8225D660, used by mode 3 when manager+0x39D is clear. The four values at
+// manager+0x350 form a cubic curve evaluated after clamping the parameter to
+// [0,1]. Invalid input and overflow fail closed.
+std::optional<float>
+evaluate_mode3_camera_gain_curve(const std::array<float, 4> &coefficients,
+                                 float parameter) noexcept;
+
 // 0x82262E68..0x82262F84, the state-writing core of 0x82262A28.  It keeps
 // retail's fused interpolation, shortest-path wrap for +0x3A4, final angle
 // normalisation, and the 0x001 snap.  Invalid arithmetic fails closed.

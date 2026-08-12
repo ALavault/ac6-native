@@ -1,0 +1,32 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x8225D660",
+    "case": "camera-mode3-gain-curve-quarter"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "FUN_8225d660",
+    "regions": [
+      {"name": "coefficients", "base": "0xb5000000", "kind": "bytes", "size": 16, "sha256": "e4062a2a9fda725c1a40e7fb90d28728cb65ae71013d6d151e3e0fbe940a1612"},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 4096}
+    ],
+    "steps": 32,
+    "callee_entries": 0,
+    "asserted_semantics_enabled": false,
+    "hint_noops": {},
+    "register_file_bridge": false,
+    "alias_copies": 0,
+    "asserted_semantics": {},
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": ""
+  },
+  "exit": {"kind": "return"},
+  "registers": {
+    "f1": "0x3fff400000000000"
+  },
+  "calls": [],
+  "memory_writes": [],
+  "region_dumps": []
+}
