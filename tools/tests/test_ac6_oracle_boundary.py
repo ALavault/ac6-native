@@ -712,6 +712,24 @@ class ProductBoundaryTests(unittest.TestCase):
             with self.assertRaises(boundary.BoundaryError):
                 boundary.audit_staging(root / "stage")
 
+    def test_xenon_generated_source_and_symbol_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "source"
+            source.mkdir()
+            (source / "ppc_recomp.0.cpp").write_text(
+                "void native_name() {}\n", encoding="utf-8"
+            )
+            with self.assertRaises(boundary.BoundaryError):
+                boundary.audit_source(source)
+
+            (source / "ppc_recomp.0.cpp").unlink()
+            (source / "runtime.cpp").write_text(
+                "void* table = PPCFuncMappings;\n", encoding="utf-8"
+            )
+            with self.assertRaises(boundary.BoundaryError):
+                boundary.audit_source(source)
+
     def test_package_rejects_oracle_named_entry(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             archive_path = Path(temporary) / "bad.tar.gz"
@@ -726,6 +744,47 @@ class ProductBoundaryTests(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     with redirect_stdout(io.StringIO()):
                         audit_native_package.main()
+            finally:
+                sys.argv = saved
+
+    def test_package_rejects_xenon_generated_name_and_elf_symbol(self) -> None:
+        cases = (
+            ("ac6/lib/ppc_recomp.12.cpp", b"generated guest code"),
+            ("ac6/bin/ac6-native", b"\x7fELF\x00PPCFuncMappings\x00"),
+        )
+        for name, payload in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                archive_path = Path(temporary) / "bad.tar.gz"
+                with tarfile.open(archive_path, "w:gz") as archive:
+                    info = tarfile.TarInfo(name)
+                    info.size = len(payload)
+                    archive.addfile(info, io.BytesIO(payload))
+                saved = sys.argv
+                sys.argv = ["audit_native_package.py", str(archive_path)]
+                try:
+                    with self.assertRaises(SystemExit):
+                        with redirect_stdout(io.StringIO()):
+                            audit_native_package.main()
+                finally:
+                    sys.argv = saved
+
+    def test_package_rejects_unscanned_oversized_member(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            archive_path = Path(temporary) / "bad.tar.gz"
+            payload = b"too large"
+            with tarfile.open(archive_path, "w:gz") as archive:
+                info = tarfile.TarInfo("ac6/share/data.bin")
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+            saved = sys.argv
+            sys.argv = ["audit_native_package.py", str(archive_path)]
+            try:
+                with mock.patch.object(
+                    audit_native_package, "MAX_PACKAGE_MEMBER_BYTES", len(payload) - 1
+                ):
+                    with self.assertRaises(SystemExit):
+                        with redirect_stdout(io.StringIO()):
+                            audit_native_package.main()
             finally:
                 sys.argv = saved
 

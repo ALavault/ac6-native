@@ -10,10 +10,15 @@ from pathlib import Path
 SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp", ".cmake", ".toml"}
 FORBIDDEN_TEXT = re.compile(
     r"(?i)(?:\brexglue\b|\brex_[A-Za-z0-9_]*\b|\bac6_recomp\b|"
-    r"\bxenonrecomp\b|(?:^|[\\/])generated(?:[\\/]|$))"
+    r"\bxenonrecomp\b|\bppc_recomp\b|\bppc_func_mapping\b|"
+    r"\bPPCFuncMappings\b|(?:^|[\\/])generated(?:[\\/]|$))"
 )
 FORBIDDEN_PATH_PARTS = {".tools", "generated", "rexglue", "ac6_recomp"}
 FORBIDDEN_RETAIL = re.compile(r"(?i)(?:^default\.xex$|^DATA\d*\.PAC$)")
+FORBIDDEN_GENERATED_NAME = re.compile(
+    r"(?i)(?:^ppc_recomp(?:\.[^.]+)*\.(?:c|cc|cpp|h|hpp)$|"
+    r"^ppc_func_mapping(?:\.[^.]+)*\.(?:c|cc|cpp|h|hpp)$)"
+)
 
 
 class BoundaryError(ValueError):
@@ -21,7 +26,11 @@ class BoundaryError(ValueError):
 
 
 def path_forbidden(path: Path) -> bool:
-    return any(part.lower() in FORBIDDEN_PATH_PARTS for part in path.parts)
+    return any(
+        part.lower() in FORBIDDEN_PATH_PARTS
+        or FORBIDDEN_GENERATED_NAME.fullmatch(part)
+        for part in path.parts
+    )
 
 
 def audit_source(root: Path) -> int:

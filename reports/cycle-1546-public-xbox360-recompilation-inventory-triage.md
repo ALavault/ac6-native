@@ -166,6 +166,13 @@ public Re-Cherry n'embarque ni fork/pin ReXGlue, ni code généré : XAM, XMA,
 VFS et Xenos sont `documented-unmatched`. Seule la forme adresse/phase/registres
 d'un hook MIDASM reste un patron provisoire.
 
+Audit C1 terminé : `cycle-1561-army-of-two-legacy-runtime-review.md`. Le seul
+dépôt public retrouvé reste l'ancien bring-up XenonRecomp, pas une migration
+ReXGlue vérifiable. Il ne fournit aucun composant M01 ; il ajoute surtout des
+gardes négatives de paquet, identité XEX, couverture des seams et refus des
+fallbacks Release. Le dépôt suit directement un XEX retail et environ 270 Mo
+de C++ PPC généré.
+
 ## Entrées non vérifiables dans cette passe
 
 KinectSportsRecomp `0fe6ed940c43f1ea277ce65eaa50713b3037bb9b`

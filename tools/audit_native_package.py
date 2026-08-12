@@ -9,16 +9,20 @@ from pathlib import Path
 
 FORBIDDEN_NAMES = re.compile(
     r"(DATA\d*\.PAC|\.xex$|oracle|\.ntxr$|\.f32$|\.ppm$|"
-    r"(?:^|/)(?:\.tools|generated|rexglue|ac6_recomp)(?:/|$)|\brex_[A-Za-z0-9_]*)",
+    r"(?:^|/)(?:\.tools|generated|rexglue|ac6_recomp)(?:/|$)|"
+    r"(?:^|/)(?:ppc_recomp|ppc_func_mapping)(?:[._][^/]*)?$|"
+    r"\brex_[A-Za-z0-9_]*)",
     re.I,
 )
 ELF_MAGIC = b"\x7fELF"
+MAX_PACKAGE_MEMBER_BYTES = 256 * 1024 * 1024
 # Scan oracle/runtime coupling markers in shipped binaries only. Xbox, XAM and
 # XMA are native product domains and must not be confused with a dependency on
 # the evidence runtime.
 FORBIDDEN_BYTES = re.compile(
     rb"(?<![A-Za-z0-9_])(?:xenia|rexglue|rex_[A-Za-z0-9_]*|ac6_recomp|"
-    rb"xenonrecomp|generated/|/\.tools/)(?![A-Za-z0-9_])",
+    rb"xenonrecomp|ppc_recomp|ppc_func_mapping|PPCFuncMappings|"
+    rb"generated/|/\.tools/)(?![A-Za-z0-9_])",
     re.I,
 )
 
@@ -34,7 +38,9 @@ def main() -> int:
         for member in members:
             if FORBIDDEN_NAMES.search(member.name):
                 raise SystemExit(f"error: forbidden package entry: {member.name}")
-            if member.isfile() and member.size <= 256 * 1024 * 1024:
+            if member.isfile() and member.size > MAX_PACKAGE_MEMBER_BYTES:
+                raise SystemExit(f"error: oversized package entry: {member.name}")
+            if member.isfile():
                 payload = archive.extractfile(member).read()  # type: ignore[union-attr]
                 # Headers, README and audit scripts may document the guest
                 # boundary; only shipped ELF payloads can introduce runtime
