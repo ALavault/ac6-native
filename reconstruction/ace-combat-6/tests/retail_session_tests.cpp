@@ -1,5 +1,6 @@
-// Mission 01 played end to end from the retail container, and ended by its own
-// sub-mission script.
+// Mission 01 session built from the retail container. Public/store-backed
+// execution stays fail-closed while the scheduler guards are unqualified; an
+// explicitly named payload-only diagnostic separately exercises the script.
 //
 // Two behaviours are under test and they are deliberately kept apart:
 //
@@ -47,6 +48,9 @@ constexpr float kFixedDt = 1.0f / 60.0f;
 using ac6::retail::RetailSession;
 using ac6::retail::ScriptAdvance;
 using ac6::retail::ScriptStepRun;
+
+ac6::InputFrame session_input(std::size_t tick) noexcept;
+std::uint64_t frame_hash(const ac6::retail::RetailSessionFrame& frame);
 
 std::vector<std::uint8_t> read_file(const std::filesystem::path& path) {
   std::ifstream input(path, std::ios::binary);
@@ -216,11 +220,89 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload) {
   REQUIRE(session->bundle()->loadout == loadout);
   REQUIRE(session->bundle()->difficulty == ac6::retail::RetailDifficulty::Ace);
   REQUIRE(session->bundle()->content_index_sha256 == store.index_sha256());
+  const auto require_external_drive_frame = [](const RetailSession& current,
+                                                const auto& frame) {
+    REQUIRE(!frame.script_ended);
+    REQUIRE(frame.sub_mission == 0);
+    REQUIRE(frame.step == 0);
+    REQUIRE(current.state() == ac6::ScenarioState::Gameplay);
+    const ac6::MissionDebrief debrief = current.debrief();
+    REQUIRE(debrief.outcome == ac6::MissionOutcome::InProgress);
+    REQUIRE(debrief.completed_objectives == 0);
+    REQUIRE(debrief.failed_objectives == 0);
+  };
+
+  // Store-backed play/replay is fail-closed until the retail scheduler guards
+  // and combat/producer join are qualified. Exercise a full controlled M01
+  // window, including save/resume and a deterministic replay of the inputs.
+  constexpr std::size_t kControlledTicks = 3600;
+  REQUIRE(session->scenario().counter_capacity() == 339);
+  for (std::uint16_t id = 0; id < session->scenario().counter_capacity(); ++id) {
+    REQUIRE(session->counter(id).has_value());
+    REQUIRE(*session->counter(id) == 0);
+  }
+  ac6::retail::RetailSessionFrame primary_frame;
+  for (std::size_t tick = 1; tick <= kControlledTicks / 2; ++tick) {
+    primary_frame = session->tick(kFixedDt, session_input(tick));
+    require_external_drive_frame(*session, primary_frame);
+  }
+  ac6::MissionExecution::Checkpoint checkpoint;
+  REQUIRE(session->save_checkpoint(checkpoint));
+  const ac6::SessionSaveSnapshot snapshot{
+      kMissionId, store.index_sha256(), session->execution().snapshot(), {}, checkpoint};
+  std::unique_ptr<RetailSession> resumed = RetailSession::open(
+      store, loadout,
+      {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+       ac6::retail::RetailDifficulty::Ace});
+  REQUIRE(resumed != nullptr);
+  REQUIRE(resumed->restore_save(snapshot));
+  for (std::size_t tick = kControlledTicks / 2 + 1; tick <= kControlledTicks; ++tick) {
+    primary_frame = session->tick(kFixedDt, session_input(tick));
+    const ac6::retail::RetailSessionFrame resumed_frame =
+        resumed->tick(kFixedDt, session_input(tick));
+    require_external_drive_frame(*session, primary_frame);
+    require_external_drive_frame(*resumed, resumed_frame);
+    REQUIRE(frame_hash(primary_frame) == frame_hash(resumed_frame));
+  }
+  std::unique_ptr<RetailSession> replay = RetailSession::open(
+      store, loadout,
+      {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+       ac6::retail::RetailDifficulty::Ace});
+  REQUIRE(replay != nullptr);
+  ac6::retail::RetailSessionFrame replay_frame;
+  for (std::size_t tick = 1; tick <= kControlledTicks; ++tick) {
+    replay_frame = replay->tick(kFixedDt, session_input(tick));
+    require_external_drive_frame(*replay, replay_frame);
+  }
+  REQUIRE(frame_hash(primary_frame) == frame_hash(replay_frame));
+  REQUIRE(primary_frame.world.tick == kControlledTicks);
+  REQUIRE(primary_frame.sub_mission == 0);
+  REQUIRE(primary_frame.step == 0);
+  REQUIRE(!primary_frame.script_ended);
+  REQUIRE(session->state() == ac6::ScenarioState::Gameplay);
+  REQUIRE(session->debrief().outcome == ac6::MissionOutcome::InProgress);
+  REQUIRE(session->debrief().completed_objectives == 0);
+  REQUIRE(session->debrief().failed_objectives == 0);
+  for (std::uint16_t id = 0; id < session->scenario().counter_capacity(); ++id) {
+    REQUIRE(session->counter(id).has_value());
+    REQUIRE(*session->counter(id) == 0);
+  }
+
   REQUIRE(RetailSession::open(store, {1, 1, false}, {kMissionId, {0, 0}}) ==
           nullptr);
   REQUIRE(RetailSession::open(store, loadout, {0, {0, 0}}) == nullptr);
   REQUIRE(RetailSession::open(store, loadout, {16, {0, 0}}) == nullptr);
   REQUIRE(RetailSession::open(store, loadout, {kMissionId, {0, 0}, 4}) == nullptr);
+  REQUIRE(RetailSession::open(
+              store, loadout,
+              {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+               ac6::retail::RetailDifficulty::Ace,
+               ac6::retail::RetailScriptDrive::DiagnosticFixedTick}) == nullptr);
+  REQUIRE(RetailSession::open(
+              store, loadout,
+              {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+               ac6::retail::RetailDifficulty::Ace,
+               ac6::retail::RetailScriptDrive::QualifiedRuntime}) == nullptr);
 
   TempStoreRoot invalid_root;
   const std::filesystem::path invalid_source = invalid_root.path() / "source";
@@ -321,18 +403,18 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
     const std::unique_ptr<RetailSession> qualified_session = RetailSession::open(
         store, {1, 1, true},
         {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-         ac6::retail::RetailDifficulty::Normal, true});
+         ac6::retail::RetailDifficulty::Normal});
     REQUIRE(qualified_session != nullptr);
     ac6::retail::RetailSessionFrame qualified_frame =
         qualified_session->tick(kFixedDt, {});
     for (std::size_t tick = 1; tick < 8; ++tick) {
       qualified_frame = qualified_session->tick(kFixedDt, {});
     }
-    // A short authored mission may complete before the eight-tick probe; the
-    // runtime intentionally stops simulation after the terminal transition.
-    REQUIRE(qualified_frame.world.tick > 0 && qualified_frame.world.tick <= 8);
-    REQUIRE(qualified_session->script().executed().size() <= 4096);
-    std::printf("retail_scheduler mission=%u ticks=8 executed=%zu ended=%u state=%u\n",
+    REQUIRE(qualified_frame.world.tick == 8);
+    REQUIRE(qualified_session->script().executed().size() <= 1);
+    REQUIRE(!qualified_session->script().ended());
+    REQUIRE(qualified_session->state() == ac6::ScenarioState::Gameplay);
+    std::printf("retail_external_drive mission=%u ticks=8 executed=%zu ended=%u state=%u\n",
                 mission_id, qualified_session->script().executed().size(),
                 qualified_session->script().ended() ? 1u : 0u,
                 static_cast<unsigned>(qualified_session->state()));
@@ -353,7 +435,7 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
       std::unique_ptr<RetailSession> resumed = RetailSession::open(
           store, {1, 1, true},
           {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-           ac6::retail::RetailDifficulty::Normal, true});
+           ac6::retail::RetailDifficulty::Normal});
       REQUIRE(resumed != nullptr && loaded.load(1) != nullptr);
       REQUIRE(resumed->restore_save(*loaded.load(1)));
       ac6::SessionSaveSnapshot wrong = *loaded.load(1);
@@ -851,13 +933,17 @@ int main(int argc, char** argv) {
   // Asserting it true would mean fabricating asset records. Assert the truth.
   REQUIRE(!idle.last.world.mission_ready);
 
-  // The product-facing store/session path owns the signal -2 cadence. The
-  // payload-only fixture above deliberately keeps caller-owned cadence, while
-  // this mode must exhaust the authored six-step Mission 01 script at the
-  // sixth fixed tick and complete all four objectives without a forced event.
+  // The forced cadence is retained only as an explicitly named payload-only
+  // diagnostic. The sealed-store entry point rejects this mode above.
+  REQUIRE(RetailSession::open(
+              payload,
+              {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+               ac6::retail::RetailDifficulty::Normal,
+               ac6::retail::RetailScriptDrive::QualifiedRuntime}) == nullptr);
   std::unique_ptr<RetailSession> scheduled = RetailSession::open(
       payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-                 ac6::retail::RetailDifficulty::Normal, true});
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
   REQUIRE(scheduled != nullptr);
   ac6::retail::RetailSessionFrame scheduled_frame;
   std::size_t scheduled_end_tick = 0;
@@ -879,10 +965,12 @@ int main(int argc, char** argv) {
   // at step zero and diverge here.
   std::unique_ptr<RetailSession> checkpoint_source = RetailSession::open(
       payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-                 ac6::retail::RetailDifficulty::Normal, true});
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
   std::unique_ptr<RetailSession> checkpoint_target = RetailSession::open(
       payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-                 ac6::retail::RetailDifficulty::Normal, true});
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
   REQUIRE(checkpoint_source != nullptr && checkpoint_target != nullptr);
   (void)checkpoint_source->tick(kFixedDt, session_input(1));
   (void)checkpoint_source->tick(kFixedDt, session_input(2));

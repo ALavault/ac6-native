@@ -140,7 +140,8 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
                                                    CampaignLoadout loadout,
                                                    RetailSessionConfig config) {
   if (!store.valid() || !loadout.valid() || config.mission_id == 0 ||
-      config.mission_id > kPalCampaignDataTableEntries.size()) {
+      config.mission_id > kPalCampaignDataTableEntries.size() ||
+      config.script_drive != RetailScriptDrive::ExternalProbe) {
     return nullptr;
   }
   // The common camera table is the first retail capability table already
@@ -177,6 +178,10 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
 
 std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> bytes,
                                                    RetailSessionConfig config) {
+  if (config.script_drive != RetailScriptDrive::ExternalProbe &&
+      config.script_drive != RetailScriptDrive::DiagnosticFixedTick) {
+    return nullptr;
+  }
   const std::optional<RetailCameraModeSelection> camera_mode =
       resolve_retail_camera_mode(config.camera_mode_word);
   if (!camera_mode.has_value()) return nullptr;
@@ -209,7 +214,7 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
   session->mission_id_ = config.mission_id;
   session->camera_mode_ = *camera_mode;
   session->player_entity_ = *player;
-  session->advance_script_each_tick_ = config.advance_script_each_tick;
+  session->script_drive_ = config.script_drive;
   session->payload_ = std::make_unique<ScenarioPayload>(std::move(payload));
   session->scenario_ = std::make_unique<MissionScenario>(std::move(scenario));
   session->world_ = std::make_unique<RetailWorld>(std::move(*world));
@@ -259,10 +264,10 @@ std::optional<MissionArea> RetailSession::current_area() const noexcept {
 
 RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcept {
   RetailSessionFrame frame;
-  // The retail mission state reaches 0x82267370 on signal -2 before the rest
-  // of the frame work. Product launches enable this path; parser/runtime
-  // fixtures leave it disabled so they can measure explicit caller cadence.
-  if (advance_script_each_tick_ && !script_.ended()) {
+  // This cadence is a payload-only diagnostic. Store-backed product sessions
+  // cannot select it while the retail scheduler guards and producer join are
+  // unqualified.
+  if (script_drive_ == RetailScriptDrive::DiagnosticFixedTick && !script_.ended()) {
     (void)advance_script();
   }
   frame.world = execution_->tick(fixed_dt, input);

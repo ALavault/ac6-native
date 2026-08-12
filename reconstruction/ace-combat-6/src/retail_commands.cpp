@@ -283,7 +283,8 @@ int run_play_impl(const Options& options) {
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, loadout,
                                   {1, {0, 0}, retail::kRetailOpeningCameraModeWord,
-                                   options.difficulty, true});
+                                   options.difficulty,
+                                   retail::RetailScriptDrive::ExternalProbe});
   if (session == nullptr) return 125;
   if (!options.resume.empty()) {
     SessionSaveStore saves;
@@ -453,13 +454,13 @@ struct ReplayRun final {
 
 std::optional<ReplayRun> replay_once(const RetailContentStore& store,
                                      const retail::RetailSessionReplay& replay,
-                                     const std::filesystem::path& trace = {},
-                                     const bool trace_window = false) {
+                                     const std::filesystem::path& trace = {}) {
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, replay.loadout,
                                   {replay.mission_id, {0, 0},
                                    retail::kRetailOpeningCameraModeWord,
-                                   replay.difficulty, !trace_window});
+                                   replay.difficulty,
+                                   retail::RetailScriptDrive::ExternalProbe});
   if (session == nullptr) return std::nullopt;
   ExecutionTraceJsonlWriter trace_writer;
   const bool tracing = !trace.empty();
@@ -514,18 +515,13 @@ int run_replay_impl(const Options& options) {
     return 134;
   }
   if (!loadout_qualified(store, replay.loadout)) return 135;
-  // A trace is a bounded Mission 01 comparison window, not a campaign
-  // completion request.  The old replay path advanced the authored script on
-  // every tick and therefore exhausted its six setup steps at native tick 6,
-  // while the oracle window deliberately stays in the airborne manager lane
-  // for 3,600 samples.  Keep ordinary replay semantics for `replay` alone,
-  // but hold the retail script cursor when `--trace` is present so both native
-  // runs cover the same fixed simulation window without forced progression.
+  // Replay and play share the same fail-closed drive policy. A trace changes
+  // observation only; it cannot enable or disable scenario progression.
   const bool trace_window = !options.trace.empty();
   const std::optional<ReplayRun> first =
-      replay_once(store, replay, options.trace, trace_window);
+      replay_once(store, replay, options.trace);
   const std::optional<ReplayRun> second =
-      replay_once(store, replay, {}, trace_window);
+      replay_once(store, replay);
   if (!first.has_value() || !second.has_value()) return 136;
   const bool deterministic = same_world_frame(first->final_frame, second->final_frame) &&
       first->sub_mission == second->sub_mission && first->step == second->step &&
@@ -568,8 +564,8 @@ int run_replay_impl(const Options& options) {
          << "  \"trace_samples\": " << first->trace_samples << ",\n"
          << "  \"trace_events\": " << first->trace_events << ",\n"
          << "  \"trace_window\": " << (trace_window ? "true" : "false") << ",\n"
-         << "  \"script_advance_each_tick\": "
-         << (trace_window ? "false" : "true") << "\n"
+         << "  \"script_drive\": \"external_probe\",\n"
+         << "  \"script_advance_each_tick\": false\n"
          << "}\n";
   if (!output || !deterministic || !trace_complete) return 139;
   std::fprintf(stdout, "ac6_retail=pass command=replay mission=%u frames=%zu "

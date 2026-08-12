@@ -10,15 +10,14 @@
 // hands that world to the product's own runtime, and runs the session loop -
 // input, flight integration, camera, HUD - over it.
 //
-// The product scheduler reaches the script's signal -2 branch once per fixed
-// tick. The native session now owns that cadence when its product-facing
-// configuration enables it; payload-only fixtures can still call
-// advance_script explicitly to measure alternate cadences. The guard retail
-// uses before that branch (context+0x820 and the low six bits of
-// FUN_82268C58()'s +0x124) remains an explicit boundary because those runtime
-// objects have no qualified native counterpart yet. Tag-7 conditions are
-// evaluated when their step becomes current; their counter producers remain a
-// separate boundary rather than being synthesized here.
+// The native session does not synthesize the product scheduler's signal -2.
+// Retail's three guards before that branch (context+0x820 and the low six bits
+// of FUN_82268C58()'s +0x124 among them), plus the combat/producer join, have no
+// qualified native counterpart yet. Payload-only fixtures can still call
+// advance_script explicitly, or opt into a named diagnostic cadence. Store-
+// backed sessions reject that diagnostic mode. Tag-7 conditions are evaluated
+// when their step becomes current; their counter producers remain a separate
+// boundary rather than being synthesized here.
 
 #include "ac6/campaign_progression.h"
 #include "ac6/product_runtime.h"
@@ -35,6 +34,18 @@
 
 namespace ac6::retail {
 
+enum class RetailScriptDrive : std::uint8_t {
+  // Fail-closed: a qualified external runtime/probe must call advance_script
+  // only when the retail scheduler guards and combat producer join permit it.
+  ExternalProbe = 0,
+  // Reserved for the native implementation of those guards and that join.
+  // Neither session entry point accepts this mode today.
+  QualifiedRuntime = 1,
+  // Payload-only diagnostic: inject signal -2 once per native fixed tick.
+  // This is deliberately rejected by the sealed-store product entry point.
+  DiagnosticFixedTick = 2,
+};
+
 struct RetailSessionConfig {
   std::uint32_t mission_id{1};
   // Which record the local-player branch matches, as 0x820A7420 resolves it.
@@ -43,10 +54,7 @@ struct RetailSessionConfig {
   // path is the qualified zero word, which 0x82223AC0 maps to view 1.
   std::uint32_t camera_mode_word{kRetailOpeningCameraModeWord};
   RetailDifficulty difficulty{RetailDifficulty::Normal};
-  // Product sessions receive signal -2 once per fixed simulation tick. Keep
-  // this opt-in for the payload-only parser/runtime fixtures, whose callers
-  // intentionally probe alternate script cadences.
-  bool advance_script_each_tick{};
+  RetailScriptDrive script_drive{RetailScriptDrive::ExternalProbe};
 };
 
 // One frame of the session, as the product's runtime produced it, plus where
@@ -104,16 +112,15 @@ class RetailSession final {
   // FUN_82268B28. None when the sub-mission has no tag-0 step.
   std::optional<MissionArea> current_area() const noexcept;
 
-  // One session frame: input, flight, camera, HUD state. Product sessions may
-  // advance the retail script immediately before the fixed-step world tick;
-  // payload-only fixtures can retain explicit caller-owned advancement.
+  // One session frame: input, flight, camera, HUD state. Script advancement is
+  // caller-owned unless a payload-only diagnostic explicitly requests a
+  // forced fixed-tick cadence.
   RetailSessionFrame tick(float fixed_dt, InputFrame input) noexcept;
 
-  // One call of 0x82267370 through 0x822ED708's update branch. The product
-  // scheduler invokes this from tick(); callers may invoke it directly only
-  // when the config leaves automatic progression disabled. The sub-mission
-  // the cursor leaves has its objective completed and the one it arrives on
-  // has its objective activated.
+  // One call of 0x82267370 through 0x822ED708's update branch. Callers invoke
+  // this only after an external probe/runtime has qualified the retail guards.
+  // The sub-mission the cursor leaves has its objective completed and the one
+  // it arrives on has its objective activated.
   ScriptAdvance advance_script() noexcept;
 
   // Save/restore the execution and retail script cursor as one product
@@ -171,7 +178,7 @@ class RetailSession final {
   std::uint32_t mission_id_{};
   RetailCameraModeSelection camera_mode_{retail_opening_camera_mode()};
   std::uint64_t tick_{};
-  bool advance_script_each_tick_{};
+  RetailScriptDrive script_drive_{RetailScriptDrive::ExternalProbe};
 };
 
 // The entity 0x820A7420 classified as the local player: the one record whose

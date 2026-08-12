@@ -157,7 +157,8 @@
       "closure": "M01's 339-slot counter capacity and every producer, consumer, encountered script tag, condition, transition, zone, and order reached by Mission 01 are mapped and mission-owner behavior is tested.",
       "blockers": [
         "All 3,650 authored OrderFlagBin producers across the fifteen missions are now localized and bounded; M01 uses 133 distinct IDs within its 339-slot capacity, while slot meanings, non-scenario producers, and live consumers remain unmapped.",
-        "AI/event timing and the events that satisfy retail conditions remain open; no counter may be fabricated."
+        "The public play/replay route now fails closed under ExternalProbe for a deterministic 3,600-tick M01 window; the first-target activation, qualified weapon/durability, destruction-to-counter producer, and three scheduler guards remain open.",
+        "AI/event timing and the events that satisfy retail conditions remain open; no counter or script tick may be fabricated."
       ],
       "evidence": [
         {
@@ -169,6 +170,11 @@
           "path": "reports/cycle-1532-the-authored-counter-producers-are-bounded.md",
           "size": 2252,
           "sha256": "9710a62ffd9f5691bbd45974e72b07e6e3ab1b626c336a57529833a2157bfb75"
+        },
+        {
+          "path": "reports/cycle-1537-product-script-drive-fails-closed.md",
+          "size": 2615,
+          "sha256": "8d2e50f61c06ee59bb529602f18cd76cf774b1079af7d0da223aad35c849b4be"
         }
       ]
     },
