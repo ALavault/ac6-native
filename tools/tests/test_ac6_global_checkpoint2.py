@@ -43,6 +43,22 @@ class GlobalCheckpoint2Tests(unittest.TestCase):
         ):
             audit_document(document)
 
+    def test_static_first_policy_is_required(self) -> None:
+        document = copy.deepcopy(self.document())
+        del document["policy"]["microexecution_is_ambiguity_escalation"]
+
+        with self.assertRaisesRegex(Checkpoint2Error, "checkpoint policy"):
+            audit_document(document)
+
+    def test_evidence_strategy_must_remain_passed(self) -> None:
+        document = copy.deepcopy(self.document())
+        document["evidence_strategy"]["state"] = "open"
+
+        with self.assertRaisesRegex(
+            Checkpoint2Error, "checkpoint evidence strategy state"
+        ):
+            audit_document(document)
+
 
 if __name__ == "__main__":
     unittest.main()

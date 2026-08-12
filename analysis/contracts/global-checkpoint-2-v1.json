@@ -57,7 +57,7 @@
     {
       "id": "vmx-vmx128",
       "state": "open",
-      "closure": "Every reachable position, transform, camera, and physics vector instruction has retail bytes, positive control, micro-execution, handwritten native semantics, and corpus coverage.",
+      "closure": "Every reachable position, transform, camera, and physics vector instruction has retail bytes, positive control, handwritten native semantics, and corpus coverage; micro-execution is required only for a documented ambiguity that static and bit-exact controls cannot resolve.",
       "blockers": [
         "The reachable instruction census is not sealed across the fifteen payloads.",
         "Huge finite angles, floating-point exception details, NaN payloads, interpolation, and unsupported Xenon instruction families remain explicit open boundaries."
@@ -187,7 +187,16 @@
     "unknown_behavior_fails_closed": true,
     "oracle_is_not_product": true,
     "generated_code_is_not_product": true,
-    "mission_progress_cannot_close_checkpoint": true
+    "mission_progress_cannot_close_checkpoint": true,
+    "microexecution_is_ambiguity_escalation": true
+  },
+  "evidence_strategy": {
+    "state": "passed",
+    "evidence": {
+      "path": "reports/checkpoint-2-static-first-evidence-policy.md",
+      "size": 1957,
+      "sha256": "4672f704310c41202452c1c61e094d5076ae8ca31c0183298a83d0031a7a49f2"
+    }
   },
   "validation_commands": [
     "cmake --build reconstruction/ace-combat-6/build -j16",

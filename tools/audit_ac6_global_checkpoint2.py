@@ -163,10 +163,19 @@ def audit_document(document: dict) -> None:
         "oracle_is_not_product",
         "generated_code_is_not_product",
         "mission_progress_cannot_close_checkpoint",
+        "microexecution_is_ambiguity_escalation",
     }
     require(
         set(policy) == required_policy and all(policy.values()),
         "checkpoint policy",
+    )
+    evidence_strategy = document.get("evidence_strategy", {})
+    require(
+        evidence_strategy.get("state") == "passed",
+        "checkpoint evidence strategy state",
+    )
+    audit_evidence(
+        evidence_strategy.get("evidence"), "checkpoint evidence strategy"
     )
     commands = document.get("validation_commands")
     require(
