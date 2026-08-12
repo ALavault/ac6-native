@@ -1,4 +1,5 @@
 #include "ac6/vulkan_scene_resource_cache.h"
+#include "fixtures/vulkan_clip_mesh_spirv.h"
 #include "fixtures/vulkan_triangle_spirv.h"
 #include "fixtures/vulkan_textured_triangle_spirv.h"
 
@@ -80,6 +81,22 @@ int main() {
           "strip-mesh", "qualified-texture", qualified_positions, qualified_uvs,
           strip_indices, qualified_texture)) {
     return fail("qualified_upload_refusal");
+  }
+  constexpr std::array<float, 16> identity_clip{
+      1.0F, 0.0F, 0.0F, 0.0F,
+      0.0F, 1.0F, 0.0F, 0.0F,
+      0.0F, 0.0F, 1.0F, 0.0F,
+      0.0F, 0.0F, 0.0F, 1.0F};
+  const auto clip_upload = ac6::make_vulkan_mission01_clip_textured_upload(
+      "clip-mesh", "qualified-texture", world_positions, qualified_uvs,
+      qualified_indices, identity_clip, qualified_texture);
+  if (!clip_upload || clip_upload->vertices.size() != 3U ||
+      clip_upload->vertices[0].z != 1.0F || clip_upload->vertices[0].w != 1.0F ||
+      clip_upload->rgba8.size() != 4U ||
+      ac6::make_vulkan_mission01_clip_textured_upload(
+          "clip-mesh", "qualified-texture", qualified_positions, qualified_uvs,
+          strip_indices, identity_clip, qualified_texture)) {
+    return fail("clip_upload_adapter");
   }
 
   ac6::RenderScene scene = scene_fixture();
@@ -169,6 +186,39 @@ int main() {
       cache.live_texture_count() != 0U || backend.live_texture_count() != 0U ||
       backend.live_textured_mesh_count() != 0U) {
     return fail("textured_reset");
+  }
+
+  const std::array<ac6::VulkanClipTexturedVertex, 3> clip_vertices{{
+      {-0.8F, -0.8F, 0.0F, 1.0F, 0.0F, 0.0F},
+      {0.8F, -0.8F, 0.0F, 1.0F, 1.0F, 0.0F},
+      {0.0F, 0.8F, 0.0F, 1.0F, 0.5F, 1.0F},
+  }};
+  const std::array<ac6::VulkanSceneClipTexturedMeshUpload, 1>
+      clip_mesh_uploads{{{"mesh", clip_vertices, indices}}};
+  const std::array<ac6::VulkanSceneTexturedMaterialUpload, 1>
+      clip_material_uploads{{{
+          "material", ac6_test::kClipMeshVertexSpirv,
+          ac6_test::kTexturedTriangleFragmentSpirv, {}, true}}};
+  if (!cache.build_clip_textured(textured_scene, target, clip_mesh_uploads,
+                                 clip_material_uploads, texture_uploads) ||
+      !cache.ready() || cache.live_mesh_count() != 1U ||
+      cache.live_pipeline_count() != 1U || cache.live_texture_count() != 1U ||
+      !cache.render(textured_scene)) {
+    return fail("clip_textured_persistent_build");
+  }
+  const auto clip_readback = backend.readback_rgba8(target);
+  if (clip_readback.size() != 16U * 16U * 4U ||
+      clip_readback[textured_center] != 255U ||
+      clip_readback[textured_center + 1U] != 0U ||
+      clip_readback[textured_center + 2U] != 0U ||
+      clip_readback[textured_center + 3U] != 255U) {
+    return fail("clip_textured_persistent_readback");
+  }
+  cache.reset();
+  if (cache.live_mesh_count() != 0U || cache.live_pipeline_count() != 0U ||
+      cache.live_texture_count() != 0U ||
+      backend.live_clip_textured_mesh_count() != 0U) {
+    return fail("clip_textured_reset");
   }
 
   const std::array<ac6::VulkanSceneMaterialUpload, 0> missing_materials{};

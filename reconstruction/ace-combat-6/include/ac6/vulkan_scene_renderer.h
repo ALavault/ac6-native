@@ -31,6 +31,12 @@ struct VulkanSceneTexturedMeshBinding final {
   std::uint32_t index_count{};
 };
 
+struct VulkanSceneClipTexturedMeshBinding final {
+  std::string_view mesh_id;
+  VulkanClipTexturedMeshHandle mesh{};
+  std::uint32_t index_count{};
+};
+
 struct VulkanSceneTextureBinding final {
   std::string_view texture_id;
   VulkanTextureHandle texture{};
@@ -63,6 +69,15 @@ class VulkanSceneRenderer final {
   [[nodiscard]] bool render_textured(
       const RenderScene& scene, VulkanRenderTargetHandle target,
       std::span<const VulkanSceneTexturedMeshBinding> meshes,
+      std::span<const VulkanSceneTexturedMaterialBinding> materials,
+      std::span<const VulkanSceneTextureBinding> textures) noexcept;
+
+  // Bounded projected variant. Vertices are already in homogeneous clip
+  // space; the caller owns the object-to-clip proof and no camera is inferred
+  // here. This remains a direct Vulkan path with persistent resources only.
+  [[nodiscard]] bool render_clip_textured(
+      const RenderScene& scene, VulkanRenderTargetHandle target,
+      std::span<const VulkanSceneClipTexturedMeshBinding> meshes,
       std::span<const VulkanSceneTexturedMaterialBinding> materials,
       std::span<const VulkanSceneTextureBinding> textures) noexcept;
 
