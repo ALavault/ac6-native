@@ -127,13 +127,60 @@ bool VulkanFramePresenter::create(const VulkanDevice& device,
     destroy();
     return false;
   }
+  staging_size_ = static_cast<VkDeviceSize>(extent_.width) * extent_.height * 4u;
+  if (staging_size_ == 0) {
+    destroy();
+    return false;
+  }
+  const VkBufferCreateInfo buffer_info{
+      VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr, 0, staging_size_,
+      VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_SHARING_MODE_EXCLUSIVE, 0,
+      nullptr};
+  if (vkCreateBuffer(device_, &buffer_info, nullptr, &staging_buffer_) != VK_SUCCESS) {
+    destroy();
+    return false;
+  }
+  VkMemoryRequirements requirements{};
+  vkGetBufferMemoryRequirements(device_, staging_buffer_, &requirements);
+  VkPhysicalDeviceMemoryProperties memory_properties{};
+  vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
+  std::uint32_t memory_type = memory_properties.memoryTypeCount;
+  for (std::uint32_t index = 0; index < memory_properties.memoryTypeCount; ++index) {
+    const VkMemoryPropertyFlags flags = memory_properties.memoryTypes[index].propertyFlags;
+    if ((requirements.memoryTypeBits & (1u << index)) != 0 &&
+        (flags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                  VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) ==
+            (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+      memory_type = index;
+      break;
+    }
+  }
+  if (memory_type == memory_properties.memoryTypeCount) {
+    destroy();
+    return false;
+  }
+  const VkMemoryAllocateInfo staging_allocate_info{
+      VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, nullptr, requirements.size,
+      memory_type};
+  if (vkAllocateMemory(device_, &staging_allocate_info, nullptr, &staging_memory_) != VK_SUCCESS ||
+      vkBindBufferMemory(device_, staging_buffer_, staging_memory_, 0) != VK_SUCCESS ||
+      vkMapMemory(device_, staging_memory_, 0, staging_size_, 0,
+                  &staging_mapped_) != VK_SUCCESS) {
+    destroy();
+    return false;
+  }
+  source_pixels_.reserve(static_cast<std::size_t>(staging_size_));
+  frame_pixels_.resize(static_cast<std::size_t>(staging_size_));
   return true;
 }
 
 bool VulkanFramePresenter::present_frame(const NativeRenderTarget& target) noexcept {
-  std::vector<std::uint8_t> source;
-  if (!valid() || !target.copy_rgba8(source) || source.empty()) return false;
-  std::vector<std::uint8_t> pixels(static_cast<std::size_t>(extent_.width) * extent_.height * 4u);
+  if (!valid() || !persistent_upload_ready() ||
+      !target.copy_rgba8(source_pixels_) || source_pixels_.empty() ||
+      frame_pixels_.size() != static_cast<std::size_t>(staging_size_)) {
+    return false;
+  }
   for (std::uint32_t y = 0; y < extent_.height; ++y) {
     const std::uint32_t source_y = std::min(target.height() - 1u,
         static_cast<std::uint32_t>((static_cast<std::uint64_t>(y) * target.height()) / extent_.height));
@@ -142,57 +189,25 @@ bool VulkanFramePresenter::present_frame(const NativeRenderTarget& target) noexc
           static_cast<std::uint32_t>((static_cast<std::uint64_t>(x) * target.width()) / extent_.width));
       const std::size_t source_offset = (static_cast<std::size_t>(source_y) * target.width() + source_x) * 4u;
       const std::size_t destination_offset = (static_cast<std::size_t>(y) * extent_.width + x) * 4u;
-      std::memcpy(pixels.data() + destination_offset, source.data() + source_offset, 4u);
+      std::memcpy(frame_pixels_.data() + destination_offset,
+                  source_pixels_.data() + source_offset, 4u);
     }
   }
-  VkBuffer staging = VK_NULL_HANDLE;
-  VkDeviceMemory staging_memory = VK_NULL_HANDLE;
-  const auto cleanup = [&]() {
-    if (staging_memory != VK_NULL_HANDLE) vkFreeMemory(device_, staging_memory, nullptr);
-    if (staging != VK_NULL_HANDLE) vkDestroyBuffer(device_, staging, nullptr);
-  };
-  const VkBufferCreateInfo buffer_info{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr, 0,
-                                       pixels.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                       VK_SHARING_MODE_EXCLUSIVE, 0, nullptr};
-  if (vkCreateBuffer(device_, &buffer_info, nullptr, &staging) != VK_SUCCESS) return false;
-  VkMemoryRequirements requirements{};
-  vkGetBufferMemoryRequirements(device_, staging, &requirements);
-  VkPhysicalDeviceMemoryProperties memory_properties{};
-  vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
-  std::uint32_t memory_type = memory_properties.memoryTypeCount;
-  for (std::uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
-    const VkMemoryPropertyFlags flags = memory_properties.memoryTypes[i].propertyFlags;
-    if ((requirements.memoryTypeBits & (1u << i)) != 0 &&
-        (flags & (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) ==
-            (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
-      memory_type = i;
-      break;
-    }
-  }
-  if (memory_type == memory_properties.memoryTypeCount) { cleanup(); return false; }
-  const VkMemoryAllocateInfo allocate_info{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, nullptr,
-                                           requirements.size, memory_type};
-  if (vkAllocateMemory(device_, &allocate_info, nullptr, &staging_memory) != VK_SUCCESS ||
-      vkBindBufferMemory(device_, staging, staging_memory, 0) != VK_SUCCESS) {
-    cleanup(); return false;
-  }
-  void* mapped = nullptr;
-  if (vkMapMemory(device_, staging_memory, 0, pixels.size(), 0, &mapped) != VK_SUCCESS) {
-    cleanup(); return false;
-  }
-  std::memcpy(mapped, pixels.data(), pixels.size());
-  vkUnmapMemory(device_, staging_memory);
   if (vkWaitForFences(device_, 1, &fence_, VK_TRUE, UINT64_MAX) != VK_SUCCESS ||
-      vkResetFences(device_, 1, &fence_) != VK_SUCCESS) { cleanup(); return false; }
+      vkResetFences(device_, 1, &fence_) != VK_SUCCESS) return false;
+  // The upload buffer is shared by consecutive submissions.  Wait for the
+  // previous fence before overwriting it; the old per-frame buffer masked
+  // this ordering requirement by construction.
+  std::memcpy(staging_mapped_, frame_pixels_.data(), frame_pixels_.size());
   std::uint32_t image_index = 0;
   const VkResult acquire = vkAcquireNextImageKHR(device_, swapchain_, UINT64_MAX,
                                                   image_available_, VK_NULL_HANDLE, &image_index);
   if ((acquire != VK_SUCCESS && acquire != VK_SUBOPTIMAL_KHR) || image_index >= images_.size() ||
-      vkResetCommandBuffer(command_buffer_, 0) != VK_SUCCESS) { cleanup(); return false; }
+      vkResetCommandBuffer(command_buffer_, 0) != VK_SUCCESS) return false;
   const VkCommandBufferBeginInfo begin_info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr, 0, nullptr};
-  if (vkBeginCommandBuffer(command_buffer_, &begin_info) != VK_SUCCESS) { cleanup(); return false; }
+  if (vkBeginCommandBuffer(command_buffer_, &begin_info) != VK_SUCCESS) return false;
   const VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-  if (image_index >= initialized_images_.size()) { cleanup(); return false; }
+  if (image_index >= initialized_images_.size()) return false;
   const VkImageMemoryBarrier to_transfer{
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
       initialized_images_[image_index] ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR : VK_IMAGE_LAYOUT_UNDEFINED,
@@ -202,7 +217,7 @@ bool VulkanFramePresenter::present_frame(const NativeRenderTarget& target) noexc
                        VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &to_transfer);
   const VkBufferImageCopy copy_region{0, 0, 0, {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
                                       {0, 0, 0}, {extent_.width, extent_.height, 1}};
-  vkCmdCopyBufferToImage(command_buffer_, staging, images_[image_index],
+  vkCmdCopyBufferToImage(command_buffer_, staging_buffer_, images_[image_index],
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
   const VkImageMemoryBarrier to_present{
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT, 0,
@@ -210,17 +225,16 @@ bool VulkanFramePresenter::present_frame(const NativeRenderTarget& target) noexc
       VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, images_[image_index], range};
   vkCmdPipelineBarrier(command_buffer_, VK_PIPELINE_STAGE_TRANSFER_BIT,
                        VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &to_present);
-  if (vkEndCommandBuffer(command_buffer_) != VK_SUCCESS) { cleanup(); return false; }
+  if (vkEndCommandBuffer(command_buffer_) != VK_SUCCESS) return false;
   const VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
   const VkSubmitInfo submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO, nullptr, 1, &image_available_,
                                  &wait_stage, 1, &command_buffer_, 1, &render_finished_};
-  if (vkQueueSubmit(queue_, 1, &submit_info, fence_) != VK_SUCCESS) { cleanup(); return false; }
+  if (vkQueueSubmit(queue_, 1, &submit_info, fence_) != VK_SUCCESS) return false;
   initialized_images_[image_index] = true;
   const VkPresentInfoKHR present_info{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, nullptr, 1,
                                       &render_finished_, 1, &swapchain_, &image_index, nullptr};
   const VkResult presented = vkQueuePresentKHR(queue_, &present_info);
   const bool waited = vkWaitForFences(device_, 1, &fence_, VK_TRUE, UINT64_MAX) == VK_SUCCESS;
-  cleanup();
   return waited && (presented == VK_SUCCESS || presented == VK_SUBOPTIMAL_KHR);
 }
 
@@ -270,6 +284,17 @@ bool VulkanFramePresenter::present_clear(float red, float green, float blue,
 void VulkanFramePresenter::destroy() noexcept {
   if (device_ == VK_NULL_HANDLE) return;
   vkDeviceWaitIdle(device_);
+  if (staging_mapped_ != nullptr && staging_memory_ != VK_NULL_HANDLE) {
+    vkUnmapMemory(device_, staging_memory_);
+  }
+  if (staging_memory_ != VK_NULL_HANDLE) vkFreeMemory(device_, staging_memory_, nullptr);
+  if (staging_buffer_ != VK_NULL_HANDLE) vkDestroyBuffer(device_, staging_buffer_, nullptr);
+  staging_mapped_ = nullptr;
+  staging_memory_ = VK_NULL_HANDLE;
+  staging_buffer_ = VK_NULL_HANDLE;
+  staging_size_ = 0;
+  source_pixels_.clear();
+  frame_pixels_.clear();
   if (fence_ != VK_NULL_HANDLE) vkDestroyFence(device_, fence_, nullptr);
   if (render_finished_ != VK_NULL_HANDLE) vkDestroySemaphore(device_, render_finished_, nullptr);
   if (image_available_ != VK_NULL_HANDLE) vkDestroySemaphore(device_, image_available_, nullptr);

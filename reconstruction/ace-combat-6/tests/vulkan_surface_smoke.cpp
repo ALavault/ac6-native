@@ -68,7 +68,8 @@ int main() {
   ac6::VulkanFramePresenter presenter;
   ac6::NativeRenderTarget native_target;
   if (!native_target.resize(64, 32) || !native_target.clear(0xFF163D7Au, 1.0f) ||
-      !presenter.create(device, swapchain) || !presenter.present_clear(0.03f, 0.12f, 0.24f, 1.0f) ||
+      !presenter.create(device, swapchain) || !presenter.persistent_upload_ready() ||
+      !presenter.present_clear(0.03f, 0.12f, 0.24f, 1.0f) ||
       !presenter.present_frame(native_target) || !presenter.present_frame(native_target)) {
     std::fprintf(stderr, "vk_present_failed\n");
     presenter.destroy();

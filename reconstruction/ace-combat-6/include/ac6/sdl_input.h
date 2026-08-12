@@ -200,6 +200,13 @@ class VulkanFramePresenter final {
   bool present_frame(const NativeRenderTarget& target) noexcept;
   void destroy() noexcept;
   bool valid() const noexcept { return command_pool_ != VK_NULL_HANDLE; }
+  // The upload buffer is allocated and mapped once when the swapchain is
+  // created.  A frame submission only copies pixels into this persistent
+  // buffer; it must not allocate or destroy a Vulkan staging resource.
+  bool persistent_upload_ready() const noexcept {
+    return staging_buffer_ != VK_NULL_HANDLE && staging_memory_ != VK_NULL_HANDLE &&
+        staging_mapped_ != nullptr && staging_size_ != 0;
+  }
 
  private:
   VkDevice device_{VK_NULL_HANDLE};
@@ -214,6 +221,12 @@ class VulkanFramePresenter final {
   VkExtent2D extent_{};
   std::vector<VkImage> images_;
   std::vector<bool> initialized_images_;
+  VkBuffer staging_buffer_{VK_NULL_HANDLE};
+  VkDeviceMemory staging_memory_{VK_NULL_HANDLE};
+  VkDeviceSize staging_size_{};
+  void* staging_mapped_{};
+  std::vector<std::uint8_t> source_pixels_;
+  std::vector<std::uint8_t> frame_pixels_;
 };
 
 }  // namespace ac6
