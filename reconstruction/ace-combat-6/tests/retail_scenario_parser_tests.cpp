@@ -209,6 +209,74 @@ std::vector<std::uint8_t> synthetic_scenario(std::uint8_t class_byte) {
   return blob.take();
 }
 
+// A minimal scenario with one authored OrderFlagBin and a declared counter
+// capacity. The flag id is parameterized so the parser's new bound is tested
+// independently of the qualified retail corpus.
+std::vector<std::uint8_t> synthetic_flag_scenario(
+    std::uint16_t counter_capacity, std::uint16_t counter_id) {
+  Blob blob;
+  const Node root = append_node(blob);
+  const Table root_table = append_table(blob, 10);
+
+  const Node unit_list = append_node(blob);
+  point_child(blob, root_table, 0, unit_list.at);
+  const Table unit_table = append_table(blob, 1);
+  point_table(blob, unit_list, unit_table.at);
+  const Node wrapper = append_node(blob);
+  point_child(blob, unit_table, 0, wrapper.at);
+  const Table wrapper_table = append_table(blob, 1);
+  point_table(blob, wrapper, wrapper_table.at);
+  const Node record = append_node(blob);
+  point_child(blob, wrapper_table, 0, record.at);
+  const std::size_t record_data = blob.size();
+  blob.append_zeros(0x10);
+  blob.set_u8(record_data + 0x08, 2);
+  point_data(blob, record, record_data);
+  const Table record_table = append_table(blob, 1);
+  point_table(blob, record, record_table.at);
+
+  const Node set = append_node(blob);
+  point_child(blob, record_table, 0, set.at);
+  const Table set_table = append_table(blob, 1);
+  point_table(blob, set, set_table.at);
+  const Node act = append_node(blob);
+  point_child(blob, set_table, 0, act.at);
+  const Table act_table = append_table(blob, 1);
+  point_table(blob, act, act_table.at);
+  const Node order = append_node(blob);
+  point_child(blob, act_table, 0, order.at);
+  const std::size_t order_data = blob.size();
+  blob.append_zeros(1);
+  blob.set_u8(order_data, 6);
+  point_data(blob, order, order_data);
+  const Table order_table = append_table(blob, 1);
+  point_table(blob, order, order_table.at);
+  const Node flag = append_node(blob);
+  point_child(blob, order_table, 0, flag.at);
+  const std::size_t flag_data = blob.size();
+  blob.append_zeros(5);
+  blob.set_u8(flag_data, static_cast<std::uint8_t>(counter_id >> 8));
+  blob.set_u8(flag_data + 1, static_cast<std::uint8_t>(counter_id));
+  point_data(blob, flag, flag_data);
+
+  const Node counters = append_node(blob);
+  point_child(blob, root_table, 1, counters.at);
+  const std::size_t counter_data = blob.size();
+  blob.append_zeros(2);
+  blob.set_u8(counter_data,
+              static_cast<std::uint8_t>(counter_capacity >> 8));
+  blob.set_u8(counter_data + 1,
+              static_cast<std::uint8_t>(counter_capacity));
+  point_data(blob, counters, counter_data);
+
+  for (std::size_t slot = 2; slot < 10; ++slot) {
+    const Node empty = append_node(blob);
+    point_child(blob, root_table, slot, empty.at);
+  }
+  point_table(blob, root, root_table.at);
+  return blob.take();
+}
+
 std::string read_file(const std::filesystem::path& path) {
   std::ifstream input(path, std::ios::binary);
   std::ostringstream buffer;
@@ -299,6 +367,23 @@ void check_presence_rule() {
   REQUIRE(payload.has_value());
   REQUIRE(!payload->present(0));
   REQUIRE(payload->present(8));
+}
+
+void check_flag_counter_bound() {
+  const std::optional<ScenarioPayload> accepted_payload =
+      ScenarioPayload::open(synthetic_flag_scenario(8, 7));
+  REQUIRE(accepted_payload.has_value());
+  const std::optional<MissionScenario> accepted =
+      MissionScenario::parse(*accepted_payload);
+  REQUIRE(accepted.has_value());
+  REQUIRE(accepted->flag_orders().size() == 1);
+  REQUIRE(accepted->flag_orders().front().act_index == 0);
+  REQUIRE(accepted->flag_orders().front().order_index == 0);
+
+  const std::optional<ScenarioPayload> rejected_payload =
+      ScenarioPayload::open(synthetic_flag_scenario(8, 8));
+  REQUIRE(rejected_payload.has_value());
+  REQUIRE(!MissionScenario::parse(*rejected_payload).has_value());
 }
 
 int check_retail(const std::filesystem::path& manifests,
@@ -414,6 +499,7 @@ int main(int argc, char** argv) {
   check_synthetic();
   check_negative_count_is_empty();
   check_presence_rule();
+  check_flag_counter_bound();
   if (argc < 3) return 0;
   return check_retail(argv[1], argv[2]);
 }

@@ -56,6 +56,8 @@ std::string submission_stable_id(std::uint32_t mission_id,
 }
 
 bool parse_tag7_condition(const ScenarioPayload& payload, std::size_t step,
+                          std::uint16_t counter_capacity,
+                          std::size_t sub_mission_count,
                           std::optional<ScenarioStepCondition>& condition) {
   // 0x8226E158 obtains pas[8], then dereferences the first child data block
   // as the six-byte condition record. A missing/truncated record is not a
@@ -71,6 +73,11 @@ bool parse_tag7_condition(const ScenarioPayload& payload, std::size_t step,
   const std::optional<std::uint8_t> target = payload.u8(*data + 0x05);
   if (!counter_id.has_value() || !threshold_bits.has_value() ||
       !comparison.has_value() || !target.has_value() || *comparison > 2) {
+    return false;
+  }
+  if ((*counter_id != 0 && *counter_id != 0xFFFFu &&
+       *counter_id >= counter_capacity) ||
+      *target >= sub_mission_count) {
     return false;
   }
   if (*counter_id != 0 && *counter_id != 0xFFFFu) {
@@ -305,8 +312,9 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
               !operation.has_value()) {
             return std::nullopt;
           }
-          scenario.flag_orders_.push_back(
-              {record.index, *counter_id, *literal, *operation});
+          scenario.flag_orders_.push_back({record.index, act_index,
+                                           current_order_index, *counter_id,
+                                           *literal, *operation});
         }
         ++act_index;
       }
@@ -358,8 +366,10 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
   }
 
   // Slot 2, the sub-missions, each with the 0x28-stride script 0x8226E158 runs.
+  const std::vector<std::size_t> sub_mission_nodes =
+      payload.children(slots[kSlotSubMissions]);
   std::uint32_t sub_mission_index = 0;
-  for (const std::size_t node : payload.children(slots[kSlotSubMissions])) {
+  for (const std::size_t node : sub_mission_nodes) {
     ScenarioSubMission sub_mission;
     sub_mission.index = sub_mission_index++;
     for (const std::size_t list : payload.children(node)) {
@@ -378,7 +388,9 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         if (!tag.has_value()) return std::nullopt;
         sub_mission.step_tags.push_back(*tag);
         std::optional<ScenarioStepCondition> condition;
-        if (*tag == 7 && !parse_tag7_condition(payload, step, condition)) {
+        if (*tag == 7 &&
+            !parse_tag7_condition(payload, step, scenario.counter_capacity_,
+                                  sub_mission_nodes.size(), condition)) {
           return std::nullopt;
         }
         sub_mission.step_conditions.push_back(condition);
@@ -403,6 +415,12 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
       }
     }
     scenario.sub_missions_.push_back(std::move(sub_mission));
+  }
+
+  // Retain the authored producers without executing them, but never expose an
+  // index outside the counter table the retail payload itself declares.
+  for (const ScenarioFlagOrder& order : scenario.flag_orders_) {
+    if (order.counter_id >= scenario.counter_capacity_) return std::nullopt;
   }
 
   return scenario;

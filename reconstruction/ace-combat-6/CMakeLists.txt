@@ -225,6 +225,13 @@ add_test(NAME ac6-retail-scenario-parser-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../../reports/logs/cycle-739-pac-mission-gate/fhm/idx_0009/000_00_00_00_10.bin)
 set_tests_properties(ac6-retail-scenario-parser-tests PROPERTIES SKIP_RETURN_CODE 77)
 
+# Statically joins every authored OrderFlagBin producer to its retail counter
+# capacity across the fifteen campaign payloads. No order is executed here.
+add_executable(ac6-retail-counter-corpus-tests tests/retail_counter_corpus_tests.cpp)
+target_link_libraries(ac6-retail-counter-corpus-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-counter-corpus COMMAND ac6-retail-counter-corpus-tests)
+set_tests_properties(ac6-retail-counter-corpus PROPERTIES SKIP_RETURN_CODE 77)
+
 # The consumer behaviours: classification, insertion, sub-mission sequencing.
 add_executable(ac6-retail-mission-state-tests tests/retail_mission_state_tests.cpp)
 target_link_libraries(ac6-retail-mission-state-tests PRIVATE ac6_product_core)

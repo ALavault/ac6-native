@@ -151,9 +151,9 @@
     {
       "id": "objectives-campaign",
       "state": "open",
-      "closure": "All 339 counters, producers, consumers, encountered script tags, conditions, transitions, zones, and orders are mapped and mission-owner behavior is corpus-tested.",
+      "closure": "M01's 339-slot counter capacity and every authored producer, consumer, encountered script tag, condition, transition, zone, and order are mapped and mission-owner behavior is corpus-tested.",
       "blockers": [
-        "The meanings and producers of the 339 counters remain unmapped.",
+        "All 3,650 authored OrderFlagBin producers across the fifteen missions are now localized and bounded; M01 uses 133 distinct IDs within its 339-slot capacity, while slot meanings, non-scenario producers, and live consumers remain unmapped.",
         "AI/event timing and the events that satisfy retail conditions remain open; no counter may be fabricated."
       ],
       "evidence": [
@@ -161,6 +161,11 @@
           "path": "reports/checkpoint-2-objective-condition-parser.md",
           "size": 2873,
           "sha256": "313e313fbee3716ad50e8de9ff8890500fa145e6b3554cc6d2603062de8c9ba4"
+        },
+        {
+          "path": "reports/cycle-1532-the-authored-counter-producers-are-bounded.md",
+          "size": 2252,
+          "sha256": "9710a62ffd9f5691bbd45974e72b07e6e3ab1b626c336a57529833a2157bfb75"
         }
       ]
     },
@@ -213,6 +218,7 @@
     "python3 tools/audit_ac6_oracle_reproducibility.py",
     "python3 tools/audit_ac6_camera_selector_microexec.py",
     "python3 tools/audit_ac6_scene_tcam_corpus.py --check-matrix reports/ac6-pal-scene-tcam-corpus.json",
+    "AC6_RETAIL_CACHE=PATH ctest --test-dir reconstruction/ace-combat-6/build -R '^ac6-retail-counter-corpus$' --output-on-failure",
     "git diff --check"
   ]
 }

@@ -192,9 +192,12 @@ struct ScenarioFaction {
 
 // One OrderFlagBin order - tag 6 of the per-unit order program, and the only
 // thing in the scenario that writes a mission counter. Its payload is
-// {u16 counter_id, u16 literal, u8 operation}.
+// {u16 counter_id, u16 literal, u8 operation}. The Set/Act/Order indices retain
+// its authored location without implying when the order runs.
 struct ScenarioFlagOrder {
   std::uint32_t unit_index{};
+  std::uint32_t act_index{};
+  std::uint32_t order_index{};
   std::uint16_t counter_id{};
   std::uint16_t literal{};
   std::uint8_t operation{};
