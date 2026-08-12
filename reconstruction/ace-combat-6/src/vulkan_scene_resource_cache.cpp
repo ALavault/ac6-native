@@ -144,7 +144,7 @@ make_vulkan_mission01_clip_textured_upload(
     const retail::DecodedTexture& texture) noexcept {
   if (mesh_id.empty() || texture_id.empty() || positions.empty() ||
       positions.size() != texcoords.size() || indices.empty() ||
-      indices.size() % 3U != 0U || texture.width == 0U || texture.height == 0U ||
+      texture.width == 0U || texture.height == 0U ||
       texture.pixels.size() != static_cast<std::size_t>(texture.width) *
                                      texture.height) {
     return std::nullopt;
@@ -191,12 +191,28 @@ make_vulkan_mission01_clip_textured_upload(
         {clip[0], clip[1], clip[2], clip[3], uv.u, uv.v});
   }
   upload.indices.reserve(indices.size());
+  std::array<std::uint16_t, 3> strip{};
+  std::size_t strip_count = 0U;
   for (const std::uint16_t index : indices) {
-    if (index == retail::kStripRestart || index >= upload.vertices.size()) {
+    if (index == retail::kStripRestart) {
+      strip_count = 0U;
+      continue;
+    }
+    if (index >= upload.vertices.size()) {
       return std::nullopt;
     }
-    upload.indices.push_back(index);
+    strip[strip_count % 3U] = index;
+    ++strip_count;
+    if (strip_count < 3U) continue;
+    std::uint16_t first = strip[(strip_count - 3U) % 3U];
+    std::uint16_t second = strip[(strip_count - 2U) % 3U];
+    const std::uint16_t third = strip[(strip_count - 1U) % 3U];
+    if ((strip_count & 1U) == 0U) std::swap(first, second);
+    upload.indices.push_back(first);
+    upload.indices.push_back(second);
+    upload.indices.push_back(third);
   }
+  if (upload.indices.empty()) return std::nullopt;
   return upload;
 }
 

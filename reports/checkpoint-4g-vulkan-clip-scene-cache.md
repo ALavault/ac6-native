@@ -10,9 +10,11 @@ le HUD et la profondeur ; aucune matrice n'est déduite de `RenderScene`.
 
 L'adaptateur `make_vulkan_mission01_clip_textured_upload` convertit un mesh NDXR
 et une texture NTXR déjà décodée avec une matrice objet→clip fournie par
-l'appelant. Il vérifie finitude, `w != 0`, indices triangle-list et convertit
-`0xAABBGGRR` en RGBA8. Il ne qualifie donc ni la caméra, ni les constantes
-Xenos, ni un shader retail : la preuve de projection doit précéder son appel.
+`0xAABBGGRR` en RGBA8. Les strips NDXR sont convertis en triangle-list avec la
+même alternance et les mêmes resets `0xFFFF` que le rasteriseur qualifié ; la
+voie 2D, elle, reste stricte et refuse tout restart. Il ne qualifie donc ni la
+caméra, ni les constantes Xenos, ni un shader retail : la preuve de projection
+doit précéder son appel.
 
 Validation ciblée :
 
@@ -25,7 +27,7 @@ ac6-cpp-complexity, scene contract, boundary source/binary        pass
 ```
 
 Le readback headless retrouve le pixel texturé attendu après deux chemins
-persistants ; les refus de strip et de rollback restent testés. Aucun shader
+persistants ; la triangulation strip et les refus de rollback restent testés. Aucun shader
 Xenos/SPIR-V retail n'est livré : les blobs historiques sous `reports/` restent
 des indices `bridge`, et le couple `472913F460D4B446/8F1C48BA92C8E43E` n'est pas
 promu en contrat produit sans capture oracle courante.

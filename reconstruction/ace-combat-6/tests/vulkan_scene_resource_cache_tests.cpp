@@ -73,7 +73,8 @@ int main() {
   }
   const std::array<ac6::retail::NdxrPosition, 3> world_positions{{
       {-0.8F, -0.8F, 1.0F}, {0.8F, -0.8F, 1.0F}, {0.0F, 0.8F, 1.0F}}};
-  const std::array<std::uint16_t, 3> strip_indices{{0U, 1U, ac6::retail::kStripRestart}};
+  const std::array<std::uint16_t, 4> strip_indices{{0U, 1U, 2U,
+                                                     ac6::retail::kStripRestart}};
   if (ac6::make_vulkan_mission01_textured_upload(
           "world-mesh", "qualified-texture", world_positions, qualified_uvs,
           qualified_indices, qualified_texture) ||
@@ -90,12 +91,15 @@ int main() {
   const auto clip_upload = ac6::make_vulkan_mission01_clip_textured_upload(
       "clip-mesh", "qualified-texture", world_positions, qualified_uvs,
       qualified_indices, identity_clip, qualified_texture);
+  const auto clip_strip_upload =
+      ac6::make_vulkan_mission01_clip_textured_upload(
+          "clip-strip-mesh", "qualified-texture", qualified_positions,
+          qualified_uvs, strip_indices, identity_clip, qualified_texture);
   if (!clip_upload || clip_upload->vertices.size() != 3U ||
       clip_upload->vertices[0].z != 1.0F || clip_upload->vertices[0].w != 1.0F ||
-      clip_upload->rgba8.size() != 4U ||
-      ac6::make_vulkan_mission01_clip_textured_upload(
-          "clip-mesh", "qualified-texture", qualified_positions, qualified_uvs,
-          strip_indices, identity_clip, qualified_texture)) {
+      clip_upload->indices.size() != 3U ||
+      clip_upload->rgba8.size() != 4U || !clip_strip_upload ||
+      clip_strip_upload->indices.size() != 3U) {
     return fail("clip_upload_adapter");
   }
 
