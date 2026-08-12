@@ -47,6 +47,10 @@ exports/
 # --- build output and caches ----------------------------------------------
 build/
 .build/
+/reconstruction/ace-combat-6/build-core/
+/bin/
+/include/
+/share/
 __pycache__/
 
 # --- textual reverse-engineering memory (never binary evidence) ----------
@@ -120,6 +124,8 @@ reports/**/*.ppm
 reports/**/*.bin
 reports/**/*.capt
 ghidra-projects-xenon/
+/exports.pre-s0/
+/ghidra-user/.config/
 
 # Test byproducts that ctest drops at the REPOSITORY ROOT, not under reports/.
 # The reports/** patterns above do not cover them, so before this a `git add -A`

@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/reconstruction/ace-combat-6/build-core/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
