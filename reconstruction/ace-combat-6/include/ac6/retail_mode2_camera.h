@@ -150,6 +150,38 @@ struct RetailMode2IndirectAxes final {
   bool operator==(const RetailMode2IndirectAxes &) const = default;
 };
 
+// The two scalar slots passed to 0x8225C680 by the mode-3 direct target path.
+// `manager_alternate_scale` is manager+0x4A8: false selects retail's 1.25
+// radial scale, while true selects 1.0.
+struct RetailMode3AxisInput final {
+  float x{}; // first slot, r3
+  float y{}; // second slot, r4
+  bool manager_alternate_scale{};
+  bool operator==(const RetailMode3AxisInput &) const = default;
+};
+
+// Results of the retail trigonometric calls, injected after their explicit
+// `frsp` at 0x8225C740/+4C. This bounded port does not claim a general native
+// equivalent for 0x820936E8, 0x82381068 or 0x82380F98.
+//
+// The names follow the destination slots rather than an assumed cos/sin tuple:
+// 0x82380F98's sine-like result multiplies the magnitude written to the first
+// slot; 0x82381068's cosine-like result multiplies the magnitude written to the
+// second. In particular, retail's x=1,y=0 control is first=0x3F800000 and
+// second=0xB33BBD2E. Reversing these fields to {cos*m,sin*m} is not faithful to
+// the observed multiply/store order at 0x8225C744..0x8225C758.
+struct RetailMode3AxisFactors final {
+  float first_axis_factor{};
+  float second_axis_factor{};
+  bool operator==(const RetailMode3AxisFactors &) const = default;
+};
+
+struct RetailMode3NormalisedAxes final {
+  float first{};
+  float second{};
+  bool operator==(const RetailMode3NormalisedAxes &) const = default;
+};
+
 // 0x82262A4C..0x82262E64 for mode 2 with manager+0x4A8 == 0, excluding only
 // the externally-owned identity/query result represented by suppress_axes.
 // Produces the exact inputs consumed by step_mode2_camera_rotation().
@@ -167,6 +199,15 @@ std::optional<RetailMode2IndirectAxes> normalise_mode2_indirect_camera_axes(
 // step_mode2_camera_rotation(); the VMX128 axis producer stays outside.
 std::optional<RetailMode2RotationInput> select_mode2_indirect_camera_rotation(
     const RetailMode2IndirectTargetInput &input) noexcept;
+
+// 0x8225C680. The zero/zero branch preserves both input zero signs without
+// consuming the injected factors. Otherwise retail computes float x*x, then
+// fmaf(y,y,x*x), scales sqrt(radius^2) by 1.25 or 1.0, clamps the magnitude to
+// [0,1] and applies the two explicitly injected factors. Invalid arithmetic
+// fails closed.
+std::optional<RetailMode3NormalisedAxes> normalise_mode3_camera_axes(
+    const RetailMode3AxisInput &input,
+    const RetailMode3AxisFactors &retail_factors) noexcept;
 
 // 0x8225D660, used by mode 3 when manager+0x39D is clear. The four values at
 // manager+0x350 form a cubic curve evaluated after clamping the parameter to

@@ -56,6 +56,10 @@ constexpr float kPi = std::bit_cast<float>(std::uint32_t{0x40490FDB});
 constexpr float kTwoPi = std::bit_cast<float>(std::uint32_t{0x40C90FDB});
 constexpr float kNegativePi =
     std::bit_cast<float>(std::uint32_t{0xC0490FDB});
+constexpr float kMode3DefaultAxisScale =
+    std::bit_cast<float>(std::uint32_t{0x3FA00000});
+constexpr float kMode3AlternateAxisScale =
+    std::bit_cast<float>(std::uint32_t{0x3F800000});
 
 float retail_unit_clamp(float value) noexcept {
   // 0x8225DB04..0x8225DB20: the two comparisons are ordered and the selected
@@ -231,6 +235,49 @@ std::optional<RetailMode2RotationInput> select_mode2_indirect_camera_rotation(
       !std::isfinite(result.target_at_3a8) || !std::isfinite(result.response)) {
     return std::nullopt;
   }
+  return result;
+}
+
+std::optional<RetailMode3NormalisedAxes> normalise_mode3_camera_axes(
+    const RetailMode3AxisInput &input,
+    const RetailMode3AxisFactors &retail_factors) noexcept {
+  if (!std::isfinite(input.x) || !std::isfinite(input.y))
+    return std::nullopt;
+
+  // 0x8225C6B4..0x8225C6C0 skips the angle, radius and trigonometric calls.
+  // Returning the original slots also retains their independent zero signs.
+  if (input.x == 0.0F && input.y == 0.0F)
+    return RetailMode3NormalisedAxes{input.x, input.y};
+
+  if (!std::isfinite(retail_factors.first_axis_factor) ||
+      !std::isfinite(retail_factors.second_axis_factor)) {
+    return std::nullopt;
+  }
+
+  // 0x8225C704 rounds x*x to float before the fused y*y addition at +0x708.
+  const float x_squared = input.x * input.x;
+  if (!std::isfinite(x_squared))
+    return std::nullopt;
+  const float radius_squared = std::fmaf(input.y, input.y, x_squared);
+  if (!std::isfinite(radius_squared) || radius_squared < 0.0F)
+    return std::nullopt;
+
+  const float radius = std::sqrt(radius_squared);
+  const float scale = input.manager_alternate_scale
+                          ? kMode3AlternateAxisScale
+                          : kMode3DefaultAxisScale;
+  float magnitude = radius * scale;
+  if (!std::isfinite(radius) || !std::isfinite(magnitude))
+    return std::nullopt;
+  magnitude = std::clamp(magnitude, 0.0F, 1.0F);
+
+  // Retail stores the cosine-like product second and the sine-like product
+  // first; the neutral factor names make that measured ordering explicit.
+  const RetailMode3NormalisedAxes result{
+      retail_factors.first_axis_factor * magnitude,
+      retail_factors.second_axis_factor * magnitude};
+  if (!std::isfinite(result.first) || !std::isfinite(result.second))
+    return std::nullopt;
   return result;
 }
 

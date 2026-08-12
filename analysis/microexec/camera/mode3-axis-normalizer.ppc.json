@@ -1,0 +1,38 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x8225C680",
+    "case": "camera-mode3-normalizer-axis-x"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "Function_8225C680",
+    "regions": [
+      {"name": "constant_zero", "base": "0x8200082c", "kind": "bytes", "size": 4, "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"},
+      {"name": "constant_one", "base": "0x82001348", "kind": "bytes", "size": 4, "sha256": "de620abd6d3615746360c1d15ce3a56291236d37424124054a49d25e947ffc4d"},
+      {"name": "default_scale", "base": "0x8206a030", "kind": "bytes", "size": 4, "sha256": "ce8a3518504b3c99f1bb9ed5b692a236ab44939b18de25c6c459d521eaf77eda"},
+      {"name": "global_root_pointer", "base": "0x826e4eb4", "kind": "bytes", "size": 4, "sha256": "5cdec5d34b5e22aaa37bb0d30be4bea3333f71739f6517e070c46552789f6774"},
+      {"name": "manager_slot", "base": "0xb402f9a0", "kind": "bytes", "size": 4, "sha256": "3a5176f689d6a7199d5826614323b9bced07676e7e473e382220b81f4b21ac78"},
+      {"name": "alternate_scale", "base": "0xb50004a8", "kind": "bytes", "size": 1, "sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d"},
+      {"name": "axes", "base": "0xb6000000", "kind": "bytes", "size": 8, "sha256": "e416065dd951359ab79d557107324f0f8fb0142494f2523ca9fdac35f1ac3d18"},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 8192}
+    ],
+    "steps": 208,
+    "callee_entries": 8,
+    "asserted_semantics_enabled": false,
+    "hint_noops": {},
+    "register_file_bridge": false,
+    "alias_copies": 0,
+    "asserted_semantics": {},
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": ""
+  },
+  "exit": {"kind": "return"},
+  "registers": {},
+  "calls": [],
+  "memory_writes": [],
+  "region_dumps": [
+    {"name": "axes", "base": "0xb6000000", "size": 8, "after_hex": "3f800000b33bbd2e", "after_hex_b": "3f800000b33bbd2e"}
+  ]
+}

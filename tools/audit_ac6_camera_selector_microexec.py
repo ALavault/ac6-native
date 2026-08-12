@@ -9,9 +9,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-XEX_SHA256 = (
-    "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
-)
+XEX_SHA256 = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
 SNAPSHOT_SCHEMA = "ac6.function-snapshot.v1"
 
 
@@ -24,7 +22,7 @@ def require(condition: bool, message: str) -> None:
         raise CameraSelectorEvidenceError(message)
 
 
-def load_snapshot(path: Path) -> dict:
+def load_snapshot(path: Path, expected_exit: str = "return") -> dict:
     document = json.loads(path.read_text(encoding="utf-8"))
     require(document.get("schema") == SNAPSHOT_SCHEMA, f"{path.name} schema")
     provenance = document.get("provenance", {})
@@ -32,10 +30,12 @@ def load_snapshot(path: Path) -> dict:
         provenance.get("xex_sha256") == XEX_SHA256
         and provenance.get("asserted_semantics_enabled") is False
         and provenance.get("asserted_semantics") == {}
-        and provenance.get("register_file_bridge") is False,
+        and provenance.get("hint_noops") == {}
+        and provenance.get("register_file_bridge") is False
+        and provenance.get("alias_copies") == 0,
         f"{path.name} provenance",
     )
-    require(document.get("exit") == {"kind": "return"}, f"{path.name} exit")
+    require(document.get("exit") == {"kind": expected_exit}, f"{path.name} exit")
     return document
 
 
@@ -53,8 +53,7 @@ def audit(root: Path = ROOT) -> None:
     )
     direct_provenance = direct["provenance"]
     require(
-        direct_provenance.get("steps") == 217
-        and direct_provenance.get("callee_entries") == 20,
+        direct_provenance.get("steps") == 217 and direct_provenance.get("callee_entries") == 20,
         "direct selector execution census",
     )
     dumps = direct.get("region_dumps")
@@ -83,8 +82,7 @@ def audit(root: Path = ROOT) -> None:
     )
     curve_provenance = curve["provenance"]
     require(
-        curve_provenance.get("steps") == 32
-        and curve_provenance.get("callee_entries") == 0,
+        curve_provenance.get("steps") == 32 and curve_provenance.get("callee_entries") == 0,
         "mode3 curve execution census",
     )
     require(
@@ -139,6 +137,121 @@ def audit(root: Path = ROOT) -> None:
         "indirect scalar-tail retail result",
     )
 
+    small_direction = load_snapshot(evidence / "mode2-indirect-small-direction.ppc.json", "step_limit")
+    require(
+        small_direction.get("identity")
+        == {
+            "implementation": "ppc-pcode",
+            "function": "0x82262738",
+            "case": "camera-mode2-indirect-small-direction",
+        },
+        "indirect small-direction identity",
+    )
+    small_provenance = small_direction["provenance"]
+    require(
+        small_provenance.get("function_name") == "<no function>"
+        and small_provenance.get("steps") == 134
+        and small_provenance.get("callee_entries") == 2
+        and small_provenance.get("written") == "output 16 bytes",
+        "indirect small-direction execution census",
+    )
+    require(
+        [
+            (region.get("name"), region.get("base"), region.get("kind"), region.get("size"))
+            for region in small_provenance.get("regions", [])
+        ]
+        == [
+            ("stack_pre", "0xc0000000", "zero", 3920),
+            ("output", "0xc0000f50", "poison", 16),
+            ("direction", "0xc0000f60", "bytes", 16),
+            ("stack_tail", "0xc0000f70", "zero", 144),
+        ],
+        "indirect small-direction regions",
+    )
+    small_direction_bytes = "3680000036000000b680000000000000"
+    require(
+        small_direction.get("registers")
+        == {
+            "f28": "0x3ec0000000000000",
+            "f31": "0xbfe921fb60000000",
+        },
+        "indirect small-direction scalar result",
+    )
+    require(
+        small_direction.get("calls") == []
+        and small_direction.get("memory_writes")
+        == [
+            {
+                "address": "0xc0000f50",
+                "size": 16,
+                "after_hex": small_direction_bytes,
+                "after_hex_b": small_direction_bytes,
+            }
+        ]
+        and small_direction.get("region_dumps")
+        == [
+            {
+                "name": "output",
+                "base": "0xc0000f50",
+                "size": 16,
+                "after_hex": small_direction_bytes,
+                "after_hex_b": small_direction_bytes,
+            }
+        ],
+        "indirect small-direction copied output",
+    )
+
+    normalizer = load_snapshot(evidence / "mode3-axis-normalizer.ppc.json")
+    require(
+        normalizer.get("identity")
+        == {
+            "implementation": "ppc-pcode",
+            "function": "0x8225C680",
+            "case": "camera-mode3-normalizer-axis-x",
+        },
+        "mode3 axis normalizer identity",
+    )
+    normalizer_provenance = normalizer["provenance"]
+    require(
+        normalizer_provenance.get("function_name") == "Function_8225C680"
+        and normalizer_provenance.get("steps") == 208
+        and normalizer_provenance.get("callee_entries") == 8
+        and normalizer_provenance.get("written") == "",
+        "mode3 axis normalizer execution census",
+    )
+    require(
+        [
+            (region.get("name"), region.get("base"), region.get("kind"), region.get("size"))
+            for region in normalizer_provenance.get("regions", [])
+        ]
+        == [
+            ("constant_zero", "0x8200082c", "bytes", 4),
+            ("constant_one", "0x82001348", "bytes", 4),
+            ("default_scale", "0x8206a030", "bytes", 4),
+            ("global_root_pointer", "0x826e4eb4", "bytes", 4),
+            ("manager_slot", "0xb402f9a0", "bytes", 4),
+            ("alternate_scale", "0xb50004a8", "bytes", 1),
+            ("axes", "0xb6000000", "bytes", 8),
+            ("stack", "0xc0000000", "zero", 8192),
+        ],
+        "mode3 axis normalizer regions",
+    )
+    require(
+        normalizer.get("calls") == []
+        and normalizer.get("memory_writes") == []
+        and normalizer.get("region_dumps")
+        == [
+            {
+                "name": "axes",
+                "base": "0xb6000000",
+                "size": 8,
+                "after_hex": "3f800000b33bbd2e",
+                "after_hex_b": "3f800000b33bbd2e",
+            }
+        ],
+        "mode3 axis normalizer retail result",
+    )
+
 
 def main() -> int:
     try:
@@ -148,7 +261,7 @@ def main() -> int:
         return 1
     print(
         "camera_selector_microexec=pass direct=217 curve=32 "
-        "indirect_tail=38 substituted=0"
+        "indirect_tail=38 small_direction=134 normalizer=208 substituted=0"
     )
     return 0
 

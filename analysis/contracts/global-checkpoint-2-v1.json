@@ -75,7 +75,7 @@
       "state": "open",
       "closure": "Scene selection, every TCAM variant, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested for all fifteen missions.",
       "blockers": [
-        "The direct mode-2 target path, the mode-3 cubic gain, and the non-mode-3 scalar tail of the manager+0x4A8 path are ported; the upstream VMX128 direction producer, mode-1 heading correction/override, 0x82281198 query producer, and their remaining 0x82262A28 joins are still open.",
+        "The direct mode-2 target path, mode-3 cubic gain, non-mode-3 scalar tail, small-direction threshold path, and 0x8225C680 radial normalizer are bounded; the upstream matrix/VMX128 direction producer, VMX estimate path, retail trigonometric factor producer, mode-1 heading correction/override, 0x82281198 query producer, and remaining 0x82262A28 joins are still open.",
         "The live player locator producer and full fifteen-payload Scene/TCAM variant census remain open."
       ],
       "evidence": [
@@ -88,6 +88,11 @@
           "path": "reports/cycle-1526-the-indirect-camera-tail-is-bounded.md",
           "size": 4120,
           "sha256": "1bc283f85cdd781fcd1ad6e0110500383556e9def74eaf1a25b8933679cb44a9"
+        },
+        {
+          "path": "reports/cycle-1527-the-mode3-axis-normalizer-is-bounded.md",
+          "size": 3186,
+          "sha256": "bb506afd92b1c040b4ec13a6dd6b1fcabb6ff75c8f97f311fa565d175641c7b8"
         }
       ]
     },

@@ -438,6 +438,115 @@ void check_mode3_gain_curve() {
         "non-finite cubic state fails closed");
 }
 
+void check_mode3_axis_normaliser() {
+  using namespace ac6::retail;
+
+  // Exact result of canonical PAL 0x8225C680 for x=1,y=0, including the small
+  // negative residue returned by the cosine-like retail helper.
+  const RetailMode3AxisFactors axis_x_factors{
+      1.0F, std::bit_cast<float>(std::uint32_t{0xB33BBD2E})};
+  const auto axis_x = normalise_mode3_camera_axes(
+      RetailMode3AxisInput{1.0F, 0.0F, false}, axis_x_factors);
+  check(axis_x.has_value(), "the mode-3 x-axis retail control is accepted");
+  if (axis_x.has_value()) {
+    check_bits(axis_x->first, 0x3F800000u,
+               "mode-3 first output matches 0x8225C680 micro-execution");
+    check_bits(axis_x->second, 0xB33BBD2Eu,
+               "mode-3 second output keeps the retail cosine residue");
+  }
+
+  const RetailMode3AxisFactors first_only{1.0F, 0.0F};
+  const auto default_scale = normalise_mode3_camera_axes(
+      RetailMode3AxisInput{0.5F, 0.0F, false}, first_only);
+  const auto alternate_scale = normalise_mode3_camera_axes(
+      RetailMode3AxisInput{0.5F, 0.0F, true}, first_only);
+  check(default_scale.has_value() && alternate_scale.has_value(),
+        "both qualified mode-3 radial scales are accepted");
+  if (default_scale.has_value() && alternate_scale.has_value()) {
+    check_bits(default_scale->first, 0x3F200000u,
+               "manager+0x4A8 clear selects the retail 1.25 scale");
+    check_bits(alternate_scale->first, 0x3F000000u,
+               "manager+0x4A8 set selects the retail 1.0 scale");
+  }
+
+  // These exact float words distinguish retail's fused y*y+x*x from rounding
+  // y*y separately before the addition: the resulting magnitudes differ by
+  // one ulp (0x3EB1EBB7 versus 0x3EB1EBB6).
+  const auto fused_radius = normalise_mode3_camera_axes(
+      RetailMode3AxisInput{
+          std::bit_cast<float>(std::uint32_t{0x3E85ACE4}),
+          std::bit_cast<float>(std::uint32_t{0x3E6AD561}), true},
+      first_only);
+  check(fused_radius.has_value(), "the fused retail radius control is accepted");
+  if (fused_radius.has_value()) {
+    check_bits(fused_radius->first, 0x3EB1EBB7u,
+               "the radius keeps float x*x then fused y*y+x*x grouping");
+  }
+
+  const auto clamped = normalise_mode3_camera_axes(
+      RetailMode3AxisInput{2.0F, 0.0F, false},
+      RetailMode3AxisFactors{0.25F, -0.5F});
+  check(clamped.has_value() && clamped->first == 0.25F &&
+            clamped->second == -0.5F,
+        "the scaled radius is clamped to one before both products");
+
+  const auto signed_zero = normalise_mode3_camera_axes(
+      RetailMode3AxisInput{-0.0F, 0.0F, false},
+      RetailMode3AxisFactors{1.0F, 1.0F});
+  check(signed_zero.has_value(), "the retail zero/zero branch is accepted");
+  if (signed_zero.has_value()) {
+    check_bits(signed_zero->first, 0x80000000u,
+               "the first slot preserves its negative zero sign");
+    check_bits(signed_zero->second, 0x00000000u,
+               "the second slot preserves its positive zero sign");
+  }
+
+  RetailMode3AxisInput invalid{1.0F, 0.0F, false};
+  invalid.x = std::numeric_limits<float>::quiet_NaN();
+  check(!normalise_mode3_camera_axes(invalid, first_only).has_value(),
+        "a non-finite mode-3 axis fails closed");
+  invalid = {1.0F, std::numeric_limits<float>::infinity(), false};
+  check(!normalise_mode3_camera_axes(invalid, first_only).has_value(),
+        "a non-finite second mode-3 axis fails closed");
+  invalid = {1.0F, 0.0F, false};
+  check(!normalise_mode3_camera_axes(
+             invalid,
+             RetailMode3AxisFactors{
+                 std::numeric_limits<float>::infinity(), 0.0F})
+             .has_value(),
+        "a non-finite injected retail factor fails closed");
+  invalid = {std::numeric_limits<float>::max(), 0.0F, false};
+  check(!normalise_mode3_camera_axes(invalid, first_only).has_value(),
+        "overflow in the separately rounded x square fails closed");
+  invalid = {0.0F, std::numeric_limits<float>::max(), false};
+  check(!normalise_mode3_camera_axes(invalid, first_only).has_value(),
+        "overflow in the fused radius square fails closed");
+
+  // The bounded output is directly useful to the already-qualified gain and
+  // rotation stages without claiming the still-open complete mode-3 selector.
+  const auto composed_axes = normalise_mode3_camera_axes(
+      RetailMode3AxisInput{0.3F, 0.4F, true},
+      RetailMode3AxisFactors{0.6F, 0.8F});
+  check(composed_axes.has_value(),
+        "finite normalized mode-3 axes are available to later stages");
+  if (composed_axes.has_value()) {
+    const auto gain = evaluate_mode3_camera_gain_curve(
+        std::array<float, 4>{1.0F, 1.0F, 1.0F, 1.0F},
+        std::fabs(composed_axes->second));
+    std::optional<RetailMode2RotationState> stepped;
+    if (gain.has_value()) {
+      RetailMode2RotationInput rotation;
+      rotation.target_at_3a0 = *gain * composed_axes->first;
+      rotation.target_at_3a4 = composed_axes->second;
+      rotation.target_at_3a8 = *gain * composed_axes->first;
+      rotation.response = 0.5F;
+      stepped = step_mode2_camera_rotation(rotation);
+    }
+    check(stepped.has_value(),
+          "mode-3 axes compose with the bounded gain and rotation cores");
+  }
+}
+
 void check_unit_transform() {
   using namespace ac6::retail;
   RetailMode2CameraState state;
@@ -567,6 +676,7 @@ int main(int argc, char **argv) {
   check_rotation_core();
   check_direct_target_selector();
   check_indirect_scalar_tail();
+  check_mode3_axis_normaliser();
   check_mode3_gain_curve();
   check_unit_transform();
   check_transposed_dot_products();

@@ -1,0 +1,39 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x82262738",
+    "case": "camera-mode2-indirect-small-direction"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "<no function>",
+    "regions": [
+      {"name": "stack_pre", "base": "0xc0000000", "kind": "zero", "size": 3920},
+      {"name": "output", "base": "0xc0000f50", "kind": "poison", "size": 16},
+      {"name": "direction", "base": "0xc0000f60", "kind": "bytes", "size": 16, "sha256": "dd31673b0ee0051122047531b09793a6272dd2209897ff76b2516ee31f0d167e"},
+      {"name": "stack_tail", "base": "0xc0000f70", "kind": "zero", "size": 144}
+    ],
+    "steps": 134,
+    "callee_entries": 2,
+    "asserted_semantics_enabled": false,
+    "hint_noops": {},
+    "register_file_bridge": false,
+    "alias_copies": 0,
+    "asserted_semantics": {},
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": "output 16 bytes"
+  },
+  "exit": {"kind": "step_limit"},
+  "registers": {
+    "f28": "0x3ec0000000000000",
+    "f31": "0xbfe921fb60000000"
+  },
+  "calls": [],
+  "memory_writes": [
+    {"address": "0xc0000f50", "size": 16, "after_hex": "3680000036000000b680000000000000", "after_hex_b": "3680000036000000b680000000000000"}
+  ],
+  "region_dumps": [
+    {"name": "output", "base": "0xc0000f50", "size": 16, "after_hex": "3680000036000000b680000000000000", "after_hex_b": "3680000036000000b680000000000000"}
+  ]
+}
