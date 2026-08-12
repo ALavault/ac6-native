@@ -118,6 +118,10 @@ ne fait que précharger des XEX non recompilés ; ce n'est pas un modèle comple
 
 ReOdyssey suit comme audit spécialisé du remplacement progressif du renderer.
 
+Audit A3 terminé : `cycle-1549-downpour-rexglue-source-audit.md`. Il établit
+notamment que les tags publics Downpour `v1.1` à `v1.1.6` sont des changements
+README uniquement et que le code SDK public s'arrête à `v1.0`.
+
 ## Entrées non vérifiables dans cette passe
 
 KinectSportsRecomp `0fe6ed940c43f1ea277ce65eaa50713b3037bb9b`
