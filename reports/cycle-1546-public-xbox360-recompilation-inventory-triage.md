@@ -154,6 +154,13 @@ preuves retail le cache SMOL-V incohérent, les formats en fallback, l'absence
 de mips/cubemaps et les synchronisations neutralisées ; aucune lane M01 n'est
 fermée par ce dépôt.
 
+Audit B5 terminé : `cycle-1559-goldeneye-rexglue-instrumentation-review.md`.
+Il retient le tuple de télémétrie ring/swap/fence/thread, mais sépare
+strictement observation et récupération : le watchdog public écrit horloge,
+sémaphore, bit skip et pointeurs guest, donc invalide toute trace oracle. Il
+confirme aussi la nécessité d'auditer récursivement le paquet final et les gros
+tableaux d'octets, pas seulement les fichiers suivis.
+
 Audit C4 terminé : `cycle-1554-lollipop-rexglue-runtime-review.md`. Le dépôt
 public Re-Cherry n'embarque ni fork/pin ReXGlue, ni code généré : XAM, XMA,
 VFS et Xenos sont `documented-unmatched`. Seule la forme adresse/phase/registres
