@@ -24,6 +24,9 @@ EVIDENCE_NAMES = (
     "mode2-indirect-small-direction.ppc.json",
     "mode3-gain-curve.ppc.json",
     "mode3-axis-normalizer.ppc.json",
+    "mode2-tunnel-query-hit.ppc.json",
+    "mode2-tunnel-query-miss.ppc.json",
+    "mode2-tunnel-query-inactive.ppc.json",
 )
 
 
@@ -114,6 +117,43 @@ class CameraSelectorMicroexecTests(unittest.TestCase):
                 root,
                 "mode3-axis-normalizer.ppc.json",
                 lambda document: document["provenance"].__setitem__("register_file_bridge", True),
+            )
+            with self.assertRaises(CameraSelectorEvidenceError):
+                audit(root)
+
+    def test_tunnel_hit_result_mismatch_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            copy_evidence(
+                root,
+                "mode2-tunnel-query-hit.ppc.json",
+                lambda document: document["registers"].__setitem__("r3", "0x00000000"),
+            )
+            with self.assertRaises(CameraSelectorEvidenceError):
+                audit(root)
+
+    def test_tunnel_miss_callback_mismatch_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            copy_evidence(
+                root,
+                "mode2-tunnel-query-miss.ppc.json",
+                lambda document: next(
+                    region for region in document["provenance"]["regions"] if region["name"] == "vtable_query"
+                ).__setitem__("sha256", "0" * 64),
+            )
+            with self.assertRaises(CameraSelectorEvidenceError):
+                audit(root)
+
+    def test_tunnel_inactive_bit_mismatch_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            copy_evidence(
+                root,
+                "mode2-tunnel-query-inactive.ppc.json",
+                lambda document: next(
+                    region for region in document["provenance"]["regions"] if region["name"] == "tunnel_flags"
+                ).__setitem__("sha256", "0" * 64),
             )
             with self.assertRaises(CameraSelectorEvidenceError):
                 audit(root)

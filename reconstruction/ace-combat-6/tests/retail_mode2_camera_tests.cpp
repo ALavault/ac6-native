@@ -250,6 +250,48 @@ void check_rotation_core() {
         "non-finite camera rotation state fails closed");
 }
 
+ac6::retail::RetailMode2AxisSuppressionGuard admitted_suppression_guard() {
+  ac6::retail::RetailMode2AxisSuppressionGuard guard;
+  guard.manager_mode_at_190 = 1U;
+  guard.object_descriptor_pointer_at_19c = 0xB5000000U;
+  guard.object_serial_at_b0 = 0x12345678U;
+  guard.expected_serial_at_1a0 = 0x12345678U;
+  return guard;
+}
+
+void check_axis_suppression_guard() {
+  using namespace ac6::retail;
+
+  const RetailMode2AxisSuppressionGuard admitted = admitted_suppression_guard();
+  check(should_suppress_mode2_camera_axes(admitted, true),
+        "all retail guards admit a positive tunnel result");
+  check(!should_suppress_mode2_camera_axes(admitted, false),
+        "a negative tunnel result preserves the axes");
+
+  RetailMode2AxisSuppressionGuard refused = admitted;
+  refused.manager_state_at_3c4 = 1U;
+  check(!should_suppress_mode2_camera_axes(refused, true),
+        "manager+0x3C4 refuses suppression when nonzero");
+
+  refused = admitted;
+  refused.manager_mode_at_190 = 2U;
+  check(!should_suppress_mode2_camera_axes(refused, true),
+        "manager+0x190 refuses suppression outside mode 1");
+
+  refused = admitted;
+  refused.object_descriptor_pointer_at_19c = 0U;
+  check(!should_suppress_mode2_camera_axes(refused, true),
+        "a null CGaObjDesc pointer refuses suppression");
+
+  refused = admitted;
+  refused.object_serial_at_b0 ^= 1U;
+  check(!should_suppress_mode2_camera_axes(refused, true),
+        "a stale CGaObjDesc serial refuses suppression");
+
+  check(!should_suppress_mode2_camera_axes({}, true),
+        "a bare legacy suppression boolean fails closed");
+}
+
 void check_direct_target_selector() {
   using namespace ac6::retail;
 
@@ -320,6 +362,7 @@ void check_direct_target_selector() {
         "manager+0x4A0 gates the target reads");
 
   RetailMode2DirectTargetInput suppressed = direct;
+  suppressed.suppression_guard = admitted_suppression_guard();
   suppressed.suppress_axes = true;
   const auto suppressed_result =
       select_mode2_direct_camera_rotation(suppressed);
@@ -328,6 +371,15 @@ void check_direct_target_selector() {
             suppressed_result->target_at_3a4 == 0.0F &&
             suppressed_result->target_at_3a8 == 0.0F,
         "the later identity query can suppress both axes");
+
+  RetailMode2DirectTargetInput unqualified = direct;
+  unqualified.suppress_axes = true;
+  const auto unqualified_result =
+      select_mode2_direct_camera_rotation(unqualified);
+  check(unqualified_result.has_value() &&
+            unqualified_result->target_at_3a0 != 0.0F &&
+            unqualified_result->target_at_3a4 != 0.0F,
+        "an injected result cannot bypass the structured retail guards");
 
   RetailMode2DirectTargetInput invalid = direct;
   invalid.gain_at_360 = std::numeric_limits<float>::infinity();
@@ -399,6 +451,7 @@ void check_indirect_scalar_tail() {
         "zero limits take the retail zero result without division");
 
   RetailMode2IndirectTargetInput suppressed = indirect;
+  suppressed.suppression_guard = admitted_suppression_guard();
   suppressed.suppress_axes = true;
   const auto suppressed_result =
       select_mode2_indirect_camera_rotation(suppressed);
@@ -674,6 +727,7 @@ int main(int argc, char **argv) {
   check_dynamic_branches();
   check_dynamic_refusals();
   check_rotation_core();
+  check_axis_suppression_guard();
   check_direct_target_selector();
   check_indirect_scalar_tail();
   check_mode3_axis_normaliser();

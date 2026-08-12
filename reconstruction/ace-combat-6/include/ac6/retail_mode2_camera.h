@@ -106,6 +106,19 @@ struct RetailMode2RotationInput final {
   bool operator==(const RetailMode2RotationInput &) const = default;
 };
 
+// Qualified guards immediately before the 0x82281198 tunnel query in
+// 0x82262A28. The descriptor pointer is manager+0x19C; its serial at +0xB0
+// must equal manager+0x1A0. Geometry and tunnel ownership deliberately stay
+// outside this structure.
+struct RetailMode2AxisSuppressionGuard final {
+  std::uint32_t manager_state_at_3c4{};
+  std::uint32_t manager_mode_at_190{};
+  std::uint32_t object_descriptor_pointer_at_19c{};
+  std::uint32_t object_serial_at_b0{};
+  std::uint32_t expected_serial_at_1a0{};
+  bool operator==(const RetailMode2AxisSuppressionGuard &) const = default;
+};
+
 // Live scalar fields consumed by the direct mode-2 target branch of
 // 0x82262A28. This is the manager+0x4A8 == 0 path: when a target is admitted,
 // +0xE88 supplies the first axis and the negated +0xE8C supplies the second.
@@ -121,8 +134,10 @@ struct RetailMode2DirectTargetInput final {
   float gain_at_364{};
   float response_rate_at_368{};
   float frame_delta{};
-  // Result of the later retail identity/query guard. Ownership of that global
-  // query stays outside this scalar selector until its producer lands.
+  // Result already computed by the retail tunnel producer. It is admitted
+  // only through suppression_guard; this scalar selector does not reproduce
+  // either tunnel geometry or the query manager.
+  RetailMode2AxisSuppressionGuard suppression_guard{};
   bool suppress_axes{};
   bool operator==(const RetailMode2DirectTargetInput &) const = default;
 };
@@ -140,6 +155,8 @@ struct RetailMode2IndirectTargetInput final {
   float gain_at_364{};
   float response_rate_at_368{};
   float frame_delta{};
+  RetailMode2AxisSuppressionGuard suppression_guard{};
+  // Injected, already-computed result of 0x82281198. See the direct input.
   bool suppress_axes{};
   bool operator==(const RetailMode2IndirectTargetInput &) const = default;
 };
@@ -182,8 +199,14 @@ struct RetailMode3NormalisedAxes final {
   bool operator==(const RetailMode3NormalisedAxes &) const = default;
 };
 
+// Admits the injected 0x82281198 result only when every caller-side retail
+// guard is present. A default/partial fixture therefore cannot suppress axes.
+bool should_suppress_mode2_camera_axes(
+    const RetailMode2AxisSuppressionGuard &guard,
+    bool tunnel_query_result) noexcept;
+
 // 0x82262A4C..0x82262E64 for mode 2 with manager+0x4A8 == 0, excluding only
-// the externally-owned identity/query result represented by suppress_axes.
+// the externally-owned geometry result represented by suppress_axes.
 // Produces the exact inputs consumed by step_mode2_camera_rotation().
 std::optional<RetailMode2RotationInput> select_mode2_direct_camera_rotation(
     const RetailMode2DirectTargetInput &input) noexcept;

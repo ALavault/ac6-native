@@ -139,6 +139,18 @@ float normalise_rotation(float value, bool snap) noexcept {
 
 } // namespace
 
+bool should_suppress_mode2_camera_axes(
+    const RetailMode2AxisSuppressionGuard &guard,
+    bool tunnel_query_result) noexcept {
+  // 0x82262DA0..0x82262DC0 validates the CGaObjDesc pointer/serial pair;
+  // 0x82262DE8..0x82262E20 then admits the externally-owned tunnel query only
+  // in camera mode 1 with manager+0x3C4 clear.
+  return guard.manager_state_at_3c4 == 0U && guard.manager_mode_at_190 == 1U &&
+         guard.object_descriptor_pointer_at_19c != 0U &&
+         guard.object_serial_at_b0 == guard.expected_serial_at_1a0 &&
+         tunnel_query_result;
+}
+
 std::optional<RetailMode2RotationInput> select_mode2_direct_camera_rotation(
     const RetailMode2DirectTargetInput &input) noexcept {
   if (!finite_rotation(input.current) || !std::isfinite(input.target_at_e88) ||
@@ -169,7 +181,8 @@ std::optional<RetailMode2RotationInput> select_mode2_direct_camera_rotation(
   // chosen above, exactly as in the retail ordering.
   first_axis = clamp_signed_unit(first_axis);
   second_axis = clamp_signed_unit(second_axis);
-  if (input.suppress_axes) {
+  if (should_suppress_mode2_camera_axes(input.suppression_guard,
+                                        input.suppress_axes)) {
     first_axis = 0.0F;
     second_axis = 0.0F;
   }
@@ -218,7 +231,8 @@ std::optional<RetailMode2RotationInput> select_mode2_indirect_camera_rotation(
   float second_axis = normalised->second;
   const float selected_gain =
       first_axis > 0.0F ? input.gain_at_360 : input.gain_at_350;
-  if (input.suppress_axes) {
+  if (should_suppress_mode2_camera_axes(input.suppression_guard,
+                                        input.suppress_axes)) {
     first_axis = 0.0F;
     second_axis = 0.0F;
   }

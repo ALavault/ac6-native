@@ -252,6 +252,82 @@ def audit(root: Path = ROOT) -> None:
         "mode3 axis normalizer retail result",
     )
 
+    tunnel_cases = (
+        (
+            "mode2-tunnel-query-hit.ppc.json",
+            "camera-mode2-tunnel-query-hit",
+            45,
+            6,
+            "0x00000001",
+            "433ebf5bc03dffa38536673207a21281612cef5faa9bc7a4d5b9be2fdb12cf1a",
+            "220f9bfc5095c5a52accd8b226ad81418b1e6a89568df59e640660b52fb33e1c",
+        ),
+        (
+            "mode2-tunnel-query-miss.ppc.json",
+            "camera-mode2-tunnel-query-miss",
+            93,
+            9,
+            "0x00000000",
+            "433ebf5bc03dffa38536673207a21281612cef5faa9bc7a4d5b9be2fdb12cf1a",
+            "26dd144b65f4364f9216ed9209908fe96e0711fa57c8ceea1636d8df75ac217a",
+        ),
+        (
+            "mode2-tunnel-query-inactive.ppc.json",
+            "camera-mode2-tunnel-query-inactive",
+            82,
+            8,
+            "0x00000000",
+            "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "220f9bfc5095c5a52accd8b226ad81418b1e6a89568df59e640660b52fb33e1c",
+        ),
+    )
+    for (
+        snapshot_name,
+        case_name,
+        steps,
+        callee_entries,
+        result,
+        flags_sha256,
+        callback_sha256,
+    ) in tunnel_cases:
+        tunnel = load_snapshot(evidence / snapshot_name)
+        require(
+            tunnel.get("identity")
+            == {
+                "implementation": "ppc-pcode",
+                "function": "0x82281198",
+                "case": case_name,
+            },
+            f"{case_name} identity",
+        )
+        tunnel_provenance = tunnel["provenance"]
+        require(
+            tunnel_provenance.get("function_name") == "Function_82281198"
+            and tunnel_provenance.get("steps") == steps
+            and tunnel_provenance.get("callee_entries") == callee_entries
+            and tunnel_provenance.get("written") == "",
+            f"{case_name} execution census",
+        )
+        tunnel_regions = {
+            region.get("name"): region
+            for region in tunnel_provenance.get("regions", [])
+        }
+        require(
+            tunnel_regions.get("tunnel_flags", {}).get("sha256") == flags_sha256
+            and tunnel_regions.get("vtable_query", {}).get("base") == "0xb600012c"
+            and tunnel_regions.get("vtable_query", {}).get("size") == 4
+            and tunnel_regions.get("vtable_query", {}).get("sha256")
+            == callback_sha256,
+            f"{case_name} active-bit and callback fixture",
+        )
+        require(
+            tunnel.get("registers") == {"r3": result}
+            and tunnel.get("calls") == []
+            and tunnel.get("memory_writes") == []
+            and tunnel.get("region_dumps") == [],
+            f"{case_name} retail result",
+        )
+
 
 def main() -> int:
     try:
@@ -261,7 +337,8 @@ def main() -> int:
         return 1
     print(
         "camera_selector_microexec=pass direct=217 curve=32 "
-        "indirect_tail=38 small_direction=134 normalizer=208 substituted=0"
+        "indirect_tail=38 small_direction=134 normalizer=208 "
+        "tunnel=45/93/82 substituted=0"
     )
     return 0
 

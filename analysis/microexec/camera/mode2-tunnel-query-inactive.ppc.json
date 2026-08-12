@@ -1,0 +1,41 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x82281198",
+    "case": "camera-mode2-tunnel-query-inactive"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "Function_82281198",
+    "regions": [
+      {"name": "global_root_pointer", "base": "0x826e4eb4", "kind": "bytes", "size": 4, "sha256": "1cf26833657471fae2c3554a8e792554803333ec209eb2db4194b9f30a824c6b"},
+      {"name": "global_root_prefix", "base": "0xb1000000", "kind": "zero", "size": 225328},
+      {"name": "global_state_slot", "base": "0xb1037030", "kind": "bytes", "size": 4, "sha256": "26dd144b65f4364f9216ed9209908fe96e0711fa57c8ceea1636d8df75ac217a"},
+      {"name": "tunnel_manager", "base": "0xb4000000", "kind": "bytes", "size": 12, "sha256": "d52e224c45b135c9cd640ce6daa160e87358543c1597d9efdf835dcc11c1f233"},
+      {"name": "tunnel_head", "base": "0xb5000000", "kind": "bytes", "size": 4, "sha256": "19d9f3bd93224272d6985347452e9208efd8a038acfebe8cf75820574d8dbb4a"},
+      {"name": "tunnel_body", "base": "0xb5000004", "kind": "zero", "size": 276},
+      {"name": "tunnel_flags", "base": "0xb5000118", "kind": "bytes", "size": 4, "sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"},
+      {"name": "vtable_prefix", "base": "0xb6000000", "kind": "zero", "size": 300},
+      {"name": "vtable_query", "base": "0xb600012c", "kind": "bytes", "size": 4, "sha256": "220f9bfc5095c5a52accd8b226ad81418b1e6a89568df59e640660b52fb33e1c"},
+      {"name": "query", "base": "0xb7000000", "kind": "bytes", "size": 16, "sha256": "be363ed743fe08f622963b50229752b48add9c634b38d5fc0a7a7779151b8312"},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 16384}
+    ],
+    "steps": 82,
+    "callee_entries": 8,
+    "asserted_semantics_enabled": false,
+    "hint_noops": {},
+    "register_file_bridge": false,
+    "alias_copies": 0,
+    "asserted_semantics": {},
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": ""
+  },
+  "exit": {"kind": "return"},
+  "registers": {
+    "r3": "0x00000000"
+  },
+  "calls": [],
+  "memory_writes": [],
+  "region_dumps": []
+}
