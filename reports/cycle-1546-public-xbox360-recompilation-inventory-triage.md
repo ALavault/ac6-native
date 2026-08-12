@@ -141,6 +141,17 @@ Audit A5 terminé : `cycle-1552-banjo-tooie-rexglue-fork-review.md`. Il retient
 le fallback SDL `dummy` pour les seuls runs headless et rejette comme généraux
 la queue `GetKeystroke`, les automatismes XAM et l'extracteur STFS.
 
+Audit B2 terminé : `cycle-1553-crazy-taxi-hybrid-recomp-review.md`. Il montre
+que le HEAD exécute la sortie ReXGlue, pas l'ancien corpus XenonRecomp, et
+classe comme divergents les défauts de `switch`, appels indirects et fautes de
+pages neutralisés pour continuer l'exécution. Il confirme `skip_lr=false` et
+le seam XAM invité comme choix provisoires, sans qualifier timing, XMA ou GPU.
+
+Audit C4 terminé : `cycle-1554-lollipop-rexglue-runtime-review.md`. Le dépôt
+public Re-Cherry n'embarque ni fork/pin ReXGlue, ni code généré : XAM, XMA,
+VFS et Xenos sont `documented-unmatched`. Seule la forme adresse/phase/registres
+d'un hook MIDASM reste un patron provisoire.
+
 ## Entrées non vérifiables dans cette passe
 
 KinectSportsRecomp `0fe6ed940c43f1ea277ce65eaa50713b3037bb9b`
