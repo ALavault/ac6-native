@@ -138,6 +138,12 @@ if(AC6_BUILD_PLATFORM)
   add_executable(ac6-sdl-input-tests tests/sdl_input_tests.cpp)
   target_link_libraries(ac6-sdl-input-tests PRIVATE ac6_platform)
   add_test(NAME ac6-sdl-input COMMAND ac6-sdl-input-tests)
+
+  add_executable(ac6-retail-replay-trace-cadence-tests
+    tests/retail_replay_trace_cadence_tests.cpp src/retail_commands.cpp)
+  target_link_libraries(ac6-retail-replay-trace-cadence-tests PRIVATE ac6_platform)
+  add_test(NAME ac6-retail-replay-trace-cadence
+    COMMAND ac6-retail-replay-trace-cadence-tests)
 endif()
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)

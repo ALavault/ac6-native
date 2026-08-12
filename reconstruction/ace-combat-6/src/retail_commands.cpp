@@ -22,13 +22,29 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <span>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace ac6::retail_cli {
+
+namespace detail {
+
+bool append_native_replay_trace_sample(
+    ExecutionTraceJsonlWriter& writer, std::uint64_t frame_index,
+    InputFrame input, const WorldFrame& simulation,
+    TraceMissionObjectives mission, TraceGraphicsSubmission graphics) {
+  if (frame_index == std::numeric_limits<std::uint64_t>::max()) return false;
+  return writer.append(frame_index + 1u, input, simulation, std::move(mission),
+                       graphics);
+}
+
+}  // namespace detail
+
 namespace {
 
 struct Options final {
@@ -464,7 +480,6 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
   if (session == nullptr) return std::nullopt;
   ExecutionTraceJsonlWriter trace_writer;
   const bool tracing = !trace.empty();
-  if (tracing && replay.frames.size() % 2u != 0u) return std::nullopt;
   if (tracing) {
     std::error_code error;
     const std::filesystem::path parent = trace.parent_path();
@@ -483,19 +498,19 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
     hash_u32(result.semantic_hash, frame.sub_mission);
     hash_u32(result.semantic_hash, frame.step);
     hash_u32(result.semantic_hash, frame.script_ended ? 1u : 0u);
-    if (tracing && index % 2u == 1u) {
-      if (input != replay.frames[index - 1u] || !trace_writer.append(
-              (index + 1u) / 2u, input, frame.world,
-              {session->state(), frame.sub_mission, frame.step, frame.script_ended,
-               session->execution().scenario().objectives().snapshot()},
-              {TraceGraphicsBackend::Headless, 0, false})) {
-        return std::nullopt;
-      }
+    if (tracing && !detail::append_native_replay_trace_sample(
+                       trace_writer, static_cast<std::uint64_t>(index), input,
+                       frame.world,
+                       {session->state(), frame.sub_mission, frame.step,
+                        frame.script_ended,
+                        session->execution().scenario().objectives().snapshot()},
+                       {TraceGraphicsBackend::Headless, 0, false})) {
+      return std::nullopt;
     }
   }
   if (tracing && !trace_writer.close()) return std::nullopt;
   result.trace_events = tracing ? trace_writer.event_count() : 0;
-  result.trace_samples = tracing ? replay.frames.size() / 2u : 0;
+  result.trace_samples = tracing ? replay.frames.size() : 0;
   return result;
 }
 
@@ -529,7 +544,7 @@ int run_replay_impl(const Options& options) {
       first->semantic_hash == second->semantic_hash;
   const bool trace_complete =
       options.trace.empty() ||
-      (first->trace_samples == replay.frames.size() / 2u &&
+      (first->trace_samples == replay.frames.size() &&
        first->trace_events == first->trace_samples * 5u);
   std::error_code error;
   std::filesystem::create_directories(options.report, error);
