@@ -17,7 +17,8 @@ Onze revues profondes supplémentaires couvrent désormais Forza Horizon,
 Fable II, Skate 2, reNut, PGR4, Midnight Club: Los Angeles, Hydro Thunder,
 GTA IV, Black Ops II, PGR3 et Diablo III.
 Skate 3 et Sonic Unleashed, déjà revus aux cycles 1542–1544, ne sont pas
-recomptés.
+recomptés. reNut a été revalidé au cycle 1571 après l'avance de ses branches
+publique, `dev` et Linux ; il reste un seul projet dans ce total.
 
 ## Matrice vérifiée et priorisée
 
@@ -33,7 +34,7 @@ recomptés.
 | B3 | Forza Horizon `80a25bed26ef231ea086a87235cd46aedae38120` | ReXGlue v0.2.2, seul `default.xex` recompilé ; deux images secondaires seulement chargées | cas négatif : transaction identité/plages/imports/TLS/attach avant publication d'un module | heap global réinitialisé au chargement ; aucun code hôte secondaire, licence ou test |
 | B4 | Fable II `1e25911172f8e30458099eda96a1ad7b8992ed60` | reset de l'ancien arbre XenonRecomp vers un shell `rexglue migrate` | ordre lifecycle provisoire et gardes de provenance/codegen | SDK externe non épinglé, aucun reçu XEX ni exécution démontrée |
 | B5 | GoldenEye `fdee4d1f750aff4c3b5c6ba3d60f20281c21447d` | ReXGlue direct | hooks input/souris/XAM UI | réseau revendiqué mais aucun transport public auditable |
-| B6 | reNut `ef74a036676db6a71c3e2e93bd770e64cf539e5a` | ReXGlue, branche Linux et releases non reliées par reçu | capture oracle : shader sync/warm-up, watchdog et `PRESENT` télémétrique | code PPC de secours suivi ; build Linux issu de fichiers ignorés et SDK ambigu |
+| B6 | reNut `3b509f2fa97f0a1c7b49cbef5191bc69a714d2e4`, `dev` `887aef79499df877486fe0576e63760077f6672f`, Linux `e73ca783f2ea269e65c6b30dba52634cb0c86233` | ReXGlue, trois lignées non reliées par reçu | probe post-normalisation associé au replay XAM brut ; corpus fetch/BC3/endian/tiling ; tests save/audio POSIX | aucun XEX/test/licence ; cadence/input/renderer et remplacement textures divergents |
 | B7 | MCLA `cdfea396e487a3f4b03053827ffa1eda0e3b1e39` + deux implémentations publiques | ReXGlue, ville/rendu confiés au runtime commun | garde dialecte/opcode VMX128 ; seam VFS `t:` ; census secteurs/textures à requalifier | aucune identité XEX/replay/test ; preuves réparties entre trois dépôts |
 | B8 | Hydro Thunder `0216dae319eb5b61a7f1553d74529ca9e4ad55c5` + SDK `34b11ee6aed9d4ef914e49e6d8a8a092b02ced36` | pack ReXGlue minimal dans un monorepo | test Xenos `exp_adjust` signé dans dword 3, indépendant de `lod_bias` | scaffold Daytona/OutRun, aucune preuve eau/reflet/input ou XEX qualifié |
 | B9 | GTA IV `3e98ca9d392a4b5618243e275469ac9cd7918e99` (`beta`) | ReXGlue vendored 0.7.5 ; migration 0.8.0 plus récente sans généré | timebase Xenon 50 MHz, montage VFS ordonné et instrumentation du streaming | XEX/SDK exacts non scellés ; renderer/imports divergents ; claims gameplay non appariés |
