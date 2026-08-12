@@ -113,6 +113,27 @@ VulkanBackend::~VulkanBackend() {
       destroy_vulkan_buffer(*state_, mesh.vertex_buffer, mesh.vertex_memory);
       destroy_vulkan_buffer(*state_, mesh.index_buffer, mesh.index_memory);
     }
+    for (auto& [unused, mesh] : state_->textured_meshes) {
+      static_cast<void>(unused);
+      destroy_vulkan_buffer(*state_, mesh.vertex_buffer, mesh.vertex_memory);
+      destroy_vulkan_buffer(*state_, mesh.index_buffer, mesh.index_memory);
+    }
+    for (auto& [unused, texture] : state_->textures) {
+      static_cast<void>(unused);
+      destroy_vulkan_texture(*state_, texture);
+    }
+    if (state_->texture_descriptor_pool != VK_NULL_HANDLE) {
+      vkDestroyDescriptorPool(state_->device, state_->texture_descriptor_pool,
+                              nullptr);
+    }
+    if (state_->texture_descriptor_set_layout != VK_NULL_HANDLE) {
+      vkDestroyDescriptorSetLayout(state_->device,
+                                   state_->texture_descriptor_set_layout,
+                                   nullptr);
+    }
+    if (state_->texture_sampler != VK_NULL_HANDLE) {
+      vkDestroySampler(state_->device, state_->texture_sampler, nullptr);
+    }
     if (state_->command_pool != VK_NULL_HANDLE) {
       vkDestroyCommandPool(state_->device, state_->command_pool, nullptr);
     }
@@ -241,6 +262,8 @@ VulkanBackendCreateResult VulkanBackend::create() {
       (rgba8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0U;
   state->caps.color_bgra8_unorm =
       (bgra8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0U;
+  state->caps.sampled_rgba8_unorm =
+      (rgba8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0U;
   state->caps.device_name = properties.deviceName;
 
   result.backend = std::unique_ptr<VulkanBackend>(new VulkanBackend(std::move(state)));
@@ -253,6 +276,14 @@ const RenderDeviceCaps& VulkanBackend::caps() const noexcept {
 
 std::size_t VulkanBackend::live_mesh_count() const noexcept {
   return state_->meshes.size();
+}
+
+std::size_t VulkanBackend::live_textured_mesh_count() const noexcept {
+  return state_->textured_meshes.size();
+}
+
+std::size_t VulkanBackend::live_texture_count() const noexcept {
+  return state_->textures.size();
 }
 
 std::size_t VulkanBackend::live_render_target_count() const noexcept {

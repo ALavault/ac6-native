@@ -213,6 +213,121 @@ bool create_vulkan_buffer(VulkanBackendState& state, const VkDeviceSize size,
   return vkBindBufferMemory(state.device, buffer, memory, 0U) == VK_SUCCESS;
 }
 
+bool create_vulkan_texture_image(VulkanBackendState& state,
+                                 const std::uint32_t width,
+                                 const std::uint32_t height, VkImage& image,
+                                 VkDeviceMemory& memory) noexcept {
+  if (width == 0U || height == 0U || !state.caps.sampled_rgba8_unorm) {
+    return false;
+  }
+  return create_image(state, width, height, VK_FORMAT_R8G8B8A8_UNORM,
+                      VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                          VK_IMAGE_USAGE_SAMPLED_BIT,
+                      image, memory);
+}
+
+bool create_vulkan_image_view(VulkanBackendState& state, const VkImage image,
+                              VkImageView& view) noexcept {
+  return image != VK_NULL_HANDLE &&
+         create_image_view(state, image, VK_FORMAT_R8G8B8A8_UNORM,
+                           VK_IMAGE_ASPECT_COLOR_BIT, view);
+}
+
+void destroy_vulkan_texture(VulkanBackendState& state,
+                            VulkanTextureResource& texture) noexcept {
+  if (texture.descriptor_set != VK_NULL_HANDLE &&
+      state.texture_descriptor_pool != VK_NULL_HANDLE) {
+    static_cast<void>(vkFreeDescriptorSets(
+        state.device, state.texture_descriptor_pool, 1U,
+        &texture.descriptor_set));
+  }
+  if (texture.view != VK_NULL_HANDLE) {
+    vkDestroyImageView(state.device, texture.view, nullptr);
+  }
+  if (texture.image != VK_NULL_HANDLE) {
+    vkDestroyImage(state.device, texture.image, nullptr);
+  }
+  if (texture.memory != VK_NULL_HANDLE) {
+    vkFreeMemory(state.device, texture.memory, nullptr);
+  }
+  texture = {};
+}
+
+bool ensure_vulkan_texture_descriptors(VulkanBackendState& state) noexcept {
+  if (state.texture_sampler != VK_NULL_HANDLE &&
+      state.texture_descriptor_set_layout != VK_NULL_HANDLE &&
+      state.texture_descriptor_pool != VK_NULL_HANDLE) {
+    return true;
+  }
+  const VkSamplerCreateInfo sampler_info{
+      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0U,
+      .magFilter = VK_FILTER_LINEAR,
+      .minFilter = VK_FILTER_LINEAR,
+      .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+      .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+      .mipLodBias = 0.0F,
+      .anisotropyEnable = VK_FALSE,
+      .maxAnisotropy = 1.0F,
+      .compareEnable = VK_FALSE,
+      .compareOp = VK_COMPARE_OP_ALWAYS,
+      .minLod = 0.0F,
+      .maxLod = 1.0F,
+      .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+      .unnormalizedCoordinates = VK_FALSE,
+  };
+  if (vkCreateSampler(state.device, &sampler_info, nullptr,
+                      &state.texture_sampler) != VK_SUCCESS) {
+    return false;
+  }
+  const VkDescriptorSetLayoutBinding binding{
+      .binding = 0U,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .descriptorCount = 1U,
+      .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .pImmutableSamplers = nullptr,
+  };
+  const VkDescriptorSetLayoutCreateInfo layout_info{
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0U,
+      .bindingCount = 1U,
+      .pBindings = &binding,
+  };
+  if (vkCreateDescriptorSetLayout(state.device, &layout_info, nullptr,
+                                  &state.texture_descriptor_set_layout) !=
+      VK_SUCCESS) {
+    vkDestroySampler(state.device, state.texture_sampler, nullptr);
+    state.texture_sampler = VK_NULL_HANDLE;
+    return false;
+  }
+  const VkDescriptorPoolSize pool_size{
+      .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .descriptorCount = 64U,
+  };
+  const VkDescriptorPoolCreateInfo pool_info{
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+      .maxSets = 64U,
+      .poolSizeCount = 1U,
+      .pPoolSizes = &pool_size,
+  };
+  if (vkCreateDescriptorPool(state.device, &pool_info, nullptr,
+                             &state.texture_descriptor_pool) != VK_SUCCESS) {
+    vkDestroyDescriptorSetLayout(state.device,
+                                 state.texture_descriptor_set_layout, nullptr);
+    vkDestroySampler(state.device, state.texture_sampler, nullptr);
+    state.texture_descriptor_set_layout = VK_NULL_HANDLE;
+    state.texture_sampler = VK_NULL_HANDLE;
+    return false;
+  }
+  return true;
+}
+
 void destroy_vulkan_buffer(VulkanBackendState& state, VkBuffer& buffer,
                            VkDeviceMemory& memory) noexcept {
   if (buffer != VK_NULL_HANDLE) vkDestroyBuffer(state.device, buffer, nullptr);
@@ -273,6 +388,190 @@ VulkanMeshHandle VulkanBackend::create_mesh(
   const std::uint64_t handle = state_->next_handle++;
   state_->meshes.emplace(handle, resource);
   return {handle};
+}
+
+VulkanTexturedMeshHandle VulkanBackend::create_textured_mesh(
+    const std::span<const VulkanTexturedVertex> vertices,
+    const std::span<const std::uint16_t> indices) noexcept {
+  if (vertices.empty() || indices.empty() || indices.size() % 3U != 0U ||
+      indices.size() > std::numeric_limits<std::uint32_t>::max()) {
+    return {};
+  }
+  for (const auto& vertex : vertices) {
+    if (!std::isfinite(vertex.x) || !std::isfinite(vertex.y) ||
+        !std::isfinite(vertex.u) || !std::isfinite(vertex.v)) {
+      return {};
+    }
+  }
+  for (const std::uint16_t index : indices) {
+    if (index >= vertices.size()) return {};
+  }
+  VulkanTexturedMeshResource resource;
+  if (!create_vulkan_buffer(*state_, vertices.size_bytes(),
+                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                            resource.vertex_buffer, resource.vertex_memory) ||
+      !create_vulkan_buffer(*state_, indices.size_bytes(),
+                            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                            resource.index_buffer, resource.index_memory)) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  void* mapped = nullptr;
+  if (vkMapMemory(state_->device, resource.vertex_memory, 0U,
+                  vertices.size_bytes(), 0U, &mapped) != VK_SUCCESS) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  std::memcpy(mapped, vertices.data(), vertices.size_bytes());
+  vkUnmapMemory(state_->device, resource.vertex_memory);
+  if (vkMapMemory(state_->device, resource.index_memory, 0U,
+                  indices.size_bytes(), 0U, &mapped) != VK_SUCCESS) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  std::memcpy(mapped, indices.data(), indices.size_bytes());
+  vkUnmapMemory(state_->device, resource.index_memory);
+  resource.index_count = static_cast<std::uint32_t>(indices.size());
+  const std::uint64_t handle = state_->next_handle++;
+  state_->textured_meshes.emplace(handle, resource);
+  return {handle};
+}
+
+void VulkanBackend::release_textured_mesh(
+    const VulkanTexturedMeshHandle mesh) noexcept {
+  const auto found = state_->textured_meshes.find(mesh.value);
+  if (found == state_->textured_meshes.end()) return;
+  static_cast<void>(vkDeviceWaitIdle(state_->device));
+  destroy_vulkan_buffer(*state_, found->second.vertex_buffer,
+                        found->second.vertex_memory);
+  destroy_vulkan_buffer(*state_, found->second.index_buffer,
+                        found->second.index_memory);
+  state_->textured_meshes.erase(found);
+}
+
+bool VulkanBackend::has_textured_mesh(
+    const VulkanTexturedMeshHandle mesh) const noexcept {
+  return mesh && state_->textured_meshes.contains(mesh.value);
+}
+
+VulkanTextureHandle VulkanBackend::create_texture_rgba8(
+    const std::uint32_t width, const std::uint32_t height,
+    const std::span<const std::uint8_t> rgba8) noexcept {
+  const std::uint64_t expected = static_cast<std::uint64_t>(width) * height * 4U;
+  if (width == 0U || height == 0U || expected != rgba8.size() ||
+      expected > std::numeric_limits<VkDeviceSize>::max() ||
+      width > state_->caps.max_image_dimension_2d ||
+      height > state_->caps.max_image_dimension_2d ||
+      !state_->caps.sampled_rgba8_unorm || !ensure_vulkan_texture_descriptors(*state_)) {
+    return {};
+  }
+  VulkanTextureResource resource;
+  resource.width = width;
+  resource.height = height;
+  if (!create_vulkan_texture_image(*state_, width, height, resource.image,
+                                   resource.memory) ||
+      !create_vulkan_image_view(*state_, resource.image, resource.view)) {
+    destroy_vulkan_texture(*state_, resource);
+    return {};
+  }
+  VkBuffer staging_buffer = VK_NULL_HANDLE;
+  VkDeviceMemory staging_memory = VK_NULL_HANDLE;
+  if (!create_vulkan_buffer(*state_, static_cast<VkDeviceSize>(expected),
+                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, staging_buffer,
+                            staging_memory)) {
+    destroy_vulkan_texture(*state_, resource);
+    return {};
+  }
+  void* mapped = nullptr;
+  if (vkMapMemory(state_->device, staging_memory, 0U,
+                  static_cast<VkDeviceSize>(expected), 0U, &mapped) !=
+      VK_SUCCESS) {
+    destroy_vulkan_buffer(*state_, staging_buffer, staging_memory);
+    destroy_vulkan_texture(*state_, resource);
+    return {};
+  }
+  std::memcpy(mapped, rgba8.data(), rgba8.size());
+  vkUnmapMemory(state_->device, staging_memory);
+  const bool submitted = submit_vulkan_commands(
+      *state_, [&](const VkCommandBuffer commands) {
+        record_texture_transition(commands, resource.image,
+                                  VK_IMAGE_LAYOUT_UNDEFINED,
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        const VkBufferImageCopy copy{
+            .bufferOffset = 0U,
+            .bufferRowLength = 0U,
+            .bufferImageHeight = 0U,
+            .imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0U, 0U, 1U},
+            .imageOffset = {0, 0, 0},
+            .imageExtent = {width, height, 1U},
+        };
+        vkCmdCopyBufferToImage(commands, staging_buffer, resource.image,
+                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1U,
+                               &copy);
+        record_texture_transition(commands, resource.image,
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+      });
+  destroy_vulkan_buffer(*state_, staging_buffer, staging_memory);
+  if (!submitted) {
+    destroy_vulkan_texture(*state_, resource);
+    return {};
+  }
+  const VkDescriptorSetAllocateInfo allocate_info{
+      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+      .pNext = nullptr,
+      .descriptorPool = state_->texture_descriptor_pool,
+      .descriptorSetCount = 1U,
+      .pSetLayouts = &state_->texture_descriptor_set_layout,
+  };
+  if (vkAllocateDescriptorSets(state_->device, &allocate_info,
+                               &resource.descriptor_set) != VK_SUCCESS) {
+    destroy_vulkan_texture(*state_, resource);
+    return {};
+  }
+  const VkDescriptorImageInfo image_info{
+      .sampler = state_->texture_sampler,
+      .imageView = resource.view,
+      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+  };
+  const VkWriteDescriptorSet write{
+      .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+      .pNext = nullptr,
+      .dstSet = resource.descriptor_set,
+      .dstBinding = 0U,
+      .dstArrayElement = 0U,
+      .descriptorCount = 1U,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .pImageInfo = &image_info,
+      .pBufferInfo = nullptr,
+      .pTexelBufferView = nullptr,
+  };
+  vkUpdateDescriptorSets(state_->device, 1U, &write, 0U, nullptr);
+  resource.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  const std::uint64_t handle = state_->next_handle++;
+  state_->textures.emplace(handle, resource);
+  return {handle};
+}
+
+void VulkanBackend::release_texture(const VulkanTextureHandle texture) noexcept {
+  const auto found = state_->textures.find(texture.value);
+  if (found == state_->textures.end()) return;
+  static_cast<void>(vkDeviceWaitIdle(state_->device));
+  destroy_vulkan_texture(*state_, found->second);
+  state_->textures.erase(found);
+}
+
+bool VulkanBackend::has_texture(const VulkanTextureHandle texture) const noexcept {
+  return texture && state_->textures.contains(texture.value);
 }
 
 void VulkanBackend::release_mesh(const VulkanMeshHandle mesh) noexcept {

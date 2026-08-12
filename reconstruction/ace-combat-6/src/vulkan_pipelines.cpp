@@ -30,10 +30,31 @@ namespace {
 }  // namespace
 
 VulkanPipelineHandle VulkanBackend::create_pipeline(
+    const VulkanRenderTargetHandle target,
+    const std::span<const std::uint32_t> vertex_spirv,
+    const std::span<const std::uint32_t> fragment_spirv,
+    const VulkanPipelineState state) noexcept {
+  return create_pipeline_impl(target, vertex_spirv, fragment_spirv, state,
+                              false);
+}
+
+VulkanPipelineHandle VulkanBackend::create_textured_pipeline(
+    const VulkanRenderTargetHandle target,
+    const std::span<const std::uint32_t> vertex_spirv,
+    const std::span<const std::uint32_t> fragment_spirv,
+    const VulkanPipelineState state) noexcept {
+  if (!state_->caps.sampled_rgba8_unorm ||
+      !ensure_vulkan_texture_descriptors(*state_)) {
+    return {};
+  }
+  return create_pipeline_impl(target, vertex_spirv, fragment_spirv, state, true);
+}
+
+VulkanPipelineHandle VulkanBackend::create_pipeline_impl(
     const VulkanRenderTargetHandle target_handle,
     const std::span<const std::uint32_t> vertex_spirv,
     const std::span<const std::uint32_t> fragment_spirv,
-    const VulkanPipelineState pipeline_state) noexcept {
+    const VulkanPipelineState pipeline_state, const bool textured) noexcept {
   const auto target = state_->targets.find(target_handle.value);
   if (target == state_->targets.end() ||
       (pipeline_state.depth_test && !target->second.with_depth) ||
@@ -69,14 +90,19 @@ VulkanPipelineHandle VulkanBackend::create_pipeline(
   };
   const VkVertexInputBindingDescription binding{
       .binding = 0U,
-      .stride = sizeof(VulkanVertex),
+      .stride = static_cast<std::uint32_t>(textured ? sizeof(VulkanTexturedVertex)
+                                                    : sizeof(VulkanVertex)),
       .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
   };
-  const VkVertexInputAttributeDescription attribute{
-      .location = 0U,
-      .binding = 0U,
-      .format = VK_FORMAT_R32G32_SFLOAT,
-      .offset = 0U,
+  const VkVertexInputAttributeDescription attributes[]{
+      {.location = 0U,
+       .binding = 0U,
+       .format = VK_FORMAT_R32G32_SFLOAT,
+       .offset = 0U},
+      {.location = 1U,
+       .binding = 0U,
+       .format = VK_FORMAT_R32G32_SFLOAT,
+       .offset = static_cast<std::uint32_t>(sizeof(float) * 2U)},
   };
   const VkPipelineVertexInputStateCreateInfo vertex_input{
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -84,8 +110,8 @@ VulkanPipelineHandle VulkanBackend::create_pipeline(
       .flags = 0,
       .vertexBindingDescriptionCount = 1U,
       .pVertexBindingDescriptions = &binding,
-      .vertexAttributeDescriptionCount = 1U,
-      .pVertexAttributeDescriptions = &attribute,
+      .vertexAttributeDescriptionCount = textured ? 2U : 1U,
+      .pVertexAttributeDescriptions = attributes,
   };
   const VkPipelineInputAssemblyStateCreateInfo input_assembly{
       .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
@@ -173,14 +199,15 @@ VulkanPipelineHandle VulkanBackend::create_pipeline(
       .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
-      .setLayoutCount = 0U,
-      .pSetLayouts = nullptr,
+      .setLayoutCount = textured ? 1U : 0U,
+      .pSetLayouts = textured ? &state_->texture_descriptor_set_layout : nullptr,
       .pushConstantRangeCount = 0U,
       .pPushConstantRanges = nullptr,
   };
   VulkanPipelineResource resource;
   resource.render_pass = target->second.render_pass;
   resource.state = pipeline_state;
+  resource.textured = textured;
   if (vkCreatePipelineLayout(state_->device, &layout_info, nullptr,
                              &resource.layout) != VK_SUCCESS) {
     vkDestroyShaderModule(state_->device, vertex_module, nullptr);

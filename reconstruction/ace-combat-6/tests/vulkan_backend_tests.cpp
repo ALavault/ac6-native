@@ -1,5 +1,6 @@
 #include "ac6/vulkan_backend.h"
 #include "fixtures/vulkan_triangle_spirv.h"
+#include "fixtures/vulkan_textured_triangle_spirv.h"
 
 #include <array>
 #include <cstddef>
@@ -97,6 +98,52 @@ int main() {
       draw_pixels[center + 3U] != 255U ||
       !clear_pixel_matches(draw_pixels, 0U)) {
     return fail("draw_readback");
+  }
+
+  const std::array<ac6::VulkanTexturedVertex, 3> textured_vertices{{
+      {-0.8F, -0.8F, 0.0F, 0.0F},
+      {0.8F, -0.8F, 1.0F, 0.0F},
+      {0.0F, 0.8F, 0.5F, 1.0F},
+  }};
+  const ac6::VulkanTexturedMeshHandle textured_mesh =
+      backend.create_textured_mesh(textured_vertices, indices);
+  const std::array<std::uint8_t, 4U * 4U * 4U> texture_pixels = [] {
+    std::array<std::uint8_t, 4U * 4U * 4U> pixels{};
+    for (std::size_t index = 0U; index < pixels.size(); index += 4U) {
+      pixels[index] = 255U;
+      pixels[index + 3U] = 255U;
+    }
+    return pixels;
+  }();
+  const ac6::VulkanTextureHandle texture =
+      backend.create_texture_rgba8(4U, 4U, texture_pixels);
+  const ac6::VulkanPipelineHandle textured_pipeline = backend.create_textured_pipeline(
+      target, ac6_test::kTexturedTriangleVertexSpirv,
+      ac6_test::kTexturedTriangleFragmentSpirv, {});
+  if (!textured_mesh || !texture || !textured_pipeline ||
+      backend.live_textured_mesh_count() != 1U ||
+      backend.live_texture_count() != 1U ||
+      !backend.has_textured_mesh(textured_mesh) || !backend.has_texture(texture) ||
+      !backend.draw_textured_indexed(target, textured_pipeline, textured_mesh,
+                                     texture)) {
+    return fail("textured_draw");
+  }
+  if (backend.draw_indexed(target, textured_pipeline, mesh)) {
+    return fail("textured_pipeline_position_draw");
+  }
+  const auto textured_pixels = backend.readback_rgba8(target);
+  if (textured_pixels.size() != 16U * 16U * 4U ||
+      textured_pixels[center] != 255U || textured_pixels[center + 1U] != 0U ||
+      textured_pixels[center + 2U] != 0U || textured_pixels[center + 3U] != 255U) {
+    return fail("textured_readback");
+  }
+  backend.release_pipeline(textured_pipeline);
+  backend.release_texture(texture);
+  backend.release_textured_mesh(textured_mesh);
+  if (backend.live_texture_count() != 0U ||
+      backend.live_textured_mesh_count() != 0U ||
+      backend.has_texture(texture) || backend.has_textured_mesh(textured_mesh)) {
+    return fail("textured_release");
   }
 
   backend.release_pipeline(pipeline);
