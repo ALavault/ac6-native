@@ -43,6 +43,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_scenario.cpp src/retail_mission_state.cpp src/retail_state_machine.cpp
   src/retail_mission_script.cpp src/retail_session.cpp
   src/retail_session_replay.cpp
+  src/retail_projection_receipt.cpp
   src/retail_world_position.cpp
   src/ntxr_texture.cpp
   src/retail_model_directory.cpp
@@ -210,6 +211,12 @@ add_test(NAME ac6-session-save-tests COMMAND ac6-session-save-tests)
 add_executable(ac6-retail-session-replay-tests tests/retail_session_replay_tests.cpp)
 target_link_libraries(ac6-retail-session-replay-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-session-replay-tests COMMAND ac6-retail-session-replay-tests)
+
+add_executable(ac6-retail-projection-receipt-tests
+  tests/retail_projection_receipt_tests.cpp)
+target_link_libraries(ac6-retail-projection-receipt-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-projection-receipt-tests
+  COMMAND ac6-retail-projection-receipt-tests)
 
 add_executable(ac6-execution-trace-tests tests/execution_trace_tests.cpp)
 target_link_libraries(ac6-execution-trace-tests PRIVATE ac6_product_core)
