@@ -177,19 +177,24 @@
       "state": "open",
       "closure": "Qualified XMA and bounded moviepack streams reached by Mission 01 provide retail framing, English/Japanese selection, subtitles, A/V synchronisation, and temporal events without speculative demuxing.",
       "blockers": [
-        "The current two-bank ASF reader exposes only a 5,449-range suffix; static review found 1,079 preceding candidate offsets, so correction to the full 6,528-range table must pass before bounded demux work.",
+        "The two-bank ASF reader now exposes the complete 6,528-range table with unique-boundary and fail-closed ambiguity controls, but those opaque ranges do not yet have qualified packet, stream, frame, codec, or timestamp semantics.",
         "Audio/video synchronisation, language selection, subtitles, and timed events are not yet qualified."
       ],
       "evidence": [
         {
           "path": "reports/checkpoint-2-media-xma-contract.md",
-          "size": 1983,
-          "sha256": "40675bdbb9797b44a10718f92026aa7a1f2e6e358d23d0777294877d9953d1f8"
+          "size": 2214,
+          "sha256": "5d950b7c03e1c5c7453d18451315faf3aeeb69775cf33ba5a9188998af1dd128"
         },
         {
           "path": "reports/cycle-1530-the-asf-offsets-become-bounded-ranges.md",
-          "size": 2545,
-          "sha256": "0049e2d6ac27736d018185078403ca7314390f9b874f1e8769f02d2e3aca93e5"
+          "size": 2972,
+          "sha256": "98d591e7a6b4163f43d8da7a18aa52dd57bb96322ec5e74d61fd90b26153acbe"
+        },
+        {
+          "path": "reports/cycle-1535-the-complete-asf-index-is-recovered.md",
+          "size": 1997,
+          "sha256": "537d92ce6244e71bfaab42d9d05f2b04964015e60dbd6634a57fd5438ff47be3"
         }
       ]
     }

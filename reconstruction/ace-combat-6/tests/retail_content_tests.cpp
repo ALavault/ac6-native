@@ -466,17 +466,15 @@ void optional_ffmpeg_media_decode_smoke() {
 }
 
 void asf_index_parser_is_bounded_and_rejects_truncation() {
-  constexpr std::array<std::uint8_t, 16> header_guid{
-      0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66, 0xcf, 0x11,
-      0xa6, 0xd9, 0x00, 0xaa, 0x00, 0x62, 0xce, 0x6c};
-  constexpr std::array<std::uint8_t, 16> file_guid{
-      0xa1, 0xdc, 0xab, 0x8c, 0x47, 0xa9, 0xcf, 0x11,
-      0x8e, 0xe4, 0x00, 0xc0, 0x0c, 0x20, 0x53, 0x65};
-  constexpr std::array<std::uint8_t, 16> extension_guid{
-      0xb5, 0x03, 0xbf, 0x5f, 0x2e, 0xa9, 0xcf, 0x11,
-      0x8e, 0xe3, 0x00, 0xc0, 0x0c, 0x20, 0x53, 0x65};
-  auto put_le32 = [](std::vector<std::uint8_t>& bytes, std::size_t offset,
-                     std::uint32_t value) {
+  constexpr std::array<std::uint8_t, 16> header_guid{0x30, 0x26, 0xb2, 0x75, 0x8e, 0x66,
+                                                     0xcf, 0x11, 0xa6, 0xd9, 0x00, 0xaa,
+                                                     0x00, 0x62, 0xce, 0x6c};
+  constexpr std::array<std::uint8_t, 16> file_guid{0xa1, 0xdc, 0xab, 0x8c, 0x47, 0xa9, 0xcf, 0x11,
+                                                   0x8e, 0xe4, 0x00, 0xc0, 0x0c, 0x20, 0x53, 0x65};
+  constexpr std::array<std::uint8_t, 16> extension_guid{0xb5, 0x03, 0xbf, 0x5f, 0x2e, 0xa9,
+                                                        0xcf, 0x11, 0x8e, 0xe3, 0x00, 0xc0,
+                                                        0x0c, 0x20, 0x53, 0x65};
+  auto put_le32 = [](std::vector<std::uint8_t>& bytes, std::size_t offset, std::uint32_t value) {
     bytes[offset] = static_cast<std::uint8_t>(value);
     bytes[offset + 1] = static_cast<std::uint8_t>(value >> 8u);
     bytes[offset + 2] = static_cast<std::uint8_t>(value >> 16u);
@@ -487,8 +485,7 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
     put_le32(bytes, offset, static_cast<std::uint32_t>(value));
     put_le32(bytes, offset + 4, static_cast<std::uint32_t>(value >> 32u));
   };
-  auto bank = [&](std::vector<std::uint8_t>& bytes, std::size_t base,
-                  std::uint8_t tag) {
+  auto bank = [&](std::vector<std::uint8_t>& bytes, std::size_t base, std::uint8_t tag) {
     std::copy(header_guid.begin(), header_guid.end(), bytes.begin() + base);
     put_le32(bytes, base + 16, 0x1234u);
     bytes[base + 20] = 'B';
@@ -504,13 +501,16 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
     constexpr std::size_t extension_offset = file_offset + 104;
     std::copy(extension_guid.begin(), extension_guid.end(),
               bytes.begin() + base + extension_offset);
-    put_le64(bytes, base + extension_offset + 16, 40u);
-    constexpr std::size_t index_offset = extension_offset + 40;
-    put_le32(bytes, base + index_offset, 200u);
-    put_le32(bytes, base + index_offset + 4, 300u);
-    put_le32(bytes, base + index_offset + 8, 400u);
-    put_le32(bytes, base + index_offset + 12, 11u);
-    put_le32(bytes, base + index_offset + 16, 22u);
+    put_le64(bytes, base + extension_offset + 16, 42u);
+    constexpr std::size_t table_offset = 160;
+    put_le32(bytes, base + table_offset, 220u);
+    put_le32(bytes, base + table_offset + 4, 260u);
+    put_le32(bytes, base + table_offset + 8, 300u);
+    put_le32(bytes, base + table_offset + 12, 340u);
+    put_le32(bytes, base + table_offset + 16, 400u);
+    put_le32(bytes, base + table_offset + 20, 440u);
+    put_le32(bytes, base + table_offset + 24, 11u);
+    put_le32(bytes, base + table_offset + 28, 22u);
   };
 
   std::vector<std::uint8_t> bytes(1024, 0);
@@ -522,28 +522,66 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
   REQUIRE(parsed->bank_count() == 2);
   REQUIRE(parsed->bank(0).size == 512);
   REQUIRE(parsed->bank(0).bank_tag == 0x0e);
-  REQUIRE(parsed->bank(0).index_offset == 174);
-  REQUIRE(parsed->bank(0).index_count == 3);
-  REQUIRE(parsed->bank(0).first_index == 200);
-  REQUIRE(parsed->bank(0).last_index == 400);
+  REQUIRE(parsed->bank(0).index_offset == 160);
+  REQUIRE(parsed->bank(0).index_count == 6);
+  REQUIRE(parsed->bank(0).first_index == 220);
+  REQUIRE(parsed->bank(0).last_index == 440);
   REQUIRE(parsed->bank(0).entry_offsets ==
-          std::vector<std::uint32_t>({200u, 300u, 400u}));
-  REQUIRE((parsed->entry_range(0, 0) == ac6::RetailAsfEntryRange{200u, 100u}));
-  REQUIRE((parsed->entry_range(0, 2) == ac6::RetailAsfEntryRange{400u, 112u}));
-  REQUIRE(!parsed->entry_range(0, 3).has_value());
+          std::vector<std::uint32_t>({220u, 260u, 300u, 340u, 400u, 440u}));
+  REQUIRE((parsed->entry_range(0, 0) == ac6::RetailAsfEntryRange{220u, 40u}));
+  REQUIRE((parsed->entry_range(0, 5) == ac6::RetailAsfEntryRange{440u, 72u}));
+  REQUIRE(!parsed->entry_range(0, 6).has_value());
   REQUIRE(!parsed->entry_range(2, 0).has_value());
   REQUIRE(parsed->bank(1).offset == 512);
   REQUIRE(parsed->bank(1).bank_tag == 0x21);
-  REQUIRE((parsed->entry_range(1, 0) == ac6::RetailAsfEntryRange{712u, 100u}));
+  REQUIRE((parsed->entry_range(1, 0) == ac6::RetailAsfEntryRange{732u, 40u}));
 
-  put_le32(bytes, 174, 512);
+  put_le32(bytes, 172, 400u);
   REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
   bank(bytes, 0, 0x0e);
-  put_le32(bytes, 174, 180);
+  put_le32(bytes, 172, 404u);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  put_le32(bytes, 172, 398u);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  put_le32(bytes, 172, 512u);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  put_le32(bytes, 180, 400u);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  put_le32(bytes, 180, 396u);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  put_le32(bytes, 180, 442u);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  put_le32(bytes, 172, 0u);
+  put_le32(bytes, 176, 188u);
   REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
   bank(bytes, 0, 0x0e);
   bytes.resize(600);
   REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+
+  std::vector<std::uint8_t> ambiguous(65536, 0);
+  bank(ambiguous, 0, 0x0e);
+  put_le32(ambiguous, 176, 0x0000c800u);
+  put_le32(ambiguous, 180, 0x0000cc00u);
+  put_le32(ambiguous, 184, 0u);
+  put_le32(ambiguous, 188, 0u);
+  REQUIRE(!ac6::RetailAsfIndex::open(ambiguous, detail).has_value());
+  REQUIRE(detail == "ASF offset table boundary is ambiguous");
+
+  constexpr std::size_t max_index_entries = 200000;
+  std::vector<std::uint8_t> excessive(1800000, 0);
+  bank(excessive, 0, 0x0e);
+  for (std::size_t i = 0; i < max_index_entries; ++i) {
+    put_le32(excessive, 176 + i * 4, 900000u + static_cast<std::uint32_t>(i) * 4u);
+  }
+  put_le32(excessive, 176 + max_index_entries * 4, 0u);
+  put_le32(excessive, 180 + max_index_entries * 4, 0u);
+  REQUIRE(!ac6::RetailAsfIndex::open(excessive, detail).has_value());
 
   const char* cache_name = std::getenv("AC6_ASF_CACHE");
   if (cache_name == nullptr || *cache_name == '\0') {
@@ -552,28 +590,25 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
   if (cache_name == nullptr || *cache_name == '\0') return;
   ac6::RetailContentStore store;
   REQUIRE(store.open(cache_name));
-  const auto retail = ac6::RetailAsfIndex::open(
-      store.media(), ac6::RetailMediaAsset::Movie, detail);
+  const auto retail =
+      ac6::RetailAsfIndex::open(store.media(), ac6::RetailMediaAsset::Movie, detail);
   if (!retail.has_value()) std::fprintf(stderr, "asf_index detail=%s\n", detail.c_str());
   REQUIRE(retail.has_value());
   REQUIRE(retail->bank_count() == 2);
   REQUIRE(retail->bank(0).size == 164638720u);
   REQUIRE(retail->bank(1).size == 183668736u);
-  REQUIRE(retail->bank(0).index_count == 2630);
-  REQUIRE(retail->bank(1).index_count == 2819);
-  REQUIRE((retail->entry_range(0, 0) ==
-           ac6::RetailAsfEntryRange{28142156u, 51800u}));
-  REQUIRE((retail->entry_range(0, 2629) ==
-           ac6::RetailAsfEntryRange{164634736u, 3984u}));
-  REQUIRE((retail->entry_range(1, 0) ==
-           ac6::RetailAsfEntryRange{193514776u, 18568u}));
-  REQUIRE((retail->entry_range(1, 2818) ==
-           ac6::RetailAsfEntryRange{348303760u, 3696u}));
+  REQUIRE(retail->bank(0).index_count == 3177);
+  REQUIRE(retail->bank(1).index_count == 3351);
+  REQUIRE((retail->entry_range(0, 0) == ac6::RetailAsfEntryRange{37616u, 1836u}));
+  REQUIRE((retail->entry_range(0, 547) == ac6::RetailAsfEntryRange{28142156u, 51800u}));
+  REQUIRE((retail->entry_range(0, 3176) == ac6::RetailAsfEntryRange{164634736u, 3984u}));
+  REQUIRE((retail->entry_range(1, 0) == ac6::RetailAsfEntryRange{164698852u, 3152u}));
+  REQUIRE((retail->entry_range(1, 532) == ac6::RetailAsfEntryRange{193514776u, 18568u}));
+  REQUIRE((retail->entry_range(1, 3350) == ac6::RetailAsfEntryRange{348303760u, 3696u}));
   std::size_t ranges = 0;
   for (std::size_t bank_index = 0; bank_index < retail->bank_count(); ++bank_index) {
     const auto& retail_bank = retail->bank(bank_index);
-    for (std::size_t entry_index = 0; entry_index < retail_bank.index_count;
-         ++entry_index) {
+    for (std::size_t entry_index = 0; entry_index < retail_bank.index_count; ++entry_index) {
       const auto range = retail->entry_range(bank_index, entry_index);
       REQUIRE(range.has_value());
       REQUIRE(range->offset >= retail_bank.offset);
@@ -582,10 +617,9 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
       ++ranges;
     }
   }
-  REQUIRE(ranges == 5449);
-  std::fprintf(stdout, "asf_index=pass banks=%zu entries=%u,%u ranges=%zu\n",
-               retail->bank_count(), retail->bank(0).index_count,
-               retail->bank(1).index_count, ranges);
+  REQUIRE(ranges == 6528);
+  std::fprintf(stdout, "asf_index=pass banks=%zu entries=%u,%u ranges=%zu\n", retail->bank_count(),
+               retail->bank(0).index_count, retail->bank(1).index_count, ranges);
 }
 
 }  // namespace

@@ -24,13 +24,16 @@ custom-IO probes. ASF movie playback remains explicitly open: its retail
 is claimed. The bounded resource/index contract is nevertheless now
 qualified by `RetailAsfIndex`: it scans the content-addressed blob in 1 MiB
 windows, parses the BNK prefix plus the standard File Properties/Header
-Extension objects, and validates the following little-endian monotone offset
-table without loading the compressed pack into one buffer.
+Extension objects, and validates the complete little-endian monotone offset
+table without loading the compressed pack into one buffer. The first reader
+mistook the probe anchor for the table start and retained only 5,449 suffix
+entries. Backtracking to the unique bounded predecessor recovers the 1,079
+earlier entries and is covered by fail-closed ambiguity tests.
 
 ```text
-asf_index=pass banks=2 entries=2630,2819
-bank_0 offset=0 size=164638720 index_offset=4356 first=28142156 last=164634736
-bank_1 offset=164638720 size=183668736 index_offset=164643076 first=28876056 last=183665040
+asf_index=pass banks=2 entries=3177,3351 ranges=6528
+bank_0 offset=0 size=164638720 index_offset=2168 first=37616 last=164634736
+bank_1 offset=164638720 size=183668736 index_offset=2228 first=60132 last=183665040
 ```
 
 `RetailMediaStore::open` now requires this ASF index whenever the qualified

@@ -88,66 +88,121 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
     detail = "ASF Header Extension object exceeds the bank";
     return std::nullopt;
   }
-  const std::size_t index_base =
-      extension_offset + static_cast<std::size_t>(extension_size);
-  if (index_base + 8 > bytes.size() || index_base >= size) {
+  const std::size_t index_base = extension_offset + static_cast<std::size_t>(extension_size);
+  const auto probe_contains = [&bytes](std::size_t position, std::size_t length) {
+    return position <= bytes.size() && length <= bytes.size() - position;
+  };
+  const auto bank_contains = [size](std::size_t position, std::size_t length) {
+    const std::uint64_t bank_position = position;
+    return bank_position <= size && static_cast<std::uint64_t>(length) <= size - bank_position;
+  };
+  if (!probe_contains(index_base, 8) || !bank_contains(index_base, 8)) {
     detail = "ASF offset table is missing";
     return std::nullopt;
   }
 
-  std::size_t index_offset = 0;
-  std::uint32_t index_count = 0;
-  std::uint32_t first_index = 0;
-  std::uint32_t last_index = 0;
-  std::vector<std::uint32_t> index_entries;
-  for (std::size_t alignment = 0; alignment != 4 && index_count == 0; ++alignment) {
+  struct IndexCandidate final {
+    std::size_t offset{};
+    std::size_t trailer_offset{};
+    std::vector<std::uint32_t> entries;
+  };
+  std::optional<IndexCandidate> selected;
+  for (std::size_t alignment = 0; alignment != 4; ++alignment) {
+    if (index_base > std::numeric_limits<std::size_t>::max() - alignment) continue;
     const std::size_t candidate = index_base + alignment;
-    if (candidate + 8 > bytes.size() || candidate >= size) continue;
-    std::uint32_t candidate_count = 0;
-    std::uint32_t candidate_first = 0;
-    std::uint32_t candidate_last = 0;
+    if (!probe_contains(candidate, 8) || !bank_contains(candidate, 8)) continue;
     std::uint32_t previous = 0;
     std::vector<std::uint32_t> candidate_entries;
     bool valid = true;
-    for (std::size_t cursor = candidate;
-         cursor + 4 <= bytes.size() && cursor < size &&
-         candidate_count < kMaxIndexEntries; cursor += 4) {
-      const std::uint32_t value = read_u32(bytes.data() + cursor);
-      if (candidate_count != 0 && value <= previous) break;
-      if (static_cast<std::uint64_t>(value) >= size) {
+    bool terminated = false;
+    std::size_t cursor = candidate;
+    while (candidate_entries.size() < kMaxIndexEntries) {
+      if (!probe_contains(cursor, 4) || !bank_contains(cursor, 4)) {
         valid = false;
         break;
       }
-      if (candidate_count == 0) candidate_first = value;
-      previous = value;
-      candidate_last = value;
+      const std::uint32_t value = read_u32(bytes.data() + cursor);
+      if ((value & 3u) != 0 || (!candidate_entries.empty() && value <= previous) ||
+          static_cast<std::uint64_t>(value) >= size) {
+        if (!probe_contains(cursor, 8) || !bank_contains(cursor, 8)) {
+          valid = false;
+          break;
+        }
+        const std::size_t floor = cursor + 8;
+        if (static_cast<std::uint64_t>(value) >= floor) {
+          valid = false;
+          break;
+        }
+        terminated = true;
+        break;
+      }
       candidate_entries.push_back(value);
-      ++candidate_count;
+      previous = value;
+      if (cursor > std::numeric_limits<std::size_t>::max() - 4) {
+        valid = false;
+        break;
+      }
+      cursor += 4;
     }
-    const std::size_t candidate_trailer = candidate + candidate_count * 4u;
-    if (!valid || candidate_count < 2 || candidate_count == kMaxIndexEntries ||
-        candidate_trailer + 8 > bytes.size() || candidate_trailer + 8 > size) {
+    if (!valid || !terminated || candidate_entries.size() < 2 ||
+        candidate_entries.size() == kMaxIndexEntries) {
       continue;
     }
-    index_offset = candidate;
-    index_count = candidate_count;
-    first_index = candidate_first;
-    last_index = candidate_last;
-    index_entries = std::move(candidate_entries);
+    const std::size_t floor = cursor + 8;
+    if (static_cast<std::uint64_t>(candidate_entries.front()) < floor) continue;
+    bool terminal_boundary = false;
+    std::vector<std::uint32_t> preceding_entries;
+    std::size_t recovered_offset = candidate;
+    std::uint32_t next = candidate_entries.front();
+    while (recovered_offset >= 4) {
+      const std::size_t predecessor_offset = recovered_offset - 4;
+      const std::uint32_t predecessor = read_u32(bytes.data() + predecessor_offset);
+      if (static_cast<std::uint64_t>(predecessor) < floor) {
+        terminal_boundary = true;
+        break;
+      }
+      if ((predecessor & 3u) != 0 || predecessor >= next ||
+          static_cast<std::uint64_t>(predecessor) >= size ||
+          candidate_entries.size() + preceding_entries.size() + 1 >= kMaxIndexEntries) {
+        valid = false;
+        break;
+      }
+      preceding_entries.push_back(predecessor);
+      recovered_offset = predecessor_offset;
+      next = predecessor;
+    }
+    if (!valid || !terminal_boundary) continue;
+    std::reverse(preceding_entries.begin(), preceding_entries.end());
+    preceding_entries.insert(preceding_entries.end(), candidate_entries.begin(),
+                             candidate_entries.end());
+    if (selected.has_value()) {
+      detail = "ASF offset table boundary is ambiguous";
+      return std::nullopt;
+    }
+    selected = IndexCandidate{recovered_offset, cursor, std::move(preceding_entries)};
   }
-  if (index_count == 0) {
+  if (!selected.has_value()) {
     detail = "ASF offset table has no bounded monotone termination";
     return std::nullopt;
   }
-  const std::size_t trailer_offset = index_offset + index_count * 4u;
-  if (trailer_offset + 8 > bytes.size() || trailer_offset + 8 > size) {
+  const std::size_t index_offset = selected->offset;
+  const std::size_t trailer_offset = selected->trailer_offset;
+  std::vector<std::uint32_t> index_entries = std::move(selected->entries);
+  if (!probe_contains(trailer_offset, 8) || !bank_contains(trailer_offset, 8)) {
     detail = "ASF offset table trailer is truncated";
     return std::nullopt;
   }
-  if (index_entries.size() != index_count || first_index < trailer_offset + 8) {
+  if (index_entries.empty() || index_entries.size() >= kMaxIndexEntries ||
+      index_offset > trailer_offset || (trailer_offset - index_offset) % 4 != 0 ||
+      index_entries.size() != (trailer_offset - index_offset) / 4 ||
+      static_cast<std::uint64_t>(index_entries.front()) < trailer_offset + 8 ||
+      index_entries.size() > std::numeric_limits<std::uint32_t>::max()) {
     detail = "ASF offset table overlaps bank metadata";
     return std::nullopt;
   }
+  const std::uint32_t index_count = static_cast<std::uint32_t>(index_entries.size());
+  const std::uint32_t first_index = index_entries.front();
+  const std::uint32_t last_index = index_entries.back();
   RetailAsfBank bank;
   bank.offset = offset;
   bank.size = size;
