@@ -1,0 +1,78 @@
+# Replay-qualified setup route.  The extra settle keeps the post-start menu
+# edge at the same guest frontier before the deploy confirmation.
+sleep	1
+wait	AC6 oracle frontier reached: 0x8237C828	60
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*37	20
+key	space	0.1
+wait	type28=[^ ]*35	20
+key	space	0.1
+wait	selector44=[^ ]*3	20
+capture	game-data-browser
+key	Shift	0.1
+wait	selector44=[^ ]*10	20
+sleep	1
+capture	post-browser-cancel
+key	Left	0.1
+key	space	0.1
+wait	state40=9.*type28=5	20
+capture	create-game-data-prompt
+key	space	0.1
+sleep	2
+capture	post-create-confirm
+key	space	0.1
+sleep	5
+capture	post-file-selection
+wait	type28=[^ ]*6	20
+sleep	2
+capture	slot-create-prompt-ready
+sleep	2
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait-pulse	type28=[^ ]*8	space
+key	space	0.1
+wait	type28=[^ ]*10	20
+capture	post-slot-create-confirm
+key	space	0.1
+sleep	3
+capture	campaign-new-game
+key	space	0.1
+sleep	3
+capture	difficulty
+key	space	0.1
+sleep	3
+capture	controls
+key	space	0.1
+sleep	3
+capture	language
+key	space	0.1
+sleep	3
+capture	post-language-first-a
+key	space	0.1
+sleep	2
+capture	campaign-intro
+wait-pulse	\[ac6-campaign-transition\].*state=0->1	space+Escape
+wait-pulse	\[ac6-campaign-transition\].*state=1->2	Escape
+capture	post-campaign-intro-skip
+sleep	5
+capture	mission-01-start
+key	space	0.1
+sleep	15
+capture	post-start-a
+sleep	2
+key	space	0.1
+sleep	20
+capture	post-start-b
+key	space	0.1
+sleep	12
+capture	post-weapon-confirm
+key	Shift	0.1
+sleep	8
+capture	deploy-prompt

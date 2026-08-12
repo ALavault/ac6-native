@@ -207,6 +207,38 @@ sur les 3 600 ticks. Le replay transporte donc exactement la séquence d'entrée
 de la capture A ; la divergence restante est bien dans la construction du
 snapshot/état natif, et non dans le convertisseur de manette.
 
+## Replay d'entrée armé, qualification encore ouverte
+
+Pour isoler cette frontière, le probe capture-only possède maintenant un TSV
+armé uniquement par `mission01-execution-v2.arm`. Il charge exactement 3 600
+lignes séquentielles (`tick pitch roll yaw throttle buttons`), refuse les
+plages invalides et ne remplace le paquet fusionné qu'après succès du replay.
+Le TSV dérivé de la capture A est
+`523a0535f11785433436101f8a6bba56166c4cfcd6e3a8758c86cf4ad6b93e47` ; le binaire
+reconstruit après ce changement vaut
+`e5df0f9ddf07945dd667d0f891e194bcd707445773bd55f43a3738e3b643647c`.
+
+La route dédiée, avec une attente de stabilisation après `post-start-a`, est
+`scripts/ac6-oracle-mission01-controlled-sortie-replay.steps`
+(`13c15b0113916d7d0f252c0681054dcc4c9bc1823c23139bc6cde1dfd636154c`). Une
+première exécution avec la route originale a atteint l'étape 76 mais restait
+sur le menu « Select a special weapon » ; elle prouve que l'entrée clavier de
+mise en place peut arriver avant la frontière graphique. Une exécution sans
+TSV, limitée à 120 s, a franchi les mêmes appels d'entrée jusqu'à l'étape 59,
+mais a expiré avant la fenêtre. Les essais de la route dédiée ont ensuite
+expiré ou été interrompus avant `arm-trace` (étapes 5, 6 et 76 ; manifestes
+`76f393fe7e8fa41d813cf374410000efa9d5a6816c0b3ac7a4fd9783bc583844`,
+`66e94a09df34135f733de6879781a48a6831dfc3437a0359a2dc2f87ac348206` et
+`fb0c381d2075d00284ab9fb0a091705d51e8faa213941097ba608d408a51f145`). Aucun
+de ces runs ne produit une capture v2 recevable, et aucun n'est utilisé comme
+preuve de parité.
+
+Le garde conditionnel de `InputSystem::GetState` est nécessaire : réécrire les
+wrappers endian même lorsque le replay est absent modifiait la navigation de
+menu avant l'armement. Le correctif est donc conservé comme patch 12 de la
+pile, mais sa qualification runtime reste explicitement ouverte tant qu'une
+route complète n'a pas produit deux traces byte-identiques.
+
 ## Contrat natif de snapshot et de scène
 
 Cette divergence a maintenant une frontière produit explicite dans

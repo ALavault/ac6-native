@@ -1,0 +1,16 @@
+# Replay-qualified Mission 01 route with the setup settle at post-start-a.
+include	ac6-oracle-mission01-trace-entry-replay.steps
+wait-pulse	AC6 oracle Mission 01 player-update boundary reached at 0x822A6710	space
+wait	AC6 oracle Mission 01 manager-tick boundary reached at 0x8226D1C8 with player from 0x822A6710	60
+capture	flight-entry-qualified
+arm-trace
+key	w	1.0
+sleep	5
+key	d	1.0
+sleep	5
+key	q	1.0
+sleep	5
+mouse	1	1.0
+sleep	5
+wait	AC6 oracle trace v2 complete: 3600 gameplay ticks	180
+capture	controlled-sortie-end

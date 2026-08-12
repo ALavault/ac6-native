@@ -325,6 +325,9 @@ class OracleRun:
             "--ac6_render_capture=true",
             "--ac6_native_graphics_enabled=false",
         ]
+        trace_input = getattr(self.args, "trace_input", None)
+        if trace_input:
+            command.append(f"--ac6_oracle_trace_v2_input_path={trace_input}")
         self.console = self.console_path.open("wb")
         self.game = subprocess.Popen(
             command, cwd=self.args.binary.parent, env=self.display_env,
@@ -348,6 +351,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duration", type=int, default=900)
     parser.add_argument("--display", default=":120")
     parser.add_argument("--unlock-fps", action="store_true")
+    parser.add_argument(
+        "--trace-input", type=Path, default=None,
+        help="replay the qualified controller_input rows from a trace-v2 TSV",
+    )
     return parser.parse_args()
 
 
@@ -361,6 +368,10 @@ def main() -> int:
     arguments.game_dir = arguments.game_dir.resolve()
     arguments.route = arguments.route.resolve()
     arguments.output = arguments.output.resolve()
+    if arguments.trace_input is not None:
+        arguments.trace_input = arguments.trace_input.resolve()
+        if not arguments.trace_input.is_file():
+            raise SystemExit("oracle runner: trace input is not a regular file")
     if not arguments.binary.is_file() or not os.access(arguments.binary, os.X_OK):
         raise SystemExit("oracle runner: binary is not executable")
     if sha256(arguments.game_dir / "default.xex") != XEX_SHA256:
@@ -435,6 +446,9 @@ def main() -> int:
         "display": arguments.display,
         "audio_driver": "dummy",
         "audio_trace_telemetry": True,
+        "trace_input": ({"path": str(arguments.trace_input),
+                         "sha256": sha256(arguments.trace_input)}
+                        if arguments.trace_input is not None else None),
         "unlock_fps": arguments.unlock_fps,
         "game_status": game_status,
         "xvfb_status": xvfb_status,

@@ -1,0 +1,132 @@
+--- a/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h
++++ b/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h
+@@ -10,0 +11,8 @@
++// Capture-only deterministic input lane. When the qualified trace arm file
++// and replay cvar are present, replaces the merged host packet for the
++// current manager tick. The product build never links this interface.
++bool OverrideInputState(uint32_t user_index, uint16_t& buttons,
++                        uint8_t& left_trigger, uint8_t& right_trigger,
++                        int16_t& thumb_lx, int16_t& thumb_ly,
++                        int16_t& thumb_rx, int16_t& thumb_ry);
++
+--- a/thirdparty/rexglue-sdk/src/input/input_system.cpp
++++ b/thirdparty/rexglue-sdk/src/input/input_system.cpp
+@@ -123,0 +124,21 @@
++  uint16_t override_buttons = static_cast<uint16_t>(merged.gamepad.buttons);
++  uint8_t override_left_trigger =
++      static_cast<uint8_t>(merged.gamepad.left_trigger);
++  uint8_t override_right_trigger =
++      static_cast<uint8_t>(merged.gamepad.right_trigger);
++  int16_t override_thumb_lx = static_cast<int16_t>(merged.gamepad.thumb_lx);
++  int16_t override_thumb_ly = static_cast<int16_t>(merged.gamepad.thumb_ly);
++  int16_t override_thumb_rx = static_cast<int16_t>(merged.gamepad.thumb_rx);
++  int16_t override_thumb_ry = static_cast<int16_t>(merged.gamepad.thumb_ry);
++  if (ac6::oracle::OverrideInputState(
++          user_index, override_buttons, override_left_trigger,
++          override_right_trigger, override_thumb_lx, override_thumb_ly,
++          override_thumb_rx, override_thumb_ry)) {
++    merged.gamepad.buttons = override_buttons;
++    merged.gamepad.left_trigger = override_left_trigger;
++    merged.gamepad.right_trigger = override_right_trigger;
++    merged.gamepad.thumb_lx = override_thumb_lx;
++    merged.gamepad.thumb_ly = override_thumb_ly;
++    merged.gamepad.thumb_rx = override_thumb_rx;
++    merged.gamepad.thumb_ry = override_thumb_ry;
++  }
+--- a/src/ac6_oracle_probe.cpp
++++ b/src/ac6_oracle_probe.cpp
+@@ -27,0 +28,2 @@
++REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_input_path, "", "AC6/Oracle",
++                      "Capture-only per-manager-tick controller replay TSV");
+@@ -70,0 +73,4 @@
++std::mutex g_replay_input_mutex;
++std::string g_replay_input_path;
++std::vector<InputSnapshot> g_replay_inputs;
++bool g_replay_input_failed = false;
+@@ -76,0 +83,57 @@
++bool EnsureReplayInputs(const std::string& path) {
++  if (path.empty()) return false;
++  if (path == g_replay_input_path && !g_replay_inputs.empty()) {
++    return !g_replay_input_failed;
++  }
++  g_replay_input_path = path;
++  g_replay_inputs.clear();
++  g_replay_input_failed = false;
++  std::ifstream input(path);
++  if (!input) {
++    g_replay_input_failed = true;
++    return false;
++  }
++  std::string line;
++  uint64_t expected_tick = 1;
++  while (std::getline(input, line)) {
++    if (line.empty() || line.front() == '#') continue;
++    std::istringstream row(line);
++    uint64_t tick = 0;
++    int pitch = 0;
++    int roll = 0;
++    int yaw = 0;
++    int throttle = 0;
++    unsigned buttons = 0;
++    if (!(row >> tick >> pitch >> roll >> yaw >> throttle >> buttons) ||
++        tick != expected_tick || pitch < -32768 || pitch > 32767 ||
++        roll < -32768 || roll > 32767 || yaw < -32768 || yaw > 32767 ||
++        throttle < 0 || throttle > 255 || buttons > 65535U) {
++      g_replay_input_failed = true;
++      g_replay_inputs.clear();
++      return false;
++    }
++    std::string extra;
++    if (row >> extra) {
++      g_replay_input_failed = true;
++      g_replay_inputs.clear();
++      return false;
++    }
++    g_replay_inputs.push_back({0, static_cast<uint16_t>(buttons), 0,
++                               static_cast<uint8_t>(throttle),
++                               static_cast<int16_t>(pitch),
++                               static_cast<int16_t>(roll),
++                               static_cast<int16_t>(yaw), 0});
++    ++expected_tick;
++    if (g_replay_inputs.size() > kTraceV2Ticks) {
++      g_replay_input_failed = true;
++      g_replay_inputs.clear();
++      return false;
++    }
++  }
++  if (g_replay_inputs.size() != kTraceV2Ticks) {
++    g_replay_input_failed = true;
++    g_replay_inputs.clear();
++    return false;
++  }
++  return true;
++}
+@@ -337,0 +401,28 @@
++bool OverrideInputState(uint32_t user_index, uint16_t& buttons,
++                        uint8_t& left_trigger, uint8_t& right_trigger,
++                        int16_t& thumb_lx, int16_t& thumb_ly,
++                        int16_t& thumb_rx, int16_t& thumb_ry) {
++  if (user_index != 0) return false;
++  const std::string path = REXCVAR_GET(ac6_oracle_trace_v2_input_path);
++  const std::string arm = REXCVAR_GET(ac6_oracle_trace_v2_arm_path);
++  if (path.empty() || arm.empty() || !std::filesystem::is_regular_file(arm)) {
++    return false;
++  }
++  std::lock_guard<std::mutex> replay_lock(g_replay_input_mutex);
++  if (!EnsureReplayInputs(path)) return false;
++  std::uint64_t tick = 0;
++  {
++    std::lock_guard<std::mutex> trace_lock(g_trace_v2_mutex);
++    tick = g_trace_v2_tick_count;
++  }
++  if (tick >= g_replay_inputs.size()) return false;
++  const InputSnapshot& desired = g_replay_inputs[static_cast<std::size_t>(tick)];
++  buttons = desired.buttons;
++  left_trigger = desired.left_trigger;
++  right_trigger = desired.right_trigger;
++  thumb_lx = desired.thumb_lx;
++  thumb_ly = desired.thumb_ly;
++  thumb_rx = desired.thumb_rx;
++  thumb_ry = desired.thumb_ry;
++  return true;
++}

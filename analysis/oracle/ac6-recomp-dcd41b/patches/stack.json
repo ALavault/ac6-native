@@ -80,6 +80,13 @@
       "sha256": "13a5ad39755de865c1333710c3f21249208776983396c4ab6a0cefe5b16a001f",
       "reason": "Keep the dummy device render tic monotone on host time through underruns while retaining serialized callback dispatch until queued guest playback is observed.",
       "validation": "ac6_audio_startup_pacing_test covers zero, observed-tic floor, and host-clock progression. Runtime qualification remains open: run M with the final binary still stopped during the campaign intro before state 0->1."
+    },
+    {
+      "order": 12,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/deterministic-trace-input-replay.patch",
+      "sha256": "a0ab1b1f65208c458b4d77e2ae957aa27c8a16de9a0ffc9658b4266f8efc93b7",
+      "reason": "Add a capture-only, arm-gated per-manager-tick controller replay lane so oracle reruns can separate setup timing from Mission 01 input divergence.",
+      "validation": "Clean external build of ac6recomp succeeds; TSV parser rejects malformed, out-of-range, non-sequential, or non-3600-row input. End-to-end replay remains unqualified while the setup route is still timing-sensitive before arm-trace."
     }
   ],
   "configuration": {
