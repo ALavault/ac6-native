@@ -23,6 +23,8 @@ CHECKPOINT2 = ROOT / "analysis/contracts/global-checkpoint-2-v1.json"
 GATES = ("JF", "JV", "JP", "JG")
 STATES = {"open", "passed"}
 XEX = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+NTSC_UJ_XEX = "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc"
+NTSC_UJ_XXH3 = "892639b654015428"
 SPINE_PHASES = (
     "M01-A-load", "M01-B-controlled-sortie", "M01-C-first-objective",
     "M01-D-debrief", "M01-E-replay", "M01-F-parity",
@@ -109,6 +111,62 @@ def audit_rexglue_trust(path: Path) -> None:
             pal_oracle.get("oracle_binary_sha256") !=
             manifest.get("runtime_build", {}).get("binary_sha256")):
         raise ValueError("RexGlue PAL revision identity")
+    modern = trust.get("source_pins", {}).get("modern_us_reference", {})
+    modern_identity_path = project_path(modern.get("identity"))
+    modern_identity = json.loads(modern_identity_path.read_text(encoding="utf-8"))
+    modern_target = modern_identity.get("target", {})
+    modern_oracle = modern_identity.get("oracle_reference", {})
+    modern_codegen = modern_identity.get("codegen", {})
+    modern_linux = modern_identity.get("linux_retest", {})
+    modern_xenia = modern_identity.get("xenia_identity_cross_check", {})
+    if (modern_identity.get("schema") != "ac6.recomp-oracle-identity.v1" or
+            modern_identity.get("source_media", {}).get("retail_bytes_committed") is not False or
+            modern_target.get("target_id") != "ac6-ntsc-uj-default-xex" or
+            modern_target.get("module") != "default.xex" or
+            modern_target.get("sha256") != NTSC_UJ_XEX or
+            modern_target.get("module_xxh3") != NTSC_UJ_XXH3 or
+            modern_target.get("title_id") != "4E4D07D1" or
+            modern_target.get("media_id") != "531C30BE" or
+            modern_target.get("xex_version") != "v0.0.0.8" or
+            modern_target.get("base_version") != "v0.0.0.8"):
+        raise ValueError("RexGlue NTSC-U/J target identity")
+    if (modern.get("ac6_recomp_commit") != modern_oracle.get("commit") or
+            modern.get("rexglue_tree") != modern_oracle.get("rexglue_tree") or
+            modern.get("runtime_config_sha256") !=
+            modern_oracle.get("runtime_config_sha256") or
+            modern.get("target_region") != "NTSC-U/J family" or
+            modern.get("module") != modern_target.get("module") or
+            modern.get("xex_sha256") != modern_target.get("sha256") or
+            modern.get("module_xxh3") != modern_target.get("module_xxh3") or
+            modern.get("title_id") != modern_target.get("title_id") or
+            modern.get("media_id") != modern_target.get("media_id") or
+            modern.get("xex_version") != modern_target.get("xex_version") or
+            modern.get("base_version") != modern_target.get("base_version") or
+            modern.get("codegen_tree_sha256") !=
+            modern_codegen.get("generated_tree_sha256")):
+        raise ValueError("RexGlue NTSC-U/J revision identity")
+    marker = modern_identity.get("controller_seams", {}).get("frame_input_stage", {})
+    xam_thunk = modern_identity.get("controller_seams", {}).get("xam_input_get_state_thunk", {})
+    if (modern_codegen.get("status") != "generated-with-audit-only-link-order-patch" or
+            modern_codegen.get("identical_runs") != 2 or
+            modern_codegen.get("generated_output_committed") is not False or
+            modern_codegen.get("generated_output_is_product") is not False or
+            modern_linux.get("full_runtime_built") is not False or
+            modern_linux.get("runtime_launched") is not False or
+            modern_xenia.get("gameplay_evidence") is not False or
+            modern_xenia.get("parity_evidence") is not False or
+            marker.get("address") != "0x821CA940" or
+            marker.get("length") != 328 or
+            marker.get("code_sha256") !=
+            "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d" or
+            marker.get("runtime_cadence_qualified") is not False or
+            xam_thunk.get("address") != "0x82390CE0" or
+            xam_thunk.get("code_sha256") !=
+            "9fcb5cb10e9f71b1b6eaf6f8c1854155506dee6702d9b6423888f72622d032bb" or
+            modern.get("codegen_status") != "provisional-rexglue" or
+            modern.get("linux_runtime_built") is not False or
+            modern.get("pal_gate_evidence") is not False):
+        raise ValueError("RexGlue NTSC-U/J provisional boundary")
     divergences = trust.get("known_divergences")
     if not isinstance(divergences, list) or {
             item.get("id") for item in divergences if isinstance(item, dict)

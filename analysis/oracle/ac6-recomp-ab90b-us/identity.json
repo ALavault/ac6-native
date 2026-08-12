@@ -1,0 +1,118 @@
+{
+  "schema": "ac6.recomp-oracle-identity.v1",
+  "qualification_date": "2026-08-12",
+  "role": "provisional-rexglue identity, codegen and controller-seam evidence only",
+  "source_media": {
+    "disc_label": "XGD2DVD_NTSC",
+    "size": 7835492352,
+    "sha256": "204c5e645d79da8776699c12f17bd069f869fbdb10ae79015d1a0ef2b743c98c",
+    "extractor_sha256": "5d3405746601b723a67fdd5db06e6c225943a9513001f6e80643373f3ed3e947",
+    "retail_bytes_committed": false
+  },
+  "target": {
+    "target_id": "ac6-ntsc-uj-default-xex",
+    "platform": "Xbox 360",
+    "region": "NTSC-U/J family",
+    "region_mask": "0x0000FDFF",
+    "module": "default.xex",
+    "size": 7483392,
+    "sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "module_xxh3": "892639b654015428",
+    "title_id": "4E4D07D1",
+    "media_id": "531C30BE",
+    "savegame_id": "4E4D07D1",
+    "xex_version": "v0.0.0.8",
+    "base_version": "v0.0.0.8",
+    "disc_number": 1,
+    "disc_count": 1,
+    "image_base": "0x82000000",
+    "image_size": "0x00AA0000",
+    "entry_point": "0x821F5ED0",
+    "timestamp": "0x46EB93E2",
+    "original_pe_name": "ACE6_X360.exe"
+  },
+  "oracle_reference": {
+    "repository": "https://github.com/sal063/AC6_recomp",
+    "commit": "ab90b54713e5889f33eee1cc8681dae89fe83d1e",
+    "tree": "1e60427e316a2667d189eb1e067a8ec7d776fd50",
+    "tag": "v1.0.0-beta.1",
+    "rexglue_tree": "73589e54e95291a7039de6beada6390ac7c12f78",
+    "runtime_config_sha256": "c39ffcf1cd4173bfee92bd3be9137808b415a664257b948a1974d305a704fa4e",
+    "cmake_presets_sha256": "2981a545f4a351c2a4b084450258f58409a2ca00a68bc96d6334601cded0fa71",
+    "configured_function_count": 10527
+  },
+  "fresh_headless_import": {
+    "project_name": "ac6-us",
+    "program": "default.xex",
+    "language": "PowerPC:BE:64:A2ALT-32addr:default",
+    "loader": "XEX Loader by Warranty Voider",
+    "analysis": "loader-only",
+    "additional_function_symbols": 8163,
+    "retail_bytes_committed": false
+  },
+  "controller_seams": {
+    "frame_input_stage": {
+      "address": "0x821CA940",
+      "end_inclusive": "0x821CAA87",
+      "next_function": "0x821CAA88",
+      "image_rva": "0x001CA940",
+      "length": 328,
+      "code_sha256": "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d",
+      "direct_caller": "0x821D7B38",
+      "candidate_role": "ac6_frame_input_stage",
+      "candidate_hook_phase": "before_input",
+      "runtime_cadence_qualified": false
+    },
+    "xam_input_get_state_thunk": {
+      "address": "0x82390CE0",
+      "length": 12,
+      "code_sha256": "9fcb5cb10e9f71b1b6eaf6f8c1854155506dee6702d9b6423888f72622d032bb",
+      "direct_callers": [
+        "0x8234CEDC",
+        "0x8234CFA0"
+      ],
+      "caller_lrs": [
+        "0x8234CEE0",
+        "0x8234CFA4"
+      ]
+    }
+  },
+  "codegen": {
+    "status": "generated-with-audit-only-link-order-patch",
+    "generated_function_count": 13274,
+    "generated_file_count": 37,
+    "generated_bytes": 64784688,
+    "generated_tree_sha256": "24564a80f4f3366a9d01b51a9b15de5753908908b6f91c3c960d2653a989d14d",
+    "sources_cmake_sha256": "c604796f3ac27f6da171434f59671d81ea5477badab3beb34925f65358dabf72",
+    "identical_runs": 2,
+    "audit_patch_sha256": "73100dae2f3e1725d4013882d1dc823900640aac5d1dc64168f9620719c52b00",
+    "decode_warning_range": "0x823CFE20..0x823CFED0 stride 0x10",
+    "decode_warning_classification": "XEX import trampoline descriptors followed by mtctr/bctr, not promoted as decoded instructions",
+    "generated_output_committed": false,
+    "generated_output_is_product": false
+  },
+  "linux_retest": {
+    "compiler": "Clang 21.1.8",
+    "preset": "linux-amd64-relwithdebinfo",
+    "unmodified_codegen_tool": {
+      "status": "failed-link",
+      "detail": "rexsystem references FLAGS_ac6_fix_trails_storage_ defined in rexgraphics, but the static archive order does not resolve it"
+    },
+    "application_after_audit_tool_patch": {
+      "status": "failed-compile",
+      "detail": "src/ac6_texture_overrides.h includes d3d12.h unconditionally on Linux"
+    },
+    "full_runtime_built": false,
+    "runtime_launched": false
+  },
+  "xenia_identity_cross_check": {
+    "commit": "16e1eb8e28a2935b75c36707b585a4f5e174ad43",
+    "tree": "0ca8afcf518d9a72579e536916a4bac77beda406",
+    "binary_sha256": "134187430ad32e482b0527e8de10c8ae6371c115bfdfe1f841322d3c6bd9f37a",
+    "audio_driver": "dummy",
+    "result": "module identity and XEX headers cross-checked; title terminated before gameplay",
+    "gameplay_evidence": false,
+    "parity_evidence": false
+  },
+  "acceptance": "This identity authorizes provisional ReXGlue codegen and a future poll-exact raw replay producer for this exact NTSC-U/J XEX. It does not qualify PAL semantics, runtime cadence, audiovisual parity or any native product lane."
+}

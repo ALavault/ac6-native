@@ -73,3 +73,12 @@ def test_rexglue_pal_binary_identity_is_bound_to_manifest(
     path.write_text(json.dumps(document), encoding="utf-8")
     with pytest.raises(ValueError, match="PAL revision identity"):
         MODULE.audit_rexglue_trust(path)
+
+
+def test_rexglue_ntsc_uj_identity_is_bound_to_manifest(tmp_path: Path) -> None:
+    document = json.loads(MODULE.REXGLUE_TRUST.read_text(encoding="utf-8"))
+    document["source_pins"]["modern_us_reference"]["xex_sha256"] = "0" * 64
+    path = tmp_path / "rexglue-trust.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="NTSC-U/J revision identity"):
+        MODULE.audit_rexglue_trust(path)
