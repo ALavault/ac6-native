@@ -10,12 +10,15 @@ import re
 import sys
 from pathlib import Path
 
+from audit_ac6_global_checkpoint2 import audit_document as audit_checkpoint2
+
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX = ROOT / "analysis/mission-capability-matrix.tsv"
 TEMPLATE = ROOT / "analysis/templates/mission-gate-template.json"
 LADDER = ROOT / "GLOBAL_OFFLINE_LADDER.md"
 SPINE = ROOT / "analysis/mission01-execution-spine.json"
+CHECKPOINT2 = ROOT / "analysis/contracts/global-checkpoint-2-v1.json"
 GATES = ("JF", "JV", "JP", "JG")
 STATES = {"open", "passed"}
 XEX = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
@@ -155,6 +158,7 @@ def audit() -> None:
         if (row.get("supported") == "yes") != should_support:
             raise ValueError(f"support disagrees with gates: {row.get('mission')}")
     audit_spine(rows[0])
+    audit_checkpoint2(json.loads(CHECKPOINT2.read_text(encoding="utf-8")))
     ladder = LADDER.read_text(encoding="utf-8")
     for checkpoint in range(8):
         if f"{checkpoint} —" not in ladder:

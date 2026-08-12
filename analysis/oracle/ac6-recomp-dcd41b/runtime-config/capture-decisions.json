@@ -1,8 +1,8 @@
 {
   "schema": "ac6.oracle-capture-config-decisions.v1",
-  "input_configuration_sha256": "6f43396da64a08df61423a8cce57605ac8154dbf0b9ac8f05fd563c94f08e868",
+  "input_configuration_sha256": "551c38c0233701382e96b78992bbb273b7800a04e6692ec2ddc0553e3f6316d5",
   "boundary_export_sha256": "5e7119fa582656e17432d84bb202e03f54c15052cde2920b93115a173f6284f1",
-  "policy_sha256": "2d93b1ce21267d8501e3dcbf22628f82dbbccb8fb2a8e90aa3205a5d9834cc37",
+  "policy_sha256": "cb19aa934521210b34007a3da4a1dce90bf506be090a6b9f6733945a440fd8be",
   "overrides": [
     {
       "address": "0x820F6180",
@@ -25,5 +25,5 @@
       "evidence": "Canonical player update boundary; cycles 779, 1010 and 1080 join its live player transform writes to the airborne Mission 01 gameplay cone."
     }
   ],
-  "output_configuration_sha256": "444096b5362eb68cfef4e61f3e68913f1916bef3aba80441d2a14d98a4826a85"
+  "output_configuration_sha256": "39c3e974f90f0bcc2d2817bd970882f217216c5dabd4fdd28074046dc7d000c6"
 }

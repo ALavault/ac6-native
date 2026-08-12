@@ -13,20 +13,31 @@ import stat
 import subprocess
 import time
 from pathlib import Path
+from typing import NamedTuple
 
 from build_ac6_execution_trace_v2 import TraceV2Error, load_jsonl
 
 ROOT = Path(__file__).resolve().parents[1]
 XEX_SHA256 = "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+TRACE_INPUT_TICKS = 3600
+TRACE_INPUT_MAX_BYTES = 512 * 1024
+REPLAY_LOADED_MARKER = "AC6 oracle replay loaded: 3600 manager-tick rows"
 FATAL = re.compile(
     r"REX_FATAL|Unresolved branch|ac6-oracle-indirect-miss|"
-    r"ac6-oracle-host-trap|Unhandled SIGSEGV",
+    r"ac6-oracle-host-trap|AC6 oracle replay input invalid|Unhandled SIGSEGV",
     re.IGNORECASE,
 )
 
 
 class RunError(RuntimeError):
     pass
+
+
+class TraceInputSnapshot(NamedTuple):
+    source: Path
+    payload: bytes
+    sha256: str
+    rows: int
 
 
 def normalize_display(value: str) -> str:
@@ -136,6 +147,79 @@ def validate_trace_timing(steps: list[tuple[str, str, str]], unlock_fps: bool) -
         raise RunError(
             "trace routes must enable the 60 Hz correction at arm time, after startup"
         )
+
+
+def validate_trace_input_payload(
+    payload: bytes, ticks: int = TRACE_INPUT_TICKS
+) -> int:
+    if len(payload) > TRACE_INPUT_MAX_BYTES:
+        raise RunError("trace input exceeds byte bound")
+    try:
+        lines = payload.decode("utf-8").splitlines()
+    except UnicodeError as error:
+        raise RunError(f"trace input is not UTF-8: {error}") from error
+    rows = 0
+    for line_number, line in enumerate(lines, start=1):
+        if line == "" or line.startswith("#"):
+            continue
+        fields = line.split()
+        if len(fields) != 6:
+            raise RunError(f"malformed trace input line {line_number}")
+        try:
+            tick, pitch, roll, yaw, throttle, buttons = map(int, fields)
+        except ValueError as error:
+            raise RunError(f"non-decimal trace input line {line_number}") from error
+        rows += 1
+        if tick != rows:
+            raise RunError(f"non-sequential trace input tick at line {line_number}")
+        if not -32768 <= pitch <= 32767:
+            raise RunError(f"trace input pitch outside bounds at line {line_number}")
+        if not -32768 <= roll <= 32767:
+            raise RunError(f"trace input roll outside bounds at line {line_number}")
+        if not -32768 <= yaw <= 32767:
+            raise RunError(f"trace input yaw outside bounds at line {line_number}")
+        if not 0 <= throttle <= 255:
+            raise RunError(f"trace input throttle outside bounds at line {line_number}")
+        if not 0 <= buttons <= 65535:
+            raise RunError(f"trace input buttons outside bounds at line {line_number}")
+        if rows > ticks:
+            raise RunError(f"trace input exceeds {ticks} ticks")
+    if rows != ticks:
+        raise RunError(f"trace input has {rows} rows, expected {ticks}")
+    return rows
+
+
+def load_trace_input_snapshot(
+    path: Path, ticks: int = TRACE_INPUT_TICKS
+) -> TraceInputSnapshot:
+    try:
+        payload = path.read_bytes()
+    except OSError as error:
+        raise RunError(f"trace input is unreadable: {error}") from error
+    rows = validate_trace_input_payload(payload, ticks)
+    return TraceInputSnapshot(
+        source=path,
+        payload=payload,
+        sha256=hashlib.sha256(payload).hexdigest(),
+        rows=rows,
+    )
+
+
+def validate_trace_input(path: Path, ticks: int = TRACE_INPUT_TICKS) -> int:
+    return load_trace_input_snapshot(path, ticks).rows
+
+
+def stage_trace_input(snapshot: TraceInputSnapshot, destination: Path) -> None:
+    try:
+        with destination.open("xb") as output:
+            output.write(snapshot.payload)
+            output.flush()
+            os.fsync(output.fileno())
+        destination.chmod(0o444)
+    except OSError as error:
+        raise RunError(f"trace input staging failed: {error}") from error
+    if sha256(destination) != snapshot.sha256:
+        raise RunError("trace input staging identity mismatch")
 
 
 class OracleRun:
@@ -375,10 +459,15 @@ def main() -> int:
     arguments.game_dir = arguments.game_dir.resolve()
     arguments.route = arguments.route.resolve()
     arguments.output = arguments.output.resolve()
+    trace_input_snapshot: TraceInputSnapshot | None = None
     if arguments.trace_input is not None:
         arguments.trace_input = arguments.trace_input.resolve()
         if not arguments.trace_input.is_file():
             raise SystemExit("oracle runner: trace input is not a regular file")
+        try:
+            trace_input_snapshot = load_trace_input_snapshot(arguments.trace_input)
+        except RunError as error:
+            raise SystemExit(f"oracle runner: {error}") from error
     if not arguments.binary.is_file() or not os.access(arguments.binary, os.X_OK):
         raise SystemExit("oracle runner: binary is not executable")
     if sha256(arguments.game_dir / "default.xex") != XEX_SHA256:
@@ -398,6 +487,13 @@ def main() -> int:
         raise SystemExit(f"oracle runner: {error}") from error
     arguments.output.mkdir(parents=True)
     (arguments.output / "user-data").mkdir()
+    if trace_input_snapshot is not None:
+        runtime_trace_input = arguments.output / "trace-input.tsv"
+        try:
+            stage_trace_input(trace_input_snapshot, runtime_trace_input)
+        except RunError as error:
+            raise SystemExit(f"oracle runner: {error}") from error
+        arguments.trace_input = runtime_trace_input
 
     before = shm_inventory()
     started = time.time()
@@ -428,6 +524,19 @@ def main() -> int:
     console_text = console_path.read_text(encoding="utf-8", errors="replace") \
         if console_path.is_file() else ""
     fatal_matches = sorted(set(FATAL.findall(log_text + "\n" + console_text)))
+    replay_loaded = (
+        REPLAY_LOADED_MARKER in log_text or REPLAY_LOADED_MARKER in console_text
+    )
+    if arguments.trace_input is not None and not replay_loaded:
+        cleanup_error = cleanup_error or "trace input: runtime replay marker absent"
+    runtime_trace_input_sha256: str | None = None
+    if trace_input_snapshot is not None:
+        try:
+            runtime_trace_input_sha256 = sha256(arguments.trace_input)
+        except OSError as caught:
+            cleanup_error = cleanup_error or f"trace input: {caught}"
+        if runtime_trace_input_sha256 != trace_input_snapshot.sha256:
+            cleanup_error = cleanup_error or "trace input: staged identity changed"
     trace_v2: dict[str, object] | None = None
     if runner.trace_v2_armed:
         trace_path = arguments.output / "mission01-execution-v2.raw.jsonl"
@@ -453,9 +562,13 @@ def main() -> int:
         "display": arguments.display,
         "audio_driver": "dummy",
         "audio_trace_telemetry": True,
-        "trace_input": ({"path": str(arguments.trace_input),
-                         "sha256": sha256(arguments.trace_input)}
-                        if arguments.trace_input is not None else None),
+        "trace_input": ({"source_path": str(trace_input_snapshot.source),
+                         "runtime_path": str(arguments.trace_input),
+                         "sha256": trace_input_snapshot.sha256,
+                         "runtime_sha256": runtime_trace_input_sha256,
+                         "rows": trace_input_snapshot.rows,
+                         "runtime_loaded": replay_loaded}
+                        if trace_input_snapshot is not None else None),
         "unlock_fps": arguments.unlock_fps,
         "game_status": game_status,
         "xvfb_status": xvfb_status,

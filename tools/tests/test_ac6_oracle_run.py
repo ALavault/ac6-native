@@ -109,6 +109,57 @@ class OracleDisplayTests(unittest.TestCase):
         with self.assertRaisesRegex(RUNNER.RunError, "at arm time"):
             RUNNER.validate_trace_timing(steps, True)
 
+    def write_trace_input(self, root: Path, rows: int = 3600) -> Path:
+        path = root / "input.tsv"
+        path.write_text(
+            "".join(f"{tick} 0 0 0 0 0\n" for tick in range(1, rows + 1)),
+            encoding="utf-8",
+        )
+        return path
+
+    def test_trace_input_requires_exactly_3600_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write_trace_input(Path(temporary), 3599)
+            with self.assertRaisesRegex(RUNNER.RunError, "3599 rows"):
+                RUNNER.validate_trace_input(path)
+
+    def test_trace_input_rejects_out_of_range_value(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write_trace_input(Path(temporary))
+            lines = path.read_text(encoding="utf-8").splitlines()
+            lines[11] = "12 0 0 0 256 0"
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(RUNNER.RunError, "throttle outside bounds"):
+                RUNNER.validate_trace_input(path)
+
+    def test_trace_input_rejects_duplicate_tick(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write_trace_input(Path(temporary))
+            lines = path.read_text(encoding="utf-8").splitlines()
+            lines[11] = "11 0 0 0 0 0"
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(RUNNER.RunError, "non-sequential"):
+                RUNNER.validate_trace_input(path)
+
+    def test_trace_input_accepts_bounded_sequential_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = self.write_trace_input(Path(temporary))
+            self.assertEqual(RUNNER.validate_trace_input(path), 3600)
+
+    def test_trace_input_staging_uses_one_validated_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = self.write_trace_input(root)
+            snapshot = RUNNER.load_trace_input_snapshot(source)
+            source.write_text("replaced after validation\n", encoding="utf-8")
+            runtime = root / "runtime.tsv"
+
+            RUNNER.stage_trace_input(snapshot, runtime)
+
+            self.assertEqual(runtime.read_bytes(), snapshot.payload)
+            self.assertEqual(RUNNER.sha256(runtime), snapshot.sha256)
+            self.assertEqual(runtime.stat().st_mode & 0o777, 0o444)
+
 
 if __name__ == "__main__":
     unittest.main()

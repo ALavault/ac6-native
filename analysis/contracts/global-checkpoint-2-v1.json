@@ -1,0 +1,172 @@
+{
+  "schema": "ac6.global-checkpoint-2.v1",
+  "checkpoint": 2,
+  "state": "open",
+  "target": {
+    "platform": "Xbox 360 PAL",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": "ace-combat-6"
+  },
+  "prerequisites": [
+    {
+      "checkpoint": 0,
+      "state": "passed",
+      "evidence": {
+        "path": "reports/checkpoint-0-global-offline-contract.md",
+        "size": 1691,
+        "sha256": "bd7f5da3a3144f3d9422776ff02af126333dbe3d3a887e241e7cbcdcb2521f55"
+      }
+    },
+    {
+      "checkpoint": 1,
+      "state": "passed",
+      "evidence": {
+        "path": "reports/checkpoint-1-content-store-v2.json",
+        "size": 1361,
+        "sha256": "6c3360fa7237511ee94a896d8e4383d2b6dc526a25358bec85505e83c713f829"
+      }
+    }
+  ],
+  "reproducibility": {
+    "state": "passed",
+    "evidence": {
+      "path": "analysis/oracle/ac6-recomp-dcd41b/reproducibility-v1.json",
+      "size": 6497,
+      "sha256": "e326778ecfd61652f48bb464efd40052b2b7cebbc0bee8aae086d35842de694e"
+    }
+  },
+  "corpus_missions": [
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "M05",
+    "M06",
+    "M07",
+    "M08",
+    "M09",
+    "M10",
+    "M11",
+    "M12",
+    "M13",
+    "M14",
+    "M15"
+  ],
+  "lanes": [
+    {
+      "id": "vmx-vmx128",
+      "state": "open",
+      "closure": "Every reachable position, transform, camera, and physics vector instruction has retail bytes, positive control, micro-execution, handwritten native semantics, and corpus coverage.",
+      "blockers": [
+        "The reachable instruction census is not sealed across the fifteen payloads.",
+        "Huge finite angles, floating-point exception details, NaN payloads, interpolation, and unsupported Xenon instruction families remain explicit open boundaries."
+      ],
+      "evidence": [
+        {
+          "path": "reports/cycle-229-vmx-transform-runtime-probe.md",
+          "size": 3456,
+          "sha256": "5bfae5df329d5e14b7fec365041260cb204baa0a9791095b322217dff15e6c68"
+        }
+      ]
+    },
+    {
+      "id": "scene-tcam",
+      "state": "open",
+      "closure": "Scene selection, every TCAM variant, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested for all fifteen missions.",
+      "blockers": [
+        "The target-selection block feeding f25/f28/f29/f31/f24 in canonical function 0x82262A28 is not yet ported.",
+        "The live player locator producer and full fifteen-payload Scene/TCAM variant census remain open."
+      ],
+      "evidence": [
+        {
+          "path": "reports/cycle-1508-the-camera-rotation-core-is-retail-bounded.md",
+          "size": 3479,
+          "sha256": "c13e94adbedd30f51f094fd0f45442673c92bc1e0d6e8828f57e73b37fae0969"
+        }
+      ]
+    },
+    {
+      "id": "mdlp-mate",
+      "state": "open",
+      "closure": "Model directories, class and parent relations, transform staging/commit, material/shader/texture joins, duplicate policy, and mounts match retail across the corpus.",
+      "blockers": [
+        "Vertex data is not joined to the derived material path.",
+        "Material slots 2 through 4, parameter-node meanings, and unmatched texture references are not qualified."
+      ],
+      "evidence": [
+        {
+          "path": "reports/cycle-1211-the-material-layer-lands-and-a-control-loses-half-its-power.md",
+          "size": 4035,
+          "sha256": "bbb33358574936a0ba649035c264c472c91a99247acbcfd8d01eb0e771ee272e"
+        }
+      ]
+    },
+    {
+      "id": "ndxr-ntxr-xenos",
+      "state": "open",
+      "closure": "All observed NDXR layouts/topologies/attributes and NTXR formats/mips/cubes/tiling/endian rules are retail-derived, bounded, corpus-tested, and unknown formats reject deterministically.",
+      "blockers": [
+        "Exact Xenos tiled BC3 swizzle and endian decoding lacks an image-positive control.",
+        "The fifteen-mission format, stride, restart, mip, cube-map, and truncation corpus is not yet sealed."
+      ],
+      "evidence": [
+        {
+          "path": "reports/cycle-942-retail-ntxr-inventory.md",
+          "size": 633,
+          "sha256": "eb1bbd10ff7a9ddb2fd674b6979e67bf9ca1a2d841b0cb3489c41b83bac77d05"
+        }
+      ]
+    },
+    {
+      "id": "objectives-campaign",
+      "state": "open",
+      "closure": "All 339 counters, producers, consumers, encountered script tags, conditions, transitions, zones, and orders are mapped and mission-owner behavior is corpus-tested.",
+      "blockers": [
+        "The meanings and producers of the 339 counters remain unmapped.",
+        "AI/event timing and the events that satisfy retail conditions remain open; no counter may be fabricated."
+      ],
+      "evidence": [
+        {
+          "path": "reports/checkpoint-2-objective-condition-parser.md",
+          "size": 2873,
+          "sha256": "313e313fbee3716ad50e8de9ff8890500fa145e6b3554cc6d2603062de8c9ba4"
+        }
+      ]
+    },
+    {
+      "id": "xma-asf",
+      "state": "open",
+      "closure": "Qualified XMA and bounded moviepack streams provide retail framing, English/Japanese selection, subtitles, A/V synchronisation, and temporal events without speculative demuxing.",
+      "blockers": [
+        "ASF codec/container decoding and bounded stream exposure to FFmpeg remain open.",
+        "Audio/video synchronisation, language selection, subtitles, and timed events are not yet qualified."
+      ],
+      "evidence": [
+        {
+          "path": "reports/checkpoint-2-media-xma-contract.md",
+          "size": 1983,
+          "sha256": "40675bdbb9797b44a10718f92026aa7a1f2e6e358d23d0777294877d9953d1f8"
+        }
+      ]
+    }
+  ],
+  "policy": {
+    "all_lanes_required_for_pass": true,
+    "shared_reader_change_requires_all_15_missions": true,
+    "unknown_behavior_fails_closed": true,
+    "oracle_is_not_product": true,
+    "generated_code_is_not_product": true,
+    "mission_progress_cannot_close_checkpoint": true
+  },
+  "validation_commands": [
+    "cmake --build reconstruction/ace-combat-6/build -j16",
+    "SDL_AUDIODRIVER=dummy xvfb-run -a ctest --test-dir reconstruction/ace-combat-6/build --output-on-failure",
+    "python3 -m unittest discover -s tools/tests",
+    "ruff check tools scripts",
+    "python3 tools/audit_ac6_global_ladder.py",
+    "python3 tools/audit_ac6_global_checkpoint2.py",
+    "python3 tools/audit_ac6_oracle_reproducibility.py",
+    "git diff --check"
+  ]
+}

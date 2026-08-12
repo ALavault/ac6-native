@@ -84,30 +84,44 @@
     {
       "order": 12,
       "path": "analysis/oracle/ac6-recomp-dcd41b/patches/deterministic-trace-input-replay.patch",
-      "sha256": "a0ab1b1f65208c458b4d77e2ae957aa27c8a16de9a0ffc9658b4266f8efc93b7",
+      "sha256": "23791a9e4fe40004254dc3ab7153008287a59a0b990f1a3a820efda9d2e04b3d",
       "reason": "Add a capture-only, arm-gated per-manager-tick controller replay lane so oracle reruns can separate setup timing from Mission 01 input divergence.",
-      "validation": "Clean external build of ac6recomp succeeds; TSV parser rejects malformed, out-of-range, non-sequential, or non-3600-row input. End-to-end replay remains unqualified while the setup route is still timing-sensitive before arm-trace."
+      "validation": "Clean external Clang 21 build and three capture-host CTests pass. The TSV parser rejects malformed, out-of-range, non-sequential, or non-3600-row input; ac6_trace_input_policy_test covers initial wait plus zero, one, and multiple GetState calls per manager tick without the former reverse lock order. End-to-end replay remains unqualified while the setup route is still timing-sensitive before arm-trace."
     },
     {
       "order": 13,
       "path": "analysis/oracle/ac6-recomp-dcd41b/patches/unit-manager-insertion-boundary.patch",
-      "sha256": "96840055187c005760c2466f78146cbe5d9a036a15b08a3b939117b9279e8234",
+      "sha256": "8adadd9190a11875a8b68950e9255a461a4ca51a860380e51f8d012ea0a2e5c0",
       "reason": "Capture-only insertion census at the qualified CX360UnitManager boundary 0x8226FEC0; separates construction from later publication without altering the five-domain trace.",
-      "validation": "Capture checkout compiles; route stopped before Mission 01, so no gate is closed and no capture is qualified."
+      "validation": "The capture configuration codegens 10478 functions and the complete Clang 21 host links with the 0x8226FEC0 wrapper. The bounded dummy-audio Vulkan smoke stops at the known 0x8234530C -> 0x8234524C frontier before Mission 01, so no gate is closed and no capture is qualified."
     }
   ],
   "configuration": {
-    "runtime_sha256": "6f43396da64a08df61423a8cce57605ac8154dbf0b9ac8f05fd563c94f08e868",
-    "capture_sha256": "444096b5362eb68cfef4e61f3e68913f1916bef3aba80441d2a14d98a4826a85",
-    "source": "canonical Ghidra export plus capture-overrides.json"
+    "boundary_sha256": "450d6904d2338ddeb5d80f3cf4a420c9cc6853bcff119c27b06f304b472f5086",
+    "runtime_sha256": "551c38c0233701382e96b78992bbb273b7800a04e6692ec2ddc0553e3f6316d5",
+    "capture_sha256": "39c3e974f90f0bcc2d2817bd970882f217216c5dabd4fdd28074046dc7d000c6",
+    "hook_policy": "analysis/oracle/ac6-recomp-dcd41b/runtime-config/hook-policy.json",
+    "hook_policy_sha256": "40c084966ce3582f9d3701e22cf4084ee1cf48b00ea918112dd6895247faaf4a",
+    "capture_overrides": "analysis/oracle/ac6-recomp-dcd41b/runtime-config/capture-overrides.json",
+    "capture_overrides_sha256": "cb19aa934521210b34007a3da4a1dce90bf506be090a6b9f6733945a440fd8be",
+    "boundary_export": "analysis/oracle/ac6-recomp-dcd41b/ghidra/function-boundaries.json",
+    "boundary_export_sha256": "5e7119fa582656e17432d84bb202e03f54c15052cde2920b93115a173f6284f1",
+    "switch_tables": "analysis/oracle/ac6-recomp-dcd41b/ghidra/switch-tables.json",
+    "switch_tables_sha256": "2ca93685a182fea2ad144dbbf201c77fe66de1f5c289169e2a4fca6eaaa23a25",
+    "runtime_decisions": "analysis/oracle/ac6-recomp-dcd41b/runtime-config/decisions.json",
+    "runtime_decisions_sha256": "5a1c7f6817d6d03d21add29bd42f6bf676f8a0110a976c8b29f3326f2ead7fcc",
+    "capture_decisions": "analysis/oracle/ac6-recomp-dcd41b/runtime-config/capture-decisions.json",
+    "capture_decisions_sha256": "1f00aab1bf5f4c45360f1a685d1c339137e99187308ac7af410a65216d2e739e",
+    "source": "portable dcd41b boundary correction plus canonical Ghidra switch tables and capture overrides",
+    "file_path": "assets/default.xex"
   },
   "qualification": {
     "qualified_patch_count": 11,
     "clean_application_pass": true,
     "runtime_route_status": "open",
-    "changed_file_count": 27,
+    "changed_file_count": 29,
     "changed_tree_algorithm": "sha256(sorted(path + NUL + bytes + NUL))",
-    "changed_tree_sha256": "9cbce31057b6a52c010fee763b8a38e877890ce85651ce1037ad8ac6af22fa5b",
+    "changed_tree_sha256": "54fd4d402654a2b7991fca985ec46cc302fdd5f5a5af3de4efe2780e9e301492",
     "capture_profile_byte_match": true
   }
 }

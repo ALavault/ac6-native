@@ -1,6 +1,316 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c5d7e025..c4cb4423 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -62,4 +62,9 @@ if(AC6_BUILD_TESTING)
+         thirdparty/rexglue-sdk/include
+     )
+     add_test(NAME ac6_audio_startup_pacing_test COMMAND ac6_audio_startup_pacing_test)
++    add_executable(ac6_trace_input_policy_test
++        tests/ac6_trace_input_policy_test.cpp
++    )
++    target_include_directories(ac6_trace_input_policy_test PRIVATE src)
++    add_test(NAME ac6_trace_input_policy_test COMMAND ac6_trace_input_policy_test)
+ endif()
+diff --git a/src/ac6_oracle_probe.cpp b/src/ac6_oracle_probe.cpp
+index 1ce1126d..17b301ab 100644
+--- a/src/ac6_oracle_probe.cpp
++++ b/src/ac6_oracle_probe.cpp
+@@ -16,6 +16,7 @@
+ #include <rex/memory.h>
+ #include <rex/ppc.h>
+
++#include "ac6_trace_input_policy.h"
+ #include "d3d_hooks.h"
+
+ REXCVAR_DEFINE_STRING(ac6_oracle_probe_path, "", "AC6/Oracle",
+@@ -24,6 +25,8 @@ REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_path, "", "AC6/Oracle",
+                       "Capture-only five-domain execution trace JSONL path");
+ REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_arm_path, "", "AC6/Oracle",
+                       "File whose presence arms the Mission 01 execution window");
++REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_input_path, "", "AC6/Oracle",
++                      "Capture-only per-manager-tick controller replay TSV");
+
+ namespace ac6::oracle {
+ namespace {
+@@ -62,10 +65,95 @@ uint64_t g_trace_v2_sequence = 0;
+ uint64_t g_trace_v2_output_bytes = 0;
+ bool g_trace_v2_failed = false;
+ bool g_trace_v2_complete = false;
++std::atomic<uint64_t> g_trace_v2_tick_atomic{0};
+ std::atomic<uint32_t> g_gameplay_manager{0};
+ std::atomic<uint32_t> g_gameplay_player{0};
+ std::atomic<bool> g_player_update_reported{false};
+ std::atomic<bool> g_mission_tick_reported{false};
++std::mutex g_replay_input_mutex;
++std::string g_replay_input_path;
++std::vector<InputSnapshot> g_replay_inputs;
++bool g_replay_input_failed = false;
++bool g_replay_input_error_reported = false;
++ReplayTickPolicy g_replay_tick_policy;
++
++bool FailReplayInputs(std::string_view reason) {
++  g_replay_input_failed = true;
++  g_replay_inputs.clear();
++  if (!g_replay_input_error_reported) {
++    g_replay_input_error_reported = true;
++    REXLOG_ERROR("AC6 oracle replay input invalid: {}", reason);
++  }
++  return false;
++}
++
++bool EnsureReplayInputs(const std::string& path) {
++  if (path.empty()) return false;
++  if (path == g_replay_input_path) {
++    return !g_replay_input_failed;
++  }
++  g_replay_input_path = path;
++  g_replay_inputs.clear();
++  g_replay_input_failed = false;
++  g_replay_input_error_reported = false;
++  g_replay_tick_policy.Reset();
++  std::ifstream input(path);
++  if (!input) {
++    return FailReplayInputs("file is unreadable");
++  }
++  std::string line;
++  uint64_t expected_tick = 1;
++  while (std::getline(input, line)) {
++    if (line.empty() || line.front() == '#') continue;
++    std::istringstream row(line);
++    uint64_t tick = 0;
++    int pitch = 0;
++    int roll = 0;
++    int yaw = 0;
++    int throttle = 0;
++    unsigned buttons = 0;
++    if (!(row >> tick >> pitch >> roll >> yaw >> throttle >> buttons) ||
++        tick != expected_tick || pitch < -32768 || pitch > 32767 ||
++        roll < -32768 || roll > 32767 || yaw < -32768 || yaw > 32767 ||
++        throttle < 0 || throttle > 255 || buttons > 65535U) {
++      return FailReplayInputs("malformed, non-sequential, or out-of-range row");
++    }
++    std::string extra;
++    if (row >> extra) {
++      return FailReplayInputs("row has trailing fields");
++    }
++    g_replay_inputs.push_back({0, static_cast<uint16_t>(buttons), 0,
++                               static_cast<uint8_t>(throttle),
++                               static_cast<int16_t>(roll),
++                               static_cast<int16_t>(pitch),
++                               static_cast<int16_t>(yaw), 0});
++    ++expected_tick;
++    if (g_replay_inputs.size() > kTraceV2Ticks) {
++      return FailReplayInputs("more than 3600 rows");
++    }
++  }
++  if (g_replay_inputs.size() != kTraceV2Ticks) {
++    return FailReplayInputs("row count is not 3600");
++  }
++  REXLOG_INFO("AC6 oracle replay loaded: 3600 manager-tick rows");
++  return true;
++}
++
++ReplayTickDecision ValidateReplayInputTick(uint64_t tick, bool trace_started) {
++  const std::string path = REXCVAR_GET(ac6_oracle_trace_v2_input_path);
++  const std::string arm = REXCVAR_GET(ac6_oracle_trace_v2_arm_path);
++  if (path.empty() || arm.empty() || !std::filesystem::is_regular_file(arm)) {
++    return ReplayTickDecision::kReady;
++  }
++  std::lock_guard<std::mutex> replay_lock(g_replay_input_mutex);
++  if (!EnsureReplayInputs(path)) return ReplayTickDecision::kMissingInput;
++  const ReplayTickDecision decision =
++      g_replay_tick_policy.ManagerTick(tick, trace_started);
++  if (decision == ReplayTickDecision::kMissingInput) {
++    FailReplayInputs("manager tick has no input GetState call");
++  }
++  return decision;
++}
+
+ InputSnapshot SnapshotInput() {
+   std::lock_guard<std::mutex> lock(g_input_mutex);
+@@ -146,6 +234,7 @@ bool EnsureTraceV2Output(const std::string& path) {
+   g_trace_v2_output_bytes = 0;
+   g_trace_v2_failed = !g_trace_v2_output.is_open();
+   g_trace_v2_complete = false;
++  g_trace_v2_tick_atomic.store(0, std::memory_order_relaxed);
+   if (g_trace_v2_failed) {
+     REXLOG_ERROR("AC6 oracle trace v2 could not open its bounded output");
+     return false;
+@@ -232,9 +321,19 @@ void EmitExecutionTick(uint8_t* base, uint32_t player) {
+          << "\"}";
+
+   std::lock_guard<std::mutex> lock(g_trace_v2_mutex);
+-  if (g_trace_v2_failed || g_trace_v2_complete || !EnsureTraceV2Output(path)) {
++  if (g_trace_v2_failed || g_trace_v2_complete) {
++    return;
++  }
++  const ReplayTickDecision replay_decision = ValidateReplayInputTick(
++      g_trace_v2_tick_count, g_trace_v2_output.is_open());
++  if (replay_decision == ReplayTickDecision::kWaitingForFirstInput) {
++    return;
++  }
++  if (replay_decision == ReplayTickDecision::kMissingInput) {
++    g_trace_v2_failed = true;
+     return;
+   }
++  if (!EnsureTraceV2Output(path)) return;
+   const uint64_t tick = g_trace_v2_tick_count + 1u;
+   if (!EmitTraceV2Domain(tick, "controller_input", controller_json) ||
+       !EmitTraceV2Domain(tick, "simulation_snapshot", simulation_json) ||
+@@ -245,6 +344,7 @@ void EmitExecutionTick(uint8_t* base, uint32_t player) {
+     return;
+   }
+   ++g_trace_v2_tick_count;
++  g_trace_v2_tick_atomic.store(g_trace_v2_tick_count, std::memory_order_relaxed);
+   g_trace_v2_output.flush();
+   if (g_trace_v2_tick_count == kTraceV2Ticks) {
+     g_trace_v2_complete = true;
+@@ -352,6 +452,45 @@ void PublishInputState(uint32_t user_index, uint32_t packet_number, uint16_t but
+              thumb_lx, thumb_ly, thumb_rx, thumb_ry};
+ }
+
++bool OverrideInputState(uint32_t user_index, uint16_t& buttons,
++                        uint8_t& left_trigger, uint8_t& right_trigger,
++                        int16_t& thumb_lx, int16_t& thumb_ly,
++                        int16_t& thumb_rx, int16_t& thumb_ry) {
++  if (user_index != 0) return false;
++  const std::string path = REXCVAR_GET(ac6_oracle_trace_v2_input_path);
++  const std::string arm = REXCVAR_GET(ac6_oracle_trace_v2_arm_path);
++  if (path.empty() || arm.empty() || !std::filesystem::is_regular_file(arm)) {
++    return false;
++  }
++  const std::uint64_t tick =
++      g_trace_v2_tick_atomic.load(std::memory_order_relaxed);
++  if (tick >= kTraceV2Ticks) return false;
++  std::lock_guard<std::mutex> replay_lock(g_replay_input_mutex);
++  if (!EnsureReplayInputs(path) || tick >= g_replay_inputs.size()) {
++    if (!g_replay_input_failed) {
++      FailReplayInputs("manager tick exceeds replay rows");
++    }
++    buttons = 0;
++    left_trigger = 0;
++    right_trigger = 0;
++    thumb_lx = 0;
++    thumb_ly = 0;
++    thumb_rx = 0;
++    thumb_ry = 0;
++    return true;
++  }
++  g_replay_tick_policy.ObserveInput(tick);
++  const InputSnapshot& desired = g_replay_inputs[static_cast<std::size_t>(tick)];
++  buttons = desired.buttons;
++  left_trigger = desired.left_trigger;
++  right_trigger = desired.right_trigger;
++  thumb_lx = desired.thumb_lx;
++  thumb_ly = desired.thumb_ly;
++  thumb_rx = desired.thumb_rx;
++  thumb_ry = desired.thumb_ry;
++  return true;
++}
++
+ }  // namespace ac6::oracle
+
+ PPC_EXTERN_FUNC(__imp__sub_82267370);
+diff --git a/src/ac6_trace_input_policy.h b/src/ac6_trace_input_policy.h
+new file mode 100644
+index 00000000..8b4fc6ce
+--- /dev/null
++++ b/src/ac6_trace_input_policy.h
+@@ -0,0 +1,49 @@
++#pragma once
++
++#include <cstdint>
++#include <limits>
++
++namespace ac6::oracle {
++
++enum class ReplayTickDecision {
++  kWaitingForFirstInput,
++  kReady,
++  kMissingInput,
++};
++
++// Access is serialized by the replay-input mutex in the capture host.
++class ReplayTickPolicy {
++ public:
++  void Reset() {
++    observed_tick_ = kNoTick;
++    calls_ = 0;
++  }
++
++  void ObserveInput(uint64_t tick) {
++    if (observed_tick_ != tick) {
++      observed_tick_ = tick;
++      calls_ = 0;
++    }
++    ++calls_;
++  }
++
++  [[nodiscard]] ReplayTickDecision ManagerTick(uint64_t tick,
++                                                bool trace_started) const {
++    if (!trace_started && tick == 0 && observed_tick_ == kNoTick) {
++      return ReplayTickDecision::kWaitingForFirstInput;
++    }
++    if (observed_tick_ == tick && calls_ != 0) {
++      return ReplayTickDecision::kReady;
++    }
++    return ReplayTickDecision::kMissingInput;
++  }
++
++  [[nodiscard]] uint64_t calls() const { return calls_; }
++
++ private:
++  static constexpr uint64_t kNoTick = std::numeric_limits<uint64_t>::max();
++  uint64_t observed_tick_{kNoTick};
++  uint64_t calls_{0};
++};
++
++}  // namespace ac6::oracle
+diff --git a/tests/ac6_trace_input_policy_test.cpp b/tests/ac6_trace_input_policy_test.cpp
+new file mode 100644
+index 00000000..84879ee9
+--- /dev/null
++++ b/tests/ac6_trace_input_policy_test.cpp
+@@ -0,0 +1,30 @@
++#include "ac6_trace_input_policy.h"
++
++#include <cassert>
++
++int main() {
++  using ac6::oracle::ReplayTickDecision;
++  using ac6::oracle::ReplayTickPolicy;
++
++  ReplayTickPolicy policy;
++  assert(policy.ManagerTick(0, false) ==
++         ReplayTickDecision::kWaitingForFirstInput);
++
++  policy.ObserveInput(0);
++  assert(policy.calls() == 1);
++  assert(policy.ManagerTick(0, false) == ReplayTickDecision::kReady);
++
++  policy.ObserveInput(0);
++  assert(policy.calls() == 2);
++  assert(policy.ManagerTick(0, true) == ReplayTickDecision::kReady);
++
++  assert(policy.ManagerTick(1, true) == ReplayTickDecision::kMissingInput);
++  policy.ObserveInput(1);
++  assert(policy.calls() == 1);
++  assert(policy.ManagerTick(1, true) == ReplayTickDecision::kReady);
++
++  policy.Reset();
++  assert(policy.ManagerTick(0, false) ==
++         ReplayTickDecision::kWaitingForFirstInput);
++  return 0;
++}
+diff --git a/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h b/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h
+index a6501e5d..0a96748a 100644
 --- a/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h
 +++ b/thirdparty/rexglue-sdk/include/rex/ac6_oracle_probe.h
-@@ -10,0 +11,8 @@
+@@ -8,4 +8,12 @@ void PublishInputState(uint32_t user_index, uint32_t packet_number, uint16_t but
+                        uint8_t left_trigger, uint8_t right_trigger, int16_t thumb_lx,
+                        int16_t thumb_ly, int16_t thumb_rx, int16_t thumb_ry);
+
 +// Capture-only deterministic input lane. When the qualified trace arm file
 +// and replay cvar are present, replaces the merged host packet for the
 +// current manager tick. The product build never links this interface.
@@ -9,9 +319,15 @@
 +                        int16_t& thumb_lx, int16_t& thumb_ly,
 +                        int16_t& thumb_rx, int16_t& thumb_ry);
 +
+ }  // namespace ac6::oracle
+diff --git a/thirdparty/rexglue-sdk/src/input/input_system.cpp b/thirdparty/rexglue-sdk/src/input/input_system.cpp
+index 1a149796..340a635b 100644
 --- a/thirdparty/rexglue-sdk/src/input/input_system.cpp
 +++ b/thirdparty/rexglue-sdk/src/input/input_system.cpp
-@@ -123,0 +124,21 @@
+@@ -121,6 +121,27 @@ X_RESULT InputSystem::GetState(uint32_t user_index, X_INPUT_STATE* out_state) {
+     return any_connected ? X_ERROR_EMPTY : X_ERROR_DEVICE_NOT_CONNECTED;
+   }
+
 +  uint16_t override_buttons = static_cast<uint16_t>(merged.gamepad.buttons);
 +  uint8_t override_left_trigger =
 +      static_cast<uint8_t>(merged.gamepad.left_trigger);
@@ -33,100 +349,6 @@
 +    merged.gamepad.thumb_rx = override_thumb_rx;
 +    merged.gamepad.thumb_ry = override_thumb_ry;
 +  }
---- a/src/ac6_oracle_probe.cpp
-+++ b/src/ac6_oracle_probe.cpp
-@@ -27,0 +28,2 @@
-+REXCVAR_DEFINE_STRING(ac6_oracle_trace_v2_input_path, "", "AC6/Oracle",
-+                      "Capture-only per-manager-tick controller replay TSV");
-@@ -70,0 +73,4 @@
-+std::mutex g_replay_input_mutex;
-+std::string g_replay_input_path;
-+std::vector<InputSnapshot> g_replay_inputs;
-+bool g_replay_input_failed = false;
-@@ -76,0 +83,57 @@
-+bool EnsureReplayInputs(const std::string& path) {
-+  if (path.empty()) return false;
-+  if (path == g_replay_input_path && !g_replay_inputs.empty()) {
-+    return !g_replay_input_failed;
-+  }
-+  g_replay_input_path = path;
-+  g_replay_inputs.clear();
-+  g_replay_input_failed = false;
-+  std::ifstream input(path);
-+  if (!input) {
-+    g_replay_input_failed = true;
-+    return false;
-+  }
-+  std::string line;
-+  uint64_t expected_tick = 1;
-+  while (std::getline(input, line)) {
-+    if (line.empty() || line.front() == '#') continue;
-+    std::istringstream row(line);
-+    uint64_t tick = 0;
-+    int pitch = 0;
-+    int roll = 0;
-+    int yaw = 0;
-+    int throttle = 0;
-+    unsigned buttons = 0;
-+    if (!(row >> tick >> pitch >> roll >> yaw >> throttle >> buttons) ||
-+        tick != expected_tick || pitch < -32768 || pitch > 32767 ||
-+        roll < -32768 || roll > 32767 || yaw < -32768 || yaw > 32767 ||
-+        throttle < 0 || throttle > 255 || buttons > 65535U) {
-+      g_replay_input_failed = true;
-+      g_replay_inputs.clear();
-+      return false;
-+    }
-+    std::string extra;
-+    if (row >> extra) {
-+      g_replay_input_failed = true;
-+      g_replay_inputs.clear();
-+      return false;
-+    }
-+    g_replay_inputs.push_back({0, static_cast<uint16_t>(buttons), 0,
-+                               static_cast<uint8_t>(throttle),
-+                               static_cast<int16_t>(pitch),
-+                               static_cast<int16_t>(roll),
-+                               static_cast<int16_t>(yaw), 0});
-+    ++expected_tick;
-+    if (g_replay_inputs.size() > kTraceV2Ticks) {
-+      g_replay_input_failed = true;
-+      g_replay_inputs.clear();
-+      return false;
-+    }
-+  }
-+  if (g_replay_inputs.size() != kTraceV2Ticks) {
-+    g_replay_input_failed = true;
-+    g_replay_inputs.clear();
-+    return false;
-+  }
-+  return true;
-+}
-@@ -337,0 +401,28 @@
-+bool OverrideInputState(uint32_t user_index, uint16_t& buttons,
-+                        uint8_t& left_trigger, uint8_t& right_trigger,
-+                        int16_t& thumb_lx, int16_t& thumb_ly,
-+                        int16_t& thumb_rx, int16_t& thumb_ry) {
-+  if (user_index != 0) return false;
-+  const std::string path = REXCVAR_GET(ac6_oracle_trace_v2_input_path);
-+  const std::string arm = REXCVAR_GET(ac6_oracle_trace_v2_arm_path);
-+  if (path.empty() || arm.empty() || !std::filesystem::is_regular_file(arm)) {
-+    return false;
-+  }
-+  std::lock_guard<std::mutex> replay_lock(g_replay_input_mutex);
-+  if (!EnsureReplayInputs(path)) return false;
-+  std::uint64_t tick = 0;
-+  {
-+    std::lock_guard<std::mutex> trace_lock(g_trace_v2_mutex);
-+    tick = g_trace_v2_tick_count;
-+  }
-+  if (tick >= g_replay_inputs.size()) return false;
-+  const InputSnapshot& desired = g_replay_inputs[static_cast<std::size_t>(tick)];
-+  buttons = desired.buttons;
-+  left_trigger = desired.left_trigger;
-+  right_trigger = desired.right_trigger;
-+  thumb_lx = desired.thumb_lx;
-+  thumb_ly = desired.thumb_ly;
-+  thumb_rx = desired.thumb_rx;
-+  thumb_ry = desired.thumb_ry;
-+  return true;
-+}
+   if (out_state) {
+     *out_state = merged;
+   }

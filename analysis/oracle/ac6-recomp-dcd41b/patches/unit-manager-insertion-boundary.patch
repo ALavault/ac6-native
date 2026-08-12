@@ -9,12 +9,10 @@
  
  namespace ac6::oracle {
  namespace {
-@@ -69,6 +71,18 @@
+@@ -69,6 +71,16 @@
  std::atomic<uint32_t> g_gameplay_player{0};
  std::atomic<bool> g_player_update_reported{false};
  std::atomic<bool> g_mission_tick_reported{false};
-+std::atomic<uint64_t> g_trace_v2_tick_atomic{0};
-+
 +std::mutex g_unit_boundary_mutex;
 +std::ofstream g_unit_boundary_output;
 +std::string g_unit_boundary_output_path;
@@ -28,23 +26,7 @@
  std::mutex g_replay_input_mutex;
  std::string g_replay_input_path;
  std::vector<InputSnapshot> g_replay_inputs;
-@@ -211,6 +225,7 @@
-   g_trace_v2_output_bytes = 0;
-   g_trace_v2_failed = !g_trace_v2_output.is_open();
-   g_trace_v2_complete = false;
-+  g_trace_v2_tick_atomic.store(0, std::memory_order_relaxed);
-   if (g_trace_v2_failed) {
-     REXLOG_ERROR("AC6 oracle trace v2 could not open its bounded output");
-     return false;
-@@ -310,6 +325,7 @@
-     return;
-   }
-   ++g_trace_v2_tick_count;
-+  g_trace_v2_tick_atomic.store(g_trace_v2_tick_count, std::memory_order_relaxed);
-   g_trace_v2_output.flush();
-   if (g_trace_v2_tick_count == kTraceV2Ticks) {
-     g_trace_v2_complete = true;
-@@ -317,6 +333,70 @@
+@@ -317,6 +329,70 @@
    }
  }
  

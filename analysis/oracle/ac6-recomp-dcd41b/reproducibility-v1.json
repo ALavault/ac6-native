@@ -1,0 +1,180 @@
+{
+  "schema": "ac6.oracle-reproducibility.v1",
+  "captured_on": "2026-08-12",
+  "target": {
+    "platform": "Xbox 360 PAL",
+    "module": "default.xex",
+    "size": 7483392,
+    "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "retail_inventory": [
+    {
+      "path": "default.xex",
+      "size": 7483392,
+      "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+    },
+    {
+      "path": "DATA.TBL",
+      "size": 14824,
+      "sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5"
+    },
+    {
+      "path": "DATA00.PAC",
+      "size": 2267086848,
+      "sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816"
+    },
+    {
+      "path": "DATA01.PAC",
+      "size": 664141824,
+      "sha256": "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4"
+    },
+    {
+      "path": "bgmpack.bin",
+      "size": 724762624,
+      "sha256": "78db61397696a5c98decc83052a1c36db8f816405b49c9910b689f8ad52c86fa"
+    },
+    {
+      "path": "moviepack.bin",
+      "size": 348307456,
+      "sha256": "40c28c384beba5cf37eb47d70bcfe99703160278df5670a2f6f56d52b00e6a5a"
+    },
+    {
+      "path": "demopack_eng.bin",
+      "size": 234217472,
+      "sha256": "31aae3a752b01553f42e63d6654ba0e45867e6962360a2fa5dc7cf3c4392c589"
+    },
+    {
+      "path": "demopack_jpn.bin",
+      "size": 234455040,
+      "sha256": "70e8159859662cedc98dcc44740b2e21fd93004a861abda77dcb52f36d410501"
+    },
+    {
+      "path": "voicepack_eng.bin",
+      "size": 279078912,
+      "sha256": "3e1c358714617337e30aef9ebae0b5bf43a7b84342f9d31093b8ec18296e8726"
+    },
+    {
+      "path": "voicepack_jpn.bin",
+      "size": 327245824,
+      "sha256": "82af039f582d741c574f62060adb1170ee087a2a0fa00fa241d18b846b03adcd"
+    }
+  ],
+  "ghidra": {
+    "canonical_project": "ace-combat-6",
+    "canonical_project_path": "ghidra-projects/ace-combat-6",
+    "program": "default.xex",
+    "bridge": {
+      "path": "ghidra-bridge.yaml",
+      "size": 558,
+      "sha256": "756da4759014db3a2b4fcbea6106c1100eadeff5558914f7c8943018e625f7c2"
+    },
+    "project_properties": {
+      "path": "ghidra-projects/ace-combat-6.rep/project.prp",
+      "size": 161,
+      "sha256": "6bfa9afa8af78326409d04feadb43223a0948fbfb09a4a598c296cef7fe3b6bf"
+    },
+    "historical_project": "ghidra-projects/ace-combat-6-corrected",
+    "historical_status": "needs-revalidation",
+    "cross_project_export_merge_allowed": false
+  },
+  "architecture_catalog": {
+    "portfolio_relative_path": ".tools/knowledge-base/architecture-v1/catalog.json",
+    "size": 17423,
+    "sha256": "49d1845cae30484d5c41dedffde08f98781702d1b41a5d09f99fce884166ec2e",
+    "role": "generic architecture support only; never AC6 binary evidence"
+  },
+  "oracle": {
+    "repository": "https://github.com/sal063/AC6_recomp.git",
+    "commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+    "product_role": "control-flow, ABI, and bounded-capture evidence only",
+    "clean_reference": {
+      "detached": true,
+      "status_entry_count": 0,
+      "status_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "preserved_dirty_checkouts": [
+      {
+        "name": "reference",
+        "commit": "c5b089fb6988ac504ba394db611543bda2fb2c96",
+        "branch": "dev-test",
+        "status_entry_count": 39,
+        "status_sha256": "15087cb49f5fae6fe4768f63f3fe417572022521b32a76a0deda40175f17d38b",
+        "tracked_diff_sha256": "3a75fec447b6dff5f4ceb914297bce4ad63ec6bd490a20bd86f8723f741dc3c8",
+        "preserve_without_cleanup": true
+      },
+      {
+        "name": "gapfill",
+        "commit": "b8b03c7a89dc7f23bcd7844d15aa5080d480bf11",
+        "branch": "main",
+        "status_entry_count": 163,
+        "status_sha256": "2c50fb7787d89bd926acf671ea6354a950d0a0ebc99c049c1210bfb0a4ac2043",
+        "tracked_diff_sha256": "05f304aacbe63a22675a0c3a049c2f8ab3287452d0878341ca47289b678802c0",
+        "preserve_without_cleanup": true
+      }
+    ],
+    "runtime_overlay": {
+      "detached": true,
+      "status_entry_count": 30,
+      "status_sha256": "ae4c578cd2b1ca6df5861319f7ec0696f5b93ea8e9f478744e896a57b4cb6075",
+      "tracked_diff_sha256": "8eb4a9baf3fa311f5dd3d621ffa845c5b28deb16b86de641e51ab5cefb96138e"
+    },
+    "simde_overlay": {
+      "tree": "9559a819f9d621989165d6b755d0a58e2ffda5ea",
+      "archive_sha256": "39b46c0b9b8874936a0a5168470ef4f93b0e8f6645d80969ffde28acd9a5e2b4"
+    }
+  },
+  "patch_stack": {
+    "path": "analysis/oracle/ac6-recomp-dcd41b/patches/stack.json",
+    "sha256": "67162f943a9b9bd6e003dbe286308b50eab7d93ad7bc065b312602dbb56fb979",
+    "patch_count": 13,
+    "git_tree": "5652cc95c6ae7eadd7394217d047a76e7ef310c6",
+    "changed_file_count": 29,
+    "changed_tree_sha256": "54fd4d402654a2b7991fca985ec46cc302fdd5f5a5af3de4efe2780e9e301492"
+  },
+  "configuration": {
+    "boundary_sha256": "450d6904d2338ddeb5d80f3cf4a420c9cc6853bcff119c27b06f304b472f5086",
+    "runtime_sha256": "551c38c0233701382e96b78992bbb273b7800a04e6692ec2ddc0553e3f6316d5",
+    "capture_sha256": "39c3e974f90f0bcc2d2817bd970882f217216c5dabd4fdd28074046dc7d000c6"
+  },
+  "capture_build": {
+    "compiler": "Ubuntu clang 21.1.8 (6ubuntu1)",
+    "host_arch_flags": "-march=x86-64-v3",
+    "function_count": 10478,
+    "generated_file_count": 56,
+    "generated_bytes": 104738907,
+    "generated_tree_sha256": "34ac6c7e497bd585d5e2d1154c2c7f6d2edd2f5eeeaa19833c98227d649b8919",
+    "binary_size": 93821832,
+    "binary_sha256": "992221ab5f970030cb67237fa6e628385a12ea46f00f27e562f149859b67f07e",
+    "host_ctests": {
+      "passed": 3,
+      "failed": 0
+    },
+    "codegen_diagnostics": {
+      "status": "open",
+      "gate_evidence": false
+    },
+    "smoke": {
+      "audio_driver": "dummy",
+      "vulkan_device": "NVIDIA RTX PRO 4000 Blackwell",
+      "swapchain": "1280x720",
+      "frontier_source": "0x8234530C",
+      "frontier_target": "0x8234524C",
+      "exit_code": 134,
+      "result": "unresolved-branch",
+      "gate_evidence": false
+    }
+  },
+  "timing": {
+    "oracle_presentation_fps": 30,
+    "oracle_input_and_state_hz": 30,
+    "native_simulation_hz": 60,
+    "native_ticks_per_oracle_sample": 2,
+    "presentation_unlock_status": "disabled-after-crash-at-0x7E980000"
+  },
+  "qualification_boundary": {
+    "boundary_manifest": "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
+    "boundary_manifest_remains_separate": true,
+    "capture_route_status": "open",
+    "capture_status": "not-captured"
+  }
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import tarfile
@@ -11,6 +12,7 @@ import tomllib
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
@@ -18,8 +20,17 @@ sys.path.insert(0, str(TOOLS))
 
 import audit_ac6_product_boundary as boundary
 import audit_native_package
+import apply_ac6_oracle_patch_stack as patch_stack
 from audit_ac6_oracle_manifest import ManifestError, tree_sha256, validate_document
 from apply_ac6_oracle_boundary_corrections import CorrectionError, correct_configuration
+from apply_ac6_oracle_patch_stack import (
+    PatchRecord,
+    StackError,
+    apply_stack,
+    load_stack,
+    preflight,
+    validate_target,
+)
 from build_ac6_oracle_runtime_config import (
     RuntimeConfigError,
     apply_hook_policy,
@@ -96,6 +107,266 @@ class OracleManifestTests(unittest.TestCase):
                 record["sha256"],
                 record["path"],
             )
+        replay_patch = ROOT / stack["patches"][11]["path"]
+        patch_text = replay_patch.read_text(encoding="utf-8")
+        file_diffs = [
+            "diff --git " + section
+            for section in patch_text.split("diff --git ")[1:]
+        ]
+        self.assertTrue(file_diffs)
+        for file_diff in file_diffs:
+            hunk_headers = re.findall(
+                r"^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@",
+                file_diff,
+                flags=re.MULTILINE,
+            )
+            self.assertTrue(hunk_headers)
+            if "\n--- /dev/null\n" not in file_diff:
+                self.assertTrue(
+                    all(old_count != "0" for old_count, _ in hunk_headers)
+                )
+
+    def test_patch_stack_loader_qualifies_all_records(self) -> None:
+        base, records = load_stack(PATCH_STACK, ROOT)
+        self.assertEqual(base, "dcd41b7457fcac8242f8ef40de83d1719390d5af")
+        self.assertEqual(len(records), 13)
+        self.assertEqual(records[11].display_path,
+                         "analysis/oracle/ac6-recomp-dcd41b/patches/"
+                         "deterministic-trace-input-replay.patch")
+
+
+class OraclePatchStackTransactionTests(unittest.TestCase):
+    def git(self, root: Path, *arguments: str) -> str:
+        result = subprocess.run(
+            ["git", "-C", str(root), *arguments], check=True,
+            capture_output=True, text=True,
+        )
+        return result.stdout.rstrip("\n")
+
+    def repository(self, temporary: str) -> tuple[Path, str]:
+        root = Path(temporary) / "runtime"
+        (root / "assets").mkdir(parents=True)
+        (root / "ac6recomp_config.toml").write_text("base\n", encoding="utf-8")
+        (root / "assets/default.xex").write_bytes(b"PAL fixture")
+        (root / "a.txt").write_text("one\n", encoding="utf-8")
+        (root / "b.txt").write_text("one\n", encoding="utf-8")
+        self.git(root, "init", "-q")
+        self.git(root, "config", "user.name", "AC6 test")
+        self.git(root, "config", "user.email", "ac6-test@example.invalid")
+        self.git(root, "add", ":/")
+        self.git(root, "commit", "-qm", "fixture")
+        base = self.git(root, "rev-parse", "HEAD")
+        self.git(root, "switch", "--detach", "-q", base)
+        (root / "ac6recomp_config.toml").write_text("corrected\n", encoding="utf-8")
+        return root, base
+
+    def records(self, temporary: str) -> list[PatchRecord]:
+        patch_root = Path(temporary) / "patches"
+        patch_root.mkdir()
+        records = []
+        for order, name in enumerate(("a.txt", "b.txt"), start=1):
+            path = patch_root / f"{order}.patch"
+            path.write_text(
+                f"diff --git a/{name} b/{name}\n"
+                f"--- a/{name}\n+++ b/{name}\n@@ -1 +1 @@\n-one\n+two\n",
+                encoding="utf-8",
+            )
+            records.append(PatchRecord(order, path, path.name, ()))
+        return records
+
+    def manifest(self, temporary: str, base: str, xex: Path) -> Path:
+        artifact_root = Path(temporary) / "artifacts"
+        manifest = artifact_root / "analysis/oracle/ac6-recomp-dcd41b/manifest.json"
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps({
+            "oracle": {"commit": base},
+            "target": {
+                "module": "default.xex",
+                "platform": "Xbox 360 PAL",
+                "size": xex.stat().st_size,
+                "sha256": hashlib.sha256(xex.read_bytes()).hexdigest(),
+            },
+            "configuration": {"path": "ac6recomp_config.toml"},
+            "boundary_correction": {
+                "patched_configuration_sha256": hashlib.sha256(
+                    b"corrected\n"
+                ).hexdigest(),
+            },
+        }), encoding="utf-8")
+        return artifact_root
+
+    def test_target_cross_checks_manifest_commit_and_pal_xex(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, base = self.repository(temporary)
+            artifact_root = self.manifest(
+                temporary, base, root / "assets/default.xex"
+            )
+            validate_target(root, base, artifact_root)
+            document_path = artifact_root / "analysis/oracle/ac6-recomp-dcd41b/manifest.json"
+            document = json.loads(document_path.read_text(encoding="utf-8"))
+            document["oracle"]["commit"] = "0" * 40
+            document_path.write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaisesRegex(StackError, "stack/manifest oracle commit"):
+                validate_target(root, base, artifact_root)
+
+    def test_traditional_unified_patch_paths_are_snapshotted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, _ = self.repository(temporary)
+            patch_path = Path(temporary) / "traditional.patch"
+            patch_path.write_text(
+                "--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-one\n+two\n",
+                encoding="utf-8",
+            )
+            record = PatchRecord(1, patch_path, patch_path.name, ())
+
+            self.assertEqual(patch_stack.record_paths(root, record), {Path("a.txt")})
+
+    def test_overlay_qualification_is_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, base = self.repository(temporary)
+            records = self.records(temporary)
+            result = patch_stack.preflight_details(root, base, records)
+            stack_path = Path(temporary) / "stack.json"
+            qualification = {
+                "qualified_patch_count": 0,
+                "clean_application_pass": True,
+                "runtime_route_status": "open",
+                "changed_file_count": result.changed_file_count,
+                "changed_tree_algorithm":
+                    "sha256(sorted(path + NUL + bytes + NUL))",
+                "changed_tree_sha256": result.changed_tree_sha256,
+                "capture_profile_byte_match": True,
+            }
+            stack_path.write_text(
+                json.dumps({"qualification": qualification}), encoding="utf-8"
+            )
+            patch_stack.validate_qualification(stack_path, records, result)
+
+            qualification["changed_tree_sha256"] = "0" * 64
+            stack_path.write_text(
+                json.dumps({"qualification": qualification}), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(StackError, "changed overlay qualification"):
+                patch_stack.validate_qualification(stack_path, records, result)
+
+    def test_worktree_path_digest_covers_untracked_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, _ = self.repository(temporary)
+            paths = {Path("a.txt"), Path("b.txt")}
+            before = patch_stack.worktree_paths_sha256(root, paths)
+            (root / "b.txt").write_text("changed\n", encoding="utf-8")
+
+            self.assertNotEqual(
+                before, patch_stack.worktree_paths_sha256(root, paths)
+            )
+
+    def test_intermediate_failure_rolls_back_exact_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, base = self.repository(temporary)
+            records = self.records(temporary)
+            expected_tree = preflight(root, base, records)
+            (root / "b.txt").write_text("locally dirty\n", encoding="utf-8")
+            status = self.git(root, "status", "--porcelain=v1", "--untracked-files=all")
+            before = {name: (root / name).read_bytes()
+                      for name in ("ac6recomp_config.toml", "a.txt", "b.txt")}
+
+            with self.assertRaises(StackError):
+                apply_stack(root, records, expected_tree)
+
+            self.assertEqual(
+                self.git(root, "status", "--porcelain=v1", "--untracked-files=all"),
+                status,
+            )
+            self.assertEqual(
+                {name: (root / name).read_bytes()
+                 for name in ("ac6recomp_config.toml", "a.txt", "b.txt")},
+                before,
+            )
+
+    def test_final_tree_mismatch_rolls_back_exact_worktree(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, _ = self.repository(temporary)
+            records = self.records(temporary)
+            status = self.git(root, "status", "--porcelain=v1", "--untracked-files=all")
+            before = {name: (root / name).read_bytes()
+                      for name in ("ac6recomp_config.toml", "a.txt", "b.txt")}
+
+            with self.assertRaisesRegex(StackError, "runtime overlay tree mismatch"):
+                apply_stack(root, records, "0" * 40)
+
+            self.assertEqual(
+                self.git(root, "status", "--porcelain=v1", "--untracked-files=all"),
+                status,
+            )
+            self.assertEqual(
+                {name: (root / name).read_bytes()
+                 for name in ("ac6recomp_config.toml", "a.txt", "b.txt")},
+                before,
+            )
+
+    def test_concurrent_interference_rolls_back_snapshot_and_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, base = self.repository(temporary)
+            records = self.records(temporary)
+            expected_tree = preflight(root, base, records)
+            status = self.git(root, "status", "--porcelain=v1", "--untracked-files=all")
+            index_path = Path(self.git(root, "rev-parse", "--git-path", "index"))
+            if not index_path.is_absolute():
+                index_path = root / index_path
+            index_before = index_path.read_bytes()
+            before = {name: (root / name).read_bytes()
+                      for name in ("ac6recomp_config.toml", "a.txt", "b.txt")}
+            original_run_git = patch_stack.run_git
+            interfered = False
+
+            def run_with_interference(
+                command_root: Path, *arguments: str, **kwargs: object
+            ) -> str:
+                nonlocal interfered
+                if (not interfered and arguments[:2] == ("apply", "--index")
+                        and "--check" in arguments
+                        and arguments[-1].endswith("2.patch")):
+                    interfered = True
+                    (root / "b.txt").write_text("concurrent\n", encoding="utf-8")
+                return original_run_git(command_root, *arguments, **kwargs)
+
+            with mock.patch.object(
+                patch_stack, "run_git", side_effect=run_with_interference
+            ), self.assertRaises(StackError):
+                apply_stack(
+                    root, records, expected_tree,
+                    capture_configuration=b"capture\n",
+                )
+
+            self.assertTrue(interfered)
+            self.assertEqual(index_path.read_bytes(), index_before)
+            self.assertEqual(
+                self.git(root, "status", "--porcelain=v1", "--untracked-files=all"),
+                status,
+            )
+            self.assertEqual(
+                {name: (root / name).read_bytes()
+                 for name in ("ac6recomp_config.toml", "a.txt", "b.txt")},
+                before,
+            )
+
+    def test_success_installs_capture_config_and_unstages_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, base = self.repository(temporary)
+            records = self.records(temporary)
+            expected_tree = preflight(root, base, records)
+
+            apply_stack(
+                root, records, expected_tree,
+                capture_configuration=b"capture\n",
+            )
+
+            self.assertEqual(
+                (root / "ac6recomp_config.toml").read_bytes(), b"capture\n"
+            )
+            self.assertEqual((root / "a.txt").read_text(encoding="utf-8"), "two\n")
+            self.assertEqual((root / "b.txt").read_text(encoding="utf-8"), "two\n")
+            self.assertEqual(self.git(root, "diff", "--cached", "--name-only"), "")
 
 
 class OracleBoundaryCorrectionTests(unittest.TestCase):
