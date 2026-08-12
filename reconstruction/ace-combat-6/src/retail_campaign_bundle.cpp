@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <utility>
 
 namespace ac6::retail {
 namespace {
@@ -13,6 +14,12 @@ constexpr std::uint32_t kMaximumRootChildren = 4096;
 bool add_within(std::uint64_t left, std::uint64_t right,
                 std::uint64_t limit) noexcept {
   return left <= limit && right <= limit - left;
+}
+
+bool is_campaign_entry(std::uint32_t data_table_entry) noexcept {
+  return std::find(kPalCampaignDataTableEntries.begin(),
+                   kPalCampaignDataTableEntries.end(),
+                   data_table_entry) != kPalCampaignDataTableEntries.end();
 }
 
 }  // namespace
@@ -70,6 +77,12 @@ std::optional<RetailCampaignBundle> RetailCampaignBundle::open_entry(
     }
   }
   if (!bundle.child(0).has_value()) return std::nullopt;
+  if (is_campaign_entry(data_table_entry)) {
+    std::optional<RetailSceneTcamCatalog> catalog =
+        RetailSceneTcamCatalog::scan(bundle.bytes_);
+    if (!catalog.has_value()) return std::nullopt;
+    bundle.scene_tcams_ = std::move(*catalog);
+  }
   return bundle;
 }
 
@@ -85,6 +98,17 @@ std::optional<std::span<const std::uint8_t>> RetailCampaignBundle::child(
     return std::nullopt;
   }
   return std::span<const std::uint8_t>(bytes_).subspan(offset, length);
+}
+
+std::optional<std::span<const std::uint8_t>>
+RetailCampaignBundle::tcam_bytes(std::size_t index) const noexcept {
+  const RetailSceneTcamResource* resource = scene_tcams_.resource(index);
+  if (resource == nullptr || resource->payload_offset > bytes_.size() ||
+      resource->size > bytes_.size() - resource->payload_offset) {
+    return std::nullopt;
+  }
+  return std::span<const std::uint8_t>(bytes_).subspan(
+      resource->payload_offset, resource->size);
 }
 
 }  // namespace ac6::retail

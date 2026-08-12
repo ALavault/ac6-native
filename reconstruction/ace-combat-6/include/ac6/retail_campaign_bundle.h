@@ -2,7 +2,9 @@
 
 #include "ac6/retail_container_index.h"
 #include "ac6/retail_content.h"
+#include "ac6/retail_scene_tcam.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -28,6 +30,11 @@ class RetailCampaignBundle final {
   std::span<const std::uint8_t> payload() const noexcept { return bytes_; }
   std::optional<std::span<const std::uint8_t>> child(
       std::uint32_t index) const noexcept;
+  const RetailSceneTcamCatalog& scene_tcams() const noexcept {
+    return scene_tcams_;
+  }
+  std::optional<std::span<const std::uint8_t>> tcam_bytes(
+      std::size_t index) const noexcept;
 
  private:
   std::uint32_t mission_id_{};
@@ -35,6 +42,7 @@ class RetailCampaignBundle final {
   Sha256Digest content_index_sha256_{};
   std::vector<std::uint8_t> bytes_;
   ContainerIndex root_{};
+  RetailSceneTcamCatalog scene_tcams_;
 };
 
 }  // namespace ac6::retail

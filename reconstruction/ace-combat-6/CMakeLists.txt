@@ -74,6 +74,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_scalar_sin_cos.cpp
   src/retail_container_index.cpp
   src/retail_fhm_view.cpp
+  src/retail_scene_tcam.cpp
   src/retail_campaign_bundle.cpp
   src/retail_mission_world_bundle.cpp
   src/retail_mission_bundle.cpp
@@ -408,6 +409,11 @@ add_test(NAME ac6-retail-container-index COMMAND ac6-retail-container-index-test
 add_executable(ac6-retail-fhm-view-tests tests/retail_fhm_view_tests.cpp)
 target_link_libraries(ac6-retail-fhm-view-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-fhm-view COMMAND ac6-retail-fhm-view-tests)
+
+add_executable(ac6-retail-scene-tcam-tests tests/retail_scene_tcam_tests.cpp)
+target_link_libraries(ac6-retail-scene-tcam-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-scene-tcam COMMAND ac6-retail-scene-tcam-tests)
+set_tests_properties(ac6-retail-scene-tcam PROPERTIES SKIP_RETURN_CODE 77)
 
 add_executable(ac6-retail-content-tests tests/retail_content_tests.cpp)
 target_link_libraries(ac6-retail-content-tests PRIVATE ac6_product_core ZLIB::ZLIB)

@@ -76,7 +76,7 @@
       "closure": "Scene selection, every TCAM variant, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested for all fifteen missions.",
       "blockers": [
         "The direct mode-2 target path, mode-3 cubic gain, non-mode-3 scalar tail, small-direction threshold path, 0x8225C680 radial normalizer, caller-side identity guard, and active/hit/miss core of 0x82281198 are bounded; the upstream matrix/VMX128 direction producer, VMX estimate path, retail trigonometric factor producer, mode-1 heading correction/override, two tunnel geometry callbacks, vertical fallback, manager publication join, and remaining 0x82262A28 joins are still open.",
-        "The exact fifteen-payload Scene/TCAM census is sealed at 176 tables, 2,950 paths, and 88 TCAM resources; runtime group selection, record semantics/interpolation, NFIC activation, live player/manager pose producers, FOV, clipping, culling, and transitions remain open."
+        "The exact fifteen-payload Scene/TCAM census is now parsed by the native campaign bundle at 176 tables, 2,950 paths, and 88 bounded TCAM resources; runtime group selection, record semantics/interpolation, NFIC activation, live player/manager pose producers, FOV, clipping, culling, and transitions remain open."
       ],
       "evidence": [
         {
@@ -108,6 +108,11 @@
           "path": "reports/cycle-1529-the-camera-tunnel-guard-is-executed.md",
           "size": 3036,
           "sha256": "3091c6ccb6c866a0994ff4c07755ef42f0dc1387d8a2f625f08024e28b289c1f"
+        },
+        {
+          "path": "reports/cycle-1531-the-scene-tcam-census-enters-the-native-bundle.md",
+          "size": 2409,
+          "sha256": "879039afe4d972d05a0da45e1f37b031ad5ce2972832847e4d2cc8a20eb1a96a"
         }
       ]
     },
