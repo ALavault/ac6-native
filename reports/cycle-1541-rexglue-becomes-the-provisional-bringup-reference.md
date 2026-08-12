@@ -22,7 +22,7 @@ de tout code PPC généré et des autres oracles.
 
 Le contrat est scellé dans
 `analysis/rexglue-semantic-trust-v1.json`. L'audit global vérifie son identité
-PAL, ses transitions, ses interdictions et quatre divergences déjà établies :
+PAL, ses transitions, ses interdictions et les divergences déjà établies :
 
 - `dcbst` reconnu mais émis comme no-op par RexGlue 0.9 ;
 - `frsqrte`, `vrefp` et `vrsqrtefp` remplacés par des mathématiques hôte exactes ;
@@ -30,11 +30,16 @@ PAL, ses transitions, ses interdictions et quatre divergences déjà établies :
 - `sync`, `lwsync` et `eieio` émis comme no-op ;
 - `vmsum4fp128` réduit par `DPPS`, contrairement à l'ordre séquentiel du
   contrôle SLEIGH PAL actuel — sans promouvoir ce contrôle en preuve console.
+- binder HLE tronquant les arguments 64 bits et plaçant mal les arguments
+  mixtes flottants/entiers ;
+- VSCR.SAT et une partie de FPSCR/FPRF/exceptions non modélisés ;
+- FMA scalar non fused dans le RexGlue 0.7.1 de l'oracle PAL actuel.
 
-Ces exceptions restent fail-closed. Les revues UnleashedRecomp,
-Skate3Recomp, rexdex/recompiler, XenonRecomp, XenosRecomp et RexGlue peuvent
-compléter le registre, mais aucune ne peut déclasser une divergence sans preuve
-PAL bornée.
+Ces exceptions restent fail-closed et la confiance est liée au couple commit
+AC6/arbre ReXGlue ; une révision non auditée n'hérite de rien. Les revues
+UnleashedRecomp, Skate3Recomp, rexdex/recompiler, XenonRecomp, XenosRecomp et
+RexGlue peuvent compléter le registre, mais aucune ne peut déclasser une
+divergence sans preuve PAL bornée.
 
 ## Effet sur le plan
 

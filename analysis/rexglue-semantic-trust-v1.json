@@ -22,7 +22,9 @@
     "pal_oracle": {
       "manifest": "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
       "ac6_recomp_commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
-      "rexglue_tree": "741541d6035616dc406f7d74c2fe8f155913c77b"
+      "rexglue_tree": "741541d6035616dc406f7d74c2fe8f155913c77b",
+      "runtime_config_sha256": "bbc441bbeb793dfd5d9bee403b69d39a68efcf59e808fe96f05dee6688951c4c",
+      "oracle_binary_sha256": "815e18930794883d92a47f03a3747e59501ac2f6b9f242ea5bf0bf3029682b8f"
     },
     "modern_us_reference": {
       "repository": "https://github.com/sal063/AC6_recomp",
@@ -41,6 +43,7 @@
     "provisional_allows_publication": false,
     "product_may_link_or_embed_oracle": false,
     "known_divergence_is_never_provisional": true,
+    "provisional_is_revision_scoped": true,
     "revision_changes_require_semantic_diff": true,
     "shared_reader_changes_require_15_mission_corpus": true,
     "promotion_requires_pal_identity": true,
@@ -125,8 +128,96 @@
         "reports/cycle-1412-the-only-reading-that-fits.md",
         "reconstruction/ace-combat-6/tests/retail_scalar_sin_cos_tests.cpp"
       ]
+    },
+    {
+      "id": "cpu-hle-u64-arguments-truncated",
+      "status": "divergent",
+      "domain": "cpu-abi",
+      "semantics": [
+        "64-bit integer HLE arguments",
+        "64-bit integer HLE stack arguments"
+      ],
+      "reason": "RexGlue 0.9's generic HLE binder reads and writes integer argument slots through u32 even when the declared wrapper argument is 64 bits.",
+      "gate_evidence": false,
+      "evidence": [
+        "include/rex/ppc/function.h",
+        "reports/cycle-1544-recompiler-rexglue-xenon-xenos-review.md"
+      ]
+    },
+    {
+      "id": "cpu-hle-mixed-fp-integer-slotting",
+      "status": "divergent",
+      "domain": "cpu-abi",
+      "semantics": [
+        "mixed floating-point and integer HLE arguments"
+      ],
+      "reason": "RexGlue 0.9 advances independent floating-point and integer argument counters, while the Xbox ABI call position also advances across mixed argument classes.",
+      "gate_evidence": false,
+      "evidence": [
+        "include/rex/ppc/function.h",
+        "reports/cycle-1544-recompiler-rexglue-xenon-xenos-review.md"
+      ]
+    },
+    {
+      "id": "cpu-vscr-sat-not-updated",
+      "status": "divergent",
+      "domain": "cpu-vmx",
+      "semantics": [
+        "vpkswss",
+        "VSCR.SAT"
+      ],
+      "reason": "RexGlue packs and clamps the result lanes but does not update VSCR.SAT, so only the lane result may be used provisionally and the complete instruction is divergent.",
+      "gate_evidence": false,
+      "evidence": [
+        "src/codegen/builders/vector.cpp",
+        "include/rex/ppc/context.h",
+        "reports/cycle-1544-recompiler-rexglue-xenon-xenos-review.md"
+      ]
+    },
+    {
+      "id": "cpu-fpscr-status-incomplete",
+      "status": "divergent",
+      "domain": "cpu-floating-point",
+      "semantics": [
+        "FPSCR status and exceptions",
+        "FPRF",
+        "fcmpo signaling NaN behavior",
+        "mffs",
+        "mtfsf"
+      ],
+      "reason": "RexGlue preserves only a bounded rounding-mode model; exception flags, FPRF and signaling-NaN effects required by the complete FPSCR contract are not modeled.",
+      "gate_evidence": false,
+      "evidence": [
+        "include/rex/ppc/context.h",
+        "src/codegen/builders/floating_point.cpp",
+        "reports/cycle-1544-recompiler-rexglue-xenon-xenos-review.md"
+      ]
+    },
+    {
+      "id": "cpu-pal-oracle-fma-unfused",
+      "status": "divergent",
+      "domain": "cpu-floating-point",
+      "semantics": [
+        "scalar fused multiply-add in RexGlue 0.7.1"
+      ],
+      "reason": "The RexGlue 0.7.1 tree used by the current PAL oracle emits scalar multiply then add, whereas RexGlue 0.9 emits std::fma; discriminating inputs cannot inherit the modern behavior.",
+      "gate_evidence": false,
+      "evidence": [
+        "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
+        "reports/cycle-1544-recompiler-rexglue-xenon-xenos-review.md"
+      ]
     }
   ],
+  "revision_scope": {
+    "unreviewed_revision_inherits": "nothing",
+    "required_identity_fields": [
+      "ac6_recomp_commit",
+      "rexglue_tree",
+      "runtime_config_sha256",
+      "oracle_binary_sha256"
+    ],
+    "semantic_diff_required_before_reuse": true
+  },
   "promotion": {
     "from": "provisional-rexglue",
     "to": "retail-qualified",

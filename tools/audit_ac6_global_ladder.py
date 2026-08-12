@@ -36,6 +36,11 @@ REXGLUE_DIVERGENCES = {
     "cpu-reservation-without-address-or-granule",
     "cpu-barriers-emitted-as-noop",
     "cpu-vmsum4fp128-summation-order",
+    "cpu-hle-u64-arguments-truncated",
+    "cpu-hle-mixed-fp-integer-slotting",
+    "cpu-vscr-sat-not-updated",
+    "cpu-fpscr-status-incomplete",
+    "cpu-pal-oracle-fma-unfused",
 }
 
 
@@ -75,6 +80,7 @@ def audit_rexglue_trust(path: Path) -> None:
         "provisional_allows_integration_tests",
         "provisional_allows_diagnostic_replay",
         "known_divergence_is_never_provisional",
+        "provisional_is_revision_scoped",
         "revision_changes_require_semantic_diff",
         "shared_reader_changes_require_15_mission_corpus",
         "promotion_requires_pal_identity",
@@ -93,6 +99,16 @@ def audit_rexglue_trust(path: Path) -> None:
     if policy.get("default_for_reached_implemented_rexglue_semantics") != \
             "provisional-rexglue":
         raise ValueError("RexGlue semantic trust default")
+    pal_oracle = trust.get("source_pins", {}).get("pal_oracle", {})
+    manifest_path = project_path(pal_oracle.get("manifest"))
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if (pal_oracle.get("ac6_recomp_commit") != manifest.get("oracle", {}).get("commit") or
+            pal_oracle.get("rexglue_tree") != manifest.get("sdk", {}).get("tree_sha1") or
+            pal_oracle.get("runtime_config_sha256") !=
+            manifest.get("configuration", {}).get("sha256") or
+            pal_oracle.get("oracle_binary_sha256") !=
+            manifest.get("runtime_build", {}).get("binary_sha256")):
+        raise ValueError("RexGlue PAL revision identity")
     divergences = trust.get("known_divergences")
     if not isinstance(divergences, list) or {
             item.get("id") for item in divergences if isinstance(item, dict)
@@ -102,6 +118,14 @@ def audit_rexglue_trust(path: Path) -> None:
         if (item.get("status") != "divergent" or item.get("gate_evidence") is not False or
                 not item.get("semantics") or not item.get("evidence")):
             raise ValueError(f"RexGlue divergence contract: {item.get('id')}")
+    revision_scope = trust.get("revision_scope", {})
+    if (revision_scope.get("unreviewed_revision_inherits") != "nothing" or
+            revision_scope.get("semantic_diff_required_before_reuse") is not True or
+            set(revision_scope.get("required_identity_fields", [])) != {
+                "ac6_recomp_commit", "rexglue_tree", "runtime_config_sha256",
+                "oracle_binary_sha256",
+            }):
+        raise ValueError("RexGlue revision scope")
     promotion = trust.get("promotion", {})
     if (promotion.get("from") != "provisional-rexglue" or
             promotion.get("to") != "retail-qualified" or

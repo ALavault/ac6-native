@@ -47,6 +47,13 @@ Les identités PAL restent `default.xex`, SHA-256
 projet canonique `ghidra-projects/ace-combat-6`. Aucun pin tiers ne remplace
 cette identité.
 
+Le dépôt AC6 moderne annonce `rapidsamphire/rexglue-sdk` dans `.gitmodules`,
+mais `thirdparty/rexglue-sdk` est stocké comme un répertoire Git normal, pas un
+gitlink. Le fork déclaré et l'arbre réellement compilé ne coïncident pas ;
+l'arbre `73589e54…` est donc l'unique identité utile. Depuis l'upgrade 0.8, cet
+arbre a encore divergé sur 83 fichiers. Le même principe vaut au PAL : seul
+`741541d6…`, pas un nom de branche, identifie le SDK exécuté.
+
 ## Matrice des architectures
 
 | Composant | CPU AOT | Runtime/HLE | PM4/EDRAM | Shaders | Linux | Position |
@@ -164,6 +171,24 @@ La présomption raisonnable demandée s'applique ainsi : toute sémantique
 atteinte, réellement implémentée dans la révision exécutée et sans divergence
 connue est utilisable pour le bring-up natif. Il n'est plus nécessaire de
 micro-exécuter chaque feuille avant de l'implémenter.
+
+Le registre HLE large ne prouve rien à lui seul. Le census statique donne 2 620
+fonctions enregistrées dans les SDK examinés, environ 460 implémentations et
+2 149 à 2 407 stubs explicites selon le fork. Le replay M01 doit donc produire
+la liste des ordinals réellement atteints et arrêter au premier stub.
+
+La bonne frontière input se trouve dans `XamInputGetState_entry`, autour de
+tous ses retours, et non dans `InputSystem::GetState` : ce dernier a déjà perdu
+les retours XAM courts et fusionné les pilotes par OR/max/axe de plus grande
+magnitude. Le contexte courant permet de capturer LR et thread. AC6 ne définit
+pas `skip_lr`, contrairement à Unleashed ; la garde LR est donc disponible dans
+l'oracle PAL tant que le manifeste l'impose.
+
+Le loader sait afficher title/media/version pendant le codegen, mais l'image
+générée et le lancement ne scellent pas ces champs. Le gate AC6 moderne ne
+compare que le Title ID, commun aux régions : il pourrait accepter un PAL avec
+une carte d'adresses US. Le sidecar oracle doit donc ajouter SHA XEX, hash du
+module chargé, Media ID, version/base et hash des bytes du marqueur.
 
 ### Pourquoi elle reste provisoire
 

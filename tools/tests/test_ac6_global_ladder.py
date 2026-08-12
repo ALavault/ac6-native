@@ -53,3 +53,23 @@ def test_known_rexglue_divergence_cannot_become_provisional(
     path.write_text(json.dumps(document), encoding="utf-8")
     with pytest.raises(ValueError, match="divergence contract"):
         MODULE.audit_rexglue_trust(path)
+
+
+def test_unreviewed_rexglue_revision_cannot_inherit_trust(
+        tmp_path: Path) -> None:
+    document = json.loads(MODULE.REXGLUE_TRUST.read_text(encoding="utf-8"))
+    document["revision_scope"]["unreviewed_revision_inherits"] = "provisional-rexglue"
+    path = tmp_path / "rexglue-trust.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="revision scope"):
+        MODULE.audit_rexglue_trust(path)
+
+
+def test_rexglue_pal_binary_identity_is_bound_to_manifest(
+        tmp_path: Path) -> None:
+    document = json.loads(MODULE.REXGLUE_TRUST.read_text(encoding="utf-8"))
+    document["source_pins"]["pal_oracle"]["oracle_binary_sha256"] = "0" * 64
+    path = tmp_path / "rexglue-trust.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="PAL revision identity"):
+        MODULE.audit_rexglue_trust(path)
