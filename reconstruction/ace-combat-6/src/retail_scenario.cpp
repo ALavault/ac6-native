@@ -88,6 +88,21 @@ bool parse_tag7_condition(const ScenarioPayload& payload, std::size_t step,
   return true;
 }
 
+std::optional<std::uint16_t> parse_counter_capacity(
+    const ScenarioPayload& payload, const std::size_t slot) {
+  const std::optional<std::size_t> data = payload.resolve(slot, 0);
+  if (!data.has_value()) return std::uint16_t{0};
+  return payload.u16(*data);
+}
+
+bool counter_ids_are_bounded(const std::vector<ScenarioFlagOrder>& orders,
+                             const std::uint16_t capacity) {
+  for (const ScenarioFlagOrder& order : orders) {
+    if (order.counter_id >= capacity) return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 // The entity's initial position, as retail reads it: the first three floats of
@@ -202,8 +217,6 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
 
   MissionScenario scenario;
 
-  // Slot 0. Each element of the list is a wrapper with no data and exactly one
-  // child; the record the consumer iterates is that child.
   std::uint32_t index = 0;
   for (const std::size_t wrapper : payload.children(slots[kSlotObjAndUnit])) {
     const std::vector<std::size_t> inner = payload.children(wrapper);
@@ -323,16 +336,10 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
     scenario.units_.push_back(std::move(record));
   }
 
-  // Slot 1, whose u16 count sizes the mission counter table.
-  {
-    const std::optional<std::size_t> data =
-        payload.resolve(slots[kSlotCounters], 0);
-    if (data.has_value()) {
-      const std::optional<std::uint16_t> count = payload.u16(*data);
-      if (!count.has_value()) return std::nullopt;
-      scenario.counter_capacity_ = *count;
-    }
-  }
+  const std::optional<std::uint16_t> counter_capacity =
+      parse_counter_capacity(payload, slots[kSlotCounters]);
+  if (!counter_capacity.has_value()) return std::nullopt;
+  scenario.counter_capacity_ = *counter_capacity;
 
   // Slot 5, the faction table. Its entries carry data without a table, so the
   // block is read directly rather than through resolve's presence rule.
@@ -417,10 +424,9 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
     scenario.sub_missions_.push_back(std::move(sub_mission));
   }
 
-  // Retain the authored producers without executing them, but never expose an
-  // index outside the counter table the retail payload itself declares.
-  for (const ScenarioFlagOrder& order : scenario.flag_orders_) {
-    if (order.counter_id >= scenario.counter_capacity_) return std::nullopt;
+  // Retain producers without executing them, but reject out-of-table indices.
+  if (!counter_ids_are_bounded(scenario.flag_orders_, scenario.counter_capacity_)) {
+    return std::nullopt;
   }
 
   return scenario;

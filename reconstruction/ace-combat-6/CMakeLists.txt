@@ -269,7 +269,9 @@ add_test(NAME ac6-retail-playable
 set_tests_properties(ac6-retail-playable PROPERTIES SKIP_RETURN_CODE 77)
 
 # JF: the session loop over the retail-built world, ended by the retail script.
-add_executable(ac6-retail-session-tests tests/retail_session_tests.cpp)
+add_executable(ac6-retail-session-tests
+  tests/retail_session_tests.cpp
+  tests/retail_session_store_tests.cpp)
 target_link_libraries(ac6-retail-session-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-session
   COMMAND ac6-retail-session-tests
