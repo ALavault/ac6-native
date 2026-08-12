@@ -8,6 +8,7 @@
 #include "ac6/retail_content.h"
 #include "ac6/retail_frontend_resources.h"
 #include "ac6/retail_mission01_cpu_compositor.h"
+#include "ac6/retail_projection_receipt.h"
 #include "ac6/retail_session.h"
 #include "ac6/retail_session_replay.h"
 #include "ac6/sdl_input.h"
@@ -52,11 +53,13 @@ struct Options final {
   std::filesystem::path save;
   std::filesystem::path resume;
   std::filesystem::path replay;
+  std::filesystem::path projection_receipt;
   std::filesystem::path report;
   std::filesystem::path capture;
   std::filesystem::path scene_capture;
   std::filesystem::path scene_report;
   std::filesystem::path trace;
+  bool projection_receipt_seen{};
   std::uint32_t aircraft{1};
   std::uint32_t weapon{1};
   retail::RetailDifficulty difficulty{retail::RetailDifficulty::Normal};
@@ -130,7 +133,12 @@ bool parse_replay_options(int argc, char** argv, Options& options) {
     const std::filesystem::path value(argv[++index]);
     if (option == "--cache" && options.cache.empty()) options.cache = value;
     else if (option == "--replay" && options.replay.empty()) options.replay = value;
-    else if (option == "--report" && options.report.empty()) options.report = value;
+    else if (option == "--projection-receipt" &&
+             !options.projection_receipt_seen) {
+      if (value.empty()) return false;
+      options.projection_receipt = value;
+      options.projection_receipt_seen = true;
+    } else if (option == "--report" && options.report.empty()) options.report = value;
     else if (option == "--trace" && options.trace.empty()) options.trace = value;
     else return false;
   }
@@ -529,6 +537,23 @@ int run_replay_impl(const Options& options) {
       replay.final_digest != replay.input_digest()) {
     return 134;
   }
+  std::optional<retail::RetailProjectionReceiptPreflight> projection_preflight;
+  if (options.projection_receipt_seen) {
+    projection_preflight = retail::preflight_retail_projection_receipt(
+        options.projection_receipt, options.replay, replay, store.index_sha256());
+    if (!projection_preflight->passed()) {
+      std::fprintf(
+          stderr,
+          "ac6_retail=fail error=projection_receipt_%s detail=%s receipt=%s "
+          "replay=%s\n",
+          retail::retail_projection_receipt_error_name(
+              projection_preflight->error),
+          projection_preflight->detail.c_str(),
+          options.projection_receipt.string().c_str(),
+          options.replay.string().c_str());
+      return 140;
+    }
+  }
   if (!loadout_qualified(store, replay.loadout)) return 135;
   // Replay and play share the same fail-closed drive policy. A trace changes
   // observation only; it cannot enable or disable scenario progression.
@@ -560,7 +585,27 @@ int run_replay_impl(const Options& options) {
          << "  \"aircraft_id\": " << replay.loadout.aircraft_id << ",\n"
          << "  \"weapon_id\": " << replay.loadout.weapon_id << ",\n"
          << "  \"cache_index_sha256\": \"" << sha256_hex(store.index_sha256()) << "\",\n"
-         << "  \"replay_frames\": " << replay.frames.size() << ",\n"
+         << "  \"projection_receipt_provided\": "
+         << (options.projection_receipt_seen ? "true" : "false") << ",\n"
+         << "  \"native_output_verified\": "
+         << (projection_preflight.has_value() &&
+                     projection_preflight->native_output_verified
+                 ? "true"
+                 : "false")
+         << ",\n"
+         << "  \"source_lineage_verified\": "
+         << (projection_preflight.has_value() &&
+                     projection_preflight->source_lineage_verified
+                 ? "true"
+                 : "false")
+         << ",\n";
+  if (projection_preflight.has_value()) {
+    output << "  \"projection_receipt_sha256\": \""
+           << sha256_hex(projection_preflight->receipt_sha256) << "\",\n"
+           << "  \"projection_replay_sha256\": \""
+           << sha256_hex(projection_preflight->replay_sha256) << "\",\n";
+  }
+  output << "  \"replay_frames\": " << replay.frames.size() << ",\n"
          << "  \"random_seed\": " << replay.random_seed << ",\n"
          << "  \"replay_final_tick\": " << replay.final_tick << ",\n"
          << "  \"checkpoint_count\": " << replay.checkpoints.size() << ",\n"
