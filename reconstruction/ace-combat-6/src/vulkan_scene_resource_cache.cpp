@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cmath>
+#include <limits>
 #include <utility>
 
 namespace ac6 {
@@ -76,6 +78,61 @@ namespace {
 }
 
 }  // namespace
+
+std::optional<VulkanMission01TexturedUpload>
+make_vulkan_mission01_textured_upload(
+    const std::string_view mesh_id, const std::string_view texture_id,
+    const std::span<const retail::NdxrPosition> positions,
+    const std::span<const retail::NdxrTexcoord> texcoords,
+    const std::span<const std::uint16_t> indices,
+    const retail::DecodedTexture& texture) noexcept {
+  if (mesh_id.empty() || texture_id.empty() || positions.empty() ||
+      positions.size() != texcoords.size() || indices.empty() ||
+      indices.size() % 3U != 0U || texture.width == 0U || texture.height == 0U ||
+      texture.pixels.size() != static_cast<std::size_t>(texture.width) *
+                                     texture.height) {
+    return std::nullopt;
+  }
+  VulkanMission01TexturedUpload upload;
+  upload.mesh_id = std::string(mesh_id);
+  upload.texture_id = std::string(texture_id);
+  upload.texture_width = texture.width;
+  upload.texture_height = texture.height;
+  upload.rgba8.resize(texture.pixels.size() * 4U);
+  for (std::size_t index = 0U; index < texture.pixels.size(); ++index) {
+    const std::uint32_t pixel = texture.pixels[index];
+    upload.rgba8[index * 4U] = static_cast<std::uint8_t>(pixel & 0xFFU);
+    upload.rgba8[index * 4U + 1U] =
+        static_cast<std::uint8_t>((pixel >> 8U) & 0xFFU);
+    upload.rgba8[index * 4U + 2U] =
+        static_cast<std::uint8_t>((pixel >> 16U) & 0xFFU);
+    upload.rgba8[index * 4U + 3U] =
+        static_cast<std::uint8_t>((pixel >> 24U) & 0xFFU);
+  }
+  upload.vertices.reserve(positions.size());
+  for (std::size_t index = 0U; index < positions.size(); ++index) {
+    const auto& position = positions[index];
+    const auto& uv = texcoords[index];
+    if (!std::isfinite(position.x) || !std::isfinite(position.y) ||
+        !std::isfinite(position.z) || !std::isfinite(uv.u) ||
+        !std::isfinite(uv.v)) {
+      return std::nullopt;
+    }
+    // This first adapter is deliberately 2D: it only accepts already
+    // projected X/Y inputs.  A world-space Z/transform path is a later,
+    // trace-qualified checkpoint, never silently dropped here.
+    if (position.z != 0.0F) return std::nullopt;
+    upload.vertices.push_back({position.x, position.y, uv.u, uv.v});
+  }
+  upload.indices.reserve(indices.size());
+  for (const std::uint16_t index : indices) {
+    if (index == retail::kStripRestart || index >= upload.vertices.size()) {
+      return std::nullopt;
+    }
+    upload.indices.push_back(index);
+  }
+  return upload;
+}
 
 VulkanSceneResourceCache::VulkanSceneResourceCache(
     VulkanBackend& backend) noexcept

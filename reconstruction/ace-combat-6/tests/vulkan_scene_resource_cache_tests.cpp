@@ -54,6 +54,34 @@ int main() {
   const auto target = backend.create_render_target(16, 16, false);
   if (!target) return fail("target");
 
+  const std::array<ac6::retail::NdxrPosition, 3> qualified_positions{{
+      {-0.8F, -0.8F, 0.0F}, {0.8F, -0.8F, 0.0F}, {0.0F, 0.8F, 0.0F}}};
+  const std::array<ac6::retail::NdxrTexcoord, 3> qualified_uvs{{
+      {0.0F, 0.0F}, {1.0F, 0.0F}, {0.5F, 1.0F}}};
+  const std::array<std::uint16_t, 3> qualified_indices{{0U, 1U, 2U}};
+  const ac6::retail::DecodedTexture qualified_texture{
+      1U, 1U, std::vector<std::uint32_t>{0xFF0000FFU}};
+  const auto qualified_upload = ac6::make_vulkan_mission01_textured_upload(
+      "qualified-mesh", "qualified-texture", qualified_positions, qualified_uvs,
+      qualified_indices, qualified_texture);
+  if (!qualified_upload || qualified_upload->vertices.size() != 3U ||
+      qualified_upload->indices.size() != 3U ||
+      qualified_upload->rgba8.size() != 4U || qualified_upload->rgba8[0] != 255U ||
+      qualified_upload->rgba8[3] != 255U) {
+    return fail("qualified_upload_adapter");
+  }
+  const std::array<ac6::retail::NdxrPosition, 3> world_positions{{
+      {-0.8F, -0.8F, 1.0F}, {0.8F, -0.8F, 1.0F}, {0.0F, 0.8F, 1.0F}}};
+  const std::array<std::uint16_t, 3> strip_indices{{0U, 1U, ac6::retail::kStripRestart}};
+  if (ac6::make_vulkan_mission01_textured_upload(
+          "world-mesh", "qualified-texture", world_positions, qualified_uvs,
+          qualified_indices, qualified_texture) ||
+      ac6::make_vulkan_mission01_textured_upload(
+          "strip-mesh", "qualified-texture", qualified_positions, qualified_uvs,
+          strip_indices, qualified_texture)) {
+    return fail("qualified_upload_refusal");
+  }
+
   ac6::RenderScene scene = scene_fixture();
   const std::array<ac6::VulkanVertex, 3> vertices{{
       {-0.8F, -0.8F}, {0.8F, -0.8F}, {0.0F, 0.8F}}};

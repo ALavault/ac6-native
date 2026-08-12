@@ -1,9 +1,12 @@
 #pragma once
 
+#include "ac6/ntxr_texture.h"
+#include "ac6/retail_ndxr_geometry.h"
 #include "ac6/vulkan_scene_renderer.h"
 
 #include <cstdint>
 #include <cstddef>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -32,6 +35,27 @@ struct VulkanSceneTextureUpload final {
   std::uint32_t height{};
   std::span<const std::uint8_t> rgba8;
 };
+
+// Qualified Mission 01 adapter output.  The adapter owns the converted
+// vectors; cache::build_textured copies them into device resources and never
+// retains a retail span.
+struct VulkanMission01TexturedUpload final {
+  std::string mesh_id;
+  std::vector<VulkanTexturedVertex> vertices;
+  std::vector<std::uint16_t> indices;
+  std::string texture_id;
+  std::uint32_t texture_width{};
+  std::uint32_t texture_height{};
+  std::vector<std::uint8_t> rgba8;
+};
+
+[[nodiscard]] std::optional<VulkanMission01TexturedUpload>
+make_vulkan_mission01_textured_upload(
+    std::string_view mesh_id, std::string_view texture_id,
+    std::span<const retail::NdxrPosition> positions,
+    std::span<const retail::NdxrTexcoord> texcoords,
+    std::span<const std::uint16_t> indices,
+    const retail::DecodedTexture& texture) noexcept;
 
 struct VulkanSceneMaterialUpload final {
   std::string_view material_id;
