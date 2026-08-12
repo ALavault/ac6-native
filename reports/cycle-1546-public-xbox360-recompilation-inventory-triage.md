@@ -118,6 +118,17 @@ ne fait que précharger des XEX non recompilés ; ce n'est pas un modèle comple
 
 ReOdyssey suit comme audit spécialisé du remplacement progressif du renderer.
 
+Audit A1 terminé :
+[`cycle-1551-gears1-low-level-runtime-review.md`](cycle-1551-gears1-low-level-runtime-review.md).
+Verdict : excellent laboratoire de fixtures et d'instrumentation XMA/PM4/XAM,
+mais backend non transplantable sans réécriture ; licence racine absente,
+preuves privées non reproductibles et divergences certaines dans le command
+processor, le lock XMA, le renderer et la VFS.
+
+Audit A2 terminé : `cycle-1548-futari-multixex-rexglue-review.md`. Il retient
+les registres exact-path et le retrait avant réemploi d'une base invitée, mais
+diffère tout chargeur multi-XEX AC6 jusqu'à un census M01 de `XexLoadImage`.
+
 Audit A3 terminé : `cycle-1549-downpour-rexglue-source-audit.md`. Il établit
 notamment que les tags publics Downpour `v1.1` à `v1.1.6` sont des changements
 README uniquement et que le code SDK public s'arrête à `v1.0`.
@@ -125,6 +136,10 @@ README uniquement et que le code SDK public s'arrête à `v1.0`.
 Audit A4 terminé : `cycle-1550-marathon-autonomous-runtime-review.md`. Il
 confirme la frontière D3D/XDK haute sans PM4, mais classe XMA, XAM/HID et les
 lecteurs ISO/XContent comme non réutilisables sans durcissement et preuve AC6.
+
+Audit A5 terminé : `cycle-1552-banjo-tooie-rexglue-fork-review.md`. Il retient
+le fallback SDL `dummy` pour les seuls runs headless et rejette comme généraux
+la queue `GetKeystroke`, les automatismes XAM et l'extracteur STFS.
 
 ## Entrées non vérifiables dans cette passe
 
