@@ -49,17 +49,17 @@
   },
   "known_divergences": [
     {
-      "id": "cpu-dcbst-unimplemented",
+      "id": "cpu-dcbst-emitted-as-noop",
       "status": "divergent",
       "domain": "cpu-cache",
       "semantics": [
         "dcbst"
       ],
-      "reason": "The RexGlue 0.9 decoder and dispatch table do not implement this instruction.",
+      "reason": "RexGlue 0.9 decodes and dispatches dcbst, but its builder emits no effective address calculation or explicit cache publication operation.",
       "gate_evidence": false,
       "evidence": [
-        "src/codegen/ppc/opcode.cpp",
-        "src/codegen/instruction_dispatch.cpp"
+        "src/codegen/instruction_dispatch.cpp",
+        "src/codegen/builders/system.cpp"
       ]
     },
     {

@@ -24,7 +24,7 @@ Le contrat est scellé dans
 `analysis/rexglue-semantic-trust-v1.json`. L'audit global vérifie son identité
 PAL, ses transitions, ses interdictions et quatre divergences déjà établies :
 
-- `dcbst` absent de RexGlue 0.9 ;
+- `dcbst` reconnu mais émis comme no-op par RexGlue 0.9 ;
 - `frsqrte`, `vrefp` et `vrsqrtefp` remplacés par des mathématiques hôte exactes ;
 - réservations `lwarx/ldarx` sans adresse ni granule ;
 - `sync`, `lwsync` et `eieio` émis comme no-op.

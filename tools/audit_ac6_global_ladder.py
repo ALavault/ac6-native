@@ -31,7 +31,7 @@ REXGLUE_TRUST_STATES = {
     "provisional-rexglue", "retail-qualified", "divergent",
 }
 REXGLUE_DIVERGENCES = {
-    "cpu-dcbst-unimplemented",
+    "cpu-dcbst-emitted-as-noop",
     "cpu-reciprocal-estimates-exact-host-math",
     "cpu-reservation-without-address-or-granule",
     "cpu-barriers-emitted-as-noop",
