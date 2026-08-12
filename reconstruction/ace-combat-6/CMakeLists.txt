@@ -117,7 +117,8 @@ if(AC6_BUILD_PLATFORM)
   add_library(ac6_platform STATIC
     src/sdl_input.cpp
     src/vulkan_surface.cpp
-    src/vulkan_swapchain.cpp)
+    src/vulkan_swapchain.cpp
+    src/vulkan_scene_renderer.cpp)
   target_include_directories(ac6_platform PUBLIC include)
   target_link_libraries(ac6_platform PUBLIC ac6_product_core ac6_vulkan_backend
     PkgConfig::SDL3 Vulkan::Vulkan)
@@ -588,6 +589,11 @@ if(AC6_BUILD_PLATFORM)
   target_link_libraries(ac6-vulkan-backend-tests PRIVATE ac6_vulkan_backend)
   add_test(NAME ac6-vulkan-backend COMMAND ac6-vulkan-backend-tests)
   set_tests_properties(ac6-vulkan-backend PROPERTIES SKIP_RETURN_CODE 77)
+
+  add_executable(ac6-vulkan-scene-renderer-tests tests/vulkan_scene_renderer_tests.cpp)
+  target_link_libraries(ac6-vulkan-scene-renderer-tests PRIVATE ac6_platform)
+  add_test(NAME ac6-vulkan-scene-renderer COMMAND ac6-vulkan-scene-renderer-tests)
+  set_tests_properties(ac6-vulkan-scene-renderer PROPERTIES SKIP_RETURN_CODE 77)
 
   if(Python3_Interpreter_FOUND)
     add_test(NAME ac6-product-boundary-binary
