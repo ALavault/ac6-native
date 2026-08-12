@@ -526,16 +526,29 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
   REQUIRE(parsed->bank(0).index_count == 3);
   REQUIRE(parsed->bank(0).first_index == 200);
   REQUIRE(parsed->bank(0).last_index == 400);
+  REQUIRE(parsed->bank(0).entry_offsets ==
+          std::vector<std::uint32_t>({200u, 300u, 400u}));
+  REQUIRE((parsed->entry_range(0, 0) == ac6::RetailAsfEntryRange{200u, 100u}));
+  REQUIRE((parsed->entry_range(0, 2) == ac6::RetailAsfEntryRange{400u, 112u}));
+  REQUIRE(!parsed->entry_range(0, 3).has_value());
+  REQUIRE(!parsed->entry_range(2, 0).has_value());
   REQUIRE(parsed->bank(1).offset == 512);
   REQUIRE(parsed->bank(1).bank_tag == 0x21);
+  REQUIRE((parsed->entry_range(1, 0) == ac6::RetailAsfEntryRange{712u, 100u}));
 
   put_le32(bytes, 174, 512);
+  REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
+  bank(bytes, 0, 0x0e);
+  put_le32(bytes, 174, 180);
   REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
   bank(bytes, 0, 0x0e);
   bytes.resize(600);
   REQUIRE(!ac6::RetailAsfIndex::open(bytes, detail).has_value());
 
-  const char* cache_name = std::getenv("AC6_MEDIA_CACHE");
+  const char* cache_name = std::getenv("AC6_ASF_CACHE");
+  if (cache_name == nullptr || *cache_name == '\0') {
+    cache_name = std::getenv("AC6_MEDIA_CACHE");
+  }
   if (cache_name == nullptr || *cache_name == '\0') return;
   ac6::RetailContentStore store;
   REQUIRE(store.open(cache_name));
@@ -548,9 +561,31 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
   REQUIRE(retail->bank(1).size == 183668736u);
   REQUIRE(retail->bank(0).index_count == 2630);
   REQUIRE(retail->bank(1).index_count == 2819);
-  std::fprintf(stdout, "asf_index=pass banks=%zu entries=%u,%u\n",
+  REQUIRE((retail->entry_range(0, 0) ==
+           ac6::RetailAsfEntryRange{28142156u, 51800u}));
+  REQUIRE((retail->entry_range(0, 2629) ==
+           ac6::RetailAsfEntryRange{164634736u, 3984u}));
+  REQUIRE((retail->entry_range(1, 0) ==
+           ac6::RetailAsfEntryRange{193514776u, 18568u}));
+  REQUIRE((retail->entry_range(1, 2818) ==
+           ac6::RetailAsfEntryRange{348303760u, 3696u}));
+  std::size_t ranges = 0;
+  for (std::size_t bank_index = 0; bank_index < retail->bank_count(); ++bank_index) {
+    const auto& retail_bank = retail->bank(bank_index);
+    for (std::size_t entry_index = 0; entry_index < retail_bank.index_count;
+         ++entry_index) {
+      const auto range = retail->entry_range(bank_index, entry_index);
+      REQUIRE(range.has_value());
+      REQUIRE(range->offset >= retail_bank.offset);
+      REQUIRE(range->size > 0);
+      REQUIRE(range->offset + range->size <= retail_bank.offset + retail_bank.size);
+      ++ranges;
+    }
+  }
+  REQUIRE(ranges == 5449);
+  std::fprintf(stdout, "asf_index=pass banks=%zu entries=%u,%u ranges=%zu\n",
                retail->bank_count(), retail->bank(0).index_count,
-               retail->bank(1).index_count);
+               retail->bank(1).index_count, ranges);
 }
 
 }  // namespace

@@ -29,6 +29,16 @@ struct RetailAsfBank final {
   std::uint32_t last_index{};
   std::uint32_t trailer_word0{};
   std::uint32_t trailer_word1{};
+  // Relative offsets read verbatim from the bounded monotone table. Adjacent
+  // values delimit indexed compressed ranges; no packet, frame or codec
+  // meaning is inferred.
+  std::vector<std::uint32_t> entry_offsets;
+};
+
+struct RetailAsfEntryRange final {
+  std::uint64_t offset{};  // absolute offset in the content-addressed blob
+  std::uint64_t size{};
+  bool operator==(const RetailAsfEntryRange&) const = default;
 };
 
 class RetailAsfIndex final {
@@ -48,6 +58,8 @@ class RetailAsfIndex final {
   std::size_t bank_count() const noexcept { return banks_.size(); }
   const RetailAsfBank& bank(std::size_t index) const noexcept { return banks_[index]; }
   const std::vector<RetailAsfBank>& banks() const noexcept { return banks_; }
+  std::optional<RetailAsfEntryRange> entry_range(
+      std::size_t bank_index, std::size_t entry_index) const noexcept;
 
  private:
   std::vector<RetailAsfBank> banks_;

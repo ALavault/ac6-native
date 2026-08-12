@@ -164,7 +164,7 @@
       "state": "open",
       "closure": "Qualified XMA and bounded moviepack streams provide retail framing, English/Japanese selection, subtitles, A/V synchronisation, and temporal events without speculative demuxing.",
       "blockers": [
-        "ASF codec/container decoding and bounded stream exposure to FFmpeg remain open.",
+        "The two-bank ASF index now exposes 5,449 non-empty content-addressed ranges; their internal packet structure, codec/container decoding, and bounded demux exposure to FFmpeg remain open.",
         "Audio/video synchronisation, language selection, subtitles, and timed events are not yet qualified."
       ],
       "evidence": [
@@ -172,6 +172,11 @@
           "path": "reports/checkpoint-2-media-xma-contract.md",
           "size": 1983,
           "sha256": "40675bdbb9797b44a10718f92026aa7a1f2e6e358d23d0777294877d9953d1f8"
+        },
+        {
+          "path": "reports/cycle-1530-the-asf-offsets-become-bounded-ranges.md",
+          "size": 2545,
+          "sha256": "0049e2d6ac27736d018185078403ca7314390f9b874f1e8769f02d2e3aca93e5"
         }
       ]
     }

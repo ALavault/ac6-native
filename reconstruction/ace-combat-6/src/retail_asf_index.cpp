@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <utility>
 
 namespace ac6 {
 namespace {
@@ -98,6 +99,7 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
   std::uint32_t index_count = 0;
   std::uint32_t first_index = 0;
   std::uint32_t last_index = 0;
+  std::vector<std::uint32_t> index_entries;
   for (std::size_t alignment = 0; alignment != 4 && index_count == 0; ++alignment) {
     const std::size_t candidate = index_base + alignment;
     if (candidate + 8 > bytes.size() || candidate >= size) continue;
@@ -105,6 +107,7 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
     std::uint32_t candidate_first = 0;
     std::uint32_t candidate_last = 0;
     std::uint32_t previous = 0;
+    std::vector<std::uint32_t> candidate_entries;
     bool valid = true;
     for (std::size_t cursor = candidate;
          cursor + 4 <= bytes.size() && cursor < size &&
@@ -118,6 +121,7 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
       if (candidate_count == 0) candidate_first = value;
       previous = value;
       candidate_last = value;
+      candidate_entries.push_back(value);
       ++candidate_count;
     }
     const std::size_t candidate_trailer = candidate + candidate_count * 4u;
@@ -129,6 +133,7 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
     index_count = candidate_count;
     first_index = candidate_first;
     last_index = candidate_last;
+    index_entries = std::move(candidate_entries);
   }
   if (index_count == 0) {
     detail = "ASF offset table has no bounded monotone termination";
@@ -137,6 +142,10 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
   const std::size_t trailer_offset = index_offset + index_count * 4u;
   if (trailer_offset + 8 > bytes.size() || trailer_offset + 8 > size) {
     detail = "ASF offset table trailer is truncated";
+    return std::nullopt;
+  }
+  if (index_entries.size() != index_count || first_index < trailer_offset + 8) {
+    detail = "ASF offset table overlaps bank metadata";
     return std::nullopt;
   }
   RetailAsfBank bank;
@@ -153,6 +162,7 @@ std::optional<RetailAsfBank> parse_bank(std::span<const std::uint8_t> bytes,
   bank.last_index = last_index;
   bank.trailer_word0 = read_u32(bytes.data() + trailer_offset);
   bank.trailer_word1 = read_u32(bytes.data() + trailer_offset + 4);
+  bank.entry_offsets = std::move(index_entries);
   return bank;
 }
 
@@ -247,6 +257,25 @@ std::optional<RetailAsfIndex> RetailAsfIndex::open(const RetailMediaStore& store
     result.banks_.push_back(*bank);
   }
   return result;
+}
+
+std::optional<RetailAsfEntryRange> RetailAsfIndex::entry_range(
+    std::size_t bank_index, std::size_t entry_index) const noexcept {
+  if (bank_index >= banks_.size()) return std::nullopt;
+  const RetailAsfBank& bank = banks_[bank_index];
+  if (entry_index >= bank.entry_offsets.size() ||
+      bank.entry_offsets.size() != bank.index_count) {
+    return std::nullopt;
+  }
+  const std::uint64_t begin = bank.entry_offsets[entry_index];
+  const std::uint64_t end = entry_index + 1 < bank.entry_offsets.size()
+                                ? bank.entry_offsets[entry_index + 1]
+                                : bank.size;
+  if (begin >= end || end > bank.size ||
+      bank.offset > std::numeric_limits<std::uint64_t>::max() - begin) {
+    return std::nullopt;
+  }
+  return RetailAsfEntryRange{bank.offset + begin, end - begin};
 }
 
 }  // namespace ac6
