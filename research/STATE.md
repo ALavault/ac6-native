@@ -158,7 +158,7 @@ ou le renderer sans preuve contradictoire.
   géométrie, 2 206 pixels couleur et profondeur non constante. Trois
   exécutions du même replay ont le hash sémantique
   `459390c93868090f`; pause et save/resume sont stables.
-- Le contrat `analysis/contracts/mission01-native-gate.json` passe désormais J0
+- Le contrat `analysis/contracts/mission01-native-gate-v2.json` passe désormais J0/J1
   avec une capture native object-ID après calibration de scène; J1 reste
   ouvert. La capture P0 précédente reste conservée comme baseline du défaut
   point-cloud.

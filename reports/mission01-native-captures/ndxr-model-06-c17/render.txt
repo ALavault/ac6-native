@@ -1,1 +1,0 @@
-model 6: 1 pieces, 1547 vertices, 2797 indices, extent 53.02 x 17.03 x 50.37

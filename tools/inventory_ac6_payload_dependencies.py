@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Per-mission closures are fully consumed inside their defining loop iteration.
+# ruff: noqa: B023
 """Build a bounded, content-addressed dependency inventory for AC6 FHM payloads.
 
 The input manifests are produced by ``extract_ac6_pac.py``.  Only decoded

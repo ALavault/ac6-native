@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Closures are consumed before the surrounding case loop advances.
+# ruff: noqa: B023
 """Differential for the input binding layer, 0x82211C10.
 
 The plan forbids a flight behaviour entering the contract without one, and cycle

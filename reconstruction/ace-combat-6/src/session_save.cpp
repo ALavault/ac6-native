@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -16,7 +17,7 @@ constexpr std::array<char, 8> kMagic{{'A', 'C', '6', 'S', 'E', 'S', 'S', '\0'}};
 bool valid_campaign(const CampaignSaveSnapshot& snapshot) noexcept {
   if (snapshot.completed.size() > 1024) return false;
   std::uint32_t previous = 0;
-  for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
+  for (const CampaignSaveSnapshot::Record& record : snapshot.completed) {
     if (record.mission_id == 0 || record.mission_id <= previous ||
         static_cast<std::uint8_t>(record.state) <
             static_cast<std::uint8_t>(CampaignMissionState::Briefing) ||
@@ -182,7 +183,7 @@ void write_u64(std::ostream& output, std::uint64_t value) {
 
 void write_f32(std::ostream& output, float value) {
   std::uint32_t raw = 0;
-  std::memcpy(&raw, &value, sizeof(raw));
+  raw = std::bit_cast<std::uint32_t>(value);
   write_u32(output, raw);
 }
 
@@ -211,7 +212,7 @@ bool read_u64(std::istream& input, std::uint64_t& value) {
 bool read_f32(std::istream& input, float& value) {
   std::uint32_t raw = 0;
   if (!read_u32(input, raw)) return false;
-  std::memcpy(&value, &raw, sizeof(value));
+  value = std::bit_cast<float>(raw);
   return std::isfinite(value);
 }
 
@@ -551,7 +552,7 @@ bool SessionSaveStore::write_file(const std::filesystem::path& path) const {
                  static_cast<std::streamsize>(snapshot.content_index_sha256.size()));
     write_flight(output, snapshot.flight);
     write_u32(output, static_cast<std::uint32_t>(snapshot.campaign.completed.size()));
-    for (const CampaignSaveSnapshot::Record record : snapshot.campaign.completed) {
+    for (const CampaignSaveSnapshot::Record& record : snapshot.campaign.completed) {
       write_u32(output, record.mission_id);
       write_u32(output, record.objective_mask);
       write_u32(output, static_cast<std::uint32_t>(record.state));

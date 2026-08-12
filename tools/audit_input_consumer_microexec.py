@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Closures are consumed before the surrounding case loop advances.
+# ruff: noqa: B023
 """Run 0x821CAA50 on a built input service and read what it writes.
 
 Cycles 1315-1318 derived the consumer by reading: a flag word at record+0x08, a

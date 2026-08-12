@@ -32,6 +32,7 @@ HEADER = 16
 SIDE = 65
 PATCH_BYTES = 0x4204
 N = 1024                       # samples, 128 world units apart
+WORLD_BIAS = 65536
 SEA_LEVEL = 0.5
 
 
@@ -136,12 +137,12 @@ def main(argv):
         out = bytearray()
         for z in range(N):
             for x in range(N):
-                b, l = bits[z][x], land[z][x]
-                if b and not l:
+                bit_value, land_value = bits[z][x], land[z][x]
+                if bit_value and not land_value:
                     out += bytes((30, 60, 120))     # water bit over sea
-                elif not b and l:
+                elif not bit_value and land_value:
                     out += bytes((90, 130, 70))     # clear bit over land
-                elif b and l:
+                elif bit_value and land_value:
                     out += bytes((230, 60, 60))     # bit over high ground
                 else:
                     out += bytes((250, 210, 80))    # no bit over flat ground

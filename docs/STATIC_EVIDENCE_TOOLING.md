@@ -106,20 +106,13 @@ explicitly with `--float-abs` or `--float-rel`.
 
 ## Audit the native J0/J1 acceptance gate
 
-Initialize a fail-closed contract, replace the commit and add hashed evidence:
+Audit the current contract against repository-relative or external artifacts:
 
 ```bash
 python3 tools/audit_ac6_mission01_native_gate.py \
-  --init analysis/contracts/mission01-native-gate.json
-```
-
-Audit it against repository-relative or external artifacts:
-
-```bash
-python3 tools/audit_ac6_mission01_native_gate.py \
-  analysis/contracts/mission01-native-gate.json \
+  analysis/contracts/mission01-native-gate-v2.json \
   --artifact-root . \
-  --require J0
+  --require J1
 ```
 
 The fixed J0/J1 requirement list cannot be shortened. A passed requirement must

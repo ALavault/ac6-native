@@ -24,7 +24,7 @@ void write_u32(std::vector<std::uint8_t>& bytes, std::uint32_t value) {
 
 bool read_u32(const std::vector<std::uint8_t>& bytes, std::size_t& offset,
               std::uint32_t& value) noexcept {
-  if (offset > bytes.size() || bytes.size() - offset < 4) return false;
+  if (bytes.size() < 4 || offset > bytes.size() - 4) return false;
   value = static_cast<std::uint32_t>(bytes[offset]) |
           (static_cast<std::uint32_t>(bytes[offset + 1]) << 8u) |
           (static_cast<std::uint32_t>(bytes[offset + 2]) << 16u) |
@@ -36,7 +36,7 @@ bool read_u32(const std::vector<std::uint8_t>& bytes, std::size_t& offset,
 bool valid_snapshot(const CampaignSaveSnapshot& snapshot) noexcept {
   if (snapshot.completed.size() > 1024) return false;
   std::uint32_t previous = 0;
-  for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
+  for (const CampaignSaveSnapshot::Record& record : snapshot.completed) {
     if (record.mission_id == 0 || record.mission_id <= previous ||
         static_cast<std::uint8_t>(record.state) <
             static_cast<std::uint8_t>(CampaignMissionState::Briefing) ||
@@ -298,7 +298,7 @@ CampaignSaveSnapshot CampaignProgression::snapshot() const {
 bool CampaignProgression::restore(const CampaignSaveSnapshot& snapshot) noexcept {
   if (!finalized_) return false;
   std::uint32_t previous = 0;
-  for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
+  for (const CampaignSaveSnapshot::Record& record : snapshot.completed) {
     const Entry* entry = find_entry(record.mission_id);
     const std::uint32_t objective_mask = entry == nullptr ? 0u :
         (0xffffffffu >> (32u - entry->spec.objective_count));
@@ -320,7 +320,7 @@ bool CampaignProgression::restore(const CampaignSaveSnapshot& snapshot) noexcept
     entry.status.objective_mask = 0;
     entry.status.loadout = {};
   }
-  for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
+  for (const CampaignSaveSnapshot::Record& record : snapshot.completed) {
     Entry* entry = find_entry(record.mission_id);
     entry->status.state = record.state;
     entry->status.objective_mask = record.objective_mask;
@@ -336,7 +336,7 @@ bool CampaignProgression::encode_snapshot(std::vector<std::uint8_t>& bytes) cons
   bytes.assign(kMagic.begin(), kMagic.end());
   write_u32(bytes, 2);
   write_u32(bytes, static_cast<std::uint32_t>(current.completed.size()));
-  for (const auto record : current.completed) {
+  for (const auto& record : current.completed) {
     write_u32(bytes, record.mission_id);
     write_u32(bytes, record.objective_mask);
     write_u32(bytes, static_cast<std::uint32_t>(record.state));
@@ -416,7 +416,7 @@ bool CampaignSaveStore::write_file(const std::filesystem::path& path) const {
     const CampaignSaveSnapshot& snapshot = slots_.at(slot);
     write_file_u32(slot);
     write_file_u32(static_cast<std::uint32_t>(snapshot.completed.size()));
-    for (const CampaignSaveSnapshot::Record record : snapshot.completed) {
+    for (const CampaignSaveSnapshot::Record& record : snapshot.completed) {
       write_file_u32(record.mission_id);
       write_file_u32(record.objective_mask);
       write_file_u32(static_cast<std::uint32_t>(record.state));

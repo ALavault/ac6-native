@@ -123,12 +123,12 @@ std::optional<std::uint8_t> ScenarioPayload::u8(std::size_t offset) const noexce
 }
 
 std::optional<std::uint16_t> ScenarioPayload::u16(std::size_t offset) const noexcept {
-  if (offset > bytes_.size() || bytes_.size() - offset < 2) return std::nullopt;
+  if (bytes_.size() < 2 || offset > bytes_.size() - 2) return std::nullopt;
   return static_cast<std::uint16_t>(bytes_[offset] << 8 | bytes_[offset + 1]);
 }
 
 std::optional<std::uint32_t> ScenarioPayload::u32(std::size_t offset) const noexcept {
-  if (offset > bytes_.size() || bytes_.size() - offset < 4) return std::nullopt;
+  if (bytes_.size() < 4 || offset > bytes_.size() - 4) return std::nullopt;
   return static_cast<std::uint32_t>(bytes_[offset]) << 24 |
          static_cast<std::uint32_t>(bytes_[offset + 1]) << 16 |
          static_cast<std::uint32_t>(bytes_[offset + 2]) << 8 |

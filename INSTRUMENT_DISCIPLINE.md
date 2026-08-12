@@ -142,9 +142,9 @@ Two lessons, and the second is the one that generalises:
 
 - **validating a tool on the cases you had in mind is not validating it**. Three
   contracts passed; five existed.
-- once fixed, it found something real: `mission01-native-gate.json`, the
-  superseded v1 contract, cites **7 artefacts that no longer exist**. The live
-  contracts — v2, v3, v4 — are clean at 17, 19 and 22.
+- once fixed, it found something real: the removed v1 Mission 01 contract cited
+  **7 artefacts that no longer existed**. The live contracts — v2, v3, v4 —
+  remain fail-closed.
 
 ## A ninth instance, and it is a new shape: the true positive from dead code
 

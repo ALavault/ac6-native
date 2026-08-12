@@ -4,10 +4,9 @@
 // 0x823911C0 -> 0x8234D3F0 -> 0x8234D510 -> 0x8234D110 / 0x8234D378 ->
 // 0x8234D0A0, with the dispatch at 0x82343A30 above it.
 //
-// Cycles 1307-1310 derived it. The claims it replaces were inherited from
-// CURRENT_PLAN.md, which is bannered superseded and whose bridge is no longer in
-// the workspace: "canonical device+0x3E", "raw device+0x4E", and "0x8234D110
-// splits to +0x28/+0x2A". All three are right and none of them was evidence.
+// Cycles 1307-1310 derived it. They replace the former bridge-only claims
+// "canonical device+0x3E", "raw device+0x4E", and "0x8234D110 splits to
+// +0x28/+0x2A". All three were correct but had not been evidence-backed.
 //
 // THE KERNEL BOUNDARY. 0x823911C0 is three instructions -
 //

@@ -8,6 +8,6 @@ Start with `PREPARATION_REPORT.md`, then follow `IMPORT_PLAN.md`. The supplied
 archive and extracted proprietary files are evidence inputs, never source-tree
 deliverables.
 
-The portable product now lives under `reconstruction/ace-combat-6/`. Its first
-native DATA.TBL/PAC validation gate and current limitations are recorded in
-`NATIVE_RECONSTRUCTION_STATUS.md`.
+The portable product lives under `reconstruction/ace-combat-6/`. The live
+product roadmap is `GLOBAL_OFFLINE_LADDER.md`; Mission 01 evidence and gates are
+tracked in `MISSION01_LADDER.md`.

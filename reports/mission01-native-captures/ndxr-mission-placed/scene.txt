@@ -1,5 +1,0 @@
-placed 95 units, 16 distinct models, span 66456 x 9000 x 19024
-densest cluster: 24 units within 2000 of (1856, 1500, -16416)
-  frame 0: 2 of 95 units within 135 of the eye
-    near: model id 6 at (1856,1500,-16416) dist 48  extent 53.02 x 17.03 x 50.37
-    near: model id 6 at (1856,1500,-16416) dist 48  extent 53.02 x 17.03 x 50.37

@@ -1,3 +1,0 @@
-main tid   : 4076976
-wchan      : __skb_wait_for_more_packets
-syscall    : 45 0x63 0x17014f750 0x501 0x0 0x780963ffe348 0x780963ffe344 0x780963ffe2a8 0x780a26aaca82

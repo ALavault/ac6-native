@@ -1,0 +1,8 @@
+line-length = 120
+exclude = ["tools/apply_ac6_oracle_boundary_corrections.py"]
+
+[lint]
+select = ["E9", "F821", "B023", "B904"]
+
+# The legacy analysis corpus is intentionally not reformatted wholesale. This
+# gate targets execution-breaking names, closure capture and exception chains.

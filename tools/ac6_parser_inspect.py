@@ -1,5 +1,8 @@
 """Inspect candidate parser function addresses in the canonical Ghidra project."""
 
+# Ghidra injects these script globals at runtime.
+# ruff: noqa: F821
+
 from ghidra.util.task import ConsoleTaskMonitor
 
 def addr(program, value):
@@ -71,4 +74,3 @@ for pc_addr, label in parser_candidates:
             break
         print(f"  CALLEE {c}")
         cc += 1
-

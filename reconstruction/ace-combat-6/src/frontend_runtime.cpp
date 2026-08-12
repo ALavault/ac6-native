@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -226,13 +227,13 @@ bool SaveStore::write_file(const std::filesystem::path& path) const {
     write_u32(slot);
     write_u64(snapshot.tick);
     std::uint32_t raw{};
-    std::memcpy(&raw, &snapshot.position_x, sizeof(raw)); write_u32(raw);
-    std::memcpy(&raw, &snapshot.position_y, sizeof(raw)); write_u32(raw);
-    std::memcpy(&raw, &snapshot.position_z, sizeof(raw)); write_u32(raw);
-    std::memcpy(&raw, &snapshot.pitch, sizeof(raw)); write_u32(raw);
-    std::memcpy(&raw, &snapshot.roll, sizeof(raw)); write_u32(raw);
-    std::memcpy(&raw, &snapshot.yaw, sizeof(raw)); write_u32(raw);
-    std::memcpy(&raw, &snapshot.fixed_accumulator, sizeof(raw)); write_u32(raw);
+    raw = std::bit_cast<std::uint32_t>(snapshot.position_x); write_u32(raw);
+    raw = std::bit_cast<std::uint32_t>(snapshot.position_y); write_u32(raw);
+    raw = std::bit_cast<std::uint32_t>(snapshot.position_z); write_u32(raw);
+    raw = std::bit_cast<std::uint32_t>(snapshot.pitch); write_u32(raw);
+    raw = std::bit_cast<std::uint32_t>(snapshot.roll); write_u32(raw);
+    raw = std::bit_cast<std::uint32_t>(snapshot.yaw); write_u32(raw);
+    raw = std::bit_cast<std::uint32_t>(snapshot.fixed_accumulator); write_u32(raw);
   }
   const bool written = static_cast<bool>(output);
   output.close();
@@ -283,7 +284,7 @@ bool SaveStore::read_file(const std::filesystem::path& path) {
     RuntimeSnapshot snapshot{tick, 0.0f, 0.0f, 0.0f};
     const auto read_float = [&record](std::size_t offset, float& value) {
       const std::uint32_t raw = read_le_u32(record.data() + offset);
-      std::memcpy(&value, &raw, sizeof(value));
+      value = std::bit_cast<float>(raw);
       return std::isfinite(value);
     };
     if (!read_float(12, snapshot.position_x) || !read_float(16, snapshot.position_y) ||

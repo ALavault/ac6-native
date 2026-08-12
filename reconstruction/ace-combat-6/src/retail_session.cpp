@@ -5,8 +5,8 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
-#include <cstring>
 #include <span>
 
 namespace ac6::retail {
@@ -29,13 +29,13 @@ void append_u32(std::vector<std::uint8_t>& bytes, std::uint32_t value) {
 
 void append_f32(std::vector<std::uint8_t>& bytes, float value) {
   std::uint32_t raw = 0;
-  std::memcpy(&raw, &value, sizeof(raw));
+  raw = std::bit_cast<std::uint32_t>(value);
   append_u32(bytes, raw);
 }
 
 bool take_u32(std::span<const std::uint8_t> bytes, std::size_t& offset,
               std::uint32_t& value) noexcept {
-  if (offset > bytes.size() || bytes.size() - offset < sizeof(value)) return false;
+  if (bytes.size() < sizeof(value) || offset > bytes.size() - sizeof(value)) return false;
   value = static_cast<std::uint32_t>(bytes[offset]) |
           (static_cast<std::uint32_t>(bytes[offset + 1]) << 8u) |
           (static_cast<std::uint32_t>(bytes[offset + 2]) << 16u) |
@@ -48,7 +48,7 @@ bool take_f32(std::span<const std::uint8_t> bytes, std::size_t& offset,
               float& value) noexcept {
   std::uint32_t raw = 0;
   if (!take_u32(bytes, offset, raw)) return false;
-  std::memcpy(&value, &raw, sizeof(value));
+  value = std::bit_cast<float>(raw);
   return std::isfinite(value);
 }
 
@@ -117,7 +117,7 @@ bool decode_sequencer(std::span<const std::uint8_t> bytes,
         !take_u32(bytes, offset, counter.bits)) {
       return false;
     }
-    std::memcpy(&counter.value, &value, sizeof(counter.value));
+    counter.value = std::bit_cast<std::int32_t>(value);
   }
   return offset == bytes.size();
 }

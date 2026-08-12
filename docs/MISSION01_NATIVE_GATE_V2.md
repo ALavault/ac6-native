@@ -1,8 +1,5 @@
 # Mission 01 native and retail gates
 
-`analysis/contracts/mission01-native-gate.json` remains readable as the v1
-native contract. It is not promoted implicitly to the retail gate.
-
 `analysis/contracts/mission01-native-gate-v2.json` separates the mechanisms
 implemented by the native runtime from identities qualified in retail data:
 
@@ -17,14 +14,13 @@ marked `retail_semantics_qualified: false` cannot close a retail domain.
 Bridge, vtable-only, FHM co-location, and fixture evidence are supporting or
 native evidence; they cannot be promoted to retail ownership.
 
-The final Mission 01 retail gate requires J0, all native domains, both retail
+The Mission 01 retail gate requires J0, all native domains, both retail
 unit/objective domains, qualified retail radio/scenario evidence, and native
-pause/save/restart. The current contract therefore reports J0 passed and J1
-open while `retail_units_and_waves` and `retail_objectives` remain unresolved.
+pause/save/restart. The current contract reports J0 and J1 passed.
 
 Validate with:
 
 ```sh
 python3 tools/audit_ac6_mission01_native_gate.py \
-  analysis/contracts/mission01-native-gate-v2.json --artifact-root . --require J0
+  analysis/contracts/mission01-native-gate-v2.json --artifact-root .
 ```

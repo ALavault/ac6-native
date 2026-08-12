@@ -3,6 +3,7 @@
 #include "text_parse.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
@@ -29,7 +30,7 @@ std::uint32_t read_le_u32(const unsigned char* bytes) noexcept {
 float read_le_f32(const unsigned char* bytes) noexcept {
   const std::uint32_t raw = read_le_u32(bytes);
   float value = 0.0f;
-  std::memcpy(&value, &raw, sizeof(value));
+  value = std::bit_cast<float>(raw);
   return value;
 }
 
@@ -50,13 +51,13 @@ bool read_exact_at(std::ifstream& input, std::uint64_t offset, unsigned char* by
 bool NativeGeometryDatabase::load_verified_binary(
     const MissionDrawable& drawable, const std::vector<unsigned char>& raw) {
         const auto be16 = [&raw](std::size_t offset, std::uint16_t& value) {
-          if (offset > raw.size() || raw.size() - offset < sizeof(value)) return false;
+          if (raw.size() < sizeof(value) || offset > raw.size() - sizeof(value)) return false;
           value = static_cast<std::uint16_t>(static_cast<std::uint16_t>(raw[offset]) << 8u) |
                   static_cast<std::uint16_t>(raw[offset + 1u]);
           return true;
         };
         const auto be32 = [&raw](std::size_t offset, std::uint32_t& value) {
-          if (offset > raw.size() || raw.size() - offset < sizeof(value)) return false;
+          if (raw.size() < sizeof(value) || offset > raw.size() - sizeof(value)) return false;
           value = (static_cast<std::uint32_t>(raw[offset]) << 24u) |
                   (static_cast<std::uint32_t>(raw[offset + 1u]) << 16u) |
                   (static_cast<std::uint32_t>(raw[offset + 2u]) << 8u) |
@@ -66,7 +67,7 @@ bool NativeGeometryDatabase::load_verified_binary(
         const auto bef32 = [&be32](std::size_t offset, float& value) {
           std::uint32_t bits = 0;
           if (!be32(offset, bits)) return false;
-          std::memcpy(&value, &bits, sizeof(value));
+          value = std::bit_cast<float>(bits);
           return std::isfinite(value);
         };
         // The header was parsed inline here, correctly but without a single
@@ -216,8 +217,8 @@ bool NativeGeometryDatabase::load_verified_binary(
           if (vertex_stride >= 28u) {
             std::uint32_t u_bits = 0, v_bits = 0;
             if (!be32(offset + uv_offset, u_bits) || !be32(offset + uv_offset + 4u, v_bits)) return false;
-            std::memcpy(&value.u, &u_bits, sizeof(value.u));
-            std::memcpy(&value.v, &v_bits, sizeof(value.v));
+            value.u = std::bit_cast<float>(u_bits);
+            value.v = std::bit_cast<float>(v_bits);
           }
           if (!std::isfinite(value.u) || !std::isfinite(value.v)) value.u = value.v = 0.0f;
           if (!decoded.bounds.valid) decoded.bounds = {value.x, value.y, value.z, value.x, value.y, value.z, true};

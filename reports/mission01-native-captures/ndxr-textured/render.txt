@@ -1,6 +1,0 @@
-  merged bounds x[-26.5 26.5] y[-2.9 14.1] z[-26.1 24.3], indices 2797
-model 6: 1 pieces, 1547 verts, texture 268445283 -> 512x512
-  merged bounds x[-5.1 5.1] y[-1.4 3.3] z[-5.1 10.7], indices 7657
-model 16: 18 pieces, 5243 verts, texture 268444181 -> 512x512
-  merged bounds x[-6.6 6.6] y[-1.5 2.9] z[-6.6 11.7], indices 15585
-model 24: 27 pieces, 10614 verts, texture 268444652 -> 512x512

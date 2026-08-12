@@ -167,4 +167,4 @@ if __name__ == "__main__":
         audit()
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"global_ladder=fail error={error}", file=sys.stderr)
-        raise SystemExit(1)
+        raise SystemExit(1) from error

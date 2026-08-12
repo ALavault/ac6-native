@@ -1,4 +1,0 @@
-A: focused window 2097153
-B: focused window 2097153
-T: focused window 2097153
-T: injected Escape+space+Escape after frame 5

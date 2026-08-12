@@ -7,7 +7,7 @@
 disc-image/
 extracted-disc/
 game-files/
-assets/
+/assets/
 input/
 remaster-export/
 *.iso
@@ -126,6 +126,27 @@ reports/**/*.capt
 ghidra-projects-xenon/
 /exports.pre-s0/
 /ghidra-user/.config/
+
+# Contract fixtures are durable evidence even though adjacent captures are not.
+!analysis/oracle/ac6-recomp-dcd41b/captures/mission01-hud-route/*.png
+!reports/mission01-native-captures/
+reports/mission01-native-captures/**
+!reports/mission01-native-captures/jf-retail-session/
+!reports/mission01-native-captures/jf-retail-session/hud-debrief.png
+!reports/mission01-native-captures/jf-retail-session/retail-session-hud.json
+!reports/mission01-native-captures/p3-runtime-state/
+!reports/mission01-native-captures/p3-runtime-state/native-session.json
+!reports/mission01-native-captures/p4-retail-radio/
+!reports/mission01-native-captures/p4-retail-radio/native-session.json
+!reports/mission01-native-captures/p6-native-hud/
+!reports/mission01-native-captures/p6-native-hud/hud-failure.png
+!reports/mission01-native-captures/p6-native-hud/hud-live.png
+!reports/mission01-native-captures/p6-native-hud/hud-success.png
+!reports/mission01-native-captures/p6-native-hud/native-hud-debrief.json
+!reports/mission01-native-captures/p7-current-main/
+!reports/mission01-native-captures/p7-current-main/capture-metrics.json
+!reports/mission01-native-captures/p7-current-main/native-session.json
+!reports/mission01-native-captures/p7-current-main/object-id.png
 
 # Test byproducts that ctest drops at the REPOSITORY ROOT, not under reports/.
 # The reports/** patterns above do not cover them, so before this a `git add -A`
