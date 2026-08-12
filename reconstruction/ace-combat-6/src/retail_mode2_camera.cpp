@@ -102,6 +102,18 @@ float clamp_signed_unit(float value) noexcept {
   return value;
 }
 
+std::optional<float> normalise_bounded_axis(float value, float limit) noexcept {
+  if (!std::isfinite(value) || !std::isfinite(limit) || limit < 0.0F)
+    return std::nullopt;
+  if (std::fabs(value) > limit)
+    value = value < 0.0F ? -limit : limit;
+  if (limit == 0.0F)
+    return 0.0F;
+  const float ratio = value / limit;
+  return std::isfinite(ratio) ? std::optional(clamp_signed_unit(ratio))
+                              : std::nullopt;
+}
+
 float interpolate_rotation(float current, float target,
                            float response) noexcept {
   // The retail block uses fmsubs followed by fmadds. Expressing both as fma
@@ -165,6 +177,55 @@ std::optional<RetailMode2RotationInput> select_mode2_direct_camera_rotation(
   result.target_at_3a8 = selected_gain * first_axis;
   result.response = input.response_rate_at_368 * input.frame_delta;
   result.wrap_at_3a4 = false;
+  if (!std::isfinite(result.target_at_3a0) ||
+      !std::isfinite(result.target_at_3a4) ||
+      !std::isfinite(result.target_at_3a8) || !std::isfinite(result.response)) {
+    return std::nullopt;
+  }
+  return result;
+}
+
+std::optional<RetailMode2IndirectAxes> normalise_mode2_indirect_camera_axes(
+    const RetailMode2IndirectTargetInput &input) noexcept {
+  const float first_limit =
+      input.first_axis > 0.0F ? input.gain_at_360 : input.gain_at_350;
+  const std::optional<float> first =
+      normalise_bounded_axis(input.first_axis, first_limit);
+  const std::optional<float> second =
+      normalise_bounded_axis(input.second_axis, input.gain_at_364);
+  if (!first.has_value() || !second.has_value())
+    return std::nullopt;
+  return RetailMode2IndirectAxes{*first, *second};
+}
+
+std::optional<RetailMode2RotationInput> select_mode2_indirect_camera_rotation(
+    const RetailMode2IndirectTargetInput &input) noexcept {
+  if (!finite_rotation(input.current) ||
+      !std::isfinite(input.response_rate_at_368) ||
+      !std::isfinite(input.frame_delta)) {
+    return std::nullopt;
+  }
+  const std::optional<RetailMode2IndirectAxes> normalised =
+      normalise_mode2_indirect_camera_axes(input);
+  if (!normalised.has_value())
+    return std::nullopt;
+
+  float first_axis = normalised->first;
+  float second_axis = normalised->second;
+  const float selected_gain =
+      first_axis > 0.0F ? input.gain_at_360 : input.gain_at_350;
+  if (input.suppress_axes) {
+    first_axis = 0.0F;
+    second_axis = 0.0F;
+  }
+
+  RetailMode2RotationInput result;
+  result.current = input.current;
+  result.target_at_3a4 = input.gain_at_364 * second_axis;
+  result.target_at_3a0 = selected_gain * first_axis;
+  result.target_at_3a8 = selected_gain * first_axis;
+  result.response = input.response_rate_at_368 * input.frame_delta;
+  result.wrap_at_3a4 = true;
   if (!std::isfinite(result.target_at_3a0) ||
       !std::isfinite(result.target_at_3a4) ||
       !std::isfinite(result.target_at_3a8) || !std::isfinite(result.response)) {

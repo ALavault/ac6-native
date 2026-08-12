@@ -92,6 +92,53 @@ def audit(root: Path = ROOT) -> None:
         "mode3 curve retail result",
     )
 
+    indirect = load_snapshot(evidence / "mode2-indirect-scalar-tail.ppc.json")
+    require(
+        indirect.get("identity")
+        == {
+            "implementation": "ppc-pcode",
+            "function": "0x8226283C",
+            "case": "camera-mode2-indirect-scalar-tail",
+        },
+        "indirect scalar-tail identity",
+    )
+    indirect_provenance = indirect["provenance"]
+    require(
+        indirect_provenance.get("function_name") == "<no function>"
+        and indirect_provenance.get("steps") == 38
+        and indirect_provenance.get("callee_entries") == 0,
+        "indirect scalar-tail execution census",
+    )
+    require(
+        indirect.get("calls")
+        == [
+            {
+                "target": "0x82262a10",
+                "ordinal": 0,
+                "note": "bounded scalar tail return, arg 0x00000000",
+            }
+        ],
+        "indirect scalar-tail bounded return",
+    )
+    require(
+        indirect.get("memory_writes")
+        == [
+            {
+                "address": "0xb6000000",
+                "size": 4,
+                "after_hex": "3f000000",
+                "after_hex_b": "3f000000",
+            },
+            {
+                "address": "0xb6000010",
+                "size": 4,
+                "after_hex": "bf000000",
+                "after_hex_b": "bf000000",
+            },
+        ],
+        "indirect scalar-tail retail result",
+    )
+
 
 def main() -> int:
     try:
@@ -99,7 +146,10 @@ def main() -> int:
     except (OSError, json.JSONDecodeError, KeyError, ValueError) as error:
         print(f"camera_selector_microexec=fail error={error}", file=sys.stderr)
         return 1
-    print("camera_selector_microexec=pass direct=217 curve=32 substituted=0")
+    print(
+        "camera_selector_microexec=pass direct=217 curve=32 "
+        "indirect_tail=38 substituted=0"
+    )
     return 0
 
 

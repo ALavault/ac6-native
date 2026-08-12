@@ -75,7 +75,7 @@
       "state": "open",
       "closure": "Scene selection, every TCAM variant, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested for all fifteen missions.",
       "blockers": [
-        "The direct mode-2 target path and the mode-3 cubic gain are ported; the manager+0x4A8 path, mode-1 heading correction/override, 0x82281198 query producer, and their remaining 0x82262A28 joins are still open.",
+        "The direct mode-2 target path, the mode-3 cubic gain, and the non-mode-3 scalar tail of the manager+0x4A8 path are ported; the upstream VMX128 direction producer, mode-1 heading correction/override, 0x82281198 query producer, and their remaining 0x82262A28 joins are still open.",
         "The live player locator producer and full fifteen-payload Scene/TCAM variant census remain open."
       ],
       "evidence": [
@@ -83,6 +83,11 @@
           "path": "reports/cycle-1524-the-direct-camera-target-is-executed.md",
           "size": 4765,
           "sha256": "f710292b66ffee88f126c248faa471c8a1e2278577fd1ca6172ba499c06ff3a5"
+        },
+        {
+          "path": "reports/cycle-1526-the-indirect-camera-tail-is-bounded.md",
+          "size": 4120,
+          "sha256": "1bc283f85cdd781fcd1ad6e0110500383556e9def74eaf1a25b8933679cb44a9"
         }
       ]
     },

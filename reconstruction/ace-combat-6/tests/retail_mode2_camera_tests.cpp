@@ -335,6 +335,88 @@ void check_direct_target_selector() {
         "non-finite direct selector state fails closed");
 }
 
+void check_indirect_scalar_tail() {
+  using namespace ac6::retail;
+
+  // The intermediate axes are the positive control micro-executed from
+  // canonical PAL 0x8226283C in mode2-indirect-scalar-tail.ppc.json.
+  RetailMode2IndirectTargetInput indirect;
+  indirect.first_axis = 2.0F;
+  indirect.second_axis = -1.0F;
+  indirect.gain_at_350 = 1.0F;
+  indirect.gain_at_360 = 4.0F;
+  indirect.gain_at_364 = 2.0F;
+  indirect.response_rate_at_368 = 0.25F;
+  indirect.frame_delta = 1.0F;
+  const auto axes = normalise_mode2_indirect_camera_axes(indirect);
+  check(axes.has_value(),
+        "the indirect scalar tail accepts finite retail fields");
+  if (axes.has_value()) {
+    check_bits(axes->first, 0x3F000000u,
+               "the positive axis matches the retail scalar-tail control");
+    check_bits(axes->second, 0xBF000000u,
+               "the negative axis matches the retail scalar-tail control");
+  }
+
+  const auto selected = select_mode2_indirect_camera_rotation(indirect);
+  check(selected.has_value(),
+        "the indirect axes compose with mode 2 selection");
+  if (selected.has_value()) {
+    check_bits(selected->target_at_3a0, 0x40000000u,
+               "the positive axis is rescaled by manager+0x360");
+    check_bits(selected->target_at_3a4, 0xBF800000u,
+               "the second axis is rescaled by manager+0x364");
+    check_bits(selected->target_at_3a8, 0x40000000u,
+               "the indirect mode-2 target is shared with +0x3A8");
+    check(selected->wrap_at_3a4,
+          "manager+0x4A8 requests the retail shortest-path wrap");
+    const auto stepped = step_mode2_camera_rotation(*selected);
+    check(stepped.has_value(),
+          "the indirect selector composes with the rotation core");
+    if (stepped.has_value()) {
+      check_bits(stepped->rotation_at_3a0, 0x3F000000u,
+                 "the indirect +0x3A0 transition keeps retail grouping");
+      check_bits(stepped->rotation_at_3a4, 0xBE800000u,
+                 "the indirect +0x3A4 transition keeps retail grouping");
+    }
+  }
+
+  RetailMode2IndirectTargetInput bounded = indirect;
+  bounded.first_axis = -3.0F;
+  bounded.second_axis = 5.0F;
+  const auto bounded_axes = normalise_mode2_indirect_camera_axes(bounded);
+  check(bounded_axes.has_value() && bounded_axes->first == -1.0F &&
+            bounded_axes->second == 1.0F,
+        "negative and second axes use +0x350/+0x364 and clamp symmetrically");
+
+  RetailMode2IndirectTargetInput zero_limits = indirect;
+  zero_limits.gain_at_350 = 0.0F;
+  zero_limits.gain_at_360 = 0.0F;
+  zero_limits.gain_at_364 = 0.0F;
+  const auto zero_axes = normalise_mode2_indirect_camera_axes(zero_limits);
+  check(zero_axes.has_value() && zero_axes->first == 0.0F &&
+            zero_axes->second == 0.0F,
+        "zero limits take the retail zero result without division");
+
+  RetailMode2IndirectTargetInput suppressed = indirect;
+  suppressed.suppress_axes = true;
+  const auto suppressed_result =
+      select_mode2_indirect_camera_rotation(suppressed);
+  check(suppressed_result.has_value() &&
+            suppressed_result->target_at_3a0 == 0.0F &&
+            suppressed_result->target_at_3a4 == 0.0F,
+        "the shared query can suppress indirect axes after gain selection");
+
+  RetailMode2IndirectTargetInput invalid = indirect;
+  invalid.gain_at_364 = -1.0F;
+  check(!normalise_mode2_indirect_camera_axes(invalid).has_value(),
+        "an unqualified negative scalar-tail limit fails closed");
+  invalid = indirect;
+  invalid.first_axis = std::numeric_limits<float>::infinity();
+  check(!select_mode2_indirect_camera_rotation(invalid).has_value(),
+        "non-finite indirect selector state fails closed");
+}
+
 void check_mode3_gain_curve() {
   using namespace ac6::retail;
   constexpr std::array<float, 4> coefficients{1.0F, 2.0F, 4.0F, 8.0F};
@@ -484,6 +566,7 @@ int main(int argc, char **argv) {
   check_dynamic_refusals();
   check_rotation_core();
   check_direct_target_selector();
+  check_indirect_scalar_tail();
   check_mode3_gain_curve();
   check_unit_transform();
   check_transposed_dot_products();

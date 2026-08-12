@@ -127,11 +127,46 @@ struct RetailMode2DirectTargetInput final {
   bool operator==(const RetailMode2DirectTargetInput &) const = default;
 };
 
+// Scalar inputs to the non-mode-3 tail of 0x82262508. The VMX128 block before
+// 0x8226283C constructs the two axes and remains an external producer; this
+// structure does not claim or reproduce that transform. The three limits are
+// the same manager fields later consumed by 0x82262A28.
+struct RetailMode2IndirectTargetInput final {
+  RetailMode2RotationState current{};
+  float first_axis{};  // f28 at 0x8226283C
+  float second_axis{}; // f31 at 0x8226283C
+  float gain_at_350{};
+  float gain_at_360{};
+  float gain_at_364{};
+  float response_rate_at_368{};
+  float frame_delta{};
+  bool suppress_axes{};
+  bool operator==(const RetailMode2IndirectTargetInput &) const = default;
+};
+
+struct RetailMode2IndirectAxes final {
+  float first{};
+  float second{};
+  bool operator==(const RetailMode2IndirectAxes &) const = default;
+};
+
 // 0x82262A4C..0x82262E64 for mode 2 with manager+0x4A8 == 0, excluding only
 // the externally-owned identity/query result represented by suppress_axes.
 // Produces the exact inputs consumed by step_mode2_camera_rotation().
 std::optional<RetailMode2RotationInput> select_mode2_direct_camera_rotation(
     const RetailMode2DirectTargetInput &input) noexcept;
+
+// 0x8226283C..0x82262930 with the mode-3 flag clear. Each finite axis is
+// symmetrically bounded, divided by its selected positive limit and clamped to
+// [-1,+1]. Zero limits produce zero exactly as the retail branches do.
+std::optional<RetailMode2IndirectAxes> normalise_mode2_indirect_camera_axes(
+    const RetailMode2IndirectTargetInput &input) noexcept;
+
+// Composes that qualified scalar tail with the mode-2 path of
+// 0x82262AE4..0x82262E64. It produces the exact inputs consumed by
+// step_mode2_camera_rotation(); the VMX128 axis producer stays outside.
+std::optional<RetailMode2RotationInput> select_mode2_indirect_camera_rotation(
+    const RetailMode2IndirectTargetInput &input) noexcept;
 
 // 0x8225D660, used by mode 3 when manager+0x39D is clear. The four values at
 // manager+0x350 form a cubic curve evaluated after clamping the parameter to

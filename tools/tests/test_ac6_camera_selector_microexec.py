@@ -28,6 +28,7 @@ class CameraSelectorMicroexecTests(unittest.TestCase):
             target.mkdir(parents=True)
             for name in (
                 "mode2-target-selector-direct.ppc.json",
+                "mode2-indirect-scalar-tail.ppc.json",
                 "mode3-gain-curve.ppc.json",
             ):
                 document = json.loads(
@@ -37,6 +38,27 @@ class CameraSelectorMicroexecTests(unittest.TestCase):
                 )
                 if name.startswith("mode2"):
                     document["provenance"]["asserted_semantics_enabled"] = True
+                (target / name).write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaises(CameraSelectorEvidenceError):
+                audit(root)
+
+    def test_indirect_scalar_result_mismatch_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "analysis/microexec/camera"
+            target.mkdir(parents=True)
+            for name in (
+                "mode2-target-selector-direct.ppc.json",
+                "mode2-indirect-scalar-tail.ppc.json",
+                "mode3-gain-curve.ppc.json",
+            ):
+                document = json.loads(
+                    (ROOT / "analysis/microexec/camera" / name).read_text(
+                        encoding="utf-8"
+                    )
+                )
+                if name == "mode2-indirect-scalar-tail.ppc.json":
+                    document["memory_writes"][0]["after_hex"] = "00000000"
                 (target / name).write_text(json.dumps(document), encoding="utf-8")
             with self.assertRaises(CameraSelectorEvidenceError):
                 audit(root)

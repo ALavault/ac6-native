@@ -1,0 +1,39 @@
+{
+  "schema": "ac6.function-snapshot.v1",
+  "identity": {
+    "implementation": "ppc-pcode",
+    "function": "0x8226283C",
+    "case": "camera-mode2-indirect-scalar-tail"
+  },
+  "provenance": {
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "function_name": "<no function>",
+    "regions": [
+      {"name": "root", "base": "0xb4000000", "kind": "bytes", "size": 4, "sha256": "62a270b29e926adc39f0daaa2f168b6efc02fe42ffc145f60aaf71fa2507aa86"},
+      {"name": "table", "base": "0xb4100000", "kind": "bytes", "size": 4, "sha256": "3a5176f689d6a7199d5826614323b9bced07676e7e473e382220b81f4b21ac78"},
+      {"name": "manager350", "base": "0xb5000350", "kind": "bytes", "size": 24, "sha256": "534a188fe54708cbb58cfa6b90c9183bb27fb42c8ef38a9f43d4f1f9945ffdab"},
+      {"name": "first_output", "base": "0xb6000000", "kind": "poison", "size": 4},
+      {"name": "second_output", "base": "0xb6000010", "kind": "poison", "size": 4},
+      {"name": "stack", "base": "0xc0000000", "kind": "zero", "size": 4096}
+    ],
+    "steps": 38,
+    "callee_entries": 0,
+    "asserted_semantics_enabled": false,
+    "hint_noops": {},
+    "register_file_bridge": false,
+    "alias_copies": 0,
+    "asserted_semantics": {},
+    "write_detection": "union of two poison passes, 0xCD and 0x00",
+    "written": "first_output 4 bytes, second_output 4 bytes"
+  },
+  "exit": {"kind": "return"},
+  "registers": {},
+  "calls": [
+    {"target": "0x82262a10", "ordinal": 0, "note": "bounded scalar tail return, arg 0x00000000"}
+  ],
+  "memory_writes": [
+    {"address": "0xb6000000", "size": 4, "after_hex": "3f000000", "after_hex_b": "3f000000"},
+    {"address": "0xb6000010", "size": 4, "after_hex": "bf000000", "after_hex_b": "bf000000"}
+  ],
+  "region_dumps": []
+}
