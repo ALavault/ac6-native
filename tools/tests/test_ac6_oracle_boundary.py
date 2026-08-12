@@ -107,6 +107,11 @@ class OracleManifestTests(unittest.TestCase):
                 record["sha256"],
                 record["path"],
             )
+            patch_record = PatchRecord(
+                record["order"], path, record["path"],
+                tuple(record.get("apply_args", [])),
+            )
+            patch_stack.record_paths(ROOT, patch_record)
         replay_patch = ROOT / stack["patches"][11]["path"]
         patch_text = replay_patch.read_text(encoding="utf-8")
         file_diffs = [
@@ -220,6 +225,24 @@ class OraclePatchStackTransactionTests(unittest.TestCase):
             record = PatchRecord(1, patch_path, patch_path.name, ())
 
             self.assertEqual(patch_stack.record_paths(root, record), {Path("a.txt")})
+
+    def test_generated_output_patch_paths_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root, _ = self.repository(temporary)
+            for relative in ("generated/recomp.cpp", "src/ppc_recomp.cpp"):
+                with self.subTest(relative=relative):
+                    patch_path = Path(temporary) / (relative.replace("/", "-") + ".patch")
+                    patch_path.write_text(
+                        f"diff --git a/{relative} b/{relative}\n"
+                        f"--- /dev/null\n+++ b/{relative}\n"
+                        "@@ -0,0 +1 @@\n+forbidden\n",
+                        encoding="utf-8",
+                    )
+                    record = PatchRecord(1, patch_path, patch_path.name, ())
+                    with self.assertRaisesRegex(
+                        StackError, "generated output path forbidden"
+                    ):
+                        patch_stack.record_paths(root, record)
 
     def test_overlay_qualification_is_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

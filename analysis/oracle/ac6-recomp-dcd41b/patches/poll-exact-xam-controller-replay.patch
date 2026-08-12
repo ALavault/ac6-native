@@ -1,0 +1,1647 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c4cb4423..94ef9d2b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,6 +18,8 @@ endif()
+ # Sources
+ set(AC6RECOMP_SOURCES
+     src/main.cpp
++    src/ac6_controller_input_replay.cpp
++    src/ac6_controller_input_replay_runtime.cpp
+     src/ac6_decimal_parse.cpp
+     src/ac6_oracle_probe.cpp
+     src/ac6_oracle_route_probe.cpp
+@@ -67,4 +69,16 @@ if(AC6_BUILD_TESTING)
+     )
+     target_include_directories(ac6_trace_input_policy_test PRIVATE src)
+     add_test(NAME ac6_trace_input_policy_test COMMAND ac6_trace_input_policy_test)
++    add_executable(ac6_controller_input_replay_test
++        tests/ac6_controller_input_replay_test.cpp
++        src/ac6_controller_input_replay.cpp
++    )
++    target_include_directories(ac6_controller_input_replay_test PRIVATE
++        src
++        thirdparty/rexglue-sdk
++        thirdparty/rexglue-sdk/include
++    )
++    target_link_libraries(ac6_controller_input_replay_test PRIVATE rex::core)
++    add_test(NAME ac6_controller_input_replay_test
++             COMMAND ac6_controller_input_replay_test)
+ endif()
+diff --git a/src/ac6_controller_input_replay.cpp b/src/ac6_controller_input_replay.cpp
+new file mode 100644
+index 00000000..7849488f
+--- /dev/null
++++ b/src/ac6_controller_input_replay.cpp
+@@ -0,0 +1,762 @@
++#include "ac6_controller_input_replay.h"
++
++#include <algorithm>
++#include <array>
++#include <limits>
++#include <regex>
++#include <set>
++#include <sstream>
++#include <utility>
++
++#include <rex/crypto/sha256.h>
++#if defined(__clang__)
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wdeprecated-literal-operator"
++#endif
++#include "../thirdparty/rexglue-sdk/thirdparty/tomlplusplus/vendor/json.hpp"
++#if defined(__clang__)
++#pragma clang diagnostic pop
++#endif
++
++namespace ac6::oracle::controller_replay {
++namespace {
++
++using Json = nlohmann::json;
++
++constexpr std::size_t kMaxLineBytes = 1024u * 1024u;
++constexpr uint64_t kMaxMarkers = 500'000u;
++constexpr std::string_view kSchema = "ac6.controller-input-replay.v1";
++constexpr std::string_view kOracleCommit =
++    "dcd41b7457fcac8242f8ef40de83d1719390d5af";
++constexpr std::string_view kPalXexSha256 =
++    "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde";
++
++const std::regex kSha256{"[0-9a-f]{64}"};
++const std::regex kHex32{"[0-9A-F]{8}"};
++const std::regex kHex64{"[0-9a-f]{16}"};
++const std::regex kXexVersion{
++    "v(?:0|[1-9][0-9]{0,9})(?:\\.(?:0|[1-9][0-9]{0,9})){3}"};
++
++bool SetError(std::string message, std::string& error) {
++  error = std::move(message);
++  return false;
++}
++
++bool ExactKeys(const Json& value,
++               std::initializer_list<std::string_view> expected) {
++  if (!value.is_object() || value.size() != expected.size()) return false;
++  for (std::string_view key : expected) {
++    if (!value.contains(std::string(key))) return false;
++  }
++  return true;
++}
++
++bool Unsigned(const Json& value, uint64_t maximum, uint64_t& output) {
++  if (value.is_number_unsigned()) {
++    output = value.get<uint64_t>();
++  } else if (value.is_number_integer()) {
++    const int64_t signed_value = value.get<int64_t>();
++    if (signed_value < 0) return false;
++    output = static_cast<uint64_t>(signed_value);
++  } else {
++    return false;
++  }
++  return output <= maximum;
++}
++
++bool Signed(const Json& value, int64_t minimum, int64_t maximum,
++            int64_t& output) {
++  if (value.is_number_unsigned()) {
++    const uint64_t unsigned_value = value.get<uint64_t>();
++    if (unsigned_value > static_cast<uint64_t>(maximum)) return false;
++    output = static_cast<int64_t>(unsigned_value);
++  } else if (value.is_number_integer()) {
++    output = value.get<int64_t>();
++  } else {
++    return false;
++  }
++  return output >= minimum && output <= maximum;
++}
++
++bool StringMatches(const Json& value, const std::regex& expression) {
++  return value.is_string() &&
++         std::regex_match(value.get_ref<const std::string&>(), expression);
++}
++
++std::string CanonicalLine(const Json& value) {
++  return value.dump(-1, ' ', true, Json::error_handler_t::strict) + '\n';
++}
++
++bool ParseCanonicalLine(std::string_view line, Json& value, std::string& error,
++                        std::string_view where) {
++  if (line.empty() || line.size() > kMaxLineBytes || line.back() != '\n' ||
++      line.find('\r') != std::string_view::npos) {
++    return SetError(std::string(where) + " framing", error);
++  }
++  value = Json::parse(line.begin(), line.end() - 1, nullptr, false);
++  if (value.is_discarded() || !value.is_object()) {
++    return SetError(std::string(where) + " JSON", error);
++  }
++  if (CanonicalLine(value) != line) {
++    return SetError(std::string(where) + " canonical encoding", error);
++  }
++  return true;
++}
++
++bool ValidateState(const Json& state, ControllerState* output,
++                   std::string& error, std::string_view where) {
++  if (!ExactKeys(state, {"packet_number", "buttons", "left_trigger",
++                         "right_trigger", "thumb_lx", "thumb_ly",
++                         "thumb_rx", "thumb_ry"})) {
++    return SetError(std::string(where) + " shape", error);
++  }
++  uint64_t packet = 0;
++  uint64_t buttons = 0;
++  uint64_t left_trigger = 0;
++  uint64_t right_trigger = 0;
++  int64_t lx = 0;
++  int64_t ly = 0;
++  int64_t rx = 0;
++  int64_t ry = 0;
++  if (!Unsigned(state["packet_number"], UINT32_MAX, packet) ||
++      !Unsigned(state["buttons"], UINT16_MAX, buttons) ||
++      !Unsigned(state["left_trigger"], UINT8_MAX, left_trigger) ||
++      !Unsigned(state["right_trigger"], UINT8_MAX, right_trigger) ||
++      !Signed(state["thumb_lx"], INT16_MIN, INT16_MAX, lx) ||
++      !Signed(state["thumb_ly"], INT16_MIN, INT16_MAX, ly) ||
++      !Signed(state["thumb_rx"], INT16_MIN, INT16_MAX, rx) ||
++      !Signed(state["thumb_ry"], INT16_MIN, INT16_MAX, ry)) {
++    return SetError(std::string(where) + " range", error);
++  }
++  if (output) {
++    *output = {
++        static_cast<uint32_t>(packet),
++        static_cast<uint16_t>(buttons),
++        static_cast<uint8_t>(left_trigger),
++        static_cast<uint8_t>(right_trigger),
++        static_cast<int16_t>(lx),
++        static_cast<int16_t>(ly),
++        static_cast<int16_t>(rx),
++        static_cast<int16_t>(ry),
++    };
++  }
++  return true;
++}
++
++Json StateJson(const ControllerState& state) {
++  return Json{{"packet_number", state.packet_number},
++              {"buttons", state.buttons},
++              {"left_trigger", state.left_trigger},
++              {"right_trigger", state.right_trigger},
++              {"thumb_lx", state.thumb_lx},
++              {"thumb_ly", state.thumb_ly},
++              {"thumb_rx", state.thumb_rx},
++              {"thumb_ry", state.thumb_ry}};
++}
++
++bool ValidateHeader(const Json& header, std::string& error) {
++  if (!ExactKeys(header, {"kind", "schema", "producer", "target",
++                          "session", "segment", "sync"}) ||
++      header["kind"] != "header" || header["schema"] != kSchema) {
++    return SetError("header identity or shape", error);
++  }
++
++  const Json& producer = header["producer"];
++  if (!ExactKeys(producer, {"lane", "implementation_commit",
++                            "binary_sha256", "platform"}) ||
++      producer["lane"] != "ac6-recomp" ||
++      producer["implementation_commit"] != kOracleCommit ||
++      !StringMatches(producer["binary_sha256"], kSha256) ||
++      !producer["platform"].is_string() ||
++      producer["platform"].get_ref<const std::string&>().empty() ||
++      producer["platform"].get_ref<const std::string&>().size() > 128u ||
++      producer["platform"].get_ref<const std::string&>().find('\0') !=
++          std::string::npos) {
++    return SetError("producer identity", error);
++  }
++
++  const Json& target = header["target"];
++  if (!ExactKeys(target, {"title_id", "media_id", "module", "xex_sha256",
++                          "xex_version", "base_version", "module_xxh3",
++                          "marker_address", "marker_code_sha256"}) ||
++      target["title_id"] != "4E4D07D1" || target["media_id"] != "0379EFB3" ||
++      target["module"] != "default.xex" ||
++      target["xex_sha256"] != kPalXexSha256 ||
++      !StringMatches(target["xex_version"], kXexVersion) ||
++      !StringMatches(target["base_version"], kXexVersion) ||
++      !StringMatches(target["module_xxh3"], kHex64) ||
++      target["marker_address"] != "821CA908" ||
++      !StringMatches(target["marker_code_sha256"], kSha256)) {
++    return SetError("PAL target identity", error);
++  }
++
++  const Json& session = header["session"];
++  if (!ExactKeys(session, {"content_manifest_sha256", "runtime_config_sha256",
++                           "behavior_config_sha256",
++                           "profile_save_manifest_sha256", "route_sha256",
++                           "segment_origin"})) {
++    return SetError("session shape", error);
++  }
++  for (const char* key : {"content_manifest_sha256", "runtime_config_sha256",
++                          "behavior_config_sha256",
++                          "profile_save_manifest_sha256", "route_sha256"}) {
++    if (!StringMatches(session[key], kSha256)) {
++      return SetError(std::string("session identity: ") + key, error);
++    }
++  }
++  if (session["segment_origin"] != "clean_boot" &&
++      session["segment_origin"] != "sealed_retail_save") {
++    return SetError("session segment_origin", error);
++  }
++
++  const Json& segment = header["segment"];
++  if (!ExactKeys(segment, {"kind", "parent_replay_sha256",
++                           "parent_payload_sha256", "parent_start_marker",
++                           "parent_marker_count"}) ||
++      segment["kind"] != "full_recording" ||
++      !segment["parent_replay_sha256"].is_null() ||
++      !segment["parent_payload_sha256"].is_null() ||
++      !segment["parent_start_marker"].is_null() ||
++      !segment["parent_marker_count"].is_null()) {
++    return SetError("full recording lineage", error);
++  }
++
++  const Json& sync = header["sync"];
++  const Json portable_guards =
++      Json::array({"marker_index", "poll_in_marker", "caller_lr",
++                   "user_index", "flags", "state_ptr_null"});
++  const Json lane_local = Json::array({"thread_id", "state_ptr"});
++  const Json telemetry = Json::array({"guest_tick", "present_index"});
++  if (!ExactKeys(sync, {"primary", "portable_guards",
++                        "lane_local_diagnostics", "telemetry", "marker_role",
++                        "marker_phase", "cadence"}) ||
++      sync["primary"] != "poll_index" ||
++      sync["portable_guards"] != portable_guards ||
++      sync["lane_local_diagnostics"] != lane_local ||
++      sync["telemetry"] != telemetry ||
++      sync["marker_role"] != "ac6_frame_input_stage" ||
++      sync["marker_phase"] != "before_input") {
++    return SetError("sync contract", error);
++  }
++  const Json& cadence = sync["cadence"];
++  uint64_t native_hz = 0;
++  if (!ExactKeys(cadence, {"status", "source_hz", "native_hz",
++                           "resampling", "projection"}) ||
++      cadence["status"] != "unqualified" ||
++      !cadence["source_hz"].is_null() ||
++      !Unsigned(cadence["native_hz"], 1000, native_hz) || native_hz != 60 ||
++      cadence["resampling"] != "refuse" ||
++      cadence["projection"] != "unique_successful_user0_poll") {
++    return SetError("unqualified cadence contract", error);
++  }
++  return true;
++}
++
++struct ValidationSummary {
++  uint64_t poll_count{0};
++  uint64_t marker_count{0};
++  uint64_t present_count{0};
++};
++
++bool SplitLines(std::string_view data, std::vector<std::string_view>& lines,
++                std::string& error) {
++  if (data.empty() || data.size() > kMaxReplayBytes || data.back() != '\n' ||
++      data.find('\r') != std::string_view::npos) {
++    return SetError("file framing or byte bound", error);
++  }
++  std::size_t start = 0;
++  while (start < data.size()) {
++    const std::size_t end = data.find('\n', start);
++    if (end == std::string_view::npos || end - start + 1 > kMaxLineBytes) {
++      return SetError("file line bound", error);
++    }
++    lines.emplace_back(data.substr(start, end - start + 1));
++    if (lines.size() > kMaxEvents + 2u) {
++      return SetError("file record bound", error);
++    }
++    start = end + 1;
++  }
++  return lines.size() >= 3u;
++}
++
++bool ValidateEvents(const std::vector<Json>& events, ValidationSummary& summary,
++                    std::string& error) {
++  if (events.empty() || events.size() > kMaxEvents) {
++    return SetError("empty replay or event count bound", error);
++  }
++  uint64_t expected_poll = 0;
++  uint64_t expected_marker = 1;
++  uint64_t current_marker = 0;
++  uint64_t expected_poll_in_marker = 0;
++  uint64_t last_present = 0;
++  uint64_t last_guest_tick = 0;
++
++  for (std::size_t sequence = 0; sequence < events.size(); ++sequence) {
++    const Json& event = events[sequence];
++    uint64_t event_sequence = 0;
++    if (!event.contains("kind") || !event["kind"].is_string()) {
++      return SetError("event kind", error);
++    }
++    const std::string kind = event["kind"].get<std::string>();
++    if (kind == "marker") {
++      uint64_t marker_index = 0;
++      uint64_t poll_index = 0;
++      if (!ExactKeys(event, {"kind", "sequence", "marker_index",
++                             "poll_index", "guest_tick", "present_index"}) ||
++          !Unsigned(event["sequence"], kMaxEvents, event_sequence) ||
++          event_sequence != sequence ||
++          !Unsigned(event["marker_index"], kMaxMarkers, marker_index) ||
++          marker_index != expected_marker ||
++          !Unsigned(event["poll_index"], kMaxEvents, poll_index) ||
++          poll_index != expected_poll ||
++          (summary.marker_count != 0 && expected_poll_in_marker == 0)) {
++        return SetError("marker order", error);
++      }
++      ++summary.marker_count;
++      current_marker = expected_marker++;
++      expected_poll_in_marker = 0;
++    } else if (kind == "poll") {
++      uint64_t poll_index = 0;
++      uint64_t marker_index = 0;
++      uint64_t poll_in_marker = 0;
++      uint64_t thread_id = 0;
++      uint64_t caller_lr = 0;
++      uint64_t user_index = 0;
++      uint64_t flags = 0;
++      uint64_t state_ptr = 0;
++      uint64_t result = 0;
++      if (!ExactKeys(event, {"kind", "sequence", "poll_index",
++                             "marker_index", "poll_in_marker", "guest_tick",
++                             "present_index", "thread_id", "caller_lr",
++                             "user_index", "flags", "state_ptr", "result",
++                             "state"}) ||
++          !Unsigned(event["sequence"], kMaxEvents, event_sequence) ||
++          event_sequence != sequence ||
++          !Unsigned(event["poll_index"], kMaxEvents, poll_index) ||
++          poll_index != expected_poll ||
++          !Unsigned(event["marker_index"], kMaxMarkers, marker_index) ||
++          marker_index != current_marker ||
++          !Unsigned(event["poll_in_marker"], kMaxEvents, poll_in_marker) ||
++          poll_in_marker != expected_poll_in_marker ||
++          !Unsigned(event["thread_id"], UINT32_MAX, thread_id) ||
++          !Unsigned(event["caller_lr"], UINT32_MAX, caller_lr) ||
++          !Unsigned(event["user_index"], UINT32_MAX, user_index) ||
++          !Unsigned(event["flags"], UINT32_MAX, flags) ||
++          !Unsigned(event["state_ptr"], UINT32_MAX, state_ptr) ||
++          !Unsigned(event["result"], UINT32_MAX, result)) {
++        return SetError("poll order, shape or range", error);
++      }
++      if (result == 0 && state_ptr != 0) {
++        if (!ValidateState(event["state"], nullptr, error, "poll state")) {
++          return false;
++        }
++      } else if (!event["state"].is_null()) {
++        return SetError("poll state/result/pointer", error);
++      }
++      ++expected_poll;
++      ++expected_poll_in_marker;
++    } else {
++      return SetError("event kind", error);
++    }
++
++    uint64_t guest_tick = 0;
++    uint64_t present_index = 0;
++    if (!Unsigned(event["guest_tick"], UINT64_MAX, guest_tick) ||
++        !Unsigned(event["present_index"], UINT64_MAX, present_index) ||
++        guest_tick < last_guest_tick || present_index < last_present) {
++      return SetError("event telemetry order", error);
++    }
++    last_guest_tick = guest_tick;
++    last_present = present_index;
++  }
++
++  if (expected_poll == 0 || summary.marker_count == 0 ||
++      expected_poll_in_marker == 0) {
++    return SetError("replay terminal shape", error);
++  }
++  summary.poll_count = expected_poll;
++  summary.present_count = last_present;
++  return true;
++}
++
++bool ParseReplay(std::string_view data, const Json* expected_header,
++                 std::vector<std::string>* event_lines, Json* parsed_header,
++                 std::string& error) {
++  std::vector<std::string_view> lines;
++  if (!SplitLines(data, lines, error)) return false;
++
++  Json header;
++  if (!ParseCanonicalLine(lines.front(), header, error, "header") ||
++      !ValidateHeader(header, error)) {
++    return false;
++  }
++  if (expected_header && header != *expected_header) {
++    return SetError("runtime header mismatch", error);
++  }
++
++  std::vector<Json> events;
++  events.reserve(lines.size() - 2u);
++  for (std::size_t index = 1; index + 1 < lines.size(); ++index) {
++    Json event;
++    std::ostringstream where;
++    where << "event line " << index + 1u;
++    if (!ParseCanonicalLine(lines[index], event, error, where.str())) return false;
++    events.emplace_back(std::move(event));
++  }
++  ValidationSummary summary;
++  if (!ValidateEvents(events, summary, error)) return false;
++
++  Json footer;
++  if (!ParseCanonicalLine(lines.back(), footer, error, "footer") ||
++      !ExactKeys(footer, {"kind", "event_count", "poll_count",
++                          "marker_count", "present_count", "payload_sha256"}) ||
++      footer["kind"] != "footer") {
++    return SetError("footer identity or shape", error);
++  }
++  uint64_t event_count = 0;
++  uint64_t poll_count = 0;
++  uint64_t marker_count = 0;
++  uint64_t present_count = 0;
++  if (!Unsigned(footer["event_count"], kMaxEvents, event_count) ||
++      event_count != events.size() ||
++      !Unsigned(footer["poll_count"], kMaxEvents, poll_count) ||
++      poll_count != summary.poll_count ||
++      !Unsigned(footer["marker_count"], kMaxMarkers, marker_count) ||
++      marker_count != summary.marker_count ||
++      !Unsigned(footer["present_count"], UINT64_MAX, present_count) ||
++      present_count < summary.present_count ||
++      !StringMatches(footer["payload_sha256"], kSha256)) {
++    return SetError("footer counts or range", error);
++  }
++
++  Json footer_payload{{"kind", "footer"},
++                      {"event_count", event_count},
++                      {"poll_count", poll_count},
++                      {"marker_count", marker_count},
++                      {"present_count", present_count}};
++  const std::size_t footer_offset = data.size() - lines.back().size();
++  std::string digest_input(data.substr(0, footer_offset));
++  digest_input += CanonicalLine(footer_payload);
++  if (footer["payload_sha256"].get<std::string>() !=
++      rex::crypto::sha256(digest_input)) {
++    return SetError("footer payload_sha256", error);
++  }
++
++  if (event_lines) {
++    event_lines->clear();
++    event_lines->reserve(lines.size() - 2u);
++    for (std::size_t index = 1; index + 1 < lines.size(); ++index) {
++      event_lines->emplace_back(lines[index]);
++    }
++  }
++  if (parsed_header) *parsed_header = std::move(header);
++  return true;
++}
++
++bool ParseHeader(std::string_view line, Json& header, std::string& canonical,
++                 std::string& error) {
++  if (!ParseCanonicalLine(line, header, error, "expected header") ||
++      !ValidateHeader(header, error)) {
++    return false;
++  }
++  canonical.assign(line);
++  return true;
++}
++
++bool ReadEvent(const std::vector<std::string>& lines, std::size_t cursor,
++               Json& event, std::string& error) {
++  if (cursor >= lines.size()) return SetError("replay EOF", error);
++  return ParseCanonicalLine(lines[cursor], event, error, "replay event");
++}
++
++std::string Hex32(uint32_t value) {
++  std::ostringstream stream;
++  stream << "0x" << std::hex << std::uppercase << value;
++  return stream.str();
++}
++
++}  // namespace
++
++void Service::Reset() {
++  mode_ = Mode::kDisabled;
++  failed_ = false;
++  failure_.clear();
++  header_line_.clear();
++  body_.clear();
++  replay_bytes_.clear();
++  replay_event_lines_.clear();
++  replay_cursor_ = 0;
++  sequence_ = 0;
++  poll_index_ = 0;
++  marker_index_ = 0;
++  poll_in_marker_ = 0;
++  last_guest_tick_ = 0;
++  last_present_index_ = 0;
++}
++
++bool Service::Fail(std::string message, std::string& error) {
++  if (!failed_) failure_ = std::move(message);
++  failed_ = true;
++  error = failure_;
++  return false;
++}
++
++bool Service::BeginRecord(std::string_view canonical_header,
++                          std::string& error) {
++  Reset();
++  Json header;
++  if (!ParseHeader(canonical_header, header, header_line_, error)) {
++    return Fail(error, error);
++  }
++  if (header_line_.size() > kMaxReplayBytes) {
++    return Fail("header byte bound", error);
++  }
++  mode_ = Mode::kRecord;
++  body_ = header_line_;
++  return true;
++}
++
++bool Service::BeginReplay(std::string_view replay,
++                          std::string_view canonical_expected_header,
++                          std::string& error) {
++  Reset();
++  Json expected;
++  if (!ParseHeader(canonical_expected_header, expected, header_line_, error)) {
++    return Fail(error, error);
++  }
++  Json parsed;
++  if (!ParseReplay(replay, &expected, &replay_event_lines_, &parsed, error)) {
++    return Fail(error, error);
++  }
++  replay_bytes_.assign(replay);
++  mode_ = Mode::kReplay;
++  return true;
++}
++
++bool Service::MarkerBefore(uint64_t guest_tick, uint64_t present_index,
++                           std::string& error) {
++  if (mode_ == Mode::kDisabled) return true;
++  if (failed_) return SetError(failure_, error);
++
++  if (mode_ == Mode::kReplay) {
++    Json event;
++    if (!ReadEvent(replay_event_lines_, replay_cursor_, event, error)) {
++      return Fail(error, error);
++    }
++    uint64_t event_marker = 0;
++    uint64_t event_poll = 0;
++    if (event["kind"] != "marker" ||
++        !Unsigned(event["marker_index"], kMaxMarkers, event_marker) ||
++        event_marker != marker_index_ + 1u ||
++        !Unsigned(event["poll_index"], kMaxEvents, event_poll) ||
++        event_poll != poll_index_) {
++      std::ostringstream message;
++      message << "divergence sequence=" << sequence_
++              << " expected=marker marker_index=" << marker_index_ + 1u
++              << " poll_index=" << poll_index_;
++      return Fail(message.str(), error);
++    }
++    ++replay_cursor_;
++    ++sequence_;
++    ++marker_index_;
++    poll_in_marker_ = 0;
++    return true;
++  }
++
++  if (guest_tick < last_guest_tick_ || present_index < last_present_index_) {
++    return Fail("record marker telemetry order", error);
++  }
++  if (marker_index_ != 0 && poll_in_marker_ == 0) {
++    return Fail("record previous marker has no polls", error);
++  }
++  if (sequence_ >= kMaxEvents || marker_index_ >= kMaxMarkers) {
++    return Fail("record marker/event bound", error);
++  }
++  ++marker_index_;
++  poll_in_marker_ = 0;
++  Json event{{"kind", "marker"},
++             {"sequence", sequence_},
++             {"marker_index", marker_index_},
++             {"poll_index", poll_index_},
++             {"guest_tick", guest_tick},
++             {"present_index", present_index}};
++  const std::string line = CanonicalLine(event);
++  if (line.size() > kMaxReplayBytes - body_.size()) {
++    return Fail("record byte bound", error);
++  }
++  body_ += line;
++  ++sequence_;
++  last_guest_tick_ = guest_tick;
++  last_present_index_ = present_index;
++  return true;
++}
++
++bool Service::RecordPoll(const PollObservation& observation,
++                         std::string& error) {
++  if (mode_ != Mode::kRecord) {
++    return Fail("record poll outside record mode", error);
++  }
++  if (failed_) return SetError(failure_, error);
++  if (sequence_ >= kMaxEvents || poll_index_ >= kMaxEvents) {
++    return Fail("record poll/event bound", error);
++  }
++  if (observation.guest_tick < last_guest_tick_ ||
++      observation.present_index < last_present_index_) {
++    return Fail("record poll telemetry order", error);
++  }
++  if ((observation.result == 0 && observation.state_ptr != 0) !=
++      observation.state.has_value()) {
++    return Fail("record poll state/result/pointer", error);
++  }
++
++  Json event{{"kind", "poll"},
++             {"sequence", sequence_},
++             {"poll_index", poll_index_},
++             {"marker_index", marker_index_},
++             {"poll_in_marker", poll_in_marker_},
++             {"guest_tick", observation.guest_tick},
++             {"present_index", observation.present_index},
++             {"thread_id", observation.thread_id},
++             {"caller_lr", observation.caller_lr},
++             {"user_index", observation.user_index},
++             {"flags", observation.flags},
++             {"state_ptr", observation.state_ptr},
++             {"result", observation.result},
++             {"state", observation.state ? StateJson(*observation.state)
++                                           : Json(nullptr)}};
++  const std::string line = CanonicalLine(event);
++  if (line.size() > kMaxReplayBytes - body_.size()) {
++    return Fail("record byte bound", error);
++  }
++  body_ += line;
++  ++sequence_;
++  ++poll_index_;
++  ++poll_in_marker_;
++  last_guest_tick_ = observation.guest_tick;
++  last_present_index_ = observation.present_index;
++  return true;
++}
++
++bool Service::ReplayNextPoll(const PollGuards& guards, ReplayPoll& output,
++                             std::string& error) {
++  if (mode_ != Mode::kReplay) {
++    return Fail("replay poll outside replay mode", error);
++  }
++  if (failed_) return SetError(failure_, error);
++  Json event;
++  if (!ReadEvent(replay_event_lines_, replay_cursor_, event, error)) {
++    return Fail(error, error);
++  }
++
++  uint64_t event_poll = 0;
++  uint64_t event_marker = 0;
++  uint64_t event_poll_in_marker = 0;
++  uint64_t caller_lr = 0;
++  uint64_t user_index = 0;
++  uint64_t flags = 0;
++  uint64_t state_ptr = 0;
++  uint64_t result = 0;
++  if (event["kind"] != "poll" ||
++      !Unsigned(event["poll_index"], kMaxEvents, event_poll) ||
++      event_poll != poll_index_ ||
++      !Unsigned(event["marker_index"], kMaxMarkers, event_marker) ||
++      event_marker != marker_index_ ||
++      !Unsigned(event["poll_in_marker"], kMaxEvents, event_poll_in_marker) ||
++      event_poll_in_marker != poll_in_marker_ ||
++      !Unsigned(event["caller_lr"], UINT32_MAX, caller_lr) ||
++      !Unsigned(event["user_index"], UINT32_MAX, user_index) ||
++      !Unsigned(event["flags"], UINT32_MAX, flags) ||
++      !Unsigned(event["state_ptr"], UINT32_MAX, state_ptr) ||
++      !Unsigned(event["result"], UINT32_MAX, result)) {
++    std::ostringstream message;
++    message << "divergence poll_index=" << poll_index_
++            << " expected=poll marker_index=" << marker_index_
++            << " poll_in_marker=" << poll_in_marker_;
++    return Fail(message.str(), error);
++  }
++
++  auto mismatch = [&](std::string_view guard, std::string expected,
++                      std::string actual) {
++    std::ostringstream message;
++    message << "divergence poll_index=" << poll_index_ << " guard=" << guard
++            << " expected=" << expected << " actual=" << actual;
++    return Fail(message.str(), error);
++  };
++  if (caller_lr != guards.caller_lr) {
++    return mismatch("caller_lr", Hex32(static_cast<uint32_t>(caller_lr)),
++                    Hex32(guards.caller_lr));
++  }
++  if (user_index != guards.user_index) {
++    return mismatch("user_index", std::to_string(user_index),
++                    std::to_string(guards.user_index));
++  }
++  if (flags != guards.flags) {
++    return mismatch("flags", Hex32(static_cast<uint32_t>(flags)),
++                    Hex32(guards.flags));
++  }
++  const bool recorded_null = state_ptr == 0;
++  if (recorded_null != guards.state_ptr_null) {
++    return mismatch("state_ptr_null", recorded_null ? "true" : "false",
++                    guards.state_ptr_null ? "true" : "false");
++  }
++
++  output = {};
++  output.result = static_cast<uint32_t>(result);
++  if (result == 0 && state_ptr != 0) {
++    ControllerState state;
++    if (!ValidateState(event["state"], &state, error, "replay state")) {
++      return Fail(error, error);
++    }
++    output.state = state;
++  }
++  ++replay_cursor_;
++  ++sequence_;
++  ++poll_index_;
++  ++poll_in_marker_;
++  return true;
++}
++
++bool Service::Finalize(std::string& sealed_recording, std::string& error) {
++  sealed_recording.clear();
++  if (failed_) return SetError(failure_, error);
++  if (mode_ == Mode::kDisabled) return true;
++  if (mode_ == Mode::kReplay) {
++    if (replay_cursor_ != replay_event_lines_.size()) {
++      std::ostringstream message;
++      message << "replay has " << replay_event_lines_.size() - replay_cursor_
++              << " unconsumed events at sequence=" << sequence_;
++      return Fail(message.str(), error);
++    }
++    mode_ = Mode::kDisabled;
++    return true;
++  }
++
++  if (sequence_ == 0 || poll_index_ == 0 || marker_index_ == 0 ||
++      poll_in_marker_ == 0) {
++    return Fail("recording has no complete marker/poll window", error);
++  }
++  Json footer_payload{{"kind", "footer"},
++                      {"event_count", sequence_},
++                      {"poll_count", poll_index_},
++                      {"marker_count", marker_index_},
++                      {"present_count", last_present_index_}};
++  const std::string digest =
++      rex::crypto::sha256(body_ + CanonicalLine(footer_payload));
++  Json footer = footer_payload;
++  footer["payload_sha256"] = digest;
++  const std::string footer_line = CanonicalLine(footer);
++  if (footer_line.size() > kMaxReplayBytes - body_.size()) {
++    return Fail("sealed replay byte bound", error);
++  }
++  sealed_recording = body_ + footer_line;
++  std::string validation_error;
++  if (!ParseReplay(sealed_recording, nullptr, nullptr, nullptr,
++                   validation_error)) {
++    sealed_recording.clear();
++    return Fail("self-validation failed: " + validation_error, error);
++  }
++  mode_ = Mode::kDisabled;
++  return true;
++}
++
++}  // namespace ac6::oracle::controller_replay
+diff --git a/src/ac6_controller_input_replay.h b/src/ac6_controller_input_replay.h
+new file mode 100644
+index 00000000..30838235
+--- /dev/null
++++ b/src/ac6_controller_input_replay.h
+@@ -0,0 +1,99 @@
++#pragma once
++
++#include <cstddef>
++#include <cstdint>
++#include <optional>
++#include <string>
++#include <string_view>
++#include <vector>
++
++namespace ac6::oracle::controller_replay {
++
++constexpr std::size_t kMaxReplayBytes = 128u * 1024u * 1024u;
++constexpr std::size_t kMaxEvents = 1'000'000u;
++
++struct ControllerState {
++  uint32_t packet_number{0};
++  uint16_t buttons{0};
++  uint8_t left_trigger{0};
++  uint8_t right_trigger{0};
++  int16_t thumb_lx{0};
++  int16_t thumb_ly{0};
++  int16_t thumb_rx{0};
++  int16_t thumb_ry{0};
++
++  bool operator==(const ControllerState&) const = default;
++};
++
++struct PollObservation {
++  uint64_t guest_tick{0};
++  uint64_t present_index{0};
++  uint32_t thread_id{0};
++  uint32_t caller_lr{0};
++  uint32_t user_index{0};
++  uint32_t flags{0};
++  uint32_t state_ptr{0};
++  uint32_t result{0};
++  std::optional<ControllerState> state;
++};
++
++struct PollGuards {
++  uint32_t caller_lr{0};
++  uint32_t user_index{0};
++  uint32_t flags{0};
++  bool state_ptr_null{true};
++};
++
++struct ReplayPoll {
++  uint32_t result{0};
++  std::optional<ControllerState> state;
++};
++
++enum class Mode {
++  kDisabled,
++  kRecord,
++  kReplay,
++};
++
++// Poll-exact service for ac6.controller-input-replay.v1. The runtime owns file
++// IO; this class owns bounded parsing, canonical sealing and event ordering.
++class Service {
++ public:
++  bool BeginRecord(std::string_view canonical_header, std::string& error);
++  bool BeginReplay(std::string_view replay, std::string_view canonical_expected_header,
++                   std::string& error);
++
++  bool MarkerBefore(uint64_t guest_tick, uint64_t present_index, std::string& error);
++  bool RecordPoll(const PollObservation& observation, std::string& error);
++  bool ReplayNextPoll(const PollGuards& guards, ReplayPoll& output, std::string& error);
++
++  // Record mode returns the sealed JSONL. Replay mode requires exact EOF and
++  // returns an empty payload. Disabled mode is a no-op.
++  bool Finalize(std::string& sealed_recording, std::string& error);
++
++  [[nodiscard]] Mode mode() const { return mode_; }
++  [[nodiscard]] bool failed() const { return failed_; }
++  [[nodiscard]] uint64_t poll_index() const { return poll_index_; }
++  [[nodiscard]] uint64_t marker_index() const { return marker_index_; }
++
++ private:
++  bool Fail(std::string message, std::string& error);
++  void Reset();
++
++  Mode mode_{Mode::kDisabled};
++  bool failed_{false};
++  std::string failure_;
++  std::string header_line_;
++  std::string body_;
++  std::string replay_bytes_;
++  std::vector<std::string> replay_event_lines_;
++  std::size_t replay_cursor_{0};
++  uint64_t sequence_{0};
++  uint64_t poll_index_{0};
++  uint64_t marker_index_{0};
++  uint64_t poll_in_marker_{0};
++  uint64_t last_guest_tick_{0};
++  uint64_t last_present_index_{0};
++};
++
++}  // namespace ac6::oracle::controller_replay
+diff --git a/src/ac6_controller_input_replay_runtime.cpp b/src/ac6_controller_input_replay_runtime.cpp
+new file mode 100644
+index 00000000..5d5089ed
+--- /dev/null
++++ b/src/ac6_controller_input_replay_runtime.cpp
+@@ -0,0 +1,345 @@
++#include "generated/ac6recomp_config.h"
++
++#include "ac6_controller_input_replay.h"
++
++#include <atomic>
++#include <filesystem>
++#include <fstream>
++#include <mutex>
++#include <sstream>
++#include <string>
++
++#include <native/chrono/clock.h>
++#include <rex/ac6_controller_input_replay.h>
++#include <rex/ac6_oracle_probe.h>
++#include <rex/cvar.h>
++#include <rex/logging.h>
++#include <rex/ppc/function.h>
++#include <rex/system/thread_state.h>
++
++#include "d3d_hooks.h"
++
++#ifndef PPC_CONFIG_H_INCLUDED
++#error "AC6 oracle PPC wrappers require generated/ac6recomp_config.h first"
++#endif
++
++REXCVAR_DEFINE_STRING(ac6_oracle_controller_header_path, "", "AC6/Oracle",
++                      "Canonical ac6.controller-input-replay.v1 header JSONL");
++REXCVAR_DEFINE_STRING(ac6_oracle_controller_record_path, "", "AC6/Oracle",
++                      "New poll-exact controller recording path");
++REXCVAR_DEFINE_STRING(ac6_oracle_controller_replay_path, "", "AC6/Oracle",
++                      "Sealed poll-exact controller replay path");
++
++namespace ac6::oracle {
++namespace {
++
++using controller_replay::ControllerState;
++using controller_replay::Mode;
++using controller_replay::PollGuards;
++using controller_replay::PollObservation;
++using controller_replay::ReplayPoll;
++using controller_replay::Service;
++
++constexpr std::size_t kMaxHeaderBytes = 1024u * 1024u;
++
++std::mutex g_controller_mutex;
++Service g_controller_service;
++std::filesystem::path g_record_path;
++bool g_controller_initialized = false;
++std::atomic<uint64_t> g_temporary_sequence{0};
++
++bool ReadBounded(const std::filesystem::path& path, std::size_t maximum,
++                 std::string& payload, std::string& error) {
++  std::error_code status_error;
++  const uintmax_t size = std::filesystem::file_size(path, status_error);
++  if (status_error || size == 0 || size > maximum) {
++    error = "input absent, empty, or outside byte bound: " + path.string();
++    return false;
++  }
++  std::ifstream input(path, std::ios::binary);
++  if (!input) {
++    error = "input unreadable: " + path.string();
++    return false;
++  }
++  payload.assign(std::istreambuf_iterator<char>(input),
++                 std::istreambuf_iterator<char>());
++  if (!input.eof() || payload.size() != size) {
++    error = "input changed or failed while reading: " + path.string();
++    payload.clear();
++    return false;
++  }
++  return true;
++}
++
++bool AtomicWriteNew(const std::filesystem::path& destination,
++                    std::string_view payload, std::string& error) {
++  const std::filesystem::path parent = destination.parent_path().empty()
++                                           ? std::filesystem::current_path()
++                                           : destination.parent_path();
++  if (destination.filename().empty() || !std::filesystem::is_directory(parent) ||
++      std::filesystem::exists(destination)) {
++    error = "record output parent/identity is invalid or already exists";
++    return false;
++  }
++
++  std::filesystem::path temporary;
++  std::ofstream output;
++  for (uint32_t attempt = 0; attempt < 64; ++attempt) {
++    const uint64_t suffix =
++        g_temporary_sequence.fetch_add(1, std::memory_order_relaxed);
++    temporary = parent / ("." + destination.filename().string() +
++                          ".ac6-controller-" + std::to_string(suffix) + ".tmp");
++    output.open(temporary, std::ios::binary | std::ios::out |
++                               std::ios::noreplace);
++    if (output) break;
++    output.clear();
++  }
++  if (!output) {
++    error = "could not create exclusive temporary replay output";
++    return false;
++  }
++  output.write(payload.data(), static_cast<std::streamsize>(payload.size()));
++  output.flush();
++  const bool write_ok = output.good();
++  output.close();
++  if (!write_ok) {
++    std::error_code ignored;
++    std::filesystem::remove(temporary, ignored);
++    error = "temporary replay write failed";
++    return false;
++  }
++
++  std::error_code link_error;
++  std::filesystem::create_hard_link(temporary, destination, link_error);
++  std::error_code remove_error;
++  std::filesystem::remove(temporary, remove_error);
++  if (link_error || remove_error) {
++    if (!link_error) {
++      std::error_code rollback_error;
++      std::filesystem::remove(destination, rollback_error);
++    }
++    error = "atomic replay publication failed";
++    return false;
++  }
++  return true;
++}
++
++struct Telemetry {
++  uint64_t guest_tick;
++  uint64_t present_index;
++  uint32_t thread_id;
++  uint32_t caller_lr;
++};
++
++Telemetry CurrentTelemetry() {
++  rex::runtime::ThreadState* thread = rex::runtime::ThreadState::Get();
++  if (!thread || !thread->context()) {
++    REX_FATAL("AC6 controller replay called without a bound guest thread");
++  }
++  return {
++      rex::chrono::Clock::PeekGuestTickCount(),
++      ac6::d3d::GetFrameCaptureSummary().frame_index,
++      thread->thread_id(),
++      static_cast<uint32_t>(thread->context()->lr),
++  };
++}
++
++ControllerState ToServiceState(const XamControllerState& state) {
++  return {
++      state.packet_number, state.buttons,      state.left_trigger,
++      state.right_trigger, state.thumb_lx,     state.thumb_ly,
++      state.thumb_rx,      state.thumb_ry,
++  };
++}
++
++XamControllerState FromServiceState(const ControllerState& state) {
++  return {
++      state.packet_number, state.buttons,      state.left_trigger,
++      state.right_trigger, state.thumb_lx,     state.thumb_ly,
++      state.thumb_rx,      state.thumb_ry,
++  };
++}
++
++[[noreturn]] void FatalControllerReplay(std::string_view operation,
++                                        const std::string& detail) {
++  REX_FATAL("AC6 controller replay {} failed: {}", operation, detail);
++}
++
++}  // namespace
++
++bool InitializeControllerInputReplay() {
++  std::lock_guard<std::mutex> lock(g_controller_mutex);
++  if (g_controller_initialized) {
++    REXLOG_ERROR("AC6 controller replay initialized more than once");
++    return false;
++  }
++  g_controller_initialized = true;
++
++  const std::filesystem::path header_path =
++      REXCVAR_GET(ac6_oracle_controller_header_path);
++  const std::filesystem::path record_path =
++      REXCVAR_GET(ac6_oracle_controller_record_path);
++  const std::filesystem::path replay_path =
++      REXCVAR_GET(ac6_oracle_controller_replay_path);
++  if (!rex::cvar::GetFlagByName("ac6_oracle_trace_v2_input_path").empty()) {
++    REXLOG_ERROR(
++        "Legacy manager-tick TSV replay is retired; use the poll-exact XAM "
++        "controller replay lane");
++    return false;
++  }
++  if (record_path.empty() && replay_path.empty()) {
++    if (!header_path.empty()) {
++      REXLOG_ERROR("AC6 controller header configured without record/replay mode");
++      return false;
++    }
++    return true;
++  }
++  if (header_path.empty() || (!record_path.empty() && !replay_path.empty())) {
++    REXLOG_ERROR("AC6 controller replay requires one mode and one header");
++    return false;
++  }
++
++  std::string header;
++  std::string error;
++  if (!ReadBounded(header_path, kMaxHeaderBytes, header, error)) {
++    REXLOG_ERROR("AC6 controller replay initialization: {}", error);
++    return false;
++  }
++  if (!record_path.empty()) {
++    if (record_path == header_path || std::filesystem::exists(record_path) ||
++        !g_controller_service.BeginRecord(header, error)) {
++      REXLOG_ERROR("AC6 controller record initialization: {}",
++                   error.empty() ? "output identity" : error);
++      return false;
++    }
++    g_record_path = record_path;
++    REXLOG_INFO(
++        "AC6 controller record armed before guest launch at PAL marker "
++        "0x821CA908 BEFORE (cadence unqualified)");
++    return true;
++  }
++
++  if (replay_path == header_path) {
++    REXLOG_ERROR("AC6 controller replay and header paths must differ");
++    return false;
++  }
++  std::string replay;
++  if (!ReadBounded(replay_path, controller_replay::kMaxReplayBytes, replay,
++                   error) ||
++      !g_controller_service.BeginReplay(replay, header, error)) {
++    REXLOG_ERROR("AC6 controller replay initialization: {}", error);
++    return false;
++  }
++  REXLOG_INFO(
++      "AC6 controller replay loaded before guest launch at PAL marker "
++      "0x821CA908 BEFORE (cadence unqualified)");
++  return true;
++}
++
++bool FinalizeControllerInputReplay() {
++  std::lock_guard<std::mutex> lock(g_controller_mutex);
++  if (!g_controller_initialized) return true;
++  const Mode mode = g_controller_service.mode();
++  std::string sealed;
++  std::string error;
++  if (!g_controller_service.Finalize(sealed, error)) {
++    REXLOG_ERROR("AC6 controller replay finalization: {}", error);
++    return false;
++  }
++  if (mode == Mode::kRecord && !AtomicWriteNew(g_record_path, sealed, error)) {
++    REXLOG_ERROR("AC6 controller record publication: {}", error);
++    return false;
++  }
++  if (mode != Mode::kDisabled) {
++    REXLOG_INFO("AC6 controller replay finalized polls={} markers={}",
++                g_controller_service.poll_index(),
++                g_controller_service.marker_index());
++  }
++  g_controller_initialized = false;
++  g_record_path.clear();
++  return true;
++}
++
++XamControllerPollAction BeginXamInputGetState(
++    uint32_t user_index, uint32_t flags, uint32_t state_ptr, uint32_t& result,
++    XamControllerState& state, bool& has_state,
++    XamControllerPollRecord& record) {
++  record = {};
++  g_controller_mutex.lock();
++  const Mode mode = g_controller_service.mode();
++  if (mode == Mode::kDisabled) {
++    g_controller_mutex.unlock();
++    return XamControllerPollAction::kPhysical;
++  }
++  const Telemetry telemetry = CurrentTelemetry();
++  if (mode == Mode::kReplay) {
++    ReplayPoll replay;
++    std::string error;
++    const bool accepted = g_controller_service.ReplayNextPoll(
++        {telemetry.caller_lr, user_index, flags, state_ptr == 0}, replay,
++        error);
++    if (accepted) {
++      result = replay.result;
++      has_state = replay.state.has_value();
++      if (replay.state) state = FromServiceState(*replay.state);
++    }
++    g_controller_mutex.unlock();
++    if (!accepted) FatalControllerReplay("poll", error);
++    if (has_state) {
++      PublishInputState(user_index, state.packet_number, state.buttons,
++                        state.left_trigger, state.right_trigger, state.thumb_lx,
++                        state.thumb_ly, state.thumb_rx, state.thumb_ry);
++    }
++    return XamControllerPollAction::kReplay;
++  }
++
++  record = {
++      true, telemetry.guest_tick, telemetry.present_index, telemetry.thread_id,
++      telemetry.caller_lr, user_index, flags, state_ptr,
++  };
++  return XamControllerPollAction::kRecord;
++}
++
++void CompleteRecordXamInputGetState(XamControllerPollRecord& record,
++                                    uint32_t result,
++                                    const XamControllerState* state) {
++  if (!record.armed) return;
++  PollObservation observation{
++      record.guest_tick,
++      record.present_index,
++      record.thread_id,
++      record.caller_lr,
++      record.user_index,
++      record.flags,
++      record.state_ptr,
++      result,
++      state ? std::optional<ControllerState>(ToServiceState(*state))
++            : std::nullopt,
++  };
++  std::string error;
++  const bool accepted = g_controller_service.RecordPoll(observation, error);
++  record.armed = false;
++  g_controller_mutex.unlock();
++  if (!accepted) FatalControllerReplay("record poll", error);
++}
++
++void ControllerInputMarkerBefore() {
++  std::lock_guard<std::mutex> lock(g_controller_mutex);
++  if (g_controller_service.mode() == Mode::kDisabled) return;
++  const Telemetry telemetry = CurrentTelemetry();
++  std::string error;
++  if (!g_controller_service.MarkerBefore(telemetry.guest_tick,
++                                         telemetry.present_index, error)) {
++    FatalControllerReplay("marker", error);
++  }
++}
++
++}  // namespace ac6::oracle
++
++PPC_EXTERN_FUNC(__imp__rex_sub_821CA908);
++
++PPC_FUNC_IMPL(rex_sub_821CA908) {
++  PPC_FUNC_PROLOGUE();
++  ac6::oracle::ControllerInputMarkerBefore();
++  __imp__rex_sub_821CA908(ctx, base);
++}
+diff --git a/src/ac6recomp_app.h b/src/ac6recomp_app.h
+index 9933524d..dfe7bae0 100644
+--- a/src/ac6recomp_app.h
++++ b/src/ac6recomp_app.h
+@@ -3,6 +3,8 @@
+ #include <memory>
+
+ #include <rex/rex_app.h>
++#include <rex/ac6_controller_input_replay.h>
++#include <rex/logging.h>
+
+ #include "ac6_native_graphics_overlay.h"
+ #include "generated/ac6recomp_config.h"
+@@ -17,6 +19,18 @@ class Ac6recompApp : public rex::ReXApp {
+   }
+
+  protected:
++  void OnPostSetup() override {
++    if (!ac6::oracle::InitializeControllerInputReplay()) {
++      REX_FATAL("AC6 controller replay initialization failed before guest launch");
++    }
++  }
++
++  void OnPostGuestShutdown() override {
++    if (!ac6::oracle::FinalizeControllerInputReplay()) {
++      REX_FATAL("AC6 controller replay did not finalize cleanly");
++    }
++  }
++
+   void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {
+     rex::ReXApp::OnCreateDialogs(drawer);
+     native_graphics_status_dialog_ =
+@@ -27,4 +41,3 @@ class Ac6recompApp : public rex::ReXApp {
+  private:
+   std::unique_ptr<ac6::graphics::NativeGraphicsStatusDialog> native_graphics_status_dialog_;
+ };
+-
+diff --git a/tests/ac6_controller_input_replay_test.cpp b/tests/ac6_controller_input_replay_test.cpp
+new file mode 100644
+index 00000000..7a41c116
+--- /dev/null
++++ b/tests/ac6_controller_input_replay_test.cpp
+@@ -0,0 +1,104 @@
++#include "ac6_controller_input_replay.h"
++
++#include <cassert>
++#include <string>
++
++namespace {
++
++using ac6::oracle::controller_replay::ControllerState;
++using ac6::oracle::controller_replay::PollObservation;
++using ac6::oracle::controller_replay::ReplayPoll;
++using ac6::oracle::controller_replay::Service;
++
++constexpr const char* kGolden =
++    R"json({"kind":"header","producer":{"binary_sha256":"1111111111111111111111111111111111111111111111111111111111111111","implementation_commit":"dcd41b7457fcac8242f8ef40de83d1719390d5af","lane":"ac6-recomp","platform":"linux-x86_64-vulkan"},"schema":"ac6.controller-input-replay.v1","segment":{"kind":"full_recording","parent_marker_count":null,"parent_payload_sha256":null,"parent_replay_sha256":null,"parent_start_marker":null},"session":{"behavior_config_sha256":"7777777777777777777777777777777777777777777777777777777777777777","content_manifest_sha256":"3333333333333333333333333333333333333333333333333333333333333333","profile_save_manifest_sha256":"5555555555555555555555555555555555555555555555555555555555555555","route_sha256":"6666666666666666666666666666666666666666666666666666666666666666","runtime_config_sha256":"4444444444444444444444444444444444444444444444444444444444444444","segment_origin":"sealed_retail_save"},"sync":{"cadence":{"native_hz":60,"projection":"unique_successful_user0_poll","resampling":"refuse","source_hz":null,"status":"unqualified"},"lane_local_diagnostics":["thread_id","state_ptr"],"marker_phase":"before_input","marker_role":"ac6_frame_input_stage","portable_guards":["marker_index","poll_in_marker","caller_lr","user_index","flags","state_ptr_null"],"primary":"poll_index","telemetry":["guest_tick","present_index"]},"target":{"base_version":"v0.0.0.11","marker_address":"821CA908","marker_code_sha256":"2222222222222222222222222222222222222222222222222222222222222222","media_id":"0379EFB3","module":"default.xex","module_xxh3":"0123456789abcdef","title_id":"4E4D07D1","xex_sha256":"acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde","xex_version":"v0.0.0.11"}}
++{"guest_tick":100,"kind":"marker","marker_index":1,"poll_index":0,"present_index":1,"sequence":0}
++{"caller_lr":2184500248,"flags":1,"guest_tick":101,"kind":"poll","marker_index":1,"poll_in_marker":0,"poll_index":0,"present_index":1,"result":0,"sequence":1,"state":{"buttons":4096,"left_trigger":0,"packet_number":10,"right_trigger":127,"thumb_lx":123,"thumb_ly":-321,"thumb_rx":-20,"thumb_ry":20},"state_ptr":2701135872,"thread_id":7,"user_index":0}
++{"event_count":2,"kind":"footer","marker_count":1,"payload_sha256":"35abc1fe0d1bfa61d138a88753e2d961275cc6c1c790292e8c4ebabbf8306c15","poll_count":1,"present_count":1}
++)json";
++
++std::string Header() {
++  const std::string golden = kGolden;
++  return golden.substr(0, golden.find('\n') + 1u);
++}
++
++ControllerState State() {
++  return {10, 0x1000, 0, 127, 123, -321, -20, 20};
++}
++
++void GoldenRecordAndReplay() {
++  Service record;
++  std::string error;
++  assert(record.BeginRecord(Header(), error));
++  assert(record.MarkerBefore(100, 1, error));
++  PollObservation poll{101,       1,          7, 0x8234D418u, 0,
++                       1,         0xA1001000, 0, State()};
++  assert(record.RecordPoll(poll, error));
++  std::string sealed;
++  assert(record.Finalize(sealed, error));
++  assert(sealed == kGolden);
++
++  Service replay;
++  assert(replay.BeginReplay(kGolden, Header(), error));
++  // Guest/present clocks are telemetry, not synchronization keys.
++  assert(replay.MarkerBefore(999, 99, error));
++  ReplayPoll output;
++  assert(replay.ReplayNextPoll({0x8234D418u, 0, 1, false}, output,
++                               error));
++  assert(output.result == 0);
++  assert(output.state == State());
++  assert(replay.Finalize(sealed, error));
++  assert(sealed.empty());
++}
++
++void FailClosedCases() {
++  std::string error;
++  Service truncated;
++  std::string payload = kGolden;
++  payload.resize(payload.rfind('\n', payload.size() - 2u) + 1u);
++  assert(!truncated.BeginReplay(payload, Header(), error));
++  assert(!error.empty());
++
++  Service corrupt;
++  payload = kGolden;
++  payload[payload.find("35abc1fe")] = '4';
++  assert(!corrupt.BeginReplay(payload, Header(), error));
++  assert(error == "footer payload_sha256");
++
++  Service mismatch;
++  assert(mismatch.BeginReplay(kGolden, Header(), error));
++  assert(mismatch.MarkerBefore(100, 1, error));
++  ReplayPoll output;
++  assert(!mismatch.ReplayNextPoll({0xDEADBEEFu, 0, 1, false}, output,
++                                  error));
++  const std::string first_error = error;
++  assert(first_error.find("poll_index=0 guard=caller_lr") !=
++         std::string::npos);
++  assert(!mismatch.ReplayNextPoll({0x8234D418u, 0, 1, false}, output,
++                                  error));
++  assert(error == first_error);
++
++  Service incomplete;
++  assert(incomplete.BeginRecord(Header(), error));
++  assert(incomplete.MarkerBefore(100, 1, error));
++  std::string sealed;
++  assert(!incomplete.Finalize(sealed, error));
++}
++
++void HeaderIdentityIsSealed() {
++  std::string error;
++  std::string wrong = Header();
++  wrong.replace(wrong.find("821CA908"), 8, "8226D1C8");
++  Service service;
++  assert(!service.BeginRecord(wrong, error));
++  assert(error == "PAL target identity");
++}
++
++}  // namespace
++
++int main() {
++  GoldenRecordAndReplay();
++  FailClosedCases();
++  HeaderIdentityIsSealed();
++  return 0;
++}
+diff --git a/thirdparty/rexglue-sdk/include/native/chrono/clock.h b/thirdparty/rexglue-sdk/include/native/chrono/clock.h
+index 47c0f759..74972834 100644
+--- a/thirdparty/rexglue-sdk/include/native/chrono/clock.h
++++ b/thirdparty/rexglue-sdk/include/native/chrono/clock.h
+@@ -47,6 +47,9 @@ class Clock {
+   static void set_guest_system_time_base(uint64_t time_base);
+
+   static uint64_t QueryGuestTickCount();
++  // Returns the last guest tick without advancing the guest clock. This is
++  // suitable for telemetry that must not perturb guest-visible time.
++  static uint64_t PeekGuestTickCount();
+   static uint64_t QueryGuestSystemTime();
+   static uint32_t QueryGuestUptimeMillis();
+
+diff --git a/thirdparty/rexglue-sdk/include/rex/ac6_controller_input_replay.h b/thirdparty/rexglue-sdk/include/rex/ac6_controller_input_replay.h
+new file mode 100644
+index 00000000..c82e04cd
+--- /dev/null
++++ b/thirdparty/rexglue-sdk/include/rex/ac6_controller_input_replay.h
+@@ -0,0 +1,56 @@
++#pragma once
++
++#include <cstdint>
++
++namespace ac6::oracle {
++
++struct XamControllerState {
++  uint32_t packet_number{0};
++  uint16_t buttons{0};
++  uint8_t left_trigger{0};
++  uint8_t right_trigger{0};
++  int16_t thumb_lx{0};
++  int16_t thumb_ly{0};
++  int16_t thumb_rx{0};
++  int16_t thumb_ry{0};
++};
++
++// Opaque recording admission retained across the physical input call. When
++// armed, the runtime serializes that call with markers so the poll ordinal is
++// reserved at the XAM entry seam rather than at return time.
++struct XamControllerPollRecord {
++  bool armed{false};
++  uint64_t guest_tick{0};
++  uint64_t present_index{0};
++  uint32_t thread_id{0};
++  uint32_t caller_lr{0};
++  uint32_t user_index{0};
++  uint32_t flags{0};
++  uint32_t state_ptr{0};
++};
++
++enum class XamControllerPollAction {
++  kPhysical,
++  kRecord,
++  kReplay,
++};
++
++// Called after cvars and the PAL XEX are loaded, but before LaunchModule.
++bool InitializeControllerInputReplay();
++bool FinalizeControllerInputReplay();
++
++// One admission point decides replay, serialized record, or the untouched
++// physical path before any input driver is entered. A record admission must be
++// completed on every physical or validation return path.
++XamControllerPollAction BeginXamInputGetState(
++    uint32_t user_index, uint32_t flags, uint32_t state_ptr, uint32_t& result,
++    XamControllerState& state, bool& has_state,
++    XamControllerPollRecord& record);
++void CompleteRecordXamInputGetState(XamControllerPollRecord& record,
++                                    uint32_t result,
++                                    const XamControllerState* state);
++
++// Qualified PAL 0x821CA908 function-entry marker, before guest instructions.
++void ControllerInputMarkerBefore();
++
++}  // namespace ac6::oracle
+diff --git a/thirdparty/rexglue-sdk/include/rex/rex_app.h b/thirdparty/rexglue-sdk/include/rex/rex_app.h
+index 6fcda846..db5f7dc8 100644
+--- a/thirdparty/rexglue-sdk/include/rex/rex_app.h
++++ b/thirdparty/rexglue-sdk/include/rex/rex_app.h
+@@ -97,6 +97,9 @@ class ReXApp : public ui::WindowedApp, public ui::WindowListener, public ui::Win
+   /// Called before cleanup begins. Release custom resources here.
+   virtual void OnShutdown() {}
+
++  /// Called after the guest module thread has stopped, before runtime cleanup.
++  virtual void OnPostGuestShutdown() {}
++
+   /// Called after path defaults are computed, before Runtime is constructed.
+   /// Override to adjust game/user/update data paths programmatically.
+   virtual void OnConfigurePaths(PathConfig& paths) { (void)paths; }
+diff --git a/thirdparty/rexglue-sdk/src/input/input_system.cpp b/thirdparty/rexglue-sdk/src/input/input_system.cpp
+index 340a635b..1a149796 100644
+--- a/thirdparty/rexglue-sdk/src/input/input_system.cpp
++++ b/thirdparty/rexglue-sdk/src/input/input_system.cpp
+@@ -121,27 +121,6 @@ X_RESULT InputSystem::GetState(uint32_t user_index, X_INPUT_STATE* out_state) {
+     return any_connected ? X_ERROR_EMPTY : X_ERROR_DEVICE_NOT_CONNECTED;
+   }
+
+-  uint16_t override_buttons = static_cast<uint16_t>(merged.gamepad.buttons);
+-  uint8_t override_left_trigger =
+-      static_cast<uint8_t>(merged.gamepad.left_trigger);
+-  uint8_t override_right_trigger =
+-      static_cast<uint8_t>(merged.gamepad.right_trigger);
+-  int16_t override_thumb_lx = static_cast<int16_t>(merged.gamepad.thumb_lx);
+-  int16_t override_thumb_ly = static_cast<int16_t>(merged.gamepad.thumb_ly);
+-  int16_t override_thumb_rx = static_cast<int16_t>(merged.gamepad.thumb_rx);
+-  int16_t override_thumb_ry = static_cast<int16_t>(merged.gamepad.thumb_ry);
+-  if (ac6::oracle::OverrideInputState(
+-          user_index, override_buttons, override_left_trigger,
+-          override_right_trigger, override_thumb_lx, override_thumb_ly,
+-          override_thumb_rx, override_thumb_ry)) {
+-    merged.gamepad.buttons = override_buttons;
+-    merged.gamepad.left_trigger = override_left_trigger;
+-    merged.gamepad.right_trigger = override_right_trigger;
+-    merged.gamepad.thumb_lx = override_thumb_lx;
+-    merged.gamepad.thumb_ly = override_thumb_ly;
+-    merged.gamepad.thumb_rx = override_thumb_rx;
+-    merged.gamepad.thumb_ry = override_thumb_ry;
+-  }
+   if (out_state) {
+     *out_state = merged;
+   }
+diff --git a/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp b/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
+index 59face43..80792e21 100644
+--- a/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
+@@ -5,6 +5,7 @@
+
+ #include <rex/input/input.h>
+ #include <rex/input/input_system.h>
++#include <rex/ac6_controller_input_replay.h>
+ #include <rex/kernel/xam/private.h>
+ #include <rex/logging.h>
+ #include <rex/ppc/function.h>
+@@ -96,9 +97,57 @@ ppc_u32_result_t XamInputGetState_entry(ppc_u32_t user_index, ppc_u32_t flags,
+                   (uint32_t)flags);
+   }
+
++  const uint32_t raw_user_index = user_index;
++  const uint32_t raw_flags = flags;
++  const uint32_t state_ptr = input_state.guest_address();
++  uint32_t replay_result = 0;
++  ac6::oracle::XamControllerState replay_state;
++  bool replay_has_state = false;
++  ac6::oracle::XamControllerPollRecord record;
++  const auto replay_action = ac6::oracle::BeginXamInputGetState(
++      raw_user_index, raw_flags, state_ptr, replay_result, replay_state,
++      replay_has_state, record);
++  if (replay_action == ac6::oracle::XamControllerPollAction::kReplay) {
++    if (replay_has_state) {
++      if (!input_state) {
++        REX_FATAL("AC6 controller replay produced state for a null guest pointer");
++      }
++      input_state->packet_number = replay_state.packet_number;
++      input_state->gamepad.buttons = replay_state.buttons;
++      input_state->gamepad.left_trigger = replay_state.left_trigger;
++      input_state->gamepad.right_trigger = replay_state.right_trigger;
++      input_state->gamepad.thumb_lx = replay_state.thumb_lx;
++      input_state->gamepad.thumb_ly = replay_state.thumb_ly;
++      input_state->gamepad.thumb_rx = replay_state.thumb_rx;
++      input_state->gamepad.thumb_ry = replay_state.thumb_ry;
++    }
++    return replay_result;
++  }
++
++  auto record_return = [&](uint32_t result) -> ppc_u32_result_t {
++    ac6::oracle::XamControllerState recorded_state;
++    const ac6::oracle::XamControllerState* recorded_state_ptr = nullptr;
++    if (result == X_ERROR_SUCCESS && input_state) {
++      recorded_state = {
++          static_cast<uint32_t>(input_state->packet_number),
++          static_cast<uint16_t>(input_state->gamepad.buttons),
++          input_state->gamepad.left_trigger,
++          input_state->gamepad.right_trigger,
++          static_cast<int16_t>(input_state->gamepad.thumb_lx),
++          static_cast<int16_t>(input_state->gamepad.thumb_ly),
++          static_cast<int16_t>(input_state->gamepad.thumb_rx),
++          static_cast<int16_t>(input_state->gamepad.thumb_ry),
++      };
++      recorded_state_ptr = &recorded_state;
++    }
++    ac6::oracle::CompleteRecordXamInputGetState(record, result,
++                                                recorded_state_ptr);
++    return result;
++  };
++
+   if ((flags & 0xFF) && (flags & XINPUT_FLAG_GAMEPAD) == 0) {
+     // Ignore any query for other types of devices.
+-    return X_ERROR_DEVICE_NOT_CONNECTED;
++    return record_return(X_ERROR_DEVICE_NOT_CONNECTED);
+   }
+
+   uint32_t actual_user_index = user_index;
+@@ -108,7 +157,7 @@ ppc_u32_result_t XamInputGetState_entry(ppc_u32_t user_index, ppc_u32_t flags,
+   }
+
+   auto* is = input_system();
+-  return is->GetState(actual_user_index, input_state);
++  return record_return(is->GetState(actual_user_index, input_state));
+ }
+
+ // https://msdn.microsoft.com/en-us/library/windows/desktop/microsoft.directx_sdk.reference.xinputsetstate(v=vs.85).aspx
+diff --git a/thirdparty/rexglue-sdk/src/native/core/clock.cpp b/thirdparty/rexglue-sdk/src/native/core/clock.cpp
+index 915157dc..0ff76bb6 100644
+--- a/thirdparty/rexglue-sdk/src/native/core/clock.cpp
++++ b/thirdparty/rexglue-sdk/src/native/core/clock.cpp
+@@ -130,6 +130,15 @@ uint64_t Clock::QueryGuestTickCount() {
+   return update_guest_clock();
+ }
+
++uint64_t Clock::PeekGuestTickCount() {
++  std::lock_guard<std::mutex> lock(g_tick_mutex);
++  if (REXCVAR_GET(clock_no_scaling)) {
++    return QueryHostTickCount() * g_guest_tick_ratio.first /
++           g_guest_tick_ratio.second;
++  }
++  return g_last_guest_tick_count;
++}
++
+ uint64_t Clock::QueryGuestSystemTime() {
+   if (REXCVAR_GET(clock_no_scaling)) {
+     return Clock::QueryHostSystemTime();
+diff --git a/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp b/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
+index 85c83213..145286b8 100644
+--- a/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
++++ b/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
+@@ -291,6 +291,7 @@ void ReXApp::OnDestroy() {
+   if (module_thread_.joinable()) {
+     module_thread_.join();
+   }
++  OnPostGuestShutdown();
+   if (window_) {
+     window_->RemoveInputListener(this);
+     window_->RemoveListener(this);
+diff --git a/ac6recomp_config.toml b/ac6recomp_config.toml
+index 12e4a988..e100cf52 100644
+--- a/ac6recomp_config.toml
++++ b/ac6recomp_config.toml
+@@ -3091,6 +3091,7 @@ functions = { # only valid for recompile mode
+ 0x821CA750 = { name = "rex_sub_821CA750" }
+ 0x821CA860 = { name = "rex_sub_821CA860" }
+ 0x821CA8C0 = { name = "rex_sub_821CA8C0" }
++0x821CA908 = { name = "rex_sub_821CA908" }
+ 0x821CA940 = { name = "rex_sub_821CA940" }
+ 0x821CAA88 = { name = "rex_sub_821CAA88" }
+ 0x821CB628 = { name = "rex_sub_821CB628" }

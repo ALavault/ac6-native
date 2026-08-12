@@ -323,6 +323,11 @@ def record_paths(root: Path, record: PatchRecord) -> set[Path]:
         relative = Path(raw[2:])
         require(not relative.is_absolute() and ".." not in relative.parts,
                 f"patch path escapes runtime: {record.display_path}")
+        require(
+            "generated" not in relative.parts
+            and not relative.name.startswith("ppc_recomp."),
+            f"generated output path forbidden: {record.display_path}",
+        )
         candidate = (root / relative).resolve(strict=False)
         try:
             candidate.relative_to(root.resolve())
