@@ -225,14 +225,17 @@
     "generated_code_is_not_product": true,
     "mission_progress_cannot_close_checkpoint": true,
     "other_mission_semantics_are_deferred": true,
-    "microexecution_is_ambiguity_escalation": true
+    "microexecution_is_ambiguity_escalation": true,
+    "rexglue_is_provisional_bringup_reference": true,
+    "provisional_semantics_cannot_close_lane": true,
+    "known_rexglue_divergence_fails_closed": true
   },
   "evidence_strategy": {
     "state": "passed",
     "evidence": {
       "path": "reports/checkpoint-2-static-first-evidence-policy.md",
-      "size": 1957,
-      "sha256": "4672f704310c41202452c1c61e094d5076ae8ca31c0183298a83d0031a7a49f2"
+      "size": 3322,
+      "sha256": "78157ce024b221cb0bb1123f33374e451791437a88856ccb042364043580be42"
     }
   },
   "validation_commands": [

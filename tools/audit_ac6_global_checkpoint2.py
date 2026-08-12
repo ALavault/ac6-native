@@ -170,6 +170,9 @@ def audit_document(document: dict) -> None:
         "mission_progress_cannot_close_checkpoint",
         "other_mission_semantics_are_deferred",
         "microexecution_is_ambiguity_escalation",
+        "rexglue_is_provisional_bringup_reference",
+        "provisional_semantics_cannot_close_lane",
+        "known_rexglue_divergence_fails_closed",
     }
     require(
         set(policy) == required_policy and all(policy.values()),

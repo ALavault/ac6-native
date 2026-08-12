@@ -33,3 +33,23 @@ def test_capability_matrix_cannot_outrun_spine() -> None:
     with pytest.raises(ValueError, match="matrix outruns execution spine"):
         MODULE.audit_spine({"JF": "passed", "JV": "passed", "JP": "open", "JG": "open",
                             "supported": "no"})
+
+
+def test_rexglue_provisional_semantics_cannot_close_a_gate(
+        tmp_path: Path) -> None:
+    document = json.loads(MODULE.REXGLUE_TRUST.read_text(encoding="utf-8"))
+    document["policy"]["provisional_allows_lane_closure"] = True
+    path = tmp_path / "rexglue-trust.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="negative policy"):
+        MODULE.audit_rexglue_trust(path)
+
+
+def test_known_rexglue_divergence_cannot_become_provisional(
+        tmp_path: Path) -> None:
+    document = json.loads(MODULE.REXGLUE_TRUST.read_text(encoding="utf-8"))
+    document["known_divergences"][0]["status"] = "provisional-rexglue"
+    path = tmp_path / "rexglue-trust.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(ValueError, match="divergence contract"):
+        MODULE.audit_rexglue_trust(path)

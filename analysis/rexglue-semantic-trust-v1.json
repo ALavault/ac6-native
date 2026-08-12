@@ -1,0 +1,127 @@
+{
+  "schema": "ac6.rexglue-semantic-trust.v1",
+  "decision_date": "2026-08-12",
+  "scope": "mission01-executed-dependency-cone",
+  "target": {
+    "platform": "Xbox 360 PAL",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "states": [
+    "provisional-rexglue",
+    "retail-qualified",
+    "divergent"
+  ],
+  "source_pins": {
+    "rexglue_upstream": {
+      "repository": "https://github.com/rexglue/rexglue-sdk",
+      "version": "0.9.0",
+      "commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+      "license": "BSD-3-Clause"
+    },
+    "pal_oracle": {
+      "manifest": "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
+      "ac6_recomp_commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+      "rexglue_tree": "741541d6035616dc406f7d74c2fe8f155913c77b"
+    },
+    "modern_us_reference": {
+      "repository": "https://github.com/sal063/AC6_recomp",
+      "ac6_recomp_commit": "ab90b54713e5889f33eee1cc8681dae89fe83d1e",
+      "rexglue_tree": "73589e54e95291a7039de6beada6390ac7c12f78",
+      "target_region": "US-only",
+      "pal_gate_evidence": false
+    }
+  },
+  "policy": {
+    "default_for_reached_implemented_rexglue_semantics": "provisional-rexglue",
+    "provisional_allows_native_implementation": true,
+    "provisional_allows_integration_tests": true,
+    "provisional_allows_diagnostic_replay": true,
+    "provisional_allows_lane_closure": false,
+    "provisional_allows_publication": false,
+    "product_may_link_or_embed_oracle": false,
+    "known_divergence_is_never_provisional": true,
+    "revision_changes_require_semantic_diff": true,
+    "shared_reader_changes_require_15_mission_corpus": true,
+    "promotion_requires_pal_identity": true,
+    "promotion_requires_bounded_retail_evidence": true,
+    "promotion_requires_native_regression_test": true
+  },
+  "known_divergences": [
+    {
+      "id": "cpu-dcbst-unimplemented",
+      "status": "divergent",
+      "domain": "cpu-cache",
+      "semantics": [
+        "dcbst"
+      ],
+      "reason": "The RexGlue 0.9 decoder and dispatch table do not implement this instruction.",
+      "gate_evidence": false,
+      "evidence": [
+        "src/codegen/ppc/opcode.cpp",
+        "src/codegen/instruction_dispatch.cpp"
+      ]
+    },
+    {
+      "id": "cpu-reciprocal-estimates-exact-host-math",
+      "status": "divergent",
+      "domain": "cpu-floating-point",
+      "semantics": [
+        "frsqrte",
+        "vrefp",
+        "vrsqrtefp"
+      ],
+      "reason": "RexGlue emits exact host divide or square-root operations instead of the Xenon estimate results; its frsqrte vectors document different expected values.",
+      "gate_evidence": false,
+      "evidence": [
+        "src/codegen/builders/floating_point.cpp",
+        "src/codegen/builders/vector.cpp",
+        "tests/ppc/asm/instr_frsqrte.s"
+      ]
+    },
+    {
+      "id": "cpu-reservation-without-address-or-granule",
+      "status": "divergent",
+      "domain": "cpu-atomics",
+      "semantics": [
+        "lwarx",
+        "ldarx",
+        "stwcx.",
+        "stdcx."
+      ],
+      "reason": "The reservation records only the loaded value; the conditional store does not validate the reserved address or reservation granule.",
+      "gate_evidence": false,
+      "evidence": [
+        "src/codegen/builders/helpers.h",
+        "include/rex/ppc/context.h"
+      ]
+    },
+    {
+      "id": "cpu-barriers-emitted-as-noop",
+      "status": "divergent",
+      "domain": "cpu-memory-ordering",
+      "semantics": [
+        "sync",
+        "lwsync",
+        "eieio"
+      ],
+      "reason": "RexGlue emits no host fence and assumes x86 ordering, which is not a complete Xenon or portable host contract.",
+      "gate_evidence": false,
+      "evidence": [
+        "src/codegen/builders/system.cpp"
+      ]
+    }
+  ],
+  "promotion": {
+    "from": "provisional-rexglue",
+    "to": "retail-qualified",
+    "required": [
+      "qualify the PAL XEX and canonical Ghidra project",
+      "name the reached function or service and bounded input domain",
+      "cross-check retail bytes and static ABI/dataflow",
+      "use an executed oracle or micro-execution only when a material ambiguity remains",
+      "add a native positive test and deterministic rejection tests",
+      "record the evidence in the Mission 01 lane ledger"
+    ]
+  }
+}

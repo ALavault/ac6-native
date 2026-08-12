@@ -59,6 +59,13 @@ class GlobalCheckpoint2Tests(unittest.TestCase):
         ):
             audit_document(document)
 
+    def test_provisional_rexglue_policy_is_required(self) -> None:
+        document = copy.deepcopy(self.document())
+        del document["policy"]["provisional_semantics_cannot_close_lane"]
+
+        with self.assertRaisesRegex(Checkpoint2Error, "checkpoint policy"):
+            audit_document(document)
+
     def test_semantic_scope_is_mission01(self) -> None:
         document = copy.deepcopy(self.document())
         document["semantic_scope"] = "all-missions"

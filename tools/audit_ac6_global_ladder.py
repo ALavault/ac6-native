@@ -18,6 +18,7 @@ MATRIX = ROOT / "analysis/mission-capability-matrix.tsv"
 TEMPLATE = ROOT / "analysis/templates/mission-gate-template.json"
 LADDER = ROOT / "GLOBAL_OFFLINE_LADDER.md"
 SPINE = ROOT / "analysis/mission01-execution-spine.json"
+REXGLUE_TRUST = ROOT / "analysis/rexglue-semantic-trust-v1.json"
 CHECKPOINT2 = ROOT / "analysis/contracts/global-checkpoint-2-v1.json"
 GATES = ("JF", "JV", "JP", "JG")
 STATES = {"open", "passed"}
@@ -26,6 +27,15 @@ SPINE_PHASES = (
     "M01-A-load", "M01-B-controlled-sortie", "M01-C-first-objective",
     "M01-D-debrief", "M01-E-replay", "M01-F-parity",
 )
+REXGLUE_TRUST_STATES = {
+    "provisional-rexglue", "retail-qualified", "divergent",
+}
+REXGLUE_DIVERGENCES = {
+    "cpu-dcbst-unimplemented",
+    "cpu-reciprocal-estimates-exact-host-math",
+    "cpu-reservation-without-address-or-granule",
+    "cpu-barriers-emitted-as-noop",
+}
 
 
 def sha256(path: Path) -> str:
@@ -47,6 +57,57 @@ def project_path(relative: object) -> Path:
     return candidate
 
 
+def audit_rexglue_trust(path: Path) -> None:
+    trust = json.loads(path.read_text(encoding="utf-8"))
+    if trust.get("schema") != "ac6.rexglue-semantic-trust.v1":
+        raise ValueError("RexGlue semantic trust schema")
+    target = trust.get("target", {})
+    if (target.get("platform") != "Xbox 360 PAL" or
+            target.get("module") != "default.xex" or
+            target.get("xex_sha256") != XEX):
+        raise ValueError("RexGlue semantic trust target")
+    if set(trust.get("states", [])) != REXGLUE_TRUST_STATES:
+        raise ValueError("RexGlue semantic trust states")
+    policy = trust.get("policy", {})
+    required_true = (
+        "provisional_allows_native_implementation",
+        "provisional_allows_integration_tests",
+        "provisional_allows_diagnostic_replay",
+        "known_divergence_is_never_provisional",
+        "revision_changes_require_semantic_diff",
+        "shared_reader_changes_require_15_mission_corpus",
+        "promotion_requires_pal_identity",
+        "promotion_requires_bounded_retail_evidence",
+        "promotion_requires_native_regression_test",
+    )
+    required_false = (
+        "provisional_allows_lane_closure",
+        "provisional_allows_publication",
+        "product_may_link_or_embed_oracle",
+    )
+    if any(policy.get(key) is not True for key in required_true):
+        raise ValueError("RexGlue semantic trust positive policy")
+    if any(policy.get(key) is not False for key in required_false):
+        raise ValueError("RexGlue semantic trust negative policy")
+    if policy.get("default_for_reached_implemented_rexglue_semantics") != \
+            "provisional-rexglue":
+        raise ValueError("RexGlue semantic trust default")
+    divergences = trust.get("known_divergences")
+    if not isinstance(divergences, list) or {
+            item.get("id") for item in divergences if isinstance(item, dict)
+    } != REXGLUE_DIVERGENCES:
+        raise ValueError("RexGlue known divergence coverage")
+    for item in divergences:
+        if (item.get("status") != "divergent" or item.get("gate_evidence") is not False or
+                not item.get("semantics") or not item.get("evidence")):
+            raise ValueError(f"RexGlue divergence contract: {item.get('id')}")
+    promotion = trust.get("promotion", {})
+    if (promotion.get("from") != "provisional-rexglue" or
+            promotion.get("to") != "retail-qualified" or
+            not promotion.get("required")):
+        raise ValueError("RexGlue semantic promotion contract")
+
+
 def audit_spine(m01_row: dict[str, str]) -> None:
     spine = json.loads(SPINE.read_text(encoding="utf-8"))
     if spine.get("schema") != "ac6.mission01-execution-spine.v1" or spine.get("mission") != "M01":
@@ -58,9 +119,12 @@ def audit_spine(m01_row: dict[str, str]) -> None:
     policy = spine.get("focus_policy", {})
     for key in ("defer_other_missions", "shared_reader_changes_require_15_mission_corpus",
                 "new_report_requires_durable_test_contract_or_invariant",
-                "product_must_not_depend_on_oracle"):
+                "product_must_not_depend_on_oracle", "rexglue_provisional_bringup_allowed",
+                "known_divergences_fail_closed"):
         if policy.get(key) is not True:
             raise ValueError(f"Mission 01 spine policy: {key}")
+    if policy.get("provisional_evidence_closes_gates") is not False:
+        raise ValueError("Mission 01 provisional gate policy")
 
     oracle = spine.get("oracle", {})
     oracle_manifest_path = project_path(oracle.get("manifest"))
@@ -69,6 +133,10 @@ def audit_spine(m01_row: dict[str, str]) -> None:
             "dcd41b7457fcac8242f8ef40de83d1719390d5af" or
             oracle_manifest.get("target", {}).get("sha256") != XEX):
         raise ValueError("Mission 01 spine oracle identity")
+    trust_path = project_path(oracle.get("semantic_trust_registry"))
+    if trust_path != REXGLUE_TRUST.resolve():
+        raise ValueError("Mission 01 RexGlue semantic trust path")
+    audit_rexglue_trust(trust_path)
     frontier = oracle.get("current_runtime_frontier", {})
     if (not re.fullmatch(r"0x[0-9A-F]{8}", str(frontier.get("source"))) or
             not re.fullmatch(r"0x[0-9A-F]{8}", str(frontier.get("target"))) or
@@ -163,7 +231,8 @@ def audit() -> None:
     for checkpoint in range(8):
         if f"{checkpoint} —" not in ladder:
             raise ValueError(f"missing checkpoint {checkpoint}")
-    print("global_ladder=pass missions=15 gates=4 checkpoints=8 m01_spine=6")
+    print("global_ladder=pass missions=15 gates=4 checkpoints=8 m01_spine=6 "
+          "rexglue_trust=pass")
 
 
 if __name__ == "__main__":

@@ -12,10 +12,14 @@
     "defer_other_missions": true,
     "shared_reader_changes_require_15_mission_corpus": true,
     "new_report_requires_durable_test_contract_or_invariant": true,
-    "product_must_not_depend_on_oracle": true
+    "product_must_not_depend_on_oracle": true,
+    "rexglue_provisional_bringup_allowed": true,
+    "provisional_evidence_closes_gates": false,
+    "known_divergences_fail_closed": true
   },
   "oracle": {
     "manifest": "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
+    "semantic_trust_registry": "analysis/rexglue-semantic-trust-v1.json",
     "required_capture_status_for_runtime_gates": "captured",
     "current_runtime_frontier": {
       "source": "0x8234530C",
