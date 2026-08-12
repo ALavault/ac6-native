@@ -175,10 +175,11 @@
     {
       "id": "xma-asf",
       "state": "open",
-      "closure": "Qualified XMA and bounded moviepack streams reached by Mission 01 provide retail framing, English/Japanese selection, subtitles, A/V synchronisation, and temporal events without speculative demuxing.",
+      "closure": "Every media resource proven reachable in the Mission 01 briefing, gameplay and debrief cone provides bounded retail framing, English/Japanese voice selection, PAL subtitles, synchronisation, and temporal events without speculative demuxing.",
       "blockers": [
-        "The two-bank ASF reader now exposes the complete 6,528-range table with unique-boundary and fail-closed ambiguity controls, but those opaque ranges do not yet have qualified packet, stream, frame, codec, or timestamp semantics.",
-        "Audio/video synchronisation, language selection, subtitles, and timed events are not yet qualified."
+        "moviepack.bin has no static join to the Mission 01 briefing, gameplay, or debrief and is no longer a preview blocker; its complete 6,528-range reader remains a shared-cache regression guard only. BGM and demo banks likewise require a qualified M01 reachability join before entering the semantic cone.",
+        "Mission 01 has 54 RadioTbl rows and global English/Japanese voice banks, but no qualified join yet maps a reached row to a bounded external RIFF ordinal, TextData record, voice-language producer, or audio clock.",
+        "The PAL TextData entry map and signed temporal-marker consumer are statically bounded, while the exact string leaf, codec, time unit, subtitle selection, and audio/text synchronisation remain open."
       ],
       "evidence": [
         {
@@ -195,6 +196,11 @@
           "path": "reports/cycle-1535-the-complete-asf-index-is-recovered.md",
           "size": 1997,
           "sha256": "537d92ce6244e71bfaab42d9d05f2b04964015e60dbd6634a57fd5438ff47be3"
+        },
+        {
+          "path": "reports/cycle-1536-mission01-does-not-require-the-movie-pack.md",
+          "size": 3118,
+          "sha256": "f21aeae7ce6c9eeb3d7d5f9e51c670e5993db3733786e04c5239b61e7e39786e"
         }
       ]
     }

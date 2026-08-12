@@ -32,9 +32,18 @@ class RetailFrontendResources final {
   const std::array<RetailFrontendFontSummary, 7>& fonts() const noexcept {
     return fonts_;
   }
+  std::optional<std::uint32_t> locale_data_table_entry(
+      std::uint32_t slot) const noexcept {
+    if (slot >= kPalFrontendLocaleDataTableEntries.size()) return std::nullopt;
+    return kPalFrontendLocaleDataTableEntries[slot];
+  }
   bool has_locale_slot(std::uint32_t slot) const noexcept {
-    return slot < kPalFrontendLocaleDataTableEntries.size() &&
-           fonts_[slot + 1u].nfh_nodes != 0;
+    const std::optional<std::uint32_t> entry = locale_data_table_entry(slot);
+    if (!entry.has_value()) return false;
+    for (const RetailFrontendFontSummary& font : fonts_) {
+      if (font.data_table_entry == *entry) return font.nfh_nodes != 0;
+    }
+    return false;
   }
 
  private:

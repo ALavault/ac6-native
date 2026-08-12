@@ -25,8 +25,12 @@ inline constexpr std::array<std::uint32_t, 15> kPalCampaignDataTableEntries{
 // exercise a one-payload importer without silently manufacturing UI text.
 inline constexpr std::array<std::uint32_t, 7> kPalFrontendFontDataTableEntries{
     2, 3, 4, 5, 6, 7, 8};
+// The runtime language order is English, French, German, Italian, Spanish.
+// DATA.TBL entries 2 and 3 remain common/font resources rather than locale
+// slots; the PAL selector at 0x821BAB70 -> 0x821BB118 maps the five locales
+// in the non-numeric order below.
 inline constexpr std::array<std::uint32_t, 5> kPalFrontendLocaleDataTableEntries{
-    3, 4, 5, 6, 7};
+    4, 7, 5, 6, 8};
 
 // Entry 1 contains the common retail camera tables. Entry 119 is the qualified
 // Mission 01 world/map resource: terrain, placement, map parts, textures and

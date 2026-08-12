@@ -1,6 +1,7 @@
 #include "ac6/retail_frontend_resources.h"
 #include "ac6/frontend_runtime.h"
 
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 
@@ -15,7 +16,10 @@ int main() {
   }
   const auto resources = ac6::retail::RetailFrontendResources::open(store);
   if (!resources.has_value() || !resources->complete()) return 2;
-  for (std::uint32_t slot = 0; slot < 5u; ++slot) {
+  constexpr std::array<std::uint32_t, 5> kExpectedLocaleEntries{4, 7, 5, 6, 8};
+  for (std::uint32_t slot = 0; slot < kExpectedLocaleEntries.size(); ++slot) {
+    const auto entry = resources->locale_data_table_entry(slot);
+    if (!entry.has_value() || *entry != kExpectedLocaleEntries[slot]) return 3;
     if (!resources->has_locale_slot(slot)) return 3;
     for (std::uint32_t difficulty = 0; difficulty <=
              static_cast<std::uint32_t>(ac6::FrontendDifficulty::Hard);
@@ -32,6 +36,12 @@ int main() {
         }
       }
     }
+  }
+  if (resources->locale_data_table_entry(kExpectedLocaleEntries.size()).has_value() ||
+      resources->locale_data_table_entry(0xffffffffu).has_value() ||
+      resources->has_locale_slot(kExpectedLocaleEntries.size()) ||
+      resources->has_locale_slot(0xffffffffu)) {
+    return 5;
   }
   std::fprintf(stdout, "frontend_fonts=pass entries=7 locales=5 index_sha256=%s\n",
                ac6::sha256_hex(resources->content_index_sha256()).c_str());
