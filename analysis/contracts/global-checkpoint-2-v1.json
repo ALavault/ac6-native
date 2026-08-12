@@ -76,7 +76,7 @@
       "closure": "Scene selection, every TCAM variant, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested for all fifteen missions.",
       "blockers": [
         "The direct mode-2 target path, mode-3 cubic gain, non-mode-3 scalar tail, small-direction threshold path, and 0x8225C680 radial normalizer are bounded; the upstream matrix/VMX128 direction producer, VMX estimate path, retail trigonometric factor producer, mode-1 heading correction/override, 0x82281198 query producer, and remaining 0x82262A28 joins are still open.",
-        "The live player locator producer and full fifteen-payload Scene/TCAM variant census remain open."
+        "The exact fifteen-payload Scene/TCAM census is sealed at 176 tables, 2,950 paths, and 88 TCAM resources; runtime group selection, record semantics/interpolation, NFIC activation, live player/manager pose producers, FOV, clipping, culling, and transitions remain open."
       ],
       "evidence": [
         {
@@ -93,6 +93,16 @@
           "path": "reports/cycle-1527-the-mode3-axis-normalizer-is-bounded.md",
           "size": 3186,
           "sha256": "bb506afd92b1c040b4ec13a6dd6b1fcabb6ff75c8f97f311fa565d175641c7b8"
+        },
+        {
+          "path": "reports/cycle-1528-the-fifteen-scene-tcam-payloads-are-censused.md",
+          "size": 3357,
+          "sha256": "de215727e304e2959c5041dfb6762215238596fcdc278b7bdb982c2d58108e21"
+        },
+        {
+          "path": "reports/ac6-pal-scene-tcam-corpus.json",
+          "size": 22412,
+          "sha256": "1a20ca778f73f62dd6155788a566b591c4176beb1f1aa6a26a4450dfb2177ca9"
         }
       ]
     },
@@ -178,6 +188,7 @@
     "python3 tools/audit_ac6_global_checkpoint2.py",
     "python3 tools/audit_ac6_oracle_reproducibility.py",
     "python3 tools/audit_ac6_camera_selector_microexec.py",
+    "python3 tools/audit_ac6_scene_tcam_corpus.py --check-matrix reports/ac6-pal-scene-tcam-corpus.json",
     "git diff --check"
   ]
 }

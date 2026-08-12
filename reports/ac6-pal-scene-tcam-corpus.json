@@ -1,0 +1,715 @@
+{
+  "cache_index_sha256": "cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85",
+  "missions": [
+    {
+      "branches": [
+        22,
+        23
+      ],
+      "mission_id": 1,
+      "payload_entry": 9,
+      "payload_sha256": "cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05",
+      "payload_size": 42446032,
+      "scene_paths": 553,
+      "scene_tables": 44,
+      "tcam_resources": 22
+    },
+    {
+      "branches": [],
+      "mission_id": 2,
+      "payload_entry": 10,
+      "payload_sha256": "e894db3b36956562fa888511c3a0ce352cd690186f96eeb0d7a772f3b1a59675",
+      "payload_size": 10232304,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [],
+      "mission_id": 3,
+      "payload_entry": 11,
+      "payload_sha256": "9ad51f392aa291aa9975cfc97db0c1133e862f611752af3020c1e0cda34b321e",
+      "payload_size": 18162160,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [],
+      "mission_id": 4,
+      "payload_entry": 12,
+      "payload_sha256": "51de2c162e2b3fbfe0af0cd3fa39dbe78be3f571e37b45c5b4d02cb57d75c291",
+      "payload_size": 21238256,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [],
+      "mission_id": 5,
+      "payload_entry": 13,
+      "payload_sha256": "43804307b77e68e085a83f8d2838b6b112b15e54a10c01e6debf98604ae87921",
+      "payload_size": 37163504,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [],
+      "mission_id": 6,
+      "payload_entry": 14,
+      "payload_sha256": "1c386251c8b8505da5b8a667395edad233349f4092a6a4443403b07691b37a09",
+      "payload_size": 27320816,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [
+        22,
+        23
+      ],
+      "mission_id": 7,
+      "payload_entry": 15,
+      "payload_sha256": "d503092155a2d8c4f4bdcc86971e607e720d94abfa51461629a0b37b750c3947",
+      "payload_size": 30120272,
+      "scene_paths": 290,
+      "scene_tables": 24,
+      "tcam_resources": 12
+    },
+    {
+      "branches": [],
+      "mission_id": 8,
+      "payload_entry": 16,
+      "payload_sha256": "e667df8084e710d2a9db957062bc0f6f78ac455fc749bf42831b7ed5e5ea20a1",
+      "payload_size": 32293360,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [
+        22,
+        23
+      ],
+      "mission_id": 9,
+      "payload_entry": 17,
+      "payload_sha256": "f7448daf41808679e647b1477c7ae7100229dccb6b1aabd2274d8fa6d7be6980",
+      "payload_size": 36000976,
+      "scene_paths": 662,
+      "scene_tables": 16,
+      "tcam_resources": 8
+    },
+    {
+      "branches": [],
+      "mission_id": 10,
+      "payload_entry": 18,
+      "payload_sha256": "27251d6f29155cb9d1004e96fbbb825870eadb3fd90f2da63147e1dc2bc27fc7",
+      "payload_size": 28144112,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [],
+      "mission_id": 11,
+      "payload_entry": 19,
+      "payload_sha256": "36e8c0c27cc4a99a84186953f2a210529d8d60a59ea867d0c6bb9063627845e2",
+      "payload_size": 29290992,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [],
+      "mission_id": 12,
+      "payload_entry": 20,
+      "payload_sha256": "eaecae03f33ba2f6215fbbdff9c48c8967015644f81d8a234507d43ab698e199",
+      "payload_size": 12653040,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [
+        22,
+        23
+      ],
+      "mission_id": 13,
+      "payload_entry": 21,
+      "payload_sha256": "16c35b83f5f4018c888c3ae80a51eae6dfcd69a49ab7e363c8ea4d5f054b74fa",
+      "payload_size": 48476816,
+      "scene_paths": 363,
+      "scene_tables": 30,
+      "tcam_resources": 15
+    },
+    {
+      "branches": [],
+      "mission_id": 14,
+      "payload_entry": 22,
+      "payload_sha256": "dc320871b064c65a620c08c855b8ce3cc08b3d63765e44172473ee2dc8e9fc64",
+      "payload_size": 13681136,
+      "scene_paths": 0,
+      "scene_tables": 0,
+      "tcam_resources": 0
+    },
+    {
+      "branches": [
+        22,
+        23,
+        24,
+        25
+      ],
+      "mission_id": 15,
+      "payload_entry": 23,
+      "payload_sha256": "1a733dd9db6a4ab82666b8452814583a12e53ec47b120f945f5b188e576667f9",
+      "payload_size": 55944256,
+      "scene_paths": 1082,
+      "scene_tables": 62,
+      "tcam_resources": 31
+    }
+  ],
+  "policy": {
+    "cache_paths_embedded": false,
+    "retail_bytes_embedded": false
+  },
+  "schema": "ac6.scene-tcam-corpus.v1",
+  "schema_version": 1,
+  "status": "qualified",
+  "tcam_resources": [
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_01/Tcam__c01.mop",
+      "sha256": "2af69c5ebdf322c473b7aa4599882dc2d5b915a4433a9e58f0ea6ea3340cf2d1",
+      "size": 4656
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_02/Tcam__c02.mop",
+      "sha256": "7f67fb67bdedd1f810f78d4257d43bcd159a20e1018a71a32d2eca2f45bb2cc0",
+      "size": 3216
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_03/Tcam__c03.mop",
+      "sha256": "55a52f455035d56b8ef02c2d7b2c3d18b621b719eaf32dabef12003adcb924ec",
+      "size": 3152
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_04/Tcam__c04.mop",
+      "sha256": "19c6f266157d7db70328824c6299294944db7e820d8a69363dfc27e562a0792c",
+      "size": 2496
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_05/Tcam__c05.mop",
+      "sha256": "774b7dda01209977e7528bcb76b66d61e80c2ad204281baf541625485796b619",
+      "size": 5328
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_06/Tcam__c06.mop",
+      "sha256": "fe7e186e38e4eb6694d90aa8dd173e2aa329864994e6e8c0e1922e278ab946cc",
+      "size": 8256
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_07/Tcam__c07.mop",
+      "sha256": "96b9c9fe540e580c0a07e89751ef76eed11c6e27d82116612818595b5d5f4b62",
+      "size": 4848
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_08/Tcam__c08.mop",
+      "sha256": "b0d67a8a43c50d0b3f27d10ea97145e809ece0c96f5141ce111838d90f50303b",
+      "size": 2832
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_09/Tcam__c07.mop",
+      "sha256": "ebe9451e351b7d53090423543283ea3fdcb2c44935a48c3a8f35e7920463296a",
+      "size": 3680
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_10/Tcam__cut11.mop",
+      "sha256": "b8230a568b8e8605c32b0ec04d01322590e9de6ea8f80efa36f84d01ec5e52ff",
+      "size": 13568
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_11/Tcam__cut12.mop",
+      "sha256": "25a6e1f4e2e71a23bf0a797a6300268c78b0f5937abb98b2ef6858274d27a72a",
+      "size": 15824
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_12/Tcam__cut13.mop",
+      "sha256": "d6f52b64c3db59f15ae4255ec243bafa1bd82824239ab7511a4ed313370671dd",
+      "size": 11440
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_13/Tcam__cut14.mop",
+      "sha256": "9e7d76269c8b8e92f953f4252a218602b798d2c1898f86638b8ae8b45444f05e",
+      "size": 6528
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_14/Tcam__cut15.mop",
+      "sha256": "d5557c3dec29eddb84acfd15c5feb9b82a7a869cd39c88193e3fb6d1be02260e",
+      "size": 7136
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_15/Tcam__cut16.mop",
+      "sha256": "051c59d6e7b540aadd105798a74239147866e9bd3f140bee6b96701eeca76bf2",
+      "size": 17328
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_01a/dd01_01a_16/Tcam__cut17.mop",
+      "sha256": "f6549c94d7cd6d6770900618afec9c86f2071ee4fe31bea8d640a3bc53c0313d",
+      "size": 6816
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_02a/dd01_02a_01/Tcam__cut01.mop",
+      "sha256": "dbac425605079d6ea76ca1242628faf66105caa84e2cb13d5ae86ed2a0acfcd3",
+      "size": 6560
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_02a/dd01_02a_02/Tcam__cut02.mop",
+      "sha256": "1858a256722bf2e31210b82d7ac56e5c9acbafd920e2bf7a22e5d55d585a1cec",
+      "size": 8304
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_02a/dd01_02a_03/Tcam__cut03.mop",
+      "sha256": "e42b7e0f9dc7fd235455dd5329886fbaf16bb324328a764c2746ef4b3cd21b2e",
+      "size": 7904
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_02a/dd01_02a_04/Tcam__cut04.mop",
+      "sha256": "9f994ab30e99554806446cba8839e635d9f5b4f435693b5cbe8f80f467e26741",
+      "size": 5856
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_02a/dd01_02a_05/Tcam__cut05.mop",
+      "sha256": "97800a8b6726b7eda1b1d8f8c9d8c3c54afecd01eaab4202c28a50a234ee9326",
+      "size": 15456
+    },
+    {
+      "mission_id": 1,
+      "path": "Scene/dd01_02a/dd01_02a_06/Tcam__cut06.mop",
+      "sha256": "a07f6cbf723f09f08a02af6cd7391263d8e069e58c2508ce7af5700eda71c8c3",
+      "size": 9456
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01a/dd07_01a_01/Tcam__cut01.mop",
+      "sha256": "5fd84836feec8f39d9752f56f1711570d1e60369be4b23318b7740d43736b34d",
+      "size": 13520
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01a/dd07_01a_02/Tcam__cut02.mop",
+      "sha256": "0c75a43b3524426e5106f6396dbadefc046ab0e4f03b5ea407b4d07671df9f77",
+      "size": 8720
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01a/dd07_01a_03/Tcam__cut03.mop",
+      "sha256": "6691c36c9cdb950a59f5282fd123b5b3efbadf4ed4be2a6503ec03c86ce52cec",
+      "size": 4112
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01a/dd07_01a_04/Tcam__cut04.mop",
+      "sha256": "63d1c27f7c1fc8939c4b66b53f3843ff8448a9335713e263f417ceef0d9d23d3",
+      "size": 6784
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01a/dd07_01a_05/Tcam__cut05.mop",
+      "sha256": "c878490e6e71b45570f3ef51ea1963ac6e5e8c92a07452020eb7cb32688357a4",
+      "size": 4416
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01a/dd07_01a_06/Tcam__cut06.mop",
+      "sha256": "b3116b46ab6fd55647000c31673d4ce9ec1dfb67a5fd3e74dba8d5575dc2421b",
+      "size": 15824
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01b/dd07_01b_01/Tcam__cut01.mop",
+      "sha256": "5fd84836feec8f39d9752f56f1711570d1e60369be4b23318b7740d43736b34d",
+      "size": 13520
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01b/dd07_01b_02/Tcam__cut02.mop",
+      "sha256": "27ab3994846831d2251de16783772d681470b1715f75a782c60ab420c40df93d",
+      "size": 8560
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01b/dd07_01b_03/Tcam__cut03.mop",
+      "sha256": "6691c36c9cdb950a59f5282fd123b5b3efbadf4ed4be2a6503ec03c86ce52cec",
+      "size": 4112
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01b/dd07_01b_04/Tcam__cut04.mop",
+      "sha256": "63d1c27f7c1fc8939c4b66b53f3843ff8448a9335713e263f417ceef0d9d23d3",
+      "size": 6784
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01b/dd07_01b_05/Tcam__cut05.mop",
+      "sha256": "c878490e6e71b45570f3ef51ea1963ac6e5e8c92a07452020eb7cb32688357a4",
+      "size": 4416
+    },
+    {
+      "mission_id": 7,
+      "path": "Scene/dd07_01b/dd07_01b_06/Tcam__cut06.mop",
+      "sha256": "5a3f68e580eeead6bac776cfe2f6acc1e8c51f47099179ab6d66b17ffbf32acd",
+      "size": 15776
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_01a/dd09_01a_01/Tcam__c01.mop",
+      "sha256": "2b6d9e7360bafdf11c36c1e087641523592a26dbc5cc902d779a22aa2a80937c",
+      "size": 3216
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_01a/dd09_01a_02/Tcam__c02.mop",
+      "sha256": "3220036a08dfa65967f41774c83a48bc85e2227d06d150690f9283ee281138b5",
+      "size": 15408
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_01a/dd09_01a_03/Tcam__cut01.mop",
+      "sha256": "f778739f552f605eb582af7fded3f8371657c47fdd8a8a6b339cf517423474bc",
+      "size": 16064
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_01a/dd09_01a_04/Tcam__cut02.mop",
+      "sha256": "b35ab13fbfdcd55d1abb9ef9003b9505bfc4120704472e873b1cfa796183bcff",
+      "size": 9344
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_01a/dd09_01a_05/Tcam__cut03.mop",
+      "sha256": "baf0aa0ef95d796e3e18583d444049a76fb48a16706a22506eea8c2dad73b126",
+      "size": 5200
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_01a/dd09_01a_06/Tcam__cut04.mop",
+      "sha256": "d3f3ed7c2a1ec3a983e0d210910964b2cc5f6dc1e520d0292d971a4b0542b917",
+      "size": 9344
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_02a/dd09_02a_01/Tcam__cut04.mop",
+      "sha256": "3ebaaaf776e4fdb30d9368824cba1b0a27d9d63fe8039d450eb0300ffa0d9650",
+      "size": 7552
+    },
+    {
+      "mission_id": 9,
+      "path": "Scene/dd09_02a/dd09_02a_02/Tcam__cut05.mop",
+      "sha256": "9ab3d3137ee1602228144e89e626d298b15cfb0b588e3f2be07f7215e618cdcd",
+      "size": 17488
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_01/Tcam__cut01.mop",
+      "sha256": "ab2e698dee06a7f9e62e5d7cedd0572f327b1c177ac6152d6068b07329f6ebfd",
+      "size": 4208
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_02/Tcam__cut02.mop",
+      "sha256": "9d6c130470add9cbbea75118c45098c3d7bc1bd4db78376e765cd0e718cd6176",
+      "size": 8448
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_03/Tcam__cut03.mop",
+      "sha256": "a84a0561296a0d75b9ac76bd576756a75cd2d913521d1630b436ff1e1984a4d5",
+      "size": 13520
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_04/Tcam__cut04.mop",
+      "sha256": "b86111852111403598a0001899884daa49b67ff97d878b02fe9010122d030aa8",
+      "size": 4320
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_05/Tcam__cut05.mop",
+      "sha256": "a81038b8f98ac52d018e37fdc95bd183d2bbcaf3930b22bbb505a19b21d7bd6a",
+      "size": 5376
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_06/Tcam__cut06.mop",
+      "sha256": "b3dc825775e4f1d2936b245c248a0796a059261c78d8e08cb9f1c30253fe034f",
+      "size": 11856
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_07/Tcam__cut07.mop",
+      "sha256": "d700feb139284ae7037b09a2b20f770fba451642e626f801687f8fb0126fb16f",
+      "size": 4512
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_08/Tcam__cut08.mop",
+      "sha256": "0d2f8fb71b6cdede5f687ca790be8a305459218e000cdabb9a3a946df0ed616b",
+      "size": 7536
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_09/Tcam__cut09.mop",
+      "sha256": "478f75284450dc5d49275e7b96fb47b18c852fa46f5a6536eb1b9ae73f342c67",
+      "size": 6096
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_10/Tcam__cut10.mop",
+      "sha256": "47f462701eccf0c72f88a42a1c3e3a8f9ea5e9897668e1452dc1bc5fbea52232",
+      "size": 3936
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_01a/dd13_01a_11/Tcam__cut11.mop",
+      "sha256": "5a8645e69dc12e81c54c52a51bc6d3476cdc62bc81ce417a6909c9747f89b1d2",
+      "size": 6032
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_02a/dd13_02a_01/Tcam__01.mop",
+      "sha256": "455fe528e917c3099b9d5269cd55cc2bbaf4485a772fc969ab8e8d721d05b48f",
+      "size": 7472
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_02a/dd13_02a_02/Tcam__02.mop",
+      "sha256": "6e48576645847f9e33abfe019175e882bcb042209f8b12020b9b6616234c11cb",
+      "size": 3248
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_02a/dd13_02a_03/Tcam__03.mop",
+      "sha256": "ac61dd5937e6f7c868970946f4ea5970c6323adc3ef2fc2a563517217cf4fcae",
+      "size": 10592
+    },
+    {
+      "mission_id": 13,
+      "path": "Scene/dd13_02a/dd13_02a_04/Tcam__04.mop",
+      "sha256": "0a2ebec317f1fa7b92960f4ef08b03b80b66bd69ccd07f931da51175a5333d0b",
+      "size": 30848
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_01a/dd15_01a_01/Tcam__cut01.mop",
+      "sha256": "4abad3fc0d3c4e9df5e6c35af4012ffe0551e119da8ef4962d1fe8e7a04e7916",
+      "size": 18288
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_01a/dd15_01a_02/Tcam__cut02.mop",
+      "sha256": "b92bbf240993a56b8fe5fe00ce3b92316a44195476c92d7c1744f49bfaee5fc9",
+      "size": 20832
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_01a/dd15_01a_03/Tcam__cut03.mop",
+      "sha256": "3fc40145ea78239998f37bcf5500767ab9ca78a4046319cb247487b3f99ccfae",
+      "size": 10544
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_01a/dd15_01a_04/Tcam__cut04.mop",
+      "sha256": "5ae96ef9c114656f99b57b1eeabbcb6690d76835fc3a2deeabc9d9f3b0e7f393",
+      "size": 9824
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_01a/dd15_01a_05/Tcam__cut05.mop",
+      "sha256": "d52c07e0298490e5a10b0abeee1d8d23ab29168d6be3401a3123a458801bb5c8",
+      "size": 9296
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_01a/dd15_01a_06/Tcam__cut06.mop",
+      "sha256": "945813a7e5a9030353ec85dce9043d7a15659ab13e2dcf0f8592a49e1785c18a",
+      "size": 4160
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_02a/dd15_02a_01/Tcam__01.mop",
+      "sha256": "3cf930a4bf40494ab017faf4d01f74a303757c392c559be6dc65cf396554efd2",
+      "size": 6816
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_02a/dd15_02a_02/Tcam__02.mop",
+      "sha256": "1bbb63ab05896829322ebc7e73fad0cf33f8681b36cd08328d9728ccd45804b2",
+      "size": 5408
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_02a/dd15_02a_03/Tcam__03.mop",
+      "sha256": "a3af3fdfb29442bb7a94fe3aa9089cd360b6d0d91fc6e7a945a23f7d3df268af",
+      "size": 5696
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_02a/dd15_02a_04/Tcam__04.mop",
+      "sha256": "229ee4da0b383f477036b8fcd8e2db69b5bac4da3262bdd09bb1f37d512ecbd4",
+      "size": 8224
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_02a/dd15_02a_05/Tcam__05.mop",
+      "sha256": "65245e18a205879f81f0bc0ec49e2068ec6a4fbbed3838d0ff375cfdde000964",
+      "size": 9616
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_01/Tcam__c01.mop",
+      "sha256": "34a6d0d998eb1b2cdd7eca72580ce4eaa3f8ec477de51d22b9b050fc761a62fb",
+      "size": 10640
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_02/Tcam__c02.mop",
+      "sha256": "6069fe15edab57f12a989caa71d7338ef4e8de05db6e0398cd124bdeeaf06888",
+      "size": 5024
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_03/Tcam__c03.mop",
+      "sha256": "6cdab58fd13858d8f6556f6e720e53a34cab1a22b9c021964ac1744305df3995",
+      "size": 3040
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_04/Tcam__c04.mop",
+      "sha256": "d3f7a1e516c268931d3007d97f341cff0201de3907a36e9e8089ee2f4ce67e52",
+      "size": 2144
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_05/Tcam__c05.mop",
+      "sha256": "839e86096ee1307136344ef6b2e75ad18670774ebe55a280b39ba2a42743fb60",
+      "size": 6320
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_06/Tcam__c06.mop",
+      "sha256": "3bc9d047b5885d959ee0f9f8ce4f8af197bd15918e93d3162f630ab192b0aafd",
+      "size": 1808
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_07/Tcam__c07.mop",
+      "sha256": "c07ebf7b5b415e56582624a10ff34626b8e4146ebfaf1842be142f08ffeaf096",
+      "size": 1424
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_08/Tcam__c08.mop",
+      "sha256": "36df90331d7db334643300119f3ef9d84c1d70c52adceb5ae47b80f288390a16",
+      "size": 7104
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_09/Tcam__c09.mop",
+      "sha256": "50732f02877d1f88ed8ee12c380bb46538ef84a0db8f334e1c601986c29cd67b",
+      "size": 8672
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_10/Tcam__c10.mop",
+      "sha256": "54d8d3c1b8d7e9c74ceb19221cf249fa97d847376a71f6095127bd36f6d1b079",
+      "size": 8624
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_03a/dd15_03a_11/Tcam__c11.mop",
+      "sha256": "6c28cc8cb8252ad08952f08b3e5eda2d06b1e1192a60a0a8ab9178069d260c79",
+      "size": 24640
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_01/Tcam__cut01.mop",
+      "sha256": "7b623718a0cf52564120729b90cf107f479d18bd6775ce248c3885b33742e55f",
+      "size": 4416
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_02/Tcam__cut02.mop",
+      "sha256": "b908d2d5a743223de303c4384b080e9ebffae43555e7d4d0d6c4477f0654863f",
+      "size": 11568
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_03/Tcam__cut03.mop",
+      "sha256": "4ef23047f5d268c23c3bec802c11477a8fbf4249131dc99792d369eb3698494e",
+      "size": 29184
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_04/Tcam__cut04.mop",
+      "sha256": "c5c258e2e98cfbbe54d82d9b488e360680692ceabb1e1a81ec4e98a11393cc6d",
+      "size": 11136
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_05/Tcam__cut05.mop",
+      "sha256": "a2b2a98e0fd302dfb2da4ad11793293f19efb2824ccd6c3213d4bd8c1e9d2b97",
+      "size": 6768
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_06/Tcam__cut06.mop",
+      "sha256": "2e846cf751f43a5ddb6ab0fae19cfcca9a527622fcafa606e6112c3e7c45901c",
+      "size": 5936
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_07/Tcam__cut07.mop",
+      "sha256": "dfaf8cc2b72fe33d977aa8025be67d0c74fe63c440462bd69f0deba881a0734c",
+      "size": 20800
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_08/Tcam__cut08.mop",
+      "sha256": "b27d7b20514cf989e0c907dcf3166b94c767254724ce73717e849e14d582ba4e",
+      "size": 8000
+    },
+    {
+      "mission_id": 15,
+      "path": "Scene/dd15_04a/dd15_04a_09/Tcam__cut09.mop",
+      "sha256": "7ca2bd7f88c91493311c9a0bf14b13110d1bfb8391878ebba0933887f2ed21db",
+      "size": 41520
+    }
+  ],
+  "totals": {
+    "mission_payloads": 15,
+    "scene_paths": 2950,
+    "scene_tables": 176,
+    "tcam_resources": 88
+  }
+}
