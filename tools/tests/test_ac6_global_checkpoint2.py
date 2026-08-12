@@ -59,6 +59,20 @@ class GlobalCheckpoint2Tests(unittest.TestCase):
         ):
             audit_document(document)
 
+    def test_semantic_scope_is_mission01(self) -> None:
+        document = copy.deepcopy(self.document())
+        document["semantic_scope"] = "all-missions"
+
+        with self.assertRaisesRegex(Checkpoint2Error, "semantic scope"):
+            audit_document(document)
+
+    def test_shared_reader_regression_scope_remains_global(self) -> None:
+        document = copy.deepcopy(self.document())
+        document["shared_reader_regression_scope"] = ["M01"]
+
+        with self.assertRaisesRegex(Checkpoint2Error, "shared reader"):
+            audit_document(document)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -113,11 +113,16 @@ def audit_document(document: dict) -> None:
         json.loads(reproduction_path.read_text(encoding="utf-8")), ROOT
     )
 
+    require(
+        document.get("semantic_scope") == "mission01-executed-dependency-cone",
+        "checkpoint semantic scope",
+    )
     expected_missions = [f"M{number:02d}" for number in range(1, 16)]
     require(
-        document.get("corpus_missions") == expected_missions,
-        "checkpoint mission corpus",
+        document.get("shared_reader_regression_scope") == expected_missions,
+        "checkpoint shared reader regression scope",
     )
+    audit_evidence(document.get("scope_decision"), "checkpoint scope decision")
     lanes = document.get("lanes")
     require(
         isinstance(lanes, list)
@@ -163,6 +168,7 @@ def audit_document(document: dict) -> None:
         "oracle_is_not_product",
         "generated_code_is_not_product",
         "mission_progress_cannot_close_checkpoint",
+        "other_mission_semantics_are_deferred",
         "microexecution_is_ambiguity_escalation",
     }
     require(
@@ -198,7 +204,8 @@ def audit() -> None:
     passed = sum(lane["state"] == "passed" for lane in document["lanes"])
     print(
         f"global_checkpoint2=pass state={document['state']} "
-        f"lanes={passed}/{len(LANES)} missions=15"
+        f"lanes={passed}/{len(LANES)} semantic_scope=M01 "
+        "shared_reader_missions=15"
     )
 
 

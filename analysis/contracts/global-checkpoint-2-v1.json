@@ -8,6 +8,16 @@
     "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
     "ghidra_project": "ace-combat-6"
   },
+  "semantic_scope": "mission01-executed-dependency-cone",
+  "shared_reader_regression_scope": [
+    "M01", "M02", "M03", "M04", "M05", "M06", "M07", "M08",
+    "M09", "M10", "M11", "M12", "M13", "M14", "M15"
+  ],
+  "scope_decision": {
+    "path": "reports/cycle-1534-mission01-becomes-the-checkpoint2-semantic-scope.md",
+    "size": 1555,
+    "sha256": "25b81693299741fb35e0e4da46a9d5d2afa9c78a94f258fc1b837ed071fd3745"
+  },
   "prerequisites": [
     {
       "checkpoint": 0,
@@ -36,30 +46,13 @@
       "sha256": "e326778ecfd61652f48bb464efd40052b2b7cebbc0bee8aae086d35842de694e"
     }
   },
-  "corpus_missions": [
-    "M01",
-    "M02",
-    "M03",
-    "M04",
-    "M05",
-    "M06",
-    "M07",
-    "M08",
-    "M09",
-    "M10",
-    "M11",
-    "M12",
-    "M13",
-    "M14",
-    "M15"
-  ],
   "lanes": [
     {
       "id": "vmx-vmx128",
       "state": "open",
-      "closure": "Every reachable position, transform, camera, and physics vector instruction has retail bytes, positive control, handwritten native semantics, and corpus coverage; micro-execution is required only for a documented ambiguity that static and bit-exact controls cannot resolve.",
+      "closure": "Every position, transform, camera, and physics vector instruction reachable in the executed Mission 01 cone has retail bytes, positive control and handwritten native semantics; micro-execution is required only for a documented ambiguity that static and bit-exact controls cannot resolve.",
       "blockers": [
-        "The raw 0x40-byte locator copy at 0x822A6710 is now statically qualified and corpus-reachable for all fifteen missions without micro-execution; the remaining reachable instruction census is not sealed.",
+        "The raw 0x40-byte locator copy at 0x822A6710 is now statically qualified and corpus-reachable for all fifteen missions without micro-execution; the remaining Mission 01 reachable instruction census is not sealed.",
         "Huge finite angles, floating-point exception details, NaN payloads, interpolation, and unsupported Xenon instruction families remain explicit open boundaries."
       ],
       "evidence": [
@@ -83,7 +76,7 @@
     {
       "id": "scene-tcam",
       "state": "open",
-      "closure": "Scene selection, every TCAM variant, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested for all fifteen missions.",
+      "closure": "Mission 01 Scene selection, TCAM variants, live manager/player pose producers, FOV, clipping, culling, and cinematic transitions are derived and tested end to end.",
       "blockers": [
         "The direct mode-2 target path, mode-3 cubic gain, non-mode-3 scalar tail, small-direction threshold path, 0x8225C680 radial normalizer, caller-side identity guard, and active/hit/miss core of 0x82281198 are bounded; the upstream matrix/VMX128 direction producer, VMX estimate path, retail trigonometric factor producer, mode-1 heading correction/override, two tunnel geometry callbacks, vertical fallback, manager publication join, and remaining 0x82262A28 joins are still open.",
         "The exact fifteen-payload Scene/TCAM census is now parsed by the native campaign bundle at 176 tables, 2,950 paths, and 88 bounded TCAM resources; runtime group selection, record semantics/interpolation, NFIC activation, live player/manager pose producers, FOV, clipping, culling, and transitions remain open."
@@ -129,7 +122,7 @@
     {
       "id": "mdlp-mate",
       "state": "open",
-      "closure": "Model directories, class and parent relations, transform staging/commit, material/shader/texture joins, duplicate policy, and mounts match retail across the corpus.",
+      "closure": "Mission 01 model directories, class and parent relations, transform staging/commit, material/shader/texture joins, duplicate policy, and mounts match retail.",
       "blockers": [
         "Vertex data is not joined to the derived material path.",
         "Material slots 2 through 4, parameter-node meanings, and unmatched texture references are not qualified."
@@ -145,10 +138,10 @@
     {
       "id": "ndxr-ntxr-xenos",
       "state": "open",
-      "closure": "All observed NDXR layouts/topologies/attributes and NTXR formats/mips/cubes/tiling/endian rules are retail-derived, bounded, corpus-tested, and unknown formats reject deterministically.",
+      "closure": "All NDXR layouts/topologies/attributes and NTXR formats/mips/cubes/tiling/endian rules reached by Mission 01 are retail-derived and bounded, and unknown formats reject deterministically.",
       "blockers": [
         "Exact Xenos tiled BC3 swizzle and endian decoding lacks an image-positive control.",
-        "The fifteen-mission format, stride, restart, mip, cube-map, and truncation corpus is not yet sealed."
+        "Mission 01 format, stride, restart, mip, cube-map, and truncation coverage is not yet sealed; shared-reader changes must still pass the fifteen-payload regression corpus."
       ],
       "evidence": [
         {
@@ -161,7 +154,7 @@
     {
       "id": "objectives-campaign",
       "state": "open",
-      "closure": "M01's 339-slot counter capacity and every authored producer, consumer, encountered script tag, condition, transition, zone, and order are mapped and mission-owner behavior is corpus-tested.",
+      "closure": "M01's 339-slot counter capacity and every producer, consumer, encountered script tag, condition, transition, zone, and order reached by Mission 01 are mapped and mission-owner behavior is tested.",
       "blockers": [
         "All 3,650 authored OrderFlagBin producers across the fifteen missions are now localized and bounded; M01 uses 133 distinct IDs within its 339-slot capacity, while slot meanings, non-scenario producers, and live consumers remain unmapped.",
         "AI/event timing and the events that satisfy retail conditions remain open; no counter may be fabricated."
@@ -182,9 +175,9 @@
     {
       "id": "xma-asf",
       "state": "open",
-      "closure": "Qualified XMA and bounded moviepack streams provide retail framing, English/Japanese selection, subtitles, A/V synchronisation, and temporal events without speculative demuxing.",
+      "closure": "Qualified XMA and bounded moviepack streams reached by Mission 01 provide retail framing, English/Japanese selection, subtitles, A/V synchronisation, and temporal events without speculative demuxing.",
       "blockers": [
-        "The two-bank ASF index now exposes 5,449 non-empty content-addressed ranges; their internal packet structure, codec/container decoding, and bounded demux exposure to FFmpeg remain open.",
+        "The current two-bank ASF reader exposes only a 5,449-range suffix; static review found 1,079 preceding candidate offsets, so correction to the full 6,528-range table must pass before bounded demux work.",
         "Audio/video synchronisation, language selection, subtitles, and timed events are not yet qualified."
       ],
       "evidence": [
@@ -208,6 +201,7 @@
     "oracle_is_not_product": true,
     "generated_code_is_not_product": true,
     "mission_progress_cannot_close_checkpoint": true,
+    "other_mission_semantics_are_deferred": true,
     "microexecution_is_ambiguity_escalation": true
   },
   "evidence_strategy": {

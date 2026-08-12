@@ -33,7 +33,7 @@ alias. Paths follow XDG.
 |---|---|---|
 | 0 — baseline and global contract | baseline passes; historical contracts are fail-closed; mission contract template and 15-mission matrix exist | **passed** |
 | 1 — complete offline import | atomic RetailContentStore v2 contains the qualified offline closure; no source PAC access after import | **passed** |
-| 2 — structural blockers | VMX position, Scene/TCAM/MDLP/MATE/NDXR/NTXR, objective progression, and XMA/ASF are proved and tested across 15 payloads | pending |
+| 2 — Mission 01 structural blockers | VMX position, Scene/TCAM/MDLP/MATE/NDXR/NTXR, objective progression, and XMA/ASF close the executed M01 dependency cone; shared readers retain their 15-payload regression corpus | pending |
 | 3 — complete Mission 01 vertical | M01 passes JF, JV, JP, and JG at 720p30 with exact 60 Hz simulation | pending |
 | 4 — standard missions | M02–06, M08, M10–12, and M14 each pass JF→JV→JP→JG | pending |
 | 5 — rich missions and campaign | M07, M09, M13, M15 and a deterministic complete campaign pass | pending |
@@ -69,6 +69,11 @@ while retaining the fifteen-mission corpus requirement for shared readers.
 The same global-ladder auditor checks its evidence hashes, prerequisite order,
 three work lanes and oracle capture qualification. The mission matrix cannot
 advance beyond this spine.
+
+Checkpoint 2 follows the same M01-first scope. Semantic coverage of M02–M15 is
+deferred until after the M01 preview; only shared-reader regression remains
+global during the vertical slice. The durable decision is recorded in
+`reports/cycle-1534-mission01-becomes-the-checkpoint2-semantic-scope.md`.
 
 Normalized oracle and native event traces are compared with:
 
