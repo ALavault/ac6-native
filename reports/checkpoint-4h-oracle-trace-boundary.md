@@ -22,3 +22,12 @@ et les deux runs ont le même binaire et la même route. Ils ne sont pas import�
 comme oracle qualifié, ni utilisés pour corriger la simulation ou le renderer.
 Le comparateur existant reste l'autorité pour la prochaine capture obtenue avec
 une source d'entrée rejouée et une frontière de départ identique.
+
+Le TSV de replay est désormais reproductible depuis la trace brute avec
+`tools/extract_ac6_trace_v2_input.py`. L’extraction exige le contrat v2 complet,
+les groupes ordonnés de cinq domaines, les 3 600 ticks séquentiels et les
+bornes de chaque champ. La capture A reproduit l’artefact historique
+`/tmp/ac6-oracle-input-a.tsv`, SHA-256
+`523a0535f11785433436101f8a6bba56166c4cfcd6e3a8758c86cf4ad6b93e47`.
+Le test unitaire de l’extracteur couvre aussi un groupe v2 valide et un flux
+malformé refusé.
