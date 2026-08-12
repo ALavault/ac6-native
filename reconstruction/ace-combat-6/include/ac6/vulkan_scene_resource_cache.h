@@ -29,6 +29,12 @@ struct VulkanSceneTexturedMeshUpload final {
   std::span<const std::uint16_t> indices;
 };
 
+struct VulkanSceneWorldTexturedMeshUpload final {
+  std::string_view mesh_id;
+  std::span<const VulkanWorldTexturedVertex> vertices;
+  std::span<const std::uint16_t> indices;
+};
+
 struct VulkanSceneClipTexturedMeshUpload final {
   std::string_view mesh_id;
   std::span<const VulkanClipTexturedVertex> vertices;
@@ -55,6 +61,19 @@ struct VulkanMission01TexturedUpload final {
   std::vector<std::uint8_t> rgba8;
 };
 
+// Mission 01 geometry retained in authored XYZ coordinates. Draw transforms
+// remain in DrawPacket and are composed with the renderer-owned generic camera
+// before being applied by the Vulkan vertex shader.
+struct VulkanMission01WorldTexturedUpload final {
+  std::string mesh_id;
+  std::vector<VulkanWorldTexturedVertex> vertices;
+  std::vector<std::uint16_t> indices;
+  std::string texture_id;
+  std::uint32_t texture_width{};
+  std::uint32_t texture_height{};
+  std::vector<std::uint8_t> rgba8;
+};
+
 // Qualified NDXR/NTXR data after an explicitly supplied object-to-clip
 // transform. The transform is caller-owned evidence; this helper never
 // chooses a camera, handedness, or projection convention.
@@ -70,6 +89,14 @@ struct VulkanMission01ClipTexturedUpload final {
 
 [[nodiscard]] std::optional<VulkanMission01TexturedUpload>
 make_vulkan_mission01_textured_upload(
+    std::string_view mesh_id, std::string_view texture_id,
+    std::span<const retail::NdxrPosition> positions,
+    std::span<const retail::NdxrTexcoord> texcoords,
+    std::span<const std::uint16_t> indices,
+    const retail::DecodedTexture& texture) noexcept;
+
+[[nodiscard]] std::optional<VulkanMission01WorldTexturedUpload>
+make_vulkan_mission01_world_textured_upload(
     std::string_view mesh_id, std::string_view texture_id,
     std::span<const retail::NdxrPosition> positions,
     std::span<const retail::NdxrTexcoord> texcoords,
@@ -128,6 +155,12 @@ class VulkanSceneResourceCache final {
       std::span<const VulkanSceneTexturedMaterialUpload> materials,
       std::span<const VulkanSceneTextureUpload> textures) noexcept;
 
+  [[nodiscard]] bool build_world_textured(
+      const RenderScene& scene, VulkanRenderTargetHandle target,
+      std::span<const VulkanSceneWorldTexturedMeshUpload> meshes,
+      std::span<const VulkanSceneTexturedMaterialUpload> materials,
+      std::span<const VulkanSceneTextureUpload> textures) noexcept;
+
   [[nodiscard]] bool render(const RenderScene& scene) noexcept;
   void reset() noexcept;
 
@@ -149,6 +182,8 @@ class VulkanSceneResourceCache final {
   std::vector<VulkanSceneMaterialBinding> material_bindings_;
   std::vector<std::string> texture_ids_;
   std::vector<VulkanSceneTexturedMeshBinding> textured_mesh_bindings_;
+  std::vector<VulkanSceneWorldTexturedMeshBinding>
+      world_textured_mesh_bindings_;
   std::vector<VulkanSceneClipTexturedMeshBinding> clip_textured_mesh_bindings_;
   std::vector<VulkanSceneTexturedMaterialBinding> textured_material_bindings_;
   std::vector<VulkanSceneTextureBinding> texture_bindings_;
@@ -156,6 +191,7 @@ class VulkanSceneResourceCache final {
   bool ready_{};
   bool textured_mode_{};
   bool clip_textured_mode_{};
+  bool world_textured_mode_{};
 };
 
 }  // namespace ac6

@@ -267,8 +267,9 @@ bool VulkanBackend::draw_textured_indexed(
   const auto mesh = state_->textured_meshes.find(mesh_handle.value);
   const auto texture = state_->textures.find(texture_handle.value);
   if (target == state_->targets.end() || pipeline == state_->pipelines.end() ||
-      mesh == state_->textured_meshes.end() || texture == state_->textures.end() ||
-      !pipeline->second.textured ||
+      mesh == state_->textured_meshes.end() ||
+      texture == state_->textures.end() || !pipeline->second.textured ||
+      pipeline->second.clip_space || pipeline->second.world_space ||
       pipeline->second.render_pass != target->second.render_pass ||
       target->second.color_layout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
       texture->second.layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ||
@@ -314,8 +315,9 @@ bool VulkanBackend::draw_clip_textured_indexed(
   const auto mesh = state_->clip_textured_meshes.find(mesh_handle.value);
   const auto texture = state_->textures.find(texture_handle.value);
   if (target == state_->targets.end() || pipeline == state_->pipelines.end() ||
-      mesh == state_->clip_textured_meshes.end() || texture == state_->textures.end() ||
-      !pipeline->second.textured || !pipeline->second.clip_space ||
+      mesh == state_->clip_textured_meshes.end() ||
+      texture == state_->textures.end() || !pipeline->second.textured ||
+      !pipeline->second.clip_space || pipeline->second.world_space ||
       pipeline->second.render_pass != target->second.render_pass ||
       target->second.color_layout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
       texture->second.layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ||
@@ -346,6 +348,62 @@ bool VulkanBackend::draw_clip_textured_indexed(
     vkCmdBindDescriptorSets(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipeline->second.layout, 0U, 1U,
                             &texture->second.descriptor_set, 0U, nullptr);
+    vkCmdDrawIndexed(commands, mesh->second.index_count, 1U, 0U, 0, 0U);
+    vkCmdEndRenderPass(commands);
+  });
+}
+
+bool VulkanBackend::draw_world_textured_indexed(
+    const VulkanRenderTargetHandle target_handle,
+    const VulkanPipelineHandle pipeline_handle,
+    const VulkanWorldTexturedMeshHandle mesh_handle,
+    const VulkanTextureHandle texture_handle,
+    const std::array<float, 16>& object_to_clip) noexcept {
+  for (const float value : object_to_clip) {
+    if (!std::isfinite(value)) return false;
+  }
+  const auto target = state_->targets.find(target_handle.value);
+  const auto pipeline = state_->pipelines.find(pipeline_handle.value);
+  const auto mesh = state_->world_textured_meshes.find(mesh_handle.value);
+  const auto texture = state_->textures.find(texture_handle.value);
+  if (target == state_->targets.end() || pipeline == state_->pipelines.end() ||
+      mesh == state_->world_textured_meshes.end() ||
+      texture == state_->textures.end() || !target->second.with_depth ||
+      !pipeline->second.textured || pipeline->second.clip_space ||
+      !pipeline->second.world_space || !pipeline->second.state.depth_test ||
+      !pipeline->second.state.depth_write ||
+      pipeline->second.render_pass != target->second.render_pass ||
+      target->second.color_layout != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
+      target->second.depth_layout !=
+          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+      texture->second.layout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ||
+      texture->second.descriptor_set == VK_NULL_HANDLE) {
+    return false;
+  }
+  return submit_vulkan_commands(*state_, [&](const VkCommandBuffer commands) {
+    const VkRenderPassBeginInfo begin{
+        .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+        .pNext = nullptr,
+        .renderPass = target->second.render_pass,
+        .framebuffer = target->second.framebuffer,
+        .renderArea = {{0, 0}, {target->second.width, target->second.height}},
+        .clearValueCount = 0U,
+        .pClearValues = nullptr,
+    };
+    vkCmdBeginRenderPass(commands, &begin, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      pipeline->second.pipeline);
+    const VkDeviceSize offset = 0U;
+    vkCmdBindVertexBuffers(commands, 0U, 1U, &mesh->second.vertex_buffer,
+                           &offset);
+    vkCmdBindIndexBuffer(commands, mesh->second.index_buffer, 0U,
+                         VK_INDEX_TYPE_UINT16);
+    vkCmdBindDescriptorSets(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipeline->second.layout, 0U, 1U,
+                            &texture->second.descriptor_set, 0U, nullptr);
+    vkCmdPushConstants(commands, pipeline->second.layout,
+                       VK_SHADER_STAGE_VERTEX_BIT, 0U,
+                       sizeof(std::array<float, 16>), object_to_clip.data());
     vkCmdDrawIndexed(commands, mesh->second.index_count, 1U, 0U, 0, 0U);
     vkCmdEndRenderPass(commands);
   });

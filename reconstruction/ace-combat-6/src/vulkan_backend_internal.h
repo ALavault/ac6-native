@@ -26,6 +26,14 @@ struct VulkanTexturedMeshResource {
   std::uint32_t index_count{};
 };
 
+struct VulkanWorldTexturedMeshResource {
+  VkBuffer vertex_buffer{VK_NULL_HANDLE};
+  VkDeviceMemory vertex_memory{VK_NULL_HANDLE};
+  VkBuffer index_buffer{VK_NULL_HANDLE};
+  VkDeviceMemory index_memory{VK_NULL_HANDLE};
+  std::uint32_t index_count{};
+};
+
 struct VulkanClipTexturedMeshResource {
   VkBuffer vertex_buffer{VK_NULL_HANDLE};
   VkDeviceMemory vertex_memory{VK_NULL_HANDLE};
@@ -67,6 +75,7 @@ struct VulkanPipelineResource {
   VulkanPipelineState state{};
   bool textured{};
   bool clip_space{};
+  bool world_space{};
 };
 
 struct VulkanBackendState {
@@ -84,6 +93,8 @@ struct VulkanBackendState {
   RenderDeviceCaps caps;
   std::unordered_map<std::uint64_t, VulkanMeshResource> meshes;
   std::unordered_map<std::uint64_t, VulkanTexturedMeshResource> textured_meshes;
+  std::unordered_map<std::uint64_t, VulkanWorldTexturedMeshResource>
+      world_textured_meshes;
   std::unordered_map<std::uint64_t, VulkanClipTexturedMeshResource>
       clip_textured_meshes;
   std::unordered_map<std::uint64_t, VulkanTextureResource> textures;

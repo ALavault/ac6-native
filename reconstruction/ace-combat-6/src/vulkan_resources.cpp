@@ -114,7 +114,9 @@ void destroy_target(VulkanBackendState& state,
       .format = VK_FORMAT_D32_SFLOAT,
       .samples = VK_SAMPLE_COUNT_1_BIT,
       .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-      .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+      // One RenderScene packet is currently submitted per render pass. Keep
+      // depth so later packets test against earlier packets' writes.
+      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
       .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
       .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
       .initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -140,11 +142,21 @@ void destroy_target(VulkanBackendState& state,
   const VkSubpassDependency dependency{
       .srcSubpass = VK_SUBPASS_EXTERNAL,
       .dstSubpass = 0U,
-      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      .srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+      .srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT |
+                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+      .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                      VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                      VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+      .srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT |
+                       VK_ACCESS_TRANSFER_WRITE_BIT |
+                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
       .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                       VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                       VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
       .dependencyFlags = 0,
   };
   const VkRenderPassCreateInfo pass_info{
@@ -463,6 +475,80 @@ bool VulkanBackend::has_textured_mesh(
   return mesh && state_->textured_meshes.contains(mesh.value);
 }
 
+VulkanWorldTexturedMeshHandle VulkanBackend::create_world_textured_mesh(
+    const std::span<const VulkanWorldTexturedVertex> vertices,
+    const std::span<const std::uint16_t> indices) noexcept {
+  if (vertices.empty() || indices.empty() || indices.size() % 3U != 0U ||
+      indices.size() > std::numeric_limits<std::uint32_t>::max()) {
+    return {};
+  }
+  for (const auto& vertex : vertices) {
+    if (!std::isfinite(vertex.x) || !std::isfinite(vertex.y) ||
+        !std::isfinite(vertex.z) || !std::isfinite(vertex.u) ||
+        !std::isfinite(vertex.v)) {
+      return {};
+    }
+  }
+  for (const std::uint16_t index : indices) {
+    if (index >= vertices.size()) return {};
+  }
+  VulkanWorldTexturedMeshResource resource;
+  if (!create_vulkan_buffer(*state_, vertices.size_bytes(),
+                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+                            resource.vertex_buffer, resource.vertex_memory) ||
+      !create_vulkan_buffer(*state_, indices.size_bytes(),
+                            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                            resource.index_buffer, resource.index_memory)) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  void* mapped = nullptr;
+  if (vkMapMemory(state_->device, resource.vertex_memory, 0U,
+                  vertices.size_bytes(), 0U, &mapped) != VK_SUCCESS) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  std::memcpy(mapped, vertices.data(), vertices.size_bytes());
+  vkUnmapMemory(state_->device, resource.vertex_memory);
+  if (vkMapMemory(state_->device, resource.index_memory, 0U,
+                  indices.size_bytes(), 0U, &mapped) != VK_SUCCESS) {
+    destroy_vulkan_buffer(*state_, resource.vertex_buffer,
+                          resource.vertex_memory);
+    destroy_vulkan_buffer(*state_, resource.index_buffer,
+                          resource.index_memory);
+    return {};
+  }
+  std::memcpy(mapped, indices.data(), indices.size_bytes());
+  vkUnmapMemory(state_->device, resource.index_memory);
+  resource.index_count = static_cast<std::uint32_t>(indices.size());
+  const std::uint64_t handle = state_->next_handle++;
+  state_->world_textured_meshes.emplace(handle, resource);
+  return {handle};
+}
+
+void VulkanBackend::release_world_textured_mesh(
+    const VulkanWorldTexturedMeshHandle mesh) noexcept {
+  const auto found = state_->world_textured_meshes.find(mesh.value);
+  if (found == state_->world_textured_meshes.end()) return;
+  static_cast<void>(vkDeviceWaitIdle(state_->device));
+  destroy_vulkan_buffer(*state_, found->second.vertex_buffer,
+                        found->second.vertex_memory);
+  destroy_vulkan_buffer(*state_, found->second.index_buffer,
+                        found->second.index_memory);
+  state_->world_textured_meshes.erase(found);
+}
+
+bool VulkanBackend::has_world_textured_mesh(
+    const VulkanWorldTexturedMeshHandle mesh) const noexcept {
+  return mesh && state_->world_textured_meshes.contains(mesh.value);
+}
+
 VulkanClipTexturedMeshHandle VulkanBackend::create_clip_textured_mesh(
     const std::span<const VulkanClipTexturedVertex> vertices,
     const std::span<const std::uint16_t> indices) noexcept {
@@ -747,6 +833,12 @@ void VulkanBackend::release_render_target(
 bool VulkanBackend::has_render_target(
     const VulkanRenderTargetHandle target) const noexcept {
   return target && state_->targets.contains(target.value);
+}
+
+bool VulkanBackend::render_target_has_d32(
+    const VulkanRenderTargetHandle target) const noexcept {
+  const auto found = state_->targets.find(target.value);
+  return target && found != state_->targets.end() && found->second.with_depth;
 }
 
 }  // namespace ac6

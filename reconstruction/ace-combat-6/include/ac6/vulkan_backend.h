@@ -53,6 +53,19 @@ struct VulkanTexturedVertex {
   float v{};
 };
 
+// World-space position/UV transport. Unlike VulkanClipTexturedVertex this ABI
+// preserves authored XYZ. The renderer composes DrawPacket's object-to-world
+// transform with an explicit renderer camera and pushes the resulting 64-byte
+// object-to-clip matrix to the vertex shader. Retail TCAM qualification is a
+// separate boundary.
+struct VulkanWorldTexturedVertex {
+  float x{};
+  float y{};
+  float z{};
+  float u{};
+  float v{};
+};
+
 // Clip-space layout recovered as a generic transport mechanism.  It is kept
 // separate from the 2D position/UV layout so a caller cannot accidentally
 // submit world-space coordinates without an explicitly qualified projection.
@@ -76,6 +89,13 @@ struct VulkanTexturedMeshHandle {
   [[nodiscard]] explicit operator bool() const noexcept { return value != 0U; }
   friend bool operator==(VulkanTexturedMeshHandle,
                          VulkanTexturedMeshHandle) = default;
+};
+
+struct VulkanWorldTexturedMeshHandle {
+  std::uint64_t value{};
+  [[nodiscard]] explicit operator bool() const noexcept { return value != 0U; }
+  friend bool operator==(VulkanWorldTexturedMeshHandle,
+                         VulkanWorldTexturedMeshHandle) = default;
 };
 
 struct VulkanClipTexturedMeshHandle {
@@ -137,6 +157,13 @@ class VulkanBackend final {
   void release_textured_mesh(VulkanTexturedMeshHandle mesh) noexcept;
   [[nodiscard]] bool has_textured_mesh(VulkanTexturedMeshHandle mesh) const noexcept;
 
+  [[nodiscard]] VulkanWorldTexturedMeshHandle create_world_textured_mesh(
+      std::span<const VulkanWorldTexturedVertex> vertices,
+      std::span<const std::uint16_t> indices) noexcept;
+  void release_world_textured_mesh(VulkanWorldTexturedMeshHandle mesh) noexcept;
+  [[nodiscard]] bool has_world_textured_mesh(
+      VulkanWorldTexturedMeshHandle mesh) const noexcept;
+
   [[nodiscard]] VulkanClipTexturedMeshHandle create_clip_textured_mesh(
       std::span<const VulkanClipTexturedVertex> vertices,
       std::span<const std::uint16_t> indices) noexcept;
@@ -156,6 +183,8 @@ class VulkanBackend final {
       std::uint32_t width, std::uint32_t height, bool with_depth) noexcept;
   void release_render_target(VulkanRenderTargetHandle target) noexcept;
   [[nodiscard]] bool has_render_target(VulkanRenderTargetHandle target) const noexcept;
+  [[nodiscard]] bool render_target_has_d32(
+      VulkanRenderTargetHandle target) const noexcept;
 
   [[nodiscard]] VulkanPipelineHandle create_pipeline(
       VulkanRenderTargetHandle target,
@@ -172,6 +201,11 @@ class VulkanBackend final {
       std::span<const std::uint32_t> vertex_spirv,
       std::span<const std::uint32_t> fragment_spirv,
       VulkanPipelineState state = {}) noexcept;
+  [[nodiscard]] VulkanPipelineHandle create_world_textured_pipeline(
+      VulkanRenderTargetHandle target,
+      std::span<const std::uint32_t> vertex_spirv,
+      std::span<const std::uint32_t> fragment_spirv,
+      VulkanPipelineState state = {true, true, false}) noexcept;
   void release_pipeline(VulkanPipelineHandle pipeline) noexcept;
   [[nodiscard]] bool has_pipeline(VulkanPipelineHandle pipeline) const noexcept;
 
@@ -187,11 +221,16 @@ class VulkanBackend final {
   [[nodiscard]] bool draw_clip_textured_indexed(
       VulkanRenderTargetHandle target, VulkanPipelineHandle pipeline,
       VulkanClipTexturedMeshHandle mesh, VulkanTextureHandle texture) noexcept;
+  [[nodiscard]] bool draw_world_textured_indexed(
+      VulkanRenderTargetHandle target, VulkanPipelineHandle pipeline,
+      VulkanWorldTexturedMeshHandle mesh, VulkanTextureHandle texture,
+      const std::array<float, 16>& object_to_clip) noexcept;
   [[nodiscard]] std::vector<std::uint8_t> readback_rgba8(
       VulkanRenderTargetHandle target) noexcept;
 
   [[nodiscard]] std::size_t live_mesh_count() const noexcept;
   [[nodiscard]] std::size_t live_textured_mesh_count() const noexcept;
+  [[nodiscard]] std::size_t live_world_textured_mesh_count() const noexcept;
   [[nodiscard]] std::size_t live_clip_textured_mesh_count() const noexcept;
   [[nodiscard]] std::size_t live_texture_count() const noexcept;
   [[nodiscard]] std::size_t live_render_target_count() const noexcept;
@@ -199,9 +238,10 @@ class VulkanBackend final {
 
  private:
   [[nodiscard]] VulkanPipelineHandle create_pipeline_impl(
-      VulkanRenderTargetHandle target, std::span<const std::uint32_t> vertex_spirv,
+      VulkanRenderTargetHandle target,
+      std::span<const std::uint32_t> vertex_spirv,
       std::span<const std::uint32_t> fragment_spirv, VulkanPipelineState state,
-      bool textured, bool clip_space) noexcept;
+      bool textured, bool clip_space, bool world_space) noexcept;
   explicit VulkanBackend(std::unique_ptr<VulkanBackendState> state) noexcept;
   std::unique_ptr<VulkanBackendState> state_;
 };

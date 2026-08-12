@@ -140,6 +140,7 @@
       "state": "open",
       "closure": "All NDXR layouts/topologies/attributes and NTXR formats/mips/cubes/tiling/endian rules reached by Mission 01 are retail-derived and bounded, and unknown formats reject deterministically.",
       "blockers": [
+        "A typed world-space Vulkan path now preserves authored XYZ, consumes one generic RenderScene camera per submission, applies each DrawPacket transform in the vertex shader, and retains D32 across draws; the 4,226 M01 placements, retail TCAM camera, retail shaders/constants/states, and public play route are not yet connected.",
         "Exact Xenos tiled BC3 swizzle and endian decoding lacks an image-positive control.",
         "Mission 01 format, stride, restart, mip, cube-map, and truncation coverage is not yet sealed; shared-reader changes must still pass the fifteen-payload regression corpus."
       ],
@@ -148,6 +149,11 @@
           "path": "reports/cycle-942-retail-ntxr-inventory.md",
           "size": 633,
           "sha256": "eb1bbd10ff7a9ddb2fd674b6979e67bf9ca1a2d841b0cb3489c41b83bac77d05"
+        },
+        {
+          "path": "reports/cycle-1538-world-space-draw-packets-reach-vulkan.md",
+          "size": 3350,
+          "sha256": "d88cd6477fa1f75b84d167c13680bd9bc00e4ebfe85f6763e45219a44f8f9b7f"
         }
       ]
     },

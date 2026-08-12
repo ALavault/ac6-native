@@ -35,7 +35,7 @@ VulkanPipelineHandle VulkanBackend::create_pipeline(
     const std::span<const std::uint32_t> fragment_spirv,
     const VulkanPipelineState state) noexcept {
   return create_pipeline_impl(target, vertex_spirv, fragment_spirv, state,
-                              false, false);
+                              false, false, false);
 }
 
 VulkanPipelineHandle VulkanBackend::create_textured_pipeline(
@@ -48,7 +48,7 @@ VulkanPipelineHandle VulkanBackend::create_textured_pipeline(
     return {};
   }
   return create_pipeline_impl(target, vertex_spirv, fragment_spirv, state, true,
-                              false);
+                              false, false);
 }
 
 VulkanPipelineHandle VulkanBackend::create_clip_textured_pipeline(
@@ -61,7 +61,20 @@ VulkanPipelineHandle VulkanBackend::create_clip_textured_pipeline(
     return {};
   }
   return create_pipeline_impl(target, vertex_spirv, fragment_spirv, state, true,
-                              true);
+                              true, false);
+}
+
+VulkanPipelineHandle VulkanBackend::create_world_textured_pipeline(
+    const VulkanRenderTargetHandle target,
+    const std::span<const std::uint32_t> vertex_spirv,
+    const std::span<const std::uint32_t> fragment_spirv,
+    const VulkanPipelineState state) noexcept {
+  if (!state_->caps.sampled_rgba8_unorm ||
+      !ensure_vulkan_texture_descriptors(*state_)) {
+    return {};
+  }
+  return create_pipeline_impl(target, vertex_spirv, fragment_spirv, state, true,
+                              false, true);
 }
 
 VulkanPipelineHandle VulkanBackend::create_pipeline_impl(
@@ -69,11 +82,14 @@ VulkanPipelineHandle VulkanBackend::create_pipeline_impl(
     const std::span<const std::uint32_t> vertex_spirv,
     const std::span<const std::uint32_t> fragment_spirv,
     const VulkanPipelineState pipeline_state, const bool textured,
-    const bool clip_space) noexcept {
+    const bool clip_space, const bool world_space) noexcept {
   const auto target = state_->targets.find(target_handle.value);
   if (target == state_->targets.end() ||
       (pipeline_state.depth_test && !target->second.with_depth) ||
-      (pipeline_state.depth_write && !pipeline_state.depth_test)) {
+      (pipeline_state.depth_write && !pipeline_state.depth_test) ||
+      (world_space &&
+       (!textured || clip_space || !target->second.with_depth ||
+        !pipeline_state.depth_test || !pipeline_state.depth_write))) {
     return {};
   }
   const VkShaderModule vertex_module = create_shader_module(*state_, vertex_spirv);
@@ -106,22 +122,26 @@ VulkanPipelineHandle VulkanBackend::create_pipeline_impl(
   const VkVertexInputBindingDescription binding{
       .binding = 0U,
       .stride = static_cast<std::uint32_t>(
-          clip_space ? sizeof(VulkanClipTexturedVertex)
-                     : textured ? sizeof(VulkanTexturedVertex)
-                                : sizeof(VulkanVertex)),
+          world_space  ? sizeof(VulkanWorldTexturedVertex)
+          : clip_space ? sizeof(VulkanClipTexturedVertex)
+          : textured   ? sizeof(VulkanTexturedVertex)
+                       : sizeof(VulkanVertex)),
       .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
   };
   const VkVertexInputAttributeDescription attributes[]{
       {.location = 0U,
        .binding = 0U,
-       .format = clip_space ? VK_FORMAT_R32G32B32A32_SFLOAT
-                            : VK_FORMAT_R32G32_SFLOAT,
+       .format = world_space  ? VK_FORMAT_R32G32B32_SFLOAT
+                 : clip_space ? VK_FORMAT_R32G32B32A32_SFLOAT
+                              : VK_FORMAT_R32G32_SFLOAT,
        .offset = 0U},
       {.location = 1U,
        .binding = 0U,
        .format = VK_FORMAT_R32G32_SFLOAT,
-       .offset = static_cast<std::uint32_t>(
-           sizeof(float) * (clip_space ? 4U : 2U))},
+       .offset =
+           static_cast<std::uint32_t>(sizeof(float) * (world_space  ? 3U
+                                                       : clip_space ? 4U
+                                                                    : 2U))},
   };
   const VkPipelineVertexInputStateCreateInfo vertex_input{
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -214,20 +234,28 @@ VulkanPipelineHandle VulkanBackend::create_pipeline_impl(
       .pAttachments = &blend_attachment,
       .blendConstants = {0.0F, 0.0F, 0.0F, 0.0F},
   };
+  constexpr VkPushConstantRange world_transform_range{
+      .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+      .offset = 0U,
+      .size = sizeof(std::array<float, 16>),
+  };
+  static_assert(sizeof(std::array<float, 16>) == 64U);
   const VkPipelineLayoutCreateInfo layout_info{
       .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
       .pNext = nullptr,
       .flags = 0,
       .setLayoutCount = textured ? 1U : 0U,
-      .pSetLayouts = textured ? &state_->texture_descriptor_set_layout : nullptr,
-      .pushConstantRangeCount = 0U,
-      .pPushConstantRanges = nullptr,
+      .pSetLayouts =
+          textured ? &state_->texture_descriptor_set_layout : nullptr,
+      .pushConstantRangeCount = world_space ? 1U : 0U,
+      .pPushConstantRanges = world_space ? &world_transform_range : nullptr,
   };
   VulkanPipelineResource resource;
   resource.render_pass = target->second.render_pass;
   resource.state = pipeline_state;
   resource.textured = textured;
   resource.clip_space = clip_space;
+  resource.world_space = world_space;
   if (vkCreatePipelineLayout(state_->device, &layout_info, nullptr,
                              &resource.layout) != VK_SUCCESS) {
     vkDestroyShaderModule(state_->device, vertex_module, nullptr);

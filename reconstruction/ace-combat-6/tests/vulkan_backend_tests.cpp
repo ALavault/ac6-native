@@ -1,12 +1,14 @@
 #include "ac6/vulkan_backend.h"
 #include "fixtures/vulkan_triangle_spirv.h"
 #include "fixtures/vulkan_textured_triangle_spirv.h"
+#include "fixtures/vulkan_world_textured_spirv.h"
 #include "fixtures/vulkan_clip_mesh_spirv.h"
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 
 namespace {
 
@@ -169,6 +171,54 @@ int main() {
   backend.release_clip_textured_mesh(clip_mesh);
   if (backend.live_clip_textured_mesh_count() != 0U) {
     return fail("clip_textured_release");
+  }
+
+  if (use_depth) {
+    const std::array<ac6::VulkanWorldTexturedVertex, 3> world_vertices{{
+        {-0.8F, -0.8F, 0.0F, 0.0F, 0.0F},
+        {0.8F, -0.8F, 0.0F, 1.0F, 0.0F},
+        {0.0F, 0.8F, 0.0F, 0.5F, 1.0F},
+    }};
+    const ac6::VulkanWorldTexturedMeshHandle world_mesh =
+        backend.create_world_textured_mesh(world_vertices, indices);
+    const ac6::VulkanTextureHandle world_texture =
+        backend.create_texture_rgba8(4U, 4U, texture_pixels);
+    const ac6::VulkanPipelineState world_state{true, true, false};
+    const auto no_depth_target = backend.create_render_target(16U, 16U, false);
+    if (!world_mesh || !world_texture || !no_depth_target ||
+        backend.render_target_has_d32(no_depth_target) ||
+        backend.create_world_textured_pipeline(
+            no_depth_target, ac6_test::kWorldTexturedVertexSpirv,
+            ac6_test::kTexturedTriangleFragmentSpirv, world_state)) {
+      return fail("world_depth_target_refusal");
+    }
+    backend.release_render_target(no_depth_target);
+    const ac6::VulkanPipelineHandle world_pipeline =
+        backend.create_world_textured_pipeline(
+            target, ac6_test::kWorldTexturedVertexSpirv,
+            ac6_test::kTexturedTriangleFragmentSpirv, world_state);
+    std::array<float, 16> world_transform{1.0F,  0.0F, 0.0F, 0.0F, 0.0F, 1.0F,
+                                          0.0F,  0.0F, 0.0F, 0.0F, 1.0F, 0.0F,
+                                          0.25F, 0.0F, 0.2F, 1.0F};
+    std::array<float, 16> nonfinite_transform = world_transform;
+    nonfinite_transform[5] = std::numeric_limits<float>::infinity();
+    if (!world_pipeline || !backend.render_target_has_d32(target) ||
+        backend.live_world_textured_mesh_count() != 1U ||
+        !backend.clear_render_target(target, {0.0F, 0.0F, 0.0F, 1.0F}, 1.0F) ||
+        backend.draw_world_textured_indexed(target, world_pipeline, world_mesh,
+                                            world_texture,
+                                            nonfinite_transform) ||
+        !backend.draw_world_textured_indexed(target, world_pipeline, world_mesh,
+                                             world_texture, world_transform)) {
+      return fail("world_textured_draw");
+    }
+    backend.release_pipeline(world_pipeline);
+    backend.release_texture(world_texture);
+    backend.release_world_textured_mesh(world_mesh);
+    if (backend.live_world_textured_mesh_count() != 0U ||
+        backend.has_world_textured_mesh(world_mesh)) {
+      return fail("world_textured_release");
+    }
   }
 
   backend.release_pipeline(pipeline);
