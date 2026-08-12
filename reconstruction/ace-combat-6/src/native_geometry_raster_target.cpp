@@ -845,16 +845,17 @@ bool NativeRenderTarget::copy_rgba8(std::vector<std::uint8_t>& pixels) const {
   if (width_ == 0 || height_ == 0 || color_.size() != static_cast<std::size_t>(width_) * height_) {
     return false;
   }
-  std::vector<std::uint8_t> converted;
-  converted.resize(color_.size() * 4u);
+  // Reuse the caller's buffer. The Vulkan presenter keeps this vector for
+  // the lifetime of the swapchain, so conversion does not allocate on every
+  // submitted frame.
+  pixels.resize(color_.size() * 4u);
   for (std::size_t i = 0; i < color_.size(); ++i) {
     const std::uint32_t pixel = color_[i];
-    converted[i * 4u + 0u] = static_cast<std::uint8_t>((pixel >> 16u) & 0xFFu);
-    converted[i * 4u + 1u] = static_cast<std::uint8_t>((pixel >> 8u) & 0xFFu);
-    converted[i * 4u + 2u] = static_cast<std::uint8_t>(pixel & 0xFFu);
-    converted[i * 4u + 3u] = static_cast<std::uint8_t>((pixel >> 24u) & 0xFFu);
+    pixels[i * 4u + 0u] = static_cast<std::uint8_t>((pixel >> 16u) & 0xFFu);
+    pixels[i * 4u + 1u] = static_cast<std::uint8_t>((pixel >> 8u) & 0xFFu);
+    pixels[i * 4u + 2u] = static_cast<std::uint8_t>(pixel & 0xFFu);
+    pixels[i * 4u + 3u] = static_cast<std::uint8_t>((pixel >> 24u) & 0xFFu);
   }
-  pixels = std::move(converted);
   return true;
 }
 

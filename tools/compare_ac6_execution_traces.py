@@ -154,6 +154,23 @@ def first_value_difference(reference: Any, candidate: Any,
     return None
 
 
+def difference_kind(difference: dict[str, Any] | None) -> str:
+    """Classify a first mismatch without assigning semantics to raw fields.
+
+    A missing or extra object key is a producer/schema boundary.  It must not
+    be reported as a gameplay value divergence: the oracle probe deliberately
+    exposes raw guest words in some domains while the native producer exposes
+    semantic fields.  Type and scalar/list differences remain value
+    divergences and are still reported at the exact first path.
+    """
+    if difference is None:
+        return "equal"
+    if difference.get("reference") == "<missing>" or \
+            difference.get("candidate") == "<missing>":
+        return "producer_schema_mismatch"
+    return "value_divergence"
+
+
 def compare_documents(reference: dict[str, Any], candidate: dict[str, Any],
                       domains: tuple[str, ...] = DOMAINS,
                       maximum_events: int = 3_000_000) -> dict[str, Any]:
@@ -185,6 +202,7 @@ def compare_documents(reference: dict[str, Any], candidate: dict[str, Any],
     return {
         "schema": REPORT_SCHEMA,
         "equal": first is None,
+        "comparison_kind": difference_kind(first),
         "domains": list(domains),
         "compared_events": inspected,
         "reference": {"schema": reference["schema"],
@@ -225,7 +243,8 @@ def main() -> int:
         print(f"execution_trace_compare=equal events={report['compared_events']}")
         return 0
     divergence = report["first_divergence"]
-    print(f"execution_trace_compare=diverged sequence={divergence['sequence']} "
+    print(f"execution_trace_compare={report['comparison_kind']} "
+          f"sequence={divergence['sequence']} "
           f"tick={divergence['tick']} domain={divergence['domain']} "
           f"path={divergence['path']}")
     return 1

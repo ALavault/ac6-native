@@ -17,6 +17,11 @@ int main() {
   REQUIRE(target.copy_rgba8(rgba));
   REQUIRE(rgba[0] == 0x10u && rgba[1] == 0x20u && rgba[2] == 0x30u &&
           rgba[3] == 0xFFu);
+  const auto* rgba_storage = rgba.data();
+  const std::size_t rgba_capacity = rgba.capacity();
+  REQUIRE(target.copy_rgba8(rgba));
+  REQUIRE(rgba.data() == rgba_storage);
+  REQUIRE(rgba.capacity() == rgba_capacity);
   REQUIRE(target.readback().depth_coverage == source.size());
   REQUIRE(!target.blit_argb32(32, 64, source, source_depth, 24000.0F));
   return 0;
