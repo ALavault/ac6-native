@@ -35,6 +35,11 @@ struct SdlKeyboardMapping {
   bool valid() const noexcept;
 };
 
+// InputFrame::buttons uses the XInput GAMEPAD bit mask. SDL buttons without an
+// XInput equivalent map to zero and are ignored by SdlInputAdapter.
+[[nodiscard]] std::uint16_t sdl_gamepad_button_xinput_mask(
+    SDL_GamepadButton button) noexcept;
+
 class SdlInputAdapter final {
  public:
   explicit SdlInputAdapter(SdlAxisMapping mapping = {}, SdlKeyboardMapping keyboard = {})

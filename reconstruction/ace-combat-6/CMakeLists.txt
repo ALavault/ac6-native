@@ -134,6 +134,11 @@ if(AC6_BUILD_PLATFORM)
 endif()
 
 enable_testing()
+if(AC6_BUILD_PLATFORM)
+  add_executable(ac6-sdl-input-tests tests/sdl_input_tests.cpp)
+  target_link_libraries(ac6-sdl-input-tests PRIVATE ac6_platform)
+  add_test(NAME ac6-sdl-input COMMAND ac6-sdl-input-tests)
+endif()
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
   add_test(NAME ac6-cpp-complexity

@@ -12,6 +12,42 @@
 
 namespace ac6 {
 
+namespace {
+
+struct SdlXInputButtonMapping {
+  SDL_GamepadButton sdl_button;
+  std::uint16_t xinput_mask;
+};
+
+constexpr std::array<SdlXInputButtonMapping, 14> kSdlXInputButtonMappings{{
+    {SDL_GAMEPAD_BUTTON_DPAD_UP, 0x0001u},
+    {SDL_GAMEPAD_BUTTON_DPAD_DOWN, 0x0002u},
+    {SDL_GAMEPAD_BUTTON_DPAD_LEFT, 0x0004u},
+    {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, 0x0008u},
+    {SDL_GAMEPAD_BUTTON_START, 0x0010u},
+    {SDL_GAMEPAD_BUTTON_BACK, 0x0020u},
+    {SDL_GAMEPAD_BUTTON_LEFT_STICK, 0x0040u},
+    {SDL_GAMEPAD_BUTTON_RIGHT_STICK, 0x0080u},
+    {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, 0x0100u},
+    {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, 0x0200u},
+    {SDL_GAMEPAD_BUTTON_SOUTH, 0x1000u},
+    {SDL_GAMEPAD_BUTTON_EAST, 0x2000u},
+    {SDL_GAMEPAD_BUTTON_WEST, 0x4000u},
+    {SDL_GAMEPAD_BUTTON_NORTH, 0x8000u},
+}};
+
+}  // namespace
+
+std::uint16_t sdl_gamepad_button_xinput_mask(
+    const SDL_GamepadButton button) noexcept {
+  const auto mapping = std::find_if(
+      kSdlXInputButtonMappings.begin(), kSdlXInputButtonMappings.end(),
+      [button](const SdlXInputButtonMapping& candidate) {
+        return candidate.sdl_button == button;
+      });
+  return mapping == kSdlXInputButtonMappings.end() ? 0u : mapping->xinput_mask;
+}
+
 bool SdlInputProfile::load_manifest(const std::filesystem::path& path,
                                     SdlAxisMapping& axes,
                                     SdlKeyboardMapping& keyboard) noexcept {
@@ -137,14 +173,17 @@ bool SdlInputAdapter::apply(const SDL_Event& event, InputFrame& frame,
   }
   if (event.type != SDL_EVENT_GAMEPAD_BUTTON_DOWN &&
       event.type != SDL_EVENT_GAMEPAD_BUTTON_UP) return false;
-  if (event.gbutton.button >= 16) return false;
-  const std::uint16_t mask = static_cast<std::uint16_t>(1u << event.gbutton.button);
+  const std::uint16_t mask = sdl_gamepad_button_xinput_mask(
+      static_cast<SDL_GamepadButton>(event.gbutton.button));
+  if (mask == 0) return false;
   if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
     buttons = static_cast<std::uint16_t>(buttons | mask);
+    frame.buttons = buttons;
     const InputBinding* binding = mappings.resolve(buttons);
     if (binding != nullptr) events.push_back({binding->event, subject});
   } else {
     buttons = static_cast<std::uint16_t>(buttons & ~mask);
+    frame.buttons = buttons;
   }
   return true;
 }

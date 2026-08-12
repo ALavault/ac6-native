@@ -25,6 +25,7 @@ struct InputFrame {
   std::int16_t roll{};
   std::int16_t yaw{};
   std::uint8_t throttle{};
+  // Raw XInput GAMEPAD button mask, independent of the host input API.
   std::uint16_t buttons{};
   bool operator==(const InputFrame&) const = default;
 };
