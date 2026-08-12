@@ -777,6 +777,7 @@ int main(int argc, char** argv) {
   const std::vector<ac6::retail::ScenarioSubMission>& sub_missions =
       probe->scenario().sub_missions();
   REQUIRE(sub_missions.size() == 4);
+  REQUIRE(probe->scenario().orders().size() == 2975);
   std::size_t total_steps = 0;
   for (const ac6::retail::ScenarioSubMission& sub_mission : sub_missions) {
     REQUIRE(sub_mission.step_count_byte == sub_mission.step_tags.size());

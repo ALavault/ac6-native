@@ -201,6 +201,16 @@ struct ScenarioFlagOrder {
   bool operator==(const ScenarioFlagOrder&) const = default;
 };
 
+// Lossless Set -> Act -> Order census. The tag is only an identifier here;
+// command 30's activation consumer remains a runtime FSM boundary.
+struct ScenarioOrderRecord {
+  std::uint32_t unit_index{};
+  std::uint32_t act_index{};
+  std::uint32_t order_index{};
+  std::uint8_t tag{};
+  bool operator==(const ScenarioOrderRecord&) const = default;
+};
+
 // A tag-2 order's position record, read at the offsets 0x822953F0 reads it.
 // This is the record the game resolves into a world position, and Mission 01
 // carries 890 of them - the only world-scale coordinates in the payload.
@@ -292,6 +302,9 @@ class MissionScenario final {
   const std::vector<ScenarioFlagOrder>& flag_orders() const noexcept {
     return flag_orders_;
   }
+  const std::vector<ScenarioOrderRecord>& orders() const noexcept {
+    return orders_;
+  }
   const std::vector<ScenarioArea>& areas() const noexcept { return areas_; }
   const std::vector<ScenarioPositionRecord>& positions() const noexcept {
     return positions_;
@@ -307,6 +320,7 @@ class MissionScenario final {
   std::vector<ScenarioFaction> factions_;
   std::vector<ScenarioSubMission> sub_missions_;
   std::vector<ScenarioFlagOrder> flag_orders_;
+  std::vector<ScenarioOrderRecord> orders_;
   std::vector<ScenarioArea> areas_;
   std::vector<ScenarioPositionRecord> positions_;
   std::uint16_t counter_capacity_{};

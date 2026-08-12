@@ -371,6 +371,25 @@ int check_retail(const std::filesystem::path& manifests,
   REQUIRE(faction_bytes.at(0) == 140 && faction_bytes.at(1) == 42 &&
           faction_bytes.at(2) == 48);
 
+  // Complete Set -> Act -> Order census. Tags remain opaque identifiers: no
+  // activation or despawn behavior is inferred from this payload-only view.
+  REQUIRE(scenario->orders().size() == 2975);
+  std::map<std::uint8_t, std::size_t> order_tags;
+  for (const ac6::retail::ScenarioOrderRecord& order : scenario->orders()) {
+    order_tags[order.tag] += 1;
+  }
+  REQUIRE(order_tags.size() == 8);
+  REQUIRE(order_tags.at(0) == 233);
+  REQUIRE(order_tags.at(1) == 206);
+  REQUIRE(order_tags.at(2) == 890);
+  REQUIRE(order_tags.at(3) == 442);
+  REQUIRE(order_tags.at(5) == 686);
+  REQUIRE(order_tags.at(6) == 232);
+  REQUIRE(order_tags.at(7) == 53);
+  REQUIRE(order_tags.at(8) == 233);
+  REQUIRE(order_tags.find(4) == order_tags.end());
+  REQUIRE(order_tags.find(9) == order_tags.end());
+
   std::size_t steps = 0;
   for (const ac6::retail::ScenarioSubMission& sub : scenario->sub_missions()) {
     steps += sub.step_tags.size();

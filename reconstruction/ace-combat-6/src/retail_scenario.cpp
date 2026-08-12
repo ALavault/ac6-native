@@ -251,15 +251,20 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         record.model_bindings.push_back(binding);
       }
     }
-    // The unit's Set -> Act -> Order program, kept only for the orders that
-    // write a mission counter.
+    // The unit's Set -> Act -> Order program. The complete tag row is retained
+    // separately; this is a census, not an activation implementation.
     if (record.has_behaviour_set) {
+      std::uint32_t act_index = 0;
       for (const std::size_t act : payload.children(record_children[0])) {
+        std::uint32_t order_index = 0;
         for (const std::size_t order : payload.children(act)) {
+          const std::uint32_t current_order_index = order_index++;
           const std::optional<std::size_t> order_data = payload.resolve(order, 0);
           if (!order_data.has_value()) continue;
           const std::optional<std::uint8_t> tag = payload.u8(*order_data);
           if (!tag.has_value()) continue;
+          scenario.orders_.push_back(
+              {record.index, act_index, current_order_index, *tag});
           if (*tag == kPositionOrderTag) {
             // 0x82295BF0 hands the order's own payload to 0x822953F0 as its
             // third argument; these are the fields that function reads.
@@ -303,6 +308,7 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
           scenario.flag_orders_.push_back(
               {record.index, *counter_id, *literal, *operation});
         }
+        ++act_index;
       }
     }
 
