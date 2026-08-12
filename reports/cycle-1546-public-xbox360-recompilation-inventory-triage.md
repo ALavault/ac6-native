@@ -147,6 +147,13 @@ classe comme divergents les défauts de `switch`, appels indirects et fautes de
 pages neutralisés pour continuer l'exécution. Il confirme `skip_lr=false` et
 le seam XAM invité comme choix provisoires, sans qualifier timing, XMA ou GPU.
 
+Audit B1 terminé : `cycle-1555-reodyssey-renderer-review.md`. Il retient la
+frontière haute D3D, les ABI invitées typées et la décomposition
+fetch/detile/endian/upload comme patrons d'architecture. Il rejette comme
+preuves retail le cache SMOL-V incohérent, les formats en fallback, l'absence
+de mips/cubemaps et les synchronisations neutralisées ; aucune lane M01 n'est
+fermée par ce dépôt.
+
 Audit C4 terminé : `cycle-1554-lollipop-rexglue-runtime-review.md`. Le dépôt
 public Re-Cherry n'embarque ni fork/pin ReXGlue, ni code généré : XAM, XMA,
 VFS et Xenos sont `documented-unmatched`. Seule la forme adresse/phase/registres
