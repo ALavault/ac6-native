@@ -35,6 +35,7 @@ REXGLUE_DIVERGENCES = {
     "cpu-reciprocal-estimates-exact-host-math",
     "cpu-reservation-without-address-or-granule",
     "cpu-barriers-emitted-as-noop",
+    "cpu-vmsum4fp128-summation-order",
 }
 
 

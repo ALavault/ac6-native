@@ -110,6 +110,21 @@
       "evidence": [
         "src/codegen/builders/system.cpp"
       ]
+    },
+    {
+      "id": "cpu-vmsum4fp128-summation-order",
+      "status": "divergent",
+      "domain": "cpu-vmx128",
+      "semantics": [
+        "vmsum4fp128"
+      ],
+      "reason": "RexGlue emits SIMDe DPPS with a pairwise reduction, while the current executed PAL SLEIGH control matches only a left-to-right sum of individually rounded products; neither result is yet qualified against console hardware.",
+      "gate_evidence": false,
+      "evidence": [
+        "src/codegen/builders/vector.cpp",
+        "reports/cycle-1412-the-only-reading-that-fits.md",
+        "reconstruction/ace-combat-6/tests/retail_scalar_sin_cos_tests.cpp"
+      ]
     }
   ],
   "promotion": {

@@ -27,7 +27,9 @@ PAL, ses transitions, ses interdictions et quatre divergences déjà établies :
 - `dcbst` reconnu mais émis comme no-op par RexGlue 0.9 ;
 - `frsqrte`, `vrefp` et `vrsqrtefp` remplacés par des mathématiques hôte exactes ;
 - réservations `lwarx/ldarx` sans adresse ni granule ;
-- `sync`, `lwsync` et `eieio` émis comme no-op.
+- `sync`, `lwsync` et `eieio` émis comme no-op ;
+- `vmsum4fp128` réduit par `DPPS`, contrairement à l'ordre séquentiel du
+  contrôle SLEIGH PAL actuel — sans promouvoir ce contrôle en preuve console.
 
 Ces exceptions restent fail-closed. Les revues UnleashedRecomp,
 Skate3Recomp, rexdex/recompiler, XenonRecomp, XenosRecomp et RexGlue peuvent
