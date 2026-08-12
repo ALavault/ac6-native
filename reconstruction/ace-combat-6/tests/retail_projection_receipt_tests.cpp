@@ -67,6 +67,14 @@ RetailSessionReplay make_replay(std::int16_t last_yaw = 300) {
   return replay;
 }
 
+RetailSessionReplay make_identity_replay() {
+  RetailSessionReplay replay = make_replay();
+  replay.frames = {replay.frames[0], replay.frames[2]};
+  replay.final_tick = replay.frames.size();
+  replay.final_digest = replay.input_digest();
+  return replay;
+}
+
 std::string repeat(char value, std::size_t count) {
   return std::string(count, value);
 }
@@ -134,6 +142,83 @@ std::string receipt_for(const RetailSessionReplay &replay,
          "\"xex_sha256\":"
          "\"acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde\","
          "\"xex_version\":\"v0.0.0.11\"}}\n";
+  return json.str();
+}
+
+std::string receipt_v4_for(const RetailSessionReplay &replay,
+                           const std::filesystem::path &replay_path,
+                           std::uint64_t source_hz = 30u,
+                           std::uint64_t hold = 2u) {
+  ac6::Sha256Digest replay_sha{};
+  if (!ac6::sha256_file(replay_path, replay_sha))
+    return {};
+  const std::string cache = ac6::sha256_hex(replay.content_index_sha256);
+  const std::string input = ac6::sha256_hex(replay.input_digest());
+  const std::string final = ac6::sha256_hex(replay.final_digest);
+  const std::string output = ac6::sha256_hex(replay_sha);
+  std::ostringstream json;
+  json
+      << "{\"cache_index_sha256\":\"" << cache
+      << "\",\"cadence\":{\"census\":{\"file_sha256\":\"" << repeat('a', 64)
+      << "\",\"integrity_level\":\"integrity_only_runtime_census\","
+         "\"interval_count\":1,\"method\":\"uniform_marker_interval_v1\","
+         "\"payload_sha256\":\""
+      << repeat('b', 64)
+      << "\",\"record_count\":2,\"schema\":"
+         "\"ac6.controller-cadence-census.v2\"},\"hold\":"
+      << hold
+      << ","
+         "\"integrity_level\":\"integrity_only_runtime_census\","
+         "\"native_clock\":{\"clock_id\":\"ac6_native_fixed_step\","
+         "\"frequency\":{\"denominator\":1,\"numerator\":60},\"schema\":"
+         "\"ac6.native-simulation-clock.v1\",\"tick_semantics\":"
+         "\"one_simulation_step\"},\"native_hz\":60,\"resampling\":\""
+      << (hold == 1u ? "identity" : "zero_order_hold")
+      << "\",\"source_hz\":" << source_hz
+      << "},\"kind\":"
+         "\"native_projection_receipt\",\"mapping\":{\"buttons\":"
+         "\"raw_xinput_buttons\",\"pitch\":\"thumb_ly\",\"roll\":"
+         "\"thumb_lx\",\"throttle\":\"right_trigger\",\"yaw\":"
+         "\"left_shoulder=-32768;right_shoulder=32767;otherwise="
+         "thumb_rx;left_precedes_right\"},\"native_target\":{"
+         "\"base_version\":\"v0.0.0.11\",\"media_id\":\"0379EFB3\","
+         "\"module\":\"default.xex\",\"target_id\":"
+         "\"ac6-pal-default-xex\",\"title_id\":\"4E4D07D1\","
+         "\"xex_sha256\":"
+         "\"acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde\","
+         "\"xex_version\":\"v0.0.0.11\"},\"output\":{\"aircraft_id\":"
+      << replay.loadout.aircraft_id << ",\"capability_data_valid\":"
+      << (replay.loadout.capability_data_valid ? "true" : "false")
+      << ",\"checkpoint_count\":" << replay.checkpoints.size()
+      << ",\"difficulty\":" << static_cast<unsigned>(replay.difficulty)
+      << ",\"difficulty_name\":\"Normal\",\"final_digest_sha256\":\"" << final
+      << "\",\"final_tick\":" << replay.final_tick
+      << ",\"format\":\"AC6RTPLY\",\"frame_count\":" << replay.frames.size()
+      << ",\"input_digest_sha256\":\"" << input
+      << "\",\"mission_id\":" << replay.mission_id << ",\"output_sha256\":\""
+      << output << "\",\"random_seed\":" << replay.random_seed
+      << ",\"source_marker_count\":2,\"version\":" << replay.version
+      << ",\"weapon_id\":" << replay.loadout.weapon_id
+      << "},\"schema\":\"ac6.native-controller-projection-receipt.v4\","
+         "\"source\":{\"oracle\":{\"marker_contract\":{\"address\":"
+         "\"821CA940\",\"code\":{\"image_rva\":\"001CA940\",\"length\":"
+         "328,\"sha256\":"
+         "\"a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d\"}"
+         ","
+         "\"phase\":\"before_input\",\"role\":\"ac6_frame_input_stage\"},"
+         "\"target\":{\"base_version\":\"v0.0.0.8\",\"entry_point\":"
+         "\"821F5ED0\",\"media_id\":\"531C30BE\",\"module\":"
+         "\"default.xex\",\"module_xxh3\":\"892639B654015428\","
+         "\"region_mask\":\"0000FDFF\",\"target_id\":"
+         "\"ac6-ntsc-uj-default-xex\",\"title_id\":\"4E4D07D1\","
+         "\"xex_sha256\":"
+         "\"6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc\","
+         "\"xex_version\":\"v0.0.0.8\"}},\"parent_payload_sha256\":\""
+      << repeat('9', 64) << "\",\"parent_replay_sha256\":\"" << repeat('8', 64)
+      << "\",\"parent_window\":{\"marker_count\":2,\"start_marker\":1},"
+         "\"raw_payload_sha256\":\""
+      << repeat('7', 64) << "\",\"raw_replay_sha256\":\"" << repeat('6', 64)
+      << "\",\"raw_schema\":\"ac6.controller-input-replay.v4\"}}\n";
   return json.str();
 }
 
@@ -327,6 +412,128 @@ int contract_mutations(const std::filesystem::path &receipt_path,
   return failures;
 }
 
+int v4_contract_tests(const std::filesystem::path &receipt_path,
+                      const std::filesystem::path &replay_path,
+                      const std::filesystem::path &identity_path,
+                      const RetailSessionReplay &replay) {
+  int failures = 0;
+  const std::string canonical = receipt_v4_for(replay, replay_path);
+  write_text(receipt_path, canonical);
+  const auto accepted = ac6::retail::preflight_retail_projection_receipt(
+      receipt_path, replay_path, replay, replay.content_index_sha256);
+  failures +=
+      check(accepted.passed(), "canonical NTSC-U/J to PAL receipt v4 passes");
+  failures += check(accepted.native_output_verified &&
+                        !accepted.source_lineage_verified,
+                    "v4 keeps source lineage unverified");
+  failures += check(
+      accepted.detail.find("provisional NTSC-U/J oracle to PAL") !=
+              std::string::npos &&
+          accepted.detail.find("not parity evidence") != std::string::npos,
+      "v4 success keeps provisional qualification explicit");
+
+  constexpr std::array<std::pair<std::string_view, std::string_view>, 14>
+      mutations{{
+          {"ac6.native-controller-projection-receipt.v4",
+           "ac6.native-controller-projection-receipt.v3"},
+          {"ac6.controller-input-replay.v4", "ac6.controller-input-replay.v3"},
+          {"ac6.controller-cadence-census.v2",
+           "ac6.controller-cadence-census.v1"},
+          {"ac6-ntsc-uj-default-xex", "ac6-pal-default-xex"},
+          {"\"base_version\":\"v0.0.0.8\"", "\"base_version\":\"v0.0.0.11\""},
+          {"531C30BE", "0379EFB3"},
+          {"6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+           "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"},
+          {"892639B654015428", "892639b654015428"},
+          {"821F5ED0", "821CA940"},
+          {"0000FDFF", "0000FFFF"},
+          {"821CA940", "821CA908"},
+          {"\"image_rva\":\"001CA940\"", "\"image_rva\":\"001CA908\""},
+          {"\"length\":328", "\"length\":16"},
+          {"a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d",
+           "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"},
+      }};
+  for (const auto &[old_value, new_value] : mutations) {
+    std::string mutated(canonical);
+    failures += check(replace_once(mutated, old_value, new_value),
+                      "v4 contract mutation locates its field");
+    write_text(receipt_path, mutated);
+    failures += check(
+        run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+            RetailProjectionReceiptError::SchemaMismatch,
+        "v4 contract mutation fails closed");
+  }
+
+  std::string native_to_source_swap(canonical);
+  failures += check(replace_once(native_to_source_swap, "ac6-pal-default-xex",
+                                 "ac6-ntsc-uj-default-xex"),
+                    "v4 native target swap locates its field");
+  write_text(receipt_path, native_to_source_swap);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "v4 refuses the source identity as native target");
+
+  std::string hybrid_target(canonical);
+  failures += check(replace_once(hybrid_target, "\"media_id\":\"0379EFB3\"",
+                                 "\"media_id\":\"531C30BE\""),
+                    "v4 hybrid native target locates its field");
+  write_text(receipt_path, hybrid_target);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "v4 rejects a PAL/NTSC hybrid native tuple");
+
+  std::string extra_cadence_marker(canonical);
+  failures += check(
+      replace_once(extra_cadence_marker,
+                   "\"integrity_level\":\"integrity_only_runtime_census\","
+                   "\"native_clock\"",
+                   "\"integrity_level\":\"integrity_only_runtime_census\","
+                   "\"marker_contract\":{},\"native_clock\""),
+      "v4 cadence marker injection locates its field");
+  write_text(receipt_path, extra_cadence_marker);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "v4 rejects the legacy cadence marker field");
+
+  std::string output_version(canonical);
+  failures +=
+      check(replace_once(output_version, "\"version\":3", "\"version\":4"),
+            "v4 output replay version locates its field");
+  write_text(receipt_path, output_version);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::ReplayMetadataMismatch,
+      "v4 receipt cannot relabel its AC6RTPLY output as version 4");
+
+  std::string extra_root_target(canonical);
+  failures += check(
+      replace_once(extra_root_target,
+                   "\"raw_schema\":\"ac6.controller-input-replay.v4\"}}\n",
+                   "\"raw_schema\":\"ac6.controller-input-replay.v4\"},"
+                   "\"target\":{}}\n"),
+      "v4 legacy root target injection locates its field");
+  write_text(receipt_path, extra_root_target);
+  failures += check(
+      run(receipt_path, replay_path, replay, replay.content_index_sha256) ==
+          RetailProjectionReceiptError::SchemaMismatch,
+      "v4 rejects a legacy root target alongside native_target");
+
+  const RetailSessionReplay identity = make_identity_replay();
+  failures += check(identity.write_file(identity_path),
+                    "v4 identity-cadence replay writes");
+  write_text(receipt_path, receipt_v4_for(identity, identity_path, 60u, 1u));
+  const auto identity_result = ac6::retail::preflight_retail_projection_receipt(
+      receipt_path, identity_path, identity, identity.content_index_sha256);
+  failures += check(identity_result.passed() &&
+                        identity_result.native_output_verified &&
+                        !identity_result.source_lineage_verified,
+                    "v4 accepts the exact 60-to-60 identity projection");
+  return failures;
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -370,6 +577,9 @@ int main(int argc, char **argv) {
             "success keeps raw/parent lineage boundary explicit");
   failures += contract_mutations(receipt_path, replay_path, replay, canonical);
   failures += metadata_mutations(receipt_path, replay_path, replay, canonical);
+
+  failures += v4_contract_tests(receipt_path, replay_path,
+                                root.path() / "identity.ac6rply", replay);
 
   std::string digest_mutation = canonical;
   const std::string digest = ac6::sha256_hex(replay.input_digest());
@@ -479,10 +689,10 @@ int main(int argc, char **argv) {
   const auto fifo_path = root.path() / "receipt.fifo";
   failures += check(::mkfifo(fifo_path.c_str(), 0600) == 0,
                     "receipt FIFO fixture is created");
-  failures += check(
-      run(fifo_path, replay_path, replay, replay.content_index_sha256) ==
-          RetailProjectionReceiptError::ReceiptUnreadable,
-      "non-regular receipt is rejected without blocking");
+  failures +=
+      check(run(fifo_path, replay_path, replay, replay.content_index_sha256) ==
+                RetailProjectionReceiptError::ReceiptUnreadable,
+            "non-regular receipt is rejected without blocking");
 
   write_text(receipt_path, canonical);
   {

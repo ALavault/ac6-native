@@ -24,8 +24,12 @@ from pathlib import Path
 from typing import Any, Iterator, Sequence
 
 
-SCHEMA = "ac6.controller-input-replay.v3"
-CADENCE_CENSUS_SCHEMA = "ac6.controller-cadence-census.v1"
+SCHEMA_V3 = "ac6.controller-input-replay.v3"
+SCHEMA_V4 = "ac6.controller-input-replay.v4"
+SCHEMA = SCHEMA_V3
+CADENCE_CENSUS_SCHEMA_V1 = "ac6.controller-cadence-census.v1"
+CADENCE_CENSUS_SCHEMA_V2 = "ac6.controller-cadence-census.v2"
+CADENCE_CENSUS_SCHEMA = CADENCE_CENSUS_SCHEMA_V1
 REFERENCE_CLOCK_SCHEMA = "ac6.fixed-rate-reference-clock.v1"
 NATIVE_CLOCK_SCHEMA = "ac6.native-simulation-clock.v1"
 NATIVE_CLOCK_CONTRACT = {
@@ -43,11 +47,43 @@ PAL_TARGET_IDENTITY = {
     "xex_version": "v0.0.0.11",
     "base_version": "v0.0.0.11",
 }
+PAL_NATIVE_TARGET_IDENTITY = {
+    "target_id": "ac6-pal-default-xex",
+    "title_id": "4E4D07D1",
+    "media_id": "0379EFB3",
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "xex_version": "v0.0.0.11",
+    "base_version": "v0.0.0.11",
+}
+NTSC_UJ_ORACLE_TARGET_IDENTITY = {
+    "target_id": "ac6-ntsc-uj-default-xex",
+    "title_id": "4E4D07D1",
+    "media_id": "531C30BE",
+    "module": "default.xex",
+    "xex_sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "xex_version": "v0.0.0.8",
+    "base_version": "v0.0.0.8",
+    "module_xxh3": "892639B654015428",
+    "entry_point": "821F5ED0",
+    "region_mask": "0000FDFF",
+}
+NTSC_UJ_MARKER_CONTRACT = {
+    "role": "ac6_frame_input_stage",
+    "address": "821CA940",
+    "phase": "before_input",
+    "code": {
+        "image_rva": "001CA940",
+        "length": 328,
+        "sha256": "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d",
+    },
+}
 PRIMARY_SYNC_KEY = "poll_index"
 SHA256 = re.compile(r"[0-9a-f]{64}")
 COMMIT = re.compile(r"[0-9a-f]{40}")
 HEX32 = re.compile(r"[0-9A-F]{8}")
 HEX64 = re.compile(r"[0-9a-f]{16}")
+HEX64_UPPER = re.compile(r"[0-9A-F]{16}")
 XEX_VERSION = re.compile(r"v(?:0|[1-9][0-9]{0,9})(?:\.(?:0|[1-9][0-9]{0,9})){3}")
 LANES = {"xenia-canary", "ac6-recomp"}
 SEGMENT_ORIGINS = {"clean_boot", "sealed_retail_save"}
@@ -88,7 +124,9 @@ AC6RTPLY_RANDOM_SEED = 0xAC60000000000001
 CACHE_CURRENT_MAGIC = b"AC6RCUR\0"
 CACHE_CURRENT_VERSION = 2
 CACHE_CURRENT_SIZE = 48
-PROJECTION_RECEIPT_SCHEMA = "ac6.native-controller-projection-receipt.v3"
+PROJECTION_RECEIPT_SCHEMA_V3 = "ac6.native-controller-projection-receipt.v3"
+PROJECTION_RECEIPT_SCHEMA_V4 = "ac6.native-controller-projection-receipt.v4"
+PROJECTION_RECEIPT_SCHEMA = PROJECTION_RECEIPT_SCHEMA_V3
 CONTROLLER_MAPPING = {
     "pitch": "thumb_ly",
     "roll": "thumb_lx",
@@ -112,6 +150,7 @@ TARGET_KEYS = {
     "marker_code_length",
     "marker_code_sha256",
 }
+TARGET_V4_KEYS = set(NTSC_UJ_ORACLE_TARGET_IDENTITY)
 SESSION_KEYS = {
     "content_manifest_sha256",
     "runtime_config_sha256",
@@ -136,6 +175,7 @@ SYNC_KEYS = {
     "marker_phase",
     "cadence",
 }
+SYNC_V4_KEYS = (SYNC_KEYS - {"marker_role", "marker_phase"}) | {"marker_contract"}
 PORTABLE_GUARDS = (
     "marker_index",
     "poll_in_marker",
@@ -184,6 +224,7 @@ CENSUS_PARENT_KEYS = {"replay_sha256", "payload_sha256", "window"}
 CENSUS_WINDOW_KEYS = {"start_marker", "marker_count"}
 MARKER_CONTRACT_KEYS = {"role", "address", "phase", "code"}
 MARKER_CODE_KEYS = {"offset", "length", "sha256"}
+MARKER_CODE_V4_KEYS = {"image_rva", "length", "sha256"}
 REFERENCE_CLOCK_KEYS = {"schema", "clock_id", "frequency", "counter_bits", "read_semantics"}
 NATIVE_CLOCK_KEYS = {"schema", "clock_id", "frequency", "tick_semantics"}
 CENSUS_RECORD_KEYS = {"sequence", "parent_marker_index", "event_sequence", "reference_tick"}
@@ -465,6 +506,45 @@ def validate_target(value: object, where: str = "target") -> dict[str, Any]:
     return target
 
 
+def validate_oracle_target_v4(value: object, where: str = "target") -> dict[str, Any]:
+    target = require_dict(value, TARGET_V4_KEYS, where)
+    for field in ("title_id", "media_id", "entry_point", "region_mask"):
+        if not isinstance(target[field], str) or HEX32.fullmatch(target[field]) is None:
+            raise ReplayError(f"{where} {field}")
+    if not isinstance(target["module_xxh3"], str) or HEX64_UPPER.fullmatch(target["module_xxh3"]) is None:
+        raise ReplayError(f"{where} module_xxh3")
+    module = require_bounded_string(target["module"], MAX_MODULE_LENGTH, f"{where} module")
+    if "/" in module or "\\" in module:
+        raise ReplayError(f"{where} module basename")
+    require_bounded_string(target["target_id"], MAX_PLATFORM_LENGTH, f"{where} target_id")
+    require_sha256(target["xex_sha256"], f"{where} xex")
+    for field in ("xex_version", "base_version"):
+        if not isinstance(target[field], str) or XEX_VERSION.fullmatch(target[field]) is None:
+            raise ReplayError(f"{where} {field}")
+    for field, expected in NTSC_UJ_ORACLE_TARGET_IDENTITY.items():
+        if target[field] != expected:
+            raise ReplayError(f"{where} NTSC-U/J {field}")
+    return target
+
+
+def _validate_marker_contract_v4(value: object, where: str) -> dict[str, Any]:
+    marker = require_dict(value, MARKER_CONTRACT_KEYS, where)
+    if marker["role"] not in MARKER_ROLES or marker["phase"] not in MARKER_PHASES:
+        raise ReplayError(f"{where} role/phase")
+    if not isinstance(marker["address"], str) or HEX32.fullmatch(marker["address"]) is None:
+        raise ReplayError(f"{where} address")
+    code = require_dict(marker["code"], MARKER_CODE_V4_KEYS, f"{where} code")
+    if not isinstance(code["image_rva"], str) or HEX32.fullmatch(code["image_rva"]) is None:
+        raise ReplayError(f"{where} code image_rva")
+    code_length = require_uint(code["length"], MAX_MARKER_CODE_BYTES, f"{where} code length")
+    require_sha256(code["sha256"], f"{where} code")
+    if code_length == 0:
+        raise ReplayError(f"{where} code range")
+    if marker != NTSC_UJ_MARKER_CONTRACT:
+        raise ReplayError(f"{where} NTSC-U/J identity")
+    return marker
+
+
 def _require_reduced_rational(value: object, where: str) -> tuple[int, int]:
     rational = require_dict(value, RATIONAL_KEYS, where)
     numerator = require_uint(rational["numerator"], 0xFFFFFFFFFFFFFFFF, f"{where} numerator")
@@ -495,6 +575,8 @@ def _native_clock_contract(value: object, where: str) -> dict[str, Any]:
 
 
 def _marker_contract(header: dict[str, Any]) -> dict[str, Any]:
+    if header["schema"] == SCHEMA_V4:
+        return copy.deepcopy(header["sync"]["marker_contract"])
     return {
         "role": header["sync"]["marker_role"],
         "address": header["target"]["marker_address"],
@@ -507,9 +589,16 @@ def _marker_contract(header: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _marker_phase(header: dict[str, Any]) -> str:
+    if header["schema"] == SCHEMA_V4:
+        return header["sync"]["marker_contract"]["phase"]
+    return header["sync"]["marker_phase"]
+
+
 def validate_header(header: object) -> dict[str, Any]:
     result = require_dict(header, HEADER_KEYS, "header")
-    if result["kind"] != "header" or result["schema"] != SCHEMA:
+    schema = result["schema"]
+    if result["kind"] != "header" or not isinstance(schema, str) or schema not in {SCHEMA_V3, SCHEMA_V4}:
         raise ReplayError("header identity")
 
     producer = require_dict(result["producer"], PRODUCER_KEYS, "producer")
@@ -523,7 +612,10 @@ def validate_header(header: object) -> dict[str, Any]:
     require_sha256(producer["build_sha256"], "producer build")
     require_bounded_string(producer["platform"], MAX_PLATFORM_LENGTH, "producer platform")
 
-    validate_target(result["target"])
+    if schema == SCHEMA_V3:
+        validate_target(result["target"])
+    else:
+        validate_oracle_target_v4(result["target"])
 
     session = require_dict(result["session"], SESSION_KEYS, "session")
     for field in (
@@ -557,7 +649,7 @@ def validate_header(header: object) -> dict[str, Any]:
         if parent_start == 0 or marker_count == 0 or parent_start > MAX_MARKERS - marker_count + 1:
             raise ReplayError("segment parent marker window")
 
-    sync = require_dict(result["sync"], SYNC_KEYS, "sync")
+    sync = require_dict(result["sync"], SYNC_KEYS if schema == SCHEMA_V3 else SYNC_V4_KEYS, "sync")
     if sync["primary"] != PRIMARY_SYNC_KEY:
         raise ReplayError("sync primary")
     if sync["portable_guards"] != list(PORTABLE_GUARDS):
@@ -566,10 +658,13 @@ def validate_header(header: object) -> dict[str, Any]:
         raise ReplayError("sync lane-local diagnostics")
     if sync["telemetry"] != list(TELEMETRY):
         raise ReplayError("sync telemetry")
-    if sync["marker_role"] not in MARKER_ROLES:
-        raise ReplayError("sync marker role")
-    if sync["marker_phase"] not in MARKER_PHASES:
-        raise ReplayError("sync marker phase")
+    if schema == SCHEMA_V3:
+        if sync["marker_role"] not in MARKER_ROLES:
+            raise ReplayError("sync marker role")
+        if sync["marker_phase"] not in MARKER_PHASES:
+            raise ReplayError("sync marker phase")
+    else:
+        _validate_marker_contract_v4(sync["marker_contract"], "sync marker contract")
     cadence = require_dict(sync["cadence"], CADENCE_KEYS, "sync cadence")
     status = cadence["status"]
     source_hz = cadence["source_hz"]
@@ -597,7 +692,8 @@ def validate_header(header: object) -> dict[str, Any]:
         if cadence["resampling"] != expected_resampling or native_hz < source_hz or native_hz % source_hz != 0:
             raise ReplayError("sync derived cadence")
         census = require_dict(cadence["census"], CENSUS_REFERENCE_KEYS, "sync cadence census")
-        if census["schema"] != CADENCE_CENSUS_SCHEMA:
+        expected_census_schema = CADENCE_CENSUS_SCHEMA_V1 if schema == SCHEMA_V3 else CADENCE_CENSUS_SCHEMA_V2
+        if census["schema"] != expected_census_schema:
             raise ReplayError("sync cadence census schema")
         require_sha256(census["file_sha256"], "sync cadence census file")
         require_sha256(census["payload_sha256"], "sync cadence census payload")
@@ -730,7 +826,7 @@ def _validate_segment_marker_count(header: dict[str, Any], marker_count: int) ->
 
 def seal_replay(header: dict[str, Any], events: Sequence[dict[str, Any]], present_count: int | None = None) -> bytes:
     validated_header = validate_header(header)
-    validated_events = validate_events(events, validated_header["sync"]["marker_phase"])
+    validated_events = validate_events(events, _marker_phase(validated_header))
     marker_count = sum(event["kind"] == "marker" for event in validated_events)
     poll_count = sum(event["kind"] == "poll" for event in validated_events)
     _validate_segment_marker_count(validated_header, marker_count)
@@ -791,7 +887,7 @@ def _load_replay_lines(raw_lines: Sequence[bytes], expected_header: dict[str, An
     footer = require_dict(records[-1], FOOTER_KEYS, "footer")
     if footer["kind"] != "footer":
         raise ReplayError("footer identity")
-    events = validate_events(records[1:-1], header["sync"]["marker_phase"])
+    events = validate_events(records[1:-1], _marker_phase(header))
     marker_count = sum(event["kind"] == "marker" for event in events)
     poll_count = sum(event["kind"] == "poll" for event in events)
     _validate_segment_marker_count(header, marker_count)
@@ -858,7 +954,16 @@ def _require_marker_window(start_marker: int, marker_count: int, where: str) -> 
 
 def _validate_cadence_census_document(value: object, file_sha256: str) -> CadenceCensus:
     census = require_dict(value, CENSUS_KEYS, "cadence census")
-    if census["kind"] != "cadence_census" or census["schema"] != CADENCE_CENSUS_SCHEMA:
+    census_schema = census["schema"]
+    if (
+        census["kind"] != "cadence_census"
+        or not isinstance(census_schema, str)
+        or census_schema
+        not in {
+            CADENCE_CENSUS_SCHEMA_V1,
+            CADENCE_CENSUS_SCHEMA_V2,
+        }
+    ):
         raise ReplayError("cadence census identity")
     if census["integrity_level"] != CADENCE_INTEGRITY_LEVEL:
         raise ReplayError("cadence census integrity level")
@@ -892,25 +997,29 @@ def _validate_cadence_census_document(value: object, file_sha256: str) -> Cadenc
     marker_count = require_uint(window["marker_count"], MAX_MARKERS, "cadence census marker_count")
     _require_marker_window(start_marker, marker_count, "cadence census")
 
-    target = validate_target(census["target"], "cadence census target")
-    marker = require_dict(census["marker_contract"], MARKER_CONTRACT_KEYS, "cadence census marker contract")
-    if marker["role"] not in MARKER_ROLES or marker["phase"] not in MARKER_PHASES:
-        raise ReplayError("cadence census marker role/phase")
-    if not isinstance(marker["address"], str) or HEX32.fullmatch(marker["address"]) is None:
-        raise ReplayError("cadence census marker address")
-    code = require_dict(marker["code"], MARKER_CODE_KEYS, "cadence census marker code")
-    code_offset = require_uint(code["offset"], 0xFFFFFFFF, "cadence census marker code offset")
-    code_length = require_uint(code["length"], MAX_MARKER_CODE_BYTES, "cadence census marker code length")
-    require_sha256(code["sha256"], "cadence census marker code")
-    if code_length == 0 or code_offset > 0xFFFFFFFF - code_length + 1:
-        raise ReplayError("cadence census marker code range")
-    if (
-        marker["address"] != target["marker_address"]
-        or code["offset"] != target["marker_code_offset"]
-        or code["length"] != target["marker_code_length"]
-        or code["sha256"] != target["marker_code_sha256"]
-    ):
-        raise ReplayError("cadence census marker target mismatch")
+    if census_schema == CADENCE_CENSUS_SCHEMA_V1:
+        target = validate_target(census["target"], "cadence census target")
+        marker = require_dict(census["marker_contract"], MARKER_CONTRACT_KEYS, "cadence census marker contract")
+        if marker["role"] not in MARKER_ROLES or marker["phase"] not in MARKER_PHASES:
+            raise ReplayError("cadence census marker role/phase")
+        if not isinstance(marker["address"], str) or HEX32.fullmatch(marker["address"]) is None:
+            raise ReplayError("cadence census marker address")
+        code = require_dict(marker["code"], MARKER_CODE_KEYS, "cadence census marker code")
+        code_offset = require_uint(code["offset"], 0xFFFFFFFF, "cadence census marker code offset")
+        code_length = require_uint(code["length"], MAX_MARKER_CODE_BYTES, "cadence census marker code length")
+        require_sha256(code["sha256"], "cadence census marker code")
+        if code_length == 0 or code_offset > 0xFFFFFFFF - code_length + 1:
+            raise ReplayError("cadence census marker code range")
+        if (
+            marker["address"] != target["marker_address"]
+            or code["offset"] != target["marker_code_offset"]
+            or code["length"] != target["marker_code_length"]
+            or code["sha256"] != target["marker_code_sha256"]
+        ):
+            raise ReplayError("cadence census marker target mismatch")
+    else:
+        validate_oracle_target_v4(census["target"], "cadence census target")
+        _validate_marker_contract_v4(census["marker_contract"], "cadence census marker contract")
 
     clock = require_dict(census["clock"], REFERENCE_CLOCK_KEYS, "cadence census clock")
     if (
@@ -1016,6 +1125,9 @@ def load_cadence_census_bytes(data: bytes) -> CadenceCensus:
 
 
 def _require_census_contract(census: CadenceCensus, header: dict[str, Any]) -> None:
+    expected_schema = CADENCE_CENSUS_SCHEMA_V1 if header["schema"] == SCHEMA_V3 else CADENCE_CENSUS_SCHEMA_V2
+    if census.document["schema"] != expected_schema:
+        raise ReplayError("cadence census/raw schema mismatch")
     if census.document["producer"] != header["producer"]:
         raise ReplayError("cadence census producer mismatch")
     expected_configuration = {
@@ -1049,7 +1161,7 @@ def _require_census_records_for_parent(census: CadenceCensus, parent: ReplayDocu
 
 def _census_reference(census: CadenceCensus) -> dict[str, Any]:
     return {
-        "schema": CADENCE_CENSUS_SCHEMA,
+        "schema": census.document["schema"],
         "file_sha256": census.file_sha256,
         "payload_sha256": census.payload_sha256,
         "integrity_level": CADENCE_INTEGRITY_LEVEL,
@@ -1249,15 +1361,18 @@ def read_cache_identity(cache: Path) -> str:
     return digest.hex()
 
 
-def build_ac6rtply_v3(
+def _build_ac6rtply(
     raw_replay: bytes,
     cache_index_sha256: str,
     cadence_census: bytes,
-    expected_header: dict[str, Any] | None = None,
+    expected_header: dict[str, Any] | None,
+    required_raw_schema: str,
 ) -> tuple[bytes, dict[str, Any]]:
     if len(raw_replay) > MAX_REPLAY_BYTES:
         raise ReplayError("projection raw replay byte bound")
     document = load_replay_bytes(raw_replay, expected_header)
+    if document.header["schema"] != required_raw_schema:
+        raise ReplayError(f"AC6RTPLY projection requires raw {required_raw_schema}")
     raw_replay_sha256 = hashlib.sha256(raw_replay).hexdigest()
     require_sha256(cache_index_sha256, "projection cache index")
     if not any(bytes.fromhex(cache_index_sha256)):
@@ -1305,55 +1420,93 @@ def build_ac6rtply_v3(
 
     cadence = document.header["sync"]["cadence"]
     digest_hex = input_digest.hex()
-    receipt = {
-        "kind": "native_projection_receipt",
-        "schema": PROJECTION_RECEIPT_SCHEMA,
-        "source": {
-            "raw_replay_sha256": raw_replay_sha256,
-            "raw_payload_sha256": document.footer["payload_sha256"],
-            "parent_replay_sha256": segment["parent_replay_sha256"],
-            "parent_payload_sha256": segment["parent_payload_sha256"],
-            "parent_window": {
-                "start_marker": segment["parent_start_marker"],
-                "marker_count": segment["parent_marker_count"],
-            },
-        },
-        "target": copy.deepcopy(document.header["target"]),
-        "cadence": {
-            "integrity_level": CADENCE_INTEGRITY_LEVEL,
-            "source_hz": cadence["source_hz"],
-            "native_hz": cadence["native_hz"],
-            "resampling": cadence["resampling"],
-            "hold": hold,
-            "census": copy.deepcopy(cadence["census"]),
-            "marker_contract": copy.deepcopy(census.document["marker_contract"]),
-            "native_clock": copy.deepcopy(NATIVE_CLOCK_CONTRACT),
-        },
-        "mapping": copy.deepcopy(CONTROLLER_MAPPING),
-        "cache_index_sha256": cache_index_sha256,
-        "output": {
-            "format": "AC6RTPLY",
-            "version": AC6RTPLY_VERSION,
-            "mission_id": AC6RTPLY_MISSION_ID,
-            "difficulty": AC6RTPLY_NORMAL_DIFFICULTY,
-            "difficulty_name": "Normal",
-            "aircraft_id": AC6RTPLY_AIRCRAFT_ID,
-            "weapon_id": AC6RTPLY_WEAPON_ID,
-            "capability_data_valid": True,
-            "random_seed": AC6RTPLY_RANDOM_SEED,
-            "checkpoint_count": 0,
-            "source_marker_count": marker_count,
-            "frame_count": frame_count,
-            "final_tick": frame_count,
-            "input_digest_sha256": digest_hex,
-            "final_digest_sha256": digest_hex,
-            "output_sha256": hashlib.sha256(replay).hexdigest(),
+    source = {
+        "raw_replay_sha256": raw_replay_sha256,
+        "raw_payload_sha256": document.footer["payload_sha256"],
+        "parent_replay_sha256": segment["parent_replay_sha256"],
+        "parent_payload_sha256": segment["parent_payload_sha256"],
+        "parent_window": {
+            "start_marker": segment["parent_start_marker"],
+            "marker_count": segment["parent_marker_count"],
         },
     }
+    receipt_cadence = {
+        "integrity_level": CADENCE_INTEGRITY_LEVEL,
+        "source_hz": cadence["source_hz"],
+        "native_hz": cadence["native_hz"],
+        "resampling": cadence["resampling"],
+        "hold": hold,
+        "census": copy.deepcopy(cadence["census"]),
+        "native_clock": copy.deepcopy(NATIVE_CLOCK_CONTRACT),
+    }
+    receipt_output = {
+        "format": "AC6RTPLY",
+        "version": AC6RTPLY_VERSION,
+        "mission_id": AC6RTPLY_MISSION_ID,
+        "difficulty": AC6RTPLY_NORMAL_DIFFICULTY,
+        "difficulty_name": "Normal",
+        "aircraft_id": AC6RTPLY_AIRCRAFT_ID,
+        "weapon_id": AC6RTPLY_WEAPON_ID,
+        "capability_data_valid": True,
+        "random_seed": AC6RTPLY_RANDOM_SEED,
+        "checkpoint_count": 0,
+        "source_marker_count": marker_count,
+        "frame_count": frame_count,
+        "final_tick": frame_count,
+        "input_digest_sha256": digest_hex,
+        "final_digest_sha256": digest_hex,
+        "output_sha256": hashlib.sha256(replay).hexdigest(),
+    }
+    if required_raw_schema == SCHEMA_V3:
+        receipt_cadence["marker_contract"] = copy.deepcopy(census.document["marker_contract"])
+        receipt = {
+            "kind": "native_projection_receipt",
+            "schema": PROJECTION_RECEIPT_SCHEMA_V3,
+            "source": source,
+            "target": copy.deepcopy(document.header["target"]),
+            "cadence": receipt_cadence,
+            "mapping": copy.deepcopy(CONTROLLER_MAPPING),
+            "cache_index_sha256": cache_index_sha256,
+            "output": receipt_output,
+        }
+    else:
+        source["raw_schema"] = SCHEMA_V4
+        source["oracle"] = {
+            "target": copy.deepcopy(document.header["target"]),
+            "marker_contract": copy.deepcopy(document.header["sync"]["marker_contract"]),
+        }
+        receipt = {
+            "kind": "native_projection_receipt",
+            "schema": PROJECTION_RECEIPT_SCHEMA_V4,
+            "source": source,
+            "native_target": copy.deepcopy(PAL_NATIVE_TARGET_IDENTITY),
+            "cadence": receipt_cadence,
+            "mapping": copy.deepcopy(CONTROLLER_MAPPING),
+            "cache_index_sha256": cache_index_sha256,
+            "output": receipt_output,
+        }
     receipt_bytes = canonical_line(receipt)
     if len(receipt_bytes) > MAX_RECEIPT_BYTES:
         raise ReplayError("projection receipt byte bound")
     return replay, receipt
+
+
+def build_ac6rtply_v3(
+    raw_replay: bytes,
+    cache_index_sha256: str,
+    cadence_census: bytes,
+    expected_header: dict[str, Any] | None = None,
+) -> tuple[bytes, dict[str, Any]]:
+    return _build_ac6rtply(raw_replay, cache_index_sha256, cadence_census, expected_header, SCHEMA_V3)
+
+
+def build_ac6rtply_v4(
+    raw_replay: bytes,
+    cache_index_sha256: str,
+    cadence_census: bytes,
+    expected_header: dict[str, Any] | None = None,
+) -> tuple[bytes, dict[str, Any]]:
+    return _build_ac6rtply(raw_replay, cache_index_sha256, cadence_census, expected_header, SCHEMA_V4)
 
 
 def compare_runs(recorded: ReplayDocument, replayed: ReplayDocument) -> dict[str, Any]:
@@ -1582,6 +1735,14 @@ def main() -> int:
     project_parser.add_argument("--expected-header", type=Path, required=True)
     project_parser.add_argument("--cadence-census", type=Path, required=True)
 
+    project_v4_parser = subparsers.add_parser("project-ac6rtply-v4")
+    project_v4_parser.add_argument("replay", type=Path)
+    project_v4_parser.add_argument("cache", type=Path)
+    project_v4_parser.add_argument("output", type=Path)
+    project_v4_parser.add_argument("receipt", type=Path)
+    project_v4_parser.add_argument("--expected-header", type=Path, required=True)
+    project_v4_parser.add_argument("--cadence-census", type=Path, required=True)
+
     compare_parser = subparsers.add_parser("compare")
     compare_parser.add_argument("recorded", type=Path)
     compare_parser.add_argument("replayed", type=Path)
@@ -1640,11 +1801,12 @@ def main() -> int:
                 f"rows={len(output.splitlines())} "
                 f"sha256={hashlib.sha256(output_bytes).hexdigest()}"
             )
-        elif arguments.command == "project-ac6rtply-v3":
+        elif arguments.command in {"project-ac6rtply-v3", "project-ac6rtply-v4"}:
             expected_header = _read_json(arguments.expected_header)
             raw_data, _ = _load_replay_file_bytes(arguments.replay, expected_header)
             cache_index_sha256 = read_cache_identity(arguments.cache)
-            output, receipt = build_ac6rtply_v3(
+            build_projection = build_ac6rtply_v3 if arguments.command == "project-ac6rtply-v3" else build_ac6rtply_v4
+            output, receipt = build_projection(
                 raw_data,
                 cache_index_sha256,
                 _read_bounded_file_bytes(arguments.cadence_census, MAX_CADENCE_CENSUS_BYTES, "cadence census"),

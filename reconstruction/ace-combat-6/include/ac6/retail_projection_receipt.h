@@ -8,12 +8,13 @@
 
 namespace ac6::retail {
 
-// The v3 receipt is an integrity sidecar for a controller projection.  This
-// preflight proves that its native-output claims describe the exact replay
-// file and the cache opened by the caller, and requires a runtime-census
-// integrity-only cadence census reference plus a marker contract matching the
-// PAL target metadata.  This level is usable for provisional replay but is not
-// parity evidence or runner attestation.
+// The v3 and v4 receipts are integrity sidecars for controller projections.
+// Both prove that their native-output claims describe the exact replay file
+// and cache opened by the caller.  V3 accepts only a PAL source/target.  V4 is
+// a separate, strict contract for the one qualified NTSC-U/J source identity
+// projected into the PAL native target.  Both require an
+// integrity-only runtime cadence census and are usable for provisional replay,
+// but are not parity evidence or runner attestation.
 // Source replay and cadence-census lineage are parsed structurally, but
 // cannot be proved without their raw/parent/sidecar artefacts.
 enum class RetailProjectionReceiptError : std::uint8_t {

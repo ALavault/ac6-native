@@ -504,6 +504,10 @@ def test_projection_receipt_cadence_mutation_fails_closed(tmp_path: Path) -> Non
             "projection receipt identity",
         ),
         (
+            lambda receipt: receipt.update(schema="ac6.native-controller-projection-receipt.v4"),
+            "projection receipt identity",
+        ),
+        (
             lambda receipt: receipt["cadence"]["census"].update(method="asserted_hz"),
             "projection cadence census identity",
         ),
@@ -542,6 +546,62 @@ def test_projection_receipt_v3_contract_mutations_fail_closed(
         encoding="utf-8",
     )
     with pytest.raises(TraceV2Error, match=message):
+        load_projection_receipt(receipt_path)
+
+
+def test_execution_trace_v2_rejects_real_v4_shape_and_relabel(tmp_path: Path) -> None:
+    _, v3_path, _ = projection_fixture(tmp_path, [INPUT_A, INPUT_B], 30, 60)
+    v3 = json.loads(v3_path.read_bytes())
+    source = v3["source"]
+    v4 = {
+        "kind": "native_projection_receipt",
+        "schema": "ac6.native-controller-projection-receipt.v4",
+        "source": {
+            **source,
+            "raw_schema": "ac6.controller-input-replay.v4",
+            "oracle": {
+                "target": {
+                    "target_id": "ac6-ntsc-uj-default-xex",
+                    "title_id": "4E4D07D1",
+                    "media_id": "531C30BE",
+                    "module": "default.xex",
+                    "xex_sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+                    "xex_version": "v0.0.0.8",
+                    "base_version": "v0.0.0.8",
+                    "module_xxh3": "892639B654015428",
+                    "entry_point": "821F5ED0",
+                    "region_mask": "0000FDFF",
+                },
+                "marker_contract": {
+                    "role": "ac6_frame_input_stage",
+                    "address": "821CA940",
+                    "phase": "before_input",
+                    "code": {"image_rva": "001CA940", "length": 328, "sha256": "a" * 64},
+                },
+            },
+        },
+        "native_target": {
+            "target_id": "ac6-pal-default-xex",
+            "title_id": "4E4D07D1",
+            "media_id": "0379EFB3",
+            "module": "default.xex",
+            "xex_sha256": XEX_SHA256,
+            "xex_version": "v0.0.0.11",
+            "base_version": "v0.0.0.11",
+        },
+        "cadence": {key: value for key, value in v3["cadence"].items() if key != "marker_contract"},
+        "mapping": v3["mapping"],
+        "cache_index_sha256": v3["cache_index_sha256"],
+        "output": v3["output"],
+    }
+    receipt_path = tmp_path / "real-v4.json"
+    receipt_path.write_text(json.dumps(v4, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+    with pytest.raises(TraceV2Error, match="projection receipt shape"):
+        load_projection_receipt(receipt_path)
+
+    v4["schema"] = PROJECTION_RECEIPT_SCHEMA
+    receipt_path.write_text(json.dumps(v4, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+    with pytest.raises(TraceV2Error, match="projection receipt shape"):
         load_projection_receipt(receipt_path)
 
 

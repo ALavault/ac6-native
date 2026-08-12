@@ -19,6 +19,7 @@ from ac6_controller_input_replay import (  # noqa: E402
     _canonical_controller,
     _publish_atomic_files,
     build_ac6rtply_v3,
+    build_ac6rtply_v4,
     canonical_line,
     compare_runs,
     export_controller_tsv,
@@ -98,6 +99,23 @@ def header() -> dict:
             },
         },
     }
+
+
+def header_v4() -> dict:
+    result = header()
+    result["schema"] = "ac6.controller-input-replay.v4"
+    result["producer"] = {
+        "lane": "ac6-recomp",
+        "implementation_commit": "ab90b54713e5889f33eee1cc8681dae89fe83d1e",
+        "binary_sha256": "1" * 64,
+        "build_sha256": "0" * 64,
+        "platform": "linux-x86_64-vulkan",
+    }
+    result["target"] = copy.deepcopy(replay_module.NTSC_UJ_ORACLE_TARGET_IDENTITY)
+    result["sync"].pop("marker_role")
+    result["sync"].pop("marker_phase")
+    result["sync"]["marker_contract"] = copy.deepcopy(replay_module.NTSC_UJ_MARKER_CONTRACT)
+    return result
 
 
 def state(buttons: int = 0, lx: int = 0, ly: int = 0) -> dict:
@@ -274,6 +292,57 @@ def cadence_census(
     return seal_cadence_census(body)
 
 
+def cadence_census_v4(
+    parent: bytes,
+    parent_header: dict,
+    source_hz: int = 30,
+    *,
+    start_marker: int = 1,
+    marker_count: int = 2,
+) -> bytes:
+    parent_document = load_replay_bytes(parent)
+    assert source_hz in {30, 60}
+    assert marker_count >= 2
+    reference_stride = 60 // source_hz
+    marker_sequences = {
+        event["marker_index"]: event["sequence"] for event in parent_document.events if event["kind"] == "marker"
+    }
+    body = {
+        "kind": "cadence_census",
+        "schema": "ac6.controller-cadence-census.v2",
+        "integrity_level": "integrity_only_runtime_census",
+        "producer": copy.deepcopy(parent_header["producer"]),
+        "configuration": {
+            "runtime_config_sha256": parent_header["session"]["runtime_config_sha256"],
+            "behavior_config_sha256": parent_header["session"]["behavior_config_sha256"],
+        },
+        "parent": {
+            "replay_sha256": hashlib.sha256(parent).hexdigest(),
+            "payload_sha256": parent_document.footer["payload_sha256"],
+            "window": {"start_marker": start_marker, "marker_count": marker_count},
+        },
+        "target": copy.deepcopy(parent_header["target"]),
+        "marker_contract": copy.deepcopy(parent_header["sync"]["marker_contract"]),
+        "clock": {
+            "schema": "ac6.fixed-rate-reference-clock.v1",
+            "clock_id": "fixture-fixed-counter",
+            "frequency": {"numerator": 60, "denominator": 1},
+            "counter_bits": 64,
+            "read_semantics": "monotonic_snapshot_before_marker",
+        },
+        "records": [
+            {
+                "sequence": sequence,
+                "parent_marker_index": marker,
+                "event_sequence": marker_sequences.get(marker, 1 + (marker - 1) * 3),
+                "reference_tick": 100 + sequence * reference_stride,
+            }
+            for sequence, marker in enumerate(range(start_marker, start_marker + marker_count))
+        ],
+    }
+    return seal_cadence_census(body)
+
+
 def cadence_census_body(data: bytes) -> dict:
     body = copy.deepcopy(load_cadence_census_bytes(data).document)
     del body["payload_sha256"]
@@ -284,6 +353,14 @@ def measured_window(source_hz: int = 30) -> tuple[bytes, dict, bytes]:
     parent_header = header()
     parent = seal_replay(parent_header, events(), 3)
     census = cadence_census(parent, parent_header, source_hz)
+    window = slice_replay(parent, 1, 2, census, parent_header)
+    return window, load_replay_bytes(window).header, census
+
+
+def measured_window_v4(source_hz: int = 30) -> tuple[bytes, dict, bytes]:
+    parent_header = header_v4()
+    parent = seal_replay(parent_header, events(), 3)
+    census = cadence_census_v4(parent, parent_header, source_hz)
     window = slice_replay(parent, 1, 2, census, parent_header)
     return window, load_replay_bytes(window).header, census
 
@@ -900,6 +977,207 @@ def test_ac6rtply_v3_exact_layout_and_metadata_only_receipt(tmp_path: Path) -> N
     assert canonical_line(receipt) == canonical_line(json.loads(canonical_line(receipt)))
 
 
+def test_v3_projection_remains_byte_compatible() -> None:
+    window, _, census = measured_window(30)
+    replay, receipt = build_ac6rtply_v3(window, "a" * 64, census)
+    assert hashlib.sha256(window).hexdigest() == "f55d2a079738832d8bccdbe8a1d1cd8a5bb91564c81f93208e17a2b4d617e844"
+    assert hashlib.sha256(census).hexdigest() == "8143b7f955e708b3b25e0b0c3483c2f1cc6723e7558761d7ef0f73fb3c0aa6f6"
+    assert hashlib.sha256(replay).hexdigest() == "f8ab11a5885f9a069f98a42f20d1978b26299ece1aaf77082b742103094bcb7b"
+    assert hashlib.sha256(canonical_line(receipt)).hexdigest() == (
+        "d5c911dbe47f4d1d27eedea3ca1627d47023f221e345d061f30760dd81acfe58"
+    )
+
+
+def test_v4_ntsc_oracle_projects_once_to_pal_ac6rtply_v3() -> None:
+    window, window_header, census = measured_window_v4(30)
+    replay, receipt = build_ac6rtply_v4(window, "a" * 64, census, window_header)
+    parent = seal_replay(header_v4(), events(), 3)
+
+    assert (len(parent), hashlib.sha256(parent).hexdigest()) == (
+        3736,
+        "aa3410b8e4534cf1b0f3e13000d70719d796a103e308821e14585eaf0909fa20",
+    )
+    assert (len(census), hashlib.sha256(census).hexdigest()) == (
+        1847,
+        "69f7f8cfe174765cd97e94df195f0fab4c73491ae4c2496542d5b43be0680590",
+    )
+    assert (len(window), hashlib.sha256(window).hexdigest()) == (
+        4025,
+        "48022a3ad178779bcdae55993c011796296e55c76ea3e87edfb7ca8bbfb417ad",
+    )
+    assert (len(replay), hashlib.sha256(replay).hexdigest()) == (
+        157,
+        "f8ab11a5885f9a069f98a42f20d1978b26299ece1aaf77082b742103094bcb7b",
+    )
+    receipt_bytes = canonical_line(receipt)
+    assert (len(receipt_bytes), hashlib.sha256(receipt_bytes).hexdigest()) == (
+        2835,
+        "cd8f1b031382e6ba33fb4bdd498f0989fe4a5044cbcc22f72afc00c5533e4482",
+    )
+
+    assert replay[:9] == b"AC6RTPLY\0"
+    assert struct.unpack_from("<I", replay, 9) == (3,)
+    assert struct.unpack_from("<Q", replay, 77) == (4,)
+    assert struct.unpack_from("<I", replay, 117) == (4,)
+    assert len(replay[121:]) == 4 * replay_module.INPUT_FRAME_BYTES
+    assert set(receipt) == {
+        "kind",
+        "schema",
+        "source",
+        "native_target",
+        "cadence",
+        "mapping",
+        "cache_index_sha256",
+        "output",
+    }
+    assert receipt["schema"] == "ac6.native-controller-projection-receipt.v4"
+    assert set(receipt["source"]) == {
+        "raw_schema",
+        "raw_replay_sha256",
+        "raw_payload_sha256",
+        "parent_replay_sha256",
+        "parent_payload_sha256",
+        "parent_window",
+        "oracle",
+    }
+    assert receipt["source"]["raw_schema"] == "ac6.controller-input-replay.v4"
+    assert receipt["source"]["oracle"] == {
+        "target": replay_module.NTSC_UJ_ORACLE_TARGET_IDENTITY,
+        "marker_contract": replay_module.NTSC_UJ_MARKER_CONTRACT,
+    }
+    assert receipt["native_target"] == replay_module.PAL_NATIVE_TARGET_IDENTITY
+    assert receipt["cadence"]["census"]["schema"] == "ac6.controller-cadence-census.v2"
+    assert "marker_contract" not in receipt["cadence"]
+    assert receipt["cadence"]["integrity_level"] == "integrity_only_runtime_census"
+    assert receipt["cadence"]["hold"] == 2
+    assert receipt["output"]["version"] == 3
+    assert receipt["output"]["source_marker_count"] == 2
+    assert receipt["output"]["frame_count"] == 4
+    assert canonical_line(receipt) == canonical_line(json.loads(canonical_line(receipt)))
+
+
+def test_v4_60_to_60_projection_is_identity_without_duplicate_frames() -> None:
+    window, window_header, census = measured_window_v4(60)
+    replay, receipt = build_ac6rtply_v4(window, "a" * 64, census, window_header)
+
+    assert struct.unpack_from("<Q", replay, 77) == (2,)
+    assert struct.unpack_from("<I", replay, 117) == (2,)
+    frames = replay[121:]
+    assert len(frames) == 2 * replay_module.INPUT_FRAME_BYTES
+    assert frames[: replay_module.INPUT_FRAME_BYTES] != frames[replay_module.INPUT_FRAME_BYTES :]
+    assert (
+        receipt["cadence"]["source_hz"],
+        receipt["cadence"]["native_hz"],
+        receipt["cadence"]["resampling"],
+        receipt["cadence"]["hold"],
+    ) == (60, 60, "identity", 1)
+    assert receipt["output"]["source_marker_count"] == 2
+    assert receipt["output"]["frame_count"] == 2
+
+
+@pytest.mark.parametrize(
+    ("field", "mutated"),
+    [
+        ("target_id", "ac6-pal-default-xex"),
+        ("title_id", "4E4D07D2"),
+        ("media_id", "0379EFB3"),
+        ("module", "other.xex"),
+        ("xex_sha256", "f" * 64),
+        ("xex_version", "v0.0.0.9"),
+        ("base_version", "v0.0.0.9"),
+        ("module_xxh3", "AAAAAAAAAAAAAAAA"),
+        ("entry_point", "821F5ED4"),
+        ("region_mask", "0000FFFF"),
+    ],
+)
+def test_v4_raw_rejects_each_ntsc_target_mutation(field: str, mutated: object) -> None:
+    bad = header_v4()
+    bad["target"][field] = mutated
+    with pytest.raises(ReplayError, match="NTSC-U/J"):
+        seal_replay(bad, events(), 3)
+
+
+@pytest.mark.parametrize(
+    ("path", "mutated"),
+    [
+        (("role",), "mission_manager_tick"),
+        (("address",), "821CA944"),
+        (("phase",), "after_input"),
+        (("code", "image_rva"), "001CA944"),
+        (("code", "length"), 327),
+        (("code", "sha256"), "f" * 64),
+    ],
+)
+def test_v4_raw_rejects_each_marker_contract_mutation(path: tuple[str, ...], mutated: object) -> None:
+    bad = header_v4()
+    cursor = bad["sync"]["marker_contract"]
+    for component in path[:-1]:
+        cursor = cursor[component]
+    cursor[path[-1]] = mutated
+    with pytest.raises(ReplayError, match="NTSC-U/J"):
+        seal_replay(bad, events(), 3)
+
+
+def test_v4_rejects_schema_target_marker_and_census_mixing() -> None:
+    v3 = header()
+    v4 = header_v4()
+
+    v3_with_v4_contract = copy.deepcopy(v4)
+    v3_with_v4_contract["schema"] = "ac6.controller-input-replay.v3"
+    with pytest.raises(ReplayError, match="sync shape|target shape"):
+        seal_replay(v3_with_v4_contract, events(), 3)
+
+    v4_with_v3_contract = copy.deepcopy(v3)
+    v4_with_v3_contract["schema"] = "ac6.controller-input-replay.v4"
+    with pytest.raises(ReplayError, match="sync shape|target shape"):
+        seal_replay(v4_with_v3_contract, events(), 3)
+
+    parent = seal_replay(v4, events(), 3)
+    census = cadence_census_v4(parent, v4, 30)
+    census_body = cadence_census_body(census)
+    census_body["schema"] = "ac6.controller-cadence-census.v1"
+    with pytest.raises(ReplayError, match="target shape"):
+        seal_cadence_census(census_body)
+
+    v3_parent = seal_replay(v3, events(), 3)
+    v3_census_body = cadence_census_body(cadence_census(v3_parent, v3, 30))
+    v3_census_body["schema"] = "ac6.controller-cadence-census.v2"
+    with pytest.raises(ReplayError, match="target shape"):
+        seal_cadence_census(v3_census_body)
+
+    window_v3, _, census_v3 = measured_window(30)
+    window_v4, _, census_v4 = measured_window_v4(30)
+    with pytest.raises(ReplayError, match="raw ac6.controller-input-replay.v3"):
+        build_ac6rtply_v3(window_v4, "a" * 64, census_v4)
+    with pytest.raises(ReplayError, match="raw ac6.controller-input-replay.v4"):
+        build_ac6rtply_v4(window_v3, "a" * 64, census_v3)
+
+    invalid_header_schema = header_v4()
+    invalid_header_schema["schema"] = []
+    with pytest.raises(ReplayError, match="header identity"):
+        seal_replay(invalid_header_schema, events(), 3)
+    invalid_census_schema = cadence_census_body(census_v4)
+    invalid_census_schema["schema"] = []
+    with pytest.raises(ReplayError, match="cadence census identity"):
+        seal_cadence_census(invalid_census_schema)
+
+
+def test_v4_projection_rejects_double_zero_order_hold() -> None:
+    window, window_header, census = measured_window_v4(30)
+    replay, _ = build_ac6rtply_v4(window, "a" * 64, census)
+    with pytest.raises(ReplayError, match="framing|JSON"):
+        build_ac6rtply_v4(replay, "a" * 64, census)
+    with pytest.raises(ReplayError, match="full recording"):
+        slice_replay(window, 1, 2, census, window_header)
+
+    document_v4 = load_replay_bytes(window)
+    forged_header = copy.deepcopy(window_header)
+    forged_header["sync"]["cadence"]["source_hz"] = 15
+    forged = seal_replay(forged_header, list(document_v4.events), document_v4.footer["present_count"])
+    with pytest.raises(ReplayError, match="computed contract mismatch"):
+        build_ac6rtply_v4(forged, "a" * 64, census)
+
+
 def test_ac6rtply_projection_refuses_full_recording_and_ambiguous_poll() -> None:
     full = seal_replay(header(), events(), 3)
     with pytest.raises(ReplayError, match="resealed marker window"):
@@ -1007,3 +1285,68 @@ def test_slice_and_project_cli_accept_integrity_only_census(
     assert output_path.read_bytes().startswith(b"AC6RTPLY\0")
     receipt = json.loads(receipt_path.read_bytes())
     assert receipt["cadence"]["integrity_level"] == "integrity_only_runtime_census"
+
+
+def test_v4_slice_and_projection_cli_preserve_interregion_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    parent_header = header_v4()
+    parent = seal_replay(parent_header, events(), 3)
+    census = cadence_census_v4(parent, parent_header, 30)
+    parent_path = tmp_path / "parent-v4.jsonl"
+    parent_header_path = tmp_path / "parent-v4-header.json"
+    census_path = tmp_path / "cadence-census-v2.json"
+    window_path = tmp_path / "window-v4.jsonl"
+    parent_path.write_bytes(parent)
+    parent_header_path.write_text(json.dumps(parent_header), encoding="utf-8")
+    census_path.write_bytes(census)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "controller-replay",
+            "slice-reseal",
+            str(parent_path),
+            str(window_path),
+            "--expected-header",
+            str(parent_header_path),
+            "--cadence-census",
+            str(census_path),
+            "--start-marker",
+            "1",
+            "--marker-count",
+            "2",
+        ],
+    )
+    assert main() == 0
+    capsys.readouterr()
+    window = load_replay_bytes(window_path.read_bytes())
+    window_header_path = tmp_path / "window-v4-header.json"
+    window_header_path.write_text(json.dumps(window.header), encoding="utf-8")
+    cache, _ = make_cache(tmp_path)
+    output_path = tmp_path / "mission01-v4.ac6rply"
+    receipt_path = tmp_path / "mission01-v4.receipt.json"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "controller-replay",
+            "project-ac6rtply-v4",
+            str(window_path),
+            str(cache),
+            str(output_path),
+            str(receipt_path),
+            "--expected-header",
+            str(window_header_path),
+            "--cadence-census",
+            str(census_path),
+        ],
+    )
+    assert main() == 0
+    assert "format=AC6RTPLY version=3" in capsys.readouterr().out
+    assert output_path.read_bytes().startswith(b"AC6RTPLY\0")
+    receipt = json.loads(receipt_path.read_bytes())
+    assert receipt["schema"] == "ac6.native-controller-projection-receipt.v4"
+    assert receipt["source"]["oracle"]["target"] == replay_module.NTSC_UJ_ORACLE_TARGET_IDENTITY
+    assert receipt["native_target"] == replay_module.PAL_NATIVE_TARGET_IDENTITY

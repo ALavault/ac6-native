@@ -1,11 +1,12 @@
 #include "ac6/retail_projection_receipt.h"
 
 #include "ac6/sha256.h"
+#include "retail_projection_replay_bytes.h"
 
 #include <algorithm>
 #include <array>
-#include <charconv>
 #include <cerrno>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -33,10 +34,15 @@ constexpr std::size_t kMaximumJsonNodes = 1024u;
 constexpr std::size_t kMaximumJsonMembers = 128u;
 constexpr std::size_t kMaximumJsonArrayItems = 256u;
 constexpr std::size_t kMaximumJsonStringBytes = 4096u;
-constexpr std::string_view kSchema =
+constexpr std::string_view kSchemaV3 =
     "ac6.native-controller-projection-receipt.v3";
-constexpr std::string_view kCadenceCensusSchema =
+constexpr std::string_view kSchemaV4 =
+    "ac6.native-controller-projection-receipt.v4";
+constexpr std::string_view kRawSchemaV4 = "ac6.controller-input-replay.v4";
+constexpr std::string_view kCadenceCensusSchemaV1 =
     "ac6.controller-cadence-census.v1";
+constexpr std::string_view kCadenceCensusSchemaV2 =
+    "ac6.controller-cadence-census.v2";
 constexpr std::string_view kCadenceMethod = "uniform_marker_interval_v1";
 constexpr std::string_view kCadenceIntegrityLevel =
     "integrity_only_runtime_census";
@@ -44,9 +50,10 @@ constexpr std::string_view kNativeClockSchema =
     "ac6.native-simulation-clock.v1";
 constexpr std::string_view kPalXexSha256 =
     "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde";
-constexpr std::array<std::uint8_t, 9> kReplayMagic{'A', 'C', '6', 'R', 'T',
-                                                   'P', 'L', 'Y', 0};
-
+constexpr std::string_view kNtscUjXexSha256 =
+    "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc";
+constexpr std::string_view kNtscUjMarkerCodeSha256 =
+    "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d";
 enum class JsonKind : std::uint8_t {
   Null,
   Boolean,
@@ -504,13 +511,12 @@ bool read_bounded(const std::filesystem::path &path, std::uint64_t maximum,
     ~Descriptor() { ::close(value); }
   } owner{descriptor};
 
-  struct stat status {};
+  struct stat status{};
   if (::fstat(descriptor, &status) != 0 || !S_ISREG(status.st_mode) ||
       status.st_size < 0) {
     return false;
   }
-  const std::uint64_t initial_size =
-      static_cast<std::uint64_t>(status.st_size);
+  const std::uint64_t initial_size = static_cast<std::uint64_t>(status.st_size);
   if (initial_size > maximum) {
     exceeded = true;
     return false;
@@ -539,18 +545,9 @@ bool read_bounded(const std::filesystem::path &path, std::uint64_t maximum,
   }
 }
 
-bool validate_source(const JsonValue &source, std::uint64_t &marker_count) {
-  constexpr std::array keys{
-      std::string_view{"parent_payload_sha256"},
-      std::string_view{"parent_replay_sha256"},
-      std::string_view{"parent_window"},
-      std::string_view{"raw_payload_sha256"},
-      std::string_view{"raw_replay_sha256"},
-  };
+bool validate_lineage(const JsonValue &source, std::uint64_t &marker_count) {
   constexpr std::array window_keys{std::string_view{"marker_count"},
                                    std::string_view{"start_marker"}};
-  if (!exact_keys(source, keys))
-    return false;
   Sha256Digest ignored{};
   if (!digest_value(member(source, "parent_payload_sha256"), ignored) ||
       !digest_value(member(source, "parent_replay_sha256"), ignored) ||
@@ -567,7 +564,99 @@ bool validate_source(const JsonValue &source, std::uint64_t &marker_count) {
          start_marker <= 500000u - marker_count + 1u;
 }
 
-bool validate_target(const JsonValue &target) {
+bool validate_source_v3(const JsonValue &source, std::uint64_t &marker_count) {
+  constexpr std::array keys{
+      std::string_view{"parent_payload_sha256"},
+      std::string_view{"parent_replay_sha256"},
+      std::string_view{"parent_window"},
+      std::string_view{"raw_payload_sha256"},
+      std::string_view{"raw_replay_sha256"},
+  };
+  return exact_keys(source, keys) && validate_lineage(source, marker_count);
+}
+
+bool validate_ntsc_uj_oracle_target(const JsonValue &target) {
+  constexpr std::array keys{
+      std::string_view{"base_version"}, std::string_view{"entry_point"},
+      std::string_view{"media_id"},     std::string_view{"module"},
+      std::string_view{"module_xxh3"},  std::string_view{"region_mask"},
+      std::string_view{"target_id"},    std::string_view{"title_id"},
+      std::string_view{"xex_sha256"},   std::string_view{"xex_version"},
+  };
+  return exact_keys(target, keys) &&
+         string_is(member(target, "target_id"), "ac6-ntsc-uj-default-xex") &&
+         string_is(member(target, "title_id"), "4E4D07D1") &&
+         string_is(member(target, "media_id"), "531C30BE") &&
+         string_is(member(target, "module"), "default.xex") &&
+         string_is(member(target, "xex_sha256"), kNtscUjXexSha256) &&
+         string_is(member(target, "xex_version"), "v0.0.0.8") &&
+         string_is(member(target, "base_version"), "v0.0.0.8") &&
+         string_is(member(target, "module_xxh3"), "892639B654015428") &&
+         string_is(member(target, "entry_point"), "821F5ED0") &&
+         string_is(member(target, "region_mask"), "0000FDFF");
+}
+
+bool validate_ntsc_uj_marker_contract(const JsonValue &marker) {
+  constexpr std::array marker_keys{
+      std::string_view{"address"}, std::string_view{"code"},
+      std::string_view{"phase"}, std::string_view{"role"}};
+  constexpr std::array code_keys{std::string_view{"image_rva"},
+                                 std::string_view{"length"},
+                                 std::string_view{"sha256"}};
+  const JsonValue *code = member(marker, "code");
+  return exact_keys(marker, marker_keys) && code != nullptr &&
+         exact_keys(*code, code_keys) &&
+         string_is(member(marker, "address"), "821CA940") &&
+         string_is(member(marker, "phase"), "before_input") &&
+         string_is(member(marker, "role"), "ac6_frame_input_stage") &&
+         string_is(member(*code, "image_rva"), "001CA940") &&
+         integer_is(member(*code, "length"), 328u) &&
+         string_is(member(*code, "sha256"), kNtscUjMarkerCodeSha256);
+}
+
+bool validate_source_v4(const JsonValue &source, std::uint64_t &marker_count) {
+  constexpr std::array keys{
+      std::string_view{"oracle"},
+      std::string_view{"parent_payload_sha256"},
+      std::string_view{"parent_replay_sha256"},
+      std::string_view{"parent_window"},
+      std::string_view{"raw_payload_sha256"},
+      std::string_view{"raw_replay_sha256"},
+      std::string_view{"raw_schema"},
+  };
+  constexpr std::array oracle_keys{std::string_view{"marker_contract"},
+                                   std::string_view{"target"}};
+  const JsonValue *oracle = member(source, "oracle");
+  const JsonValue *target =
+      oracle == nullptr ? nullptr : member(*oracle, "target");
+  const JsonValue *marker =
+      oracle == nullptr ? nullptr : member(*oracle, "marker_contract");
+  return exact_keys(source, keys) &&
+         string_is(member(source, "raw_schema"), kRawSchemaV4) &&
+         validate_lineage(source, marker_count) && oracle != nullptr &&
+         exact_keys(*oracle, oracle_keys) && target != nullptr &&
+         validate_ntsc_uj_oracle_target(*target) && marker != nullptr &&
+         validate_ntsc_uj_marker_contract(*marker);
+}
+
+bool validate_native_target_v4(const JsonValue &target) {
+  constexpr std::array keys{
+      std::string_view{"base_version"}, std::string_view{"media_id"},
+      std::string_view{"module"},       std::string_view{"target_id"},
+      std::string_view{"title_id"},     std::string_view{"xex_sha256"},
+      std::string_view{"xex_version"},
+  };
+  return exact_keys(target, keys) &&
+         string_is(member(target, "target_id"), "ac6-pal-default-xex") &&
+         string_is(member(target, "title_id"), "4E4D07D1") &&
+         string_is(member(target, "media_id"), "0379EFB3") &&
+         string_is(member(target, "module"), "default.xex") &&
+         string_is(member(target, "xex_sha256"), kPalXexSha256) &&
+         string_is(member(target, "xex_version"), "v0.0.0.11") &&
+         string_is(member(target, "base_version"), "v0.0.0.11");
+}
+
+bool validate_target_v3(const JsonValue &target) {
   constexpr std::array keys{
       std::string_view{"base_version"},
       std::string_view{"marker_address"},
@@ -633,29 +722,16 @@ bool validate_mapping(const JsonValue &mapping) {
                    "thumb_rx;left_precedes_right");
 }
 
-bool validate_cadence(const JsonValue &cadence, const JsonValue &target,
-                      std::uint64_t source_marker_count, std::uint64_t &hold) {
-  constexpr std::array keys{
-      std::string_view{"census"},          std::string_view{"hold"},
-      std::string_view{"integrity_level"}, std::string_view{"marker_contract"},
-      std::string_view{"native_clock"},    std::string_view{"native_hz"},
-      std::string_view{"resampling"},      std::string_view{"source_hz"},
-  };
+bool validate_cadence_common(const JsonValue &cadence,
+                             std::string_view census_schema,
+                             std::uint64_t source_marker_count,
+                             std::uint64_t &hold) {
   constexpr std::array census_keys{
       std::string_view{"file_sha256"},    std::string_view{"integrity_level"},
       std::string_view{"interval_count"}, std::string_view{"method"},
       std::string_view{"payload_sha256"}, std::string_view{"record_count"},
       std::string_view{"schema"},
   };
-  constexpr std::array marker_keys{
-      std::string_view{"address"},
-      std::string_view{"code"},
-      std::string_view{"phase"},
-      std::string_view{"role"},
-  };
-  constexpr std::array code_keys{std::string_view{"length"},
-                                 std::string_view{"offset"},
-                                 std::string_view{"sha256"}};
   constexpr std::array native_clock_keys{
       std::string_view{"clock_id"}, std::string_view{"frequency"},
       std::string_view{"schema"}, std::string_view{"tick_semantics"}};
@@ -663,8 +739,7 @@ bool validate_cadence(const JsonValue &cadence, const JsonValue &target,
                                      std::string_view{"numerator"}};
   std::uint64_t native_hz = 0;
   std::uint64_t source_hz = 0;
-  if (!exact_keys(cadence, keys) ||
-      !string_is(member(cadence, "integrity_level"), kCadenceIntegrityLevel) ||
+  if (!string_is(member(cadence, "integrity_level"), kCadenceIntegrityLevel) ||
       !integer_value(member(cadence, "hold"), hold) ||
       !integer_value(member(cadence, "native_hz"), native_hz) ||
       !integer_value(member(cadence, "source_hz"), source_hz) || hold == 0u ||
@@ -684,7 +759,7 @@ bool validate_cadence(const JsonValue &cadence, const JsonValue &target,
   std::uint64_t record_count = 0;
   std::uint64_t interval_count = 0;
   if (census == nullptr || !exact_keys(*census, census_keys) ||
-      !string_is(member(*census, "schema"), kCadenceCensusSchema) ||
+      !string_is(member(*census, "schema"), census_schema) ||
       !string_is(member(*census, "integrity_level"), kCadenceIntegrityLevel) ||
       !string_is(member(*census, "method"), kCadenceMethod) ||
       !digest_value(member(*census, "file_sha256"), ignored) ||
@@ -697,6 +772,29 @@ bool validate_cadence(const JsonValue &cadence, const JsonValue &target,
     return false;
   }
 
+  const JsonValue *native_clock = member(cadence, "native_clock");
+  const JsonValue *frequency =
+      native_clock == nullptr ? nullptr : member(*native_clock, "frequency");
+  return native_clock != nullptr &&
+         exact_keys(*native_clock, native_clock_keys) && frequency != nullptr &&
+         exact_keys(*frequency, rational_keys) &&
+         string_is(member(*native_clock, "schema"), kNativeClockSchema) &&
+         string_is(member(*native_clock, "clock_id"),
+                   "ac6_native_fixed_step") &&
+         string_is(member(*native_clock, "tick_semantics"),
+                   "one_simulation_step") &&
+         integer_is(member(*frequency, "numerator"), 60u) &&
+         integer_is(member(*frequency, "denominator"), 1u) && native_hz == 60u;
+}
+
+bool validate_cadence_marker_v3(const JsonValue &cadence,
+                                const JsonValue &target) {
+  constexpr std::array marker_keys{
+      std::string_view{"address"}, std::string_view{"code"},
+      std::string_view{"phase"}, std::string_view{"role"}};
+  constexpr std::array code_keys{std::string_view{"length"},
+                                 std::string_view{"offset"},
+                                 std::string_view{"sha256"}};
   const JsonValue *marker = member(cadence, "marker_contract");
   const JsonValue *code = marker == nullptr ? nullptr : member(*marker, "code");
   Sha256Digest marker_code{};
@@ -732,20 +830,36 @@ bool validate_cadence(const JsonValue &cadence, const JsonValue &target,
       marker_code != target_marker_code) {
     return false;
   }
+  return true;
+}
 
-  const JsonValue *native_clock = member(cadence, "native_clock");
-  const JsonValue *frequency =
-      native_clock == nullptr ? nullptr : member(*native_clock, "frequency");
-  return native_clock != nullptr &&
-         exact_keys(*native_clock, native_clock_keys) && frequency != nullptr &&
-         exact_keys(*frequency, rational_keys) &&
-         string_is(member(*native_clock, "schema"), kNativeClockSchema) &&
-         string_is(member(*native_clock, "clock_id"),
-                   "ac6_native_fixed_step") &&
-         string_is(member(*native_clock, "tick_semantics"),
-                   "one_simulation_step") &&
-         integer_is(member(*frequency, "numerator"), 60u) &&
-         integer_is(member(*frequency, "denominator"), 1u) && native_hz == 60u;
+bool validate_cadence_v3(const JsonValue &cadence, const JsonValue &target,
+                         std::uint64_t source_marker_count,
+                         std::uint64_t &hold) {
+  constexpr std::array keys{
+      std::string_view{"census"},          std::string_view{"hold"},
+      std::string_view{"integrity_level"}, std::string_view{"marker_contract"},
+      std::string_view{"native_clock"},    std::string_view{"native_hz"},
+      std::string_view{"resampling"},      std::string_view{"source_hz"},
+  };
+  return exact_keys(cadence, keys) &&
+         validate_cadence_common(cadence, kCadenceCensusSchemaV1,
+                                 source_marker_count, hold) &&
+         validate_cadence_marker_v3(cadence, target);
+}
+
+bool validate_cadence_v4(const JsonValue &cadence,
+                         std::uint64_t source_marker_count,
+                         std::uint64_t &hold) {
+  constexpr std::array keys{
+      std::string_view{"census"},          std::string_view{"hold"},
+      std::string_view{"integrity_level"}, std::string_view{"native_clock"},
+      std::string_view{"native_hz"},       std::string_view{"resampling"},
+      std::string_view{"source_hz"},
+  };
+  return exact_keys(cadence, keys) &&
+         validate_cadence_common(cadence, kCadenceCensusSchemaV2,
+                                 source_marker_count, hold);
 }
 
 std::string_view difficulty_name(RetailDifficulty difficulty) {
@@ -822,137 +936,6 @@ bool validate_output(const JsonValue &output, const RetailSessionReplay &replay,
          final_digest == replay.final_digest &&
          digest_value(member(output, "output_sha256"), output_digest) &&
          output_digest == replay_sha256;
-}
-
-class ReplayBytesReader final {
-public:
-  explicit ReplayBytesReader(std::span<const std::uint8_t> bytes)
-      : bytes_(bytes) {}
-
-  bool read_u16(std::uint16_t &value) {
-    if (remaining() < 2u)
-      return false;
-    value = static_cast<std::uint16_t>(bytes_[cursor_]) |
-            (static_cast<std::uint16_t>(bytes_[cursor_ + 1u]) << 8u);
-    cursor_ += 2u;
-    return true;
-  }
-
-  bool read_u32(std::uint32_t &value) {
-    if (remaining() < 4u)
-      return false;
-    value = static_cast<std::uint32_t>(bytes_[cursor_]) |
-            (static_cast<std::uint32_t>(bytes_[cursor_ + 1u]) << 8u) |
-            (static_cast<std::uint32_t>(bytes_[cursor_ + 2u]) << 16u) |
-            (static_cast<std::uint32_t>(bytes_[cursor_ + 3u]) << 24u);
-    cursor_ += 4u;
-    return true;
-  }
-
-  bool read_u64(std::uint64_t &value) {
-    if (remaining() < 8u)
-      return false;
-    value = 0;
-    for (std::size_t index = 0; index < 8u; ++index) {
-      value |= static_cast<std::uint64_t>(bytes_[cursor_ + index])
-               << (index * 8u);
-    }
-    cursor_ += 8u;
-    return true;
-  }
-
-  bool read_bytes(std::span<std::uint8_t> output) {
-    if (remaining() < output.size())
-      return false;
-    std::copy_n(bytes_.begin() + static_cast<std::ptrdiff_t>(cursor_),
-                output.size(), output.begin());
-    cursor_ += output.size();
-    return true;
-  }
-
-  bool consume(std::span<const std::uint8_t> expected) {
-    if (remaining() < expected.size() ||
-        !std::equal(expected.begin(), expected.end(),
-                    bytes_.begin() + static_cast<std::ptrdiff_t>(cursor_))) {
-      return false;
-    }
-    cursor_ += expected.size();
-    return true;
-  }
-
-  bool finished() const noexcept { return cursor_ == bytes_.size(); }
-
-private:
-  std::size_t remaining() const noexcept { return bytes_.size() - cursor_; }
-
-  std::span<const std::uint8_t> bytes_;
-  std::size_t cursor_{};
-};
-
-bool replay_v3_matches(std::span<const std::uint8_t> bytes,
-                       const RetailSessionReplay &replay) {
-  ReplayBytesReader reader(bytes);
-  std::uint32_t version = 0;
-  std::uint32_t mission = 0;
-  std::uint32_t difficulty = 0;
-  std::uint32_t aircraft = 0;
-  std::uint32_t weapon = 0;
-  std::uint32_t capability = 0;
-  Sha256Digest cache{};
-  std::uint64_t seed = 0;
-  std::uint32_t checkpoint_count = 0;
-  if (!reader.consume(kReplayMagic) || !reader.read_u32(version) ||
-      !reader.read_u32(mission) || !reader.read_u32(difficulty) ||
-      !reader.read_u32(aircraft) || !reader.read_u32(weapon) ||
-      !reader.read_u32(capability) || capability > 1u ||
-      !reader.read_bytes(cache) || !reader.read_u64(seed) ||
-      !reader.read_u32(checkpoint_count) ||
-      version != RetailSessionReplay::kCurrentVersion ||
-      version != replay.version || mission != replay.mission_id ||
-      difficulty != static_cast<std::uint8_t>(replay.difficulty) ||
-      aircraft != replay.loadout.aircraft_id ||
-      weapon != replay.loadout.weapon_id ||
-      (capability != 0u) != replay.loadout.capability_data_valid ||
-      cache != replay.content_index_sha256 || seed != replay.random_seed ||
-      checkpoint_count != replay.checkpoints.size()) {
-    return false;
-  }
-  for (const RetailSessionReplay::Checkpoint &expected : replay.checkpoints) {
-    std::uint32_t frame_index = 0;
-    Sha256Digest digest{};
-    if (!reader.read_u32(frame_index) || !reader.read_bytes(digest) ||
-        frame_index != expected.frame_index ||
-        digest != expected.input_digest) {
-      return false;
-    }
-  }
-  std::uint64_t final_tick = 0;
-  Sha256Digest final_digest{};
-  std::uint32_t frame_count = 0;
-  if (!reader.read_u64(final_tick) || !reader.read_bytes(final_digest) ||
-      !reader.read_u32(frame_count) || final_tick != replay.final_tick ||
-      final_digest != replay.final_digest ||
-      frame_count != replay.frames.size()) {
-    return false;
-  }
-  for (const InputFrame expected : replay.frames) {
-    std::uint16_t pitch = 0;
-    std::uint16_t roll = 0;
-    std::uint16_t yaw = 0;
-    std::uint8_t throttle = 0;
-    std::uint16_t buttons = 0;
-    if (!reader.read_u16(pitch) || !reader.read_u16(roll) ||
-        !reader.read_u16(yaw) ||
-        !reader.read_bytes(std::span<std::uint8_t>(&throttle, 1u)) ||
-        !reader.read_u16(buttons) ||
-        pitch != static_cast<std::uint16_t>(expected.pitch) ||
-        roll != static_cast<std::uint16_t>(expected.roll) ||
-        yaw != static_cast<std::uint16_t>(expected.yaw) ||
-        throttle != expected.throttle || buttons != expected.buttons) {
-      return false;
-    }
-  }
-  return reader.finished();
 }
 
 RetailProjectionReceiptError json_error(JsonStatus status) {
@@ -1037,7 +1020,7 @@ preflight_retail_projection_receipt(const std::filesystem::path &receipt_path,
     return result;
   }
 
-  constexpr std::array root_keys{
+  constexpr std::array root_keys_v3{
       std::string_view{"cache_index_sha256"},
       std::string_view{"cadence"},
       std::string_view{"kind"},
@@ -1047,23 +1030,47 @@ preflight_retail_projection_receipt(const std::filesystem::path &receipt_path,
       std::string_view{"source"},
       std::string_view{"target"},
   };
+  constexpr std::array root_keys_v4{
+      std::string_view{"cache_index_sha256"},
+      std::string_view{"cadence"},
+      std::string_view{"kind"},
+      std::string_view{"mapping"},
+      std::string_view{"native_target"},
+      std::string_view{"output"},
+      std::string_view{"schema"},
+      std::string_view{"source"},
+  };
   const JsonValue *source = member(root, "source");
-  const JsonValue *target = member(root, "target");
   const JsonValue *cadence = member(root, "cadence");
   const JsonValue *mapping = member(root, "mapping");
   const JsonValue *output = member(root, "output");
   std::uint64_t source_marker_count = 0;
   std::uint64_t hold = 0;
-  if (!exact_keys(root, root_keys) ||
-      !string_is(member(root, "kind"), "native_projection_receipt") ||
-      !string_is(member(root, "schema"), kSchema) || source == nullptr ||
-      target == nullptr || cadence == nullptr || mapping == nullptr ||
-      output == nullptr || !validate_source(*source, source_marker_count) ||
-      !validate_target(*target) ||
-      !validate_cadence(*cadence, *target, source_marker_count, hold) ||
-      !validate_mapping(*mapping)) {
-    auto result = fail(RetailProjectionReceiptError::SchemaMismatch,
-                       "receipt v3 shape or projection contract mismatch");
+  const bool common_shape =
+      string_is(member(root, "kind"), "native_projection_receipt") &&
+      source != nullptr && cadence != nullptr && mapping != nullptr &&
+      output != nullptr && validate_mapping(*mapping);
+  const bool receipt_v3 = string_is(member(root, "schema"), kSchemaV3);
+  const bool receipt_v4 = string_is(member(root, "schema"), kSchemaV4);
+  bool contract_matches = false;
+  if (common_shape && receipt_v3 && exact_keys(root, root_keys_v3)) {
+    const JsonValue *target = member(root, "target");
+    contract_matches =
+        target != nullptr && validate_source_v3(*source, source_marker_count) &&
+        validate_target_v3(*target) &&
+        validate_cadence_v3(*cadence, *target, source_marker_count, hold);
+  } else if (common_shape && receipt_v4 && exact_keys(root, root_keys_v4)) {
+    const JsonValue *native_target = member(root, "native_target");
+    contract_matches = native_target != nullptr &&
+                       validate_source_v4(*source, source_marker_count) &&
+                       validate_native_target_v4(*native_target) &&
+                       validate_cadence_v4(*cadence, source_marker_count, hold);
+  }
+  if (!contract_matches) {
+    auto result =
+        fail(RetailProjectionReceiptError::SchemaMismatch,
+             receipt_v3 ? "receipt v3 shape or projection contract mismatch"
+                        : "receipt v4 shape or projection contract mismatch");
     result.receipt_sha256 = receipt_sha256;
     return result;
   }
@@ -1095,7 +1102,7 @@ preflight_retail_projection_receipt(const std::filesystem::path &receipt_path,
     return result;
   }
   const Sha256Digest replay_sha256 = sha256_bytes(replay_bytes);
-  if (!replay_v3_matches(replay_bytes, replay)) {
+  if (!detail::replay_v3_matches(replay_bytes, replay)) {
     auto result = fail(RetailProjectionReceiptError::ReplayIdentityMismatch,
                        "projection receipt requires an exact AC6RTPLY v3 file");
     result.receipt_sha256 = receipt_sha256;
@@ -1113,9 +1120,12 @@ preflight_retail_projection_receipt(const std::filesystem::path &receipt_path,
 
   RetailProjectionReceiptPreflight result;
   result.error = RetailProjectionReceiptError::None;
-  result.detail =
-      "native output/cache verified; raw, parent and cadence-census lineage "
-      "unverified";
+  result.detail = receipt_v4
+                      ? "native output/cache verified for the provisional "
+                        "NTSC-U/J oracle to PAL projection; raw, parent and "
+                        "cadence-census lineage unverified; not parity evidence"
+                      : "native output/cache verified; raw, parent and "
+                        "cadence-census lineage unverified";
   result.receipt_sha256 = receipt_sha256;
   result.replay_sha256 = replay_sha256;
   result.native_output_verified = true;
