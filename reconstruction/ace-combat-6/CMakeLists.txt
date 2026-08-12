@@ -72,6 +72,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/retail_flight_input_apply.cpp
   src/retail_flight_input_router.cpp
   src/retail_scalar_sin_cos.cpp
+  src/retail_locator_payload.cpp
   src/retail_container_index.cpp
   src/retail_fhm_view.cpp
   src/retail_scene_tcam.cpp
@@ -458,6 +459,10 @@ add_test(NAME ac6-retail-mission-world-bundle
 add_executable(ac6-retail-scalar-sin-cos-tests tests/retail_scalar_sin_cos_tests.cpp)
 target_link_libraries(ac6-retail-scalar-sin-cos-tests PRIVATE ac6_product_core)
 add_test(NAME ac6-retail-scalar-sin-cos COMMAND ac6-retail-scalar-sin-cos-tests)
+
+add_executable(ac6-retail-locator-payload-tests tests/retail_locator_payload_tests.cpp)
+target_link_libraries(ac6-retail-locator-payload-tests PRIVATE ac6_product_core)
+add_test(NAME ac6-retail-locator-payload COMMAND ac6-retail-locator-payload-tests)
 
 # A3.2: where the six input fields come from -- the binding layer's outputs.
 add_executable(ac6-retail-flight-input-router-tests

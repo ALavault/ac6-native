@@ -59,7 +59,7 @@
       "state": "open",
       "closure": "Every reachable position, transform, camera, and physics vector instruction has retail bytes, positive control, handwritten native semantics, and corpus coverage; micro-execution is required only for a documented ambiguity that static and bit-exact controls cannot resolve.",
       "blockers": [
-        "The reachable instruction census is not sealed across the fifteen payloads.",
+        "The raw 0x40-byte locator copy at 0x822A6710 is now statically qualified and corpus-reachable for all fifteen missions without micro-execution; the remaining reachable instruction census is not sealed.",
         "Huge finite angles, floating-point exception details, NaN payloads, interpolation, and unsupported Xenon instruction families remain explicit open boundaries."
       ],
       "evidence": [
@@ -67,6 +67,16 @@
           "path": "reports/cycle-229-vmx-transform-runtime-probe.md",
           "size": 3456,
           "sha256": "5bfae5df329d5e14b7fec365041260cb204baa0a9791095b322217dff15e6c68"
+        },
+        {
+          "path": "analysis/vmx128/player-locator-copy.tsv",
+          "size": 3778,
+          "sha256": "2229208c7d832f5de7761534579c774a05275f5fc4b6bea7207ab88d36d49bde"
+        },
+        {
+          "path": "reports/cycle-1533-the-first-vmx-slice-needs-no-micro-execution.md",
+          "size": 2984,
+          "sha256": "a8c9686955615d3e4328e33ffdd967aa25cbe2af77d16d5f0233423edb0ed13a"
         }
       ]
     },
@@ -219,6 +229,7 @@
     "python3 tools/audit_ac6_camera_selector_microexec.py",
     "python3 tools/audit_ac6_scene_tcam_corpus.py --check-matrix reports/ac6-pal-scene-tcam-corpus.json",
     "AC6_RETAIL_CACHE=PATH ctest --test-dir reconstruction/ace-combat-6/build -R '^ac6-retail-counter-corpus$' --output-on-failure",
+    "ctest --test-dir reconstruction/ace-combat-6/build -R '^ac6-retail-locator-payload$' --output-on-failure",
     "git diff --check"
   ]
 }

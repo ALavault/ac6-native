@@ -1,4 +1,10 @@
-# 0x822A6710 -- the ONE behavioural specialisation of a player unit. Cycle 1340.
+# 0x822A6710 -- the ONE behavioural specialisation of a player unit.
+#
+# Requalified in cycle 1533 against canonical project
+# `ghidra-projects/ace-combat-6`, target/module `default.xex`, SHA-256
+# acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde.
+# The scratch `ghidra-projects-xenon/ac6-xenon` supplies decode only. Canonical
+# .pdata bounds the 42-instruction body at 0x822A6710..0x822A67B7.
 #
 # Slot +0x3C of ACE6::CAce6UnitPlayer and CAce6UnitOtherPlayer. ACE6::CAce6Unit
 # has the do-nothing `blr` stub there (0x822DDBE8), so this method exists only
@@ -20,6 +26,24 @@
 #   lvx128 [child+0x80] -> stvx128 [this+0xA0]      row 1
 #   lvx128 [child+0x90] -> stvx128 [this+0xB0]      row 2
 #   lvx128 [child+0xA0] -> stvx128 [this+0xC0]      translation
+#
+# Exact canonical sites (address raw-word role effective-address):
+# 0x822A677C 0x100050C3 load  child+0x70
+# 0x822A6780 0x11AA28C3 load  child+0x80
+# 0x822A6784 0x118A30C3 load  child+0x90
+# 0x822A6788 0x100059C3 store this+0x90
+# 0x822A678C 0x11AB29C3 store this+0xA0
+# 0x822A6790 0x118B31C3 store this+0xB0
+# 0x822A6794 0x100838C3 load  child+0xA0
+# 0x822A6798 0x100939C3 store this+0xC0
+#
+# The qualified PAL cache index
+# cfca517e3f843169ca01fc52700472e66b86365621a922fc27a64a21ab713f85
+# proves the authored/construction predicate for entries 9..23: exactly one
+# class-0 record, index 0, with one present Obj and ObjBin child per mission.
+# Reachability bitmap bit0=M01..bit14=M15 is 0x7FFF. This proves the normal
+# construction route, not heap-allocation success or live execution in every
+# mission.
 #
 # columns: source destination meaning
 child+0x70	this+0x90	locator row 0
