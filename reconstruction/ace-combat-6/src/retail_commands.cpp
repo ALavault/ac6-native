@@ -619,6 +619,28 @@ std::uint64_t hash_frame(std::uint64_t hash, const WorldFrame& frame) noexcept {
   return hash;
 }
 
+std::uint64_t hash_combat_state(std::uint64_t hash,
+                                const MissionExecution& execution) noexcept {
+  const std::vector<CombatUnitState> units = execution.combat().snapshot_units();
+  hash_u64(hash, units.size());
+  for (const CombatUnitState& unit : units) {
+    hash_u32(hash, unit.entity);
+    hash_u32(hash, unit.faction);
+    for (const float value : {unit.position.x, unit.position.y, unit.position.z,
+                              unit.health, unit.max_health,
+                              unit.collision_radius}) {
+      hash_float(hash, value);
+    }
+    hash_u32(hash, unit.active ? 1U : 0U);
+  }
+  hash_u64(hash, execution.combat().active_projectiles());
+  hash_u64(hash, execution.combat().damage_events());
+  hash_u32(hash, execution.locked_target());
+  hash_u32(hash, execution.primary_weapon_id());
+  hash_u32(hash, execution.weapon_count());
+  return hash;
+}
+
 struct ReplayRun final {
   WorldFrame final_frame{};
   std::uint32_t sub_mission{};
@@ -656,6 +678,8 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
     result.step = frame.step;
     result.script_ended = frame.script_ended;
     result.semantic_hash = hash_frame(result.semantic_hash, frame.world);
+    result.semantic_hash = hash_combat_state(result.semantic_hash,
+                                             session->execution());
     hash_u32(result.semantic_hash, frame.sub_mission);
     hash_u32(result.semantic_hash, frame.step);
     hash_u32(result.semantic_hash, frame.script_ended ? 1u : 0u);
@@ -764,7 +788,7 @@ int run_replay_impl(const Options& options) {
          << "  \"checkpoint_count\": " << replay.checkpoints.size() << ",\n"
          << "  \"input_digest\": \"" << sha256_hex(replay.input_digest()) << "\",\n"
          << "  \"final_digest\": \"" << sha256_hex(replay.final_digest) << "\",\n"
-         << "  \"final_digest_basis\": \"input_frames_le_v1\",\n"
+         << "  \"final_digest_basis\": \"world_script_combat_v1\",\n"
          << "  \"final_tick\": " << first->final_frame.tick << ",\n"
          << "  \"final_player_entity\": " << first->final_frame.player_entity << ",\n"
          << "  \"sub_mission\": " << first->sub_mission << ",\n"
