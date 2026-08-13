@@ -683,13 +683,27 @@ int main(int argc, char** argv) {
   // Asserting it true would mean fabricating asset records. Assert the truth.
   REQUIRE(!idle.last.world.mission_ready);
 
-  // The forced cadence is retained only as an explicitly named payload-only
-  // diagnostic. The sealed-store entry point rejects this mode above.
-  REQUIRE(RetailSession::open(
+  // QualifiedRuntime owns the scheduler guards and advances one authored step
+  // per gameplay tick. The forced cadence remains a payload-only diagnostic.
+  std::unique_ptr<RetailSession> qualified = RetailSession::open(
               payload,
               {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
                ac6::retail::RetailDifficulty::Normal,
-               ac6::retail::RetailScriptDrive::QualifiedRuntime}) == nullptr);
+               ac6::retail::RetailScriptDrive::QualifiedRuntime});
+  REQUIRE(qualified != nullptr);
+  ac6::retail::RetailSessionFrame qualified_frame;
+  std::size_t qualified_end_tick = 0;
+  for (std::size_t tick = 1; tick <= 32; ++tick) {
+    qualified_frame = qualified->tick(kFixedDt, session_input(tick));
+    if (qualified_frame.script_ended && qualified_end_tick == 0) {
+      qualified_end_tick = tick;
+    }
+  }
+  REQUIRE(qualified_end_tick == 6);
+  REQUIRE(qualified->state() == ac6::ScenarioState::Complete);
+  REQUIRE(qualified->debrief().outcome == ac6::MissionOutcome::Success);
+  REQUIRE(qualified->debrief().completed_objectives == 4);
+  REQUIRE(qualified_frame.script_ended);
   std::unique_ptr<RetailSession> scheduled = RetailSession::open(
       payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
                  ac6::retail::RetailDifficulty::Normal,

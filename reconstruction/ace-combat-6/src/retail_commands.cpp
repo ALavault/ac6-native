@@ -308,7 +308,7 @@ int run_play_impl(const Options& options) {
       retail::RetailSession::open(store, loadout,
                                   {1, {0, 0}, retail::kRetailOpeningCameraModeWord,
                                    options.difficulty,
-                                   retail::RetailScriptDrive::ExternalProbe});
+                                   retail::RetailScriptDrive::QualifiedRuntime});
   if (session == nullptr) return 125;
   if (!options.resume.empty()) {
     SessionSaveStore saves;
@@ -484,7 +484,7 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
                                   {replay.mission_id, {0, 0},
                                    retail::kRetailOpeningCameraModeWord,
                                    replay.difficulty,
-                                   retail::RetailScriptDrive::ExternalProbe});
+                                   retail::RetailScriptDrive::QualifiedRuntime});
   if (session == nullptr) return std::nullopt;
   ExecutionTraceJsonlWriter trace_writer;
   const bool tracing = !trace.empty();
@@ -624,8 +624,8 @@ int run_replay_impl(const Options& options) {
          << "  \"trace_samples\": " << first->trace_samples << ",\n"
          << "  \"trace_events\": " << first->trace_events << ",\n"
          << "  \"trace_window\": " << (trace_window ? "true" : "false") << ",\n"
-         << "  \"script_drive\": \"external_probe\",\n"
-         << "  \"script_advance_each_tick\": false\n"
+         << "  \"script_drive\": \"qualified_runtime\",\n"
+         << "  \"script_advance_each_tick\": true\n"
          << "}\n";
   if (!output || !deterministic || !trace_complete) return 139;
   std::fprintf(stdout, "ac6_retail=pass command=replay mission=%u frames=%zu "

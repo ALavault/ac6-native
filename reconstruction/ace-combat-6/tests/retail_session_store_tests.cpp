@@ -245,11 +245,19 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload,
               {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
                ac6::retail::RetailDifficulty::Ace,
                ac6::retail::RetailScriptDrive::DiagnosticFixedTick}) == nullptr);
-  REQUIRE(RetailSession::open(
-              store, loadout,
-              {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-               ac6::retail::RetailDifficulty::Ace,
-               ac6::retail::RetailScriptDrive::QualifiedRuntime}) == nullptr);
+  std::unique_ptr<RetailSession> qualified = RetailSession::open(
+      store, loadout,
+      {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+       ac6::retail::RetailDifficulty::Ace,
+       ac6::retail::RetailScriptDrive::QualifiedRuntime});
+  REQUIRE(qualified != nullptr);
+  ac6::retail::RetailSessionFrame qualified_frame;
+  for (std::size_t tick = 1; tick <= 6; ++tick) {
+    qualified_frame = qualified->tick(kFixedDt, input(tick));
+  }
+  REQUIRE(qualified_frame.script_ended);
+  REQUIRE(qualified->state() == ac6::ScenarioState::Complete);
+  REQUIRE(qualified->debrief().outcome == ac6::MissionOutcome::Success);
 
   TempStoreRoot invalid_root;
   const std::filesystem::path invalid_source = invalid_root.path() / "source";

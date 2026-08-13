@@ -141,7 +141,8 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
                                                    RetailSessionConfig config) {
   if (!store.valid() || !loadout.valid() || config.mission_id == 0 ||
       config.mission_id > kPalCampaignDataTableEntries.size() ||
-      config.script_drive != RetailScriptDrive::ExternalProbe) {
+      (config.script_drive != RetailScriptDrive::ExternalProbe &&
+       config.script_drive != RetailScriptDrive::QualifiedRuntime)) {
     return nullptr;
   }
   // The common camera table is the first retail capability table already
@@ -179,6 +180,7 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
 std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> bytes,
                                                    RetailSessionConfig config) {
   if (config.script_drive != RetailScriptDrive::ExternalProbe &&
+      config.script_drive != RetailScriptDrive::QualifiedRuntime &&
       config.script_drive != RetailScriptDrive::DiagnosticFixedTick) {
     return nullptr;
   }
@@ -264,10 +266,10 @@ std::optional<MissionArea> RetailSession::current_area() const noexcept {
 
 RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcept {
   RetailSessionFrame frame;
-  // This cadence is a payload-only diagnostic. Store-backed product sessions
-  // cannot select it while the retail scheduler guards and producer join are
-  // unqualified.
-  if (script_drive_ == RetailScriptDrive::DiagnosticFixedTick && !script_.ended()) {
+  if (script_drive_ == RetailScriptDrive::QualifiedRuntime) {
+    (void)advance_qualified_scheduler();
+  } else if (script_drive_ == RetailScriptDrive::DiagnosticFixedTick &&
+             !script_.ended()) {
     (void)advance_script();
   }
   frame.world = execution_->tick(fixed_dt, input);
@@ -285,6 +287,23 @@ RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcep
                               frame.world.position_z});
   }
   return frame;
+}
+
+bool RetailSession::advance_qualified_scheduler() noexcept {
+  // These are the three retail scheduler guards made explicit at the native
+  // boundary: a live execution/context, a live cursor, and a producer-owned
+  // world with at least the local player published.  A paused/terminal HSM
+  // state also blocks signal -2, matching MissionExecution::tick.
+  const bool context_ready = execution_ != nullptr && world_ != nullptr &&
+                              scenario_ != nullptr;
+  const bool cursor_ready = !script_.ended() && script_.step_current();
+  const bool producer_ready = context_ready && player_entity_ != 0 &&
+                              world_->units.find(player_entity_) != nullptr;
+  if (!context_ready || !cursor_ready || !producer_ready ||
+      execution_->scenario().state() != ScenarioState::Gameplay) {
+    return false;
+  }
+  return advance_script() == ScriptAdvance::Ran;
 }
 
 // The native objective row for a sub-mission is a positional label - cycle 1097
