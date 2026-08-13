@@ -1,0 +1,2194 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 23b026ff..c39f3c8c 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -9,6 +9,10 @@ project(ac6recomp LANGUAGES CXX)
+ set(CMAKE_CXX_STANDARD 23)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
++option(AC6_ORACLE_BUILD_TESTS
++       "Build poll-exact oracle contract tests independently of BUILD_TESTING"
++       OFF)
++
+ include(CheckIPOSupported)
+ check_ipo_supported(RESULT AC6RECOMP_IPO_SUPPORTED OUTPUT AC6RECOMP_IPO_ERROR)
+ 
+@@ -29,6 +33,9 @@ endif()
+ # Sources
+ set(AC6RECOMP_SOURCES
+     src/main.cpp
++    src/ac6_controller_input_replay.cpp
++    src/ac6_controller_input_replay_io.cpp
++    src/ac6_controller_input_replay_runtime.cpp
+     src/ac6_pac_decode_dump.cpp
+     src/ac6_pac_decoder_probe.cpp
+     src/ac6_pac_index.cpp
+@@ -59,6 +66,23 @@ rexglue_setup_target(ac6recomp)
+ # Link libmspack for AC6 PAC LZX decompression in the runtime dump path.
+ target_link_libraries(ac6recomp PRIVATE mspack)
+ 
++if(AC6_ORACLE_BUILD_TESTS)
++    enable_testing()
++    find_package(Threads REQUIRED)
++    add_executable(ac6_controller_input_replay_test
++        tests/ac6_controller_input_replay_test.cpp
++        src/ac6_controller_input_replay.cpp
++        src/ac6_controller_input_replay_io.cpp
++    )
++    target_include_directories(ac6_controller_input_replay_test PRIVATE src)
++    target_link_libraries(ac6_controller_input_replay_test PRIVATE
++        rex::core
++        Threads::Threads
++    )
++    add_test(NAME ac6_controller_input_replay_test
++             COMMAND ac6_controller_input_replay_test)
++endif()
++
+ if(AC6RECOMP_IPO_SUPPORTED)
+     set_property(TARGET ac6recomp PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
+     set_property(TARGET ac6recomp PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELWITHDEBINFO TRUE)
+diff --git a/src/ac6_controller_input_replay.cpp b/src/ac6_controller_input_replay.cpp
+new file mode 100644
+index 00000000..ccc450f6
+--- /dev/null
++++ b/src/ac6_controller_input_replay.cpp
+@@ -0,0 +1,825 @@
++#include "ac6_controller_input_replay.h"
++
++#include <algorithm>
++#include <array>
++#include <limits>
++#include <regex>
++#include <set>
++#include <sstream>
++#include <utility>
++
++#include <rex/crypto/sha256.h>
++#if defined(__clang__)
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wdeprecated-literal-operator"
++#endif
++#include "../thirdparty/rexglue-sdk/thirdparty/tomlplusplus/vendor/json.hpp"
++#if defined(__clang__)
++#pragma clang diagnostic pop
++#endif
++
++namespace ac6::oracle::controller_replay {
++namespace {
++
++using Json = nlohmann::json;
++
++constexpr std::size_t kMaxLineBytes = 1024u * 1024u;
++constexpr uint64_t kMaxMarkers = 500'000u;
++constexpr std::size_t kMaxJsonDepth = 64u;
++constexpr std::string_view kSchema = "ac6.controller-input-replay.v4";
++constexpr std::string_view kOracleCommit =
++    "ab90b54713e5889f33eee1cc8681dae89fe83d1e";
++constexpr std::string_view kNtscUjXexSha256 =
++    "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc";
++constexpr std::string_view kMarkerCodeSha256 =
++    "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d";
++constexpr uint32_t kExpectedCallerLr0 = 0x8234CEE0u;
++constexpr uint32_t kExpectedCallerLr1 = 0x8234CFA4u;
++
++const std::regex kSha256{"[0-9a-f]{64}"};
++const std::regex kHex64Upper{"[0-9A-F]{16}"};
++
++bool SetError(std::string message, std::string& error) {
++  error = std::move(message);
++  return false;
++}
++
++bool ExactKeys(const Json& value,
++               std::initializer_list<std::string_view> expected) {
++  if (!value.is_object() || value.size() != expected.size()) return false;
++  for (std::string_view key : expected) {
++    if (!value.contains(std::string(key))) return false;
++  }
++  return true;
++}
++
++bool Unsigned(const Json& value, uint64_t maximum, uint64_t& output) {
++  if (value.is_number_unsigned()) {
++    output = value.get<uint64_t>();
++  } else if (value.is_number_integer()) {
++    const int64_t signed_value = value.get<int64_t>();
++    if (signed_value < 0) return false;
++    output = static_cast<uint64_t>(signed_value);
++  } else {
++    return false;
++  }
++  return output <= maximum;
++}
++
++bool Signed(const Json& value, int64_t minimum, int64_t maximum,
++            int64_t& output) {
++  if (value.is_number_unsigned()) {
++    const uint64_t unsigned_value = value.get<uint64_t>();
++    if (unsigned_value > static_cast<uint64_t>(maximum)) return false;
++    output = static_cast<int64_t>(unsigned_value);
++  } else if (value.is_number_integer()) {
++    output = value.get<int64_t>();
++  } else {
++    return false;
++  }
++  return output >= minimum && output <= maximum;
++}
++
++bool StringMatches(const Json& value, const std::regex& expression) {
++  return value.is_string() &&
++         std::regex_match(value.get_ref<const std::string&>(), expression);
++}
++
++std::string CanonicalLine(const Json& value) {
++  return value.dump(-1, ' ', true, Json::error_handler_t::strict) + '\n';
++}
++
++bool ParseCanonicalLine(std::string_view line, Json& value, std::string& error,
++                        std::string_view where) {
++  if (line.empty() || line.size() > kMaxLineBytes || line.back() != '\n' ||
++      line.find('\r') != std::string_view::npos) {
++    return SetError(std::string(where) + " framing", error);
++  }
++  std::size_t depth = 0;
++  bool in_string = false;
++  bool escaped = false;
++  for (char byte : line) {
++    if (in_string) {
++      if (escaped) {
++        escaped = false;
++      } else if (byte == '\\') {
++        escaped = true;
++      } else if (byte == '"') {
++        in_string = false;
++      }
++      continue;
++    }
++    if (byte == '"') {
++      in_string = true;
++    } else if (byte == '{' || byte == '[') {
++      if (++depth > kMaxJsonDepth) {
++        return SetError(std::string(where) + " JSON depth bound", error);
++      }
++    } else if (byte == '}' || byte == ']') {
++      if (depth == 0) {
++        return SetError(std::string(where) + " JSON nesting", error);
++      }
++      --depth;
++    }
++  }
++  if (in_string || depth != 0) {
++    return SetError(std::string(where) + " JSON nesting", error);
++  }
++  value = Json::parse(line.begin(), line.end() - 1, nullptr, false);
++  if (value.is_discarded() || !value.is_object()) {
++    return SetError(std::string(where) + " JSON", error);
++  }
++  if (CanonicalLine(value) != line) {
++    return SetError(std::string(where) + " canonical encoding", error);
++  }
++  return true;
++}
++
++bool ExpectedCallerLr(uint64_t caller_lr) {
++  return caller_lr == kExpectedCallerLr0 || caller_lr == kExpectedCallerLr1;
++}
++
++bool ValidateState(const Json& state, ControllerState* output,
++                   std::string& error, std::string_view where) {
++  if (!ExactKeys(state, {"packet_number", "buttons", "left_trigger",
++                         "right_trigger", "thumb_lx", "thumb_ly",
++                         "thumb_rx", "thumb_ry"})) {
++    return SetError(std::string(where) + " shape", error);
++  }
++  uint64_t packet = 0;
++  uint64_t buttons = 0;
++  uint64_t left_trigger = 0;
++  uint64_t right_trigger = 0;
++  int64_t lx = 0;
++  int64_t ly = 0;
++  int64_t rx = 0;
++  int64_t ry = 0;
++  if (!Unsigned(state["packet_number"], UINT32_MAX, packet) ||
++      !Unsigned(state["buttons"], UINT16_MAX, buttons) ||
++      !Unsigned(state["left_trigger"], UINT8_MAX, left_trigger) ||
++      !Unsigned(state["right_trigger"], UINT8_MAX, right_trigger) ||
++      !Signed(state["thumb_lx"], INT16_MIN, INT16_MAX, lx) ||
++      !Signed(state["thumb_ly"], INT16_MIN, INT16_MAX, ly) ||
++      !Signed(state["thumb_rx"], INT16_MIN, INT16_MAX, rx) ||
++      !Signed(state["thumb_ry"], INT16_MIN, INT16_MAX, ry)) {
++    return SetError(std::string(where) + " range", error);
++  }
++  if (output) {
++    *output = {
++        static_cast<uint32_t>(packet),
++        static_cast<uint16_t>(buttons),
++        static_cast<uint8_t>(left_trigger),
++        static_cast<uint8_t>(right_trigger),
++        static_cast<int16_t>(lx),
++        static_cast<int16_t>(ly),
++        static_cast<int16_t>(rx),
++        static_cast<int16_t>(ry),
++    };
++  }
++  return true;
++}
++
++Json StateJson(const ControllerState& state) {
++  return Json{{"packet_number", state.packet_number},
++              {"buttons", state.buttons},
++              {"left_trigger", state.left_trigger},
++              {"right_trigger", state.right_trigger},
++              {"thumb_lx", state.thumb_lx},
++              {"thumb_ly", state.thumb_ly},
++              {"thumb_rx", state.thumb_rx},
++              {"thumb_ry", state.thumb_ry}};
++}
++
++bool ValidateHeader(const Json& header, std::string& error) {
++  if (!ExactKeys(header, {"kind", "schema", "producer", "target",
++                          "session", "segment", "sync"}) ||
++      header["kind"] != "header" || header["schema"] != kSchema) {
++    return SetError("header identity or shape", error);
++  }
++
++  const Json& producer = header["producer"];
++  if (!ExactKeys(producer, {"lane", "implementation_commit",
++                            "binary_sha256", "build_sha256", "platform"}) ||
++      producer["lane"] != "ac6-recomp" ||
++      producer["implementation_commit"] != kOracleCommit ||
++      !StringMatches(producer["binary_sha256"], kSha256) ||
++      !StringMatches(producer["build_sha256"], kSha256) ||
++      !producer["platform"].is_string() ||
++      producer["platform"].get_ref<const std::string&>().empty() ||
++      producer["platform"].get_ref<const std::string&>().size() > 128u ||
++      producer["platform"].get_ref<const std::string&>().find('\0') !=
++          std::string::npos) {
++    return SetError("producer identity", error);
++  }
++
++  const Json& target = header["target"];
++  if (!ExactKeys(target, {"target_id", "title_id", "media_id", "module",
++                          "xex_sha256", "xex_version", "base_version",
++                          "module_xxh3", "entry_point", "region_mask"}) ||
++      target["target_id"] != "ac6-ntsc-uj-default-xex" ||
++      target["title_id"] != "4E4D07D1" || target["media_id"] != "531C30BE" ||
++      target["module"] != "default.xex" ||
++      target["xex_sha256"] != kNtscUjXexSha256 ||
++      target["xex_version"] != "v0.0.0.8" ||
++      target["base_version"] != "v0.0.0.8" ||
++      !StringMatches(target["module_xxh3"], kHex64Upper) ||
++      target["module_xxh3"] != "892639B654015428" ||
++      target["entry_point"] != "821F5ED0" ||
++      target["region_mask"] != "0000FDFF") {
++    return SetError("NTSC-U/J target identity", error);
++  }
++
++  const Json& session = header["session"];
++  if (!ExactKeys(session, {"content_manifest_sha256", "runtime_config_sha256",
++                           "behavior_config_sha256",
++                           "profile_save_manifest_sha256", "route_sha256",
++                           "segment_origin"})) {
++    return SetError("session shape", error);
++  }
++  for (const char* key : {"content_manifest_sha256", "runtime_config_sha256",
++                          "behavior_config_sha256",
++                          "profile_save_manifest_sha256", "route_sha256"}) {
++    if (!StringMatches(session[key], kSha256)) {
++      return SetError(std::string("session identity: ") + key, error);
++    }
++  }
++  if (session["segment_origin"] != "clean_boot" &&
++      session["segment_origin"] != "sealed_retail_save") {
++    return SetError("session segment_origin", error);
++  }
++
++  const Json& segment = header["segment"];
++  if (!ExactKeys(segment, {"kind", "parent_replay_sha256",
++                           "parent_payload_sha256", "parent_start_marker",
++                           "parent_marker_count"}) ||
++      segment["kind"] != "full_recording" ||
++      !segment["parent_replay_sha256"].is_null() ||
++      !segment["parent_payload_sha256"].is_null() ||
++      !segment["parent_start_marker"].is_null() ||
++      !segment["parent_marker_count"].is_null()) {
++    return SetError("full recording lineage", error);
++  }
++
++  const Json& sync = header["sync"];
++  const Json portable_guards =
++      Json::array({"marker_index", "poll_in_marker", "caller_lr",
++                   "user_index", "flags", "state_ptr_null"});
++  const Json lane_local = Json::array({"thread_id", "state_ptr"});
++  const Json telemetry = Json::array({"guest_tick", "present_index"});
++  if (!ExactKeys(sync, {"primary", "portable_guards",
++                        "lane_local_diagnostics", "telemetry",
++                        "marker_contract", "cadence"}) ||
++      sync["primary"] != "poll_index" ||
++      sync["portable_guards"] != portable_guards ||
++      sync["lane_local_diagnostics"] != lane_local ||
++      sync["telemetry"] != telemetry) {
++    return SetError("sync contract", error);
++  }
++  const Json& marker = sync["marker_contract"];
++  if (!ExactKeys(marker, {"role", "address", "phase", "code"}) ||
++      marker["role"] != "ac6_frame_input_stage" ||
++      marker["address"] != "821CA940" || marker["phase"] != "before_input") {
++    return SetError("NTSC-U/J marker contract", error);
++  }
++  const Json& code = marker["code"];
++  uint64_t code_length = 0;
++  if (!ExactKeys(code, {"image_rva", "length", "sha256"}) ||
++      code["image_rva"] != "001CA940" ||
++      !Unsigned(code["length"], 4096, code_length) || code_length != 328 ||
++      code["sha256"] != kMarkerCodeSha256) {
++    return SetError("NTSC-U/J marker code contract", error);
++  }
++  const Json& cadence = sync["cadence"];
++  if (!ExactKeys(cadence, {"status", "integrity_level", "source_hz",
++                           "native_hz", "resampling", "projection", "census",
++                           "native_clock"}) ||
++      cadence["status"] != "unqualified" ||
++      !cadence["integrity_level"].is_null() ||
++      !cadence["source_hz"].is_null() ||
++      !cadence["native_hz"].is_null() ||
++      cadence["resampling"] != "refuse" ||
++      cadence["projection"] != "unique_successful_user0_poll" ||
++      !cadence["census"].is_null() || !cadence["native_clock"].is_null()) {
++    return SetError("unqualified cadence contract", error);
++  }
++  return true;
++}
++
++struct ValidationSummary {
++  uint64_t poll_count{0};
++  uint64_t marker_count{0};
++  uint64_t present_count{0};
++};
++
++bool SplitLines(std::string_view data, std::vector<std::string_view>& lines,
++                std::string& error) {
++  if (data.empty() || data.size() > kMaxReplayBytes || data.back() != '\n' ||
++      data.find('\r') != std::string_view::npos) {
++    return SetError("file framing or byte bound", error);
++  }
++  std::size_t start = 0;
++  while (start < data.size()) {
++    const std::size_t end = data.find('\n', start);
++    if (end == std::string_view::npos || end - start + 1 > kMaxLineBytes) {
++      return SetError("file line bound", error);
++    }
++    lines.emplace_back(data.substr(start, end - start + 1));
++    if (lines.size() > kMaxEvents + 2u) {
++      return SetError("file record bound", error);
++    }
++    start = end + 1;
++  }
++  return lines.size() >= 3u;
++}
++
++bool ValidateEvents(const std::vector<Json>& events, ValidationSummary& summary,
++                    std::string& error) {
++  if (events.empty() || events.size() > kMaxEvents) {
++    return SetError("empty replay or event count bound", error);
++  }
++  uint64_t expected_poll = 0;
++  uint64_t expected_marker = 1;
++  uint64_t current_marker = 0;
++  uint64_t expected_poll_in_marker = 0;
++  uint64_t last_present = 0;
++  uint64_t last_guest_tick = 0;
++
++  for (std::size_t sequence = 0; sequence < events.size(); ++sequence) {
++    const Json& event = events[sequence];
++    uint64_t event_sequence = 0;
++    if (!event.contains("kind") || !event["kind"].is_string()) {
++      return SetError("event kind", error);
++    }
++    const std::string kind = event["kind"].get<std::string>();
++    if (kind == "marker") {
++      uint64_t marker_index = 0;
++      uint64_t poll_index = 0;
++      if (!ExactKeys(event, {"kind", "sequence", "marker_index",
++                             "poll_index", "guest_tick", "present_index"}) ||
++          !Unsigned(event["sequence"], kMaxEvents, event_sequence) ||
++          event_sequence != sequence ||
++          !Unsigned(event["marker_index"], kMaxMarkers, marker_index) ||
++          marker_index != expected_marker ||
++          !Unsigned(event["poll_index"], kMaxEvents, poll_index) ||
++          poll_index != expected_poll ||
++          (summary.marker_count != 0 && expected_poll_in_marker == 0)) {
++        return SetError("marker order", error);
++      }
++      ++summary.marker_count;
++      current_marker = expected_marker++;
++      expected_poll_in_marker = 0;
++    } else if (kind == "poll") {
++      uint64_t poll_index = 0;
++      uint64_t marker_index = 0;
++      uint64_t poll_in_marker = 0;
++      uint64_t thread_id = 0;
++      uint64_t caller_lr = 0;
++      uint64_t user_index = 0;
++      uint64_t flags = 0;
++      uint64_t state_ptr = 0;
++      uint64_t result = 0;
++      if (!ExactKeys(event, {"kind", "sequence", "poll_index",
++                             "marker_index", "poll_in_marker", "guest_tick",
++                             "present_index", "thread_id", "caller_lr",
++                             "user_index", "flags", "state_ptr", "result",
++                             "state"}) ||
++          !Unsigned(event["sequence"], kMaxEvents, event_sequence) ||
++          event_sequence != sequence ||
++          !Unsigned(event["poll_index"], kMaxEvents, poll_index) ||
++          poll_index != expected_poll ||
++          !Unsigned(event["marker_index"], kMaxMarkers, marker_index) ||
++          marker_index != current_marker ||
++          !Unsigned(event["poll_in_marker"], kMaxEvents, poll_in_marker) ||
++          poll_in_marker != expected_poll_in_marker ||
++          !Unsigned(event["thread_id"], UINT32_MAX, thread_id) ||
++          !Unsigned(event["caller_lr"], UINT32_MAX, caller_lr) ||
++          !ExpectedCallerLr(caller_lr) ||
++          !Unsigned(event["user_index"], UINT32_MAX, user_index) ||
++          !Unsigned(event["flags"], UINT32_MAX, flags) ||
++          !Unsigned(event["state_ptr"], UINT32_MAX, state_ptr) ||
++          !Unsigned(event["result"], UINT32_MAX, result)) {
++        return SetError("poll order, shape or range", error);
++      }
++      if (result == 0 && state_ptr != 0) {
++        if (!ValidateState(event["state"], nullptr, error, "poll state")) {
++          return false;
++        }
++      } else if (!event["state"].is_null()) {
++        return SetError("poll state/result/pointer", error);
++      }
++      ++expected_poll;
++      ++expected_poll_in_marker;
++    } else {
++      return SetError("event kind", error);
++    }
++
++    uint64_t guest_tick = 0;
++    uint64_t present_index = 0;
++    if (!Unsigned(event["guest_tick"], UINT64_MAX, guest_tick) ||
++        !Unsigned(event["present_index"], UINT64_MAX, present_index) ||
++        guest_tick < last_guest_tick || present_index < last_present) {
++      return SetError("event telemetry order", error);
++    }
++    last_guest_tick = guest_tick;
++    last_present = present_index;
++  }
++
++  if (expected_poll == 0 || summary.marker_count == 0 ||
++      expected_poll_in_marker == 0) {
++    return SetError("replay terminal shape", error);
++  }
++  summary.poll_count = expected_poll;
++  summary.present_count = last_present;
++  return true;
++}
++
++bool ParseReplay(std::string_view data, const Json* expected_header,
++                 std::vector<std::string>* event_lines, Json* parsed_header,
++                 std::string& error) {
++  std::vector<std::string_view> lines;
++  if (!SplitLines(data, lines, error)) return false;
++
++  Json header;
++  if (!ParseCanonicalLine(lines.front(), header, error, "header") ||
++      !ValidateHeader(header, error)) {
++    return false;
++  }
++  if (expected_header && header != *expected_header) {
++    return SetError("runtime header mismatch", error);
++  }
++
++  std::vector<Json> events;
++  events.reserve(lines.size() - 2u);
++  for (std::size_t index = 1; index + 1 < lines.size(); ++index) {
++    Json event;
++    std::ostringstream where;
++    where << "event line " << index + 1u;
++    if (!ParseCanonicalLine(lines[index], event, error, where.str())) return false;
++    events.emplace_back(std::move(event));
++  }
++  ValidationSummary summary;
++  if (!ValidateEvents(events, summary, error)) return false;
++
++  Json footer;
++  if (!ParseCanonicalLine(lines.back(), footer, error, "footer") ||
++      !ExactKeys(footer, {"kind", "event_count", "poll_count",
++                          "marker_count", "present_count", "payload_sha256"}) ||
++      footer["kind"] != "footer") {
++    return SetError("footer identity or shape", error);
++  }
++  uint64_t event_count = 0;
++  uint64_t poll_count = 0;
++  uint64_t marker_count = 0;
++  uint64_t present_count = 0;
++  if (!Unsigned(footer["event_count"], kMaxEvents, event_count) ||
++      event_count != events.size() ||
++      !Unsigned(footer["poll_count"], kMaxEvents, poll_count) ||
++      poll_count != summary.poll_count ||
++      !Unsigned(footer["marker_count"], kMaxMarkers, marker_count) ||
++      marker_count != summary.marker_count ||
++      !Unsigned(footer["present_count"], UINT64_MAX, present_count) ||
++      present_count < summary.present_count ||
++      !StringMatches(footer["payload_sha256"], kSha256)) {
++    return SetError("footer counts or range", error);
++  }
++
++  Json footer_payload{{"kind", "footer"},
++                      {"event_count", event_count},
++                      {"poll_count", poll_count},
++                      {"marker_count", marker_count},
++                      {"present_count", present_count}};
++  const std::size_t footer_offset = data.size() - lines.back().size();
++  std::string digest_input(data.substr(0, footer_offset));
++  digest_input += CanonicalLine(footer_payload);
++  if (footer["payload_sha256"].get<std::string>() !=
++      rex::crypto::sha256(digest_input)) {
++    return SetError("footer payload_sha256", error);
++  }
++
++  if (event_lines) {
++    event_lines->clear();
++    event_lines->reserve(lines.size() - 2u);
++    for (std::size_t index = 1; index + 1 < lines.size(); ++index) {
++      event_lines->emplace_back(lines[index]);
++    }
++  }
++  if (parsed_header) *parsed_header = std::move(header);
++  return true;
++}
++
++bool ParseHeader(std::string_view line, Json& header, std::string& canonical,
++                 std::string& error) {
++  if (!ParseCanonicalLine(line, header, error, "expected header") ||
++      !ValidateHeader(header, error)) {
++    return false;
++  }
++  canonical.assign(line);
++  return true;
++}
++
++bool ReadEvent(const std::vector<std::string>& lines, std::size_t cursor,
++               Json& event, std::string& error) {
++  if (cursor >= lines.size()) return SetError("replay EOF", error);
++  return ParseCanonicalLine(lines[cursor], event, error, "replay event");
++}
++
++std::string Hex32(uint32_t value) {
++  std::ostringstream stream;
++  stream << "0x" << std::hex << std::uppercase << value;
++  return stream.str();
++}
++
++}  // namespace
++
++void Service::Reset() {
++  mode_ = Mode::kDisabled;
++  failed_ = false;
++  failure_.clear();
++  header_line_.clear();
++  body_.clear();
++  replay_bytes_.clear();
++  replay_event_lines_.clear();
++  replay_cursor_ = 0;
++  sequence_ = 0;
++  poll_index_ = 0;
++  marker_index_ = 0;
++  poll_in_marker_ = 0;
++  last_guest_tick_ = 0;
++  last_present_index_ = 0;
++}
++
++bool Service::Fail(std::string message, std::string& error) {
++  if (!failed_) failure_ = std::move(message);
++  failed_ = true;
++  error = failure_;
++  return false;
++}
++
++void Service::Abort(std::string reason) {
++  if (!failed_) failure_ = std::move(reason);
++  failed_ = true;
++}
++
++bool Service::BeginRecord(std::string_view canonical_header,
++                          std::string& error) {
++  Reset();
++  Json header;
++  if (!ParseHeader(canonical_header, header, header_line_, error)) {
++    return Fail(error, error);
++  }
++  if (header_line_.size() > kMaxReplayBytes) {
++    return Fail("header byte bound", error);
++  }
++  mode_ = Mode::kRecord;
++  body_ = header_line_;
++  return true;
++}
++
++bool Service::BeginReplay(std::string_view replay,
++                          std::string_view canonical_expected_header,
++                          std::string& error) {
++  Reset();
++  Json expected;
++  if (!ParseHeader(canonical_expected_header, expected, header_line_, error)) {
++    return Fail(error, error);
++  }
++  Json parsed;
++  if (!ParseReplay(replay, &expected, &replay_event_lines_, &parsed, error)) {
++    return Fail(error, error);
++  }
++  replay_bytes_.assign(replay);
++  mode_ = Mode::kReplay;
++  return true;
++}
++
++bool Service::MarkerBefore(uint64_t guest_tick, uint64_t present_index,
++                           std::string& error) {
++  if (mode_ == Mode::kDisabled) return true;
++  if (failed_) return SetError(failure_, error);
++
++  if (mode_ == Mode::kReplay) {
++    Json event;
++    if (!ReadEvent(replay_event_lines_, replay_cursor_, event, error)) {
++      return Fail(error, error);
++    }
++    uint64_t event_marker = 0;
++    uint64_t event_poll = 0;
++    if (event["kind"] != "marker" ||
++        !Unsigned(event["marker_index"], kMaxMarkers, event_marker) ||
++        event_marker != marker_index_ + 1u ||
++        !Unsigned(event["poll_index"], kMaxEvents, event_poll) ||
++        event_poll != poll_index_) {
++      std::ostringstream message;
++      message << "divergence sequence=" << sequence_
++              << " expected=marker marker_index=" << marker_index_ + 1u
++              << " poll_index=" << poll_index_;
++      return Fail(message.str(), error);
++    }
++    ++replay_cursor_;
++    ++sequence_;
++    ++marker_index_;
++    poll_in_marker_ = 0;
++    return true;
++  }
++
++  if (guest_tick < last_guest_tick_ || present_index < last_present_index_) {
++    return Fail("record marker telemetry order", error);
++  }
++  if (marker_index_ != 0 && poll_in_marker_ == 0) {
++    return Fail("record previous marker has no polls", error);
++  }
++  if (sequence_ >= kMaxEvents || marker_index_ >= kMaxMarkers) {
++    return Fail("record marker/event bound", error);
++  }
++  ++marker_index_;
++  poll_in_marker_ = 0;
++  Json event{{"kind", "marker"},
++             {"sequence", sequence_},
++             {"marker_index", marker_index_},
++             {"poll_index", poll_index_},
++             {"guest_tick", guest_tick},
++             {"present_index", present_index}};
++  const std::string line = CanonicalLine(event);
++  if (line.size() > kMaxReplayBytes - body_.size()) {
++    return Fail("record byte bound", error);
++  }
++  body_ += line;
++  ++sequence_;
++  last_guest_tick_ = guest_tick;
++  last_present_index_ = present_index;
++  return true;
++}
++
++bool Service::RecordPoll(const PollObservation& observation,
++                         std::string& error) {
++  if (mode_ != Mode::kRecord) {
++    return Fail("record poll outside record mode", error);
++  }
++  if (failed_) return SetError(failure_, error);
++  if (sequence_ >= kMaxEvents || poll_index_ >= kMaxEvents) {
++    return Fail("record poll/event bound", error);
++  }
++  if (!ExpectedCallerLr(observation.caller_lr)) {
++    return Fail("record poll unexpected NTSC-U/J caller_lr", error);
++  }
++  if (observation.guest_tick < last_guest_tick_ ||
++      observation.present_index < last_present_index_) {
++    return Fail("record poll telemetry order", error);
++  }
++  if ((observation.result == 0 && observation.state_ptr != 0) !=
++      observation.state.has_value()) {
++    return Fail("record poll state/result/pointer", error);
++  }
++
++  Json event{{"kind", "poll"},
++             {"sequence", sequence_},
++             {"poll_index", poll_index_},
++             {"marker_index", marker_index_},
++             {"poll_in_marker", poll_in_marker_},
++             {"guest_tick", observation.guest_tick},
++             {"present_index", observation.present_index},
++             {"thread_id", observation.thread_id},
++             {"caller_lr", observation.caller_lr},
++             {"user_index", observation.user_index},
++             {"flags", observation.flags},
++             {"state_ptr", observation.state_ptr},
++             {"result", observation.result},
++             {"state", observation.state ? StateJson(*observation.state)
++                                           : Json(nullptr)}};
++  const std::string line = CanonicalLine(event);
++  if (line.size() > kMaxReplayBytes - body_.size()) {
++    return Fail("record byte bound", error);
++  }
++  body_ += line;
++  ++sequence_;
++  ++poll_index_;
++  ++poll_in_marker_;
++  last_guest_tick_ = observation.guest_tick;
++  last_present_index_ = observation.present_index;
++  return true;
++}
++
++bool Service::ReplayNextPoll(const PollGuards& guards, ReplayPoll& output,
++                             std::string& error) {
++  if (mode_ != Mode::kReplay) {
++    return Fail("replay poll outside replay mode", error);
++  }
++  if (failed_) return SetError(failure_, error);
++  Json event;
++  if (!ReadEvent(replay_event_lines_, replay_cursor_, event, error)) {
++    return Fail(error, error);
++  }
++
++  uint64_t event_poll = 0;
++  uint64_t event_marker = 0;
++  uint64_t event_poll_in_marker = 0;
++  uint64_t caller_lr = 0;
++  uint64_t user_index = 0;
++  uint64_t flags = 0;
++  uint64_t state_ptr = 0;
++  uint64_t result = 0;
++  if (event["kind"] != "poll" ||
++      !Unsigned(event["poll_index"], kMaxEvents, event_poll) ||
++      event_poll != poll_index_ ||
++      !Unsigned(event["marker_index"], kMaxMarkers, event_marker) ||
++      event_marker != marker_index_ ||
++      !Unsigned(event["poll_in_marker"], kMaxEvents, event_poll_in_marker) ||
++      event_poll_in_marker != poll_in_marker_ ||
++      !Unsigned(event["caller_lr"], UINT32_MAX, caller_lr) ||
++      !ExpectedCallerLr(caller_lr) ||
++      !Unsigned(event["user_index"], UINT32_MAX, user_index) ||
++      !Unsigned(event["flags"], UINT32_MAX, flags) ||
++      !Unsigned(event["state_ptr"], UINT32_MAX, state_ptr) ||
++      !Unsigned(event["result"], UINT32_MAX, result)) {
++    std::ostringstream message;
++    message << "divergence poll_index=" << poll_index_
++            << " expected=poll marker_index=" << marker_index_
++            << " poll_in_marker=" << poll_in_marker_;
++    return Fail(message.str(), error);
++  }
++
++  auto mismatch = [&](std::string_view guard, std::string expected,
++                      std::string actual) {
++    std::ostringstream message;
++    message << "divergence poll_index=" << poll_index_ << " guard=" << guard
++            << " expected=" << expected << " actual=" << actual;
++    return Fail(message.str(), error);
++  };
++  if (caller_lr != guards.caller_lr) {
++    return mismatch("caller_lr", Hex32(static_cast<uint32_t>(caller_lr)),
++                    Hex32(guards.caller_lr));
++  }
++  if (user_index != guards.user_index) {
++    return mismatch("user_index", std::to_string(user_index),
++                    std::to_string(guards.user_index));
++  }
++  if (flags != guards.flags) {
++    return mismatch("flags", Hex32(static_cast<uint32_t>(flags)),
++                    Hex32(guards.flags));
++  }
++  const bool recorded_null = state_ptr == 0;
++  if (recorded_null != guards.state_ptr_null) {
++    return mismatch("state_ptr_null", recorded_null ? "true" : "false",
++                    guards.state_ptr_null ? "true" : "false");
++  }
++
++  output = {};
++  output.result = static_cast<uint32_t>(result);
++  if (result == 0 && state_ptr != 0) {
++    ControllerState state;
++    if (!ValidateState(event["state"], &state, error, "replay state")) {
++      return Fail(error, error);
++    }
++    output.state = state;
++  }
++  ++replay_cursor_;
++  ++sequence_;
++  ++poll_index_;
++  ++poll_in_marker_;
++  return true;
++}
++
++bool Service::Finalize(std::string& sealed_recording, std::string& error) {
++  sealed_recording.clear();
++  if (failed_) return SetError(failure_, error);
++  if (mode_ == Mode::kDisabled) return true;
++  if (mode_ == Mode::kReplay) {
++    if (replay_cursor_ != replay_event_lines_.size()) {
++      std::ostringstream message;
++      message << "replay has " << replay_event_lines_.size() - replay_cursor_
++              << " unconsumed events at sequence=" << sequence_;
++      return Fail(message.str(), error);
++    }
++    mode_ = Mode::kDisabled;
++    return true;
++  }
++
++  if (sequence_ == 0 || poll_index_ == 0 || marker_index_ == 0 ||
++      poll_in_marker_ == 0) {
++    return Fail("recording has no complete marker/poll window", error);
++  }
++  Json footer_payload{{"kind", "footer"},
++                      {"event_count", sequence_},
++                      {"poll_count", poll_index_},
++                      {"marker_count", marker_index_},
++                      {"present_count", last_present_index_}};
++  const std::string digest =
++      rex::crypto::sha256(body_ + CanonicalLine(footer_payload));
++  Json footer = footer_payload;
++  footer["payload_sha256"] = digest;
++  const std::string footer_line = CanonicalLine(footer);
++  if (footer_line.size() > kMaxReplayBytes - body_.size()) {
++    return Fail("sealed replay byte bound", error);
++  }
++  sealed_recording = body_ + footer_line;
++  std::string validation_error;
++  if (!ParseReplay(sealed_recording, nullptr, nullptr, nullptr,
++                   validation_error)) {
++    sealed_recording.clear();
++    return Fail("self-validation failed: " + validation_error, error);
++  }
++  mode_ = Mode::kDisabled;
++  return true;
++}
++
++}  // namespace ac6::oracle::controller_replay
+diff --git a/src/ac6_controller_input_replay.h b/src/ac6_controller_input_replay.h
+new file mode 100644
+index 00000000..20c0c344
+--- /dev/null
++++ b/src/ac6_controller_input_replay.h
+@@ -0,0 +1,100 @@
++#pragma once
++
++#include <cstddef>
++#include <cstdint>
++#include <optional>
++#include <string>
++#include <string_view>
++#include <vector>
++
++namespace ac6::oracle::controller_replay {
++
++constexpr std::size_t kMaxReplayBytes = 128u * 1024u * 1024u;
++constexpr std::size_t kMaxEvents = 1'000'000u;
++
++struct ControllerState {
++  uint32_t packet_number{0};
++  uint16_t buttons{0};
++  uint8_t left_trigger{0};
++  uint8_t right_trigger{0};
++  int16_t thumb_lx{0};
++  int16_t thumb_ly{0};
++  int16_t thumb_rx{0};
++  int16_t thumb_ry{0};
++
++  bool operator==(const ControllerState&) const = default;
++};
++
++struct PollObservation {
++  uint64_t guest_tick{0};
++  uint64_t present_index{0};
++  uint32_t thread_id{0};
++  uint32_t caller_lr{0};
++  uint32_t user_index{0};
++  uint32_t flags{0};
++  uint32_t state_ptr{0};
++  uint32_t result{0};
++  std::optional<ControllerState> state;
++};
++
++struct PollGuards {
++  uint32_t caller_lr{0};
++  uint32_t user_index{0};
++  uint32_t flags{0};
++  bool state_ptr_null{true};
++};
++
++struct ReplayPoll {
++  uint32_t result{0};
++  std::optional<ControllerState> state;
++};
++
++enum class Mode {
++  kDisabled,
++  kRecord,
++  kReplay,
++};
++
++// Poll-exact service for ac6.controller-input-replay.v4. The runtime owns file
++// IO; this class owns bounded parsing, canonical sealing and event ordering.
++class Service {
++ public:
++  bool BeginRecord(std::string_view canonical_header, std::string& error);
++  bool BeginReplay(std::string_view replay, std::string_view canonical_expected_header,
++                   std::string& error);
++
++  bool MarkerBefore(uint64_t guest_tick, uint64_t present_index, std::string& error);
++  bool RecordPoll(const PollObservation& observation, std::string& error);
++  bool ReplayNextPoll(const PollGuards& guards, ReplayPoll& output, std::string& error);
++  void Abort(std::string reason);
++
++  // Record mode returns the sealed JSONL. Replay mode requires exact EOF and
++  // returns an empty payload. Disabled mode is a no-op.
++  bool Finalize(std::string& sealed_recording, std::string& error);
++
++  [[nodiscard]] Mode mode() const { return mode_; }
++  [[nodiscard]] bool failed() const { return failed_; }
++  [[nodiscard]] uint64_t poll_index() const { return poll_index_; }
++  [[nodiscard]] uint64_t marker_index() const { return marker_index_; }
++
++ private:
++  bool Fail(std::string message, std::string& error);
++  void Reset();
++
++  Mode mode_{Mode::kDisabled};
++  bool failed_{false};
++  std::string failure_;
++  std::string header_line_;
++  std::string body_;
++  std::string replay_bytes_;
++  std::vector<std::string> replay_event_lines_;
++  std::size_t replay_cursor_{0};
++  uint64_t sequence_{0};
++  uint64_t poll_index_{0};
++  uint64_t marker_index_{0};
++  uint64_t poll_in_marker_{0};
++  uint64_t last_guest_tick_{0};
++  uint64_t last_present_index_{0};
++};
++
++}  // namespace ac6::oracle::controller_replay
+diff --git a/src/ac6_controller_input_replay_io.cpp b/src/ac6_controller_input_replay_io.cpp
+new file mode 100644
+index 00000000..ede4dc22
+--- /dev/null
++++ b/src/ac6_controller_input_replay_io.cpp
+@@ -0,0 +1,259 @@
++#include "ac6_controller_input_replay_io.h"
++
++#include <algorithm>
++#include <atomic>
++#include <cerrno>
++#include <cstdint>
++#include <cstring>
++#include <limits>
++#include <system_error>
++
++#if defined(_WIN32)
++#include <fcntl.h>
++#include <io.h>
++#include <sys/stat.h>
++#include <windows.h>
++#else
++#include <fcntl.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#endif
++
++namespace ac6::oracle::controller_replay {
++namespace {
++
++std::atomic<uint64_t> g_temporary_sequence{0};
++
++std::string ErrnoMessage(std::string_view operation) {
++  return std::string(operation) + ": " + std::strerror(errno);
++}
++
++#if defined(_WIN32)
++using FileStat = struct _stat64;
++
++int OpenRead(const std::filesystem::path &path) {
++  return _wopen(path.c_str(), _O_RDONLY | _O_BINARY);
++}
++
++int OpenWriteExclusive(const std::filesystem::path &path) {
++  return _wopen(path.c_str(), _O_WRONLY | _O_CREAT | _O_EXCL | _O_BINARY,
++                _S_IREAD | _S_IWRITE);
++}
++
++int StatDescriptor(int descriptor, FileStat *status) {
++  return _fstat64(descriptor, status);
++}
++
++int CloseDescriptor(int descriptor) { return _close(descriptor); }
++
++bool FlushDescriptor(int descriptor) {
++  const intptr_t handle = _get_osfhandle(descriptor);
++  return handle != -1 && FlushFileBuffers(reinterpret_cast<HANDLE>(handle));
++}
++
++bool FlushDirectory(const std::filesystem::path &) {
++  // Windows makes the file durable with FlushFileBuffers before the exclusive
++  // hard-link publication. Directory handles are not portably flushable.
++  return true;
++}
++#else
++using FileStat = struct stat;
++
++int OpenRead(const std::filesystem::path &path) {
++  return open(path.c_str(), O_RDONLY | O_CLOEXEC);
++}
++
++int OpenWriteExclusive(const std::filesystem::path &path) {
++  return open(path.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0600);
++}
++
++int StatDescriptor(int descriptor, FileStat *status) {
++  return fstat(descriptor, status);
++}
++
++int CloseDescriptor(int descriptor) { return close(descriptor); }
++
++bool FlushDescriptor(int descriptor) { return fsync(descriptor) == 0; }
++
++bool FlushDirectory(const std::filesystem::path &path) {
++  const int descriptor = open(path.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
++  if (descriptor < 0)
++    return false;
++  const bool flushed = fsync(descriptor) == 0;
++  const bool closed = close(descriptor) == 0;
++  return flushed && closed;
++}
++#endif
++
++bool WriteAll(int descriptor, std::string_view payload) {
++  std::size_t offset = 0;
++  while (offset < payload.size()) {
++    const std::size_t remaining = payload.size() - offset;
++#if defined(_WIN32)
++    const unsigned int chunk = static_cast<unsigned int>(
++        std::min<std::size_t>(remaining, std::numeric_limits<int>::max()));
++    const int written = _write(descriptor, payload.data() + offset, chunk);
++#else
++    const ssize_t written =
++        write(descriptor, payload.data() + offset, remaining);
++#endif
++    if (written < 0 && errno == EINTR)
++      continue;
++    if (written <= 0)
++      return false;
++    offset += static_cast<std::size_t>(written);
++  }
++  return true;
++}
++
++bool RemoveIfPresent(const std::filesystem::path &path) {
++  std::error_code error;
++  const bool removed = std::filesystem::remove(path, error);
++  return !error && (removed || !std::filesystem::exists(path, error));
++}
++
++} // namespace
++
++bool ReadBoundedFile(const std::filesystem::path &path, std::size_t maximum,
++                     std::string &payload, std::string &error) {
++  payload.clear();
++  const int descriptor = OpenRead(path);
++  if (descriptor < 0) {
++    error = ErrnoMessage("input open failed");
++    return false;
++  }
++
++  FileStat status{};
++  if (StatDescriptor(descriptor, &status) != 0 || status.st_size <= 0 ||
++      static_cast<uint64_t>(status.st_size) > maximum) {
++    CloseDescriptor(descriptor);
++    error = "input empty or outside byte bound: " + path.string();
++    return false;
++  }
++
++  payload.resize(static_cast<std::size_t>(status.st_size));
++  std::size_t offset = 0;
++  while (offset < payload.size()) {
++    const std::size_t remaining = payload.size() - offset;
++#if defined(_WIN32)
++    const unsigned int chunk = static_cast<unsigned int>(
++        std::min<std::size_t>(remaining, std::numeric_limits<int>::max()));
++    const int read_count = _read(descriptor, payload.data() + offset, chunk);
++#else
++    const ssize_t read_count =
++        read(descriptor, payload.data() + offset, remaining);
++#endif
++    if (read_count < 0 && errno == EINTR)
++      continue;
++    if (read_count <= 0) {
++      CloseDescriptor(descriptor);
++      payload.clear();
++      error = "input truncated while reading: " + path.string();
++      return false;
++    }
++    offset += static_cast<std::size_t>(read_count);
++  }
++
++  char trailing = 0;
++#if defined(_WIN32)
++  const int trailing_count = _read(descriptor, &trailing, 1);
++#else
++  const ssize_t trailing_count = read(descriptor, &trailing, 1);
++#endif
++  const bool closed = CloseDescriptor(descriptor) == 0;
++  if (trailing_count != 0 || !closed) {
++    payload.clear();
++    error = "input changed or failed while reading: " + path.string();
++    return false;
++  }
++  return true;
++}
++
++bool PublishNewFile(const std::filesystem::path &destination,
++                    std::string_view payload, std::string &error) {
++  const std::filesystem::path parent = destination.parent_path().empty()
++                                           ? std::filesystem::current_path()
++                                           : destination.parent_path();
++  std::error_code filesystem_error;
++  if (payload.empty() || destination.filename().empty() ||
++      !std::filesystem::is_directory(parent, filesystem_error) ||
++      filesystem_error ||
++      std::filesystem::exists(destination, filesystem_error)) {
++    error = "record output parent/identity is invalid or already exists";
++    return false;
++  }
++
++  std::filesystem::path temporary;
++  int descriptor = -1;
++  for (uint32_t attempt = 0; attempt < 64; ++attempt) {
++    const uint64_t suffix =
++        g_temporary_sequence.fetch_add(1, std::memory_order_relaxed);
++    temporary = parent / ("." + destination.filename().string() +
++                          ".ac6-controller-" + std::to_string(suffix) + ".tmp");
++    descriptor = OpenWriteExclusive(temporary);
++    if (descriptor >= 0)
++      break;
++    if (errno != EEXIST)
++      break;
++  }
++  if (descriptor < 0) {
++    error = ErrnoMessage("exclusive temporary replay creation failed");
++    return false;
++  }
++
++  const bool data_durable =
++      WriteAll(descriptor, payload) && FlushDescriptor(descriptor);
++  const bool closed = CloseDescriptor(descriptor) == 0;
++  if (!data_durable || !closed) {
++    RemoveIfPresent(temporary);
++    error = "temporary replay write/fsync failed";
++    return false;
++  }
++
++  std::error_code link_error;
++  std::filesystem::create_hard_link(temporary, destination, link_error);
++  if (link_error) {
++    RemoveIfPresent(temporary);
++    error = "exclusive replay publication failed: " + link_error.message();
++    return false;
++  }
++
++  if (!FlushDirectory(parent) || !RemoveIfPresent(temporary) ||
++      !FlushDirectory(parent)) {
++    RemoveIfPresent(destination);
++    RemoveIfPresent(temporary);
++    FlushDirectory(parent);
++    error = "replay directory fsync/cleanup failed";
++    return false;
++  }
++  return true;
++}
++
++bool PendingPublication::Stage(std::filesystem::path destination,
++                               std::string payload, std::string &error) {
++  if (pending() || destination.empty() || payload.empty()) {
++    error = "publication staging state is invalid";
++    return false;
++  }
++  destination_ = std::move(destination);
++  payload_ = std::move(payload);
++  return true;
++}
++
++bool PendingPublication::Publish(std::string &error) {
++  if (!pending()) {
++    error = "no staged publication";
++    return false;
++  }
++  if (!PublishNewFile(destination_, payload_, error))
++    return false;
++  Reset();
++  return true;
++}
++
++void PendingPublication::Reset() {
++  destination_.clear();
++  payload_.clear();
++}
++
++} // namespace ac6::oracle::controller_replay
+diff --git a/src/ac6_controller_input_replay_io.h b/src/ac6_controller_input_replay_io.h
+new file mode 100644
+index 00000000..829c4dba
+--- /dev/null
++++ b/src/ac6_controller_input_replay_io.h
+@@ -0,0 +1,35 @@
++#pragma once
++
++#include <cstddef>
++#include <filesystem>
++#include <string>
++#include <string_view>
++
++namespace ac6::oracle::controller_replay {
++
++bool ReadBoundedFile(const std::filesystem::path &path, std::size_t maximum,
++                     std::string &payload, std::string &error);
++
++bool PublishNewFile(const std::filesystem::path &destination,
++                    std::string_view payload, std::string &error);
++
++// Retains a sealed recording until durable publication succeeds. This makes a
++// shutdown retry safe after an I/O or destination-collision failure.
++class PendingPublication {
++public:
++  bool Stage(std::filesystem::path destination, std::string payload,
++             std::string &error);
++  bool Publish(std::string &error);
++  void Reset();
++
++  [[nodiscard]] bool pending() const { return !payload_.empty(); }
++  [[nodiscard]] const std::filesystem::path &destination() const {
++    return destination_;
++  }
++
++private:
++  std::filesystem::path destination_;
++  std::string payload_;
++};
++
++} // namespace ac6::oracle::controller_replay
+diff --git a/src/ac6_controller_input_replay_runtime.cpp b/src/ac6_controller_input_replay_runtime.cpp
+new file mode 100644
+index 00000000..021aa054
+--- /dev/null
++++ b/src/ac6_controller_input_replay_runtime.cpp
+@@ -0,0 +1,315 @@
++#include "generated/ac6recomp_config.h"
++
++#include "ac6_controller_input_replay.h"
++#include "ac6_controller_input_replay_io.h"
++
++#include <filesystem>
++#include <mutex>
++#include <sstream>
++#include <string>
++
++#include <native/chrono/clock.h>
++#include <rex/ac6_controller_input_replay.h>
++#include <rex/cvar.h>
++#include <rex/logging.h>
++#include <rex/ppc/function.h>
++#include <rex/system/thread_state.h>
++
++#include "d3d_hooks.h"
++
++#ifndef PPC_CONFIG_H_INCLUDED
++#error "AC6 oracle PPC wrappers require generated/ac6recomp_config.h first"
++#endif
++
++REXCVAR_DEFINE_STRING(ac6_oracle_controller_header_path, "", "AC6/Oracle",
++                      "Canonical ac6.controller-input-replay.v4 header JSONL");
++REXCVAR_DEFINE_STRING(ac6_oracle_controller_record_path, "", "AC6/Oracle",
++                      "New poll-exact controller recording path");
++REXCVAR_DEFINE_STRING(ac6_oracle_controller_replay_path, "", "AC6/Oracle",
++                      "Sealed poll-exact controller replay path");
++
++namespace ac6::oracle {
++namespace {
++
++using controller_replay::ControllerState;
++using controller_replay::Mode;
++using controller_replay::PendingPublication;
++using controller_replay::PollGuards;
++using controller_replay::PollObservation;
++using controller_replay::ReplayPoll;
++using controller_replay::Service;
++
++constexpr std::size_t kMaxHeaderBytes = 1024u * 1024u;
++constexpr uint32_t kExpectedTitleId = 0x4E4D07D1u;
++constexpr uint32_t kExpectedEntryPoint = 0x821F5ED0u;
++constexpr uint32_t kExpectedCallerLr0 = 0x8234CEE0u;
++constexpr uint32_t kExpectedCallerLr1 = 0x8234CFA4u;
++
++std::mutex g_controller_mutex;
++Service g_controller_service;
++std::filesystem::path g_record_path;
++bool g_controller_initialized = false;
++PendingPublication g_pending_publication;
++
++struct Telemetry {
++  uint64_t guest_tick;
++  uint64_t present_index;
++  uint32_t thread_id;
++  uint32_t caller_lr;
++};
++
++Telemetry CurrentTelemetry() {
++  rex::runtime::ThreadState *thread = rex::runtime::ThreadState::Get();
++  if (!thread || !thread->context()) {
++    REX_FATAL("AC6 controller replay called without a bound guest thread");
++  }
++  return {
++      rex::chrono::Clock::PeekGuestTickCount(),
++      ac6::d3d::GetFrameCaptureSummary().frame_index,
++      thread->thread_id(),
++      static_cast<uint32_t>(thread->context()->lr),
++  };
++}
++
++ControllerState ToServiceState(const XamControllerState &state) {
++  return {
++      state.packet_number, state.buttons,  state.left_trigger,
++      state.right_trigger, state.thumb_lx, state.thumb_ly,
++      state.thumb_rx,      state.thumb_ry,
++  };
++}
++
++XamControllerState FromServiceState(const ControllerState &state) {
++  return {
++      state.packet_number, state.buttons,  state.left_trigger,
++      state.right_trigger, state.thumb_lx, state.thumb_ly,
++      state.thumb_rx,      state.thumb_ry,
++  };
++}
++
++[[noreturn]] void FatalControllerReplay(std::string_view operation,
++                                        const std::string &detail) {
++  REX_FATAL("AC6 controller replay {} failed: {}", operation, detail);
++}
++
++} // namespace
++
++bool InitializeControllerInputReplay(uint32_t title_id, uint32_t entry_point) {
++  std::lock_guard<std::mutex> lock(g_controller_mutex);
++  if (g_controller_initialized) {
++    REXLOG_ERROR("AC6 controller replay initialized more than once");
++    return false;
++  }
++  if (title_id != kExpectedTitleId || entry_point != kExpectedEntryPoint) {
++    REXLOG_ERROR("AC6 controller replay rejected loaded module title={:08X} "
++                 "entry={:08X}; "
++                 "expected qualified NTSC-U/J title={:08X} entry={:08X}",
++                 title_id, entry_point, kExpectedTitleId, kExpectedEntryPoint);
++    return false;
++  }
++
++  const std::filesystem::path header_path =
++      REXCVAR_GET(ac6_oracle_controller_header_path);
++  const std::filesystem::path record_path =
++      REXCVAR_GET(ac6_oracle_controller_record_path);
++  const std::filesystem::path replay_path =
++      REXCVAR_GET(ac6_oracle_controller_replay_path);
++  if (record_path.empty() && replay_path.empty()) {
++    if (!header_path.empty()) {
++      REXLOG_ERROR(
++          "AC6 controller header configured without record/replay mode");
++      return false;
++    }
++    return true;
++  }
++  if (header_path.empty() || (!record_path.empty() && !replay_path.empty())) {
++    REXLOG_ERROR("AC6 controller replay requires one mode and one header");
++    return false;
++  }
++
++  Service staged_service;
++  std::filesystem::path staged_record_path;
++  std::string header;
++  std::string error;
++  if (!controller_replay::ReadBoundedFile(header_path, kMaxHeaderBytes, header,
++                                          error)) {
++    REXLOG_ERROR("AC6 controller replay initialization: {}", error);
++    return false;
++  }
++  if (!record_path.empty()) {
++    if (record_path == header_path || std::filesystem::exists(record_path) ||
++        !staged_service.BeginRecord(header, error)) {
++      REXLOG_ERROR("AC6 controller record initialization: {}",
++                   error.empty() ? "output identity" : error);
++      return false;
++    }
++    staged_record_path = record_path;
++    REXLOG_INFO(
++        "AC6 controller raw v4 record armed before guest launch at NTSC-U/J "
++        "marker 0x821CA940 BEFORE (cadence unqualified; census external)");
++  } else {
++    if (replay_path == header_path) {
++      REXLOG_ERROR("AC6 controller replay and header paths must differ");
++      return false;
++    }
++    std::string replay;
++    if (!controller_replay::ReadBoundedFile(
++            replay_path, controller_replay::kMaxReplayBytes, replay, error) ||
++        !staged_service.BeginReplay(replay, header, error)) {
++      REXLOG_ERROR("AC6 controller replay initialization: {}", error);
++      return false;
++    }
++    REXLOG_INFO(
++        "AC6 controller raw v4 replay loaded before guest launch at NTSC-U/J "
++        "marker 0x821CA940 BEFORE (cadence unqualified; census external)");
++  }
++
++  // Publish the fully validated state in one critical section only after all
++  // input and configuration checks have succeeded.
++  g_controller_service = std::move(staged_service);
++  g_record_path = std::move(staged_record_path);
++  g_pending_publication.Reset();
++  g_controller_initialized = true;
++  return true;
++}
++
++bool FinalizeControllerInputReplay() {
++  std::lock_guard<std::mutex> lock(g_controller_mutex);
++  if (!g_controller_initialized)
++    return true;
++  const Mode mode = g_controller_service.mode();
++  std::string sealed;
++  std::string error;
++  if (!g_pending_publication.pending()) {
++    if (!g_controller_service.Finalize(sealed, error)) {
++      REXLOG_ERROR("AC6 controller replay finalization: {}", error);
++      return false;
++    }
++    if (mode == Mode::kRecord &&
++        !g_pending_publication.Stage(g_record_path, std::move(sealed), error)) {
++      REXLOG_ERROR("AC6 controller record staging: {}", error);
++      return false;
++    }
++  }
++  if (g_pending_publication.pending() &&
++      !g_pending_publication.Publish(error)) {
++    REXLOG_ERROR("AC6 controller record publication: {}", error);
++    return false;
++  }
++  if (mode != Mode::kDisabled) {
++    REXLOG_INFO("AC6 controller replay finalized polls={} markers={}",
++                g_controller_service.poll_index(),
++                g_controller_service.marker_index());
++  }
++  g_controller_initialized = false;
++  g_record_path.clear();
++  g_pending_publication.Reset();
++  return true;
++}
++
++XamControllerPollAction
++BeginXamInputGetState(uint32_t user_index, uint32_t flags, uint32_t state_ptr,
++                      uint32_t &result, XamControllerState &state,
++                      bool &has_state, XamControllerPollRecord &record) {
++  record = {};
++  g_controller_mutex.lock();
++  const Mode mode = g_controller_service.mode();
++  if (mode == Mode::kDisabled) {
++    g_controller_mutex.unlock();
++    return XamControllerPollAction::kPhysical;
++  }
++  const Telemetry telemetry = CurrentTelemetry();
++  if (telemetry.caller_lr != kExpectedCallerLr0 &&
++      telemetry.caller_lr != kExpectedCallerLr1) {
++    const uint32_t caller_lr = telemetry.caller_lr;
++    g_controller_mutex.unlock();
++    FatalControllerReplay(
++        "poll caller LR",
++        fmt::format("unexpected NTSC-U/J LR 0x{:08X}", caller_lr));
++  }
++  if (mode == Mode::kReplay) {
++    ReplayPoll replay;
++    std::string error;
++    const bool accepted = g_controller_service.ReplayNextPoll(
++        {telemetry.caller_lr, user_index, flags, state_ptr == 0}, replay,
++        error);
++    if (accepted) {
++      result = replay.result;
++      has_state = replay.state.has_value();
++      if (replay.state)
++        state = FromServiceState(*replay.state);
++    }
++    g_controller_mutex.unlock();
++    if (!accepted)
++      FatalControllerReplay("poll", error);
++    return XamControllerPollAction::kReplay;
++  }
++
++  record = {
++      true,
++      telemetry.guest_tick,
++      telemetry.present_index,
++      telemetry.thread_id,
++      telemetry.caller_lr,
++      user_index,
++      flags,
++      state_ptr,
++  };
++  return XamControllerPollAction::kRecord;
++}
++
++void AbortRecordXamInputGetState(XamControllerPollRecord &record) {
++  if (!record.armed)
++    return;
++  g_controller_service.Abort(
++      "physical input call threw after record admission");
++  record.armed = false;
++  g_controller_mutex.unlock();
++}
++
++void CompleteRecordXamInputGetState(XamControllerPollRecord &record,
++                                    uint32_t result,
++                                    const XamControllerState *state) {
++  if (!record.armed)
++    return;
++  PollObservation observation{
++      record.guest_tick,
++      record.present_index,
++      record.thread_id,
++      record.caller_lr,
++      record.user_index,
++      record.flags,
++      record.state_ptr,
++      result,
++      state ? std::optional<ControllerState>(ToServiceState(*state))
++            : std::nullopt,
++  };
++  std::string error;
++  const bool accepted = g_controller_service.RecordPoll(observation, error);
++  record.armed = false;
++  g_controller_mutex.unlock();
++  if (!accepted)
++    FatalControllerReplay("record poll", error);
++}
++
++void ControllerInputMarkerBefore() {
++  std::lock_guard<std::mutex> lock(g_controller_mutex);
++  if (g_controller_service.mode() == Mode::kDisabled)
++    return;
++  const Telemetry telemetry = CurrentTelemetry();
++  std::string error;
++  if (!g_controller_service.MarkerBefore(telemetry.guest_tick,
++                                         telemetry.present_index, error)) {
++    FatalControllerReplay("marker", error);
++  }
++}
++
++} // namespace ac6::oracle
++
++PPC_EXTERN_FUNC(__imp__rex_sub_821CA940);
++
++PPC_FUNC_IMPL(rex_sub_821CA940) {
++  PPC_FUNC_PROLOGUE();
++  ac6::oracle::ControllerInputMarkerBefore();
++  __imp__rex_sub_821CA940(ctx, base);
++}
+diff --git a/src/ac6recomp_app.h b/src/ac6recomp_app.h
+index fe732081..d8b0fe9c 100644
+--- a/src/ac6recomp_app.h
++++ b/src/ac6recomp_app.h
+@@ -4,8 +4,11 @@
+ #include <string>
+ 
+ #include <rex/cvar.h>
++#include <rex/ac6_controller_input_replay.h>
+ #include <rex/logging.h>
+ #include <rex/rex_app.h>
++#include <rex/system/kernel_state.h>
++#include <rex/system/user_module.h>
+ #if REX_HAS_D3D12
+ #include <rex/graphics/d3d12/graphics_system.h>
+ #endif
+@@ -87,6 +90,20 @@ class Ac6recompApp : public rex::ReXApp {
+         });
+         REXLOG_INFO("Ac6recompApp: Native frame boundary callback registered");
+     }
++
++    auto module = runtime()->kernel_state()->GetExecutableModule();
++    if (!module || !ac6::oracle::InitializeControllerInputReplay(
++                       module->title_id(), module->entry_point())) {
++      REX_FATAL(
++          "AC6 controller replay initialization failed after XEX load and "
++          "before guest launch");
++    }
++  }
++
++  void OnPostGuestShutdown() override {
++    if (!ac6::oracle::FinalizeControllerInputReplay()) {
++      REX_FATAL("AC6 controller replay did not finalize after guest shutdown");
++    }
+   }
+ 
+   void OnCreateDialogs(rex::ui::ImGuiDrawer* drawer) override {
+@@ -110,4 +127,3 @@ class Ac6recompApp : public rex::ReXApp {
+  private:
+   std::unique_ptr<ac6::graphics::NativeGraphicsStatusDialog> native_graphics_status_dialog_;
+ };
+-
+diff --git a/src/d3d_hooks.cpp b/src/d3d_hooks.cpp
+index c256567a..7d2acc65 100644
+--- a/src/d3d_hooks.cpp
++++ b/src/d3d_hooks.cpp
+@@ -840,6 +840,11 @@ DrawStatsSnapshot GetDrawStats() {
+     return g_snapshot;
+ }
+ 
++FrameCaptureSummary GetFrameCaptureSummary() {
++    std::shared_lock<std::shared_mutex> lock(g_capture_mutex);
++    return g_capture_summary;
++}
++
+ FrameCaptureSnapshot TakeFrameCapture(FrameCaptureSummary* summary_out) {
+     std::unique_lock<std::shared_mutex> lock(g_capture_mutex);
+     if (summary_out) {
+diff --git a/src/d3d_hooks.h b/src/d3d_hooks.h
+index 0d739af1..624b9d27 100644
+--- a/src/d3d_hooks.h
++++ b/src/d3d_hooks.h
+@@ -11,8 +11,8 @@ namespace ac6::d3d {
+ void OnFrameBoundary();
+ 
+ DrawStatsSnapshot GetDrawStats();
++FrameCaptureSummary GetFrameCaptureSummary();
+ FrameCaptureSnapshot TakeFrameCapture(FrameCaptureSummary* summary_out = nullptr);
+ ShadowState GetShadowState();
+ 
+ }  // namespace ac6::d3d
+-
+diff --git a/tests/ac6_controller_input_replay_test.cpp b/tests/ac6_controller_input_replay_test.cpp
+new file mode 100644
+index 00000000..25c08f0b
+--- /dev/null
++++ b/tests/ac6_controller_input_replay_test.cpp
+@@ -0,0 +1,243 @@
++#include "ac6_controller_input_replay.h"
++#include "ac6_controller_input_replay_io.h"
++
++#include <cassert>
++#include <chrono>
++#include <filesystem>
++#include <fstream>
++#include <mutex>
++#include <string>
++#include <thread>
++#include <vector>
++
++namespace {
++
++using ac6::oracle::controller_replay::ControllerState;
++using ac6::oracle::controller_replay::PendingPublication;
++using ac6::oracle::controller_replay::PollObservation;
++using ac6::oracle::controller_replay::ReplayPoll;
++using ac6::oracle::controller_replay::Service;
++
++constexpr const char *kHeader =
++    R"json({"kind":"header","producer":{"binary_sha256":"1111111111111111111111111111111111111111111111111111111111111111","build_sha256":"0000000000000000000000000000000000000000000000000000000000000000","implementation_commit":"ab90b54713e5889f33eee1cc8681dae89fe83d1e","lane":"ac6-recomp","platform":"linux-x86_64-vulkan"},"schema":"ac6.controller-input-replay.v4","segment":{"kind":"full_recording","parent_marker_count":null,"parent_payload_sha256":null,"parent_replay_sha256":null,"parent_start_marker":null},"session":{"behavior_config_sha256":"7777777777777777777777777777777777777777777777777777777777777777","content_manifest_sha256":"3333333333333333333333333333333333333333333333333333333333333333","profile_save_manifest_sha256":"5555555555555555555555555555555555555555555555555555555555555555","route_sha256":"6666666666666666666666666666666666666666666666666666666666666666","runtime_config_sha256":"4444444444444444444444444444444444444444444444444444444444444444","segment_origin":"clean_boot"},"sync":{"cadence":{"census":null,"integrity_level":null,"native_clock":null,"native_hz":null,"projection":"unique_successful_user0_poll","resampling":"refuse","source_hz":null,"status":"unqualified"},"lane_local_diagnostics":["thread_id","state_ptr"],"marker_contract":{"address":"821CA940","code":{"image_rva":"001CA940","length":328,"sha256":"a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d"},"phase":"before_input","role":"ac6_frame_input_stage"},"portable_guards":["marker_index","poll_in_marker","caller_lr","user_index","flags","state_ptr_null"],"primary":"poll_index","telemetry":["guest_tick","present_index"]},"target":{"base_version":"v0.0.0.8","entry_point":"821F5ED0","media_id":"531C30BE","module":"default.xex","module_xxh3":"892639B654015428","region_mask":"0000FDFF","target_id":"ac6-ntsc-uj-default-xex","title_id":"4E4D07D1","xex_sha256":"6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc","xex_version":"v0.0.0.8"}}
++)json";
++
++ControllerState State() { return {10, 0x1000, 0, 127, 123, -321, -20, 20}; }
++
++std::string GoldenRecordAndReplay() {
++  Service record;
++  std::string error;
++  assert(record.BeginRecord(kHeader, error));
++  assert(record.MarkerBefore(100, 1, error));
++  PollObservation poll{101, 1, 7, 0x8234CEE0u, 0, 1, 0xA1001000, 0, State()};
++  assert(record.RecordPoll(poll, error));
++  assert(record.MarkerBefore(200, 2, error));
++  PollObservation second_poll{201, 2,          7, 0x8234CFA4u, 0,
++                              1,   0xA1001000, 0, State()};
++  assert(record.RecordPoll(second_poll, error));
++  std::string sealed;
++  assert(record.Finalize(sealed, error));
++  assert(sealed.starts_with(kHeader));
++  assert(sealed.find("\"payload_sha256\":") != std::string::npos);
++
++  Service replay;
++  assert(replay.BeginReplay(sealed, kHeader, error));
++  // Guest/present clocks are telemetry, not synchronization keys.
++  assert(replay.MarkerBefore(999, 99, error));
++  ReplayPoll output;
++  assert(replay.ReplayNextPoll({0x8234CEE0u, 0, 1, false}, output, error));
++  assert(output.result == 0);
++  assert(output.state == State());
++  assert(replay.MarkerBefore(1000, 100, error));
++  assert(replay.ReplayNextPoll({0x8234CFA4u, 0, 1, false}, output, error));
++  assert(output.result == 0);
++  assert(output.state == State());
++  std::string replay_payload;
++  assert(replay.Finalize(replay_payload, error));
++  assert(replay_payload.empty());
++  return sealed;
++}
++
++void HeaderFailures() {
++  std::string error;
++  auto rejected = [&](std::string value) {
++    Service service;
++    assert(!service.BeginRecord(value, error));
++    assert(!error.empty());
++  };
++
++  std::string value = kHeader;
++  value.replace(value.find("531C30BE"), 8, "0379EFB3");
++  rejected(value);
++  value = kHeader;
++  value.replace(value.find("892639B654015428"), 16, "892639b654015428");
++  rejected(value);
++  value = kHeader;
++  value.replace(value.find("ac6.controller-input-replay.v4"), 30,
++                "ac6.controller-input-replay.v3");
++  rejected(value);
++  value = kHeader;
++  value.replace(value.find("\"native_hz\":null"), 16, "\"native_hz\":60");
++  rejected(value);
++  value = kHeader;
++  value.pop_back();
++  rejected(value);
++  rejected(std::string(65, '[') + std::string(65, ']') + "\n");
++}
++
++void EventFailures(const std::string &sealed) {
++  std::string error;
++  Service wrong_lr;
++  assert(wrong_lr.BeginRecord(kHeader, error));
++  assert(wrong_lr.MarkerBefore(1, 1, error));
++  PollObservation unexpected{2, 1,          7, 0x8234D418u, 0,
++                             1, 0xA1001000, 0, State()};
++  assert(!wrong_lr.RecordPoll(unexpected, error));
++  assert(error.find("caller_lr") != std::string::npos);
++
++  Service empty_marker;
++  assert(empty_marker.BeginRecord(kHeader, error));
++  assert(empty_marker.MarkerBefore(1, 1, error));
++  assert(!empty_marker.MarkerBefore(2, 2, error));
++
++  Service mismatch;
++  assert(mismatch.BeginReplay(sealed, kHeader, error));
++  assert(mismatch.MarkerBefore(1, 1, error));
++  ReplayPoll output;
++  assert(!mismatch.ReplayNextPoll({0x8234CFA4u, 0, 1, false}, output, error));
++  assert(error.find("poll_index=0") != std::string::npos);
++  assert(error.find("caller_lr") != std::string::npos);
++
++  Service incomplete;
++  assert(incomplete.BeginReplay(sealed, kHeader, error));
++  assert(incomplete.MarkerBefore(1, 1, error));
++  std::string output_payload;
++  assert(!incomplete.Finalize(output_payload, error));
++  assert(error.find("unconsumed") != std::string::npos);
++
++  std::string corrupted = sealed;
++  const std::size_t state = corrupted.find("\"thumb_lx\":123");
++  assert(state != std::string::npos);
++  corrupted.replace(state, 14, "\"thumb_lx\":124");
++  Service corrupt;
++  assert(!corrupt.BeginReplay(corrupted, kHeader, error));
++  assert(error.find("payload_sha256") != std::string::npos);
++
++  std::string truncated = sealed;
++  truncated.resize(truncated.rfind('\n', truncated.size() - 2u) + 1u);
++  Service truncation;
++  assert(!truncation.BeginReplay(truncated, kHeader, error));
++}
++
++void LifecycleAndConcurrentRecord() {
++  Service service;
++  std::string error;
++  assert(service.BeginRecord(kHeader, error));
++
++  std::mutex mutex;
++  uint64_t clock = 1;
++  constexpr uint32_t kThreadCount = 4;
++  constexpr uint32_t kPollsPerThread = 16;
++  std::vector<std::thread> workers;
++  for (uint32_t thread_index = 0; thread_index < kThreadCount; ++thread_index) {
++    workers.emplace_back([&, thread_index] {
++      for (uint32_t poll_index = 0; poll_index < kPollsPerThread;
++           ++poll_index) {
++        std::lock_guard<std::mutex> lock(mutex);
++        const uint64_t marker_tick = clock++;
++        assert(service.MarkerBefore(marker_tick, marker_tick, error));
++        PollObservation observation{clock++,
++                                    marker_tick,
++                                    thread_index + 1,
++                                    poll_index % 2 == 0 ? 0x8234CEE0u
++                                                        : 0x8234CFA4u,
++                                    0,
++                                    1,
++                                    0xA1001000u,
++                                    0,
++                                    State()};
++        assert(service.RecordPoll(observation, error));
++      }
++    });
++  }
++  for (auto &worker : workers)
++    worker.join();
++
++  std::string sealed;
++  assert(service.Finalize(sealed, error));
++  assert(sealed.find("\"poll_count\":64") != std::string::npos);
++  assert(sealed.find("\"marker_count\":64") != std::string::npos);
++
++  // A completed service can begin a fresh lifecycle without state leakage.
++  assert(service.BeginRecord(kHeader, error));
++  assert(service.MarkerBefore(1, 1, error));
++  PollObservation observation{2, 1,           1, 0x8234CEE0u, 0,
++                              1, 0xA1001000u, 0, State()};
++  assert(service.RecordPoll(observation, error));
++  assert(service.Finalize(sealed, error));
++  assert(service.poll_index() == 1);
++}
++
++void DescriptorIoAndPublicationRetry() {
++  namespace fs = std::filesystem;
++  const auto unique =
++      std::chrono::steady_clock::now().time_since_epoch().count();
++  const fs::path directory =
++      fs::temp_directory_path() /
++      ("ac6-controller-replay-test-" + std::to_string(unique));
++  assert(fs::create_directory(directory));
++
++  const fs::path source = directory / "source.jsonl";
++  const fs::path destination = directory / "record.jsonl";
++  {
++    std::ofstream output(source, std::ios::binary | std::ios::trunc);
++    output << "bounded payload";
++    assert(output.good());
++  }
++  std::string payload;
++  std::string error;
++  assert(ac6::oracle::controller_replay::ReadBoundedFile(source, 64, payload,
++                                                         error));
++  assert(payload == "bounded payload");
++  assert(!ac6::oracle::controller_replay::ReadBoundedFile(source, 4, payload,
++                                                          error));
++
++  // Force the first exclusive publication to fail, then prove that the same
++  // staged bytes survive and can be retried after the collision is removed.
++  {
++    std::ofstream collision(destination, std::ios::binary | std::ios::trunc);
++    collision << "collision";
++  }
++  PendingPublication publication;
++  assert(publication.Stage(destination, "sealed replay", error));
++  assert(!publication.Publish(error));
++  assert(publication.pending());
++  assert(fs::remove(destination));
++  assert(publication.Publish(error));
++  assert(!publication.pending());
++  assert(ac6::oracle::controller_replay::ReadBoundedFile(destination, 64,
++                                                         payload, error));
++  assert(payload == "sealed replay");
++
++  assert(fs::remove(source));
++  assert(fs::remove(destination));
++  assert(fs::remove(directory));
++}
++
++} // namespace
++
++int main(int argc, char **argv) {
++  const std::string sealed = GoldenRecordAndReplay();
++  HeaderFailures();
++  EventFailures(sealed);
++  LifecycleAndConcurrentRecord();
++  DescriptorIoAndPublicationRetry();
++  if (argc == 2) {
++    std::ofstream output(argv[1], std::ios::binary | std::ios::trunc);
++    assert(output);
++    output.write(sealed.data(), static_cast<std::streamsize>(sealed.size()));
++    output.flush();
++    assert(output.good());
++  }
++  return 0;
++}
+diff --git a/thirdparty/rexglue-sdk/include/native/chrono/clock.h b/thirdparty/rexglue-sdk/include/native/chrono/clock.h
+index 47c0f759..74972834 100644
+--- a/thirdparty/rexglue-sdk/include/native/chrono/clock.h
++++ b/thirdparty/rexglue-sdk/include/native/chrono/clock.h
+@@ -47,6 +47,9 @@ class Clock {
+   static void set_guest_system_time_base(uint64_t time_base);
+ 
+   static uint64_t QueryGuestTickCount();
++  // Returns the last guest tick without advancing the guest clock. This is
++  // suitable for telemetry that must not perturb guest-visible time.
++  static uint64_t PeekGuestTickCount();
+   static uint64_t QueryGuestSystemTime();
+   static uint32_t QueryGuestUptimeMillis();
+ 
+diff --git a/thirdparty/rexglue-sdk/include/rex/ac6_controller_input_replay.h b/thirdparty/rexglue-sdk/include/rex/ac6_controller_input_replay.h
+new file mode 100644
+index 00000000..da14b70a
+--- /dev/null
++++ b/thirdparty/rexglue-sdk/include/rex/ac6_controller_input_replay.h
+@@ -0,0 +1,57 @@
++#pragma once
++
++#include <cstdint>
++
++namespace ac6::oracle {
++
++struct XamControllerState {
++  uint32_t packet_number{0};
++  uint16_t buttons{0};
++  uint8_t left_trigger{0};
++  uint8_t right_trigger{0};
++  int16_t thumb_lx{0};
++  int16_t thumb_ly{0};
++  int16_t thumb_rx{0};
++  int16_t thumb_ry{0};
++};
++
++// Opaque recording admission retained across the physical input call. When
++// armed, the runtime serializes that call with markers so the poll ordinal is
++// reserved at the XAM entry seam rather than at return time.
++struct XamControllerPollRecord {
++  bool armed{false};
++  uint64_t guest_tick{0};
++  uint64_t present_index{0};
++  uint32_t thread_id{0};
++  uint32_t caller_lr{0};
++  uint32_t user_index{0};
++  uint32_t flags{0};
++  uint32_t state_ptr{0};
++};
++
++enum class XamControllerPollAction {
++  kPhysical,
++  kRecord,
++  kReplay,
++};
++
++// Called after the qualified NTSC-U/J XEX is loaded, but before LaunchModule.
++bool InitializeControllerInputReplay(uint32_t title_id, uint32_t entry_point);
++bool FinalizeControllerInputReplay();
++
++// One admission point decides replay, serialized record, or the untouched
++// physical path before any input driver is entered. A record admission must be
++// completed on every physical or validation return path.
++XamControllerPollAction BeginXamInputGetState(
++    uint32_t user_index, uint32_t flags, uint32_t state_ptr, uint32_t& result,
++    XamControllerState& state, bool& has_state,
++    XamControllerPollRecord& record);
++void CompleteRecordXamInputGetState(XamControllerPollRecord& record,
++                                    uint32_t result,
++                                    const XamControllerState* state);
++void AbortRecordXamInputGetState(XamControllerPollRecord& record);
++
++// Qualified NTSC-U/J 0x821CA940 entry marker, before guest instructions.
++void ControllerInputMarkerBefore();
++
++}  // namespace ac6::oracle
+diff --git a/thirdparty/rexglue-sdk/include/rex/rex_app.h b/thirdparty/rexglue-sdk/include/rex/rex_app.h
+index 05f3d76c..58ff88b9 100644
+--- a/thirdparty/rexglue-sdk/include/rex/rex_app.h
++++ b/thirdparty/rexglue-sdk/include/rex/rex_app.h
+@@ -107,6 +107,9 @@ class ReXApp : public ui::WindowedApp, public ui::WindowListener, public ui::Win
+   /// Called before cleanup begins. Release custom resources here.
+   virtual void OnShutdown() {}
+ 
++  /// Called after all guest XThreads have stopped and joined, before cleanup.
++  virtual void OnPostGuestShutdown() {}
++
+   /// Called after path defaults are computed, before Runtime is constructed.
+   /// Override to adjust game/user/update data paths programmatically.
+   virtual void OnConfigurePaths(PathConfig& paths) { (void)paths; }
+diff --git a/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp b/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
+index 59face43..e811bc7a 100644
+--- a/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
+@@ -5,6 +5,7 @@
+ 
+ #include <rex/input/input.h>
+ #include <rex/input/input_system.h>
++#include <rex/ac6_controller_input_replay.h>
+ #include <rex/kernel/xam/private.h>
+ #include <rex/logging.h>
+ #include <rex/ppc/function.h>
+@@ -96,9 +97,57 @@ ppc_u32_result_t XamInputGetState_entry(ppc_u32_t user_index, ppc_u32_t flags,
+                   (uint32_t)flags);
+   }
+ 
++  const uint32_t raw_user_index = user_index;
++  const uint32_t raw_flags = flags;
++  const uint32_t state_ptr = input_state.guest_address();
++  uint32_t replay_result = 0;
++  ac6::oracle::XamControllerState replay_state;
++  bool replay_has_state = false;
++  ac6::oracle::XamControllerPollRecord record;
++  const auto replay_action = ac6::oracle::BeginXamInputGetState(
++      raw_user_index, raw_flags, state_ptr, replay_result, replay_state,
++      replay_has_state, record);
++  if (replay_action == ac6::oracle::XamControllerPollAction::kReplay) {
++    if (replay_has_state) {
++      if (!input_state) {
++        REX_FATAL("AC6 controller replay produced state for a null guest pointer");
++      }
++      input_state->packet_number = replay_state.packet_number;
++      input_state->gamepad.buttons = replay_state.buttons;
++      input_state->gamepad.left_trigger = replay_state.left_trigger;
++      input_state->gamepad.right_trigger = replay_state.right_trigger;
++      input_state->gamepad.thumb_lx = replay_state.thumb_lx;
++      input_state->gamepad.thumb_ly = replay_state.thumb_ly;
++      input_state->gamepad.thumb_rx = replay_state.thumb_rx;
++      input_state->gamepad.thumb_ry = replay_state.thumb_ry;
++    }
++    return replay_result;
++  }
++
++  auto record_return = [&](uint32_t result) -> ppc_u32_result_t {
++    ac6::oracle::XamControllerState recorded_state;
++    const ac6::oracle::XamControllerState* recorded_state_ptr = nullptr;
++    if (result == X_ERROR_SUCCESS && input_state) {
++      recorded_state = {
++          static_cast<uint32_t>(input_state->packet_number),
++          static_cast<uint16_t>(input_state->gamepad.buttons),
++          input_state->gamepad.left_trigger,
++          input_state->gamepad.right_trigger,
++          static_cast<int16_t>(input_state->gamepad.thumb_lx),
++          static_cast<int16_t>(input_state->gamepad.thumb_ly),
++          static_cast<int16_t>(input_state->gamepad.thumb_rx),
++          static_cast<int16_t>(input_state->gamepad.thumb_ry),
++      };
++      recorded_state_ptr = &recorded_state;
++    }
++    ac6::oracle::CompleteRecordXamInputGetState(record, result,
++                                                recorded_state_ptr);
++    return result;
++  };
++
+   if ((flags & 0xFF) && (flags & XINPUT_FLAG_GAMEPAD) == 0) {
+     // Ignore any query for other types of devices.
+-    return X_ERROR_DEVICE_NOT_CONNECTED;
++    return record_return(X_ERROR_DEVICE_NOT_CONNECTED);
+   }
+ 
+   uint32_t actual_user_index = user_index;
+@@ -108,7 +157,12 @@ ppc_u32_result_t XamInputGetState_entry(ppc_u32_t user_index, ppc_u32_t flags,
+   }
+ 
+   auto* is = input_system();
+-  return is->GetState(actual_user_index, input_state);
++  try {
++    return record_return(is->GetState(actual_user_index, input_state));
++  } catch (...) {
++    ac6::oracle::AbortRecordXamInputGetState(record);
++    throw;
++  }
+ }
+ 
+ // https://msdn.microsoft.com/en-us/library/windows/desktop/microsoft.directx_sdk.reference.xinputsetstate(v=vs.85).aspx
+diff --git a/thirdparty/rexglue-sdk/src/native/core/clock.cpp b/thirdparty/rexglue-sdk/src/native/core/clock.cpp
+index 915157dc..df6c1f84 100644
+--- a/thirdparty/rexglue-sdk/src/native/core/clock.cpp
++++ b/thirdparty/rexglue-sdk/src/native/core/clock.cpp
+@@ -130,6 +130,11 @@ uint64_t Clock::QueryGuestTickCount() {
+   return update_guest_clock();
+ }
+ 
++uint64_t Clock::PeekGuestTickCount() {
++  std::lock_guard<std::mutex> lock(g_tick_mutex);
++  return g_last_guest_tick_count;
++}
++
+ uint64_t Clock::QueryGuestSystemTime() {
+   if (REXCVAR_GET(clock_no_scaling)) {
+     return Clock::QueryHostSystemTime();
+diff --git a/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp b/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
+index e54812ca..7862ab62 100644
+--- a/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
++++ b/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
+@@ -693,6 +693,13 @@ void ReXApp::OnDestroy() {
+   if (module_thread_.joinable()) {
+     module_thread_.join();
+   }
++  // Natural main-thread exit may leave child XThreads alive. TerminateTitle is
++  // idempotent here and now joins every guest host thread before consumers
++  // seal or publish post-guest instrumentation.
++  if (runtime_ && runtime_->kernel_state()) {
++    runtime_->kernel_state()->TerminateTitle();
++  }
++  OnPostGuestShutdown();
+   if (window_) {
+     window_->RemoveInputListener(this);
+     window_->RemoveListener(this);
+diff --git a/thirdparty/rexglue-sdk/src/system/kernel_state.cpp b/thirdparty/rexglue-sdk/src/system/kernel_state.cpp
+index 3ec95685..83422702 100644
+--- a/thirdparty/rexglue-sdk/src/system/kernel_state.cpp
++++ b/thirdparty/rexglue-sdk/src/system/kernel_state.cpp
+@@ -673,6 +673,7 @@ void KernelState::UnloadUserModule(const object_ref<UserModule>& module, bool ca
+ void KernelState::TerminateTitle() {
+   REXSYS_DEBUG("KernelState::TerminateTitle");
+   auto global_lock = global_critical_region_.Acquire();
++  std::vector<object_ref<XThread>> terminated_guest_threads_to_join;
+ 
+   // Call terminate routines.
+   // TODO(benvanik): these might take arguments.
+@@ -691,7 +692,7 @@ void KernelState::TerminateTitle() {
+   // Kill all guest threads.
+   for (auto it = threads_by_id_.begin(); it != threads_by_id_.end();) {
+     if (!XThread::IsInThread(it->second) && it->second->is_guest_thread()) {
+-      auto thread = it->second;
++      auto thread = retain_object(it->second);
+ 
+       if (thread->is_running()) {
+         // NOTE(tomc): JIT safe point stepping not available
+@@ -702,6 +703,12 @@ void KernelState::TerminateTitle() {
+         // NOTE(tomc): function_dispatcher_->StepToGuestSafePoint() is JIT-only
+         thread->Terminate(0);
+         global_lock.lock();
++
++        // The ReXApp module waiter owns the main thread's single native join.
++        // All other force-terminated guest threads are joined here.
++        if (!thread->main_thread()) {
++          terminated_guest_threads_to_join.push_back(thread);
++        }
+       }
+ 
+       // Erase it from the thread list.
+@@ -711,6 +718,15 @@ void KernelState::TerminateTitle() {
+     }
+   }
+ 
++  // No guest poll may race title teardown or a consumer's post-guest hook.
++  // Wait outside the kernel critical region because thread exit paths may
++  // need that region themselves.
++  global_lock.unlock();
++  for (auto& thread : terminated_guest_threads_to_join) {
++    thread->Wait(0, 0, 0, nullptr);
++  }
++  global_lock.lock();
++
+   // Third: Unload all user modules (including the executable).
+   for (size_t i = 0; i < user_modules_.size(); i++) {
+     X_STATUS status = user_modules_[i]->Unload();

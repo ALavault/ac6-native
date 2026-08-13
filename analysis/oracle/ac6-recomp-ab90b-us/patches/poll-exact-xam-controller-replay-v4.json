@@ -1,0 +1,78 @@
+{
+  "schema": "ac6.recomp-poll-exact-prototype.v1",
+  "status": "hardened-independent-audit-pass-not-integrated",
+  "qualification_date": "2026-08-13",
+  "base": {
+    "repository": "https://github.com/sal063/AC6_recomp",
+    "commit": "ab90b54713e5889f33eee1cc8681dae89fe83d1e",
+    "tree": "1e60427e316a2667d189eb1e067a8ec7d776fd50",
+    "rexglue_tree": "73589e54e95291a7039de6beada6390ac7c12f78"
+  },
+  "target": {
+    "identity_manifest": "analysis/oracle/ac6-recomp-ab90b-us/identity.json",
+    "target_id": "ac6-ntsc-uj-default-xex",
+    "xex_sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "module_xxh3": "892639B654015428",
+    "title_id": "4E4D07D1",
+    "media_id": "531C30BE",
+    "version": "v0.0.0.8",
+    "retail_bytes_committed": false
+  },
+  "patch": {
+    "path": "analysis/oracle/ac6-recomp-ab90b-us/patches/poll-exact-xam-controller-replay-v4.patch",
+    "sha256": "d2695e194ae470797a5baec989c651114167cfb3e568397ea901b85fb6c6f85b",
+    "size": 81442,
+    "handwritten_target_count": 17,
+    "generated_targets": 0,
+    "ppc_recomp_targets": 0
+  },
+  "wire_contract": {
+    "raw_schema": "ac6.controller-input-replay.v4",
+    "cadence_census_schema": "ac6.controller-cadence-census.v2",
+    "census_producer": "external-qualified-runner-only",
+    "raw_cadence_status": "unqualified",
+    "raw_resampling": "refuse",
+    "runtime_self_attestation": false,
+    "source_lineage_verified": false
+  },
+  "seams": {
+    "xam_service": "thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp:XamInputGetState_entry",
+    "xam_thunk": "0x82390CE0",
+    "expected_caller_lrs": [
+      "0x8234CEE0",
+      "0x8234CFA4"
+    ],
+    "marker": {
+      "address": "0x821CA940",
+      "phase": "before_input",
+      "length": 328,
+      "code_sha256": "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d",
+      "implementation": "handwritten strong wrapper calling generated weak implementation"
+    }
+  },
+  "lifecycle": {
+    "initialize": "after LoadXexImage in OnPostSetup, before LaunchModule",
+    "finalize": "after main-thread join and quiescence/join of force-terminated child XThreads, before runtime destruction",
+    "publication": "staged write/fsync, exclusive new-path hard-link, directory fsync, retained retry state",
+    "interactive_run_performed": false
+  },
+  "validation": {
+    "clean_apply_check": true,
+    "diff_check": true,
+    "service_compile_werror": true,
+    "service_tests": true,
+    "lifecycle_concurrency_tests": true,
+    "descriptor_bounded_read_test": true,
+    "publication_failure_retry_test": true,
+    "tests_independent_of_build_testing": true,
+    "python_v4_cross_read": true,
+    "external_census_v2_qualification_path": true,
+    "runtime_syntax_check": true,
+    "xam_syntax_check": true,
+    "lifecycle_syntax_check": true,
+    "boundary_guard": true,
+    "independent_clean_checkout_audit": true,
+    "deterministic_raw_fixture_sha256": "80c09e029c3d920b6567f49737bbe3ecce6039410803c0cd5cead2c4f6821733"
+  },
+  "acceptance": "Independent clean-checkout audit passed for the hardened patch. It is ready for controlled oracle integration, but is not part of an oracle stack, gate, lane closure or retail qualification until the modern runtime builds, runtime cadence is measured by a qualified external clock and producer/build lineage is attested."
+}
