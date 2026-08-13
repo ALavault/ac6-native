@@ -620,6 +620,21 @@ int main(int argc, char** argv) {
   // faction switch classified, not a chosen index.
   REQUIRE(probe->world().published == 230);
   REQUIRE(probe->player_entity() != 0);
+  // M01-C input bridge: the first hostile target appears only after the
+  // explicit X rising edge, and the primary projectile only after A.
+  std::unique_ptr<RetailSession> combat_probe = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::QualifiedRuntime});
+  REQUIRE(combat_probe != nullptr);
+  ac6::InputFrame select_target{};
+  select_target.buttons = 0x4000u;
+  (void)combat_probe->tick(kFixedDt, select_target);
+  REQUIRE(combat_probe->target_entity() != 0);
+  ac6::InputFrame fire_primary{};
+  fire_primary.buttons = 0x1000u;
+  (void)combat_probe->tick(kFixedDt, fire_primary);
+  REQUIRE(combat_probe->execution().combat().active_projectiles() == 1);
   REQUIRE(!probe->scenario().flag_orders().empty());
   const ac6::retail::ScenarioFlagOrder& first_flag =
       probe->scenario().flag_orders().front();

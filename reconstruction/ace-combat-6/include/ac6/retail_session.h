@@ -114,6 +114,13 @@ class RetailSession final {
   // advances the retail script at this boundary; ExternalProbe does not.
   RetailSessionFrame tick(float fixed_dt, InputFrame input) noexcept;
 
+  // Mission 01's first native combat bridge. X selects the deterministic
+  // nearest hostile and A fires the qualified primary weapon on its rising
+  // edge; no target or projectile is created without that player action.
+  bool lock_nearest_target() noexcept;
+  bool fire_primary() noexcept;
+  EntityId target_entity() const noexcept;
+
   // One call of 0x82267370 through 0x822ED708's update branch. Callers invoke
   // this only after an external probe/runtime has qualified the retail guards.
   // The sub-mission the cursor leaves has its objective completed and the one
@@ -177,6 +184,7 @@ class RetailSession final {
   RetailCameraModeSelection camera_mode_{retail_opening_camera_mode()};
   std::uint64_t tick_{};
   RetailScriptDrive script_drive_{RetailScriptDrive::ExternalProbe};
+  std::uint16_t previous_buttons_{};
 };
 
 // The entity 0x820A7420 classified as the local player: the one record whose

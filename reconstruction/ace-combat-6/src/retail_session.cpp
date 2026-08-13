@@ -20,6 +20,9 @@ constexpr std::uint32_t kLocalPlayerCategory = 2;
 constexpr std::array<std::uint8_t, 4> kRetailSequencerMagic{{'R', 'S', 'Q', '1'}};
 constexpr std::uint32_t kRetailSequencerVersion = 1;
 constexpr std::size_t kRetailSequencerMaximumEntries = 4096;
+constexpr std::uint16_t kTargetButton = 0x4000u;  // X
+constexpr std::uint16_t kFireButton = 0x1000u;    // A
+constexpr std::uint32_t kPrimaryWeaponId = 1u;
 
 void append_u32(std::vector<std::uint8_t>& bytes, std::uint32_t value) {
   for (unsigned int shift = 0; shift < 32; shift += 8) {
@@ -235,6 +238,11 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
   MissionLaunchDefinition launch;
   launch.mission_id = config.mission_id;
   launch.player_entity = *player;
+  // The first native combat slice uses one deterministic primary weapon. Its
+  // projectile and collision code are the shared CombatWorld implementation;
+  // no wave/target is synthesized by the session.
+  launch.weapons.push_back({kPrimaryWeaponId, 100.0F, 2000.0F, 0.25F,
+                            1.0e9F});
   launch.combat_states = session->world_->combat.snapshot_units();
   launch.units.reserve(launch.combat_states.size());
   for (const CombatUnitState& state : launch.combat_states) {
@@ -264,8 +272,27 @@ std::optional<MissionArea> RetailSession::current_area() const noexcept {
   return normalise_area(setup.x0, setup.z0, setup.x1, setup.z1);
 }
 
+bool RetailSession::lock_nearest_target() noexcept {
+  if (!execution_) return false;
+  const EntityId target = execution_->nearest_enemy(player_entity_);
+  return target != 0 && execution_->lock_target(target);
+}
+
+bool RetailSession::fire_primary() noexcept {
+  return execution_ != nullptr && execution_->fire_weapon(kPrimaryWeaponId);
+}
+
+EntityId RetailSession::target_entity() const noexcept {
+  return execution_ == nullptr ? 0 : execution_->locked_target();
+}
+
 RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcept {
   RetailSessionFrame frame;
+  const std::uint16_t pressed =
+      static_cast<std::uint16_t>(input.buttons & ~previous_buttons_);
+  if ((pressed & kTargetButton) != 0U) (void)lock_nearest_target();
+  if ((pressed & kFireButton) != 0U) (void)fire_primary();
+  previous_buttons_ = input.buttons;
   if (script_drive_ == RetailScriptDrive::QualifiedRuntime) {
     (void)advance_qualified_scheduler();
   } else if (script_drive_ == RetailScriptDrive::DiagnosticFixedTick &&
@@ -419,6 +446,7 @@ bool RetailSession::restore_checkpoint(
     return false;
   }
   tick_ = checkpoint.flight.tick;
+  previous_buttons_ = 0;
   return true;
 }
 

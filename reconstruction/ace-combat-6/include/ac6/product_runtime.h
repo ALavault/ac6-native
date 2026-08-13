@@ -1086,6 +1086,8 @@ class MissionExecution final {
   bool dispatch_radio(std::uint32_t id) noexcept;
   bool play_radio(std::uint32_t id, float duration_seconds) noexcept;
   bool lock_target(EntityId target) noexcept;
+  EntityId locked_target() const noexcept;
+  EntityId nearest_enemy(EntityId owner) const noexcept;
   bool fire_weapon(std::uint32_t weapon_id) noexcept;
   void set_failure_tick(std::uint64_t tick) noexcept { failure_tick_ = tick; }
   std::uint64_t failure_tick() const noexcept { return failure_tick_; }

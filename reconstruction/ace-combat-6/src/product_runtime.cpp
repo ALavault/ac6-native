@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <fstream>
+#include <limits>
 #include <string_view>
 #include <utility>
 
@@ -521,6 +522,36 @@ void MissionSequenceDirector::reset() noexcept {
 
 bool MissionExecution::lock_target(EntityId target) noexcept {
   return launched_ && combat_.lock_target(scenario_.player(), target);
+}
+
+EntityId MissionExecution::locked_target() const noexcept {
+  return launched_ ? combat_.locked_target(scenario_.player()) : 0;
+}
+
+EntityId MissionExecution::nearest_enemy(const EntityId owner) const noexcept {
+  if (!launched_) return 0;
+  const CombatUnitState* source = combat_.unit(owner);
+  if (source == nullptr || !source->active) return 0;
+  EntityId result = 0;
+  float best_distance = std::numeric_limits<float>::max();
+  for (const CombatUnitState& candidate : combat_.snapshot_units()) {
+    if (!candidate.active || candidate.entity == owner ||
+        candidate.faction == source->faction) {
+      continue;
+    }
+    const float dx = candidate.position.x - source->position.x;
+    const float dy = candidate.position.y - source->position.y;
+    const float dz = candidate.position.z - source->position.z;
+    const float distance = dx * dx + dy * dy + dz * dz;
+    if (!std::isfinite(distance) || distance <= 0.000001F ||
+        (distance > best_distance && result != 0) ||
+        (distance == best_distance && candidate.entity >= result)) {
+      continue;
+    }
+    best_distance = distance;
+    result = candidate.entity;
+  }
+  return result;
 }
 
 bool MissionExecution::fire_weapon(std::uint32_t weapon_id) noexcept {
