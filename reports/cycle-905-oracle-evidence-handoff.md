@@ -1,4 +1,9 @@
-# Cycle 905 — preuve oracle encore requise
+# Cycle 905 — handoff Xenia historique, superseded
+
+Depuis le contrat R0 du 2026-08-13, ce handoff ne doit plus servir à une
+nouvelle capture M01. Le handoff actif est
+`AC6_RECOMP_LINUX_ORACLE_HANDOFF.md`, sur l'oracle NTSC-U/J
+`AC6_recomp@ab90b547…`; la cible native reste le PAL `acc302…bcde`.
 
 Le produit natif possède maintenant les seams replay, NDXR, caméra, UV et
 texture externe, mais aucune capture positive de gameplay oracle n'est présente

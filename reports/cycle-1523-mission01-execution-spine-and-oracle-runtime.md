@@ -1,5 +1,13 @@
 # AC6 cycle 1523 — oracle reproductible et spine d'exécution Mission 01
 
+> Mise à jour R0, 2026-08-13 : la lignée PAL `dcd41b…` décrite ci-dessous est
+> historique seulement. L'oracle comportemental actif est le NTSC-U/J exact
+> `6eefba42…cbbbc` sur `AC6_recomp@ab90b547…`; la cible native reste le PAL
+> `acc302…bcde`. Le contrat inscriptible est `ac6.execution-trace.v3` à six
+> domaines ; v2 est lisible uniquement comme historique. L'état normatif est
+> dans `analysis/mission01-execution-spine.json` et
+> `AC6_RECOMP_LINUX_ORACLE_HANDOFF.md`.
+
 ## Résultat
 
 Ce cycle remplace le travail diffus par une tranche verticale contrôlée sans

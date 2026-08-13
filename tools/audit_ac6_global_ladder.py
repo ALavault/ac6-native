@@ -210,21 +210,48 @@ def audit_spine(m01_row: dict[str, str]) -> None:
         raise ValueError("Mission 01 provisional gate policy")
 
     oracle = spine.get("oracle", {})
-    oracle_manifest_path = project_path(oracle.get("manifest"))
-    oracle_manifest = json.loads(oracle_manifest_path.read_text(encoding="utf-8"))
-    if (oracle_manifest.get("oracle", {}).get("commit") !=
-            "dcd41b7457fcac8242f8ef40de83d1719390d5af" or
-            oracle_manifest.get("target", {}).get("sha256") != XEX):
+    oracle_identity_path = project_path(oracle.get("behavioral_identity"))
+    oracle_identity = json.loads(oracle_identity_path.read_text(encoding="utf-8"))
+    identity_target = oracle_identity.get("target", {})
+    identity_reference = oracle_identity.get("oracle_reference", {})
+    if (identity_reference.get("commit") != oracle.get("implementation_commit") or
+            identity_reference.get("tree") != oracle.get("implementation_tree") or
+            oracle.get("implementation_commit") !=
+            "ab90b54713e5889f33eee1cc8681dae89fe83d1e" or
+            identity_target.get("target_id") != oracle.get("target_id") or
+            identity_target.get("sha256") != NTSC_UJ_XEX or
+            oracle.get("xex_sha256") != NTSC_UJ_XEX):
         raise ValueError("Mission 01 spine oracle identity")
+    historical_path = project_path(oracle.get("historical_pal_oracle_manifest"))
+    historical = json.loads(historical_path.read_text(encoding="utf-8"))
+    if (historical.get("oracle", {}).get("commit") !=
+            "dcd41b7457fcac8242f8ef40de83d1719390d5af" or
+            historical.get("target", {}).get("sha256") != XEX or
+            oracle.get("historical_pal_oracle_role") !=
+            "historical-only-not-runtime-gate-evidence"):
+        raise ValueError("Mission 01 historical oracle identity")
     trust_path = project_path(oracle.get("semantic_trust_registry"))
     if trust_path != REXGLUE_TRUST.resolve():
         raise ValueError("Mission 01 RexGlue semantic trust path")
     audit_rexglue_trust(trust_path)
-    frontier = oracle.get("current_runtime_frontier", {})
-    if (not re.fullmatch(r"0x[0-9A-F]{8}", str(frontier.get("source"))) or
-            not re.fullmatch(r"0x[0-9A-F]{8}", str(frontier.get("target"))) or
-            frontier.get("gate_evidence") is not False):
+    marker = oracle.get("marker", {})
+    if (marker != {
+            "role": "ac6_frame_input_stage", "address": "0x821CA940",
+            "phase": "before_input",
+            "code_sha256": "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d",
+            } or oracle.get("current_runtime_frontier") != {
+                "classification": "linux-runtime-not-yet-built", "gate_evidence": False}):
         raise ValueError("Mission 01 spine runtime frontier")
+
+    trace = spine.get("execution_trace", {})
+    if trace != {
+            "write_schema": "ac6.execution-trace.v3",
+            "historical_read_schema": "ac6.execution-trace.v2",
+            "historical_read_promotable": False,
+            "projection_receipt_schema": "ac6.native-controller-projection-receipt.v4",
+            "domains": ["input", "simulation", "objectives", "graphics", "media", "hashes"],
+            }:
+        raise ValueError("Mission 01 execution trace contract")
 
     lanes = spine.get("lanes")
     if not isinstance(lanes, list) or [lane.get("id") for lane in lanes] != [
@@ -257,7 +284,7 @@ def audit_spine(m01_row: dict[str, str]) -> None:
             if not evidence or any(status_by_id[required] != "passed" for required in expected_requires):
                 raise ValueError(f"Mission 01 spine premature pass: {phase_id}")
             if (phase.get("oracle_capture_required") is True and
-                    oracle_manifest.get("capture_status") !=
+                    oracle_identity.get("capture_status") !=
                     oracle.get("required_capture_status_for_runtime_gates")):
                 raise ValueError(f"Mission 01 spine unqualified oracle pass: {phase_id}")
             passed_gates.update(gates)

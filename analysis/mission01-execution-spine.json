@@ -18,15 +18,32 @@
     "known_divergences_fail_closed": true
   },
   "oracle": {
-    "manifest": "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
+    "behavioral_identity": "analysis/oracle/ac6-recomp-ab90b-us/identity.json",
+    "implementation_commit": "ab90b54713e5889f33eee1cc8681dae89fe83d1e",
+    "implementation_tree": "1e60427e316a2667d189eb1e067a8ec7d776fd50",
+    "target_id": "ac6-ntsc-uj-default-xex",
+    "xex_sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "marker": {
+      "role": "ac6_frame_input_stage",
+      "address": "0x821CA940",
+      "phase": "before_input",
+      "code_sha256": "a4c027fcc05b34b0bb5ad5c8ad6a7f6bd37e2230797549637ee1950338ea390d"
+    },
+    "historical_pal_oracle_manifest": "analysis/oracle/ac6-recomp-dcd41b/manifest.json",
+    "historical_pal_oracle_role": "historical-only-not-runtime-gate-evidence",
     "semantic_trust_registry": "analysis/rexglue-semantic-trust-v1.json",
     "required_capture_status_for_runtime_gates": "captured",
     "current_runtime_frontier": {
-      "source": "0x8234530C",
-      "target": "0x8234524C",
-      "classification": "unresolved-branch",
+      "classification": "linux-runtime-not-yet-built",
       "gate_evidence": false
     }
+  },
+  "execution_trace": {
+    "write_schema": "ac6.execution-trace.v3",
+    "historical_read_schema": "ac6.execution-trace.v2",
+    "historical_read_promotable": false,
+    "projection_receipt_schema": "ac6.native-controller-projection-receipt.v4",
+    "domains": ["input", "simulation", "objectives", "graphics", "media", "hashes"]
   },
   "lanes": [
     {
