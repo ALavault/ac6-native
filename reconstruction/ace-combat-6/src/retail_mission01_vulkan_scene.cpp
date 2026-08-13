@@ -85,6 +85,22 @@ std::optional<RetailMission01VulkanScene> RetailMission01VulkanScene::open(
 }
 
 std::optional<RetailMission01VulkanScene>
+RetailMission01VulkanScene::open_assets(
+    RetailMission01MapRenderAssets assets,
+    const std::uint32_t draw_instance_index, const bool swap_16,
+    const std::array<float, 16>& object_to_clip,
+    const std::span<const std::uint32_t> vertex_spirv,
+    const std::span<const std::uint32_t> fragment_spirv,
+    const std::uint64_t vertex_shader_hash,
+    const std::uint64_t fragment_shader_hash, const std::uint32_t width,
+    const std::uint32_t height) {
+  if (!assets.store_backed()) return std::nullopt;
+  return build(std::move(assets), draw_instance_index, swap_16,
+               object_to_clip, vertex_spirv, fragment_spirv,
+               vertex_shader_hash, fragment_shader_hash, width, height);
+}
+
+std::optional<RetailMission01VulkanScene>
 RetailMission01VulkanScene::build_for_testing(
     RetailMission01MapRenderAssets assets,
     const std::uint32_t draw_instance_index, const bool swap_16,

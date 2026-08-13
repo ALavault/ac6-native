@@ -55,6 +55,19 @@ class RetailMission01VulkanScene final {
       std::uint64_t fragment_shader_hash,
       std::uint32_t width = 1280U, std::uint32_t height = 720U);
 
+  // Production handoff for callers that already decoded the immutable map
+  // assets. This preserves store provenance while avoiding a second parse of
+  // the 4,226-instance placement graph.
+  static std::optional<RetailMission01VulkanScene> open_assets(
+      RetailMission01MapRenderAssets assets,
+      std::uint32_t draw_instance_index, bool swap_16,
+      const std::array<float, 16>& object_to_clip,
+      std::span<const std::uint32_t> vertex_spirv,
+      std::span<const std::uint32_t> fragment_spirv,
+      std::uint64_t vertex_shader_hash,
+      std::uint64_t fragment_shader_hash,
+      std::uint32_t width = 1280U, std::uint32_t height = 720U);
+
   // Test-only construction still follows the same NDXR/NTXR and scene
   // contracts, but does not claim sealed-cache provenance.
   static std::optional<RetailMission01VulkanScene> build_for_testing(

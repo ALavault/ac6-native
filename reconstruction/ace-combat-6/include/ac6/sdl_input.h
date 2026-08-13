@@ -8,6 +8,7 @@
 
 #include <array>
 #include <filesystem>
+#include <span>
 #include <vector>
 
 namespace ac6 {
@@ -203,6 +204,11 @@ class VulkanFramePresenter final {
   bool create(const VulkanDevice& device, const VulkanSwapchain& swapchain) noexcept;
   bool present_clear(float red, float green, float blue, float alpha) noexcept;
   bool present_frame(const NativeRenderTarget& target) noexcept;
+  // Presents a GPU-rendered RGBA8 readback without constructing a
+  // NativeRenderTarget. The readback is uploaded through the persistent
+  // staging buffer; CPU rasterization remains outside this transport.
+  bool present_rgba8(std::span<const std::uint8_t> pixels,
+                     std::uint32_t width, std::uint32_t height) noexcept;
   void destroy() noexcept;
   bool valid() const noexcept { return command_pool_ != VK_NULL_HANDLE; }
   // The upload buffer is allocated and mapped once when the swapchain is
@@ -232,6 +238,10 @@ class VulkanFramePresenter final {
   void* staging_mapped_{};
   std::vector<std::uint8_t> source_pixels_;
   std::vector<std::uint8_t> frame_pixels_;
+
+  bool present_uploaded_rgba8(std::span<const std::uint8_t> pixels,
+                              std::uint32_t width,
+                              std::uint32_t height) noexcept;
 };
 
 }  // namespace ac6

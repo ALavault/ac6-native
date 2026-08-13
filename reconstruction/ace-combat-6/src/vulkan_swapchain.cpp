@@ -176,21 +176,41 @@ bool VulkanFramePresenter::create(const VulkanDevice& device,
 }
 
 bool VulkanFramePresenter::present_frame(const NativeRenderTarget& target) noexcept {
-  if (!valid() || !persistent_upload_ready() ||
-      !target.copy_rgba8(source_pixels_) || source_pixels_.empty() ||
+  if (!target.copy_rgba8(source_pixels_)) return false;
+  return present_uploaded_rgba8(source_pixels_, target.width(), target.height());
+}
+
+bool VulkanFramePresenter::present_rgba8(
+    const std::span<const std::uint8_t> pixels, const std::uint32_t width,
+    const std::uint32_t height) noexcept {
+  return present_uploaded_rgba8(pixels, width, height);
+}
+
+bool VulkanFramePresenter::present_uploaded_rgba8(
+    const std::span<const std::uint8_t> pixels, const std::uint32_t width,
+    const std::uint32_t height) noexcept {
+  const std::size_t expected_size = static_cast<std::size_t>(width) * height * 4U;
+  if (!valid() || !persistent_upload_ready() || width == 0U || height == 0U ||
+      pixels.size() != expected_size ||
       frame_pixels_.size() != static_cast<std::size_t>(staging_size_)) {
     return false;
   }
   for (std::uint32_t y = 0; y < extent_.height; ++y) {
-    const std::uint32_t source_y = std::min(target.height() - 1u,
-        static_cast<std::uint32_t>((static_cast<std::uint64_t>(y) * target.height()) / extent_.height));
+    const std::uint32_t source_y = std::min(
+        height - 1U,
+        static_cast<std::uint32_t>((static_cast<std::uint64_t>(y) * height) /
+                                    extent_.height));
     for (std::uint32_t x = 0; x < extent_.width; ++x) {
-      const std::uint32_t source_x = std::min(target.width() - 1u,
-          static_cast<std::uint32_t>((static_cast<std::uint64_t>(x) * target.width()) / extent_.width));
-      const std::size_t source_offset = (static_cast<std::size_t>(source_y) * target.width() + source_x) * 4u;
-      const std::size_t destination_offset = (static_cast<std::size_t>(y) * extent_.width + x) * 4u;
+      const std::uint32_t source_x = std::min(
+          width - 1U,
+          static_cast<std::uint32_t>((static_cast<std::uint64_t>(x) * width) /
+                                      extent_.width));
+      const std::size_t source_offset =
+          (static_cast<std::size_t>(source_y) * width + source_x) * 4U;
+      const std::size_t destination_offset =
+          (static_cast<std::size_t>(y) * extent_.width + x) * 4U;
       std::memcpy(frame_pixels_.data() + destination_offset,
-                  source_pixels_.data() + source_offset, 4u);
+                  pixels.data() + source_offset, 4U);
     }
   }
   if (vkWaitForFences(device_, 1, &fence_, VK_TRUE, UINT64_MAX) != VK_SUCCESS ||

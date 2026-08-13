@@ -67,9 +67,17 @@ int main() {
   }
   ac6::VulkanFramePresenter presenter;
   ac6::NativeRenderTarget native_target;
+  std::vector<std::uint8_t> gpu_readback(64U * 32U * 4U, 0U);
+  for (std::size_t index = 0U; index < gpu_readback.size(); index += 4U) {
+    gpu_readback[index] = 0x18U;
+    gpu_readback[index + 1U] = 0x3dU;
+    gpu_readback[index + 2U] = 0x7aU;
+    gpu_readback[index + 3U] = 0xffU;
+  }
   if (!native_target.resize(64, 32) || !native_target.clear(0xFF163D7Au, 1.0f) ||
       !presenter.create(device, swapchain) || !presenter.persistent_upload_ready() ||
       !presenter.present_clear(0.03f, 0.12f, 0.24f, 1.0f) ||
+      !presenter.present_rgba8(gpu_readback, 64U, 32U) ||
       !presenter.present_frame(native_target) || !presenter.present_frame(native_target)) {
     std::fprintf(stderr, "vk_present_failed\n");
     presenter.destroy();
