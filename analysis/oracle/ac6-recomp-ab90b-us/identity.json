@@ -102,8 +102,10 @@
       "status": "failed-compile",
       "detail": "src/ac6_texture_overrides.h includes d3d12.h unconditionally on Linux"
     },
-    "full_runtime_built": false,
-    "runtime_launched": false
+    "full_runtime_built": true,
+    "runtime_launched": true,
+    "linux_minimal_manifest": "analysis/oracle/ac6-recomp-ab90b-us/patches/linux-vulkan-minimal-v1.json",
+    "result": "boot-title-polls-three-nonblack-present-clean-shutdown"
   },
   "xenia_identity_cross_check": {
     "commit": "16e1eb8e28a2935b75c36707b585a4f5e174ad43",

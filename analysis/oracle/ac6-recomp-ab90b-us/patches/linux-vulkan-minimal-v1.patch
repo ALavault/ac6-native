@@ -1,0 +1,671 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c39f3c8c..fd06f034 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -12,6 +12,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+ option(AC6_ORACLE_BUILD_TESTS
+        "Build poll-exact oracle contract tests independently of BUILD_TESTING"
+        OFF)
++option(AC6_ORACLE_LINUX_MINIMAL
++       "Build the stock AC6 behavioural oracle with Vulkan only"
++       OFF)
++
++if(AC6_ORACLE_LINUX_MINIMAL AND (WIN32 OR NOT REXGLUE_USE_VULKAN OR REXGLUE_USE_D3D12))
++    message(FATAL_ERROR
++        "AC6_ORACLE_LINUX_MINIMAL requires Linux, Vulkan ON and D3D12 OFF")
++endif()
+
+ include(CheckIPOSupported)
+ check_ipo_supported(RESULT AC6RECOMP_IPO_SUPPORTED OUTPUT AC6RECOMP_IPO_ERROR)
+@@ -31,11 +39,14 @@ else()
+ endif()
+
+ # Sources
+-set(AC6RECOMP_SOURCES
+-    src/main.cpp
++set(AC6RECOMP_ORACLE_SOURCES
+     src/ac6_controller_input_replay.cpp
+     src/ac6_controller_input_replay_io.cpp
+     src/ac6_controller_input_replay_runtime.cpp
++)
++
++set(AC6RECOMP_ENHANCEMENT_SOURCES
++    src/main.cpp
+     src/ac6_pac_decode_dump.cpp
+     src/ac6_pac_decoder_probe.cpp
+     src/ac6_pac_index.cpp
+@@ -55,6 +66,19 @@ set(AC6RECOMP_SOURCES
+     src/ac6_backend_fixes/ac6_widescreen.cpp
+ )
+
++if(AC6_ORACLE_LINUX_MINIMAL)
++    set(AC6RECOMP_SOURCES
++        ${AC6RECOMP_ORACLE_SOURCES}
++        src/ac6_oracle_linux_main.cpp
++        src/ac6_oracle_linux_stock_hooks.cpp
++    )
++else()
++    set(AC6RECOMP_SOURCES
++        ${AC6RECOMP_ORACLE_SOURCES}
++        ${AC6RECOMP_ENHANCEMENT_SOURCES}
++    )
++endif()
++
+ if(WIN32)
+     add_executable(ac6recomp WIN32 ${AC6RECOMP_SOURCES})
+ else()
+@@ -63,8 +87,14 @@ endif()
+
+ rexglue_setup_target(ac6recomp)
+
++if(AC6_ORACLE_LINUX_MINIMAL)
++    target_compile_definitions(ac6recomp PRIVATE AC6_ORACLE_LINUX_MINIMAL=1)
++endif()
++
+ # Link libmspack for AC6 PAC LZX decompression in the runtime dump path.
+-target_link_libraries(ac6recomp PRIVATE mspack)
++if(NOT AC6_ORACLE_LINUX_MINIMAL)
++    target_link_libraries(ac6recomp PRIVATE mspack)
++endif()
+
+ if(AC6_ORACLE_BUILD_TESTS)
+     enable_testing()
+@@ -79,8 +109,33 @@ if(AC6_ORACLE_BUILD_TESTS)
+         rex::core
+         Threads::Threads
+     )
++    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
++        target_compile_options(ac6_controller_input_replay_test PRIVATE -UNDEBUG)
++    endif()
+     add_test(NAME ac6_controller_input_replay_test
+              COMMAND ac6_controller_input_replay_test)
++
++    if(AC6_ORACLE_LINUX_MINIMAL)
++        add_executable(ac6_posix_auto_reset_event_test
++            tests/ac6_posix_auto_reset_event_test.cpp
++        )
++        target_link_libraries(ac6_posix_auto_reset_event_test PRIVATE
++            rex::core
++            Threads::Threads
++        )
++        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
++            target_compile_options(ac6_posix_auto_reset_event_test PRIVATE -UNDEBUG)
++        endif()
++        add_test(NAME ac6_posix_auto_reset_event_test
++                 COMMAND ac6_posix_auto_reset_event_test)
++
++        add_executable(ac6_posix_socket_ioctl_test
++            tests/ac6_posix_socket_ioctl_test.cpp
++        )
++        target_link_libraries(ac6_posix_socket_ioctl_test PRIVATE rex::core)
++        add_test(NAME ac6_posix_socket_ioctl_test
++                 COMMAND ac6_posix_socket_ioctl_test)
++    endif()
+ endif()
+
+ if(AC6RECOMP_IPO_SUPPORTED)
+diff --git a/src/ac6_controller_input_replay_runtime.cpp b/src/ac6_controller_input_replay_runtime.cpp
+index 021aa054..2ff49f09 100644
+--- a/src/ac6_controller_input_replay_runtime.cpp
++++ b/src/ac6_controller_input_replay_runtime.cpp
+@@ -3,6 +3,7 @@
+ #include "ac6_controller_input_replay.h"
+ #include "ac6_controller_input_replay_io.h"
+
++#include <atomic>
+ #include <filesystem>
+ #include <mutex>
+ #include <sstream>
+@@ -15,7 +16,9 @@
+ #include <rex/ppc/function.h>
+ #include <rex/system/thread_state.h>
+
++#if !defined(AC6_ORACLE_LINUX_MINIMAL)
+ #include "d3d_hooks.h"
++#endif
+
+ #ifndef PPC_CONFIG_H_INCLUDED
+ #error "AC6 oracle PPC wrappers require generated/ac6recomp_config.h first"
+@@ -29,6 +32,11 @@ REXCVAR_DEFINE_STRING(ac6_oracle_controller_replay_path, "", "AC6/Oracle",
+                       "Sealed poll-exact controller replay path");
+
+ namespace ac6::oracle {
++
++#if defined(AC6_ORACLE_LINUX_MINIMAL)
++uint64_t LinuxMinimalPresentIndex();
++#endif
++
+ namespace {
+
+ using controller_replay::ControllerState;
+@@ -46,6 +54,9 @@ constexpr uint32_t kExpectedCallerLr0 = 0x8234CEE0u;
+ constexpr uint32_t kExpectedCallerLr1 = 0x8234CFA4u;
+
+ std::mutex g_controller_mutex;
++#if defined(AC6_ORACLE_LINUX_MINIMAL)
++std::atomic<uint32_t> g_physical_poll_diagnostic_count{0};
++#endif
+ Service g_controller_service;
+ std::filesystem::path g_record_path;
+ bool g_controller_initialized = false;
+@@ -65,7 +76,11 @@ Telemetry CurrentTelemetry() {
+   }
+   return {
+       rex::chrono::Clock::PeekGuestTickCount(),
++#if defined(AC6_ORACLE_LINUX_MINIMAL)
++      LinuxMinimalPresentIndex(),
++#else
+       ac6::d3d::GetFrameCaptureSummary().frame_index,
++#endif
+       thread->thread_id(),
+       static_cast<uint32_t>(thread->context()->lr),
+   };
+@@ -215,6 +230,19 @@ BeginXamInputGetState(uint32_t user_index, uint32_t flags, uint32_t state_ptr,
+   g_controller_mutex.lock();
+   const Mode mode = g_controller_service.mode();
+   if (mode == Mode::kDisabled) {
++#if defined(AC6_ORACLE_LINUX_MINIMAL)
++    const auto diagnostic_index =
++        g_physical_poll_diagnostic_count.fetch_add(1, std::memory_order_relaxed);
++    if (diagnostic_index < 10) {
++      const Telemetry telemetry = CurrentTelemetry();
++      REXLOG_INFO(
++          "AC6_ORACLE_PHYSICAL_POLL index={} guest_tick={} present={} "
++          "thread={} caller_lr={:08X} user={} flags={} state_null={}",
++          diagnostic_index, telemetry.guest_tick, telemetry.present_index,
++          telemetry.thread_id, telemetry.caller_lr, user_index, flags,
++          state_ptr == 0);
++    }
++#endif
+     g_controller_mutex.unlock();
+     return XamControllerPollAction::kPhysical;
+   }
+diff --git a/src/ac6_oracle_linux_main.cpp b/src/ac6_oracle_linux_main.cpp
+new file mode 100644
+index 00000000..309f2a71
+--- /dev/null
++++ b/src/ac6_oracle_linux_main.cpp
+@@ -0,0 +1,134 @@
++#include "generated/ac6recomp_config.h"
++#include "generated/ac6recomp_init.h"
++
++#include <atomic>
++#include <cstdio>
++#include <cstdlib>
++#include <memory>
++#include <string_view>
++
++#include <rex/ac6_controller_input_replay.h>
++#include <rex/cvar.h>
++#include <rex/graphics/vulkan/graphics_system.h>
++#include <rex/logging.h>
++#include <rex/rex_app.h>
++#include <rex/system/kernel_state.h>
++#include <rex/system/user_module.h>
++
++#if !defined(__linux__) || !REX_HAS_VULKAN || REX_HAS_D3D12
++#error "AC6_ORACLE_LINUX_MINIMAL is Linux/Vulkan-only"
++#endif
++
++REXCVAR_DEFINE_BOOL(ac6_unlock_fps, false, "AC6/Oracle",
++                    "Forbidden in the stock behavioural oracle");
++REXCVAR_DEFINE_BOOL(ac6_kbm_enabled, false, "AC6/Oracle",
++                    "Forbidden in the stock behavioural oracle");
++REXCVAR_DEFINE_BOOL(ac6_texture_swaps_enabled, false, "AC6/Oracle",
++                    "Forbidden in the stock behavioural oracle");
++REXCVAR_DEFINE_BOOL(ac6_fix_scaling, false, "AC6/Oracle",
++                    "Forbidden in the stock behavioural oracle");
++REXCVAR_DEFINE_BOOL(ac6_fix_deswizzle, false, "AC6/Oracle",
++                    "Forbidden in the stock behavioural oracle");
++REXCVAR_DEFINE_BOOL(ac6_fix_dof, false, "AC6/Oracle",
++                    "Forbidden in the stock behavioural oracle");
++REXCVAR_DEFINE_BOOL(ac6_fix_water_line, false, "AC6/Oracle",
++                    "Forbidden in the stock behavioural oracle");
++
++namespace {
++
++std::atomic<uint64_t> g_present_index{0};
++
++[[noreturn]] void RefuseEnhancements() {
++  std::fputs("AC6_ORACLE_LINUX_MINIMAL refuses FPS, KBM, texture swaps and AC6 fixes\n",
++             stderr);
++  std::fflush(stderr);
++  std::exit(EXIT_FAILURE);
++}
++
++class Ac6OracleLinuxApp final : public rex::ReXApp {
++ public:
++  Ac6OracleLinuxApp(rex::ui::WindowedAppContext& context,
++                    std::string_view name, rex::PPCImageInfo image)
++      : rex::ReXApp(context, name, image) {}
++
++  static std::unique_ptr<rex::ui::WindowedApp> Create(
++      rex::ui::WindowedAppContext& context) {
++    return std::make_unique<Ac6OracleLinuxApp>(context, "ac6recomp", PPCImageConfig);
++  }
++
++ protected:
++  uint32_t OnGetExpectedTitleId() const override { return 0x4E4D07D1; }
++
++  void OnConfigLoaded() override {
++    if (REXCVAR_GET(ac6_unlock_fps) || REXCVAR_GET(ac6_kbm_enabled) ||
++        REXCVAR_GET(ac6_texture_swaps_enabled) || REXCVAR_GET(ac6_fix_scaling) ||
++        REXCVAR_GET(ac6_fix_deswizzle) || REXCVAR_GET(ac6_fix_dof) ||
++        REXCVAR_GET(ac6_fix_water_line)) {
++      RefuseEnhancements();
++    }
++    rex::cvar::SetSessionDefault("vsync", "true", "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("guest_vblank_sync_to_refresh", "true",
++                                 "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("resolution_scale", "1", "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("draw_resolution_scale_x", "1",
++                                 "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("draw_resolution_scale_y", "1",
++                                 "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("video_mode_width", "1280", "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("video_mode_height", "720", "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("resolution", "720p", "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("show_build_stamp", "false", "AC6_ORACLE_LINUX_MINIMAL");
++    // A skipped placeholder frame is not an observable retail PRESENT. Compile
++    // synchronously so the bounded oracle run never substitutes or suppresses
++    // a frame while Vulkan pipelines warm up.
++    rex::cvar::SetSessionDefault("async_shader_compilation", "false",
++                                 "AC6_ORACLE_LINUX_MINIMAL");
++    rex::cvar::SetSessionDefault("vulkan_pipeline_creation_threads", "0",
++                                 "AC6_ORACLE_LINUX_MINIMAL");
++  }
++
++  void OnPreSetup(rex::RuntimeConfig& config) override {
++    rex::ReXApp::OnPreSetup(config);
++    config.graphics = REX_GRAPHICS_BACKEND(rex::graphics::vulkan::VulkanGraphicsSystem);
++  }
++
++  void OnPostSetup() override {
++    auto* graphics = runtime()->graphics_system();
++    if (!graphics) {
++      REX_FATAL("AC6 minimal oracle has no Vulkan graphics system");
++    }
++    graphics->SetFrameBoundaryCallback([](rex::memory::Memory*) {
++      const auto index =
++          g_present_index.fetch_add(1, std::memory_order_relaxed) + 1;
++      if (index <= 10) {
++        REXLOG_INFO("AC6_ORACLE_PRESENT index={}", index);
++      }
++    });
++    auto module = runtime()->kernel_state()->GetExecutableModule();
++    if (!module || !ac6::oracle::InitializeControllerInputReplay(
++                       module->title_id(), module->entry_point())) {
++      REX_FATAL("AC6 minimal oracle rejected XEX or controller replay lineage");
++    }
++    REXLOG_INFO("AC6_ORACLE_LINUX_MINIMAL stock Vulkan profile active");
++  }
++
++  void OnPostGuestShutdown() override {
++    REXLOG_INFO("AC6_ORACLE_SHUTDOWN presents={}",
++                g_present_index.load(std::memory_order_relaxed));
++    if (!ac6::oracle::FinalizeControllerInputReplay()) {
++      REX_FATAL("AC6 minimal oracle controller replay finalization failed");
++    }
++  }
++};
++
++}  // namespace
++
++namespace ac6::oracle {
++
++uint64_t LinuxMinimalPresentIndex() {
++  return g_present_index.load(std::memory_order_relaxed);
++}
++
++}  // namespace ac6::oracle
++
++REX_DEFINE_APP(ac6recomp, Ac6OracleLinuxApp::Create)
+diff --git a/src/ac6_oracle_linux_stock_hooks.cpp b/src/ac6_oracle_linux_stock_hooks.cpp
+new file mode 100644
+index 00000000..a8433e20
+--- /dev/null
++++ b/src/ac6_oracle_linux_stock_hooks.cpp
+@@ -0,0 +1,36 @@
++// Neutral definitions for enhancement and diagnostic seams embedded by the
++// revision-pinned config. The minimal oracle never edits generated output.
++
++#include "ac6_backend_fixes/ac6_backend_hooks.h"
++#include "ac6_pac_decode_dump.h"
++#include "ac6_pac_decoder_probe.h"
++#include "render_hooks.h"
++
++void Ac6OnPacReadCompleted(std::string_view, uint32_t, uint64_t, uint32_t) {}
++
++void ac6PacWorkerDispatchHook(PPCRegister&, PPCRegister&) {}
++void ac6PacWorkerL2DispatchHook(PPCRegister&, PPCRegister&, PPCRegister&,
++                               PPCRegister&, PPCRegister&) {}
++void ac6PacDecoderDumpHook(PPCRegister&, PPCRegister&, PPCRegister&, PPCRegister&) {}
++void ac6PacCodecDispatchProbe(PPCRegister&) {}
++void ac6PacMode1EntryProbe(PPCRegister&) {}
++void ac6PacBitFetcherProbe(PPCRegister&, PPCRegister&, PPCRegister&) {}
++void ac6PacDynamicHeaderProbe(PPCRegister&, PPCRegister&) {}
++void ac6PacTreeBuilderProbe(PPCRegister&) {}
++void ac6PacBlockConsumerProbe(PPCRegister&) {}
++
++bool ac6FlipIntervalHook() { return false; }
++bool ac6PresentIntervalHook(PPCRegister&) { return false; }
++void ac6DeltaDivisorHook(PPCRegister&) {}
++void ac6DeltaPrecisionHook(PPCRegister&, PPCRegister&, PPCRegister&, PPCRegister&) {}
++void ac6PresentTimingHook(PPCRegister&) {}
++void ac6CinematicTickHook(PPCRegister&) {}
++void ac6PathDropHook(PPCRegister&) {}
++
++namespace ac6::backend {
++
++void ReportSwapDecision(const rex::system::GraphicsSwapSubmission&, uint64_t,
++                        SwapSourceType, bool, uint32_t, uint32_t, uint32_t,
++                        uint32_t, uint64_t, uint64_t) {}
++
++}  // namespace ac6::backend
+diff --git a/tests/ac6_posix_auto_reset_event_test.cpp b/tests/ac6_posix_auto_reset_event_test.cpp
+new file mode 100644
+index 00000000..1e7e00b1
+--- /dev/null
++++ b/tests/ac6_posix_auto_reset_event_test.cpp
+@@ -0,0 +1,56 @@
++#include <atomic>
++#include <chrono>
++#include <cstdio>
++#include <thread>
++
++#include <rex/thread.h>
++
++namespace {
++
++using namespace std::chrono_literals;
++
++bool CheckExistingWaiterOwnsSignal() {
++  auto event = rex::thread::Event::CreateAutoResetEvent(false);
++  std::atomic<bool> entering_wait{false};
++  std::atomic<rex::thread::WaitResult> existing_result{
++      rex::thread::WaitResult::kFailed};
++
++  std::thread existing_waiter([&] {
++    entering_wait.store(true, std::memory_order_release);
++    existing_result.store(rex::thread::Wait(event.get(), false, 1s),
++                          std::memory_order_release);
++  });
++
++  while (!entering_wait.load(std::memory_order_acquire)) {
++    std::this_thread::yield();
++  }
++  // Let the announced waiter enter the condition-variable wait before Set.
++  std::this_thread::sleep_for(10ms);
++
++  event->Set();
++  const auto later_result = rex::thread::Wait(event.get(), false, 5ms);
++  if (later_result == rex::thread::WaitResult::kSuccess) {
++    // Release the original waiter before reporting the stolen signal.
++    event->Set();
++  }
++  existing_waiter.join();
++
++  return existing_result.load(std::memory_order_acquire) ==
++             rex::thread::WaitResult::kSuccess &&
++         later_result == rex::thread::WaitResult::kTimeout;
++}
++
++}  // namespace
++
++int main() {
++  for (int iteration = 0; iteration < 64; ++iteration) {
++    if (!CheckExistingWaiterOwnsSignal()) {
++      std::fprintf(stderr,
++                   "auto-reset signal was stolen by a later waiter at "
++                   "iteration %d\n",
++                   iteration);
++      return 1;
++    }
++  }
++  return 0;
++}
+diff --git a/tests/ac6_posix_socket_ioctl_test.cpp b/tests/ac6_posix_socket_ioctl_test.cpp
+new file mode 100644
+index 00000000..2d22e5ed
+--- /dev/null
++++ b/tests/ac6_posix_socket_ioctl_test.cpp
+@@ -0,0 +1,23 @@
++#include <fcntl.h>
++#include <sys/socket.h>
++
++#include <cstdint>
++
++#include <rex/net/socket.h>
++
++int main() {
++  const int socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
++  if (socket_fd < 0) {
++    return 1;
++  }
++
++  // Guest memory is big-endian. Either endian interpretation is nonzero,
++  // which is the contract required by FIONBIO.
++  uint8_t enabled[4] = {0, 0, 0, 1};
++  const int ioctl_result =
++      rex::net::socket_ioctl(socket_fd, 0x8004667E, enabled);
++  const int flags = fcntl(socket_fd, F_GETFL, 0);
++  rex::net::socket_close(socket_fd);
++
++  return ioctl_result == 0 && flags >= 0 && (flags & O_NONBLOCK) ? 0 : 1;
++}
+diff --git a/thirdparty/rexglue-sdk/src/core/socket_posix.cpp b/thirdparty/rexglue-sdk/src/core/socket_posix.cpp
+index b4b885a3..8f4ed190 100644
+--- a/thirdparty/rexglue-sdk/src/core/socket_posix.cpp
++++ b/thirdparty/rexglue-sdk/src/core/socket_posix.cpp
+@@ -13,6 +13,22 @@ int socket_close(SocketHandle handle) {
+ }
+
+ int socket_ioctl(SocketHandle handle, uint32_t cmd, uint8_t* arg) {
++  // Xbox 360 socket ioctls use the Winsock command encoding. Translate the
++  // commands whose POSIX numeric values differ instead of passing guest
++  // constants directly to the host kernel.
++  switch (cmd) {
++    case 0x8004667E:  // Winsock FIONBIO
++      cmd = FIONBIO;
++      break;
++    case 0x4004667F:  // Winsock FIONREAD
++      cmd = FIONREAD;
++      break;
++    case 0x40047307:  // Winsock SIOCATMARK
++      cmd = SIOCATMARK;
++      break;
++    default:
++      break;
++  }
+   return ioctl(static_cast<int>(handle), cmd, arg);
+ }
+
+diff --git a/thirdparty/rexglue-sdk/src/core/threading_posix.cpp b/thirdparty/rexglue-sdk/src/core/threading_posix.cpp
+index e10e30b4..21c9bc61 100644
+--- a/thirdparty/rexglue-sdk/src/core/threading_posix.cpp
++++ b/thirdparty/rexglue-sdk/src/core/threading_posix.cpp
+@@ -233,7 +233,7 @@ class PosixConditionBase {
+   virtual ~PosixConditionBase() = default;
+   virtual bool Signal() = 0;
+
+-  WaitResult Wait(std::chrono::milliseconds timeout) {
++  virtual WaitResult Wait(std::chrono::milliseconds timeout) {
+     bool executed;
+     auto predicate = [this] { return this->signaled(); };
+ #if REX_PLATFORM_LINUX
+@@ -394,17 +394,77 @@ class PosixCondition<Event> : public PosixConditionBase {
+
+   bool Signal() override {
+     auto lock = std::unique_lock<std::mutex>(mutex_);
+-    signal_ = true;
+-    cond_.notify_all();
++    if (!manual_reset_ && !waiters_.empty()) {
++      // An auto-reset event releases a thread that was already waiting. Do
++      // not leave a stealable boolean signal for a later waiter (notably the
++      // thread performing SignalAndWait itself).
++      Waiter* waiter = waiters_.front();
++      waiters_.pop_front();
++      waiter->granted = true;
++      cond_.notify_all();
++    } else {
++      signal_ = true;
++      if (manual_reset_) {
++        cond_.notify_all();
++      } else {
++        cond_.notify_one();
++      }
++    }
+     return true;
+   }
+
++  WaitResult Wait(std::chrono::milliseconds timeout) override {
++    if (manual_reset_) {
++      return PosixConditionBase::Wait(timeout);
++    }
++
++#if REX_PLATFORM_LINUX
++    auto native_mutex = static_cast<pthread_mutex_t*>(mutex_.native_handle());
++    int lock_result = pthread_mutex_lock(native_mutex);
++    if (lock_result == EOWNERDEAD) {
++      pthread_mutex_consistent(native_mutex);
++    } else if (lock_result != 0) {
++      return WaitResult::kFailed;
++    }
++    std::unique_lock<std::mutex> lock(mutex_, std::adopt_lock);
++#else
++    std::unique_lock<std::mutex> lock(mutex_);
++#endif
++    if (signal_) {
++      signal_ = false;
++      return WaitResult::kSuccess;
++    }
++
++    Waiter waiter;
++    waiters_.push_back(&waiter);
++    bool executed;
++    if (timeout == std::chrono::milliseconds::max()) {
++      cond_.wait(lock, [&waiter] { return waiter.granted; });
++      executed = true;
++    } else {
++      executed = cond_.wait_for(lock, timeout,
++                                [&waiter] { return waiter.granted; });
++    }
++    if (!executed) {
++      auto position = std::find(waiters_.begin(), waiters_.end(), &waiter);
++      if (position != waiters_.end()) {
++        waiters_.erase(position);
++      }
++      return WaitResult::kTimeout;
++    }
++    return WaitResult::kSuccess;
++  }
++
+   void Reset() {
+     auto lock = std::unique_lock<std::mutex>(mutex_);
+     signal_ = false;
+   }
+
+  private:
++  struct Waiter {
++    bool granted = false;
++  };
++
+   inline bool signaled() const override { return signal_; }
+   inline void post_execution() override {
+     if (!manual_reset_) {
+@@ -413,6 +473,7 @@ class PosixCondition<Event> : public PosixConditionBase {
+   }
+   bool signal_;
+   const bool manual_reset_;
++  std::deque<Waiter*> waiters_;
+ };
+
+ template <>
+diff --git a/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp b/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
+index 7862ab62..0bbe01c8 100644
+--- a/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
++++ b/thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp
+@@ -652,6 +652,12 @@ void ReXApp::OnClosing(ui::UIEvent& e) {
+   (void)e;
+   REXLOG_INFO("Window closing, shutting down...");
+   shutting_down_.store(true, std::memory_order_release);
++  // Stop host-driven guest audio callbacks while the guest object table and
++  // function dispatcher are still intact. Runtime::Shutdown is idempotent and
++  // will perform the remaining audio teardown later.
++  if (runtime_ && runtime_->audio_system()) {
++    runtime_->audio_system()->Shutdown();
++  }
+   if (runtime_ && runtime_->kernel_state()) {
+     runtime_->kernel_state()->TerminateTitle();
+   }
+diff --git a/thirdparty/rexglue-sdk/src/rexglue/CMakeLists.txt b/thirdparty/rexglue-sdk/src/rexglue/CMakeLists.txt
+index f344f777..7994430b 100644
+--- a/thirdparty/rexglue-sdk/src/rexglue/CMakeLists.txt
++++ b/thirdparty/rexglue-sdk/src/rexglue/CMakeLists.txt
+@@ -17,6 +17,10 @@ target_include_directories(rexglue
+ target_link_libraries(rexglue
+     PRIVATE
+         rexcodegen
++        # Linux static archives: rexsystem references an AC6 graphics CVar.
++        # Repeat the two leaves after rexcodegen so the linker can resolve it.
++        rexsystem
++        rexgraphics
+ )
+
+ # Delay-load FidelityFX DLLs so rexglue can run in tool mode without them.
+diff --git a/thirdparty/rexglue-sdk/src/system/xsocket.cpp b/thirdparty/rexglue-sdk/src/system/xsocket.cpp
+index 903a29a4..af7e28f4 100644
+--- a/thirdparty/rexglue-sdk/src/system/xsocket.cpp
++++ b/thirdparty/rexglue-sdk/src/system/xsocket.cpp
+@@ -41,7 +41,8 @@ X_STATUS XSocket::Initialize(AddressFamily af, Type type, Protocol proto) {
+   type_ = type;
+   proto_ = proto;
+
+-  if (proto == Protocol::IPPROTO_VDP) {
++  const bool is_vdp = proto == Protocol::IPPROTO_VDP;
++  if (is_vdp) {
+     // VDP is a layer on top of UDP.
+     proto = Protocol::IPPROTO_UDP;
+   }
+@@ -51,6 +52,20 @@ X_STATUS XSocket::Initialize(AddressFamily af, Type type, Protocol proto) {
+     return X_STATUS_UNSUCCESSFUL;
+   }
+
++#if REX_PLATFORM_LINUX
++  // XNet/VDP packet delivery is not implemented on this backend. Avoid
++  // blocking the guest main thread forever when it probes an empty VDP
++  // socket; the guest observes the normal no-packet result instead.
++  if (is_vdp) {
++    uint32_t enabled = 1;
++    if (rex::net::socket_ioctl(native_handle_, 0x8004667E,
++                               reinterpret_cast<uint8_t*>(&enabled)) < 0) {
++      Close();
++      return X_STATUS_UNSUCCESSFUL;
++    }
++  }
++#endif
++
+   return X_STATUS_SUCCESS;
+ }
+
+diff --git a/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt b/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt
+index a2dbc9ba..bf9e2771 100644
+--- a/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt
++++ b/thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt
+@@ -253,9 +253,14 @@ set(SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+ set(SDL_VULKAN OFF CACHE BOOL "" FORCE)
+ set(SDL_METAL OFF CACHE BOOL "" FORCE)
+
+-# Disable dummy drivers
++# The Linux behavioural-oracle harness is qualified with SDL's dummy audio
++# backend. Keep it available only for that explicit, stock-profile build.
+ set(SDL_DISKAUDIO OFF CACHE BOOL "" FORCE)
+-set(SDL_DUMMYAUDIO OFF CACHE BOOL "" FORCE)
++if(AC6_ORACLE_LINUX_MINIMAL)
++    set(SDL_DUMMYAUDIO ON CACHE BOOL "" FORCE)
++else()
++    set(SDL_DUMMYAUDIO OFF CACHE BOOL "" FORCE)
++endif()
+ set(SDL_DUMMYVIDEO OFF CACHE BOOL "" FORCE)
+
+ add_subdirectory(sdl3)

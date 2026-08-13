@@ -56,9 +56,10 @@ audio/vidéo.
 
 ## Frontière suivante
 
-Le runtime Linux de la lignée active n'est pas encore construit. La prochaine
-frontière est O1 : Vulkan minimal, profil stock, trois `PRESENT` non noirs et
-arrêt propre avec lignée vérifiée. `ac6.execution-trace.v3` est le seul format
+Le runtime Linux/Vulkan minimal de la lignée active est construit et O1 est
+validé : profil stock, polls continus, trois `PRESENT` non noirs et arrêt
+propre avec lignée vérifiée. La prochaine frontière est O2, capture deux fois
+du corpus avec un contrôleur physique unique. `ac6.execution-trace.v3` est le seul format
 inscriptible : il sépare oracle NTSC-U/J, marqueur, reçu v4, cible PAL et
 producteur, puis ordonne six domaines (`input`, `simulation`, `objectives`,
 `graphics`, `media`, `hashes`). La v2 reste lisible comme historique, jamais

@@ -1,0 +1,85 @@
+{
+  "schema": "ac6.recomp-linux-minimal-patch.v1",
+  "status": "built-boot-title-pass",
+  "qualification_date": "2026-08-13",
+  "base": {
+    "commit": "ab90b54713e5889f33eee1cc8681dae89fe83d1e",
+    "tree": "1e60427e316a2667d189eb1e067a8ec7d776fd50",
+    "rexglue_tree": "73589e54e95291a7039de6beada6390ac7c12f78"
+  },
+  "target": {
+    "identity_manifest": "analysis/oracle/ac6-recomp-ab90b-us/identity.json",
+    "target_id": "ac6-ntsc-uj-default-xex",
+    "xex_size": 7483392,
+    "xex_sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "xex_xxh3": "1fa2e575058a45de",
+    "module_xxh3": "892639b654015428",
+    "title_id": "4E4D07D1",
+    "media_id": "531C30BE",
+    "version": "v0.0.0.8"
+  },
+  "patch_stack": [
+    {
+      "path": "analysis/oracle/ac6-recomp-ab90b-us/patches/poll-exact-xam-controller-replay-v4.patch",
+      "sha256": "d2695e194ae470797a5baec989c651114167cfb3e568397ea901b85fb6c6f85b"
+    },
+    {
+      "path": "analysis/oracle/ac6-recomp-ab90b-us/patches/linux-vulkan-minimal-v1.patch",
+      "sha256": "a33ce746155962ac60916cdc39d4534a5c17ab9ef268fbe0b0ef67291ecf01f0"
+    }
+  ],
+  "source_files": {
+    "CMakeLists.txt": "72fb1db7d0520a09111ec1507c4cc9f40023942cf184b29cfb0bfd3f13a7ae6b",
+    "src/ac6_controller_input_replay_runtime.cpp": "c44a62517a8ed68d21104f72eceb858a7abb877ec31144bfb98f6e6c8f882be8",
+    "src/ac6_oracle_linux_main.cpp": "31af630530e678beafd3c81e2064542b519c6e7e3c52bffdca305041d8836c3b",
+    "src/ac6_oracle_linux_stock_hooks.cpp": "d88d6d9501a1dfcc0a203dbd6cc4b1f9b560c6ea4a5bda895fbd00b07b0c9fbd",
+    "tests/ac6_posix_auto_reset_event_test.cpp": "6ef29e8a70ddf754884d5f39e74a0db03740e49d35027d76e80d2535bb551c3a",
+    "tests/ac6_posix_socket_ioctl_test.cpp": "252e735af12aa4bbadc0560fb4665a273d1d4cc7f2bacd6d43f94adf899f9e79",
+    "thirdparty/rexglue-sdk/src/core/socket_posix.cpp": "3922cf1d2bea200254911768861aee00953e131d7f6b58f6b72d960ed9ffe08d",
+    "thirdparty/rexglue-sdk/src/core/threading_posix.cpp": "c0e721d3d03d4aedf87e9f4cab70b0c485247d5881a90a23aebc317fe9b91549",
+    "thirdparty/rexglue-sdk/src/native/ui/rex_app.cpp": "312046024b41a55300d9fb834daf701c1b942e9fa97d9e118b516e18b9d60aa8",
+    "thirdparty/rexglue-sdk/src/rexglue/CMakeLists.txt": "3ce7bf049ce68ba402a12028eddd2f8e535233d98e4e3163213285d4f60d42cc",
+    "thirdparty/rexglue-sdk/src/system/xsocket.cpp": "729bb08e2f3641771e3def03a71cf83e9d035f82a9f5ca8d7ec0ef90f6db572e",
+    "thirdparty/rexglue-sdk/thirdparty/CMakeLists.txt": "75df91c6486f9664e63d0623212a84a401ab71acefa7f257b0fc2a30209b528a"
+  },
+  "build": {
+    "compiler": "/usr/bin/clang++-21",
+    "configuration": "RelWithDebInfo",
+    "cmake": {
+      "AC6_ORACLE_BUILD_TESTS": "ON",
+      "AC6_ORACLE_LINUX_MINIMAL": "ON",
+      "REXGLUE_USE_D3D12": "OFF",
+      "REXGLUE_USE_VULKAN": "ON"
+    },
+    "runtime_config_sha256": "c39ffcf1cd4173bfee92bd3be9137808b415a664257b948a1974d305a704fa4e",
+    "generated": {
+      "files": 37,
+      "bytes": 64784688,
+      "tree_sha256": "24564a80f4f3366a9d01b51a9b15de5753908908b6f91c3c960d2653a989d14d"
+    },
+    "binary": {
+      "name": "ac6recomp",
+      "size": 145366000,
+      "sha256": "f27b0f33e6343f97e6e1ee02ed6631e9cb220f71613ac3c1d8de2c118afb590f"
+    }
+  },
+  "stock_profile": {
+    "fps": "retail",
+    "resolution_scale": 1,
+    "keyboard_mouse": false,
+    "texture_swaps": false,
+    "fixes": false,
+    "fps_unlock": false,
+    "async_shader_compilation": false,
+    "vulkan_pipeline_creation_threads": 0,
+    "audio_driver_headless": "dummy"
+  },
+  "boundaries": {
+    "generated_output_modified": false,
+    "d3d12_compiled": false,
+    "win32_sources_compiled": false,
+    "ac6_enhancements_compiled": false,
+    "cadence_inferred_by_runner": false,
+    "retail_bytes_committed": false
+  }
+}

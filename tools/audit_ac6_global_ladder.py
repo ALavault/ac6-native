@@ -151,8 +151,13 @@ def audit_rexglue_trust(path: Path) -> None:
             modern_codegen.get("identical_runs") != 2 or
             modern_codegen.get("generated_output_committed") is not False or
             modern_codegen.get("generated_output_is_product") is not False or
-            modern_linux.get("full_runtime_built") is not False or
-            modern_linux.get("runtime_launched") is not False or
+            modern_linux.get("full_runtime_built") is not True or
+            modern_linux.get("runtime_launched") is not True or
+            modern_linux.get("result") !=
+            "boot-title-polls-three-nonblack-present-clean-shutdown" or
+            modern_linux.get("linux_minimal_manifest") !=
+            "analysis/oracle/ac6-recomp-ab90b-us/patches/"
+            "linux-vulkan-minimal-v1.json" or
             modern_xenia.get("gameplay_evidence") is not False or
             modern_xenia.get("parity_evidence") is not False or
             marker.get("address") != "0x821CA940" or

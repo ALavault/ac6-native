@@ -23,6 +23,12 @@ hash du binaire. Il refuse les améliorations AC6, le fallback physique et tout
 autre contrôleur. Il échantillonne `CLOCK_MONOTONIC_RAW` avant le marqueur
 `0x821CA940` sans inférer lui-même la cadence.
 
+O1 est scellé par `linux-vulkan-minimal-v1.json` et validé par
+`tools/ac6_recomp_linux_oracle.py` : boot jusqu'au titre, polls continus, trois
+captures Vulkan consécutives non noires et arrêt propre. Le contrôle négatif
+sans contrôleur passe ; la présence d'un contrôleur physique unique reste une
+condition du handoff O2 ci-dessous.
+
 ## Handoff O2 — 75 minutes maximum
 
 Partir deux fois d'un processus et profil propres. Choisir Normal/Normal,
