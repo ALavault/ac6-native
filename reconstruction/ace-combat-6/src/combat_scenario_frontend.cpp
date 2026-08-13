@@ -689,6 +689,7 @@ void CombatWorld::tick(float fixed_dt) noexcept {
   }
   for (auto& projectile : projectiles_) {
     if (!projectile.active) continue;
+    const CombatVector previous_position = projectile.position;
     projectile.position.x += projectile.velocity.x * fixed_dt;
     projectile.position.y += projectile.velocity.y * fixed_dt;
     projectile.position.z += projectile.velocity.z * fixed_dt;
@@ -703,7 +704,29 @@ void CombatWorld::tick(float fixed_dt) noexcept {
       continue;
     }
     const float hit_radius = target->collision_radius + 0.25f;
-    if (combat_distance_squared(projectile.position, target->position) <= hit_radius * hit_radius) {
+    // Projectiles are discrete state, but collision is a swept test.  A fast
+    // round must not tunnel through a target between two fixed ticks.
+    const CombatVector segment{
+        projectile.position.x - previous_position.x,
+        projectile.position.y - previous_position.y,
+        projectile.position.z - previous_position.z};
+    const CombatVector to_target{
+        target->position.x - previous_position.x,
+        target->position.y - previous_position.y,
+        target->position.z - previous_position.z};
+    const float segment_length_squared =
+        segment.x * segment.x + segment.y * segment.y + segment.z * segment.z;
+    float segment_fraction = 0.0f;
+    if (segment_length_squared > 0.0f && std::isfinite(segment_length_squared)) {
+      segment_fraction = (to_target.x * segment.x + to_target.y * segment.y +
+                          to_target.z * segment.z) / segment_length_squared;
+      segment_fraction = std::clamp(segment_fraction, 0.0f, 1.0f);
+    }
+    const CombatVector closest{
+        previous_position.x + segment.x * segment_fraction,
+        previous_position.y + segment.y * segment_fraction,
+        previous_position.z + segment.z * segment_fraction};
+    if (combat_distance_squared(closest, target->position) <= hit_radius * hit_radius) {
       (void)apply_damage(projectile.target, projectile.damage);
       projectile.active = false;
     }

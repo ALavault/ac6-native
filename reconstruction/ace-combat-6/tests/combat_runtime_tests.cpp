@@ -61,12 +61,12 @@ int main(int argc, char** argv) {
   ac6::CombatWorld combat;
   REQUIRE(combat.add_unit({4097, 1, {0.0f, 0.0f, 0.0f}, 100.0f, 100.0f, 1.0f, true}));
   REQUIRE(combat.add_unit({4098, 2, {0.0f, 0.0f, 20.0f}, 80.0f, 80.0f, 1.0f, true}));
-  REQUIRE(combat.add_weapon({7, 20.0f, 40.0f, 0.0f, 100.0f}));
+  REQUIRE(combat.add_weapon({7, 80.0f, 100.0f, 0.0f, 100.0f}));
   REQUIRE(combat.lock_target(4097, 4098));
   REQUIRE(combat.fire(4097, 7));
   REQUIRE(combat.active_projectiles() == 1);
   combat.tick(1.0f);
-  REQUIRE(combat.apply_damage(4098, 80.0f));
+  REQUIRE(combat.active_projectiles() == 0);
   REQUIRE(!combat.unit(4098)->active);
   REQUIRE(combat.damage_events() == 1);
 

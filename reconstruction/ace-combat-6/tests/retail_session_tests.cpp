@@ -625,7 +625,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<RetailSession> combat_probe = RetailSession::open(
       payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
                  ac6::retail::RetailDifficulty::Normal,
-                 ac6::retail::RetailScriptDrive::QualifiedRuntime});
+                 ac6::retail::RetailScriptDrive::ExternalProbe});
   REQUIRE(combat_probe != nullptr);
   ac6::InputFrame select_target{};
   select_target.buttons = 0x4000u;
@@ -635,6 +635,24 @@ int main(int argc, char** argv) {
   fire_primary.buttons = 0x1000u;
   (void)combat_probe->tick(kFixedDt, fire_primary);
   REQUIRE(combat_probe->execution().combat().active_projectiles() == 1);
+  const ac6::EntityId first_target = combat_probe->target_entity();
+  REQUIRE(first_target != 0);
+  const ac6::CombatUnitState* target_after_fire =
+      combat_probe->execution().combat().unit(first_target);
+  REQUIRE(target_after_fire != nullptr && target_after_fire->active);
+  // The projectile is advanced by the product tick, not by the input bridge.
+  // Hold the read-only probe scheduler at this boundary while the long PAL
+  // trajectory resolves; no target health or collision is synthesized here.
+  for (std::size_t tick = 0;
+       tick < 180 && combat_probe->execution().combat().active_projectiles() != 0;
+       ++tick) {
+    (void)combat_probe->tick(kFixedDt, {});
+  }
+  REQUIRE(combat_probe->execution().combat().active_projectiles() == 0);
+  REQUIRE(combat_probe->execution().combat().damage_events() == 1);
+  const ac6::CombatUnitState* target_after_hit =
+      combat_probe->execution().combat().unit(first_target);
+  REQUIRE(target_after_hit != nullptr && !target_after_hit->active);
 
   // Controller lifecycle is part of the product session, not an external
   // event injection: Start pauses/resumes on its rising edge and Back restores
