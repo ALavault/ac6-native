@@ -102,6 +102,12 @@ class RetailSession final {
   const std::optional<RetailSessionBundle>& bundle() const noexcept {
     return bundle_;
   }
+  const CampaignProgression* campaign() const noexcept {
+    return campaign_enabled_ ? &campaign_ : nullptr;
+  }
+  CampaignSaveSnapshot campaign_snapshot() const {
+    return campaign_enabled_ ? campaign_.snapshot() : CampaignSaveSnapshot{};
+  }
   const RetailCameraModeSelection& camera_mode() const noexcept {
     return camera_mode_;
   }
@@ -169,7 +175,9 @@ class RetailSession final {
   RetailSession() = default;
   static std::unique_ptr<RetailSession> open_parsed(ScenarioPayload payload,
                                                     MissionScenario scenario,
-                                                    RetailSessionConfig config);
+                                                    RetailSessionConfig config,
+                                                    const RetailContentStore* store = nullptr,
+                                                    CampaignLoadout loadout = {});
   bool advance_qualified_scheduler() noexcept;
   void track_objective(std::uint32_t sub_mission) noexcept;
   RetailSessionFrame frame_from_snapshot(InputFrame input) const noexcept;
@@ -184,6 +192,8 @@ class RetailSession final {
   std::unique_ptr<RetailWorld> world_;
   std::unique_ptr<MissionDefinition> definition_;
   std::unique_ptr<MissionAssetDatabase> assets_;
+  CampaignProgression campaign_;
+  bool campaign_enabled_{};
   std::unique_ptr<MissionExecution> execution_;
   MissionScriptRunner script_;
   std::optional<RetailSessionBundle> bundle_;

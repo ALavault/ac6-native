@@ -555,7 +555,8 @@ int run_play_impl(const Options& options) {
     SessionSaveStore saves;
     MissionExecution::Checkpoint checkpoint;
     if (!session->save_checkpoint(checkpoint) ||
-        !saves.save(1, {1, store.index_sha256(), session->execution().snapshot(), {}, checkpoint}) ||
+        !saves.save(1, {1, store.index_sha256(), session->execution().snapshot(),
+                        session->campaign_snapshot(), checkpoint}) ||
         !saves.write_file(options.save)) return 131;
   }
   std::fprintf(stdout,
@@ -641,6 +642,21 @@ std::uint64_t hash_combat_state(std::uint64_t hash,
   return hash;
 }
 
+std::uint64_t hash_campaign_state(std::uint64_t hash,
+                                  const retail::RetailSession& session) noexcept {
+  const CampaignSaveSnapshot snapshot = session.campaign_snapshot();
+  hash_u64(hash, snapshot.completed.size());
+  for (const CampaignSaveSnapshot::Record& record : snapshot.completed) {
+    hash_u32(hash, record.mission_id);
+    hash_u32(hash, record.objective_mask);
+    hash_u32(hash, static_cast<std::uint32_t>(record.state));
+    hash_u32(hash, record.loadout.aircraft_id);
+    hash_u32(hash, record.loadout.weapon_id);
+    hash_u32(hash, record.loadout.capability_data_valid ? 1u : 0u);
+  }
+  return hash;
+}
+
 struct ReplayRun final {
   WorldFrame final_frame{};
   std::uint32_t sub_mission{};
@@ -680,6 +696,7 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
     result.semantic_hash = hash_frame(result.semantic_hash, frame.world);
     result.semantic_hash = hash_combat_state(result.semantic_hash,
                                              session->execution());
+    result.semantic_hash = hash_campaign_state(result.semantic_hash, *session);
     hash_u32(result.semantic_hash, frame.sub_mission);
     hash_u32(result.semantic_hash, frame.step);
     hash_u32(result.semantic_hash, frame.script_ended ? 1u : 0u);

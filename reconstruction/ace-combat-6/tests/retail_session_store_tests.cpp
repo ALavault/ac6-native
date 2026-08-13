@@ -170,12 +170,17 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload,
   REQUIRE(session->bundle()->loadout == loadout);
   REQUIRE(session->bundle()->difficulty == ac6::retail::RetailDifficulty::Ace);
   REQUIRE(session->bundle()->content_index_sha256 == store.index_sha256());
+  REQUIRE(session->campaign() != nullptr);
+  REQUIRE(session->campaign()->status(kMissionId) != nullptr);
+  REQUIRE(session->campaign()->status(kMissionId)->state ==
+          ac6::CampaignMissionState::Active);
   const auto require_external_drive_frame = [](const RetailSession& current,
                                                 const auto& frame) {
     REQUIRE(!frame.script_ended);
     REQUIRE(frame.sub_mission == 0);
     REQUIRE(frame.step == 0);
     REQUIRE(current.state() == ac6::ScenarioState::Gameplay);
+    REQUIRE(frame.world.mission_ready);
     const ac6::MissionDebrief debrief = current.debrief();
     REQUIRE(debrief.outcome == ac6::MissionOutcome::InProgress);
     REQUIRE(debrief.completed_objectives == 0);
@@ -196,7 +201,8 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload,
   ac6::MissionExecution::Checkpoint checkpoint;
   REQUIRE(session->save_checkpoint(checkpoint));
   const ac6::SessionSaveSnapshot snapshot{
-      kMissionId, store.index_sha256(), session->execution().snapshot(), {}, checkpoint};
+      kMissionId, store.index_sha256(), session->execution().snapshot(),
+      session->campaign_snapshot(), checkpoint};
   std::unique_ptr<RetailSession> resumed = RetailSession::open(
       store, loadout,
       {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,

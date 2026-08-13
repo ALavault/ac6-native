@@ -2,6 +2,7 @@
 
 #include "ac6/retail_campaign_bundle.h"
 #include "ac6/retail_camera_table.h"
+#include "ac6/retail_mission_world_bundle.h"
 
 #include <algorithm>
 #include <array>
@@ -174,7 +175,8 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
     return nullptr;
   }
   std::unique_ptr<RetailSession> session = open_parsed(
-      std::move(*mission->scenario_payload()), std::move(*mission->scenario()), config);
+      std::move(*mission->scenario_payload()), std::move(*mission->scenario()), config,
+      &store, loadout);
   if (session == nullptr) return nullptr;
   session->bundle_ = RetailSessionBundle{
       mission->data_table_entry(), loadout, mission->content_index_sha256(),
@@ -201,7 +203,9 @@ std::unique_ptr<RetailSession> RetailSession::open(std::vector<std::uint8_t> byt
 
 std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payload,
                                                            MissionScenario scenario,
-                                                           RetailSessionConfig config) {
+                                                           RetailSessionConfig config,
+                                                           const RetailContentStore* store,
+                                                           CampaignLoadout loadout) {
   const std::optional<RetailCameraModeSelection> camera_mode =
       resolve_retail_camera_mode(config.camera_mode_word);
   if (!camera_mode.has_value()) return nullptr;
@@ -227,15 +231,56 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
   session->world_ = std::make_unique<RetailWorld>(std::move(*world));
   session->script_ = MissionScriptRunner::from(*session->scenario_);
 
-  // The mission declares no external asset, and that is a statement, not an
-  // omission: visual parity is out of JF's scope, so the session does not
-  // pretend to resolve retail archives. mission_ready therefore means what is
-  // left of it - the scenario is in gameplay.
-  session->definition_ = std::make_unique<MissionDefinition>(
-      MissionDefinition{config.mission_id, MissionFamily::Unknown, {}});
+  std::vector<AssetId> resource_ids;
+  if (store != nullptr) {
+    const std::uint32_t campaign_entry =
+        kPalCampaignDataTableEntries[config.mission_id - 1];
+    const std::optional<std::uint32_t> world_entry =
+        mission_world_data_table_entry(config.mission_id);
+    resource_ids.push_back(campaign_entry);
+    // Bounded store fixtures may import only the scenario root. The product
+    // cache adds the world root when present; absence here keeps the parser
+    // boundary testable without manufacturing a resource identity.
+    if (world_entry.has_value() && store->find(*world_entry) != nullptr) {
+      resource_ids.push_back(*world_entry);
+    }
+    std::sort(resource_ids.begin(), resource_ids.end());
+  }
+  session->definition_ = std::make_unique<MissionDefinition>(MissionDefinition{
+      config.mission_id,
+      store == nullptr ? MissionFamily::Unknown : MissionFamily::AirIntercept,
+      resource_ids});
   session->assets_ = std::make_unique<MissionAssetDatabase>();
+  if (store != nullptr) {
+    for (const AssetId resource_id : resource_ids) {
+      const RetailContentRecord* record = store->find(resource_id);
+      if (record == nullptr || record->payload_sha256 == Sha256Digest{} ||
+          record->expanded_size == 0) return nullptr;
+      AssetRecord asset;
+      asset.id = resource_id;
+      asset.relative_path = "retail-cache://DATA.TBL/" + std::to_string(resource_id);
+      asset.sha256 = sha256_hex(record->payload_sha256);
+      asset.byte_size = record->expanded_size;
+      if (!session->assets_->add(std::move(asset))) return nullptr;
+    }
+    const std::uint32_t objective_count = static_cast<std::uint32_t>(
+        session->world_->objectives.find_by_mission(config.mission_id).size());
+    const CampaignMissionSpec spec{
+        config.mission_id,
+        {config.mission_id, kPalCampaignDataTableEntries[config.mission_id - 1],
+         kPalCampaignDataTableEntries[config.mission_id - 1]},
+        objective_count,
+        {}};
+    if (!loadout.valid() || !session->campaign_.add(spec) ||
+        !session->campaign_.finalize() ||
+        !session->campaign_.enter_briefing(config.mission_id) ||
+        !session->campaign_.set_loadout(config.mission_id, loadout) ||
+        !session->campaign_.begin(config.mission_id)) return nullptr;
+    session->campaign_enabled_ = true;
+  }
   session->execution_ = std::make_unique<MissionExecution>(
-      *session->definition_, session->assets_.get(), &session->world_->objectives);
+      *session->definition_, session->assets_.get(), &session->world_->objectives,
+      nullptr, session->campaign_enabled_ ? &session->campaign_ : nullptr);
 
   MissionLaunchDefinition launch;
   launch.mission_id = config.mission_id;
@@ -526,6 +571,10 @@ bool RetailSession::restore_save(const SessionSaveSnapshot& snapshot) noexcept {
                   snapshot.content_index_sha256.end(),
                   [](std::uint8_t byte) { return byte == 0; }) ||
       snapshot.content_index_sha256 != bundle_->content_index_sha256) {
+    return false;
+  }
+  if (campaign_enabled_ && !snapshot.campaign.completed.empty() &&
+      !campaign_.restore(snapshot.campaign)) {
     return false;
   }
   return restore_checkpoint(*snapshot.checkpoint);
