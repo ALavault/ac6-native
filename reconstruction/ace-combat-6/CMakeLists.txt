@@ -109,7 +109,8 @@ if(AC6_BUILD_PLATFORM)
     src/vulkan_resources.cpp
     src/vulkan_pipelines.cpp
     src/vulkan_commands.cpp
-    src/vulkan_readback.cpp)
+    src/vulkan_readback.cpp
+    src/vulkan_present.cpp)
   target_include_directories(ac6_vulkan_backend PUBLIC include)
   target_link_libraries(ac6_vulkan_backend PUBLIC Vulkan::Vulkan)
   target_compile_features(ac6_vulkan_backend PUBLIC cxx_std_20)

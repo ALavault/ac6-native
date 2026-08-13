@@ -80,6 +80,7 @@ struct VulkanPipelineResource {
 
 struct VulkanBackendState {
   VkInstance instance{VK_NULL_HANDLE};
+  bool owns_instance{true};
   VkPhysicalDevice physical_device{VK_NULL_HANDLE};
   VkDevice device{VK_NULL_HANDLE};
   VkQueue queue{VK_NULL_HANDLE};
@@ -89,6 +90,14 @@ struct VulkanBackendState {
   VkDescriptorPool texture_descriptor_pool{VK_NULL_HANDLE};
   VkPhysicalDeviceMemoryProperties memory_properties{};
   std::uint32_t queue_family{};
+  VkSurfaceKHR present_surface{VK_NULL_HANDLE};
+  VkSwapchainKHR present_swapchain{VK_NULL_HANDLE};
+  VkFormat present_format{VK_FORMAT_UNDEFINED};
+  VkExtent2D present_extent{};
+  std::vector<VkImage> present_images;
+  std::vector<VkImageView> present_views;
+  std::vector<bool> present_initialized;
+  VkFence present_fence{VK_NULL_HANDLE};
   std::uint64_t next_handle{1U};
   RenderDeviceCaps caps;
   std::unordered_map<std::uint64_t, VulkanMeshResource> meshes;
@@ -134,5 +143,8 @@ void record_texture_transition(VkCommandBuffer commands, VkImage image,
                                             VkImage image, VkImageView& view) noexcept;
 void destroy_vulkan_texture(VulkanBackendState& state,
                             VulkanTextureResource& texture) noexcept;
+void destroy_present_swapchain(VulkanBackendState& state) noexcept;
+bool create_present_swapchain(VulkanBackendState& state,
+                              std::uint32_t width, std::uint32_t height) noexcept;
 
 }  // namespace ac6

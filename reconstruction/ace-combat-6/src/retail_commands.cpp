@@ -182,8 +182,10 @@ struct NativeGraphics final {
   VulkanDevice device;
   VulkanSwapchain swapchain;
   VulkanFramePresenter presenter;
+  bool surface_only{};
 
-  bool initialize(std::uint32_t width, std::uint32_t height) noexcept {
+  bool initialize(std::uint32_t width, std::uint32_t height,
+                  bool surface_only_mode = false) noexcept {
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO)) return false;
     video_initialized = true;
     if (!SDL_Vulkan_LoadLibrary(nullptr)) return false;
@@ -192,8 +194,10 @@ struct NativeGraphics final {
     if (!SdlVulkanSurface::required_instance_extensions(extensions) ||
         !instance.create(extensions) ||
         !window.create("ac6-native", width, height, true, false) ||
-        !surface.create(window, instance.handle()) ||
-        !device.create(instance.handle(), surface.handle()) ||
+        !surface.create(window, instance.handle())) return false;
+    surface_only = surface_only_mode;
+    if (surface_only) return true;
+    if (!device.create(instance.handle(), surface.handle()) ||
         !swapchain.create(device, surface.handle(), width, height) ||
         !presenter.create(device, swapchain)) return false;
     return true;
@@ -262,10 +266,15 @@ class NativeMission01GpuRenderer final {
   NativeMission01GpuRenderer(const NativeMission01GpuRenderer&) = delete;
   NativeMission01GpuRenderer& operator=(const NativeMission01GpuRenderer&) = delete;
 
-  bool initialize(const RetailContentStore& store) {
-    auto created = VulkanBackend::create();
+  bool initialize(const RetailContentStore& store, const NativeGraphics& graphics,
+                  const bool direct_present) {
+    auto created = direct_present
+        ? VulkanBackend::create_for_surface(graphics.instance.handle(),
+                                            graphics.surface.handle(), 1280U, 720U)
+        : VulkanBackend::create();
     if (!created) return false;
     backend_ = std::move(created.backend);
+    direct_present_ = direct_present;
     target_ = backend_->create_render_target(1280U, 720U, false);
     if (!target_) return false;
 
@@ -308,9 +317,15 @@ class NativeMission01GpuRenderer final {
     if (!resources_ || !scene_.has_value() || !resources_->render(scene_->scene())) {
       return false;
     }
+    if (direct_present_) {
+      pixels.clear();
+      return backend_->present_target(target_);
+    }
     pixels = backend_->readback_rgba8(target_);
     return pixels.size() == 1280U * 720U * 4U;
   }
+
+  bool direct_present() const noexcept { return direct_present_; }
 
   const retail::RetailMission01VulkanSceneReport* report() const noexcept {
     return scene_.has_value() ? &scene_->report() : nullptr;
@@ -321,13 +336,15 @@ class NativeMission01GpuRenderer final {
   std::unique_ptr<VulkanSceneResourceCache> resources_;
   std::optional<retail::RetailMission01VulkanScene> scene_;
   VulkanRenderTargetHandle target_{};
+  bool direct_present_{};
 };
 
 bool render_frame(NativeGraphics& graphics, NativeMission01GpuRenderer& renderer,
                   std::vector<std::uint8_t>& pixels,
                   const retail::RetailSessionFrame& frame) {
   (void)frame;
-  return renderer.render(pixels) && graphics.present_rgba8(pixels, 1280U, 720U);
+  if (!renderer.render(pixels)) return false;
+  return renderer.direct_present() || graphics.present_rgba8(pixels, 1280U, 720U);
 }
 
 std::optional<retail::Mission01CpuFrame> render_retail_scene(
@@ -454,7 +471,8 @@ int run_play_impl(const Options& options) {
     }
   }
   NativeGraphics graphics;
-  if (!graphics.initialize(1280, 720)) {
+  const bool direct_vulkan = options.scene_capture.empty() && options.capture.empty();
+  if (!graphics.initialize(1280, 720, direct_vulkan)) {
     std::fprintf(stderr,
                  "ac6_retail=fail error=vulkan_unavailable detail=interactive_backend\n");
     return 125;
@@ -467,7 +485,7 @@ int run_play_impl(const Options& options) {
   std::optional<NativeMission01GpuRenderer> gpu_renderer;
   if (options.scene_capture.empty()) {
     gpu_renderer.emplace();
-    if (!gpu_renderer->initialize(store)) {
+    if (!gpu_renderer->initialize(store, graphics, direct_vulkan)) {
       std::fprintf(stderr,
                    "ac6_retail=fail error=vulkan_scene_unavailable "
                    "detail=mission01_clip_upload\n");

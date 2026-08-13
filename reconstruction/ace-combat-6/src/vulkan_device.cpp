@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <utility>
 #include <vector>
 
 namespace ac6 {
@@ -30,7 +31,8 @@ struct DeviceCandidate {
   return std::nullopt;
 }
 
-[[nodiscard]] std::optional<DeviceCandidate> select_device(VkInstance instance) {
+[[nodiscard]] std::optional<DeviceCandidate> select_device(
+    VkInstance instance, VkSurfaceKHR surface = VK_NULL_HANDLE) {
   std::uint32_t count = 0;
   if (vkEnumeratePhysicalDevices(instance, &count, nullptr) != VK_SUCCESS ||
       count == 0U) {
@@ -44,6 +46,14 @@ struct DeviceCandidate {
   for (const VkPhysicalDevice device : devices) {
     const auto queue_family = graphics_queue_family(device);
     if (!queue_family) continue;
+    if (surface != VK_NULL_HANDLE) {
+      VkBool32 present = VK_FALSE;
+      if (vkGetPhysicalDeviceSurfaceSupportKHR(device, *queue_family, surface,
+                                               &present) != VK_SUCCESS ||
+          present == VK_FALSE) {
+        continue;
+      }
+    }
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(device, &properties);
     if (properties.apiVersion < VK_API_VERSION_1_3) continue;
@@ -147,9 +157,10 @@ VulkanBackend::~VulkanBackend() {
     if (state_->command_pool != VK_NULL_HANDLE) {
       vkDestroyCommandPool(state_->device, state_->command_pool, nullptr);
     }
+    destroy_present_swapchain(*state_);
     vkDestroyDevice(state_->device, nullptr);
   }
-  if (state_->instance != VK_NULL_HANDLE) {
+  if (state_->owns_instance && state_->instance != VK_NULL_HANDLE) {
     vkDestroyInstance(state_->instance, nullptr);
   }
 }
@@ -277,6 +288,106 @@ VulkanBackendCreateResult VulkanBackend::create() {
   state->caps.device_name = properties.deviceName;
 
   result.backend = std::unique_ptr<VulkanBackend>(new VulkanBackend(std::move(state)));
+  return result;
+}
+
+VulkanBackendCreateResult VulkanBackend::create_for_surface(
+    const VkInstance instance, const VkSurfaceKHR surface,
+    const std::uint32_t width, const std::uint32_t height) {
+  VulkanBackendCreateResult result;
+  auto state = std::make_unique<VulkanBackendState>();
+  const auto fail = [&](const VulkanBackendError error) {
+    result.error = error;
+    result.backend = std::unique_ptr<VulkanBackend>(
+        new VulkanBackend(std::move(state)));
+    return std::move(result);
+  };
+  if (instance == VK_NULL_HANDLE || surface == VK_NULL_HANDLE || width == 0U ||
+      height == 0U) {
+    return fail(VulkanBackendError::instance_creation_failed);
+  }
+  state->instance = instance;
+  state->owns_instance = false;
+  state->present_surface = surface;
+  const auto selected = select_device(instance, surface);
+  if (!selected) return fail(VulkanBackendError::physical_device_unavailable);
+  state->physical_device = selected->device;
+  state->queue_family = selected->queue_family;
+  const float priority = 1.0F;
+  const VkDeviceQueueCreateInfo queue_info{
+      .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .queueFamilyIndex = state->queue_family,
+      .queueCount = 1,
+      .pQueuePriorities = &priority,
+  };
+  const char* extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  const VkDeviceCreateInfo device_info{
+      .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = 0,
+      .queueCreateInfoCount = 1,
+      .pQueueCreateInfos = &queue_info,
+      .enabledLayerCount = 0,
+      .ppEnabledLayerNames = nullptr,
+      .enabledExtensionCount = 1,
+      .ppEnabledExtensionNames = extensions,
+      .pEnabledFeatures = nullptr,
+  };
+  if (vkCreateDevice(state->physical_device, &device_info, nullptr,
+                     &state->device) != VK_SUCCESS) {
+    return fail(VulkanBackendError::device_creation_failed);
+  }
+  vkGetDeviceQueue(state->device, state->queue_family, 0, &state->queue);
+  vkGetPhysicalDeviceMemoryProperties(state->physical_device,
+                                      &state->memory_properties);
+  const VkCommandPoolCreateInfo pool_info{
+      .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+      .pNext = nullptr,
+      .flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT |
+               VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+      .queueFamilyIndex = state->queue_family,
+  };
+  if (vkCreateCommandPool(state->device, &pool_info, nullptr,
+                          &state->command_pool) != VK_SUCCESS) {
+    return fail(VulkanBackendError::command_pool_creation_failed);
+  }
+  VkPhysicalDeviceProperties properties{};
+  VkPhysicalDeviceFeatures features{};
+  VkFormatProperties depth_properties{};
+  VkFormatProperties rgba8_properties{};
+  VkFormatProperties bgra8_properties{};
+  vkGetPhysicalDeviceProperties(state->physical_device, &properties);
+  vkGetPhysicalDeviceFeatures(state->physical_device, &features);
+  vkGetPhysicalDeviceFormatProperties(state->physical_device,
+                                      VK_FORMAT_D32_SFLOAT, &depth_properties);
+  vkGetPhysicalDeviceFormatProperties(state->physical_device,
+                                      VK_FORMAT_R8G8B8A8_UNORM, &rgba8_properties);
+  vkGetPhysicalDeviceFormatProperties(state->physical_device,
+                                      VK_FORMAT_B8G8R8A8_UNORM, &bgra8_properties);
+  state->caps.api_version = properties.apiVersion;
+  state->caps.vendor_id = properties.vendorID;
+  state->caps.device_id = properties.deviceID;
+  state->caps.max_image_dimension_2d = properties.limits.maxImageDimension2D;
+  state->caps.max_sampler_anisotropy = properties.limits.maxSamplerAnisotropy;
+  state->caps.discrete_gpu = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+  state->caps.depth_d32 = (depth_properties.optimalTilingFeatures &
+                           VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0U;
+  state->caps.sampler_anisotropy = features.samplerAnisotropy != VK_FALSE;
+  state->caps.color_rgba8_unorm =
+      (rgba8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0U;
+  state->caps.color_bgra8_unorm =
+      (bgra8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) != 0U;
+  state->caps.sampled_rgba8_unorm =
+      (rgba8_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) != 0U;
+  state->caps.device_name = properties.deviceName;
+  if (!create_present_swapchain(*state, width, height)) {
+    return fail(VulkanBackendError::physical_device_unavailable);
+  }
+  state->caps.presentation_fifo = true;
+  result.backend = std::unique_ptr<VulkanBackend>(
+      new VulkanBackend(std::move(state)));
   return result;
 }
 

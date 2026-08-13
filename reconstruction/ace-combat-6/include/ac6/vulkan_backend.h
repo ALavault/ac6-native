@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include <vulkan/vulkan.h>
+
 namespace ac6 {
 
 enum class VulkanBackendError : std::uint8_t {
@@ -143,6 +145,12 @@ class VulkanBackend final {
   ~VulkanBackend();
 
   [[nodiscard]] static VulkanBackendCreateResult create();
+  // Uses an SDL-qualified instance/surface supplied by the platform layer and
+  // keeps presentation on the same Vulkan device as scene resources. The
+  // backend never destroys the caller-owned instance or surface.
+  [[nodiscard]] static VulkanBackendCreateResult create_for_surface(
+      VkInstance instance, VkSurfaceKHR surface,
+      std::uint32_t width, std::uint32_t height);
   [[nodiscard]] const RenderDeviceCaps& caps() const noexcept;
 
   [[nodiscard]] VulkanMeshHandle create_mesh(
@@ -227,6 +235,9 @@ class VulkanBackend final {
       const std::array<float, 16>& object_to_clip) noexcept;
   [[nodiscard]] std::vector<std::uint8_t> readback_rgba8(
       VulkanRenderTargetHandle target) noexcept;
+  // GPU-only copy/present for the surface-backed path. This is deliberately
+  // separate from readback_rgba8, which remains a diagnostic capture API.
+  [[nodiscard]] bool present_target(VulkanRenderTargetHandle target) noexcept;
 
   [[nodiscard]] std::size_t live_mesh_count() const noexcept;
   [[nodiscard]] std::size_t live_textured_mesh_count() const noexcept;
