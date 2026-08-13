@@ -635,6 +635,44 @@ int main(int argc, char** argv) {
   fire_primary.buttons = 0x1000u;
   (void)combat_probe->tick(kFixedDt, fire_primary);
   REQUIRE(combat_probe->execution().combat().active_projectiles() == 1);
+
+  // Controller lifecycle is part of the product session, not an external
+  // event injection: Start pauses/resumes on its rising edge and Back restores
+  // the exact launch cursor, world and combat state.
+  std::unique_ptr<RetailSession> lifecycle = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::QualifiedRuntime});
+  REQUIRE(lifecycle != nullptr);
+  const ac6::retail::RetailSessionFrame before_pause = lifecycle->tick(kFixedDt, {});
+  REQUIRE(before_pause.world.tick == 1);
+  ac6::InputFrame start_button{};
+  start_button.buttons = 0x0010u;
+  const ac6::retail::RetailSessionFrame paused = lifecycle->tick(kFixedDt, start_button);
+  REQUIRE(lifecycle->state() == ac6::ScenarioState::Paused);
+  REQUIRE(paused.world.tick == before_pause.world.tick);
+  // Holding Start does not retrigger the toggle, and a paused frame does not
+  // advance flight or the retail script.
+  const ac6::retail::RetailSessionFrame held_start = lifecycle->tick(kFixedDt, start_button);
+  REQUIRE(lifecycle->state() == ac6::ScenarioState::Paused);
+  REQUIRE(held_start.world.tick == paused.world.tick);
+  const ac6::retail::RetailSessionFrame released_start = lifecycle->tick(kFixedDt, {});
+  REQUIRE(released_start.world.tick == paused.world.tick);
+  const ac6::retail::RetailSessionFrame resumed = lifecycle->tick(kFixedDt, start_button);
+  REQUIRE(lifecycle->state() == ac6::ScenarioState::Gameplay);
+  REQUIRE(resumed.world.tick == paused.world.tick + 1);
+  REQUIRE(lifecycle->restart());
+  REQUIRE(lifecycle->state() == ac6::ScenarioState::Gameplay);
+  REQUIRE(lifecycle->execution().snapshot().tick == 0);
+  REQUIRE(lifecycle->script().sub_mission() == 0 && lifecycle->script().step() == 0);
+  REQUIRE(lifecycle->target_entity() == 0);
+  REQUIRE(lifecycle->execution().combat().active_projectiles() == 0);
+  ac6::InputFrame back_button{};
+  back_button.buttons = 0x0020u;
+  const ac6::retail::RetailSessionFrame restarted = lifecycle->tick(kFixedDt, back_button);
+  REQUIRE(restarted.world.tick == 0);
+  REQUIRE(lifecycle->state() == ac6::ScenarioState::Gameplay);
+
   REQUIRE(!probe->scenario().flag_orders().empty());
   const ac6::retail::ScenarioFlagOrder& first_flag =
       probe->scenario().flag_orders().front();

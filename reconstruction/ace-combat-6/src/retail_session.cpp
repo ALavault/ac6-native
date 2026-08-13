@@ -22,6 +22,8 @@ constexpr std::uint32_t kRetailSequencerVersion = 1;
 constexpr std::size_t kRetailSequencerMaximumEntries = 4096;
 constexpr std::uint16_t kTargetButton = 0x4000u;  // X
 constexpr std::uint16_t kFireButton = 0x1000u;    // A
+constexpr std::uint16_t kStartButton = 0x0010u;  // Start
+constexpr std::uint16_t kBackButton = 0x0020u;   // Back
 constexpr std::uint32_t kPrimaryWeaponId = 1u;
 
 void append_u32(std::vector<std::uint8_t>& bytes, std::uint32_t value) {
@@ -259,6 +261,12 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
   (void)session->world_->sequencer.select(session->script_.sub_mission(), 0.0f);
   (void)session->resolve_tag7_conditions();
   session->track_objective(session->script_.sub_mission());
+  // Capture the state immediately after the retail entry step. This is the
+  // controller's restart boundary, and deliberately includes the script
+  // cursor and sequencer rather than reconstructing either from a mission id.
+  MissionExecution::Checkpoint launch_checkpoint;
+  if (!session->save_checkpoint(launch_checkpoint)) return nullptr;
+  session->launch_checkpoint_ = std::move(launch_checkpoint);
   return session;
 }
 
@@ -286,10 +294,70 @@ EntityId RetailSession::target_entity() const noexcept {
   return execution_ == nullptr ? 0 : execution_->locked_target();
 }
 
+bool RetailSession::pause() noexcept {
+  return execution_ != nullptr && execution_->dispatch({EventType::Pause, player_entity_});
+}
+
+bool RetailSession::resume() noexcept {
+  return execution_ != nullptr && execution_->dispatch({EventType::Resume, player_entity_});
+}
+
+bool RetailSession::toggle_pause() noexcept {
+  if (execution_ == nullptr) return false;
+  if (execution_->scenario().state() == ScenarioState::Gameplay) return pause();
+  if (execution_->scenario().state() == ScenarioState::Paused) return resume();
+  return false;
+}
+
+bool RetailSession::restart() noexcept {
+  if (!launch_checkpoint_.has_value()) return false;
+  return restore_checkpoint(*launch_checkpoint_);
+}
+
+RetailSessionFrame RetailSession::frame_from_snapshot(InputFrame input) const noexcept {
+  RetailSessionFrame frame;
+  const RuntimeSnapshot snapshot = execution_->snapshot();
+  frame.world.tick = snapshot.tick;
+  frame.world.mission_id = mission_id_;
+  frame.world.mission_ready = false;
+  frame.world.position_x = snapshot.position_x;
+  frame.world.position_y = snapshot.position_y;
+  frame.world.position_z = snapshot.position_z;
+  frame.world.pitch = snapshot.pitch;
+  frame.world.roll = snapshot.roll;
+  frame.world.yaw = snapshot.yaw;
+  frame.world.speed = 0.0f;
+  frame.world.active_units = static_cast<std::uint32_t>(execution_->units().active_count());
+  frame.world.player_entity = player_entity_;
+  frame.world.camera_x = snapshot.position_x - 12.0f;
+  frame.world.camera_y = snapshot.position_y + 3.0f;
+  frame.world.camera_z = snapshot.position_z + 12.0f;
+  frame.world.camera_target_x = snapshot.position_x;
+  frame.world.camera_target_y = snapshot.position_y;
+  frame.world.camera_target_z = snapshot.position_z;
+  frame.world.input = input;
+  frame.camera_mode = camera_mode_;
+  frame.sub_mission = script_.sub_mission();
+  frame.step = script_.step();
+  frame.script_ended = script_.ended();
+  const std::optional<MissionArea> area = current_area();
+  if (area.has_value()) {
+    frame.player_inside_area = area_contains(
+        *area, ScenarioVector{snapshot.position_x, snapshot.position_y,
+                              snapshot.position_z});
+  }
+  return frame;
+}
+
 RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcept {
   RetailSessionFrame frame;
   const std::uint16_t pressed =
       static_cast<std::uint16_t>(input.buttons & ~previous_buttons_);
+  if ((pressed & kBackButton) != 0U && restart()) {
+    previous_buttons_ = input.buttons;
+    return frame_from_snapshot(input);
+  }
+  if ((pressed & kStartButton) != 0U) (void)toggle_pause();
   if ((pressed & kTargetButton) != 0U) (void)lock_nearest_target();
   if ((pressed & kFireButton) != 0U) (void)fire_primary();
   previous_buttons_ = input.buttons;

@@ -1045,6 +1045,8 @@ class MissionRuntime final {
   WorldFrame tick(float fixed_dt, InputFrame input);
   WorldFrame run_replay(float fixed_dt, const ReplayLog& replay);
   RuntimeSnapshot snapshot() const noexcept;
+  // The launch snapshot (tick zero) is a valid restart boundary. Ordinary
+  // callers still use restore() for any finite fixed-step snapshot.
   bool restore(RuntimeSnapshot snapshot) noexcept;
   bool set_definition(const MissionDefinition* definition) noexcept;
   void set_scenario(const MissionScenario* scenario) noexcept { scenario_ = scenario; }

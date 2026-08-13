@@ -121,6 +121,13 @@ class RetailSession final {
   bool fire_primary() noexcept;
   EntityId target_entity() const noexcept;
 
+  // Controller lifecycle actions. Start toggles the retail gameplay HSM
+  // between Gameplay and Paused; Back restores the sealed launch checkpoint.
+  bool pause() noexcept;
+  bool resume() noexcept;
+  bool toggle_pause() noexcept;
+  bool restart() noexcept;
+
   // One call of 0x82267370 through 0x822ED708's update branch. Callers invoke
   // this only after an external probe/runtime has qualified the retail guards.
   // The sub-mission the cursor leaves has its objective completed and the one
@@ -165,6 +172,7 @@ class RetailSession final {
                                                     RetailSessionConfig config);
   bool advance_qualified_scheduler() noexcept;
   void track_objective(std::uint32_t sub_mission) noexcept;
+  RetailSessionFrame frame_from_snapshot(InputFrame input) const noexcept;
   // Resolve tag-7 steps at the same dispatch boundary as retail. A satisfied
   // condition selects its target; an unsatisfied or sentinel condition calls
   // the normal script advance. The loop is bounded so a malformed self-jump
@@ -185,6 +193,7 @@ class RetailSession final {
   std::uint64_t tick_{};
   RetailScriptDrive script_drive_{RetailScriptDrive::ExternalProbe};
   std::uint16_t previous_buttons_{};
+  std::optional<MissionExecution::Checkpoint> launch_checkpoint_;
 };
 
 // The entity 0x820A7420 classified as the local player: the one record whose

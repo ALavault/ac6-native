@@ -233,7 +233,7 @@ RuntimeSnapshot MissionRuntime::snapshot() const noexcept {
 }
 
 bool MissionRuntime::restore(RuntimeSnapshot snapshot) noexcept {
-  if (snapshot.tick == 0 || !std::isfinite(snapshot.position_x) ||
+  if (!std::isfinite(snapshot.position_x) ||
       !std::isfinite(snapshot.position_y) || !std::isfinite(snapshot.position_z) ||
       !std::isfinite(snapshot.pitch) || !std::isfinite(snapshot.roll) ||
       !std::isfinite(snapshot.yaw) || !std::isfinite(snapshot.fixed_accumulator) ||
@@ -628,7 +628,7 @@ bool MissionExecution::restore(RuntimeSnapshot snapshot) noexcept {
 }
 
 bool MissionExecution::save_checkpoint(Checkpoint& checkpoint) const noexcept {
-  if (!launched_ || runtime_.snapshot().tick == 0 || combat_.active_projectiles() != 0) {
+  if (!launched_ || combat_.active_projectiles() != 0) {
     return false;
   }
   Checkpoint candidate;
