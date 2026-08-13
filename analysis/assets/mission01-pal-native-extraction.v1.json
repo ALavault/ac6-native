@@ -1,0 +1,98 @@
+{
+  "schema": "ac6.mission01-pal-native-extraction.v1",
+  "mission_id": 1,
+  "source": {
+    "region": "PAL",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "archives": {
+      "DATA00.PAC": {
+        "sha256": "c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
+        "size": 2267086848
+      },
+      "DATA01.PAC": {
+        "sha256": "eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4",
+        "size": 664141824
+      }
+    }
+  },
+  "roots": [
+    {
+      "data_tbl_index": 9,
+      "archive": "DATA00.PAC",
+      "source_offset": 16941056,
+      "stored_size": 13234234,
+      "expanded_size": 42446032,
+      "payload_sha256": "cd81e02189516cb5ba0c08d41659a90ae927fe2eccdad53cf5216db44b6d7a05"
+    },
+    {
+      "data_tbl_index": 119,
+      "archive": "DATA00.PAC",
+      "source_offset": 210927616,
+      "stored_size": 116266854,
+      "expanded_size": 165892096,
+      "payload_sha256": "e57cbeeb8f97a7a607ee1315b11a822b6af2d32581dcb7cbd557f1a6280e6dbd"
+    }
+  ],
+  "closure": {
+    "schema": "ac6.asset-closure.v1",
+    "extraction_manifest_sha256": "5cda5014a59147c7876921085e36b9f653b6049c05a934f652be0c07489928e2",
+    "closure_sha256": "c8d3860bd36fc06d7c2f7e3b4a9f4dd2dc0b1ee0229ea998c1d98efc7cd187d6",
+    "root_count": 2,
+    "unique_node_count": 1382,
+    "occurrence_count": 1615,
+    "fhm_node_count": 142,
+    "leaf_node_count": 1240,
+    "shared_node_count": 28,
+    "cross_root_shared_node_count": 1,
+    "parser_note_count": 0
+  },
+  "native_slices": {
+    "aircraft_ndxr": [
+      {"id": "o_f16c_lod1", "path": "root_m16_10.ndxr", "bytes": 142710, "vertices": 4435, "indices": 6468, "sha256": "115f6d224300ce2f8057def5faebfacbe88f3248ceedfb38302a531b21b4d54d"},
+      {"id": "o_f16c_lod2", "path": "root_m16_11.ndxr", "bytes": 55126, "vertices": 1650, "indices": 2474, "sha256": "98968f6c474ccabba0e3cfcb0bffeadd8cf2f3ed4fb40170e3a2bd62a78034c2"},
+      {"id": "o_f16c_lod3", "path": "root_m16_12.ndxr", "bytes": 3494, "vertices": 95, "indices": 128, "sha256": "92f721c5afbbf285f1ccc7271d53adaf44563f28423178dfa42c67aa72ba32bf"},
+      {"id": "o_f16c_lod4", "path": "root_m16_13.ndxr", "bytes": 758, "vertices": 6, "indices": 7, "sha256": "33cd3f4ed326ba8d72f66df418365d1837a2c794b8029ccd96e653f4cef58919"},
+      {"id": "r_f16c_dd", "path": "root_m76_6.ndxr", "bytes": 149798, "vertices": 3936, "indices": 5930, "sha256": "70dc3a7ddff7a358e8ea3430708c78b2742f3e202fd242bd0ab23f8e762541ae"}
+    ],
+    "terrain_ndxr": [
+      {"id": "mapparts_010", "path": "010_NDXR_ndxr.ndxr", "bytes": 53145, "vertices": 1300, "indices": 1626, "sha256": "64db82451822a31abe3cccd3f3865a1fb60ad5848e38615273d54efa11381177"},
+      {"id": "mapparts_059", "path": "059_NDXR_ndxr.ndxr", "bytes": 7049, "vertices": 148, "indices": 185, "sha256": "96464dade16c0e265d812dca2dc29226afa505e677624fb977cbcc3b947923af"},
+      {"id": "mapparts_063", "path": "063_NDXR_ndxr.ndxr", "bytes": 20537, "vertices": 517, "indices": 651, "sha256": "55c8568e208a1299caf86bcd9bbbecd2a3076eb8c8ca2da1174dc667f84312e5"},
+      {"id": "mapparts_144", "path": "144_NDXR_ndxr.ndxr", "bytes": 8121, "vertices": 168, "indices": 222, "sha256": "02310f4f8fe545646d9bd236a21530e8cc587cf9d8d0cc6def1930a1380db75e"},
+      {"id": "mapparts_163", "path": "163_NDXR_ndxr.ndxr", "bytes": 225801, "vertices": 6218, "indices": 9075, "sha256": "f424e8b51ffbb0d490984f4eb64880cd7a57d545cb36b366e5dcb31cd8077798"},
+      {"id": "mapparts_169", "path": "169_NDXR_ndxr.ndxr", "bytes": 36057, "vertices": 862, "indices": 1083, "sha256": "4377bc34d51585874807024babcde284515b43cdecec2fbaff3457aafbd37bed"}
+    ],
+    "terrain_ntxr": [
+      {"id": "terrain_atlas_000", "path": "000_NTXR.ntxr", "bytes": 22417408, "width": 4096, "height": 4096, "sha256": "4ac5fc0b222c4fef069a9290b6b90a052c6e0cffbac1c8171b67e1bc1fdd6984"},
+      {"id": "terrain_atlas_001", "path": "001_NTXR.ntxr", "bytes": 22417408, "width": 4096, "height": 4096, "sha256": "6f2533d430ea0d57312d466c454504e9ad53b633cd047d888d3512aa4b568a95"},
+      {"id": "terrain_atlas_002", "path": "002_NTXR.ntxr", "bytes": 22417408, "width": 4096, "height": 4096, "sha256": "4754fd3ca25857259d6935a1e72c1b28077f7b054b95214045f7d955d488aa49"},
+      {"id": "terrain_atlas_003", "path": "003_NTXR.ntxr", "bytes": 22417408, "width": 4096, "height": 4096, "sha256": "4816f48ba8a9a8039392bf3fb4f22e96f5b5f9352cff5966523e4725460b28d2"},
+      {"id": "terrain_atlas_004", "path": "004_NTXR.ntxr", "bytes": 22417408, "width": 4096, "height": 4096, "sha256": "d9e13d3a7b6f046687c5b3cf3d8f59d7ab17ed498b3f07501bb199da864c61e8"},
+      {"id": "terrain_atlas_005", "path": "005_NTXR.ntxr", "bytes": 22417408, "width": 4096, "height": 4096, "sha256": "3ff81bbb57e6a2549970ec8a2b9af5aed2b2bd6fa03e26198d4e14397b62fc91"},
+      {"id": "terrain_atlas_006", "path": "006_NTXR.ntxr", "bytes": 5640192, "width": 4096, "height": 1024, "sha256": "b232e7bb4f2259db1083e4ef6a2b5df9cbb4f66457ea6dc9a8e6c1d5928171fd"}
+    ]
+  },
+  "external_cache": {
+    "payload_root": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-pal-m01-extract-20260813-v1",
+    "closure_root": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-pal-m01-closure-20260813-v1",
+    "aircraft_slice_root": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-pal-m01-f16-slices-20260813-v1",
+    "terrain_slice_root": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-pal-m01-terrain-slices-20260813-v4",
+    "texture_slice_root": "/fastdata/lavaulta/auto-re-agent/.tools/ac6-pal-m01-terrain-textures-20260813-v1",
+    "versioned_payloads": false,
+    "rebuild_from": [
+      "tools/extract_ac6_pac.py",
+      "tools/build_ac6_asset_closure.py",
+      "tools/extract_ndxr_native_slices.py",
+      "tools/extract_ntxr_native_slices.py"
+    ]
+  },
+  "policy": {
+    "retail_containers_copied": false,
+    "payload_bytes_versioned": false,
+    "non_product_tracking_files_copied": false,
+    "excluded_path_patterns": ["(?i)tracker", "(?i)tracking", "(?i)telemetry"],
+    "semantic_names_inferred": false,
+    "native_use": "bounded content-addressed slices only"
+  }
+}
