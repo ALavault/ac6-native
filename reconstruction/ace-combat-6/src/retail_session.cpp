@@ -2,6 +2,7 @@
 
 #include "ac6/retail_campaign_bundle.h"
 #include "ac6/retail_camera_table.h"
+#include "ac6/retail_frontend_resources.h"
 #include "ac6/retail_mission_world_bundle.h"
 
 #include <algorithm>
@@ -26,6 +27,17 @@ constexpr std::uint16_t kFireButton = 0x1000u;    // A
 constexpr std::uint16_t kStartButton = 0x0010u;  // Start
 constexpr std::uint16_t kBackButton = 0x0020u;   // Back
 constexpr std::uint32_t kPrimaryWeaponId = 1u;
+
+FrontendDifficulty frontend_difficulty(RetailDifficulty difficulty) noexcept {
+  switch (difficulty) {
+    case RetailDifficulty::Easy: return FrontendDifficulty::Easy;
+    case RetailDifficulty::Hard:
+    case RetailDifficulty::Expert:
+    case RetailDifficulty::Ace: return FrontendDifficulty::Hard;
+    case RetailDifficulty::Normal: return FrontendDifficulty::Normal;
+  }
+  return FrontendDifficulty::Normal;
+}
 
 void append_u32(std::vector<std::uint8_t>& bytes, std::uint32_t value) {
   for (unsigned int shift = 0; shift < 32; shift += 8) {
@@ -230,6 +242,8 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
   session->scenario_ = std::make_unique<MissionScenario>(std::move(scenario));
   session->world_ = std::make_unique<RetailWorld>(std::move(*world));
   session->script_ = MissionScriptRunner::from(*session->scenario_);
+  const std::optional<RetailFrontendResources> frontend_resources =
+      store == nullptr ? std::nullopt : RetailFrontendResources::open(*store);
 
   std::vector<AssetId> resource_ids;
   if (store != nullptr) {
@@ -272,10 +286,31 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
         objective_count,
         {}};
     if (!loadout.valid() || !session->campaign_.add(spec) ||
-        !session->campaign_.finalize() ||
-        !session->campaign_.enter_briefing(config.mission_id) ||
-        !session->campaign_.set_loadout(config.mission_id, loadout) ||
-        !session->campaign_.begin(config.mission_id)) return nullptr;
+        !session->campaign_.finalize()) return nullptr;
+    if (frontend_resources.has_value()) {
+      // The complete PAL cache takes the same title -> new game -> briefing
+      // -> hangar -> loading -> mission route as the product frontend. The
+      // bounded scenario-only store has no font closure and stays on the
+      // direct campaign diagnostic path below.
+      MissionCatalog catalog;
+      if (!catalog.add(*session->definition_) ||
+          !session->frontend_.configure(
+              {frontend_difficulty(config.difficulty), FrontendControls::Normal,
+               FrontendLanguage::English}, *frontend_resources) ||
+          !session->frontend_.advance()) return nullptr;
+      session->frontend_.set_campaign(&session->campaign_);
+      if (!session->frontend_.select_mission(catalog, config.mission_id) ||
+          !session->frontend_.advance() ||
+          !session->frontend_.advance() ||
+          !session->frontend_.set_loadout(loadout) ||
+          !session->frontend_.advance() ||
+          !session->frontend_.advance()) return nullptr;
+      session->frontend_enabled_ = true;
+    } else if (!session->campaign_.enter_briefing(config.mission_id) ||
+               !session->campaign_.set_loadout(config.mission_id, loadout) ||
+               !session->campaign_.begin(config.mission_id)) {
+      return nullptr;
+    }
     session->campaign_enabled_ = true;
   }
   session->execution_ = std::make_unique<MissionExecution>(
@@ -340,11 +375,23 @@ EntityId RetailSession::target_entity() const noexcept {
 }
 
 bool RetailSession::pause() noexcept {
-  return execution_ != nullptr && execution_->dispatch({EventType::Pause, player_entity_});
+  if (execution_ == nullptr ||
+      !execution_->dispatch({EventType::Pause, player_entity_})) return false;
+  if (frontend_enabled_ && !frontend_.pause()) {
+    (void)execution_->dispatch({EventType::Resume, player_entity_});
+    return false;
+  }
+  return true;
 }
 
 bool RetailSession::resume() noexcept {
-  return execution_ != nullptr && execution_->dispatch({EventType::Resume, player_entity_});
+  if (execution_ == nullptr ||
+      !execution_->dispatch({EventType::Resume, player_entity_})) return false;
+  if (frontend_enabled_ && !frontend_.resume()) {
+    (void)execution_->dispatch({EventType::Pause, player_entity_});
+    return false;
+  }
+  return true;
 }
 
 bool RetailSession::toggle_pause() noexcept {
@@ -356,7 +403,11 @@ bool RetailSession::toggle_pause() noexcept {
 
 bool RetailSession::restart() noexcept {
   if (!launch_checkpoint_.has_value()) return false;
-  return restore_checkpoint(*launch_checkpoint_);
+  if (!restore_checkpoint(*launch_checkpoint_)) return false;
+  if (frontend_enabled_ && frontend_.state() == FrontendState::Pause) {
+    if (!frontend_.resume()) return false;
+  }
+  return true;
 }
 
 RetailSessionFrame RetailSession::frame_from_snapshot(InputFrame input) const noexcept {
@@ -413,6 +464,11 @@ RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcep
     (void)advance_script();
   }
   frame.world = execution_->tick(fixed_dt, input);
+  if (frontend_enabled_ && frontend_.state() == FrontendState::Mission &&
+      (execution_->scenario().state() == ScenarioState::Complete ||
+       execution_->scenario().state() == ScenarioState::Aborted)) {
+    (void)frontend_.enter_debrief(*execution_);
+  }
   frame.camera_mode = camera_mode_;
   tick_ = frame.world.tick;
   frame.sub_mission = script_.sub_mission();

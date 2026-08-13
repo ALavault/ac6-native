@@ -18,6 +18,7 @@
 // counter producers remain a separate boundary rather than being synthesized.
 
 #include "ac6/campaign_progression.h"
+#include "ac6/frontend_runtime.h"
 #include "ac6/product_runtime.h"
 #include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
@@ -105,6 +106,10 @@ class RetailSession final {
   const CampaignProgression* campaign() const noexcept {
     return campaign_enabled_ ? &campaign_ : nullptr;
   }
+  // A complete PAL cache owns the frontend handoff. Scenario-only fixtures
+  // intentionally keep this disabled and remain on the diagnostic path.
+  bool frontend_enabled() const noexcept { return frontend_enabled_; }
+  FrontendState frontend_state() const noexcept { return frontend_.state(); }
   CampaignSaveSnapshot campaign_snapshot() const {
     return campaign_enabled_ ? campaign_.snapshot() : CampaignSaveSnapshot{};
   }
@@ -194,6 +199,8 @@ class RetailSession final {
   std::unique_ptr<MissionAssetDatabase> assets_;
   CampaignProgression campaign_;
   bool campaign_enabled_{};
+  FrontendController frontend_;
+  bool frontend_enabled_{};
   std::unique_ptr<MissionExecution> execution_;
   MissionScriptRunner script_;
   std::optional<RetailSessionBundle> bundle_;

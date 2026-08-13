@@ -157,6 +157,8 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
         {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
          ac6::retail::RetailDifficulty::Normal});
     REQUIRE(qualified_session != nullptr);
+    REQUIRE(qualified_session->frontend_enabled());
+    REQUIRE(qualified_session->frontend_state() == ac6::FrontendState::Mission);
     ac6::retail::RetailSessionFrame qualified_frame =
         qualified_session->tick(kFixedDt, {});
     for (std::size_t tick = 1; tick < 8; ++tick) {
@@ -171,6 +173,19 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
                 qualified_session->script().ended() ? 1u : 0u,
                 static_cast<unsigned>(qualified_session->state()));
     if (mission_id == 1) {
+      std::unique_ptr<RetailSession> frontend_product = RetailSession::open(
+          store, {1, 1, true},
+          {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+           ac6::retail::RetailDifficulty::Normal,
+           ac6::retail::RetailScriptDrive::QualifiedRuntime});
+      REQUIRE(frontend_product != nullptr);
+      for (std::size_t tick = 0; tick < 8; ++tick) {
+        (void)frontend_product->tick(kFixedDt, {});
+      }
+      REQUIRE(frontend_product->state() == ac6::ScenarioState::Complete);
+      REQUIRE(frontend_product->frontend_state() == ac6::FrontendState::Debrief);
+      REQUIRE(frontend_product->debrief().outcome == ac6::MissionOutcome::Success);
+
       ac6::MissionExecution::Checkpoint checkpoint;
       REQUIRE(qualified_session->save_checkpoint(checkpoint));
       ac6::SessionSaveSnapshot snapshot{
