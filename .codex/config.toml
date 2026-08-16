@@ -5,5 +5,5 @@ default_subagent_reasoning_effort = "xhigh"
 
 [features.multi_agent_v2]
 enabled = true
-default_wait_timeout_ms = 900000
+default_wait_timeout_ms = 3600000
 max_wait_timeout_ms = 3600000
