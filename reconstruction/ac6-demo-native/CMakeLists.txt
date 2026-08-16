@@ -6,11 +6,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(ac6-demo-native-core STATIC
+set(AC6DEMO_NATIVE_SOURCES
     src/content_store.cpp
+    src/posix_fd.cpp
     src/sha256.cpp
     src/vfs.cpp
 )
+add_library(ac6-demo-native-core STATIC ${AC6DEMO_NATIVE_SOURCES})
 target_include_directories(ac6-demo-native-core
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -26,16 +28,49 @@ target_compile_features(ac6-demo-native PRIVATE cxx_std_20)
 
 include(CTest)
 if(BUILD_TESTING)
+    # Fixture/profile hooks are compiled into a test-only copy of the core.
+    # The production library and CLI are deliberately built without this macro.
+    add_library(ac6-demo-native-test-core STATIC ${AC6DEMO_NATIVE_SOURCES})
+    target_include_directories(ac6-demo-native-test-core
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+    target_compile_features(ac6-demo-native-test-core PUBLIC cxx_std_20)
+    target_compile_definitions(ac6-demo-native-test-core
+        PRIVATE AC6DEMO_NATIVE_ENABLE_TESTING=1
+    )
+    target_compile_options(ac6-demo-native-test-core PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra;-Wpedantic;-Wconversion>
+    )
+
     add_executable(ac6-demo-native-content-tests tests/content_store_tests.cpp)
-    target_link_libraries(ac6-demo-native-content-tests PRIVATE ac6-demo-native-core)
+    target_link_libraries(ac6-demo-native-content-tests PRIVATE ac6-demo-native-test-core)
     target_compile_features(ac6-demo-native-content-tests PRIVATE cxx_std_20)
+    target_compile_definitions(ac6-demo-native-content-tests
+        PRIVATE AC6DEMO_NATIVE_ENABLE_TESTING=1
+    )
 
     add_executable(ac6-demo-native-vfs-tests tests/vfs_boundary_tests.cpp)
-    target_link_libraries(ac6-demo-native-vfs-tests PRIVATE ac6-demo-native-core)
+    target_link_libraries(ac6-demo-native-vfs-tests PRIVATE ac6-demo-native-test-core)
     target_compile_features(ac6-demo-native-vfs-tests PRIVATE cxx_std_20)
+    target_compile_definitions(ac6-demo-native-vfs-tests
+        PRIVATE AC6DEMO_NATIVE_ENABLE_TESTING=1
+    )
 
     add_test(NAME ac6-demo-native-content COMMAND ac6-demo-native-content-tests)
     add_test(NAME ac6-demo-native-vfs COMMAND ac6-demo-native-vfs-tests)
+
+    find_program(AC6DEMO_NATIVE_NM nm)
+    if(AC6DEMO_NATIVE_NM)
+        add_test(
+            NAME ac6-demo-native-production-surface
+            COMMAND ${CMAKE_COMMAND}
+                -DAC6DEMO_NM=${AC6DEMO_NATIVE_NM}
+                -DAC6DEMO_CORE=$<TARGET_FILE:ac6-demo-native-core>
+                -DAC6DEMO_CLI=$<TARGET_FILE:ac6-demo-native>
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/production_surface.cmake
+        )
+    endif()
 endif()
 
 install(TARGETS ac6-demo-native RUNTIME DESTINATION bin)

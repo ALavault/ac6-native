@@ -24,9 +24,6 @@ public:
     }
 
 private:
-    [[nodiscard]] std::optional<std::filesystem::path> resolve(
-        std::string_view guest_path, std::string* error) const;
-
     std::filesystem::path store_root_;
 };
 

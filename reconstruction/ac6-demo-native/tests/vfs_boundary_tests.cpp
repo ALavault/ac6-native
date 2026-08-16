@@ -57,6 +57,17 @@ Fixture make_fixture() {
     fixture.store = fixture.root / "store";
     fs::create_directories(fixture.source);
     fixture.profile = ac6demo_native::production_identity();
+    constexpr std::array<const char*, 9U> fixture_hashes = {
+        "28866794d33e5f58db1c4a8a14a59f4021d594b9fb610de521b0e7fd07a5f5e2",
+        "3c5180fe488bbeb3735fe966871a37db9a8ce3a92898e52d39263697977c9337",
+        "46624b152325958dfe55bade2dadb20b30aa15c6f5906e05d712465fa7ff808d",
+        "e35b4648e2379f379b99a0d5d78a78ab6f37d91365bb066f7dff2530ad7a712a",
+        "dea2e94b63c693367ac987abcf0ec18b4eb296bd3c9b63bdd622441126168e97",
+        "d23b72b1f0b801ddd207b17311a920f5870a1ba43b7dd088b33223f209aee074",
+        "632c409a6af7da9f9afb16c5dad1622005c27b72753380ec5f1c24102f0fc397",
+        "b7f30f7c122a7678bdd8069a5cb0395d47cb7325d7ae9e55e1a87c83d763f5b7",
+        "029fa331595b13a1da6a630e9ed04bed1e8b9cd653e0d65a5afca255f1ef8f11",
+    };
     for (std::size_t index = 0; index < fixture.profile.files.size(); ++index) {
         const std::string payload = "entry-" + std::to_string(index) + "-0123456789";
         const auto& expected = fixture.profile.files[index];
@@ -65,7 +76,7 @@ Fixture make_fixture() {
         output << payload;
         output.close();
         fixture.profile.files[index].size = payload.size();
-        fixture.profile.files[index].sha256 = ac6demo_native::sha256_file(path);
+        fixture.profile.files[index].sha256 = fixture_hashes[index];
     }
     ac6demo_native::ContentStore store(fixture.store);
     std::string error;
@@ -145,6 +156,17 @@ void test_marker_and_symlink_boundaries() {
     require(!ac6demo_native::testing::verify_fixture(store, fixture.profile, &error),
             "tampered marker rejects verification");
 
+    Fixture oversize_marker_fixture = make_fixture();
+    const fs::path oversize_generation = generation_path(oversize_marker_fixture.store);
+    {
+        std::ofstream marker(oversize_generation / ac6demo_native::store_marker_name(),
+                             std::ios::binary | std::ios::trunc);
+        marker << std::string(5000U, 'x');
+    }
+    ac6demo_native::Vfs oversize_vfs(oversize_marker_fixture.store);
+    require(!oversize_vfs.read("game:/Default.xex", 0U, 1U, &error).has_value(),
+            "oversized marker rejects before guest allocation");
+
     Fixture missing_marker_fixture = make_fixture();
     const fs::path missing_marker_generation = generation_path(missing_marker_fixture.store);
     std::error_code ec;
@@ -162,6 +184,14 @@ void test_marker_and_symlink_boundaries() {
     ac6demo_native::Vfs symlink_vfs(symlink_fixture.store);
     require(!symlink_vfs.read("game:/Default.xex", 0U, 1U, &error).has_value(),
             "published symlink rejected");
+
+    Fixture symlink_store_fixture = make_fixture();
+    const fs::path symlink_store = symlink_store_fixture.root / "store-link";
+    fs::create_symlink(symlink_store_fixture.store, symlink_store, ec);
+    require(!ec, "store symlink created");
+    ac6demo_native::Vfs symlink_store_vfs(symlink_store);
+    require(!symlink_store_vfs.read("game:/Default.xex", 0U, 1U, &error).has_value(),
+            "VFS store symlink rejected");
 }
 
 }  // namespace

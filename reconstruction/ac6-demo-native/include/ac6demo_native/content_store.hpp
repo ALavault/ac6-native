@@ -19,17 +19,21 @@ struct IdentityProfile {
     std::string product;
     std::string platform;
     std::string region;
+    std::string vfs_namespace;
+    bool supported = false;
     std::vector<ExpectedFile> files;
 };
 
 class ContentStore;
 
+#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
 namespace testing {
 bool import_fixture(ContentStore& store, const std::filesystem::path& source,
                     const IdentityProfile& profile, std::string* error = nullptr);
 bool verify_fixture(const ContentStore& store, const IdentityProfile& profile,
                     std::string* error = nullptr);
 }  // namespace testing
+#endif
 
 [[nodiscard]] const IdentityProfile& production_identity() noexcept;
 [[nodiscard]] const char* store_marker_name() noexcept;
@@ -51,17 +55,6 @@ public:
     [[nodiscard]] const std::filesystem::path& root() const noexcept;
 
 private:
-    friend bool testing::import_fixture(ContentStore&, const std::filesystem::path&,
-                                        const IdentityProfile&, std::string*);
-    friend bool testing::verify_fixture(const ContentStore&, const IdentityProfile&,
-                                        std::string*);
-
-    [[nodiscard]] bool import_with_profile(const std::filesystem::path& source,
-                                           const IdentityProfile& profile,
-                                           std::string* error) const;
-    [[nodiscard]] bool verify_with_profile(const IdentityProfile& profile,
-                                           std::string* error) const;
-
     std::filesystem::path root_;
 };
 

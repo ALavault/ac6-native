@@ -10,6 +10,7 @@
 #include <iostream>
 #include <span>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -57,6 +58,17 @@ Fixture make_fixture() {
     fixture.store = fixture.root / "store";
     fs::create_directories(fixture.source);
     fixture.profile = ac6demo_native::production_identity();
+    constexpr std::array<const char*, 9U> fixture_hashes = {
+        "24bfefcb6e74c711d738ab9c85f4b46c618811064680126aaab31f366e6d745e",
+        "6b4582cfe087a7dc262faec27674c167e1ee3ac9ce6067b72bfc428d22b24db8",
+        "9c8c0939a3a1012e3813962738531239b64c8ce7e3c40c3c915a208957da4fc3",
+        "0f43adb318b645b1aaa444ffb2859e2d9834364c182da22c6715b5151b3acb4d",
+        "d134a0f7aed318b5810a104e4198211b5ddb47416bed61f09cb1c8b64c2ca439",
+        "263f1bdc8f65f7ba15495955ce4a2cbd532a4902f6efa3f4c45c10e4e406295f",
+        "f7c32948afe52f85f9ec36064511443e5716347a4b6e45b98fa8e369a75b5ff1",
+        "5088008fc1fbef91958e5b6815e9624f9b665ec041819bf2ac7193f454bc2e1d",
+        "138383eea238817b70501b35db6a8c30833b076728e313707e8c6682f4398ae6",
+    };
     for (std::size_t index = 0; index < fixture.profile.files.size(); ++index) {
         const std::string payload = "synthetic-fixture-" + std::to_string(index) +
                                      "\nread-only identity test\n";
@@ -66,7 +78,7 @@ Fixture make_fixture() {
         output.write(payload.data(), static_cast<std::streamsize>(payload.size()));
         output.close();
         fixture.profile.files[index].size = payload.size();
-        fixture.profile.files[index].sha256 = ac6demo_native::sha256_file(path);
+        fixture.profile.files[index].sha256 = fixture_hashes[index];
     }
     return fixture;
 }
@@ -94,6 +106,15 @@ void test_sha256_vectors() {
     require(ac6demo_native::sha256_bytes(std::as_bytes(std::span(abc))) ==
                 "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
             "SHA-256 abc vector");
+    std::vector<std::byte> million(1000000U, std::byte{'a'});
+    require(ac6demo_native::sha256_bytes(million) ==
+                "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0",
+            "SHA-256 million-a vector");
+    Fixture fixture = make_fixture();
+    std::string error;
+    require(ac6demo_native::sha256_file(fixture.root / "does-not-exist", &error).empty() &&
+                !error.empty(),
+            "SHA-256 I/O error is reported");
 }
 
 void test_positive_and_rollback() {
@@ -166,6 +187,99 @@ void test_rejections() {
         require(!ac6demo_native::testing::import_fixture(store, fixture.source, profile),
                 "retail identity cannot be injected as production corpus");
     }
+    {
+        Fixture fixture = make_fixture();
+        auto profile = fixture.profile;
+        profile.schema = "wrong-schema";
+        ac6demo_native::ContentStore store(fixture.store);
+        std::string error;
+        require(!ac6demo_native::testing::import_fixture(store, fixture.source, profile, &error),
+                "metadata schema cannot be overridden");
+    }
+    {
+        Fixture fixture = make_fixture();
+        auto profile = fixture.profile;
+        profile.supported = true;
+        ac6demo_native::ContentStore store(fixture.store);
+        std::string error;
+        require(!ac6demo_native::testing::import_fixture(store, fixture.source, profile, &error),
+                "supported profile cannot be enabled");
+    }
+    {
+        Fixture fixture = make_fixture();
+        std::error_code ec;
+        fs::remove(fixture.source / "DATA.TBL", ec);
+        fs::create_symlink(fixture.source / "DATA00.PAC", fixture.source / "DATA.TBL", ec);
+        require(!ec && rejected(fixture), "source symlink swap rejected");
+    }
+    {
+        Fixture fixture = make_fixture();
+        std::error_code ec;
+        fs::create_directories(fixture.root / "other", ec);
+        fs::remove_all(fixture.store, ec);
+        fs::create_symlink(fixture.root / "other", fixture.store, ec);
+        require(!ec && rejected(fixture), "store symlink rejected");
+    }
+}
+
+void test_concurrent_imports_and_orphan_recovery() {
+    Fixture fixture = make_fixture();
+    fs::create_directories(fixture.store / ".staging-orphan");
+    {
+        std::ofstream orphan(fixture.store / ".staging-orphan" / "left-by-crash");
+        orphan << "orphan";
+    }
+    ac6demo_native::ContentStore first(fixture.store);
+    ac6demo_native::ContentStore second(fixture.store);
+    std::string first_error;
+    std::string second_error;
+    bool first_ok = false;
+    bool second_ok = false;
+    std::thread first_thread([&] {
+        first_ok = ac6demo_native::testing::import_fixture(
+            first, fixture.source, fixture.profile, &first_error);
+    });
+    std::thread second_thread([&] {
+        second_ok = ac6demo_native::testing::import_fixture(
+            second, fixture.source, fixture.profile, &second_error);
+    });
+    first_thread.join();
+    second_thread.join();
+    if (!first_ok || !second_ok) {
+        std::cerr << "concurrent import errors: " << first_error << " / " << second_error
+                  << '\n';
+    }
+    require(first_ok && second_ok, "concurrent imports are valid");
+    std::string error;
+    require(ac6demo_native::testing::verify_fixture(first, fixture.profile, &error),
+            "concurrent publication verifies");
+    require(fs::exists(fixture.store / ".staging-orphan" / "left-by-crash"),
+            "orphan staging is not deleted by another process");
+}
+
+void test_pointer_corruption_and_rollback() {
+    Fixture fixture = make_fixture();
+    ac6demo_native::ContentStore store(fixture.store);
+    std::string error;
+    require(ac6demo_native::testing::import_fixture(store, fixture.source, fixture.profile, &error),
+            "initial publication for pointer tests");
+    const fs::path pointer = fixture.store / "current";
+    std::ifstream before_input(pointer, std::ios::binary);
+    const std::string before((std::istreambuf_iterator<char>(before_input)),
+                             std::istreambuf_iterator<char>());
+    {
+        std::ofstream corrupt(pointer, std::ios::binary | std::ios::trunc);
+        corrupt << "not-a-generation\n";
+    }
+    require(!ac6demo_native::testing::import_fixture(store, fixture.source, fixture.profile,
+                                                       &error),
+            "corrupt pointer rejects import");
+    std::ifstream after_input(pointer, std::ios::binary);
+    const std::string after((std::istreambuf_iterator<char>(after_input)),
+                            std::istreambuf_iterator<char>());
+    require(after != before && after == "not-a-generation\n",
+            "corrupt pointer remains untouched");
+    require(!store.verify(&error), "corrupt pointer rejects production verify");
 }
 
 void test_separation() {
@@ -185,6 +299,8 @@ int main() {
     test_sha256_vectors();
     test_positive_and_rollback();
     test_rejections();
+    test_concurrent_imports_and_orphan_recovery();
+    test_pointer_corruption_and_rollback();
     test_separation();
     std::cout << "content store tests passed\n";
     return 0;

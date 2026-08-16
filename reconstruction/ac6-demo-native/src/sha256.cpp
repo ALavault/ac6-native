@@ -1,9 +1,9 @@
 #include "ac6demo_native/sha256.hpp"
 
+#include "posix_fd.hpp"
+
 #include <array>
-#include <fstream>
 #include <iomanip>
-#include <limits>
 #include <sstream>
 
 namespace ac6demo_native {
@@ -178,30 +178,16 @@ std::string sha256_bytes(std::span<const std::byte> bytes) {
 }
 
 std::string sha256_file(const std::filesystem::path& path, std::string* error) {
-    std::ifstream input(path, std::ios::binary);
+    detail::UniqueFd input(detail::open_regular_path(path, error));
     if (!input) {
-        if (error != nullptr) {
-            *error = "cannot open file";
-        }
         return {};
     }
-
-    Sha256 hasher;
-    std::array<char, 1024U * 1024U> buffer{};
-    while (input) {
-        input.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-        const std::streamsize count = input.gcount();
-        if (count > 0) {
-            hasher.update(buffer.data(), static_cast<std::size_t>(count));
-        }
-    }
-    if (!input.eof()) {
-        if (error != nullptr) {
-            *error = "cannot read file";
-        }
+    std::uint64_t size = 0;
+    bool regular = false;
+    if (!detail::stat_fd(input.get(), &size, &regular, error) || !regular) {
         return {};
     }
-    return hasher.final_hex();
+    return detail::sha256_fd(input.get(), size, error);
 }
 
 }  // namespace ac6demo_native
