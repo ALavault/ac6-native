@@ -15,7 +15,7 @@
   "source_anchors": [
     {
       "path": "reports/handoff/CURRENT.json",
-      "sha256": "3a92a96a149507133c07ce43d00d724526221fc640391a2fc0b7b7fd67f180dc",
+      "sha256": "f4913090e4d1821075f67ae3febd6b6bec0d983b630411863241a0e4fcbe9b37",
       "claim": "authoritative portfolio handoff; AC6 cycle 1761; supported=false"
     },
     {
