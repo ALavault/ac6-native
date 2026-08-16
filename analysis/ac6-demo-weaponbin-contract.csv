@@ -1,0 +1,28 @@
+offset,representation,minimal_semantics,grade,consumer_evidence,proof_or_boundary
+0x00,float32,engagement/acquisition range,A,demo:0x82252778 @ 0x82252A44-0x82252A78,"scaled, squared and compared with target distance squared"
+0x04,float32,maximum projectile travel distance / lifetime range,A-,demo:0x822A4698; demo:0x822A4978,fed with initial/target speed and optional acceleration into kinematic time solver demo:0x82286410
+0x08,float32,weapon/projectile base scalar,C,demo:0x822735A8 @ 0x82273668,copied to runtime+0x164; final operation still open
+0x0C,float32,engagement-cycle base delay component,A-,demo:0x82252778 @ 0x82252B30-0x82252B4C,threshold term field_0x0C + field_0x10 + modifier4*field_0x18
+0x10,float32,engagement-cycle fixed delay component; not damage,A,demo:0x82252778 @ 0x82252B3C-0x82252B4C,summed into a timer threshold; former damage hypothesis rejected
+0x14,float32,secondary timing/transition scalar,C,direct consumers not terminally typed,do not promote to cooldown without terminal counter
+0x18,float32,modifier-scaled engagement-cycle delay component,A-,demo:0x82252778 @ 0x82252B38-0x82252B4C,multiplied by modifier id 4 and summed into timer threshold
+0x1C,float32,secondary angular/kinematic parameter,C+,demo:0x822A4748; demo:0x822A4978,getter scaled by modifier id 9; stored into projectile kinematic record
+0x20,float32,vertical acceleration / gravity magnitude,A-,demo:0x822735A8 @ 0x82273638-0x82273644,negated into launch vector; standard profiles use 9.8
+0x24,float32,initial projectile speed relative to launcher,A-,demo:0x822A48A8; demo:0x822A4978,"initial kinematic speed, zero for gun and 600 for Strigon missile"
+0x28,float32,target/terminal projectile speed relative to launcher,A-,demo:0x822A47F8; demo:0x822A4978,"target speed, 4000 for gun and 2000 for Strigon missile"
+0x2C,float32,directional dispersion angle,A,demo:0x822735A8 and random-direction consumers,standard gun uses 3 degrees; Strigon missile 2 degrees
+0x30,float32,acquisition/launch cone half-angle,A,demo:0x82252778 @ 0x82252A7C-0x82252AA8,"scaled, converted by demo:0x82328BF8 and compared with direction dot product"
+0x34,float32,shot interval / burst step,A,demo:0x822735A8 @ 0x82273670-0x82273680,denominator of trunc(field_0x38 / field_0x34)
+0x38,float32,burst window / firing duration,A,demo:0x822735A8 @ 0x82273678-0x8227369C,numerator producing minimum-one burst count
+0x3C,u32/bitset,emitter/sub-channel multiplicity mask,B+,bit-population consumers,number of active bits is consumed; exact model-socket role open
+0x40,float32,tuning scalar,C,known direct consumers but terminal role open,retain neutral name
+0x44,float32,unknown,D,no terminal consumer qualified,retain unknown
+0x48,float32,unknown,D,no terminal consumer qualified,retain unknown
+0x4C,float32,random-vector scale,B,directional randomization consumers,scales random vector; physical role open
+0x50,float32,unknown,D,no terminal consumer qualified,retain unknown
+0x54,float32,projectile acceleration,B+,demo:0x822A4978 @ 0x822A4A08-0x822A4A1C,optional acceleration; zero in all demo WeaponBin records sampled
+0x58,float32,missile angular-rate/turn-limit parameter,B+,demo:0x822A4978 @ 0x822A4AA0-0x822A4ABC,converted degrees-to-radians; Strigon missile uses 60
+0x5C,u8,weapon family discriminator,A-,demo:0x82252778 family branches plus corpus clustering,1 gun; 2 missile/SAM; 3 flak; 5 bomber payload; 6 AA gun; 7 tank gun; 9 special; 13 naval/CIWS-like
+0x5D,u8,family flags/submode,B+,demo:0x822735A8 copies to runtime+0x168,standard gun=8; Strigon missile=40
+0x5E,u8,flags/reserved,C,compact terminal bytes,exact bits open
+0x5F,u8,flags/reserved,C,compact terminal bytes,exact bits open
