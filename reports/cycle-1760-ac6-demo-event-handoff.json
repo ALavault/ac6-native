@@ -1,0 +1,88 @@
+{
+  "schema": "ac6-demo-event-handoff/v1",
+  "cycle": 1760,
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "boundary_config_sha256": "4a87dd8c377638f6bddf308ee63025e314c5a3470507767070e2ad15c0e54506",
+    "binary_sha256": "e2b3baf16e968e0b45423046a5e8fe6437d0cfa55657c7ce65491c89719d7847"
+  },
+  "scope": {
+    "routes": ["neutral", "buttons_16"],
+    "backend": "vulkan",
+    "max_ticks": 5600,
+    "buttons_16_input": "--input-at 252,16,0,0,0,0,0,0,1",
+    "environment": [
+      "SDL_AUDIODRIVER=dummy",
+      "AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1",
+      "AC6_DEMO_EXPERIMENTAL_XMA_KICK=1",
+      "AC6_DEMO_WATCH_EVENT_HANDOFF=1",
+      "AC6_DEMO_WATCH_EVENT_HANDOFF_FOCUSED=1"
+    ],
+    "temporary_root": "/fastdata/lavaulta/tmp/ac6-cycle1760-event-handoff.IveLQv"
+  },
+  "routes": {
+    "neutral": {
+      "return_code": 4,
+      "report_sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+      "trace_sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+      "stderr_sha256": "f48e45689ac288de819eef8fa0208b1f86d7bb2642cc8eafe8bf4002da5c7f27"
+    },
+    "buttons_16": {
+      "return_code": 4,
+      "report_sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+      "trace_sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+      "stderr_sha256": "f48e45689ac288de819eef8fa0208b1f86d7bb2642cc8eafe8bf4002da5c7f27"
+    }
+  },
+  "result": {
+    "outcome": "max_ticks",
+    "completed_ticks": 5600,
+    "presents": 5463,
+    "milestones": {"frontend": false, "mission": false, "terminal": false},
+    "scheduler": {"threads": 23, "blocked": 23, "runnable": 0, "finished": 0},
+    "event_handoff": {
+      "handle": "0xE000004C",
+      "trace_record_cap": 32768,
+      "focused_log_ticks": [0, 1212],
+      "last_covered_tick": 1212,
+      "run_max_ticks": 5600,
+      "set_enter": 2176,
+      "event_wake": 2176,
+      "set_exit": 2176,
+      "signal_wait_resume": 962,
+      "signal_wait_block": 963,
+      "wait_single_block": 0,
+      "wait_single_resume": 0,
+      "thread_12_set_enter": 1212,
+      "wake_waiter_1": 963,
+      "resume_thread_1": 962,
+      "set_lr": "0x821A6AC4",
+      "wait_lr": "0x821A69CC",
+      "complete_set_wake_resume_chains": 962,
+      "log_cap_note": "The focused event trace is capped at 32768 records and its last covered tick is 1212; the final wake is not followed by a logged resume."
+    },
+    "stderr_byte_identical": true,
+    "graphics_or_readback_divergence": false,
+    "post_resume_guest_access_observed": false,
+    "post_resume_guest_access_observed_scope": "bounded_event_handoff_capsule",
+    "post_resume_guest_access_observed_note": "false means not observed in this bounded capsule; it does not establish that no access occurred before run tick 5600.",
+    "decision": "STOP_kernel_XAM_event_transport_boundary",
+    "decision_scope": "observation_boundary_only",
+    "decision_note": "STOP marks the kernel/XAM event-transport observation boundary; it is not a complete semantic conclusion."
+  },
+  "policy": {
+    "read_only": true,
+    "xenia_used": false,
+    "retail_or_historical_evidence_used": false,
+    "supported": false,
+    "frontend_promoted": false,
+    "native_parity_promoted": false
+  },
+  "source_report": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.md"
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "ac6-demo-reference-fsm-scaffold/v1",
+  "status": "scaffold-only",
+  "target_id": "ac6-demo-xbox360-pal",
+  "backend_contract": "emu-agent/v2",
+  "entry_state": "wait_boot",
+  "states": [
+    "wait_boot",
+    "press_start",
+    "navigate_frontend",
+    "wait_loading",
+    "stabilize_flight",
+    "navigate",
+    "acquire_target",
+    "attack",
+    "track_objective",
+    "terminal_success",
+    "terminal_failure"
+  ],
+  "transitions": [],
+  "controllers": {
+    "status": "unconfigured",
+    "gains": null,
+    "saturation": null,
+    "waypoints": []
+  },
+  "budgets": {
+    "status": "unconfigured",
+    "per_state_ticks": null,
+    "episode_ticks": null
+  },
+  "failure_policy": {
+    "missing_observation": "terminal_failure",
+    "replay_divergence": "terminal_failure",
+    "lost_target": "terminal_failure",
+    "budget_exceeded": "terminal_failure",
+    "release_controller_to_neutral": true
+  },
+  "promotion_blockers": [
+    "no qualified observation-to-transition mapping",
+    "no versioned controller gains",
+    "no endogenous terminal receipt"
+  ]
+}

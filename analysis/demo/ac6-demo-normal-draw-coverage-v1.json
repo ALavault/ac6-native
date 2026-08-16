@@ -1,0 +1,63 @@
+{
+  "schema": "ac6-demo-normal-draw-coverage/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "module": "Default.xex",
+    "ghidra_project": "ace-combat-6-demo",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "route": "neutral",
+    "backend": "vulkan",
+    "max_ticks": 253,
+    "codegen": true,
+    "instrumentation": "AC6_DEMO_WATCH_NORMAL_DRAW_RESULT=1",
+    "read_only": true,
+    "binary_sha256": "abd3fc918523324e159abb98970cccb0aa2afbcf95b2b0c7d4ae365377069652",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "occlusion_query_precise": true
+  },
+  "result": {
+    "width": 640,
+    "height": 360,
+    "samples_per_pixel": 4,
+    "expected_samples": 921600,
+    "passed_samples": 921600,
+    "black_pixels": 230400,
+    "sentinel_pixels": 0,
+    "other_pixels": 0,
+    "resolved_rgba8_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "classification": "full-coverage-zero-output"
+  },
+  "artifacts": {
+    "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+    "report_sha256": "c8b53c54dbebb5815210199057ffb378fae07c0a58a3793474254eb7c17b740b",
+    "stderr_sha256": "9144cb3636ee5a293e66270d0be58943f5236e82b70d56de415c9eedac1522bd"
+    ,"ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c"
+  },
+  "determinism": {
+    "cold_runs": 2,
+    "trace_byte_identical": true,
+    "report_byte_identical": true,
+    "stderr_byte_identical": true
+  },
+  "classification": {
+    "qualified": [
+      "the reached RT0 draw passes all 921600 multisample samples",
+      "the fragment output replaces the complete magenta sentinel with zero RGBA",
+      "the neutral black resolve is draw output rather than absent rasterization"
+    ],
+    "unknown": [
+      "first guest-driven non-black frame",
+      "frontend, mission and terminal state"
+    ]
+  },
+  "policy": {
+    "default_path_changed": false,
+    "synthetic_pixels": false,
+    "xenia_used": false,
+    "retail_evidence_used": false,
+    "supported_promoted": false
+  }
+}

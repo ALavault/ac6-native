@@ -1,0 +1,26 @@
+{
+  "schema": "ac6-agent-behavior/v1",
+  "name": "explore-menus",
+  "prompt": "Explorer volontairement tous les menus et sous-menus.",
+  "mode": "explore",
+  "novelty_weight": 2.0,
+  "exploration_weight": 1.5,
+  "risk_weight": 1.0,
+  "max_decisions": 500,
+  "max_guest_frames": 18000,
+  "restore_interval": 25,
+  "allowed_options": [
+    "neutral_1",
+    "wait_15",
+    "press_start",
+    "confirm",
+    "cancel",
+    "menu_up",
+    "menu_down",
+    "menu_left",
+    "menu_right"
+  ],
+  "blocked_options": ["disconnect_1"],
+  "forced_options": [],
+  "preferred_situations": ["title", "menu"]
+}

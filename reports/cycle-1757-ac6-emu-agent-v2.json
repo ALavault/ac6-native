@@ -1,0 +1,86 @@
+{
+  "schema": "ac6-emu-agent-report/v2",
+  "cycle": 1757,
+  "status": "implemented-diagnostic",
+  "target": {
+    "project": "ac6-pal",
+    "target_id": "ac6-demo-xbox360-pal",
+    "program": "Default.xex",
+    "program_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "module": "Default.xex",
+    "platform": "Xbox 360 / Xenon PowerPC BE / Xenos"
+  },
+  "backends": {
+    "selectable": ["demo-recomp", "demo-native"],
+    "implementation": "MCP stdio control plane with emulator/backend transport absent; fail-closed protocol surface",
+    "qualified_pal_artifact_sha256s": []
+  },
+  "tools": {
+    "v2": [
+      "emu_open_session", "emu_step", "emu_observe",
+      "emu_run_until", "emu_replay", "emu_close_session"
+    ],
+    "v1_compatibility": [
+      "emu_capabilities", "emu_run_episode", "emu_compare_episodes",
+      "emu_branch_episode", "emu_minimize_reproducer", "emu_inspect_artifact"
+    ],
+    "shell_or_process_control": false
+  },
+  "schemas": {
+    "action": "ac6-agent-action/v1",
+    "observation": "ac6-agent-observation/v1",
+    "episode_receipt": "ac6-emu-episode-receipt/v1",
+    "envelope": "emu-agent/v2",
+    "validation": "strict bounded JSON; unknown fields, unsafe values and unqualified available evidence rejected"
+  },
+  "ownership_lifecycle_replay": {
+    "ownership": "session owns actions, observations and receipt snapshots; replay requires an owned immutable receipt",
+    "lifecycle": ["open", "step/observe/run_until", "replay", "close"],
+    "boot": "open validates the exact PAL identity and selected backend, creates an in-memory session and receipt",
+    "limits": "bounded sessions/actions/observations/ticks/tombstones; close is idempotent",
+    "replay": "snapshot-based, immutable, separate session; unknown or foreign receipt rejected"
+  },
+  "strict_unavailable": {
+    "open": {"status": "backend_unavailable", "reason": "emulator/backend transport unavailable"},
+    "step": {"status": "backend_unavailable", "observation": "unavailable"},
+    "observe": {"availability": "unavailable", "all_domains_value": null},
+    "run_until": {"status": "backend_unavailable"},
+    "replay": {"status": "backend_unavailable"},
+    "available_observation_claim": false,
+    "frontend_observation_claim": false
+  },
+  "runtime_boundary": {
+    "mcp_transport": "stdio",
+    "emulator_transport": false,
+    "subprocess_spawn": false,
+    "process": false,
+    "socket": false,
+    "guest_input_accepted": false,
+    "native_or_xenia_parity": false,
+    "xenia_is_oracle_only": true
+  },
+  "validation": {
+    "tests": "17 passed",
+    "command": "TMPDIR=/fastdata/lavaulta/tmp python -m pytest -q tests/test_emu_agent_ac6.py",
+    "review": "aucun constat",
+    "json": "python json.load validation passed"
+  },
+  "claims_forbidden": [
+    "transport/process/socket runtime ownership",
+    "available observations or frontend state",
+    "guest input acceptance, gameplay, pixels, audio, mission result or parity"
+  ],
+  "source_hashes": {
+    "tools/emu_agent/protocol/v2.py": "829f7ae67309db1cf45570f24b91a8c15194c82e5b213b11b230e51c6d1e9d5e",
+    "tools/emu_agent/mcp_server/server.py": "448fde207f21ff8a9dd9789330ad51fb4ca567df22de700e3e90cad2caba6fa0",
+    "tools/emu_agent/mcp_server/manifest.py": "df3c91edc5cb30f4325df364ca869cf37668fb04381da147bfd82ff200219f6f",
+    "tools/emu_agent/protocol/schema.py": "c09a47667a60a4905a1906780361872c14f051196c0786788f91d4452e3b9fe3",
+    "tools/emu_agent/protocol/spec.py": "3ab44fd96b6d3e5fd2ac99b40af5d98cdaf1fb9cf91218aa8d64b084180e37f6",
+    "tests/test_emu_agent_ac6.py": "7eb44ff8a48193687e2374b725229aa18eb1fbfd8794372555f9134a2dac0f48"
+  },
+  "integrity": {
+    "receipt_sha256": "ddbcedb899f1d23184c83f7fd3cc59a21bc0e631e79c27fd17e68adcbede48f8",
+    "report_markdown_sha256": "4445c4afc89c133eeb6e84913096042d2248db1657edd4224e2d6a43222b7f89",
+    "hash_definition": "SHA-256 of canonical JSON with integrity.receipt_sha256 replaced by null"
+  }
+}

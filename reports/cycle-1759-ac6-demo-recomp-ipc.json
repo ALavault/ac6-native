@@ -1,0 +1,79 @@
+{
+  "schema": "ac6-demo-recomp-ipc-report/v1",
+  "cycle": 1759,
+  "status": "implemented-diagnostic",
+  "supported": false,
+  "target": {
+    "project": "ac6-pal",
+    "target_id": "ac6-demo-xbox360-pal",
+    "program": "Default.xex",
+    "program_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "module": "Default.xex",
+    "identity_check": "demo XEX hash and target identity match the qualified expected constants; no retail/Xenia evidence used"
+  },
+  "files": {
+    "python_transport": "tools/emu_agent/backends/demo_recomp/transport.py",
+    "mcp_server": "tools/emu_agent/mcp_server/server.py",
+    "cpp_fd_session": "recompilation/ace-combat-6-demo/src/emu_agent_ipc.cpp",
+    "cpp_fd_header": "recompilation/ace-combat-6-demo/include/ac6demo/emu_agent_ipc.hpp",
+    "python_tests": "tools/tests/test_emu_agent_demo_recomp_transport.py",
+    "cpp_tests": "recompilation/ace-combat-6-demo/tests/ac6-demo-emu-agent-ipc-tests.cpp"
+  },
+  "architecture": {
+    "ipc": "private AF_UNIX SOCK_STREAM socketpair",
+    "spawn": "subprocess.Popen with shell=false, close_fds=true, pass_fds containing only the child fd",
+    "argv": "server-configured executable plus fixed --emu-agent-ipc-fd <fd>; no protocol-supplied command or path",
+    "token": "unguessable 32-byte token in Python transport; C++ validates lowercase hexadecimal token up to 64 characters",
+    "framing": "4-byte big-endian length prefix plus canonical JSON object; max frame 65536 bytes; duplicate/non-canonical keys rejected",
+    "deadlines": {"default_seconds": 30.0, "maximum_seconds": 120.0, "bounded_select_read": true},
+    "ownership": "one owned child and one private socket per transport; close is idempotent and closes/reaps owned resources",
+    "cpp_mode": "--emu-agent-ipc-fd enters C++ run_emu_agent_ipc and owns a DemoSession on the passed fd"
+  },
+  "backend_states": {
+    "initial_unavailable": "configured binary absent or backend not attached at session boot; receipt remains backend_unavailable",
+    "transport_failed": "owned transport was attached then failed/disconnected; session is poisoned, subsequent observe/step/run_until fail closed",
+    "replay": "boot a separate owned session from an immutable receipt; any replay failure rolls back the new session and owned transport",
+    "observations": {"availability": "unavailable", "qualified": false, "pal_artifact_allowlist_sha256": []}
+  },
+  "protocol_boundary": {
+    "mcp_transport": "stdio",
+    "emulator_transport": true,
+    "subprocess_spawn": true,
+    "socket": true,
+    "qualification": "transport presence is not PAL qualification; available observations remain forbidden because the allowlist is empty",
+    "supported": false,
+    "retail_or_xenia": false
+  },
+  "validation": {
+    "python_command": "TMPDIR=/fastdata/lavaulta/tmp python -m pytest -q tests/test_emu_agent_ac6.py tests/test_ac6_agent_fsm.py tools/tests/test_emu_agent_demo_recomp_transport.py",
+    "python_result": "54 passed, 1 skipped",
+    "py_compile": "pass for transport.py, server.py, ac6_fsm.py and transport/FSM tests",
+    "codegen_off": {"build": "cmake --build recompilation/ace-combat-6-demo/build --parallel 12", "ctest": "19/19 passed"},
+    "codegen_on": {"build": "qualified PAL XEX + pinned XenonRecomp", "ctest": "18/18 passed", "manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa", "generated_guest_object_sha256": "577a0cfbc15e90c438f25898b222d7edb514e88a81cd49c523bb8b934832d1b6"},
+    "two_codegen_reproducibility": {"manifest_equal": true, "generated_tree_equal": true, "generated_tree_files": 55, "generated_tree_sha256": "de50e8a5481f9d3ad4467b4d69d0ccddd10dea3b9683ca0f8697e59eee3019e6", "objects_equal": true, "object_tree_files": 53, "object_tree_sha256": "468a712b2024eb4d95b62ac45cf6e50289f2bf51f6eb8ecc116e6fd2e42292b5"},
+    "installation": "cmake --install recompilation/ace-combat-6-demo/build --prefix $PWD; test ! -e bin/bin: PASS",
+    "review": "aucun constat"
+  },
+  "limits": {
+    "pal_run": false,
+    "mission_success": false,
+    "available_observation": false,
+    "frontend_claim": false,
+    "allowlist_empty": true,
+    "note": "IPC and C++ DemoSession tests use controlled fixtures/headless demo code; they do not promote PAL gameplay or mission support."
+  },
+  "source_hashes": {
+    "tools/emu_agent/backends/demo_recomp/transport.py": "ca915108ec1f41cc2d6e4ac91d8a21b003206bd691fdc036f69a363eb95a1adf",
+    "tools/emu_agent/mcp_server/server.py": "b4b41ce9de98fbf7bb3eeb69a883e84e262f7906854728a3d4a540d08a7a9aef",
+    "tools/tests/test_emu_agent_demo_recomp_transport.py": "245360175cbc742634d05283343f9829983444da7f7312f5d6c7125cefddd38e",
+    "tests/test_emu_agent_ac6.py": "7eb44ff8a48193687e2374b725229aa18eb1fbfd8794372555f9134a2dac0f48",
+    "recompilation/ace-combat-6-demo/src/emu_agent_ipc.cpp": "679e42b631aaf0e5d492b8b866ca76a58609d61f2e00386f9d4abcf2cecd5def",
+    "recompilation/ace-combat-6-demo/include/ac6demo/emu_agent_ipc.hpp": "749e0af69551dd32f13b112553d2f379be011accb6b1907315d2197fdea5d881",
+    "recompilation/ace-combat-6-demo/tests/ac6-demo-emu-agent-ipc-tests.cpp": "888dc8fcc1a22216a7de86ff73b92caee6f21d0afca9792752e9ad3b2feeda09"
+  },
+  "integrity": {
+    "receipt_sha256": "4e992d4b767590b4ecb70cabef4a3c9511550b0a990ba86aed0696bf9d9f99af",
+    "report_markdown_sha256": "765cd820a76d1c8a9d458dffa8767397f7e4991ac50f603c74dfee3019b14aaf",
+    "hash_definition": "receipt SHA-256 is over canonical JSON with integrity.receipt_sha256 replaced by null"
+  }
+}

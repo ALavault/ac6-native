@@ -1,0 +1,99 @@
+{
+  "schema": "ac6-demo-edram-source-command-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "module": "Default.xex",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "boundary_config_sha256": "4a87dd8c377638f6bddf308ee63025e314c5a3470507767070e2ad15c0e54506",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "run": {
+    "route": "neutral",
+    "backend": "vulkan",
+    "completed_ticks": 253,
+    "outcome": "max_ticks",
+    "expected_return_code": 4,
+    "codegen": true,
+    "binary_sha256": "e27f29c5208b34ddc363edb22ffdc52df641acbdf4942d3f4f91b03a160fb062"
+  },
+  "join": [
+    {
+      "role": "edram_rt0_draw_command",
+      "ib_address": "0x1274A000",
+      "packet_address": "0x1274A3BC",
+      "offset_dword": 239,
+      "header": "0xC0003601",
+      "initiator": "0x00030088",
+      "tick": 0,
+      "thread": 1,
+      "submit_lr": "0x821B9C80",
+      "guest_writer": {
+        "function_entry": "0x821B55C0",
+        "function_end_exclusive": "0x821B58AC",
+        "function_byte_sha256": "6100f7ba6d1a04a38b271fdfe8594ca838a405381e7fb3a62dae09cdd6776f73",
+        "store_pc": "0x821B5840",
+        "store_bytes": "954B0004",
+        "instruction": "stwu r10,4(r11)",
+        "lr": "0x821B5644"
+      }
+    },
+    {
+      "role": "rb_copy_command",
+      "ib_address": "0x1274A000",
+      "packet_address": "0x1274A60C",
+      "offset_dword": 387,
+      "header": "0xC0003600",
+      "initiator": "0x00030088",
+      "tick": 0,
+      "thread": 1,
+      "submit_lr": "0x821B9C80",
+      "guest_writer": {
+        "function_entry": "0x821B6FD0",
+        "function_end_exclusive": "0x821B7E14",
+        "function_byte_sha256": "940a16c1e6b13a7ed1e9dec75eb355787e9248cedd6b9ac791e1f1f00d981d8c",
+        "store_pc": "0x821B7C04",
+        "store_bytes": "954B0004",
+        "instruction": "stwu r10,4(r11)",
+        "lr": "0x821B7AC0"
+      }
+    }
+  ],
+  "artifacts": {
+    "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+    "report_sha256": "c8b53c54dbebb5815210199057ffb378fae07c0a58a3793474254eb7c17b740b",
+    "probe_stderr_sha256": "061104e704defefb4d1edbe4bcc73cd48b199da3843981f2b5285d11d6ee68f2",
+    "normalized_stdout_sha256": "386ad33ab95e852454b8d157593c3a94d4066b0e17945459195c51445bd555b6",
+    "writer_stderr_sha256": "b60f4981b1e382523aaec2e4f0cf54441bd2cf2d7aeff29b2ab0e1a8aa9ec37a"
+  },
+  "determinism": {
+    "cold_runs": 2,
+    "trace_byte_identical": true,
+    "report_byte_identical": true,
+    "probe_stderr_byte_identical": true,
+    "normalized_stdout_byte_identical": true
+  },
+  "classification": {
+    "qualified": [
+      "guest writers of the two reached main-IB DRAW_INDX_2 packets",
+      "ordered RT0 draw command before RB_COPY command",
+      "PM4 consumer submission at tick 0 on guest thread 1"
+    ],
+    "unknown": [
+      "non-zero EDRAM sample contents before RB_COPY",
+      "a positive non-black runtime readback",
+      "frontend, mission and terminal state"
+    ]
+  },
+  "policy": {
+    "read_only_probe": true,
+    "opt_in": true,
+    "xenia_used": false,
+    "retail_evidence_used": false,
+    "generated_names_used_for_semantics": false,
+    "supported_promoted": false,
+    "start_opened": false
+  }
+}

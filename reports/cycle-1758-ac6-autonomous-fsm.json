@@ -1,0 +1,77 @@
+{
+  "schema": "ac6-autonomous-fsm-report/v1",
+  "cycle": 1758,
+  "status": "implemented-diagnostic",
+  "supported": false,
+  "target": {
+    "project": "ac6-pal",
+    "target_id": "ac6-demo-xbox360-pal",
+    "program": "Default.xex",
+    "program_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "module": "Default.xex",
+    "identity_check": "expected demo identity matches the emu-agent v2 protocol constants; no runtime PAL execution or new evidence inferred"
+  },
+  "files_and_configuration": {
+    "config": "config/ac6-agent-fsm-v1.json",
+    "controller": "tools/emu_agent/controller/ac6_fsm.py",
+    "tests": "tests/test_ac6_agent_fsm.py",
+    "config_schema": "ac6-agent-fsm/v1",
+    "config_sha256": "a7b95d1b76252d86cc1eff70b2915b69042ca3d63fce33c30a8dd0e68c53fc0f"
+  },
+  "fsm_contract": {
+    "states": ["wait_boot", "press_start", "navigate_frontend", "loading", "stabilize_flight", "navigate", "acquire", "attack", "track_objective", "terminal"],
+    "state_count": 10,
+    "active_budget_states": ["wait_boot", "press_start", "navigate_frontend", "loading", "stabilize_flight", "navigate", "acquire", "attack", "track_objective"],
+    "active_budget_count": 9,
+    "terminal_outcome_separate": true,
+    "max_steps": 240,
+    "state_budgets": {"wait_boot": 30, "press_start": 8, "navigate_frontend": 30, "loading": 60, "stabilize_flight": 30, "navigate": 80, "acquire": 30, "attack": 80, "track_objective": 80},
+    "terminal_outcomes": ["succeeded", "failed"]
+  },
+  "policy": {
+    "control": "deterministic proportional P only",
+    "navigate_kp": 0.25,
+    "navigate_output_limit": 9000,
+    "stick_saturation": "bounded int16 [-32768, 32767] with finite numeric inputs",
+    "delays": {"press_start": 2, "frontend_confirm": 2, "attack_burst": 1},
+    "burst": "attack emits fire plus right trigger for one bounded frame, then neutral/re-evaluation",
+    "neutral_on_error": true
+  },
+  "protocol_guards": {
+    "session_tick_sequence_ack": "session identity, monotone observation tick/sequence, action sequence and successful emu_step acknowledgement are required",
+    "backend_failure": "fail closed and emit a neutral release when an active frame was sent",
+    "observation_failure": "invalid, unavailable, stale, mismatched, unqualified or missing required domains fail closed",
+    "pal_artifact_allowlist_sha256": [],
+    "mcp_transport": "stdio",
+    "emulator_transport": false,
+    "subprocess_spawn": false,
+    "socket": false
+  },
+  "validation": {
+    "command": "TMPDIR=/fastdata/lavaulta/tmp python -m pytest -q tests/test_emu_agent_ac6.py tests/test_ac6_agent_fsm.py",
+    "result": "43 passed",
+    "py_compile": "python -m py_compile tools/emu_agent/controller/ac6_fsm.py tests/test_ac6_agent_fsm.py: pass",
+    "coverage": ["10-state transitions and positive terminal", "9 active budgets/max_steps", "P determinism", "delay and attack burst", "saturation", "session/tick/sequence/ACK guards", "neutral release on errors", "terminal failure and target loss"],
+    "review": "aucun constat"
+  },
+  "evidence_limits": {
+    "pal_run": false,
+    "mission_success": false,
+    "available_observation": false,
+    "frontend_claim": false,
+    "allowlist_is_empty": true,
+    "transport_or_process_claim": false,
+    "note": "Tests use explicitly monkeypatched qualified fixtures; this is not PAL runtime evidence and does not promote supported=true."
+  },
+  "source_hashes": {
+    "config/ac6-agent-fsm-v1.json": "a7b95d1b76252d86cc1eff70b2915b69042ca3d63fce33c30a8dd0e68c53fc0f",
+    "tools/emu_agent/controller/ac6_fsm.py": "7f199bf9fe39f590e9e53d9390e2f55e6d15fb2eb363d9039cc594a0a2f4c10a",
+    "tests/test_ac6_agent_fsm.py": "05e049f1ee4ed66b1598b52385e8dbd61960569839819cd49d1799b5c5ba0537",
+    "tests/test_emu_agent_ac6.py": "7eb44ff8a48193687e2374b725229aa18eb1fbfd8794372555f9134a2dac0f48"
+  },
+  "integrity": {
+    "receipt_sha256": "39c186e086f4d3257bf7e683eb23a59b368223121aff3c8ad88a5e09044e06c7",
+    "report_markdown_sha256": "dfbe02e6dc7ff4fda867f927304f5bbc3eed831718aa24d8024dab90068e974d",
+    "hash_definition": "receipt SHA-256 is over canonical JSON with integrity.receipt_sha256 replaced by null"
+  }
+}

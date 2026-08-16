@@ -1,0 +1,49 @@
+{
+  "schema": "ac6-demo-start-neutral-5600-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "module": "Default.xex",
+    "ghidra_project": "ace-combat-6-demo",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "backend": "vulkan"
+  },
+  "scope": {
+    "routes": ["neutral", "start"],
+    "max_ticks": 5600,
+    "input_divergence": {
+      "trace_sequence": 760,
+      "tick": 252,
+      "neutral_buttons": 0,
+      "buttons": 16
+    }
+  },
+  "result": {
+    "presents": 5463,
+    "milestones": {"frontend": false, "mission": false, "terminal": false},
+    "graphics_identical": true,
+    "scheduler": {"threads": 23, "blocked": 23, "runnable": 0},
+    "xma_stderr_identical": true,
+    "critical_section_counters": {
+      "RtlEnterCriticalSection_ordinal_293": {"neutral": 6290753, "buttons_16": 6290585},
+      "RtlLeaveCriticalSection_ordinal_304": {"neutral": 6285405, "buttons_16": 6285237}
+    },
+    "classification": "no_milestone_graphics_or_scheduler_divergence"
+  },
+  "artifacts": {
+    "neutral_report_sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+    "buttons_16_report_sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+    "neutral_trace_sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+    "buttons_16_trace_sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+    "xma_stderr_sha256": "abd259b921262d547e22e3fea45252920935c13fbb9612dc684076eb09c56717",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "boundary_config_sha256": "4a87dd8c377638f6bddf308ee63025e314c5a3470507767070e2ad15c0e54506"
+  },
+  "policy": {
+    "read_only": true,
+    "xenia_used": false,
+    "native_parity_promoted": false,
+    "frontend_promoted": false
+  }
+}

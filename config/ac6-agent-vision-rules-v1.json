@@ -1,0 +1,30 @@
+{
+  "schema": "ac6-agent-vision-rules/v1",
+  "rules": [
+    {
+      "situation": "title",
+      "ocr_contains": ["press", "start"],
+      "confidence": 0.95
+    },
+    {
+      "situation": "loading",
+      "ocr_contains": "loading",
+      "confidence": 0.9
+    },
+    {
+      "situation": "pause",
+      "ocr_contains": "pause",
+      "confidence": 0.9
+    },
+    {
+      "situation": "mission_result",
+      "ocr_contains": ["mission", "accomplished"],
+      "confidence": 0.98
+    },
+    {
+      "situation": "retry",
+      "ocr_contains": ["mission", "failed"],
+      "confidence": 0.98
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schema": "ac6-agent-observation-domain-inventory-scaffold/v1",
+  "status": "scaffold-only",
+  "target_id": "ac6-demo-xbox360-pal",
+  "root_fields": {
+    "tick": "protocol-defined",
+    "present": "runtime-counter-only",
+    "milestones": "unavailable"
+  },
+  "domains": {
+    "player": {"availability":"unavailable","producer":null,"evidence":null},
+    "camera": {"availability":"unavailable","producer":null,"evidence":null},
+    "flight": {"availability":"unavailable","producer":null,"evidence":null},
+    "target": {"availability":"unavailable","producer":null,"evidence":null},
+    "objective": {"availability":"unavailable","producer":null,"evidence":null},
+    "terminal": {"availability":"unavailable","producer":null,"evidence":null},
+    "readback": {"availability":"unavailable","producer":null,"evidence":null}
+  },
+  "qualification_todos": [
+    "bind each producer to target/module/address and PAL bytes",
+    "define tick-consistent snapshot boundaries",
+    "store readbacks by content hash outside the JSON envelope",
+    "reject unavailable data carrying a numeric zero"
+  ]
+}

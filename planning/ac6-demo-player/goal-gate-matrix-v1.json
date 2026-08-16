@@ -1,0 +1,560 @@
+{
+  "schema": "ac6-demo-player-goal-gate-matrix/v1",
+  "generated_at": "2026-08-16",
+  "path_base": "portfolio-root:/fastdata/lavaulta/auto-re-agent",
+  "target": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "platform": "xbox360-xenon",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "supported": false,
+  "status_vocabulary": ["proven", "partial", "failed", "missing"],
+  "source_anchors": [
+    {
+      "path": "reports/handoff/CURRENT.json",
+      "sha256": "79dd3a3f527bc1832389b89f7de4baf3eeea9d9fbf5ee5f19e1b50fe14618d7a",
+      "claim": "authoritative portfolio handoff; AC6 cycle 1760; supported=false"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
+      "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
+      "claim": "latest bounded PAL A/B event-handoff result"
+    },
+    {
+      "path": "workspaces/ace-combat-6/planning/ac6-demo-player/acceptance-matrix.md",
+      "sha256": "bfd0181f90feb9a752964d1667bfaf3587cf3b683b06363d0b35fe60d8ce8e77",
+      "claim": "user-plan gate inventory; scaffold, not a receipt"
+    },
+    {
+      "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-domain1-handoff.md",
+      "sha256": "dba2c5d7c078a9a3be24fe182c209c81228c53efa40fb191ffad4641bb45e103",
+      "claim": "demo-native domain 1 remains import-only and unsupported"
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "identity_target_baseline",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/config/demo-identity.json",
+          "sha256": "b5f61e01ea104038b15bff21c6ed3a4ecfcbb0584913197add1e3ff669c648ef",
+          "claim": "PAL-demo identity, XEX size, entry point, and nine-file manifest"
+        },
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/codegen/manifest.json",
+          "sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+          "claim": "codegen target, XEX and Ghidra manifest identity"
+        }
+      ],
+      "tests": [
+        "sha256sum Default.xex = de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+        "sha256sum codegen/xex-basefile.bin = b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+      ],
+      "limits": ["identity qualification does not establish runtime support"]
+    },
+    {
+      "gate_id": "identity_negative_corpus",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-identity-profile-v1.json",
+          "sha256": "7833e1585d937a149d247e2eef9b49ca952c0f83c4fb92380fcc4f0e493ad22d",
+          "claim": "required retail/truncation/unexpected-file rejection list"
+        },
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/tests/ac6-demo-content-tests.cpp",
+          "claim": "content test rejects an empty/unmarked store"
+        }
+      ],
+      "tests": ["job msw5b55a: ac6-demo-content-tests passed inside CTest 20/20"],
+      "limits": ["full nine-file negative corpus and symlink/path rejection receipt absent"]
+    },
+    {
+      "gate_id": "codegen_boundary",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/codegen/manifest.json",
+          "sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+          "claim": "52 generated/compiled C++ files, boundary_diagnostics=0, unsupported_instructions=0"
+        },
+        {
+          "path": "/home/lavaulta/.codex/process-jobs/jobs/job-msw5b55a-f587e15f.json",
+          "sha256": "aa3f5c238fb48e49eab75de5fe395578e0a13721e563a79854562c106dc5eb17",
+          "claim": "ac6-post-resume-codegen-validation-v2 completed rc=0"
+        }
+      ],
+      "tests": [
+        "job msw5b55a: CTest 20/20, Python tests, post-resume header tests, source/complexity audits passed"
+      ],
+      "limits": ["job stdout contains non-fatal third-party compiler warnings; no PAL mission/runtime claim"]
+    },
+    {
+      "gate_id": "codegen_two_run_reproducibility",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1759-ac6-demo-recomp-ipc.json",
+          "sha256": "dbb93272079a988ef2178c0afba6eaf64bbdbebccf42770ddb7449953492d555",
+          "receipt_sha256": "4e992d4b767590b4ecb70cabef4a3c9511550b0a990ba86aed0696bf9d9f99af",
+          "claim": "two manifests, 55 generated files and 53 object files equal"
+        }
+      ],
+      "tests": ["two_codegen_reproducibility.manifest_equal/generated_tree_equal/objects_equal=true"],
+      "limits": ["reproducible generated output is not semantic parity"]
+    },
+    {
+      "gate_id": "install_root_no_bin_bin",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1759-ac6-demo-recomp-ipc.json",
+          "sha256": "dbb93272079a988ef2178c0afba6eaf64bbdbebccf42770ddb7449953492d555",
+          "receipt_sha256": "4e992d4b767590b4ecb70cabef4a3c9511550b0a990ba86aed0696bf9d9f99af",
+          "claim": "canonical install passed and bin/bin was absent"
+        }
+      ],
+      "tests": ["cmake --install ... --prefix $PWD; test ! -e bin/bin: PASS"],
+      "limits": ["installation proves packaging layout only"]
+    },
+    {
+      "gate_id": "package_hygiene",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/config/demo-playable-gate-v1.json",
+          "sha256": "03aeb39433621ccd5392aa461049505cd7c17b4e7d2ed4cfca5c450952e1e7a7",
+          "claim": "package exclusions remain final requirements, not a receipt"
+        }
+      ],
+      "tests": [],
+      "limits": ["no final ac6-demo-native package receipt exists"]
+    },
+    {
+      "gate_id": "writer_guest_pm4_rbcopy",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-edram-source-command-join-v1.json",
+          "sha256": "6fda1c1d53406f8bdc8ba68a1dca0fae3ebcf12f91d69510f13b7ea78c23d160",
+          "claim": "guest writers 0x821B5840/0x821B7C04 join RT0 draw and RB_COPY offsets 239/387"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1754-demo-edram-source-command-join.md",
+          "sha256": "bb3c59dcf32e1fae6d4b9804966f72361a8e8dd85e0ea9d7e813c2574b30dad3",
+          "claim": "two cold trace/report/stderr outputs byte-identical"
+        }
+      ],
+      "tests": ["determinism.cold_runs=2 and trace/report/probe_stderr_byte_identical=true"],
+      "limits": ["writer chain does not establish non-zero EDRAM or pixels"]
+    },
+    {
+      "gate_id": "graphics_draw_coverage",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-normal-draw-coverage-v1.json",
+          "sha256": "9f3607c4d544b795dbddee5ee54be0732d342bde49c791b3aa3d52dc9ce7f62f",
+          "claim": "921600/921600 MSAA samples passed; full coverage draw"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1755-demo-normal-draw-coverage.md",
+          "sha256": "863cbe7b42ebfaf8ead72c6189ff71a43f571f4b10ce58ccd36de7f2ee20918c",
+          "claim": "two cold runs identical, but output remained zero"
+        }
+      ],
+      "tests": ["occlusionQueryPrecise=true; trace/report/stderr identical 2/2"],
+      "limits": ["unit graphics tests and coverage are not a positive runtime readback"]
+    },
+    {
+      "gate_id": "readback_non_black",
+      "status": "failed",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-normal-draw-coverage-v1.json",
+          "sha256": "9f3607c4d544b795dbddee5ee54be0732d342bde49c791b3aa3d52dc9ce7f62f",
+          "claim": "black_pixels=230400, sentinel_pixels=0, other_pixels=0, resolved hash 0b150fd3…ec58366"
+        }
+      ],
+      "tests": ["classification=full-coverage-zero-output"],
+      "limits": ["no frontend/mission/pixel promotion is admissible"]
+    },
+    {
+      "gate_id": "kernel_xam_event_transport",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
+          "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
+          "claim": "962 complete set/wake/resume chains; handle 0xE000004C"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.md",
+          "sha256": "af863759608ac66b726be07911d4951cf0670d9a9279f6b0961214d4a1183e82",
+          "claim": "STOP at bounded kernel/XAM event-transport observation boundary"
+        }
+      ],
+      "tests": ["two routes rc=4, 5463 PRESENT, 23 blocked/0 runnable, stderr byte-identical"],
+      "limits": ["focused trace cap=32768 and last covered tick=1212; false post-resume access is capsule-scoped"]
+    },
+    {
+      "gate_id": "vfs_user_store_runtime",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/config/demo-identity.json",
+          "sha256": "b5f61e01ea104038b15bff21c6ed3a4ecfcbb0584913197add1e3ff669c648ef",
+          "claim": "nine-file identity and excluded paths"
+        },
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/tests/ac6-demo-content-tests.cpp",
+          "claim": "empty/unmarked store rejection test"
+        }
+      ],
+      "tests": ["CTest content test passed"],
+      "limits": ["no full qualified nine-file guest mount and no demo-native VFS product"]
+    },
+    {
+      "gate_id": "time_scheduler_runtime",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-start-neutral-5600-ab-v1.json",
+          "sha256": "3bde5cd5f116c61d660c6f6751dc6b5edce6c4e58b8fc8530ce6b51ced4d1f3b",
+          "claim": "5463 PRESENT, 23 blocked/0 runnable, no graphics/scheduler divergence"
+        }
+      ],
+      "tests": ["completed_ticks=5600 in cycle 1760"],
+      "limits": ["60 Hz simulation and 30 Hz presentation cadence are not proven"]
+    },
+    {
+      "gate_id": "guest_memory_post_resume",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-event-post-set-memory-join-v1.json",
+          "sha256": "8516533d5dc08cb778100ae0cef74a52493c42564f9a003f794a31ad86649b4f",
+          "claim": "351/351 same-tick guest memory rows in earlier bounded join"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
+          "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
+          "claim": "post_resume_guest_access_observed=false only within capped capsule"
+        }
+      ],
+      "tests": [],
+      "limits": ["semantic role and current post-resume access remain unknown"]
+    },
+    {
+      "gate_id": "vmx_cpu_runtime",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/codegen/manifest.json",
+          "sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+          "claim": "bounded generated CPU/codegen lane has zero unsupported instructions"
+        }
+      ],
+      "tests": ["neutral/buttons A/B reached max_ticks without CPU/indirect-target fault"],
+      "limits": ["no full VMX128 semantic/parity gate and no mission execution"]
+    },
+    {
+      "gate_id": "xenos_runtime",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1754-demo-edram-source-command-join.md",
+          "sha256": "bb3c59dcf32e1fae6d4b9804966f72361a8e8dd85e0ea9d7e813c2574b30dad3",
+          "claim": "PM4 draw and RB_COPY command order joined"
+        },
+        {
+          "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/CMakeCache.txt",
+          "claim": "codegen-on Vulkan build configuration"
+        }
+      ],
+      "tests": ["Xenos command/shader/tiling tests passed in job msw5b55a"],
+      "limits": ["full translation/resolve path still produces black readback"]
+    },
+    {
+      "gate_id": "xma_runtime",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1753-demo-xma-context-guard.md",
+          "claim": "six context-qualified XMA kick tuples traversed under opt-in guard"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
+          "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
+          "claim": "XMA create/kick remains experimental and read-only"
+        }
+      ],
+      "tests": [],
+      "limits": ["no XMA effect, decoded packet or audio behavior is promoted"]
+    },
+    {
+      "gate_id": "media_decode_audio",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1753-demo-xma-context-guard.md",
+          "claim": "explicitly says no audio packet, audible effect or decode is materialized"
+        }
+      ],
+      "tests": [],
+      "limits": ["English/Japanese XMA decode, timestamps, volume and SDL output absent"]
+    },
+    {
+      "gate_id": "input_delivery",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-start-neutral-5600-ab-v1.json",
+          "sha256": "3bde5cd5f116c61d660c6f6751dc6b5edce6c4e58b8fc8530ce6b51ced4d1f3b",
+          "claim": "buttons=16 appears at trace sequence 760/tick 252"
+        }
+      ],
+      "tests": ["graphics/scheduler/milestones remained identical across A/B"],
+      "limits": ["input value is not assigned a semantic START name and no persistent transition follows"]
+    },
+    {
+      "gate_id": "start_transition",
+      "status": "failed",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1756-demo-start-neutral-5600-ab.md",
+          "sha256": "d468c83ea27d2a0090de40637d3b8a13ca7ed52e1e19b2ae4a0cb4dfb17d1cc1",
+          "claim": "A/B input divergence did not create frontend, graphics or scheduler divergence"
+        }
+      ],
+      "tests": ["milestones frontend/mission/terminal=false in both routes"],
+      "limits": ["failure is route/run-specific evidence, not a claim that all future input is impossible"]
+    },
+    {
+      "gate_id": "frontend",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
+          "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
+          "claim": "frontend=false after 5600-tick A/B"
+        }
+      ],
+      "tests": [],
+      "limits": ["no positive guest milestone plus non-black readback"]
+    },
+    {
+      "gate_id": "mission",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
+          "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
+          "claim": "mission=false; no title-to-mission path receipt"
+        }
+      ],
+      "tests": [],
+      "limits": ["no controllable aircraft, endogenous scenario or mission transition"]
+    },
+    {
+      "gate_id": "objectives",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
+          "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
+          "claim": "objective domain availability=unavailable"
+        }
+      ],
+      "tests": [],
+      "limits": ["no endogenous objective producer or terminal condition"]
+    },
+    {
+      "gate_id": "results_terminal",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
+          "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
+          "claim": "terminal=false; outcome=max_ticks only"
+        }
+      ],
+      "tests": [],
+      "limits": ["no positive or negative endogenous result receipt"]
+    },
+    {
+      "gate_id": "mcp_v2_surface",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1757-ac6-emu-agent-v2.json",
+          "sha256": "5cfc69cf82e3312ab97618908046662e2e2e85954c513e2425849a01145be520",
+          "receipt_sha256": "ddbcedb899f1d23184c83f7fd3cc59a21bc0e631e79c27fd17e68adcbede48f8",
+          "claim": "six v2 tools, v1 compatibility, strict unavailable protocol"
+        },
+        {
+          "path": "workspaces/ace-combat-6/tools/emu_agent/protocol/v2.py",
+          "sha256": "829f7ae67309db1cf45570f24b91a8c15194c82e5b213b11b230e51c6d1e9d5e",
+          "claim": "protocol implementation"
+        }
+      ],
+      "tests": ["pytest tests/test_emu_agent_ac6.py: 17 passed"],
+      "limits": ["protocol/control plane only; backend observations unavailable"]
+    },
+    {
+      "gate_id": "mcp_ownership_lifecycle_replay",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1759-ac6-demo-recomp-ipc.json",
+          "sha256": "dbb93272079a988ef2178c0afba6eaf64bbdbebccf42770ddb7449953492d555",
+          "receipt_sha256": "4e992d4b767590b4ecb70cabef4a3c9511550b0a990ba86aed0696bf9d9f99af",
+          "claim": "session ownership, immutable receipt replay and idempotent close contract"
+        }
+      ],
+      "tests": ["MCP v2 + FSM + transport: 54 passed, 1 skipped"],
+      "limits": ["tests use controlled fixtures; no PAL gameplay ownership claim"]
+    },
+    {
+      "gate_id": "mcp_runtime_transport_artifacts",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/tools/emu_agent/backends/demo_recomp/transport.py",
+          "sha256": "ca915108ec1f41cc2d6e4ac91d8a21b003206bd691fdc036f69a363eb95a1adf",
+          "claim": "owned AF_UNIX/Popen transport implementation"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1759-ac6-demo-recomp-ipc.json",
+          "sha256": "dbb93272079a988ef2178c0afba6eaf64bbdbebccf42770ddb7449953492d555",
+          "receipt_sha256": "4e992d4b767590b4ecb70cabef4a3c9511550b0a990ba86aed0696bf9d9f99af",
+          "claim": "allowlist empty; observations unavailable; supported=false"
+        }
+      ],
+      "tests": ["CTest OFF 19/19 and ON 18/18; transport suite included in 54 passed"],
+      "limits": ["no qualified PAL artifact SHA and no available observation"]
+    },
+    {
+      "gate_id": "fsm_contract",
+      "status": "proven",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1758-ac6-autonomous-fsm.json",
+          "sha256": "dfa8b25455098a2633f10555b9c544f510cd8c0e3bbd18224bef2d9a9e056b56",
+          "receipt_sha256": "39c186e086f4d3257bf7e683eb23a59b368223121aff3c8ad88a5e09044e06c7",
+          "claim": "10 states, 9 budgets, deterministic P/delays/saturation and fail-closed guards"
+        },
+        {
+          "path": "workspaces/ace-combat-6/config/ac6-agent-fsm-v1.json",
+          "sha256": "a7b95d1b76252d86cc1eff70b2915b69042ca3d63fce33c30a8dd0e68c53fc0f",
+          "claim": "FSM configuration"
+        }
+      ],
+      "tests": ["pytest tests/test_emu_agent_ac6.py tests/test_ac6_agent_fsm.py: 43 passed; py_compile PASS"],
+      "limits": ["deterministic controller contract is not a qualified runtime route"]
+    },
+    {
+      "gate_id": "fsm_runtime_route",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/planning/ac6-demo-player/fsm-reference-v1.json",
+          "sha256": "44cddc3a70bda72c66db39259bc21f7a61154997f46bbe09793b6822474040e4",
+          "claim": "scaffold-only; transitions/controllers/budgets unconfigured"
+        }
+      ],
+      "tests": [],
+      "limits": ["allowlist PAL empty; no available observations or terminal receipt"]
+    },
+    {
+      "gate_id": "demo_native_domain1_identity_import",
+      "status": "partial",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-domain1-handoff.md",
+          "sha256": "dba2c5d7c078a9a3be24fe182c209c81228c53efa40fb191ffad4641bb45e103",
+          "claim": "domain 1 import-only, exact corpus and rejection policy"
+        },
+        {
+          "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-identity-profile-v1.json",
+          "sha256": "7833e1585d937a149d247e2eef9b49ca952c0f83c4fb92380fcc4f0e493ad22d",
+          "claim": "identity scaffold status=not-wired"
+        }
+      ],
+      "tests": [],
+      "limits": ["no reconstruction/ac6-demo-native directory or separate executable"]
+    },
+    {
+      "gate_id": "demo_native_runtime_domains",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
+          "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
+          "claim": "player/camera/flight/target/objective/terminal/readback all unavailable"
+        }
+      ],
+      "tests": [],
+      "limits": ["no scene, simulation, PPM, Vulkan, FSM or replay domain is wired"]
+    },
+    {
+      "gate_id": "cold_success_failure_runs",
+      "status": "missing",
+      "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-start-neutral-5600-ab-v1.json",
+          "sha256": "3bde5cd5f116c61d660c6f6751dc6b5edce6c4e58b8fc8530ce6b51ced4d1f3b",
+          "claim": "two cold A/B routes both reached max_ticks, not success/failure terminals"
+        }
+      ],
+      "tests": ["neutral/buttons_16 return_code=4; frontend/mission/terminal=false"],
+      "limits": ["required two cold successes plus one distinct failure is open"]
+    }
+  ],
+  "next_checkpoint": {
+    "gate_id": "post_resume_one_shot_ab",
+    "status": "missing",
+    "objective": "Run one fresh neutral/buttons=16 A/B capsule at the same PAL identity and 5600-tick bound with AC6_DEMO_WATCH_POST_RESUME_ACCESS=1, then map exactly one post-resume access without changing generated C++.",
+    "evidence": [
+      {
+        "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/src/guest_bridge/event_post_set_trace.hpp",
+        "sha256": "874e3d78df5e511d45362bfa34396236b805fbe0c383030546d7da51c89d91e8",
+        "claim": "one-shot load/store/vector/refused branch instrumentation"
+      },
+      {
+        "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/tools/map_generated_guest_load_sites.py",
+        "sha256": "32d8b7a74b72ee7b3fca1fc791e8ede34ed6e57f8b2266319ce1c2029f69aa04",
+        "claim": "requires exactly one handoff and one mapped access; rejects refused/ambiguous routes"
+      }
+    ],
+    "limits": [
+      "a mapped load/store closes only the post-resume access observation, not graphics/readback",
+      "refusal and no-capture are evidence boundaries, not semantic support",
+      "the current event trace cap cannot be treated as proof of access absence"
+    ]
+  },
+  "next_checkpoint_branches": [
+    {
+      "branch_id": "access_load_or_store",
+      "status": "proven",
+      "match": "exactly one AC6_POST_RESUME_ACCESS kind=load* or store* row after the qualified handoff",
+      "action": "map generated function/line to PAL PC and bytes; retain graphics/readback as open"
+    },
+    {
+      "branch_id": "access_refused",
+      "status": "partial",
+      "match": "AC6_POST_RESUME_ACCESS_REFUSED, including atomic/reservation route",
+      "action": "record explicit refusal and stop promotion; do not infer scalar memory semantics"
+    },
+    {
+      "branch_id": "no_capture",
+      "status": "missing",
+      "match": "no exact handoff/access, malformed row, multiple rows, or capture bound ends first",
+      "action": "classify bounded no-capture only; do not conclude that the guest access is absent"
+    }
+  ]
+}

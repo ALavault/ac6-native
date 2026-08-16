@@ -1,0 +1,14 @@
+{
+  "schema": "ac6-agent-fsm/v1",
+  "name": "ac6-reference-autonomous",
+  "max_steps": 240,
+  "state_budgets": {
+    "wait_boot": 30, "press_start": 8, "navigate_frontend": 30,
+    "loading": 60, "stabilize_flight": 30, "navigate": 80,
+    "acquire": 30, "attack": 80, "track_objective": 80
+  },
+  "delays": {"press_start": 2, "frontend_confirm": 2, "attack_burst": 1},
+  "pid": {"navigate": {"kp": 0.25, "output": 9000}},
+  "waypoint": [0, 0, 0],
+  "buttons": {"start": 256, "confirm": 4096, "fire": 16}
+}

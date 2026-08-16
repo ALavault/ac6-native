@@ -1,0 +1,32 @@
+{
+  "schema": "ac6-demo-native-identity-profile-scaffold/v1",
+  "status": "not-wired",
+  "target_id": "ac6-demo-xbox360-pal",
+  "product": "ac6-demo-native",
+  "platform": "xbox360-xenon",
+  "region": "PAL-demo",
+  "files": [
+    {"name":"Default.xex","size":1454080,"sha256":"de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"},
+    {"name":"DATA.TBL","size":13784,"sha256":"0d9e11cf19881971e7d14c0077e9e719c1795e0316afab4b48b153351591eef8"},
+    {"name":"DATA00.PAC","size":177340416,"sha256":"838356ade0f41fc7eee11684dda8e4d6c07eac7512a23ef1d148eb3144dbb162"},
+    {"name":"DATA01.PAC","size":15138816,"sha256":"08ef13fe61caf0b072a4de6de577e965b4f1c8feb88d638ffc099dd4d63238d3"},
+    {"name":"bgmpack.bin","size":66455552,"sha256":"1ff738c781eeffb510295fc539fc98aeb298040b4ea5965f8eb628bfe1365a8b"},
+    {"name":"demopack_eng.bin","size":11427840,"sha256":"b2e7a883951a1a95484a98829beaf5381d4e68c5a7bf2a2a0847857365f1cfad"},
+    {"name":"demopack_jpn.bin","size":11675648,"sha256":"b35049450612e8ca9b75e29b8318508b81a46c173fdd626de3de39c1df2ff306"},
+    {"name":"voicepack_eng.bin","size":16988160,"sha256":"f482d54d8314c4eae8c3ab20cda40a6c539c96cd933dcfde3c41f03b33e121ba"},
+    {"name":"voicepack_jpn.bin","size":21876736,"sha256":"e67c7add7e4dde4297ae87ec0ca30e6e91333d32511b6fd12e8f2d01e4c987b8"}
+  ],
+  "required_rejections": [
+    "retail XEX acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "truncated file",
+    "unexpected file",
+    "path outside imported store",
+    "historical Ghidra project"
+  ],
+  "integration_todos": [
+    "native import policy",
+    "atomic content store",
+    "negative identity tests",
+    "separate install target"
+  ]
+}
