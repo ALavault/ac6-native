@@ -1,0 +1,4 @@
+model,objects,objbin_id_0x0D,objbin_field_0x48,base_max_durability,maneuver_modes,maneuver_profile_sha256,weapon0_sha256,weapon1_sha256,weapon_slots_present,combat_interpretation
+o_f18f,16,0,407,40,1;2;3;4;5;6,fe9b2f0d8e5ab1a6fbf09cf093056f5034f76910fa64b52b0fa4d8924c4f6ab2,cea14157365087811e097ef7c6b5b3bb603b3f199135dcd4939348feffab06c4,,0,baseline fighter: standard gun; general AI; durability 40
+o_rflm,16,0,410,40,1;2;3;4;5;6,730e55e565a899b9bbc31eeeae7895022a73d56ccad7c793e0a592b70b33f4fa,cea14157365087811e097ef7c6b5b3bb603b3f199135dcd4939348feffab06c4,,0,more active general AI than F/A-18F; identical standard gun; durability 40
+o_su33,8,22,411,48,4;5;6;7;8,f0a326c209cae6db003cfb7626d13efe1f2bd43cb551b61736138f8093d29769,cea14157365087811e097ef7c6b5b3bb603b3f199135dcd4939348feffab06c4,965e6996991ea6575c1396199069b448f085bba4d0aee636bcd46e7f6519407d,0;1,elite tactical AI; identical standard gun plus missile slot; durability 48
