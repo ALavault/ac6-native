@@ -1,9 +1,10 @@
 # Domaine 1 — `ac6-demo-native` : identité, import et VFS
 
-Statut : préparation uniquement, `import-only`, `supported=false`. Le domaine
-ne doit démarrer qu’après fermeture et handoff explicite de la recompilation
-démo. Il ne porte aucune scène, simulation, PPM, Vulkan, FSM ou sémantique
-issue du C++ généré.
+Statut cycle 1762 : base autonome livrée en `import-only`,
+**PARTIAL/NO-GO**, `supported=false`. L’identité/import/VFS est maintenant
+présente et validée, mais la publication durable reste bloquée par les
+constats P1/P2 ci-dessous. Le domaine ne porte aucune scène, simulation, PPM,
+Vulkan, FSM ou sémantique issue du C++ généré.
 
 Profil source inchangé :
 [`demo-native-identity-profile-v1.json`](demo-native-identity-profile-v1.json).
@@ -31,7 +32,7 @@ Total : **322 371 032 octets**. Le store publié doit être séparé de
 `ac6-native` et `ac6-demo-recomp`, avec marqueur et chemin XDG propres; aucun
 manifest externe ne doit devenir un fichier VFS guest.
 
-## Architecture future minimale
+## Architecture livrée, frontière maintenue
 
 - `reconstruction/ac6-demo-native/config/demo-native-identity-v1.json` : profil
   canonique import-only, sans `.pdata`, Ghidra ou codegen.
@@ -42,10 +43,15 @@ manifest externe ne doit devenir un fichier VFS guest.
   `game:/` et neuf noms exacts, sans chemin hôte ni échappement.
 - `tests/content_store_tests.cpp` et `tests/vfs_boundary_tests.cpp` : corpus
   positif et rejets ci-dessous.
-- CMake autonome et futur `ac6-demo-native` limité à `import`/`verify`.
+- CMake autonome et `ac6-demo-native` limité à `import`/`verify`.
   Aucun lien vers `ac6_product_core`, `ac6_demo_runtime` ou les sorties
   XenonRecomp; aucun `play`/`replay` tant que les traces ne ferment pas les
   frontières runtime.
+
+Les commits livrés sont `1f3f720ae400ef4e18a04aa7b7bfbe3112682088`
+(identité/store/VFS) et `6de7e190c1eee6d8e9a8f0be5828a80ca9ef18e9`
+(durcissement de publication). Les deux sont atteignables depuis
+`origin/static-scenario-schema-microexec`.
 
 ## Rejets obligatoires
 
@@ -62,10 +68,29 @@ Tout rejet doit laisser le store précédent intact et ne publier aucun staging.
 
 ## Ce qui est disponible maintenant
 
-Identités des neuf fichiers, taille totale, `target_id`, plateforme/région,
-namespace VFS, liste d’exclusions et séparation stricte avec l’identité retail.
-Le C++ recompilé ne peut servir qu’au contrôle ABI/flux, jamais à dériver une
-sémantique native.
+Identités des neuf fichiers, taille totale de 322 371 032 octets,
+`target_id`, plateforme/région, namespace VFS, liste d’exclusions et
+séparation stricte avec l’identité retail. La base autonome, le CLI, le store
+et le VFS passent CTest **3/3**; le corpus PAL exact, l’isolation de surface,
+`verify` et l’installation sans `bin/bin` sont validés. Le C++ recompilé ne
+peut servir qu’au contrôle ABI/flux, jamais à dériver une sémantique native.
+
+## Bloquants cycle 1762
+
+- **P1 — TOCTOU publication** : `content_store.cpp:494-560,570-599`.
+  La séquence staging/génération/validation/pointeur reste ouverte au swap
+  concurrent requis.
+- **P1 — cleanup étranger** : `content_store.cpp:506-520`,
+  `posix_fd.cpp:419-452`, `content_store.cpp:367-374`. L’ownership du nom
+  nettoyé n’est pas qualifié contre un remplacement étranger.
+- **P2 — parent-dir fsync** : `posix_fd.cpp:128-175`. La création `mkdirat`
+  n’a pas de synchronisation parent qualifiée à sa frontière de durabilité.
+
+Les tests multi-processus, swap concurrent, injection d’échec
+rename/fsync/rollback et erreurs d’E/S forcées restent manquants. Le domaine 2
+reste **NO-GO** malgré son plan read-only; aucune promotion runtime, frontend
+ou mission n’est permise. La frontière XAM du cycle 1761 reste séparée et ne
+doit pas être déclarée fermée.
 
 ## Ce qui dépend de futures traces
 
@@ -75,6 +100,7 @@ transport MCP et tout statut de support. Tant que ces preuves manquent,
 `ac6-demo-native` reste un importateur vérifiable, non un runtime supporté.
 
 Ne pas modifier l’identité, les claims ou le CMake retail; ne pas modifier la
-recompilation démo, ses sorties générées, `CURRENT.json` ou les rapports pour
-ouvrir ce domaine. Le démarrage est conditionné à la fermeture recomp et à un
-handoff qualifié séparé.
+recompilation démo ni ses sorties générées. Une passe corrective supplémentaire
+requiert une autorisation explicite ou une réévaluation par root. Les deux
+tentatives Luna autorisées sont épuisées uniquement comme note de
+handoff/next-action, jamais comme preuve technique.

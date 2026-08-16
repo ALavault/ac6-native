@@ -1,0 +1,172 @@
+{
+  "schema": "ac6-demo-native-domain1-report/v1",
+  "cycle": 1762,
+  "recorded_at": "2026-08-17",
+  "status": "partial",
+  "verdict": "PARTIAL/NO-GO",
+  "supported": false,
+  "target": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "platform": "xbox360-xenon",
+    "region": "PAL-demo",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian PPC / 64-bit registers / 32-bit guest pointers / Xenos / xboxkrnl / XAM / XMA",
+    "retail_xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "ghidra_project": null,
+    "generated_cpp": false
+  },
+  "scope": {
+    "product": "ac6-demo-native",
+    "domain": "domain1_identity_import_vfs",
+    "status_boundary": "import-only",
+    "vfs_namespace": "game:/",
+    "source_identity_profile": "reconstruction/ac6-demo-native/config/demo-native-identity-v1.json",
+    "source_corpus": "workspaces/ace-combat-6/demo-game-file/extracted/stfs-root",
+    "store_separation": "separate ac6-demo-native XDG store; no ac6-native or ac6-demo-recomp reuse",
+    "manifest_is_not_guest_vfs": true,
+    "runtime_domains_promoted": false
+  },
+  "implementation": {
+    "commits": [
+      {
+        "commit": "1f3f720ae400ef4e18a04aa7b7bfbe3112682088",
+        "date": "2026-08-17T00:54:47+02:00",
+        "subject": "Add AC6 demo native identity store and VFS",
+        "status": "reachable from origin/static-scenario-schema-microexec"
+      },
+      {
+        "commit": "6de7e190c1eee6d8e9a8f0be5828a80ca9ef18e9",
+        "date": "2026-08-17T01:23:49+02:00",
+        "subject": "Harden AC6 demo native content publication",
+        "status": "reachable from origin/static-scenario-schema-microexec"
+      }
+    ],
+    "autonomous_cmake": "reconstruction/ac6-demo-native/CMakeLists.txt",
+    "cli": "bin/ac6-demo-native",
+    "vfs": [
+      "reconstruction/ac6-demo-native/include/ac6demo_native/vfs.hpp",
+      "reconstruction/ac6-demo-native/src/vfs.cpp"
+    ],
+    "store": [
+      "reconstruction/ac6-demo-native/include/ac6demo_native/content_store.hpp",
+      "reconstruction/ac6-demo-native/src/content_store.cpp",
+      "reconstruction/ac6-demo-native/src/posix_fd.cpp"
+    ]
+  },
+  "identity_and_corpus": {
+    "profile": "reconstruction/ac6-demo-native/config/demo-native-identity-v1.json",
+    "profile_status": "sealed-import-only",
+    "supported": false,
+    "file_count": 9,
+    "total_bytes": 322371032,
+    "source_names_exact": true,
+    "size_and_sha256_exact": true,
+    "retail_mixed": false,
+    "generated_or_historical_ghidra_claim": false,
+    "validation": "all nine files in demo-game-file/extracted/stfs-root matched the sealed profile size and SHA-256"
+  },
+  "validation": {
+    "build": {
+      "command": "cmake --build reconstruction/ac6-demo-native/build -j16",
+      "result": "PASS"
+    },
+    "ctest": {
+      "command": "SDL_AUDIODRIVER=dummy ctest --test-dir reconstruction/ac6-demo-native/build --output-on-failure",
+      "passed": 3,
+      "total": 3,
+      "result": "PASS",
+      "tests": [
+        "ac6-demo-native-content",
+        "ac6-demo-native-vfs",
+        "ac6-demo-native-production-surface"
+      ]
+    },
+    "install": {
+      "command": "cmake --install reconstruction/ac6-demo-native/build --prefix $PWD",
+      "result": "PASS",
+      "installed_cli": "bin/ac6-demo-native",
+      "no_bin_bin": true,
+      "installed_identity": "share/ac6-demo-native/config/demo-native-identity-v1.json"
+    },
+    "cli_verify": {
+      "command": "bin/ac6-demo-native verify --store <isolated temporary store>",
+      "result": "PASS",
+      "output": "verified: ac6-demo-xbox360-pal"
+    },
+    "corpus": {
+      "source": "demo-game-file/extracted/stfs-root",
+      "result": "PASS",
+      "files": 9,
+      "total_bytes": 322371032
+    },
+    "isolation": {
+      "production_surface_ctest": "PASS",
+      "fixture_api_leak": false,
+      "profile_override_accepted": false,
+      "links_to_retail_or_demo_recomp": false,
+      "runtime_or_frontend_wiring": false
+    }
+  },
+  "blockers": [
+    {
+      "priority": "P1",
+      "kind": "TOCTOU publication",
+      "locations": [
+        "reconstruction/ac6-demo-native/src/content_store.cpp:494-560",
+        "reconstruction/ac6-demo-native/src/content_store.cpp:570-599"
+      ],
+      "claim": "The staging/generation validation and pointer publication sequence is not yet closed against the required concurrent swap race; atomic publication is therefore not a qualified crash/concurrency contract."
+    },
+    {
+      "priority": "P1",
+      "kind": "foreign-entry cleanup",
+      "locations": [
+        "reconstruction/ac6-demo-native/src/content_store.cpp:506-520",
+        "reconstruction/ac6-demo-native/src/posix_fd.cpp:419-452",
+        "reconstruction/ac6-demo-native/src/content_store.cpp:367-374"
+      ],
+      "claim": "Failure cleanup is not qualified against a foreign replacement/ownership race; cleanup must not remove an entry that is no longer owned by the operation."
+    },
+    {
+      "priority": "P2",
+      "kind": "parent-directory durability",
+      "locations": [
+        "reconstruction/ac6-demo-native/src/posix_fd.cpp:128-175"
+      ],
+      "claim": "mkdirat-based path creation has no qualified parent-directory fsync at the creation boundary, so durability after failure is open."
+    }
+  ],
+  "missing_tests": [
+    "true multi-process publication/cleanup test",
+    "concurrent swap test covering the publication TOCTOU",
+    "rename/fsync failure injection and rollback test",
+    "forced I/O error test covering each write/fsync/cleanup boundary"
+  ],
+  "domain_boundaries": {
+    "domain1": "PARTIAL/NO-GO until the P1/P2 store blockers and missing failure tests are closed",
+    "domain2": "NO-GO despite the read-only plan; no runtime/frontend/mission wiring or promotion",
+    "runtime_frontend_mission": "not promoted",
+    "xam": "cycle 1761 kernel/XAM event-transport frontier remains separate and is not claimed closed",
+    "retail_or_xenia": "not used",
+    "generated_or_historical_ghidra": "not used"
+  },
+  "handoff": {
+    "next_action": "Require explicit authorization for one additional corrective pass, or root reevaluation of the domain1 boundary; do not promote runtime/frontend/mission.",
+    "luna_attempt_note": "The two authorized Luna attempts are exhausted only as a handoff/next-action scheduling note, never as technical evidence or blocker proof.",
+    "support": false
+  },
+  "source_hashes": {
+    "reconstruction/ac6-demo-native/config/demo-native-identity-v1.json": "0312ec1d9f70842805255e2bd0055a97035646339709cb63f4bb179db7f7ec07",
+    "reconstruction/ac6-demo-native/README.md": "f6f4f3385f78ea66278102a40c1b732c4e3f90688af65199e34d7fb2e62ec22b",
+    "reconstruction/ac6-demo-native/CMakeLists.txt": "221a096d598dc82d830b646c537c4de5b37f5cdbc93f1ebcb3f559831b6a370e",
+    "reconstruction/ac6-demo-native/src/content_store.cpp": "e7a6a76c78413d27acbcdcb3010b25f77f57e47f78a2afac4ec3dc256c241b89",
+    "reconstruction/ac6-demo-native/src/posix_fd.cpp": "6f1c0abd19fb2dd5828656c5bd09ab60716ff6bb52571b5c6f2fb8eb8d2146f8",
+    "reconstruction/ac6-demo-native/src/vfs.cpp": "b2938b0eeb5791876aaa490c333499aa1713c493225df1f05eccfd20d473de00",
+    "reconstruction/ac6-demo-native/tests/content_store_tests.cpp": "2143b608d18dd271ac6281764d0dc3c98347576e6d5dfd45c0006330cea18cd7",
+    "reconstruction/ac6-demo-native/tests/vfs_boundary_tests.cpp": "3c9df410e153fef5d59f89075f1f4b6fc238193e7eabbd7dde775a5a9e811a8b",
+    "reconstruction/ac6-demo-native/tests/production_surface.cmake": "96c9f2bb10850806e78c46846dee4c03e91174f80c5c912d3dfbc8a143874d8c",
+    "planning/ac6-demo-player/demo-native-domain1-handoff.md": "b3870f4e0f5cde9bcd49246d1c1f64167effd72c2fde6dd07f20f172111dc16c",
+    "reports/cycle-1761-ac6-demo-post-resume-one-shot.json": "dd398c2d969882ba12a96a88d17218b075bcc60308aa3a06080759a7ec1090f9"
+  }
+}

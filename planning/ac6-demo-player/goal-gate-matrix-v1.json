@@ -1,6 +1,6 @@
 {
   "schema": "ac6-demo-player-goal-gate-matrix/v1",
-  "generated_at": "2026-08-16",
+  "generated_at": "2026-08-17",
   "path_base": "portfolio-root:/fastdata/lavaulta/auto-re-agent",
   "target": {
     "target_id": "ac6-demo-xbox360-pal",
@@ -36,8 +36,13 @@
     },
     {
       "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-domain1-handoff.md",
-      "sha256": "dba2c5d7c078a9a3be24fe182c209c81228c53efa40fb191ffad4641bb45e103",
+      "sha256": "b3870f4e0f5cde9bcd49246d1c1f64167effd72c2fde6dd07f20f172111dc16c",
       "claim": "demo-native domain 1 remains import-only and unsupported"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1762-ac6-demo-native-domain1-partial.json",
+      "sha256": "391774ab041772a44585a4beef1a30d7db7bad593e54c34b42b7305714b09097",
+      "claim": "domain 1 autonomous import/CLI/VFS/identity/corpus/install is validated but publication blockers keep PARTIAL/NO-GO"
     }
   ],
   "gates": [
@@ -64,7 +69,7 @@
     },
     {
       "gate_id": "identity_negative_corpus",
-      "status": "proven",
+      "status": "partial",
       "evidence": [
         {
           "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-identity-profile-v1.json",
@@ -74,10 +79,15 @@
         {
           "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/tests/ac6-demo-content-tests.cpp",
           "claim": "content test rejects an empty/unmarked store"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1762-ac6-demo-native-domain1-partial.json",
+          "sha256": "391774ab041772a44585a4beef1a30d7db7bad593e54c34b42b7305714b09097",
+          "claim": "nine-file PAL corpus size/SHA validation passes; supported=false and retail/generated/Ghidra identities are excluded"
         }
       ],
-      "tests": ["job msw5b55a: ac6-demo-content-tests passed inside CTest 20/20"],
-      "limits": ["full nine-file negative corpus and symlink/path rejection receipt absent"]
+      "tests": ["cycle 1762 corpus validation: nine files and 322371032 bytes exact; native CTest 3/3"],
+      "limits": ["multi-process/swap/rename-fsync-failure/forced-I/O negative tests remain absent"]
     },
     {
       "gate_id": "codegen_boundary",
@@ -122,9 +132,14 @@
           "sha256": "dbb93272079a988ef2178c0afba6eaf64bbdbebccf42770ddb7449953492d555",
           "receipt_sha256": "4e992d4b767590b4ecb70cabef4a3c9511550b0a990ba86aed0696bf9d9f99af",
           "claim": "canonical install passed and bin/bin was absent"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1762-ac6-demo-native-domain1-partial.json",
+          "sha256": "391774ab041772a44585a4beef1a30d7db7bad593e54c34b42b7305714b09097",
+          "claim": "ac6-demo-native CLI/profile installation passed and bin/bin was absent"
         }
       ],
-      "tests": ["cmake --install ... --prefix $PWD; test ! -e bin/bin: PASS"],
+      "tests": ["cycle 1762 cmake --install ... --prefix $PWD; test ! -e bin/bin: PASS"],
       "limits": ["installation proves packaging layout only"]
     },
     {
@@ -488,17 +503,22 @@
       "evidence": [
         {
           "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-domain1-handoff.md",
-          "sha256": "dba2c5d7c078a9a3be24fe182c209c81228c53efa40fb191ffad4641bb45e103",
+          "sha256": "b3870f4e0f5cde9bcd49246d1c1f64167effd72c2fde6dd07f20f172111dc16c",
           "claim": "domain 1 import-only, exact corpus and rejection policy"
         },
         {
           "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-identity-profile-v1.json",
           "sha256": "7833e1585d937a149d247e2eef9b49ca952c0f83c4fb92380fcc4f0e493ad22d",
           "claim": "identity scaffold status=not-wired"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1762-ac6-demo-native-domain1-partial.json",
+          "sha256": "391774ab041772a44585a4beef1a30d7db7bad593e54c34b42b7305714b09097",
+          "claim": "autonomous CLI/VFS/store exists, corpus and install validate, but P1 TOCTOU/cleanup and P2 parent-dir fsync keep PARTIAL/NO-GO"
         }
       ],
-      "tests": [],
-      "limits": ["no reconstruction/ac6-demo-native directory or separate executable"]
+      "tests": ["ac6-demo-native CTest 3/3; CLI verify PASS; corpus/isolation/install PASS"],
+      "limits": ["publication blockers at content_store.cpp:494-560,570-599; content_store.cpp:506-520 and 367-374; posix_fd.cpp:419-452 and 128-175; no guest mount or runtime promotion"]
     },
     {
       "gate_id": "demo_native_runtime_domains",
@@ -528,51 +548,40 @@
     }
   ],
   "next_checkpoint": {
-    "gate_id": "post_resume_one_shot_ab",
-    "status": "proven",
-    "objective": "Map the first post-resume access boundary; keep START/frontend/readback semantics open and seek a later qualified render/readback divergence.",
+    "gate_id": "demo_native_domain1_corrective_pass_or_root_review",
+    "status": "partial",
+    "objective": "Obtain explicit authorization for one corrective domain1 store pass or root reevaluation; keep domain2/runtime/frontend/mission unsupported and XAM cycle1761 separate.",
     "evidence": [
       {
-        "path": "workspaces/ace-combat-6/reports/cycle-1761-ac6-demo-post-resume-one-shot.json",
-        "sha256": "dd398c2d969882ba12a96a88d17218b075bcc60308aa3a06080759a7ec1090f9",
-        "receipt_sha256": "600c40c2f289df730f49e922c71551e0064818580a821159f92d768a9c751e07",
-        "claim": "fresh neutral/buttons=16 A/B: one handoff and one load64 each, mapped unique PC 0x82327154"
-      },
-      {
-        "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/src/guest_bridge/event_post_set_trace.hpp",
-        "sha256": "874e3d78df5e511d45362bfa34396236b805fbe0c383030546d7da51c89d91e8",
-        "claim": "one-shot load/store/vector/refused branch instrumentation"
-      },
-      {
-        "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/tools/map_generated_guest_load_sites.py",
-        "sha256": "32d8b7a74b72ee7b3fca1fc791e8ede34ed6e57f8b2266319ce1c2029f69aa04",
-        "claim": "requires exactly one handoff and one mapped access; rejects refused/ambiguous routes"
+        "path": "workspaces/ace-combat-6/reports/cycle-1762-ac6-demo-native-domain1-partial.json",
+        "sha256": "391774ab041772a44585a4beef1a30d7db7bad593e54c34b42b7305714b09097",
+        "claim": "domain1 import/CLI/VFS boundary is validated; P1/P2 publication blockers and missing failure tests remain"
       }
     ],
     "limits": [
-      "mapped load64 closes only the post-resume access observation, not START consumption or graphics/readback",
-      "refusal and no-capture are evidence boundaries, not semantic support",
-      "the current event trace cap cannot be treated as proof of access absence"
+      "the two authorized Luna attempts are a handoff/next-action note only, never technical evidence",
+      "next action requires explicit corrective-pass authorization or root reevaluation",
+      "no runtime/frontend/mission promotion and no XAM closure"
     ]
   },
   "next_checkpoint_branches": [
     {
-      "branch_id": "access_load_or_store",
-      "status": "proven",
-      "match": "exactly one AC6_POST_RESUME_ACCESS kind=load* or store* row after the qualified handoff",
-      "action": "map generated function/line to PAL PC and bytes; retain graphics/readback as open"
-    },
-    {
-      "branch_id": "access_refused",
+      "branch_id": "corrective_store_pass_authorized",
       "status": "partial",
-      "match": "AC6_POST_RESUME_ACCESS_REFUSED, including atomic/reservation route",
-      "action": "record explicit refusal and stop promotion; do not infer scalar memory semantics"
+      "match": "explicit authorization for one corrective domain1 store pass",
+      "action": "close P1 TOCTOU/foreign cleanup and P2 parent-dir fsync; add multi-process/swap/rename-fsync-failure/forced-I/O tests"
     },
     {
-      "branch_id": "no_capture",
+      "branch_id": "root_reevaluation",
+      "status": "partial",
+      "match": "root reevaluates the import-only domain1 boundary",
+      "action": "retain supported=false and no runtime/frontend/mission promotion"
+    },
+    {
+      "branch_id": "runtime_domain2_promotion",
       "status": "missing",
-      "match": "no exact handoff/access, malformed row, multiple rows, or capture bound ends first",
-      "action": "classify bounded no-capture only; do not conclude that the guest access is absent"
+      "match": "domain2 runtime/frontend/mission evidence",
+      "action": "NO-GO; no promotion or XAM closure"
     }
   ]
 }
