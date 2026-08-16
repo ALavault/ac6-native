@@ -1,0 +1,7 @@
+edge,status,grade,evidence,consequence
+WeaponBin+0x10 -> damage magnitude,rejected,A for rejection in direct consumer,demo:0x82252778 sums +0x10 into an engagement-cycle timer threshold,do not map native damage from WeaponBin+0x10
+missile impact -> MISSILEDAMAGE,closed,A,"demo:0x820A2698, site demo:0x820A2C58 passes event code 1008 to target/collision interface",weapon family 2 reaches DurableBin channel MISSILEDAMAGE
+event constructor magnitude storage,closed,A,demo:0x822B40C0 stores f1 at event+0x80,"damage magnitude is an event/impact payload, not inherently a WeaponBin field"
+event magnitude -> durability,closed,A,demo:0x8224FE60 applies current -= DurableBin[event_code] * magnitude,complete downstream damage equation is known
+gun impact producer -> GUNDAMAGE magnitude,external boundary open,C,event code 1007 is named and DurableBin-indexed; direct producer and magnitude source remain outside current Arms/WeaponBin slice,next subsystem is impact/collision/damage-event production
+missile impact magnitude source,external boundary open,B-,missile hit site supplies code 1008 but does not load a WeaponBin scalar as f1 at the dispatch site,resolve target/collision virtual method and its impact-energy/effect lookup
