@@ -2,6 +2,7 @@
 
 ## Agent wait timeout
 
+- Pour `wait_agent`, utiliser `timeout_ms=3600000` (1 heure) ou omettre ce paramètre puisque le défaut configuré vaut 1 heure ; ne jamais utiliser `900000`/15 min ni `300000`, sauf demande explicite.
 - Never repeat unchanged `wait_agent` polling. After a timeout, wait again only when new status or information justifies it; otherwise report or suspend.
 - Do not invent, expand, or continue work beyond the explicit request. Do not add unsolicited tasks or optional improvements.
 
