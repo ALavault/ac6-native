@@ -1,0 +1,191 @@
+#include "ac6demo_native/content_store.hpp"
+#include "ac6demo_native/sha256.hpp"
+
+#include <array>
+#include <cassert>
+#include <chrono>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <span>
+#include <string>
+#include <utility>
+#include <vector>
+
+namespace {
+namespace fs = std::filesystem;
+
+struct Fixture {
+    fs::path root;
+    fs::path source;
+    fs::path store;
+    ac6demo_native::IdentityProfile profile;
+
+    Fixture() = default;
+    Fixture(const Fixture&) = delete;
+    Fixture& operator=(const Fixture&) = delete;
+    Fixture(Fixture&& other) noexcept
+        : root(std::move(other.root)),
+          source(std::move(other.source)),
+          store(std::move(other.store)),
+          profile(std::move(other.profile)) {}
+    Fixture& operator=(Fixture&& other) noexcept {
+        if (this != &other) {
+            std::error_code ec;
+            fs::remove_all(root, ec);
+            root = std::move(other.root);
+            source = std::move(other.source);
+            store = std::move(other.store);
+            profile = std::move(other.profile);
+        }
+        return *this;
+    }
+
+    ~Fixture() {
+        std::error_code ec;
+        fs::remove_all(root, ec);
+    }
+};
+
+Fixture make_fixture() {
+    const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    Fixture fixture;
+    fixture.root = fs::temp_directory_path() / ("ac6-demo-native-content-" +
+                                                 std::to_string(stamp));
+    fixture.source = fixture.root / "source";
+    fixture.store = fixture.root / "store";
+    fs::create_directories(fixture.source);
+    fixture.profile = ac6demo_native::production_identity();
+    for (std::size_t index = 0; index < fixture.profile.files.size(); ++index) {
+        const std::string payload = "synthetic-fixture-" + std::to_string(index) +
+                                     "\nread-only identity test\n";
+        const auto& expected = fixture.profile.files[index];
+        const fs::path path = fixture.source / expected.name;
+        std::ofstream output(path, std::ios::binary);
+        output.write(payload.data(), static_cast<std::streamsize>(payload.size()));
+        output.close();
+        fixture.profile.files[index].size = payload.size();
+        fixture.profile.files[index].sha256 = ac6demo_native::sha256_file(path);
+    }
+    return fixture;
+}
+
+void require(bool condition, const char* message) {
+    if (!condition) {
+        std::cerr << "FAIL: " << message << '\n';
+        std::abort();
+    }
+}
+
+bool rejected(Fixture& fixture) {
+    ac6demo_native::ContentStore store(fixture.store);
+    std::string error;
+    return !ac6demo_native::testing::import_fixture(store, fixture.source, fixture.profile, &error) &&
+           !error.empty();
+}
+
+void test_sha256_vectors() {
+    const std::array<std::byte, 0U> empty{};
+    require(ac6demo_native::sha256_bytes(empty) ==
+                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "SHA-256 empty vector");
+    const std::string abc = "abc";
+    require(ac6demo_native::sha256_bytes(std::as_bytes(std::span(abc))) ==
+                "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+            "SHA-256 abc vector");
+}
+
+void test_positive_and_rollback() {
+    Fixture fixture = make_fixture();
+    ac6demo_native::ContentStore store(fixture.store);
+    std::string error;
+    require(!store.import_directory(fixture.source, &error),
+            "production import does not accept synthetic fixture identity");
+    require(ac6demo_native::testing::import_fixture(store, fixture.source, fixture.profile, &error),
+            "synthetic nine-file import");
+    require(ac6demo_native::testing::verify_fixture(store, fixture.profile, &error),
+            "synthetic nine-file verification through VFS");
+    const fs::path pointer = fixture.store / "current";
+    std::ifstream pointer_input(pointer, std::ios::binary);
+    const std::string before((std::istreambuf_iterator<char>(pointer_input)),
+                             std::istreambuf_iterator<char>());
+
+    {
+        std::ofstream tampered(fixture.source / "DATA.TBL", std::ios::binary | std::ios::trunc);
+        tampered << "tampered";
+    }
+    require(!ac6demo_native::testing::import_fixture(store, fixture.source, fixture.profile, &error),
+            "tamper rejected before publication");
+    std::ifstream after_input(pointer, std::ios::binary);
+    const std::string after((std::istreambuf_iterator<char>(after_input)),
+                            std::istreambuf_iterator<char>());
+    require(after == before, "failed import preserves current pointer");
+    bool has_staging = false;
+    for (const auto& entry : fs::directory_iterator(fixture.store)) {
+        has_staging = has_staging || entry.path().filename().string().rfind(".staging-", 0U) == 0U;
+    }
+    require(!has_staging, "failed import cleans staging");
+}
+
+void test_rejections() {
+    {
+        Fixture fixture = make_fixture();
+        fs::remove(fixture.source / "DATA.TBL");
+        require(rejected(fixture), "missing file rejected");
+    }
+    {
+        Fixture fixture = make_fixture();
+        std::ofstream extra(fixture.source / "moviepack.bin", std::ios::binary);
+        extra << "unexpected";
+        require(rejected(fixture), "unexpected file rejected");
+    }
+    {
+        Fixture fixture = make_fixture();
+        fs::rename(fixture.source / "DATA.TBL", fixture.source / "data.tbl");
+        require(rejected(fixture), "wrong case rejected");
+    }
+    {
+        Fixture fixture = make_fixture();
+        std::error_code ec;
+        fs::remove(fixture.source / "DATA.TBL", ec);
+        fs::create_symlink(fixture.source / "DATA00.PAC", fixture.source / "DATA.TBL", ec);
+        require(!ec && rejected(fixture), "source symlink rejected");
+    }
+    {
+        Fixture fixture = make_fixture();
+        std::ofstream truncated(fixture.source / "DATA.TBL", std::ios::binary | std::ios::trunc);
+        truncated << "short";
+        require(rejected(fixture), "truncated file rejected");
+    }
+    {
+        Fixture fixture = make_fixture();
+        auto profile = fixture.profile;
+        profile.files[0].sha256 = ac6demo_native::retail_xex_sha256();
+        ac6demo_native::ContentStore store(fixture.store);
+        require(!ac6demo_native::testing::import_fixture(store, fixture.source, profile),
+                "retail identity cannot be injected as production corpus");
+    }
+}
+
+void test_separation() {
+    const auto root = ac6demo_native::ContentStore::default_root().generic_string();
+    require(root.find("ac6-demo-native") != std::string::npos,
+            "default store has dedicated XDG product name");
+    require(root.find("ac6-native") == std::string::npos &&
+                root.find("ac6-demo-recomp") == std::string::npos,
+            "default store is separate from other products");
+    require(ac6demo_native::production_identity().target_id == "ac6-demo-xbox360-pal",
+            "compiled target identity");
+}
+
+}  // namespace
+
+int main() {
+    test_sha256_vectors();
+    test_positive_and_rollback();
+    test_rejections();
+    test_separation();
+    std::cout << "content store tests passed\n";
+    return 0;
+}
