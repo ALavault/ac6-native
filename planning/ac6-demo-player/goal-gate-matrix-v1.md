@@ -4,9 +4,9 @@ Target: `ac6-demo-xbox360-pal`, Xbox 360 Xenon/PAL demo, `Default.xex`.
 Overall support remains `supported=false`.
 
 The authoritative anchor is [`CURRENT.json`](../../../../reports/handoff/CURRENT.json)
-(SHA-256 `79dd3a…4618d7a`), cycle 1760
-([JSON](../../reports/cycle-1760-ac6-demo-event-handoff.json), SHA-256
-`6258f9…68884af`). Statuses are strict: `proven`, `partial`,
+(cycle 1761, supported=false), with the post-resume one-shot receipt
+([JSON](../../reports/cycle-1761-ac6-demo-post-resume-one-shot.json), canonical
+SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 `failed`, or `missing`. Green unit/CTest results are never runtime parity.
 
 | Gate | Status | Evidence and limit |
@@ -23,7 +23,7 @@ The authoritative anchor is [`CURRENT.json`](../../../../reports/handoff/CURRENT
 | Kernel/XAM event transport | partial | Cycle 1760: 962 set→wake→resume chains on `0xE000004C`; focused trace capped at 32768 and only covers to tick 1212. |
 | VFS/user store | partial | Static store/VFS implementation and empty-store test exist; no complete nine-file guest mount receipt. |
 | Time/scheduler | partial | 5600 ticks, 5463 PRESENT, 23 blocked/0 runnable; 60 Hz simulation/30 Hz presentation cadence not proven. |
-| Guest memory/post-resume | partial | Earlier capsule has 351 same-tick memory rows; current bounded event capsule observes no post-resume access. |
+| Guest memory/post-resume | proven | Cycle 1761 closes the first-access observation boundary: each fresh route has one handoff and one `load64`, mapped to unique PAL PC `0x82327154` (`0x7F0409D8`, bytes `eb61ffd0`). Semantic role, START consumption and readback remain open. |
 | VMX/CPU runtime | partial | Bounded codegen/CPU route reaches max ticks without unsupported instruction/fault; full VMX semantic gate absent. |
 | XMA runtime | partial | Six context-qualified kicks are traversed under opt-in guard; no XMA effect is promoted. |
 | Media/audio decode | missing | No decoded packet, timestamp/volume, or English/Japanese audio output receipt. |
@@ -44,14 +44,13 @@ The authoritative anchor is [`CURRENT.json`](../../../../reports/handoff/CURRENT
 
 ## Single next checkpoint
 
-Run one fresh neutral/buttons=16 A/B `post_resume_one_shot` capsule at the same
-PAL identity and 5600-tick bound, adding
-`AC6_DEMO_WATCH_POST_RESUME_ACCESS=1`. Use the existing one-shot probe and
-`map_generated_guest_load_sites.py`; do not modify generated C++.
+Seek the first qualified render/readback divergence after the cycle-1761
+post-resume access. Do not reinterpret the `load64` as START consumption or
+frontend transition; do not modify generated C++.
 
 | Branch | Status | Classification |
 |---|---|---|
-| Exactly one `load*`/`store*` access | proven | Map generated function/line to PAL PC/bytes. This closes only the event-access observation; graphics/readback stays open. |
+| Exactly one `load*`/`store*` access | proven | Cycle 1761 maps each route to PAL PC/bytes. This closes only the event-access observation; graphics/readback stays open. |
 | Explicit `AC6_POST_RESUME_ACCESS_REFUSED` | partial | Record a refusal boundary; do not infer scalar memory semantics or promote support. |
 | No capture, malformed, multiple rows, or bound ends first | missing | Bounded no-capture only; it is not proof that the guest access is absent. |
 

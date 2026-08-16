@@ -15,8 +15,14 @@
   "source_anchors": [
     {
       "path": "reports/handoff/CURRENT.json",
-      "sha256": "79dd3a3f527bc1832389b89f7de4baf3eeea9d9fbf5ee5f19e1b50fe14618d7a",
-      "claim": "authoritative portfolio handoff; AC6 cycle 1760; supported=false"
+      "sha256": "3a92a96a149507133c07ce43d00d724526221fc640391a2fc0b7b7fd67f180dc",
+      "claim": "authoritative portfolio handoff; AC6 cycle 1761; supported=false"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1761-ac6-demo-post-resume-one-shot.json",
+      "sha256": "dd398c2d969882ba12a96a88d17218b075bcc60308aa3a06080759a7ec1090f9",
+      "receipt_sha256": "600c40c2f289df730f49e922c71551e0064818580a821159f92d768a9c751e07",
+      "claim": "two fresh routes each have one mapped post-resume load64; no START/frontend promotion"
     },
     {
       "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
@@ -58,7 +64,7 @@
     },
     {
       "gate_id": "identity_negative_corpus",
-      "status": "partial",
+      "status": "proven",
       "evidence": [
         {
           "path": "workspaces/ace-combat-6/planning/ac6-demo-player/demo-native-identity-profile-v1.json",
@@ -244,10 +250,16 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
           "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
           "claim": "post_resume_guest_access_observed=false only within capped capsule"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1761-ac6-demo-post-resume-one-shot.json",
+          "sha256": "dd398c2d969882ba12a96a88d17218b075bcc60308aa3a06080759a7ec1090f9",
+          "receipt_sha256": "600c40c2f289df730f49e922c71551e0064818580a821159f92d768a9c751e07",
+          "claim": "one load64/handoff per fresh route; unique mapped PAL PC 0x82327154"
         }
       ],
       "tests": [],
-      "limits": ["semantic role and current post-resume access remain unknown"]
+      "limits": ["first-access boundary is closed only; semantic role, START consumption, frontend and readback remain unknown"]
     },
     {
       "gate_id": "vmx_cpu_runtime",
@@ -517,9 +529,15 @@
   ],
   "next_checkpoint": {
     "gate_id": "post_resume_one_shot_ab",
-    "status": "missing",
-    "objective": "Run one fresh neutral/buttons=16 A/B capsule at the same PAL identity and 5600-tick bound with AC6_DEMO_WATCH_POST_RESUME_ACCESS=1, then map exactly one post-resume access without changing generated C++.",
+    "status": "proven",
+    "objective": "Map the first post-resume access boundary; keep START/frontend/readback semantics open and seek a later qualified render/readback divergence.",
     "evidence": [
+      {
+        "path": "workspaces/ace-combat-6/reports/cycle-1761-ac6-demo-post-resume-one-shot.json",
+        "sha256": "dd398c2d969882ba12a96a88d17218b075bcc60308aa3a06080759a7ec1090f9",
+        "receipt_sha256": "600c40c2f289df730f49e922c71551e0064818580a821159f92d768a9c751e07",
+        "claim": "fresh neutral/buttons=16 A/B: one handoff and one load64 each, mapped unique PC 0x82327154"
+      },
       {
         "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/src/guest_bridge/event_post_set_trace.hpp",
         "sha256": "874e3d78df5e511d45362bfa34396236b805fbe0c383030546d7da51c89d91e8",
@@ -532,7 +550,7 @@
       }
     ],
     "limits": [
-      "a mapped load/store closes only the post-resume access observation, not graphics/readback",
+      "mapped load64 closes only the post-resume access observation, not START consumption or graphics/readback",
       "refusal and no-capture are evidence boundaries, not semantic support",
       "the current event trace cap cannot be treated as proof of access absence"
     ]

@@ -1,0 +1,75 @@
+{
+  "schema": "ac6-demo-post-resume-one-shot-report/v1",
+  "cycle": 1761,
+  "status": "demo-observed-boundary",
+  "supported": false,
+  "source_master": {
+    "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-post-resume-ab/sha256/940637146a447e48fc1619471b9910278c962ca0b261017a269c3cc4affca0c8/receipt.json",
+    "sha256": "940637146a447e48fc1619471b9910278c962ca0b261017a269c3cc4affca0c8"
+  },
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "project": "ace-combat-6-demo",
+    "ghidra_project": "ace-combat-6-demo",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "backend": "vulkan",
+    "fresh_process_per_route": true,
+    "routes": ["neutral", "buttons_16"],
+    "max_ticks": 5600,
+    "presents_per_route": 5463,
+    "scheduler_per_route": {"threads": 23, "blocked": 23, "runnable": 0, "finished": 0},
+    "input": {"buttons": "0x0010", "tick": 252, "connected": true, "lt": 0, "rt": 0, "lx": 0, "ly": 0, "rx": 0, "ry": 0},
+    "environment": ["SDL_AUDIODRIVER=dummy", "Xvfb -displayfd (owned per route)", "AC6_DEMO_WATCH_POST_RESUME_ACCESS=1"]
+  },
+  "comparison": {
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "outcome": "max_ticks",
+    "report_subtrees_json_object_equal": ["outcome", "milestones", "graphics", "scheduler"],
+    "graphics_equal": true,
+    "scheduler_equal": true,
+    "traces_equal": false,
+    "trace_sha256": {"neutral": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562", "buttons_16": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946"},
+    "report_sha256": {"neutral": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533", "buttons_16": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468"},
+    "stderr_byte_equal": true,
+    "stderr_sha256": "77b7e327c12486e70bba61eb3a784ce6668413b394b15fa4245e3d4044f8c394"
+  },
+  "post_resume_boundary": {
+    "access_count_per_route": 1,
+    "handoff_count_per_route": 1,
+    "access": {"kind": "load64", "address": "0x7F0409D8", "value": "0x0000000000000000", "tick": 1, "thread": 1, "generated_line": 30, "source": "ppc_recomp.44.cpp", "guest_pc": "0x82327154", "instruction": "ld r27,-48(r1)", "instruction_bytes": "eb 61 ff d0", "lr": "0x821A69CC"},
+    "handoff": {"callsite": "0x821A69C8", "resume_pc": "0x821A69CC", "signal_handle": "0xE0000048", "wait_handle": "0xE000004C", "thread": 1, "tick": 1, "lr_is_not_pc": true},
+    "mapper": {"tool": "ppc_func_mapping", "mapped_unique_pc": "0x82327154", "mapper_tests": 9, "ghidra_owner": "unavailable"},
+    "interpretation": "closes the first post-resume access observation boundary only; it does not prove scalar semantics, START consumption, frontend transition, or guest-owned readback"
+  },
+  "provenance_only": {
+    "failure_receipts": [
+      {"sha256": "f6084b87e674e81a5590fbb8e1b63b097b51fc8dd6fe2cbc58a6a6ce39bced39", "role": "prior failed receipt provenance only"},
+      {"sha256": "2c6c088bd162f08f9c0252a298489f58caf6f180169fcb386c27b76e1d4dfb43", "role": "prior failed receipt provenance only"}
+    ],
+    "xvfb_lifecycle_cases": 13,
+    "xvfb_real_smoke": true,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_used": false,
+    "retail_or_historical_evidence_used": false
+  },
+  "conclusion": "The first post-resume guest access boundary is closed for this fresh demo A/B capsule. This is not evidence of START consumption, frontend, mission, terminal, native parity, or supported=true.",
+  "source_hashes": {
+    "analysis/demo/.../receipt.json": "940637146a447e48fc1619471b9910278c962ca0b261017a269c3cc4affca0c8",
+    "analysis/demo/.../neutral.post-resume-map.json": "0ed62d3a18b5ce29fc048f61e507389b784bf05ce1a322ae0b44f02d04356bc1",
+    "analysis/demo/.../buttons_16.post-resume-map.json": "938a461325159d519710866fec79988db3eccfd09eb74bb0fe2727c41fa36075",
+    "tests/test_build_demo.py": "2c01c2960c33f8d5a42cb9360275590b22ecd382cc6c04afb614e7e87ec1bbfb"
+  },
+  "integrity": {
+    "receipt_sha256": "600c40c2f289df730f49e922c71551e0064818580a821159f92d768a9c751e07",
+    "report_markdown_sha256": "6cfde00d171095a6f760ab54ff6dcbea1e1d237f5d145da7675d41d7749d3657",
+    "hash_definition": "receipt SHA-256 is over canonical JSON with integrity.receipt_sha256 replaced by null"
+  }
+}

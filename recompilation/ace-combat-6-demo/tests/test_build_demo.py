@@ -2105,6 +2105,42 @@ class BoundaryEvidenceTests(unittest.TestCase):
         self.assertEqual(current_ac6["cycle"], receipt["cycle"])
         self.assertEqual(current_ac6["source_report"], source_report)
 
+    def test_cycle_1761_post_resume_one_shot_receipt_is_bounded_and_linked(self):
+        receipt_path = WORKSPACE / "reports/cycle-1761-ac6-demo-post-resume-one-shot.json"
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["schema"], "ac6-demo-post-resume-one-shot-report/v1")
+        self.assertEqual(receipt["cycle"], 1761)
+        self.assertFalse(receipt["supported"])
+        self.assertEqual(receipt["target"]["id"], "ac6-demo-xbox360-pal")
+        self.assertEqual(receipt["target"]["project"], "ace-combat-6-demo")
+        self.assertEqual(receipt["target"]["xex_sha256"], BUILD.EXPECTED_XEX)
+        self.assertEqual(receipt["scope"]["max_ticks"], 5600)
+        self.assertEqual(receipt["scope"]["presents_per_route"], 5463)
+        self.assertEqual(receipt["scope"]["scheduler_per_route"],
+                         {"threads": 23, "blocked": 23, "runnable": 0, "finished": 0})
+        self.assertEqual(receipt["post_resume_boundary"]["access_count_per_route"], 1)
+        self.assertEqual(receipt["post_resume_boundary"]["handoff_count_per_route"], 1)
+        access = receipt["post_resume_boundary"]["access"]
+        self.assertEqual((access["address"], access["guest_pc"], access["instruction_bytes"]),
+                         ("0x7F0409D8", "0x82327154", "eb 61 ff d0"))
+        self.assertTrue(receipt["post_resume_boundary"]["handoff"]["lr_is_not_pc"])
+        self.assertEqual(receipt["comparison"]["report_subtrees_json_object_equal"],
+                         ["outcome", "milestones", "graphics", "scheduler"])
+        self.assertFalse(receipt["comparison"]["traces_equal"])
+        self.assertFalse(receipt["comparison"]["frontend"])
+        self.assertFalse(receipt["comparison"]["mission"])
+        self.assertFalse(receipt["comparison"]["terminal"])
+        self.assertEqual(receipt["provenance_only"]["xvfb_lifecycle_cases"], 13)
+        self.assertEqual(receipt["post_resume_boundary"]["mapper"]["mapper_tests"], 9)
+        source = WORKSPACE / "analysis/demo/ac6-demo-post-resume-ab/sha256/940637146a447e48fc1619471b9910278c962ca0b261017a269c3cc4affca0c8/receipt.json"
+        self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(),
+                         receipt["source_master"]["sha256"])
+        current = json.loads((WORKSPACE.parents[1] / "reports/handoff/CURRENT.json").read_text())
+        current_ac6 = next(item for item in current["targets"] if item["id"] == "ac6")
+        self.assertEqual(current_ac6["cycle"], 1761)
+        self.assertEqual(current_ac6["source_report"],
+                         "workspaces/ace-combat-6/reports/cycle-1761-ac6-demo-post-resume-one-shot.md")
+
 
 if __name__ == "__main__":
     unittest.main()
