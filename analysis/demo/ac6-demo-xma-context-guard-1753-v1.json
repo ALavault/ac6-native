@@ -1,0 +1,48 @@
+{
+  "schema": "ac6-demo-xma-context-guard/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "guard": {
+    "register": "0x7FEA1A80",
+    "length": 4,
+    "sequence": [
+      {"context": "0x2E800000", "wire": "0x01000000", "logical_bit": "0x01", "tick": 1048},
+      {"context": "0x2E800040", "wire": "0x02000000", "logical_bit": "0x02", "tick": 1048},
+      {"context": "0x2E800080", "wire": "0x04000000", "logical_bit": "0x04", "tick": 1048},
+      {"context": "0x2E8000C0", "wire": "0x08000000", "logical_bit": "0x08", "tick": 5052},
+      {"context": "0x2E800100", "wire": "0x10000000", "logical_bit": "0x10", "tick": 5052},
+      {"context": "0x2E800140", "wire": "0x20000000", "logical_bit": "0x20", "tick": 5052}
+    ],
+    "default": "disabled",
+    "post_write_effect": "none"
+  },
+  "run": {
+    "route": "neutral",
+    "max_ticks": 5400,
+    "completed_ticks": 5400,
+    "presents": 5263,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "scheduler": {"threads": 23, "runnable": 0, "blocked": 23}
+  },
+  "graphics": {
+    "ib_intermediate_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+    "ib_main_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+  },
+  "artifacts": {
+    "report_sha256": "ec40217ffd824cd7e6f525497b31a05d4c6ca7e14bfdf2746e8de6fc3ce93a44",
+    "trace_sha256": "793f57e338aa7265f1e4d3c06d0a6d9865fc34da37e0ec9abee1653d6a5c1d6e",
+    "stderr_sha256": "99f1278ca16212cb9a7e3c25365fc3e9c954ebf55106bb59017e88eb9c9cc1df",
+    "binary_sha256": "b8b155faded9a453ee115c42ee533a29c572b9ca278fe46960f984d5332f9a07"
+  },
+  "classification": {
+    "demo-qualified": ["six context/value pairs are enforced by the opt-in guard"],
+    "demo-observed": ["MmGetPhysicalAddress immediately precedes each kick", "5263 PRESENT", "23 blocked threads"],
+    "xenia-generic": [],
+    "unknown": ["XMA register semantics", "audio packets", "EDRAM writer", "frontend and mission"]
+  }
+}

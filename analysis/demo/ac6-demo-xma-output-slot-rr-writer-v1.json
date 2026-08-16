@@ -1,0 +1,46 @@
+{
+  "schema": "ac6-demo-xma-output-slot-rr-writer/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "rr": {
+    "path": "../../.tools/rr-install/bin/rr",
+    "commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "neutral_events_sha256": "8fabf9189316f8178e5ad3a9cc9f6a2261791ff5bc87eeb5e9abedf1b48ab065",
+    "start_events_sha256": "69b647db1702927f219fee9ffa3630088d3c48117e42a831471dfd41d5366afb"
+  },
+  "runs": {
+    "max_ticks": 1050,
+    "present_count": 911,
+    "frontier": {"tick": 1048, "module": "xboxkrnl.exe", "ordinal": 548, "name": "XMACreateContext", "thread": 21, "lr": "0x82357298"},
+    "neutral": {"rtply_sha256":"6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20", "report_sha256":"7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131", "guest_r3":"0x17360050"},
+    "start": {"rtply_sha256":"d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d", "report_sha256":"238bd9e4f7e8ea150b7e5622101340145bc0dd9e7076d5c6472f4970634022cc", "guest_r3":"0x17360050"}
+  },
+  "watchpoint": {
+    "guest_range": {"base":"0x17360050", "length":"0x4"},
+    "neutral_host_address": "0x797c63360050",
+    "start_host_address": "0x705ffe760050",
+    "direction": "reverse-continue",
+    "writer": {"function":"0x821A4B70", "instruction":"0x821A4B94", "bytes":"7c205fec", "mnemonic":"dcbzl r0,r11", "caller":"0x82356528", "callsite":"0x8235660C", "lr_after_call":"0x82356610", "callsite_bytes":"4be4e565"},
+    "effect": "zero-fill path observed through host memset size 0x80",
+    "guest_mutation_by_import": false,
+    "status": "demo-qualified-last-writer"
+  },
+  "static": {
+    "writer_function": {"entry":"0x821A4B70","size":"0xFC","byte_sha256":"5c7d7d4282c7d5422c6a77015a1506f2fb8aa29ed6d8184acd7a5602f3a15d8b","pseudocode_sha256":"858910269474b60e8a6c160921e3de37d795ba0d48830b5288a41eef69e53b27"},
+    "caller_function": {"entry":"0x82356528","size":"0x264","byte_sha256":"89f43ea2bddb86eaf02618a1ffc86f70924b5c01c49cf7b55ac56d92dce76e3a","pseudocode_sha256":"d4754a9723b0f651b24ad995ca60fcee1874e7bd79e1189eddfa20a2c095dad5"}
+  },
+  "classification": {
+    "demo-qualified": ["A/B rr identity", "last writer function/instruction", "callsite bytes", "pre-call output-slot address"],
+    "demo-observed": ["zero-fill 0x80", "reverse watchpoint FE pattern"],
+    "xenia-generic": [],
+    "unknown": ["first writer", "table/index", "post-call output pointer", "XMA ABI and packets"]
+  },
+  "guard": {"ordinal_548_traps": true, "xma_effect": false, "audio_decode": false, "readback": false, "screencap": false},
+  "next_checkpoint": "fresh neutral/START guest-store trace for [0x17360050,0x17360054) and first consumer"
+}

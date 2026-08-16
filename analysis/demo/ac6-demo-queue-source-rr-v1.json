@@ -1,0 +1,113 @@
+{
+  "schema": "ac6-demo-queue-source-rr/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "runtime": {
+    "root": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "max_ticks": 253,
+    "neutral": {
+      "trace_events_sha256": "77014c9464e034dd7a709b1f37512ba6abca757b83724aecea6cf9e35c153fef",
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-neutral-queue-consumer-source-gdb.log",
+      "gdb_log_sha256": "7912aced06e3c9f7c0c300d5fc70a5dc090ad82cc34cc85e16868102d64b4ba4"
+    },
+    "start": {
+      "trace_events_sha256": "a11313387e8704ed1ca15728585f128736caffe5402dcb7da8eedc44ad73df9a",
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-start-queue-consumer-source-gdb.log",
+      "gdb_log_sha256": "a523e822de2683f84b1bf745d0bd563526acbbec78c095c465b41d93b27c2792"
+    }
+  },
+  "rr": {
+    "path": ".tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "probe_script": "recompilation/ace-combat-6-demo/tools/rr_queue_consumer_source.gdb",
+    "probe_script_sha256": "cf38fe7abea14b11bae6094b5769446053e0d868d62b9ed40b2d27282bde3490",
+    "read_only": true,
+    "terminal_signal": "SIGKILL at syscall_traced; not promoted as guest success"
+  },
+  "abi": {
+    "context_source": ".build/ac6-demo-codegen-atomic-1/ppc_context_base.h",
+    "register_offsets": {
+      "r3": "0x00",
+      "r0": "0x08",
+      "r1": "0x10",
+      "r2": "0x18",
+      "r4_to_r31": "0x20 + (reg-4)*8",
+      "lr": "0x100"
+    },
+    "entry": "0x820FFCA0",
+    "guest_memory_decode": "raw_base + guest_address, big-endian u32"
+  },
+  "observations": {
+    "neutral": {
+      "tick": 221,
+      "thread": 25,
+      "guest_lr": "0x822EE194",
+      "queue": "0x82386CC0",
+      "producer_index_address": "0x8238CD90",
+      "consumer_index_address": "0x8238CD94",
+      "producer_index": 0,
+      "consumer_index": 0,
+      "source_address": "0x82386D90",
+      "source_word_count": 24,
+      "source_all_zero": true
+    },
+    "start": {
+      "tick": 221,
+      "thread": 25,
+      "guest_lr": "0x822EE194",
+      "queue": "0x82386CC0",
+      "producer_index_address": "0x8238CD90",
+      "consumer_index_address": "0x8238CD94",
+      "producer_index": 0,
+      "consumer_index": 0,
+      "source_address": "0x82386D90",
+      "source_word_count": 24,
+      "source_all_zero": true
+    },
+    "a_b_equal": true
+  },
+  "static_join": {
+    "generated_source": ".build/ac6-demo-codegen-atomic-1/generated/ppc_recomp.7.cpp",
+    "generated_source_sha256": "8b95cfc10189d3ebfde61210f78b837b145fd327c357c8177e12167f74f5a78b",
+    "function": "0x820FFCA0",
+    "source_formula": "r31 + r10*96 + 208",
+    "index_register": "r10 loaded from queue+24788",
+    "source_address_formula": "0x82386CC0 + 0*96 + 208 = 0x82386D90",
+    "authority": "literal generated control-flow/address cross-match only"
+  },
+  "classification": {
+    "demo-qualified": [
+      "same-build neutral/START source slot address and zero snapshot",
+      "queue index addresses and values",
+      "corrected PPCContext ABI and read-only rr provenance"
+    ],
+    "demo-observed": [
+      "first 0x820FFCA0 entry at tick 221/thread 25",
+      "source slot 0x82386D90 selected with consumer index zero"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "writer and later payload of the source slot",
+      "queue semantics and frontbuffer consumer",
+      "pixels, frontend, mission and terminal"
+    ]
+  },
+  "guard": {
+    "require_correct_ppc_context_layout": true,
+    "require_same_build_ab": true,
+    "read_only": true,
+    "queue_index_range": "[0x8238CD90,0x8238CD98)",
+    "source_slot_range": "[0x82386D90,0x82386DF0)",
+    "on_nonzero_or_divergence": "stop and retain unknown",
+    "synthetic_state_write": false,
+    "range_resynchronization": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

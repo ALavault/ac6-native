@@ -1,0 +1,76 @@
+{
+  "schema": "ac6-demo-atomic-rr-noinline/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon PPC big-endian / Xenos",
+    "frontbuffer_range": ["0x1374A000", "0x13AE2000"]
+  },
+  "tools": {
+    "rr": ".tools/rr-install/bin/rr",
+    "rr_source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "gdb_script": "recompilation/ace-combat-6-demo/tools/rr_atomic_probe.gdb",
+    "gdb_script_sha256": "b91b48fa183693b73f8e2e36970b0039e0920841aefb8fcaa9def6aa8b58cbc7"
+  },
+  "build": {
+    "runtime_binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "runtime_binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "adapter_header_sha256": "138be495fa44ceff0e3f06db1ba611f0a33a0d3fdbf91642d83c6c01dc298643",
+    "atomic_impl_sha256": "bcbe03debf63ee4fd0e6c45936f1001b1600b6a2650a8bac29c4981bc6f317d0",
+    "generated_cpp_files": 52,
+    "generated_boundary_diagnostics": 0,
+    "generated_unsupported_instructions": 0,
+    "generated_counts": {"ldarx": 6, "stdcx": 8, "PPC_LDARX": 6, "PPC_STDCX": 8, "raw_compare_swap": 0, "raw_base_dereference": 0},
+    "ctest": "17/17"
+  },
+  "rr_ab": {
+    "trace_root": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070",
+    "neutral": {
+      "ticks": 253,
+      "trace_data_bytes": 311445834,
+      "trace_events_sha256": "77014c9464e034dd7a709b1f37512ba6abca757b83724aecea6cf9e35c153fef",
+      "report_sha256": "420fb9341ea0a56be33f0143f9bf9be768b08a1697fe7cb314e5e055bbf2a843",
+      "rtply_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+      "gdb_log_sha256": "16efc94a46444f7f6788bf411ace8995a642bbfdf6b24ec1b9d7c72b245395fe"
+    },
+    "start": {
+      "input": "buttons=0x10 at tick 252",
+      "ticks": 253,
+      "trace_data_bytes": 311406657,
+      "trace_events_sha256": "a11313387e8704ed1ca15728585f128736caffe5402dcb7da8eedc44ad73df9a",
+      "report_sha256": "8506399dca66624afcf52a8746bc4cd08c669f30021d9fb954bb8bebb01f7327",
+      "rtply_sha256": "31553733582cf7345375d8f1978a28645621e488700f2a31b7e883b66109360b2",
+      "gdb_log_sha256": "8fd421ddeacf2ec29ad00a2dcc1bbb18cfebca4651c85d5260cf7374e757309d"
+    },
+    "common": {
+      "atomic_entry_count_per_route": 1,
+      "atomic_entry": {"function": "0x822E4290", "lr": "0x822EE194", "r3": "0x82935270", "tick": 0, "thread": 13},
+      "ldarx_dynamic_calls_per_route": 0,
+      "stdcx_dynamic_calls_per_route": 0,
+      "frontbuffer_reader_or_writer_lines": 0,
+      "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "presents": 116,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "classification": {
+    "demo-qualified": ["exact rr A/B identity", "atomic entry PC/LR/thread/tick", "zero dynamic wrapper calls", "frontbuffer negative guard"],
+    "demo-observed": ["0x822E4290 entry at tick 0 in neutral and START"],
+    "xenia-generic": [],
+    "unknown": ["future atomics after frontend transition", "guest pixel consumer", "pixels", "frontend", "mission", "screencap"]
+  },
+  "policy": {
+    "no_retail_merge": true,
+    "system_rr_used": false,
+    "xenia_rexglue_ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_or_proprietary_assets_tracked": false,
+    "fail_closed": true,
+    "screencap_promoted": false
+  },
+  "next_checkpoint": "Probe the first actual guest transition tick; if an atomic wrapper is reached, record effective address and PC/LR/thread/tick before any frontbuffer effect."
+}

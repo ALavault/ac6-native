@@ -1,0 +1,145 @@
+{
+  "schema": "ac6-demo-frontbuffer-vector-reader-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "frontend_claimed": false
+  },
+  "instrumentation": {
+    "build": "ac6-demo-vector-build-1",
+    "build_type": "Release",
+    "codegen": true,
+    "vector_trace": true,
+    "default_product_vector_trace": false,
+    "env": "AC6_DEMO_WATCH_FRONTBUFFER_READERS=1",
+    "scalar_hook": "AC6_PPC_LOAD_U8/U16/U32/U64",
+    "vector_hook": "simde_mm_load_si128 -> AC6_PPC_RECORD_VECTOR_READ",
+    "vector_trace_source": "src/guest_bridge/vector_read_trace.cpp",
+    "range": {
+      "begin": "0x1374A000",
+      "end_exclusive": "0x13AE2000",
+      "bytes": 3768320
+    },
+    "mutates_guest": false,
+    "generated_cpp_modified": false
+  },
+  "runs": {
+    "neutral_t253": {
+      "process_fresh": true,
+      "ticks": 253,
+      "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "report_sha256": "33b6c8b3759461fd7720ca3942258cee3fcd1ec4732746a1df8314e50b5685a7",
+      "stdout_sha256": "e89f0b09bfaece518fef12882c0aa91d18ef9c06c323906f95c1bd901728e39a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scalar_reader_rows": 0,
+      "vector_reader_rows": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "vdswap_notifications": 116,
+      "last_vdswap_tick": 252,
+      "ib_sha256": [
+        "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+        "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+      ]
+    },
+    "start_t253": {
+      "process_fresh": true,
+      "ticks": 253,
+      "trace_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "report_sha256": "2d0c391ba3d0d2a6f2dbf0907ac8538abde5be17f8f9424c2fb63cb2bb91a6cf",
+      "stdout_sha256": "390a3cc1731c925969b1d2d6f9d18340d553290c124b076f6a5702df79fab103",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scalar_reader_rows": 0,
+      "vector_reader_rows": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "vdswap_notifications": 116,
+      "last_vdswap_tick": 252,
+      "ib_sha256": [
+        "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+        "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+      ]
+    },
+    "start_t800": {
+      "process_fresh": true,
+      "ticks": 800,
+      "trace_sha256": "54a2860fccb21ab3be0595ae5532a7f9e0dbc3b7b971aaf334a7a087f5a427e1",
+      "report_sha256": "062e97c4087ec46b14979ecfd0ce3cef1e5f00531e27bfd899d7e6b7386c36fe",
+      "stdout_sha256": "31ba1a5dff8119a093a4dda19130478e7e83e9496655d3e5ea6541feb5583ef7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scalar_reader_rows": 0,
+      "vector_reader_rows": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "vdswap_notifications": 663,
+      "last_vdswap_tick": 799,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "ib_sha256": [
+        "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+        "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+      ]
+    }
+  },
+  "renderer": {
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "frontbuffer": {
+      "address": "0x1374A000",
+      "format": 6,
+      "tiled": true,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "validation": {
+    "ctest_codegen_on": "17/17",
+    "ctest_vector_diagnostic": "17/17",
+    "source_complexity": "pass",
+    "source_audit": "pass",
+    "status_audit": "pass",
+    "git_diff_check": "pass"
+  },
+  "classification": {
+    "demo-qualified": [
+      "zero scalar and vector reader rows in the instrumented frontbuffer range through tick 253 on neutral and START",
+      "identical guest writeback, linear digest, IB hashes and VdSwap count in the A/B pair"
+    ],
+    "demo-observed": [
+      "116 VdSwap notifications and one typed Xenos PRESENT in each route"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "consumer after tick 253",
+      "unintercepted VMX load forms",
+      "host scanout read",
+      "non-black guest pixels",
+      "frontend, mission result and screencap"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "retail_evidence_merged": false,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "rexglue_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "screencap_promoted": false,
+    "current_source_hashes": {
+      "tools/ppc_context_adapter.h": "e743b4f410938a8b2dc3074d0d9c2ae6237a6bfb7c868fe8c763a821a226bae6",
+      "src/guest_bridge.cpp": "7e276fac2f5fbe8264efcb864050751693eb68825ab7766f5366e2c0b21e0579",
+      "src/guest_bridge/frontbuffer_writer_trace.hpp": "69387c378d53fd2cbcbdb6d6ff37d605284521978d72526f7497e3afa708fdae",
+      "src/guest_bridge/vector_read_trace.cpp": "dfc0cff64162077c921bcc2418b0751ccb9cb9b001b155211ed237cd8362b556",
+      "CMakeLists.txt": "a0a3be885e052d58226f6ecf66957185badfac08469af119e3b7ac88fba83c82"
+    },
+    "diagnostic_binary_sha256": "5e423f95a2b75746d2aca55e7b1a431bdb40417f39134a950f82192093943c83",
+    "normal_binary_sha256": "6d59405310748f2e480745e4114331b06da5cf0c4be4a62301e5e37b0b74cda4"
+  }
+}

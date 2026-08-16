@@ -1,0 +1,89 @@
+{
+  "schema": "ac6-demo-start-indirect-sites-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "d76dbe00eccb4f7935b38e75c59d71d3d63c38778ffd5f39c321a742843ed355",
+    "source_guest_bridge_sha256": "712c34daa408d80a85587dd6bc02b82a4d66464148f16396ae5e7c688ded3e65",
+    "fresh_process_per_route": true,
+    "fresh_store_per_route": true,
+    "hook": "AC6_DEMO_WATCH_INDIRECT_OBJECT=1",
+    "hook_default": false,
+    "neutral": {
+      "max_ticks": 300,
+      "outcome": "max_ticks",
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "rtply_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+      "report_sha256": "c931a747e1cabf2aac8e7eee426b08f5033c74e327480064882e5b3ed7cd9df1",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "start": {
+      "input": "START held at ticks 252..267",
+      "max_ticks": 300,
+      "outcome": "max_ticks",
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "rtply_sha256": "3613f8e02c97bd0f91d7889172c4507e56aaa8953b79ad09a13996592d0aaa47",
+      "report_sha256": "f57d77c65f81b2d03021ce3734b89518e1253471bb78f825167db4a7f42e08eb",
+      "stderr_sha256": "1cde617bc5b5253e4515f3ace8b83d81a001b59bb3cffd4d50fca4ecb4cc3a0e"
+    }
+  },
+  "sites": [
+    {
+      "lr": "0x82321F30",
+      "target": "0x820D0D10",
+      "objects": ["0x2E3CF9D0"],
+      "vtable": "0x820064D8",
+      "slot": 11,
+      "slot_match_count": 1,
+      "target_byte_sha256": "4fffdf821110b8666232792686171c50b90498ed759cf76c6a20fcae854bea1b",
+      "virtual_dispatch_qualified": true
+    },
+    {
+      "lr": "0x82321F34",
+      "target": "0x820E7E08",
+      "objects": ["0x2E3D3D14"],
+      "vtable": "0x820077AC",
+      "slot": 78,
+      "slot_match_count": 1,
+      "target_byte_sha256": "988a4167846e4f600a58f19d51a7e694a854985677cad48f0e5d73f1efda9180",
+      "virtual_dispatch_qualified": true
+    },
+    {
+      "lr": "0x823231B8",
+      "target": "0x820DEA08",
+      "objects": ["0x2E3DE8D4", "0x2E3DF154", "0x2E3DE154"],
+      "vtable": "0x82006D8C",
+      "slot": 3,
+      "slot_match_count": 3,
+      "target_byte_sha256": "a7db8c3da7a49d593c1595910dcef2b882340e4df4f27f11350cca1e85a6c9d4",
+      "virtual_dispatch_qualified": true
+    }
+  ],
+  "classification": {
+    "demo-qualified": ["three exact object/vtable/slot joins", "same-build A/B to 300", "163 PRESENT on both routes"],
+    "demo-observed": ["START-only sites at tick 268"],
+    "xenia-generic": [],
+    "unknown": ["callee semantics", "frontend/pixels/audio/mission/terminal"]
+  },
+  "guard": {
+    "read_only_probe": true,
+    "dispatch_sites_fail_closed": true,
+    "candidate_slot_must_match_exactly": true,
+    "no_generated_cpp_edit": true,
+    "no_ghidra_mutation": true,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

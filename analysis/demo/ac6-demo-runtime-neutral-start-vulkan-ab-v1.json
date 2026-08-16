@@ -1,0 +1,81 @@
+{
+  "schema": "ac6-demo-runtime-neutral-start-vulkan-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "runs": {
+    "neutral": {
+      "input": "connected neutral for ticks 0..252",
+      "completed_ticks": 253,
+      "outcome": "max_ticks",
+      "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "report_sha256": "33b6c8b3759461fd7720ca3942258cee3fcd1ec4732746a1df8314e50b5685a7"
+    },
+    "start": {
+      "input": "connected neutral plus XINPUT_GAMEPAD_START=0x0010 at tick 252",
+      "completed_ticks": 253,
+      "outcome": "max_ticks",
+      "trace_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "report_sha256": "2d0c391ba3d0d2a6f2dbf0907ac8538abde5be17f8f9424c2fb63cb2bb91a6cf"
+    }
+  },
+  "comparison": {
+    "graphics_report_equal": true,
+    "presentation_notifications": 116,
+    "main_ib": {
+      "address": "0x1274A000",
+      "dword_count": 3029,
+      "sha256_neutral": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "sha256_start": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "equal": true
+    },
+    "intermediate_ib": {
+      "address": "0x127CA0C0",
+      "dword_count": 11,
+      "sha256_neutral": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "sha256_start": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "equal": true
+    },
+    "renderer": {
+      "shader_loads": 5,
+      "draws": 26,
+      "presents": 1,
+      "normal_draws": 1,
+      "neutral_resolves": 1,
+      "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "normal_readback_equal": true,
+      "normal_readback_all_zero": true,
+      "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "neutral_resolve_equal": true
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "neutral and START use the same exact PAL IBs through tick 253",
+      "the reached native Vulkan renderer reports equal normal and resolve hashes"
+    ],
+    "demo-observed": [
+      "START delivery at tick 252",
+      "116 presentation notifications in each route"
+    ],
+    "unknown": [
+      "a later guest-owned visual transition after tick 253",
+      "guest EDRAM contents and destination bytes",
+      "frontend, mission and terminal milestones"
+    ]
+  },
+  "policy": {
+    "start_promoted": false,
+    "product_runtime_readback_claimed": false,
+    "screencap_claimed": false,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

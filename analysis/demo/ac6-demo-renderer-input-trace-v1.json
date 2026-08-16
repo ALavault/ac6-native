@@ -1,0 +1,81 @@
+{
+  "schema": "ac6-demo-renderer-input-trace/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "classification": "demo-observed",
+    "read_only": true,
+    "route": "neutral",
+    "fresh_store": true,
+    "backend": "vulkan",
+    "max_ticks": 253,
+    "instrumentation": "AC6_DEMO_WATCH_RESOLVE=1",
+    "binary_sha256": "068d36792acef0e0f96f1ae775ba96363a983fa327ea3f30efe1eff6b06c5c1b",
+    "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794"
+  },
+  "renderer_frontier": {
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "validated_modules": 4,
+    "graphics_pipelines": 2,
+    "normal_draws": 1,
+    "neutral_resolves": 1,
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "vertex_fetches": [
+    {
+      "role": "normal-rectangle",
+      "tick": 0,
+      "address": "0x127CA03C",
+      "dword_count": 21,
+      "endian": 2,
+      "guest_bytes_sha256": "cf61dc45a42c755414326bbafa7d69dedc9046eef9b4d70a4326f6ea1dac7db1",
+      "guest_big_endian_dwords": [
+        "0xBF000000", "0xBF000000", "0x00000000", "0x00000000",
+        "0x00000000", "0x00000000", "0x00000000", "0x441FE000",
+        "0xBF000000", "0x00000000", "0x00000000", "0x00000000",
+        "0x00000000", "0x00000000", "0x441FE000", "0x43B3C000",
+        "0x00000000", "0x00000000", "0x00000000", "0x00000000",
+        "0x00000000"
+      ]
+    },
+    {
+      "role": "resolve-rectangle",
+      "tick": 1,
+      "address": "0x127CA090",
+      "dword_count": 6,
+      "endian": 2,
+      "guest_bytes_sha256": "1187ed995d8b69e1d8790da7d380efd0d2e048a95047589a515f97f73910fa12",
+      "guest_big_endian_dwords": [
+        "0xBF000000", "0xBF000000", "0x449FF000",
+        "0xBF000000", "0x449FF000", "0x4433E000"
+      ]
+    }
+  ],
+  "classification": {
+    "demo_observed": [
+      "two exact guest fetch ranges and their bytes/hashes",
+      "Vulkan frontier counters and black readback digests"
+    ],
+    "demo_qualified": [],
+    "xenia_generic": [],
+    "unknown": [
+      "non-zero EDRAM color RT0 content before RB_COPY",
+      "draw output provenance for the 24 bootstrap point draws",
+      "visible frontend pixels"
+    ]
+  },
+  "policy": {
+    "no_retail_evidence_merged": true,
+    "no_external_checkout_modified": true,
+    "no_microcode_or_shader_tracked": true,
+    "no_synthetic_visual_fallback": true,
+    "fail_closed": true
+  }
+}

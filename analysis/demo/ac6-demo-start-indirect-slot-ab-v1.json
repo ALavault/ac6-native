@@ -1,0 +1,88 @@
+{
+  "schema": "ac6-demo-start-indirect-slot-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "aa24028d533aeef28eab88e58cbfd2f8849a8a7a5a38395713588d897e2d1581",
+    "fresh_process_per_route": true,
+    "fresh_store_per_route": true,
+    "hook": "AC6_DEMO_WATCH_INDIRECT_OBJECT=1",
+    "hook_default": false,
+    "hook_effect": "read-only guest memory reads",
+    "neutral": {
+      "max_ticks": 600,
+      "outcome": "max_ticks",
+      "presents": 463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "rtply_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+      "report_sha256": "dbe6484af6c1446db0e2e5017b34441d909cc07e81922959d8ad9d9719b16484",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "start": {
+      "input": "START held at ticks 252..267",
+      "completed_ticks": 268,
+      "outcome": "guest-indirect trap",
+      "presents": 131,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "rtply_sha256": "db6d8a5d31f80022868e30cd4f3335339dddada4c7e2f3bbf8d71756cb76536b",
+      "report_sha256": "40aab8bf769cd512bcb1f4f0f37c2ca50445e0719f6210d353272d82b1a34586",
+      "stderr_sha256": "7fb995872bc97c5e3ce5971691aadcfc6233d9a31e7c9f52a7b7d1d649dfa6ba"
+    }
+  },
+  "edge": {
+    "thread": 1,
+    "tick": 268,
+    "lr": "0x82321F34",
+    "target": "0x820E7E08",
+    "count": 1,
+    "object": "0x2E3D3D14",
+    "object_mapped": true,
+    "vtable": "0x820077AC",
+    "slots": {
+      "77": "0x820E7E00",
+      "78": "0x820E7E08"
+    },
+    "selected_slot": 78,
+    "selected_slot_unique_among": [77, 78],
+    "r10": "0x820077AC",
+    "virtual_dispatch_report_field_before_hook": null
+  },
+  "static": {
+    "chunk_range": ["0x820E7E00", "0x820E7E0F"],
+    "chunk_bytes_be": "38a000014bffa17438a000004bffa16c",
+    "chunk_byte_sha256": "988a4167846e4f600a58f19d51a7e694a854985677cad48f0e5d73f1efda9180",
+    "chunk_boundary_provenance": "ghidra-chunk",
+    "next_pdata_range": ["0x820E7E10", "0x820E80D3"],
+    "rtti_vtables": ["0x820065A4", "0x820077AC"],
+    "caller_range": ["0x82321E20", "0x82321F6B"],
+    "stub_entry_bytes": {"0x820E7E08": "38a000004bffa16c", "branch_target": "0x820E1F78"},
+    "function_boundary_split": false
+  },
+  "classification": {
+    "demo-qualified": ["neutral/START fresh A/B", "object+0 and vtable", "unique slot 78", "exact PAL chunk bytes"],
+    "demo-observed": ["START-held route reaches the edge at tick 268"],
+    "xenia-generic": [],
+    "unknown": ["stub business semantics", "frontend/pixels/audio/mission/terminal"]
+  },
+  "guard": {
+    "fail_closed": true,
+    "hook_default_off": true,
+    "no_guest_store": true,
+    "keep_chunk_unsplit": true,
+    "require_exact_stub_bytes": true,
+    "branch_target_must_be_0x820E1F78": true,
+    "synthetic_state_write": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

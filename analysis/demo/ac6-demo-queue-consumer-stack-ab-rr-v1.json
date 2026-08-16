@@ -1,0 +1,134 @@
+{
+  "schema": "ac6-demo-queue-consumer-stack-ab-rr/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "runtime": {
+    "root": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "neutral_trace": {
+      "path": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/neutral.trace",
+      "events_sha256": "77014c9464e034dd7a709b1f37512ba6abca757b83724aecea6cf9e35c153fef",
+      "report_sha256": "420fb9341ea0a56be33f0143f9bf9be768b08a1697fe7cb314e5e055bbf2a843"
+    },
+    "start_trace": {
+      "path": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/start.trace",
+      "events_sha256": "a11313387e8704ed1ca15728585f128736caffe5402dcb7da8eedc44ad73df9a",
+      "report_sha256": "8506399dca66624afcf52a8746bc4cd08c669f30021d9fb954bb8bebb01f7327"
+    }
+  },
+  "rr": {
+    "path": ".tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "probe_script": "recompilation/ace-combat-6-demo/tools/rr_queue_consumer_stack.gdb",
+    "probe_script_sha256": "a3924894a8ff97f0e5afe7e97b124d5890ce2b6523098d0a28ac201b570ed4cf",
+    "read_only": true
+  },
+  "breakpoint": "__imp__sub_820FEFA8",
+  "ppc_context_layout": {
+    "r3": "0x00",
+    "r0": "0x08",
+    "r1": "0x10",
+    "r2": "0x18",
+    "r4_to_r31": "0x20 + (reg-4)*8",
+    "lr": "0x100",
+    "source": ".build/ac6-demo-codegen-atomic-1/ppc_context_base.h"
+  },
+  "observations": {
+    "neutral": {
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-neutral-queue-consumer-stack2-gdb.log",
+      "gdb_log_sha256": "281b6e791c1f8a16d44554a9c18e396be84c5a98ee024e18b44026568d06b451",
+      "count": 1,
+      "tick": 252,
+      "thread": 25,
+      "r1": "0x2EEEBE40",
+      "r3": "0x2EEEBE90",
+      "r4": "0x00000001",
+      "r5": "0x00000000",
+      "r6": "0x00000000",
+      "r7": "0x00000030",
+      "r30": "0x82386D08",
+      "r31": "0x82386CC0",
+      "guest_lr": "0x820FFD8C",
+      "bounded_fields_zero": true
+    },
+    "start": {
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-start-queue-consumer-stack2-gdb.log",
+      "gdb_log_sha256": "b6df96cfc06d841b4d4e664fb4148d890538e0d91e978652a96608b6140f3809",
+      "count": 1,
+      "tick": 252,
+      "thread": 25,
+      "r1": "0x2EEEBE40",
+      "r3": "0x2EEEBE90",
+      "r4": "0x00000001",
+      "r5": "0x00000000",
+      "r6": "0x00000000",
+      "r7": "0x00000030",
+      "r30": "0x82386D08",
+      "r31": "0x82386CC0",
+      "guest_lr": "0x820FFD8C",
+      "bounded_fields_zero": true
+    },
+    "start_t300_corrected": {
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-queue-consumer-entry-gdb-corrected.log",
+      "gdb_log_sha256": "579611b358fb808c09a5245323ef93ad6d88ca2757f58ec46cb52ce3e446c424",
+      "count": 16,
+      "first_tick": 252,
+      "last_tick": 267,
+      "r3": "0x2EEEBE90",
+      "bounded_fields_zero": true
+    }
+  },
+  "comparison": {
+    "same_guest_tuple": true,
+    "neutral_calls": 1,
+    "start_calls": 1,
+    "extra_start_calls": 0,
+    "stack_object": "0x2EEEBE90",
+    "queue_base": "0x82386CC0",
+    "object_payload": "bounded fields all zero",
+    "frontbuffer_consumer": "unknown"
+  },
+  "static_join": {
+    "function": "0x820FFCA0",
+    "sequence": [
+      "addi r3,r1,80",
+      "bl 0x820FEFA8",
+      "LR=0x820FFD8C"
+    ],
+    "arithmetic": "0x2EEEBE40 + 0x50 = 0x2EEEBE90"
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact PPCContext register layout",
+      "same-build neutral/START context tuple",
+      "non-null stack object and bounded zero fields",
+      "read-only rr provenance"
+    ],
+    "demo-observed": [
+      "one entry per route at tick 252",
+      "16 corrected START entries ticks 252..267"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantic role of the stack object and function",
+      "queue payload and downstream consumer",
+      "guest-owned frontbuffer, pixels, frontend and mission result"
+    ]
+  },
+  "guard": {
+    "register_map_required": true,
+    "require_same_build_ab": true,
+    "require_nonnull_r3_before_object_read": true,
+    "bounded_object_offsets": [0, 4, 8, 20, 24, 64, 68, 72, 76, 80],
+    "on_unmapped_register_or_out_of_range": "stop and retain unknown",
+    "synthetic_state_write": false,
+    "range_resynchronization": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

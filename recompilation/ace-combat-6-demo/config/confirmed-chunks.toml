@@ -1,0 +1,1086 @@
+# Binary-qualified demo boundary additions. Every entry is cross-checked
+# against the canonical project ace-combat-6-demo and the XEX identity above.
+# A callable bl target is represented as a second function; its owner is not
+# split merely because a branch lands in the middle of the owner's body.
+
+[[function]]
+address = 0x821AEF38
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AEF30; Vd graphics notification callback slot"
+byte_sha256 = "ddc012352d46188dc9fb9fb4ce5449dfd4b9f3ceeacbc73d56ab94c41a11ecca"
+
+[[function]]
+address = 0x821AEF58
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AEF50; Vd graphics notification callback slot"
+byte_sha256 = "80120c5d5563e99b17aaf028a946f2f8834ecbc6e440e7fd40d3a564418a9fe7"
+
+[[function]]
+address = 0x821AEF78
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AEF70; Vd graphics notification callback slot"
+byte_sha256 = "7de972c46aa09f1cba92498bceebf7418ee2ce2aec40a6a494f7d4ebadfc8cd4"
+
+[[function]]
+address = 0x821AEF98
+size = 0x4C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AEF90; Vd graphics notification callback slot"
+byte_sha256 = "cc9fa52774e4d84c2d9b9fe63ef1c52f20ec65a00248aab7ed8414e0c2f047f6"
+
+[[function]]
+address = 0x821AF2C0
+size = 0x4C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF2A8; Vd graphics notification callback slot"
+byte_sha256 = "e3653bd66b64d7b2b07cf3ba5b5cb92cd1d9aba00197edb3a6c2b2dc9f40f323"
+
+[[function]]
+address = 0x821AF320
+size = 0x44
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF310; Vd graphics notification callback slot"
+byte_sha256 = "48a3edff78b31bb7f7fc9bde3f89e7a32453c0a27a1c040aa2dc75bf6103a76e"
+
+[[function]]
+address = 0x821AF2B0
+size = 0x08
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF2A8; Vd graphics notification callback slot"
+byte_sha256 = "ae50b4fbdce6cdb4e6008d850bf59189866065a92197171222ec899e1207dc4e"
+
+[[function]]
+address = 0x821AF378
+size = 0x44
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF368; Vd graphics notification callback slot"
+byte_sha256 = "b391092bc412ab631851df30d62178204756f18bed6a0f64f9ccdf152990d500"
+
+[[function]]
+address = 0x821AF160
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF150; Vd graphics notification callback slot"
+byte_sha256 = "64e6b98f1369ec0dd8ff2114cc0dbaa994dff1323612ef7a6ad6fa313c8aadcb"
+
+[[function]]
+address = 0x821AFAB0
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFAA0; Vd graphics notification callback slot"
+byte_sha256 = "b69a3593ffab3e0d60793100ef7f2df9e441d1953b56bd61fb68b5add7981a8a"
+
+[[function]]
+address = 0x821AFA40
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFA38; Vd graphics notification callback slot"
+byte_sha256 = "3456fdc714325ff1b3e5af52b5d9a68a7be381fedd66e31e5b89992b7203bbbb"
+
+[[function]]
+address = 0x821AFA78
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFA68; Vd graphics notification callback slot"
+byte_sha256 = "60729c2e48f3f42c62b0bb23e74524ba184ac931fb6fdec54312c6b5632fab95"
+
+[[function]]
+address = 0x821AF520
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF500; Vd graphics notification callback slot"
+byte_sha256 = "42bd607070bb3884339edcc5cdb7c6422f2aa8698cc16af8c498385d63cff4f1"
+
+[[function]]
+address = 0x821AF830
+size = 0xA4
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF828; Vd graphics notification callback slot"
+byte_sha256 = "c8190a519cdacc208754aebcdd9055e3ad5a33246c9419b061951e0247c418c6"
+
+[[function]]
+address = 0x821AF8E0
+size = 0xA4
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF8D8; Vd graphics notification callback slot"
+byte_sha256 = "98778be4a1de8c9202b24cd03a4ac72c44dbfeb6f03538d424f2e76503281df3"
+
+[[function]]
+address = 0x821AF990
+size = 0xA4
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AF988; Vd graphics notification callback slot"
+byte_sha256 = "e3272094dad6031b12be1e555d9232e57a3bd59bfc7ec96e64b7ba50d2813e0f"
+
+[[function]]
+address = 0x821AFB78
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFB70; Vd graphics notification callback slot"
+byte_sha256 = "232154ad8dacf3f63b1cafbb98bc27337e9c067c5a94774f66983b513c40096c"
+
+[[function]]
+address = 0x821AFC10
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFC08; Vd graphics notification callback slot"
+byte_sha256 = "a6139e2ae33994ec987d8f3a0960ef2805c2b3289d7b88a9d7b015f793be2fa2"
+
+[[function]]
+address = 0x821AFC40
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFC38; Vd graphics notification callback slot"
+byte_sha256 = "f6c690203490a9fbe65c87c4d3f5dca87a03ed1fdd7d4ff1711df54b3c4198ec"
+
+[[function]]
+address = 0x821AFC68
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFC60; Vd graphics notification callback slot"
+byte_sha256 = "a29cf8deee9bd55e73ad5eb94e69f6a27b9d727c205e56c2d3de486a73e072a4"
+
+[[function]]
+address = 0x821AFDF0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFDE8; Vd graphics notification callback slot"
+byte_sha256 = "9e92ca95eb860e83018928e0e2eb832d32b025200fd97b8f1f1f206286a8118b"
+
+[[function]]
+address = 0x821AFC98
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AFC90; Vd graphics notification callback slot"
+byte_sha256 = "0ca6ce1c4f29fa30044d88e7dbf701c6c924f8ab3cbeafc062eb5496e893fbcb"
+
+[[function]]
+address = 0x821B0130
+size = 0x3C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821B0120; runtime callback target from LR=0x821C5E84"
+byte_sha256 = "6f7776950139e20a28718e4009a44be74669e7e8ca3dd9d44987072923502441"
+
+[[function]]
+address = 0x821B06F0
+size = 0x3C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821B06D8; runtime callback target from LR=0x821C5E84"
+byte_sha256 = "9e002ef51efb6177a277d06d9a71ad1b92ecf855c4c5bc2d9a2e6ce54726eaf6"
+
+[[function]]
+address = 0x822D8CF8
+size = 0x138
+kind = "owner"
+evidence = "canonical-ghidra:ace-combat-6-demo"
+byte_sha256 = "58ceb2c01b41465597f91ea1b0b53da071b1cbfe902974ea8d9011a5af249764"
+
+[[function]]
+address = 0x82132598
+size = 0x1E8
+kind = "owner"
+evidence = "ghidra:ace-combat-6-demo/Default.xex"
+byte_sha256 = "2924103450a6a59b286ed4df70f0a7f227078d9bbd23ffb7c1c9cfdfe4ce2509"
+
+[[function]]
+address = 0x82133710
+size = 0xB8
+kind = "owner"
+evidence = "ghidra:ace-combat-6-demo/Default.xex"
+byte_sha256 = "14792ff79287803fcbc62dead66a0497394e606c9140c4256d757fc5f2a92894"
+
+[[function]]
+address = 0x82090790
+size = 0x18
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x820934D4 owner=0x820907A8"
+byte_sha256 = "94fe7502ef4c436cc1f1c434313381696bc353385ea6039fbc52c0cd05b6b266"
+
+[[function]]
+address = 0x821E1030
+size = 0x10
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x8209442C,0x82094454 owner=0x821E1040"
+byte_sha256 = "55ebc23f53fed2ceea9da14061e9dddd3367efedc43bea41a08a65f693845d47"
+
+[[function]]
+address = 0x822181D8
+size = 0x30
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x820947BC owner=0x82218208"
+byte_sha256 = "391cf8471b544fe4fda05a81185544ecf6831c3e21dd1ae21eeeda44f007d428"
+
+[[function]]
+address = 0x82218208
+size = 0x30
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x822044CC owner=0x82218238"
+byte_sha256 = "8eeadb72e038bf466ee250c97f4f5444498bfcab21821dc46b37dc6c89f364e5"
+
+[[function]]
+address = 0x82218238
+size = 0x20
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x8209579C owner=0x82218258"
+byte_sha256 = "b12f0eeb533ed6310980d70251e73f46c54c66aa94319559f3d05f2fc053c414"
+
+[[function]]
+address = 0x82220528
+size = 0x24
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x82094E94,0x821760EC,0x821781D4 owner=0x82220550"
+byte_sha256 = "c117877dd300c2ed83792d55074352bdbe64d82baafcc5d5799368b9aa1ab700"
+
+[[function]]
+address = 0x821A00D0
+size = 0xC
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x82094FFC,0x82174764,0x82176254,0x82178340 owner=0x821A00E8"
+byte_sha256 = "64c9dcbc434e7371de4baf050e9971c53138a062da4c660777acae68957a0e94"
+
+[[function]]
+address = 0x822DAF58
+size = 0x20
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x8209501C,0x82095EB4,0x82174A9C,0x82176274,0x82176B7C,0x82178360 owner=0x822DAF78"
+byte_sha256 = "17afa0177baf9e13eabd13453a7c56cd76d9d8f2f3d46cf7a4f7c0d07a4a6b8c"
+
+[[function]]
+address = 0x8221C568
+size = 0x4
+kind = "tail-call-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x82095024 owner=0x8221C5B0"
+byte_sha256 = "615108feabe2b459626f1ab97de4054445867f4516cb46bf429423805f817693"
+
+[[function]]
+address = 0x82218DF0
+size = 0x44
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x82095468 owner=0x82218E88"
+byte_sha256 = "6b6bdd4eabe994215c52e27f2487c17965ae9911565331fc41a4d7028594837e"
+
+[[function]]
+address = 0x8219DC40
+size = 0xC
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x82095694 owner=0x8219DC68"
+byte_sha256 = "6730b9ecee0f1a6c9fe99f273217c346dcc4bd541a4ed41a149c9d123198f7c8"
+
+[[function]]
+address = 0x821FD530
+size = 0x1C
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x820956B4 owner=0x821FD570"
+byte_sha256 = "e83cd0ff636d6774b984d0164bd1517dade482ca79cab1ec9e393ec08937181f"
+
+[[function]]
+address = 0x821FD550
+size = 0x20
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x820956D4 owner=0x821FD570"
+byte_sha256 = "809f9b1bba69cd9321ee6a0e6c406287eed664ed9ccfc17f1d8191974bb6393a"
+
+[[function]]
+address = 0x821FDA00
+size = 0x50
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x82095734 owner=0x821FDA50"
+byte_sha256 = "267c2ff7f7cf30d101f810d18955aa14bb3ae7d3e1e423228068ef3acf4d96b8"
+
+[[function]]
+address = 0x82218158
+size = 0x7C
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x82095784 owner=0x82218258"
+byte_sha256 = "a6899e5d5fdff638b490d86128f91932bb6c28b67b0a49d52f40dd395f15862a"
+
+[[function]]
+address = 0x822261A0
+size = 0x3C
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x820957A8 owner=0x822261E0"
+byte_sha256 = "6f7a1f1a0099cf55f4b954849194290ceb970f90ca7585745ba34c99ad1dd219"
+
+[[function]]
+address = 0x820A1BC8
+size = 0x10
+kind = "tail-call-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x820959D4,0x821748F8,0x821769AC owner=0x820A1BD8"
+byte_sha256 = "bca0b1b6bbc8d66d61b73c07108ffbc95e4a5b2f89f305405b936569b126fcb3"
+
+[[function]]
+address = 0x8220FBD8
+size = 0x7C
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x8209603C,0x82174C24,0x82176D04 owner=0x8220FE18"
+byte_sha256 = "1f475a2bbd806b53bcb3c5ad7ca1212c132a13baa4650d7a07d233aecd3cfec5"
+
+[[function]]
+address = 0x82226850
+size = 0x1C
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x8209681C,0x82175404,0x821774E4 owner=0x822268B8"
+byte_sha256 = "dd2d5f2393b15a4fd8115b837a590e90bcbc1d166ae182992500bffb1135140b"
+
+[[function]]
+address = 0x82226870
+size = 0x10
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x8209682C,0x82175414,0x821774F4 owner=0x82226880"
+byte_sha256 = "37735921a5ba4d501ccf7ad3d3d8ac107fcd29f5eecf16df914d4156fb3c5d8a"
+
+[[function]]
+address = 0x82210680
+size = 0x2C
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x820969BC,0x821755A4,0x82177684,0x8229C06C,0x8229C104 owner=0x822106F0"
+byte_sha256 = "e8936ce6e9a656858dd60fdc42964e5ca4380a8723377b82d145855a5a95d8f0"
+
+[[function]]
+address = 0x8221C548
+size = 0x10
+kind = "callable-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex callers=0x820970DC,0x820970EC,0x82120008,0x82120024,0x82175CC4,0x82175CD4,0x82177DA8,0x82177DB8 owner=0x8221C558"
+byte_sha256 = "4b9923335d60e0a81e1f8a006b64e5efe703985032623e4f56d18b0fa4723435"
+
+[[function]]
+address = 0x82229158
+size = 0x80
+kind = "callable-inner-chunk"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x82229454 owner=0x822291D8"
+byte_sha256 = "20c7278ecd3ff2ae7da329d749a30dd90e982bf0c0b1eacbd0b9a110b1d239f8"
+
+[[function]]
+address = 0x822EBED0
+size = 0x8C
+kind = "callable-inner-chunk"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x822EC94C owner=0x822EBFC0"
+byte_sha256 = "3eaa13e94aad6103c736055e3fd5006b1aa1f2da5d88e3cced376852af7fe686"
+
+[[function]]
+address = 0x8233A370
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "ghidra:ace-combat-6-demo/Default.xex caller=0x82339BD4 owner=0x8233A388; PPC delay-slot nop=0x00000000"
+byte_sha256 = "4a71e561280dd7b43533fa9b0e3c07f8a25d77d069ba11b204d3bc4d6a379ccf"
+
+[[function]]
+address = 0x82090048
+size = 0x14
+kind = "indirect-dispatch-stub"
+evidence = "ghidra:ace-combat-6-demo/Default.xex bounded .text block; predecessor=0x00000000; terminal=bctr; owner=0x82090078"
+byte_sha256 = "13f494db2bdda4142efc751b7959171b38dc1da47a458109d98ae4183c143037"
+
+[[function]]
+address = 0x82090060
+size = 0x14
+kind = "indirect-dispatch-stub"
+evidence = "ghidra:ace-combat-6-demo/Default.xex bounded .text block; predecessor=0x00000000; terminal=bctr; owner=0x82090078"
+byte_sha256 = "32814e265c24c9d06ac598b1e0028773ee8f199121fa30ac34de2e09de248acd"
+
+[[function]]
+address = 0x820900D0
+size = 0x60
+kind = "bounded-unowned-entry"
+evidence = "ghidra:ace-combat-6-demo/Default.xex bounded .text block; predecessor=0x00000000; terminal=blr; owner=0x82090130"
+byte_sha256 = "1cd2938855bc1ced73a306145c51ba0c0ee6a5dc368811ffc0cc8287166ceac1"
+
+[[function]]
+address = 0x82090340
+size = 0x4
+kind = "tail-call-wrapper"
+evidence = "ghidra:ace-combat-6-demo/Default.xex bounded .text block; predecessor=0x00000000; terminal=branch-to-0x821E2728; owner=0x82090348"
+byte_sha256 = "004f7bc12d60eecd53af93dc44034c65fdc0187e110251494ca8747eb838b7a8"
+
+[[function]]
+address = 0x82090780
+size = 0x10
+kind = "bounded-unowned-entry"
+evidence = "ghidra:ace-combat-6-demo/Default.xex bounded .text block; predecessor=0x8209077C blr; terminal=blr; owner=0x82090790"
+byte_sha256 = "3288c72b8ab3ed0685537f41878fdb35c04d8ff0b15149fe5305a2e794d0d094"
+
+[[function]]
+address = 0x82092300
+size = 0x20
+kind = "bounded-unowned-entry"
+evidence = "ghidra:ace-combat-6-demo/Default.xex disassembled bounded .text block; predecessor=0x00000000; terminal=blr; owner=0x82092320"
+byte_sha256 = "31f40c2549c1abea4ea2a41801dd478e789a97cfc1bdaaa6e894e0d1c7a64326"
+
+[[function]]
+address = 0x82093600
+size = 0x10
+kind = "bounded-unowned-entry"
+evidence = "ghidra:ace-combat-6-demo/Default.xex disassembled bounded .text block; predecessor=0x820935FC blr; terminal=blr; owner=0x82093610"
+byte_sha256 = "b813ff69d078fb3284e17a98d93c659623beb0239f91bf9cffea9c6aaa22207a"
+
+[[function]]
+address = 0x82094290
+size = 0x34
+kind = "bounded-unowned-entry"
+evidence = "ghidra:ace-combat-6-demo/Default.xex disassembled bounded .text block; predecessor=0x00000000; terminal=tail-branch; owner=0x82094308"
+byte_sha256 = "5ba5d19f7ae1ae8a988ad006595eebc0febf6bc3b090d93a28e1bef432f669ca"
+
+[[function]]
+address = 0x820942C4
+size = 0x4
+kind = "ppc-branch-delay-slot"
+evidence = "ghidra:ace-combat-6-demo/Default.xex bounded successor of branch at 0x820942C0; instruction=blr; owner=0x82094308"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x820CF8F0
+size = 0x10
+kind = "bounded-unowned-entry"
+evidence = "ghidra:ace-combat-6-demo/Default.xex disassembled after terminal owner 0x820CF8EC; terminal=branch; owner=0x820CF900"
+byte_sha256 = "5c7559cdb36d4f8ae04145e31d5a8450f8c697f9a90b4e9693e48682566ec153"
+
+[[function]]
+address = 0x820DD6F0
+size = 0x10
+kind = "bounded-unowned-entry"
+evidence = "ghidra:ace-combat-6-demo/Default.xex bounded .text block; predecessor=0x00000000; terminal=blr; owner=0x820DD700"
+byte_sha256 = "f6d7619ec2d09fb2231aa18cba14e3c84db4a20d954b01cd460b88fe923f6a0f"
+
+# The XEX startup callback table contains callable addresses inside the
+# bounded owner chunks above. These explicit entries preserve the owner and
+# avoid an unqualified heuristic split.
+
+[[function]]
+address = 0x82373328
+size = 0x0C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x823732E8; XEX callback table slot=0x82380100"
+byte_sha256 = "94d3bf426517f40b4831d5d8cb2596f2d6376a82f4295be8334c350da7b9d316"
+
+[[function]]
+address = 0x82373668
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373648; XEX callback table slot=0x8238013C"
+byte_sha256 = "f533cd50256e663d69c041320df7e2b7224bb757b9ffa36699b972b4a71b7d5e"
+
+[[function]]
+address = 0x823736C8
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x823736A8; XEX callback table slot=0x82380148"
+byte_sha256 = "d28a60145f19b55122a71113361a72a68bde7474a3a4b5df9ac49d35842f2221"
+
+[[function]]
+address = 0x82373BA0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373B90; XEX callback table slot=0x823801C0"
+byte_sha256 = "49addae6012db873056800ab02b7fe4b9e3c7474115f9871dbe6383537a37c8f"
+
+[[function]]
+address = 0x82373BB0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373B90; XEX callback table slot=0x823801C4"
+byte_sha256 = "563731b2eb8d7a5904a7764a9ba9e868aab325ce82d30bb70ef13f1a535ef08b"
+
+[[function]]
+address = 0x82373BC0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373B90; XEX callback table slot=0x823801C8"
+byte_sha256 = "afd6ea33f19951cca78b767a664beb1b91e43c20dd9098723f957abf76f7e54a"
+
+[[function]]
+address = 0x82373BD0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373B90; XEX callback table slot=0x823801CC"
+byte_sha256 = "2a7e65dfafd80059809ee68268a56252b1e0aca230f58c5f6c0b89daca954a20"
+
+[[function]]
+address = 0x82373BE0
+size = 0x0C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373B90; XEX callback table slot=0x823801D0"
+byte_sha256 = "78412010d7a3c24ec4a35ca5bf3c53f24d9596373781a5c86597eee71779e3e6"
+
+[[function]]
+address = 0x82373C90
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373C80; XEX callback table slot=0x823801EC"
+byte_sha256 = "36ba6c514f0726ceef8c417c2757c2c5cfd2487c5f118f8e0ce19d2adec9e58e"
+
+[[function]]
+address = 0x82373CA0
+size = 0x0C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373C80; XEX callback table slot=0x823801F0"
+byte_sha256 = "de82759a16532c526c7a686da9979fb288bb413765be516cd268bb4f9c6b30ec"
+
+[[function]]
+address = 0x82373D00
+size = 0x0C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82373CC0; XEX callback table slot=0x823801FC"
+byte_sha256 = "463fa7de154b54d437c15cd230b1babce23b82007664d3f057e76b6bf3b78d8e"
+
+[[function]]
+address = 0x823746C0
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x823746B0; XEX callback table slot=0x8238036C"
+byte_sha256 = "7fec623f8b32cd8aaa1137bbfbf170320b7e41cf1160242c4a10ab1959171492"
+
+[[function]]
+address = 0x8236E538
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex indirect target from LR=0x8236E480; predecessor=0x8236E534 terminal; following owner=0x8236E558"
+byte_sha256 = "b5e53062da17f2faed7d4ae1d772b30730804eeccda38ed5ceb71d0349982e33"
+
+[[function]]
+address = 0x82358410
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable target from LR=0x8236DDEC; predecessor=0x8235840C terminal; following owner=0x82358450"
+byte_sha256 = "a0a325ef41310d3c1982289dc0ddebfc9d09849f41cdc9d15f0e3c6f937866e5"
+
+[[function]]
+address = 0x823577C0
+size = 0x84
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable target from LR=0x8236F3B0; predecessor=0x823577BC terminal; following owner=0x823578D0"
+byte_sha256 = "1a9555d3bf332e88a7aeb9b85f3890a85dbc14b3f465f40cf54249ae0f13c0fc"
+
+[[function]]
+address = 0x8234D710
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable target from LR=0x8234D7E8; predecessor=0x8234D70C terminal; following owner=0x8234D738"
+byte_sha256 = "a2e0e1b36a58bd15183ff41e5592308f66c81c5b9a527387333955da91855f77"
+
+[[function]]
+address = 0x8234D6D8
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable target from LR=0x8236F514; predecessor=0x8234D6D4 terminal; following owner=0x8234D738"
+byte_sha256 = "48755565fcd914043b08816dbf7590196f687a6bf2f0aa4ec1e5b4595696b93c"
+
+[[function]]
+address = 0x8234D720
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x8234D71C terminal; following owner=0x8234D738"
+byte_sha256 = "967ee825bb5c0579ebdd5df7d4eb5518c1839c81bb4665a0259d234eecea9a09"
+
+[[function]]
+address = 0x8234E7D0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x8234E7CC terminal; following owner=0x8234E7E8"
+byte_sha256 = "4fb34372fb6d9f6877a4f51b97f42f0fcdbbc2ccd28450727acb76c459c5c80c"
+
+[[function]]
+address = 0x8234E7E0
+size = 0x04
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable tail entry; predecessor=0x8234E7DC terminal; following owner=0x8234E7E8"
+byte_sha256 = "a8daa9ae70cd1c61ab0f0ebe8ae0d86aa105986dca8634ca7f64c2353b9f0457"
+
+[[function]]
+address = 0x8234E948
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x8234E944 terminal; following owner=0x8234E958"
+byte_sha256 = "af196fab6d7d98d451d34b60b85bfa1ba0be9a76d60e93647a99915abea6edf5"
+
+[[function]]
+address = 0x82358FD8
+size = 0x04
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable tail target from LR=0x8236EB2C; predecessor=0x82358FD4 terminal; following owner=0x82358FE0"
+byte_sha256 = "1a6aa8e0baf26ad554c571e7868dc9b2bc857f022ebb33f3a52fcdff9e9c7a79"
+
+[[function]]
+address = 0x82358420
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x8235841C terminal; following owner=0x82358450"
+byte_sha256 = "16c0414f7b1c6728a2e399e50a90ac7af577fe791e57f621eda04aaff14d9d88"
+
+[[function]]
+address = 0x82358FD0
+size = 0x08
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x82358FCC terminal; following owner=0x82358FE0"
+byte_sha256 = "40489ac68b4c754b63be06e8ee91098f2c5364e1a17d9a22de2c3c79626d4541"
+
+[[function]]
+address = 0x8236F598
+size = 0x48
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x8236F594 terminal; following owner=0x8236F650"
+byte_sha256 = "32f5c4555de4fe8a1300e9487f356ab658e4b4a0d5b9131b3c615c472f007d00"
+
+[[function]]
+address = 0x8236F5E0
+size = 0x38
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x8236F5DC terminal; following owner=0x8236F650"
+byte_sha256 = "9939b4e7dfb716659b291c7e3f9f9d60bfb0a2485f717a978020aaf1e030efdf"
+
+[[function]]
+address = 0x8236F618
+size = 0x34
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable entry; predecessor=0x8236F614 terminal; following owner=0x8236F650"
+byte_sha256 = "f938d5970b047eb870a3df8c434b945ebd4319f2639f17dfc011933dc621fda8"
+
+[[function]]
+address = 0x821A1870
+size = 0x04
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable data reference=0x8201303C; owner=0x821A1860 tail branch; predecessor=0x821A186C terminal; following owner=0x821A1878"
+byte_sha256 = "bd6224f827200a335526d6ae5734908d377791b87dedf6bf0d98cc0ea954dd02"
+
+[[function]]
+address = 0x821CE680
+size = 0x44
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable data reference=0x823C9E94; owner=0x821CE640; predecessor=0x821CE67C terminal; following owner=0x821CE6C8"
+byte_sha256 = "636b6f4e5f411f6827571d479007b81787ce4e871f3a367ce1290a0eef61eb52"
+
+[[function]]
+address = 0x8234E728
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable data slot=0x823C9E0C; predecessor=0x8234E724 terminal; following owner=0x8234E750"
+byte_sha256 = "7eb3e7d9349729b4edf979391542ec4f85639727a8e43bdb63ab417863c7ed26"
+
+[[function]]
+address = 0x8219DC18
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex data references=0x82006B00,0x82012CD4,0x82012D1C,0x82012E4C,0x82012E94,0x82012EEC,0x82012F4C,0x82012FB4; predecessor=0x8219DC14 terminal; following owner=0x8219DC28"
+byte_sha256 = "eb701dd327924814da2db7e2c0ee348bbdf5ab32c4f0ba2fcde3b777a9a612b5"
+
+[[function]]
+address = 0x8219DC10
+size = 0x08
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex data references=0x82012CD0,0x82012D18,0x82012E48,0x82012E90,0x82012EE8,0x82012F48,0x82012FB0,0x82021190,0x82027B30; predecessor=0x8219DC0C terminal; following owner=0x8219DC18"
+byte_sha256 = "346c225f5d95166202fc2c3fb41933b5906cee11d8f263c7545fe0947c543898"
+
+[[function]]
+address = 0x8219DC08
+size = 0x08
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex data references=0x82012CC8,0x82012D10,0x82012E40,0x82012E88,0x82012EE0,0x82012F40,0x82012FA8; predecessor=0x8219DC04 terminal; following owner=0x8219DC10"
+byte_sha256 = "1bb0bc5d0c2813701d8ef6be1cd494374d15f50615257d7ce0a8130438f14fc9"
+
+[[function]]
+address = 0x821A0768
+size = 0x08
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable data=0x82012FD0 -> 0x821A0768; standalone setter stw r4,0x98(r3); blr; preceding getter=0x821A0760"
+byte_sha256 = "60126c05681e2efc5e1d10b28c389fdefa21c28ff8428305f17eaa410b725ccd"
+
+[[function]]
+address = 0x8223D4C8
+size = 0x04
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable slot=0x82021170; predecessor=0x8223D4C4 terminal; following owner=0x8223D4D0"
+byte_sha256 = "c7b17d5e3380669fd96ee41c284576a54d380f0bbd4be39330c655690130456f"
+
+[[function]]
+address = 0x8216C858
+size = 0x04
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex vtable data references=0x8200BFC4,0x82012CC0,0x82012D08,0x82012E38,0x82012E80,0x82012ED8,0x82012F38,0x82012FA0; predecessor=0x8216C854 terminal; following owner=0x8216C860"
+byte_sha256 = "41f0619a1f19a384dba2d624dbf5e4239546ec8c99f19d9dd06a3f422b75ad06"
+
+[[function]]
+address = 0x821A06B0
+size = 0x08
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; bytes=908310184e800020; predecessor=0x821A06AC blr terminal; terminal=0x821A06B4 blr; following owner=0x821A06B8; reached by 0x8219E694 bctrl with LR=0x8219E698"
+byte_sha256 = "865d7b028bc4010165e7e94e78da315cb0488a6a2a22b0f925ef122fdf4e89dc"
+
+[[function]]
+address = 0x820942C8
+size = 0x0000003C
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "c793fe93ed502f0c0510b14b70b881f2aede61c65219e76e3ed3e5a6af4c66d9"
+
+[[function]]
+address = 0x820B1BC8
+size = 0x00000018
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "c83bb4598215b269e4120ba75baba7cdb8d7f71bc57dbdf69541ce9f930d7e24"
+
+[[function]]
+address = 0x820C3FE0
+size = 0x00000018
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "b52fd860c1f952790f32a198d06c0b2fadaacd2b75eac2df80fe356b5c8a7c20"
+
+[[function]]
+address = 0x820C3FF8
+size = 0x0000001C
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f3e55b3956e46dcc40728e1a8e589e20224351f4ed960056d73777b1c6b10564"
+
+[[function]]
+address = 0x820C5FDC
+size = 0x00000004
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x820C8F20
+size = 0x00000004
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x820F9F60
+size = 0x00000008
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "779152d752080ee5efa5b38ac43841d2cc0cb24d9c2d6c01262547c87f16331d"
+
+[[function]]
+address = 0x820F9F68
+size = 0x00000008
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "778b9379d7bc8048c6072adf343e1f299b393af6b998147bdcfa038b6c8770bf"
+
+[[function]]
+address = 0x820F9F70
+size = 0x00000008
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "1eb6cd84aa20e3a2653026f7a2fd61c440a2d521aee80f4d5d7c552c661f4221"
+
+[[function]]
+address = 0x820FBA88
+size = 0x00000030
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "e7fe8f4f686aca54acf9cbda73c2761e3a40f0281648c9c923e44d3bcecaeeb3"
+
+[[function]]
+address = 0x8212DCE8
+size = 0x00000004
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x821A6BDC
+size = 0x00000004
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x82227B00
+size = 0x000000F0
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "d609aa399a7fb7886b5c1224cda619338331f71b18b048f48af9870d5f3c71d5"
+
+[[function]]
+address = 0x822A7A30
+size = 0x000006B0
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "906fe0ca96606a59376f508cc8b0ecb17354014681fcbf5c0625b317ee5eadac"
+
+[[function]]
+address = 0x822A80E0
+size = 0x00000004
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x822C2A58
+size = 0x00000020
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "a2e9225e3fd4231834cf1408125c4f6925009dbaa85502e63322c9ea9a2581ad"
+
+[[function]]
+address = 0x822DB03C
+size = 0x00000004
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x822EBBF8
+size = 0x00000080
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "2cdd1a7c77ac92ae9c685719d1aa7087a1c5aa4bb80427cf0af5c854b56d12e9"
+
+[[function]]
+address = 0x823220A0
+size = 0x00000004
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "f332ea5b5437103cbb6f1508679da89eec9288ad775c96c439a17fccabe3de8e"
+
+[[function]]
+address = 0x8234D6F0
+size = 0x00000010
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "0059442a630d64821fdd833fa612645f506c60f1e45e3a305a25253716ab5e48"
+
+[[function]]
+address = 0x8234D700
+size = 0x00000034
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "28452f85751a00188a5285f3158c1c752438c074bca245858b8b50806d0bdb2d"
+
+[[function]]
+address = 0x8234DFC0
+size = 0x00000028
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "bcf2e87199362c41e98112662b5cb4b6aa8ea5ee7a7ea6a7671e24e0e11929ab"
+
+[[function]]
+address = 0x823538E0
+size = 0x00000014
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "08986e6de461a9eb45409f7c43bb3b1e3bdac0c56c0584ba935a332465150fde"
+
+[[function]]
+address = 0x82353A68
+size = 0x00000008
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "550a14f045fc9962d19f64b2b79ea0585464d3fed8b8eaa34559dfc13f391e38"
+
+[[function]]
+address = 0x82354268
+size = 0x00000018
+kind = "canonical-reimport-boundary"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; terminal/reference revalidation; literal boundary cross-match source_manifest_sha256=28b867269e75a7ecf63ed9eb16107039a510ffd169df938cfc26ff9e571d5d92"
+byte_sha256 = "85f94080bb37a249c8e4c7ad8fe88c021bb995008d9ae156fc2cf66764d11702"
+
+[[function]]
+address = 0x822F2EE8
+size = 0x34
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; predecessor=0x822F2EE4 blr terminal; paths end at 0x822F2F04/0x822F2F18 bctr; following owner=0x822F2F30; reached by 0x822F3C14 bctrl with LR=0x822F3C18 at tick=2"
+byte_sha256 = "ad7ee1e17f612cfda0792ea8cdc0bc19d91e3c56a00ef33a93f80c1eb61c44cb"
+
+[[function]]
+address = 0x82277780
+size = 0x28
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; predecessor=0x8227777C blr terminal; paths end at 0x82277790/0x822777A4 blr; following owner=0x822777A8; reached by 0x822782F0 bctrl with LR=0x822782F4 at tick=2"
+byte_sha256 = "23e4eaa34bf99ec2a906a0669683dabf0a8df8e6bc48be418f371c7f36103f36"
+
+[[function]]
+address = 0x82277768
+size = 0x40
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; owner=0x82277738; paths end at 0x8227777C/0x82277790/0x822777A4 blr; following owner=0x822777A8; reached by 0x8223D10C bctrl with LR=0x8223D110 at neutral tick=2126 thread=1"
+byte_sha256 = "f6a8852999506e1376f611452603625b2359a632c4b150a7fb3114ac3cdf74d0"
+
+[[function]]
+address = 0x822CCCB8
+size = 0x3C
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; owner=0x822CCC88; predecessor=0x822CCCB4 blr terminal; paths end at 0x822CCCC8/0x822CCCDC blr and 0x822CCCF0 bctr; padding=0x822CCCF4; following owner=0x822CCCF8; reached by 0x8223D794 bctrl with LR=0x8223D798 at neutral tick=2126 thread=1"
+byte_sha256 = "ddcbba9f92911e549f2b58182188841d43fc481d9f5d1fc068ffed510679a38f"
+
+[[function]]
+address = 0x822CC3B8
+size = 0x1C
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; owner=0x822CC378; predecessor=0x822CC3B4 blr terminal; terminal=0x822CC3D0 blr; padding=0x822CC3D4; following owner=0x822CC3D8; reached by 0x8223E300 bctrl with LR=0x8223E304 at neutral tick=2126 thread=1"
+byte_sha256 = "b065d7ebb63ed6554a65f6a45255ca8056ec416c8bbb301459575d16ddacbb3b"
+
+[[function]]
+address = 0x822CD118
+size = 0x08
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; owner=0x822CD108; predecessor=0x822CD114 blr terminal; terminal=0x822CD11C blr; following owner=0x822CD120; reached by 0x8223FF6C bctrl with LR=0x8223FF70 at neutral tick=2126 thread=1"
+byte_sha256 = "8b193777f1adfe8f5afbd7fdd1395de6aca91dcef21e381992179dcd189a38fd"
+
+[[function]]
+address = 0x8216C990
+size = 0x14
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; bytes=3d60826e39400000396b2fb0914b13044e800020; predecessor=0x8216C98C blr terminal; terminal=0x8216C9A0 blr; padding=0x8216C9A4; following owner=0x8216C9A8; clears guest word 0x826E42B4; reached by 0x8218A3A8 bctrl with LR=0x8218A3AC at tick=220 thread=1"
+byte_sha256 = "ed2cebcdcf29eea15c8ba36b8c8e41862941e2be32c546f2be808bc51bfc7823"
+
+[[function]]
+address = 0x820D0FF8
+size = 0x10
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; bytes=8163001c548a103a7c6b502e4e800020; predecessor=0x820D0FF4 blr terminal; terminal=0x820D1004 blr; following sibling owner=0x820D1008; getter returns word32 from object+0x1C[index]; reached by 0x82323F04 bctrl with LR=0x82323F08 at tick=220 thread=1; callsite loads vtable slot=11"
+byte_sha256 = "b48dced8399369eb2dc72968be0b14fa1031a09966ba8c7f74310ff2b5b6ac08"
+
+[[function]]
+address = 0x8222F2D0
+size = 0x08
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; bytes=3860000b4e800020; predecessor=0x8222F2CC blr terminal; terminal=0x8222F2D4 blr; following sibling owner=0x8222F2F8; returns constant 11; vtable=0x82006D8C slot=6 at 0x82006DA4; reached by 0x820DF8E0 bctrl with LR=0x820DF8E4 at tick=220 thread=1"
+byte_sha256 = "9b15c270c3a60716a9af043a0a6011feb05d00d49436fda42a7bafac68327a79"
+
+[[function]]
+address = 0x821044D0
+size = 0x08
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; bytes=7c8323784816d5ec; predecessor=0x821044CC terminal tail branch; terminal=0x821044D4 tail branch to 0x82271AC0; following owner=0x821044E8; live vtable=0x820092BC slot=9 at 0x820092E0; reached statically adjacent dependency of multi-slot callsite 0x821042AC"
+byte_sha256 = "868cda65f3370ce149c08da2b200b07259ba15aa9565bafd36fa7cc3385f656e"
+
+[[function]]
+address = 0x821044D8
+size = 0x08
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; bytes=7c8323784bffdbd4; predecessor=0x821044D4 terminal tail branch; terminal=0x821044DC tail branch to 0x821020B0; following owner=0x821044E8; live vtable=0x820092BC slot=10 at 0x820092E4; reached by 0x821042AC bctrl with LR=0x821042B0 at tick=244 thread=1"
+byte_sha256 = "78d6acbfaa194418b4beb2ed97ce19c57078506d1cea96483801fe042a02b9a4"
+
+[[function]]
+address = 0x821044E0
+size = 0x08
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; bytes=7c8323784816d8b4; predecessor=0x821044DC terminal tail branch; terminal=0x821044E4 tail branch to 0x82271D98; following owner=0x821044E8; live vtable=0x820092BC slot=11 at 0x820092E8; reached by the multi-slot callsite 0x821042AC at tick=244 thread=1"
+byte_sha256 = "68eb47f2187b2e3abf9b41c342a565a82f01c39cab138f3355731b3d410f3388"
+
+[[function]]
+address = 0x8216C920
+size = 0x20
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; predecessor=0x8216C91C blr terminal; paths terminate at 0x8216C934 beqlr or 0x8216C93C blr; following configured sibling=0x8216C940 and pdata owner=0x8216C9A8; vtable=0x8201130C slot=9 at 0x82011330; clears object bytes +0x09/+0x0A according to mask bits r4&3; statically adjacent producer for reached slot-10 reader"
+byte_sha256 = "a1205bfdadbd066e99f4d5e1831400419e6297d0cd61e6d8ee0fd14e7abdb9da"
+
+[[function]]
+address = 0x8216C940
+size = 0x50
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; predecessor=0x8216C93C blr terminal; all paths terminate by 0x8216C98C; following configured sibling=0x8216C990 and pdata owner=0x8216C9A8; vtable=0x8201130C slot=10 at 0x82011334; reads object bytes +0x09/+0x0A according to mask r4&3; reached by 0x82259D54 bctrl with LR=0x82259D58 at tick=252 thread=1 r4=1"
+byte_sha256 = "e7bdf7dfb1f5fcb0ed5a198a74f32077ba9e613e0fd894248b7857b2f5365530"
+
+[[function]]
+address = 0x820EABA0
+size = 0x10
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x820EAB60..0x820EABAF; predecessor=0x820EAB9C blr terminal; terminal=0x820EABAC blr; following configured sibling=0x820EABB0; vtable=0x82007D0C slot=10 at 0x82007D34; reached by 0x82321FD0 bctrl with LR=0x82321FD4 at tick=265 thread=1"
+byte_sha256 = "a2e5d1f4670a08c14f95c9c28832866b7110b88f93ad56ebf6e38c10546a3e31"
+
+[[function]]
+address = 0x820D0F58
+size = 0x10
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x820D0F20..0x820D0F8B; predecessor=0x820D0F54 blr terminal; terminal=0x820D0F64 blr; following sibling=0x820D0F68; vtable=0x8200654C slot=3 at 0x82006558; reached by 0x823234B4 bctrl with LR=0x823234B8 at tick=266 thread=1"
+byte_sha256 = "0b4eaa14c1ae4847a22986878446f55b1159435a2bf9caa6ea1dd8b43a2e3fbc"
+
+[[function]]
+address = 0x820D0F78
+size = 0x18
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; starts after 0x820D0F74 blr terminal and ends with bctr at 0x820D0F8C; next sibling=0x820D0F90; vtable=0x8200654C slot=5 at 0x82006560; reached by 0x82323568 bctrl with LR=0x8232356C at tick=266 thread=1"
+byte_sha256 = "02d629246de0f1e5faaa858e641bf2ce24a7aba70fe0a0d84a3487cf5c53622f"
+
+[[function]]
+address = 0x820D0F68
+size = 0x10
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x820D0F20..0x820D0F8B; predecessor=0x820D0F64 blr terminal; terminal=0x820D0F74 blr; following sibling=0x820D0F78; vtable=0x8200654C slot=4 at 0x8200655C; reached by 0x82323590 bctrl with LR=0x82323594 at tick=266 thread=1"
+byte_sha256 = "e307014f03414b0340961a7744ed4356b9cebcb9d99b53c741541678d3c46b46"
+
+[[function]]
+address = 0x820D32B0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x820D3230..0x820D3363; predecessor=0x820D32AC bctr terminal; terminal=0x820D32BC bctr; following sibling=0x820D32C0; reached by 0x820DC370 bctrl with LR=0x820DC374 at neutral tick=2511 thread=1"
+byte_sha256 = "da23e3ba38b71445cb1e786baee20d64c660f9db6f185a5984909c92625ae284"
+
+[[function]]
+address = 0x820EB490
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x820EB448..0x820EB4A7; predecessor sibling 0x820EB478..0x820EB48F terminates with bctr; target terminates with bctr at 0x820EB4A4; next sibling is .pdata function 0x820EB4A8; vtable=0x82007D60 slot=7 at 0x82007D7C; reached by 0x820EA284 bcctrl with LR=0x820EA288 at neutral tick=4251"
+byte_sha256 = "e88e5c7368a1e567db263db2851c38c7ac69ae2e0f2daa9809af5f8cc450851b"
+
+[[function]]
+address = 0x82351198
+size = 0x08
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x82351190..0x823511AF; predecessor sibling 0x82351190..0x82351197 terminates with a tail branch; target adjusts r3 by -4 then tail-branches at 0x8235119C to pdata function 0x82351368; following sibling starts 0x823511A0; reached by 0x82353928 bctrl with LR=0x8235392C at neutral tick=5049 thread=21"
+byte_sha256 = "edc2a88af607b72e14d53b5d8b68388e5b565ccc2e67839abde0a345f45cf68b"
+
+[[function]]
+address = 0x8236E550
+size = 0x08
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x8236E530..0x8236E557; predecessor sibling 0x8236E548..0x8236E54F terminates with a tail branch; target adjusts r3 by -4 then tail-branches at 0x8236E554 to pdata function 0x8236E698; next sibling is pdata function 0x8236E558; reached by 0x8236E584 bctrl with LR=0x8236E588 at neutral tick=5049 thread=21"
+byte_sha256 = "76b7caa54b8a23c66e70cad1effbddbf18ead2727a7a739e27a06d6107bfd210"
+
+[[function]]
+address = 0x82323600
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x823235D0..0x82323647; predecessor=0x823235FC blr terminal; terminal=0x82323614 blr; following sibling=0x82323618; computed dispatch table base=0x8264CDC0 selected from object type by owner=0x82323BB8; reached by 0x82323C48 bctrl with LR=0x82323C4C at tick=266 thread=1"
+byte_sha256 = "64643f32fcadd0b71b2aaa7564f17855a946387c7d60a8e58eab75244c6f1359"
+
+[[function]]
+address = 0x823235E8
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x823235D0..0x82323647; predecessor=0x823235E4 blr terminal; terminal=0x823235FC blr; following sibling=0x82323600; computed dispatch table selected by owner=0x82323BB8; reached by 0x82323C48 bctrl with LR=0x82323C4C at neutral tick=2453 thread=1"
+byte_sha256 = "5d3515187236e81a0027685ff0fd8a53943f7599dc93ffc969a565a32376b79c"
+
+[[function]]
+address = 0x82323630
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x823235D0..0x82323647; predecessor=0x8232362C blr terminal; terminal=0x82323644 blr; next owner=0x82323648; computed dispatch table base=0x8264CDF8 selected from object type by owner=0x82323BB8; reached by 0x82323C84 bctrl with LR=0x82323C88 at tick=266 thread=1"
+byte_sha256 = "4b72509428a58ee8eaea6f12e87d1a8a1a38c306ba15952480f011d0c2ca624f"
+
+[[function]]
+address = 0x82323618
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x823235D0..0x82323647; predecessor=0x82323614 blr terminal; terminal=0x8232362C blr; following sibling=0x82323630; computed dispatch selected by owner=0x82323BB8; reached by 0x82323C84 bctrl with LR=0x82323C88 at tick=267 thread=1"
+byte_sha256 = "2ded41d13e8af14e2e1c80e65a7d5de6890863f2b763cff0a30301967d6cd6da"
+
+[[function]]
+address = 0x820D0D18
+size = 0x64
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x820D0D10..0x820D0D7B; predecessor=0x820D0D14 blr terminal; all paths terminate by 0x820D0D78 blr; next owner=0x820D0D80; vtable=0x820064D8 slot=6 at 0x820064F0; reached by 0x823233F8 bctrl with LR=0x823233FC at tick=266 thread=1"
+byte_sha256 = "3943a353aecf2bff45dd5ba6970a53c1492e09224efd35235027e8709bc29e72"
+
+[[function]]
+address = 0x820D0F48
+size = 0x10
+kind = "callable-bounded-entry"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x820D0F20..0x820D0F8B; predecessor=0x820D0F44 tail branch terminal; terminal=0x820D0F54 blr; following sibling=0x820D0F58; vtable=0x8200654C slot=2 at 0x82006554; reached by 0x82325E30 bctrl with LR=0x82325E34 at tick=266 thread=1"
+byte_sha256 = "29773a9261d30081b5e8a26f1abe8e7ea061af696acbb69f1faf8a84cb7fc0bb"
+
+[[function]]
+address = 0x822F2EC0
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x822F2EA8..0x822F2F1B; predecessor=0x822F2EBC blr terminal; terminal=0x822F2EE4 blr; next sibling=0x822F2EE8; shared RTTI vtable slot=4 including 0x82029108/0x82029158/0x8202A99C/0x8202A9D8/0x8202AA74; reached by 0x822DB98C bctrl with LR=0x822DB990 at tick=266 thread=1"
+byte_sha256 = "8dd9461fcc14589eacebe3a0ddbae1b06acd7359ea3acf98a727663fcf04cc47"

@@ -1,0 +1,61 @@
+{
+  "schema": "ac6-demo-neutral-boundary/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "route": "neutral",
+    "backend": "headless",
+    "xma_create_opt_in": true,
+    "xma_kick_opt_in": true,
+    "start_injected": false
+  },
+  "closed_boundary": {
+    "entry": "0x820D32B0",
+    "size": "0x10",
+    "bytes_hex": "81830000816C009C7D6903A64E800420",
+    "byte_sha256": "da23e3ba38b71445cb1e786baee20d64c660f9db6f185a5984909c92625ae284",
+    "caller_lr": "0x820DC374",
+    "first_tick": 2511,
+    "thread": 1,
+    "proof_run": {
+      "outcome": "max_ticks",
+      "completed_ticks": 2512,
+      "presents": 2375,
+      "trace_sha256": "c2566f69d106dd7bba2b8edbb6055b2d312a905f0d93a3f9f98968bddff44918",
+      "report_sha256": "8eb0cccc9801999aa24df3a6a2141ffe5611083490d532672f7b4a81255abc74"
+    }
+  },
+  "extension": {
+    "outcome": "max_ticks",
+    "completed_ticks": 3000,
+    "presents": 2863,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "unresolved_boundary": null,
+    "trace_sha256": "5392f66fb0a77681a6cdb07cdacc0802f3ba5d5ebbdf4e1dd4f6fdcb34be470a",
+    "report_sha256": "2e930bde338c6a1693358da06851135dec0e0a60e83548de0e46dddbf054842b"
+  },
+  "artifacts": {
+    "binary_sha256": "381fcb15b3f11a8356d86fe98ef7a4b5edf246dac4bf1a8c5bceb55eaffbbf6c",
+    "codegen_manifest_sha256": "31bfd340eabe68cacefb826ceab12f167965ef8aa96b586b79951074e196d529",
+    "boundary_config_sha256": "ef3e917757ced959f998085bbe506c10eedc27fd5b5c86834f28fe74d02982cd",
+    "static_atlas_sha256": "05a261a153c1b415fdee94aff65900946dc0e8074ee9d234b1d1bc1c60f0b71b"
+  },
+  "classification": {
+    "demo_qualified": [
+      "0x820D32B0 callable boundary and exact PAL bytes",
+      "neutral progress through tick 3000 without unresolved boundary",
+      "static atlas complete at 12873 functions"
+    ],
+    "unknown": [
+      "semantic role and selected vtable owner for 0x820D32B0",
+      "first non-black EDRAM producer",
+      "first guest-owned frontend state",
+      "causal START transition"
+    ]
+  }
+}

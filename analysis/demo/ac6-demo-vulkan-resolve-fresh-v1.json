@@ -1,0 +1,57 @@
+{
+  "schema": "ac6-demo-vulkan-resolve-fresh/v1",
+  "target": {
+    "name": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "endianness": "big",
+    "gpu": "Xenos"
+  },
+  "sources": {
+    "test": "recompilation/ace-combat-6-demo/tests/ac6-demo-vulkan-resolve-tests.cpp",
+    "test_sha256": "adf1a740c3db56829105f73ce47d4c1c5fd3178eb1773a51d290b199b829528",
+    "repeat_wrapper": "recompilation/ace-combat-6-demo/tools/run_vulkan_resolve_repeat.py",
+    "repeat_wrapper_sha256": "6b8ccbb0098bcc6b507560364bbb97b27456d5d8b66595d64de275ac3460bcd6",
+    "rexglue_commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+    "spirv_header_sha256": "de24d6b23367da6b2fa3b5d1d843d920cbdf4a5170cf49544412c4bebcb1eb11",
+    "spirv_sha256": "e8cfb0d6981476118cefbf797d33092ccf09281f728d34220c1514dd79487b32",
+    "spirv_val_sha256": "2cc19cddc1293518705467f41f55094800b319bd77b1eaf6e30bc7901d6e3406"
+  },
+  "constants": ["0x00000010", "0x00091400", "0x01000300", "0x00005C28", "0x00000000"],
+  "dispatch": [20, 90, 1],
+  "destination": {"tiled_extent": "0x398000", "guards": "aligned-before-and-after", "descriptor_range": "exact-tiled-extent"},
+  "digests": {
+    "black": {
+      "pixel": "00000000",
+      "tiled_sha256": "94831d4c398252020f792d92f546c5122ad522c4270b73be9e8619fde1db641f",
+      "linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    },
+    "asymmetric": {
+      "pixel": "33221144",
+      "tiled_sha256": "0bf69cf42fd6c3ac73b30c438a4db6d1664eaafa9c716b9ba330a9886c976786",
+      "linear_sha256": "66dde082635ccc6b24abba5b372ceb10173bc2b062faa2d93de7c4548bb60dc8"
+    }
+  },
+  "freshness": {
+    "in_process_harness_instances": 2,
+    "wrapper_processes": 2,
+    "stdout_equal": true,
+    "deterministic": true,
+    "spirv_val_vulkan11": true
+  },
+  "classification": {
+    "demo-qualified": ["reached constants", "1280x720 destination tuple", "transactional guard expectations"],
+    "xenia-generic": ["ReXGlue resolve SPIR-V", "tiled/untile oracle", "copy shader semantics"],
+    "demo-observed": [],
+    "unknown": ["actual PAL EDRAM contents", "source raster pixels", "guest-owned framebuffer", "frontend", "audio", "mission result"]
+  },
+  "guard": {
+    "test_only": true,
+    "production_path_unchanged": true,
+    "no_fallback_visual": true,
+    "no_screencap": true,
+    "no_proprietary_assets": true
+  },
+  "validation": {"codegen_on_ctest": "17/17", "codegen_off_ctest": "18/18", "spirv_val": "PASS"},
+  "next_checkpoint": "materialize only independently qualified PAL EDRAM source and compare a nonzero guest-owned readback; do not promote this oracle output to play"
+}

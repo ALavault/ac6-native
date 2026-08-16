@@ -1,0 +1,95 @@
+{
+  "schema": "ac6-demo-start-indirect-820e7e08/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile": ".build/ac6-demo-codegen-atomic-1/xex-basefile.bin",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "process_fresh": true,
+    "store_fresh": true,
+    "route": "START held at ticks 252..267",
+    "request": {"until": "terminal", "max_ticks": 600, "backend": "headless"},
+    "completed_ticks": 268,
+    "outcome": "trap",
+    "frontier": {
+      "kind": "guest-indirect",
+      "diagnostic": "unqualified guest indirect call",
+      "tick": 268,
+      "thread": 1,
+      "lr": "0x82321F34",
+      "target": "0x820E7E08"
+    },
+    "rtply": {"path": "/fastdata/lavaulta/tmp/ac6-start-hold600.rtply", "sha256": "db6d8a5d31f80022868e30cd4f3335339dddada4c7e2f3bbf8d71756cb76536b"},
+    "report": {"path": "/fastdata/lavaulta/tmp/ac6-start-hold600.report.json", "sha256": "40aab8bf769cd512bcb1f4f0f37c2ca50445e0719f6210d353272d82b1a34586"},
+    "stderr": {"path": "/fastdata/lavaulta/tmp/ac6-start-hold600.stderr", "sha256": "41b7a8d793cd512bcb1f4f0f37c2ca50445e0719f6210d353272d82b1a34586b"},
+    "milestones": {"presents": 131, "frontend": false, "mission": false, "terminal": false}
+  },
+  "dynamic_edge": {
+    "thread": 1,
+    "tick": 268,
+    "lr": "0x82321F34",
+    "target": "0x820E7E08",
+    "count": 1,
+    "virtual_dispatch": null,
+    "last_registers": {
+      "r1": "0x7F040768", "r3": "0x2E3D3D14", "r4": "0x2E3CFA08",
+      "r5": "0x00000000", "r6": "0x00000000", "r7": "0x00000000",
+      "r8": "0x00000000", "r9": "0x00000000", "r10": "0x820077AC",
+      "r11": "0x820E7E08", "r12": "0x82321F1C", "r13": "0x7F000000",
+      "r26": "0x00000001", "r27": "0x00000000", "r28": "0x2E3CF0D4",
+      "r29": "0x00000000", "r30": "0xFFFFFFFF", "r31": "0x2E3D3AD4"
+    }
+  },
+  "static_join": {
+    "chunk": {
+      "range": ["0x820E7E00", "0x820E7E0F"],
+      "byte_sha256": "988a4167846e4f600a58f19d51a7e694a854985677cad48f0e5d73f1efda9180",
+      "bytes_be": "38a000014bffa17438a000004bffa16c",
+      "boundary_provenance": "ghidra-chunk",
+      "function_boundary_promoted": false
+    },
+    "next_function": {
+      "entry": "0x820E7E10",
+      "range": ["0x820E7E10", "0x820E80D3"],
+      "boundary_provenance": "pdata",
+      "byte_sha256": "c5de9580b1a539467c2a31739c6fca52f15bd002ff4c9c2c4ea751eee4136e93",
+      "pseudocode_sha256": "ef7acd7399fd7309b2303df5b44b91c89ba076799fd7f09ee637ad277cc58fbb"
+    },
+    "caller": {
+      "entry": "0x82321E20",
+      "range": ["0x82321E20", "0x82321F6B"],
+      "byte_sha256": "1c0454f49aad8ce00009905808b90cf6278a464e1eb6671e1b7397ef605419c9",
+      "pseudocode_sha256": "d83cfa1c85bfe7e1dd911f4f9b784448e36d68fb2ac4a548b5a16b563d28f51f"
+    },
+    "rtti_vtables": [
+      {"address": "0x820065A4", "target_slots": {"77": "0x820E7E00", "78": "0x820E7E08"}, "type_name_sha256": "7ed19cde0c4cd722d4823fe7c9998748fa97bb997b88b7b26f0f6c237c0502a1"},
+      {"address": "0x820077AC", "target_slots": {"77": "0x820E7E00", "78": "0x820E7E08"}, "type_name_sha256": "58528444d07c4912c91a413d12fd8e33c01b908efaa5b328bf49e0bfb058a0b4"}
+    ],
+    "dynamic_slot_join": "unknown"
+  },
+  "classification": {
+    "demo-qualified": ["PAL identity", "exact dynamic target/tick/LR", "chunk and bytes", "RTTI target slots", "caller and next boundary"],
+    "demo-observed": ["START-held route reaches the edge", "r10 equals 0x820077AC in the edge snapshot"],
+    "xenia-generic": [],
+    "unknown": ["exact object/vtable load at bctrl", "selected slot/ABI", "state semantics", "frontend/pixels/audio/mission/terminal"]
+  },
+  "guard": {
+    "fail_closed": true,
+    "keep_chunk_unsplit": true,
+    "do_not_promote_start": true,
+    "do_not_implement_target": true,
+    "require_fresh_neutral_start_ab": true,
+    "require_object_vtable_slot_capture": true,
+    "retail_evidence_merged": false,
+    "generated_cpp_mutated": false,
+    "ghidra_mutated": false,
+    "xenia_rexglue_mutated": false,
+    "proprietary_asset_tracked": false
+  }
+}

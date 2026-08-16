@@ -1,0 +1,118 @@
+{
+  "schema": "ac6-demo-event-handoff-focused/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "backend": "headless",
+    "max_ticks": 600,
+    "fresh_process_per_run": true,
+    "runtime_binary_sha256": "b2ebebb0dbc72d37ea2cb31d266493553008c75af1ba59b3556ef1c27de69b08",
+    "source_hook_sha256": "5d792e06c2d7955e568fe299ae202e0acf143cde7f439e00496fec49d1c3eaec",
+    "instrumentation": [
+      "AC6_DEMO_WATCH_EVENT_HANDOFF=1",
+      "AC6_DEMO_WATCH_EVENT_HANDOFF_FOCUSED=1"
+    ],
+    "instrumentation_default": false,
+    "record_limit_per_run": 32768,
+    "neutral_trace_directory": "/fastdata/lavaulta/tmp/ac6-demo-event-focus600-neutral.STsyl5",
+    "start_trace_directory": "/fastdata/lavaulta/tmp/ac6-demo-event-focus600-start.KmOjhB",
+    "neutral_stderr_sha256": "061757baf8eb1ab8075e15ea40c22f8389b9e6b3504e8eb932984a9a7142cfb6",
+    "start_stderr_sha256": "061757baf8eb1ab8075e15ea40c22f8389b9e6b3504e8eb932984a9a7142cfb6",
+    "neutral_rtply_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+    "start_rtply_sha256": "4d2f77515e5850ca3e8e0e36e2eaa306a9a7b2c7d602deae56755cab4ba100e1",
+    "neutral_report_sha256": "dbe6484af6c1446db0e2e5017b34441d909cc07e81922959d8ad9d9719b16484",
+    "start_report_sha256": "0c7b23fa425903158224ce47661c7acbaff2ebf2f0c7b2f323effb63171ca88a",
+    "records_per_run": 13785,
+    "record_tick_range": [0, 599],
+    "stderr_byte_equal": true
+  },
+  "operations": {
+    "event_wake": 3264,
+    "set_enter": 3210,
+    "set_exit": 3210,
+    "signal_wait_enter": 1407,
+    "signal_wait_block": 706,
+    "signal_wait_resume": 704,
+    "wait_single_block": 612,
+    "wait_single_resume": 602,
+    "clear": 55,
+    "resume_thread": 11,
+    "pulse_enter": 2,
+    "pulse_exit": 2
+  },
+  "demo_observed": {
+    "primary_pair": {
+      "signal": "0xE0000048",
+      "wait": "0xE000004C",
+      "signal_wait_records": 1402,
+      "first_tick": 0,
+      "last_tick": 599,
+      "threads": [1],
+      "caller_lr": "0x821A69CC"
+    },
+    "secondary_pair": {
+      "signal": "0xE0000054",
+      "wait": "0xE0000058",
+      "signal_wait_records": 1415,
+      "first_tick": 0,
+      "last_tick": 599,
+      "threads": [1, 14],
+      "caller_lr": "0x821A69CC"
+    },
+    "set_clear_pulse_resume": {
+      "set_records": 3210,
+      "clear_records": 55,
+      "pulse_records": 2,
+      "resume_records": 11,
+      "set_clear_pulse_tick_range": [0, 599],
+      "pulse_ticks": [112, 264],
+      "resume_tick_range": [0, 106]
+    }
+  },
+  "demo_qualified": {
+    "completed_ticks": 600,
+    "presents": 463,
+    "threads": 23,
+    "blocked_threads": 23,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "neutral_start_trace_byte_equal": true,
+    "neutral_start_report_subtrees_equal": ["outcome", "milestones", "graphics", "scheduler"],
+    "start_input": {"tick": 252, "buttons": "0x0010", "connected": true}
+  },
+  "classification": {
+    "xenia-generic": [
+      "0x821A69C8/0x821A69CC and 0xF8000088 -> 0xF800008C from cycle 1644 Xenia archive"
+    ],
+    "demo-observed": [
+      "0xE0000000-based bridge handles and operation counts from the PAL codegen runtime"
+    ],
+    "demo-qualified": [
+      "full 0..599 focused A/B traces are byte-identical",
+      "set/clear/pulse/resume operations are captured without scheduler mutation"
+    ],
+    "unknown": [
+      "mapping between Xenia F800 handles and PAL E000 handles",
+      "guest PC distinct from the import caller LR",
+      "which event operation owns a future frontend transition"
+    ]
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "same_pal_demo_only": true,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_asset_tracked": false,
+    "runtime_behavior_changed": false,
+    "fallback_or_synthetic_progression": false,
+    "fail_closed": true
+  }
+}

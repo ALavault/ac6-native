@@ -8,7 +8,10 @@ import re
 from pathlib import Path
 
 EXTENSIONS = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx"}
-EXCLUDED = {".git", "build", "generated", "thirdparty", "third_party", "external", "vendor"}
+# SDKs are reference payloads, not product translation units. Keep them
+# inspectable without allowing their vendor headers to enter the product
+# complexity ratchet.
+EXCLUDED = {".git", "build", "generated", "sdk", "thirdparty", "third_party", "external", "vendor"}
 LIMITS = {"source": 1200, "header": 1200, "test": 1000, "function": 220}
 CONTROL = re.compile(r"\b(if|for|while|switch|catch|else|do|try)\s*\(")
 FUNCTION = re.compile(r"(?:[~\w:*&<>]+\s+)*[~\w:]+\s*\([^;{}]*\)\s*(?:const\b|noexcept\b|override\b|final\b|&|\s)*\{")

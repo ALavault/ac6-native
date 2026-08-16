@@ -1,0 +1,125 @@
+{
+  "schema": "ac6-demo-event-handle-consumer-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "instrumentation": {
+    "runtime_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handle_consumer_trace.hpp",
+    "runtime_hook_sha256": "6e3dbcd29d046ef67014480213b87191e753baf883d1fd568236638cce8ac43e",
+    "load_hook": "recompilation/ace-combat-6-demo/src/guest_bridge.cpp:678-689",
+    "load_hook_sha256": "8ab43b33faf354108fe74f4e47276b49b6182618e460a622ddb68f749838c2f3",
+    "runtime_binary_sha256": "e2809bbb577dd4bd900742d723b3afab20c427c36c7984d2e665b1c5153300cc",
+    "environment": "AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS=1",
+    "default_enabled": false,
+    "record_limit": 8192,
+    "read_only": true,
+    "capture_fields": ["guest_load_address", "loaded_value", "tick", "thread", "context_lr_observed"]
+  },
+  "runs": {
+    "neutral": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "none",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+      "report_sha256": "a11feac6f2df648d6b8a82cc2048d0b16ea37f308a2753858f6eafceab2a4340",
+      "stderr_sha256": "9f19ca803f9afbac93b3c19075a082e30fc5ba80cf6604d67e63e2e45355dc9b",
+      "consumer_rows": 3927,
+      "consumer_rows_sha256": "19a7e07cef04760240bcc75903095a37c41a240c12548acea641bdbf77ff8474",
+      "consumer_groups": 370,
+      "first_tick": 0,
+      "last_tick": 299,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "tick 252, buttons 0x0010, connected",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+      "report_sha256": "c74ca0ea7733fe49f0ee5440c73e414737f7fa3cf8e83dc39b95012e30112593",
+      "stderr_sha256": "9f19ca803f9afbac93b3c19075a082e30fc5ba80cf6604d67e63e2e45355dc9b",
+      "consumer_rows": 3927,
+      "consumer_rows_sha256": "19a7e07cef04760240bcc75903095a37c41a240c12548acea641bdbf77ff8474",
+      "consumer_groups": 370,
+      "first_tick": 0,
+      "last_tick": 299,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "consumer_groups_observed": [
+    {"address":"0x7F040B58","value":"0xE1000000","context_lr":"0x821A8D00","count":1,"ticks":[0],"threads":[1]},
+    {"address":"0x7F040B58","value":"0xE1000004","context_lr":"0x821A8D00","count":1,"ticks":[0],"threads":[1]},
+    {"address":"0x7F040B28","value":"0xE0000000","context_lr":"0x821A6364","count":1,"ticks":[0],"threads":[1]},
+    {"address":"0x7F040B28","value":"0xE0000004","context_lr":"0x821A6364","count":1,"ticks":[0],"threads":[1]},
+    {"address":"0x82934748","value":"0xE0000048","context_lr":"0x822EEE38","count":351,"ticks":[1,299],"threads":[1,12]},
+    {"address":"0x8293474C","value":"0xE000004C","context_lr":"0x822EEE44","count":351,"ticks":[1,299],"threads":[1,12]},
+    {"address":"0x82934748","value":"0xE0000048","context_lr":"0x822E3F1C","count":299,"ticks":[1,299],"threads":[12]},
+    {"address":"0x82934768","value":"0xE0000044","context_lr":"0x822E3F1C","count":299,"ticks":[1,299],"threads":[12]},
+    {"address":"0x82933F98","value":"0xE0000054","context_lr":"0x822EEEA0","count":211,"ticks":[0,299],"threads":[1,14]},
+    {"address":"0x82933F9C","value":"0xE0000058","context_lr":"0x822EEEA0","count":106,"ticks":[0,299],"threads":[1,14]},
+    {"address":"0x82934748","value":"0xE0000048","context_lr":"0x822E40A4","count":153,"ticks":[0,299],"threads":[1]},
+    {"address":"0x8293474C","value":"0xE000004C","context_lr":"0x822E40A4","count":101,"ticks":[0,299],"threads":[1]},
+    {"address":"0x82774868","value":"0xE0000000","context_lr":"0x821A1EF4","count":1,"ticks":[0],"threads":[1]}
+  ],
+  "static_join": {
+    "atlas": "analysis/demo/ac6-demo-static-decomp-atlas-v1.json",
+    "boundary_join": {
+      "0x821A8D00": "Function_821A8CB8",
+      "0x821A6364": "Function_821A62F0",
+      "0x822EEE38": "Function_822EEE10",
+      "0x822EEE44": "Function_822EEE10",
+      "0x822E3F1C": "Function_822E3EC0",
+      "0x822EEEA0": "Function_822EEE68",
+      "0x822E40A4": "Function_822E4080"
+    },
+    "qualification": "The atlas supplies containing PAL boundaries only; context_lr_observed is not promoted to an exact load instruction PC."
+  },
+  "ab_comparison": {
+    "consumer_rows_equal": true,
+    "consumer_rows_sha256_equal": true,
+    "stderr_sha256_equal": true,
+    "consumer_group_count_equal": true,
+    "graphics_report_equal_semantically": true,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "start_transition_promoted": false
+  },
+  "join_to_writer_probe": {
+    "writer_capsule": "analysis/demo/ac6-demo-event-handle-writer-probe-v1.json",
+    "writer_sites": 25,
+    "writer_rows_per_run": 163,
+    "writer_rows_sha256": "735d6fafb356107ef30671dfdf1e2650f54da662d7e6d63e5feae064e3411724",
+    "consumer_to_writer_semantics": "unknown"
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact guest load address/value/tick/thread observations",
+      "A/B byte-identical consumer row stream",
+      "containing PAL function boundaries from the static atlas"
+    ],
+    "demo-observed": ["context LR values at the load helper boundary", "handle values E000/E100"],
+    "xenia-generic": ["F800 handle interpretation and POSIX wait implementation"],
+    "unknown": ["exact load instruction PC", "PAL object type", "consumer causal edge", "payload semantics", "frontend transition"]
+  },
+  "policy": {
+    "runtime_behavior_changed": false,
+    "input_read": false,
+    "readback_promoted": false,
+    "proprietary_assets_tracked": false,
+    "retail_evidence_fused": false,
+    "default_disabled": true,
+    "fail_closed": true
+  }
+}

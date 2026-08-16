@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/hedge-dev/XenonRecomp.git",
+  "commit": "ddd128bcca99fe8bfbb99bea583c972351fa6ace",
+  "submodules": {
+    "thirdparty/fmt": "873670ba3f9e7bc77ec2c1c94b04f1f8bef77e9f",
+    "thirdparty/libmspack": "305907723a4e7ab2018e58040059ffb5e77db837",
+    "thirdparty/simde": "a532a12ca9bbdc5e6547eb602e6256b71a5377d4",
+    "thirdparty/tiny-AES-c": "23856752fbd139da0b8ca6e471a13d5bcc99a08d",
+    "thirdparty/tomlplusplus": "c4369ae1d8955cae20c4ab40b9813ef4b60e48be",
+    "thirdparty/xxHash": "2bf8313b934633b2a5b7e8fd239645b85e10c852"
+  }
+}

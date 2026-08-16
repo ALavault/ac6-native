@@ -1,0 +1,89 @@
+{
+  "artifacts": {
+    "callgraph": {
+      "path": "analysis/demo/ac6-demo-sdk-callgraph.json",
+      "sha256": "fc0517135dc2c92e59ef23835967542cee522ac2f67b467ea61a7703b8a82f99",
+      "size": 8446152
+    },
+    "export_script": {
+      "path": "recompilation/ace-combat-6-demo/tools/ghidra/ExportDemoSdkCallGraph.java",
+      "sha256": "46beea75e08111e8f2168a2d17715323ceaa3769fc84a5d47b4f6247bd36b31a",
+      "size": 44861
+    }
+  },
+  "census": {
+    "bounded_wrappers": 118,
+    "callable_imports": 228,
+    "direct_call_edges": 1435,
+    "edges": 1853,
+    "imports": 238,
+    "non_call_variable_references": 93,
+    "owner_nodes": 743,
+    "unresolved_indirect_callsites": 320,
+    "variable_imports": 10,
+    "wrapper_frontier_edges": 294,
+    "xam_imports": 87,
+    "xboxkrnl_imports": 151
+  },
+  "determinism": {
+    "byte_identical": true,
+    "comparison": "cmp",
+    "export_1_sha256": "fc0517135dc2c92e59ef23835967542cee522ac2f67b467ea61a7703b8a82f99",
+    "export_2_sha256": "fc0517135dc2c92e59ef23835967542cee522ac2f67b467ea61a7703b8a82f99"
+  },
+  "identity": {
+    "compiler_spec": "default",
+    "language": "PowerPC:BE:64:Xenon",
+    "pdata_sha256": "82c68b78f3256dd0c2bdd0df40e97daf6f3cf6dd1e162d5ddee4a47d1d14e50b",
+    "program": "Default.xex",
+    "project": "ace-combat-6-demo",
+    "project_path": "ghidra-projects/ace-combat-6-demo",
+    "target_id": "ac6-demo-xbox360-pal",
+    "text_sha256": "6531a539783328976898a3df802ffcbcff40a4ad13f643836bedbdb137dd86f6",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "indirect_policy": {
+    "qualified_indirect_edges": 0,
+    "rule": "bctr/bctrl remain unresolved without separate qualified vtable and slot evidence",
+    "unresolved_exported": 320
+  },
+  "negative_tests": [
+    {
+      "expected": "target ID mismatch: wrong-target",
+      "output_created": false,
+      "result": "pass",
+      "test": "wrong target ID against canonical demo project"
+    },
+    {
+      "expected": "wrong canonical demo project",
+      "output_created": false,
+      "result": "pass",
+      "test": "demo exporter against canonical PAL retail project"
+    }
+  ],
+  "schema": "ac6-demo-sdk-callgraph-evidence/v1",
+  "validation": {
+    "headless_flags": [
+      "-readOnly",
+      "-noanalysis"
+    ],
+    "json_checks": [
+      "all import, owner-node and edge IDs are unique",
+      "all edge source and target IDs resolve",
+      "all import edge IDs resolve",
+      "no bctr/bctrl instruction is promoted to a resolved edge",
+      "all indirect callsite records have resolution=unresolved"
+    ],
+    "result": "CALLGRAPH_VALIDATION_PASS"
+  },
+  "xam_input_focus": {
+    "import": "import:xam.xex:401:XamInputGetState",
+    "sdk_tail_edge": "edge:0x82338250->import:xam.xex:401:XamInputGetState:tail_call",
+    "sdk_wrapper": "function:0x82338248",
+    "title_frontier_edges": [
+      "edge:0x822F60A4->function:0x82338248:direct_call",
+      "edge:0x822F6168->function:0x82338248:direct_call"
+    ],
+    "semantic_limit": "These callers and PPC argument origins identify input sites; they do not prove that either caller executes in a menu."
+  }
+}

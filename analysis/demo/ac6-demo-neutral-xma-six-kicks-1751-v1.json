@@ -1,0 +1,50 @@
+{
+  "schema": "ac6-demo-neutral-xma-six-kicks/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "run": {
+    "route": "neutral",
+    "backend": "headless",
+    "store": "/fastdata/lavaulta/tmp/ac6-cycle1741-neutral-long.PVFEW5/store",
+    "max_ticks": 5400,
+    "completed_ticks": 5400,
+    "presents": 5263,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "scheduler": {"threads": 23, "runnable": 0, "blocked": 23}
+  },
+  "xma_kicks": [
+    {"tick": 1048, "thread": 21, "context": "0x2E800000", "register": "0x7FEA1A80", "wire": "0x01000000", "logical_bit": "0x01"},
+    {"tick": 1048, "thread": 21, "context": "0x2E800040", "register": "0x7FEA1A80", "wire": "0x02000000", "logical_bit": "0x02"},
+    {"tick": 1048, "thread": 21, "context": "0x2E800080", "register": "0x7FEA1A80", "wire": "0x04000000", "logical_bit": "0x04"},
+    {"tick": 5052, "thread": 21, "context": "0x2E8000C0", "register": "0x7FEA1A80", "wire": "0x08000000", "logical_bit": "0x08"},
+    {"tick": 5052, "thread": 21, "context": "0x2E800100", "register": "0x7FEA1A80", "wire": "0x10000000", "logical_bit": "0x10"},
+    {"tick": 5052, "thread": 21, "context": "0x2E800140", "register": "0x7FEA1A80", "wire": "0x20000000", "logical_bit": "0x20"}
+  ],
+  "frontier": {
+    "kind": "scheduler-wait",
+    "caller_lr": "0x822E559C",
+    "target": "0x822F8848",
+    "wait_key": "0xE000004C",
+    "status": "observed; semantic contract and EDRAM writer unknown"
+  },
+  "graphics": {
+    "ib_intermediate_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+    "ib_main_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+  },
+  "artifacts": {
+    "report_sha256": "ec40217ffd824cd7e6f525497b31a05d4c6ca7e14bfdf2746e8de6fc3ce93a44",
+    "trace_sha256": "793f57e338aa7265f1e4d3c06d0a6d9865fc34da37e0ec9abee1653d6a5c1d6e",
+    "stderr_sha256": "646d91c7ec63e9179f9b46672428d77895e286ed3e58ebf0e941df8010e4c223",
+    "binary_sha256": "b31b5f4346b2f50eea40a74ab43b10f2502c1b49ee72dcfafffaf2aaca1d8ccb"
+  },
+  "provenance": {
+    "demo_observed": ["six exact PAL context/kick tuples", "23-thread blocked state", "5263 PRESENT"],
+    "demo_qualified": ["tuple validation and fail-closed pre-effect guard"],
+    "unknown": ["XMA hardware semantics", "decoded/audible audio", "EDRAM writer", "frontend and mission result"]
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "schema": "ac6-demo-xeswap-host-readback-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "backend": "Vulkan"
+  },
+  "demo_contract": {
+    "xe_swap_address": "0x1374A000",
+    "format": 6,
+    "tiled": true,
+    "width": 1280,
+    "height": 720,
+    "destination_bytes": 3768320,
+    "destination_end_exclusive": "0x13AE2000",
+    "present_joined": true,
+    "join_policy": "copy draw and XE_SWAP same batch; exact address/format/tiling/dimensions; normal draw may be prior batch"
+  },
+  "host_readback": {
+    "tiled_rgba8_sha256": "94831d4c398252020f792d92f546c5122ad522c4270b73be9e8619fde1db641f",
+    "linear_rgba8_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "cpu_tiled_oracle_equal": true,
+    "guards_intact": true,
+    "raw_persisted_outside_tmpdir": false
+  },
+  "runs": {
+    "neutral": {
+      "ticks": 253,
+      "return_code": 0,
+      "rtply_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "linear_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    },
+    "start_tick_252": {
+      "ticks": 253,
+      "return_code": 4,
+      "outcome": "max_ticks",
+      "rtply_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "report_sha256": "2d0c391ba3d0d2a6f2dbf0907ac8538abde5be17f8f9424c2fb63cb2bb91a6cf",
+      "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "linear_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    }
+  },
+  "validation": {
+    "ctest_codegen_on": "17/17",
+    "ctest_demo_off": "18/18",
+    "complexity": "pass",
+    "source_audit": "pass",
+    "binary_sha256": "c4ecb2de22338e17ab251c7f7b37d88811c173b861dba50fd2e94605f4635dbb"
+  },
+  "classification": {
+    "demo_qualified": [
+      "XE_SWAP to Vulkan destination join",
+      "bounded tiled host readback and CPU oracle equality",
+      "neutral/START deterministic host readback"
+    ],
+    "unknown": [
+      "GPU-to-GuestMemory writeback",
+      "guest-owned EDRAM/frontbuffer bytes",
+      "non-black pixels and native screencap",
+      "frontend/mission result"
+    ],
+    "xenia_generic": []
+  },
+  "policy": {
+    "fail_closed": true,
+    "retail_evidence_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "screencap_promoted": false
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "schema": "ac6-demo-frontbuffer-host-read-boundary/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "frontbuffer_address": "0x1374A000",
+    "frontbuffer_end": "0x13AE2000",
+    "frontbuffer_extent_bytes": 3768320,
+    "width": 1280,
+    "height": 720,
+    "texture_format": 6,
+    "tiled": true
+  },
+  "instrumentation": {
+    "env": ["AC6_DEMO_WATCH_FRONTBUFFER_HOST_READS=1"],
+    "source": "recompilation/ace-combat-6-demo/src/guest_memory.cpp",
+    "source_sha256": "2ce50a622cb447deae3b8958cdd06abecbe48760f71bd323e75bf02b6e90333b",
+    "function": "watch_frontbuffer_host_read",
+    "hook": "GuestMemory::load_bytes",
+    "max_records": 128,
+    "mutates_guest_memory": false,
+    "default_effect": "disabled"
+  },
+  "runs": {
+    "neutral_vulkan_t253": {
+      "process_fresh": true,
+      "input": "connected neutral",
+      "ticks": 253,
+      "report_sha256": "4c6bea202bb0c2c86ecf102735ab4523c2f12411d6f241e8aa1ade1e8d77a214",
+      "rtply_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "stdout_sha256": "380814f143c6c85707eb60f76c4ef137d9151d005b3100bda87569a0f2912e79",
+      "stderr_sha256": "62eac5079fbd9312d00c705dbd08ebcd87e98a0961d137c44f219a65e274df56",
+      "host_read_rows": 2,
+      "host_read_rows_sha256": "62eac5079fbd9312d00c705dbd08ebcd87e98a0961d137c44f219a65e274df56",
+      "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "vdswap_calls": 116,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start_vulkan_t253": {
+      "process_fresh": true,
+      "input": "buttons=0x10 at tick 252",
+      "ticks": 253,
+      "report_sha256": "d69ab8c7cf0e2d887f251ed62a5e803f1f51f5a9136e27aec2547dcfc2c88a35",
+      "rtply_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "stdout_sha256": "10ea62ed7253b1192d16f1784ccfa3a4a7c16b8f0a34fa9c5a1b77d0b01e312e",
+      "stderr_sha256": "62eac5079fbd9312d00c705dbd08ebcd87e98a0961d137c44f219a65e274df56",
+      "host_read_rows": 2,
+      "host_read_rows_sha256": "62eac5079fbd9312d00c705dbd08ebcd87e98a0961d137c44f219a65e274df56",
+      "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "vdswap_calls": 116,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "host_read_sites": [
+    {
+      "address": "0x1374A000",
+      "size": 3768320,
+      "caller_module_offset": "0x9BA2B",
+      "function": "ac6demo::commit_reached_guest_present",
+      "source": "recompilation/ace-combat-6-demo/src/xenos_guest_present_join.hpp:30",
+      "role": "copy guest padding and prior allocation before writeback"
+    },
+    {
+      "address": "0x1374A000",
+      "size": 3768320,
+      "caller_module_offset": "0x9BA9C",
+      "function": "ac6demo::commit_reached_guest_present",
+      "source": "recompilation/ace-combat-6-demo/src/xenos_guest_present_join.hpp:41",
+      "role": "reread after store for exact untiled digest validation"
+    }
+  ],
+  "source_audit": {
+    "vkQueuePresentKHR": false,
+    "raw_base_scanout_consumer": false,
+    "frontbuffer_load_guest_bytes_sites": [
+      "recompilation/ace-combat-6-demo/src/xenos_guest_present_join.hpp:30",
+      "recompilation/ace-combat-6-demo/src/xenos_guest_present_join.hpp:41"
+    ],
+    "classification": "host validation boundary, not guest-owned consumer"
+  },
+  "classification": {
+    "demo-qualified": [
+      "A/B process-fresh host reads and caller sites",
+      "exact destination, extent, IB and VdSwap identity",
+      "readback validation remains fail-closed"
+    ],
+    "demo-observed": [
+      "two host reads per Vulkan route",
+      "guest writeback and black linear digest"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "PPC guest-owned frontbuffer consumer",
+      "external scanout, non-black pixels, frontend, mission and screencap"
+    ]
+  },
+  "validation": {
+    "ctest_codegen": "17/17",
+    "ctest_vector": "17/17",
+    "render_status": "AC6_DEMO_STATUS_PASS",
+    "git_diff_check": "pass",
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "rexglue_modified": false,
+    "microcode_tracked": false,
+    "screencap_promoted": false
+  },
+  "next_checkpoint": "Trace the first PPC guest-owned access outside 0x821C5190 with PC/LR/thread/tick; trap unknown addresses before effect."
+}

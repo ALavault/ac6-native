@@ -1,0 +1,39 @@
+{
+  "canonical_project_path": "ghidra-projects/ace-combat-6-demo",
+  "compiler_spec": "default",
+  "entry_point": "0x821A7160",
+  "export_counts": {
+    "chunks": 4431,
+    "data_ranges": 6789,
+    "pdata_functions": 8327,
+    "requalified_boundaries": 36,
+    "skipped_chunks": 184
+  },
+  "ghidra_version": "12.1.2",
+  "image_base": "0x82000000",
+  "language": "PowerPC:BE:64:Xenon",
+  "loader": "XEX Loader by Warranty Voider",
+  "pdata": {
+    "address": "0x82077200",
+    "byte_sha256": "82c68b78f3256dd0c2bdd0df40e97daf6f3cf6dd1e162d5ddee4a47d1d14e50b",
+    "size": "0x00010438"
+  },
+  "program": "Default.xex",
+  "project": "ace-combat-6-demo",
+  "schema": "ac6-demo-ghidra-import-journal/v1",
+  "script_sha256": {
+    "config/confirmed-chunks.toml": "1f9e3878464bf84482e0ee92bb7cf72893d41a4c136fb101b2e83697c1d845c8",
+    "tools/ghidra/ExportQualifiedDemoChunks.java": "80dc70e0d82e87660f5882789416b0697051a00119c1e4b2db3802b25e2f1333",
+    "tools/ghidra/InspectDemoBoundary.java": "7a51719ebdfe5bf1becd6438b136caf5ff88ffe74a76fe1860ec7eb630c05b5f",
+    "tools/ghidra/QualifyDemoChunk.java": "a6069797f3d92a48b36e8044e0ede985bd97a2fe633f83dba7a1fa1a67217536",
+    "tools/ghidra/ValidateDemoBoundarySet.java": "07dc3bc70fa5ae6ecddd3912716aa1596399b3be3a5cdca04a41135b132580c3",
+    "tools/import_ghidra_demo.py": "eb922c94310c6b4d516a19c6f254d94d8c0c60d83edf54136aa0e43eca9abfd5"
+  },
+  "sections": {
+    "address": "0x82090000",
+    "byte_sha256": "6531a539783328976898a3df802ffcbcff40a4ad13f643836bedbdb137dd86f6",
+    "size": "0x002E67C4"
+  },
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+}

@@ -1,0 +1,75 @@
+{
+  "schema": "ac6-demo-point-draw-source-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "classification": "demo-observed",
+    "read_only": true,
+    "route": "neutral",
+    "fresh_store": true,
+    "backend": "vulkan",
+    "max_ticks": 253,
+    "instrumentation": "AC6_DEMO_WATCH_POINT_DRAWS=1",
+    "run_dir": "/fastdata/lavaulta/tmp/ac6-cycle1739-points.XWPmPa",
+    "binary_sha256": "89ae75b98145d46407db70909529fcb269055bfdb62d7e2027ae04a56966a27b",
+    "stdout_sha256": "933597e9835126f33e72bb4570cd14603e6ffc0f2ac2431db0ee8eb0fe45e2c0",
+    "stderr_sha256": "68cdea5d9ab9220c5c2180d1ea343274a65dd368c40e3443de8772d8a58788a6",
+    "return_code": 0
+  },
+  "draws": {
+    "count": 24,
+    "tick": 0,
+    "thread": 1,
+    "predicated": false,
+    "vertex_shader_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+    "pixel_shader_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+    "raw_registers": {
+      "rb_surface_info": "0x00000000",
+      "rb_color_mask": "0x00000000",
+      "rb_color_control": "0x1000000E",
+      "rb_depth_info": "0x00000000",
+      "rb_depth_control": "0x00000000",
+      "rb_modecontrol": "0x00000004",
+      "texture_fetch_0": "0x00000000",
+      "texture_fetch_1": "0x00000000"
+    },
+    "fetch_decode": {
+      "address": "0x00000000",
+      "dwords": 0,
+      "endian": 0,
+      "bytes_captured": false
+    },
+    "all_24_rows_same_raw_state": true
+  },
+  "result": {
+    "point_draws_can_write_qualified_rt0": false,
+    "first_nonzero_edram_writer": "unknown",
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "guest_linear_readback_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "classification": {
+    "demo_observed": [
+      "24 identical PointList rows at tick 0/thread 1",
+      "zero surface/color-mask/depth/fetch state and no point fetch payload"
+    ],
+    "demo_qualified": [],
+    "xenia_generic": [],
+    "unknown": [
+      "whether the point rows have a non-register side effect in Xenos",
+      "first nonzero EDRAM writer before RB_COPY",
+      "frontend pixels and mission state"
+    ]
+  },
+  "guards": {
+    "opt_in_only": true,
+    "default_path_changed": false,
+    "synthetic_fallback": false,
+    "retail_evidence_merged": false,
+    "external_checkouts_modified": false,
+    "fail_closed": true
+  }
+}

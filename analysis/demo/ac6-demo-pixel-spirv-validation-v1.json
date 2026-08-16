@@ -1,0 +1,52 @@
+{
+  "schema": "ac6-demo-xenos-spirv-validation/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "classification": {
+    "container_and_microcode_match": "demo-qualified",
+    "translation_rules": "xenosrecomp-generic",
+    "spirv_validation_rules": "spirv-tools-generic",
+    "shader_semantics_for_ac6": "unknown"
+  },
+  "input": {
+    "stage": "pixel",
+    "microcode_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+    "container_sha256": "cd0be9a9accf9e9aa8e86d10069c684d3dcaa1909232e468b8e94406d3977e8c",
+    "container_instances": [
+      "0x8264B390+0x280",
+      "0x8264B790+0x280"
+    ]
+  },
+  "tools": {
+    "xenosrecomp": {
+      "commit": "990d03b28a27b50277ee5d8d942e1c5f873869d1",
+      "binary_sha256": "e71e311c298208b1774f7943171b9f32bc0adb9bb14f1b19889dfcd8ade5b6a4"
+    },
+    "dxc": {
+      "release": "v1.9.2602.24",
+      "commit": "d355aa83",
+      "binary_sha256": "db50584b967fba011f571a6b63e63ae9d14a04418a52d57ff3600750b1c9940d"
+    },
+    "spirv_tools": {
+      "commit": "e39e5c5838bc4b4162c349f2a2e5f163efe5432f",
+      "spirv_val_sha256": "2cc19cddc1293518705467f41f55094800b319bd77b1eaf6e30bc7901d6e3406"
+    }
+  },
+  "outputs": {
+    "hlsl_sha256": "e5ef8c7082aa80108c533d41b047a08ac6a12a32b501d3f4d9347ae53366d6ef",
+    "spirv_sha256": "5affe6f87d30ab6dcd950c94f8512426b4a628c7fbe308037bd9d28b32f76306",
+    "spirv_size": 1448,
+    "second_compile_byte_identical": true,
+    "spirv_val_exit_code": 0,
+    "spirv_val_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "policy": {
+    "temporary_outputs_root": "/fastdata/lavaulta/tmp",
+    "proprietary_bytes_published": false,
+    "hlsl_or_spirv_tracked": false,
+    "fail_closed": true
+  }
+}

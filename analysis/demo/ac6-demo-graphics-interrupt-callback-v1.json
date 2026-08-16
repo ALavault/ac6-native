@@ -1,0 +1,110 @@
+{
+  "schema": "ac6-demo-graphics-interrupt-callback/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "frontend_claimed": false
+  },
+  "static": {
+    "callback": "0x821B9710",
+    "callback_range": ["0x821B9710", "0x821B97C7"],
+    "callback_bytes_sha256": "b2d449272e73fed7f844bb29153b181922a4eb30fc84c2c09740503eeb76d7d0",
+    "callback_pseudocode_sha256": "1a08f0a11ca831de2e87cdb31b5b6c6d60105856ba09d727b0e365e9de5b8492",
+    "callback_direct_calls": ["0x821BE2E0", "0x821C5090", "0x8232710C", "0x82375FB4", "0x82375FC4"],
+    "imports": [
+      "xboxkrnl.exe:KeAcquireSpinLockAtRaisedIrql:77",
+      "xboxkrnl.exe:KeReleaseSpinLockFromRaisedIrql:137"
+    ],
+    "callsites": {
+      "VdSwap": "0x821C5A1C",
+      "VdSetGraphicsInterruptCallback": ["0x821C645C", "0x821C68C8"],
+      "VdCallGraphicsNotificationRoutines": "0x821C6CE8"
+    }
+  },
+  "instrumentation": {
+    "env": "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT=1",
+    "frontbuffer_env": "AC6_DEMO_WATCH_FRONTBUFFER_READERS=1",
+    "trace_header": "src/guest_bridge/graphics_interrupt_trace.hpp",
+    "trace_header_sha256": "22bae274e54eccd9b33b6970e18834455df7a74b820f6f101e534a92831f7ee0",
+    "range": {
+      "begin": "0x1374A000",
+      "end_exclusive": "0x13AE2000",
+      "bytes": 3768320
+    },
+    "default_effect": "disabled",
+    "mutates_guest": false
+  },
+  "runs": {
+    "neutral_t800": {
+      "process_fresh": true,
+      "ticks": 800,
+      "rtply_sha256": "bbc7ecb8fc20bfdbbdd1d70d24a4fdc78f6619dd5622c761e88541d776fd7068",
+      "report_sha256": "0d70fd74c24bd4205491c66c56bd4a5c31278dd99d6270a44248196990563ffa",
+      "stderr_sha256": "cb28c5410f943b63f95085e3d2fdc8de8d3b60f92512e1ae014b6e554011b985",
+      "register_rows": 1,
+      "call_rows": 800,
+      "callback": "0x821B9710",
+      "context": "0x10041A00",
+      "source_counts": {"0": 799, "1": 1},
+      "scalar_reader_rows": 0,
+      "vector_reader_rows": 0,
+      "vdswap_notifications": 663,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    },
+    "start_t800": {
+      "process_fresh": true,
+      "ticks": 800,
+      "rtply_sha256": "54a2860fccb21ab3be0595ae5532a7f9e0dbc3b7b971aaf334a7a087f5a427e1",
+      "report_sha256": "062e97c4087ec46b14979ecfd0ce3cef1e5f00531e27bfd899d7e6b7386c36fe",
+      "stderr_sha256": "cb28c5410f943b63f95085e3d2fdc8de8d3b60f92512e1ae014b6e554011b985",
+      "register_rows": 1,
+      "call_rows": 800,
+      "callback": "0x821B9710",
+      "context": "0x10041A00",
+      "source_counts": {"0": 799, "1": 1},
+      "scalar_reader_rows": 0,
+      "vector_reader_rows": 0,
+      "vdswap_notifications": 663,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    }
+  },
+  "validation": {
+    "ctest_codegen_on": "17/17",
+    "ctest_vector_diagnostic": "17/17",
+    "complexity": "pass",
+    "source_audit": "pass",
+    "status_audit": "pass",
+    "generated_cpp_modified": false,
+    "retail_evidence_merged": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact callback registration and 800 calls in neutral and START",
+      "zero scalar/vector frontbuffer reads in both routes",
+      "identical VdSwap count, writeback, digest and IB hashes"
+    ],
+    "demo-observed": [
+      "callback 0x821B9710 with context 0x10041A00",
+      "source=1 once and source=0 for the remaining calls"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "indirect target semantics inside callback",
+      "host scanout read",
+      "non-black pixels, frontend, mission and screencap"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "rexglue_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "screencap_promoted": false
+  }
+}

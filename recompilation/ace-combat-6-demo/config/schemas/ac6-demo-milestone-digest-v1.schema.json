@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ac6-demo-milestone-digest/v1",
+  "title": "AC6 demo deterministic milestone digest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "target", "replay", "milestone", "guest_transition", "xenos_readback", "semantic_sha256"],
+  "properties": {
+    "schema": {"const": "ac6-demo-milestone-digest/v1"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "module", "xex_sha256", "ghidra_project", "ghidra_language"],
+      "properties": {
+        "id": {"const": "ac6-demo-xbox360-pal"},
+        "module": {"const": "Default.xex"},
+        "xex_sha256": {"const": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"},
+        "ghidra_project": {"const": "ghidra-projects/ace-combat-6-demo"},
+        "ghidra_language": {"const": "PowerPC:BE:64:Xenon"}
+      }
+    },
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rtply_v4_sha256", "xam_movie_v1_sha256", "normalized_xam_sha256"],
+      "properties": {
+        "rtply_v4_sha256": {"$ref": "#/$defs/sha256"},
+        "xam_movie_v1_sha256": {"$ref": "#/$defs/sha256"},
+        "normalized_xam_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "milestone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "tick", "thread", "typed_branch_pc"],
+      "properties": {
+        "name": {"enum": ["frontend", "mission_launch", "first_gameplay_frame", "aircraft_control", "mission_result", "terminal"]},
+        "tick": {"type": "integer", "minimum": 0},
+        "thread": {"type": "integer", "minimum": 1, "maximum": 4294967295},
+        "typed_branch_pc": {"$ref": "#/$defs/guest_address"}
+      }
+    },
+    "guest_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "address", "width", "before_hex", "after_hex", "writer_pc", "first_consumer_pc", "persistence_ticks"],
+      "properties": {
+        "owner": {"const": "guest"},
+        "address": {"$ref": "#/$defs/guest_address"},
+        "width": {"enum": [1, 2, 4, 8]},
+        "before_hex": {"type": "string", "pattern": "^[0-9a-f]+$"},
+        "after_hex": {"type": "string", "pattern": "^[0-9a-f]+$"},
+        "writer_pc": {"$ref": "#/$defs/guest_address"},
+        "first_consumer_pc": {"$ref": "#/$defs/guest_address"},
+        "persistence_ticks": {"type": "integer", "minimum": 1}
+      }
+    },
+    "xenos_readback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["post_transition_batch_sha256", "present_resource_id", "width", "height", "rgba8_sha256", "non_black_pixels"],
+      "properties": {
+        "post_transition_batch_sha256": {"$ref": "#/$defs/sha256"},
+        "present_resource_id": {"$ref": "#/$defs/sha256"},
+        "width": {"const": 1280},
+        "height": {"const": 720},
+        "rgba8_sha256": {"$ref": "#/$defs/sha256"},
+        "non_black_pixels": {"type": "integer", "minimum": 1, "maximum": 921600}
+      }
+    },
+    "semantic_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "guest_address": {"type": "string", "pattern": "^0x[0-9A-F]{8}$"}
+  }
+}

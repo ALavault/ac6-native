@@ -1,0 +1,63 @@
+{
+  "schema": "ac6-demo-pal-viewport-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "classification": "demo-observed",
+    "read_only": true,
+    "fresh_store": true,
+    "route": "neutral",
+    "backend": "vulkan",
+    "max_ticks": 253,
+    "instrumentation": "AC6_DEMO_EXPERIMENTAL_PAL_VIEWPORT=1",
+    "binary_sha256": "07aec28d21dbe587247f27ee694220b6d035db2c7677b6259aeac2ffa18ffa0e",
+    "stderr_sha256": "40db926df03425edda8f94cfca5bd20e8eeea520fa71519221dd26ec14f0c38f"
+  },
+  "hypothesis": {
+    "name": "captured PAL viewport removes the black readback",
+    "viewport": {"x": 0.0, "y": 360.0, "width": 640.0, "height": -360.0,
+                  "min_depth": 0.0, "max_depth": 1.0},
+    "source": "demo-observed register scale/offset 640,-360,360",
+    "status": "rejected-as-complete-fix"
+  },
+  "result": {
+    "return_code": 3,
+    "trap_before_effect": true,
+    "readback_sha256": "1dea584cd88f464d0748a26d2c6dd9cd6b4c42bf6a98dfb0be08446bab6154b5",
+    "black_pixels": 750,
+    "clear_magenta_pixels": 229600,
+    "surface_pixels": 230400,
+    "default_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366"
+  },
+  "default_control": {
+    "same_binary_sha256": "07aec28d21dbe587247f27ee694220b6d035db2c7677b6259aeac2ffa18ffa0e",
+    "return_code": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "classification": {
+    "demo_observed": [
+      "the opt-in Vulkan output digest and bounded pixel counts"
+    ],
+    "demo_qualified": [],
+    "xenia_generic": [],
+    "unknown": [
+      "actual RB_SURFACE_INFO dimensions and storage layout",
+      "whether captured viewport applies to the assumed 640x360 target",
+      "non-zero EDRAM source and final frontend pixels"
+    ]
+  },
+  "policy": {
+    "default_path_changed": false,
+    "production_viewport_promoted": false,
+    "synthetic_fallback": false,
+    "retail_evidence_merged": false,
+    "external_checkouts_modified": false,
+    "fail_closed": true
+  }
+}

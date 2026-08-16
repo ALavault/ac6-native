@@ -1,0 +1,165 @@
+{
+  "schema": "ac6-demo-xma-three-slot-optin/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "endianness": "xenon-big-endian",
+    "gpu": "xenos"
+  },
+  "scope": {
+    "binary": ".build/ac6-demo-codegen-build-1/ac6-demo-recomp",
+    "binary_sha256": "8c2138cab60eb123b31e89852c4fc0af030b47fc5c32f1eee5b933881424c841",
+    "hooks": {
+      "lifecycle": {
+        "path": "recompilation/ace-combat-6-demo/src/guest_bridge/lifecycle.hpp",
+        "sha256": "1ddca123d962c6b95b523427cd002e61cbd10e568f3f4893c5ea3ff4d5c8a606"
+      },
+      "xma_dispatch": {
+        "path": "recompilation/ace-combat-6-demo/src/guest_bridge/audio_memory_dispatch.hpp",
+        "sha256": "815de350f09e84a512accb9b51ced1891bfed224c7baa3ae187c2e131fdfe07b"
+      },
+      "bridge_header": {
+        "path": "recompilation/ace-combat-6-demo/include/ac6demo/guest_bridge.hpp",
+        "sha256": "21e2603729b65b7c4bc205fb19cc5ab5e0e6844e90eff1b5285697088e4bbe9c"
+      }
+    },
+    "request": {
+      "backend": "headless",
+      "until": "frontend",
+      "max_ticks": 1100,
+      "fresh_store_per_route": true,
+      "temporary_root": "/fastdata/lavaulta/tmp/ac6-cycle1727-xma-three.hp2Gs4"
+    },
+    "rr": {
+      "commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+      "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+      "reexecuted": false,
+      "gate_preserved": true
+    }
+  },
+  "experiment": {
+    "environment": [
+      "AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1",
+      "AC6_DEMO_EXPERIMENTAL_XMA_KICK=1",
+      "AC6_DEMO_WATCH_XMA_ADDRESS=1",
+      "AC6_DEMO_WATCH_XMA_KICK=1",
+      "AC6_DEMO_WATCH_XMA_LATE=1",
+      "AC6_DEMO_WATCH_XMA_CREATE=1"
+    ],
+    "read": {
+      "tick": 106,
+      "address": "0x7FEA1800",
+      "wire_value": "0x0000802E",
+      "logical_value": "0x2E800000",
+      "store_address": "0x829DA52C",
+      "store_value": "0x2E800000",
+      "store_lr": "0x8234F078"
+    },
+    "create_call": {
+      "tick": 1048,
+      "thread": 21,
+      "lr": "0x82357298",
+      "r4": "0x00000000",
+      "r5": "0x00006180",
+      "r6": "0x00000000",
+      "r7": "0x00000001",
+      "status": "0x00000000"
+    },
+    "slots": [
+      {"slot": "0x17360050", "context": "0x2E800000", "pc": "0x82357240", "lr": "0x823572AC", "wire": "0x01000000", "logical": 1},
+      {"slot": "0x173600B0", "context": "0x2E800040", "pc": "0x82357240", "lr": "0x823572AC", "wire": "0x02000000", "logical": 2},
+      {"slot": "0x17360110", "context": "0x2E800080", "pc": "0x82357240", "lr": "0x823572AC", "wire": "0x04000000", "logical": 4}
+    ],
+    "acceptance": {
+      "address": "0x7FEA1A80",
+      "length": 4,
+      "order": [1, 2, 4],
+      "default_route_unchanged": true,
+      "production_enabled": false
+    }
+  },
+  "routes": {
+    "neutral": {
+      "trace_sha256": "4123e4b5115d9b2518bbaf0baa74c23af2a85fcba3afd0e8f994627bfc5a0e9d",
+      "report_sha256": "18c331a6171b89429f1c277d9aaa208cc78c8d0be3bd935f5f53d1e60158bc78",
+      "stderr_sha256": "f425991a3c3d0ed165009595152121cfcdab10669e27521f978920a63236e2ff",
+      "return_code": 4,
+      "completed_ticks": 1100,
+      "presents": 1,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "trace_sha256": "a9e5e7c9fe0279b0da38fd480f08ccd66ab546101989b5e467f38ecd3ecae207",
+      "report_sha256": "2c9790c056395dcada28185618e4d163f10b1262002a513bb88990eadb2265cf",
+      "stderr_sha256": "f425991a3c3d0ed165009595152121cfcdab10669e27521f978920a63236e2ff",
+      "return_code": 4,
+      "completed_ticks": 1100,
+      "presents": 1,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "frontier": {
+    "tick": 1100,
+    "thread": 1,
+    "lr": "0x822E559C",
+    "indirect_target": "0x822F8848",
+    "wait_key": "0xE000004C",
+    "last_indirect_tick": 1099,
+    "indirect_call_count": 1030473,
+    "scheduler": {"threads": 23, "runnable": 0, "blocked": 23, "finished": 0},
+    "render_queue": {"base": "0x82386CC0", "producer_changes": 1695, "consumer_changes": 0},
+    "semantic_status": "unknown"
+  },
+  "graphics": {
+    "normalized_equal_neutral_start": true,
+    "normalized_sha256": "0a15df8790bcdd050a57cef6a3843b4ae3b4108fd0f7c4e1c4523b0fdb331e98",
+    "ring_base": "0x126CA000",
+    "ring_capacity_dwords": 131072,
+    "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "shader_loads": 5,
+    "draws": 26,
+    "present_count": 1,
+    "frontbuffer": {"format": 6, "tiled": true, "width": 1280, "height": 720},
+    "pixels_qualified": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "PAL identity and exact three-slot PC/LR/thread/tick tuples",
+      "0x7FEA1800 read and 0x829DA52C store",
+      "wire order 0x01000000, 0x02000000, 0x04000000",
+      "neutral/START stderr equality and scheduler outcome"
+    ],
+    "demo-observed": [
+      "test-only acceptance of all three writes",
+      "post-XMA frontier 0x822E559C -> 0x822F8848"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "0x7FEA1A80 name and effect",
+      "ordinal-548 ABI and consumer",
+      "XMA packets, PCM and English/Japanese audio",
+      "nonzero EDRAM source, frontend pixels and screencap",
+      "START causal transition and mission result"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "opt_in_only": true,
+    "no_retail": true,
+    "no_proprietary_assets_tracked": true,
+    "no_generated_cpp_or_microcode_modified": true
+  },
+  "validation": {
+    "ctest_off": "18/18",
+    "ctest_on": "17/17",
+    "tmpdir": "/fastdata/lavaulta/tmp",
+    "audio_driver": "dummy"
+  }
+}

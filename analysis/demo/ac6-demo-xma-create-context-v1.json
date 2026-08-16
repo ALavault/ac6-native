@@ -1,0 +1,103 @@
+{
+  "schema": "ac6-demo-xma-create-context/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "827dbc7b0ffce2918214c951320c118e79ab1b45c676574a60c5d6b0591edeb7",
+    "source_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/xma_import_trace.hpp",
+    "source_hook_sha256": "2e0ff0efa733bba832179110452a87bd98457a361db8d599eaaaf7388fdc4ade",
+    "source_complexity_baseline_sha256": "7711ab1ef8ace3e94b26bb9f16f5a99d08ad2a025a4afa61cfffeeec2c38c6b2",
+    "hook": "AC6_DEMO_WATCH_XMA_CREATE=1",
+    "hook_default_enabled": false,
+    "fresh_process_per_route": true,
+    "fresh_store_per_route": true
+  },
+  "replay": {
+    "max_ticks": 1050,
+    "neutral": {
+      "completed_ticks": 1048,
+      "presents": 911,
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131",
+      "stderr_sha256": "9fa701c6a30b712e96eb94dfc014db565d7928dd3c2b7afe77f9d16de3547c31"
+    },
+    "start": {
+      "input": "button 0x10 at ticks 252..267",
+      "completed_ticks": 1048,
+      "presents": 911,
+      "rtply_sha256": "d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d",
+      "report_sha256": "238bd9e4f7e8ea150b7e5622101340145bc0dd9e7076d5c6472f4970634022cc",
+      "stderr_sha256": "9fa701c6a30b712e96eb94dfc014db565d7928dd3c2b7afe77f9d16de3547c31"
+    },
+    "milestones": {"frontend": false, "mission": false, "terminal": false}
+  },
+  "import": {
+    "module": "xboxkrnl.exe",
+    "name": "XMACreateContext",
+    "ordinal": 548,
+    "tick": 1048,
+    "thread": 21,
+    "lr": "0x82357298",
+    "r3": "0x17360050",
+    "r4": "0x00000000",
+    "r5": "0x00006180",
+    "r6": "0x00000000",
+    "r7": "0x00000001",
+    "descriptor_length": 96,
+    "descriptor_sha256": "a4f014e03e752249dc9740522458b6fc4d212d013add1e7f2a1d99cc3346dedf",
+    "descriptor_words_be": [
+      "0x00000000", "0x17360180", "0x17361F80", "0x00000000",
+      "0x00000000", "0x00000000", "0x00000000", "0x00000000",
+      "0x07800000", "0xB8800000", "0x00000000", "0x00000000",
+      "0x00000000", "0x00000000", "0x00000000", "0x17362180",
+      "0x17363F80", "0x00000000", "0x00000000", "0x00000000",
+      "0x00000000", "0x00000000", "0x00000000", "0x00000000"
+    ],
+    "neutral_start_descriptor_equal": true,
+    "effect": "trap_before_import_effect"
+  },
+  "static_pal": {
+    "function": "0x82357240",
+    "function_size": "0x000000CC",
+    "function_byte_sha256": "7436f8404267283916f2f2e64fdcda534788553fbf366daa330bc09fe9220ed9",
+    "callsite": "0x82357294",
+    "callsite_bytes_be": "4801F5217C771B78",
+    "callsite_bytes_sha256": "002a6b2cff25a089e8727167800ab776fb43b5d69a5e5f4ebc939213abeba38d",
+    "table_stride": 96,
+    "table_entry_offset": 64,
+    "classification": "demo-qualified structural table only"
+  },
+  "xenia_generic": {
+    "checkout": "tools/xenia-source",
+    "commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec",
+    "source": "src/xenia/kernel/xboxkrnl/xboxkrnl_audio_xma.cc",
+    "source_sha256": "73c92f8c5196694f838a6f787750681e3f7a4cd044b478c118c3035a46e3c86c",
+    "use": "generic ABI cross-reference; not AC6 evidence"
+  },
+  "classification": {
+    "demo-qualified": ["PAL identity", "ordinal 548 callsite", "tick/thread/registers", "bounded descriptor bytes", "neutral/START equality"],
+    "demo-observed": ["911 PRESENT before trap", "mappable descriptor at 0x17360050"],
+    "xenia-generic": ["output-pointer/context-return shape only"],
+    "unknown": ["context allocation and output write", "descriptor field semantics", "XMA registers", "packets/timestamps/volume", "FFmpeg/vgmstream/SDL3 PCM"]
+  },
+  "guard": {
+    "read_only": true,
+    "hook_default_disabled": true,
+    "guest_state_injected": false,
+    "xma_import_implemented": false,
+    "retail_evidence_merged": false,
+    "xenia_modified": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "microcode_followed": false,
+    "proprietary_asset_tracked": false,
+    "readback_promoted": false,
+    "screencap_promoted": false
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "schema": "ac6-demo-xma-context-array-frontier/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "experiment": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "d6ad26517ed9e746cf50b0a499db924daca5cade4f8129708ee213c5acde49d3",
+    "source_hashes": {
+      "recompilation/ace-combat-6-demo/src/guest_bridge/lifecycle.hpp": "eeb197aed9fa2c0e9c0e64d2ca9a46cede4ea79d2f341ebd549548b9c7503990",
+      "recompilation/ace-combat-6-demo/src/guest_bridge_resources.cpp": "679744f6c3e5ad4507e01fd0865c4e244a10b25a75c6333f266ccc51762b2fec",
+      "recompilation/ace-combat-6-demo/include/ac6demo/guest_bridge.hpp": "a21ada30499ecbf9fa6348b9fd4e3d55a343d5d70fa057c1fc07403a270f83bf"
+    },
+    "environment": "AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1",
+    "max_ticks": 1050,
+    "backend": "headless",
+    "stores": "cycle1712-ab neutral-store and start-store"
+  },
+  "static_join": {
+    "reader_mmio": "0x7FEA1800",
+    "reader_role": "PAL sub_82356510 lwbrx source before XMACreateContext",
+    "store_pc": "0x823572D8",
+    "runtime_lr": "0x823572AC",
+    "function": "0x82357240..0x8235730B",
+    "function_sha256": "7436f8404267283916f2f2e64fdcda534788553fbf366daa330bc09fe9220ed9",
+    "index_formula": "((physical - 0x829DA52C) >> 6) & 0xFFFF",
+    "index_context_offset": "0x50",
+    "pal_register_base_literal": "0x1FFA86A0",
+    "observed_index": 1,
+    "arithmetic_result": "0x7FEA1A80",
+    "store_order": ["stwbrx", "eieio"],
+    "no_generated_semantic_promotion": true
+  },
+  "runs": {
+    "neutral_opt_in": {
+      "rtply_sha256": "ab54c75ebccfdf3a41a840ab691a728e1d120a7616cca98a5f6ff42fa804fc43",
+      "report_sha256": "e4c33682b9c834b1a08380c35581adc865bfb090207d96962d3d6848eaf399e0",
+      "stderr_sha256": "18b1a2b66a11c5e63a3f778b2cd9e3a4294ee8635da3f2a70396056fa008bd7b",
+      "completed_ticks": 1048,
+      "presentation_notifications": 911,
+      "frontier_address": "0x7FEA1A80",
+      "frontier_thread": 21,
+      "frontier_lr": "0x823572AC",
+      "context_array": "0x2E800000",
+      "trap_before_effect": true
+    },
+    "start_opt_in": {
+      "input": "tick 252 buttons 0x10",
+      "rtply_sha256": "2ce0a717f8d3df56aa87644d7fc9624f5e02b1020a0b5eeaf0992f6877db417f",
+      "report_sha256": "54ba669894f6fcc5cfdbd94627896cd299a119a803916d70f92e5bf2cbc490e8",
+      "stderr_sha256": "18b1a2b66a11c5e63a3f778b2cd9e3a4294ee8635da3f2a70396056fa008bd7b",
+      "completed_ticks": 1048,
+      "presentation_notifications": 911,
+      "frontier_address": "0x7FEA1A80",
+      "frontier_thread": 21,
+      "frontier_lr": "0x823572AC",
+      "context_array": "0x2E800000",
+      "trap_before_effect": true
+    },
+    "default_neutral_guard": {
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131",
+      "stderr_sha256": "9fa0f47bab02839f61641f25b7e67789ad350a50a90f8cad8b6c7627692456c8",
+      "frontier": "xboxkrnl.exe ordinal 548 at tick 1048",
+      "matches_cycle1712_rtply": true
+    }
+  },
+  "graphics_invariants": {
+    "ring_base": "0x126CA000",
+    "ring_capacity_dwords": 131072,
+    "ring_submitted_dwords": 25,
+    "intermediate_ib": {"address": "0x127CA0C0", "dwords": 11, "sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0"},
+    "main_ib": {"address": "0x1274A000", "dwords": 3029, "sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"},
+    "present_notifications": 911
+  },
+  "classification": {
+    "demo-qualified": ["XEX/basefile identity", "PAL reader/store join", "neutral/START frontier equality", "default RTPLY guard", "IB hashes"],
+    "demo-observed": ["context array allocation", "0x7FEA1A80 attempted store", "trap before effect"],
+    "xenia-generic": ["64-byte context shape", "320-entry reservation"],
+    "unknown": ["XMA register semantics", "hardware bitmap/effect", "packets/timestamps/PCM", "audio language", "guest-owned pixels"]
+  },
+  "guard": {
+    "production_import_still_traps": true,
+    "default_rtply_baseline_preserved": true,
+    "opt_in_only": true,
+    "no_xenia_rexglue_ghidra_generated_cpp_microcode_changes": true,
+    "no_retail_merge": true,
+    "no_audio_decode": true,
+    "no_readback_or_screencap_promotion": true
+  },
+  "next_checkpoint": "qualify PAL 0x7FEA1A80 independently (read/write/effect) or retain ordinal-548 fail-closed trap"
+}

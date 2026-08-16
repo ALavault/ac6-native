@@ -1,0 +1,206 @@
+{
+  "schema": "ac6-demo-boundary-closure-evidence/v1",
+  "target_identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "image_base": "0x82000000",
+    "ghidra_project": "ghidra-projects/ace-combat-6-demo",
+    "ghidra_version": "12.1.2",
+    "language": "PowerPC:BE:64:Xenon"
+  },
+  "corridor_id": "frontend-tick244-multislot-vtable-thunks",
+  "claim": "The callsite 0x821042AC selects exactly one live vtable slot in 6..11; the observed object dispatches through slots 8, 9, 10 and 11 to four independently bounded sibling thunks, including the formerly unqualified 0x821044D8.",
+  "lane": "bridge",
+  "classification": {
+    "thunk_bounds_callsite_and_candidate_slots": "static_exact",
+    "live_object_vtable_slots_targets_and_order": "bridge_observed",
+    "native_product_behavior": "unknown",
+    "stock_behavior": "unknown"
+  },
+  "scenario": {
+    "command": "probe --until mission --max-ticks 3600 --backend headless",
+    "completed_ticks": 252,
+    "thread": 1,
+    "presents": 115,
+    "frontend": true,
+    "mission": false,
+    "inputs": "neutral AC6RTPLY-v4 seam",
+    "repeat_trace_byte_identical": true
+  },
+  "interventions": [
+    {
+      "name": "qualified-multislot-dispatch-observer",
+      "behavioral": false,
+      "detail": "At LR 0x821042B0, require one and only one target match among live vtable slots 6..11."
+    },
+    {
+      "name": "xam-bootstrap-dispatch",
+      "behavioral": true,
+      "services": [
+        "XNotifyPositionUI(6)",
+        "XamUserGetSigninState(0)=1",
+        "XamUserGetName(0,16)=User"
+      ]
+    }
+  ],
+  "static_chain": {
+    "caller_function": "0x82104188",
+    "candidate_slot_loads": [
+      "vtable+0x18 (slot 6)",
+      "vtable+0x1C (slot 7)",
+      "vtable+0x20 (slot 8)",
+      "vtable+0x24 (slot 9)",
+      "vtable+0x28 (slot 10)",
+      "vtable+0x2C (slot 11)"
+    ],
+    "branch": "0x821042AC: bctrl",
+    "produced_lr": "0x821042B0",
+    "entry": "0x821044D8",
+    "entry_bytes": "7c8323784bffdbd4",
+    "entry_byte_sha256": "78d6acbfaa194418b4beb2ed97ce19c57078506d1cea96483801fe042a02b9a4",
+    "predecessor": "0x821044D4: terminal tail branch",
+    "body": [
+      "0x821044D8: mr r3,r4",
+      "0x821044DC: tail branch 0x821020B0"
+    ],
+    "following_owner": "0x821044E8",
+    "sibling_boundaries": [
+      {
+        "entry": "0x821044D0",
+        "size": "0x08",
+        "slot": 9,
+        "tail_target": "0x82271AC0",
+        "byte_sha256": "868cda65f3370ce149c08da2b200b07259ba15aa9565bafd36fa7cc3385f656e"
+      },
+      {
+        "entry": "0x821044E0",
+        "size": "0x08",
+        "slot": 11,
+        "tail_target": "0x82271D98",
+        "byte_sha256": "68eb47f2187b2e3abf9b41c342a565a82f01c39cab138f3355731b3d410f3388"
+      }
+    ]
+  },
+  "dynamic_events": [
+    {
+      "event": "virtual_dispatch",
+      "tick": 244,
+      "thread": 1,
+      "lr": "0x821042B0",
+      "object": "0x826E47B0",
+      "vtable": "0x820092BC",
+      "slot": 8,
+      "target": "0x821044C8",
+      "count": 1
+    },
+    {
+      "event": "virtual_dispatch",
+      "tick": 244,
+      "thread": 1,
+      "lr": "0x821042B0",
+      "object": "0x826E47B0",
+      "vtable": "0x820092BC",
+      "slot": 9,
+      "target": "0x821044D0",
+      "count": 1
+    },
+    {
+      "event": "virtual_dispatch",
+      "tick": 244,
+      "thread": 1,
+      "lr": "0x821042B0",
+      "object": "0x826E47B0",
+      "vtable": "0x820092BC",
+      "slot": 10,
+      "target": "0x821044D8",
+      "count": 1
+    },
+    {
+      "event": "virtual_dispatch",
+      "tick": 244,
+      "thread": 1,
+      "lr": "0x821042B0",
+      "object": "0x826E47B0",
+      "vtable": "0x820092BC",
+      "slot": 11,
+      "target": "0x821044E0",
+      "count": 1
+    },
+    {
+      "event": "next_frontier",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x82259D58",
+      "target": "0x8216C940",
+      "diagnostic": "unqualified guest indirect call"
+    }
+  ],
+  "memory_effects": {
+    "reads": [
+      "object+0x00: big-endian guest vtable pointer",
+      "one selected word in vtable slots 6..11"
+    ],
+    "writes": []
+  },
+  "branch_coverage": {
+    "observed_slots": [8, 9, 10, 11],
+    "unobserved_slots": [6, 7],
+    "ambiguous_target_matches": 0
+  },
+  "rejected_hypotheses": [
+    "The Ghidra chunk 0x821044C8..0x821044E7 is not treated as one callable boundary; its four terminal thunks are distinct starts.",
+    "The live vtable base is 0x820092BC, correcting the preliminary static table slice that began two entries late at 0x820092C4."
+  ],
+  "unobserved_paths": [
+    "live dispatch through slots 6 or 7",
+    "stock XAM return values"
+  ],
+  "native_comparator": {
+    "boundary_records": [
+      "config/confirmed-chunks.toml@0x821044D0",
+      "config/confirmed-chunks.toml@0x821044D8",
+      "config/confirmed-chunks.toml@0x821044E0"
+    ],
+    "required_slots": "lr=0x821042B0,vtable=0x820092BC,slots=8/9/10/11",
+    "required_progress": "completed_ticks>=252,presents>=115"
+  },
+  "confidence": {
+    "bounds": "static_exact",
+    "dispatch": "bridge_observed",
+    "vtable_base_and_slots": "bridge_observed"
+  },
+  "oracle_debt": [
+    {
+      "claim_id": "demo-xam-signin-state-user0",
+      "claim": "The retail XAM service returns signin state 1 for the qualified local profile scenario.",
+      "reason": "The bridge supplies this service result.",
+      "domain": "XAM/profile",
+      "minimal_stock_scenario": "Boot with one local offline profile and record ordinal 528 for user 0 once.",
+      "expected_artifact": "one stock callsite/result record",
+      "blocked_product_gate": "exact XAM parity"
+    }
+  ],
+  "artifacts": {
+    "ghidra_chunk_record_sha256": "1fb54b01cda2c9c43324a13182503138863dd3e06f9cc933da02b59b9948b64c",
+    "ghidra_manifest_sha256": "2ef9f9110734ff82c16408898d24ecc63ce49a518fd368298464871e33918072",
+    "ghidra_journal_sha256": "72d6c3d7db61f163e4cee3ec88a5cab4fd850cd8252520a09df60ca6072fe57c",
+    "boundary_config_sha256": "35d74c34175aabf51e24c1126f693f545364364d7e87febf40728d5a54097c2a",
+    "codegen_manifest_sha256": "b8665decacab02371b9ac0422659a8e00aa84257aa4a2f446056d726007089e7",
+    "generated_guest_object_sha256": "c42ffdf425e69edc9e3f20cd1521a3a0b4f118ffe3a99567aad0d41ac540c70d",
+    "frontier_report_sha256": "7ee86b7590324369d09b433c1a251083d32c6752cc405da5d21413d58df449d4",
+    "trace_sha256": "cba210be2b61b57e35605818db32c9a09a41e7a1dcf34ec5199b557b69dc38b9"
+  },
+  "validation": {
+    "independent_ghidra_imports": 2,
+    "ghidra_imports_byte_identical": true,
+    "requalified_boundaries": 34,
+    "independent_codegens": 2,
+    "codegens_byte_identical": true,
+    "provenance_fix_preserved_guest_object": true,
+    "boundary_diagnostics": 0,
+    "unsupported_instructions": 0,
+    "codegen_on_ctest": "10/10",
+    "codegen_off_ctest": "11/11"
+  }
+}

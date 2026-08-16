@@ -1,0 +1,163 @@
+{
+  "schema": "ac6-demo-behavioral-capsule/v1",
+  "target_identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "image_base": "0x82000000"
+  },
+  "corridor_id": "frontend-user-slot-enumeration",
+  "claim": "For the explicit single-profile offline bridge scenario, XamUserGetSigninState returns local state 1 for slot 0 and not-signed-in state 0 for slots 1..3; the title wrapper rejects indices above 3 before the import.",
+  "lane": "bridge",
+  "classification": {
+    "title_wrapper_and_consumed_enum_values": "static_exact",
+    "reached_user_indices_and_forward_progress": "bridge_observed",
+    "service_cross_match": "static_exact",
+    "portable_bridge_contract": "native_reproduced",
+    "retail_service_results": "unknown"
+  },
+  "scenario": {
+    "command": "probe --until mission --max-ticks 3600 --backend headless",
+    "profile": "one explicit offline-local user in slot 0",
+    "inputs": "neutral AC6RTPLY-v4 seam",
+    "completed_ticks": 252,
+    "presents": 115,
+    "frontend": true,
+    "mission": false
+  },
+  "interventions": [
+    {
+      "name": "xam-single-offline-profile",
+      "behavioral": true,
+      "service": "xam.xex ordinal 528 XamUserGetSigninState",
+      "mapping": [
+        {"user_index": 0, "signin_state": 1},
+        {"user_index": 1, "signin_state": 0},
+        {"user_index": 2, "signin_state": 0},
+        {"user_index": 3, "signin_state": 0}
+      ],
+      "rejected_indices": ">3"
+    }
+  ],
+  "static_chain": {
+    "project": "ghidra-projects/ace-combat-6-demo",
+    "language": "PowerPC:BE:64:Xenon",
+    "wrapper": "0x8219BA28..0x8219BA74",
+    "user_guard": "0x8219BA34: cmplwi cr6,r4,3; 0x8219BA38: bgt 0x8219BA64",
+    "argument_move": "0x8219BA3C: or r3,r4,r4",
+    "callsite": "0x8219BA40: bl 0x821A56A0",
+    "produced_lr": "0x8219BA44",
+    "consumer": [
+      "state 1 returns the wrapper value 1",
+      "state 2 returns the wrapper value 2",
+      "all other states return the wrapper value 0"
+    ],
+    "service_cross_match": {
+      "source": "tools/xenia-source/src/xenia/kernel/xam/xam_user.cc",
+      "commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec",
+      "contract": "slot 0 uses the configured profile signin state; other slots return 0"
+    }
+  },
+  "dynamic_events": [
+    {
+      "event": "baseline_frontier",
+      "report_sha256": "26bdd203c950e06c48842dc044070169bf17e7e905a5466d5a328bc2bc882729",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x8219BA44",
+      "import_call_count": 3,
+      "last_user_index": 1,
+      "diagnostic": "unimplemented import xam.xex ordinal 528"
+    },
+    {
+      "event": "qualified_enumeration",
+      "report_sha256": "63fa5175b21ee4af1aa1270a7b38960a1917c6332f5bd248dc22996a1d2a7614",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x8219BA44",
+      "import_call_count": 9,
+      "last_user_index": 3,
+      "continued": true
+    },
+    {
+      "event": "next_frontier",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x82134004",
+      "module": "xam.xex",
+      "ordinal": 20,
+      "name": "NetDll_recvfrom"
+    }
+  ],
+  "input_schema": {
+    "user_index": "u32 guest value restricted to 0..3 by the reached wrapper"
+  },
+  "output_schema": {
+    "signin_state": {
+      "0": "not signed in",
+      "1": "local profile",
+      "2": "Xbox Live profile; never synthesized by this offline bridge"
+    }
+  },
+  "memory_effects": {
+    "reads": [],
+    "writes": []
+  },
+  "branch_coverage": {
+    "bridge_service_indices": [0, 1, 2, 3],
+    "native_unit_indices": [0, 1, 2, 3, 4],
+    "out_of_range_fail_closed": true
+  },
+  "rejected_hypotheses": [
+    "Unused hardware user slots are not additional local profiles.",
+    "The offline bridge never returns state 2 merely to satisfy the title consumer.",
+    "Indices above 3 are not accepted by the bridge even though the reached title wrapper already guards them."
+  ],
+  "unobserved_paths": [
+    "a second retail profile",
+    "Xbox Live state 2",
+    "stock return values for this exact local profile"
+  ],
+  "native_comparator": {
+    "function": "GuestBridge::xam_user_signin_state",
+    "expected": [[0, 1], [1, 0], [2, 0], [3, 0]],
+    "rejected": [4],
+    "test": "ac6-demo-core-tests"
+  },
+  "confidence": {
+    "wrapper": "static_exact",
+    "bridge_progress": "bridge_observed",
+    "bridge_mapping": "native_reproduced",
+    "stock_parity": "unknown"
+  },
+  "oracle_debt": [
+    {
+      "claim_id": "demo-xam-signin-state-users",
+      "affirmation": "A stock boot with one local offline profile returns state 1 for slot 0 and state 0 for unused slots 1..3 at 0x8219BA40.",
+      "reason_static_bridge_insufficient": "The bridge supplies the service result and Xenia source is an implementation cross-match, not a stock observation.",
+      "sensitive_domain": "XAM/profile",
+      "minimal_stock_scenario": "Boot the qualified demo with one local offline profile and stop only on the first ordinal-528 user-slot enumeration.",
+      "minimal_input": "neutral boot",
+      "expected_observable": "arguments and returns for user indices 0..3",
+      "expected_artifact": "one bounded stock callsite/result sequence",
+      "blocked_product_gate": "exact XAM parity"
+    }
+  ],
+  "artifacts": {
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "codegen_manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "generated_guest_object_sha256": "e56094dde5a942f5ffb74bcfe70c6e679489408d9f9cf48cd6369a85773f9feb",
+    "bridge_binary_sha256": "f7129083ba7e22345ff9e4b67e82e8f568d45e120d7ba07ddfe4c1730d3f2588",
+    "bridge_profile_source_sha256": "c4e757fcbae4b0f617f05840b0b14293b5053663213f27048076db281fe611a0",
+    "bridge_dispatch_source_sha256": "2f11a48c8bcbdac44f9269c5b1c5a34eb977143af1f4c773e87c7b33a88d8641",
+    "frontier_report_sha256": "63fa5175b21ee4af1aa1270a7b38960a1917c6332f5bd248dc22996a1d2a7614",
+    "trace_sha256": "cba210be2b61b57e35605818db32c9a09a41e7a1dcf34ec5199b557b69dc38b9"
+  },
+  "validation": {
+    "targeted_native_tests": "5/5",
+    "complexity": "pass",
+    "source_audit": "pass",
+    "trace_byte_identical": true,
+    "next_frontier_reached": true
+  }
+}

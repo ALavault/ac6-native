@@ -1,0 +1,89 @@
+{
+  "schema": "ac6-demo-edram-source-materialization/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "source_contract": {
+    "normal_draw_width": 640,
+    "normal_draw_height": 360,
+    "normal_readback_bytes": 921600,
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "requires_all_zero": true,
+    "msaa_samples": 4,
+    "edram_tile_samples": [80, 16],
+    "edram_pitch_tiles": 16,
+    "edram_surface_bytes": "0x384000",
+    "edram_total_bytes": "0xA00000",
+    "outside_surface_canary": "0x5A",
+    "nonzero_or_divergent_input": "trap_before_dispatch"
+  },
+  "runs": {
+    "neutral": {
+      "completed_ticks": 600,
+      "outcome": "max_ticks",
+      "trace_sha256": "6c34827cc3f9962a7f4042610d69aeb54bbd0165fd5a1c830d341efad07970c7",
+      "report_sha256": "96942b46382d8818e6d12bcf2fa3574b47c52f8034779090819156b39b89235f"
+    },
+    "start": {
+      "completed_ticks": 600,
+      "outcome": "max_ticks",
+      "trace_sha256": "2a4577f883bbfa31f8740b35e998da10ea42ddba050fa7232e80abe6c71f27cc",
+      "report_sha256": "12a96930bc7a93878073e01a6297a81274e3cb5bc0cf1dec3ac3ba57d02dbfcd"
+    }
+  },
+  "renderer": {
+    "presentation_notifications": 463,
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "normal_draws": 1,
+    "neutral_resolves": 1,
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "neutral_start_equal": true
+  },
+  "replay_revalidation": {
+    "source_cycle": 1665,
+    "fresh_store": true,
+    "backend": "vulkan",
+    "deterministic": true,
+    "events": 2151,
+    "exit_code": 0,
+    "xam_divergence": false,
+    "trace_bytewise_equal": true,
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "validation": {
+    "ctest_off": "18/18",
+    "ctest_codegen_on": "17/17",
+    "source_cpp_sha256": "cb4ef06d158a4624a85f9713697da5dc7227c2af9fde6831b078c806f926b803"
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact reached normal draw readback gates EDRAM materialization",
+      "Xenos sample layout and 0x384000 surface bound are enforced",
+      "canary outside source surface and destination extent remain intact",
+      "neutral/START A/B remains stable after the change"
+    ],
+    "unknown": [
+      "guest-owned EDRAM dump",
+      "guest-owned frontbuffer bytes",
+      "non-black visual frame",
+      "frontend and mission milestones"
+    ]
+  },
+  "policy": {
+    "synthetic_edram_promoted": false,
+    "screencap_claimed": false,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

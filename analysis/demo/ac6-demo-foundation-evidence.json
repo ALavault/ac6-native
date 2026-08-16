@@ -1,0 +1,46 @@
+{
+  "codegen": {
+    "boundary_diagnostics": 0,
+    "compiled_cpp_files": 52,
+    "configured_function_records": 135,
+    "confirmed_data_ranges": 6789,
+    "confirmed_functions": 12857,
+    "generated_cpp_files": 52,
+    "ghidra_chunks": 4431,
+    "import_stub_records": 238,
+    "pdata_functions": 8327,
+    "qualified_non_pdata_functions": 4531,
+    "switch_tables": 158,
+    "unsupported_instructions": 0,
+    "xenonrecomp_commit": "ddd128bcca99fe8bfbb99bea583c972351fa6ace"
+  },
+  "ghidra": {
+    "chunks": 4431,
+    "data_ranges": 6789,
+    "independent_imports_byte_identical": true,
+    "journal_sha256": "b133247ff63117a24b0871661ada71198811b2c39e6292dcd1dd96a57ad90f78",
+    "language": "PowerPC:BE:64:Xenon",
+    "loader": "XEX Loader by Warranty Voider",
+    "manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "project_path": "ghidra-projects/ace-combat-6-demo",
+    "version": "12.1.2"
+  },
+  "identity": {
+    "entry_point": "0x821A7160",
+    "image_base": "0x82000000",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "reproducibility": {
+    "byte_identical": true,
+    "clean_codegen_runs": 2,
+    "generated_files": 55,
+    "generated_tree_sha256": "8d4505935d1e2eb76b4d944733b751a7cf9c9ec9eac5cf5764729a0577ab1d93",
+    "manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "object_files": 53,
+    "object_tree_sha256": "e0c56a5c50b7ea3371d0095b6523e4006507c276848e199d4812ba19e2970922",
+    "relocatable_guest_object_sha256": "e56094dde5a942f5ffb74bcfe70c6e679489408d9f9cf48cd6369a85773f9feb"
+  },
+  "schema": "ac6-demo-foundation-evidence/v1",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal"
+}

@@ -1,0 +1,122 @@
+{
+  "schema": "ac6-demo-main-ib-rr-provenance/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "route": "neutral-headless",
+    "terminal_tick": 253,
+    "rr_gate_report": "reports/ac6-demo-local-rr-fidelity-gate-20260815.md",
+    "rr_gate_report_sha256": "bb26f8888be14bac8ffd6cfd372090ae1146605113db2e049947b8332ff43703",
+    "rr_source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "rr_binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "trace_runtime_sha256": "24712c2487c94f917edd7635dfd6abb082477888b2c5a4a25e9ebc7d03920bd8",
+    "probe_report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79"
+  },
+  "captured_main_ib": {
+    "address": "0x1274A000",
+    "end_exclusive": "0x1274CF54",
+    "dword_count": 3029,
+    "byte_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "first_dword": "0x00000D02",
+    "last_dword": "0x00000005"
+  },
+  "writers": {
+    "first_dword_final_write": {
+      "guest_address": "0x1274A000",
+      "guest_value": "0x00000D02",
+      "guest_pc": "0x821B0D70",
+      "instruction_bytes": "95 4B 00 04",
+      "instruction": "stwu r10,4(r11)",
+      "recompiled_function": "sub_821B0D20",
+      "guest_lr": null,
+      "guest_thread": null,
+      "tick": null,
+      "dynamic_context_status": "PC/value/window qualified; LR/thread/tick not published by the bounded rr receipt",
+      "classification": "demo-qualified",
+      "distinction": "final producer of the captured first dword; not the first write observed in the same four-byte window"
+    },
+    "first_zone_initial_write": {
+      "guest_address": "0x1274A000",
+      "guest_value": "0x020D0000",
+      "previous_value": "0x00000000",
+      "guest_pc": "0x821BAE5C",
+      "guest_lr": "0x821BAE2C",
+      "recompiled_function": "sub_821BAAD0",
+      "host_function_offset_after_call": "+7134",
+      "guest_thread": 1,
+      "tick": 0,
+      "classification": "demo-qualified",
+      "distinction": "initial write to the watched four-byte window; not the final producer of the captured first dword"
+    },
+    "last_zone_final_write": {
+      "guest_address": "0x1274CF50",
+      "guest_value": "0x00000005",
+      "guest_pc": "0x821BA01C",
+      "instruction_bytes": "94 CA 00 04",
+      "instruction": "stwu r6,4(r10)",
+      "guest_lr": "0x821B9F78",
+      "recompiled_function": "sub_821B9F70",
+      "host_function_offset_after_call": "+1515",
+      "guest_thread": 1,
+      "tick": 0,
+      "classification": "demo-qualified",
+      "lr_source": "qualified generated literal control-flow for the same XEX; the reverse watchpoint qualified address, value, PC, function, thread and tick"
+    }
+  },
+  "ring_publication": {
+    "ring_base": "0x126CA000",
+    "packet_start": "0x126CA058",
+    "guest_dwords": [
+      "0xC0013F00",
+      "0x1274A000",
+      "0x00000BD5"
+    ],
+    "store_guest_pcs": [
+      "0x821B9D24",
+      "0x821B9D3C",
+      "0x821B9D44"
+    ],
+    "first_store_instruction_bytes": "7D 2A C1 2E",
+    "first_store_instruction": "stwx r9,r10,r24",
+    "guest_lr": "0x821B9C80",
+    "recompiled_function": "sub_821B9BC8",
+    "guest_thread": 1,
+    "tick": 0,
+    "captured_submission_offset_dwords": 22,
+    "classification": "demo-qualified"
+  },
+  "method": {
+    "debugger": "rr replay GDB remote",
+    "watchpoint_policy": "exact 4-byte hardware windows; reverse-continue; no range resynchronization",
+    "byte_order_check": "native little-endian watch values were byte-swapped back to Xenon big-endian guest dwords",
+    "cross_check": "the ring triple and IB endpoint dwords match the byte-identical qualified probe report",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "pal_instruction_bytes_checked": ["0x821B0D70", "0x821BA01C", "0x821B9D24"]
+  },
+  "validation": {
+    "targeted_python_tests": "30/30",
+    "ctest": "18/18",
+    "source_audit": "pass",
+    "complexity_audit": "pass"
+  },
+  "limits": {
+    "whole_ib_single_writer_claimed": false,
+    "per_dword_writer_map_claimed": false,
+    "final_first_dword_lr_thread_tick_complete": false,
+    "start_or_vulkan_route_qualified": false,
+    "semantic_role_beyond_pm4_publication_claimed": false
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "system_rr_used": false,
+    "xenia_or_rexglue_modified": false,
+    "ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false
+  }
+}

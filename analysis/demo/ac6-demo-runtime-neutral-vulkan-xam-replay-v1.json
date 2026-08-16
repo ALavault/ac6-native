@@ -1,0 +1,66 @@
+{
+  "schema": "ac6-demo-runtime-neutral-vulkan-xam-replay/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "codegen_manifest_sha256": "ae57c86869c556f17c7eee3f9d781d19943d20bf2599abbe201ac88954bda185",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c"
+  },
+  "record": {
+    "backend": "vulkan",
+    "completed_ticks": 600,
+    "outcome": "max_ticks",
+    "exit_code": 4,
+    "rtply_v4_bytes": 5946400,
+    "rtply_v4_sha256": "6c34827cc3f9962a7f4042610d69aeb54bbd0165fd5a1c830d341efad07970c7",
+    "xam_movie_v1_bytes": 68973,
+    "xam_movie_v1_sha256": "64a53fadbaf306a5b7cd6f4d67dc676f8b1de7f5a7418315faa580fe2d9854ed",
+    "report_sha256": "96942b46382d8818e6d12bcf2fa3574b47c52f8034779090819156b39b89235f"
+  },
+  "replay": {
+    "fresh_store": true,
+    "backend": "vulkan",
+    "exit_code": 0,
+    "deterministic": true,
+    "events": 2151,
+    "xam_movie_replay": true,
+    "hid_consulted": false,
+    "trace_compared_bytewise": true
+  },
+  "renderer": {
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "normal_draws": 1,
+    "neutral_resolves": 1,
+    "presentation_notifications": 463,
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "classification": {
+    "demo-qualified": [
+      "XAM movie record and strict replay",
+      "RTPLY-v4 byte-identical replay from a fresh store",
+      "Vulkan renderer digests equal on record and replay"
+    ],
+    "demo-observed": ["463 presentation notifications", "2151 replay events"],
+    "unknown": [
+      "guest-owned EDRAM contents",
+      "guest-owned destination bytes",
+      "frontend, mission and terminal milestones",
+      "non-black pixels"
+    ]
+  },
+  "policy": {
+    "start_promoted": false,
+    "screencap_claimed": false,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

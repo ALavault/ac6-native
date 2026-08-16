@@ -1,0 +1,118 @@
+{
+  "schema": "ac6-demo-event-handle-writer-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "instrumentation": {
+    "runtime_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handle_writer_trace.hpp",
+    "runtime_hook_sha256": "e833132c8e06489ce7396fcb3713b87d97752b253ef0618fd453d997b2856875",
+    "store_hook": "recompilation/ace-combat-6-demo/src/guest_bridge.cpp:742-771",
+    "store_hook_sha256": "c3b14ad4b986bf234ec110fef5190c9ea983c7578a6d7be0ebc78d1877a569ce",
+    "runtime_binary_sha256": "4f0b8f7926f0511922db82905620f2f21a4855b9c232b4b70afb11b9c603e557",
+    "environment": "AC6_DEMO_WATCH_EVENT_HANDLE_WRITERS=1",
+    "default_enabled": false,
+    "record_limit": 4096,
+    "read_only": true
+  },
+  "runs": {
+    "neutral": {
+      "store": ".build/ac6-demo-store-test-3",
+      "max_ticks": 600,
+      "completed_ticks": 600,
+      "trace_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+      "report_sha256": "20da97c48ad48cbead0a8fd6c938ac62835b8239035226168af64af33775cbe6",
+      "stderr_sha256": "5fa5887b476e9f2af8691c882f99dc01e4cb775fdd94840213462ca2822a8566",
+      "writer_rows": 163,
+      "writer_rows_sha256": "735d6fafb356107ef30671dfdf1e2650f54da662d7e6d63e5feae064e3411724",
+      "presents": 463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "tick 252, buttons 0x0010, connected",
+      "max_ticks": 600,
+      "completed_ticks": 600,
+      "trace_sha256": "4d2f77515e5850ca3e8e0e36e2eaa306a9a7b2c7d602deae56755cab4ba100e1",
+      "report_sha256": "b48fb16234582727d4231f90bf06e381c5ec385fdfc57505186bc1cc51e43161",
+      "stderr_sha256": "5fa5887b476e9f2af8691c882f99dc01e4cb775fdd94840213462ca2822a8566",
+      "writer_rows": 163,
+      "writer_rows_sha256": "735d6fafb356107ef30671dfdf1e2650f54da662d7e6d63e5feae064e3411724",
+      "presents": 463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "static_join": {
+    "atlas": "analysis/demo/ac6-demo-static-decomp-atlas-v1.json",
+    "atlas_sha256": "7ee1e677dfac287fdcd8d80b1c5f34575cbabf1c41ab79e70bd1581f87114e2d",
+    "generated_source_files": {
+      "ppc_recomp.17.cpp": "aaaf14e286296b16012ff5bc2a978f176775fe3816944151e2566d24f804967c",
+      "ppc_recomp.20.cpp": "5af39f25c9382c4cd2e3728a0d7b1aedd439cb1ed4e1b729c2ac92793d3671d1",
+      "ppc_recomp.21.cpp": "4cc95d6fc95fbc9c10096086857a6d64bad6d63abea15282ac78d3212238c6a1",
+      "ppc_recomp.36.cpp": "5a831302a284e18d8f857dcaecf5333bbe8839169c7acc202295893310f10d7b",
+      "ppc_recomp.37.cpp": "94c7018ad92d89382e3eb292cd583455022074ac64eca46d0cd269dfef5a8153",
+      "ppc_recomp.38.cpp": "5783abd5c5d1ad189195de3e0b4192089b04f311c2c8b8ceca62fc3beaafab73",
+      "ppc_recomp.42.cpp": "0a9e4f0347ee223320ead3b44e2a27ef92a718464e604758869058e53999afe4"
+    },
+    "mapping_rule": "generated PPC_STORE_U32 source line -> sequential guest instruction PC; PAL word read at PC-0x82000000",
+    "site_count": 25,
+    "sites": [
+      {"owner":"0x8219A060","writer_pc":"0x8219A4B8","writer_bytes":"0x907F5960","runtime_lr":"0x8219A4B8","generated_line":14395,"stores":52,"guest_addresses":["0x82398848","0x8274A370"],"handle_range":["0xE0000088","0xE0000160"],"ticks":[40,106,117,223,257],"threads":[1,9]},
+      {"owner":"0x8219A060","writer_pc":"0x8219A4F4","writer_bytes":"0x913F595C","runtime_lr":"0x8219A4D4","generated_line":14427,"stores":52,"guest_addresses":["0x82398844","0x8274A36C"],"handle_range":["0xE0000088","0xE0000160"],"ticks":[40,106,117,223,257],"threads":[1,9]},
+      {"owner":"0x821A1E38","writer_pc":"0x821A1EAC","writer_bytes":"0x939EFFF0","runtime_lr":"0x821A1EA4","generated_line":32783,"stores":4,"guest_addresses":["0x82774858","0x8277485C","0x82774860","0x82774864"],"handle_range":["0xE1000000","0xE100000C"],"ticks":[0],"threads":[1]},
+      {"owner":"0x821A1E38","writer_pc":"0x821A1ED0","writer_bytes":"0x917E0000","runtime_lr":"0x821A1EBC","generated_line":32802,"stores":4,"guest_addresses":["0x82774868","0x8277486C","0x82774870","0x82774874"],"handle_range":["0xE0000000","0xE0000018"],"ticks":[0],"threads":[1]},
+      {"owner":"0x821A1E38","writer_pc":"0x821A1EE0","writer_bytes":"0x917E0010","runtime_lr":"0x821A1ED8","generated_line":32811,"stores":4,"guest_addresses":["0x82774878","0x8277487C","0x82774880","0x82774884"],"handle_range":["0xE0000004","0xE000001C"],"ticks":[0],"threads":[1]},
+      {"owner":"0x821A1F20","writer_pc":"0x821A1FA0","writer_bytes":"0x93DFFFFC","runtime_lr":"0x821A1F8C","generated_line":32924,"stores":4,"guest_addresses":["0x82774888","0x82774920","0x827749B8","0x82774A50"],"handle_range":["0xE1000010","0xE100001C"],"ticks":[0],"threads":[1]},
+      {"owner":"0x821A1F20","writer_pc":"0x821A1FBC","writer_bytes":"0x917F0000","runtime_lr":"0x821A1FA8","generated_line":32939,"stores":4,"guest_addresses":["0x8277488C","0x82774924","0x827749BC","0x82774A54"],"handle_range":["0xE0000020","0xE0000038"],"ticks":[0],"threads":[1]},
+      {"owner":"0x821A1F20","writer_pc":"0x821A1FD8","writer_bytes":"0x917F0004","runtime_lr":"0x821A1FC4","generated_line":32954,"stores":4,"guest_addresses":["0x82774890","0x82774928","0x827749C0","0x82774A58"],"handle_range":["0xE0000024","0xE000003C"],"ticks":[0],"threads":[1]},
+      {"owner":"0x821C4E40","writer_pc":"0x821C4F38","writer_bytes":"0x907F0008","runtime_lr":"0x821C4F34","generated_line":27922,"stores":2,"guest_addresses":["0x10044704","0x10044754"],"handle_range":["0xE1000038","0xE100003C"],"ticks":[0],"threads":[1]},
+      {"owner":"0x821D00E8","writer_pc":"0x821D020C","writer_bytes":"0x907F0518","runtime_lr":"0x821D0208","generated_line":12809,"stores":1,"guest_addresses":["0x2E89D148"],"handle_range":["0xE0000110","0xE0000110"],"ticks":[106],"threads":[1]},
+      {"owner":"0x821D00E8","writer_pc":"0x821D0278","writer_bytes":"0x907F04F0","runtime_lr":"0x821D0274","generated_line":12868,"stores":1,"guest_addresses":["0x2E89D120"],"handle_range":["0xE1000050","0xE1000050"],"ticks":[106],"threads":[1]},
+      {"owner":"0x822E0D18","writer_pc":"0x822E0D54","writer_bytes":"0x917F0000","runtime_lr":"0x822E0D48","generated_line":6334,"stores":9,"guest_addresses":["0x7F0400D8","0x7F040828","0x7F040838","0x7F040848","0x7F040858","0x7F040B28"],"handle_range":["0xE0000068","0xE000011C"],"ticks":[2,40,112],"threads":[1]},
+      {"owner":"0x822E1E00","writer_pc":"0x822E1E44","writer_bytes":"0x917F0000","runtime_lr":"0x822E1E38","generated_line":8930,"stores":1,"guest_addresses":["0x82386D48"],"handle_range":["0xE0000130","0xE0000130"],"ticks":[221],"threads":[1]},
+      {"owner":"0x822E3F48","writer_pc":"0x822E3FB8","writer_bytes":"0x917F0058","runtime_lr":"0x822E3FA0","generated_line":14237,"stores":1,"guest_addresses":["0x82934760"],"handle_range":["0xE0000040","0xE0000040"],"ticks":[0],"threads":[1]},
+      {"owner":"0x822E3F48","writer_pc":"0x822E3FCC","writer_bytes":"0x917F0060","runtime_lr":"0x822E3FC0","generated_line":14248,"stores":1,"guest_addresses":["0x82934768"],"handle_range":["0xE0000044","0xE0000044"],"ticks":[0],"threads":[1]},
+      {"owner":"0x822E4370","writer_pc":"0x822E43C0","writer_bytes":"0x917F0068","runtime_lr":"0x822E43B4","generated_line":14877,"stores":1,"guest_addresses":["0x829352D8"],"handle_range":["0xE0000050","0xE0000050"],"ticks":[0],"threads":[1]},
+      {"owner":"0x822ECE08","writer_pc":"0x822ECEBC","writer_bytes":"0x907E0048","runtime_lr":"0x822ECEB8","generated_line":19430,"stores":1,"guest_addresses":["0x829D37C8"],"handle_range":["0xE0000064","0xE0000064"],"ticks":[2],"threads":[1]},
+      {"owner":"0x822EE198","writer_pc":"0x822EE208","writer_bytes":"0x907F0000","runtime_lr":"0x822EE208","generated_line":2861,"stores":8,"guest_addresses":["0x82386CC8","0x82928BB8","0x82928BD8","0x82928BF8","0x82933F78","0x82934770","0x829352B8","0x829D37A8"],"handle_range":["0xE1000020","0xE1000054"],"ticks":[0,2,221],"threads":[1]},
+      {"owner":"0x822EED70","writer_pc":"0x822EEDA8","writer_bytes":"0x917F0000","runtime_lr":"0x822EED94","generated_line":4587,"stores":2,"guest_addresses":["0x82933F98","0x82934748"],"handle_range":["0xE0000048","0xE0000054"],"ticks":[0],"threads":[1]},
+      {"owner":"0x822EED70","writer_pc":"0x822EEDB4","writer_bytes":"0x907F0004","runtime_lr":"0x822EEDB0","generated_line":4594,"stores":2,"guest_addresses":["0x82933F9C","0x8293474C"],"handle_range":["0xE000004C","0xE0000058"],"ticks":[0],"threads":[1]},
+      {"owner":"0x822EF850","writer_pc":"0x822EF918","writer_bytes":"0x917F0098","runtime_lr":"0x822EF900","generated_line":6387,"stores":1,"guest_addresses":["0x82928C18"],"handle_range":["0xE000005C","0xE000005C"],"ticks":[0],"threads":[1]},
+      {"owner":"0x822EF850","writer_pc":"0x822EF924","writer_bytes":"0x907F00A0","runtime_lr":"0x822EF920","generated_line":6394,"stores":1,"guest_addresses":["0x82928C20"],"handle_range":["0xE0000060","0xE0000060"],"ticks":[0],"threads":[1]},
+      {"owner":"0x82320700","writer_pc":"0x82320750","writer_bytes":"0x907F0000","runtime_lr":"0x8232074C","generated_line":20670,"stores":1,"guest_addresses":["0x829D9628"],"handle_range":["0xE1000044","0xE1000044"],"ticks":[106],"threads":[1]},
+      {"owner":"0x82320700","writer_pc":"0x82320774","writer_bytes":"0x907F0004","runtime_lr":"0x82320770","generated_line":20689,"stores":1,"guest_addresses":["0x829D962C"],"handle_range":["0xE1000048","0xE1000048"],"ticks":[106],"threads":[1]},
+      {"owner":"0x82320700","writer_pc":"0x82320798","writer_bytes":"0x907F0008","runtime_lr":"0x82320794","generated_line":20708,"stores":1,"guest_addresses":["0x829D9630"],"handle_range":["0xE100004C","0xE100004C"],"ticks":[106],"threads":[1]}
+    ],
+    "priority_sites": [
+      {"purpose":"event/thread table construction","owner":"0x821A1E38","writer_pcs":["0x821A1EAC","0x821A1ED0","0x821A1EE0"],"ticks":[0],"thread":1},
+      {"purpose":"signal/wait handle pair publication","owner":"0x822EED70","writer_pcs":["0x822EEDA8","0x822EEDB4"],"values":["0xE0000048","0xE000004C","0xE0000054","0xE0000058"],"ticks":[0],"thread":1},
+      {"purpose":"repeated object-handle field writes","owner":"0x8219A060","writer_pcs":["0x8219A4B8","0x8219A4F4"],"ticks":[40,106,117,223,257],"threads":[1,9]}
+    ]
+  },
+  "classification": {
+    "xenia-generic": ["F8000088 -> F800008C and pthread_cond_wait stack from cycle 1644"],
+    "demo-observed": ["163 opt-in AC6_PPC_STORE_U32 rows per route, E000/E100 values, guest addresses, ticks, threads and runtime LR"],
+    "demo-qualified": ["25 writer sites, exact guest PC/word from PAL basefile, generated source line and A/B row digest"],
+    "unknown": ["object type for each E000/E100 value, semantic mapping to Xenia F800 handles, and downstream consumer that causes a visible transition"]
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "same_pal_demo_only": true,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_asset_tracked": false,
+    "runtime_behavior_changed": false,
+    "fallback_or_synthetic_progression": false,
+    "screencap_promoted": false,
+    "fail_closed": true
+  }
+}

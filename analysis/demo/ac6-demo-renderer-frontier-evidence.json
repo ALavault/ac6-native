@@ -1,0 +1,315 @@
+{
+  "schema": "ac6-demo-renderer-frontier-evidence/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "image_base": "0x82000000",
+    "architecture": "PowerPC:BE:64:Xenon",
+    "guest_pointer_bits": 32
+  },
+  "claims": [
+    {
+      "id": "vd_swap_reached",
+      "classification": "bridge_observed",
+      "claim": "The qualified guest reaches VdSwap 115 times by guest tick 252 and supplies a 1280x720 frontbuffer fetch."
+    },
+    {
+      "id": "swap_wire_packet",
+      "classification": "static_exact",
+      "claim": "The bounded bridge writes the ReXGlue VdSwap wire shape: one six-dword fetch packet followed by PM4_XE_SWAP and type-2 NOP padding."
+    },
+    {
+      "id": "reached_pm4_corpus",
+      "classification": "bridge_observed",
+      "claim": "The bounded decoder validates and executes the reached PM4 effects through RPTR completion, including scratch writeback, resumable WAITs, the CPU-2 interrupt handshake, gamma LUT programming, shader-done writes, draws and swap."
+    },
+    {
+      "id": "xenos_interrupt_handshake",
+      "classification": "bridge_observed",
+      "claim": "PM4_INTERRUPT source 1 reaches guest callback 0x821B9710 on active CPU 2, dispatches scratch handler 0x821C5190, clears the CPU-2 bit and permits deterministic WAIT_REG_MEM resumption."
+    },
+    {
+      "id": "visible_frontend",
+      "classification": "unknown",
+      "claim": "No decoded PM4 draw, rendered pixel, title state or menu state has been qualified. Presentation notifications do not establish a visible frontend."
+    }
+  ],
+  "probe": {
+    "lane": "bridge",
+    "scenario": "neutral input, headless backend, until frontend, maximum 300 guest ticks; repeated twice from fresh stores",
+    "outcome": "max_ticks",
+    "completed_ticks": 300,
+    "report_sha256": "acfbefc327c28b8cb53a9f38869350b023e54bd25ac172d53438df0b0bca8dcb",
+    "trace_sha256": "4e0015fc1d1c3b2a49fd3bf52da50e85988f838985a92d5e49b5fd7f10ec5d19",
+    "binary_sha256": "9eb6e4ae8b8e720ddc69cd9998bf17560fed3cbdf8061b704f61a3b66f253375",
+    "codegen_manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "milestones": {
+      "presentation_notifications": 115,
+      "qualified_frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "vd_swap": {
+    "calls": 115,
+    "last_tick": 252,
+    "output_buffer": "0x131CB3F8",
+    "fetch_address": "0x7F040958",
+    "swap_state": "0x16AE1008",
+    "system_header": "0x7F0409A8",
+    "fetch_words": [
+      "0x8A000002",
+      "0x1374A006",
+      "0x0059E4FF",
+      "0x00001414",
+      "0x00000000",
+      "0x00000200"
+    ],
+    "frontbuffer_address": "0x1374A000",
+    "texture_format": 6,
+    "color_space": 0,
+    "width": 1280,
+    "height": 720
+  },
+  "wire_packet": {
+    "dword_count": 64,
+    "dword_0": "0x00054800",
+    "dwords_1_to_6": "vd_swap.fetch_words",
+    "dword_7": "0xC0036400",
+    "dword_8": "0x53574150",
+    "dword_9": "0x1374A000",
+    "dword_10": 1280,
+    "dword_11": 720,
+    "dwords_12_to_63": "0x80000000"
+  },
+  "ring": {
+    "base": "0x126CA000",
+    "size_log2": 16,
+    "capacity_dwords": 131072,
+    "read_pointer": 7,
+    "write_pointer": 25,
+    "owner_endpoint": 7,
+    "submissions": 2,
+    "pointer_mismatches": 2,
+    "submitted_dwords": 25,
+    "max_submission_dwords": 22,
+    "primary_submission_dword_counts": [
+      22,
+      3
+    ],
+    "indirect_buffers": [
+      {
+        "address": "0x127CA0C0",
+        "dword_count": 11,
+        "guest_big_endian_byte_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0"
+      },
+      {
+        "address": "0x1274A000",
+        "dword_count": 3029,
+        "guest_big_endian_byte_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+      }
+    ],
+    "packet_census": {
+      "packet_count": 877,
+      "decoded_dword_count": 3065,
+      "type_counts": [
+        340,
+        0,
+        252,
+        285
+      ],
+      "type3_opcode_counts": {
+        "REG_RMW_0x21": 2,
+        "IM_LOAD_IMMEDIATE_0x2B": 3,
+        "DRAW_INDX_2_0x36": 2,
+        "INVALIDATE_STATE_0x3B": 3,
+        "WAIT_REG_MEM_0x3C": 9,
+        "INDIRECT_BUFFER_0x3F": 2,
+        "COND_WRITE_0x45": 256,
+        "EVENT_WRITE_0x46": 1,
+        "ME_INIT_0x48": 1,
+        "INTERRUPT_0x54": 1,
+        "EVENT_WRITE_SHD_0x58": 2,
+        "SET_BIN_MASK_LO_0x60": 2,
+        "XE_SWAP_0x64": 1
+      },
+      "reached_corpus_qualified": true
+    }
+  },
+  "reached_semantic_inputs": {
+    "classification": "static_exact over bridge_observed guest dwords",
+    "shader_loads": [
+      {
+        "stage": "vertex",
+        "start": 0,
+        "dword_count": 24,
+        "guest_big_endian_byte_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3"
+      },
+      {
+        "stage": "vertex",
+        "start": 0,
+        "dword_count": 27,
+        "guest_big_endian_byte_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b"
+      },
+      {
+        "stage": "pixel",
+        "start": 0,
+        "dword_count": 9,
+        "guest_big_endian_byte_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25"
+      },
+      {
+        "stage": "vertex",
+        "start": 0,
+        "dword_count": 15,
+        "guest_big_endian_byte_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0"
+      }
+    ],
+    "draws": [
+      {
+        "initiator": "0x00030088",
+        "primitive": "rectangle_list",
+        "source": "auto_index",
+        "index_format": "uint16",
+        "index_count": 3,
+        "predicated": true,
+        "register_state_sha256": "14536e8c1d5df66b6ea034496d7a6c25f0ec62df0122188282fcb5e3627095d8",
+        "vertex_fetch_address": "0x127CA03C",
+        "vertex_fetch_endian": 2,
+        "vertex_fetch_size_words": 21
+      },
+      {
+        "initiator": "0x00030088",
+        "primitive": "rectangle_list",
+        "source": "auto_index",
+        "index_format": "uint16",
+        "index_count": 3,
+        "predicated": false,
+        "register_state_sha256": "003a1ada74eb303b64b9896e33e87027885e40ff9e7d0ca693bfc106bdf13168",
+        "vertex_fetch_address": "0x127CA090",
+        "vertex_fetch_endian": 2,
+        "vertex_fetch_size_words": 6
+      }
+    ],
+    "swap": {
+      "signature": "0x53574150",
+      "frontbuffer_address": "0x1374A000",
+      "format": 6,
+      "tiled": true,
+      "width": 1280,
+      "height": 720
+    },
+    "unqualified_for_rendering": [
+      "shader opcode translation",
+      "vertex fetch format and lane interpretation",
+      "texture tiling and endian conversion",
+      "resolve and copy semantics",
+      "blend, depth and final pixel output"
+    ]
+  },
+  "typed_command_output": {
+    "classification": "bridge_observed",
+    "transactional": true,
+    "shader_load_count": 5,
+    "draw_count": 26,
+    "bootstrap_point_draw_count": 24,
+    "final_rectangle_draw_count": 2,
+    "draw_shader_pairs": [
+      {
+        "vertex": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+        "pixel": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25"
+      },
+      {
+        "vertex": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+        "pixel": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25"
+      }
+    ],
+    "present_count": 1,
+    "present_resource_id": "5a192a0ad264cdedf1c271c3fc72944aa209c810d99495fe4acba00b862a93e0",
+    "present_format": 6,
+    "present_tiled": true,
+    "present_width": 1280,
+    "present_height": 720,
+    "guest_addresses_in_public_commands": false
+  },
+  "executed_effect_output": {
+    "classification": "bridge_observed",
+    "transactional_prefix_resume": true,
+    "scratch_writeback": 6,
+    "register_rmw": 4,
+    "wait_reg_mem": 10,
+    "conditional_write": 256,
+    "event_write": 1,
+    "interrupt": 1,
+    "event_write_shader_done": 4,
+    "invalidate_state": 5,
+    "micro_engine_init": 2,
+    "guest_memory_writes": 10,
+    "cpu_interrupts": 1,
+    "last_interrupt_cpu": 2,
+    "pending_wait": false,
+    "pending_interrupt_count": 0,
+    "gamma_lut_sha256": "929c345c43cc9b551b80108635ed3343b813bb09afafaa9d509db27448d037cd"
+  },
+  "interventions": [
+    {
+      "id": "hle_vd_swap_packet",
+      "behavioral": true,
+      "description": "The bridge constructs the bounded 64-dword VdSwap packet in guest memory."
+    },
+    {
+      "id": "bounded_cp_semantics",
+      "behavioral": true,
+      "description": "The bridge executes only the reached ReXGlue-qualified CP subset and resumes at WAIT headers; it remains a bridge substitute for Xenos timing and ordering, not a stock oracle."
+    },
+    {
+      "id": "headless_present_counter",
+      "behavioral": true,
+      "description": "The current backend records presentation notifications without decoding PM4 or producing pixels."
+    }
+  ],
+  "reference": {
+    "name": "ReXGlue",
+    "commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+    "classification": "static_exact",
+    "product_dependency": false,
+    "files": {
+      "LICENSE": "f8c7147eba0225be836dd7f701bd9e254b76386271fe0a57955ee479864b1c97",
+      "thirdparty/rexglue-sdk/LICENSE": "8e065be1da2ff9a16b1f063d4636d8b67e6a654bb90583ea4332e66ac421bb18",
+      "src/kernel/xboxkrnl/xboxkrnl_video.cpp": "a3533e86c7fddd118000a94aaa9bd84d040977a53135db05f6ab9b34f6ea6a2c",
+      "src/graphics/graphics_system.cpp": "9896ba95176ef0c5c5538580f99b92b7719af75263ace8380fc16dd40aabf6d8",
+      "src/graphics/command_processor.cpp": "999a0ead43cbfa8325a0da83ab7a4cc1a31c1d155466c0c3e824394bda38207f",
+      "src/graphics/vulkan/command_processor.cpp": "c43d566f117dd50c4167bcfeaaa8c94f18a4472bcb1903b28d293416c461ac02",
+      "thirdparty/rexglue-sdk/include/rexglue/xenos.h": "f7dcbf856feaeb0350c9c9aaf5c16a768b4147fc487819cd513e0cc68fc16fd5"
+    }
+  },
+  "implementation": {
+    "src/graphics.cpp": "f3e8f44cb4799633d0ce82d0e708e731d357571fb6b30a8c0b724e3adcc3052c",
+    "src/guest_bridge/graphics_dispatch.hpp": "39ff2a8ff06518ab105e59941a9d0597a4ea38dcff26321b03094ececd559d50",
+    "src/guest_bridge/graphics_ring.hpp": "dff3a601b691cb9a8b77c36193e396c304a3862ac8fe32503319754d5b6940d8",
+    "src/guest_bridge/lifecycle.hpp": "e42a7eaf3242c11391730cd61cbc0a76a47ca7da6bf7e53a088167c780ab0e72",
+    "src/frontier_report.cpp": "2059d0bd91b11020d74fdc0f25b5ff972b6ee47e8d65e723959c3f97f60542ee",
+    "include/ac6demo/guest_bridge.hpp": "df607771bdc30f23ca04e16a82ba1d53d1223fe593751e6b688ac14925d43582",
+    "include/ac6demo/xenos_commands.hpp": "351200ef4a49013350eaa1678afe5c0b6ebab61fcb0c93beae5d495d34829eb8",
+    "include/ac6demo/xenos_command_processor.hpp": "2054908cb9bfcabc8a9b225d081124bf6d587813d30e274ac709ef8c90ae7b36",
+    "src/xenos_command_processor.cpp": "9376864a3885fcf382e890bcd0f6244caec3936784147812ca1d0ff8ffba793b",
+    "tests/ac6-demo-xenos-command-tests.cpp": "fd5ff09320488839415b2291941f77d34e9f1f3d6be13f64a7360029ea7a8818",
+    "tests/ac6-demo-frontier-tests.cpp": "9c0115545a65b17227763cebe5f65006dae0db921a06ad906bdfc41ec3813c53",
+    "tests/ac6-demo-core-tests.cpp": "0ff50ece4bbdcc834bfbb6b1b7b23d66e8b899f64a60947463e46f0ffbb860e1",
+    "tests/ac6-demo-graphics-tests.cpp": "a1d6578b5557d480221d3531b8ee2a87f04e56ec04feb0705c4996f2af1f4e9c"
+  },
+  "frontier": {
+    "structural_pm4_decode": true,
+    "renderer_relevant_packet_execution": true,
+    "synchronous_effect_execution": true,
+    "full_semantic_packet_execution": false,
+    "draw_decode": true,
+    "draw_packets_observed_in_final_census": 2,
+    "typed_draws_accumulated_across_ring_configurations": 26,
+    "pm4_xe_swap_observed": 1,
+    "pixel_output": false,
+    "qualified_frontend": false,
+    "next_gate": "Translate the five reached shaders and qualified fetch/tiling/resolve state into renderer resources, then require deterministic evolving 1280x720 readback before claiming a visible frontend."
+  }
+}

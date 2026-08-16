@@ -1,0 +1,90 @@
+{
+  "schema": "ac6-demo-start-tick268-store-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "a9dde7be809f225f63175329e42e52cfa33bbd1f8c689d96039485e5e6349b5e",
+    "source_guest_bridge_sha256": "e5217db6b098e493612e61da67d5be60026c04211cb91b3f9d79fb46d6283c66",
+    "complexity_baseline": "config/source-complexity-baseline.json",
+    "complexity_baseline_sha256": "de45ba1333e906a294ce321aa6e63d09d9bd2833889fbce01f6cecbc597fcb97",
+    "fresh_process_per_route": true,
+    "fresh_store_per_route": true,
+    "tick_window": [268, 269],
+    "address_range": {"begin": "0x2E3C0000", "end": "0x2E3F0000"},
+    "stack_range_excluded": {"begin": "0x7F000000", "end": "0x80000000"},
+    "hook": "AC6_DEMO_WATCH_TICK_STORES=1",
+    "range_filter": "AC6_DEMO_WATCH_TICK_RANGE=0x2e3c0000:0x2e3f0000",
+    "hook_default": false,
+    "start_input": "button 0x10 held at ticks 252..267",
+    "start": {
+      "stores": 605,
+      "nonzero_stores": 345,
+      "ticks": [268],
+      "threads": [1],
+      "presents": 132,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "outcome": "max_ticks",
+      "completed_ticks": 269,
+      "stderr_sha256": "86fda1bc6c5fc3af9b9978a2263a69611800f38b825c90819c0687baa8bae82b",
+      "rtply_sha256": "4bf229f4a691d28efb6e979b717120955f7337388190e7109f05bcfa9fb1c273",
+      "report_sha256": "598c6f84a5fbfc44aaeca2c9fb4cacafa1f38c2d2fc81d823971a9c8cb20c621"
+    },
+    "neutral": {
+      "stores": 606,
+      "nonzero_stores": 346,
+      "ticks": [268],
+      "threads": [1],
+      "presents": 132,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "outcome": "max_ticks",
+      "completed_ticks": 269,
+      "stderr_sha256": "eec2429f36cb16c96a89a6959f8964ec1d73141eec0e9306f47b87c373017650",
+      "rtply_sha256": "919dd6f1fc894526a444d12f0968153cad8acc1cd6baa37ad022a6255a72df7e",
+      "report_sha256": "aacdebaf4412ad38104ccda80eba0163e7e801272d50433af494af5a6b6d9d72"
+    }
+  },
+  "differential": {
+    "strict_common_rows": 604,
+    "start_only": [
+      {"address": "0x2E3D3C0C", "size": 4, "value": "0x00000000", "pc": "0x820CDC20", "function": "sub_82321E20", "line": 24475}
+    ],
+    "neutral_only": [
+      {"address": "0x2E3D44F0", "size": 4, "value": "0x00000000", "pc": "0x823255F0", "function": "sub_823255E8", "line": 8352},
+      {"address": "0x2E3D44F0", "size": 4, "value": "0xFFFFFFFF", "pc": "0x82325644", "function": "sub_823255E8", "line": 8404}
+    ],
+    "semantic_transition_proven": false
+  },
+  "classification": {
+    "demo-qualified": ["PAL identity", "bounded tick/store A/B", "exact 604-row common set and 1-vs-2 row delta"],
+    "demo-observed": ["START-only virtual dispatch edges at tick 268", "605 stores in the selected guest range"],
+    "xenia-generic": [],
+    "unknown": ["object roles", "guest frontend writer/consumer", "pixels", "audio", "mission", "terminal"]
+  },
+  "guard": {
+    "read_only_probe": true,
+    "range_filter_explicit": true,
+    "hook_default_disabled": true,
+    "semantic_transition_required_before_start_promotion": true,
+    "no_renderer_fallback": true,
+    "no_generated_cpp_edit": true,
+    "no_ghidra_mutation": true,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  },
+  "validation": {
+    "ctest": "17/17",
+    "complexity": "pass",
+    "source_audit": "pass",
+    "status": "pass"
+  }
+}

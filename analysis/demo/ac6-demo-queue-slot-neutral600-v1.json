@@ -1,0 +1,87 @@
+{
+  "schema": "ac6-demo-queue-slot-neutral600/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "max_ticks": 600,
+    "completed_ticks": 600,
+    "fresh_process": true,
+    "fresh_store": true,
+    "hook": "AC6_DEMO_WATCH_RENDER_QUEUE_SLOTS=1",
+    "hook_default": false,
+    "rtply_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+    "report_sha256": "dbe6484af6c1446db0e2e5017b34441d909cc07e81922959d8ad9d9719b16484",
+    "stderr_sha256": "4465437e2485e4ec097fe13bd999b11573210530bea34dc37a10c319081d1d9a"
+  },
+  "queue": {
+    "object_base": "0x82386CC0",
+    "consumer_slot": "0x82386D90",
+    "producer_slot": "0x82386DD0",
+    "slot_size": 96,
+    "payload_range": "[0x82386D90,0x82386DF0)",
+    "metadata_range": "[0x8238CD90,0x8238CDA0)",
+    "store_rows": 2440,
+    "tick_first": 221,
+    "tick_last": 599,
+    "address_counts": {
+      "0x82386D90": 0,
+      "0x82386DD0": 348,
+      "0x8238CD90": 1045,
+      "0x8238CD94": 1045,
+      "0x8238CD98": 1,
+      "0x8238CD9C": 1
+    },
+    "producer_slot": {
+      "direct_store_count": 348,
+      "nonzero_count": 0,
+      "size": 4,
+      "first_tick": 252,
+      "last_tick": 599,
+      "thread": 1,
+      "lr": "0x820FF734",
+      "function": "0x820FF710",
+      "generated_line": 42775
+    },
+    "consumer_slot": {
+      "direct_store_count": 0,
+      "nonzero_count": 0
+    },
+    "metadata_nonzero_not_payload": true
+  },
+  "classification": {
+    "demo-qualified": [
+      "neutral fresh run through tick 600",
+      "zero direct consumer-slot stores",
+      "producer-slot stores all zero",
+      "metadata and payload ranges kept separate"
+    ],
+    "demo-observed": [
+      "repeated queue metadata stores from tick 221 onward",
+      "producer zero store from ticks 252..599"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "writer of a nonzero consumer payload",
+      "payload beyond tick 600",
+      "frontbuffer consumer, pixels, frontend, audio, mission and terminal"
+    ]
+  },
+  "guard": {
+    "require_pal_demo_identity": true,
+    "require_fresh_process_and_store": true,
+    "payload_range": "[0x82386D90,0x82386DF0)",
+    "metadata_range": "[0x8238CD90,0x8238CDA0)",
+    "metadata_must_not_be_promoted_to_payload": true,
+    "on_nonzero_payload_or_divergence": "stop and retain unknown",
+    "synthetic_state_write": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

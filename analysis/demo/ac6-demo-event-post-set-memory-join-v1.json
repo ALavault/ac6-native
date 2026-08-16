@@ -1,0 +1,125 @@
+{
+  "schema": "ac6-demo-event-post-set-memory-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "inputs": {
+    "store_seed": ".build/ac6-demo-store-test-3",
+    "neutral_store": "/fastdata/lavaulta/tmp/ac6-demo-event-post-set-memory-ab.py0Jl4/neutral-store",
+    "start_store": "/fastdata/lavaulta/tmp/ac6-demo-event-post-set-memory-ab.py0Jl4/start-store",
+    "neutral_trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+    "start_trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+    "neutral_report_sha256": "a11feac6f2df648d6b8a82cc2048d0b16ea37f308a2753858f6eafceab2a4340",
+    "start_report_sha256": "c74ca0ea7733fe49f0ee5440c73e414737f7fa3cf8e83dc39b95012e30112593",
+    "neutral_stderr_sha256": "de03c62b8398fa5e28831eb928770589807b91df97ba9b9a15d912e962de843b",
+    "start_stderr_sha256": "de03c62b8398fa5e28831eb928770589807b91df97ba9b9a15d912e962de843b",
+    "memory_rows_sha256": "1fb44bae233f8499cbd9e284a1e58248d799ac68b41b48befb327fca76ca7c61",
+    "memory_rows_definition": "SHA-256 of '\\n'.join(all AC6_EVENT_POST_SET_MEMORY stderr lines)+'\\n'",
+    "max_ticks": 300,
+    "start_input": "tick 252, buttons 0x0010, connected"
+  },
+  "instrumentation": {
+    "hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_post_set_trace.hpp",
+    "hook_sha256": "5d34731226d52ede3d7dc76e7ee4092c5e1f337423fd46f7184e62742e381384",
+    "scheduler_source": "recompilation/ace-combat-6-demo/src/guest_bridge/scheduler.hpp",
+    "scheduler_source_sha256": "68965cdcc7accb1a808a3886626a1b7b3375019aaa2d92c6ec8cbb26554f37df",
+    "bridge_source_sha256": "b4385209597b4127d5fc23ab8fca4f86f3667f67a27b9b489cce56ae040af334",
+    "runtime_binary_sha256": "d056e75d3fc77722c05dbb33c6a1e6be3e3415be992e9e9c310fef1c5e0b7aa9",
+    "environment": [
+      "AC6_DEMO_WATCH_EVENT_HANDOFF=1",
+      "AC6_DEMO_WATCH_EVENT_HANDOFF_FOCUSED=1",
+      "AC6_DEMO_WATCH_EVENT_POST_SET=1"
+    ],
+    "operations": ["load8", "load16", "load32", "load64", "store8", "store16", "store32", "store64", "store128"],
+    "read_only": true,
+    "default_enabled": false,
+    "generated_cpp_modified": false
+  },
+  "runs": {
+    "neutral": {
+      "completed_ticks": 300,
+      "memory_rows": 351,
+      "memory_tick_delta_zero": 351,
+      "operation_counts": {"load8": 10, "load16": 13, "load32": 246, "load64": 47, "store8": 4, "store16": 6, "store32": 20, "store64": 5, "store128": 0},
+      "entry_counts": {"0x821A7160": 53, "0x821C4970": 149, "0x82320560": 97, "0x822EE158": 39, "0x821A1D10": 13},
+      "unique_guest_addresses": 56,
+      "first_rows": [
+        {"op":"load64","address":"0x7F0409D8","width":8,"thread":1,"tick":1,"lr":"0x821A69CC","entry":"0x821A7160"},
+        {"op":"load64","address":"0x1678CDF0","width":8,"thread":14,"tick":1,"lr":"0x821A69CC","entry":"0x822EE158"},
+        {"op":"load32","address":"0x82000608","width":4,"thread":18,"tick":2,"lr":"0x821C4A28","entry":"0x821C4970"},
+        {"op":"load64","address":"0x1678CDF0","width":8,"thread":14,"tick":2,"lr":"0x821A69CC","entry":"0x822EE158"},
+        {"op":"store32","address":"0x17C74F84","width":4,"thread":1,"tick":3,"lr":"0x821A3E74","entry":"0x821A7160","generated_function":"__imp__sub_823273E0","generated_line":1284},
+        {"op":"load32","address":"0x82000608","width":4,"thread":18,"tick":4,"lr":"0x821C4A28","entry":"0x821C4970"}
+      ],
+      "last_rows": [
+        {"op":"load32","address":"0x82000608","width":4,"thread":18,"tick":298,"lr":"0x821C4A28","entry":"0x821C4970"},
+        {"op":"load64","address":"0x1678CDF0","width":8,"thread":14,"tick":298,"lr":"0x821A69CC","entry":"0x822EE158"},
+        {"op":"load32","address":"0x2EB40EE8","width":4,"thread":21,"tick":299,"lr":"0x821A877C","entry":"0x82320560"},
+        {"op":"load64","address":"0x1678CDF0","width":8,"thread":14,"tick":299,"lr":"0x821A69CC","entry":"0x822EE158"}
+      ],
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "completed_ticks": 300,
+      "memory_rows": 351,
+      "memory_tick_delta_zero": 351,
+      "operation_counts": {"load8": 10, "load16": 13, "load32": 246, "load64": 47, "store8": 4, "store16": 6, "store32": 20, "store64": 5, "store128": 0},
+      "entry_counts": {"0x821A7160": 53, "0x821C4970": 149, "0x82320560": 97, "0x822EE158": 39, "0x821A1D10": 13},
+      "unique_guest_addresses": 56,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "ab_comparison": {
+    "memory_rows_equal": true,
+    "operation_counts_equal": true,
+    "entry_counts_equal": true,
+    "normalized_sequence_sha256_equal": true,
+    "event_wake_to_memory_same_tick": true,
+    "first_access_by_entry": {
+      "0x821A7160": "load64 0x7F0409D8 width8, then service stores/loads; first stable service access is load16 0x7F0407CC",
+      "0x821C4970": "load32 0x82000608 width4 via LR 0x821C4A28",
+      "0x82320560": "load32 0x2EB40EE8 width4 via LR 0x821A877C",
+      "0x822EE158": "load64 0x1678CDF0 width8 via LR 0x821A69CC",
+      "0x821A1D10": "first observed row is store16 0x102C5AC0 in the 300-tick window"
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "351/351 post-set activations have one same-thread guest memory row in each route",
+      "all 351 rows have tick == set_tick == resume_tick",
+      "neutral and START operation/address/width/thread/LR/entry sequences are byte-identical",
+      "the five entry families and their PAL-qualified static boundaries are exact"
+    ],
+    "demo-observed": [
+      "56 guest addresses and eight observed load/store widths/types",
+      "generated service label __imp__sub_823273E0 at observed store sites"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantic role of the five activated functions and guest addresses",
+      "whether any observed address is an Xenos/PM4 queue or shader resource",
+      "exact writer/consumer join from these accesses to IB 0x1274A000",
+      "frontend, pixels, mission and screencap"
+    ]
+  },
+  "policy": {
+    "runtime_behavior_changed": false,
+    "retail_evidence_fused": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_assets_tracked": false,
+    "readback_promoted": false,
+    "fail_closed": true
+  }
+}

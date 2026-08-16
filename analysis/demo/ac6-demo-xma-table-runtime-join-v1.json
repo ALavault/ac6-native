@@ -1,0 +1,121 @@
+{
+  "schema": "ac6-demo-xma-table-runtime-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos"
+  },
+  "build": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "84e3864a55282081507beb3cb22069c1668696c72f6ba1904db591ef0d6ce217",
+    "guest_bridge_sha256": "862e9eea3083cb939f2af3c8fd6e3f140c987cced159201dce1ce1eaaf176834",
+    "xma_trace_header_sha256": "23b1bf94579d2b3aebb4afb5c67eb55e65fce5555e03f4bfcd7ef1ef8adb0f12",
+    "complexity_guest_bridge_lines": 1443,
+    "ctest": "17/17"
+  },
+  "runs": {
+    "root": "/fastdata/lavaulta/tmp/ac6-cycle1709.vxxpib",
+    "max_ticks": 1050,
+    "neutral": {
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131",
+      "stderr_sha256": "eac2aecd1c20d7b408ec9f811af9c6f51f92239bda59005b648283f5634be83c"
+    },
+    "start": {
+      "rtply_sha256": "d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d",
+      "report_sha256": "238bd9e4f7e8ea150b7e5622101340145bc0dd9e7076d5c6472f4970634022cc",
+      "stderr_sha256": "eac2aecd1c20d7b408ec9f811af9c6f51f92239bda59005b648283f5634be83c",
+      "input": "tick252:16,0,0,0,0,0,0,0,1"
+    }
+  },
+  "table": {
+    "address": "0x17360000",
+    "count": "0x00000003",
+    "flags": "0x00030000",
+    "entries_base": "0x17360010",
+    "stride": "0x60",
+    "selected_index": 0,
+    "selected_entry": "0x17360010",
+    "output_slot_offset": "0x40",
+    "output_slot": "0x17360050"
+  },
+  "entry_context": {
+    "wrapper": {
+      "pc": "0x82357240",
+      "lr": "0x8235675C",
+      "tick": 1048,
+      "thread": 21,
+      "r3": "0x17360000",
+      "r4": "0x00000000",
+      "r5": "0x00006180",
+      "r6": "0x00000000",
+      "r7": "0x00000001"
+    },
+    "store": {
+      "pc": "0x823273E0",
+      "lr": "0x821A3E74",
+      "tick": 2,
+      "thread": 1,
+      "address": "0x17360050",
+      "value_be": "0xFEFEFEFE"
+    },
+    "load": {
+      "pc": "0x82357240",
+      "lr": "0x82357248",
+      "tick": 1048,
+      "thread": 21,
+      "address": "0x17360050",
+      "value_be": "0x00000000"
+    }
+  },
+  "import": {
+    "module": "xboxkrnl.exe",
+    "name": "XMACreateContext",
+    "ordinal": 548,
+    "call_lr": "0x82357298",
+    "r3": "0x17360050",
+    "r4": "0x00000000",
+    "r5": "0x00006180",
+    "r6": "0x00000000",
+    "r7": "0x00000001",
+    "effect": "trap-before-import"
+  },
+  "graphics": {
+    "presents": 911,
+    "frontbuffer": "0x1374A000",
+    "width": 1280,
+    "height": 720,
+    "texture_format": 6,
+    "neutral_start_vd_swap_identical": true
+  },
+  "classification": {
+    "demo-qualified": [
+      "runtime table address/count/flags/base",
+      "entry 0 and output slot formula",
+      "slot store/load and XMACreateContext registers",
+      "neutral/START byte-identical probe and 911 PRESENT"
+    ],
+    "demo-observed": [
+      "flags 0x00030000",
+      "entries 1 and 2 not selected in this route"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "context ABI and return value",
+      "contents of all three entries",
+      "post-import output pointer",
+      "XMA packet/timestamp/volume and PCM consumer",
+      "guest-owned pixels and mission result"
+    ]
+  },
+  "guard": {
+    "table_probe_opt_in_only": true,
+    "ordinal_548_traps": true,
+    "guest_mutation": false,
+    "audio_decode": false,
+    "readback": false,
+    "screencap": false
+  },
+  "next_checkpoint": "boundedly inspect entries 0..2 and preserve ordinal 548 trap until return/output pointer and first exact XMA packet are qualified"
+}

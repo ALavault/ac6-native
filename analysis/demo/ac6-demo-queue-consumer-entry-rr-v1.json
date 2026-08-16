@@ -1,0 +1,109 @@
+{
+  "schema": "ac6-demo-queue-consumer-entry-rr/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "rr": {
+    "path": ".tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6"
+  },
+  "probe": {
+    "script": "recompilation/ace-combat-6-demo/tools/rr_queue_consumer_entry.gdb",
+    "script_sha256": "ae83abd9432690038fe9902fd518794bde732cc2400973ed1096adfdc3c6d683",
+    "breakpoint": "__imp__sub_820FEFA8",
+    "read_only": true,
+    "writes_guest_memory": false
+  },
+  "start_route": {
+    "trace": "/fastdata/lavaulta/tmp/ac6-demo-start-rr-t300.B10dbp/trace",
+    "runtime_binary_sha256": "aa2345b8eb96aa19bf601b25698e8faff3886ece1b84829539fc4eb1e6fb6a0f",
+    "terminal_tick": 300,
+    "gdb_log": "/fastdata/lavaulta/tmp/ac6-queue-consumer-entry-gdb-corrected.log",
+    "gdb_log_sha256": "579611b358fb808c09a5245323ef93ad6d88ca2757f58ec46cb52ce3e446c424",
+    "observations": {
+      "count": 16,
+      "first_tick": 252,
+      "last_tick": 267,
+      "thread": 25,
+      "guest_lr": "0x820FFD8C",
+      "host_pc": "0x53217bcb",
+      "r3": "0x2EEEBE90",
+      "r4": "0x00000001",
+      "r5": "0x00000000",
+      "r6": "0x00000000",
+      "r7": "0x00000030",
+      "r31": "0x82386CC0",
+      "object_fields": "offsets 0,4,8,0x14,0x18,0x40,0x44,0x48,0x4c,0x50 all read as zero"
+    },
+    "callsite": {
+      "function": "0x820FFCA0",
+      "guest_sequence": [
+        "addi r3,r1,80",
+        "bl 0x820FEFA8",
+        "LR=0x820FFD8C"
+      ]
+    }
+  },
+  "same_build_ab": {
+    "neutral_trace": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/neutral.trace",
+    "start_trace": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/start.trace",
+    "runtime_binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "neutral_events_sha256": "77014c9464e034dd7a709b1f37512ba6abca757b83724aecea6cf9e35c153fef",
+    "start_events_sha256": "a11313387e8704ed1ca15728585f128736caffe5402dcb7da8eedc44ad73df9a",
+    "neutral_report_sha256": "420fb9341ea0a56be33f0143f9bf9be768b08a1697fe7cb314e5e055bbf2a843",
+    "start_report_sha256": "8506399dca66624afcf52a8746bc4cd08c669f30021d9fb954bb8bebb01f7327",
+    "neutral_probe_log_sha256": "281b6e791c1f8a16d44554a9c18e396be84c5a98ee024e18b44026568d06b451",
+    "start_probe_log_sha256": "b6df96cfc06d841b4d4e664fb4148d890538e0d91e978652a96608b6140f3809",
+    "qualifying_entries_after_tick_252": {
+      "neutral": 1,
+      "start": 1,
+      "note": "both same-build noinline logs have one identical entry at tick 252; corrected stack ABI reports r3=0x2EEEBE90"
+    }
+  },
+  "static_join": {
+    "function_820FEFA8": {
+      "byte_sha256": "652a3a166707a01b22bf62e2cb3391ec471357a721ee2d46ccd6932af507edd9",
+      "pseudocode_sha256": "66172ed7f35ef941abb17efbb0eb6dd3960717560017a29f05f58bddffc10b0d",
+      "size": "0x6ec",
+      "role": "unknown"
+    },
+    "function_820FFCA0": {
+      "byte_sha256": "efe72ffa05bb2cd3ad991e1f063b7c9d94ad91f7c4808da133849dd9fd7ee119",
+      "pseudocode_sha256": "5170446450d957db1e07a92689aeb1d89884f39dba8f827c0fe97133750a6b24",
+      "size": "0x110",
+      "role": "unknown"
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "XEX and basefile identity",
+      "PAL bytes and exact callsite LR 0x820FFD8C",
+      "START trace thread/tick/register observation",
+      "read-only bounded probe"
+    ],
+    "demo-observed": [
+      "16 sub_820FEFA8 entries at ticks 252..267 on START t300 trace",
+      "r3=0x2EEEBE90 and r31=0x82386CC0 at the captured entry; bounded fields are zero"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "nonzero guest object payload",
+      "semantic role of 0x820FEFA8/0x820FFCA0",
+      "neutral/START entry parity at the same build",
+      "guest-owned frontbuffer consumer and pixels"
+    ]
+  },
+  "guard": {
+    "policy": "promote only a same-build neutral/START pair with thread 25, LR 0x820FFD8C, non-null r3, r31 0x82386CC0, and readable bounded fields",
+    "on_mismatch": "retain unknown and stop before visual effect",
+    "synthetic_state_write": false,
+    "range_resynchronization": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

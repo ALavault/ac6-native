@@ -1,0 +1,59 @@
+{
+  "schema": "ac6-demo-neutral-boundary/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "route": "neutral",
+    "backend": "headless",
+    "xma_create_opt_in": true,
+    "xma_kick_opt_in": true,
+    "start_injected": false
+  },
+  "closed_boundary": {
+    "entry": "0x823235E8",
+    "size": "0x18",
+    "byte_sha256": "5d3515187236e81a0027685ff0fd8a53943f7599dc93ffc969a565a32376b79c",
+    "caller_lr": "0x82323C4C",
+    "first_tick": 2453,
+    "thread": 1,
+    "proof_run": {
+      "outcome": "max_ticks",
+      "completed_ticks": 2500,
+      "presents": 2363,
+      "trace_sha256": "e30f33a928bb9bc073fe9aa45c8f136de55602e9007a7f4e08ccc8783e72c0df",
+      "report_sha256": "4528585b2e1b2860ce3961e74f6900ace9f98461378469639455e7c3dab1417e"
+    }
+  },
+  "next_frontier": {
+    "kind": "guest-indirect",
+    "entry": "0x820D32B0",
+    "caller_lr": "0x820DC374",
+    "tick": 2511,
+    "thread": 1,
+    "containing_static_range": ["0x820D3230", "0x820D3363"],
+    "containing_static_range_sha256": "38ebf8e97577e9d438ec73593b8d3da6e71f0df0a4c16bd2f17dd2d43c5eac63",
+    "trace_sha256": "5542eca45e83bc11734bd3f59f8d287bc4d9778961bbe1c045ecef85b452ba8e",
+    "report_sha256": "88f47a331607eca82d5e6eac5f027e2bc0c6b539685627f07939837d5a21af25"
+  },
+  "artifacts": {
+    "binary_sha256": "70244abb7400c17736524d1de5d7ff7dc2a2f905c4ef15a45c229db9eac2cf00",
+    "codegen_manifest_sha256": "4d6584b8e32ce1e7805207e779e3dc3375b9410d66f104ba89f0080d5b96625f",
+    "boundary_config_sha256": "ea816b1353ec3767c5a9fecbc7058bdb59022abd293508f47d892edc4a11b8d0",
+    "static_atlas_sha256": "d4cbf56620efc24bb8499a85a3ee48dce2c3da5f7da9185a88fbed0e55dfad22"
+  },
+  "classification": {
+    "demo_qualified": [
+      "0x823235E8 callable boundary and exact PAL bytes",
+      "neutral progress through tick 2500",
+      "next indirect frontier at tick 2511"
+    ],
+    "unknown": [
+      "callable bounds and semantic role of 0x820D32B0",
+      "first non-black EDRAM producer",
+      "causal START transition"
+    ]
+  }
+}

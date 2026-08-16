@@ -1,0 +1,103 @@
+{
+  "demo_qualified": {
+    "color_export": "interpolator0=max(r0,r0)",
+    "color_fetch": {
+      "constant_index": 0,
+      "constant_index_select": 0,
+      "dst_register": 0,
+      "dst_swizzle": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "format": 38,
+      "mini_fetch": true,
+      "offset_dwords": 3,
+      "opcode": 0,
+      "src_register": 0,
+      "stride_dwords": 0
+    },
+    "pixel_input_color0": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "position_export": "position=max(r1,r1)",
+    "position_fetch": {
+      "constant_index": 0,
+      "constant_index_select": 0,
+      "dst_register": 1,
+      "dst_swizzle": [
+        0,
+        1,
+        2,
+        5
+      ],
+      "format": 57,
+      "mini_fetch": false,
+      "offset_dwords": 0,
+      "opcode": 0,
+      "src_register": 0,
+      "stride_dwords": 7
+    },
+    "positions": [
+      [
+        -0.5,
+        -0.5,
+        0.0
+      ],
+      [
+        639.5,
+        -0.5,
+        0.0
+      ],
+      [
+        639.5,
+        359.5,
+        0.0
+      ]
+    ],
+    "vertex_colors": [
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ]
+  },
+  "microcode_bytes_published": false,
+  "microcode_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+  "schema": "ac6-demo-reached-vertex-shader-analysis/v1",
+  "source_report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79",
+  "target_id": "ac6-demo-xbox360-pal",
+  "unknown": [
+    "EDRAM content outside the reached rectangle",
+    "effects of earlier bootstrap point draws"
+  ],
+  "vertex_bytes_published": false,
+  "vertex_capsule_sha256": "cf61dc45a42c755414326bbafa7d69dedc9046eef9b4d70a4326f6ea1dac7db1",
+  "xenia_generic": {
+    "export_position": 62,
+    "vector_opcode_2": "max",
+    "vertex_formats": {
+      "38": "k_32_32_32_32_FLOAT",
+      "57": "k_32_32_32_FLOAT"
+    }
+  },
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+}

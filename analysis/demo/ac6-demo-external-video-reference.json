@@ -1,0 +1,31 @@
+{
+  "schema": "ac6-demo-external-reference/v1",
+  "target_id": "ac6-demo-xbox360-pal",
+  "reference": {
+    "kind": "youtube-video",
+    "url": "https://www.youtube.com/watch?v=5nnpSTu5p_o",
+    "provided_by": "user",
+    "access_checked_at": "2026-08-15",
+    "access_result": "metadata-unavailable-from-current-environment"
+  },
+  "allowed_use": [
+    "visual milestone ordering",
+    "approximate presentation timing",
+    "manual comparison after guest-owned readback exists"
+  ],
+  "prohibited_use": [
+    "binary or ABI evidence",
+    "guest-state evidence",
+    "asset extraction or redistribution",
+    "replacement for deterministic replay validation"
+  ],
+  "milestones": [
+    "title",
+    "START transition",
+    "first gameplay frame",
+    "aircraft control",
+    "combat and objectives",
+    "mission result"
+  ],
+  "timestamps": "unknown"
+}

@@ -1,0 +1,97 @@
+{
+  "schema": "ac6-demo-queue-consumer-branch-rr/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "runtime": {
+    "root": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "max_ticks": 253,
+    "neutral_trace": {
+      "path": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/neutral.trace",
+      "events_sha256": "77014c9464e034dd7a709b1f37512ba6abca757b83724aecea6cf9e35c153fef",
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-neutral-queue-consumer-branch-gdb.log",
+      "gdb_log_sha256": "0212891977402e55c2381874d8d82b82294ead5674e403979431b8e21b3848aa",
+      "breakpoint_hits": {
+        "0x820FEA88": 0,
+        "0x8226D6A0": 0,
+        "0x8226E398": 0
+      }
+    },
+    "start_trace": {
+      "path": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/start.trace",
+      "events_sha256": "a11313387e8704ed1ca15728585f128736caffe5402dcb7da8eedc44ad73df9a",
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-start-queue-consumer-branch-gdb.log",
+      "gdb_log_sha256": "dab0f697ad6b701756d5daad19f32bf6405cc54de8c280e560227475edbd22a2",
+      "breakpoint_hits": {
+        "0x820FEA88": 0,
+        "0x8226D6A0": 0,
+        "0x8226E398": 0
+      }
+    }
+  },
+  "rr": {
+    "path": ".tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "probe_script": "recompilation/ace-combat-6-demo/tools/rr_queue_consumer_branch.gdb",
+    "probe_script_sha256": "1d0e2183a8c6e1eb2ef6619ee6da2f79ba0b200ea736a447b54974ef04912b65",
+    "read_only": true,
+    "terminal_signal": "SIGKILL at syscall_traced; not promoted as guest success"
+  },
+  "abi": {
+    "context_source": ".build/ac6-demo-codegen-atomic-1/ppc_context_base.h",
+    "register_offsets": {
+      "r3": "0x00",
+      "r0": "0x08",
+      "r1": "0x10",
+      "r2": "0x18",
+      "r4_to_r31": "0x20 + (reg-4)*8",
+      "lr": "0x100"
+    },
+    "entry": "0x820FEFA8",
+    "callee_breakpoints": ["0x820FEA88", "0x8226D6A0", "0x8226E398"]
+  },
+  "static_join": {
+    "generated_source": ".build/ac6-demo-codegen-atomic-1/generated/ppc_recomp.7.cpp",
+    "generated_source_sha256": "8b95cfc10189d3ebfde61210f78b837b145fd327c357c8177e12167f74f5a78b",
+    "entry_field_load": "lwz r11,64(r31)",
+    "branch_values": [1, 2, 3, 4],
+    "observed_field": "r31+0x40 == 0",
+    "default_target": "loc_820FF688",
+    "interpretation": "literal control-flow cross-match only; no semantic name promoted"
+  },
+  "classification": {
+    "demo-qualified": [
+      "same-build neutral/START rr replay and exact breakpoint inventory",
+      "corrected PPCContext ABI used by the probe",
+      "zero hits for all three armed callees in both traces"
+    ],
+    "demo-observed": [
+      "0x820FEFA8 receives a non-null stack object at tick 252",
+      "bounded object field r31+0x40 was zero in the preceding A/B probe",
+      "the three callee entry points were not reached in the probed replays"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "queue payload and consumer semantics",
+      "guest frontbuffer consumer and pixels",
+      "frontend, mission and terminal result"
+    ]
+  },
+  "guard": {
+    "require_correct_ppc_context_layout": true,
+    "require_same_build_ab": true,
+    "read_only": true,
+    "bounded_object_range": "[r3,r3+0x60)",
+    "bounded_slot_range": "[0x82386D90,0x82386E30)",
+    "on_out_of_range_or_divergence": "stop and retain unknown",
+    "synthetic_state_write": false,
+    "range_resynchronization": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schema": "ac6-demo-xma-mmio-store-pc-correction/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "static": {
+    "basefile_length": 10420224,
+    "range_start": "0x823572AC",
+    "range_end_exclusive": "0x823572E0",
+    "range_sha256": "5211109b1ef5928b6c967f88c116a07cc2fc3abb0f1db1288c787bd2e99c53a4",
+    "instructions": [
+      {"pc": "0x823572A8", "bytes": "48 01 ED 7D", "operation": "bl MmGetPhysicalAddress"},
+      {"pc": "0x823572AC", "bytes": "81 7C A5 2C", "operation": "lwz r11,-23252(r28)", "role": "runtime LR return target"},
+      {"pc": "0x823572D8", "bytes": "7D 60 55 2C", "operation": "stwbrx r11,0,r10", "role": "first unknown MMIO store"},
+      {"pc": "0x823572DC", "bytes": "7C 00 06 AC", "operation": "eieio"}
+    ],
+    "generated_source": {
+      "path": ".build/ac6-demo-atomic-runtime-1/codegen/generated/ppc_recomp.48.cpp",
+      "sha256": "df90d3db8752bd32f26e0060a8d2e9c58dd38ccb4c212cddc71b87078454eaca",
+      "role": "literal control-flow cross-match only"
+    }
+  },
+  "dynamic": {
+    "runs": ["cycle1712 neutral", "cycle1712 START"],
+    "thread": 21,
+    "tick": 1048,
+    "runtime_lr": "0x823572AC",
+    "runtime_lr_role": "return PC after MmGetPhysicalAddress",
+    "store_pc_static": "0x823572D8",
+    "store_address": "0x7FEA31E0",
+    "register_index": "0x0C78",
+    "logical_r11": "0x00000001",
+    "generated_store_argument": "0x01000000",
+    "effect": "trap_before_effect"
+  },
+  "classification": {
+    "demo-qualified": ["PAL instruction bytes", "MMIO address/index", "trap LR/tick/thread", "neutral/START equality"],
+    "demo-observed": ["opt-in attempted store"],
+    "xenia-generic": ["generic XMA table boundary"],
+    "unknown": ["register semantics", "hardware endian effect", "XMA packet/PCM consumer"]
+  },
+  "guard": {
+    "default_xmacreate_traps": true,
+    "no_runtime_source_change": true,
+    "no_xenia_or_rexglue_change": true,
+    "no_retail_merge": true,
+    "no_audio_decode": true,
+    "no_readback_or_screencap_promotion": true
+  },
+  "next_checkpoint": "qualify PAL register 0x0C78 with independent read/write/effect evidence or retain ordinal-548 trap"
+}

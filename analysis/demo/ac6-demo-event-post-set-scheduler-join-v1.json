@@ -1,0 +1,123 @@
+{
+  "schema": "ac6-demo-event-post-set-scheduler-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "inputs": {
+    "store_seed": ".build/ac6-demo-store-test-3",
+    "neutral_store": "/fastdata/lavaulta/tmp/ac6-demo-event-post-set-sched-joined.gAvf8r/neutral-store",
+    "start_store": "/fastdata/lavaulta/tmp/ac6-demo-event-post-set-sched-joined.gAvf8r/start-store",
+    "neutral_trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+    "start_trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+    "neutral_report_sha256": "a11feac6f2df648d6b8a82cc2048d0b16ea37f308a2753858f6eafceab2a4340",
+    "start_report_sha256": "c74ca0ea7733fe49f0ee5440c73e414737f7fa3cf8e83dc39b95012e30112593",
+    "neutral_stderr_sha256": "3a082f4831a084c7f0739d5b54cc0e6ed4f0113c1becedbbe0d8eb2ebcf94c9a",
+    "start_stderr_sha256": "3a082f4831a084c7f0739d5b54cc0e6ed4f0113c1becedbbe0d8eb2ebcf94c9a",
+    "post_set_schedule_rows_sha256": "ebf80c87c8f5524ea25d364bab109585594ebbcdaba7dd934ac6ae0a2792537a",
+    "max_ticks": 300,
+    "start_input": "tick 252, buttons 0x0010, connected"
+  },
+  "instrumentation": {
+    "hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_post_set_trace.hpp",
+    "hook_sha256": "0efae7a6cd833f09ec7b264e708790063e688405f1eb365a27622c384dc86e9f",
+    "scheduler_source": "recompilation/ace-combat-6-demo/src/guest_bridge/scheduler.hpp",
+    "scheduler_source_sha256": "68965cdcc7accb1a808a3886626a1b7b3375019aaa2d92c6ec8cbb26554f37df",
+    "bridge_source_sha256": "e5227d3372782cd403af837941102edcaee2e199857b1020da18e16ceae87eb0",
+    "runtime_binary_sha256": "fccd4d03ad1f5738f19986ea0cc49ea1373e64b50410e8d6aba8cbf1e6e18d02",
+    "environment": [
+      "AC6_DEMO_WATCH_EVENT_HANDOFF=1",
+      "AC6_DEMO_WATCH_EVENT_HANDOFF_FOCUSED=1",
+      "AC6_DEMO_WATCH_EVENT_POST_SET=1"
+    ],
+    "read_only": true,
+    "default_enabled": false,
+    "generated_cpp_modified": false
+  },
+  "runs": {
+    "neutral": {
+      "completed_ticks": 300,
+      "set_enter_e000004c": 351,
+      "event_wake_e000004c": 351,
+      "post_set_schedule_rows": 351,
+      "schedule_tick_delta_zero": 351,
+      "entry_counts": {
+        "0x821A7160": 53,
+        "0x821C4970": 149,
+        "0x82320560": 97,
+        "0x822EE158": 39,
+        "0x821A1D10": 13
+      },
+      "set_thread_counts": {"1": 52, "12": 299},
+      "resume_thread_counts": {"1": 53, "9": 13, "14": 39, "18": 149, "21": 97},
+      "event_wake_to_schedule_equal": true,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "completed_ticks": 300,
+      "set_enter_e000004c": 351,
+      "event_wake_e000004c": 351,
+      "post_set_schedule_rows": 351,
+      "schedule_tick_delta_zero": 351,
+      "entry_counts": {
+        "0x821A7160": 53,
+        "0x821C4970": 149,
+        "0x82320560": 97,
+        "0x822EE158": 39,
+        "0x821A1D10": 13
+      },
+      "set_thread_counts": {"1": 52, "12": 299},
+      "resume_thread_counts": {"1": 53, "9": 13, "14": 39, "18": 149, "21": 97},
+      "event_wake_to_schedule_equal": true,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "static_join": {
+    "project": "ace-combat-6-demo",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "entries": [
+      {"address": "0x821A7160", "size": "0x000001C0", "byte_sha256": "7840b8e8f4ab43a4911d5c5cd2602d43cac579a1c559db5185d39efe31b175b5", "pseudocode_sha256": "f7ce5332f0c18fa4beb2189ed44f23d0e39171882e25a1bb9632fcb980ee7263"},
+      {"address": "0x821C4970", "size": "0x000000EC", "byte_sha256": "1322ae24c6f129e7fa561afdf16518d831cc97220d640727066a74cb6da3ee2b", "pseudocode_sha256": "9d681b912bd0f901ecafe03357a42a2d4ae60c07d02cc7d5041749b9b88162d2"},
+      {"address": "0x82320560", "size": "0x0000009C", "byte_sha256": "8bc388e683fa6b8e0ff95d151d6028967f34c03e4bd3db06f7b0b855dbaffdb0", "pseudocode_sha256": "330c1ccd85e1267f133e9403a4f4142964f52b1534cb4ca8f6697776277e9f56"},
+      {"address": "0x822EE158", "size": "0x00000040", "byte_sha256": "b74b5e202116f6d6620224d717a66be548e33a341ca977fa409277d2f434ab37", "pseudocode_sha256": "dc4a21c3c20c75bb8f6948b89d511eb9696f035fb4bd98c6b44d22807095551b"},
+      {"address": "0x821A1D10", "size": "0x000000F8", "byte_sha256": "3d8036a5410ef503eee03cf5b18fb5be00329b11a0246d9290ff1d9d98acb046", "pseudocode_sha256": "c24259579b5aefa2056cce5092fbb627a23a84defeabdde221436aa967581481"}
+    ],
+    "roles": "unknown"
+  },
+  "classification": {
+    "demo-qualified": [
+      "E000004C set_enter→event_wake→scheduler activation joins 351/351 per route",
+      "resume_tick equals set_tick for all 351 rows per route",
+      "entry/startup/parameter fields and PAL byte hashes are exact",
+      "neutral/START stderr and normalized post-set rows are byte-identical"
+    ],
+    "demo-observed": [
+      "five scheduler activation families and their thread distributions"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantic role of each resumed function and parameter",
+      "first guest store/load after activation",
+      "scheduler-to-Xenos queue causality, frontend, mission and pixels"
+    ]
+  },
+  "policy": {
+    "runtime_behavior_changed": false,
+    "retail_evidence_fused": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_assets_tracked": false,
+    "readback_promoted": false,
+    "fail_closed": true
+  }
+}

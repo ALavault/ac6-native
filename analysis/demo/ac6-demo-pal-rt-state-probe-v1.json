@@ -1,0 +1,138 @@
+{
+  "schema": "ac6-demo-pal-rt-state-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "classification": "demo-observed",
+    "read_only": true,
+    "route": "neutral",
+    "fresh_store": true,
+    "backend": "vulkan",
+    "max_ticks": 253,
+    "instrumentation": "AC6_DEMO_WATCH_RESOLVE=1",
+    "run_dir": "/fastdata/lavaulta/tmp/ac6-cycle1738-raw.ou1mcX",
+    "binary_sha256": "89ae75b98145d46407db70909529fcb269055bfdb62d7e2027ae04a56966a27b",
+    "stdout_sha256": "933597e9835126f33e72bb4570cd14603e6ffc0f2ac2431db0ee8eb0fe45e2c0",
+    "stderr_sha256": "3df64ed24e0f383601d75c30506dae3cc8ce8aa5fd282f8c678ec7831796c884",
+    "return_code": 0
+  },
+  "start_control": {
+    "classification": "demo-observed",
+    "route": "START",
+    "fresh_store": true,
+    "run_dir": "/fastdata/lavaulta/tmp/ac6-cycle1738-start.0y3Bzs",
+    "stdout_sha256": "933597e9835126f33e72bb4570cd14603e6ffc0f2ac2431db0ee8eb0fe45e2c0",
+    "stderr_sha256": "3df64ed24e0f383601d75c30506dae3cc8ce8aa5fd282f8c678ec7831796c884",
+    "raw_state_stderr_byte_identical_to_neutral": true,
+    "renderer_stdout_byte_identical_to_neutral": true,
+    "readback_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "raw_register_snapshots": [
+    {
+      "tick": 0,
+      "draw_mode": "0x00000004",
+      "fetch0": "0x127CA03F",
+      "fetch1": "0x10000056",
+      "rb_surface_info": "0x0A020280",
+      "rb_color_info_0": "0x00000000",
+      "rb_color_info_1": "0x00000000",
+      "rb_color_info_2": "0x00000000",
+      "rb_color_info_3": "0x00000000",
+      "rb_depth_info": "0x000102D0",
+      "screen_scissor_tl": "0x00000000",
+      "screen_scissor_br": "0x20002000",
+      "vport_xscale": "0x44200000",
+      "vport_xoffset": "0x44200000",
+      "vport_yscale": "0xC3B40000",
+      "vport_yoffset": "0x43B40000",
+      "rb_color_mask": "0x0000FFFF",
+      "rb_depth_control": "0x00008777",
+      "pa_cl_clip_control": "0x00010000",
+      "pa_cl_vte_control": "0x00000300",
+      "rb_copy_control": "0x00000000",
+      "rb_copy_dest_base": "0x00000000",
+      "rb_copy_dest_pitch": "0x00000000",
+      "rb_copy_dest_info": "0x00000000"
+    },
+    {
+      "tick": 1,
+      "draw_mode": "0x00000006",
+      "fetch0": "0x127CA093",
+      "fetch1": "0x1000001A",
+      "rb_surface_info": "0x14000500",
+      "rb_color_info_0": "0x00000000",
+      "rb_color_info_1": "0x00000000",
+      "rb_color_info_2": "0x00000000",
+      "rb_color_info_3": "0x00000000",
+      "rb_depth_info": "0x000102D0",
+      "screen_scissor_tl": "0x00000000",
+      "screen_scissor_br": "0x20002000",
+      "vport_xscale": "0x44200000",
+      "vport_xoffset": "0x44200000",
+      "vport_yscale": "0xC3B40000",
+      "vport_yoffset": "0x43B40000",
+      "rb_color_mask": "0x0000000F",
+      "rb_depth_control": "0x00000000",
+      "pa_cl_clip_control": "0x00010000",
+      "pa_cl_vte_control": "0x00000300",
+      "rb_copy_control": "0x00100000",
+      "rb_copy_dest_base": "0x1374A000",
+      "rb_copy_dest_pitch": "0x02D00500",
+      "rb_copy_dest_info": "0x01000300"
+    }
+  ],
+  "generic_decode": {
+    "authority": "xenia-generic",
+    "source": "ReXGlue registers.h, checkout cb58065c793429aa92895d778af58d12e9d26d8f",
+    "source_sha256": "not copied into demo evidence",
+    "rb_surface_info": {
+      "normal": {"surface_pitch_pixels": 640, "msaa": "k4X", "hiz_pitch": 640},
+      "resolve": {"surface_pitch_pixels": 1280, "msaa": "k1X", "hiz_pitch": 1280}
+    },
+    "rb_depth_info": {"depth_base_tiles": 720, "depth_format_raw": 1},
+    "viewport_ieee754": {"x_scale": 640.0, "x_offset": 640.0, "y_scale": -360.0, "y_offset": 360.0},
+    "screen_scissor": {"tl": [0, 0], "br": [8192, 8192], "window_scissor": "not captured by this probe"},
+    "rb_copy_control": {"copy_src_select": 0, "copy_sample_select": 0, "color_clear": 0, "depth_clear": 0, "copy_command_raw": 1, "copy_command_generic": "kConvert"},
+    "rb_copy_dest_pitch": {"pitch_pixels": 1280, "height_pixels": 720},
+    "rb_copy_dest_info": {"endian128": 0, "array": 0, "slice": 0, "format_raw": 6, "number_format": 0, "exp_bias": 0, "swap": 1}
+  },
+  "renderer_observation": {
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "guest_linear_readback_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "guest_writeback": true
+  },
+  "classification": {
+    "demo_observed": [
+      "raw register snapshots at the normal and resolve rectangle draws",
+      "guest destination address, pitch/info words and neutral black readbacks"
+    ],
+    "demo_qualified": [],
+    "xenia_generic": [
+      "bitfield decoding of RB_SURFACE_INFO, RB_DEPTH_INFO and RB_COPY_*",
+      "IEEE-754 decoding of viewport registers"
+    ],
+    "unknown": [
+      "non-zero EDRAM source and first writer before RB_COPY",
+      "semantic color/depth layout implied by color-info zero and depth format raw 1",
+      "final window scissor state and exact raster coverage",
+      "whether the generic copy command reproduces the PAL pixels",
+      "frontend pixels, audio PCM and mission state"
+    ]
+  },
+  "guards": {
+    "opt_in_only": true,
+    "default_path_changed": false,
+    "synthetic_fallback": false,
+    "retail_evidence_merged": false,
+    "external_checkouts_modified": false,
+    "fail_closed": true,
+    "screencap_qualified": false
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "schema": "ac6-demo-pm4-opaque-registers/v2",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "authority": {
+    "parser_source": "recompilation/ace-combat-6-demo/src/xenos_command_processor.cpp",
+    "parser_source_sha256": "7a52ca99de7058e08282d8e97b3dd454295dd51d720925441da11f86281507a8",
+    "inventory_tool": "recompilation/ace-combat-6-demo/tools/inventory_pm4_report.py",
+    "inventory_tool_sha256": "3807be84761d48893dde2cbff6c1adbe9b467c4fd434dc0359731d67980ff906",
+    "register_table": ".tools/rexglue-upstream-reference/include/rex/graphics/register_table.inc",
+    "register_table_sha256": "c9dfdbfe72763051736230850ee92eaf73b7e2e9be328ac8b83df7d3b5aa9e53",
+    "register_authority": "generic Xenos table only; not AC6 binary evidence"
+  },
+  "binary": {
+    "codegen_on_executable_sha256": "a4a5b57f2aaf7404fe2a84f8f7ef34a974b1304c14f81de8021271d183957811",
+    "codegen_manifest_sha256": "ae57c86869c556f17c7eee3f9d781d19943d20bf2599abbe201ac88954bda185",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "boundary_config_sha256": "398df89740579bcc3475264139453a67b8b3ddc9b4826d4a2e9de9c0361d2480"
+  },
+  "fresh_ab": {
+    "neutral": {
+      "source_report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79",
+      "trace_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+      "return_code": 4,
+      "completed_ticks": 253,
+      "present_notifications": 116,
+      "frontier": "scheduler activation budget exhausted before frontend milestone"
+    },
+    "start": {
+      "source_report_sha256": "0f66d089f0656be4c79f0cd9b101f194d27ba6cefcd91e49e60ca2dfa10d564e",
+      "trace_sha256": "31553733582cf7345375d8f197a28645621e488700f2a31b7e883b66109360b2",
+      "input": "--input-at 252,16,0,0,0,0,0,0,1",
+      "return_code": 4,
+      "completed_ticks": 253,
+      "present_notifications": 116,
+      "frontier": "scheduler activation budget exhausted before frontend milestone"
+    },
+    "comparison": {
+      "graphics_equal": true,
+      "ring_equal": true,
+      "ib_hashes_equal": true,
+      "typed_commands_equal": true,
+      "effects_equal": true,
+      "trace_equal": false,
+      "trace_difference_explained_by_input": true,
+      "neutral_before_start": true
+    }
+  },
+  "ring_and_ib": {
+    "base": "0x126CA000",
+    "capacity_dwords": 131072,
+    "read_pointer": 7,
+    "write_pointer": 25,
+    "submissions": 2,
+    "intermediate_ib": {
+      "address": "0x127CA0C0",
+      "dword_count": 11,
+      "sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0"
+    },
+    "main_ib": {
+      "address": "0x1274A000",
+      "dword_count": 3029,
+      "packet_count": 871,
+      "sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "packet_types": {"type0": 338, "type2": 252, "type3": 281},
+      "first_unknown": null
+    }
+  },
+  "opaque_register_packet": {
+    "ib_address": "0x1274A000",
+    "offset_dword": 2,
+    "header": "0x00030A02",
+    "type": 0,
+    "count": 4,
+    "packet_sha256": "e4356ed3872ca5140b95f76c486a038a799b827210477111f45d4f6785947312",
+    "payload_sha256": "dc30c314ce60dbdce270ce057b8c57cc40b5f92e5cfe51bef41191ad5f662942",
+    "writes": [
+      {"index": "0x0A02", "value": "0xC0100000", "status": "opaque-storage-qualified"},
+      {"index": "0x0A03", "value": "0x07F00000", "status": "opaque-storage-qualified"},
+      {"index": "0x0A04", "value": "0xC0000000", "status": "opaque-storage-qualified"},
+      {"index": "0x0A05", "value": "0x00100000", "status": "opaque-storage-qualified"}
+    ],
+    "semantics": "ordinary transactional register-file storage only; register names and hardware effects remain unknown",
+    "negative_guard": "any other value at these indices traps before commit"
+  },
+  "reached_commands": {
+    "shader_load_count": 5,
+    "shader_hashes_only": [
+      "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+      "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+      "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+      "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0"
+    ],
+    "draw_count": 26,
+    "present_count": 1,
+    "frontbuffer": {
+      "address": "0x1374A000",
+      "format": 6,
+      "tiled": true,
+      "width": 1280,
+      "height": 720
+    },
+    "effects": {
+      "scratch_writeback": 6,
+      "register_rmw": 4,
+      "wait_reg_mem": 10,
+      "conditional_write": 256,
+      "event_write": 1,
+      "interrupt": 1,
+      "event_write_shader_done": 4,
+      "invalidate_state": 5,
+      "micro_engine_init": 2,
+      "memory_write_count": 10,
+      "synchronous_effects_qualified": true
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "fresh neutral and START exact main/intermediate IB identities",
+      "exact 0x0A02..0x0A05 values admitted as transactional opaque storage",
+      "exact packet consumption and reached command counts",
+      "frontbuffer resource metadata and XE_SWAP ordering"
+    ],
+    "demo-observed": [
+      "neutral/START codegen-ON probes reach 253 ticks and 116 PRESENT",
+      "five immediate shader identities, 26 draws and one present"
+    ],
+    "xenia-generic": [
+      "ordinary register-file storage model and register-table names"
+    ],
+    "unknown": [
+      "hardware semantics of 0x0A02..0x0A05",
+      "EDRAM contents and guest-owned pixels",
+      "frontend/menu state and mission result",
+      "XMA effect, packets and audio consumer"
+    ]
+  },
+  "policy": {
+    "microcode_or_spirv_tracked": false,
+    "retail_evidence_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_or_xenia_modified": false,
+    "play_fallback_added": false,
+    "frontend_promoted": false,
+    "fail_closed_on_unseen_register_value": true,
+    "guest_owned_pixels_qualified": false
+  }
+}

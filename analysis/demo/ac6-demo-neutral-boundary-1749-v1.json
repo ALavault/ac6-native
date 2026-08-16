@@ -1,0 +1,60 @@
+{
+  "schema": "ac6-demo-neutral-boundary/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "closed_boundary": {
+    "entry": "0x8236E550",
+    "size": "0x08",
+    "bytes_hex": "3863FFFC48000144",
+    "byte_sha256": "76b7caa54b8a23c66e70cad1effbddbf18ead2727a7a739e27a06d6107bfd210",
+    "caller_pc": "0x8236E584",
+    "caller_lr": "0x8236E588",
+    "first_tick": 5049,
+    "thread": 21,
+    "shape": "addi r3,r3,-4; tail branch to 0x8236E698",
+    "role": "unknown"
+  },
+  "atlas": {
+    "function_count": 12876,
+    "configured_function_records": 154,
+    "confirmed_functions": 118,
+    "classified_text_bytes": 3041220,
+    "text_bytes": 3041220,
+    "fresh_exports": 2,
+    "byte_identical": true,
+    "sha256": "b9728fde73e99d46bcc104fca565885948f15d031edf7f9c390eb8c24df40e3c"
+  },
+  "proof": {
+    "report_sha256": "cf1e657844d2e7512a0d0529c8d1f23079e1febfd678e45934849fdd94e47afa",
+    "trace_sha256": "6f82300f92f6611c2bcfe67035a740475c27e722567cd33a190b9dadf4ba5ed0",
+    "completed_ticks": 5052,
+    "presents": 4915,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "next_frontier": {
+    "kind": "runtime",
+    "description": "fourth observed XMA context-kick write",
+    "address": "0x7FEA1A80",
+    "wire_value": "0x08000000",
+    "logical_bit": "0x00000008",
+    "context": "0x2E8000C0",
+    "caller_lr": "0x823572AC",
+    "tick": 5052,
+    "thread": 21
+  },
+  "artifacts": {
+    "binary_sha256": "678e2a2ed59739e044aa06d26b339057a46d5989481551bcf848d18477c4a34c",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa"
+  },
+  "unknown": [
+    "semantic role of the adjustment thunk",
+    "hardware effect and consumer of logical XMA bit 3",
+    "decoded packets and audible samples",
+    "frontend, non-black pixels and mission result"
+  ]
+}

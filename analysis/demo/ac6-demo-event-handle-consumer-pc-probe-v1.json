@@ -1,0 +1,214 @@
+{
+  "schema": "ac6-demo-event-handle-consumer-pc-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "instrumentation": {
+    "consumer_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handle_consumer_trace.hpp",
+    "consumer_hook_sha256": "85fe030919a704d81db398324c4f5b51ecb0719938624b47b2c547a397ad875e",
+    "load_site_adapter": "recompilation/ace-combat-6-demo/tools/ppc_context_adapter.h",
+    "load_site_adapter_sha256": "45217e58b52c86a86a3f68a4381a43724fa2fad352119563df753ee0224636c8",
+    "bridge_source_sha256": "57f53b873c579f6f6c3db831379676fea226f604c6503d1ea4f940e3755cd324",
+    "runtime_binary_sha256": "6042df424b89219e56f481d2c79ed73393229ca8ac23ba5e72ac012a2e67b886",
+    "site_setter": "AC6_PPC_SET_LOAD_SITE(__func__, __LINE__)",
+    "environment": "AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS=1",
+    "default_enabled": false,
+    "read_only": true,
+    "generated_cpp_modified": false
+  },
+  "mapper": {
+    "tool": "recompilation/ace-combat-6-demo/tools/map_generated_guest_load_sites.py",
+    "tool_sha256": "ceadfb57007ddadb5ec894bc8c69df873ca2c8786129fb8682a796aac6e80b1d",
+    "output_schema": "ac6-demo-generated-guest-load-map/v1",
+    "basefile_bytes_checked": true,
+    "instruction_comments_counted": true,
+    "fail_closed_on_missing_or_ambiguous_site": true,
+    "neutral_map_sha256": "eea89f3b84ee8256e780812182e4cea0126f5e6f6dab56ca875f932fe1309f95",
+    "start_map_sha256": "2af4a64ec0e14a28ae5db546d407736353e4af73c7e29fb2d0df3ce60ab43872"
+  },
+  "runs": {
+    "neutral": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "none",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+      "report_sha256": "c931a747e1cabf2aac8e7eee426b08f5033c74e327480064882e5b3ed7cd9df1",
+      "stderr_sha256": "7cd4324e17950428dfd2aad4f91a98f05b0343258d136da6020a8273b9b8432c",
+      "consumer_rows": 3927,
+      "mapped_rows": 3927,
+      "unique_guest_load_sites": 64,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "tick 252, buttons 0x0010, connected",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+      "report_sha256": "51a2c2ce232f22c062800c73fdcaad1ce1c4cfa990aa4ced0f1bc6512de95161",
+      "stderr_sha256": "7cd4324e17950428dfd2aad4f91a98f05b0343258d136da6020a8273b9b8432c",
+      "consumer_rows": 3927,
+      "mapped_rows": 3927,
+      "unique_guest_load_sites": 64,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "exact_guest_load_sites": [
+    {
+      "guest_pc": "0x821A6364",
+      "instruction_bytes": "80 61 00 50",
+      "instruction": "lwz r3,80(r1)",
+      "function": "sub_821A62F0",
+      "generated_source": "ppc_recomp.18.cpp:10515",
+      "count": 75,
+      "values": ["0xE0000000", "0xE0000004", "0xE0000048", "0xE000004C", "0xE0000054", "0xE0000058"]
+    },
+    {
+      "guest_pc": "0x821A8D14",
+      "instruction_bytes": "80 61 00 50",
+      "instruction": "lwz r3,80(r1)",
+      "function": "sub_821A8CB8",
+      "generated_source": "ppc_recomp.18.cpp:16986",
+      "count": 22,
+      "values": ["0xE1000000", "0xE1000004", "0xE1000008", "0xE100000C"]
+    },
+    {
+      "guest_pc": "0x822EEE30",
+      "instruction_bytes": "80 7F 00 00",
+      "instruction": "lwz r3,0(r31)",
+      "function": "sub_822EEE10",
+      "generated_source": "ppc_recomp.38.cpp:4674",
+      "count": 456,
+      "addresses": ["0x82934748", "0x82933F98"],
+      "values": ["0xE0000048", "0xE0000054"]
+    },
+    {
+      "guest_pc": "0x822EEE38",
+      "instruction_bytes": "80 7F 00 00",
+      "instruction": "lwz r3,0(r31)",
+      "function": "sub_822EEE10",
+      "generated_source": "ppc_recomp.38.cpp:4679",
+      "count": 456,
+      "addresses": ["0x82934748", "0x82933F98"],
+      "values": ["0xE0000048", "0xE0000054"]
+    },
+    {
+      "guest_pc": "0x822EEE44",
+      "instruction_bytes": "80 7F 00 04",
+      "instruction": "lwz r3,4(r31)",
+      "function": "sub_822EEE10",
+      "generated_source": "ppc_recomp.38.cpp:4686",
+      "count": 456,
+      "addresses": ["0x8293474C", "0x82933F9C"],
+      "values": ["0xE000004C", "0xE0000058"]
+    },
+    {
+      "guest_pc": "0x822EEE88",
+      "instruction_bytes": "80 9F 00 04",
+      "instruction": "lwz r4,4(r31)",
+      "function": "sub_822EEE68",
+      "generated_source": "ppc_recomp.38.cpp:4729",
+      "count": 106,
+      "addresses": ["0x82933F9C"],
+      "values": ["0xE0000058"]
+    },
+    {
+      "guest_pc": "0x822EEE98",
+      "instruction_bytes": "80 7F 00 00",
+      "instruction": "lwz r3,0(r31)",
+      "function": "sub_822EEE68",
+      "generated_source": "ppc_recomp.38.cpp:4739",
+      "count": 211,
+      "addresses": ["0x82933F98"],
+      "values": ["0xE0000054"]
+    },
+    {
+      "guest_pc": "0x822EEEA4",
+      "instruction_bytes": "80 7F 00 00",
+      "instruction": "lwz r3,0(r31)",
+      "function": "sub_822EEE68",
+      "generated_source": "ppc_recomp.38.cpp:4746",
+      "count": 211,
+      "addresses": ["0x82933F98"],
+      "values": ["0xE0000054"]
+    },
+    {
+      "guest_pc": "0x822E409C",
+      "instruction_bytes": "80 7F 00 00",
+      "instruction": "lwz r3,0(r31)",
+      "function": "sub_822E4080",
+      "generated_source": "ppc_recomp.36.cpp:14379",
+      "count": 153,
+      "addresses": ["0x82934748"],
+      "values": ["0xE0000048"]
+    },
+    {
+      "guest_pc": "0x822E40B8",
+      "instruction_bytes": "80 7F 00 00",
+      "instruction": "lwz r3,0(r31)",
+      "function": "sub_822E4080",
+      "generated_source": "ppc_recomp.36.cpp:14395",
+      "count": 153,
+      "addresses": ["0x82934748"],
+      "values": ["0xE0000048"]
+    },
+    {
+      "guest_pc": "0x822E40C8",
+      "instruction_bytes": "80 9F 00 04",
+      "instruction": "lwz r4,4(r31)",
+      "function": "sub_822E4080",
+      "generated_source": "ppc_recomp.36.cpp:14404",
+      "count": 101,
+      "addresses": ["0x8293474C"],
+      "values": ["0xE000004C"]
+    }
+  ],
+  "joins": {
+    "writer_capsule": "analysis/demo/ac6-demo-event-handle-writer-probe-v1.json",
+    "writer_sites": 25,
+    "writer_rows_per_run": 163,
+    "consumer_payload_semantics": "unknown",
+    "context_lr_is_exact_guest_pc": false,
+    "generated_source_map_is_exact_guest_pc": true
+  },
+  "ab_comparison": {
+    "consumer_rows_equal": true,
+    "mapped_rows_equal": true,
+    "site_set_equal": true,
+    "stderr_sha256_equal": true,
+    "start_transition_promoted": false,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "3,927/3,927 rows mapped to 64 exact guest load PCs",
+      "four PAL instruction bytes checked at each mapped site",
+      "neutral/START stream and site set byte-identical"
+    ],
+    "demo-observed": ["context LR, handle values, ticks and threads"],
+    "xenia-generic": ["F800 handle and POSIX wait interpretation"],
+    "unknown": ["PAL object type", "writer-to-consumer payload semantics", "frontend causality"]
+  },
+  "policy": {
+    "runtime_behavior_changed": false,
+    "readback_promoted": false,
+    "retail_evidence_fused": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_assets_tracked": false,
+    "fail_closed": true
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "schema": "ac6-demo-xma-late-aperture/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "mode": "direct-read-only-probe",
+    "max_ticks": 1050,
+    "fresh_store_per_route": true,
+    "experimental_xma_create": true,
+    "watch_xma_late": true,
+    "rr_reexecuted": false,
+    "temporary_directory": "/fastdata/lavaulta/tmp/ac6-cycle1720-final.8PoMxE",
+    "binary_sha256": "d80c12c25729d4f008d7471ea73c7ca07850f652a79560d5c5b28bfbb25c9edb",
+    "source_files": {
+      "xma_import_trace_hpp_sha256": "7aa156f8d9eae07ad525987d3667297db9eb3c9d4a1203bc910cf6831c5aea00",
+      "guest_bridge_cpp_sha256": "ca9187fa622151366ef83b9115167487a62c6d533d7a99450874da6464d5a7c0"
+    }
+  },
+  "watched_ranges": [
+    {"source_guest_pc": "0x82357310", "base": "0x7FEA1A40", "end_exclusive": "0x7FEA3A40", "meaning": "unknown PAL address family"},
+    {"source_guest_pc": "0x823575A8", "base": "0x7FEA1940", "end_exclusive": "0x7FEA3940", "meaning": "unknown PAL address family"},
+    {"source_guest_pc": "fixed", "base": "0x7FEA1804", "end_exclusive": "0x7FEA1808", "meaning": "unknown fixed access"},
+    {"source_guest_pc": "fixed", "base": "0x7FEA1818", "end_exclusive": "0x7FEA181C", "meaning": "unknown fixed access"}
+  ],
+  "routes": {
+    "neutral": {
+      "input": "none",
+      "return_code": 3,
+      "completed_ticks": 1048,
+      "presents": 911,
+      "rtply_sha256": "ab54c75ebccfdf3a41a840ab691a728e1d120a7616cca98a5f6ff42fa804fc43",
+      "report_sha256": "ec64edad8c9d8657e25390c12ae4c2d7d1f2f1a3d351e059ddc16ed714011219",
+      "stderr_sha256": "c1423f545587d0e696d3bfa35605e390763cca044ee741991da06761f9ad85ad",
+      "late_accesses": [
+        {"op": "store32", "address": "0x7FEA1A80", "size": 4, "value_wire": "0x01000000", "pc": "0x82357240", "lr": "0x823572AC", "thread": 21, "tick": 1048, "function": "__imp__sub_82357240", "line": 14268}
+      ],
+      "fixed_1804_hits": 0,
+      "fixed_1818_hits": 0
+    },
+    "start": {
+      "input": "252,16,0,0,0,0,0,0,1",
+      "return_code": 3,
+      "completed_ticks": 1048,
+      "presents": 911,
+      "rtply_sha256": "2ce0a717f8d3df56aa87644d7fc9624f5e02b1020a0b5eeaf0992f6877db417f",
+      "report_sha256": "18ba4ec3fcf27338b465d02c40972f653aba415eab9d173abc4002c186f518ed",
+      "stderr_sha256": "c1423f545587d0e696d3bfa35605e390763cca044ee741991da06761f9ad85ad",
+      "late_accesses": [
+        {"op": "store32", "address": "0x7FEA1A80", "size": 4, "value_wire": "0x01000000", "pc": "0x82357240", "lr": "0x823572AC", "thread": 21, "tick": 1048, "function": "__imp__sub_82357240", "line": 14268}
+      ],
+      "fixed_1804_hits": 0,
+      "fixed_1818_hits": 0
+    }
+  },
+  "comparison": {
+    "frontier_equal": true,
+    "late_access_stream_equal": true,
+    "rtply_differs_only_by_input": true,
+    "effect_observed": false,
+    "first_unknown": "XMA store effect at 0x7FEA1A80"
+  },
+  "classification": {
+    "demo-qualified": [
+      "XEX/basefile identity",
+      "late aperture bounds",
+      "neutral/START access PC-LR-thread-tick-value and trap frontier",
+      "no fixed 0x7FEA1804/0x7FEA1818 access before the trap"
+    ],
+    "demo-observed": ["one attempted store to 0x7FEA1A80 per route"],
+    "xenia-generic": [],
+    "unknown": ["register semantics", "XMA effect", "packets", "PCM/audio", "pixels", "frontend", "mission"]
+  },
+  "policy": {
+    "read_only": true,
+    "mmio_mapping_added": false,
+    "production_route_changed": false,
+    "retail_evidence_merged": false,
+    "system_rr_used": false,
+    "generated_cpp_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "fail_closed": true,
+    "screencap_promoted": false
+  }
+}

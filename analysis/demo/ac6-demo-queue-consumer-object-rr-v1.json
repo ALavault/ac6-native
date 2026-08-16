@@ -1,0 +1,112 @@
+{
+  "schema": "ac6-demo-queue-consumer-object-rr/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "runtime": {
+    "root": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "max_ticks": 253,
+    "neutral": {
+      "trace": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/neutral.trace",
+      "events_sha256": "77014c9464e034dd7a709b1f37512ba6abca757b83724aecea6cf9e35c153fef",
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-neutral-queue-consumer-object-gdb.log",
+      "gdb_log_sha256": "da3677ab0264b6d1a54cd2d3cddf4fb1e9add57c4a5e82456eaa1991b80df25f"
+    },
+    "start": {
+      "trace": "/fastdata/lavaulta/tmp/ac6-demo-atomic-rr-noinline.12070/start.trace",
+      "events_sha256": "a11313387e8704ed1ca15728585f128736caffe5402dcb7da8eedc44ad73df9a",
+      "gdb_log": "/fastdata/lavaulta/tmp/ac6-start-queue-consumer-object-gdb.log",
+      "gdb_log_sha256": "ba29f33ff532459605095e41342789d0c9b57486aade885c7f9ecb0a9d7bec67"
+    }
+  },
+  "rr": {
+    "path": ".tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "probe_script": "recompilation/ace-combat-6-demo/tools/rr_queue_consumer_object.gdb",
+    "probe_script_sha256": "f0adfdd2b3452cc5ae82821a442fb30837121673d440039c219e796d0d4e8bb7",
+    "read_only": true,
+    "terminal_signal": "SIGKILL at syscall_traced; not promoted as guest success"
+  },
+  "abi": {
+    "context_source": ".build/ac6-demo-codegen-atomic-1/ppc_context_base.h",
+    "register_offsets": {
+      "r3": "0x00",
+      "r0": "0x08",
+      "r1": "0x10",
+      "r2": "0x18",
+      "r4_to_r31": "0x20 + (reg-4)*8",
+      "lr": "0x100"
+    },
+    "entry": "0x820FEFA8",
+    "guest_memory_decode": "raw_base + guest_address, big-endian u32"
+  },
+  "observations": {
+    "object_address": "0x2EEEBE90",
+    "object_range": "[r3,r3+0x60)",
+    "word_count": 24,
+    "neutral": {
+      "tick": 252,
+      "thread": 25,
+      "r3": "0x2EEEBE90",
+      "r31": "0x82386CC0",
+      "guest_lr": "0x820FFD8C",
+      "all_words_zero": true,
+      "nonzero_offsets": []
+    },
+    "start": {
+      "tick": 252,
+      "thread": 25,
+      "r3": "0x2EEEBE90",
+      "r31": "0x82386CC0",
+      "guest_lr": "0x820FFD8C",
+      "all_words_zero": true,
+      "nonzero_offsets": []
+    },
+    "a_b_equal": true
+  },
+  "static_source_join": {
+    "function": "0x820FFCA0",
+    "generated_source": ".build/ac6-demo-codegen-atomic-1/generated/ppc_recomp.7.cpp",
+    "generated_source_sha256": "8b95cfc10189d3ebfde61210f78b837b145fd327c357c8177e12167f74f5a78b",
+    "source_entry_formula": "r11 = r31 + r10*96 + 208",
+    "vector_load_offsets": ["0x00", "0x10", "0x20", "0x30"],
+    "scalar_source_offsets": ["0x40", "0x44", "0x48", "0x4c", "0x50", "0x54", "0x58"],
+    "stack_copy_offsets": ["r1+0x90", "r1+0x94", "r1+0x98", "r1+0x9c", "r1+0xa0", "r1+0xa4", "r1+0xa8"],
+    "consumer_object": "r1+0x50",
+    "authority": "literal generated control-flow cross-match only"
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact bounded big-endian object snapshot in neutral and START",
+      "all 24 words zero at the tick-252 consumer entry",
+      "same-build ABI and rr provenance"
+    ],
+    "demo-observed": [
+      "non-null stack object and queue base",
+      "zero fields including offsets 0x54 and 0x58"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantic role and producer of the object",
+      "queue payload beyond the bounded object",
+      "frontbuffer consumer, pixels, frontend, mission and terminal"
+    ]
+  },
+  "guard": {
+    "require_correct_ppc_context_layout": true,
+    "require_same_build_ab": true,
+    "read_only": true,
+    "object_range": "[r3,r3+0x60)",
+    "slot_range": "[0x82386D90,0x82386E30)",
+    "on_nonzero_or_divergence": "stop and retain unknown",
+    "synthetic_state_write": false,
+    "range_resynchronization": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

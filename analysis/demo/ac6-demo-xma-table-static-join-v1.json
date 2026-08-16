@@ -1,0 +1,92 @@
+{
+  "schema": "ac6-demo-xma-table-static-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "evidence": {
+    "report": "reports/cycle-1702-demo-xma-create-context-boundary.md",
+    "routes": ["neutral", "START"],
+    "tick": 1048,
+    "thread": 21,
+    "lr": "0x82357298",
+    "import": {
+      "module": "xboxkrnl.exe",
+      "name": "XMACreateContext",
+      "ordinal": 548
+    },
+    "registers": {
+      "r3": "0x17360050",
+      "r4": "0x00000000",
+      "r5": "0x00006180",
+      "r6": "0x00000000",
+      "r7": "0x00000001"
+    },
+    "pre_call_window": {
+      "base": "0x17360050",
+      "length": "0x60",
+      "sha256": "a4f014e03e752249dc9740522458b6fc4d212d013add1e7f2a1d99cc3346dedf",
+      "word0": "0x00000000",
+      "status": "demo-qualified"
+    }
+  },
+  "static_formula": {
+    "function": {
+      "entry": "0x82357240",
+      "size": "0x000000CC",
+      "byte_sha256": "7436f8404267283916f2f2e64fdcda534788553fbf366daa330bc09fe9220ed9",
+      "pseudocode_sha256": "9d2db824bcf8391231e9b809524e7acec3079f2204cfd3c28dd3e8ceda002a13"
+    },
+    "fields": {
+      "table_arg": "r3",
+      "count": "u32be(table+0)",
+      "flags": "u32be(table+4)",
+      "entry_base": "u32be(table+8)+index*96",
+      "output_slot": "entry_base+64"
+    },
+    "callsites": [
+      {"pc": "0x82357294", "lr_after_call": "0x82357298", "target": "XMACreateContext"},
+      {"pc": "0x8235681C", "lr_after_call": "0x82356820", "target": "XMAReleaseContext"}
+    ],
+    "structural_writes": [
+      "entry+20",
+      "entry+24",
+      "entry+80 (u16)",
+      "entry+84",
+      "entry+88",
+      "table+4"
+    ]
+  },
+  "functions": [
+    {"entry":"0x823567E0","size":"0x78","byte_sha256":"c3665d41ee97188f7e013c3eefccd4efd2dba7663511f25c265ea7e29ce37f6c","pseudocode_sha256":"0bbc498dbf2201a8802d63dc61f33abdc24a8c76c48aa174a83ab0fb5f93e74c","role":"release-loop-structural","status":"demo-qualified"},
+    {"entry":"0x82356868","size":"0xD4","byte_sha256":"46a5a09078c7000ee4970ea2945ad7b07f0aa4e6c75178918b6152375ce676d6","pseudocode_sha256":"f1d9c964a0690a2c6bebd24c841ca06da8176cb88e80a34e45457cc2397353ec","role":"entry-update-structural","status":"demo-qualified"},
+    {"entry":"0x82356940","size":"0x60","byte_sha256":"035f3fa4b7a23bfe3ca26a43f629a3fae0996027bfc92458729efa04e5dfe952","pseudocode_sha256":"edc69e4b03e5fd63a3806b1a2e53624324972356d628fef33aff75cdda569691","role":"entry-match-test","status":"demo-qualified"},
+    {"entry":"0x823569A0","size":"0x4C","byte_sha256":"a3954d198749f05c71d5e370715d226e398c0ba49b70ea898407899b103443ee","pseudocode_sha256":"03f49276ca47a4cf48f1da34b2112edf417173de881933da6906030ee6c4af70","role":"state-bit-test","status":"demo-observed"},
+    {"entry":"0x823569F0","size":"0x58","byte_sha256":"571c301870a6790ac357462a9ce967dc3d1a0e5a04905c31c2ac0dd47204d9f6","pseudocode_sha256":"e509b4c49db9b99eb2e86fe63b6b96dc2cd20c17ae1fa972db99ba4e5dc9279b","role":"state-bit-test","status":"demo-observed"},
+    {"entry":"0x82357030","size":"0x1C","byte_sha256":"7998a2aa0f436e92344a278239037a1edeaf06e09c6a301dbb7d11fccc36b53d","pseudocode_sha256":"8b7abf0111f6a8c37c93541dbb5a1c354c7d7e1a9598dc7701606b79448efe05","role":"word-transform-structural","status":"demo-qualified"},
+    {"entry":"0x82357310","size":"0x80","byte_sha256":"5768c76bea572f55a15b8496790f685505c781f2f2259ff1237978a268005c2f","pseudocode_sha256":"496813462c14fc650dc32743d63723292d94c58c416f7051211dfb6b2a5d2dc5","role":"table-flag-mmio-structural","status":"demo-qualified"}
+  ],
+  "correction": {
+    "cycle": 1702,
+    "old_label": "96-byte descriptor",
+    "correct_label": "96-byte pre-call observation window at output_slot",
+    "reason": "PAL bytes pass entry_base+64 to XMACreateContext; the observed window can cross adjacent entries",
+    "status": "demo-qualified-correction"
+  },
+  "classification": {
+    "demo-qualified": ["import identity", "callsite/LR", "tick/thread/registers", "stride-96 formula", "output-slot offset 64", "bounded pre-call word/window", "structural writers/readers"],
+    "demo-observed": ["neutral/START identical pre-call window", "state-test functions reached statically"],
+    "xenia-generic": ["generic output-pointer prototype only"],
+    "unknown": ["return status", "post-call output pointer", "XMA context ABI", "packet/timestamp/volume", "PCM and language"]
+  },
+  "guard": {
+    "import_remains_fail_closed": true,
+    "guest_mutation": false,
+    "decode_audio": false,
+    "readback_or_screencap_promoted": false
+  },
+  "next_checkpoint": "fresh neutral/START read-only observation of [r3,r3+4) and first exact reads/writes, without implementing ordinal 548"
+}

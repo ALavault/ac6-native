@@ -1,0 +1,74 @@
+{
+  "schema": "ac6-demo-frontbuffer-vdswap-persistence/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "binary": {
+    "path": ".build/ac6-demo-codegen-build-1/ac6-demo-recomp",
+    "sha256": "156d46feece454e9fd272bcf80e2d96622bb10bfec4d59251c8c5e1081f8698b"
+  },
+  "probe": {
+    "backend": "vulkan",
+    "ticks": 800,
+    "input": "neutral",
+    "reader_hook": "AC6_DEMO_WATCH_FRONTBUFFER_READERS=1",
+    "frontbuffer_range": ["0x1374A000", "0x13AE2000"],
+    "process_fresh": true
+  },
+  "artifacts": {
+    "trace_sha256": "bbc7ecb8fc20bfdbbdd1d70d24a4fdc78f6619dd5622c761e88541d776fd7068",
+    "report_sha256": "0d70fd74c24bd4205491c66c56bd4a5c31278dd99d6270a44248196990563ffa",
+    "stdout_sha256": "69f2acced5eeac19abd2b2bc8e9bb95e9ceabc5b4b69732d94e18c978418ec40",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "observations": {
+    "completed_ticks": 800,
+    "frontend": false,
+    "mission": false,
+    "guest_writeback": true,
+    "guest_linear_rgba8_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "scalar_frontbuffer_reads": 0,
+    "vd_swap_notifications": 663,
+    "last_vd_swap_tick": 799,
+    "present_count": 1,
+    "present_format": 6,
+    "present_tiled": true,
+    "present_width": 1280,
+    "present_height": 720,
+    "frontbuffer_address": "0x1374A000",
+    "ib_hashes": {
+      "0x127CA0C0/11": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "0x1274A000/3029": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "guest-owned pixel-only writeback",
+      "VdSwap persistence through tick 799",
+      "zero scalar loads in the exact frontbuffer range"
+    ],
+    "demo-observed": ["663 guest VdSwap notifications", "one typed Xenos PRESENT"],
+    "xenia-generic": [],
+    "unknown": [
+      "direct VMX/vector loads",
+      "guest consumer or scanout read",
+      "non-black pixels",
+      "frontend",
+      "mission",
+      "screencap"
+    ]
+  },
+  "policy": {
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_or_rexglue_modified": false,
+    "retail_evidence_fused": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_asset_followed": false,
+    "screencap_promoted": false,
+    "fail_closed": true
+  }
+}

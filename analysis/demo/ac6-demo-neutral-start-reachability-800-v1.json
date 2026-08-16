@@ -1,0 +1,66 @@
+{
+  "schema": "ac6-demo-neutral-start-reachability-800/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon PPC big-endian / Xenos"
+  },
+  "run": {
+    "root": "/fastdata/lavaulta/tmp/ac6-demo-atomic-reachability-800.19008",
+    "max_ticks": 800,
+    "backend": "headless",
+    "neutral_store": ".build/ac6-demo-atomic-neutral-store",
+    "start_store": ".build/ac6-demo-atomic-start-store",
+    "start_input": "buttons=0x10 at tick 252"
+  },
+  "artifacts": {
+    "neutral": {
+      "atlas_sha256": "1ab042eb6ec9f0d73edf2f7233b3ee089b2ecedfedfb936491e16b7e5bf272e8",
+      "report_sha256": "4b27f553f3b50b93325834272c010f30a0595e9953e256d766e8298f4312090f",
+      "rtply_sha256": "dbde578cbaaa543458bb3071657fb6625c314c333ed89be415345a731166fb25",
+      "movie_sha256": "ea359f36338102513a2f483af103dc38dc30528108569cceb9e7c70b112d2a66"
+    },
+    "start": {
+      "atlas_sha256": "41d14bfd476a5b8892e7f4efc709eb9e92ab4e992bbb04db06a9776b8b1af859",
+      "report_sha256": "15cd5574232531f1f94b4dc239f4eb92d2912827bd63c6c8128d716d42c6f4ab",
+      "rtply_sha256": "df272431ba560497a35822c46f27976a5204382ff17c4bcefd68783a886523d2",
+      "movie_sha256": "cb3160ec6491e78ed6b31595a676583bf2f20025b7aef42cf62fdfc64b0f2bb7"
+    }
+  },
+  "comparison": {
+    "functions": {"neutral": 2456, "start": 2456, "address_set_equal": true},
+    "indirect_edges": {"neutral": 1078, "start": 1078, "records_equal": true},
+    "imports": {"neutral": 581, "start": 581, "records_equal": false},
+    "function_counter_deltas": [
+      {"address": "0x822E1DF0", "neutral": 478087, "start": 477919, "delta": -168},
+      {"address": "0x822E1DF8", "neutral": 478087, "start": 477919, "delta": -168}
+    ],
+    "import_counter_deltas": [
+      {"module": "xboxkrnl.exe", "ordinal": 293, "caller_lr": "0x820FF91C", "neutral": 476443, "start": 476275, "delta": -168},
+      {"module": "xboxkrnl.exe", "ordinal": 304, "caller_lr": "0x820FF93C", "neutral": 475895, "start": 475727, "delta": -168}
+    ],
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+    "presents": 116,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "frontbuffer_guest_lines": 0
+  },
+  "classification": {
+    "demo-qualified": ["same reached function set", "same indirect-edge set", "bounded A/B at 800 ticks"],
+    "demo-observed": ["-168 scheduler/import count deltas after tick 252"],
+    "xenia-generic": [],
+    "unknown": ["causal frontend transition", "guest pixel consumer", "pixels", "mission", "screencap"]
+  },
+  "policy": {
+    "retail_evidence_fused": false,
+    "generated_cpp_modified": false,
+    "ghidra_xenia_rexglue_modified": false,
+    "microcode_or_proprietary_assets_tracked": false,
+    "fail_closed": true,
+    "start_promoted": false
+  },
+  "next_checkpoint": "Find a guest boundary that differs between neutral and START before promoting any visual transition; no synthetic state write is allowed."
+}

@@ -1,0 +1,138 @@
+{
+  "schema": "ac6-demo-copy-resolve-profile/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "source": {
+    "main_ib_address": "0x1274A000",
+    "main_ib_dword_count": 3029,
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "register_snapshot_sha256_copy_draw": "003a1ada74eb303b64b9896e33e87027885e40ff9e7d0ca693bfc106bdf13168",
+    "packet_offsets": {
+      "source_surface_and_color": 307,
+      "copy_registers": 326,
+      "copy_shader_load": 333,
+      "copy_mode": 354,
+      "copy_draw": 387,
+      "copy_event": 389,
+      "coherency": 395,
+      "coherency_wait": 398,
+      "copy_control_reset": 404,
+      "copy_dest_reset": 406,
+      "present_fetch": 408,
+      "xe_swap": 415
+    }
+  },
+  "artifacts": {
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "rb_copy_draw_register_snapshot_sha256": "003a1ada74eb303b64b9896e33e87027885e40ff9e7d0ca693bfc106bdf13168"
+  },
+  "generic_authority": {
+    "rexglue_commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+    "registers_path": ".tools/rexglue-upstream-reference/include/rex/graphics/registers.h",
+    "registers_sha256": "2ccf7732db706133acfec34f7d70659e3d12b0533bc51e8b95ca8137cc4d1c40",
+    "symbols": [
+      "RB_SURFACE_INFO",
+      "RB_COLOR_INFO",
+      "RB_COPY_CONTROL",
+      "RB_COPY_DEST_BASE",
+      "RB_COPY_DEST_PITCH",
+      "RB_COPY_DEST_INFO",
+      "draw_util::GetResolveInfo"
+    ],
+    "xenia_commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec"
+  },
+  "source_render_target": {
+    "classification": "demo-qualified raw register snapshot; xenia-generic bit layout",
+    "rb_surface_info_raw": "0x14000500",
+    "surface_pitch_pixels": 1280,
+    "msaa_samples_raw": 0,
+    "msaa_samples_generic": "1x",
+    "hiz_pitch_pixels": 1280,
+    "rb_color0_info_raw": "0x00000000",
+    "color_base_tiles": 0,
+    "color_base_bit11": 0,
+    "color_format_raw": 0,
+    "color_format_generic": "8_8_8_8",
+    "color_exp_bias": 0,
+    "source_select_raw": 0,
+    "source_select_generic": "color RT0"
+  },
+  "copy_state": {
+    "classification": "demo-qualified raw register values; xenia-generic bit layout",
+    "rb_modecontrol_raw": "0x00000006",
+    "edram_mode_generic": "copy",
+    "rb_copy_control_raw": "0x00100000",
+    "copy_src_select": 0,
+    "copy_sample_select": 0,
+    "color_clear_enable": 0,
+    "depth_clear_enable": 0,
+    "copy_command_raw": 1,
+    "copy_command_generic": "convert",
+    "rb_copy_dest_base_raw": "0x1374A000",
+    "rb_copy_dest_pitch_raw": "0x02D00500",
+    "copy_dest_pitch_pixels": 1280,
+    "copy_dest_height": 720,
+    "rb_copy_dest_info_raw": "0x01000300",
+    "copy_dest_endian_raw": 0,
+    "copy_dest_array": 0,
+    "copy_dest_slice": 0,
+    "copy_dest_format_raw": 6,
+    "copy_dest_number_raw": 0,
+    "copy_dest_exp_bias": 0,
+    "copy_dest_swap": 1
+  },
+  "ordered_packets": [
+    {"offset_dword": 326, "base_register": "0x2318", "count": 4, "payload": ["0x00100000", "0x1374A000", "0x02D00500", "0x01000300"], "payload_sha256": "4af7db32c67442151f448a4107fce15a7dcb68e1c64ebc35337fdcf68974f8e7"},
+    {"offset_dword": 387, "opcode": "0x36", "name": "PM4_DRAW_INDX_2", "role": "RB_COPY", "initiator": "0x00030088", "register_snapshot_sha256": "003a1ada74eb303b64b9896e33e87027885e40ff9e7d0ca693bfc106bdf13168"},
+    {"offset_dword": 389, "opcode": "0x46", "name": "PM4_EVENT_WRITE", "value": "0x00000006"},
+    {"offset_dword": 395, "base_register": "0x0A2F", "payload": ["0x00385000", "0x1374A000"]},
+    {"offset_dword": 398, "opcode": "0x3C", "name": "PM4_WAIT_REG_MEM", "register": "0x0A31"},
+    {"offset_dword": 404, "base_register": "0x2318", "value": "0x00000000"},
+    {"offset_dword": 406, "base_register": "0x231B", "value": "0x00000000"},
+    {"offset_dword": 408, "base_register": "0x4800", "payload_sha256": "5a192a0ad264cdedf1c271c3fc72944aa209c810d99495fe4acba00b862a93e0"},
+    {"offset_dword": 415, "opcode": "0x64", "name": "PM4_XE_SWAP", "payload": ["0x53574150", "0x1374A000", "0x00000500", "0x000002D0"]}
+  ],
+  "coherency": {
+    "base_host": "0x1374A000",
+    "size_host": "0x00385000",
+    "classification": "demo-observed cache-window candidate, not an allocation or readback bound"
+  },
+  "classification": {
+    "demo-qualified": [
+      "copy draw register snapshot and ordered packet values",
+      "source color RT0 descriptor: base 0, format 0, pitch 1280, 1x",
+      "copy command convert, source select RT0, sample 0, no clear",
+      "destination base/pitch/height/format/endian/swap",
+      "copy event/coherency wait/reset/fetch/swap order"
+    ],
+    "demo-observed": [
+      "coherency window 0x1374A000..0x13AF9000",
+      "copy draw and present fetch occur in the same main IB"
+    ],
+    "xenia-generic": [
+      "register names and bitfield meanings",
+      "copy command and source/destination format interpretations"
+    ],
+    "unknown": [
+      "contents of EDRAM color RT0 before the copy",
+      "actual copy shader selection and pixel conversion result",
+      "destination bytes produced by the product runtime",
+      "frontend, mission and terminal result"
+    ]
+  },
+  "policy": {
+    "read_only_evidence": true,
+    "product_runtime_readback_claimed": false,
+    "screencap_claimed": false,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

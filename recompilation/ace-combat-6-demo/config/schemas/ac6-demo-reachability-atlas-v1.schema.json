@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ac6-demo-reachability-atlas/v1",
+  "title": "AC6 demo low-overhead reachability atlas",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "target", "replay", "tick_range", "functions", "indirect_edges", "imports", "atlas_sha256"],
+  "properties": {
+    "schema": {"const": "ac6-demo-reachability-atlas/v1"},
+    "target": {"$ref": "#/$defs/target"},
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rtply_v4_sha256", "xam_movie_v1_sha256"],
+      "properties": {
+        "rtply_v4_sha256": {"$ref": "#/$defs/sha256"},
+        "xam_movie_v1_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "tick_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first", "last"],
+      "properties": {
+        "first": {"type": "integer", "minimum": 0},
+        "last": {"type": "integer", "minimum": 0}
+      }
+    },
+    "functions": {
+      "type": "array",
+      "maxItems": 200000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["address", "first_tick", "last_tick", "count"],
+        "properties": {
+          "address": {"$ref": "#/$defs/address"},
+          "first_tick": {"type": "integer", "minimum": 0},
+          "last_tick": {"type": "integer", "minimum": 0},
+          "count": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "indirect_edges": {
+      "type": "array",
+      "maxItems": 200000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["thread", "lr", "target", "count"],
+        "properties": {
+          "thread": {"type": "integer", "minimum": 1},
+          "lr": {"$ref": "#/$defs/address"},
+          "target": {"$ref": "#/$defs/address"},
+          "count": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "imports": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["module", "ordinal", "caller_lr", "count"],
+        "properties": {
+          "module": {"enum": ["xboxkrnl.exe", "xam.xex"]},
+          "ordinal": {"type": "integer", "minimum": 0, "maximum": 65535},
+          "caller_lr": {"$ref": "#/$defs/address"},
+          "count": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "atlas_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "address": {"type": "string", "pattern": "^0x[0-9A-F]{8}$"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "module", "xex_sha256", "ghidra_project", "ghidra_language"],
+      "properties": {
+        "id": {"const": "ac6-demo-xbox360-pal"},
+        "module": {"const": "Default.xex"},
+        "xex_sha256": {"const": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"},
+        "ghidra_project": {"const": "ghidra-projects/ace-combat-6-demo"},
+        "ghidra_language": {"const": "PowerPC:BE:64:Xenon"}
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schema": "ac6-demo-start-chunk-store-boundary/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "58cc4bad9296560a101b437d5c1e7a39a3cb4008eecf3293fe66539bcfe80e67",
+    "source_sha256": {
+      "qualified_thunk.hpp": "498f8d6d6dd76d18473c7defe6ca07d2165089f787b509e9e4719ad83a0c96d8",
+      "guest_bridge.cpp": "327a3fcebf51534d8055525e85825aea3df0f6148056a150625f19e88d0b7ce1"
+    },
+    "route": "START held at ticks 252..267",
+    "tick": 268,
+    "process_fresh": true,
+    "store_fresh": true,
+    "hook": "AC6_DEMO_WATCH_CHUNK_TARGET_STORES=1",
+    "hook_default": false,
+    "hook_cap": 8192,
+    "rows": 175,
+    "rtply_sha256": "e1e99f68d7a3f04de87d8d4244eea137d9306265797b9f42ef0bc9c30185993e",
+    "report_sha256": "dddbdc3d71169559449b5e69bc6dc5150a174fd3dcb4e0528b5089ce8e56d15b",
+    "stderr_sha256": "acdeb87e1f2707e8643f6c571f546f550d9f0fc52989e3eb9f5149d834634c6d"
+  },
+  "scope": {
+    "target_entry": "0x820E7E08",
+    "branch_target": "0x820E1F78",
+    "object": "0x2E3D3D14",
+    "vtable": "0x820077AC",
+    "selected_slot": 78,
+    "stack_range": ["0x7F040408", "0x7F040770"],
+    "guest_state_ranges_excluded": ["0x2E3D3D14 object", "0x820077AC vtable"],
+    "non_stack_rows": 0,
+    "object_or_vtable_rows": 0
+  },
+  "classification": {
+    "demo-qualified": ["175 exact stores", "all stores in bounded guest stack", "zero object/vtable/out-of-stack stores"],
+    "demo-observed": ["stub and callees execute at tick 268", "route reaches 600 ticks after shim"],
+    "xenia-generic": [],
+    "unknown": ["stores outside shim scope", "frontend/pixels/audio/mission/terminal"]
+  },
+  "guard": {
+    "read_only": true,
+    "default_off": true,
+    "max_rows": 8192,
+    "reject_out_of_scope_interpretation": true,
+    "no_synthetic_guest_state": true,
+    "no_visual_fallback": true,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

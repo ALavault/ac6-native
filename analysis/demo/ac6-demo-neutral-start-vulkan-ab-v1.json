@@ -1,0 +1,102 @@
+{
+  "schema": "ac6-demo-neutral-start-vulkan-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "binary_sha256": "b939517a34baba2107715d19daccd5cb0d4fa831616488f34aca3e3dff915a8b",
+    "codegen_manifest_sha256": "ae57c86869c556f17c7eee3f9d781d19943d20bf2599abbe201ac88954bda185",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "boundary_config_sha256": "398df89740579bcc3475264139453a67b8b3ddc9b4826d4a2e9de9c0361d2480",
+    "max_ticks": 253,
+    "store": "recompilation/ace-combat-6-demo/.build/ac6-demo-store-test-3",
+    "fresh_process_per_run": true,
+    "backend": "vulkan",
+    "headless_environment": "SDL_AUDIODRIVER=dummy xvfb-run -a"
+  },
+  "runs": {
+    "neutral": {
+      "input": "none",
+      "rtply_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "report_sha256": "33b6c8b3759461fd7720ca3942258cee3fcd1ec4732746a1df8314e50b5685a7",
+      "stdout_sha256": "c67b5e24784138cc12f59f6f933b14972a14a37346ec9cdf68a894e1bb74100a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "return_code": 4
+    },
+    "start": {
+      "input": "tick 252, button mask 0x10",
+      "rtply_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724",
+      "report_sha256": "2d0c391ba3d0d2a6f2dbf0907ac8538abde5be17f8f9424c2fb63cb2bb91a6cf",
+      "stdout_sha256": "b804416969207c6730dc9559d0c0b21476611bdd9ff045e46bc677a7fda36597",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "return_code": 4
+    }
+  },
+  "renderer_stdout_fields": {
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "validated_modules": 4,
+    "vulkan_modules": 4,
+    "descriptor_set_layouts": 2,
+    "pipeline_layouts": 1,
+    "graphics_pipelines": 2,
+    "shared_memory_descriptors": 4,
+    "constant_buffer_descriptors": 10,
+    "normal_draws": 1,
+    "neutral_resolves": 1,
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "comparison": {
+    "report_subtrees_byte_equal": [
+      "outcome",
+      "milestones",
+      "graphics",
+      "scheduler"
+    ],
+    "completed_ticks": 253,
+    "presentation_notifications": 116,
+    "frontend_milestone": false,
+    "mission_milestone": false,
+    "terminal_milestone": false,
+    "vd_swap": {
+      "calls": 116,
+      "tick": 252,
+      "frontbuffer_address": "0x1374A000",
+      "format": 6,
+      "tiled": true,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "neutral Vulkan normal-draw readback is the checked 640x360 black digest",
+      "neutral Vulkan resolve readback is the checked 1280x720 linear RGBA8 black digest",
+      "neutral and START reach the same renderer counts and VD_SWAP state"
+    ],
+    "demo-observed": [
+      "one START movie event is injected at tick 252"
+    ],
+    "unknown": [
+      "non-black frontend pixels",
+      "causal START visual transition",
+      "frontend, mission and terminal milestones"
+    ]
+  },
+  "policy": {
+    "start_promoted": false,
+    "play_fallback_enabled": false,
+    "retail_evidence_merged": false,
+    "xenia_or_rexglue_modified": false,
+    "ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

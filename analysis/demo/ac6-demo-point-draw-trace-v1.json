@@ -1,0 +1,117 @@
+{
+  "schema": "ac6-demo-point-draw-trace/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "binary_sha256": "fab052a88a479504634ebaf5f6a5e5b221f332e008f29b377e1db8811a5f5c91",
+    "codegen": "ON",
+    "backend": "headless",
+    "max_ticks": 253,
+    "routes": ["neutral", "START at tick 252"],
+    "fresh_store_per_route": true,
+    "read_only": true,
+    "watch": "AC6_DEMO_WATCH_POINT_DRAWS=1",
+    "xenia_executed": false,
+    "xenia_patch_applied": false,
+    "ptrace_used": false,
+    "retail_evidence_merged": false,
+    "generated_cpp_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false
+  },
+  "runs": {
+    "neutral": {
+      "report_sha256": "ecca3ef5bdbdf4ebfb0ad6eecd50116de79e02545c5d13473070315f688b94af",
+      "trace_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+      "stderr_sha256": "68cdea5d9ab9220c5c2180d1ea343274a65dd368c40e3443de8772d8a58788a6",
+      "return_code": 4,
+      "outcome": "max_ticks",
+      "completed_ticks": 253
+    },
+    "start": {
+      "report_sha256": "8fa22c09b14684e9dd50c1e617ba0a416eab033b215df4be1bbf0725d986f7c4",
+      "trace_sha256": "31553733582cf7345375d8f197a28645621e488700f2a31b7e883b66109360b2",
+      "stderr_sha256": "68cdea5d9ab9220c5c2180d1ea343274a65dd368c40e3443de8772d8a58788a6",
+      "return_code": 4,
+      "outcome": "max_ticks",
+      "completed_ticks": 253
+    },
+    "comparison": {
+      "stderr_byte_identical": true,
+      "graphics_subtree_byte_identical": true,
+      "scheduler_subtree_byte_identical": true,
+      "outcome_subtree_byte_identical": true,
+      "control_flow_diff_is_expected_start_input": true,
+      "start_input": "tick 252, buttons 16, connected 1"
+    }
+  },
+  "point_draws": {
+    "rows_per_route": 24,
+    "first_tick": 0,
+    "last_tick": 0,
+    "thread_set": [1],
+    "primitive": "PointList",
+    "predicated": false,
+    "all_rows_same_raw_state": true,
+    "vertex_shader_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+    "pixel_shader_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+    "raw_registers": {
+      "0x2000": "0x00000000",
+      "0x2104": "0x00000000",
+      "0x2180": "0x1000000E",
+      "0x2200": "0x00000000",
+      "0x2201": "0x00000000",
+      "0x2208": "0x00000004",
+      "fetch0": "0x00000000",
+      "fetch1": "0x00000000",
+      "fetch_address": "0x00000000",
+      "fetch_dwords": 0,
+      "fetch_endian": 0
+    },
+    "interpretation": "demo-observed raw state only; no fetch payload was read"
+  },
+  "renderer_observation": {
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "validated_modules": 4,
+    "readback_produced": false,
+    "screencap_produced": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "24 bootstrap PointList rows per route at tick 0",
+      "neutral/START raw point-draw state and stderr are byte-identical",
+      "all observed point rows have color-mask register 0 and depth registers 0"
+    ],
+    "demo-observed": [
+      "bootstrap vertex shader hash 099625f3…",
+      "bootstrap pixel shader hash 4913603d…",
+      "mode register 0x2208 = 0x00000004"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantic meaning of raw register 0x2000/0x2104/0x2180/0x2208",
+      "nonzero EDRAM writer after this bootstrap frame",
+      "frontend pixels, XMA/audio and mission result"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "trace_only": true,
+    "production_route_changed": false,
+    "renderer_fallback": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  },
+  "next_checkpoint": {
+    "test": "advance a fresh PAL route past the XMA ordinal-548 boundary and watch the first nonzero EDRAM write",
+    "guard": "point-draw tracing is disabled unless AC6_DEMO_WATCH_POINT_DRAWS is set and is never a play fallback",
+    "renderer": "keep neutral readback black; do not promote a screencap from this point-only observation"
+  }
+}

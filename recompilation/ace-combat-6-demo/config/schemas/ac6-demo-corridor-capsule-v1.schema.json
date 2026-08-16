@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ac6-demo-corridor-capsule/v1",
+  "title": "AC6 demo bounded dynamic corridor capsule",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "target", "spec_sha256", "replay", "frontier", "memory_ranges", "capsule_sha256"],
+  "properties": {
+    "schema": {"const": "ac6-demo-corridor-capsule/v1"},
+    "target": {"$ref": "#/$defs/target"},
+    "spec_sha256": {"$ref": "#/$defs/sha256"},
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rtply_v4_sha256", "xam_movie_v1_sha256"],
+      "properties": {
+        "rtply_v4_sha256": {"$ref": "#/$defs/sha256"},
+        "xam_movie_v1_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "frontier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tick", "thread", "pc", "lr", "ctr", "registers", "diagnostic"],
+      "properties": {
+        "tick": {"type": "integer", "minimum": 0},
+        "thread": {"type": "integer", "minimum": 1},
+        "pc": {"$ref": "#/$defs/address"},
+        "lr": {"$ref": "#/$defs/address"},
+        "ctr": {"$ref": "#/$defs/address"},
+        "registers": {
+          "type": "object",
+          "propertyNames": {"pattern": "^(r([0-9]|[12][0-9]|3[01])|cr|xer)$"},
+          "additionalProperties": {"type": "string", "pattern": "^0x[0-9A-F]{16}$"}
+        },
+        "diagnostic": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "memory_ranges": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["address", "length", "sha256", "purpose"],
+        "properties": {
+          "address": {"$ref": "#/$defs/address"},
+          "length": {"type": "integer", "minimum": 1, "maximum": 1048576},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "purpose": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
+      }
+    },
+    "capsule_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "address": {"type": "string", "pattern": "^0x[0-9A-F]{8}$"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "module", "xex_sha256", "ghidra_project", "ghidra_language"],
+      "properties": {
+        "id": {"const": "ac6-demo-xbox360-pal"},
+        "module": {"const": "Default.xex"},
+        "xex_sha256": {"const": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"},
+        "ghidra_project": {"const": "ghidra-projects/ace-combat-6-demo"},
+        "ghidra_language": {"const": "PowerPC:BE:64:Xenon"}
+      }
+    }
+  }
+}

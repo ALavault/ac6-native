@@ -1,0 +1,144 @@
+{
+  "schema": "ac6-demo-critical-section-wrapper-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon PPC big-endian / Xenos",
+    "basefile": {
+      "path": ".build/ac6-demo-codegen-xenon-38/xex-basefile.bin",
+      "sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+      "guest_offset": "guest_address - 0x82000000"
+    }
+  },
+  "inputs": {
+    "report": {
+      "path": "reports/cycle-1682-demo-critical-section-wrapper-join.md",
+      "sha256": "0e1e94a1b37dcec518c1692ef66bcfb1314e2deb7b24ffc4770725c47a2e2d1c"
+    },
+    "static_decomp_atlas": {
+      "path": "analysis/demo/ac6-demo-static-decomp-atlas-v1.json",
+      "sha256": "7ee1e677dfac287fdcd8d80b1c5f34575cbabf1c41ab79e70bd1581f87114e2d"
+    },
+    "static_semantics": {
+      "path": "analysis/demo/ac6-demo-static-semantics-v1.json",
+      "sha256": "e723930a01e9ba573d0d899e16ebbd51f31c6c4553f53cf5ccafee5f50ba7962"
+    },
+    "callgraph": {
+      "path": "analysis/demo/ac6-demo-sdk-callgraph.json",
+      "sha256": "fc0517135dc2c92e59ef23835967542cee522ac2f67b467ea61a7703b8a82f99"
+    },
+    "reachability": {
+      "path": "analysis/demo/ac6-demo-neutral-start-reachability-800-v1.json",
+      "sha256": "804a7b99b2456b1c0a88773735838f44720541c5a6001e4e9bf5fcc587a20891"
+    }
+  },
+  "wrappers": [
+    {
+      "guest_entry": "0x822E1DF0",
+      "guest_range": ["0x822E1DF0", "0x822E1DF3"],
+      "basefile_offset": "0x002E1DF0",
+      "bytes_be_hex": "48093DF4",
+      "byte_sha256": "39fda93031a36353924736edccdee43a6e8ce169b3718e5004fde714051dec3d",
+      "branch_target": "0x82375BE4",
+      "import_name": "RtlEnterCriticalSection",
+      "boundary_provenance": "ghidra-chunk",
+      "pseudocode_sha256": "c7a2e5326d4ae1486c24b4ae3f2c6f7f71ed65494c61fef5bb25246c80411ab2",
+      "classification": "demo-qualified"
+    },
+    {
+      "guest_entry": "0x822E1DF8",
+      "guest_range": ["0x822E1DF8", "0x822E1DFB"],
+      "basefile_offset": "0x002E1DF8",
+      "bytes_be_hex": "48093DDC",
+      "byte_sha256": "dc7b05359e80ad587b45aa660d0fd056fffa69d91f92ba1a149d8d65c2c86395",
+      "branch_target": "0x82375BD4",
+      "import_name": "RtlLeaveCriticalSection",
+      "boundary_provenance": "ghidra-chunk",
+      "pseudocode_sha256": "12edd1a91f40a8db8a7d632fdd38e8395e886e13e64536ea779727ba70e8f9",
+      "classification": "demo-qualified"
+    }
+  ],
+  "caller": {
+    "guest_entry": "0x820FF8D8",
+    "guest_range": ["0x820FF8D8", "0x820FF987"],
+    "byte_sha256": "d83eea89ef1ed6e33d23ebe88b02578284ca0b24f959bd04fad58e89b86684f5",
+    "pseudocode_sha256": "556cf6bde78db66ebf2f8e7ce3aab7aa42a71950d000a24e098e3664d239881b",
+    "direct_calls": ["0x822E1DF0", "0x822E1DF8"],
+    "role": "critical-section cadence caller",
+    "classification": "demo-observed"
+  },
+  "dynamic_ab": {
+    "run": {
+      "max_ticks": 800,
+      "backend": "headless",
+      "stores_neutral_and_start_fresh": true,
+      "start_input": "buttons=0x10 at tick 252"
+    },
+    "neutral": {
+      "functions": 2456,
+      "indirect_edges": 1078,
+      "imports": 581,
+      "caller_0x820FF8D8": 548,
+      "wrapper_0x822E1DF0": 478087,
+      "wrapper_0x822E1DF8": 478087,
+      "xboxkrnl_ordinal_293_lr_0x820FF91C": 476443,
+      "xboxkrnl_ordinal_304_lr_0x820FF93C": 475895,
+      "presents": 116
+    },
+    "start": {
+      "functions": 2456,
+      "indirect_edges": 1078,
+      "imports": 581,
+      "caller_0x820FF8D8": 548,
+      "wrapper_0x822E1DF0": 477919,
+      "wrapper_0x822E1DF8": 477919,
+      "xboxkrnl_ordinal_293_lr_0x820FF91C": 476275,
+      "xboxkrnl_ordinal_304_lr_0x820FF93C": 475727,
+      "presents": 116
+    },
+    "deltas": {
+      "wrapper_0x822E1DF0": -168,
+      "wrapper_0x822E1DF8": -168,
+      "xboxkrnl_ordinal_293_lr_0x820FF91C": -168,
+      "xboxkrnl_ordinal_304_lr_0x820FF93C": -168
+    },
+    "same_ib_sha256": {
+      "intermediate": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "main": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+    },
+    "guest_frontbuffer_lines": 0,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact PAL wrapper bytes and ranges",
+      "branch targets to named critical-section imports",
+      "same bounded function/edge/import sets in neutral and START"
+    ],
+    "demo-observed": ["-168 cadence delta after START in both wrappers and two import callsites"],
+    "xenia-generic": [],
+    "unknown": [
+      "critical-section payload and ownership",
+      "causal frontend transition",
+      "guest pixel consumer",
+      "pixels",
+      "audio",
+      "mission",
+      "result",
+      "screencap"
+    ]
+  },
+  "policy": {
+    "retail_evidence_fused": false,
+    "synthetic_guest_state_written": false,
+    "generated_cpp_modified": false,
+    "ghidra_xenia_rexglue_modified": false,
+    "microcode_or_proprietary_assets_tracked": false,
+    "fail_closed": true,
+    "start_promoted": false
+  },
+  "next_checkpoint": "Find and instrument a guest consumer that differs between neutral and START after tick 252; critical-section cadence alone cannot promote a visual transition or readback."
+}

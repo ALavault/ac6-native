@@ -1,0 +1,49 @@
+diff --git a/XenonRecomp/recompiler_config.cpp b/XenonRecomp/recompiler_config.cpp
+index 81330a4..afcd5a2 100644
+--- a/XenonRecomp/recompiler_config.cpp
++++ b/XenonRecomp/recompiler_config.cpp
+@@ -26,6 +26,7 @@ void RecompilerConfig::Load(const std::string_view& configFilePath)
+         crRegistersAsLocalVariables = main["cr_as_local"].value_or(false);
+         nonArgumentRegistersAsLocalVariables = main["non_argument_as_local"].value_or(false);
+         nonVolatileRegistersAsLocalVariables = main["non_volatile_as_local"].value_or(false);
++        strict = main["strict"].value_or(false);
+ 
+         restGpr14Address = main["restgprlr_14_address"].value_or(0u);
+         saveGpr14Address = main["savegprlr_14_address"].value_or(0u);
+@@ -61,12 +61,23 @@ void RecompilerConfig::Load(const std::string_view& configFilePath)
+         if (auto invalidArray = main["invalid_instructions"].as_array())
+         {
+             for (auto& instr : *invalidArray)
+             {
+                 auto& instrTable = *instr.as_table();
+                 uint32_t data = *instrTable["data"].value<uint32_t>();
+                 uint32_t size = *instrTable["size"].value<uint32_t>();
+                 invalidInstructions.emplace(data, size);
+             }
+         }
++
++        if (auto invalidRangeArray = main["invalid_ranges"].as_array())
++        {
++            for (auto& range : *invalidRangeArray)
++            {
++                auto& rangeTable = *range.as_table();
++                uint32_t address = *rangeTable["address"].value<uint32_t>();
++                uint32_t size = *rangeTable["size"].value<uint32_t>();
++                invalidRanges.emplace(address, size);
++            }
++        }
+ 
+         if (!switchTableFilePath.empty())
+diff --git a/XenonRecomp/recompiler_config.h b/XenonRecomp/recompiler_config.h
+index 534e503..5ff6b3b 100644
+--- a/XenonRecomp/recompiler_config.h
++++ b/XenonRecomp/recompiler_config.h
+@@ -52,6 +52,8 @@ struct RecompilerConfig
+     std::unordered_map<uint32_t, uint32_t> functions;
+     std::unordered_map<uint32_t, uint32_t> invalidInstructions;
++    std::unordered_map<uint32_t, uint32_t> invalidRanges;
+     std::unordered_map<uint32_t, RecompilerMidAsmHook> midAsmHooks;
++    bool strict = false;
+ 
+     void Load(const std::string_view& configFilePath);
+ };

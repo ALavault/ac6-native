@@ -1,0 +1,396 @@
+diff --git a/src/xenia/gpu/command_processor.h b/src/xenia/gpu/command_processor.h
+index bf0d7a753..266ef86be 100644
+--- a/src/xenia/gpu/command_processor.h
++++ b/src/xenia/gpu/command_processor.h
+@@ -21,6 +21,8 @@
+ #include <unordered_map>
+ #include <vector>
+ 
++#include "xenia/base/agent_bridge.h"
++
+ #include "xenia/base/math.h"
+ #include "xenia/base/ring_buffer.h"
+ #include "xenia/gpu/register_file.h"
+diff --git a/src/xenia/gpu/pm4_command_processor_implement.h b/src/xenia/gpu/pm4_command_processor_implement.h
+index 9a8da9888..df34e01ba 100644
+--- a/src/xenia/gpu/pm4_command_processor_implement.h
++++ b/src/xenia/gpu/pm4_command_processor_implement.h
+@@ -798,6 +798,20 @@ bool COMMAND_PROCESSOR::ExecutePacketType3_XE_SWAP(uint32_t packet,
+   COMMAND_PROCESSOR::IssueSwap(frontbuffer_ptr, frontbuffer_width,
+                                frontbuffer_height);
+ 
++  // This is the backend-independent completed XE_SWAP boundary. The agent
++  // bridge is disabled by default and does not alter guest execution unless an
++  // explicitly configured transport has installed an action.
++  const uint64_t agent_completed_present =
++      xe::AgentBridge::Get().OnCompletedPresent(
++          frontbuffer_ptr, frontbuffer_width, frontbuffer_height);
++  if (agent_completed_present <= 120) {
++    XELOGI(
++        "AGENT_BRIDGE_PRESENT count={} frontbuffer=0x{:08X} width={} "
++        "height={}",
++        agent_completed_present, frontbuffer_ptr, frontbuffer_width,
++        frontbuffer_height);
++  }
++
+   // Advance the present-frame counter shown in the log prefix.
+   logging::IncrementFrameNumber();
+ 
+diff --git a/src/xenia/hid/input_system.cc b/src/xenia/hid/input_system.cc
+index 0dd502e56..a6e35fe13 100644
+--- a/src/xenia/hid/input_system.cc
++++ b/src/xenia/hid/input_system.cc
+@@ -14,6 +14,8 @@
+ 
+ #include "xenia/hid/input_system.h"
+ 
++#include "xenia/base/agent_bridge.h"
++
+ #include "xenia/base/profiling.h"
+ #include "xenia/hid/hid_flags.h"
+ #include "xenia/hid/input_driver.h"
+@@ -28,6 +30,11 @@ namespace hid {
+ 
+ DEFINE_bool(vibration, true, "Toggle controller vibration.", "HID");
+ 
++DEFINE_bool(agent_bridge, false,
++            "Enable deterministic guest controller injection at completed "
++            "XE_SWAP boundaries. Requires an external agent transport.",
++            "HID");
++
+ DEFINE_double(left_stick_deadzone_percentage, 0.0,
+               "Defines deadzone level for left stick. Allowed range [0.0-1.0].",
+               "HID");
+@@ -50,6 +57,7 @@ InputSystem::InputSystem(xe::ui::Window* window) : window_(window) {
+ InputSystem::~InputSystem() = default;
+ 
+ X_STATUS InputSystem::Setup() {
++  AgentBridge::Get().SetEnabled(cvars::agent_bridge);
+   LoadSlotBindingsFromPassthrough();
+   // SDL drains its initial DEVICEADDED events inside the driver's own Setup,
+   // before AddDriver wires devices_changed_callback_ — that auto-reconcile is
+@@ -146,6 +154,23 @@ X_RESULT InputSystem::GetState(uint32_t user_index, uint32_t flags,
+                                X_INPUT_STATE* out_state) {
+   SCOPE_profile_cpu_f("hid");
+ 
++  AgentControllerState injected_state;
++  if (AgentBridge::Get().GetInjectedControllerState(user_index,
++                                                    &injected_state)) {
++    if (!injected_state.connected) {
++      return X_ERROR_DEVICE_NOT_CONNECTED;
++    }
++    std::memset(out_state, 0, sizeof(X_INPUT_STATE));
++    out_state->gamepad.buttons = injected_state.buttons;
++    out_state->gamepad.left_trigger = injected_state.left_trigger;
++    out_state->gamepad.right_trigger = injected_state.right_trigger;
++    out_state->gamepad.thumb_lx = injected_state.thumb_lx;
++    out_state->gamepad.thumb_ly = injected_state.thumb_ly;
++    out_state->gamepad.thumb_rx = injected_state.thumb_rx;
++    out_state->gamepad.thumb_ry = injected_state.thumb_ry;
++    return X_ERROR_SUCCESS;
++  }
++
+   // If UI is blocking input, return zeroed state to the game
+   if (ui_input_blockers_.load() > 0) {
+     std::memset(out_state, 0, sizeof(X_INPUT_STATE));
+diff --git a/src/xenia/base/agent_bridge.h b/src/xenia/base/agent_bridge.h
+new file mode 100644
+index 000000000..a919c053a
+--- /dev/null
++++ b/src/xenia/base/agent_bridge.h
+@@ -0,0 +1,83 @@
++/**
++ ******************************************************************************
++ * Xenia : Xbox 360 Emulator Research Project                                 *
++ ******************************************************************************
++ * Released under the BSD license - see LICENSE in the root for more details. *
++ ******************************************************************************
++ */
++
++#ifndef XENIA_BASE_AGENT_BRIDGE_H_
++#define XENIA_BASE_AGENT_BRIDGE_H_
++
++#include <cstdint>
++#include <mutex>
++#include <string>
++
++namespace xe {
++
++// Backend-independent state shared by the completed-XE_SWAP boundary and the
++// guest input poll. Transport, framebuffer capture and save-state coordination
++// are intentionally kept outside this class.
++struct AgentControllerState {
++  bool connected = true;
++  uint16_t buttons = 0;
++  uint8_t left_trigger = 0;
++  uint8_t right_trigger = 0;
++  int16_t thumb_lx = 0;
++  int16_t thumb_ly = 0;
++  int16_t thumb_rx = 0;
++  int16_t thumb_ry = 0;
++};
++
++struct AgentBridgeCapabilities {
++  bool pause_after_completed_present = false;
++  bool exact_guest_frame_step = false;
++  bool guest_controller_injection = true;
++  bool framebuffer_capture_while_paused = false;
++  bool checkpoint_restore = false;
++};
++
++class AgentBridge {
++ public:
++  static AgentBridge& Get();
++
++  void SetEnabled(bool enabled);
++  bool enabled() const;
++
++  // Installs one controller state for the following hold_frames completed
++  // guest presents. The action identifier must be strictly increasing.
++  bool SubmitAction(uint64_t action_id, const AgentControllerState& state,
++                    uint32_t hold_frames, std::string* error = nullptr);
++
++  // Called by the common PM4 XE_SWAP handler after the backend IssueSwap has
++  // returned. Returns the monotonically increasing completed-present number.
++  uint64_t OnCompletedPresent(uint32_t frontbuffer_ptr, uint32_t width,
++                              uint32_t height);
++
++  // Returns true when slot zero must be replaced by the injected state.
++  bool GetInjectedControllerState(uint32_t user_index,
++                                  AgentControllerState* state,
++                                  uint64_t* action_id = nullptr) const;
++
++  uint64_t completed_present_count() const;
++  uint32_t remaining_frames() const;
++  AgentBridgeCapabilities capabilities() const;
++
++  void ResetForTest();
++
++ private:
++  AgentBridge() = default;
++
++  mutable std::mutex mutex_;
++  bool enabled_ = false;
++  bool has_action_ = false;
++  bool has_submitted_action_ = false;
++  uint64_t last_action_id_ = 0;
++  uint64_t completed_present_count_ = 0;
++  uint32_t remaining_frames_ = 0;
++  AgentControllerState controller_state_;
++};
++
++}  // namespace xe
++
++#endif  // XENIA_BASE_AGENT_BRIDGE_H_
+diff --git a/src/xenia/base/agent_bridge.cc b/src/xenia/base/agent_bridge.cc
+new file mode 100644
+index 000000000..556de3bfe
+--- /dev/null
++++ b/src/xenia/base/agent_bridge.cc
+@@ -0,0 +1,124 @@
++/**
++ ******************************************************************************
++ * Xenia : Xbox 360 Emulator Research Project                                 *
++ ******************************************************************************
++ * Released under the BSD license - see LICENSE in the root for more details. *
++ ******************************************************************************
++ */
++
++#include "xenia/base/agent_bridge.h"
++
++namespace xe {
++
++AgentBridge& AgentBridge::Get() {
++  static AgentBridge bridge;
++  return bridge;
++}
++
++void AgentBridge::SetEnabled(bool enabled) {
++  std::lock_guard<std::mutex> lock(mutex_);
++  enabled_ = enabled;
++  if (!enabled_) {
++    has_action_ = false;
++    remaining_frames_ = 0;
++    controller_state_ = {};
++  }
++}
++
++bool AgentBridge::enabled() const {
++  std::lock_guard<std::mutex> lock(mutex_);
++  return enabled_;
++}
++
++bool AgentBridge::SubmitAction(uint64_t action_id,
++                               const AgentControllerState& state,
++                               uint32_t hold_frames, std::string* error) {
++  std::lock_guard<std::mutex> lock(mutex_);
++  if (!enabled_) {
++    if (error) {
++      *error = "agent bridge is disabled";
++    }
++    return false;
++  }
++  if (!hold_frames) {
++    if (error) {
++      *error = "hold_frames must be non-zero";
++    }
++    return false;
++  }
++  if (has_submitted_action_ && action_id <= last_action_id_) {
++    if (error) {
++      *error = "action_id must be strictly increasing";
++    }
++    return false;
++  }
++  if (remaining_frames_) {
++    if (error) {
++      *error = "previous action has not completed";
++    }
++    return false;
++  }
++
++  last_action_id_ = action_id;
++  has_submitted_action_ = true;
++  controller_state_ = state;
++  remaining_frames_ = hold_frames;
++  has_action_ = true;
++  return true;
++}
++
++uint64_t AgentBridge::OnCompletedPresent(uint32_t frontbuffer_ptr,
++                                         uint32_t width, uint32_t height) {
++  static_cast<void>(frontbuffer_ptr);
++  static_cast<void>(width);
++  static_cast<void>(height);
++  std::lock_guard<std::mutex> lock(mutex_);
++  ++completed_present_count_;
++  if (enabled_ && remaining_frames_) {
++    --remaining_frames_;
++    if (!remaining_frames_) {
++      controller_state_ = {};
++      has_action_ = false;
++    }
++  }
++  return completed_present_count_;
++}
++
++bool AgentBridge::GetInjectedControllerState(uint32_t user_index,
++                                             AgentControllerState* state,
++                                             uint64_t* action_id) const {
++  std::lock_guard<std::mutex> lock(mutex_);
++  if (!enabled_ || !has_action_ || !remaining_frames_ || user_index != 0) {
++    return false;
++  }
++  *state = controller_state_;
++  if (action_id) {
++    *action_id = last_action_id_;
++  }
++  return true;
++}
++
++uint64_t AgentBridge::completed_present_count() const {
++  std::lock_guard<std::mutex> lock(mutex_);
++  return completed_present_count_;
++}
++
++uint32_t AgentBridge::remaining_frames() const {
++  std::lock_guard<std::mutex> lock(mutex_);
++  return remaining_frames_;
++}
++
++AgentBridgeCapabilities AgentBridge::capabilities() const { return {}; }
++
++void AgentBridge::ResetForTest() {
++  std::lock_guard<std::mutex> lock(mutex_);
++  enabled_ = false;
++  has_action_ = false;
++  has_submitted_action_ = false;
++  last_action_id_ = 0;
++  completed_present_count_ = 0;
++  remaining_frames_ = 0;
++  controller_state_ = {};
++}
++
++}  // namespace xe
+diff --git a/src/xenia/base/testing/agent_bridge_test.cc b/src/xenia/base/testing/agent_bridge_test.cc
+new file mode 100644
+index 000000000..326cbacc6
+--- /dev/null
++++ b/src/xenia/base/testing/agent_bridge_test.cc
+@@ -0,0 +1,75 @@
++/**
++ ******************************************************************************
++ * Xenia : Xbox 360 Emulator Research Project                                 *
++ ******************************************************************************
++ * Released under the BSD license - see LICENSE in the root for more details. *
++ ******************************************************************************
++ */
++
++#include "xenia/base/agent_bridge.h"
++
++#include "third_party/catch/single_include/catch2/catch.hpp"
++
++namespace xe::test {
++
++TEST_CASE("Agent bridge actions are present-bounded", "[agent_bridge]") {
++  AgentBridge& bridge = AgentBridge::Get();
++  bridge.ResetForTest();
++  bridge.SetEnabled(true);
++
++  AgentControllerState submitted;
++  submitted.buttons = 0x10;
++  submitted.thumb_lx = -1234;
++  std::string error;
++  REQUIRE(bridge.SubmitAction(7, submitted, 2, &error));
++
++  AgentControllerState observed;
++  uint64_t action_id = 0;
++  REQUIRE(bridge.GetInjectedControllerState(0, &observed, &action_id));
++  REQUIRE(action_id == 7);
++  REQUIRE(observed.buttons == 0x10);
++  REQUIRE(observed.thumb_lx == -1234);
++  REQUIRE_FALSE(bridge.GetInjectedControllerState(1, &observed));
++
++  REQUIRE(bridge.OnCompletedPresent(0x1000, 1280, 720) == 1);
++  REQUIRE(bridge.remaining_frames() == 1);
++  REQUIRE(bridge.GetInjectedControllerState(0, &observed));
++
++  REQUIRE(bridge.OnCompletedPresent(0x1000, 1280, 720) == 2);
++  REQUIRE(bridge.remaining_frames() == 0);
++  REQUIRE_FALSE(bridge.GetInjectedControllerState(0, &observed));
++
++  REQUIRE_FALSE(bridge.SubmitAction(7, submitted, 1, &error));
++  REQUIRE(error == "action_id must be strictly increasing");
++  REQUIRE(bridge.SubmitAction(8, submitted, 1, &error));
++}
++
++TEST_CASE("Agent bridge rejects overlap and invalid duration",
++          "[agent_bridge]") {
++  AgentBridge& bridge = AgentBridge::Get();
++  bridge.ResetForTest();
++  AgentControllerState state;
++  std::string error;
++
++  REQUIRE_FALSE(bridge.SubmitAction(1, state, 1, &error));
++  REQUIRE(error == "agent bridge is disabled");
++  bridge.SetEnabled(true);
++  REQUIRE_FALSE(bridge.SubmitAction(1, state, 0, &error));
++  REQUIRE(error == "hold_frames must be non-zero");
++  REQUIRE(bridge.SubmitAction(1, state, 3, &error));
++  REQUIRE_FALSE(bridge.SubmitAction(2, state, 1, &error));
++  REQUIRE(error == "previous action has not completed");
++}
++
++TEST_CASE("Agent bridge capability claims remain fail-closed",
++          "[agent_bridge]") {
++  const AgentBridgeCapabilities capabilities =
++      AgentBridge::Get().capabilities();
++  REQUIRE(capabilities.guest_controller_injection);
++  REQUIRE_FALSE(capabilities.pause_after_completed_present);
++  REQUIRE_FALSE(capabilities.exact_guest_frame_step);
++  REQUIRE_FALSE(capabilities.framebuffer_capture_while_paused);
++  REQUIRE_FALSE(capabilities.checkpoint_restore);
++}
++
++}  // namespace xe::test
+

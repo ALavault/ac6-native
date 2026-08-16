@@ -1,0 +1,112 @@
+{
+  "schema": "ac6-demo-vertex-shader-rr-provenance/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "route": "neutral-headless",
+    "terminal_tick": 253,
+    "rr_gate_report": "reports/ac6-demo-local-rr-fidelity-gate-20260815.md",
+    "rr_source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "rr_binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "probe_report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "image_initialization": {
+    "host_writer": "ac6demo::GuestMemory::map_bytes",
+    "caller": "ac6demo::DemoSession::start",
+    "mechanism": "host memcpy into guest image before guest execution",
+    "guest_pc": null,
+    "guest_lr": null,
+    "guest_thread": null,
+    "tick": null,
+    "classification": "demo-qualified",
+    "note": "The exact sequences are present in the qualified decompressed PAL basefile ranges, not proven as contiguous sequences in a store container. No container identity is claimed."
+  },
+  "vertex_shaders": [
+    {
+      "role": "bootstrap",
+      "sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+      "byte_count": 96,
+      "image_source": {"start": "0x82013E20", "end_exclusive": "0x82013E80"},
+      "pm4_destination": {"start": "0x16ADF014", "end_exclusive": "0x16ADF074"},
+      "copy": {
+        "function": "sub_82327D90",
+        "guest_pc": "0x82327DEC",
+        "instruction_bytes": "90 C3 00 00",
+        "instruction": "stw r6,0(r3)",
+        "caller_function": "sub_821B1D58",
+        "guest_lr": "0x821B1DB8",
+        "guest_thread": 1,
+        "tick": 0
+      }
+    },
+    {
+      "role": "normal-rectangle",
+      "sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+      "byte_count": 108,
+      "image_source": {"start": "0x820140A0", "end_exclusive": "0x8201410C"},
+      "pm4_destination": {"start": "0x1274A254", "end_exclusive": "0x1274A2C0"},
+      "copy": {
+        "function": "sub_82327D90",
+        "guest_pc": "0x82327DEC",
+        "instruction_bytes": "90 C3 00 00",
+        "instruction": "stw r6,0(r3)",
+        "caller_function": "sub_821B6078",
+        "guest_lr": "0x821B63FC",
+        "guest_thread": 1,
+        "tick": 0
+      }
+    },
+    {
+      "role": "resolve-rectangle",
+      "sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+      "byte_count": 60,
+      "image_source": {"start": "0x82014140", "end_exclusive": "0x8201417C"},
+      "pm4_destination": {"start": "0x1274A540", "end_exclusive": "0x1274A57C"},
+      "copy": {
+        "function": "sub_82327D90",
+        "guest_pc": "0x82327E38",
+        "instruction_bytes": "F8 E3 00 09",
+        "instruction": "stdu r7,8(r3)",
+        "caller_function": "sub_821B6FD0",
+        "guest_lr": "0x821B7830",
+        "guest_thread": 1,
+        "tick": 0
+      }
+    }
+  ],
+  "main_ib_join": {
+    "address": "0x1274A000",
+    "end_exclusive": "0x1274CF54",
+    "dword_count": 3029,
+    "sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "normal_im_load_offset_dwords": 146,
+    "resolve_im_load_offset_dwords": 333,
+    "causal_slice": [239, 326, 333, 351, 376, 387, 389, 393, 398, 404, 406, 408, 415]
+  },
+  "method": {
+    "watchpoints": "exact 4-byte hardware windows with reverse-continue; no resynchronization",
+    "image_hash_check": "SHA-256 over exact qualified basefile ranges",
+    "copy_join": "rr host stacks, generated literal control flow and exact PAL instruction bytes",
+    "byte_order": "guest bytes and hashes are Xenon big-endian"
+  },
+  "limits": {
+    "container_match_claimed": false,
+    "retail_cross_match_used": false,
+    "start_or_vulkan_route_qualified": false,
+    "whole_source_section_semantics_claimed": false
+  },
+  "policy": {
+    "system_rr_used": false,
+    "retail_evidence_merged": false,
+    "xenia_or_rexglue_modified": false,
+    "ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_asset_tracked": false
+  }
+}

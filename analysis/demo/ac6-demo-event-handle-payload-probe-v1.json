@@ -1,0 +1,212 @@
+{
+  "schema": "ac6-demo-event-handle-payload-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "instrumentation": {
+    "consumer_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handle_consumer_trace.hpp",
+    "consumer_hook_sha256": "960bbddc5e077529cea16769ec7e51f8a1218953456a3a5626c4aa30fb66b2d3",
+    "load_site_adapter": "recompilation/ace-combat-6-demo/tools/ppc_context_adapter.h",
+    "load_site_adapter_sha256": "45217e58b52c86a86a3f68a4381a43724fa2fad352119563df753ee0224636c8",
+    "bridge_source_sha256": "c21534500d29f8e2f426aef54e83135eef9230d4ea582794cd0e2e3728f54fd2",
+    "runtime_binary_sha256": "da685f423e373eb75a80bf7a269a4b8682bf9d3e533dc2174e94ec680256d741",
+    "environment": [
+      "AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS=1",
+      "AC6_DEMO_WATCH_EVENT_HANDLE_PAYLOAD=1"
+    ],
+    "snapshot_alignment_bytes": 32,
+    "snapshot_words": 8,
+    "record_limit": 8192,
+    "default_enabled": false,
+    "read_only": true,
+    "generated_cpp_modified": false,
+    "overflow_guard_fail_closed": true
+  },
+  "mapper": {
+    "tool": "recompilation/ace-combat-6-demo/tools/map_generated_guest_load_sites.py",
+    "tool_sha256": "ceadfb57007ddadb5ec894bc8c69df873ca2c8786129fb8682a796aac6e80b1d",
+    "output_schema": "ac6-demo-generated-guest-load-map/v1",
+    "basefile_bytes_checked": true,
+    "instruction_comments_counted": true,
+    "fail_closed_on_missing_or_ambiguous_site": true,
+    "neutral_map_sha256": "eea89f3b84ee8256e780812182e4cea0126f5e6f6dab56ca875f932fe1309f95",
+    "start_map_sha256": "2af4a64ec0e14a28ae5db546d407736353e4af73c7e29fb2d0df3ce60ab43872"
+  },
+  "runs": {
+    "neutral": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "none",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+      "report_sha256": "c931a747e1cabf2aac8e7eee426b08f5033c74e327480064882e5b3ed7cd9df1",
+      "stderr_sha256": "6c6e278efc38443dcfe188397715669296258957597e5dd55d054bd6545dc098",
+      "stdout_sha256": "e512476a446b634199987d862739cf416b921bfc765ae2452750d13a6ce3557d",
+      "consumer_rows": 3927,
+      "payload_rows": 3927,
+      "payload_groups": 1057,
+      "unique_payload_snapshots": 530,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "tick 252, buttons 0x0010, connected",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+      "report_sha256": "51a2c2ce232f22c062800c73fdcaad1ce1c4cfa990aa4ced0f1bc6512de95161",
+      "stderr_sha256": "6c6e278efc38443dcfe188397715669296258957597e5dd55d054bd6545dc098",
+      "stdout_sha256": "1790c5183409569153b6f253b3a336d363647cb3b1bcd3dbea7c4f793d8ecfee",
+      "consumer_rows": 3927,
+      "payload_rows": 3927,
+      "payload_groups": 1057,
+      "unique_payload_snapshots": 530,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "exact_payload_sites": [
+    {
+      "guest_pc": "0x822EEE30",
+      "instruction_bytes": "80 7F 00 00",
+      "function": "sub_822EEE10",
+      "generated_source": "ppc_recomp.38.cpp:4674",
+      "rows": 456,
+      "snapshot_count": 223,
+      "addresses": ["0x82934748", "0x82933F98"],
+      "values": ["0xE0000048", "0xE0000054"]
+    },
+    {
+      "guest_pc": "0x822EEE38",
+      "instruction_bytes": "80 7F 00 00",
+      "function": "sub_822EEE10",
+      "generated_source": "ppc_recomp.38.cpp:4679",
+      "rows": 456,
+      "snapshot_count": 223,
+      "addresses": ["0x82934748", "0x82933F98"],
+      "values": ["0xE0000048", "0xE0000054"]
+    },
+    {
+      "guest_pc": "0x822EEE44",
+      "instruction_bytes": "80 7F 00 04",
+      "function": "sub_822EEE10",
+      "generated_source": "ppc_recomp.38.cpp:4686",
+      "rows": 456,
+      "snapshot_count": 223,
+      "addresses": ["0x8293474C", "0x82933F9C"],
+      "values": ["0xE000004C", "0xE0000058"]
+    },
+    {
+      "guest_pc": "0x822E409C",
+      "instruction_bytes": "80 7F 00 00",
+      "function": "sub_822E4080",
+      "generated_source": "ppc_recomp.36.cpp:14379",
+      "rows": 153,
+      "snapshot_count": 4,
+      "address": "0x82934748",
+      "value": "0xE0000048",
+      "word7_values": ["0x00000000", "0x00000001", "0x000000DC", "0x0000001D"],
+      "nonbaseline_ticks": {"0x000000DC": 222, "0x0000001D": 252}
+    },
+    {
+      "guest_pc": "0x822E40B8",
+      "instruction_bytes": "80 7F 00 00",
+      "function": "sub_822E4080",
+      "generated_source": "ppc_recomp.36.cpp:14395",
+      "rows": 153,
+      "snapshot_count": 4,
+      "address": "0x82934748",
+      "value": "0xE0000048",
+      "word7_values": ["0x00000000", "0x00000001", "0x000000DC", "0x0000001D"],
+      "nonbaseline_ticks": {"0x000000DC": 222, "0x0000001D": 252}
+    },
+    {
+      "guest_pc": "0x822E40C8",
+      "instruction_bytes": "80 9F 00 04",
+      "function": "sub_822E4080",
+      "generated_source": "ppc_recomp.36.cpp:14404",
+      "rows": 101,
+      "snapshot_count": 1,
+      "address": "0x8293474C",
+      "value": "0xE000004C"
+    }
+  ],
+  "snapshot_examples": [
+    {
+      "base": "0x82934740",
+      "mask": "0xFF",
+      "words_be": ["00000001", "00000000", "E0000048", "E000004C", "00000001", "00000000", "00000000", "00000000"],
+      "site_family": "0x822EEE30/0x822EEE38/0x822EEE44 and 0x822E409C/0x822E40B8",
+      "classification": "demo-observed"
+    },
+    {
+      "base": "0x82933F80",
+      "mask": "0xFF",
+      "words_be": ["00000000", "7FFFFFFF", "00000005", "822E33E0", "82933F00", "82028FA0", "E0000054", "E0000058"],
+      "site_family": "0x822EEE30/0x822EEE38/0x822EEE44 and 0x822EEE88/0x822EEE98/0x822EEEA4",
+      "classification": "demo-observed"
+    },
+    {
+      "base": "0x82934760",
+      "mask": "0xFF",
+      "words_be": ["E0000040", "00000001", "E0000044", "00000001", "E1000020", "0000000C", "00000000", "00000001"],
+      "site_family": "bootstrap table consumers",
+      "classification": "demo-observed"
+    }
+  ],
+  "joins": {
+    "writer_capsule": "analysis/demo/ac6-demo-event-handle-writer-probe-v1.json",
+    "writer_sites": 25,
+    "writer_rows_per_run": 163,
+    "payload_to_writer_causal_edge": "unknown",
+    "context_lr_is_exact_guest_pc": false,
+    "generated_source_map_is_exact_guest_pc": true
+  },
+  "ab_comparison": {
+    "consumer_rows_equal": true,
+    "payload_rows_equal": true,
+    "payload_groups_equal": true,
+    "unique_payload_snapshots_equal": true,
+    "stderr_sha256_equal": true,
+    "site_payloads_equal": true,
+    "start_transition_promoted": false,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "3,927/3,927 payload rows captured with bounded 8-word BE snapshots",
+      "64 exact guest load sites map to PAL instruction bytes",
+      "neutral/START payload counts, groups, snapshots and stderr are identical",
+      "word7 changes at the exact 0x822E409C/0x822E40B8 sites are observed at ticks 222 and 252"
+    ],
+    "demo-observed": [
+      "payload words, handle values, ticks, threads and aligned guest ranges"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "PAL object type and payload field semantics",
+      "writer-to-consumer causal edge and persistence beyond the sampled load",
+      "frontend transition, mission state and guest-owned pixels"
+    ]
+  },
+  "policy": {
+    "runtime_behavior_changed": false,
+    "readback_promoted": false,
+    "retail_evidence_fused": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_assets_tracked": false,
+    "fail_closed": true
+  }
+}

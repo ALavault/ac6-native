@@ -1,0 +1,69 @@
+{
+  "schema": "ac6-demo-neutral-boundary/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "route": "neutral",
+    "backend": "headless",
+    "start_injected": false
+  },
+  "closed_boundary": {
+    "entry": "0x82351198",
+    "size": "0x08",
+    "bytes_hex": "3863FFFC480001CC",
+    "byte_sha256": "edc2a88af607b72e14d53b5d8b68388e5b565ccc2e67839abde0a345f45cf68b",
+    "boundary_provenance": "confirmed sub-entry in canonical Ghidra chunk 0x82351190..0x823511AF",
+    "caller_pc": "0x82353928",
+    "caller_lr": "0x8235392C",
+    "first_tick": 5049,
+    "thread": 21,
+    "shape": "addi r3,r3,-4; tail branch to 0x82351368",
+    "role": "unknown"
+  },
+  "next_frontier": {
+    "kind": "import",
+    "module": "xboxkrnl.exe",
+    "name": "XMAReleaseContext",
+    "ordinal": 550,
+    "thunk": "0x823767A4",
+    "caller_lr": "0x82356820",
+    "tick": 5049,
+    "thread": 21,
+    "report_sha256": "66f89741b42762326c301c3b7a22bfbc0b40e8a0c981d9c2891364adb44fb27c",
+    "trace_sha256": "0b553e06ccd6cfbf72302d2ee3063bc8e44fcf4278b873ecd590d728abb222af"
+  },
+  "atlas": {
+    "function_count": 12875,
+    "configured_function_records": 153,
+    "confirmed_functions": 117,
+    "classified_text_bytes": 3041220,
+    "text_bytes": 3041220,
+    "complete": true,
+    "fresh_exports": 2,
+    "byte_identical": true,
+    "sha256": "0947f8550beb70460bd722d65704fd11b50262f4d4e7220c1eb09d503d39c491"
+  },
+  "artifacts": {
+    "binary_sha256": "58985fa7ae46a107a57413587126464cceb2e90c090fd4129922604c827582ee",
+    "codegen_manifest_sha256": "c002a18fb4fd36b43852d62653db4552a5e5d7c9dd032d7a05fdd9db14f7e552",
+    "boundary_config_sha256": "c86f0221457f4d9081030e199b304f67ca9024aa47dbcfe2ea3063aeb74e786e"
+  },
+  "classification": {
+    "demo_qualified": [
+      "callsite 0x82353928 bctrl and LR 0x8235392C",
+      "target bytes and -4 r3 adjustment",
+      "tail branch target 0x82351368",
+      "neutral progress from the indirect frontier to XMAReleaseContext ordinal 550"
+    ],
+    "unknown": [
+      "semantic role and owning C++ type of the adjustment thunk",
+      "exact XMAReleaseContext guest effect",
+      "first guest-owned frontend state",
+      "first non-black EDRAM producer",
+      "mission result"
+    ]
+  }
+}

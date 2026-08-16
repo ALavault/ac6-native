@@ -1,0 +1,72 @@
+{
+  "schema": "ac6-demo-xma-experimental-mmio-frontier/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "experiment": {
+    "environment": "AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1",
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "d6d957c05c01c70a1bea4f3d90d6863cf531a554e61f4510ab1921add7925016",
+    "source_files": [
+      {"path": "recompilation/ace-combat-6-demo/src/guest_bridge/audio_memory_dispatch.hpp", "sha256": "46b8ad8377773bc5a43df73a47441c6c713269829830000ea9f16ba6a5148f64"},
+      {"path": "recompilation/ace-combat-6-demo/src/guest_bridge_resources.cpp", "sha256": "60cd7945b7dc27d445c59520d070e919f4517a321f9e62aad233233bef5f4d69"},
+      {"path": "recompilation/ace-combat-6-demo/include/ac6demo/guest_bridge.hpp", "sha256": "f12e80059e78e567646cbb12b6c8f4e1aa33676c2e5e2d71cbbfa97190c87ebb"}
+    ],
+    "routes": ["neutral", "START"],
+    "max_ticks": 1050,
+    "stores": "fresh copies of cycle1711 neutral/start stores"
+  },
+  "ab": {
+    "neutral": {
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "ca7e9ba7f9c5828d78a37ccbeef2bc3f62f306801a33c59b3f8db24ffc8db855",
+      "stderr_sha256": "4e2535be3a3a28b382348756035dae167877225988ed4bfb294707148ed6bbf1",
+      "presents": 911,
+      "frontier_tick": 1048
+    },
+    "start": {
+      "input": "252,16,0,0,0,0,0,0,1",
+      "rtply_sha256": "d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d",
+      "report_sha256": "5c8360ee11c113123e71d2a06509c08090eb24453d42d5147708dfb136409a6c",
+      "stderr_sha256": "4e2535be3a3a28b382348756035dae167877225988ed4bfb294707148ed6bbf1",
+      "presents": 911,
+      "frontier_tick": 1048
+    },
+    "equal_frontier": true,
+    "equal_stderr": true
+  },
+  "demo_observation": {
+    "import": {"module": "xboxkrnl.exe", "name": "XMACreateContext", "ordinal": 548, "lr": "0x82357298", "thread": 21, "tick": 1048},
+    "registers": {"r3_output_slot": "0x17360050", "r4": "0x00000000", "r5": "0x00006180", "r6": "0x00000000", "r7": "0x00000001"},
+    "experimental_output_pointer": "0x2EEEC000",
+    "post_import": {"import": "MmGetPhysicalAddress", "ordinal": 190, "count": 1, "input": "0x2EEEC000", "status": "returned to PAL before MMIO trap"},
+    "first_unknown": {"address": "0x7FEA31E0", "register_index": "0x0C78", "static_store_pc": "0x823572D8", "static_store_bytes": "7d 60 55 2c", "runtime_lr": "0x823572AC", "runtime_lr_role": "return_pc_after_bl_MmGetPhysicalAddress", "runtime_lr_bytes": "81 7c a5 2c", "thread": 21, "tick": 1048, "operation": "stwbrx r11,0,r10", "logical_value": "0x00000001", "generated_store_argument": "0x01000000", "next_instruction": "0x823572DC: 7c 00 06 ac (eieio)"}
+  },
+  "generic_authority": {
+    "xenia": {"commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec", "source": "tools/xenia-source/src/xenia/kernel/xboxkrnl/xboxkrnl_audio_xma.cc", "sha256": "73c92f8c5196694f838a6f787750681e3f7a4cd044b478c118c3035a46e3c86c"},
+    "rexglue": {"commit": "cb58065c793429aa92895d778af58d12e9d26d8f", "decoder_header_sha256": "0f77e87e3a81a14ed50231587009006e915871205328b32f598a673ec62f98f8", "register_table_sha256": "f036b553b353a90b18dd7642a233ec0abcb98d372c644259263f55459acbaa7f"},
+    "context_bytes": 64,
+    "context_count": 320,
+    "generic_xma_known_register_range": "0x0600..0x06FF"
+  },
+  "classification": {
+    "demo-qualified": ["exact callsite/registers", "output slot", "experimental pointer observation", "post-import MmGetPhysicalAddress", "first MMIO frontier", "neutral/START equality", "default trap guard"],
+    "demo-observed": ["opt-in allocation and progression to MMIO store"],
+    "xenia-generic": ["64-byte context", "320-context array", "output-pointer success ABI", "generic XMA register table"],
+    "unknown": ["register 0x0C78 semantics", "XMA packet/timestamp/volume", "PCM", "language", "guest-owned pixels", "mission"]
+  },
+  "guard": {
+    "default_import_traps": true,
+    "experiment_is_not_play_or_replay": true,
+    "no_audio_decode": true,
+    "no_readback_or_screencap_promotion": true,
+    "xenia_rexglue_modified": false,
+    "retail_evidence_merged": false,
+    "proprietary_assets_tracked": false
+  },
+  "next_checkpoint": "qualify PAL XMA MMIO register 0x0C78 at 0x7FEA31E0 before any further mapping; otherwise retain default ordinal-548 trap"
+}

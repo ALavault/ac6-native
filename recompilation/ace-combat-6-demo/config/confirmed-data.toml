@@ -1,0 +1,23 @@
+# Binary-qualified non-code ranges between Xenon functions.  Additional
+# ranges are emitted by the demo-specific Ghidra manifest with byte hashes.
+
+[[range]]
+address = 0x82375954
+size = 0x04
+kind = "terminal-padding"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex between terminal helper entries"
+byte_sha256 = "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+
+[[range]]
+address = 0x8237596C
+size = 0x04
+kind = "terminal-padding"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex between terminal helper entries"
+byte_sha256 = "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119"
+
+[[range]]
+address = 0x82375984
+size = 0x0E40
+kind = "xex-callable-import-table"
+evidence = "qualified XEX import table: 228 contiguous 16-byte callable records; bogus one-byte Ghidra functions rejected because descriptor words do not decode as Xenon instructions"
+byte_sha256 = "5b0a7669a672b071daa5061877f3cb0952bd83217d5236516464c1ba9655642b"

@@ -1,0 +1,63 @@
+{
+  "schema": "ac6-demo-start-chunk-return-guard/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "a6f605156adce9f31209c8759db96d1ffa3c8e8fcac23b1a0c9cf8dcc45c2359",
+    "source_guest_bridge_sha256": "fc2b765e5ccea74b2d65932880b3c4e876b690c4c6dc82bff579a6eeca9e7159",
+    "hooks": ["AC6_DEMO_WATCH_CHUNK_RETURN=1", "AC6_DEMO_WATCH_INDIRECT_OBJECT=1"],
+    "hook_default": false,
+    "fresh_process_per_route": true,
+    "fresh_store_per_route": true,
+    "start_input": "button 0x10 held at ticks 252..267",
+    "start": {
+      "chunk_return_count": 1,
+      "return": {"target": "0x820E1F78", "tick": 268, "thread": 1, "r1": "0x7F040768", "r3": "0x7F0406F8", "r4": "0x00000001", "r5": "0x00000000", "r21": "0x00000000", "r26": "0x00000001", "r27": "0x00000000", "r28": "0x2E3CF0D4", "r29": "0x00000000", "r30": "0xFFFFFFFF", "r31": "0x2E3D3AD4", "lr": "0x82321F34"},
+      "rtply_sha256": "4bf229f4a691d28efb6e979b717120955f7337388190e7109f05bcfa9fb1c273",
+      "report_sha256": "598c6f84a5fbfc44aaeca2c9fb4cacafa1f38c2d2fc81d823971a9c8cb20c621",
+      "stderr_sha256": "50df21f818b941b1e028d557b53a58efe38f4cdbefdc9952334e85b29f1a4fc3"
+    },
+    "neutral": {
+      "chunk_return_count": 0,
+      "rtply_sha256": "919dd6f1fc894526a444d12f0968153cad8acc1cd6baa37ad022a6255a72df7e",
+      "report_sha256": "aacdebaf4412ad38104ccda80eba0163e7e801272d50433af494af5a6b6d9d72",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "common": {"max_ticks": 269, "presents": 132, "frontend": false, "mission": false, "terminal": false}
+  },
+  "control_join": {
+    "object": "0x2E3D3D14",
+    "r26": "0x2E3D3E64",
+    "load_r21_address": "0x2E3D3E68",
+    "load_r21_value": "0x2E3D4050",
+    "load_r27_address": "0x2E3D4050",
+    "load_r27_value": "0x2E3D4050",
+    "compare_pc": "0x820E1FE0",
+    "indirect_callers": ["0x820E2018", "0x820E205C"],
+    "dynamic_indirect_edges_observed": 0,
+    "early_equal_branch": "static bytes plus exact dynamic loads; no downstream bctrl observed"
+  },
+  "classification": {
+    "demo-qualified": ["PAL identity", "START-only chunk return", "exact loads and static compare join", "no downstream indirect edge"],
+    "demo-observed": ["r5=0 and callee-saved return context"],
+    "xenia-generic": [],
+    "unknown": ["thunk business semantics", "caller consumer", "frontend", "pixels", "audio", "mission", "terminal"]
+  },
+  "guard": {
+    "read_only_probe": true,
+    "hook_default_disabled": true,
+    "no_guest_state_injected": true,
+    "no_visual_promotion": true,
+    "no_renderer_fallback": true,
+    "no_generated_cpp_edit": true,
+    "no_ghidra_mutation": true,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

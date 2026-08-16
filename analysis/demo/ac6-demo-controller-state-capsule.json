@@ -1,0 +1,212 @@
+{
+  "schema": "ac6-demo-behavioral-capsule/v1",
+  "target_identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "image_base": "0x82000000"
+  },
+  "corridor_id": "scheduled-xam-input-to-title-logical-pressed-bitset",
+  "claim": "At the first reached XamInputGetState poll, a one-poll START frame is copied through the title's PPC postprocessor, normalized from raw 0x0010 to 0x0400, then mapped to logical current and pressed bit 0x10; a neutral control leaves every representation zero.",
+  "lane": "bridge",
+  "classification": {
+    "poll_callsite_and_field_offsets": "static_exact",
+    "neutral_and_start_field_values": "bridge_observed",
+    "title_normalizer_and_output": "bridge_observed",
+    "logical_bitset_mapping": "bridge_observed",
+    "deterministic_replay": "native_reproduced",
+    "menu_consumption": "unknown",
+    "visible_menu_state": "unknown"
+  },
+  "sdk_cross_match": {
+    "version": "XDK 6132.0",
+    "authority": "cross-match only; target callsites are demo SDK 5632",
+    "xinputdefs_sha256": "e6dae6d2523f067520a74becc2068ed7d1365f6087ba5a21f6a0a1f1baa9e5bb",
+    "state_size": 16,
+    "buttons_offset": 4,
+    "start_mask": 16,
+    "result": "matches the reached XamInputGetState payload exactly"
+  },
+  "scenario": {
+    "command": "probe --until mission --max-ticks 253 --backend headless",
+    "profile": "one explicit offline-local user",
+    "baseline": "connected neutral frame for every tick",
+    "stimulus": "START 0x0010 at tick 252 only, connected neutral otherwise",
+    "completed_ticks": 253,
+    "presents": 115,
+    "historical_frontend_marker": true,
+    "qualified_frontend_milestone": false,
+    "mission_milestone": false,
+    "outcome": "max_ticks"
+  },
+  "interventions": [
+    {
+      "name": "scheduled-xam-input-frame",
+      "behavioral": true,
+      "service": "XamInputGetState",
+      "guest_writes_by_probe": false,
+      "physical_controller_fallback": false,
+      "host_network_access": false
+    }
+  ],
+  "static_chain": {
+    "project": "ghidra-projects/ace-combat-6-demo",
+    "language": "PowerPC:BE:64:Xenon",
+    "controller_vtable": "0x8202A8DC, five exact slots",
+    "controller_copy_dispatch": "0x822EC008 calls vtable slot 3 at 0x822F5CE8",
+    "controller_copy_entry": "0x822F5CE8..0x822F5CFB copies controller+0x04 for 0x40 bytes",
+    "poll_dispatch": "0x822EC2A0 calls vtable slot 4 at 0x822F61A0",
+    "poll_function": "0x822F61A0",
+    "capabilities_output_setup": "0x822F6124 passes controller+0x58",
+    "state_output_setup": "0x822F6160 passes controller+0x44",
+    "xam_input_get_state_call": "0x822F6168",
+    "produced_lr": "0x822F616C",
+    "postprocessor_call": "0x822F6178 calls 0x822F6008",
+    "title_consumer": "0x82198BF0..0x821995AF, copy callsites 0x82198C44 and 0x821994CC",
+    "normalized_player0_buttons": "0x827B37E0, u32 big-endian; raw current is shifted left by 6",
+    "normalized_global_reader": "0x821995E8 in 0x821995B0..0x82199688 selects/reset records; it is not a menu-state branch",
+    "logical_bitset_handoff": "0x821DE990 maps normalized START 0x0400 to pressed logical bit 0x10 at 0x82798488",
+    "static_consumer_candidates": "0x82170FCC CModeTaskDemoBase::update and 0x82185210 CModeTaskMissionTitle::update; runtime reach unknown",
+    "controller_fields": {
+      "pressed_buttons": "+0x14, u32 big-endian",
+      "released_buttons": "+0x18, u32 big-endian",
+      "current_buttons": "+0x1C, u32 big-endian",
+      "previous_buttons": "+0x74, u32 big-endian",
+      "raw_buttons": "+0x48, u16 big-endian inside the XAM state output"
+    }
+  },
+  "dynamic_events": [
+    {
+      "control": "neutral",
+      "tick": 252,
+      "guest_thread": "main poll path",
+      "guest_pc": "0x822F6168",
+      "caller_guest_pc": "0x822F616C",
+      "controller_object": "0x829D153C",
+      "controller_vtable": "0x8202A8DC",
+      "xam_state_polls": 1,
+      "xam_capability_polls": 4,
+      "current_buttons": 0,
+      "pressed_buttons": 0,
+      "released_buttons": 0,
+      "previous_buttons": 0,
+      "normalized_buttons": 0,
+      "logical_current": 0,
+      "logical_previous": 0,
+      "logical_pressed": 0
+    },
+    {
+      "control": "START",
+      "tick": 252,
+      "guest_thread": "main poll path",
+      "guest_pc": "0x822F6168",
+      "caller_guest_pc": "0x822F616C",
+      "controller_object": "0x829D153C",
+      "controller_vtable": "0x8202A8DC",
+      "xam_state_polls": 1,
+      "xam_capability_polls": 4,
+      "current_buttons": 16,
+      "pressed_buttons": 16,
+      "released_buttons": 0,
+      "previous_buttons": 16,
+      "normalized_buttons": 1024,
+      "logical_current": 16,
+      "logical_previous": 0,
+      "logical_pressed": 16
+    }
+  ],
+  "input_schema": {
+    "tick": "u64 guest tick",
+    "buttons": "u16 XInput mask",
+    "triggers": "two u8 values",
+    "axes": "four signed i16 values",
+    "connected": "boolean",
+    "schedule_policy": "exactly one frame per guest poll; unspecified ticks are connected neutral"
+  },
+  "output_schema": {
+    "controller_object": "validated 32-bit mapped guest pointer",
+    "button_fields": "four separately decoded u32 big-endian values",
+    "normalized_buttons": "u32 big-endian title value at 0x827B37E0",
+    "logical_bitsets": "current/previous/pressed u32 big-endian values at 0x82798480/0x82798484/0x82798488",
+    "trace_domain": "input read-only observation"
+  },
+  "memory_effects": {
+    "probe_reads": ["controller+0x14", "controller+0x18", "controller+0x1C", "controller+0x74", "0x827B37E0", "0x82798480", "0x82798484", "0x82798488"],
+    "probe_writes": [],
+    "service_write": "qualified XamInputGetState output only",
+    "postprocessor_writes": ["controller+0x14", "controller+0x18", "controller+0x1C", "controller+0x74"]
+  },
+  "branch_coverage": {
+    "connected_neutral": true,
+    "connected_start_pressed": true,
+    "start_release_next_poll": false,
+    "disconnected": false,
+    "title_normalizer": true,
+    "menu_state_consumer": false
+  },
+  "rejected_hypotheses": [
+    "The first reached controller poll does not ignore the scheduled START mask.",
+    "The snapshot is not inferred from host input: it is read from the live guest object after PPC postprocessing.",
+    "A headless frontend milestone is not evidence that a visible menu was rendered."
+  ],
+  "unobserved_paths": [
+    "dynamic reach and taken/not-taken behavior of 0x82170FCC and 0x82185210",
+    "a guest-owned menu transition caused by START",
+    "the release edge on the next controller poll",
+    "visible menu output through Xenos/Vulkan or the stock oracle",
+    "mission launch"
+  ],
+  "native_comparator": {
+    "neutral": [0, 0, 0, 0],
+    "start": [16, 16, 0, 16],
+    "normalized_neutral": 0,
+    "normalized_start": 1024,
+    "logical_current_neutral": 0,
+    "logical_pressed_neutral": 0,
+    "logical_current_start": 16,
+    "logical_pressed_start": 16,
+    "field_order": ["current", "pressed", "released", "previous"],
+    "same_controller_object": true,
+    "trace_replay": "byte-identical AC6RTPLY-v4 semantics, 763 events"
+  },
+  "confidence": {
+    "static_layout": "static_exact",
+    "reached_transition": "bridge_observed",
+    "replay": "native_reproduced",
+    "menu_transition": "unknown",
+    "visual_result": "unknown"
+  },
+  "oracle_debt": [
+    {
+      "claim_id": "demo-visible-menu-start-transition",
+      "affirmation": "A START press at the reached poll changes the visible stock demo menu and selects or launches the intended menu state.",
+      "reason_static_bridge_insufficient": "The current bridge has no qualified renderer and neither typed task-state branch has yet been reached dynamically.",
+      "sensitive_domain": "Xenos final pixels and title menu state",
+      "minimal_stock_scenario": "Boot the qualified demo to its first stable menu and press START once.",
+      "minimal_input": "one START press followed by release",
+      "expected_observable": "before/after screenshot plus the first changed guest menu-state field or PC",
+      "expected_artifact": "bounded Xenia stock trace and two screenshots",
+      "blocked_product_gate": "visible interactive frontend"
+    }
+  ],
+  "artifacts": {
+    "runtime_binary_sha256": "c804032f0bf9ab04fab732ca9b98d9de46a7c8ad74c4715fec1d7aa2d0c51e6e",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "codegen_manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "generated_guest_object_sha256": "e56094dde5a942f5ffb74bcfe70c6e679489408d9f9cf48cd6369a85773f9feb",
+    "neutral_report_sha256": "b7b676a9e50094d0397a699c9fd02a9adf0f994afe0b07ec47d81578f4ad16e2",
+    "neutral_trace_sha256": "b0b89606b318a73034a20a8e0ba618e0f40d32d4c195942ad732f09c1c18a27d",
+    "start_report_sha256": "a1ae4185e84f5e912be69d678029fa4e819997a806859fe81282796669ab0702",
+    "start_trace_sha256": "e4a97131f48371872c2d3ddfc0a632dbc4ecfb79c7b2292c845e6e7ccbef4c93"
+  },
+  "validation": {
+    "baseline_control": true,
+    "positive_control": true,
+    "same_guest_bound": true,
+    "same_controller_object": true,
+    "deterministic_replay": true,
+    "replay_events": 763,
+    "renderer_validation": false,
+    "menu_transition_validation": false
+  }
+}

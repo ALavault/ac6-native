@@ -1,0 +1,85 @@
+{
+  "schema": "ac6-demo-start-tick268-load-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "72701e4729db70605ad1f8303d60267f4b7e67c2384862cf12dc1d8f696708d7",
+    "source_guest_bridge_sha256": "e150cdfb1357659b30b460c1cb0ffba15cd6700373642d9c9d8172f262f20e22",
+    "trace_fragment_sha256": "d3ed18ebbb97e685b452fe89d07d3851e29f29e4f2171d8d34720af87bf6088f",
+    "fresh_process_per_route": true,
+    "fresh_store_per_route": true,
+    "tick_window": [268, 269],
+    "address_range": {"begin": "0x2E3D3C00", "end": "0x2E3D4500"},
+    "hooks": ["AC6_DEMO_WATCH_TICK_LOADS=1", "AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS=1"],
+    "hook_default": false,
+    "start_input": "button 0x10 held at ticks 252..267",
+    "start": {
+      "tick_load_rows": 148,
+      "presents": 132,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "outcome": "max_ticks",
+      "completed_ticks": 269,
+      "stderr_sha256": "2b4d71874e342162624327ccccd69d4c5dbf325a756b24324372776fcf28fcbf",
+      "rtply_sha256": "4bf229f4a691d28efb6e979b717120955f7337388190e7109f05bcfa9fb1c273",
+      "report_sha256": "598c6f84a5fbfc44aaeca2c9fb4cacafa1f38c2d2fc81d823971a9c8cb20c621"
+    },
+    "neutral": {
+      "tick_load_rows": 147,
+      "presents": 132,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "outcome": "max_ticks",
+      "completed_ticks": 269,
+      "stderr_sha256": "72eeee5e6d1c62b4fb1843c00bb7015a320b1d4f04ee23a7285e4021b4774adc",
+      "rtply_sha256": "919dd6f1fc894526a444d12f0968153cad8acc1cd6baa37ad022a6255a72df7e",
+      "report_sha256": "aacdebaf4412ad38104ccda80eba0163e7e801272d50433af494af5a6b6d9d72"
+    }
+  },
+  "differential": {
+    "strict_common_load_rows": 141,
+    "start_only": [
+      {"address": "0x2E3D3C0C", "value": "0x00000000", "lr": "0x820CDC20", "function": "sub_82321E20", "line": 24471},
+      {"address": "0x2E3D3D14", "value": "0x820077AC", "lr": "0x82321F34", "function": "sub_823241D0", "line": 5188},
+      {"address": "0x2E3D3E68", "value": "0x2E3D4050", "lr": "0x820E1F80", "function": "sub_820E1F78", "line": 31532},
+      {"address": "0x2E3D4050", "value": "0x2E3D4050", "lr": "0x820E1F80", "function": "sub_820E1F78", "line": 31536},
+      {"address": "0x2E3D3D18", "value": "0x2E3D3AD4", "lr": "0x820E1FC4", "function": "sub_820DD528", "line": 20549},
+      {"address": "0x2E3D3D20", "value": "0x2E3CF150", "lr": "0x820D9508", "function": "sub_820D9500", "line": 11007},
+      {"address": "0x2E3D3D20", "value": "0x2E3CF150", "lr": "0x820DC680", "function": "sub_820DC660", "line": 18316}
+    ],
+    "neutral_only": [
+      {"address": "0x2E3D44E8", "value": "0x00000000", "lr": "0x820CDF24", "function": "sub_82321E20", "line": 24538},
+      {"address": "0x2E3D44EC", "value": "0x00000000", "lr": "0x823255F0", "function": "sub_823255E8", "line": 8350},
+      {"address": "0x2E3D44F0", "value": "0xFFFFFFFF", "lr": "0x823255F0", "function": "sub_823255E8", "line": 8344},
+      {"address": "0x2E3D44F0", "value": "0x00000000", "lr": "0x823255F0", "function": "sub_823255E8", "line": 8355},
+      {"address": "0x2E3D44D0", "value": "0x2E3D3AD4", "lr": "0x823255F0", "function": "sub_823255E8", "line": 8363},
+      {"address": "0x2E3D44DC", "value": "0x2DF1121C", "lr": "0x823255F0", "function": "sub_823255E8", "line": 8367}
+    ],
+    "consumer_causality_proven": false
+  },
+  "classification": {
+    "demo-qualified": ["PAL identity", "bounded load A/B", "exact PC/LR/line/value differential"],
+    "demo-observed": ["START-only vtable and thunk-field loads at tick 268"],
+    "xenia-generic": [],
+    "unknown": ["load/store order", "consumer semantics", "frontend", "pixels", "audio", "mission", "terminal"]
+  },
+  "guard": {
+    "read_only_probe": true,
+    "range_filter_explicit": true,
+    "hook_default_disabled": true,
+    "consumer_order_required_before_promotion": true,
+    "no_renderer_fallback": true,
+    "no_generated_cpp_edit": true,
+    "no_ghidra_mutation": true,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false
+  }
+}

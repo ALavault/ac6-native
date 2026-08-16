@@ -1,0 +1,152 @@
+{
+  "schema": "ac6-demo-boundary-closure-evidence/v1",
+  "target_identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "image_base": "0x82000000",
+    "ghidra_project": "ghidra-projects/ace-combat-6-demo",
+    "ghidra_version": "12.1.2",
+    "language": "PowerPC:BE:64:Xenon"
+  },
+  "corridor_id": "frontend-tick220-vtable-slot11-getter",
+  "claim": "The live slot-11 virtual call at 0x82323F04 dispatches to the independently bounded getter 0x820D0FF8..0x820D1004, which reads one big-endian word from object+0x1C[index].",
+  "lane": "bridge",
+  "classification": {
+    "instruction_bounds_and_callsite": "static_exact",
+    "live_object_vtable_slot_and_target": "bridge_observed",
+    "native_product_behavior": "unknown",
+    "stock_behavior": "unknown"
+  },
+  "scenario": {
+    "command": "probe --until mission --max-ticks 3600 --backend headless",
+    "completed_ticks": 220,
+    "thread": 1,
+    "presents": 111,
+    "frontend": true,
+    "mission": false,
+    "inputs": "neutral AC6RTPLY-v4 seam"
+  },
+  "interventions": [
+    {
+      "name": "qualified-indirect-dispatch-observer",
+      "behavioral": false,
+      "detail": "Read-only capture keyed by the compiled guest LR 0x82323F08."
+    },
+    {
+      "name": "xam-bootstrap-dispatch",
+      "behavioral": true,
+      "services": [
+        "XNotifyPositionUI(6)",
+        "XamUserGetSigninState(0)=1",
+        "XamUserGetName(0,16)=User"
+      ]
+    }
+  ],
+  "static_chain": {
+    "caller_function": "0x82323BB8",
+    "object_load": "0x82323EE4: lwz r11,0x10(r31)",
+    "this_register": "r3/r30",
+    "vtable_load": "0x82323EF8: lwz r11,0(r30)",
+    "slot_load": "0x82323EFC: lwz r11,0x2C(r11)",
+    "branch": "0x82323F04: bctrl",
+    "produced_lr": "0x82323F08",
+    "entry": "0x820D0FF8",
+    "entry_bytes": "8163001c548a103a7c6b502e4e800020",
+    "entry_byte_sha256": "b48dced8399369eb2dc72968be0b14fa1031a09966ba8c7f74310ff2b5b6ac08",
+    "predecessor": "0x820D0FF4: blr",
+    "body": [
+      "0x820D0FF8: lwz r11,0x1C(r3)",
+      "0x820D0FFC: rlwinm r10,r4,2,0,29",
+      "0x820D1000: lwzx r3,r11,r10",
+      "0x820D1004: blr"
+    ],
+    "following_sibling_owner": "0x820D1008"
+  },
+  "dynamic_events": [
+    {
+      "event": "virtual_dispatch",
+      "tick": 220,
+      "thread": 1,
+      "lr": "0x82323F08",
+      "object": "0x2E3CEB10",
+      "vtable": "0x8200654C",
+      "slot": 11,
+      "target": "0x820D0FF8",
+      "index_r4": 0,
+      "count": 1
+    },
+    {
+      "event": "next_frontier",
+      "tick": 220,
+      "thread": 1,
+      "lr": "0x820DF8E4",
+      "target": "0x8222F2D0",
+      "diagnostic": "unqualified guest indirect call"
+    }
+  ],
+  "memory_effects": {
+    "reads": [
+      "object+0x00: big-endian guest vtable pointer",
+      "vtable+0x2C: big-endian guest target pointer",
+      "object+0x1C: big-endian guest array pointer",
+      "array+index*4: big-endian guest word"
+    ],
+    "writes": []
+  },
+  "branch_coverage": {
+    "observed_indices": [0],
+    "terminal_return_observed": true
+  },
+  "rejected_hypotheses": [
+    "0x820D0FF8 is not accepted merely because it lies near another function; its predecessor and terminal flows bound it independently.",
+    "The call is not joined from a plausible vtable alone; the live object, exact slot, exact target and hit are all captured."
+  ],
+  "unobserved_paths": [
+    "indices other than zero",
+    "other live object instances",
+    "stock XAM return values"
+  ],
+  "native_comparator": {
+    "boundary_record": "config/confirmed-chunks.toml@0x820D0FF8",
+    "required_edge": "thread=1,lr=0x82323F08,target=0x820D0FF8,slot=11",
+    "trace_must_remain_sha256": "88716516817bb4d66a404a43dcb082a643ca798d3baffe58c114bc0cc28ddb34"
+  },
+  "confidence": {
+    "bounds": "static_exact",
+    "dispatch": "bridge_observed",
+    "semantics": "static_exact"
+  },
+  "oracle_debt": [
+    {
+      "claim_id": "demo-xam-signin-state-user0",
+      "claim": "The retail XAM service returns signin state 1 for the qualified local profile scenario.",
+      "reason": "The bridge currently supplies this service result, so it cannot promote it to stock_observed.",
+      "domain": "XAM/profile",
+      "minimal_stock_scenario": "Boot the demo with one local offline profile and record ordinal 528 for user 0 once.",
+      "expected_artifact": "one stock callsite/result record",
+      "blocked_product_gate": "exact XAM parity"
+    }
+  ],
+  "artifacts": {
+    "ghidra_chunk_record_sha256": "c43b45f9e48df2f9f57eb7afcc1632da28dac23a58a21ae0eb4094308c26f3ab",
+    "ghidra_manifest_sha256": "f9950d22e0ab415a07e92f0bc9f4e94d334afabc0ea0fca5f3c53d08fe5819ce",
+    "ghidra_journal_sha256": "20892836a952797a924e3825d51ff898a727cf8d273cbd0b8018eee1beec6093",
+    "boundary_config_sha256": "a6e0566e374d5c188b00cb8626ef3a73af2fd2884761efd560f8a5988ebed1c1",
+    "codegen_manifest_sha256": "a00bd935bd6b90cef4ca9874dd2e3b92b94816111993c51e22e298dbebf20126",
+    "generated_guest_object_sha256": "a345c3760e6cdc5a11ceae094b27214c3dcb3b54eec94581220cd4a2193fc5a7",
+    "frontier_report_sha256": "d16138d83e27a7bac8319776e8d782893233aaafd778325d571b5eeec3f7263a",
+    "trace_sha256": "88716516817bb4d66a404a43dcb082a643ca798d3baffe58c114bc0cc28ddb34"
+  },
+  "validation": {
+    "independent_ghidra_imports": 2,
+    "ghidra_imports_byte_identical": true,
+    "requalified_boundaries": 30,
+    "independent_codegens": 2,
+    "codegens_byte_identical": true,
+    "boundary_diagnostics": 0,
+    "unsupported_instructions": 0,
+    "codegen_on_ctest": "10/10",
+    "codegen_off_ctest": "11/11"
+  }
+}

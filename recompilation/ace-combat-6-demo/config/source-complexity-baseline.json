@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "files": {
+    "src/guest_bridge.cpp": {
+      "kind": "source",
+      "lines": 1443,
+      "functions": []
+    }
+  }
+}

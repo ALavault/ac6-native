@@ -1,0 +1,73 @@
+{
+  "schema": "ac6-emu-agent-report/v1",
+  "status": "implemented-diagnostic",
+  "target": {
+    "project": "ac6-pal",
+    "program": "Default.xex",
+    "program_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "title_id": "4E4D87E6",
+    "media_id": "565E01A0",
+    "image_base": "0x82000000",
+    "endianness": "big",
+    "cpu": "Xenon PowerPC",
+    "graphics": "Xenos"
+  },
+  "repository": {
+    "commit": "d7ca71b8734d8b4984ab658d34f69316342552f1",
+    "worktree_status_sha256": "ac83b7f07ee16f1f02e9317f1a4dff45959cdac8abac51eeffa3a4c99309127f"
+  },
+  "ghidra": {"project": "ace-combat-6-demo", "language": "PowerPC:BE:64:Xenon"},
+  "xenia": {
+    "kind": "xenia-edge",
+    "release": "60ff861",
+    "source_commit": "e4b13738c3c461b2c06241fa3f54b5a669b6a304",
+    "appimage_path": ".tools/xenia-edge-60ff861/xenia_edge_linux.AppImage",
+    "appimage_sha256": "c2cac2a029ce0d44a71c4e919fd71c702654079023b63fd669472ba3cd78b828",
+    "config_sha256": null,
+    "transport": "none"
+  },
+  "protocol": {
+    "request_schema": "emu-agent/v1",
+    "result_schema": "emu-agent-result/v1",
+    "timeline_clock": "xam_input_poll",
+    "artifact_policy": "references_only",
+    "safety": {"allow_guest_write": false, "allow_synthetic_state": false, "allow_shell": false}
+  },
+  "capability_summary": {
+    "xam_input_poll_step": false,
+    "guest_controller_injection": "hook-exists-no-transport",
+    "present_boundary": "observed-hook-only",
+    "savestate": false,
+    "guest_memory": false,
+    "registers": false,
+    "framebuffer_capture": false,
+    "transport": false
+  },
+  "validation": {
+    "command": "python -m pytest -q tests/test_emu_agent_ac6.py",
+    "result": "6 passed",
+    "compileall": "pass",
+    "xenia_probe": "identity-only; no emulator process launched",
+    "input_control": "timeline validated and hashed; not accepted by a guest",
+    "liveness": false,
+    "pitch_controls": {
+      "neutral": "not executed; transport unavailable",
+      "positive": "not executed; transport unavailable",
+      "negative": "not executed; transport unavailable",
+      "shifted_poll": "not executed; transport unavailable"
+    }
+  },
+  "claims_allowed": [
+    "the PAL XEX, Ghidra project, and Xenia Edge AppImage identities are hash-qualified",
+    "controller timelines are canonicalized on the XAM-poll clock",
+    "the runner refuses guest writes, synthetic state, shell, and missing Xenia transport",
+    "seeded edge variants and metadata-only comparisons are deterministic"
+  ],
+  "claims_forbidden": [
+    "retail guest input was accepted",
+    "XAM poll stepping or player/child/transform causality was observed",
+    "strict or semantic retail determinism",
+    "gameplay, pixels, audio, mission result, or parity"
+  ],
+  "next_gate": "add an authenticated local SubmitAction/observation transport to the pinned Edge AgentBridge, then run neutral/positive/negative/shifted-poll from isolated profile copies with guest liveness and tracepack evidence"
+}

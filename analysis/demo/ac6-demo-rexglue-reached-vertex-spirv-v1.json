@@ -1,0 +1,85 @@
+{
+  "schema": "ac6-demo-rexglue-reached-vertex-spirv/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "classification": {
+    "microcode_identity": "demo-observed",
+    "program_register_count": "demo-observed+xenia-generic",
+    "translation": "rexglue-generic",
+    "spirv_validation": "spirv-tools-generic",
+    "xenosrecomp_vertex_comparison": "unknown-no-exact-demo-container"
+  },
+  "sources": [
+    {
+      "report_sha256": "5899020b259336e3b244e1d92678fdefb85c0663986ffe23f08265074bd6ec39",
+      "ib_sha256": "5714cd0f408f8f7d45c8067dc7011de344c14119df1646024c67d1c64d6b1c3d"
+    },
+    {
+      "report_sha256": "e998760bfa5b1ba9ccdafad867d797010f30c43ff7108312724606eca73ade0c",
+      "ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+    }
+  ],
+  "tools": {
+    "rexglue": {
+      "outer_commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+      "sdk_tree": "741541d6035616dc406f7d74c2fe8f155913c77b",
+      "version": "0.7.1",
+      "librexgraphics_sha256": "564a728c0f83217d0e6f1c5c4cb8d829cb9d3c6e04c63e4285b1a449a98243a5",
+      "authority": "generic-only"
+    },
+    "spirv_tools": {
+      "commit": "e39e5c5838bc4b4162c349f2a2e5f163efe5432f",
+      "spirv_val_sha256": "2cc19cddc1293518705467f41f55094800b319bd77b1eaf6e30bc7901d6e3406",
+      "target_env": "vulkan1.1",
+      "scalar_block_layout": true
+    }
+  },
+  "shaders": [
+    {
+      "microcode_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+      "dword_count": 24,
+      "sq_program_cntl": "0x1000000E",
+      "register_count": 15,
+      "spirv_size": 7800,
+      "spirv_sha256": "944fd75222b6de743b9ce1cd18440b8497230e3813bb105c655cd6cfba123ce6",
+      "disassembly_sha256": "860531fd1e38a7edc018e9a5397f157657797631c0a2bbe3968624720c9eba2d",
+      "spirv_val_exit_code": 0
+    },
+    {
+      "microcode_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+      "dword_count": 27,
+      "sq_program_cntl": "0x10010001",
+      "register_count": 2,
+      "spirv_size": 12496,
+      "spirv_sha256": "ba9b97cceb816059cd21ff6abfda6c59160363155d5b270a3e315b215adb0576",
+      "disassembly_sha256": "9daf5ab06ee9a1d00787acc55da976ee4ee981f12c11a7bcecd138bc4d9e7425",
+      "spirv_val_exit_code": 0
+    },
+    {
+      "microcode_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+      "dword_count": 15,
+      "sq_program_cntl": "0x00010002",
+      "register_count": 3,
+      "spirv_size": 9288,
+      "spirv_sha256": "4913cadb00aef0bba3f42c25e25919b6403e2de654e8165748337df331cdc920",
+      "disassembly_sha256": "52e5e6b3441d956d5a5ee43c2fb9dc01638e160370b33510cab254fdcdb23328",
+      "spirv_val_exit_code": 0
+    }
+  ],
+  "xenosrecomp": {
+    "commit": "990d03b28a27b50277ee5d8d942e1c5f873869d1",
+    "exact_demo_container_matches": 0,
+    "status": "not-run-fail-closed",
+    "reason": "XenosRecomp requires a qualified ShaderContainer; no reached vertex microcode hash occurs in the deterministic demo NSXR inventory"
+  },
+  "policy": {
+    "temporary_outputs_root": "/fastdata/lavaulta/tmp",
+    "proprietary_bytes_published": false,
+    "microcode_disassembly_or_spirv_tracked": false,
+    "play_fallback_added": false,
+    "fail_closed": true
+  }
+}

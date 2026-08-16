@@ -1,0 +1,16 @@
+{
+  "target": "xbox360-xenon",
+  "generated_output": "build-only",
+  "unknown_instruction": "trap",
+  "unknown_mmio": "trap",
+  "unknown_import": "trap",
+  "unknown_graphics": "trap",
+  "unknown_media": "trap",
+  "guest_pointer_bits": 32,
+  "guest_gpr_bits": 64,
+  "guest_endian": "big",
+  "guest_memory_bytes": 4294967296,
+  "framebuffer": {"width": 1280, "height": 720, "refresh_hz": 60, "present_interval": 2, "letterbox": true},
+  "trace": {"magic": "AC6RTPLY", "version": 4, "domains": ["input", "simulation", "objectives", "graphics", "media", "hashes"]},
+  "supported": false
+}

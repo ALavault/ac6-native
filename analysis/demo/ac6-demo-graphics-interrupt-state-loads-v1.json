@@ -1,0 +1,118 @@
+{
+  "schema": "ac6-demo-graphics-interrupt-state-loads/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "handler": "0x821C5190",
+    "handler_range": ["0x821C5190", "0x821C5323"],
+    "handler_bytes_sha256": "2ec755d70c3feb6adc7ae4eacf85403e1a2609cd4d5fe74c17c33f65a61ac1d3",
+    "inner_call_site": "0x821C528C"
+  },
+  "instrumentation": {
+    "env": [
+      "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT=1",
+      "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE=1",
+      "AC6_DEMO_WATCH_FRONTBUFFER_READERS=1"
+    ],
+    "header": "recompilation/ace-combat-6-demo/src/guest_bridge/graphics_interrupt_trace.hpp",
+    "header_sha256": "64bff903467acf5183ecbbaa9ab3a7128c31b34e72a2296d58ce2c4dff4689f9",
+    "guest_bridge_sha256": "814325d10695b2890595dd7fa150c5034d79bea9869a3b794aed821799e12f11",
+    "max_state_rows": 256,
+    "mutates_guest_memory": false,
+    "default_effect": "disabled"
+  },
+  "runs": {
+    "neutral_t800": {
+      "process_fresh": true,
+      "ticks": 800,
+      "trace_sha256": "bbc7ecb8fc20bfdbbdd1d70d24a4fdc78f6619dd5622c761e88541d776fd7068",
+      "report_sha256": "0d70fd74c24bd4205491c66c56bd4a5c31278dd99d6270a44248196990563ffa",
+      "stderr_sha256": "c0563a6e313861793ba51e165a65521b1ac10e2753575f144c5c7e170b6c1079",
+      "state_rows": 12,
+      "frontbuffer_scalar_rows": 0,
+      "frontbuffer_vector_rows": 0,
+      "vdswap_notifications": 663,
+      "r9_at_inner_call": "0x00000000",
+      "inner_call_edge": false,
+      "guard_probe": {
+        "report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79",
+        "trace_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+        "stderr_sha256": "84f4cb2905d5df8e6d4818dda12edce1729894b8393d9b613cca3200f80c80b8",
+        "ticks": 253,
+        "violations": 0
+      }
+    },
+    "start_t800": {
+      "process_fresh": true,
+      "ticks": 800,
+      "trace_sha256": "54a2860fccb21ab3be0595ae5532a7f9e0dbc3b7b971aaf334a7a087f5a427e1",
+      "report_sha256": "062e97c4087ec46b14979ecfd0ce3cef1e5f00531e27bfd899d7e6b7386c36fe",
+      "stderr_sha256": "c0563a6e313861793ba51e165a65521b1ac10e2753575f144c5c7e170b6c1079",
+      "state_rows": 12,
+      "frontbuffer_scalar_rows": 0,
+      "frontbuffer_vector_rows": 0,
+      "vdswap_notifications": 663,
+      "r9_at_inner_call": "0x00000000",
+      "inner_call_edge": false,
+      "guard_probe": {
+        "report_sha256": "0f66d089f0656be4c79f0cd9b101f194d27ba6cefcd91e49e60ca2dfa10d564e",
+        "trace_sha256": "31553733582cf7345375d8f197a28645621e488700f2a31b7e883b66109360b2",
+        "stderr_sha256": "84f4cb2905d5df8e6d4818dda12edce1729894b8393d9b613cca3200f80c80b8",
+        "ticks": 253,
+        "violations": 0
+      }
+    }
+  },
+  "state_rows": [
+    {"address": "0x82000608", "value": "0x000101BE", "lr": "0x821C5198", "line": 28303},
+    {"address": "0x000101BE", "value": "0x10041A00", "lr": "0x821C5198", "line": 28305},
+    {"address": "0x10045A9C", "value": "0x00000000", "lr": "0x821C51B8", "line": 28314},
+    {"address": "0x10046E18", "value": "0x0000003C", "lr": "0x821C51B8", "line": 28316},
+    {"address": "0x10045A90", "value": "0x00000000", "lr": "0x821C51B8", "line": 28341},
+    {"address": "0x10045A94", "value": "0x00000000", "lr": "0x821C51FC", "line": 28369},
+    {"address": "0x10045A8C", "value": "0x00000000", "lr": "0x821C51FC", "line": 28371},
+    {"address": "0x10045A84", "value": "0x00000000", "lr": "0x821C51FC", "line": 28392},
+    {"address": "0x10045A8C", "value": "0x00000000", "lr": "0x821C51FC", "line": 28428},
+    {"address": "0x10045A9C", "value": "0x00000001", "lr": "0x821C51FC", "line": 28436},
+    {"address": "0x10045AA0", "value": "0x00000000", "lr": "0x821C51FC", "line": 28461},
+    {"address": "0x10044494", "value": "0x16AE2000", "lr": "0x821C51FC", "line": 28482}
+  ],
+  "classification": {
+    "demo-qualified": [
+      "12 exact handler state loads per run, byte-identical neutral/START",
+      "r9=0 at 0x821C528C and no inner indirect target",
+      "zero scalar/vector frontbuffer reads"
+    ],
+    "demo-observed": [
+      "global chain 0x82000608 -> 0x000101BE -> 0x10041A00",
+      "663 VdSwap notifications per route"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantics of state fields",
+      "future target when r9 is nonzero",
+      "host scanout read, pixels, frontend, mission and screencap"
+    ]
+  },
+  "validation": {
+    "ctest_codegen_on": "17/17",
+    "ctest_vector_diagnostic": "17/17",
+    "vector_binary_sha256": "686e311babdbc740967e790639339fd8f1e5233f44e8a2f0c6ee3532ed789ea4",
+    "codegen_binary_sha256": "502c62a0fe19e9116a3ec557f1f4c62b506d4f842ab1eccc36f33261e1daea91",
+    "render_status": "AC6_DEMO_STATUS_PASS",
+    "git_diff_check": "pass",
+    "generated_cpp_modified": false,
+    "retail_evidence_merged": false
+  },
+  "policy": {
+    "fail_closed": true,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "rexglue_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "screencap_promoted": false
+  }
+}

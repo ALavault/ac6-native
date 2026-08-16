@@ -1,0 +1,79 @@
+{
+  "schema": "ac6-demo-xgi-user-context/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "demo_observed": {
+    "route": "neutral",
+    "tick": 4254,
+    "thread": 1,
+    "module": "xam.xex",
+    "name": "XMsgStartIORequest",
+    "ordinal": 503,
+    "thunk": "0x82375A44",
+    "caller_pc": "0x821A559C",
+    "caller_lr": "0x821A55A0",
+    "registers": {
+      "r3_app": "0x000000FB",
+      "r4_message": "0x000B0006",
+      "r5_overlapped": "0x00000000",
+      "r6_buffer": "0x7F0409B8",
+      "r7_length": "0x00000018"
+    },
+    "buffer_be_words": [
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00000000",
+      "0x00008001",
+      "0x00000000"
+    ]
+  },
+  "demo_qualified": {
+    "handler": "read-only exact-tuple guard",
+    "return_r3": "0x00000000",
+    "guest_writes": 0,
+    "negative_guards": [
+      "caller_lr",
+      "app",
+      "message",
+      "overlapped",
+      "length",
+      "mapped buffer",
+      "six big-endian words"
+    ],
+    "proof": {
+      "outcome": "max_ticks",
+      "completed_ticks": 5000,
+      "presents": 4863,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "report_sha256": "6066da562acebd1d6596218c641676ea5cc3a36455f31b2f7c65d03e2cb2d6e2",
+      "trace_sha256": "f2c3f6a03095651767ea95617358f819fa99f726b7e1279bfdb173da652d286f",
+      "repeat_count": 2,
+      "byte_identical": true
+    }
+  },
+  "xenia_generic": {
+    "checkout_commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec",
+    "xam_msg_sha256": "2fba467f5791c16adbd9b9cc05b67badbf5cfda647cf9725c9c0172c78d26218",
+    "xgi_app_sha256": "b17632456bf642946136dc81df201316ea63a9d6a7c6d9d98c6bf28ccabad478",
+    "interpretation": "five-register message ABI; app 0xFB/message 0xB0006 reads a 24-byte user-context request and returns success without a guest write"
+  },
+  "artifacts": {
+    "binary_sha256": "51f8d208b712db48c453d7f2c6de4d63e89967eb878e3443f0b67d8fd971dafc",
+    "codegen_manifest_sha256": "12b75543281291dcb4380ca2393b89a08bfdbf48f9b1ffda1e56075f0c9bc9c9",
+    "boundary_config_sha256": "14711d9a5fdf34c34f9b17b65a6aea06044934034bf2195c1a37f5528764b013",
+    "static_atlas_sha256": "4e39111c83b9d124e02577fa707eb0815b2bfe2bc58ea4315f9691ae589230a2"
+  },
+  "unknown": [
+    "semantic name of context id 0x8001 in the PAL title",
+    "first guest-owned frontend state",
+    "first non-black EDRAM producer",
+    "causal START transition",
+    "mission result"
+  ]
+}

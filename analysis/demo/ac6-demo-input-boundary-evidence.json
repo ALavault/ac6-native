@@ -1,0 +1,228 @@
+{
+  "schema": "ac6-demo-input-boundary-evidence/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "ghidra": {
+    "project": "ace-combat-6-demo",
+    "language": "PowerPC:BE:64:Xenon",
+    "version": "12.1.2",
+    "runtime_jdk": "21.0.11",
+    "manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "journal_sha256": "b133247ff63117a24b0871661ada71198811b2c39e6292dcd1dd96a57ad90f78",
+    "reference_script_sha256": "60ade829ad0205cc8e8fa0c468863b5b4fb34896521ecfac5ccb5f558004ffeb",
+    "vtable_script_sha256": "16a339485bda33c103aed08ad63d97772625378912dc353f804c406160400800"
+  },
+  "sdk_cross_match": {
+    "role": "cross-match only; the demo's 5632 callsites remain authoritative",
+    "available_version": "XDK 6132.0 (identical input headers in local 6132.2 and 6132.6)",
+    "xinputdefs_sha256": "e6dae6d2523f067520a74becc2068ed7d1365f6087ba5a21f6a0a1f1baa9e5bb",
+    "xbox_header_sha256": "2e05e4b3f719921fa5d3a99b234e5ca5daa25f3d10392a548e51ec3a4d7a850b",
+    "public_state_layout": {
+      "size": 16,
+      "packet_number": "+0x00 u32",
+      "buttons": "+0x04 u16",
+      "triggers": "+0x06/+0x07 u8",
+      "thumb_axes": "+0x08/+0x0A/+0x0C/+0x0E signed i16"
+    },
+    "start_mask": "XINPUT_GAMEPAD_START=0x0010",
+    "demo_xam_wrapper_difference": "XamInputGetState receives user, flags and output in r3/r4/r5; this internal wrapper ABI is established by the demo XEX, not by the public two-argument XInputGetState prototype"
+  },
+  "static_input_cone": {
+    "controller_vtable": {
+      "address": "0x8202A8DC",
+      "slots": 5,
+      "live_value": "bridge_observed",
+      "poll_state": "0x822F61A0",
+      "poll_state_slot": 4,
+      "copy_state": "0x822F5CE8..0x822F5CFB",
+      "copy_state_slot": 3,
+      "qualified_slots": [
+        {"slot": 0, "address": "0x822F5FC0"},
+        {"slot": 1, "address": "0x822F5C40"},
+        {"slot": 2, "address": "0x822EFC40"},
+        {"slot": 3, "address": "0x822F5CE8"},
+        {"slot": 4, "address": "0x822F61A0"}
+      ]
+    },
+    "poll_dispatch": {
+      "caller": "0x822EC2A0..0x822EC34F",
+      "callsite": "0x822EC2E0",
+      "instruction": "bctrl",
+      "slot_load": "0x822EC2D8 loads vtable+0x10",
+      "dynamic_lr": "0x822EC2E4",
+      "dynamic_target": "0x822F61A0",
+      "dynamic_count": 4
+    },
+    "state_copy_dispatch": {
+      "title_wrapper": "0x822E0278..0x822E028F",
+      "manager_reader": "0x822EC008..0x822EC057",
+      "slot_dispatch": "0x822EC200..0x822EC234",
+      "dynamic_lr": "0x822EC03C",
+      "dynamic_target": "0x822F5CE8",
+      "dynamic_count": 8,
+      "copy_contract": "copies controller+0x04 for 0x40 bytes to the title output"
+    },
+    "title_normalizer": {
+      "function": "0x82198BF0..0x821995AF",
+      "copy_callsites": ["0x82198C44", "0x821994CC"],
+      "player_zero_output": "0x827B37E0",
+      "start_transform": "raw current bit 0x0010 is shifted left by 6 to normalized bit 0x0400"
+    },
+    "normalized_state_xrefs": {
+      "classification": "static_exact",
+      "count": 4,
+      "entries": [
+        {
+          "site": "0x821995E8",
+          "access": "read",
+          "function": "0x821995B0..0x82199688",
+          "effect": "tests owner+0x1C masks against four normalized player records and dispatches 0x821984B0(owner,index) on a match"
+        },
+        {
+          "site": "0x82199660",
+          "access": "write",
+          "function": "0x821995B0..0x82199688",
+          "effect": "clears the four normalized records during reset"
+        },
+        {
+          "site": "0x82199804",
+          "access": "write",
+          "function": "0x821997C0..0x821998C8",
+          "effect": "clears the four normalized records before polling"
+        },
+        {
+          "site": "0x823734E4",
+          "access": "write",
+          "function": "bounded constructor block 0x82373498..0x8237350C",
+          "effect": "initializes four records of stride 0xA0"
+        }
+      ],
+      "menu_conclusion": "The only direct read selects and resets input records; it is not evidence of a title or menu transition. Later logical consumers are reached through the bitset handoff at 0x821DE990."
+    },
+    "logical_bitset_handoff": {
+      "classification": "static_exact",
+      "mapper": "0x821DE990..0x821DEA3C",
+      "mapper_callsites": [
+        {"site": "0x82199864", "target": "global+0x20874"},
+        {"site": "0x82199878", "target": "global+0x219D8"},
+        {"site": "0x8219988C", "target": "global+0x22B3C"},
+        {"site": "0x821998A0", "target": "global+0x23CA0"},
+        {"site": "0x821998AC", "target": "owner+0x20"}
+      ],
+      "binding_helper": "0x821DE778..0x821DE7C0",
+      "binding_contract": "For each of 32 masks, source.normalized & binding sets logical bit (1 << index) in target.current at target+0xE44.",
+      "start_binding": {
+        "map": "global+0x22B3C = 0x8279763C",
+        "initializer": "0x8218EB18(mode=1)",
+        "instructions": "0x8218EE58 loads binding index 4; 0x8218EE5C ORs 0x0400; 0x8218EE60 stores it",
+        "normalized_button": "0x0400",
+        "logical_index": 4,
+        "logical_mask": "0x00000010"
+      },
+      "edge_helper": "0x821DE6E0 computes pressed = current & ~previous",
+      "addresses": {
+        "current": "0x82798480",
+        "previous": "0x82798484",
+        "pressed": "0x82798488"
+      }
+    },
+    "first_static_consumers": [
+      {
+        "classification": "static_exact",
+        "runtime_reach": "unknown",
+        "function": "0x82170F58..0x82171250",
+        "type": "CModeTaskDemoBase::update",
+        "pressed_load": "0x82170FC0",
+        "start_test": "0x82170FCC",
+        "taken_target": "0x8217111C",
+        "first_effect": "0x82171128 stores 1 to [0x827435F8]+0x18",
+        "type_evidence": "vtable 0x8200C904; Opening, Intermission, Ending and SceneViewerMission derivatives share this handler"
+      },
+      {
+        "classification": "static_exact",
+        "runtime_reach": "unknown",
+        "function": "0x82185198..0x821852A8",
+        "type": "CModeTaskMissionTitle::update",
+        "precondition": "task+0x0C == 1",
+        "pressed_load": "0x8218520C",
+        "start_test": "0x82185210",
+        "taken_effect": "listener slot +0x54 resolves to 0x821852B0..0x821852FC, which stores parent+0x44=3 and parent+0x0C=2",
+        "type_evidence": "vtable 0x8200E5C4 and RTTI CModeTaskMissionTitle"
+      }
+    ],
+    "rejected_static_route": {
+      "address": "0x823C2D2C",
+      "reason": "qualified as a file-I/O dispatch table, not the controller global"
+    }
+  },
+  "historical_probe": {
+    "max_ticks": 10,
+    "completed_ticks": 5,
+    "frontend_presents": 3,
+    "controller_constructor_edge": {
+      "thread": 1,
+      "tick": 2,
+      "lr": "0x822EC19C",
+      "target": "0x822F5C40",
+      "count": 4
+    },
+    "trace_sha256": "6ece2e34e9691d0716740cf2f96cd6ae6355952a4ec07e87a72a0efcb5006490",
+    "frontier_report_sha256": "d24e632e1aeec221a2b01fb0fbe217696d0ee4643efecaacb1d124b6d30eb99e",
+    "result": "constructor-only; superseded by the tick-252 poll evidence"
+  },
+  "runtime_probe": {
+    "binary_sha256": "c804032f0bf9ab04fab732ca9b98d9de46a7c8ad74c4715fec1d7aa2d0c51e6e",
+    "codegen_manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "generated_guest_object_sha256": "e56094dde5a942f5ffb74bcfe70c6e679489408d9f9cf48cd6369a85773f9feb",
+    "max_ticks": 253,
+    "completed_ticks": 253,
+    "frontend_presents": 115,
+    "historical_frontend_marker": true,
+    "qualified_frontend_milestone": false,
+    "mission_milestone": false,
+    "xam_input_imports_reached": [
+      "XamInputGetCapabilities",
+      "XamInputGetState"
+    ],
+    "poll": {
+      "tick": 252,
+      "function": "0x822F61A0",
+      "xam_get_state_lr": "0x822F616C",
+      "postprocessor": "0x822F6008",
+      "controller_object": "0x829D153C"
+    },
+    "controls": {
+      "neutral": {
+        "controller_vtable": "0x8202A8DC",
+        "fields_current_pressed_released_previous": [0, 0, 0, 0],
+        "normalized_buttons": 0,
+        "logical_current": 0,
+        "logical_previous": 0,
+        "logical_pressed": 0,
+        "trace_sha256": "b0b89606b318a73034a20a8e0ba618e0f40d32d4c195942ad732f09c1c18a27d",
+        "report_sha256": "b7b676a9e50094d0397a699c9fd02a9adf0f994afe0b07ec47d81578f4ad16e2"
+      },
+      "start_one_poll": {
+        "buttons": 16,
+        "controller_vtable": "0x8202A8DC",
+        "fields_current_pressed_released_previous": [16, 16, 0, 16],
+        "normalized_buttons": 1024,
+        "logical_current": 16,
+        "logical_previous": 0,
+        "logical_pressed": 16,
+        "trace_sha256": "e4a97131f48371872c2d3ddfc0a632dbc4ecfb79c7b2292c845e6e7ccbef4c93",
+        "report_sha256": "a1ae4185e84f5e912be69d678029fa4e819997a806859fe81282796669ab0702"
+      }
+    },
+    "deterministic_replay": {
+      "passed": true,
+      "event_count": 763,
+      "backend": "headless"
+    },
+    "result": "scheduled START reaches the guest controller state and the first title normalizer; static analysis maps it to pressed logical bit 0x10 and identifies two typed consumer branches, but their runtime reach and visible rendering remain unqualified"
+  },
+  "status": "input-seam-through-static-logical-consumers-closed; dynamic-task-branch-and-visual-gates-open"
+}

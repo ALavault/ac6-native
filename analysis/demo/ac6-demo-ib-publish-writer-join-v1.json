@@ -1,0 +1,95 @@
+{
+  "schema": "ac6-demo-ib-publish-writer-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "inputs": {
+    "seed_store": ".build/ac6-demo-store-test-3",
+    "ab_temp": "/fastdata/lavaulta/tmp/ac6-demo-ib-publish-ab2.dbdXjq",
+    "max_ticks": 300,
+    "neutral_start_input": "tick 252, buttons 0x0010, connected",
+    "writer_hook": "AC6_DEMO_WATCH_IB_WRITERS=1",
+    "combined_hook": "AC6_DEMO_WATCH_EVENT_POST_SET=1"
+  },
+  "ib": {
+    "main": {
+      "address": "0x1274A000",
+      "end_exclusive": "0x1274CF54",
+      "dword_count": 3029,
+      "byte_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "first_dword": "0x00000D02",
+      "last_dword": "0x00000005"
+    },
+    "ring_publication": {
+      "address": "0x126CA058",
+      "guest_dwords": ["0xC0013F00", "0x1274A000", "0x00000BD5"],
+      "writer_pc": ["0x821B9D24", "0x821B9D3C", "0x821B9D44"],
+      "writer_instruction": "0x821B9D24: 7D 2A C1 2E (stwx r9,r10,r24)",
+      "function": "0x821B9BC8",
+      "thread": 1,
+      "tick": 0
+    }
+  },
+  "ab": {
+    "neutral": {
+      "writer_rows": 4958,
+      "main_ib_rows": 4958,
+      "tick0_guest_rows": 2858,
+      "ring_publication_rows": 3,
+      "first_main_row": {"address":"0x1274A000","size":4,"tick":0,"thread":1,"lr":"0x821BAE2C","function":"0x821BAAD0","generated_line":3404},
+      "last_main_row": {"address":"0x1274CF50","size":4,"tick":0,"thread":1,"lr":"0x821B9F78","function":"0x821B9F70","generated_line":1254},
+      "stderr_sha256": "3a2c708863eca4ac41808a562c209fc7fd191f5ce6ac6646bbc52d8c63bed765"
+    },
+    "start": {
+      "writer_rows": 4958,
+      "main_ib_rows": 4958,
+      "tick0_guest_rows": 2858,
+      "ring_publication_rows": 3,
+      "first_main_row": {"address":"0x1274A000","size":4,"tick":0,"thread":1,"lr":"0x821BAE2C","function":"0x821BAAD0","generated_line":3404},
+      "last_main_row": {"address":"0x1274CF50","size":4,"tick":0,"thread":1,"lr":"0x821B9F78","function":"0x821B9F70","generated_line":1254},
+      "stderr_sha256": "3a2c708863eca4ac41808a562c209fc7fd191f5ce6ac6646bbc52d8c63bed765"
+    },
+    "normalized_writer_lines_sha256": "b96745e47a50dc670e6379e35169ff987f1d4b82db68cbdb373b816c976a39e3",
+    "byte_identical": true
+  },
+  "coverage": {
+    "guest_hook_rows": 2858,
+    "guest_unique_four_byte_starts": 2858,
+    "missing_guest_starts": 62,
+    "missing_contiguous_range": {"start":"0x1274A660","end_exclusive":"0x1274A760","bytes":256},
+    "host_write_observation": {"native_module_offset":"0x26CE517","classification":"demo-observed only","guest_writer_proven":false},
+    "sizes": {"store4":2751,"store8":107},
+    "note": "The 256-byte gap is covered by AC6_IB_HOST_WRITE lines, not by the guest store hook; no complete per-dword writer map is promoted."
+  },
+  "ordering": {
+    "combined_run": true,
+    "first_main_ib_log_index": 5,
+    "first_ring_publication_log_index": 5786,
+    "first_event_post_set_schedule_index": 5790,
+    "first_target_entry": "0x821A7160",
+    "target_entry_count": 53,
+    "target_set_tick": 1,
+    "target_resume_tick": 1,
+    "qualified_order": "IB construction and ring publication precede the first post-NtSetEvent scheduler activation in stderr order",
+    "activation_to_renderer_causality": "unknown"
+  },
+  "classification": {
+    "demo-qualified": ["neutral/START writer and publication streams byte-identical", "first/last writer rows and ring triple", "main IB hash and exact bounds", "publication before first 0x821A7160 post-set schedule row"],
+    "demo-observed": ["2858 guest writer rows at tick 0", "4/8-byte store families", "host-write coverage of the 256-byte gap"],
+    "xenia-generic": [],
+    "unknown": ["values/semantics of all writer rows", "complete per-dword writer map", "PM4/Xenos semantic join", "frontend, pixels, mission and START transition"]
+  },
+  "policy": {
+    "read_only_audit": true,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

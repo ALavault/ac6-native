@@ -1,0 +1,66 @@
+{
+  "schema": "ac6-demo-xma-address-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "ghidra_project": "ghidra-projects/ace-combat-6-demo",
+    "ghidra_language": "PowerPC:BE:64:Xenon"
+  },
+  "static": {
+    "reader": {
+      "entry": "0x82356510",
+      "size": "0x18",
+      "byte_sha256": "83dbe228ed39602a849d9a7655e1b117e9118aacd9b084058c93cb923a22d6d2",
+      "operation": "lwbrx from 0x7FEA1800; stw to 0x829DA52C"
+    },
+    "address_builder": {
+      "entry": "0x82357240",
+      "size": "0xCC",
+      "byte_sha256": "7436f8404267283916f2e64fdcda534788553fbf366daa330bc09fe9220ed9",
+      "post_mm_get_physical_address_lr": "0x823572AC",
+      "store_pc": "0x823572D8",
+      "barrier_pc": "0x823572DC"
+    },
+    "equation": {
+      "I": "((P - G) >> 6) & 0xFFFF",
+      "A": "0x7FEA1A80 + ((I >> 5) << 2)",
+      "V": "1 << (I & 0x1F)",
+      "operation": "stwbrx V,0,A; eieio"
+    },
+    "control_source": {
+      "path": ".build/ac6-demo-atomic-runtime-1/codegen/generated/ppc_recomp.48.cpp",
+      "role": "literal control-flow cross-match only"
+    }
+  },
+  "calculated_cases": [
+    {"P": "0x2EEEC000", "G": "0x2EEEC000", "I": "0x0000", "A": "0x7FEA1A80"},
+    {"P": "0x2EEEC000", "G": "0x00000000", "I": "0xBB00", "A": "0x7FEA31E0"},
+    {"P": "0x2EEEC000", "G": "0x2E800000", "I": "0xBB00", "A": "0x7FEA31E0"}
+  ],
+  "dynamic_join": {
+    "source": "cycle1715 direct/rr opt-in A/B",
+    "context_pointer": "0x2EEEC000",
+    "trap_address": "0x7FEA31E0",
+    "thread": 21,
+    "tick": 1048,
+    "runtime_lr": "0x823572AC",
+    "trap_before_effect": true
+  },
+  "classification": {
+    "demo-qualified": ["PAL bytes/hashes", "PPC arithmetic", "calculated addresses"],
+    "demo-observed": ["cycle1715 trap and context pointer"],
+    "xenia-generic": [],
+    "unknown": ["MMIO register semantics", "effective G", "hardware effect", "XMA packets/audio"]
+  },
+  "guard": {
+    "no_mmio_mapping_added": true,
+    "default_xmacreate_traps": true,
+    "no_retail_merge": true,
+    "no_generated_cpp_promotion": true,
+    "no_audio_or_readback": true
+  },
+  "next_checkpoint": "read-only trace of PAL read 0x7FEA1800, global 0x829DA52C store, and P/G/A/V before 0x823572D8"
+}

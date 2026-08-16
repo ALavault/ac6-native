@@ -1,0 +1,57 @@
+{
+  "schema": "ac6-demo-neutral-xma-kick/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "run": {
+    "route": "neutral",
+    "backend": "headless",
+    "store": "/fastdata/lavaulta/tmp/ac6-cycle1741-neutral-long.PVFEW5/store",
+    "max_ticks": 5300,
+    "completed_ticks": 5052,
+    "thread": 21,
+    "presents": 4915,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "closed_observation": {
+    "register": "0x7FEA1A80",
+    "callsite_pc": "0x82357240",
+    "caller_lr": "0x823572AC",
+    "context": "0x2E8000C0",
+    "wire_value": "0x08000000",
+    "logical_bit": "0x00000008",
+    "tick": 5052,
+    "effect": "not modeled; guard accepted only the observed tuple"
+  },
+  "next_frontier": {
+    "register": "0x7FEA1A80",
+    "callsite_pc": "0x82357240",
+    "caller_lr": "0x823572AC",
+    "context": "0x2E800100",
+    "wire_value": "0x10000000",
+    "logical_bit": "0x00000010",
+    "tick": 5052,
+    "thread": 21,
+    "status": "unknown; trapped before effect"
+  },
+  "graphics": {
+    "ib_intermediate_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+    "ib_main_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+  },
+  "artifacts": {
+    "report_sha256": "287ecfce993fc87031e6de929ec1e73168df7a6aa6c892c0b92cb87c3d55754e",
+    "trace_sha256": "6f82300f92f6611c2bcfe67035a740475c27e722567cd33a190b9dadf4ba5ed0",
+    "stderr_sha256": "d47515ebeb5a8139bb22bd8192a61d38f4d05dc135f34b0fd6989a5a563349ae",
+    "binary_sha256": "dab70114197b8ab4a9aa446ede2e1f9ee443086c124fd373933c870b86f6391a",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa"
+  },
+  "provenance": {
+    "demo_observed": ["five XMA context/kick tuples at tick 5052"],
+    "demo_qualified": ["fourth tuple accepted only by exact opt-in guard"],
+    "unknown": ["XMA hardware semantics", "audio packets/samples", "frontend and mission result"]
+  }
+}

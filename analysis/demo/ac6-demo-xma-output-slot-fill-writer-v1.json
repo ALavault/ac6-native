@@ -1,0 +1,41 @@
+{
+  "schema": "ac6-demo-xma-output-slot-fill-writer/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "rr": {
+    "commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "trace_root": "/fastdata/lavaulta/tmp/ac6-cycle1704.AkiNBj",
+    "neutral_watch_sha256": "8bca938d2adeed23e2fa1f38b1c0ce573a0b40600f1895d0f29d5fa56436391d",
+    "neutral_frame_sha256": "6768cb57d3ab14352a722fa16058e92bd688d2ed748a981480f2d15a64d66904",
+    "start_watch_sha256": "b296b0d25ad3f17118af8832af49a41202ece19017336226a760f6e798fb9a76"
+  },
+  "dynamic_ab": {
+    "max_ticks": 1050,
+    "present_count": 911,
+    "frontier": {"tick": 1048, "thread": 21, "lr": "0x82357298", "ordinal": 548, "name": "XMACreateContext"},
+    "guest_slot": "0x17360050",
+    "writer_value_be": "0xFEFEFEFE",
+    "neutral": {"rtply_sha256":"6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20", "report_sha256":"7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131"},
+    "start": {"rtply_sha256":"d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d", "report_sha256":"238bd9e4f7e8ea150b7e5622101340145bc0dd9e7076d5c6472f4970634022cc"}
+  },
+  "static_join": {
+    "fill_helper": {"entry":"0x823273E0","size":"0xA0","byte_sha256":"b89e717560e2a52f7975ff89a362a8301cab15e05c3d5f90dac72af83eadb91a","pseudocode_sha256":"bd6f73382fa16ab22bab4895d3e3595564fbbec7c5d3753990e00d094db9ea08"},
+    "fill_caller": {"entry":"0x821A3C30","size":"0x9D0","byte_sha256":"bb41ae128e7548b79805f080e4953c9a65c81d0e0831509ccae29560ec9cfb3a","pseudocode_sha256":"96a0dfe832598c2c8eff87663da17349f1cc6c235c6aee066d2e9b857cff5316"},
+    "fill_callsite": {"pc":"0x821A3E70","bytes":"48183571","lr_after_call":"0x821A3E74","r4":"0x000000FE","callee":"0x823273E0"},
+    "zero_fill": {"entry":"0x821A4B70","instruction":"0x821A4B94","bytes":"7c205fec","mnemonic":"dcbzl r0,r11"}
+  },
+  "classification": {
+    "demo-qualified": ["neutral/START same writer", "slot/value", "fill callsite/LR", "PAL hashes", "fill->zero-fill->XMA call order"],
+    "demo-observed": ["reverse watchpoint order", "FE pattern"],
+    "xenia-generic": [],
+    "unknown": ["first writer before fill", "fill tick/thread", "table/index", "post-call output pointer", "consumer and XMA packet"]
+  },
+  "guard": {"ordinal_548_traps": true, "import_effect": false, "audio_decode": false, "readback": false, "screencap": false},
+  "next_checkpoint": "capture TLS tick/thread at fill and first consumer of [0x17360050,0x17360054)"
+}

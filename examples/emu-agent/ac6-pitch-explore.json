@@ -1,0 +1,14 @@
+{
+  "schema": "emu-agent/v1",
+  "request_id": "ac6-pitch-explore",
+  "target": {"project": "ac6-pal", "program_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8", "emulator_sha256": "c2cac2a029ce0d44a71c4e919fd71c702654079023b63fd669472ba3cd78b828", "emulator_config_sha256": null, "title_id": "4E4D87E6"},
+  "start": {"checkpoint_id": "neutral-headless-t253", "state_sha256": null, "profile_snapshot_sha256": null},
+  "reproducibility": {"policy": "diagnostic", "repetitions": 3, "seed": 6},
+  "strategy": {"kind": "explore", "episode_budget": 8, "mutation_budget": 8},
+  "timeline": [],
+  "stop": {"any": [{"xam_polls": 240}, {"new_coverage": true}, {"crash": true}], "host_watchdog_seconds": 180},
+  "observe": {"profile": "ac6_input_pitch_v1", "artifact_policy": "references_only"},
+  "safety": {"allow_guest_write": false, "allow_synthetic_state": false, "allow_shell": false},
+  "backend": "xenia",
+  "seed": 6
+}

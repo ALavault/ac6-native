@@ -1,0 +1,90 @@
+{
+  "schema": "ac6-xenia-runtime-final-archive/v1",
+  "archive": {
+    "path": "/fastdata/lavaulta/autoo-re-agent/workspaces/ace-combat-6/xenia-runtime-results-20260815-final.tar.zst",
+    "bytes": 8616470,
+    "sha256": "0196ab3630a937118abea3d41e6d3dc663fcfdb04a3d7d2a843d572361578768",
+    "readme_sha256": "cc62c165f0dafb494da5d1fd3cfda1513c758de8ebe2cc000a88e4bc24526bc6",
+    "manifest_sha256": "14a49d1e3ec5bfe2fb4dc84248ac180f6acf49c1b4f5fa596b5c212d2e325620",
+    "sha256sums_sha256": "1459ff3a2c6d84ad3dff4a2e23b7b25b7dd0c30ca05d9a2d4893debfa7ace92d",
+    "integrity_scope": "archive hash and selected payload hashes rechecked read-only; not all members extracted into the project"
+  },
+  "oracle_context": {
+    "title_id": "4E4D87E6",
+    "reported_title": "ACE COMBAT 6 Demo",
+    "xenia_revision": "7010c86fb14f118ee598d3f76010dc0759b9502a",
+    "external_game_hash_recorded_by_run": "141e9f25d84d1b29746271e6dfc60ca742f40531d0a48f1a47637dac54e2b117",
+    "pal_demo_xex_sha256": null,
+    "pal_identity_join": "unknown",
+    "authority": "xenia-oracle only"
+  },
+  "successful_run": {
+    "session": "20260815-162258",
+    "mode": "gameplay-native",
+    "started": "2026-08-15T16:22:58+02:00",
+    "finished": "2026-08-15T16:28:30+02:00",
+    "exit_status": 137,
+    "manifest_sha256": "bcfd4eb3634f25dbca04c63eca072a5aa98525af284a6434969054f7af82da88",
+    "config_sha256": "5457dc1898e120cc5efe729c4094bc04404b4726905d41f50d902185dcd69e60",
+    "runtime": {
+      "runtime_events_sha256": "bb6fa18e9c5f10b5a0935ab36445ac1cc525449d5bae3103179d54ba928971ac",
+      "semantic_events_sha256": "07526239cfee793ac110b141fd874374ae8b1f73443f015bf2391d05bd659882",
+      "controller_sha256": "9c81b3b7b91b66e450fd4e31aa2dd52983cb8a864626da9d1e22fe26c2f03de1",
+      "xenia_log_sha256": "2d2696ae89e907c792f264d2bc4e8c58859b91bd5411dd7f34264f6de6b6a302",
+      "tick_frequency": 50000000,
+      "events": 72488,
+      "duration_guest_seconds": 328.96327828,
+      "event_counts": {"thread_create":23,"frame_swap":12496,"audio_submit":59969},
+      "frame_swap_pc_lr": "0x821C5A1C/0x821C5A20",
+      "frame_swap_args": ["0xBA9A0000","0x1A9A0000",1280,720,6],
+      "audio_submit_pc_lr": "0x8234D360/0x8234D364",
+      "audio_submit_args": [0,"0x40020700",0,0,0],
+      "thread_create_pc_lr": "0x821A8CFC/0x821A8D00"
+    },
+    "stable_interval": {"guest_seconds":30.539,"frames_before":8262,"frames_after":9173,"audio_before":32416,"audio_after":38125,"fps":29.83},
+    "semantic": {"rows":2113,"watchdog_snapshots":657,"thread_pc_snapshots":655,"file_open":11,"file_read":790,"watchdog_snapshots_with_waits":0},
+    "controller": {"rows":19,"thread":6,"pc_first":"0x822F6168","lr_first":"0x822F616C","nonzero_button_masks":{"0x10":3,"0x400":2,"0x1000":2}},
+    "screenshots": [
+      {"name":"xenia-title-check.png","sha256":"66a4336b48a1705ed5a83e5904aa3605e162612faffabfca65e7aa3edb3c6766","width":1853,"height":1011,"role":"oracle-only title"},
+      {"name":"xenia-cinematic.png","sha256":"e2de233a9a4023d0a91f7627ec5309d06f98fc74e111bf289842f4f64e4a1915","width":1853,"height":1011,"role":"oracle-only cinematic"},
+      {"name":"xenia-gameplay-check.png","sha256":"ad06392d9da572a981e561acd00c2975f481677ef730352e29940bbfb8ac7416","width":1853,"height":1011,"role":"oracle-only gameplay"},
+      {"name":"xenia-gameplay-sustained.png","sha256":"8d5f715020605c9800fd3f47c022f3c0b7df4aeb2d18727374c5b09428fdffef","width":1853,"height":1011,"role":"oracle-only sustained gameplay"}
+    ]
+  },
+  "cadence": {
+    "ten_second_windows": {
+      "170-180": {"frames":297,"audio":1871},
+      "200-210": {"frames":299,"audio":1873},
+      "250-260": {"frames":299,"audio":1870},
+      "270-280": {"frames":291,"audio":1845},
+      "280-290": {"frames":276,"audio":1660},
+      "290-300": {"frames":201,"audio":1463},
+      "300-310": {"frames":181,"audio":1596},
+      "310-320": {"frames":151,"audio":1338}
+    },
+    "alsa_or_underrun_log_lines": 40,
+    "exact_alsa_underrun_recoveries_reported": 36,
+    "interpretation": "global slowdown after approximately 280 guest seconds; cause not isolated"
+  },
+  "comparative_runs": {
+    "native_freeze": "20260815-145806: threads 6 and 17 blocked at NtSignalAndWaitForSingleObjectEx, guest PC 0x821A69C8, signal 0xF8000088, wait 0xF800008C",
+    "strace_progress": "20260815-150700: reached gameplay under continuous strace, but scheduling perturbation made it slow",
+    "patched_native": "20260815-162258: passed black screen, title/menu, cinematic and live gameplay without ptrace scheduling",
+    "thread_event_test": "737 assertions (712 wait, 25 event) reported by MANIFEST"
+  },
+  "classification": {
+    "xenia-generic": ["Xenia revision and instrumentation stream", "runtime event schema and cadence", "generic guest PC/LR/thread observations", "POSIX event deadlock comparison"],
+    "demo-observed": ["archive metadata labels title ID 4E4D87E6 as AC6 Demo", "Xenia oracle reached title/menu/cinematic/gameplay", "oracle screenshots and controller transitions"],
+    "demo-qualified": [],
+    "unknown": ["join to PAL Default.xex SHA de917873…5da8", "parity with native ac6-demo-recomp", "PAL PM4/IB/shader identity", "guest-owned pixels/readback", "endogenous mission result", "clean terminal status and cause of late slowdown"]
+  },
+  "policy": {
+    "project_files_modified": false,
+    "retail_evidence_merged": false,
+    "xenia_checkout_modified": false,
+    "screenshots_promoted_to_native_proof": false,
+    "shader_microcode_copied_or_tracked": false,
+    "proprietary_asset_followed": false,
+    "fail_closed": true
+  }
+}

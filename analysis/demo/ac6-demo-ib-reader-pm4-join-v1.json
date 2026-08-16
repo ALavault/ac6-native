@@ -1,0 +1,99 @@
+{
+  "schema": "ac6-demo-ib-reader-pm4-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "inputs": {
+    "store_seed": ".build/ac6-demo-store-test-3",
+    "ab_temp": "/fastdata/lavaulta/tmp/ac6-demo-ib-reader-final.MS8prn",
+    "max_ticks": 300,
+    "until": "frontend",
+    "backend": "headless",
+    "start_input": "tick 252, buttons 0x0010, connected",
+    "trace_sha256": {
+      "neutral": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+      "start": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b"
+    },
+    "frontier_report_sha256": {
+      "neutral": "a11feac6f2df648d6b8a82cc2048d0b16ea37f308a2753858f6eafceab2a4340",
+      "start": "c74ca0ea7733fe49f0ee5440c73e414737f7fa3cf8e83dc39b95012e30112593"
+    },
+    "stderr_sha256": "4edea68095837c315ab88f60aea9fc01b77d1e31fcd9fd1051bc7e0ad7b57597",
+    "binary_sha256": "2d791e20a83bb7997d74857dae845598e331f503b55247dd85027cb3c8902c89",
+    "hooks": ["AC6_DEMO_WATCH_IB_READERS=1", "AC6_DEMO_WATCH_IB_WRITERS=1"]
+  },
+  "ab": {
+    "neutral": {"status": 4, "completed_ticks": 300, "reader_rows": 9, "writer_rows": {"main_ib":4958,"ring_publication":3}},
+    "start": {"status": 4, "completed_ticks": 300, "reader_rows": 9, "writer_rows": {"main_ib":4958,"ring_publication":3}},
+    "reader_lines_sha256": "d5dc151cc105026550005be3505656832c44e7abbc00b6c3f810432c8d226e13",
+    "writer_lines_sha256": "b96745e47a50dc670e6379e35169ff987f1d4b82db68cbdb373b816c976a39e3",
+    "reader_stream_byte_identical": true,
+    "writer_stream_byte_identical": true,
+    "stderr_byte_identical": true
+  },
+  "reader_rows": [
+    {"region":"ring_publication","address":"0x126CA058","offset_dword":0,"value":"0xC0013F00"},
+    {"region":"ring_publication","address":"0x126CA05C","offset_dword":1,"value":"0x1274A000"},
+    {"region":"ring_publication","address":"0x126CA060","offset_dword":2,"value":"0x00000BD5"},
+    {"region":"main_ib","address":"0x1274A000","offset_dword":0,"value":"0x00000D02"},
+    {"region":"main_ib","address":"0x1274A3BC","offset_dword":239,"value":"0xC0003601"},
+    {"region":"main_ib","address":"0x1274A60C","offset_dword":387,"value":"0xC0003600"},
+    {"region":"main_ib","address":"0x1274A660","offset_dword":408,"value":"0x00054800"},
+    {"region":"main_ib","address":"0x1274A67C","offset_dword":415,"value":"0xC0036400"},
+    {"region":"main_ib","address":"0x1274CF50","offset_dword":3028,"value":"0x00000005"}
+  ],
+  "pm4_join": {
+    "main_ib_address": "0x1274A000",
+    "main_ib_end_exclusive": "0x1274CF54",
+    "main_ib_dword_count": 3029,
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "ring_publication": ["0xC0013F00","0x1274A000","0x00000BD5"],
+    "packet_matches": [
+      {"offset_dword":239,"header":"0xC0003601","opcode":"0x36","name":"PM4_DRAW_INDX_2"},
+      {"offset_dword":387,"header":"0xC0003600","opcode":"0x36","name":"PM4_DRAW_INDX_2"},
+      {"offset_dword":408,"header":"0x00054800","kind":"type0-register-write","register":"0x4800"},
+      {"offset_dword":415,"header":"0xC0036400","opcode":"0x64","name":"PM4_XE_SWAP"},
+      {"offset_dword":3028,"container_packet_offset":3025,"header":"0xC0025800","opcode":"0x58","name":"PM4_EVENT_WRITE_SHD","value":"0x00000005"}
+    ],
+    "ring_snapshot": {"base":"0x126CA000","capacity_dwords":131072,"submissions":2,"submitted_dwords":25,"max_submission_dwords":22},
+    "inventory_source": "analysis/demo/ac6-demo-pm4-inventory-v1.json",
+    "inventory_semantic_status": "structural packet match only; no new Xenos semantic name inferred"
+  },
+  "consumer": {
+    "native_method": "GuestBridge::apply_xenos_mmio_write",
+    "source": "recompilation/ace-combat-6-demo/src/guest_bridge/graphics_ring.hpp",
+    "mmio_store_address": "0x7FC80714",
+    "ring_word_load_source_lines": "418-439",
+    "indirect_capture_source_lines": "452-485",
+    "pm4_processor": "XenosCommandProcessor::process_batch",
+    "pm4_processor_source": "recompilation/ace-combat-6-demo/src/xenos_command_processor.cpp:462-625",
+    "guest_publication_context": {"thread":1,"tick":0,"lr":"0x821B9C80","function":"__imp__sub_821B9BC8"},
+    "guest_reader_pc": null,
+    "classification": "host consumer anchored to an exact guest MMIO publication; separate guest reader PC is not claimed"
+  },
+  "source_hashes": {
+    "graphics_ring_hpp": "31f47c0384ab1b1b889bc8f75edf82281d3d8ea620f15f5dc64de27131976e28",
+    "guest_bridge_cpp": "23dc239146b971018340bd6c32510fd4a7047e0f68420118c072f79a53fb635d",
+    "xenos_command_processor_cpp": "38f9dbcda48befc60cc67e10c884aeeab7861f1f47709dcd2e78f3b00cdc3b57"
+  },
+  "classification": {
+    "demo-qualified": ["A/B identical exact reader rows and values", "guest MMIO publication context", "main IB hash/bounds and packet offset joins", "reader path is transactional and bounds checked"],
+    "demo-observed": ["reader trace is emitted by native host memory loads", "generated-line 808 is instrumentation context, not a guest PC"],
+    "xenia-generic": [],
+    "unknown": ["separate guest hardware reader PC", "semantic meaning of type0 register 0x4800", "resolve pixels and frontend/mission result"]
+  },
+  "policy": {
+    "read_only_hook": true,
+    "default_enabled": false,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "schema": "ac6-demo-guest-present-writeback/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "backend": "Vulkan"
+  },
+  "source_provenance": {
+    "generic_tiling": "ReXGlue",
+    "rexglue_commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+    "xenos_tiling_source": "recompilation/ace-combat-6-demo/src/xenos_tiling.cpp",
+    "retail_evidence_merged": false
+  },
+  "destination": {
+    "xe_swap_address": "0x1374A000",
+    "format": 6,
+    "tiled": true,
+    "width": 1280,
+    "height": 720,
+    "bytes": 3768320,
+    "end_exclusive": "0x13AE2000",
+    "present_joined": true,
+    "guest_allocation_owned": true,
+    "guest_range_mapped": true,
+    "padding_preserved": true
+  },
+  "writeback": {
+    "writer": "DemoSession::store_guest_bytes -> GuestMemory::store_bytes",
+    "pixel_only_tiled_copy": true,
+    "host_tiled_sha256": "94831d4c398252020f792d92f546c5122ad522c4270b73be9e8619fde1db641f",
+    "guest_tiled_sha256": "87898167ad53aa9cf9f8a867de7becf9fa422d5f3fc5c65710a9b67ad7ec1f3d",
+    "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "guest_readback_matches_resolve": true,
+    "raw_bytes_persisted": false
+  },
+  "runs": {
+    "neutral": {
+      "ticks": 253,
+      "rtply_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "return_code": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "writer_trace": {
+        "address": "0x1374A000",
+        "size": 3768320,
+        "caller_module_offset": "0x9BA87"
+      }
+    },
+    "start_tick_252": {
+      "ticks": 253,
+      "rtply_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "return_code": 4,
+      "outcome": "max_ticks",
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "writer_trace": {
+        "address": "0x1374A000",
+        "size": 3768320,
+        "caller_module_offset": "0x9BA87"
+      }
+    }
+  },
+  "validation": {
+    "ctest_codegen_on": "17/17",
+    "ctest_demo_off": "18/18",
+    "complexity": "pass",
+    "source_audit": "pass",
+    "binary_sha256": "d5e5dbcfe49d4b2ab1392b4d49b72cbb4a9f51320be86f3c263233ad87a74714",
+    "source_hashes": {
+      "xenos_guest_present_join.hpp": "81765c14271f5e7cef099364d25f420f9be2087fd61c74a5be814128a5ffadb4",
+      "session.hpp": "4079c73f678578854f7721a7275ec419fd83815d75edcb8bacafd8b63b79642e",
+      "vulkan_neutral_resolve.hpp": "3c04a42736dc392421d4698ce3efd2024986b7002ccd34760a4086cfafec91ec",
+      "vulkan_neutral_resolve.cpp": "97629b2a30ae00da9e03f874c493181b513a5ab20d3754e417eb3f08f998d40d",
+      "main.cpp": "cc0246f33e4e1dbec11f9285fa352eb50622c9d057ea24e934f7d9582f0f2269"
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "XE_SWAP destination to owned GuestMemory allocation",
+      "pixel-only tiled writeback with preserved padding",
+      "guest reload and linear digest equality",
+      "neutral/START A/B identical guest pixel digest"
+    ],
+    "demo-observed": ["black neutral/START frame at 253 ticks"],
+    "xenia-generic": ["ReXGlue Xenos 2D tiling formula"],
+    "unknown": [
+      "first guest consumer of the frontbuffer",
+      "two-tick guest persistence",
+      "non-black pixels",
+      "frontend/mission result",
+      "promotable screencap"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "fallback_visual_enabled": false,
+    "guest_cpu_writer_attributed": false,
+    "retail_evidence_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "screencap_promoted": false
+  }
+}

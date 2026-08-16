@@ -1,0 +1,96 @@
+{
+  "schema": "ac6-demo-runtime-normal-readback-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "execution": {
+    "scenario": "neutral input, codegen ON, Vulkan, bounded probe",
+    "build": ".build/ac6-demo-codegen-build-1/ac6-demo-recomp",
+    "store": ".build/ac6-demo-store-test-3",
+    "max_ticks": 253,
+    "completed_ticks": 253,
+    "outcome": "max_ticks",
+    "process_exit_status": 4,
+    "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+    "frontier_report_sha256": "33b6c8b3759461fd7720ca3942258cee3fcd1ec4732746a1df8314e50b5685a7",
+    "presentation_notifications": 116,
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0"
+  },
+  "renderer": {
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "validated_modules": 4,
+    "vulkan_modules": 4,
+    "graphics_pipelines": 2,
+    "normal_draws": 1,
+    "neutral_resolves": 1,
+    "normal_draw_readback": {
+      "width": 640,
+      "height": 360,
+      "rgba8_bytes": 921600,
+      "sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "all_bytes_zero": true,
+      "classification": "demo-observed native Vulkan readback from the reached translated draw"
+    },
+    "neutral_resolve": {
+      "width": 1280,
+      "height": 720,
+      "linear_rgba8_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "classification": "test-only native Vulkan resolve using the reached neutral 1x projection"
+    }
+  },
+  "resolve_authority": {
+    "rexglue_commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+    "resolve_spirv_sha256": "e8cfb0d6981476118cefbf797d33092ccf09281f728d34220c1514dd79487b32",
+    "spirv_val_target": "vulkan1.1",
+    "dispatch_groups": [20, 90, 1],
+    "destination": {
+      "base": "0x1374A000",
+      "width": 1280,
+      "height": 720,
+      "pitch": 1280,
+      "format_raw": 6,
+      "endian_raw": 0,
+      "tiled": true,
+      "swap_raw": 1
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "PAL XEX identity and bounded neutral runtime execution",
+      "main/intermediate IB hashes and exact reached copy/present profile",
+      "normal translated draw produced a hash-checked all-zero 640x360 readback",
+      "the reached resolve shader ran with guard-checked 1280x720 destination"
+    ],
+    "demo-observed": [
+      "116 presentation notifications at tick 253",
+      "one normal draw, one neutral resolve and one present in the Vulkan frontier"
+    ],
+    "xenia-generic": [
+      "resolve shader layout and Xenos tiling interpretation"
+    ],
+    "unknown": [
+      "guest-owned EDRAM bytes before the copy draw",
+      "general 4x/MSAA-to-EDRAM mapping and non-black pixel conversion",
+      "guest-owned destination readback and screencap",
+      "frontend, mission and terminal milestones"
+    ]
+  },
+  "policy": {
+    "read_only_runtime_evidence": true,
+    "neutral_projection_only": true,
+    "product_runtime_readback_claimed": false,
+    "screencap_claimed": false,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

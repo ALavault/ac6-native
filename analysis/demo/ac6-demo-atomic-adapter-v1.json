@@ -1,0 +1,95 @@
+{
+  "schema": "ac6-demo-atomic-adapter/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon PPC big-endian / Xenos",
+    "frontbuffer_range": ["0x1374A000", "0x13AE2000"]
+  },
+  "generation": {
+    "xenonrecomp_commit": "ddd128bcca99fe8bfbb99bea583c972351fa6ace",
+    "strict_patch": "recompilation/ace-combat-6-demo/patches/xenonrecomp-strict-recompiler.patch",
+    "strict_patch_sha256": "c74303af6bcde78a3d9b10a96ee83f2c6f29517cb10c0e74a09e01969314ee40",
+    "manifest": ".build/ac6-demo-codegen-atomic-1/manifest.json",
+    "manifest_sha256": "ae57c86869c556f17c7eee3f9d781d19943d20bf2599abbe201ac88954bda185",
+    "generated_files": 52,
+    "generated_bytes": 55662296,
+    "generated_aggregate_sha256": "1a83381595fa7e5a502e3925f8bd3ac295552e6d2293d028a600ebcbdf64b210",
+    "boundary_diagnostics": 0,
+    "unsupported_instructions": 0,
+    "raw_direct_memory_expressions": 0,
+    "routed_calls": {"PPC_LDARX": 6, "PPC_STDCX": 8},
+    "adapter_header_sha256": "0f31a29b73a8a9ee5a35355dc33cfaa938a5cf561ce61e57a16524b519a06a4f",
+    "ccache": {"path": "/usr/bin/ccache", "version": "4.12.3", "enabled": true}
+  },
+  "headless_ab": {
+    "ticks": 253,
+    "neutral": {
+      "trace_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+      "report_sha256": "420fb9341ea0a56be33f0143f9bf9be768b08a1697fe7cb314e5e055bbf2a843"
+    },
+    "start": {
+      "input": "buttons=0x10 at tick 252",
+      "trace_sha256": "31553733582cf7345375d8f1978a28645621e488700f2a31b7e883b66109360b2",
+      "report_sha256": "8506399dca66624afcf52a8746bc4cd08c669f30021d9fb954bb8bebb01f7327"
+    },
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ib_sha256": {
+      "intermediate": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "main": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"
+    },
+    "presents": 116,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "guest_frontbuffer_reader_or_writer_lines": 0
+  },
+  "vulkan_ab": {
+    "ticks": 253,
+    "neutral": {
+      "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "report_sha256": "4c6bea202bb0c2c86ecf102735ab4523c2f12411d6f241e8aa1ade1e8d77a214"
+    },
+    "start": {
+      "trace_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "report_sha256": "d69ab8c7cf0e2d887f251ed62a5e803f1f51f5a9136e27aec2547dcfc2c88a35"
+    },
+    "renderer": {
+      "shader_loads": 5,
+      "draws": 26,
+      "presents": 1,
+      "normal_draws": 1,
+      "neutral_resolves": 1,
+      "vulkan_modules": 4,
+      "descriptor_set_layouts": 2,
+      "pipeline_layouts": 1,
+      "graphics_pipelines": 2,
+      "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    },
+    "host_writeback": {
+      "address": "0x1374A000",
+      "size": 3768320,
+      "caller_module_offset": "0xBE447",
+      "routes": 2,
+      "guest_owned": false
+    }
+  },
+  "classification": {
+    "demo-qualified": ["fresh strict codegen/build", "headless and Vulkan A/B PM4 identity", "fail-closed atomic adapter"],
+    "demo-observed": ["Vulkan host frontbuffer writeback"],
+    "xenia-generic": [],
+    "unknown": ["guest pixel consumer", "non-black pixels", "frontend", "mission", "screencap"]
+  },
+  "policy": {
+    "read_only_or_runtime_diagnostic": true,
+    "retail_evidence_fused": false,
+    "xenia_rexglue_ghidra_modified": false,
+    "generated_cpp_or_microcode_tracked": false,
+    "proprietary_assets_tracked": false,
+    "screencap_promoted": false,
+    "fail_closed": true
+  },
+  "next_checkpoint": "Run rr on the fresh adapter and join PC/LR/thread/tick to effective guest addresses before any frontbuffer effect."
+}

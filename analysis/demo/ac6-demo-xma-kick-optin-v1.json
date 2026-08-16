@@ -1,0 +1,109 @@
+{
+  "schema": "ac6-demo-xma-kick-optin/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "endianness": "xenon-big-endian",
+    "gpu": "xenos"
+  },
+  "scope": {
+    "binary": ".build/ac6-demo-codegen-build-1/ac6-demo-recomp",
+    "binary_sha256": "15d480ad215a61f1d26e418ee03acb407b3e07d210500101188c91bd7dde8d61",
+    "hook": "recompilation/ace-combat-6-demo/src/guest_bridge/lifecycle.hpp",
+    "hook_sha256": "9df8383ae3c0b8e273e8ea008bc49199fb25fd2638cd63fec5c8814b3ec19ca4",
+    "mode": "probe-headless",
+    "max_ticks": 1100,
+    "temporary_root": "/fastdata/lavaulta/tmp/ac6-cycle1726-xma-kick.nKruLn",
+    "fresh_store_per_route": true,
+    "rr_reexecuted": false,
+    "production_route_unchanged": true
+  },
+  "experiment": {
+    "environment": [
+      "AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1",
+      "AC6_DEMO_EXPERIMENTAL_XMA_KICK=1",
+      "AC6_DEMO_WATCH_XMA_ADDRESS=1",
+      "AC6_DEMO_WATCH_XMA_KICK=1",
+      "AC6_DEMO_WATCH_XMA_LATE=1"
+    ],
+    "address": "0x7FEA1A80",
+    "length": 4,
+    "wire_value": "0x01000000",
+    "logical_value": "0x00000001",
+    "pc": "0x82357240",
+    "lr": "0x823572AC",
+    "thread": 21,
+    "tick": 1048,
+    "accepted_before_effect": true,
+    "next_frontier": {
+      "kind": "import",
+      "module": "xboxkrnl.exe",
+      "ordinal": 548,
+      "lr": "0x82357298",
+      "tick": 1048,
+      "trap_before_effect": true
+    }
+  },
+  "routes": {
+    "neutral": {
+      "return_code": 3,
+      "completed_ticks": 1048,
+      "presents": 911,
+      "trace_sha256": "ab54c75ebccfdf3a41a840ab691a728e1d120a7616cca98a5f6ff42fa804fc43",
+      "report_sha256": "77d1c1a6514b99a4d9bccef21a0bfc8a23aa7a0b979220a7081623201b1b20bb",
+      "stderr_sha256": "795f50d6f3737e1435ecf69ae404713585de363138c4a476d6fb747f5cd32958"
+    },
+    "start": {
+      "return_code": 3,
+      "completed_ticks": 1048,
+      "presents": 911,
+      "trace_sha256": "2ce0a717f8d3df56aa87644d7fc9624f5e02b1020a0b5eeaf0992f6877db417f",
+      "report_sha256": "42ebac6800212ab1ce69c9a0329246b55b28b60848c3b5fee63701b8f5f232b8",
+      "stderr_sha256": "795f50d6f3737e1435ecf69ae404713585de363138c4a476d6fb747f5cd32958"
+    },
+    "default_guard": {
+      "return_code": 3,
+      "completed_ticks": 1048,
+      "presents": 911,
+      "frontier": "xboxkrnl.exe ordinal 548",
+      "trace_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "f117a3e07b7da8d362c07be2a4d5b3f88c89a45eb1453ae53851eddd2d6fc0b1",
+      "stderr_sha256": "9fa0f47bab02839f61641f25b7e67789ad350a50a90f8cad8b6c7627692456c8"
+    }
+  },
+  "pm4": {
+    "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "draws": 26,
+    "presents": 1,
+    "pixels_qualified": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "PAL identity and exact dynamic writer tuple",
+      "neutral/START equality",
+      "default route remains ordinal-548 fail-closed"
+    ],
+    "demo-observed": [
+      "test-only exact write acceptance before ordinal-548 trap"
+    ],
+    "xenia-generic": [
+      "context-kick terminology and generic motivation only"
+    ],
+    "unknown": [
+      "MMIO name/effect",
+      "ordinal-548 ABI and consumer",
+      "XMA packets/PCM/audio",
+      "EDRAM/pixels/screencap/mission"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "opt_in_only": true,
+    "no_retail": true,
+    "no_proprietary_assets_tracked": true,
+    "no_generated_cpp_or_microcode_modified": true
+  }
+}

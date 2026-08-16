@@ -1,0 +1,315 @@
+{
+  "schema": "ac6-demo-start-queue-rr-provenance/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "route": "START-movie-headless",
+    "terminal_tick": 300,
+    "trace": "/fastdata/lavaulta/tmp/ac6-demo-start-rr-t300.B10dbp/trace",
+    "runtime_binary_sha256": "aa2345b8eb96aa19bf601b25698e8faff3886ece1b84829539fc4eb1e6fb6a0f",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "rr_source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "rr_binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "direct_report_sha256": "e3f6b8e2ed4a873481be34eecda2986b1bc11eb55a3d878f9844179eef59785a",
+    "rr_report_sha256": "e3f6b8e2ed4a873481be34eecda2986b1bc11eb55a3d878f9844179eef59785a",
+    "direct_rtply_sha256": "0b5ffbbdb76341a42461d69749624b193abcda740b4da699d98afb2a82785182",
+    "rr_rtply_sha256": "0b5ffbbdb76341a42461d69749624b193abcda740b4da699d98afb2a82785182",
+    "fresh_store_per_run": true
+  },
+  "queue": {
+    "base": "0x82386CC0",
+    "producer_offset": "0x60D0",
+    "consumer_offset": "0x60D4",
+    "producer_address": "0x8238CD90",
+    "consumer_address": "0x8238CD94",
+    "element_stride": 96,
+    "guest_byte_order": "big-endian",
+    "host_watch_value_conversion": "little-endian host watch values are byte-swapped to guest u32"
+  },
+  "boundary_probe": {
+    "debugger": "pinned rr replay GDB remote",
+    "script": "/fastdata/lavaulta/tmp/ac6-start-queue-boundary.gdb",
+    "script_sha256": "5c8a49c9a5162b0923110e727a585dd5a3b22e855c27c170184cc3a91c91a1de",
+    "log": "/fastdata/lavaulta/tmp/ac6-demo-start-rr-t300.B10dbp/queue-boundary.log",
+    "log_sha256": "e57793ae8bdf3a308c9cfd06d8a68f69276ce2f02550a5c5e54d82eff4e46ac6",
+    "breakpoints": ["0x820FF8D8", "0x820FFCA0"],
+    "observations": 49,
+    "worker": {
+      "function": "sub_820FFCA0",
+      "tick": 221,
+      "guest_thread": 25,
+      "producer": 0,
+      "consumer": 0
+    },
+    "primary": {
+      "function": "sub_820FF8D8",
+      "first_tick": 252,
+      "last_tick": 299,
+      "count": 48,
+      "guest_thread": 1,
+      "producer": 0,
+      "consumer": 0
+    },
+    "classification": "demo-qualified-boundary-observation",
+    "note": "The boundary reads are exact guest-memory observations at function entry; they do not identify the instruction that changed either index."
+  },
+  "reverse_watchpoint_method": {
+    "policy": "exact four-byte hardware windows with reverse-continue; no range resynchronization",
+    "guest_pc_context": "captured from the rr replay context when available",
+    "direction_normalization": "rr reverse watchpoint Old/New are inverted relative to forward guest execution; normalized transitions below are forward-order",
+    "raw_reverse_log": "/fastdata/lavaulta/tmp/ac6-demo-start-rr-t300.B10dbp/queue-reverse.gdb.log",
+    "raw_reverse_log_sha256": "cdb1f792d5ba2b54d620d9176b46f7b9961ef87afa63fae4f881971a77b86c1a",
+    "forward_writer_log": "/fastdata/lavaulta/tmp/ac6-demo-start-rr-t300.B10dbp/queue-forward-producer.log",
+    "forward_writer_log_sha256": "f3af53f6d4717f4e5096054be7dba493c493273cc254ecd5242d41868391585e",
+    "classification": "demo-qualified-normalized-from-hashed-rr-logs"
+  },
+  "watchpoints": {
+    "producer": {
+      "address": "0x8238CD90",
+      "transition": {"guest_old": 1, "guest_new": 0},
+      "tick": 299,
+      "guest_thread": 25,
+      "dynamic_function": "sub_820FFCA0",
+      "host_stack_symbols": [
+        "GuestMemory::store_u32",
+        "AC6_PPC_STORE_U32",
+        "__imp__sub_820FFCA0",
+        "__imp__sub_820FF700",
+        "__imp__sub_822EE158",
+        "__imp__sub_821A93F8",
+        "GuestBridge::execute_guest_thread"
+      ],
+      "static_store_candidate": {
+        "guest_pc": "0x820FFD94",
+        "instruction_bytes": "93 7F 60 D0",
+        "instruction": "stw r27,0x60D0(r31)",
+        "function": "sub_820FFCA0"
+      },
+      "dynamic_callsite_join": {
+        "host_return_address": "0x5f8d5322e219",
+        "host_callsite_address": "0x5f8d5322e214",
+        "guest_pc_map": "0x820FFD94",
+        "guest_pc_map_source": "qualified generated literal control-flow plus PAL basefile bytes",
+        "context_pc_marker": "0x820FFCE4",
+        "context_pc_marker_is_guest_lr": false
+      },
+      "pc_status": "demo-qualified-host-callsite-and-guest-static-map",
+      "guest_lr": null,
+      "classification": "demo-qualified-function-transition-and-callsite; guest-LR-unknown"
+    },
+    "consumer": {
+      "address": "0x8238CD94",
+      "transition": {"guest_old": 1, "guest_new": 0},
+      "tick": 298,
+      "guest_thread": 25,
+      "dynamic_function": "sub_820FFCA0",
+      "host_stack_symbols": [
+        "GuestMemory::store_u32",
+        "AC6_PPC_STORE_U32",
+        "__imp__sub_820FFCA0",
+        "__imp__sub_820FF700",
+        "__imp__sub_822EE158",
+        "__imp__sub_821A93F8",
+        "GuestBridge::execute_guest_thread"
+      ],
+      "static_store_candidate": {
+        "guest_pc": "0x820FFD98",
+        "instruction_bytes": "93 7F 60 D4",
+        "instruction": "stw r27,0x60D4(r31)",
+        "function": "sub_820FFCA0"
+      },
+      "normal_path_static_candidate": {
+        "guest_pc": "0x820FFD78",
+        "instruction_bytes": "91 5F 60 D4",
+        "instruction": "stw r10,0x60D4(r31)",
+        "function": "sub_820FFCA0",
+        "observed_in_transition": false
+      },
+      "dynamic_callsite_join": {
+        "host_return_address": "0x5f8d5322e259",
+        "host_callsite_address": "0x5f8d5322e254",
+        "guest_pc_map": "0x820FFD98",
+        "guest_pc_map_source": "qualified generated literal control-flow plus PAL basefile bytes",
+        "context_pc_marker": "0x820FFCE4",
+        "context_pc_marker_is_guest_lr": false
+      },
+      "pc_status": "demo-qualified-host-callsite-and-guest-static-map",
+      "guest_lr": null,
+      "classification": "demo-qualified-function-transition-and-callsite; guest-LR-unknown"
+    },
+    "producer_helper": {
+      "address": "0x8238CD90",
+      "transition": {"guest_old": 0, "guest_new": 1},
+      "dynamic_function": "sub_820FF710",
+      "tick": 299,
+      "guest_thread": 1,
+      "static_store_candidate": {
+        "guest_pc": "0x820FF75C",
+        "instruction_bytes": "91 7F 60 D0",
+        "instruction": "stw r11,0x60D0(r31)",
+        "function": "sub_820FF710"
+      },
+      "dynamic_callsite_join": {
+        "host_return_address": "0x5f8d532296ca",
+        "host_callsite_address": "0x5f8d532296c5",
+        "guest_pc_map": "0x820FF75C",
+        "guest_pc_map_source": "qualified generated literal control-flow plus PAL basefile bytes",
+        "context_pc_marker": null,
+        "context_pc_marker_is_guest_lr": false
+      },
+      "pc_status": "demo-qualified-forward-host-callsite-and-guest-static-map",
+      "guest_lr": null,
+      "classification": "demo-qualified-function-transition-and-callsite; guest-LR-unknown"
+    }
+  },
+  "read_candidates": [
+    {
+      "guest_pc": "0x820FFCE4",
+      "instruction_bytes": "81 7F 60 D0",
+      "instruction": "lwz r11,0x60D0(r31)",
+      "function": "sub_820FFCA0",
+      "field": "producer",
+      "classification": "static-candidate"
+    },
+    {
+      "guest_pc": "0x820FFCE8",
+      "instruction_bytes": "81 5F 60 D4",
+      "instruction": "lwz r10,0x60D4(r31)",
+      "function": "sub_820FFCA0",
+      "field": "consumer",
+      "classification": "static-candidate"
+    }
+  ],
+  "static_byte_provenance": {
+    "source": "qualified PAL basefile bytes, cross-checked against literal generated control flow",
+    "classification": "demo-observed-static-candidate",
+    "retail_oracle_used": false
+  },
+  "aggregate_scheduler_observation": {
+    "producer_changes": 95,
+    "consumer_changes": 0,
+    "last_producer_tick": 299,
+    "max_pending": 1,
+    "classification": "demo-observed-runtime-counter; not a direct instruction provenance"
+  },
+  "native_slot_probe": {
+    "enabled_only_by_env": "AC6_DEMO_WATCH_RENDER_QUEUE_WRITERS",
+    "runtime_binary_sha256": "61304c3000fda1b7170b111d439a2d002f360b58e9406adfce3d8d73c2140613",
+    "route": "fresh direct probe, START at tick 252, headless, max tick 300",
+    "trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+    "report_sha256": "c74ca0ea7733fe49f0ee5440c73e414737f7fa3cf8e83dc39b95012e30112593",
+    "stderr_log": "/fastdata/lavaulta/tmp/ac6-demo-queue-slot-probe.b4JWwf/stderr",
+    "stderr_sha256": "9b6507d1d4d9d2ad59638b1e89fd593496010c1a1cb363398491be6b7981eca8",
+    "record_count": 290,
+    "valid_slot_snapshot_count": 96,
+    "slot_snapshot_sha256": "2ea9ab9198d1638007400cd2c3bef1cc745b864b76011a0e1bc52180ac6452d4",
+    "slot_snapshot_bytes": 96,
+    "observations": [
+      {
+        "field": "producer",
+        "address": "0x8238CD90",
+        "value": 1,
+        "first_tick": 252,
+        "last_tick": 299,
+        "count": 48,
+        "thread": 1,
+        "dynamic_function": "sub_820FF710",
+        "generated_line": 42781,
+        "guest_pc_static_map": "0x820FF75C",
+        "instruction_bytes": "91 7F 60 D0",
+        "context_lr": "0x820FF734",
+        "context_lr_is_guest_lr": false,
+        "slot_address": "0x82386DD0",
+        "slot_all_zero": true,
+        "classification": "demo-observed-native-hook; rr-independent"
+      },
+      {
+        "field": "consumer_normal",
+        "address": "0x8238CD94",
+        "value": 1,
+        "first_tick": 252,
+        "last_tick": 299,
+        "count": 48,
+        "thread": 25,
+        "dynamic_function": "sub_820FFCA0",
+        "generated_line": 43739,
+        "guest_pc_static_map": "0x820FFD78",
+        "instruction_bytes": "91 5F 60 D4",
+        "context_lr": "0x820FFCE4",
+        "context_lr_is_guest_lr": false,
+        "slot_address": "0x82386D90",
+        "slot_all_zero": true,
+        "classification": "demo-observed-native-hook; rr-independent"
+      },
+      {
+        "field": "producer_reset",
+        "address": "0x8238CD90",
+        "value": 0,
+        "first_tick": 252,
+        "last_tick": 299,
+        "count": 48,
+        "thread": 25,
+        "dynamic_function": "sub_820FFCA0",
+        "generated_line": 43756,
+        "guest_pc_static_map": "0x820FFD94",
+        "instruction_bytes": "93 7F 60 D0",
+        "context_lr": "0x820FFCE4",
+        "context_lr_is_guest_lr": false,
+        "slot_valid": false,
+        "classification": "demo-observed-native-hook; rr-independent"
+      },
+      {
+        "field": "consumer_reset",
+        "address": "0x8238CD94",
+        "value": 0,
+        "first_tick": 252,
+        "last_tick": 299,
+        "count": 48,
+        "thread": 25,
+        "dynamic_function": "sub_820FFCA0",
+        "generated_line": 43758,
+        "guest_pc_static_map": "0x820FFD98",
+        "instruction_bytes": "93 7F 60 D4",
+        "context_lr": "0x820FFCE4",
+        "context_lr_is_guest_lr": false,
+        "slot_valid": false,
+        "classification": "demo-observed-native-hook; rr-independent"
+      }
+    ],
+    "interpretation": "The hook observes the exact generated store call, guest context marker, thread and tick without changing memory. The context LR is not promoted to a guest LR; the 96-byte candidate slot is all zero in every valid snapshot. The rr A/B gate below remains the authoritative replay gate."
+  },
+  "ab_gate": {
+    "terminal_tick": 300,
+    "presents": 163,
+    "frontend_milestone": false,
+    "mission_milestone": false,
+    "terminal_milestone": false,
+    "classification": "demo-qualified-A/B"
+  },
+  "limits": {
+    "direct_producer_store_pc_qualified": false,
+    "direct_consumer_store_pc_qualified": false,
+    "direct_producer_helper_store_pc_qualified": false,
+    "native_hook_store_lines_observed": true,
+    "native_hook_slot_payload_observed_all_zero": true,
+    "host_callsite_and_guest_static_map_joined": true,
+    "guest_lr_qualified": false,
+    "queue_command_payload_semantics_qualified": false,
+    "menu_task_production_qualified": false,
+    "visual_transition_proven": false
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "system_rr_used": false,
+    "xenia_or_rexglue_modified": false,
+    "ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

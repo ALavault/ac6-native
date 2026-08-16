@@ -1,0 +1,125 @@
+{
+  "schema": "ac6-demo-xma-xenia-generic-crossmatch/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "generic_authorities": {
+    "xenia": {
+      "checkout": "/fastdata/lavaulta/auto-re-agent/tools/xenia-source",
+      "commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec",
+      "path": "src/xenia/kernel/xboxkrnl/xboxkrnl_audio_xma.cc",
+      "sha256": "73c92f8c5196694f838a6f787750681e3f7a4cd044b478c118c3035a46e3c86c",
+      "symbols": [
+        "StoreXmaContextIndexedRegister",
+        "XMAInitializeContext_entry",
+        "XMAEnableContext_entry",
+        "XMADisableContext_entry"
+      ]
+    },
+    "rexglue": {
+      "checkout": "/fastdata/lavaulta/auto-re-agent/.tools/rexglue-upstream-reference",
+      "commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+      "path": "include/rex/audio/xma/register_table.inc",
+      "sha256": "f036b553b353a90b18dd7642a233ec0abcb98d372c644259263f55459acbaa7f",
+      "symbols": [
+        "ContextArrayAddress",
+        "CurrentContextIndex",
+        "NextContextIndex",
+        "Kick",
+        "Lock",
+        "Clear"
+      ]
+    }
+  },
+  "xenia_generic": {
+    "indexed_register_formula": "hw_index=(physical_context-context_array_ptr)/sizeof(XMA_CONTEXT_DATA); reg_num=base_reg+((hw_index>>5)*4); reg_value=1<<(hw_index&0x1f); write byte_swap(reg_value)",
+    "calls": {
+      "XMAInitializeContext": {"base_reg": "0x1A80", "source_line": 189},
+      "XMAEnableContext": {"base_reg": "0x1940", "source_line": 361},
+      "XMADisableContext": {"base_reg": "0x1A40", "source_line": 369}
+    },
+    "register_table": {
+      "comment": "XMA stuff is probably only 0x0600..0x06FF",
+      "entries": {
+        "0x0600": "ContextArrayAddress",
+        "0x0606": "CurrentContextIndex",
+        "0x0607": "NextContextIndex",
+        "0x0650": "Kick context group",
+        "0x0690": "Lock context group",
+        "0x06A0": "Clear context group"
+      }
+    }
+  },
+  "demo_evidence": {
+    "static_address_join_report": {
+      "path": "reports/cycle-1716-demo-xma-address-join.md",
+      "sha256": "3eb336767e89e27ff822ccfc9eecb1b4dc0a3746e3d6fb179c049f4fb277b379"
+    },
+    "dynamic_address_probe": {
+      "path": "reports/cycle-1717-demo-xma-address-trace.md",
+      "sha256": "8d8de0293eab830ddbbe70e92db61044cc1320f10260eaef53eac05bd9e4a2ee"
+    },
+    "late_aperture_probe": {
+      "path": "reports/cycle-1720-demo-xma-late-aperture.md",
+      "sha256": "361cf7cec870604d33d0f8ba1b52992fb7cfefa270299403aac5fa988fb36f52"
+    },
+    "pal_static_formula": {
+      "read_address": "0x7FEA1800",
+      "global_address": "0x829DA52C",
+      "store_base_address": "0x7FEA1A80",
+      "formula": "I=((P-G)>>6)&0xffff; A=0x7FEA1A80+((I>>5)<<2); V=1<<(I&0x1f)",
+      "store_instruction": "0x823572D8",
+      "barrier_instruction": "0x823572DC"
+    },
+    "pal_dynamic_observation": {
+      "routes": ["neutral", "START"],
+      "comparison": "direct and rr traces agree",
+      "tick": 1048,
+      "thread": 21,
+      "read_0x7FEA1800": "0x2E800000",
+      "P": "0x2E800000",
+      "A": "0x7FEA1A80",
+      "V_wire": "0x01000000",
+      "effect": "trap before guest MMIO effect"
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "PAL XEX/basefile identity",
+      "PAL address arithmetic and instruction boundaries",
+      "neutral/START direct-vs-rr attempted-store observation"
+    ],
+    "demo-observed": [
+      "read 0x7FEA1800 and attempted store at 0x7FEA1A80",
+      "trap before any mapped effect"
+    ],
+    "xenia-generic": [
+      "indexed-context register formula",
+      "XMAInitializeContext base 0x1A80",
+      "XMAEnableContext base 0x1940",
+      "XMADisableContext base 0x1A40",
+      "ReXGlue 0x0600..0x06FF register-table names"
+    ],
+    "unknown": [
+      "whether PAL 0x7FEA1A80 is the same register as Xenia base 0x1A80",
+      "PAL XMA context-array pointer and hardware index",
+      "effect/consumer of the PAL store",
+      "XMA packets, timestamps, volume and decoded PCM",
+      "runtime language route"
+    ]
+  },
+  "policy": {
+    "generic_mapping_installed": false,
+    "mmio_mapping_added": false,
+    "ordinal_548_trap_preserved": true,
+    "retail_evidence_merged": false,
+    "xenia_or_rexglue_modified": false,
+    "generated_cpp_or_microcode_modified": false,
+    "proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

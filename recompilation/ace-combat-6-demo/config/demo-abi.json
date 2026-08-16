@@ -1,0 +1,15 @@
+{
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "image_base": "0x82000000",
+  "savegprlr_14": "0x823270D0",
+  "restgprlr_14": "0x82327120",
+  "savefpr_14": "0x823271B0",
+  "restfpr_14": "0x823271FC",
+  "savevmx_14": "0x82327860",
+  "restvmx_14": "0x82327AF8",
+  "savevmx_64": "0x823278F4",
+  "restvmx_64": "0x82327B8C",
+  "setjmp": null,
+  "longjmp": null,
+  "qualification": "binary-qualified demo scan; no retail rebase"
+}

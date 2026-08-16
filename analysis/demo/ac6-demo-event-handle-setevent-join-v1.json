@@ -1,0 +1,144 @@
+{
+  "schema": "ac6-demo-event-handle-setevent-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "inputs": {
+    "store": ".build/ac6-demo-store-test-3",
+    "neutral_trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+    "start_trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+    "neutral_report_sha256": "c931a747e1cabf2aac8e7eee426b08f5033c74e327480064882e5b3ed7cd9df1",
+    "start_report_sha256": "51a2c2ce232f22c062800c73fdcaad1ce1c4cfa990aa4ced0f1bc6512de95161",
+    "neutral_stderr_sha256": "c4262869a84da293c3c9edce43eda8cac89726cbc9e69a935c5608cc871fbb17",
+    "start_stderr_sha256": "c4262869a84da293c3c9edce43eda8cac89726cbc9e69a935c5608cc871fbb17",
+    "max_ticks": 300,
+    "start_input": "tick 252, buttons 0x0010, connected"
+  },
+  "instrumentation": {
+    "payload_writer_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handle_payload_writer_trace.hpp",
+    "payload_writer_hook_sha256": "cf2f8fff11c53f48ae2b592923bcd16d59b6619173713f0bd07b718d07eabad5",
+    "bridge_source_sha256": "6a172843de078453be64cacf35aec307bb19867cc50d0663684457b6d86643f4",
+    "runtime_binary_sha256": "a587917a47c2b62692531ca9cb505d3a2eaf1a2ed46302354d2a131f785b01a6",
+    "handoff_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handoff_trace.hpp",
+    "environment": [
+      "AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS=1",
+      "AC6_DEMO_WATCH_EVENT_HANDLE_PAYLOAD=1",
+      "AC6_DEMO_WATCH_EVENT_HANDLE_PAYLOAD_WRITERS=1",
+      "AC6_DEMO_WATCH_EVENT_HANDOFF=1",
+      "AC6_DEMO_WATCH_EVENT_HANDOFF_FOCUSED=1"
+    ],
+    "read_only": true,
+    "default_enabled": false,
+    "generated_cpp_modified": false
+  },
+  "writer_mapper": {
+    "tool": "recompilation/ace-combat-6-demo/tools/map_generated_guest_payload_writers.py",
+    "tool_sha256": "ad115a042ac6844a724d8fb36f5ec343a8cb946a19b74449cd979286e549350e",
+    "output_schema": "ac6-demo-generated-guest-payload-writer-map/v1",
+    "neutral_map_sha256": "b86a291411821b41b3512ae6333a218e12e5adc213aa4333053b24ea29ca6d4b",
+    "start_map_sha256": "65cfdca0acbb9d58b807ba8366d7355b70383ca53e6a5528c756fcc920674197",
+    "mapped_rows": [374, 374],
+    "unique_sites": [19, 19]
+  },
+  "runs": {
+    "neutral": {
+      "completed_ticks": 300,
+      "payload_writer_rows": 374,
+      "payload_rows": 3927,
+      "handoff_rows": 4485,
+      "set_enter_rows": 1110,
+      "set_exit_rows": 1110,
+      "event_wake_rows": 1164,
+      "set_enter_e000004c": 351,
+      "set_exit_e000004c": 351,
+      "writer_to_set_enter_same_tick_thread": 351,
+      "writer_to_set_lr_mismatch": 0,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "completed_ticks": 300,
+      "payload_writer_rows": 374,
+      "payload_rows": 3927,
+      "handoff_rows": 4485,
+      "set_enter_rows": 1110,
+      "set_exit_rows": 1110,
+      "event_wake_rows": 1164,
+      "set_enter_e000004c": 351,
+      "set_exit_e000004c": 351,
+      "writer_to_set_enter_same_tick_thread": 351,
+      "writer_to_set_lr_mismatch": 0,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "qualified_chain": {
+    "guest_function": "sub_822EEE10",
+    "payload_writer_pc": "0x822EEE3C",
+    "payload_writer_bytes": "FB DF 00 10",
+    "payload_writer_instruction": "std r30,16(r31)",
+    "payload_address": "0x82934758",
+    "post_read_pc": "0x822EEE44",
+    "post_read_bytes": "80 7F 00 04",
+    "post_read_handle": "0xE000004C",
+    "nt_set_event_caller_lr": "0x821A6AC4",
+    "nt_set_event_handle": "0xE000004C",
+    "nt_set_event_enter_exit_pairs": 351,
+    "nt_set_event_same_tick_thread_pairs": 351,
+    "post_read_to_set_enter_ordered": true,
+    "sample_tick_222": {
+      "writer_value": "0x00000000000000DC",
+      "post_read_word7": "0x000000DC",
+      "set_enter_state": "0x00000001",
+      "set_exit_state": "0x00000001"
+    },
+    "sample_tick_252": {
+      "writer_value": "0x000000000000001D",
+      "post_read_word7": "0x0000001D",
+      "set_enter_state": "0x00000001",
+      "set_exit_state": "0x00000001"
+    }
+  },
+  "ab_comparison": {
+    "stderr_sha256_equal": true,
+    "writer_rows_equal": true,
+    "payload_rows_equal": true,
+    "handoff_counts_equal": true,
+    "qualified_pair_counts_equal": true,
+    "start_transition_promoted": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "payload writer, post-read E000004C and NtSetEvent are ordered in the same guest tick/thread",
+      "351/351 set_enter and set_exit pairs use caller LR 0x821A6AC4",
+      "neutral/START traces and all causal counts are identical"
+    ],
+    "demo-observed": [
+      "set_enter/set_exit state and event_wake records",
+      "E0000044 set operations following the E000004C operation"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "downstream consumer after NtSetEvent",
+      "scheduler-to-renderer causality, frontend state and pixels",
+      "semantic type of the payload object"
+    ]
+  },
+  "policy": {
+    "runtime_behavior_changed": false,
+    "retail_evidence_fused": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_assets_tracked": false,
+    "readback_promoted": false,
+    "fail_closed": true
+  }
+}

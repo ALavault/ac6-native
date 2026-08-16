@@ -1,0 +1,67 @@
+{
+  "schema": "ac6-demo-xma-release/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "demo_observed": {
+    "route": "neutral",
+    "tick": 5049,
+    "thread": 21,
+    "module": "xboxkrnl.exe",
+    "name": "XMAReleaseContext",
+    "ordinal": 550,
+    "thunk": "0x823767A4",
+    "caller_pc": "0x8235681C",
+    "caller_lr": "0x82356820",
+    "call_count": 3,
+    "contexts": ["0x2E800000", "0x2E800040", "0x2E800080"],
+    "other_registers": {"r4": 1, "r5": 0, "r6": 0, "r7": 0}
+  },
+  "demo_qualified": {
+    "guard": "three exact active 64-byte contexts allocated by the reached create loop",
+    "effect": "zero the selected 64-byte context and mark it inactive",
+    "return_r3": "0x00000000",
+    "rejections": [
+      "wrong caller LR or register tuple",
+      "pointer outside the context array",
+      "unaligned pointer",
+      "context not yet allocated",
+      "context already released",
+      "unmapped or unowned context range"
+    ]
+  },
+  "generic_reference": {
+    "classification": "xenia-generic",
+    "rexglue_commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+    "xma_context_source_sha256": "c9e388c6b761903a601d04206ee66e23e48070bd5a59e40ca231c0a15814d867",
+    "invariant": "release invalidates the allocation and zeroes 64 bytes"
+  },
+  "proof": {
+    "report_sha256": "3d13810b02909ac56cf03f63f343177062513d86a553d5436daa2de6e464666a",
+    "trace_sha256": "0b553e06ccd6cfbf72302d2ee3063bc8e44fcf4278b873ecd590d728abb222af",
+    "presents": 4912,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "next_frontier": {
+    "kind": "guest-indirect",
+    "caller_lr": "0x8236E588",
+    "target": "0x8236E550",
+    "tick": 5049,
+    "thread": 21
+  },
+  "artifacts": {
+    "binary_sha256": "b6b5e71c1fcce2d7a5642dbd6dd35883d74fa9ff722eb844951865e34e53e1bf",
+    "static_atlas_sha256": "0947f8550beb70460bd722d65704fd11b50262f4d4e7220c1eb09d503d39c491"
+  },
+  "unknown": [
+    "semantic role and boundary of 0x8236E550",
+    "decoded XMA packets or audible samples",
+    "first guest-owned frontend state",
+    "first non-black EDRAM producer",
+    "mission result"
+  ]
+}

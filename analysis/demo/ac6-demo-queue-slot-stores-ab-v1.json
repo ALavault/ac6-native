@@ -1,0 +1,91 @@
+{
+  "schema": "ac6-demo-queue-slot-stores-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "max_ticks": 253,
+    "fresh_process_per_route": true,
+    "fresh_store_per_route": true,
+    "instrumentation": "AC6_DEMO_WATCH_RENDER_QUEUE_SLOTS=1",
+    "instrumentation_default": false
+  },
+  "routes": {
+    "neutral": {
+      "input": "none",
+      "rtply_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+      "report_sha256": "420fb9341ea0a56be33f0143f9bf9be768b08a1697fe7cb314e5e055bbf2a843",
+      "stderr_sha256": "d8e6d3df2c8e19373f2aa12ba7c99892c6faceb5c4171a4c11560458c7179e21",
+      "stderr_rows": 11
+    },
+    "start": {
+      "input": "--input-at 252,16,0,0,0,0,0,0,1",
+      "rtply_sha256": "31553733582cf7345375d8f197a28645621e488700f2a31b7e883b66109360b2",
+      "report_sha256": "8506399dca66624afcf52a8746bc4cd08c669f30021d9fb954bb8bebb01f7327",
+      "stderr_sha256": "d8e6d3df2c8e19373f2aa12ba7c99892c6faceb5c4171a4c11560458c7179e21",
+      "stderr_rows": 11
+    }
+  },
+  "queue": {
+    "object_base": "0x82386CC0",
+    "consumer_slot": "0x82386D90",
+    "producer_slot": "0x82386DD0",
+    "slot_size": 96,
+    "metadata_range": "[0x8238CD90,0x8238CDA0)",
+    "payload_range": "[0x82386D90,0x82386DF0)",
+    "observations_per_route": {
+      "consumer_slot_direct_store_count": 0,
+      "producer_slot_direct_store_count": 1,
+      "producer_slot_direct_nonzero_count": 0,
+      "producer_slot_store": {
+        "address": "0x82386DD0",
+        "size": 4,
+        "nonzero": 0,
+        "tick": 252,
+        "thread": 1,
+        "lr": "0x820FF734",
+        "function": "0x820FF710",
+        "generated_line": 42775
+      },
+      "nonzero_metadata_addresses": [
+        "0x8238CD9C",
+        "0x8238CD90",
+        "0x8238CD94"
+      ]
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "fresh neutral/START stores are stderr-byte-identical",
+      "zero direct stores to consumer slot 0x82386D90",
+      "only producer-slot store is a zero word at 0x82386DD0"
+    ],
+    "demo-observed": [
+      "queue metadata changes at tick 221 and tick 252",
+      "consumer and producer metadata reset stores at tick 252"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "later slot writes beyond tick 253",
+      "slot semantics and frontbuffer consumer",
+      "pixels, frontend, audio, mission and terminal"
+    ]
+  },
+  "guard": {
+    "require_pal_demo_identity": true,
+    "require_fresh_process_and_store": true,
+    "require_neutral_start_stderr_sha_equal": true,
+    "payload_range": "[0x82386D90,0x82386DF0)",
+    "metadata_must_not_be_promoted_to_payload": true,
+    "on_nonzero_payload_or_divergence": "stop and retain unknown",
+    "synthetic_state_write": false,
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

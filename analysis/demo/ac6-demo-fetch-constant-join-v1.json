@@ -1,0 +1,126 @@
+{
+  "schema": "ac6-demo-fetch-constant-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "source": {
+    "main_ib_address": "0x1274A000",
+    "main_ib_dword_count": 3029,
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "packet_offset_dword": 408,
+    "packet_header": "0x00054800",
+    "packet_kind": "type0-register-write",
+    "base_register": "0x4800",
+    "register_count": 6,
+    "packet_sha256": "435bd3872bfa853cd0b7589ce83117db26eceaaed30899ef79111900d3972e50",
+    "payload_sha256": "5a192a0ad264cdedf1c271c3fc72944aa209c810d99495fe4acba00b862a93e0",
+    "fetch_words": [
+      "0x8A000002",
+      "0x1374A006",
+      "0x0059E4FF",
+      "0x00001414",
+      "0x00000000",
+      "0x00000200"
+    ]
+  },
+  "generic_authority": {
+    "rexglue_commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+    "register_table": {
+      "path": ".tools/rexglue-upstream-reference/include/rex/graphics/register_table.inc",
+      "sha256": "c9dfdbfe72763051736230850ee92eaf73b7e2e9be328ac8b83df7d3b5aa9e53",
+      "entry": "0x4800 = SHADER_CONSTANT_FETCH_00_0"
+    },
+    "xenos_layout": {
+      "path": ".tools/rexglue-upstream-reference/include/rex/graphics/xenos.h",
+      "sha256": "f7dcbf856feaeb0350c9c9aaf5c16a768b4147fc487819cd513e0cc68fc16fd5",
+      "union": "xe_gpu_texture_fetch_t"
+    },
+    "xenia_commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec"
+  },
+  "decoded_fields": {
+    "classification": "demo-qualified raw fields; xenia-generic bit layout",
+    "type_raw": 2,
+    "type_name_generic": "texture",
+    "pitch_field": 40,
+    "pitch_pixels_calculated": 1280,
+    "tiled_raw": 1,
+    "format_raw": 6,
+    "endianness_raw": 0,
+    "request_size_raw": 0,
+    "stacked_raw": 0,
+    "base_address": "0x1374A000",
+    "width_minus_one": 1279,
+    "height_minus_one": 719,
+    "width": 1280,
+    "height": 720,
+    "dimension_raw": 1,
+    "dimension_name_generic": "2DOrStacked",
+    "packed_mips_raw": 0,
+    "mip_address_raw": 0
+  },
+  "cross_checks": {
+    "vd_swap_fetch_words": [
+      "0x8A000002",
+      "0x1374A006",
+      "0x0059E4FF",
+      "0x00001414",
+      "0x00000000",
+      "0x00000200"
+    ],
+    "vd_swap_source": "analysis/demo/ac6-demo-renderer-frontier-evidence.json",
+    "fetch_words_byte_identical_to_vd_swap": true,
+    "frontbuffer_address": "0x1374A000",
+    "texture_format": 6,
+    "width": 1280,
+    "height": 720,
+    "neutral_start_reader_rows_per_route": 9,
+    "neutral_start_reader_stream_sha256": "d5dc151cc105026550005be3505656832c44e7abbc00b6c3f810432c8d226e13"
+  },
+  "implementation": {
+    "processor_source": "recompilation/ace-combat-6-demo/src/xenos_command_processor.cpp",
+    "processor_source_sha256": "041490187f4edbc5169bf21b72e6467668da23387c8d239dd1989fa369ee36cc",
+    "guard": "XE_SWAP requires exact six-dword fetch plus decoded type, pitch, tiled, format, endian, base, dimensions and 2D fields",
+    "negative_test_source": "recompilation/ace-combat-6-demo/tests/ac6-demo-xenos-command-tests.cpp",
+    "negative_test_source_sha256": "16e2ca5f429865754c8f05f6ec4f765e006d41cffc35105b5c408dc4ab7ed4ed",
+    "validation": {
+      "demo_ctest": "18/18",
+      "codegen_ctest": "17/17",
+      "changed_fetch_traps": true
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact packet/header/register range and hashes",
+      "six fetch dwords byte-identical to the observed VdSwap fetch",
+      "base/format/width/height/endian/tiled/pitch/dimension consistency",
+      "fail-closed XE_SWAP guard and negative test"
+    ],
+    "demo-observed": [
+      "packet occurs at main-IB offset 408 before XE_SWAP offset 415",
+      "same fetch words are supplied by the guest VdSwap boundary"
+    ],
+    "xenia-generic": [
+      "register name and xe_gpu_texture_fetch_t bit layout"
+    ],
+    "unknown": [
+      "swizzle/filter/format channel semantics beyond the raw fields",
+      "EDRAM source contents and copy/resolve pixel result",
+      "separate guest hardware reader PC",
+      "frontend, mission and terminal result"
+    ]
+  },
+  "policy": {
+    "read_only_evidence_join": true,
+    "runtime_guard_fail_closed": true,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "product_runtime_readback_claimed": false,
+    "screencap_claimed": false
+  }
+}

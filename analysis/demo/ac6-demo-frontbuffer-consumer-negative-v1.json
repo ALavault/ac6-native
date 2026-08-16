@@ -1,0 +1,89 @@
+{
+  "schema": "ac6-demo-frontbuffer-consumer-negative/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "frontend_claimed": false
+  },
+  "instrumentation": {
+    "env": "AC6_DEMO_WATCH_FRONTBUFFER_READERS=1",
+    "hook": "src/guest_bridge/frontbuffer_writer_trace.hpp",
+    "callers": ["AC6_PPC_LOAD_U8", "AC6_PPC_LOAD_U16", "AC6_PPC_LOAD_U32", "AC6_PPC_LOAD_U64"],
+    "range": {"begin": "0x1374A000", "end_exclusive": "0x13AE2000", "bytes": 3768320},
+    "default_effect": "disabled",
+    "host_loads_included": false
+  },
+  "runs": {
+    "neutral_t253": {
+      "ticks": 253,
+      "rtply_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "reader_rows": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "start_t253": {
+      "ticks": 253,
+      "rtply_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "reader_rows": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "neutral_t600": {
+      "ticks": 600,
+      "rtply_sha256": "6c34827cc3f9962a7f4042610d69aeb54bbd0165fd5a1c830d341efad07970c7",
+      "reader_rows": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "start_t600": {
+      "ticks": 600,
+      "rtply_sha256": "2a4577f883bbfa31f8740b35e998da10ea42ddba050fa7232e80abe6c71f27cc",
+      "reader_rows": 0,
+      "guest_writeback": true,
+      "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "validation": {
+    "ctest_codegen_on": "17/17",
+    "ctest_demo_off": "18/18",
+    "complexity": "pass",
+    "binary_sha256": "156d46feece454e9fd272bcf80e2d96622bb10bfec4d59251c8c5e1081f8698b",
+    "source_hashes": {
+      "frontbuffer_writer_trace.hpp": "eff93e722548606849a16ebb893ccc6db0cabeebabec1e4723afce7c3d630f17",
+      "guest_bridge.cpp": "56faba13c05c6c736d984724278b87b4bec1c959222c78807dd7cd91c262af3a",
+      "tools/ppc_context_adapter.h": "0707a79bf2a6749821c3085f4634433c0108e16c95239af95a9bb86d31e51214"
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "zero PPC reads in frontbuffer range through tick 600 on neutral and START",
+      "same guest linear digest after renderer writeback"
+    ],
+    "demo-observed": ["black reached frame and max_ticks outcome"],
+    "xenia-generic": [],
+    "unknown": [
+      "first guest frontbuffer consumer",
+      "scanout host path",
+      "guest persistence after tick 600",
+      "non-black pixels",
+      "frontend/mission result",
+      "native screencap"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "reader_hook_mutates_guest": false,
+    "retail_evidence_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "screencap_promoted": false
+  }
+}

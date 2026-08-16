@@ -1,0 +1,136 @@
+{
+  "schema": "ac6-demo-graphics-interrupt-target-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "dynamic": {
+    "neutral": {
+      "trace_path": "/fastdata/lavaulta/tmp/ac6-int-neutral-800-1786828401.json",
+      "rtply_sha256": "bbc7ecb8fc20bfdbbdd1d70d24a4fdc78f6619dd5622c761e88541d776fd7068",
+      "edge": {
+        "kind": "indirect",
+        "thread": 2,
+        "lr": "0x821B9768",
+        "target": "0x821C5190",
+        "first_tick": 1,
+        "last_tick": 1,
+        "count": 1,
+        "registers": {
+          "r3": "0x00000100",
+          "r4": "0x10041A00",
+          "r31": "0x821C5190"
+        }
+      },
+      "callback_edge": {
+        "thread": 2,
+        "lr": "0x00000000",
+        "target": "0x821B9710",
+        "first_tick": 1,
+        "last_tick": 799,
+        "count": 800
+      }
+    },
+    "start": {
+      "trace_path": "/fastdata/lavaulta/tmp/ac6-int-start-800-1786828402.json",
+      "rtply_sha256": "54a2860fccb21ab3be0595ae5532a7f9e0dbc3b7b971aaf334a7a087f5a427e1",
+      "edge": {
+        "kind": "indirect",
+        "thread": 2,
+        "lr": "0x821B9768",
+        "target": "0x821C5190",
+        "first_tick": 1,
+        "last_tick": 1,
+        "count": 1,
+        "registers": {
+          "r3": "0x00000100",
+          "r4": "0x10041A00",
+          "r31": "0x821C5190"
+        }
+      },
+      "callback_edge": {
+        "thread": 2,
+        "lr": "0x00000000",
+        "target": "0x821B9710",
+        "first_tick": 1,
+        "last_tick": 799,
+        "count": 800
+      }
+    },
+    "ab_equal": true,
+    "frontbuffer_scalar_reads": 0,
+    "frontbuffer_vector_reads": 0,
+    "vdswap_notifications": 663,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "static": {
+    "atlas_path": "analysis/demo/ac6-demo-static-decomp-atlas-v1.json",
+    "atlas_sha256": "7ee1e677dfac287fdcd8d80b1c5f34575cbabf1c41ab79e70bd1581f87114e2d",
+    "target": {
+      "entry": "0x821C5190",
+      "range": ["0x821C5190", "0x821C5323"],
+      "byte_sha256": "2ec755d70c3feb6adc7ae4eacf85403e1a2609cd4d5fe74c17c33f65a61ac1d3",
+      "pseudocode_sha256": "9ae78c3dcdb91951358d0c82e4a50c977c40c47b6a8a05cb6a52068fc37a9c1f",
+      "direct_calls": ["0x823270F8", "0x82375FD4", "0x82375FE4", "0x82376064"],
+      "imports": [
+        "xboxkrnl.exe:KeQueryPerformanceFrequency:131",
+        "xboxkrnl.exe:KfAcquireSpinLock:177",
+        "xboxkrnl.exe:KfReleaseSpinLock:180"
+      ],
+      "globals": ["0x82000608"],
+      "boundary_provenance": "pdata"
+    },
+    "inner_indirect_site": {
+      "address": "0x821C528C",
+      "owner": "0x821C5190",
+      "mnemonic": "bctrl",
+      "instruction_sha256": "79cb7a343751219f212b2198c45b0992afa52c689ec6d9a9b055591a73a09aea",
+      "resolution": "unknown",
+      "targets": []
+    },
+    "generated_cross_match_only": {
+      "unit": ".build/ac6-demo-vector-build-1/codegen/generated/ppc_recomp.20.cpp",
+      "sha256": "5af39f25c9382c4cd2e3728a0d7b1aedd439cb1ed4e1b729c2ac92793d3671d1",
+      "tracked": false
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "exact callback internal edge 0x821B9768 -> 0x821C5190 in neutral and START",
+      "thread 2, tick 1, r3/r4/r31 values and count 1",
+      "static .pdata boundary and byte/pseudocode hashes for 0x821C5190"
+    ],
+    "demo-observed": [
+      "handler reached after PM4_INTERRUPT source 1",
+      "663 VdSwap notifications and deterministic wait resumption"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "state behind global 0x82000608",
+      "target at inner bctrl 0x821C528C",
+      "host scanout read and all pixel/frontend/mission claims"
+    ]
+  },
+  "validation": {
+    "ctest_codegen_on": "17/17",
+    "ctest_vector_diagnostic": "17/17",
+    "render_status": "AC6_DEMO_STATUS_PASS",
+    "git_diff_check_project": "pass",
+    "generated_cpp_modified": false,
+    "retail_evidence_merged": false
+  },
+  "policy": {
+    "fail_closed": true,
+    "mutates_guest_memory": false,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "rexglue_modified": false,
+    "microcode_tracked": false,
+    "proprietary_asset_tracked": false,
+    "screencap_promoted": false
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "schema": "ac6-demo-frontier-branch-delay-thunk/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "backend": "headless",
+    "max_ticks": 600,
+    "fresh_process_per_run": true,
+    "store": "recompilation/ace-combat-6-demo/.build/ac6-demo-store-test-3",
+    "runtime_binary_sha256": "200947b05e6ca656d8978486227ba75a56cc00afd121fe912371f45a9e3d04e7",
+    "codegen_manifest_sha256": "ae57c86869c556f17c7eee3f9d781d19943d20bf2599abbe201ac88954bda185"
+  },
+  "rr_pm4_provenance_reused": {
+    "tool": ".tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "gate_report": "reports/ac6-demo-local-rr-fidelity-gate-20260815.md",
+    "gate_report_sha256": "bb26f8888be14bac8ffd6cfd372090ae1146605113db2e049947b8332ff43703",
+    "probe_report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79",
+    "main_ib_receipt": "analysis/demo/ac6-demo-main-ib-rr-provenance-v1.json",
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "writers": {
+      "first_dword_final": {
+        "guest_pc": "0x821B0D70",
+        "guest_lr": null,
+        "guest_thread": null,
+        "tick": null,
+        "status": "demo-qualified-pc-only; lr-thread-tick-unknown"
+      },
+      "last_dword_final": {
+        "guest_pc": "0x821BA01C",
+        "guest_lr": "0x821B9F78",
+        "guest_thread": 1,
+        "tick": 0,
+        "status": "demo-qualified"
+      },
+      "ring_publication": {
+        "guest_pc": "0x821B9D24",
+        "guest_lr": "0x821B9C80",
+        "guest_thread": 1,
+        "tick": 0,
+        "packet": ["0xC0013F00", "0x1274A000", "0x00000BD5"],
+        "status": "demo-qualified"
+      }
+    },
+    "policy": {
+      "same_xex_only": true,
+      "no_retail_merge": true,
+      "no_system_rr": true,
+      "no_resynchronization": true
+    }
+  },
+  "pre_resolution_frontier": {
+    "tick": 385,
+    "thread": 1,
+    "caller_function": "0x820DC408",
+    "caller_bctrl_pc": "0x820DC4F8",
+    "caller_bctrl_bytes": "4E 80 04 21",
+    "return_lr": "0x820DC4FC",
+    "target": "0x820D3310",
+    "registers": {
+      "r3": "0x2E3E0454",
+      "r29": "0x820D3310",
+      "r31": "0x2E3D3E38"
+    },
+    "trap_report_sha256": "b0f680bf0bd43c138240ebbc9add40dcab3893524fde44c7bafb5d02e911065b",
+    "classification": "demo-observed-first-unknown-indirect"
+  },
+  "static_join": {
+    "thunk": {
+      "address": "0x820D3310",
+      "range": ["0x820D3310", "0x820D331F"],
+      "kind": "Ghidra branch-delay-slot / dynamically callable code",
+      "words": ["0x81830000", "0x816C0064", "0x7D6903A6", "0x4E800420"],
+      "bytes_sha256": "8018a855aaf23aa448ea5acac2fbdc00107cdd658bbc497035361fce6f49556c",
+      "semantics_observed": "lwz r12,0(r3); lwz r11,0x64(r12); mtctr r11; bctr"
+    },
+    "vtable": {
+      "address": "0x82006A9C",
+      "slot_offset": "0x64",
+      "slot_address": "0x82006B00",
+      "slot_target": "0x8219DC18",
+      "slot_target_bytes_sha256": "eb701dd327924814da2db7e2c0ee348bbdf5ab32c4f0ba2fcde3b777a9a612b5"
+    },
+    "chunk": {
+      "range": ["0x820D3230", "0x820D3363"],
+      "kind": "Ghidra bounded-unowned",
+      "bytes_sha256": "38ebf8e97577e9d438ec73593b8d3da6e71f0df0a4c16bd2f17dd2d43c5eac63"
+    },
+    "target_function": {
+      "address": "0x8219DC18",
+      "range": ["0x8219DC18", "0x8219DC27"],
+      "byte_sha256": "eb701dd327924814da2db7e2c0ee348bbdf5ab32c4f0ba2fcde3b777a9a612b5",
+      "atlas_confidence": "unknown",
+      "atlas_decompilation": "unavailable"
+    }
+  },
+  "dynamic_observation": {
+    "tick": 385,
+    "thread": 1,
+    "object": "0x2E3E0454",
+    "vtable": "0x82006A9C",
+    "slot_address": "0x82006B00",
+    "slot_target": "0x8219DC18",
+    "nested_edge_lr": "0x820DC4FC",
+    "nested_edge_qualified": true,
+    "all_addresses_mapped": true
+  },
+  "runs": {
+    "neutral": {
+      "input": "none",
+      "rtply_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+      "report_sha256": "20da97c48ad48cbead0a8fd6c938ac62835b8239035226168af64af33775cbe6",
+      "stdout_sha256": "22a580202e8ca664d1d3275ac668c0fba9c94d2acde8b33c75000d7d6b2110ea",
+      "return_code": 4
+    },
+    "start": {
+      "input": "tick 252, button mask 0x10",
+      "rtply_sha256": "4d2f77515e5850ca3e8e0e36e2eaa306a9a7b2c7d602deae56755cab4ba100e1",
+      "report_sha256": "b48fb16234582727d4231f90bf06e381c5ec385fdfc57505186bc1cc51e43161",
+      "stdout_sha256": "92af50b9df4e92ed720d7fa94bcafc1999afc4dfeb5eb4aa0f966fb50b7491d4",
+      "return_code": 4
+    }
+  },
+  "comparison": {
+    "report_subtrees_byte_equal": ["outcome", "milestones", "graphics", "scheduler"],
+    "completed_ticks": 600,
+    "presentation_notifications": 463,
+    "frontend_milestone": false,
+    "mission_milestone": false,
+    "terminal_milestone": false,
+    "render_queue_producer_changes": 695,
+    "render_queue_consumer_changes": 0,
+    "resolved_edge_targets": ["0x820D3310", "0x8219DC18"]
+  },
+  "classification": {
+    "demo-qualified": [
+      "the reached thunk bytes and exact vtable slot are checked before execution",
+      "the thunk invokes only the exact mapped slot target",
+      "neutral and START complete 600 ticks without a CPU/indirect trap"
+    ],
+    "demo-observed": [
+      "the thunk is reached at tick 385 on guest thread 1",
+      "the slot target is 0x8219DC18"
+    ],
+    "unknown": [
+      "semantic role of the object/vtable beyond the observed thunk ABI",
+      "frontend transition, non-black pixels and mission progression"
+    ]
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "xenia_or_rexglue_modified": false,
+    "ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false,
+    "fallback_or_synthetic_progression": false,
+    "fail_closed": true
+  }
+}

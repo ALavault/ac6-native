@@ -1,0 +1,91 @@
+{
+  "schema": "ac6-demo-neutral-start-reachability-1000/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon PPC big-endian / Xenos"
+  },
+  "runtime": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "ed44dba583e2aa78d081ca52796ddc0e52b7b775015db41ca1198814c95b2ecc",
+    "backend": "headless",
+    "codegen": "ON",
+    "max_ticks": 1000,
+    "until": "terminal",
+    "root": "/fastdata/lavaulta/tmp/ac6-demo-reachability-5000.zCSUzX/",
+    "neutral_store": "neutral-store-correct (no input-at)",
+    "start_store": "start-store (buttons=0x10 at tick 252)"
+  },
+  "artifacts": {
+    "neutral": {
+      "atlas_sha256": "5166afcc9c6fae78f34cf1037d73ae881003579ce875474d1b0c0e13ca33fcf6",
+      "report_sha256": "4023fc0fae3b75c1bcd3386e303346dae7d2b9920958f1da429d15bc9c481d5c",
+      "rtply_sha256": "790c6d9dd3931f8f4c2b5224afe3480d01f1460d1bc6a1f324b65d06bbe718a3",
+      "movie_sha256": "9f1b80ed55109fccc470a152ab849f1139e942d4305b3ac58f986183fd796e03"
+    },
+    "start": {
+      "atlas_sha256": "8ef27d4d4ffa87ffdb6fdae5d7aaaa2507126b2adf01876d426a1f71e7cdc36f",
+      "report_sha256": "6031c8ea0c26e591ce246e51297e7de6ab9cba7f4a90c4f71d772d5bd8c5ed3e",
+      "rtply_sha256": "993cbe344b60d6fd675d66c8719f74488138c9be802d96ce06957d23efa06657",
+      "movie_sha256": "d6de5cf324eaa9777db6cdbead8a76c0079b281e308eaa2aa04dce0f5804738c"
+    },
+    "report": {
+      "path": "reports/cycle-1683-demo-neutral-start-reachability-1000.md",
+      "sha256": "23324134b915eda0d7e2d80a1b1f87eae0026f0c5b66769fdbb86e3299dafe5c"
+    }
+  },
+  "comparison": {
+    "tick_range": {"first": 0, "last": 999},
+    "functions": {"neutral": 2457, "start": 2457, "address_set_equal": true},
+    "indirect_edges": {"neutral": 1078, "start": 1078, "records_equal": true},
+    "imports": {"neutral": 581, "start": 581, "records_equal": true},
+    "function_records": {
+      "0x820FF8D8": {"neutral": 748, "start": 748, "delta": 0, "first_tick": 252, "last_tick": 999},
+      "0x820D2D28": {"neutral": 2, "start": 2, "delta": 0, "first_tick": 986, "last_tick": 986, "static_byte_sha256": "a7f4a3465fc62576f762c7cd2c8227ec6fafe99d6c884fdfb1077c8cc47c842b", "static_role": "unknown"},
+      "0x822E1DF0": {"neutral": 785782, "start": 785614, "delta": -168, "first_tick": 252, "last_tick": 999},
+      "0x822E1DF8": {"neutral": 785782, "start": 785614, "delta": -168, "first_tick": 252, "last_tick": 999}
+    },
+    "control_flow_only_differences": [
+      {"wrapper": "0x822E1DF0", "neutral": 785782, "start": 785614, "delta": -168},
+      {"wrapper": "0x822E1DF8", "neutral": 785782, "start": 785614, "delta": -168}
+    ],
+    "graphics": {
+      "presentation_notifications": {"neutral": 863, "start": 863},
+      "vd_swap_calls": {"neutral": 863, "start": 863, "last_tick": 999},
+      "ring_base": "0x126CA000",
+      "ring_capacity_dwords": 131072,
+      "submissions": 2,
+      "intermediate_ib": {"address": "0x127CA0C0", "dwords": 11, "sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0"},
+      "main_ib": {"address": "0x1274A000", "dwords": 3029, "sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"},
+      "frontbuffer": {"address": "0x1374A000", "format": 6, "width": 1280, "height": 720},
+      "guest_frontbuffer_lines": 0
+    },
+    "milestones": {
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "process-fresh neutral/START A/B through tick 1000",
+      "same function, indirect-edge and import sets",
+      "same PM4 IBs, presentation count and XE_SWAP tuple"
+    ],
+    "demo-observed": ["shared function 0x822E1DF0/DF8 cadence delta -168 after START"],
+    "xenia-generic": [],
+    "unknown": ["causal frontend transition", "guest pixel consumer", "pixels", "audio", "mission", "result", "screencap"]
+  },
+  "policy": {
+    "retail_evidence_fused": false,
+    "synthetic_guest_state_written": false,
+    "generated_cpp_modified": false,
+    "ghidra_xenia_rexglue_modified": false,
+    "microcode_or_proprietary_assets_tracked": false,
+    "fail_closed": true,
+    "start_promoted": false,
+    "rejected_invalid_neutral_attempt": true
+  },
+  "next_checkpoint": "Instrument a guest consumer that can differ between neutral and START after tick 252; do not promote a visual transition from critical-section cadence alone."
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "ac6-demo-neutral-boundary-batch/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "language": "PowerPC:BE:64:Xenon"
+  },
+  "scope": {
+    "route": "neutral",
+    "backend": "headless",
+    "fresh_store": true,
+    "xma_create_opt_in": true,
+    "xma_kick_opt_in": true,
+    "start_injected": false,
+    "first_new_tick": 2126
+  },
+  "closed_boundaries": [
+    {
+      "entry": "0x82277768",
+      "size": "0x40",
+      "byte_sha256": "f6a8852999506e1376f611452603625b2359a632c4b150a7fb3114ac3cdf74d0",
+      "caller_lr": "0x8223D110",
+      "thread": 1,
+      "tick": 2126,
+      "source_report_sha256": "25e5b015887f8d55d964df1015a52607d097c743f4232c0b6a94f6f152ea962d"
+    },
+    {
+      "entry": "0x822CCCB8",
+      "size": "0x3C",
+      "byte_sha256": "ddcbba9f92911e549f2b58182188841d43fc481d9f5d1fc068ffed510679a38f",
+      "caller_lr": "0x8223D798",
+      "thread": 1,
+      "tick": 2126,
+      "source_report_sha256": "f4ba9de24e26db0c91fd059302617aa2da6a2eed70100dfc20130bbc9f1d58c1"
+    },
+    {
+      "entry": "0x822CC3B8",
+      "size": "0x1C",
+      "byte_sha256": "b065d7ebb63ed6554a65f6a45255ca8056ec416c8bbb301459575d16ddacbb3b",
+      "caller_lr": "0x8223E304",
+      "thread": 1,
+      "tick": 2126,
+      "source_report_sha256": "ad2008d4f42e72790e1cbde58527967bcf2e408b18800f8c0d3e1ddaeae9a802"
+    }
+  ],
+  "next_frontier": {
+    "kind": "guest-indirect",
+    "diagnostic": "unqualified guest indirect call",
+    "entry": "0x822CD118",
+    "caller_lr": "0x8223FF70",
+    "thread": 1,
+    "tick": 2126,
+    "source_report_sha256": "7749ddfdb807ef9140483e2127ae7bdf038d07e61793af64b3db8b150c165bda"
+  },
+  "artifacts": {
+    "trace_sha256": "1fda8336cb2855bc51e9f12d754e37660f43ed57717d185372b05bb9b1557ed7",
+    "final_codegen_manifest_sha256": "8c63660d24908846ed09f912a1d4843d6e0b026bd8fd0bb1667db16117782681",
+    "final_boundary_config_sha256": "706ba2e1eaf5186d9402be02041789579522dd8542df4e3b34049003b7118af0",
+    "final_binary_sha256": "84e35957dd1e334e6e2724a7a1ee30dcd2bfd3553555c9c3bb8ed9313214f558",
+    "static_atlas_sha256": "37480d8c52a57890491e517530be42f5b26a38455795a669df21eb4eb8ec604f",
+    "static_shader_receipt_sha256": "32e359303a08e06f11f822b6a37adbf05b52d8aff1505d85817f11fbf10a4335"
+  },
+  "classification": {
+    "demo_qualified": [
+      "three callable boundaries and their exact PAL byte hashes",
+      "neutral execution order and next fail-closed frontier",
+      "12870-function complete static atlas"
+    ],
+    "demo_observed": [
+      "1989 frame-swap milestones before the next trap",
+      "no frontend, mission or terminal milestone"
+    ],
+    "unknown": [
+      "semantic role of the four indirect targets",
+      "first non-black EDRAM producer",
+      "causal START transition"
+    ]
+  }
+}

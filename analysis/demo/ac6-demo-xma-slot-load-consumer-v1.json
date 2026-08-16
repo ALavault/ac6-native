@@ -1,0 +1,100 @@
+{
+  "schema": "ac6-demo-xma-slot-load-consumer/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos"
+  },
+  "build": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "55cb936000849012c7516fecb9002e7118db4471b440a26285e74291beef15bb",
+    "guest_bridge_sha256": "f947c64dd89be8c5c909a4540f18e03ec8f852f50cecc0dae5d73d4c1f1eceec",
+    "xma_trace_header_sha256": "8ef408447f37650691fab009aa4f051bd9840ece06bfd4691db1e615d227b09a",
+    "complexity_guest_bridge_lines": 1434,
+    "ctest": "17/17"
+  },
+  "runs": {
+    "root": "/fastdata/lavaulta/tmp/ac6-cycle1706.YcZlMG",
+    "max_ticks": 1050,
+    "neutral": {
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131",
+      "stderr_sha256": "4f563ac6306859bc9b4beddbc9d4ddbd9eef73ecd123c34cb1c16696ac56ec80"
+    },
+    "start": {
+      "rtply_sha256": "d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d",
+      "report_sha256": "238bd9e4f7e8ea150b7e5622101340145bc0dd9e7076d5c6472f4970634022cc",
+      "stderr_sha256": "4f563ac6306859bc9b4beddbc9d4ddbd9eef73ecd123c34cb1c16696ac56ec80",
+      "input": "tick252:16,0,0,0,0,0,0,0,1"
+    }
+  },
+  "slot": {
+    "address": "0x17360050",
+    "width": 4,
+    "store": {
+      "pc": "0x823273E0",
+      "lr": "0x821A3E74",
+      "tick": 2,
+      "thread": 1,
+      "value_be": "0xFEFEFEFE"
+    },
+    "load": {
+      "pc": "0x82357240",
+      "lr": "0x82357248",
+      "tick": 1048,
+      "thread": 21,
+      "value_be": "0x00000000"
+    }
+  },
+  "import": {
+    "module": "xboxkrnl.exe",
+    "name": "XMACreateContext",
+    "ordinal": 548,
+    "tick": 1048,
+    "thread": 21,
+    "lr": "0x82357298",
+    "r3": "0x17360050",
+    "r4": "0x00000000",
+    "r5": "0x00006180",
+    "r6": "0x00000000",
+    "r7": "0x00000001",
+    "effect": "trap-before-import"
+  },
+  "graphics": {
+    "presents": 911,
+    "neutral_start_vd_swap_identical": true,
+    "frontbuffer": "0x1374A000",
+    "width": 1280,
+    "height": 720,
+    "texture_format": 6
+  },
+  "classification": {
+    "demo-qualified": [
+      "fresh neutral/START slot store and load",
+      "slot PC/LR/tick/thread/value",
+      "XMACreateContext call registers and fail-closed trap",
+      "911 PRESENT and identical VD_SWAP"
+    ],
+    "demo-observed": [
+      "FEFEFEFE preparation pattern",
+      "bounded 96-byte window at r3"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "first writer before FE fill",
+      "selected table entry/index",
+      "post-call output pointer",
+      "first XMA packet and PCM"
+    ]
+  },
+  "guard": {
+    "watch_opt_in_only": true,
+    "ordinal_548_traps": true,
+    "import_effect": false,
+    "audio_decode": false,
+    "readback": false,
+    "screencap": false
+  },
+  "next_checkpoint": "capture TLS tick/thread at fill and first consumer of [0x17360050,0x17360054)"
+}

@@ -1,0 +1,191 @@
+{
+  "schema": "ac6-demo-xma-pal-static-abi-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "kind": "read_only_static_join",
+    "generated_checkout": ".build/ac6-demo-codegen-xenon-59",
+    "generated_manifest_sha256": "2ed52cc109c1db7499e348ecea0064dffb990f1ca908cd038c8753aea18880fd",
+    "generated_file": "generated/ppc_recomp.48.cpp",
+    "generated_file_sha256": "1c594e0bc735b2c47e59a35300821ee6e914463afbb8b3d23f2b6aa080ce01b9",
+    "generated_import_map": "generated/ppc_func_mapping.cpp",
+    "generated_import_map_sha256": "f0e3df9955d1f1f1f717980a8d4fddc6ae346989d43711b3b4f6ec1bf32a8c5e",
+    "generated_cpp_use": "literal control-flow/ABI cross-match only; not product source",
+    "runtime_mutated": false,
+    "xenia_executed": false,
+    "ptrace_used": false,
+    "retail_evidence_merged": false,
+    "generated_cpp_modified": false,
+    "microcode_followed": false,
+    "proprietary_asset_tracked": false
+  },
+  "pal_static": {
+    "allocator_function": {
+      "entry": "0x82357240",
+      "size": "0xCC",
+      "byte_sha256": "7436f8404267283916f2e64fdcda534788553fbf366daa330bc09fe9220ed9",
+      "pseudocode_sha256": "9d2db824bcf8391231e9b809524e7acec3079f2204cfd3c28dd3e8ceda002a13",
+      "callsite": "0x82357294",
+      "callsite_bytes_be": "4801F5217C771B78",
+      "direct_calls": ["0x823270F4", "0x82376024", "0x823767B4"]
+    },
+    "context_table": {
+      "count_offset": "entry+0",
+      "flags_offset": "entry+4",
+      "base_offset": "entry+8",
+      "entry_stride": 96,
+      "output_slot_offset": 64,
+      "context_index_field": 80,
+      "entry_loop": "count entries; skip nonzero output slot; call XMACreateContext on entry+64"
+    },
+    "call": {
+      "import_thunk": "0x823767B4",
+      "module": "xboxkrnl.exe",
+      "name": "XMACreateContext",
+      "ordinal": 548,
+      "return_lr": "0x82357298",
+      "arguments": {
+        "r3": "entry+64 output slot",
+        "r4": "0x00000000",
+        "r5": "0x00006180",
+        "r6": "0x00000000",
+        "r7": "0x00000001"
+      },
+      "post_call": [
+        "copy r3 status to r23; branch on signed status < 0",
+        "load context pointer from [entry+64]",
+        "call MmGetPhysicalAddress",
+        "compute index from physical address and global 0x829DA52C",
+        "store context index at [entry+80]",
+        "form and issue an unqualified stwbrx/eieio MMIO write at 0x823572D8/0x823572DC"
+      ]
+    },
+    "related_functions": [
+      {
+        "entry": "0x82357310",
+        "size": "0x80",
+        "byte_sha256": "5768c76bea572f55a15b8496790f685505c781f2f2259ff1237978a268005c2f",
+        "pseudocode_sha256": "496813462c14fc650dc32743d63723292d94c58c416f7051211dfb6b2a5d2dc5",
+        "observed_shape": "iterates entries, reads [entry+80], forms another indexed stwbrx/eieio family",
+        "semantic_name": "unknown"
+      },
+      {
+        "entry": "0x82357390",
+        "size": "0xC8",
+        "byte_sha256": "d0d5f3c29766eddc606cbb2b4b1aac072dea242e7659bf7a68d2437ff0d5003d",
+        "pseudocode_sha256": "2fad2149027c50ddc4de01dc4a0c3e8de39b7d3b4f30c7aa4e5c08db28c086ce",
+        "direct_calls": ["0x821A5038", "0x8232710C", "0x82356DA0", "0x82357050", "0x82357458", "0x82376064"],
+        "semantic_name": "unknown"
+      },
+      {
+        "entry": "0x82357458",
+        "size": "0x150",
+        "byte_sha256": "fa99339cb706c69835fec1f54e6c8fe1f24715954fd70ccc22223a5dacd94e1b",
+        "pseudocode_sha256": "7aa386de4b1a6b1309925c24ecedd4aebfcfbee8ab1fd78199264b0de2c64a7f",
+        "observed_shape": "scans entry+80 and copies/updates bounded guest fields; no import call",
+        "semantic_name": "unknown"
+      },
+      {
+        "entry": "0x823575A8",
+        "size": "0x148",
+        "byte_sha256": "0170decfcb699ad75b759421f98de13d72ccd3359bc6f17cd7aa2e19e97a6c9a",
+        "pseudocode_sha256": "88586ba8ccd84e4de689e66619aea4ecf94e5274b0b916425e3b557d5d665b61",
+        "observed_shape": "iterates table entries and performs guest cache/field operations; no import call",
+        "semantic_name": "unknown"
+      }
+    ],
+    "import_table_observation": {
+      "xma_imports_in_qualified_generated_map": [
+        {"address": "0x823767A4", "name": "XMAReleaseContext", "ordinal": 550},
+        {"address": "0x823767B4", "name": "XMACreateContext", "ordinal": 548}
+      ],
+      "direct_xma_initialize_or_enable_call_present": false,
+      "qualification": "absence from this PAL import map is structural evidence only; it does not prove hardware register semantics"
+    }
+  },
+  "runtime_join": {
+    "neutral_start": {
+      "frontier": "tick 1048, guest thread 21, XMACreateContext ordinal 548",
+      "return_lr": "0x82357298",
+      "output_slot": "0x17360050",
+      "presents_before_frontier": 911,
+      "descriptor_sha256": "a4f014e03e752249dc9740522458b6fc4d212d013add1e7f2a1d99cc3346dedf",
+      "routes_equal_at_frontier": true,
+      "effect": "production trap before import effect"
+    },
+    "first_post_import_store": {
+      "pc": "0x823572D8",
+      "bytes_be": "7D60552C",
+      "instruction": "stwbrx r11,0,r10",
+      "barrier_pc": "0x823572DC",
+      "barrier_bytes_be": "7C0006AC",
+      "address_under_experiment": "0x7FEA1A80",
+      "logical_value_under_experiment": "0x00000001",
+      "qualification": "address/value observed only under an opt-in experiment; no hardware effect promoted"
+    }
+  },
+  "xenia_generic": {
+    "checkout": "tools/xenia-source",
+    "commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec",
+    "source": "src/xenia/kernel/xboxkrnl/xboxkrnl_audio_xma.cc",
+    "source_sha256": "73c92f8c5196694f838a6f787750681e3f7a4cd044b478c118c3035a46e3c86c",
+    "generic_exports": [
+      {"ordinal": 548, "name": "XMACreateContext", "shape": "output pointer, status return"},
+      {"ordinal": 549, "name": "XMAInitializeContext", "shape": "context pointer plus init structure"},
+      {"ordinal": 550, "name": "XMAReleaseContext", "shape": "context pointer"},
+      {"ordinal": 551, "name": "XMAEnableContext", "shape": "context pointer"}
+    ],
+    "generic_context": {"bytes": 64, "count": 320},
+    "generic_register_bases": ["0x1A80", "0x1940", "0x1A40"],
+    "use": "cross-match only; never an AC6 PAL proof"
+  },
+  "classification": {
+    "demo-qualified": [
+      "PAL XEX/basefile identity",
+      "0x82357240 table loop, entry stride and output-slot offset",
+      "XMACreateContext callsite/registers and post-call control flow",
+      "qualified PAL function byte/pseudocode hashes",
+      "PAL import map contains XMACreateContext and XMAReleaseContext only",
+      "neutral/START runtime frontier equality"
+    ],
+    "demo-observed": [
+      "911 PRESENT before the ordinal-548 trap",
+      "opt-in address/value at 0x7FEA1A80"
+    ],
+    "xenia-generic": [
+      "output-pointer create shape",
+      "generic XMA export names/ordinals and context/register layout"
+    ],
+    "unknown": [
+      "PAL context allocator and output write semantics",
+      "meaning/effect of 0x7FEA1A80 and related MMIO writes",
+      "XMA packet/timestamp/volume/PCM path and language selection",
+      "first nonzero EDRAM writer, pixels, frontend and mission result"
+    ]
+  },
+  "guard": {
+    "read_only": true,
+    "production_route_changed": false,
+    "xma_import_default_traps": true,
+    "renderer_fallback": false,
+    "audio_decode": false,
+    "readback_promoted": false,
+    "screencap_promoted": false,
+    "retail_evidence_merged": false,
+    "xenia_modified": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false
+  },
+  "next_checkpoint": {
+    "test": "qualify the first PAL post-create writer/consumer with PC/LR/thread/tick on a fresh neutral/START A/B",
+    "minimal_change": "none until the MMIO effect or exact PAL context ABI is independently proven",
+    "fail_closed": "retain ordinal 548 trap and do not map Xenia register bases into the PAL runtime"
+  }
+}

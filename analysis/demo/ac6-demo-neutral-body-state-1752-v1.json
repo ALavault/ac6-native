@@ -1,0 +1,48 @@
+{
+  "schema": "ac6-demo-neutral-body-state/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "probe": {
+    "route": "neutral",
+    "max_ticks": 5400,
+    "completed_ticks": 5400,
+    "body_entry": "0x822F8848",
+    "caller_lr": "0x822E559C",
+    "object": "0x82934280",
+    "vtable": "0x8202A488",
+    "slot": 4,
+    "slot_target": "0x822F8848",
+    "registers": {"r4": "0x00000000", "r5": "0x0000057C", "r6": "0x00000100", "r7": "0x00000000"},
+    "activations": 5153,
+    "stores": 51530,
+    "store_addresses": ["0x829341A4", "0x829341A8", "0x829341AC", "0x829341B0", "0x829341B4", "0x829341B8", "0x829341BC", "0x829341C0", "0x829341C4", "0x829341C8"],
+    "store_values": ["0x829342A0", "0x00000000", "0x00000000", "0x00000000", "0x82934500", "0x829342A0", "0x00000000", "0x00000000", "0x00000000", "0x82934500"],
+    "first_ticks": [0, 1, 222],
+    "last_ticks": [5397, 5398, 5399]
+  },
+  "result": {
+    "presents": 5263,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "scheduler_threads": 23,
+    "scheduler_blocked": 23,
+    "edram_writer": "unknown",
+    "pixels": "unknown"
+  },
+  "artifacts": {
+    "report_sha256": "ec40217ffd824cd7e6f525497b31a05d4c6ca7e14bfdf2746e8de6fc3ce93a44",
+    "trace_sha256": "793f57e338aa7265f1e4d3c06d0a6d9865fc34da37e0ec9abee1653d6a5c1d6e",
+    "stderr_sha256": "4ac886e87e0236566d3b72aeb9ab5d49ec33b20debfd55bb003dc02bb052858c",
+    "binary_sha256": "b31b5f4346b2f50eea40a74ab43b10f2502c1b49ee72dcfafffaf2aaca1d8ccb"
+  },
+  "classification": {
+    "demo-qualified": ["object/vtable/slot stability", "bounded body-store set"],
+    "demo-observed": ["5153 body activations", "six XMA tuples", "5263 PRESENT"],
+    "xenia-generic": [],
+    "unknown": ["body semantic role", "EDRAM writer", "pixels", "XMA/audio effect", "mission"]
+  }
+}

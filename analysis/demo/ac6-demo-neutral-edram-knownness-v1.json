@@ -1,0 +1,71 @@
+{
+  "schema": "ac6-demo-neutral-edram-knownness/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "classification": {
+    "registers_draws_and_shader_hashes": "demo-observed",
+    "register_and_resolve_semantics": "xenia-rexglue-generic",
+    "known_pixel_region": "demo-qualified",
+    "remaining_pixels": "demo-qualified-none"
+  },
+  "bootstrap": {
+    "ib_sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc",
+    "draw_count": 24,
+    "primitive": "point-list",
+    "index_count": 1,
+    "rb_modecontrol": "0x00000004",
+    "rb_color_mask": "0x00000000",
+    "rb_depthcontrol": "0x00000000",
+    "effect": "no-color-depth-or-stencil-write"
+  },
+  "normal_rectangle": {
+    "main_ib_offset_dword": 239,
+    "rectangle": [0, 0, 640, 360],
+    "vertex_shader_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+    "pixel_shader_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+    "color_export": [0, 0, 0, 0],
+    "rb_modecontrol": "0x00000004",
+    "rb_surface_info": "0x0A020280",
+    "surface_pitch_pixels": 640,
+    "msaa": "4x",
+    "sample_grid": [1280, 720],
+    "surface_pitch_tiles": 16,
+    "covered_edram_tiles": 720,
+    "rb_color_mask": "0x0000FFFF",
+    "rb_blendcontrol0": "0x00010001",
+    "blend": "src-one-dst-zero-add-color-and-alpha",
+    "rb_depthcontrol": "0x00008777",
+    "depth_compare": "always",
+    "stencil_compare": "always",
+    "effect": "replace-rt0-with-zero-rgba-inside-rectangle"
+  },
+  "resolve": {
+    "main_ib_offset_dword": 387,
+    "rectangle": [0, 0, 1280, 720],
+    "copy_shader": "ResolveCopyShaderIndex::kFast32bpp1x2xMSAA",
+    "group_count": [20, 90],
+    "source_format": "ColorRenderTargetFormat::k_8_8_8_8",
+    "destination_format": "ColorFormat::k_8_8_8_8",
+    "copy_dest_swap": "bgra",
+    "tiled_extent": "0x00398000"
+  },
+  "knownness_after_resolve": {
+    "total_pixels": 921600,
+    "known_pixels": 921600,
+    "unknown_pixels": 0,
+    "reason": "the 640x360 normal rectangle covers every sample of a 4x MSAA surface; its 2x2 sample grid is the same 1280x720, pitch-16-tile, base-0 EDRAM storage reinterpreted by the 1x copy draw",
+    "known_region": [0, 0, 1280, 720],
+    "known_rgba_after_swap": [0, 0, 0, 0],
+    "linear_rgba8_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "semantic_frame_qualified": "uniform-black",
+    "runtime_readback_produced": false
+  },
+  "policy": {
+    "initial_edram_assumed_zero": false,
+    "unknown_pixels_filled_or_displayed": false,
+    "screencap_claimed": false,
+    "fail_closed": true
+  }
+}

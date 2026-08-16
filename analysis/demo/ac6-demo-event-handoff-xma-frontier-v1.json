@@ -1,0 +1,97 @@
+{
+  "schema": "ac6-demo-event-handoff-xma-frontier/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "endianness": "xenon-big-endian",
+    "gpu": "xenos"
+  },
+  "scope": {
+    "binary": ".build/ac6-demo-codegen-build-1/ac6-demo-recomp",
+    "binary_sha256": "8c2138cab60eb123b31e89852c4fc0af030b47fc5c32f1eee5b933881424c841",
+    "temporary_root": "/fastdata/lavaulta/tmp/ac6-cycle1728-event.IddBKU",
+    "trace_mode": "read-only event handoff; no state mutation",
+    "xenia_patch_applied": false,
+    "xenia_executed": false,
+    "ptrace_used": false,
+    "rr_reexecuted": false,
+    "production_route_changed": false
+  },
+  "routes": {
+    "neutral": {
+      "stderr_sha256": "4eb3242c877b8645320e4e3ca25cfeefcdee69276b23cf3f3b05fd983b6b00a0",
+      "report_sha256": "18c331a6171b89429f1c277d9aaa208cc78c8d0be3bd935f5f53d1e60158bc78",
+      "trace_sha256": "4123e4b5115d9b2518bbaf0baa74c23af2a85fcba3afd0e8f994627bfc5a0e9d",
+      "stderr_byte_identical_to_start": true
+    },
+    "start": {
+      "stderr_sha256": "4eb3242c877b8645320e4e3ca25cfeefcdee69276b23cf3f3b05fd983b6b00a0",
+      "report_sha256": "2c9790c056395dcada28185618e4d163f10b1262002a513bb88990eadb2265cf",
+      "trace_sha256": "a9e5e7c9fe0279b0da38fd480f08ccd66ab546101989b5e467f38ecd3ecae207",
+      "stderr_byte_identical_to_neutral": true
+    }
+  },
+  "window": {
+    "first_tick": 1040,
+    "last_tick": 1099,
+    "rows_per_route": 600,
+    "handles": {"signal": "0xE0000048", "wait": "0xE000004C"},
+    "operations": {
+      "set_enter": 120,
+      "event_wake": 120,
+      "set_exit": 120,
+      "signal_wait_enter": 120,
+      "signal_wait_resume": 60,
+      "signal_wait_block": 60
+    },
+    "writers": {
+      "thread12": {"operation": "NtSetEvent", "lr": "0x821A6AC4", "count": 60},
+      "thread1": {"operation": "NtSetEvent", "lr": "0x821A6AC4", "count": 60}
+    },
+    "waiter": {
+      "thread": 1,
+      "lr": "0x821A69CC",
+      "resume_count": 60,
+      "block_count": 60,
+      "selected_waiter_count": 60
+    },
+    "neutral_start_rows_identical": true,
+    "lost_wakeup_observed": false
+  },
+  "frontier": {
+    "tick": 1100,
+    "thread": 1,
+    "lr": "0x822E559C",
+    "indirect_target": "0x822F8848",
+    "wait_key": "0xE000004C",
+    "scheduler": {"threads": 23, "runnable": 0, "blocked": 23, "finished": 0},
+    "semantics": "unknown"
+  },
+  "classification": {
+    "demo-qualified": [
+      "event handoff counts and exact PC/LR/tick/thread fields",
+      "neutral/START stderr equality",
+      "no Xenia/ptrace mutation in the probe"
+    ],
+    "demo-observed": [
+      "thread 12 wakes thread 1 on E000004C",
+      "thread 1 resumes then re-enters signal/wait"
+    ],
+    "xenia-generic": [
+      "archived POSIX SignalAndWait patch remains a hypothesis only"
+    ],
+    "unknown": [
+      "cause of re-entry and meaning of 0x822F8848",
+      "XMA effect, nonzero EDRAM, pixels, audio and mission"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "read_only": true,
+    "no_xenia_patch_applied": true,
+    "no_ptrace": true,
+    "no_retail": true,
+    "no_proprietary_assets_tracked": true
+  }
+}

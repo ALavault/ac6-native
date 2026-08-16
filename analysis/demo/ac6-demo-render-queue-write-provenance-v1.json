@@ -1,0 +1,156 @@
+{
+  "schema": "ac6-demo-render-queue-write-provenance/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "backend": "headless",
+    "max_ticks": 600,
+    "fresh_process_per_run": true,
+    "runtime_binary_sha256": "200947b05e6ca656d8978486227ba75a56cc00afd121fe912371f45a9e3d04e7",
+    "instrumentation": "AC6_DEMO_WATCH_RENDER_QUEUE_WRITERS=1",
+    "instrumentation_default": false,
+    "neutral_report_sha256": "20da97c48ad48cbead0a8fd6c938ac62835b8239035226168af64af33775cbe6",
+    "start_report_sha256": "b48fb16234582727d4231f90bf06e381c5ec385fdfc57505186bc1cc51e43161",
+    "neutral_rtply_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+    "start_rtply_sha256": "4d2f77515e5850ca3e8e0e36e2eaa306a9a7b2c7d602deae56755cab4ba100e1",
+    "neutral_stderr_sha256": "b8d5a2f70a3db3ee2650f0b18a8bffde494c496695508f5869a4765eb1dc7810",
+    "start_stderr_sha256": "b8d5a2f70a3db3ee2650f0b18a8bffde494c496695508f5869a4765eb1dc7810",
+    "stderr_line_count": 2786,
+    "stderr_write_record_count": 2090
+  },
+  "queue": {
+    "object_base": "0x82386CC0",
+    "producer_address": "0x8238CD90",
+    "consumer_address": "0x8238CD94",
+    "producer_offset": "0x60D0",
+    "consumer_offset": "0x60D4",
+    "slot_stride": 96,
+    "slot_samples": {
+      "count_per_run": 696,
+      "all_zero": true,
+      "sha256": "2ea9ab9198d1638007400cd2c3bef1cc745b864b76011a0e1bc52180ac6452d4",
+      "producer_index_zero_address": "0x82386DD0",
+      "consumer_index_zero_address": "0x82386D90"
+    },
+    "exact_store_summary": {
+      "producer_nonzero": {
+        "address": "0x8238CD90",
+        "value": 1,
+        "count": 348,
+        "first_tick": 252,
+        "last_tick": 599,
+        "thread": 1,
+        "lr": "0x820FF734",
+        "function": "0x820FF710",
+        "generated_line": 42781
+      },
+      "consumer_nonzero": {
+        "address": "0x8238CD94",
+        "value": 1,
+        "count": 348,
+        "first_tick": 252,
+        "last_tick": 599,
+        "thread": 25,
+        "lr": "0x820FFCE4",
+        "function": "0x820FFCA0",
+        "generated_line": 43739
+      },
+      "consumer_reset": {
+        "address": "0x8238CD94",
+        "value": 0,
+        "count": 348,
+        "first_tick": 252,
+        "last_tick": 599,
+        "thread": 25,
+        "lr": "0x820FFCE4",
+        "function": "0x820FFCA0",
+        "generated_line": 43758
+      },
+      "producer_reset_by_worker": {
+        "address": "0x8238CD90",
+        "value": 0,
+        "count": 348,
+        "first_tick": 252,
+        "last_tick": 599,
+        "thread": 25,
+        "lr": "0x820FFCE4",
+        "function": "0x820FFCA0",
+        "generated_line": 43756
+      },
+      "producer_reset_by_primary": {
+        "address": "0x8238CD90",
+        "value": 0,
+        "count": 348,
+        "first_tick": 252,
+        "last_tick": 599,
+        "thread": 1,
+        "lr": "0x820FF91C",
+        "function": "0x820FF8D8",
+        "generated_line": 43087
+      },
+      "consumer_reset_by_primary": {
+        "address": "0x8238CD94",
+        "value": 0,
+        "count": 348,
+        "first_tick": 252,
+        "last_tick": 599,
+        "thread": 1,
+        "lr": "0x820FF91C",
+        "function": "0x820FF8D8",
+        "generated_line": 43085
+      },
+      "bootstrap_zero": {
+        "addresses": ["0x8238CD90", "0x8238CD94"],
+        "value": 0,
+        "count_per_address": 1,
+        "tick": 221,
+        "thread": 1,
+        "lr": "0x821A450C",
+        "function": "0x820FF9E0",
+        "generated_lines": [43207, 43209]
+      }
+    }
+  },
+  "interpretation": {
+    "demo-qualified": [
+      "the producer and consumer nonzero stores are exact address/value/tick/thread/LR joins",
+      "thread 25 function 0x820FFCA0 writes consumer=1 and resets it each tick",
+      "all captured slot payloads are zero with the same SHA-256 in neutral and START",
+      "neutral and START have identical queue-write stderr digests"
+    ],
+    "demo-observed": [
+      "the scheduler snapshot reports consumer_changes=0 because it samples after the worker reset",
+      "the exact hook records 348 consumer=1 stores per route despite that sampled counter"
+    ],
+    "unknown": [
+      "semantic payload of slot 0x82386D90/0x82386DD0",
+      "frontend ownership of the worker and any nonzero slot producer",
+      "mission progression, non-black pixels and audio"
+    ]
+  },
+  "ab_comparison": {
+    "neutral_start_queue_write_summary_equal": true,
+    "neutral_start_report_subtrees_equal": ["outcome", "milestones", "graphics", "scheduler"],
+    "completed_ticks": 600,
+    "presents": 463,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "readback_promoted": false
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "same_pal_demo_only": true,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_asset_tracked": false,
+    "runtime_behavior_changed": false,
+    "fallback_or_synthetic_progression": false,
+    "fail_closed": true
+  }
+}

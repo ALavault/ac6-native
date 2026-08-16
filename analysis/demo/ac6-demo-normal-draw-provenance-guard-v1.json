@@ -1,0 +1,83 @@
+{
+  "schema": "ac6-demo-normal-draw-provenance-guard/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "guard": {
+    "normal_vertex_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+    "normal_pixel_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+    "primitive": "rectangle-list",
+    "index_count": 3,
+    "index_source": "auto-index",
+    "index_format": "uint16",
+    "predicated": true,
+    "registers": {
+      "RB_SURFACE_INFO": "0x0A020280",
+      "RB_COLOR_MASK": "0x0000FFFF",
+      "RB_BLENDCONTROL0": "0x10010001",
+      "RB_DEPTHCONTROL": "0x00008777",
+      "RB_DEPTHCONTROL1": "0x00010001",
+      "RB_MODECONTROL": "0x00000004"
+    },
+    "batch_lifetime": "immutable XenosDrawCommand snapshots retained across PM4 batches until Vulkan execution",
+    "unknown_profile": "fatal before the normal draw"
+  },
+  "runtime_ab": {
+    "max_ticks": 253,
+    "neutral": {
+      "input": "connected neutral",
+      "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "report_sha256": "33b6c8b3759461fd7720ca3942258cee3fcd1ec4732746a1df8314e50b5685a7"
+    },
+    "start": {
+      "input": "XINPUT_GAMEPAD_START=0x0010 at tick 252",
+      "trace_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "report_sha256": "2d0c391ba3d0d2a6f2dbf0907ac8538abde5be17f8f9424c2fb63cb2bb91a6cf"
+    },
+    "equal_graphics_reports": true,
+    "presentation_notifications": 116,
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "normal_draws": 1,
+    "neutral_resolves": 1
+  },
+  "validation": {
+    "ctest_demo_off": "18/18",
+    "ctest_codegen_on": "17/17",
+    "spirv_val": "pass",
+    "source_hashes": {
+      "main.cpp": "8871b1d35f2610440b794ee6d57807c616c6b2344a78a8136bb5928cf9c782d5",
+      "vulkan_normal_draw.cpp": "aa225fb787429d792de6033a28e152ae3401b064125df669bb3078b7ebfd3381",
+      "vulkan_normal_draw.hpp": "56c77a248417cee0b72f517e973c0aac9e6c74cfa7426ab3786ba11834046ed8"
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "normal draw register/hash profile",
+      "cross-batch snapshot lifetime and fail-closed guard",
+      "neutral/START IB and Vulkan output equality at tick 253"
+    ],
+    "demo-observed": [
+      "START delivery at tick 252",
+      "normal and neutral resolve executions"
+    ],
+    "unknown": [
+      "guest-owned EDRAM and destination bytes",
+      "later visual transition, frontend, mission and terminal"
+    ]
+  },
+  "policy": {
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "screencap_claimed": false,
+    "fail_closed": true
+  }
+}

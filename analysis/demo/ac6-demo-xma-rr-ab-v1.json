@@ -1,0 +1,87 @@
+{
+  "schema": "ac6-demo-xma-rr-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "experiment": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "d6ad26517ed9e746cf50b0a499db924daca5cade4f8129708ee213c5acde49d3",
+    "environment": "AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1",
+    "backend": "headless",
+    "max_ticks": 1050,
+    "stores": "cycle1712-ab neutral-store and start-store"
+  },
+  "rr": {
+    "path": "/fastdata/lavaulta/auto-re-agent/.tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "process_fresh": true,
+    "trace_data_not_versioned": true
+  },
+  "runs": {
+    "neutral": {
+      "direct": {
+        "rtply_sha256": "ab54c75ebccfdf3a41a840ab691a728e1d120a7616cca98a5f6ff42fa804fc43",
+        "report_sha256": "e4c33682b9c834b1a08380c35581adc865bfb090207d96962d3d6848eaf399e0",
+        "stderr_sha256": "18b1a2b66a11c5e63a3f778b2cd9e3a4294ee8635da3f2a70396056fa008bd7b"
+      },
+      "rr": {
+        "rtply_sha256": "ab54c75ebccfdf3a41a840ab691a728e1d120a7616cca98a5f6ff42fa804fc43",
+        "report_sha256": "e4c33682b9c834b1a08380c35581adc865bfb090207d96962d3d6848eaf399e0",
+        "stderr_sha256": "18b1a2b66a11c5e63a3f778b2cd9e3a4294ee8635da3f2a70396056fa008bd7b",
+        "trace_events_sha256": "f1a6c591d0e691ee82ab344518cc30a8b76d017e408e07b26b2fa19a925e1da2",
+        "trace_data_sha256": "df848e3606a7dd48178407614b8b710bb4b124809a37d75f12ae7096891b6eb3"
+      },
+      "completed_ticks": 1048,
+      "presentation_notifications": 911,
+      "frontier": {
+        "thread": 21,
+        "lr": "0x823572AC",
+        "address": "0x7FEA1A80",
+        "trap_before_effect": true
+      }
+    },
+    "start": {
+      "input": "tick 252 buttons 0x10",
+      "direct": {
+        "rtply_sha256": "2ce0a717f8d3df56aa87644d7fc9624f5e02b1020a0b5eeaf0992f6877db417f",
+        "report_sha256": "54ba669894f6fcc5cfdbd94627896cd299a119a803916d70f92e5bf2cbc490e8",
+        "stderr_sha256": "18b1a2b66a11c5e63a3f778b2cd9e3a4294ee8635da3f2a70396056fa008bd7b"
+      },
+      "rr": {
+        "rtply_sha256": "2ce0a717f8d3df56aa87644d7fc9624f5e02b1020a0b5eeaf0992f6877db417f",
+        "report_sha256": "54ba669894f6fcc5cfdbd94627896cd299a119a803916d70f92e5bf2cbc490e8",
+        "stderr_sha256": "18b1a2b66a11c5e63a3f778b2cd9e3a4294ee8635da3f2a70396056fa008bd7b",
+        "trace_events_sha256": "182fbe3407634b18151f6e7f95770cb28d75788778d926c21c3e0b91c1ce91a2",
+        "trace_data_sha256": "34e823c0fe9c21c5661fc2e531f7ff400effbf4a4aef412aa3480d765cb9b9e7"
+      },
+      "completed_ticks": 1048,
+      "presentation_notifications": 911,
+      "frontier": {
+        "thread": 21,
+        "lr": "0x823572AC",
+        "address": "0x7FEA1A80",
+        "trap_before_effect": true
+      }
+    }
+  },
+  "classification": {
+    "demo-qualified": ["PAL identity", "direct/rr byte equality", "frontier/tick/thread/LR/address", "911 PRESENT"],
+    "demo-observed": ["experimental context allocation", "context slot write", "trap before MMIO effect"],
+    "xenia-generic": [],
+    "unknown": ["0x7FEA1A80 semantics", "XMA packets", "PCM/audio", "pixels"]
+  },
+  "guard": {
+    "default_xmacreate_traps": true,
+    "play_replay_do_not_enable_experiment": true,
+    "no_retail_merge": true,
+    "no_xenia_or_rexglue_change": true,
+    "no_audio_decode": true,
+    "no_readback_or_screencap_promotion": true
+  },
+  "next_checkpoint": "PAL read-only join of 0x7FEA1800, global 0x829DA52C, and 0x823572D8-derived address in neutral/START"
+}

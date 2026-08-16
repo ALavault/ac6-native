@@ -1,0 +1,180 @@
+{
+  "schema": "ac6-demo-behavioral-capsule/v1",
+  "target_identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "image_base": "0x82000000"
+  },
+  "corridor_id": "offline-socket-failure-to-receive-consumer",
+  "claim": "When the strict offline bridge has already failed socket creation, the reached NetDll_recvfrom call receives handle -1, returns -1 with WSAENOTSOCK, leaves all guest buffers untouched, and the frontend continues past tick 252 without host networking.",
+  "lane": "bridge",
+  "classification": {
+    "wrapper_abi_and_title_consumer": "static_exact",
+    "invalid_handle_arguments_and_forward_progress": "bridge_observed",
+    "offline_failure_contract": "native_reproduced",
+    "stock_service_result": "unknown"
+  },
+  "scenario": {
+    "command": "probe --until mission --max-ticks 260 --backend headless",
+    "profile": "one explicit offline-local user",
+    "inputs": "neutral AC6RTPLY-v4 seam",
+    "completed_ticks": 260,
+    "presents": 115,
+    "frontend": true,
+    "mission": false,
+    "outcome": "max_ticks"
+  },
+  "interventions": [
+    {
+      "name": "offline-network-failure",
+      "behavioral": true,
+      "services": [
+        "NetDll_socket=-1/WSAENETDOWN",
+        "NetDll_bind=-1/WSAENOTSOCK",
+        "NetDll_recvfrom=-1/WSAENOTSOCK"
+      ],
+      "host_network_access": false
+    }
+  ],
+  "static_chain": {
+    "project": "ghidra-projects/ace-combat-6-demo",
+    "language": "PowerPC:BE:64:Xenon",
+    "caller": "0x82133FB0..0x8213412B",
+    "argument_setup": [
+      "0x82133FEC loads the stored socket handle",
+      "0x82133FF0..0x82133FFC pass address output, flags 0, length 1273 and receive buffer"
+    ],
+    "wrapper": "0x821CA128..0x821CA147",
+    "wrapper_contract": "moves caller to r3, socket to r4, buffer to r5, length to r6, flags to r7, address to r8 and address length to r9",
+    "import": "xam.xex ordinal 20 NetDll_recvfrom",
+    "produced_lr": "0x82134004",
+    "consumer": [
+      "0x82134008 compares the return with -1",
+      "0x8213400C branches directly to the cleanup path on -1",
+      "receive bytes are parsed only after a positive return"
+    ],
+    "service_cross_match": {
+      "source": "tools/xenia-source/src/xenia/kernel/xam/xam_net.cc",
+      "commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec",
+      "contract": "an invalid socket returns -1 and sets WSAENOTSOCK before accessing receive buffers"
+    }
+  },
+  "dynamic_events": [
+    {
+      "event": "socket_creation_failure",
+      "tick": 106,
+      "thread": 1,
+      "module": "xam.xex",
+      "ordinal": 3,
+      "name": "NetDll_socket",
+      "count": 1
+    },
+    {
+      "event": "invalid_socket_bind",
+      "tick": 106,
+      "thread": 1,
+      "module": "xam.xex",
+      "ordinal": 11,
+      "name": "NetDll_bind",
+      "socket": "0xFFFFFFFF",
+      "count": 1
+    },
+    {
+      "event": "invalid_socket_receive",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x82134004",
+      "module": "xam.xex",
+      "ordinal": 20,
+      "name": "NetDll_recvfrom",
+      "caller": 1,
+      "socket": "0xFFFFFFFF",
+      "length": 1273,
+      "flags": 0,
+      "count": 1
+    },
+    {
+      "event": "bounded_forward_progress",
+      "tick": 260,
+      "frontend": true,
+      "diagnostic": "scheduler activation budget exhausted before mission milestone"
+    }
+  ],
+  "input_schema": {
+    "caller": "u32, reached value 1",
+    "socket": "u32, reached invalid handle 0xFFFFFFFF",
+    "buffer": "mapped guest pointer",
+    "length": "u32, reached value 1273",
+    "flags": "u32, reached value 0",
+    "from": "mapped 16-byte guest pointer",
+    "from_length": "mapped 4-byte guest pointer"
+  },
+  "output_schema": {
+    "return": "signed -1",
+    "last_error": "10038 WSAENOTSOCK",
+    "guest_writes": "none"
+  },
+  "memory_effects": {
+    "reads": ["mapping validation only"],
+    "writes": []
+  },
+  "branch_coverage": {
+    "invalid_socket": true,
+    "valid_socket": false,
+    "positive_receive": false,
+    "host_network_path": false
+  },
+  "rejected_hypotheses": [
+    "The demo does not require a fabricated valid socket to keep the frontend alive.",
+    "The invalid-socket path does not consume or initialize the receive buffers.",
+    "A scheduler max-tick stop is not promoted to an import or CPU failure."
+  ],
+  "unobserved_paths": [
+    "valid Xbox System Link receive",
+    "stock last-error behavior for the exact scenario",
+    "any host-network-backed socket"
+  ],
+  "native_comparator": {
+    "dispatch": "xam_bootstrap_dispatch.hpp::NetDll_recvfrom",
+    "required_result": "r3=-1,network_error=10038,no guest writes",
+    "required_progress": "completed_ticks=260,frontend=true,no import or indirect-call trap",
+    "negative_shape": "any argument shape other than the reached invalid-socket receive remains fail-closed"
+  },
+  "confidence": {
+    "title_consumer": "static_exact",
+    "reached_shape": "bridge_observed",
+    "offline_bridge_behavior": "native_reproduced",
+    "stock_parity": "unknown"
+  },
+  "oracle_debt": [
+    {
+      "claim_id": "demo-stock-offline-recvfrom-invalid-socket",
+      "affirmation": "The stock oracle returns -1/WSAENOTSOCK without guest-buffer writes when this title reaches recvfrom after failed socket creation.",
+      "reason_static_bridge_insufficient": "The bridge supplies all three network failures; the Xenia source cross-match is not a stock observation.",
+      "sensitive_domain": "XAM/network service result",
+      "minimal_stock_scenario": "Offline boot through the first recvfrom at 0x82134000.",
+      "minimal_input": "neutral boot with networking unavailable",
+      "expected_observable": "return, last error and hashes of receive/output buffers before and after",
+      "expected_artifact": "one bounded stock callsite/result record",
+      "blocked_product_gate": "exact XAM parity"
+    }
+  ],
+  "artifacts": {
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "codegen_manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "generated_guest_object_sha256": "e56094dde5a942f5ffb74bcfe70c6e679489408d9f9cf48cd6369a85773f9feb",
+    "bridge_binary_sha256": "be3ee6da52745a434ec46e44f00dd58ef20814336c255bf514354bff4f4d9856",
+    "bridge_dispatch_source_sha256": "9c459d4acba0f83bca9be0d8bc943e5f34173519111abf32775db7f00d842bfe",
+    "frontier_report_sha256": "db7c37e62a489b5cf38b338a50cdc0ecf82e43009bb2970091e4229f51a034d7",
+    "trace_sha256": "5ef24c2e3866dfe8379e995f56492dfadd742aab734a5b0662d5b39c5f49a48d"
+  },
+  "validation": {
+    "max_ticks_reached": true,
+    "ticks_beyond_previous_frontier": 8,
+    "frontend": true,
+    "import_or_indirect_trap": false,
+    "complexity": "pass",
+    "source_audit": "pass"
+  }
+}

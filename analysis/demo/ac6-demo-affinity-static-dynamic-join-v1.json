@@ -1,0 +1,132 @@
+{
+  "schema": "ac6-demo-affinity-static-dynamic-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "binary_sha256": "83bda520cabcba2d939be4df2224f4f82240a2752475c420fbbb898bf3c34e23",
+    "environment": [
+      "AC6_DEMO_WATCH_AFFINITY=1",
+      "AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1",
+      "AC6_DEMO_EXPERIMENTAL_XMA_KICK=1",
+      "AC6_DEMO_WATCH_XMA_ADDRESS=1",
+      "AC6_DEMO_WATCH_XMA_KICK=1",
+      "AC6_DEMO_WATCH_XMA_LATE=1",
+      "AC6_DEMO_WATCH_XMA_CREATE=1"
+    ],
+    "max_ticks": 1100,
+    "routes": ["neutral", "START at tick 252"],
+    "read_only": true,
+    "production_route_changed": false,
+    "xenia_executed": false,
+    "xenia_patch_applied": false,
+    "ptrace_used": false,
+    "retail_evidence_merged": false,
+    "generated_cpp_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false
+  },
+  "static_pal_join": {
+    "entry": "0x821A5390",
+    "range": ["0x821A5390", "0x821A543F"],
+    "byte_sha256": "69cdc3705fab26d4c0cb9a2012a5a1750a6d822d736c7e671a1982af13b246bc",
+    "boundary_provenance": "pdata",
+    "imports": [
+      "xboxkrnl.exe:KeSetAffinityThread:151",
+      "xboxkrnl.exe:ObDereferenceObject:261",
+      "xboxkrnl.exe:ObReferenceObjectByHandle:272"
+    ],
+    "call_instruction": "0x821A53DC",
+    "raw_control_flow": [
+      "input r4 is compared against 6",
+      "requested mask is 1 << input r4 when input r4 is in 0..5",
+      "the mask is passed in r4 to KeSetAffinityThread",
+      "the caller converts the returned previous mask with cntlzw/subfic"
+    ],
+    "classification": "demo-qualified"
+  },
+  "dynamic": {
+    "rows_per_route": 19,
+    "neutral_start_stderr_sha256": "8f7e29ed19e266f35528c98bea9ec9a65674d75e5edd76718440cd100a69141d",
+    "neutral": {
+      "report_sha256": "18c331a6171b89429f1c277d9aaa208cc78c8d0be3bd935f5f53d1e60158bc78",
+      "trace_sha256": "4123e4b5115d9b2518bbaf0baa74c23af2a85fcba3afd0e8f994627bfc5a0e9d",
+      "outcome": "max_ticks",
+      "completed_ticks": 1100
+    },
+    "start": {
+      "report_sha256": "2c9790c056395dcada28185618e4d163f10b1262002a513bb88990eadb2265cf",
+      "trace_sha256": "a9e5e7c9fe0279b0da38fd480f08ccd66ab546101989b5e467f38ecd3ecae207",
+      "outcome": "max_ticks",
+      "completed_ticks": 1100
+    },
+    "raw_rows": [
+      {"thread":1,"tick":0,"object":"0x10140000","raw_r4":"0x00000001","previous_ptr":"0x7F040B4C","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":0,"object":"0x10181000","raw_r4":"0x00000004","previous_ptr":"0x7F040B4C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":0,"object":"0x101C2000","raw_r4":"0x00000008","previous_ptr":"0x7F040B4C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":0,"object":"0x10203000","raw_r4":"0x00000002","previous_ptr":"0x7F040B4C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":0,"object":"0x10244000","raw_r4":"0x00000002","previous_ptr":"0x7F040B5C","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":0,"object":"0x10285000","raw_r4":"0x00000004","previous_ptr":"0x7F040B5C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":0,"object":"0x102C6000","raw_r4":"0x00000008","previous_ptr":"0x7F040B5C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":0,"object":"0x10307000","raw_r4":"0x00000010","previous_ptr":"0x7F040B5C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":12,"tick":0,"object":"0x166CA000","raw_r4":"0x00000004","previous_ptr":"0x1670AF04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":13,"tick":0,"object":"0x1670B000","raw_r4":"0x00000008","previous_ptr":"0x1674BF04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":14,"tick":0,"object":"0x1674C000","raw_r4":"0x00000020","previous_ptr":"0x1678CF04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":15,"tick":0,"object":"0x1678D000","raw_r4":"0x00000010","previous_ptr":"0x167CDF04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":16,"tick":0,"object":"0x167CE000","raw_r4":"0x00000004","previous_ptr":"0x1680EF04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":17,"tick":0,"object":"0x1680F000","raw_r4":"0x00000008","previous_ptr":"0x1684FF04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":20,"tick":2,"object":"0x172E6000","raw_r4":"0x00000001","previous_ptr":"0x17326F04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":106,"object":"0x2EB05000","raw_r4":"0x00000010","previous_ptr":"0x7F04097C","previous_value":"0x17760000","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":106,"object":"0x2EB46000","raw_r4":"0x00000010","previous_ptr":"0x7F04097C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":1,"tick":106,"object":"0x2EB87000","raw_r4":"0x00000020","previous_ptr":"0x7F04097C","previous_value":"0x00000001","result":"0x00000000","lr":"0x821A53DC"},
+      {"thread":25,"tick":221,"object":"0x2EEB0000","raw_r4":"0x00000002","previous_ptr":"0x2EEF0F04","previous_value":"0x00000000","result":"0x00000000","lr":"0x821A53DC"}
+    ],
+    "raw_mask_set": ["0x00000001","0x00000002","0x00000004","0x00000008","0x00000010","0x00000020"],
+    "neutral_start_byte_identical": true,
+    "scheduler_terminal": {"threads":23,"runnable":0,"blocked":23,"finished":0}
+  },
+  "experimental_stateful_attempt": {
+    "status": "rejected",
+    "failure": "host SIGSEGV in record_import_edge/std::map before a guest-visible report",
+    "production_branch_retained": false,
+    "interpretation": "not evidence for or against Xenon affinity semantics"
+  },
+  "classification": {
+    "demo-qualified": [
+      "PAL Function_821A5390 boundary/import join",
+      "dynamic one-hot mask values 1,2,4,8,16,32 match the static 0..5 shift path",
+      "neutral/START affinity rows and terminal scheduler state are byte-identical"
+    ],
+    "demo-observed": [
+      "19 KeSetAffinityThread calls per route",
+      "raw previous-pointer values including 0x17760000 at tick 106",
+      "current handler returns success and writes 1 to a mapped previous pointer"
+    ],
+    "xenia-generic": [
+      "three Xenon cores, six hardware threads and any host-vCPU mapping"
+    ],
+    "unknown": [
+      "whether the previous pointer is semantically a prior affinity mask in every caller",
+      "whether retaining affinity changes liveness",
+      "scheduler ownership of the six masks",
+      "nonzero EDRAM, pixels, frontend, XMA/audio and mission result"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "read_only_trace_only": true,
+    "stateful_experiment_removed": true,
+    "xenia_patch_or_ptrace_used": false,
+    "retail_evidence_merged": false,
+    "renderer_fallback": false
+  },
+  "next_checkpoint": {
+    "test": "qualify the previous-pointer writer and caller result from PAL bytes, then add a bounded stateful model with an explicit crash guard",
+    "guard": "AC6_DEMO_EXPERIMENTAL_AFFINITY is not a production feature; any failure traps before guest effect",
+    "renderer": "continue independent EDRAM writer watch; affinity rows do not identify pixels"
+  }
+}

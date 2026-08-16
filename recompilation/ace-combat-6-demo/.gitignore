@@ -1,0 +1,12 @@
+# The demo product never stores proprietary inputs or generated recompilation output.
+build/
+out/
+codegen/
+generated/
+*.xex
+*.PAC
+*.TBL
+*.bin
+*.cpp.generated
+*.log
+

@@ -1,0 +1,143 @@
+{
+  "schema": "ac6-xenia-runtime-wait-analysis/v1",
+  "archive": {
+    "path": "/fastdata/lavaulta/autoo-re-agent/workspaces/ace-combat-6/xenia-runtime-results-20260815-153556.tar.zst",
+    "sha256": "094148a49ab23f2cfee385ff750876eb04a401154859c3fe1ffda5ea16a891ea",
+    "bytes": 1145602,
+    "readme_sha256": "e78324bb36b9bdde57b30aec21495cf11d122c9db260fbb6806b84a6fb1ddf04",
+    "extracted_file_count": 41,
+    "repository_revision_recorded_by_archive": "7010c86fb14f118ee598d3f76010dc0759b9502a"
+  },
+  "verification": {
+    "manifests_read": 7,
+    "included_runtime_size_records_matching": "4 per run for the six manifests with size tables",
+    "omitted_original_records": "shader caches and controller data are not in this selection; the manifests describe the original run directories",
+    "config_hashes_match_manifest_record": false,
+    "config_hash_mismatch_sessions": ["20260815-150700"],
+    "config_hash_mismatch_note": "the extracted reference config is semantically equal on parsed TOML values to the baseline; its formatting/comment/order differs from the source file whose hash is recorded in the manifest",
+    "game_and_xenia_hashes_reverified": false,
+    "game_and_xenia_hashes_reason": "the source paths are outside the archive; their recorded SHA-256 values remain manifest evidence only"
+  },
+  "target_context": {
+    "title": "Ace Combat 6 Demo",
+    "title_id": "4E4D87E6",
+    "xenia_gpu": "Vulkan / NVIDIA RTX 500 Ada Generation Laptop GPU",
+    "guest_architecture": "Xenon PPC big-endian (runtime observed through Xenia)",
+    "scope": "Xenia oracle evidence; not parity or PAL-demo proof"
+  },
+  "runs": [
+    {
+      "session": "20260815-145806",
+      "mode": "gameplay-native-waits",
+      "experiment": "baseline native",
+      "watchdog": "62/62 snapshots: threads 6 and 17 signal_and_wait 0x821A69C8/0x821A69CC, 0xF8000088 -> 0xF800008C",
+      "binary_events": {"thread_create": 16, "frame_swap": 1, "audio_submit": 0},
+      "semantic_events": {"watchdog_snapshot": 62}
+    },
+    {
+      "session": "20260815-150700",
+      "mode": "gameplay-waits",
+      "experiment": "continuous strace reference (README claim)",
+      "watchdog": "156 snapshots with thread 17 in the pair, 2 empty snapshots; thread 6 remains active in the sampled path",
+      "binary_events": {"thread_create": 23, "frame_swap": 3078, "audio_submit": 14683},
+      "semantic_events": {"watchdog_snapshot": 158, "thread_pc_snapshot": 157, "kernel_wait_multiple": 52562, "file_open": 7, "file_read": 599}
+    },
+    {
+      "session": "20260815-151137",
+      "mode": "gameplay-native-waits",
+      "experiment": "posix_duplicate_signal_and_wait_bypass=true",
+      "watchdog": "338/338 snapshots: threads 6 and 17 remain in 0xF8000088 -> 0xF800008C",
+      "binary_events": {"thread_create": 16, "frame_swap": 1, "audio_submit": 0},
+      "semantic_events": {"watchdog_snapshot": 338}
+    },
+    {
+      "session": "20260815-151937",
+      "mode": "gameplay-native-waits",
+      "experiment": "posix_main_thread_signal_and_wait_timeout_ms=1",
+      "watchdog": "68/68 snapshots: threads 6 and 17 remain in the original pair",
+      "binary_events": {"thread_create": 16, "frame_swap": 1, "audio_submit": 0},
+      "semantic_events": {"watchdog_snapshot": 68}
+    },
+    {
+      "session": "20260815-152122",
+      "mode": "gameplay-native-waits",
+      "experiment": "posix_main_thread_signal_and_wait_timeout_ms=16",
+      "watchdog": "119/119 snapshots: thread 6 uses 0xF8000074 -> 0xF8000078; thread 17 remains 0xF8000088 -> 0xF800008C",
+      "binary_events": {"thread_create": 16, "frame_swap": 1, "audio_submit": 0},
+      "semantic_events": {"watchdog_snapshot": 119}
+    },
+    {
+      "session": "20260815-152734",
+      "mode": "gameplay-native-waits",
+      "experiment": "timeout experiment removed",
+      "watchdog": "59/59 snapshots: threads 6 and 17 return to 0xF8000088 -> 0xF800008C",
+      "binary_events": {"thread_create": 16, "frame_swap": 1, "audio_submit": 0},
+      "semantic_events": {"watchdog_snapshot": 59}
+    },
+    {
+      "session": "20260815-153303",
+      "mode": "gameplay-native-waits",
+      "experiment": "GDB host backtrace capture",
+      "watchdog": "402/402 snapshots: threads 6 and 17 remain in the original pair",
+      "binary_events": {"thread_create": 16, "frame_swap": 1, "audio_submit": 0},
+      "semantic_events": {"watchdog_snapshot": 402},
+      "host_backtrace": true
+    }
+  ],
+  "qualified_facts": {
+    "signal_and_wait": {
+      "guest_caller_pc": "0x821A69C8",
+      "guest_caller_lr": "0x821A69CC",
+      "signal_handle": "0xF8000088",
+      "wait_handle": "0xF800008C",
+      "native_negative": "threads 6 and 17 stay in the pair across every native baseline/variant watchdog snapshot",
+      "reference": "thread 17 remains in the pair while thread 6 proceeds under the README's strace reference"
+    },
+    "thread6_wait_multiple": {
+      "guest_pc": "0x821A6A78",
+      "guest_lr": "0x821A6A7C",
+      "handles": ["0xF8000010", "0xF800001C", "0xF8000028", "0xF8000034"],
+      "events_in_reference": 52562,
+      "enter_exit_balance": "26281 enter / 26281 exit"
+    },
+    "frame_swap": {
+      "guest_pc": "0x821C5A1C",
+      "guest_lr": "0x821C5A20",
+      "raw_args": ["0xBA9A0000", "0x1A9A0000", "0x00000500", "0x000002D0", "0x00000006"],
+      "raw_arg_inference": "the fourth and fifth dwords are consistent with 1280 and 720, but the event ABI is not labelled in the archive"
+    },
+    "audio": {
+      "guest_pc": "0x8234D360",
+      "guest_lr": "0x8234D364",
+      "raw_args": ["0x00000000", "0x40020700", "0x00000000", "0x00000000", "0x00000000"],
+      "reference_count": 14683,
+      "native_count": 0
+    },
+    "content_io_reference": {
+      "open_pc_lr": ["0x821A5FE8", "0x821A5FEC"],
+      "read_pc_lr": ["0x821A6264", "0x821A6268"],
+      "opened": ["game:\\DATA.TBL", "game:\\DATA00.PAC", "game:\\DATA01.PAC", "game:\\bgmpack.bin", "game:\\demopack_eng.bin", "game:\\voicepack_eng.bin"],
+      "read_totals": {"DATA.TBL": 13784, "DATA00.PAC": 147294208, "bgmpack.bin": 2756608, "demopack_eng.bin": 788480, "voicepack_eng.bin": 110592}
+    }
+  },
+  "host_join": {
+    "source": "runs/20260815-153303/host-backtraces.txt",
+    "signal_and_wait_stack": "pthread_cond_wait -> xe::threading::PosixConditionBase::Wait -> xe::kernel::XObject::SignalAndWait -> NtSignalAndWaitForSingleObjectEx trampoline",
+    "line_examples": [421, 422, 423, 424, 425, 583, 584, 585, 586],
+    "single_wait_stack": "pthread_cond_wait -> PosixConditionBase::Wait -> xe::kernel::XObject::Wait -> NtWaitForSingleObjectEx trampoline",
+    "guest_thread_mapping": "the host backtrace does not encode guest thread IDs; the mapping to guest 6/17 comes from the semantic watchdog records"
+  },
+  "hypotheses": [
+    {"status": "supported_hypothesis", "text": "lost or incorrectly ordered auto-reset wakeup in the signal-then-wait hand-off; scheduling perturbation lets thread 6 avoid the permanent pair"},
+    {"status": "supported_hypothesis", "text": "unsafe host suspension or critical-section interaction while a guest thread is inside a POSIX condition wait"},
+    {"status": "open_hypothesis", "text": "wrong event lifecycle or handle aliasing around 0xF8000088/0xF800008C; event-operation trace is disabled, so set/clear/pulse ownership is not proven"},
+    {"status": "lower_priority_inference", "text": "graphics/audio device selection is unlikely to be the primary freeze cause because frozen runs share the same Vulkan device and only one initial swap, while the positive reference sustains swaps/audio; this does not prove renderer correctness"}
+  ],
+  "limits": {
+    "input": "controller.jsonl is omitted from the archive selection; no guest input transition is qualified",
+    "render": "raw frame_swap events exist, but no pixels, readback, resolve lineage or screenshot is included",
+    "audio": "audio_submit and package reads are observed; XMA packet/timestamp/volume semantics are not decoded",
+    "transition": "README labels the positive run gameplay, while the archived events do not contain a first-gameplay semantic milestone",
+    "xenia_status": "all Xenia conclusions are generic oracle evidence and must not be merged as PAL-demo proof"
+  }
+}

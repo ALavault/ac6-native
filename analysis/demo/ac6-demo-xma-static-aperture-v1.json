@@ -1,0 +1,55 @@
+{
+  "schema": "ac6-demo-xma-static-aperture/v1",
+  "target": {
+    "name": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "endianness": "big",
+    "gpu": "Xenos"
+  },
+  "evidence": {
+    "basefile_path": ".build/ac6-demo-atomic-runtime-1/codegen/xex-basefile.bin",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "atlas_path": "analysis/demo/ac6-demo-static-semantics-v1.json",
+    "atlas_sha256": "e723930a01e9ba573d0d899e16ebbd51f31c6c4553f53cf5ccafee5f50ba7962",
+    "canonical_static_atlas_path": "analysis/demo/ac6-demo-static-decomp-atlas-v1.json",
+    "canonical_static_atlas_sha256": "7ee1e677dfac287fdcd8d80b1c5f34575cbabf1c41ab79e70bd1581f87114e2d",
+    "generated_crossmatch_path": ".build/ac6-demo-atomic-runtime-1/codegen/generated/ppc_recomp.48.cpp",
+    "generated_crossmatch_sha256": "df90d3db8752bd32f26e0060a8d2e9c58dd38ccb4c212cddc71b87078454eaca",
+    "generated_role": "literal-control-flow-cross-match-only"
+  },
+  "functions": [
+    {"entry":"0x82357240","size":"0xCC","byte_sha256":"7436f8404267283916f2e64fdcda534788553fbf366daa330bc09fe9220ed9","pseudocode_sha256":"9d2db824bcf8391231e9b809524e7acec3079f2204cfd3c28dd3e8ceda002a13","status":"demo-qualified-structural"},
+    {"entry":"0x82357310","size":"0x80","byte_sha256":"5768c76bea572f55a15b8496790f685505c781f2f2259ff1237978a268005c2f","pseudocode_sha256":"496813462c14fc650dc32743d63723292d94c58c416f7051211dfb6b2a5d2dc5","status":"demo-qualified-structural"},
+    {"entry":"0x82357390","size":"0xC8","byte_sha256":"d0d5f3c29766eddc606cbb2b4b1aac072dea242e7659bf7a68d2437ff0d5003d","pseudocode_sha256":"2fad2149027c50ddc4de01dc4a0c3e8de39b7d3b4f30c7aa4e5c08db28c086ce","status":"demo-qualified-structural"},
+    {"entry":"0x82357458","size":"0x150","byte_sha256":"fa99339cb706c69835fec1f54e6c8fe1f24715954fd70ccc22223a5dacd94e1b","pseudocode_sha256":"7aa386de4b1a6b1309925c24ecedd4aebfcfbee8ab1fd78199264b0de2c64a7f","status":"demo-qualified-structural"},
+    {"entry":"0x823575A8","size":"0x148","byte_sha256":"0170decfcb699ad75b759421f98de13d72ccd3359bc6f17cd7aa2e19e97a6c9a","pseudocode_sha256":"88586ba8ccd84e4de689e66619aea4ecf94e5274b0b916425e3b557d5d665b61","status":"demo-qualified-structural"}
+  ],
+  "raw_accesses": [
+    {"function":"0x82357310","pc":"0x82357360","bytes":"7CA05D2C","instruction":"stwbrx r5,0,r11","address_base_for_index_zero":"0x7FEA1A40","address_formula":"0x7FEA1A40 + ((n >> 5) << 2)","value_formula":"bswap32(1 << (n & 31))","n":"u16be(entry+80)","barrier_pc":"0x82357364","barrier_bytes":"7C0006AC","status":"demo-qualified-structural"},
+    {"function":"0x82357390","pc":"0x82357408","bytes":"7FC0512E","instruction":"stwx r30,0,r10","address":"0x7FEA1804","value":"0x00000000","barrier_pc":"0x8235740C","barrier_bytes":"7C0006AC","status":"demo-qualified-structural"},
+    {"function":"0x82357390","pc":"0x82357414","bytes":"7D40592E","instruction":"stwx r10,0,r11","address":"0x7FEA1804","value":"0x03000000","barrier_pc":"0x82357418","barrier_bytes":"7C0006AC","status":"demo-qualified-structural"},
+    {"function":"0x82357458","pc":"0x8235748C","bytes":"7D605C2C","instruction":"lwbrx r11,0,r11","address":"0x7FEA1818","status":"demo-qualified-structural"},
+    {"function":"0x823575A8","pc":"0x823576C0","bytes":"7D603D2C","instruction":"stwbrx r11,0,r7","address_base_for_index_zero":"0x7FEA1940","address_formula":"0x7FEA1940 + ((n >> 5) << 2)","value_formula":"bswap32(1 << (n & 31))","n":"u16be(entry+80)","barrier_pc":"0x823576C4","barrier_bytes":"7C0006AC","status":"demo-qualified-structural"}
+  ],
+  "correction": {
+    "rejected_candidate": "0x7FEA1AC0",
+    "reason": "PAL immediates 0x1FFA8690 followed by rlwinm shift 2 yield 0x7FEA1A40 for n=0",
+    "effect_status": "unknown"
+  },
+  "classification": {
+    "demo-qualified": ["PAL identity", "function boundaries and hashes", "raw instruction bytes", "address arithmetic"],
+    "demo-observed": [],
+    "xenia-generic": [],
+    "unknown": ["MMIO register names", "hardware effects", "XMA packets", "timestamps", "volume", "PCM", "audio consumer"]
+  },
+  "guard": {
+    "default_ordinal_548_fail_closed": true,
+    "no_mmio_mapping_added": true,
+    "no_generated_cpp_modified": true,
+    "no_ghidra_xenia_rexglue_modified": true,
+    "no_proprietary_assets_tracked": true,
+    "no_audio_readback_screencap": true
+  },
+  "next_checkpoint": "fresh opt-in neutral/START capture of raw stores at 0x7FEA1A40, 0x7FEA1940, 0x7FEA1804, and read at 0x7FEA1818 with PC/LR/thread/tick; retain ordinal 548 trap until independent effect proof"
+}

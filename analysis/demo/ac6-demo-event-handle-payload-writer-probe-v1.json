@@ -1,0 +1,182 @@
+{
+  "schema": "ac6-demo-event-handle-payload-writer-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "instrumentation": {
+    "writer_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handle_payload_writer_trace.hpp",
+    "writer_hook_sha256": "cf2f8fff11c53f48ae2b592923bcd16d59b6619173713f0bd07b718d07eabad5",
+    "consumer_hook": "recompilation/ace-combat-6-demo/src/guest_bridge/event_handle_consumer_trace.hpp",
+    "bridge_source_sha256": "6a172843de078453be64cacf35aec307bb19867cc50d0663684457b6d86643f4",
+    "runtime_binary_sha256": "a587917a47c2b62692531ca9cb505d3a2eaf1a2ed46302354d2a131f785b01a6",
+    "environment": [
+      "AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS=1",
+      "AC6_DEMO_WATCH_EVENT_HANDLE_PAYLOAD=1",
+      "AC6_DEMO_WATCH_EVENT_HANDLE_PAYLOAD_WRITERS=1"
+    ],
+    "watched_ranges": [
+      ["0x82934740", "0x82934760"],
+      ["0x82933F80", "0x82933FA0"]
+    ],
+    "record_limit_per_writer_kind": 16384,
+    "overflow_safe_intersection": true,
+    "default_enabled": false,
+    "read_only": true,
+    "generated_cpp_modified": false
+  },
+  "mapper": {
+    "tool": "recompilation/ace-combat-6-demo/tools/map_generated_guest_payload_writers.py",
+    "tool_sha256": "ad115a042ac6844a724d8fb36f5ec343a8cb946a19b74449cd979286e549350e",
+    "output_schema": "ac6-demo-generated-guest-payload-writer-map/v1",
+    "basefile_bytes_checked": true,
+    "instruction_comments_counted": true,
+    "fail_closed_on_missing_or_ambiguous_site": true,
+    "neutral_map_sha256": "1fdcdfed6ec80ae90cf19391b12f78b66d8664d326e41001b7e9bd0e551e9bee",
+    "start_map_sha256": "dba4e6e44d18382dd6a9461a9c7145b00f33fcb09c35cc117eed22a59fde43d3"
+  },
+  "runs": {
+    "neutral": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "none",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+      "report_sha256": "c931a747e1cabf2aac8e7eee426b08f5033c74e327480064882e5b3ed7cd9df1",
+      "stderr_sha256": "dd9d73a46446eb16ab31990cd8d1f7f2bfaddf84e041962ed7b6ebbd64194986",
+      "consumer_rows": 3927,
+      "payload_rows": 3927,
+      "payload_writer_rows": 374,
+      "mapped_writer_rows": 374,
+      "unique_writer_sites": 19,
+      "same_tick_thread_writer_to_post_read_pairs": 351,
+      "value_to_post_read_word7_mismatches": 0,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "start": {
+      "store": ".build/ac6-demo-store-test-3",
+      "input": "tick 252, buttons 0x0010, connected",
+      "max_ticks": 300,
+      "completed_ticks": 300,
+      "trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+      "report_sha256": "51a2c2ce232f22c062800c73fdcaad1ce1c4cfa990aa4ced0f1bc6512de95161",
+      "stderr_sha256": "dd9d73a46446eb16ab31990cd8d1f7f2bfaddf84e041962ed7b6ebbd64194986",
+      "consumer_rows": 3927,
+      "payload_rows": 3927,
+      "payload_writer_rows": 374,
+      "mapped_writer_rows": 374,
+      "unique_writer_sites": 19,
+      "same_tick_thread_writer_to_post_read_pairs": 351,
+      "value_to_post_read_word7_mismatches": 0,
+      "presents": 163,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "qualified_causal_sequence": {
+    "guest_function": "sub_822EEE10",
+    "generated_source": "ppc_recomp.38.cpp",
+    "guest_addresses": [
+      "0x82934748",
+      "0x82934758",
+      "0x8293474C"
+    ],
+    "steps": [
+      {
+        "guest_pc": "0x822EEE30",
+        "instruction_bytes": "80 7F 00 00",
+        "instruction": "lwz r3,0(r31)",
+        "generated_line": 4674,
+        "operation": "pre-read handle E0000048"
+      },
+      {
+        "guest_pc": "0x822EEE38",
+        "instruction_bytes": "80 7F 00 00",
+        "instruction": "lwz r3,0(r31)",
+        "generated_line": 4679,
+        "operation": "second read handle E0000048"
+      },
+      {
+        "guest_pc": "0x822EEE3C",
+        "instruction_bytes": "FB DF 00 10",
+        "instruction": "std r30,16(r31)",
+        "generated_line": 4681,
+        "operation": "8-byte payload writer at 0x82934758"
+      },
+      {
+        "guest_pc": "0x822EEE44",
+        "instruction_bytes": "80 7F 00 04",
+        "instruction": "lwz r3,4(r31)",
+        "generated_line": 4686,
+        "operation": "post-write handle E000004C"
+      }
+    ],
+    "thread12_writer_ticks": [1, 299],
+    "thread12_writer_count": 299,
+    "post_read_same_tick_thread_count": 351,
+    "post_read_word7_matches_writer_low32": true,
+    "observed_values": {
+      "tick_222": "0x00000000000000DC",
+      "tick_252": "0x000000000000001D"
+    }
+  },
+  "other_observed_writes": {
+    "count": 23,
+    "scope": "initialization and payload fields in the two watched ranges",
+    "scalar_store_sizes": [4, 8],
+    "vector_or_byte_store_rows": 0
+  },
+  "joins": {
+    "consumer_payload_capsule": "analysis/demo/ac6-demo-event-handle-payload-probe-v1.json",
+    "writer_handle_capsule": "analysis/demo/ac6-demo-event-handle-writer-probe-v1.json",
+    "writer_sites_total": 19,
+    "payload_writer_to_renderer_edge": "unknown",
+    "context_lr_is_exact_guest_pc": false,
+    "generated_source_map_is_exact_guest_pc": true
+  },
+  "ab_comparison": {
+    "payload_writer_rows_equal": true,
+    "mapped_writer_sites_equal": true,
+    "consumer_rows_equal": true,
+    "stderr_sha256_equal": true,
+    "causal_pair_count_equal": true,
+    "start_transition_promoted": false,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "classification": {
+    "demo-qualified": [
+      "374/374 scalar writer rows map to 19 exact PAL guest store sites",
+      "the sequence 0x822EEE30 -> 0x822EEE38 -> 0x822EEE3C -> 0x822EEE44 is byte-qualified",
+      "351 same-tick/thread writer-to-post-read pairs have zero word7 mismatches",
+      "the writer values at ticks 222 and 252 propagate to the post-write snapshot"
+    ],
+    "demo-observed": [
+      "23 initialization/interior writes in the two bounded ranges",
+      "handles E0000048/E000004C and payload values"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantic type of the payload and object",
+      "consumer edge after the qualified post-read",
+      "frontend transition, renderer ownership and guest-owned pixels"
+    ]
+  },
+  "policy": {
+    "runtime_behavior_changed": false,
+    "readback_promoted": false,
+    "retail_evidence_fused": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_assets_tracked": false,
+    "fail_closed": true
+  }
+}

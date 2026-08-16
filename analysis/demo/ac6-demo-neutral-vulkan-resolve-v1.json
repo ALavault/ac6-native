@@ -1,0 +1,75 @@
+{
+  "schema": "ac6-demo-neutral-vulkan-resolve/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "classification": {
+    "pm4_register_values": "demo-qualified",
+    "neutral_edram_contents": "demo-qualified",
+    "resolve_interpretation_and_shader": "xenia-generic",
+    "vulkan_execution": "test-only-observed",
+    "product_runtime_readback": "unknown"
+  },
+  "generic_authorities": {
+    "rexglue_commit": "cb58065c793429aa92895d778af58d12e9d26d8f",
+    "xenia_commit": "95a5c3ee250f80c3b9d139658649d9ffb6db3eec",
+    "resolve_shader_header_sha256": "de24d6b23367da6b2fa3b5d1d843d920cbdf4a5170cf49544412c4bebcb1eb11",
+    "resolve_spirv_bytes": 8380,
+    "resolve_spirv_sha256": "e8cfb0d6981476118cefbf797d33092ccf09281f728d34220c1514dd79487b32",
+    "spirv_tools_commit": "e39e5c5838bc4b4162c349f2a2e5f163efe5432f",
+    "spirv_val_sha256": "2cc19cddc1293518705467f41f55094800b319bd77b1eaf6e30bc7901d6e3406",
+    "spirv_val_target": "vulkan1.1"
+  },
+  "reached_contract": {
+    "push_constant_dwords_absolute_guest_base": [
+      "0x00000010",
+      "0x00091400",
+      "0x01000300",
+      "0x00005C28",
+      "0x1374A000"
+    ],
+    "push_constant_dwords_relative_descriptor": [
+      "0x00000010",
+      "0x00091400",
+      "0x01000300",
+      "0x00005C28",
+      "0x00000000"
+    ],
+    "workgroup_size": [8, 8, 1],
+    "dispatch_groups": [20, 90, 1],
+    "edram_bytes": 10485760,
+    "destination_tiled_bytes": 3768320,
+    "destination_linear_bytes": 3686400,
+    "destination": {
+      "width": 1280,
+      "height": 720,
+      "pitch": 1280,
+      "format_raw": 6,
+      "endian_raw": 0,
+      "tiled": true,
+      "copy_dest_swap_raw": 1
+    }
+  },
+  "validation": {
+    "fresh_processes": 2,
+    "fresh_outputs_identical": true,
+    "guards_before_and_after_unchanged": true,
+    "internal_tiled_gaps_unchanged": true,
+    "full_tiled_buffer_matches_cpu_oracle": true,
+    "untile_before_linear_hash": true,
+    "neutral_linear_rgba8_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "asymmetric_swap_linear_sha256": "66dde082635ccc6b24abba5b372ceb10173bc2b062faa2d93de7c4548bb60dc8",
+    "spirv_val_passed": true,
+    "ctest": "17/17"
+  },
+  "policy": {
+    "test_only": true,
+    "play_fallback": false,
+    "product_runtime_readback_claimed": false,
+    "screencap_claimed": false,
+    "proprietary_shader_or_microcode_tracked": false,
+    "fail_closed": true
+  }
+}

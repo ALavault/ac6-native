@@ -1,0 +1,92 @@
+{
+  "schema": "ac6-demo-map-shader-offline-gate/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "data_tbl_entry": 163,
+    "data00_pac_offset": "0x08CC0000"
+  },
+  "sources": {
+    "shader_archive_sha256": "7294a028408b5008236624cb46f6b108f3ed1c2ffd9961c5317634c47ae36a3c",
+    "fresh_entry_163_decode": true,
+    "nsxr_children": 49,
+    "map_terrain_occurrences": 108,
+    "map_terrain_unique_microcodes": 78
+  },
+  "tooling": {
+    "gate_script_sha256": "c29f7fd04df8a1173be1fbc8f3b7c06ed433b8c874f8b9e4111387e75e5e77ab",
+    "rexglue_cli_source_sha256": "23a6b029e48baee1873802363eaedd49fbb00136f9f465260d0fa560e03e282f",
+    "rexglue_cli_binary_sha256": "e50e52aee328a2ab7c3fab7340a30262cb5be4ffb7b33737142988fe173faf56",
+    "xenosrecomp_commit": "990d03b28a27b50277ee5d8d942e1c5f873869d1",
+    "xenosrecomp_binary_sha256": "e71e311c298208b1774f7943171b9f32bc0adb9bb14f1b19889dfcd8ade5b6a4",
+    "dxc_release": "v1.9.2602.24",
+    "dxc_sha256": "db50584b967fba011f571a6b63e63ae9d14a04418a52d57ff3600750b1c9940d",
+    "spirv_val_sha256": "2cc19cddc1293518705467f41f55094800b319bd77b1eaf6e30bc7901d6e3406"
+  },
+  "method": {
+    "pixel": "exact raw microcode -> ReXGlue AnalyzeUcode/SpirvShaderTranslator -> spirv-val",
+    "vertex": "exact full NSXR ShaderContainer -> XenosRecomp -> HLSL -> DXC SPIR-V -> spirv-val",
+    "register_rule": "ReXGlue auto is allowed only without dynamic register addressing",
+    "vertex_container_rule": "vertex declaration and interpolator reflection must come from the exact NSXR container",
+    "vertex_alias_rule": "deduplicate only byte-identical HLSL input parameters when exact VertexElement words map multiple vfetch instruction addresses to the same usage/index",
+    "vertex_blocker_rule": "classify special export masks from ReXGlue analysis before interpreting translator failures",
+    "temporary_policy": "microcode, containers, disassembly, HLSL and SPIR-V stay under TMPDIR"
+  },
+  "result": {
+    "qualified_occurrences": 102,
+    "blocked_occurrences": 6,
+    "qualified_unique": 72,
+    "blocked_unique": 6,
+    "pixel_qualified": 28,
+    "pixel_total": 28,
+    "pixel_dynamic_register_addressing": 0,
+    "vertex_qualified": 44,
+    "vertex_total": 50,
+    "blocked_occurrence_classes": {
+      "xenosrecomp_unsupported_point_size_export": 6
+    },
+    "spirv_validation_failures_after_successful_compilation": 0,
+    "fresh_gate_runs": 2,
+    "fresh_gate_receipts_byte_identical": true,
+    "normalized_semantic_alias_occurrences": 10,
+    "full_temporary_receipt_bytes": 160390,
+    "full_temporary_receipt_sha256": "1aa151beb1d43ac6b65c699c48d64e6a0397ac907d68eb5da51ae766a473297e"
+  },
+  "vertex_template_boundary": {
+    "raw_rexglue_result": "50/50 stop at an undefined vertex fetch format",
+    "interpretation": "the static microcode is an unpatched template; the exact NSXR ShaderContainer supplies vertex declarations consumed by XenosRecomp",
+    "not_interpreted_as": "invalid shader identity or permission to invent a vertex format"
+  },
+  "blocked": [
+    {"canonical_sha256": "90793cd7e5a56a5b5668ce367b222f09388bef5c9c21bd11bbda27788cb4e70b", "updb": "vsPts_DIRECTPOS.updb", "blocker": "xenosrecomp_unsupported_point_size_export"},
+    {"canonical_sha256": "614412d7892c8b505161b9d4f09bd2fe1eb33d8b789b43b5b8a8bf31ae4e65ba", "updb": "vsMapStar.updb", "blocker": "xenosrecomp_unsupported_point_size_export"},
+    {"canonical_sha256": "54e9adcb4fbe285222232533aa3b729d1a90f182156b77d21375591cc0b4906b", "updb": "vsMapStarSat.updb", "blocker": "xenosrecomp_unsupported_point_size_export"},
+    {"canonical_sha256": "2d553f60e8c589755aa5727aa266c9c88dd49d7b12e0b433a016a40be4a7dc28", "updb": "vsPts_DIRECTPOS.updb", "blocker": "xenosrecomp_unsupported_point_size_export"},
+    {"canonical_sha256": "70fa7479ff2e63a5c923647e92a3070755361ab85dc720884bd0ae1016ef8790", "updb": "vsMapStar.updb", "blocker": "xenosrecomp_unsupported_point_size_export"},
+    {"canonical_sha256": "98453000d0a80349e812b25eb25e2a219e2320dafb8853d34acc8e9630ed124b", "updb": "vsMapStarSat.updb", "blocker": "xenosrecomp_unsupported_point_size_export"}
+  ],
+  "classification": {
+    "demo_qualified": [
+      "28 pixel shader identities, static register analysis, translations and SPIR-V validation",
+      "44 vertex ShaderContainer identities, guarded HLSL translations, DXC outputs and SPIR-V validation",
+      "8 semantic-alias microcodes normalized only by removing repeated byte-identical input declarations",
+      "6 exact point-size-export vertex blockers"
+    ],
+    "xenia_generic": ["ReXGlue Xenos analysis and SPIR-V translation semantics"],
+    "xenosrecomp_generic": ["ShaderContainer reflection and HLSL translation semantics"],
+    "unknown": [
+      "host translation of Xenos VSPointSizeEdgeFlagKillVertex.x with the reached draw state",
+      "runtime reachability of the 72 Map shaders not observed by external Xenia runs",
+      "draw resources, constants and pixels for every statically translated shader"
+    ]
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "proprietary_bytes_tracked": false,
+    "generated_hlsl_or_spirv_tracked": false,
+    "xenia_or_xenosrecomp_modified": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "fail_closed": true
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "schema": "ac6-demo-generated-memory-coverage/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "frontbuffer_range": ["0x1374A000", "0x13AE2000"]
+  },
+  "generated_inventory": {
+    "directory": ".build/ac6-demo-codegen-build-1/codegen/generated",
+    "files": 52,
+    "bytes": 55663364,
+    "aggregate_sha256": "bf249ebf5ab102dcc934521b92109a325eeaeb20fb290bda13625d4da73febbf",
+    "forms": {
+      "PPC_LOAD_U8": 7050,
+      "PPC_LOAD_U16": 5021,
+      "PPC_LOAD_U32": 117024,
+      "PPC_LOAD_U64": 12051,
+      "simde_mm_load_si128": 42275,
+      "simde_mm_loadu_si128": 0,
+      "PPC_STORE_U8": 5924,
+      "PPC_STORE_U16": 3689,
+      "PPC_STORE_U32": 92294,
+      "PPC_STORE_U64": 11091,
+      "PPC_STORE_U128": 7234
+    },
+    "raw_atomic_functions": [
+      {"guest_function": "0x821B9648", "effective": ["r3"]},
+      {"guest_function": "0x821B96B8", "effective": ["r3"]},
+      {"guest_function": "0x822E4240", "effective": ["r3+16"]},
+      {"guest_function": "0x822E4268", "effective": ["r3+24"]},
+      {"guest_function": "0x822E4290", "effective": ["r3+16", "r3+24", "r3+40"]}
+    ],
+    "raw_base_dereference_other_than_atomic": 0
+  },
+  "rr_replay": {
+    "tool": "../../.tools/rr-install/bin/rr",
+    "source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "trace": "/fastdata/lavaulta/tmp/ac6-demo-rr-gate.jLnJ38/probe-trace",
+    "route": "neutral headless tick 253",
+    "binary_sha256": "24712c2487c94f917edd7635dfd6abb082477888b2c5a4a25e9ebc7d03920bd8",
+    "probe_report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79",
+    "rtply_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+    "gdb_output_sha256": "a148b463b02ad541bda54f3e80071118cb188e398690eea081ff170fd5d414da",
+    "hits": [
+      {
+        "guest_function": "0x822E4290",
+        "guest_r3": "0x82935270",
+        "effective_addresses": ["0x82935280", "0x82935288", "0x82935298"],
+        "overlaps_frontbuffer": false,
+        "guest_pc_lr_thread_tick": "not captured by this host breakpoint; no semantic promotion"
+      }
+    ],
+    "unhit_functions": ["0x821B9648", "0x821B96B8", "0x822E4240", "0x822E4268"],
+    "rwatch_result": "rr syscall_traced sentinel with unreadable value; excluded from evidence"
+  },
+  "start_rr_ab": {
+    "input": "buttons=0x10 at tick 252",
+    "direct_status": 4,
+    "rr_status": 4,
+    "direct_rtply_sha256": "31553733582cf7345375d8f197a28645621e488700f2a31b7e883b66109360b2",
+    "rr_rtply_sha256": "31553733582cf7345375d8f197a28645621e488700f2a31b7e883b66109360b2",
+    "direct_report_sha256": "8506399dca66624afcf52a8746bc4cd08c669f30021d9fb954bb8bebb01f7327",
+    "rr_report_sha256": "8506399dca66624afcf52a8746bc4cd08c669f30021d9fb954bb8bebb01f7327",
+    "rr_binary_sha256": "a4a5b57f2aaf7404fe2a84f8f7ef34a974b1304c14f81de8021271d183957811",
+    "gdb_output_sha256": "ebdca681055b44a423ad54bffe462a5f46781c955e31a7cde9123ab5ddfc3f63",
+    "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+    "vdswap_calls": 116,
+    "frontbuffer_atomic_overlap": false,
+    "atomic_hit": "0x822E4290 -> 0x82935280/0x82935288/0x82935298",
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "instrumentation": {
+    "scalar_adapter_sha256": "e743b4f410938a8b2dc3074d0d9c2ae6237a6bfb7c868fe8c763a821a226bae6",
+    "vector_trace_sha256": "dfc0cff64162077c921bcc2418b0751ccb9cb9b001b155211ed237cd8362b556",
+    "guest_bridge_sha256": "814325d10695b2890595dd7fa150c5034d79bea9869a3b794aed821799e12f11",
+    "generated_cpp_modified": false,
+    "default_effect": "diagnostic only"
+  },
+  "classification": {
+    "demo-qualified": [
+      "exhaustive generated scalar/vector forms and remaining atomic sites",
+      "rr dynamic effective addresses for the only reached atomic function",
+      "no overlap with the exact PAL frontbuffer range"
+    ],
+    "demo-observed": ["one 0x822E4290 atomic path hit in neutral rr trace"],
+    "xenia-generic": [],
+    "unknown": [
+      "future START atomic paths",
+      "guest-owned pixel consumer and external scanout",
+      "pixels, frontend, mission and screencap"
+    ]
+  },
+  "validation": {
+    "ctest_codegen": "17/17",
+    "ctest_diagnostic": "17/17",
+    "render_status": "AC6_DEMO_STATUS_PASS",
+    "fail_closed": true,
+    "retail_evidence_merged": false,
+    "xenia_modified": false,
+    "ghidra_modified": false,
+    "microcode_tracked": false,
+    "screencap_promoted": false
+  },
+  "next_checkpoint": "Repeat rr atomic-site replay for START and trap any effective address overlapping the PAL frontbuffer before effect."
+}

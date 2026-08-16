@@ -1,0 +1,88 @@
+{
+  "schema": "ac6-demo-runtime-neutral-start-vulkan-t600/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "codegen_manifest_sha256": "ae57c86869c556f17c7eee3f9d781d19943d20bf2599abbe201ac88954bda185",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c"
+  },
+  "runs": {
+    "neutral": {
+      "store": "fresh-copy-of-.build/ac6-demo-store-test-3",
+      "backend": "vulkan",
+      "input": "connected neutral for ticks 0..599",
+      "completed_ticks": 600,
+      "outcome": "max_ticks",
+      "trace_sha256": "6c34827cc3f9962a7f4042610d69aeb54bbd0165fd5a1c830d341efad07970c7",
+      "report_sha256": "96942b46382d8818e6d12bcf2fa3574b47c52f8034779090819156b39b89235f"
+    },
+    "start": {
+      "store": "fresh-copy-of-.build/ac6-demo-store-test-3",
+      "backend": "vulkan",
+      "input": "connected neutral plus XINPUT_GAMEPAD_START=0x0010 at tick 252",
+      "completed_ticks": 600,
+      "outcome": "max_ticks",
+      "trace_sha256": "2a4577f883bbfa31f8740b35e998da10ea42ddba050fa7232e80abe6c71f27cc",
+      "report_sha256": "12a96930bc7a93878073e01a6297a81274e3cb5bc0cf1dec3ac3ba57d02dbfcd"
+    }
+  },
+  "comparison": {
+    "presentation_notifications": {"neutral": 463, "start": 463, "equal": true},
+    "milestones": {
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "main_ib": {
+      "address": "0x1274A000",
+      "dword_count": 3029,
+      "sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "equal": true
+    },
+    "intermediate_ib": {
+      "address": "0x127CA0C0",
+      "dword_count": 11,
+      "sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "equal": true
+    },
+    "renderer": {
+      "shader_loads": 5,
+      "draws": 26,
+      "presents": 1,
+      "normal_draws": 1,
+      "neutral_resolves": 1,
+      "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "normal_readback_all_zero": true,
+      "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+      "equal": true
+    }
+  },
+  "classification": {
+    "demo-qualified": [
+      "PAL XEX identity",
+      "both reached IB hashes and lengths",
+      "neutral/START Vulkan A/B equal through tick 600",
+      "normal draw and resolve digests equal"
+    ],
+    "demo-observed": ["START at tick 252", "463 presentation notifications"],
+    "unknown": [
+      "guest-owned EDRAM contents",
+      "guest-owned destination bytes",
+      "non-black pixels",
+      "frontend, mission and terminal milestones"
+    ]
+  },
+  "policy": {
+    "start_promoted": false,
+    "screencap_claimed": false,
+    "synthetic_edram_promoted": false,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_rexglue_modified": false,
+    "microcode_or_proprietary_asset_tracked": false,
+    "fail_closed": true
+  }
+}

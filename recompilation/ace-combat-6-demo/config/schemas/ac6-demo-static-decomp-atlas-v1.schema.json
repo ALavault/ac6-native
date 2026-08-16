@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ac6-demo-static-decomp-atlas/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "identity", "provenance", "sections", "coverage", "functions", "data_ranges", "rejections", "vtables", "indirect_sites"],
+  "properties": {
+    "schema": {"const": "ac6-demo-static-decomp-atlas/v1"},
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_id", "xex_sha256", "project", "project_path", "program", "module", "language", "ghidra_version"],
+      "properties": {
+        "target_id": {"const": "ac6-demo-xbox360-pal"},
+        "xex_sha256": {"const": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"},
+        "project": {"const": "ace-combat-6-demo"},
+        "project_path": {"const": "ghidra-projects/ace-combat-6-demo"},
+        "program": {"const": "Default.xex"},
+        "module": {"const": "Default.xex"},
+        "language": {"const": "PowerPC:BE:64:Xenon"},
+        "ghidra_version": {"const": "12.1.2"}
+      }
+    },
+    "provenance": {"type": "object", "minProperties": 8, "additionalProperties": {"pattern": "^[0-9a-f]{64}$"}},
+    "sections": {"type": "object", "required": ["text", "pdata"], "additionalProperties": false, "properties": {"text": {"$ref": "#/$defs/rangeHash"}, "pdata": {"$ref": "#/$defs/rangeHash"}}},
+    "coverage": {"type": "object", "additionalProperties": false, "required": ["function_count", "pdata_functions", "ghidra_chunks", "confirmed_functions", "classified_text_bytes", "text_bytes", "complete"], "properties": {"function_count": {"const": 12876}, "pdata_functions": {"const": 8327}, "ghidra_chunks": {"const": 4431}, "confirmed_functions": {"const": 118}, "classified_text_bytes": {"type": "integer", "minimum": 0}, "text_bytes": {"const": 3041220}, "complete": {"type": "boolean"}}},
+    "functions": {"type": "array", "minItems": 12876, "maxItems": 12876, "items": {"$ref": "#/$defs/function"}},
+    "data_ranges": {"type": "array", "items": {"$ref": "#/$defs/rangeHash"}},
+    "rejections": {"type": "array", "items": {"type": "string"}},
+    "vtables": {"type": "array", "items": {"type": "object"}},
+    "indirect_sites": {"type": "array", "items": {"type": "object"}}
+  },
+  "$defs": {
+    "rangeHash": {"type": "object", "additionalProperties": false, "required": ["address", "size", "byte_sha256"], "properties": {"address": {"pattern": "^0x[0-9A-F]{8}$"}, "size": {"pattern": "^0x[0-9A-F]{8}$"}, "byte_sha256": {"pattern": "^[0-9a-f]{64}$"}}},
+    "function": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entry", "ranges", "byte_sha256", "boundary_provenance", "symbol", "decompilation", "direct_calls", "imports", "globals", "strings", "rtti_vtables", "role", "confidence"],
+      "properties": {
+        "entry": {"pattern": "^0x[0-9A-F]{8}$"},
+        "ranges": {"type": "array", "minItems": 1, "items": {"type": "array", "prefixItems": [{"pattern": "^0x[0-9A-F]{8}$"}, {"pattern": "^0x[0-9A-F]{8}$"}], "items": false}},
+        "byte_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "boundary_provenance": {"enum": ["pdata", "ghidra-chunk", "confirmed-range"]},
+        "symbol": {"type": ["string", "null"]},
+        "decompilation": {"type": "object", "additionalProperties": false, "required": ["status", "pseudocode_sha256"], "properties": {"status": {"enum": ["success", "failed", "timeout", "unavailable"]}, "pseudocode_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}}},
+        "direct_calls": {"type": "array", "items": {"pattern": "^0x[0-9A-F]{8}$"}},
+        "imports": {"type": "array", "items": {"type": "string"}},
+        "globals": {"type": "array", "items": {"pattern": "^0x[0-9A-F]{8}$"}},
+        "strings": {"type": "array", "items": {"type": "string"}},
+        "rtti_vtables": {"type": "array", "items": {"pattern": "^0x[0-9A-F]{8}$"}},
+        "role": {"enum": ["bootstrap", "kernel/scheduler", "XAM/input/content", "VFS", "Xenos", "XMA/audio", "frontend", "mission/scenario", "flight/combat/objectives", "unknown"]},
+        "confidence": {"enum": ["confirmed", "dynamic", "cross-match", "heuristic", "unknown"]}
+      }
+    }
+  }
+}

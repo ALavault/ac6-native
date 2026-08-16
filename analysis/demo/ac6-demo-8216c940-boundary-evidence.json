@@ -1,0 +1,175 @@
+{
+  "schema": "ac6-demo-boundary-closure-evidence/v1",
+  "target_identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "image_base": "0x82000000",
+    "ghidra_project": "ghidra-projects/ace-combat-6-demo",
+    "ghidra_version": "12.1.2",
+    "language": "PowerPC:BE:64:Xenon"
+  },
+  "corridor_id": "frontend-tick252-vtable-slot10-two-byte-state-reader",
+  "claim": "The live call at 0x82259D54 dispatches object 0x2E7F0080 through vtable 0x8201130C slot 10 to the independently bounded entry 0x8216C940..0x8216C98C; that entry reads the two adjacent object state bytes written and cleared by sibling slots 8 and 9.",
+  "lane": "bridge",
+  "classification": {
+    "entry_bounds_callsite_vtable_and_byte_state_contract": "static_exact",
+    "live_object_vtable_slot_target_mask_and_hit": "bridge_observed",
+    "live_return_value": "unknown",
+    "native_product_behavior": "unknown",
+    "stock_behavior": "unknown"
+  },
+  "scenario": {
+    "command": "probe --until mission --max-ticks 3600 --backend headless",
+    "completed_ticks": 252,
+    "thread": 1,
+    "presents": 115,
+    "frontend": true,
+    "mission": false,
+    "inputs": "neutral AC6RTPLY-v4 seam",
+    "repeat_trace_byte_identical": true
+  },
+  "interventions": [
+    {
+      "name": "qualified-indirect-dispatch-observer",
+      "behavioral": false,
+      "detail": "Read-only capture keyed by compiled guest LR 0x82259D58 and exact candidate slot 10."
+    },
+    {
+      "name": "xam-bootstrap-dispatch",
+      "behavioral": true,
+      "services": [
+        "XNotifyPositionUI(6)",
+        "XamUserGetSigninState(0)=1",
+        "XamUserGetName(0,16)=User"
+      ]
+    }
+  ],
+  "static_chain": {
+    "caller_function": "0x82259D10",
+    "object_load": "0x82259D40: lwz r3,0x4(r31)",
+    "vtable_load": "0x82259D48: lwz r11,0(r3)",
+    "slot_load": "0x82259D4C: lwz r11,0x28(r11)",
+    "branch": "0x82259D54: bctrl",
+    "produced_lr": "0x82259D58",
+    "static_vtable": "0x8201130C",
+    "static_slot_address": "0x82011334",
+    "entry": "0x8216C940",
+    "entry_bytes": "548b07be2f0b0003409a002889630009280b0000418200148963000a38600001280b00004c820020386000004e800020548b07ff4182000c886300094e800020548b07bd4182ffe48863000a4e800020",
+    "entry_byte_sha256": "e7bdf7dfb1f5fcb0ed5a198a74f32077ba9e613e0fd894248b7857b2f5365530",
+    "predecessor": "0x8216C93C: blr",
+    "body": [
+      "0x8216C940..0x8216C96C: mask 3 returns one iff object+0x09 and object+0x0A are both nonzero",
+      "0x8216C970..0x8216C97C: mask bit 0 returns object+0x09",
+      "0x8216C980..0x8216C98C: mask bit 1 returns object+0x0A, otherwise zero"
+    ],
+    "following_sibling": "0x8216C990",
+    "following_pdata_owner": "0x8216C9A8",
+    "producer_siblings": [
+      {
+        "entry": "0x8216C900",
+        "size": "0x20",
+        "slot": 8,
+        "effect": "set object bytes +0x09/+0x0A selected by r4&3",
+        "byte_sha256": "c07aaf3cad81bcd05f260db9f273a5143b399e4cd0ba4a5ed7b96e39bd7362df"
+      },
+      {
+        "entry": "0x8216C920",
+        "size": "0x20",
+        "slot": 9,
+        "effect": "clear object bytes +0x09/+0x0A selected by r4&3",
+        "byte_sha256": "a1205bfdadbd066e99f4d5e1831400419e6297d0cd61e6d8ee0fd14e7abdb9da"
+      }
+    ]
+  },
+  "dynamic_events": [
+    {
+      "event": "virtual_dispatch",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x82259D58",
+      "object": "0x2E7F0080",
+      "vtable": "0x8201130C",
+      "slot": 10,
+      "target": "0x8216C940",
+      "mask_r4": 1,
+      "count": 1
+    },
+    {
+      "event": "next_frontier",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x8219BA44",
+      "module": "xam.xex",
+      "ordinal": 528,
+      "name": "XamUserGetSigninState",
+      "user_index_r3": 1,
+      "diagnostic": "unimplemented import"
+    }
+  ],
+  "memory_effects": {
+    "reads": [
+      "object+0x00: big-endian guest vtable pointer",
+      "vtable+0x28: big-endian guest target pointer",
+      "object+0x09 and/or object+0x0A according to r4&3"
+    ],
+    "writes": []
+  },
+  "branch_coverage": {
+    "observed_masks": [1],
+    "unobserved_masks": [0, 2, 3],
+    "all_static_paths_terminal_by": "0x8216C98C"
+  },
+  "rejected_hypotheses": [
+    "The reached target is not accepted merely because it lies before pdata owner 0x8216C9A8; its predecessor, terminal flow, exact slot and live dispatch are independently joined.",
+    "The two state bytes are not anonymous reader-only data; direct sibling slots 8 and 9 provide bounded set and clear producers."
+  ],
+  "unobserved_paths": [
+    "live masks 0, 2 and 3",
+    "live return byte for the observed mask",
+    "stock XAM return values"
+  ],
+  "native_comparator": {
+    "boundary_record": "config/confirmed-chunks.toml@0x8216C940",
+    "required_edge": "thread=1,lr=0x82259D58,object=0x2E7F0080,target=0x8216C940,vtable=0x8201130C,slot=10,r4=1",
+    "required_progress": "completed_ticks>=252,presents>=115"
+  },
+  "confidence": {
+    "bounds": "static_exact",
+    "byte_state_contract": "static_exact",
+    "dispatch": "bridge_observed",
+    "live_return": "unknown"
+  },
+  "oracle_debt": [
+    {
+      "claim_id": "demo-xam-signin-state-users",
+      "claim": "The retail XAM service returns local sign-in state 1 for user 0 and not-signed-in state 0 for unused user slots in the qualified offline profile scenario.",
+      "reason": "The bridge supplies user 0 and currently traps on the first user 1 query.",
+      "domain": "XAM/profile",
+      "minimal_stock_scenario": "Boot with one local offline profile and capture ordinal 528 arguments and results for the first user-slot enumeration at 0x8219BA40.",
+      "expected_artifact": "one bounded stock callsite sequence for user indices 0 and 1",
+      "blocked_product_gate": "exact XAM parity"
+    }
+  ],
+  "artifacts": {
+    "ghidra_chunk_record_sha256": "0b44d0bf53f0ebf09b2654977d8f461ba549a31320c85fc3183c795306274641",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "ghidra_journal_sha256": "b133247ff63117a24b0871661ada71198811b2c39e6292dcd1dd96a57ad90f78",
+    "boundary_config_sha256": "1f9e3878464bf84482e0ee92bb7cf72893d41a4c136fb101b2e83697c1d845c8",
+    "codegen_manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "generated_guest_object_sha256": "e56094dde5a942f5ffb74bcfe70c6e679489408d9f9cf48cd6369a85773f9feb",
+    "frontier_report_sha256": "26bdd203c950e06c48842dc044070169bf17e7e905a5466d5a328bc2bc882729",
+    "trace_sha256": "cba210be2b61b57e35605818db32c9a09a41e7a1dcf34ec5199b557b69dc38b9"
+  },
+  "validation": {
+    "independent_ghidra_imports": 2,
+    "ghidra_imports_byte_identical": true,
+    "requalified_boundaries": 36,
+    "independent_codegens": 2,
+    "codegens_byte_identical": true,
+    "boundary_diagnostics": 0,
+    "unsupported_instructions": 0,
+    "codegen_on_ctest": "10/10",
+    "codegen_off_ctest": "11/11"
+  }
+}

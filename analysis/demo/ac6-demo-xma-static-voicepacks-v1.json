@@ -1,0 +1,90 @@
+{
+  "schema": "ac6-demo-xma-static-voicepacks/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "asset_root": "demo-game-file/extracted/stfs-root",
+    "manifest_sha256": "bf3bc0549c05b4b6de53017a885332fb51bcb682ac769a18674e5b00f9f26496"
+  },
+  "tools": {
+    "vgmstream": {
+      "source_commit": "5bf4bdf0de37710b412bd81649e513fb054cef85",
+      "binary_sha256": "f88f81c5d6718d611836683d5cce28622d31639b51776a1a90e7307330a0cab5"
+    },
+    "ffprobe": {
+      "path": "/usr/bin/ffprobe",
+      "binary_sha256": "a6dac1e9e8631e04075d06854cc4069308aec279bb04683b4a0bca5e4f54b2fe"
+    },
+    "extra_tools_manifest_sha256": "945c05a3b75859c7607f315632b4c83526bda593df0de3871d0455312570570e"
+  },
+  "packs": {
+    "eng": {
+      "path": "voicepack_eng.bin",
+      "size": 16988160,
+      "sha256": "f482d54d8314c4eae8c3ab20cda40a6c539c96cd933dcfde3c41f03b33e121ba",
+      "riff_count": 738,
+      "riff_length_min": 6144,
+      "riff_length_max": 92160,
+      "data_size_min": 4096,
+      "data_size_max": 90112,
+      "vgmstream_opened": 738,
+      "ffprobe_opened": 738,
+      "format_tag": "0x0165",
+      "codec": "xma1",
+      "sample_rate_hz": 48000,
+      "channels": 1,
+      "sample_format": "fltp",
+      "sampled_segments": [
+        {"index": 0, "offset": 0, "length": 51200, "data_offset": 2048, "data_size": 49152, "sha256": "50277d5dc6bc70b9897a90ec30cb714101dc5cfecd12a82cdd97201923ffde3a", "duration_seconds": 4.545, "bitrate_kbps": 90},
+        {"index": 369, "offset": 8396800, "length": 30720, "data_offset": 8398848, "data_size": 28672, "sha256": "991bcefbc7bcdc4e5cb7695b47d99344081efba26d131182b599122f64719cad", "duration_seconds": 2.790, "bitrate_kbps": 88},
+        {"index": 737, "offset": 16957440, "length": 30720, "data_offset": 16959488, "data_size": 28672, "sha256": "f4582706a70d405534dce5db8667b67153cda1c1c996380f2b853c7649316b6b", "duration_seconds": 2.679, "bitrate_kbps": 91}
+      ]
+    },
+    "jpn": {
+      "path": "voicepack_jpn.bin",
+      "size": 21876736,
+      "sha256": "e67c7add7e4dde4297ae87ec0ca30e6e91333d32511b6fd12e8f2d01e4c987b8",
+      "riff_count": 738,
+      "riff_length_min": 10240,
+      "riff_length_max": 83968,
+      "data_size_min": 8192,
+      "data_size_max": 81920,
+      "vgmstream_opened": 738,
+      "ffprobe_opened": 738,
+      "format_tag": "0x0165",
+      "codec": "xma1",
+      "sample_rate_hz": 48000,
+      "channels": 1,
+      "sample_format": "fltp",
+      "sampled_segments": [
+        {"index": 0, "offset": 0, "length": 57344, "data_offset": 2048, "data_size": 55296, "sha256": "9f920e67bfd8152779342ebd88a67657e6e03fc12e5bbc3b43d8bc69eba2a437", "duration_seconds": 5.062, "bitrate_kbps": 90},
+        {"index": 369, "offset": 11278336, "length": 38912, "data_offset": 11280384, "data_size": 36864, "sha256": "6c89377df43e39192ae6fb7cc5c977de60a9f47f5ebb4d6b72afbc1e01b82e8f", "duration_seconds": 3.500, "bitrate_kbps": 88},
+        {"index": 737, "offset": 21827584, "length": 49152, "data_offset": 21829632, "data_size": 47104, "sha256": "06d6da124bd3e6536ca828cff80915acbb8546e072d5990bd70c17c610830bc5", "duration_seconds": 4.365, "bitrate_kbps": 90}
+      ]
+    }
+  },
+  "validation": {
+    "all_riff_records_bounded": true,
+    "all_segments_contiguous": true,
+    "vgmstream_metadata_only": true,
+    "ffprobe_metadata_only": true,
+    "pcm_or_wav_written": false,
+    "runtime_consumer_joined": false,
+    "language_route_qualified": false
+  },
+  "classification": {
+    "demo-qualified": ["static pack identity", "bounded RIFF/XMA1 structure", "dual metadata oracle 738/738"],
+    "demo-observed": ["voicepack_eng.bin present", "voicepack_jpn.bin present"],
+    "xenia-generic": [],
+    "unknown": ["runtime selection", "XMA packets/timestamps/volume", "PCM/audio consumer", "SDL3 route"]
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "proprietary_asset_tracked": false,
+    "decoded_audio_tracked": false,
+    "play_path_changed": false,
+    "fail_closed": true
+  }
+}

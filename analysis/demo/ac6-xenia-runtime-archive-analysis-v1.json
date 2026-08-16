@@ -1,0 +1,113 @@
+{
+  "schema": "ac6-xenia-runtime-archive-analysis/v1",
+  "generated_at": "2026-08-16",
+  "scope": "read-only runtime archive analysis",
+  "archive": {
+    "path": "/fastdata/lavaulta/autoo-re-agent/workspaces/ace-combat-6/xenia-runtime-results-20260815-final.tar.zst",
+    "sha256": "0196ab3630a937118abea3d41e6d3dc663fcfdb04a3d7d2a843d572361578768",
+    "readme_sha256": "cc62c165f0dafb494da5d1fd3cfda1513c758de8ebe2cc000a88e4bc24526bc6",
+    "manifest_sha256": "14a49d1e3ec5bfe2fb4dc84248ac180f6acf49c1b4f5fa596b5c212d2e325620",
+    "internal_sha256sums": "pass",
+    "xenia_revision_declared": "7010c86fb14f118ee598d3f76010dc0759b9502a",
+    "title_id": "4E4D87E6",
+    "version": "0.0.1.2",
+    "default_xex_sha256": null,
+    "target_pal_xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "target_identity_join": "not established"
+  },
+  "evidence_files": {
+    "successful_manifest_sha256": "bcfd4eb3634f25dbca04c63eca072a5aa98525af284a6434969054f7af82da88",
+    "successful_runtime_events_sha256": "bb6fa18e9c5f10b5a0935ab36445ac1cc525449d5bae3103179d54ba928971ac",
+    "successful_semantic_events_sha256": "07526239cfee793ac110b141fd874374ae8b1f73443f015bf2391d05bd659882",
+    "successful_controller_sha256": "9c81b3b7b91b66e450fd4e31aa2dd52983cb8a864626da9d1e22fe26c2f03de1",
+    "native_freeze_manifest_sha256": "e8a5477131511365f97a45d9474dffd2fb321cb2cb6a7ae5d36c0bc314e54d26",
+    "native_freeze_semantic_events_sha256": "ba345212a6bd650eb21a6545a7cd86054861a9a4850c706f5d9bb90eb603d1c1",
+    "gdb_backtraces_sha256": "f06462b7ca2a90d4d1f65a7c1982e113f7755bc66e1d644a49c999a6986ae375"
+  },
+  "runtime_observed": {
+    "negative_wait": {
+      "guest_threads": [6, 17],
+      "pc": "0x821A69C8",
+      "lr": "0x821A69CC",
+      "signal_handle": "0xF8000088",
+      "wait_handle": "0xF800008C",
+      "primitive": "NtSignalAndWaitForSingleObjectEx",
+      "status": "both blocked in native negative runs"
+    },
+    "positive_strace": {
+      "session": "20260815-150700",
+      "thread_17": "same SignalAndWait pair",
+      "thread_6": "active",
+      "frame_swaps": 3078,
+      "audio_submits": 14683,
+      "guest_seconds_from_binary": 79.058
+    },
+    "positive_patched_native": {
+      "session": "20260815-162258",
+      "frame_swaps": 12496,
+      "audio_submits": 59969,
+      "guest_seconds_from_binary": 328.963,
+      "stable_interval_seconds": 30.539,
+      "stable_interval_frames": 911,
+      "stable_interval_fps": 29.83,
+      "semantic_kernel_wait_events": 0
+    },
+    "guest_event_sites": {
+      "thread_create": {"pc": "0x821A8CFC", "lr": "0x821A8D00"},
+      "frame_swap": {
+        "pc": "0x821C5A1C",
+        "lr": "0x821C5A20",
+        "args": ["0xBA9A0000", "0x1A9A0000", 1280, 720, 6]
+      },
+      "audio_submit": {
+        "pc": "0x8234D360",
+        "lr": "0x8234D364",
+        "args": [0, "0x40020700", 0, 0, 0]
+      },
+      "strace_wait_multiple": {
+        "pc": "0x821A6A78",
+        "lr": "0x821A6A7C",
+        "handles": ["0xF8000010", "0xF800001C", "0xF8000028", "0xF8000034"]
+      }
+    },
+    "host_backtrace": {
+      "observed_chain": [
+        "pthread_cond_wait",
+        "xe::threading::PosixConditionBase::Wait",
+        "xe::kernel::XObject::SignalAndWait",
+        "NtSignalAndWaitForSingleObjectEx_entry"
+      ],
+      "host_guest_thread_join": "not directly printed"
+    }
+  },
+  "classification": {
+    "xenia_generic": [
+      "PosixConditionBase::SignalAndWait waiter reservation",
+      "XObject::SignalAndWait and XObject::Wait symbols",
+      "patched XEvent and controller instrumentation"
+    ],
+    "runtime_observed": [
+      "native/strace/patched run comparison",
+      "guest PCs/LRs, handles, thread snapshots, frame/audio event sites",
+      "title/menu/cinematic/gameplay phase ordering from archive manifest"
+    ],
+    "demo_qualified": [],
+    "unknown": [
+      "exact PAL Default.xex identity inside archive",
+      "Windows dispatcher equivalence",
+      "exact lost-wakeup or suspension cause",
+      "AC6 native renderer pixels, XMA packet semantics, PCM/audio parity",
+      "late slowdown cause and long-duration stability"
+    ]
+  },
+  "report": {
+    "path": "reports/cycle-1725-xenia-runtime-archive-analysis.md",
+    "sha256": "c7919603851d6c39a9402f56b1e665709a8fefb828416bb05b8b185a3380dbf8"
+  },
+  "guard": {
+    "do_not_promote_to_pal_demo": true,
+    "do_not_copy_game_assets": true,
+    "do_not_use_strace_as_parity_evidence": true,
+    "next_test": "bounded sequence-number logging around NtSignalAndWaitForSingleObjectEx and PosixCondition waiter selection"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "ac6-demo-frontbuffer-writer-absence/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "language": "PowerPC:BE:64:Xenon",
+    "backend": "Xenos/Vulkan"
+  },
+  "destination": {
+    "address": "0x1374A000",
+    "end_exclusive": "0x13AE2000",
+    "bytes": 3768320,
+    "format": 6,
+    "tiled": true,
+    "width": 1280,
+    "height": 720,
+    "pitch_raw": "0x02D00500",
+    "mapping_observation": "guest_readable_after_tick_253",
+    "readback_nonzero_bytes": 0
+  },
+  "instrumentation": {
+    "guest_store_header": "src/guest_bridge/frontbuffer_writer_trace.hpp",
+    "host_store_source": "src/guest_memory.cpp",
+    "environment": "AC6_DEMO_WATCH_FRONTBUFFER_WRITERS=1",
+    "default_effect": "disabled",
+    "guest_store_count": 0,
+    "host_store_bytes_count": 0
+  },
+  "runs": [
+    {
+      "route": "neutral",
+      "ticks": 253,
+      "return_code": 0,
+      "rtply_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "guest_store_count": 0,
+      "host_store_count": 0
+    },
+    {
+      "route": "start_tick_252",
+      "ticks": 253,
+      "return_code": 4,
+      "outcome": "max_ticks",
+      "rtply_sha256": "31553733582cf7345375d8f197a28645621e488700f2a31b7e883b66109360b2",
+      "report_sha256": "0f66d089f0656be4c79f0cd9b101f194d27ba6cefcd91e49e60ca2dfa10d564e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "guest_store_count": 0,
+      "host_store_count": 0
+    }
+  ],
+  "validation": {
+    "ctest_off": "18/18",
+    "ctest_on": "17/17",
+    "complexity": "pass",
+    "source_audit": "pass",
+    "binary_sha256": "baabfdc45f3a622c145a5ec020b05ac5d99f542def3575fda4845559aa3f19a3"
+  },
+  "classification": {
+    "demo_qualified": [
+      "frontbuffer address and extent observed in PAL PM4",
+      "guest range readable and zero after tick 253",
+      "no guest or host store observed on neutral/START under exact watcher"
+    ],
+    "unknown": [
+      "GPU destination contents",
+      "GPU-to-guest writeback",
+      "guest-owned pixels and native screencap"
+    ],
+    "xenia_generic": []
+  },
+  "policy": {
+    "fail_closed": true,
+    "retail_merged": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "microcode_tracked": false,
+    "native_screencap_promoted": false
+  }
+}

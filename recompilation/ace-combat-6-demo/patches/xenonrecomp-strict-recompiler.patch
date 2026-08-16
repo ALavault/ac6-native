@@ -1,0 +1,285 @@
+diff --git a/XenonRecomp/recompiler.cpp b/XenonRecomp/recompiler.cpp
+index fa91527..cc76ff3 100644
+--- a/XenonRecomp/recompiler.cpp
++++ b/XenonRecomp/recompiler.cpp
+@@ -168,7 +168,30 @@ void Recompiler::Analyse()
+         }
+     }
+ 
+-    for (auto& [address, size] : config.functions)
++    std::vector<std::pair<uint32_t, uint32_t>> configuredFunctions(config.functions.begin(),
++                                                                    config.functions.end());
++    std::sort(configuredFunctions.begin(), configuredFunctions.end(),
++              [](const auto& left, const auto& right) { return left.first < right.first; });
++    for (const auto& [address, size] : configuredFunctions)
+     {
++        size_t coveredEnd = address;
++        bool canonicalHelper = false;
++        for (const auto& symbol : image.symbols)
++        {
++            if (symbol.type != Symbol_Function ||
++                (symbol.name.rfind("__save", 0) != 0 &&
++                 symbol.name.rfind("__rest", 0) != 0) ||
++                symbol.address > coveredEnd ||
++                symbol.address + symbol.size <= coveredEnd)
++                continue;
++            canonicalHelper = true;
++            coveredEnd = std::max(coveredEnd, symbol.address + symbol.size);
++        }
++        if (canonicalHelper)
++        {
++            if (coveredEnd < address + size)
++                throw std::runtime_error("configured range partially overlaps canonical helper");
++            continue;
++        }
+         functions.emplace_back(address, size);
+         image.symbols.emplace(fmt::format("sub_{:X}", address), address, size, Symbol_Function);
+@@ -212,6 +216,8 @@ void Recompiler::Analyse()
+ 
+                 if (address >= section.base && address < section.base + section.size && image.symbols.find(address) == image.symbols.end())
+                 {
++                    if (config.strict)
++                        throw std::runtime_error(fmt::format("unqualified callable target at 0x{:X}", address));
+                     auto data = section.data + address - section.base;
+                     auto& fn = functions.emplace_back(Function::Analyze(data, section.base + section.size - address, address));
+                     image.symbols.emplace(fmt::format("sub_{:X}", fn.base), fn.base, fn.size, Symbol_Function);
+@@ -225,9 +225,42 @@ void Recompiler::Analyse()
+         while (data < dataEnd)
+         {
+             auto invalidInstr = config.invalidInstructions.find(ByteSwap(*(uint32_t*)data));
++            auto invalidRange = config.invalidRanges.find((uint32_t)base);
++            if (invalidRange != config.invalidRanges.end())
++            {
++                if (invalidRange->second == 0 || (invalidRange->second & 3) != 0 ||
++                    data + invalidRange->second > dataEnd)
++                    throw std::runtime_error(fmt::format(
++                        "invalid qualified data range at 0x{:X}", base));
++                base += invalidRange->second;
++                data += invalidRange->second;
++                continue;
++            }
++            if (config.strict && invalidInstr == config.invalidInstructions.end() &&
++                ByteSwap(*(uint32_t*)data) == 0 && image.symbols.find(base) == image.symbols.end())
++            {
++                // Zero words are PPC/Xenon padding only when the next code
++                // address is already an explicit symbol.  This keeps strict
++                // mode closed over accidental data holes.
++                auto padding = data;
++                auto paddingBase = base;
++                while (padding < dataEnd && ByteSwap(*(uint32_t*)padding) == 0)
++                {
++                    padding += 4;
++                    paddingBase += 4;
++                }
++                if (image.symbols.find(paddingBase) == image.symbols.end())
++                    throw std::runtime_error(fmt::format(
++                        "unqualified padding boundary at 0x{:X} next=0x{:X} configured={}",
++                        base, paddingBase, config.functions.find((uint32_t)paddingBase) !=
++                        config.functions.end()));
++                base = paddingBase;
++                data = padding;
++                continue;
++            }
+             if (invalidInstr != config.invalidInstructions.end())
+             {
+                 base += invalidInstr->second;
+                 data += invalidInstr->second;
+                 continue;
+             }
+@@ -242,6 +251,8 @@ void Recompiler::Analyse()
+             }
+             else
+             {
++                if (config.strict)
++                    throw std::runtime_error(fmt::format("unqualified code boundary at 0x{:X}", base));
+                 auto& fn = functions.emplace_back(Function::Analyze(data, dataEnd - data, base));
+                 image.symbols.emplace(fmt::format("sub_{:X}", fn.base), fn.base, fn.size, Symbol_Function);
+ 
+@@ -619,6 +627,8 @@ bool Recompiler::Recompile(
+                 {
+                     println("\t\t// ERROR: 0x{:X}", label);
+                     fmt::println("ERROR: Switch case at {:X} is trying to jump outside function: {:X}", base, label);
++                    if (config.strict)
++                        throw std::runtime_error(fmt::format("switch boundary at 0x{:X}", label));
+                     println("\t\treturn;");
+                 }
+                 else
+@@ -849,7 +855,7 @@ bool Recompiler::Recompile(
+         break;
+ 
+     case PPC_INST_EIEIO:
+-        // no op
++        println("\tPPC_EIEIO(ctx);");
+         break;
+ 
+     case PPC_INST_EXTSB:
+@@ -1098,7 +1098,6 @@ bool Recompiler::Recompile(
+     case PPC_INST_LDARX:
+-        print("\t{}.u64 = *(uint64_t*)(base + ", reserved());
++        print("\t{}.u64 = PPC_LDARX(ctx, ", r(insn.operands[0]));
+         if (insn.operands[1] != 0)
+             print("{}.u32 + ", r(insn.operands[1]));
+-        println("{}.u32);", r(insn.operands[2]));
+-        println("\t{}.u64 = __builtin_bswap64({}.u64);", r(insn.operands[0]), reserved());
++        println("{}.u32);", r(insn.operands[2]));
+         break;
+@@ -1121,8 +1121,15 @@
+     case PPC_INST_LHZX:
+         print("\t{}.u64 = PPC_LOAD_U16(", r(insn.operands[0]));
+         if (insn.operands[1] != 0)
+             print("{}.u32 + ", r(insn.operands[1]));
+         println("{}.u32);", r(insn.operands[2]));
+         break;
++
++    case PPC_INST_LHBRX:
++        print("\t{}.u64 = __builtin_bswap16(PPC_LOAD_U16(", r(insn.operands[0]));
++        if (insn.operands[1] != 0)
++            print("{}.u32 + ", r(insn.operands[1]));
++        println("{}.u32));", r(insn.operands[2]));
++        break;
+ 
+     case PPC_INST_LI:
+@@ -1187,11 +1193,10 @@ bool Recompiler::Recompile(
+         break;
+ 
+     case PPC_INST_LWARX:
+-        print("\t{}.u32 = *(uint32_t*)(base + ", reserved());
++        print("\t{}.u32 = PPC_LWARX(ctx, ", r(insn.operands[0]));
+         if (insn.operands[1] != 0)
+             print("{}.u32 + ", r(insn.operands[1]));
+         println("{}.u32);", r(insn.operands[2]));
+-        println("\t{}.u64 = __builtin_bswap32({}.u32);", r(insn.operands[0]), reserved());
+         break;
+
+     case PPC_INST_LWAX:
+@@ -1209,7 +1214,7 @@ bool Recompiler::Recompile(
+         break;
+ 
+     case PPC_INST_LWSYNC:
+-        // no op
++        println("\tPPC_LWSYNC(ctx);");
+         break;
+ 
+     case PPC_INST_LWZ:
+@@ -1260,7 +1265,7 @@ bool Recompiler::Recompile(
+         break;
+ 
+     case PPC_INST_MFTB:
+-        println("\t{}.u64 = __rdtsc();", r(insn.operands[0]));
++        println("\t{}.u64 = PPC_READ_TIMEBASE(ctx);", r(insn.operands[0]));
+         break;
+ 
+     case PPC_INST_MR:
+@@ -1562,9 +1562,9 @@ bool Recompiler::Recompile(
+     case PPC_INST_STDCX:
+         println("\t{}.lt = 0;", cr(0));
+         println("\t{}.gt = 0;", cr(0));
+-        print("\t{}.eq = __sync_bool_compare_and_swap(reinterpret_cast<uint64_t*>(base + ", cr(0));
++        print("\t{}.eq = PPC_STDCX(ctx, ", cr(0));
+         if (insn.operands[1] != 0)
+             print("{}.u32 + ", r(insn.operands[1]));
+-        println("{}.u32), {}.s64, __builtin_bswap64({}.s64));", r(insn.operands[2]), reserved(), r(insn.operands[0]));
++        println("{}.u32, {}.u64);", r(insn.operands[2]), r(insn.operands[0]));
+         println("\t{}.so = {}.so;", cr(0), xer());
+         break;
+@@ -1658,10 +1663,10 @@ bool Recompiler::Recompile(
+     case PPC_INST_STWCX:
+         println("\t{}.lt = 0;", cr(0));
+         println("\t{}.gt = 0;", cr(0));
+-        print("\t{}.eq = __sync_bool_compare_and_swap(reinterpret_cast<uint32_t*>(base + ", cr(0));
++        print("\t{}.eq = PPC_STWCX(ctx, ", cr(0));
+         if (insn.operands[1] != 0)
+             print("{}.u32 + ", r(insn.operands[1]));
+-        println("{}.u32), {}.s32, __builtin_bswap32({}.s32));", r(insn.operands[2]), reserved(), r(insn.operands[0]));
++        println("{}.u32, {}.u32);", r(insn.operands[2]), r(insn.operands[0]));
+         println("\t{}.so = {}.so;", cr(0), xer());
+         break;
+
+@@ -1711,7 +1716,7 @@ bool Recompiler::Recompile(
+         break;
+ 
+     case PPC_INST_SYNC:
+-        // no op
++        println("\tPPC_SYNC(ctx);");
+         break;
+ 
+     case PPC_INST_TDLGEI:
+@@ -1769,7 +1774,8 @@ bool Recompiler::Recompile(
+         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_and_si128(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
+         break;
+ 
+-    case PPC_INST_VANDC128:
++    case PPC_INST_VANDC:
++    case PPC_INST_VANDC128:
+         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_andnot_si128(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8)));", v(insn.operands[0]), v(insn.operands[2]), v(insn.operands[1]));
+         break;
+ 
+@@ -1831,7 +1836,9 @@ bool Recompiler::Recompile(
+ 
+     case PPC_INST_VCMPBFP:
+     case PPC_INST_VCMPBFP128:
+-        println("\t__builtin_debugtrap();");
++        println("\tPPC_VCMPBFP({}, {}, {}, {}, {});", v(insn.operands[0]),
++                v(insn.operands[1]), v(insn.operands[2]), cr(6),
++                strchr(insn.opcode->name, '.') != nullptr ? "true" : "false");
+         break;
+ 
+     case PPC_INST_VCMPEQFP:
+@@ -1703,10 +1710,12 @@ bool Recompiler::Recompile(
+ 
+     case PPC_INST_STVX:
+     case PPC_INST_STVX128:
+-        print("\tsimde_mm_store_si128((simde__m128i*)(base + ((");
++        print("\t{} = ", ea());
+         if (insn.operands[1] != 0)
+             print("{}.u32 + ", r(insn.operands[1]));
+-        println("{}.u32) & ~0xF)), simde_mm_shuffle_epi8(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*)VectorMaskL)));", r(insn.operands[2]), v(insn.operands[0]));
++        println("{}.u32;", r(insn.operands[2]));
++        println("\t{} &= ~0xFU;", ea());
++        println("\tPPC_STORE_U128({}, {});", ea(), v(insn.operands[0]));
+         break;
+ 
+     case PPC_INST_STW:
+@@ -2047,11 +2056,15 @@ bool Recompiler::Recompile(
+         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_packus_epi16(simde_mm_load_si128((simde__m128i*){}.s16), simde_mm_load_si128((simde__m128i*){}.s16)));", v(insn.operands[0]), v(insn.operands[2]), v(insn.operands[1]));
+         break;
+ 
++    case PPC_INST_VPKSWSS:
++    case PPC_INST_VPKSWSS128:
++        println("\tPPC_VPKSWSS({}, {}, {});", v(insn.operands[0]), v(insn.operands[1]),
++                v(insn.operands[2]));
++        break;
++
+     case PPC_INST_VREFP:
+     case PPC_INST_VREFP128:
+-        // TODO: see if we can use rcp safely
+-        printSetFlushMode(true);
+-        println("\tsimde_mm_store_ps({}.f32, simde_mm_div_ps(simde_mm_set1_ps(1), simde_mm_load_ps({}.f32)));", v(insn.operands[0]), v(insn.operands[1]));
++        println("\tPPC_VREFP({}, {});", v(insn.operands[0]), v(insn.operands[1]));
+         break;
+ 
+     case PPC_INST_VRFIM:
+@@ -2081,13 +2094,11 @@ bool Recompiler::Recompile(
+ 
+     case PPC_INST_VRSQRTEFP:
+     case PPC_INST_VRSQRTEFP128:
+-        // TODO: see if we can use rsqrt safely
+-        // TODO: we can detect if the input is from a dot product and apply logic only on one value
+-        printSetFlushMode(true);
+-        println("\tsimde_mm_store_ps({}.f32, simde_mm_div_ps(simde_mm_set1_ps(1), simde_mm_sqrt_ps(simde_mm_load_ps({}.f32))));", v(insn.operands[0]), v(insn.operands[1]));
++        println("\tPPC_VRSQRTEFP({}, {});", v(insn.operands[0]), v(insn.operands[1]));
+         break;
+ 
+     case PPC_INST_VSEL:
++    case PPC_INST_VSEL128:
+         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_or_si128(simde_mm_andnot_si128(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8)), simde_mm_and_si128(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8))));", v(insn.operands[0]), v(insn.operands[3]), v(insn.operands[1]), v(insn.operands[3]), v(insn.operands[2]));
+         break;
+ 
+@@ -2430,4 +2505,7 @@ bool Recompiler::Recompile(const Function& fn)
+             if (!Recompile(fn, base, insn, data, switchTable, localVariables, csrState))
+             {
+                 fmt::println("Unrecognized instruction at 0x{:X}: {}", base, insn.opcode->name);
++                if (config.strict)
++                    throw std::runtime_error(fmt::format("unsupported instruction {} at 0x{:X}",
++                                                         insn.opcode->name, base));
+                 allRecompiled = false;

@@ -1,0 +1,69 @@
+{
+  "schema": "ac6-demo-neutral-boundary/v1",
+  "identity": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "route": "neutral",
+    "backend": "headless",
+    "fresh_store": true,
+    "xma_create_opt_in": true,
+    "xma_kick_opt_in": true,
+    "start_injected": false
+  },
+  "closed_boundary": {
+    "entry": "0x822CD118",
+    "size": "0x08",
+    "byte_sha256": "8b193777f1adfe8f5afbd7fdd1395de6aca91dcef21e381992179dcd189a38fd",
+    "caller_lr": "0x8223FF70",
+    "first_tick": 2126,
+    "thread": 1,
+    "proof_run": {
+      "outcome": "max_ticks",
+      "completed_ticks": 2127,
+      "trace_sha256": "a06b700cd11ca38ff7540aef063522bea87024b639bfe99ca4f9180441ae16da",
+      "report_sha256": "9768d7841152d1775e73726d1ddee92c80d2d8e67f46fb787331c347c8ffc20b"
+    }
+  },
+  "extended_run": {
+    "requested_ticks": 2500,
+    "completed_ticks": 2453,
+    "outcome": "trap",
+    "presents": 2316,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "trace_sha256": "8ab246f104d7aa610e95c650f5fede72a61bb68ce91f97ef",
+    "report_sha256": "f3b227b0a72b41b05c024869e4339c530ec586ed9dc1876b24fc9f197a6a68c2"
+  },
+  "next_frontier": {
+    "kind": "guest-indirect",
+    "diagnostic": "unqualified guest indirect call",
+    "entry": "0x823235E8",
+    "caller_lr": "0x82323C4C",
+    "thread": 1,
+    "tick": 2453,
+    "containing_static_range": ["0x823235D0", "0x82323647"],
+    "containing_static_range_sha256": "04e962890d85921dd579ef0bdb0dd889e687a6787d0b27254413feb6087e1b0b"
+  },
+  "artifacts": {
+    "binary_sha256": "d6384abdc7fb17db931da89197603ecd46701c86028e38c7acde3591f7b7ea3a",
+    "codegen_manifest_sha256": "10c244e3d58da8acbef19bf4d9fea9dd0231271420c505201a9105d08138f8af",
+    "boundary_config_sha256": "699d21777b95fbdf70af000ff5dc4ca3057c9e03aa7312e74324b1cd9cdcd9e3",
+    "static_atlas_sha256": "908cb4307b204186a6e1ab3b3d4ee5956796303c8981e92cf19921d8d980d79e"
+  },
+  "classification": {
+    "demo_qualified": [
+      "0x822CD118 callable boundary and exact PAL bytes",
+      "neutral progress through tick 2127",
+      "next indirect frontier at tick 2453"
+    ],
+    "unknown": [
+      "semantic role and exact callable bounds of 0x823235E8",
+      "first non-black EDRAM producer",
+      "causal START transition"
+    ]
+  }
+}

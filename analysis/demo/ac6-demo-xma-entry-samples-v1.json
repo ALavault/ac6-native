@@ -1,0 +1,80 @@
+{
+  "schema": "ac6-demo-xma-entry-samples/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos"
+  },
+  "build": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "61a0c4848a9f8649dd0cd9979c2caf25d189e9b0f5dff522ed910082c69236fd",
+    "guest_bridge_sha256": "862e9eea3083cb939f2af3c8fd6e3f140c987cced159201dce1ce1eaaf176834",
+    "xma_trace_header_sha256": "b95a74395922f60b409fb7f1e86d0ccba7707df32cec929b9ad200f89a3c780c",
+    "complexity_guest_bridge_lines": 1443,
+    "ctest": "17/17"
+  },
+  "runs": {
+    "root": "/fastdata/lavaulta/tmp/ac6-cycle1711.cWAvnp",
+    "max_ticks": 1050,
+    "neutral": {
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131",
+      "stderr_sha256": "71cf5631963d6b299246eca750dd1ce4311e9ce3261f8468d1ae4aeb4fcb2d8e"
+    },
+    "start": {
+      "rtply_sha256": "d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d",
+      "report_sha256": "238bd9e4f7e8ea150b7e5622101340145bc0dd9e7076d5c6472f4970634022cc",
+      "stderr_sha256": "71cf5631963d6b299246eca750dd1ce4311e9ce3261f8468d1ae4aeb4fcb2d8e",
+      "input": "tick252:16,0,0,0,0,0,0,0,1"
+    }
+  },
+  "table": {
+    "address": "0x17360000",
+    "count": 3,
+    "flags": "0x00030000",
+    "entries_base": "0x17360010",
+    "stride": "0x60",
+    "sample_bytes_per_pointer": 64,
+    "sample_sha256": "f5a5fd42d16a20302798ef6ed309979b43003d2320d9f0e8ea9831a92759fb4b",
+    "entries": [
+      {"index":0,"entry":"0x17360010","pointers":["0x17360180","0x17361F80"],"first_words":["0x00000000","0x00000000"]},
+      {"index":1,"entry":"0x17360070","pointers":["0x17362180","0x17363F80"],"first_words":["0x00000000","0x00000000"]},
+      {"index":2,"entry":"0x173600D0","pointers":["0x17364180","0x17365F80"],"first_words":["0x00000000","0x00000000"]}
+    ]
+  },
+  "import": {
+    "module": "xboxkrnl.exe",
+    "name": "XMACreateContext",
+    "ordinal": 548,
+    "call_lr": "0x82357298",
+    "output_slot": "0x17360050",
+    "effect": "trap-before-import"
+  },
+  "classification": {
+    "demo-qualified": [
+      "six pointer addresses",
+      "64-byte sample SHA and first words",
+      "all-zero sample result neutral/START"
+    ],
+    "demo-observed": [
+      "repeated pointer pairs in each entry"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "pointer semantics and actual range size",
+      "nonzero payload after sample",
+      "XMA ABI/return/packet/PCM",
+      "guest-owned pixels and mission result"
+    ]
+  },
+  "guard": {
+    "sample_bounded_read_only": true,
+    "sample_does_not_extract_media": true,
+    "ordinal_548_traps": true,
+    "audio_decode": false,
+    "readback": false,
+    "screencap": false
+  },
+  "next_checkpoint": "watch first stores/loads on six exact pointer ranges in a route beyond ordinal 548; require nonzero word and PAL producer"
+}

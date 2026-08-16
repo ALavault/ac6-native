@@ -1,0 +1,55 @@
+{
+  "schema": "ac6-demo-renderer-command-mailbox/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "classification": {
+    "pm4_parser_and_transaction": "demo-qualified",
+    "runtime_shader_words": "demo-observed-ephemeral",
+    "register_snapshots": "demo-qualified",
+    "runtime_shader_translation": "unknown",
+    "product_vulkan_draw": "unknown"
+  },
+  "mailbox": {
+    "owner": "GuestBridge",
+    "limit_commands": 4096,
+    "commit_rule": "append only after the bounded batch, staged writes, interrupts and renderer snapshots are accepted",
+    "consumer_api": "DemoSession::consume_renderer_commands",
+    "command_variants": [
+      "XenosShaderLoadCommand",
+      "XenosDrawCommand",
+      "XenosPresentCommand"
+    ],
+    "shader_payload": {
+      "field": "guest_big_endian_dwords",
+      "runtime_only": true,
+      "hash_preserved": true,
+      "reported_or_traced": false,
+      "installed_as_asset": false
+    },
+    "draw_payload": {
+      "immutable_register_snapshot": true,
+      "vertex_shader_sha256": true,
+      "pixel_shader_sha256": true
+    }
+  },
+  "validation": {
+    "shader_word_vectors_match_packet_payloads": true,
+    "shader_hashes_unchanged": true,
+    "draw_register_snapshots_immutable": true,
+    "unknown_packets_remain_fatal": true,
+    "ctest": "17/17",
+    "source_audit": "pass",
+    "complexity_audit": "pass"
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "shader_or_microcode_serialized": false,
+    "proprietary_asset_tracked": false,
+    "generated_cpp_modified": false,
+    "play_fallback_added": false,
+    "fail_closed": true
+  }
+}

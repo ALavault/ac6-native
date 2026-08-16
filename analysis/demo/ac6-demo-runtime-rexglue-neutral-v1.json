@@ -1,0 +1,224 @@
+{
+  "schema": "ac6-demo-runtime-rexglue-neutral/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "classification": {
+    "rexglue_translation_rules": "xenia-generic",
+    "microcode_and_pm4": "demo-observed",
+    "four_module_identity_and_validation": "demo-qualified",
+    "product_vulkan_shader_modules": "demo-qualified",
+    "product_vulkan_descriptor_and_pipeline_layouts": "demo-qualified",
+    "product_edram_draw": "unknown"
+  },
+  "translator": {
+    "source_commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+    "sdk_tree": "741541d6035616dc406f7d74c2fe8f155913c77b",
+    "librexgraphics_sha256": "564a728c0f83217d0e6f1c5c4cb8d829cb9d3c6e04c63e4285b1a449a98243a5",
+    "input_byte_order": "Xenon big-endian",
+    "output_lifetime": "memory-only",
+    "validator_environment": "Vulkan 1.1 with scalar block layout"
+  },
+  "modules": [
+    {
+      "stage": "vertex",
+      "microcode_dwords": 24,
+      "register_count": 15,
+      "microcode_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+      "qualified_image_source": ["0x82013E20", "0x82013E80"],
+      "spirv_bytes": 7800,
+      "spirv_sha256": "944fd75222b6de743b9ce1cd18440b8497230e3813bb105c655cd6cfba123ce6"
+    },
+    {
+      "stage": "vertex",
+      "microcode_dwords": 27,
+      "register_count": 2,
+      "microcode_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+      "qualified_image_source": ["0x820140A0", "0x8201410C"],
+      "spirv_bytes": 12496,
+      "spirv_sha256": "ba9b97cceb816059cd21ff6abfda6c59160363155d5b270a3e315b215adb0576"
+    },
+    {
+      "stage": "vertex",
+      "microcode_dwords": 15,
+      "register_count": 3,
+      "microcode_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+      "qualified_image_source": ["0x82014140", "0x8201417C"],
+      "spirv_bytes": 9288,
+      "spirv_sha256": "4913cadb00aef0bba3f42c25e25919b6403e2de654e8165748337df331cdc920"
+    },
+    {
+      "stage": "pixel",
+      "microcode_dwords": 9,
+      "register_count": 1,
+      "microcode_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+      "spirv_bytes": 7008,
+      "spirv_sha256": "f6422d60ff48b5ed43292db838655199322a6d439fea10d39302deda69ece9fe"
+    }
+  ],
+  "neutral_runtime": {
+    "fresh_store_runs": 2,
+    "terminal_tick": 253,
+    "shader_loads": 5,
+    "draws": 26,
+    "presents": 1,
+    "validated_modules": 4,
+    "rtply_sha256": "1d41d2e26003a631f8bec19534812a258ffc5d90466be885f6f7f3df797ebef7",
+    "report_sha256": "d96a9b68a90f389207ee725ea5f182ea935d798f15c341bc455c6208370b6a79",
+    "runs_byte_identical": true,
+    "rr_gate_rtply_unchanged": true,
+    "rr_gate_report_unchanged": true
+  },
+  "neutral_vulkan_runtime": {
+    "fresh_store_runs": 2,
+    "terminal_tick": 253,
+    "validated_modules": 4,
+    "created_vk_shader_modules": 4,
+    "created_descriptor_set_layouts": 2,
+    "created_pipeline_layouts": 1,
+    "created_graphics_pipelines": 2,
+    "rtply_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+    "report_sha256": "04116bf6a30acd2c68cdd2917f6da915f0d531695c6e8a5ba39bf1870b23de35",
+    "runs_byte_identical": true,
+    "graphics_pipeline_created": true,
+    "populated_shared_memory_descriptors": 4,
+    "populated_constant_buffer_descriptors": 10,
+    "draw_executed": false,
+    "readback_produced": false
+  },
+  "reached_shared_memory": {
+    "classification": "demo-qualified",
+    "segment_selector": "xenia-generic address bits 27..28",
+    "segment_mask": "0x07FFFFFF",
+    "descriptors": 4,
+    "zero_initialized_before_commit": true,
+    "populated_segment": 2,
+    "guest_range": ["0x127CA03C", "0x127CA0A8"],
+    "guest_bytes": 108,
+    "masked_destination_offset": "0x027CA03C",
+    "normal_fetch_range": ["0x127CA03C", "0x127CA090"],
+    "copy_fetch_range": ["0x127CA090", "0x127CA0A8"],
+    "constant_descriptors_populated": true,
+    "draw_executed": false
+  },
+  "reached_constant_payloads": {
+    "classification": "demo-qualified using xenia-generic ReXGlue ABI",
+    "descriptor_sets": 2,
+    "descriptors_per_set": 5,
+    "sizes": {
+      "system": 504,
+      "float_vertex_dummy": 16,
+      "float_pixel_dummy": 16,
+      "bool_loop": 160,
+      "fetch": 768
+    },
+    "spirv_static_system_members": {
+      "vertex": [0, 1, 2, 3, 4, 8, 9, 10, 12],
+      "pixel": [0, 19, 23]
+    },
+    "member_roles": {
+      "0": "flags",
+      "1": "vertex_index_load_address",
+      "2": "vertex_index_endian",
+      "3": "line_loop_closing_index",
+      "4": "vertex_base_index",
+      "8": "vertex_index_min",
+      "9": "vertex_index_max",
+      "10": "ndc_scale",
+      "12": "ndc_offset",
+      "19": "alpha_test_reference",
+      "23": "color_exp_bias"
+    },
+    "normal_system_flags": "0x00074B00",
+    "copy_system_flags": "0x00070B00",
+    "float_constants_reached": 0,
+    "bool_or_loop_constants_reached": 0,
+    "fetch_copy_policy": "exact 192-dword register snapshot",
+    "commit": "each five-buffer descriptor set replaces no state until every allocation, upload and descriptor update succeeds",
+    "draw_executed": false
+  },
+  "reached_graphics_pipeline_profiles": [
+    {
+      "role": "normal-rectangle",
+      "vertex_shader_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+      "pixel_shader_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+      "rb_surface_info": "0x0A020280",
+      "samples": 4,
+      "color_mask": "0x0000FFFF",
+      "blend_control": "0x00010001",
+      "depth_control": "0x00008777",
+      "mode_control": "0x00000004",
+      "color_attachment": "VK_FORMAT_R8G8B8A8_UNORM",
+      "depth_attachment": "VK_FORMAT_D24_UNORM_S8_UINT"
+    },
+    {
+      "role": "copy-rectangle",
+      "vertex_shader_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+      "pixel_shader_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+      "rb_surface_info": "0x14000500",
+      "samples": 1,
+      "color_mask": "0x0000000F",
+      "blend_control": "0x00010001",
+      "depth_control": "0x00000000",
+      "mode_control": "0x00000006",
+      "color_attachment": "VK_FORMAT_R8G8B8A8_UNORM",
+      "depth_attachment": null
+    }
+  ],
+  "reached_vulkan_layout_abi": {
+    "source": "ReXGlue SpirvShaderTranslator generic ABI cross-checked against all four reached SPIR-V interfaces",
+    "scalar_block_layout_required_and_enabled": true,
+    "sets": [
+      {
+        "set": 0,
+        "binding": 0,
+        "descriptor_type": "storage-buffer",
+        "descriptor_count": 4,
+        "stages": ["vertex", "fragment"]
+      },
+      {
+        "set": 1,
+        "bindings": [0, 1, 2, 3, 4],
+        "descriptor_type": "uniform-buffer",
+        "roles": ["system", "float-vertex", "float-pixel", "bool-loop", "fetch"]
+      }
+    ],
+    "push_constant_bytes": 0,
+    "texture_sets_reached": 0
+  },
+  "external_validation": {
+    "spirv_tools_commit": "e39e5c5838bc4b4162c349f2a2e5f163efe5432f",
+    "spirv_val_sha256": "2cc19cddc1293518705467f41f55094800b319bd77b1eaf6e30bc7901d6e3406",
+    "command_policy": "spirv-val --target-env vulkan1.1 --scalar-block-layout",
+    "modules_passed": 4,
+    "qualified_vertex_source_probe": {
+      "script": "tools/validate_qualified_vertex_sources.py",
+      "basefile_ranges_passed": 3,
+      "external_spirv_val_passed": 3,
+      "temporary_only": true
+    }
+  },
+  "transaction": {
+    "input": "GuestBridge bounded renderer mailbox",
+    "commit": "cache state replaces prior state only after every command and module validates",
+    "unknown_identity": "fatal before cache commit",
+    "unavailable_shader_bytes": "fatal before cache commit",
+    "serialization": false
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "shader_microcode_or_spirv_tracked": false,
+    "temporary_outputs_outside_tmpdir": false,
+    "generated_cpp_modified": false,
+    "xenia_rexglue_modified": false,
+    "play_fallback_added": false,
+    "fail_closed": true
+  },
+  "validation": {
+    "ctest": "18/18",
+    "source_audit": "pass",
+    "complexity_audit": "pass"
+  }
+}

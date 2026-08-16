@@ -1,0 +1,112 @@
+{
+  "schema": "ac6-demo-static-reached-shaders/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "image_base": "0x82000000",
+    "source_section": ".rdata",
+    "byte_order": "Xenon big-endian"
+  },
+  "method": {
+    "guest_execution_required": false,
+    "runtime_trace_required": false,
+    "source_gate": "exact basefile range, size and SHA-256",
+    "stage_gate": "static PM4 producer call-shape, corroborated by Xenos decoding; pixel also has exact NSXR descriptor flags",
+    "translation": "pinned ReXGlue shader translator",
+    "validation": "pinned spirv-val --target-env vulkan1.1 --scalar-block-layout",
+    "temporary_policy": "microcode, disassembly and SPIR-V exist only under TMPDIR"
+  },
+  "static_producers": [
+    {
+      "function": "0x821B1D58",
+      "reference_pc": "0x821B1D9C",
+      "sources": ["0x82013E20", "0x82013E80"],
+      "static_atlas_pseudocode_sha256": "3ca21b218f9aa82ae4ddfbec1d593772654a02bd70d1a659a8fe663dd3fc80ae"
+    },
+    {
+      "function": "0x821B6078",
+      "reference_pc": "0x821B63D8",
+      "sources": ["0x82014078", "0x820140A0"],
+      "static_atlas_pseudocode_sha256": "88da8668fbcdeefc57e0d09619a7864c57f2bb86019089e73e7568247123b735"
+    },
+    {
+      "function": "0x821B6FD0",
+      "reference_pc": "0x821B7810",
+      "sources": ["0x82014140"],
+      "static_atlas_pseudocode_sha256": "8313da079ccd9770eda23aaba0397305c6a6ba23c178922aafee6e0ac297bac4"
+    }
+  ],
+  "shaders": [
+    {
+      "stage": "vertex",
+      "basefile_offset": "0x00013E20",
+      "guest_range": ["0x82013E20", "0x82013E80"],
+      "bytes": 96,
+      "dwords": 24,
+      "register_count": 15,
+      "microcode_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+      "spirv_bytes": 7800,
+      "spirv_sha256": "944fd75222b6de743b9ce1cd18440b8497230e3813bb105c655cd6cfba123ce6"
+    },
+    {
+      "stage": "pixel",
+      "basefile_offset": "0x00013E80",
+      "guest_range": ["0x82013E80", "0x82013EA4"],
+      "bytes": 36,
+      "dwords": 9,
+      "register_count": 1,
+      "microcode_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+      "spirv_bytes": 7008,
+      "spirv_sha256": "f6422d60ff48b5ed43292db838655199322a6d439fea10d39302deda69ece9fe",
+      "additional_static_nsxr_occurrences": ["0x8264B68C", "0x8264BA8C"]
+    },
+    {
+      "stage": "vertex",
+      "basefile_offset": "0x000140A0",
+      "guest_range": ["0x820140A0", "0x8201410C"],
+      "bytes": 108,
+      "dwords": 27,
+      "register_count": 2,
+      "microcode_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+      "spirv_bytes": 12496,
+      "spirv_sha256": "ba9b97cceb816059cd21ff6abfda6c59160363155d5b270a3e315b215adb0576"
+    },
+    {
+      "stage": "vertex",
+      "basefile_offset": "0x00014140",
+      "guest_range": ["0x82014140", "0x8201417C"],
+      "bytes": 60,
+      "dwords": 15,
+      "register_count": 3,
+      "microcode_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+      "spirv_bytes": 9288,
+      "spirv_sha256": "4913cadb00aef0bba3f42c25e25919b6403e2de654e8165748337df331cdc920"
+    }
+  ],
+  "validation": {
+    "source_ranges": "4/4 pass",
+    "rexglue_translation": "4/4 pass",
+    "spirv_val": "4/4 pass",
+    "validator_sha256": "74bf0ce96433552bce1d4b635ea41ef720ec5b2afcb22d977a98ed9daa8b7641",
+    "validator_output_sha256": "e3c19af9e52e7c611edd28c127ed3f9e657f7936da63b41d43cc4fc7096b2111",
+    "spirv_val_sha256": "2cc19cddc1293518705467f41f55094800b319bd77b1eaf6e30bc7901d6e3406"
+  },
+  "classification": {
+    "demo_qualified": [
+      "four static source ranges",
+      "stages, sizes, dword counts and hashes",
+      "four deterministic ReXGlue translations",
+      "four SPIR-V validations"
+    ],
+    "xenia_generic": ["Xenos instruction and ReXGlue translation semantics"],
+    "unknown": ["route-specific reachability without a dynamic observation"]
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "proprietary_bytes_tracked": false,
+    "microcode_or_spirv_tracked": false,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false
+  }
+}

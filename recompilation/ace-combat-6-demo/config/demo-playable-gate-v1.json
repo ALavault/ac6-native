@@ -1,0 +1,78 @@
+{
+  "schema": "demo-playable-gate-v1",
+  "target_id": "ac6-demo-xbox360-pal",
+  "target_xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "canonical_ghidra": {
+    "project": "ghidra-projects/ace-combat-6-demo",
+    "version": "12.1.2",
+    "language": "PowerPC:BE:64:Xenon"
+  },
+  "evidence_policy": {
+    "retail_target_id": "ac6-retail-xbox360-pal",
+    "retail_frozen": true,
+    "cross_target_evidence_merge": false
+  },
+  "supported": false,
+  "required_lanes": {
+    "cpu_codegen": {
+      "closed": false,
+      "closed_subgates": [
+        "two byte-identical clean strict codegens",
+        "zero boundary diagnostics and zero unsupported instructions",
+        "generated guest object executes through tick 260 without CPU or indirect-target fault",
+        "persistent deterministic scheduler and reached kernel-object waits"
+      ],
+      "open_gate": "frontend-to-mission execution without a new CPU, target or observable VMX fault"
+    },
+    "kernel_xam_vfs": {
+      "closed": false,
+      "closed_subgates": [
+        "atomic qualified nine-file user-store mount",
+        "reached offline profile enumeration",
+        "reached invalid-socket recvfrom behavior without a host socket",
+        "reached events, mutants, semaphore, timeout waits and critical sections"
+      ],
+      "open_gate": "all title/menu and mission ABI consumers reached by the accepted replay close without synthetic signals"
+    },
+    "graphics": {
+      "closed": false,
+      "closed_subgates": [
+        "reached PM4 corpus validates transactionally before RPTR completion",
+        "reached WAIT, interrupt and scratch-handshake effects resume deterministically",
+        "five shader loads, 24 historical draws, two final rectangles and XE_SWAP inventoried"
+      ],
+      "open_gate": "qualified shader/fetch/tiling/resolve translation produces three evolving non-black 1280x720 readbacks at 30 presents/s"
+    },
+    "input_replay": {
+      "closed": false,
+      "closed_subgates": [
+        "AC6RTPLY-v4 neutral and START tick replays are byte-identical",
+        "raw START reaches the guest controller object and logical pressed bit 0x10"
+      ],
+      "open_gate": "complete ac6.xam-input-movie.v1 call replay plus two semantically identical end-to-end replays with no HID fallback"
+    },
+    "audio_media": {
+      "closed": false,
+      "closed_subgates": [
+        "strict unknown-media boundary exists"
+      ],
+      "open_gate": "reached XMA packets decode with timestamps and volume through FFmpeg/SDL3 in English and Japanese"
+    },
+    "mission": {
+      "closed": false,
+      "closed_subgates": [
+        "demo scenario structure cross-checks 213 units, 414 ObjBin, 4 factions and 3 sub-missions"
+      ],
+      "open_gate": "guest-owned title-to-result mission path, controllable aircraft, endogenous objectives and clean return or exit"
+    }
+  },
+  "final_requirements": [
+    "qualified nine-file identity and negative truncation/tampering tests",
+    "two byte-identical clean codegens with zero diagnostics/unsupported instructions",
+    "deterministic frontend and mission probes with ac6-demo-frontier-report/v1",
+    "60 Hz simulation and 30 Hz 1280x720 presentation",
+    "cmake install without bin/bin",
+    "package contains no XEX, PAC/TBL, SDK, Ghidra database, external checkout or generated C++",
+    "zero synthetic mission or objective progression"
+  ]
+}

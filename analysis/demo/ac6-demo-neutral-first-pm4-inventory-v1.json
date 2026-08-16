@@ -1,0 +1,1793 @@
+{
+  "buffers": [
+    {
+      "address": "0x1686A040",
+      "byte_sha256": "332312dafa2b73d9ee34877094f852fc1b09d6fe6644b57add0711f9544df699",
+      "dword_count": 11,
+      "packet_count": 3,
+      "packet_type_counts": {
+        "0": 2,
+        "3": 1
+      },
+      "packets": [
+        {
+          "base_register": "0x0A31",
+          "count": 1,
+          "header": "0x00000A31",
+          "kind": "type0-register-write",
+          "offset_dword": 0,
+          "one_register": false,
+          "packet_byte_sha256": "602fb64dbafe0bc3f7e7f91acc392b64ae08371555020b5f384bdb43313d4e73",
+          "payload": {
+            "byte_sha256": "67abdd721024f0ff4e0b3f4c2fc13bc5bad42d0b7851d456d88d203d15aaa450",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x01000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0A31",
+              "name": "COHER_STATUS_HOST"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0A2F",
+          "count": 2,
+          "header": "0x00010A2F",
+          "kind": "type0-register-write",
+          "offset_dword": 2,
+          "one_register": false,
+          "packet_byte_sha256": "764f628290f3dcb5bf316a20e92f09640f3d588fcc3505c0c7605b56bd2cca8c",
+          "payload": {
+            "byte_sha256": "658fc76e5597298f27578e4ad09355acba611c5aa1af220a38c063c865b70e89",
+            "dword_count": 2,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00200000",
+              "0x1685A000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0A2F",
+              "name": "COHER_SIZE_HOST"
+            },
+            {
+              "index": "0x0A30",
+              "name": "COHER_BASE_HOST"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "count": 5,
+          "header": "0xC0043C00",
+          "kind": "type3",
+          "offset_dword": 5,
+          "opcode": "0x3C",
+          "opcode_name": "PM4_WAIT_REG_MEM",
+          "packet_byte_sha256": "1c2757952e450859a89e2fea96d22c65c8ff1c5a2cf642b2484fa097b76887a9",
+          "payload": {
+            "byte_sha256": "ea1224c3e2b8e4bd9d6760de058aed4fc347583fc6a4c80584832eb1cb9e3acb",
+            "dword_count": 5,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000003",
+              "0x00000A31",
+              "0x00000000",
+              "0x80000000",
+              "0x00000008"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        }
+      ],
+      "referenced_ib_addresses": [
+        "0x1685A000"
+      ],
+      "register_write_count": 3,
+      "type3_opcode_counts": {
+        "PM4_WAIT_REG_MEM": 1
+      }
+    },
+    {
+      "address": "0x1685A000",
+      "byte_sha256": "325e40b03a507b3813a52457f740110ffd602fbf5540475c1b4b33f066cd15d5",
+      "dword_count": 64,
+      "packet_count": 23,
+      "packet_type_counts": {
+        "0": 15,
+        "3": 8
+      },
+      "packets": [
+        {
+          "base_register": "0x0D02",
+          "count": 1,
+          "header": "0x00000D02",
+          "kind": "type0-register-write",
+          "offset_dword": 0,
+          "one_register": false,
+          "packet_byte_sha256": "e497d093b0b3b1aec4d782f86f5f26bddbd947d02517b51331fc9800dec72e63",
+          "payload": {
+            "byte_sha256": "393d4cce58475a41ed42f7c0e6cc2b75f728d90fa5e9ee2b7cfba758d3af11a5",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010800"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0D02",
+              "name": "SQ_INST_STORE_MANAGMENT"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0A02",
+          "count": 4,
+          "header": "0x00030A02",
+          "kind": "type0-register-write",
+          "offset_dword": 2,
+          "one_register": false,
+          "packet_byte_sha256": "e4356ed3872ca5140b95f76c486a038a799b827210477111f45d4f6785947312",
+          "payload": {
+            "byte_sha256": "dc30c314ce60dbdce270ce057b8c57cc40b5f92e5cfe51bef41191ad5f662942",
+            "dword_count": 4,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0xC0100000",
+              "0x07F00000",
+              "0xC0000000",
+              "0x00100000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0A02",
+              "name": "UNKNOWN_0A02"
+            },
+            {
+              "index": "0x0A03",
+              "name": "UNKNOWN_0A03"
+            },
+            {
+              "index": "0x0A04",
+              "name": "UNKNOWN_0A04"
+            },
+            {
+              "index": "0x0A05",
+              "name": "UNKNOWN_0A05"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x01DD",
+          "count": 1,
+          "header": "0x000001DD",
+          "kind": "type0-register-write",
+          "offset_dword": 7,
+          "one_register": false,
+          "packet_byte_sha256": "17902cd773c6dab2c41ec0f644e6e4c35325008131d29b39cc4fddd7fdfce75a",
+          "payload": {
+            "byte_sha256": "24ec3457fb7b022be33ccd2ef69adc7f9ebb38d51e272ad5dafccfbabeae5735",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x16A5B000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x01DD",
+              "name": "SCRATCH_ADDR"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x01DC",
+          "count": 1,
+          "header": "0x000001DC",
+          "kind": "type0-register-write",
+          "offset_dword": 9,
+          "one_register": false,
+          "packet_byte_sha256": "2221cc0b778ed6ccf808a2eb5f1c694fa48c60f395509d56e3c9767ba63460da",
+          "payload": {
+            "byte_sha256": "b7a358c9915696fd1370187c289ed6b2263e3139bee463684eefeb78369f7bef",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00020033"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x01DC",
+              "name": "SCRATCH_UMSK"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x05C8",
+          "count": 1,
+          "header": "0x000005C8",
+          "kind": "type0-register-write",
+          "offset_dword": 11,
+          "one_register": false,
+          "packet_byte_sha256": "fb8a1d968f35220e513ac26f3fd03c6adf7ec3e5af967e999e18f5f03af1f76e",
+          "payload": {
+            "byte_sha256": "bc3817c13bc4e6f192a840895fa937d252db153efb89bb14a6c2ddf1f9c55409",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00020000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x05C8",
+              "name": "WAIT_UNTIL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0D04",
+          "count": 1,
+          "header": "0x00000D04",
+          "kind": "type0-register-write",
+          "offset_dword": 13,
+          "one_register": false,
+          "packet_byte_sha256": "7f1ae1dce926b22c70d4fe3b6ed1d751717b1d2c30a7ebdbea5baa5f6542e4d8",
+          "payload": {
+            "byte_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0D04",
+              "name": "SQ_EO_RT"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0D01",
+          "count": 1,
+          "header": "0x00000D01",
+          "kind": "type0-register-write",
+          "offset_dword": 15,
+          "one_register": false,
+          "packet_byte_sha256": "cc58ba4cdf02310ff603590dc6635ab7d1af8a351ab1e57f12d0384e984a35c7",
+          "payload": {
+            "byte_sha256": "fb5e512425fc9449316ec95969ebe71e2d576dbab833d61e2a5b9330fd70ee02",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x04000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0D01",
+              "name": "SQ_FLOW_CONTROL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "count": 3,
+          "header": "0xC0022100",
+          "kind": "type3",
+          "offset_dword": 17,
+          "opcode": "0x21",
+          "opcode_name": "PM4_REG_RMW",
+          "packet_byte_sha256": "103ce2157c25ebb657488dd14984571429f87f51722e7f93ed4529fecff5131f",
+          "payload": {
+            "byte_sha256": "fd0b4d0729e4e1b4e35c56fdd6d38da011cf17d565123ceebfa6e69772ee1b4b",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000081",
+              "0xFFFFFFFF",
+              "0x80010000"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 3,
+          "header": "0xC0022100",
+          "kind": "type3",
+          "offset_dword": 21,
+          "opcode": "0x21",
+          "opcode_name": "PM4_REG_RMW",
+          "packet_byte_sha256": "8e7c84fb254e994c81b1d2e398f2250d99993105ff8d8b2406a439a374bfafdd",
+          "payload": {
+            "byte_sha256": "48e171a1f02a371124455f11f717cd7cb1630faf993f01395f968dcb216c5f69",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000082",
+              "0xFFFFFFFF",
+              "0x00000000"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "base_register": "0x0E42",
+          "count": 1,
+          "header": "0x00000E42",
+          "kind": "type0-register-write",
+          "offset_dword": 25,
+          "one_register": false,
+          "packet_byte_sha256": "2b4788665d2e25d4a5b65641c68d862e93871ba1e38f6c9841d3c62693a8a2a8",
+          "payload": {
+            "byte_sha256": "09b2d53edcc3ff3283d79cc734d4aa890db9807d40f802e7666e013e034a4afb",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00001F60"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0E42",
+              "name": "UNKNOWN_0E42"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0C85",
+          "count": 1,
+          "header": "0x00000C85",
+          "kind": "type0-register-write",
+          "offset_dword": 27,
+          "one_register": false,
+          "packet_byte_sha256": "191c8f8096ace31fd4a5aee9d8b4fb947cfa0ed59ca3808ea76eb9a173b219ac",
+          "payload": {
+            "byte_sha256": "88185d128d9922e0e6bcd32b07b6c7f20f27968eab447a1d8d1cdf250f79f7d3",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000003"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0C85",
+              "name": "PA_CL_ENHANCE"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x057C",
+          "count": 1,
+          "header": "0x0000057C",
+          "kind": "type0-register-write",
+          "offset_dword": 29,
+          "one_register": false,
+          "packet_byte_sha256": "7c9701d90e828bdbf103fae43ef5205c2316b461907a1d9513e7dc6d6af377a9",
+          "payload": {
+            "byte_sha256": "cd81a10daae6526465a4af0192828977709c1ee0858b4d9cf0a2ca41e9888737",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x0BADF00D"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x057C",
+              "name": "CALLBACK_ADDRESS"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x057B",
+          "count": 1,
+          "header": "0x0000057B",
+          "kind": "type0-register-write",
+          "offset_dword": 31,
+          "one_register": false,
+          "packet_byte_sha256": "86960c6129cdf808564f3d6172317fbb29912f8a33a0cdde11279dfa18b6c902",
+          "payload": {
+            "byte_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x057B",
+              "name": "SCRATCH_REG3"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2080",
+          "count": 3,
+          "header": "0x00022080",
+          "kind": "type0-register-write",
+          "offset_dword": 33,
+          "one_register": false,
+          "packet_byte_sha256": "bff31c94f73bb3d51393dcfafd26507274bda0958b517cdc0bf433d279acab8e",
+          "payload": {
+            "byte_sha256": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2080",
+              "name": "PA_SC_WINDOW_OFFSET"
+            },
+            {
+              "index": "0x2081",
+              "name": "PA_SC_WINDOW_SCISSOR_TL"
+            },
+            {
+              "index": "0x2082",
+              "name": "PA_SC_WINDOW_SCISSOR_BR"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x05C8",
+          "count": 1,
+          "header": "0x000005C8",
+          "kind": "type0-register-write",
+          "offset_dword": 37,
+          "one_register": false,
+          "packet_byte_sha256": "fb8a1d968f35220e513ac26f3fd03c6adf7ec3e5af967e999e18f5f03af1f76e",
+          "payload": {
+            "byte_sha256": "bc3817c13bc4e6f192a840895fa937d252db153efb89bb14a6c2ddf1f9c55409",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00020000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x05C8",
+              "name": "WAIT_UNTIL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0F01",
+          "count": 1,
+          "header": "0x00000F01",
+          "kind": "type0-register-write",
+          "offset_dword": 39,
+          "one_register": false,
+          "packet_byte_sha256": "40b24f3681e38be7ec110098db54ad398893b8a158806ca4aa47b74dcef87b12",
+          "payload": {
+            "byte_sha256": "df0bf46720862eeea3233116c843b0bf630b92d4597dd89a553ea4c0494cda8b",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x0000200E"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0F01",
+              "name": "RB_BC_CONTROL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "count": 2,
+          "header": "0xC0013F00",
+          "kind": "type3",
+          "offset_dword": 41,
+          "opcode": "0x3F",
+          "opcode_name": null,
+          "packet_byte_sha256": "cc860dc5de104279a5196bf2176bb0d93ca27e5606221b1d119a5a839b8da137",
+          "payload": {
+            "byte_sha256": "399e20980aba114d9d2839283e541b2f730304a02811c4aa7947c20d451b3361",
+            "dword_count": 2,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x16ADF000",
+              "0x0000004A"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 2,
+          "header": "0xC0013F00",
+          "kind": "type3",
+          "offset_dword": 44,
+          "opcode": "0x3F",
+          "opcode_name": null,
+          "packet_byte_sha256": "6ea1c135b0cbc9804507b4a9735d078d54a1e39658cf1e89ce127e94e61ba641",
+          "payload": {
+            "byte_sha256": "68852bad90af0e1734876b95807d418a73d803d70ee9a21d6dcac9d894458a36",
+            "dword_count": 2,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x16ADFD40",
+              "0x0000000D"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 2,
+          "header": "0xC0013F00",
+          "kind": "type3",
+          "offset_dword": 47,
+          "opcode": "0x3F",
+          "opcode_name": null,
+          "packet_byte_sha256": "e10dd99f5b3ad59b6a8459858a2903f7e3a619a69025a8b9698cc4be1972b2de",
+          "payload": {
+            "byte_sha256": "0ddcaa0fac6f19d42649049bf78a4be6290baccd47de8fcf0e026d8a7055a6af",
+            "dword_count": 2,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x16AE0980",
+              "0x00000030"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "base_register": "0x2080",
+          "count": 3,
+          "header": "0x00022080",
+          "kind": "type0-register-write",
+          "offset_dword": 50,
+          "one_register": false,
+          "packet_byte_sha256": "bff31c94f73bb3d51393dcfafd26507274bda0958b517cdc0bf433d279acab8e",
+          "payload": {
+            "byte_sha256": "15ec7bf0b50732b49f8228e07d24365338f9e3ab994b00af08e5a3bffe55fd8b",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000",
+              "0x00000000",
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2080",
+              "name": "PA_SC_WINDOW_OFFSET"
+            },
+            {
+              "index": "0x2081",
+              "name": "PA_SC_WINDOW_SCISSOR_TL"
+            },
+            {
+              "index": "0x2082",
+              "name": "PA_SC_WINDOW_SCISSOR_BR"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "count": 1,
+          "header": "0xC0003B00",
+          "kind": "type3",
+          "offset_dword": 54,
+          "opcode": "0x3B",
+          "opcode_name": "PM4_INVALIDATE_STATE",
+          "packet_byte_sha256": "1ee979d7d692486113ad595ce5f66f43668832eda2ea125888c744e7b3263c75",
+          "payload": {
+            "byte_sha256": "0ef58c180b0a1c291073268769e7d968f7489859cda0a1dcd61eb77996c53cfe",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00007FFF"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 3,
+          "header": "0xC0025800",
+          "kind": "type3",
+          "offset_dword": 56,
+          "opcode": "0x58",
+          "opcode_name": "PM4_EVENT_WRITE_SHD",
+          "packet_byte_sha256": "3150031028455f5191228212ad8c6e1068d9245c75e4341a7cfdb1b0ad0fe34f",
+          "payload": {
+            "byte_sha256": "930c98fb319016d763b905861b9ceafb74816bf5eda74cec9745f34670d191a0",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000003",
+              "0x16A5A006",
+              "0x1685A0D4"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 3,
+          "header": "0xC0025800",
+          "kind": "type3",
+          "offset_dword": 60,
+          "opcode": "0x58",
+          "opcode_name": "PM4_EVENT_WRITE_SHD",
+          "packet_byte_sha256": "9fe18343dd44bce11f44423ec3cde5c708d9b5395f22fccfa7b32355d3a6a222",
+          "payload": {
+            "byte_sha256": "8982751be3bbdb5cb7e0457ca78c3fe444a734a69aaf5b9c8514d9bd6dc17f3e",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000003",
+              "0x16A5A002",
+              "0x00000003"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        }
+      ],
+      "referenced_ib_addresses": [
+        "0x16ADF000",
+        "0x16ADFD40",
+        "0x16AE0980"
+      ],
+      "register_write_count": 18,
+      "type3_opcode_counts": {
+        "PM4_EVENT_WRITE_SHD": 2,
+        "PM4_INVALIDATE_STATE": 1,
+        "PM4_REG_RMW": 2,
+        "UNKNOWN_0x3F": 3
+      }
+    },
+    {
+      "address": "0x16ADF000",
+      "byte_sha256": "5714cd0f408f8f7d45c8067dc7011de344c14119df1646024c67d1c64d6b1c3d",
+      "dword_count": 74,
+      "packet_count": 16,
+      "packet_type_counts": {
+        "0": 13,
+        "3": 3
+      },
+      "packets": [
+        {
+          "count": 1,
+          "header": "0xC0003B00",
+          "kind": "type3",
+          "offset_dword": 0,
+          "opcode": "0x3B",
+          "opcode_name": "PM4_INVALIDATE_STATE",
+          "packet_byte_sha256": "a95194f33096874b157c1185eb6b6474d44586294e3d8a8c647420761993996d",
+          "payload": {
+            "byte_sha256": "1112da16eb081d8d3dedf4cfb31fb10f96d713988136da3dc00e9f0c8def0e0e",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000300"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 26,
+          "header": "0xC0192B00",
+          "kind": "type3",
+          "offset_dword": 2,
+          "opcode": "0x2B",
+          "opcode_name": "PM4_IM_LOAD_IMMEDIATE",
+          "packet_byte_sha256": "48e7782c6a12f9bc120498ac80df51a54239b9d5267701037c3c0774f31f94f4",
+          "payload": {
+            "byte_sha256": "562d7b5317eb4691a526558ec8dbc23b8ae43cc9ce0130a2f7d9c143eee6b270",
+            "dword_count": 26,
+            "microcode_redacted": true,
+            "omitted_dwords": 24,
+            "preview_dwords": [
+              "0x00000000",
+              "0x00000018"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 11,
+          "header": "0xC00A2B00",
+          "kind": "type3",
+          "offset_dword": 29,
+          "opcode": "0x2B",
+          "opcode_name": "PM4_IM_LOAD_IMMEDIATE",
+          "packet_byte_sha256": "22402245026b0b418a737243329e6293a419620d1d679b1af8cda8db93468ebd",
+          "payload": {
+            "byte_sha256": "66612c9ad30481ae3d17e0ec8f6e965a2efaac7722e9172b1935e8401f8a2e5a",
+            "dword_count": 11,
+            "microcode_redacted": true,
+            "omitted_dwords": 9,
+            "preview_dwords": [
+              "0x00000001",
+              "0x00000009"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "base_register": "0x2180",
+          "count": 2,
+          "header": "0x00012180",
+          "kind": "type0-register-write",
+          "offset_dword": 41,
+          "one_register": false,
+          "packet_byte_sha256": "2161be26b334e914e050e1b6914898ce970c49db84154430745823eb6399687c",
+          "payload": {
+            "byte_sha256": "dc0d99b09f6a4be798ed2728a6671cdb2b962a2f2f48ddebdf479d2f6ceb6b0e",
+            "dword_count": 2,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x1000000E",
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2180",
+              "name": "SQ_PROGRAM_CNTL"
+            },
+            {
+              "index": "0x2181",
+              "name": "SQ_CONTEXT_MISC"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2100",
+          "count": 3,
+          "header": "0x00022100",
+          "kind": "type0-register-write",
+          "offset_dword": 44,
+          "one_register": false,
+          "packet_byte_sha256": "fa0fabf99616cfaf68c2b7c8baf43ca0adaae1df19957d2f993c09ea71d07660",
+          "payload": {
+            "byte_sha256": "e62aca4103b7db6d0e1d6ab406ac5e8393f233d6c2bf3c1341e436f0e8576eee",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x0000FFFF",
+              "0x00000000",
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2100",
+              "name": "VGT_MAX_VTX_INDX"
+            },
+            {
+              "index": "0x2101",
+              "name": "VGT_MIN_VTX_INDX"
+            },
+            {
+              "index": "0x2102",
+              "name": "VGT_INDX_OFFSET"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2293",
+          "count": 1,
+          "header": "0x00002293",
+          "kind": "type0-register-write",
+          "offset_dword": 48,
+          "one_register": false,
+          "packet_byte_sha256": "2af90bbe5220c3003fad9b1b4d6959a3aaa567ccf24bfcbf1f13048857921e07",
+          "payload": {
+            "byte_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2293",
+              "name": "PA_SC_VIZ_QUERY"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2204",
+          "count": 3,
+          "header": "0x00022204",
+          "kind": "type0-register-write",
+          "offset_dword": 50,
+          "one_register": false,
+          "packet_byte_sha256": "113afef67b24b594df3ec07c1272559f3ac24d4da67331c59ac6422b1a5949d2",
+          "payload": {
+            "byte_sha256": "4e06a94ccde3795c3b0705c20073ea48d75f82a906e4b939d8422b73ccce5cb0",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010000",
+              "0x00010000",
+              "0x00000300"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2204",
+              "name": "PA_CL_CLIP_CNTL"
+            },
+            {
+              "index": "0x2205",
+              "name": "PA_SU_SC_MODE_CNTL"
+            },
+            {
+              "index": "0x2206",
+              "name": "PA_CL_VTE_CNTL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2312",
+          "count": 1,
+          "header": "0x00002312",
+          "kind": "type0-register-write",
+          "offset_dword": 54,
+          "one_register": false,
+          "packet_byte_sha256": "728b8a82ca1160c3009de242c27281b05311bd48f6e1ed3f21d4c80597c886c8",
+          "payload": {
+            "byte_sha256": "b7d1b3a1104cc86b1cea310793cf777002db0517281d135a02de079b0ea87c23",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x0000FFFF"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2312",
+              "name": "PA_SC_AA_MASK"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x200D",
+          "count": 1,
+          "header": "0x0000200D",
+          "kind": "type0-register-write",
+          "offset_dword": 56,
+          "one_register": false,
+          "packet_byte_sha256": "5ad20351d28328d820fae86cface84a046febe9e999d42051d5f7075ecb09d54",
+          "payload": {
+            "byte_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x200D",
+              "name": "COHER_DEST_BASE_7"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2200",
+          "count": 1,
+          "header": "0x00002200",
+          "kind": "type0-register-write",
+          "offset_dword": 58,
+          "one_register": false,
+          "packet_byte_sha256": "00b705332ba3ad92312b2c1a5bcbb64452b7820e598677e15c5e2e37d9d36684",
+          "payload": {
+            "byte_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2200",
+              "name": "RB_DEPTHCONTROL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2203",
+          "count": 1,
+          "header": "0x00002203",
+          "kind": "type0-register-write",
+          "offset_dword": 60,
+          "one_register": false,
+          "packet_byte_sha256": "9a23f5964c5bdd28c4a6fe7c1769a96bba994ab531a8c572fd8862ffb99b8bf5",
+          "payload": {
+            "byte_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2203",
+              "name": "RB_HIZCONTROL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2208",
+          "count": 1,
+          "header": "0x00002208",
+          "kind": "type0-register-write",
+          "offset_dword": 62,
+          "one_register": false,
+          "packet_byte_sha256": "11afcf4ff4c1bf2c9dc22b93da3250217c24baba8a804ef6cefe54ab1972ad1c",
+          "payload": {
+            "byte_sha256": "1bc5d0e3df0ea12c4d0078668d14924f95106bbe173e196de50fe13a900b0937",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000004"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2208",
+              "name": "RB_MODECONTROL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2104",
+          "count": 1,
+          "header": "0x00002104",
+          "kind": "type0-register-write",
+          "offset_dword": 64,
+          "one_register": false,
+          "packet_byte_sha256": "5c00c7d46637cb4584d912fe4c0e03e526a4e78869ec0ccc791870da747a150b",
+          "payload": {
+            "byte_sha256": "df3f619804a92fdb4057192dc43dd748ea778adc52bc498ce80524c014b81119",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2104",
+              "name": "RB_COLOR_MASK"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2280",
+          "count": 1,
+          "header": "0x00002280",
+          "kind": "type0-register-write",
+          "offset_dword": 66,
+          "one_register": false,
+          "packet_byte_sha256": "b687d8ee3a248606e74323db1922d54ae6dc2334392f069b14ef086cb99cd87d",
+          "payload": {
+            "byte_sha256": "8ef46faf7d4adafc97ce602d84df6b49a6f2950371b371a5d63ccef112992f43",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00080008"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2280",
+              "name": "PA_SU_POINT_SIZE"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2302",
+          "count": 1,
+          "header": "0x00002302",
+          "kind": "type0-register-write",
+          "offset_dword": 68,
+          "one_register": false,
+          "packet_byte_sha256": "a7d55c92dfc20e8aa81642d07e35d620aa6b35948e4cdc630c40b81885c392e8",
+          "payload": {
+            "byte_sha256": "1bc5d0e3df0ea12c4d0078668d14924f95106bbe173e196de50fe13a900b0937",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000004"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2302",
+              "name": "PA_SU_VTX_CNTL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x2080",
+          "count": 3,
+          "header": "0x00022080",
+          "kind": "type0-register-write",
+          "offset_dword": 70,
+          "one_register": false,
+          "packet_byte_sha256": "dcfecc7320f93fe11cfd777a92a6513e1f3121057cadcb60b710b29bdb34288d",
+          "payload": {
+            "byte_sha256": "32a651203a43d57d089a0062eaca96974d1b57af4717c68724f5af5e4a554fe2",
+            "dword_count": 3,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00000000",
+              "0x00000000",
+              "0x00100010"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x2080",
+              "name": "PA_SC_WINDOW_OFFSET"
+            },
+            {
+              "index": "0x2081",
+              "name": "PA_SC_WINDOW_SCISSOR_TL"
+            },
+            {
+              "index": "0x2082",
+              "name": "PA_SC_WINDOW_SCISSOR_BR"
+            }
+          ],
+          "type": 0
+        }
+      ],
+      "referenced_ib_addresses": [],
+      "register_write_count": 20,
+      "type3_opcode_counts": {
+        "PM4_IM_LOAD_IMMEDIATE": 2,
+        "PM4_INVALIDATE_STATE": 1
+      }
+    },
+    {
+      "address": "0x16ADFD40",
+      "byte_sha256": "7faaea1a5e85dd8155e2ec67f1c3c63ba1bf57e1d52165c44f254b6099f684a9",
+      "dword_count": 13,
+      "packet_count": 3,
+      "packet_type_counts": {
+        "0": 3
+      },
+      "packets": [
+        {
+          "base_register": "0x05C8",
+          "count": 1,
+          "header": "0x000005C8",
+          "kind": "type0-register-write",
+          "offset_dword": 0,
+          "one_register": false,
+          "packet_byte_sha256": "fb8a1d968f35220e513ac26f3fd03c6adf7ec3e5af967e999e18f5f03af1f76e",
+          "payload": {
+            "byte_sha256": "bc3817c13bc4e6f192a840895fa937d252db153efb89bb14a6c2ddf1f9c55409",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00020000"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x05C8",
+              "name": "WAIT_UNTIL"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0D00",
+          "count": 8,
+          "header": "0x00078D00",
+          "kind": "type0-register-write",
+          "offset_dword": 2,
+          "one_register": true,
+          "packet_byte_sha256": "6a258a4ad42785dfa5975d81f09022945f876741d47b9d97a1a77ea895c2bfbe",
+          "payload": {
+            "byte_sha256": "5d4a15723112f0389fd0f3fc8a248118110ec9e0f2df715027ed162a6b687b4a",
+            "dword_count": 8,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00040401",
+              "0x00040401",
+              "0x00040401",
+              "0x00040401",
+              "0x00040401",
+              "0x00040401",
+              "0x00040401",
+              "0x00040401"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            },
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            },
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            },
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            },
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            },
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            },
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            },
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            }
+          ],
+          "type": 0
+        },
+        {
+          "base_register": "0x0D00",
+          "count": 1,
+          "header": "0x00000D00",
+          "kind": "type0-register-write",
+          "offset_dword": 11,
+          "one_register": false,
+          "packet_byte_sha256": "083c99d8f823ad0643a4ecab4db42fb0c618df1cf90092ae9ba8c8db55110fdd",
+          "payload": {
+            "byte_sha256": "798954f87c35100e175892248e7fda11bd06037f06539b26110b803159617912",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00040400"
+            ]
+          },
+          "registers": [
+            {
+              "index": "0x0D00",
+              "name": "SQ_GPR_MANAGEMENT"
+            }
+          ],
+          "type": 0
+        }
+      ],
+      "referenced_ib_addresses": [],
+      "register_write_count": 2,
+      "type3_opcode_counts": {}
+    },
+    {
+      "address": "0x16AE0980",
+      "byte_sha256": "4f2445f960ffe0265688c12b9081c0cdb17e8c0a4c8191cbfecb6bfd6bb8dbfc",
+      "dword_count": 48,
+      "packet_count": 24,
+      "packet_type_counts": {
+        "3": 24
+      },
+      "packets": [
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 0,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 2,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 4,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 6,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 8,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 10,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 12,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 14,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 16,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 18,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 20,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 22,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 24,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 26,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 28,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 30,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 32,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 34,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 36,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 38,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 40,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 42,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 44,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        },
+        {
+          "count": 1,
+          "header": "0xC0003600",
+          "kind": "type3",
+          "offset_dword": 46,
+          "opcode": "0x36",
+          "opcode_name": "PM4_DRAW_INDX_2",
+          "packet_byte_sha256": "8daa029ad7178dbbe6d946482170cab62cab47cbe25767241cc0d141ee9b6fed",
+          "payload": {
+            "byte_sha256": "b299f29ebe3ca3f40057b7b2035ee1f4e95213588f5764e83fdffa2382c406b6",
+            "dword_count": 1,
+            "microcode_redacted": false,
+            "omitted_dwords": 0,
+            "preview_dwords": [
+              "0x00010081"
+            ]
+          },
+          "predicated": false,
+          "type": 3
+        }
+      ],
+      "referenced_ib_addresses": [],
+      "register_write_count": 0,
+      "type3_opcode_counts": {
+        "PM4_DRAW_INDX_2": 24
+      }
+    }
+  ],
+  "first_unknown": {
+    "ib_address": "0x1685A000",
+    "index": "0x0A02",
+    "kind": "register",
+    "name": "UNKNOWN_0A02",
+    "offset_dword": 2
+  },
+  "ring": {
+    "base": 377823232,
+    "capacity_dwords": 8192,
+    "read_pointer": 3,
+    "submissions": 1,
+    "write_pointer": 25
+  },
+  "schema": "ac6-demo-pm4-inventory/v1",
+  "semantic_decode": "blocked_at_first_unknown",
+  "source": {
+    "probe_report_sha256": "5899020b259336e3b244e1d92678fdefb85c0663986ffe23f08265074bd6ec39",
+    "register_authority": "local Xenos architecture reference; not AC6 binary evidence",
+    "register_table_sha256": "c9dfdbfe72763051736230850ee92eaf73b7e2e9be328ac8b83df7d3b5aa9e53"
+  },
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  }
+}

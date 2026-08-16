@@ -1,0 +1,31 @@
+{
+  "schema": "ac6-demo-replay-evidence/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "trace": {
+    "format": "AC6RTPLY-v4",
+    "sha256": "6ece2e34e9691d0716740cf2f96cd6ae6355952a4ec07e87a72a0efcb5006490",
+    "backend": "headless",
+    "input_frames": 5,
+    "events": 18
+  },
+  "replay": {
+    "build_identity": "new-ghidra-12.1.2",
+    "runs": 2,
+    "byte_identical_to_capture": true,
+    "semantic_comparison": "captured trace bytes equal each generated replay trace",
+    "network_access": false,
+    "synthetic_input": false,
+    "mission_progression": false
+  },
+  "implementation_sha256": {
+    "include/ac6demo/trace.hpp": "26c4dc581915085ec694130203ec2c8d4babeca024b7288c0f08df2299f72139",
+    "src/trace.cpp": "36764e27cc1392fbe062f9d6b5952d6e74becd23cbb4bef2159b28b1e328c46e",
+    "src/main.cpp": "904efb11fa96aeb9ca1685c1a116c3f37ea132cb5bdf2f82520ba234f26a2dcc",
+    "tests/ac6-demo-trace-tests.cpp": "90e3e499f37bed4372172f6c7d710179f049747b300fafdd6f72af1ec001cbf7"
+  },
+  "status": "pass"
+}

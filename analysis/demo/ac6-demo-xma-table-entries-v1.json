@@ -1,0 +1,120 @@
+{
+  "schema": "ac6-demo-xma-table-entries/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos"
+  },
+  "build": {
+    "binary": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "binary_sha256": "58c1b403795f75692491122bfbbd46a0ed59981f84d0811f16ac39fd2001660f",
+    "guest_bridge_sha256": "862e9eea3083cb939f2af3c8fd6e3f140c987cced159201dce1ce1eaaf176834",
+    "xma_trace_header_sha256": "daa49656f6ca8d77cdc2158eb215dd40473eb5d98f8b85cdb0d9b3eaa6edaa4b",
+    "complexity_guest_bridge_lines": 1443,
+    "ctest": "17/17"
+  },
+  "runs": {
+    "root": "/fastdata/lavaulta/tmp/ac6-cycle1710.4WglKZ",
+    "max_ticks": 1050,
+    "neutral": {
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131",
+      "stderr_sha256": "8fd7688187f440a0e4cb242e7abda91edc42b018043845032a8fe9d0fff17ca8"
+    },
+    "start": {
+      "rtply_sha256": "d53bf82d50724f6b0d771f30edfcdc17439b63fabba6a1e884b72a1ac2268c8d",
+      "report_sha256": "238bd9e4f7e8ea150b7e5622101340145bc0dd9e7076d5c6472f4970634022cc",
+      "stderr_sha256": "8fd7688187f440a0e4cb242e7abda91edc42b018043845032a8fe9d0fff17ca8",
+      "input": "tick252:16,0,0,0,0,0,0,0,1"
+    }
+  },
+  "table": {
+    "address": "0x17360000",
+    "count": 3,
+    "flags": "0x00030000",
+    "entries_base": "0x17360010",
+    "stride": "0x60",
+    "bounded_bytes": 288,
+    "entries": [
+      {
+        "index": 0,
+        "address": "0x17360010",
+        "words_be": [
+          "0x07800000", "0xB8800000", "0x00000000", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x17360180",
+          "0x17361F80", "0x00000000", "0x00000000", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x00000000",
+          "0x00000000", "0x17360180", "0x17361F80", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x00000000"
+        ],
+        "output_slot": "0x17360050"
+      },
+      {
+        "index": 1,
+        "address": "0x17360070",
+        "words_be": [
+          "0x07800000", "0xB8800000", "0x00000000", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x17362180",
+          "0x17363F80", "0x00000000", "0x00000000", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x00000000",
+          "0x00000000", "0x17362180", "0x17363F80", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x00000000"
+        ],
+        "output_slot": "0x173600B0"
+      },
+      {
+        "index": 2,
+        "address": "0x173600D0",
+        "words_be": [
+          "0x07800000", "0xB8800000", "0x00000000", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x17364180",
+          "0x17365F80", "0x00000000", "0x00000000", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x00000000",
+          "0x00000000", "0x17364180", "0x17365F80", "0x00000000",
+          "0x00000000", "0x00000000", "0x00000000", "0x00000000"
+        ],
+        "output_slot": "0x17360110"
+      }
+    ]
+  },
+  "import": {
+    "module": "xboxkrnl.exe",
+    "name": "XMACreateContext",
+    "ordinal": 548,
+    "call_lr": "0x82357298",
+    "r3": "0x17360050",
+    "r4": "0x00000000",
+    "r5": "0x00006180",
+    "r6": "0x00000000",
+    "r7": "0x00000001",
+    "effect": "trap-before-import"
+  },
+  "classification": {
+    "demo-qualified": [
+      "table and all three bounded entries",
+      "entry addresses and output-slot offsets",
+      "raw big-endian words and repeated pointers",
+      "neutral/START equality"
+    ],
+    "demo-observed": [
+      "pointer spacing and repeated words"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "field semantics",
+      "XMA context ABI and return",
+      "packet/timestamp/volume/PCM",
+      "guest-owned pixels and mission result"
+    ]
+  },
+  "guard": {
+    "bounded_read_only": true,
+    "ordinal_548_traps": true,
+    "guest_mutation": false,
+    "audio_decode": false,
+    "readback": false,
+    "screencap": false
+  },
+  "next_checkpoint": "target exact entry ranges for first post-table stores/loads; preserve trap until return and packet ABI are proven"
+}

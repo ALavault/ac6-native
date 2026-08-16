@@ -1,0 +1,104 @@
+{
+  "schema": "ac6-demo-event-handoff-probe/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "backend": "headless",
+    "max_ticks": 600,
+    "fresh_process_per_run": true,
+    "runtime_binary_sha256": "67c62dcef7b214c2a95cafd63c2f1f0db6ccc6725ff04ba3e22ea2af2f93524e",
+    "source_hook": "src/guest_bridge/event_handoff_trace.hpp",
+    "source_hook_sha256": "4388013eb6720cba028262d561dbcb758dcbf93cf0938f13079509047970278a",
+    "instrumentation": ["AC6_DEMO_WATCH_EVENT_HANDOFF=1"],
+    "instrumentation_default": false,
+    "record_limit_per_run": 4096,
+    "neutral_trace_directory": "/fastdata/lavaulta/tmp/ac6-demo-event600-neutral.B94sq8",
+    "start_trace_directory": "/fastdata/lavaulta/tmp/ac6-demo-event600-start.tSKwDE",
+    "neutral_stderr_sha256": "f5d2a9b7f1df135cf0c1d194df2d496c6e9bbc3f49738ca606c6d996c4a07f88",
+    "start_stderr_sha256": "f5d2a9b7f1df135cf0c1d194df2d496c6e9bbc3f49738ca606c6d996c4a07f88",
+    "neutral_rtply_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+    "start_rtply_sha256": "4d2f77515e5850ca3e8e0e36e2eaa306a9a7b2c7d602deae56755cab4ba100e1",
+    "neutral_report_sha256": "dbe6484af6c1446db0e2e5017b34441d909cc07e81922959d8ad9d9719b16484",
+    "start_report_sha256": "0c7b23fa425903158224ce47661c7acbaff2ebf2f0c7b2f323effb63171ca88a",
+    "records_per_run": 4096,
+    "record_tick_range": [0, 285]
+  },
+  "xenia_generic": {
+    "source_report": "reports/cycle-1644-xenia-runtime-wait-analysis.md",
+    "archive_capsule": "analysis/demo/ac6-demo-xenia-runtime-wait-analysis-v1.json",
+    "signal_and_wait": {
+      "caller_pc": "0x821A69C8",
+      "caller_lr": "0x821A69CC",
+      "signal_handle": "0xF8000088",
+      "wait_handle": "0xF800008C",
+      "native_frozen_threads": [6, 17],
+      "host_stack": "pthread_cond_wait -> PosixConditionBase::Wait -> XObject::SignalAndWait -> NtSignalAndWaitForSingleObjectEx"
+    },
+    "qualification": "xenia-generic; not PAL-demo handle or pixel evidence"
+  },
+  "demo_observed": {
+    "bridge_handles": {
+      "primary": {
+        "signal": "0xE0000048",
+        "wait": "0xE000004C",
+        "signal_wait_enter": 71,
+        "signal_wait_block": 36,
+        "signal_wait_resume": 35,
+        "enter_tick_range": [0, 284],
+        "threads": [1],
+        "lr": "0x821A69CC"
+      },
+      "secondary": {
+        "signal": "0xE0000054",
+        "wait": "0xE0000058",
+        "signal_wait_enter": 74,
+        "signal_wait_block": 38,
+        "signal_wait_resume": 37,
+        "enter_tick_range": [0, 284],
+        "threads": [1, 14],
+        "lr": "0x821A69CC"
+      }
+    },
+    "trace_semantics": {
+      "publication": "event publication record includes handle, guest thread, LR, tick and event kind",
+      "event_wake": "post-publication state and granted waiter are recorded without changing wake behavior",
+      "wait_block_resume": "event waits record bounded block/resume and timeout status",
+      "native_bridge_handle_space": "0xE0000000-based synthetic bridge handles; no equality to Xenia 0xF800 handles is asserted"
+    }
+  },
+  "demo_qualified": {
+    "neutral_start_stderr_byte_equal": true,
+    "report_subtrees_byte_equal": ["outcome", "milestones", "graphics", "scheduler"],
+    "completed_ticks": 600,
+    "presents": 463,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "runtime_behavior_changed": false,
+    "start_input": {"tick": 252, "buttons": "0x0010", "connected": true},
+    "observation": "the PAL bridge reaches the signal-and-wait caller LR 0x821A69CC and performs deterministic guest event hand-offs; neutral and START remain causally identical through tick 600"
+  },
+  "unknown": [
+    "mapping between Xenia's F8000088/F800008C and the PAL bridge's E0000048/E000004C",
+    "event set/clear/pulse ownership beyond the 4096-record trace cap",
+    "full-range PC (only import caller LR is available in this bridge hook)",
+    "whether any later event hand-off contributes to a frontend transition"
+  ],
+  "policy": {
+    "retail_evidence_merged": false,
+    "same_pal_demo_only": true,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "xenia_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_asset_tracked": false,
+    "runtime_behavior_changed": false,
+    "fallback_or_synthetic_progression": false,
+    "fail_closed": true
+  }
+}

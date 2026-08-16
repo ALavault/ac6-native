@@ -1,0 +1,152 @@
+{
+  "schema": "ac6-demo-static-shader-semantics/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "data_tbl_entry": 163,
+    "data00_pac_offset": "0x08CC0000",
+    "byte_order": "Xenon big-endian"
+  },
+  "external_archive": {
+    "path": "ac6-pal-shader-identification-20260816.tar.zst",
+    "sha256": "7294a028408b5008236624cb46f6b108f3ed1c2ffd9961c5317634c47ae36a3c",
+    "bytes": 576773,
+    "sha256sums_sha256": "d17f7431d34a7467de50938bdd53496c579205195a49d9dd1cfcbfbce4b7e04c",
+    "all_member_checksums_pass": true,
+    "contains_proprietary_microcode": true,
+    "tracking_allowed": false
+  },
+  "local_reproduction": {
+    "source": "fresh local decode of DATA.TBL entry 163",
+    "root_expanded_bytes": 7761968,
+    "root_child_count": 49,
+    "root_child_magic": "NSXR",
+    "root_parser_notes": 0,
+    "extractor_sha256": "f91bade0291881259a014c588227cbc2df7d80e3fd2e82ae401beea493b63432",
+    "candidate_record_count": 10610,
+    "candidate_unique_hash_count": 5158,
+    "canonical_record_count": 3802,
+    "canonical_unique_microcode_count": 1891,
+    "canonical_tsv_sha256": "32da44938ad32847ab644a3d7532bd2882cd45ddd9e11d644a54d318f5a9082c",
+    "canonical_tsv_byte_identical_to_archive": true,
+    "unresolved_count": 0,
+    "unresolved_tsv_sha256": "6623a83b64e422eda3a5135443bf7bacba7a1ce705be3358360115b7d2610932"
+  },
+  "semantic_corpus": {
+    "unique_updb_path_count": 1876,
+    "stage_record_counts": {
+      "vertex": 1901,
+      "pixel": 1901
+    },
+    "stage_unique_microcode_counts": {
+      "vertex": 884,
+      "pixel": 1007
+    },
+    "map_terrain_record_count": 108,
+    "map_terrain_unique_microcode_count": 78,
+    "map_terrain_unique_updb_count": 78,
+    "map_terrain_stage_unique_counts": {
+      "vertex": 50,
+      "pixel": 28
+    },
+    "family_unique_microcode_memberships": {
+      "Map": 37,
+      "Map_HDR": 37,
+      "Ocean": 14,
+      "MPARTS": 28
+    },
+    "archive_runtime_coverage": {
+      "unique_seen_by_local_xenia": 6,
+      "unique_not_seen_by_local_xenia": 72,
+      "classification": "external-observed; runtime dumps are not included in this local reproduction"
+    },
+    "direct_parameter_string_occurrences": {
+      "ACE_vMapParam": 40,
+      "ACE_vMapMeshSpecularCol": 14,
+      "ACE_vMapPartsSpecularCol": 36
+    }
+  },
+  "reached_shader_endian_join": [
+    {
+      "stage": "vertex",
+      "basefile_offset": "0x00013E20",
+      "bytes": 96,
+      "raw_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+      "swap32_sha256": "fcb772a93fe6826c4ddc1ce4abbe746aededfa270ea664e066308ac23a8a390c",
+      "archive_basefile_match": true,
+      "pac_nsxr_match": false,
+      "semantic_role": "unknown"
+    },
+    {
+      "stage": "pixel",
+      "basefile_offset": "0x00013E80",
+      "bytes": 36,
+      "raw_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+      "swap32_sha256": "f9b2db9e42f6f4e2278a0956c3dafad21d838c028200289d5b33c99b15d0d79c",
+      "archive_basefile_match": true,
+      "pac_nsxr_match": false,
+      "semantic_role": "unknown"
+    },
+    {
+      "stage": "vertex",
+      "basefile_offset": "0x000140A0",
+      "bytes": 108,
+      "raw_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+      "swap32_sha256": "6e8911a271a8cd7afaa9da6e2eae512116790960819dce77b1a93469369b8a25",
+      "archive_basefile_match": true,
+      "pac_nsxr_match": false,
+      "semantic_role": "pass-through",
+      "semantic_role_status": "external-analysis; exact instruction-level local receipt still required"
+    },
+    {
+      "stage": "vertex",
+      "basefile_offset": "0x00014140",
+      "bytes": 60,
+      "raw_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+      "swap32_sha256": "5c3f28414f1d4b7dace878ef9b56a5b328ee1ac7d94c31e641ed6a3d17040483",
+      "archive_basefile_match": false,
+      "archive_false_negative": true,
+      "pac_nsxr_match": false,
+      "semantic_role": "2d-position-pass-through",
+      "semantic_role_status": "demo-qualified by fresh local ReXGlue analysis of the exact PAL basefile range",
+      "local_disassembly_sha256": "52e5e6b3441d956d5a5ee43c2fb9dc01638e160370b33510cab254fdcdb23328",
+      "fetch_index_status": "unknown: the external archive reports vf0 while the fresh local ReXGlue analysis reports vf95"
+    }
+  ],
+  "classification": {
+    "demo_qualified": [
+      "entry 163 decodes to 49 NSXR children without parser notes",
+      "canonical 3802-record TSV reproduces byte-identically",
+      "1876 UPDB paths and exact family path components",
+      "Map, Map_HDR, Ocean and MPARTS membership derived from exact embedded paths",
+      "three named Map parameter strings and occurrence counts",
+      "four reached basefile ranges and both raw and swap32 hashes",
+      "586168 exact basefile presence at offset 0x14140",
+      "586168 is a 2D-position pass-through vertex shader"
+    ],
+    "external_observed": [
+      "84 Xenia shader identities reportedly reproduce exactly",
+      "6 of 78 unique Map/terrain shaders reportedly seen by local Xenia",
+      "93488c pass-through interpretation"
+    ],
+    "name_derived": [
+      "shader operation variants such as Detail, ExpFog and ProjPos"
+    ],
+    "unknown": [
+      "semantic roles of reached shaders 099625 and 491360",
+      "586168 fetch index because vf0 and vf95 decoders disagree",
+      "route-specific use of the 72 statically qualified but dynamically unseen Map/terrain shaders",
+      "pixel contribution of any shader without joined draw resources and constants"
+    ]
+  },
+  "policy": {
+    "retail_evidence_merged": false,
+    "xenia_used_as_binary_proof": false,
+    "proprietary_payloads_tracked": false,
+    "microcode_or_spirv_tracked": false,
+    "temporary_root_required": true,
+    "generated_cpp_modified": false,
+    "ghidra_modified": false
+  }
+}

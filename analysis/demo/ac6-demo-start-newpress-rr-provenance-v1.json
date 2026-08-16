@@ -1,0 +1,208 @@
+{
+  "schema": "ac6-demo-start-newpress-rr-provenance/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "route": "START-movie-headless",
+    "terminal_tick": 254,
+    "rr_source_commit": "7352eb807ed75e3b51be85fa6a27f121235dbfb0",
+    "rr_binary_sha256": "33fd6e3eade957f5b0e4c7e12ddb9f6ff54ce522103ad418f1b6d14737f454d6",
+    "runtime_binary_sha256": "aa2345b8eb96aa19bf601b25698e8faff3886ece1b84829539fc4eb1e6fb6a0f",
+    "direct_report_sha256": "3d8a3a1bc1744c2ce53ec006b3ba4f79c871e957d5bd14f1de65471c98f93eeb",
+    "rr_report_sha256": "3d8a3a1bc1744c2ce53ec006b3ba4f79c871e957d5bd14f1de65471c98f93eeb",
+    "direct_rtply_sha256": "a9cdedb3593eeebcdfd4c4a17387a2285cf685bd9cdf8cf452e15b0a9f8b7cac",
+    "rr_rtply_sha256": "a9cdedb3593eeebcdfd4c4a17387a2285cf685bd9cdf8cf452e15b0a9f8b7cac",
+    "fresh_store_per_run": true
+  },
+  "new_press": {
+    "guest_address": "0x829D1550",
+    "object_base": "0x829D153C",
+    "object_offset": "0x14",
+    "logical_value": "0x00000010",
+    "host_little_endian_watch_value": "0x10000000",
+    "writer": {
+      "function": "sub_822F6008",
+      "guest_pc": "0x822F6054",
+      "instruction_bytes": "91 7F 00 14",
+      "instruction": "stw r11,0x14(r31)",
+      "guest_lr": "0x822F617C",
+      "guest_thread": 1,
+      "tick": 252
+    }
+  },
+  "first_copy": {
+    "function": "sub_82327D90",
+    "caller_function": "sub_822F5CE8",
+    "source_range": {"start": "0x829D1540", "byte_count": 64},
+    "destination_range": {"start": "0x7F0409E0", "byte_count": 64},
+    "source_new_press_address": "0x829D1550",
+    "destination_new_press_address": "0x7F0409F0",
+    "guest_pc": "0x82327E34",
+    "instruction": "ldu r7,8(r4)",
+    "guest_thread": 1,
+    "tick": 252
+  },
+  "first_post_copy_access": {
+    "function": "sub_821A4C70",
+    "guest_address": "0x7F0409F0",
+    "logical_value": "0x00000010",
+    "guest_thread": 1,
+    "tick": 252,
+    "guest_pc": "0x821A4E2C",
+    "instruction_bytes": "11 A0 F8 C3",
+    "instruction": "lvx128 v13,r0,r31",
+    "effective_aligned_address": "0x7F0409F0",
+    "register_join": {"r31": "0x7F0409F0", "r27": "0x0000000F"},
+    "classification": "demo-qualified",
+    "note": "rr register state joins the compiler-emitted direct 16-byte load to the exact PAL instruction bytes. This remains a bulk-copy read; no semantic branch is claimed."
+  },
+  "semantic_consumer": {
+    "function": "sub_82198BF0",
+    "input_address": "0x7F040910",
+    "input_read": {
+      "guest_pc": "0x82198D0C",
+      "instruction_bytes": "81 61 00 78",
+      "instruction": "lwz r11,120(r1)"
+    },
+    "start_extract": {
+      "guest_pc": "0x82198D68",
+      "instruction_bytes": "55 7C 35 6A",
+      "instruction": "rlwinm r28,r11,6,21,21",
+      "input_bit": "0x00000010",
+      "output_bit": "0x00000400"
+    },
+    "output_write": {
+      "guest_pc": "0x82198DD0",
+      "instruction_bytes": "91 7F 00 08",
+      "instruction": "stw r11,8(r31)",
+      "guest_address": "0x827B37E0",
+      "logical_value": "0x00000400",
+      "host_little_endian_watch_value": "0x00040000"
+    },
+    "tick": 252,
+    "guest_thread": 1
+  },
+  "persistence_check": {
+    "next_input_tick": 253,
+    "next_input_function": "sub_822F6008",
+    "output_address": "0x827B37E0",
+    "logical_value_at_next_tick": "0x00000000",
+    "two_tick_persistence": false,
+    "classification": "demo-qualified",
+    "note": "The published semantic output is cleared by the next input tick; this refutes persistence of the one-tick new-press output, not the possibility of a separate level-state consumer."
+  },
+  "logical_bitset_handoff": {
+    "mapper_function": "sub_821DE990",
+    "edge_helper": "sub_821DE6E0",
+    "writer": {
+      "guest_pc": "0x821DE6F8",
+      "instruction_bytes": "91 03 0E 4C",
+      "instruction": "stw r8,3660(r3)",
+      "guest_address": "0x82798488",
+      "logical_value_at_tick_252": "0x00000010",
+      "logical_value_at_tick_253": "0x00000000",
+      "guest_thread": 1,
+      "tick_252": 252,
+      "tick_253": 253
+    },
+    "static_start_binding": {
+      "normalized_value": "0x00000400",
+      "logical_index": 4,
+      "logical_mask": "0x00000010",
+      "binding_map": "0x8279763C"
+    },
+    "menu_consumers": {
+      "candidate_a": "0x82170FCC",
+      "candidate_b": "0x82185210",
+      "runtime_reached": false,
+      "classification": "static-exact / runtime-unknown"
+    }
+  },
+  "menu_boundary_probe": {
+    "trace": "ac6-demo-start-rr-t300/trace",
+    "max_tick": 300,
+    "gdb_script_sha256": "fba5c9dd2cef79b0e9cb187167846b14779088c22a03d71bf8ef9040583b0eae",
+    "candidate_entrypoints": ["0x82170F58", "0x82185198"],
+    "candidate_pressed_tests": ["0x82170FCC", "0x82185210"],
+    "hits": {"0x82170F58": 0, "0x82185198": 0},
+    "classification": "demo-observed-no-hit-through-tick-300",
+    "note": "Pinned rr replay GDB breakpoints produced no boundary-hit marker through the controlled max-ticks=300 completion. This is not proof of non-reachability beyond tick 300."
+  },
+  "extended_start_ab": {
+    "terminal_tick": 300,
+    "runtime_binary_sha256": "aa2345b8eb96aa19bf601b25698e8faff3886ece1b84829539fc4eb1e6fb6a0f",
+    "direct_rtply_sha256": "0b5ffbbdb76341a42461d69749624b193abcda740b4da699d98afb2a82785182",
+    "rr_rtply_sha256": "0b5ffbbdb76341a42461d69749624b193abcda740b4da699d98afb2a82785182",
+    "direct_report_sha256": "e3f6b8e2ed4a873481be34eecda2986b1bc11eb55a3d878f9844179eef59785a",
+    "rr_report_sha256": "e3f6b8e2ed4a873481be34eecda2986b1bc11eb55a3d878f9844179eef59785a",
+    "fresh_store_per_run": true,
+    "presents": 163,
+    "frontend_milestone": false,
+    "mission_milestone": false,
+    "terminal_milestone": false,
+    "classification": "demo-qualified-A/B"
+  },
+  "task_dispatch_probe": {
+    "trace": "ac6-demo-start-rr-t300/trace",
+    "max_tick": 300,
+    "breakpoint_guest_pc": "0x82259D10",
+    "dispatch_callsite_guest_pc": "0x82259D74",
+    "dispatch_slot": 4,
+    "gdb_script_sha256": "4dcc6e3ac6f9ee74170cf86aeb3a3ad690ebe73b9af2112105d7db9a199f2f29",
+    "log_sha256": "31f649f320cb722238e0261e0e25bc2da7493ac355230b857484f3f6d6047741",
+    "observed_ticks": {"first": 252, "last": 299, "count": 48},
+    "guest_memory_endian": "big",
+    "manager": "0x18970400",
+    "lists": [
+      {"offset": 564, "nodes": []},
+      {"offset": 580, "nodes": [
+        {"node": "0x18970424", "task": "0x2E7F0080", "vtable": "0x8201130C",
+         "rtti": "CModeTaskStartUpDemoOffline", "slot4": "0x8218A4A0"}
+      ]},
+      {"offset": 596, "nodes": [
+        {"node": "0x18970404", "task": "0x18BA2BF4", "vtable": "0x8200F388",
+         "rtti": "CTaskLoading", "slot4": "0x8218CE20"},
+        {"node": "0x18970414", "task": "0x18980000", "vtable": "0x82011694",
+         "rtti": "CTaskModeManager", "slot4": "0x821929A8"}
+      ]}
+    ],
+    "menu_candidates": {
+      "candidate_a_vtable": "0x8200C904",
+      "candidate_a_update": "0x82170F58",
+      "candidate_b_vtable": "0x8200E5C4",
+      "candidate_b_update": "0x82185198",
+      "observed_in_lists": false,
+      "observed_update_hits": false
+    },
+    "classification": "demo-qualified-list-observation",
+    "limits": [
+      "The probe observes the dispatcher lists and slot-4 calls through tick 299 only.",
+      "No task construction or menu transition is inferred from absent list entries.",
+      "RTPLY/report A/B remains the admission gate; no renderer or START promotion follows."
+    ]
+  },
+  "method": {
+    "watchpoints": "exact 4-byte hardware windows under the pinned local rr",
+    "byte_order": "guest logical values are big-endian; hardware watch values are host little-endian",
+    "a_b_gate": "direct and rr report/RTPLY hashes must be byte-identical before watchpoint evidence is admitted"
+  },
+  "limits": {
+    "first_post_copy_guest_pc_qualified": true,
+    "two_tick_persistence_proven": false,
+    "visual_transition_proven": false,
+    "start_promoted": false
+  },
+  "policy": {
+    "system_rr_used": false,
+    "retail_evidence_merged": false,
+    "xenia_rexglue_modified": false,
+    "ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_or_shader_tracked": false,
+    "proprietary_asset_tracked": false
+  }
+}

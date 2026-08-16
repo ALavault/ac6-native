@@ -1,0 +1,61 @@
+{
+  "schema": "ac6-demo-ghidra-refresh-evidence/v1",
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "ghidra": {
+    "version": "12.1.2",
+    "language": "PowerPC:BE:64:Xenon",
+    "runtime_jdk": "21.0.11",
+    "jre_upgrade_required": false,
+    "previous_manifest_sha256": "2ef9f9110734ff82c16408898d24ecc63ce49a518fd368298464871e33918072",
+    "manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "previous_journal_sha256": "72d6c3d7db61f163e4cee3ec88a5cab4fd850cd8252520a09df60ca6072fe57c",
+    "journal_sha256": "b133247ff63117a24b0871661ada71198811b2c39e6292dcd1dd96a57ad90f78",
+    "independent_imports": 2,
+    "independent_imports_byte_identical": true,
+    "chunks": 4431,
+    "data_ranges": 6789,
+    "skipped_chunks": 184,
+    "previous_requalified_boundaries": 34,
+    "requalified_boundaries": 36,
+    "analysis_ranges_changed": false,
+    "changed_provenance_inputs": [
+      "config/confirmed-chunks.toml"
+    ]
+  },
+  "codegen": {
+    "previous_manifest_sha256": "b8665decacab02371b9ac0422659a8e00aa84257aa4a2f446056d726007089e7",
+    "manifest_sha256": "e44a9213cf1be4c0937610583ed38b9e0560d105bdca0db32bc53c196eae541c",
+    "generated_guest_object_sha256": "e56094dde5a942f5ffb74bcfe70c6e679489408d9f9cf48cd6369a85773f9feb",
+    "generated_guest_object_changed": true,
+    "clean_runs": 2,
+    "clean_runs_byte_identical": true,
+    "confirmed_functions": 12857,
+    "configured_function_records": 135,
+    "boundary_diagnostics": 0,
+    "unsupported_instructions": 0
+  },
+  "runtime": {
+    "previous_trace_sha256": "cba210be2b61b57e35605818db32c9a09a41e7a1dcf34ec5199b557b69dc38b9",
+    "trace_sha256": "5ef24c2e3866dfe8379e995f56492dfadd742aab734a5b0662d5b39c5f49a48d",
+    "trace_changed": true,
+    "semantic_report_sha256": "db7c37e62a489b5cf38b338a50cdc0ecf82e43009bb2970091e4229f51a034d7",
+    "frontend_tick": 5,
+    "presents": 115,
+    "dynamic_control_flow_edges": 1533,
+    "trap": {
+      "kind": "scheduler",
+      "tick": 260,
+      "thread": 1,
+      "lr": "0x820FF910",
+      "target": "0x820FF710",
+      "diagnostic": "scheduler activation budget exhausted before mission milestone"
+    }
+  },
+  "validation": {
+    "codegen_on_ctest_passed": 10,
+    "codegen_off_ctest_passed": 11,
+    "ctest_failed": 0,
+    "supported": false
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "schema": "ac6-demo-xma-address-trace/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "xenon-big-endian/xenos",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "binary": {
+    "path": ".build/ac6-demo-atomic-runtime-1/ac6-demo-recomp",
+    "sha256": "30429ddecb4154d2c09f4f68055bc69f937f38850afcfd8cb3212043313ed2bb",
+    "sources": {
+      "recompilation/ace-combat-6-demo/src/guest_bridge.cpp": "26c8bfaa58e620996cf7bae1ef88ef9ba7506e7816201db733f712ac254fa1f4",
+      "recompilation/ace-combat-6-demo/src/guest_bridge/lifecycle.hpp": "f7ea981a36d481593556d5e5a1928f1c3d2502552ae2c87c08bab0648f7d6594",
+      "recompilation/ace-combat-6-demo/src/guest_bridge/audio_memory_dispatch.hpp": "5fd8e8a904a4baf4a86ac6f667ce60d35612fb1858cf1e8a255dbd8594e7162b",
+      "recompilation/ace-combat-6-demo/src/guest_bridge/xma_import_trace.hpp": "65bb46d12ed5abd0e497aef9245179ca790b76eb117d65df6b9f393c90ee8de2"
+    }
+  },
+  "experiment": {
+    "environment": ["AC6_DEMO_EXPERIMENTAL_XMA_CREATE=1", "AC6_DEMO_WATCH_XMA_ADDRESS=1"],
+    "backend": "headless",
+    "max_ticks": 1050,
+    "neutral_input": "none",
+    "start_input": "tick 252: buttons 0x10, remaining fields zero, user 1"
+  },
+  "dynamic": {
+    "neutral": {
+      "read": {"tick": 106, "address": "0x7FEA1800", "wire": "0x0000802E", "logical": "0x2E800000"},
+      "global_store": {"tick": 106, "address": "0x829DA52C", "value": "0x2E800000", "lr": "0x8234F078", "function": "__imp__sub_82356510", "line": 12330},
+      "physical": {"tick": 1048, "thread": 21, "input": "0x2E800000", "output": "0x2E800000", "lr": "0x823572AC"},
+      "mmio_store": {"tick": 1048, "thread": 21, "address": "0x7FEA1A80", "wire_value": "0x01000000", "logical_value": "0x00000001", "lr": "0x823572AC", "trap_before_effect": true},
+      "presentation_notifications": 911,
+      "rtply_sha256": "ab54c75ebccfdf3a41a840ab691a728e1d120a7616cca98a5f6ff42fa804fc43",
+      "report_sha256": "e4c33682b9c834b1a08380c35581adc865bfb090207d96962d3d6848eaf399e0",
+      "stderr_sha256": "3b8df9bf480ce529a1ddadc63c9a9091ca5260a04bceb7b359810af6928c6003"
+    },
+    "start": {
+      "read": {"tick": 106, "address": "0x7FEA1800", "wire": "0x0000802E", "logical": "0x2E800000"},
+      "global_store": {"tick": 106, "address": "0x829DA52C", "value": "0x2E800000", "lr": "0x8234F078", "function": "__imp__sub_82356510", "line": 12330},
+      "physical": {"tick": 1048, "thread": 21, "input": "0x2E800000", "output": "0x2E800000", "lr": "0x823572AC"},
+      "mmio_store": {"tick": 1048, "thread": 21, "address": "0x7FEA1A80", "wire_value": "0x01000000", "logical_value": "0x00000001", "lr": "0x823572AC", "trap_before_effect": true},
+      "presentation_notifications": 911,
+      "rtply_sha256": "2ce0a717f8d3df56aa87644d7fc9624f5e02b1020a0b5eeaf0992f6877db417f",
+      "report_sha256": "54ba6694f6fcc5cfdbd94627896cd299a119a803916d70f92e5bf2cbc490e8",
+      "stderr_sha256": "3b8df9bf480ce529a1ddadc63c9a9091ca5260a04bceb7b359810af6928c6003"
+    },
+    "default_guard": {
+      "rtply_sha256": "6a759832c5471405591dac956bbc96dd99ab087d274067d01eea18849b428f20",
+      "report_sha256": "7c2555e8ada7d3c5b65525ef57024fc6af404a3224f4d65e832b1ed1fe3ae131",
+      "stderr_sha256": "9fa0f47bab02839f61641f25b7e67789ad350a50a90f8cad8b6c7627692456c8",
+      "trap": "xboxkrnl.exe ordinal 548 at tick 1048"
+    }
+  },
+  "static_join": {
+    "reader": "0x82356510: lwbrx 0x7FEA1800; stw 0x829DA52C",
+    "store": "0x823572D8: 7D60552C stwbrx; 0x823572DC: 7C0006AC eieio",
+    "equation": "I=((P-G)>>6)&0xFFFF; A=0x7FEA1A80+((I>>5)<<2); V=1<<(I&0x1F)"
+  },
+  "classification": {
+    "demo-qualified": ["P/G/A/V dynamic join", "neutral/START equality", "default trap guard"],
+    "demo-observed": ["trap before MMIO effect", "911 PRESENT"],
+    "xenia-generic": [],
+    "unknown": ["MMIO register name and effect", "XMA packets", "PCM/audio", "pixels"]
+  },
+  "guard": {
+    "read_only_probe": true,
+    "default_route_unchanged": true,
+    "play_replay_experiment_disabled": true,
+    "no_mmio_mapping_added": true,
+    "no_retail_merge": true,
+    "no_xenia_rexglue_ghidra_mutation": true,
+    "no_audio_decode": true,
+    "no_readback_or_screencap": true
+  },
+  "next_checkpoint": "static join of later PAL XMA stores; retain ordinal-548 fail-closed absent an independent effect proof"
+}

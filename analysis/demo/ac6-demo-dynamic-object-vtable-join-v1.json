@@ -1,0 +1,130 @@
+{
+  "schema": "ac6-demo-dynamic-object-vtable-join/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "binary": ".build/ac6-demo-codegen-build-1/ac6-demo-recomp",
+    "binary_sha256": "43677602c888cf481e0d0498a19a99cdda201526d306a8e76c860a6962e164d0",
+    "temporary_root": "/fastdata/lavaulta/tmp/ac6-cycle1729-object-refactored.6d2e7k",
+    "stores": "/fastdata/lavaulta/tmp/ac6-cycle1727-xma-three.hp2Gs4/{neutral,start}-store",
+    "probe": "probe --until frontend --max-ticks 1100 --backend headless",
+    "hook": "AC6_DEMO_WATCH_INDIRECT_OBJECT=1",
+    "read_only": true,
+    "xenia_executed": false,
+    "xenia_patch_applied": false,
+    "ptrace_used": false,
+    "rr_reexecuted": false,
+    "production_route_changed": false
+  },
+  "routes": {
+    "neutral": {
+      "report_sha256": "18c331a6171b89429f1c277d9aaa208cc78c8d0be3bd935f5f53d1e60158bc78",
+      "trace_sha256": "4123e4b5115d9b2518bbaf0baa74c23af2a85fcba3afd0e8f994627bfc5a0e9d",
+      "stderr_sha256": "f775d1469badd95315477b9e0cf94d2bdcb0a4260ea7c018d92e91b44f1b2c5a",
+      "outcome": "max_ticks",
+      "completed_ticks": 1100,
+      "indirect_observations": 853,
+      "distinct_observation_ticks": 851,
+      "observation_tick_range": [0, 1099]
+    },
+    "start": {
+      "report_sha256": "2c9790c056395dcada28185618e4d163f10b1262002a513bb88990eadb2265cf",
+      "trace_sha256": "a9e5e7c9fe0279b0da38fd480f08ccd66ab546101989b5e467f38ecd3ecae207",
+      "stderr_sha256": "f775d1469badd95315477b9e0cf94d2bdcb0a4260ea7c018d92e91b44f1b2c5a",
+      "input": "tick 252, raw START movie frame",
+      "outcome": "max_ticks",
+      "completed_ticks": 1100,
+      "indirect_observations": 853,
+      "distinct_observation_ticks": 851,
+      "observation_tick_range": [0, 1099]
+    },
+    "neutral_start_stderr_byte_identical": true,
+    "graphics_summary": {
+      "ring_base": "0x126CA000",
+      "ring_capacity_dwords": 131072,
+      "intermediate_ib_sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0",
+      "main_ib_sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6",
+      "shader_loads": 5,
+      "draws": 26,
+      "presents": 1,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "dynamic_join": {
+    "callsite_lr": "0x822E559C",
+    "indirect_target": "0x822F8848",
+    "thread": 1,
+    "object": "0x82934280",
+    "object_mapped": true,
+    "vtable": "0x8202A488",
+    "vtable_mapped": true,
+    "slot": 4,
+    "slot_mapped": true,
+    "slot_target": "0x822F8848",
+    "arguments": {
+      "r4": "0x00000000",
+      "r5": "0x0000057C",
+      "r6": "0x00000100",
+      "r7": "0x00000000"
+    },
+    "observed_on_both_routes": true,
+    "value_stable_across_all_observations": true
+  },
+  "static_crosscheck": {
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "rtti_atlas": "analysis/demo/ac6-demo-rtti-atlas-v1.json",
+    "rtti_vtable": "0x8202A488",
+    "rtti_slot_4": "0x822F8848",
+    "static_decomp_atlas": "analysis/demo/ac6-demo-static-decomp-atlas-v1.json",
+    "target_body_size": "0xA8",
+    "target_body_sha256": "88bc7c976af0fd94257d9f589e93cca6fd500d104333fa5a8c8acaaa84d1bdd6",
+    "target_pseudocode_sha256": "a07d0310429701f003ad47108c982cb02beb8f62bc8002c550f28abd4e0e1a12",
+    "direct_calls": [
+      "0x822E53B8",
+      "0x822E53F0",
+      "0x822F02F8",
+      "0x822F0410",
+      "0x822F6708"
+    ]
+  },
+  "classification": {
+    "demo-qualified": [
+      "A/B dynamic object 0x82934280 -> vtable 0x8202A488 -> slot 4 -> 0x822F8848",
+      "callsite LR 0x822E559C and arguments are stable across neutral/START",
+      "static RTTI and PAL basefile cross-check for vtable slot 4"
+    ],
+    "demo-observed": [
+      "853 hook observations per route through tick 1099",
+      "the same PM4 frontier and max_ticks terminal state on both routes"
+    ],
+    "xenia-generic": [],
+    "unknown": [
+      "semantic role and ABI contract of 0x822F8848",
+      "cause of the repeated event-loop re-entry",
+      "nonzero EDRAM, pixels, XMA effect, audio and mission result"
+    ]
+  },
+  "next_checkpoint": {
+    "action": "qualify the body-side state transitions of 0x822F8848 and the first nonzero EDRAM writer before resolve",
+    "constraints": [
+      "keep the hook disabled by default",
+      "trap on unknown state instead of approximating",
+      "do not promote Xenia, retail, generated C++, Ghidra names or microcode containers"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "retail_evidence_merged": false,
+    "xenia_or_rexglue_modified": false,
+    "ghidra_modified": false,
+    "generated_cpp_modified": false,
+    "microcode_modified_or_tracked": false,
+    "proprietary_asset_tracked": false
+  }
+}

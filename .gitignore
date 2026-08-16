@@ -76,6 +76,9 @@ __pycache__/
 !analysis/mission1/*.md
 !analysis/mission1/*.tsv
 !analysis/mission1/*.yaml
+!analysis/ghidra/
+!analysis/ghidra/*.json
+!analysis/ghidra/*.log
 !analysis/address_catalog.tsv
 !reports/
 !reports/**/*.md
@@ -104,9 +107,15 @@ payload/
 *.zip
 *.tar.gz
 *.tar.zst
+*.rar
+*.RAR
 *.wad
 *.dat
 __pycache__/
+
+# --- AC6 Xbox LIVE demo: user-owned inputs and local runtime traces --------
+/demo-game-file/
+/ac6-demo*.trace.jsonl
 
 # --- local generated evidence and build products ---------------------------
 hs_err_pid*.log
