@@ -39,6 +39,53 @@
     context.r3.u32 = 0U;
     return true;
   }
+  if (std::string_view{name} == "XAudioSubmitRenderDriverFrame") {
+    // xboxkrnl.exe ordinal 501, an export of the official xboxkrnl.lib that
+    // no SDK header declares. The call shape comes from the call itself:
+    // r3 is the handle this bridge issued, and r4 is a guest buffer of the
+    // exact byte count the client announced at registration (0x1800 = 6144,
+    // which is XAUDIOFRAMESIZE_NATIVE 256 samples of six 32-bit channels).
+    //
+    // This is a sink and nothing more. The frame is counted and its buffer
+    // checked; not one sample is decoded, mixed, resampled or handed to a
+    // host audio device, and no audible output is claimed anywhere. Its only
+    // purpose is to let the guest's own render loop complete a frame instead
+    // of trapping halfway through it.
+    auto &bridge = require_bridge();
+    auto &memory = bridge.memory();
+    const auto frame_pointer = context.r4.u32;
+    const auto frame_bytes = bridge.xaudio_frame_bytes();
+    if (context.r3.u32 != bridge.xaudio_client_handle() || frame_bytes == 0U ||
+        frame_pointer == 0U || !memory.mapped(frame_pointer, frame_bytes)) {
+      return false;
+    }
+    bridge.count_xaudio_frame_submission();
+    context.r3.u32 = 0U;
+    return true;
+  }
+  if (std::string_view{name} == "XAudioGetVoiceCategoryVolumeChangeMask") {
+    // xboxkrnl.exe ordinal 503. The name is authoritative -- it is an export
+    // of the official xboxkrnl.lib in every SDK version here -- but no SDK
+    // header declares it and no doc page describes it, so the shape comes
+    // from the call itself: r3 is 0xE4000000, which is the very handle this
+    // bridge returned from XAudioRegisterRenderDriverClient, and r4 is a
+    // mapped guest pointer, so this is (client handle, out mask).
+    //
+    // The mask says which voice categories changed volume. Nothing in this
+    // runtime ever changes one and the guest has never called
+    // XAudioSetVoiceCategoryVolume, so the only answer consistent with this
+    // runtime's own state is "none". A different handle fails closed.
+    auto &bridge = require_bridge();
+    auto &memory = bridge.memory();
+    const auto mask_pointer = context.r4.u32;
+    if (context.r3.u32 != bridge.xaudio_client_handle() ||
+        mask_pointer == 0U || !memory.mapped(mask_pointer, 4U)) {
+      return false;
+    }
+    memory.store_u32(mask_pointer, 0U);
+    context.r3.u32 = 0U;
+    return true;
+  }
   if (std::string_view{name} == "XAudioRegisterRenderDriverClient") {
     auto& bridge = require_bridge();
     auto& memory = bridge.memory();
@@ -54,6 +101,9 @@
         !memory.mapped(callback, 4U)) {
       return false;
     }
+    // r5 carries the render frame size in bytes; the submit path validates
+    // its buffer against exactly this number rather than a constant.
+    bridge.set_xaudio_frame_bytes(context.r5.u32);
     std::uint32_t handle{};
     if (!bridge.register_xaudio_client(callback, callback_context, &handle)) {
       context.r3.u32 = 0xC000009AU;

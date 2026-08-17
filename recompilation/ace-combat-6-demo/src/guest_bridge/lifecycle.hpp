@@ -283,6 +283,29 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
     memory_.store_u8(active_cpu_address, previous_active_cpu);
     current_guest_thread_id = previous_thread_id;
   };
+  const auto dispatch_xaudio_frame = [&]() {
+    auto *primary_fiber =
+        static_cast<GuestFiber *>(primary_thread_.fiber_state);
+    if (primary_fiber == nullptr || primary_fiber->ppc == nullptr ||
+        graphics_interrupt_stack_top_ == 0U) {
+      throw RuntimeTrap("XAudio callback context is unavailable", tick_);
+    }
+    PPCContext frame = *primary_fiber->ppc;
+    frame.r1.u32 = graphics_interrupt_stack_top_ - 0x200U;
+    frame.r3.u32 = xaudio_callback_context_;
+    frame.r4.u32 = 0U;
+    frame.r5.u32 = 0U;
+    frame.lr = 0U;
+    const auto previous_thread_id = current_guest_thread_id;
+    current_guest_thread_id = 2U;
+    try {
+      AC6_PPC_CALL_INDIRECT(frame, memory_.raw_base(), xaudio_callback_);
+    } catch (...) {
+      current_guest_thread_id = previous_thread_id;
+      throw;
+    }
+    current_guest_thread_id = previous_thread_id;
+  };
   if (xenos_cp_interrupts_pending_ != 0U) {
     if (graphics_interrupt_callback == 0U) {
       throw RuntimeTrap("Xenos CP interrupt has no guest callback", tick_);
@@ -295,6 +318,28 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
       last_graphics_interrupt_tick_ != tick_) {
     dispatch_graphics_interrupt(0U);
     last_graphics_interrupt_tick_ = tick_;
+  }
+  // The registered render-driver client is guest code that this bridge has
+  // stored since tick 106 and never once called, which is why the mixer
+  // thread has waited on its eight auto-reset events ever since: nothing in
+  // this runtime signals them, and on the console the audio driver does.
+  //
+  // Cadence is the XDK's native render frame, not a guess.  xauddefs.h gives
+  // XAUDIOFRAMESIZE_NATIVE 256 and XAUDIOSAMPLERATE_NATIVE 48000, so a client
+  // is driven 48000 / 256 = 187.5 times a second.  Simulation runs at 60 Hz,
+  // so that is 25/8 frames per tick, emitted from an integer running total so
+  // the schedule is exact and identical on replay: no host clock, no drift,
+  // 3 or 4 calls per tick in a fixed pattern.
+  //
+  // What the callback does is the guest's business.  This only restores the
+  // beat the hardware provides; it decides nothing about audio itself, and
+  // no sample is decoded or submitted anywhere.
+  if (xaudio_callback_ != 0U) {
+    const auto target = ((tick_ + 1U) * 25U) / 8U;
+    while (xaudio_frames_emitted_ < target) {
+      dispatch_xaudio_frame();
+      ++xaudio_frames_emitted_;
+    }
   }
   (void)run_runnable_threads();
   resume_xenos_pending_batch();

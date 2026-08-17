@@ -369,6 +369,19 @@ public:
   [[nodiscard]] std::uint32_t ensure_xma_context_array();
   [[nodiscard]] std::uint32_t allocate_xma_context();
   [[nodiscard]] bool release_xma_context(std::uint32_t context);
+  [[nodiscard]] std::uint32_t xaudio_client_handle() const noexcept {
+    return xaudio_client_handle_;
+  }
+  [[nodiscard]] std::uint32_t xaudio_frame_bytes() const noexcept {
+    return xaudio_frame_bytes_;
+  }
+  void set_xaudio_frame_bytes(std::uint32_t bytes) noexcept {
+    xaudio_frame_bytes_ = bytes;
+  }
+  void count_xaudio_frame_submission() noexcept { ++xaudio_frames_submitted_; }
+  [[nodiscard]] std::uint64_t xaudio_frames_submitted() const noexcept {
+    return xaudio_frames_submitted_;
+  }
   void observe_xma_physical_context(std::uint32_t context) noexcept {
     xma_last_physical_context_ = context;
   }
@@ -515,6 +528,9 @@ private:
   std::uint32_t xaudio_client_handle_{};
   std::uint32_t xaudio_callback_{};
   std::uint32_t xaudio_callback_context_{};
+  std::uint64_t xaudio_frames_emitted_{};
+  std::uint32_t xaudio_frame_bytes_{};
+  std::uint64_t xaudio_frames_submitted_{};
   std::optional<std::uint32_t> notify_ui_position_;
   std::uint64_t graphics_present_count_{};
   VdSwapSnapshot vd_swap_snapshot_{};
