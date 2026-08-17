@@ -70,15 +70,13 @@ inline void initialize_post_resume_watch() noexcept {
 }
 
 // Existing generated scalar-site watchers also use process-level opt-ins.
-// Cache them once so an access made while the post-resume probe is disabled
-// performs no environment lookup at all.
+// Keep existing opt-ins cached, but read independent XAM state outside cache.
 [[nodiscard]] inline bool guest_load_site_watchers_enabled() noexcept {
   static const bool enabled =
       std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS") != nullptr ||
       std::getenv("AC6_DEMO_WATCH_FRONTBUFFER_READERS") != nullptr ||
-      std::getenv("AC6_DEMO_WATCH_XMA_SLOT") != nullptr ||
-      xam_return_chain_watch_enabled_fast();
-  return enabled;
+      std::getenv("AC6_DEMO_WATCH_XMA_SLOT") != nullptr;
+  return enabled || xam_return_chain_watch_enabled_fast();
 }
 
 inline void trace_ib_write(std::uint32_t address, std::uint32_t width,

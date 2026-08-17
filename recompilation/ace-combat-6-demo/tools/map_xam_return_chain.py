@@ -33,6 +33,12 @@ CALLER_LR = 0x822F616C
 CONTROLLER_OBJECT = 0x829D153C
 EXCLUSIVE_ADDRESS = CONTROLLER_OBJECT + 0x80
 MAX_ACCESSES = 32
+EXPECTED_SIZES = {
+    "load8": 1, "store8": 1, "load16": 2, "store16": 2,
+    "load32": 4, "store32": 4, "load64": 8, "store64": 8,
+    "load128": 16, "store128": 16, "lwarx": 4, "stwcx": 4,
+    "ldarx": 8, "stdcx": 8,
+}
 
 ALLOWLIST_BYTES = {
     0x822F601C: "a1 7f 00 48",
@@ -146,10 +152,11 @@ def _parse_trace(path: Path) -> tuple[dict[str, object], list[dict[str, object]]
 
 
 def _check_value(row: dict[str, object]) -> None:
+    kind = str(row["kind"])
     size = int(row["size"])
     value = str(row["value_be"])
-    if size not in {1, 2, 4, 8, 16}:
-        fail(f"unsupported access width: {size}")
+    if EXPECTED_SIZES.get(kind) != size:
+        fail(f"kind/size mismatch: {kind}/{size}")
     if len(value) != 2 + size * 2 or not re.fullmatch(r"0x[0-9A-F]{%d}" % (size * 2), value):
         fail(f"value_be width is not exactly {size} bytes")
 

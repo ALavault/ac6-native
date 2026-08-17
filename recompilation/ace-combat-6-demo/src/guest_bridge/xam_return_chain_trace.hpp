@@ -26,6 +26,20 @@ inline constexpr std::uint32_t kXamReturnMaxAccesses = 32U;
           std::string_view{function} == "__imp__sub_822F5E58");
 }
 
+[[nodiscard]] inline std::uint32_t xam_return_chain_expected_size(
+    const char *kind) noexcept {
+  if (kind == nullptr) return 0U;
+  const std::string_view value{kind};
+  if (value == "load8" || value == "store8") return 1U;
+  if (value == "load16" || value == "store16") return 2U;
+  if (value == "load32" || value == "store32" || value == "lwarx" ||
+      value == "stwcx") return 4U;
+  if (value == "load64" || value == "store64" || value == "ldarx" ||
+      value == "stdcx") return 8U;
+  if (value == "load128" || value == "store128") return 16U;
+  return 0U;
+}
+
 struct XamReturnChainState final {
   // 0 = not initialized, 1 = disabled, 2 = enabled, 3 = initializer.
   std::atomic<std::uint8_t> enabled{0U};
@@ -207,6 +221,7 @@ inline void record_xam_return_chain(
   const bool qualified = target &&
                          xam_return_chain_exclusive_site(function, generated_line);
   if (size == 0U || size > 8U ||
+      xam_return_chain_expected_size(kind) != size ||
       !xam_return_chain_claim(thread, target)) {
     return;
   }
@@ -241,6 +256,7 @@ inline void record_xam_return_chain_bytes(
     std::uint32_t lr, const char *function,
     std::uint32_t generated_line) noexcept {
   if (bytes == nullptr || size != 16U ||
+      xam_return_chain_expected_size(kind) != size ||
       !xam_return_chain_claim(thread)) {
     return;
   }
@@ -270,6 +286,7 @@ inline void record_xam_return_chain_atomic(
     std::uint32_t thread, std::uint32_t lr, const char *function,
     std::uint32_t generated_line, std::uint32_t site_pc = 0U) noexcept {
   if (!xam_return_chain_watch_enabled_fast() ||
+      xam_return_chain_expected_size(kind) != size ||
       !xam_return_chain_claim(thread, true)) {
     return;
   }

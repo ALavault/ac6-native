@@ -78,6 +78,8 @@ class XamReturnChainMapperTests(unittest.TestCase):
 
     def test_final_qualified_store_contract_is_strict(self) -> None:
         inverses = (
+            valid_trace().replace("kind=store32 address=0x829D15BC size=4 value_be=0x12345678",
+                                 "kind=store32 address=0x829D15BC size=1 value_be=0x12"),
             valid_trace().replace("kind=store32 address=0x829D15BC",
                                  "kind=load32 address=0x829D15BC"),
             valid_trace().replace("generated_line=3948", "generated_line=3949"),
@@ -99,6 +101,25 @@ class XamReturnChainMapperTests(unittest.TestCase):
         completed = self.run_mapper(valid_trace())
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(self.result["ghidra_owner"]["project"], "ace-combat-6-demo")
+
+    def test_fresh_process_xam_only_and_off_fast_path(self) -> None:
+        executable = PROJECT / "build" / "ac6-demo-xam-return-chain-header-tests"
+        if not executable.is_file():
+            self.skipTest(f"header probe unavailable: {executable}")
+        base = {key: value for key, value in os.environ.items()
+                if not key.startswith("AC6_DEMO_WATCH_")}
+        enabled = dict(base, AC6_XAM_PROBE_ONLY="1",
+                       AC6_DEMO_WATCH_XAM_RETURN_CHAIN="1")
+        result = subprocess.run([str(executable)], env=enabled, text=True,
+                                capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("function=__imp__sub_822F5E58 generated_line=3948", result.stderr)
+        self.assertIn("reason=qualified_store_exclusive", result.stderr)
+        disabled = dict(base, AC6_XAM_PROBE_ONLY="1")
+        result = subprocess.run([str(executable)], env=disabled, text=True,
+                                capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn("AC6_XAM_RETURN_CHAIN_ARM", result.stderr)
         bad_address = valid_trace(exclusive_address="0x829D15BD")
         completed = self.run_mapper(bad_address)
         self.assertNotEqual(completed.returncode, 0)

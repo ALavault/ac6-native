@@ -123,6 +123,16 @@ void test_scalar_vector_and_target() {
   assert(xam_return_chain_state.accesses.load() == 1U);
 }
 
+void test_kind_size_rejection() {
+  arm();
+  record_xam_return_chain("store32", 0x1000U, 1U, 0x12U, 1U, kThread, 0U,
+                          "f", 10U);
+  assert(xam_return_chain_state.accesses.load() == 0U);
+  record_xam_return_chain_bytes("load128", 0x1000U, 8U, nullptr, 1U,
+                                kThread, 0U, "f", 10U);
+  assert(xam_return_chain_state.accesses.load() == 0U);
+}
+
 void test_exact_bound_and_atomic_contract() {
   arm();
   for (std::uint32_t i = 0U; i < kXamReturnMaxAccesses; ++i) {
@@ -153,10 +163,21 @@ void test_exact_bound_and_atomic_contract() {
 }  // namespace
 
 int main() {
+  if (std::getenv("AC6_XAM_PROBE_ONLY") != nullptr) {
+    constexpr std::array<std::uint8_t, 16U> payload{};
+    initialize_xam_return_chain_watch();
+    arm_xam_return_chain(kXamReturnCaller, 1U, kThread, 0U, 0U,
+                         kXamReturnControllerObject, 0U, payload.data());
+    record_xam_return_chain("store32", kXamReturnExclusiveAddress, 4U,
+                            0x12345678U, 2U, kThread, 0U,
+                            "__imp__sub_822F5E58", 3948U);
+    return 0;
+  }
   test_off_hot_path();
   test_arm_identity_rejections();
   test_thread_affinity_and_concurrency();
   test_scalar_vector_and_target();
+  test_kind_size_rejection();
   test_exact_bound_and_atomic_contract();
   return 0;
 }
