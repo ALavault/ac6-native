@@ -1,0 +1,11 @@
+subsystem,compiled_in_demo_xex,mission01_or_demo_reachability,retail_semantic_anchor,classification,evidence
+DemoOffline core tasks,yes,yes,yes,demo-active,five qualified task factories and transition tables
+CModeTaskHangar,yes,no,yes,shared-retail-anchor,RTTI/vtables compiled; no qualified DemoOffline transition
+CModeTaskGallery*,yes,no,yes,shared-retail-anchor,RTTI/vtables compiled; no qualified DemoOffline transition
+CModeTaskRanking,yes,no,yes,shared-retail-anchor,RTTI/vtables compiled; no qualified DemoOffline transition
+CModeTaskDebriefing,yes,no,yes,shared-retail-anchor,base game transition exists; GameDemoOffline overrides it
+CModeTaskMissionSelect,yes,no,yes,shared-retail-anchor,base game transition exists; absent from qualified demo graph
+CModeTaskDemoIntermission,yes,no,yes,shared-retail-anchor,compiled class; no qualified DemoOffline edge
+GameMenu pause/failed,yes,gameplay conditional,yes,shared-gameplay-conditional,generic consumer and MissionManager commands qualified
+GameMenu supply,yes,producer not established,yes,shared-gameplay-conditional,request 3 and command 5 qualified; Mission 01 producer open
+checkpoint retry,yes,failed-menu conditional,yes,shared-gameplay-conditional,command 2 and phase checkpoint path qualified
