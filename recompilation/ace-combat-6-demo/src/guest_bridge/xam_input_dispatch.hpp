@@ -22,9 +22,15 @@ if (std::string_view{name} == "XamInputGetState") {
                      [](std::byte byte) {
                        return static_cast<std::uint8_t>(byte);
                      });
-      ac6demo::guest_bridge_detail::arm_xam_return_chain(
-          caller_lr, bridge.tick(), current_guest_thread_id, user_index, flags,
-          output, context.r3.u32, state16.data());
+      // The PAL callsite passes controller+0x44 as X_INPUT_STATE output;
+      // the qualified consumer subtracts that fixed offset before reading
+      // the controller object.  Arm the chain on that object identity while
+      // retaining the returned 16-byte state from the actual output buffer.
+      if (output >= 0x44U) {
+        ac6demo::guest_bridge_detail::arm_xam_return_chain(
+            caller_lr, bridge.tick(), current_guest_thread_id, user_index,
+            flags, output - 0x44U, context.r3.u32, state16.data());
+      }
     }
   }
   return true;
