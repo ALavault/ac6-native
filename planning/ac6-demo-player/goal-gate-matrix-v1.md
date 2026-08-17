@@ -43,19 +43,19 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | FSM contract | proven | Cycle 1758 receipt `39c186e0…e06c7`: 10 states/9 budgets, deterministic controller, fail-closed guards; 43 tests. |
 | FSM PAL route | missing | Scaffold/runtime route has no qualified observations, allowlist, or terminal receipt. |
 | demo-native domain 1 | proven | Cycle 1764 validates identity/import/CLI/VFS/PAL corpus/install plus adversarial publication/rollback. It remains `import-only` and `supported=false`. |
-| demo-native runtime domains | partial | Cycle 1765 adds typed XInput, deterministic 60 Hz ticks and guest-notified PRESENT with 4/4 CTest. No replay journal, IPC, guest scheduler, gameplay observation or runtime route exists. |
+| demo-native runtime domains | partial | Cycles 1765–1766 add typed XInput, deterministic ticks/PRESENT and byte-identical in-memory `AC6RTPLY-v4` replay with 5/5 CTest. No IPC, guest scheduler, gameplay observation or runtime route exists. |
 | Two cold success/failure runs | missing | Current cold A/B both return `max_ticks`, rc=4; no success and distinct failure terminal. |
 
 ## Single next checkpoint
 
-Add the native `AC6RTPLY-v4` per-tick journal for the bounded platform
-observations and prove record/replay identity before any demo-recomp comparison.
+Expose the bounded platform/replay path through an owned `demo-native` IPC
+session while returning every guest/gameplay domain as unavailable.
 Keep frontend/mission unsupported and keep the cycle-1761 XAM frontier
 separate until its A/B receipt is delivered.
 
 | Branch | Status | Classification |
 |---|---|---|
-| Runtime/domain 2 promotion | partial | Platform/input/time contract passes; native replay journal, IPC and guest/runtime comparison remain absent. |
+| Runtime/domain 2 promotion | partial | Platform/input/time and native replay contracts pass; owned IPC and guest/runtime comparison remain absent. |
 
 The machine-readable canonical record is
 [`goal-gate-matrix-v1.json`](goal-gate-matrix-v1.json).

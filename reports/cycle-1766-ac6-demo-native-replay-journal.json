@@ -1,0 +1,34 @@
+{
+  "schema": "ac6-demo-native-replay-report/v1",
+  "cycle": 1766,
+  "recorded_at": "2026-08-17",
+  "verdict": "REPLAY-CONTRACT-GO / RUNTIME-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "commit": "985ff6b52a163b2105a6e232ce9715a4dbfe23b8",
+  "contract": {
+    "magic": "AC6RTPLY",
+    "version": 4,
+    "backend": "headless",
+    "record_limit": 1000000,
+    "byte_limit": 268435456,
+    "record_byte_limit": 512,
+    "sha256_trailer": true,
+    "same_platform_replay_path": true,
+    "byte_identical_reserialization": true
+  },
+  "validation": {
+    "build": "PASS",
+    "ctest": {"passed": 5, "total": 5, "result": "PASS"},
+    "record_replay_reserialize": "PASS",
+    "negative_identity_action_trailer": "PASS",
+    "complexity_audit": {"files": 17, "result": "PASS"}
+  },
+  "limits": [
+    "in-memory platform contract only",
+    "no CLI persistence or demo-native MCP transport",
+    "no guest scheduler or gameplay observation",
+    "no recomp/native runtime parity claim"
+  ]
+}
