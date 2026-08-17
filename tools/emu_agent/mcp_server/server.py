@@ -85,6 +85,11 @@ def _json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
+def _artifact_ref(kind: str, value: Any) -> dict[str, Any]:
+    encoded = _json(value).encode("utf-8")
+    return {"kind": kind, "sha256": digest(value), "size": len(encoded)}
+
+
 def _error(code: int, message: str, request_id: Any = None) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
 
@@ -260,19 +265,29 @@ class EmuMcpServer:
 
     def _v2_receipt(self, session_id: str, status: str, *, error: str | None = None, parent: str | None = None) -> dict[str, Any]:
         session = self._v2_sessions.get(session_id, {})
+        actions = session.get("actions", [])
+        observations = session.get("observations", [])
+        stop_reason = {
+            "completed": "checkpoint",
+            "backend_unavailable": "backend_unavailable",
+            "closed": "client_close",
+            "error": "error",
+        }.get(status, "error")
         receipt = {
             "schema": RECEIPT_SCHEMA, "receipt_id": "rcpt-" + uuid.uuid4().hex,
             "session_id": session_id, "status": status, "backend": session.get("backend", "xenia"),
-            "qualified": False, "actions_sha256": digest(session.get("actions", [])),
-            "observations_sha256": digest(session.get("observations", [])),
+            "qualified": False, "actions_sha256": digest(actions),
+            "observations_sha256": digest(observations),
             "events": list(session.get("events", [])), "error": error,
+            "artifacts": [_artifact_ref("actions", actions), _artifact_ref("observations", observations)],
+            "first_divergence": session.get("first_divergence"), "stop_reason": stop_reason,
             "identity": {"target_id": TARGET_ID, "xex_sha256": XEX_SHA256, "module": "Default.xex"},
         }
         if parent is not None:
             receipt["parent_receipt_id"] = parent
         checked = validate_receipt(receipt)
         session.setdefault("receipt_ids", []).append(checked["receipt_id"])
-        session.setdefault("receipt_snapshots", {})[checked["receipt_id"]] = copy.deepcopy({"actions": session.get("actions", []), "observations": session.get("observations", []), "actions_digest": checked["actions_sha256"], "observations_digest": checked["observations_sha256"], "identity": checked["identity"], "owner": session_id})
+        session.setdefault("receipt_snapshots", {})[checked["receipt_id"]] = copy.deepcopy({"actions": actions, "observations": observations, "actions_digest": checked["actions_sha256"], "observations_digest": checked["observations_sha256"], "artifacts": checked["artifacts"], "identity": checked["identity"], "owner": session_id})
         return checked
 
     def _v2_call(self, name: str, args: Mapping[str, Any]) -> dict[str, Any]:

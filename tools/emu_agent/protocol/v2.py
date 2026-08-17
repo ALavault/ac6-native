@@ -22,7 +22,10 @@ XEX_SHA256 = "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
 TARGET_ID = "ac6-demo-xbox360-pal"
 _ACTION_KEYS = {"schema", "action_id", "session_id", "sequence", "tick", "xinput"}
 _OBS_KEYS = {"schema", "observation_id", "session_id", "sequence", "tick", "present", "milestones", "domains", "availability", "provenance"}
-_RECEIPT_KEYS = {"schema", "receipt_id", "session_id", "status", "backend", "qualified", "actions_sha256", "observations_sha256", "events", "error", "parent_receipt_id", "identity"}
+_RECEIPT_KEYS = {"schema", "receipt_id", "session_id", "status", "backend", "qualified", "actions_sha256", "observations_sha256", "events", "error", "parent_receipt_id", "identity", "artifacts", "first_divergence", "stop_reason"}
+_RECEIPT_ARTIFACT_KEYS = {"kind", "sha256", "size"}
+_RECEIPT_ARTIFACT_KINDS = {"actions", "observations", "readback", "journal"}
+_RECEIPT_STOP_REASONS = {"checkpoint", "backend_unavailable", "client_close", "error", "divergence", "limit"}
 _TYPES = {"wait", "input", "advance", "pause", "resume"}
 _CONTROLS = {"confirm", "cancel", "start", "select", "up", "down", "left", "right", "pause", "resume", "fire", "special"}
 _DOMAINS = ("player", "camera", "flight", "target", "objective", "terminal", "readback")
@@ -220,6 +223,29 @@ def validate_receipt(value: Any) -> dict[str, Any]:
         raise ValidationError("unsupported receipt status", path="$.status")
     if not isinstance(item.get("qualified"), bool) or not isinstance(item.get("events"), list):
         raise ValidationError("receipt status fields are malformed", path="$")
+    if item.get("stop_reason") not in _RECEIPT_STOP_REASONS:
+        raise ValidationError("unsupported receipt stop reason", path="$.stop_reason")
+    artifacts = item.get("artifacts")
+    if not isinstance(artifacts, list) or len(artifacts) > 64:
+        raise ValidationError("receipt artifacts are malformed", path="$.artifacts")
+    for index, artifact in enumerate(artifacts):
+        if not isinstance(artifact, Mapping) or set(artifact) != _RECEIPT_ARTIFACT_KEYS:
+            raise ValidationError("receipt artifact reference is malformed", path=f"$.artifacts[{index}]")
+        if artifact["kind"] not in _RECEIPT_ARTIFACT_KINDS:
+            raise ValidationError("receipt artifact kind is unsupported", path=f"$.artifacts[{index}].kind")
+        digest_value = artifact["sha256"]
+        if not isinstance(digest_value, str) or len(digest_value) != 64 or any(ch not in _HEX for ch in digest_value):
+            raise ValidationError("receipt artifact sha256 is malformed", path=f"$.artifacts[{index}].sha256")
+        if isinstance(artifact["size"], bool) or not isinstance(artifact["size"], int) or not 0 <= artifact["size"] <= 256 * 1024 * 1024:
+            raise ValidationError("receipt artifact size is malformed", path=f"$.artifacts[{index}].size")
+    divergence = item.get("first_divergence")
+    if divergence is not None:
+        divergence = _obj(divergence, "$.first_divergence", {"sequence", "field", "left", "right"})
+        if isinstance(divergence["sequence"], bool) or not isinstance(divergence["sequence"], int) or not 0 <= divergence["sequence"] <= 0xFFFFFFFF:
+            raise ValidationError("first divergence sequence is malformed", path="$.first_divergence.sequence")
+        _text(divergence["field"], "$.first_divergence.field", max_len=64)
+        _safe_json(divergence["left"], "$.first_divergence.left")
+        _safe_json(divergence["right"], "$.first_divergence.right")
     if item["qualified"]:
         raise ValidationError("unavailable backend cannot produce a qualified receipt", path="$.qualified")
     if item["status"] == "backend_unavailable" and not item.get("error"):

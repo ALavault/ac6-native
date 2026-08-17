@@ -16,7 +16,7 @@ from tools.emu_agent.backends.demo_recomp.transport import (
     recv_frame,
 )
 from tools.emu_agent.mcp_server import server as mcp_server
-from tools.emu_agent.protocol.v2 import ACTION_SCHEMA, TARGET_ID, XEX_SHA256
+from tools.emu_agent.protocol.v2 import ACTION_SCHEMA, TARGET_ID, XEX_SHA256, validate_receipt
 
 
 class _Process:
@@ -190,6 +190,10 @@ class DemoRecompMcpTests(unittest.TestCase):
             server = mcp_server.EmuMcpServer(demo_recomp_binary="/configured/ac6-demo-recomp")
             opened = server.call_tool("emu_open_session", {"target": target, "backend": "demo-recomp"})
             self.assertEqual(opened["status"], "completed")
+            self.assertEqual(opened["stop_reason"], "checkpoint")
+            self.assertEqual({item["kind"] for item in opened["artifacts"]}, {"actions", "observations"})
+            self.assertIsNone(opened["first_divergence"])
+            validate_receipt(opened)
             session_id = opened["session_id"]
             stepped = server.call_tool("emu_step", {"session_id": session_id, "action": _action(session_id)})
             self.assertEqual(stepped["observation"]["tick"], 1)
@@ -197,11 +201,24 @@ class DemoRecompMcpTests(unittest.TestCase):
             observed = server.call_tool("emu_observe", {"session_id": session_id})
             self.assertEqual(observed["present"], 0)
             receipt = server.call_tool("emu_run_until", {"session_id": session_id, "actions": [], "max_steps": 1})
+            self.assertEqual(receipt["stop_reason"], "checkpoint")
+            validate_receipt(receipt)
             replayed = server.call_tool("emu_replay", {"session_id": session_id, "receipt_id": receipt["receipt_id"], "actions": [_action(session_id)]})
             self.assertEqual(replayed["status"], "completed")
             closed = server.call_tool("emu_close_session", {"session_id": session_id})
             self.assertEqual(closed["status"], "closed")
             self.assertTrue(_Transport.instances[0].closed)
+
+    def test_receipt_rejects_unbounded_or_unqualified_artifact_references(self):
+        target = {"target_id": TARGET_ID, "program_sha256": XEX_SHA256, "module": "Default.xex"}
+        with patch.object(mcp_server, "DemoRecompTransport", _Transport):
+            server = mcp_server.EmuMcpServer(demo_recomp_binary="/configured/ac6-demo-recomp")
+            receipt = server.call_tool("emu_open_session", {"target": target, "backend": "demo-recomp"})
+            bad = dict(receipt)
+            bad["artifacts"] = [{"kind": "actions", "sha256": "0" * 64, "size": 1 << 29}]
+            with self.assertRaises(Exception):
+                validate_receipt(bad)
+            server.call_tool("emu_close_session", {"session_id": receipt["session_id"]})
 
     def test_identical_boot_sequences_have_identical_safe_observations(self):
         _Transport.instances.clear()
