@@ -577,6 +577,34 @@ bool rename_replace(int old_parent_fd, const char* old_name, int new_parent_fd,
 #endif
 }
 
+bool rename_exchange(int first_parent_fd, const char* first_name, int second_parent_fd,
+                     const char* second_name, std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)first_parent_fd; (void)first_name; (void)second_parent_fd; (void)second_name;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#elif defined(__linux__) && defined(SYS_renameat2)
+#ifndef RENAME_EXCHANGE
+#define RENAME_EXCHANGE (1U << 1U)
+#endif
+#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
+    static std::atomic_bool exchange_injected{false};
+    if ((std::getenv("AC6DEMO_NATIVE_TEST_FAIL_POINTER_EXCHANGE_ONCE") != nullptr ||
+         std::getenv("AC6DEMO_NATIVE_TEST_FAIL_POINTER_RENAME_ONCE") != nullptr) &&
+        !exchange_injected.exchange(true)) {
+        return set_error(error, "injected pointer exchange failure");
+    }
+#endif
+    if (::syscall(SYS_renameat2, first_parent_fd, first_name, second_parent_fd,
+                  second_name, static_cast<unsigned int>(RENAME_EXCHANGE)) != 0) {
+        return errno_error(error, "atomic pointer exchange failed");
+    }
+    return true;
+#else
+    (void)first_parent_fd; (void)first_name; (void)second_parent_fd; (void)second_name;
+    return set_error(error, "atomic pointer exchange unavailable");
+#endif
+}
+
 bool read_current_generation(int root_fd, UniqueFd* generation, std::string* error) {
 #if !AC6DEMO_NATIVE_POSIX_BACKEND
     (void)root_fd;
@@ -618,6 +646,15 @@ bool read_current_generation(int root_fd, UniqueFd* generation, std::string* err
     UniqueFd opened(open_directory_at(generations.get(), name.c_str(), error));
     if (!opened) {
         return set_error(error, "published generation missing");
+    }
+    std::uint64_t opened_device = 0U;
+    std::uint64_t opened_inode = 0U;
+    std::uint64_t named_device = 0U;
+    std::uint64_t named_inode = 0U;
+    if (!identity_fd(opened.get(), &opened_device, &opened_inode, error) ||
+        !identity_at(generations.get(), name.c_str(), &named_device, &named_inode, error) ||
+        opened_device != named_device || opened_inode != named_inode) {
+        return set_error(error, "published generation identity changed during open");
     }
     if (!validate_store_marker(opened.get(), error)) {
         return false;

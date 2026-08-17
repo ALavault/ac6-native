@@ -155,7 +155,7 @@ void test_positive_and_rollback() {
     for (const auto& entry : fs::directory_iterator(fixture.store)) {
         has_staging = has_staging || entry.path().filename().string().rfind(".staging-", 0U) == 0U;
     }
-    require(!has_staging, "failed import cleans staging");
+    require(!has_staging, "preflight failure creates no staging");
 }
 
 void test_rejections() {
