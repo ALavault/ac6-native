@@ -83,6 +83,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1773-demo-controller-writer-reader.json",
       "sha256": "2c580f10d3b3f8a7a64fa0e3453bc4e21d7432047f718ebc1e98000d71964cc6",
       "claim": "buttons16 writer 0x829D15BC at PAL 0x822F5EA0 is joined to guest lwz 0x822F5EA8; zero value and readback remain unproven"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1774-demo-input-semantic-ab.json",
+      "sha256": "77bed167902dc35dea28a5525912f99c443ec731a3a3cd3c89f1816bc9df5b4c",
+      "claim": "final-binary A/B joins buttons16 to a non-zero guest controller snapshot, normalization and logical pressed bit; START/readback remain closed"
     }
   ],
   "gates": [
@@ -417,16 +422,21 @@
     },
     {
       "gate_id": "input_delivery",
-      "status": "partial",
+      "status": "proven",
       "evidence": [
         {
           "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-start-neutral-5600-ab-v1.json",
           "sha256": "3bde5cd5f116c61d660c6f6751dc6b5edce6c4e58b8fc8530ce6b51ced4d1f3b",
           "claim": "buttons=16 appears at trace sequence 760/tick 252"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1774-demo-input-semantic-ab.json",
+          "sha256": "77bed167902dc35dea28a5525912f99c443ec731a3a3cd3c89f1816bc9df5b4c",
+          "claim": "fresh final-binary A/B proves guest controller object, XInput fields, normalization and logical pressed output at tick 252"
         }
       ],
-      "tests": ["graphics/scheduler/milestones remained identical across A/B"],
-      "limits": ["input value is not assigned a semantic START name and no persistent transition follows"]
+      "tests": ["cycle 1774: neutral/buttons16 snapshots share object/vtable; buttons16 current=pressed=0x10, normalized=0x400 and logical_pressed=0x10; CTest input/trace/XAM movie pass"],
+      "limits": ["delivery and guest normalization are proven, but no persistent semantic START transition follows"]
     },
     {
       "gate_id": "start_transition",
@@ -678,7 +688,7 @@
   "next_checkpoint": {
     "gate_id": "demo_native_runtime_domain3_guest_boundary",
     "status": "partial",
-    "objective": "Qualify a non-zero semantic/readback effect for the joined controller slot or retain it unavailable; keep START/frontend/mission and all other domains closed.",
+    "objective": "Join the qualified input snapshot to a guest START consumer and a non-black frontend/readback effect; keep mission, gameplay and terminal domains closed until their own receipts exist.",
     "evidence": [
       {
         "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
@@ -715,6 +725,11 @@
           "sha256": "2c580f10d3b3f8a7a64fa0e3453bc4e21d7432047f718ebc1e98000d71964cc6",
           "claim": "writer 0x829D15BC and guest reader 0x822F5EA8 are joined by a fresh A/B replay; zero value and black readback keep observation unavailable"
         },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1774-demo-input-semantic-ab.json",
+          "sha256": "77bed167902dc35dea28a5525912f99c443ec731a3a3cd3c89f1816bc9df5b4c",
+          "claim": "guest input snapshot is non-zero and receipt-backed at tick 252, but START/frontend/readback are not promoted"
+        },
       {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
         "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
@@ -722,7 +737,7 @@
       }
     ],
     "limits": [
-      "writer/read join is complete, but no non-zero semantic or non-black readback effect is available; no frontend/mission or arbitrary guest-memory exposure"
+      "input semantics are qualified, but no persistent START consumer, non-black frontend/readback, mission or arbitrary guest-memory observation is available"
     ]
   },
   "next_checkpoint_branches": [
@@ -730,7 +745,7 @@
       "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "qualify a non-zero semantic/readback effect for 0x829D15BC or retain observation unavailable; do not open START/frontend/mission yet"
+      "action": "join the tick-252 input snapshot to its guest START consumer and require a non-black frontend/readback pair; do not open mission/gameplay/terminal yet"
     }
   ]
 }
