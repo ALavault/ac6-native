@@ -329,6 +329,13 @@ void test_multiprocess_import_and_failure_rollback() {
     unsetenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_WHAT");
     require(ac6demo_native::testing::verify_fixture(parent_store, fixture.profile, &error),
             "post-exchange fsync failure rolls back to valid current");
+    setenv("AC6DEMO_NATIVE_TEST_SWAP_OLD_POINTER_AFTER_EXCHANGE", "1", 1);
+    require(!ac6demo_native::testing::import_fixture(parent_store, fixture.source,
+                                                      fixture.profile, &error),
+            "post-exchange old pointer swap is rejected");
+    unsetenv("AC6DEMO_NATIVE_TEST_SWAP_OLD_POINTER_AFTER_EXCHANGE");
+    require(ac6demo_native::testing::verify_fixture(parent_store, fixture.profile, &error),
+            "backup inode restores current after old pointer swap");
     std::ifstream after_input(pointer, std::ios::binary);
     const std::string after((std::istreambuf_iterator<char>(after_input)),
                             std::istreambuf_iterator<char>());

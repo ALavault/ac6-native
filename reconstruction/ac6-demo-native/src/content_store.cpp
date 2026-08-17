@@ -568,6 +568,7 @@ bool publish_generation(int root_fd, const StagedGeneration& generation,
     UniqueFd old_current;
     std::uint64_t old_device = 0U;
     std::uint64_t old_inode = 0U;
+    const std::string rollback_name = ".rollback-" + generation.name;
     if (had_old_pointer) {
         old_current.reset(detail::open_regular_at(root_fd, "current", O_RDONLY, 0U, error));
         std::string confirmed_old_pointer;
@@ -584,6 +585,18 @@ bool publish_generation(int root_fd, const StagedGeneration& generation,
             old_path_device != old_device || old_path_inode != old_inode) {
             return set_error(error, "current changed before compare-and-swap");
         }
+#if defined(__unix__) || defined(__APPLE__)
+        std::uint64_t rollback_device = 0U;
+        std::uint64_t rollback_inode = 0U;
+        if (::linkat(root_fd, "current", root_fd, rollback_name.c_str(), 0) != 0 ||
+            !detail::identity_at(root_fd, rollback_name.c_str(), &rollback_device,
+                                 &rollback_inode, error) ||
+            rollback_device != old_device || rollback_inode != old_inode) {
+            return set_error(error, "rollback identity unavailable");
+        }
+#else
+        return set_error(error, "POSIX descriptor backend unavailable");
+#endif
     }
 
     std::uint64_t pointer_device = 0U;
@@ -609,6 +622,27 @@ bool publish_generation(int root_fd, const StagedGeneration& generation,
     return set_error(error, "POSIX descriptor backend unavailable");
 #endif
 
+#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
+    if (had_old_pointer &&
+        std::getenv("AC6DEMO_NATIVE_TEST_SWAP_OLD_POINTER_AFTER_EXCHANGE") != nullptr) {
+        const std::string foreign = ".foreign-" + generation.pointer_temp_name;
+        UniqueFd replacement;
+        if (!detail::rename_noreplace(root_fd, generation.pointer_temp_name.c_str(),
+                                      root_fd, foreign.c_str(), error)) {
+            return false;
+        }
+        replacement.reset(detail::open_regular_at(
+            root_fd, generation.pointer_temp_name.c_str(), O_WRONLY | O_CREAT | O_EXCL,
+            0600U, error));
+        constexpr char foreign_pointer[] = "foreign\n";
+        if (!replacement ||
+            !detail::write_all(replacement.get(), foreign_pointer,
+                               sizeof(foreign_pointer) - 1U, error)) {
+            return false;
+        }
+    }
+#endif
+
     std::uint64_t current_device = 0U;
     std::uint64_t current_inode = 0U;
     bool valid = detail::identity_at(root_fd, "current", &current_device, &current_inode,
@@ -632,18 +666,25 @@ bool publish_generation(int root_fd, const StagedGeneration& generation,
     if (had_old_pointer) {
         std::uint64_t current_now_device = 0U;
         std::uint64_t current_now_inode = 0U;
-        std::uint64_t swapped_now_device = 0U;
-        std::uint64_t swapped_now_inode = 0U;
-        const bool exchange_back_safe =
+        std::uint64_t rollback_device = 0U;
+        std::uint64_t rollback_inode = 0U;
+        const char* rollback_source = nullptr;
+        if (detail::identity_at(root_fd, generation.pointer_temp_name.c_str(),
+                                &rollback_device, &rollback_inode, nullptr) &&
+            rollback_device == old_device && rollback_inode == old_inode) {
+            rollback_source = generation.pointer_temp_name.c_str();
+        } else if (detail::identity_at(root_fd, rollback_name.c_str(), &rollback_device,
+                                       &rollback_inode, nullptr) &&
+                   rollback_device == old_device && rollback_inode == old_inode) {
+            rollback_source = rollback_name.c_str();
+        }
+        const bool exchange_back_safe = rollback_source != nullptr &&
             detail::identity_at(root_fd, "current", &current_now_device,
                                 &current_now_inode, nullptr) &&
-            detail::identity_at(root_fd, generation.pointer_temp_name.c_str(),
-                                &swapped_now_device, &swapped_now_inode, nullptr) &&
-            current_now_device == pointer_device && current_now_inode == pointer_inode &&
-            swapped_now_device == old_device && swapped_now_inode == old_inode;
+            current_now_device == pointer_device && current_now_inode == pointer_inode;
         if (exchange_back_safe &&
             detail::rename_exchange(root_fd, "current", root_fd,
-                                    generation.pointer_temp_name.c_str(), error) &&
+                                    rollback_source, error) &&
             detail::sync_directory(root_fd, "rollback root fsync failed", error) &&
             detail::identity_at(root_fd, "current", &current_now_device,
                                 &current_now_inode, error) &&
