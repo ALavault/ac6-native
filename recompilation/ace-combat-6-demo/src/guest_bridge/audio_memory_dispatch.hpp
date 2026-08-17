@@ -1,62 +1,41 @@
 // Internal GuestBridge domain fragment; included only by guest_bridge.cpp.
   if (std::string_view{name} == "XMACreateContext") {
-    // This is a bounded experiment, never enabled by play/replay. It joins
-    // the exact PAL callsite/registers to the generic XMA output-pointer ABI
-    // without broadening the import surface or fabricating audio packets.
-    constexpr std::uint32_t kFirstOutputSlot = 0x17360050U;
-    constexpr std::uint32_t kOutputSlotStride = 0x60U;
-    constexpr std::uint32_t kOutputSlotCount = 3U;
-    const auto output_slot = context.r3.u32;
-    const auto slot_delta = output_slot - kFirstOutputSlot;
-    const auto slot_is_qualified =
-        output_slot >= kFirstOutputSlot &&
-        slot_delta / kOutputSlotStride < kOutputSlotCount &&
-        slot_delta % kOutputSlotStride == 0U;
-    if (std::getenv("AC6_DEMO_EXPERIMENTAL_XMA_CREATE") == nullptr ||
-        static_cast<std::uint32_t>(context.lr) != 0x82357298U ||
-        !slot_is_qualified || context.r4.u32 != 0U ||
-        context.r5.u32 != 0x6180U || context.r6.u32 != 0U ||
-        context.r7.u32 != 1U) {
-      return false;
-    }
+    // XDK XMADecoder.h: STDAPI XMACreateContext(PXMACONTEXT *ppContext).
+    // Exactly one parameter, an out-pointer; r4..r7 are not arguments and
+    // whatever the caller left in them is stale. The earlier opt-in
+    // experiment pinned that whole register tuple and three specific output
+    // addresses because those were what one observed run happened to carry;
+    // neither is part of the contract, and guest-side storage is not the
+    // kernel's business. What remains fail-closed is the reached callsite,
+    // that the out-pointer is writable, and the allocator's own bound.
     auto &bridge = require_bridge();
     auto &memory = bridge.memory();
-    if (!memory.mapped(output_slot, 4U)) {
+    const auto output_slot = context.r3.u32;
+    if (static_cast<std::uint32_t>(context.lr) != 0x82357298U ||
+        output_slot == 0U || !memory.mapped(output_slot, 4U)) {
       return false;
     }
     const auto context_pointer = bridge.allocate_xma_context();
     memory.store_u32(output_slot, context_pointer);
+    // S_OK, or the exhaustion status the opt-in experiment already used. The
+    // allocator holds 320 contexts and the demo creates three, so this error
+    // path is unreached and its exact value stays unqualified.
     context.r3.u32 = context_pointer == 0U ? 0xC0000017U : 0U;
-    std::fprintf(stderr,
-                 "AC6_XMA_EXPERIMENTAL_CREATE tick=%llu thread=%u "
-                 "slot=0x%08x context=0x%08x status=0x%08x\n",
-                 static_cast<unsigned long long>(bridge.tick()),
-                 current_guest_thread_id, output_slot, context_pointer,
-                 context.r3.u32);
     return true;
   }
   if (std::string_view{name} == "XMAReleaseContext") {
-    // The reached PAL release loop visits the same three contiguous contexts
-    // created by the opt-in experiment. ReXGlue/Xenia generically clear the
-    // 64-byte context and release its allocation bit. Preserve only those
-    // three reached slots; every other caller, pointer and tuple traps.
-    constexpr std::uint32_t kFirstContext = 0x2E800000U;
-    constexpr std::uint32_t kContextBytes = 64U;
-    constexpr std::uint32_t kContextCount = 3U;
+    // XDK: VOID XMAReleaseContext(PXMACONTEXT pContext), one parameter and no
+    // return value; it "does not actually free memory; it merely places the
+    // context on the free list". release_xma_context already validates the
+    // pointer against the array this runtime handed out, which is the real
+    // check the three pinned addresses were standing in for.
     const auto context_pointer = context.r3.u32;
-    const auto context_delta = context_pointer - kFirstContext;
-    const auto context_is_qualified =
-        context_pointer >= kFirstContext &&
-        context_delta / kContextBytes < kContextCount &&
-        context_delta % kContextBytes == 0U;
-    if (std::getenv("AC6_DEMO_EXPERIMENTAL_XMA_CREATE") == nullptr ||
-        static_cast<std::uint32_t>(context.lr) != 0x82356820U ||
-        !context_is_qualified || context.r4.u32 != 1U ||
-        context.r5.u32 != 0U || context.r6.u32 != 0U ||
-        context.r7.u32 != 0U ||
+    if (static_cast<std::uint32_t>(context.lr) != 0x82356820U ||
         !require_bridge().release_xma_context(context_pointer)) {
       return false;
     }
+    // The function is VOID, so the caller must not read r3; it is written
+    // deterministically rather than left carrying the argument.
     context.r3.u32 = 0U;
     return true;
   }
