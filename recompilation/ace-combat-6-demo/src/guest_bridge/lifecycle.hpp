@@ -93,9 +93,6 @@ void GuestBridge::prepare(const ThreadImage &image) {
           throw RuntimeTrap("unqualified XMA context-array read", tick_, 0,
                             address);
         }
-        if (std::getenv("AC6_DEMO_EXPERIMENTAL_XMA_CREATE") == nullptr) {
-          return 0U;
-        }
         const auto array = ensure_xma_context_array();
         if (array == 0U) {
           throw RuntimeTrap("cannot allocate XMA context array", tick_, 0,
@@ -132,7 +129,7 @@ void GuestBridge::prepare(const ThreadImage &image) {
   // Keep this mapping absent from the default route and accept only the six
   // observed writes in an explicit experiment; reads and every other value
   // remain fail-closed.
-  if (std::getenv("AC6_DEMO_EXPERIMENTAL_XMA_KICK") != nullptr) {
+  {
     memory_.map_mmio(
         0x7FEA1A80U, 4U,
         [this](std::uint32_t address, std::size_t length) -> std::uint64_t {
@@ -143,28 +140,20 @@ void GuestBridge::prepare(const ThreadImage &image) {
                std::size_t length) {
           const auto expected_wire =
               static_cast<std::uint64_t>(xma_kick_expected_bit_) << 24U;
+          // The kick is one-hot: the guest sets bit i for the i-th
+          // context of the array this runtime handed out. The opt-in
+          // experiment spelled that out as six absolute addresses
+          // (0x2E800000 + i * 64) because that is where its array happened
+          // to land; the array is allocated dynamically, so the rule is the
+          // index, not the address. Everything else still traps.
           std::uint32_t expected_context = 0U;
-          switch (xma_kick_expected_bit_) {
-          case 1U:
-            expected_context = 0x2E800000U;
-            break;
-          case 2U:
-            expected_context = 0x2E800040U;
-            break;
-          case 4U:
-            expected_context = 0x2E800080U;
-            break;
-          case 8U:
-            expected_context = 0x2E8000C0U;
-            break;
-          case 16U:
-            expected_context = 0x2E800100U;
-            break;
-          case 32U:
-            expected_context = 0x2E800140U;
-            break;
-          default:
-            break;
+          const auto array = xma_context_array_address_;
+          if (array != 0U && xma_kick_expected_bit_ != 0U &&
+              (xma_kick_expected_bit_ & (xma_kick_expected_bit_ - 1U)) == 0U) {
+            const auto index =
+                static_cast<std::uint32_t>(
+                    std::countr_zero(xma_kick_expected_bit_));
+            expected_context = array + index * 64U;
           }
           if (address != 0x7FEA1A80U || length != 4U ||
               value != expected_wire || xma_kick_expected_bit_ > 32U ||

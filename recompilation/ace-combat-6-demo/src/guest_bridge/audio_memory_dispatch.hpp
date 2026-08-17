@@ -133,9 +133,11 @@
       return false;
     }
     context.r3.u32 = address;
-    if (std::getenv("AC6_DEMO_EXPERIMENTAL_XMA_CREATE") != nullptr) {
-      bridge.observe_xma_physical_context(address);
-    }
+    // Pure observation, no effect on the returned address: the kick window
+    // checks that the context being kicked is the one whose physical address
+    // the guest just asked for. Gating it on the experiment left that state
+    // at zero on the nominal path, so every kick was refused.
+    bridge.observe_xma_physical_context(address);
     if (std::getenv("AC6_DEMO_WATCH_XMA_ADDRESS") != nullptr) {
       std::fprintf(stderr,
                    "AC6_XMA_PHYSICAL tick=%llu thread=%u input=0x%08X "
