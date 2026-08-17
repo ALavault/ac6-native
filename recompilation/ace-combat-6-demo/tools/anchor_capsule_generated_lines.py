@@ -15,8 +15,14 @@ line. The line stays for provenance; the PC is what survives.
 It changes nothing else, refuses to write when a citation cannot be resolved,
 and is idempotent: a citation that already carries a PC is left alone.
 
+With --audit it walks a directory instead and fails on any capsule whose
+citations no longer resolve, except the ones already known stale. That is a
+ratchet: the four capsules broken before this tool existed cannot be repaired
+from here, but no fifth can join them unnoticed.
+
 usage: anchor_capsule_generated_lines.py CAPSULE.json... [--generated DIR]
                                           [--basefile PATH] [--write]
+       anchor_capsule_generated_lines.py --audit ROOT...
 """
 from __future__ import annotations
 
@@ -66,9 +72,44 @@ def anchor(node: object, functions, basefile: bytes, report: list[str]) -> bool:
     return True
 
 
+# Broken before tools/anchor_capsule_generated_lines.py existed, and not
+# repairable from here: they cite lines of a codegen tree this repository no
+# longer has. sub_820FF710 has since moved to line 43191 of ppc_recomp.7.cpp,
+# so their citations now denote an unrelated VMX instruction.
+KNOWN_STALE = {
+    "ac6-demo-queue-slot-neutral600-v1.json",
+    "ac6-demo-queue-slot-stores-ab-v1.json",
+    "ac6-demo-render-queue-slot-write-probe-v1.json",
+    "ac6-demo-render-queue-write-provenance-v1.json",
+    "ac6-demo-ib-publish-writer-join-v1.json",
+}
+
+
+def audit(roots: list[Path], functions, basefile: bytes) -> int:
+    checked = stale = 0
+    for root in roots:
+        for path in sorted(root.rglob("*.json")):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if "generated_line" not in text:
+                continue
+            checked += 1
+            try:
+                anchor(json.loads(text), functions, basefile, [])
+            except (MappingError, ValueError, KeyError) as error:
+                stale += 1
+                known = path.name in KNOWN_STALE
+                print(f"{'known-stale' if known else 'error'}: {path}: {error}")
+                if not known:
+                    print("capsule_line_anchors=fail")
+                    return 1
+    print(f"capsule_line_anchors=pass checked={checked} known_stale={stale}")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("capsules", nargs="+", type=Path)
+    parser.add_argument("capsules", nargs="*", type=Path)
+    parser.add_argument("--audit", action="store_true")
     parser.add_argument("--generated", type=Path, default=GENERATED)
     parser.add_argument("--basefile", type=Path, default=BASEFILE)
     parser.add_argument("--write", action="store_true")
@@ -76,6 +117,8 @@ def main() -> int:
 
     basefile = arguments.basefile.read_bytes()
     functions = load_functions(arguments.generated, len(basefile))
+    if arguments.audit:
+        return audit(arguments.capsules, functions, basefile)
     failures = 0
     for path in arguments.capsules:
         document = json.loads(path.read_text(encoding="utf-8"))

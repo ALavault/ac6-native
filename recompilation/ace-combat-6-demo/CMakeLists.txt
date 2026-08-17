@@ -390,6 +390,16 @@ add_test(NAME ac6-demo-post-resume-tests
 add_test(NAME ac6-demo-xam-return-chain-mapper-tests
   COMMAND ${Python3_EXECUTABLE} -m unittest discover
     -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_xam_return_chain.py)
+# Ratchet: a capsule citing a generated line must still resolve to the PAL
+# instruction it names, or be one of the five already broken before the check
+# existed. Four of those now denote an unrelated VMX instruction instead of
+# failing, which is why this is a gate and not a report.
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/build-codegen-on/codegen/generated)
+  add_test(NAME ac6-demo-capsule-line-anchors
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/tools/anchor_capsule_generated_lines.py
+      --audit ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/demo)
+endif()
 add_test(NAME ac6-demo-import-sequence-diff-tests
   COMMAND ${Python3_EXECUTABLE} -m unittest discover
     -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_diff_import_sequences.py)
