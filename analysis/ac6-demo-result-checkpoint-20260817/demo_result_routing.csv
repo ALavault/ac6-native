@@ -1,0 +1,7 @@
+producer_state,internal_outcome,task_result,destination,minimal_semantics,reachability,grade
+MissionManager+0x338 = 3,2,0,CModeTaskTitleDemoOffline,explicit quit/abort route; written by demo:0x82173A30 and menu command 4,reachable,A
+MissionManager+0x338 = 1,1,1,CModeTaskAdvertiseDemoOfflineEnd,ordinary completed-mission route; writer demo:0x822116F0 precedes objective/result finalization,reachable,A-
+MissionManager+0x338 = 4 or 5,1,1,CModeTaskAdvertiseDemoOfflineEnd,terminal variants folded into the ordinary Advertise result,not observed in Mission 01,A-
+MissionManager+0x338 = 1 and application mode = 5,5,1,CModeTaskAdvertiseDemoOfflineEnd,secondary ordinary terminal route,compiled; reachability open,A
+MissionManager+0x338 = 1 and mission index = 15 and application mode = 1,3,2,CModeTaskAdvertiseDemoOfflineEnd,final-campaign special route,dead in demo Mission 01,A route / B semantics
+MissionManager+0x338 = 2,,,,state value not mapped by the observed terminal selector,open,C

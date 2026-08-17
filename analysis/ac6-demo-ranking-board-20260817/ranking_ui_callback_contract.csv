@@ -1,0 +1,16 @@
+callback_id,kind,semantics,grade
+910,input/list selection,select one of 13 UI commands; out-of-range reset,A-
+920,board selection,configure family/stage/difficulty filters and start query,A-
+927,scalar,backend total/available count from +0xD0,A-
+928,scalar,"current normalized row count, maximum 10",A
+929,scalar,constant page size 10,A
+940,row scalar,rank of requested row,A
+941,row string,formatted time from row +0x38,A
+942,row string,formatted primary 64-bit board value from row +0x28,A-
+943,row string,rank/name identity rendering,A
+944,row scalar,compound aircraft/special-weapon/country key,A-
+950,selected-row scalar,rank/validity word of local-player row,A-
+951,selected-row string,local-player rank/name rendering,A
+952,selected-row string,local-player primary 64-bit board value,A-
+953,selected-row string,local-player formatted time,A
+954,selected-row scalar,local-player compound aircraft/weapon/country key,A-

@@ -1,0 +1,8 @@
+stage,function,operation,grade
+raw descriptor restore,0x82217428,copies the contiguous snapshot buffer back to every registered live block,A
+selected-unit transform handoff,0x8229E698 mode 2,"reads selected UnitManager object, preserves/copies transform vectors around object+0x50 and manager+0x348/+0x350",A-
+state object validation,0x82298100,validates/rebinds a state object through its callback/vtable contract instead of trusting raw bytes alone,A-
+state object resume,0x8217BC38 from 0x8229E698,resumes the restored mission-state object,B+
+transition-bit cleanup,0x8229E698,clears bit 0 in manager state blocks around +0xEC and +0xFC,A-
+manager rearm,0x82297F08,reinitializes dependent MissionManager runtime after restore,B+
+subsystem republish,0x82210AC8 and later calls,republishes mission/update state after the rollback,B

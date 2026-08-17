@@ -1,0 +1,12 @@
+offset,element_size,count,stride,semantics,consumer_evidence,provenance,grade
+0x000,4,1,,global mission rank/state,demo:0x8220F780; Free Mission result queries,regenerated_from_report_and_consumers,A-
+0x004,4,7,4,operation ranks/states,objective finalizer and result UI queries,regenerated_from_report_and_consumers,A-
+0x0D8,4,1,,mission score,demo:0x822771A0,regenerated_from_report_and_consumers,A
+0x0DC,4,7,4,operation rewards/scores,mission result UI queries,regenerated_from_report_and_consumers,B+
+0x0F8,4,1,,global rank bonus,demo:0x822771A0 rank-bonus table,regenerated_from_report_and_consumers,A
+0x0FC,4,1,,primary operation reward,mission result UI queries,regenerated_from_report_and_consumers,B+
+0x100,4,1,,total mission duration,result UI and campaign merge,regenerated_from_report_and_consumers,A-
+0x104,4,7,4,operation durations or deltas,mission result UI queries,regenerated_from_report_and_consumers,B+
+0x120,4,1,,category index in range 0..6,category multiplier lookup,regenerated_from_report_and_consumers,A-
+0x144,4,19,4,additive mission counters,demo:0x822CFFB0 campaign aggregate merge,regenerated_from_report_and_consumers,A-
+stride,0x190,16 records/profile,,mission result record size,profile layout and index arithmetic,regenerated_from_report_and_consumers,A

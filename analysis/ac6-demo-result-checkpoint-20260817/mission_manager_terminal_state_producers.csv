@@ -1,0 +1,5 @@
+site,write,downstream,semantics,grade
+0x82173A30,store 3 to MissionManager+0x338,vslot +0xAC,explicit game-task quit/abort producer,A
+MissionManager command 4 via 0x8229ECE0,store 3 to MissionManager+0x338,state 0x82297848; HSM phase 14,menu-driven leave mission,A-
+0x822116F0 (store at 0x82211714),store 1 to MissionManager+0x338,"objective rank calculation, result finalizer 0x822771A0, vslot +0xAC",normal mission completion producer,A-
+0x8229FA34 context,store 1 to MissionManager+0x338,terminal state processing,secondary normal-completion writer,B+

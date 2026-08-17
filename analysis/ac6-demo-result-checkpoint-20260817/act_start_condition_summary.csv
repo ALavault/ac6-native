@@ -1,0 +1,14 @@
+metric,value,notes
+rows,205,all parsed Act-start descriptors in the demo mission root
+service_value_or_timestamp_conditions,176,condition_mode 1
+mission_timeline_or_progress_conditions,29,condition_mode 0
+timeline_selector_1,7,
+timeline_selector_2,22,
+post_start_mode_0,33,
+post_start_mode_1,151,
+post_start_mode_2,21,
+Strigon_service_edges,8,services 219..226 each select one element group 165..172
+Nimbus_channel_edges,18,services 243..251 each select paired groups 191..199 and 200..208
+Nimbus_barrier_293_edges,19,groups 182..199 and controller 209
+Nimbus_barrier_294_edges,19,groups 182..199 and controller 209
+provenance,regenerated summary,full row-level CSV remains reproducible from the published extractor and original mission-root blob

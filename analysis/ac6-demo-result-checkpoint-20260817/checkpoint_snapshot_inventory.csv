@@ -1,0 +1,8 @@
+block,registration_owner,live_pointer,size,cardinality,semantics,grade
+MissionManager prefix,0x82296A40,MissionManager this,0xCE10,fixed,includes pointer-rich gameplay manager prefix; stops exactly before embedded HUD at +0xCE10,A
+68-byte mission runtime records,0x82296A40,MissionManager+0x54,count_from_mission_root * 68,dynamic,objectives/conditions runtime array; Mission 01 observed count 361,A-
+20-byte service registry,0x82296A40,MissionManager+0x58,service_count * 20,dynamic,Mission 01 service count 327,A
+group/index table,0x82296A40,MissionManager+0x28,group_count * 4,dynamic,Mission 01 observed count 213,A-
+global mode word A,0x82296A40,application_root+0x1C,4,fixed,global gameplay word,A
+global mode word B,0x82296A40,application_root+0x20,4,fixed,global gameplay word,A
+active runtime unit objects,0x820A3BD8..0x820A4430,factory result pointer,factory allocation size,per-object conditional,"entire object block, including vtable and internal pointers; route-dependent count",A
