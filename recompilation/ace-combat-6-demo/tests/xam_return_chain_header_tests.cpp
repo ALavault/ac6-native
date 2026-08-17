@@ -8,6 +8,15 @@
 
 namespace {
 
+const char *probe_function = nullptr;
+std::uint32_t probe_line = 0U;
+
+extern "C" void AC6_PPC_SET_LOAD_SITE(const char *function,
+                                        std::uint32_t line) noexcept {
+  probe_function = function;
+  probe_line = line;
+}
+
 using namespace ac6demo::guest_bridge_detail;
 
 constexpr std::uint32_t kThread = 7U;
@@ -131,6 +140,9 @@ void test_kind_size_rejection() {
   record_xam_return_chain_bytes("load128", 0x1000U, 8U, nullptr, 1U,
                                 kThread, 0U, "f", 10U);
   assert(xam_return_chain_state.accesses.load() == 0U);
+  record_xam_return_chain("store32", 0x1000U, 4U, 0x100000000ULL, 1U,
+                          kThread, 0U, "f", 10U);
+  assert(xam_return_chain_state.accesses.load() == 0U);
 }
 
 void test_exact_bound_and_atomic_contract() {
@@ -168,9 +180,10 @@ int main() {
     initialize_xam_return_chain_watch();
     arm_xam_return_chain(kXamReturnCaller, 1U, kThread, 0U, 0U,
                          kXamReturnControllerObject, 0U, payload.data());
+    AC6_PPC_SET_LOAD_SITE("__imp__sub_822F5E58", 3948U);
     record_xam_return_chain("store32", kXamReturnExclusiveAddress, 4U,
                             0x12345678U, 2U, kThread, 0U,
-                            "__imp__sub_822F5E58", 3948U);
+                            probe_function, probe_line);
     return 0;
   }
   test_off_hot_path();

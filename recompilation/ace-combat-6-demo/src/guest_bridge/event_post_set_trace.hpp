@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <string_view>
 
-#include "guest_bridge/xam_return_chain_trace.hpp"
+#include "xam_return_chain_trace.hpp"
 
 namespace ac6demo::guest_bridge_detail {
 

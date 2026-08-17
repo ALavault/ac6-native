@@ -40,6 +40,12 @@ inline constexpr std::uint32_t kXamReturnMaxAccesses = 32U;
   return 0U;
 }
 
+[[nodiscard]] inline bool xam_return_chain_value_fits(
+    std::uint32_t size, std::uint64_t value) noexcept {
+  return size == 8U || (size > 0U && size <= 8U &&
+                        (value >> (size * 8U)) == 0U);
+}
+
 struct XamReturnChainState final {
   // 0 = not initialized, 1 = disabled, 2 = enabled, 3 = initializer.
   std::atomic<std::uint8_t> enabled{0U};
@@ -222,6 +228,7 @@ inline void record_xam_return_chain(
                          xam_return_chain_exclusive_site(function, generated_line);
   if (size == 0U || size > 8U ||
       xam_return_chain_expected_size(kind) != size ||
+      !xam_return_chain_value_fits(size, value_be) ||
       !xam_return_chain_claim(thread, target)) {
     return;
   }
@@ -287,6 +294,7 @@ inline void record_xam_return_chain_atomic(
     std::uint32_t generated_line, std::uint32_t site_pc = 0U) noexcept {
   if (!xam_return_chain_watch_enabled_fast() ||
       xam_return_chain_expected_size(kind) != size ||
+      !xam_return_chain_value_fits(size, value_be) ||
       !xam_return_chain_claim(thread, true)) {
     return;
   }
