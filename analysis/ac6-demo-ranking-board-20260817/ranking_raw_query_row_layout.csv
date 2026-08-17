@@ -1,0 +1,9 @@
+offset,size,semantics,grade
+0x00,8,Xbox user identifier used to find the local player row,A-
+0x08,4,rank / list position,A
+0x0C,4,reserved or backend metadata,C
+0x10,8,board/backend 64-bit value copied to normalized row +0x08,B-
+0x18,16,gamertag/name,A
+0x28,4,property count,A
+0x2C,4,pointer to 24-byte property records,A
+stride,48,query result row stride,A

@@ -1,0 +1,17 @@
+state,target,minimal_role,grade
+0,demo:0x821883F0,entry/initial screen,A target; semantic name partial
+1,demo:0x82188770,UI transition/query/display state,A target; semantic name partial
+2,demo:0x82188870,UI transition/query/display state,A target; semantic name partial
+3,demo:0x821888D4,UI transition/query/display state,A target; semantic name partial
+4,demo:0x821888D4,UI transition/query/display state,A target; semantic name partial
+5,demo:0x8218847C,UI transition/query/display state,A target; semantic name partial
+6,demo:0x82188538,UI transition/query/display state,A target; semantic name partial
+7,demo:0x821885A4,UI transition/query/display state,A target; semantic name partial
+8,demo:0x82188600,UI transition/query/display state,A target; semantic name partial
+9,demo:0x82188660,UI transition/query/display state,A target; semantic name partial
+10,demo:0x821887B4,UI transition/query/display state,A target; semantic name partial
+11,demo:0x821887C0,UI transition/query/display state,A target; semantic name partial
+12,demo:0x82188800,UI transition/query/display state,A target; semantic name partial
+13,demo:0x82188834,UI transition/query/display state,A target; semantic name partial
+14,demo:0x82188844,UI transition/query/display state,A target; semantic name partial
+15,demo:0x821888B0,UI transition/query/display state,A target; semantic name partial

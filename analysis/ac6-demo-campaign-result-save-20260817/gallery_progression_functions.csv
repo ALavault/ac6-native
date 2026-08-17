@@ -1,0 +1,6 @@
+function,inputs,outputs,grade
+demo:0x82276B38,mission-stat thresholds and broad completion predicates,working unlock/achievement flags,A-
+demo:0x82276EF8,"mission records, bitmasks and completion predicates",45 Assault Records and 54 medals,A
+demo:0x822764D0,specific mission completions and prior unlock bits,campaign unlock lattice,A-
+demo:0x82276798,global/profile predicates,additional persistent unlock flags,B+
+call order,after mission record copy and aggregate merge,atomic post-result progression update,A

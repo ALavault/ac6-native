@@ -1,0 +1,8 @@
+field,storage,minimal_semantics,grade
+entry_count,54,,A
+entry_stride,2,,A
+entry+0x00,u8,acquired state,A
+entry+0x01,u8,new/unseen marker,A
+UI query 380,,reads acquired byte,A
+UI query 381,,reads new marker,A
+gallery acknowledgement,,clears new marker on acquired medals,A

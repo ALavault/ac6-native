@@ -1,0 +1,14 @@
+address,role
+demo:0x8220F780,compute operation/objective rank and reward
+demo:0x822109A8,read first eligible objective rank
+demo:0x82210A30,read first eligible objective reward
+demo:0x822771A0,finalize and publish mission result
+demo:0x822CFFB0,merge result into campaign aggregate
+demo:0x82171B28,Free Mission result scalar queries
+demo:0x82171CD8,Free Mission per-operation array queries
+demo:0x82172368/0x821723B8/0x82172640,campaign aggregate UI queries
+demo:0x8229FEA8/0x8229FF38,SaveProperty serialize/deserialize
+demo:0x8229FFC0,SaveProperty serialized size
+demo:0x822A0028,SaveProperty validator
+demo:0x8229FA80/0x8229FB38,profile serialize/deserialize
+demo:0x82276B38/0x82276EF8/0x822764D0/0x82276798,post-result gallery/progression updates

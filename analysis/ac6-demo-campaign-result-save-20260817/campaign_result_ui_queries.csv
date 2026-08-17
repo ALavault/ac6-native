@@ -1,0 +1,9 @@
+query_id,source,minimal_semantics
+611,record+0x000,overall rank/status
+612,record+0x0D8,mission score
+613,record+0x100,mission time
+614,count nonzero/non-6 values in record+0x004..0x01C,number of ranked operations
+615,record+0x004 + index*4,operation rank/status
+616,record+0x0DC + index*4,operation reward/score
+617,record+0x104 + index*4,operation elapsed/delta
+619,external unlock/availability chain,special result/gallery eligibility

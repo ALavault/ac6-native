@@ -1,0 +1,12 @@
+offset,size,semantics,grade
+method-this +0x13B0,72,local-player normalized row scratch/storage,A-; public object pointer may be shifted by 8
+public-base +0x13B8,field within local row,validity/rank word used by UI callbacks,A
+method-this +0x13F8,720,10 normalized rows × 72 bytes,A
+public-base +0x1400,72 × 10,UI-visible list row base,A
++0x16C8 / public +0x16D0,4,normalized row count,A
++0x00C8,4,maximum rows per page = 10,A
++0x00D8,4,raw query result handle/pointer,A-
++0x1750,4,backend asynchronous state,A
++0x1754,4,last result/status,A-
++0x1758,4,backend/request object pointer,A-
++0x175C,1,async retry/pending latch,A-

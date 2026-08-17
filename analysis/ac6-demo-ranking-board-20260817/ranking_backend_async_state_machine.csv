@@ -1,0 +1,15 @@
+state,target_or_operation,minimal_role,grade
+0,demo:0x821512C8,idle/start,A structural
+1,demo:0x821512D0,create/open board request,B+
+2,demo:0x82151318,resolve board/view metadata,B+
+3,demo:0x82151370,publish local identity/query context,B+
+4,demo:0x821513DC,advance asynchronous request,B
+5,demo:0x82151408,issue stat query,B+
+6,demo:0x8215143C,poll query,B+
+7,demo:0x82151468,normalize response/request by identity,B+
+8,demo:0x821514A0,consume response rows,B+
+9,demo:0x821514D8,post-processing phase A,B
+10,demo:0x8215150C,post-processing phase B,B
+11,demo:0x82151540,close/finalize phase A,B
+12,demo:0x82151574,close/finalize phase B,B
+14,terminal,finished; status exposed by demo:0x821515C0,A

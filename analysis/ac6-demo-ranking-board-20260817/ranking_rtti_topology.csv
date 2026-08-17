@@ -1,0 +1,8 @@
+class,type_descriptor,primary_vtable,secondary_vtable,constructor_or_entry,object_size,role,grade
+CModeTaskRanking,demo:0x82391A48,demo:0x8200E8EC,demo:0x8200E88C,demo:0x821906B8,0x20718,"leaderboard browser task, offline/online",A
+CX360RankingBoard,demo:0x8238FE60,demo:0x8200B01C,,demo:0x821484D0,,Xbox leaderboard request/record container,A-
+ACE6::CAce6RankingBoardApp,demo:0x8238FE84,demo:0x8200B07C,,demo:0x82148688,,game-side ranking board application layer,A
+CX360RankingBoardApp,demo:0x8238FEAC,demo:0x8200B084,,demo:0x821A39F0,,Xbox-specific leaderboard backend,A
+CModeTaskGalleryCampaignResult,,demo:0x8200CC54,demo:0x8200CBF4,demo:0x82190190,,"campaign result gallery, separate from leaderboard browser",A- separation
+CModeTaskGalleryCampaignResultMission,,demo:0x8201030C,demo:0x820102AC,demo:0x82190190,,per-mission campaign result view,A- separation
+CModeTaskGalleryMedalMission,,demo:0x820103DC,demo:0x8201037C,demo:0x82190660,,"mission medal gallery, separate result subsystem",A- separation

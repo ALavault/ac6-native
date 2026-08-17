@@ -1,0 +1,10 @@
+family_id,label,description_format,dimensions,grade
+0,CAMPAIGN MISSION,[%03d] キャンペーン：ミッション%02d：難易度%s (Max:%d),"mission, difficulty",A
+1,CAMPAIGN TOTAL,[%03d] キャンペーン：総合：難易度%s (Max:%d),difficulty,A
+2,KILLS,[%03d] 撃墜数 (Max:%d),global,A
+3,BATTLE ROYALE STAGE,[%03d] 個人デスマッチ：STAGE%02d (Max:%d),stage,A
+3,BATTLE ROYALE TOTAL,[%03d] 個人デスマッチ：総合 (Max:%d),global,A
+4,TEAM BATTLE STAGE,[%03d] チームデスマッチ：STAGE%02d (Max:%d),stage,A
+4,TEAM BATTLE TOTAL,[%03d] チームデスマッチ：総合 (Max:%d),global,A
+5,CO-OP BATTLE,[%03d] NPC討伐ミッション%02d (Max:%d),mission,A
+5,SIEGE BATTLE,[%03d] 攻守交替ミッション%02d (Max:%d),mission,A

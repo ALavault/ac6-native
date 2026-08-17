@@ -1,0 +1,9 @@
+field,storage,minimal_semantics,grade
+entry_count,45,,A
+entry_stride,8,,A
+entry+0x00,u8,acquired/unlocked state,A-
+entry+0x01,u8,new/unseen marker,A
+entry+0x04,u32,auxiliary value/counter,B
+UI query 385,,reads acquired byte,A
+UI query 386,,reads new marker,A
+UI command 387,,clears new marker for one entry,A

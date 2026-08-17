@@ -1,0 +1,13 @@
+offset,size,semantics,producer,consumers,grade
+0x00,4,rank / validity marker,raw result +0x08,"row rendering, UI callback 940/943",A
+0x04,4,padding or reserved,zeroed,,C
+0x08,8,board/backend 64-bit value,raw result +0x10,not fully named,B-
+0x10,16,gamertag/name,raw result +0x18,row renderer and callback 943/951,A
+0x20,8,"secondary 64-bit board statistic, likely kill/board-specific metric",property normalization path,board-dependent; exact column join open,C+
+0x28,8,primary score/value after unpacking packed campaign statistic,"property type path, shifted high bits",formatters 0x8218F8E0/0x8218FA58 and callback 942/952,A-
+0x30,4,aircraft identifier,packed low bits,aircraft formatter 0x8219B8A8; compound callback 944,A-
+0x34,4,special-weapon identifier,packed low bits,weapon formatter 0x8219B970; compound callback 944,A-
+0x38,4,"time in seconds, displayed mm:ss'cc""",packed low bits transformed as 3600 - value,row formatter and callback 941/953,A
+0x3C,4,country/region code,32-bit property,%3d) %d %s and compound callback 944,A-
+0x40,8,reserved/zero in observed normalizer,memset,,C
+stride,72,normalized UI row,demo:0x821505C8,10-row list and local-player row,A

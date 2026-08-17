@@ -1,0 +1,12 @@
+offset,semantics,grade
++0x00000,primary CModeTaskRanking vtable,A
++0x0000C,screen/HSM state,A
++0x00068,secondary/FSM vtable,A
++0x00070,embedded UI/task helper constructed by demo:0x822628A8,A-
++0x2058C,main ranking-board/backend pointer,A
++0x20594,backend result/status field,B+
++0x20598..+0x205A8,filter and selection fields used to derive board family,A-
++0x206AC..+0x206C0,"page, cursor, query and displayed-board state",A-
++0x206BD,loading/async byte,A-
++0x206C0,"four-word paging tuple initialized as {0,0,1,0}",A
+object size,0x20718 bytes,A

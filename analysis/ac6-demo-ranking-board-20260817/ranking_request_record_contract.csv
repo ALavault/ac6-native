@@ -1,0 +1,4 @@
+field,value,evidence,semantics,grade
+record_stride,0x74 (116),demo:0x82148730 / 0x821487B8,generic leaderboard stat request/record,A
+construction,"zero 116 bytes, parse/fill, insert into container",demo:0x82148730,request-side serialized record,A-
+range arithmetic,all pointer/range calculations divide/multiply by 116,demo:0x821487B8,fixed record contract,A

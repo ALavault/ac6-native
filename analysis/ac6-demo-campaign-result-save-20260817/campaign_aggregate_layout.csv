@@ -1,0 +1,8 @@
+offset,minimal_semantics,operation,grade
+0x004,campaign_completion_count,incremented when mission 15 completes,A-
+0x008,campaign_total_time,sum of mission result +0x100; formatted H/M/S,A
+0x010,completed_mission_count,incremented on every merged mission result,A
+0x014..0x05C,additive_counters[19],sum of mission result +0x144..+0x18C,A
+0x10A0 + i*8,assault_record[i],45 entries; relative to aggregate object,A
+0x1208 + i*2,medal[i],54 entries; relative to aggregate object,A
+0x1274 and adjacent tables,best_rank_and_category_records,lower positive rank / higher score retention,A-

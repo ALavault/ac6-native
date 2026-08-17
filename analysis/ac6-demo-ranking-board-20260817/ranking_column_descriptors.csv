@@ -1,0 +1,8 @@
+ordinal,column_id,label,english,descriptor_flags,row_source,grade
+0,1,国,country/region,0x01000000,+0x3C,A-
+1,2,SCORE,score / primary board value,0x01000000,+0x28,A-
+2,3,撃墜数,kills / secondary board metric,0x01000000,+0x20 candidate,B
+3,4,TIME,time in seconds,0x01000000,+0x38,A
+4,5,使用機体,aircraft used,0x01000000,+0x30,A-
+5,6,使用特殊兵装,special weapon used,0x01000000,+0x34,A-
+6,0,ボードID,board ID / board-specific 64-bit identity,special: fields 3/4 set to 1,board/query context; not proven as one row scalar,B
