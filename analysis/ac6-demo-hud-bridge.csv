@@ -1,0 +1,6 @@
+stage,address_or_offset,meaning,status
+OrderProperty manager callback,campaign vslot+0x54 → demo:0x820AC748,no-op blr,direct HUD claim refuted
+embedded HUD,MissionManager+0xCE10,ACE6::CAce6HudImpl<CX360HudRenderer>,RTTI exact
+published HUD pointer,MissionManager+0x2D8,pointer to embedded HUD,exact
+per-frame owner,demo:0x822158B0 / UpHud,loads +0x2D8 and calls vslot+0x38,exact
+generic HUD dispatcher,demo:0x821FE2E0,eight-mode sub-interface dispatcher,owner/consumer closed; widget labels internal

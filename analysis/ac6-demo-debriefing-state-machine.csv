@@ -1,0 +1,5 @@
+function,role,fields,status
+demo:0x82170828,mode/task initialization,"task+0x0C,+0x44,+0x70",A-
+demo:0x821708E0,per-frame manager update via vslot+0x84,embedded manager,A
+demo:0x821709A8,debriefing HSM,"task+0x0C state, +0x44 countdown",A-
+demo:0x8211E188,timeline playback,manager+0x490..0x4AC,A

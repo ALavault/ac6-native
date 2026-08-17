@@ -1,0 +1,13 @@
+group_id,external_identity,script_family,act_count,order_count,tag_sequences,flag_operations,properties,motion_modes
+9,C-17 transport representative,airdrop transport,2,12,0:0-2-6-6-2-8-2-6-3-5 | 1:1-5,97:1:m0;114:1:m0;144:1:m0,1,0;0;0
+25,C-17/drop controller representative,airdrop trigger,2,11,0:0-2-6-2-8-2-6-3-5 | 1:1-5,130:1:m0;160:1:m0,1,0;0;0
+62,c_arbn representative,airborne tank/descent,3,12,0:0-2-8-2-6-3-5 | 1:1-5 | 2:7-6-5,130:2:m0;130:2:m0,1,7;7
+67,c_arbn synchronization controller,airdrop synchronization,2,13,0:0-8-3-6-3-6-3-6-3-6-5 | 1:1-5,136:1:m0;137:1:m0;138:1:m0;139:1:m0,3,
+118,F/A-18F conditional wave,conditional fighter wave,2,13,0:0-8-2-2-2-2-2-5-3-5 | 1:7-6-5,164:1:m1,8,3;1;1;1;1
+119,Rafale M conditional wave,conditional fighter wave,2,13,0:0-8-2-2-2-2-2-5-3-5 | 1:7-6-5,279:2:m0,8,3;1;1;1;1
+165,Strigon lead element,elite coordinated element,2,26,0:0-8-2-8-5-8-2-6-3-5-2-2-2-5-5-5-2-3-5-8-2-6-3-5 | 1:1-5,219:1:m0;219:1:m0,128;0;129;129,0;3;1;3;1;1;3
+169,Strigon second lead element,elite coordinated element,2,26,0:0-8-2-8-5-8-2-6-3-5-2-2-2-5-5-5-2-3-5-8-2-6-3-5 | 1:1-5,219:1:m0;223:1:m0,128;0;129;129,0;3;4;1;1;1;3
+174,F/A-18F mission-update reinforcement,fighter reinforcement,1,11,0:0-2-3-3-5-2-2-5-2-3-5,,,0;0;3;0
+177,Rafale M mission-update reinforcement,fighter reinforcement,1,11,0:0-2-3-3-5-2-2-5-2-3-5,,,3;0;3;3
+200,Nimbus candidate 0,scripted long-range weapon controller,2,7,0:0-8-3-6-5 | 1:1-5,243:0:m0,3,
+208,Nimbus candidate 8,scripted long-range weapon controller,2,7,0:0-8-3-6-5 | 1:1-5,251:0:m0,3,

@@ -1,0 +1,9 @@
+offset,meaning,grade
+0x490,reset/loop start time,A-
+0x494,upper/end time bound,A-
+0x498,current playback time,A
+0x49C,keyframe time array pointer,A
+0x4A0,keyframe count,A
+0x4A4,current keyframe index,A
+0x4A8,playback speed,A
+0x4AC,aggregate-event enable,A-

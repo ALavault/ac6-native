@@ -1,0 +1,4 @@
+namespace,count,direct_join,meaning,status
+RadioTblBin line IDs,49,entry10 child14 voice IDs,logical voice lines,exact
+RadioTblBin sentinel controls,4,none; id 0xFFFF,service325 values1..4 control rows,exact
+entry10 child15,229,separate,semantic/global radio event names,must not numeric-join

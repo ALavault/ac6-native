@@ -1,0 +1,11 @@
+tag,ac6_serialized_label,wrapper_offset,runtime_role,runtime_functions,root0_count,grade
+0,base/action-start,0x04,initial pose and Act-start predicate descriptor,predicate routes → demo:0x82244F18,214,A- structural
+1,OrderDisappearBin,0x08,disappear/deactivate path at Act entry,demo:0x822434E0,205,A
+2,motion/spatial order,0x0C,"target/waypoint motion, pose and trajectory state",init demo:0x82243A18; update demo:0x82243BA0,884,A behavior; source class name open
+3,OrderStopBin,0x10,timed wait/stop state,init demo:0x82242778; update demo:0x822429D0,414,A-
+4,OrderLeadBin,0x14,supported by loader; absent from this mission root,no root0 execution sample,0,name A; behavior open here
+5,OrderJumpBin,0x18,relative/absolute branch with counter or predicate,demo:0x82244B90 dispatch,658,A
+6,OrderFlagBin,0x1C,"flag/service write, serialized modes 0=set and 1=add",demo:0x82210190,229,A
+7,marker/no payload,0x20,marks a fallback/event-selected Act; immediately skipped,selector demo:0x82245230,52,A structural; internal label open
+8,OrderPropertyBin,0x24,set current object property and publish the change,demo:0x82240808,219,A
+9,event-broadcast order,0x28,broadcast event 1026 with float payload to children,demo:0x82244B90,0,A behavior; source class name open

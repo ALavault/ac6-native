@@ -1,0 +1,7 @@
+event_type,handler,minimal_effect,business_name_status
+3,demo:0x82275468,categorical counter increment,open
+13,demo:0x82275430,add input+0x14 to manager+0x658,open
+34,demo:0x8211DD10,create/register tracked entity,structural closed
+35,demo:0x8211DF28,update existing tracked entity,structural closed
+37,demo:0x822752D0,update 128-slot aggregate tables and total,open
+38,demo:0x82275450,set manager+0x654 to2,open

@@ -1,0 +1,6 @@
+difficulty_value,label,max_durability_factor,equivalent_incoming_pressure_vs_normal,code_constant,status
+1,EASY,1.5,0.6666666666666666,demo:0x8200256C,closed A
+2,NORMAL,1.0,1.0,implicit fall-through,closed A
+3,HARD,0.5,2.0,demo:0x82001374,closed A
+4,EXPERT,0.3333333333333333,3.0,demo:0x82009000,closed A
+5,ACE,0.25,4.0,demo:0x820015C8,closed A

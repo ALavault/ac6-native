@@ -1,0 +1,6 @@
+component,address_or_field,semantics,grade
+rectangle writer,demo:0x82211A38,"orders and stores minX,minZ,maxX,maxZ",A
+rectangle predicate,demo:0x82211AB0,inclusive X/Z test,A
+fallback point,UnitManager collection+0x1008; object+0x50/+0x58,selected object X/Z,A-
+campaign wrapper,"demo:0x822124C8, vslot+0x90",calls predicate for selected object,A-
+terminal segment,"x=-37000; z[-50000,50000]",Return Line geometry candidate,A- geometry / B+ label
