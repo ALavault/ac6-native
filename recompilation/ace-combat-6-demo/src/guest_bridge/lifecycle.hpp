@@ -449,6 +449,21 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
       }
     }
   }
+  // The renderer's own state machine. sub_821AD378 runs once per frame and
+  // dispatches on this word through a jump table, doing nothing at all unless
+  // it holds 11..19; it is the switch that decides whether a frame is built.
+  if (std::getenv("AC6_DEMO_WATCH_RENDER_STATE") != nullptr) {
+    static std::uint32_t previous = 0xFFFFFFFFU;
+    constexpr std::uint32_t kRenderStateWord = 0x827AD2F0U;
+    if (memory_.mapped(kRenderStateWord, 4U)) {
+      const auto state = memory_.load_u32(kRenderStateWord);
+      if (state != previous) {
+        std::fprintf(stderr, "AC6_RENDER_STATE tick=%llu state=%u\n",
+                     static_cast<unsigned long long>(tick_), state);
+        previous = state;
+      }
+    }
+  }
   (void)run_runnable_threads();
   resume_xenos_pending_batch();
 }
