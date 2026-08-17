@@ -776,6 +776,20 @@
     }
     return true;
   }
+  // Which semaphore is released, and how often. Cycle 1777 recorded the
+  // render queue's consumer index never changing, which reads as "the worker
+  // is never woken"; this is the number that decides whether that reading is
+  // about waking at all.
+  if ((std::string_view{name} == "NtReleaseSemaphore" ||
+       std::string_view{name} == "KeReleaseSemaphore") &&
+      std::getenv("AC6_DEMO_WATCH_SEMAPHORES") != nullptr) {
+    std::fprintf(stderr,
+                 "AC6_SEM_RELEASE tick=%llu thread=%u name=%s handle=0x%08X "
+                 "count=%u lr=0x%08X\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 current_guest_thread_id, name, context.r3.u32, context.r4.u32,
+                 static_cast<std::uint32_t>(context.lr));
+  }
   if (std::string_view{name} == "NtReleaseSemaphore") {
     const auto handle = context.r3.u32;
     const auto found = semaphores.find(handle);
