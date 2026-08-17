@@ -68,42 +68,8 @@
   it records the pinned Wine/Vulkan launcher, local `codex` profile and AZERTY
   keyboard route without promoting oracle use to parity evidence.
 
-## Projet Codex multi-agent
+## Multi-agent routing
 
-- Sol est réservé exclusivement à l’agent racine; ne jamais le spawner, le
-  configurer ni l’hériter pour un enfant. Le Sol racine planifie, architecture,
-  traite le débogage difficile, délègue et décide; il n’implémente, ne recherche,
-  ne relit, ne teste et n’effectue aucune autre exécution.
-- Seul l’agent racine peut spawner.
-- Si un sous-agent Sol semble nécessaire, arrêter et demander l’accord explicite
-  de l’utilisateur pour cette seule tâche, jamais de façon permanente.
-- Chaque spawn doit utiliser explicitement `fork_turns = "none"` et ne
-  transmettre que le contexte propre à la tâche.
-- Les sous-agents ne spawnent jamais d’autres agents.
-- Tous les sous-agents, nommés ou dynamiques/non spécifiés, commencent avec
-  `gpt-5.6-luna` et `reasoning_effort="xhigh"`. Si cette tentative reste
-  incomplète, le racine peut lancer un dernier sous-agent par défaut avec
-  `gpt-5.6-luna` et `reasoning_effort="max"`. Aucun autre modèle n'est autorisé
-  pour les sous-agents.
-- Flux préféré : Sol planifie → researcher enquête → coder
-  implémente → reviewer relit → coder corrige les constats valides → Sol
-  décide.
-- Ne jamais remplacer silencieusement un modèle configuré devenu indisponible.
-
-### Delegated task completion
-
-- Give every worker explicit, enumerable acceptance criteria.
-- After a worker returns, compare its result against every criterion.
-- A partial worker result is not a completed task merely because tests passed.
-- If the work is incomplete but directionally correct, prefer one targeted
-  follow-up to the same worker over spawning a fresh agent.
-- The follow-up must list only the unresolved criteria and must not request
-  repetition of completed work.
-- Spawn a fresh worker only when a clean context, independent review, or
-  different role is materially useful.
-- Allow one Luna/xhigh completion attempt and, only if it is incomplete, one
-  Luna/max completion attempt per logical task. If still unresolved, return the
-  evidence and unresolved criteria to root for reassessment; never spawn a third
-  subagent.
-- Sol keeps orchestration terse and does not produce long status analyses
-  between worker attempts.
+- Use only role-free default subagents with `gpt-5.6-luna` and `reasoning_effort="xhigh"`.
+- Subagents never spawn other agents.
+- If a subagent fails or returns an incomplete result, the main/root thread resumes the task directly; do not retry with another role or model.
