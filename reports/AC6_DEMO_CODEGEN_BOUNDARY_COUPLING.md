@@ -65,3 +65,33 @@ cycle.
 - **Faire citer les preuves autrement** : si les capsules identifiaient un
   site par son PC PAL plutôt que par un numéro de ligne généré, le couplage
   disparaîtrait. C'est le seul des trois qui règle la cause.
+
+## L'ampleur : 689 entrées internes, pas une
+
+Mesuré en croisant l'ensemble des fonctions que l'oracle Xenia a traduites —
+donc exécutées — avec les débuts de fonction de l'atlas statique :
+
+```text
+exécutées par l'oracle           12 922
+qui sont des débuts de fonction  12 233
+INTERNES (pas un début)             689
+```
+
+`0x820D3710` est l'une de ces 689. Le port ne peut donc pas les émettre, et
+chacune apparaîtra comme un appel indirect non qualifié dès que le guest
+l'atteindra.
+
+Cela change la forme de la décision. Le coût de renumérotation ne dépend pas
+du nombre d'entrées ajoutées : une seule le paie en entier. Déclarer les 689
+en une passe coûte exactement le même re-scellement que d'en déclarer une, et
+évite de le repayer 689 fois.
+
+Ce qui ne change pas : **l'oracle ne peut pas fournir ces frontières.**
+`AGENTS.md` interdit explicitement de laisser un oracle imposer ses débuts de
+fonction par-dessus les frontières Ghidra. Les 689 adresses sont des
+*candidates* — l'oracle dit où regarder — et chacune doit porter sa propre
+qualification binaire, du type que les 154 entrées existantes portent déjà
+(propriétaire, étendue, terminaison, hash des octets).
+
+La séquence saine est donc : d'abord découpler les capsules du numéro de ligne
+généré, ensuite qualifier les entrées par lots, jamais l'inverse.
