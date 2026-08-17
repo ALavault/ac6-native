@@ -78,6 +78,16 @@ void GuestBridge::prepare(const ThreadImage &image) {
         if (address != 0x7FC80714U || length != 4U || value > 0xFFFFFFFFULL) {
           throw RuntimeTrap("unqualified Xenos MMIO write", tick_, 0, address);
         }
+        // Every GPU submission this guest makes passes through this one
+        // register write. Counting them, with the tick, is what separates
+        // "the renderer mistranslates the work" from "there is no work".
+        if (std::getenv("AC6_DEMO_WATCH_RING_KICK") != nullptr) {
+          std::fprintf(
+              stderr,
+              "AC6_RING_KICK tick=%llu thread=%u wptr 0x%08X -> 0x%08X\n",
+              static_cast<unsigned long long>(tick_), current_guest_thread_id,
+              xenos_mmio_wptr_, static_cast<std::uint32_t>(value));
+        }
         xenos_mmio_wptr_ = static_cast<std::uint32_t>(value);
       });
   // PAL bytes at sub_82356510 read XMA register 0x600 before the first
