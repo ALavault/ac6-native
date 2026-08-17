@@ -23,6 +23,6 @@ offset,representation,minimal_semantics,grade,consumer_evidence,proof_or_boundar
 0x54,float32,projectile acceleration,B+,demo:0x822A4978 @ 0x822A4A08-0x822A4A1C,optional acceleration; zero in all demo WeaponBin records sampled
 0x58,float32,missile angular-rate/turn-limit parameter,B+,demo:0x822A4978 @ 0x822A4AA0-0x822A4ABC,converted degrees-to-radians; Strigon missile uses 60
 0x5C,u8,weapon family discriminator,A-,demo:0x82252778 family branches plus corpus clustering,1 gun; 2 missile/SAM; 3 flak; 5 bomber payload; 6 AA gun; 7 tank gun; 9 special; 13 naval/CIWS-like
-0x5D,u8,family flags/submode,B+,demo:0x822735A8 copies to runtime+0x168,standard gun=8; Strigon missile=40
+0x5D,u8,base damage term,A,demo:0x82273470 @ 0x82273500-0x82273514,"converted to float, added to context modifier id 10 and propagated to impact magnitude; gun=8; Strigon missile=40"
 0x5E,u8,flags/reserved,C,compact terminal bytes,exact bits open
 0x5F,u8,flags/reserved,C,compact terminal bytes,exact bits open
