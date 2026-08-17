@@ -1,0 +1,89 @@
+{
+  "schema": "ac6-demo-xam-return-chain-ab-report/v3",
+  "cycle": 1771,
+  "recorded_at": "2026-08-17",
+  "verdict": "XAM-AB-QUALIFIED / FRONTEND-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+  "job": {
+    "id": "job-msx0ahek-175def36",
+    "exit_code": 0,
+    "status": "success",
+    "reason": "route-aware mapper sealed both bounded A/B expectations",
+    "receipt_sha256": "1ed65d1189681cf8b445b2466ee02a62a5718d446c33bc0c806d004f30bcce6c"
+  },
+  "inputs": {
+    "binary_sha256": "c1f724d6abe8a699939f6d3f880aeb7a237027595b07f35d3104a3bd9088275a",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "mapper_sha256": "89e3822fef2d14fdec5582c382aa0e687dc25f24a7d1121fd778bd0f84297dce",
+    "backend": "vulkan",
+    "audio_driver": "dummy",
+    "max_ticks": 5600,
+    "input_tick": 252,
+    "max_accesses": 64
+  },
+  "static_join": {
+    "ghidra_project": "ace-combat-6-demo",
+    "module": "Default.xex",
+    "function": "__imp__sub_822F5E58",
+    "generated_line": 3948,
+    "guest_pc": "0x822F5EA0",
+    "pal_bytes": "90 7f 00 80",
+    "runtime_address": "0x829D15BC",
+    "controller_object": "0x829D153C",
+    "offset": "0x80",
+    "writer_value": "0x00000000",
+    "writer_effect_proven": false
+  },
+  "routes": {
+    "neutral": {
+      "expectation": "no_exclusive",
+      "map_sha256": "49b598d90e7c7b3fcc7391856906cc2ac1507418225e04dfe4b58263fd34f479",
+      "report_sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+      "trace_sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "arm_state16": "00000000000000000000000000000000",
+      "target_observation": "load32 value_be=0x00000000 at 0x829D15BC",
+      "stop": "bound accesses=64",
+      "mapped_rows": 64,
+      "unique_sites": 46
+    },
+    "buttons16": {
+      "expectation": "qualified_store_exclusive",
+      "map_sha256": "7421596e7845c922ee9c3353f6c9bec485979f5e10ad2c0b7c1166b3594fa73a",
+      "report_sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+      "trace_sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "arm_state16": "00000001001000000000000000000000",
+      "target_writer": "store32 value_be=0x00000000 at 0x829D15BC",
+      "stop": "qualified_store_exclusive accesses=58",
+      "mapped_rows": 58,
+      "unique_sites": 40
+    }
+  },
+  "policy": {
+    "content_addressed": true,
+    "current_file_written": false,
+    "frontend_claim_written": false,
+    "gameplay_observation_promoted": false,
+    "writer_effect_proven": false,
+    "native_parity_claim": false
+  },
+  "limits": [
+    "the guest writer is zero-valued and no first consumer or non-black readback is joined",
+    "the A/B contract proves route-differential access, not START/frontend/mission semantics",
+    "MCP gameplay domains remain unavailable and supported=false"
+  ]
+}
