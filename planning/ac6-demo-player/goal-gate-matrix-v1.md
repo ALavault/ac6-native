@@ -43,7 +43,7 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | FSM contract | proven | Cycle 1758 receipt `39c186e0…e06c7`: 10 states/9 budgets, deterministic controller, fail-closed guards; 43 tests. |
 | FSM PAL route | missing | Scaffold/runtime route has no qualified observations, allowlist, or terminal receipt. |
 | demo-native domain 1 | partial | Cycle 1762 validates autonomous identity/import/CLI/VFS/corpus/install, still `import-only`/`supported=false`; P1 TOCTOU/foreign cleanup and P2 parent-dir fsync blockers prevent promotion. |
-| demo-native runtime domains | missing | Player/camera/flight/target/objective/terminal/readback inventory all unavailable. |
+| demo-native runtime domains | missing | Player/camera/flight/target/objective/terminal/readback remain unavailable. Cycle 1763 qualifies only the static `WeaponBin+0x5D → event+0x0C → DurableBin` contract; no runtime wiring or Strigon record provenance is promoted. |
 | Two cold success/failure runs | missing | Current cold A/B both return `max_ticks`, rc=4; no success and distinct failure terminal. |
 
 ## Single next checkpoint

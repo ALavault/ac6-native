@@ -528,10 +528,18 @@
           "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
           "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
           "claim": "player/camera/flight/target/objective/terminal/readback all unavailable"
+        },
+        {
+          "path": "workspaces/ace-combat-6/analysis/ac6-demo-infos-branch-audit-v1.json",
+          "sha256": "66c81479791bbaf079e198ee9aaa705187ab9a865eaf3c95dd41bde96811180d",
+          "claim": "PAL static cross-match qualifies WeaponBin+0x5D plus modifier 10, compact impact magnitude +0x0C, and DurableBin damage equation; no runtime wiring"
         }
       ],
       "tests": [],
-      "limits": ["no scene, simulation, PPM, Vulkan, FSM or replay domain is wired"]
+      "limits": [
+        "no scene, simulation, PPM, Vulkan, FSM or replay domain is wired",
+        "Strigon record hashes and mode metrics remain information-only without source ranges or extractor receipt"
+      ]
     },
     {
       "gate_id": "cold_success_failure_runs",

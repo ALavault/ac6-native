@@ -1,5 +1,13 @@
 # AC6 démo — fermeture du chemin impacts, dommages et DurableBin
 
+> **Qualification d’intégration.** Importé de `origin/infos` (`e6362d1e`). Le
+> cœur statique `WeaponBin+0x5D + modifier[10] → event+0x0C → DurableBin` est
+> recroisé avec le basefile PAL `b98a9ac1…14218` et le projet
+> `ace-combat-6-demo` dans `cycle-1763-ac6-demo-infos-branch-audit`. Les deux
+> getters `0x8216B258/0x8216B3A8` restent sans décompilation qualifiée et la
+> chaîne complète n’a pas de preuve dynamique. Les grades historiques ne
+> promeuvent donc aucun gate runtime, frontend ou mission.
+
 Date : 2026-08-17  
 Corpus : démo Xbox 360 `ACE6_X360`  
 Portée : analyse statique uniquement ; toutes les adresses sont préfixées implicitement `demo:`

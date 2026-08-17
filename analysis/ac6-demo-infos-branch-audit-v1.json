@@ -1,0 +1,81 @@
+{
+  "schema": "ac6-demo-infos-branch-audit/v1",
+  "status": "integrated_with_qualification",
+  "source": {
+    "remote": "origin",
+    "branch": "infos",
+    "tip": "e6362d1eea2bccea8fe8a2db1248fe4a02743e65",
+    "merge_base": "883a58cd17a9105a9c87e2f3e99ba6353809e035",
+    "content_scope": "nine analysis/report files; no code delta"
+  },
+  "target": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c"
+  },
+  "source_artifacts": [
+    {"path": "analysis/ac6-demo-compact-impact-event.csv", "source_sha256": "10ea16c87e599f76b16985dc490b789441e96bfa8bf1f9dd481db8d401395adf", "classification": "qualified_static"},
+    {"path": "analysis/ac6-demo-damage-boundary.csv", "source_sha256": "c2a446d3a939a08c8462c41e040e472a926f043d66a09013a451fbb29693232a", "classification": "mixed_static_and_open"},
+    {"path": "analysis/ac6-demo-damage-magnitude-chain.csv", "source_sha256": "6834eda28b1d964dac6371d7c5df563f92bb50d7b472cbe7001a698c60649817", "classification": "mixed_static_and_open"},
+    {"path": "analysis/ac6-demo-strigon-combat-profile.csv", "source_sha256": "5d1279bdedf0333f96185b23fd334fca73d0ef99da43d370b678a85019909958", "classification": "information_only_missing_source_ranges"},
+    {"path": "analysis/ac6-demo-strigon-mode-metrics.csv", "source_sha256": "ffa802f4c27bbdc906b4875e983b28200d8fd2889a4cfd831df8edf41ac25d8b", "classification": "information_only_missing_extractor_receipt"},
+    {"path": "analysis/ac6-demo-weaponbin-contract.csv", "source_sha256": "cb7f71bf2ce6b45a5b4843564f1218b329794a8c43a4e6b433be1cb0bfd92df7", "classification": "mixed_static_and_unqualified_record_values"},
+    {"path": "reports/AC6_DEMO_AI_WEAPON_CLOSURE.md", "source_sha256": "e40722121784f1d21271d37c6042f5c36b28b709971d222022e1bf09e41c0211", "classification": "guarded_historical_report"},
+    {"path": "reports/AC6_DEMO_DAMAGE_EVENT_CLOSURE.md", "source_sha256": "c72202f86709767d052d70dfd1385da53dd67b3fb58902fcd0d8dc05db4ca82f", "classification": "guarded_historical_report"},
+    {"path": "reports/AC6_DEMO_NEXT_SUBSYSTEM.md", "source_sha256": "3f7a328bdcb09ce50d2af0a3b2552d059e32366c20d462ed0085c1193ebe47c9", "classification": "research_suggestion_only"}
+  ],
+  "qualified_static_crossmatches": [
+    {
+      "function": "0x82273470",
+      "byte_sha256": "af6b2a2588b011596756ef68359d189bcff5fc01b9ea698b855a43f4cb789158",
+      "evidence": [
+        "0x822734C0 bytes 3880000a: li r4,10",
+        "0x822734C8 bytes 48043b19: bl 0x822B6FE0",
+        "0x82273500 bytes 896b005d: lbz r11,0x5D(r11)",
+        "0x8227350C bytes fc00069c: fcfid f0,f0",
+        "0x82273514 bytes ec20082a: fadds f1,f0,f1"
+      ],
+      "claim": "WeaponBin+0x5D is converted from u8 to float and added to context modifier 10"
+    },
+    {
+      "function": "0x821E2F60",
+      "byte_sha256": "4c57450bd164d1046cceaee2adf1a6edf335d8ad3d709b3324e8edf47e02dde9",
+      "evidence": [
+        "record base is stack+0x50",
+        "0x821E2FB0 stores incoming magnitude at record+0x0C",
+        "0x821E2F94/0x821E2F9C/0x821E2FB4 populate record+0x00/+0x04/+0x08",
+        "0x821E2FC4..0x821E2FDC populate record+0x1C vector and record+0x18 source"
+      ],
+      "claim": "compact impact record layout and magnitude offset are statically corroborated"
+    },
+    {
+      "function": "0x8224FE60",
+      "byte_sha256": "2811a6c9ac72f4069bf7274445755b878e21011399de6c88916381498b62ec7b",
+      "evidence": [
+        "0x8224FFB8 reads the event code and subtracts 1003",
+        "the jump table selects DurableBin coefficients including +0x14/+0x18",
+        "0x82250128 reads event+0x0C",
+        "0x8225012C computes current minus coefficient times magnitude",
+        "0x82250130 stores target+0x110"
+      ],
+      "claim": "DurableBin coefficient times event magnitude reduces current durability"
+    }
+  ],
+  "partial_or_unqualified": [
+    "0x8216B258 and 0x8216B3A8 exist in the PAL atlas but their decompilation status is unavailable; the complete missile getter semantics remain partial",
+    "Strigon record hashes, object counts, maneuver weights and mode metrics have no file-relative source ranges or extractor receipt on origin/infos",
+    "nominal weapon values such as gun=8 and missile=40 need a qualified source-record capsule before gate use",
+    "all imported evidence is static; it does not prove an endogenous runtime hit, damage transition, frontend, mission or terminal state",
+    "the ActBin/OrderBin/SetBin priority is advisory and does not replace reports/handoff/CURRENT.json"
+  ],
+  "policy": {
+    "supported": false,
+    "runtime_gate_promoted": false,
+    "frontend_gate_promoted": false,
+    "mission_gate_promoted": false,
+    "retail_data_accepted": false
+  }
+}

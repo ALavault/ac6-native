@@ -1,5 +1,10 @@
 # AC6 — décision sur le prochain sous-système
 
+> **Statut d’intégration.** Proposition de recherche importée de
+> `origin/infos` (`e6362d1e`), pas nouveau handoff autoritatif. Elle ne remplace
+> pas `reports/handoff/CURRENT.json`, ne ferme pas la frontière XAM/START et
+> n’ouvre pas le domaine 2 de `ac6-demo-native`.
+
 Date : 2026-08-17
 
 ## Front désormais fermé

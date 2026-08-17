@@ -1,5 +1,14 @@
 # AC6 — fermeture statique de l’IA aérienne et de WeaponBin
 
+> **Qualification d’intégration.** Ce document provient de `origin/infos`
+> (`e6362d1e`). Les grades historiques ci-dessous ne sont pas des promotions de
+> gate. Seul le noyau statique explicitement corroboré dans
+> `cycle-1763-ac6-demo-infos-branch-audit` est qualifié pour la démo PAL
+> `de917873…5da8`, projet Ghidra `ace-combat-6-demo`. Les hashes de records,
+> profils Strigon et métriques de modes restent informationnels faute de ranges
+> sources et d’un extracteur scellé. Aucune fermeture runtime, frontend ou
+> mission n’en découle.
+
 Date : 2026-08-17  
 Corpus : démo Xbox 360 `ACE6_X360`  
 Portée : analyse statique uniquement
