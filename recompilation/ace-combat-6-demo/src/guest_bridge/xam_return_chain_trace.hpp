@@ -17,7 +17,12 @@ inline constexpr std::uint32_t kXamReturnExclusivePc = 0x822F5EA0U;
 inline constexpr std::uint32_t kXamReturnControllerObject = 0x829D153CU;
 inline constexpr std::uint32_t kXamReturnExclusiveAddress =
     kXamReturnControllerObject + 0x80U;
-inline constexpr std::uint32_t kXamReturnMaxAccesses = 32U;
+// The qualified call corridor needs 58 claims in the longest static path:
+// sub_822F6008's preamble and sub_822F5D58 (37), sub_822F5E00 and its caller
+// post-processing (11), then sub_822F5E58 through the exclusive store (10).
+// Six additional claims cover the bounded non-exclusive return path; this is
+// a fixed diagnostic budget, not an open-ended trace.
+inline constexpr std::uint32_t kXamReturnMaxAccesses = 64U;
 
 [[nodiscard]] inline bool xam_return_chain_exclusive_site(
     const char *function, std::uint32_t generated_line) noexcept {

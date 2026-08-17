@@ -136,6 +136,7 @@ document = {
     },
     "config": {
         "routes": ["neutral", "buttons16"], "tick": 252, "max_ticks": 5600,
+        "max_accesses": 64,
         "backend": "vulkan", "audio_driver": "dummy",
         "xma": "qualified runtime flags",
         "xvfb_lifecycle": "single owned supervisor reused by both fresh probes",
@@ -303,7 +304,7 @@ for route in neutral buttons16; do
   refused_count="$(grep -a -c '^AC6_XAM_RETURN_CHAIN_ACCESS_REFUSED ' "$stderr" || true)"
   stop_count="$(grep -a -c '^AC6_XAM_RETURN_CHAIN_STOP ' "$stderr" || true)"
   [[ "$arm_count" == 1 ]] || { fail_run "$route did not emit exactly one XAM arm"; exit 1; }
-  (( access_count > 0 && access_count <= 32 )) || {
+  (( access_count > 0 && access_count <= 64 )) || {
     fail_run "$route emitted an empty or over-bounded XAM chain"; exit 1;
   }
   [[ "$refused_count" == 0 ]] || { fail_run "$route emitted an XAM refusal"; exit 1; }

@@ -32,7 +32,7 @@ from map_generated_guest_load_sites import (  # type: ignore
 CALLER_LR = 0x822F616C
 CONTROLLER_OBJECT = 0x829D153C
 EXCLUSIVE_ADDRESS = CONTROLLER_OBJECT + 0x80
-MAX_ACCESSES = 32
+MAX_ACCESSES = 64
 EXPECTED_SIZES = {
     "load8": 1, "store8": 1, "load16": 2, "store16": 2,
     "load32": 4, "store32": 4, "load64": 8, "store64": 8,
