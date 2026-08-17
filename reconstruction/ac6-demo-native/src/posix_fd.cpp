@@ -500,7 +500,9 @@ bool sync_fd(int fd, const char* what, std::string* error) {
 #else
 #if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
     static std::atomic_bool fsync_injected{false};
+    const char* fail_what = std::getenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_WHAT");
     if (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC") != nullptr ||
+        (fail_what != nullptr && what != nullptr && std::strcmp(fail_what, what) == 0) ||
         (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_ONCE") != nullptr &&
          !fsync_injected.exchange(true))) {
         return set_error(error, "injected fsync failure");
@@ -551,29 +553,6 @@ bool rename_noreplace(int old_parent_fd, const char* old_name, int new_parent_fd
     (void)new_parent_fd;
     (void)new_name;
     return set_error(error, "atomic no-replace rename unavailable");
-#endif
-}
-
-bool rename_replace(int old_parent_fd, const char* old_name, int new_parent_fd,
-                    const char* new_name, std::string* error) {
-#if !AC6DEMO_NATIVE_POSIX_BACKEND
-    (void)old_parent_fd;
-    (void)old_name;
-    (void)new_parent_fd;
-    (void)new_name;
-    return set_error(error, "POSIX descriptor backend unavailable");
-#else
-#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
-    static std::atomic_bool pointer_rename_injected{false};
-    if (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_POINTER_RENAME_ONCE") != nullptr &&
-        !pointer_rename_injected.exchange(true)) {
-        return set_error(error, "injected pointer rename failure");
-    }
-#endif
-    if (::renameat(old_parent_fd, old_name, new_parent_fd, new_name) != 0) {
-        return errno_error(error, "pointer rename failed");
-    }
-    return true;
 #endif
 }
 
@@ -658,6 +637,10 @@ bool read_current_generation(int root_fd, UniqueFd* generation, std::string* err
     }
     if (!validate_store_marker(opened.get(), error)) {
         return false;
+    }
+    if (!identity_at(generations.get(), name.c_str(), &named_device, &named_inode, error) ||
+        opened_device != named_device || opened_inode != named_inode) {
+        return set_error(error, "published generation changed during validation");
     }
     *generation = std::move(opened);
     return true;

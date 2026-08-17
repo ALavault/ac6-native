@@ -72,9 +72,6 @@ private:
 [[nodiscard]] bool rename_noreplace(int old_parent_fd, const char* old_name,
                                     int new_parent_fd, const char* new_name,
                                     std::string* error);
-[[nodiscard]] bool rename_replace(int old_parent_fd, const char* old_name,
-                                  int new_parent_fd, const char* new_name,
-                                  std::string* error);
 [[nodiscard]] bool rename_exchange(int first_parent_fd, const char* first_name,
                                    int second_parent_fd, const char* second_name,
                                    std::string* error);

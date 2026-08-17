@@ -322,6 +322,13 @@ void test_multiprocess_import_and_failure_rollback() {
                                                       fixture.profile, &error),
             "injected pointer rename failure rejected");
     unsetenv("AC6DEMO_NATIVE_TEST_FAIL_POINTER_RENAME_ONCE");
+    setenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_WHAT", "publication root fsync failed", 1);
+    require(!ac6demo_native::testing::import_fixture(parent_store, fixture.source,
+                                                      fixture.profile, &error),
+            "post-exchange fsync failure rejected");
+    unsetenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_WHAT");
+    require(ac6demo_native::testing::verify_fixture(parent_store, fixture.profile, &error),
+            "post-exchange fsync failure rolls back to valid current");
     std::ifstream after_input(pointer, std::ios::binary);
     const std::string after((std::istreambuf_iterator<char>(after_input)),
                             std::istreambuf_iterator<char>());
