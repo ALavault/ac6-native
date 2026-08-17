@@ -42,39 +42,41 @@ ac6::TraceMissionObjectives mission(std::uint32_t step) {
 }  // namespace
 
 int main() {
-  const char* path = "ac6-test-execution-trace-v2.raw.jsonl";
+  const char* path = "ac6-test-execution-trace-v3.raw.jsonl";
   int failures = 0;
   ac6::ExecutionTraceJsonlWriter writer;
   failures += check(writer.open(path), "trace opens");
   const ac6::InputFrame first_input{1200, -2300, 3400, 200, 0x10};
   failures += check(writer.append(1, first_input, frame(2, first_input), mission(1),
                                   {ac6::TraceGraphicsBackend::Headless, 0, false}),
-                    "first tick writes five domains");
+                    "first tick writes six domains");
   failures += check(!writer.append(3, first_input, frame(6, first_input), mission(3), {}),
                     "non-contiguous tick is rejected");
   const ac6::InputFrame second_input{};
   failures += check(writer.append(2, second_input, frame(4, second_input), mission(2),
                                   {ac6::TraceGraphicsBackend::VulkanDirect, 3, true}),
                     "second contiguous tick writes");
-  failures += check(writer.event_count() == 10, "five events per tick");
+  failures += check(writer.event_count() == 12, "six events per tick");
   failures += check(writer.close(), "trace closes");
 
   std::ifstream input(path);
   std::vector<std::string> lines;
   for (std::string line; std::getline(input, line);) lines.push_back(line);
-  failures += check(lines.size() == 10, "ten JSONL records persisted");
-  failures += check(lines[0].find("\"sequence\":0,\"tick\":1,\"domain\":\"controller_input\"") !=
+  failures += check(lines.size() == 12, "twelve JSONL records persisted");
+  failures += check(lines[0].find("\"sequence\":0,\"tick\":1,\"domain\":\"input\"") !=
                         std::string::npos,
-                    "controller event is first");
-  failures += check(lines[4].find("\"domain\":\"output_hashes\"") != std::string::npos,
-                    "hash event is fifth");
-  failures += check(lines[5].find("\"sequence\":5,\"tick\":2,\"domain\":\"controller_input\"") !=
+                    "input event is first");
+  failures += check(lines[4].find("\"domain\":\"media\"") != std::string::npos,
+                    "media event is fifth");
+  failures += check(lines[6].find("\"sequence\":6,\"tick\":2,\"domain\":\"input\"") !=
                         std::string::npos,
                     "second tick sequence continues");
   failures += check(lines[2].find("\"id\":1") < lines[2].find("\"id\":2"),
                     "objective rows are stable by id");
-  failures += check(lines[4].find("\"simulation_snapshot\":\"") != std::string::npos,
-                    "output hashes name the simulation domain");
+  failures += check(lines[4].find("\"qualified\":false") != std::string::npos,
+                    "unqualified media remains explicit");
+  failures += check(lines[11].find("\"simulation\":\"") != std::string::npos,
+                    "hashes name the simulation domain");
   std::remove(path);
   return failures == 0 ? 0 : 1;
 }

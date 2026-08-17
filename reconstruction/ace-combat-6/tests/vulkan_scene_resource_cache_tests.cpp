@@ -320,6 +320,7 @@ int main() {
   changed.tick = 2;
   changed.refresh_digest();
   if (cache.render(changed)) return fail("changed_scene_accepted");
+  if (!cache.render_dynamic(changed)) return fail("dynamic_scene_submit");
   const auto pixels = backend.readback_rgba8(target);
   const std::size_t center = (8U * 16U + 8U) * 4U;
   if (pixels.size() != 16U * 16U * 4U || pixels[center] != 0U ||

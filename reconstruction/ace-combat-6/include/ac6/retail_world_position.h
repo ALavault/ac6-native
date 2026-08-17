@@ -6,12 +6,9 @@
 // relative offsets of their Obj sub-records, because nothing had said how the
 // payload's numbers become world coordinates. 0x822953F0 says it.
 //
-// It could not be read in the canonical project: the arithmetic is VMX128 and
-// the program is loaded as PowerPC:BE:64:A2ALT-32addr, so the decompiler stopped
-// at `halt_baddata()`. Cycle 1115 lifted that by importing the same image a
-// second time under PowerPC:BE:64:Xenon. Everything below is read there, and the
-// Xenon import is a scratch corpus - nothing from it is merged into the
-// canonical project.
+// Historical analyses loaded the program as A2ALT-32addr and stopped at
+// `halt_baddata()`. The canonical project now uses PowerPC:BE:64:Xenon; the
+// VMX128 read below is therefore qualified against the active project.
 //
 // Its one call site is 0x82295BF0, the default arm of the ten-way switch at
 // 0x82295B90 that 0x82295A88 runs for a tag-2 order:

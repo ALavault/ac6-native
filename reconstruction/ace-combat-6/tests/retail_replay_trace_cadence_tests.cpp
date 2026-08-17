@@ -63,13 +63,13 @@ int main() {
             {ac6::TraceGraphicsBackend::Headless, 0, false}),
         "each native frame writes one trace sample");
   }
-  failures += check(writer.event_count() == inputs.size() * 5u,
-                    "three native frames write fifteen domain events");
+  failures += check(writer.event_count() == inputs.size() * 6u,
+                    "three native frames write eighteen domain events");
   failures += check(!ac6::retail_cli::detail::append_native_replay_trace_sample(
                         writer, std::numeric_limits<std::uint64_t>::max(),
                         inputs.back(), frame(4, inputs.back()), {}, {}),
                     "sample tick overflow fails closed");
-  failures += check(writer.event_count() == inputs.size() * 5u,
+  failures += check(writer.event_count() == inputs.size() * 6u,
                     "rejected overflow writes no event");
   failures += check(writer.close(), "trace closes");
 
@@ -77,14 +77,14 @@ int main() {
   std::vector<std::string> lines;
   for (std::string line; std::getline(input, line);)
     lines.push_back(line);
-  failures += check(lines.size() == inputs.size() * 5u,
+  failures += check(lines.size() == inputs.size() * 6u,
                     "all domain events persist");
   for (std::size_t index = 0; index < inputs.size(); ++index) {
     const std::string tick = "\"tick\":" + std::to_string(index + 1u);
     const std::string pitch =
         "\"pitch\":" + std::to_string(inputs[index].pitch);
-    failures += check(lines[index * 5u].find(tick) != std::string::npos &&
-                          lines[index * 5u].find(pitch) != std::string::npos,
+    failures += check(lines[index * 6u].find(tick) != std::string::npos &&
+                          lines[index * 6u].find(pitch) != std::string::npos,
                       "each controller event preserves its frame index and input");
   }
   std::remove(path);

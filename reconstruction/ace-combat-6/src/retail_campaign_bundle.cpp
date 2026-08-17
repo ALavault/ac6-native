@@ -111,4 +111,15 @@ RetailCampaignBundle::tcam_bytes(std::size_t index) const noexcept {
       resource->payload_offset, resource->size);
 }
 
+std::optional<std::span<const std::uint8_t>>
+RetailCampaignBundle::nfic_cut_bytes(std::size_t index) const noexcept {
+  const RetailSceneTcamResource* resource = scene_tcams_.resource(index);
+  if (resource == nullptr || resource->nfic_payload_offset > bytes_.size() ||
+      resource->nfic_size > bytes_.size() - resource->nfic_payload_offset) {
+    return std::nullopt;
+  }
+  return std::span<const std::uint8_t>(bytes_).subspan(
+      resource->nfic_payload_offset, resource->nfic_size);
+}
+
 }  // namespace ac6::retail

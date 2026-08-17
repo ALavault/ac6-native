@@ -39,16 +39,21 @@ def parse_tbl(path: Path) -> tuple[int, int, list[dict]]:
     if len(data) != expected_size:
         raise ValueError(f"unexpected DATA.TBL size: got {len(data)}, expected {expected_size}")
     entries = []
+    archive_indices = {"DATA00.PAC": 0, "DATA01.PAC": 0}
     for index in range(entry_count):
         group, offset, stored_size, expanded_size = struct.unpack_from(
             ">4I", data, HEADER_SIZE + index * ENTRY_SIZE
         )
+        pac_name = "DATA01.PAC" if group & 0x01000000 else "DATA00.PAC"
+        codec_index = archive_indices[pac_name]
+        archive_indices[pac_name] += 1
         entries.append(
             {
                 "index": index,
+                "codec_index": codec_index,
                 "group": group,
                 "group_hex": f"0x{group:08x}",
-                "pac_name": "DATA01.PAC" if group & 0x01000000 else "DATA00.PAC",
+                "pac_name": pac_name,
                 "storage_kind": "raw" if group & 0x00020000 else "compressed",
                 "offset": offset,
                 "stored_size": stored_size,
@@ -138,10 +143,16 @@ def decode_payload(
         return stored, {"status": "not_attempted"}, ".stored.bin"
 
     if entry["storage_kind"] == "compressed":
-        payload = decompress_entry(stored, entry["index"], entry["expanded_size"])
+        payload = decompress_entry(
+            stored, entry["codec_index"], entry["expanded_size"]
+        )
         return (
             payload,
-            {"status": "decoded", "codec": "mode1_pi_xor_raw_deflate"},
+            {
+                "status": "decoded",
+                "codec": "mode1_pi_xor_raw_deflate",
+                "codec_index": entry["codec_index"],
+            },
             ".decompressed.bin",
         )
 
@@ -156,7 +167,7 @@ def decode_payload(
             ".stored.bin",
         )
 
-    payload = descramble(stored, entry["index"])
+    payload = descramble(stored, entry["codec_index"])
     expected_size = entry["expanded_size"]
     if expected_size not in (0, len(payload)):
         raise ValueError(
@@ -165,7 +176,11 @@ def decode_payload(
         )
     return (
         payload,
-        {"status": "decoded", "codec": "mode1_pi_xor_raw"},
+        {
+            "status": "decoded",
+            "codec": "mode1_pi_xor_raw",
+            "codec_index": entry["codec_index"],
+        },
         ".descrambled.bin",
     )
 

@@ -92,6 +92,16 @@ std::string graphics_payload(TraceGraphicsSubmission graphics) {
   return output.str();
 }
 
+std::string media_payload(TraceMediaSubmission media) {
+  std::ostringstream output = json_stream();
+  output << "{\"qualified\":"
+         << (media.qualified ? "true" : "false")
+         << ",\"clock_tick\":" << media.clock_tick
+         << ",\"temporal_events\":" << media.temporal_events
+         << ",\"subtitle_events\":" << media.subtitle_events << '}';
+  return output.str();
+}
+
 }  // namespace
 
 ExecutionTraceJsonlWriter::~ExecutionTraceJsonlWriter() {
@@ -126,7 +136,8 @@ bool ExecutionTraceJsonlWriter::append(std::uint64_t sample_tick,
                                        InputFrame input,
                                        const WorldFrame& simulation,
                                        TraceMissionObjectives mission,
-                                       TraceGraphicsSubmission graphics) {
+                                       TraceGraphicsSubmission graphics,
+                                       TraceMediaSubmission media) {
   if (!good() || input != simulation.input || sample_tick == 0 ||
       simulation.tick == 0 || (has_tick_ && sample_tick != previous_tick_ + 1u)) {
     return false;
@@ -135,16 +146,20 @@ bool ExecutionTraceJsonlWriter::append(std::uint64_t sample_tick,
   const std::string simulation_json = simulation_payload(simulation);
   const std::string mission_json = mission_payload(std::move(mission));
   const std::string graphics_json = graphics_payload(graphics);
+  const std::string media_json = media_payload(media);
   std::ostringstream hashes = json_stream();
-  hashes << "{\"simulation_snapshot\":\"" << hash_payload(simulation_json)
-         << "\",\"mission_objectives\":\"" << hash_payload(mission_json)
-         << "\",\"graphics_submission\":\"" << hash_payload(graphics_json)
+  hashes << "{\"input\":\"" << hash_payload(input_json)
+         << "\",\"simulation\":\"" << hash_payload(simulation_json)
+         << "\",\"objectives\":\"" << hash_payload(mission_json)
+         << "\",\"graphics\":\"" << hash_payload(graphics_json)
+         << "\",\"media\":\"" << hash_payload(media_json)
          << "\"}";
-  if (!emit(sample_tick, "controller_input", input_json) ||
-      !emit(sample_tick, "simulation_snapshot", simulation_json) ||
-      !emit(sample_tick, "mission_objectives", mission_json) ||
-      !emit(sample_tick, "graphics_submission", graphics_json) ||
-      !emit(sample_tick, "output_hashes", hashes.str())) {
+  if (!emit(sample_tick, "input", input_json) ||
+      !emit(sample_tick, "simulation", simulation_json) ||
+      !emit(sample_tick, "objectives", mission_json) ||
+      !emit(sample_tick, "graphics", graphics_json) ||
+      !emit(sample_tick, "media", media_json) ||
+      !emit(sample_tick, "hashes", hashes.str())) {
     return false;
   }
   previous_tick_ = sample_tick;

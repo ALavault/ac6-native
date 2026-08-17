@@ -224,97 +224,57 @@ struct NativeGraphics final {
   }
 };
 
-std::array<float, 16> preview_object_to_clip(
-    const retail::Mission01MapPrimitive& primitive,
-    const retail::Mission01MapDrawInstance& instance) noexcept {
-  if (primitive.geometry.positions.empty()) {
-    return {1.0F, 0.0F, 0.0F, 0.0F,
-            0.0F, 1.0F, 0.0F, 0.0F,
-            0.0F, 0.0F, 1.0F, 0.0F,
-            0.0F, 0.0F, 0.0F, 1.0F};
-  }
-  std::array<float, 3> minimum{primitive.geometry.positions.front().x,
-                                primitive.geometry.positions.front().y,
-                                primitive.geometry.positions.front().z};
-  std::array<float, 3> maximum = minimum;
-  for (const retail::NdxrPosition& position : primitive.geometry.positions) {
-    minimum[0] = std::min(minimum[0], position.x);
-    minimum[1] = std::min(minimum[1], position.y);
-    minimum[2] = std::min(minimum[2], position.z);
-    maximum[0] = std::max(maximum[0], position.x);
-    maximum[1] = std::max(maximum[1], position.y);
-    maximum[2] = std::max(maximum[2], position.z);
-  }
-  const std::array<float, 3> centre{
-      instance.world_x + (minimum[0] + maximum[0]) * 0.5F,
-      instance.world_y + (minimum[1] + maximum[1]) * 0.5F,
-      instance.world_z + (minimum[2] + maximum[2]) * 0.5F};
-  const float span_x = std::max(maximum[0] - minimum[0], 1.0F);
-  const float span_y = std::max(maximum[1] - minimum[1], 1.0F);
-  const float span_z = std::max(maximum[2] - minimum[2], 1.0F);
-  const float extent = std::max({span_x, span_y, span_z});
-  const float scale = 1.6F / extent;
-  return {scale, 0.0F, 0.0F, -centre[0] * scale,
-          0.0F, scale, 0.0F, -centre[1] * scale,
-          0.0F, 0.0F, scale, -centre[2] * scale,
-          0.0F, 0.0F, 0.0F, 1.0F};
-}
-
 class NativeMission01GpuRenderer final {
  public:
   NativeMission01GpuRenderer() = default;
   NativeMission01GpuRenderer(const NativeMission01GpuRenderer&) = delete;
   NativeMission01GpuRenderer& operator=(const NativeMission01GpuRenderer&) = delete;
 
-  bool initialize(const RetailContentStore& store, const NativeGraphics& graphics,
-                  const bool direct_present) {
+  bool initialize(const RetailContentStore& store,
+                  const SimulationSnapshot& snapshot,
+                  const NativeGraphics& graphics, const bool direct_present) {
     auto created = direct_present
         ? VulkanBackend::create_for_surface(graphics.instance.handle(),
                                             graphics.surface.handle(), 1280U, 720U)
         : VulkanBackend::create();
-    if (!created) return false;
+    if (!created) {
+      failure_detail_ = "backend";
+      return false;
+    }
     backend_ = std::move(created.backend);
     direct_present_ = direct_present;
-    target_ = backend_->create_render_target(1280U, 720U, false);
-    if (!target_) return false;
-
-    std::optional<retail::RetailMission01MapRenderAssets> assets =
-        retail::RetailMission01MapRenderAssets::open(store);
-    if (!assets.has_value() || assets->draw_instances().empty()) return false;
-    std::uint32_t draw_index = 0U;
-    const retail::Mission01MapPrimitive* primitive = nullptr;
-    for (std::uint32_t index = 0U;
-         index < assets->draw_instances().size(); ++index) {
-      primitive = assets->primitive_for(assets->draw_instances()[index]);
-      if (primitive != nullptr && !primitive->geometry.positions.empty() &&
-          !primitive->geometry.indices.empty()) {
-        draw_index = index;
-        break;
-      }
-      primitive = nullptr;
+    target_ = backend_->create_render_target(1280U, 720U, true);
+    if (!target_) {
+      failure_detail_ = "target";
+      return false;
     }
-    if (primitive == nullptr) return false;
-    const std::array<float, 16> object_to_clip = preview_object_to_clip(
-        *primitive, assets->draw_instances()[draw_index]);
-    scene_ = retail::RetailMission01VulkanScene::open_assets(
-        std::move(*assets), draw_index, true, object_to_clip,
-        detail::kRetailClipVertexSpirv,
-        detail::kRetailTexturedFragmentSpirv,
-        0x6d30315f636c6970ULL, 0x6d30315f74657874ULL, 1280U, 720U);
-    if (!scene_.has_value()) return false;
+    scene_ = retail::RetailMission01VulkanScene::open_runtime(
+        store, snapshot, true, 1280U, 720U);
+    if (!scene_.has_value()) {
+      failure_detail_ = "adapter_open";
+      return false;
+    }
     resources_ = std::make_unique<VulkanSceneResourceCache>(*backend_);
-    const VulkanSceneClipTexturedMeshUpload mesh = scene_->mesh_upload();
-    const VulkanSceneTexturedMaterialUpload material = scene_->material_upload();
-    const VulkanSceneTextureUpload texture = scene_->texture_upload();
-    const std::array<VulkanSceneClipTexturedMeshUpload, 1> meshes{mesh};
+    const std::vector<VulkanSceneWorldTexturedMeshUpload> meshes =
+        scene_->world_mesh_uploads();
+    const VulkanSceneTexturedMaterialUpload material =
+        scene_->world_material_upload();
+    const std::vector<VulkanSceneTextureUpload> textures =
+        scene_->world_texture_uploads();
     const std::array<VulkanSceneTexturedMaterialUpload, 1> materials{material};
-    const std::array<VulkanSceneTextureUpload, 1> textures{texture};
-    return resources_->build_clip_textured(scene_->scene(), target_, meshes,
-                                           materials, textures);
+    if (!resources_->build_world_textured(scene_->scene(), target_, meshes,
+                                          materials, textures)) {
+      failure_detail_ = resources_->failure_detail();
+      return false;
+    }
+    return true;
   }
 
-  bool render(std::vector<std::uint8_t>& pixels) noexcept {
-    if (!resources_ || !scene_.has_value() || !resources_->render(scene_->scene())) {
+  bool render(const SimulationSnapshot& snapshot,
+              std::vector<std::uint8_t>& pixels) noexcept {
+    if (!resources_ || !scene_.has_value() ||
+        !scene_->update_snapshot(snapshot) ||
+        !resources_->render_dynamic(scene_->scene())) {
       return false;
     }
     if (direct_present_) {
@@ -331,19 +291,21 @@ class NativeMission01GpuRenderer final {
     return scene_.has_value() ? &scene_->report() : nullptr;
   }
 
+  const char* failure_detail() const noexcept { return failure_detail_; }
+
  private:
   std::unique_ptr<VulkanBackend> backend_;
   std::unique_ptr<VulkanSceneResourceCache> resources_;
   std::optional<retail::RetailMission01VulkanScene> scene_;
   VulkanRenderTargetHandle target_{};
   bool direct_present_{};
+  const char* failure_detail_{"unknown"};
 };
 
 bool render_frame(NativeGraphics& graphics, NativeMission01GpuRenderer& renderer,
                   std::vector<std::uint8_t>& pixels,
-                  const retail::RetailSessionFrame& frame) {
-  (void)frame;
-  if (!renderer.render(pixels)) return false;
+                  const SimulationSnapshot& snapshot) {
+  if (!renderer.render(snapshot, pixels)) return false;
   return renderer.direct_present() || graphics.present_rgba8(pixels, 1280U, 720U);
 }
 
@@ -458,7 +420,7 @@ int run_play_impl(const Options& options) {
       retail::RetailSession::open(store, loadout,
                                   {1, {0, 0}, retail::kRetailOpeningCameraModeWord,
                                    options.difficulty,
-                                   retail::RetailScriptDrive::QualifiedRuntime});
+                                   retail::RetailScriptDrive::ExternalProbe});
   if (session == nullptr) return 125;
   if (!options.resume.empty()) {
     SessionSaveStore saves;
@@ -477,6 +439,7 @@ int run_play_impl(const Options& options) {
                  "ac6_retail=fail error=vulkan_unavailable detail=interactive_backend\n");
     return 125;
   }
+  const SimulationSnapshot initial_snapshot = session->render_snapshot();
   std::optional<NativeRenderTarget> diagnostic_target;
   if (!options.scene_capture.empty()) {
     diagnostic_target.emplace();
@@ -485,10 +448,20 @@ int run_play_impl(const Options& options) {
   std::optional<NativeMission01GpuRenderer> gpu_renderer;
   if (options.scene_capture.empty()) {
     gpu_renderer.emplace();
-    if (!gpu_renderer->initialize(store, graphics, direct_vulkan)) {
+    if (!gpu_renderer->initialize(store, initial_snapshot, graphics,
+                                  direct_vulkan)) {
       std::fprintf(stderr,
                    "ac6_retail=fail error=vulkan_scene_unavailable "
-                   "detail=mission01_clip_upload\n");
+                   "detail=%s\n", gpu_renderer->failure_detail());
+      return 126;
+    }
+    const retail::RetailMission01VulkanSceneReport* report =
+        gpu_renderer->report();
+    if (report == nullptr || !report->complete_render_scene ||
+        !report->jv_eligible) {
+      std::fprintf(stderr,
+                   "ac6_retail=fail error=mission01_unqualified "
+                   "detail=checkpoint2_scene_tcam\n");
       return 126;
     }
   }
@@ -506,15 +479,21 @@ int run_play_impl(const Options& options) {
   replay.difficulty = options.difficulty;
   replay.loadout = loadout;
   replay.content_index_sha256 = store.index_sha256();
-  retail::RetailSessionFrame frame = session->tick(1.0f / 60.0f, input_frame);
+  retail::RetailSessionFrame frame;
   std::vector<std::uint8_t> gpu_pixels;
   if (options.scene_capture.empty()) {
     if (!gpu_renderer.has_value() ||
-        !render_frame(graphics, *gpu_renderer, gpu_pixels, frame)) return 128;
-  } else if (!present_retail_scene_capture(
-                 graphics, *diagnostic_target, hud, *session, frame, *scene_compositor,
-                 loadout, options.scene_capture, options.scene_report)) {
-    return 128;
+        !render_frame(graphics, *gpu_renderer, gpu_pixels, initial_snapshot)) {
+      return 128;
+    }
+  } else {
+    frame = session->tick(1.0f / 60.0f, input_frame);
+    if (!present_retail_scene_capture(
+            graphics, *diagnostic_target, hud, *session, frame,
+            *scene_compositor, loadout, options.scene_capture,
+            options.scene_report)) {
+      return 128;
+    }
   }
   bool capture_written = false;
   const auto capture = [&]() -> bool {
@@ -560,7 +539,8 @@ int run_play_impl(const Options& options) {
       stepped = true;
     }
     if (stepped && (!gpu_renderer.has_value() ||
-                    !render_frame(graphics, *gpu_renderer, gpu_pixels, frame))) {
+                    !render_frame(graphics, *gpu_renderer, gpu_pixels,
+                                  session->render_snapshot()))) {
       return 128;
     }
     if (stepped && !capture()) return 129;
@@ -663,6 +643,8 @@ std::uint64_t hash_combat_state(std::uint64_t hash,
 std::uint64_t hash_campaign_state(std::uint64_t hash,
                                   const retail::RetailSession& session) noexcept {
   const CampaignSaveSnapshot snapshot = session.campaign_snapshot();
+  hash_u32(hash, session.frontend_enabled() ? 1u : 0u);
+  hash_u32(hash, static_cast<std::uint32_t>(session.frontend_state()));
   hash_u64(hash, snapshot.completed.size());
   for (const CampaignSaveSnapshot::Record& record : snapshot.completed) {
     hash_u32(hash, record.mission_id);
@@ -693,7 +675,7 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
                                   {replay.mission_id, {0, 0},
                                    retail::kRetailOpeningCameraModeWord,
                                    replay.difficulty,
-                                   retail::RetailScriptDrive::QualifiedRuntime});
+                                   retail::RetailScriptDrive::ExternalProbe});
   if (session == nullptr) return std::nullopt;
   ExecutionTraceJsonlWriter trace_writer;
   const bool tracing = !trace.empty();
@@ -782,7 +764,7 @@ int run_replay_impl(const Options& options) {
   const bool trace_complete =
       options.trace.empty() ||
       (first->trace_samples == replay.frames.size() &&
-       first->trace_events == first->trace_samples * 5u);
+       first->trace_events == first->trace_samples * 6u);
   std::error_code error;
   std::filesystem::create_directories(options.report, error);
   if (error) return 137;
@@ -823,7 +805,7 @@ int run_replay_impl(const Options& options) {
          << "  \"checkpoint_count\": " << replay.checkpoints.size() << ",\n"
          << "  \"input_digest\": \"" << sha256_hex(replay.input_digest()) << "\",\n"
          << "  \"final_digest\": \"" << sha256_hex(replay.final_digest) << "\",\n"
-         << "  \"final_digest_basis\": \"world_script_combat_v1\",\n"
+         << "  \"final_digest_basis\": \"world_script_combat_campaign_frontend_v2\",\n"
          << "  \"final_tick\": " << first->final_frame.tick << ",\n"
          << "  \"final_player_entity\": " << first->final_frame.player_entity << ",\n"
          << "  \"sub_mission\": " << first->sub_mission << ",\n"
@@ -836,8 +818,8 @@ int run_replay_impl(const Options& options) {
          << "  \"trace_samples\": " << first->trace_samples << ",\n"
          << "  \"trace_events\": " << first->trace_events << ",\n"
          << "  \"trace_window\": " << (trace_window ? "true" : "false") << ",\n"
-         << "  \"script_drive\": \"qualified_runtime\",\n"
-         << "  \"script_advance_each_tick\": true\n"
+         << "  \"script_drive\": \"external_probe\",\n"
+         << "  \"script_advance_each_tick\": false\n"
          << "}\n";
   if (!output || !deterministic || !trace_complete) return 139;
   std::fprintf(stdout, "ac6_retail=pass command=replay mission=%u frames=%zu "

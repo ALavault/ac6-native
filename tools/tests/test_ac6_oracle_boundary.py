@@ -134,7 +134,7 @@ class OracleManifestTests(unittest.TestCase):
     def test_patch_stack_loader_qualifies_all_records(self) -> None:
         base, records = load_stack(PATCH_STACK, ROOT)
         self.assertEqual(base, "dcd41b7457fcac8242f8ef40de83d1719390d5af")
-        self.assertEqual(len(records), 13)
+        self.assertEqual(len(records), 15)
         self.assertEqual(records[11].display_path,
                          "analysis/oracle/ac6-recomp-dcd41b/patches/"
                          "deterministic-trace-input-replay.patch")
@@ -420,7 +420,7 @@ class OracleBoundaryExportTests(unittest.TestCase):
             "project": "ace-combat-6",
             "program": "default.xex",
             "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
-            "language": "PowerPC:BE:64:A2ALT-32addr",
+            "language": "PowerPC:BE:64:Xenon",
             "function_count": 1,
             "functions": [{
                 "entry": "0x82000000",

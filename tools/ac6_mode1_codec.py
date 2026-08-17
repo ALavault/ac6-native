@@ -40,7 +40,7 @@ def _pi_fractional_words(nwords: int) -> tuple[int, ...]:
 
 @lru_cache(maxsize=_PAD_COUNT)
 def pad_for_index(index: int) -> bytes:
-    """Return the eight-byte retail descramble pad for a table index."""
+    """Return the eight-byte descramble pad for an archive-local codec index."""
     if index < 0:
         raise ValueError("negative DATA.TBL index")
     words = _pi_fractional_words(_PI_WORDS_NEEDED)
@@ -53,9 +53,11 @@ def descramble(data: bytes, index: int) -> bytes:
     return bytes(value ^ pad[offset & 7] for offset, value in enumerate(data))
 
 
-def decompress_entry(data: bytes, index: int, expected_size: int | None = None) -> bytes:
+def decompress_entry(
+    data: bytes, codec_index: int, expected_size: int | None = None
+) -> bytes:
     """Descramble one on-disc mode-1 blob and inflate its raw DEFLATE stream."""
-    raw = descramble(data, index)
+    raw = descramble(data, codec_index)
     decoded = zlib.decompress(raw, wbits=-15)
     if expected_size is not None and len(decoded) != expected_size:
         raise ValueError(

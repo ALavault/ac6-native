@@ -103,6 +103,12 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1777-demo-task-render-queue-ab.json",
       "sha256": "3e803c30b7b75167b97ccee67fd31b3488164d74ebb98e64b3ceca530b15276b",
       "claim": "fresh queue A/B joins primary/worker index writers to exact PAL bytes; all slot payloads remain zero and menu owners are not constructed"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1778-demo-task-list-mutation-ab.json",
+      "sha256": "8de35bc6db4983c205d64b7cd01e0035fd3d04e8c9991fe6ac1f569163d41066",
+      "receipt_sha256": "d37e15f4ba764ab257372468228a451262509dcfa0af4283f7321c90ad857628",
+      "claim": "fresh task-list A/B qualifies guest construction and dispatch of three non-menu tasks; menu owners and frontend remain absent"
     }
   ],
   "gates": [
@@ -486,10 +492,16 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1777-demo-task-render-queue-ab.json",
           "sha256": "3e803c30b7b75167b97ccee67fd31b3488164d74ebb98e64b3ceca530b15276b",
           "claim": "queue producer/worker/reset path is A/B identical with zero 96-byte payloads; no task-menu construction or frontend effect follows"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1778-demo-task-list-mutation-ab.json",
+          "sha256": "8de35bc6db4983c205d64b7cd01e0035fd3d04e8c9991fe6ac1f569163d41066",
+          "receipt_sha256": "d37e15f4ba764ab257372468228a451262509dcfa0af4283f7321c90ad857628",
+          "claim": "task-list range 0x18970400..0x18970440 mutates identically in both routes and dispatches loading/mode-manager/startup tasks, but not menu owners"
         }
       ],
-      "tests": ["cycle 1775–1777: logical mapper is reached, queue indices are published/reset A/B identically, but both routes return rc=4 with frontend/mission/terminal=false and no START consumer owner"],
-      "limits": ["the queue boundary is scheduler-only while slot payloads are zero; it does not claim all future input is impossible or synthesize a menu state"]
+      "tests": ["cycle 1775–1778: logical mapper, queue index publication/reset and task-list construction/dispatch are A/B identical, but both routes return rc=4 with frontend/mission/terminal=false and no menu owner"],
+      "limits": ["task-list mutation is qualified as a scheduler/task boundary only; no persistent START consumer, menu owner, non-black readback or synthetic menu state is admissible"]
     },
     {
       "gate_id": "frontend",
@@ -723,7 +735,7 @@
   "next_checkpoint": {
     "gate_id": "demo_native_runtime_domain3_guest_boundary",
     "status": "partial",
-    "objective": "Qualify the first nonzero queue payload or task-list mutation that constructs 0x82170F58 or 0x82185198, then require a guest menu-state change and non-black frontend/readback pair; keep mission, gameplay and terminal domains closed.",
+    "objective": "Qualify the first task-list or queue mutation that constructs 0x82170F58 or 0x82185198, then require a guest menu-state change and non-black frontend/readback pair; keep mission, gameplay and terminal domains closed.",
     "evidence": [
       {
         "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
@@ -780,6 +792,12 @@
           "sha256": "3e803c30b7b75167b97ccee67fd31b3488164d74ebb98e64b3ceca530b15276b",
           "claim": "queue index producer/consumer/reset is exact but payloads are zero; the next proof is a nonzero queue slot or task-list mutation"
         },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1778-demo-task-list-mutation-ab.json",
+          "sha256": "8de35bc6db4983c205d64b7cd01e0035fd3d04e8c9991fe6ac1f569163d41066",
+          "receipt_sha256": "d37e15f4ba764ab257372468228a451262509dcfa0af4283f7321c90ad857628",
+          "claim": "task-list mutation and three-task dispatch are qualified; the next proof is menu-owner construction and guest menu-state/readback change"
+      },
       {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
         "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
@@ -787,7 +805,7 @@
       }
     ],
     "limits": [
-      "input semantics, queue indices and scheduler boundaries are qualified, but no nonzero task payload, task construction, persistent START consumer, non-black frontend/readback, mission or arbitrary guest-memory observation is available"
+      "input semantics, queue indices and three non-menu task constructions are qualified, but no menu-owner construction, persistent START consumer, non-black frontend/readback, mission or arbitrary guest-memory observation is available"
     ]
   },
   "next_checkpoint_branches": [
@@ -795,7 +813,7 @@
       "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "watch the first nonzero queue slot or task-list mutation and join it to construction of 0x82170F58/0x82185198 and a guest menu-state change; then require non-black frontend/readback, without opening mission/gameplay/terminal"
+      "action": "watch the next task-list/queue mutation and join it to construction of 0x82170F58/0x82185198 and a guest menu-state change; then require non-black frontend/readback, without opening mission/gameplay/terminal"
     }
   ]
 }

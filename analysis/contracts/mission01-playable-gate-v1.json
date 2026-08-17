@@ -242,16 +242,16 @@
           {
             "kind": "native-capture",
             "path": "reports/mission01-native-captures/jf-retail-session/retail-session-hud.json",
-            "sha256": "83caa48e0dcfb9b1aee61a382e167f2c7799fc00234e06dfb279a0befc45adab",
+            "sha256": "077840e781372f3a791e811db47150b6939a74ec8cde9251963a8b27f9207055",
             "size": 1623,
             "claim": "the numbers the test asserted before either image was written - two captures at tick 900 and tick 1800, differing colour hashes, 1276 and 1521 HUD pixel writes, no fixture"
           },
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "6abfc636be9ba922ea9be6140f0a36ed004b239874f1176d1f460a7a70760e5c",
+            "sha256": "069adf1dc9d8ee297d518ace7fbe3531bfcb338d0a5192c075a98d3331fd2b29",
             "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from the class-0 Set on the campaign arm (820a72c0, 0x820A72EC, vtable 0x820568D4 = CAce6UnitPlayer) and from category 2 only on the online arm, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-            "size": 19947
+            "size": 30463
           }
         ]
       },
@@ -332,8 +332,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_input.h",
-            "sha256": "0780f1f67e6ac020feb35e3c6665736a6880469cc074b5770c2026f7762e3296",
-            "size": 6314,
+            "sha256": "ef3861bd69b8757df7e1e7566e8c53a84353a6ede11028a84908d2a460cc1a3f",
+            "size": 6223,
             "claim": "include/ac6/retail_input.h carries the derivation and names what is not ported: the wrapper, the two readers, the poll entry as DriverController vtable 0x820124F8 slot +0x10, the axis loop and its table, the button arithmetic, the accessor, the capability map, and the dispatch at 0x82343A30 with 0x82343838's return value"
           }
         ]

@@ -173,18 +173,11 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
                 qualified_session->script().ended() ? 1u : 0u,
                 static_cast<unsigned>(qualified_session->state()));
     if (mission_id == 1) {
-      std::unique_ptr<RetailSession> frontend_product = RetailSession::open(
-          store, {1, 1, true},
-          {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-           ac6::retail::RetailDifficulty::Normal,
-           ac6::retail::RetailScriptDrive::QualifiedRuntime});
-      REQUIRE(frontend_product != nullptr);
-      for (std::size_t tick = 0; tick < 8; ++tick) {
-        (void)frontend_product->tick(kFixedDt, {});
-      }
-      REQUIRE(frontend_product->state() == ac6::ScenarioState::Complete);
-      REQUIRE(frontend_product->frontend_state() == ac6::FrontendState::Debrief);
-      REQUIRE(frontend_product->debrief().outcome == ac6::MissionOutcome::Success);
+      REQUIRE(RetailSession::open(
+                  store, {1, 1, true},
+                  {mission_id, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                   ac6::retail::RetailDifficulty::Normal,
+                   ac6::retail::RetailScriptDrive::QualifiedRuntime}) == nullptr);
 
       ac6::MissionExecution::Checkpoint checkpoint;
       REQUIRE(qualified_session->save_checkpoint(checkpoint));
@@ -600,6 +593,155 @@ void write_capture_bundle(const std::filesystem::path& directory,
   REQUIRE(static_cast<bool>(metrics));
 }
 
+void check_long_session(const std::vector<std::uint8_t>& payload,
+                        const RetailSession& probe,
+                        const std::filesystem::path& report_path,
+                        const std::filesystem::path& capture_path) {
+  const std::optional<ac6::retail::MissionArea> area = probe.current_area();
+  REQUIRE(area.has_value());
+  REQUIRE(area->min_x == -50000.0f && area->max_x == 50000.0f);
+  REQUIRE(area->min_z == -50000.0f && area->max_z == 50000.0f);
+  REQUIRE(ac6::retail::area_contains(*area, {0.0f, 1.0e9f, 0.0f}));
+  REQUIRE(!ac6::retail::area_contains(*area, {60000.0f, 0.0f, 0.0f}));
+
+  const std::vector<ScriptStepRun> expected = {
+      {0, 0, 0}, {0, 1, 1}, {1, 0, 0}, {2, 0, 1}, {2, 1, 0}, {3, 0, 0},
+  };
+  const SessionRun paced = run_session(payload, 300);
+  const SessionRun fast = run_session(payload, 1);
+  const SessionRun slow = run_session(payload, 257);
+  REQUIRE(paced.trace == expected);
+  REQUIRE(fast.trace == expected);
+  REQUIRE(slow.trace == expected);
+  REQUIRE(paced.advances == 6 && paced.ended_at_tick == 1800);
+  REQUIRE(fast.advances == 6 && fast.ended_at_tick == 6);
+  REQUIRE(slow.advances == 6 && slow.ended_at_tick == 1542);
+  REQUIRE(paced.state == ac6::ScenarioState::Complete);
+  REQUIRE(paced.debrief.outcome == ac6::MissionOutcome::Success);
+  REQUIRE(paced.debrief.objective_count == 4);
+  REQUIRE(paced.debrief.completed_objectives == 4);
+  REQUIRE(paced.debrief.failed_objectives == 0);
+  REQUIRE(paced.last.script_ended);
+
+  const SessionRun idle = run_session(payload, 0);
+  REQUIRE(idle.advances == 0);
+  REQUIRE(idle.state == ac6::ScenarioState::Gameplay);
+  REQUIRE(idle.debrief.outcome == ac6::MissionOutcome::InProgress);
+  REQUIRE(idle.debrief.completed_objectives == 0);
+  REQUIRE(!idle.last.script_ended);
+  REQUIRE(idle.last.world.tick == kTicks);
+  REQUIRE(idle.last.world.player_entity == probe.player_entity());
+  REQUIRE(idle.last.world.active_units == 230);
+  REQUIRE(!idle.last.world.mission_ready);
+
+  REQUIRE(RetailSession::open(
+              payload,
+              {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+               ac6::retail::RetailDifficulty::Normal,
+               ac6::retail::RetailScriptDrive::QualifiedRuntime}) == nullptr);
+
+  std::unique_ptr<RetailSession> scheduled = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
+  REQUIRE(scheduled != nullptr);
+  ac6::retail::RetailSessionFrame scheduled_frame;
+  std::size_t scheduled_end_tick = 0;
+  for (std::size_t tick = 1; tick <= 32; ++tick) {
+    scheduled_frame = scheduled->tick(kFixedDt, session_input(tick));
+    if (scheduled_frame.script_ended && scheduled_end_tick == 0) {
+      scheduled_end_tick = tick;
+    }
+  }
+  REQUIRE(scheduled_end_tick == 6);
+  REQUIRE(scheduled->state() == ac6::ScenarioState::Complete);
+  REQUIRE(scheduled->debrief().outcome == ac6::MissionOutcome::Success);
+  REQUIRE(scheduled->debrief().completed_objectives == 4);
+  REQUIRE(scheduled->debrief().failed_objectives == 0);
+  REQUIRE(scheduled_frame.script_ended);
+
+  std::unique_ptr<RetailSession> checkpoint_source = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
+  std::unique_ptr<RetailSession> checkpoint_target = RetailSession::open(
+      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+                 ac6::retail::RetailDifficulty::Normal,
+                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
+  REQUIRE(checkpoint_source != nullptr && checkpoint_target != nullptr);
+  (void)checkpoint_source->tick(kFixedDt, session_input(1));
+  (void)checkpoint_source->tick(kFixedDt, session_input(2));
+  ac6::MissionExecution::Checkpoint retail_checkpoint;
+  REQUIRE(checkpoint_source->save_checkpoint(retail_checkpoint));
+  REQUIRE(retail_checkpoint.retail_script_state_valid);
+  REQUIRE(!retail_checkpoint.retail_sequencer_state.empty());
+  require_mismatched_sequencer_rejected(*checkpoint_target, retail_checkpoint);
+  REQUIRE(checkpoint_target->restore_checkpoint(retail_checkpoint));
+  const ac6::retail::RetailSessionFrame source_next =
+      checkpoint_source->tick(kFixedDt, session_input(3));
+  const ac6::retail::RetailSessionFrame target_next =
+      checkpoint_target->tick(kFixedDt, session_input(3));
+  REQUIRE(frame_hash(source_next) == frame_hash(target_next));
+
+  const ac6::WorldFrame& last = idle.last.world;
+  REQUIRE(last.position_x != 0.0f || last.position_y != 0.0f || last.position_z != 0.0f);
+  REQUIRE(last.camera_x == last.position_x - 12.0f);
+  REQUIRE(last.camera_y == last.position_y + 3.0f);
+  REQUIRE(last.camera_z == last.position_z + 12.0f);
+  REQUIRE(last.camera_target_x == last.position_x &&
+          last.camera_target_y == last.position_y &&
+          last.camera_target_z == last.position_z);
+
+  const SessionRun mirrored = run_session(payload, 0, mirrored_input);
+  REQUIRE(mirrored.last.world.tick == kTicks);
+  REQUIRE(mirrored.last.world.position_y != last.position_y);
+  REQUIRE(mirrored.hash != idle.hash);
+  const SessionRun repeat = run_session(payload, 300);
+  const SessionRun idle_repeat = run_session(payload, 0);
+  REQUIRE(repeat.hash == paced.hash);
+  REQUIRE(idle_repeat.hash == idle.hash);
+  REQUIRE(fast.hash != paced.hash);
+
+  if (!capture_path.empty()) write_capture_bundle(capture_path, payload);
+  std::printf("retail_session ticks=%zu steps=%zu advances=%zu ended_at=%zu completed=%u\n",
+              kTicks, paced.trace.size(), paced.advances, paced.ended_at_tick,
+              paced.debrief.completed_objectives);
+
+  if (!report_path.empty()) {
+    const std::vector<ac6::retail::ScenarioSubMission>& sub_missions =
+        probe.scenario().sub_missions();
+    std::ofstream report(report_path);
+    REQUIRE(static_cast<bool>(report));
+    report << "{\n"
+           << "  \"schema\": \"ac6.retail-session.v1\",\n"
+           << "  \"mission_id\": " << kMissionId << ",\n"
+           << "  \"source\": \"retail scenario container only, no manifest\",\n"
+           << "  \"units_published\": " << probe.world().published << ",\n"
+           << "  \"player_entity\": " << probe.player_entity() << ",\n"
+           << "  \"ticks\": " << kTicks << ",\n"
+           << "  \"sub_missions\": " << sub_missions.size() << ",\n"
+           << "  \"script_steps\": " << paced.trace.size() << ",\n"
+           << "  \"script_advances\": " << paced.advances << ",\n"
+           << "  \"script_exhausted_at_tick\": " << paced.ended_at_tick << ",\n"
+           << "  \"trace_independent_of_cadence\": true,\n"
+           << "  \"objectives\": " << paced.debrief.objective_count << ",\n"
+           << "  \"objectives_completed\": " << paced.debrief.completed_objectives << ",\n"
+           << "  \"outcome\": \"Success\",\n"
+           << "  \"no_script_no_completion\": true,\n"
+           << "  \"asset_readiness\": false,\n"
+           << "  \"asset_readiness_note\": \"the session declares no external "
+              "asset, so the product's readiness flag stays false; retail "
+              "archives remain outside the runtime\",\n"
+           << "  \"script_cadence_is_not_derived\": true,\n"
+           << "  \"mission_area_x\": [" << area->min_x << ", " << area->max_x << "],\n"
+           << "  \"mission_area_z\": [" << area->min_z << ", " << area->max_z << "],\n"
+           << "  \"deterministic_replay\": true,\n"
+           << "  \"session_hash\": \"" << std::hex << paced.hash << std::dec << "\"\n"
+           << "}\n";
+    REQUIRE(static_cast<bool>(report));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -675,7 +817,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<RetailSession> lifecycle = RetailSession::open(
       payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
                  ac6::retail::RetailDifficulty::Normal,
-                 ac6::retail::RetailScriptDrive::QualifiedRuntime});
+                 ac6::retail::RetailScriptDrive::ExternalProbe});
   REQUIRE(lifecycle != nullptr);
   const ac6::retail::RetailSessionFrame before_pause = lifecycle->tick(kFixedDt, {});
   REQUIRE(before_pause.world.tick == 1);
@@ -717,192 +859,8 @@ int main(int argc, char** argv) {
     REQUIRE(*first_counter == static_cast<std::int16_t>(first_flag.literal));
   }
   REQUIRE(!probe->apply_flag_order(probe->scenario().flag_orders().size(), 1.0F, 0u));
-  // Sub-mission 0's tag-0 step installs a rectangle; the port of FUN_82268B28
-  // normalises it and FUN_82268BA0 answers on x and z only.
-  const std::optional<ac6::retail::MissionArea> area = probe->current_area();
-  REQUIRE(area.has_value());
-  REQUIRE(area->min_x == -50000.0f && area->max_x == 50000.0f);
-  REQUIRE(area->min_z == -50000.0f && area->max_z == 50000.0f);
-  REQUIRE(ac6::retail::area_contains(*area, {0.0f, 1.0e9f, 0.0f}));
-  REQUIRE(!ac6::retail::area_contains(*area, {60000.0f, 0.0f, 0.0f}));
-
-  // The trace the payload's step counts imply, written out rather than derived
-  // in the test, so a runner that walked the script differently would fail.
-  const std::vector<ScriptStepRun> expected = {
-      {0, 0, 0}, {0, 1, 1}, {1, 0, 0}, {2, 0, 1}, {2, 1, 0}, {3, 0, 0},
-  };
-
-  // Three cadences, one trace. The script's shape is a property of the payload;
-  // when it advances is the caller's business.
-  const SessionRun paced = run_session(payload, 300);
-  const SessionRun fast = run_session(payload, 1);
-  const SessionRun slow = run_session(payload, 257);
-  REQUIRE(paced.trace == expected);
-  REQUIRE(fast.trace == expected);
-  REQUIRE(slow.trace == expected);
-  REQUIRE(paced.advances == 6 && paced.ended_at_tick == 1800);
-  REQUIRE(fast.advances == 6 && fast.ended_at_tick == 6);
-  REQUIRE(slow.advances == 6 && slow.ended_at_tick == 1542);
-
-  // The debrief is reached, and it is reached with every sub-mission behind the
-  // cursor - not with a flag.
-  REQUIRE(paced.state == ac6::ScenarioState::Complete);
-  REQUIRE(paced.debrief.outcome == ac6::MissionOutcome::Success);
-  REQUIRE(paced.debrief.objective_count == 4);
-  REQUIRE(paced.debrief.completed_objectives == 4);
-  REQUIRE(paced.debrief.failed_objectives == 0);
-  REQUIRE(paced.last.script_ended);
-
-  // The anti-goal, asserted: without the script, nothing ends the mission.
-  const SessionRun idle = run_session(payload, 0);
-  REQUIRE(idle.advances == 0);
-  REQUIRE(idle.state == ac6::ScenarioState::Gameplay);
-  REQUIRE(idle.debrief.outcome == ac6::MissionOutcome::InProgress);
-  REQUIRE(idle.debrief.completed_objectives == 0);
-  REQUIRE(!idle.last.script_ended);
-  REQUIRE(idle.last.world.tick == kTicks);
-  REQUIRE(idle.last.world.player_entity == probe->player_entity());
-  REQUIRE(idle.last.world.active_units == 230);
-  // mission_ready is the product's asset-readiness flag, and it is false here
-  // on purpose: the retail session declares no external asset, because the
-  // archives stay outside the runtime and visual parity is out of JF's scope.
-  // Asserting it true would mean fabricating asset records. Assert the truth.
-  REQUIRE(!idle.last.world.mission_ready);
-
-  // QualifiedRuntime owns the scheduler guards and advances one authored step
-  // per gameplay tick. The forced cadence remains a payload-only diagnostic.
-  std::unique_ptr<RetailSession> qualified = RetailSession::open(
-              payload,
-              {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-               ac6::retail::RetailDifficulty::Normal,
-               ac6::retail::RetailScriptDrive::QualifiedRuntime});
-  REQUIRE(qualified != nullptr);
-  ac6::retail::RetailSessionFrame qualified_frame;
-  std::size_t qualified_end_tick = 0;
-  for (std::size_t tick = 1; tick <= 32; ++tick) {
-    qualified_frame = qualified->tick(kFixedDt, session_input(tick));
-    if (qualified_frame.script_ended && qualified_end_tick == 0) {
-      qualified_end_tick = tick;
-    }
-  }
-  REQUIRE(qualified_end_tick == 6);
-  REQUIRE(qualified->state() == ac6::ScenarioState::Complete);
-  REQUIRE(qualified->debrief().outcome == ac6::MissionOutcome::Success);
-  REQUIRE(qualified->debrief().completed_objectives == 4);
-  REQUIRE(qualified_frame.script_ended);
-  std::unique_ptr<RetailSession> scheduled = RetailSession::open(
-      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-                 ac6::retail::RetailDifficulty::Normal,
-                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
-  REQUIRE(scheduled != nullptr);
-  ac6::retail::RetailSessionFrame scheduled_frame;
-  std::size_t scheduled_end_tick = 0;
-  for (std::size_t tick = 1; tick <= 32; ++tick) {
-    scheduled_frame = scheduled->tick(kFixedDt, session_input(tick));
-    if (scheduled_frame.script_ended && scheduled_end_tick == 0) {
-      scheduled_end_tick = tick;
-    }
-  }
-  REQUIRE(scheduled_end_tick == 6);
-  REQUIRE(scheduled->state() == ac6::ScenarioState::Complete);
-  REQUIRE(scheduled->debrief().outcome == ac6::MissionOutcome::Success);
-  REQUIRE(scheduled->debrief().completed_objectives == 4);
-  REQUIRE(scheduled->debrief().failed_objectives == 0);
-  REQUIRE(scheduled_frame.script_ended);
-
-  // A retail cursor must survive a checkpoint and produce the same next
-  // frame; restoring only MissionExecution would restart the authored script
-  // at step zero and diverge here.
-  std::unique_ptr<RetailSession> checkpoint_source = RetailSession::open(
-      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-                 ac6::retail::RetailDifficulty::Normal,
-                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
-  std::unique_ptr<RetailSession> checkpoint_target = RetailSession::open(
-      payload, {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-                 ac6::retail::RetailDifficulty::Normal,
-                 ac6::retail::RetailScriptDrive::DiagnosticFixedTick});
-  REQUIRE(checkpoint_source != nullptr && checkpoint_target != nullptr);
-  (void)checkpoint_source->tick(kFixedDt, session_input(1));
-  (void)checkpoint_source->tick(kFixedDt, session_input(2));
-  ac6::MissionExecution::Checkpoint retail_checkpoint;
-  REQUIRE(checkpoint_source->save_checkpoint(retail_checkpoint));
-  REQUIRE(retail_checkpoint.retail_script_state_valid);
-  REQUIRE(!retail_checkpoint.retail_sequencer_state.empty());
-
-  // The script and counter sequencer are one authored state. A well-formed
-  // blob naming another sub-mission must not be combined with this cursor.
-  require_mismatched_sequencer_rejected(*checkpoint_target, retail_checkpoint);
-  REQUIRE(checkpoint_target->restore_checkpoint(retail_checkpoint));
-  const ac6::retail::RetailSessionFrame source_next =
-      checkpoint_source->tick(kFixedDt, session_input(3));
-  const ac6::retail::RetailSessionFrame target_next =
-      checkpoint_target->tick(kFixedDt, session_input(3));
-  REQUIRE(frame_hash(source_next) == frame_hash(target_next));
-
-  // The session loop is a session loop: the flight integrator moved the player
-  // off the origin, the camera follows it at the runtime's fixed offset, and
-  // the camera aims at the player rather than at a constant.
-  const ac6::WorldFrame& last = idle.last.world;
-  REQUIRE(last.position_x != 0.0f || last.position_y != 0.0f || last.position_z != 0.0f);
-  REQUIRE(last.camera_x == last.position_x - 12.0f);
-  REQUIRE(last.camera_y == last.position_y + 3.0f);
-  REQUIRE(last.camera_z == last.position_z + 12.0f);
-  REQUIRE(last.camera_target_x == last.position_x &&
-          last.camera_target_y == last.position_y &&
-          last.camera_target_z == last.position_z);
-
-  // Input reaches the flight model: a mirrored stick gives a different session.
-  const SessionRun mirrored = run_session(payload, 0, mirrored_input);
-  REQUIRE(mirrored.last.world.tick == kTicks);
-  REQUIRE(mirrored.last.world.position_y != last.position_y);
-  REQUIRE(mirrored.hash != idle.hash);
-
-  // The session is deterministic: the same payload and the same input stream
-  // give the same 1800 frames, camera included.
-  const SessionRun repeat = run_session(payload, 300);
-  REQUIRE(repeat.hash == paced.hash);
-  const SessionRun idle_repeat = run_session(payload, 0);
-  REQUIRE(idle_repeat.hash == idle.hash);
-  // A different cadence is a different session, so the hashes must differ; an
-  // equality here would mean the frames carry nothing about the script.
-  REQUIRE(fast.hash != paced.hash);
-
-  if (argc >= 4) write_capture_bundle(argv[3], payload);
-
-  std::printf("retail_session ticks=%zu steps=%zu advances=%zu ended_at=%zu completed=%u\n",
-              kTicks, paced.trace.size(), paced.advances, paced.ended_at_tick,
-              paced.debrief.completed_objectives);
-
-  if (argc >= 3) {
-    std::ofstream report(argv[2]);
-    REQUIRE(static_cast<bool>(report));
-    report << "{\n"
-           << "  \"schema\": \"ac6.retail-session.v1\",\n"
-           << "  \"mission_id\": " << kMissionId << ",\n"
-           << "  \"source\": \"retail scenario container only, no manifest\",\n"
-           << "  \"units_published\": " << probe->world().published << ",\n"
-           << "  \"player_entity\": " << probe->player_entity() << ",\n"
-           << "  \"ticks\": " << kTicks << ",\n"
-           << "  \"sub_missions\": " << sub_missions.size() << ",\n"
-           << "  \"script_steps\": " << paced.trace.size() << ",\n"
-           << "  \"script_advances\": " << paced.advances << ",\n"
-           << "  \"script_exhausted_at_tick\": " << paced.ended_at_tick << ",\n"
-           << "  \"trace_independent_of_cadence\": true,\n"
-           << "  \"objectives\": " << paced.debrief.objective_count << ",\n"
-           << "  \"objectives_completed\": " << paced.debrief.completed_objectives << ",\n"
-           << "  \"outcome\": \"Success\",\n"
-           << "  \"no_script_no_completion\": true,\n"
-           << "  \"asset_readiness\": false,\n"
-           << "  \"asset_readiness_note\": \"the session declares no external "
-              "asset, so the product's readiness flag stays false; retail "
-              "archives remain outside the runtime\",\n"
-           << "  \"script_cadence_is_not_derived\": true,\n"
-           << "  \"mission_area_x\": [" << area->min_x << ", " << area->max_x << "],\n"
-           << "  \"mission_area_z\": [" << area->min_z << ", " << area->max_z << "],\n"
-           << "  \"deterministic_replay\": true,\n"
-           << "  \"session_hash\": \"" << std::hex << paced.hash << std::dec << "\"\n"
-           << "}\n";
-    REQUIRE(static_cast<bool>(report));
-  }
+  check_long_session(payload, *probe,
+                     argc >= 3 ? std::filesystem::path(argv[2]) : std::filesystem::path{},
+                     argc >= 4 ? std::filesystem::path(argv[3]) : std::filesystem::path{});
   return 0;
 }

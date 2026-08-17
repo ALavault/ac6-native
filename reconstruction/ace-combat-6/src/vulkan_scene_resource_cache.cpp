@@ -151,6 +151,14 @@ namespace {
   return true;
 }
 
+[[nodiscard]] Sha256Digest resource_digest(const RenderScene& scene) {
+  RenderScene stable = scene;
+  stable.tick = 1U;
+  stable.camera = {};
+  stable.refresh_digest();
+  return stable.digest;
+}
+
 }  // namespace
 
 std::optional<VulkanMission01TexturedUpload>
@@ -398,6 +406,7 @@ void VulkanSceneResourceCache::reset() noexcept {
   material_ids_.clear();
   mesh_ids_.clear();
   scene_digest_.fill(0U);
+  resource_digest_.fill(0U);
   target_ = {};
   ready_ = false;
   textured_mode_ = false;
@@ -526,6 +535,7 @@ bool VulkanSceneResourceCache::build(
   }
   target_ = target;
   scene_digest_ = scene.digest;
+  resource_digest_ = resource_digest(scene);
   ready_ = true;
   textured_mode_ = false;
   return true;
@@ -674,6 +684,7 @@ bool VulkanSceneResourceCache::build_textured(
   }
   target_ = target;
   scene_digest_ = scene.digest;
+  resource_digest_ = resource_digest(scene);
   ready_ = true;
   textured_mode_ = true;
   clip_textured_mode_ = false;
@@ -813,6 +824,7 @@ bool VulkanSceneResourceCache::build_clip_textured(
     texture_bindings_[index].texture_id = texture_ids_[index];
   target_ = target;
   scene_digest_ = scene.digest;
+  resource_digest_ = resource_digest(scene);
   ready_ = true;
   textured_mode_ = false;
   clip_textured_mode_ = true;
@@ -824,9 +836,17 @@ bool VulkanSceneResourceCache::build_world_textured(
     const std::span<const VulkanSceneWorldTexturedMeshUpload> meshes,
     const std::span<const VulkanSceneTexturedMaterialUpload> materials,
     const std::span<const VulkanSceneTextureUpload> textures) noexcept {
-  if (!bounded_world_textured_scene(scene) || !target ||
-      !backend_.render_target_has_d32(target) ||
-      !render_scene_supported(scene, backend_.caps())) {
+  failure_detail_ = "none";
+  if (!bounded_world_textured_scene(scene)) {
+    failure_detail_ = "scene_contract";
+    return false;
+  }
+  if (!target || !backend_.render_target_has_d32(target)) {
+    failure_detail_ = "depth_target";
+    return false;
+  }
+  if (!render_scene_supported(scene, backend_.caps())) {
+    failure_detail_ = "device_caps";
     return false;
   }
 
@@ -863,11 +883,13 @@ bool VulkanSceneResourceCache::build_world_textured(
     normalize(required_material_ids);
     normalize(required_texture_ids);
   } catch (...) {
+    failure_detail_ = "resource_id_allocation";
     return false;
   }
   if (!unique_ids(required_mesh_ids) || !unique_ids(required_material_ids) ||
       !unique_ids(required_texture_ids) || !unique_ids(upload_mesh_ids) ||
       !unique_ids(upload_material_ids) || !unique_ids(upload_texture_ids)) {
+    failure_detail_ = "duplicate_resource_id";
     return false;
   }
   reset();
@@ -902,11 +924,15 @@ bool VulkanSceneResourceCache::build_world_textured(
           [&id](const auto& upload) { return upload.mesh_id == id; });
       if (found == meshes.end() || found->vertices.empty() ||
           found->indices.empty() || found->indices.size() % 3U != 0U) {
+        failure_detail_ = "mesh_upload";
         return discard();
       }
       const VulkanWorldTexturedMeshHandle handle =
           backend_.create_world_textured_mesh(found->vertices, found->indices);
-      if (!handle) return discard();
+      if (!handle) {
+        failure_detail_ = "mesh_allocation";
+        return discard();
+      }
       new_mesh_bindings.push_back(
           {{}, handle, static_cast<std::uint32_t>(found->indices.size())});
       new_mesh_ids.push_back(std::move(id));
@@ -915,10 +941,16 @@ bool VulkanSceneResourceCache::build_world_textured(
       const auto found = std::find_if(
           textures.begin(), textures.end(),
           [&id](const auto& upload) { return upload.texture_id == id; });
-      if (found == textures.end()) return discard();
+      if (found == textures.end()) {
+        failure_detail_ = "texture_upload";
+        return discard();
+      }
       const VulkanTextureHandle handle = backend_.create_texture_rgba8(
           found->width, found->height, found->rgba8);
-      if (!handle) return discard();
+      if (!handle) {
+        failure_detail_ = "texture_allocation";
+        return discard();
+      }
       new_texture_bindings.push_back({{}, handle});
       new_texture_ids.push_back(std::move(id));
     }
@@ -936,6 +968,7 @@ bool VulkanSceneResourceCache::build_world_textured(
           found->vertex_spirv.empty() || found->fragment_spirv.empty() ||
           !found->textures_resolved || !found->state.depth_test ||
           !found->state.depth_write) {
+        failure_detail_ = "material_upload";
         return discard();
       }
       for (const DrawPacket& packet : scene.draw_packets) {
@@ -943,19 +976,27 @@ bool VulkanSceneResourceCache::build_world_textured(
         packet_found = true;
         if (found->state.depth_test != packet.depth.test ||
             found->state.depth_write != packet.depth.write ||
-            found->state.alpha_blend != packet.blend.enabled) {
+          found->state.alpha_blend != packet.blend.enabled) {
+          failure_detail_ = "material_state";
           return discard();
         }
       }
-      if (!packet_found) return discard();
+      if (!packet_found) {
+        failure_detail_ = "material_packet";
+        return discard();
+      }
       const VulkanPipelineHandle handle =
           backend_.create_world_textured_pipeline(
               target, found->vertex_spirv, found->fragment_spirv, found->state);
-      if (!handle) return discard();
+      if (!handle) {
+        failure_detail_ = "pipeline_allocation";
+        return discard();
+      }
       new_material_bindings.push_back({{}, handle, found->state, true});
       new_material_ids.push_back(std::move(id));
     }
   } catch (...) {
+    failure_detail_ = "vulkan_allocation_exception";
     return discard();
   }
 
@@ -975,6 +1016,7 @@ bool VulkanSceneResourceCache::build_world_textured(
     texture_bindings_[index].texture_id = texture_ids_[index];
   target_ = target;
   scene_digest_ = scene.digest;
+  resource_digest_ = resource_digest(scene);
   ready_ = true;
   textured_mode_ = false;
   clip_textured_mode_ = false;
@@ -996,6 +1038,29 @@ bool VulkanSceneResourceCache::render(const RenderScene& scene) noexcept {
   if (textured_mode_) {
     return renderer_.render_textured(scene, target_, textured_mesh_bindings_,
                                      textured_material_bindings_, texture_bindings_);
+  }
+  return renderer_.render(scene, target_, mesh_bindings_, material_bindings_);
+}
+
+bool VulkanSceneResourceCache::render_dynamic(
+    const RenderScene& scene) noexcept {
+  if (!ready_ || !scene.valid() || resource_digest(scene) != resource_digest_) {
+    return false;
+  }
+  if (world_textured_mode_) {
+    return renderer_.render_world_textured(
+        scene, target_, world_textured_mesh_bindings_,
+        textured_material_bindings_, texture_bindings_);
+  }
+  if (clip_textured_mode_) {
+    return renderer_.render_clip_textured(
+        scene, target_, clip_textured_mesh_bindings_,
+        textured_material_bindings_, texture_bindings_);
+  }
+  if (textured_mode_) {
+    return renderer_.render_textured(scene, target_, textured_mesh_bindings_,
+                                     textured_material_bindings_,
+                                     texture_bindings_);
   }
   return renderer_.render(scene, target_, mesh_bindings_, material_bindings_);
 }

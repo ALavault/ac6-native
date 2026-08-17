@@ -91,6 +91,33 @@ int main() {
     std::cerr << "retail_mission01_vulkan_scene=fail condition=missing_shader\n";
     return 1;
   }
-  std::cout << "retail_mission01_vulkan_scene=pass draw=1 jv_eligible=0\n";
+  ac6::WorldFrame frame;
+  frame.mission_id = 1U;
+  frame.mission_ready = true;
+  frame.player_entity = 1U;
+  frame.camera_x = 0.0F;
+  frame.camera_y = 0.0F;
+  frame.camera_z = -100.0F;
+  frame.camera_target_x = 0.0F;
+  frame.camera_target_y = 0.0F;
+  frame.camera_target_z = 0.0F;
+  const ac6::SimulationSnapshot snapshot = ac6::make_simulation_snapshot(
+      frame, ac6::ScenarioState::Gameplay, 1U, 0U, false);
+  const auto runtime = ac6::retail::RetailMission01VulkanScene::open_runtime(
+      store, snapshot, true, 1280U, 720U);
+  if (!runtime.has_value() || runtime->report().runtime_draw_instances != 4226U ||
+      runtime->report().terrain_draw_instances != 65536U ||
+      runtime->report().runtime_meshes == 0U ||
+      runtime->report().runtime_textures == 0U ||
+      runtime->report().complete_render_scene || runtime->report().jv_eligible) {
+    std::cerr << "retail_mission01_vulkan_scene=fail condition=runtime_scene\n";
+    return 1;
+  }
+  std::cout << "retail_mission01_vulkan_scene=pass draw=1 jv_eligible=0"
+            << " runtime_draw=" << runtime->report().runtime_draw_instances
+            << " runtime_meshes=" << runtime->report().runtime_meshes
+            << " runtime_textures=" << runtime->report().runtime_textures
+            << " terrain_draw=" << runtime->report().terrain_draw_instances
+            << "\n";
   return 0;
 }

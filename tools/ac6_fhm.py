@@ -24,7 +24,9 @@ def _magic(data: bytes) -> str:
 
 
 def parse_fhm(blob: bytes) -> list[FhmChild] | None:
-    if len(blob) < 0x18 or blob[:4] != b"FHM ":
+    # The fixed header ends at the child count at 0x10.  A count-zero FHM is
+    # therefore valid at 0x14 bytes and has no offset/size table.
+    if len(blob) < 0x14 or blob[:4] != b"FHM ":
         return None
     count = struct.unpack_from(">I", blob, 0x10)[0]
     if count > 1_000_000:

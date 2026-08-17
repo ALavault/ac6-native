@@ -238,6 +238,102 @@
       "sha256": "78157ce024b221cb0bb1123f33374e451791437a88856ccb042364043580be42"
     }
   },
+  "provisional_progress": {
+    "state": "provisional-covered",
+    "cycles": [
+      {
+        "path": "reports/cycle-1580-qualified-runtime-scheduler.md",
+        "size": 1293,
+        "sha256": "74af04a138de0c4a39eae2d6d0cecf5e0ae7a028935c3e878c16d6b3cabadce0"
+      },
+      {
+        "path": "reports/cycle-1581-m01-vulkan-interactive-provisional.md",
+        "size": 1763,
+        "sha256": "3bf146e03f7a6685f5ff17d78f1c4bfd4d2ff087dacc2916de5165c5c2c77393"
+      },
+      {
+        "path": "reports/cycle-1582-m01-combat-input-bridge.md",
+        "size": 1648,
+        "sha256": "96828dfc09cd5faded38bc6e46f27645d8fda78d27e3d55ccbddf340a0c3e962"
+      },
+      {
+        "path": "reports/cycle-1583-replay-combat-digest.md",
+        "size": 798,
+        "sha256": "c7589c68d9ccffb474ba073b74a6c9e964abf470a53e98e847a9b28a8461f926"
+      },
+      {
+        "path": "reports/cycle-1584-m01-lifecycle.md",
+        "size": 1535,
+        "sha256": "2e595c0b659f3d7a5b7ca67f0cfe4558352ea7235b881e79404e5b57e4e2a212"
+      },
+      {
+        "path": "reports/cycle-1585-m01-campaign-session.md",
+        "size": 2289,
+        "sha256": "197adbf131cdb0934a870757a437672c3c7b3fbbd26d2e4ee10a7ae53e7f11f3"
+      },
+      {
+        "path": "reports/cycle-1586-vulkan-gpu-present.md",
+        "size": 1918,
+        "sha256": "f49e61ae4bb44a4087e225c9f25461b2f521feb75692261a1e8a15cd083a3455"
+      },
+      {
+        "path": "reports/cycle-1587-m01-combat-swept-collision.md",
+        "size": 1483,
+        "sha256": "332144966ba683f69c160c98d79321e94ce9fb16f6f018d80315c41a14bf4bd2"
+      },
+      {
+        "path": "reports/cycle-1588-m01-frontend-handoff.md",
+        "size": 1707,
+        "sha256": "0f1821e32a49c0d4f70bb040bfc8e880e063944e7cd052edc0d45716ef432b63"
+      },
+      {
+        "path": "reports/cycle-1589-m01-frontend-digest.md",
+        "size": 1182,
+        "sha256": "c8f9d81845241ca48cce7d76d993f41bdb2b2e343bf8cbb07d9b3eb109aba54c"
+      },
+      {
+        "path": "reports/cycle-1591-m01-runtime-scene-boundary.md",
+        "size": 1703,
+        "sha256": "75f729b196e93cee4968d254f3286c8fb7f70a0830540668b81bdf8ce2e979ff"
+      },
+      {
+        "path": "reports/cycle-1593-m01-runtime-resource-boundary.md",
+        "size": 1310,
+        "sha256": "cefc48341211a1721a76d316c1e26a7d238583894f9902ef6b3eadc9f521be49"
+      },
+      {
+        "path": "reports/cycle-1594-m01-tcam-nfic-semantic-reader.md",
+        "size": 3000,
+        "sha256": "5ce40137d83666f1d3b222407d3f131a3cde69358dad8d2a16a14cd0f0b64c9a"
+      },
+      {
+        "path": "reports/cycle-1596-execution-trace-v3-domains.md",
+        "size": 1265,
+        "sha256": "80390db962132008a27a2d1008966238f51587be55e88e433eaf6f26a6fba0ba"
+      },
+      {
+        "path": "reports/cycle-1598-m01-qualified-scheduler-retraction.md",
+        "size": 1895,
+        "sha256": "91287ad0dd38bcc8e1f949f44c3f50a372a608e512ff491caf4cdacf6612e951"
+      },
+      {
+        "path": "reports/cycle-1599-m01-product-weapon-fail-closed.md",
+        "size": 1810,
+        "sha256": "6fd70dd898007fd84b4e4e08cb92e2f3de2835ccaf0ff2827226873da534ba39"
+      },
+      {
+        "path": "reports/cycle-1600-m01-objbin-combat-references.md",
+        "size": 1892,
+        "sha256": "c15e6f53e36a6b24e97b0a46bb4a4f9adae44b5bbc976a937e23c85fa0f423e3"
+      },
+      {
+        "path": "reports/cycle-1601-demo-build-and-scenario-qualification.md",
+        "size": 3379,
+        "sha256": "e403c939734a00bd636e287980050576293b4b126cb1308a61aea9cdf39657bc"
+      }
+    ],
+    "closure_effect": "Records provisional implementation and validation only; no checkpoint lane is closed and no provisional or oracle evidence is promoted to retail-qualified semantics."
+  },
   "validation_commands": [
     "cmake --build reconstruction/ace-combat-6/build -j16",
     "SDL_AUDIODRIVER=dummy xvfb-run -a ctest --test-dir reconstruction/ace-combat-6/build --output-on-failure",

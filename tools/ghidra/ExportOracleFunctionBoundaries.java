@@ -16,6 +16,7 @@ import java.util.List;
 public class ExportOracleFunctionBoundaries extends GhidraScript {
   private static final String XEX_SHA256 =
       "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde";
+  private static final String LANGUAGE = "PowerPC:BE:64:Xenon";
 
   private static String address(long value) {
     return String.format("0x%08X", value);
@@ -30,6 +31,10 @@ public class ExportOracleFunctionBoundaries extends GhidraScript {
     }
     if (!XEX_SHA256.equalsIgnoreCase(currentProgram.getExecutableSHA256())) {
       throw new AssertionError("wrong XEX: " + currentProgram.getExecutableSHA256());
+    }
+    String language = currentProgram.getLanguageID().toString();
+    if (!LANGUAGE.equals(language) && !(LANGUAGE + ":default").equals(language)) {
+      throw new AssertionError("wrong language: " + currentProgram.getLanguageID());
     }
   }
 
@@ -59,7 +64,9 @@ public class ExportOracleFunctionBoundaries extends GhidraScript {
       writer.write("  \"project\": \"ace-combat-6\",\n");
       writer.write("  \"program\": \"default.xex\",\n");
       writer.write("  \"sha256\": \"" + currentProgram.getExecutableSHA256().toLowerCase() + "\",\n");
-      writer.write("  \"language\": \"" + currentProgram.getLanguageID() + "\",\n");
+      // Keep the processor identity stable across Ghidra's optional compiler
+      // suffix (fresh imports report Xenon:default, existing projects Xenon).
+      writer.write("  \"language\": \"" + LANGUAGE + "\",\n");
       writer.write("  \"function_count\": " + functions.size() + ",\n");
       writer.write("  \"functions\": [\n");
       for (int index = 0; index < functions.size(); index++) {

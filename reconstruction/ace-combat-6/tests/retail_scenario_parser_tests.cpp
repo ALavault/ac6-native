@@ -116,7 +116,10 @@ void point_child(Blob& blob, const Table& table, std::size_t slot,
 
 // A ten-slot scenario root holding one unit record, one faction and one
 // sub-mission of two steps. Every value is chosen, none is retail.
-std::vector<std::uint8_t> synthetic_scenario(std::uint8_t class_byte) {
+std::vector<std::uint8_t> synthetic_scenario(
+    std::uint8_t class_byte,
+    std::optional<std::uint8_t> weapon_selector = std::nullopt,
+    bool truncate_weapon = false) {
   Blob blob;
   const Node root = append_node(blob);
   const Table root_table = append_table(blob, 10);
@@ -164,6 +167,26 @@ std::vector<std::uint8_t> synthetic_scenario(std::uint8_t class_byte) {
   blob.append_u32(0);
   point_data(blob, object, object_data);
 
+  Node weapon;
+  if (weapon_selector.has_value()) {
+    // object.child[0] is ObjBin; ObjBin.child[3] is WeaponBin slot zero.
+    const Table object_children = append_table(blob, 1);
+    point_table(blob, object, object_children.at);
+    const Node obj_bin = append_node(blob);
+    point_child(blob, object_children, 0, obj_bin.at);
+    const std::size_t obj_bin_data = blob.size();
+    blob.append_zeros(0x63);
+    point_data(blob, obj_bin, obj_bin_data);
+    const Table obj_bin_children = append_table(blob, 7);
+    point_table(blob, obj_bin, obj_bin_children.at);
+    std::array<Node, 7> children;
+    for (std::size_t slot = 0; slot < children.size(); ++slot) {
+      children[slot] = append_node(blob);
+      point_child(blob, obj_bin_children, slot, children[slot].at);
+    }
+    weapon = children[3];
+  }
+
   // Slot 2: one sub-mission whose script has two steps, tags 0 and 1.
   const Node sub_mission_list = append_node(blob);
   point_child(blob, root_table, 2, sub_mission_list.at);
@@ -206,6 +229,15 @@ std::vector<std::uint8_t> synthetic_scenario(std::uint8_t class_byte) {
     point_child(blob, root_table, slot, empty.at);
   }
   point_table(blob, root, root_table.at);
+
+  // Keep the WeaponBin payload last so the truncated form really ends before
+  // the byte at +0x5C instead of borrowing bytes from the next node.
+  if (weapon_selector.has_value()) {
+    const std::size_t weapon_data = blob.size();
+    blob.append_zeros(truncate_weapon ? 0x5C : 0x5D);
+    if (!truncate_weapon) blob.set_u8(weapon_data + 0x5C, *weapon_selector);
+    point_data(blob, weapon, weapon_data);
+  }
   return blob.take();
 }
 
@@ -313,6 +345,7 @@ void check_synthetic() {
   REQUIRE(record.object_category == 4);
   REQUIRE(record.has_behaviour_set);
   REQUIRE(record.obj_scalars.size() == 1);
+  REQUIRE(record.obj_bin_references.size() == record.obj_scalars.size());
   REQUIRE(record.obj_scalars.front() ==
           (ac6::retail::ScenarioObjScalars{1.5f, -2.0f, 3.25f}));
 
@@ -336,6 +369,22 @@ void check_synthetic() {
   REQUIRE(unknown_payload.has_value());
   REQUIRE(!MissionScenario::parse(*unknown_payload).has_value());
   REQUIRE(!ac6::retail::object_category(7).has_value());
+
+  const std::optional<ScenarioPayload> weapon_payload =
+      ScenarioPayload::open(synthetic_scenario(2, 9));
+  REQUIRE(weapon_payload.has_value());
+  const std::optional<MissionScenario> weapon_scenario =
+      MissionScenario::parse(*weapon_payload);
+  REQUIRE(weapon_scenario.has_value());
+  const auto& weapon =
+      weapon_scenario->units().front().obj_bin_references.front().weapons[0];
+  REQUIRE(weapon.has_value());
+  REQUIRE(weapon->selector == 9);
+
+  const std::optional<ScenarioPayload> truncated_weapon_payload =
+      ScenarioPayload::open(synthetic_scenario(2, 9, true));
+  REQUIRE(truncated_weapon_payload.has_value());
+  REQUIRE(!MissionScenario::parse(*truncated_weapon_payload).has_value());
 
   // A truncated buffer yields no payload, and a truncated node yields no child.
   REQUIRE(!ScenarioPayload::open({0, 0, 0, 0}).has_value());
@@ -409,10 +458,27 @@ int check_retail(const std::filesystem::path& manifests,
   // numbers are the correction, and they are asserted so the wrong node cannot
   // be read again without failing.
   std::size_t bindings = 0, without_model = 0, with_secondary = 0, consecutive = 0;
+  std::array<std::size_t, 4> weapon_count_histogram{};
+  std::map<std::uint8_t, std::size_t> weapon_selector_histogram;
+  std::size_t durable_slots = 0;
   std::set<std::uint8_t> primaries;
   std::uint8_t highest = 0;
   for (const ac6::retail::ScenarioUnitRecord& unit : scenario->units()) {
     REQUIRE(unit.model_bindings.size() == unit.obj_scalars.size());
+    REQUIRE(unit.obj_bin_references.size() == unit.obj_scalars.size());
+    for (const ac6::retail::ScenarioObjBinReferences& references :
+         unit.obj_bin_references) {
+      REQUIRE(references.data.has_value());
+      if (references.durable.has_value()) ++durable_slots;
+      std::size_t weapon_count = 0;
+      for (std::size_t weapon = 0; weapon < references.weapons.size(); ++weapon) {
+        if (references.weapons[weapon].has_value()) {
+          ++weapon_count;
+          ++weapon_selector_histogram[references.weapons[weapon]->selector];
+        }
+      }
+      ++weapon_count_histogram[weapon_count];
+    }
     for (const ac6::retail::ScenarioModelBinding& binding : unit.model_bindings) {
       bindings += 1;
       if (!binding.has_model()) {
@@ -434,6 +500,13 @@ int check_retail(const std::filesystem::path& manifests,
   REQUIRE(without_model == 123);
   REQUIRE(with_secondary == 309);
   REQUIRE(consecutive == 281);
+  REQUIRE(durable_slots > 0);
+  REQUIRE(weapon_count_histogram ==
+          (std::array<std::size_t, 4>{152, 189, 93, 0}));
+  REQUIRE(weapon_selector_histogram ==
+          (std::map<std::uint8_t, std::size_t>{{1, 186}, {2, 121}, {3, 2},
+                                               {5, 13}, {6, 29}, {7, 11},
+                                               {9, 9}, {13, 4}}));
   REQUIRE(primaries.size() == 38);
   // Every index addresses Mission 01's own 94-entry model directory. An index
   // at or above the count would make 0x8228E9B8 return null.

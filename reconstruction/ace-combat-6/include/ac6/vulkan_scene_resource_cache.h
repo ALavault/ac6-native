@@ -74,6 +74,13 @@ struct VulkanMission01WorldTexturedUpload final {
   std::vector<std::uint8_t> rgba8;
 };
 
+struct VulkanMission01TextureUpload final {
+  std::string texture_id;
+  std::uint32_t texture_width{};
+  std::uint32_t texture_height{};
+  std::vector<std::uint8_t> rgba8;
+};
+
 // Qualified NDXR/NTXR data after an explicitly supplied object-to-clip
 // transform. The transform is caller-owned evidence; this helper never
 // chooses a camera, handedness, or projection convention.
@@ -162,6 +169,10 @@ class VulkanSceneResourceCache final {
       std::span<const VulkanSceneTextureUpload> textures) noexcept;
 
   [[nodiscard]] bool render(const RenderScene& scene) noexcept;
+  // Dynamic frame submission: tick and camera may change while all Vulkan
+  // resources remain persistent. Geometry/material/texture identity is still
+  // checked against the build-time resource digest.
+  [[nodiscard]] bool render_dynamic(const RenderScene& scene) noexcept;
   void reset() noexcept;
 
   [[nodiscard]] bool ready() const noexcept { return ready_; }
@@ -171,6 +182,9 @@ class VulkanSceneResourceCache final {
   [[nodiscard]] std::size_t live_mesh_count() const noexcept;
   [[nodiscard]] std::size_t live_pipeline_count() const noexcept;
   [[nodiscard]] std::size_t live_texture_count() const noexcept;
+  [[nodiscard]] const char* failure_detail() const noexcept {
+    return failure_detail_;
+  }
 
  private:
   VulkanBackend& backend_;
@@ -188,10 +202,12 @@ class VulkanSceneResourceCache final {
   std::vector<VulkanSceneTexturedMaterialBinding> textured_material_bindings_;
   std::vector<VulkanSceneTextureBinding> texture_bindings_;
   std::array<std::uint8_t, 32> scene_digest_{};
+  std::array<std::uint8_t, 32> resource_digest_{};
   bool ready_{};
   bool textured_mode_{};
   bool clip_textured_mode_{};
   bool world_textured_mode_{};
+  const char* failure_detail_{"none"};
 };
 
 }  // namespace ac6

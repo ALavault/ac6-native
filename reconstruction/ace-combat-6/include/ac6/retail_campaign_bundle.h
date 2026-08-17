@@ -35,6 +35,8 @@ class RetailCampaignBundle final {
   }
   std::optional<std::span<const std::uint8_t>> tcam_bytes(
       std::size_t index) const noexcept;
+  std::optional<std::span<const std::uint8_t>> nfic_cut_bytes(
+      std::size_t index) const noexcept;
 
  private:
   std::uint32_t mission_id_{};

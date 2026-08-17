@@ -30,6 +30,12 @@ struct RetailMission01VulkanSceneReport final {
   bool placement_translation_applied{};
   bool shader_bytes_supplied{};
   bool jv_eligible{};
+  std::size_t runtime_draw_instances{};
+  std::size_t runtime_meshes{};
+  std::size_t runtime_textures{};
+  std::size_t terrain_draw_instances{};
+  std::size_t water_lookup_entries{};
+  bool complete_render_scene{};
 };
 
 class RetailMission01VulkanScene final {
@@ -68,6 +74,14 @@ class RetailMission01VulkanScene final {
       std::uint64_t fragment_shader_hash,
       std::uint32_t width = 1280U, std::uint32_t height = 720U);
 
+  // Product handoff. The sealed cache and the current native simulation own
+  // asset selection, transforms, camera and shader identity. No draw index,
+  // projection matrix or shader byte span crosses this boundary.
+  static std::optional<RetailMission01VulkanScene> open_runtime(
+      const RetailContentStore& store, const SimulationSnapshot& snapshot,
+      bool swap_16 = true, std::uint32_t width = 1280U,
+      std::uint32_t height = 720U);
+
   // Test-only construction still follows the same NDXR/NTXR and scene
   // contracts, but does not claim sealed-cache provenance.
   static std::optional<RetailMission01VulkanScene> build_for_testing(
@@ -95,9 +109,24 @@ class RetailMission01VulkanScene final {
   [[nodiscard]] VulkanSceneTexturedMaterialUpload material_upload() const noexcept;
   [[nodiscard]] VulkanSceneTextureUpload texture_upload() const noexcept;
 
+  [[nodiscard]] std::vector<VulkanSceneWorldTexturedMeshUpload>
+  world_mesh_uploads() const;
+  [[nodiscard]] VulkanSceneTexturedMaterialUpload world_material_upload()
+      const noexcept;
+  [[nodiscard]] std::vector<VulkanSceneTextureUpload> world_texture_uploads()
+      const;
+
+  // Updates only frame-owned camera/tick metadata. Persistent GPU resources
+  // remain untouched; the resource cache has a separate dynamic render gate.
+  [[nodiscard]] bool update_snapshot(const SimulationSnapshot& snapshot) noexcept;
+
  private:
   RetailMission01VulkanScene(RetailMission01MapRenderAssets assets,
                              VulkanMission01ClipTexturedUpload upload,
+                             std::vector<VulkanMission01WorldTexturedUpload>
+                                 world_uploads,
+                             std::vector<VulkanMission01TextureUpload>
+                                 world_texture_uploads,
                              std::vector<std::uint32_t> vertex_spirv,
                              std::vector<std::uint32_t> fragment_spirv,
                              RenderScene scene,
@@ -114,8 +143,14 @@ class RetailMission01VulkanScene final {
       std::uint64_t fragment_shader_hash,
       std::uint32_t width, std::uint32_t height);
 
+  static std::optional<RetailMission01VulkanScene> build_runtime(
+      RetailMission01MapRenderAssets assets, const SimulationSnapshot& snapshot,
+      bool swap_16, std::uint32_t width, std::uint32_t height);
+
   RetailMission01MapRenderAssets assets_;
   VulkanMission01ClipTexturedUpload upload_;
+  std::vector<VulkanMission01WorldTexturedUpload> world_uploads_;
+  std::vector<VulkanMission01TextureUpload> world_texture_uploads_;
   std::vector<std::uint32_t> vertex_spirv_;
   std::vector<std::uint32_t> fragment_spirv_;
   RenderScene scene_;

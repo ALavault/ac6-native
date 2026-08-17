@@ -69,9 +69,16 @@ int main(int argc, char** argv) {
 
   std::map<int, std::size_t> classes;
   std::map<int, std::size_t> factions;
+  std::map<int, std::size_t> weapon_selectors;
   for (const ac6::retail::ScenarioUnitRecord& record : scenario->units()) {
     classes[record.class_byte] += 1;
     factions[record.faction_byte] += 1;
+    for (const ac6::retail::ScenarioObjBinReferences& references :
+         record.obj_bin_references) {
+      for (const auto& weapon : references.weapons) {
+        if (weapon.has_value()) weapon_selectors[weapon->selector] += 1;
+      }
+    }
   }
   std::map<int, std::size_t> operations;
   std::map<int, std::size_t> counter_ids;
@@ -158,6 +165,8 @@ int main(int argc, char** argv) {
   std::printf("  \"sub_missions\": %zu,\n", scenario->sub_missions().size());
   std::printf("  \"class_bytes\": %s,\n", histogram(classes).c_str());
   std::printf("  \"faction_bytes\": %s,\n", histogram(factions).c_str());
+  std::printf("  \"weapon_selectors\": %s,\n",
+              histogram(weapon_selectors).c_str());
   std::printf("  \"flag_orders\": %zu,\n", scenario->flag_orders().size());
   std::printf("  \"flag_operations\": %s,\n", histogram(operations).c_str());
   std::printf("  \"distinct_counters\": %zu,\n", counter_ids.size());

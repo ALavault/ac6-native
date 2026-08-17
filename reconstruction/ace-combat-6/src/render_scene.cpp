@@ -134,7 +134,7 @@ SimulationSnapshot make_simulation_snapshot(
 }
 
 bool SimulationSnapshot::valid() const {
-  if (tick == 0 || mission_id == 0 || player_entity == 0 || !camera.valid() ||
+  if (mission_id == 0 || player_entity == 0 || !camera.valid() ||
       !finite_array(player_position) || !finite_array(player_attitude) ||
       !std::isfinite(player_speed) || !nonzero_digest(digest)) {
     return false;
@@ -206,7 +206,7 @@ bool MaterialPipeline::valid() const {
 }
 
 bool RenderScene::valid() const {
-  if (tick == 0 || mission_id == 0 || !camera.valid() || !surface.valid() ||
+  if (mission_id == 0 || !camera.valid() || !surface.valid() ||
       passes.empty() || materials.empty() || !nonzero_digest(digest)) {
     return false;
   }

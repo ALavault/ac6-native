@@ -1,11 +1,21 @@
 {
   "ghidra_exports": {
+    "status": "historical-not-qualified-after-xenon-migration",
+    "canonical_source": "analysis/ghidra/canonical-import.json",
     "direct_call_edges": 9874,
     "directory": "exports",
     "function_count": 8824,
     "functions_with_callees": 7057,
     "functions_with_callers": 2818,
     "index_sha256": "1a91a61b79202f855e22a423b5395ba8831be07f04a1880cda59413ee1455182"
+  },
+  "canonical_ghidra": {
+    "project": "ghidra-projects/ace-combat-6",
+    "language": "PowerPC:BE:64:Xenon",
+    "ghidra_version": "12.1.2",
+    "function_count": 10708,
+    "boundary_export": "analysis/ghidra/canonical-function-boundaries.json",
+    "boundary_export_sha256": "fa3cf70e8acf811b2d273544f954078dcbf9577cf65f223af53ec1b29e59c40f"
   },
   "identity": {
     "architecture": "powerpc-xenon",

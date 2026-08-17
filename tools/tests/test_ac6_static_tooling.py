@@ -7,12 +7,14 @@ import struct
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import map_object_layout
+import inventory_ac6_pac_shaders
 from ac6_mode1_codec import descramble
 from ac6_fhm import parse_fhm
 from audit_ac6_mission01_native_gate import GateError, audit_contract, template
@@ -121,6 +123,33 @@ def snapshot(implementation: str, r3: int, value: float = 1.0) -> dict:
 
 
 class ExtractPacTests(unittest.TestCase):
+    def test_fhm_accepts_minimal_empty_container(self) -> None:
+        empty = bytearray(0x14)
+        empty[:4] = b"FHM "
+        empty[4:8] = b"\x01\x01\x00\x10"
+        self.assertEqual(parse_fhm(bytes(empty)), [])
+
+    def test_pac_shader_inventory_hashes_both_dword_orders(self) -> None:
+        microcode = bytes.fromhex("0102030411223344aabbccdd")
+        container = bytearray(0x4c)
+        struct.pack_into(">III", container, 0, 0x102A1101, 0x40, len(microcode))
+        struct.pack_into(">I", container, 0x18, 0x20)
+        struct.pack_into(">II", container, 0x20, 0, len(microcode))
+        container[0x40:] = microcode
+        nsxr = bytearray(0x80)
+        nsxr[:4] = b"NSXR"
+        struct.pack_into(">I", nsxr, 4, len(nsxr))
+        nsxr[0x20 : 0x20 + len(container)] = container
+        records = inventory_ac6_pac_shaders.scan_nsxr_leaf(
+            bytes(nsxr), entry_index=7, path="0007/0000"
+        )
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["sha256_raw"], hashlib.sha256(microcode).hexdigest())
+        self.assertEqual(
+            records[0]["sha256_swap32"],
+            hashlib.sha256(bytes.fromhex("0403020144332211ddccbbaa")).hexdigest(),
+        )
+
     def test_raw_entries_are_descrambled_in_decode_mode(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -162,6 +191,45 @@ class ExtractPacTests(unittest.TestCase):
             entry = manifest["entries"][0]
             self.assertEqual(entry["decode"]["status"], "preserved")
             self.assertEqual((output_root / entry["payload_path"]).read_bytes(), stored)
+
+    def test_data01_uses_archive_local_codec_index(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            asset_root = root / "assets"
+            output_root = root / "out"
+            asset_root.mkdir()
+            data00_payload = make_fhm([b"NDXR" + b"A" * 12])
+            data01_payload = make_fhm([b"NTXR" + b"B" * 12])
+            compressor = zlib.compressobj(level=9, wbits=-15)
+            compressed = compressor.compress(data01_payload) + compressor.flush()
+            data00_stored = descramble(data00_payload, 0)
+            data01_stored = descramble(compressed, 0)
+            (asset_root / "DATA00.PAC").write_bytes(data00_stored)
+            (asset_root / "DATA01.PAC").write_bytes(data01_stored)
+            table = struct.pack(
+                ">II4I4I",
+                2,
+                2,
+                0x00020000,
+                0,
+                len(data00_stored),
+                len(data00_payload),
+                0x01010000,
+                0,
+                len(data01_stored),
+                len(data01_payload),
+            )
+            (asset_root / "DATA.TBL").write_bytes(table)
+
+            manifest = extract_selected(asset_root, output_root, [0, 1], True)
+            records = {entry["index"]: entry for entry in manifest["entries"]}
+            self.assertEqual(records[0]["codec_index"], 0)
+            self.assertEqual(records[1]["codec_index"], 0)
+            self.assertEqual(records[1]["decode"]["codec_index"], 0)
+            self.assertEqual(
+                (output_root / records[1]["payload_path"]).read_bytes(),
+                data01_payload,
+            )
 
     def test_fhm_ignores_trailing_zero_size_capacity_slots(self) -> None:
         child = b"NDXR" + b"A" * 12

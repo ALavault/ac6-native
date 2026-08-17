@@ -1,6 +1,49 @@
 # AC6 native Linux — état de recherche
 
-Mise à jour : 2026-08-06T08:43:03+02:00
+Mise à jour : 2026-08-15T06:30:00+02:00
+
+## Contrat actif — démo native Linux
+
+- La cible primaire exclusive est désormais la démo PAL `Default.xex`,
+  SHA-256 `de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8`,
+  qualifiée dans Ghidra 12.1.2 sous `PowerPC:BE:64:Xenon` par le projet
+  `ghidra-projects/ace-combat-6-demo`.
+- Le PAL retail `acc302c1…bcde`, son produit, son projet Ghidra, son worktree et
+  ses preuves sont gelés. Les sections retail ci-dessous restent historiques
+  et ne décrivent plus la cible active ; aucune preuve ni trace n'est fusionnée
+  entre les identités.
+- Le socle démo déjà fermé est conservé : codegen strict reproductible,
+  runtime PPC/scheduler déterministe, corridor XAM partiel, replay
+  `AC6RTPLY-v4` et processeur PM4 transactionnel. Les frontières ouvertes sont
+  le movie XAM appel par appel, les consumers frontend, les pixels Xenos, les
+  services/audio atteints et la mission endogène.
+- Contrat détaillé : `/fastdata/lavaulta/auto-re-agent/GOAL.md`. Gate :
+  `recompilation/ace-combat-6-demo/config/demo-playable-gate-v1.json`.
+
+## Oracle Xenia Linux — cycle 1604
+
+- Le bundle Canary Linux `907d92b` avec profil portable et intervention hôte
+  déclarée `strace -f -qq -e trace=none` progresse visuellement deux fois
+  jusqu'à l'intro Project Aces sous Xvfb/Vulkan/SDL dummy.
+- Le contrôle sans `strace`, à binaire, profil et XEX identiques, reste figé :
+  les captures 8/20 s sont byte-identiques et aucun pixel ne change.
+- Le contournement est donc causal sur cette machine, mais reste une
+  intervention d'oracle affectant signaux et scheduling, jamais une
+  dépendance du produit. Menu, input, mission, cadence et pixels exacts restent
+  non qualifiés. Preuve :
+  `reports/cycle-1604-xenia-linux-strace-verification.md`.
+
+## Debugger Xenia Linux — cycle 1605
+
+- Deux runs bornés confirment que le mode `--debug` est désactivé pendant
+  l'initialisation : `Stack walker unimplemented on posix`, puis
+  `Disabling --debug due to lack of stack walker`.
+- `break_on_start` suspend avant le premier thread guest sans PC exploitable ;
+  sur un guest vivant, `Break and Show Guest Debugger` affiche la même absence
+  de mode debug. Aucun PC, thread ou registre PPC n'est qualifié.
+- Xenia Linux reste donc un oracle visuel sous intervention `strace`, pas un
+  oracle de debug guest. Preuve :
+  `reports/cycle-1605-xenia-linux-debug-oracle.md`.
 
 ## Gate courant
 
@@ -467,6 +510,33 @@ calibration de scène comme parité retail sans association exacte.
 - La frontière retail n'a pas changé : cycle 1080 réduit le prochain test au
   lien record/scénario → insertion ou activation dans UnitManager/MissionManager.
 
+## Réconciliation historique du contrat retail — 2026-08-14 (superseded)
+
+- À cette date, la cible annoncée était exclusivement le PAL retail
+  `default.xex`, SHA-256
+  `acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde`, avec
+  `DATA.TBL` SHA-256
+  `82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5`.
+- Le projet actif `ghidra-projects/ace-combat-6` a été remplacé par un corpus
+  Ghidra 12.1.2 utilisant exclusivement `PowerPC:BE:64:Xenon`. L'ancien
+  `PowerPC:BE:64:A2ALT-32addr` est conservé, sans fusion, sous
+  `ghidra-projects/historical-a2alt-20260814`.
+- L'export de bornes Xenon contient 10 708 fonctions contre 10 645 dans
+  l'ancien corpus A2ALT. Preuve machine-readable :
+  `analysis/ghidra/canonical-import.json` et
+  `analysis/ghidra/canonical-function-boundaries.json`.
+- La mise à jour change donc les résultats statiques (frontières et décodage
+  VMX128); toute observation bridge antérieure doit être requalifiée avec ce
+  projet avant promotion. Aucun run stock ou Xenia n'est requis pour cette
+  conclusion.
+- Les documents demandés `NATIVE_RECONSTRUCTION_STATUS.md`,
+  `DECOMPILATION_PLAN.md`, `CURRENT_PLAN.md` et `reports/handoff/CURRENT.json`
+  n'existent pas dans ce dépôt AC6; cette absence est conservée comme dette
+  documentaire explicite, sans importer les plans d'un autre produit.
+- Le prochain corridor reste `ObjBin -> WeaponBin/DurableBin -> loadout ->
+  destruction -> compteur`; il doit être instrumenté en lane `bridge` après
+  revalidation statique Xenon. Le probe démo reste hors de cette cible.
+
 ## Recapture native post-merge P7 — 2026-08-06
 
 - Après arrêt des workers persistants, le HEAD stable est
@@ -486,3 +556,25 @@ calibration de scène comme parité retail sans association exacte.
   pour le contenu retail complet tant que l'ownership matériel/texture retail
   n'est pas qualifié ; topology is next boundary ; camera/clipping is next
   boundary. La recapture ne promeut pas les vagues ou objectifs retail ni J1.
+
+## Xenia Linux ORACLE_RECOVERY bornée — 2026-08-14
+
+- Le checkout Xenia est propre à `95a5c3ee250f80c3b9d139658649d9ffb6db3eec`;
+  `origin/master` est identique après `fetch --prune`. Aucune mise à jour
+  n'était nécessaire.
+- La matrice Canary atteint le chargement du module et crée la swapchain/audio
+  avec `SDL_AUDIODRIVER=dummy`, mais les captures restent noires et identiques.
+  `apu=nop` échoue explicitement dans `AudioSystem::RegisterClient`; la variante
+  `gpu=null` n'apporte aucune preuve de progression CPU. Cette matrice indique
+  `ProfileManager: Found 0 Profiles`, ce qui est un prérequis manquant, pas une
+  cause suffisante : le cycle 1540 a chargé un profil jetable et reste noir
+  après création des threads, audio et bind réseau.
+- `break_on_start` confirme l'entrée du debugger mais aucun PC guest n'est
+  lisible sans l'UI debugger locale. La frontière Linux/Xvfb non fermée reste
+  donc après lancement invité et avant le premier `PRESENT` de contenu; ce
+  résultat ne constitue ni une preuve négative sur le guest ni une promotion
+  native. Le détail est consigné dans le rapport, réconcilié avec le cycle
+  1540.
+- Rapport borné : `reports/cycle-1603-xenia-linux-oracle-recovery.md`.
+  Les logs/captures restent temporaires sous `/tmp`; aucune source AC6 n'a été
+  modifiée et aucun processus Xenia/Xvfb ne reste actif.

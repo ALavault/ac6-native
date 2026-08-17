@@ -38,6 +38,7 @@ constexpr std::size_t kFactionSideByte = 0x2C;
 // 0x820A7944 and 0x820A7968, on the ObjBin data block.
 constexpr std::size_t kObjModelPrimary = 0x61;
 constexpr std::size_t kObjModelSecondary = 0x62;
+constexpr std::size_t kWeaponSelector = 0x5C;
 constexpr std::size_t kFactionWord = 0x28;
 
 std::string format_float(float value) {
@@ -101,6 +102,51 @@ bool counter_ids_are_bounded(const std::vector<ScenarioFlagOrder>& orders,
     if (order.counter_id >= capacity) return false;
   }
   return true;
+}
+
+struct ParsedObjMetadata {
+  ScenarioModelBinding model;
+  ScenarioObjBinReferences references;
+};
+
+std::optional<ParsedObjMetadata> parse_obj_metadata(
+    const ScenarioPayload& payload, const std::size_t object) {
+  ParsedObjMetadata parsed;
+  const std::vector<std::size_t> entry_children = payload.children(object);
+  if (entry_children.empty()) return parsed;
+  const std::size_t obj_bin = entry_children[0];
+  parsed.references.data = payload.resolve(obj_bin, 0);
+  if (parsed.references.data.has_value()) {
+    const std::optional<std::uint8_t> primary =
+        payload.u8(*parsed.references.data + kObjModelPrimary);
+    const std::optional<std::uint8_t> secondary =
+        payload.u8(*parsed.references.data + kObjModelSecondary);
+    if (primary.has_value()) parsed.model.primary = *primary;
+    if (secondary.has_value()) parsed.model.secondary = *secondary;
+  }
+  const std::vector<std::size_t> children = payload.children(obj_bin);
+  const auto child_data = [&](const std::size_t child)
+      -> std::optional<std::size_t> {
+    if (child >= children.size() || !payload.present(children[child])) {
+      return std::nullopt;
+    }
+    return payload.resolve(children[child], 0);
+  };
+  parsed.references.parameter = child_data(0);
+  parsed.references.maneuvers = child_data(1);
+  parsed.references.durable = child_data(2);
+  for (std::size_t weapon = 0; weapon < parsed.references.weapons.size(); ++weapon) {
+    const std::optional<std::size_t> data = child_data(weapon + 3);
+    if (!data.has_value()) continue;
+    const std::optional<std::uint8_t> selector = payload.u8(*data + kWeaponSelector);
+    // WeaponBin consumers unconditionally reach +0x5C after a non-null slot.
+    // A truncated payload cannot be represented as an absent/default weapon.
+    if (!selector.has_value()) return std::nullopt;
+    parsed.references.weapons[weapon] =
+        ScenarioWeaponBinReference{*data, *selector};
+  }
+  parsed.references.tail = child_data(6);
+  return parsed;
 }
 
 }  // namespace
@@ -257,18 +303,11 @@ std::optional<MissionScenario> MissionScenario::parse(const ScenarioPayload& pay
         // entry's child[0] data block into the 0x20-byte record, and 0x820A7944
         // reads +0x61/+0x62 from that. Cycle 1148 measured this node instead and
         // found only zeros, which is why three cycles hunted an external table.
-        ScenarioModelBinding binding;
-        const std::vector<std::size_t> entry_children = payload.children(object);
-        if (!entry_children.empty()) {
-          const std::optional<std::size_t> bin = payload.resolve(entry_children[0], 0);
-          if (bin.has_value()) {
-            const std::optional<std::uint8_t> primary = payload.u8(*bin + kObjModelPrimary);
-            const std::optional<std::uint8_t> secondary = payload.u8(*bin + kObjModelSecondary);
-            if (primary.has_value()) binding.primary = *primary;
-            if (secondary.has_value()) binding.secondary = *secondary;
-          }
-        }
-        record.model_bindings.push_back(binding);
+        const std::optional<ParsedObjMetadata> metadata =
+            parse_obj_metadata(payload, object);
+        if (!metadata.has_value()) return std::nullopt;
+        record.model_bindings.push_back(metadata->model);
+        record.obj_bin_references.push_back(metadata->references);
       }
     }
     // The unit's Set -> Act -> Order program. The complete tag row is retained

@@ -170,6 +170,11 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload,
   REQUIRE(session->bundle()->loadout == loadout);
   REQUIRE(session->bundle()->difficulty == ac6::retail::RetailDifficulty::Ace);
   REQUIRE(session->bundle()->content_index_sha256 == store.index_sha256());
+  // The frontend loadout id is provenance, not a qualified WeaponBin
+  // definition. Store-backed sessions expose no synthetic combat profile.
+  REQUIRE(session->execution().primary_weapon_id() == 0);
+  REQUIRE(session->execution().weapon_count() == 0);
+  REQUIRE(!session->fire_primary());
   REQUIRE(session->campaign() != nullptr);
   REQUIRE(session->campaign()->status(kMissionId) != nullptr);
   REQUIRE(session->campaign()->status(kMissionId)->state ==
@@ -251,19 +256,11 @@ void check_store_backed_session(const std::vector<std::uint8_t>& payload,
               {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
                ac6::retail::RetailDifficulty::Ace,
                ac6::retail::RetailScriptDrive::DiagnosticFixedTick}) == nullptr);
-  std::unique_ptr<RetailSession> qualified = RetailSession::open(
-      store, loadout,
-      {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
-       ac6::retail::RetailDifficulty::Ace,
-       ac6::retail::RetailScriptDrive::QualifiedRuntime});
-  REQUIRE(qualified != nullptr);
-  ac6::retail::RetailSessionFrame qualified_frame;
-  for (std::size_t tick = 1; tick <= 6; ++tick) {
-    qualified_frame = qualified->tick(kFixedDt, input(tick));
-  }
-  REQUIRE(qualified_frame.script_ended);
-  REQUIRE(qualified->state() == ac6::ScenarioState::Complete);
-  REQUIRE(qualified->debrief().outcome == ac6::MissionOutcome::Success);
+  REQUIRE(RetailSession::open(
+              store, loadout,
+              {kMissionId, {0, 0}, ac6::retail::kRetailOpeningCameraModeWord,
+               ac6::retail::RetailDifficulty::Ace,
+               ac6::retail::RetailScriptDrive::QualifiedRuntime}) == nullptr);
 
   TempStoreRoot invalid_root;
   const std::filesystem::path invalid_source = invalid_root.path() / "source";

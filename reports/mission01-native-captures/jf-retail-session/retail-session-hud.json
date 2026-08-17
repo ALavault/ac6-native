@@ -35,10 +35,10 @@
     "telemetry_visible": true,
     "objective_visible": true,
     "outcome_visible": false,
-    "pixel_writes": 1276,
-    "unique_pixels": 1276,
+    "pixel_writes": 1726,
+    "unique_pixels": 1726,
     "color_coverage": 230400,
-    "color_hash": 1153868006800278301
+    "color_hash": 2422131309207710271
   },
   "debrief": {
     "tick": 1800,
@@ -53,9 +53,9 @@
     "telemetry_visible": true,
     "objective_visible": true,
     "outcome_visible": true,
-    "pixel_writes": 1521,
-    "unique_pixels": 1521,
+    "pixel_writes": 1971,
+    "unique_pixels": 1971,
     "color_coverage": 230400,
-    "color_hash": 9023430668389540307
+    "color_hash": 8103547381316999205
   }
 }

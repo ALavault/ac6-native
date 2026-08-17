@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
+import json
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -103,6 +105,31 @@ class OracleDisplayTests(unittest.TestCase):
             with self.assertRaises(RUNNER.RunError):
                 runner.execute([("arm-trace", "", "")])
 
+    def test_xam_movie_record_never_captures_host_presentation(self) -> None:
+        runner = RUNNER.OracleRun(SimpleNamespace(
+            duration=10,
+            display=":210",
+            xam_movie_record=True,
+            xam_movie_replay=None,
+        ))
+        captures: list[str] = []
+        runner.capture = captures.append
+
+        runner.execute([("capture", "forbidden-host-frame", "")])
+
+        self.assertEqual(captures, [])
+
+    def test_runtime_cache_is_bounded_to_isolated_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            cache_root = Path(temporary) / "cache"
+            runner = RUNNER.OracleRun(SimpleNamespace(
+                duration=10,
+                display=":210",
+                cache_root=cache_root,
+            ))
+
+            self.assertEqual(runner.display_env["XDG_CACHE_HOME"], str(cache_root))
+
     def test_trace_route_rejects_startup_fps_unlock(self) -> None:
         steps = [("sleep", "1", ""), ("arm-trace", "", "")]
         RUNNER.validate_trace_timing(steps, False)
@@ -159,6 +186,46 @@ class OracleDisplayTests(unittest.TestCase):
             self.assertEqual(runtime.read_bytes(), snapshot.payload)
             self.assertEqual(RUNNER.sha256(runtime), snapshot.sha256)
             self.assertEqual(runtime.stat().st_mode & 0o777, 0o444)
+
+    def test_xam_movie_summary_is_poll_exact_and_ignores_guest_tick(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "movie.jsonl"
+            header = {"kind": "header", "schema": RUNNER.XAM_MOVIE_SCHEMA}
+            event = {
+                "kind": "XamInputGetState", "ordinal": 0, "guest_tick": 91,
+                "guest_thread": 2, "caller_lr": 0x823911C0, "user": 0,
+                "flags": 1, "state_ptr_null": False, "result": 0,
+                "state16": "00" * 16,
+            }
+            normalized = {key: event[key] for key in (
+                "kind", "ordinal", "caller_lr", "user", "flags",
+                "state_ptr_null", "result", "state16",
+            )}
+            normalized_sha = hashlib.sha256(
+                (json.dumps(normalized, sort_keys=True, separators=(",", ":")) + "\n").encode()
+            ).hexdigest()
+            footer = {"kind": "footer", "event_count": 1,
+                      "payload_sha256": "0" * 64,
+                      "normalized_sha256": normalized_sha}
+            path.write_text("".join(
+                json.dumps(value, sort_keys=True, separators=(",", ":")) + "\n"
+                for value in (header, event, footer)
+            ), encoding="utf-8")
+
+            summary = RUNNER.xam_movie_summary(path)
+
+            self.assertEqual(summary["events"], 1)
+            self.assertEqual(summary["normalized_sha256"], normalized_sha)
+            self.assertNotIn("present", path.read_text(encoding="utf-8"))
+
+    def test_guest_milestone_digest_uses_guest_predicates_only(self) -> None:
+        steps = [("wait", "state=1", "10"), ("capture", "ignored", ""),
+                 ("wait-pulse", "state=2", "space")]
+        events, digest = RUNNER.guest_milestone_digest(
+            "host timestamp 12\nstate=1\nhost frame 8\nstate=2\n", steps
+        )
+        self.assertEqual([event["step"] for event in events], [1, 3])
+        self.assertRegex(digest, r"^[0-9a-f]{64}$")
 
 
 if __name__ == "__main__":

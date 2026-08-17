@@ -1,6 +1,8 @@
 #include "ac6/retail_scene_tcam.h"
 
 #include <algorithm>
+#include <bit>
+#include <cmath>
 #include <limits>
 #include <optional>
 #include <utility>
@@ -16,6 +18,11 @@ constexpr std::uint16_t kRetailFhmHeaderSize = 0x10;
 constexpr std::uint32_t kTcamGyzHeaderSize = 0x20;
 constexpr std::uint32_t kTcamGyzTag = 0x00011E00;
 constexpr std::uint32_t kMinimumTcamRecordTable = 0x50;
+constexpr std::uint16_t kNficCutStartTag = 0x8001;
+constexpr std::uint16_t kNficFrameStartTag = 0x8002;
+constexpr std::uint16_t kNficFrameTerminateTag = 0x8003;
+constexpr std::uint16_t kNficCutTerminateTag = 0x8004;
+constexpr std::uint16_t kNficMoveCameraTag = 0x1001;
 
 std::uint16_t be16(const std::uint8_t* bytes) noexcept {
   return static_cast<std::uint16_t>(
@@ -27,6 +34,10 @@ std::uint32_t be32(const std::uint8_t* bytes) noexcept {
          (static_cast<std::uint32_t>(bytes[1]) << 16u) |
          (static_cast<std::uint32_t>(bytes[2]) << 8u) |
          static_cast<std::uint32_t>(bytes[3]);
+}
+
+float be_float(const std::uint8_t* bytes) noexcept {
+  return std::bit_cast<float>(be32(bytes));
 }
 
 bool has_magic(std::span<const std::uint8_t> bytes,
@@ -177,6 +188,348 @@ RetailTcamMopView::record_data_offsets(std::size_t index) const noexcept {
                                       be32(record->data() + 0x18)};
 }
 
+std::optional<RetailTcamCameraTrack> RetailTcamCameraTrack::open(
+    const RetailTcamMopView& view) noexcept {
+  try {
+    const std::optional<std::span<const std::uint8_t>> position_record =
+        view.record_bytes(0);
+    const std::optional<std::span<const std::uint8_t>> orientation_record =
+        view.record_bytes(1);
+    const std::optional<std::span<const std::uint8_t>> fov_record =
+        view.record_bytes(2);
+    const std::optional<std::array<std::uint32_t, 2>> position_offsets =
+        view.record_data_offsets(0);
+    const std::optional<std::array<std::uint32_t, 2>> orientation_offsets =
+        view.record_data_offsets(1);
+    const std::optional<std::array<std::uint32_t, 2>> fov_offsets =
+        view.record_data_offsets(2);
+    if (!position_record.has_value() || !orientation_record.has_value() ||
+        !fov_record.has_value() || !position_offsets.has_value() ||
+        !orientation_offsets.has_value() || !fov_offsets.has_value()) {
+      return std::nullopt;
+    }
+
+    const std::uint32_t position_count = be32(position_record->data() + 0x10);
+    const std::uint32_t orientation_count =
+        be32(orientation_record->data() + 0x10);
+    const std::uint32_t fov_count = be32(fov_record->data() + 0x10);
+    constexpr std::uint32_t kMaximumCameraSamples = 4096;
+    if (position_count == 0 || position_count > kMaximumCameraSamples ||
+        orientation_count != position_count || fov_count != 1) {
+      return std::nullopt;
+    }
+
+    const std::uint32_t position_data = (*position_offsets)[0];
+    const std::uint32_t orientation_data = (*orientation_offsets)[0];
+    const std::uint32_t fov_data = (*fov_offsets)[0];
+    const std::uint32_t position_times = (*position_offsets)[1];
+    const std::uint32_t orientation_times = (*orientation_offsets)[1];
+    const std::uint32_t end_offset = (*fov_offsets)[1];
+    const std::uint64_t sample_bytes =
+        static_cast<std::uint64_t>(position_count) * 16u;
+    const std::uint64_t time_bytes =
+        static_cast<std::uint64_t>(position_count) * sizeof(std::uint16_t);
+    if (static_cast<std::uint64_t>(position_data) + sample_bytes !=
+            orientation_data ||
+        static_cast<std::uint64_t>(orientation_data) + sample_bytes != fov_data ||
+        static_cast<std::uint64_t>(fov_data) + sizeof(float) != position_times ||
+        static_cast<std::uint64_t>(position_times) + time_bytes !=
+            orientation_times ||
+        static_cast<std::uint64_t>(orientation_times) + time_bytes !=
+            end_offset ||
+        end_offset > view.gyz_bytes().size()) {
+      return std::nullopt;
+    }
+
+    const std::span<const std::uint8_t> gyz = view.gyz_bytes();
+    const float vertical_fov = be_float(gyz.data() + fov_data);
+    if (!std::isfinite(vertical_fov) || vertical_fov <= 0.0F ||
+        vertical_fov >= 3.14159265358979323846F) {
+      return std::nullopt;
+    }
+
+    RetailTcamCameraTrack track;
+    track.times_.reserve(position_count);
+    track.positions_.reserve(position_count);
+    track.orientations_.reserve(position_count);
+    track.vertical_fov_radians_ = vertical_fov;
+    for (std::uint32_t index = 0; index < position_count; ++index) {
+      const std::size_t sample_offset =
+          static_cast<std::size_t>(position_data) + index * 16u;
+      const std::size_t orientation_offset =
+          static_cast<std::size_t>(orientation_data) + index * 16u;
+      std::array<float, 4> position{};
+      std::array<float, 4> orientation{};
+      for (std::size_t component = 0; component < 4; ++component) {
+        position[component] = be_float(gyz.data() + sample_offset + component * 4u);
+        orientation[component] =
+            be_float(gyz.data() + orientation_offset + component * 4u);
+        if (!std::isfinite(position[component]) ||
+            !std::isfinite(orientation[component])) {
+          return std::nullopt;
+        }
+      }
+      const std::uint16_t time = be16(
+          gyz.data() + static_cast<std::size_t>(position_times) + index * 2u);
+      if (!track.times_.empty() && time <= track.times_.back()) {
+        return std::nullopt;
+      }
+      track.times_.push_back(time);
+      track.positions_.push_back(position);
+      track.orientations_.push_back(orientation);
+    }
+    return track;
+  } catch (...) {
+    return std::nullopt;
+  }
+}
+
+std::optional<RetailTcamCameraSample> RetailTcamCameraTrack::sample(
+    std::uint16_t frame) const noexcept {
+  if (times_.empty() || positions_.size() != times_.size() ||
+      orientations_.size() != times_.size()) {
+    return std::nullopt;
+  }
+
+  std::size_t left = 0;
+  std::size_t right = 0;
+  float fraction = 0.0F;
+  if (frame <= times_.front()) {
+    right = left;
+  } else if (frame >= times_.back()) {
+    left = times_.size() - 1;
+    right = left;
+  } else {
+    const auto upper = std::upper_bound(times_.begin(), times_.end(), frame);
+    right = static_cast<std::size_t>(upper - times_.begin());
+    left = right - 1;
+    const float span = static_cast<float>(times_[right] - times_[left]);
+    fraction = static_cast<float>(frame - times_[left]) / span;
+  }
+
+  RetailTcamCameraSample result;
+  result.frame = frame;
+  for (std::size_t component = 0; component < 3; ++component) {
+    result.position[component] =
+        positions_[left][component] +
+        (positions_[right][component] - positions_[left][component]) * fraction;
+  }
+  result.orientation = orientations_[left];
+  for (std::size_t component = 0; component < result.orientation.size();
+       ++component) {
+    result.orientation[component] =
+        orientations_[left][component] +
+        (orientations_[right][component] - orientations_[left][component]) *
+            fraction;
+  }
+  result.vertical_fov_radians = vertical_fov_radians_;
+  return result;
+}
+
+std::optional<RetailNficCutView> RetailNficCutView::open(
+    std::span<const std::uint8_t> bytes) noexcept {
+  try {
+    constexpr std::size_t kHeaderBytes = 16;
+    constexpr std::size_t kChunkHeaderBytes = 8;
+    constexpr std::size_t kMaximumBytes = 16u * 1024u * 1024u;
+    constexpr std::size_t kMaximumEvents = 500000;
+    constexpr std::array<std::uint16_t, 9> kExpectedChunks{
+        0x3000, 0x3010, 0x3020, 0x3021, 0x3022,
+        0x3030, 0x3031, 0x3040, 0x3041};
+    if (bytes.size() < kHeaderBytes || bytes.size() > kMaximumBytes ||
+        !has_magic(bytes, std::string_view("NFICCUT\0", 8))) {
+      return std::nullopt;
+    }
+
+    RetailNficCutView view;
+    view.bytes_ = bytes;
+    std::size_t cursor = kHeaderBytes;
+    while (cursor < bytes.size()) {
+      if (view.chunk_count_ == view.chunks_.size() ||
+          bytes.size() - cursor < kChunkHeaderBytes) {
+        return std::nullopt;
+      }
+      const std::uint16_t tag = be16(bytes.data() + cursor);
+      const std::uint16_t reserved = be16(bytes.data() + cursor + 2u);
+      const std::uint32_t payload_size = be32(bytes.data() + cursor + 4u);
+      if (reserved != 0 || payload_size > bytes.size() - cursor -
+                                           kChunkHeaderBytes) {
+        return std::nullopt;
+      }
+      for (std::size_t index = 0; index < view.chunk_count_; ++index) {
+        if (view.chunks_[index].tag == tag) return std::nullopt;
+      }
+      RetailNficCutView::Chunk& chunk = view.chunks_[view.chunk_count_++];
+      chunk.tag = tag;
+      chunk.payload_offset = static_cast<std::uint32_t>(
+          cursor + kChunkHeaderBytes);
+      chunk.payload_size = payload_size;
+      cursor += kChunkHeaderBytes + payload_size;
+    }
+    if (view.chunk_count_ != kExpectedChunks.size()) return std::nullopt;
+    for (const std::uint16_t tag : kExpectedChunks) {
+      bool found = false;
+      for (std::size_t index = 0; index < view.chunk_count_; ++index) {
+        if (view.chunks_[index].tag == tag) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) return std::nullopt;
+    }
+
+    const Chunk* event_chunk = nullptr;
+    for (std::size_t index = 0; index < view.chunk_count_; ++index) {
+      if (view.chunks_[index].tag == 0x3040) {
+        event_chunk = &view.chunks_[index];
+        break;
+      }
+    }
+    if (event_chunk == nullptr) return std::nullopt;
+    const std::size_t event_begin = event_chunk->payload_offset;
+    const std::size_t event_end =
+        event_begin + static_cast<std::size_t>(event_chunk->payload_size);
+    view.event_offsets_.reserve(
+        std::min<std::size_t>(kMaximumEvents, event_chunk->payload_size / 8u));
+    cursor = event_begin;
+    bool terminator = false;
+    while (cursor < event_end) {
+      if (event_end - cursor < kChunkHeaderBytes) return std::nullopt;
+      const std::uint16_t tag = be16(bytes.data() + cursor);
+      const std::uint16_t reserved = be16(bytes.data() + cursor + 2u);
+      const std::uint32_t payload_size = be32(bytes.data() + cursor + 4u);
+      if (tag == 0 && reserved == 0 && payload_size == 0) {
+        if (event_end - cursor != kChunkHeaderBytes) return std::nullopt;
+        terminator = true;
+        cursor = event_end;
+        break;
+      }
+      if (reserved != 0 || payload_size > event_end - cursor -
+                                            kChunkHeaderBytes ||
+          view.event_offsets_.size() == kMaximumEvents) {
+        return std::nullopt;
+      }
+      view.event_offsets_.push_back(static_cast<std::uint32_t>(cursor));
+      if (tag == kNficCutTerminateTag) view.has_terminal_event_ = true;
+      cursor += kChunkHeaderBytes + payload_size;
+    }
+    if (!terminator || !view.has_terminal_event_ ||
+        view.event_offsets_.empty()) {
+      return std::nullopt;
+    }
+    const std::uint32_t last_event = view.event_offsets_.back();
+    if (be16(bytes.data() + last_event) != kNficCutTerminateTag) {
+      return std::nullopt;
+    }
+
+    for (const auto& symbol : std::array<std::pair<std::uint16_t,
+                                                    std::string_view>, 5>{
+             std::pair{ kNficMoveCameraTag, std::string_view("MoveCamera") },
+             std::pair{ kNficCutStartTag, std::string_view("CutStart") },
+             std::pair{ kNficFrameStartTag, std::string_view("FrameStart") },
+             std::pair{ kNficFrameTerminateTag,
+                        std::string_view("FrameTerminate") },
+             std::pair{ kNficCutTerminateTag,
+                        std::string_view("CutTerminate") }}) {
+      if (!view.has_dictionary_symbol(symbol.first, symbol.second)) {
+        return std::nullopt;
+      }
+    }
+    return view;
+  } catch (...) {
+    return std::nullopt;
+  }
+}
+
+std::optional<std::span<const std::uint8_t>> RetailNficCutView::chunk_payload(
+    std::uint16_t tag) const noexcept {
+  for (std::size_t index = 0; index < chunk_count_; ++index) {
+    const Chunk& chunk = chunks_[index];
+    if (chunk.tag != tag) continue;
+    if (chunk.payload_offset > bytes_.size() ||
+        chunk.payload_size > bytes_.size() - chunk.payload_offset) {
+      return std::nullopt;
+    }
+    return bytes_.subspan(chunk.payload_offset, chunk.payload_size);
+  }
+  return std::nullopt;
+}
+
+std::optional<RetailNficEventView> RetailNficCutView::event(
+    std::size_t index) const noexcept {
+  if (index >= event_offsets_.size()) return std::nullopt;
+  const std::size_t offset = event_offsets_[index];
+  if (offset > bytes_.size() || bytes_.size() - offset < 8u) {
+    return std::nullopt;
+  }
+  const std::uint16_t reserved = be16(bytes_.data() + offset + 2u);
+  const std::uint32_t payload_size = be32(bytes_.data() + offset + 4u);
+  if (reserved != 0 || payload_size > bytes_.size() - offset - 8u) {
+    return std::nullopt;
+  }
+  return RetailNficEventView{
+      be16(bytes_.data() + offset),
+      bytes_.subspan(offset + 8u, payload_size)};
+}
+
+bool RetailNficCutView::has_dictionary_symbol(std::uint16_t tag,
+                                              std::string_view name) const noexcept {
+  const std::optional<std::span<const std::uint8_t>> dictionary =
+      chunk_payload(0x3041);
+  if (!dictionary.has_value()) return false;
+  std::size_t cursor = 0;
+  bool found = false;
+  while (cursor < dictionary->size()) {
+    if (dictionary->size() - cursor < 4u) return false;
+    const std::uint16_t symbol_tag = be16(dictionary->data() + cursor);
+    const std::uint16_t name_size = be16(dictionary->data() + cursor + 2u);
+    cursor += 4u;
+    if (name_size > dictionary->size() - cursor) return false;
+    const std::span<const std::uint8_t> encoded =
+        dictionary->subspan(cursor, name_size);
+    const bool matches =
+        encoded.size() > name.size() &&
+        std::equal(name.begin(), name.end(), encoded.begin()) &&
+        encoded[name.size()] == 0 &&
+        std::all_of(encoded.begin() + static_cast<std::ptrdiff_t>(name.size() + 1u),
+                    encoded.end(), [](std::uint8_t value) { return value == 0; });
+    found = found || (symbol_tag == tag && matches);
+    cursor += name_size;
+  }
+  return found;
+}
+
+std::optional<RetailNficCameraCommand>
+RetailNficCutView::initial_camera_command() const noexcept {
+  if (!has_dictionary_symbol(kNficMoveCameraTag, "MoveCamera") ||
+      !has_dictionary_symbol(kNficCutStartTag, "CutStart") ||
+      !has_dictionary_symbol(kNficFrameStartTag, "FrameStart") ||
+      event_offsets_.size() < 3u) {
+    return std::nullopt;
+  }
+  const auto cut_start = event(0);
+  const auto frame_start = event(1);
+  const auto move_camera = event(2);
+  if (!cut_start.has_value() || !frame_start.has_value() ||
+      !move_camera.has_value() || cut_start->tag != kNficCutStartTag ||
+      frame_start->tag != kNficFrameStartTag ||
+      move_camera->tag != kNficMoveCameraTag ||
+      !cut_start->payload.empty() || frame_start->payload.size() != 4u ||
+      move_camera->payload.size() != 8u ||
+      be32(frame_start->payload.data()) != 1u) {
+    return std::nullopt;
+  }
+  const std::uint32_t scene_word = be32(move_camera->payload.data());
+  const std::uint32_t frame_word = be32(move_camera->payload.data() + 4u);
+  if ((scene_word & 0xFFFFu) != 0 || (frame_word & 0xFFFFu) != 0 ||
+      (scene_word >> 16u) == 0 || (frame_word >> 16u) == 0) {
+    return std::nullopt;
+  }
+  return RetailNficCameraCommand{
+      static_cast<std::uint16_t>(scene_word >> 16u),
+      static_cast<std::uint16_t>(frame_word >> 16u)};
+}
+
 class RetailSceneTcamScanner final {
  public:
   explicit RetailSceneTcamScanner(std::span<const std::uint8_t> payload)
@@ -265,6 +618,15 @@ class RetailSceneTcamScanner final {
             std::numeric_limits<std::size_t>::max() - catalog_.scene_paths_) {
       return false;
     }
+    if (state->data() < payload_.data() ||
+        state->data() > payload_.data() + payload_.size() ||
+        state->size() > payload_.size() -
+                              static_cast<std::size_t>(state->data() -
+                                                       payload_.data())) {
+      return false;
+    }
+    const std::size_t state_offset =
+        static_cast<std::size_t>(state->data() - payload_.data());
     ++catalog_.scene_tables_;
     catalog_.scene_paths_ += paths->size();
 
@@ -290,6 +652,8 @@ class RetailSceneTcamScanner final {
       resource.fhm_path.push_back(index);
       resource.payload_offset = payload_offset;
       resource.size = bytes->size();
+      resource.nfic_payload_offset = state_offset;
+      resource.nfic_size = state->size();
       resource.sha256 = sha256_bytes(*bytes);
       catalog_.resources_.push_back(std::move(resource));
     }

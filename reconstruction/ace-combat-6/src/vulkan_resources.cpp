@@ -7,6 +7,11 @@
 namespace ac6 {
 namespace {
 
+// The sealed Mission 01 PAL map/terrain handoff currently resolves to 167
+// distinct sampled textures. Keep a bounded descriptor budget above that
+// qualified count; exhaustion remains an explicit resource failure.
+constexpr std::uint32_t kTextureDescriptorCapacity = 256U;
+
 [[nodiscard]] bool create_image(VulkanBackendState& state,
                                 std::uint32_t width, std::uint32_t height,
                                 VkFormat format, VkImageUsageFlags usage,
@@ -318,13 +323,13 @@ bool ensure_vulkan_texture_descriptors(VulkanBackendState& state) noexcept {
   }
   const VkDescriptorPoolSize pool_size{
       .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-      .descriptorCount = 64U,
+      .descriptorCount = kTextureDescriptorCapacity,
   };
   const VkDescriptorPoolCreateInfo pool_info{
       .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
       .pNext = nullptr,
       .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-      .maxSets = 64U,
+      .maxSets = kTextureDescriptorCapacity,
       .poolSizeCount = 1U,
       .pPoolSizes = &pool_size,
   };

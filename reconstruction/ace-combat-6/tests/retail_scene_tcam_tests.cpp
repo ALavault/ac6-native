@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -34,6 +35,20 @@ void put_be32(std::vector<std::uint8_t>& bytes, std::size_t offset,
   bytes[offset + 1] = static_cast<std::uint8_t>(value >> 16u);
   bytes[offset + 2] = static_cast<std::uint8_t>(value >> 8u);
   bytes[offset + 3] = static_cast<std::uint8_t>(value);
+}
+
+void put_be16(std::vector<std::uint8_t>& bytes, std::size_t offset,
+              std::uint16_t value) {
+  REQUIRE(offset <= bytes.size() && bytes.size() - offset >= 2);
+  bytes[offset] = static_cast<std::uint8_t>(value >> 8u);
+  bytes[offset + 1] = static_cast<std::uint8_t>(value);
+}
+
+std::uint16_t read_be16(std::span<const std::uint8_t> bytes,
+                        std::size_t offset) {
+  REQUIRE(offset <= bytes.size() && bytes.size() - offset >= 2);
+  return static_cast<std::uint16_t>(
+      (static_cast<std::uint16_t>(bytes[offset]) << 8u) | bytes[offset + 1]);
 }
 
 struct FhmSlot final {
@@ -362,6 +377,112 @@ int check_qualified_cache() {
       REQUIRE(resource->fhm_path ==
               std::vector<std::uint32_t>({22, 1, 0, 1, 0}));
 
+      const ac6::retail::RetailTcamMopView* tcam = nullptr;
+      const auto tcam_view =
+          ac6::retail::RetailTcamMopView::open(*bundle->tcam_bytes(*exact));
+      REQUIRE(tcam_view.has_value());
+      tcam = &*tcam_view;
+
+      const auto camera_track =
+          ac6::retail::RetailTcamCameraTrack::open(*tcam);
+      REQUIRE(camera_track.has_value());
+      REQUIRE(camera_track->sample_count() == 121);
+      REQUIRE(camera_track->first_frame() == 0);
+      REQUIRE(camera_track->last_frame() == 120);
+      const auto first_sample = camera_track->sample(1);
+      REQUIRE(first_sample.has_value());
+      REQUIRE(std::fabs(first_sample->position[0] - (-15824.801758F)) <
+              0.001F);
+      REQUIRE(std::fabs(first_sample->position[1] - 3284.871826F) < 0.001F);
+      REQUIRE(std::fabs(first_sample->position[2] - (-1023.996643F)) <
+              0.001F);
+      REQUIRE(std::fabs(first_sample->orientation[0] - (-1.284656F)) <
+              0.001F);
+      REQUIRE(std::fabs(first_sample->orientation[1] - 0.284061F) < 0.001F);
+      REQUIRE(std::fabs(first_sample->orientation[2] - 0.000019F) < 0.001F);
+      REQUIRE(std::fabs(first_sample->vertical_fov_radians - 0.761F) <
+              0.001F);
+      const auto last_sample = camera_track->sample(121);
+      REQUIRE(last_sample.has_value());
+      REQUIRE(last_sample->position != first_sample->position);
+      REQUIRE(camera_track->sample(0)->position != first_sample->position);
+      REQUIRE(camera_track->sample(122)->position == last_sample->position);
+
+      const std::span<const std::uint8_t> qualified_bytes = *bundle->tcam_bytes(*exact);
+      const auto position_offsets = tcam->record_data_offsets(0);
+      const auto orientation_offsets = tcam->record_data_offsets(1);
+      const auto fov_offsets = tcam->record_data_offsets(2);
+      REQUIRE(position_offsets.has_value() && orientation_offsets.has_value() &&
+              fov_offsets.has_value());
+      std::vector<std::uint8_t> malformed(qualified_bytes.begin(),
+                                          qualified_bytes.end());
+      put_be32(malformed, tcam->gyz_offset() + 0x50 + 0x10, 120);
+      REQUIRE(!ac6::retail::RetailTcamCameraTrack::open(
+                    *ac6::retail::RetailTcamMopView::open(malformed))
+                   .has_value());
+      malformed.assign(qualified_bytes.begin(), qualified_bytes.end());
+      put_be32(malformed, tcam->gyz_offset() + (*orientation_offsets)[0],
+               0x7FC00000u);
+      const auto malformed_view =
+          ac6::retail::RetailTcamMopView::open(malformed);
+      REQUIRE(malformed_view.has_value());
+      REQUIRE(!ac6::retail::RetailTcamCameraTrack::open(*malformed_view)
+                   .has_value());
+      malformed.assign(qualified_bytes.begin(), qualified_bytes.end());
+      const std::size_t position_times_offset =
+          tcam->gyz_offset() + (*position_offsets)[1];
+      const std::uint16_t first_time =
+          read_be16(qualified_bytes, position_times_offset);
+      put_be16(malformed, position_times_offset + 2, first_time);
+      const auto non_monotonic_view =
+          ac6::retail::RetailTcamMopView::open(malformed);
+      REQUIRE(non_monotonic_view.has_value());
+      REQUIRE(!ac6::retail::RetailTcamCameraTrack::open(*non_monotonic_view)
+                   .has_value());
+      malformed.assign(qualified_bytes.begin(), qualified_bytes.end());
+      put_be32(malformed, tcam->gyz_offset() + (*fov_offsets)[0], 0u);
+      const auto bad_fov_view = ac6::retail::RetailTcamMopView::open(malformed);
+      REQUIRE(bad_fov_view.has_value());
+      REQUIRE(!ac6::retail::RetailTcamCameraTrack::open(*bad_fov_view)
+                   .has_value());
+
+      const auto nfic_bytes = bundle->nfic_cut_bytes(*exact);
+      REQUIRE(nfic_bytes.has_value());
+      REQUIRE(nfic_bytes->size() == 39352);
+      const auto nfic = ac6::retail::RetailNficCutView::open(*nfic_bytes);
+      REQUIRE(nfic.has_value());
+      REQUIRE(nfic->chunk_count() == 9);
+      REQUIRE(nfic->event_count() == 2402);
+      REQUIRE(nfic->has_terminal_event());
+      REQUIRE(nfic->has_dictionary_symbol(0x1001, "MoveCamera"));
+      REQUIRE(nfic->has_dictionary_symbol(0x8001, "CutStart"));
+      REQUIRE(nfic->has_dictionary_symbol(0x8002, "FrameStart"));
+      REQUIRE(nfic->has_dictionary_symbol(0x8003, "FrameTerminate"));
+      REQUIRE(nfic->has_dictionary_symbol(0x8004, "CutTerminate"));
+      const auto nfic_event0 = nfic->event(0);
+      const auto nfic_event1 = nfic->event(1);
+      const auto nfic_event2 = nfic->event(2);
+      REQUIRE(nfic_event0.has_value() && nfic_event1.has_value() &&
+              nfic_event2.has_value());
+      REQUIRE(nfic_event0->tag == 0x8001 && nfic_event0->payload.empty());
+      REQUIRE(nfic_event1->tag == 0x8002 && nfic_event1->payload.size() == 4 &&
+              nfic_event1->payload[3] == 1);
+      REQUIRE(nfic_event2->tag == 0x1001 && nfic_event2->payload.size() == 8);
+      const auto camera_command = nfic->initial_camera_command();
+      REQUIRE(camera_command.has_value());
+      REQUIRE(camera_command->scene_object_id == 1);
+      REQUIRE(camera_command->tcam_frame == 1);
+
+      std::vector<std::uint8_t> malformed_nfic(nfic_bytes->begin(),
+                                               nfic_bytes->end());
+      put_be32(malformed_nfic, 16 + 4, 0xFFFFFFFFu);
+      REQUIRE(!ac6::retail::RetailNficCutView::open(malformed_nfic)
+                   .has_value());
+      malformed_nfic.assign(nfic_bytes->begin(), nfic_bytes->end());
+      put_be16(malformed_nfic, 16 + 2, 1);
+      REQUIRE(!ac6::retail::RetailNficCutView::open(malformed_nfic)
+                   .has_value());
+
       // Offsets, not source spans, survive moving the byte-owning bundle.
       ac6::retail::RetailCampaignBundle moved = std::move(*bundle);
       const std::optional<std::size_t> moved_exact =
@@ -373,6 +494,10 @@ int check_qualified_cache() {
       REQUIRE(moved_bytes->size() == 4656);
       REQUIRE(ac6::sha256_hex(ac6::sha256_bytes(*moved_bytes)) ==
               kMission01TcamSha256);
+      const auto moved_nfic = moved.nfic_cut_bytes(*moved_exact);
+      REQUIRE(moved_nfic.has_value());
+      REQUIRE(moved_nfic->size() == 39352);
+      REQUIRE(ac6::retail::RetailNficCutView::open(*moved_nfic).has_value());
     }
   }
 

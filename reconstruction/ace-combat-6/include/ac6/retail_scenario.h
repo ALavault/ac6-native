@@ -17,6 +17,7 @@
 // payload is untrusted input and a malformed one must fail closed, never read
 // out of bounds.
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -147,6 +148,30 @@ struct ScenarioModelBinding {
   bool operator==(const ScenarioModelBinding&) const = default;
 };
 
+// The one WeaponBin field whose consumer is qualified in both binaries.
+// Retail 0x822C6700 and demo 0x82272750 select ObjBin +0x10/+0x14/+0x18 and
+// dispatch on byte +0x5C of the pointed-to data. The selector is not a weapon
+// id: the two builds deliberately map some values to different result codes.
+struct ScenarioWeaponBinReference {
+  std::size_t data{};
+  std::uint8_t selector{};  // WeaponBin data +0x5C
+  bool operator==(const ScenarioWeaponBinReference&) const = default;
+};
+
+// Bounded offsets retained from one 0x20-byte ObjBin record. The internal
+// DurableBin layout and all WeaponBin fields except the consumer-qualified
+// selector above remain unqualified. The three weapon entries map exactly to
+// ObjBin children 3, 4 and 5.
+struct ScenarioObjBinReferences {
+  std::optional<std::size_t> data;
+  std::optional<std::size_t> parameter;   // child 0
+  std::optional<std::size_t> maneuvers;   // child 1
+  std::optional<std::size_t> durable;     // child 2
+  std::array<std::optional<ScenarioWeaponBinReference>, 3> weapons;  // children 3..5
+  std::optional<std::size_t> tail;        // child 6, role unknown
+  bool operator==(const ScenarioObjBinReferences&) const = default;
+};
+
 // One element of the parsed 'Obj & Unit' slot, as 0x820A7070 reads it.
 struct ScenarioUnitRecord {
   std::uint32_t index{};
@@ -179,6 +204,8 @@ struct ScenarioUnitRecord {
   std::vector<ScenarioObjScalars> obj_scalars;
   // One per Obj record, in the same order as obj_scalars.
   std::vector<ScenarioModelBinding> model_bindings;
+  // One structural record per Obj, preserving only resolved payload offsets.
+  std::vector<ScenarioObjBinReferences> obj_bin_references;
   bool operator==(const ScenarioUnitRecord&) const = default;
 };
 

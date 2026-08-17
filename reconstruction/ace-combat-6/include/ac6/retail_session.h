@@ -10,16 +10,18 @@
 // hands that world to the product's own runtime, and runs the session loop -
 // input, flight integration, camera, HUD - over it.
 //
-// The qualified native session owns the scheduler's signal -2 boundary: it
-// checks the context, cursor and producer guards before advancing one retail
-// step. ExternalProbe remains available for read-only differential captures;
-// DiagnosticFixedTick remains payload-only and is never a product entry mode.
-// Tag-7 conditions are evaluated when their step becomes current; their
-// counter producers remain a separate boundary rather than being synthesized.
+// The native session does not synthesize the product scheduler's signal -2.
+// Retail's three guards and their objective/combat producers have no complete
+// native counterpart yet. Payload-only fixtures can call advance_script
+// explicitly, or opt into a named diagnostic cadence. Store-backed sessions
+// reject that diagnostic mode. Tag-7 conditions are evaluated when their step
+// becomes current; their counter producers remain a separate boundary rather
+// than being synthesized.
 
 #include "ac6/campaign_progression.h"
 #include "ac6/frontend_runtime.h"
 #include "ac6/product_runtime.h"
+#include "ac6/render_scene.h"
 #include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
 #include "ac6/retail_mission_script.h"
@@ -34,11 +36,11 @@
 namespace ac6::retail {
 
 enum class RetailScriptDrive : std::uint8_t {
-  // Read-only diagnostic: a qualified external runtime/probe calls
-  // advance_script explicitly.
+  // Fail-closed: a qualified external runtime/producer must call
+  // advance_script only after the retail guards and producer join permit it.
   ExternalProbe = 0,
-  // Product mode: the native session owns the three scheduler guards, cursor
-  // and progression producers and advances one step per gameplay tick.
+  // Reserved for the native implementation of those guards and producers.
+  // Neither session entry point accepts this mode today.
   QualifiedRuntime = 1,
   // Payload-only diagnostic: inject signal -2 once per native fixed tick.
   // This is deliberately rejected by the sealed-store product entry point.
@@ -121,9 +123,14 @@ class RetailSession final {
   // FUN_82268B28. None when the sub-mission has no tag-0 step.
   std::optional<MissionArea> current_area() const noexcept;
 
-  // One session frame: input, flight, camera, HUD state. QualifiedRuntime
-  // advances the retail script at this boundary; ExternalProbe does not.
+  // One session frame: input, flight, camera, HUD state. Script advancement is
+  // producer-owned unless a payload-only diagnostic explicitly requests the
+  // fixed-tick cadence.
   RetailSessionFrame tick(float fixed_dt, InputFrame input) noexcept;
+
+  // Read-only renderer handoff. It does not tick simulation or advance the
+  // script; callers use it to build/update persistent GPU resources.
+  [[nodiscard]] SimulationSnapshot render_snapshot() const noexcept;
 
   // Mission 01's first native combat bridge. X selects the deterministic
   // nearest hostile and A fires the qualified primary weapon on its rising
@@ -183,7 +190,6 @@ class RetailSession final {
                                                     RetailSessionConfig config,
                                                     const RetailContentStore* store = nullptr,
                                                     CampaignLoadout loadout = {});
-  bool advance_qualified_scheduler() noexcept;
   void track_objective(std::uint32_t sub_mission) noexcept;
   RetailSessionFrame frame_from_snapshot(InputFrame input) const noexcept;
   // Resolve tag-7 steps at the same dispatch boundary as retail. A satisfied

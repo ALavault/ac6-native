@@ -43,6 +43,78 @@ class RetailTcamMopView final {
   std::uint32_t record_table_{};
 };
 
+struct RetailTcamCameraSample final {
+  std::uint16_t frame{};
+  std::array<float, 3> position{};
+  std::array<float, 4> orientation{};
+  float vertical_fov_radians{};
+};
+
+// The first three GYZ records of the qualified M01 Tcam resource are a
+// bounded camera track: position keys, angular-orientation keys, and one
+// vertical-FOV scalar. The orientation values remain serialized angular
+// values; this type deliberately does not assign a retail Euler order.
+class RetailTcamCameraTrack final {
+ public:
+  static std::optional<RetailTcamCameraTrack> open(
+      const RetailTcamMopView& view) noexcept;
+
+  std::size_t sample_count() const noexcept { return times_.size(); }
+  std::uint16_t first_frame() const noexcept { return times_.front(); }
+  std::uint16_t last_frame() const noexcept { return times_.back(); }
+  std::optional<RetailTcamCameraSample> sample(
+      std::uint16_t frame) const noexcept;
+
+ private:
+  std::vector<std::uint16_t> times_;
+  std::vector<std::array<float, 4>> positions_;
+  std::vector<std::array<float, 4>> orientations_;
+  float vertical_fov_radians_{};
+};
+
+struct RetailNficEventView final {
+  std::uint16_t tag{};
+  std::span<const std::uint8_t> payload{};
+};
+
+struct RetailNficCameraCommand final {
+  std::uint16_t scene_object_id{};
+  std::uint16_t tcam_frame{};
+};
+
+// Bounded reader for the qualified NFIC CUT chunk/event representation. It
+// exposes serialized control events and the first camera join only; it does
+// not claim that archive order activates a mission scene at runtime.
+class RetailNficCutView final {
+ public:
+  static std::optional<RetailNficCutView> open(
+      std::span<const std::uint8_t> bytes) noexcept;
+
+  std::size_t chunk_count() const noexcept { return chunk_count_; }
+  std::size_t event_count() const noexcept { return event_offsets_.size(); }
+  std::optional<std::span<const std::uint8_t>> chunk_payload(
+      std::uint16_t tag) const noexcept;
+  std::optional<RetailNficEventView> event(
+      std::size_t index) const noexcept;
+  bool has_dictionary_symbol(std::uint16_t tag,
+                             std::string_view name) const noexcept;
+  bool has_terminal_event() const noexcept { return has_terminal_event_; }
+  std::optional<RetailNficCameraCommand> initial_camera_command() const noexcept;
+
+ private:
+  struct Chunk final {
+    std::uint16_t tag{};
+    std::uint32_t payload_offset{};
+    std::uint32_t payload_size{};
+  };
+
+  std::span<const std::uint8_t> bytes_;
+  std::array<Chunk, 16> chunks_{};
+  std::size_t chunk_count_{};
+  std::vector<std::uint32_t> event_offsets_;
+  bool has_terminal_event_{};
+};
+
 // Owned metadata for one Tcam path/resource join. fhm_path is the exact child
 // index route from the campaign payload root through the resource FHM to the
 // Tcam bytes. payload_offset is retained instead of a span so this record and
@@ -52,6 +124,8 @@ struct RetailSceneTcamResource final {
   std::vector<std::uint32_t> fhm_path;
   std::size_t payload_offset{};
   std::size_t size{};
+  std::size_t nfic_payload_offset{};
+  std::size_t nfic_size{};
   Sha256Digest sha256{};
 };
 
