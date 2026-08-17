@@ -16,6 +16,12 @@ primaire `0x820FF8D8`, worker `0x820FFCA0` et le producteur
 publication. Aucun objet correspondant aux propriétaires menu
 `0x82170F58`/`0x82185198` n'est construit dans ce chemin.
 
+Au callsite dispatcher `0x82259D74`, les trois entrées dynamiques restent
+`CModeTaskStartUpDemoOffline` (`0x2E7F0080/0x8201130C`), `CTaskLoading`
+(`0x18BA2BF4/0x8200F388`) et `CTaskModeManager`
+(`0x18980000/0x82011694`), 348 appels chacun entre les ticks 252 et 599 ;
+aucune vtable menu n'apparaît.
+
 `frontend`, `mission`, `terminal` restent faux à `PRESENT=463`. La file est
 qualifiée comme frontière scheduler, pas comme renderer ou menu ; aucune
 observation MCP supplémentaire n'est exposée.

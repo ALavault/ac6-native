@@ -12,8 +12,8 @@
     "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
   },
   "capsule": {
-    "path": "analysis/demo/ac6-demo-task-render-queue-ab/sha256/d710d620a66f3578520f8281e97b868323a424f2db5d95b1d691206da5ad0e02/receipt.json",
-    "sha256": "d710d620a66f3578520f8281e97b868323a424f2db5d95b1d691206da5ad0e02"
+    "path": "analysis/demo/ac6-demo-task-render-queue-ab/sha256/2f42bb661fdcc07575976b1b898734dbaac09c92195a0a32cf0e1d34fefbfff3/receipt.json",
+    "sha256": "2f42bb661fdcc07575976b1b898734dbaac09c92195a0a32cf0e1d34fefbfff3"
   },
   "inputs": {
     "binary_sha256": "cf90f55162c7cfb21f473d8640a278c4347366efaec2898a9ad687277a9e87b0",
@@ -33,6 +33,20 @@
     "primary_boundary": "0x820FF8D8",
     "worker_boundary": "0x820FFCA0",
     "menu_owners": ["0x82170F58", "0x82185198"]
+  },
+  "task_dispatch": {
+    "dispatcher": "0x82259D10",
+    "callsite": "0x82259D74",
+    "slot": 4,
+    "first_tick": 252,
+    "last_tick": 599,
+    "calls_per_entry": 348,
+    "entries": [
+      {"object": "0x2E7F0080", "vtable": "0x8201130C", "type": "CModeTaskStartUpDemoOffline", "slot4": "0x8218A4A0"},
+      {"object": "0x18BA2BF4", "vtable": "0x8200F388", "type": "CTaskLoading", "slot4": "0x8218CE20"},
+      {"object": "0x18980000", "vtable": "0x82011694", "type": "CTaskModeManager", "slot4": "0x821929A8"}
+    ],
+    "menu_vtables_observed": false
   },
   "routes": {
     "neutral": {
