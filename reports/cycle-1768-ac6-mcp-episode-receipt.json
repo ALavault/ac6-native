@@ -1,0 +1,30 @@
+{
+  "schema": "ac6-mcp-episode-receipt-report/v1",
+  "cycle": 1768,
+  "recorded_at": "2026-08-17",
+  "verdict": "RECEIPT-CONTRACT-GO / RUNTIME-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "commit": "36b6504c",
+  "receipt_schema": {
+    "schema": "ac6-agent-episode-receipt/v1",
+    "identity": "target_id/xex_sha256/module sealed",
+    "actions": "SHA-256 plus bounded content-addressed reference",
+    "observations": "SHA-256 plus bounded content-addressed reference",
+    "artifacts": "kind, lowercase SHA-256 and bounded byte size",
+    "first_divergence": "nullable bounded sequence/field/value record",
+    "stop_reason": ["checkpoint", "backend_unavailable", "client_close", "error", "divergence", "limit"]
+  },
+  "validation": {
+    "python_transport": {"passed": 13, "skipped": 1, "result": "PASS"},
+    "native_binary_mcp": "PASS; demo-native tick/PRESENT remains unavailable gameplay evidence",
+    "malformed_artifact_reference": "rejected before acceptance",
+    "py_compile": "PASS"
+  },
+  "limits": [
+    "artifact references are in-memory action/observation digests; no qualified readback artifact exists",
+    "first divergence is nullable until an A/B replay produces one",
+    "guest scheduler, simulation, renderer, frontend, mission and terminal remain unopened"
+  ]
+}

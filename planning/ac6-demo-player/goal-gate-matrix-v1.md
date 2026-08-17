@@ -39,7 +39,7 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | Results/terminal | missing | `terminal=false`, outcome only `max_ticks`; no success/failure result. |
 | MCP v2 surface | proven | Cycle 1757 receipt `ddbcedb8…de48f8`: six v2 tools, v1 compatibility, 17 tests. Contract only. |
 | MCP ownership/lifecycle/replay | proven | Cycle 1759: immutable receipt replay, session ownership/close; 54 tests + 1 skip. Fixture/contract scope only. |
-| MCP runtime artifacts | partial | Cycle 1767 proves owned `demo-native` AF_UNIX/Popen start/step/observe/stop and bounded failure handling; PAL gameplay observations remain unavailable. |
+| MCP runtime artifacts | partial | Cycles 1767–1768 prove owned `demo-native` AF_UNIX/Popen lifecycle plus episode receipts with content-addressed action/observation refs and fail-closed divergence fields; PAL gameplay/readback observations remain unavailable. |
 | FSM contract | proven | Cycle 1758 receipt `39c186e0…e06c7`: 10 states/9 budgets, deterministic controller, fail-closed guards; 43 tests. |
 | FSM PAL route | missing | Scaffold/runtime route has no qualified observations, allowlist, or terminal receipt. |
 | demo-native domain 1 | proven | Cycle 1764 validates identity/import/CLI/VFS/PAL corpus/install plus adversarial publication/rollback. It remains `import-only` and `supported=false`. |

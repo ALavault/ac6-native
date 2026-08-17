@@ -53,6 +53,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
       "sha256": "8cce1ce9d10c2e65265fa8fb45d623b955d1b0f0ead308d76cd322f50a0d4c32",
       "claim": "owned demo-native platform IPC is tested; guest/gameplay observations remain unavailable"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1768-ac6-mcp-episode-receipt.json",
+      "sha256": "1ee78018410db7fe0dfde361de3b9c4c915b80dd8d0f108c50d60f8b6716b033",
+      "claim": "v2 episode receipts seal bounded content-addressed action/observation references, divergence and stop reason"
     }
   ],
   "gates": [
@@ -480,9 +485,14 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
           "sha256": "8cce1ce9d10c2e65265fa8fb45d623b955d1b0f0ead308d76cd322f50a0d4c32",
           "claim": "demo-native owned socketpair start/step/observe/stop and oversize rejection pass; MCP domains remain unavailable"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1768-ac6-mcp-episode-receipt.json",
+          "sha256": "1ee78018410db7fe0dfde361de3b9c4c915b80dd8d0f108c50d60f8b6716b033",
+          "claim": "episode receipts now seal action/observation artifacts, nullable divergence and stop reason"
         }
       ],
-      "tests": ["cycle 1767: CTest 6/6; MCP transport 12 passed, 1 gated skip; native binary start/step/observe/close PASS"],
+      "tests": ["cycle 1768: MCP transport 13 passed, 1 gated skip; native binary start/step/observe/close PASS; malformed artifact rejected"],
       "limits": ["no qualified PAL artifact SHA and no available gameplay observation"]
     },
     {
@@ -594,6 +604,11 @@
         "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
         "sha256": "8cce1ce9d10c2e65265fa8fb45d623b955d1b0f0ead308d76cd322f50a0d4c32",
         "claim": "owned IPC is closed as a platform-only seam; the next proof must come from a guest-owned producer/consumer"
+      },
+      {
+        "path": "workspaces/ace-combat-6/reports/cycle-1768-ac6-mcp-episode-receipt.json",
+        "sha256": "1ee78018410db7fe0dfde361de3b9c4c915b80dd8d0f108c50d60f8b6716b033",
+        "claim": "receipt contract is sealed without promoting a gameplay or readback observation"
       },
       {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
