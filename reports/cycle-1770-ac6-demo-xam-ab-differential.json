@@ -1,0 +1,85 @@
+{
+  "schema": "ac6-demo-xam-return-chain-ab-report/v2",
+  "cycle": 1770,
+  "recorded_at": "2026-08-17",
+  "verdict": "XAM-AB-DIFFERENTIAL / FRONTEND-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+  "job": {
+    "id": "job-mswzopyp-b73383bf",
+    "exit_code": 1,
+    "status": "failed",
+    "reason": "neutral route has no exclusive writer; strict A/B runner refuses before mapping the negative route",
+    "receipt_sha256": "7ad7ea95ed2acc7a8ea472af066dd0eba42b5cc17a5e41083da4f57d8033b44b"
+  },
+  "inputs": {
+    "binary_sha256": "c1f724d6abe8a699939f6d3f880aeb7a237027595b07f35d3104a3bd9088275a",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "capture_mapper_sha256": "0deaea596728e08eea3c2a6e2022e13432176cab25492b22ad6bc3d3a125fee1",
+    "requalification_mapper_sha256": "2c8ddde60b629ef3e2ee6ca249c38a1629c79319074fa0827ac0c620a01a8f18",
+    "backend": "vulkan",
+    "max_ticks": 5600,
+    "input_tick": 252,
+    "max_accesses": 64
+  },
+  "static_join": {
+    "ghidra_project": "ace-combat-6-demo",
+    "module": "Default.xex",
+    "function": "__imp__sub_822F5E58",
+    "generated_line": 3948,
+    "guest_pc": "0x822F5EA0",
+    "pal_bytes": "90 7f 00 80",
+    "runtime_address": "0x829D15BC",
+    "controller_object": "0x829D153C",
+    "offset": "0x80",
+    "buttons16_rows": 58,
+    "buttons16_unique_sites": 40,
+    "buttons16_stop": "qualified_store_exclusive"
+  },
+  "routes": {
+    "neutral": {
+      "report_sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+      "trace_sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "arm_state16": "00000000000000000000000000000000",
+      "target_observation": "load32 value_be=0x00000000",
+      "stop": "bound accesses=64",
+      "mapper": "refused: stop reason is not qualified_store_exclusive"
+    },
+    "buttons16": {
+      "report_sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+      "trace_sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "arm_state16": "00000001001000000000000000000000",
+      "target_writer": "store32 value_be=0x00000000",
+      "stop": "qualified_store_exclusive accesses=58",
+      "mapped_rows": 58,
+      "unique_sites": 40
+    }
+  },
+  "policy": {
+    "content_addressed": true,
+    "current_file_written": false,
+    "frontend_claim_written": false,
+    "gameplay_observation_promoted": false,
+    "writer_effect_proven": false,
+    "native_parity_claim": false
+  },
+  "limits": [
+    "the qualified writer stores zero and no consumer/readback effect is joined",
+    "neutral is a bounded negative route; the strict runner receipt remains failure until route-aware A/B mapping is implemented",
+    "no START/frontend/mission/objective/terminal or MCP gameplay observation is promoted"
+  ]
+}

@@ -40,9 +40,50 @@ EXPECTED_SIZES = {
     "ldarx": 8, "stdcx": 8,
 }
 
+# Exact PAL instruction corridor observed from the bounded XAM return chain.
+# Keeping every intermediate site explicit prevents a broad function/range
+# allowlist while still allowing the full A/B trace to be mapped.
 ALLOWLIST_BYTES = {
+    0x821A5044: "81 6b 07 00",
+    0x821A5048: "80 6b 00 10",
+    0x822F5D58: "a1 03 00 50",
+    0x822F5D60: "a1 43 00 4c",
+    0x822F5D68: "a1 23 00 4e",
+    0x822F5D70: "a0 c3 00 52",
+    0x822F5D78: "b1 03 00 40",
+    0x822F5D80: "b1 43 00 3c",
+    0x822F5D84: "b1 23 00 3e",
+    0x822F5D88: "b0 c3 00 42",
+    0x822F5D8C: "81 4b ff fc",
+    0x822F5D98: "7d 4a 1a 2e",
+    0x822F5DA4: "81 2b 00 00",
+    0x822F5DB0: "7d 49 1b 2e",
+    0x822F5DB4: "81 4b 00 04",
+    0x822F5DC0: "7d 0a 1b 2e",
+    0x822F5E00: "89 43 00 4a",
+    0x822F5E10: "b1 43 00 38",
+    0x822F5E14: "89 43 00 4b",
+    0x822F5E20: "b1 63 00 3a",
+    0x822F5E24: "89 63 00 4a",
+    0x822F5E3C: "89 63 00 4b",
+    0x822F5E5C: "91 81 ff f8",
+    0x822F5E60: "fb c1 ff e8",
+    0x822F5E64: "fb e1 ff f0",
+    0x822F5E68: "94 21 ff 90",
+    0x822F5E7C: "81 3f 00 78",
+    0x822F5E84: "91 7f 00 24",
+    0x822F5E8C: "81 1f 00 7c",
+    0x822F5EA0: "90 7f 00 80",
+    0x822F600C: "91 81 ff f8",
+    0x822F6010: "fb e1 ff f0",
+    0x822F6014: "94 21 ff a0",
     0x822F601C: "a1 7f 00 48",
     0x822F6020: "91 7f 00 1c",
+    0x822F602C: "81 7f 00 1c",
+    0x822F6030: "81 5f 00 74",
+    0x822F6048: "91 3f 00 20",
+    0x822F6054: "91 7f 00 14",
+    0x822F605C: "91 5f 00 18",
 }
 ALLOWLIST_PCS = frozenset((*ALLOWLIST_BYTES, 0x822F5EA0))
 

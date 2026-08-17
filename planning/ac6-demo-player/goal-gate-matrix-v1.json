@@ -63,6 +63,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
       "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
       "claim": "two fresh PAL XAM routes reach the same blocked frontier and black readback; mapper refusal prevents promotion"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1770-ac6-demo-xam-ab-differential.json",
+      "sha256": "ccaa98c9d9db369cab2b465986a68206ef848a2ef3439ec93bd611d116c91ef0",
+      "claim": "neutral reads the qualified target as zero while buttons16 maps a qualified zero store at PAL 0x822F5EA0; no effect or gameplay promotion"
     }
   ],
   "gates": [
@@ -252,10 +257,15 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
           "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
           "claim": "fresh neutral/buttons16 routes converge at 0x822F8848 with mapper refusal and no promotion"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1770-ac6-demo-xam-ab-differential.json",
+          "sha256": "ccaa98c9d9db369cab2b465986a68206ef848a2ef3439ec93bd611d116c91ef0",
+          "claim": "buttons16 maps the exact 40-site XAM corridor to a zero store at 0x829D15BC; neutral has only a zero load and bounded stop"
         }
       ],
-      "tests": ["cycle 1769: two routes rc=4, 5600 ticks, 5463 PRESENT, frontend/mission/terminal=false; mapper refusal is fail-closed"],
-      "limits": ["mapper capsule is incomplete; same blocked frontier does not qualify a guest semantic producer"]
+      "tests": ["cycle 1769: two routes rc=4, 5600 ticks, 5463 PRESENT, frontend/mission/terminal=false; mapper refusal is fail-closed", "cycle 1770: neutral bound=64 with target load zero; buttons16 qualified_store_exclusive at 0x822F5EA0, 58 rows and 40 mapped sites"],
+      "limits": ["writer stores zero and no consumer/readback effect is joined; gameplay observations remain unavailable"]
     },
     {
       "gate_id": "vfs_user_store_runtime",
@@ -656,13 +666,18 @@
         "claim": "XAM A/B mapper refusal is the current negative boundary before guest-owned promotion"
       },
       {
+        "path": "workspaces/ace-combat-6/reports/cycle-1770-ac6-demo-xam-ab-differential.json",
+        "sha256": "ccaa98c9d9db369cab2b465986a68206ef848a2ef3439ec93bd611d116c91ef0",
+        "claim": "static corridor requalified; buttons16 writer is receipt-backed but zero-effect, so no observation is exposed"
+      },
+      {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
         "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
         "claim": "all gameplay domains remain unavailable until receipt-backed guest producers exist"
       }
     ],
     "limits": [
-      "mapper refusal must be repaired/requalified before a guest-owned producer can be promoted; no frontend/mission or arbitrary guest-memory exposure"
+      "buttons16 writer is requalified statically, but its zero effect and missing consumer/readback keep the guest observation unavailable; no frontend/mission or arbitrary guest-memory exposure"
     ]
   },
   "next_checkpoint_branches": [
@@ -670,7 +685,7 @@
       "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "repair/requalify the XAM mapper on the exact PAL A/B capsule, then qualify one bounded guest-owned state boundary from Ghidra plus replay A/B; do not open START/frontend/mission yet"
+      "action": "join the qualified zero writer to its first guest consumer/readback with a fresh A/B replay; do not open START/frontend/mission yet"
     }
   ]
 }
