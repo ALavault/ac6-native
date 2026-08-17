@@ -518,8 +518,26 @@ StageResult stage_generation(int root_fd, int generations_fd,
                              &named_inode, error) ||
         named_device != staging_device || named_inode != staging_inode ||
         !detail::sync_directory(staging.get(), "generation fsync failed", error) ||
-        !check_generation_content(staging.get(), profile, error) ||
-        !detail::identity_at(generations_fd, result->name.c_str(), &named_device,
+        !check_generation_content(staging.get(), profile, error)) {
+        set_error(error, "staged generation validation failed");
+        return StageResult::failure;
+    }
+#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
+    if (std::getenv("AC6DEMO_NATIVE_TEST_SWAP_GENERATION_AFTER_HASH") != nullptr) {
+        const std::string displaced = ".foreign-" + result->name;
+        UniqueFd replacement;
+        if (!detail::rename_noreplace(generations_fd, result->name.c_str(), generations_fd,
+                                      displaced.c_str(), error)) {
+            return StageResult::failure;
+        }
+        replacement.reset(detail::create_exclusive_directory_at(
+            generations_fd, result->name.c_str(), error));
+        if (!replacement) {
+            return StageResult::failure;
+        }
+    }
+#endif
+    if (!detail::identity_at(generations_fd, result->name.c_str(), &named_device,
                              &named_inode, error) ||
         named_device != staging_device || named_inode != staging_inode ||
         !detail::sync_fd(staging.get(), "generation fsync failed", error) ||

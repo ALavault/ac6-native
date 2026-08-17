@@ -374,6 +374,21 @@ void test_pointer_corruption_and_rollback() {
     require(fs::is_symlink(symlink_pointer), "foreign current symlink is preserved");
 }
 
+void test_generation_swap_after_hash() {
+#if defined(__unix__) || defined(__APPLE__)
+    Fixture fixture = make_fixture();
+    ac6demo_native::ContentStore store(fixture.store);
+    std::string error;
+    setenv("AC6DEMO_NATIVE_TEST_SWAP_GENERATION_AFTER_HASH", "1", 1);
+    require(!ac6demo_native::testing::import_fixture(
+                store, fixture.source, fixture.profile, &error),
+            "generation name swap after full hash is rejected");
+    unsetenv("AC6DEMO_NATIVE_TEST_SWAP_GENERATION_AFTER_HASH");
+    require(!fs::exists(fixture.store / "current"),
+            "generation swap cannot publish current");
+#endif
+}
+
 void test_separation() {
     const auto root = ac6demo_native::ContentStore::default_root().generic_string();
     require(root.find("ac6-demo-native") != std::string::npos,
@@ -394,6 +409,7 @@ int main() {
     test_concurrent_imports_and_orphan_recovery();
     test_multiprocess_import_and_failure_rollback();
     test_pointer_corruption_and_rollback();
+    test_generation_swap_after_hash();
     test_separation();
     std::cout << "content store tests passed\n";
     return 0;
