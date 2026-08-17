@@ -26,9 +26,15 @@ fi
 [[ -f "$xex" ]] || { echo "demo XEX absent: $xex" >&2; exit 2; }
 printf '%s  %s\n' "$xex_sha256" "$xex" | sha256sum -c - >/dev/null
 
-# --gpu=null keeps this headless; the run is a kernel-call capture, never a
-# rendering one.  A build without a null GPU falls back to vulkan under Xvfb.
-timeout --signal=INT --kill-after=10s "${seconds}s" \
+# --gpu=null keeps this a kernel-call capture, never a rendering one, but the
+# Edge build still initialises GTK+ and exits without a DISPLAY, so the run is
+# wrapped in Xvfb whenever none is set rather than being called headless twice.
+runner=(timeout --signal=INT --kill-after=10s "${seconds}s")
+if [[ -z "${DISPLAY:-}" ]]; then
+  runner=(xvfb-run -a "${runner[@]}")
+fi
+
+"${runner[@]}" \
   "$launcher" \
     --headless=true \
     --gpu=null \

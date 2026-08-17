@@ -46,6 +46,9 @@ exports/
 
 # --- build output and caches ----------------------------------------------
 build/
+build-*/
+**/build-codegen-on/
+**/build-codegen-on-b/
 .build/
 /reconstruction/ace-combat-6/build-core/
 /bin/

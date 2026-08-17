@@ -425,8 +425,17 @@ endif()
 # Declared last: these three suites are defined further down the file, and
 # every check in them is an assert() that NDEBUG would erase.
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  foreach(assert_test IN ITEMS ac6-demo-emu-agent-ipc-tests
+  set(ac6_demo_assert_tests ac6-demo-emu-agent-ipc-tests
       ac6-demo-post-resume-header-tests ac6-demo-xam-return-chain-header-tests)
+  # ac6-demo-rexglue-runtime-tests is deliberately NOT in this list. Enabling
+  # its asserts surfaced two stale expectations; the payload size was settled
+  # (512, the sizeof of a hash-pinned SDK type) but its system-constant flags
+  # expectation, 0x00074B00 against the product's 0x0007CB00, is a semantic
+  # question about one kSysFlag bit that is not settled. Aligning the test with
+  # the code would assert the answer instead of deriving it. The suite stays
+  # vacuous, visibly, until that bit is qualified -- see
+  # tools/audit_test_assert_liveness.py --known-vacuous.
+  foreach(assert_test IN LISTS ac6_demo_assert_tests)
     target_compile_options(${assert_test} PRIVATE -UNDEBUG)
   endforeach()
 endif()

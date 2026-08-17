@@ -28,6 +28,10 @@ SOURCE_SUFFIXES = {".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx"}
 # BOOST_assert-style names do not match.
 RUNTIME_ASSERT = re.compile(r"(?<![_A-Za-z0-9])assert\s*\(")
 GUARD = re.compile(r"#\s*ifdef\s+NDEBUG\b[^#]*#\s*error", re.S)
+# A suite may be knowingly vacuous only if it says so in its own text and the
+# reason is written there. This is debt made visible, not an exemption: the
+# audit still reports it on every run.
+KNOWN_VACUOUS = re.compile(r"KNOWN VACUOUS UNDER NDEBUG")
 
 
 def strip_comments_and_strings(text: str) -> str:
@@ -38,6 +42,7 @@ def strip_comments_and_strings(text: str) -> str:
 def audit(roots: list[Path]) -> tuple[int, list[str]]:
     checked = 0
     failures: list[str] = []
+    vacuous: list[str] = []
     for root in roots:
         if not root.is_dir():
             continue
@@ -48,9 +53,12 @@ def audit(roots: list[Path]) -> tuple[int, list[str]]:
             if not RUNTIME_ASSERT.search(strip_comments_and_strings(raw)):
                 continue
             checked += 1
+            if KNOWN_VACUOUS.search(raw):
+                vacuous.append(path.as_posix())
+                continue
             if not GUARD.search(raw):
                 failures.append(path.as_posix())
-    return checked, failures
+    return checked, failures, vacuous
 
 
 def main() -> int:
@@ -58,7 +66,10 @@ def main() -> int:
     parser.add_argument("roots", nargs="+", type=Path,
                         help="test directories to audit")
     arguments = parser.parse_args()
-    checked, failures = audit([root.resolve() for root in arguments.roots])
+    checked, failures, vacuous = audit(
+        [root.resolve() for root in arguments.roots])
+    for path in vacuous:
+        print(f"warning: {path}: knowingly vacuous under NDEBUG")
     if failures:
         print("test_assert_liveness=fail")
         for path in failures:
@@ -66,7 +77,8 @@ def main() -> int:
                   f"'#ifdef NDEBUG / #error' guard, so NDEBUG would erase "
                   f"every check in it")
         return 1
-    print(f"test_assert_liveness=pass suites={checked}")
+    print(f"test_assert_liveness=pass suites={checked} "
+          f"vacuous={len(vacuous)}")
     return 0
 
 

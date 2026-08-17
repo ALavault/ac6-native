@@ -107,10 +107,7 @@ struct GuestEvent final {
   bool manual_reset{};
   std::uint32_t granted_thread{};
 };
-struct GuestNotifyListener final {
-  std::uint64_t mask{};
-  std::uint32_t max_version{};
-};
+#include "guest_bridge/notification_state.hpp"
 struct GuestTimer final {
   std::uint32_t timer_type{};
   bool signaled{};
@@ -164,6 +161,10 @@ thread_local std::uint32_t next_tls_slot = 0U;
 thread_local std::int32_t network_error = 10093; // WSANOTINITIALISED
 thread_local std::uint32_t next_event_handle = 0xE0000000U;
 thread_local std::uint32_t next_notify_handle = 0xE5000000U;
+// XNotifyCreateListener: the saved system notifications are delivered to the
+// first eligible listener only. "If two listeners with overlapping categories
+// are created, only one will receive the saved notifications."
+thread_local bool saved_notifications_delivered = false;
 thread_local std::uint32_t next_timer_handle = 0xE6000000U;
 thread_local std::uint32_t current_guest_thread_id = 1U;
 thread_local std::uint32_t current_import_lr = 0U;

@@ -89,29 +89,65 @@
     context.r3.u32 = 0U;
     return true;
   }
+// XDK xam.h: XNID(Version, Area, Index) = Area << 25 | Version << 16 | Index,
+// with _XNAREA_SYSTEM 0, so XN_SYS_UI = XNID(0, 0, 0x0009) and
+// XN_SYS_SIGNINCHANGED = XNID(0, 0, 0x000A). XNOTIFY_SYSTEM is the area bit a
+// listener asks for. Values are read from the header, not inferred from names.
+constexpr std::uint32_t kNotificationSystemUi = 0x00000009U;
+constexpr std::uint32_t kNotificationSystemSigninChanged = 0x0000000AU;
+constexpr std::uint64_t kNotifyAreaSystem = 0x00000001U;
+
   if (std::string_view{name} == "XamNotifyCreateListener") {
-    // XamNotifyCreateListener(mask, max_version) returns a kernel listener
-    // handle.  Keep only the qualified offline queue: no host notifications
-    // are injected, so XNotifyGetNext deterministically reports an empty
-    // queue until a title-reached broadcast contract is qualified.
+    // XamNotifyCreateListener(qwAreas) returns a kernel listener handle.
+    //
+    // XDK XNotifyCreateListener: "Before the first listener is created [...]
+    // four types of system notifications will be saved by the notification
+    // system: XN_LIVE_INVITE_ACCEPTED, XN_SYS_UI, XN_SYS_SIGNINCHANGED,
+    // XN_SYS_DISCMEDIACHANGED. These notifications are saved by category until
+    // the first listener eligible to receive the notifications is created;
+    // then they are immediately delivered to that first listener."
+    //
+    // The console therefore hands a title its initial sign-in state through a
+    // notification, not only through polling. Without it a title that waits
+    // for XN_SYS_SIGNINCHANGED before leaving its start-up mode waits forever.
     const auto max_version = context.r4.u32;
     if (max_version > 10U || next_notify_handle > 0xFFFFFFFCU) {
       return false;
     }
     const auto handle = next_notify_handle;
     next_notify_handle += 4U;
-    notify_listeners.emplace(handle,
-                             GuestNotifyListener{context.r3.u64, max_version});
+    const auto areas = context.r3.u64;
+    GuestNotifyListener listener{areas, max_version, {}};
+    if (!saved_notifications_delivered && (areas & kNotifyAreaSystem) != 0U) {
+      // Of the four saved notifications only the two system ones have a
+      // qualified offline value here. XN_LIVE_INVITE_ACCEPTED needs a pending
+      // Live invite, which an offline demo cannot have, and
+      // XN_SYS_DISCMEDIACHANGED reports a media change that never happens
+      // against a fixed store, so neither is synthesized.
+      //
+      // XN_SYS_UI param is BOOL fShow: no system UI is over this title.
+      // XN_SYS_SIGNINCHANGED param is DWORD dwValid, "bit specifying which
+      // players are valid, the least-significant bit represents user zero";
+      // slot 0 is signed in locally and slots 1..3 are not, which is exactly
+      // what XamUserGetSigninState already reports, so the bitmask is 1.
+      listener.pending.push_back(GuestNotification{kNotificationSystemUi, 0U});
+      listener.pending.push_back(
+          GuestNotification{kNotificationSystemSigninChanged, 1U});
+      saved_notifications_delivered = true;
+    }
+    notify_listeners.emplace(handle, std::move(listener));
     context.r3.u32 = handle;
     return true;
   }
   if (std::string_view{name} == "XNotifyGetNext") {
-    // XNotifyGetNext(handle, match_id, id*, param*) clears the output slots
-    // and returns zero when the listener has no pending notification.  The
-    // demo's strict offline profile does not synthesize sign-in or network
-    // notifications, but it does preserve the listener ABI and close path.
+    // XNotifyGetNext(handle, dwMsgFilter, pdwId, pParam). dwMsgFilter is a
+    // notification id, "set to zero to retrieve any notification"; the return
+    // value is "nonzero" when a notification was returned and zero when the
+    // queue is empty. Output slots are cleared on the empty path so the ABI
+    // stays the one the guest already relied on.
     auto& memory = require_bridge().memory();
     const auto listener = notify_listeners.find(context.r3.u32);
+    const auto filter = context.r4.u32;
     const auto id_pointer = context.r5.u32;
     const auto param_pointer = context.r6.u32;
     if (listener == notify_listeners.end() || id_pointer == 0U ||
@@ -119,11 +155,26 @@
         (param_pointer != 0U && !memory.mapped(param_pointer, 4U))) {
       return false;
     }
-    memory.store_u32(id_pointer, 0U);
-    if (param_pointer != 0U) {
-      memory.store_u32(param_pointer, 0U);
+    auto& pending = listener->second.pending;
+    const auto match = std::find_if(
+        pending.begin(), pending.end(),
+        [filter](const GuestNotification& notification) {
+          return filter == 0U || notification.id == filter;
+        });
+    if (match == pending.end()) {
+      memory.store_u32(id_pointer, 0U);
+      if (param_pointer != 0U) {
+        memory.store_u32(param_pointer, 0U);
+      }
+      context.r3.u32 = 0U;
+      return true;
     }
-    context.r3.u32 = 0U;
+    memory.store_u32(id_pointer, match->id);
+    if (param_pointer != 0U) {
+      memory.store_u32(param_pointer, match->param);
+    }
+    pending.erase(match);
+    context.r3.u32 = 1U;
     return true;
   }
   if (std::string_view{name} == "XNotifyPositionUI") {
