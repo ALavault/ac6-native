@@ -32,7 +32,7 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | XMA runtime | partial | Six context-qualified kicks are traversed under opt-in guard; no XMA effect is promoted. |
 | Media/audio decode | missing | No decoded packet, timestamp/volume, or English/Japanese audio output receipt. |
 | Input delivery | proven | Cycles 1774–1775 final-binary A/B join the guest controller snapshot and logical mapper: `buttons16` gives current/pressed `0x10`, normalized `0x400`, logical pressed `0x10`; no persistent START transition follows. |
-| START transition | failed | Cycle 1776 complete atlas A/B reaches neither owner `0x82170F58` nor `0x82185198` for static START consumers `0x82170FCC`/`0x82185210`; both routes remain at the scheduler bound. |
+| START transition | failed | Cycle 1777 joins the primary/worker queue index writers but finds zero slot payloads; owners `0x82170F58`/`0x82185198` remain unconstructed and both routes stay at the scheduler bound. |
 | Frontend | missing | Both 5600-tick routes report `frontend=false`; no positive milestone/readback pair. |
 | Mission | missing | `mission=false`; no title→mission receipt. |
 | Objectives | missing | Observation inventory marks objective unavailable; no endogenous producer. |
@@ -48,15 +48,15 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 
 ## Single next checkpoint
 
-Qualify the scheduler/task producer that would construct the first static
-START/menu consumer (`0x82170F58` or `0x82185198`), then require a guest
-menu-state change and non-black frontend/readback pair before exposing any
-frontend observation. Keep mission, gameplay, terminal and the cycle-1761 XAM
-frontier separate until their own A/B receipts exist.
+Qualify the first nonzero queue payload or task-list mutation that would
+construct the first static START/menu consumer (`0x82170F58` or `0x82185198`),
+then require a guest menu-state change and non-black frontend/readback pair
+before exposing any frontend observation. Keep mission, gameplay, terminal and
+the cycle-1761 XAM frontier separate until their own A/B receipts exist.
 
 | Branch | Status | Classification |
 |---|---|---|
-| Runtime/domain 3 guest boundary | partial | Input snapshot and logical mapper are receipt-backed in cycles 1775–1776; the current atlas proves neither START consumer owner is reached, so task construction, menu-state change, non-black readback and gameplay observations remain absent. |
+| Runtime/domain 3 guest boundary | partial | Cycles 1775–1777 receipt-back the input mapper and scheduler queue; all slot payloads are zero and neither START owner is reached, so task construction, menu-state change, non-black readback and gameplay observations remain absent. |
 
 The machine-readable canonical record is
 [`goal-gate-matrix-v1.json`](goal-gate-matrix-v1.json).

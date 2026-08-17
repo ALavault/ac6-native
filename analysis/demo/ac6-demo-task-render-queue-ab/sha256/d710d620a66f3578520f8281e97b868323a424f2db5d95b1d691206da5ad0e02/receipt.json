@@ -1,0 +1,104 @@
+{
+  "schema": "ac6-demo-task-render-queue-ab/v1",
+  "status": "success",
+  "reason": "fresh neutral/buttons16 queue-writer A/B completed at tick 600",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c"
+  },
+  "inputs": {
+    "binary_sha256": "cf90f55162c7cfb21f473d8640a278c4347366efaec2898a9ad687277a9e87b0",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "max_ticks": 600,
+    "input_tick": 252,
+    "instrumentation": ["AC6_DEMO_WATCH_RENDER_QUEUE_WRITERS=1", "AC6_DEMO_WATCH_RENDER_QUEUE_SLOTS=1"]
+  },
+  "queue": {
+    "object_base": "0x82386CC0",
+    "producer_address": "0x8238CD90",
+    "consumer_address": "0x8238CD94",
+    "producer_offset": "0x60D0",
+    "consumer_offset": "0x60D4",
+    "slot_stride": 96,
+    "slot_range": "0x82386D90..0x8238CDD0",
+    "mapped_sites": [
+      {"pal_pc": "0x820FF750", "bytes": "91 4b 01 10", "instruction": "stw r10,272(r11)", "source": "__imp__sub_820FF710:43230"},
+      {"pal_pc": "0x820FF75C", "bytes": "91 7f 60 d0", "instruction": "stw r11,24784(r31)", "source": "__imp__sub_820FF710:43236"},
+      {"pal_pc": "0x820FF94C", "bytes": "91 7f 60 d4", "instruction": "stw r11,24788(r31)", "source": "__imp__sub_820FF8D8:43540"},
+      {"pal_pc": "0x820FF950", "bytes": "91 7f 60 d0", "instruction": "stw r11,24784(r31)", "source": "__imp__sub_820FF8D8:43542"},
+      {"pal_pc": "0x820FFA08", "bytes": "91 7f 60 d0", "instruction": "stw r11,24784(r31)", "source": "__imp__sub_820FF9E0:43662"},
+      {"pal_pc": "0x820FFA0C", "bytes": "91 7f 60 d4", "instruction": "stw r11,24788(r31)", "source": "__imp__sub_820FF9E0:43664"},
+      {"pal_pc": "0x820FFA10", "bytes": "91 7f 60 d8", "instruction": "stw r11,24792(r31)", "source": "__imp__sub_820FF9E0:43666"},
+      {"pal_pc": "0x820FFA14", "bytes": "91 5f 60 dc", "instruction": "stw r10,24796(r31)", "source": "__imp__sub_820FF9E0:43668"},
+      {"pal_pc": "0x820FFD78", "bytes": "91 5f 60 d4", "instruction": "stw r10,24788(r31)", "source": "__imp__sub_820FFCA0:44194"},
+      {"pal_pc": "0x820FFD94", "bytes": "93 7f 60 d0", "instruction": "stw r27,24784(r31)", "source": "__imp__sub_820FFCA0:44211"},
+      {"pal_pc": "0x820FFD98", "bytes": "93 7f 60 d4", "instruction": "stw r27,24788(r31)", "source": "__imp__sub_820FFCA0:44213"}
+    ]
+  },
+  "routes": {
+    "neutral": {
+      "input_buttons": "0x00000000",
+      "trace_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+      "report_sha256": "3f6c5df255c23751042ef97e7b638cd4dc814a8154be78e318ab1089a82140b7",
+      "stderr_sha256": "30857e100cb5b484bd8936af6f38bc5e0bf7474abd2ea2c0db725c7aa1714ea6",
+      "queue_write_records": 2090,
+      "slot_store_records": 2440,
+      "slot_snapshots": 696,
+      "slot_snapshot_sha256": "3ef591eb77e787a91005515ada814caea006b710b33a690955593c96a7bb1def",
+      "slot_snapshot_nonzero": 0,
+      "completed_ticks": 600,
+      "presents": 463,
+      "producer_changes": 695,
+      "consumer_changes": 0,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    },
+    "buttons16": {
+      "input_buttons": "0x00000010",
+      "trace_sha256": "4d2f77515e5850ca3e8e0e36e2eaa306a9a7b2c7d602deae56755cab4ba100e1",
+      "report_sha256": "a162fafedab45d95f895439517c9e370bfe8285d5044e2b4a35a1f6db358a2db",
+      "stderr_sha256": "30857e100cb5b484bd8936af6f38bc5e0bf7474abd2ea2c0db725c7aa1714ea6",
+      "queue_write_records": 2090,
+      "slot_store_records": 2440,
+      "slot_snapshots": 696,
+      "slot_snapshot_sha256": "3ef591eb77e787a91005515ada814caea006b710b33a690955593c96a7bb1def",
+      "slot_snapshot_nonzero": 0,
+      "completed_ticks": 600,
+      "presents": 463,
+      "producer_changes": 695,
+      "consumer_changes": 0,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    }
+  },
+  "comparison": {
+    "stderr_byte_identical": true,
+    "slot_snapshots_equal": true,
+    "slot_payload_nonzero": false,
+    "guest_queue_consumer_change": false,
+    "task_menu_consumer_constructed": false,
+    "frontend_effect": false,
+    "readback_effect": false
+  },
+  "policy": {
+    "content_addressed": true,
+    "fresh_stores": true,
+    "generated_cpp_modified": false,
+    "retail_evidence_fused": false,
+    "fallback_or_synthetic_progression": false,
+    "frontend_claim_written": false,
+    "supported": false
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "schema": "ac6-demo-task-render-queue-ab-report/v1",
+  "cycle": 1777,
+  "recorded_at": "2026-08-17",
+  "verdict": "TASK-PRODUCER-QUEUE-QUALIFIED / MENU-CONSTRUCTION-NO-GO",
+  "supported": false,
+  "target": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "ghidra_project": "ace-combat-6-demo",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "capsule": {
+    "path": "analysis/demo/ac6-demo-task-render-queue-ab/sha256/d710d620a66f3578520f8281e97b868323a424f2db5d95b1d691206da5ad0e02/receipt.json",
+    "sha256": "d710d620a66f3578520f8281e97b868323a424f2db5d95b1d691206da5ad0e02"
+  },
+  "inputs": {
+    "binary_sha256": "cf90f55162c7cfb21f473d8640a278c4347366efaec2898a9ad687277a9e87b0",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "max_ticks": 600,
+    "input_tick": 252
+  },
+  "static_join": {
+    "dispatcher": "0x82259D10",
+    "dispatcher_slot4_callsite": "0x82259D74",
+    "queue_base": "0x82386CC0",
+    "queue_producer": "0x8238CD90",
+    "queue_consumer": "0x8238CD94",
+    "primary_boundary": "0x820FF8D8",
+    "worker_boundary": "0x820FFCA0",
+    "menu_owners": ["0x82170F58", "0x82185198"]
+  },
+  "routes": {
+    "neutral": {
+      "input_buttons": "0x00000000",
+      "trace_sha256": "b724112495de5af96b395f93ba5d1dacd8a522bfae2aa1fcc69890b3c9aac9fb",
+      "report_sha256": "3f6c5df255c23751042ef97e7b638cd4dc814a8154be78e318ab1089a82140b7",
+      "stderr_sha256": "30857e100cb5b484bd8936af6f38bc5e0bf7474abd2ea2c0db725c7aa1714ea6",
+      "queue_write_records": 2090,
+      "slot_store_records": 2440,
+      "slot_snapshots": 696,
+      "slot_snapshot_sha256": "3ef591eb77e787a91005515ada814caea006b710b33a690955593c96a7bb1def",
+      "slot_snapshot_nonzero": 0,
+      "completed_ticks": 600,
+      "presents": 463,
+      "producer_changes": 695,
+      "consumer_changes": 0,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    },
+    "buttons16": {
+      "input_buttons": "0x00000010",
+      "trace_sha256": "4d2f77515e5850ca3e8e0e36e2eaa306a9a7b2c7d602deae56755cab4ba100e1",
+      "report_sha256": "a162fafedab45d95f895439517c9e370bfe8285d5044e2b4a35a1f6db358a2db",
+      "stderr_sha256": "30857e100cb5b484bd8936af6f38bc5e0bf7474abd2ea2c0db725c7aa1714ea6",
+      "queue_write_records": 2090,
+      "slot_store_records": 2440,
+      "slot_snapshots": 696,
+      "slot_snapshot_sha256": "3ef591eb77e787a91005515ada814caea006b710b33a690955593c96a7bb1def",
+      "slot_snapshot_nonzero": 0,
+      "completed_ticks": 600,
+      "presents": 463,
+      "producer_changes": 695,
+      "consumer_changes": 0,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    }
+  },
+  "policy": {
+    "queue_producer_consumer_proven": true,
+    "task_menu_owner_constructed": false,
+    "guest_menu_state_change": false,
+    "frontend_claim_written": false,
+    "readback_effect_proven": false,
+    "mission_observation_promoted": false,
+    "terminal_observation_promoted": false,
+    "supported": false
+  },
+  "limits": [
+    "the current guest queue producer/worker/reset path is exact and A/B identical, but all 96-byte slot snapshots are zero",
+    "producer changes are observed while the sampled consumer index remains zero after worker reset; no task-menu object is constructed",
+    "both routes stop at max_ticks with PRESENT=463, frontend/mission/terminal=false and black readback",
+    "the next boundary is the first nonzero queue payload or task-list mutation, not a synthesized menu or renderer state"
+  ]
+}

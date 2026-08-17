@@ -98,6 +98,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1776-demo-start-consumer-reach-ab.json",
       "sha256": "f23ab6a949e2788bf0fe7ea36e966f052cb2e23de25f391710ea61a2512a7e83",
       "claim": "fresh function-reachability A/B reaches neither typed START consumer owner; both routes remain at the scheduler bound"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1777-demo-task-render-queue-ab.json",
+      "sha256": "32cb9224c35e64ad8e29617127d19030a82b54dd36cac679b3601641903662b2",
+      "claim": "fresh queue A/B joins primary/worker index writers to exact PAL bytes; all slot payloads remain zero and menu owners are not constructed"
     }
   ],
   "gates": [
@@ -476,10 +481,15 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1776-demo-start-consumer-reach-ab.json",
           "sha256": "f23ab6a949e2788bf0fe7ea36e966f052cb2e23de25f391710ea61a2512a7e83",
           "claim": "complete generated-entry atlas A/B confirms owners 0x82170F58 and 0x82185198 are absent from both fresh route traces"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1777-demo-task-render-queue-ab.json",
+          "sha256": "32cb9224c35e64ad8e29617127d19030a82b54dd36cac679b3601641903662b2",
+          "claim": "queue producer/worker/reset path is A/B identical with zero 96-byte payloads; no task-menu construction or frontend effect follows"
         }
       ],
-      "tests": ["cycle 1775/1776: logical mapper is reached, but both complete atlas routes return rc=4 at tick 253 with frontend/mission/terminal=false and no START consumer owner"],
-      "limits": ["the negative bound closes only this scheduler path; it does not claim all future input is impossible or synthesize a menu state"]
+      "tests": ["cycle 1775–1777: logical mapper is reached, queue indices are published/reset A/B identically, but both routes return rc=4 with frontend/mission/terminal=false and no START consumer owner"],
+      "limits": ["the queue boundary is scheduler-only while slot payloads are zero; it does not claim all future input is impossible or synthesize a menu state"]
     },
     {
       "gate_id": "frontend",
@@ -713,7 +723,7 @@
   "next_checkpoint": {
     "gate_id": "demo_native_runtime_domain3_guest_boundary",
     "status": "partial",
-    "objective": "Qualify the scheduler/task producer that would construct 0x82170F58 or 0x82185198, then require a guest menu-state change and non-black frontend/readback pair; keep mission, gameplay and terminal domains closed.",
+    "objective": "Qualify the first nonzero queue payload or task-list mutation that constructs 0x82170F58 or 0x82185198, then require a guest menu-state change and non-black frontend/readback pair; keep mission, gameplay and terminal domains closed.",
     "evidence": [
       {
         "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
@@ -765,6 +775,11 @@
           "sha256": "f23ab6a949e2788bf0fe7ea36e966f052cb2e23de25f391710ea61a2512a7e83",
           "claim": "fresh atlas A/B closes the current negative reachability bound; the next proof must join task construction/dispatch to a guest menu-state change"
         },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1777-demo-task-render-queue-ab.json",
+          "sha256": "32cb9224c35e64ad8e29617127d19030a82b54dd36cac679b3601641903662b2",
+          "claim": "queue index producer/consumer/reset is exact but payloads are zero; the next proof is a nonzero queue slot or task-list mutation"
+        },
       {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
         "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
@@ -772,7 +787,7 @@
       }
     ],
     "limits": [
-      "input semantics and logical mapping are qualified, but no task construction, persistent START consumer, non-black frontend/readback, mission or arbitrary guest-memory observation is available"
+      "input semantics, queue indices and scheduler boundaries are qualified, but no nonzero task payload, task construction, persistent START consumer, non-black frontend/readback, mission or arbitrary guest-memory observation is available"
     ]
   },
   "next_checkpoint_branches": [
@@ -780,7 +795,7 @@
       "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "join the task dispatcher/producer to construction of 0x82170F58 or 0x82185198 and a guest menu-state change, then require non-black frontend/readback; do not open mission/gameplay/terminal yet"
+      "action": "watch the first nonzero queue slot or task-list mutation and join it to construction of 0x82170F58/0x82185198 and a guest menu-state change; then require non-black frontend/readback, without opening mission/gameplay/terminal"
     }
   ]
 }
