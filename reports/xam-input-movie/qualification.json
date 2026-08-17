@@ -1,0 +1,91 @@
+{
+  "schema": "ac6.xam-input-movie-qualification.v1",
+  "status": "implemented_bootstrap_blocked",
+  "lane": "bridge",
+  "claim_level": "bridge_observed",
+  "target": {
+    "module": "default.xex",
+    "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+    "base_address": "0x82000000"
+  },
+  "implementation": {
+    "movie_schema": "ac6.xam-input-movie.v1",
+    "runtime_commit": "dcd41b7457fcac8242f8ef40de83d1719390d5af",
+    "runtime_binary_sha256": "7e6b0dd0d936c7a347ee513a76679c81765334f5741dba60d95497650e5df858",
+    "runtime_diff_sha256": "eac88deca86f3cd02592a8bbc306f4be223a2ca65af0cf9d4dab86736ed37c38",
+    "runtime_configuration_sha256": "444096b5362eb68cfef4e61f3e68913f1916bef3aba80441d2a14d98a4826a85",
+    "generated_tree_sha256": "2f53a98d27056b89b2de47dd4864572054c5ad006e9f5f176e0bafd4313fd5bf",
+    "durable_patch_sha256": "bdf772f31da76b60fbd8f343b581d1478ba1425314eea1dc48a719a709ae4645",
+    "records": [
+      "ordinal",
+      "guest_tick",
+      "guest_thread",
+      "caller_lr",
+      "user",
+      "flags",
+      "state_ptr_null",
+      "result",
+      "state16"
+    ],
+    "strict_replay_guards": [
+      "event_type",
+      "ordinal",
+      "caller_lr",
+      "user",
+      "flags",
+      "state_ptr_null",
+      "short_trace",
+      "long_trace"
+    ],
+    "host_hid_bypassed_on_replay": true,
+    "host_key_timestamps_in_movie": false,
+    "host_presentation_frames_in_movie": false
+  },
+  "bootstrap": {
+    "initial_state": "FROM_XEX_LAUNCH",
+    "route": "scripts/ac6-oracle-mission01-controlled-sortie-delayed.steps",
+    "route_sha256": "e74acaa35c6fc1c26a816a64791686f7c22894cc979585ec90400c16943d5d55",
+    "profile_id": "codex",
+    "content_manifest_sha256": "d487e859531263b29240f3ce57de6f0647645c887f9fa6537d945092022bd12c",
+    "behavior_sha256": "8152525686adf8fa58952db80b3bd94e1fd845885b8de5b3c64534caa20a1dbb",
+    "isolated_roots": ["storage", "content", "cache"],
+    "duration_limit_seconds": 900,
+    "executed_steps": 59,
+    "partial_event_count": 3754,
+    "partial_normalized_xam_sha256": "61045bddf3030771a7463e4c081a8ba9530b062a209d38038370c3a56e17b224",
+    "partial_movie_sha256": "5f3ab4d607e12739c0f800e43b0d3ed2fa9e2056f947f556a196d43c75c543b2",
+    "fatal_diagnostics": [],
+    "first_unreached_predicate": "[ac6-campaign-transition].*state=0->1",
+    "last_observed_campaign_state": {
+      "state40": 0,
+      "selector44": 0,
+      "response12": 2,
+      "type28": 10,
+      "result36": 0
+    },
+    "result": "route_duration_exceeded"
+  },
+  "validation": {
+    "python": "59 passed, 12 subtests passed",
+    "runtime_ctest": "ac6_xam_input_movie_test 1/1 passed",
+    "diff_check": "passed",
+    "complete_recording": false,
+    "qualified_replay_count": 0,
+    "identical_normalized_streams": false,
+    "identical_guest_milestone_digests": false,
+    "reachability_atlas_run": false,
+    "enriched_corridor_run": false
+  },
+  "blocker": {
+    "subsystem": "bridge_campaign_transition",
+    "not_a_replay_divergence": true,
+    "renderer_repair_authorized": false,
+    "xenia_or_wine_repair_authorized": false,
+    "next_experiment": "Resolve or reproduce the named state=0->1 campaign transition boundary, then record once from a fresh FROM_XEX_LAUNCH root before running two strict replays."
+  },
+  "raw_bootstrap_policy": {
+    "retained": false,
+    "reason": "The incomplete bootstrap contained diagnostic host input timing and presentation captures, which are forbidden as movie evidence. Only normalized hashes and the exact blocker are retained."
+  }
+}

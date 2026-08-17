@@ -1,0 +1,110 @@
+{
+  "schema": "ac6-demo-xenia-edge-gpu-run/v1",
+  "cycle": 1740,
+  "read_only": true,
+  "oracle_only": true,
+  "target": {
+    "name": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "endianness": "xenon-big-endian",
+    "title_id": "4E4D87E6"
+  },
+  "archive": {
+    "path": "xenia-edge-ac6-gpu-run-20260816-113443.tar.zst",
+    "sha256": "ef420b2ed4c8f71229e937a2ad695afcbfa82e0216e51b3ef1f6b911ace6d7e8",
+    "manifest_sha256": "131ee15b6134b545f3555feded20d8a853531a6f636a2814a9201a68bda730a4",
+    "sha256sums_sha256": "0bb08316831fc6dd6078421cbcd6b2fb1e88525e616a0f63ad6d82c394681d48",
+    "sha256sums_entries": 684,
+    "xtr_inventory_sha256": "cb14f027fc1ed3330a7b1821a2688080feb40411ba19f2f28dfbf4629fb697fe",
+    "ucode_inventory_sha256": "4fac051c4496e72fae84bc25ec478a6f6799e1e0129a68729b97880fc6223719"
+  },
+  "xenia_edge": {
+    "commit": "15200f6447e6b1f3676e09f0e7c065b3bf57f92d",
+    "backend": "vulkan",
+    "gpu": "NVIDIA RTX 500 Ada Generation Laptop GPU",
+    "trace_format": 1
+  },
+  "run": {
+    "trace_pairs": 23,
+    "xtr_bytes": 3170308988,
+    "last_emulator_frame": 3697,
+    "log_sha256": "efa6e0af0bfd29666c48212237039f453a1cfcdc0a6d94aed0d05f4a79b077b2",
+    "log_observed": {
+      "render_target_creations": 24,
+      "draw_skipped": 364,
+      "dynamic_vd_swap": false,
+      "explicit_gpu_resolve": false
+    }
+  },
+  "selected_xtr": [
+    {
+      "file": "run/4E4D87E6_5152.xtr",
+      "sha256": "31a53c204b86305adf948e4cd40ab24c645970f4e8db7fcba06ad5b789c8b3ea",
+      "packets": 36185,
+      "ib_start": 18,
+      "ib_end": 18,
+      "edram_snapshot_bytes": 10485760,
+      "edram_snapshot_sha256": "b78bb470b25dc2669b74b17bc1cdf7276539dc9483525b60abcbba07ae70a8b3",
+      "edram_nonzero_bytes": 5860457,
+      "swap_events": 1,
+      "png_sha256": "626c5914b34109f38ca4f5026cbfbbe1f46aa543cc4327474081fa34c29a39e5"
+    },
+    {
+      "file": "run/4E4D87E6_5505.xtr",
+      "sha256": "2462c2551d3a8e52945f95a955a2cfd0b392b55c7e35d3869576effafb257678",
+      "packets": 36644,
+      "ib_start": 18,
+      "ib_end": 18,
+      "edram_snapshot_bytes": 10485760,
+      "edram_snapshot_sha256": "f8de6878d8faddbfd4257b4b8232da8c422e8345700ab30861a2f3f28c6863e3",
+      "edram_nonzero_bytes": 5126138,
+      "swap_events": 1,
+      "png_sha256": "a9e22d74d3116d89d498d3bde218f971235eba9904a97d0f73ed3106ddb9c26d"
+    },
+    {
+      "file": "run/4E4D87E6_5849.xtr",
+      "sha256": "16a060773b06e7a99bbed4859591f4e572f60183a0c46c8a0b75f40c3ec49502",
+      "packets": 36248,
+      "ib_start": 18,
+      "ib_end": 18,
+      "edram_snapshot_bytes": 10485760,
+      "edram_snapshot_sha256": "da37a4ac335a7a9b90a6d1b60d7609724298a3a450c59fb7b1c68d0ac228790e",
+      "edram_nonzero_bytes": 5286025,
+      "swap_events": 1,
+      "png_sha256": "94655bd6798594a558db9ea6fd5e25c104dd62575447b83f5ebda720661e6c50"
+    }
+  ],
+  "pal_ib_join": {
+    "references": [
+      {"base": "0x127CA0C0", "dwords": 11, "sha256": "ef7ab6e4832aed218b50126464de899ccf0f4bf2eaf26ecfac6371c51671d2b0"},
+      {"base": "0x1274A000", "dwords": 3029, "sha256": "d121c8d8cf55bcb755fa558c4d54a9311f4520fa2e8bb5e34b25920f107358d6"}
+    ],
+    "observed_target_memory_ranges": [],
+    "observed_closed_ib_bases": [],
+    "status": "not_established",
+    "reason": "Les trois XTR gameplay ne contiennent ni plage mémoire ni IB fermé aux bases PAL qualifiées; les adresses Edge restent propres à l'oracle."
+  },
+  "shader_crossmatch": {
+    "status": "calculated_cross_match_only",
+    "matches": [
+      {"demo_microcode_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3", "edge_file": "shaders/shader_C049A8C9E556F129.ucode.bin.vert", "edge_bytes": 96, "swap32_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3"},
+      {"demo_microcode_sha256": "934488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b", "edge_file": "shaders/shader_0A6D1DD7767FDF27.ucode.bin.vert", "edge_bytes": 108, "swap32_sha256": "934488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b"},
+      {"demo_microcode_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25", "edge_file": "shaders/shader_2E372EA28CC404B7.ucode.bin.frag", "edge_bytes": 36, "swap32_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25"},
+      {"demo_microcode_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0", "edge_file": null, "edge_bytes": null, "swap32_sha256": null}
+    ]
+  },
+  "classification": {
+    "xenia_generic": ["XTR packet/IB protocol", "raw EDRAM snapshots", "Edge Vulkan log and swap event"],
+    "demo_observed": ["PAL Title ID and expected XEX identity declared by manifest", "23 XTR/PNG pairs", "gameplay PNGs and trace headers carrying Title ID"],
+    "demo_qualified": [],
+    "unknown": ["PAL IB producer/consumer join", "native EDRAM writer and pixel parity", "PM4 resolve semantics", "586168ec container", "XMA PCM parity", "mission result"]
+  },
+  "guard": {
+    "no_retail_merge": true,
+    "no_project_asset_copy": true,
+    "no_xenia_semantics_promotion": true,
+    "no_runtime_mutation": true,
+    "next_checkpoint": "instrumenter le premier writer EDRAM non nul du draw rectangle PAL, puis joindre sa plage à RB_COPY/XE_SWAP; garder Edge comme oracle de structure et non comme source de pixels native"
+  }
+}

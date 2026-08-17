@@ -1,0 +1,96 @@
+{
+  "schema": "ac6-demo-xenia-edge-run-archive/v1",
+  "cycle": 1735,
+  "read_only": true,
+  "oracle_only": true,
+  "target": {
+    "name": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "endianness": "xenon-big-endian",
+    "title_id": "4E4D87E6",
+    "media_id": "565E01A0"
+  },
+  "archive": {
+    "path": "workspaces/ace-combat-6/xenia-edge-ac6-decomp-20260816-104009.tar.zst",
+    "sha256": "098661057a6d6fc5147d7b0add31c24f2cbe8296b4e22438a293804bf28864d2",
+    "manifest_sha256": "8e414764f8bd5f6cc2c846dfd8ac2051d9be0feef50fa5cb5420d6bbe749f713",
+    "sha256sums_sha256": "7f919dc40e6ad55d9f5e163edb95ed325c22c993574a7e01b983955ce92d4453",
+    "internal_sha256sums": {
+      "status": "pass",
+      "entries": 13558,
+      "ok": 13558,
+      "failed": 0,
+      "missing": 0
+    }
+  },
+  "xenia_edge": {
+    "commit": "15200f6447e6b1f3676e09f0e7c065b3bf57f92d",
+    "gpu": "NVIDIA RTX 500 Ada Generation Laptop GPU",
+    "driver": "595.84",
+    "backend": "vulkan"
+  },
+  "run": {
+    "start": "2026-08-16T10:40:09+02:00",
+    "end": "2026-08-16T10:41:58+02:00",
+    "package_id": "3377D814ABAE45D844E90826823AF6AB5D5F2F2B4E",
+    "log_sha256": "929151b7a9f40f0e36fb01774d7dd04cf371ac43e01ae493f8c4fd7690dcde1c",
+    "log_bytes": 49830385,
+    "log_lines": 479796,
+    "terminal_frame": 4183,
+    "terminal_marker": "Cheap-skate exit!",
+    "vulkan_device_lost": false,
+    "xma_nonzero_error_status": false,
+    "xma_work_loop_exits": 180,
+    "xma_context_ids": "0..31"
+  },
+  "artifacts": {
+    "xex_bytes": 1454080,
+    "hir_files": 12922,
+    "hir_range": ["0x82090000", "0x823767B4"],
+    "late_discovered_or_reemitted_functions": 636,
+    "shader_files": 630,
+    "vertex_shaders": 87,
+    "pixel_shaders": 91,
+    "internal_geometry_shaders": 14,
+    "ucode_binary_files": 178,
+    "ucode_text_files": 178,
+    "spirv_variants": 260,
+    "gpu_trace_files": 0,
+    "gpu_trace_status": "unavailable_in_release_build"
+  },
+  "selected_hir": [
+    {"address": "0x821B0D20", "sha256": "d4136d8473090133d1ca36260f68bd369998f2ac45409945aafc839ebb188409", "byte_evidence": "0x821B0D70 954B0004 stwu r10,4(r11)"},
+    {"address": "0x821B9BC8", "sha256": "d4db00a313b2ffa4c862dc2280418c3b90a6620da10e1713869742f65c7c893c", "byte_evidence": "0x821B9D24 7D2AC12E stwx r9,r10,r24"},
+    {"address": "0x821B9F70", "sha256": "2afbf819a449dd99ea4e67d9dc0153232ba13ab3d8548a00fc5fd29fa2a8cfe3", "byte_evidence": "0x821BA01C 94CA0004 stwu r6,4(r10)"},
+    {"address": "0x82357240", "sha256": "dc767fb868fd61a1f554025c6b7694cec63057ade46f2c459752b823a45e6093", "byte_evidence": "0x82357294 call XMACreateContext; 0x823572A8 call MmGetPhysicalAddress"},
+    {"address": "0x821A7160", "sha256": "9722245fdb83bc9486dccdff441e1b51f94ff4129d0f20edb526dc2b64bbf3fb", "byte_evidence": "module entry named by MANIFEST"}
+  ],
+  "shader_hash_join": [
+    {"demo_microcode_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3", "xenia_file": "shader_C049A8C9E556F129.ucode.bin.vert", "bytes": 96, "xenia_file_sha256": "fcb772a93fe6826c4ddc1ce4abbe746aededfa270ea664e066308ac23a8a390c", "calculated_swap32_sha256": "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3", "status": "exact_calculated_match"},
+    {"demo_microcode_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b", "xenia_file": "shader_0A6D1DD7767FDF27.ucode.bin.vert", "bytes": 108, "xenia_file_sha256": "6e8911a271a8cd7afaa9da6e2eae512116790960819dce77b1a93469369b8a25", "calculated_swap32_sha256": "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b", "status": "exact_calculated_match"},
+    {"demo_microcode_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25", "xenia_file": "shader_2E372EA28CC404B7.ucode.bin.frag", "bytes": 36, "xenia_file_sha256": "f9b2db9e42f6f4e2278a0956c3dafad21d838c028200289d5b33c99b15d0d79c", "calculated_swap32_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25", "status": "exact_calculated_match"},
+    {"demo_microcode_sha256": "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0", "xenia_file": null, "bytes": null, "xenia_file_sha256": null, "calculated_swap32_sha256": null, "status": "not_found_in_178_ucode_binaries"}
+  ],
+  "renderer_observed": {
+    "swapchain": {"width": 1280, "height": 720, "format": 44, "color_space": 0},
+    "frame0_edram": {"color": "640x1024", "msaa": "4x", "color_format": 0, "color_base": 0, "depth_format": 1, "depth_base": 720},
+    "frame0_texture": {"width": 1280, "height": 720, "format": "k_8_8_8_8", "pitch": 1280, "size": "0x00398000", "guest_base": "0x1A9A0000"},
+    "frame4183_examples": ["1280x720 k_8_8_8_8", "640x360 k_16_16_FLOAT", "640x360 k_32_FLOAT", "320x360 k_8_8_8_8"],
+    "classification": "xenia-generic",
+    "native_pm4_join": "not_established"
+  },
+  "classification": {
+    "demo_observed": ["exact PAL XEX identity", "run metadata", "HIR PPC byte text", "log terminal and counters"],
+    "xenia_generic": ["HIR/IR semantics", "shader IDs and SPIR-V/pipelines", "EDRAM/texture log", "POSIX debug/trace limitations"],
+    "demo_qualified": [],
+    "unknown": ["dynamic HIR coverage", "Edge writer for 0x1274A000", "586168ec shader container", "nonzero EDRAM/pixels", "XMA PCM parity", "mission result"]
+  },
+  "guard": {
+    "no_retail_merge": true,
+    "no_generated_runtime_mutation": true,
+    "no_asset_copy": true,
+    "no_xenia_semantics_promotion": true,
+    "next_checkpoint": "Debug/Checked Edge GPU trace bounded to first frame, then native first nonzero EDRAM writer/consumer"
+  }
+}

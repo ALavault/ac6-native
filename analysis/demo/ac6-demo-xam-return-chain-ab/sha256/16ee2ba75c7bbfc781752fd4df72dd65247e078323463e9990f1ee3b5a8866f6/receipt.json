@@ -1,0 +1,136 @@
+{
+  "boundary": "xam_return_chain",
+  "config": {
+    "audio_driver": "dummy",
+    "backend": "vulkan",
+    "max_ticks": 5600,
+    "routes": [
+      "neutral",
+      "buttons16"
+    ],
+    "tick": 252,
+    "xma": "qualified runtime flags",
+    "xvfb_lifecycle": "single owned supervisor reused by both fresh probes"
+  },
+  "inputs": {
+    "binary": {
+      "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+      "sha256": "a89e6588d77d85737f3568d0501f4c6937d4119a47148f2a76f87ca41e18d391"
+    },
+    "codegen_manifest": {
+      "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/codegen/manifest.json",
+      "sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa"
+    },
+    "mapper": {
+      "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/tools/map_xam_return_chain.py",
+      "sha256": "92a4835d07d8f4c79d435a1bce1fe55e55aec3896ed795a995815dfcb88c43a3"
+    }
+  },
+  "policy": {
+    "content_addressed": true,
+    "current_file_written": false,
+    "fail_closed": true,
+    "frontend_claim_written": false,
+    "quotas_and_hashes": true,
+    "transactional": true
+  },
+  "reason": "neutral mapper refused the trace",
+  "routes": {
+    "buttons16": {
+      "buttons16.map.json": {
+        "bytes": 0,
+        "path": null,
+        "quota_bytes": 16777216,
+        "sha256": null,
+        "status": "missing"
+      },
+      "buttons16.report.json": {
+        "bytes": 968381,
+        "path": "artifacts/buttons16/buttons16.report.json",
+        "quota_bytes": 33554432,
+        "sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+        "status": "present"
+      },
+      "buttons16.stderr.log": {
+        "bytes": 12276,
+        "path": "artifacts/buttons16/buttons16.stderr.log",
+        "quota_bytes": 33554432,
+        "sha256": "db8df87a3252698256011e327cd4cd6ab3463dd8bc23b7a17d3ff962d5d6162e",
+        "status": "present"
+      },
+      "buttons16.stdout.log": {
+        "bytes": 655,
+        "path": "artifacts/buttons16/buttons16.stdout.log",
+        "quota_bytes": 33554432,
+        "sha256": "d3bc95a625757d2fa4a60b07c318939049fc0af93138e24701f8b375ee9aa4ec",
+        "status": "present"
+      },
+      "buttons16.trace": {
+        "bytes": 58495417,
+        "path": "artifacts/buttons16/buttons16.trace",
+        "quota_bytes": 134217728,
+        "sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+        "status": "present"
+      },
+      "return_code": {
+        "bytes": 2,
+        "path": "artifacts/buttons16/return_code",
+        "quota_bytes": 32,
+        "sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+        "status": "present"
+      }
+    },
+    "neutral": {
+      "neutral.map.json": {
+        "bytes": 0,
+        "path": null,
+        "quota_bytes": 16777216,
+        "sha256": null,
+        "status": "missing"
+      },
+      "neutral.report.json": {
+        "bytes": 968381,
+        "path": "artifacts/neutral/neutral.report.json",
+        "quota_bytes": 33554432,
+        "sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+        "status": "present"
+      },
+      "neutral.stderr.log": {
+        "bytes": 12276,
+        "path": "artifacts/neutral/neutral.stderr.log",
+        "quota_bytes": 33554432,
+        "sha256": "fc01b1c522d12dc4b3275fdff8a7a2a5d59b9114cbb87c5e9ea9a958e8f74636",
+        "status": "present"
+      },
+      "neutral.stdout.log": {
+        "bytes": 651,
+        "path": "artifacts/neutral/neutral.stdout.log",
+        "quota_bytes": 33554432,
+        "sha256": "5504bef04bf4a86baedd95d8fc694e4286483aec4f44454bdab3f359ab6c6acd",
+        "status": "present"
+      },
+      "neutral.trace": {
+        "bytes": 58495408,
+        "path": "artifacts/neutral/neutral.trace",
+        "quota_bytes": 134217728,
+        "sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+        "status": "present"
+      },
+      "return_code": {
+        "bytes": 2,
+        "path": "artifacts/neutral/return_code",
+        "quota_bytes": 32,
+        "sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+        "status": "present"
+      }
+    }
+  },
+  "schema": "ac6-demo-xam-return-chain-ab/v1",
+  "status": "failure",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  }
+}

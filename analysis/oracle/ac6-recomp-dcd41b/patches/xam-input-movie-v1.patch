@@ -1,0 +1,982 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 94ef9d2..b0646d8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,6 +20,8 @@ set(AC6RECOMP_SOURCES
+     src/main.cpp
+     src/ac6_controller_input_replay.cpp
+     src/ac6_controller_input_replay_runtime.cpp
++    src/ac6_xam_input_movie.cpp
++    src/ac6_xam_input_movie_runtime.cpp
+     src/ac6_decimal_parse.cpp
+     src/ac6_oracle_probe.cpp
+     src/ac6_oracle_route_probe.cpp
+@@ -81,4 +83,15 @@ if(AC6_BUILD_TESTING)
+     target_link_libraries(ac6_controller_input_replay_test PRIVATE rex::core)
+     add_test(NAME ac6_controller_input_replay_test
+              COMMAND ac6_controller_input_replay_test)
++    add_executable(ac6_xam_input_movie_test
++        tests/ac6_xam_input_movie_test.cpp
++        src/ac6_xam_input_movie.cpp
++    )
++    target_include_directories(ac6_xam_input_movie_test PRIVATE
++        src
++        thirdparty/rexglue-sdk
++        thirdparty/rexglue-sdk/include
++    )
++    target_link_libraries(ac6_xam_input_movie_test PRIVATE rex::core)
++    add_test(NAME ac6_xam_input_movie_test COMMAND ac6_xam_input_movie_test)
+ endif()
+diff --git a/src/ac6_xam_input_movie.cpp b/src/ac6_xam_input_movie.cpp
+new file mode 100644
+index 0000000..c57fd61
+--- /dev/null
++++ b/src/ac6_xam_input_movie.cpp
+@@ -0,0 +1,421 @@
++#include "ac6_xam_input_movie.h"
++
++#include <algorithm>
++#include <regex>
++#include <sstream>
++#include <utility>
++
++#include <rex/crypto/sha256.h>
++#if defined(__clang__)
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wdeprecated-literal-operator"
++#endif
++#include "../thirdparty/rexglue-sdk/thirdparty/tomlplusplus/vendor/json.hpp"
++#if defined(__clang__)
++#pragma clang diagnostic pop
++#endif
++
++namespace ac6::oracle::xam_movie {
++namespace {
++
++using Json = nlohmann::json;
++constexpr std::string_view kSchema = "ac6.xam-input-movie.v1";
++constexpr std::string_view kRuntimeCommit =
++    "dcd41b7457fcac8242f8ef40de83d1719390d5af";
++constexpr std::string_view kXexSha =
++    "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde";
++constexpr std::string_view kDataTblSha =
++    "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5";
++constexpr std::size_t kMaxLineBytes = 1024u * 1024u;
++const std::regex kSha256{"[0-9a-f]{64}"};
++
++bool SetError(std::string value, std::string& error) {
++  error = std::move(value);
++  return false;
++}
++
++bool ExactKeys(const Json& value,
++               std::initializer_list<std::string_view> expected) {
++  if (!value.is_object() || value.size() != expected.size()) return false;
++  return std::ranges::all_of(expected, [&](std::string_view key) {
++    return value.contains(std::string(key));
++  });
++}
++
++bool Sha(const Json& value) {
++  return value.is_string() &&
++         std::regex_match(value.get_ref<const std::string&>(), kSha256);
++}
++
++bool Uint(const Json& value, uint64_t maximum, uint64_t& output) {
++  if (value.is_number_unsigned()) {
++    output = value.get<uint64_t>();
++  } else if (value.is_number_integer()) {
++    const int64_t signed_value = value.get<int64_t>();
++    if (signed_value < 0) return false;
++    output = static_cast<uint64_t>(signed_value);
++  } else {
++    return false;
++  }
++  return output <= maximum;
++}
++
++std::string Canonical(const Json& value) {
++  return value.dump(-1, ' ', true, Json::error_handler_t::strict) + '\n';
++}
++
++bool ParseCanonical(std::string_view line, Json& output, std::string& error,
++                    std::string_view where) {
++  if (line.empty() || line.size() > kMaxLineBytes || line.back() != '\n' ||
++      line.find('\r') != std::string_view::npos) {
++    return SetError(std::string(where) + " framing", error);
++  }
++  output = Json::parse(line.begin(), line.end() - 1, nullptr, false);
++  if (output.is_discarded() || !output.is_object() || Canonical(output) != line) {
++    return SetError(std::string(where) + " canonical JSON", error);
++  }
++  return true;
++}
++
++bool ValidateRoot(const Json& root, std::string_view label) {
++  return ExactKeys(root, {"label", "tree_sha256", "isolated"}) &&
++         root["label"] == label && Sha(root["tree_sha256"]) &&
++         root["isolated"] == true;
++}
++
++bool ValidateHeader(const Json& header, std::string& error) {
++  if (!ExactKeys(header, {"kind", "schema", "lane", "initial_state",
++                          "target", "content", "runtime", "configuration",
++                          "profile", "roots", "route", "interventions"}) ||
++      header["kind"] != "header" || header["schema"] != kSchema ||
++      header["lane"] != "bridge" ||
++      header["initial_state"] != "FROM_XEX_LAUNCH") {
++    return SetError("header identity or initial state", error);
++  }
++  const Json& target = header["target"];
++  if (!ExactKeys(target, {"target_id", "module", "xex_sha256",
++                           "data_tbl_sha256", "base_address"}) ||
++      target["target_id"] != "ac6-pal-default-xex" ||
++      target["module"] != "default.xex" || target["xex_sha256"] != kXexSha ||
++      target["data_tbl_sha256"] != kDataTblSha ||
++      target["base_address"] != "82000000") {
++    return SetError("target identity", error);
++  }
++  const Json& runtime = header["runtime"];
++  if (!ExactKeys(runtime, {"commit", "diff_sha256", "binary_sha256"}) ||
++      runtime["commit"] != kRuntimeCommit || !Sha(runtime["diff_sha256"]) ||
++      !Sha(runtime["binary_sha256"])) {
++    return SetError("runtime identity", error);
++  }
++  const Json& content = header["content"];
++  if (!ExactKeys(content, {"manifest_sha256"}) ||
++      !Sha(content["manifest_sha256"])) {
++    return SetError("content identity", error);
++  }
++  const Json& configuration = header["configuration"];
++  if (!ExactKeys(configuration,
++                 {"runtime_sha256", "behavior_sha256"}) ||
++      !Sha(configuration["runtime_sha256"]) ||
++      !Sha(configuration["behavior_sha256"])) {
++    return SetError("configuration identity", error);
++  }
++  const Json& profile = header["profile"];
++  if (!ExactKeys(profile, {"id", "tree_sha256"}) ||
++      !profile["id"].is_string() || profile["id"].get<std::string>().empty() ||
++      !Sha(profile["tree_sha256"])) {
++    return SetError("profile identity", error);
++  }
++  const Json& roots = header["roots"];
++  if (!ExactKeys(roots, {"storage", "content", "cache"}) ||
++      !ValidateRoot(roots["storage"], "storage") ||
++      !ValidateRoot(roots["content"], "content") ||
++      !ValidateRoot(roots["cache"], "cache")) {
++    return SetError("isolated roots identity", error);
++  }
++  const Json& route = header["route"];
++  if (!ExactKeys(route, {"recipe", "sha256"}) ||
++      route["recipe"] != "scripts/ac6-oracle-mission01-controlled-sortie-delayed.steps" ||
++      !Sha(route["sha256"]) || !header["interventions"].is_array()) {
++    return SetError("route or interventions identity", error);
++  }
++  return true;
++}
++
++std::string Hex(const StateBytes& state) {
++  static constexpr char digits[] = "0123456789abcdef";
++  std::string output(kStateBytes * 2u, '0');
++  for (std::size_t index = 0; index < state.size(); ++index) {
++    const uint8_t value = std::to_integer<uint8_t>(state[index]);
++    output[index * 2u] = digits[value >> 4u];
++    output[index * 2u + 1u] = digits[value & 15u];
++  }
++  return output;
++}
++
++bool State(const Json& value, StateBytes& state) {
++  if (!value.is_string()) return false;
++  const std::string& text = value.get_ref<const std::string&>();
++  if (text.size() != kStateBytes * 2u) return false;
++  auto nibble = [](char c) -> int {
++    if (c >= '0' && c <= '9') return c - '0';
++    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
++    return -1;
++  };
++  for (std::size_t index = 0; index < state.size(); ++index) {
++    const int high = nibble(text[index * 2u]);
++    const int low = nibble(text[index * 2u + 1u]);
++    if (high < 0 || low < 0) return false;
++    state[index] = std::byte((high << 4) | low);
++  }
++  return true;
++}
++
++bool Split(std::string_view bytes, std::vector<std::string_view>& lines,
++           std::string& error) {
++  if (bytes.empty() || bytes.size() > kMaxMovieBytes || bytes.back() != '\n' ||
++      bytes.find('\r') != std::string_view::npos) {
++    return SetError("movie framing or byte bound", error);
++  }
++  for (std::size_t start = 0; start < bytes.size();) {
++    const std::size_t end = bytes.find('\n', start);
++    if (end == std::string_view::npos || end - start + 1u > kMaxLineBytes ||
++        lines.size() >= kMaxEvents + 2u) {
++      return SetError("movie line or event bound", error);
++    }
++    lines.push_back(bytes.substr(start, end - start + 1u));
++    start = end + 1u;
++  }
++  return lines.size() >= 2u;
++}
++
++bool ParseEvent(const Json& event, uint64_t expected, Observation& output,
++                std::string& error) {
++  if (!ExactKeys(event, {"kind", "ordinal", "guest_tick", "guest_thread",
++                          "caller_lr", "user", "flags", "state_ptr_null",
++                          "result", "state16"}) ||
++      event["kind"] != "XamInputGetState") {
++    return SetError("event type or shape mismatch", error);
++  }
++  uint64_t ordinal = 0, guest_tick = 0, guest_thread = 0, caller_lr = 0;
++  uint64_t user = 0, flags = 0, result = 0;
++  if (!Uint(event["ordinal"], kMaxEvents, ordinal) || ordinal != expected ||
++      !Uint(event["guest_tick"], UINT64_MAX, guest_tick) ||
++      !Uint(event["guest_thread"], UINT32_MAX, guest_thread) ||
++      !Uint(event["caller_lr"], UINT32_MAX, caller_lr) ||
++      !Uint(event["user"], UINT32_MAX, user) ||
++      !Uint(event["flags"], UINT32_MAX, flags) ||
++      !event["state_ptr_null"].is_boolean() ||
++      !Uint(event["result"], UINT32_MAX, result)) {
++    return SetError("event range or ordinal mismatch", error);
++  }
++  const bool pointer_null = event["state_ptr_null"].get<bool>();
++  const bool has_state = !event["state16"].is_null();
++  StateBytes state{};
++  if ((has_state && (!State(event["state16"], state) || pointer_null || result != 0)) ||
++      (!has_state && !event["state16"].is_null())) {
++    return SetError("event state/result/pointer mismatch", error);
++  }
++  output = {ordinal, guest_tick, static_cast<uint32_t>(guest_thread),
++            static_cast<uint32_t>(caller_lr), static_cast<uint32_t>(user),
++            static_cast<uint32_t>(flags), pointer_null,
++            static_cast<uint32_t>(result), has_state, state};
++  return true;
++}
++
++std::string Normalized(const Observation& observation) {
++  return Canonical(Json{{"kind", "XamInputGetState"},
++                        {"ordinal", observation.ordinal},
++                        {"caller_lr", observation.caller_lr},
++                        {"user", observation.user},
++                        {"flags", observation.flags},
++                        {"state_ptr_null", observation.state_ptr_null},
++                        {"result", observation.result},
++                        {"state16", observation.has_state
++                                        ? Json(Hex(observation.state))
++                                        : Json(nullptr)}});
++}
++
++}  // namespace
++
++void Service::Reset() {
++  mode_ = Mode::kDisabled;
++  failed_ = false;
++  failure_.clear();
++  header_.clear();
++  body_.clear();
++  normalized_.clear();
++  expected_normalized_sha256_.clear();
++  replay_events_.clear();
++  replay_cursor_ = 0;
++  ordinal_ = 0;
++}
++
++bool Service::Fail(std::string message, std::string& error) {
++  failed_ = true;
++  failure_ = std::move(message);
++  error = failure_;
++  return false;
++}
++
++bool Service::BeginRecord(std::string_view header, std::string& error) {
++  Reset();
++  Json parsed;
++  if (!ParseCanonical(header, parsed, error, "header") ||
++      !ValidateHeader(parsed, error)) {
++    return false;
++  }
++  header_.assign(header);
++  body_ = header_;
++  mode_ = Mode::kRecord;
++  return true;
++}
++
++bool Service::BeginReplay(std::string_view movie,
++                          std::string_view expected_header,
++                          std::string& error) {
++  Reset();
++  Json expected;
++  if (!ParseCanonical(expected_header, expected, error, "expected header") ||
++      !ValidateHeader(expected, error)) {
++    return false;
++  }
++  std::vector<std::string_view> lines;
++  if (!Split(movie, lines, error)) return false;
++  Json actual;
++  if (!ParseCanonical(lines.front(), actual, error, "movie header") ||
++      !ValidateHeader(actual, error) || actual != expected) {
++    return SetError("movie header mismatch", error);
++  }
++  Json footer;
++  if (!ParseCanonical(lines.back(), footer, error, "footer") ||
++      !ExactKeys(footer, {"kind", "event_count", "payload_sha256",
++                          "normalized_sha256"}) ||
++      footer["kind"] != "footer" || !Sha(footer["payload_sha256"])) {
++    return SetError("footer shape", error);
++  }
++  uint64_t count = 0;
++  if (!Uint(footer["event_count"], kMaxEvents, count) ||
++      count != lines.size() - 2u || count == 0) {
++    return SetError("trace-length mismatch", error);
++  }
++  std::string digest_input(movie.substr(0, movie.size() - lines.back().size()));
++  digest_input += Canonical(Json{{"kind", "footer"}, {"event_count", count}});
++  if (footer["payload_sha256"] != rex::crypto::sha256(digest_input)) {
++    return SetError("payload digest mismatch", error);
++  }
++  if (!Sha(footer["normalized_sha256"])) {
++    return SetError("normalized digest shape", error);
++  }
++  replay_events_.reserve(count);
++  for (std::size_t index = 1; index + 1 < lines.size(); ++index) {
++    Json event;
++    Observation ignored;
++    if (!ParseCanonical(lines[index], event, error, "event") ||
++        !ParseEvent(event, index - 1u, ignored, error)) {
++      return false;
++    }
++    normalized_ += Normalized(ignored);
++    replay_events_.emplace_back(lines[index]);
++  }
++  expected_normalized_sha256_ = footer["normalized_sha256"].get<std::string>();
++  if (rex::crypto::sha256(normalized_) != expected_normalized_sha256_) {
++    return SetError("normalized digest mismatch", error);
++  }
++  normalized_.clear();
++  header_.assign(expected_header);
++  mode_ = Mode::kReplay;
++  return true;
++}
++
++bool Service::Record(const Observation& observation, std::string& error) {
++  if (mode_ != Mode::kRecord || failed_) return Fail("record mode", error);
++  if (observation.ordinal != ordinal_ || ordinal_ >= kMaxEvents ||
++      (observation.has_state &&
++       (observation.state_ptr_null || observation.result != 0))) {
++    return Fail("record event invariant", error);
++  }
++  Json event{{"kind", "XamInputGetState"},
++             {"ordinal", ordinal_},
++             {"guest_tick", observation.guest_tick},
++             {"guest_thread", observation.guest_thread},
++             {"caller_lr", observation.caller_lr},
++             {"user", observation.user},
++             {"flags", observation.flags},
++             {"state_ptr_null", observation.state_ptr_null},
++             {"result", observation.result},
++             {"state16", observation.has_state ? Json(Hex(observation.state))
++                                                : Json(nullptr)}};
++  const std::string line = Canonical(event);
++  if (body_.size() + line.size() > kMaxMovieBytes) {
++    return Fail("movie byte bound", error);
++  }
++  body_ += line;
++  normalized_ += Normalized(observation);
++  ++ordinal_;
++  return true;
++}
++
++bool Service::Replay(const Guards& guards, ReplayValue& output,
++                     std::string& error) {
++  if (mode_ != Mode::kReplay || failed_) return Fail("replay mode", error);
++  if (replay_cursor_ >= replay_events_.size()) {
++    return Fail("trace-length mismatch: unexpected XamInputGetState", error);
++  }
++  Json event;
++  Observation observation;
++  if (!ParseCanonical(replay_events_[replay_cursor_], event, error, "event") ||
++      !ParseEvent(event, ordinal_, observation, error)) {
++    return Fail(error, error);
++  }
++  auto mismatch = [&](std::string_view field) {
++    return Fail("strict replay mismatch: " + std::string(field) +
++                    " at ordinal " + std::to_string(ordinal_),
++                error);
++  };
++  if (observation.caller_lr != guards.caller_lr) return mismatch("caller_lr");
++  if (observation.user != guards.user) return mismatch("user");
++  if (observation.flags != guards.flags) return mismatch("flags");
++  if (observation.state_ptr_null != guards.state_ptr_null) {
++    return mismatch("state_ptr_null");
++  }
++  output = {observation.result, observation.has_state, observation.state};
++  Observation actual = observation;
++  actual.caller_lr = guards.caller_lr;
++  actual.user = guards.user;
++  actual.flags = guards.flags;
++  actual.state_ptr_null = guards.state_ptr_null;
++  normalized_ += Normalized(actual);
++  ++replay_cursor_;
++  ++ordinal_;
++  return true;
++}
++
++bool Service::Finalize(std::string& sealed_movie, std::string& error) {
++  sealed_movie.clear();
++  if (failed_) return SetError(failure_, error);
++  if (mode_ == Mode::kDisabled) return true;
++  if (mode_ == Mode::kReplay) {
++    if (replay_cursor_ != replay_events_.size()) {
++      return Fail("trace-length mismatch: unconsumed events", error);
++    }
++    if (rex::crypto::sha256(normalized_) != expected_normalized_sha256_) {
++      return Fail("normalized XAM event stream mismatch", error);
++    }
++    Reset();
++    return true;
++  }
++  if (ordinal_ == 0) return Fail("empty movie", error);
++  Json footer_payload{{"kind", "footer"}, {"event_count", ordinal_}};
++  const std::string digest_input = body_ + Canonical(footer_payload);
++  footer_payload["payload_sha256"] = rex::crypto::sha256(digest_input);
++  footer_payload["normalized_sha256"] = rex::crypto::sha256(normalized_);
++  sealed_movie = body_ + Canonical(footer_payload);
++  if (sealed_movie.size() > kMaxMovieBytes) {
++    sealed_movie.clear();
++    return Fail("sealed movie byte bound", error);
++  }
++  Reset();
++  return true;
++}
++
++}  // namespace ac6::oracle::xam_movie
+diff --git a/src/ac6_xam_input_movie.h b/src/ac6_xam_input_movie.h
+new file mode 100644
+index 0000000..7d1f239
+--- /dev/null
++++ b/src/ac6_xam_input_movie.h
+@@ -0,0 +1,77 @@
++#pragma once
++
++#include <array>
++#include <cstddef>
++#include <cstdint>
++#include <string>
++#include <string_view>
++#include <vector>
++
++namespace ac6::oracle::xam_movie {
++
++constexpr std::size_t kStateBytes = 16;
++constexpr std::size_t kMaxMovieBytes = 128u * 1024u * 1024u;
++constexpr std::size_t kMaxEvents = 1'000'000u;
++
++using StateBytes = std::array<std::byte, kStateBytes>;
++
++struct Observation {
++  uint64_t ordinal{0};
++  uint64_t guest_tick{0};
++  uint32_t guest_thread{0};
++  uint32_t caller_lr{0};
++  uint32_t user{0};
++  uint32_t flags{0};
++  bool state_ptr_null{true};
++  uint32_t result{0};
++  bool has_state{false};
++  StateBytes state{};
++};
++
++struct Guards {
++  uint32_t caller_lr{0};
++  uint32_t user{0};
++  uint32_t flags{0};
++  bool state_ptr_null{true};
++};
++
++struct ReplayValue {
++  uint32_t result{0};
++  bool has_state{false};
++  StateBytes state{};
++};
++
++enum class Mode { kDisabled, kRecord, kReplay };
++
++class Service {
++ public:
++  bool BeginRecord(std::string_view header, std::string& error);
++  bool BeginReplay(std::string_view movie, std::string_view expected_header,
++                   std::string& error);
++  bool Record(const Observation& observation, std::string& error);
++  bool Replay(const Guards& guards, ReplayValue& output, std::string& error);
++  bool Finalize(std::string& sealed_movie, std::string& error);
++
++  [[nodiscard]] Mode mode() const { return mode_; }
++  [[nodiscard]] uint64_t ordinal() const { return ordinal_; }
++  [[nodiscard]] bool replay_consumed() const {
++    return mode_ == Mode::kReplay && replay_cursor_ == replay_events_.size();
++  }
++
++ private:
++  bool Fail(std::string message, std::string& error);
++  void Reset();
++
++  Mode mode_{Mode::kDisabled};
++  bool failed_{false};
++  std::string failure_;
++  std::string header_;
++  std::string body_;
++  std::string normalized_;
++  std::string expected_normalized_sha256_;
++  std::vector<std::string> replay_events_;
++  std::size_t replay_cursor_{0};
++  uint64_t ordinal_{0};
++};
++
++}  // namespace ac6::oracle::xam_movie
+diff --git a/src/ac6_xam_input_movie_runtime.cpp b/src/ac6_xam_input_movie_runtime.cpp
+new file mode 100644
+index 0000000..ac93feb
+--- /dev/null
++++ b/src/ac6_xam_input_movie_runtime.cpp
+@@ -0,0 +1,234 @@
++#include <rex/ac6_xam_input_movie.h>
++
++#include <atomic>
++#include <filesystem>
++#include <fstream>
++#include <iterator>
++#include <mutex>
++#include <string>
++#include <string_view>
++
++#include <native/chrono/clock.h>
++#include <rex/cvar.h>
++#include <rex/logging.h>
++#include <rex/system/thread_state.h>
++
++#include "ac6_xam_input_movie.h"
++
++REXCVAR_DEFINE_STRING(ac6_xam_movie_header_path, "", "AC6/Oracle",
++                      "Canonical ac6.xam-input-movie.v1 header JSONL");
++REXCVAR_DEFINE_STRING(ac6_xam_movie_record_path, "", "AC6/Oracle",
++                      "Exclusive XAM input movie output");
++REXCVAR_DEFINE_STRING(ac6_xam_movie_replay_path, "", "AC6/Oracle",
++                      "Strict XAM input movie replay input");
++
++namespace ac6::oracle {
++namespace {
++
++using xam_movie::Mode;
++using xam_movie::Observation;
++using xam_movie::ReplayValue;
++using xam_movie::Service;
++
++constexpr std::size_t kMaxHeaderBytes = 1024u * 1024u;
++std::mutex g_mutex;
++Service g_service;
++std::filesystem::path g_record_path;
++bool g_initialized = false;
++std::atomic<uint64_t> g_temp_sequence{0};
++
++bool ReadBounded(const std::filesystem::path& path, std::size_t maximum,
++                 std::string& output, std::string& error) {
++  std::error_code status_error;
++  const uintmax_t size = std::filesystem::file_size(path, status_error);
++  if (status_error || size == 0 || size > maximum ||
++      !std::filesystem::is_regular_file(path)) {
++    error = "input absent, non-regular, empty, or outside byte bound";
++    return false;
++  }
++  std::ifstream input(path, std::ios::binary);
++  output.assign(std::istreambuf_iterator<char>(input),
++                std::istreambuf_iterator<char>());
++  input.peek();
++  if (!input.eof() || output.size() != size) {
++    output.clear();
++    error = "input changed or failed while reading";
++    return false;
++  }
++  return true;
++}
++
++bool PublishNew(const std::filesystem::path& destination,
++                std::string_view payload, std::string& error) {
++  const std::filesystem::path parent = destination.parent_path().empty()
++                                           ? std::filesystem::current_path()
++                                           : destination.parent_path();
++  if (destination.filename().empty() || !std::filesystem::is_directory(parent) ||
++      std::filesystem::exists(destination)) {
++    error = "movie output identity or parent";
++    return false;
++  }
++  const auto temporary = parent / ("." + destination.filename().string() +
++      ".tmp-" + std::to_string(g_temp_sequence.fetch_add(1)));
++  {
++    std::ofstream output(temporary, std::ios::binary | std::ios::out |
++                                       std::ios::noreplace);
++    if (!output) {
++      error = "exclusive temporary movie creation";
++      return false;
++    }
++    output.write(payload.data(), static_cast<std::streamsize>(payload.size()));
++    output.flush();
++    if (!output) {
++      std::error_code ignored;
++      std::filesystem::remove(temporary, ignored);
++      error = "temporary movie write";
++      return false;
++    }
++  }
++  std::error_code link_error;
++  std::filesystem::create_hard_link(temporary, destination, link_error);
++  std::error_code remove_error;
++  std::filesystem::remove(temporary, remove_error);
++  if (link_error || remove_error) {
++    if (!link_error) {
++      std::error_code ignored;
++      std::filesystem::remove(destination, ignored);
++    }
++    error = "atomic movie publication";
++    return false;
++  }
++  return true;
++}
++
++struct Telemetry {
++  uint64_t tick;
++  uint32_t thread;
++  uint32_t lr;
++};
++
++Telemetry CurrentTelemetry() {
++  rex::runtime::ThreadState* thread = rex::runtime::ThreadState::Get();
++  if (!thread || !thread->context()) {
++    REX_FATAL("AC6 XAM movie called without a guest thread");
++  }
++  return {rex::chrono::Clock::PeekGuestTickCount(), thread->thread_id(),
++          static_cast<uint32_t>(thread->context()->lr)};
++}
++
++[[noreturn]] void Fatal(std::string_view operation, const std::string& detail) {
++  REX_FATAL("AC6 XAM input movie {} failed: {}", operation, detail);
++}
++
++}  // namespace
++
++bool InitializeXamInputMovie() {
++  std::lock_guard<std::mutex> lock(g_mutex);
++  if (g_initialized) return false;
++  g_initialized = true;
++  const std::filesystem::path header = REXCVAR_GET(ac6_xam_movie_header_path);
++  const std::filesystem::path record = REXCVAR_GET(ac6_xam_movie_record_path);
++  const std::filesystem::path replay = REXCVAR_GET(ac6_xam_movie_replay_path);
++  if (record.empty() && replay.empty()) return header.empty();
++  if (header.empty() || (!record.empty() && !replay.empty()) ||
++      !rex::cvar::GetFlagByName("ac6_oracle_controller_record_path").empty() ||
++      !rex::cvar::GetFlagByName("ac6_oracle_controller_replay_path").empty() ||
++      !rex::cvar::GetFlagByName("ac6_oracle_trace_v2_input_path").empty()) {
++    REXLOG_ERROR("AC6 XAM movie requires one exclusive input mode");
++    return false;
++  }
++  std::string header_bytes;
++  std::string error;
++  if (!ReadBounded(header, kMaxHeaderBytes, header_bytes, error)) {
++    REXLOG_ERROR("AC6 XAM movie header: {}", error);
++    return false;
++  }
++  if (!record.empty()) {
++    if (record == header || std::filesystem::exists(record) ||
++        !g_service.BeginRecord(header_bytes, error)) {
++      REXLOG_ERROR("AC6 XAM movie record initialization: {}", error);
++      return false;
++    }
++    g_record_path = record;
++    REXLOG_INFO("AC6 XAM input movie record armed FROM_XEX_LAUNCH");
++    return true;
++  }
++  std::string movie;
++  if (replay == header ||
++      !ReadBounded(replay, xam_movie::kMaxMovieBytes, movie, error) ||
++      !g_service.BeginReplay(movie, header_bytes, error)) {
++    REXLOG_ERROR("AC6 XAM movie replay initialization: {}", error);
++    return false;
++  }
++  REXLOG_INFO("AC6 XAM input movie strict replay armed FROM_XEX_LAUNCH; host HID bypassed");
++  return true;
++}
++
++bool FinalizeXamInputMovie() {
++  std::lock_guard<std::mutex> lock(g_mutex);
++  if (!g_initialized) return true;
++  const Mode mode = g_service.mode();
++  const uint64_t count = g_service.ordinal();
++  std::string sealed;
++  std::string error;
++  if (!g_service.Finalize(sealed, error) ||
++      (mode == Mode::kRecord && !PublishNew(g_record_path, sealed, error))) {
++    REXLOG_ERROR("AC6 XAM movie finalization: {}", error);
++    return false;
++  }
++  if (mode != Mode::kDisabled) {
++    REXLOG_INFO("AC6 XAM input movie finalized events={}", count);
++  }
++  g_record_path.clear();
++  g_initialized = false;
++  return true;
++}
++
++XamInputMovieAction BeginXamInputMoviePoll(
++    uint32_t user, uint32_t flags, uint32_t state_ptr, uint32_t& result,
++    XamInputMovieState& state, bool& has_state, XamInputMovieRecord& record) {
++  record = {};
++  g_mutex.lock();
++  const Mode mode = g_service.mode();
++  if (mode == Mode::kDisabled) {
++    g_mutex.unlock();
++    return XamInputMovieAction::kPhysical;
++  }
++  const Telemetry telemetry = CurrentTelemetry();
++  if (mode == Mode::kReplay) {
++    ReplayValue replay;
++    std::string error;
++    const bool accepted = g_service.Replay(
++        {telemetry.lr, user, flags, state_ptr == 0}, replay, error);
++    if (accepted) {
++      result = replay.result;
++      has_state = replay.has_state;
++      state.bytes = replay.state;
++      if (g_service.replay_consumed()) {
++        REXLOG_INFO("AC6 XAM input movie strict replay consumed all events");
++      }
++    }
++    g_mutex.unlock();
++    if (!accepted) Fatal("poll", error);
++    return XamInputMovieAction::kReplay;
++  }
++  record = {telemetry.tick, telemetry.thread, telemetry.lr, user, flags,
++            state_ptr == 0, true};
++  return XamInputMovieAction::kPhysical;
++}
++
++void CompleteXamInputMoviePoll(XamInputMovieRecord& record, uint32_t result,
++                               const XamInputMovieState* state) {
++  if (!record.active) return;
++  Observation observation{
++      g_service.ordinal(), record.guest_tick, record.guest_thread,
++      record.caller_lr, record.user, record.flags, record.state_ptr_null,
++      result, state != nullptr, state ? state->bytes : xam_movie::StateBytes{}};
++  std::string error;
++  const bool accepted = g_service.Record(observation, error);
++  record.active = false;
++  g_mutex.unlock();
++  if (!accepted) Fatal("record poll", error);
++}
++
++}  // namespace ac6::oracle
+diff --git a/src/ac6recomp_app.h b/src/ac6recomp_app.h
+index dfe7bae..d8a2ceb 100644
+--- a/src/ac6recomp_app.h
++++ b/src/ac6recomp_app.h
+@@ -4,6 +4,7 @@
+ 
+ #include <rex/rex_app.h>
+ #include <rex/ac6_controller_input_replay.h>
++#include <rex/ac6_xam_input_movie.h>
+ #include <rex/logging.h>
+ 
+ #include "ac6_native_graphics_overlay.h"
+@@ -20,12 +21,18 @@ class Ac6recompApp : public rex::ReXApp {
+ 
+  protected:
+   void OnPostSetup() override {
++    if (!ac6::oracle::InitializeXamInputMovie()) {
++      REX_FATAL("AC6 XAM input movie initialization failed before guest launch");
++    }
+     if (!ac6::oracle::InitializeControllerInputReplay()) {
+       REX_FATAL("AC6 controller replay initialization failed before guest launch");
+     }
+   }
+ 
+   void OnPostGuestShutdown() override {
++    if (!ac6::oracle::FinalizeXamInputMovie()) {
++      REX_FATAL("AC6 XAM input movie did not finalize cleanly");
++    }
+     if (!ac6::oracle::FinalizeControllerInputReplay()) {
+       REX_FATAL("AC6 controller replay did not finalize cleanly");
+     }
+diff --git a/tests/ac6_xam_input_movie_test.cpp b/tests/ac6_xam_input_movie_test.cpp
+new file mode 100644
+index 0000000..e0871b1
+--- /dev/null
++++ b/tests/ac6_xam_input_movie_test.cpp
+@@ -0,0 +1,70 @@
++#include "ac6_xam_input_movie.h"
++
++#include <cassert>
++#include <cstddef>
++#include <string>
++
++namespace {
++
++std::string Header() {
++  return R"json({"configuration":{"behavior_sha256":"7777777777777777777777777777777777777777777777777777777777777777","runtime_sha256":"6666666666666666666666666666666666666666666666666666666666666666"},"content":{"manifest_sha256":"5555555555555555555555555555555555555555555555555555555555555555"},"initial_state":"FROM_XEX_LAUNCH","interventions":["mission01-step-recipe"],"kind":"header","lane":"bridge","profile":{"id":"isolated-english-new-game","tree_sha256":"4444444444444444444444444444444444444444444444444444444444444444"},"roots":{"cache":{"isolated":true,"label":"cache","tree_sha256":"3333333333333333333333333333333333333333333333333333333333333333"},"content":{"isolated":true,"label":"content","tree_sha256":"2222222222222222222222222222222222222222222222222222222222222222"},"storage":{"isolated":true,"label":"storage","tree_sha256":"1111111111111111111111111111111111111111111111111111111111111111"}},"route":{"recipe":"scripts/ac6-oracle-mission01-controlled-sortie-delayed.steps","sha256":"9999999999999999999999999999999999999999999999999999999999999999"},"runtime":{"binary_sha256":"8888888888888888888888888888888888888888888888888888888888888888","commit":"dcd41b7457fcac8242f8ef40de83d1719390d5af","diff_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"schema":"ac6.xam-input-movie.v1","target":{"base_address":"82000000","data_tbl_sha256":"82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5","module":"default.xex","target_id":"ac6-pal-default-xex","xex_sha256":"acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"}})json"
++         "\n";
++}
++
++ac6::oracle::xam_movie::StateBytes State() {
++  ac6::oracle::xam_movie::StateBytes state{};
++  for (std::size_t index = 0; index < state.size(); ++index) {
++    state[index] = std::byte(index);
++  }
++  return state;
++}
++
++}  // namespace
++
++int main() {
++  using namespace ac6::oracle::xam_movie;
++  Service record;
++  std::string error;
++  assert(record.BeginRecord(Header(), error));
++  assert(record.Record({0, 100, 2, 0x823911C0, 0, 1, false, 0, true,
++                        State()}, error));
++  assert(record.Record({1, 101, 2, 0x823911C0, 1, 0, true, 1167, false, {}},
++                       error));
++  std::string movie;
++  assert(record.Finalize(movie, error));
++  assert(movie.find("000102030405060708090a0b0c0d0e0f") != std::string::npos);
++  assert(movie.find("present") == std::string::npos);
++  assert(movie.find("XamInputGetState") != std::string::npos);
++
++  Service replay;
++  assert(replay.BeginReplay(movie, Header(), error));
++  ReplayValue value;
++  assert(replay.Replay({0x823911C0, 0, 1, false}, value, error));
++  assert(value.result == 0 && value.has_state && value.state == State());
++  assert(replay.Replay({0x823911C0, 1, 0, true}, value, error));
++  assert(value.result == 1167 && !value.has_state);
++  std::string none;
++  assert(replay.Finalize(none, error));
++
++  for (const auto mismatch : {Guards{0x823911C4, 0, 1, false},
++                              Guards{0x823911C0, 1, 1, false},
++                              Guards{0x823911C0, 0, 2, false}}) {
++    Service strict;
++    assert(strict.BeginReplay(movie, Header(), error));
++    assert(!strict.Replay(mismatch, value, error));
++  }
++
++  Service short_replay;
++  assert(short_replay.BeginReplay(movie, Header(), error));
++  assert(short_replay.Replay({0x823911C0, 0, 1, false}, value, error));
++  assert(!short_replay.Finalize(none, error));
++  assert(error.find("trace-length mismatch") != std::string::npos);
++
++  Service extra_replay;
++  assert(extra_replay.BeginReplay(movie, Header(), error));
++  assert(extra_replay.Replay({0x823911C0, 0, 1, false}, value, error));
++  assert(extra_replay.Replay({0x823911C0, 1, 0, true}, value, error));
++  assert(!extra_replay.Replay({0x823911C0, 0, 1, false}, value, error));
++  assert(error.find("trace-length mismatch") != std::string::npos);
++  return 0;
++}
+diff --git a/thirdparty/rexglue-sdk/include/rex/ac6_xam_input_movie.h b/thirdparty/rexglue-sdk/include/rex/ac6_xam_input_movie.h
+new file mode 100644
+index 0000000..c9150b9
+--- /dev/null
++++ b/thirdparty/rexglue-sdk/include/rex/ac6_xam_input_movie.h
+@@ -0,0 +1,33 @@
++#pragma once
++
++#include <array>
++#include <cstddef>
++#include <cstdint>
++
++namespace ac6::oracle {
++
++struct XamInputMovieState {
++  std::array<std::byte, 16> bytes{};
++};
++
++struct XamInputMovieRecord {
++  uint64_t guest_tick{0};
++  uint32_t guest_thread{0};
++  uint32_t caller_lr{0};
++  uint32_t user{0};
++  uint32_t flags{0};
++  bool state_ptr_null{true};
++  bool active{false};
++};
++
++enum class XamInputMovieAction { kPhysical, kReplay };
++
++bool InitializeXamInputMovie();
++bool FinalizeXamInputMovie();
++XamInputMovieAction BeginXamInputMoviePoll(
++    uint32_t user, uint32_t flags, uint32_t state_ptr, uint32_t& result,
++    XamInputMovieState& state, bool& has_state, XamInputMovieRecord& record);
++void CompleteXamInputMoviePoll(XamInputMovieRecord& record, uint32_t result,
++                               const XamInputMovieState* state);
++
++}  // namespace ac6::oracle
+diff --git a/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp b/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
+index 80792e2..579e91d 100644
+--- a/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
++++ b/thirdparty/rexglue-sdk/src/kernel/xam/xam_input.cpp
+@@ -3,9 +3,12 @@
+  * Copyright (c) 2026 Tom Clay. All rights reserved.
+  */
+ 
++#include <cstring>
++
+ #include <rex/input/input.h>
+ #include <rex/input/input_system.h>
+ #include <rex/ac6_controller_input_replay.h>
++#include <rex/ac6_xam_input_movie.h>
+ #include <rex/kernel/xam/private.h>
+ #include <rex/logging.h>
+ #include <rex/ppc/function.h>
+@@ -100,6 +103,23 @@ ppc_u32_result_t XamInputGetState_entry(ppc_u32_t user_index, ppc_u32_t flags,
+   const uint32_t raw_user_index = user_index;
+   const uint32_t raw_flags = flags;
+   const uint32_t state_ptr = input_state.guest_address();
++  uint32_t movie_result = 0;
++  ac6::oracle::XamInputMovieState movie_state{};
++  bool movie_has_state = false;
++  ac6::oracle::XamInputMovieRecord movie_record;
++  const auto movie_action = ac6::oracle::BeginXamInputMoviePoll(
++      raw_user_index, raw_flags, state_ptr, movie_result, movie_state,
++      movie_has_state, movie_record);
++  if (movie_action == ac6::oracle::XamInputMovieAction::kReplay) {
++    if (movie_has_state) {
++      if (!input_state) {
++        REX_FATAL("AC6 XAM input movie has state for a null guest pointer");
++      }
++      std::memcpy(input_state.host_address(), movie_state.bytes.data(),
++                  movie_state.bytes.size());
++    }
++    return movie_result;
++  }
+   uint32_t replay_result = 0;
+   ac6::oracle::XamControllerState replay_state;
+   bool replay_has_state = false;
+@@ -125,6 +145,15 @@ ppc_u32_result_t XamInputGetState_entry(ppc_u32_t user_index, ppc_u32_t flags,
+   }
+ 
+   auto record_return = [&](uint32_t result) -> ppc_u32_result_t {
++    ac6::oracle::XamInputMovieState observed_movie_state{};
++    const ac6::oracle::XamInputMovieState* observed_movie_state_ptr = nullptr;
++    if (result == X_ERROR_SUCCESS && input_state) {
++      std::memcpy(observed_movie_state.bytes.data(), input_state.host_address(),
++                  observed_movie_state.bytes.size());
++      observed_movie_state_ptr = &observed_movie_state;
++    }
++    ac6::oracle::CompleteXamInputMoviePoll(movie_record, result,
++                                           observed_movie_state_ptr);
+     ac6::oracle::XamControllerState recorded_state;
+     const ac6::oracle::XamControllerState* recorded_state_ptr = nullptr;
+     if (result == X_ERROR_SUCCESS && input_state) {

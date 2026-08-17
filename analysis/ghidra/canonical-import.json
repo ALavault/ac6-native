@@ -1,0 +1,41 @@
+{
+  "schema": "ac6-ghidra-canonical-import.v1",
+  "target_id": "ac6-pal-default-xex",
+  "project_path": "ghidra-projects/ace-combat-6",
+  "project": "ace-combat-6",
+  "program": "default.xex",
+  "module": "default.xex",
+  "xex_sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+  "xex_size": 7483392,
+  "data_tbl_sha256": "82700410d305dc2d24e24d378ce5b9b63f240ac208842d7620b608fac15d50f5",
+  "image_base": "0x82000000",
+  "entry_point": "0x821F5E90",
+  "ghidra": {
+    "version": "12.1.2",
+    "loader": "XEX Loader by Warranty Voider",
+    "language": "PowerPC:BE:64:Xenon",
+    "compiler_spec": "default"
+  },
+  "analysis": "auto",
+  "bridge_export": {
+    "status": "not-qualified",
+    "reason": "ghidra-bridge export all was interrupted after a repeated pcode warning at 0x82073E3C; exports/ remains ignored and is not evidence",
+    "qualified_source": "analysis/ghidra/canonical-function-boundaries.json"
+  },
+  "function_count": 10708,
+  "boundary_export": "analysis/ghidra/canonical-function-boundaries.json",
+  "boundary_export_sha256": "fa3cf70e8acf811b2d273544f954078dcbf9577cf65f223af53ec1b29e59c40f",
+  "import_journal": "analysis/ghidra/canonical-import.log",
+  "import_journal_sha256": "c5b5cb84ef2ed6ebcfdd05ef2d6ad3c2167ca900c388efba986b5a4b798a031c",
+  "script_sha256": {
+    "tools/import_ac6_ghidra_xenon.py": "793febff03a961c1919c43c17a28daa1806db8a988f9278ab42aca969f621ed5",
+    "tools/ghidra/ExportOracleFunctionBoundaries.java": "96885e2fbe75d26d60ee3fa21702cbcd367f9fd7c123385d27be638a9a2f4050"
+  },
+  "previous_a2alt": {
+    "project_path": "ghidra-projects/historical-a2alt-20260814",
+    "language": "PowerPC:BE:64:A2ALT-32addr",
+    "function_count": 10645,
+    "boundary_export_sha256": "5e7119fa582656e17432d84bb202e03f54c15052cde2920b93115a173f6284f1"
+  },
+  "merge_policy": "A2ALT-32addr is historical and must not be merged"
+}

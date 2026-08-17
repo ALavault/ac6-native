@@ -1,0 +1,12 @@
+neutral	neutral.trace	present	2800397	a932958dfc01e0ba2069bc8513a7592ff7d5730f54ba61daf612c488e632946b	134217728
+neutral	neutral.report.json	present	793480	5600e9ef0b846faf657f9dcfad8b300c5a9555c1025a4c1bd57f48529aff87d5	33554432
+neutral	neutral.stdout.log	present	650	1572e5899e081a85143ec854518b282821b2a070f525df9ca4d9d019051092b6	33554432
+neutral	neutral.stderr.log	present	276240	10f4170fa2b8ce7da4fb494b52f15af0f757ad9516cba3e2c7b6d74197259e7e	33554432
+neutral	neutral.map.json	missing	0		16777216
+neutral	return_code	present	2	7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d	32
+buttons16	buttons16.trace	present	1766430	98369b6c70f6df60e992023f054e9737d3d8de71375f00b94096277117a58d33	134217728
+buttons16	buttons16.report.json	missing	0		33554432
+buttons16	buttons16.stdout.log	present	0	e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855	33554432
+buttons16	buttons16.stderr.log	present	6645	b98aa5ff81b189f0a0b43660e7dc3ffc0fe14af372b992b4eb9e75b7098e2200	33554432
+buttons16	buttons16.map.json	missing	0		16777216
+buttons16	return_code	missing	0		32

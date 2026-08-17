@@ -1,0 +1,58 @@
+{
+  "access": {
+    "address": "0x7F0409D8",
+    "function": "__imp____restgprlr_27",
+    "generated_line": 30,
+    "guest_pc": "0x82327154",
+    "instruction": "ld r27,-48(r1)",
+    "instruction_bytes": "eb 61 ff d0",
+    "kind": "load64",
+    "lr": "0x821A69CC",
+    "size": 8,
+    "source": "ppc_recomp.44.cpp",
+    "thread": 1,
+    "tick": 1,
+    "value": "0x0000000000000000"
+  },
+  "handoff": {
+    "callsite": "0x821A69C8",
+    "lr_is_not_pc": true,
+    "resume_pc": "0x821A69CC",
+    "signal_handle": "0xE0000048",
+    "thread": 1,
+    "tick": 1,
+    "wait_handle": "0xE000004C"
+  },
+  "inputs": {
+    "generated_dir": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/codegen/generated",
+    "generated_manifest": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/codegen/manifest.json",
+    "generated_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "generated_source_sha256": {
+      "ppc_recomp.44.cpp": "1da306b495a8da108405a2f5fc42d0d59d92358a01c5b970dc651e70e2106b90"
+    },
+    "log": "/fastdata/lavaulta/tmp/ac6-demo-post-resume-ab.K8jl0c/staging/neutral.stderr.log",
+    "log_sha256": "77b7e327c12486e70bba61eb3a784ce6668413b394b15fa4245e3d4044f8c394",
+    "xex": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/demo-game-file/extracted/stfs-root/Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "mapped_rows": 1,
+  "mode": "post_resume_one_shot",
+  "policy": {
+    "ambiguity_is_failure": true,
+    "exactly_one_instruction_handoff": true,
+    "exactly_one_memory_access": true,
+    "fail_closed": true,
+    "generated_cpp_modified": false,
+    "pal_bytes_checked": true
+  },
+  "rows": 1,
+  "schema": "ac6-demo-generated-guest-load-map/v1",
+  "target": {
+    "architecture": "Xenon big-endian / Xenos",
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "unique_sites": 1
+}

@@ -1,0 +1,141 @@
+{
+  "boundary": "xam_return_chain",
+  "config": {
+    "audio_driver": "dummy",
+    "backend": "vulkan",
+    "max_accesses": 64,
+    "max_ticks": 5600,
+    "route_expectations": {
+      "buttons16": "qualified_store_exclusive",
+      "neutral": "no_exclusive"
+    },
+    "routes": [
+      "neutral",
+      "buttons16"
+    ],
+    "tick": 252,
+    "xma": "qualified runtime flags",
+    "xvfb_lifecycle": "single owned supervisor reused by both fresh probes"
+  },
+  "inputs": {
+    "binary": {
+      "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+      "sha256": "c1f724d6abe8a699939f6d3f880aeb7a237027595b07f35d3104a3bd9088275a"
+    },
+    "codegen_manifest": {
+      "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/build-codegen-on/codegen/manifest.json",
+      "sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa"
+    },
+    "mapper": {
+      "path": "/fastdata/lavaulta/auto-re-agent/workspaces/ace-combat-6/recompilation/ace-combat-6-demo/tools/map_xam_return_chain.py",
+      "sha256": "89e3822fef2d14fdec5582c382aa0e687dc25f24a7d1121fd778bd0f84297dce"
+    }
+  },
+  "policy": {
+    "content_addressed": true,
+    "current_file_written": false,
+    "fail_closed": true,
+    "frontend_claim_written": false,
+    "quotas_and_hashes": true,
+    "transactional": true
+  },
+  "reason": "qualified differential XAM return-chain A/B completed",
+  "routes": {
+    "buttons16": {
+      "buttons16.map.json": {
+        "bytes": 30985,
+        "path": "artifacts/buttons16/buttons16.map.json",
+        "quota_bytes": 16777216,
+        "sha256": "7421596e7845c922ee9c3353f6c9bec485979f5e10ad2c0b7c1166b3594fa73a",
+        "status": "present"
+      },
+      "buttons16.report.json": {
+        "bytes": 968381,
+        "path": "artifacts/buttons16/buttons16.report.json",
+        "quota_bytes": 33554432,
+        "sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+        "status": "present"
+      },
+      "buttons16.stderr.log": {
+        "bytes": 16619,
+        "path": "artifacts/buttons16/buttons16.stderr.log",
+        "quota_bytes": 33554432,
+        "sha256": "7107a5823716cdfe036e8d6281262424f8d49a83f01309ebffadb98303de8519",
+        "status": "present"
+      },
+      "buttons16.stdout.log": {
+        "bytes": 655,
+        "path": "artifacts/buttons16/buttons16.stdout.log",
+        "quota_bytes": 33554432,
+        "sha256": "da434fe440bcdd7ac395de93a9eaad9f994cb05e3e7807fb0cb0ea1222851be2",
+        "status": "present"
+      },
+      "buttons16.trace": {
+        "bytes": 58495417,
+        "path": "artifacts/buttons16/buttons16.trace",
+        "quota_bytes": 134217728,
+        "sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+        "status": "present"
+      },
+      "return_code": {
+        "bytes": 2,
+        "path": "artifacts/buttons16/return_code",
+        "quota_bytes": 32,
+        "sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+        "status": "present"
+      }
+    },
+    "neutral": {
+      "neutral.map.json": {
+        "bytes": 33808,
+        "path": "artifacts/neutral/neutral.map.json",
+        "quota_bytes": 16777216,
+        "sha256": "49b598d90e7c7b3fcc7391856906cc2ac1507418225e04dfe4b58263fd34f479",
+        "status": "present"
+      },
+      "neutral.report.json": {
+        "bytes": 968381,
+        "path": "artifacts/neutral/neutral.report.json",
+        "quota_bytes": 33554432,
+        "sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+        "status": "present"
+      },
+      "neutral.stderr.log": {
+        "bytes": 17617,
+        "path": "artifacts/neutral/neutral.stderr.log",
+        "quota_bytes": 33554432,
+        "sha256": "0deef07a36b7ccc248cf500a58cefee6341e3c33d703b89714511d3bb2ff6029",
+        "status": "present"
+      },
+      "neutral.stdout.log": {
+        "bytes": 651,
+        "path": "artifacts/neutral/neutral.stdout.log",
+        "quota_bytes": 33554432,
+        "sha256": "16d56deab8d8eb7ca9d2cf12244163e91b82f43e06cb2635f509c212f8a30694",
+        "status": "present"
+      },
+      "neutral.trace": {
+        "bytes": 58495408,
+        "path": "artifacts/neutral/neutral.trace",
+        "quota_bytes": 134217728,
+        "sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+        "status": "present"
+      },
+      "return_code": {
+        "bytes": 2,
+        "path": "artifacts/neutral/return_code",
+        "quota_bytes": 32,
+        "sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+        "status": "present"
+      }
+    }
+  },
+  "schema": "ac6-demo-xam-return-chain-ab/v1",
+  "status": "success",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "pal_basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  }
+}

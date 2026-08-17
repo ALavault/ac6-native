@@ -1,0 +1,33 @@
+{
+  "schema": "ac6-xenia-edge-native-profile/v1",
+  "cycle": 1734,
+  "oracle_only": true,
+  "target": {
+    "name": "ac6-demo-xbox360-pal",
+    "xex": "Default.xex",
+    "sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "endianness": "xenon-big-endian"
+  },
+  "xenia_edge": {
+    "repository": "https://github.com/has207/xenia-edge",
+    "release": "60ff861",
+    "commit": "60ff8616696e81726f09053874c12adc7716537f",
+    "asset": ".tools/xenia-edge-60ff861/xenia_edge_linux.AppImage",
+    "sha256": "c2cac2a029ce0d44a71c4e919fd71c702654079023b63fd669472ba3cd78b828",
+    "native_linux": true,
+    "fuse_available": false
+  },
+  "launcher": {
+    "path": "scripts/run_xenia_edge_native.sh",
+    "storage_root": ".tools/xenia-edge-profile",
+    "content_root": ".tools/xenia-edge-profile/content",
+    "cache_root": ".tools/xenia-edge-profile/cache_host",
+    "auto_login": "optional_XENIA_EDGE_PROFILE_XUID"
+  },
+  "profile_layout": "content/<XUID>/FFFE07D1/00010000/<XUID>",
+  "classification": "xenia-generic",
+  "unknowns": [
+    "No first-run profile creation was performed by this audit.",
+    "No PAL game run or visual parity claim is made."
+  ]
+}

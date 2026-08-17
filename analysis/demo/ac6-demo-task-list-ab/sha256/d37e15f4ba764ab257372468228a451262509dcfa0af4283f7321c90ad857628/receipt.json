@@ -1,0 +1,118 @@
+{
+  "schema": "ac6-demo-task-list-ab/v1",
+  "status": "success",
+  "reason": "fresh neutral/buttons16 task-list A/B completed at tick 300",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c"
+  },
+  "inputs": {
+    "binary_sha256": "e95a0947c29da84a9ae07dca2b275b370fe89a8c71d170a6e7d38e460d0c1925",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "max_ticks": 300,
+    "input_tick": 252,
+    "instrumentation": ["AC6_DEMO_WATCH_TASK_LIST=1"]
+  },
+  "task_list": {
+    "address_range": "0x18970400..0x18970440",
+    "word_count": 16,
+    "record_count": 1688,
+    "store_records": 43,
+    "load_records": 1645,
+    "first_store_tick": 4,
+    "last_store_tick": 221,
+    "first_load_tick": 106,
+    "last_load_tick": 299,
+    "initial_fill": {"tick": 4, "value": "0xFEFEFEFE", "writer": "0x823273E0"},
+    "construction_ticks": [106, 221],
+    "task_objects": [
+      {"tick": 106, "object": "0x18BA2BF4", "node": "0x18970408", "next": "0x18970624"},
+      {"tick": 221, "object": "0x18980000", "node": "0x18970418", "next": "0x18970404"},
+      {"tick": 221, "object": "0x2E7F0080", "node": "0x18970428", "next": "0x18970614"}
+    ],
+    "mapped_store_sites": [
+      {"pal_pc": "0x82327418", "bytes": "90 86 00 00", "instruction": "stw r4,0(r6)", "source": "__imp__sub_823273E0:1402"},
+      {"pal_pc": "0x8232741C", "bytes": "90 86 00 04", "instruction": "stw r4,4(r6)", "source": "__imp__sub_823273E0:1404"},
+      {"pal_pc": "0x82327420", "bytes": "90 86 00 08", "instruction": "stw r4,8(r6)", "source": "__imp__sub_823273E0:1406"},
+      {"pal_pc": "0x82327424", "bytes": "90 86 00 0c", "instruction": "stw r4,12(r6)", "source": "__imp__sub_823273E0:1408"},
+      {"pal_pc": "0x821E1A30", "bytes": "90 cb 00 00", "instruction": "stw r6,0(r11)", "source": "__imp__sub_821E18B8:20938"},
+      {"pal_pc": "0x8225A008", "bytes": "91 43 00 00", "instruction": "stw r10,0(r3)", "source": "__imp__sub_82259FF8:3900"},
+      {"pal_pc": "0x8225A018", "bytes": "91 4b 00 04", "instruction": "stw r10,4(r11)", "source": "__imp__sub_82259FF8:3909"},
+      {"pal_pc": "0x8225A020", "bytes": "91 0b 00 00", "instruction": "stw r8,0(r11)", "source": "__imp__sub_82259FF8:3915"},
+      {"pal_pc": "0x8225A024", "bytes": "91 4b 00 08", "instruction": "stw r10,8(r11)", "source": "__imp__sub_82259FF8:3917"},
+      {"pal_pc": "0x8225A028", "bytes": "91 4b 00 0c", "instruction": "stw r10,12(r11)", "source": "__imp__sub_82259FF8:3919"},
+      {"pal_pc": "0x82259E4C", "bytes": "90 8b 00 04", "instruction": "stw r4,4(r11)", "source": "__imp__sub_82259E18:3633"},
+      {"pal_pc": "0x82259E68", "bytes": "91 4b 00 0c", "instruction": "stw r10,12(r11)", "source": "__imp__sub_82259E18:3647"},
+      {"pal_pc": "0x82259E6C", "bytes": "91 2b 00 08", "instruction": "stw r9,8(r11)", "source": "__imp__sub_82259E18:3649"},
+      {"pal_pc": "0x82259E74", "bytes": "91 69 00 0c", "instruction": "stw r11,12(r9)", "source": "__imp__sub_82259E18:3653"}
+    ]
+  },
+  "task_dispatch": {
+    "dispatcher": "0x82259D10",
+    "callsite": "0x82259D74",
+    "slot": 4,
+    "first_tick": 252,
+    "last_tick": 299,
+    "calls_per_entry": 48,
+    "entries": [
+      {"object": "0x2E7F0080", "vtable": "0x8201130C", "rtti": "CModeTaskStartUpDemoOffline", "slot4": "0x8218A4A0"},
+      {"object": "0x18BA2BF4", "vtable": "0x8200F388", "rtti": "CTaskLoading", "slot4": "0x8218CE20"},
+      {"object": "0x18980000", "vtable": "0x82011694", "rtti": "CTaskModeManager", "slot4": "0x821929A8"}
+    ],
+    "menu_vtables_observed": false
+  },
+  "routes": {
+    "neutral": {
+      "input_buttons": "0x00000000",
+      "trace_sha256": "2e49ae679129c17283c39855ba662c17a8eaba8349e622f88e01eca50ad9c115",
+      "report_sha256": "b61d53b0e2c39b2ac33d2ea6138b11255f05e30c9cc7bc5174165caca0e0275b",
+      "stderr_sha256": "6e976350a52fd0889a2828ab861c5c15f1865a02503d42d577c649ec4561c742",
+      "completed_ticks": 300,
+      "presents": 163,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    },
+    "buttons16": {
+      "input_buttons": "0x00000010",
+      "trace_sha256": "179db68a5d78cccc2b53634bc9f5f54636674ecbf9e529f82a4c9d217235345b",
+      "report_sha256": "c8bbcb539a5b408d6c8e484c6c42536c2edf807842b4c327fd01020381694729",
+      "stderr_sha256": "6e976350a52fd0889a2828ab861c5c15f1865a02503d42d577c649ec4561c742",
+      "completed_ticks": 300,
+      "presents": 163,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    }
+  },
+  "comparison": {
+    "task_accesses_byte_identical": true,
+    "stderr_byte_identical": true,
+    "construction_ticks_equal": true,
+    "menu_owner_constructed": false,
+    "guest_menu_state_change": false,
+    "frontend_effect": false,
+    "readback_effect": false
+  },
+  "policy": {
+    "content_addressed": true,
+    "fresh_stores": true,
+    "generated_cpp_modified": false,
+    "retail_evidence_fused": false,
+    "fallback_or_synthetic_progression": false,
+    "frontend_claim_written": false,
+    "mission_observation_promoted": false,
+    "terminal_observation_promoted": false,
+    "supported": false
+  }
+}

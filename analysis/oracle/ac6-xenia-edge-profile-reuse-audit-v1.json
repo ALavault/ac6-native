@@ -1,0 +1,47 @@
+{
+  "schema": "ac6-xenia-edge-profile-reuse-audit/v1",
+  "classification": "xenia-generic",
+  "read_only": true,
+  "appimage": {
+    "path": ".tools/xenia-edge-60ff861/xenia_edge_linux.AppImage",
+    "sha256": "c2cac2a029ce0d44a71c4e919fd71c702654079023b63fd669472ba3cd78b828"
+  },
+  "wrapper": {
+    "path": "scripts/run_xenia_edge_native.sh",
+    "sha256": "5bfba9132ba4b89c191d1c0d5d0b71a436437bb2d2a742ac75e87f91b011c595",
+    "storage_root": "${XENIA_EDGE_PROFILE_ROOT:-<portfolio>/.tools/xenia-edge-profile}",
+    "content_root": "${storage_root}/content",
+    "cache_root": "${storage_root}/cache_host",
+    "xuid_override": "XENIA_EDGE_PROFILE_XUID, exactly 16 hexadecimal digits"
+  },
+  "observed": {
+    "mkdir_idempotent": true,
+    "path_expansion_stable": true,
+    "absolute_root_override_supported": true,
+    "bash_n_pass": true,
+    "running_edge_processes": 0,
+    "profile_root_currently_exists": false,
+    "runtime_reuse_run": false
+  },
+  "profile_layout_generic": "content/<XUID>/FFFE07D1/00010000/<XUID>",
+  "risks": [
+    "cycle-1735 archive did not use this wrapper and therefore does not prove reuse",
+    "no lock prevents concurrent launches sharing profile/cache",
+    "relative XENIA_EDGE_PROFILE_ROOT depends on cwd",
+    "profile/cache root is not release-suffixed",
+    "archive Edge commit 15200f... differs from wrapper release 60ff861"
+  ],
+  "classification_detail": {
+    "demo_observed": [],
+    "demo_qualified": [],
+    "xenia_generic": [
+      "wrapper flag layout and idempotent directory creation",
+      "expected Edge profile path and XUID validation"
+    ],
+    "unknown": [
+      "whether a real second launch reuses an existing account/profile",
+      "whether release 60ff861 accepts the archived 15200f profile state"
+    ]
+  },
+  "next_test": "two launches against an absolute temporary profile root, recording FindProfiles/Loading Account and config hashes; no PAL pixel/audio promotion"
+}
