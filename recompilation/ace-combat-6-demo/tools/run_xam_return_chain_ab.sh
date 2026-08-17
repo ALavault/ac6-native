@@ -32,6 +32,11 @@ MAX_LOG_BYTES=$((32 * 1024 * 1024))
 MAX_MAP_BYTES=$((16 * 1024 * 1024))
 MAX_RETURN_BYTES=32
 PROBE_TIMEOUT_SECONDS=900
+PROBE_MAX_TICKS="${AC6_DEMO_PROBE_MAX_TICKS:-5600}"
+[[ "$PROBE_MAX_TICKS" =~ ^[0-9]+$ && "$PROBE_MAX_TICKS" -gt 0 ]] || {
+  printf 'probe max ticks must be a positive integer\n' >&2
+  exit 2
+}
 
 RUN_TMP="$(mktemp -d "$TMPDIR/ac6-xam-return-chain.XXXXXX")"
 CAPSULE_PUBLISHED=0
@@ -99,13 +104,13 @@ publish_capsule() {
   done
   python3 - "$stage/receipt.json" "$stage/index.tsv" "$status" "$reason" \
     "$EXPECTED_XEX_SHA256" "$EXPECTED_BASEFILE_SHA256" "$BINARY" "$MANIFEST" \
-    "$MAPPER" "$RUN_STATUS" <<'PY'
+    "$MAPPER" "$RUN_STATUS" "$PROBE_MAX_TICKS" <<'PY'
 import hashlib
 import json
 import sys
 from pathlib import Path
 
-out, index, status, reason, xex_sha, base_sha, binary, manifest, mapper, run_status = sys.argv[1:]
+out, index, status, reason, xex_sha, base_sha, binary, manifest, mapper, run_status, max_ticks = sys.argv[1:]
 artifacts = {}
 for line in Path(index).read_text(encoding="utf-8").splitlines():
     route, label, state, size, digest, limit = line.split("\t")
@@ -135,7 +140,7 @@ document = {
         "mapper": {"path": mapper, "sha256": digest(mapper)},
     },
     "config": {
-        "routes": ["neutral", "buttons16"], "tick": 252, "max_ticks": 5600,
+        "routes": ["neutral", "buttons16"], "tick": 252, "max_ticks": int(max_ticks),
         "max_accesses": 64,
         "route_expectations": {"neutral": "no_exclusive",
                                "buttons16": "qualified_store_exclusive"},
@@ -206,7 +211,7 @@ grep -Fxq "$EXPECTED_XEX_SHA256" "$STORE_SEED/.ac6-demo-store" || {
 # process identity (start time and process group) is checked before and after
 # each probe, so an unrelated X server can never be signalled or reused.
 python3 - "$RUN_TMP" "$BINARY" "$STORE_SEED" "$MAX_TRACE_BYTES" \
-  "$MAX_REPORT_BYTES" "$MAX_LOG_BYTES" "$PROBE_TIMEOUT_SECONDS" <<'PY'
+  "$MAX_REPORT_BYTES" "$MAX_LOG_BYTES" "$PROBE_TIMEOUT_SECONDS" "$PROBE_MAX_TICKS" <<'PY'
 import os
 import select
 import shutil
@@ -214,7 +219,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-run_root, binary, seed, trace_limit, report_limit, log_limit, timeout = sys.argv[1:]
+run_root, binary, seed, trace_limit, report_limit, log_limit, timeout, max_ticks = sys.argv[1:]
 run_root = Path(run_root)
 seed = Path(seed)
 
@@ -258,11 +263,13 @@ try:
             "AC6_DEMO_EXPERIMENTAL_XMA_KICK": "1",
             "AC6_DEMO_WATCH_XMA_SLOT": "1",
             "AC6_DEMO_INPUT_MODE": mode, "AC6_DEMO_INPUT_TICK": "252",
-            "AC6_DEMO_MAX_TICKS": "5600",
+            "AC6_DEMO_MAX_TICKS": str(max_ticks),
         })
+        if os.environ.get("AC6_DEMO_WATCH_CONTROLLER_READERS"):
+            env["AC6_DEMO_WATCH_CONTROLLER_READERS"] = "1"
         input_at = f"252,{buttons},0,0,0,0,0,0,1"
         command = [binary, "probe", "--store", str(store), "--until", "frontend",
-                   "--max-ticks", "5600", "--trace", str(trace),
+                   "--max-ticks", str(max_ticks), "--trace", str(trace),
                    "--report", str(report), "--backend", "vulkan",
                    "--input-at", input_at]
         with stdout.open("w", encoding="utf-8") as out, stderr.open(
