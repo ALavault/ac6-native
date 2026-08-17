@@ -366,6 +366,7 @@ public:
   [[nodiscard]] std::uint32_t allocate_address(std::uint32_t size) noexcept;
   // Experimental, opt-in XMA probe only. The production path remains
   // fail-closed until the PAL post-import state is qualified.
+  void map_xma_kick_window();
   [[nodiscard]] std::uint32_t ensure_xma_context_array();
   [[nodiscard]] std::uint32_t allocate_xma_context();
   [[nodiscard]] bool release_xma_context(std::uint32_t context);

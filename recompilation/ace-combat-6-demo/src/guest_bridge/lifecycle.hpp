@@ -134,78 +134,7 @@ void GuestBridge::prepare(const ThreadImage &image) {
         throw RuntimeTrap("write to read-only XMA context-array register",
                           tick_, 0, address);
       });
-  // Test-only bridge for the bounded PAL context-kick sequence. The static
-  // PAL sequence is XMACreateContext -> MmGetPhysicalAddress -> stwbrx and
-  // the observed values are wire-endian encodings of logical bits 0..3.
-  // Xenia's generic XMA terminology is not promoted to the PAL product.
-  // Keep this mapping absent from the default route and accept only the six
-  // observed writes in an explicit experiment; reads and every other value
-  // remain fail-closed.
-  {
-    memory_.map_mmio(
-        0x7FEA1A80U, 4U,
-        [this](std::uint32_t address, std::size_t length) -> std::uint64_t {
-          throw RuntimeTrap("unqualified XMA kick register read", tick_, 0,
-                            address ^ static_cast<std::uint32_t>(length));
-        },
-        [this](std::uint32_t address, std::uint64_t value,
-               std::size_t length) {
-          const auto expected_wire =
-              static_cast<std::uint64_t>(xma_kick_expected_bit_) << 24U;
-          // The kick is one-hot: the guest sets bit i for the i-th
-          // context of the array this runtime handed out. The opt-in
-          // experiment spelled that out as six absolute addresses
-          // (0x2E800000 + i * 64) because that is where its array happened
-          // to land; the array is allocated dynamically, so the rule is the
-          // index, not the address. Everything else still traps.
-          std::uint32_t expected_context = 0U;
-          const auto array = xma_context_array_address_;
-          if (array != 0U && xma_kick_expected_bit_ != 0U &&
-              (xma_kick_expected_bit_ & (xma_kick_expected_bit_ - 1U)) == 0U) {
-            const auto index =
-                static_cast<std::uint32_t>(
-                    std::countr_zero(xma_kick_expected_bit_));
-            expected_context = array + index * 64U;
-          }
-          if (address != 0x7FEA1A80U || length != 4U ||
-              // The wire value is the bit in the register's top byte, so the
-              // register addresses eight contexts and 128 is the last one it
-              // can name. The opt-in experiment stopped at 32 because it saw
-              // six kicks; that is a count of one run, not a boundary. The
-              // boundary is the byte.
-              value != expected_wire || xma_kick_expected_bit_ > 128U ||
-              xma_last_physical_context_ != expected_context) {
-            throw RuntimeTrap("unqualified XMA kick register write", tick_, 0,
-                              address);
-          }
-          if (std::getenv("AC6_DEMO_WATCH_XMA_KICK") != nullptr) {
-            std::fprintf(stderr,
-                         "AC6_XMA_KICK tick=%llu thread=%u address=0x%08X "
-                         "wire=0x%08X logical=0x%08X\n",
-                         static_cast<unsigned long long>(tick_),
-                         current_guest_thread_id, address,
-                         static_cast<std::uint32_t>(value),
-                         xma_kick_expected_bit_);
-          }
-          xma_kick_expected_bit_ <<= 1U;
-          xma_last_physical_context_ = 0U;
-        });
-  }
-  memory_.map_mmio(
-      0x7FC86544U, 4U,
-      [this](std::uint32_t address, std::size_t length) -> std::uint64_t {
-        if (address != 0x7FC86544U || length != 4U) {
-          throw RuntimeTrap("unqualified Xenos interrupt-status read", tick_, 0,
-                            address);
-        }
-        // Xenos register index 0x1951. The SDK model and bounded PAL hardware
-        // capture both report bit 0 set for every delivered vblank.
-        return 1U;
-      },
-      [this](std::uint32_t address, std::uint64_t, std::size_t) {
-        throw RuntimeTrap("write to read-only Xenos interrupt status", tick_, 0,
-                          address);
-      });
+  map_xma_kick_window();
   const auto table_address =
       static_cast<std::uint64_t>(PPC_IMAGE_BASE) + PPC_IMAGE_SIZE;
   const auto table_size = static_cast<std::uint64_t>(PPC_CODE_SIZE) * 2ULL;
@@ -406,3 +335,91 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
 }
 
 } // namespace ac6demo
+
+void GuestBridge::map_xma_kick_window() {
+  // Test-only bridge for the bounded PAL context-kick sequence. The static
+  // PAL sequence is XMACreateContext -> MmGetPhysicalAddress -> stwbrx and
+  // the observed values are wire-endian encodings of logical bits 0..3.
+  // Xenia's generic XMA terminology is not promoted to the PAL product.
+  // Keep this mapping absent from the default route and accept only the six
+  // observed writes in an explicit experiment; reads and every other value
+  // remain fail-closed.
+  {
+    memory_.map_mmio(
+        0x7FEA1A80U, 4U,
+        [this](std::uint32_t address, std::size_t length) -> std::uint64_t {
+          throw RuntimeTrap("unqualified XMA kick register read", tick_, 0,
+                            address ^ static_cast<std::uint32_t>(length));
+        },
+        [this](std::uint32_t address, std::uint64_t value,
+               std::size_t length) {
+          // The guest computes its own bit at PC 0x82357240:
+          //     index = (context - [0x829DA52C]) / 64
+          //     bit   = 1 << (index & 0x1F)      ; clrlwi r11,r10,27
+          // and stores it byte-reversed, because the aperture is
+          // little-endian on the wire. So the value is bswap32(1 << index),
+          // which is 0x01000000 for index 0 and 0x08000000 for index 3 --
+          // both of them values earlier cycles recorded. Modelling it as
+          // bit << 24 happens to agree for indices 0..7 and then diverges,
+          // which is why the ninth context looked like an encoding this
+          // register could not express. It can; the model could not.
+          const auto expected_wire = static_cast<std::uint64_t>(
+              __builtin_bswap32(xma_kick_expected_bit_));
+          // The kick is one-hot: the guest sets bit i for the i-th
+          // context of the array this runtime handed out. The opt-in
+          // experiment spelled that out as six absolute addresses
+          // (0x2E800000 + i * 64) because that is where its array happened
+          // to land; the array is allocated dynamically, so the rule is the
+          // index, not the address. Everything else still traps.
+          std::uint32_t expected_context = 0U;
+          const auto array = xma_context_array_address_;
+          if (array != 0U && xma_kick_expected_bit_ != 0U &&
+              (xma_kick_expected_bit_ & (xma_kick_expected_bit_ - 1U)) == 0U) {
+            const auto index =
+                static_cast<std::uint32_t>(
+                    std::countr_zero(xma_kick_expected_bit_));
+            expected_context = array + index * 64U;
+          }
+          if (address != 0x7FEA1A80U || length != 4U ||
+              // The wire value is the bit in the register's top byte, so the
+              // register addresses eight contexts and 128 is the last one it
+              // can name. The opt-in experiment stopped at 32 because it saw
+              // six kicks; that is a count of one run, not a boundary. The
+              // boundary is the byte.
+              // index & 0x1F means this register names 32 contexts, and the
+              // allocator hands out 320, so a run reaching index 32 needs a
+              // register selection this has not observed and must trap.
+              value != expected_wire || xma_kick_expected_bit_ == 0U ||
+              xma_last_physical_context_ != expected_context) {
+            throw RuntimeTrap("unqualified XMA kick register write", tick_, 0,
+                              address);
+          }
+          if (std::getenv("AC6_DEMO_WATCH_XMA_KICK") != nullptr) {
+            std::fprintf(stderr,
+                         "AC6_XMA_KICK tick=%llu thread=%u address=0x%08X "
+                         "wire=0x%08X logical=0x%08X\n",
+                         static_cast<unsigned long long>(tick_),
+                         current_guest_thread_id, address,
+                         static_cast<std::uint32_t>(value),
+                         xma_kick_expected_bit_);
+          }
+          xma_kick_expected_bit_ <<= 1U;
+          xma_last_physical_context_ = 0U;
+        });
+  }
+  memory_.map_mmio(
+      0x7FC86544U, 4U,
+      [this](std::uint32_t address, std::size_t length) -> std::uint64_t {
+        if (address != 0x7FC86544U || length != 4U) {
+          throw RuntimeTrap("unqualified Xenos interrupt-status read", tick_, 0,
+                            address);
+        }
+        // Xenos register index 0x1951. The SDK model and bounded PAL hardware
+        // capture both report bit 0 set for every delivered vblank.
+        return 1U;
+      },
+      [this](std::uint32_t address, std::uint64_t, std::size_t) {
+        throw RuntimeTrap("write to read-only Xenos interrupt status", tick_, 0,
+                          address);
+      });
+}
