@@ -74,6 +74,11 @@ ALLOWLIST_BYTES = {
     0x822F5E84: "91 7f 00 24",
     0x822F5E8C: "81 1f 00 7c",
     0x822F5EA0: "90 7f 00 80",
+    0x822F5EA8: "81 7f 00 80",
+    0x822F5EAC: "81 5f 00 84",
+    0x822F5EE0: "81 81 ff f8",
+    0x822F5EE8: "eb c1 ff e8",
+    0x822F5EEC: "eb e1 ff f0",
     0x822F600C: "91 81 ff f8",
     0x822F6010: "fb e1 ff f0",
     0x822F6014: "94 21 ff a0",
@@ -84,6 +89,8 @@ ALLOWLIST_BYTES = {
     0x822F6048: "91 3f 00 20",
     0x822F6054: "91 7f 00 14",
     0x822F605C: "91 5f 00 18",
+    0x822F6064: "81 7f 00 1c",
+    0x822F6068: "91 7f 00 74",
 }
 ALLOWLIST_PCS = frozenset((*ALLOWLIST_BYTES, 0x822F5EA0))
 
@@ -127,8 +134,8 @@ def _normalise_function(function: str, functions: dict[str, FunctionRecord]) -> 
     fail(f"function is absent from qualified generated sources: {function}")
 
 
-def _parse_trace(path: Path) -> tuple[dict[str, object], list[dict[str, object]],
-                                       dict[str, object]]:
+def _parse_trace(path: Path, expectation: str) -> tuple[dict[str, object], list[dict[str, object]],
+                                                        dict[str, object]]:
     arms: list[dict[str, object]] = []
     rows: list[dict[str, object]] = []
     stops: list[dict[str, object]] = []
@@ -187,8 +194,11 @@ def _parse_trace(path: Path) -> tuple[dict[str, object], list[dict[str, object]]
         fail(f"expected exactly one bounded stop, got {len(stops)}")
     if any(int(stop["accesses"]) != len(rows) for stop in stops):
         fail("stop count disagrees with bounded access count")
-    if stops[0]["reason"] != "qualified_store_exclusive":
+    reason = str(stops[0]["reason"])
+    if expectation == "qualified_store_exclusive" and reason != expectation:
         fail("stop reason is not qualified_store_exclusive")
+    if expectation == "no_exclusive" and reason != "bound":
+        fail("stop reason is not bounded no-exclusive")
     return arm, rows, stops[-1] if stops else {}
 
 
@@ -263,17 +273,24 @@ def build(args: argparse.Namespace) -> dict[str, object]:
         fail(f"PAL basefile identity mismatch: {base_sha}")
     manifest, manifest_sha = load_generated_manifest(manifest, xex_sha)
     functions = load_functions(args.generated_dir, len(base_bytes))
-    arm, rows, stop = _parse_trace(args.trace)
+    arm, rows, stop = _parse_trace(args.trace, args.expect)
     if any(int(row["thread"]) != int(arm["thread"]) for row in rows):
         fail("access thread does not match the armed guest thread")
     mapped_rows = _map_rows(rows, functions, base_bytes)
-    final = mapped_rows[-1]
-    if (final["kind"] != "store32" or final["guest_pc"] != "0x822F5EA0" or
-            int(final["address"]) != EXCLUSIVE_ADDRESS):
-        fail("last row is not the qualified exclusive store32")
-    if any(int(row["address"]) == EXCLUSIVE_ADDRESS
-           for row in mapped_rows[:-1]):
-        fail("exclusive target appeared before the final qualified row")
+    target_rows = [row for row in mapped_rows
+                   if int(row["address"]) == EXCLUSIVE_ADDRESS]
+    if args.expect == "qualified_store_exclusive":
+        final = mapped_rows[-1]
+        if (final["kind"] != "store32" or final["guest_pc"] != "0x822F5EA0" or
+                int(final["address"]) != EXCLUSIVE_ADDRESS):
+            fail("last row is not the qualified exclusive store32")
+        if any(int(row["address"]) == EXCLUSIVE_ADDRESS
+               for row in mapped_rows[:-1]):
+            fail("exclusive target appeared before the final qualified row")
+    else:
+        if (len(target_rows) != 1 or target_rows[0]["kind"] != "load32" or
+                target_rows[0]["value_be"] != "0x00000000"):
+            fail("bounded no-exclusive route lacks exactly one zero target load")
     source_hashes = {
         source.name: sha256(source.read_bytes())
         for source in sorted({args.generated_dir / str(row["source"])
@@ -312,6 +329,7 @@ def build(args: argparse.Namespace) -> dict[str, object]:
         "unique_sites": len({row["guest_pc"] for row in mapped_rows}),
         "sites": mapped_rows,
         "stop": stop,
+        "expectation": args.expect,
         "policy": {
             "allowlisted_pcs": [f"0x{pc:08X}" for pc in sorted(ALLOWLIST_PCS)],
             "exclusive_runtime_address": f"0x{EXCLUSIVE_ADDRESS:08X}",
@@ -330,6 +348,8 @@ def main() -> int:
     parser.add_argument("--xex", type=Path, required=True)
     parser.add_argument("--generated-dir", type=Path, required=True)
     parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--expect", choices=("qualified_store_exclusive", "no_exclusive"),
+                        default="qualified_store_exclusive")
     parser.add_argument("--json", "--output", dest="output", type=Path, required=True)
     args = parser.parse_args()
     result = build(args)

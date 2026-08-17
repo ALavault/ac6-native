@@ -41,7 +41,8 @@ class XamReturnChainMapperTests(unittest.TestCase):
             if not path.is_file() or path.is_symlink():
                 self.skipTest(f"qualified codegen fixture unavailable: {path}")
 
-    def run_mapper(self, trace: str, *, manifest: Path | None = None) -> subprocess.CompletedProcess[str]:
+    def run_mapper(self, trace: str, *, manifest: Path | None = None,
+                   expect: str = "qualified_store_exclusive") -> subprocess.CompletedProcess[str]:
         with tempfile.TemporaryDirectory(prefix="xam-map-", dir=os.environ["TMPDIR"]) as directory:
             root = Path(directory)
             trace_path = root / "trace.log"
@@ -49,13 +50,26 @@ class XamReturnChainMapperTests(unittest.TestCase):
             trace_path.write_text(trace, encoding="utf-8")
             command = [sys.executable, str(MAPPER), "--trace", str(trace_path),
                        "--basefile", str(BASEFILE), "--xex", str(XEX),
-                       "--generated-dir", str(GENERATED), "--json", str(output_path)]
+                       "--generated-dir", str(GENERATED), "--expect", expect,
+                       "--json", str(output_path)]
             if manifest is not None:
                 command.extend(["--manifest", str(manifest)])
             completed = subprocess.run(command, text=True, capture_output=True)
             if completed.returncode == 0:
                 self.result = json.loads(output_path.read_text(encoding="utf-8"))
             return completed
+
+    def test_bounded_no_exclusive_route_is_explicit(self) -> None:
+        trace = valid_trace().replace(
+            "kind=store32 address=0x829D15BC size=4 value_be=0x12345678 "
+            "tick=252 thread=1 lr=0x00000000 function=__imp__sub_822F5E58 generated_line=3948",
+            "kind=load32 address=0x829D15BC size=4 value_be=0x00000000 "
+            "tick=252 thread=1 lr=0x00000000 function=__imp__sub_822F5E58 generated_line=3953",
+        ).replace("reason=qualified_store_exclusive", "reason=bound")
+        completed = self.run_mapper(trace, expect="no_exclusive")
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertEqual(self.result["expectation"], "no_exclusive")
+        self.assertEqual(self.result["stop"]["reason"], "bound")
 
     def test_three_allowlisted_sites_bytes_and_hashes(self) -> None:
         completed = self.run_mapper(valid_trace(lr="0xDEADBEEF"))
@@ -148,6 +162,8 @@ class XamReturnChainMapperTests(unittest.TestCase):
         self.assertIn('"backend": "vulkan"', source)
         self.assertIn('"audio_driver": "dummy"', source)
         self.assertIn('"xma": "qualified runtime flags"', source)
+        self.assertIn('--expect "$expectation"', source)
+        self.assertIn('"route_expectations"', source)
         completed = subprocess.run([str(RUNNER), "unexpected"],
                                    text=True, capture_output=True)
         self.assertEqual(completed.returncode, 2)

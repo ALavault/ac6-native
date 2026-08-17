@@ -137,6 +137,8 @@ document = {
     "config": {
         "routes": ["neutral", "buttons16"], "tick": 252, "max_ticks": 5600,
         "max_accesses": 64,
+        "route_expectations": {"neutral": "no_exclusive",
+                               "buttons16": "qualified_store_exclusive"},
         "backend": "vulkan", "audio_driver": "dummy",
         "xma": "qualified runtime flags",
         "xvfb_lifecycle": "single owned supervisor reused by both fresh probes",
@@ -312,7 +314,12 @@ for route in neutral buttons16; do
   grep -Eq 'state16=[0-9A-Fa-f]{32}$' "$stderr" || {
     fail_run "$route arm did not carry a complete state16 payload"; exit 1;
   }
-  python3 "$MAPPER" --trace "$stderr" --basefile "$BASEFILE" --xex "$XEX" \
+  if [[ "$route" == neutral ]]; then
+    expectation=no_exclusive
+  else
+    expectation=qualified_store_exclusive
+  fi
+  python3 "$MAPPER" --expect "$expectation" --trace "$stderr" --basefile "$BASEFILE" --xex "$XEX" \
     --generated-dir "$GENERATED" --manifest "$MANIFEST" \
     --json "$RUN_TMP/$route/$route.map.json" || {
       fail_run "$route mapper refused the trace"; exit 1;
@@ -321,4 +328,4 @@ for route in neutral buttons16; do
 done
 
 RUN_STATUS="success"
-publish_capsule success "qualified XAM return-chain A/B completed"
+publish_capsule success "qualified differential XAM return-chain A/B completed"
