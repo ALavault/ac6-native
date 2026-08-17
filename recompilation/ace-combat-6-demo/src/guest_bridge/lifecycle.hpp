@@ -168,7 +168,12 @@ void GuestBridge::prepare(const ThreadImage &image) {
             expected_context = array + index * 64U;
           }
           if (address != 0x7FEA1A80U || length != 4U ||
-              value != expected_wire || xma_kick_expected_bit_ > 32U ||
+              // The wire value is the bit in the register's top byte, so the
+              // register addresses eight contexts and 128 is the last one it
+              // can name. The opt-in experiment stopped at 32 because it saw
+              // six kicks; that is a count of one run, not a boundary. The
+              // boundary is the byte.
+              value != expected_wire || xma_kick_expected_bit_ > 128U ||
               xma_last_physical_context_ != expected_context) {
             throw RuntimeTrap("unqualified XMA kick register write", tick_, 0,
                               address);
