@@ -58,6 +58,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1768-ac6-mcp-episode-receipt.json",
       "sha256": "1ee78018410db7fe0dfde361de3b9c4c915b80dd8d0f108c50d60f8b6716b033",
       "claim": "v2 episode receipts seal bounded content-addressed action/observation references, divergence and stop reason"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+      "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+      "claim": "two fresh PAL XAM routes reach the same blocked frontier and black readback; mapper refusal prevents promotion"
     }
   ],
   "gates": [
@@ -219,9 +224,14 @@
           "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-normal-draw-coverage-v1.json",
           "sha256": "9f3607c4d544b795dbddee5ee54be0732d342bde49c791b3aa3d52dc9ce7f62f",
           "claim": "black_pixels=230400, sentinel_pixels=0, other_pixels=0, resolved hash 0b150fd3…ec58366"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+          "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+          "claim": "both fresh XAM routes carry normal readback 0b150fd3…ec58366 and no frontend milestone"
         }
       ],
-      "tests": ["classification=full-coverage-zero-output"],
+      "tests": ["classification=full-coverage-zero-output; cycle 1769 repeats the same readback on neutral/buttons16"],
       "limits": ["no frontend/mission/pixel promotion is admissible"]
     },
     {
@@ -237,10 +247,15 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.md",
           "sha256": "af863759608ac66b726be07911d4951cf0670d9a9279f6b0961214d4a1183e82",
           "claim": "STOP at bounded kernel/XAM event-transport observation boundary"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+          "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+          "claim": "fresh neutral/buttons16 routes converge at 0x822F8848 with mapper refusal and no promotion"
         }
       ],
-      "tests": ["two routes rc=4, 5463 PRESENT, 23 blocked/0 runnable, stderr byte-identical"],
-      "limits": ["focused trace cap=32768 and last covered tick=1212; false post-resume access is capsule-scoped"]
+      "tests": ["cycle 1769: two routes rc=4, 5600 ticks, 5463 PRESENT, frontend/mission/terminal=false; mapper refusal is fail-closed"],
+      "limits": ["mapper capsule is incomplete; same blocked frontier does not qualify a guest semantic producer"]
     },
     {
       "gate_id": "vfs_user_store_runtime",
@@ -267,9 +282,14 @@
           "path": "workspaces/ace-combat-6/analysis/demo/ac6-demo-start-neutral-5600-ab-v1.json",
           "sha256": "3bde5cd5f116c61d660c6f6751dc6b5edce6c4e58b8fc8530ce6b51ced4d1f3b",
           "claim": "5463 PRESENT, 23 blocked/0 runnable, no graphics/scheduler divergence"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+          "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+          "claim": "independent fresh XAM A/B reports reproduce 5600 ticks and 5463 PRESENT with the same blocked frontier"
         }
       ],
-      "tests": ["completed_ticks=5600 in cycle 1760"],
+      "tests": ["cycle 1769 completed_ticks=5600 on both routes"],
       "limits": ["60 Hz simulation and 30 Hz presentation cadence are not proven"]
     },
     {
@@ -376,6 +396,11 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1756-demo-start-neutral-5600-ab.md",
           "sha256": "d468c83ea27d2a0090de40637d3b8a13ca7ed52e1e19b2ae4a0cb4dfb17d1cc1",
           "claim": "A/B input divergence did not create frontend, graphics or scheduler divergence"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+          "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+          "claim": "fresh neutral/buttons16 routes still converge at the same blocked frontier; no START promotion"
         }
       ],
       "tests": ["milestones frontend/mission/terminal=false in both routes"],
@@ -389,6 +414,11 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
           "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
           "claim": "frontend=false after 5600-tick A/B"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+          "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+          "claim": "two fresh routes remain frontend=false with identical black normal readback"
         }
       ],
       "tests": [],
@@ -402,6 +432,11 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
           "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
           "claim": "mission=false; no title-to-mission path receipt"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+          "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+          "claim": "fresh neutral/buttons16 routes remain mission=false and mapper refuses promotion"
         }
       ],
       "tests": [],
@@ -428,6 +463,11 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1760-ac6-demo-event-handoff.json",
           "sha256": "6258f903da2a5c6fb9d0100ce093ee424aca9c3947b679829dbbc0dce68884af",
           "claim": "terminal=false; outcome=max_ticks only"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+          "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+          "claim": "both routes return code 4/max_ticks with no endogenous terminal"
         }
       ],
       "tests": [],
@@ -611,13 +651,18 @@
         "claim": "receipt contract is sealed without promoting a gameplay or readback observation"
       },
       {
+        "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
+        "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
+        "claim": "XAM A/B mapper refusal is the current negative boundary before guest-owned promotion"
+      },
+      {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
         "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
         "claim": "all gameplay domains remain unavailable until receipt-backed guest producers exist"
       }
     ],
     "limits": [
-      "no frontend/mission promotion, no XAM closure and no arbitrary guest-memory exposure"
+      "mapper refusal must be repaired/requalified before a guest-owned producer can be promoted; no frontend/mission or arbitrary guest-memory exposure"
     ]
   },
   "next_checkpoint_branches": [
@@ -625,7 +670,7 @@
       "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "qualify one bounded guest-owned state boundary from Ghidra plus replay A/B, then add only its receipt-backed observation domain; do not open START/frontend/mission yet"
+      "action": "repair/requalify the XAM mapper on the exact PAL A/B capsule, then qualify one bounded guest-owned state boundary from Ghidra plus replay A/B; do not open START/frontend/mission yet"
     }
   ]
 }

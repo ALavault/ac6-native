@@ -22,8 +22,8 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | Final package hygiene | missing | No final `ac6-demo-native` package receipt; XEX/PAC/TBL/SDK/Ghidra/generated-C++ exclusion gate remains open. |
 | Guest writer → PM4 → RB_COPY | proven | Cycle 1754 receipt joins writers `0x821B5840`/`0x821B7C04` to IB offsets 239/387; two cold artifacts identical. |
 | Graphics/Xenos coverage | partial | Cycle 1755: 921600/921600 MSAA samples, but all resolved pixels are zero. |
-| Non-black readback | failed | `resolved_rgba8_sha256=0b150fd3…ec58366`, 230400 black pixels, no sentinel/other pixels. |
-| Kernel/XAM event transport | partial | Cycle 1760: 962 set→wake→resume chains on `0xE000004C`; focused trace capped at 32768 and only covers to tick 1212. |
+| Non-black readback | failed | `resolved_rgba8_sha256=0b150fd3…ec58366`, 230400 black pixels, no sentinel/other pixels; cycle 1769 repeats the same hash on fresh neutral/buttons16 routes. |
+| Kernel/XAM event transport | partial | Cycle 1760: 962 set→wake→resume chains on `0xE000004C`; cycle 1769 repeats the blocked frontier at `0x822F8848`, while the mapper refuses promotion. |
 | VFS/user store | proven | Cycle 1764: autonomous CLI/store/VFS, PAL import/verify, descriptor-anchored full-SHA publication and atomic rollback pass in the separate product store. This remains import-only. |
 | Time/scheduler | partial | 5600 ticks, 5463 PRESENT, 23 blocked/0 runnable; 60 Hz simulation/30 Hz presentation cadence not proven. |
 | Guest memory/post-resume | partial | Cycle 1761 closes only the first-access observation boundary: each fresh route has one handoff and one `load64`, mapped to unique PAL PC `0x82327154` (`0x7F0409D8`, bytes `eb61ffd0`). Semantic role, START consumption and readback remain open. |
@@ -32,7 +32,7 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | XMA runtime | partial | Six context-qualified kicks are traversed under opt-in guard; no XMA effect is promoted. |
 | Media/audio decode | missing | No decoded packet, timestamp/volume, or English/Japanese audio output receipt. |
 | Input delivery | partial | `buttons=16` appears at tick 252/sequence 760; no semantic START transition follows. |
-| START transition | failed | Neutral/buttons A/B have identical graphics/scheduler/milestones. |
+| START transition | failed | Neutral/buttons A/B have identical graphics/scheduler/milestones; cycle 1769 still converges at `0x822F8848`. |
 | Frontend | missing | Both 5600-tick routes report `frontend=false`; no positive milestone/readback pair. |
 | Mission | missing | `mission=false`; no title→mission receipt. |
 | Objectives | missing | Observation inventory marks objective unavailable; no endogenous producer. |
@@ -43,7 +43,7 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | FSM contract | proven | Cycle 1758 receipt `39c186e0…e06c7`: 10 states/9 budgets, deterministic controller, fail-closed guards; 43 tests. |
 | FSM PAL route | missing | Scaffold/runtime route has no qualified observations, allowlist, or terminal receipt. |
 | demo-native domain 1 | proven | Cycle 1764 validates identity/import/CLI/VFS/PAL corpus/install plus adversarial publication/rollback. It remains `import-only` and `supported=false`. |
-| demo-native runtime domains | partial | Cycles 1765–1767 add typed XInput, deterministic ticks/PRESENT, byte-identical in-memory `AC6RTPLY-v4` replay and owned IPC with 6/6 CTest. Guest scheduler and gameplay observations remain unavailable. |
+| demo-native runtime domains | partial | Cycles 1765–1768 add typed XInput, deterministic ticks/PRESENT, byte-identical in-memory `AC6RTPLY-v4` replay, owned IPC and sealed episode receipts. Guest scheduler and gameplay observations remain unavailable. |
 | Two cold success/failure runs | missing | Current cold A/B both return `max_ticks`, rc=4; no success and distinct failure terminal. |
 
 ## Single next checkpoint

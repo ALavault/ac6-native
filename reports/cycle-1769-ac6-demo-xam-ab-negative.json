@@ -1,0 +1,66 @@
+{
+  "schema": "ac6-demo-xam-return-chain-ab-report/v1",
+  "cycle": 1769,
+  "recorded_at": "2026-08-17",
+  "verdict": "XAM-AB-NEGATIVE / FRONTEND-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+  "job": {
+    "id": "job-mswwrng9-946059c2",
+    "exit_code": 1,
+    "status": "failed",
+    "reason": "neutral mapper refused the trace",
+    "receipt_sha256": "16ee2ba75c7bbfc781752fd4df72dd65247e078323463e9990f1ee3b5a8866f6"
+  },
+  "inputs": {
+    "binary_sha256": "a89e6588d77d85737f3568d0501f4c6937d4119a47148f2a76f87ca41e18d391",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "mapper_sha256": "92a4835d07d8f4c79d435a1bce1fe55e55aec3896ed795a995815dfcb88c43a3",
+    "backend": "vulkan",
+    "max_ticks": 5600,
+    "input_tick": 252
+  },
+  "routes": {
+    "neutral": {
+      "report_sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+      "trace_sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "frontier_address": "0x822F8848",
+      "frontier_lr": "0x822E559C",
+      "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    },
+    "buttons16": {
+      "report_sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+      "trace_sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "frontier_address": "0x822F8848",
+      "frontier_lr": "0x822E559C",
+      "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+      "neutral_resolve_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+    }
+  },
+  "policy": {
+    "content_addressed": true,
+    "current_file_written": false,
+    "frontend_claim_written": false,
+    "gameplay_observation_promoted": false
+  },
+  "limits": [
+    "mapper refusal leaves the focused XAM return-chain receipt incomplete",
+    "same frontier and black readback are a negative route result, not a semantic guest-state qualification",
+    "no START/frontend/mission/objective/terminal or native parity claim is promoted"
+  ]
+}
