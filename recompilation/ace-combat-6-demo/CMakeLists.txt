@@ -390,6 +390,9 @@ add_test(NAME ac6-demo-post-resume-tests
 add_test(NAME ac6-demo-xam-return-chain-mapper-tests
   COMMAND ${Python3_EXECUTABLE} -m unittest discover
     -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_xam_return_chain.py)
+add_test(NAME ac6-demo-import-sequence-diff-tests
+  COMMAND ${Python3_EXECUTABLE} -m unittest discover
+    -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_diff_import_sequences.py)
 add_executable(ac6-demo-xam-return-chain-header-tests
   tests/xam_return_chain_header_tests.cpp)
 target_include_directories(ac6-demo-xam-return-chain-header-tests PRIVATE
