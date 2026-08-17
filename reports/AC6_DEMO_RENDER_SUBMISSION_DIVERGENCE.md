@@ -141,3 +141,43 @@ donne `0x827AD2F0`. Et `state = 0` donne `0 - 11 = 0xFFFFFFF5`, très supérieur
 à 8 en comparaison non signée, donc retour immédiat : **la machine ne peut pas
 se démarrer elle-même**. Quelque chose d'autre doit écrire ce mot, et sur toute
 la sonde rien ne l'écrit — il n'a jamais une valeur autre que 0.
+
+## Le garde par trame : `r7` tombe à zéro dès le tick 4
+
+`sub_821C57D0`, la fonction exécutée 5 463 fois — une par PRESENT — protège
+tout son chemin de rendu par :
+
+```text
+cmpwi  cr6,r7,0
+beq    cr6,0x821C5920      ; r7 nul -> saute tout
+lwz    r10,21592(r31)
+lwz    r11,21596(r31)
+subf   r10,r10,r11
+cmplwi cr6,r10,6
+bge    cr6,0x821C5920      ; file pleine -> saute aussi
+...
+bl     0x821ADD90
+```
+
+Mesuré à l'entrée de la fonction (`AC6_DEMO_WATCH_FRAME_GATE`, hook
+`AC6_PPC_FUNCTION_ENTRY_CONTEXT`) :
+
+```text
+tick=0 object=0x10041A00 r7=0x1374A000 read=0 write=0 delta=0
+tick=1 object=0x10041A00 r7=0x1374A000 read=0 write=0 delta=0
+tick=4 object=0x10041A00 r7=0x00000000 read=0 write=0 delta=0
+tick=6 ... r7=0x00000000 ...
+```
+
+`r7` vaut l'adresse du frontbuffer `0x1374A000` aux ticks 0 et 1, puis **zéro
+pour toujours**. La seconde condition n'entre jamais en jeu : `delta` reste 0,
+la file n'est jamais pleine.
+
+Les deux appelants expliquent la bascule. `sub_821C4970` — l'entrée des
+threads graphiques 18 et 19 — appelle avec le frontbuffer ; elle ne tourne que
+deux fois, au tick 0, avant de se bloquer sur les événements que `KeSetEvent`
+ne pose jamais. Après quoi il ne reste que `sub_822F02F8`, qui saute en queue
+vers la même fonction sans jamais écrire `r7`, donc avec zéro hérité.
+
+Le chemin de rendu par trame n'est donc pas « sauté par une condition
+mystérieuse » : il est appelé par le mauvais appelant, parce que le bon dort.
