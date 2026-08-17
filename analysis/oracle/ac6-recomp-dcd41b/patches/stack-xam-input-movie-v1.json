@@ -94,6 +94,20 @@
       "sha256": "8adadd9190a11875a8b68950e9255a461a4ca51a860380e51f8d012ea0a2e5c0",
       "reason": "Capture-only insertion census at the qualified CX360UnitManager boundary 0x8226FEC0; separates construction from later publication without altering the five-domain trace.",
       "validation": "The capture configuration codegens 10478 functions and the complete Clang 21 host links with the 0x8226FEC0 wrapper. The bounded dummy-audio Vulkan smoke stops at the known 0x8234530C -> 0x8234524C frontier before Mission 01, so no gate is closed and no capture is qualified."
+    },
+    {
+      "order": 14,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/poll-exact-xam-controller-replay.patch",
+      "sha256": "623ffecb806f1e062dec248bfe5c11da7c16f726ef1022f275ee583a3433dad8",
+      "reason": "Provide the previously qualified PAL XamInputGetState lifecycle and strong guest marker seam used as the base for the XAM-only movie patch.",
+      "validation": "Clean Clang 21 build and four capture-host CTests passed at cycle 1556; this legacy marker/present protocol remains disabled when the XAM movie mode is active."
+    },
+    {
+      "order": 15,
+      "path": "analysis/oracle/ac6-recomp-dcd41b/patches/xam-input-movie-v1.patch",
+      "sha256": "bdf772f31da76b60fbd8f343b581d1478ba1425314eea1dc48a719a709ae4645",
+      "reason": "Add a FROM_XEX_LAUNCH, poll-exact XAM movie containing no X11 timestamp or host presentation identity, with strict host-HID-bypassing replay.",
+      "validation": "Full Clang 21 runtime links; ac6_xam_input_movie_test covers exact 16-byte guest state, caller/user/flags and short/long trace rejection. End-to-end Mission 01 qualification is pending."
     }
   ],
   "configuration": {
@@ -116,12 +130,12 @@
     "file_path": "assets/default.xex"
   },
   "qualification": {
-    "qualified_patch_count": 11,
+    "qualified_patch_count": 13,
     "clean_application_pass": true,
     "runtime_route_status": "open",
-    "changed_file_count": 29,
+    "changed_file_count": 46,
     "changed_tree_algorithm": "sha256(sorted(path + NUL + bytes + NUL))",
-    "changed_tree_sha256": "54fd4d402654a2b7991fca985ec46cc302fdd5f5a5af3de4efe2780e9e301492",
+    "changed_tree_sha256": "cd809ef6769c607d74967afe2307106150c94e4300e97377f08791d06826cbad",
     "capture_profile_byte_match": true
   }
 }

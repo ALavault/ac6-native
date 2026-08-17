@@ -20,9 +20,11 @@ class ComplexityTests(unittest.TestCase):
             root = Path(temporary)
             (root / "src").mkdir()
             (root / "build-sanitize").mkdir()
+            (root / ".build/plan-probes").mkdir(parents=True)
             (root / "sdk").mkdir()
             (root / "src/a.cpp").write_text("int f() { return 1; }\n")
             (root / "build-sanitize/b.cpp").write_text("x\n" * 2000)
+            (root / ".build/plan-probes/c.cpp").write_text("x\n" * 2000)
             (root / "sdk/vendor.h").write_text("x\n" * 2000)
             baseline = root / "base.json"
             baseline.write_text(json.dumps({"files": {

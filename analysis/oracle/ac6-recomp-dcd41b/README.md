@@ -69,6 +69,17 @@ python3 tools/apply_ac6_oracle_patch_stack.py \
   AC6_CAPTURE_WORKTREE --artifact-root . --apply
 ```
 
+The XAM input movie lane extends that sealed overlay with two further host
+patches (`poll-exact-xam-controller-replay.patch`, `xam-input-movie-v1.patch`)
+carried by `patches/stack-xam-input-movie-v1.json`: same base commit, same
+configuration, orders 1–15, `qualified_patch_count` 13. It is kept apart from
+`stack.json` because `reproducibility-v1.json` seals the 13-patch overlay
+(`git_tree 5652cc95…`, 29 changed files, overlay `54fd4d40…`) together with the
+capture build made from it, and the movie build is a different binary
+(`reports/xam-input-movie/qualification.json`). The 15-patch overlay preflights
+to `git_tree 2ea61530…`, 46 changed files, overlay `cd809ef6…`; its end-to-end
+qualification remains open.
+
 Configure this capture host with the qualified SIMDe include overlay and the
 explicit system Clang 21 compiler, then build codegen and the complete host.
 `reproducibility-v1.json` seals the resulting source overlay, generated tree,

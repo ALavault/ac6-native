@@ -57,6 +57,9 @@ ROUTE_CAPTURE = (
     ROOT / "analysis/oracle/ac6-recomp-dcd41b/captures/mission01-hud-route"
 )
 PATCH_STACK = ROOT / "analysis/oracle/ac6-recomp-dcd41b/patches/stack.json"
+MOVIE_PATCH_STACK = (
+    ROOT / "analysis/oracle/ac6-recomp-dcd41b/patches/stack-xam-input-movie-v1.json"
+)
 
 
 class OracleManifestTests(unittest.TestCase):
@@ -134,10 +137,32 @@ class OracleManifestTests(unittest.TestCase):
     def test_patch_stack_loader_qualifies_all_records(self) -> None:
         base, records = load_stack(PATCH_STACK, ROOT)
         self.assertEqual(base, "dcd41b7457fcac8242f8ef40de83d1719390d5af")
-        self.assertEqual(len(records), 15)
+        self.assertEqual(len(records), 13)
         self.assertEqual(records[11].display_path,
                          "analysis/oracle/ac6-recomp-dcd41b/patches/"
                          "deterministic-trace-input-replay.patch")
+
+    def test_xam_input_movie_stack_extends_the_sealed_stack(self) -> None:
+        # reproducibility-v1.json seals the 13-patch overlay of stack.json;
+        # the XAM input movie lane carries the same 13 records plus two more
+        # in a separate stack so the seal and the movie build stay distinct.
+        sealed_base, sealed = load_stack(PATCH_STACK, ROOT)
+        movie_base, movie = load_stack(MOVIE_PATCH_STACK, ROOT)
+        self.assertEqual(movie_base, sealed_base)
+        self.assertEqual(len(movie), 15)
+        self.assertEqual(
+            [(r.display_path, r.apply_args) for r in movie[:13]],
+            [(r.display_path, r.apply_args) for r in sealed],
+        )
+        self.assertEqual(
+            [r.display_path.rsplit("/", 1)[1] for r in movie[13:]],
+            ["poll-exact-xam-controller-replay.patch",
+             "xam-input-movie-v1.patch"],
+        )
+        sealed_doc = json.loads(PATCH_STACK.read_text(encoding="utf-8"))
+        movie_doc = json.loads(MOVIE_PATCH_STACK.read_text(encoding="utf-8"))
+        self.assertEqual(movie_doc["configuration"], sealed_doc["configuration"])
+        self.assertEqual(movie_doc["qualification"]["qualified_patch_count"], 13)
 
 
 class OraclePatchStackTransactionTests(unittest.TestCase):

@@ -46,7 +46,7 @@ def function_sizes(text: str) -> list[dict[str, int | str]]:
 def files(root: Path):
     for path in sorted(root.rglob("*")):
         if path.suffix.lower() not in EXTENSIONS or any(
-            part.lower() in EXCLUDED or part.lower().startswith("build")
+            part.lower() in EXCLUDED or part.lower().lstrip(".").startswith("build")
             for part in path.relative_to(root).parts
         ):
             continue
