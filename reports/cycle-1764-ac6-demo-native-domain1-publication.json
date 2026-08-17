@@ -1,0 +1,57 @@
+{
+  "schema": "ac6-demo-native-domain1-report/v1",
+  "cycle": 1764,
+  "recorded_at": "2026-08-17",
+  "verdict": "DOMAIN1-GO / DOMAIN2-NO-GO",
+  "supported": false,
+  "target": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "platform": "xbox360-xenon",
+    "region": "PAL-demo",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "retail_xex_sha256_rejected": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde"
+  },
+  "scope": {
+    "product": "ac6-demo-native",
+    "domain": "domain1_identity_import_vfs",
+    "status_boundary": "import-only",
+    "domain2": "NO-GO",
+    "runtime_frontend_mission_promoted": false
+  },
+  "commits": [
+    "5b30f1d7c9ff57cb76afac779efeee5b31bf1cda",
+    "0487efef05d490a1723a907a0ce00b555a85e169",
+    "1246fd2b650a508a8498b63628960f29be1b90ce"
+  ],
+  "publication_contract": {
+    "full_sha256_before_current": true,
+    "generation_name_inode_rechecked_after_hash": true,
+    "current_pointer_and_generation_rechecked_after_hash": true,
+    "foreign_name_unlink_or_replace": false,
+    "atomic_exchange_rollback": true,
+    "old_pointer_inode_backup": true,
+    "orphan_gc": "deferred; no ambiguous-name cleanup"
+  },
+  "validation": {
+    "build": "PASS",
+    "ctest": {"passed": 3, "total": 3, "result": "PASS"},
+    "complexity_audit": {"files": 11, "result": "PASS"},
+    "install": {"result": "PASS", "no_bin_bin": true},
+    "pal_corpus": {
+      "files": 9,
+      "total_bytes": 322371032,
+      "isolated_import": "PASS",
+      "isolated_verify": "PASS",
+      "temporary_store_removed": true
+    },
+    "adversarial_tests": [
+      "multiprocess publication",
+      "rename and fsync failures",
+      "post-exchange fsync rollback",
+      "generation-name swap after full hash",
+      "old-pointer replacement after exchange",
+      "corrupt and symlink pointers"
+    ]
+  }
+}
