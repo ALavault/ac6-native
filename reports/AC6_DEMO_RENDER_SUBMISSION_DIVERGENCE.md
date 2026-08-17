@@ -179,5 +179,31 @@ deux fois, au tick 0, avant de se bloquer sur les événements que `KeSetEvent`
 ne pose jamais. Après quoi il ne reste que `sub_822F02F8`, qui saute en queue
 vers la même fonction sans jamais écrire `r7`, donc avec zéro hérité.
 
-Le chemin de rendu par trame n'est donc pas « sauté par une condition
-mystérieuse » : il est appelé par le mauvais appelant, parce que le bon dort.
+### Correction : `r7` n'est pas un argument
+
+Ce qui précède mesure la mauvaise valeur. Dans `sub_821C57D0`, `r7` est
+**chargé à l'intérieur de la fonction**, depuis `[r31+21600]`, avant d'être
+testé :
+
+```text
+ligne 97   ctx.r7 = PPC_LOAD_U32(ctx.r31 + 21600);
+ligne 117  ctx.cr6.compare<int32_t>(ctx.r7, 0);
+```
+
+Le hook d'entrée lisait donc le `r7` résiduel de l'appelant, sans rapport avec
+la condition. Que cette valeur ait été le frontbuffer aux ticks 0 et 1 puis
+zéro est une coïncidence de l'ABI, pas un mécanisme.
+
+Le vrai garde est le champ `[device+21600]` avec `device = 0x10041A00`. Mesuré
+sur toute la sonde, lui et ses deux voisins d'index ne bougent jamais :
+
+```text
+tick=1 read=0x00000000 write=0x00000000 enable=0x00000000
+```
+
+et rien d'autre jusqu'au tick 5 599. Le rendu par trame est donc désactivé par
+un champ qui n'est jamais armé.
+
+Son unique écrivain est `sub_821ADAB8` (deux magasins, `+21600`), **jamais
+atteinte nativement, exécutée par l'oracle**, et sans appelant statique — même
+forme que le reste de la famille renderer.
