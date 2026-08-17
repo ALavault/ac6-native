@@ -141,6 +141,11 @@ int main() {
   input.scheduler.waits[0].last_indirect_target = 0x82375D14U;
   input.scheduler.waits[0].indirect_call_count = 1890U;
   input.scheduler.waits[0].last_indirect_tick = 19U;
+  // The guest call site of the wait itself, distinct from the last indirect
+  // call the thread made before it: a parked worker's last indirect target is
+  // its startup thunk, which says nothing about what it is waiting for.
+  input.scheduler.waits[0].wait_lr = 0x82350130U;
+  input.scheduler.waits[0].wait_key = 0xE000004CU;
   input.frontier = ac6demo::derive_progress_frontier(
       input.until, input.completed_ticks, input.milestones, input.scheduler);
   assert(input.frontier.has_value());
@@ -158,6 +163,7 @@ int main() {
       liveness_document.find(
           "scheduler activation budget exhausted before mission milestone") !=
       std::string::npos);
+  assert(liveness_document.find("\"wait_lr\":2184511792") != std::string::npos);
   assert(liveness_document.find("\"thread\": 1") != std::string::npos);
 
   input.completed_ticks = 320U;

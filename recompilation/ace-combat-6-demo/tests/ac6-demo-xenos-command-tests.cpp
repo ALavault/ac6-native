@@ -91,13 +91,13 @@ void test_qualified_commands_and_immutable_draws() {
   assert(shader1.stage == ac6demo::XenosShaderStage::Vertex);
   assert(shader1.start_dword == 0U && shader1.size_dwords == 2U);
   assert(shader1.guest_big_endian_sha256 ==
-         "72c0d37c1d5ab7fa342210d10c7abfae888539bee05dca3c65ec49ca2f1e8c8b");
+         "f51c9b0b3e2f4e386b1c77e81d341867052f700fbf3fd12897f298d6e38cbcf1");
   assert((shader1.guest_big_endian_dwords ==
           std::vector<std::uint32_t>{0x01020304U, 0xAABBCCDDU}));
   assert(shader2.stage == ac6demo::XenosShaderStage::Pixel &&
          shader2.size_dwords == 1U);
   assert(shader2.guest_big_endian_sha256 ==
-         "b2ed992186a5cb19f6669d2e2b5d94fdc54539e9b97a8f5a5fd645de7c513891");
+         "b2ed992186a5cb19f6668aade821f502c1d00970dfd0e35128d51bac4649916c");
   assert((shader2.guest_big_endian_dwords ==
           std::vector<std::uint32_t>{0x12345678U}));
   assert(shader3.stage == ac6demo::XenosShaderStage::Vertex &&

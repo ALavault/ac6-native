@@ -160,6 +160,9 @@ bool GuestBridge::block_current_guest_thread(std::uint8_t wait_kind,
   current->wake_timed_out = false;
   current->wait_kind = wait_kind;
   current->wait_key = wait_key;
+  // Every guest wait is entered from inside an import, so the link register of
+  // the import currently being dispatched is the guest call site of the wait.
+  current->wait_lr = current_import_lr;
   current->wake_tick = wake_tick;
   if (swapcontext(&fiber->context, active_scheduler_context) != 0) {
     throw RuntimeTrap("guest fiber context switch failed", tick_);
@@ -417,7 +420,8 @@ GuestSchedulerSnapshot GuestBridge::scheduler_snapshot() const noexcept {
                                   thread.parameter, callback, callback_parameter,
                                   last_call.target, last_call.lr, last_call.count,
                                   last_call.tick,
-                                  thread.wait_key, thread.wake_tick,
+                                  thread.wait_key, thread.wait_lr,
+                                  thread.wake_tick,
                                   thread.wait_kind, thread.blocked,
                                   thread.suspended, thread.finished};
     }

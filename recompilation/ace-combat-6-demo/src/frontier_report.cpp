@@ -118,6 +118,7 @@ void write_scheduler_details(std::ostream &output,
            << ",\"indirect_call_count\":" << wait.indirect_call_count
            << ",\"last_indirect_tick\":" << wait.last_indirect_tick
            << ",\"wait_key\":" << wait.wait_key
+           << ",\"wait_lr\":" << wait.wait_lr
            << ",\"wake_tick\":" << wait.wake_tick
            << ",\"wait_kind\":" << static_cast<unsigned>(wait.wait_kind)
            << ",\"blocked\":" << (wait.blocked ? "true" : "false")

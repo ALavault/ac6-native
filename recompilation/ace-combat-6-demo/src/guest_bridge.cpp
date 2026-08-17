@@ -166,6 +166,7 @@ thread_local std::uint32_t next_event_handle = 0xE0000000U;
 thread_local std::uint32_t next_notify_handle = 0xE5000000U;
 thread_local std::uint32_t next_timer_handle = 0xE6000000U;
 thread_local std::uint32_t current_guest_thread_id = 1U;
+thread_local std::uint32_t current_import_lr = 0U;
 thread_local const char* current_load_generated_name = nullptr;
 thread_local std::uint32_t current_load_generated_line = 0U;
 thread_local std::uint64_t event_set_count = 0U;
@@ -1126,8 +1127,11 @@ timer_period_to_ticks(std::uint32_t period_ms) noexcept {
       1U, (duration + kHundredNanosecondsPerGuestTick - 1U) /
               kHundredNanosecondsPerGuestTick);
 }
-[[nodiscard]] bool dispatch_import(PPCContext &context, const char *module,
-                                   const char *name, std::uint16_t ordinal) {
+[[nodiscard]] bool dispatch_import_qualified(PPCContext &context,
+                                             const char *module,
+                                             const char *name,
+                                             std::uint16_t ordinal) {
+  current_import_lr = static_cast<std::uint32_t>(context.lr);
   require_bridge().record_import_edge(
       current_guest_thread_id, static_cast<std::uint32_t>(context.lr), module,
       name, ordinal, snapshot_registers(context));
@@ -1143,6 +1147,8 @@ timer_period_to_ticks(std::uint32_t period_ms) noexcept {
 #include "guest_bridge/xam_input_dispatch.hpp"
   return false;
 }
+
+#include "guest_bridge/import_journal.hpp"
 } // namespace
 // clang-format off
 #include "guest_bridge/constructor.hpp"

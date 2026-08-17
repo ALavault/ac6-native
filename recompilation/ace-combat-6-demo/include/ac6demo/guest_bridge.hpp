@@ -117,6 +117,7 @@ struct GuestThreadWaitSnapshot final {
   std::uint64_t indirect_call_count{};
   std::uint64_t last_indirect_tick{};
   std::uint32_t wait_key{};
+  std::uint32_t wait_lr{};
   std::uint64_t wake_tick{};
   std::uint8_t wait_kind{};
   bool blocked{};
@@ -453,6 +454,7 @@ private:
     bool wake_timed_out{};
     std::uint8_t wait_kind{};
     std::uint32_t wait_key{};
+    std::uint32_t wait_lr{};
     std::uint64_t wake_tick{};
     void *fiber_state{};
   };

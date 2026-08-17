@@ -319,6 +319,11 @@ foreach(test_name IN ITEMS
     ac6-demo-xenos-tiling-tests)
   add_executable(${test_name} tests/${test_name}.cpp)
   target_link_libraries(${test_name} PRIVATE ac6_demo_runtime)
+  # These suites express every check as assert(). The configured build type is
+  # RelWithDebInfo, which defines NDEBUG, so without this they pass vacuously.
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(${test_name} PRIVATE -UNDEBUG)
+  endif()
   if (CMAKE_GENERATOR MATCHES "Ninja")
     set_property(TARGET ${test_name} PROPERTY JOB_POOL_COMPILE ac6_demo_compile)
     set_property(TARGET ${test_name} PROPERTY JOB_POOL_LINK ac6_demo_link)
@@ -365,7 +370,6 @@ add_executable(ac6-xbox360-host-xam-input-movie-tests
 target_link_libraries(ac6-xbox360-host-xam-input-movie-tests PRIVATE
   ac6_xbox360_host)
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  target_compile_options(ac6-demo-input-tests PRIVATE -UNDEBUG)
   target_compile_options(ac6-xbox360-host-xam-input-movie-tests PRIVATE
     -UNDEBUG)
 endif()
@@ -413,4 +417,13 @@ if (NOT AC6_DEMO_ENABLE_CODEGEN)
     COMMAND ${Python3_EXECUTABLE}
       ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_no_guest_cli.py
       $<TARGET_FILE:ac6-demo-recomp>)
+endif()
+
+# Declared last: these three suites are defined further down the file, and
+# every check in them is an assert() that NDEBUG would erase.
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  foreach(assert_test IN ITEMS ac6-demo-emu-agent-ipc-tests
+      ac6-demo-post-resume-header-tests ac6-demo-xam-return-chain-header-tests)
+    target_compile_options(${assert_test} PRIVATE -UNDEBUG)
+  endforeach()
 endif()
