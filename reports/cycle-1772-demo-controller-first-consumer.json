@@ -1,0 +1,136 @@
+{
+  "schema": "ac6-demo-controller-first-consumer-ab-report/v1",
+  "cycle": 1772,
+  "recorded_at": "2026-08-17",
+  "verdict": "CONTROLLER-CONSUMER-QUALIFIED / READBACK-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+  "job": {
+    "id": "job-msx0r3y3-3068dba4",
+    "exit_code": 0,
+    "status": "success",
+    "reason": "bounded tick-252 controller-reader trace completed for neutral/buttons16",
+    "receipt_sha256": "1cdab9d876b554e6a25ebb19ca315e0d51b6881d234cecbbf58eb5aa6e8cd6e8"
+  },
+  "inputs": {
+    "binary_sha256": "1cf83c7cc4da873a63c5b8d1a59aa40aefd197aea297e6f0b483b5a0febd513f",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "mapper_sha256": "89e3822fef2d14fdec5582c382aa0e687dc25f24a7d1121fd778bd0f84297dce",
+    "load_site_mapper_sha256": "a5526c456739d480feb7d9e23dbe00016e4220e2f354b212035264cfbe4bc4ee",
+    "generated_source": "codegen/generated/ppc_recomp.39.cpp",
+    "generated_source_sha256": "6bd2d59ba301c46b5bf39fe6bca5df2df2d1fcd2dd7d7dcc3000b7ca57a25601",
+    "backend": "vulkan",
+    "audio_driver": "dummy",
+    "max_ticks": 253,
+    "input_tick": 252,
+    "max_accesses": 64,
+    "watch_range": "[0x829D1550,0x829D15C4)"
+  },
+  "static_join": {
+    "ghidra_project": "ace-combat-6-demo",
+    "module": "Default.xex",
+    "controller_object": "0x829D153C",
+    "consumer_kind": "first post-stop non-chain guest load",
+    "function": "__imp__sub_822F61A0",
+    "generated_line": 4456,
+    "guest_pc": "0x822F61E4",
+    "pal_bytes": "81 7f 00 44",
+    "instruction": "lwz r11,68(r31)",
+    "runtime_address": "0x829D1580",
+    "offset": "0x44",
+    "lr": "0x822F61E4",
+    "thread": 1,
+    "tick": 252,
+    "writer_target": "0x829D15BC",
+    "writer_target_offset": "0x80",
+    "writer_effect_proven": false
+  },
+  "routes": {
+    "neutral": {
+      "expectation": "no_exclusive",
+      "map_sha256": "e7f89249bd9c24e9208a6a16903d51e5b112a9517178347086dc4eed595407ad",
+      "report_sha256": "9812e42845ec2f4e91afe80574b89144b86222e1df1c0266a3619635ff76002e",
+      "trace_sha256": "d8f148f449660549432a15b8593312818edcd71cc97a9333642701b71e34e51d",
+      "stderr_sha256": "fc434a5a1844dedb9b8b22761411f7d30734d84c827ad5020c26adfd6c2ac10f",
+      "return_code": 4,
+      "completed_ticks": 253,
+      "presents": 116,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "stop": "bound accesses=64",
+      "first_post_stop_reader": {
+        "address": "0x829D1580",
+        "size": 4,
+        "value": "0x00000000",
+        "function": "__imp__sub_822F61A0",
+        "generated_line": 4456,
+        "guest_pc": "0x822F61E4",
+        "pal_bytes": "81 7f 00 44",
+        "lr": "0x822F61E4",
+        "thread": 1,
+        "tick": 252
+      },
+      "post_stop_chain_prefix": []
+    },
+    "buttons16": {
+      "expectation": "qualified_store_exclusive",
+      "map_sha256": "cb751d7b0f2f084ae3ba5000194b416a241cbe510bb69e119ba11275e016572e",
+      "report_sha256": "e04f047962beccb53cfbfa820eff34d35c5ee15bc9c9a3de0d95b0035ca56baa",
+      "trace_sha256": "0b2453b993091000f00204c41f55ccd85c631b6c6b2b9c7e3d840f787b5b1d27",
+      "stderr_sha256": "12a62ce768defa337a6a45ae5caf9f5a0b5d181fff0b1603b384cbe7872c0918",
+      "return_code": 4,
+      "completed_ticks": 253,
+      "presents": 116,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "stop": "qualified_store_exclusive accesses=58",
+      "first_post_stop_reader": {
+        "address": "0x829D1580",
+        "size": 4,
+        "value": "0x00000001",
+        "function": "__imp__sub_822F61A0",
+        "generated_line": 4456,
+        "guest_pc": "0x822F61E4",
+        "pal_bytes": "81 7f 00 44",
+        "lr": "0x822F61E4",
+        "thread": 1,
+        "tick": 252
+      },
+      "post_stop_chain_prefix": [
+        {
+          "address": "0x829D1558",
+          "size": 4,
+          "value": "0x00000010",
+          "function": "__imp__sub_822F5E58",
+          "generated_line": 3976
+        },
+        {
+          "address": "0x829D1558",
+          "size": 4,
+          "value": "0x00000010",
+          "function": "__imp__sub_822F6008",
+          "generated_line": 4226
+        }
+      ]
+    }
+  },
+  "policy": {
+    "content_addressed": true,
+    "current_file_written": false,
+    "frontend_claim_written": false,
+    "gameplay_observation_promoted": false,
+    "writer_effect_proven": false,
+    "native_parity_claim": false,
+    "arbitrary_guest_memory_exposure": false
+  },
+  "limits": [
+    "the first post-stop guest read is a controller-object load at +0x44, not a readback of the zero writer at +0x80",
+    "buttons16 has two post-stop return-chain reads before the same first non-chain consumer; the A/B join does not establish semantic input ownership",
+    "both bounded routes stop at max_ticks with frontend/mission/terminal=false and readback remains black",
+    "MCP gameplay domains remain unavailable and supported=false"
+  ]
+}

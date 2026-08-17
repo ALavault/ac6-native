@@ -73,6 +73,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1771-ac6-demo-xam-ab-qualified.json",
       "sha256": "53ac7cb67ee483171012a8fd489cf5b5a3ef35c1e79e4d7f3c857e915c81746d",
       "claim": "route-aware capsule seals neutral no-exclusive and buttons16 qualified writer maps with both content-addressed maps; no effect or gameplay promotion"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1772-demo-controller-first-consumer.json",
+      "sha256": "b46f1276944f3fd0cb81764f5ab3044c1f2529623b746fe9fdf2d6d67b32ff1b",
+      "claim": "tick-252 trace maps the first post-stop non-chain guest controller load at 0x822F61E4 in both routes; writer target/readback remains unjoined"
     }
   ],
   "gates": [
@@ -272,10 +277,15 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1771-ac6-demo-xam-ab-qualified.json",
           "sha256": "53ac7cb67ee483171012a8fd489cf5b5a3ef35c1e79e4d7f3c857e915c81746d",
           "claim": "route-aware receipt maps neutral 64/46 and buttons16 58/40 with identical 5600/5463 runs; writer remains zero-valued"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1772-demo-controller-first-consumer.json",
+          "sha256": "b46f1276944f3fd0cb81764f5ab3044c1f2529623b746fe9fdf2d6d67b32ff1b",
+          "claim": "bounded A/B trace maps first non-chain consumer __imp__sub_822F61A0 / 0x822F61E4 at tick 252; no writer-target readback"
         }
       ],
-      "tests": ["cycle 1769: two routes rc=4, 5600 ticks, 5463 PRESENT, frontend/mission/terminal=false; mapper refusal is fail-closed", "cycle 1770: neutral bound=64 with target load zero; buttons16 qualified_store_exclusive at 0x822F5EA0, 58 rows and 40 mapped sites", "cycle 1771: success receipt with route-aware expectations and both maps content-addressed"],
-      "limits": ["writer stores zero and no consumer/readback effect is joined; gameplay observations remain unavailable"]
+      "tests": ["cycle 1769: two routes rc=4, 5600 ticks, 5463 PRESENT, frontend/mission/terminal=false; mapper refusal is fail-closed", "cycle 1770: neutral bound=64 with target load zero; buttons16 qualified_store_exclusive at 0x822F5EA0, 58 rows and 40 mapped sites", "cycle 1771: success receipt with route-aware expectations and both maps content-addressed", "cycle 1772: first non-chain controller load maps to identical PAL PC/bytes in both routes; writer target remains unread"],
+      "limits": ["first controller-object consumer is joined, but the zero writer target and non-black readback effect remain unjoined; gameplay observations remain unavailable"]
     },
     {
       "gate_id": "vfs_user_store_runtime",
@@ -658,7 +668,7 @@
   "next_checkpoint": {
     "gate_id": "demo_native_runtime_domain3_guest_boundary",
     "status": "partial",
-    "objective": "Qualify the first guest-owned simulation/state producer and consumer from the PAL demo, then expose only a receipt-backed observation; keep all other domains unavailable.",
+    "objective": "Join the qualified zero writer target to a guest consumer/readback from the PAL demo, then expose only a receipt-backed observation; keep all other domains unavailable.",
     "evidence": [
       {
         "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
@@ -685,6 +695,11 @@
           "sha256": "53ac7cb67ee483171012a8fd489cf5b5a3ef35c1e79e4d7f3c857e915c81746d",
           "claim": "route-aware A/B mapping is sealed; the qualified writer remains zero-effect and gameplay observations stay unavailable"
         },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1772-demo-controller-first-consumer.json",
+          "sha256": "b46f1276944f3fd0cb81764f5ab3044c1f2529623b746fe9fdf2d6d67b32ff1b",
+          "claim": "first post-stop non-chain controller consumer is mapped at 0x822F61E4 in both routes; no target readback or gameplay promotion"
+        },
       {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
         "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
@@ -692,7 +707,7 @@
       }
     ],
     "limits": [
-      "buttons16 writer is requalified statically, but its zero effect and missing consumer/readback keep the guest observation unavailable; no frontend/mission or arbitrary guest-memory exposure"
+      "buttons16 writer is requalified statically and a controller consumer is mapped, but the writer target's zero effect/readback remains unjoined; no frontend/mission or arbitrary guest-memory exposure"
     ]
   },
   "next_checkpoint_branches": [
@@ -700,7 +715,7 @@
       "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "join the qualified zero writer to its first guest consumer/readback with a fresh A/B replay; do not open START/frontend/mission yet"
+      "action": "join target 0x829D15BC to its first guest consumer/readback with a fresh A/B replay; do not open START/frontend/mission yet"
     }
   ]
 }
