@@ -472,20 +472,23 @@ signal.signal(signal.SIGTERM, on_term)
 signal.signal(signal.SIGHUP, on_term)
 signal.signal(signal.SIGINT, on_term)
 display_fd = os.open(display_file, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+if display_fd != 3:
+    # An inherited fd 3 (ctest keeps its log open there) would otherwise be
+    # dup2'd over in preexec_fn and then closed again by close_fds, since a
+    # freshly duplicated 3 is not in pass_fds. Pin the display file to 3 in
+    # this supervisor before forking so pass_fds keeps exactly that fd.
+    os.dup2(display_fd, 3)
+    os.close(display_fd)
+    display_fd = 3
 stdout = open(os.path.join(os.path.dirname(status_file), "xvfb.stdout"), "wb")
 stderr = open(os.path.join(os.path.dirname(status_file), "xvfb.stderr"), "wb")
-
-
-def child_setup():
-    if display_fd != 3:
-        os.dup2(display_fd, 3)
 
 
 try:
     child = subprocess.Popen(
         ["Xvfb", "-displayfd", "3", "-screen", "0", "1280x720x24", "-nolisten", "tcp"],
         stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
-        close_fds=True, pass_fds=(display_fd,), preexec_fn=child_setup)
+        close_fds=True, pass_fds=(display_fd,))
     os.close(display_fd)
     stdout.close()
     stderr.close()

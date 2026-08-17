@@ -252,6 +252,11 @@ run_case() {
 }
 
 run_case rc4 4 ready rc 0
+# ctest (and any parent holding a log there) leaves fd 3 open in the test;
+# the supervisor must still hand Xvfb the display file on exactly fd 3.
+exec 3>"$TEST_TMP/inherited-fd3"
+run_case rc4-inherited-fd3 4 ready rc 0
+exec 3>&-
 run_case rc3 3 ready rc 0
 run_case probe-timeout 124 ready timeout 0
 run_case start-immediate-fail 125 fail rc 0 '' 0 'xvfb start failed'
@@ -278,4 +283,4 @@ run_case cleanup-failure-preserves-rc 4 ready rc 0 '' 1
 
 smoke_real_xvfb
 
-printf 'post-resume Xvfb lifecycle: 13 real cases + 1 real-Xvfb smoke PASS\n'
+printf 'post-resume Xvfb lifecycle: 14 real cases + 1 real-Xvfb smoke PASS\n'
