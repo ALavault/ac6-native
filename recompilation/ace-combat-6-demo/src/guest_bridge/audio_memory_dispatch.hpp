@@ -104,6 +104,15 @@
     // r5 carries the render frame size in bytes; the submit path validates
     // its buffer against exactly this number rather than a constant.
     bridge.set_xaudio_frame_bytes(context.r5.u32);
+    if (std::getenv("AC6_DEMO_WATCH_IMPORTS") != nullptr) {
+      std::fprintf(stderr,
+                   "AC6_XAUDIO_REGISTER tick=%llu descriptor=0x%08X "
+                   "callback=0x%08X context=0x%08X frame_bytes=0x%X "
+                   "r6=0x%08X r7=0x%08X r8=0x%08X\n",
+                   static_cast<unsigned long long>(bridge.tick()), descriptor,
+                   callback, callback_context, context.r5.u32, context.r6.u32,
+                   context.r7.u32, context.r8.u32);
+    }
     std::uint32_t handle{};
     if (!bridge.register_xaudio_client(callback, callback_context, &handle)) {
       context.r3.u32 = 0xC000009AU;
