@@ -343,6 +343,22 @@
       }
       objects[index] = object;
     }
+    // Same opt-in journal as the imports: the wait registers name a pointer,
+    // not a wait. Without the resolved list, "thread 22 waits on eight
+    // objects" cannot be turned into which eight.
+    if (std::getenv("AC6_DEMO_WATCH_IMPORTS") != nullptr) {
+      std::fprintf(stderr, "AC6_WAIT_OBJECTS tick=%llu thread=%u lr=0x%08X "
+                           "count=%u type=%u",
+                   static_cast<unsigned long long>(bridge.tick()),
+                   current_guest_thread_id,
+                   static_cast<std::uint32_t>(context.lr), count, wait_type);
+      for (std::uint32_t index = 0U; index < count; ++index) {
+        std::fprintf(stderr, " obj%u=0x%08X:type=0x%02X", index,
+                     objects[index],
+                     static_cast<unsigned>(memory.load_u8(objects[index])));
+      }
+      std::fprintf(stderr, "\n");
+    }
     for (;;) {
       std::uint32_t signaled_count = 0U;
       std::uint32_t first_signaled = 0U;
