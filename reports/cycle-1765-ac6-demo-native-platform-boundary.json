@@ -1,0 +1,42 @@
+{
+  "schema": "ac6-demo-native-domain2-report/v1",
+  "cycle": 1765,
+  "recorded_at": "2026-08-17",
+  "verdict": "PARTIAL/NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "commit": "ef827eeb07e29169a77ffb5fbc645414c5481edf",
+  "boundary": {
+    "domain": "platform-input-time",
+    "simulation_hz": 60,
+    "nominal_present_interval": 2,
+    "one_action_per_tick": true,
+    "present_guest_notified": true,
+    "wall_clock": false,
+    "hid_fallback": false,
+    "runtime_exposed": false
+  },
+  "contract_sources": [
+    {
+      "path": "workspaces/ace-combat-6/recompilation/ace-combat-6-demo/config/strict-policy.json",
+      "sha256": "dab6079652716eb5c72a14f99209ca71cb696a36081a8d7a5ebbfe98ccb6b329"
+    },
+    {
+      "path": "workspaces/ace-combat-6/tools/emu_agent/protocol/v2.py",
+      "sha256": "829f7ae67309db1cf45570f24b91a8c15194c82e5b213b11b230e51c6d1e9d5e"
+    }
+  ],
+  "validation": {
+    "build": "PASS",
+    "ctest": {"passed": 4, "total": 4, "result": "PASS"},
+    "determinism": {"runs": 2, "ticks": 600, "result": "PASS"},
+    "complexity_audit": {"files": 14, "result": "PASS"},
+    "install_no_bin_bin": "PASS"
+  },
+  "limits": [
+    "no native AC6RTPLY-v4 journal",
+    "no demo-native IPC or guest scheduler",
+    "no gameplay observation, frontend, mission or terminal",
+    "no recomp/native runtime parity claim"
+  ]
+}

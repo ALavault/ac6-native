@@ -43,19 +43,19 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | FSM contract | proven | Cycle 1758 receipt `39c186e0…e06c7`: 10 states/9 budgets, deterministic controller, fail-closed guards; 43 tests. |
 | FSM PAL route | missing | Scaffold/runtime route has no qualified observations, allowlist, or terminal receipt. |
 | demo-native domain 1 | proven | Cycle 1764 validates identity/import/CLI/VFS/PAL corpus/install plus adversarial publication/rollback. It remains `import-only` and `supported=false`. |
-| demo-native runtime domains | missing | Player/camera/flight/target/objective/terminal/readback remain unavailable. Cycle 1763 qualifies only the static `WeaponBin+0x5D → event+0x0C → DurableBin` contract; no runtime wiring or Strigon record provenance is promoted. |
+| demo-native runtime domains | partial | Cycle 1765 adds typed XInput, deterministic 60 Hz ticks and guest-notified PRESENT with 4/4 CTest. No replay journal, IPC, guest scheduler, gameplay observation or runtime route exists. |
 | Two cold success/failure runs | missing | Current cold A/B both return `max_ticks`, rc=4; no success and distinct failure terminal. |
 
 ## Single next checkpoint
 
-Derive and wire the first bounded demo-native platform/input/time runtime
-domain from qualified PAL traces, then compare it with the demo-recomp receipt.
+Add the native `AC6RTPLY-v4` per-tick journal for the bounded platform
+observations and prove record/replay identity before any demo-recomp comparison.
 Keep frontend/mission unsupported and keep the cycle-1761 XAM frontier
 separate until its A/B receipt is delivered.
 
 | Branch | Status | Classification |
 |---|---|---|
-| Runtime/domain 2 promotion | missing | Wire one qualified platform/input/time domain and compare the same observations/replay against demo-recomp; no frontend/mission claim. |
+| Runtime/domain 2 promotion | partial | Platform/input/time contract passes; native replay journal, IPC and guest/runtime comparison remain absent. |
 
 The machine-readable canonical record is
 [`goal-gate-matrix-v1.json`](goal-gate-matrix-v1.json).

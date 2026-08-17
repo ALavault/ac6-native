@@ -527,8 +527,13 @@
     },
     {
       "gate_id": "demo_native_runtime_domains",
-      "status": "missing",
+      "status": "partial",
       "evidence": [
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1765-ac6-demo-native-platform-boundary.json",
+          "sha256": "75ef526ead66e6a747749eef1ca9f7ae248e8f0b458d2103beff1ee614e1af07",
+          "claim": "typed XInput, deterministic 60 Hz ticks and guest-notified PRESENT contract pass 4/4 CTest without runtime exposure"
+        },
         {
           "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
           "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
@@ -542,7 +547,7 @@
       ],
       "tests": [],
       "limits": [
-        "no scene, simulation, PPM, Vulkan, FSM or replay domain is wired",
+        "platform/input/time contract exists but no AC6RTPLY-v4 journal, IPC, guest scheduler, scene, simulation, Vulkan, FSM or runtime route is wired",
         "Strigon record hashes and mode metrics remain information-only without source ranges or extractor receipt"
       ]
     },
@@ -562,13 +567,18 @@
   ],
   "next_checkpoint": {
     "gate_id": "demo_native_runtime_domain2",
-    "status": "missing",
-    "objective": "Derive and wire the first demo-native platform/input/time runtime domain from qualified PAL traces; keep frontend/mission unsupported until guest-owned transitions exist.",
+    "status": "partial",
+    "objective": "Add the native AC6RTPLY-v4 per-tick journal for the qualified platform observations, then prove record/replay identity without exposing a guest-runtime claim.",
     "evidence": [
       {
         "path": "workspaces/ace-combat-6/reports/cycle-1764-ac6-demo-native-domain1-publication.json",
         "sha256": "877ab1a176e810479e1cde76af7f14b92d0507553f4c795ccaed1e095f37adad",
         "claim": "domain1 is proven and leaves domain2/runtime explicitly unopened"
+      },
+      {
+        "path": "workspaces/ace-combat-6/reports/cycle-1765-ac6-demo-native-platform-boundary.json",
+        "sha256": "75ef526ead66e6a747749eef1ca9f7ae248e8f0b458d2103beff1ee614e1af07",
+        "claim": "domain2 platform contract is partial; replay journal and runtime exposure remain absent"
       }
     ],
     "limits": [
@@ -578,9 +588,9 @@
   "next_checkpoint_branches": [
     {
       "branch_id": "runtime_domain2_promotion",
-      "status": "missing",
-      "match": "qualified demo-native platform/input/time evidence",
-      "action": "wire one bounded domain and compare against demo-recomp receipts; no frontend/mission promotion"
+      "status": "partial",
+      "match": "qualified demo-native platform/input/time contract",
+      "action": "seal AC6RTPLY-v4 record/replay identity, then compare bounded observations against demo-recomp; no frontend/mission promotion"
     }
   ]
 }
