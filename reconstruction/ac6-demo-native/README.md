@@ -36,4 +36,6 @@ The library also contains the first domain-2 boundary: a deterministic 60 Hz
 tick counter, typed bounded XInput state, and guest-notified PRESENT count.
 It reads no host controller or wall clock and is not exposed by the CLI. This
 is a tested platform contract only; it does not establish guest execution,
-frontend, mission, renderer, replay parity, or support.
+frontend, mission, renderer, or support. Its in-memory `AC6RTPLY-v4` journal
+is exact-PAL, content-hashed, bounded, canonical, and replayed through the same
+platform API; no filesystem replay command or guest runtime is exposed.
