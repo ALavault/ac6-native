@@ -383,6 +383,42 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
       ++xaudio_frames_emitted_;
     }
   }
+  // Frontend state, read-only and opt-in. The startup mode task's own state
+  // word and the mode manager's transition request are the two numbers that
+  // say whether the frontend is stalled or merely looping, and neither was
+  // observable before. Addresses: CModeTaskStartUpDemoOffline is 0x2E7F0080
+  // and its update sub_8218A4A0 switches on [this+12]; the manager pointer is
+  // the global at 0x827435F8, which that update loads before storing 1 at
+  // [manager+24].
+  if (std::getenv("AC6_DEMO_WATCH_MODE_STATE") != nullptr) {
+    static std::uint32_t previous_state = 0xFFFFFFFFU;
+    static std::uint32_t previous_request = 0xFFFFFFFFU;
+    constexpr std::uint32_t kStartUpTask = 0x2E7F0080U;
+    if (memory_.mapped(kStartUpTask, 96U)) {
+      const auto state = memory_.load_u32(kStartUpTask + 12U);
+      if (state != previous_state) {
+        std::fprintf(stderr,
+                     "AC6_MODE_STATE tick=%llu state=0x%08X counter=0x%08X\n",
+                     static_cast<unsigned long long>(tick_), state,
+                     memory_.load_u32(kStartUpTask + 68U));
+        previous_state = state;
+      }
+    }
+    if (memory_.mapped(0x827435F8U, 4U)) {
+      const auto manager = memory_.load_u32(0x827435F8U);
+      if (manager != 0U && memory_.mapped(manager, 64U)) {
+        const auto request = memory_.load_u32(manager + 24U);
+        if (request != previous_request) {
+          std::fprintf(stderr,
+                       "AC6_MODE_REQUEST tick=%llu manager=0x%08X "
+                       "vtable=0x%08X request=0x%08X\n",
+                       static_cast<unsigned long long>(tick_), manager,
+                       memory_.load_u32(manager), request);
+          previous_request = request;
+        }
+      }
+    }
+  }
   (void)run_runnable_threads();
   resume_xenos_pending_batch();
 }
