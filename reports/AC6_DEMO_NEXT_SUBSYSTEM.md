@@ -2,66 +2,84 @@
 
 Date : 2026-08-17
 
-Oracle sémantique secondaire admis : `https://acecombat.fandom.com/wiki/Invasion_of_Gracemeria_(mission)` ; la page sert à ordonner les phases, jamais à remplacer une xref binaire.
+## Front désormais fermé
 
-## Décision
+La production de magnitude par les armes à projectile est fermée :
 
-Le prochain sous-système à attaquer est :
+```text
+WeaponBin+0x5D
++ modificateur contextuel[10]
+→ configuration projectile
+→ impact
+→ événement compact+0x0C
+→ DurableBin[event]
+→ durabilité
+```
 
-**production des événements de dommage par les impacts et collisions**.
+Le faux producteur `0x820A2C58` est rétracté : il appartient à la décoration de texte radio.
 
-Ce choix ne consiste pas à prolonger artificiellement `WeaponBin`. La frontière vient justement d’être localisée : `WeaponBin` se termine sur l’acquisition, la trajectoire, la cadence et la famille ; l’interface suivante fabrique un événement `GUNDAMAGE`, `MISSILEDAMAGE`, `GROUNDDAMAGE` ou `FRAKEDAMAGE` avec une magnitude.
+## Nouveau sous-système prioritaire
 
-## Pourquoi ce front est prioritaire
+Le prochain front est :
 
-Il ferme la seule lacune majeure de la chaîne combat :
+```text
+ActBin / OrderBin / SetBin
+→ activation, clonage ou changement d'état d'ObjBin
+→ UnitManager / MissionManager
+→ transition de mission
+```
 
-`WeaponBin → projectile → impact → code + magnitude → DurableBin → durabilité → destruction`
+## Pourquoi ce front est maintenant prioritaire
 
-Les deux extrémités sont déjà qualifiées :
+Les mécanismes locaux d'une unité active sont suffisamment qualifiés :
 
-- côté projectile, les portées, vitesses et familles sont connues ;
-- côté cible, l’équation de durabilité et les multiplicateurs `DurableBin` sont connus.
+- provenance `ObjBin → objet actif` ;
+- IA `ManeuverBin → pitch/roll/yaw` ;
+- `WeaponBin → acquisition, trajectoire, cadence et dommage` ;
+- `DurableBin → perte de durabilité`.
 
-Le segment restant est petit et discriminant. Le fermer permettra de remplacer dans `ac6-native` les valeurs synthétiques de dommage par un contrat retail étayé.
+Le principal manque est désormais l'orchestration globale de Mission 01 :
+
+- activation des groupes Nimbus 200–208 ;
+- clonage ou activation des chars aéroportés ;
+- vagues F/A-18F, Rafale M et Strigon ;
+- ordre de retraite ;
+- condition de franchissement de la Return Line ouest ;
+- changement d'ordre ou désactivation des unités encore présentes.
 
 ## Première tranche bornée
 
-1. Partir de `demo:0x820A2698` et résoudre le vslot appelé à `demo:0x820A2C58` avec le code 1008.
-2. Reconstituer la structure d’impact passée dans `r5` et l’origine de sa magnitude.
-3. Inventorier les producteurs des codes :
-   - 1007 `GUNDAMAGE` ;
-   - 1008 `MISSILEDAMAGE` ;
-   - 1009 `GROUNDDAMAGE` ;
-   - 1014 `FRAKEDAMAGE`.
-4. Joindre chaque producteur à :
-   - classe/vtable du projectile ou collisionneur ;
-   - vitesse relative et angle d’impact ;
-   - effet ou table auxiliaire ;
-   - magnitude finale transmise à l’événement.
-5. Tester si la magnitude dépend de :
-   - l’énergie cinétique ;
-   - une table par famille ;
-   - la cible ;
-   - la difficulté/ESM ;
-   - un mélange de ces facteurs.
+1. Retrouver le switch des tags `OrderBin` :
+   `Disappear`, `Stop`, `Lead`, `Jump`, `Flag`, `Property`.
+2. Relier chaque handler à une mutation exacte :
+   - flag HSM ;
+   - état d'activation ;
+   - ordre/cible courant ;
+   - entrée `SetBin` ou groupe `ObjBin`.
+3. Suivre les opérations d'activation jusqu'à :
+   - une factory `UnitManager` ;
+   - l'activation d'un objet préconstruit ;
+   - le clonage d'un template.
+4. Identifier le prédicat terminal de retraite qui lit le transform du joueur et écrit l'état de mission.
 
 ## Critère de fermeture
 
-Pour chaque famille de dommage, produire :
+```text
+phase de mission
+→ record Act/Order/Set
+→ handler
+→ mutation exacte
+→ groupe ObjBin
+→ effet UnitManager/HSM
+```
 
-`producer class → input fields → formula → event code → magnitude → DurableBin channel`
+La chronologie publique de *Invasion of Gracemeria* reste un oracle sémantique secondaire. Elle peut contraindre l'ordre attendu, mais ne remplace jamais la provenance binaire. Les formats propriétaires ont déjà assez de pouvoirs occultes sans leur attribuer ceux d'une page wiki.
 
-Un nom de type « damage » n’est accepté qu’après cette formule. Une constante lue près d’un missile reste une constante lue près d’un missile, malgré tous les efforts de notre cerveau pour y voir une destinée.
+## Fronts secondaires
 
-## Front suivant après celui-ci
+En parallèle, deux petites frontières du dommage peuvent être fermées à faible coût :
 
-Une fois le dommage fermé, le meilleur front devient l’orchestration de mission `ActBin/OrderBin/SetBin`, afin de résoudre :
+- nom métier du modificateur d'identifiant 10 ;
+- owners exacts des producteurs `GROUNDDAMAGE` et `FRAKEDAMAGE`.
 
-- activation des groupes Nimbus ;
-- clonage/activation des chars aéroportés ;
-- vagues F/A-18F, Rafale et Strigon ;
-- ordre de retraite ;
-- condition de franchissement de la Return Line.
-
-La chronologie publique de Mission 01 fournira alors un oracle sémantique utile, sans remplacer les preuves de provenance binaires.
+Elles ne justifient plus de retarder l'analyse de l'orchestration de mission.
