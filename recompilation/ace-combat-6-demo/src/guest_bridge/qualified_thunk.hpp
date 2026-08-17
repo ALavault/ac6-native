@@ -12,45 +12,62 @@
 
 namespace ac6demo::guest_bridge_detail {
 
-// This is the only reached callable entry that Ghidra classifies as a branch
-// delay slot.  Its four PAL words and the vtable offset are checked at runtime;
-// the caller supplies the normal qualified function lookup/invocation path.
+// A family of 16-byte virtual-call trampolines, which Ghidra classifies as
+// branch delay slots rather than function starts, so codegen emits none of
+// them and every one arrives here as an unqualified indirect call.
+//
+// Each is literally four words:
+//
+//     lwz   r12,0(rX)        ; 0x81830000 (r3) or 0x81840000 (r4)
+//     lwz   r11,OFF(r12)     ; 0x816C0000 | OFF
+//     mtctr r11              ; 0x7D6903A6
+//     bctr                   ; 0x4E800420
+//
+// so the object register and the vtable offset are read out of the bytes at
+// the entry rather than listed here. Three neighbours in one Ghidra chunk
+// make the point: 0x820D3230 is r4 slot 0x54, 0x820D32D0 is r3 slot 0x70,
+// 0x820D3310 is r3 slot 0x64. This used to qualify 0x820D3310 alone, with
+// its offset written in as a constant; pressing START during the title
+// screen reaches 0x820D32D0 and would have needed a second copy, and the
+// next screen a third. What is qualified is the shape, and every check the
+// single-address version made is still made: the four words are verified at
+// dispatch, the object and vtable must be mapped, and the slot target must
+// be a function this build knows.
 template <typename Lookup, typename Invoke>
 bool dispatch_reached_branch_delay_thunk(
     PPCContext &context, std::uint8_t *base, std::uint32_t guest_address,
     GuestMemory &memory, std::uint64_t tick, std::uint32_t lr, Lookup &&lookup,
     Invoke &&invoke) {
-  constexpr std::uint32_t kThunk = 0x820D3310U;
-  if (guest_address != kThunk) {
+  if ((guest_address & 3U) != 0U || !memory.mapped(guest_address, 16U)) {
     return false;
   }
-  constexpr std::array<std::uint32_t, 4U> kWords{
-      0x81830000U, 0x816C0064U, 0x7D6903A6U, 0x4E800420U};
-  if (!memory.mapped(kThunk, 16U) ||
-      !std::ranges::equal(
-          kWords, std::array<std::uint32_t, 4U>{memory.load_u32(kThunk),
-                                                memory.load_u32(kThunk + 4U),
-                                                memory.load_u32(kThunk + 8U),
-                                                memory.load_u32(kThunk + 12U)})) {
-    throw RuntimeTrap("qualified branch-delay thunk bytes changed", tick, lr,
-                      guest_address);
+  const auto load_object = memory.load_u32(guest_address);
+  const auto load_slot = memory.load_u32(guest_address + 4U);
+  if ((load_object != 0x81830000U && load_object != 0x81840000U) ||
+      (load_slot & 0xFFFF0000U) != 0x816C0000U ||
+      memory.load_u32(guest_address + 8U) != 0x7D6903A6U ||
+      memory.load_u32(guest_address + 12U) != 0x4E800420U) {
+    return false;
   }
-  const auto object = context.r3.u32;
+  const auto slot_offset = load_slot & 0xFFFFU;
+  const auto object =
+      load_object == 0x81830000U ? context.r3.u32 : context.r4.u32;
   if (object == 0U || !memory.mapped(object, 4U)) {
     throw RuntimeTrap("qualified branch-delay thunk object is not mapped", tick,
                       lr, object);
   }
   const auto vtable = memory.load_u32(object);
   if (vtable == 0U ||
-      vtable > std::numeric_limits<std::uint32_t>::max() - 0x64U ||
-      !memory.mapped(vtable + 0x64U, 4U)) {
+      vtable > std::numeric_limits<std::uint32_t>::max() - slot_offset - 4U ||
+      !memory.mapped(vtable + slot_offset, 4U)) {
     throw RuntimeTrap("qualified branch-delay thunk vtable slot is not mapped",
                       tick, lr, vtable);
   }
-  const auto slot_target = memory.load_u32(vtable + 0x64U);
-  if (slot_target == 0U || slot_target == kThunk || lookup(slot_target) == nullptr) {
-    throw RuntimeTrap("qualified branch-delay thunk target is not qualified", tick,
-                      lr, slot_target);
+  const auto slot_target = memory.load_u32(vtable + slot_offset);
+  if (slot_target == 0U || slot_target == guest_address ||
+      lookup(slot_target) == nullptr) {
+    throw RuntimeTrap("qualified branch-delay thunk target is not qualified",
+                      tick, lr, slot_target);
   }
   context.r12.u64 = vtable;
   context.r11.u64 = slot_target;
