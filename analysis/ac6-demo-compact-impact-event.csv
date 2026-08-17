@@ -1,0 +1,8 @@
+offset,semantics,source,grade
+0x00,full event ID,source object+0xB4,A
+0x04,Arms subtype or selected slot,source object+0x10C,A-
+0x08,auxiliary source ID,source object+0x104,A
+0x0C,damage/event magnitude,f1,A
+0x14,target identity,target resolver,A
+0x18,source identity,source resolver,A
+0x1C,impact vector or position,r7 vector,A-
