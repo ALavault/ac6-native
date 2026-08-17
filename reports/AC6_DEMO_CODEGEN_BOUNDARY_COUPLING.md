@@ -95,3 +95,34 @@ qualification binaire, du type que les 154 entrées existantes portent déjà
 
 La séquence saine est donc : d'abord découpler les capsules du numéro de ligne
 généré, ensuite qualifier les entrées par lots, jamais l'inverse.
+
+## Le couplage a déjà mordu, et il ne se signale pas
+
+En cherchant à découpler les capsules avant de toucher aux frontières, il
+apparaît que quatre d'entre elles ne sont **déjà plus** résolubles, sans
+qu'aucune frontière ait été ajoutée :
+
+```text
+ac6-demo-queue-slot-neutral600-v1.json          sub_820FF710:42775
+ac6-demo-queue-slot-stores-ab-v1.json           sub_820FF710:42775
+ac6-demo-render-queue-slot-write-probe-v1.json  sub_820FF710:42775
+ac6-demo-render-queue-write-provenance-v1.json  sub_820FF710:42781
+```
+
+`sub_820FF710` commence aujourd'hui **ligne 43191** de `ppc_recomp.7.cpp`. La
+ligne 42775 existe toujours dans ce fichier, mais elle appartient à une autre
+fonction, et son contenu est `// vmrghw v13,v12,v10` — une instruction VMX,
+pas le store de file de rendu que ces capsules décrivent.
+
+C'est la forme la plus dangereuse du problème. Une citation périmée **ne cesse
+pas de résoudre** : elle résout vers autre chose. Un lecteur qui suivrait ces
+quatre capsules aujourd'hui trouverait une instruction sans rapport et n'aurait
+aucun signal l'avertissant que le lien est rompu.
+
+Le codegen n'avait pas besoin d'un changement de frontière pour bouger ; une
+version d'outil ou un patch suffit. Un numéro de ligne généré est donc
+périssable par nature, et non seulement fragile aux frontières.
+
+`tools/anchor_capsule_generated_lines.py` sert des deux côtés : il ajoute le PC
+PAL aux citations encore résolubles, et il **refuse** celles qui ne le sont
+plus, ce qui en fait le contrôle qui manquait.
