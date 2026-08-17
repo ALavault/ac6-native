@@ -97,3 +97,47 @@ elle est appelée par un pointeur calculé à l'exécution.
 - Quel site indirect appelle `sub_821AD7C0`, et sous quelle condition.
 - Si l'état 11 est la seule entrée valide, ou si d'autres valeurs de [11,19]
   sont des points d'entrée légitimes.
+
+## Correction : `sub_821AD7C0` n'est pas le démarreur
+
+Le commit `cf7116b2` conclut que « deux fonctions seulement manipulent cette
+base […] l'autre est `sub_821AD7C0`, jamais atteinte, qui est donc le
+démarreur ». Le « donc » ne tient pas. Lue, cette fonction compare un octet
+`[r3+4]` à des caractères ASCII :
+
+```text
+cmpwi cr6,r11,107   ; 'k'
+cmpwi cr6,r11,97    ; 'a'
+cmpwi cr6,r11,99    ; 'c'
+cmpwi cr6,r11,100   ; 'd'
+cmpwi cr6,r11,102   ; 'f'
+cmpwi cr6,r11,103   ; 'g'
+```
+
+C'est un parseur à dispatch sur caractère. Il partage seulement une constante
+d'adressage avec la machine à états. La recherche qui l'a produit — un seul
+motif, `addi rX,rY,-11832` — était trop étroite pour porter la conclusion
+qu'on lui a fait porter.
+
+## Hypothèses écartées
+
+- **Le runtime écraserait l'état.** Non : à `0x827AD2F0` l'image
+  `Default.xex.base.bin` contient elle-même des zéros. C'est une variable de
+  `.bss`, et le chargement est fidèle.
+- **Le guest se croirait sans affichage.** Non : `VdQueryVideoMode` rend
+  1280×720 à 60 Hz et `VdGetCurrentDisplayInformation` remplit sa structure de
+  0x58 octets avec des dimensions cohérentes (`+0x10`/`+0x14` = 1280/720,
+  `+0x48`/`+0x4A` = 1280/720, `+0x4C` = 60.0f).
+- **Une autre forme d'adressage écrirait l'état.** Aucune trouvée :
+  ni `addi …,-11536` (adresse directe), ni `ori …,53704`. Les 53 magasins
+  `stw rX,296(rY)` du binaire utilisent des bases variées et restent à
+  départager.
+
+## L'état de la question
+
+L'arithmétique de la base est vérifiée sur le C++ généré :
+`lis r11,-32133` donne `0x827B0000`, moins 11 832 donne `0x827AD1C8`, plus 296
+donne `0x827AD2F0`. Et `state = 0` donne `0 - 11 = 0xFFFFFFF5`, très supérieur
+à 8 en comparaison non signée, donc retour immédiat : **la machine ne peut pas
+se démarrer elle-même**. Quelque chose d'autre doit écrire ce mot, et sur toute
+la sonde rien ne l'écrit — il n'a jamais une valeur autre que 0.
