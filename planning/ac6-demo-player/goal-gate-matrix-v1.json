@@ -48,6 +48,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1764-ac6-demo-native-domain1-publication.json",
       "sha256": "877ab1a176e810479e1cde76af7f14b92d0507553f4c795ccaed1e095f37adad",
       "claim": "domain 1 publication, corpus, VFS and adversarial CAS gate is proven; product remains import-only and unsupported"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
+      "sha256": "8cce1ce9d10c2e65265fa8fb45d623b955d1b0f0ead308d76cd322f50a0d4c32",
+      "claim": "owned demo-native platform IPC is tested; guest/gameplay observations remain unavailable"
     }
   ],
   "gates": [
@@ -470,10 +475,15 @@
           "sha256": "dbb93272079a988ef2178c0afba6eaf64bbdbebccf42770ddb7449953492d555",
           "receipt_sha256": "4e992d4b767590b4ecb70cabef4a3c9511550b0a990ba86aed0696bf9d9f99af",
           "claim": "allowlist empty; observations unavailable; supported=false"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
+          "sha256": "8cce1ce9d10c2e65265fa8fb45d623b955d1b0f0ead308d76cd322f50a0d4c32",
+          "claim": "demo-native owned socketpair start/step/observe/stop and oversize rejection pass; MCP domains remain unavailable"
         }
       ],
-      "tests": ["CTest OFF 19/19 and ON 18/18; transport suite included in 54 passed"],
-      "limits": ["no qualified PAL artifact SHA and no available observation"]
+      "tests": ["cycle 1767: CTest 6/6; MCP transport 12 passed, 1 gated skip; native binary start/step/observe/close PASS"],
+      "limits": ["no qualified PAL artifact SHA and no available gameplay observation"]
     },
     {
       "gate_id": "fsm_contract",
@@ -548,11 +558,16 @@
           "path": "workspaces/ace-combat-6/analysis/ac6-demo-infos-branch-audit-v1.json",
           "sha256": "66c81479791bbaf079e198ee9aaa705187ab9a865eaf3c95dd41bde96811180d",
           "claim": "PAL static cross-match qualifies WeaponBin+0x5D plus modifier 10, compact impact magnitude +0x0C, and DurableBin damage equation; no runtime wiring"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
+          "sha256": "8cce1ce9d10c2e65265fa8fb45d623b955d1b0f0ead308d76cd322f50a0d4c32",
+          "claim": "domain-2 platform/replay is exposed through owned demo-native IPC without promoting guest domains"
         }
       ],
-      "tests": [],
+      "tests": ["cycle 1767: platform IPC C++ test, native binary transport and MCP configured-native routing pass"],
       "limits": [
-        "platform/input/time and in-memory replay contracts exist but no IPC, guest scheduler, scene, simulation, Vulkan, FSM or runtime route is wired",
+        "platform/input/time and replay contracts are exposed by IPC but no guest scheduler, scene, simulation, Vulkan, FSM or runtime route is wired",
         "Strigon record hashes and mode metrics remain information-only without source ranges or extractor receipt"
       ]
     },
@@ -571,36 +586,31 @@
     }
   ],
   "next_checkpoint": {
-    "gate_id": "demo_native_runtime_domain2",
+    "gate_id": "demo_native_runtime_domain3_guest_boundary",
     "status": "partial",
-    "objective": "Expose the bounded platform/replay contract through an owned demo-native IPC session while keeping every guest/gameplay observation unavailable.",
+    "objective": "Qualify the first guest-owned simulation/state producer and consumer from the PAL demo, then expose only a receipt-backed observation; keep all other domains unavailable.",
     "evidence": [
       {
-        "path": "workspaces/ace-combat-6/reports/cycle-1764-ac6-demo-native-domain1-publication.json",
-        "sha256": "877ab1a176e810479e1cde76af7f14b92d0507553f4c795ccaed1e095f37adad",
-        "claim": "domain1 is proven and leaves domain2/runtime explicitly unopened"
+        "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
+        "sha256": "8cce1ce9d10c2e65265fa8fb45d623b955d1b0f0ead308d76cd322f50a0d4c32",
+        "claim": "owned IPC is closed as a platform-only seam; the next proof must come from a guest-owned producer/consumer"
       },
       {
-        "path": "workspaces/ace-combat-6/reports/cycle-1765-ac6-demo-native-platform-boundary.json",
-        "sha256": "75ef526ead66e6a747749eef1ca9f7ae248e8f0b458d2103beff1ee614e1af07",
-        "claim": "domain2 platform contract is partial; replay journal and runtime exposure remain absent"
-      },
-      {
-        "path": "workspaces/ace-combat-6/reports/cycle-1766-ac6-demo-native-replay-journal.json",
-        "sha256": "7bea094caeade73d955e5f25c0e73bf1bcf23214542e62382f490478944150d5",
-        "claim": "platform replay is byte-identical in-memory; owned IPC and guest runtime remain absent"
+        "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
+        "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
+        "claim": "all gameplay domains remain unavailable until receipt-backed guest producers exist"
       }
     ],
     "limits": [
-      "no runtime/frontend/mission promotion and no XAM closure"
+      "no frontend/mission promotion, no XAM closure and no arbitrary guest-memory exposure"
     ]
   },
   "next_checkpoint_branches": [
     {
-      "branch_id": "runtime_domain2_promotion",
+      "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "wire owned demo-native IPC to the same platform/replay path, with guest/gameplay domains unavailable; no frontend/mission promotion"
+      "action": "qualify one bounded guest-owned state boundary from Ghidra plus replay A/B, then add only its receipt-backed observation domain; do not open START/frontend/mission yet"
     }
   ]
 }

@@ -4,10 +4,10 @@ Target: `ac6-demo-xbox360-pal`, Xbox 360 Xenon/PAL demo, `Default.xex`.
 Overall support remains `supported=false`.
 
 The portfolio handoff anchor remains [`CURRENT.json`](../../../../reports/handoff/CURRENT.json)
-(cycle 1761, supported=false). The latest AC6 checkpoint is the domain-1
+(cycle 1761, supported=false). The latest AC6 checkpoint is the owned IPC
 `ac6-demo-native` receipt
-([JSON](../../reports/cycle-1764-ac6-demo-native-domain1-publication.json),
-SHA-256 `877ab1a1…adad`), while the post-resume one-shot receipt remains
+([JSON](../../reports/cycle-1767-ac6-demo-native-ipc.json),
+SHA-256 `8cce1ce9…4c32`), while the post-resume one-shot receipt remains
 ([JSON](../../reports/cycle-1761-ac6-demo-post-resume-one-shot.json), canonical
 SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 `failed`, or `missing`. Green unit/CTest results are never runtime parity.
@@ -39,23 +39,23 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | Results/terminal | missing | `terminal=false`, outcome only `max_ticks`; no success/failure result. |
 | MCP v2 surface | proven | Cycle 1757 receipt `ddbcedb8…de48f8`: six v2 tools, v1 compatibility, 17 tests. Contract only. |
 | MCP ownership/lifecycle/replay | proven | Cycle 1759: immutable receipt replay, session ownership/close; 54 tests + 1 skip. Fixture/contract scope only. |
-| MCP runtime artifacts | partial | AF_UNIX/Popen transport is implemented/tested, but PAL allowlist is empty and observations remain unavailable. |
+| MCP runtime artifacts | partial | Cycle 1767 proves owned `demo-native` AF_UNIX/Popen start/step/observe/stop and bounded failure handling; PAL gameplay observations remain unavailable. |
 | FSM contract | proven | Cycle 1758 receipt `39c186e0…e06c7`: 10 states/9 budgets, deterministic controller, fail-closed guards; 43 tests. |
 | FSM PAL route | missing | Scaffold/runtime route has no qualified observations, allowlist, or terminal receipt. |
 | demo-native domain 1 | proven | Cycle 1764 validates identity/import/CLI/VFS/PAL corpus/install plus adversarial publication/rollback. It remains `import-only` and `supported=false`. |
-| demo-native runtime domains | partial | Cycles 1765–1766 add typed XInput, deterministic ticks/PRESENT and byte-identical in-memory `AC6RTPLY-v4` replay with 5/5 CTest. No IPC, guest scheduler, gameplay observation or runtime route exists. |
+| demo-native runtime domains | partial | Cycles 1765–1767 add typed XInput, deterministic ticks/PRESENT, byte-identical in-memory `AC6RTPLY-v4` replay and owned IPC with 6/6 CTest. Guest scheduler and gameplay observations remain unavailable. |
 | Two cold success/failure runs | missing | Current cold A/B both return `max_ticks`, rc=4; no success and distinct failure terminal. |
 
 ## Single next checkpoint
 
-Expose the bounded platform/replay path through an owned `demo-native` IPC
-session while returning every guest/gameplay domain as unavailable.
-Keep frontend/mission unsupported and keep the cycle-1761 XAM frontier
-separate until its A/B receipt is delivered.
+Qualify one bounded guest-owned simulation/state producer and consumer from the
+PAL demo, then expose only that receipt-backed observation domain. Keep every
+other domain, START/frontend/mission and the cycle-1761 XAM frontier separate
+until their own A/B receipts exist.
 
 | Branch | Status | Classification |
 |---|---|---|
-| Runtime/domain 2 promotion | partial | Platform/input/time and native replay contracts pass; owned IPC and guest/runtime comparison remain absent. |
+| Runtime/domain 3 guest boundary | partial | Platform/input/time, native replay and owned IPC contracts pass; the first guest-owned producer/consumer and runtime comparison remain absent. |
 
 The machine-readable canonical record is
 [`goal-gate-matrix-v1.json`](goal-gate-matrix-v1.json).

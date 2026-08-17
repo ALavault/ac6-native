@@ -1,0 +1,35 @@
+{
+  "schema": "ac6-demo-native-ipc-report/v1",
+  "cycle": 1767,
+  "recorded_at": "2026-08-17",
+  "verdict": "IPC-CONTRACT-GO / RUNTIME-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "commit": "95d51538",
+  "contract": {
+    "schema": "emu-agent/v2",
+    "backend": "demo-native",
+    "transport": "private AF_UNIX socketpair",
+    "framing": "4-byte big-endian length prefix; canonical JSON; 64 KiB maximum",
+    "startup": "server-configured executable and inherited fd only",
+    "actions": "bounded typed XInputFrame",
+    "observations": "tick/PRESENT transport facts; gameplay domains unavailable",
+    "replay": "same owned transport path; no savestate or arbitrary memory access"
+  },
+  "validation": {
+    "build": "PASS",
+    "ctest": {"passed": 6, "total": 6, "result": "PASS"},
+    "ipc_cpp": "socketpair start/step/observe/stop and oversize rejection PASS",
+    "mcp_python": {"passed": 12, "skipped": 1, "result": "PASS"},
+    "native_binary_transport": "start/step/observe/close PASS; tick=1, PRESENT=0",
+    "complexity_audit": {"files": 20, "result": "PASS"},
+    "install": "PASS; bin/bin absent"
+  },
+  "limits": [
+    "guest scheduler, XAM, scene, simulation, renderer and audio are not wired",
+    "all player/camera/flight/target/objective/terminal/readback domains remain unavailable",
+    "no frontend, mission, success or endogenous failure claim",
+    "no PAL content store was required for this platform-only transport proof"
+  ]
+}
