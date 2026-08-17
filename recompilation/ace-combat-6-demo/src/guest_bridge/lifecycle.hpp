@@ -84,9 +84,11 @@ void GuestBridge::prepare(const ThreadImage &image) {
         if (std::getenv("AC6_DEMO_WATCH_RING_KICK") != nullptr) {
           std::fprintf(
               stderr,
-              "AC6_RING_KICK tick=%llu thread=%u wptr 0x%08X -> 0x%08X\n",
+              "AC6_RING_KICK tick=%llu thread=%u lr=0x%08X wptr 0x%08X -> "
+              "0x%08X\n",
               static_cast<unsigned long long>(tick_), current_guest_thread_id,
-              xenos_mmio_wptr_, static_cast<std::uint32_t>(value));
+              current_import_lr, xenos_mmio_wptr_,
+              static_cast<std::uint32_t>(value));
         }
         xenos_mmio_wptr_ = static_cast<std::uint32_t>(value);
       });

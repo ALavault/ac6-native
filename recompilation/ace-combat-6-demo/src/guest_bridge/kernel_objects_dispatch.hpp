@@ -776,6 +776,20 @@
     }
     return true;
   }
+  // The kernel-event side of the same question. The graphics worker threads
+  // wait on KEVENTs, which only these three primitives can move, and a run
+  // that never calls them is a run whose workers never wake.
+  if ((std::string_view{name} == "KeSetEvent" ||
+       std::string_view{name} == "KePulseEvent" ||
+       std::string_view{name} == "KeResetEvent") &&
+      std::getenv("AC6_DEMO_WATCH_SEMAPHORES") != nullptr) {
+    std::fprintf(stderr,
+                 "AC6_KEVENT tick=%llu thread=%u name=%s object=0x%08X "
+                 "lr=0x%08X\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 current_guest_thread_id, name, context.r3.u32,
+                 static_cast<std::uint32_t>(context.lr));
+  }
   // Which semaphore is released, and how often. Cycle 1777 recorded the
   // render queue's consumer index never changing, which reads as "the worker
   // is never woken"; this is the number that decides whether that reading is
