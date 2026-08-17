@@ -20,9 +20,21 @@ binary and from the Ghidra-derived atlas:
 An address with no atlas owner is not proposed at all -- 125 of the 689 are in
 that state and need a Ghidra pass, not a generated guess.
 
-Nothing is applied. Adding these to config/confirmed-chunks.toml renumbers
-every generated line, which is a campaign-level decision; see
-reports/AC6_DEMO_CODEGEN_BOUNDARY_COUPLING.md before running with --emit.
+A proposal is NOT ready to apply. Applying all 409 at once was tried and
+XenonRecomp refused it in strict mode:
+
+    unqualified callable target at 0x821AC60C
+
+Declaring an interior entry splits its owner, and the tail of the split can
+then call an address that used to be internal to one function and is now a
+call between two. The boundary set therefore has to be closed under "every
+target a declared function calls is itself declared", and this tool does not
+compute that closure yet. Until it does, an emitted fragment is a candidate
+list, not a change.
+
+Adding these to config/confirmed-chunks.toml also renumbers every generated
+line, which is a campaign-level decision; see
+reports/AC6_DEMO_CODEGEN_BOUNDARY_COUPLING.md.
 
 usage: propose_interior_entries.py ORACLE_LIST [--emit OUT.toml] [--limit N]
 """

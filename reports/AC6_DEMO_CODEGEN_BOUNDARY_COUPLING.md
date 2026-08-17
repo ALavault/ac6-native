@@ -126,3 +126,45 @@ périssable par nature, et non seulement fragile aux frontières.
 `tools/anchor_capsule_generated_lines.py` sert des deux côtés : il ajoute le PC
 PAL aux citations encore résolubles, et il **refuse** celles qui ne le sont
 plus, ce qui en fait le contrôle qui manquait.
+
+## Le lot de 409 a été appliqué, et refusé pour une autre raison
+
+Le couplage documenté plus haut n'était finalement pas l'obstacle. Les 409
+entrées ont été concaténées dans `confirmed-chunks.toml` (563 au total),
+`test_build_demo.py` les a acceptées, et la régénération a échoué :
+
+```text
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  unqualified callable target at 0x821AC60C
+```
+
+Déclarer une entrée interne **découpe son propriétaire**. La queue du
+découpage peut alors appeler une adresse qui était jusque-là interne à une
+seule fonction et qui devient un appel entre deux — cible qu'aucune entrée ne
+déclare. L'ensemble des frontières doit donc être **clos** sous :
+
+> toute cible appelée par une fonction déclarée est elle-même déclarée.
+
+Le critère de sélection utilisé — exécutée par l'oracle, interne à une
+fonction Ghidra, terminée par `blr`/`bctr` — ne produit pas cette clôture.
+Aucune des mesures précédentes ne pouvait le révéler : ni le comptage des 689,
+ni la vérification des propriétaires, ni les hash. Seule la tentative le
+pouvait, et c'est le seul argument valable pour l'avoir tentée.
+
+Retour à 154 entrées, guest régénéré à l'identique, gates vertes.
+
+### Ce qu'il faudrait
+
+Calculer le point fixe : décoder les `bl` dans l'étendue de chaque entrée
+proposée, exiger que chaque cible soit déclarée, ajouter celles qui manquent,
+recommencer. C'est faisable hors ligne, sans passe de codegen, puisque les
+octets suffisent. Tant que ce n'est pas fait, `--emit` produit une liste de
+candidates et non un changement, et l'outil le dit désormais lui-même.
+
+### Ce qui a tenu
+
+La méthode de ré-ancrage des fixtures. Les quatre lignes épinglées par
+`test_xam_return_chain.py` ont été résolues en PC PAL **avant** la
+régénération — `0x822F601C`, `0x822F6020`, `0x822F5EA0`, `0x822F5EA8` — puis
+retrouvées après. C'est la vérification contre le binaire qui manquait à la
+tentative précédente, et elle resservira quand la clôture sera calculée.
