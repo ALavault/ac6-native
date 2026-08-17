@@ -21,12 +21,19 @@ The installed JSON profile is sealed documentation of the same compiled
 identity. It is not read as guest content and cannot be selected by the CLI.
 
 Publication is anchored to POSIX directory descriptors. Imports hold an
-interprocess lock, retain the staging/generation and pointer descriptors, and
-use a cryptographic ownership token plus device/inode checks. Failed publication
-closes descriptors and leaves staging, pointer, or generation objects orphaned;
+interprocess lock, retain the staging/generation and pointer descriptors, hash
+the complete generation before publication, and recross names with device/inode
+identities after validation. Failed publication closes descriptors and leaves
+staging, pointer, rollback-link, or generation objects orphaned;
 no automatic cleanup or quarantine is attempted. A same-UID,
 non-cooperating process can bypass advisory locks on POSIX; that residual threat
 cannot be eliminated without filesystem isolation, so swaps are detected after
 rename and never cause an unvalidated object to become `current`. A crash or
 ambiguous publication may intentionally leave an orphan for later offline,
 identity-aware recovery; it is never recursively deleted by name.
+
+The library also contains the first domain-2 boundary: a deterministic 60 Hz
+tick counter, typed bounded XInput state, and guest-notified PRESENT count.
+It reads no host controller or wall clock and is not exposed by the CLI. This
+is a tested platform contract only; it does not establish guest execution,
+frontend, mission, renderer, replay parity, or support.

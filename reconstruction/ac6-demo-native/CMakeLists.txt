@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(AC6DEMO_NATIVE_SOURCES
     src/content_store.cpp
+    src/platform.cpp
     src/posix_fd.cpp
     src/sha256.cpp
     src/vfs.cpp
@@ -57,8 +58,13 @@ if(BUILD_TESTING)
         PRIVATE AC6DEMO_NATIVE_ENABLE_TESTING=1
     )
 
+    add_executable(ac6-demo-native-platform-tests tests/platform_tests.cpp)
+    target_link_libraries(ac6-demo-native-platform-tests PRIVATE ac6-demo-native-test-core)
+    target_compile_features(ac6-demo-native-platform-tests PRIVATE cxx_std_20)
+
     add_test(NAME ac6-demo-native-content COMMAND ac6-demo-native-content-tests)
     add_test(NAME ac6-demo-native-vfs COMMAND ac6-demo-native-vfs-tests)
+    add_test(NAME ac6-demo-native-platform COMMAND ac6-demo-native-platform-tests)
 
     find_program(AC6DEMO_NATIVE_NM nm)
     if(AC6DEMO_NATIVE_NM)
