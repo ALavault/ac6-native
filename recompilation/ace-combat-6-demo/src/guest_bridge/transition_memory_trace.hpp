@@ -105,4 +105,28 @@ inline void trace_controller_reader(
       generated_name == nullptr ? "" : generated_name, generated_line);
 }
 
+inline void trace_controller_target_reader(
+    std::uint32_t address, std::uint32_t size, std::uint64_t value,
+    std::uint64_t tick, std::uint32_t thread, std::uint32_t lr,
+    const char *generated_name, std::uint32_t generated_line) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_CONTROLLER_TARGET_READERS") != nullptr;
+  static thread_local std::uint32_t record_count = 0U;
+  constexpr std::uint32_t kTarget = 0x829D15BCU;
+  if (!enabled || size == 0U || size > 8U ||
+      static_cast<std::uint64_t>(address) > kTarget ||
+      static_cast<std::uint64_t>(address) + size <= kTarget ||
+      record_count >= 8192U) {
+    return;
+  }
+  ++record_count;
+  std::fprintf(
+      stderr,
+      "AC6_CONTROLLER_TARGET_READ address=0x%08X size=%u value=0x%08X "
+      "tick=%llu thread=%u lr=0x%08X function=%s generated_line=%u\n",
+      address, size, static_cast<std::uint32_t>(value),
+      static_cast<unsigned long long>(tick), thread, lr,
+      generated_name == nullptr ? "" : generated_name, generated_line);
+}
+
 } // namespace ac6demo::guest_bridge_detail

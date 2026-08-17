@@ -702,6 +702,10 @@ extern "C" std::uint8_t AC6_PPC_LOAD_U8(PPCContext &context, std::uint8_t *base,
       address, 1U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), current_load_generated_name,
       current_load_generated_line);
+  ac6demo::guest_bridge_detail::trace_controller_target_reader(
+      address, 1U, value, require_bridge().tick(), current_guest_thread_id,
+      static_cast<std::uint32_t>(context.lr), current_load_generated_name,
+      current_load_generated_line);
   ac6demo::guest_bridge_detail::record_post_resume_scalar("load8", address, 1U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), current_load_generated_name, current_load_generated_line);
   ac6demo::guest_bridge_detail::trace_xma_slot_load(
       address, 1U, value, require_bridge().tick(), current_guest_thread_id,
@@ -727,6 +731,10 @@ extern "C" std::uint16_t AC6_PPC_LOAD_U16(PPCContext &context,
       address, 2U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), current_load_generated_name,
       current_load_generated_line);
+  ac6demo::guest_bridge_detail::trace_controller_target_reader(
+      address, 2U, value, require_bridge().tick(), current_guest_thread_id,
+      static_cast<std::uint32_t>(context.lr), current_load_generated_name,
+      current_load_generated_line);
   ac6demo::guest_bridge_detail::record_post_resume_scalar("load16", address, 2U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), current_load_generated_name, current_load_generated_line);
   ac6demo::guest_bridge_detail::trace_xma_slot_load(
       address, 2U, value, require_bridge().tick(), current_guest_thread_id,
@@ -749,6 +757,10 @@ extern "C" std::uint32_t AC6_PPC_LOAD_U32(PPCContext &context,
   if (ac6demo::guest_bridge_detail::graphics_interrupt_state_load_guard(address, current_load_generated_name)) throw ac6demo::RuntimeTrap("graphics interrupt state load outside qualified range", require_bridge().tick(), static_cast<std::uint32_t>(context.lr), address);
   const auto value = guest_memory_access(context, address, [&] { return memory_for(context).load_u32(address); });
   ac6demo::guest_bridge_detail::trace_controller_reader(
+      address, 4U, value, require_bridge().tick(), current_guest_thread_id,
+      static_cast<std::uint32_t>(context.lr), current_load_generated_name,
+      current_load_generated_line);
+  ac6demo::guest_bridge_detail::trace_controller_target_reader(
       address, 4U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), current_load_generated_name,
       current_load_generated_line);
@@ -798,6 +810,10 @@ extern "C" std::uint64_t AC6_PPC_LOAD_U64(PPCContext &context,
   const auto value = guest_memory_access(
       context, address, [&] { return memory_for(context).load_u64(address); });
   ac6demo::guest_bridge_detail::trace_controller_reader(
+      address, 8U, value, require_bridge().tick(), current_guest_thread_id,
+      static_cast<std::uint32_t>(context.lr), current_load_generated_name,
+      current_load_generated_line);
+  ac6demo::guest_bridge_detail::trace_controller_target_reader(
       address, 8U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), current_load_generated_name,
       current_load_generated_line);

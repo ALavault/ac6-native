@@ -1,0 +1,137 @@
+{
+  "schema": "ac6-demo-controller-writer-reader-ab-report/v1",
+  "cycle": 1773,
+  "recorded_at": "2026-08-17",
+  "verdict": "CONTROLLER-WRITER-READER-QUALIFIED / READBACK-NO-GO",
+  "supported": false,
+  "target_id": "ac6-demo-xbox360-pal",
+  "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+  "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+  "job": {
+    "id": "job-msx17znb-6e65cbe7",
+    "exit_code": 0,
+    "status": "success",
+    "reason": "bounded 5600-tick A/B replay joined the qualified target writer to a guest load",
+    "receipt_sha256": "f975d130894ac647b6b8860ad65116c5cb9ad1c65ef465682cd53c692b5d0177"
+  },
+  "inputs": {
+    "captured_binary_sha256": "963a9e94546239f00c177537b4cdf12bec645cb86f13c979e9635181db8dcf2a",
+    "final_build_binary_sha256": "a93db7af73ee0b76f76fed8898c41ec68ee189bb06d03336bffb878f01e299dc",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "mapper_sha256": "89e3822fef2d14fdec5582c382aa0e687dc25f24a7d1121fd778bd0f84297dce",
+    "load_site_mapper_sha256": "a5526c456739d480feb7d9e23dbe00016e4220e2f354b212035264cfbe4bc4ee",
+    "generated_source": "codegen/generated/ppc_recomp.39.cpp",
+    "generated_source_sha256": "6bd2d59ba301c46b5bf39fe6bca5df2df2d1fcd2dd7d7dcc3000b7ca57a25601",
+    "backend": "vulkan",
+    "audio_driver": "dummy",
+    "max_ticks": 5600,
+    "input_tick": 252,
+    "max_accesses": 64,
+    "target": "0x829D15BC"
+  },
+  "static_join": {
+    "ghidra_project": "ace-combat-6-demo",
+    "module": "Default.xex",
+    "controller_object": "0x829D153C",
+    "target_offset": "0x80",
+    "runtime_address": "0x829D15BC",
+    "writer": {
+      "function": "__imp__sub_822F5E58",
+      "generated_line": 3948,
+      "guest_pc": "0x822F5EA0",
+      "pal_bytes": "90 7f 00 80",
+      "instruction": "stw r3,128(r31)",
+      "tick": 252,
+      "thread": 1,
+      "lr": "0x822F5E78",
+      "value": "0x00000000"
+    },
+    "reader": {
+      "kind": "guest_load32",
+      "function": "__imp__sub_822F5E58",
+      "generated_line": 3953,
+      "guest_pc": "0x822F5EA8",
+      "pal_bytes": "81 7f 00 80",
+      "instruction": "lwz r11,128(r31)",
+      "first_post_writer_tick": 254,
+      "thread": 1,
+      "lr": "0x822F5E78",
+      "value": "0x00000000",
+      "persistence_ticks": [255, 763, 765]
+    },
+    "writer_reader_join_proven": true,
+    "writer_effect_proven": false,
+    "readback_effect_proven": false
+  },
+  "routes": {
+    "neutral": {
+      "expectation": "no_exclusive",
+      "map_sha256": "660dee51c75d2a1987a9f2f10f98e422b97fd076f948298f9695d5394a20385c",
+      "report_sha256": "99dba4f56917bbd6f6569718d8788eec5ce52ea17f3788d719f32abb12396533",
+      "trace_sha256": "ba3871e2ee1411e52ca66938c5457fcddc746403056de70eedd2258e1a4df562",
+      "stderr_sha256": "63759d161fbd1cf295a1e46268b9dc4e132b94a2ce5a45a0a83ee1a15a6c3e54",
+      "return_code_sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "stop": "bound accesses=64",
+      "target_reader_samples": {
+        "first_tick": 252,
+        "post_writer_tick": null,
+        "last_tick": 763,
+        "value": "0x00000000",
+        "function": "__imp__sub_822F5E58",
+        "generated_line": 3953
+      },
+      "writer_store_observed": false
+    },
+    "buttons16": {
+      "expectation": "qualified_store_exclusive",
+      "map_sha256": "f0c4f1c35883ef83219e825f1a54c2884d4bf997aba5bd99cd8b7c69747d7645",
+      "report_sha256": "90d27b58a59c53119208c041d4bcaf194f0c4b0f54688fea34a94bdb303ee468",
+      "trace_sha256": "30bb9fb66f1a027d294fef4151dc63da15e4f5509650444a5868b88ba43bd946",
+      "stderr_sha256": "22c337dff4fce39c2c5d4314124895cf1fdf689bb14bdbe348cb33b504d2081d",
+      "return_code_sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+      "return_code": 4,
+      "completed_ticks": 5600,
+      "presents": 5463,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "stop": "qualified_store_exclusive accesses=58",
+      "writer_store_observed": {
+        "tick": 252,
+        "value": "0x00000000",
+        "function": "__imp__sub_822F5E58",
+        "generated_line": 3948
+      },
+      "target_reader_samples": {
+        "first_tick": 254,
+        "persistence_ticks": [255, 765],
+        "value": "0x00000000",
+        "function": "__imp__sub_822F5E58",
+        "generated_line": 3953
+      }
+    }
+  },
+  "policy": {
+    "content_addressed": true,
+    "current_file_written": false,
+    "frontend_claim_written": false,
+    "gameplay_observation_promoted": false,
+    "writer_reader_join_promoted": true,
+    "writer_effect_proven": false,
+    "readback_effect_proven": false,
+    "native_parity_claim": false,
+    "arbitrary_guest_memory_exposure": false
+  },
+  "limits": [
+    "the qualified buttons16 zero store at +0x80 is followed by a guest lwz at +0x80, but the value remains zero and no non-black render/readback effect is proven",
+    "neutral supplies the same target guest load without the exclusive writer; the A/B join establishes a storage consumer, not semantic player ownership",
+    "both bounded routes stop at max_ticks with frontend/mission/terminal=false and PRESENT=5463",
+    "MCP gameplay domains remain unavailable and supported=false"
+  ]
+}
