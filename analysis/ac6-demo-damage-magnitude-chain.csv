@@ -1,0 +1,11 @@
+stage,function,source,destination,grade
+extract_base,demo:0x82273470,WeaponBin+0x5D u8,f1,A
+context_modifier,demo:0x822B6FE0,modifier index 10 plus owner context,f1 additive,A
+gun_configure,demo:0x822735A8,f1,Arms+0x168,A
+gun_impact,demo:0x822885C8 and concrete getter,Arms+0x168,builder f1,A-
+missile_configure,demo:0x822A4978,f1,projectile config+0x24,A
+missile_embed,demo:0x82286830,config+0x24,embedded+0x60,A
+missile_getter,demo:0x8216B258 / 0x8216B3A8,embedded+0x60,collision callback f1,A
+compact_event,demo:0x821E2F60,f1,event+0x0C,A
+target_dispatch,demo:0x821E23B8,compact event,target vslot+0x38,A
+durability,demo:0x8224FE60,event+0x0C times DurableBin[event],object+0x110,A
