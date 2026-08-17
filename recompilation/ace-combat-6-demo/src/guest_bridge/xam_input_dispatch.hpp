@@ -5,6 +5,8 @@ if (std::string_view{name} == "XamInputGetState") {
     return false;
   }
   const auto caller_lr = static_cast<std::uint32_t>(context.lr);
+  const auto user_index = context.r3.u32;
+  const auto flags = context.r4.u32;
   const auto output = context.r5.u32;
   context.r3.u32 = bridge.input_device().get_state(
       context.r3.u32, context.r4.u32, bridge.memory(), context.r5.u32,
@@ -12,6 +14,18 @@ if (std::string_view{name} == "XamInputGetState") {
                                 caller_lr});
   if (context.r3.u32 == 0U) {
     bridge.input_device().observe_controller_state_output(caller_lr, output);
+    std::array<std::uint8_t, 16U> state16{};
+    auto &memory = bridge.memory();
+    if (memory.mapped(output, state16.size())) {
+      const auto bytes = memory.load_bytes(output, state16.size());
+      std::transform(bytes.begin(), bytes.end(), state16.begin(),
+                     [](std::byte byte) {
+                       return static_cast<std::uint8_t>(byte);
+                     });
+      ac6demo::guest_bridge_detail::arm_xam_return_chain(
+          caller_lr, bridge.tick(), current_guest_thread_id, user_index, flags,
+          output, context.r3.u32, state16.data());
+    }
   }
   return true;
 }

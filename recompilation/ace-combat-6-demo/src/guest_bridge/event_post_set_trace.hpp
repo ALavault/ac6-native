@@ -7,6 +7,8 @@
 #include <cstdlib>
 #include <string_view>
 
+#include "guest_bridge/xam_return_chain_trace.hpp"
+
 namespace ac6demo::guest_bridge_detail {
 
 // This probe is deliberately separate from the other AC6 diagnostics.  A
@@ -74,7 +76,8 @@ inline void initialize_post_resume_watch() noexcept {
   static const bool enabled =
       std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS") != nullptr ||
       std::getenv("AC6_DEMO_WATCH_FRONTBUFFER_READERS") != nullptr ||
-      std::getenv("AC6_DEMO_WATCH_XMA_SLOT") != nullptr;
+      std::getenv("AC6_DEMO_WATCH_XMA_SLOT") != nullptr ||
+      xam_return_chain_watch_enabled_fast();
   return enabled;
 }
 
@@ -155,6 +158,8 @@ inline void record_post_resume_scalar(const char *kind,
                                       std::uint32_t lr,
                                       const char *generated_name,
                                       std::uint32_t generated_line) noexcept {
+  record_xam_return_chain(kind, address, size, value, tick, thread, lr,
+                          generated_name, generated_line);
   if (kind == nullptr || size == 0U || size > 8U ||
       !claim_post_resume_access(thread)) {
     return;
@@ -184,6 +189,8 @@ inline void record_post_resume_bytes(const char *kind,
                                      std::uint32_t lr,
                                      const char *generated_name,
                                      std::uint32_t generated_line) noexcept {
+  record_xam_return_chain_bytes(kind, address, size, bytes, tick, thread, lr,
+                                generated_name, generated_line);
   if (kind == nullptr || bytes == nullptr || size == 0U || size > 16U ||
       !claim_post_resume_access(thread)) {
     return;

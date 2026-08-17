@@ -61,6 +61,7 @@ SITE_RE = re.compile(
     r"\bPPC_MM_(LOAD|STORE)_U(8|16|32|64)\b"
 )
 VECTOR_LOAD_RE = re.compile(r"\bsimde_mm_load_(?:si|u)128\s*\(")
+ATOMIC_SITE_RE = re.compile(r"\bPPC_(LWARX|LDARX|STWCX|STDCX)\s*\(")
 
 
 class MappingError(RuntimeError):
@@ -135,6 +136,8 @@ def load_functions(generated: Path, basefile_size: int | None = None) -> dict[st
     result: dict[str, FunctionRecord] = {}
     mapping = load_function_mapping(generated, basefile_size or 0x100000000)
     for source in sorted(generated.glob("ppc_recomp.*.cpp")):
+        if source.is_symlink() or not source.is_file():
+            raise MappingError(f"generated source is missing or symlinked: {source}")
         lines = source.read_text(encoding="utf-8").splitlines()
         starts: list[tuple[int, str, int]] = []
         for index, line in enumerate(lines):
@@ -158,6 +161,11 @@ def load_functions(generated: Path, basefile_size: int | None = None) -> dict[st
 
 
 def _site_kind(source_line: str, expected_kind: str) -> None:
+    if expected_kind in {"lwarx", "ldarx", "stwcx", "stdcx"}:
+        matches = list(ATOMIC_SITE_RE.finditer(source_line))
+        if len(matches) != 1 or matches[0].group(1).lower() != expected_kind:
+            raise MappingError("ambiguous or mismatched generated atomic site")
+        return
     matches = list(SITE_RE.finditer(source_line))
     if expected_kind == "load128" and VECTOR_LOAD_RE.search(source_line):
         if len(matches) != 0:

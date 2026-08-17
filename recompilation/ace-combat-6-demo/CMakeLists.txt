@@ -383,6 +383,16 @@ add_test(NAME ac6-demo-python-tests
 add_test(NAME ac6-demo-post-resume-tests
   COMMAND ${Python3_EXECUTABLE} -m unittest discover
     -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_post_resume_probe.py)
+add_test(NAME ac6-demo-xam-return-chain-mapper-tests
+  COMMAND ${Python3_EXECUTABLE} -m unittest discover
+    -s ${CMAKE_CURRENT_SOURCE_DIR}/tests -p test_xam_return_chain.py)
+add_executable(ac6-demo-xam-return-chain-header-tests
+  tests/xam_return_chain_header_tests.cpp)
+target_include_directories(ac6-demo-xam-return-chain-header-tests PRIVATE
+  src include)
+target_link_libraries(ac6-demo-xam-return-chain-header-tests PRIVATE Threads::Threads)
+add_test(NAME ac6-demo-xam-return-chain-header-tests
+  COMMAND ac6-demo-xam-return-chain-header-tests)
 add_test(NAME ac6-demo-post-resume-xvfb-lifecycle
   COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/test_post_resume_xvfb_lifecycle.sh)
 set_tests_properties(ac6-demo-post-resume-xvfb-lifecycle PROPERTIES TIMEOUT 55)

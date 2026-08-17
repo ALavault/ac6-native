@@ -4,6 +4,7 @@
 #include "ppc_context_base.h"
 #include "ac6demo/guest_bridge.hpp"
 #include "event_post_set_trace.hpp"
+#include "xam_return_chain_trace.hpp"
 #ifdef AC6_DEMO_ENABLE_VECTOR_READ_TRACE
 #include "frontbuffer_writer_trace.hpp"
 #endif
@@ -26,6 +27,7 @@ thread_local ac6demo::GuestBridge *current_bridge = nullptr;
 #ifdef AC6_DEMO_GENERATED_GUEST
 extern "C" {
 std::atomic_bool AC6_PPC_POST_RESUME_VECTOR_FAST_ENABLED{false};
+std::atomic_bool AC6_PPC_XAM_RETURN_CHAIN_VECTOR_FAST_ENABLED{false};
 }
 
 extern "C" void AC6_PPC_SET_POST_RESUME_VECTOR_CONTEXT(
@@ -38,8 +40,12 @@ extern "C" void AC6_PPC_SET_POST_RESUME_VECTOR_CONTEXT(
   current_tick = tick;
   current_thread = thread;
   ac6demo::guest_bridge_detail::initialize_post_resume_watch();
+  ac6demo::guest_bridge_detail::initialize_xam_return_chain_watch();
   AC6_PPC_POST_RESUME_VECTOR_FAST_ENABLED.store(
       ac6demo::guest_bridge_detail::post_resume_watch_enabled_fast(),
+      std::memory_order_release);
+  AC6_PPC_XAM_RETURN_CHAIN_VECTOR_FAST_ENABLED.store(
+      ac6demo::guest_bridge_detail::xam_return_chain_watch_enabled_fast(),
       std::memory_order_release);
 }
 
@@ -68,6 +74,33 @@ extern "C" void AC6_PPC_RECORD_POST_RESUME_VECTOR_READ(
   std::array<std::uint8_t, 16U> bytes{};
   std::memcpy(bytes.data(), source, bytes.size());
   ac6demo::guest_bridge_detail::record_post_resume_bytes(
+      "load128", address, 16U, bytes.data(), current_tick, current_thread,
+      static_cast<std::uint32_t>(current_context->lr), generated_name,
+      generated_line);
+}
+
+extern "C" void AC6_PPC_RECORD_XAM_RETURN_CHAIN_VECTOR_READ(
+    const void *source, const void *value, const char *generated_name,
+    std::uint32_t generated_line) noexcept {
+  if (!AC6_PPC_XAM_RETURN_CHAIN_VECTOR_FAST_ENABLED.load(
+          std::memory_order_relaxed) ||
+      source == nullptr || value == nullptr || current_bridge == nullptr ||
+      current_context == nullptr) {
+    return;
+  }
+  const auto raw = reinterpret_cast<std::uintptr_t>(
+      current_bridge->memory().raw_base());
+  const auto pointer = reinterpret_cast<std::uintptr_t>(source);
+  if (raw == 0U || pointer < raw) return;
+  const auto offset = pointer - raw;
+  if (offset >= 0x1'0000'0000ULL) return;
+  const auto address = static_cast<std::uint32_t>(offset);
+  if (!current_bridge->memory().mapped(address, 16U)) return;
+  std::array<std::uint8_t, 16U> bytes{};
+  // `value` is the result after the vector operation.  It is not truncated to
+  // a scalar and is emitted in Xenon memory (big-endian) byte order.
+  std::memcpy(bytes.data(), value, bytes.size());
+  ac6demo::guest_bridge_detail::record_xam_return_chain_bytes(
       "load128", address, 16U, bytes.data(), current_tick, current_thread,
       static_cast<std::uint32_t>(current_context->lr), generated_name,
       generated_line);

@@ -21,6 +21,10 @@ extern "C" std::uint32_t AC6_PPC_LWARX(PPCContext &context,
   ac6demo::guest_bridge_detail::refuse_post_resume_atomic(
       "lwarx", address, 4U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr));
+  ac6demo::guest_bridge_detail::record_xam_return_chain_atomic(
+      "lwarx", address, 4U, value, true, require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      current_load_generated_name, current_load_generated_line);
   return value;
 }
 
@@ -47,6 +51,10 @@ extern "C" bool AC6_PPC_STWCX(PPCContext &context, std::uint32_t address,
       "stwcx", address, 4U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr),
       success ? "atomic_success" : "atomic_failed");
+  ac6demo::guest_bridge_detail::record_xam_return_chain_atomic(
+      "stwcx", address, 4U, value, success, require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      current_load_generated_name, current_load_generated_line);
   return success;
 }
 
@@ -66,6 +74,10 @@ AC6_PPC_LDARX(PPCContext &context, std::uint32_t address) {
   ac6demo::guest_bridge_detail::refuse_post_resume_atomic(
       "ldarx", address, 8U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr));
+  ac6demo::guest_bridge_detail::record_xam_return_chain_atomic(
+      "ldarx", address, 8U, value, true, require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      current_load_generated_name, current_load_generated_line);
   return value;
 }
 
@@ -95,6 +107,10 @@ AC6_PPC_STDCX(PPCContext &context, std::uint32_t address,
       "stdcx", address, 8U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr),
       success ? "atomic_success" : "atomic_failed");
+  ac6demo::guest_bridge_detail::record_xam_return_chain_atomic(
+      "stdcx", address, 8U, value, success, require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      current_load_generated_name, current_load_generated_line);
   return success;
 }
 
