@@ -1157,6 +1157,7 @@ timer_period_to_ticks(std::uint32_t period_ms) noexcept {
 #include "guest_bridge/point_draw_trace.hpp"
 #include "guest_bridge/graphics_ring.hpp"
 #include "guest_bridge/graphics_mmio_cpu.hpp"
+#include "guest_bridge/frontend_state_trace.hpp"
 #include "guest_bridge/lifecycle.hpp"
 // clang-format on
 #else
