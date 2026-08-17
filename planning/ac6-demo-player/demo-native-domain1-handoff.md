@@ -1,5 +1,11 @@
 # Domaine 1 — `ac6-demo-native` : identité, import et VFS
 
+> **Historique cycle 1762, remplacé.** Les bloqueurs de publication ci-dessous
+> sont fermés par le checkpoint cycle 1764
+> [`cycle-1764-ac6-demo-native-domain1-publication.md`](../../reports/cycle-1764-ac6-demo-native-domain1-publication.md).
+> Le domaine 1 est `proven`/import-only ; `supported=false` et le domaine 2
+> reste non ouvert.
+
 Statut cycle 1762 : base autonome livrée en `import-only`,
 **PARTIAL/NO-GO**, `supported=false`. L’identité/import/VFS est maintenant
 présente et validée, mais la publication durable reste bloquée par les
