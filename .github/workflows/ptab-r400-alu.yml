@@ -1,0 +1,192 @@
+name: PTAB R400 ALU forensic extraction
+
+on:
+  push:
+    branches:
+      - research/ptab-r400-alu
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PDF inspection tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils tesseract-ocr
+
+      - name: Fetch public PTAB exhibits from all known S3 URL forms
+        shell: bash
+        run: |
+          set -u
+          mkdir -p /tmp/ptab/pdf /tmp/ptab/text
+          : > /tmp/ptab/fetch.tsv
+          ids=(2048 2049 2050 2051 2052 2082 2083 2084 2085 2086 2087 2088 2089 2090 2091 2092 2093 2094 2095)
+          for id in "${ids[@]}"; do
+            out="/tmp/ptab/pdf/${id}.pdf"
+            tmp="${out}.tmp"
+            rm -f "$tmp" "$out"
+            urls=(
+              "https://s3-us-west-1.amazonaws.com/ptab-filings%2FIPR2015-00325%2F${id}"
+              "https://s3-us-west-1.amazonaws.com/ptab-filings/IPR2015-00325/${id}"
+              "https://ptab-filings.s3-us-west-1.amazonaws.com/IPR2015-00325/${id}"
+            )
+            found=0
+            for url in "${urls[@]}"; do
+              code=$(curl -L -sS --retry 3 --retry-all-errors --connect-timeout 15 --max-time 180 \
+                -A 'Mozilla/5.0 PTAB-R400-research' -w '%{http_code}' -o "$tmp" "$url" || true)
+              magic=$(head -c 4 "$tmp" 2>/dev/null || true)
+              bytes=$(stat -c '%s' "$tmp" 2>/dev/null || echo 0)
+              printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$code" "$bytes" "$magic" "$url" >> /tmp/ptab/fetch.tsv
+              if [[ "$code" == "200" && "$magic" == "%PDF" ]]; then
+                mv "$tmp" "$out"
+                found=1
+                break
+              fi
+              rm -f "$tmp"
+            done
+            if [[ "$found" == 0 ]]; then
+              echo "EXHIBIT ${id}: unavailable" >&2
+            fi
+          done
+          echo '=== FETCH MATRIX ==='
+          cat /tmp/ptab/fetch.tsv
+          echo '=== FETCHED PDF HASHES ==='
+          find /tmp/ptab/pdf -type f -name '*.pdf' -print0 | sort -z | xargs -0 -r sha256sum
+
+      - name: Extract text, OCR fallback, and print bounded forensic report
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from __future__ import annotations
+          import hashlib
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          root = Path('/tmp/ptab')
+          pdf_dir = root / 'pdf'
+          text_dir = root / 'text'
+          text_dir.mkdir(parents=True, exist_ok=True)
+
+          target_re = re.compile(
+              r'(?i)(?:\brecip(?:rocal)?\w*\b|\brcp\w*\b|\brsq\w*\b|'
+              r'\bmultiply(?:_add)?\w*\b|\bmul(?:tiply)?\w*\b|\bmacc\w*\b|'
+              r'isHardwareAccurate|hardware.?accurate|precision_mul|precision_recip|'
+              r'round(?:ing|ed)?|guard|sticky|mantissa|normaliz|denorm|flush|'
+              r'writeback|write.?back|bypass|forward|gpr|exponent|nan|infinity|'
+              r'floor|trunc)'
+          )
+          signature_re = re.compile(
+              r'(?i)(?:SQ_ALU::[A-Za-z_][A-Za-z0-9_]*|'
+              r'\b(?:float|double|bool|void|int|uint\w*|DWORD)\s+'
+              r'[A-Za-z_][A-Za-z0-9_:]*\s*\([^;]{0,180}\))'
+          )
+
+          def run(*args: str) -> subprocess.CompletedProcess[str]:
+              return subprocess.run(args, text=True, capture_output=True, check=False)
+
+          def extract_text(pdf: Path) -> tuple[str, str]:
+              txt = text_dir / f'{pdf.stem}.txt'
+              p = run('pdftotext', '-layout', str(pdf), str(txt))
+              text = txt.read_text(errors='replace') if txt.exists() else ''
+              method = 'pdftotext'
+              useful = sum(ch.isalnum() for ch in text)
+              if useful >= 300:
+                  return text, method
+              # OCR fallback, page by page. Exhibits are short, but cap at 40 pages.
+              image_prefix = text_dir / f'{pdf.stem}-page'
+              info = run('pdfinfo', str(pdf)).stdout
+              m = re.search(r'^Pages:\s+(\d+)', info, re.M)
+              pages = min(int(m.group(1)) if m else 40, 40)
+              run('pdftoppm', '-f', '1', '-l', str(pages), '-r', '250', '-png', str(pdf), str(image_prefix))
+              chunks: list[str] = []
+              for image in sorted(text_dir.glob(f'{pdf.stem}-page-*.png')):
+                  base = image.with_suffix('')
+                  run('tesseract', str(image), str(base), '-l', 'eng', '--psm', '6')
+                  ocr = base.with_suffix('.txt')
+                  if ocr.exists():
+                      chunks.append(ocr.read_text(errors='replace'))
+                  image.unlink(missing_ok=True)
+                  ocr.unlink(missing_ok=True)
+              text = '\n\f\n'.join(chunks)
+              txt.write_text(text)
+              return text, 'tesseract'
+
+          print('=== PTAB R400 ALU FORENSIC REPORT ===')
+          for pdf in sorted(pdf_dir.glob('*.pdf'), key=lambda p: int(p.stem)):
+              raw = pdf.read_bytes()
+              sha = hashlib.sha256(raw).hexdigest()
+              info = run('pdfinfo', str(pdf)).stdout
+              pages_match = re.search(r'^Pages:\s+(\d+)', info, re.M)
+              pages = pages_match.group(1) if pages_match else '?'
+              text, method = extract_text(pdf)
+              lines = text.splitlines()
+              print(f'\n===== EXHIBIT {pdf.stem} =====')
+              print(f'bytes={len(raw)} sha256={sha} pages={pages} extraction={method} text_chars={len(text)}')
+
+              # First-page/title evidence, tightly bounded.
+              print('--- FIRST NONEMPTY LINES (max 35) ---')
+              emitted = 0
+              for i, line in enumerate(lines[:350], 1):
+                  s = line.rstrip()
+                  if not s.strip():
+                      continue
+                  print(f'{i:05d}: {s[:300]}')
+                  emitted += 1
+                  if emitted >= 35:
+                      break
+
+              sigs: list[tuple[int, str]] = []
+              for i, line in enumerate(lines, 1):
+                  if signature_re.search(line):
+                      sigs.append((i, line.strip()))
+              print(f'--- FUNCTION/SIGNATURE INDEX ({min(len(sigs), 160)}/{len(sigs)}) ---')
+              for i, line in sigs[:160]:
+                  print(f'{i:05d}: {line[:500]}')
+
+              hit_indices = [i for i, line in enumerate(lines) if target_re.search(line)]
+              print(f'--- TARGET TERM HITS: {len(hit_indices)} ---')
+              # Merge +/- 10-line contexts. Cap output to 900 lines per exhibit.
+              intervals: list[list[int]] = []
+              for i in hit_indices:
+                  a, b = max(0, i - 10), min(len(lines), i + 11)
+                  if intervals and a <= intervals[-1][1] + 2:
+                      intervals[-1][1] = max(intervals[-1][1], b)
+                  else:
+                      intervals.append([a, b])
+              budget = 900
+              used = 0
+              for a, b in intervals:
+                  if used >= budget:
+                      break
+                  b = min(b, a + (budget - used))
+                  print(f'--- CONTEXT lines {a+1}-{b} ---')
+                  for j in range(a, b):
+                      print(f'{j+1:05d}: {lines[j][:600]}')
+                  used += b - a
+              if len(hit_indices) and used >= budget:
+                  print('--- CONTEXT OUTPUT CAPPED ---')
+
+              # Machine-readable term counts, useful even when OCR is noisy.
+              terms = ['recip', 'reciprocal', 'multiply', 'multiply_add', 'isHardwareAccurate',
+                       'round', 'guard', 'sticky', 'mantissa', 'normal', 'denorm', 'gpr',
+                       'writeback', 'bypass', 'forward', 'precision_mul', 'precision_recip']
+              lower = text.lower()
+              counts = {term: lower.count(term.lower()) for term in terms}
+              print('--- TERM COUNTS ---')
+              print(' '.join(f'{k}={v}' for k, v in counts.items()))
+          PY
+
+      - name: Preserve only a compact job summary
+        if: always()
+        run: |
+          echo 'PTAB R400 ALU inspection completed. Full public exhibits were not uploaded as artifacts.' >> "$GITHUB_STEP_SUMMARY"
