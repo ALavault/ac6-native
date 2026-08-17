@@ -296,6 +296,26 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
     frame.r4.u32 = 0U;
     frame.r5.u32 = 0U;
     frame.lr = 0U;
+    // Read-only view of the client object the callback is about to reach,
+    // for whoever picks up the missing-object question. The callback loads
+    // 0x829DA528 and passes it on, and at the first frame that object is
+    // 0x1005CEBC with vtable 0x820653BC -- not an RTTI vtable, so the layer
+    // dispatches C-style and the atlas cannot name the class. Its +0x40 is
+    // the very callback context registered at tick 106, which is what
+    // identifies it as the client. Its words +0x0C through +0x28 are all
+    // zero, and one of them is what the faulting path dereferences.
+    if (std::getenv("AC6_DEMO_WATCH_XAUDIO") != nullptr) {
+      const auto client = memory_.load_u32(0x829DA528U);
+      std::fprintf(stderr, "AC6_XAUDIO_CLIENT tick=%llu client=0x%08X",
+                   static_cast<unsigned long long>(tick_), client);
+      if (client != 0U && memory_.mapped(client, 0x80U)) {
+        for (std::uint32_t offset = 0U; offset < 0x80U; offset += 4U) {
+          std::fprintf(stderr, " +%02X=0x%08X", offset,
+                       memory_.load_u32(client + offset));
+        }
+      }
+      std::fprintf(stderr, "\n");
+    }
     const auto previous_thread_id = current_guest_thread_id;
     current_guest_thread_id = 2U;
     try {
