@@ -764,6 +764,10 @@ extern "C" std::uint32_t AC6_PPC_LOAD_U32(PPCContext &context,
       address, 4U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), current_load_generated_name,
       current_load_generated_line);
+  ac6demo::guest_bridge_detail::trace_input_semantic_access(
+      "load32", address, 4U, value, require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      current_load_generated_name, current_load_generated_line);
   ac6demo::guest_bridge_detail::record_post_resume_scalar("load32", address, 4U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), current_load_generated_name, current_load_generated_line);
   ac6demo::guest_bridge_detail::trace_xma_slot_load(
       address, 4U, value, require_bridge().tick(), current_guest_thread_id,
@@ -885,6 +889,10 @@ extern "C" void AC6_PPC_STORE_U32(PPCContext &context, std::uint8_t *base,
                                   const char *generated_name,
                                   std::uint32_t generated_line) {
   (void)base; trace_body_store(context, address, value, generated_name, generated_line); ac6demo::guest_bridge_detail::trace_xma_late_access("store32", address, 4U, true, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line); ac6demo::guest_bridge_detail::trace_xma_address_store(address, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  ac6demo::guest_bridge_detail::trace_input_semantic_access(
+      "store32", address, 4U, value, require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_frontbuffer_write(
       address, 4U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);

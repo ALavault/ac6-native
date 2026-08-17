@@ -1,0 +1,118 @@
+{
+  "schema": "ac6-demo-input-logical-map-ab-report/v1",
+  "cycle": 1775,
+  "recorded_at": "2026-08-17",
+  "verdict": "INPUT-LOGICAL-MAPPER-QUALIFIED / MENU-CONSUMER-NO-GO",
+  "supported": false,
+  "target": {
+    "target_id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "ghidra_project": "ace-combat-6-demo",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "job": {
+    "id": "job-msx27372-12ffa833",
+    "status": "success",
+    "exit_code": 0,
+    "receipt_path": "analysis/demo/ac6-demo-xam-return-chain-ab/sha256/9de96a4771ff3d94f5a16e872fa233c2ff45506ce7626f006101ad20d489bc01/receipt.json",
+    "receipt_sha256": "9de96a4771ff3d94f5a16e872fa233c2ff45506ce7626f006101ad20d489bc01"
+  },
+  "inputs": {
+    "binary_sha256": "cf90f55162c7cfb21f473d8640a278c4347366efaec2898a9ad687277a9e87b0",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "mapper_sha256": "89e3822fef2d14fdec5582c382aa0e687dc25f24a7d1121fd778bd0f84297dce",
+    "generated_source_sha256": "6bd2d59ba301c46b5bf39fe6bca5df2df2d1fcd2dd7d7dcc3000b7ca57a25601",
+    "load_site_mapper_sha256": "a5526c456739d480feb7d9e23dbe00016e4220e2f354b212035264cfbe4bc4ee",
+    "backend": "vulkan",
+    "audio_driver": "dummy",
+    "max_ticks": 253,
+    "semantic_tick": 252
+  },
+  "static_join": {
+    "controller_object": "0x829D153C",
+    "controller_vtable": "0x8202A8DC",
+    "xinput_buttons_offset": 4,
+    "normalizer": {
+      "site": "0x82198C44",
+      "normalized_address": "0x827B37E0",
+      "raw_start_mask": "0x0010",
+      "normalized_start_mask": "0x00000400"
+    },
+    "logical_mapper": {
+      "site": "0x821DE990",
+      "current_address": "0x82798480",
+      "previous_address": "0x82798484",
+      "pressed_address": "0x82798488",
+      "logical_mask": "0x00000010"
+    },
+    "mapped_sites": [
+      {"pal_pc": "0x821DE9DC", "bytes": "81 45 00 00", "operation": "load current", "source": "__imp__sub_821DE990:13618"},
+      {"pal_pc": "0x821DE9E4", "bytes": "91 7f 0e 4c", "operation": "store pressed", "source": "__imp__sub_821DE990:13622"},
+      {"pal_pc": "0x821DE9F0", "bytes": "91 65 00 00", "operation": "store current", "source": "__imp__sub_821DE990:13628"},
+      {"pal_pc": "0x821DE9F4", "bytes": "91 5f 0e 48", "operation": "store previous", "source": "__imp__sub_821DE990:13630"},
+      {"pal_pc": "0x821DE6E0", "bytes": "81 43 0e 48", "operation": "load previous", "source": "__imp__sub_821DE6E0:13136"},
+      {"pal_pc": "0x821DE6E8", "bytes": "81 23 0e 44", "operation": "load current", "source": "__imp__sub_821DE6E0:13140"},
+      {"pal_pc": "0x821DE6F8", "bytes": "91 03 0e 4c", "operation": "store pressed", "source": "__imp__sub_821DE6E0:13148"},
+      {"pal_pc": "0x821DE710", "bytes": "81 23 0e 44", "operation": "load current", "source": "__imp__sub_821DE6E0:13163"},
+      {"pal_pc": "0x821DE778", "bytes": "81 64 00 08", "operation": "load normalized", "source": "__imp__sub_821DE778:13237"},
+      {"pal_pc": "0x821DE790", "bytes": "81 04 00 08", "operation": "load normalized", "source": "__imp__sub_821DE778:13250"},
+      {"pal_pc": "0x821DE7A0", "bytes": "81 05 00 00", "operation": "load current", "source": "__imp__sub_821DE778:13259"},
+      {"pal_pc": "0x821DE7AC", "bytes": "91 25 00 00", "operation": "store current", "source": "__imp__sub_821DE778:13265"},
+      {"pal_pc": "0x82198D70", "bytes": "81 7f 00 08", "operation": "load normalized", "source": "__imp__sub_82198BF0:11688"},
+      {"pal_pc": "0x82198D80", "bytes": "91 7f 00 08", "operation": "store normalized", "source": "__imp__sub_82198BF0:11696"},
+      {"pal_pc": "0x82198DD0", "bytes": "91 7f 00 08", "operation": "store normalized", "source": "__imp__sub_82198BF0:11736"}
+    ],
+    "static_menu_consumers": ["0x82170FCC", "0x82185210"]
+  },
+  "routes": {
+    "neutral": {
+      "map_sha256": "a96c8b61e05b403199b7265252437183ce3c3030cb424ff34836da3629755175",
+      "report_sha256": "9812e42845ec2f4e91afe80574b89144b86222e1df1c0266a3619635ff76002e",
+      "trace_sha256": "d8f148f449660549432a15b8593312818edcd71cc97a9333642701b71e34e51d",
+      "stderr_sha256": "15354ba7c921928e864449cf13a7e4979d454d3abfd42aaa31c00f9b6fb6ac3b",
+      "return_code_sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+      "return_code": 4,
+      "completed_ticks": 253,
+      "presents": 116,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black",
+      "semantic": {"normalized": "0x00000000", "logical_current": "0x00000000", "logical_pressed": "0x00000000", "logical_previous": "0x00000000", "menu_consumers_observed": false}
+    },
+    "buttons16": {
+      "map_sha256": "4fe75e8b916099bf58eedfc98bcb9dea3b635ec2970ee6fc374f1a7a0fd777b7",
+      "report_sha256": "e04f047962beccb53cfbfa820eff34d35c5ee15bc9c9a3de0d95b0035ca56baa",
+      "trace_sha256": "0b2453b993091000f00204c41f55ccd85c631b6c6b2b9c7e3d840f787b5b1d27",
+      "stderr_sha256": "4195a4b134473a2aac6b899c2f516ef1d9340714bf4d4dcb9e8e760c3e6842dd",
+      "return_code_sha256": "7de1555df0c2700329e815b93b32c571c3ea54dc967b89e81ab73b9972b72d1d",
+      "return_code": 4,
+      "completed_ticks": 253,
+      "presents": 116,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black",
+      "semantic": {"normalized": "0x00000400", "logical_current": "0x00000010", "logical_pressed": "0x00000010", "logical_previous": "0x00000000", "menu_consumers_observed": false}
+    }
+  },
+  "policy": {
+    "guest_producer_consumer_proven": true,
+    "input_observation_promoted": true,
+    "menu_consumer_proven": false,
+    "start_transition_promoted": false,
+    "frontend_claim_written": false,
+    "readback_effect_proven": false,
+    "mission_observation_promoted": false,
+    "gameplay_observation_promoted": false,
+    "terminal_observation_promoted": false,
+    "supported": false
+  },
+  "limits": [
+    "the A/B proves the guest normalizer and logical current/previous/pressed mapper, including raw START 0x10 -> normalized 0x400 -> logical 0x10",
+    "static menu consumers 0x82170FCC and 0x82185210 are not dynamically reached in the bounded tick-252 routes",
+    "both routes stop at max_ticks with frontend/mission/terminal=false and the resolved readback remains black",
+    "MCP player/camera/flight/target/objective/terminal domains remain unavailable; no arbitrary guest-memory observation is exposed"
+  ]
+}

@@ -129,4 +129,37 @@ inline void trace_controller_target_reader(
       generated_name == nullptr ? "" : generated_name, generated_line);
 }
 
+inline void trace_input_semantic_access(
+    const char *kind, std::uint32_t address, std::uint32_t size,
+    std::uint64_t value, std::uint64_t tick, std::uint32_t thread,
+    std::uint32_t lr, const char *generated_name,
+    std::uint32_t generated_line) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_INPUT_SEMANTICS") != nullptr;
+  static thread_local std::uint32_t record_count = 0U;
+  constexpr std::uint32_t kNormalized = 0x827B37E0U;
+  constexpr std::uint32_t kLogicalBegin = 0x82798480U;
+  constexpr std::uint32_t kLogicalEnd = 0x8279848CU;
+  const auto end = static_cast<std::uint64_t>(address) + size;
+  const bool normalized =
+      static_cast<std::uint64_t>(address) < kNormalized + 4U &&
+      end > kNormalized;
+  const bool logical = static_cast<std::uint64_t>(address) < kLogicalEnd &&
+                       end > kLogicalBegin;
+  if (!enabled || size == 0U || size > 8U || (!normalized && !logical) ||
+      record_count >= 8192U) {
+    return;
+  }
+  ++record_count;
+  std::fprintf(
+      stderr,
+      "AC6_INPUT_SEMANTIC_ACCESS kind=%s address=0x%08X size=%u "
+      "value=0x%08X tick=%llu thread=%u lr=0x%08X function=%s "
+      "generated_line=%u\n",
+      kind == nullptr ? "" : kind, address, size,
+      static_cast<std::uint32_t>(value),
+      static_cast<unsigned long long>(tick), thread, lr,
+      generated_name == nullptr ? "" : generated_name, generated_line);
+}
+
 } // namespace ac6demo::guest_bridge_detail

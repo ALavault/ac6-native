@@ -31,8 +31,8 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 | Xenos runtime | partial | Cycle 1754 joins guest writers to PM4/RB_COPY, but cycle 1755 readback remains black; no complete translation/resolve parity is promoted. |
 | XMA runtime | partial | Six context-qualified kicks are traversed under opt-in guard; no XMA effect is promoted. |
 | Media/audio decode | missing | No decoded packet, timestamp/volume, or English/Japanese audio output receipt. |
-| Input delivery | proven | Cycle 1774 final-binary A/B joins the guest controller snapshot: `buttons16` gives current/pressed `0x10`, normalized `0x400`, logical pressed `0x10`; no persistent START transition follows. |
-| START transition | failed | Neutral/buttons A/B have identical graphics/scheduler/milestones; cycle 1769 still converges at `0x822F8848`. |
+| Input delivery | proven | Cycles 1774–1775 final-binary A/B join the guest controller snapshot and logical mapper: `buttons16` gives current/pressed `0x10`, normalized `0x400`, logical pressed `0x10`; no persistent START transition follows. |
+| START transition | failed | Cycle 1775 dynamically proves the logical mapper but reaches neither static START consumer `0x82170FCC` nor `0x82185210`; both routes remain at the same blocked frontier. |
 | Frontend | missing | Both 5600-tick routes report `frontend=false`; no positive milestone/readback pair. |
 | Mission | missing | `mission=false`; no title→mission receipt. |
 | Objectives | missing | Observation inventory marks objective unavailable; no endogenous producer. |
@@ -48,14 +48,14 @@ SHA-256 `600c40c2…51e07`). Statuses are strict: `proven`, `partial`,
 
 ## Single next checkpoint
 
-Join the cycle-1774 guest input snapshot to its START consumer and require a
-non-black frontend/readback pair before exposing any frontend observation. Keep
-mission, gameplay, terminal and the cycle-1761 XAM frontier separate until
-their own A/B receipts exist.
+Qualify runtime reach of the first static START/menu consumer (`0x82170FCC` or
+`0x82185210`) and require a non-black frontend/readback pair before exposing any
+frontend observation. Keep mission, gameplay, terminal and the cycle-1761 XAM
+frontier separate until their own A/B receipts exist.
 
 | Branch | Status | Classification |
 |---|---|---|
-| Runtime/domain 3 guest boundary | partial | Input snapshot producer/consumer is receipt-backed in cycle 1774; START consumer, non-black readback, guest scheduler and gameplay observations remain absent. |
+| Runtime/domain 3 guest boundary | partial | Input snapshot and logical mapper are receipt-backed in cycle 1775; the first START consumer, non-black readback, guest scheduler and gameplay observations remain absent. |
 
 The machine-readable canonical record is
 [`goal-gate-matrix-v1.json`](goal-gate-matrix-v1.json).

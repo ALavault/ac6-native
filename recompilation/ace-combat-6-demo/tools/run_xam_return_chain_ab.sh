@@ -269,6 +269,8 @@ try:
             env["AC6_DEMO_WATCH_CONTROLLER_READERS"] = "1"
         if os.environ.get("AC6_DEMO_WATCH_CONTROLLER_TARGET_READERS"):
             env["AC6_DEMO_WATCH_CONTROLLER_TARGET_READERS"] = "1"
+        if os.environ.get("AC6_DEMO_WATCH_INPUT_SEMANTICS"):
+            env["AC6_DEMO_WATCH_INPUT_SEMANTICS"] = "1"
         input_at = f"252,{buttons},0,0,0,0,0,0,1"
         command = [binary, "probe", "--store", str(store), "--until", "frontend",
                    "--max-ticks", str(max_ticks), "--trace", str(trace),

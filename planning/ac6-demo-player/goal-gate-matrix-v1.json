@@ -88,6 +88,11 @@
       "path": "workspaces/ace-combat-6/reports/cycle-1774-demo-input-semantic-ab.json",
       "sha256": "77bed167902dc35dea28a5525912f99c443ec731a3a3cd3c89f1816bc9df5b4c",
       "claim": "final-binary A/B joins buttons16 to a non-zero guest controller snapshot, normalization and logical pressed bit; START/readback remain closed"
+    },
+    {
+      "path": "workspaces/ace-combat-6/reports/cycle-1775-demo-input-logical-map-ab.json",
+      "sha256": "880ffc033a4a091c02593df7f2488ea27ba58e0f15a9a2655b0a293334623442",
+      "claim": "fresh A/B joins the normalized and logical input mapper to exact PAL instructions; static START consumers are not dynamically reached"
     }
   ],
   "gates": [
@@ -433,9 +438,14 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1774-demo-input-semantic-ab.json",
           "sha256": "77bed167902dc35dea28a5525912f99c443ec731a3a3cd3c89f1816bc9df5b4c",
           "claim": "fresh final-binary A/B proves guest controller object, XInput fields, normalization and logical pressed output at tick 252"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1775-demo-input-logical-map-ab.json",
+          "sha256": "880ffc033a4a091c02593df7f2488ea27ba58e0f15a9a2655b0a293334623442",
+          "claim": "fresh A/B proves raw START 0x10 -> normalized 0x400 -> logical pressed 0x10 through guest-owned mapper sites"
         }
       ],
-      "tests": ["cycle 1774: neutral/buttons16 snapshots share object/vtable; buttons16 current=pressed=0x10, normalized=0x400 and logical_pressed=0x10; CTest input/trace/XAM movie pass"],
+      "tests": ["cycle 1774/1775: neutral/buttons16 snapshots share object/vtable; buttons16 current=pressed=0x10, normalized=0x400 and logical_pressed=0x10; CTest input/trace/XAM movie pass"],
       "limits": ["delivery and guest normalization are proven, but no persistent semantic START transition follows"]
     },
     {
@@ -451,10 +461,15 @@
           "path": "workspaces/ace-combat-6/reports/cycle-1769-ac6-demo-xam-ab-negative.json",
           "sha256": "1d6ccea717302752a73f3d37b322aee5ed64907d5d48e0557b86c280ac4119b4",
           "claim": "fresh neutral/buttons16 routes still converge at the same blocked frontier; no START promotion"
+        },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1775-demo-input-logical-map-ab.json",
+          "sha256": "880ffc033a4a091c02593df7f2488ea27ba58e0f15a9a2655b0a293334623442",
+          "claim": "logical mapper is dynamically proven, but static START consumers 0x82170FCC and 0x82185210 are not reached in either bounded route"
         }
       ],
-      "tests": ["milestones frontend/mission/terminal=false in both routes"],
-      "limits": ["failure is route/run-specific evidence, not a claim that all future input is impossible"]
+      "tests": ["cycle 1775: both routes return rc=4 at tick 253 with frontend/mission/terminal=false; no dynamic START consumer"],
+      "limits": ["logical mapper reach does not establish a persistent START/menu transition; failure is route/run-specific evidence, not a claim that all future input is impossible"]
     },
     {
       "gate_id": "frontend",
@@ -688,7 +703,7 @@
   "next_checkpoint": {
     "gate_id": "demo_native_runtime_domain3_guest_boundary",
     "status": "partial",
-    "objective": "Join the qualified input snapshot to a guest START consumer and a non-black frontend/readback effect; keep mission, gameplay and terminal domains closed until their own receipts exist.",
+    "objective": "Qualify runtime reach of the first static START/menu consumer (0x82170FCC or 0x82185210) and require a non-black frontend/readback pair; keep mission, gameplay and terminal domains closed.",
     "evidence": [
       {
         "path": "workspaces/ace-combat-6/reports/cycle-1767-ac6-demo-native-ipc.json",
@@ -730,6 +745,11 @@
           "sha256": "77bed167902dc35dea28a5525912f99c443ec731a3a3cd3c89f1816bc9df5b4c",
           "claim": "guest input snapshot is non-zero and receipt-backed at tick 252, but START/frontend/readback are not promoted"
         },
+        {
+          "path": "workspaces/ace-combat-6/reports/cycle-1775-demo-input-logical-map-ab.json",
+          "sha256": "880ffc033a4a091c02593df7f2488ea27ba58e0f15a9a2655b0a293334623442",
+          "claim": "guest logical mapper is receipt-backed; the first static START consumers remain dynamically unreached and frontend/readback stay closed"
+        },
       {
         "path": "workspaces/ace-combat-6/planning/ac6-demo-player/observation-domain-inventory-v1.json",
         "sha256": "505c50673a0213976fbe32f74a128dc1970180a05e160a0de8ea965fda01e647",
@@ -737,7 +757,7 @@
       }
     ],
     "limits": [
-      "input semantics are qualified, but no persistent START consumer, non-black frontend/readback, mission or arbitrary guest-memory observation is available"
+      "input semantics and logical mapping are qualified, but no persistent START consumer, non-black frontend/readback, mission or arbitrary guest-memory observation is available"
     ]
   },
   "next_checkpoint_branches": [
@@ -745,7 +765,7 @@
       "branch_id": "runtime_domain3_guest_boundary",
       "status": "partial",
       "match": "qualified demo-native platform/input/time contract",
-      "action": "join the tick-252 input snapshot to its guest START consumer and require a non-black frontend/readback pair; do not open mission/gameplay/terminal yet"
+      "action": "instrument runtime reach of 0x82170FCC or 0x82185210, then require a non-black frontend/readback pair; do not open mission/gameplay/terminal yet"
     }
   ]
 }
