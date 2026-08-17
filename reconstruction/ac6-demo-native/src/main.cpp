@@ -1,4 +1,5 @@
 #include "ac6demo_native/content_store.hpp"
+#include "ac6demo_native/ipc.hpp"
 
 #include <iostream>
 #include <string>
@@ -36,6 +37,10 @@ bool parse_store_option(int argc, char** argv, int first, std::filesystem::path*
 }  // namespace
 
 int main(int argc, char** argv) {
+    const int ipc_result = ac6demo_native::maybe_run_platform_ipc(argc, argv);
+    if (ipc_result >= 0) {
+        return ipc_result;
+    }
     if (argc < 2) {
         usage(argv[0]);
         return 2;

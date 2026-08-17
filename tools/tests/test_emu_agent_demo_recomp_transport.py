@@ -213,6 +213,24 @@ class DemoRecompMcpTests(unittest.TestCase):
         opened = mcp_server.EmuMcpServer().call_tool("emu_open_session", {"target": target, "backend": "demo-native"})
         self.assertEqual(opened["status"], "backend_unavailable")
 
+    def test_configured_demo_native_uses_owned_transport_and_stays_unqualified(self):
+        _Transport.instances.clear()
+        target = {"target_id": TARGET_ID, "program_sha256": XEX_SHA256, "module": "Default.xex"}
+        with patch.object(mcp_server, "DemoRecompTransport", _Transport):
+            server = mcp_server.EmuMcpServer(demo_native_binary="/configured/ac6-demo-native")
+            self.assertEqual(server.capabilities()["v2_backends"]["demo-native"], "configured")
+            opened = server.call_tool("emu_open_session", {"target": target, "backend": "demo-native"})
+            self.assertEqual(opened["status"], "completed")
+            session_id = opened["session_id"]
+            observation = server.call_tool(
+                "emu_step", {"session_id": session_id, "action": _action(session_id)}
+            )["observation"]
+            self.assertEqual(observation["tick"], 1)
+            self.assertEqual(observation["availability"], "unavailable")
+            self.assertIn("demo-native", observation["provenance"]["reason"])
+            self.assertEqual(server.call_tool("emu_close_session", {"session_id": session_id})["status"], "closed")
+            self.assertTrue(_Transport.instances[0].closed)
+
     def test_failed_transport_rejects_observe_step_and_empty_run_until(self):
         class FailingTransport(_Transport):
             def observe(self):

@@ -11,6 +11,20 @@ ac6-demo-native import <source-directory> [--store <store-directory>]
 ac6-demo-native verify [--store <store-directory>]
 ```
 
+For the owned MCP session seam it also accepts the server-supplied private
+socket only:
+
+```text
+ac6-demo-native --emu-agent-ipc-fd <inherited-fd>
+```
+
+The IPC protocol is length-prefixed canonical JSON with bounded typed XInput,
+deterministic platform ticks, and tick/PRESENT acknowledgements. The process
+never opens a host controller, wall clock, network socket, arbitrary guest
+memory, or caller-selected command. Its transport is a platform-only contract:
+the MCP observation domains remain `unavailable` until qualified guest
+producers and readback evidence exist.
+
 Without `--store`, data is kept below the product-specific XDG data location
 `ac6-demo-native`; the corresponding product-specific XDG config location is
 available through the library API. The store contains only an atomic
@@ -34,8 +48,8 @@ identity-aware recovery; it is never recursively deleted by name.
 
 The library also contains the first domain-2 boundary: a deterministic 60 Hz
 tick counter, typed bounded XInput state, and guest-notified PRESENT count.
-It reads no host controller or wall clock and is not exposed by the CLI. This
-is a tested platform contract only; it does not establish guest execution,
-frontend, mission, renderer, or support. Its in-memory `AC6RTPLY-v4` journal
+It reads no host controller or wall clock. The CLI IPC seam exposes only this
+bounded platform contract; it does not establish guest execution, frontend,
+mission, renderer, or support. Its in-memory `AC6RTPLY-v4` journal
 is exact-PAL, content-hashed, bounded, canonical, and replayed through the same
 platform API; no filesystem replay command or guest runtime is exposed.

@@ -231,7 +231,8 @@ def _tool_schema(name: str) -> dict[str, Any]:
 class EmuMcpServer:
     """Stateful in-memory dispatcher for the macro tool set."""
 
-    def __init__(self, *, demo_recomp_binary: str | None = None) -> None:
+    def __init__(self, *, demo_recomp_binary: str | None = None,
+                 demo_native_binary: str | None = None) -> None:
         self._episodes: dict[str, dict[str, Any]] = {}
         self._explorations: dict[str, dict[str, Any]] = {}
         self._v2_sessions: dict[str, dict[str, Any]] = {}
@@ -240,6 +241,7 @@ class EmuMcpServer:
         # Startup configuration only.  Tool arguments can never select a
         # binary, command line, endpoint, or content store.
         self._demo_recomp_binary = demo_recomp_binary
+        self._demo_native_binary = demo_native_binary
 
     @staticmethod
     def _v2_unavailable(session_id: str, sequence: int, *, tick: int,
@@ -298,15 +300,13 @@ class EmuMcpServer:
             if backend not in {"demo-recomp", "demo-native"}:
                 raise ExplorationError("backend_unavailable: backend must be demo-recomp or demo-native")
             session_id = "sess-" + uuid.uuid4().hex
-            if backend == "demo-native":
+            binary = self._demo_recomp_binary if backend == "demo-recomp" else self._demo_native_binary
+            if not binary:
                 self._v2_sessions[session_id] = {"backend": backend, "backend_state": "initial_unavailable", "actions": [], "observations": [], "events": [], "receipt_ids": [], "receipt_snapshots": {}, "last_tick": -1, "closed": False}
-                return self._v2_receipt(session_id, "backend_unavailable", error="demo-native transport unavailable") | {"session_id": session_id}
-            if not self._demo_recomp_binary:
-                self._v2_sessions[session_id] = {"backend": backend, "backend_state": "initial_unavailable", "actions": [], "observations": [], "events": [], "receipt_ids": [], "receipt_snapshots": {}, "last_tick": -1, "closed": False}
-                return self._v2_receipt(session_id, "backend_unavailable", error="demo-recomp binary is not configured at server startup") | {"session_id": session_id}
+                return self._v2_receipt(session_id, "backend_unavailable", error=f"{backend} binary is not configured at server startup") | {"session_id": session_id}
             transport: DemoRecompTransport | None = None
             try:
-                transport = DemoRecompTransport(self._demo_recomp_binary)
+                transport = DemoRecompTransport(binary)
                 transport.start()
             except DemoRecompTransportError as error:
                 if transport is not None:
@@ -342,7 +342,7 @@ class EmuMcpServer:
             if isinstance(transport, DemoRecompTransport):
                 try:
                     result = transport.observe()
-                    observation = self._v2_unavailable(session_id, len(session["observations"]), tick=result["tick"], present=result["present"], reason="unqualified_demo_recomp_observation")
+                    observation = self._v2_unavailable(session_id, len(session["observations"]), tick=result["tick"], present=result["present"], reason=f"unqualified_{session['backend']}_observation")
                 except DemoRecompTransportError as error:
                     self._v2_transport_failed(session)
                     raise ExplorationError(str(error))
@@ -367,7 +367,7 @@ class EmuMcpServer:
                 except DemoRecompTransportError as error:
                     self._v2_transport_failed(session)
                     raise ExplorationError(str(error)) from error
-                observation = self._v2_unavailable(session_id, len(session["observations"]), tick=result["tick"], present=result["present"], reason="unqualified_demo_recomp_observation")
+                observation = self._v2_unavailable(session_id, len(session["observations"]), tick=result["tick"], present=result["present"], reason=f"unqualified_{session['backend']}_observation")
             else:
                 observation = validate_observation(unavailable_observation(session_id, len(session["observations"])))
             session["last_tick"] = action["tick"]
@@ -384,7 +384,7 @@ class EmuMcpServer:
             if session.get("backend_state") == "active":
                 return self._v2_receipt(session_id, "completed")
             return self._v2_receipt(session_id, "backend_unavailable",
-                                    error="demo-recomp transport unavailable")
+                                    error=f"{session['backend']} transport unavailable")
         if name == "emu_replay":
             if "receipt_id" not in args or not isinstance(args.get("receipt_id"), str):
                 raise ExplorationError("replay requires a receipt_id")
@@ -401,9 +401,10 @@ class EmuMcpServer:
             replay_transport: DemoRecompTransport | None = None
             try:
                 if session.get("backend_state") == "active":
-                    if session["backend"] != "demo-recomp" or not self._demo_recomp_binary:
-                        raise ExplorationError("backend_unavailable: demo-recomp transport is not configured")
-                    replay_transport = DemoRecompTransport(self._demo_recomp_binary)
+                    replay_binary = self._demo_recomp_binary if session["backend"] == "demo-recomp" else self._demo_native_binary
+                    if not replay_binary:
+                        raise ExplorationError(f"backend_unavailable: {session['backend']} transport is not configured")
+                    replay_transport = DemoRecompTransport(replay_binary)
                     replay_transport.start()
                     replay_state = "active"
                 else:
@@ -466,7 +467,7 @@ class EmuMcpServer:
                 "needs_dynamic_evidence": "Required before claiming retail guest state, rendering, or parity",
             },
             "retail_payload_policy": "metadata-only; no retail payload is read or returned",
-            "v2_backends": {"demo-recomp": "configured" if self._demo_recomp_binary else "backend_unavailable", "demo-native": "backend_unavailable"},
+            "v2_backends": {"demo-recomp": "configured" if self._demo_recomp_binary else "backend_unavailable", "demo-native": "configured" if self._demo_native_binary else "backend_unavailable"},
         }
 
     def _remember_episode(self, episode: Mapping[str, Any]) -> dict[str, Any]:
@@ -661,7 +662,7 @@ class EmuMcpServer:
                     "protocolVersion": PROTOCOL_VERSION,
                     "capabilities": {"tools": {"listChanged": False}},
                     "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
-                    "instructions": "Use the six v1 diagnostic tools or six v2 session tools; demo-recomp/demo-native remain backend_unavailable until qualified transport exists.",
+                    "instructions": "Use the six v1 diagnostic tools or six v2 session tools; configured demo-recomp/demo-native transports expose only unqualified observations until guest evidence exists.",
                 }
             elif method == "notifications/initialized":
                 return None
