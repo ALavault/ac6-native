@@ -334,7 +334,29 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
   // What the callback does is the guest's business.  This only restores the
   // beat the hardware provides; it decides nothing about audio itself, and
   // no sample is decoded or submitted anywhere.
-  if (xaudio_callback_ != 0U) {
+  // The registered callback takes no arguments. Its whole body is
+  //     lis r11,-32098 ; lwz r3,-23256(r11) ; b 0x82355E58
+  // so it loads a single global at 0x829DA528 and tail-calls with it. While
+  // that global is null the callback dereferences null a few frames in, which
+  // is exactly where driving it from the registration tick used to stop. The
+  // guest publishes the pointer when its audio system is ready, so the
+  // readiness condition is the guest's own, read from the address the
+  // callback itself reads -- not a delay this runtime invents.
+  //
+  // Opt-in, and the reason is a measured negative. Driving it unconditionally
+  // makes the guest fault on its FIRST frame, whenever that frame is: delayed
+  // to tick 600 the trap simply moves to tick 600, identical registers. So the
+  // object the audio path needs is never built by waiting, and the frames a
+  // driven client would deliver cost the run 5,500 ticks of reach for no
+  // compensating progress. Until that object is understood the default route
+  // keeps its reach and this stays behind AC6_DEMO_EXPERIMENTAL_XAUDIO_DRIVE.
+  constexpr std::uint32_t kXAudioClientStateGlobal = 0x829DA528U;
+  const bool xaudio_client_ready =
+      xaudio_callback_ != 0U &&
+      std::getenv("AC6_DEMO_EXPERIMENTAL_XAUDIO_DRIVE") != nullptr &&
+      memory_.mapped(kXAudioClientStateGlobal, 4U) &&
+      memory_.load_u32(kXAudioClientStateGlobal) != 0U;
+  if (xaudio_client_ready) {
     const auto target = ((tick_ + 1U) * 25U) / 8U;
     while (xaudio_frames_emitted_ < target) {
       dispatch_xaudio_frame();
