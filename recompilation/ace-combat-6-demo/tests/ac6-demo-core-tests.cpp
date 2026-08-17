@@ -1,3 +1,8 @@
+#ifdef NDEBUG
+#error "Every check in this suite is an assert(); NDEBUG erases them and the \
+suite then passes vacuously. Build this target with -UNDEBUG."
+#endif
+
 #include "ac6demo/endian.hpp"
 #include "ac6demo/guest_bridge.hpp"
 #include "ac6demo/guest_memory.hpp"

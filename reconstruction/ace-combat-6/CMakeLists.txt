@@ -156,6 +156,16 @@ if(Python3_Interpreter_FOUND)
       --root ${CMAKE_SOURCE_DIR}/../..
       --baseline ${CMAKE_SOURCE_DIR}/../../analysis/source_complexity_baseline.json
       --check)
+  # Repo-wide: a suite whose checks are assert() must refuse to build under
+  # NDEBUG. Ten demo suites passed vacuously for eighty-seven commits.
+  add_test(NAME ac6-test-assert-liveness
+    COMMAND ${Python3_EXECUTABLE}
+      ${CMAKE_SOURCE_DIR}/../../tools/audit_test_assert_liveness.py
+      ${CMAKE_SOURCE_DIR}/tests
+      ${CMAKE_SOURCE_DIR}/../../recompilation/ace-combat-6-demo/tests
+      ${CMAKE_SOURCE_DIR}/../ac6-xbox360-host/tests
+      ${CMAKE_SOURCE_DIR}/../ac6-demo-native/tests
+      ${CMAKE_SOURCE_DIR}/../../tests)
 endif()
 
 add_executable(ac6-product-runtime-tests tests/product_runtime_tests.cpp)

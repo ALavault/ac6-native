@@ -1,3 +1,8 @@
+#ifdef NDEBUG
+#error "Every check in this suite is an assert(); NDEBUG erases them and the \
+suite then passes vacuously. Build this target with -UNDEBUG."
+#endif
+
 #include "ac6demo/xenos_command_processor.hpp"
 
 #include "ac6demo/runtime_error.hpp"

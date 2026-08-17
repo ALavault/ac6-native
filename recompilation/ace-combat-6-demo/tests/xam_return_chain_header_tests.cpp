@@ -1,3 +1,8 @@
+#ifdef NDEBUG
+#error "Every check in this suite is an assert(); NDEBUG erases them and the \
+suite then passes vacuously. Build this target with -UNDEBUG."
+#endif
+
 #include "../src/guest_bridge/xam_return_chain_trace.hpp"
 
 #include <array>

@@ -136,6 +136,19 @@ rots:
       -scriptPath scripts -postScript MicroExecuteFunction.java --batch W/manifest
     python3 tools/audit_microexec_harness_calibration.py --check --workdir W
 
+A suite whose checks are all `assert()` is erased by `NDEBUG`, which the
+configured `RelWithDebInfo`/`Release` build types define. Ten of the twelve demo
+test executables compiled their assertions away and **passed vacuously for
+eighty-seven commits**; a deliberately wrong constant added to
+`ac6-demo-frontier-tests` passed. Every such source now carries an
+`#ifdef NDEBUG / #error` guard, so the mistake is a build failure rather than a
+green run, and this checks the guard is where a runtime `assert()` is — the one
+thing the guard cannot do for itself. It runs as `ac6-test-assert-liveness`:
+
+    python3 tools/audit_test_assert_liveness.py \
+      reconstruction/ace-combat-6/tests recompilation/ace-combat-6-demo/tests \
+      reconstruction/ac6-xbox360-host/tests reconstruction/ac6-demo-native/tests tests
+
 And this one needs no Ghidra pass at all, so run it first — it is instant and it
 catches the class of defect that cost cycle 1460 a headless run to find:
 
