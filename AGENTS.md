@@ -2,8 +2,6 @@
 
 ## Agent wait timeout
 
-- Pour `wait_agent`, utiliser `timeout_ms=3600000` (1 heure) ou omettre ce paramètre puisque le défaut configuré vaut 1 heure ; ne jamais utiliser `900000`/15 min ni `300000`, sauf demande explicite.
-- Never repeat unchanged `wait_agent` polling. After a timeout, wait again only when new status or information justifies it; otherwise report or suspend.
 - Do not invent, expand, or continue work beyond the explicit request. Do not add unsolicited tasks or optional improvements.
 
 ## Scope, paths and resources
@@ -67,9 +65,3 @@
   `workspaces/ace-combat-6/XENIA_WINE_ORACLE_HANDOFF.md`;
   it records the pinned Wine/Vulkan launcher, local `codex` profile and AZERTY
   keyboard route without promoting oracle use to parity evidence.
-
-## Multi-agent routing
-
-- Use only role-free default subagents with `gpt-5.6-luna` and `reasoning_effort="xhigh"`.
-- Subagents never spawn other agents.
-- If a subagent fails or returns an incomplete result, the main/root thread resumes the task directly; do not retry with another role or model.
