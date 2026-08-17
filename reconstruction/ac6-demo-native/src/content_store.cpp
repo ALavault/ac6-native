@@ -19,6 +19,9 @@
 #if defined(__unix__) || defined(__APPLE__)
 #include <dirent.h>
 #include <fcntl.h>
+#if defined(__linux__)
+#include <sys/random.h>
+#endif
 #include <unistd.h>
 #else
 constexpr int O_RDONLY = 0;
@@ -55,6 +58,9 @@ constexpr char kMarkerContents[] =
     "voicepack_jpn.bin,21876736,e67c7add7e4dde4297ae87ec0ca30e6e91333d32511b6fd12e8f2d01e4c987b8\n";
 constexpr char kRetailXexSha256[] =
     "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde";
+constexpr char kImportLockName[] = ".ac6-demo-native.import.lock";
+constexpr char kOwnershipName[] = ".ac6-demo-native.owner";
+constexpr std::size_t kOwnershipTokenBytes = 32U;
 constexpr std::size_t kMaxAttempts = 16U;
 
 const std::array<ExpectedFile, 9U>& production_files() {
@@ -156,6 +162,60 @@ std::string operation_id(std::size_t attempt) {
            std::to_string(static_cast<unsigned long long>(attempt));
 }
 
+using OwnershipToken = std::array<std::byte, kOwnershipTokenBytes>;
+
+bool make_ownership_token(OwnershipToken* token, std::string* error) {
+    if (token == nullptr) {
+        return set_error(error, "ownership token output invalid");
+    }
+#if defined(__linux__)
+    std::size_t offset = 0U;
+    while (offset < token->size()) {
+        const ssize_t count = ::getrandom(token->data() + offset,
+                                          token->size() - offset, 0U);
+        if (count < 0 && errno == EINTR) {
+            continue;
+        }
+        if (count <= 0) {
+            return set_error(error, "cryptographic ownership token unavailable");
+        }
+        offset += static_cast<std::size_t>(count);
+    }
+    return true;
+#else
+    (void)token;
+    return set_error(error, "cryptographic ownership token unavailable");
+#endif
+}
+
+bool token_matches_fd(int fd, const OwnershipToken& token, std::string* error) {
+    std::string contents;
+    if (!detail::read_bounded(fd, token.size(), &contents, error) ||
+        contents.size() != token.size() ||
+        !std::equal(contents.begin(), contents.end(),
+                    reinterpret_cast<const char*>(token.data()))) {
+        return set_error(error, "ownership token mismatch");
+    }
+    return true;
+}
+
+bool write_ownership_file(int parent_fd, const char* name,
+                          const OwnershipToken& token, UniqueFd* owned,
+                          std::string* error) {
+    if (owned == nullptr) {
+        return set_error(error, "ownership file output invalid");
+    }
+    owned->reset(detail::open_regular_at(parent_fd, name,
+                                         O_RDWR | O_CREAT | O_EXCL, 0600U, error));
+    if (!*owned ||
+        !detail::write_all(owned->get(), token.data(), token.size(), error) ||
+        !detail::sync_fd(owned->get(), "ownership token fsync failed", error) ||
+        !token_matches_fd(owned->get(), token, error)) {
+        return false;
+    }
+    return true;
+}
+
 struct SourceFile {
     std::string name;
     UniqueFd fd;
@@ -181,7 +241,7 @@ bool enumerate_source(int directory_fd, const IdentityProfile& profile,
     (void)profile;
     return set_error(error, "POSIX descriptor backend unavailable");
 #else
-    const int duplicate = ::dup(directory_fd);
+    const int duplicate = detail::reopen_directory(directory_fd, error);
     if (duplicate < 0) {
         return set_error(error, "cannot enumerate source directory");
     }
@@ -321,7 +381,7 @@ bool check_generation_files(int generation_fd, const IdentityProfile& profile,
         expected_names.insert(file.name);
     }
     expected_names.insert(kMarkerName);
-    const int duplicate = ::dup(generation_fd);
+    const int duplicate = detail::reopen_directory(generation_fd, error);
     if (duplicate < 0) {
         return set_error(error, "cannot enumerate published generation");
     }
@@ -364,13 +424,243 @@ bool check_generation_files(int generation_fd, const IdentityProfile& profile,
 #endif
 }
 
-bool remove_owned_entry(int parent_fd, const char* name) {
+bool check_generation_content(int generation_fd, const IdentityProfile& profile,
+                              std::string* error) {
+    if (!check_generation_files(generation_fd, profile, error)) {
+        return false;
+    }
+    for (const auto& expected : profile.files) {
+        UniqueFd file(detail::open_regular_at(generation_fd, expected.name.c_str(),
+                                              O_RDONLY, 0U, error));
+        if (!file) {
+            return set_error(error, "published content unavailable");
+        }
+        std::uint64_t size = 0U;
+        bool regular = false;
+        if (!detail::stat_fd(file.get(), &size, &regular, error) || !regular ||
+            size != expected.size) {
+            return set_error(error, "published content size mismatch");
+        }
+        std::string hash_error;
+        if (detail::sha256_fd(file.get(), size, &hash_error) != expected.sha256) {
+            return set_error(error, "published content hash mismatch");
+        }
+    }
+    return true;
+}
+
+bool revalidate_current(int root_fd, int expected_generation_fd,
+                        const std::string& expected_pointer,
+                        const IdentityProfile& profile, std::string* error) {
+    std::string pointer;
+    bool present = false;
+    if (!detail::read_current_pointer(root_fd, &pointer, &present, error) || !present ||
+        pointer != expected_pointer) {
+        return set_error(error, "published pointer changed during commit");
+    }
+    UniqueFd generation;
+    if (!detail::read_current_generation(root_fd, &generation, error)) {
+        return false;
+    }
+    std::uint64_t expected_device = 0U;
+    std::uint64_t expected_inode = 0U;
+    std::uint64_t actual_device = 0U;
+    std::uint64_t actual_inode = 0U;
+    if (!detail::identity_fd(expected_generation_fd, &expected_device, &expected_inode,
+                             error) ||
+        !detail::identity_fd(generation.get(), &actual_device, &actual_inode, error) ||
+        expected_device != actual_device || expected_inode != actual_inode) {
+        return set_error(error, "published generation identity changed");
+    }
+    return check_generation_content(generation.get(), profile, error);
+}
+
+bool rollback_current(int root_fd, int expected_generation_fd,
+                      const std::string& expected_pointer,
+                      const std::string& old_pointer, bool had_old_pointer,
+                      const IdentityProfile& profile, std::string* error) {
+    if (!revalidate_current(root_fd, expected_generation_fd, expected_pointer, profile,
+                            error)) {
+        return false;
+    }
+    if (had_old_pointer) {
+        const std::string rollback_name = ".rollback-" + operation_id(0U);
+        UniqueFd rollback(detail::open_regular_at(
+            root_fd, rollback_name.c_str(), O_RDWR | O_CREAT | O_EXCL, 0600U, error));
+        if (!rollback || !detail::write_all(rollback.get(), old_pointer.data(),
+                                            old_pointer.size(), error) ||
+            !detail::sync_fd(rollback.get(), "rollback pointer fsync failed", error)) {
+            return false;
+        }
+        std::uint64_t rollback_device = 0U;
+        std::uint64_t rollback_inode = 0U;
+        std::uint64_t rollback_path_device = 0U;
+        std::uint64_t rollback_path_inode = 0U;
+        if (!detail::identity_fd(rollback.get(), &rollback_device, &rollback_inode, error) ||
+            !detail::identity_at(root_fd, rollback_name.c_str(), &rollback_path_device,
+                                 &rollback_path_inode, error) ||
+            rollback_device != rollback_path_device || rollback_inode != rollback_path_inode) {
+            return set_error(error, "rollback pointer identity changed");
+        }
 #if defined(__unix__) || defined(__APPLE__)
-    return ::unlinkat(parent_fd, name, 0) == 0 || errno == ENOENT;
+        if (!detail::rename_replace(root_fd, rollback_name.c_str(), root_fd, "current",
+                                    error)) {
+            return false;
+        }
 #else
+        return set_error(error, "POSIX descriptor backend unavailable");
+#endif
+    } else {
+#if defined(__unix__) || defined(__APPLE__)
+        if (::unlinkat(root_fd, "current", 0) != 0) {
+            return set_error(error, "rollback pointer removal failed");
+        }
+#else
+        return set_error(error, "POSIX descriptor backend unavailable");
+#endif
+    }
+    if (!detail::sync_directory(root_fd, "rollback root fsync failed", error)) {
+        return false;
+    }
+    std::string restored;
+    bool restored_present = false;
+    if (!detail::read_current_pointer(root_fd, &restored, &restored_present, error) ||
+        restored_present != had_old_pointer ||
+        (had_old_pointer && restored != old_pointer)) {
+        return set_error(error, "rollback pointer verification failed");
+    }
+    return true;
+}
+
+bool quarantine_owned_directory(int parent_fd, const std::string& name,
+                                int owned_fd, const OwnershipToken* token,
+                                const char* token_name, const char* marker,
+                                const char* const* files, std::size_t file_count,
+                                std::string* error) {
+#if !defined(__unix__) && !defined(__APPLE__)
     (void)parent_fd;
     (void)name;
-    return false;
+    (void)owned_fd;
+    (void)token;
+    (void)token_name;
+    (void)marker;
+    (void)files;
+    (void)file_count;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#else
+    std::uint64_t owned_device = 0U;
+    std::uint64_t owned_inode = 0U;
+    std::uint64_t path_device = 0U;
+    std::uint64_t path_inode = 0U;
+    if (!detail::identity_fd(owned_fd, &owned_device, &owned_inode, error) ||
+        !detail::identity_at(parent_fd, name.c_str(), &path_device, &path_inode, error) ||
+        owned_device != path_device || owned_inode != path_inode) {
+        return set_error(error, "owned directory identity changed");
+    }
+
+    const std::string quarantine_name = ".quarantine-" + operation_id(0U);
+    if (!detail::rename_noreplace(parent_fd, name.c_str(), parent_fd,
+                                  quarantine_name.c_str(), error)) {
+        return false;
+    }
+    UniqueFd quarantine(detail::open_directory_at(parent_fd, quarantine_name.c_str(), error));
+    if (!quarantine ||
+        !detail::identity_fd(quarantine.get(), &path_device, &path_inode, error) ||
+        path_device != owned_device || path_inode != owned_inode) {
+        return set_error(error, "quarantined directory identity changed");
+    }
+    if (token != nullptr) {
+        if (token_name == nullptr) {
+            return set_error(error, "ownership token name missing");
+        }
+        UniqueFd token_fd(detail::open_regular_at(quarantine.get(), token_name, O_RDONLY,
+                                                  0U, error));
+        if (!token_fd || !token_matches_fd(token_fd.get(), *token, error)) {
+            return set_error(error, "quarantined ownership token invalid");
+        }
+    }
+
+    const auto unlink_entry = [&](const char* entry) {
+        return ::unlinkat(quarantine.get(), entry, 0) == 0 || errno == ENOENT;
+    };
+    if (!unlink_entry(marker) ||
+        (token_name != nullptr && token != nullptr && !unlink_entry(token_name))) {
+        return set_error(error, "quarantine cleanup failed");
+    }
+    for (std::size_t index = 0; index < file_count; ++index) {
+        if (!unlink_entry(files[index])) {
+            return set_error(error, "quarantine cleanup failed");
+        }
+    }
+
+    const int duplicate = detail::reopen_directory(quarantine.get(), error);
+    if (duplicate < 0) {
+        return set_error(error, "quarantine enumeration failed");
+    }
+    DIR* directory = ::fdopendir(duplicate);
+    if (directory == nullptr) {
+        (void)::close(duplicate);
+        return set_error(error, "quarantine enumeration failed");
+    }
+    errno = 0;
+    const dirent* unexpected = nullptr;
+    while (const dirent* entry = ::readdir(directory)) {
+        if (std::string_view(entry->d_name) != "." &&
+            std::string_view(entry->d_name) != "..") {
+            unexpected = entry;
+            break;
+        }
+    }
+    const bool read_failed = errno != 0;
+    (void)::closedir(directory);
+    if (read_failed || unexpected != nullptr) {
+        return set_error(error, "quarantine contains unowned entries");
+    }
+    if (!detail::sync_directory(quarantine.get(), "quarantine fsync failed", error)) {
+        return false;
+    }
+    quarantine.reset();
+    if (::unlinkat(parent_fd, quarantine_name.c_str(), AT_REMOVEDIR) != 0) {
+        return set_error(error, "quarantine directory removal failed");
+    }
+    return detail::sync_directory(parent_fd, "parent fsync failed", error);
+#endif
+}
+
+bool quarantine_owned_file(int parent_fd, const std::string& name, int owned_fd,
+                           std::string* error) {
+#if !defined(__unix__) && !defined(__APPLE__)
+    (void)parent_fd;
+    (void)name;
+    (void)owned_fd;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#else
+    std::uint64_t owned_device = 0U;
+    std::uint64_t owned_inode = 0U;
+    std::uint64_t path_device = 0U;
+    std::uint64_t path_inode = 0U;
+    if (!detail::identity_fd(owned_fd, &owned_device, &owned_inode, error) ||
+        !detail::identity_at(parent_fd, name.c_str(), &path_device, &path_inode, error) ||
+        owned_device != path_device || owned_inode != path_inode) {
+        return set_error(error, "owned file identity changed");
+    }
+    const std::string quarantine_name = ".quarantine-file-" + operation_id(0U);
+    if (!detail::rename_noreplace(parent_fd, name.c_str(), parent_fd,
+                                  quarantine_name.c_str(), error)) {
+        return false;
+    }
+    UniqueFd quarantine(detail::open_regular_at(parent_fd, quarantine_name.c_str(), O_RDONLY,
+                                                0U, error));
+    if (!quarantine ||
+        !detail::identity_fd(quarantine.get(), &path_device, &path_inode, error) ||
+        path_device != owned_device || path_inode != owned_inode) {
+        return set_error(error, "quarantined file identity changed");
+    }
+    quarantine.reset();
+    if (::unlinkat(parent_fd, quarantine_name.c_str(), 0) != 0) {
+        return set_error(error, "quarantine file removal failed");
+    }
+    return detail::sync_directory(parent_fd, "parent fsync failed", error);
 #endif
 }
 
@@ -391,6 +681,15 @@ bool current_pointer_is_valid(int root_fd, const IdentityProfile& profile,
         return false;
     }
     return true;
+}
+
+bool sync_root_parent(const fs::path& root_path, std::string* error) {
+    const fs::path parent = root_path.parent_path().empty()
+                                ? fs::path(".")
+                                : root_path.parent_path();
+    UniqueFd parent_fd(detail::open_directory_path(parent, false, error));
+    return parent_fd && detail::sync_directory(parent_fd.get(), "root parent fsync failed",
+                                               error);
 }
 
 }  // namespace
@@ -456,6 +755,13 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
     if (!root) {
         return false;
     }
+    if (!sync_root_parent(root_path, error)) {
+        return false;
+    }
+    UniqueFd import_lock(detail::open_lock_at(root.get(), kImportLockName, error));
+    if (!import_lock || !detail::lock_exclusive(import_lock.get(), error)) {
+        return false;
+    }
     UniqueFd generations(detail::open_directory_at(root.get(), "generations", nullptr));
 #if defined(__unix__) || defined(__APPLE__)
     if (!generations && errno == ENOENT) {
@@ -475,6 +781,11 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
         !detail::sync_directory(root.get(), "store fsync failed", error)) {
         return false;
     }
+    std::string old_pointer;
+    bool had_old_pointer = false;
+    if (!detail::read_current_pointer(root.get(), &old_pointer, &had_old_pointer, error)) {
+        return false;
+    }
     if (!current_pointer_is_valid(root.get(), profile, error)) {
         return false;
     }
@@ -484,11 +795,17 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
         file_names[index] = profile.files[index].name.c_str();
     }
 
+    OwnershipToken token{};
+    if (!make_ownership_token(&token, error)) {
+        return false;
+    }
+
     for (std::size_t attempt = 0; attempt < kMaxAttempts; ++attempt) {
         const std::string id = operation_id(attempt);
         const std::string staging_name = ".staging-" + id;
         const std::string generation_name = "generation-" + id;
         const std::string pointer_temp_name = ".current-" + id + ".tmp";
+        const std::string owner_name = ".owner-" + id;
 
         std::string create_error;
         UniqueFd staging(detail::create_exclusive_directory_at(
@@ -501,22 +818,48 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
         if (!staging) {
             return set_error(error, "cannot create staging area");
         }
+        std::uint64_t staging_device = 0U;
+        std::uint64_t staging_inode = 0U;
+        if (!detail::identity_fd(staging.get(), &staging_device, &staging_inode, error)) {
+            return set_error(error, "staging identity unavailable");
+        }
+        if (!detail::sync_directory(root.get(), "staging parent fsync failed", error)) {
+            std::string ignored;
+            (void)quarantine_owned_directory(root.get(), staging_name, staging.get(), nullptr,
+                                             nullptr, kMarkerName, file_names.data(),
+                                             profile.files.size(), &ignored);
+            return set_error(error, "staging parent fsync failed");
+        }
         bool generation_owned = false;
         bool pointer_temp_owned = false;
+        bool owner_sidecar_owned = false;
+        UniqueFd staging_owner;
+        UniqueFd owner_sidecar;
+        UniqueFd pointer_temp;
         const auto cleanup = [&] {
-            staging.reset();
             if (pointer_temp_owned) {
-                (void)remove_owned_entry(root.get(), pointer_temp_name.c_str());
+                std::string ignored;
+                (void)quarantine_owned_file(root.get(), pointer_temp_name,
+                                        pointer_temp.get(), &ignored);
                 pointer_temp_owned = false;
             }
             if (!generation_owned) {
-                (void)detail::remove_owned_directory(
-                    root.get(), staging_name.c_str(), kMarkerName, file_names.data(),
-                    profile.files.size());
+                std::string ignored;
+                const OwnershipToken* cleanup_token = staging_owner ? &token : nullptr;
+                const char* cleanup_token_name = staging_owner ? kOwnershipName : nullptr;
+                (void)quarantine_owned_directory(
+                    root.get(), staging_name, staging.get(), cleanup_token, cleanup_token_name,
+                    kMarkerName, file_names.data(), profile.files.size(), &ignored);
             } else {
-                (void)detail::remove_owned_directory(
-                    generations.get(), generation_name.c_str(), kMarkerName,
-                    file_names.data(), profile.files.size());
+                std::string ignored;
+                (void)quarantine_owned_directory(
+                    generations.get(), generation_name, staging.get(), nullptr, nullptr,
+                    kMarkerName, file_names.data(), profile.files.size(), &ignored);
+            }
+            if (owner_sidecar_owned) {
+                std::string ignored;
+                (void)quarantine_owned_file(root.get(), owner_name, owner_sidecar.get(), &ignored);
+                owner_sidecar_owned = false;
             }
         };
 
@@ -534,10 +877,26 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
         if (!failed && !check_generation_files(staging.get(), profile, error)) {
             failed = true;
         }
+        if (!failed && !write_ownership_file(staging.get(), kOwnershipName, token,
+                                             &staging_owner, error)) {
+            failed = true;
+        }
         if (!failed && !detail::sync_directory(staging.get(), "staging fsync failed", error)) {
             failed = true;
         }
         if (failed) {
+            cleanup();
+            return false;
+        }
+
+        if (!write_ownership_file(root.get(), owner_name.c_str(), token,
+                                  &owner_sidecar, error)) {
+            owner_sidecar_owned = static_cast<bool>(owner_sidecar);
+            cleanup();
+            return false;
+        }
+        owner_sidecar_owned = true;
+        if (!detail::sync_directory(root.get(), "owner parent fsync failed", error)) {
             cleanup();
             return false;
         }
@@ -558,6 +917,20 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
             return false;
         }
         generation_owned = true;
+        std::uint64_t generation_device = 0U;
+        std::uint64_t generation_inode = 0U;
+        if (!detail::identity_at(generations.get(), generation_name.c_str(),
+                                 &generation_device, &generation_inode, error) ||
+            generation_device != staging_device || generation_inode != staging_inode) {
+            cleanup();
+            return set_error(error, "published generation identity changed");
+        }
+        if (!quarantine_owned_file(staging.get(), kOwnershipName, staging_owner.get(), error) ||
+            !detail::sync_directory(staging.get(), "generation fsync failed", error) ||
+            !check_generation_files(staging.get(), profile, error)) {
+            cleanup();
+            return false;
+        }
         if (!detail::sync_fd(staging.get(), "generation fsync failed", error) ||
             !detail::sync_directory(generations.get(), "generations fsync failed", error) ||
             !detail::sync_directory(root.get(), "store fsync failed", error)) {
@@ -565,9 +938,8 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
             cleanup();
             return false;
         }
-        staging.reset();
 
-        UniqueFd pointer_temp(detail::open_regular_at(
+        pointer_temp.reset(detail::open_regular_at(
             root.get(), pointer_temp_name.c_str(), O_WRONLY | O_CREAT | O_EXCL, 0600U,
             error));
         if (!pointer_temp) {
@@ -582,26 +954,62 @@ bool import_impl(const fs::path& root_path, const fs::path& source,
             cleanup();
             return false;
         }
-        pointer_temp.reset();
         if (!current_pointer_is_valid(root.get(), profile, error)) {
             cleanup();
             return false;
         }
-#if defined(__unix__) || defined(__APPLE__)
-        if (::renameat(root.get(), pointer_temp_name.c_str(), root.get(), "current") != 0) {
+        std::uint64_t pointer_device = 0U;
+        std::uint64_t pointer_inode = 0U;
+        if (!detail::identity_fd(pointer_temp.get(), &pointer_device, &pointer_inode, error)) {
             cleanup();
-            return set_error(error, "cannot publish pointer");
+            return false;
+        }
+        std::uint64_t pointer_path_device = 0U;
+        std::uint64_t pointer_path_inode = 0U;
+        if (!detail::identity_at(root.get(), pointer_temp_name.c_str(), &pointer_path_device,
+                                 &pointer_path_inode, error) ||
+            pointer_device != pointer_path_device || pointer_inode != pointer_path_inode) {
+            cleanup();
+            return set_error(error, "pointer temporary identity changed");
+        }
+#if defined(__unix__) || defined(__APPLE__)
+        if (!detail::rename_replace(root.get(), pointer_temp_name.c_str(), root.get(),
+                                    "current", error)) {
+            cleanup();
+            return false;
         }
 #else
         cleanup();
         return set_error(error, "POSIX descriptor backend unavailable");
 #endif
         pointer_temp_owned = false;
-        if (!detail::sync_directory(root.get(), "store fsync failed", error)) {
-            // The pointer may have advanced; do not remove the generation after
-            // the final rename because it may now be the published one.
+        if (!detail::sync_directory(root.get(), "store fsync failed", error) ||
+            !revalidate_current(root.get(), staging.get(), generation_name + "\n", profile,
+                                error)) {
+            const bool rolled_back = rollback_current(
+                root.get(), staging.get(), generation_name + "\n", old_pointer,
+                had_old_pointer, profile, error);
+            cleanup();
+            if (!rolled_back) {
+                return set_error(error, "publication rollback failed");
+            }
             return false;
         }
+        if (owner_sidecar_owned &&
+            !quarantine_owned_file(root.get(), owner_name, owner_sidecar.get(), error)) {
+            const bool rolled_back = rollback_current(
+                root.get(), staging.get(), generation_name + "\n", old_pointer,
+                had_old_pointer, profile, error);
+            cleanup();
+            if (!rolled_back) {
+                return set_error(error, "publication rollback failed");
+            }
+            return false;
+        }
+        owner_sidecar_owned = false;
+        staging.reset();
+        pointer_temp.reset();
+        generation_owned = false;
         return true;
     }
     return set_error(error, "generation collision retry limit exceeded");
@@ -618,25 +1026,8 @@ bool verify_impl(const fs::path& root_path, const IdentityProfile& profile,
     }
     UniqueFd generation;
     if (!detail::read_current_generation(root.get(), &generation, error) ||
-        !check_generation_files(generation.get(), profile, error)) {
+        !check_generation_content(generation.get(), profile, error)) {
         return false;
-    }
-    for (const auto& expected : profile.files) {
-        UniqueFd file(detail::open_regular_at(generation.get(), expected.name.c_str(), O_RDONLY,
-                                              0U, error));
-        if (!file) {
-            return set_error(error, "published content unavailable");
-        }
-        std::uint64_t size = 0U;
-        bool regular = false;
-        if (!detail::stat_fd(file.get(), &size, &regular, error) || !regular ||
-            size != expected.size) {
-            return set_error(error, "published content size mismatch");
-        }
-        std::string hash_error;
-        if (detail::sha256_fd(file.get(), size, &hash_error) != expected.sha256) {
-            return set_error(error, "published content hash mismatch");
-        }
     }
     return true;
 }

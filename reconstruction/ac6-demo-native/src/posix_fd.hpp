@@ -41,6 +41,10 @@ private:
                                       bool create, std::string* error);
 [[nodiscard]] int open_directory_at(int parent_fd, const char* name,
                                     std::string* error);
+[[nodiscard]] int reopen_directory(int directory_fd, std::string* error);
+[[nodiscard]] int open_lock_at(int parent_fd, const char* name,
+                               std::string* error);
+[[nodiscard]] bool lock_exclusive(int fd, std::string* error);
 [[nodiscard]] int create_directory_at(int parent_fd, const char* name,
                                       std::string* error);
 [[nodiscard]] int create_exclusive_directory_at(int parent_fd, const char* name,
@@ -52,6 +56,11 @@ private:
 
 [[nodiscard]] bool stat_fd(int fd, std::uint64_t* size, bool* regular,
                            std::string* error);
+[[nodiscard]] bool identity_fd(int fd, std::uint64_t* device,
+                               std::uint64_t* inode, std::string* error);
+[[nodiscard]] bool identity_at(int parent_fd, const char* name,
+                               std::uint64_t* device, std::uint64_t* inode,
+                               std::string* error);
 [[nodiscard]] bool write_all(int fd, const void* data, std::size_t size,
                              std::string* error);
 [[nodiscard]] bool read_exact(int fd, void* data, std::size_t size,
@@ -60,16 +69,17 @@ private:
                                 std::string* error);
 [[nodiscard]] bool sync_fd(int fd, const char* what, std::string* error);
 [[nodiscard]] bool sync_directory(int fd, const char* what, std::string* error);
-[[nodiscard]] bool remove_owned_directory(int parent_fd, const char* name,
-                                          const char* marker,
-                                          const char* const* files,
-                                          std::size_t file_count);
 [[nodiscard]] bool rename_noreplace(int old_parent_fd, const char* old_name,
                                     int new_parent_fd, const char* new_name,
                                     std::string* error);
+[[nodiscard]] bool rename_replace(int old_parent_fd, const char* old_name,
+                                  int new_parent_fd, const char* new_name,
+                                  std::string* error);
 
 [[nodiscard]] bool read_current_generation(int root_fd, UniqueFd* generation,
                                            std::string* error);
+[[nodiscard]] bool read_current_pointer(int root_fd, std::string* contents,
+                                        bool* present, std::string* error);
 [[nodiscard]] bool validate_store_marker(int generation_fd,
                                          std::string* error);
 [[nodiscard]] std::string sha256_fd(int fd, std::uint64_t size,

@@ -14,6 +14,11 @@
 #include <utility>
 #include <vector>
 
+#if defined(__unix__) || defined(__APPLE__)
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
+
 namespace {
 namespace fs = std::filesystem;
 
@@ -123,8 +128,12 @@ void test_positive_and_rollback() {
     std::string error;
     require(!store.import_directory(fixture.source, &error),
             "production import does not accept synthetic fixture identity");
-    require(ac6demo_native::testing::import_fixture(store, fixture.source, fixture.profile, &error),
-            "synthetic nine-file import");
+    const bool imported = ac6demo_native::testing::import_fixture(store, fixture.source,
+                                                                    fixture.profile, &error);
+    if (!imported) {
+        std::cerr << "synthetic import error: " << error << '\n';
+    }
+    require(imported, "synthetic nine-file import");
     require(ac6demo_native::testing::verify_fixture(store, fixture.profile, &error),
             "synthetic nine-file verification through VFS");
     const fs::path pointer = fixture.store / "current";
@@ -257,6 +266,69 @@ void test_concurrent_imports_and_orphan_recovery() {
             "orphan staging is not deleted by another process");
 }
 
+void test_multiprocess_import_and_failure_rollback() {
+#if defined(__unix__) || defined(__APPLE__)
+    Fixture fixture = make_fixture();
+    int result_pipe[2] = {-1, -1};
+    require(::pipe(result_pipe) == 0, "multiprocess result pipe created");
+    const pid_t child = ::fork();
+    require(child >= 0, "multiprocess child created");
+    if (child == 0) {
+        (void)::close(result_pipe[0]);
+        ac6demo_native::ContentStore child_store(fixture.store);
+        std::string child_error;
+        const bool ok = ac6demo_native::testing::import_fixture(
+            child_store, fixture.source, fixture.profile, &child_error);
+        const unsigned char result = ok ? 1U : 0U;
+        (void)::write(result_pipe[1], &result, sizeof(result));
+        (void)::close(result_pipe[1]);
+        ::_exit(ok ? 0 : 1);
+    }
+    (void)::close(result_pipe[1]);
+    ac6demo_native::ContentStore parent_store(fixture.store);
+    std::string parent_error;
+    const bool parent_ok = ac6demo_native::testing::import_fixture(
+        parent_store, fixture.source, fixture.profile, &parent_error);
+    unsigned char child_result = 0U;
+    require(::read(result_pipe[0], &child_result, sizeof(child_result)) ==
+                static_cast<ssize_t>(sizeof(child_result)),
+            "multiprocess result received");
+    (void)::close(result_pipe[0]);
+    int child_status = 0;
+    require(::waitpid(child, &child_status, 0) == child, "multiprocess child joined");
+    require(parent_ok && child_result == 1U && WIFEXITED(child_status) &&
+                WEXITSTATUS(child_status) == 0,
+            "multiprocess imports are valid");
+    std::string error;
+    require(ac6demo_native::testing::verify_fixture(parent_store, fixture.profile, &error),
+            "multiprocess publication verifies");
+
+    const fs::path pointer = fixture.store / "current";
+    std::ifstream before_input(pointer, std::ios::binary);
+    const std::string before((std::istreambuf_iterator<char>(before_input)),
+                             std::istreambuf_iterator<char>());
+    setenv("AC6DEMO_NATIVE_TEST_FAIL_RENAME_ONCE", "1", 1);
+    require(!ac6demo_native::testing::import_fixture(parent_store, fixture.source,
+                                                      fixture.profile, &error),
+            "injected staging rename failure rejected");
+    unsetenv("AC6DEMO_NATIVE_TEST_FAIL_RENAME_ONCE");
+    setenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_ONCE", "1", 1);
+    require(!ac6demo_native::testing::import_fixture(parent_store, fixture.source,
+                                                      fixture.profile, &error),
+            "injected fsync failure rejected");
+    unsetenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_ONCE");
+    setenv("AC6DEMO_NATIVE_TEST_FAIL_POINTER_RENAME_ONCE", "1", 1);
+    require(!ac6demo_native::testing::import_fixture(parent_store, fixture.source,
+                                                      fixture.profile, &error),
+            "injected pointer rename failure rejected");
+    unsetenv("AC6DEMO_NATIVE_TEST_FAIL_POINTER_RENAME_ONCE");
+    std::ifstream after_input(pointer, std::ios::binary);
+    const std::string after((std::istreambuf_iterator<char>(after_input)),
+                            std::istreambuf_iterator<char>());
+    require(after == before, "failure injections preserve old current");
+#endif
+}
+
 void test_pointer_corruption_and_rollback() {
     Fixture fixture = make_fixture();
     ac6demo_native::ContentStore store(fixture.store);
@@ -280,6 +352,19 @@ void test_pointer_corruption_and_rollback() {
     require(after != before && after == "not-a-generation\n",
             "corrupt pointer remains untouched");
     require(!store.verify(&error), "corrupt pointer rejects production verify");
+
+    Fixture symlink_fixture = make_fixture();
+    const fs::path symlink_generation = symlink_fixture.store / "generations" /
+                                        "foreign-generation";
+    fs::create_directories(symlink_generation);
+    const fs::path symlink_pointer = symlink_fixture.store / "current";
+    fs::remove(symlink_pointer);
+    fs::create_symlink(symlink_generation, symlink_pointer);
+    ac6demo_native::ContentStore symlink_store(symlink_fixture.store);
+    require(!ac6demo_native::testing::import_fixture(
+                symlink_store, symlink_fixture.source, symlink_fixture.profile, &error),
+            "current symlink swap rejects import");
+    require(fs::is_symlink(symlink_pointer), "foreign current symlink is preserved");
 }
 
 void test_separation() {
@@ -300,6 +385,7 @@ int main() {
     test_positive_and_rollback();
     test_rejections();
     test_concurrent_imports_and_orphan_recovery();
+    test_multiprocess_import_and_failure_rollback();
     test_pointer_corruption_and_rollback();
     test_separation();
     std::cout << "content store tests passed\n";

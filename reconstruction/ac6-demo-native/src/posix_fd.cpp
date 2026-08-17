@@ -5,9 +5,11 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cerrno>
 #include <cctype>
 #include <cstring>
+#include <cstdlib>
 #include <limits>
 #include <span>
 #include <string_view>
@@ -16,6 +18,7 @@
 #define AC6DEMO_NATIVE_POSIX_BACKEND 1
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -163,6 +166,13 @@ int open_directory_path(const std::filesystem::path& path, bool create,
                 errno_error(error, "cannot create directory");
                 return -1;
             }
+            while (::fsync(current.get()) != 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                errno_error(error, "parent directory fsync failed");
+                return -1;
+            }
             child = ::openat(current.get(), component.c_str(), directory_flags());
         }
         if (child < 0) {
@@ -193,6 +203,49 @@ int open_directory_at(int parent_fd, const char* name, std::string* error) {
         errno_error(error, "cannot open directory entry");
     }
     return fd;
+#endif
+}
+
+int reopen_directory(int directory_fd, std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)directory_fd;
+    set_error(error, "POSIX descriptor backend unavailable");
+    return -1;
+#else
+    if (!posix_flags_available(error)) {
+        return -1;
+    }
+    const int fd = ::openat(directory_fd, ".", directory_flags());
+    if (fd < 0) {
+        return errno_error(error, "cannot reopen directory descriptor");
+    }
+    return fd;
+#endif
+}
+
+int open_lock_at(int parent_fd, const char* name, std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)parent_fd;
+    (void)name;
+    set_error(error, "POSIX descriptor backend unavailable");
+    return -1;
+#else
+    return open_regular_at(parent_fd, name, O_RDWR | O_CREAT, 0600U, error);
+#endif
+}
+
+bool lock_exclusive(int fd, std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)fd;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#else
+    while (::flock(fd, LOCK_EX) != 0) {
+        if (errno == EINTR) {
+            continue;
+        }
+        return set_error(error, "interprocess import lock failed");
+    }
+    return true;
 #endif
 }
 
@@ -306,6 +359,49 @@ bool stat_fd(int fd, std::uint64_t* size, bool* regular, std::string* error) {
 #endif
 }
 
+bool identity_fd(int fd, std::uint64_t* device, std::uint64_t* inode,
+                 std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)fd;
+    (void)device;
+    (void)inode;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#else
+    if (device == nullptr || inode == nullptr) {
+        return set_error(error, "descriptor identity output invalid");
+    }
+    struct stat status {};
+    if (!stat_descriptor(fd, &status, error)) {
+        return false;
+    }
+    *device = static_cast<std::uint64_t>(status.st_dev);
+    *inode = static_cast<std::uint64_t>(status.st_ino);
+    return true;
+#endif
+}
+
+bool identity_at(int parent_fd, const char* name, std::uint64_t* device,
+                 std::uint64_t* inode, std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)parent_fd;
+    (void)name;
+    (void)device;
+    (void)inode;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#else
+    if (name == nullptr || device == nullptr || inode == nullptr) {
+        return set_error(error, "entry identity output invalid");
+    }
+    struct stat status {};
+    if (::fstatat(parent_fd, name, &status, AT_SYMLINK_NOFOLLOW) != 0) {
+        return errno_error(error, "entry identity unavailable");
+    }
+    *device = static_cast<std::uint64_t>(status.st_dev);
+    *inode = static_cast<std::uint64_t>(status.st_ino);
+    return true;
+#endif
+}
+
 bool write_all(int fd, const void* data, std::size_t size, std::string* error) {
 #if !AC6DEMO_NATIVE_POSIX_BACKEND
     (void)fd;
@@ -402,6 +498,14 @@ bool sync_fd(int fd, const char* what, std::string* error) {
     (void)what;
     return set_error(error, "POSIX descriptor backend unavailable");
 #else
+#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
+    static std::atomic_bool fsync_injected{false};
+    if (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC") != nullptr ||
+        (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_FSYNC_ONCE") != nullptr &&
+         !fsync_injected.exchange(true))) {
+        return set_error(error, "injected fsync failure");
+    }
+#endif
     while (::fsync(fd) != 0) {
         if (errno == EINTR) {
             continue;
@@ -416,42 +520,6 @@ bool sync_directory(int fd, const char* what, std::string* error) {
     return sync_fd(fd, what == nullptr ? "directory fsync failed" : what, error);
 }
 
-bool remove_owned_directory(int parent_fd, const char* name, const char* marker,
-                            const char* const* files, std::size_t file_count) {
-#if !AC6DEMO_NATIVE_POSIX_BACKEND
-    (void)parent_fd;
-    (void)name;
-    (void)marker;
-    (void)files;
-    (void)file_count;
-    return false;
-#else
-    UniqueFd directory(open_directory_at(parent_fd, name, nullptr));
-    if (!directory) {
-        return errno == ENOENT;
-    }
-    const auto unlink_entry = [fd = directory.get()](const char* entry) {
-        if (entry == nullptr) {
-            return true;
-        }
-        if (::unlinkat(fd, entry, 0) == 0 || errno == ENOENT) {
-            return true;
-        }
-        return false;
-    };
-    if (!unlink_entry(marker)) {
-        return false;
-    }
-    for (std::size_t index = 0; index < file_count; ++index) {
-        if (!unlink_entry(files[index])) {
-            return false;
-        }
-    }
-    directory.reset();
-    return ::unlinkat(parent_fd, name, AT_REMOVEDIR) == 0 || errno == ENOENT;
-#endif
-}
-
 bool rename_noreplace(int old_parent_fd, const char* old_name, int new_parent_fd,
                       const char* new_name, std::string* error) {
 #if !AC6DEMO_NATIVE_POSIX_BACKEND
@@ -464,6 +532,14 @@ bool rename_noreplace(int old_parent_fd, const char* old_name, int new_parent_fd
 #ifndef RENAME_NOREPLACE
 #define RENAME_NOREPLACE (1U << 0U)
 #endif
+#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
+    static std::atomic_bool rename_injected{false};
+    if (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_RENAME") != nullptr ||
+        (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_RENAME_ONCE") != nullptr &&
+         !rename_injected.exchange(true))) {
+        return set_error(error, "injected rename failure");
+    }
+#endif
     if (::syscall(SYS_renameat2, old_parent_fd, old_name, new_parent_fd, new_name,
                   static_cast<unsigned int>(RENAME_NOREPLACE)) != 0) {
         return errno_error(error, "cannot publish generation without replacement");
@@ -475,6 +551,29 @@ bool rename_noreplace(int old_parent_fd, const char* old_name, int new_parent_fd
     (void)new_parent_fd;
     (void)new_name;
     return set_error(error, "atomic no-replace rename unavailable");
+#endif
+}
+
+bool rename_replace(int old_parent_fd, const char* old_name, int new_parent_fd,
+                    const char* new_name, std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)old_parent_fd;
+    (void)old_name;
+    (void)new_parent_fd;
+    (void)new_name;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#else
+#if defined(AC6DEMO_NATIVE_ENABLE_TESTING)
+    static std::atomic_bool pointer_rename_injected{false};
+    if (std::getenv("AC6DEMO_NATIVE_TEST_FAIL_POINTER_RENAME_ONCE") != nullptr &&
+        !pointer_rename_injected.exchange(true)) {
+        return set_error(error, "injected pointer rename failure");
+    }
+#endif
+    if (::renameat(old_parent_fd, old_name, new_parent_fd, new_name) != 0) {
+        return errno_error(error, "pointer rename failed");
+    }
+    return true;
 #endif
 }
 
@@ -524,6 +623,34 @@ bool read_current_generation(int root_fd, UniqueFd* generation, std::string* err
         return false;
     }
     *generation = std::move(opened);
+    return true;
+#endif
+}
+
+bool read_current_pointer(int root_fd, std::string* contents, bool* present,
+                          std::string* error) {
+#if !AC6DEMO_NATIVE_POSIX_BACKEND
+    (void)root_fd;
+    (void)contents;
+    (void)present;
+    return set_error(error, "POSIX descriptor backend unavailable");
+#else
+    if (contents == nullptr || present == nullptr) {
+        return set_error(error, "pointer output invalid");
+    }
+    *present = false;
+    contents->clear();
+    UniqueFd pointer(open_regular_at(root_fd, "current", O_RDONLY, 0U, nullptr));
+    if (!pointer) {
+        if (errno == ENOENT) {
+            return true;
+        }
+        return set_error(error, "published pointer invalid");
+    }
+    *present = true;
+    if (!read_bounded(pointer.get(), kPointerLimit, contents, error)) {
+        return set_error(error, "published pointer invalid");
+    }
     return true;
 #endif
 }
