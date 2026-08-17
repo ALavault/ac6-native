@@ -1,0 +1,87 @@
+{
+  "schema": "ac6-demo-menu-consumer-reach-ab/v1",
+  "status": "success",
+  "reason": "fresh neutral/buttons16 reachability-atlas A/B completed at the tick-253 bound",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_manifest_sha256": "576fa31e02b1c899cdc997b8a6e252d6d7785656d13067a9d8a54aeb2810086c"
+  },
+  "inputs": {
+    "binary_sha256": "cf90f55162c7cfb21f473d8640a278c4347366efaec2898a9ad687277a9e87b0",
+    "codegen_manifest_sha256": "9f1fffb0398358331f9bbf575a3d2fb5cf1478f7cbda5a1dbe46c264a935bbfa",
+    "backend": "vulkan",
+    "audio_driver": "dummy",
+    "max_ticks": 253,
+    "input_tick": 252,
+    "atlas_schema": "ac6-demo-reachability-atlas/v1"
+  },
+  "static_consumers": [
+    {
+      "function": "0x82170F58..0x82171250",
+      "consumer": "0x82170FCC",
+      "type": "CModeTaskDemoBase::update",
+      "first_effect": "0x82171128 stores 1 to [0x827435F8]+0x18"
+    },
+    {
+      "function": "0x82185198..0x821852A8",
+      "consumer": "0x82185210",
+      "type": "CModeTaskMissionTitle::update",
+      "first_effect": "listener path stores parent+0x44=3 and parent+0x0C=2"
+    }
+  ],
+  "routes": {
+    "neutral": {
+      "input_buttons": "0x00000000",
+      "atlas_sha256": "7e59722177a2f8435245b21dba53f76a7ab03cce64316d6f79ab3810708daab8",
+      "atlas_internal_sha256": "8e449ad467c6039617f8f58e06554b1b20e36c225e075f2414390bf0cd79dea4",
+      "trace_sha256": "c5357c6d9639c2a675161bd10c3cdbe97096df0dac11d760fe8a2d964b1c5794",
+      "report_sha256": "c8b53c54dbebb5815210199057ffb378fae07c0a58a3793474254eb7c17b740b",
+      "xam_movie_sha256": "eb7913cc0c07378406a08991c822fe534b787c9a2686fc52b185d127bd585164",
+      "function_count": 2286,
+      "consumer_entries": {"0x82170F58": false, "0x82185198": false},
+      "completed_ticks": 253,
+      "presents": 116,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    },
+    "buttons16": {
+      "input_buttons": "0x00000010",
+      "atlas_sha256": "7d885dce13309e9da75b7832ab8bd6cc2a24c1a71f536bad990653d195975cf0",
+      "atlas_internal_sha256": "0262ef0d1e9027a715836214ab90f3b921437d68dcf6c7be9ee9d284b0fff583",
+      "trace_sha256": "4a7326d9b1148dc6a5943cabea5c0e2562ae7ad833eda6bc7cd92a089e25724f",
+      "report_sha256": "b22f0a3a65d40e8e76d3aae7681a83b4efde290a969fcc667f8eed08b04f4e11",
+      "xam_movie_sha256": "6ff805733a77db79c794c926abb4646221e862a70cc9cfd9c04343f8b4664e95",
+      "function_count": 2286,
+      "consumer_entries": {"0x82170F58": false, "0x82185198": false},
+      "completed_ticks": 253,
+      "presents": 116,
+      "return_code": 4,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "readback": "black"
+    }
+  },
+  "comparison": {
+    "function_set_equal": true,
+    "static_consumers_reached": false,
+    "guest_menu_state_change": false,
+    "frontend_effect": false,
+    "readback_effect": false
+  },
+  "policy": {
+    "content_addressed": true,
+    "fresh_stores": true,
+    "strict_xam_movie": true,
+    "hid_fallback": false,
+    "frontend_claim_written": false,
+    "supported": false
+  }
+}
