@@ -408,6 +408,24 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
       const auto manager = memory_.load_u32(0x827435F8U);
       if (manager != 0U && memory_.mapped(manager, 64U)) {
         const auto request = memory_.load_u32(manager + 24U);
+        // The manager's +0x08 is the running mode and +0x0C the one it just
+        // left. Printing the mode object with its vtable on every change is
+        // what turns "the frontend does nothing" into a named sequence.
+        {
+          static std::uint32_t current_mode = 0U;
+          const auto mode = memory_.load_u32(manager + 8U);
+          if (mode != current_mode) {
+            const auto vtable = (mode != 0U && memory_.mapped(mode, 4U))
+                                    ? memory_.load_u32(mode)
+                                    : 0U;
+            std::fprintf(stderr,
+                         "AC6_MODE_SWITCH tick=%llu mode=0x%08X vtable=0x%08X "
+                         "previous=0x%08X\n",
+                         static_cast<unsigned long long>(tick_), mode, vtable,
+                         memory_.load_u32(manager + 12U));
+            current_mode = mode;
+          }
+        }
         if (request != previous_request) {
           std::fprintf(stderr,
                        "AC6_MODE_REQUEST tick=%llu manager=0x%08X "
