@@ -210,15 +210,23 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
                   const auto mode = memory.load_u32(gs + 120U);
                   const auto sub0 = memory.load_u32(gs + 112U);
                   const auto sub4 = memory.load_u32(gs + 116U);
+                  // sub_820E9300 (GetCurrentMission's validity gate) requires
+                  // [sub0+8] == 1 as its first check, forcing mission=16
+                  // otherwise. Reading it here answers whether the script's
+                  // decline after START correlates with this gate.
+                  const auto sub0_field8 =
+                      (sub0 != 0U && memory.mapped(sub0, 12U))
+                          ? memory.load_u32(sub0 + 8U) : 0xFFFFFFFFU;
                   const std::uint64_t key =
                       (static_cast<std::uint64_t>(mode) << 32) ^ sub0 ^
-                      (static_cast<std::uint64_t>(sub4) << 8);
+                      (static_cast<std::uint64_t>(sub4) << 8) ^ sub0_field8;
                   if (key != previous_state) {
                     std::fprintf(stderr,
                                  "AC6_GAMESTATE tick=%llu gs=0x%08X mode=%d "
-                                 "sub112=0x%08X sub116=0x%08X\n",
+                                 "sub112=0x%08X sub116=0x%08X sub112f8=0x%08X\n",
                                  static_cast<unsigned long long>(tick), gs,
-                                 static_cast<int>(mode), sub0, sub4);
+                                 static_cast<int>(mode), sub0, sub4,
+                                 sub0_field8);
                     previous_state = key;
                   }
                 }
