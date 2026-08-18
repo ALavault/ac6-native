@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include <span>
 
 namespace ac6demo {
@@ -48,6 +50,21 @@ inline void commit_reached_guest_present(
   }
   resolve.guest_tiled_rgba8_sha256 = Sha256::bytes(reread);
   resolve.guest_linear_rgba8_sha256 = Sha256::bytes(guest_linear);
+  // Ad hoc visual-review dump, opt-in only -- this campaign's readback is
+  // otherwise reported only as a SHA256, never a saved image. Writes a
+  // plain PPM (P6, RGB, alpha dropped) so pnmtopng can convert it the same
+  // way every other committed capture in this repo already is.
+  if (const char *ppm_path = std::getenv("AC6_DEMO_DUMP_READBACK_PPM");
+      ppm_path != nullptr) {
+    if (FILE *file = std::fopen(ppm_path, "wb"); file != nullptr) {
+      std::fprintf(file, "P6\n%u %u\n255\n", kReachedResolveWidth,
+                   kReachedResolveHeight);
+      for (std::size_t pixel = 0; pixel < guest_linear.size(); pixel += 4U) {
+        std::fwrite(&guest_linear[pixel], 1, 3, file);
+      }
+      std::fclose(file);
+    }
+  }
   resolve.guest_writeback = true;
   resolve.tiled_bytes.clear();
   resolve.tiled_bytes.shrink_to_fit();
