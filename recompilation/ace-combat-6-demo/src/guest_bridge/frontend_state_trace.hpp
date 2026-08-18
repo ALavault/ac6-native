@@ -138,16 +138,22 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
                   const auto total =
                       (w224 != 0U && memory.mapped(w224, 4200U))
                           ? memory.load_u32(w224 + 4136U) : 0xFFFFFFFFU;
+                  const auto cb8 = (w236 != 0U && memory.mapped(w236, 16U))
+                                       ? memory.load_u8(w236 + 8U) : 0xFFU;
+                  const auto g48 = memory.mapped(0x826DFC48U, 1U)
+                                       ? memory.load_u8(0x826DFC48U) : 0xFFU;
                   const std::uint64_t key =
                       (static_cast<std::uint64_t>(w236) << 32) ^ w224 ^
-                      (static_cast<std::uint64_t>(flag9) << 16);
+                      (static_cast<std::uint64_t>(flag9) << 16) ^
+                      (static_cast<std::uint64_t>(cb8) << 24) ^
+                      (static_cast<std::uint64_t>(g48) << 8);
                   static std::uint64_t previous_key = 0xFFFFFFFFFFFFFFFFULL;
                   if (key != previous_key || (tick % 500U) == 0U) {
                     std::fprintf(stderr,
                                  "AC6_SWGW tick=%llu world=0x%08X anim=0x%08X "
                                  "player=0x%08X step=0x%02X frame=%d of %d "
                                  "avptr=0x%08X pvptr=0x%08X p4124=%d p4128=%d "
-                                 "p4140=%d\n",
+                                 "p4140=%d cb8=0x%02X g48=0x%02X g44=0x%08X\n",
                                  static_cast<unsigned long long>(tick), field4,
                                  w236, w224, flag9, static_cast<int>(frame),
                                  static_cast<int>(total),
@@ -155,7 +161,13 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
                                  w224 ? memory.load_u32(w224) : 0U,
                                  w224 ? memory.load_u32(w224 + 4124U) : 0U,
                                  w224 ? memory.load_u32(w224 + 4128U) : 0U,
-                                 w224 ? memory.load_u32(w224 + 4140U) : 0U);
+                                 w224 ? memory.load_u32(w224 + 4140U) : 0U,
+                                 (w236 && memory.mapped(w236, 16U))
+                                     ? memory.load_u8(w236 + 8U) : 0xFFU,
+                                 memory.mapped(0x826DFC48U, 1U)
+                                     ? memory.load_u8(0x826DFC48U) : 0xFFU,
+                                 memory.mapped(0x826DFC44U, 4U)
+                                     ? memory.load_u32(0x826DFC44U) : 0U);
                     previous_key = key;
                   }
                 }
