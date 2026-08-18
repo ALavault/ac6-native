@@ -434,10 +434,47 @@ inline void apply_swg_mission_override(std::uint32_t out_param_address) {
                out_param_address, forced_value);
 }
 
-// SendMsgI's and GetCurrentMission's out-param pointer (both r4, per the
-// marshaller's uniform box-the-result-through-r4 convention confirmed by
-// direct read of sub_820EA538/sub_820EA550's own generated bodies) has to
-// be captured before the call -- callees are free to clobber r4 -- and
+// AC6_DEMO_CORRECTING_D6FB7982_THE_VTABLE_SWEEP_WAS_ALSO_ALREADY_DONE.md's
+// verified-open step: GetCurrentMode/GetCurrentLevel were never forced
+// individually, and none of SendMsgI/GetCurrentMission were ever forced
+// together with the others in the same tick-3001 batch -- a combined
+// effect "can't be ruled out by testing one at a time"
+// (AC6_DEMO_FORCING_GETCURRENTMISSION_TO_16_ALSO_DOES_NOT_TRIGGER_COMPLETION.md's
+// own words). Same write-only, opt-in shape as the two existing
+// overrides.
+inline void apply_swg_mode_override(std::uint32_t out_param_address) {
+  static const char *forced_str = std::getenv("AC6_DEMO_FORCE_SWG_MODE_RESULT");
+  if (forced_str == nullptr || out_param_address == 0U) {
+    return;
+  }
+  static const auto forced_value =
+      static_cast<std::uint32_t>(std::strtoul(forced_str, nullptr, 0));
+  require_bridge().memory().store_u32(out_param_address, forced_value);
+  std::fprintf(stderr,
+               "AC6_SWG_MODE_FORCED tick=%llu address=0x%08X value=%u\n",
+               static_cast<unsigned long long>(require_bridge().tick()),
+               out_param_address, forced_value);
+}
+
+inline void apply_swg_level_override(std::uint32_t out_param_address) {
+  static const char *forced_str = std::getenv("AC6_DEMO_FORCE_SWG_LEVEL_RESULT");
+  if (forced_str == nullptr || out_param_address == 0U) {
+    return;
+  }
+  static const auto forced_value =
+      static_cast<std::uint32_t>(std::strtoul(forced_str, nullptr, 0));
+  require_bridge().memory().store_u32(out_param_address, forced_value);
+  std::fprintf(stderr,
+               "AC6_SWG_LEVEL_FORCED tick=%llu address=0x%08X value=%u\n",
+               static_cast<unsigned long long>(require_bridge().tick()),
+               out_param_address, forced_value);
+}
+
+// SendMsgI's, GetCurrentMission's, GetCurrentMode's and GetCurrentLevel's
+// out-param pointer (all r4, per the marshaller's uniform
+// box-the-result-through-r4 convention confirmed by direct read of
+// sub_820EA538/sub_820EA550/sub_820EA598's own generated bodies) has to be
+// captured before the call -- callees are free to clobber r4 -- and
 // applied after, once the call's own store has already happened and can be
 // overwritten before the marshaller reads it back for boxing.
 template <typename Function>
@@ -448,12 +485,22 @@ inline void invoke_body_trace_with_swg_msgi_override(
       lr == 0x820E9130U && guest_address == 0x820E9838U;
   const bool is_get_mission =
       lr == 0x820E9130U && guest_address == 0x820EA550U;
+  const bool is_get_mode =
+      lr == 0x820E9130U && guest_address == 0x820EA538U;
+  const bool is_get_level =
+      lr == 0x820E9130U && guest_address == 0x820EA598U;
   const auto out_param_address =
-      (is_send_msg_i || is_get_mission) ? context.r4.u32 : 0U;
+      (is_send_msg_i || is_get_mission || is_get_mode || is_get_level)
+          ? context.r4.u32
+          : 0U;
   invoke_body_trace(function, context, base, guest_address);
   if (is_send_msg_i) {
     apply_swg_sendmsgi_override(out_param_address);
   } else if (is_get_mission) {
     apply_swg_mission_override(out_param_address);
+  } else if (is_get_mode) {
+    apply_swg_mode_override(out_param_address);
+  } else if (is_get_level) {
+    apply_swg_level_override(out_param_address);
   }
 }
