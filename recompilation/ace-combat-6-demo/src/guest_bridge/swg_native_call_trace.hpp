@@ -130,6 +130,29 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
                  current_guest_thread_id, lr, context.r1.u32, context.r3.u32,
                  context.r31.u32);
   }
+  // 4ee47a17's own named next step: sub_820DA488 (an ASContext/CSwgASContext
+  // virtual method, slot 14 -- confirmed by whose_vtable.py, class
+  // swg::ASContext<...>::(unnamed) / swg::CSwgASContext<...>::(unnamed))
+  // boxes a plain integer argument (its own r4) into a heap
+  // ASContext::String -- category ends up equal to whichever value the
+  // CALLER of this box() passed as r4. Logging lr/r3/r4 here names that
+  // caller, in evaluation order, for the whole tick-3001 batch at once.
+  if (std::getenv("AC6_DEMO_WATCH_SWG_BOX_CALL") != nullptr &&
+      guest_address == 0x820DA488U) {
+    // sub_823246C0's own dispatch (the one observed caller, lr=0x82324854)
+    // fetches r4 from [[this+20]+0] then advances [this+20] by 4 before this
+    // call -- a program-counter fetch. r31 here is that interpreter's own
+    // "this" (callee-saved, unchanged since the bctrl), so [r31+20] names
+    // the buffer this stream is read from.
+    auto &memory = require_bridge().memory();
+    const auto pc_field = memory.load_u32(context.r31.u32 + 20U);
+    std::fprintf(stderr,
+                 "AC6_SWG_BOX_CALL tick=%llu thread=%u lr=0x%08X "
+                 "r3=0x%08X r4=0x%08X r31=0x%08X pc_after=0x%08X\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 current_guest_thread_id, lr, context.r3.u32, context.r4.u32,
+                 context.r31.u32, pc_field);
+  }
   // AC6_DEMO_THE_STATEMENT_SEQUENCER_COPIES_LITERAL_KEYS_FROM_TYPED_RECORDS.md's
   // own named next step: sub_820DEDF8 (the literal-key copy) is reached
   // only through its caller's own vtable slot 20 -- log r4 (the "source
