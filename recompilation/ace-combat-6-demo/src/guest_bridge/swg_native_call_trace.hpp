@@ -36,4 +36,25 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
                current_guest_thread_id, guest_address, context.r23.u32,
                context.r31.u32, context.r28.u32, marshaled_args, first_arg,
                tag_bytes);
+  // sub_820CE010 bounds this same array to 16 slots (base 0x826DF800,
+  // 64 bytes / 4). Only two of them (startup's and title's own listener)
+  // have ever been read for a slot-+0x20 implementation; dump every
+  // populated slot's object and vtable pointer here so a third registrant
+  // isn't missed.
+  if (std::getenv("AC6_DEMO_WATCH_SWG_LISTENER_ARRAY") != nullptr &&
+      guest_address == 0x820E9838U) {
+    auto &memory = require_bridge().memory();
+    for (std::uint32_t slot = 0; slot < 16U; ++slot) {
+      const auto object = memory.load_u32(0x826DF800U + slot * 4U);
+      if (object == 0U) {
+        continue;
+      }
+      const auto vtable = memory.load_u32(object);
+      std::fprintf(stderr,
+                   "AC6_SWG_LISTENER_SLOT tick=%llu slot=%u object=0x%08X "
+                   "vtable=0x%08X\n",
+                   static_cast<unsigned long long>(require_bridge().tick()),
+                   slot, object, vtable);
+    }
+  }
 }
