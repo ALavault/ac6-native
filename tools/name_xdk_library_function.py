@@ -15,6 +15,18 @@ eight is an identification.
 It never renames anything on its own and it prints the window count with every
 answer, because a match on one window of a common prologue means nothing.
 
+CALIBRATION, measured rather than assumed. At --window 16 the noise floor is
+about 3 of 60: CModeTaskTitle::update at 0x8218A7A8, which is certainly Namco's
+own code, scores 3/60 against d3d9.lib and 2/60 against two others, each time
+under a different name. So at that window size anything up to roughly 6/60 is
+indistinguishable from noise, and only D3D::SwapCallback at 24/60 stood clear of
+it. Sixteen bytes is four instructions, which any prologue can supply.
+
+A LOW SCORE IS NOT ABSENCE. D3DDevice_Swap -- a confirmed library function --
+scores 1/16 at --window 48, so a zero there says the windows were unlucky, not
+that the function is absent from the library. Do not conclude "this is game
+code" from a miss; that mistake was published once and retracted.
+
 usage: name_xdk_library_function.py IMAGE ADDR [ADDR ...] [--libs DIR]
        [--window BYTES] [--windows N]
 """
