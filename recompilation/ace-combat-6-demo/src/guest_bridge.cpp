@@ -590,6 +590,9 @@ extern "C" void AC6_PPC_STORE_U8(PPCContext &context, std::uint8_t *base,
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 1U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  ac6demo::guest_bridge_detail::trace_addr_range_write(
+      address, 1U, value, require_bridge().tick(), current_guest_thread_id,
+      static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
   guest_memory_access(context, address,
                       [&] { memory_for(context).store_u8(address, value); });
   ac6demo::guest_bridge_detail::record_post_resume_scalar("store8", address, 1U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
@@ -613,6 +616,9 @@ extern "C" void AC6_PPC_STORE_U16(PPCContext &context, std::uint8_t *base,
   trace_render_queue_slot_store(context, address, 2U, value != 0U, generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 2U, require_bridge().tick(), current_guest_thread_id,
+      static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  ac6demo::guest_bridge_detail::trace_addr_range_write(
+      address, 2U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
   guest_memory_access(context, address,
                       [&] { memory_for(context).store_u16(address, value); });
@@ -651,6 +657,9 @@ extern "C" void AC6_PPC_STORE_U32(PPCContext &context, std::uint8_t *base,
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 4U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  ac6demo::guest_bridge_detail::trace_addr_range_write(
+      address, 4U, value, require_bridge().tick(), current_guest_thread_id,
+      static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
   guest_memory_access(context, address,
                       [&] { memory_for(context).store_u32(address, value); });
   ac6demo::guest_bridge_detail::record_post_resume_scalar("store32", address, 4U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
@@ -682,6 +691,10 @@ extern "C" void AC6_PPC_STORE_U64(PPCContext &context, std::uint8_t *base,
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 8U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  ac6demo::guest_bridge_detail::trace_addr_range_write(
+      address, 8U, static_cast<std::uint32_t>(value), require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      generated_name, generated_line);
   guest_memory_access(context, address,
                       [&] { memory_for(context).store_u64(address, value); });
   ac6demo::guest_bridge_detail::record_post_resume_scalar("store64", address, 8U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);

@@ -79,6 +79,41 @@ inline void initialize_post_resume_watch() noexcept {
   return enabled || xam_return_chain_watch_enabled_fast();
 }
 
+// Same ad-hoc-range idea as guest_memory.cpp's watch_addr_range_host_write
+// (AC6_DEMO_WATCH_ADDR_LO/HI), but called from here instead of from
+// GuestMemory::store_uN, because only here is the PPCContext (and hence
+// tick/thread/lr/generated_name) already in hand -- store_uN only ever had
+// __builtin_return_address, which resolves every guest store to the same
+// generic template and named no one. Two lines per matching write is not
+// pretty; it's cheaper than plumbing PPCContext through GuestMemory.
+inline void trace_addr_range_write(std::uint32_t address,
+                                   std::uint32_t width, std::uint32_t value,
+                                   std::uint64_t tick, std::uint32_t thread,
+                                   std::uint32_t lr,
+                                   const char *generated_name,
+                                   std::uint32_t generated_line) noexcept {
+  static const char *lo_str = std::getenv("AC6_DEMO_WATCH_ADDR_LO");
+  static const char *hi_str = std::getenv("AC6_DEMO_WATCH_ADDR_HI");
+  static const bool enabled = lo_str != nullptr && hi_str != nullptr;
+  if (!enabled) {
+    return;
+  }
+  static const auto lo =
+      static_cast<std::uint32_t>(std::strtoul(lo_str, nullptr, 0));
+  static const auto hi =
+      static_cast<std::uint32_t>(std::strtoul(hi_str, nullptr, 0));
+  const auto end = static_cast<std::uint64_t>(address) + width;
+  if (address >= hi || end <= lo) {
+    return;
+  }
+  std::fprintf(
+      stderr,
+      "AC6_ADDR_RANGE_WRITE address=0x%08X size=%u value=0x%X tick=%llu "
+      "thread=%u lr=0x%08X function=%s generated_line=%u\n",
+      address, width, value, static_cast<unsigned long long>(tick), thread,
+      lr, generated_name == nullptr ? "" : generated_name, generated_line);
+}
+
 inline void trace_ib_write(std::uint32_t address, std::uint32_t width,
                            std::uint64_t tick, std::uint32_t thread,
                            std::uint32_t lr, const char *generated_name,
