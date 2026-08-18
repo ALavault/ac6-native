@@ -139,6 +139,43 @@ inline void trace_message_listeners(ac6demo::GuestMemory &memory,
   }
 }
 
+// One-shot dump of the swg "player" object's body -- the 8 resource ids
+// found at +16..+44 (6f87f548) only account for the first 64 of a
+// 4200+-byte buffer; this checks whether the rest holds compiled
+// clip/bytecode data or is unused padding, and dumps the two live pointers
+// found just before the frame/total counters (+4116/+4120).
+inline void trace_swg_w224_body(ac6demo::GuestMemory &memory,
+                                std::uint64_t tick, std::uint32_t w224) {
+  static bool dumped = false;
+  if (dumped || w224 == 0U || !memory.mapped(w224, 4140U)) {
+    return;
+  }
+  dumped = true;
+  std::fprintf(stderr, "AC6_SWG_W224_BODY tick=%llu addr=0x%08X:",
+               static_cast<unsigned long long>(tick), w224);
+  for (std::uint32_t off = 0U; off < 1024U; off += 4U) {
+    std::fprintf(stderr, " %08X", memory.load_u32(w224 + off));
+  }
+  std::fprintf(stderr, "\n");
+  std::fprintf(stderr, "AC6_SWG_W224_TAIL tick=%llu addr=0x%08X+4000:",
+               static_cast<unsigned long long>(tick), w224);
+  for (std::uint32_t off = 4000U; off < 4140U; off += 4U) {
+    std::fprintf(stderr, " %08X", memory.load_u32(w224 + off));
+  }
+  std::fprintf(stderr, "\n");
+  for (const auto field_off : {4116U, 4120U}) {
+    const auto ptr = memory.load_u32(w224 + field_off);
+    std::fprintf(stderr, "AC6_SWG_W224_PTR tick=%llu off=%u ptr=0x%08X:",
+                 static_cast<unsigned long long>(tick), field_off, ptr);
+    if (ptr != 0U && memory.mapped(ptr, 64U)) {
+      for (std::uint32_t o = 0U; o < 64U; o += 4U) {
+        std::fprintf(stderr, " %08X", memory.load_u32(ptr + o));
+      }
+    }
+    std::fprintf(stderr, "\n");
+  }
+}
+
 // Frontend and renderer state, read-only and opt-in. Extracted from
 // run_entry, which the source budget caps at 220 lines.
 inline void trace_frontend_state(ac6demo::GuestMemory &memory,
@@ -288,20 +325,7 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
                                      ? memory.load_u32(0x826DFC44U) : 0U);
                     previous_key = key;
                   }
-                  // One-shot header dump of w224 -- if this 4200+-byte
-                  // buffer holds compiled swg clip/bytecode data, its first
-                  // bytes are the best place to look for a format signature.
-                  static bool dumped_w224_header = false;
-                  if (!dumped_w224_header && w224 != 0U &&
-                      memory.mapped(w224, 64U)) {
-                    dumped_w224_header = true;
-                    std::fprintf(stderr, "AC6_SWG_W224_HEADER tick=%llu addr=0x%08X:",
-                                 static_cast<unsigned long long>(tick), w224);
-                    for (std::uint32_t off = 0U; off < 64U; off += 4U) {
-                      std::fprintf(stderr, " %08X", memory.load_u32(w224 + off));
-                    }
-                    std::fprintf(stderr, "\n");
-                  }
+                  trace_swg_w224_body(memory, tick, w224);
                 }
                 if (field4 != previous_swg) {
                   std::fprintf(stderr,
