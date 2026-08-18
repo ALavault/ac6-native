@@ -106,6 +106,120 @@ inline void dump_swg_symbol_table(ac6demo::GuestMemory &memory,
   }
 }
 
+// The campaign's long-deferred falsifier: is EndMode's statement
+// (0x2DCB2024, present in title's own bytecode -- 1fcc88b3 -- and
+// never fetched by address across every run this campaign has
+// captured -- 1fcc88b3/b67e7f6f/e4e9b251/74756ffc) causally connected
+// to the completion trigger (sub_820EA4A8) at all? Force the tracked
+// execution-context slot's own PC field to EndMode's address exactly
+// ONCE, at a chosen tick, then let execution run on undisturbed --
+// the first attempt at this (a per-call, non-one-shot version) forced
+// pc backward on every subsequent box-call too, which kept
+// sub_823246C0's own inner loop's "pc < end" bound satisfied forever
+// (EndMode sits *before* the idle loop's own entry in memory, so the
+// jump is backward, not past the bound) and produced 15129 identical
+// forced writes in a single tick with no dispatcher ever regaining
+// control. A real one-shot avoids that: after the single write, the
+// interpreter is free to fetch/advance/dispatch EndMode's own words
+// exactly like any other statement. Unlike every other instrument in
+// this file (except the SendMsgI/mission overrides below), this
+// WRITES guest memory to test a hypothesis, not observe one. Opt-in,
+// off by default, no effect unless the env var is set.
+//
+// AC6_DEMO_CORRECTING_THE_FALSIFIER_NEVER_ACTUALLY_DISPATCHED_ENDMODE.md
+// found this "worked" only by accident: the forced write landed
+// mid-flight inside sub_823246C0's own internal operand-boxing loop,
+// so EndMode's own words got read as garbage arguments of an unrelated
+// statement, never as a fresh opcode dispatch through the outer
+// interpreter (sub_82325160). Kept for its own historical value and
+// because forcing the PC field this way is still a real, if blunt,
+// instrument -- the falsifier that actually tests dispatch is
+// apply_swg_inject_endmode_offset below.
+inline void apply_swg_force_endmode_pc(const PPCContext &context,
+                                        std::uint32_t guest_address) {
+  if (guest_address != 0x820DA488U) {
+    return;
+  }
+  static const char *tick_str = std::getenv("AC6_DEMO_FORCE_ENDMODE_AT_TICK");
+  if (tick_str == nullptr) {
+    return;
+  }
+  static const auto target_tick =
+      static_cast<std::uint64_t>(std::strtoull(tick_str, nullptr, 0));
+  static bool already_fired = false;
+  if (already_fired || require_bridge().tick() != target_tick ||
+      context.r31.u32 != 0x2E3DFA08U) {
+    return;
+  }
+  already_fired = true;
+  require_bridge().memory().store_u32(context.r31.u32 + 20U, 0x2DCB2024U);
+  std::fprintf(stderr,
+               "AC6_SWG_ENDMODE_FORCED tick=%llu slot=0x%08X pc=0x2DCB2024\n",
+               static_cast<unsigned long long>(require_bridge().tick()),
+               context.r31.u32);
+}
+
+// Falsifier v2, correcting AC6_DEMO_CORRECTING_THE_FALSIFIER_NEVER_ACTUALLY_DISPATCHED_ENDMODE.md's
+// own named next step: v1 (above) stomped a live PC field mid-loop, so
+// its forced words were read as garbage arguments of an unrelated,
+// already-in-progress statement, never as a fresh opcode dispatch.
+// This one injects instead of stomping: MovieMemory's own GetAt
+// (vtable slot 11, sub_820D0FF8, r3=collection r4=index) is reached
+// only through this same indirect-call path, and this trace fires
+// BEFORE the callee's own body runs (AC6_PPC_CALL_INDIRECT calls
+// trace_swg_native_call, then dispatches to the resolved target) --
+// so overwriting the array slot GetAt is about to read, right here,
+// lands before the read happens. The natural queue-drain chain
+// (sub_82323BB8's Phase 2 -> sub_82325288 -> sub_823251E0, already
+// fully read) then runs untouched on the injected value: a genuine
+// fresh sub_82325160 entry, not an interruption of one. One-shot,
+// write-only, opt-in, off by default. AC6_DEMO_WATCH_SWG_GETAT_CALL is
+// a separate, read-only diagnostic (tick/r3/r4 per call) used to find
+// a real injection tick -- GetAt is called only a handful of times per
+// run, not every tick, unlike Add().
+inline void apply_swg_inject_endmode_offset(const PPCContext &context,
+                                             std::uint32_t guest_address) {
+  if (guest_address != 0x820D0FF8U) {
+    return;
+  }
+  if (std::getenv("AC6_DEMO_WATCH_SWG_GETAT_CALL") != nullptr) {
+    std::fprintf(stderr, "AC6_SWG_GETAT_CALL tick=%llu r3=0x%08X r4=%u\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 context.r3.u32, context.r4.u32);
+  }
+  static const char *tick_str = std::getenv("AC6_DEMO_INJECT_ENDMODE_AT_TICK");
+  static const char *offset_str = std::getenv("AC6_DEMO_INJECT_ENDMODE_OFFSET");
+  if (tick_str == nullptr || offset_str == nullptr) {
+    return;
+  }
+  static const auto target_tick =
+      static_cast<std::uint64_t>(std::strtoull(tick_str, nullptr, 0));
+  static const auto forced_offset =
+      static_cast<std::uint32_t>(std::strtoul(offset_str, nullptr, 0));
+  static const char *collection_str =
+      std::getenv("AC6_DEMO_INJECT_ENDMODE_COLLECTION");
+  static const auto target_collection =
+      collection_str != nullptr
+          ? static_cast<std::uint32_t>(std::strtoul(collection_str, nullptr, 0))
+          : 0x2E3EDCD0U;
+  static bool already_fired = false;
+  if (already_fired || require_bridge().tick() != target_tick ||
+      context.r3.u32 != target_collection) {
+    return;
+  }
+  already_fired = true;
+  auto &memory = require_bridge().memory();
+  const auto array = memory.load_u32(context.r3.u32 + 28U);
+  const auto index = context.r4.u32;
+  const auto slot_address = array + index * 4U;
+  memory.store_u32(slot_address, forced_offset);
+  std::fprintf(stderr,
+               "AC6_SWG_ENDMODE_INJECTED tick=%llu collection=0x%08X "
+               "array=0x%08X index=%u slot=0x%08X offset=0x%08X\n",
+               static_cast<unsigned long long>(require_bridge().tick()),
+               context.r3.u32, array, index, slot_address, forced_offset);
+}
+
 // sub_820E8F90's own native-call dispatch: mtctr r10=[r23+12]; bctrl, with
 // r23 still holding the 16-byte command-table row (table_base +
 // command_index*16) it was assigned to at function entry and never
@@ -153,44 +267,8 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
                  current_guest_thread_id, lr, context.r3.u32, context.r4.u32,
                  context.r31.u32, pc_field);
   }
-  // The campaign's long-deferred falsifier: is EndMode's statement
-  // (0x2DCB2024, present in title's own bytecode -- 1fcc88b3 -- and
-  // never fetched by address across every run this campaign has
-  // captured -- 1fcc88b3/b67e7f6f/e4e9b251/74756ffc) causally connected
-  // to the completion trigger (sub_820EA4A8) at all? Force the tracked
-  // execution-context slot's own PC field to EndMode's address exactly
-  // ONCE, at a chosen tick, then let execution run on undisturbed --
-  // the first attempt at this (a per-call, non-one-shot version) forced
-  // pc backward on every subsequent box-call too, which kept
-  // sub_823246C0's own inner loop's "pc < end" bound satisfied forever
-  // (EndMode sits *before* the idle loop's own entry in memory, so the
-  // jump is backward, not past the bound) and produced 15129 identical
-  // forced writes in a single tick with no dispatcher ever regaining
-  // control. A real one-shot avoids that: after the single write, the
-  // interpreter is free to fetch/advance/dispatch EndMode's own words
-  // exactly like any other statement. Unlike every other instrument in
-  // this file (except the SendMsgI/mission overrides above), this
-  // WRITES guest memory to test a hypothesis, not observe one. Opt-in,
-  // off by default, no effect unless the env var is set.
-  if (guest_address == 0x820DA488U) {
-    static const char *tick_str = std::getenv("AC6_DEMO_FORCE_ENDMODE_AT_TICK");
-    if (tick_str != nullptr) {
-      static const auto target_tick =
-          static_cast<std::uint64_t>(std::strtoull(tick_str, nullptr, 0));
-      static bool already_fired = false;
-      if (!already_fired && require_bridge().tick() == target_tick &&
-          context.r31.u32 == 0x2E3DFA08U) {
-        already_fired = true;
-        require_bridge().memory().store_u32(context.r31.u32 + 20U,
-                                             0x2DCB2024U);
-        std::fprintf(stderr,
-                     "AC6_SWG_ENDMODE_FORCED tick=%llu slot=0x%08X "
-                     "pc=0x2DCB2024\n",
-                     static_cast<unsigned long long>(require_bridge().tick()),
-                     context.r31.u32);
-      }
-    }
-  }
+  apply_swg_force_endmode_pc(context, guest_address);
+  apply_swg_inject_endmode_offset(context, guest_address);
   // AC6_DEMO_THE_STATEMENT_SEQUENCER_COPIES_LITERAL_KEYS_FROM_TYPED_RECORDS.md's
   // own named next step: sub_820DEDF8 (the literal-key copy) is reached
   // only through its caller's own vtable slot 20 -- log r4 (the "source
