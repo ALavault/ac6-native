@@ -252,6 +252,7 @@ thread_local ucontext_t *active_scheduler_context = nullptr;
 }
 #include "guest_bridge/affinity_trace.hpp"
 #include "guest_bridge/dynamic_object_vtable_trace.hpp"
+#include "guest_bridge/swg_native_call_trace.hpp"
 void record_event_publication(std::uint32_t key, std::uint32_t lr,
                               std::uint8_t kind) noexcept {
   ++event_set_count;
@@ -747,8 +748,7 @@ extern "C" void AC6_PPC_STORE_U128(PPCContext &context, std::uint8_t *base,
                  });
   ac6demo::guest_bridge_detail::record_post_resume_bytes("store128", address, 16U, guest_bytes_for_trace.data(), require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
 }
-extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base,
-                                      std::uint32_t guest_address) {
+extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, std::uint32_t guest_address) {
   struct QualifiedVirtualDispatchSite final {
     std::uint32_t lr;
     std::array<std::uint32_t, 6> slots;
@@ -778,6 +778,7 @@ extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base,
   };
   const auto lr = static_cast<std::uint32_t>(context.lr);
   trace_dynamic_object_vtable(context, lr, guest_address);
+  trace_swg_native_call(context, lr, guest_address);
   if (std::getenv("AC6_DEMO_WATCH_INDIRECT_OBJECT") != nullptr && lr == 0x82321F34U) {
     auto &memory = require_bridge().memory();
     const auto object = context.r3.u32;
