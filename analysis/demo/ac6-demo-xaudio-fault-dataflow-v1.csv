@@ -1,0 +1,10 @@
+stage,address,operation,result,grade
+bridge PCR init,GuestBridge::prepare,store 0 at kGuestThreadBase+0x10C,all fibers begin as guest CPU 0,A
+fiber init,GuestBridge::initialize_guest_fiber,r13=kGuestThreadBase for every fiber,shared PCR pointer,A
+affinity import,KeSetAffinityThread bridge handler,validates mask but does not retain it,guest-visible CPU unchanged,A
+XAudio host drive,dispatch_xaudio_frame,copies primary context; changes host-side thread id only,PCR byte remains 0,A
+processor selection,0x8236F810,"lbz r9,0x10C(r13)",processor index 0 in current bridge,A
+descriptor selection,0x8236F7C8,select global+0x0C+8*index,CPU0 pair selected,A
+decoder dispatch,0x8236F8D4,call vslot +0x18 with r5 descriptor,r5 null when pair unpopulated,A
+null propagation,0x82354390,r5 ? r5-8 : 0,null base passed onward,A
+fault,0x8234F950,read base+0x14/+0x18/+0x1C,null dereference,A

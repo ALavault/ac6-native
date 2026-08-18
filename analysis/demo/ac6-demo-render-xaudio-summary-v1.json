@@ -1,0 +1,43 @@
+{
+  "schema": "ac6-demo-pal-render-xaudio-open-frontiers/v1",
+  "date": "2026-08-18",
+  "target": {
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "flat_image_sha256": "b81941994944b84f5792fd7b89cd698ca429b13c1bb4f501ea12e49dc54c2f01",
+    "fixed_pe_sha256": "b1ffe385b121a92e79e8cac10470793a7c3be7676e7506a566deb296b5cd9fcb",
+    "base": "0x82000000"
+  },
+  "renderer": {
+    "gate": "device+0x5460",
+    "sole_writer": "0x821ADAB8",
+    "enable_event": {
+      "event": 17,
+      "channel": 6
+    },
+    "disable_event": {
+      "event": 16,
+      "channel": 6
+    },
+    "registration": {
+      "function": "0x821ADC78",
+      "service": 47,
+      "category": 2,
+      "callback": "0x821ADAB8"
+    },
+    "remaining": "identify concrete dispatcher/caller delivering category-2 event (17,6)"
+  },
+  "xaudio": {
+    "processor_selector": "r13+0x10C",
+    "descriptor_pairs": 6,
+    "bridge_pcr_initial_cpu": 0,
+    "bridge_shared_pcr": true,
+    "affinity_retained": false,
+    "null_sink": "0x8234F950",
+    "remaining": "bind synthetic render callback to a qualified audio processor identity"
+  },
+  "publication": {
+    "plain_text_only": true,
+    "zip": false,
+    "proprietary_bytes": false
+  }
+}

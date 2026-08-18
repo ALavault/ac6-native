@@ -1,0 +1,6 @@
+object,constructor,table_or_vtable,method,role,grade
+global audio engine,0x82355F70,0x820653BC,0x82355E58,published at 0x829DA528; callback owner,A
+XAudio callback,,,0x8236DD98,loads global; ignores external callback arguments,A
+source voice,0x823587B0,0x820653F8,0x82357FC8 slot +0x54,owns decoder/processing child,A-
+decoder child,0x82354280,0x82065320,0x82354390 slot +0x18,receives processor descriptor in r5,A
+CModeTaskRanking,0x821906B8,0x8200E8EC; secondary 0x8200E88C,,frontend class; not the audio global,A

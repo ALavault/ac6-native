@@ -1,0 +1,10 @@
+event,channel_condition,effect,grade
+0,all,clear global channel mask and device+0x5460,A
+1,all,clear global channel mask and device+0x5460,A
+16,all,"clear 1<<channel; channel 6 disables device+0x5460",A
+17,all,"set 1<<channel; channel 6 enables device+0x5460 and resets +0x5458/+0x545C",A
+34,all,store channel/value at device+0x5490,A
+224,all,device maintenance/rebind path,A-
+225,all,device maintenance/rebind path,A-
+226,all,device maintenance/rebind path,A-
+255,all,replay 17 active channel records from table 0x823C2EA8,A

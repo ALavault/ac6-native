@@ -1,0 +1,6 @@
+claim,exact_pal_evidence,verdict,grade
+CModeTaskRanking primary vtable,"COL 0x82072DF4 at [0x8200E8E8], TD 0x82391A48",vtable 0x8200E8EC,A
+CModeTaskRanking secondary vtable,"COL 0x82072E4C at [0x8200E888], offset 0x68",vtable 0x8200E88C,A
+0x82065374 is Ranking vtable,"preceding word 0x82065370 is function 0x82351340, not COL; table includes constants",rejected,A
+0x82065324 is Ranking vtable,"preceding word 0x82065320 is function 0x823538E0, not COL",rejected,A
+0x820653BC object identity,0x82355F70 writes it then publishes object at 0x829DA528,global audio engine table,A
