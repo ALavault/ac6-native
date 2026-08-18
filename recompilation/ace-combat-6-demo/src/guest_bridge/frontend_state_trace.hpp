@@ -51,6 +51,23 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
             current_mode = mode;
           }
         }
+        // The running mode's own state word, at +12 like the startup mode's.
+        // Whether the title's state moves when START is pressed is what
+        // separates "the input is consumed" from "the input has an effect".
+        {
+          static std::uint32_t previous_mode_state = 0xFFFFFFFFU;
+          const auto mode = memory.load_u32(manager + 8U);
+          if (mode != 0U && memory.mapped(mode, 16U)) {
+            const auto mode_state = memory.load_u32(mode + 12U);
+            if (mode_state != previous_mode_state) {
+              std::fprintf(stderr,
+                           "AC6_MODE_INNER tick=%llu mode=0x%08X state=0x%08X\n",
+                           static_cast<unsigned long long>(tick), mode,
+                           mode_state);
+              previous_mode_state = mode_state;
+            }
+          }
+        }
         if (request != previous_request) {
           std::fprintf(stderr,
                        "AC6_MODE_REQUEST tick=%llu manager=0x%08X "
