@@ -288,6 +288,20 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
                                      ? memory.load_u32(0x826DFC44U) : 0U);
                     previous_key = key;
                   }
+                  // One-shot header dump of w224 -- if this 4200+-byte
+                  // buffer holds compiled swg clip/bytecode data, its first
+                  // bytes are the best place to look for a format signature.
+                  static bool dumped_w224_header = false;
+                  if (!dumped_w224_header && w224 != 0U &&
+                      memory.mapped(w224, 64U)) {
+                    dumped_w224_header = true;
+                    std::fprintf(stderr, "AC6_SWG_W224_HEADER tick=%llu addr=0x%08X:",
+                                 static_cast<unsigned long long>(tick), w224);
+                    for (std::uint32_t off = 0U; off < 64U; off += 4U) {
+                      std::fprintf(stderr, " %08X", memory.load_u32(w224 + off));
+                    }
+                    std::fprintf(stderr, "\n");
+                  }
                 }
                 if (field4 != previous_swg) {
                   std::fprintf(stderr,
