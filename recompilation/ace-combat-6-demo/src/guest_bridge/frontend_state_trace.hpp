@@ -72,6 +72,12 @@ inline void trace_device_flags(ac6demo::GuestMemory &memory,
     std::fprintf(stderr, "AC6_DISPLAYMODE tick=%llu [0x827AD2F0]=%u case=%d\n",
                  static_cast<unsigned long long>(tick), mode,
                  static_cast<int>(mode) - 11);
+    // [device+22264] bit 2 gates the only path from the per-frame present into
+    // sub_821BB078, whose cone reaches sub_821ACCD0, one of the two writers.
+    std::fprintf(stderr, "AC6_DEVGATE tick=%llu f22264=0x%08X bit2=%d\n",
+                 static_cast<unsigned long long>(tick),
+                 memory.load_u32(device + 22264U),
+                 (memory.load_u32(device + 22264U) & 0x4U) ? 1 : 0);
   }
 }
 
