@@ -62,9 +62,13 @@ inline std::uint32_t resolve_swg_symbol_type_tag(ac6demo::GuestMemory &memory,
 // directly by walking every entry the map actually holds, independent of
 // what the guest happens to evaluate. In-order traversal, explicit stack
 // (guest trees are small; this is a diagnostic bound, not a guess at real
-// depth).
+// depth). Also dumps the value object's own [+0]/[+8]/[+12] fields --
+// sub_820E8F90 derives r23 (table_base + command_index*16) from this same
+// value object, so these fields are the concrete next step to naming every
+// registered category by its real command-table row, not just its type.
 inline void dump_swg_symbol_table(ac6demo::GuestMemory &memory,
-                                   std::uint32_t root, std::uint32_t context) {
+                                   std::uint32_t root, std::uint32_t context,
+                                   std::uint32_t context_vtable) {
   const auto my_head = memory.load_u32(root + 4U);
   std::array<std::uint32_t, 64> stack{};
   std::size_t depth = 0;
@@ -81,11 +85,22 @@ inline void dump_swg_symbol_table(ac6demo::GuestMemory &memory,
     node = stack[--depth];
     const auto category = memory.load_u32(node + 16U);
     const auto id = memory.load_u32(node + 24U);
-    const auto type_tag = resolve_swg_symbol_type_tag(memory, node);
+    const auto value_pointer = memory.load_u32(node + 28U);
+    const auto type_tag =
+        value_pointer != 0U ? memory.load_u32(value_pointer + 4U) : 0U;
+    const auto value0 =
+        value_pointer != 0U ? memory.load_u32(value_pointer + 0U) : 0U;
+    const auto value8 =
+        value_pointer != 0U ? memory.load_u32(value_pointer + 8U) : 0U;
+    const auto value12 =
+        value_pointer != 0U ? memory.load_u32(value_pointer + 12U) : 0U;
     std::fprintf(stderr,
-                 "AC6_SWG_SYMBOL_TABLE_ENTRY context=0x%08X node=0x%08X "
-                 "category=0x%08X id=0x%08X type_tag=0x%08X\n",
-                 context, node, category, id, type_tag);
+                 "AC6_SWG_SYMBOL_TABLE_ENTRY context=0x%08X "
+                 "context_vtable=0x%08X node=0x%08X category=0x%08X "
+                 "id=0x%08X type_tag=0x%08X value0=0x%08X value8=0x%08X "
+                 "value12=0x%08X\n",
+                 context, context_vtable, node, category, id, type_tag,
+                 value0, value8, value12);
     ++visited;
     node = memory.load_u32(node + 8U);
   }
@@ -127,25 +142,31 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
   // fires every AST node the attract movie evaluates, every frame.
   const auto tick = require_bridge().tick();
   const bool in_watched_window = tick >= 2990ULL && tick <= 8000ULL;
-  if (std::getenv("AC6_DEMO_WATCH_SWG_LOOKUP_KEY") != nullptr &&
-      guest_address == 0x820DFFB8U && in_watched_window) {
+  if (guest_address == 0x820DFFB8U &&
+      (std::getenv("AC6_DEMO_WATCH_SWG_LOOKUP_KEY") != nullptr ||
+       std::getenv("AC6_DEMO_DUMP_SWG_SYMBOL_TABLE") != nullptr)) {
     auto &memory = require_bridge().memory();
     const auto key_pointer = context.r6.u32;
     const auto category = key_pointer != 0U ? memory.load_u32(key_pointer + 4U) : 0U;
     const auto id = key_pointer != 0U ? memory.load_u32(key_pointer + 12U) : 0U;
-    const auto node = find_swg_symbol_node(memory, context.r4.u32 + 36U, category, id);
-    const auto type_tag = resolve_swg_symbol_type_tag(memory, node);
-    std::fprintf(stderr,
-                 "AC6_SWG_LOOKUP_KEY tick=%llu thread=%u lr=0x%08X "
-                 "key_pointer=0x%08X category=0x%08X id=0x%08X node=0x%08X "
-                 "type_tag=0x%08X\n",
-                 static_cast<unsigned long long>(tick), current_guest_thread_id,
-                 lr, key_pointer, category, id, node, type_tag);
-    // AC6_DEMO_CATEGORY_IS_THE_NATIVE_FUNCTION_ID_TITLE_NEVER_EVALUATES_CATEGORY_1.md's
-    // open (a)-vs-(b) question: is category 1 absent from this context's
-    // script entirely, or present but unreached? Dump the full table once
-    // per distinct context (a fixed small seen-set -- this subsystem has
-    // exactly two live contexts all campaign, startup's and title's).
+    if (std::getenv("AC6_DEMO_WATCH_SWG_LOOKUP_KEY") != nullptr && in_watched_window) {
+      const auto node = find_swg_symbol_node(memory, context.r4.u32 + 36U, category, id);
+      const auto type_tag = resolve_swg_symbol_type_tag(memory, node);
+      std::fprintf(stderr,
+                   "AC6_SWG_LOOKUP_KEY tick=%llu thread=%u lr=0x%08X "
+                   "key_pointer=0x%08X category=0x%08X id=0x%08X node=0x%08X "
+                   "type_tag=0x%08X\n",
+                   static_cast<unsigned long long>(tick), current_guest_thread_id,
+                   lr, key_pointer, category, id, node, type_tag);
+    }
+    // AC6_DEMO_CATEGORY_1_IS_STRUCTURALLY_ABSENT_FROM_TITLES_SYMBOL_TABLE.md's
+    // named control: startup's context (only ever seen at ticks 1045/2425,
+    // outside the lookup-line tick window above) has never actually had
+    // its table dumped, so the method that found category 1 missing from
+    // title's table has never been shown to find category 1 present where
+    // it demonstrably is. This dump is gated separately, on every call,
+    // not the lookup-line window -- cheap, since it's once per distinct
+    // context (a fixed small seen-set).
     if (std::getenv("AC6_DEMO_DUMP_SWG_SYMBOL_TABLE") != nullptr) {
       static std::array<std::uint32_t, 4> dumped_contexts{};
       static std::size_t dumped_count = 0;
@@ -156,7 +177,9 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
       }
       if (!already_dumped && dumped_count < dumped_contexts.size()) {
         dumped_contexts[dumped_count++] = context_address;
-        dump_swg_symbol_table(memory, context.r4.u32 + 36U, context_address);
+        const auto context_vtable = memory.load_u32(context_address);
+        dump_swg_symbol_table(memory, context_address + 36U, context_address,
+                               context_vtable);
       }
     }
   }
