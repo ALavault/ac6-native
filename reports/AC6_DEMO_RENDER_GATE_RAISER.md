@@ -101,3 +101,52 @@ Les cycles 1603 à 1605 ont établi qu'aucun débogueur guest n'est disponible
 sur Xenia Linux — `Stack walker unimplemented on posix`, `--debug` désactivé.
 Cette capture n'est donc pas réalisable en l'état, alors que la recherche
 statique menée ici a nommé le lève-événement sans elle.
+
+## La porte du renderer appartient au sous-système de mission
+
+En remontant les trois sites de construction, les chaînes se terminent toutes
+en appel indirect, mais leurs propriétaires se nomment :
+
+```text
+tools/whose_vtable.py .build/Default.xex.base.bin 0x8217B668 0x82093840
+    0x8217B668  vtable 0x8200D24C slot +0x00
+                CX360MissionManager<CAce6MissionManagerReplay>
+    0x82093840  vtable 0x82000CB0 slot +0x00
+                CX360UnitManager
+```
+
+La chaîne complète est donc :
+
+```text
+CX360MissionManager  ->  CX360UnitManager  ->  événement (17, 6)
+                     ->  callback 0x821ADAB8  ->  device+0x5460 = 1
+                     ->  sub_821C57D0 soumet enfin
+```
+
+**La porte de soumission du renderer est une ressource de mission.** Elle
+n'est pas armée par une couche graphique ni par un service système : elle
+l'est quand le gestionnaire de mission construit son gestionnaire d'unités.
+
+## Les deux fronts n'en font qu'un
+
+Cette session poursuivait deux frontières comme si elles étaient
+indépendantes :
+
+- le **frontend** — la boucle d'attract démarrage ↔ titre, que START arrête
+  sans la faire avancer ;
+- le **rendu** — l'écran noir, la porte jamais armée.
+
+Elles sont le même front. Le rendu ne s'arme qu'en mission ; la mission
+n'arrive qu'après le titre ; le titre n'avance qu'avec START. Il n'y a donc
+pas deux problèmes à résoudre en parallèle, mais un seul chemin à ouvrir, et
+son premier verrou est celui que `reports/AC6_DEMO_START_DURING_TITLE.md`
+décrit.
+
+## Conséquence sur la gate Phase 1
+
+La gate attend « un état de menu **et** sa sortie Xenos jointe ». Si la porte
+de soumission est de portée mission, alors exiger un readback non noir depuis
+l'écran-titre pourrait demander quelque chose que cette route ne produit pas.
+Ce n'est pas démontré ici — l'écran-titre affiche bien quelque chose sur
+console — mais la possibilité doit être vérifiée avant d'attribuer le noir à
+un défaut du port.
