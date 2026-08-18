@@ -130,6 +130,24 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
                  current_guest_thread_id, lr, context.r1.u32, context.r3.u32,
                  context.r31.u32);
   }
+  // AC6_DEMO_THE_STATEMENT_SEQUENCER_COPIES_LITERAL_KEYS_FROM_TYPED_RECORDS.md's
+  // own named next step: sub_820DEDF8 (the literal-key copy) is reached
+  // only through its caller's own vtable slot 20 -- log r4 (the "source
+  // record" argument) on every call to discriminate three readings in one
+  // run: distinct 0x82xxxxxx addresses would mean static image data
+  // (the hunt for the compiled statement table genuinely ends), distinct
+  // heap-range addresses would mean runtime-constructed record objects
+  // (same shape as 25d092bc's symbol registration, applied to statements),
+  // and one repeated address would mean a mutable cursor, not a list.
+  if (std::getenv("AC6_DEMO_WATCH_SWG_RECORD_KEY_CALL") != nullptr &&
+      guest_address == 0x820DEDF8U) {
+    std::fprintf(stderr,
+                 "AC6_SWG_RECORD_KEY_CALL tick=%llu thread=%u lr=0x%08X "
+                 "r3=0x%08X r4=0x%08X r5=0x%08X\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 current_guest_thread_id, lr, context.r3.u32, context.r4.u32,
+                 context.r5.u32);
+  }
   // AC6_DEMO_THE_SYMBOL_TABLE_IS_AN_MSVC_MAP_KEYED_BY_TWO_INTEGERS.md's
   // named next step: sub_820DFFB8 (the AST-node evaluator) passes its own
   // r6 as the map lookup key -- a pointer to a struct whose [+4] (category,
