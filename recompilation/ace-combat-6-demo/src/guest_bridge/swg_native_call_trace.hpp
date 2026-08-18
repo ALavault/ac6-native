@@ -470,6 +470,41 @@ inline void apply_swg_level_override(std::uint32_t out_param_address) {
                out_param_address, forced_value);
 }
 
+// menu_endMode(I)->V's own in-param, unlike the four out-param overrides
+// above, has to land BEFORE the call: sub_8218AB98 (title's own dispatch
+// target) reads it once, unconditionally stores it to [this+112] near its
+// own return, and 09c1090a/1edce620 both trace this argument (not any
+// out-param result) as what selects the destination the transition
+// machinery constructs. The boxed value lives at *marshaled_args (r26,
+// same address AC6_SWG_NATIVE_CALL's own first_arg already dereferences --
+// reused here rather than re-derived), and the callee is not yet entered
+// when this runs, so overwriting it here is exactly what a differently
+// authored script call would have marshalled. Gated on a specific tick
+// (AC6_DEMO_FORCE_MENU_ENDMODE_AT_TICK) rather than firing on every call,
+// so startup's own tick-2425 call is never touched by accident.
+inline void apply_menu_endmode_arg_override(std::uint32_t marshaled_args_address) {
+  static const char *forced_str = std::getenv("AC6_DEMO_FORCE_MENU_ENDMODE_ARG");
+  static const char *at_tick_str =
+      std::getenv("AC6_DEMO_FORCE_MENU_ENDMODE_AT_TICK");
+  if (forced_str == nullptr || at_tick_str == nullptr ||
+      marshaled_args_address == 0U) {
+    return;
+  }
+  static const auto forced_value =
+      static_cast<std::uint32_t>(std::strtoul(forced_str, nullptr, 0));
+  static const auto at_tick =
+      static_cast<std::uint64_t>(std::strtoull(at_tick_str, nullptr, 0));
+  if (require_bridge().tick() != at_tick) {
+    return;
+  }
+  require_bridge().memory().store_u32(marshaled_args_address, forced_value);
+  std::fprintf(stderr,
+               "AC6_MENU_ENDMODE_ARG_FORCED tick=%llu address=0x%08X "
+               "value=%u\n",
+               static_cast<unsigned long long>(require_bridge().tick()),
+               marshaled_args_address, forced_value);
+}
+
 // SendMsgI's, GetCurrentMission's, GetCurrentMode's and GetCurrentLevel's
 // out-param pointer (all r4, per the marshaller's uniform
 // box-the-result-through-r4 convention confirmed by direct read of
@@ -489,10 +524,15 @@ inline void invoke_body_trace_with_swg_msgi_override(
       lr == 0x820E9130U && guest_address == 0x820EA538U;
   const bool is_get_level =
       lr == 0x820E9130U && guest_address == 0x820EA598U;
+  const bool is_menu_end_mode =
+      lr == 0x820E9130U && guest_address == 0x820EA4A8U;
   const auto out_param_address =
       (is_send_msg_i || is_get_mission || is_get_mode || is_get_level)
           ? context.r4.u32
           : 0U;
+  if (is_menu_end_mode) {
+    apply_menu_endmode_arg_override(context.r26.u32);
+  }
   invoke_body_trace(function, context, base, guest_address);
   if (is_send_msg_i) {
     apply_swg_sendmsgi_override(out_param_address);
