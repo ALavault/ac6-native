@@ -37,6 +37,31 @@ inline void trace_service_registry(ac6demo::GuestMemory &memory,
   }
 }
 
+// Is the front buffer black, or a static image that never updates? Every
+// "black screen" statement in this campaign traces back to submissions=2 and
+// never to output. VdSwap reports frontbuffer_address 0x137A0000 at 1280x720.
+inline void trace_frontbuffer(ac6demo::GuestMemory &memory, std::uint64_t tick) {
+  constexpr std::uint32_t kFrontBuffer = 0x137A0000U;
+  constexpr std::uint32_t kBytes = 1280U * 720U * 4U;
+  if ((tick % 1000U) != 0U || !memory.mapped(kFrontBuffer, kBytes)) {
+    return;
+  }
+  std::uint64_t hash = 0xCBF29CE484222325ULL;
+  std::uint64_t nonzero = 0U;
+  for (std::uint32_t offset = 0U; offset < kBytes; offset += 4U) {
+    const auto word = memory.load_u32(kFrontBuffer + offset);
+    if (word != 0U) {
+      ++nonzero;
+    }
+    hash = (hash ^ word) * 0x100000001B3ULL;
+  }
+  std::fprintf(stderr,
+               "AC6_FRONTBUFFER tick=%llu nonzero=%llu of %u fnv=0x%016llX\n",
+               static_cast<unsigned long long>(tick),
+               static_cast<unsigned long long>(nonzero), kBytes / 4U,
+               static_cast<unsigned long long>(hash));
+}
+
 // The ring publisher sub_821B9BC8 gates on bit 1 of device byte 10941, and the
 // device is whatever the guest stored through the VdGlobalDevice import slot.
 inline void trace_device_flags(ac6demo::GuestMemory &memory,
@@ -172,6 +197,7 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
             trace_service_registry(memory, tick);
             trace_message_listeners(memory, tick);
             trace_device_flags(memory, tick);
+            trace_frontbuffer(memory, tick);
             // GetCurrentMode / GetCurrentMission / GetCurrentLevel -- the three
             // script commands the movie issues after START -- all read the
             // singleton at [0x823C27E0]: mode is [gs+120], the other two derive
