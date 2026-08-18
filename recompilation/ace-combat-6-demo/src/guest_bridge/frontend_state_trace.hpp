@@ -59,6 +59,32 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
           const auto mode = memory.load_u32(manager + 8U);
           if (mode != 0U && memory.mapped(mode, 16U)) {
             const auto mode_state = memory.load_u32(mode + 12U);
+            // GetCurrentMode / GetCurrentMission / GetCurrentLevel -- the three
+            // script commands the movie issues after START -- all read the
+            // singleton at [0x823C27E0]: mode is [gs+120], the other two derive
+            // from the sub-object at gs+112.
+            {
+              static std::uint64_t previous_state = 0xFFFFFFFFFFFFFFFFULL;
+              if (memory.mapped(0x823C27E0U, 4U)) {
+                const auto gs = memory.load_u32(0x823C27E0U);
+                if (gs != 0U && memory.mapped(gs, 128U)) {
+                  const auto mode = memory.load_u32(gs + 120U);
+                  const auto sub0 = memory.load_u32(gs + 112U);
+                  const auto sub4 = memory.load_u32(gs + 116U);
+                  const std::uint64_t key =
+                      (static_cast<std::uint64_t>(mode) << 32) ^ sub0 ^
+                      (static_cast<std::uint64_t>(sub4) << 8);
+                  if (key != previous_state) {
+                    std::fprintf(stderr,
+                                 "AC6_GAMESTATE tick=%llu gs=0x%08X mode=%d "
+                                 "sub112=0x%08X sub116=0x%08X\n",
+                                 static_cast<unsigned long long>(tick), gs,
+                                 static_cast<int>(mode), sub0, sub4);
+                    previous_state = key;
+                  }
+                }
+              }
+            }
             // The title's state-1 arm calls slot +0x20 on the sub-object at
             // mode+28, whose first act is to return early when [that+4] is
             // zero. That word is the difference between a poll that works and
