@@ -1,0 +1,54 @@
+{
+  "schema": "ac6-demo-supply-reachability/v1",
+  "date": "2026-08-18",
+  "target": "AC6 Xbox 360 PAL campaign demo",
+  "ui_owner": {
+    "class": "CSelectGameMenuManager",
+    "type_descriptor": "0x8238F2C4",
+    "vtable": "0x8200A4B4",
+    "constructor": "0x8212DB70",
+    "application_offset": "0x222C08"
+  },
+  "qualified_chain": [
+    {
+      "address": "0x8212CF30",
+      "operation": "request 3 opens GameMenu_OpenSupplyMenu"
+    },
+    {
+      "address": "0x8212D0C8",
+      "operation": "selection 0 sends MissionManager command 5"
+    },
+    {
+      "address": "0x8229ECE0",
+      "operation": "campaign MissionManager dispatcher, vslot +0x78"
+    },
+    {
+      "condition": "manager+0x3AC",
+      "routes": [
+        "0x8229E158(this,2)",
+        "state 0x8229CDF8"
+      ]
+    }
+  ],
+  "classification": {
+    "compiled_in_shared_xex": true,
+    "generic_supply_consumer_qualified": true,
+    "mission01_request3_producer_established": false,
+    "aerial_refuelling_established": false,
+    "retail_semantic_anchor": true,
+    "grade": "B+"
+  },
+  "claims": {
+    "supported": [
+      "a generic supply menu and command path are compiled",
+      "the path belongs to shared gameplay/campaign code",
+      "the path remains useful for retail cross-build mapping"
+    ],
+    "not_supported": [
+      "Mission 01 necessarily opens the supply menu",
+      "the supply path is specifically aerial refuelling",
+      "absence of a Mission 01 producer means absence from retail"
+    ]
+  },
+  "next_discriminant": "identify a Mission 01 producer for CSelectGameMenuManager request 3 or prove none exists in the mission ActBin/service graph"
+}

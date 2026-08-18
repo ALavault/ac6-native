@@ -1,0 +1,12 @@
+callsite,owner_begin,owner_end_exclusive,subsystem,role,grade
+0x821C4AD0,0x821C4A60,0x821C4AE8,renderer enqueue,enqueue packet and signal selected worker event,A
+0x821C4FD4,0x821C4F90,0x821C501C,renderer shutdown,wake worker during stop or teardown,A
+0x82338C6C,0x82338C00,0x82338C90,generic async I/O,completion/synchronisation signal,B+
+0x82338DC0,0x82338D48,0x82338DEC,generic async I/O,completion/synchronisation signal,B+
+0x82338E34,0x82338DF0,0x82338E58,generic async I/O,completion/synchronisation signal,B+
+0x82338EE0,0x82338E60,0x82338F08,generic async I/O,completion/synchronisation signal,B+
+0x82355128,0x82355038,0x82355140,XAudio,worker or completion signal,A-
+0x8235587C,0x82355768,0x82355900,XAudio,worker or completion signal,A-
+0x82355D90,0x82355C88,0x82355DB8,XAudio,worker or completion signal,A-
+0x82355EA8,0x82355E58,0x82355F70,XAudio,render callback/worker signal,A
+0x821C4AE8 (tail branch at 0x821C4B34),0x821C4AE8,0x821C4B38,renderer enqueue,enqueue packet for selected worker and tail-call KeSetEvent,A

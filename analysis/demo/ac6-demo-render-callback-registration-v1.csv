@@ -1,0 +1,4 @@
+owner,callsite,registration_function,service,category,callback,minimal_role,grade
+0x821C64E8,0x821C667C,0x821ADC78,47,2,0x821ADAB8,register renderer lifecycle callback,A
+0x82356070,inside audio initialisation,audio helper,47,4,0x82369290,register audio callback,A-
+XAudio teardown,inside audio teardown,audio helper,47,4,0,unregister category-4 callback,A-
