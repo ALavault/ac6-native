@@ -24,6 +24,30 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
                  current_guest_thread_id, lr, context.r1.u32, context.r3.u32,
                  context.r31.u32);
   }
+  // AC6_DEMO_THE_SYMBOL_TABLE_IS_AN_MSVC_MAP_KEYED_BY_TWO_INTEGERS.md's
+  // named next step: sub_820DFFB8 (the AST-node evaluator) passes its own
+  // r6 as the map lookup key -- a pointer to a struct whose [+4] (category,
+  // wildcard -1) and [+12] (id) fields are the only ones the comparator
+  // reads. Log both fields directly rather than the raw pointer, so this
+  // is the swg vocabulary itself, not another address to chase. Gated to a
+  // window covering the press and a long post-press tail, matching
+  // AC6_DEMO_FORCING_GETCURRENTMISSION_TO_16_ALSO_DOES_NOT_TRIGGER_COMPLETION.md's
+  // 8000-tick precedent for "does anything resume later" -- ungated this
+  // fires every AST node the attract movie evaluates, every frame.
+  const auto tick = require_bridge().tick();
+  const bool in_watched_window = tick >= 2990ULL && tick <= 8000ULL;
+  if (std::getenv("AC6_DEMO_WATCH_SWG_LOOKUP_KEY") != nullptr &&
+      guest_address == 0x820DFFB8U && in_watched_window) {
+    auto &memory = require_bridge().memory();
+    const auto key_pointer = context.r6.u32;
+    const auto category = key_pointer != 0U ? memory.load_u32(key_pointer + 4U) : 0U;
+    const auto id = key_pointer != 0U ? memory.load_u32(key_pointer + 12U) : 0U;
+    std::fprintf(stderr,
+                 "AC6_SWG_LOOKUP_KEY tick=%llu thread=%u lr=0x%08X "
+                 "key_pointer=0x%08X category=0x%08X id=0x%08X\n",
+                 static_cast<unsigned long long>(tick), current_guest_thread_id,
+                 lr, key_pointer, category, id);
+  }
   if (std::getenv("AC6_DEMO_WATCH_SWG_NATIVE_CALL") == nullptr ||
       lr != 0x820E9130U) {
     return;
