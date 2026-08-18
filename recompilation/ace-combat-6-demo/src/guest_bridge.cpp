@@ -962,7 +962,7 @@ extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, s
   }
   if (const auto function = lookup_guest_function(guest_address);
       function != nullptr) {
-    invoke_body_trace(function, context, base, guest_address);
+    invoke_body_trace_with_swg_msgi_override(function, context, base, guest_address, lr);
     return;
   }
   throw ac6demo::RuntimeTrap("unqualified guest indirect call",

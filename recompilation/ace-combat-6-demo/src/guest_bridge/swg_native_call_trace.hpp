@@ -58,3 +58,43 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
     }
   }
 }
+
+// Falsifier for AC6_DEMO_M102_RESOLVES_TO_A_QUERY_NOBODY_CURRENTLY_ANSWERS.md's
+// named next step: force SendMsgI's boxed "handled" result to a chosen
+// value instead of the 0 every currently-registered listener leaves it
+// at, and watch live whether title's script goes on to call
+// sub_820EA4A8 (the completion trigger, 642f77a4). Unlike every other
+// instrument in this file, this one WRITES guest memory -- it exists to
+// test a hypothesis, not to observe one, and is opt-in on its own env
+// var, off by default.
+inline void apply_swg_sendmsgi_override(std::uint32_t out_param_address) {
+  static const char *forced_str = std::getenv("AC6_DEMO_FORCE_SWG_MSGI_RESULT");
+  if (forced_str == nullptr || out_param_address == 0U) {
+    return;
+  }
+  static const auto forced_value =
+      static_cast<std::uint32_t>(std::strtoul(forced_str, nullptr, 0));
+  require_bridge().memory().store_u32(out_param_address, forced_value);
+  std::fprintf(stderr,
+               "AC6_SWG_MSGI_FORCED tick=%llu address=0x%08X value=%u\n",
+               static_cast<unsigned long long>(require_bridge().tick()),
+               out_param_address, forced_value);
+}
+
+// SendMsgI's out-param pointer (its own r4, saved as r29 and written
+// through at return) has to be captured before the call -- callees are
+// free to clobber r4 -- and applied after, once the call's own store has
+// already happened and can be overwritten before the marshaller reads it
+// back at "lwz r10,80(r1)" in its Integer-boxing branch.
+template <typename Function>
+inline void invoke_body_trace_with_swg_msgi_override(
+    Function function, PPCContext &context, std::uint8_t *base,
+    std::uint32_t guest_address, std::uint32_t lr) {
+  const bool is_send_msg_i =
+      lr == 0x820E9130U && guest_address == 0x820E9838U;
+  const auto out_param_address = is_send_msg_i ? context.r4.u32 : 0U;
+  invoke_body_trace(function, context, base, guest_address);
+  if (is_send_msg_i) {
+    apply_swg_sendmsgi_override(out_param_address);
+  }
+}
