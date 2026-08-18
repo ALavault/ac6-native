@@ -37,6 +37,44 @@ inline void trace_service_registry(ac6demo::GuestMemory &memory,
   }
 }
 
+// The ring publisher sub_821B9BC8 gates on bit 1 of device byte 10941, and the
+// device is whatever the guest stored through the VdGlobalDevice import slot.
+inline void trace_device_flags(ac6demo::GuestMemory &memory,
+                               std::uint64_t tick) {
+  static std::uint32_t previous = 0xFFFFFFFFU;
+  if (!memory.mapped(0x82000608U, 4U)) {
+    return;
+  }
+  const auto slot = memory.load_u32(0x82000608U);
+  if (slot == 0U || !memory.mapped(slot, 4U)) {
+    return;
+  }
+  const auto device = memory.load_u32(slot);
+  if (device == 0U || !memory.mapped(device, 22300U)) {
+    return;
+  }
+  const auto flags = memory.load_u8(device + 10941U);
+  const std::uint32_t key = (device ^ (static_cast<std::uint32_t>(flags) << 24));
+  if (key == previous && (tick % 2000U) != 0U) {
+    return;
+  }
+  previous = key;
+  std::fprintf(stderr,
+               "AC6_DEVFLAGS tick=%llu slot=0x%08X device=0x%08X "
+               "byte10941=0x%02X bit1=%d f21508=0x%08X f5460=0x%08X\n",
+               static_cast<unsigned long long>(tick), slot, device, flags,
+               (flags & 0x02U) ? 1 : 0, memory.load_u32(device + 21508U),
+               memory.load_u32(device + 21600U));
+  // sub_821AD378, the only reached writer of device+21508, switches on
+  // [0x827AD2F0] - 11 and writes nothing unless that lands in 0..8.
+  if (memory.mapped(0x827AD2F0U, 4U)) {
+    const auto mode = memory.load_u32(0x827AD2F0U);
+    std::fprintf(stderr, "AC6_DISPLAYMODE tick=%llu [0x827AD2F0]=%u case=%d\n",
+                 static_cast<unsigned long long>(tick), mode,
+                 static_cast<int>(mode) - 11);
+  }
+}
+
 inline void trace_message_listeners(ac6demo::GuestMemory &memory,
                                     std::uint64_t tick) {
   // SendMsgI broadcasts to the listener array at 0x826DF800 and calls
@@ -127,6 +165,7 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
             const auto mode_state = memory.load_u32(mode + 12U);
             trace_service_registry(memory, tick);
             trace_message_listeners(memory, tick);
+            trace_device_flags(memory, tick);
             // GetCurrentMode / GetCurrentMission / GetCurrentLevel -- the three
             // script commands the movie issues after START -- all read the
             // singleton at [0x823C27E0]: mode is [gs+120], the other two derive

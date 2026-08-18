@@ -51,4 +51,14 @@ constexpr std::uint32_t tick_count_milliseconds(std::uint64_t tick) noexcept {
   return static_cast<std::uint32_t>((tick * 1000ULL) / 60ULL);
 }
 
+// VdGlobalDevice, ordinal 446: the slot the guest writes its device object
+// into (sub_821C64E8) and reads it back from (sub_821C5190). Unpatched, that
+// round trip goes through 0x000101BE and works by accident.
+constexpr std::uint32_t kVdGlobalDeviceSlot = 0x82000608U;
+
+// Byte 10941 of the device object is a flag word; bit 1 gates the ring
+// publication path in sub_821B9BC8, which runs 47,238 times across a
+// 12,000-tick run while the ring write pointer never leaves 25.
+constexpr std::uint32_t kDeviceFlagsByte = 10941U;
+
 } // namespace ac6demo::guest_bridge_detail
