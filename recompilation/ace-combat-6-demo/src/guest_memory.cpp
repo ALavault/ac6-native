@@ -62,6 +62,42 @@ void watch_frontbuffer_host_write(std::uint32_t address, std::size_t size,
                resolved && info.dli_sname != nullptr ? info.dli_sname : "");
 }
 
+// General-purpose write watcher for a single ad-hoc range, unlike the fixed
+// IB/frontbuffer watchers above: the range comes from AC6_DEMO_WATCH_ADDR_LO
+// and AC6_DEMO_WATCH_ADDR_HI (any base std::strtoul accepts, so "0x..." or
+// plain decimal), because the address under investigation changes with every
+// allocator run and isn't worth a new hardcoded watcher each time.
+void watch_addr_range_host_write(std::uint32_t address, std::size_t size,
+                                 std::uint64_t value, void *caller) noexcept {
+  static const char *lo_str = std::getenv("AC6_DEMO_WATCH_ADDR_LO");
+  static const char *hi_str = std::getenv("AC6_DEMO_WATCH_ADDR_HI");
+  static const bool enabled = lo_str != nullptr && hi_str != nullptr;
+  if (!enabled) {
+    return;
+  }
+  static const auto lo =
+      static_cast<std::uint32_t>(std::strtoul(lo_str, nullptr, 0));
+  static const auto hi =
+      static_cast<std::uint32_t>(std::strtoul(hi_str, nullptr, 0));
+  const std::uint64_t end = static_cast<std::uint64_t>(address) + size;
+  if (address >= hi || end <= lo) {
+    return;
+  }
+  Dl_info info{};
+  const bool resolved = dladdr(caller, &info) != 0 && info.dli_fbase != nullptr;
+  const auto module_offset = resolved
+                                 ? static_cast<std::uintptr_t>(
+                                       static_cast<const char *>(caller) -
+                                       static_cast<const char *>(info.dli_fbase))
+                                 : 0U;
+  std::fprintf(stderr,
+               "AC6_ADDR_RANGE_HOST_WRITE address=0x%08X size=%zu value=0x%llX "
+               "caller_module_offset=0x%zX symbol=%s\n",
+               address, size, static_cast<unsigned long long>(value),
+               module_offset,
+               resolved && info.dli_sname != nullptr ? info.dli_sname : "");
+}
+
 void watch_frontbuffer_host_read(std::uint32_t address, std::size_t size,
                                  void *caller) noexcept {
   static const bool enabled =
@@ -400,6 +436,7 @@ std::vector<std::byte> GuestMemory::load_bytes(std::uint32_t address,
 
 void GuestMemory::store_u8(std::uint32_t address, std::uint8_t value) {
   watch_ib_host_write(address, 1U, __builtin_return_address(0));
+  watch_addr_range_host_write(address, 1U, value, __builtin_return_address(0));
   if (auto* mmio = find_mmio(address, 1U); mmio != nullptr) {
     bump_generation(address, 1U);
     mmio->write(address, value, 1U);
@@ -415,6 +452,7 @@ void GuestMemory::store_u8(std::uint32_t address, std::uint8_t value) {
 
 void GuestMemory::store_u16(std::uint32_t address, std::uint16_t value) {
   watch_ib_host_write(address, 2U, __builtin_return_address(0));
+  watch_addr_range_host_write(address, 2U, value, __builtin_return_address(0));
   std::array<std::byte, 2> data{};
   write_be16(data, 0U, value);
   if (auto* mmio = find_mmio(address, data.size()); mmio != nullptr) {
@@ -439,6 +477,7 @@ void GuestMemory::store_u16(std::uint32_t address, std::uint16_t value) {
 
 void GuestMemory::store_u32(std::uint32_t address, std::uint32_t value) {
   watch_ib_host_write(address, 4U, __builtin_return_address(0));
+  watch_addr_range_host_write(address, 4U, value, __builtin_return_address(0));
   std::array<std::byte, 4> data{};
   write_be32(data, 0U, value);
   if (auto* mmio = find_mmio(address, data.size()); mmio != nullptr) {
@@ -463,6 +502,7 @@ void GuestMemory::store_u32(std::uint32_t address, std::uint32_t value) {
 
 void GuestMemory::store_u64(std::uint32_t address, std::uint64_t value) {
   watch_ib_host_write(address, 8U, __builtin_return_address(0));
+  watch_addr_range_host_write(address, 8U, value, __builtin_return_address(0));
   std::array<std::byte, 8> data{};
   write_be64(data, 0U, value);
   if (auto* mmio = find_mmio(address, data.size()); mmio != nullptr) {
@@ -488,6 +528,7 @@ void GuestMemory::store_u64(std::uint32_t address, std::uint64_t value) {
 void GuestMemory::store_bytes(std::uint32_t address, std::span<const std::byte> bytes) {
   watch_ib_host_write(address, bytes.size(), __builtin_return_address(0));
   watch_frontbuffer_host_write(address, bytes.size(), __builtin_return_address(0));
+  watch_addr_range_host_write(address, bytes.size(), 0U, __builtin_return_address(0));
   check_range(address, bytes.size());
   std::size_t copied = 0;
   while (copied < bytes.size()) {
