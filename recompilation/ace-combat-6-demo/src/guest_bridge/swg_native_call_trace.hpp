@@ -153,6 +153,44 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
                  current_guest_thread_id, lr, context.r3.u32, context.r4.u32,
                  context.r31.u32, pc_field);
   }
+  // The campaign's long-deferred falsifier: is EndMode's statement
+  // (0x2DCB2024, present in title's own bytecode -- 1fcc88b3 -- and
+  // never fetched by address across every run this campaign has
+  // captured -- 1fcc88b3/b67e7f6f/e4e9b251/74756ffc) causally connected
+  // to the completion trigger (sub_820EA4A8) at all? Force the tracked
+  // execution-context slot's own PC field to EndMode's address exactly
+  // ONCE, at a chosen tick, then let execution run on undisturbed --
+  // the first attempt at this (a per-call, non-one-shot version) forced
+  // pc backward on every subsequent box-call too, which kept
+  // sub_823246C0's own inner loop's "pc < end" bound satisfied forever
+  // (EndMode sits *before* the idle loop's own entry in memory, so the
+  // jump is backward, not past the bound) and produced 15129 identical
+  // forced writes in a single tick with no dispatcher ever regaining
+  // control. A real one-shot avoids that: after the single write, the
+  // interpreter is free to fetch/advance/dispatch EndMode's own words
+  // exactly like any other statement. Unlike every other instrument in
+  // this file (except the SendMsgI/mission overrides above), this
+  // WRITES guest memory to test a hypothesis, not observe one. Opt-in,
+  // off by default, no effect unless the env var is set.
+  if (guest_address == 0x820DA488U) {
+    static const char *tick_str = std::getenv("AC6_DEMO_FORCE_ENDMODE_AT_TICK");
+    if (tick_str != nullptr) {
+      static const auto target_tick =
+          static_cast<std::uint64_t>(std::strtoull(tick_str, nullptr, 0));
+      static bool already_fired = false;
+      if (!already_fired && require_bridge().tick() == target_tick &&
+          context.r31.u32 == 0x2E3DFA08U) {
+        already_fired = true;
+        require_bridge().memory().store_u32(context.r31.u32 + 20U,
+                                             0x2DCB2024U);
+        std::fprintf(stderr,
+                     "AC6_SWG_ENDMODE_FORCED tick=%llu slot=0x%08X "
+                     "pc=0x2DCB2024\n",
+                     static_cast<unsigned long long>(require_bridge().tick()),
+                     context.r31.u32);
+      }
+    }
+  }
   // AC6_DEMO_THE_STATEMENT_SEQUENCER_COPIES_LITERAL_KEYS_FROM_TYPED_RECORDS.md's
   // own named next step: sub_820DEDF8 (the literal-key copy) is reached
   // only through its caller's own vtable slot 20 -- log r4 (the "source
