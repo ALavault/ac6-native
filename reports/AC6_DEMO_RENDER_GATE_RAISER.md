@@ -65,3 +65,39 @@ reste nulle, donc la fonction par trame retourne aussitôt, 5 463 fois.
 - Pourquoi le slot `+0x14` n'est pas appelé : `0x820A45E0` n'a aucun appelant
   statique, donc l'appel est virtuel et son site reste à trouver.
 - Ce que valent les champs `13` et le pointeur `+0x4138` du descripteur.
+
+## Le sous-système entier est hors de portée, pas un appel
+
+Les sept fonctions de l'image qui construisent le déplacement `3248`
+(`0x0CB0`, celui de la vtable `CX360UnitManager` en `0x82000CB0`) :
+
+```text
+0x82093840  0x82095958  0x82099F20
+0x82174888  0x82176930  0x8217C0E8  0x8217C258
+```
+
+**Aucune n'est atteinte** par la route par défaut ; **toutes** sont exécutées
+par l'oracle. Ce n'est donc pas un appel virtuel manquant : l'instance de
+`CX360UnitManager` n'existe jamais dans ce runtime.
+
+## Ce que cela apporte à la classification de portée
+
+`reports/AC6_DEMO_RETAIL_SCOPE_CORRECTION.md` distingue à juste titre
+« compilé dans le XEX » de « atteignable depuis le parcours DemoOffline
+qualifié », et met en garde contre la confusion des deux.
+
+L'ensemble exécuté par l'oracle tranche cette question de manière
+opérationnelle : **l'oracle a exécuté le XEX de la démo**, donc tout ce qu'il
+exécute est `demo-active` par construction, quelle que soit la portée du
+parcours actuellement atteint par le port. `CX360UnitManager` en fait partie.
+Ce n'est pas une ancre retail à conserver de côté : c'est du code que la démo
+elle-même exécute et que ce port n'atteint pas encore.
+
+## Divergence de méthode, notée
+
+`reports/AC6_DEMO_PAL_OPEN_BOUNDARIES_NEXT.md` propose de fermer le producteur
+par une capture au point d'arrêt sur `0x821ADAB8` (r3, r4, LR, pile, tick).
+Les cycles 1603 à 1605 ont établi qu'aucun débogueur guest n'est disponible
+sur Xenia Linux — `Stack walker unimplemented on posix`, `--debug` désactivé.
+Cette capture n'est donc pas réalisable en l'état, alors que la recherche
+statique menée ici a nommé le lève-événement sans elle.
