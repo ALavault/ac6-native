@@ -159,12 +159,31 @@ void GuestBridge::prepare(const ThreadImage &image) {
     const auto offset = (mapping->guest - PPC_CODE_BASE) * 2ULL;
     std::memcpy(table + offset, &mapping->host, sizeof(mapping->host));
   }
+  // Last, so that every address this function already handed out keeps the
+  // value it had before this bridge published any kernel data import. Moving
+  // it earlier shifted the allocator by one page and tripped "unqualified
+  // Xenos scratch writeback target" at tick 0.
+  publish_kernel_data_imports();
   prepared_ = true;
 }
 
 void GuestBridge::set_tick(std::uint64_t tick) noexcept {
   tick_ = tick;
   input_.set_tick(tick);
+  if (ke_timestamp_bundle_ != 0U) {
+    memory_.store_u32(
+        ke_timestamp_bundle_ +
+            ac6demo::guest_bridge_detail::kKeTimeStampBundleTickCount,
+        ac6demo::guest_bridge_detail::tick_count_milliseconds(tick));
+    if ((tick % 200U) == 0U &&
+        std::getenv("AC6_DEMO_WATCH_KERNEL_DATA") != nullptr) {
+      std::fprintf(stderr, "AC6_KERNELDATA tick=%llu TickCount=%u ms\n",
+                   static_cast<unsigned long long>(tick),
+                   memory_.load_u32(
+                       ke_timestamp_bundle_ +
+                       ac6demo::guest_bridge_detail::kKeTimeStampBundleTickCount));
+    }
+  }
   if (active_bridge == this) {
     update_guest_timers(*this);
   }

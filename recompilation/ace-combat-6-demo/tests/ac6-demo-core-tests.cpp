@@ -10,6 +10,8 @@ suite then passes vacuously. Build this target with -UNDEBUG."
 #include "ac6demo/ppc.hpp"
 #include "ac6demo/session.hpp"
 
+#include "../src/guest_bridge/kernel_data_imports.hpp"
+
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -17,6 +19,24 @@ suite then passes vacuously. Build this target with -UNDEBUG."
 #include <limits>
 
 namespace {
+
+// KeTimeStampBundle+16 is the guest's millisecond tick count, read 23,644
+// times across a 12,000-tick run by sub_821A5040. The qualified profile is
+// 60 Hz, the same one ppc.cpp uses for its 50 MHz timebase.
+void test_ke_timestamp_bundle_tick_count() {
+  namespace detail = ac6demo::guest_bridge_detail;
+  assert(detail::kKeTimeStampBundleSlot == 0x82000700U);
+  // (library index 1 << 16) | ordinal 173, the unpatched XEX encoding.
+  assert(detail::kKeTimeStampBundleUnpatched == ((1U << 16) | 173U));
+  assert(detail::kKeTimeStampBundleTickCount == 16U);
+  assert(detail::tick_count_milliseconds(0U) == 0U);
+  assert(detail::tick_count_milliseconds(60U) == 1000U);
+  assert(detail::tick_count_milliseconds(30U) == 500U);
+  assert(detail::tick_count_milliseconds(11999U) == 199983U);
+  // Monotonic across the profile, and not truncated to 32 bits early.
+  assert(detail::tick_count_milliseconds(12000U) >
+         detail::tick_count_milliseconds(11999U));
+}
 
 #ifdef AC6_DEMO_GENERATED_GUEST
 // Guarded because the non-generated build compiles a GuestBridge with no
@@ -403,6 +423,7 @@ int main() {
   assert(std::isfinite(ac6demo::xenon_reciprocal_estimate(3.0F)));
   assert(std::isfinite(ac6demo::xenon_rsqrt_estimate(3.0F)));
 
+  test_ke_timestamp_bundle_tick_count();
 #ifdef AC6_DEMO_GENERATED_GUEST
   test_guest_processor_identity_is_one_hot();
 #endif

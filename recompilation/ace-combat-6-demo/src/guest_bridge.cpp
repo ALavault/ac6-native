@@ -1152,6 +1152,7 @@ timer_period_to_ticks(std::uint32_t period_ms) noexcept {
 #include "guest_bridge/import_journal.hpp"
 } // namespace
 // clang-format off
+#include "guest_bridge/kernel_data_imports.hpp"
 #include "guest_bridge/constructor.hpp"
 #include "guest_bridge/scheduler.hpp"
 #include "guest_bridge/point_draw_trace.hpp"

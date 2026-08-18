@@ -488,6 +488,11 @@ private:
     void *fiber_state{};
   };
 
+  // Resolves the XEX kernel data-import slots this bridge can qualify. See
+  // src/guest_bridge/kernel_data_imports.hpp for what is patched and why the
+  // rest is not.
+  void publish_kernel_data_imports();
+
   void execute_guest_thread(GuestThread &thread);
   void initialize_guest_fiber(GuestThread &thread);
   void destroy_guest_fiber(GuestThread &thread) noexcept;
@@ -502,6 +507,7 @@ private:
   bool function_reachability_enabled_{};
   std::map<std::uint32_t, GuestFunctionReachability> function_reachability_;
   std::uint32_t next_allocation_{0x10000000U};
+  std::uint32_t ke_timestamp_bundle_{};
   std::uint32_t xma_context_next_index_{};
   std::array<bool, 320U> xma_context_active_{};
   // Test-only PAL XMA probe: expected logical bit and last physical context

@@ -456,6 +456,36 @@ bool GuestBridge::reference_guest_thread(std::uint32_t handle,
   return true;
 }
 
+void GuestBridge::publish_kernel_data_imports() {
+  namespace detail = ac6demo::guest_bridge_detail;
+  if (ke_timestamp_bundle_ != 0U ||
+      !memory_.mapped(detail::kKeTimeStampBundleSlot, 4U)) {
+    return;
+  }
+  const auto slot = memory_.load_u32(detail::kKeTimeStampBundleSlot);
+  if (slot != detail::kKeTimeStampBundleUnpatched) {
+    // Someone already wrote this slot. Overwriting it would discard a value
+    // this bridge did not put there, so refuse rather than guess.
+    throw RuntimeTrap("KeTimeStampBundle import slot is not the unpatched "
+                      "encoding",
+                      tick_, 0, slot);
+  }
+  const auto bundle = detail::kKernelDataImportsBase;
+  if (memory_.mapped(bundle, detail::kKernelDataImportsSize)) {
+    throw RuntimeTrap("kernel data import page is already mapped", tick_, 0,
+                      bundle);
+  }
+  memory_.map_zero(bundle, detail::kKernelDataImportsSize);
+  memory_.store_u32(detail::kKeTimeStampBundleSlot, bundle);
+  ke_timestamp_bundle_ = bundle;
+  if (std::getenv("AC6_DEMO_WATCH_KERNEL_DATA") != nullptr) {
+    std::fprintf(stderr,
+                 "AC6_KERNELDATA KeTimeStampBundle slot=0x%08X was=0x%08X "
+                 "now=0x%08X\n",
+                 detail::kKeTimeStampBundleSlot, slot, bundle);
+  }
+}
+
 bool GuestBridge::pin_guest_thread_processor(std::uint32_t object,
                                              std::uint32_t mask) noexcept {
   // One-hot over the six hardware threads the XDK documents; anything else is
