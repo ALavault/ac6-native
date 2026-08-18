@@ -1,5 +1,96 @@
 #pragma once
 
+// Reimplements sub_820D4DB8/sub_820D4748/sub_820DFD28's own algorithm
+// (read directly, AC6_DEMO_THE_SYMBOL_TABLE_IS_AN_MSVC_MAP_KEYED_BY_TWO_INTEGERS.md
+// and AC6_DEMO_CATEGORY_IS_THE_NATIVE_FUNCTION_ID_TITLE_NEVER_EVALUATES_CATEGORY_1.md):
+// an MSVC xtree lower_bound descent (node layout: _Left=+0, _Parent=+4,
+// _Right=+8, _Isnil=+33, key struct at +12 with category at its own +4 and
+// id at its own +12 -- node-relative +16/+24), then an equality check via
+// "not(key < found)" given lower_bound's "found >= key" invariant. Ignores
+// the comparator's -1-wildcard branches: never needed, no wildcard has
+// been seen live, and this is a read-only diagnostic, not a copy of the
+// guest's own execution path.
+inline std::uint32_t find_swg_symbol_node(ac6demo::GuestMemory &memory,
+                                           std::uint32_t root,
+                                           std::uint32_t category,
+                                           std::uint32_t id) {
+  const auto less = [](std::uint32_t cat_a, std::uint32_t id_a,
+                        std::uint32_t cat_b, std::uint32_t id_b) {
+    return cat_a != cat_b ? cat_a < cat_b : id_a < id_b;
+  };
+  const auto my_head = memory.load_u32(root + 4U);
+  auto candidate = my_head;
+  auto node = memory.load_u32(my_head + 4U);
+  for (int guard = 0; guard < 64 && memory.load_u8(node + 33U) == 0U; ++guard) {
+    const auto node_category = memory.load_u32(node + 16U);
+    const auto node_id = memory.load_u32(node + 24U);
+    // sub_820D4DB8 calls the comparator as comparator(node_key, search_key)
+    // -- node first -- not the other way around; getting this backwards
+    // makes every descent go the wrong way and every lookup miss.
+    if (less(node_category, node_id, category, id)) {
+      node = memory.load_u32(node + 8U);
+    } else {
+      candidate = node;
+      node = memory.load_u32(node + 0U);
+    }
+  }
+  if (candidate == my_head) {
+    return 0U;
+  }
+  const auto candidate_category = memory.load_u32(candidate + 16U);
+  const auto candidate_id = memory.load_u32(candidate + 24U);
+  return less(category, id, candidate_category, candidate_id) ? 0U : candidate;
+}
+
+// f7c4e68f's type check is [[node+28]+4] -- node+28 holds a VALUE POINTER
+// (the mapped_type of this node's pair, stored right after the 16-byte key
+// struct that starts at node+12), and the type tag is 4 bytes into
+// *that* object, not node+32. Collapsing the pointer hop into one offset
+// add was this instrument's first-draft bug; corrected here.
+inline std::uint32_t resolve_swg_symbol_type_tag(ac6demo::GuestMemory &memory,
+                                                   std::uint32_t node) {
+  if (node == 0U) {
+    return 0U;
+  }
+  const auto value_pointer = memory.load_u32(node + 28U);
+  return value_pointer != 0U ? memory.load_u32(value_pointer + 4U) : 0U;
+}
+
+// AC6_DEMO_CATEGORY_IS_THE_NATIVE_FUNCTION_ID_TITLE_NEVER_EVALUATES_CATEGORY_1.md
+// left open whether category 1 (the completion trigger) is absent from
+// title's script entirely, or present but unreached -- this answers it
+// directly by walking every entry the map actually holds, independent of
+// what the guest happens to evaluate. In-order traversal, explicit stack
+// (guest trees are small; this is a diagnostic bound, not a guess at real
+// depth).
+inline void dump_swg_symbol_table(ac6demo::GuestMemory &memory,
+                                   std::uint32_t root, std::uint32_t context) {
+  const auto my_head = memory.load_u32(root + 4U);
+  std::array<std::uint32_t, 64> stack{};
+  std::size_t depth = 0;
+  auto node = memory.load_u32(my_head + 4U);
+  int visited = 0;
+  while ((depth > 0U || memory.load_u8(node + 33U) == 0U) && visited < 256) {
+    while (memory.load_u8(node + 33U) == 0U && depth < stack.size()) {
+      stack[depth++] = node;
+      node = memory.load_u32(node + 0U);
+    }
+    if (depth == 0U) {
+      break;
+    }
+    node = stack[--depth];
+    const auto category = memory.load_u32(node + 16U);
+    const auto id = memory.load_u32(node + 24U);
+    const auto type_tag = resolve_swg_symbol_type_tag(memory, node);
+    std::fprintf(stderr,
+                 "AC6_SWG_SYMBOL_TABLE_ENTRY context=0x%08X node=0x%08X "
+                 "category=0x%08X id=0x%08X type_tag=0x%08X\n",
+                 context, node, category, id, type_tag);
+    ++visited;
+    node = memory.load_u32(node + 8U);
+  }
+}
+
 // sub_820E8F90's own native-call dispatch: mtctr r10=[r23+12]; bctrl, with
 // r23 still holding the 16-byte command-table row (table_base +
 // command_index*16) it was assigned to at function entry and never
@@ -42,11 +133,32 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
     const auto key_pointer = context.r6.u32;
     const auto category = key_pointer != 0U ? memory.load_u32(key_pointer + 4U) : 0U;
     const auto id = key_pointer != 0U ? memory.load_u32(key_pointer + 12U) : 0U;
+    const auto node = find_swg_symbol_node(memory, context.r4.u32 + 36U, category, id);
+    const auto type_tag = resolve_swg_symbol_type_tag(memory, node);
     std::fprintf(stderr,
                  "AC6_SWG_LOOKUP_KEY tick=%llu thread=%u lr=0x%08X "
-                 "key_pointer=0x%08X category=0x%08X id=0x%08X\n",
+                 "key_pointer=0x%08X category=0x%08X id=0x%08X node=0x%08X "
+                 "type_tag=0x%08X\n",
                  static_cast<unsigned long long>(tick), current_guest_thread_id,
-                 lr, key_pointer, category, id);
+                 lr, key_pointer, category, id, node, type_tag);
+    // AC6_DEMO_CATEGORY_IS_THE_NATIVE_FUNCTION_ID_TITLE_NEVER_EVALUATES_CATEGORY_1.md's
+    // open (a)-vs-(b) question: is category 1 absent from this context's
+    // script entirely, or present but unreached? Dump the full table once
+    // per distinct context (a fixed small seen-set -- this subsystem has
+    // exactly two live contexts all campaign, startup's and title's).
+    if (std::getenv("AC6_DEMO_DUMP_SWG_SYMBOL_TABLE") != nullptr) {
+      static std::array<std::uint32_t, 4> dumped_contexts{};
+      static std::size_t dumped_count = 0;
+      const auto context_address = context.r4.u32;
+      bool already_dumped = false;
+      for (std::size_t i = 0; i < dumped_count; ++i) {
+        already_dumped = already_dumped || dumped_contexts[i] == context_address;
+      }
+      if (!already_dumped && dumped_count < dumped_contexts.size()) {
+        dumped_contexts[dumped_count++] = context_address;
+        dump_swg_symbol_table(memory, context.r4.u32 + 36U, context_address);
+      }
+    }
   }
   if (std::getenv("AC6_DEMO_WATCH_SWG_NATIVE_CALL") == nullptr ||
       lr != 0x820E9130U) {
