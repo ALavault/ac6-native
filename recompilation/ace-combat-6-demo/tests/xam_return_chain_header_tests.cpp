@@ -129,7 +129,7 @@ void test_scalar_vector_and_target() {
   arm();
   record_xam_return_chain("store32", kXamReturnExclusiveAddress, 4U,
                           0x829D15BCU, 7U, kThread, 0U,
-                          "__imp__sub_822F5E58", 3948U);
+                          "__imp__sub_822F5E58", 13109U);
   assert(xam_return_chain_state.accesses.load() == 1U);
   assert(xam_return_chain_state.phase.load() == 2U);
   record_xam_return_chain("load8", 0x3000U, 1U, 1U, 8U, kThread, 0U, "f",
@@ -185,7 +185,7 @@ int main() {
     initialize_xam_return_chain_watch();
     arm_xam_return_chain(kXamReturnCaller, 1U, kThread, 0U, 0U,
                          kXamReturnControllerObject, 0U, payload.data());
-    AC6_PPC_SET_LOAD_SITE("__imp__sub_822F5E58", 3948U);
+    AC6_PPC_SET_LOAD_SITE("__imp__sub_822F5E58", 13109U);
     record_xam_return_chain("store32", kXamReturnExclusiveAddress, 4U,
                             0x12345678U, 2U, kThread, 0U,
                             probe_function, probe_line);

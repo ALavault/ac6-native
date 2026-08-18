@@ -1084,3 +1084,1375 @@ size = 0x28
 kind = "callable-inner-chunk"
 evidence = "canonical-ghidra:ghidra-projects/ace-combat-6-demo/Default.xex language=PowerPC:BE:64:Xenon; contained by confirmed chunk 0x822F2EA8..0x822F2F1B; predecessor=0x822F2EBC blr terminal; terminal=0x822F2EE4 blr; next sibling=0x822F2EE8; shared RTTI vtable slot=4 including 0x82029108/0x82029158/0x8202A99C/0x8202A9D8/0x8202AA74; reached by 0x822DB98C bctrl with LR=0x822DB990 at tick=266 thread=1"
 byte_sha256 = "8dd9461fcc14589eacebe3a0ddbae1b06acd7359ea3acf98a727663fcf04cc47"
+
+# --- Interior entries the oracle executes and codegen cannot emit ---------
+# One pass, so the generated-line renumbering is paid once. The oracle gave
+# the candidate addresses only; owner, extent and hash come from the canonical
+# Ghidra atlas and the extracted basefile. Each extent stops at the first
+# blr/bctr and at the next declared function start, never spans a switch
+# label, and no local branch crosses the entry -- the four refusals the
+# codegen raised while this was derived.
+[[function]]
+address = 0x820948B8
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820948B0 range 0x820948B0..0x82094903; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "626acc03d669937b95ff10b50ed484118316fb32708eb2d56c0dce39df2418bf"
+
+[[function]]
+address = 0x820948D0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820948B0 range 0x820948B0..0x82094903; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "5d02d04c75bb9d2dbde3d7718e041aba8f14c90ed21cca63bd31e95dd8dde905"
+
+[[function]]
+address = 0x820948E0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820948B0 range 0x820948B0..0x82094903; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "39e01ea21eda18f5d5055aabaac99ec380f8eda9a084319467167f11fb1393c7"
+
+[[function]]
+address = 0x820A11B0
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820A11A8 range 0x820A11A8..0x820A11C3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "d95c6151639156e52bfb52566c0495bac75b213f49634a3562009197a1a55aa6"
+
+[[function]]
+address = 0x820A7560
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820A7558 range 0x820A7558..0x820A7573; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7b86a3d2263cb3d26146d056cc96ae7e60a752aa91de787a69050b3418ca528c"
+
+[[function]]
+address = 0x820A7568
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820A7558 range 0x820A7558..0x820A7573; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "0474cd4c0093509ee95a06873d9e7973cfb097f0275d0983306f1d9e5f509be3"
+
+[[function]]
+address = 0x820A9D40
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820A9D28 range 0x820A9D28..0x820A9D7B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "3c3521686f74b4f2b4825b3f906c734c9baa2f92c8f46da6e78d212a094690bb"
+
+[[function]]
+address = 0x820A9D58
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820A9D28 range 0x820A9D28..0x820A9D7B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "24d2e035282cd3bab3772841e3855e579dae1592afb9f760757f569086df8b10"
+
+[[function]]
+address = 0x820AE3B0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820AE3A0 range 0x820AE3A0..0x820AE3BF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "17d14d6f4089c7da379861bc300f12ac13a78aec716d5821ef3fc820ba751c38"
+
+[[function]]
+address = 0x820AE618
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820AE600 range 0x820AE600..0x820AE627; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "21ac9d79aa99401f050f501861fc70a36833f99e03aaf0504cda76df333aa179"
+
+[[function]]
+address = 0x820B23D8
+size = 0x3C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820B2330 range 0x820B2330..0x820B2413; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "e4e595460e636c434c18887a33ca484c4580f3674e8d70251c7392058cdc2e44"
+
+[[function]]
+address = 0x820B9F00
+size = 0x50
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820B9C00 range 0x820B9C00..0x820B9F87; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "a049692934e77780c5b9010978c902199dfb814a209149cf67d928d1ef1ffe28"
+
+[[function]]
+address = 0x820B9F58
+size = 0x30
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820B9C00 range 0x820B9C00..0x820B9F87; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6921233fd463ea9c342ba03c0f504648aa26212a84bd823a697afded82daec42"
+
+[[function]]
+address = 0x820BBAE8
+size = 0xA8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820BBA28 range 0x820BBA28..0x820BBB8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "620be8fa5ac6b7efc7f1c56f57d6c4904ffcfedcbd36075b3131979e6e2f17a9"
+
+[[function]]
+address = 0x820BC880
+size = 0x30
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820BC798 range 0x820BC798..0x820BC8AF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f68feb096890d7b1bbf464a000151cce022b1405418235a00a6f0c325bc2b185"
+
+[[function]]
+address = 0x820BD1F0
+size = 0x54
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820BD1A0 range 0x820BD1A0..0x820BD243; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6497da899c7c4a41e078f8f5b87159d87133236fcea4b24a600fee78710edfeb"
+
+[[function]]
+address = 0x820D3270
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820D3230 range 0x820D3230..0x820D3363; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f34c6f1f77631dc7a6943f70fbaa060f2b29ee0e385500993ba985a98d0e084e"
+
+[[function]]
+address = 0x820D3280
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820D3230 range 0x820D3230..0x820D3363; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "9e73257271845c73ed241038715e0e4d8d91d767bab7a2a93a219f1babc572a8"
+
+[[function]]
+address = 0x820D32D0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820D3230 range 0x820D3230..0x820D3363; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "9d59ca19b3402606588c7337b6f2f0839c89a54d7375ecb895253ef64b78a620"
+
+[[function]]
+address = 0x820D3300
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820D3230 range 0x820D3230..0x820D3363; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "2ceea41aa893285066f704a1744a7aa658e9dbc84a5a144a488c937eccaec3f6"
+
+[[function]]
+address = 0x820D3310
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820D3230 range 0x820D3230..0x820D3363; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "8018a855aaf23aa448ea5acac2fbdc00107cdd658bbc497035361fce6f49556c"
+
+[[function]]
+address = 0x820D3320
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820D3230 range 0x820D3230..0x820D3363; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "829ec6aaa88b2ebb142acfd3ec48057553b05b59a7ef3254f8ba632b086825c9"
+
+[[function]]
+address = 0x820D3710
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820D36F8 range 0x820D36F8..0x820D3747; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "edc806bbf08db12c25f06639d12ef491a91f46ef1b1f84d61e9796b4cf206c6d"
+
+[[function]]
+address = 0x820EC7C0
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EC7B0 range 0x820EC7B0..0x820EC7D3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b830d8d0b6c6393c1f4ff442b00fe377c6b4d1249beb8868bae16fd54546b7cc"
+
+[[function]]
+address = 0x820ED410
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820ED408 range 0x820ED408..0x820ED477; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "83598afbddf0e5d3afc2b62359b0d524dc3f2811e9545149345f9d2e15b0a9b1"
+
+[[function]]
+address = 0x820ED500
+size = 0x34
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820ED4F8 range 0x820ED4F8..0x820ED533; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "9fc2d6cf1282e1905d94b51693349a1bd269aaea6a0affd54c970ba7730ef3aa"
+
+[[function]]
+address = 0x820ED578
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820ED570 range 0x820ED570..0x820ED593; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "cdbfc08be0635c6ec8876b590231f97273b8b39cd48966c93836f121f643f9d9"
+
+[[function]]
+address = 0x820ED588
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820ED570 range 0x820ED570..0x820ED593; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "430b3cbdba948f966a8d8bddadb0ec499c758f92f8452730ac44fe85030220f9"
+
+[[function]]
+address = 0x820ED5B0
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820ED598 range 0x820ED598..0x820ED5D3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6a9216ab7e04658ad64b345025c10e0347bc199d4d1c222bb2536fb5aa7340a7"
+
+[[function]]
+address = 0x820EE3B8
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f74b827b967a05f93db8087d106066680a1e643b0c513d1e0fa5d26a0591e033"
+
+[[function]]
+address = 0x820EE3C8
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6afb236d6580e58b745482f546cb8af4f99105a0ee707c6ed35bc6a7e08a9c55"
+
+[[function]]
+address = 0x820EE3D8
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "cf5abb1dd4da430ef09bd8eb07cdc5481758038a4a4c525b58f7fe8e92f3ddf0"
+
+[[function]]
+address = 0x820EE3F8
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "8afd7db6e7941a8576bd49ec28f88a256966fdfb88f8aecef2a7d8d6fde35abe"
+
+[[function]]
+address = 0x820EE400
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6891b844600662ece7a17db4c9128a81e25f36a7894f9b3163ff53711b2605df"
+
+[[function]]
+address = 0x820EE418
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "622cccf083729f64371a1bfc0a9f8a123273dd202eb0295089755bcf9ce900b2"
+
+[[function]]
+address = 0x820EE420
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "69a35189fee1a46fcb5569f2fd574548586d68a33615b42478126dc5a11b79a6"
+
+[[function]]
+address = 0x820EE428
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "2f009122a77b4be364149bb398343832e6918b7be8bbe32423bf7a5b0264dd1a"
+
+[[function]]
+address = 0x820EE430
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "ca3bd54f20c830453f8e73d61a645915c6c01ff0001dc8014518a69b1b38f509"
+
+[[function]]
+address = 0x820EE438
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "a479841a2f309ce3acfb21d028111b58d9313f064c5036b09477b0934386bec6"
+
+[[function]]
+address = 0x820EE450
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "e9c57d27d277e23810a21b0f0ef86f5d2c2e8450b241569d5e137bcfadac4a37"
+
+[[function]]
+address = 0x820EE458
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7f9a79eb1b2b7484d89bd94591d301da6807d0965fbcd5e3cb39b1d2acee46a5"
+
+[[function]]
+address = 0x820EE460
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "904e52bd3707f04d837cf97c38636b25f60e866d88c5b830761630104997579b"
+
+[[function]]
+address = 0x820EE478
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "82325d8e82dbd5183cfef9957e912c314cd13f7ab2b306793f9b7bac43c223aa"
+
+[[function]]
+address = 0x820EE488
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "0b607c8e42130b1fe9c8360e08128fe0a6c45208b02fc47013deb8a14a0e68d6"
+
+[[function]]
+address = 0x820EE4D8
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x820EE3A8 range 0x820EE3A8..0x820EE50B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "69c8558f77b2866b79a456012bb28bf8620dfee33568c9844b17f1c6d3c6e901"
+
+[[function]]
+address = 0x82104868
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82104840 range 0x82104840..0x8210488B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b18be748278eda833cc8aedb44b324b93b224daf65a773a8e30d949d3b334667"
+
+[[function]]
+address = 0x82104960
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82104950 range 0x82104950..0x821049AB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "e6fd6ce82b51ff0205e3b246e6f45b290fdff10a94aec1ffefefdae994cb8176"
+
+[[function]]
+address = 0x82104970
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82104950 range 0x82104950..0x821049AB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f3ac34c767b45ec8aa911b84c5c61e70de7bb8640196ca78f12ff73612bfdc08"
+
+[[function]]
+address = 0x82105998
+size = 0x54
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82105970 range 0x82105970..0x821059EB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "0bb3caaf1f72471965f3720b2ede570dbb5b5dd4ea4a212ec95ffed470d61cf9"
+
+[[function]]
+address = 0x82106370
+size = 0x48
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821062E8 range 0x821062E8..0x8210640B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "ebc75f3708e34822d2931ff8a609479a9a72f5d8407ed0878081f41dee50dc52"
+
+[[function]]
+address = 0x82118EB8
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82118D18 range 0x82118D18..0x82118F9B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "a09835d81e77bfc25f1d1f841947a2bf7f4230e1c41cbe379ed3c9c2a62aca23"
+
+[[function]]
+address = 0x821658B0
+size = 0x40
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82165858 range 0x82165858..0x821658F3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "4b387944b58ece11060795500146a15c27de1382162f58c2b076463c29c3f96a"
+
+[[function]]
+address = 0x8216B268
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8216B258 range 0x8216B258..0x8216B273; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "5eb50fa78d0531e13a39e44041b6de96eb5093881e6df6e2aed23554dab0e741"
+
+[[function]]
+address = 0x8216B3D8
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8216B3D0 range 0x8216B3D0..0x8216B3DF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6481fa095246d29ef0c7de30b2c6a273054c59b8187d49359738638b0dfb2221"
+
+[[function]]
+address = 0x82173BC8
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82173BB8 range 0x82173BB8..0x82173BEB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "2a9f7037fa00f7e3a5291df3b35a3b17bba5f80c8d69ebf2961017b00c77bf92"
+
+[[function]]
+address = 0x8219CE18
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8219CE10 range 0x8219CE10..0x8219CE1F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "8a6b700861c94b9c51ba60fc116fc77af9890a5856bbbde7ccdb6a7909ec135d"
+
+[[function]]
+address = 0x821AC618
+size = 0x38
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821AC60C range 0x821AC60C..0x821AC64F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7f5ad3c31bc662ad178793762cb1d9071482925dcf4474e399652119d04e59d5"
+
+[[function]]
+address = 0x821CD038
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821CD034 range 0x821CD034..0x821CD05B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "e48ee649050c896add0215ae1328a57343262c8925e85b7aa1974888ab2daf75"
+
+[[function]]
+address = 0x821CD0B0
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821CD0AC range 0x821CD0AC..0x821CD0D3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7c132e0a41484aa63a4c8990d5d69bcb5f63d13e6ce12546ce21b5318e856790"
+
+[[function]]
+address = 0x821CD170
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821CD16C range 0x821CD16C..0x821CD193; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "15c3205905d45971233b544f69b36057f22f62ea48fc4e464aeed985ff7670a7"
+
+[[function]]
+address = 0x821F0EA8
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F0EA0 range 0x821F0EA0..0x821F0EEB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b2d8212f47a9d4e706120fd54b8633b3416691b0830dbb48f1ad30c8c06299d5"
+
+[[function]]
+address = 0x821F0EB0
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F0EA0 range 0x821F0EA0..0x821F0EEB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "086126961645fe7e7e70864248985f10141e6547deb500749793d55247e95ea5"
+
+[[function]]
+address = 0x821F0EC8
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F0EA0 range 0x821F0EA0..0x821F0EEB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "df4187a7bfad39c55090e7d39a5571fe80f78923f0adf33d27eeab17864b219a"
+
+[[function]]
+address = 0x821F2FF0
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F2FC8 range 0x821F2FC8..0x821F2FF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "59d23d52e0e75dd8162f8bba009f22ee05aa94c4c59c6b04f72ef79cfabf5de9"
+
+[[function]]
+address = 0x821F3238
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F3230 range 0x821F3230..0x821F326B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6799387b07ec5c0684afe7d707378ab225895ba373099cd4a37d7e2f92105dd7"
+
+[[function]]
+address = 0x821F3240
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F3230 range 0x821F3230..0x821F326B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "1019bf0b4b6f4f44858caf08ee14e8f405f0de01d08099996f6343f67d0e30c1"
+
+[[function]]
+address = 0x821F3278
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F3270 range 0x821F3270..0x821F32AB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "1375761e9643fb426c6661ed6caca297ae5f5546904091569d82e9f5b999a4fc"
+
+[[function]]
+address = 0x821F3280
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F3270 range 0x821F3270..0x821F32AB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "4b1adbba55a1169b4d0353e47994b36a8cd6cd40f63ec8ac78008e0d72eee82b"
+
+[[function]]
+address = 0x821F3288
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F3270 range 0x821F3270..0x821F32AB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "60d51181646cc0900c8d3020e88b8925aff6876c492861fa27833014c6b0c5ed"
+
+[[function]]
+address = 0x821F3290
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F3270 range 0x821F3270..0x821F32AB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "de92018e8c4574320cd6e56c9b784e40f588a0ec02137c6910c876f1d1fbbd78"
+
+[[function]]
+address = 0x821F32A0
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821F3270 range 0x821F3270..0x821F32AB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "379300f0fe4c8ff5ab53b133fe78d06a03adc656f875e26ead8222f790e6c586"
+
+[[function]]
+address = 0x821FD428
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821FD408 range 0x821FD408..0x821FD433; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b9fd8d52778f6362fcc10260c9cd284aa32f6decb3889b9a45f01a79729c1589"
+
+[[function]]
+address = 0x821FD468
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821FD450 range 0x821FD450..0x821FD47B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "fc79983090503f4665e0479911bda5377b0e4f2e5bd1171962c7aff8df73bad4"
+
+[[function]]
+address = 0x821FDD38
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x821FDD28 range 0x821FDD28..0x821FDD5B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "61342ff6189287ce29543ab4a8c37b7a9dad53843c7bf6646cea6785a161fb4e"
+
+[[function]]
+address = 0x82218AE8
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82218AE0 range 0x82218AE0..0x82218AEF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "9fa28ce72aed0ba5f16c320bb262dedacc4745a61aad9f6b5c801e2113b10a2c"
+
+[[function]]
+address = 0x8222F1E8
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8222F1D0 range 0x8222F1D0..0x8222F203; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "121cf84683281b887f114a947b6517a5d832c59b4e63b52ad09394614301a779"
+
+[[function]]
+address = 0x8222F2D8
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8222F2C8 range 0x8222F2C8..0x8222F2F7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "9fd05b772f7ae39e58827f13042fe59a6fc9f7ab09ef44596d78be038ba9fb9a"
+
+[[function]]
+address = 0x82237EF0
+size = 0x78
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82237ED0 range 0x82237ED0..0x82238127; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "a576b21408deeaeb6f45e6587487ab390ffeb7b50227078bbcd5c0a61cf60081"
+
+[[function]]
+address = 0x82238030
+size = 0x78
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82237ED0 range 0x82237ED0..0x82238127; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "28c6dee3fa5c1851fe9a513f839f880a1051ca282fc2c547d98298e1a234990b"
+
+[[function]]
+address = 0x82239C20
+size = 0x30
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82239C08 range 0x82239C08..0x82239C9F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "183a32ea2a5436e10aacea3756992ed99775c808e99ba5963e54d1e0fa93c4e9"
+
+[[function]]
+address = 0x82239C50
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82239C08 range 0x82239C08..0x82239C9F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "ad1e08a3693f0f708fff7c52a0095d1bc5ca6a0a78a281937a1e8d0b342664dc"
+
+[[function]]
+address = 0x82239C78
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82239C08 range 0x82239C08..0x82239C9F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "70e8018f36b217628253b7840b3760508bdf66201166535ebcbe5f3c95a2622d"
+
+[[function]]
+address = 0x82239FD0
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82239FA0 range 0x82239FA0..0x8223A01B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "1aec06a5bec50355247ad0297510db155016e3316c47a07f30e4fe3a79e775a5"
+
+[[function]]
+address = 0x8223A200
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8223A1A8 range 0x8223A1A8..0x8223A237; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "916978808443c489f0b7b1392be7970c8b10499a21b6b54bceaff200b4347dcd"
+
+[[function]]
+address = 0x8223B450
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8223B3A8 range 0x8223B3A8..0x8223B46F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7ab7b4d2cc5fa9efd9786881c296be27c805426363db9ac38b6863815743f661"
+
+[[function]]
+address = 0x8223B460
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8223B3A8 range 0x8223B3A8..0x8223B46F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "c846cdd4b522523ec20f789229d3eaf9f3788b5dcd6a299e9b54b99239ed38c4"
+
+[[function]]
+address = 0x8223D5A0
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8223D590 range 0x8223D590..0x8223D5BF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "5286032757e7c89bf89c3a9ecd9317b4756634e745b2fc44966b3d3d89f5e807"
+
+[[function]]
+address = 0x8223EF50
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8223EF48 range 0x8223EF48..0x8223EF5F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "20ddb786d1ca2d232dd5c5d1ac10e7cd93b6bbafc1bd1da8f7bf132d811bdb47"
+
+[[function]]
+address = 0x8223EF58
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8223EF48 range 0x8223EF48..0x8223EF5F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "23d47e93a5e69b90ae58b78cf1f9a1fadcc47a3f1d79d0610bb123e5f1a73b5a"
+
+[[function]]
+address = 0x82242338
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82242300 range 0x82242300..0x82242343; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "35ec548d0dc566107e467ad96022a9255f809a1b613a3b1dfae7116fbb1cadaa"
+
+[[function]]
+address = 0x822476D0
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822476C8 range 0x822476C8..0x822476FB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "5c919af42cd2b13d294eaea6bb6742f8a8e7e8f2d752acf905eaa9700d5f7da8"
+
+[[function]]
+address = 0x822477B8
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82247790 range 0x82247790..0x822477E3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "db0bbd1c85ebc2623193d6cb43b1a7e54cfee0c5b1ff3c82bee3d92ade3a0eb5"
+
+[[function]]
+address = 0x822477D0
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82247790 range 0x82247790..0x822477E3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "da5821684502ca3bd61396a2930f23df0cf69ce7a76c102660f883264aee5253"
+
+[[function]]
+address = 0x8224D620
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8224D610 range 0x8224D610..0x8224D627; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "45cfeeb0062f9e0966a00c61340be0e611d72dfcf344e1507942d6be90abaf38"
+
+[[function]]
+address = 0x8225ED70
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8225ED68 range 0x8225ED68..0x8225ED87; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "81b601b116d10c0553241480afc13344052c1aba9aeef8f8892698da47740589"
+
+[[function]]
+address = 0x822601B0
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822601A0 range 0x822601A0..0x822601CF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "15d5837b61ddd3e3bccf28038e703d30e52db5c18b8284d19a24193b9f620d3e"
+
+[[function]]
+address = 0x82260608
+size = 0x30
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822605D8 range 0x822605D8..0x82260637; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b54d5399f253eff3fa2443c5b02adb80ecf6fc4cadf00632b0fd37f3a22b2aee"
+
+[[function]]
+address = 0x82261168
+size = 0x4C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82261110 range 0x82261110..0x822611B3; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "903b3d8a16b1a72d611587a6616f073c9d5401be3440f5601018b56894feffac"
+
+[[function]]
+address = 0x82261A10
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82261988 range 0x82261988..0x82261A2B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "fe3b75bc0819e8be790122956236238b87d394b605d8cfae188a068ab03b2717"
+
+[[function]]
+address = 0x8226F0A8
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8226F088 range 0x8226F088..0x8226F0AF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "771290d6f964b96de81a8c769b1f6ca7774351176fc4f83166a5c8b4cda0ec61"
+
+[[function]]
+address = 0x822735A0
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82273598 range 0x82273598..0x822735A7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "765d7010ad7735039be554226cb1339ec17f12f7e6bd13f7fd86e7061fac99fb"
+
+[[function]]
+address = 0x82288250
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82288228 range 0x82288228..0x8228827F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "fade5265503c0b6754556d9fb63902b16a2d83b8d393b1c48e0f6a42301af178"
+
+[[function]]
+address = 0x82288258
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82288228 range 0x82288228..0x8228827F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "a8b77d6f882c1f9275fe9863c32a266b9abc3cc04a35a47d9021f66ece6a2be4"
+
+[[function]]
+address = 0x822A2730
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822A2700 range 0x822A2700..0x822A2743; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "1f1c7da3f2e093a56edf88488c122d480ef0139351281aa11b34392f5e67189e"
+
+[[function]]
+address = 0x822A5738
+size = 0x54
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822A56B0 range 0x822A56B0..0x822A578B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "fc8c7748d1a319da06f5f9d030a3a5cf887cb7b80f025167fb89db1c186f96c0"
+
+[[function]]
+address = 0x822A5908
+size = 0x3C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822A58B0 range 0x822A58B0..0x822A5943; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "adaaae7b24b8f8cec5922e98103d13f5f7265e96a06dc3dc43da44b93c1f7cd3"
+
+[[function]]
+address = 0x822B42A8
+size = 0x40
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B4290 range 0x822B4290..0x822B4323; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "141af1cad3c4dc24ff71177fec7dcb5836f5c2ff234ea789379906dd5911af9e"
+
+[[function]]
+address = 0x822B42C0
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B4290 range 0x822B4290..0x822B4323; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f6498f2d7dc68df5402888ac8ea28392f34128e15607b76fd3ddb6027801294d"
+
+[[function]]
+address = 0x822B42F0
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B4290 range 0x822B4290..0x822B4323; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "bc689815ad9d4eb8048abd1f6e795efc4f9307233e2d90c5fde3142a0bd2d171"
+
+[[function]]
+address = 0x822B43A0
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B4370 range 0x822B4370..0x822B43C7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b919a4fa08a63271774708f0e417ff7d69d4ea7ef4e6421364fabf17bf04d08e"
+
+[[function]]
+address = 0x822B5C08
+size = 0x20
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5BF0 range 0x822B5BF0..0x822B5C4B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "da8555e1d15e9e147c8324cb247653c385b703ead370c5e17293f3fa90ef9e66"
+
+[[function]]
+address = 0x822B5C28
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5BF0 range 0x822B5BF0..0x822B5C4B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "c041f7451a973f5f80d4ad950894cd9f6d3e0b6322d2d8fc7d65f0d4d383de19"
+
+[[function]]
+address = 0x822B5D18
+size = 0x50
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5CE8 range 0x822B5CE8..0x822B5D67; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "d8f65c8da099f4b4b9e7b2a7c93e68e00b2ea326ebca0dc9ae6addfcf370ff7f"
+
+[[function]]
+address = 0x822B5E70
+size = 0x20
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5E40 range 0x822B5E40..0x822B5EEF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "9d820fbe39bb91f558ebf51ed3111449e112f69f0af7fbbe8efca2c661f85c95"
+
+[[function]]
+address = 0x822B5E90
+size = 0x20
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5E40 range 0x822B5E40..0x822B5EEF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "834e1ad0c464be49b6a2b99cdeaa027fb3edbd9e1d644e22b91611b7ba1f5242"
+
+[[function]]
+address = 0x822B5EB0
+size = 0x20
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5E40 range 0x822B5E40..0x822B5EEF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "4c4b0c1df4afb14ce1416293b792ee2d2f24e3ab27757e961cba1d494be98105"
+
+[[function]]
+address = 0x822B5ED0
+size = 0x20
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5E40 range 0x822B5E40..0x822B5EEF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7f7d898e57cc29ff9b498be724fe6cd8bc5805765e954ce52ea8c32c1c582b5f"
+
+[[function]]
+address = 0x822B5F68
+size = 0x40
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822B5F48 range 0x822B5F48..0x822B5FA7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "20f57f78a9cf613ea49fd3a9745b12bfee1ebc49c743833111e0907aa6743e7e"
+
+[[function]]
+address = 0x822CA128
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822CA0D8 range 0x822CA0D8..0x822CA137; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "8385dbe6b152006ef4828b463932f5a588d360a28d1eaf8a56c76ed98b851d2c"
+
+[[function]]
+address = 0x822CCEB0
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822CCE98 range 0x822CCE98..0x822CCEC7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "fb714088f8dcbd08fe5ec907e5ae99ca648f9e92de02f79e9ad7b676f201ee21"
+
+[[function]]
+address = 0x822D3CC0
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822D3CA0 range 0x822D3CA0..0x822D3CC7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6e8cbf457e5d7fe1d1f668b23913b272d2730c09274ae68b672221e8e54b0fa0"
+
+[[function]]
+address = 0x822FFCF0
+size = 0x38
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822FFCC8 range 0x822FFCC8..0x822FFD27; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "042a39c48a5c6701f2b184f2341681c41922f1b0cc18834dd023a2d8154359c3"
+
+[[function]]
+address = 0x822FFDE0
+size = 0x38
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x822FFDB8 range 0x822FFDB8..0x822FFE17; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "ef29db41f3d934683351f6d513062c4a4284d741c2e6ba29087f70921c41f9ea"
+
+[[function]]
+address = 0x82324B78
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82324B60 range 0x82324B60..0x82324B8B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "bf7302501bf0aaca62a1f5d205ddeb86f6d604c5e4602905be06ad0ee3b1fe3a"
+
+[[function]]
+address = 0x82325CC8
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82325CB8 range 0x82325CB8..0x82325CD7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "27f0533d0c4f6d26df41af04f519879af78c88c784838e029d43751b4ff939f1"
+
+[[function]]
+address = 0x82327110
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8232710C range 0x8232710C..0x8232711F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "c0b24ef03a162c4def2b2becd5a03c85d47122d564a3dad97ef3afb8a8faea3c"
+
+[[function]]
+address = 0x82327114
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8232710C range 0x8232710C..0x8232711F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "4885784f16f423c606dd6e4f0eb5ca80a137bf6d4026150fdf4991af5a6b249a"
+
+[[function]]
+address = 0x82327124
+size = 0x50
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "9474c0b72c49b1804a6541e40b39c104b764497c2bcb3b193eeeea45f01d7c37"
+
+[[function]]
+address = 0x82327128
+size = 0x4C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "43bc98f89dc03d7005d7db8bd47186f8c24c35ef1d86b09f08596728526140eb"
+
+[[function]]
+address = 0x8232712C
+size = 0x48
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7e3fbaaa03c37589d240bc7a91f821cd1eba2205dde2c847bc21b9d1c0ffa528"
+
+[[function]]
+address = 0x82327130
+size = 0x44
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "2896729ed55f0fd1c3d08cf96f04e731020e178b39cdd2f028ba8c910bde7075"
+
+[[function]]
+address = 0x82327134
+size = 0x40
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b651fd3646792d6516b73f7e3bbafa9e93280427f6554f13a4665feadddd5cfa"
+
+[[function]]
+address = 0x82327138
+size = 0x3C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "609e0e07036710f4c3a7b91d04fa4c882a76f984a4865ec2a62e8d2733749cb8"
+
+[[function]]
+address = 0x8232713C
+size = 0x38
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "09eac1b6e8943b1365ec05aeb8aa398a6566a938a8a974322642e0c1b16d536b"
+
+[[function]]
+address = 0x82327140
+size = 0x34
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "15c9d032054a01f7ad80707d6774039b4a2da657212c209af03a7e71765b3241"
+
+[[function]]
+address = 0x82327144
+size = 0x30
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f0047230f042fca044261766ccdfcdbc7583b570d5fef7b46d319652e4d8aaae"
+
+[[function]]
+address = 0x82327148
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b661ccfa1d28d688a3e5f142772fc3a569627687e02144abce8c7a964c2970ed"
+
+[[function]]
+address = 0x8232714C
+size = 0x28
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "b8fccdaa02d7e723b870874165494a80d5aed7dc4a1873105ecf874e775b9a01"
+
+[[function]]
+address = 0x82327150
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "c551d18ba6788dbfaf9b102dd0c55c3f14c51a5ff4997d5c79dad440ced08486"
+
+[[function]]
+address = 0x82327154
+size = 0x20
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "24cf086c690e8cde992a92554e12ac11ff2e66f8c9d8ed65abd19e3579f6bf83"
+
+[[function]]
+address = 0x82327158
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "5448ffad152bf793e434e83f53a4f1eaac75acd15c2064ef070051617cc94c35"
+
+[[function]]
+address = 0x8232715C
+size = 0x18
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f79dd71f5c2ff37a5c01175a3160a61c92cba48e0d8fe916d254f691036c8bce"
+
+[[function]]
+address = 0x82327160
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7fed6f04d879403fc344bff4343f6bb5926ac040ae0cd08f8066aa9f1393f7f1"
+
+[[function]]
+address = 0x82327164
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327120 range 0x82327120..0x82327173; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "91a9c876c1b3c92bb59ff40af304db91e16f67e55475746a8bcd010fd151944e"
+
+[[function]]
+address = 0x823271EC
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x823271E8 range 0x823271E8..0x823271FB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "12c0952bb9d4c684183a9d8a4ed233265b86a9dd4b421820ff0b2a88251cacf1"
+
+[[function]]
+address = 0x823271F0
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x823271E8 range 0x823271E8..0x823271FB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "aa612c89cf2dfb22564aaedd5bfc45947b5a1c2383e7b895e8918d7f17cfb679"
+
+[[function]]
+address = 0x823271F4
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x823271E8 range 0x823271E8..0x823271FB; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "2e8164675cd3bd1cc078010fb1c5f7e278710faa76329b20e4856459ff9bc7ed"
+
+[[function]]
+address = 0x82327238
+size = 0x10
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327234 range 0x82327234..0x82327247; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "2646d60913b8ec832e54b0748c6e6180972fac03fda2f45fcb1280317293ad32"
+
+[[function]]
+address = 0x8232723C
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327234 range 0x82327234..0x82327247; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "678e3ddd746b02a1db589c13687222e32ba5e9325e2ac4f424303977e62ac789"
+
+[[function]]
+address = 0x82327240
+size = 0x8
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327234 range 0x82327234..0x82327247; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "cb75a5f8758360e416d96a3adc177aa96b168c106ac92a60e1e3c9d5ea65b7d5"
+
+[[function]]
+address = 0x82327868
+size = 0x8C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "17bfa422c0d232f65ef4b6add6bb433df5343ef6d4dcc874935a078abd3f8268"
+
+[[function]]
+address = 0x82327870
+size = 0x84
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "134e0a431ae0d83c9610a2774f8d36c4eee587e627eaa2647e890094935eb2fc"
+
+[[function]]
+address = 0x82327878
+size = 0x7C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "2956afa54d21fced08c948bcbf2148f3daa280ffb9ebdd84b9edcd3b54d3e438"
+
+[[function]]
+address = 0x82327880
+size = 0x74
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "0eba86167e99a161909a212896ce88a48c856616f3548d000339a367a5711f9e"
+
+[[function]]
+address = 0x82327888
+size = 0x6C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "d7b59c317779e43f3ceb75abee4adbfbf3f36ab698796e1f947d395de6fa9b6d"
+
+[[function]]
+address = 0x82327890
+size = 0x64
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "1ee73f3af858f738d40f0e22298e5bb1440dac0b878695bb354f3f5f9b63c191"
+
+[[function]]
+address = 0x82327898
+size = 0x5C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "301953a8f3d709f55ced4a527ddd06ac7f4c1e56f6626af5e9cc569c0f09e235"
+
+[[function]]
+address = 0x823278A0
+size = 0x54
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "73ad2d8212b87d0c5e8caa2240ec793070259b48a45a031e4ba3c3987346143e"
+
+[[function]]
+address = 0x823278A8
+size = 0x4C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "7b85ea9a116cf09a71c3deea1d39f7bf2d15b81432bc03edeecb20aebf5eeb33"
+
+[[function]]
+address = 0x823278B0
+size = 0x44
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "fcd4b017ed6732df14272f6e62c49ca71c111d601b97066dda52f2f7c95bcc22"
+
+[[function]]
+address = 0x823278B8
+size = 0x3C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "af18e5ca945cc6bb7a70cf6c78ab8ef30200d0eb7b0c9268901f69c94bc85125"
+
+[[function]]
+address = 0x823278C0
+size = 0x34
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "5ea6dfd368e161d93feb62a8301629d0a6f5549cc0f27171784bfab37676d239"
+
+[[function]]
+address = 0x823278C8
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "17029b7427a3fbea89548ec1e52d1736cc7ddd3afc92ce5783204a602b3bb023"
+
+[[function]]
+address = 0x823278D0
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f979b0ab2baf84fe66ed36c902b288c4acdb9688bc8a068f722b1f4766eea5c0"
+
+[[function]]
+address = 0x823278D8
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "27ce6afa2653776a22348298605028cef73003e97583345e07e85e3214de24d9"
+
+[[function]]
+address = 0x823278E0
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "4e9172c89422d37c40926f81fbe0addcb0789c1883f57226690b3d1f9584e9f2"
+
+[[function]]
+address = 0x823278E8
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327860 range 0x82327860..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "dee0c59c66ad71bc89b846757d94bed7ede55b685586df524b84a789ae188c41"
+
+[[function]]
+address = 0x82327ADC
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AD4 range 0x82327AD4..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "34dd07790111512c5aab2b26091226d74b879cdf1ae84172ac686379d32ec9b4"
+
+[[function]]
+address = 0x82327AE4
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AD4 range 0x82327AD4..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "e8850601f0cae5b6e9d77b40192b1ec9ef525423bcbc59b15aecdca7a80b8edd"
+
+[[function]]
+address = 0x82327AEC
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AD4 range 0x82327AD4..0x82327AF7; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "8925d708455daa5df20327b07f2906508d7b3eb7c023d5c9a14e60d6399ca7b0"
+
+[[function]]
+address = 0x82327B00
+size = 0x8C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "8dd2e3cd461f0143693388ed6a507e81e2bc7bb525bb53a5a87b300a809e46ec"
+
+[[function]]
+address = 0x82327B08
+size = 0x84
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "c48e8eb21467778e3cef85977caeece906eb661cfbe4f64aeabd8fb693aaa2e2"
+
+[[function]]
+address = 0x82327B10
+size = 0x7C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "53142a24f3fa6aaf1269c9674c3e1b685c53b519e9e01b332bb38606bf79e693"
+
+[[function]]
+address = 0x82327B18
+size = 0x74
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "c664445bd15574bcc2982af82220e57f087dc0f0de5ddf343a0031dc916062af"
+
+[[function]]
+address = 0x82327B20
+size = 0x6C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "e61933c103e6eaddc239a58b6520af79647212f700e62ff0723da6e7cdd74309"
+
+[[function]]
+address = 0x82327B28
+size = 0x64
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "f689fc480b30aab9ce8a5b9f54d0699403b10f0f8ebbbdec5b462e6011548bfb"
+
+[[function]]
+address = 0x82327B30
+size = 0x5C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "429f5e531f7af2faf64399ec7678d0588ffc2aa61efa3b4fa8241581c3e62dd4"
+
+[[function]]
+address = 0x82327B38
+size = 0x54
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "379ee3cacdd33730f471f503239632b50a349fdaa641a37ac9a51f60bc76d3f9"
+
+[[function]]
+address = 0x82327B40
+size = 0x4C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "5a696d0acde133e8e74454986636875771ae9b9e41aa8a861d234bb3a0d6fd29"
+
+[[function]]
+address = 0x82327B48
+size = 0x44
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "23df37911934649c6d3030287d0c0a402c3df514b60b4d0f094a2d20677314db"
+
+[[function]]
+address = 0x82327B50
+size = 0x3C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "1f4942109376c8d3203af59c2f3a1f9ba08102f88d483eccbd1ccfc4c8fbe858"
+
+[[function]]
+address = 0x82327B58
+size = 0x34
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "e628520003aa222f59a8170cdeed52dbc4245b162692ae7fd6024b19300b83ae"
+
+[[function]]
+address = 0x82327B60
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "77b7ab31229c49d7778287821143b042141a3ec40f2704b63461108f85c29e0c"
+
+[[function]]
+address = 0x82327B68
+size = 0x24
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "bd1f81aa4c1cce70bfa66dd52ab78d1740e0ff5209191d4ba701c58011a87c39"
+
+[[function]]
+address = 0x82327B70
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "a7f7379a051784a384e4b34f9eff60f5e3cd5dc8492a54d9e18249e43163316b"
+
+[[function]]
+address = 0x82327B78
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "d06e8ddec3bb0046c99ee68047c57c375ea8530747dbf527e243a01043b7cf29"
+
+[[function]]
+address = 0x82327B80
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327AF8 range 0x82327AF8..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "cb5de221ed22e1c75e63690634e7781b20bd86a4c96f56ca525edf3ea3f857c1"
+
+[[function]]
+address = 0x82327D74
+size = 0x1C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327D6C range 0x82327D6C..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "35ba66f1d36acd8be572b0263bc60cc32c799786ba2931569b5af6ab38e9b0f7"
+
+[[function]]
+address = 0x82327D7C
+size = 0x14
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327D6C range 0x82327D6C..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "086105083401e3cd56929c5dda4f6ea8161e5fb006f1564dd811e30ec3c3d7e5"
+
+[[function]]
+address = 0x82327D84
+size = 0xC
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82327D6C range 0x82327D6C..0x82327D8F; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "62274b6115eda665e237d8c2e0d238349abfc4833779b694604d9940f8bf3782"
+
+[[function]]
+address = 0x8232C360
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8232C354 range 0x8232C354..0x8232C38B; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "4192ed4552c29ae9f6c3a1b000ec6fd7a3b1fecc4ef4c95f8bf22b3dbce5696a"
+
+[[function]]
+address = 0x8232C6B0
+size = 0x40
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8232C6A8 range 0x8232C6A8..0x8232C6EF; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6342d5ab2bceb555a658b828e86564dd3774f455b8e19baeac141cc14937a3cf"
+
+[[function]]
+address = 0x82331DE0
+size = 0x34
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x82331DD4 range 0x82331DD4..0x82331E13; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "3ae56a69313a9b086e013dc6db5fb369814320f89edf6f71b8210ab85048538a"
+
+[[function]]
+address = 0x82332658
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8233264C range 0x8233264C..0x82332683; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "bd68da3c6d0f8e0166e58d9bf67729a1c178c45f7ee58dbefb4479fa1df2589f"
+
+[[function]]
+address = 0x82336328
+size = 0x2C
+kind = "callable-inner-chunk"
+evidence = "canonical-ghidra:ace-combat-6-demo/Default.xex owner=0x8233631C range 0x8233631C..0x82336353; extent to first blr/bctr; oracle-executed candidate"
+byte_sha256 = "6a49f645afaba638f23bcc461adceabf84c1349351ed73d81ab2f6160e3c6b16"

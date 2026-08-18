@@ -24,9 +24,9 @@ from map_generated_guest_load_sites import MappingError, _site_kind  # noqa: E40
 def valid_trace(*, lr: str = "0x00000000", exclusive_address: str = "0x829D15BC") -> str:
     return "\n".join([
         "AC6_XAM_RETURN_CHAIN_ARM caller_lr=0x822F616C tick=252 thread=1 user=0 flags=0x00000000 output=0x829D153C result=0x00000000 state16=000102030405060708090A0B0C0D0E0F",
-        f"AC6_XAM_RETURN_CHAIN_ACCESS kind=load16 address=0x829D1584 size=2 value_be=0x1234 tick=252 thread=1 lr={lr} function=__imp__sub_822F6008 generated_line=4187",
-        f"AC6_XAM_RETURN_CHAIN_ACCESS kind=store32 address=0x829D1558 size=4 value_be=0x12345678 tick=252 thread=1 lr={lr} function=__imp__sub_822F6008 generated_line=4189",
-        f"AC6_XAM_RETURN_CHAIN_ACCESS kind=store32 address={exclusive_address} size=4 value_be=0x12345678 tick=252 thread=1 lr={lr} function=__imp__sub_822F5E58 generated_line=3948",
+        f"AC6_XAM_RETURN_CHAIN_ACCESS kind=load16 address=0x829D1584 size=2 value_be=0x1234 tick=252 thread=1 lr={lr} function=__imp__sub_822F6008 generated_line=13348",
+        f"AC6_XAM_RETURN_CHAIN_ACCESS kind=store32 address=0x829D1558 size=4 value_be=0x12345678 tick=252 thread=1 lr={lr} function=__imp__sub_822F6008 generated_line=13350",
+        f"AC6_XAM_RETURN_CHAIN_ACCESS kind=store32 address={exclusive_address} size=4 value_be=0x12345678 tick=252 thread=1 lr={lr} function=__imp__sub_822F5E58 generated_line=13109",
         "AC6_XAM_RETURN_CHAIN_STOP reason=qualified_store_exclusive accesses=3",
         "",
     ])
@@ -62,9 +62,9 @@ class XamReturnChainMapperTests(unittest.TestCase):
     def test_bounded_no_exclusive_route_is_explicit(self) -> None:
         trace = valid_trace().replace(
             "kind=store32 address=0x829D15BC size=4 value_be=0x12345678 "
-            "tick=252 thread=1 lr=0x00000000 function=__imp__sub_822F5E58 generated_line=3948",
+            "tick=252 thread=1 lr=0x00000000 function=__imp__sub_822F5E58 generated_line=13109",
             "kind=load32 address=0x829D15BC size=4 value_be=0x00000000 "
-            "tick=252 thread=1 lr=0x00000000 function=__imp__sub_822F5E58 generated_line=3953",
+            "tick=252 thread=1 lr=0x00000000 function=__imp__sub_822F5E58 generated_line=13114",
         ).replace("reason=qualified_store_exclusive", "reason=bound")
         completed = self.run_mapper(trace, expect="no_exclusive")
         self.assertEqual(completed.returncode, 0, completed.stderr)
@@ -86,7 +86,7 @@ class XamReturnChainMapperTests(unittest.TestCase):
         self.assertTrue(self.result["policy"]["lr_is_not_pc"])
 
     def test_non_allowlisted_line_and_exclusive_address_refuse(self) -> None:
-        bad_line = valid_trace().replace("generated_line=4189", "generated_line=4190")
+        bad_line = valid_trace().replace("generated_line=13350", "generated_line=13351")
         completed = self.run_mapper(bad_line)
         self.assertNotEqual(completed.returncode, 0)
 
@@ -96,14 +96,14 @@ class XamReturnChainMapperTests(unittest.TestCase):
                                  "kind=store32 address=0x829D15BC size=1 value_be=0x12"),
             valid_trace().replace("kind=store32 address=0x829D15BC",
                                  "kind=load32 address=0x829D15BC"),
-            valid_trace().replace("generated_line=3948", "generated_line=3949"),
+            valid_trace().replace("generated_line=13109", "generated_line=13110"),
             valid_trace().replace("reason=qualified_store_exclusive",
                                  "reason=bound"),
             valid_trace().replace(
                 "AC6_XAM_RETURN_CHAIN_STOP reason=qualified_store_exclusive",
                 "AC6_XAM_RETURN_CHAIN_ACCESS kind=load8 address=0x829D1500 "
                 "size=1 value_be=0x00 tick=252 thread=1 lr=0x0 "
-                "function=__imp__sub_822F6008 generated_line=4187\n"
+                "function=__imp__sub_822F6008 generated_line=13348\n"
                 "AC6_XAM_RETURN_CHAIN_STOP reason=qualified_store_exclusive"),
         )
         for trace in inverses:
@@ -127,7 +127,7 @@ class XamReturnChainMapperTests(unittest.TestCase):
         result = subprocess.run([str(executable)], env=enabled, text=True,
                                 capture_output=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("function=__imp__sub_822F5E58 generated_line=3948", result.stderr)
+        self.assertIn("function=__imp__sub_822F5E58 generated_line=13109", result.stderr)
         self.assertIn("reason=qualified_store_exclusive", result.stderr)
         disabled = dict(base, AC6_XAM_PROBE_ONLY="1")
         result = subprocess.run([str(executable)], env=disabled, text=True,

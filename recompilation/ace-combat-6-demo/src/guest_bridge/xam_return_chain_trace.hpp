@@ -24,9 +24,17 @@ inline constexpr std::uint32_t kXamReturnExclusiveAddress =
 // a fixed diagnostic budget, not an open-ended trace.
 inline constexpr std::uint32_t kXamReturnMaxAccesses = 64U;
 
+// The exclusive store is PAL 0x822F5EA0, and this recognises it by the
+// generated line that emits it. That line number is not a property of the
+// game: it moves whenever codegen redistributes functions across files, and
+// it moved from 3948 to 13109 when 195 interior entries were declared. The
+// number is therefore refreshed with the boundary set, and the mapper is what
+// proves the new one still denotes 0x822F5EA0.
+inline constexpr std::uint32_t kXamExclusiveGeneratedLine = 13109U;
+
 [[nodiscard]] inline bool xam_return_chain_exclusive_site(
     const char *function, std::uint32_t generated_line) noexcept {
-  return generated_line == 3948U && function != nullptr &&
+  return generated_line == kXamExclusiveGeneratedLine && function != nullptr &&
          (std::string_view{function} == "sub_822F5E58" ||
           std::string_view{function} == "__imp__sub_822F5E58");
 }
