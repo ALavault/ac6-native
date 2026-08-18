@@ -59,6 +59,35 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
           const auto mode = memory.load_u32(manager + 8U);
           if (mode != 0U && memory.mapped(mode, 16U)) {
             const auto mode_state = memory.load_u32(mode + 12U);
+            // SendMsgI broadcasts to the listener array at 0x826DF800 and calls
+            // slot +0x20 on each. At the press both callees were 0x820AC748,
+            // the shared no-op, so this dumps who is actually registered.
+            {
+              static std::uint64_t previous_listeners = 0xFFFFFFFFFFFFFFFFULL;
+              if (memory.mapped(0x826DF800U, 64U)) {
+                std::uint64_t key = 0U;
+                char line[512];
+                int used = std::snprintf(line, sizeof(line),
+                                         "AC6_MSGLISTENERS tick=%llu",
+                                         static_cast<unsigned long long>(tick));
+                for (std::uint32_t i = 0U; i < 12U; ++i) {
+                  const auto entry = memory.load_u32(0x826DF800U + i * 4U);
+                  if (entry == 0U) {
+                    break;
+                  }
+                  const auto vptr =
+                      memory.mapped(entry, 4U) ? memory.load_u32(entry) : 0U;
+                  key = key * 31U + vptr;
+                  used += std::snprintf(line + used, sizeof(line) - used,
+                                        " [%u]=0x%08X vptr=0x%08X", i, entry,
+                                        vptr);
+                }
+                if (key != previous_listeners) {
+                  std::fprintf(stderr, "%s\n", line);
+                  previous_listeners = key;
+                }
+              }
+            }
             // GetCurrentMode / GetCurrentMission / GetCurrentLevel -- the three
             // script commands the movie issues after START -- all read the
             // singleton at [0x823C27E0]: mode is [gs+120], the other two derive
