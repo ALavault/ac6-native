@@ -225,10 +225,23 @@ constexpr std::uint64_t kNotifyAreaSystem = 0x00000001U;
     return true;
   }
   if (std::string_view{name} == "XamUserReadProfileSettings") {
-    // The reached AC6 path is the first, size-only profile query.  Preserve
-    // the XAM sizing contract without fabricating profile contents; a later
-    // materialization call must be qualified separately if the demo reaches
-    // one.
+    // The demo now reaches both calls of the XAM two-call sizing contract:
+    // the size-only query this handler already answered, and the
+    // materialization call (real buffer, requesting menu_endMode argument
+    // forced to 1 -- see AC6_DEMO_FORCING_MENU_ENDMODES_ARGUMENT_TO_1...).
+    // XUSER_READ_PROFILE_SETTING_RESULT/XUSER_PROFILE_SETTING/XUSER_DATA
+    // layouts read from XDK Xonline.h docs (sdk/xdk-xenon-6132.6, en-US):
+    // header is {DWORD dwSettingsLen; XUSER_PROFILE_SETTING *pSettings;} (8
+    // bytes), each XUSER_PROFILE_SETTING is
+    // {XUSER_PROFILE_SOURCE source; union{DWORD;XUID} user; DWORD
+    // dwSettingId; XUSER_DATA data;} = 4 + pad4 + 8 + 4 + pad4 + 16 = 40
+    // bytes, matching this handler's own pre-existing needed_size formula.
+    // The offline demo store has no profile database, so every requested
+    // setting is answered honestly as absent: source = XSOURCE_NO_VALUE (0,
+    // "There is no value to read") and data.type = XUSER_DATA_TYPE_NULL
+    // (0xFF, XuserGetProfileSettingsType.md) rather than fabricating a
+    // value. dwUserIndex/dwSettingId are still echoed so the guest can
+    // correlate each result to its request.
     auto& memory = require_bridge().memory();
     const auto setting_count = context.r7.u32;
     const auto setting_ids = context.r8.u32;
@@ -265,13 +278,45 @@ constexpr std::uint64_t kNotifyAreaSystem = 0x00000001U;
       context.r3.u32 = 122U;  // ERROR_INSUFFICIENT_BUFFER
       return true;
     }
-    return false;
+    for (std::uint32_t index = 0U; index < setting_count; ++index) {
+      const auto entry = buffer + 8U + index * 40U;
+      for (std::uint32_t field = 0U; field < 40U; field += 4U) {
+        memory.store_u32(entry + field, 0U);
+      }
+      memory.store_u32(entry + 8U, context.r4.u32);  // user.dwUserIndex
+      memory.store_u32(entry + 16U,
+                       memory.load_u32(setting_ids + index * 4U));  // echo id
+      memory.store_u8(entry + 24U, 0xFFU);  // data.type = XUSER_DATA_TYPE_NULL
+    }
+    memory.store_u32(buffer, setting_count);       // dwSettingsLen
+    memory.store_u32(buffer + 4U, buffer + 8U);     // pSettings
+    context.r3.u32 = 0U;  // ERROR_SUCCESS
+    return true;
   }
   if (std::string_view{name} == "XMsgStartIORequest" && ordinal == 503U) {
     // PAL-observed XGI user-context request at tick 4254. Xenia/ReXGlue use
     // the same five-register ABI and their XgiApp handler only validates/logs
     // this message before returning X_E_SUCCESS. Keep this boundary read-only
     // and accept only the exact guest tuple captured at LR 0x821A55A0.
+    if (std::getenv("AC6_DEMO_WATCH_XGI_REQUEST") != nullptr &&
+        context.r6.u32 != 0U &&
+        require_bridge().memory().mapped(context.r6.u32, 24U)) {
+      auto& watch_memory = require_bridge().memory();
+      std::fprintf(
+          stderr,
+          "AC6_XGI_REQUEST tick=%llu lr=0x%08X app=0x%X message=0x%X "
+          "overlapped=0x%X buffer=0x%08X length=%u "
+          "words=[0x%08X,0x%08X,0x%08X,0x%08X,0x%08X,0x%08X]\n",
+          static_cast<unsigned long long>(require_bridge().tick()),
+          static_cast<unsigned>(context.lr), context.r3.u32, context.r4.u32,
+          context.r5.u32, context.r6.u32, context.r7.u32,
+          watch_memory.load_u32(context.r6.u32),
+          watch_memory.load_u32(context.r6.u32 + 4U),
+          watch_memory.load_u32(context.r6.u32 + 8U),
+          watch_memory.load_u32(context.r6.u32 + 12U),
+          watch_memory.load_u32(context.r6.u32 + 16U),
+          watch_memory.load_u32(context.r6.u32 + 20U));
+    }
     if (!ac6demo::validate_xgi_user_context_request(
             require_bridge().memory(), static_cast<std::uint32_t>(context.lr),
             context.r3.u32, context.r4.u32, context.r5.u32, context.r6.u32,

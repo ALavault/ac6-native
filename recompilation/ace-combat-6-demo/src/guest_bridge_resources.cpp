@@ -92,6 +92,15 @@ bool validate_xgi_user_context_request(GuestMemory& memory,
   constexpr std::uint32_t kReachedMessage = 0x000B0006U;
   constexpr std::uint32_t kReachedLength = 24U;
   constexpr std::uint32_t kReachedCallerLr = 0x821A55A0U;
+  // sub_821A5550 (the sole caller at this LR) builds this 24-byte buffer on
+  // its own stack at r1+80 with `stw r11,80(r1)` / `std r11,88(r1)` (zeroing
+  // words 2-3) / `stw r10,96(r1)` / `stw r9,100(r1)` -- word index 1
+  // (buffer+4, stack offset 84) is never stored to by that function, so it
+  // carries whatever this stack slot held before the call, not part of the
+  // message. Two live captures confirm this: 0x00000000 and, after forcing
+  // menu_endMode's argument to 1, 0x18980054 (report
+  // AC6_DEMO_...XAMUSERREADPROFILESETTINGS... follow-up). It is read here
+  // for logging parity only and never compared.
   constexpr std::array<std::uint32_t, 6U> kReachedWords{
       0U, 0U, 0U, 0U, 0x00008001U, 0U};
   if (caller_lr != kReachedCallerLr || app != kReachedApp ||
@@ -101,6 +110,9 @@ bool validate_xgi_user_context_request(GuestMemory& memory,
     return false;
   }
   for (std::size_t index = 0U; index < kReachedWords.size(); ++index) {
+    if (index == 1U) {
+      continue;  // uninitialized stack padding; see comment above.
+    }
     const auto offset = static_cast<std::uint32_t>(index * 4U);
     if (memory.load_u32(buffer + offset) != kReachedWords[index]) {
       return false;
