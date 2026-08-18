@@ -7,14 +7,24 @@
 
 #include <array>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <ranges>
 
 namespace ac6demo::guest_bridge_detail {
 
 // A family of 16-byte virtual-call trampolines, which Ghidra classifies as
-// branch delay slots rather than function starts, so codegen emits none of
-// them and every one arrives here as an unqualified indirect call.
+// branch delay slots rather than function starts.
+//
+// This is now a fallback rather than the mechanism. 478e31ed declared 195
+// interior entries, and of the 28 trampolines in the image 13 became emitted
+// functions, so lookup_guest_function resolves them and they never reach
+// here. The remaining 15 are executed by neither this port nor the oracle, so
+// in practice nothing dispatches through this path today. It is kept because
+// it is a shape check rather than an address list -- it costs four word
+// comparisons and it catches a trampoline the boundary set ever stops
+// declaring, which is exactly the anomaly worth failing closed on.
 //
 // Each is literally four words:
 //
@@ -68,6 +78,16 @@ bool dispatch_reached_branch_delay_thunk(
       lookup(slot_target) == nullptr) {
     throw RuntimeTrap("qualified branch-delay thunk target is not qualified",
                       tick, lr, slot_target);
+  }
+  // Opt-in: which object, which slot, which target. A trampoline dispatch is
+  // where a virtual call becomes visible to this runtime, and the START press
+  // during the title screen arrives through one.
+  if (std::getenv("AC6_DEMO_WATCH_THUNK") != nullptr) {
+    std::fprintf(stderr,
+                 "AC6_THUNK tick=%llu thunk=0x%08X object=0x%08X "
+                 "vtable=0x%08X slot=0x%02X target=0x%08X lr=0x%08X\n",
+                 static_cast<unsigned long long>(tick), guest_address, object,
+                 vtable, slot_offset, slot_target, lr);
   }
   context.r12.u64 = vtable;
   context.r11.u64 = slot_target;
