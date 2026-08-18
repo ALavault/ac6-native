@@ -1,0 +1,5 @@
+range,guard,effect,frame_generation,grade
+0x821C5878..0x821C591C,device+0x5460 != 0 and query distance < 6,reserve two query slots; emit first opcode-0x58 marker; set local marker_active=1,no,A
+0x821C5920..0x821C5A34,independent of device+0x5460,continue per-frame work; call 0x821C07F8; allocate/fill command structures,yes / normal path continues,A
+0x821C5A2C..0x821C5A64,local marker_active,emit second opcode-0x58 marker and advance query index by two,no; closes optional query bracket,A
+0x821ADD90..0x821ADE18,called only at 0x821C5918 and 0x821C5A58,write type-3 opcode 0x58 packet with address and 0xDEADBEEF sentinel,no direct submission or worker signal,A

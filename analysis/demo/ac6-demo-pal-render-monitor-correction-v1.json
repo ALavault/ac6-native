@@ -1,0 +1,62 @@
+{
+  "schema": "ac6-demo-pal-render-monitor-correction/v1",
+  "date": "2026-08-18",
+  "target": {
+    "flat_image_sha256": "b81941994944b84f5792fd7b89cd698ca429b13c1bb4f501ea12e49dc54c2f01",
+    "image_base": "0x82000000",
+    "text_range": [
+      "0x82090000",
+      "0x82375984"
+    ]
+  },
+  "retractions": [
+    {
+      "claim": "0x820A45E0 builds renderer event (17,6)",
+      "verdict": "retracted",
+      "reason": "17 is runtime_tag of selector record 12; 6 is runtime_tag of adjacent selector record 13"
+    },
+    {
+      "claim": "service 47 is a game callback registry",
+      "verdict": "retracted",
+      "reason": "dispatch resolves imported KeCertMonitorData/KeDebugMonitorData callback_fn"
+    },
+    {
+      "claim": "device+0x5460 gates the entire per-frame renderer",
+      "verdict": "retracted",
+      "reason": "zero branches to 0x821C5920, where normal per-frame work continues"
+    },
+    {
+      "claim": "0x821ADD90 is the frame packet builder",
+      "verdict": "retracted",
+      "reason": "it emits a 4-dword opcode-0x58 marker and is called as a begin/end bracket only"
+    }
+  ],
+  "import_join": {
+    "0x82000610": {
+      "descriptor": "0x00010266",
+      "module": "xboxkrnl.exe",
+      "ordinal": 614,
+      "name": "KeCertMonitorData"
+    },
+    "0x820006E4": {
+      "descriptor": "0x00010059",
+      "module": "xboxkrnl.exe",
+      "ordinal": 89,
+      "name": "KeDebugMonitorData"
+    }
+  },
+  "corrected_boundary": {
+    "monitor_callback": "0x821ADAB8",
+    "registration_helper": "0x821ADC78",
+    "register_command": 47,
+    "category": 2,
+    "channel6_field": "device+0x5460",
+    "scope": "optional certification/performance query markers",
+    "true_renderer_frontier": "command-buffer ownership, publication and ring handoff after normal per-frame construction"
+  },
+  "publication": {
+    "plain_text_only": true,
+    "zip": false,
+    "proprietary_bytes": false
+  }
+}
