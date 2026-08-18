@@ -9,6 +9,21 @@
 // (if anything) title's own script issues instead.
 inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
                                    std::uint32_t guest_address) {
+  // Every reachable call to sub_820E8F90 (the marshaller) arrives through
+  // this same indirect-call path -- it has no direct `bl` callers anywhere
+  // in the image. Naming `lr` here, independent of the lr==0x820E9130 gate
+  // below (that gate is for calls *out of* the marshaller, this is for
+  // calls *into* it), identifies the swg VM loop itself: the standing
+  // "where does the interpreter live" question, attacked live.
+  if (std::getenv("AC6_DEMO_WATCH_SWG_VM_LOOP_CALL") != nullptr &&
+      guest_address == 0x820E8F90U) {
+    std::fprintf(stderr,
+                 "AC6_SWG_VM_LOOP_CALL tick=%llu thread=%u lr=0x%08X "
+                 "r1=0x%08X r3=0x%08X r31=0x%08X\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 current_guest_thread_id, lr, context.r1.u32, context.r3.u32,
+                 context.r31.u32);
+  }
   if (std::getenv("AC6_DEMO_WATCH_SWG_NATIVE_CALL") == nullptr ||
       lr != 0x820E9130U) {
     return;
