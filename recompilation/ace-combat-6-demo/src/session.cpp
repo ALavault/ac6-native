@@ -65,7 +65,8 @@ void DemoSession::start(const std::filesystem::path& trace_path, bool frontend_o
     memory_.map_bytes(image.base, image.bytes);
     guest_entry_point_ = image.entry_point;
     guest_.prepare(GuestBridge::ThreadImage{image.tls_address, image.tls_data_size,
-                                            image.tls_raw_size, image.stack_size});
+                                            image.tls_raw_size, image.stack_size,
+                                            image.system_flags});
   }
   guest_started_ = false;
   frontend_only_ = frontend_only;

@@ -278,6 +278,10 @@ public:
     std::uint32_t tls_data_size{};
     std::uint32_t tls_raw_size{};
     std::uint32_t stack_size{};
+    // XEX_HEADER_SYSTEM_FLAGS. XexCheckExecutablePrivilege(n) answers bit n of
+    // this word; the demo's Default.xex declares 0x00000600, so privilege 10 is
+    // granted and 11 and 23 -- the other two the guest asks about -- are not.
+    std::uint32_t system_flags{};
   };
 
   explicit GuestBridge(GuestMemory &memory);
@@ -411,6 +415,8 @@ public:
   [[nodiscard]] std::uint8_t
   guest_thread_processor(std::uint32_t object) const noexcept;
   [[nodiscard]] bool
+  executable_privilege(std::uint32_t privilege) const noexcept;
+  [[nodiscard]] bool
   resume_guest_thread(std::uint32_t handle,
                       std::uint32_t previous_count_pointer,
                       std::uint32_t *previous_count) noexcept;
@@ -507,6 +513,7 @@ private:
   bool function_reachability_enabled_{};
   std::map<std::uint32_t, GuestFunctionReachability> function_reachability_;
   std::uint32_t next_allocation_{0x10000000U};
+  std::uint32_t executable_system_flags_{};
   std::uint32_t ke_timestamp_bundle_{};
   std::uint32_t xma_context_next_index_{};
   std::array<bool, 320U> xma_context_active_{};

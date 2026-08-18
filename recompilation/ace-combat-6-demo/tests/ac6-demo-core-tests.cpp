@@ -39,6 +39,27 @@ void test_ke_timestamp_bundle_tick_count() {
 }
 
 #ifdef AC6_DEMO_GENERATED_GUEST
+// XexCheckExecutablePrivilege(n) answers bit n of the title's own
+// XEX_HEADER_SYSTEM_FLAGS. The demo's Default.xex declares 0x00000600, and the
+// three privileges this image asks about are 10, 11 and 23.
+void test_executable_privilege_reads_system_flags() {
+  ac6demo::GuestMemory memory;
+  memory.map_zero(0x20000U, 0x4000U);
+  ac6demo::GuestBridge bridge(memory);
+  // No image prepared yet: every privilege is refused rather than assumed.
+  assert(!bridge.executable_privilege(10U));
+  bridge.prepare(ac6demo::GuestBridge::ThreadImage{0x20000U, 0x100U, 0x100U,
+                                                   0x1000U, 0x00000600U});
+  assert(bridge.executable_privilege(9U));
+  assert(bridge.executable_privilege(10U));
+  assert(!bridge.executable_privilege(11U));
+  assert(!bridge.executable_privilege(23U));
+  assert(!bridge.executable_privilege(0U));
+  // Out of range is a refusal, not an out-of-bounds shift.
+  assert(!bridge.executable_privilege(32U));
+  assert(!bridge.executable_privilege(0xFFFFFFFFU));
+}
+
 // Guarded because the non-generated build compiles a GuestBridge with no
 // thread scheduler at all; this assertion runs for real in the codegen-on
 // tree, whose ctest suite covers the same file.
@@ -426,6 +447,7 @@ int main() {
   test_ke_timestamp_bundle_tick_count();
 #ifdef AC6_DEMO_GENERATED_GUEST
   test_guest_processor_identity_is_one_hot();
+  test_executable_privilege_reads_system_flags();
 #endif
 
   std::cout << "ac6-demo-core-tests: ok\n";

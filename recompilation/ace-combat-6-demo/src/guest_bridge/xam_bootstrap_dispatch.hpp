@@ -9,8 +9,27 @@
     return true;
   }
   if (std::string_view{name} == "XexCheckExecutablePrivilege") {
-    // The qualified title has no elevated privilege requirement for this
-    // bootstrap probe; the guest branches on the documented boolean result.
+    // Answered from the title's own XEX_HEADER_SYSTEM_FLAGS rather than a
+    // constant. The demo's Default.xex declares 0x00000600, so privilege 10 is
+    // granted and 11 and 23 are not -- the three the guest asks about. Returning
+    // a flat 0 made sub_821A6F78 skip its XGetAVPack block, which the retail
+    // runtime enters at frame 0.
+    context.r3.s64 =
+        require_bridge().executable_privilege(context.r3.u32) ? 1 : 0;
+    return true;
+  }
+  if (std::string_view{name} == "XGetAVPack") {
+    // xam.xex ordinal 971, absent from the public XDK headers. It has exactly
+    // one caller in this image, sub_821A6F78, which skips its block when the
+    // answer is 3, 6, 8 or 4 and otherwise queries ExGetXConfigSetting(2, 2)
+    // and requires (value & 0xFF00) == 0x300. This bridge's qualified AV-region
+    // record for that setting is 0x00001000, whose masked value is 0x1000, so
+    // the block is skipped at the next test whatever is answered here.
+    //
+    // The choice is therefore inert in this image, and it is written down as a
+    // choice rather than dressed up as a derivation: nothing available
+    // qualifies a specific AV pack, and this must be re-qualified if a later
+    // path ever reads the value.
     context.r3.s64 = 0;
     return true;
   }

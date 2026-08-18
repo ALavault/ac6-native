@@ -14,6 +14,9 @@ struct GuestImage final {
   std::uint32_t tls_data_size{};
   std::uint32_t tls_raw_size{};
   std::uint32_t stack_size{};
+  // XEX_HEADER_SYSTEM_FLAGS (key 0x00030000), the bitmask
+  // XexCheckExecutablePrivilege tests bit by bit.
+  std::uint32_t system_flags{};
   std::vector<std::byte> bytes;
 };
 

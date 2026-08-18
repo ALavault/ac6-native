@@ -486,6 +486,13 @@ void GuestBridge::publish_kernel_data_imports() {
   }
 }
 
+bool GuestBridge::executable_privilege(std::uint32_t privilege) const noexcept {
+  // A privilege index beyond the word cannot be granted, and answering "no" is
+  // the same as the flag being clear.
+  return privilege < 32U &&
+         ((executable_system_flags_ >> privilege) & 1U) != 0U;
+}
+
 bool GuestBridge::pin_guest_thread_processor(std::uint32_t object,
                                              std::uint32_t mask) noexcept {
   // One-hot over the six hardware threads the XDK documents; anything else is

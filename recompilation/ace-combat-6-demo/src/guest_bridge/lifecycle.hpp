@@ -164,6 +164,11 @@ void GuestBridge::prepare(const ThreadImage &image) {
   // it earlier shifted the allocator by one page and tripped "unqualified
   // Xenos scratch writeback target" at tick 0.
   publish_kernel_data_imports();
+  executable_system_flags_ = image.system_flags;
+  if (std::getenv("AC6_DEMO_WATCH_KERNEL_DATA") != nullptr) {
+    std::fprintf(stderr, "AC6_KERNELDATA system_flags=0x%08X\n",
+                 image.system_flags);
+  }
   prepared_ = true;
 }
 

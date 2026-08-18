@@ -32,6 +32,9 @@ constexpr std::uint32_t kXexHeaderEntryPoint = 0x00010100U;
 constexpr std::uint32_t kXexHeaderImageBase = 0x00010201U;
 constexpr std::uint32_t kXexHeaderTlsInfo = 0x00020104U;
 constexpr std::uint32_t kXexHeaderDefaultStackSize = 0x00020200U;
+// Key type 0x00 means the header's value word IS the datum, so this reads the
+// flag bitmask directly rather than an offset into the file.
+constexpr std::uint32_t kXexHeaderSystemFlags = 0x00030000U;
 constexpr std::uint32_t kNormalCompression = 2U;
 constexpr std::uint16_t kNormalEncryption = 1U;
 constexpr std::uint32_t kImageBase = 0x82000000U;
@@ -345,6 +348,7 @@ GuestImage load_xex_image(const std::filesystem::path& path) {
   const auto image_base = optional_header_value(xex, kXexHeaderImageBase);
   const auto tls_info_offset = optional_header_value(xex, kXexHeaderTlsInfo);
   const auto stack_size = optional_header_value(xex, kXexHeaderDefaultStackSize);
+  const auto system_flags = optional_header_value(xex, kXexHeaderSystemFlags);
   if (format_info == 0U || format_info + 12U > xex.size() || entry_point == 0U ||
       image_base != kImageBase || tls_info_offset == 0U ||
       tls_info_offset + 16U > xex.size() || stack_size == 0U) {
@@ -383,7 +387,7 @@ GuestImage load_xex_image(const std::filesystem::path& path) {
       std::span<const std::byte>(xex.data() + header_size, xex.size() - header_size),
       decrypted_key_array);
   return GuestImage{load_address, entry_point, tls_address, tls_data_size, tls_raw_size,
-                    stack_size,
+                    stack_size, system_flags,
                     decompress_normal_payload(decrypted_payload, format_info, xex, image_size)};
 }
 
