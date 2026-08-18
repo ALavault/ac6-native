@@ -59,6 +59,62 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
           const auto mode = memory.load_u32(manager + 8U);
           if (mode != 0U && memory.mapped(mode, 16U)) {
             const auto mode_state = memory.load_u32(mode + 12U);
+            // The title's state-1 arm calls slot +0x20 on the sub-object at
+            // mode+28, whose first act is to return early when [that+4] is
+            // zero. That word is the difference between a poll that works and
+            // one that does nothing 5,294 times.
+            {
+              static std::uint32_t previous_swg = 0xFFFFFFFFU;
+              const auto swg_vptr = memory.load_u32(mode + 28U);
+              if (swg_vptr != 0U && memory.mapped(mode + 28U, 32U)) {
+                const auto field4 = memory.load_u32(mode + 28U + 4U);
+                // 0x820CE368 gates on [world+236] and [world+224], skips its
+                // frame step unless byte [+236]+9 is set, and steps the frame
+                // counter at [+224]+4132 modulo [+224]+4136.
+                if (field4 != 0U && memory.mapped(field4, 256U)) {
+                  const auto w236 = memory.load_u32(field4 + 236U);
+                  const auto w224 = memory.load_u32(field4 + 224U);
+                  const auto flag9 =
+                      (w236 != 0U && memory.mapped(w236, 16U))
+                          ? memory.load_u8(w236 + 9U) : 0xFFU;
+                  const auto frame =
+                      (w224 != 0U && memory.mapped(w224, 4200U))
+                          ? memory.load_u32(w224 + 4132U) : 0xFFFFFFFFU;
+                  const auto total =
+                      (w224 != 0U && memory.mapped(w224, 4200U))
+                          ? memory.load_u32(w224 + 4136U) : 0xFFFFFFFFU;
+                  const std::uint64_t key =
+                      (static_cast<std::uint64_t>(w236) << 32) ^ w224 ^
+                      (static_cast<std::uint64_t>(flag9) << 16);
+                  static std::uint64_t previous_key = 0xFFFFFFFFFFFFFFFFULL;
+                  if (key != previous_key || (tick % 500U) == 0U) {
+                    std::fprintf(stderr,
+                                 "AC6_SWGW tick=%llu world=0x%08X anim=0x%08X "
+                                 "player=0x%08X step=0x%02X frame=%d of %d "
+                                 "avptr=0x%08X pvptr=0x%08X p4124=%d p4128=%d "
+                                 "p4140=%d\n",
+                                 static_cast<unsigned long long>(tick), field4,
+                                 w236, w224, flag9, static_cast<int>(frame),
+                                 static_cast<int>(total),
+                                 w236 ? memory.load_u32(w236) : 0U,
+                                 w224 ? memory.load_u32(w224) : 0U,
+                                 w224 ? memory.load_u32(w224 + 4124U) : 0U,
+                                 w224 ? memory.load_u32(w224 + 4128U) : 0U,
+                                 w224 ? memory.load_u32(w224 + 4140U) : 0U);
+                    previous_key = key;
+                  }
+                }
+                if (field4 != previous_swg) {
+                  std::fprintf(stderr,
+                               "AC6_SWG tick=%llu sub=0x%08X vptr=0x%08X "
+                               "field4=0x%08X field24=0x%08X\n",
+                               static_cast<unsigned long long>(tick),
+                               mode + 28U, swg_vptr, field4,
+                               memory.load_u32(mode + 28U + 24U));
+                  previous_swg = field4;
+                }
+              }
+            }
             if (mode_state != previous_mode_state) {
               std::fprintf(stderr,
                            "AC6_MODE_INNER tick=%llu mode=0x%08X state=0x%08X\n",

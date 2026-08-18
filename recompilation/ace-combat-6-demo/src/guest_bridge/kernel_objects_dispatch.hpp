@@ -68,6 +68,10 @@
     if (previous_affinity_pointer != 0U) {
       bridge.memory().store_u32(previous_affinity_pointer, 1U);
     }
+    // The mask carries the guest's processor identity; a mask this bridge
+    // cannot read as one-hot leaves the previous identity in place rather than
+    // inventing one, and the call still succeeds as the XDK specifies.
+    (void)bridge.pin_guest_thread_processor(context.r3.u32, context.r4.u32);
     context.r3.s64 = 0;
     trace_affinity_call(context, object, previous_value, previous_mapped, 0U);
     return true;

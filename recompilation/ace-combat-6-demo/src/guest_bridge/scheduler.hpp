@@ -98,6 +98,14 @@ void GuestBridge::execute_guest_thread(GuestThread& thread) {
   if (fiber == nullptr || fiber->ppc == nullptr) {
     return;
   }
+  // Every guest thread shares one PCR here, so the processor number the guest
+  // reads at r13+0x10C is whatever the last scheduled thread left behind.
+  // Republish the running thread's own number, which is the only value a real
+  // per-processor PCR would ever show it.
+  const auto processor_field = fiber->ppc->r13.u32 + 0x10CU;
+  if (memory_.mapped(processor_field, 1U)) {
+    memory_.store_u8(processor_field, thread.processor);
+  }
   const auto previous_thread_id = current_guest_thread_id;
   current_guest_thread_id = thread.id;
   try {
@@ -446,6 +454,36 @@ bool GuestBridge::reference_guest_thread(std::uint32_t handle,
   }
   *object = found->object;
   return true;
+}
+
+bool GuestBridge::pin_guest_thread_processor(std::uint32_t object,
+                                             std::uint32_t mask) noexcept {
+  // One-hot over the six hardware threads the XDK documents; anything else is
+  // not an identity this bridge is willing to publish.
+  if (mask == 0U || mask > 0x20U || (mask & (mask - 1U)) != 0U) {
+    return false;
+  }
+  const auto found = std::find_if(
+      threads_.begin(), threads_.end(),
+      [object](const GuestThread &thread) { return thread.object == object; });
+  if (found == threads_.end()) {
+    return false;
+  }
+  std::uint8_t index = 0U;
+  while ((mask >> index) != 1U) {
+    ++index;
+  }
+  found->processor = index;
+  found->processor_pinned = true;
+  return true;
+}
+
+std::uint8_t
+GuestBridge::guest_thread_processor(std::uint32_t object) const noexcept {
+  const auto found = std::find_if(
+      threads_.begin(), threads_.end(),
+      [object](const GuestThread &thread) { return thread.object == object; });
+  return found == threads_.end() ? 0U : found->processor;
 }
 
 bool GuestBridge::is_guest_thread_object(std::uint32_t object) const noexcept {

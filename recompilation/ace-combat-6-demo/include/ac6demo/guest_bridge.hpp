@@ -399,6 +399,17 @@ public:
                          std::uint32_t *object) const noexcept;
   [[nodiscard]] bool
   is_guest_thread_object(std::uint32_t object) const noexcept;
+  // XDK: XSetThreadProcessor pins a software thread to exactly one hardware
+  // thread, and GetCurrentProcessorNumber returns that number in 0..5. The
+  // affinity mask the guest passes to KeSetAffinityThread is therefore one-hot
+  // over six processors, and its index is the number the guest reads back from
+  // its PCR. Refuses a zero, multi-bit or out-of-range mask by leaving the
+  // thread's published identity untouched.
+  [[nodiscard]] bool
+  pin_guest_thread_processor(std::uint32_t object,
+                             std::uint32_t mask) noexcept;
+  [[nodiscard]] std::uint8_t
+  guest_thread_processor(std::uint32_t object) const noexcept;
   [[nodiscard]] bool
   resume_guest_thread(std::uint32_t handle,
                       std::uint32_t previous_count_pointer,
@@ -460,6 +471,10 @@ private:
     std::uint32_t parameter{};
     std::uint32_t creation_flags{};
     std::uint32_t stack_top{};
+    // Hardware-thread number this guest thread is pinned to (XDK 0..5),
+    // published at r13+0x10C while it runs. Unpinned threads keep 0.
+    std::uint8_t processor{};
+    bool processor_pinned{};
     bool suspended{};
     bool handle_open{true};
     bool started{};

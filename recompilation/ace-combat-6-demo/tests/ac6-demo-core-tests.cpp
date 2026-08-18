@@ -18,6 +18,42 @@ suite then passes vacuously. Build this target with -UNDEBUG."
 
 namespace {
 
+#ifdef AC6_DEMO_GENERATED_GUEST
+// Guarded because the non-generated build compiles a GuestBridge with no
+// thread scheduler at all; this assertion runs for real in the codegen-on
+// tree, whose ctest suite covers the same file.
+// XDK: XSetThreadProcessor pins to one hardware thread and
+// GetCurrentProcessorNumber reports 0..5, so a one-hot affinity mask names the
+// processor the guest will read back from its PCR.
+void test_guest_processor_identity_is_one_hot() {
+  ac6demo::GuestMemory memory;
+  memory.map_zero(0x20000U, 0x2000U);
+  ac6demo::GuestBridge bridge(memory);
+  std::uint32_t thread_id{};
+  const auto created = bridge.create_guest_thread(0x1000U, 0x20000U, 0U,
+                                                  0x82000000U, 0U, 0U,
+                                                  0x20004U, &thread_id);
+  assert(created);
+  std::uint32_t object{};
+  assert(bridge.reference_guest_thread(memory.load_u32(0x20004U), &object));
+  assert(bridge.guest_thread_processor(object) == 0U);
+  assert(bridge.pin_guest_thread_processor(object, 0x10U));
+  assert(bridge.guest_thread_processor(object) == 4U);
+  assert(bridge.pin_guest_thread_processor(object, 0x20U));
+  assert(bridge.guest_thread_processor(object) == 5U);
+  assert(bridge.pin_guest_thread_processor(object, 0x01U));
+  assert(bridge.guest_thread_processor(object) == 0U);
+  // Refused shapes leave the published identity alone rather than invent one.
+  assert(bridge.pin_guest_thread_processor(object, 0x04U));
+  assert(!bridge.pin_guest_thread_processor(object, 0U));
+  assert(!bridge.pin_guest_thread_processor(object, 0x30U));
+  assert(!bridge.pin_guest_thread_processor(object, 0x40U));
+  assert(!bridge.pin_guest_thread_processor(object + 4U, 0x02U));
+  assert(bridge.guest_thread_processor(object) == 2U);
+}
+
+#endif
+
 void test_xenos_ring_snapshot() {
   ac6demo::GuestMemory memory;
   memory.map_zero(0x20000U, 0x1000U);
@@ -366,6 +402,10 @@ int main() {
   assert(hooks.read_timebase(context) == 50'000'000ULL);
   assert(std::isfinite(ac6demo::xenon_reciprocal_estimate(3.0F)));
   assert(std::isfinite(ac6demo::xenon_rsqrt_estimate(3.0F)));
+
+#ifdef AC6_DEMO_GENERATED_GUEST
+  test_guest_processor_identity_is_one_hot();
+#endif
 
   std::cout << "ac6-demo-core-tests: ok\n";
   return 0;
