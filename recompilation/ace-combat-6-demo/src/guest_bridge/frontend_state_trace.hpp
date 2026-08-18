@@ -4,6 +4,72 @@
 #include <cstdio>
 #include <cstdlib>
 
+// Two opt-in probes lifted out of trace_frontend_state, which the
+// complexity budget caps at 220 lines per function.
+inline void trace_service_registry(ac6demo::GuestMemory &memory,
+                                   std::uint64_t tick) {
+  // The callback registrar sub_821ADC78 guards every one of its
+  // bctrl sites on these two globals; zero indirect edges were
+  // recorded inside it, so read them rather than assume.
+  {
+    static std::uint64_t previous_registry = 0xFFFFFFFFFFFFFFFFULL;
+    const auto a = memory.mapped(0x82000610U, 4U)
+                       ? memory.load_u32(0x82000610U) : 0U;
+    const auto b = memory.mapped(0x820006E4U, 4U)
+                       ? memory.load_u32(0x820006E4U) : 0U;
+    const auto a0 = (a != 0U && memory.mapped(a, 4U))
+                        ? memory.load_u32(a) : 0U;
+    const auto b0 = (b != 0U && memory.mapped(b, 32U))
+                        ? memory.load_u32(b) : 0U;
+    const auto b24 = (b0 != 0U && memory.mapped(b0, 32U))
+                         ? memory.load_u32(b0 + 24U) : 0U;
+    const std::uint64_t key =
+        (static_cast<std::uint64_t>(a0) << 32) ^ b0 ^
+        (static_cast<std::uint64_t>(b24) << 8);
+    if (key != previous_registry) {
+      std::fprintf(stderr,
+                   "AC6_SERVICEREG tick=%llu g610=0x%08X [g610]=0x%08X "
+                   "g6E4=0x%08X [g6E4]=0x%08X disp=0x%08X\n",
+                   static_cast<unsigned long long>(tick), a, a0, b,
+                   b0, b24);
+      previous_registry = key;
+    }
+  }
+}
+
+inline void trace_message_listeners(ac6demo::GuestMemory &memory,
+                                    std::uint64_t tick) {
+  // SendMsgI broadcasts to the listener array at 0x826DF800 and calls
+  // slot +0x20 on each. At the press both callees were 0x820AC748,
+  // the shared no-op, so this dumps who is actually registered.
+  {
+    static std::uint64_t previous_listeners = 0xFFFFFFFFFFFFFFFFULL;
+    if (memory.mapped(0x826DF800U, 64U)) {
+      std::uint64_t key = 0U;
+      char line[512];
+      int used = std::snprintf(line, sizeof(line),
+                               "AC6_MSGLISTENERS tick=%llu",
+                               static_cast<unsigned long long>(tick));
+      for (std::uint32_t i = 0U; i < 12U; ++i) {
+        const auto entry = memory.load_u32(0x826DF800U + i * 4U);
+        if (entry == 0U) {
+          break;
+        }
+        const auto vptr =
+            memory.mapped(entry, 4U) ? memory.load_u32(entry) : 0U;
+        key = key * 31U + vptr;
+        used += std::snprintf(line + used, sizeof(line) - used,
+                              " [%u]=0x%08X vptr=0x%08X", i, entry,
+                              vptr);
+      }
+      if (key != previous_listeners) {
+        std::fprintf(stderr, "%s\n", line);
+        previous_listeners = key;
+      }
+    }
+  }
+}
+
 // Frontend and renderer state, read-only and opt-in. Extracted from
 // run_entry, which the source budget caps at 220 lines.
 inline void trace_frontend_state(ac6demo::GuestMemory &memory,
@@ -59,35 +125,8 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
           const auto mode = memory.load_u32(manager + 8U);
           if (mode != 0U && memory.mapped(mode, 16U)) {
             const auto mode_state = memory.load_u32(mode + 12U);
-            // SendMsgI broadcasts to the listener array at 0x826DF800 and calls
-            // slot +0x20 on each. At the press both callees were 0x820AC748,
-            // the shared no-op, so this dumps who is actually registered.
-            {
-              static std::uint64_t previous_listeners = 0xFFFFFFFFFFFFFFFFULL;
-              if (memory.mapped(0x826DF800U, 64U)) {
-                std::uint64_t key = 0U;
-                char line[512];
-                int used = std::snprintf(line, sizeof(line),
-                                         "AC6_MSGLISTENERS tick=%llu",
-                                         static_cast<unsigned long long>(tick));
-                for (std::uint32_t i = 0U; i < 12U; ++i) {
-                  const auto entry = memory.load_u32(0x826DF800U + i * 4U);
-                  if (entry == 0U) {
-                    break;
-                  }
-                  const auto vptr =
-                      memory.mapped(entry, 4U) ? memory.load_u32(entry) : 0U;
-                  key = key * 31U + vptr;
-                  used += std::snprintf(line + used, sizeof(line) - used,
-                                        " [%u]=0x%08X vptr=0x%08X", i, entry,
-                                        vptr);
-                }
-                if (key != previous_listeners) {
-                  std::fprintf(stderr, "%s\n", line);
-                  previous_listeners = key;
-                }
-              }
-            }
+            trace_service_registry(memory, tick);
+            trace_message_listeners(memory, tick);
             // GetCurrentMode / GetCurrentMission / GetCurrentLevel -- the three
             // script commands the movie issues after START -- all read the
             // singleton at [0x823C27E0]: mode is [gs+120], the other two derive
