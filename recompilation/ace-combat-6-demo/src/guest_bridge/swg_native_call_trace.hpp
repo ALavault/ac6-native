@@ -325,6 +325,20 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
     // not the lookup-line window -- cheap, since it's once per distinct
     // context (a fixed small seen-set).
     if (std::getenv("AC6_DEMO_DUMP_SWG_SYMBOL_TABLE") != nullptr) {
+      // The fixed 4-slot cache fills with whichever contexts this call
+      // site sees first; a run long enough to reach a later context (e.g.
+      // the loading task's, first evaluated well after two earlier
+      // attract-movie pairs) never dumps it, because the cache is already
+      // full by then. AC6_DEMO_SYMBOL_TABLE_MIN_TICK biases the cache
+      // toward a specific later window without touching the unset-env
+      // default (min_tick 0 reproduces the original first-4-ever
+      // behaviour exactly).
+      static const char *min_tick_str =
+          std::getenv("AC6_DEMO_SYMBOL_TABLE_MIN_TICK");
+      static const std::uint64_t min_tick =
+          min_tick_str != nullptr
+              ? std::strtoull(min_tick_str, nullptr, 0)
+              : 0ULL;
       static std::array<std::uint32_t, 4> dumped_contexts{};
       static std::size_t dumped_count = 0;
       const auto context_address = context.r4.u32;
@@ -332,7 +346,8 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
       for (std::size_t i = 0; i < dumped_count; ++i) {
         already_dumped = already_dumped || dumped_contexts[i] == context_address;
       }
-      if (!already_dumped && dumped_count < dumped_contexts.size()) {
+      if (!already_dumped && tick >= min_tick &&
+          dumped_count < dumped_contexts.size()) {
         dumped_contexts[dumped_count++] = context_address;
         const auto context_vtable = memory.load_u32(context_address);
         dump_swg_symbol_table(memory, context_address + 36U, context_address,
