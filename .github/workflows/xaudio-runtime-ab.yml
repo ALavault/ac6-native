@@ -1,0 +1,482 @@
+name: XAudio CPU A/B integration staging
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stage-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply bounded runtime integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from __future__ import annotations
+          import json
+          import re
+          from pathlib import Path
+
+          root = Path('recompilation/ace-combat-6-demo')
+          lifecycle_path = root / 'src/guest_bridge/lifecycle.hpp'
+          audio_path = root / 'src/guest_bridge/audio_memory_dispatch.hpp'
+          contract_path = root / 'include/ac6demo/xaudio_callback_cpu_contract.hpp'
+          test_path = root / 'tests/xaudio_callback_cpu_contract_tests.cpp'
+          cmake_path = root / 'CMakeLists.txt'
+
+          lifecycle = lifecycle_path.read_text()
+          include = '#include "ac6demo/xaudio_callback_cpu_contract.hpp"\n'
+          if include not in lifecycle:
+              lifecycle = lifecycle.replace(
+                  '// Internal GuestBridge domain fragment; included only by guest_bridge.cpp.\n',
+                  '// Internal GuestBridge domain fragment; included only by guest_bridge.cpp.\n' + include,
+                  1,
+              )
+
+          dispatch_re = re.compile(
+              r'  const auto dispatch_xaudio_frame = \[&\]\(\) \{\n.*?\n  \};\n  if \(xenos_cp_interrupts_pending_ != 0U\) \{',
+              re.S,
+          )
+          dispatch = r'''  const auto dispatch_xaudio_frame =
+      [&](const XAudioCallbackCpuSelection &selection,
+          std::uint32_t client) {
+    auto *primary_fiber =
+        static_cast<GuestFiber *>(primary_thread_.fiber_state);
+    if (primary_fiber == nullptr || primary_fiber->ppc == nullptr ||
+        graphics_interrupt_stack_top_ == 0U) {
+      throw RuntimeTrap("XAudio callback context is unavailable", tick_);
+    }
+    PPCContext frame = *primary_fiber->ppc;
+    frame.r1.u32 = graphics_interrupt_stack_top_ - 0x200U;
+    frame.r3.u32 = xaudio_callback_context_;
+    frame.r4.u32 = 0U;
+    frame.r5.u32 = 0U;
+    frame.lr = 0U;
+    if (frame.r13.u32 > std::numeric_limits<std::uint32_t>::max() -
+                            0x10CU ||
+        !memory_.mapped(frame.r13.u32 + 0x10CU, 1U)) {
+      throw RuntimeTrap("XAudio callback processor field is unavailable",
+                        tick_, 0, frame.r13.u32);
+    }
+    const auto processor_field = frame.r13.u32 + 0x10CU;
+    const auto previous_processor = memory_.load_u8(processor_field);
+    const auto previous_thread_id = current_guest_thread_id;
+    const auto submissions_before = xaudio_frames_submitted_;
+    const auto events_before = event_set_count;
+    const bool watch_xaudio_cpu =
+        std::getenv("AC6_DEMO_WATCH_XAUDIO_CPU") != nullptr ||
+        std::getenv("AC6_DEMO_WATCH_XAUDIO") != nullptr;
+    if (watch_xaudio_cpu) {
+      std::fprintf(
+          stderr,
+          "AC6_XAUDIO_CPU_SELECT tick=%llu frame=%llu client=0x%08X "
+          "processor=%u previous_processor=%u descriptor_a=0x%08X "
+          "descriptor_b=0x%08X callback=0x%08X context=0x%08X "
+          "submissions_before=%llu events_before=%llu\n",
+          static_cast<unsigned long long>(tick_),
+          static_cast<unsigned long long>(xaudio_frames_emitted_), client,
+          static_cast<unsigned int>(selection.processor),
+          static_cast<unsigned int>(previous_processor),
+          selection.descriptors.a, selection.descriptors.b, xaudio_callback_,
+          xaudio_callback_context_,
+          static_cast<unsigned long long>(submissions_before),
+          static_cast<unsigned long long>(events_before));
+    }
+    memory_.store_u8(processor_field, selection.processor);
+    current_guest_thread_id = 2U;
+    try {
+      AC6_PPC_CALL_INDIRECT(frame, memory_.raw_base(), xaudio_callback_);
+    } catch (...) {
+      memory_.store_u8(processor_field, previous_processor);
+      current_guest_thread_id = previous_thread_id;
+      if (watch_xaudio_cpu) {
+        std::fprintf(stderr,
+                     "AC6_XAUDIO_CALLBACK_THROW tick=%llu frame=%llu "
+                     "processor=%u submissions_delta=%llu events_delta=%llu\n",
+                     static_cast<unsigned long long>(tick_),
+                     static_cast<unsigned long long>(xaudio_frames_emitted_),
+                     static_cast<unsigned int>(selection.processor),
+                     static_cast<unsigned long long>(
+                         xaudio_frames_submitted_ - submissions_before),
+                     static_cast<unsigned long long>(event_set_count -
+                                                     events_before));
+      }
+      throw;
+    }
+    memory_.store_u8(processor_field, previous_processor);
+    current_guest_thread_id = previous_thread_id;
+    if (watch_xaudio_cpu) {
+      std::fprintf(
+          stderr,
+          "AC6_XAUDIO_CALLBACK_RETURN tick=%llu frame=%llu processor=%u "
+          "submissions_delta=%llu events_delta=%llu restored_processor=%u\n",
+          static_cast<unsigned long long>(tick_),
+          static_cast<unsigned long long>(xaudio_frames_emitted_),
+          static_cast<unsigned int>(selection.processor),
+          static_cast<unsigned long long>(xaudio_frames_submitted_ -
+                                          submissions_before),
+          static_cast<unsigned long long>(event_set_count - events_before),
+          static_cast<unsigned int>(memory_.load_u8(processor_field)));
+    }
+  };
+  if (xenos_cp_interrupts_pending_ != 0U) {'''
+          lifecycle, count = dispatch_re.subn(dispatch, lifecycle, count=1)
+          if count != 1:
+              raise SystemExit(f'dispatch replacement count={count}')
+
+          readiness_re = re.compile(
+              r'  constexpr std::uint32_t kXAudioClientStateGlobal = 0x829DA528U;\n'
+              r'  const bool xaudio_client_ready =\n.*?\n'
+              r'  if \(xaudio_client_ready\) \{\n.*?\n  \}\n'
+              r'  trace_frontend_state',
+              re.S,
+          )
+          readiness = r'''  constexpr std::uint32_t kXAudioClientStateGlobal = 0x829DA528U;
+  const bool xaudio_drive_requested =
+      std::getenv("AC6_DEMO_EXPERIMENTAL_XAUDIO_DRIVE") != nullptr;
+  const auto *xaudio_processor_text =
+      std::getenv("AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR");
+  std::optional<std::uint8_t> xaudio_requested_processor;
+  if (xaudio_processor_text != nullptr) {
+    try {
+      xaudio_requested_processor = parse_xaudio_callback_processor(
+          std::string_view{xaudio_processor_text});
+    } catch (const std::invalid_argument &) {
+      throw RuntimeTrap("XAudio experimental processor must be 4 or 5", tick_);
+    }
+  }
+  if (xaudio_drive_requested && !xaudio_requested_processor.has_value()) {
+    throw RuntimeTrap(
+        "XAudio drive requires AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR=4|5",
+        tick_);
+  }
+  const bool xaudio_client_ready =
+      xaudio_callback_ != 0U && xaudio_drive_requested &&
+      memory_.mapped(kXAudioClientStateGlobal, 4U) &&
+      memory_.load_u32(kXAudioClientStateGlobal) != 0U;
+  if (xaudio_client_ready) {
+    const auto client = memory_.load_u32(kXAudioClientStateGlobal);
+    if (!memory_.mapped(client, 0x3CU)) {
+      throw RuntimeTrap("XAudio descriptor table is unavailable", tick_, 0,
+                        client);
+    }
+    XAudioDescriptorTable descriptor_table{};
+    for (std::uint8_t processor = 0U;
+         processor < kXAudioProcessorCount; ++processor) {
+      descriptor_table[processor] = XAudioDescriptorPair{
+          memory_.load_u32(client + xaudio_descriptor_offset(
+                                        processor, XAudioDescriptorLane::A)),
+          memory_.load_u32(client + xaudio_descriptor_offset(
+                                        processor, XAudioDescriptorLane::B))};
+    }
+    XAudioCallbackCpuSelection selection;
+    try {
+      selection = select_xaudio_callback_cpu(
+          descriptor_table, xaudio_requested_processor);
+    } catch (const std::invalid_argument &) {
+      throw RuntimeTrap("XAudio callback CPU has no complete descriptor pair",
+                        tick_, 0, client);
+    }
+    const auto target = ((tick_ + 1U) * 25U) / 8U;
+    while (xaudio_frames_emitted_ < target) {
+      dispatch_xaudio_frame(selection, client);
+      ++xaudio_frames_emitted_;
+    }
+  }
+  trace_frontend_state'''
+          lifecycle, count = readiness_re.subn(readiness, lifecycle, count=1)
+          if count != 1:
+              raise SystemExit(f'readiness replacement count={count}')
+          lifecycle_path.write_text(lifecycle)
+
+          audio = audio_path.read_text()
+          old_submit = '''    bridge.count_xaudio_frame_submission();
+    context.r3.u32 = 0U;
+    return true;
+'''
+          new_submit = '''    bridge.count_xaudio_frame_submission();
+    if (std::getenv("AC6_DEMO_WATCH_XAUDIO_CPU") != nullptr ||
+        std::getenv("AC6_DEMO_WATCH_XAUDIO") != nullptr) {
+      std::fprintf(
+          stderr,
+          "AC6_XAUDIO_SUBMIT tick=%llu thread=%u lr=0x%08X "
+          "handle=0x%08X frame=0x%08X bytes=0x%X count=%llu\\n",
+          static_cast<unsigned long long>(bridge.tick()),
+          current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+          context.r3.u32, frame_pointer, frame_bytes,
+          static_cast<unsigned long long>(bridge.xaudio_frames_submitted()));
+    }
+    context.r3.u32 = 0U;
+    return true;
+'''
+          if old_submit not in audio:
+              raise SystemExit('submit anchor not found')
+          audio = audio.replace(old_submit, new_submit, 1)
+          audio_path.write_text(audio)
+
+          contract = contract_path.read_text()
+          if '#include <string_view>' not in contract:
+              contract = contract.replace('#include <stdexcept>\n',
+                                          '#include <stdexcept>\n#include <string_view>\n')
+          parse_function = '''
+[[nodiscard]] inline std::uint8_t
+parse_xaudio_callback_processor(std::string_view value) {
+  if (value == "4") {
+    return 4U;
+  }
+  if (value == "5") {
+    return 5U;
+  }
+  throw std::invalid_argument{
+      "XAudio callback processor experiment accepts only 4 or 5"};
+}
+'''
+          marker = '\n[[nodiscard]] constexpr std::uint32_t xaudio_descriptor_offset('
+          if 'parse_xaudio_callback_processor' not in contract:
+              if marker not in contract:
+                  raise SystemExit('contract insertion anchor not found')
+              contract = contract.replace(marker, parse_function + marker, 1)
+          contract_path.write_text(contract)
+
+          test = test_path.read_text()
+          test_anchor = '  assert(ac6demo::xaudio_descriptor_offset(0U, XAudioDescriptorLane::A) ==\n'
+          parse_tests = '''  assert(ac6demo::parse_xaudio_callback_processor("4") == 4U);
+  assert(ac6demo::parse_xaudio_callback_processor("5") == 5U);
+  bool bad_processor_text = false;
+  try {
+    (void)ac6demo::parse_xaudio_callback_processor("0");
+  } catch (const std::invalid_argument &) {
+    bad_processor_text = true;
+  }
+  assert(bad_processor_text);
+
+'''
+          if 'bad_processor_text' not in test:
+              if test_anchor not in test:
+                  raise SystemExit('test insertion anchor not found')
+              test = test.replace(test_anchor, parse_tests + test_anchor, 1)
+          test_path.write_text(test)
+
+          cmake = cmake_path.read_text()
+          target = '''add_executable(ac6-demo-xaudio-callback-cpu-contract-tests
+  tests/xaudio_callback_cpu_contract_tests.cpp)
+target_include_directories(ac6-demo-xaudio-callback-cpu-contract-tests PRIVATE
+  include)
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(ac6-demo-xaudio-callback-cpu-contract-tests PRIVATE
+    -UNDEBUG -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+add_test(NAME ac6-demo-xaudio-callback-cpu-contract-tests
+  COMMAND ac6-demo-xaudio-callback-cpu-contract-tests)
+'''
+          if 'add_executable(ac6-demo-xaudio-callback-cpu-contract-tests' not in cmake:
+              cmake = cmake.replace('enable_testing()\n', 'enable_testing()\n' + target, 1)
+          cmake_path.write_text(cmake)
+
+          tools = root / 'tools'
+          tools.mkdir(exist_ok=True)
+          analyzer = tools / 'analyze_xaudio_cpu_ab.py'
+          analyzer.write_text(r'''#!/usr/bin/env python3
+from __future__ import annotations
+import argparse, json, re
+from pathlib import Path
+
+SELECT = re.compile(r"AC6_XAUDIO_CPU_SELECT .*?tick=(\d+).*?frame=(\d+).*?processor=(\d+).*?descriptor_a=0x([0-9A-Fa-f]+).*?descriptor_b=0x([0-9A-Fa-f]+)")
+RETURN = re.compile(r"AC6_XAUDIO_CALLBACK_RETURN .*?tick=(\d+).*?frame=(\d+).*?processor=(\d+).*?submissions_delta=(\d+).*?events_delta=(\d+)")
+SUBMIT = re.compile(r"AC6_XAUDIO_SUBMIT .*?tick=(\d+).*?count=(\d+)")
+WAKE = re.compile(r"AC6_EVENT_HANDOFF op=event_wake .*?tick=(\d+).*?waiter=(\d+)")
+
+def inspect(log: Path, processor: int, status: int) -> dict:
+    lines = log.read_text(errors="replace").splitlines()
+    selects = [m.groups() for line in lines if (m := SELECT.search(line))]
+    returns = [m.groups() for line in lines if (m := RETURN.search(line))]
+    submits = [m.groups() for line in lines if (m := SUBMIT.search(line))]
+    wakes = [m.groups() for line in lines if (m := WAKE.search(line)) and int(m.group(2)) != 0]
+    stages = []
+    if any(int(row[2]) == processor and int(row[3], 16) and int(row[4], 16) for row in selects):
+        stages.append("descriptor_selected")
+    if stages and returns:
+        stages.append("callback_returned")
+    if len(stages) == 2 and submits:
+        stages.append("frame_submitted")
+    if len(stages) == 3 and any(int(row[4]) > 0 for row in returns):
+        stages.append("worker_event_published")
+    if len(stages) == 4 and wakes:
+        stages.append("worker_woken")
+    if len(stages) == 5 and len(submits) >= 2:
+        stages.append("next_frame_submitted")
+    return {
+        "processor": processor,
+        "process_status": status,
+        "ordered_prefix": stages,
+        "select_count": len(selects),
+        "return_count": len(returns),
+        "submit_count": len(submits),
+        "wake_count": len(wakes),
+        "first_select": selects[0] if selects else None,
+        "first_return": returns[0] if returns else None,
+        "last_submit": submits[-1] if submits else None,
+    }
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cpu4", type=Path, required=True)
+    ap.add_argument("--cpu5", type=Path, required=True)
+    ap.add_argument("--status4", type=int, required=True)
+    ap.add_argument("--status5", type=int, required=True)
+    ap.add_argument("--output", type=Path, required=True)
+    args = ap.parse_args()
+    routes = [inspect(args.cpu4, 4, args.status4), inspect(args.cpu5, 5, args.status5)]
+    best = max(routes, key=lambda route: len(route["ordered_prefix"]))
+    promoted = len(best["ordered_prefix"]) == 6 and best["process_status"] == 0
+    result = {
+        "schema": "ac6-demo-xaudio-cpu-ab/v1",
+        "routes": routes,
+        "best_processor": best["processor"],
+        "promotion_ready": promoted,
+        "required_chain": [
+            "descriptor_selected", "callback_returned", "frame_submitted",
+            "worker_event_published", "worker_woken", "next_frame_submitted"
+        ],
+    }
+    args.output.write_text(json.dumps(result, indent=2) + "\n")
+    print(json.dumps(result, indent=2))
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+''')
+          analyzer.chmod(0o755)
+
+          runner = tools / 'run_xaudio_cpu_ab.sh'
+          runner.write_text(r'''#!/usr/bin/env bash
+set -euo pipefail
+if [[ $# -lt 2 ]]; then
+  echo "usage: $0 OUTPUT_DIR BINARY [ARGS...]" >&2
+  exit 64
+fi
+out=$1
+shift
+binary=$1
+shift
+mkdir -p "$out"
+for cpu in 4 5; do
+  log="$out/cpu${cpu}.log"
+  status_file="$out/cpu${cpu}.status"
+  set +e
+  AC6_DEMO_EXPERIMENTAL_XAUDIO_DRIVE=1 \
+  AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR="$cpu" \
+  AC6_DEMO_WATCH_XAUDIO=1 \
+  AC6_DEMO_WATCH_XAUDIO_CPU=1 \
+  AC6_DEMO_WATCH_EVENT_HANDOFF=1 \
+    "$binary" "$@" >"$out/cpu${cpu}.stdout" 2>"$log"
+  status=$?
+  set -e
+  printf '%s\n' "$status" >"$status_file"
+done
+python3 "$(dirname "$0")/analyze_xaudio_cpu_ab.py" \
+  --cpu4 "$out/cpu4.log" --cpu5 "$out/cpu5.log" \
+  --status4 "$(cat "$out/cpu4.status")" \
+  --status5 "$(cat "$out/cpu5.status")" \
+  --output "$out/xaudio-cpu-ab.json"
+''')
+          runner.chmod(0o755)
+
+          verifier = tools / 'verify_xaudio_cpu_runtime_integration.py'
+          verifier.write_text(r'''#!/usr/bin/env python3
+from pathlib import Path
+
+root = Path(__file__).resolve().parents[1]
+lifecycle = (root / "src/guest_bridge/lifecycle.hpp").read_text()
+audio = (root / "src/guest_bridge/audio_memory_dispatch.hpp").read_text()
+cmake = (root / "CMakeLists.txt").read_text()
+required = {
+    "contract include": '#include "ac6demo/xaudio_callback_cpu_contract.hpp"' in lifecycle,
+    "explicit processor env": "AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR" in lifecycle,
+    "fail-closed selection": "select_xaudio_callback_cpu" in lifecycle,
+    "PCR publish": "memory_.store_u8(processor_field, selection.processor);" in lifecycle,
+    "PCR restore catch": lifecycle.count("memory_.store_u8(processor_field, previous_processor);") >= 2,
+    "callback return trace": "AC6_XAUDIO_CALLBACK_RETURN" in lifecycle,
+    "submit trace": "AC6_XAUDIO_SUBMIT" in audio,
+    "CTest target": "ac6-demo-xaudio-callback-cpu-contract-tests" in cmake,
+}
+failed = [name for name, present in required.items() if not present]
+if "memory_.store_u8(processor_field, 4U)" in lifecycle or "memory_.store_u8(processor_field, 5U)" in lifecycle:
+    failed.append("hardcoded processor store")
+if failed:
+    raise SystemExit("missing/refused anchors: " + ", ".join(failed))
+print(f"anchors={len(required)} status=PASS")
+''')
+          verifier.chmod(0o755)
+
+          report = Path('reports/AC6_DEMO_XAUDIO_CPU_AB_RUNTIME_INTEGRATION.md')
+          report.write_text('''# AC6 démo PAL — intégration runtime de l’A/B CPU XAudio\n\nLe runtime exige maintenant un processeur expérimental explicite (`4` ou `5`) avant de conduire le callback XAudio. Il charge les six paires de descripteurs depuis l’objet audio PAL, refuse une paire incomplète, publie le CPU choisi dans `r13+0x10C`, puis restaure le byte même après exception.\n\nLe comportement par défaut reste inchangé : `AC6_DEMO_EXPERIMENTAL_XAUDIO_DRIVE` et `AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR` sont tous deux nécessaires.\n\nLa chaîne de promotion reste : descripteur non nul → retour callback → frame 0x1800 soumise → événement publié → worker réveillé → frame suivante soumise. Le runner process-fresh et l’analyseur JSON sont versionnés dans `tools/`. Les assets propriétaires ne sont pas présents en CI, donc cette intégration valide la compilation, les gardes et l’instrumentation, pas encore le résultat dynamique CPU 4 contre CPU 5.\n''')
+
+          capsule = Path('analysis/demo/ac6-demo-xaudio-runtime-ab-v1.json')
+          capsule.parent.mkdir(parents=True, exist_ok=True)
+          capsule.write_text(json.dumps({
+              "schema": "ac6-demo-xaudio-runtime-ab/v1",
+              "processors": [4, 5],
+              "default_behavior_changed": False,
+              "required_environment": [
+                  "AC6_DEMO_EXPERIMENTAL_XAUDIO_DRIVE=1",
+                  "AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR=4|5"
+              ],
+              "required_chain": [
+                  "descriptor_selected", "callback_returned", "frame_submitted",
+                  "worker_event_published", "worker_woken", "next_frame_submitted"
+              ],
+              "dynamic_ab_executed_in_ci": False,
+              "reason": "proprietary PAL demo assets are not present in the repository"
+          }, indent=2) + "\n")
+          PY
+
+      - name: Validate bounded changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash recompilation/ace-combat-6-demo/tools/run_xaudio_callback_cpu_contract_test.sh
+          python3 recompilation/ace-combat-6-demo/tools/verify_xaudio_cpu_runtime_integration.py
+          python3 -m py_compile \
+            recompilation/ace-combat-6-demo/tools/analyze_xaudio_cpu_ab.py \
+            recompilation/ace-combat-6-demo/tools/verify_xaudio_cpu_runtime_integration.py
+          git diff --check
+
+      - name: Package patched source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/xaudio-runtime-patch
+          paths=(
+            recompilation/ace-combat-6-demo/src/guest_bridge/lifecycle.hpp
+            recompilation/ace-combat-6-demo/src/guest_bridge/audio_memory_dispatch.hpp
+            recompilation/ace-combat-6-demo/include/ac6demo/xaudio_callback_cpu_contract.hpp
+            recompilation/ace-combat-6-demo/tests/xaudio_callback_cpu_contract_tests.cpp
+            recompilation/ace-combat-6-demo/CMakeLists.txt
+            recompilation/ace-combat-6-demo/tools/analyze_xaudio_cpu_ab.py
+            recompilation/ace-combat-6-demo/tools/run_xaudio_cpu_ab.sh
+            recompilation/ace-combat-6-demo/tools/verify_xaudio_cpu_runtime_integration.py
+            reports/AC6_DEMO_XAUDIO_CPU_AB_RUNTIME_INTEGRATION.md
+            analysis/demo/ac6-demo-xaudio-runtime-ab-v1.json
+          )
+          for path in "${paths[@]}"; do
+            mkdir -p "/tmp/xaudio-runtime-patch/$(dirname "$path")"
+            cp "$path" "/tmp/xaudio-runtime-patch/$path"
+          done
+          git diff --binary > /tmp/xaudio-runtime-patch/xaudio-runtime.patch
+          git diff --stat > /tmp/xaudio-runtime-patch/xaudio-runtime.stat
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xaudio-runtime-patch
+          path: /tmp/xaudio-runtime-patch
+          if-no-files-found: error
+          retention-days: 1
