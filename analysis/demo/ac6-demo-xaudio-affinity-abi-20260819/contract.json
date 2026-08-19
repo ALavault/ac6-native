@@ -1,0 +1,31 @@
+{
+  "schema": "ac6-demo-xaudio-affinity-return-abi/v1",
+  "date": "2026-08-19",
+  "target": "AC6 Xbox 360 PAL demo",
+  "static_join": {
+    "wrapper": "0x821A5390",
+    "import_call": "0x821A53DC",
+    "input": "requested processor index 0..5 converted to one-hot mask",
+    "return_consumer": "cntlzw/subfic on r3",
+    "qualified_abi": "KAFFINITY return in r3; no r5 output pointer"
+  },
+  "retraction": {
+    "fields": ["previous_ptr", "previous_value", "previous_mapped"],
+    "reason": "r5 is stale caller state, not an ABI argument",
+    "still_valid": ["object", "raw_r4", "tick", "thread", "lr"]
+  },
+  "runtime": {
+    "valid_masks": [1, 2, 4, 8, 16, 32],
+    "previous_mask": "1 << current published processor",
+    "side_effect": "update GuestThread.processor only after validation",
+    "r5_memory_access": false,
+    "default_xaudio_cpu_changed": false
+  },
+  "preserved_original_git_blob": "957e5f587a9be82f2d7efaf0e44b1a4b840aaf38",
+  "publication": {
+    "github_actions_used": false,
+    "pull_request_used": false,
+    "zip": false,
+    "proprietary_bytes": false
+  }
+}
