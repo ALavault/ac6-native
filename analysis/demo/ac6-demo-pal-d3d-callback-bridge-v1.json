@@ -1,0 +1,134 @@
+{
+  "schema": "ac6-demo-pal-d3d-callback-bridge/v1",
+  "image_sha256": "b81941994944b84f5792fd7b89cd698ca429b13c1bb4f501ea12e49dc54c2f01",
+  "status": "PASS",
+  "failures": [],
+  "transport": {
+    "scratch_callback_register": 4,
+    "scratch_parameter_register": 5,
+    "scratch_type0_header": "0x0001057C",
+    "interrupt_opcode": "0x54",
+    "interrupt_header": "0xC0005400",
+    "interrupt_payload": "CPU mask, bits 0..5",
+    "guest_dispatcher": "0x821B9710",
+    "source_one_semantics": "load [device+0x2A94]+0x10 callback and +0x14 parameter, call callback(parameter), clear current CPU bit"
+  },
+  "producers": [
+    {
+      "callsite": "0x821B9120",
+      "encoder": "0x821BAA78",
+      "callback": "0x821C4A60",
+      "route": "wrapper",
+      "parameter": "computed queue parameter",
+      "flags": "dynamic CPU-mask flags"
+    },
+    {
+      "callsite": "0x821C4D30",
+      "encoder": "0x821BA1F8",
+      "callback": "0x821C4A60",
+      "route": "direct",
+      "parameter": "computed queue parameter",
+      "flags": "r30 | 1"
+    },
+    {
+      "callsite": "0x821C5458",
+      "encoder": "0x821BA1F8",
+      "callback": "0x821C5190",
+      "route": "direct",
+      "parameter": "device callback state",
+      "flags": "0"
+    },
+    {
+      "callsite": "0x822E4444",
+      "encoder": "0x821BAA78",
+      "callback": "0x822E4240",
+      "route": "tail wrapper",
+      "parameter": "incoming r3",
+      "flags": "0"
+    },
+    {
+      "callsite": "0x822E4470",
+      "encoder": "0x821BAA78",
+      "callback": "0x822E4268",
+      "route": "wrapper",
+      "parameter": "incoming r3",
+      "flags": "0"
+    }
+  ],
+  "callsites": {
+    "0x821BA1F8": [
+      "0x821BAABC",
+      "0x821C4D30",
+      "0x821C5458"
+    ],
+    "0x821BAA78": [
+      "0x821B9120",
+      "0x822E4470"
+    ],
+    "0x821C4A60": [],
+    "0x821C5190": []
+  },
+  "functions": [
+    {
+      "begin": "0x821B8ED8",
+      "end_exclusive": "0x821B9410",
+      "bytes": 1336,
+      "sha256": "066c4326a4e70b5c9401a3b7cba52e955cafc0a7393bebf81a233eb629a75613",
+      "role": "frame/bootstrap command producer"
+    },
+    {
+      "begin": "0x821B9710",
+      "end_exclusive": "0x821B9810",
+      "bytes": 256,
+      "sha256": "33e5568db9dd9501f9809ff89a3458f4a168e94f7812728c3d0143ca6da0bc82",
+      "role": "D3D graphics interrupt dispatcher"
+    },
+    {
+      "begin": "0x821B9BC8",
+      "end_exclusive": "0x821B9DB0",
+      "bytes": 488,
+      "sha256": "785055b9532b97db9a1eda5e810047a9bbf6b4b44dd7f68016348966e565fd7d",
+      "role": "D3D::CDevice::AddCallsToPrimaryBuffer"
+    },
+    {
+      "begin": "0x821BA1F8",
+      "end_exclusive": "0x821BA388",
+      "bytes": 400,
+      "sha256": "fe0786a4366c2dea4b36f9393ede5ec742bba3e7138ea2a4fdb73f5f6d0dbc82",
+      "role": "scratch callback and PM4 interrupt encoder"
+    },
+    {
+      "begin": "0x821BA780",
+      "end_exclusive": "0x821BA880",
+      "bytes": 256,
+      "sha256": "793456cd41e7d9dd9eb36ae32b48892d00d17e5259d500f565ee6b6af9bf633f",
+      "role": "D3D::CDevice::KickOff"
+    },
+    {
+      "begin": "0x821BAA78",
+      "end_exclusive": "0x821BAAD0",
+      "bytes": 88,
+      "sha256": "eef613ab9a5a7f1f3bcba946db8bd12354c3a1f7a1ae1c035bb364b8fcfd196d",
+      "role": "callback-packet wrapper"
+    },
+    {
+      "begin": "0x821C4A60",
+      "end_exclusive": "0x821C4B38",
+      "bytes": 216,
+      "sha256": "b8ef391507415c176b898a097ae02252aa9206a53f420bfd295fbead37dcc602",
+      "role": "D3D::StartWorkerQueue callback"
+    },
+    {
+      "begin": "0x821C5190",
+      "end_exclusive": "0x821C5328",
+      "bytes": 408,
+      "sha256": "00fc5efbb0c946707ae746608013b216c29fae35d4d1cba3eee0ababf23cc1b7",
+      "role": "D3D command-processor callback"
+    }
+  ],
+  "native_model_gap": {
+    "current_behavior": "reduces PM4_INTERRUPT mask 0x4 to CPU index 2 and defers dispatch to the next outer tick",
+    "hardware_contract": "dispatch source=1 once for every set CPU bit while processing the PM4 packet",
+    "bounded_experiment": "trace scratch4/scratch5 and CPU mask at parse and guest dispatch; compare deferred vs same-slice delivery behind an opt-in guard"
+  }
+}

@@ -1,0 +1,6 @@
+callsite,encoder,callback,route,parameter,flags
+0x821B9120,0x821BAA78,0x821C4A60,wrapper,computed queue parameter,dynamic CPU-mask flags
+0x821C4D30,0x821BA1F8,0x821C4A60,direct,computed queue parameter,r30 | 1
+0x821C5458,0x821BA1F8,0x821C5190,direct,device callback state,0
+0x822E4444,0x821BAA78,0x822E4240,tail wrapper,incoming r3,0
+0x822E4470,0x821BAA78,0x822E4268,wrapper,incoming r3,0
