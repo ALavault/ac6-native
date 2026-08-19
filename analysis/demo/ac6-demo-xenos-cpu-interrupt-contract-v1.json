@@ -1,0 +1,42 @@
+{
+  "schema": "ac6-demo-xenos-cpu-interrupt-contract/v1",
+  "date": "2026-08-19",
+  "target_branch": "main",
+  "contract": {
+    "source": 1,
+    "allowed_cpu_mask": "0x3F",
+    "delivery_order": "ascending CPU index for every set bit",
+    "preserved_fields": [
+      "cpu_mask",
+      "scratch4 callback",
+      "scratch5 parameter"
+    ],
+    "invalid_masks": [
+      "zero",
+      "bits outside CPUs 0..5"
+    ]
+  },
+  "validation": {
+    "standalone_cpp20_test": "PASS",
+    "warnings": [
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-Wconversion",
+      "-Wshadow"
+    ],
+    "pal_static_verifier": "PASS",
+    "anchors": 33,
+    "functions": 8,
+    "producers": 5
+  },
+  "runtime_integration": {
+    "enabled_by_default": false,
+    "reason": "the ABI and mask width are closed, but same-slice versus deferred delivery still needs a bounded A/B trace"
+  },
+  "publication": {
+    "plain_text_only": true,
+    "zip": false,
+    "proprietary_bytes": false
+  }
+}

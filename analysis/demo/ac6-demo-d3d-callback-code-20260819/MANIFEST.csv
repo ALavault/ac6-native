@@ -1,0 +1,8 @@
+path,role,validation
+recompilation/ace-combat-6-demo/include/ac6demo/xenos_cpu_interrupt_contract.hpp,typed PM4 interrupt mask and scratch callback contract,standalone C++20 test
+recompilation/ace-combat-6-demo/tests/xenos_cpu_interrupt_contract_tests.cpp,one-hot multi-bit and invalid-mask coverage,PASS
+recompilation/ace-combat-6-demo/tools/run_xenos_cpu_interrupt_contract_test.sh,strict standalone compiler driver,PASS
+recompilation/ace-combat-6-demo/tools/verify_ac6_pal_d3d_callback_bridge.py,PAL byte/pdata/callsite verifier,PASS 33 anchors 8 functions 5 producers
+reports/AC6_DEMO_D3D_SCRATCH_CALLBACK_BRIDGE.md,static closure and runtime boundary,reviewed
+reports/AC6_DEMO_D3D_SCRATCH_CALLBACK_CODE_CHANGE.md,code-change scope and limit,reviewed
+analysis/demo/ac6-demo-xenos-cpu-interrupt-contract-v1.json,machine-readable code status,reviewed
