@@ -1,0 +1,9 @@
+old_field,old_interpretation,revised_interpretation,still_usable
+previous_ptr,r5 output pointer,stale caller register r5,no
+previous_value,value read from output pointer,unrelated guest memory content,no
+previous_mapped,validity of output pointer,whether stale r5 happened to be mapped,no
+raw_r4,requested affinity mask,requested one-hot affinity mask,yes
+object,thread object,thread object,yes
+tick,observation tick,observation tick,yes
+thread,calling guest thread,calling guest thread,yes
+lr,KeSetAffinityThread callsite,KeSetAffinityThread callsite,yes
