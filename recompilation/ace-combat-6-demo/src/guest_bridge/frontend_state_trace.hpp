@@ -391,19 +391,33 @@ inline void trace_loading_task_gates(ac6demo::GuestMemory &memory,
   }
   constexpr std::uint32_t kGate1Address = 0x2E3C020CU; // [primary+12]
   constexpr std::uint32_t kGate2Address = 0x2E3C0288U; // [subobject+32]
+  // AC6_DEMO_STATE_1_IS_A_DEAD_END_...md's cheapest remaining candidate:
+  // sub_8217E3E0's state-1 body dispatches through [[this+28]]+32 every
+  // tick; the class at [this+28] has never been captured live. Logged
+  // alongside the two gates, same instrument, same opt-in.
+  constexpr std::uint32_t kStateOneTargetAddress = 0x2E3C021CU; // [primary+28]
   static std::uint32_t previous_gate1 = 0xFFFFFFFFU;
   static std::uint8_t previous_gate2 = 0xFFU;
+  static std::uint32_t previous_state_one_target = 0xFFFFFFFFU;
   if (!memory.mapped(kGate1Address, 4U) || !memory.mapped(kGate2Address, 1U)) {
     return;
   }
   const auto gate1 = memory.load_u32(kGate1Address);
   const auto gate2 = memory.load_u8(kGate2Address);
-  if (gate1 != previous_gate1 || gate2 != previous_gate2) {
+  const auto state_one_target =
+      memory.mapped(kStateOneTargetAddress, 4U)
+          ? memory.load_u32(kStateOneTargetAddress)
+          : 0U;
+  if (gate1 != previous_gate1 || gate2 != previous_gate2 ||
+      state_one_target != previous_state_one_target) {
     std::fprintf(stderr,
-                 "AC6_LOADING_TASK_GATES tick=%llu gate1=0x%08X gate2=0x%02X\n",
-                 static_cast<unsigned long long>(tick), gate1, gate2);
+                 "AC6_LOADING_TASK_GATES tick=%llu gate1=0x%08X gate2=0x%02X "
+                 "state_one_target=0x%08X\n",
+                 static_cast<unsigned long long>(tick), gate1, gate2,
+                 state_one_target);
     previous_gate1 = gate1;
     previous_gate2 = gate2;
+    previous_state_one_target = state_one_target;
   }
 }
 
