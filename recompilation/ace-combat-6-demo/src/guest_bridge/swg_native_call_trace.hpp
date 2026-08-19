@@ -390,6 +390,31 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
   }
 }
 
+// AC6_DEMO_CORRECTING_THE_GATE_3_FRAMING_...md's unread link: does
+// SendMsgI's own out-param -- the raw accumulator sub_820E9838 writes
+// before the marshaller boxes it -- actually change once
+// CModeTaskLoadingDemoOffline's three internal gates all pass (observed
+// live to happen at tick 5414, when the mode's own inner state, the same
+// word sub_8217E258 reads as its first gate, settles at 1)? Read-only,
+// opt-in, logs on change only. Reads out_param_address the same way
+// apply_swg_sendmsgi_override writes it -- called at the identical point,
+// before any override, so it reports the genuine unmodified result.
+inline void trace_swg_msgi_result(std::uint32_t out_param_address) {
+  if (std::getenv("AC6_DEMO_WATCH_SWG_MSGI_RESULT") == nullptr ||
+      out_param_address == 0U) {
+    return;
+  }
+  static std::uint32_t previous = 0xFFFFFFFFU;
+  const auto value = require_bridge().memory().load_u32(out_param_address);
+  if (value != previous) {
+    std::fprintf(stderr,
+                 "AC6_SWG_MSGI_RESULT tick=%llu address=0x%08X value=%u\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 out_param_address, value);
+    previous = value;
+  }
+}
+
 // Falsifier for AC6_DEMO_M102_RESOLVES_TO_A_QUERY_NOBODY_CURRENTLY_ANSWERS.md's
 // named next step: force SendMsgI's boxed "handled" result to a chosen
 // value instead of the 0 every currently-registered listener leaves it
@@ -535,6 +560,7 @@ inline void invoke_body_trace_with_swg_msgi_override(
   }
   invoke_body_trace(function, context, base, guest_address);
   if (is_send_msg_i) {
+    trace_swg_msgi_result(out_param_address);
     apply_swg_sendmsgi_override(out_param_address);
   } else if (is_get_mission) {
     apply_swg_mission_override(out_param_address);

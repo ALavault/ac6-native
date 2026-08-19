@@ -375,6 +375,38 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
   }
 }
 
+// AC6_DEMO_CORRECTING_THE_GATE_3_FRAMING_...md's narrowed next step:
+// sub_8217E258's other two gates, both on the same object this campaign
+// already located (CModeTaskLoadingDemoOffline, primary 0x2E3C0200,
+// CSwgListener subobject 0x2E3C0268 = primary+0x68) -- read-only, opt-in,
+// logs only on change. These are the exact live route addresses this
+// campaign has observed across three independent probe runs of the same
+// forced-menu_endMode=1 recipe (994109dc, 77cfddb5, ae14059a); hardcoded
+// here the same way kXAudioClientStateGlobal/kRenderStateWord are
+// elsewhere in this file, on the same route-determinism basis.
+inline void trace_loading_task_gates(ac6demo::GuestMemory &memory,
+                                     std::uint64_t tick) {
+  if (std::getenv("AC6_DEMO_WATCH_LOADING_TASK_GATES") == nullptr) {
+    return;
+  }
+  constexpr std::uint32_t kGate1Address = 0x2E3C020CU; // [primary+12]
+  constexpr std::uint32_t kGate2Address = 0x2E3C0288U; // [subobject+32]
+  static std::uint32_t previous_gate1 = 0xFFFFFFFFU;
+  static std::uint8_t previous_gate2 = 0xFFU;
+  if (!memory.mapped(kGate1Address, 4U) || !memory.mapped(kGate2Address, 1U)) {
+    return;
+  }
+  const auto gate1 = memory.load_u32(kGate1Address);
+  const auto gate2 = memory.load_u8(kGate2Address);
+  if (gate1 != previous_gate1 || gate2 != previous_gate2) {
+    std::fprintf(stderr,
+                 "AC6_LOADING_TASK_GATES tick=%llu gate1=0x%08X gate2=0x%02X\n",
+                 static_cast<unsigned long long>(tick), gate1, gate2);
+    previous_gate1 = gate1;
+    previous_gate2 = gate2;
+  }
+}
+
 // AC6_DEMO_THE_LOADING_TASKS_READINESS_FLAG_IS_ALLOCATED_ONCE_AND_NEVER_WRITTEN.md's
 // named falsifier: CModeTaskLoadingDemoOffline's message-150 handler
 // (sub_8217E258) only reports "ready" when a byte at
