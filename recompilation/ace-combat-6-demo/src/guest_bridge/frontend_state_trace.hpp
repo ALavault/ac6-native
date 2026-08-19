@@ -374,3 +374,48 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
     }
   }
 }
+
+// AC6_DEMO_THE_LOADING_TASKS_READINESS_FLAG_IS_ALLOCATED_ONCE_AND_NEVER_WRITTEN.md's
+// named falsifier: CModeTaskLoadingDemoOffline's message-150 handler
+// (sub_8217E258) only reports "ready" when a byte at
+// [[0x827435F8]+0x222BFE] is nonzero, and that byte is written once (the
+// generic allocator pool-poison fill, tick 4) and never again on the
+// forced-menu_endMode=1 route. This forces it nonzero every tick from the
+// point the env var is read onward, to test whether the poll's own gate is
+// actually load-bearing -- same write-only, opt-in-only shape as
+// apply_swg_sendmsgi_override/apply_menu_endmode_arg_override in
+// swg_native_call_trace.hpp. [0x827435F8] itself is read fresh every call
+// (never cached) because it is route-dependent in principle, even though
+// every route measured so far resolves it to the same 0x18980000.
+inline void apply_loading_ready_flag_override(ac6demo::GuestMemory &memory,
+                                              std::uint64_t tick) {
+  static const char *forced_str =
+      std::getenv("AC6_DEMO_FORCE_LOADING_READY_FLAG");
+  if (forced_str == nullptr) {
+    return;
+  }
+  static const auto forced_value =
+      static_cast<std::uint8_t>(std::strtoul(forced_str, nullptr, 0));
+  constexpr std::uint32_t kManagerPointerSlot = 0x827435F8U;
+  constexpr std::uint32_t kFlagOffset = 0x222BFEU;
+  if (!memory.mapped(kManagerPointerSlot, 4U)) {
+    return;
+  }
+  const auto manager = memory.load_u32(kManagerPointerSlot);
+  if (manager == 0U) {
+    return;
+  }
+  const auto flag_address = manager + kFlagOffset;
+  if (!memory.mapped(flag_address, 1U)) {
+    return;
+  }
+  const auto previous = memory.load_u8(flag_address);
+  memory.store_u8(flag_address, forced_value);
+  if (previous != forced_value) {
+    std::fprintf(stderr,
+                 "AC6_LOADING_READY_FLAG_FORCED tick=%llu manager=0x%08X "
+                 "address=0x%08X value=%u\n",
+                 static_cast<unsigned long long>(tick), manager,
+                 flag_address, forced_value);
+  }
+}

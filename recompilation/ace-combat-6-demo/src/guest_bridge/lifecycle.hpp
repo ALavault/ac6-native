@@ -354,6 +354,7 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
     }
   }
   trace_frontend_state(memory_, tick_);
+  apply_loading_ready_flag_override(memory_, tick_);
   (void)run_runnable_threads();
   resume_xenos_pending_batch();
 }
