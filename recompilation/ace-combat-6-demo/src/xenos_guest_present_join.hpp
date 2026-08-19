@@ -7,6 +7,7 @@
 #include "ac6demo/session.hpp"
 #include "ac6demo/vulkan_neutral_resolve.hpp"
 #include "ac6demo/xenos_tiling.hpp"
+#include "renderer_audit_screencap.hpp"
 
 #include <algorithm>
 #include <cstddef>
@@ -15,7 +16,7 @@
 namespace ac6demo {
 
 // Commit only the pixels written by the qualified 1280x720 resolve into the
-// exact guest allocation named by XE_SWAP.  Padding is preserved from guest
+// exact guest allocation named by XE_SWAP. Padding is preserved from guest
 // memory, rather than copied from the Vulkan canary buffer.
 inline void commit_reached_guest_present(
     DemoSession &session, VulkanNeutralResolveResult &resolve) {
@@ -49,6 +50,7 @@ inline void commit_reached_guest_present(
   resolve.guest_tiled_rgba8_sha256 = Sha256::bytes(reread);
   resolve.guest_linear_rgba8_sha256 = Sha256::bytes(guest_linear);
   resolve.guest_writeback = true;
+  publish_renderer_audit_screencap(session, guest_linear, resolve);
   resolve.tiled_bytes.clear();
   resolve.tiled_bytes.shrink_to_fit();
 }

@@ -1,0 +1,67 @@
+{
+  "schema": "ac6-demo-renderer-audit-screencap-contract/v1",
+  "date": "2026-08-19",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "activation": {
+    "environment": "AC6_DEMO_AUDIT_SCREENCAP_DIR",
+    "default_enabled": false,
+    "directory_must_exist": true,
+    "overwrite": false
+  },
+  "capture_point": {
+    "function": "commit_reached_guest_present",
+    "stage": "guest-linear-after-qualified-writeback",
+    "guest_address": "0x1374A000",
+    "width": 1280,
+    "height": 720,
+    "format": "RGBA8",
+    "source_tiled_bytes": 3768320,
+    "source_linear_bytes": 3686400,
+    "preconditions": [
+      "qualified XE_SWAP",
+      "owned guest allocation",
+      "tiled writeback completed",
+      "guest reread completed",
+      "untile completed",
+      "linear SHA-256 matches Vulkan resolve"
+    ]
+  },
+  "png": {
+    "bit_depth": 8,
+    "color_type": 6,
+    "interlace": 0,
+    "filter": 0,
+    "zlib": "stored DEFLATE blocks",
+    "embedded_metadata": true,
+    "alpha_preserved": true
+  },
+  "sidecar": {
+    "schema": "ac6-demo-renderer-audit-screencap/v1",
+    "exclusive_creation": true,
+    "removed_if_png_publication_fails": true
+  },
+  "known_current_output": {
+    "rgba8_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "pixels": 921600,
+    "rgb_nonzero": 0,
+    "classification": "qualified-black-renderer-frontier"
+  },
+  "claims": {
+    "audit_capture_available": true,
+    "host_window_screenshot": false,
+    "gameplay_screenshot": false,
+    "non_black_renderer": false
+  },
+  "next_frontier": "qualify non-black normal-draw inputs before relaxing black-only EDRAM guards",
+  "publication": {
+    "plain_text_source_only": true,
+    "runtime_png_committed": false,
+    "zip": false,
+    "github_actions": false,
+    "pull_request": false
+  }
+}
