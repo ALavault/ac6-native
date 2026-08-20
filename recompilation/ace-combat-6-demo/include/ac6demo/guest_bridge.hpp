@@ -530,7 +530,6 @@ private:
   std::uint32_t xenos_mmio_wptr_{};
   std::uint32_t xenos_ring_base_{};
   std::uint32_t xenos_ring_owner_{};
-  std::uint32_t xenos_ring_state_{};
   std::uint32_t xenos_ring_rptr_writeback_{};
   std::uint32_t xenos_ring_size_log2_{};
   std::uint32_t xenos_ring_last_wptr_{};

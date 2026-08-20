@@ -220,10 +220,6 @@ if (std::string_view{name} == "VdEnableRingBufferRPtrWriteBack") {
       !bridge.owns_allocation(context.r3.u32, 4U)) {
     return false;
   }
-  if (context.r3.u32 < 0x3CU ||
-      !bridge.memory().mapped(context.r3.u32 - 0x3CU, 4U)) {
-    return false;
-  }
   bridge.enable_xenos_read_pointer_writeback(context.r3.u32);
   bridge.set_xenos_ring_owner(context.r31.u32);
   return true;

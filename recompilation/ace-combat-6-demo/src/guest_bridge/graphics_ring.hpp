@@ -68,6 +68,9 @@ inline void record_xenos_packet(XenosPacketCensusSnapshot& census,
                          (opcode == 0x54U && exact_count(1U)) ||
                          (opcode == 0x58U && exact_count(3U)) ||
                          (opcode == 0x60U && exact_count(1U)) ||
+                         (opcode == 0x61U && exact_count(1U)) ||
+                         (opcode == 0x62U && exact_count(1U)) ||
+                         (opcode == 0x63U && exact_count(1U)) ||
                          (opcode == 0x64U && exact_count(4U));
   if (!qualified) {
     throw RuntimeTrap("unqualified Xenos type-3 packet", tick, 0, header);
@@ -83,7 +86,8 @@ inline void record_xenos_packet(XenosPacketCensusSnapshot& census,
          (opcode == 0x21U || opcode == 0x2BU || opcode == 0x36U ||
           opcode == 0x3BU || opcode == 0x3CU || opcode == 0x45U ||
           opcode == 0x46U || opcode == 0x48U || opcode == 0x54U ||
-          opcode == 0x58U || opcode == 0x60U || opcode == 0x64U);
+          opcode == 0x58U || opcode == 0x60U || opcode == 0x61U ||
+          opcode == 0x62U || opcode == 0x63U || opcode == 0x64U);
 }
 
 void trace_ib_capture(const GuestMemory &memory, std::uint32_t address,
@@ -160,7 +164,6 @@ void GuestBridge::set_xenos_ring_owner(std::uint32_t address) noexcept {
 void GuestBridge::enable_xenos_read_pointer_writeback(
     std::uint32_t address) noexcept {
   xenos_ring_rptr_writeback_ = address;
-  xenos_ring_state_ = address - 0x3CU;
 }
 
 std::size_t
@@ -370,9 +373,8 @@ void GuestBridge::complete_xenos_ring_submission() {
   xenos_ring_max_submission_dwords_ = std::max(
       xenos_ring_max_submission_dwords_, xenos_pending_submitted_dwords_);
   xenos_packet_census_.reached_corpus_qualified = true;
-  xenos_ring_rptr_ = xenos_pending_endpoint_;
-  memory_.store_u32(xenos_ring_state_, xenos_pending_endpoint_);
-  memory_.store_u32(xenos_ring_rptr_writeback_, xenos_pending_endpoint_);
+  xenos_ring_rptr_ = xenos_pending_wptr_;
+  memory_.store_u32(xenos_ring_rptr_writeback_, xenos_pending_wptr_);
   xenos_pending_stream_.clear();
   xenos_pending_wptr_ = 0U;
   xenos_pending_endpoint_ = 0U;
@@ -404,8 +406,7 @@ void GuestBridge::apply_xenos_mmio_write(
                       value);
   }
   if (address != 0x7FC80714U || xenos_ring_base_ == 0U ||
-      xenos_ring_state_ == 0U || xenos_ring_rptr_writeback_ == 0U ||
-      !memory_.mapped(xenos_ring_state_, 4U) ||
+      xenos_ring_rptr_writeback_ == 0U ||
       !memory_.mapped(xenos_ring_rptr_writeback_, 4U)) {
     throw RuntimeTrap("unqualified Xenos ring write", tick_, 0, address);
   }

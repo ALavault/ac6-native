@@ -6,6 +6,8 @@
 - Do not run an A/B by default. Use one only when a named causal ambiguity
   cannot be resolved by a targeted trace and guest-state evidence; record the
   single differing input and the decision it is meant to settle.
+- Until the native runtime visibly reaches the start of mission gameplay, do
+  not optimize it. Make only correctness and execution-progress changes.
 
 ## Scope, paths and resources
 

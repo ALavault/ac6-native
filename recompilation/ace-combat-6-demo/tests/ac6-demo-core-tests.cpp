@@ -60,6 +60,19 @@ void test_executable_privilege_reads_system_flags() {
   assert(!bridge.executable_privilege(0xFFFFFFFFU));
 }
 
+void test_guest_thread_cycle_count_tracks_tick() {
+  ac6demo::GuestMemory memory;
+  memory.map_zero(0x20000U, 0x2000U);
+  ac6demo::GuestBridge bridge(memory);
+  bridge.prepare(ac6demo::GuestBridge::ThreadImage{0x20000U, 0x100U, 0x100U,
+                                                   0x1000U, 0U});
+  const auto current_thread = memory.load_u32(0x7F000000U + 0x100U);
+  bridge.set_tick(1U);
+  assert(memory.load_u32(current_thread + 0x58U) == 833'333U);
+  bridge.set_tick(60U);
+  assert(memory.load_u32(current_thread + 0x58U) == 50'000'000U);
+}
+
 // Guarded because the non-generated build compiles a GuestBridge with no
 // thread scheduler at all; this assertion runs for real in the codegen-on
 // tree, whose ctest suite covers the same file.
@@ -113,7 +126,7 @@ void test_xenos_ring_snapshot() {
   assert(snapshot.initialized);
   assert(snapshot.base == 0x20000U);
   assert(snapshot.capacity_dwords == 1024U);
-  assert(snapshot.read_pointer == 12U);
+  assert(snapshot.read_pointer == 16U);
   assert(snapshot.write_pointer == 16U);
   assert(snapshot.owner_endpoint == 12U);
   assert(snapshot.submissions == 3U);
@@ -129,6 +142,8 @@ void test_xenos_ring_snapshot() {
   assert(snapshot.packet_census.decoded_dword_count == 16U);
   assert(snapshot.packet_census.type_counts[0] == 8U);
   assert(snapshot.packet_census.reached_corpus_qualified);
+  assert(memory.load_u32(0x40000U) == 0U);
+  assert(memory.load_u32(0x4003CU) == 16U);
 }
 
 void test_xenos_ring_capture_wraps() {
@@ -142,28 +157,35 @@ void test_xenos_ring_capture_wraps() {
   bridge.enable_xenos_read_pointer_writeback(0x4003CU);
   memory.store_u32(0x30000U + 10908U, 14U);
   bridge.apply_xenos_mmio_write(0x7FC80714U, 14U);
-  memory.store_u32(0x20000U + 14U * 4U, 0x80000001U);
-  memory.store_u32(0x20000U + 15U * 4U, 0x80000002U);
-  memory.store_u32(0x20000U, 0x80000003U);
-  memory.store_u32(0x20004U, 0x80000004U);
-  memory.store_u32(0x30000U + 10908U, 2U);
-  bridge.apply_xenos_mmio_write(0x7FC80714U, 2U);
+  memory.store_u32(0x20000U + 14U * 4U, 0xC0006100U);
+  memory.store_u32(0x20000U + 15U * 4U, 0x00000000U);
+  memory.store_u32(0x20000U, 0xC0006200U);
+  memory.store_u32(0x20004U, 0x00000001U);
+  memory.store_u32(0x20008U, 0xC0006300U);
+  memory.store_u32(0x2000CU, 0x00000000U);
+  memory.store_u32(0x30000U + 10908U, 4U);
+  bridge.apply_xenos_mmio_write(0x7FC80714U, 4U);
   const auto snapshot = bridge.xenos_ring_snapshot();
-  assert(snapshot.read_pointer == 2U);
-  assert(snapshot.write_pointer == 2U);
+  assert(snapshot.read_pointer == 4U);
+  assert(snapshot.write_pointer == 4U);
   assert(snapshot.recent_submission_count == 2U);
   const auto &submission = snapshot.recent_submissions[1];
   assert(submission.start_pointer == 14U);
-  assert(submission.end_pointer == 2U);
-  assert(submission.dword_count == 4U);
-  assert(submission.captured_dword_count == 4U);
+  assert(submission.end_pointer == 4U);
+  assert(submission.dword_count == 6U);
+  assert(submission.captured_dword_count == 6U);
   assert(!submission.truncated);
-  assert(submission.dwords[0] == 0x80000001U);
-  assert(submission.dwords[1] == 0x80000002U);
-  assert(submission.dwords[2] == 0x80000003U);
-  assert(submission.dwords[3] == 0x80000004U);
+  assert(submission.dwords[0] == 0xC0006100U);
+  assert(submission.dwords[1] == 0x00000000U);
+  assert(submission.dwords[2] == 0xC0006200U);
+  assert(submission.dwords[3] == 0x00000001U);
+  assert(submission.dwords[4] == 0xC0006300U);
+  assert(submission.dwords[5] == 0x00000000U);
   assert(snapshot.packet_census.type_counts[0] == 7U);
-  assert(snapshot.packet_census.type_counts[2] == 4U);
+  assert(snapshot.packet_census.type_counts[2] == 0U);
+  assert(snapshot.packet_census.type3_opcode_counts[0x61U] == 1U);
+  assert(snapshot.packet_census.type3_opcode_counts[0x62U] == 1U);
+  assert(snapshot.packet_census.type3_opcode_counts[0x63U] == 1U);
 }
 
 void test_xenos_unknown_packet_keeps_rptr() {
@@ -448,6 +470,7 @@ int main() {
 #ifdef AC6_DEMO_GENERATED_GUEST
   test_guest_processor_identity_is_one_hot();
   test_executable_privilege_reads_system_flags();
+  test_guest_thread_cycle_count_tracks_tick();
 #endif
 
   std::cout << "ac6-demo-core-tests: ok\n";

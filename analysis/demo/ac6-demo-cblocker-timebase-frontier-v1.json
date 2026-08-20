@@ -1,0 +1,57 @@
+{
+  "schema": "ac6-demo-cblocker-timebase-frontier/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "change": {
+    "guest_boundary": "D3D::CBlocker::Check reads current KTHREAD+0x58 and times out after 5000 units",
+    "runtime_behavior": "GuestBridge::set_tick publishes the qualified 50 MHz Xenon timebase to current KTHREAD+0x58",
+    "xenos_correction": "The command processor writes RPTR only to the address supplied to VdEnableRingBufferRPtrWriteBack; the former address-minus-0x3c write was removed"
+  },
+  "validation": {
+    "targeted_tests": [
+      "ac6-demo-core-tests",
+      "ac6-demo-xenos-command-tests"
+    ],
+    "headless_start": {
+      "max_ticks": 3036,
+      "start_tick": 3000,
+      "release_tick": 3001,
+      "outcome": "max_ticks",
+      "guest_threads": 23,
+      "vd_swap_calls": 2899,
+      "stderr_bytes": 0,
+      "report_sha256": "c1bdc873ac6fff3ebbdca135edd2b64d08b61049d10c3ce8071fdc50b044716b",
+      "trace_sha256": "bac3e6017208ebc0722fb915caf98930adcf639ea08d403a11a1926602ce99c9"
+    },
+    "vulkan_start": {
+      "max_ticks": 3036,
+      "start_tick": 3000,
+      "release_tick": 3001,
+      "outcome": "max_ticks",
+      "validated_modules": 2,
+      "vulkan_modules": 2,
+      "graphics_pipelines": 0,
+      "normal_draws": 0,
+      "guest_writeback": 0,
+      "nonblack_guest_readback": false,
+      "audit_screenshots": 0,
+      "stderr_bytes": 0,
+      "report_sha256": "cbbb102374120d9143846f503132137407d14d1a80d7f409bb365bcf34ec89e0",
+      "trace_sha256": "0e98c34578a44f6d12e6543ee644e4609ad72fe6b42b50667b8b318c18dbe038"
+    }
+  },
+  "result": {
+    "proven": "The native PAL demo cold path no longer spins forever in CBlocker and reaches the title VdSwap loop through and after the qualified START edge.",
+    "not_proven": [
+      "a Xenos PRESENT packet",
+      "a raster graphics pipeline",
+      "a nonblack guest readback",
+      "frontend, mission, success or failure"
+    ],
+    "next_boundary": "Qualify why the reached VdSwap frontbuffer never becomes a Xenos PRESENT/copy command; do not accept presentation notification counts as visual evidence."
+  }
+}

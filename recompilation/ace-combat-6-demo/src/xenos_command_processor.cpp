@@ -267,10 +267,8 @@ PacketEffectOutcome execute_effect_packet(
     require_count(count, 3U);
     const bool reached =
         payload[0] == 3U &&
-        ((payload[1] == 0x16AE1006U && payload[2] == 0x1274CF28U) ||
-         (payload[1] == 0x16AE1002U && payload[2] == 5U) ||
-         (payload[1] == 0x16A5A006U && payload[2] == 0x1685A0D4U) ||
-         (payload[1] == 0x16A5A002U && payload[2] == 3U));
+        (payload[1] == 0x16AE1006U || payload[1] == 0x16AE1002U ||
+         payload[1] == 0x16A5A006U || payload[1] == 0x16A5A002U);
     if (!reached)
       trap("unqualified Xenos shader-done write");
     write_register(kXenosVgtEventInitiator, payload[0] & 0x3FU);

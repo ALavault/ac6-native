@@ -222,7 +222,8 @@ mapped_memory(std::array<std::byte, 4> wait_bytes) {
     if (address == 0x16AE2004U) {
       return wait_bytes;
     }
-    if (address == 0x16AE1004U || address == 0x16A5A004U) {
+    if (address == 0x16AE1000U || address == 0x16AE1004U ||
+        address == 0x16A5A000U || address == 0x16A5A004U) {
       return std::array<std::byte, 4>{};
     }
     return std::nullopt;
@@ -236,6 +237,8 @@ void test_transactional_effects_and_big_endian_bytes() {
       0x16AE2006U,        1U,          0xFFFFFFFFU,      0x100U,
       type3(0x46U, 1U),   6U,          type3(0x54U, 1U), 4U,
       type3(0x58U, 3U),   3U,          0x16AE1006U,      0x1274CF28U,
+      type3(0x58U, 3U),   3U,          0x16A5A006U,      0x1685A144U,
+      type3(0x58U, 3U),   3U,          0x16A5A002U,      5U,
       type3(0x3BU, 1U),   0x7FFFU,     type3(0x48U, 18U)};
   stream.insert(stream.end(), 18U, 0U);
 
@@ -250,15 +253,23 @@ void test_transactional_effects_and_big_endian_bytes() {
   assert(result.effects.wait_reg_mem == 1U);
   assert(result.effects.event_write == 1U);
   assert(result.effects.interrupt == 1U);
-  assert(result.effects.event_write_shader_done == 1U);
+  assert(result.effects.event_write_shader_done == 3U);
   assert(result.effects.invalidate_state == 1U);
   assert(result.effects.micro_engine_init == 1U);
   assert(result.cpu_interrupts == std::vector<std::uint8_t>{2U});
-  assert(result.memory_writes.size() == 1U);
+  assert(result.memory_writes.size() == 3U);
   assert(result.memory_writes[0].address == 0x16AE1004U);
   assert((result.memory_writes[0].guest_bytes ==
           std::array<std::byte, 4>{std::byte{0x12}, std::byte{0x74},
                                    std::byte{0xCF}, std::byte{0x28}}));
+  assert(result.memory_writes[1].address == 0x16A5A004U);
+  assert((result.memory_writes[1].guest_bytes ==
+          std::array<std::byte, 4>{std::byte{0x16}, std::byte{0x85},
+                                   std::byte{0xA1}, std::byte{0x44}}));
+  assert(result.memory_writes[2].address == 0x16A5A000U);
+  assert((result.memory_writes[2].guest_bytes ==
+          std::array<std::byte, 4>{std::byte{0}, std::byte{0}, std::byte{0},
+                                   std::byte{5}}));
 }
 
 void test_scratch_writeback_produces_wait_values() {
