@@ -2,13 +2,49 @@
 
 #ifdef AC6_DEMO_HAVE_VULKAN_RENDERER_FRONTIER
 
+#include "ac6demo/hash.hpp"
 #include "ac6demo/runtime_error.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
+#include <limits>
 #include <ranges>
+#include <utility>
+#include <vector>
 
 namespace ac6demo {
+namespace {
+
+[[nodiscard]] std::string payload_digest(
+    const std::array<std::span<const std::byte>, 5> &payloads) {
+  std::size_t total = payloads.size() * sizeof(std::uint64_t);
+  for (const auto payload : payloads) {
+    if (payload.size() > std::numeric_limits<std::size_t>::max() - total) {
+      throw RuntimeTrap("Vulkan reached constant payload extent overflow");
+    }
+    total += payload.size();
+  }
+
+  std::vector<std::byte> canonical;
+  canonical.reserve(total);
+  for (const auto payload : payloads) {
+    const auto length = static_cast<std::uint64_t>(payload.size());
+    for (unsigned shift = 0U; shift < 64U; shift += 8U) {
+      canonical.push_back(static_cast<std::byte>(length >> shift));
+    }
+    canonical.insert(canonical.end(), payload.begin(), payload.end());
+  }
+  return Sha256::bytes(canonical);
+}
+
+[[nodiscard]] std::uint64_t saturating_add(std::uint64_t left,
+                                           std::uint64_t right) noexcept {
+  const auto maximum = std::numeric_limits<std::uint64_t>::max();
+  return right > maximum - left ? maximum : left + right;
+}
+
+} // namespace
 
 std::uint32_t VulkanSharedMemory::host_memory_type(VkPhysicalDevice physical,
                                                    std::uint32_t allowed) {
@@ -43,8 +79,8 @@ VulkanSharedMemory::HostBuffer VulkanSharedMemory::create_buffer(
   vkGetBufferMemoryRequirements(device, result.buffer, &requirements);
   VkMemoryAllocateInfo allocation{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
   allocation.allocationSize = requirements.size;
-  allocation.memoryTypeIndex = host_memory_type(physical,
-                                                 requirements.memoryTypeBits);
+  allocation.memoryTypeIndex =
+      host_memory_type(physical, requirements.memoryTypeBits);
   if (vkAllocateMemory(device, &allocation, nullptr, &result.memory) !=
           VK_SUCCESS ||
       vkBindBufferMemory(device, result.buffer, result.memory, 0U) !=
@@ -77,6 +113,17 @@ void VulkanSharedMemory::destroy_buffer(VkDevice device,
   buffer = {};
 }
 
+void VulkanSharedMemory::destroy_constant_set(
+    VkDevice device, ConstantSet &constants) noexcept {
+  if (constants.pool != VK_NULL_HANDLE) {
+    vkDestroyDescriptorPool(device, constants.pool, nullptr);
+  }
+  for (auto &buffer : constants.buffers) {
+    destroy_buffer(device, buffer);
+  }
+  constants = {};
+}
+
 void VulkanSharedMemory::write_buffer(VkDevice device,
                                       const HostBuffer &buffer,
                                       VkDeviceSize offset,
@@ -93,27 +140,48 @@ void VulkanSharedMemory::write_buffer(VkDevice device,
   vkUnmapMemory(device, buffer.memory);
 }
 
-void VulkanSharedMemory::populate(
+bool VulkanSharedMemory::populate(
     VkPhysicalDevice physical, VkDevice device, VkDescriptorSetLayout layout,
     DemoSession &session, std::span<const XenosCommand> commands,
     std::uint32_t shader_loads, std::uint32_t draws, std::uint32_t presents,
     std::uint32_t translated_modules, std::uint32_t graphics_pipelines) {
-  if (populated()) {
-    return;
-  }
   const bool rectangle = std::ranges::any_of(commands, [](const auto &command) {
     const auto *draw = std::get_if<XenosDrawCommand>(&command);
     return draw != nullptr && draw->primitive == XenosPrimitive::RectangleList;
   });
-  if (!rectangle || graphics_pipelines != 2U || shader_loads != 5U ||
-      draws != 26U || presents > 1U || translated_modules != 4U) {
-    return;
+  const bool initial_profile =
+      rectangle && graphics_pipelines == 2U && shader_loads == 5U &&
+      draws == 26U && presents <= 1U && translated_modules == 4U;
+  if (!populated() && !initial_profile) {
+    return false;
   }
+  if (populated() &&
+      (graphics_pipelines != 2U || translated_modules != 4U ||
+       shader_loads < 5U || draws < 26U)) {
+    throw RuntimeTrap("Vulkan reached shared refresh profile changed");
+  }
+
   constexpr std::uint32_t guest_begin = 0x127CA03CU;
   constexpr std::uint32_t guest_end = 0x127CA0A8U;
   constexpr VkDeviceSize segment_mask = 0x07FFFFFFU;
-  const auto guest = session.load_guest_bytes(guest_begin,
-                                               guest_end - guest_begin);
+  const auto guest =
+      session.load_guest_bytes(guest_begin, guest_end - guest_begin);
+  if (guest.size() != static_cast<std::size_t>(guest_end - guest_begin)) {
+    throw RuntimeTrap("Vulkan reached shared refresh extent changed");
+  }
+  const auto digest = Sha256::bytes(guest);
+
+  if (populated()) {
+    if (!shared_version_.needs_upload(digest)) {
+      return false;
+    }
+    shared_version_.validate_candidate(digest);
+    write_buffer(device, buffers_[2], guest_begin & segment_mask, guest);
+    shared_version_.mark_uploaded(digest);
+    return true;
+  }
+
+  shared_version_.validate_candidate(digest);
   std::array<HostBuffer, 4> staged{};
   VkDescriptorPool pool = VK_NULL_HANDLE;
   try {
@@ -153,9 +221,11 @@ void VulkanSharedMemory::populate(
     write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     write.pBufferInfo = infos.data();
     vkUpdateDescriptorSets(device, 1U, &write, 0U, nullptr);
-    buffers_ = staged;
+    shared_version_.mark_uploaded(digest);
+    buffers_ = std::move(staged);
     descriptor_pool_ = pool;
     descriptor_set_ = descriptor;
+    return true;
   } catch (...) {
     if (pool != VK_NULL_HANDLE) {
       vkDestroyDescriptorPool(device, pool, nullptr);
@@ -167,29 +237,36 @@ void VulkanSharedMemory::populate(
   }
 }
 
-void VulkanSharedMemory::populate_constants(
+bool VulkanSharedMemory::populate_constants(
     VkPhysicalDevice physical, VkDevice device, VkDescriptorSetLayout layout,
     const XenosDrawCommand &draw, const ReachedShaderSpirv &vertex,
     const ReachedShaderSpirv &pixel, std::uint32_t viewport_x_max,
     std::uint32_t viewport_y_max) {
-  if (std::ranges::any_of(constants_, [&](const ConstantSet &set) {
-        return set.vertex_shader == draw.vertex_shader_sha256;
-      })) {
-    return;
-  }
-  auto free = std::ranges::find_if(constants_, [](const ConstantSet &set) {
-    return set.set == VK_NULL_HANDLE;
-  });
-  if (free == constants_.end()) {
-    throw RuntimeTrap("Vulkan reached constant descriptor limit exceeded");
-  }
   const auto payloads = build_reached_constant_payloads(
       draw, vertex, pixel, viewport_x_max, viewport_y_max);
   const std::array<std::span<const std::byte>, 5> payload_spans{
       payloads.system, payloads.float_vertex, payloads.float_pixel,
       payloads.bool_loop, payloads.fetch};
+  const auto digest = payload_digest(payload_spans);
+
+  auto slot = std::ranges::find_if(constants_, [&](const ConstantSet &set) {
+    return set.vertex_shader == draw.vertex_shader_sha256;
+  });
+  if (slot != constants_.end() && !slot->version.needs_upload(digest)) {
+    return false;
+  }
+  if (slot == constants_.end()) {
+    slot = std::ranges::find_if(constants_, [](const ConstantSet &set) {
+      return set.set == VK_NULL_HANDLE;
+    });
+  }
+  if (slot == constants_.end()) {
+    throw RuntimeTrap("Vulkan reached constant descriptor limit exceeded");
+  }
+
   ConstantSet staged;
   staged.vertex_shader = draw.vertex_shader_sha256;
+  staged.version = slot->version;
   try {
     for (std::uint32_t index = 0; index < staged.buffers.size(); ++index) {
       staged.buffers[index] = create_buffer(
@@ -229,16 +306,16 @@ void VulkanSharedMemory::populate_constants(
     }
     vkUpdateDescriptorSets(device, static_cast<std::uint32_t>(writes.size()),
                            writes.data(), 0U, nullptr);
-    *free = std::move(staged);
+    staged.version.mark_uploaded(digest);
   } catch (...) {
-    if (staged.pool != VK_NULL_HANDLE) {
-      vkDestroyDescriptorPool(device, staged.pool, nullptr);
-    }
-    for (auto &buffer : staged.buffers) {
-      destroy_buffer(device, buffer);
-    }
+    destroy_constant_set(device, staged);
     throw;
   }
+
+  ConstantSet previous = std::move(*slot);
+  *slot = std::move(staged);
+  destroy_constant_set(device, previous);
+  return true;
 }
 
 std::uint32_t VulkanSharedMemory::constant_descriptor_count() const noexcept {
@@ -256,6 +333,22 @@ VkDescriptorSet VulkanSharedMemory::constant_descriptor_set(
   return found == constants_.end() ? VK_NULL_HANDLE : found->set;
 }
 
+std::uint64_t VulkanSharedMemory::constant_upload_generation(
+    std::string_view vertex_shader) const noexcept {
+  const auto found = std::ranges::find_if(constants_, [&](const auto &set) {
+    return set.vertex_shader == vertex_shader;
+  });
+  return found == constants_.end() ? 0U : found->version.generation();
+}
+
+std::uint64_t VulkanSharedMemory::refresh_epoch() const noexcept {
+  std::uint64_t epoch = shared_version_.generation();
+  for (const auto &constants : constants_) {
+    epoch = saturating_add(epoch, constants.version.generation());
+  }
+  return epoch;
+}
+
 void VulkanSharedMemory::cleanup(VkDevice device) noexcept {
   if (device == VK_NULL_HANDLE) {
     return;
@@ -264,19 +357,14 @@ void VulkanSharedMemory::cleanup(VkDevice device) noexcept {
     vkDestroyDescriptorPool(device, descriptor_pool_, nullptr);
   }
   for (auto &constants : constants_) {
-    if (constants.pool != VK_NULL_HANDLE) {
-      vkDestroyDescriptorPool(device, constants.pool, nullptr);
-    }
-    for (auto &buffer : constants.buffers) {
-      destroy_buffer(device, buffer);
-    }
-    constants = {};
+    destroy_constant_set(device, constants);
   }
   for (auto &buffer : buffers_) {
     destroy_buffer(device, buffer);
   }
   descriptor_pool_ = VK_NULL_HANDLE;
   descriptor_set_ = VK_NULL_HANDLE;
+  shared_version_.reset();
 }
 
 } // namespace ac6demo

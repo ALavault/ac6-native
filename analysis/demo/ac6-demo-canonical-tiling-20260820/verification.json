@@ -1,0 +1,16 @@
+{
+  "files": {
+    "include/ac6demo/renderer_canonical_tiling.hpp": "c9b0e619fea89ae42f468d3f65c5961111672a98bcf94c3b9f2bb50db374e84c",
+    "include/ac6demo/xenos_tiling.hpp": "a2ac6707f17ccdb7a8ddd8b24b71909344acc63f89780137b443704fe8d7061e",
+    "src/xenos_guest_present_join.hpp": "083a36d550f91e5f6db5e8fcbe7a4cadacceb7184fea1a4af0944304bd58d4b6",
+    "src/xenos_tiling.cpp": "c919a95f9dc8e5a05e1abda491182db44148d69b5a74e8b670cd4b0ac452287f",
+    "tests/ac6-demo-xenos-tiling-tests.cpp": "2e209eab695ca7bce4ddcacd215b3bb1ad638ede5c777a84e8f45f967669b711"
+  },
+  "linear_bytes": 3686400,
+  "preserved_padding_bytes": 81920,
+  "runtime_pal_run_claimed": false,
+  "schema": "ac6-demo-renderer-canonical-tiling-verification/v1",
+  "status": "PASS",
+  "tiled_extent_bytes": 3768320,
+  "transactional_before_guest_store": true
+}

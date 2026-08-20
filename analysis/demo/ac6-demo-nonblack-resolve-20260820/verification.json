@@ -1,0 +1,11 @@
+{
+  "schema": "ac6-demo-reached-copy-differential-verification/v1",
+  "cpp_optimized": "PASS",
+  "cpp_asan": "PASS",
+  "cpp_ubsan": "PASS",
+  "python_self_test": "PASS",
+  "python_py_compile": "PASS",
+  "shell_syntax": "PASS",
+  "runtime_integration": "OPEN",
+  "nonblack_writeback": "DISABLED"
+}

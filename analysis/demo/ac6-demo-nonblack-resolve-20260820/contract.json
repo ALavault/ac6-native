@@ -1,0 +1,59 @@
+{
+  "schema": "ac6-demo-reached-copy-differential/v1",
+  "date": "2026-08-20",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "normal_extent": "640x360-rgba8",
+    "destination_extent": "1280x720-rgba8",
+    "destination_address": "0x1374A000",
+    "destination_tiled_bytes": "0x398000"
+  },
+  "stages": [
+    "edram_materialization",
+    "copy_pixels",
+    "destination_padding"
+  ],
+  "edram": {
+    "allocation_bytes": "0xA00000",
+    "surface_bytes": "0x384000",
+    "tile_samples": [80, 16],
+    "pitch_tiles": 16,
+    "outside_surface_canary": "0x5A"
+  },
+  "copy": {
+    "byte_mapping": [2, 1, 0, 3],
+    "destination_padding_bytes": "0x14000",
+    "destination_padding_canary": "0xA5"
+  },
+  "certificate": {
+    "hashes": [
+      "normal_rgba8",
+      "expected_edram",
+      "observed_edram",
+      "expected_linear",
+      "observed_linear",
+      "expected_tiled",
+      "observed_tiled"
+    ],
+    "first_difference": [
+      "edram_byte",
+      "copy_x_y_channel",
+      "padding_offset"
+    ],
+    "fail_closed_helper": "require_exact_reached_copy"
+  },
+  "self_test": {
+    "normal_sha256": "6e02bf2814ceec2aef652db55f82e9134f24d666168ff9f0ac03c9c84934d52a",
+    "expected_edram_sha256": "6bd620b37a40e04e61a19a4cf0d44fd1c92be490d29d4951e4841fd076788758",
+    "expected_linear_sha256": "60cd4712373e822090d1e9b5ba8b5625c741c72843100c11bb1c9cbe9c19bad5",
+    "expected_tiled_sha256": "72b170ddef97e028ea41b6981c508d249aef09f098a0e619c02b37dd1498e3a4"
+  },
+  "policy": {
+    "runtime_default_changed": false,
+    "nonblack_guest_writeback_enabled": false,
+    "github_actions_used": false,
+    "pull_request_used": false,
+    "zip_committed": false,
+    "proprietary_bytes_committed": false
+  }
+}

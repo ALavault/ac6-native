@@ -1,0 +1,45 @@
+{
+  "schema": "ac6-demo-copy-runtime-certificate/v1",
+  "date": "2026-08-20",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "normal_extent": "640x360 RGBA8",
+    "resolve_extent": "1280x720 RGBA8 tiled",
+    "tiled_bytes": "0x398000",
+    "pixel_bytes": "0x384000",
+    "padding_bytes": "0x14000"
+  },
+  "runtime": {
+    "wrapper": "recompilation/ace-combat-6-demo/src/vulkan_neutral_resolve.cpp",
+    "preserved_original": "recompilation/ace-combat-6-demo/src/vulkan_neutral_resolve_original.cpp",
+    "preserved_original_git_blob_sha1": "e9bbe0b7c6c6a2fc145d77a24b7b98554e527e09",
+    "certificate": "recompilation/ace-combat-6-demo/include/ac6demo/reached_copy_runtime_certificate.hpp",
+    "trace_env": "AC6_DEMO_WATCH_COPY_DIFFERENTIAL",
+    "trace_prefix": "AC6_COPY_DIFFERENTIAL",
+    "bypass": false
+  },
+  "certificate": {
+    "accepted_stage": "exact",
+    "localized_without_edram": [
+      "copy_pixels",
+      "destination_padding"
+    ],
+    "edram_observation": "not yet passed by historical Vulkan implementation",
+    "writeback_policy": "exact certificate required before public resolve returns"
+  },
+  "validation": {
+    "optimized_cpp": "PASS",
+    "asan": "PASS",
+    "ubsan": "PASS",
+    "wrapper_stub_compile": "PASS",
+    "full_vulkan_build": "NOT_RUN",
+    "pal_runtime": "NOT_RUN"
+  },
+  "policy": {
+    "github_actions_used": false,
+    "pull_request_used": false,
+    "runtime_default_bypass_added": false,
+    "zip_committed": false,
+    "proprietary_bytes_committed": false
+  }
+}

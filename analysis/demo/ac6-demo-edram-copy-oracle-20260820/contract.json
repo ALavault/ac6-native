@@ -1,0 +1,70 @@
+{
+  "schema": "ac6-demo-edram-copy-oracle/v1",
+  "date": "2026-08-20",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "normal_width": 640,
+    "normal_height": 360,
+    "destination_width": 1280,
+    "destination_height": 720,
+    "destination_address": "0x1374A000",
+    "destination_format_raw": 6,
+    "copy_dest_swap": 1
+  },
+  "edram": {
+    "sample_width": 1280,
+    "sample_height": 720,
+    "tile_width_samples": 80,
+    "tile_height_samples": 16,
+    "pitch_tiles": 16,
+    "surface_bytes": "0x384000",
+    "allocation_bytes": "0xA00000",
+    "outside_surface_canary": "0x5A"
+  },
+  "copy_oracle": {
+    "scale": "2x2 sample replication",
+    "byte_mapping": [2, 1, 0, 3],
+    "destination_tiled_bytes": "0x398000",
+    "destination_padding_bytes": "0x14000",
+    "destination_padding_canary": "0xA5",
+    "uniform_asymmetric_linear_sha256": "66dde082635ccc6b24abba5b372ceb10173bc2b062faa2d93de7c4548bb60dc8",
+    "uniform_asymmetric_tiled_sha256": "0bf69cf42fd6c3ac73b30c438a4db6d1664eaafa9c716b9ba330a9886c976786"
+  },
+  "implementation": {
+    "header": "recompilation/ace-combat-6-demo/include/ac6demo/reached_edram_copy_oracle.hpp",
+    "test": "recompilation/ace-combat-6-demo/tests/reached_edram_copy_oracle_tests.cpp",
+    "runner": "recompilation/ace-combat-6-demo/tools/run_reached_edram_copy_oracle_test.sh",
+    "audit_tool": "recompilation/ace-combat-6-demo/tools/audit_reached_copy_oracle.py"
+  },
+  "classification": {
+    "pal_demo_qualified": [
+      "dimensions",
+      "copy register profile",
+      "destination address",
+      "destination format and swap bit"
+    ],
+    "xenia_rexglue_generic": [
+      "EDRAM sample layout used by pinned resolve",
+      "Xenos tiled destination formula",
+      "R/B swap interpretation"
+    ],
+    "tested": [
+      "uniform asymmetric CPU/Vulkan digest agreement",
+      "spatial CPU oracle",
+      "transactional extent rejection"
+    ],
+    "open": [
+      "spatial non-black Vulkan runtime equality",
+      "physical Xbox 360 per-sample oracle",
+      "gameplay screencap"
+    ]
+  },
+  "policy": {
+    "fail_closed": true,
+    "runtime_default_changed": false,
+    "github_actions_used": false,
+    "pull_request_used": false,
+    "zip_committed": false,
+    "proprietary_bytes_committed": false
+  }
+}

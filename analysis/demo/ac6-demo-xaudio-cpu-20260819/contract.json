@@ -1,0 +1,40 @@
+{
+  "schema": "ac6-demo-xaudio-callback-cpu/v1",
+  "date": "2026-08-19",
+  "target": "AC6 Xbox 360 PAL demo",
+  "current_runtime": {
+    "thread_affinity_stored": true,
+    "fiber_pcr_republished": true,
+    "synthetic_xaudio_callback_pcr_republished": false,
+    "previous_affinity_out_parameter_exact": false
+  },
+  "descriptor_layout": {
+    "base_offset": 12,
+    "pair_stride": 8,
+    "processor_count": 6,
+    "observed_complete_processors": [4, 5],
+    "observed_null_processors": [0, 1, 2, 3]
+  },
+  "selection_policy": {
+    "explicit_processor": "accepted only for a complete A/B pair",
+    "implicit_processor": "accepted only when exactly one complete pair exists",
+    "pal_reached_state": "ambiguous; explicit A/B required"
+  },
+  "next_experiment": {
+    "routes": [4, 5],
+    "required_chain": [
+      "descriptor_non_null",
+      "callback_return",
+      "XAudioSubmitRenderDriverFrame",
+      "frame_size_0x1800",
+      "worker_event_publication",
+      "worker_wake",
+      "subsequent_frame_submission"
+    ]
+  },
+  "publication": {
+    "plain_text_only": true,
+    "zip": false,
+    "proprietary_bytes": false
+  }
+}

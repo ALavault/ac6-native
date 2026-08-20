@@ -3,6 +3,7 @@
 #include "ac6demo/runtime_error.hpp"
 
 #include <algorithm>
+#include <string>
 
 namespace ac6demo {
 namespace {
@@ -27,6 +28,16 @@ std::int32_t tiled_offset_2d(std::int32_t x, std::int32_t y,
          (((((y & 8) >> 2) + (x >> 3)) & 3) << 6) + (offset & 0x3F);
 }
 
+void require_reached_buffer_sizes(std::size_t tiled,
+                                  std::size_t linear,
+                                  const char *operation) {
+  if (tiled != kReachedResolveTiledExtentBytes ||
+      linear != kReachedResolveLinearBytes) {
+    throw RuntimeTrap(std::string("reached RGBA8 ") + operation +
+                      " buffer size mismatch");
+  }
+}
+
 } // namespace
 
 std::size_t reached_rgba8_tiled_offset(std::uint32_t x, std::uint32_t y) {
@@ -43,12 +54,23 @@ std::size_t reached_rgba8_tiled_offset(std::uint32_t x, std::uint32_t y) {
   return static_cast<std::size_t>(offset);
 }
 
+void tile_reached_rgba8(std::span<const std::byte> linear,
+                        std::span<std::byte> tiled) {
+  require_reached_buffer_sizes(tiled.size(), linear.size(), "tile");
+  for (std::uint32_t y = 0; y < kReachedResolveHeight; ++y) {
+    for (std::uint32_t x = 0; x < kReachedResolveWidth; ++x) {
+      const std::size_t source =
+          (static_cast<std::size_t>(y) * kReachedResolveWidth + x) * 4U;
+      const std::size_t destination = reached_rgba8_tiled_offset(x, y);
+      std::copy_n(linear.begin() + static_cast<std::ptrdiff_t>(source), 4U,
+                  tiled.begin() + static_cast<std::ptrdiff_t>(destination));
+    }
+  }
+}
+
 void untile_reached_rgba8(std::span<const std::byte> tiled,
                           std::span<std::byte> linear) {
-  if (tiled.size() != kReachedResolveTiledExtentBytes ||
-      linear.size() != kReachedResolveLinearBytes) {
-    throw RuntimeTrap("reached RGBA8 untile buffer size mismatch");
-  }
+  require_reached_buffer_sizes(tiled.size(), linear.size(), "untile");
   for (std::uint32_t y = 0; y < kReachedResolveHeight; ++y) {
     for (std::uint32_t x = 0; x < kReachedResolveWidth; ++x) {
       const std::size_t source = reached_rgba8_tiled_offset(x, y);
