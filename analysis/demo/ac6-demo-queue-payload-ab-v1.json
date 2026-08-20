@@ -1,0 +1,11 @@
+{
+  "schema": "ac6-demo-queue-payload-ab/v1",
+  "target": {"id": "ac6-demo-xbox360-pal", "module": "Default.xex", "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8", "ghidra_project": "ace-combat-6-demo"},
+  "inputs": {"binary_sha256": "e11fc1ff1eb93155340907ff787e57ababef72e83c37a6a5934e1f393061e44b", "backend": "headless", "audio_driver": "dummy", "max_ticks": 600, "start_input": {"tick": 252, "buttons": "0x00000010"}, "instrumentation": ["AC6_DEMO_WATCH_RENDER_QUEUE_SLOTS=1", "AC6_DEMO_WATCH_RENDER_QUEUE_WRITERS=1"]},
+  "routes": {
+    "neutral": {"trace_sha256": "d1e6222e9975ec6afd46e6f761120bb4217851d0eb50f570593ee89fa1b7f5c9", "stderr_sha256": "8a9fd9fa4522e3e70c75b39d339142a4510a81069010cea402371d8d3530b082", "report_sha256": "996367db466defa294cc7d98ff3adbf52fd39044226a7100b3ada71072382af2", "xam_movie_sha256": "64a53fadbaf306a5b7cd6f4d67dc676f8b1de7f5a7418315faa580fe2d9854ed", "atlas_sha256": "8ed877ac8fab54f4dd180d932671a712069a3dda44c715f68140e56699098b6f"},
+    "start": {"trace_sha256": "cedffe7aa942fff0528336cce7568b6546be5a0b03770a6842496833dd3034e3", "stderr_sha256": "8a9fd9fa4522e3e70c75b39d339142a4510a81069010cea402371d8d3530b082", "report_sha256": "7e7549ca7523268a4425740510ba1dbaaf23d033fb06c56d767f93b6224be07b", "xam_movie_sha256": "5500a5d4e0095b68f96937e49a65de299d24c83bf37fbf39bc9f58dc2fc6b4b4", "atlas_sha256": "651a602c587096f4ee56c70515516c40ef1ff761f027a58d1269ca1cca524571"}
+  },
+  "queue_slot_trace": {"records": 2440, "nonzero_records": 697, "first_nonzero": {"address": "0x8238CD9C", "size": 4, "value": "0x0000000000000001", "tick": 221, "guest_lr": "0x821A450C"}, "first_scheduler_indices": [{"address": "0x8238CD90", "value": "0x0000000000000001", "tick": 252, "thread": 1, "guest_lr": "0x820FF734"}, {"address": "0x8238CD94", "value": "0x0000000000000001", "tick": 252, "thread": 25, "guest_lr": "0x820FFCE4"}], "stderr_byte_identical": true},
+  "result": {"outcome": "max_ticks", "completed_ticks": 600, "presents": 463, "frontend": false, "mission": false, "terminal": false, "graphics_scheduler_imports_equal": true, "queue_command_payload_qualified": false, "supported": false}
+}
