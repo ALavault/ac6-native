@@ -1,5 +1,5 @@
 {
-  "schema": "ac6-demo-cblocker-timebase-frontier/v1",
+  "schema": "ac6-demo-ring-readback-frontier/v1",
   "target": {
     "id": "ac6-demo-xbox360-pal",
     "module": "Default.xex",
@@ -7,9 +7,9 @@
     "ghidra_project": "ace-combat-6-demo"
   },
   "change": {
-    "guest_boundary": "D3D::CBlocker::Check reads current KTHREAD+0x58 and times out after 5000 units",
-    "runtime_behavior": "GuestBridge::set_tick publishes the qualified 50 MHz Xenon timebase to current KTHREAD+0x58",
-    "xenos_correction": "The command processor writes RPTR only to the address supplied to VdEnableRingBufferRPtrWriteBack; the former address-minus-0x3c write was removed"
+    "xenos_correction": "The command processor writes RPTR only to the address supplied to VdEnableRingBufferRPtrWriteBack; the former address-minus-0x3c write was removed",
+    "edge_source_cross_check": "Xenia Edge e4b13738 VdEnableRingBufferRPtrWriteBack forwards only the supplied pointer, and its command processor writes only that pointer",
+    "excluded_behavior": "No host write is made to the unknown KTHREAD+0x58 field; the final cold runs need none"
   },
   "validation": {
     "targeted_tests": [
@@ -17,6 +17,7 @@
       "ac6-demo-xenos-command-tests"
     ],
     "headless_start": {
+      "runtime_binary_sha256": "1b83ebad3b25a1ee6ff8d25b206fde2470efb3bd99f52039d7cc8b0bc5e3d01f",
       "max_ticks": 3036,
       "start_tick": 3000,
       "release_tick": 3001,
@@ -45,7 +46,7 @@
     }
   },
   "result": {
-    "proven": "The native PAL demo cold path no longer spins forever in CBlocker and reaches the title VdSwap loop through and after the qualified START edge.",
+    "proven": "Removing the synthetic address-minus-0x3c RPTR write preserves the native PAL cold path through the title VdSwap loop and the qualified START edge.",
     "not_proven": [
       "a Xenos PRESENT packet",
       "a raster graphics pipeline",

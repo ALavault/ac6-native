@@ -175,13 +175,6 @@ void GuestBridge::prepare(const ThreadImage &image) {
 void GuestBridge::set_tick(std::uint64_t tick) noexcept {
   tick_ = tick;
   input_.set_tick(tick);
-  if (prepared_) {
-    const auto current_thread =
-        memory_.load_u32(kGuestThreadBase + 0x100U);
-    memory_.store_u32(
-        current_thread + 0x58U,
-        static_cast<std::uint32_t>((tick * 50'000'000ULL) / 60ULL));
-  }
   if (ke_timestamp_bundle_ != 0U) {
     memory_.store_u32(
         ke_timestamp_bundle_ +

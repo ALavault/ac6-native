@@ -60,19 +60,6 @@ void test_executable_privilege_reads_system_flags() {
   assert(!bridge.executable_privilege(0xFFFFFFFFU));
 }
 
-void test_guest_thread_cycle_count_tracks_tick() {
-  ac6demo::GuestMemory memory;
-  memory.map_zero(0x20000U, 0x2000U);
-  ac6demo::GuestBridge bridge(memory);
-  bridge.prepare(ac6demo::GuestBridge::ThreadImage{0x20000U, 0x100U, 0x100U,
-                                                   0x1000U, 0U});
-  const auto current_thread = memory.load_u32(0x7F000000U + 0x100U);
-  bridge.set_tick(1U);
-  assert(memory.load_u32(current_thread + 0x58U) == 833'333U);
-  bridge.set_tick(60U);
-  assert(memory.load_u32(current_thread + 0x58U) == 50'000'000U);
-}
-
 // Guarded because the non-generated build compiles a GuestBridge with no
 // thread scheduler at all; this assertion runs for real in the codegen-on
 // tree, whose ctest suite covers the same file.
@@ -470,7 +457,6 @@ int main() {
 #ifdef AC6_DEMO_GENERATED_GUEST
   test_guest_processor_identity_is_one_hot();
   test_executable_privilege_reads_system_flags();
-  test_guest_thread_cycle_count_tracks_tick();
 #endif
 
   std::cout << "ac6-demo-core-tests: ok\n";
