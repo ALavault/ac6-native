@@ -3,6 +3,9 @@
 ## Agent wait timeout
 
 - Do not invent, expand, or continue work beyond the explicit request. Do not add unsolicited tasks or optional improvements.
+- Do not run an A/B by default. Use one only when a named causal ambiguity
+  cannot be resolved by a targeted trace and guest-state evidence; record the
+  single differing input and the decision it is meant to settle.
 
 ## Scope, paths and resources
 
