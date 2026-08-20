@@ -3,6 +3,7 @@
 #include "ac6demo/graphics.hpp"
 #include "ac6demo/hash.hpp"
 #include "ac6demo/ppc.hpp"
+#include "ac6demo/xenon_affinity_contract.hpp"
 #include <algorithm>
 #include <array>
 #include <charconv>
@@ -333,8 +334,8 @@ void trace_render_queue_writer(PPCContext &context, std::uint32_t address,
   }
   std::fputc('\n', stderr);
 }
-void trace_render_queue_slot_store(PPCContext &c, std::uint32_t a, std::uint32_t s, bool nz, const char *n, std::uint32_t l) {
-  ac6demo::guest_bridge_detail::trace_render_queue_slot_store(a, s, nz, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(c.lr), n, l);
+void trace_render_queue_slot_store(PPCContext &c, std::uint32_t a, std::uint32_t s, std::uint64_t v, const char *n, std::uint32_t l) {
+  ac6demo::guest_bridge_detail::trace_render_queue_slot_store(a, s, v, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(c.lr), n, l);
 }
 void trace_chunk_target_store(PPCContext &context, std::uint32_t address,
                              std::uint32_t size, std::uint64_t value,
@@ -587,7 +588,7 @@ extern "C" void AC6_PPC_STORE_U8(PPCContext &context, std::uint8_t *base,
                            generated_line);
   trace_transition_store(context, address, 1U, value, generated_name,
                          generated_line);
-  trace_render_queue_slot_store(context, address, 1U, value != 0U, generated_name, generated_line);
+  trace_render_queue_slot_store(context, address, 1U, value, generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 1U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
@@ -614,7 +615,7 @@ extern "C" void AC6_PPC_STORE_U16(PPCContext &context, std::uint8_t *base,
                            generated_line);
   trace_transition_store(context, address, 2U, value, generated_name,
                          generated_line);
-  trace_render_queue_slot_store(context, address, 2U, value != 0U, generated_name, generated_line);
+  trace_render_queue_slot_store(context, address, 2U, value, generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 2U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
@@ -645,7 +646,7 @@ extern "C" void AC6_PPC_STORE_U32(PPCContext &context, std::uint8_t *base,
                            generated_line);
   trace_transition_store(context, address, 4U, value, generated_name,
                          generated_line);
-  trace_render_queue_slot_store(context, address, 4U, value != 0U, generated_name, generated_line);
+  trace_render_queue_slot_store(context, address, 4U, value, generated_name, generated_line);
   trace_render_queue_writer(context, address, value, generated_name, generated_line);
   if (std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_WRITERS") != nullptr &&
       (events.contains(value) || mutants.contains(value) ||
@@ -688,7 +689,7 @@ extern "C" void AC6_PPC_STORE_U64(PPCContext &context, std::uint8_t *base,
   trace_transition_store(context, address, 8U,
                          static_cast<std::uint32_t>(value), generated_name,
                          generated_line);
-  trace_render_queue_slot_store(context, address, 8U, value != 0U, generated_name, generated_line);
+  trace_render_queue_slot_store(context, address, 8U, value, generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 8U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
@@ -730,7 +731,7 @@ extern "C" void AC6_PPC_STORE_U128(PPCContext &context, std::uint8_t *base,
           ? 1U
           : 0U,
       generated_name, generated_line);
-  trace_render_queue_slot_store(context, address, 16U, std::any_of(value, value + 16U, [](std::uint8_t byte) { return byte != 0U; }), generated_name, generated_line);
+  trace_render_queue_slot_store(context, address, 16U, std::any_of(value, value + 16U, [](std::uint8_t byte) { return byte != 0U; }) ? 1U : 0U, generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 16U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
@@ -1053,8 +1054,7 @@ extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, s
   context.r3.s64 = 0;
   return true;
 }
-[[nodiscard]] std::uint64_t
-decode_wait_deadline(GuestBridge &bridge, std::uint32_t timeout_pointer) {
+[[nodiscard]] std::uint64_t decode_wait_deadline(GuestBridge &bridge, std::uint32_t timeout_pointer) {
   if (timeout_pointer == 0U) {
     return kNoWakeTick;
   }
@@ -1063,21 +1063,18 @@ decode_wait_deadline(GuestBridge &bridge, std::uint32_t timeout_pointer) {
     throw ac6demo::RuntimeTrap("guest wait timeout is not mapped",
                                bridge.tick(), 0, timeout_pointer);
   }
-  const auto timeout =
-      static_cast<std::int64_t>(memory.load_u64(timeout_pointer));
+  const auto timeout = static_cast<std::int64_t>(memory.load_u64(timeout_pointer));
   if (timeout > 0) {
     throw ac6demo::RuntimeTrap("unqualified absolute guest wait timeout",
                                bridge.tick(), 0, timeout_pointer);
   }
-  const auto magnitude = timeout == std::numeric_limits<std::int64_t>::min()
-                             ? std::numeric_limits<std::uint64_t>::max()
-                             : static_cast<std::uint64_t>(-timeout);
+  const auto magnitude = timeout == std::numeric_limits<std::int64_t>::min() ? std::numeric_limits<std::uint64_t>::max()
+                                                                                : static_cast<std::uint64_t>(-timeout);
   if (magnitude > kNoWakeTick - (kHundredNanosecondsPerGuestTick - 1U)) {
     return kNoWakeTick;
   }
-  const auto ticks = std::max<std::uint64_t>(
-      1U, (magnitude + kHundredNanosecondsPerGuestTick - 1U) /
-              kHundredNanosecondsPerGuestTick);
+  const auto ticks = std::max<std::uint64_t>(1U, (magnitude + kHundredNanosecondsPerGuestTick - 1U) /
+                                                      kHundredNanosecondsPerGuestTick);
   if (bridge.tick() > kNoWakeTick - ticks) {
     return kNoWakeTick;
   }
@@ -1118,22 +1115,19 @@ void update_guest_timers(GuestBridge &bridge) noexcept {
     throw ac6demo::RuntimeTrap("unqualified absolute guest timer deadline",
                                bridge.tick(), 0, pointer);
   }
-  const auto magnitude = due_time == std::numeric_limits<std::int64_t>::min()
-                             ? std::numeric_limits<std::uint64_t>::max()
-                             : static_cast<std::uint64_t>(-due_time);
+  const auto magnitude = due_time == std::numeric_limits<std::int64_t>::min() ? std::numeric_limits<std::uint64_t>::max()
+                                                                                 : static_cast<std::uint64_t>(-due_time);
   if (magnitude > kNoWakeTick - (kHundredNanosecondsPerGuestTick - 1U)) {
     return kNoWakeTick;
   }
-  const auto ticks = std::max<std::uint64_t>(
-      1U, (magnitude + kHundredNanosecondsPerGuestTick - 1U) /
-              kHundredNanosecondsPerGuestTick);
+  const auto ticks = std::max<std::uint64_t>(1U, (magnitude + kHundredNanosecondsPerGuestTick - 1U) /
+                                                      kHundredNanosecondsPerGuestTick);
   if (bridge.tick() > kNoWakeTick - ticks) {
     return kNoWakeTick;
   }
   return bridge.tick() + ticks;
 }
-[[nodiscard]] std::uint64_t
-timer_period_to_ticks(std::uint32_t period_ms) noexcept {
+[[nodiscard]] std::uint64_t timer_period_to_ticks(std::uint32_t period_ms) noexcept {
   if (period_ms == 0U) {
     return 0U;
   }
@@ -1162,7 +1156,6 @@ timer_period_to_ticks(std::uint32_t period_ms) noexcept {
 #include "guest_bridge/xam_input_dispatch.hpp"
   return false;
 }
-
 #include "guest_bridge/import_journal.hpp"
 } // namespace
 // clang-format off

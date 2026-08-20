@@ -17,6 +17,8 @@ BRIDGE = PROJECT / "src/guest_bridge.cpp"
 ATOMIC = PROJECT / "src/guest_bridge/graphics_mmio_cpu.hpp"
 ADAPTER = PROJECT / "tools/ppc_context_adapter.h"
 VECTOR = PROJECT / "src/guest_bridge/vector_read_trace.cpp"
+DISPATCH = PROJECT / "src/guest_bridge/kernel_objects_dispatch.hpp"
+DISPATCH_ORIGINAL = PROJECT / "src/guest_bridge/kernel_objects_dispatch_original.hpp"
 MAPPER_PATH = PROJECT / "tools/map_generated_guest_load_sites.py"
 
 
@@ -92,15 +94,15 @@ class PostResumeProbeTests(unittest.TestCase):
 
     def test_one_shot_handoff_and_post_access_contract(self):
         trace = TRACE.read_text(encoding="utf-8")
-        dispatch = (PROJECT / "src/guest_bridge/kernel_objects_dispatch.hpp").read_text(
-            encoding="utf-8"
-        )
+        dispatch = DISPATCH_ORIGINAL.read_text(encoding="utf-8")
         self.assertEqual(trace.count("AC6_POST_RESUME_INSTRUCTION_HANDOFF"), 1)
         self.assertEqual(trace.count("AC6_POST_RESUME_ACCESS kind="), 2)
         self.assertIn("compare_exchange_strong", trace)
         self.assertIn("resume_pc - 4U", trace)
         self.assertEqual(dispatch.count("arm_post_resume_access("), 2)
         self.assertNotIn("arm_event_post_set", dispatch)
+        self.assertIn('#include "kernel_objects_dispatch_original.hpp"',
+                      DISPATCH.read_text(encoding="utf-8"))
 
     def test_fixed_width_scalar_vector_and_atomic_routes(self):
         trace = TRACE.read_text(encoding="utf-8")

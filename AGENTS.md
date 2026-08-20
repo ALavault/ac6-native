@@ -6,7 +6,8 @@
 
 ## Scope, paths and resources
 
-- Inherit the portfolio rules in `AGENTS.md`. This file only adds AC6-specific
+- Inherit the portfolio rules from the portfolio-root `AGENTS.md` when one is
+  present; none exists today, so this file stands alone. It adds AC6-specific
   constraints. Run commands from the portfolio root; every path below is
   portfolio-root-relative.
 - Before adding analysis or build machinery, use the available procedures in

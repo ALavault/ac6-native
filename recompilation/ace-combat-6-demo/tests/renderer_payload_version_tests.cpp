@@ -1,3 +1,7 @@
+#ifdef NDEBUG
+#error "This assert-based test must be built with -UNDEBUG."
+#endif
+
 #include "ac6demo/renderer_payload_version.hpp"
 
 #include <cassert>
