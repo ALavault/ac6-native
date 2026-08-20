@@ -1,0 +1,57 @@
+{
+  "schema": "ac6-demo-title-followup-inputs/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "runtime": {
+    "binary_sha256": "58d9b6d357b1a8a0a37df808dbe54f57fabb6a1b896b0281f02476812621aa7d",
+    "codegen_manifest_sha256": "465c279f529932165cd1d00416ff9b3d237ba3932a01874aea6cda6448994c76",
+    "backend": "headless"
+  },
+  "common_input": [
+    {"tick": 3000, "buttons": "0x0010", "meaning": "START"},
+    {"tick": 3001, "buttons": "0x0000", "meaning": "release"}
+  ],
+  "short_routes": [
+    {
+      "id": "second-start",
+      "input": [{"tick": 3010, "buttons": "0x0010"}, {"tick": 3011, "buttons": "0x0000"}],
+      "report_sha256": "3ad1332871c2c7c739a3b6a1307f221ca08d6a68f1529a68da5c0c64483f4786",
+      "stderr_sha256": "fc0d54aa09e8d14ea0945982453ba9d5a55a79071d9800201ba34f0f9277c867"
+    },
+    {
+      "id": "second-a",
+      "input": [{"tick": 3010, "buttons": "0x1000"}, {"tick": 3011, "buttons": "0x0000"}],
+      "report_sha256": "a55fe8bee8e486173a24967690065f82b29246387782dbcdd57a80f20d503eea",
+      "stderr_sha256": "fc0d54aa09e8d14ea0945982453ba9d5a55a79071d9800201ba34f0f9277c867"
+    }
+  ],
+  "short_result": {
+    "completed_ticks": 3020,
+    "presents": 2883,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "frontier": {"lr": "0x822E559C", "address": "0x822F8848"},
+    "stderr_byte_identical": true,
+    "swg_lookup_or_native_call_at_tick_3010": false,
+    "last_title_local_swg_burst_tick": 3001
+  },
+  "long_second_a": {
+    "max_ticks": 4200,
+    "report_sha256": "ee6be1c03ef6e601f91064dde2b1893869a663e752bf2c2a7ea00f641b7564fe",
+    "presents": 4063,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "frontier": {"lr": "0x822E559C", "address": "0x822F8848"}
+  },
+  "result": {
+    "second_button_is_not_the_missing_title_condition": true,
+    "native_title_transition_remains_open": true,
+    "supported": false
+  }
+}

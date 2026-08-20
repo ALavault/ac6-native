@@ -1,5 +1,15 @@
 # AC6 Demo — implementation status
 
+Cycle 1783 ferme la route visuelle oracle title→menu par deux cold boots Xenia
+Edge natifs : un seul START sur `PRESS START` affiche `NORMAL/NOVICE/EXIT` en
+moins de 750 ms. Une route séparée confirme chargement, cinématique et HUD
+`MISSION START`. Le natif START→START et START→A reste sans frontend à 3020
+ticks, et START→A à 4200 ticks ; aucun second bouton n'est donc requis par la
+route réelle. Pixels Edge oracle-only, runtime `supported=false`. Rapport
+`reports/cycle-1783-demo-xenia-edge-visual-route.md`, capsules
+`analysis/oracle/ac6-demo-xenia-edge-visual-route-v1/manifest.json` et
+`analysis/demo/ac6-demo-title-followup-inputs-v1.json`.
+
 Cycle 1753 joint chaque kick XMA neutral à son `MmGetPhysicalAddress`
 immédiat : les six contextes `0x2E800000..0x2E800140` et mots wire
 `0x01000000..0x20000000` passent la garde opt-in, puis neutral atteint

@@ -1,0 +1,110 @@
+{
+  "schema": "ac6-demo-xenia-edge-visual-route/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "title_id": "4E4D87E6",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "oracle": {
+    "kind": "xenia-edge",
+    "release": "60ff861",
+    "appimage_sha256": "c2cac2a029ce0d44a71c4e919fd71c702654079023b63fd669472ba3cd78b828",
+    "renderer": "vulkan",
+    "display": "isolated Xvfb 1280x800x24",
+    "oracle_only": true
+  },
+  "input": {
+    "driver": "SDL keyboard manually bound to guest slot 0 before title",
+    "start_binding": "X",
+    "a_binding": "0xBA (semicolon)",
+    "pulse_ms": 150
+  },
+  "frontend_runs": [
+    {
+      "id": "run-a",
+      "cold_profile": true,
+      "logged_in": false,
+      "pre": {
+        "file": "run-a-title.png",
+        "sha256": "a61e64829bba445ab5f83a34122ba05d40f0e3c8b048162de3178ce1f09128ea"
+      },
+      "action": "START once while title was visible",
+      "post_750ms": {
+        "file": "run-a-menu-0750ms.png",
+        "sha256": "11b1e77f43d042c7259259d6945c9d86f1d318508f1b11f7b0ce31dabb63505a",
+        "state": "NORMAL/NOVICE/EXIT menu visible"
+      },
+      "post_2s": {
+        "file": "run-a-menu-02s.png",
+        "sha256": "e0ac52299452b23d7afdca287697056b374b9b2a9ebf6ee36799e8a611281b1b"
+      },
+      "log": {
+        "file": "run-a-xenia.log.gz",
+        "sha256": "53120714064f3eb0c72742a2eb3a6036e2bd118bd3132365c51baa12db6b5765",
+        "last_logged_frame": 3431
+      }
+    },
+    {
+      "id": "run-b",
+      "cold_profile": true,
+      "logged_in": false,
+      "pre": {
+        "file": "run-b-title.png",
+        "sha256": "e237813a5b8cea371e08f349a2819efa1104aab7435fd4b8a0492ae25f495cfb",
+        "visual_text": "PRESS START"
+      },
+      "action": "START once on the first strictly matched title frame",
+      "post_750ms": {
+        "file": "run-b-menu-0750ms.png",
+        "sha256": "4a9dd5a602f4e4f7764bef579288d7312b6cb03ad35c26fb16e23533e8a0b0e0",
+        "state": "NORMAL/NOVICE/EXIT menu visible"
+      },
+      "post_2s": {
+        "file": "run-b-menu-02s.png",
+        "sha256": "26fb34d3ef6ebdd3e11b3d834a8ff663ca46dbb274fc2f3d669437545b761a96"
+      },
+      "late_input_control": {
+        "pre_file": "run-b-late-title.png",
+        "pre_sha256": "62eac763410e25dd61314d45a906487bc36446161830fe41520d05ea5f31720c",
+        "post_file": "run-b-late-attract-esrb.png",
+        "post_sha256": "a45c85ee536fadf8a7230a0aa465e4fbe08e4141327f60576ec91b3898b3f683",
+        "result": "input coincident with attract timeout; not a qualified menu transition"
+      },
+      "log": {
+        "file": "run-b-xenia.log.gz",
+        "sha256": "5e9c3a4627aae2626c6a7cb76ea29de5350b9c4a511ace7d472e7cc99aacdf05",
+        "last_logged_frame": 11365
+      }
+    }
+  ],
+  "visual_consistency": {
+    "menu_750ms_rmse_normalized": 0.0144738,
+    "menu_2s_rmse_normalized": 0.0192433,
+    "run_a_title_to_menu_rmse_normalized": 0.232887,
+    "all_selected_images_have_nonzero_rgb": true
+  },
+  "mission_observation": {
+    "qualification": "separate interactive oracle route; not frame-exact replay evidence",
+    "sequence": [
+      {"file": "mission-menu.png", "sha256": "be3048fdcbf87c0826dd87c336622b0ce681897ad2056ad6836f5c632679e7af", "state": "NORMAL selected"},
+      {"file": "mission-loading.png", "sha256": "7db8aeee4953916a7c28e6799cfe02305d49caeb7935d8df358bfae43af699de", "state": "loading"},
+      {"file": "mission-controls.png", "sha256": "f2736fb7ced5e783836a8c22065a668ae5aac8b9020b9ebef1377bee35e32035", "state": "basic controller configuration"},
+      {"file": "mission-cutscene.png", "sha256": "0b17d3b8e7713dcbdcd2d601b22691a41f10f904fc6a0494764c1bd9b6a4250f", "state": "F-16 mission cutscene"},
+      {"file": "mission-hud-start.png", "sha256": "732f39e0a82ad8bca0d07edd3c849222e7874a56ab5cd9eac4394f2c4c1f89eb", "state": "MISSION START HUD"},
+      {"file": "mission-hud-objective.png", "sha256": "0b7eed7061a41bd66cb009c4b8e3df43f5324589f08b87f344289f88508b958b", "state": "first target/HUD"}
+    ],
+    "inputs": ["A on NORMAL", "A after controls loading", "START to skip mission cutscene"],
+    "log": {
+      "file": "mission-xenia.log.gz",
+      "sha256": "95ac13cc8f3c5ec8737ec70f7585f63495ea355bd5dd75fe1a406cccf445e997",
+      "last_logged_frame": 29592
+    }
+  },
+  "limitations": [
+    "Xenia pixels are oracle observations and never native readback evidence.",
+    "X11 key injection is host-timed; no completed-present pause, exact guest frame step, checkpoint restore or authenticated AgentBridge transport is claimed.",
+    "The mission observation proves a visible route only; it is not yet a deterministic success or failure movie."
+  ]
+}
