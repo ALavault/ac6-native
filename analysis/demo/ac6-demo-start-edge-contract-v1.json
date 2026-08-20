@@ -1,0 +1,36 @@
+{
+  "schema": "ac6-demo-start-edge-contract/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "static": {
+    "input_update": {
+      "entry": "0x821DE6E0",
+      "byte_sha256": "b3023aaa6fb0780878cd4dd1a21ba11fe8f95a2f116cd640c800b2e78f1b6667",
+      "effect": "pressed = current & ~previous; released = previous & ~current"
+    },
+    "caller": {
+      "entry": "0x821DE990",
+      "byte_sha256": "0409464f4bcb6d06da225faf3ce773397bfa7761221e117ebabbf957443015b8",
+      "calls": ["0x821DE6E0"]
+    }
+  },
+  "runtime_join": {
+    "qualified_replay": "START=0x0010 at tick 3000; release at tick 3001",
+    "effect_tick": 3001,
+    "evidence": "analysis/demo/ac6-demo-title-opcode-dispatch-v1.json",
+    "effect": "the START edge enters the distinct title script segment"
+  },
+  "decision": {
+    "oracle_difference": "Xenia Edge host pulse is approximately 150 ms, while the qualified native replay releases on the next tick",
+    "conclusion": "Holding an unchanged START bit cannot create another pressed edge after the first input update.",
+    "excluded_follow_up": "Do not repeat a cold native probe solely to test a longer START hold.",
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "supported": false
+  }
+}
