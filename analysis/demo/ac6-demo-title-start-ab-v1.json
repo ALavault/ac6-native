@@ -1,0 +1,9 @@
+{
+  "schema": "ac6-demo-title-start-ab/v1",
+  "target": {"id": "ac6-demo-xbox360-pal", "module": "Default.xex", "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8", "ghidra_project": "ace-combat-6-demo"},
+  "inputs": {"binary_sha256": "e11fc1ff1eb93155340907ff787e57ababef72e83c37a6a5934e1f393061e44b", "backend": "headless", "max_ticks": 3200, "start_input": {"tick": 3000, "buttons": "0x00000010"}, "xam_movie": "recorded", "atlas": true},
+  "routes": {"neutral": {"trace_sha256": "53efc733b1941dad3d3f9e464013cef9d532e0529e70ecf5fd2b6d9d9eee28a3", "stderr_sha256": "12dc5c501e4bc8497d1221c016e3d6ba376297d22ebf22a8a1a150aeb7a95e97", "report_sha256": "bfa7501195de2bcdd859db98979cf239737b8f8ed679e3e9b762b5e1d2a777f2", "xam_movie_sha256": "eea3f9b94850121e745a6ae5c7e4d71c1c670ebc32317a28de496e2e5ef6818d", "atlas_sha256": "72778e712db9ad4804791f004f167b47017cfeaa719fb62045c1b9c1cb8bae78"}, "start": {"trace_sha256": "502915b94e1ab85bd3badf859671c3d33f7e0cd76326584e5c78d301414565da", "stderr_sha256": "12dc5c501e4bc8497d1221c016e3d6ba376297d22ebf22a8a1a150aeb7a95e97", "report_sha256": "d08de5f6d7a3d288fa4e3c0e7e87d6b242aafc6c644297dde2cfe6532984adab", "xam_movie_sha256": "4488e469a203a32fe8705617ae118ad1c944e6caefca0ef9276824cd6c5d8a78", "atlas_sha256": "28d74560a24f2afccaf54fedf40016296e219a5d29871b3ae6e11904967c5620"}},
+  "first_divergence": {"tick": 3001, "thread": 1, "lr": "0x820DC224", "targets": ["0x820D32D0", "0x820D3AC8"], "start_only_functions": 133, "start_only_indirect_edges": 91},
+  "mode": {"title_mode_tick": 2429, "title_inner_state_tick": 2452, "manager_request_changed": false},
+  "result": {"completed_ticks": 3200, "presents": 3063, "frontend": false, "mission": false, "terminal": false, "guest_writeback": false, "menu_owner_seen": false, "supported": false}
+}
