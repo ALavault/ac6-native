@@ -44,6 +44,16 @@ inline void trace_graphics_interrupt_call(
                static_cast<unsigned long long>(tick), thread);
 }
 
+inline void trace_graphics_interrupt_pm4(std::uint8_t cpu,
+                                         std::uint64_t tick) noexcept {
+  if (!graphics_interrupt_trace_enabled()) {
+    return;
+  }
+  std::fprintf(stderr, "AC6_GRAPHICS_INTERRUPT_PM4 cpu=%u tick=%llu\n",
+               static_cast<unsigned>(cpu),
+               static_cast<unsigned long long>(tick));
+}
+
 inline void trace_graphics_interrupt_state_load(
     std::uint32_t address, std::uint32_t value, std::uint64_t tick,
     std::uint32_t thread, std::uint32_t lr, const char *generated_name,

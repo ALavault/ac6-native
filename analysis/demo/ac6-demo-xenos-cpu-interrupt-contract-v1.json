@@ -31,8 +31,14 @@
     "producers": 5
   },
   "runtime_integration": {
-    "enabled_by_default": false,
-    "reason": "the ABI and mask width are closed, but same-slice versus deferred delivery still needs a bounded A/B trace"
+    "enabled_by_default": true,
+    "delivery": "the reached PM4_INTERRUPT mask 0x4 queues CPU 2 and is delivered with source 1 in the same lifecycle tick after the Xenos batch",
+    "validation": {
+      "vulkan_one_tick_probe": "PM4 cpu 2 tick 0 -> source 1 tick 0",
+      "probe_trace_sha256": "ced808d9f4f6532841e0b55ad76f943fee26d424470e29be579a0f22fdfb36b7",
+      "ctest_codegen_on": "26/26"
+    },
+    "remaining_boundary": "masks other than the reached 0x4 remain fail-closed"
   },
   "publication": {
     "plain_text_only": true,

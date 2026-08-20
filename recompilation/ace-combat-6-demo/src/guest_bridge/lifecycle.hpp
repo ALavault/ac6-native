@@ -296,14 +296,17 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
     }
     current_guest_thread_id = previous_thread_id;
   };
-  if (xenos_cp_interrupts_pending_ != 0U) {
-    if (graphics_interrupt_callback == 0U) {
-      throw RuntimeTrap("Xenos CP interrupt has no guest callback", tick_);
+  const auto dispatch_pending_xenos_interrupts = [&] {
+    while (xenos_cp_interrupts_pending_ != 0U) {
+      if (graphics_interrupt_callback == 0U) {
+        throw RuntimeTrap("Xenos CP interrupt has no guest callback", tick_);
+      }
+      dispatch_graphics_interrupt(1U);
+      --xenos_cp_interrupts_pending_;
     }
-    dispatch_graphics_interrupt(1U);
-    --xenos_cp_interrupts_pending_;
     xenos_effects_.pending_interrupt_count = xenos_cp_interrupts_pending_;
-  }
+  };
+  dispatch_pending_xenos_interrupts();
   if (graphics_interrupt_callback != 0U &&
       last_graphics_interrupt_tick_ != tick_) {
     dispatch_graphics_interrupt(0U);
@@ -358,6 +361,7 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
   apply_loading_ready_flag_override(memory_, tick_);
   (void)run_runnable_threads();
   resume_xenos_pending_batch();
+  dispatch_pending_xenos_interrupts();
 }
 
 } // namespace ac6demo

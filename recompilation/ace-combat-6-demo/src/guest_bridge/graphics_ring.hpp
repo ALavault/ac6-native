@@ -341,6 +341,9 @@ GuestBridge::apply_xenos_typed_batch(std::span<const std::uint32_t> stream) {
   for (const auto &write : batch.memory_writes) {
     memory_.store_bytes(write.address, write.guest_bytes);
   }
+  for (const auto cpu : batch.cpu_interrupts) {
+    ac6demo::guest_bridge_detail::trace_graphics_interrupt_pm4(cpu, tick_);
+  }
   xenos_cp_interrupts_pending_ +=
       static_cast<std::uint32_t>(batch.cpu_interrupts.size());
   next_effects.pending_interrupt_count = xenos_cp_interrupts_pending_;

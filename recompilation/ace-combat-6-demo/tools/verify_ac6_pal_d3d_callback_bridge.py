@@ -168,9 +168,9 @@ def verify(data:bytes):
       "callsites":actual_calls,
       "functions":[{**r,"begin":f"0x{r['begin']:08X}","end_exclusive":f"0x{r['end_exclusive']:08X}"} for r in functions],
       "native_model_gap":{
-        "current_behavior":"reduces PM4_INTERRUPT mask 0x4 to CPU index 2 and defers dispatch to the next outer tick",
+        "current_behavior":"the reached PM4_INTERRUPT mask 0x4 queues CPU index 2 and dispatches source=1 in the same lifecycle tick after the Xenos batch",
         "hardware_contract":"dispatch source=1 once for every set CPU bit while processing the PM4 packet",
-        "bounded_experiment":"trace scratch4/scratch5 and CPU mask at parse and guest dispatch; compare deferred vs same-slice delivery behind an opt-in guard"
+        "remaining_boundary":"masks other than the reached 0x4 remain fail-closed until executed"
       }
     }
     return summary,functions
