@@ -180,27 +180,12 @@ inline void trace_swg_w224_body(ac6demo::GuestMemory &memory,
 // run_entry, which the source budget caps at 220 lines.
 inline void trace_frontend_state(ac6demo::GuestMemory &memory,
                                  std::uint64_t tick) {
-  // Frontend state, read-only and opt-in. The startup mode task's own state
-  // word and the mode manager's transition request are the two numbers that
-  // say whether the frontend is stalled or merely looping, and neither was
-  // observable before. Addresses: CModeTaskStartUpDemoOffline is 0x2E7F0080
-  // and its update sub_8218A4A0 switches on [this+12]; the manager pointer is
-  // the global at 0x827435F8, which that update loads before storing 1 at
-  // [manager+24].
+  // Frontend state, read-only and opt-in. Mode allocations vary between cold
+  // runs, so derive the running task from the manager rather than a fixed
+  // heap address. Its update switches on [this+12] and requests transitions
+  // through [manager+24].
   if (std::getenv("AC6_DEMO_WATCH_MODE_STATE") != nullptr) {
-    static std::uint32_t previous_state = 0xFFFFFFFFU;
     static std::uint32_t previous_request = 0xFFFFFFFFU;
-    constexpr std::uint32_t kStartUpTask = 0x2E7F0080U;
-    if (memory.mapped(kStartUpTask, 96U)) {
-      const auto state = memory.load_u32(kStartUpTask + 12U);
-      if (state != previous_state) {
-        std::fprintf(stderr,
-                     "AC6_MODE_STATE tick=%llu state=0x%08X counter=0x%08X\n",
-                     static_cast<unsigned long long>(tick), state,
-                     memory.load_u32(kStartUpTask + 68U));
-        previous_state = state;
-      }
-    }
     if (memory.mapped(0x827435F8U, 4U)) {
       const auto manager = memory.load_u32(0x827435F8U);
       if (manager != 0U && memory.mapped(manager, 64U)) {

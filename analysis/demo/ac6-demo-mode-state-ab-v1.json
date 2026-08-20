@@ -1,0 +1,8 @@
+{
+  "schema": "ac6-demo-mode-state-ab/v1",
+  "target": {"id": "ac6-demo-xbox360-pal", "module": "Default.xex", "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8", "ghidra_project": "ace-combat-6-demo"},
+  "inputs": {"binary_sha256": "e11fc1ff1eb93155340907ff787e57ababef72e83c37a6a5934e1f393061e44b", "backend": "headless", "replay_ticks": 600, "start_input": {"tick": 252, "buttons": "0x00000010"}, "instrumentation": "AC6_DEMO_WATCH_MODE_STATE=1"},
+  "routes": {"neutral": {"stdout_sha256": "25e17c72155363648a868aa6284c067a9e1d67829460bf5264aefd8796da432d", "stderr_sha256": "6cd2d036ac7a4f5fc7b603a554e51942e9e65b8eb1682cc31b5b2838e78b2f40"}, "start": {"stdout_sha256": "25e17c72155363648a868aa6284c067a9e1d67829460bf5264aefd8796da432d", "stderr_sha256": "6cd2d036ac7a4f5fc7b603a554e51942e9e65b8eb1682cc31b5b2838e78b2f40"}},
+  "manager": {"address": "0x18980000", "first_observed_tick": 107, "transition_request": "0x00000000", "mode": "0x2E7E0080", "vtable": "0x8201130C", "mode_first_tick": 222, "inner_state_sequence": [{"tick": 222, "state": 0}, {"tick": 266, "state": 1}], "request_changed": false},
+  "result": {"replay_deterministic": true, "route_stderr_byte_identical": true, "start_effect_observed": false, "frontend": false, "mission": false, "terminal": false, "guest_writeback": false, "supported": false}
+}
