@@ -1,0 +1,32 @@
+{
+  "schema": "ac6-demo-vulkan-real-readback/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "run": {
+    "binary_sha256": "5e7941e7dd6a424bbaeb634c82d5aca275248e08c51025c735ef045e59dd28ca",
+    "backend": "vulkan",
+    "input": "neutral",
+    "max_ticks": 10,
+    "rtply_v4_sha256": "e3b488763df82ad8bd24d5a3997590b06c46dfd55205113af8a18c237d0527d8",
+    "report_sha256": "a099ee7a8a1f47988ea737bd36e86b62bdd913b89344fe69e8aa8ee8543cdd04"
+  },
+  "renderer": {
+    "normal_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "resolve_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f",
+    "normal_draws": 1,
+    "resolves": 1,
+    "guest_writeback": true,
+    "guest_linear_sha256": "0c660f2bd3eff3150dd0040789abe2291613b9af319df870203d4f77a4913a5f"
+  },
+  "result": {
+    "readback_non_black": false,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "supported": false
+  }
+}

@@ -1,5 +1,13 @@
 # AC6 Demo — implementation status
 
+Cycle 1785 enlève la contrainte artificielle « readback noir » du resolve
+atteint, sans assouplir la validation : EDRAM, pixels et padding doivent être
+égaux à l'oracle CPU avant writeback guest. Un probe Vulkan neutral de dix
+ticks atteint bien ce writeback, mais le normal draw reste noir ; frontend et
+mission restent non qualifiés. Rapport
+`reports/cycle-1785-demo-real-readback-certificate.md`, capsule
+`analysis/demo/ac6-demo-vulkan-real-readback-1785-v1.json`.
+
 Cycle 1784 qualifie le corridor du propriétaire titre `0x2E4035D0` : START
 T3000 remplace ses handlers `0x82323968`/`0x82322A80`/`0x823239F0` par
 `0x823239F0` seul à T3001. Deux probes sont byte-identiques et le handler
