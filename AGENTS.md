@@ -65,6 +65,14 @@
   runs. Without it, headless startup may stall after one `PRESENT`; do not
   remove it from a headless harness or classify that stall as a guest/build
   regression without an audio A/B.
+- For a native Xenia Edge oracle capture, use
+  `scripts/run_xenia_edge_native.sh`, `SDL_AUDIODRIVER=dummy` and the pinned
+  Edge profile. A configured XUID alone is insufficient: before launching,
+  verify that its corresponding account exists under the profile content root
+  and that Edge will not show its profile-creation dialog. Inject gameplay
+  input only after that check. If GPU tracing is requested, create the exact
+  output directory first; if the pinned release emits no trace files, record
+  that tooling limitation and do not repeat the same capture.
 - For interactive retail observation, follow
   `workspaces/ace-combat-6/XENIA_WINE_ORACLE_HANDOFF.md`;
   it records the pinned Wine/Vulkan launcher, local `codex` profile and AZERTY
