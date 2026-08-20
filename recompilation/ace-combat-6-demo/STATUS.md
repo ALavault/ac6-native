@@ -1,5 +1,14 @@
 # AC6 Demo — implementation status
 
+Cycle 1784 qualifie le corridor du propriétaire titre `0x2E4035D0` : START
+T3000 remplace ses handlers `0x82323968`/`0x82322A80`/`0x823239F0` par
+`0x823239F0` seul à T3001. Deux probes sont byte-identiques et le handler
+restant rejoint `0x820EB200` via `0x82325ED4`; le défaut est donc après ce
+consommateur matriciel, sans frontend natif. Trace read-only opt-in
+`AC6_DEMO_WATCH_MOVIE_FRAME_DISPATCH`; rapport
+`reports/cycle-1784-demo-title-frame-dispatch.md`, capsule
+`analysis/demo/ac6-demo-title-frame-dispatch-ab-v1.json`.
+
 Cycle 1783 ferme la route visuelle oracle title→menu par deux cold boots Xenia
 Edge natifs : un seul START sur `PRESS START` affiche `NORMAL/NOVICE/EXIT` en
 moins de 750 ms. Une route séparée confirme chargement, cinématique et HUD

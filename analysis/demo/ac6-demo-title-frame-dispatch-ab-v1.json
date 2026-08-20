@@ -1,0 +1,64 @@
+{
+  "schema": "ac6-demo-title-frame-dispatch-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "runtime": {
+    "binary_sha256": "ff8519c0d3b1f0a16a5a39e35d59909c0fe43042218386c84ba975d93a4167d1",
+    "backend": "headless",
+    "instrumentation": "AC6_DEMO_WATCH_MOVIE_FRAME_DISPATCH=1",
+    "instrumentation_scope": "LR 0x82323E4C, ticks 2990..3020, read-only"
+  },
+  "runs": [
+    {
+      "id": "a",
+      "input": "START at 3000, release at 3001",
+      "outcome": "max_ticks",
+      "completed_ticks": 3020,
+      "trace_sha256": "8f1cc1ba6c8ef267e0f1093480ca1dde1cd551c58852f1f34b7529088f9db724",
+      "report_sha256": "3bbd74bb9facba2f8fc58d87311f1672aeb435e9319a6993794652e6e66385d7",
+      "stderr_sha256": "6ba1e42ec08428689fe1feab8c981ac42a64979027a9838bbb090aca711ae043"
+    },
+    {
+      "id": "b",
+      "input": "START at 3000, release at 3001",
+      "outcome": "max_ticks",
+      "completed_ticks": 3020,
+      "trace_sha256": "8f1cc1ba6c8ef267e0f1093480ca1dde1cd551c58852f1f34b7529088f9db724",
+      "report_sha256": "3bbd74bb9facba2f8fc58d87311f1672aeb435e9319a6993794652e6e66385d7",
+      "stderr_sha256": "6ba1e42ec08428689fe1feab8c981ac42a64979027a9838bbb090aca711ae043"
+    }
+  ],
+  "owner_dispatch": {
+    "owner": "0x2E4035D0",
+    "loop_callsite_lr": "0x82323E4C",
+    "pre_start_ticks": [2990, 3000],
+    "pre_start_handlers_per_tick": {
+      "0x82323968": 1,
+      "0x82322A80": 2,
+      "0x823239F0": 1
+    },
+    "post_start_ticks": [3001, 3019],
+    "post_start_handlers_per_tick": {"0x823239F0": 1},
+    "frame_table_entry": {"address": "0x2DD6A854", "words_be": ["0x000B9620", "0x00000001"]}
+  },
+  "downstream": {
+    "matrix_consumer_callsite_lr": "0x82325ED4",
+    "target": "0x820EB200",
+    "first_tick": 266,
+    "last_tick": 3019,
+    "count": 20683
+  },
+  "result": {
+    "runs_byte_identical": true,
+    "start_changes_owner_dispatch": true,
+    "post_start_matrix_consumer_reached": true,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "supported": false
+  }
+}

@@ -749,6 +749,23 @@ extern "C" void AC6_PPC_STORE_U128(PPCContext &context, std::uint8_t *base,
                  });
   ac6demo::guest_bridge_detail::record_post_resume_bytes("store128", address, 16U, guest_bytes_for_trace.data(), require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
 }
+
+static void trace_movie_frame_dispatch(const PPCContext &context,
+                                       std::uint32_t lr,
+                                       std::uint32_t target) {
+  const auto tick = require_bridge().tick();
+  if (std::getenv("AC6_DEMO_WATCH_MOVIE_FRAME_DISPATCH") == nullptr ||
+      lr != 0x82323E4CU || tick < 2990U || tick > 3020U) {
+    return;
+  }
+  std::fprintf(stderr,
+               "AC6_MOVIE_FRAME_DISPATCH tick=%llu target=0x%08X "
+               "r3=0x%08X r4=0x%08X r25=0x%08X r26=0x%08X r31=0x%08X\n",
+               static_cast<unsigned long long>(tick), target, context.r3.u32,
+               context.r4.u32, context.r25.u32, context.r26.u32,
+               context.r31.u32);
+}
+
 extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, std::uint32_t guest_address) {
   struct QualifiedVirtualDispatchSite final {
     std::uint32_t lr;
@@ -778,8 +795,8 @@ extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, s
       QualifiedVirtualDispatchSite{0x82259DA0U, {4U}, 1U},
   };
   const auto lr = static_cast<std::uint32_t>(context.lr);
-  trace_dynamic_object_vtable(context, lr, guest_address);
-  trace_swg_native_call(context, lr, guest_address);
+  trace_dynamic_object_vtable(context, lr, guest_address); trace_swg_native_call(context, lr, guest_address);
+  trace_movie_frame_dispatch(context, lr, guest_address);
   if (std::getenv("AC6_DEMO_WATCH_INDIRECT_OBJECT") != nullptr && lr == 0x82321F34U) {
     auto &memory = require_bridge().memory();
     const auto object = context.r3.u32;
