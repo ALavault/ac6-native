@@ -1,0 +1,12 @@
+{
+  "schema": "ac6-demo-copy-runtime-certificate-verification/v1",
+  "optimized_cpp": "PASS",
+  "asan": "PASS",
+  "ubsan": "PASS",
+  "wrapper_stub_compile": "PASS",
+  "exact_case": "PASS",
+  "copy_pixel_corruption": "PASS",
+  "padding_corruption": "PASS",
+  "runtime_vulkan": "NOT_RUN",
+  "runtime_pal": "NOT_RUN"
+}
