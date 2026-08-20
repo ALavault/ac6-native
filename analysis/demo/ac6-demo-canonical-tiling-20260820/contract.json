@@ -1,0 +1,46 @@
+{
+  "claims": {
+    "gameplay_screencap": false,
+    "new_pal_runtime_run": false,
+    "non_black_edram_packing_qualified": false,
+    "non_black_resolve_qualified": false
+  },
+  "destination": {
+    "bytes_per_pixel": 4,
+    "height": 720,
+    "linear_bytes": 3686400,
+    "linear_bytes_hex": "0x384000",
+    "padding_bytes": 81920,
+    "padding_bytes_hex": "0x14000",
+    "physical_address": "0x1374A000",
+    "pitch_pixels": 1280,
+    "tiled_extent_bytes": 3768320,
+    "tiled_extent_bytes_hex": "0x398000",
+    "width": 1280
+  },
+  "next_frontier": "qualify non-black RGBA8-to-Xenos-EDRAM 2x2-MSAA sample materialization and copy conversion",
+  "schema": "ac6-demo-renderer-canonical-tiling/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "tests": {
+    "all_pixel_offsets_unique": true,
+    "false_digest_rejected_before_writeback": true,
+    "guest_buffer_unchanged_after_rejection": true,
+    "non_black_roundtrip": true,
+    "padding_preservation": true,
+    "wrong_size_rejected": true
+  },
+  "writeback": {
+    "canonical_helper": "canonicalize_reached_tiled_writeback",
+    "cpu_retile_used_for_guest_write": true,
+    "direct_gpu_tiled_byte_copy_removed": true,
+    "failure_is_transactional": true,
+    "gpu_tiled_payload_is_untiled_before_guest_write": true,
+    "guest_padding_preserved": true,
+    "guest_reread_untiled_and_checked": true,
+    "linear_sha256_checked_before_guest_write": true
+  }
+}

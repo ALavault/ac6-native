@@ -14,9 +14,17 @@ inline constexpr std::uint32_t kReachedResolvePitch = 1280U;
 inline constexpr std::size_t kReachedResolveLinearBytes =
     static_cast<std::size_t>(kReachedResolveWidth) * kReachedResolveHeight * 4U;
 inline constexpr std::size_t kReachedResolveTiledExtentBytes = 0x398000U;
+inline constexpr std::size_t kReachedResolveTiledPaddingBytes =
+    kReachedResolveTiledExtentBytes - kReachedResolveLinearBytes;
 
 [[nodiscard]] std::size_t reached_rgba8_tiled_offset(std::uint32_t x,
                                                       std::uint32_t y);
+
+// Writes only the pixel-addressed bytes. Padding in the tiled allocation is
+// deliberately preserved, which is required when updating the guest-owned
+// XE_SWAP allocation rather than manufacturing a replacement allocation.
+void tile_reached_rgba8(std::span<const std::byte> linear,
+                        std::span<std::byte> tiled);
 
 void untile_reached_rgba8(std::span<const std::byte> tiled,
                           std::span<std::byte> linear);
