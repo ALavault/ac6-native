@@ -1,0 +1,43 @@
+{
+  "schema": "ac6-demo-bootstrap-pixel-zero/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "subject": {
+    "stage": "pixel",
+    "guest_range": ["0x82013E80", "0x82013EA4"],
+    "dwords": 9,
+    "microcode_sha256": "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
+    "spirv_bytes": 7008,
+    "spirv_sha256": "f6422d60ff48b5ed43292db838655199322a6d439fea10d39302deda69ece9fe"
+  },
+  "method": {
+    "tool": "ac6-demo-rexglue-shader-cli",
+    "stage": "pixel",
+    "register_count": 1,
+    "temporary_root": "/fastdata/lavaulta/tmp",
+    "proprietary_outputs_tracked": false,
+    "spirv_disassembly_sha256": "876be946da4597f6ae46163750f72e0a5a36cd33d60d8fc253c30566453bb79f"
+  },
+  "result": {
+    "ucode_semantics": "alloc colors; max oC0, r0, r0",
+    "translator_initializes_r0_to_zero": true,
+    "shader_color_input_or_texture_fetch": false,
+    "qualified_output": "zero RGBA before fixed-function alpha/color processing"
+  },
+  "join": {
+    "normal_draw_readback_sha256": "0b150fd32588b1daca5569992ebe559c0102c837306b1af4c44d35128ec58366",
+    "passed_samples": 921600,
+    "classification": "bootstrap-black-is-guest-shader-output"
+  },
+  "policy": {
+    "no_synthetic_pixels": true,
+    "default_renderer_path_changed": false,
+    "frontend_promoted": false,
+    "next_boundary": "first reached PM4 batch with a non-bootstrap pixel shader"
+  }
+}
