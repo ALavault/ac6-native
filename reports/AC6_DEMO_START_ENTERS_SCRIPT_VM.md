@@ -57,9 +57,28 @@ armement du renderer, qui reste établie. Cela ouvre une seconde piste, en
 amont : si le script ne dispose pas de ce qu'il attend, il ne demandera
 jamais la transition qui construirait le gestionnaire de mission.
 
+## Évaluateurs appelés par le slot `0x70`
+
+Le dump Ghidra canonique et la sonde froide identifient maintenant le corps de
+`0x820D3AC8` : il appelle `context.vtable[0x5C]` puis soustrait son retour au
+mot `counter_owner+0x0C`.
+
+Au tick 3001, START entraîne deux évaluations successives :
+
+```text
+0x82313E68 : context 0x2E403994+0x0C = 1
+             counter 0x2E403CE0 : 0 -> 0xFFFFFFFF
+0x8220E428 : retourne 0
+             counter 0x2E4039A0 : 1 -> 1
+```
+
+La capsule `analysis/demo/ac6-demo-title-as-context-counter-v1.json` porte
+l'identité PAL, les SHA-256 des reçus et les adresses observées. Cette écriture
+guest est qualifiée, mais sa consommation ultérieure et toute sémantique de
+menu restent ouvertes.
+
 ## Non établi
 
-- Ce que fait `0x820D3AC8`, le slot `0x70` que l'appui invoque.
 - Si la VM attend une ressource, un asset de script, ou un état.
 - La part des appels virtuels **en ligne** dans le code généré, que ce
   trampoline ne voit pas : la trace ne couvre qu'une forme de dispatch.

@@ -1,0 +1,53 @@
+{
+  "schema": "ac6-demo-title-as-context-counter/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "static": {
+    "entry": "0x820D3AC8",
+    "callsite": "0x820D3AEC",
+    "effect": "return context.vtable[0x5c](context); counter_owner[0x0c] -= return",
+    "targets": {
+      "0x82313E68": "return context[0x0c]",
+      "0x8220E428": "return 0"
+    }
+  },
+  "runtime": {
+    "binary_sha256": "bf4de8c36d91127d67b88ac102fdcb1f319c309caae0f725d4cccfb3fe7fa044",
+    "fresh_store": true,
+    "backend": "headless",
+    "input": "START=0x10 at tick 3000; release at tick 3001",
+    "completed_ticks": 3002,
+    "receipts": {
+      "replay_sha256": "da9003df3239bc92af5966568f9d8e1af196e632c5c0028f9ac01666207657e7",
+      "report_sha256": "b2e98683408baab0cd4eda22264f2dd78b94f5ba5dd7241a3375b7a3e2f8f169",
+      "stderr_sha256": "4165f036b2697cc2fbc1c22a0ec736bd815504e25a1ce298286aa8a6683d74ad"
+    }
+  },
+  "tick_3001": [
+    {
+      "target": "0x82313E68",
+      "context": "0x2E403994",
+      "counter_owner": "0x2E403CD4",
+      "context_value_read": {"address": "0x2E4039A0", "value": "0x00000001"},
+      "counter": {"address": "0x2E403CE0", "before": "0x00000000", "after": "0xFFFFFFFF"}
+    },
+    {
+      "target": "0x8220E428",
+      "context": "0x2E403BD4",
+      "counter_owner": "0x2E403994",
+      "counter": {"address": "0x2E4039A0", "before": "0x00000001", "after": "0x00000001"}
+    }
+  ],
+  "result": {
+    "guest_read_and_write_observed": true,
+    "persistent_menu_transition_proven": false,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "supported": false
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "schema": "ac6-demo-title-opcode-dispatch/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "runtime": {
+    "binary_sha256": "e10be8d8ba447265e4b4f0eda02d25a32bcd97b88965cfbb98e97e9a9350d73c",
+    "fresh_store": true,
+    "backend": "headless",
+    "input": "START=0x10 at tick 3000; release at tick 3001",
+    "completed_ticks": 3035,
+    "receipts": {
+      "replay_sha256": "534250a44f32307357bf939920636f07a1611f53d0d8b019ed6af030d4d65e41",
+      "report_sha256": "7173e18a4f630e27616032b7e9fe8049066edf2508c6dff7c7c1bc59a51789fd",
+      "stderr_sha256": "8f1595ee8874886b699a0b489740629a45aa5982d8ca0c3547fd4ee21ef7932a"
+    }
+  },
+  "interpreter": {
+    "selector": "0x823251E0",
+    "opcode_dispatch": "0x82325160 via table 0x8264CEA8",
+    "tick_3001": {
+      "distinct_opcode_path": true,
+      "opcode_0x0c": ["0x82324440", "0x820DD0B8", "0x820DC008"],
+      "effect": "0x820DC008 obtains two state objects, invokes its thunk argument, and inserts the result into its internal list"
+    },
+    "tick_3033": {
+      "new_segment": true,
+      "opcodes": {
+        "0x49": ["0x82324C80", "0x820E6CD0"],
+        "0x4a": ["0x82324C98", "0x820E6FA0"]
+      }
+    }
+  },
+  "result": {
+    "start_reaches_distinct_script_segments": true,
+    "guest_menu_transition_proven": false,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "supported": false
+  }
+}
