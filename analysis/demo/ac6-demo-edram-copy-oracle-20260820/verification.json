@@ -1,0 +1,12 @@
+{
+  "schema": "ac6-demo-edram-copy-oracle-verification/v1",
+  "cpp_test": "PASS",
+  "asan": "PASS",
+  "ubsan": "PASS",
+  "python_self_test": "PASS",
+  "python_py_compile": "PASS",
+  "shell_syntax": "PASS",
+  "uniform_asymmetric_linear_sha256": "66dde082635ccc6b24abba5b372ceb10173bc2b062faa2d93de7c4548bb60dc8",
+  "uniform_asymmetric_tiled_sha256": "0bf69cf42fd6c3ac73b30c438a4db6d1664eaafa9c716b9ba330a9886c976786",
+  "runtime_integration": "OPEN"
+}
