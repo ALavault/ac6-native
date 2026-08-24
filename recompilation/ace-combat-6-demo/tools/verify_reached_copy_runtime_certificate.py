@@ -31,12 +31,13 @@ def main() -> int:
     demo = root / "recompilation/ace-combat-6-demo"
     wrapper = demo / "src/vulkan_neutral_resolve.cpp"
     original = demo / "src/vulkan_neutral_resolve_original.cpp"
+    core = demo / "src/vulkan_reached_resolve_core.inc"
     header = demo / "include/ac6demo/reached_copy_runtime_certificate.hpp"
     test = demo / "tests/reached_copy_runtime_certificate_tests.cpp"
     runner = demo / "tools/run_reached_copy_runtime_certificate_test.sh"
 
     failures: list[str] = []
-    for path in (wrapper, original, header, test, runner):
+    for path in (wrapper, original, core, header, test, runner):
         if not path.is_file():
             failures.append(f"missing file: {path.relative_to(root)}")
 
@@ -52,10 +53,11 @@ def main() -> int:
     if wrapper.is_file():
         source = wrapper.read_text(encoding="utf-8")
         for needle in (
-            "#define execute_vulkan_neutral_resolve",
-            'include "vulkan_neutral_resolve_original.cpp"',
-            "execute_vulkan_neutral_resolve_uncertified(",
+            'include "vulkan_reached_resolve_core.inc"',
+            "execute_vulkan_neutral_resolve(",
+            "execute_vulkan_title_resolve(",
             "certify_reached_copy_runtime(",
+            "certify_reached_title_copy_runtime(",
             "require_reached_copy_runtime_writeback(certificate);",
             "AC6_DEMO_WATCH_COPY_DIFFERENTIAL",
         ):
@@ -70,6 +72,19 @@ def main() -> int:
             "return result;"
         ):
             failures.append("result returns before the certificate is enforced")
+
+    if core.is_file():
+        source = core.read_text(encoding="utf-8")
+        for needle in (
+            "execute_vulkan_reached_resolve(",
+            "enum class ResolveSource",
+            "ResolveSource::Title1x",
+            "materialize_reached_normal_rgba8_edram(",
+            "materialize_reached_title_rgba8_edram(",
+            "certify_reached_copy_runtime(",
+            "certify_reached_title_copy_runtime(",
+        ):
+            require(source, needle, failures)
 
     if header.is_file():
         source = header.read_text(encoding="utf-8")

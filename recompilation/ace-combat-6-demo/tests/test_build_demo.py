@@ -2142,9 +2142,22 @@ class BoundaryEvidenceTests(unittest.TestCase):
                          receipt["source_master"]["sha256"])
         current = json.loads((WORKSPACE.parents[1] / "reports/handoff/CURRENT.json").read_text())
         current_ac6 = next(item for item in current["targets"] if item["id"] == "ac6")
-        self.assertEqual(current_ac6["cycle"], 1761)
-        self.assertEqual(current_ac6["source_report"],
-                         "workspaces/ace-combat-6/reports/cycle-1761-ac6-demo-post-resume-one-shot.md")
+        # The handoff intentionally advances beyond this historical receipt;
+        # preserve the receipt link without pinning CURRENT.json to cycle 1761.
+        self.assertGreaterEqual(current_ac6["cycle"], receipt["cycle"])
+        self.assertTrue(current_ac6["source_report"])
+        self.assertTrue(any("cycle-1761" in gate
+                            for gate in current_ac6["latest_gates"]))
+
+    def test_qualified_rectangle_commands_are_retained_before_cache(self):
+        source = (PROJECT / "src/main.cpp").read_text()
+        normal = source.index("normal_draw_command_ = *draw;")
+        copy = source.index("copy_draw_command_ = *draw;")
+        cache = source.index("if (graphics_pipelines_.contains(key))")
+        self.assertEqual(source.count("normal_draw_command_ = *draw;"), 1)
+        self.assertEqual(source.count("copy_draw_command_ = *draw;"), 1)
+        self.assertLess(normal, cache)
+        self.assertLess(copy, cache)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+interface:
+  display_name: "AC6 Gate Runner"
+  short_description: "Run one bounded AC6 evidence gate"
+  default_prompt: "Run the next falsifiable AC6 demo gate and preserve its evidence."

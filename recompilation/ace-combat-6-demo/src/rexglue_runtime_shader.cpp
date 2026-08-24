@@ -13,6 +13,8 @@
 
 #include <array>
 #include <bit>
+#include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #include <iomanip>
 #include <ranges>
@@ -51,6 +53,8 @@ struct Identity {
   std::string_view sha256;
   std::size_t spirv_bytes;
   std::string_view spirv_sha256;
+  std::uint32_t guest_source_address;
+  std::uint16_t interpolator_mask;
 };
 
 const Identity &qualify(const XenosShaderLoadCommand &shader,
@@ -59,26 +63,41 @@ const Identity &qualify(const XenosShaderLoadCommand &shader,
       Identity{XenosShaderStage::Vertex, 24U, 15U,
                "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
                7800U,
-               "944fd75222b6de743b9ce1cd18440b8497230e3813bb105c655cd6cfba123ce6"},
+               "944fd75222b6de743b9ce1cd18440b8497230e3813bb105c655cd6cfba123ce6",
+               0U, 0U},
       Identity{XenosShaderStage::Vertex, 27U, 2U,
                "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
                12496U,
-               "ba9b97cceb816059cd21ff6abfda6c59160363155d5b270a3e315b215adb0576"},
+               "ba9b97cceb816059cd21ff6abfda6c59160363155d5b270a3e315b215adb0576",
+               0U, 0U},
       Identity{XenosShaderStage::Pixel, 9U, 1U,
                "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25",
                7008U,
-               "f6422d60ff48b5ed43292db838655199322a6d439fea10d39302deda69ece9fe"},
+               "f6422d60ff48b5ed43292db838655199322a6d439fea10d39302deda69ece9fe",
+               0U, 0U},
       Identity{XenosShaderStage::Vertex, 15U, 3U,
                "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
                9288U,
-               "4913cadb00aef0bba3f42c25e25919b6403e2de654e8165748337df331cdc920"},
+               "4913cadb00aef0bba3f42c25e25919b6403e2de654e8165748337df331cdc920",
+               0U, 0U},
+      Identity{XenosShaderStage::Vertex, 66U, 4U,
+               "84e2d87ca4c7e6b6463cd007778e3e76f2d33d5b3a2bdf71bdabedf5e2949e6b",
+               20324U,
+               "f41fa1c701b03f4b6b449ae8827c58ab59615ccf948500361ee6bd8f2d0bbcf3",
+               0x155FAA40U, 0x3U},
+      Identity{XenosShaderStage::Pixel, 15U, 2U,
+               "8982431ab8c37106400e0cc23a09a9a08b6de1d952dcb7f7def0016bd5714825",
+               14092U,
+               "bda1448b0653250ecd21c99c91f557366edb5dc7af746c22285c66776abfacfe",
+               0x155FAB80U, 0x3U},
   };
   const auto identity = std::ranges::find_if(
       identities, [&](const Identity &candidate) {
         return candidate.stage == shader.stage &&
                candidate.dwords == shader.size_dwords &&
                candidate.register_count == register_count &&
-               candidate.sha256 == shader.guest_big_endian_sha256;
+               candidate.sha256 == shader.guest_big_endian_sha256 &&
+               candidate.guest_source_address == shader.guest_source_address;
       });
   if (identity == identities.end() || shader.start_dword != 0U ||
       shader.guest_big_endian_dwords.size() != shader.size_dwords ||
@@ -96,23 +115,31 @@ qualified_reached_shader_image_source(const XenosShaderLoadCommand &shader) noex
     XenosShaderStage stage;
     std::uint16_t dwords;
     std::string_view sha256;
+    std::uint32_t guest_source_address;
     ReachedShaderImageSource source;
   };
   static constexpr std::array sources{
       SourceIdentity{XenosShaderStage::Vertex, 24U,
                      "099625f3ea15a92e74e525503b3e41302fc268bc8845da6100c991f67321e4e3",
+                     0U,
                      {0x82013E20U, 0x82013E80U}},
       SourceIdentity{XenosShaderStage::Vertex, 27U,
                      "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b",
+                     0U,
                      {0x820140A0U, 0x8201410CU}},
       SourceIdentity{XenosShaderStage::Vertex, 15U,
                      "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0",
+                     0U,
                      {0x82014140U, 0x8201417CU}},
+      SourceIdentity{XenosShaderStage::Vertex, 66U,
+                     "84e2d87ca4c7e6b6463cd007778e3e76f2d33d5b3a2bdf71bdabedf5e2949e6b",
+                     0x155FAA40U, {0x155FAA40U, 0x155FAB48U}},
   };
   const auto found = std::ranges::find_if(sources, [&](const auto &candidate) {
     return candidate.stage == shader.stage &&
            candidate.dwords == shader.size_dwords &&
-           candidate.sha256 == shader.guest_big_endian_sha256;
+           candidate.sha256 == shader.guest_big_endian_sha256 &&
+           candidate.guest_source_address == shader.guest_source_address;
   });
   if (found == sources.end() || shader.start_dword != 0U) {
     return std::nullopt;
@@ -147,11 +174,16 @@ translate_reached_shader_spirv(const XenosShaderLoadCommand &shader,
   const rex::graphics::SpirvShaderTranslator::Features features(false);
   rex::graphics::SpirvShaderTranslator translator(features, false, false,
                                                    false, 1, 1);
-  const std::uint64_t modification =
+  rex::graphics::SpirvShaderTranslator::Modification modification(
       type == rex::graphics::xenos::ShaderType::kVertex
           ? translator.GetDefaultVertexShaderModification(register_count)
-          : translator.GetDefaultPixelShaderModification(register_count);
-  auto *translation = source.GetOrCreateTranslation(modification);
+          : translator.GetDefaultPixelShaderModification(register_count));
+  if (type == rex::graphics::xenos::ShaderType::kVertex) {
+    modification.vertex.interpolator_mask = identity.interpolator_mask;
+  } else {
+    modification.pixel.interpolator_mask = identity.interpolator_mask;
+  }
+  auto *translation = source.GetOrCreateTranslation(modification.value);
   if (!translator.TranslateAnalyzedShader(*translation) ||
       !translation->is_valid() || translation->translated_binary().empty() ||
       (translation->translated_binary().size() & 3U) != 0U) {
@@ -205,8 +237,18 @@ ReachedConstantPayloads build_reached_constant_payloads(
     const ReachedShaderSpirv &pixel, const std::uint32_t viewport_x_max,
     const std::uint32_t viewport_y_max) {
   namespace graphics = rex::graphics;
-  if (!draw.registers || draw.primitive != XenosPrimitive::RectangleList ||
-      draw.source != XenosIndexSource::AutoIndex || draw.index_count != 3U ||
+  static constexpr std::string_view kTitleVertex =
+      "84e2d87ca4c7e6b6463cd007778e3e76f2d33d5b3a2bdf71bdabedf5e2949e6b";
+  static constexpr std::string_view kTitlePixel =
+      "8982431ab8c37106400e0cc23a09a9a08b6de1d952dcb7f7def0016bd5714825";
+  const bool rectangle = draw.primitive == XenosPrimitive::RectangleList &&
+                         draw.index_count == 3U;
+  const bool title = draw.primitive == XenosPrimitive::QuadList &&
+                     draw.index_count == 4U && draw.predicated &&
+                     draw.vertex_shader_sha256 == kTitleVertex &&
+                     draw.pixel_shader_sha256 == kTitlePixel;
+  if (!draw.registers || (!rectangle && !title) ||
+      draw.source != XenosIndexSource::AutoIndex ||
       viewport_x_max == 0U || viewport_y_max == 0U ||
       vertex.stage != XenosShaderStage::Vertex ||
       pixel.stage != XenosShaderStage::Pixel ||
@@ -266,6 +308,32 @@ ReachedConstantPayloads build_reached_constant_payloads(
   std::copy_n(viewport.ndc_offset, 3, system.ndc_offset);
   system.alpha_test_reference =
       regs.Get<float>(graphics::XE_GPU_REG_RB_ALPHA_REF);
+  // The reached title shader is qualified against a host Vulkan view with
+  // identity component order (BC3_UNORM exposes RGBA).  Xenos' fetch swizzle
+  // is still consumed by the translated shader through the system constant
+  // when image-view format swizzle is unavailable.  Keep that shared
+  // renderer contract explicit instead of leaving the zero-initialized
+  // 0000 swizzle (which aliases every output component to red).
+  if (title) {
+    const auto fetch_base = graphics::XE_GPU_REG_SHADER_CONSTANT_FETCH_00_0;
+    system.texture_swizzles[0] =
+        (regs[fetch_base + 3U] >> 1U) & 0x0FFFU;
+  }
+  if (title && std::getenv("AC6_DEMO_TRACE_TITLE_STATE") != nullptr) {
+    const auto fetch_base = graphics::XE_GPU_REG_SHADER_CONSTANT_FETCH_00_0;
+    std::fprintf(
+        stderr,
+        "AC6_TITLE_STATE flags=0x%08X alpha_enable=%u alpha_func=%u "
+        "alpha_ref=%g vte=0x%08X surface=0x%08X depth=0x%08X "
+        "fetch=%08X,%08X,%08X,%08X,%08X,%08X\n",
+        flags, color_control.alpha_test_enable ? 1U : 0U,
+        static_cast<unsigned>(alpha), system.alpha_test_reference,
+        regs[graphics::XE_GPU_REG_PA_CL_VTE_CNTL],
+        regs[graphics::XE_GPU_REG_RB_SURFACE_INFO],
+        regs[graphics::XE_GPU_REG_RB_DEPTH_INFO], regs[fetch_base + 0U],
+        regs[fetch_base + 1U], regs[fetch_base + 2U], regs[fetch_base + 3U],
+        regs[fetch_base + 4U], regs[fetch_base + 5U]);
+  }
   const std::uint32_t color_info = regs[graphics::XE_GPU_REG_RB_COLOR_INFO];
   const std::int32_t exp_bias =
       static_cast<std::int32_t>(color_info << 6U) >> 26U;
@@ -307,6 +375,18 @@ ReachedConstantPayloads build_reached_constant_payloads(
       pack_float(vertex, graphics::XE_GPU_REG_SHADER_CONSTANT_000_X);
   result.float_pixel =
       pack_float(pixel, graphics::XE_GPU_REG_SHADER_CONSTANT_256_X);
+  if (title) {
+    for (std::uint32_t constant = 40U; constant <= 43U; ++constant) {
+      const auto base = graphics::XE_GPU_REG_SHADER_CONSTANT_000_X +
+                        constant * 4U;
+      std::fprintf(stderr,
+                   "AC6_TITLE_CONSTANT index=%u x=%g y=%g z=%g w=%g\n",
+                   constant, std::bit_cast<float>(regs[base]),
+                   std::bit_cast<float>(regs[base + 1U]),
+                   std::bit_cast<float>(regs[base + 2U]),
+                   std::bit_cast<float>(regs[base + 3U]));
+    }
+  }
   std::memcpy(result.bool_loop.data(),
               &regs[graphics::XE_GPU_REG_SHADER_CONSTANT_BOOL_000_031],
               result.bool_loop.size());
@@ -324,7 +404,7 @@ void ReachedShaderRuntimeCache::consume(
   constexpr std::uint16_t kSqProgramCntl = 0x2180U;
   for (const auto &command : commands) {
     if (const auto *load = std::get_if<XenosShaderLoadCommand>(&command)) {
-      if (next_loads.size() >= 4U &&
+      if (next_loads.size() >= 6U &&
           next_loads.find(load->guest_big_endian_sha256) == next_loads.end()) {
         throw RuntimeTrap("runtime shader load cache limit reached");
       }

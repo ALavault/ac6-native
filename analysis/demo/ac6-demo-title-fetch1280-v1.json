@@ -1,0 +1,93 @@
+{
+  "schema": "ac6-demo-title-fetch1280/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "epoch": {
+    "name": "early Namco-logo animation",
+    "guest_tick": 1131,
+    "press_start_prompt": false,
+    "note": "The user-visible PRESS START prompt occurs substantially later."
+  },
+  "natural_predecessor": {
+    "tick": 1125,
+    "frame_index": 300,
+    "list_index": 2,
+    "draw_index": 2,
+    "resource_handle": "0x0E000059",
+    "forced_or_remapped": false
+  },
+  "pm4_source": {
+    "indirect_buffer_address": "0x1344E080",
+    "indirect_buffer_dwords": 2800,
+    "indirect_buffer_sha256": "a8e9c58bb7f5ba2362bdd89c1986e55250728abd4074a3913d4e240ea6020f44",
+    "type0_header_offset_dword": 2737,
+    "type0_header": "0x00054800",
+    "payload_offset_dword": 2738,
+    "register_range": "0x4800..0x4805",
+    "fetch_words": [
+      "0x8A004802",
+      "0x0DF68054",
+      "0x0059E4FF",
+      "0x01280D10",
+      "0x00000003",
+      "0x00000200"
+    ]
+  },
+  "vertex_fetch_observation": {
+    "same_natural_indirect_buffer": true,
+    "q1_offset_dwords": [2610, 2611],
+    "q1_words": ["0x104A4893", "0x100087F2"],
+    "p1_offset_dwords": [2612, 2613],
+    "p1_words": ["0x103FB893", "0x100A9002"],
+    "strict_native_guard_passed_before_texture_trap": true,
+    "conclusion": "guest-owned nonzero Q1 reached the natural draw submission after list 2, draw 2 and handle 0x0E000059",
+    "static_intermediate_writer_identity": "open"
+  },
+  "generic_authority": {
+    "catalog_entry": "xenia-xenos",
+    "path": ".tools/knowledge-base/architecture-v1/xbox360/xenia-xenos.h",
+    "sha256": "1224073721a11e332dab47e34555a4be6ca9a896ed842915db8e641f391e48c3",
+    "layout": "xe_gpu_texture_fetch_t"
+  },
+  "decoded_fields": {
+    "type_raw": 2,
+    "type_name_generic": "texture",
+    "pitch_field": 40,
+    "pitch_pixels": 1280,
+    "tiled": true,
+    "format_raw": 20,
+    "format_name_generic": "k_DXT4_5 / BC3",
+    "endianness_raw": 1,
+    "base_address": "0x0DF68000",
+    "width_minus_one": 1279,
+    "height_minus_one": 719,
+    "width": 1280,
+    "height": 720,
+    "dimension_raw": 1,
+    "dimension_name_generic": "2DOrStacked",
+    "padded_block_pitch": 320,
+    "padded_block_rows": 192,
+    "bytes_per_block": 16,
+    "payload_extent_bytes": 983040,
+    "payload_extent_hex": "0xF0000"
+  },
+  "runtime_receipt": {
+    "directory": "artifacts/goal-playable/brandlogo-list2-window-runtime-20260823",
+    "report_sha256": "7ab029f19b38b1fc2e4afa1c9e6dee3b76f00e9ac0707809fb2a498285f07a12",
+    "trace_sha256": "9aa227681a0549104238d45b4dd6ea69c2c64bb8974a1f5a02289c9de082c262",
+    "stderr_sha256": "72794672f1e15e1d79060a0c3bf56ff0ac0cbc6cecadd5be075160a8a79c2a98",
+    "probe_status": 3,
+    "frontier": "strict native title-texture allow-list rejected the newly reached exact profile"
+  },
+  "implementation_scope": {
+    "admit_exact_profile_only": true,
+    "guest_capture_extent": "0xF0000",
+    "renderer_format": "VK_FORMAT_BC3_UNORM_BLOCK",
+    "status": "implemented_pending_build_and_runtime_validation",
+    "forbidden_shortcuts_used": false
+  }
+}

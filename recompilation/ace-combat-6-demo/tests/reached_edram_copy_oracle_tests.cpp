@@ -84,6 +84,12 @@ int main() {
   assert(ac6demo::Sha256::bytes(linear) ==
          "66dde082635ccc6b24abba5b372ceb10173bc2b062faa2d93de7c4548bb60dc8");
 
+  std::vector<std::byte> display(ac6demo::kReachedResolveLinearBytes);
+  ac6demo::build_reached_frontbuffer_display_rgba8(linear, display);
+  assert(pixel(display, ac6demo::kReachedResolveWidth, 0U, 0U) ==
+         (std::array<std::byte, 4>{std::byte{0x11}, std::byte{0x22},
+                                  std::byte{0x33}, std::byte{0xFF}}));
+
   std::vector<std::byte> tiled(ac6demo::kReachedResolveTiledExtentBytes);
   ac6demo::build_reached_copy_tiled_oracle(uniform, tiled);
   assert(ac6demo::Sha256::bytes(tiled) ==

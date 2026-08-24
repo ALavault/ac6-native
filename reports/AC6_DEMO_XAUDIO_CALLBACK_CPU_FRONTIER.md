@@ -134,5 +134,18 @@ inexactitude ABI.
 | candidats PAL CPU 4 et 5 | fermé A- |
 | choix implicite entre 4 et 5 | refusé |
 | contrat C++ explicite / unique | ajouté et testé |
-| A/B process-fresh 4 contre 5 | ouvert |
+| A/B process-fresh 4 contre 5 | fermé négativement, voir `analysis/demo/ac6-demo-xaudio-cpu-ab-v1.json` |
 | sortie audio audible | hors de cette passe |
+
+## A/B borné du 2026-08-20
+
+Les deux exécutions fraîches du bridge, limitées à 253 ticks, sont consignées
+dans `analysis/demo/ac6-demo-xaudio-cpu-ab-v1.json`, avec l'identité exacte
+du XEX et les SHA-256 des reçus.
+
+CPU 4 sélectionne la paire `0x1005D4D8` / `0x1005ED7C` au tick 107 et tient
+jusqu'au budget, mais ne produit ni frontend, ni mission, ni la chaîne
+`submit → événement → worker → frame suivante`. Il n'est donc pas promu.
+
+CPU 5 est refusé au tick 107 : sa paire de descripteurs est incomplète. Le
+refus fail-closed est conservé ; il ne s'agit pas d'un échec de mission.

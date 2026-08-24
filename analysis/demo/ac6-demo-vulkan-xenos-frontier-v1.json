@@ -1,0 +1,93 @@
+{
+  "schema": "ac6-demo-vulkan-xenos-frontier/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "route": "START at tick 3000, released at tick 3001",
+    "fresh_process": true,
+    "backend": "vulkan via xvfb-run",
+    "audio": "SDL_AUDIODRIVER=dummy",
+    "max_ticks": 3036,
+    "runtime_binary_sha256_at_launch": "11bc2e41e8cd5c0070510c413dc820a2e81ba594cdf065ef052eb73252b8c5da",
+    "retail_oracle_used": false,
+    "generated_cpp_modified": false,
+    "return_code": 4
+  },
+  "receipts": {
+    "replay_sha256": "239b6e704545ea62d8661b1930aa0b601ca567949b424ea9dbc0a0b52410f148",
+    "report_sha256": "55b00fc8919d6f57d8b9611910a02e07d58c0f15b3d8620686d675d89b06bbb1",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "9ef57e27f2e3665d9bd186fdc3781feb42e3f64ea25253dba198f9f57cd1e2f1"
+  },
+  "outcome": {
+    "kind": "max_ticks",
+    "completed_ticks": 3036,
+    "session_state": "guest",
+    "presents": 0,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "guest_nonblack_readback": false
+  },
+  "qualified_xenos_frontier": {
+    "ring": {
+      "submissions": 4,
+      "read_pointer": 31,
+      "write_pointer": 31,
+      "submitted_dwords": 31,
+      "max_submission_dwords": 22,
+      "corpus_reached": true
+    },
+    "decoded_packets": {
+      "packet_count": 88,
+      "decoded_dwords": 280,
+      "type_0": 39,
+      "type_3": 49,
+      "type_3_opcodes": {
+        "0x21": 2,
+        "0x2B": 2,
+        "0x36_draw": 24,
+        "0x3B": 3,
+        "0x3C": 2,
+        "0x3F": 7,
+        "0x48": 1,
+        "0x58": 4,
+        "0x60": 1,
+        "0x61": 1,
+        "0x62": 1,
+        "0x63": 1
+      }
+    },
+    "typed_commands": {
+      "shader_load_count": 2,
+      "draw_count": 24,
+      "present_count": 0,
+      "renderer_relevant_semantics_qualified": true
+    },
+    "synchronous_effects": {
+      "shader_done_events": 4,
+      "scratch_writeback": 1,
+      "register_rmw": 2,
+      "wait_reg_mem": 2,
+      "invalidate_state": 3,
+      "micro_engine_init": 1,
+      "memory_write_count": 5,
+      "pending_wait": false,
+      "synchronous_effects_qualified": true
+    }
+  },
+  "conclusion": {
+    "proven": "The PAL title route reaches and drains the bounded Xenos command front end through shader loads, 24 draws, and four shader-done events without a remaining ring pointer or wait boundary.",
+    "not_proven": [
+      "a presentable guest surface",
+      "Vulkan graphics-pipeline creation or successful rasterization",
+      "a non-black guest readback",
+      "frontend, mission, success, or failure progression"
+    ],
+    "next_boundary": "Trace the first post-draw presentation-surface/state dependency that prevents a Type-3 presentation command. Preserve fail-closed behavior for unqualified Xenos effects; do not synthesize a present or progression signal."
+  }
+}

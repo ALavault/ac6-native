@@ -64,9 +64,10 @@
     return true;
   }
   if (std::string_view{name} == "VdIsHSIOTrainingSucceeded") {
-    // The HLE exposes no Xenon HSIO/EDRAM training state; report the actual
-    // bounded state so the title takes its guarded fallback branch.
-    context.r3.s64 = 0;
+    // Reporting failure selects the guest's software fallback command path,
+    // bypassing the native renderer's normal ring submission.
+    context.r3.s64 =
+        ac6demo::guest_bridge_detail::kVdHsioTrainingSucceededResult;
     return true;
   }
   if (std::string_view{name} == "_vsnprintf") {

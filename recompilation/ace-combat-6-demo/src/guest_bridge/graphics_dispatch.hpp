@@ -68,6 +68,22 @@ if (std::string_view{name} == "VdSwap") {
     memory.store_u32(context.r3.u32 + index * 4U, packet[index]);
   }
   bridge.record_graphics_present(snapshot);
+  const bool watch_vdswap = std::getenv("AC6_DEMO_WATCH_VDSWAP") != nullptr;
+  const bool watch_title_vdswap =
+      std::getenv("AC6_DEMO_WATCH_TITLE_VDSWAP") != nullptr &&
+      bridge.tick() >= 2990U && bridge.tick() <= 3035U;
+  if (watch_vdswap || watch_title_vdswap) {
+    std::fprintf(
+        stderr,
+        "AC6_VDSWAP_ACCEPT tick=%llu calls=%llu output=0x%08X "
+        "frontbuffer=0x%08X width=%u height=%u fetch0=0x%08X "
+        "fetch1=0x%08X fetch2=0x%08X\n",
+        static_cast<unsigned long long>(bridge.tick()),
+        static_cast<unsigned long long>(bridge.graphics_present_count()),
+        snapshot.output_buffer, snapshot.frontbuffer_address, snapshot.width,
+        snapshot.height, snapshot.fetch_words[0], snapshot.fetch_words[1],
+        snapshot.fetch_words[2]);
+  }
   return true;
 }
 if (std::string_view{name} == "VdInitializeRingBuffer") {

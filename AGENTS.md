@@ -3,6 +3,8 @@
 ## Agent wait timeout
 
 - Do not invent, expand, or continue work beyond the explicit request. Do not add unsolicited tasks or optional improvements.
+- Pour chaque gate, favoriser et épuiser d’abord la valorisation statique — projet Ghidra canonique qualifié, XenonAnalyse, XenonRecomp/XenosRecomp et artefacts existants. N’autoriser une valorisation runtime que si une ambiguïté causale nommée reste ouverte ; fixer alors l’entrée, les observables, la fenêtre et le `done_when`, sans trace globale ni A/B par défaut.
+- Pour la démo PAL qualifiée, le projet Ghidra canonique est `workspaces/ace-combat-6/ghidra-projects/ace-combat-6-demo`. Le projet PAL retail `workspaces/ace-combat-6/ghidra-projects/ace-combat-6` reste une cible distincte ; ne pas mélanger leurs exports ni leurs preuves.
 - Do not run an A/B by default. Use one only when a named causal ambiguity
   cannot be resolved by a targeted trace and guest-state evidence; record the
   single differing input and the decision it is meant to settle.
@@ -40,10 +42,11 @@
   its generated names, or let its configured function starts override Ghidra
   boundaries and executed validation.
 - Qualify every Ghidra result by project name as well as target ID, XEX
-  SHA-256, module and address. For the current PAL `default.xex`,
-  `workspaces/ace-combat-6/ghidra-projects/ace-combat-6` is the canonical
-  project used by `workspaces/ace-combat-6/ghidra-bridge.yaml` and by a fresh
-  headless import. Treat
+  SHA-256, module and address. For the qualified PAL **demo** `Default.xex`,
+  `workspaces/ace-combat-6/ghidra-projects/ace-combat-6-demo` is canonical.
+  The separate retail PAL `default.xex` uses
+  `workspaces/ace-combat-6/ghidra-projects/ace-combat-6`; it must not be mixed
+  with demo evidence. Treat
   `workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected` as historical/needs-revalidation
   until its bytes are reconciled; never merge exports from both projects.
 - For generic Xenon/Xenos, guest-memory and recompilation interpretation,
@@ -83,3 +86,47 @@
   `workspaces/ace-combat-6/XENIA_WINE_ORACLE_HANDOFF.md`;
   it records the pinned Wine/Vulkan launcher, local `codex` profile and AZERTY
   keyboard route without promoting oracle use to parity evidence.
+
+## Heavy-job resource safety
+
+- Before running Ghidra/headless analysis, an emulator, a full parallel build,
+  bulk extraction or a long test, inspect current host/cgroup memory. Run only
+  one such job at a time.
+- Run every heavy job in its own transient user cgroup with a wall-clock limit.
+  Start from this wrapper and adjust limits only from observed capacity; never
+  remove them:
+
+  ```sh
+  systemd-run --user --scope --unit=<unique-job> \
+    -p MemoryHigh=16G -p MemoryMax=24G -p TasksMax=128 \
+    timeout --signal=TERM --kill-after=30s <duration> <command>
+  ```
+
+- Give Java tools an explicit maximum heap below `MemoryHigh`. A resource-limit
+  failure must fail the current gate, not the agent session.
+- Redirect complete stdout/stderr to `artifacts/<gate>/` and return only a
+  compact summary. Write the exit-status marker only after the process exits;
+  if it is absent, treat the run as interrupted, never successful.
+- Monitor memory while the job runs and stop it before its cgroup limit is
+  exhausted. Never disable `systemd-oomd` or rely on swap as the safeguard.
+- Before another heavy gate, checkpoint and rotate the agent session after
+  three closed gates or 24 hours, whichever comes first.
+
+
+## Stratégie d’investigation
+
+Utilise d’abord toute information statique disponible pour réduire l’espace
+des hypothèses et préparer les tests.
+
+Optimise en priorité le nombre de décisions modèle nécessaires :
+regroupe les lectures, extractions et validations déterministes dans des scripts
+ou commandes batchées, et ne retourne au modèle qu’un rapport compact.
+
+Une exécution dynamique reste autorisée lorsqu’elle constitue le moyen le plus
+direct de départager des hypothèses encore compatibles. Dans ce cas, prépare
+l’instrumentation statiquement, collecte toutes les observations compatibles
+dans une seule exécution et ne retourne au modèle qu’après la fin de
+l’expérience ou lorsqu’une décision réelle est nécessaire.
+
+Le runtime n’est pas interdit. Les boucles observation-décision inutilement
+granulaires le sont.

@@ -194,6 +194,27 @@ if (Vulkan_FOUND AND TARGET ac6_demo_rexglue_translator)
     DEPENDS shaders/rexglue_rectangle_list.gs.hlsl tools/embed_spirv.py
     VERBATIM)
   list(APPEND AC6_DEMO_GENERATED_SOURCES "${AC6_DEMO_RECTANGLE_HEADER}")
+  set(AC6_DEMO_QUAD_SPV
+      "${CMAKE_CURRENT_BINARY_DIR}/generated/rexglue_quad_list.gs.spv")
+  set(AC6_DEMO_QUAD_HEADER
+      "${CMAKE_CURRENT_BINARY_DIR}/generated/rexglue_quad_list_spirv.hpp")
+  add_custom_command(
+    OUTPUT "${AC6_DEMO_QUAD_HEADER}"
+    COMMAND "${CMAKE_COMMAND}" -E make_directory
+            "${CMAKE_CURRENT_BINARY_DIR}/generated"
+    COMMAND "${AC6_DEMO_DXC}" -spirv -fspv-target-env=vulkan1.1
+            -T gs_6_0 -E main -Fo "${AC6_DEMO_QUAD_SPV}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/shaders/rexglue_quad_list.gs.hlsl"
+    COMMAND "${AC6_DEMO_SPIRV_VAL}" --target-env vulkan1.1
+            "${AC6_DEMO_QUAD_SPV}"
+    COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/embed_spirv.py"
+            --input "${AC6_DEMO_QUAD_SPV}"
+            --output "${AC6_DEMO_QUAD_HEADER}"
+            --symbol rexglue_quad_list_spirv
+    DEPENDS shaders/rexglue_quad_list.gs.hlsl tools/embed_spirv.py
+    VERBATIM)
+  list(APPEND AC6_DEMO_GENERATED_SOURCES "${AC6_DEMO_QUAD_HEADER}")
 endif()
 
 add_executable(ac6-demo-recomp src/main.cpp src/cli.cpp src/emu_agent_ipc.cpp
@@ -362,7 +383,8 @@ if (Vulkan_FOUND)
         ${AC6_DEMO_REXGLUE_RESOLVE_SHADER}
         ${CMAKE_CURRENT_SOURCE_DIR}/../../../../.tools/spirv-tools-install/bin/spirv-val)
     set_tests_properties(ac6-demo-vulkan-resolve-tests PROPERTIES
-      SKIP_RETURN_CODE 77)
+      SKIP_RETURN_CODE 77
+      ENVIRONMENT "TMPDIR=/fastdata/lavaulta/tmp")
   endif()
 endif()
 add_executable(ac6-xbox360-host-xam-input-movie-tests
@@ -410,6 +432,11 @@ target_include_directories(ac6-demo-xam-return-chain-header-tests PRIVATE
 target_link_libraries(ac6-demo-xam-return-chain-header-tests PRIVATE Threads::Threads)
 add_test(NAME ac6-demo-xam-return-chain-header-tests
   COMMAND ac6-demo-xam-return-chain-header-tests)
+add_executable(ac6-demo-xaudio-callback-cpu-contract-tests
+  tests/xaudio_callback_cpu_contract_tests.cpp)
+target_include_directories(ac6-demo-xaudio-callback-cpu-contract-tests PRIVATE include)
+add_test(NAME ac6-demo-xaudio-callback-cpu-contract-tests
+  COMMAND ac6-demo-xaudio-callback-cpu-contract-tests)
 add_test(NAME ac6-demo-post-resume-xvfb-lifecycle
   COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/test_post_resume_xvfb_lifecycle.sh)
 set_tests_properties(ac6-demo-post-resume-xvfb-lifecycle PROPERTIES TIMEOUT 55)
@@ -436,7 +463,8 @@ endif()
 # every check in them is an assert() that NDEBUG would erase.
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   set(ac6_demo_assert_tests ac6-demo-emu-agent-ipc-tests
-      ac6-demo-post-resume-header-tests ac6-demo-xam-return-chain-header-tests)
+      ac6-demo-post-resume-header-tests ac6-demo-xam-return-chain-header-tests
+      ac6-demo-xaudio-callback-cpu-contract-tests)
   # ac6-demo-rexglue-runtime-tests is deliberately NOT in this list. Enabling
   # its asserts surfaced two stale expectations; the payload size was settled
   # (512, the sizeof of a hash-pinned SDK type) but its system-constant flags

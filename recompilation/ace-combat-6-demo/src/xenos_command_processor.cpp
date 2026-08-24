@@ -13,8 +13,11 @@
 namespace ac6demo {
 namespace {
 
+constexpr std::uint8_t kImLoad = 0x27U;
 constexpr std::uint8_t kImLoadImmediate = 0x2BU;
+constexpr std::uint8_t kLoadAluConstant = 0x2FU;
 constexpr std::uint8_t kRegisterRmw = 0x21U;
+constexpr std::uint8_t kDrawIndx = 0x22U;
 constexpr std::uint8_t kDrawIndx2 = 0x36U;
 constexpr std::uint8_t kInvalidateState = 0x3BU;
 constexpr std::uint8_t kWaitRegMem = 0x3CU;
@@ -311,14 +314,44 @@ PacketEffectOutcome execute_effect_packet(
   }
 }
 
-template <typename WriteRegister>
+template <typename ReadShaderDword, typename WriteRegister>
 void execute_renderer_packet(
     std::uint8_t opcode, bool predicated,
     std::span<const std::uint32_t> payload,
     std::array<std::uint32_t, kXenosRegisterCount> &registers,
     std::string &vertex_shader, std::string &pixel_shader,
-    XenosBatchResult &result, WriteRegister &&write_register) {
+    XenosBatchResult &result, ReadShaderDword &&read_shader_dword,
+    WriteRegister &&write_register) {
   const auto count = payload.size();
+  if (opcode == kImLoad) {
+    require_count(count, 2U);
+    const auto stage_value = payload[0] & 3U;
+    const auto start = static_cast<std::uint16_t>(payload[1] >> 16U);
+    const auto size = static_cast<std::uint16_t>(payload[1]);
+    if (stage_value > 1U || start != 0U || size == 0U) {
+      trap("invalid Xenos pointer shader packet");
+    }
+    const std::uint32_t address = payload[0] & ~std::uint32_t{3U};
+    if (static_cast<std::uint64_t>(address) +
+            static_cast<std::uint64_t>(size) * 4U >
+        std::uint64_t{1} << 32U) {
+      trap("Xenos pointer shader range overflow");
+    }
+    std::vector<std::uint32_t> words;
+    words.reserve(size);
+    for (std::uint32_t index = 0U; index < size; ++index) {
+      words.push_back(read_shader_dword(address + index * 4U));
+    }
+    const auto stage = stage_value == 0U ? XenosShaderStage::Vertex
+                                         : XenosShaderStage::Pixel;
+    std::string identity = shader_hash(words);
+    (stage == XenosShaderStage::Vertex ? vertex_shader : pixel_shader) =
+        identity;
+    result.renderer_commands.emplace_back(XenosShaderLoadCommand{
+        stage, start, size, std::move(identity), std::move(words), address});
+    result.renderer_write_counts.push_back(result.memory_writes.size());
+    return;
+  }
   if (opcode == kImLoadImmediate) {
     if (count < 2U || payload[0] > 1U) {
       trap("invalid Xenos immediate shader stage");
@@ -336,12 +369,17 @@ void execute_renderer_packet(
     result.renderer_commands.emplace_back(
         XenosShaderLoadCommand{
             stage, start, size, std::move(identity),
-            std::vector<std::uint32_t>(payload.begin() + 2U, payload.end())});
+            std::vector<std::uint32_t>(payload.begin() + 2U, payload.end()),
+            0U});
+    result.renderer_write_counts.push_back(result.memory_writes.size());
     return;
   }
-  if (opcode == kDrawIndx2) {
-    require_count(count, 1U);
-    const auto initiator = payload[0];
+  if (opcode == kDrawIndx || opcode == kDrawIndx2) {
+    require_count(count, opcode == kDrawIndx ? 2U : 1U);
+    if (opcode == kDrawIndx && payload[0] != 0U) {
+      trap("unsupported Xenos draw visibility query");
+    }
+    const auto initiator = payload[opcode == kDrawIndx ? 1U : 0U];
     const auto primitive = static_cast<std::uint8_t>(initiator & 0x3FU);
     const auto source = static_cast<std::uint8_t>((initiator >> 6U) & 3U);
     const auto index_count = static_cast<std::uint16_t>(initiator >> 16U);
@@ -351,8 +389,12 @@ void execute_renderer_packet(
     const bool rectangle =
         primitive == static_cast<std::uint8_t>(XenosPrimitive::RectangleList) &&
         index_count == 3U;
+    const bool quad = opcode == kDrawIndx &&
+                      primitive == static_cast<std::uint8_t>(
+                                       XenosPrimitive::QuadList) &&
+                      index_count == 4U;
     if (source != static_cast<std::uint8_t>(XenosIndexSource::AutoIndex) ||
-        (!point && !rectangle)) {
+        (opcode == kDrawIndx ? !quad : (!point && !rectangle))) {
       trap("unsupported Xenos draw shape");
     }
     if (vertex_shader.empty() || pixel_shader.empty()) {
@@ -365,6 +407,7 @@ void execute_renderer_packet(
                                         : XenosIndexFormat::Uint16,
         index_count, predicated, vertex_shader, pixel_shader,
         std::make_shared<XenosRegisterSnapshot>(registers)});
+    result.renderer_write_counts.push_back(result.memory_writes.size());
     return;
   }
   if (opcode != kXeSwap) {
@@ -387,6 +430,7 @@ void execute_renderer_packet(
   }
   result.renderer_commands.emplace_back(XenosPresentCommand{
       shader_hash(fetch), format, tiled, payload[2], payload[3], address});
+  result.renderer_write_counts.push_back(result.memory_writes.size());
 }
 
 void validate_batch_structure(std::span<const std::uint32_t> dwords,
@@ -442,6 +486,9 @@ void validate_batch_structure(std::span<const std::uint32_t> dwords,
     case kSetBinSelectHi:
       require_count(count, 1U);
       break;
+    case kDrawIndx:
+      require_count(count, 2U);
+      break;
     case kMeInit:
       require_count(count, 18U);
       break;
@@ -449,6 +496,25 @@ void validate_batch_structure(std::span<const std::uint32_t> dwords,
     case kSetBinSelect:
       require_count(count, 2U);
       break;
+    case kImLoad:
+      if (count != 2U || (payload[0] & 3U) > 1U ||
+          (payload[1] >> 16U) != 0U || (payload[1] & 0xFFFFU) == 0U) {
+        trap("invalid Xenos pointer shader packet");
+      }
+      break;
+    case kLoadAluConstant: {
+      require_count(count, 3U);
+      const std::uint32_t index = payload[1] & 0x7FFU;
+      const std::uint32_t type = (payload[1] >> 16U) & 0xFFU;
+      const std::uint32_t size = payload[2] & 0xFFFU;
+      if ((payload[0] & 0xC0000003U) != 0U ||
+          (payload[1] & ~0x00FF07FFU) != 0U ||
+          (payload[2] & ~0x00000FFFU) != 0U || type != 0U || size == 0U ||
+          index >= 0x400U || size > 0x400U - index) {
+        trap("invalid Xenos ALU constant load");
+      }
+      break;
+    }
     case kImLoadImmediate:
       if (count < 2U || payload[0] > 1U || (payload[1] >> 16U) != 0U ||
           (payload[1] & 0xFFFFU) == 0U ||
@@ -511,6 +577,29 @@ XenosBatchResult XenosCommandProcessor::process_batch(
       trap("unmapped Xenos guest dword");
     }
     return gpu_swap(load_raw_dword(*bytes), encoded_address & 3U);
+  };
+  const auto read_shader_dword = [&](std::uint32_t address) {
+    for (auto write = result.memory_writes.rbegin();
+         write != result.memory_writes.rend(); ++write) {
+      if (write->address == address) {
+        const auto &bytes = write->guest_bytes;
+        return (std::to_integer<std::uint32_t>(bytes[0]) << 24U) |
+               (std::to_integer<std::uint32_t>(bytes[1]) << 16U) |
+               (std::to_integer<std::uint32_t>(bytes[2]) << 8U) |
+               std::to_integer<std::uint32_t>(bytes[3]);
+      }
+    }
+    if (!read_memory) {
+      trap("Xenos shader memory callback unavailable");
+    }
+    const auto bytes = read_memory(address);
+    if (!bytes) {
+      trap("unmapped Xenos guest shader dword");
+    }
+    return (std::to_integer<std::uint32_t>((*bytes)[0]) << 24U) |
+           (std::to_integer<std::uint32_t>((*bytes)[1]) << 16U) |
+           (std::to_integer<std::uint32_t>((*bytes)[2]) << 8U) |
+           std::to_integer<std::uint32_t>((*bytes)[3]);
   };
   const auto stage_guest_write = [&](std::uint32_t encoded_address,
                                      std::uint32_t value) {
@@ -625,6 +714,26 @@ XenosBatchResult XenosCommandProcessor::process_batch(
       continue;
     }
 
+    if (opcode == kLoadAluConstant) {
+      const std::uint32_t address = payload[0] & 0x3FFFFFFFU;
+      const std::uint32_t index = payload[1] & 0x7FFU;
+      const std::uint32_t size = payload[2] & 0xFFFU;
+      if (static_cast<std::uint64_t>(address) +
+              static_cast<std::uint64_t>(size) * 4U >
+          std::uint64_t{1} << 32U) {
+        trap("Xenos ALU constant source range overflow");
+      }
+      std::vector<std::uint32_t> words;
+      words.reserve(size);
+      for (std::uint32_t word = 0U; word < size; ++word) {
+        words.push_back(read_shader_dword(address + word * 4U));
+      }
+      for (std::uint32_t word = 0U; word < size; ++word) {
+        write_register(0x4000U + index + word, words[word]);
+      }
+      continue;
+    }
+
     const auto effect = execute_effect_packet(
         opcode, payload, packet_start, next_registers, next_bin_mask,
         next_bin_select, result, read_guest_dword, stage_guest_write,
@@ -638,7 +747,7 @@ XenosBatchResult XenosCommandProcessor::process_batch(
     }
     execute_renderer_packet(opcode, predicated, payload, next_registers,
                             next_vertex_shader, next_pixel_shader, result,
-                            write_register);
+                            read_shader_dword, write_register);
   }
 
   result.consumed_dwords = dwords.size();

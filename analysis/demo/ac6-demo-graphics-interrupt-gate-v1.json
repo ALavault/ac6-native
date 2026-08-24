@@ -1,0 +1,166 @@
+{
+  "schema": "ac6-demo-graphics-interrupt-gate/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "fresh_process": true,
+    "store": "previously verified qualified PAL store, mounted by the runtime",
+    "backend": "vulkan via xvfb-run",
+    "audio": "SDL_AUDIODRIVER=dummy",
+    "max_ticks": 2,
+    "retail_oracle_used": false,
+    "generated_cpp_modified": false,
+    "runtime_behavior_changed": false
+  },
+  "vdswap_smoke": {
+    "instrumentation": "AC6_DEMO_WATCH_VDSWAP=1",
+    "runtime_binary_sha256_at_launch": "745f020fce4ffb9d5fbfca69f5750179ca77bdb7d11d3b71fef17f954e0f49eb",
+    "return_code": 4,
+    "replay_sha256": "941a49f10d7c3e05e3291951f11abef19ab15da11b7add7ed298d0572c5b9a03",
+    "report_sha256": "ee2ec4dd79a6ed1ae7c1599305b8c612fe7a2ae992b130220f03a9d14370228a",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "ced06112c7d4c5b7092d277f2d856800919fd0748ff87e9cf016cf563567d0b2",
+    "accepted_vdswap_records": 0,
+    "presentation_notifications": 0
+  },
+    "interrupt_gate_smoke": {
+    "instrumentation": [
+      "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT=1",
+      "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE=1"
+    ],
+    "runtime_binary_sha256_at_launch": "95bd5148bbe74a62354c5b5c0094dea74b98d16c07b7c60cd8d66ce68126d6ec",
+    "return_code": 4,
+    "replay_sha256": "941a49f10d7c3e05e3291951f11abef19ab15da11b7add7ed298d0572c5b9a03",
+    "report_sha256": "ee2ec4dd79a6ed1ae7c1599305b8c612fe7a2ae992b130220f03a9d14370228a",
+    "stderr_sha256": "956eaa7c5a520b8d1ae9a92f3740fe9591728063e1c33492c578c008f3c1e06d",
+    "stdout_sha256": "1312ceef726a7cf95cf65d29eb9419df5f5fb7fa81b1167b7d2181cec09f20d1",
+    "journal": [
+      {
+        "kind": "register",
+        "callback": "0x821B9710",
+        "context": "0x10041A00",
+        "tick": 0,
+        "thread": 1
+      },
+      {
+        "kind": "gate",
+        "address": "0x7FC86544",
+        "mapped": true,
+        "value": "0x00000001",
+        "source": 0,
+        "tick": 1
+      },
+      {
+        "kind": "call",
+        "callback": "0x821B9710",
+        "context": "0x10041A00",
+        "source": 0,
+        "tick": 1,
+        "thread": 2
+      }
+        ]
+    },
+    "queue_drain_smokes": {
+        "publication_probe": {
+            "instrumentation": [
+                "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT=1",
+                "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE=1",
+                "AC6_DEMO_WATCH_ADDR_LO=0x7FC86110",
+                "AC6_DEMO_WATCH_ADDR_HI=0x7FC86114"
+            ],
+            "runtime_binary_sha256_at_launch": "237f524d7811f7de1ad556e840e30a953cec648046a286a8eb1c32ecf6870e70",
+            "return_code": 4,
+            "replay_sha256": "941a49f10d7c3e05e3291951f11abef19ab15da11b7add7ed298d0572c5b9a03",
+            "report_sha256": "ee2ec4dd79a6ed1ae7c1599305b8c612fe7a2ae992b130220f03a9d14370228a",
+            "stderr_sha256": "203f3185e76f3a86166ad94a3c5a759bd665359181164ddb79e24c3183e5de12",
+            "stdout_sha256": "18dc2b95cea29469654f26434e420cce3833c039be7545713977c3094e497f60",
+            "observed_publication_writes": 0
+        },
+        "queue_state_probe": {
+            "instrumentation": [
+                "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT=1",
+                "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE=1",
+                "AC6_DEMO_WATCH_ADDR_LO=0x10045A84",
+                "AC6_DEMO_WATCH_ADDR_HI=0x10045B2B"
+            ],
+            "runtime_binary_sha256_at_launch": "237f524d7811f7de1ad556e840e30a953cec648046a286a8eb1c32ecf6870e70",
+            "return_code": 4,
+            "replay_sha256": "941a49f10d7c3e05e3291951f11abef19ab15da11b7add7ed298d0572c5b9a03",
+            "report_sha256": "ee2ec4dd79a6ed1ae7c1599305b8c612fe7a2ae992b130220f03a9d14370228a",
+            "stderr_sha256": "2abc7907ebc44dfb04952f5cd6696ec39e3d45f58122cabf93a2c563a8d521cd",
+            "stdout_sha256": "36945d54cfa52ec4195ceb4942990a0b3367f32ebe55d926f9a18f5ae2889941",
+            "journal": [
+                {
+                    "kind": "initialization",
+                    "address_range": "0x10045A84..0x10045B28",
+                    "value": "0x00000000",
+                    "tick": 0,
+                    "thread": 1
+                },
+                {
+                    "kind": "queue_drain_counter",
+                    "function": "0x821C5090",
+                    "address": "0x10045A8C",
+                    "value": "0x00000001",
+                    "tick": 1,
+                    "thread": 2,
+                    "lr": "0x821C50AC"
+                },
+                {
+                    "kind": "queue_drain_timestamp",
+                    "function": "0x821C5090",
+                    "address": "0x10045A90",
+                    "value": "0x000CB735",
+                    "tick": 1,
+                    "thread": 2,
+                    "lr": "0x821C50AC"
+                }
+            ],
+            "queue_producer_and_consumer_offsets": [
+                "0x10045B24",
+                "0x10045B28"
+            ],
+            "queue_producer_and_consumer_values_through_tick_1": [
+                "0x00000000",
+                "0x00000000"
+            ]
+        }
+    },
+    "shared_outcome": {
+    "kind": "max_ticks",
+    "completed_ticks": 2,
+    "session_state": "guest",
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "ring_submissions": 4,
+    "ring_read_pointer": 31,
+    "ring_write_pointer": 31,
+    "submitted_dwords": 31,
+    "shader_loads": 2,
+    "draws": 24,
+    "xenos_present_commands": 0,
+    "guest_nonblack_readback": false,
+    "cpu_interrupts": 0,
+    "shader_done_events": 4
+  },
+  "qualified_static_cross_match": {
+    "evidence_only": "revision-generated code from the qualified Default.xex; not product source",
+    "function": "0x821B9710",
+    "source_zero_branch": "the callback reads bit 0 of 0x7FC86544 and calls 0x821C5090 only when the bit is set",
+    "dynamic_join": "The observed source-zero call sees value 1, so selection of that branch follows from the literal control flow. This is an inference about control flow only, not a claim that 0x821C5090 completed a presentation."
+  },
+  "conclusion": {
+        "proven": "The current runtime registers and invokes the graphics callback; its source-zero gate is mapped and asserted at tick 1. The selected 0x821C5090 drain runs, advances its counter and records its timestamp, but its producer and consumer state remain zero through tick 1, so it emits no 0x7FC86110 publication write. The absence of a VdSwap notification is therefore not explained by missing callback registration, a false source-zero gate, or a skipped selected drain.",
+        "not_proven": [
+            "VdSwap acceptance after bootstrap",
+      "a presentable surface, Vulkan rasterization, or guest readback",
+      "frontend, mission, success, or failure progression"
+    ],
+        "next_boundary": "Capture the first guest-native producer that advances 0x10045B24 or 0x10045B28 after bootstrap, then join its real queue publication to the first VdSwap acceptance. Do not create a synthetic interrupt, queue entry, swap, or progression event."
+  }
+}

@@ -85,6 +85,8 @@ void test_qualified_commands_and_immutable_draws() {
   ac6demo::XenosCommandProcessor processor;
   const auto commands = processor.process_batch(stream);
   assert(commands.size() == 6U);
+  assert(commands.renderer_write_counts ==
+         std::vector<std::size_t>(commands.size(), 0U));
 
   const auto &shader1 = std::get<ac6demo::XenosShaderLoadCommand>(commands[0]);
   const auto &shader2 = std::get<ac6demo::XenosShaderLoadCommand>(commands[1]);
@@ -95,18 +97,21 @@ void test_qualified_commands_and_immutable_draws() {
 
   assert(shader1.stage == ac6demo::XenosShaderStage::Vertex);
   assert(shader1.start_dword == 0U && shader1.size_dwords == 2U);
+  assert(shader1.guest_source_address == 0U);
   assert(shader1.guest_big_endian_sha256 ==
          "f51c9b0b3e2f4e386b1c77e81d341867052f700fbf3fd12897f298d6e38cbcf1");
   assert((shader1.guest_big_endian_dwords ==
           std::vector<std::uint32_t>{0x01020304U, 0xAABBCCDDU}));
   assert(shader2.stage == ac6demo::XenosShaderStage::Pixel &&
          shader2.size_dwords == 1U);
+  assert(shader2.guest_source_address == 0U);
   assert(shader2.guest_big_endian_sha256 ==
          "b2ed992186a5cb19f6668aade821f502c1d00970dfd0e35128d51bac4649916c");
   assert((shader2.guest_big_endian_dwords ==
           std::vector<std::uint32_t>{0x12345678U}));
   assert(shader3.stage == ac6demo::XenosShaderStage::Vertex &&
          shader3.size_dwords == 3U);
+  assert(shader3.guest_source_address == 0U);
   assert(shader3.guest_big_endian_sha256.size() == 64U);
   assert(shader3.guest_big_endian_dwords.size() == 3U);
 
@@ -158,6 +163,219 @@ void test_reached_point_draw_shape() {
   assert(draw.primitive == ac6demo::XenosPrimitive::PointList);
   assert(draw.source == ac6demo::XenosIndexSource::AutoIndex);
   assert(draw.index_count == 1U);
+}
+
+void test_reached_quad_draw_shape() {
+  const std::vector<std::uint32_t> prefix{
+      type3(0x2BU, 3U), 0U, 1U, 0x01020304U,
+      type3(0x2BU, 3U), 1U, 1U, 0x05060708U};
+  auto reached = prefix;
+  reached.insert(reached.end(),
+                 {type3(0x22U, 2U, true), 0U, 0x0004008DU});
+
+  ac6demo::XenosCommandProcessor processor;
+  const auto commands = processor.process_batch(reached);
+  assert(commands.size() == 3U);
+  const auto &draw = std::get<ac6demo::XenosDrawCommand>(commands[2]);
+  assert(draw.primitive == ac6demo::XenosPrimitive::QuadList);
+  assert(draw.source == ac6demo::XenosIndexSource::AutoIndex);
+  assert(draw.index_format == ac6demo::XenosIndexFormat::Uint16);
+  assert(draw.index_count == 4U && draw.predicated);
+
+  const auto reject_suffix = [&](std::initializer_list<std::uint32_t> suffix) {
+    auto stream = prefix;
+    stream.insert(stream.end(), suffix);
+    ac6demo::XenosCommandProcessor rejected;
+    expect_trap([&] { static_cast<void>(rejected.process_batch(stream)); });
+  };
+  reject_suffix({type3(0x22U, 2U, true), 1U, 0x0004008DU});
+  reject_suffix({type3(0x22U, 2U, true), 0U, 0x00030088U});
+  reject_suffix({type3(0x22U, 1U, true), 0x0004008DU});
+}
+
+void test_qualified_title_texture_dynamic_base() {
+  const auto make_registers = [](const std::array<std::uint32_t, 6> &words) {
+    std::array<std::uint32_t, ac6demo::kXenosRegisterCount> values{};
+    for (std::uint16_t index = 0U; index < words.size(); ++index) {
+      values[ac6demo::kXenosTextureFetch00 + index] = words[index];
+    }
+    return ac6demo::XenosRegisterSnapshot(std::move(values));
+  };
+
+  constexpr std::array<std::uint32_t, 6> kWide{
+      0x8A004802U, 0x0E059054U, 0x0059E4FFU,
+      0x01280D10U, 0x00000003U, 0x00000200U};
+  const auto reached = ac6demo::qualified_title_texture_profile(
+      make_registers(kWide));
+  assert(reached.has_value());
+  assert(reached->address == 0x0E059000U);
+  assert(reached->payload_size == 0xF0000U);
+  assert(reached->width == 1280U && reached->height == 720U);
+  assert(reached->encoding ==
+         ac6demo::QualifiedTitleTextureEncoding::Bc3);
+
+  constexpr std::array<std::uint32_t, 6> kTall{
+      0x84004802U, 0x0E32C054U, 0x0059E1FFU,
+      0x01280D10U, 0x00000003U, 0x00000200U};
+  const auto tall = ac6demo::qualified_title_texture_profile(
+      make_registers(kTall));
+  assert(tall.has_value());
+  assert(tall->address == 0x0E32C000U);
+  assert(tall->payload_size == 0x60000U);
+  assert(tall->width == 512U && tall->height == 720U);
+  assert(tall->encoding == ac6demo::QualifiedTitleTextureEncoding::Bc3);
+
+  auto moved_tall = kTall;
+  moved_tall[1] = 0x0E400054U;
+  const auto moved = ac6demo::qualified_title_texture_profile(
+      make_registers(moved_tall));
+  assert(moved.has_value() && moved->address == 0x0E400000U);
+
+  for (const auto index : std::array<std::size_t, 5>{0U, 2U, 3U, 4U, 5U}) {
+    auto changed = kTall;
+    changed[index] ^= 1U;
+    assert(!ac6demo::qualified_title_texture_profile(make_registers(changed))
+                .has_value());
+  }
+  auto changed_low_bits = kTall;
+  changed_low_bits[1] ^= 1U;
+  assert(!ac6demo::qualified_title_texture_profile(
+              make_registers(changed_low_bits))
+              .has_value());
+  auto zero_base = kTall;
+  zero_base[1] = 0x00000054U;
+  assert(!ac6demo::qualified_title_texture_profile(make_registers(zero_base))
+              .has_value());
+
+  constexpr std::array<std::uint32_t, 6> kSwap{
+      0x8A000002U, 0x1374A006U, 0x0059E4FFU,
+      0x00001414U, 0x00000000U, 0x00000200U};
+  const auto swap = ac6demo::qualified_title_texture_profile(
+      make_registers(kSwap));
+  assert(swap.has_value());
+  assert(swap->address == 0x1374A000U);
+  assert(swap->payload_size == 0x398000U);
+  assert(swap->width == 1280U && swap->height == 720U);
+  assert(swap->encoding == ac6demo::QualifiedTitleTextureEncoding::Rgba8);
+  for (const auto index : std::array<std::size_t, 5>{0U, 2U, 3U, 4U, 5U}) {
+    auto changed = kSwap;
+    changed[index] ^= 1U;
+    assert(!ac6demo::qualified_title_texture_profile(make_registers(changed))
+                .has_value());
+  }
+  auto moved_swap = kSwap;
+  moved_swap[1] = 0x13749006U;
+  assert(!ac6demo::qualified_title_texture_profile(make_registers(moved_swap))
+              .has_value());
+  auto changed_swap_low_bits = kSwap;
+  changed_swap_low_bits[1] ^= 1U;
+  assert(!ac6demo::qualified_title_texture_profile(
+              make_registers(changed_swap_low_bits))
+              .has_value());
+}
+
+void test_reached_pointer_shader_loads() {
+  const auto memory = [](
+                          std::uint32_t address)
+      -> std::optional<ac6demo::XenosCommandProcessor::GuestBytes> {
+    std::uint32_t word{};
+    if (address >= 0x155FAB80U && address < 0x155FABBCU) {
+      word = 0xA0000000U | ((address - 0x155FAB80U) / 4U);
+    } else if (address >= 0x155FAA40U && address < 0x155FAB48U) {
+      word = 0xB0000000U | ((address - 0x155FAA40U) / 4U);
+    } else {
+      return std::nullopt;
+    }
+    return ac6demo::XenosCommandProcessor::GuestBytes{
+        static_cast<std::byte>(word >> 24U),
+        static_cast<std::byte>(word >> 16U),
+        static_cast<std::byte>(word >> 8U), static_cast<std::byte>(word)};
+  };
+  const std::vector<std::uint32_t> stream{
+      type3(0x27U, 2U), 0x155FAB81U, 0x0000000FU,
+      type3(0x27U, 2U), 0x155FAA40U, 0x00000042U,
+      type3(0x36U, 1U), 0x00030088U};
+
+  ac6demo::XenosCommandProcessor processor;
+  const auto commands = processor.process_batch(stream, memory);
+  assert(commands.size() == 3U);
+  const auto &pixel = std::get<ac6demo::XenosShaderLoadCommand>(commands[0]);
+  const auto &vertex = std::get<ac6demo::XenosShaderLoadCommand>(commands[1]);
+  const auto &draw = std::get<ac6demo::XenosDrawCommand>(commands[2]);
+  assert(pixel.stage == ac6demo::XenosShaderStage::Pixel);
+  assert(pixel.start_dword == 0U && pixel.size_dwords == 15U);
+  assert(pixel.guest_source_address == 0x155FAB80U);
+  assert(pixel.guest_big_endian_dwords.front() == 0xA0000000U);
+  assert(pixel.guest_big_endian_dwords.back() == 0xA000000EU);
+  assert(vertex.stage == ac6demo::XenosShaderStage::Vertex);
+  assert(vertex.start_dword == 0U && vertex.size_dwords == 66U);
+  assert(vertex.guest_source_address == 0x155FAA40U);
+  assert(vertex.guest_big_endian_dwords.front() == 0xB0000000U);
+  assert(vertex.guest_big_endian_dwords.back() == 0xB0000041U);
+  assert(draw.pixel_shader_sha256 == pixel.guest_big_endian_sha256);
+  assert(draw.vertex_shader_sha256 == vertex.guest_big_endian_sha256);
+
+  const std::array invalid_stage{type3(0x27U, 2U), 0x155FAB82U,
+                                 0x0000000FU};
+  expect_trap([&] {
+    static_cast<void>(processor.process_batch(invalid_stage, memory));
+  });
+  const std::array invalid_start{type3(0x27U, 2U), 0x155FAB81U,
+                                 0x0001000FU};
+  expect_trap([&] {
+    static_cast<void>(processor.process_batch(invalid_start, memory));
+  });
+  const std::array unmapped{type3(0x27U, 2U), 0x155FAB81U, 0x0000000FU};
+  expect_trap(
+      [&] { static_cast<void>(processor.process_batch(unmapped)); });
+}
+
+void test_reached_alu_constant_load() {
+  const auto memory = [](
+                          std::uint32_t address)
+      -> std::optional<ac6demo::XenosCommandProcessor::GuestBytes> {
+    if (address < 0x155FAA00U || address >= 0x155FAA40U) {
+      return std::nullopt;
+    }
+    const std::uint32_t word =
+        address == 0x155FAA00U
+            ? 0x11223344U
+            : 0xC0000000U | ((address - 0x155FAA00U) / 4U);
+    return ac6demo::XenosCommandProcessor::GuestBytes{
+        static_cast<std::byte>(word >> 24U),
+        static_cast<std::byte>(word >> 16U),
+        static_cast<std::byte>(word >> 8U), static_cast<std::byte>(word)};
+  };
+  const std::array reached{type3(0x2FU, 3U), 0x155FAA00U, 0x000003F0U,
+                           0x00000010U};
+  ac6demo::XenosCommandProcessor processor;
+  assert(processor.process_batch(reached, memory).empty());
+  assert(processor.register_value(0x43F0U) == 0x11223344U);
+  assert(processor.register_value(0x43F1U) == 0xC0000001U);
+  assert(processor.register_value(0x43FFU) == 0xC000000FU);
+  assert(processor.register_value(0x4400U) == 0U);
+
+  const auto reject_without_commit = [&](const auto &stream,
+                                         const auto &callback) {
+    expect_trap(
+        [&] { static_cast<void>(processor.process_batch(stream, callback)); });
+    assert(processor.register_value(0x43F0U) == 0x11223344U);
+  };
+  const std::array unsupported_type{type3(0x2FU, 3U), 0x155FAA00U,
+                                    0x000103F0U, 0x00000010U};
+  reject_without_commit(unsupported_type, memory);
+  const std::array crosses_vertex_constants{type3(0x2FU, 3U), 0x155FAA00U,
+                                             0x000003F1U, 0x00000010U};
+  reject_without_commit(crosses_vertex_constants, memory);
+  const std::array reserved_bits{type3(0x2FU, 3U), 0x555FAA00U,
+                                 0x000003F0U, 0x00000010U};
+  reject_without_commit(reserved_bits, memory);
+  const auto missing_last = [memory](std::uint32_t address) {
+    return address == 0x155FAA3CU
+               ? std::optional<ac6demo::XenosCommandProcessor::GuestBytes>{}
+               : memory(address);
+  };
+  reject_without_commit(reached, missing_last);
 }
 
 void test_failures_have_zero_commit() {
@@ -293,6 +511,8 @@ void test_scratch_writeback_produces_wait_values() {
   assert(result.effects.scratch_writeback == 2U);
   assert(result.effects.wait_reg_mem == 2U);
   assert(result.memory_writes.size() == 2U);
+  assert(result.renderer_commands.empty() &&
+         result.renderer_write_counts.empty());
   assert(result.memory_writes[0].address == 0x16AE2004U);
   assert((result.memory_writes[0].guest_bytes ==
           std::array<std::byte, 4>{std::byte{0}, std::byte{0}, std::byte{0},
@@ -320,6 +540,29 @@ void test_bootstrap_scratch_writeback() {
   assert((result.memory_writes[0].guest_bytes ==
           std::array<std::byte, 4>{std::byte{0x0B}, std::byte{0xAD},
                                    std::byte{0xF0}, std::byte{0x0D}}));
+}
+
+void test_renderer_write_boundaries() {
+  const std::vector<std::uint32_t> stream{
+      type3(0x2BU, 3U), 0U, 1U, 0x01020304U,
+      type0(0x01DDU, 1U), 0x16A5B000U,
+      type0(0x01DCU, 1U), 0x00020033U,
+      type0(0x0578U, 1U), 0xAABBCCDDU,
+      type3(0x2BU, 3U), 1U, 1U, 0x05060708U,
+      type3(0x36U, 1U), 0x00030088U};
+  const auto memory =
+      [](std::uint32_t address) -> std::optional<std::array<std::byte, 4>> {
+    return address == 0x16A5B000U
+               ? std::optional{std::array<std::byte, 4>{}}
+               : std::nullopt;
+  };
+
+  ac6demo::XenosCommandProcessor processor;
+  const auto result = processor.process_batch(stream, memory);
+  assert(result.renderer_commands.size() == 3U);
+  assert((result.renderer_write_counts ==
+          std::vector<std::size_t>{0U, 1U, 1U}));
+  assert(result.memory_writes.size() == 1U);
 }
 
 void test_wait_commits_prefix_and_retries_at_header() {
@@ -457,10 +700,15 @@ int main() {
   test_qualified_commands_and_immutable_draws();
   test_bin_predication_skip();
   test_reached_point_draw_shape();
+  test_reached_quad_draw_shape();
+  test_qualified_title_texture_dynamic_base();
+  test_reached_pointer_shader_loads();
+  test_reached_alu_constant_load();
   test_failures_have_zero_commit();
   test_transactional_effects_and_big_endian_bytes();
   test_scratch_writeback_produces_wait_values();
   test_bootstrap_scratch_writeback();
+  test_renderer_write_boundaries();
   test_wait_commits_prefix_and_retries_at_header();
   test_register_wait_forms();
   test_malformed_suffix_is_rejected_before_prefix_commit();

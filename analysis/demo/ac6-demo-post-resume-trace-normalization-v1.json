@@ -1,0 +1,81 @@
+{
+  "schema": "ac6-demo-post-resume-trace-normalization/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "architecture": "PowerPC:BE:64:Xenon"
+  },
+  "source_receipt": {
+    "path": "analysis/demo/ac6-demo-post-resume-ab/sha256/940637146a447e48fc1619471b9910278c962ca0b261017a269c3cc4affca0c8/receipt.json",
+    "sha256": "940637146a447e48fc1619471b9910278c962ca0b261017a269c3cc4affca0c8",
+    "runtime_binary_sha256": "bf35ab5212e0d7c797bc28c5ad4256ea4948116d9f4d4c7770a9aa42babc1964",
+    "backend": "vulkan",
+    "fresh_process_per_route": true,
+    "completed_ticks": 5600
+  },
+  "inputs": {
+    "neutral": "no injection",
+    "buttons_16": "tick 252, buttons=0x0010, connected=true"
+  },
+  "method": {
+    "kind": "read-only lockstep comparison of the two AC6RTPLY v4 line streams",
+    "normalization": "The canonical frame-input field `payload.buttons` is replaced by a marker only to distinguish the injected input from an unrelated later divergence. The controller-poll payload is then interpreted as a direct derivative of that injected input, not hidden or rewritten.",
+    "integrity_trailer": "The final hashes line is excluded from semantic comparison because it necessarily changes when an earlier input record changes."
+  },
+  "comparison": {
+    "event_count_each": 22151,
+    "raw_differing_lines": 3,
+    "differences": [
+      {
+        "line": 761,
+        "sequence": 760,
+        "tick": 252,
+        "domain": "input",
+        "kind": "injected frame",
+        "neutral_buttons": 0,
+        "buttons_16": 16
+      },
+      {
+        "line": 762,
+        "sequence": 761,
+        "tick": 252,
+        "domain": "input",
+        "kind": "same-tick controller poll derived from the injected frame",
+        "changed_fields": {
+          "current_buttons": [0, 16],
+          "pressed_buttons": [0, 16],
+          "previous_buttons": [0, 16],
+          "normalized_buttons": [0, 1024],
+          "logical_current": [0, 16],
+          "logical_previous": [0, 0],
+          "logical_pressed": [0, 16]
+        }
+      },
+      {
+        "line": 22153,
+        "kind": "AC6RTPLY integrity trailer",
+        "reason": "Its SHA-256 covers the earlier differing input records."
+      }
+    ],
+    "raw_equal_event_lines_outside_tick_252_input": true,
+    "graphics_event_lines_equal": true,
+    "simulation_event_lines_equal": true,
+    "objectives_event_lines_equal": true,
+    "media_event_lines_equal": true
+  },
+  "conclusion": {
+    "result": "The two retained 5600-tick traces contain no persistent non-input event divergence. The reported trace-hash mismatch is fully explained by the tick-252 injected frame, its same-tick XAM controller-poll observation and the integrity trailer.",
+    "closed": [
+      "The existing neutral/buttons=16 trace pair supplies no guest divergence that can explain a changed draw or readback.",
+      "The one-shot post-resume load64 remains unrelated to START consumption or a frontend transition."
+    ],
+    "not_established": [
+      "A later input route that creates a rendering difference.",
+      "Guest-owned readback causality or native parity.",
+      "Frontend, mission or terminal semantics."
+    ],
+    "next_boundary": "Choose a new, bounded input or state route only if it first changes a guest-visible rendering artifact; compare that route with the same AC6RTPLY line discipline before adding renderer behavior."
+  }
+}

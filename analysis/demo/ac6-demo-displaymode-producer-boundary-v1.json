@@ -1,0 +1,181 @@
+{
+  "schema": "ac6-demo-displaymode-producer-boundary/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "static_evidence": {
+    "ghidra_project": "ghidra-projects/ace-combat-6-demo",
+    "ghidra_language": "PowerPC:BE:64:Xenon",
+    "qualified_program": "Default.xex",
+    "selector": {
+      "address": "0x827AD2F0",
+      "storage": ".data",
+      "reference_count": 16,
+      "consumer": {
+        "entry": "0x821AD378",
+        "function_byte_sha256": "aa451ccb28dd5ddf1ffa4acb897c5d1961f8f912d03aebc10b4fba2f1b20ecb6",
+        "behaviour": "The selector is read and dispatches only for values 0x0B through 0x13; the other path returns without entering a case."
+      }
+    },
+    "producer_chain": {
+      "selector_seed": {
+        "entry": "0x821ACCD0",
+        "function_byte_sha256": "e5024e8b6f6b30a0fe7b42ccf96c2afa6c6cce9b41d91b5327ebe07ed65f1fb3",
+        "behaviour": "If the selector is zero, store 0x0F; otherwise leave it unchanged.",
+        "direct_caller": "0x821BEA08 in Function_821BE9A0"
+      },
+      "activation": {
+        "entry": "0x821BE9A0",
+        "function_byte_sha256": "cda5b1baaea56e0c341c320e13cf95277b54e8e2446bb8953464e92b8f73ae09",
+        "behaviour": "After its prerequisite call and a nonzero device field at parameter+0x3468, it updates device flags/queue state then calls 0x821ACCD0."
+      },
+      "time_guard": {
+        "entry": "0x821BB078",
+        "function_byte_sha256": "75cc455d83ce847efc2b9b8d2d275cd97150e5843d250e0018605ee6bcaaee55",
+        "behaviour": "With a flag gate open, it reads the primary-thread TEB field at +0x58 and reaches 0x821BE9A0 only when the elapsed unsigned difference is at least 5000.",
+        "static_direct_callers": ["0x821B9464", "0x821B9508", "0x821BA1BC", "0x821C3CEC", "0x821C3DD4", "0x821C5D0C"]
+      }
+    },
+    "render_path_boundary": {
+      "reached_outer_loop": {
+        "entry": "0x821C57D0",
+        "function_byte_sha256": "ce1011ec7e0d06aa3feeff0f15bbd06d64c5d747a1f95c96f040a890d30bf657",
+        "conditional_call": "Its branch to 0x821BB078 is selected only when its state object field +0x56F8 has bit 2 (0x4) set."
+      },
+      "alternate_static_route": {
+        "entry": "0x821C3B88",
+        "function_byte_sha256": "7d8d418ae3f4fefe80768a501ba3a88a99a8e1c60c12a0cd2be3d72beb1ad7d0",
+        "direct_call": "0x821BB078"
+      }
+    }
+  },
+  "dynamic_reachability": {
+    "input": "XINPUT_GAMEPAD_START (0x0010) at tick 3000, released at tick 3001; connected controller and neutral on all other frames",
+    "max_ticks": 3036,
+    "backend": "headless",
+    "audio": "SDL_AUDIODRIVER=dummy",
+    "instrumentation_effect": "reachability and XAM-movie journals only; no guest-memory mutation",
+    "runtime_binary_sha256_at_launch": "1b83ebad3b25a1ee6ff8d25b206fde2470efb3bd99f52039d7cc8b0bc5e3d01f",
+    "return_code": 4,
+    "replay_sha256": "bac3e6017208ebc0722fb915caf98930adcf639ea08d403a11a1926602ce99c9",
+    "report_sha256": "c1bdc873ac6fff3ebbdca135edd2b64d08b61049d10c3ce8071fdc50b044716b",
+    "atlas_sha256": "7f44fbe34a159baf7a7ff22fc92df2ffa5dae5bbbb53dd0deb2531e657af9fd1",
+    "xam_movie_sha256": "1a50e43a8877faee1fc25e79ec410f26c66dcb45784b9a6a7a1462510e068cfd",
+    "observations": {
+      "Function_821AD378": {"first_tick": 0, "last_tick": 3035, "count": 2899},
+      "Function_821ADF40": {"first_tick": 0, "last_tick": 3035, "count": 2899},
+      "absent": ["0x821BB078", "0x821BE9A0", "0x821ACCD0", "0x821C3B88"],
+      "milestones": {"presentation_notifications": 2899, "frontend": false, "mission": false, "terminal": false}
+    }
+  },
+  "timebase_observation": {
+    "scope": "Separate fresh headless run through tick 270, neutral connected controller, AC6_DEMO_WATCH_TICK_LOADS=1 and AC6_DEMO_WATCH_TICK_RANGE=0x7F000000:0x7F001000. The journal is read-only.",
+    "runtime_binary_sha256_at_launch": "1b83ebad3b25a1ee6ff8d25b206fde2470efb3bd99f52039d7cc8b0bc5e3d01f",
+    "return_code": 4,
+    "replay_sha256": "b0ddb268e3b546739c24462c5be82e70ba4063c95e3ea90029930658dd12251d",
+    "report_sha256": "e23fb10889b4e9d515c43da8cd9c87ee720826a1968251b68d85fb1874c16105",
+    "stderr_sha256": "aea6708f059542deb40c15e077cf06502c77570f8d518dab7ed9966b5bded1ee",
+    "stdout_sha256": "904ec57608dc4902f7eaa1ad06dbdeea0cb405559e811ee3eb6308b21b40dfb0",
+    "observed_at_ticks_268_and_269": {
+      "pcr_thread_pointer_address": "0x7F000100",
+      "pcr_thread_pointer": "0x7F000BD8",
+      "primary_thread_id_address": "0x7F000D24",
+      "primary_thread_id": 1
+    },
+    "not_observed": "No journaled load of TEB+0x58 (0x7F000C30), because 0x821BB078 was not reached in this run.",
+    "not_proven": ["the value of the TEB +0x58 time field", "the time guard as the causal blocker", "a justification for injecting or restoring guest time"]
+  },
+  "start_edge_render_gate_control": {
+    "runtime_source_change": {
+      "path": "recompilation/ace-combat-6-demo/src/guest_bridge/frontend_state_trace.hpp",
+      "opt_in": "AC6_DEMO_WATCH_RENDER_GATE_START=1",
+      "effect": "Changes only diagnostic-print cadence: the existing read-only device/gate sampler also emits at ticks 2998 through 3004."
+    },
+    "scope": "Fresh qualified PAL store; headless backend; SDL_AUDIODRIVER=dummy; START at tick 3000 and release at tick 3001; all other frames neutral.",
+    "runtime_binary_sha256_at_launch": "32bd700c0c9f3f02e0c6d3fdabf3d915d78b52b50b48b7d24c19e7f2110066f3",
+    "return_code": 4,
+    "replay_sha256": "0a6479392ab7f24f5c7ff6d9c8db0a6959786efadb3ecc3d2c9e9703dd35235a",
+    "report_sha256": "7a354e20a666249639eb027f840346d59fba4ad78e7501ebe0e271d9d84c9e20",
+    "stderr_sha256": "c92c9a89d10edc6d01eaf17e3c0cd5d871831cab246b16eaa16ad8e45440e080",
+    "stdout_sha256": "f1a7c2b2115adab8d9780676ea8e4fe414d54f4199824762b607c8cd8a22e80c",
+    "outcome": {"kind": "max_ticks", "completed_ticks": 3005, "presentation_notifications": 2868, "frontend": false, "mission": false, "terminal": false},
+    "samples": {
+      "ticks": [2998, 2999, 3000, 3001, 3002, 3003, 3004],
+      "device": "0x10041A00",
+      "device_plus_0x56F8": "0x0C000001",
+      "device_plus_0x56F8_bit_0x4": false,
+      "selector_0x827AD2F0": 0,
+      "device_plus_0x5404": 0
+    },
+    "conclusion": "The START edge does not change the sampled gate, selector, or device+0x5404 route state. Together with the absence of 0x821BB078 in the reachability atlas, this rules out START as the missing activation of this route on this PAL replay."
+  },
+  "direct_field_writer_closure": {
+    "method": "Read-only Ghidra scan FindPpcDisplacementUses.java 0x56f8, then DecompileMany.java and FindDirectCallsTo.java in the qualified ace-combat-6-demo project.",
+    "scope_limit": "This covers PPC D-form accesses with literal displacement 0x56F8. It does not claim to enumerate indexed or computed-address stores.",
+    "all_literal_accesses": [
+      "0x821AEBE8 lwz/stw/lwz",
+      "0x821BA480 lwz",
+      "0x821BB4C8 stw",
+      "0x821C4E40 lwz x3",
+      "0x821C5570 lwz",
+      "0x821C55F0 lwz",
+      "0x821C57D0 lwz",
+      "0x821C5DB8 lwz",
+      "0x821C6928 lwz"
+    ],
+    "writers": {
+      "full_word_initializer": {
+        "entry": "0x821BB4C8",
+        "function_byte_sha256": "09703aaa623433d449db6c390aa09955175df2f105b5cfe70ad622c04fac3b13",
+        "store": "0x821BB55C: state+0x56F8 = parameter_4, after OR 0x0C000000 when parameter_4 has neither 0x100 nor a 0x3F000000 bit.",
+        "only_static_direct_call": "0x822F8638 in Function_822F85B8",
+        "call_arguments": "Function_822F85B8 calls 0x821BB4C8 with parameter_4=1; its resulting initialized word is 0x0C000001.",
+        "atlas": {"first_tick": 0, "last_tick": 0, "count": 1}
+      },
+      "bit_zero_preserver": {
+        "entry": "0x821AEBE8",
+        "function_byte_sha256": "1419635094b144c6245205cc799637ab5860476585700511bec52da576deb1a7",
+        "store": "0x821AEC00: replace only bit 0 with parameter_2 while preserving all other bits, including bit 0x4.",
+        "only_static_direct_call": "0x821C5F04 in Function_821C5DB8",
+        "atlas": {"first_tick": 0, "last_tick": 0, "count": 2}
+      }
+    },
+    "constructor_route": {
+      "entry": "0x822F85B8",
+      "function_byte_sha256": "d1031e11b6feada4353de3f2c858ca90c07a0855e0c322904138f46cb754f6de",
+      "atlas": {"first_tick": 0, "last_tick": 0, "count": 1},
+      "indirect_edge_to_initializer": "No atlas indirect edge targets 0x821BB4C8; the observed initialization is the qualified direct call above."
+    },
+    "conclusion": "On the observed title replay, the only literal full-word initializer occurs at tick 0 with bit 0x4 clear, and the later literal mutator cannot set that bit. This strengthens the observed stable value but does not exclude computed-address stores or unobserved indirect construction routes."
+  },
+  "full_title_scalar_writer_control": {
+    "scope": "Fresh qualified PAL store; headless backend; SDL_AUDIODRIVER=dummy; ticks 0 through 3004; START at tick 3000 and release at tick 3001.",
+    "instrumentation": {
+      "AC6_DEMO_WATCH_ADDR_LO": "0x100470F8",
+      "AC6_DEMO_WATCH_ADDR_HI": "0x10047100",
+      "effect": "Existing bridge journal only: records matching generated scalar guest stores with guest tick/thread/LR."
+    },
+    "runtime_binary_sha256_at_launch": "32bd700c0c9f3f02e0c6d3fdabf3d915d78b52b50b48b7d24c19e7f2110066f3",
+    "return_code": 4,
+    "replay_sha256": "0a6479392ab7f24f5c7ff6d9c8db0a6959786efadb3ecc3d2c9e9703dd35235a",
+    "report_sha256": "7a354e20a666249639eb027f840346d59fba4ad78e7501ebe0e271d9d84c9e20",
+    "stderr_sha256": "8e1448302788128eb18cfce18cf2b2e58b228da9ae2e8581d01d8e17ec6971c1",
+    "stdout_sha256": "8c255a6e2fde560962b82f1d2481bf1cfb61101549fd67acfec13b4a32c56900",
+    "outcome": {"kind": "max_ticks", "completed_ticks": 3005, "presentation_notifications": 2868, "frontend": false, "mission": false, "terminal": false},
+    "guest_store_records": [
+      {"tick": 0, "address": "0x100470F8", "value": "0x00000000", "lr": "0x821BB05C", "generated_function": "__imp__sub_823273E0"},
+      {"tick": 0, "address": "0x100470FC", "value": "0x00000000", "lr": "0x821BB05C", "generated_function": "__imp__sub_823273E0"},
+      {"tick": 0, "address": "0x100470F8", "value": "0x0C000001", "lr": "0x821BB4F8", "generated_function": "__imp__sub_821BB4C8"},
+      {"tick": 0, "address": "0x100470F8", "value": "0x0C000001", "lr": "0x821C5E1C", "generated_function": "__imp__sub_821AEBE8"},
+      {"tick": 0, "address": "0x100470F8", "value": "0x0C000001", "lr": "0x821C5F08", "generated_function": "__imp__sub_821AEBE8"}
+    ],
+    "no_further_matching_scalar_guest_store": {"first_tick": 1, "last_tick": 3004},
+    "conclusion": "No scalar guest store, including a computed-address scalar store, changes the sampled state word anywhere on the title replay or at START. The current device is not the route that can activate bit 0x4 during this replay."
+  },
+  "next_boundary": "Trace the one-time indirect entry to Function_822F85B8 and locate any unobserved alternate construction path that can pass parameter_4 bit 0x4 into 0x821BB4C8. Do not change the timebase, selector, or device state until such a construction route is dynamically qualified.",
+  "retail_oracle_used": false,
+  "generated_cpp_modified": false
+}

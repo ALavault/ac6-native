@@ -1,0 +1,65 @@
+{
+  "schema": "ac6-demo-title-task-list-ab/v1",
+  "identity": {
+    "target": "Ace Combat 6 PAL demo, Xbox 360",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "inputs": {
+    "binary": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+    "binary_sha256_at_launch": "4891eb383611ce496dae6a94520aa2e7a06feeda2fbffdb17730cd80d376e7e0",
+    "mode": "probe --until frontend --max-ticks 3021",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "fresh_store_seed_marker_sha256": "eabe0f0430060517e1df76cb8de65ba985fff3bc4119b422719c0d5d654616b3",
+    "instrumentation": "AC6_DEMO_WATCH_TASK_LIST=1",
+    "instrumentation_scope": "manager list headers [0x18970630, 0x18970670), ticks 2990..3020"
+  },
+  "variants": {
+    "neutral": {
+      "input": "none",
+      "return_code": 4,
+      "replay_sha256": "05cc021ea2198029eae32caccc7a281640300e1feaeedca5d96b9ebfc3cfb2b9",
+      "report_sha256": "8cd7441ea4a71fc96bbc5084fb72289de33f11c769245d12d40eda9664f90ae8",
+      "stderr_sha256": "23cdc1874ec4989c41b834d5f53a8d5f3f278dfadceab06e4ba705011e4d38c9"
+    },
+    "start": {
+      "input": [
+        "3000,16,0,0,0,0,0,0,1",
+        "3001,0,0,0,0,0,0,0,1"
+      ],
+      "return_code": 4,
+      "replay_sha256": "47e89f051815ef08468e3ef3278228e80be28d7f1509b7a61b60803c7c142712",
+      "report_sha256": "106a6b39a998b19d4330fc2d239ef0d0788f11ce58386d4d1a70ba7deb3c3df7",
+      "stderr_sha256": "23cdc1874ec4989c41b834d5f53a8d5f3f278dfadceab06e4ba705011e4d38c9"
+    }
+  },
+  "task_list_window": {
+    "records_per_variant": 124,
+    "trace_sha256": "23cdc1874ec4989c41b834d5f53a8d5f3f278dfadceab06e4ba705011e4d38c9",
+    "identical_between_variants": true,
+    "first_tick": 2990,
+    "last_tick": 3020,
+    "thread": 1,
+    "only_address": "0x18970630",
+    "only_value": "0x18970404",
+    "accesses_per_tick": [
+      {"lr": "0x82259D74", "count": 1},
+      {"lr": "0x82259DF8", "count": 1},
+      {"lr": "0x82259EC0", "count": 2}
+    ],
+    "stores_observed": false
+  },
+  "shared_outcome": {
+    "kind": "max_ticks",
+    "completed_ticks": 3021,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "presentation_notifications": 2884,
+    "ring_submissions": 2,
+    "ring_submitted_dwords": 25
+  },
+  "conclusion": "At the qualified START edge, the reached task dispatcher's observed list-head access stream is byte-identical to neutral: no header mutation and no new accessed head appear through tick 3020. This excludes an immediate handoff through these existing list heads, but does not claim that no task can be constructed elsewhere."
+}

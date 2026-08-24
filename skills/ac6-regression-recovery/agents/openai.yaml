@@ -1,0 +1,4 @@
+interface:
+  display_name: "AC6 Regression Recovery"
+  short_description: "Bisect and recover AC6 rendering regressions"
+  default_prompt: "Find the smallest verified Git change that restores this AC6 demo witness."

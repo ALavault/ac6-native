@@ -11,9 +11,15 @@
 // touches no guest state, so an enabled run stays byte-identical on replay.
 [[nodiscard]] bool dispatch_import(PPCContext &context, const char *module,
                                    const char *name, std::uint16_t ordinal) {
+  static const bool title_window =
+      std::getenv("AC6_DEMO_WATCH_TITLE_IMPORTS") != nullptr;
   static const bool enabled =
-      std::getenv("AC6_DEMO_WATCH_IMPORTS") != nullptr;
+      title_window || std::getenv("AC6_DEMO_WATCH_IMPORTS") != nullptr;
   if (!enabled) {
+    return dispatch_import_qualified(context, module, name, ordinal);
+  }
+  const auto tick = require_bridge().tick();
+  if (title_window && (tick < 2990U || tick > 3035U)) {
     return dispatch_import_qualified(context, module, name, ordinal);
   }
   const auto thread = current_guest_thread_id;
@@ -21,7 +27,7 @@
                "AC6_IMPORT_CALL tick=%llu thread=%u lr=0x%08X module=%s "
                "ordinal=%u name=%s r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X "
                "r7=0x%08X r8=0x%08X r9=0x%08X r10=0x%08X\n",
-               static_cast<unsigned long long>(require_bridge().tick()), thread,
+               static_cast<unsigned long long>(tick), thread,
                static_cast<std::uint32_t>(context.lr), module,
                static_cast<unsigned>(ordinal), name, context.r3.u32,
                context.r4.u32, context.r5.u32, context.r6.u32, context.r7.u32,

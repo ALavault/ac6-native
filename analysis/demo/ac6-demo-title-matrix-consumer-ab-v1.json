@@ -1,0 +1,67 @@
+{
+  "schema": "ac6-demo-title-matrix-consumer-ab-v1",
+  "identity": {
+    "target": "Ace Combat 6 PAL demo, Xbox 360",
+    "xex": "demo-game-file/extracted/stfs-root/Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "inputs": {
+    "binary": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+    "binary_sha256": "ca772b94de8317886e7709a24430e1a9fd650dffd8197fbcaef418cbbb2f960b",
+    "mode": "probe --until frontend --max-ticks 3021",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "instrumentation": "AC6_DEMO_WATCH_TITLE_MATRIX_CONSUMER=1",
+    "instrumentation_scope": "LR 0x82325ED4, ticks 2990..3020 only"
+  },
+  "variants": {
+    "neutral": {
+      "input": "none",
+      "replay_sha256": "05cc021ea2198029eae32caccc7a281640300e1feaeedca5d96b9ebfc3cfb2b9",
+      "report_sha256": "8cd7441ea4a71fc96bbc5084fb72289de33f11c769245d12d40eda9664f90ae8",
+      "trace_sha256": "71b04b33c07d5acaa43e9d7e982f255a283db013c086638f72d49f3484cdc0ee"
+    },
+    "start": {
+      "input": [
+        "3000,16,0,0,0,0,0,0,1",
+        "3001,0,0,0,0,0,0,0,1"
+      ],
+      "replay_sha256": "47e89f051815ef08468e3ef3278228e80be28d7f1509b7a61b60803c7c142712",
+      "report_sha256": "106a6b39a998b19d4330fc2d239ef0d0788f11ce58386d4d1a70ba7deb3c3df7",
+      "trace_sha256": "48fc809e3c7922f553b7b7e1d7c8a2284c40fa83d9b8dd7a9e01248e3fa84493"
+    }
+  },
+  "shared_matrix_consumer": {
+    "call_lr": "0x82325ED4",
+    "vtable_slot": 7,
+    "target": "0x820EB200",
+    "object": "0x2E3DFA94",
+    "vtable": "0x82007D0C",
+    "slot_target": "0x820EB200"
+  },
+  "element_stream": {
+    "neutral": {
+      "ticks_2990_3020": "30 calls and 13 distinct r4 element pointers per tick",
+      "r4_range": "0x2DCB29B4..0x2DCB2B94"
+    },
+    "start": {
+      "ticks_2990_3000": "30 calls and 13 distinct r4 element pointers per tick",
+      "tick_3001": "20 calls, 19 distinct r4 element pointers",
+      "ticks_3002_3004": "22 calls, 21 distinct r4 element pointers per tick",
+      "ticks_3005_3008": "25 calls, 22 distinct r4 element pointers per tick",
+      "ticks_3009_3020": "28 calls, 22 distinct r4 element pointers per tick",
+      "post_start_r4_range": "0x2DCB2BBC..0x2DCB2EA0"
+    }
+  },
+  "shared_outcome": {
+    "kind": "max_ticks",
+    "completed_ticks": 3021,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "presents": 2884,
+    "ring_submissions": 2,
+    "ring_submitted_dwords": 25
+  },
+  "conclusion": "START changes the elements delivered to the continuously reached matrix/draw consumer, while the runtime object, vtable and slot-7 target remain unchanged. The missing title-to-frontend transition is therefore not an absent virtual dispatch at this site; the next bounded question is how 0x820EB200's changed element/resources are consumed downstream."
+}

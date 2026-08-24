@@ -1,0 +1,285 @@
+{
+  "schema": "ac6-demo-ring-writeback-boundary/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "fresh_process": true,
+    "store": "previously verified qualified PAL store, mounted by the runtime",
+    "backend": "vulkan via xvfb-run",
+    "audio": "SDL_AUDIODRIVER=dummy",
+    "max_ticks": 2,
+    "instrumentation": [
+      "AC6_DEMO_WATCH_ADDR_LO=0x16AE1000",
+      "AC6_DEMO_WATCH_ADDR_HI=0x16AE1040"
+    ],
+    "instrumentation_effect": "write journal only; no guest-memory mutation",
+    "retail_oracle_used": false,
+    "generated_cpp_modified": false
+  },
+  "run": {
+    "runtime_binary_sha256_at_launch": "c237b4c2a2ae5ee44072686633eaa8bc2606e25324fab5f0fae9fd6b9edc357b",
+    "return_code": 4,
+    "replay_sha256": "a3ecd743d113a0b0355995c70a21a7454b71e3109bcff329dc3fab47de6da624",
+    "report_sha256": "1ed3780c8f6a758472cc205fde959a7c53d804fdab4882f10f5103825a7ff8f5",
+    "stderr_sha256": "da2050c345cf022be0e4f755641382550db674f3442717fbc04ba478795c2bac",
+    "stdout_sha256": "886d3f3b9e2be2db424c85418d67ac3f2e9aff0381afb1be4dde9a45e4bc845c"
+  },
+  "follow_up_start_probe": {
+    "input": "XINPUT_GAMEPAD_START (0x0010) at tick 252; connected, all later frames neutral",
+    "max_ticks": 300,
+    "instrumentation": "AC6_DEMO_WATCH_RESOLVE=1 (RectangleList journal only)",
+    "runtime_binary_sha256_at_launch": "c237b4c2a2ae5ee44072686633eaa8bc2606e25324fab5f0fae9fd6b9edc357b",
+    "return_code": 4,
+    "replay_sha256": "7a7cf40aed5bc1339fd5685cbcd28639f82ebba3607f5531361d3cfdaf63c530",
+    "report_sha256": "47f8a3d10c74b0040f3691048dedceb4e3a83f6e4b4d8999169b1bf1ad1bff36",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "009fa1db9d0c6df6815ac37d447758a781e42b938ff9096d63e444a597d1cc9e",
+    "rectangle_list_records": 0,
+    "presentation_notifications": 163,
+    "typed_bootstrap_profile": {
+      "shader_loads": 2,
+      "draws": 24,
+      "xenos_presents": 0,
+      "normal_draws": 0,
+      "guest_writeback": false
+    },
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "title_start3000_probe": {
+    "input": "XINPUT_GAMEPAD_START (0x0010) at tick 3000; released at tick 3001; connected, all other frames neutral",
+    "max_ticks": 3036,
+    "backend": "headless",
+    "instrumentation": "AC6_DEMO_WATCH_RESOLVE=1 (RectangleList journal only; no guest-memory mutation)",
+    "runtime_binary_sha256_at_launch": "c237b4c2a2ae5ee44072686633eaa8bc2606e25324fab5f0fae9fd6b9edc357b",
+    "return_code": 4,
+    "replay_sha256": "bac3e6017208ebc0722fb915caf98930adcf639ea08d403a11a1926602ce99c9",
+    "report_sha256": "c1bdc873ac6fff3ebbdca135edd2b64d08b61049d10c3ce8071fdc50b044716b",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "ceba8b57ab96fe9c298cfd4784b80a28f261fa94c1d0f96352ca5bc7286d42e4",
+    "rectangle_list_records": 0,
+    "presentation_notifications": 2899,
+    "typed_bootstrap_profile": {
+      "shader_loads": 2,
+      "draws": 24,
+      "xenos_presents": 0,
+      "normal_draws": 0,
+      "guest_writeback": false
+    },
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "bootstrap_ring_reconfiguration_probe": {
+    "scope": {
+      "fresh_process": true,
+      "max_ticks": 2,
+      "backend": "headless",
+      "input": "neutral connected controller",
+      "instrumentation": [
+        "AC6_DEMO_WATCH_IMPORTS=1",
+        "AC6_DEMO_WATCH_RING_KICK=1"
+      ],
+      "instrumentation_effect": "import and MMIO-write journals only; no guest-memory mutation"
+    },
+    "runtime_binary_sha256_at_launch": "1b83ebad3b25a1ee6ff8d25b206fde2470efb3bd99f52039d7cc8b0bc5e3d01f",
+    "return_code": 4,
+    "replay_sha256": "b9bb480f6b1c895109fae135e297b42e39d8feaeae51c9ead0844a9849362dd6",
+    "report_sha256": "f0c191547835f4ac8014199e0a372d97b8deaa8372609b85a37e51e618421a68",
+    "stderr_sha256": "4b50c381aa027cea2ce449c4303bc97ccf387e5cdeab22f1b33a625aaf8e660f",
+    "stdout_sha256": "8ee37fc0513d4ab3e2b8ab5b251cadcea32e3c7800c1498efcdaefcb19bb6add",
+    "sequence": [
+      {
+        "kind": "VdInitializeRingBuffer",
+        "tick": 0,
+        "caller_lr": "0x821BACA8",
+        "base": "0x16852000",
+        "size_log2": 12
+      },
+      {
+        "kind": "VdEnableRingBufferRPtrWriteBack",
+        "tick": 0,
+        "caller_lr": "0x821BACE0",
+        "address": "0x16A5A03C",
+        "block_size_log2": 6
+      },
+      {
+        "kind": "ring_kicks",
+        "tick": 0,
+        "records": [
+          {"caller_lr": "0x821C4A28", "before": 0, "after": 22},
+          {"caller_lr": "0x821C4A28", "before": 22, "after": 25},
+          {"caller_lr": "0x822F18BC", "before": 25, "after": 28},
+          {"caller_lr": "0x822F18BC", "before": 28, "after": 31}
+        ]
+      },
+      {
+        "kind": "VdInitializeRingBuffer",
+        "tick": 0,
+        "caller_lr": "0x821BACA8",
+        "base": "0x126CA000",
+        "size_log2": 16
+      },
+      {
+        "kind": "VdEnableRingBufferRPtrWriteBack",
+        "tick": 0,
+        "caller_lr": "0x821BACE0",
+        "address": "0x16AE103C",
+        "block_size_log2": 10
+      }
+    ],
+    "final_snapshot": {
+      "base": "0x126CA000",
+      "size_log2": 16,
+      "submissions": 0,
+      "typed_bootstrap_profile": {
+        "shader_loads": 2,
+        "draws": 24,
+        "xenos_presents": 0,
+        "normal_draws": 0,
+        "guest_writeback": false
+      }
+    }
+  },
+  "title_start3000_reachability_atlas": {
+    "input": "XINPUT_GAMEPAD_START (0x0010) at tick 3000; released at tick 3001; connected, all other frames neutral",
+    "max_ticks": 3036,
+    "backend": "headless",
+    "runtime_binary_sha256_at_launch": "1b83ebad3b25a1ee6ff8d25b206fde2470efb3bd99f52039d7cc8b0bc5e3d01f",
+    "return_code": 4,
+    "replay_sha256": "bac3e6017208ebc0722fb915caf98930adcf639ea08d403a11a1926602ce99c9",
+    "report_sha256": "c1bdc873ac6fff3ebbdca135edd2b64d08b61049d10c3ce8071fdc50b044716b",
+    "atlas_sha256": "7f44fbe34a159baf7a7ff22fc92df2ffa5dae5bbbb53dd0deb2531e657af9fd1",
+    "xam_movie_sha256": "1a50e43a8877faee1fc25e79ec410f26c66dcb45784b9a6a7a1462510e068cfd",
+    "stderr_sha256": "e7a81ee3371cc8ab46e09da171b5dc15add78e30758de33ce3c722c2ba83c6e2",
+    "stdout_sha256": "2c8da3eaf559b67ab9800f8d86dd9b54dc108244e699423e3421f24e17ab5fd4",
+    "atlas": {
+      "ghidra_project": "ghidra-projects/ace-combat-6-demo",
+      "ghidra_language": "PowerPC:BE:64:Xenon",
+      "function_count": 2756,
+      "ring_publisher": {
+        "address": "0x821B9BC8",
+        "first_tick": 0,
+        "last_tick": 3035,
+        "count": 11384
+      },
+      "graphics_queue_drain": {
+        "address": "0x821C5090",
+        "first_tick": 1,
+        "last_tick": 3035,
+        "count": 3035
+      }
+    },
+    "ring_kick_records": 4,
+    "final_milestones": {
+      "presentation_notifications": 2899,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    }
+  },
+  "import_join": {
+    "VdEnableRingBufferRPtrWriteBack": {
+      "tick": 0,
+      "guest_r3_writeback_address": "0x16AE103C",
+      "guest_r4_block_size_log2": 10,
+      "guest_lr": "0x821BACE0"
+    }
+  },
+  "observed_guest_state": {
+    "initialization": {
+      "address_range": "0x16AE1000..0x16AE103C",
+      "value": "0x00000000",
+      "tick": 0,
+      "function": "0x823273E0"
+    },
+    "writeback_address_after_initialization": {
+      "address": "0x16AE103C",
+      "writes_observed": 0
+    },
+    "adjacent_guest_field": [
+      {
+        "address": "0x16AE1000",
+        "value": "0x00000005",
+        "tick": 0,
+        "thread": 1,
+        "function": "0x821BAAD0",
+        "lr": "0x821BACE0"
+      },
+      {
+        "address": "0x16AE1000",
+        "value": "0x00000007",
+        "tick": 0,
+        "thread": 1,
+        "function": "0x821B9F70",
+        "lr": "0x821B9F78"
+      },
+      {
+        "address": "0x16AE1000",
+        "value": "0x00000009",
+        "tick": 1,
+        "thread": 14,
+        "function": "0x821B9F70",
+        "lr": "0x821B9F78"
+      },
+      {
+        "address": "0x16AE1000",
+        "value": "0x0000000B",
+        "tick": 1,
+        "thread": 1,
+        "function": "0x821B9F70",
+        "lr": "0x821B9F78"
+      }
+    ],
+    "adjacent_pointer_field": [
+      {
+        "address": "0x16AE1004",
+        "value": "0x12749FFC",
+        "tick": 0
+      },
+      {
+        "address": "0x16AE1004",
+        "value": "0x1274CF28",
+        "tick": 0
+      },
+      {
+        "address": "0x16AE1004",
+        "value": "0x127CA234",
+        "tick": 1
+      },
+      {
+        "address": "0x16AE1004",
+        "value": "0x127CA75C",
+        "tick": 1
+      }
+    ]
+  },
+  "qualified_static_cross_match": {
+    "evidence_only": "literal generated control-flow/address map from the qualified Default.xex; not product source",
+    "functions": [
+      "0x821BAAD0",
+      "0x821B9F70",
+      "0x823273E0"
+    ]
+  },
+  "conclusion": {
+    "proven": "0x16AE103C is the address passed by the guest to VdEnableRingBufferRPtrWriteBack. Its adjacent word 0x16AE1000 is separately guest-written several times during the cold bootstrap and is paired with a changing guest pointer at 0x16AE1004.",
+    "not_proven": [
+      "the semantic name of either guest field",
+      "a completed 0x16AE103C read-pointer writeback in this two-tick run",
+      "a normal draw, non-black readback, frontend, mission, success, or failure"
+    ],
+    "constraint": "Do not derive a host-owned state address by subtracting 0x3C from the VdEnableRingBufferRPtrWriteBack pointer, and do not write 0x16AE1000 from the host. The observed guest ownership makes such a write synthetic without new binary-qualified evidence.",
+    "next_boundary": "The four observed early kicks belong to an earlier 0x16852000/size-12 ring and precede the final 0x126CA000/size-16 configuration whose writeback address is 0x16AE103C; zeroes in the final ring snapshot do not prove that a kick was missed. Capture the first post-reconfiguration doorbell or an explicit normal RectangleList submission, preserving the guest-owned 0x16AE1000/0x16AE1004 pair and the genuine 0x16AE103C writeback boundary. START at tick 252 does not reach that profile by tick 300, and the title START/release sequence at ticks 3000/3001 does not reach it by tick 3036."
+  },
+  "validation": {
+    "ctest_codegen_on": "26/26 pass",
+    "render_status": "AC6_DEMO_STATUS_PASS",
+    "git_diff_check": "pass"
+  }
+}

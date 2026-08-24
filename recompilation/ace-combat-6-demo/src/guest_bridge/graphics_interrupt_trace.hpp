@@ -13,6 +13,11 @@ inline bool graphics_interrupt_trace_enabled() noexcept {
   return enabled;
 }
 
+inline bool graphics_interrupt_state_trace_enabled() noexcept {
+  return graphics_interrupt_trace_enabled() &&
+         std::getenv("AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE") != nullptr;
+}
+
 inline void trace_graphics_interrupt_registration(
     std::uint32_t callback, std::uint32_t context, std::uint64_t tick,
     std::uint32_t thread) noexcept {
@@ -54,15 +59,33 @@ inline void trace_graphics_interrupt_pm4(std::uint8_t cpu,
                static_cast<unsigned long long>(tick));
 }
 
+inline void trace_graphics_interrupt_gate(std::uint32_t value, bool mapped,
+                                          std::uint32_t source,
+                                          std::uint64_t tick) noexcept {
+  if (!graphics_interrupt_state_trace_enabled() || source != 0U) {
+    return;
+  }
+  std::fprintf(stderr,
+               "AC6_GRAPHICS_INTERRUPT_GATE address=0x7FC86544 "
+               "mapped=%u value=0x%08X source=%u tick=%llu\n",
+               mapped ? 1U : 0U, value, source,
+               static_cast<unsigned long long>(tick));
+}
+
 inline void trace_graphics_interrupt_state_load(
     std::uint32_t address, std::uint32_t value, std::uint64_t tick,
     std::uint32_t thread, std::uint32_t lr, const char *generated_name,
     std::uint32_t generated_line) noexcept {
-  if (!graphics_interrupt_trace_enabled() ||
-      std::getenv("AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE") == nullptr ||
-      generated_name == nullptr ||
-      std::string_view{generated_name}.find("821C5190") ==
-          std::string_view::npos) {
+  if (!graphics_interrupt_state_trace_enabled() || generated_name == nullptr) {
+    return;
+  }
+  const std::string_view function{generated_name};
+  const bool interrupt_queue_state = function.find("821C5190") !=
+                                     std::string_view::npos;
+  const bool callback_gate = function.find("821B9710") !=
+                             std::string_view::npos &&
+                             address == 0x7FC86544U;
+  if (!interrupt_queue_state && !callback_gate) {
     return;
   }
   static std::uint32_t record_count = 0U;
@@ -80,11 +103,11 @@ inline void trace_graphics_interrupt_state_load(
 
 inline bool graphics_interrupt_state_load_guard(
     std::uint32_t address, const char *generated_name) noexcept {
-  if (!graphics_interrupt_trace_enabled() ||
-      std::getenv("AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE") == nullptr ||
-      generated_name == nullptr ||
-      std::string_view{generated_name}.find("821C5190") ==
-          std::string_view::npos) {
+  if (!graphics_interrupt_state_trace_enabled() || generated_name == nullptr) {
+    return false;
+  }
+  const std::string_view function{generated_name};
+  if (function.find("821C5190") == std::string_view::npos) {
     return false;
   }
   return address != 0x82000608U && address != 0x000101BEU &&

@@ -1,0 +1,129 @@
+{
+  "schema": "ac6-demo-title-imports-queue-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "fresh_process_per_route": true,
+    "backend": "headless",
+    "max_ticks": 3036,
+    "start_input": [
+      "tick 3000: buttons=0x0010",
+      "tick 3001: buttons=0x0000"
+    ],
+    "runtime_binary_sha256": "e6b908664bb1faa5aa05d50af063167699975530c7779e50b4dca48009873b7a",
+    "retail_oracle_used": false,
+    "generated_cpp_modified": false,
+    "runtime_behavior_changed": false
+  },
+  "import_window": {
+    "instrumentation": "AC6_DEMO_WATCH_TITLE_IMPORTS=1",
+    "instrumentation_source_sha256": "375ce9f2bc78158cc8a2e80009e24c1da4a188119eedd763acb891226401bef4",
+    "window_inclusive": [2990, 3035],
+    "default_behavior": "disabled; a window-excluded import takes the original qualified dispatcher",
+    "neutral": {
+      "return_code": 4,
+      "replay_sha256": "50244ba4f28b3e7580870dd9bab1fe14a43bc9a47ddc7bfe02a356584000ea05",
+      "report_sha256": "f20f51be4a66febd543ba43d8a83c0aa6183fee2661e6b7290f85b5dfdc3e564",
+      "stderr_sha256": "00d0fc032398b043faa73514db10f73213c65e4b1975a1f1edd865bf9e77e721",
+      "calls": 67847,
+      "returns": 67839
+    },
+    "start": {
+      "return_code": 4,
+      "replay_sha256": "b4c81cf638be4cd583bba0e9a5e77e5c87f96d50c3e01126fd8580122cc9e597",
+      "report_sha256": "7661ae0a2f22ddb0a8e4b5f983ee711ae3ebf17cde31725a07be05da5f9b4171",
+      "stderr_sha256": "dd5859804b70d4aa8864bbaa6a9a72a3f80defa9594ab128c6ada83da8bcb11c",
+      "calls": 288710,
+      "returns": 288702
+    },
+    "qualified_start_delta": {
+      "all_logged_imports_handled": true,
+      "new_call": {
+        "tick": 3001,
+        "thread": 1,
+        "lr": "0x82357298",
+        "module": "xboxkrnl.exe",
+        "ordinal": 548,
+        "name": "XMACreateContext",
+        "output_slot_r3": "0x17374050",
+        "status_r3": "0x00000000"
+      },
+      "adjacent_calls": [
+        {"lr": "0x821E19B8", "ordinal": 199, "name": "MmSetAddressProtect", "result_r3": "0x17370000"},
+        {"lr": "0x823566DC", "ordinal": 190, "name": "MmGetPhysicalAddress", "result_r3": "0x17374080"},
+        {"lr": "0x82356724", "ordinal": 190, "name": "MmGetPhysicalAddress", "result_r3": "0x17375F80"},
+        {"lr": "0x823572AC", "ordinal": 190, "name": "MmGetPhysicalAddress", "result_r3": "0x2E7FF0C0"}
+      ],
+      "largest_import_delta": {
+        "thread": 1,
+        "enter_lr": "0x820FF91C",
+        "leave_lr": "0x820FF93C",
+        "imports": ["RtlEnterCriticalSection", "RtlLeaveCriticalSection"],
+        "interpretation": "START greatly increases visits to this existing PAL loop; this is not an unhandled-import failure."
+      }
+    }
+  },
+  "pal_static_join": {
+    "ghidra_project": "ace-combat-6-demo",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "function": "0x820FF8D8",
+    "loop": [
+      "0x820FF914: lock object + 0x48",
+      "0x820FF91C: read object + 0x60D4",
+      "0x820FF928: read object + 0x60D0 when the former is not positive",
+      "0x820FF934..0x820FF93C: unlock then loop while either value is positive",
+      "0x820FF940..0x820FF950: reset both values only after neither is positive"
+    ],
+    "source": "read-only Ghidra inspection; no generated C++ was used as product source"
+  },
+  "render_queue_ab": {
+    "instrumentation": "AC6_DEMO_WATCH_RENDER_QUEUE_WRITERS=1",
+    "instrumentation_source_sha256": "c1e481a88e5aa48a9c8a9892b912ee7bd641610341fb6350d3d94478d8feea9d",
+    "object": "0x82386CC0",
+    "producer": "0x8238CD90",
+    "consumer": "0x8238CD94",
+    "neutral": {
+      "return_code": 4,
+      "replay_sha256": "50244ba4f28b3e7580870dd9bab1fe14a43bc9a47ddc7bfe02a356584000ea05",
+      "report_sha256": "f20f51be4a66febd543ba43d8a83c0aa6183fee2661e6b7290f85b5dfdc3e564",
+      "stderr_sha256": "6088fd591686fca26d0688410f6def92b6dc53e72dccf2f5377eea47d22103be"
+    },
+    "start": {
+      "return_code": 4,
+      "replay_sha256": "b4c81cf638be4cd583bba0e9a5e77e5c87f96d50c3e01126fd8580122cc9e597",
+      "report_sha256": "7661ae0a2f22ddb0a8e4b5f983ee711ae3ebf17cde31725a07be05da5f9b4171",
+      "stderr_sha256": "6088fd591686fca26d0688410f6def92b6dc53e72dccf2f5377eea47d22103be"
+    },
+    "records": {
+      "writes_per_route": 16706,
+      "slot_records_per_route": 5568,
+      "full_stderr_byte_identical": true,
+      "all_write_and_slot_records_sha256": "6088fd591686fca26d0688410f6def92b6dc53e72dccf2f5377eea47d22103be"
+    },
+    "conclusion": "The START-only lock churn is not accompanied by a changed write stream for these two queue words or their sampled slots. The trace does not observe intervening reads, so it does not prove identical scheduler interleavings."
+  },
+  "outcome": {
+    "completed_ticks": 3036,
+    "presents": 2899,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "ring_submissions": 2,
+    "submitted_dwords": 25,
+    "guest_nonblack_readback": false
+  },
+  "next_checkpoint": {
+    "question": "Which START-selected script/XMA consumer first requires an effect not represented by the current qualified runtime?",
+    "not_justified": [
+      "changing the render-queue producer or consumer",
+      "tuning the scheduler quantum",
+      "inventing an XMA hardware/MMIO effect"
+    ],
+    "minimal_evidence": "Trace the first post-XMACreateContext PAL consumer and retain the current fail-closed boundary for every unqualified device effect."
+  }
+}

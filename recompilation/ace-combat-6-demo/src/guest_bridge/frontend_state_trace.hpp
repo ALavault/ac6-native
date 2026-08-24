@@ -67,6 +67,9 @@ inline void trace_frontbuffer(ac6demo::GuestMemory &memory, std::uint64_t tick) 
 inline void trace_device_flags(ac6demo::GuestMemory &memory,
                                std::uint64_t tick) {
   static std::uint32_t previous = 0xFFFFFFFFU;
+  const bool watch_start_window =
+      std::getenv("AC6_DEMO_WATCH_RENDER_GATE_START") != nullptr &&
+      tick >= 2998U && tick <= 3004U;
   if (!memory.mapped(0x82000608U, 4U)) {
     return;
   }
@@ -80,7 +83,7 @@ inline void trace_device_flags(ac6demo::GuestMemory &memory,
   }
   const auto flags = memory.load_u8(device + 10941U);
   const std::uint32_t key = (device ^ (static_cast<std::uint32_t>(flags) << 24));
-  if (key == previous && (tick % 2000U) != 0U) {
+  if (key == previous && (tick % 2000U) != 0U && !watch_start_window) {
     return;
   }
   previous = key;
@@ -104,6 +107,33 @@ inline void trace_device_flags(ac6demo::GuestMemory &memory,
                  memory.load_u32(device + 22264U),
                  (memory.load_u32(device + 22264U) & 0x4U) ? 1 : 0);
   }
+}
+
+inline void trace_title_game_state_start(ac6demo::GuestMemory &memory,
+                                         std::uint64_t tick) {
+  if (std::getenv("AC6_DEMO_WATCH_TITLE_STATE_START") == nullptr ||
+      tick < 3000U || tick > 3004U || !memory.mapped(0x823C27E0U, 4U)) {
+    return;
+  }
+  constexpr std::uint32_t kGameState = 0x823C27E0U;
+  constexpr std::uint32_t kSelection = kGameState + 0x70U;
+  if (!memory.mapped(kSelection, 0x206E8U)) {
+    return;
+  }
+  const auto raw_index =
+      static_cast<std::int32_t>(memory.load_u32(kSelection + 0x206E4U));
+  const auto index = raw_index < 0 || raw_index > 2 ? 0U
+                                                      : static_cast<std::uint32_t>(raw_index);
+  const auto mission_address = kSelection + 0x6C4U + index * 0xAAB8U;
+  const auto level_address = kSelection + 0x6D0U + index * 0xAAB8U;
+  std::fprintf(stderr,
+               "AC6_TITLE_STATE tick=%llu base=0x%08X selection=0x%08X state=%u "
+               "raw_index=%d index=%u mission_address=0x%08X mission=%u "
+               "level_address=0x%08X level=%u\n",
+               static_cast<unsigned long long>(tick), kGameState, kSelection,
+               memory.load_u32(kSelection + 8U), raw_index, index, mission_address,
+               memory.load_u32(mission_address), level_address,
+               memory.load_u32(level_address));
 }
 
 inline void trace_message_listeners(ac6demo::GuestMemory &memory,
@@ -180,6 +210,7 @@ inline void trace_swg_w224_body(ac6demo::GuestMemory &memory,
 // run_entry, which the source budget caps at 220 lines.
 inline void trace_frontend_state(ac6demo::GuestMemory &memory,
                                  std::uint64_t tick) {
+  trace_title_game_state_start(memory, tick);
   // Frontend state, read-only and opt-in. Mode allocations vary between cold
   // runs, so derive the running task from the manager rather than a fixed
   // heap address. Its update switches on [this+12] and requests transitions
@@ -190,6 +221,36 @@ inline void trace_frontend_state(ac6demo::GuestMemory &memory,
       const auto manager = memory.load_u32(0x827435F8U);
       if (manager != 0U && memory.mapped(manager, 64U)) {
         const auto request = memory.load_u32(manager + 24U);
+        if (std::getenv("AC6_DEMO_WATCH_TICK_WINDOW") != nullptr &&
+            ac6demo::guest_bridge_detail::transition_trace_tick_allowed(tick)) {
+          const auto mode = memory.load_u32(manager + 8U);
+          const bool mode_header =
+              mode != 0U && memory.mapped(mode, 0x10U);
+          const auto mode_vtable = mode_header ? memory.load_u32(mode) : 0U;
+          const auto mode_state =
+              mode_header ? memory.load_u32(mode + 0x0CU) : 0xFFFFFFFFU;
+          const auto mode_44 =
+              mode != 0U && memory.mapped(mode + 0x44U, 4U)
+                  ? memory.load_u32(mode + 0x44U)
+                  : 0xFFFFFFFFU;
+          const auto mode_70 =
+              mode != 0U && memory.mapped(mode + 0x70U, 4U)
+                  ? memory.load_u32(mode + 0x70U)
+                  : 0xFFFFFFFFU;
+          std::fprintf(
+              stderr,
+              "AC6_MODE_SNAPSHOT tick=%llu manager=0x%08X "
+              "manager_vtable=0x%08X current=0x%08X "
+              "current_vtable=0x%08X previous=0x%08X "
+              "factory10=0x%08X factory14=0x%08X request=0x%08X "
+              "state=0x%08X field44=0x%08X field70=0x%08X\n",
+              static_cast<unsigned long long>(tick), manager,
+              memory.load_u32(manager), mode, mode_vtable,
+              memory.load_u32(manager + 0x0CU),
+              memory.load_u32(manager + 0x10U),
+              memory.load_u32(manager + 0x14U), request, mode_state, mode_44,
+              mode_70);
+        }
         // The manager's +0x08 is the running mode and +0x0C the one it just
         // left. Printing the mode object with its vtable on every change is
         // what turns "the frontend does nothing" into a named sequence.

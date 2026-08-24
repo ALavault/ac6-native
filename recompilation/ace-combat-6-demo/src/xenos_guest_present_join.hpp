@@ -3,6 +3,7 @@
 #ifdef AC6_DEMO_HAVE_VULKAN_RENDERER_FRONTIER
 
 #include "ac6demo/hash.hpp"
+#include "ac6demo/reached_edram_copy_oracle.hpp"
 #include "ac6demo/renderer_canonical_tiling.hpp"
 #include "ac6demo/runtime_error.hpp"
 #include "ac6demo/session.hpp"
@@ -24,7 +25,8 @@ namespace ac6demo {
 // Padding is preserved from guest memory rather than copied from the Vulkan
 // canary buffer.
 inline void commit_reached_guest_present(
-    DemoSession &session, VulkanNeutralResolveResult &resolve) {
+    DemoSession &session, VulkanNeutralResolveResult &resolve,
+    std::uint64_t renderer_sequence) {
   constexpr std::uint32_t kAddress = 0x1374A000U;
   if (!resolve.present_joined || resolve.destination_address != kAddress ||
       resolve.width != kReachedResolveWidth ||
@@ -50,6 +52,8 @@ inline void commit_reached_guest_present(
   }
   resolve.guest_tiled_rgba8_sha256 = Sha256::bytes(reread);
   resolve.guest_linear_rgba8_sha256 = Sha256::bytes(guest_linear);
+  std::vector<std::byte> display_rgba8(kReachedResolveLinearBytes);
+  build_reached_frontbuffer_display_rgba8(guest_linear, display_rgba8);
   // Ad hoc visual-review dump, opt-in only -- this campaign's readback is
   // otherwise reported only as a SHA256, never a saved image. Writes a
   // plain PPM (P6, RGB, alpha dropped) so pnmtopng can convert it the same
@@ -59,14 +63,15 @@ inline void commit_reached_guest_present(
     if (FILE *file = std::fopen(ppm_path, "wb"); file != nullptr) {
       std::fprintf(file, "P6\n%u %u\n255\n", kReachedResolveWidth,
                    kReachedResolveHeight);
-      for (std::size_t pixel = 0; pixel < guest_linear.size(); pixel += 4U) {
-        std::fwrite(&guest_linear[pixel], 1, 3, file);
+      for (std::size_t pixel = 0; pixel < display_rgba8.size(); pixel += 4U) {
+        std::fwrite(&display_rgba8[pixel], 1, 3, file);
       }
       std::fclose(file);
     }
   }
   resolve.guest_writeback = true;
-  publish_renderer_audit_screencap(session, guest_linear, resolve);
+  publish_renderer_audit_screencap(session, display_rgba8, resolve,
+                                   renderer_sequence);
   resolve.tiled_bytes.clear();
   resolve.tiled_bytes.shrink_to_fit();
 }

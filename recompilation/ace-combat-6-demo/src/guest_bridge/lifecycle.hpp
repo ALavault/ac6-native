@@ -9,6 +9,44 @@ constexpr std::uint32_t kTebSize = 0x2E0U;
 constexpr std::uint32_t kDefaultStackSize = 0x40000U;
 constexpr std::uint32_t kGuestThreadId = 1U;
 
+ac6demo::XAudioCallbackCpuSelection select_xaudio_callback_cpu_for_client(
+    GuestMemory &memory, std::uint32_t client, std::uint64_t tick) {
+  const char *requested_processor =
+      std::getenv("AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR");
+  unsigned requested_value{};
+  if (requested_processor == nullptr) {
+    throw RuntimeTrap("XAudio drive requires an explicit processor", tick);
+  }
+  const auto [end, parse_error] = std::from_chars(
+      requested_processor, requested_processor + std::strlen(requested_processor),
+      requested_value);
+  if (parse_error != std::errc{} || *end != '\0' ||
+      requested_value >= ac6demo::kXAudioProcessorCount) {
+    throw RuntimeTrap("invalid experimental XAudio processor", tick);
+  }
+  constexpr auto kDescriptorBytes = ac6demo::xaudio_descriptor_offset(
+      static_cast<std::uint8_t>(ac6demo::kXAudioProcessorCount - 1U),
+      ac6demo::XAudioDescriptorLane::B) + 4U;
+  if (!memory.mapped(client, kDescriptorBytes)) {
+    throw RuntimeTrap("XAudio descriptor table is unavailable", tick, 0, client);
+  }
+  ac6demo::XAudioDescriptorTable descriptors{};
+  for (std::uint8_t processor = 0U;
+       processor < ac6demo::kXAudioProcessorCount; ++processor) {
+    descriptors[processor] = {
+        memory.load_u32(client + ac6demo::xaudio_descriptor_offset(
+            processor, ac6demo::XAudioDescriptorLane::A)),
+        memory.load_u32(client + ac6demo::xaudio_descriptor_offset(
+            processor, ac6demo::XAudioDescriptorLane::B))};
+  }
+  try {
+    return ac6demo::select_xaudio_callback_cpu(
+        descriptors, static_cast<std::uint8_t>(requested_value));
+  } catch (const std::invalid_argument &error) {
+    throw RuntimeTrap(error.what(), tick, 0, client);
+  }
+}
+
 } // namespace
 
 bool GuestBridge::available() const noexcept { return true; }
@@ -173,6 +211,7 @@ void GuestBridge::prepare(const ThreadImage &image) {
 }
 
 void GuestBridge::set_tick(std::uint64_t tick) noexcept {
+  trace_title_terminal_tick(*this, tick);
   tick_ = tick;
   input_.set_tick(tick);
   if (ke_timestamp_bundle_ != 0U) {
@@ -217,6 +256,17 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
   }
   active_bridge = this;
   const auto dispatch_graphics_interrupt = [&](std::uint32_t source) {
+    if (source == 0U &&
+        ac6demo::guest_bridge_detail::graphics_interrupt_state_trace_enabled()) {
+      constexpr std::uint32_t kGraphicsInterruptGate = 0x7FC86544U;
+      const bool graphics_interrupt_gate_mapped =
+          memory_.mapped(kGraphicsInterruptGate, 4U);
+      ac6demo::guest_bridge_detail::trace_graphics_interrupt_gate(
+          graphics_interrupt_gate_mapped
+              ? memory_.load_u32(kGraphicsInterruptGate)
+              : 0U,
+          graphics_interrupt_gate_mapped, source, tick_);
+    }
     auto *primary_fiber =
         static_cast<GuestFiber *>(primary_thread_.fiber_state);
     if (primary_fiber == nullptr || primary_fiber->ppc == nullptr ||
@@ -253,7 +303,8 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
     memory_.store_u8(active_cpu_address, previous_active_cpu);
     current_guest_thread_id = previous_thread_id;
   };
-  const auto dispatch_xaudio_frame = [&]() {
+  const auto dispatch_xaudio_frame =
+      [&](const ac6demo::XAudioCallbackCpuSelection &selection) {
     auto *primary_fiber =
         static_cast<GuestFiber *>(primary_thread_.fiber_state);
     if (primary_fiber == nullptr || primary_fiber->ppc == nullptr ||
@@ -286,14 +337,24 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
       }
       std::fprintf(stderr, "\n");
     }
+    if (frame.r13.u32 > std::numeric_limits<std::uint32_t>::max() - 268U ||
+        !memory_.mapped(frame.r13.u32 + 268U, 1U)) {
+      throw RuntimeTrap("XAudio callback active-CPU field is unavailable",
+                        tick_, 0, frame.r13.u32);
+    }
+    const auto active_cpu_address = frame.r13.u32 + 268U;
+    const auto previous_active_cpu = memory_.load_u8(active_cpu_address);
+    memory_.store_u8(active_cpu_address, selection.processor);
     const auto previous_thread_id = current_guest_thread_id;
     current_guest_thread_id = 2U;
     try {
       AC6_PPC_CALL_INDIRECT(frame, memory_.raw_base(), xaudio_callback_);
     } catch (...) {
+      memory_.store_u8(active_cpu_address, previous_active_cpu);
       current_guest_thread_id = previous_thread_id;
       throw;
     }
+    memory_.store_u8(active_cpu_address, previous_active_cpu);
     current_guest_thread_id = previous_thread_id;
   };
   const auto dispatch_pending_xenos_interrupts = [&] {
@@ -350,9 +411,20 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
       memory_.mapped(kXAudioClientStateGlobal, 4U) &&
       memory_.load_u32(kXAudioClientStateGlobal) != 0U;
   if (xaudio_client_ready) {
+    const auto client = memory_.load_u32(kXAudioClientStateGlobal);
+    const auto selection =
+        select_xaudio_callback_cpu_for_client(memory_, client, tick_);
+    if (std::getenv("AC6_DEMO_WATCH_XAUDIO") != nullptr) {
+      std::fprintf(stderr,
+                   "AC6_XAUDIO_CPU tick=%llu client=0x%08X cpu=%u "
+                   "descriptor_a=0x%08X descriptor_b=0x%08X\n",
+                   static_cast<unsigned long long>(tick_), client,
+                   static_cast<unsigned>(selection.processor),
+                   selection.descriptors.a, selection.descriptors.b);
+    }
     const auto target = ((tick_ + 1U) * 25U) / 8U;
     while (xaudio_frames_emitted_ < target) {
-      dispatch_xaudio_frame();
+      dispatch_xaudio_frame(selection);
       ++xaudio_frames_emitted_;
     }
   }
@@ -393,34 +465,27 @@ void GuestBridge::map_xma_kick_window() {
           // bit << 24 happens to agree for indices 0..7 and then diverges,
           // which is why the ninth context looked like an encoding this
           // register could not express. It can; the model could not.
-          const auto expected_wire = static_cast<std::uint64_t>(
-              __builtin_bswap32(xma_kick_expected_bit_));
-          // The kick is one-hot: the guest sets bit i for the i-th
-          // context of the array this runtime handed out. The opt-in
-          // experiment spelled that out as six absolute addresses
-          // (0x2E800000 + i * 64) because that is where its array happened
-          // to land; the array is allocated dynamically, so the rule is the
-          // index, not the address. Everything else still traps.
-          std::uint32_t expected_context = 0U;
+          // The kick is one-hot: the guest sets bit (i & 31) for context i.
+          // Derive i from the physical context rather than observation order;
+          // the bit legitimately wraps when the allocator reaches context 32.
           const auto array = xma_context_array_address_;
-          if (array != 0U && xma_kick_expected_bit_ != 0U &&
-              (xma_kick_expected_bit_ & (xma_kick_expected_bit_ - 1U)) == 0U) {
-            const auto index =
-                static_cast<std::uint32_t>(
-                    std::countr_zero(xma_kick_expected_bit_));
-            expected_context = array + index * 64U;
+          const auto expected_context = xma_last_physical_context_;
+          std::uint32_t expected_index =
+              static_cast<std::uint32_t>(xma_context_active_.size());
+          std::uint32_t expected_bit = 0U;
+          if (array != 0U && expected_context >= array) {
+            const auto delta = expected_context - array;
+            expected_index = delta / 64U;
+            if (delta % 64U == 0U &&
+                expected_index < xma_context_active_.size() &&
+                xma_context_active_[expected_index]) {
+              expected_bit = 1U << (expected_index & 31U);
+            }
           }
+          const auto expected_wire = static_cast<std::uint64_t>(
+              __builtin_bswap32(expected_bit));
           if (address != 0x7FEA1A80U || length != 4U ||
-              // The wire value is the bit in the register's top byte, so the
-              // register addresses eight contexts and 128 is the last one it
-              // can name. The opt-in experiment stopped at 32 because it saw
-              // six kicks; that is a count of one run, not a boundary. The
-              // boundary is the byte.
-              // index & 0x1F means this register names 32 contexts, and the
-              // allocator hands out 320, so a run reaching index 32 needs a
-              // register selection this has not observed and must trap.
-              value != expected_wire || xma_kick_expected_bit_ == 0U ||
-              xma_last_physical_context_ != expected_context) {
+              value != expected_wire || expected_bit == 0U) {
             throw RuntimeTrap("unqualified XMA kick register write", tick_, 0,
                               address);
           }
@@ -431,12 +496,72 @@ void GuestBridge::map_xma_kick_window() {
                          static_cast<unsigned long long>(tick_),
                          current_guest_thread_id, address,
                          static_cast<std::uint32_t>(value),
-                         xma_kick_expected_bit_);
+                         expected_bit);
           }
-          xma_kick_expected_bit_ <<= 1U;
+          if (std::getenv("AC6_DEMO_WATCH_XMA_CONTEXT") != nullptr &&
+              expected_context != 0U &&
+              memory_.mapped(expected_context, 64U)) {
+            static thread_local std::uint32_t context_record_count = 0U;
+            if (context_record_count < 64U) {
+              ++context_record_count;
+              std::fprintf(stderr,
+                           "AC6_XMA_CONTEXT tick=%llu thread=%u "
+                           "context=0x%08X index=%u words=",
+                           static_cast<unsigned long long>(tick_),
+                           current_guest_thread_id, expected_context,
+                           expected_index);
+              for (std::uint32_t offset = 0U; offset < 64U; offset += 4U) {
+                std::fprintf(stderr, "%s%08X", offset == 0U ? "" : ":",
+                             memory_.load_u32(expected_context + offset));
+              }
+              std::fputc('\n', stderr);
+            }
+          }
           xma_last_physical_context_ = 0U;
         });
   }
+  // Later PAL paths access indexed words at 0x7FEA1940 and 0x7FEA1A40.
+  // Their raw instructions and fresh runtime captures qualify one-hot wire
+  // values only. The device-facing effects remain unknown, so these opt-in
+  // no-op bridges move the evidence frontier without naming an XMA register.
+  const auto map_late_xma_indexed_store = [this](std::uint32_t expected_address,
+                                                 const char *gate) {
+    memory_.map_mmio(
+        expected_address, 4U,
+        [this](std::uint32_t address, std::size_t length) -> std::uint64_t {
+          throw RuntimeTrap("unqualified late XMA register read", tick_, 0,
+                            address ^ static_cast<std::uint32_t>(length));
+        },
+        [this, expected_address,
+         gate](std::uint32_t address, std::uint64_t value, std::size_t length) {
+          const auto wire_value = static_cast<std::uint32_t>(value);
+          const auto logical_bit = __builtin_bswap32(wire_value);
+          const auto context_index = logical_bit == 0U
+                                         ? xma_context_active_.size()
+                                         : std::countr_zero(logical_bit);
+          if (std::getenv(gate) == nullptr || address != expected_address ||
+              length != 4U ||
+              value > std::numeric_limits<std::uint32_t>::max() ||
+              std::popcount(logical_bit) != 1 ||
+              context_index >= xma_context_active_.size() ||
+              !xma_context_active_[context_index]) {
+            throw RuntimeTrap("unqualified late XMA register write", tick_, 0,
+                              address);
+          }
+          if (std::getenv("AC6_DEMO_WATCH_XMA_LATE") != nullptr) {
+            std::fprintf(stderr,
+                         "AC6_XMA_INDEXED_STORE tick=%llu thread=%u "
+                         "address=0x%08X wire=0x%08X logical=0x%08X\n",
+                         static_cast<unsigned long long>(tick_),
+                         current_guest_thread_id, address, wire_value,
+                         logical_bit);
+          }
+        });
+  };
+  map_late_xma_indexed_store(0x7FEA1940U,
+                             "AC6_DEMO_EXPERIMENTAL_XMA_1940_STORE");
+  map_late_xma_indexed_store(0x7FEA1A40U,
+                             "AC6_DEMO_EXPERIMENTAL_XMA_1A40_STORE");
   memory_.map_mmio(
       0x7FC86544U, 4U,
       [this](std::uint32_t address, std::size_t length) -> std::uint64_t {

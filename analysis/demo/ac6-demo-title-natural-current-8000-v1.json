@@ -1,0 +1,83 @@
+{
+  "schema": "ac6-demo-title-natural-current-8000/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_program": "Default.xex"
+  },
+  "runtime": {
+    "binary": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+    "binary_sha256": "32bd700c0c9f3f02e0c6d3fdabf3d915d78b52b50b48b7d24c19e7f2110066f3",
+    "codegen_manifest_sha256": "465c279f529932165cd1d00416ff9b3d237ba3932a01874aea6cda6448994c76",
+    "backend": "headless",
+    "audio": "SDL_AUDIODRIVER=dummy"
+  },
+  "route": {
+    "fresh_store_clone": "a hard-link clone of .build/ac6-demo-atomic-neutral-store",
+    "until": "terminal",
+    "max_ticks": 8000,
+    "input": [
+      {"tick": 3000, "buttons": "0x0010", "connected": true, "meaning": "START"},
+      {"tick": 3001, "buttons": "0x0000", "connected": true, "meaning": "release"}
+    ],
+    "overrides": "none; only the read-only AC6_DEMO_WATCH_MODE_STATE and AC6_DEMO_WATCH_SWG_MSGI_RESULT observers were enabled",
+    "retail_oracle_used": false
+  },
+  "artifacts": {
+    "run_directory": "/fastdata/lavaulta/tmp/ac6-title-natural-current.c4LQJg",
+    "replay_sha256": "582b3364405fc85f60f814c646d3ababcd8d7cd7cecd5eaaf060ad9d4b11a894",
+    "report_sha256": "b3b20d8156fe4c7cb434a9fcd3fc8bb1f6f90d3d992bac6f787a31f0cc228be6",
+    "stdout_sha256": "da3d35ba246ec91246cd1c0a7c8f438b0bd6cfe726b2cce7074b52ab6be8bebb",
+    "stderr_sha256": "fd65c12c6576e394e18bc6bc52b95d614fdb70f882ed5f75933cb0a941253270"
+  },
+  "observation": {
+    "outcome": "max_ticks",
+    "completed_ticks": 8000,
+    "mode_sequence": [
+      {"tick": 222, "mode": "0x2E7E0080", "inner_state": 0},
+      {"tick": 266, "mode": "0x2E7E0080", "inner_state": 1},
+      {"tick": 2426, "mode": "0x2E7E0080", "inner_state": 2},
+      {"tick": 2429, "mode": "0x2E3C0100", "inner_state": 0},
+      {"tick": 2452, "mode": "0x2E3C0100", "inner_state": 1}
+    ],
+    "start_response": {
+      "result_change_tick": 3001,
+      "out_parameter": "0x7F040198",
+      "value": 0,
+      "note": "The observer reports value changes, not every call; this is the only result transition it logged."
+    },
+    "milestones": {
+      "presentation_notifications": 7863,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "final_ring": {
+      "base": "0x126CA000",
+      "size_log2": 16,
+      "submissions": 0,
+      "submitted_dwords": 0,
+      "shader_load_count": 2,
+      "draw_count": 24
+    }
+  },
+  "conclusion": {
+    "result": "A correctly timed, natural START route on the current binary does not leave title inner state 1 or produce a frontend, mission, terminal, or post-bootstrap ring submission by tick 8000.",
+    "does_not_establish": [
+      "that M150 is reached by the natural START route",
+      "a native runtime defect or a source change",
+      "a retail/oracle behavioural comparison"
+    ],
+    "next_boundary": "The outstanding route boundary is the title script or native event that must turn the post-START response into an actual mode-transition request."
+  },
+  "policy": {
+    "generated_cpp_modified": false,
+    "ghidra_modified": false,
+    "runtime_source_modified": false,
+    "input_is_guest_visible": true,
+    "observers_are_read_only": true
+  }
+}

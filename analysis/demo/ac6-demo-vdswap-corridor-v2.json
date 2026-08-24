@@ -1,0 +1,112 @@
+{
+  "schema": "ac6-demo-vdswap-corridor/v2",
+  "supersedes": "ac6-demo-graphics-interrupt-gate/v1 for the VdSwap observation only",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "fresh_process": true,
+    "store": "previously verified qualified PAL store, mounted by the runtime",
+    "backend": "vulkan via xvfb-run",
+    "audio": "SDL_AUDIODRIVER=dummy",
+    "retail_oracle_used": false,
+    "generated_cpp_modified": false,
+    "instrumentation": "VdSwap journal only; disabled by default and does not write guest memory"
+  },
+  "clean_smoke": {
+    "max_ticks": 2,
+    "instrumentation": "AC6_DEMO_WATCH_VDSWAP=1",
+    "runtime_binary_sha256_at_launch": "c237b4c2a2ae5ee44072686633eaa8bc2606e25324fab5f0fae9fd6b9edc357b",
+    "return_code": 4,
+    "replay_sha256": "a3ecd743d113a0b0355995c70a21a7454b71e3109bcff329dc3fab47de6da624",
+    "report_sha256": "1ed3780c8f6a758472cc205fde959a7c53d804fdab4882f10f5103825a7ff8f5",
+    "stderr_sha256": "d6b4f49a74c00e64c61ee05a9c16679dba674586a7162c7af5b5301f1e575004",
+    "stdout_sha256": "0b87a0838c43f7a0cde14d110384447c42bb031fcf074679d7f1e60961a92902",
+    "repeat": {
+      "runtime_binary_sha256_at_launch": "c237b4c2a2ae5ee44072686633eaa8bc2606e25324fab5f0fae9fd6b9edc357b",
+      "return_code": 4,
+      "replay_sha256": "a3ecd743d113a0b0355995c70a21a7454b71e3109bcff329dc3fab47de6da624",
+      "report_sha256": "1ed3780c8f6a758472cc205fde959a7c53d804fdab4882f10f5103825a7ff8f5",
+      "stderr_sha256": "d6b4f49a74c00e64c61ee05a9c16679dba674586a7162c7af5b5301f1e575004",
+      "replay_report_and_stderr_identical": true
+    },
+    "accepted_vdswap_records": [
+      {
+        "tick": 0,
+        "calls": 1,
+        "frontbuffer": "0x1374A000",
+        "width": 1280,
+        "height": 720,
+        "fetch_words": [
+          "0x8A000002",
+          "0x1374A006",
+          "0x0059E4FF"
+        ]
+      },
+      {
+        "tick": 1,
+        "calls": 2,
+        "frontbuffer": "0x1374A000",
+        "width": 1280,
+        "height": 720,
+        "fetch_words": [
+          "0x8A000002",
+          "0x1374A006",
+          "0x0059E4FF"
+        ]
+      }
+    ],
+    "presentation_notifications": 2,
+    "frontend": false,
+    "mission": false,
+    "terminal": false
+  },
+  "cold_corridor": {
+    "max_ticks": 300,
+    "instrumentation": "AC6_DEMO_WATCH_VDSWAP=1",
+    "runtime_binary_sha256_at_launch": "3244f867a972105c6f9a9bef5f43d602da24a0c5d0760d8f99ad0d19c834115f",
+    "return_code": 4,
+    "replay_sha256": "eeb61051fdd947cecddd15492e3304b1a8234e8c3e1ae509c6765ef293dc3346",
+    "report_sha256": "101d3d8ad5792983069d55496520ffce7fbceb6f154b223eb00b618147bab88e",
+    "stderr_sha256": "6b17226f9293768ca55dcdc06a6860d5bc301cdb5ff9be2c89fddc4fc05c84aa",
+    "stdout_sha256": "2fc259b0b3f3bfdaac8479d7b12e1082621f8a6ba296479191ecceb1c4002b99",
+    "presentation_notifications": 163,
+    "last_vdswap": {
+      "tick": 299,
+      "calls": 163,
+      "frontbuffer": "0x1374A000",
+      "width": 1280,
+      "height": 720,
+      "texture_format": 6,
+      "color_space": 0
+    },
+    "renderer": {
+      "normal_draws": 0,
+      "graphics_pipelines": 0,
+      "guest_writeback": false
+    },
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "frontier": "all started guest threads blocked before frontend milestone"
+  },
+  "related_graphics_interrupt_evidence": "ac6-demo-graphics-interrupt-gate/v1 proves the tick-1 source-zero callback and its empty native queue drain; it is not evidence that this VdSwap corridor produces pixels.",
+  "conclusion": {
+    "proven": "The qualified PAL demo reaches and accepts VdSwap on a deterministic cold Vulkan corridor. The stable requested frontbuffer is guest address 0x1374A000 at 1280x720, and 163 presentation notifications occur by tick 300.",
+    "not_proven": [
+      "a non-black guest readback",
+      "Vulkan raster output from a normal draw",
+      "frontend, mission, success, or failure progression"
+    ],
+    "next_boundary": "Join an actually rendered normal draw to a guest-owned non-black readback for the accepted 0x1374A000 frontbuffer, without synthesizing pixels, a swap, or a game-state transition."
+  },
+  "validation": {
+    "cmake_build_codegen_on": "pass",
+    "ctest_codegen_on": "26/26 pass",
+    "render_status": "AC6_DEMO_STATUS_PASS",
+    "git_diff_check": "pass"
+  }
+}

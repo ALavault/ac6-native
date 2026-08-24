@@ -78,6 +78,15 @@ certify_reached_copy_runtime(
                                 observed_edram)};
 }
 
+[[nodiscard]] inline ReachedCopyRuntimeCertificate
+certify_reached_title_copy_runtime(
+    std::span<const std::byte> title_rgba8,
+    std::span<const std::byte> observed_tiled,
+    std::span<const std::byte> observed_edram = {}) {
+  return {diagnose_reached_title_copy(title_rgba8, observed_tiled,
+                                      observed_edram)};
+}
+
 inline void require_reached_copy_runtime_writeback(
     const ReachedCopyRuntimeCertificate &certificate) {
   if (!certificate.writeback_allowed()) {

@@ -1,10 +1,54 @@
 {
   "schema": 1,
   "files": {
+    "src/guest_bridge/graphics_ring.hpp": {
+      "kind": "header",
+      "lines": 898,
+      "functions": [
+        {
+          "name": "std::size_t GuestBridge::apply_xenos_typed_batch(std::span<const std::uint32_t> stream)",
+          "lines": 227
+        },
+        {
+          "name": "void GuestBridge::apply_xenos_mmio_write( std::uint32_t address, std::uint32_t value, std::uint32_t guest_thread, std::uint32_t guest_lr, const char* generated_name, std::uint32_t generated_line)",
+          "lines": 222
+        }
+      ]
+    },
+    "src/guest_bridge/title_terminal_trace.hpp": {
+      "kind": "header",
+      "lines": 1643,
+      "functions": []
+    },
     "src/guest_bridge.cpp": {
       "kind": "source",
-      "lines": 1443,
-      "functions": []
+      "lines": 2630,
+      "functions": [
+        {
+          "name": "extern void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, std::uint32_t guest_address)",
+          "lines": 269
+        }
+      ]
+    },
+    "src/main.cpp": {
+      "kind": "source",
+      "lines": 1651,
+      "functions": [
+        {
+          "name": "void create_reached_modules( ac6demo::DemoSession &session, const ac6demo::XenosRendererBatch &renderer_batch)",
+          "lines": 325
+        }
+      ]
+    },
+    "src/vulkan_normal_draw.cpp": {
+      "kind": "source",
+      "lines": 1158,
+      "functions": [
+        {
+          "name": "VulkanNormalDrawResult execute_vulkan_normal_draw( VkPhysicalDevice physical, VkDevice device, VkQueue queue, std::uint32_t queue_family, const XenosDrawCommand &draw, VkRenderPass render_pass, VkPipeline pipeline, VkPipelineLayout pipeline_layout, VkDescriptorSet shared, VkDescriptorSet constants, VulkanNormalDrawTarget &target, bool load_existing, bool *cleanup_safe)",
+          "lines": 246
+        }
+      ]
     }
   }
 }

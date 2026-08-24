@@ -1,0 +1,49 @@
+{
+  "schema": "ac6-demo-pal-xaudio-cpu-ab/v1",
+  "date": "2026-08-20",
+  "target": {
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "module": "Default.xex"
+  },
+  "mode": {
+    "experimental": true,
+    "command_contract": "AC6_DEMO_EXPERIMENTAL_XAUDIO_DRIVE=1 with explicit AC6_DEMO_EXPERIMENTAL_XAUDIO_PROCESSOR",
+    "promotion": "callback -> XAudioSubmitRenderDriverFrame -> event -> worker -> later frame",
+    "promotion_met": false
+  },
+  "runs": [
+    {
+      "processor": 4,
+      "completed_ticks": 253,
+      "outcome": "max_ticks",
+      "callback": {
+        "first_tick": 107,
+        "client": "0x1005CEBC",
+        "vtable": "0x820653BC",
+        "descriptor_a": "0x1005D4D8",
+        "descriptor_b": "0x1005ED7C",
+        "selection_count": 146
+      },
+      "milestones": { "presents": 116, "frontend": false, "mission": false, "terminal": false },
+      "sha256": {
+        "replay": "1ff887d3844b02e03b4c5694143d36ad94e84ac56d854495d681861cc6b72d34",
+        "report": "496f0e10fc4eb4458e3809761f9c8bd6d76d14f189703ac08d38365d65202ce9",
+        "stderr": "039c243a793c8f47b92a9e2e4b7eca840bbbdc7c1d5757ec267510670f4cf0d2"
+      }
+    },
+    {
+      "processor": 5,
+      "completed_ticks": 107,
+      "outcome": "trap",
+      "trap": "explicit XAudio processor has an incomplete descriptor pair",
+      "milestones": { "presents": 54, "frontend": false, "mission": false, "terminal": false },
+      "sha256": {
+        "replay": "cdedfa3e8769d9043afa1d15541fa9313e714e2b50d35146bbab1405501dbb01",
+        "report": "17b08716e4fd1162880c7455914b25ea71e238d146580916a512c1d2d1b62467",
+        "stderr": "3214a4de42b6c1712b93775b221a0d7f1f4fde68bc96842fdf97ffe934ce2c56"
+      }
+    }
+  ],
+  "verdict": "CPU 5 stays fail-closed at tick 107. CPU 4 is not promoted: its callback alone did not establish submit, event, worker, or later-frame evidence."
+}

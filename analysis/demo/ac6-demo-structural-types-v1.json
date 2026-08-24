@@ -1,0 +1,3027 @@
+{
+  "schema": "ac6-demo-structural-types/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "language": "PowerPC:BE:64:Xenon"
+  },
+  "policy": {
+    "instance_method": "r3 is proved to be a stable receiver/context and fixed offsets are accessed; this does not by itself prove a C++ class name",
+    "virtual_method": "the address is proved as the target of a qualified vtable slot",
+    "global_function": "direct-call helper with no proved receiver semantics",
+    "constructor": "initializes an allocated instance and writes a qualified vtable",
+    "constructor_initializer": "initializes an allocated instance and writes a qualified vtable; the exact source-level constructor boundary may remain descriptive",
+    "instance_initializer": "writes fixed fields of a proved receiver but does not by itself prove a source class name or constructor boundary",
+    "receiver_helper": "takes an explicit receiver-shaped object and accesses fixed fields, but the ABI does not distinguish a non-virtual member from a global helper",
+    "global_table_callback": "address selected from a qualified global function-pointer table; receiver-shaped ABI does not prove C++ method ownership",
+    "vtable_address_point": "global constant vtable address-point qualified by RTTI; this is data, not an object instance or method",
+    "global_descriptor_row": "constant global descriptor data whose handler field selects a callback; the row itself is neither a callback nor an object instance",
+    "serialized_record": "container/table/FHM/SWG bytes with a qualified serialized identity; this is not a C++ object",
+    "runtime_heap_buffer": "an address in the transient guest heap; address geometry does not make it an XEX global or prove full disk-to-heap byte identity",
+    "runtime_object_instance": "a C++-style object instance observed at a transient guest heap address in a qualified run; its vtable can type that observation, but the address is not an XEX global and is not assumed stable across runs",
+    "global_object_instance": "a C++-style object instance resident at a fixed XEX address; it is neither a pointer cell nor a function, and its source class name remains open unless RTTI qualifies it",
+    "global_pointer": "an XEX-addressed cell containing a pointer; fields reached through that pointer belong to the pointed state, not to the cell",
+    "state_field": "a fixed offset in a qualified pointed state; this is not an autonomous global",
+    "call_site": "instruction address inside another function; must not be created as an independent function",
+    "return_address": "continuation after an import call; must not be created as a function entry",
+    "confidence": "high means direct qualified CFG/data-flow evidence; medium retains an ABI or business-name limitation",
+    "demo_offline_scope": "Every CModeTask*DemoOffline type is specific to this qualified PAL demo image. Do not transfer its identity, layout, constructor, vtable slot, attribute or method semantics from a preview, prototype or retail XEX."
+  },
+  "evidence": [
+    "artifacts/goal-playable/swg-command-type-semantics-static-20260823/RESULT.md",
+    "artifacts/goal-playable/q1-type-semantics-static-20260823/RESULT.md",
+    "artifacts/goal-playable/frontend-type-semantics-static-20260823/RESULT.md",
+    "artifacts/goal-playable/frontend-mode-manager-canonical-ghidra-20260823/RESULT.md",
+    "artifacts/goal-playable/renderer-structural-semantics-static-20260823/RESULT.md",
+    "artifacts/goal-playable/brandlogo-list2-timeline-static-20260823/RESULT.md",
+    "artifacts/goal-playable/brandlogo-list2-window-runtime-20260823/RESULT.md",
+    "artifacts/goal-playable/title-start-route-static-20260823/RESULT.md",
+    "artifacts/goal-playable/start-title-object-rtti-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-swg-post-start-static-correction-20260823/RESULT.md",
+    "artifacts/goal-playable/title-frame-descriptor-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-start-descriptor-producer-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-parallel-matrix-consumer-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-swg-relocation-map-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-guest-transition-state-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-compact-source-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-disk-heap-diff-review-20260823/RESULT.md",
+    "artifacts/goal-playable/title-source-handle-join-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-to-loading-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-to-loading-static-20260823/RECONCILIATION.md",
+    "artifacts/goal-playable/drive-event-semantics-transfer-audit-20260823/RESULT.md",
+    "artifacts/goal-playable/title-state1-swg-owner-join-static-20260823/RESULT.md",
+    "artifacts/goal-playable/titleus-post-start-vm-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-listener-alternate-launchers-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-listener-alternate-launchers-static-20260823/RESULT-followup.md",
+    "artifacts/goal-playable/title-onvoice2d-completion-static-20260823/RESULT.md",
+    "artifacts/goal-playable/prototype-september-proto2-transfer-audit-20260823/RESULT.md",
+    "artifacts/goal-playable/prototype-september-swg-vm-crossmatch-20260823/RESULT.md",
+    "artifacts/goal-playable/ac6-demo-work-incremental-audit-20260823/RESULT.md",
+    "artifacts/goal-playable/startup-semantic-catalog-delta-20260823/RESULT.md",
+    "artifacts/goal-playable/mode-shared-slot-40-44-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-moviecontroller-factory-join-runtime-20260823/RESULT.md",
+    "artifacts/goal-playable/title-moviecontroller-factory-join-interpretation-20260823/RESULT.md",
+    "artifacts/goal-playable/mode-task-taxonomy-audit-20260823/RESULT.md",
+    "artifacts/goal-playable/task-loading-publication/RESULT.md",
+    "artifacts/loading-field-transition-contracts-gate/RESULT.md",
+    "reports/cycle-1609-demo-task-dispatch-frontier.md",
+    "reports/cycle-1790-demo-startup-title-timing-correction.md",
+    "artifacts/goal-playable/startup-factory-selection-static-20260823/RESULT.md",
+    "artifacts/goal-playable/startup-swg-cue-producer-static-20260823/RESULT-followup.md",
+    "artifacts/goal-playable/hsio-training-fallback-static-review-20260823/RESULT.md",
+    "artifacts/goal-playable/hsio-training-fallback-runtime-20260823/RESULT.md",
+    "artifacts/goal-playable/hsio-training-fallback-runtime-final-20260823/RESULT.md",
+    "artifacts/goal-playable/hsio-training-contract-test-20260823/RESULT.md",
+    "artifacts/goal-playable/title-start-edge-runtime-final-20260823/RESULT.md",
+    "artifacts/goal-playable/post-titleus-distinct-producer-static-20260823/RESULT.md",
+    "artifacts/goal-playable/tick3036-thunk-static-20260823/RESULT.md",
+    "artifacts/goal-playable/title-loader-descriptor-join-static-20260823/RESULT.md",
+    "artifacts/goal-playable/swg-acc-materializer-static-20260823/RESULT.md"
+  ],
+  "timeline_constraints": [
+    {
+      "earlier_epoch": "Namco logo animation, including root frame 300 / list 2 / draw index 2 / handle 0x0E000059",
+      "later_epoch": "user-visible PRESS START prompt and its input consumption",
+      "rule": "Do not assign START-prompt semantics to the BrandLogo frame-300 path; its runtime validation uses neutral input."
+    },
+    {
+      "earlier_epoch": "natural Startup -> Title task replacement at ticks 2365..2385",
+      "later_epoch": "bounded START pulse at ticks 3000/3001",
+      "rule": "The pulse is proved to execute while CModeTaskTitleDemoOffline is current and in state 1; the headless run does not prove that PRESS START pixels are visible."
+    }
+  ],
+  "runtime_joins": [
+    {
+      "epoch": "early Namco-logo animation",
+      "natural_chain": "list 2 -> draw index 2 -> handle 0x0E000059 -> same draw submission contains nonzero Q1",
+      "q1_words": ["0x104A4893", "0x100087F2"],
+      "indirect_buffer": "0x1344E080",
+      "forced_or_remapped": false,
+      "confidence": "high",
+      "boundary": "The exact static GPU record type 4/5/6 instance and writer between resource 0x59 and Q1 remain unidentified."
+    },
+    {
+      "epoch": "localized title resource selection and loading",
+      "guest_selector_chain": "0x821A5A50 -> 0x8218EA98 -> 0x8218A680 -> virtual slot +0x38 at 0x8216CA70",
+      "current_configuration": {
+        "xconfig_result": "ExGetXConfigSetting(category=3, setting=9) returns 1 in the current native bridge",
+        "selector": 1,
+        "resource_index": 178,
+        "resource_key": "0xB2",
+        "serialized_record": {
+          "identity": "DATA.TBL[178]",
+          "nature": "serialized record/bytes, not a C++ object",
+          "table_file_offset": "0xB28",
+          "big_endian_words": ["0x00010000", "0x09988000", "0x001719E2", "0x006E0000"],
+          "pac": "DATA00.PAC",
+          "stored_range": "[0x09988000,0x09AF99E2)",
+          "stored_length": "0x1719E2",
+          "stored_sha256": "a045074e9b3dc0deae0deffe23df9deade10bf44801087f0e4d127ef7eb866f9",
+          "codec": "encrypted codec 1: 64-bit XOR key derived from the initial Blowfish constants, selected by local PAC index modulo 256, then raw DEFLATE",
+          "codec_index": 178,
+          "decoded_length": "0x6E0000",
+          "decoded_root_sha256": "a85f512b7c3c17ee98b74758327413e394e18a1e2931c4438df17f93a27732c0",
+          "swg_child": "FHM[0,0] at decoded-root+0x1220",
+          "swg_name": "TitleUS",
+          "swg_length": "0x344DA8",
+          "swg_sha256": "a01a6d592002796afe0c62bfcc8cdd8f0bcde73880cf4a0da15538b71e7921ad",
+          "endmode_statement_offsets": ["0x420", "0x730", "0xA40", "0xE04"]
+        }
+      },
+      "language_zero_alternative": {
+        "condition": "guest language selector equals 0",
+        "selector": 0,
+        "resource_index": 177,
+        "resource_key": "0xB1",
+        "serialized_record": {
+          "identity": "DATA.TBL[177]",
+          "nature": "distinct serialized record/bytes, not a C++ object and not TitleUS",
+          "table_file_offset": "0xB18",
+          "big_endian_words": ["0x00010000", "0x09818000", "0x0016EB1A", "0x006D8000"],
+          "pac": "DATA00.PAC",
+          "stored_range": "[0x09818000,0x09986B1A)",
+          "stored_length": "0x16EB1A",
+          "stored_sha256": "dcc4383825564964a7e9124719528a8e521b8aa4f4a7f7c83913c70e23e36965",
+          "codec": "encrypted codec 1: 64-bit XOR key derived from the initial Blowfish constants, selected by local PAC index modulo 256, then raw DEFLATE",
+          "codec_index": 177,
+          "decoded_length": "0x6D8000",
+          "decoded_root_sha256": "2f3dcdadc255ddbd1dc4ae81f18a41bde7dd20d0121325bfb0ca2475e99252cb",
+          "swg_child": "FHM[0,0] at decoded-root+0x1220",
+          "swg_name": "Title",
+          "swg_length": "0x344D68",
+          "swg_sha256": "33dc1412ddf628f6631ee5e79369f4d2529a3a4840317a1d2dd9575f1050fe60",
+          "endmode_statement_offsets": ["0x420", "0x730", "0xA40", "0xE04"]
+        }
+      },
+      "runtime_heap_geometry": {
+        "nature": "transient runtime heap buffers, not XEX globals",
+        "decoded_root_inferred": "0x2DCB0000",
+        "swg_buffer": "0x2DCB1220 = 0x2DCB0000 + 0x1220",
+        "endmode_statement": "0x2DCB2024 = 0x2DCB1220 + 0xE04",
+        "endmode_template_big_endian": ["0x16", "0x19", "0x2E", "0x08", "0x00", "0x03"]
+      },
+      "observed_heap_window": {
+        "guest_write_source": "0x82278F78 at tick 2435 on guest thread 9",
+        "heap_range": "[0x2DCB2000,0x2DCB4000)",
+        "swg_leaf_range": "[+0x0DE0,+0x2DE0)",
+        "length": 8192,
+        "heap_sha256": "320ccbdf2ee8996ad41756d139176ca3019b4be8a963f89ca679c9dc9d5b6efe",
+        "title_us_178": {
+          "matching_bytes": "8192/8192",
+          "window_sha256": "320ccbdf2ee8996ad41756d139176ca3019b4be8a963f89ca679c9dc9d5b6efe"
+        },
+        "title_177": {
+          "matching_bytes": "8164/8192",
+          "window_sha256": "b5fa0055522a8b59d7cbe0d4c3672dbebe7fbadc0b40de251014f05e509a3e22",
+          "difference_count": 28,
+          "difference_offsets": "+0x1957; +0x1968..+0x1969; +0x197F; +0x19CB; +0x19EF; +0x1A13..+0x1BC3 step 0x24; +0x1BEB..+0x1CDB step 0x28; +0x1DCB; +0x1E93"
+        },
+        "endmode_24_bytes": {
+          "swg_offset": "+0xE04",
+          "heap_address": "0x2DCB2024",
+          "sha256": "03642527b4472b50740ed2a4644d4cd3349954254f820d0766dc48fe8f68fe0b",
+          "note": "The same 24 bytes occur in TitleUS and Title, so this subwindow alone neither distinguishes the variants nor proves statement selection."
+        }
+      },
+      "confidence": "high",
+      "coverage": {
+        "selected_disk_identity": "closed",
+        "observed_8192_byte_heap_window": "closed for TitleUS",
+        "continuous_disk_to_heap": "open",
+        "whole_image_heap_identity": "open"
+      },
+      "boundary": "No full runtime hash proves equality between the decoded TitleUS image and the heap buffer. The handle/source from 0x8216CA70/0x821A02C0 is not yet joined object-by-object to the generic compact-source/decompressor state and out=0x2DCB0000. Heap geometry alone cannot distinguish TitleUS from Title."
+    },
+    {
+      "epoch": "Startup state 2 to Title task replacement",
+      "natural_chain": "SWG EndMode row 0x82386628 -> 0x820EA4A8 -> Startup listener 0x821728C0 -> Startup+0x0C=2 -> manager+0x18 -> 0x82190B18 -> factory 0x82192680 -> Title vtable 0x820113E4",
+      "run_evidence": [
+        "artifacts/goal-playable/hsio-training-fallback-runtime-20260823/RESULT.md",
+        "artifacts/goal-playable/hsio-training-fallback-runtime-final-20260823/RESULT.md"
+      ],
+      "observed": {
+        "manager": "0x18980000",
+        "startup": "0x2E7E0080",
+        "title": "0x2E3C0100",
+        "startup_vtable": "0x8201130C",
+        "title_vtable": "0x820113E4",
+        "title_state": 1
+      },
+      "forced_or_remapped": false,
+      "confidence": "high",
+      "boundary": "Guest task replacement is closed; visible frontend frame and post-START transition remain open. Runtime heap addresses are witnesses, not XEX globals."
+    },
+    {
+      "epoch": "Title state 1 natural START pulse",
+      "natural_chain": "START replay tick 3000 -> logical current/pressed bit 0x10 -> virtual thunk 0x820D32D0 -> vtable 0x82006A9C slot +0x70 -> instance method 0x820D3AC8 -> five SWG native callbacks at tick 3001",
+      "run_evidence": [
+        "artifacts/goal-playable/title-start-edge-runtime-final-20260823/RESULT.md"
+      ],
+      "observed": {
+        "normalized_input_transient": "0x827B37E0 reaches 0x400 during pulse processing, then receives zero writes",
+        "logical_current": "[0x82798480] = 0x10",
+        "logical_pressed": "[0x82798488] = 0x10",
+        "logical_previous_at_release": "[0x82798484] = 0x10",
+        "vm_receivers": ["0x2E403CD4", "0x2E403994"],
+        "native_rows": ["0x82386658", "0x82386648", "0x82386638", "0x82386478", "0x82386568"],
+        "manager": "0x18980000",
+        "title": "0x2E3C0100",
+        "title_vtable": "0x820113E4",
+        "title_state": 1
+      },
+      "bounded_negative": "No 0x820EA4A8 call, mode request, task switch or Title-field change is observed in ticks [2990,3041); every mode snapshot through tick 3040 remains identical.",
+      "forced_or_remapped": false,
+      "confidence": "high",
+      "boundary": "This closes START acceptance and the five-call burst for one natural occurrence. It does not prove a visible prompt or frontend frame, nor exclude a later independent content event."
+    }
+  ],
+  "semantic_joins": [
+    {
+      "name": "title-resource-key-to-loader-local-chain",
+      "status": {
+        "title_resource_loader_local_chain": "closed",
+        "select_aircraft_acc_object_alias": "open",
+        "out_2dcb0000": "unproven"
+      },
+      "chain": "0x8216CA70(key=0xB2,index=0) -> 0x8219EEE8/0x8219EE40 -> resolved guest source object -> 0x821A02C0 -> 0x8219F300 -> CResourceLoaderSwg -> 0x8219E768 -> virtual slot +0x14 at 0x8219E580 -> 0x821EE0F8(source+0x20,0)",
+      "separate_acc_chain": "CSelectAircraftSetupManager::0x82127D40 selects an instance-owned outer object, calls 0x821EE0F8(outer+0x20,1), allocates from ACC+0x08, and configures its embedded decoder state at receiver+0x8CA0.",
+      "boundary": "No qualified writer proves source_B2 == outer or aliases the index-0 and index-1 ACC records. The allocator return is dynamic and is not statically equal to 0x2DCB0000."
+    },
+    {
+      "name": "title-listener-to-loading-conditional-chain",
+      "status": {
+        "listener_registration_and_dispatch": "closed",
+        "callback_to_loading_factory_and_manager": "closed conditionally",
+        "alternate_launcher_convergence": "closed",
+        "natural_start_descriptor_selection": "open"
+      },
+      "qualified_condition": "handler vtable 0x82007974, descriptor base/index selecting row 0x82386628 (EndMode) or 0x82386698 (menu_endMode), raw argument in {0,1}, and listener table containing title+0x68",
+      "conditional_chain": "0x820EA4A8 -> title secondary slot +0x54 at 0x8217C890 -> primary slot +0x48 at 0x8218AB98 -> manager+0x10=0x821926C0; Title+0x44=3; Title+0x0C=2 -> countdown -> manager+0x18=1 -> 0x821929A8 -> 0x82190B18 -> CModeTaskLoadingDemoOffline",
+      "alternate_swg_launchers": ["0x82325288", "0x82325298", "0x823252A8", "0x823253A0"],
+      "boundary": "All four qualified launch forms converge on 0x82325160; none bypasses the common interpreter/marshaller route or selects EndMode/menu_endMode. No static edge proves a natural START launcher, descriptor row, raw value or listener. The qualified post-START type-4 frame is not a transition command and the exhaustive TitleUS type-6 domain excludes 0xE04."
+    },
+    {
+      "name": "title-state1-to-swg-owner",
+      "status": {
+        "title_embedded_swg_manager_identity": "closed",
+        "generic_moviecontroller_progression": "closed",
+        "specific_endmode_or_menu_endmode_publication": "open"
+      },
+      "chain": "CModeTaskTitleDemoOffline+0x1c embedded CSwgManager -> virtual slot +0x20 at 0x820CE368 -> 0x82322438(aggregate A) -> 0x82323BB8(A+0xf4 MovieController) -> statement launch/interpreter",
+      "ownership": "CSwgManager+0x04 owns the 336-byte aggregate A; A+0x08 is embedded SWG storage, A+0xf4 is swg::MovieController*, and A+0xec aliases CSwgManager+0x24 CSwgCallback*.",
+      "boundary": "0x820CE368 has no direct call or pointer edge to 0x820E8F90, 0x820EA4A8 or 0x8217C890 and writes no Title transition or CTaskModeManager request field. Generic progression does not prove a descriptor row, raw argument or listener dispatch."
+    },
+    {
+      "name": "titleus-post-start-vm-items",
+      "status": {
+        "serialized_bytecode_decode": "closed for +0x1210..+0x178b",
+        "post_m102_sendmsgv_guard": "closed",
+        "moviememory_writer_and_type6_domain": "closed",
+        "natural_object102_sequence": "closed through frame 208",
+        "endmode_0x0e04_selection": "excluded from the exhaustive TitleUS outer-type-6 payload domain and natural object-102 route"
+      },
+      "qualified_table_base": "0x2DCB1220; the decoded item bytes at offsets +0x1210..+0x1787 lie inside the byte-equal 8192-byte heap window",
+      "items": [
+        {
+          "raw_offset": "+0x1210",
+          "runtime_pc": "0x2DCB2430",
+          "native_dispatches": ["GetCurrentLevel", "GetCurrentMission", "GetCurrentMode", "SendMsgI(M102)"],
+          "non_native_transfers": ["+0x1350 opcode 0x1a updates inline VM context only", "+0x13ac local lookup 0x0b miss/NULL", "+0x13e4 branch skips local 18 / SendMsgV"],
+          "terminal": "+0x1428 opcode 0x00"
+        },
+        {
+          "raw_offset": "+0x142C",
+          "runtime_pc": "0x2DCB264C",
+          "native_dispatches": ["descriptor row 0x82386568 -> 0x820EA6C0"],
+          "terminal": "+0x1468 opcode 0x00"
+        },
+        {
+          "raw_offset": "+0x146C",
+          "runtime_pc": "0x2DCB268C",
+          "native_dispatches": [],
+          "opcodes": ["0x2E", "0x19", "0x49", "0x4A"],
+          "terminal": "+0x1718 opcode 0x00"
+        },
+        {
+          "raw_offset": "+0x171C",
+          "runtime_pc": "0x2DCB293C",
+          "native_dispatches": [],
+          "opcodes": ["0x2E", "0x19", "0x42", "0x49", "0x4A"],
+          "terminal": "+0x1784 opcode 0x00"
+        },
+        {
+          "raw_offset": "+0x1788",
+          "runtime_pc": "0x2DCB29A8",
+          "native_dispatches": [],
+          "opcodes": ["0x02"],
+          "effect": "0x82324248 -> 0x82322CD8 follows receiver+0x19c/child+0xf4 and clears terminal+0xd5",
+          "terminal": "+0x178C opcode 0x00"
+        }
+      ],
+      "post_m102_guard": "M102 is invoked first at +0x134c. Later, opcode 0x32 at +0x13e4 branches to +0x1428 on !C; natural C=false, so it skips local 18 / SendMsgV at +0x1420. This branch does not choose M102, a later MovieMemory item, EndMode or a type-4 frame.",
+      "producer_chain": "serialized frame -> outer record type 6 -> global table callback 0x82322A80 -> MovieMemory::Add(raw) -> drain gate -> GetAt(raw) -> PC=base+raw -> bounded stream -> zero",
+      "domain": "40 unique TitleUS type-6 payloads; contains +0x1210,+0x142c,+0x146c,+0x171c,+0x1788 and excludes +0x0e04",
+      "boundary": "After frame 208, object 102 has no later type-6 record. The executable-wide D5 writer census proves that update 0x82323BB8 cannot rearm D5; progress beyond the opcode-2 terminal clear requires a distinct guest navigation callback/item, opcode-0x34 selector 1/3, or MovieController reconstruction, or an independent title-task transition producer. The parallel post-START type-4 frame remains content/render only."
+    },
+    {
+      "name": "titleus-onvoice2d-audio-enqueue",
+      "status": {
+        "synchronous_guest_enqueue": "closed",
+        "async_worker_completion": "closed",
+        "title_continuation_dependency": "refuted",
+        "immediate_native_media_import": "unreached"
+      },
+      "chain": "TitleUS+0x142c -> descriptor row 0x82386568 -> wrapper 0x820EA6C0 -> CSwgSound slot2 0x820EB508 -> CNuSound slot24 0x82104840 -> slot23 0x82106A58 -> 512-entry guest voice pool -> immediate handle return -> opcode 0x17 discards result -> stop",
+      "completion": "CNuSound slot1 0x82106EC0 calls global worker 0x82106680, which polls and frees completed 0x60-byte voice records without a callback/listener field.",
+      "boundary": "No MovieController/MovieMemory field, EndMode broadcaster, title listener, CTaskModeManager state or kernel/XAM/XMA/media import is reached in the immediate enqueue chain. XMA remains a separate audible-audio backend gate, not a title continuation gate."
+    },
+    {
+      "name": "startup-current-task-to-child-moviecontroller",
+      "status": {
+        "current_task_and_startup_type": "closed",
+        "embedded_swg_owner_identity": "closed",
+        "child_moviecontroller_construction": "closed",
+        "root_publication": "not proved",
+        "startup_to_title_task_replacement": "closed"
+      },
+      "chain": "[0x827435F8] -> CTaskModeManager+0x08 -> CModeTaskStartUpDemoOffline vtable 0x8201130C -> task+0x1c embedded CSwgManager -> task+0x20 aggregate A -> 0x820D18C8 -> 0x82323808 -> child swg::MovieController",
+      "runtime_witness": {
+        "run_evidence": [
+          "artifacts/goal-playable/title-moviecontroller-factory-join-runtime-20260823/RESULT.md",
+          "artifacts/goal-playable/title-moviecontroller-factory-join-interpretation-20260823/RESULT.md",
+          "reports/cycle-1790-demo-startup-title-timing-correction.md",
+          "artifacts/goal-playable/hsio-training-fallback-runtime-20260823/RESULT.md",
+          "artifacts/goal-playable/hsio-training-fallback-runtime-final-20260823/RESULT.md"
+        ],
+        "manager": "0x18980000",
+        "current_task": "0x2E7E0080",
+        "aggregate_a": "0x2E3C3AD4",
+        "factory_caller_lr": "0x8232356C",
+        "parent": "0x2E3CDD10 (nonzero)",
+        "child": "0x2E3CED10",
+        "child_vtable": "0x820304D8"
+      },
+      "classification": "observed child construction owned by the current Startup task's SWG aggregate; separate runtime proof closes Startup -> Title task replacement",
+      "title_task_replacement": {
+        "startup": "0x2E7E0080",
+        "title": "0x2E3C0100",
+        "title_vtable": "0x820113E4",
+        "tick": 2368
+      },
+      "boundary": "0x8232356C is a return address/callsite, not a function. This join does not prove root publication to aggregate A+0xf4. The separate bounded runtime observation closes current-task replacement Startup -> Title, but not a visible frontend frame. Runtime heap addresses are witnesses, not XEX globals."
+    },
+    {
+      "name": "title-start-input-to-vm-burst",
+      "status": {
+        "logical_start_acceptance": "closed for the bounded natural occurrence",
+        "virtual_receiver_dispatch": "closed for two runtime receivers",
+        "five_native_burst": "closed",
+        "direct_menu_endmode_or_manager_transition": "refuted for ticks [2990,3041)",
+        "visible_frontend": "open"
+      },
+      "chain": "global logical input cells 0x82798480/0x82798488 -> virtual thunk 0x820D32D0 -> 0x820D3AC8 -> rows 0x82386658/48/38, 0x82386478 and 0x82386568 -> GetCurrentLevel/GetCurrentMission/GetCurrentMode/SendMsgI(M102)/OnVoice2D",
+      "object_taxonomy": "The input addresses and native rows are global data; 0x820D32D0 is a dispatch thunk; 0x820D3AC8 is an instance virtual method; the five native targets are global SWG callbacks; 0x2E3C0100 and 0x18980000 are transient runtime instances.",
+      "static_followup": "The exhaustive D5-writer, reconstruction and alternate-launcher audit finds no distinct producer joined to menu_endMode or the Title listener.",
+      "boundary": "The loader-to-first-item layer is now qualified separately. Continue at the upstream SWG/ACC materializer that fills B/B+0x38, descriptor D, list counts and serialized records. Do not reopen literal {6,0xE04}, infer a transition from the tick-3036 thunk, or add a shim."
+    },
+    {
+      "name": "swg-loader-descriptor-first-item",
+      "status": {
+        "raw_bitstream_to_decoded_image": "closed",
+        "storage_B_and_descriptor_D": "closed structurally",
+        "moviecontroller_frame_range": "closed structurally",
+        "first_concrete_brandlogo_item": "closed as serialized type 4",
+        "compact_title_source_to_runtime_owner": "open",
+        "native_type2_record_writer": "open",
+        "draw_index_2_and_handle_0x0E000059_writer": "open"
+      },
+      "chain": "global decompressor 0x82278F78 under global wrappers 0x8227A898/0x8227AAC0 -> embedded storage B and serialized descriptor D -> virtual factory 0x820D18C8 -> MovieController initializer 0x82323808 -> global range helper 0x82326B80 -> owner+0x28/+0x2c -> update 0x82323BB8 -> serialized type 4 -> global callback 0x82326608 -> global table callback 0x82326420",
+      "object_taxonomy": "0x82278F78, 0x8227A898, 0x8227AAC0 and 0x82326B80 are global functions; 0x82322300 is an aggregate instance method; 0x820D18C8 is a virtual factory method; 0x82323808 is an instance initializer; B is embedded storage; D and frame entries are serialized records; owner+0x28/+0x2c/+0x30 are instance fields; 0x823260E0 is a receiver helper; 0x82326608/0x82326420 are global-table callbacks.",
+      "first_item_witness": "DATA.TBL[170/171] brandLogo decoded SWG, descriptor 0x1AA48, frame table 0x718, element 0x704, type 4",
+      "boundary": "The static brandLogo record is not proved to be the Title/TitleUS runtime owner's source. No qualified writer in this chain creates native record type 2, record+0x0c=2, handle slot 0x0E000059 or descriptor-row selection 0x82386628/0x82386698. The upstream materializer audit narrows the next seam to the caller of virtual cell 0x820064E8."
+    },
+    {
+      "name": "swg-acc-materializer-boundary",
+      "status": {
+        "moviecontroller_factory_and_consumer_abi": "closed",
+        "moviememory_rtti_constructor_and_queue_slots": "closed",
+        "acc_manager_helpers_as_B_writers": "refuted",
+        "B_and_D_constructor_argument_provenance": "open",
+        "count_record2_draw2_handle59_writer": "open",
+        "native_type2_rows_and_callback": "closed separately but not selected from SWG"
+      },
+      "chain": "virtual cell 0x820064E8 -> factory 0x820D18C8 -> MovieMemory constructor 0x820D0DB8 and MovieController initializer 0x82323808 -> range helper 0x82326B80; B and D enter as caller-supplied arguments",
+      "object_taxonomy": "MovieMemory is an RTTI-qualified C++ object with virtual Add/Count/GetAt/Clear methods; 0x823233B0 and 0x82323468 are global helpers using the ACC manager singleton returned by 0x82327108, not MovieController methods; B+0x38 and list/record fields are external serialized/storage data; 0x0E000059 is a registered resource-handle value, not by itself a record attribute.",
+      "negative_result": "MovieMemory construction only allocates/clears its own arrays. The ACC manager helpers write manager-owned entry/list fields, not B+0x38, count, successor or record+0x0c. Literal handle materialization at 0x820C600C is not joined to owner slot 2.",
+      "boundary": "Qualify one natural caller of virtual cell 0x820064E8 and the provenance/owner types of B and D; only then inspect that B owner for count>=3, record#1->record#2, record#2+0x0c=2 and self+0x10+4*2=0x0E000059."
+    },
+    {
+      "name": "tick3036-string-vm-operation",
+      "status": {
+        "runtime_receiver_type": "closed",
+        "virtual_slot_and_target": "closed",
+        "string_instance_operation": "closed structurally",
+        "source_business_method_name": "open",
+        "title_or_mode_transition_edge": "refuted statically"
+      },
+      "chain": "runtime instance 0x2E40C054 -> vtable 0x82006B44 (swg::ASContext::String) -> global virtual thunk 0x820D3280 slot +0x6c -> instance method 0x820D7F80 -> generic AS/VM value helper 0x820DC008; 0x820DC224 is the post-bctrl return address",
+      "effects": "The String method updates receiver+0x0c and internal representation/state through receiver+0x10/+0x20; its caller performs reference/list bookkeeping and temporary cleanup.",
+      "boundary": "No edge reaches 0x820EA4A8, 0x8217C890, 0x82190B18, 0x827435F8 or a MovieController rearm/reconstruction path. The historical receiver spelling 0x2E41C054 is not transferred to the final run tuple."
+    }
+  ],
+  "native_contracts": [
+    {
+      "name": "native-bridge-auto-reset-event-reservation",
+      "scope": "native bridge contract only; not a guest-XEX structural identity and not a transfer from retail/prototype",
+      "status": "independently validated; no PAL bridge patch justified",
+      "contract": "An auto-reset signal delivered to an already blocked waiter is reserved for that waiter and cannot be consumed by a later waiter.",
+      "bridge_state": {
+        "GuestEvent": ["signaled", "manual_reset", "granted_thread"],
+        "GuestThread": ["blocked", "wake_timed_out", "wait_kind", "wait_key", "wait_lr", "wake_tick"],
+        "operations": ["publish_guest_event", "consume_guest_event", "block_current_guest_thread", "wake_one_guest_waiter", "wake_guest_waiters"]
+      },
+      "limits": [
+        "The Drive/Xenia patch validates a generic host contract, not a causal defect in the qualified PAL demo bridge.",
+        "FIFO ordering, WaitMultiple, multi-grant behavior and guest-memory Ke* event services are not transferred.",
+        "GuestEvent has one granted_thread; the generic two-signals-before-first-resume case is not joined to the PAL path."
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "address": "0x82323BB8",
+      "kind": "instance_method",
+      "proposed_name": "swg::MovieController_UpdateTimeline",
+      "receiver": "r3: swg::MovieController instance",
+      "arguments": ["r4: external transform/state"],
+      "evidence": ["fixed owner offsets", "recursive call with child+0x18 as receiver", "global command dispatch table 0x8264CE6C"],
+      "confidence": "high"
+    },
+    {
+      "addresses": ["0x82323968", "0x823239F0", "0x82323A70"],
+      "kind": "global_table_callback",
+      "proposed_names": ["SwgCommandType0To3Callback", "SwgCommandType4Callback", "SwgCommandType5Callback"],
+      "receiver_argument": "r3: swg::MovieController instance",
+      "evidence": ["selected from global type table 0x8264CE6C", "read owner+0x20 and owner+0xf8"],
+      "confidence": "high",
+      "note": "A typed receiver argument and field accesses do not prove C++ method ownership."
+    },
+    {
+      "addresses": ["0x82322A80", "0x82323220", "0x823232B8", "0x82323338"],
+      "kind": "global_table_callback",
+      "proposed_name": "SwgCommandType6To9Callback",
+      "receiver_argument": "r3: swg::MovieController instance",
+      "evidence": ["selected from global type table 0x8264CE6C", "invoke subordinate virtual slots", "0x82322A80 reads the serialized u32 at cursor+4 and forwards it unchanged to MovieMemory::Add"],
+      "confidence": "high",
+      "note": "The shared proposed name is structural; keep the four functions distinct. Table selection does not prove C++ method ownership."
+    },
+    {
+      "addresses": ["0x823233B0", "0x82323468"],
+      "kind": "global_function",
+      "proposed_names": ["SwgAccManager_CreateOrLinkEntryA", "SwgAccManager_CreateOrLinkEntryB"],
+      "manager_source": "global singleton returned by 0x82327108",
+      "evidence": ["no this receiver is passed", "allocate/link entries through the manager +0x10 virtual object", "write manager-owned entry fields and lists +0xe4/+0xe8/+0xec/+0xf0"],
+      "confidence": "high",
+      "note": "Structural ACC-manager helpers only. Their stores are not qualified writes to storage B+0x38 or serialized SWG list records."
+    },
+    {
+      "address": "0x82323808",
+      "kind": "constructor_initializer",
+      "proposed_name": "swg::MovieController_Initialize",
+      "receiver": "r3: allocated 432-byte swg::MovieController instance",
+      "writes_vtable": "0x820304D8",
+      "writes_attributes": [
+        "MovieController+0xd0 = integer selector returned for `_root`",
+        "MovieController+0xd5 = 1",
+        "MovieController+0xd6 = 0",
+        "MovieController+0xd8 = -1",
+        "MovieController+0xdc = -1",
+        "MovieController+0xe0 = -1"
+      ],
+      "confidence": "high",
+      "note": "RTTI qualifies the allocated object as swg::MovieController. Fresh allocation/construction is proved on the 0x820D18C8 caller chain, but not by an isolated observation at LR 0x82323860."
+    },
+    {
+      "address": "0x820D18C8",
+      "kind": "virtual_factory",
+      "proposed_name": "swg::Memory_Slot4_CreateMovieController",
+      "vtable": "0x820064D8",
+      "vtable_cell": "0x820064E8",
+      "vtable_slot": "+0x10 (index 4)",
+      "receiver": "r3: swg::Memory<...> instance",
+      "evidence": ["allocates 432-byte MovieController", "allocates 36-byte MovieMemory", "calls 0x82323808 with B, D and the separate _root selector"],
+      "confidence": "high"
+    },
+    {
+      "address": "0x82326B80",
+      "kind": "global_function",
+      "proposed_name": "MovieControllerStorageWrapper_Initialize",
+      "confidence": "high",
+      "note": "Initializes inline wrapper W=MovieController+0x20: W+0=storage B and W+4=descriptor D, then derives complete frame and auxiliary ranges through W+0x1c. It is a global helper, not a MovieController method or record producer."
+    },
+    {
+      "address": "0x82278F78",
+      "kind": "global_function",
+      "proposed_name": "SwgBitstream_DecompressChunk",
+      "arguments": ["r3: explicit decompressor state", "r4: source-cursor pointer", "r5: output-cursor pointer"],
+      "evidence": ["literal and back-reference branches write final bytes directly to the output buffer", "no u32 walk, base addition or relocation pass"],
+      "confidence": "high",
+      "note": "The name is structural. The explicit state argument does not prove C++ method ownership."
+    },
+    {
+      "addresses": ["0x8227A7E8", "0x8227A898", "0x8227AAC0"],
+      "kind": "global_function",
+      "proposed_names": ["SwgDecompressor_ConfigureBuffers", "SwgDecompressor_RunScheduledChunk", "SwgDecompressor_Advance"],
+      "evidence": ["0x8227A7E8 writes source/output bases at state+0x38/+0x3c", "0x8227A898 configures and invokes the explicit decoder state", "0x8227AAC0 advances the same explicit state"],
+      "confidence": "high",
+      "note": "Structural names only; neither function has proved C++ receiver ownership."
+    },
+    {
+      "address": "0x820D0DB8",
+      "kind": "constructor_initializer",
+      "proposed_name": "swg::MovieMemory_Initialize",
+      "receiver": "r3: allocated 0x24-byte swg::MovieMemory instance",
+      "writes_vtable": "0x8200654C",
+      "evidence": ["RTTI swg::MovieMemory<stx::lwallocator<unsigned char,0x0a,0x0e>>", "allocates three backing regions through the supplied manager", "clears backing regions and initializes queue count/state"],
+      "confidence": "high",
+      "note": "Initializes MovieMemory-owned storage only; it is not the materializer for external SWG storage B, descriptor D or draw-list records."
+    },
+    {
+      "address": "0x820D0FD8",
+      "kind": "virtual_method",
+      "proposed_name": "swg::MovieMemory_Slot9_AddOffset",
+      "receiver": "r3: swg::MovieMemory instance",
+      "vtable_slot": "+0x24 (index 9)",
+      "arguments": ["r4: serialized SWG byte offset"],
+      "confidence": "high",
+      "note": "Appends the u32 without relocation; the proposed name describes the qualified contract."
+    },
+    {
+      "address": "0x82358FD0",
+      "kind": "virtual_method",
+      "proposed_name": "swg::MovieMemory_Slot10_Count",
+      "receiver": "r3: swg::MovieMemory instance",
+      "vtable_slot": "+0x28 (index 10)",
+      "confidence": "high"
+    },
+    {
+      "address": "0x820D0FF8",
+      "kind": "virtual_method",
+      "proposed_name": "swg::MovieMemory_Slot11_GetOffsetAt",
+      "receiver": "r3: swg::MovieMemory instance",
+      "vtable_slot": "+0x2c (index 11)",
+      "arguments": ["r4: element index"],
+      "confidence": "high"
+    },
+    {
+      "address": "0x820D1008",
+      "kind": "virtual_method",
+      "proposed_name": "swg::MovieMemory_Slot12_Clear",
+      "receiver": "r3: swg::MovieMemory instance",
+      "vtable_slot": "+0x30 (index 12)",
+      "confidence": "high"
+    },
+    {
+      "address": "0x823260E0",
+      "kind": "receiver_helper",
+      "proposed_name": "SwgMovieController_ResolveSerializedList",
+      "receiver_argument": "r3: explicit swg::MovieController-shaped receiver",
+      "confidence": "high",
+      "note": "Resolves list index through storage B+0x38 and relative SWG offsets. Fixed receiver fields do not distinguish a non-virtual C++ method from a global helper."
+    },
+    {
+      "address": "0x82326608",
+      "kind": "global_table_callback",
+      "proposed_name": "SwgParallelType4Callback",
+      "receiver_argument": "r3: swg::MovieController instance",
+      "dispatch_cell": "0x8264D094[4]",
+      "confidence": "high",
+      "note": "Selects the type-4 parallel path and then dispatches through 0x8264D07C[0] to 0x82326420; table membership does not prove C++ method ownership."
+    },
+    {
+      "address": "0x82326420",
+      "kind": "global_table_callback",
+      "proposed_name": "SwgType4ParallelRenderCallback",
+      "receiver_argument": "r3: swg::MovieController instance",
+      "dispatch_table": "0x8264D07C",
+      "confidence": "high",
+      "note": "Selected from a global function-pointer table; C++ method ownership is not proved."
+    },
+    {
+      "address": "0x820EB200",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgRenderer_Slot7_ConsumeRecord",
+      "receiver": "r3: CSwgRenderer instance",
+      "vtable": "0x82007D0C",
+      "vtable_slot": "+0x1c (index 7)",
+      "evidence": ["RTTI .?AVCSwgRenderer@@", "reached by qualified virtual call at LR 0x82325ED4", "consumes record+0x0c as draw index", "builds a CPU layout record of 0x70 bytes through 0x82095DF0/0x821DEED8"],
+      "confidence": "high",
+      "note": "No direct PM4/Xenos write is proved in this method; the proposed name is structural."
+    },
+    {
+      "address": "0x8264CE54",
+      "kind": "global_function_pointer_table",
+      "confidence": "high"
+    },
+    {
+      "address": "0x8264CE6C",
+      "kind": "global_function_pointer_table",
+      "confidence": "high",
+      "note": "Overlapping view beginning 0x18 bytes into table 0x8264CE54."
+    },
+    {
+      "address": "0x8264D074",
+      "kind": "global_function_pointer_table",
+      "proposed_name": "SwgRecordDispatch",
+      "confidence": "high",
+      "note": "Distinct table; it does not overlap 0x8264CE54/0x8264CE6C."
+    },
+    {
+      "address": "0x820064D8",
+      "kind": "vtable",
+      "type_descriptor": "0x823859D8",
+      "rtti": "Memory<stx::lwallocator<...>>",
+      "confidence": "high",
+      "note": "RTTI-qualified vtable; slot index 4 / cell 0x820064E8 contains virtual factory target 0x820D18C8."
+    },
+    {
+      "address": "0x82009E78",
+      "kind": "global_function_pointer_table",
+      "proposed_name": "GpuRecordTypeDispatch",
+      "confidence": "high",
+      "note": "Type-indexed callback table; not a vtable."
+    },
+    {
+      "addresses": ["0x82118FA0", "0x821185A8", "0x82119048", "0x82118A28", "0x821B86F8"],
+      "kind": "global_function",
+      "confidence": "high",
+      "note": "Direct Q/P publication pipeline functions; types 4/5/6 can write Q/R conditionally."
+    },
+    {
+      "address": "0x82118D18",
+      "kind": "global_function",
+      "boundary": "bounded_unowned",
+      "confidence": "high",
+      "note": "Qualified Ghidra chunk implementing the type-1 P writer; not a current canonical Function entry."
+    },
+    {
+      "addresses": ["0x821187A8", "0x821C2058"],
+      "kind": "instance_method",
+      "confidence": "medium",
+      "note": "Method-shaped ABI and fixed-offset context access are proved, but no virtual dispatch or business class name is qualified."
+    },
+    {
+      "address": "0x82216498",
+      "kind": "global_function",
+      "confidence": "high",
+      "note": "Loads objects through global tables, then invokes virtual slots +0x98 and +0x0c. No path to 0x82165E68 is proved."
+    },
+    {
+      "address": "0x82165E68",
+      "kind": "instance_method",
+      "receiver": "r3: object",
+      "arguments": ["r4: scalar"],
+      "confidence": "medium",
+      "note": "Contains a qualified call through virtual slot +0x50; business class remains unknown."
+    },
+    {
+      "address": "0x2E3D0100",
+      "kind": "runtime_object_instance",
+      "proposed_name": "CModeTaskTitleDemoOffline_runtime_instance",
+      "vtable": "0x820113E4",
+      "source_scope": "demo_only",
+      "evidence": [
+        "artifacts/goal-playable/frontend-type-semantics-static-20260823/RESULT.md",
+        "reports/AC6_DEMO_START_DURING_TITLE.md"
+      ],
+      "confidence": "high",
+      "note": "Qualified runtime witness during title epochs. The heap address is neither a global object nor a pointer cell and is not assumed stable across unrelated runs."
+    },
+    {
+      "address": "0x2E7F0080",
+      "kind": "runtime_object_instance",
+      "proposed_name": "CModeTaskStartUpDemoOffline_runtime_instance",
+      "vtable": "0x8201130C",
+      "source_scope": "demo_only",
+      "evidence": ["reports/cycle-1609-demo-task-dispatch-frontier.md"],
+      "confidence": "high",
+      "note": "Qualified runtime witness during the initial Startup epoch. The heap address is not an XEX global."
+    },
+    {
+      "address": "0x2E7E0080",
+      "kind": "runtime_object_instance",
+      "proposed_name": "CModeTaskStartUpDemoOffline_runtime_instance",
+      "vtable": "0x8201130C",
+      "source_scope": "demo_only",
+      "evidence": [
+        "artifacts/goal-playable/hsio-training-fallback-runtime-20260823/RESULT.md",
+        "artifacts/goal-playable/hsio-training-fallback-runtime-final-20260823/RESULT.md"
+      ],
+      "confidence": "high",
+      "note": "Qualified runtime witness during Startup -> Title task replacement. The heap address is not an XEX global and is not stable across runs."
+    },
+    {
+      "address": "0x2E3C0100",
+      "kind": "runtime_object_instance",
+      "proposed_name": "CModeTaskTitleDemoOffline_runtime_instance",
+      "vtable": "0x820113E4",
+      "source_scope": "demo_only",
+      "evidence": [
+        "artifacts/goal-playable/hsio-training-fallback-runtime-20260823/RESULT.md",
+        "artifacts/goal-playable/hsio-training-fallback-runtime-final-20260823/RESULT.md"
+      ],
+      "confidence": "high",
+      "note": "Qualified runtime witness after natural Startup -> Title replacement. The heap address is not an XEX global and is not stable across runs."
+    },
+    {
+      "address": "0x18BA2BF4",
+      "kind": "runtime_object_instance",
+      "proposed_name": "CTaskLoading_runtime_instance",
+      "vtable": "0x8200F388",
+      "rtti": "CTaskLoading",
+      "evidence": ["reports/cycle-1609-demo-task-dispatch-frontier.md"],
+      "confidence": "high",
+      "note": "Qualified slot-4 dispatch witness. This is not CModeTaskLoadingDemoOffline and the transient heap address is not an XEX global."
+    },
+    {
+      "address": "0x18980000",
+      "kind": "runtime_object_instance",
+      "proposed_name": "CTaskModeManager_runtime_instance",
+      "vtable": "0x82011694",
+      "rtti": "CTaskModeManager",
+      "evidence": ["reports/cycle-1609-demo-task-dispatch-frontier.md"],
+      "confidence": "high",
+      "note": "Qualified runtime value loaded from global pointer cell 0x827435F8. The cell is global; this pointed heap instance is not."
+    },
+    {
+      "address": "0x8218A4A0",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskStartUpDemoOffline_Update",
+      "receiver": "r3: CModeTaskStartUpDemoOffline instance",
+      "vtable": "0x8201130C",
+      "vtable_slot": "+0x10 (index 4)",
+      "source_scope": "demo_only",
+      "confidence": "high"
+    },
+    {
+      "address": "0x821728C0",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskStartUpDemoOffline_CSwgListener_Slot54",
+      "receiver": "r3: Startup+0x68 CSwgListener subobject",
+      "vtable": "0x820112AC",
+      "vtable_slot": "+0x54 (index 21)",
+      "writes_attributes": ["parent Startup+0x0C = 2"],
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Adjusts the listener receiver by -0x68, dispatches Startup primary slot +0x48, then writes the parent state. It does not construct or select a task."
+    },
+    {
+      "address": "0x8218A5B8",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskStartUpDemoOffline_Slot48_SetManagerFactory",
+      "receiver": "r3: CModeTaskStartUpDemoOffline instance (overwritten before body work)",
+      "vtable": "0x8201130C",
+      "vtable_slot": "+0x48 (index 18)",
+      "writes_attributes": ["CTaskModeManager+0x10 = 0x82192680"],
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Virtual Startup slot; implementation overwrites r3, selects factory 0 via 0x8218E920 and calls setter 0x8218EA88. It is not a constructor or factory."
+    },
+    {
+      "address": "0x8201130C",
+      "kind": "vtable_address_point",
+      "proposed_name": "CModeTaskStartUpDemoOffline_primary_vtable",
+      "rtti": "CModeTaskStartUpDemoOffline",
+      "rtti_descriptor": "0x823925DC",
+      "object_offset": "+0x00",
+      "source_scope": "demo_only",
+      "slots": {
+        "+0x10": "0x8218A4A0",
+        "+0x40": "0x8216B958",
+        "+0x44": "0x8216B978"
+      },
+      "confidence": "high",
+      "note": "Global constant vtable address-point; data, not an object instance or method."
+    },
+    {
+      "address": "0x820112AC",
+      "kind": "vtable_address_point",
+      "proposed_name": "CModeTaskStartUpDemoOffline_CSwgListener_vtable",
+      "rtti": "CModeTaskStartUpDemoOffline",
+      "rtti_descriptor": "0x823925DC",
+      "object_offset": "+0x68",
+      "source_scope": "demo_only",
+      "slots": {
+        "+0x54": "0x821728C0"
+      },
+      "confidence": "high",
+      "note": "Global constant listener vtable address-point; data, not an object instance or method."
+    },
+    {
+      "address": "0x8216B958",
+      "kind": "virtual_method",
+      "proposed_name": "ModeTaskShared_Slot40",
+      "receiver": "r3: CModeTaskStartUpDemoOffline or CModeTaskTitleDemoOffline instance",
+      "vtables": ["0x8201130C", "0x820113E4"],
+      "vtable_slot": "+0x40 (index 16)",
+      "writes_attributes": ["receiver+0x44 = 4", "receiver+0x4b = 1"],
+      "confidence": "high",
+      "note": "Shared virtual state activation/reset contract. Exact business name and the unit of +0x44 remain open."
+    },
+    {
+      "address": "0x8216B978",
+      "kind": "virtual_method",
+      "proposed_name": "ModeTaskShared_Slot44",
+      "receiver": "r3: CModeTaskStartUpDemoOffline or CModeTaskTitleDemoOffline instance",
+      "vtables": ["0x8201130C", "0x820113E4"],
+      "vtable_slot": "+0x44 (index 17)",
+      "reads_attributes": ["receiver+0x44", "receiver+0x4b"],
+      "writes_attributes": ["receiver+0x44 decremented and saturated at 0", "receiver+0x4b cleared when receiver+0x44 <= 0"],
+      "returns": "1 when receiver+0x4b == 0, otherwise 0",
+      "confidence": "high",
+      "note": "Shared virtual decrement/completion-query contract. Exact business name and the unit of +0x44 remain open."
+    },
+    {
+      "address": "0x821929A8",
+      "kind": "virtual_method",
+      "proposed_name": "CTaskModeManager_Update",
+      "receiver": "r3: CTaskModeManager",
+      "vtable": "0x82011694",
+      "vtable_slot": "+0x10",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match: tests this+0x18 and calls 0x82190B18; secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "Writes this+0x18 at 0x82192CC8 and directly calls 0x82190B18(this) when the transition is armed."
+    },
+    {
+      "address": "0x8218CE20",
+      "kind": "virtual_method",
+      "proposed_name": "CTaskLoading_Update",
+      "receiver": "r3: CTaskLoading instance",
+      "vtable": "0x8200F388",
+      "vtable_slot": "+0x10 (index 4)",
+      "boundary": "bounded_unowned",
+      "confidence": "high",
+      "note": "Qualified Ghidra chunk and vtable target; not a current canonical Function entry. Reads this+0x0a and tail-calls 0x8218CCD0 when that byte is zero."
+    },
+    {
+      "address": "0x8218A7A8",
+      "kind": "virtual_method",
+      "proposed_name": "ModeTaskTitle_UpdateShared",
+      "receiver": "r3: CModeTaskTitle or CModeTaskTitleDemoOffline",
+      "vtables": ["0x8200F01C", "0x820113E4"],
+      "vtable_slot": "+0x10",
+      "confidence": "high",
+      "note": "Shared target does not merge the two qualified object identities. On the demo title, state 1 only invokes the CSwgManager subobject slot +0x20; state 2 expires +0x44 before arming manager+0x18."
+    },
+    {
+      "address": "0x820113E4",
+      "kind": "vtable_address_point",
+      "proposed_name": "CModeTaskTitleDemoOffline_primary_vtable",
+      "rtti": "CModeTaskTitleDemoOffline",
+      "rtti_descriptor": "0x82392608",
+      "object_offset": "+0x00",
+      "slots": {
+        "+0x10": "0x8218A7A8",
+        "+0x40": "0x8216B958",
+        "+0x44": "0x8216B978",
+        "+0x48": "0x8218AB98",
+        "+0x4c": "0x8218AA30"
+      },
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Global constant primary vtable address-point; data, not an object instance or method, and not transferable from a prototype or retail XEX."
+    },
+    {
+      "address": "0x82011384",
+      "kind": "vtable_address_point",
+      "proposed_name": "CModeTaskTitleDemoOffline_CSwgListener_vtable",
+      "rtti": "CModeTaskTitleDemoOffline",
+      "rtti_descriptor": "0x82392608",
+      "object_offset": "+0x68",
+      "slots": {
+        "+0x54": "0x8217C890"
+      },
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Global constant secondary vtable address-point installed at outer+0x68; data, not an object instance or method."
+    },
+    {
+      "address": "0x8218DC10",
+      "kind": "constructor",
+      "proposed_name": "CModeTaskTitleDemoOffline_ctor",
+      "writes_vtables": ["outer+0x00 = 0x820113E4", "outer+0x68 = 0x82011384"],
+      "source_scope": "demo_only",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82192680",
+      "kind": "global_factory",
+      "proposed_name": "CreateCModeTaskTitleDemoOffline",
+      "allocation_size": "0x78",
+      "calls_constructor": "0x8218DC10",
+      "factory_cells": ["0x82391EFC", "0x82391F10", "0x82391F1C"],
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "The factory is a global function, not a method of the allocated object."
+    },
+    {
+      "address": "0x82170F58",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskDemoBaseAndDerived_Slot4_Update",
+      "vtables": ["0x8200C904", "0x8200FE04", "0x8200FECC", "0x8200FF9C", "0x82010074"],
+      "vtable_types": ["CModeTaskDemoBase", "CModeTaskDemoOpening", "CModeTaskDemoIntermission", "CModeTaskDemoEnding", "CModeTaskDemoSceneViewerMission"],
+      "vtable_slot": "+0x10 (index 4)",
+      "receiver": "r3: CModeTaskDemoBase or one of the four qualified derived instances",
+      "evidence": ["five exact Ghidra data references to the slot", "when this+0x90 == -1, tests logical pressed bits 0x01/0x10 and may write CTaskModeManager+0x18"],
+      "confidence": "high",
+      "note": "This is not the true CModeTaskTitleDemoOffline update and is not reachable as the first title transition without prior construction/insertion of a distinct task. The former vtable 0x8200B844 and byte offset +0x04 classification are refuted."
+    },
+    {
+      "address": "0x827B37E0",
+      "kind": "global_data_cell",
+      "proposed_name": "NormalizedInputTransient",
+      "confidence": "high",
+      "note": "During the qualified START pulse it reaches 0x400 and later receives zero writes. It is mutable global input state, not a stable final-tick value or a task attribute."
+    },
+    {
+      "address": "0x82798480",
+      "kind": "global_data_cell",
+      "proposed_name": "LogicalCurrentInputBits",
+      "confidence": "high",
+      "note": "Transient per-tick logical input bitset; 0x10 is the qualified START bit in the bounded run."
+    },
+    {
+      "address": "0x82798484",
+      "kind": "global_data_cell",
+      "proposed_name": "LogicalPreviousInputBits",
+      "confidence": "high",
+      "note": "Previous logical input bitset; it receives 0x10 on START release at tick 3001."
+    },
+    {
+      "address": "0x82798488",
+      "kind": "global_data_cell",
+      "proposed_name": "LogicalPressedInputBits",
+      "confidence": "high",
+      "note": "Transient per-tick logical pressed bitset; 0x10 is qualified START. It is not a persistent title or mode-manager attribute."
+    },
+    {
+      "address": "0x822F6080",
+      "kind": "instance_method",
+      "proposed_name": "InputPollingContext_PollState",
+      "receiver": "r3: input polling object/context; source class name open",
+      "calls": ["0x82338248 global XamInputGetState ABI adapter"],
+      "contract": "Preserves r3 as this, reads this+0x04, passes this+0x44 to the adapter and consults this+0x70. Returns 0 when the adapter result is 0, -1 for result 0x48F, and -2 for every other nonzero result.",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match; secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "The stable receiver and fixed offsets prove an instance method structurally, but do not qualify a source C++ class name or a title-transition role."
+    },
+    {
+      "address": "0x82338248",
+      "kind": "global_function",
+      "proposed_name": "XamInputGetStateAbiAdapter",
+      "contract": "Reorders its explicit arguments and tail-calls the XamInputGetState import at 0x823764E4.",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match; secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "Global ABI adapter, not an instance method or object attribute."
+    },
+    {
+      "address": "0x8218CCD0",
+      "kind": "instance_method",
+      "proposed_name": "CTaskLoading_Poll",
+      "receiver": "r3: CTaskLoading instance",
+      "reads_attributes": ["receiver+0x0c state", "receiver+0x11 resource selector"],
+      "writes_attributes": ["on completed poll: receiver+0x09 = 0", "on completed poll: receiver+0x0a = 1", "on completed poll: receiver+0x0c = 0"],
+      "confidence": "high",
+      "note": "Polls provider 0x8219F5D0 after resource lookup. A zero provider result leaves the state unchanged; no mode task is published."
+    },
+    {
+      "address": "0x8218CBD8",
+      "kind": "instance_method",
+      "proposed_name": "CTaskLoading_Arm",
+      "receiver": "r3: CTaskLoading instance",
+      "writes_attributes": ["on successful preparation: receiver+0x09 = 1", "on successful preparation: receiver+0x0a = 0", "on successful preparation: receiver+0x0c = 1"],
+      "confidence": "high",
+      "note": "Prepares or resolves a resource and arms the internal loading triplet only on success; exact resource business type remains open."
+    },
+    {
+      "address": "0x8218CD78",
+      "kind": "instance_method",
+      "proposed_name": "CTaskLoading_Finalize",
+      "receiver": "r3: CTaskLoading instance",
+      "writes_attributes": ["terminal path: receiver+0x09 = 0", "terminal path: receiver+0x0a = 1", "terminal path: receiver+0x0c = 0"],
+      "confidence": "high",
+      "note": "Finalizes/releases the same resource family; it is distinct from both arm and poll and does not publish a mode task."
+    },
+    {
+      "address": "0x82191468",
+      "kind": "global_factory",
+      "proposed_name": "CreateModeTaskFromFactoryEntry",
+      "evidence": ["selected through global tables 0x82391EF0/0x82391EF4/0x82391EF8", "allocates then invokes constructor"],
+      "confidence": "high"
+    },
+    {
+      "addresses": ["0x821915A8", "0x82192640"],
+      "kind": "global_factory",
+      "proposed_names": ["CreateModeTaskFromFactoryEntry1", "CreateModeTaskFromFactoryEntry2"],
+      "evidence": ["selected by global cells 0x82391EF4 and 0x82391EF8 respectively"],
+      "confidence": "high"
+    },
+    {
+      "address": "0x8218A5F0",
+      "kind": "constructor",
+      "proposed_name": "CModeTaskTitle_ctor",
+      "writes_vtable": "0x8200F01C",
+      "rtti": "CModeTaskTitle",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82190B18",
+      "kind": "instance_method",
+      "proposed_name": "CTaskModeManager_ApplySelectedFactory",
+      "receiver": "r3: CTaskModeManager",
+      "called_directly_from": "0x821929A8",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match: selects this+0x14 or fallback this+0x10, stores the factory return at this+0x08 and inserts it through [0x82822F08]->slot+0x0c; secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "Two-phase transition method. It first moves this+0x08 to this+0x0c and may invoke the selected factory for an intermediate allocation-service path. In its completion phase it selects this+0x14 or fallback this+0x10 again, stores the returned object at this+0x08 (0x82190EC0), inserts it through [0x82822F08]->vtable+0x0c (return 0x82190EDC), then calls the new object's virtual slot +0x2c."
+    },
+    {
+      "address": "0x8217E890",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskLoadingDemoOffline_Slot48_SelectGameModeFactory",
+      "receiver": "r3: CModeTaskLoadingDemoOffline instance through the qualified primary vtable",
+      "vtable": "0x82011154",
+      "vtable_cell": "0x8201119C",
+      "vtable_slot": "+0x48 (index 18)",
+      "contract": "selector 0 resolves factory 0x82192780 through 0x8218E970 and stores it at CTaskModeManager+0x10 through 0x8218EA88",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match: obtains the factory through 0x8218E970, loads the manager pointer from 0x827435F8 and calls setter 0x8218EA88; secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "This method does not invoke or construct CModeTaskGameDemoOffline; it requires an already-active Loading object."
+    },
+    {
+      "address": "0x8218E920",
+      "kind": "global_function",
+      "proposed_name": "SelectStartupModeFactory",
+      "returns": "factory pointer selected from the startup selector cells",
+      "evidence": ["qualified demo Ghidra/basefile CFG and data references: selector 0 selects 0x82391EFC -> 0x82192680; secondary to static receipt"],
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Global selector helper, not an object factory; selector 0 supplies the Title factory."
+    },
+    {
+      "address": "0x8218E970",
+      "kind": "global_function",
+      "proposed_name": "SelectGameModeFactory",
+      "returns": "function pointer from 0x82391F0C + 4*selector when selector < 1",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match: bounds-checks the selector and returns the table entry without constructing an object; secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "Selector 0 returns 0x82192780; this function performs no allocation or construction."
+    },
+    {
+      "address": "0x82192780",
+      "kind": "global_factory",
+      "proposed_name": "CreateCModeTaskGameDemoOffline",
+      "factory_cell": "0x82391F0C",
+      "source_scope": "demo_only",
+      "confidence": "high"
+    },
+    {
+      "address": "0x8218D688",
+      "kind": "constructor",
+      "proposed_name": "CModeTaskGameDemoOffline_ctor",
+      "writes_vtable": "0x820107D4",
+      "source_scope": "demo_only",
+      "confidence": "high"
+    },
+    {
+      "address": "0x820107D4",
+      "kind": "vtable_address_point",
+      "proposed_name": "CModeTaskGameDemoOffline_primary_vtable",
+      "rtti": "CModeTaskGameDemoOffline",
+      "rtti_descriptor": "0x82392338",
+      "object_offset": "+0x00",
+      "slots": {
+        "+0x0c": "0x8217C678",
+        "+0x10": "0x82173C68"
+      },
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Global constant primary vtable address-point; data, not the factory, constructor or a runtime instance."
+    },
+    {
+      "address": "0x8200F388",
+      "kind": "vtable_address_point",
+      "proposed_name": "CTaskLoading_primary_vtable",
+      "rtti": "CTaskLoading",
+      "rtti_descriptor": "0x82391C40",
+      "object_offset": "+0x00",
+      "slots": {
+        "+0x10": "0x8218CE20"
+      },
+      "confidence": "high",
+      "note": "Global constant vtable address-point for generic CTaskLoading; distinct from CModeTaskLoadingDemoOffline vtables."
+    },
+    {
+      "address": "0x8218EA88",
+      "kind": "instance_method",
+      "proposed_name": "SetGameModeFactory",
+      "receiver": "r3: CTaskModeManager loaded from [0x827435F8]",
+      "writes_attribute": "receiver+0x10 = r4 function pointer",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match: stw r4,0x10(r3); secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "Setter-shaped two-instruction body. It stores a factory pointer, not a constructed task, and performs no invocation or insertion."
+    },
+    {
+      "address": "0x82192850",
+      "kind": "virtual_method",
+      "proposed_name": "CTaskModeManager_Initialize",
+      "receiver": "r3: CTaskModeManager",
+      "vtable": "0x82011694",
+      "vtable_slot": "+0x0c",
+      "confidence": "high",
+      "note": "Sets this+0x10 to factory 0x82192700, invokes it, stores the returned object at this+0x08, and inserts it through [0x82822F08]->vtable+0x0c (bounded target 0x82259E18)."
+    },
+    {
+      "address": "0x823270FC",
+      "kind": "prologue_thunk",
+      "proposed_name": "__savegprlr_25",
+      "confidence": "high",
+      "note": "Called by 0x82190B18 only to save registers; it does not return a singleton or manager state."
+    },
+    {
+      "address": "0x82822F08",
+      "kind": "global_pointer",
+      "proposed_name": "TaskListServicePointer",
+      "confidence": "high",
+      "note": "0x82192850 dispatches through service vtable slot +0x0c with the newly created object as r4."
+    },
+    {
+      "address": "0x8281EB50",
+      "kind": "global_pointer",
+      "proposed_name": "ModeObjectServicePointer",
+      "confidence": "medium",
+      "note": "Distinct service cell used by 0x82190B18 together with 0x821E1D38; do not merge it with 0x82822F08."
+    },
+    {
+      "address": "0x82259D10",
+      "kind": "virtual_method",
+      "proposed_name": "TaskList_Dispatch",
+      "vtable": "0x82013084",
+      "vtable_slot": "+0x04",
+      "confidence": "high",
+      "note": "Canonical Function entry and vtable target; it may also be called directly."
+    },
+    {
+      "address": "0x82259E18",
+      "kind": "virtual_method",
+      "proposed_name": "TaskList_Insert",
+      "vtable": "0x82013084",
+      "vtable_slot": "+0x0c",
+      "boundary": "bounded_unowned",
+      "confidence": "high",
+      "note": "Qualified Ghidra chunk; not a current canonical Function entry."
+    },
+    {
+      "address": "0x82259D74",
+      "kind": "call_site",
+      "confidence": "high",
+      "note": "Virtual call through slot +0x10 inside task dispatch; not a function entry."
+    },
+    {
+      "address": "0x820CDF88",
+      "kind": "global_function",
+      "proposed_name": "ListenerTable_Register",
+      "confidence": "high"
+    },
+    {
+      "address": "0x826DF800",
+      "kind": "global_pointer_table",
+      "range": "[0x826DF800,0x826DF840)",
+      "entry_count": 16,
+      "entry_type": "CSwgListener*",
+      "confidence": "high",
+      "note": "Mutable listener-pointer table. 0x826DF804 is merely its second cell, not a listener object or singleton."
+    },
+    {
+      "address": "0x820E9838",
+      "kind": "global_table_callback",
+      "proposed_name": "SwgNative_SendMsgI",
+      "dispatch_slot": "+0x20",
+      "descriptor_row": "0x82386478",
+      "confidence": "high",
+      "note": "The post-START title script reaches this callback through the SendMsgI native descriptor row with message M102 and observes a typed Integer result of 0."
+    },
+    {
+      "address": "0x820EA4A8",
+      "kind": "global_table_callback",
+      "proposed_name": "SwgNativeIntegerVoidListenerBroadcaster",
+      "descriptor_rows": ["0x82386628 EndMode", "0x82386698 menu_endMode"],
+      "dispatch_site": "0x820EA500",
+      "dispatch_slot": "CSwgListener+0x54",
+      "confidence": "high",
+      "note": "Both constant descriptor rows select this same callback. It broadcasts the raw integer to registered listeners; it is not an object method and must not be named as only one of the two descriptors."
+    },
+    {
+      "address": "0x820EA238",
+      "kind": "global_function",
+      "proposed_name": "SwgNative_StopBGMFadeOut",
+      "confidence": "high",
+      "note": "This is distinct from menu_endMode and does not provide the Title listener +0x54 dispatch."
+    },
+    {
+      "address": "0x8218AB98",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskTitleDemoOffline_Slot48",
+      "receiver": "r3: CModeTaskTitleDemoOffline",
+      "vtable": "0x820113E4",
+      "vtable_slot": "+0x48",
+      "writes_attribute": "+0x70",
+      "contract": "raw <= 0 keeps raw as the selector index; raw > 0 uses raw-1. Raw 0 or 1 selects factory cell 0x82391F00 -> 0x821926C0 and stores raw at Title+0x70.",
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "The slot identity, conditional factory mapping, manager setter call and +0x70 write are proved. No natural START provenance for raw 0 or 1 is proved."
+    },
+    {
+      "address": "0x8217C890",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskTitleDemoOffline_CSwgListener_Slot54Override",
+      "receiver": "r3: CSwgListener subobject at CModeTaskTitleDemoOffline+0x68",
+      "vtable": "0x82011384",
+      "vtable_slot": "+0x54",
+      "calls_parent_slot": "+0x48 = 0x8218AB98",
+      "writes_attributes": ["outer+0x44 = 3", "outer+0x0c = 2"],
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Either EndMode or menu_endMode reaches this override only if its descriptor row is naturally selected. The slot is not assigned a universal EndMode business meaning and START selection remains open."
+    },
+    {
+      "address": "0x8218AA30",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskTitleDemoOffline_Slot4C",
+      "receiver": "r3: CModeTaskTitleDemoOffline",
+      "vtable": "0x820113E4",
+      "vtable_slot": "+0x4c",
+      "reads_attribute": "+0x70",
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "The slot and read are proved; its universal business semantics remain open."
+    },
+    {
+      "address": "0x82185198",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskMissionTitle_Update",
+      "receiver": "r3: CModeTaskMissionTitle",
+      "vtable": "0x8200E5C4",
+      "rtti_descriptor": "0x823918C4",
+      "vtable_slot": "+0x10",
+      "confidence": "high",
+      "note": "This is a distinct demo-image type and must not be joined to CModeTaskTitleDemoOffline or treated as the proved PRESS START owner."
+    },
+    {
+      "address": "0x821852B0",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskMissionTitle_CSwgListener_Override",
+      "receiver": "r3: CSwgListener subobject at CModeTaskMissionTitle+0x68",
+      "vtable": "0x8200E564",
+      "vtable_slot": "+0x54",
+      "writes_attributes": ["outer+0x44 = 3", "outer+0x0c = 2"],
+      "confidence": "high",
+      "note": "Its lookup result from 0x8218DF48/0x82391CD8 remains opaque and is not the 0x82391F0C GameDemoOffline factory selector."
+    },
+    {
+      "address": "0x82006B44",
+      "kind": "vtable_address_point",
+      "proposed_name": "swg::ASContext::String_vtable",
+      "rtti": ".?AVString@?$ASContext@V?$lwallocator@E$0A@$0EA@@stx@@@swg@@",
+      "slots": {
+        "+0x54": "0x820D7F30",
+        "+0x6c": "0x820D7F80",
+        "+0x98": "0x820D8020"
+      },
+      "confidence": "high",
+      "note": "Global constant vtable data, not a String instance or method."
+    },
+    {
+      "address": "0x820D3280",
+      "kind": "virtual_thunk",
+      "vtable_slot": "+0x6c",
+      "runtime_vtable": "0x82006B44",
+      "runtime_target": "0x820D7F80",
+      "boundary": "bounded_crossmatch",
+      "confidence": "medium",
+      "note": "Four-instruction global tail-dispatch thunk. It owns no instance state and is not a source-level String business method."
+    },
+    {
+      "address": "0x820D7F80",
+      "kind": "virtual_method",
+      "proposed_name": "swg::ASContext::String_ConvertCopyOrBox",
+      "receiver": "r3: swg::ASContext::String instance",
+      "vtable": "0x82006B44",
+      "vtable_slot": "+0x6c",
+      "reads_attributes": ["receiver+0x0c", "receiver+0x10"],
+      "writes_attributes": ["receiver+0x0c", "receiver internal state through +0x20"],
+      "confidence": "medium",
+      "note": "Instance ownership and String-value behavior are proved; conversion/copy/boxing is a conservative structural description, not an original Project Aces method name."
+    },
+    {
+      "address": "0x820DC008",
+      "kind": "global_function",
+      "proposed_name": "ASVM_ValueDispatchAndReferenceBookkeeping",
+      "confidence": "medium",
+      "note": "Invokes a value operation indirectly, then updates reference/list bookkeeping and destroys temporaries. No stable C++ receiver is proved."
+    },
+    {
+      "address": "0x820DC224",
+      "kind": "return_address",
+      "containing_function": "0x820DC008",
+      "call_instruction": "0x820DC218",
+      "confidence": "high",
+      "note": "Continuation after bctrl, not the callee, an independent function entry or a transition callback."
+    },
+    {
+      "address": "0x820D32D0",
+      "kind": "virtual_thunk",
+      "vtable_slot": "+0x70",
+      "runtime_vtable": "0x82006A9C",
+      "runtime_target": "0x820D3AC8",
+      "runtime_call_count": 2,
+      "boundary": "bounded_crossmatch",
+      "confidence": "medium",
+      "note": "No justified business-class assignment. Literal CFG/ABI cross-match proves a four-instruction tail thunk, and the bounded START run observes two dispatches through the qualified slot. This address is not a current canonical-Ghidra Function entry; preserve that boundary distinction."
+    },
+    {
+      "address": "0x820D3AC8",
+      "kind": "virtual_method",
+      "proposed_name": "VmScript_Step",
+      "receiver_vtable": "0x82006A9C",
+      "runtime_receivers": ["0x2E403CD4", "0x2E403994"],
+      "confidence": "medium",
+      "note": "VM/script-state behavior and two dynamic instance receivers during the qualified START occurrence are proved; the exact class name and source-level business method name are not."
+    },
+    {
+      "address": "0x8217C678",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskGame_InitializeCommon",
+      "receiver": "r3: CModeTaskGame-derived object",
+      "vtable_slot": "+0x0c",
+      "vtables": ["0x8200D0EC", "0x8200D524", "0x8200D5AC", "0x8200D64C", "0x820107D4", "0x82010944", "0x820109DC", "0x82010A3C"],
+      "confidence": "high",
+      "note": "Shared target across eight qualified RTTI vtables."
+    },
+    {
+      "address": "0x82173DF0",
+      "kind": "global_function",
+      "proposed_name": "StoreDelegate",
+      "confidence": "high"
+    },
+    {
+      "address": "0x8217C4D8",
+      "kind": "instance_callback",
+      "confidence": "medium",
+      "note": "Registered callback with proved downstream -3 branch; exact class/business name remains open."
+    },
+    {
+      "address": "0x821E1CD8",
+      "kind": "global_allocator",
+      "confidence": "high"
+    },
+    {
+      "address": "0x827435F8",
+      "kind": "global_pointer",
+      "proposed_name": "CTaskModeManagerPointerCell",
+      "points_to": "CTaskModeManager",
+      "evidence": ["qualified demo Xenia HIR literal CFG/ABI cross-match: 0x8217E890 loads this cell as the setter receiver; secondary to canonical demo Ghidra"],
+      "confidence": "high",
+      "note": "Canonical demo PPC closes the type join inside 0x821908B8: 0x821908E0 writes vtable 0x82011694 to r31+0 and 0x82190998 stores that same r31 to global cell 0x827435F8. Independent guest observation resolves the cell to object 0x18980000 with the same vtable and update slot 0x821929A8."
+    },
+    {
+      "addresses": ["0x8219EB20", "0x8219F7F8"],
+      "kind": "global_function",
+      "proposed_names": ["ResolveResourceKey", "AllocateResourceManager"],
+      "confidence": "medium"
+    },
+    {
+      "address": "0x82012E1C",
+      "kind": "vtable",
+      "proposed_name": "CResourceManager_vtable",
+      "confidence": "high"
+    },
+    {
+      "address": "0x8219DC50",
+      "kind": "virtual_method",
+      "proposed_name": "ResourceManagerFamily_UpdateFlags",
+      "vtable_slot": "+0x40",
+      "vtables": ["0x82012CA4", "0x82012E1C", "0x82012E64", "0x82012EBC", "0x82012F1C", "0x82012F84"],
+      "boundary": "bounded_unowned",
+      "confidence": "medium",
+      "note": "Shared virtual target across six RTTI vtables. Only flag writes are proved; it is not exclusively a CResourceManager initializer and is not a current canonical Function entry."
+    },
+    {
+      "addresses": ["0x821A8C50", "0x821A6988"],
+      "kind": "global_import_wrapper",
+      "proposed_names": ["WaitImportWrapper", "SignalImportWrapper"],
+      "confidence": "high"
+    },
+    {
+      "addresses": ["0x821A8C88", "0x821A69CC"],
+      "kind": "return_address",
+      "confidence": "high",
+      "note": "Import continuations; not function entries."
+    },
+    {
+      "address": "0xE000004C",
+      "kind": "global_handle",
+      "proposed_name": "FrontendWakeEvent",
+      "confidence": "high"
+    },
+    {
+      "addresses": ["0x821A00E8", "0x8219F080"],
+      "kind": "global_function",
+      "proposed_names": ["RegisterTypedResource", "PublishResourceHandle"],
+      "confidence": "medium",
+      "note": "Direct resource-registration chain proves type 4 and resource+0x14 = 0x59. Proposed business names are descriptive only; these are not SWG-owner methods."
+    },
+    {
+      "address": "0x82651900",
+      "kind": "global_function_pointer_table",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82346D08",
+      "kind": "global_function",
+      "confidence": "medium",
+      "note": "Uses literal function-table index 89/0x59, but no qualified call/xref joins it to the SWG resource or Q1 writer. Candidate only."
+    },
+    {
+      "address": "0x82326920",
+      "kind": "instance_initializer",
+      "proposed_name": "SwgStorageB_InitializeFromBlob",
+      "receiver": "r3: storage B subobject at SwgAggregate336+0x08",
+      "evidence": ["called as 0x82326920(A+8, blob) from 0x82321DB8", "writes B+0/B+4 to blob and derives B+0x38/+0x3c/+0x40 from blob+0x7c/+0x80"],
+      "confidence": "high",
+      "note": "Initializes B, not descriptor D. No independent RTTI/vtable proves a source-level class or method name for B."
+    },
+    {
+      "address": "0x82321DB8",
+      "kind": "instance_method",
+      "proposed_name": "SwgAggregate336_InitializeStorage",
+      "receiver": "r3: SwgAggregate336 A",
+      "arguments": ["r4: decompressed SWG blob"],
+      "confidence": "high",
+      "note": "Passes the embedded subobject A+0x08 to 0x82326920. The aggregate source class name remains unknown."
+    },
+    {
+      "address": "0x820CE258",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgManager_Slot1_ForwardCreate",
+      "receiver": "r3: CSwgManager instance",
+      "vtable": "0x82006438",
+      "vtable_slot": "+0x04 (index 1)",
+      "confidence": "high",
+      "note": "Forwards to CSwgManager slot +0x0c with the qualified ABI permutation; name is structural."
+    },
+    {
+      "address": "0x820CE350",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgManager_Slot7_RepublishRoot",
+      "receiver": "r3: CSwgManager instance",
+      "vtable": "0x82006438",
+      "vtable_slot": "+0x1c (index 7)",
+      "confidence": "high",
+      "note": "Loads aggregate A from this+0x04 and tail-calls 0x82322300 when non-null. The name does not imply a START-specific callsite."
+    },
+    {
+      "address": "0x82322300",
+      "kind": "instance_method",
+      "proposed_name": "SwgAggregate336_RepublishRootController",
+      "receiver": "r3: SwgAggregate336 A",
+      "evidence": ["conditionally releases A+0xf4", "computes B=A+8", "computes descriptor D from B tables", "looks up _root separately", "stores the new controller at A+0xf4"],
+      "confidence": "high",
+      "note": "Structural role only. A post-START observation at LR 0x82323860 does not by itself prove this caller or a changed A/B/D identity."
+    },
+    {
+      "address": "0x820D29E0",
+      "kind": "virtual_method",
+      "proposed_name": "swg::Memory_Slot3_RebuildViews",
+      "receiver": "r3: swg::Memory<...> instance",
+      "vtable": "0x820064D8",
+      "vtable_slot": "+0x0c (index 3)",
+      "confidence": "high",
+      "note": "Consumes (Memory,A,B); it does not replace the embedded B subobject."
+    },
+    {
+      "address": "0x820D13F0",
+      "kind": "virtual_method",
+      "proposed_name": "swg::Memory_Slot5_ReleaseMovieController",
+      "receiver": "r3: swg::Memory<...> instance",
+      "vtable": "0x820064D8",
+      "vtable_slot": "+0x14 (index 5)",
+      "arguments": ["r4: swg::MovieController instance"],
+      "confidence": "high"
+    },
+    {
+      "address": "0x82326D08",
+      "kind": "global_function",
+      "proposed_name": "SwgStorage_FindNamedSelector",
+      "arguments": ["r3: storage B", "r4: literal 3", "r5: name string"],
+      "confidence": "high",
+      "note": "Returns the integer selector for `_root`; it is not descriptor D, a draw index or a Xenos handle. Namespace/class ownership is not proved."
+    },
+    {
+      "address": "0x82322620",
+      "kind": "global_initializer",
+      "confidence": "high",
+      "note": "Zero-initializes node fields through +0x70, including +0x38; not a populated SWG-table producer."
+    },
+    {
+      "address": "0x820304D8",
+      "kind": "vtable",
+      "proposed_name": "swg::MovieController_vtable",
+      "rtti": "swg::MovieController",
+      "confidence": "high",
+      "note": "Global read-only vtable object; it is data, not a method."
+    },
+    {
+      "address": "0x82007D0C",
+      "kind": "vtable",
+      "proposed_name": "CSwgRenderer_vtable",
+      "rtti": "CSwgRenderer",
+      "base_rtti": "swg::Renderer",
+      "type_descriptor": "0x823866FC",
+      "confidence": "high",
+      "note": "Global read-only vtable object; slot 7 / cell +0x1c contains 0x820EB200."
+    },
+    {
+      "address": "0x823866FC",
+      "kind": "rtti_type_descriptor",
+      "type_name": ".?AVCSwgRenderer@@",
+      "confidence": "high",
+      "note": "Global RTTI data object, not an instance or function."
+    },
+    {
+      "address": "0x820EAAF0",
+      "kind": "constructor_initializer",
+      "proposed_name": "CSwgRenderer_Initialize",
+      "receiver": "r3: allocated 12336-byte CSwgRenderer instance",
+      "writes_vtable": "0x82007D0C",
+      "confidence": "high",
+      "note": "Initializes instance fields; reconstructed role is corroborated by the destructor path 0x820EB158/0x820EB1B0."
+    },
+    {
+      "address": "0x820E8B58",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgManager_Slot3_CreateRendererAggregate",
+      "receiver": "r3: CSwgManager instance",
+      "vtable": "0x82006438",
+      "vtable_slot": "+0x0c (index 3)",
+      "confidence": "high",
+      "note": "Materializes the distinct 336-byte aggregate, its CSwgRenderer/Memory ownership and the CSwgManager auxiliary, CSwgSound and CSwgCallback objects. This is not a CSwgRenderer method."
+    },
+    {
+      "address": "0x8216CB40",
+      "kind": "instance_method",
+      "proposed_name": "ModeTaskTitleCompatible_ResolveSwgResources",
+      "receiver": "r3: CModeTaskTitleDemoOffline-compatible instance",
+      "reads_attributes": ["receiver+0x14 resource pointer/handle", "receiver+0x18 resource pointer/handle", "receiver+0x1c embedded CSwgManager"],
+      "confidence": "high",
+      "note": "Resolves the SWG blob and service values, then calls the embedded CSwgManager virtual slot +0x04. The exact source member name is not recovered."
+    },
+    {
+      "address": "0x82322710",
+      "kind": "instance_initializer",
+      "proposed_name": "SwgAggregate336_Initialize",
+      "receiver": "r3: allocated 336-byte aggregate",
+      "writes_attributes": ["aggregate+0xdc = allocator/service", "aggregate+0xe0 = CSwgRenderer*"],
+      "confidence": "high",
+      "note": "The source class name of the aggregate is not qualified by RTTI; keep the structural name descriptive."
+    },
+    {
+      "address": "0x82325E70",
+      "kind": "global_table_callback",
+      "proposed_name": "SwgType0RenderCallback",
+      "dispatch_table": "0x8264D074",
+      "confidence": "high",
+      "note": "Receives a MovieController* and forwards a record/matrix to CSwgRenderer. Table membership proves callback status, not C++ method ownership."
+    },
+    {
+      "address": "0x823C27E0",
+      "kind": "global_pointer",
+      "proposed_name": "GlobalStatePointerCell_823C27E0",
+      "pointee_layout": "GlobalStateVia0x823C27E0",
+      "confidence": "high",
+      "note": "This address is the global pointer cell. Offset +0x20760 belongs to the pointed state and is not an autonomous global."
+    },
+    {
+      "address": "0x821A5A50",
+      "kind": "global_function",
+      "proposed_name": "ReadGuestLanguageXConfig",
+      "calls": "ExGetXConfigSetting(category=3, setting=9)",
+      "returns": "guest language value",
+      "function_size": "0x90",
+      "byte_sha256": "2bc8637874e3b5c38d45edebc76f54d9ba683de6bae5a6d69c4aef1d954f0068",
+      "confidence": "high",
+      "note": "The proposed name is structural; this is a global guest function, not an instance method."
+    },
+    {
+      "address": "0x8218EA98",
+      "kind": "global_function",
+      "proposed_name": "InitializeGuestLanguageSelector",
+      "writes_attributes": ["(*0x823C27E0)+0x20760 = selector; guest language 1 maps to selector 1"],
+      "called_by": "global initializer 0x821908B8",
+      "function_size": "0x80",
+      "byte_sha256": "2ff31f65ef3a7d2810f87ab98d8db61b03b69ee3a56bb97f83e9c1b0c3834b68",
+      "confidence": "high",
+      "note": "The proposed name is structural; this is a global guest function, not a method of the pointed state."
+    },
+    {
+      "address": "0x8218A680",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskTitleDemoOffline_Slot2C_SelectLocalizedResourceIndex",
+      "receiver": "r3: CModeTaskTitleDemoOffline instance",
+      "vtable": "0x820113E4",
+      "vtable_cell": "0x82011410",
+      "vtable_slot": "+0x2c (index 11)",
+      "contract": "maps selector 0 to resource index 0xB1 and selector 1 to 0xB2, then invokes slot +0x38(this,index,0)",
+      "function_size": "0x128",
+      "byte_sha256": "a339f0b667c2be7fc6a14f71d52e0f2eee0c6760bada2f35e4328b8e0fb3f836",
+      "confidence": "high",
+      "note": "The method classification comes from the exact qualified title vtable cell; the proposed name is structural."
+    },
+    {
+      "address": "0x8216CA70",
+      "kind": "virtual_method",
+      "proposed_name": "CModeTaskTitleDemoOffline_Slot38_ProcessResourceIndex",
+      "receiver": "r3: CModeTaskTitleDemoOffline instance by vtable contract",
+      "vtable": "0x820113E4",
+      "vtable_cell": "0x8201141C",
+      "vtable_slot": "+0x38 (index 14)",
+      "arguments": ["r4: resource index", "r5: observed caller value 0"],
+      "contract": "forwards the index to 0x8219EEE8(...,2,index) and 0x821A02C0(...,index,...), then retains their returned handles in loading state",
+      "function_size": "0xCC",
+      "byte_sha256": "e5b955eb8c1f94d513f3431bf8fe5f1f8a43825e9f8ff21d6da94e240d9bb2e5",
+      "confidence": "high",
+      "note": "Virtual-method ownership is proved by the title vtable slot even though the body need not use this. The proposed name is structural."
+    },
+    {
+      "address": "0x82011154",
+      "kind": "vtable_address_point",
+      "proposed_name": "CModeTaskLoadingDemoOffline_primary_vtable",
+      "rtti": "CModeTaskLoadingDemoOffline",
+      "rtti_descriptor": "0x82392584",
+      "object_offset": "+0x00",
+      "slots": {
+        "+0x40": "0x8216B958",
+        "+0x44": "0x8216B978",
+        "+0x48": "0x8217E890"
+      },
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Global constant primary vtable address-point; data, not an object instance."
+    },
+    {
+      "address": "0x820110F4",
+      "kind": "vtable_address_point",
+      "proposed_name": "CModeTaskLoadingDemoOffline_CSwgListener_vtable",
+      "rtti": "CModeTaskLoadingDemoOffline",
+      "rtti_descriptor": "0x82392584",
+      "object_offset": "+0x68",
+      "slots": {
+        "+0x54": "0x8217E228"
+      },
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Global constant secondary vtable address-point installed at outer+0x68; data, not an object instance."
+    },
+    {
+      "address": "0x8218DAF0",
+      "kind": "constructor",
+      "proposed_name": "CModeTaskLoadingDemoOffline_ctor",
+      "writes_vtables": ["outer+0x00 = 0x82011154", "outer+0x68 = 0x820110F4"],
+      "source_scope": "demo_only",
+      "confidence": "high"
+    },
+    {
+      "address": "0x821926C0",
+      "kind": "global_factory",
+      "proposed_name": "CreateCModeTaskLoadingDemoOffline",
+      "allocation_size": "0x90",
+      "calls_constructor": "0x8218DAF0",
+      "factory_cell": "0x82391F00",
+      "source_scope": "demo_only",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82391EFC",
+      "kind": "global_readonly_data",
+      "proposed_name": "StartupTitleFactorySelectorCell",
+      "value": "0x82192680",
+      "reader": "0x8218E920",
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Adjacent read-only selector cell; distinct from the DemoOfflineModeFactoryTable at 0x82391F00..0x82391F14."
+    },
+    {
+      "address": "0x82391F00",
+      "kind": "global_function_pointer_table",
+      "proposed_name": "DemoOfflineModeFactoryTable",
+      "range": "[0x82391F00,0x82391F14)",
+      "entries": {
+        "+0x00": "0x821926C0 CModeTaskLoadingDemoOffline factory",
+        "+0x04": "0x82192700",
+        "+0x08": "0x82192740",
+        "+0x0c": "0x82192780 CModeTaskGameDemoOffline factory",
+        "+0x10": "0x82192680 CModeTaskTitleDemoOffline factory"
+      },
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Global table data containing factory function pointers; none of its cells is an object instance or a constructed mode."
+    },
+    {
+      "address": "0x8218E948",
+      "kind": "global_function",
+      "proposed_name": "SelectModeFactoryByCallbackIndex",
+      "confidence": "high",
+      "note": "Raw callback values 0 or 1 become index 0 before this selector and return factory cell 0x82391F00. The name is structural and no START provenance is implied."
+    },
+    {
+      "address": "0x820CDFC8",
+      "kind": "global_function",
+      "proposed_name": "ListenerTable_Unregister",
+      "confidence": "high",
+      "note": "Clears the matching CSwgListener* entry in the 16-cell global table at 0x826DF800."
+    },
+    {
+      "address": "0x82012DC4",
+      "kind": "vtable",
+      "proposed_name": "CResourceLoaderSwg_vtable",
+      "rtti": "CResourceLoaderSwg derived from CResourceLoader",
+      "confidence": "high",
+      "note": "Global constant vtable data; slot +0x14 points to 0x8219E580."
+    },
+    {
+      "address": "0x8219E580",
+      "kind": "virtual_method",
+      "proposed_name": "CResourceLoaderSwg_Slot14_ConsumeAttachedSource",
+      "receiver": "r3: CResourceLoaderSwg instance",
+      "vtable": "0x82012DC4",
+      "vtable_slot": "+0x14 (index 5)",
+      "reads_attributes": ["this+0x18 source object", "this+0x1c source index"],
+      "confidence": "high",
+      "note": "Tests the attached source through its virtual slot +0x18, then calls global resolver 0x821EE0F8(source+0x20,index). It is not a global registration helper."
+    },
+    {
+      "address": "0x8219E768",
+      "kind": "receiver_helper",
+      "proposed_name": "ResourceLoaderSwgWrapper_AttachSourceFields",
+      "receiver_argument": "r3: explicit CResourceLoaderSwg object",
+      "writes_attributes": ["wrapper+0x14 = metadata", "wrapper+0x18 = source object", "wrapper+0x1c = index"],
+      "confidence": "high",
+      "note": "The fixed-field setter contract is proved; the ABI does not distinguish a non-virtual member from a global helper, so method ownership is not promoted."
+    },
+    {
+      "addresses": ["0x821A02C0", "0x8219F300", "0x8219EEE8", "0x8219EE40", "0x821EE0F8"],
+      "kind": "global_function",
+      "contracts": {
+        "0x8219EEE8": "forms/resolves DPL key [key,0] in the qualified title call",
+        "0x8219EE40": "produces the corresponding resolved guest source object",
+        "0x821A02C0": "looks up/creates the registry resource and returns a registry-slot handle",
+        "0x8219F300": "allocates and initializes a 0x20-byte CResourceLoaderSwg wrapper",
+        "0x821EE0F8": "global record/table resolver called on source+0x20 with an explicit index"
+      },
+      "confidence": "high",
+      "note": "The contracts are structural. No source-level namespace or business method ownership is inferred."
+    },
+    {
+      "address": "0x8200A254",
+      "kind": "vtable",
+      "proposed_name": "CSelectAircraftSetupManager_vtable",
+      "rtti": "CSelectAircraftSetupManager derived from ACE6::CAce6Thread",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82127D40",
+      "kind": "instance_method",
+      "proposed_name": "CSelectAircraftSetupManager_ResolveAccAndConfigureDecoder",
+      "receiver": "r3: CSelectAircraftSetupManager instance",
+      "vtable": "0x8200A254",
+      "confidence": "high",
+      "note": "Selects an instance-owned outer object using receiver[0x2313], resolves ACC with index 1, allocates output from ACC+0x08, and configures the embedded decoder state at receiver+0x8CA0. No title identity is proved."
+    },
+    {
+      "address": "0x8264CEA8",
+      "kind": "global_function_pointer_table",
+      "proposed_name": "SwgOpcodeDispatchTable",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82386408",
+      "kind": "global_readonly_data",
+      "proposed_name": "SwgNativeDescriptorTableBase",
+      "confidence": "high",
+      "note": "Read-only descriptor-table base; this is data, not a dispatcher or callback."
+    },
+    {
+      "addresses": ["0x82386628", "0x82386698"],
+      "kind": "global_descriptor_row",
+      "descriptor_names": ["EndMode", "menu_endMode"],
+      "argument_signature": "I",
+      "return_signature": "V",
+      "handler": "0x820EA4A8",
+      "confidence": "high",
+      "note": "Two distinct constant rows sharing one callback. Their existence does not prove natural START selection."
+    },
+    {
+      "address": "0x820077AC",
+      "kind": "vtable_address_point",
+      "proposed_name": "CSwgASContext_vtable_address_point",
+      "rtti": "CSwgASContext",
+      "confidence": "high",
+      "note": "Slots 64 and 77/78 participate in the qualified alternate statement-launch CFG."
+    },
+    {
+      "address": "0x82007974",
+      "kind": "vtable_address_point",
+      "proposed_name": "CSwgHandler_vtable_address_point",
+      "rtti": "CSwgHandler",
+      "confidence": "high",
+      "note": "Slots 44 and 47 point to 0x820E8F90 and 0x820DFFB8 respectively."
+    },
+    {
+      "address": "0x82325160",
+      "kind": "instance_method",
+      "proposed_name": "SwgExecutionContext_DispatchBytecode",
+      "receiver": "r3: structural SWG execution context",
+      "reads_attributes": ["exec+0x14 program counter", "exec+0x0c handler/context object"],
+      "dispatch_table": "0x8264CEA8",
+      "confidence": "high",
+      "note": "Structural receiver classification only; the source C++ class name is not promoted."
+    },
+    {
+      "address": "0x823251E0",
+      "kind": "instance_method",
+      "proposed_name": "SwgExecutionContext_StartAtOffset",
+      "receiver": "r3: structural SWG execution context",
+      "writes_attributes": ["exec+0x10 = statement table base", "exec+0x14 = table base + explicit offset"],
+      "confidence": "high",
+      "note": "The byte offset is used literally; this method performs no relocation."
+    },
+    {
+      "addresses": ["0x82325288", "0x82325298", "0x823252A8", "0x823253A0"],
+      "kind": "receiver_helper",
+      "proposed_name": "SwgExecutionContextLaunchers",
+      "receiver_argument": "r3: explicit execution context",
+      "confidence": "high",
+      "note": "Distinct launcher entry points can reach 0x82325160 without a type-6 callback. Table membership or natural title/START causality is not implied."
+    },
+    {
+      "address": "0x820E7638",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgASContext_Slot64_ResolveAndLaunch",
+      "receiver": "r3: CSwgASContext instance",
+      "vtable": "0x820077AC",
+      "vtable_slot": "+0x100 (index 64)",
+      "confidence": "high"
+    },
+    {
+      "addresses": ["0x820E7E00", "0x820E7E08"],
+      "kind": "virtual_thunk",
+      "proposed_name": "CSwgASContext_Slots77And78_Thunks",
+      "vtable": "0x820077AC",
+      "vtable_slots": ["+0x134 (index 77)", "+0x138 (index 78)"],
+      "target": "0x820E1F78",
+      "confidence": "high"
+    },
+    {
+      "address": "0x820E1F78",
+      "kind": "instance_method",
+      "proposed_name": "CSwgASContext_VisitLiveEntries",
+      "receiver": "r3: CSwgASContext instance",
+      "reads_attributes": ["this+0x150 live-entry collection"],
+      "confidence": "high",
+      "note": "The qualified START observation reached the slot-78 thunk with this collection empty; no statement launch occurred in that observation."
+    },
+    {
+      "address": "0x820DFFB8",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgHandler_Slot47_ResolveTypedNativeSymbol",
+      "receiver": "r3: CSwgHandler instance",
+      "vtable": "0x82007974",
+      "vtable_slot": "+0xbc (index 47)",
+      "confidence": "high",
+      "note": "On a found type-2 symbol it dispatches virtual slot 44; this does not prove which descriptor row is selected."
+    },
+    {
+      "address": "0x820E8F90",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgHandler_Slot44_MarshalNativeDescriptor",
+      "receiver": "r3: CSwgHandler instance",
+      "vtable": "0x82007974",
+      "vtable_slot": "+0xb0 (index 44)",
+      "contract": "row = handler+0x3c descriptor base + 16 * value_record+0x0c index; invokes row+0x0c after signature marshalling",
+      "confidence": "high",
+      "note": "Conditional marshaller contract only. It is not exclusive to type-6 launch and has no proved natural START row/index."
+    },
+    {
+      "address": "0x820E9130",
+      "kind": "return_address",
+      "containing_function": "0x820E8F90",
+      "instruction": "cmplwi cr6,r26,0",
+      "confidence": "high",
+      "note": "Post-bctrl continuation with zero incoming xrefs in the canonical demo project; never classify it as a function, launcher or call site."
+    },
+    {
+      "address": "0x82006438",
+      "kind": "vtable",
+      "proposed_name": "CSwgManager_vtable",
+      "rtti": "CSwgManager",
+      "confidence": "high",
+      "note": "Global constant vtable data. Slot +0x20 points to 0x820CE368."
+    },
+    {
+      "address": "0x820CE210",
+      "kind": "constructor",
+      "proposed_name": "CSwgManager_ctor",
+      "receiver": "r3: embedded or standalone CSwgManager instance",
+      "writes_vtable": "this+0x00 = 0x82006438",
+      "initializes_attributes": ["this+0x04/+0x18/+0x1c/+0x20/+0x24 = NULL", "this+0x08..+0x14 floating-point state"],
+      "confidence": "high"
+    },
+    {
+      "address": "0x820CE368",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgManager_Slot8_AdvanceOwnedSwgState",
+      "receiver": "r3: CSwgManager instance",
+      "vtable": "0x82006438",
+      "vtable_slot": "+0x20 (index 8)",
+      "reads_attributes": ["this+0x04 aggregate A", "this+0x18/+0x1c unnamed 132-byte auxiliaries", "this+0x20 CSwgSound*", "this+0x24 CSwgCallback*"],
+      "confidence": "high",
+      "note": "Advances owned auxiliaries, renderer and aggregate through 0x82322438. It has no direct call/pointer edge to the EndMode/menu_endMode marshaller or title listener and writes no title/mode-transition field."
+    },
+    {
+      "address": "0x820EB3F0",
+      "kind": "constructor",
+      "proposed_name": "CSwgSound_ctor",
+      "writes_vtable": "0x82007D60",
+      "confidence": "high"
+    },
+    {
+      "address": "0x820EB508",
+      "kind": "virtual_method",
+      "proposed_name": "CSwgSound_Slot2_EnqueueVoiceByName",
+      "receiver": "r3: CSwgSound instance",
+      "vtable": "0x82007D60",
+      "vtable_slot": "+0x08 (index 2)",
+      "reads_attributes": ["this+0x04 embedded name-to-ID resolver"],
+      "contract": "resolves the name, calls audio-service slot +0x60 and returns the produced u32 handle immediately",
+      "confidence": "high"
+    },
+    {
+      "address": "0x823CAB58",
+      "kind": "global_pointer",
+      "proposed_name": "CurrentAudioServicePointerCell",
+      "pointee_type": "stub object before initialization; CNuSound after 0x82103F68",
+      "confidence": "high",
+      "note": "Mutable pointer cell, not an audio-service object or method."
+    },
+    {
+      "address": "0x823CAB5C",
+      "kind": "global_object_instance",
+      "proposed_name": "InitialAudioServiceStubObject",
+      "vtable": "0x8201FEE8",
+      "confidence": "high",
+      "note": "The slot +0x60 stub returns success without writing a handle; its source class name is not qualified."
+    },
+    {
+      "address": "0x82103F68",
+      "kind": "global_function",
+      "proposed_name": "SetCurrentAudioService",
+      "contract": "stores its explicit pointer argument into global cell 0x823CAB58",
+      "confidence": "high",
+      "note": "No stable receiver is proved; do not classify this setter as an instance method."
+    },
+    {
+      "address": "0x826E47B0",
+      "kind": "global_object_instance",
+      "proposed_name": "GlobalCNuSoundInstance",
+      "rtti": "CNuSound : ACE6::CAce6Sound : ACE6::CAce6Thread",
+      "vtable": "0x820092BC",
+      "confidence": "high"
+    },
+    {
+      "address": "0x820092BC",
+      "kind": "vtable",
+      "proposed_name": "CNuSound_vtable",
+      "rtti": "CNuSound : ACE6::CAce6Sound : ACE6::CAce6Thread",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82105DC0",
+      "kind": "constructor",
+      "proposed_name": "CNuSound_ctor",
+      "receiver": "r3: CNuSound instance, including global 0x826E47B0",
+      "writes_vtable": "0x820092BC after CAce6Thread base construction",
+      "confidence": "high"
+    },
+    {
+      "address": "0x82104840",
+      "kind": "virtual_thunk",
+      "proposed_name": "CNuSound_Slot24_EnqueueVoiceDefaultsThunk",
+      "vtable": "0x820092BC",
+      "vtable_slot": "+0x60 (index 24)",
+      "target": "virtual slot 23 / 0x82106A58",
+      "confidence": "high",
+      "note": "Supplies two default floats and a zero flag, then tail-dispatches; it does not wait."
+    },
+    {
+      "address": "0x82106A58",
+      "kind": "virtual_method",
+      "proposed_name": "CNuSound_Slot23_AllocateVoiceRecord",
+      "receiver": "r3: CNuSound instance",
+      "vtable": "0x820092BC",
+      "vtable_slot": "+0x5c (index 23)",
+      "writes_attributes": ["one 0x60-byte record in the 512-entry guest voice pool at CNuSound+0x130"],
+      "confidence": "high",
+      "note": "Returns synchronously with success/failure and a compact handle; no callback pointer is stored."
+    },
+    {
+      "address": "0x821065E8",
+      "kind": "receiver_helper",
+      "proposed_name": "CNuSoundVoicePool_AllocateHandle",
+      "receiver_argument": "r3: explicit guest voice-pool base",
+      "contract": "allocates an index/generation pair in the 512-entry guest pool used by 0x82106A58",
+      "confidence": "high",
+      "note": "No vptr access proves class-method ownership; keep this as an explicit-base pool helper."
+    },
+    {
+      "address": "0x82106EC0",
+      "kind": "virtual_method",
+      "proposed_name": "CNuSound_Slot1_Update",
+      "receiver": "r3: CNuSound instance",
+      "vtable": "0x820092BC",
+      "vtable_slot": "+0x04 (index 1)",
+      "calls": ["0x82106680 guest audio worker"],
+      "confidence": "high"
+    },
+    {
+      "address": "0x82106680",
+      "kind": "global_function",
+      "proposed_name": "CNuSoundVoicePoolWorker",
+      "contract": "scans 512 guest voice records, creates/polls low-level voices and frees completed records",
+      "confidence": "high",
+      "note": "It obtains the current singleton rather than receiving a proved this pointer; no completion callback toward Title is present."
+    },
+    {
+      "address": "0x820CD990",
+      "kind": "constructor",
+      "proposed_name": "CSwgCallback_ctor",
+      "writes_vtable": "0x820061FC",
+      "initializes_attributes": ["this+0x08 = 1", "this+0x09 = 0"],
+      "confidence": "high"
+    },
+    {
+      "address": "0x82322438",
+      "kind": "receiver_helper",
+      "proposed_name": "SwgAggregate336_AdvanceFrames",
+      "receiver_argument": "r3: explicit 336-byte aggregate A",
+      "confidence": "high",
+      "note": "The fixed aggregate-field contract and call to MovieController update are proved; the ABI/source class boundary does not justify promotion to a named C++ method."
+    },
+    {
+      "address": "0x823CA848",
+      "kind": "global_object_instance",
+      "proposed_name": "GlobalVirtualSlot1CInstance_823CA848",
+      "confidence": "medium",
+      "note": "A fixed-address object instance whose virtual slot +0x1c supplies a delta to the CSwgManager update. Its source class and time unit are not qualified."
+    },
+    {
+      "address": "0x826DFC44",
+      "kind": "global_pointer",
+      "proposed_name": "CurrentCSwgSoundPointerCell",
+      "pointee_type": "CSwgSound",
+      "writer": "0x820CE368 stores CSwgManager+0x20",
+      "confidence": "high",
+      "note": "Mutable global pointer cell; it is not a Title field or a method."
+    },
+    {
+      "addresses": ["0x82021178", "0x82007D60", "0x820061FC"],
+      "kind": "vtable",
+      "contracts": {
+        "0x82021178": "shared vtable of two unnamed 132-byte auxiliary objects/roles; vtable-4 is zero and supplies no RTTI name",
+        "0x82007D60": "RTTI-qualified CSwgSound vtable",
+        "0x820061FC": "CSwgCallback vtable"
+      },
+      "confidence": "high",
+      "note": "These are distinct global constant vtables, not object instances. The unnamed auxiliary source type is deliberately not promoted."
+    },
+    {
+      "addresses": ["0x8223D5C0", "0x8223D518"],
+      "kind": "constructor_initializer",
+      "proposed_name": "UnnamedSwgAuxiliary132_Initializers",
+      "allocated_extent": "0x84 (132 bytes)",
+      "writes_vtable": "0x82021178",
+      "confidence": "high",
+      "note": "The two initialized auxiliary objects have distinct +0x04 initialization contracts and no qualified RTTI class name."
+    },
+    {
+      "addresses": ["0x823244B8", "0x82324500", "0x82324530", "0x823246C0", "0x823248C8", "0x82324C20", "0x82324C80", "0x82324C98", "0x82324CE0"],
+      "kind": "global_table_callback",
+      "dispatch_table": "0x8264CEA8",
+      "contracts": {
+        "0x823244B8": "opcode 0x13",
+        "0x82324500": "opcode 0x17",
+        "0x82324530": "opcode 0x19",
+        "0x823246C0": "opcode 0x2e length-delimited compact values",
+        "0x823248C8": "opcode 0x32 conditional PC displacement",
+        "0x82324C20": "opcode 0x44 VM binary operation",
+        "0x82324C80": "opcode 0x49 VM operation",
+        "0x82324C98": "opcode 0x4a VM operation",
+        "0x82324CE0": "opcode 0x4d invocation/transfer"
+      },
+      "confidence": "high",
+      "note": "Opcode-table selection proves callback status, not C++ method ownership."
+    },
+    {
+      "address": "0x82324248",
+      "kind": "global_table_callback",
+      "proposed_name": "SwgOpcode2_ClearTerminalActiveFlag",
+      "dispatch_table": "0x8264CEA8",
+      "contract": "loads exec+0x18; if non-null, tail-calls 0x82322CD8",
+      "confidence": "high",
+      "note": "Global opcode-table callback, not a proved MovieController method or EndMode handler."
+    },
+    {
+      "address": "0x82322CD8",
+      "kind": "receiver_helper",
+      "proposed_name": "SwgReceiverChain_ClearTerminalD5",
+      "receiver_argument": "r3: explicit receiver-chain node",
+      "contract": "entry/thunk follows receiver+0x19c then child+0xf4 to the terminal node; body 0x82322CE4 writes terminal+0xd5 = 0",
+      "confidence": "high",
+      "note": "The fixed receiver-chain and field effect are proved; the ABI does not establish source-level method ownership or the business name of +0xd5."
+    },
+    {
+      "address": "0x82322CF8",
+      "kind": "receiver_helper",
+      "proposed_name": "SwgReceiverChain_SetTerminalD5",
+      "receiver_argument": "r3: explicit receiver-chain node",
+      "contract": "entry/thunk follows receiver+0x19c then child+0xf4 to the terminal node; body 0x82322D04 writes terminal+0xd5 = 1",
+      "confidence": "high",
+      "note": "This is the distinct rearm helper. The fixed receiver-chain and field effect are proved, but source-level method ownership and the business name of +0xd5 are not."
+    },
+    {
+      "addresses": ["0x82322D20", "0x82322D60", "0x82322DA8", "0x82322DF0"],
+      "kind": "receiver_helper",
+      "proposed_name": "SwgMovieControllerCursorHelpers",
+      "receiver_argument": "r3: explicit MovieController receiver-chain node",
+      "contracts": {
+        "0x82322D20": "writes D6=1, D8=*argument and D5=0 through body 0x82322D28",
+        "0x82322D60": "writes D6=1, increments D8 and writes D5=0 through body 0x82322D68",
+        "0x82322DA8": "writes D6=1, decrements D8 and writes D5=0 through body 0x82322DB0",
+        "0x82322DF0": "writes D6=1, D8=map(argument) and D5=0"
+      },
+      "confidence": "high",
+      "note": "These are explicit-receiver helpers, not independently proved C++ methods. None finishes with D5=1."
+    },
+    {
+      "addresses": ["0x82324230", "0x82324260", "0x82324278", "0x82324290", "0x823242D8", "0x82324930"],
+      "kind": "global_table_callback",
+      "proposed_name": "SwgMovieControllerNavigationOpcodeHandlers",
+      "dispatch_table": "0x8264CEA8",
+      "additional_dispatch_cell": "0x8264CF78 (table index 0x34)",
+      "contracts": {
+        "0x82324230": "opcode 1: rearm terminal D5 when exec+0x18 is non-null",
+        "0x82324260": "opcode 3: increment D8, set D6 and clear D5",
+        "0x82324278": "opcode 4: decrement D8, set D6 and clear D5",
+        "0x82324290": "opcode 5: set D8 from the next word, set D6 and clear D5",
+        "0x823242D8": "opcode 6: set D8 from a mapped next word, set D6 and clear D5",
+        "0x82324930": "opcode 0x34: selector-dependent cursor choice; selectors 1 and 3 additionally rearm D5"
+      },
+      "confidence": "high",
+      "note": "Global read-only dispatch-table selection proves callback status, not C++ method ownership."
+    },
+    {
+      "addresses": ["0x820E45F8", "0x820E4648", "0x820E4698", "0x820E4800", "0x820E50D8", "0x820E5140"],
+      "kind": "global_table_callback",
+      "proposed_name": "SwgMovieControllerRegisteredNavigationCallbacks",
+      "contracts": {
+        "0x820E45F8": "obtain controller through receiver+0x30 slot +0x24; increment cursor and leave D5 cleared",
+        "0x820E4648": "obtain controller through receiver+0x30 slot +0x24; set D5=1",
+        "0x820E4698": "obtain controller through receiver+0x30 slot +0x24; decrement cursor and leave D5 cleared",
+        "0x820E4800": "obtain controller through receiver+0x30 slot +0x24; clear D5",
+        "0x820E50D8": "resolve an integer, choose D8/D6, then set D5=1",
+        "0x820E5140": "resolve an integer, choose D8/D6 and leave D5 cleared"
+      },
+      "confidence": "high",
+      "note": "These receiver-bearing sret callbacks are referenced by global code-pointer cells only. The binary does not distinguish a source non-virtual member from a free registration thunk, so no invented class-method ownership is promoted."
+    },
+    {
+      "addresses": ["0x820DAFA8", "0x820E0568", "0x820D7B50", "0x820DD158", "0x820E6CD0", "0x820E6FA0", "0x820DBA18"],
+      "kind": "virtual_method",
+      "receiver": "r3: CSwgASContext instance",
+      "vtable": "0x820077AC",
+      "contracts": {
+        "0x820DAFA8": "slot 50 / +0xc8, truth then boxed negation",
+        "0x820E0568": "slot 24 / +0x60, VM operation used by opcode 0x19",
+        "0x820D7B50": "slot 51 / +0xcc, pop/truth for conditional PC displacement",
+        "0x820DD158": "slot 42 / +0xa8, binary VM operation",
+        "0x820E6CD0": "slot 26 / +0x68, VM operation used by opcode 0x49",
+        "0x820E6FA0": "slot 27 / +0x6c, VM operation used by opcode 0x4a",
+        "0x820DBA18": "slot 69 / +0x114, reached by an outer opcode 0x16"
+      },
+      "confidence": "high",
+      "note": "Only vtable slot and literal VM effects are promoted; source business names remain open."
+    },
+    {
+      "addresses": ["0x82386658", "0x82386648", "0x82386638", "0x82386478", "0x82386568"],
+      "kind": "global_descriptor_row",
+      "descriptor_names": ["GetCurrentLevel", "GetCurrentMission", "GetCurrentMode", "SendMsgI", "OnVoice2D"],
+      "handlers": ["0x820EA598", "0x820EA550", "0x820EA538", "0x820E9838", "0x820EA6C0"],
+      "confidence": "high",
+      "note": "Exact constant descriptor rows selected by the decoded TitleUS post-START items; rows are data, not callbacks or object instances. OnVoice2D is the descriptor string and does not promote a broader source role."
+    },
+    {
+      "addresses": ["0x820EA598", "0x820EA550", "0x820EA538", "0x820EA6C0"],
+      "kind": "global_table_callback",
+      "descriptor_rows": ["0x82386658", "0x82386648", "0x82386638", "0x82386568"],
+      "contracts": {
+        "0x820EA598": "GetCurrentLevel wrapper",
+        "0x820EA550": "GetCurrentMission wrapper",
+        "0x820EA538": "GetCurrentMode wrapper",
+        "0x820EA6C0": "OnVoice2D wrapper: normalizes NUD_TONE_BANK_ name, calls CSwgSound slot2 and returns the synchronous enqueue handle"
+      },
+      "confidence": "high",
+      "note": "Invoked through native descriptor rows. Together with separately classified 0x820E9838/SendMsgI, these five returns do not choose a later MovieMemory item or the parallel type-4 frame. OnVoice2D reaches guest sound objects but no immediate native media import."
+    },
+    {
+      "address_range": "[0x2DCB2000,0x2DCB4000)",
+      "kind": "runtime_heap_buffer",
+      "proposed_name": "TitleUSObservedHeapWindow",
+      "table_base": "relative mapping base 0x2DCB1220 for the qualified window",
+      "source_window": "TitleUS[+0x0de0,+0x2de0)",
+      "sha256": "320ccbdf2ee8996ad41756d139176ca3019b4be8a963f89ca679c9dc9d5b6efe",
+      "confidence": "high",
+      "note": "8192-byte runtime byte identity only. This is not an XEX global and does not promote equality of the complete TitleUS heap image."
+    },
+    {
+      "serialized_identity": "TitleUS post-START SWG bytecode window +0x1210..+0x178b",
+      "kind": "serialized_record",
+      "storage": "DATA.TBL[178] -> DATA00.PAC -> decoded FHM[0,0]/TitleUS",
+      "length": 1404,
+      "sha256": "278ecbdad5c38b1d2c32ff9a75ec1409f855efe09836e0749753f496127c20be",
+      "confidence": "high",
+      "note": "Serialized big-endian VM bytecode/content, not a C++ object, heap allocation, global function or vtable."
+    },
+    {
+      "serialized_identity": "brandLogo decoded SWG descriptor/frame witness",
+      "kind": "serialized_record",
+      "storage": "DATA.TBL[170/171] decoded SWG; artifacts/goal-playable/brandlogo-swg-refs/parsed3/170/000_SWG_.bin",
+      "sha256": "15ca317eabdfe8b381b10880bbc8c87a1b14063985c9f3ad16802417da94b762",
+      "descriptor": "D at 0x1AA48 = {1,0x67c,0,0x718,1}",
+      "first_frame": "frame table 0x718 = {0x704,1}; element 0x704 has type 4",
+      "confidence": "high",
+      "note": "Static serialized-data witness only. It is not a C++ object and is not proved to be attached to the runtime Title/TitleUS MovieController owner."
+    },
+    {
+      "address": "0x821C64E8",
+      "kind": "global_function",
+      "proposed_name": "InitializeHsioTrainingStatusCache",
+      "receiver": "explicit device pointer in r3; source class open",
+      "writes_global": "0x827AD310 = (VdIsHSIOTrainingSucceeded() == 0)",
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "PAL title initialization routine; not the xboxkrnl import and not a device method."
+    },
+    {
+      "address": "0x827AD310",
+      "kind": "global_data_cell",
+      "proposed_name": "HsioTrainingFailureCache",
+      "contract": "On the qualified refresh path, the PAL cache is set to 1 iff the imported VdIsHSIOTrainingSucceeded result equals zero",
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Distinct from the external SDK global and from the device state attribute."
+    },
+    {
+      "address": "0x821BA780",
+      "kind": "instance_method",
+      "proposed_name": "Device_HsioCacheConsumer",
+      "receiver": "r3: private device state",
+      "reads_global": "0x827AD310",
+      "writes_attributes": ["receiver+0x2ABD bit 1"],
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Fixed receiver/field accesses are qualified; device class/source name remains open."
+    },
+    {
+      "address": "0x821B9BC8",
+      "kind": "instance_method",
+      "proposed_name": "Device_SelectRingPublicationPath",
+      "receiver": "r3: private device state",
+      "reads_attributes": ["receiver+0x2ABD bit 1"],
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "note": "Selects the publication regime from the device bit; Xenos MMIO is not classified as C++ object/global data."
+    }
+  ],
+  "layouts": [
+    {
+      "name": "swg::ASContext::String",
+      "vtable": "0x82006B44",
+      "confidence": "medium",
+      "fields": [
+        {"offset": "+0x00", "role": "vptr to the RTTI-qualified String vtable"},
+        {"offset": "+0x04", "role": "initializer-written word; exact business role open"},
+        {"offset": "+0x08", "role": "initializer-written word; exact business role open"},
+        {"offset": "+0x0c", "role": "String representation/state byte consumed and set by virtual slot +0x6c"},
+        {"offset": "+0x10..+0x1c", "role": "copied String representation words"},
+        {"offset": "+0x20", "role": "internal String state updated by helper calls"}
+      ]
+    },
+    {
+      "name": "swg::MovieController",
+      "allocated_extent": "0x1b0 (432 bytes)",
+      "vtable": "0x820304D8",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x0c", "role": "pointer to a distinct SWG context/aggregate; its +0xe0 field is CSwgRenderer*"},
+        {"offset": "+0x10", "role": "swg::MovieMemory instance pointer"},
+        {"offset": "+0x18", "role": "child link used for recursive update"},
+        {"offset": "+0x20", "role": "embedded MovieControllerStorageWrapper W"},
+        {"offset": "+0x28", "role": "frame-table begin derived from storage B and descriptor D"},
+        {"offset": "+0x2c", "role": "frame-table end"},
+        {"offset": "+0x30", "role": "frame count"},
+        {"offset": "+0x34", "role": "auxiliary range begin"},
+        {"offset": "+0x38", "role": "auxiliary range end"},
+        {"offset": "+0x3c", "role": "auxiliary range count"},
+        {"offset": "+0xd0", "role": "integer selector returned by lookup of `_root`; distinct from descriptor D"},
+        {"offset": "+0xd4", "role": "frame-selection predicate: update chooses effective frame DC=D8 when nonzero, otherwise DC=0"},
+        {"offset": "+0xd5", "role": "terminal-node byte initialized/rearmed to 1 and cleared to 0 by the qualified navigation helpers; 1 permits the update's automatic D8 increment when D6=0, while TitleUS opcode 2 at +0x1788 clears it; source business name not promoted"},
+        {"offset": "+0xd6", "role": "MovieMemory re-evaluation/seek-dirty latch; set by qualified navigation helpers and cleared by catch-up after the selected frame is reached"},
+        {"offset": "+0xd8", "role": "frame cursor/state"},
+        {"offset": "+0xdc", "role": "effective frame of the current pass"},
+        {"offset": "+0xe0", "role": "last non-empty frame actually drained from MovieMemory; -1 when the queue is empty"},
+        {"offset": "+0xf8", "role": "current element-stream cursor/command pointer"},
+        {"offset": "+0x100", "role": "embedded statement execution context; table base is stored at context+0x10 and program counter at context+0x14"},
+        {"offset": "+0x19c", "role": "receiver-chain child link; child+0xf4 yields the terminal MovieController reached by the D5 helpers"}
+      ]
+    },
+    {
+      "name": "MovieControllerStorageWrapper",
+      "embedded_at": "swg::MovieController+0x20",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x00", "role": "storage B pointer"},
+        {"offset": "+0x04", "role": "descriptor D pointer"},
+        {"offset": "+0x08", "role": "frame-table begin = *(B+0) + *(D+0x0c)"},
+        {"offset": "+0x0c", "role": "frame-table end = begin + 8 * *(D+0x10)"},
+        {"offset": "+0x10", "role": "frame count = *(D+0x10)"},
+        {"offset": "+0x14", "role": "auxiliary range begin = *(B+0) + *(D+0x04)"},
+        {"offset": "+0x18", "role": "auxiliary range end = begin + 8 * *(D+0x08)"},
+        {"offset": "+0x1c", "role": "auxiliary range count = *(D+0x08)"}
+      ]
+    },
+    {
+      "name": "SwgStorageB",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x00", "role": "relative-object base used to resolve descriptor offsets"},
+        {"offset": "+0x04", "role": "raw SWG header/blob base used to read the root descriptor index at +0xe0"},
+        {"offset": "+0x38", "role": "begin of eight-byte descriptor/object-entry table = blob + *(blob+0x7c)"},
+        {"offset": "+0x3c", "role": "end of descriptor/object-entry table"},
+        {"offset": "+0x40", "role": "descriptor/object-entry count from *(blob+0x80)"}
+      ]
+    },
+    {
+      "name": "SwgClipDescriptorD",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x00", "role": "descriptor discriminant; business meaning unknown"},
+        {"offset": "+0x04", "role": "auxiliary table offset relative to *(B+0)"},
+        {"offset": "+0x08", "role": "auxiliary entry count"},
+        {"offset": "+0x0c", "role": "frame-table offset relative to *(B+0)"},
+        {"offset": "+0x10", "role": "frame count"}
+      ]
+    },
+    {
+      "name": "SwgFrameEntry",
+      "serialized_size": "0x08",
+      "serialization": "big-endian words inside the decompressed SWG image",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x00", "role": "element-stream offset relative to *(storage B+0)"},
+        {"offset": "+0x04", "role": "element count"}
+      ]
+    },
+    {
+      "name": "SwgType4Element",
+      "serialized_size": "0x14",
+      "serialization": "content record inside the decompressed SWG image",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x08", "role": "render-list index"},
+        {"offset": "+0x10", "role": "matrix-data index; resolved as *(storage+8) + 64 * index"}
+      ],
+      "note": "Serialized content record, not a C++ object. Qualified handlers implement content selection, transform composition and rendering; no transition semantic is present."
+    },
+    {
+      "name": "SwgType6Element",
+      "serialized_size": "0x08",
+      "serialization": "big-endian words inside the decompressed SWG image",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x00", "role": "element type, literal value 6"},
+        {"offset": "+0x04", "role": "u32 byte offset relative to the current SWG statement table base; queued without relocation"}
+      ],
+      "note": "Serialized record, not a C++ object: no vptr, constructor or instance methods."
+    },
+    {
+      "name": "swg::MovieMemory",
+      "allocated_extent": "0x24 (36 bytes)",
+      "vtable": "0x8200654C",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x1c", "role": "u32 offset-array pointer"},
+        {"offset": "+0x20", "role": "queued element count"}
+      ],
+      "note": "RTTI/vtable-qualified C++ object owned through MovieController+0x10."
+    },
+    {
+      "name": "SwgDrawRecord",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x0c", "role": "draw index consumed by CSwgRenderer slot 7 / 0x820EB200"}
+      ]
+    },
+    {
+      "name": "SwgAggregate336",
+      "allocated_extent": "0x150 (336 bytes)",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x00", "role": "guard/state byte used by aggregate advancement"},
+        {"offset": "+0x01", "role": "companion guard/state byte used by aggregate advancement"},
+        {"offset": "+0x04", "role": "floating-point accumulator advanced by 0x82322438; source unit unknown"},
+        {"offset": "+0x08", "role": "embedded SwgStorageB subobject"},
+        {"offset": "+0xdc", "role": "Memory<stx::lwallocator<...>> instance pointer, vtable 0x820064D8"},
+        {"offset": "+0xe0", "role": "CSwgRenderer instance pointer"},
+        {"offset": "+0xec", "role": "CSwgCallback pointer aliasing owning CSwgManager+0x24"},
+        {"offset": "+0xf4", "role": "current swg::MovieController pointer"},
+        {"offset": "+0xf8", "role": "integer selector returned by lookup of `_root`; distinct from descriptor D"},
+        {"offset": "+0x100", "role": "frame-step state set to -1 before MovieController update"},
+        {"offset": "+0x104", "role": "frame-step threshold/deadline consumed by 0x82322438; source unit unknown"},
+        {"offset": "+0x108", "role": "second floating-point accumulator advanced by 0x82322438; source unit unknown"}
+      ],
+      "note": "Structural name only; no qualified RTTI exposes the source class name."
+    },
+    {
+      "name": "CSwgManager",
+      "vtable": "0x82006438",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x04", "role": "SwgAggregate336 instance pointer written by virtual slot +0x0c / 0x820E8B58 and consumed by slots +0x1c/+0x20"},
+        {"offset": "+0x18", "role": "first unnamed 132-byte heap auxiliary, vtable 0x82021178"},
+        {"offset": "+0x1c", "role": "second unnamed 132-byte heap auxiliary, vtable 0x82021178; distinct from Title+0x1c"},
+        {"offset": "+0x20", "role": "CSwgSound instance pointer"},
+        {"offset": "+0x24", "role": "CSwgCallback instance pointer, also published at aggregate A+0xec"}
+      ],
+      "note": "RTTI-qualified instance type. In CModeTaskTitleDemoOffline it is embedded at Title+0x1c."
+    },
+    {
+      "name": "CSwgRenderer",
+      "allocated_extent": "0x3030 (12336 bytes)",
+      "vtable": "0x82007D0C",
+      "rtti_descriptor": "0x823866FC",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x08", "role": "resource index initialized to -1"},
+        {"offset": "+0x0c", "role": "state field initialized to 0"},
+        {"offset": "+0x10 + 4*i", "role": "resource/handle slot selected by SwgDrawRecord+0x0c"}
+      ]
+    },
+    {
+      "name": "SwgCpuLayoutRecord",
+      "object_size": "0x70",
+      "confidence": "high",
+      "owner_global": "0x8281EAF0",
+      "note": "Constructed through 0x82095DF0/0x821DEED8 from matrix and SWG record data, then serialized and queued; exact source type name is unknown."
+    },
+    {
+      "name": "CModeTaskTitleDemoOffline",
+      "source_scope": "demo_only",
+      "object_size": "0x78",
+      "rtti_descriptor": "0x82392608",
+      "primary_vtable": "0x820113E4",
+      "secondary_vtable": "0x82011384 at +0x68",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x0c", "role": "title state; writers include 0x8218A680, 0x8218A7A8 and the outer-adjusted listener method 0x8217C890"},
+        {"offset": "+0x14", "role": "resource pointer/handle consumed by 0x8216CB40 to resolve the SWG blob; exact source member name unknown"},
+        {"offset": "+0x18", "role": "resource pointer/handle consumed by 0x8216CB40 to resolve two service values; exact source member name unknown"},
+        {"offset": "+0x1c", "role": "embedded CSwgManager subobject with vtable 0x82006438"},
+        {"offset": "+0x44", "role": "shared scalar state: 0x8217C890 sets 3 for the qualified title-listener path; shared slot +0x40 / 0x8216B958 sets 4; 0x8218A7A8 and shared slot +0x44 / 0x8216B978 decrement it on their respective paths; exact source unit remains open"},
+        {"offset": "+0x48", "role": "manager protocol byte; constructed as 0 and no START writer is qualified"},
+        {"offset": "+0x49", "role": "manager protocol byte constructed as 1"},
+        {"offset": "+0x4a", "role": "manager protocol byte constructed as 1"},
+        {"offset": "+0x4b", "role": "active-gate byte for the shared +0x40/+0x44 virtual protocol; written 1 by 0x8216B958 and cleared by 0x8216B978 when +0x44 reaches zero"},
+        {"offset": "+0x68", "role": "embedded CSwgListener subobject with vtable 0x82011384"},
+        {"offset": "+0x70", "role": "raw listener callback argument written by primary-vtable slot +0x48 (0x8218AB98) and consumed by slot +0x4c (0x8218AA30); natural START provenance remains open"}
+      ]
+    },
+    {
+      "name": "CModeTaskStartUpDemoOffline_partial",
+      "source_scope": "demo_only",
+      "primary_vtable": "0x8201130C",
+      "rtti_descriptor": "0x823925DC",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x1c", "role": "embedded CSwgManager subobject with vtable 0x82006438"},
+        {"offset": "+0x20", "role": "CSwgManager+0x04 pointer to SWG aggregate A"},
+        {"offset": "+0x44", "role": "counter/timer-like scalar set to 4 by virtual slot +0x40 and decremented/saturated at zero by slot +0x44; exact unit and business name remain open"},
+        {"offset": "+0x4b", "role": "active-gate byte set by virtual slot +0x40 and cleared by slot +0x44 when +0x44 reaches zero"}
+      ],
+      "note": "Partial layout only: object extent, constructor and all other attributes remain unqualified."
+    },
+    {
+      "name": "GlobalStateVia0x823C27E0",
+      "pointer_cell": "0x823C27E0",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x20760", "role": "guest language-derived title-resource selector; language value 1 is mapped to selector 1 by global function 0x8218EA98"}
+      ],
+      "note": "Structural layout for the state reached through the global pointer cell only; the source C++ type is unknown and the field is not an autonomous XEX global."
+    },
+    {
+      "name": "CModeTaskDemoBaseFamily",
+      "qualified_types": ["CModeTaskDemoBase", "CModeTaskDemoOpening", "CModeTaskDemoIntermission", "CModeTaskDemoEnding", "CModeTaskDemoSceneViewerMission"],
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x78", "role": "internal state consumed by virtual slot index 4 when +0x90 is not -1"},
+        {"offset": "+0x7c", "role": "companion internal state consumed/written by virtual slot index 4"},
+        {"offset": "+0x90", "role": "sentinel/state field; value -1 enables the direct logical-input 0x01/0x10 predicate"}
+      ],
+      "note": "This family excludes CModeTaskTitleDemoOffline; identical field offsets are not transferred to the title object."
+    },
+    {
+      "name": "InputPollingContext",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x04", "role": "attribute read by instance polling method 0x822F6080; exact business meaning open"},
+        {"offset": "+0x44", "role": "attribute/subobject address passed by 0x822F6080 to global ABI adapter 0x82338248; exact type open"},
+        {"offset": "+0x70", "role": "attribute consulted by instance polling method 0x822F6080; exact business meaning open"}
+      ],
+      "note": "Structural receiver layout only. No RTTI, vtable or source C++ class name is promoted from the secondary HIR cross-match."
+    },
+    {
+      "name": "HsioDeviceState_partial",
+      "source_scope": "demo_only",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x2ABD", "role": "byte in the explicit device receiver used by 0x821BA780 and 0x821B9BC8; bit 1 is read/set; exact business meaning open"}
+      ],
+      "note": "Private pointed device state only; no source class, object extent or fixed global instance is qualified."
+    },
+    {
+      "name": "CTaskModeManager",
+      "vtable": "0x82011694",
+      "global_pointer_cell": "0x827435F8",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x08", "role": "current mode object; written by virtual init 0x82192850 and by the completion phase of 0x82190B18"},
+        {"offset": "+0x0c", "role": "outgoing/previous mode object; 0x82190B18 copies the old +0x08 here before teardown"},
+        {"offset": "+0x10", "role": "fallback/default factory; init writes 0x82192700 and 0x8218EA88 can replace it"},
+        {"offset": "+0x14", "role": "one-shot transition factory selected before +0x10 and cleared after consumption"},
+        {"offset": "+0x18", "role": "transition armed flag; writers include the manager-internal site 0x82192CC8 and CModeTaskTitleDemoOffline update site 0x8218A800; cleared at 0x82192D08 after helper success"},
+        {"offset": "+0x24", "role": "transition state byte; exact business meaning open"},
+        {"offset": "+0x28", "role": "request state participating in the direct +0x18 arming predicate"},
+        {"offset": "+0x2c", "role": "request state participating in the direct +0x18 arming predicate"},
+        {"offset": "+0x5d", "role": "unnamed request byte filtered by current-mode protocol byte +0x49; no natural START writer is qualified"},
+        {"offset": "+0x5f", "role": "unnamed request byte whose path requires current-mode protocol byte +0x48 != 0; no natural START writer is qualified"},
+        {"offset": "+0x78", "role": "state attribute; exact business meaning open"}
+      ]
+    },
+    {
+      "name": "RegisteredResource",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x14", "role": "published resource handle; 003_NTXR stores 0x59"}
+      ]
+    },
+    {
+      "name": "GpuRecord",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x14", "role": "record type; values 4/5/6 dispatch to the conditional Q/R writer"},
+        {"offset": "+0x20", "role": "source pointer consumed by the type-4/5/6 writer"},
+        {"offset": "+0x24", "role": "element/count attribute consumed by the type-4/5/6 writer"}
+      ],
+      "note": "Layout of the GPU-record producer interface is proved; its natural instance join from SWG resource 0x59 remains open."
+    },
+    {
+      "name": "CModeTaskLoadingDemoOffline",
+      "source_scope": "demo_only",
+      "allocated_extent": "0x90 (144 bytes)",
+      "primary_vtable": "0x82011154",
+      "secondary_vtable": "0x820110F4 at +0x68",
+      "constructor": "0x8218DAF0",
+      "factory": "0x821926C0 via cell 0x82391F00",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x68", "role": "embedded CSwgListener subobject with secondary vtable 0x820110F4"}
+      ],
+      "note": "Exact demo-only type. Its primary slot +0x48 at 0x8217E890 can select the later GameDemoOffline factory only after this Loading object is active."
+    },
+    {
+      "name": "CResourceLoaderSwg",
+      "allocated_extent": "0x20 (32 bytes)",
+      "vtable": "0x82012DC4",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x14", "role": "attached metadata"},
+        {"offset": "+0x18", "role": "attached resolved guest source object"},
+        {"offset": "+0x1c", "role": "source record/table index"}
+      ],
+      "note": "RTTI-qualified wrapper object. The direct field writer 0x8219E768 remains receiver_helper because the ABI does not distinguish member from global helper."
+    },
+    {
+      "name": "CSelectAircraftSetupManager",
+      "vtable": "0x8200A254",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x2313", "role": "instance selector s used to choose an outer source slot"},
+        {"offset": "+4*(s+0x2303)", "role": "selected outer source object pointer"},
+        {"offset": "+4*(s+0x2322)", "role": "dynamic allocator output pointer"},
+        {"offset": "+0x8ca0", "role": "embedded compact-decoder state"}
+      ],
+      "note": "The selected outer source and ACC index-1 path are not proved to alias the title key-B2/index-0 source path."
+    },
+    {
+      "name": "AccCompactRecord",
+      "serialization": "guest serialized ACC bytes resolved by 0x821EE0F8",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x08", "role": "decoded-output allocation length"},
+        {"offset": "+0x10", "role": "compact source byte range passed to decoder state"}
+      ],
+      "note": "Serialized record, not a C++ object. Its identity with DATA.TBL[178]/TitleUS is not proved."
+    },
+    {
+      "name": "SelectAircraftCompactDecoderState",
+      "embedded_at": "CSelectAircraftSetupManager+0x8ca0",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x38", "role": "compact source pointer written as ACC+0x10"},
+        {"offset": "+0x3c", "role": "dynamic allocator output pointer"}
+      ],
+      "note": "Runtime decoder state fields; neither is a disk record or XEX global."
+    },
+    {
+      "name": "SwgExecutionContext",
+      "embedded_at": "swg::MovieController+0x100",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x0c", "role": "AS handler/context object used by opcode dispatch"},
+        {"offset": "+0x10", "role": "statement table base"},
+        {"offset": "+0x14", "role": "current bytecode program counter"},
+        {"offset": "+0x18", "role": "MovieController/receiver pointer consumed by navigation opcodes 1..6, including TitleUS +0x1788 opcode 2"}
+      ],
+      "note": "Structural runtime context name only; 0x823251E0 forms PC=table_base+raw_offset without selecting or relocating the offset."
+    },
+    {
+      "name": "CSwgHandler",
+      "vtable_address_point": "0x82007974",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x3c", "role": "native descriptor-table base used by virtual slot 44 / 0x820E8F90"}
+      ]
+    },
+    {
+      "name": "SwgNativeValueRecord",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x0c", "role": "native descriptor-row index used by CSwgHandler slot 44"}
+      ],
+      "note": "Structural runtime value record; no source class or business name is promoted."
+    },
+    {
+      "name": "UnnamedSwgAuxiliary132",
+      "allocated_extent": "0x84 (132 bytes)",
+      "vtable": "0x82021178",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x04", "role": "context pointer or null according to the two qualified initializers"},
+        {"offset": "+0x08", "role": "delta accumulator updated through virtual slot +0x74 on the first auxiliary"},
+        {"offset": "+0x0c", "role": "byte armed by that update on the first auxiliary"}
+      ],
+      "note": "No RTTI is present at vtable-4. Do not promote a timer/player/controller class name or merge the two owned instances by role."
+    },
+    {
+      "name": "CSwgCallback",
+      "vtable": "0x820061FC",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x08", "role": "byte initialized to 1"},
+        {"offset": "+0x09", "role": "frame-step request byte initialized to 0, consumed and cleared by CSwgManager slot +0x20"}
+      ],
+      "note": "Distinct from the global listener table and from the Title+0x68 CSwgListener subobject."
+    },
+    {
+      "name": "CSwgSound",
+      "vtable": "0x82007D60",
+      "rtti": "CSwgSound",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x04", "role": "embedded name-to-audio-ID resolver object; exact source class name not proved"}
+      ],
+      "note": "Object owned through CSwgManager+0x20 and temporarily published through global pointer cell 0x826DFC44."
+    },
+    {
+      "name": "CNuSound",
+      "vtable": "0x820092BC",
+      "rtti": "CNuSound : ACE6::CAce6Sound : ACE6::CAce6Thread",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x84", "role": "per-update state reset to zero by virtual slot 1"},
+        {"offset": "+0x98 + 0x10*bank", "role": "per-bank activation byte checked before enqueue"},
+        {"offset": "+0x130", "role": "base of 512 guest voice records, stride 0x60"}
+      ],
+      "note": "The qualified global instance is 0x826E47B0; the object is distinct from CSwgSound and from the pointer cells that expose either service."
+    },
+    {
+      "name": "CNuSoundVoiceRecord",
+      "serialized_size": "0x60",
+      "array": "512 entries embedded from CNuSound+0x130",
+      "confidence": "high",
+      "fields": [
+        {"offset": "+0x00", "role": "compact index/generation handle"},
+        {"offset": "+0x04", "role": "bank index"},
+        {"offset": "+0x08", "role": "resolved audio resource ID"},
+        {"offset": "+0x14/+0x18", "role": "floating-point voice parameters"},
+        {"offset": "+0x1c", "role": "enqueue option/flag"},
+        {"offset": "+0x20", "role": "voice state bits"},
+        {"offset": "+0x24", "role": "zero on the qualified enqueue path"},
+        {"offset": "+0x40", "role": "low-level voice handle polled by the asynchronous worker"}
+      ],
+      "note": "Guest object fields, not serialized PAC/SWG content. No completion callback pointer is present on the qualified producer/consumer path."
+    }
+  ],
+  "negative_joins": [
+    {
+      "claim": "0x82216498 directly calls or leads to 0x82165E68",
+      "status": "not_proved",
+      "consequence": "Do not implement an ABI bridge or native service from this hypothesis."
+    },
+    {
+      "claim": "record type 1 writes Q1",
+      "status": "refuted",
+      "consequence": "Type 1 writes P; seek a natural type 4/5/6 path with selector 1."
+    },
+    {
+      "claim": "0x820D32D0 is the frontend transition function",
+      "status": "refuted",
+      "consequence": "It is a virtual thunk through slot +0x70."
+    },
+    {
+      "claim": "The exact static intermediate instance chain joins SWG record #2 / resource 0x59 to a GPU type-4/5/6 record and its Q1 writer",
+      "status": "not_proved",
+      "consequence": "Runtime proves the natural end-to-end Q1 observation, but do not invent object identity, a method name or a native bridge for the still-unidentified intermediate writer."
+    },
+    {
+      "claim": "0x82346D08 joins function-table index 0x59 to the Q1 writer",
+      "status": "not_proved",
+      "consequence": "Treat the literal index as a candidate only, not semantic evidence."
+    },
+    {
+      "claim": "0x82326920 writes descriptor D or a field D+0x38",
+      "status": "refuted",
+      "consequence": "It initializes the embedded storage B=A+0x08. Descriptor D is a separate record computed later by 0x82322300 from B+0/B+4/B+0x38 and the root index."
+    },
+    {
+      "claim": "The post-START observation at LR 0x82323860 alone proves a new MovieController address or a changed aggregate A, storage B or descriptor D",
+      "status": "not_proved",
+      "consequence": "The full 0x820D18C8 chain constructs a newly allocated controller, but the observed LR does not identify that upstream caller. Keep new construction, address reuse and republication on an existing aggregate distinct until provenance is observed or statically joined."
+    },
+    {
+      "claim": "0x8218E970 constructs CModeTaskGameDemoOffline and 0x8218EA88 stores that object at receiver+0x10",
+      "status": "refuted",
+      "consequence": "0x8218E970 only selects a function pointer and 0x8218EA88 stores that factory pointer. Do not search for an object consumer at this store."
+    },
+    {
+      "claim": "0x82190B18 stores the selected factory return at this+0x08 and inserts it through [0x82822F08]->slot+0x0c",
+      "status": "proved",
+      "consequence": "Attribute these operations to the completion phase at 0x82190EC0..0x82190EDC. Keep its earlier intermediate factory call and the distinct 0x8281EB50 allocation-service path separate."
+    },
+    {
+      "claim": "0x823270FC returns singleton state used by 0x82190B18",
+      "status": "refuted",
+      "consequence": "It is the __savegprlr_25 prologue thunk and supplies no guest state."
+    },
+    {
+      "claim": "The pointer cell 0x827435F8 has type CTaskModeManager*",
+      "status": "proved",
+      "consequence": "Use CTaskModeManager* for the global cell: 0x821908B8 writes vtable 0x82011694 into the same receiver before storing it to 0x827435F8."
+    },
+    {
+      "claim": "CModeTaskMissionTitle and CModeTaskTitleDemoOffline are the same object type",
+      "status": "refuted",
+      "consequence": "Keep RTTI 0x823918C4/vtable 0x8200E5C4/update 0x82185198 separate from RTTI 0x82392608/vtable 0x820113E4/update 0x8218A7A8."
+    },
+    {
+      "claim": "CModeTaskMissionTitle and CModeTaskTitleDemoOffline share a proved PRESS START ownership edge",
+      "status": "not_proved",
+      "consequence": "Do not join the types through START; root reachability for CModeTaskMissionTitle remains open while the true demo title route is qualified independently."
+    },
+    {
+      "claim": "A CModeTask*DemoOffline identity, layout, constructor, slot, attribute or method semantic can be transferred from proto_2, another preview/prototype or retail AC6",
+      "status": "refuted",
+      "consequence": "The complete DemoOffline family is demo-only. Prototype evidence may only guide searches for separately requalified shared mechanisms."
+    },
+    {
+      "claim": "The global listener entry 0x826DF804 or event E000004C/0x821A8C88 is the missing writer edge that arms CTaskModeManager+0x18 for the true demo title",
+      "status": "refuted",
+      "consequence": "If EndMode or menu_endMode is naturally invoked with raw 0/1, the qualified demo-only downstream chain is 0x8217C890 -> 0x8218AB98 -> state 2/countdown -> 0x8218A7A8 -> manager+0x18. The decoded post-START items select neither row, so this is not a proved START-to-manager causal join."
+    },
+    {
+      "claim": "0x82170F58 is the true CModeTaskTitleDemoOffline update or directly explains the first title-to-frontend START transition",
+      "status": "refuted",
+      "consequence": "It is slot index 4 / byte offset +0x10 of CModeTaskDemoBase and four derived task vtables, none of which is the title vtable 0x820113E4. Reaching it requires a distinct task to have already been constructed and inserted."
+    },
+    {
+      "claim": "The runtime input event at 0x822F60A4/LR+4 proves or performs the title-mode transition",
+      "status": "refuted",
+      "consequence": "It qualifies the input-polling call inside instance method 0x822F6080 only. It supplies no writer edge to CModeTaskTitleDemoOffline state or CTaskModeManager transition fields."
+    },
+    {
+      "claim": "The qualified START path has a proved persistent writer from the true title state 1 into Title+0x0c/+0x44, manager+0x5d/+0x5f or manager+0x18",
+      "status": "not_proved",
+      "consequence": "The true title update in state 1 calls embedded CSwgManager slot +0x20 at 0x820CE368. That method proves generic SWG progression but no direct EndMode/menu_endMode dispatch or title/mode-request writer. The first natural descriptor/listener or alternate transition producer remains open."
+    },
+    {
+      "claim": "M102=0 or the failed local lookup 0x0B selects, skips or enqueues EndMode after START",
+      "status": "refuted",
+      "consequence": "Both operations belong to an item already present in MovieMemory and write no frame, cursor or queue state. M102 is invoked at +0x134c; the later branch at +0x13e4 tests !C, and natural C=false skips local 18 / SendMsgV at +0x1420 before the stop at +0x1428. That guard does not select a later MovieMemory item or EndMode."
+    },
+    {
+      "claim": "The post-START type-4 frame encodes a mode transition",
+      "status": "refuted",
+      "consequence": "Its qualified handlers only select content/list/matrix and feed CSwgRenderer. It is a serialized frame-content channel, distinct from MovieMemory VM items, EndMode bytecode and mode-manager state."
+    },
+    {
+      "claim": "0x82325E70 is a proved C++ instance method",
+      "status": "not_proved",
+      "consequence": "Classify it as a callback from global table 0x8264D074. A MovieController* argument is insufficient to assign method ownership."
+    },
+    {
+      "claim": "0x820EB200 directly emits PM4/Xenos work",
+      "status": "not_proved",
+      "consequence": "It is a CSwgRenderer virtual method that creates a CPU layout record subsequently serialized and queued; do not rename it as a PM4 writer."
+    },
+    {
+      "claim": "One of the eleven brandLogo type-6 payloads 0x220..0x4A8 can be relocated or transformed into the title EndMode offset 0xE04",
+      "status": "refuted",
+      "consequence": "Type-6 payloads are exact byte offsets into the current decompressed SWG image and are queued unchanged. brandLogo and title are distinct images; the selected disk identity for the current localized title is now qualified separately as DATA.TBL[178]/TitleUS, while continuous disk-to-heap identity remains open."
+    },
+    {
+      "claim": "The qualified XEX or any of the 861 decoded logical demo payloads contains the literal big-endian serialized record {6,0x00000E04}",
+      "status": "refuted",
+      "consequence": "The EndMode statement at SWG+0xE04 is bytecode, not a queue record, and no qualified MovieMemory::Add on the natural route receives 0xE04. The scan closes a literal producer only: a future computed writer remains abstractly possible, while the active post-START frame is type 4."
+    },
+    {
+      "claim": "DATA.TBL[177]/Title and DATA.TBL[178]/TitleUS are one interchangeable serialized resource identity",
+      "status": "refuted",
+      "consequence": "Keep their table rows, stored/decoded/SWG hashes and names separate. Selector 0 chooses index 177/Title; the current selector 1 chooses index 178/TitleUS. Their shared FHM and EndMode offsets do not merge their identities, and heap geometry alone cannot distinguish them."
+    },
+    {
+      "claim": "The complete decoded DATA.TBL[178]/TitleUS image is byte-identical to the complete heap image rooted at 0x2DCB0000/0x2DCB1220",
+      "status": "not_proved",
+      "consequence": "Promote only the exact 8192-byte equality at heap [0x2DCB2000,0x2DCB4000) == TitleUS[+0x0DE0,+0x2DE0). Continuous source-object, allocator-output and whole-image equality remain open."
+    },
+    {
+      "claim": "DATA.TBL[177]/Title matches the qualified 8192-byte heap window",
+      "status": "refuted",
+      "consequence": "Title differs at 28 exact byte offsets and matches only 8164/8192 bytes; the heap window matches TitleUS on 8192/8192 bytes."
+    },
+    {
+      "claim": "0x8219E580 is a global registration/helper function",
+      "status": "refuted",
+      "consequence": "It is virtual slot +0x14/index 5 of RTTI-qualified CResourceLoaderSwg vtable 0x82012DC4."
+    },
+    {
+      "claim": "0x8219E768 is proved to be a non-virtual CResourceLoaderSwg member method",
+      "status": "not_proved",
+      "consequence": "Only its explicit receiver and fixed-field setter contract are proved; retain receiver_helper because this ABI does not distinguish member from global helper."
+    },
+    {
+      "claim": "The title key-B2/index-0 source object aliases the CSelectAircraftSetupManager outer/index-1 ACC source",
+      "status": "not_proved",
+      "consequence": "Keep the two object/index chains separate until a writer or constructor proves the alias and the ACC record identity."
+    },
+    {
+      "claim": "The dynamic allocator return stored in CSelectAircraftSetupManager decoder state+0x3c equals 0x2DCB0000",
+      "status": "not_proved",
+      "consequence": "No constant, relocation, global or statically determined return joins the allocator output to that heap base."
+    },
+    {
+      "claim": "Natural START selects descriptor row 0x82386628 or 0x82386698 with raw argument 0 or 1",
+      "status": "not_proved",
+      "consequence": "The listener-to-Loading route is closed only conditionally. The decoded post-START TitleUS items select five other native rows and do not establish either EndMode row."
+    },
+    {
+      "claim": "0x820E8F90 is reachable only through a type-6 MovieMemory producer",
+      "status": "refuted",
+      "consequence": "Multiple qualified launcher CFGs reach the shared interpreter and marshaller without 0x82322A80/Type6; none is yet joined naturally to an EndMode row."
+    },
+    {
+      "claim": "CSwgManager+0x1c, CModeTaskTitleDemoOffline+0x1c, Title+0x68 and CTaskModeManager+0x18 denote the same object or state field",
+      "status": "refuted",
+      "consequence": "They are respectively an unnamed 132-byte auxiliary pointer, the embedded CSwgManager subobject, the embedded Title listener and a field of the separate mode-manager object."
+    },
+    {
+      "claim": "CSwgCallback, the global listener table 0x826DF800 and the Title+0x68 CSwgListener are one object",
+      "status": "refuted",
+      "consequence": "Keep the callback object owned at CSwgManager+0x24/A+0xEC, the mutable 16-pointer global table and the embedded title listener distinct."
+    },
+    {
+      "claim": "CSwgManager slot +0x20 at 0x820CE368 directly publishes EndMode/menu_endMode or writes the title/mode transition",
+      "status": "refuted",
+      "consequence": "It advances owned SWG state and reaches MovieController generically, but has no direct edge to 0x820E8F90/0x820EA4A8/0x8217C890 and writes none of the qualified transition fields."
+    },
+    {
+      "claim": "A return from one of the five decoded post-START native callbacks chooses MovieMemory item +0x146C or the parallel type-4 frame",
+      "status": "refuted",
+      "consequence": "Both VM items terminate after their calls, the callbacks are synchronous/nonblocking on the qualified CFG, and MovieMemory raw offsets are supplied externally."
+    },
+    {
+      "claim": "The TitleUS item at +0x146C contains an invocation opcode 0x4D or conditional branch opcode 0x32",
+      "status": "refuted",
+      "consequence": "The total decode through +0x1718 contains only 0x2E/0x19/0x49/0x4A before stop and cannot emit a native callback."
+    },
+    {
+      "claim": "Every word 0x00000016 visible in the post-START TitleUS region is an outer VM opcode 0x16",
+      "status": "refuted",
+      "consequence": "Words inside opcode-0x2E length-delimited payloads are compact values. TitleUS+0xE04 begins on a real outer 0x16, but the prepared call payloads do not."
+    },
+    {
+      "claim": "0x820E9130 is a function entry, alternate SWG launcher or independent call site",
+      "status": "refuted",
+      "consequence": "Canonical demo Ghidra places it inside 0x820E8F90 as the cmplwi continuation after bctrl, with no incoming xref. Preserve it only as a return_address."
+    },
+    {
+      "claim": "The TitleUS type-6 record domain can naturally supply MovieMemory offset +0xE04",
+      "status": "refuted",
+      "consequence": "The exhaustive 40-value domain excludes E04. The sole qualified writer in the owner/frame family is outer type 6 callback 0x82322A80, which forwards its serialized second word unchanged."
+    },
+    {
+      "claim": "TitleUS item +0x1788 invokes a native callback, EndMode or menu_endMode",
+      "status": "refuted",
+      "consequence": "It is exactly opcode 2 followed by zero: global opcode callback 0x82324248 reaches receiver helper 0x82322CD8 and clears terminal MovieController+0xd5. Object 102 has no later type-6 record after frame 208."
+    },
+    {
+      "claim": "MovieController update 0x82323BB8 or a later type-6 item of natural TitleUS object 102 autonomously rearms D5 after +0x1788",
+      "status": "refuted",
+      "consequence": "The exhaustive executable D5-writer census contains seven bodies. Update 0x82323BB8 is read-only for D5, +0x1788 clears D5 then stops, and object 102 has no later type-6 record. Any continuation requires a separately produced guest callback/item or controller reconstruction; none is joined naturally to START yet."
+    },
+    {
+      "claim": "TitleUS waits for OnVoice2D audio completion before selecting its next item or transitioning to Loading",
+      "status": "refuted",
+      "consequence": "0x820EA6C0 synchronously enqueues through CSwgSound/CNuSound, returns a handle that opcode 0x17 discards, then stops. The asynchronous CNuSound worker polls and frees the voice record without any callback to Title, MovieController, EndMode or CTaskModeManager."
+    },
+    {
+      "claim": "The Drive/Xenia auto-reset reservation patch proves a defect in the qualified PAL native bridge or authorizes a PAL code change",
+      "status": "refuted",
+      "consequence": "It independently validates only the generic reservation contract already modeled; FIFO, WaitMultiple, multi-grant and PAL path causality remain untransferred."
+    },
+    {
+      "claim": "The fail-closed HSIO result 0 alone proves the visible frontend milestone",
+      "status": "not_proved",
+      "consequence": "The bounded run closes guest Startup->Title task replacement but reports no frontend/mission/terminal milestone; keep HSIO service state, task replacement and visible frontend as separate claims."
+    },
+    {
+      "claim": "The qualified natural START pulse is lost before reaching the Title VM/SWG consumer",
+      "status": "refuted",
+      "consequence": "At ticks 3000/3001 the logical current/pressed state reaches 0x10, two vtable-slot +0x70 dispatches call 0x820D3AC8, and the exact five-native Title burst executes."
+    },
+    {
+      "claim": "The five-native burst caused by the bounded natural START occurrence directly selects menu_endMode or arms CTaskModeManager+0x18",
+      "status": "refuted",
+      "consequence": "No 0x820EA4A8 call, manager request, mode switch or Title-field change occurs in the bounded window; every mode snapshot through tick 3040 remains identical. This does not exclude a later independent guest event."
+    },
+    {
+      "claim": "A qualified MovieController+D5 writer, controller reconstruction path or alternate SWG launcher is already joined to a distinct post-TitleUS menu_endMode producer",
+      "status": "not_proved",
+      "consequence": "The exhaustive static audit finds no such join. The loader-to-first-item layer is now closed separately; continue at the upstream SWG/ACC materializer."
+    },
+    {
+      "claim": "The qualified decompressor, B/D factory and owner frame-range chain produces native record type 2, draw index 2, handle 0x0E000059 or proves that brandLogo descriptor 0x1AA48 is attached to the runtime Title/TitleUS owner",
+      "status": "not_proved",
+      "consequence": "0x82278F78 only materializes decoded bytes, 0x82326B80 only publishes ranges, and the first concrete brandLogo item is serialized type 4. No writer for record+0x00/+0x04/+0x0c, handle slot 2 or rows 0x82386628/0x82386698 is joined in this chain; keep the static data witness separate from runtime owner provenance."
+    },
+    {
+      "claim": "MovieMemory construction or ACC manager helpers 0x823233B0/0x82323468 materialize storage B+0x38 and the natural count>=3 -> record#2 -> draw_index=2 -> handle 0x0E000059 chain",
+      "status": "refuted for these qualified bodies",
+      "consequence": "MovieMemory allocates and clears only its own arrays; the two global ACC helpers operate on singleton-manager entries and lists without receiving B as the serialized-storage receiver. Resource handle registration at 0x820C600C remains distinct from proof of owner slot 2. Continue at the caller of virtual cell 0x820064E8 and B/D argument provenance."
+    },
+    {
+      "claim": "The tick-3036 0x820D3280 -> 0x820D7F80 dispatch is itself the Title terminator, a MovieController rearm or a mode transition",
+      "status": "refuted",
+      "consequence": "RTTI and CFG classify it as a swg::ASContext::String instance operation under generic AS/VM reference bookkeeping, with no static edge to menu_endMode, the Title listener, CTaskModeManager or MovieController."
+    }
+  ]
+}

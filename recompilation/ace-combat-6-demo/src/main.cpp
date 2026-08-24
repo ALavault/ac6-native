@@ -20,6 +20,7 @@
 #include <charconv>
 #include <chrono>
 #include <cstring>
+#include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -31,6 +32,7 @@
 #include <vector>
 #include <unordered_map>
 #ifdef AC6_DEMO_HAVE_VULKAN_RENDERER_FRONTIER
+#include "rexglue_quad_list_spirv.hpp"
 #include "rexglue_rectangle_list_spirv.hpp"
 #include <vulkan/vulkan.h>
 #endif
@@ -84,17 +86,19 @@ public:
   RuntimeRendererFrontier(const RuntimeRendererFrontier &) = delete;
   RuntimeRendererFrontier &operator=(const RuntimeRendererFrontier &) = delete;
   void consume(ac6demo::DemoSession &session) {
-    auto commands = session.consume_renderer_commands();
-    if (commands.empty()) {
+    auto batches = session.consume_renderer_batches();
+    if (batches.empty()) {
       return;
     }
 #ifdef AC6_DEMO_HAVE_REXGLUE_TRANSLATOR
-    cache_.consume(commands);
+    for (const auto &batch : batches) {
+      cache_.consume(batch.commands);
 #ifdef AC6_DEMO_HAVE_VULKAN_RENDERER_FRONTIER
-    if (device_ != VK_NULL_HANDLE) {
-      create_reached_modules(session, commands);
-    }
+      if (device_ != VK_NULL_HANDLE) {
+        create_reached_modules(session, batch);
+      }
 #endif
+    }
 #else
     throw ac6demo::RuntimeTrap(
         "renderer commands reached without the pinned ReXGlue translator");
@@ -111,8 +115,10 @@ public:
 #ifdef AC6_DEMO_HAVE_VULKAN_RENDERER_FRONTIER
     result.vulkan_modules = static_cast<std::uint32_t>(vulkan_modules_.size());
     result.vulkan_descriptor_set_layouts =
-        shared_layout_ != VK_NULL_HANDLE && constants_layout_ != VK_NULL_HANDLE
-            ? 2U
+        shared_layout_ != VK_NULL_HANDLE && constants_layout_ != VK_NULL_HANDLE &&
+                empty_layout_ != VK_NULL_HANDLE &&
+                texture_layout_ != VK_NULL_HANDLE
+            ? 4U
             : 0U;
     result.vulkan_pipeline_layouts = pipeline_layout_ != VK_NULL_HANDLE ? 1U : 0U;
     result.vulkan_graphics_pipelines =
@@ -239,6 +245,15 @@ private:
       throw ac6demo::RuntimeTrap(
           "Vulkan rejected validated rectangle geometry module");
     }
+    geometry_info.codeSize =
+        ac6demo::generated::rexglue_quad_list_spirv.size() *
+        sizeof(std::uint32_t);
+    geometry_info.pCode = ac6demo::generated::rexglue_quad_list_spirv.data();
+    if (vkCreateShaderModule(device_, &geometry_info, nullptr,
+                             &quad_geometry_module_) != VK_SUCCESS) {
+      throw ac6demo::RuntimeTrap(
+          "Vulkan rejected validated quad geometry module");
+    }
   }
   void create_reached_layouts() {
     VkDescriptorSetLayoutBinding shared{};
@@ -276,7 +291,31 @@ private:
       throw ac6demo::RuntimeTrap(
           "Vulkan reached constant layout creation failed");
     }
-    const std::array layouts{shared_layout_, constants_layout_};
+    set_info.bindingCount = 0U;
+    set_info.pBindings = nullptr;
+    if (vkCreateDescriptorSetLayout(device_, &set_info, nullptr,
+                                    &empty_layout_) != VK_SUCCESS) {
+      throw ac6demo::RuntimeTrap(
+          "Vulkan reached empty layout creation failed");
+    }
+    std::array<VkDescriptorSetLayoutBinding, 3> texture{};
+    for (std::uint32_t index = 0U; index < texture.size(); ++index) {
+      texture[index].binding = index;
+      texture[index].descriptorCount = 1U;
+      texture[index].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+      texture[index].descriptorType = index < 2U
+                                          ? VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+                                          : VK_DESCRIPTOR_TYPE_SAMPLER;
+    }
+    set_info.bindingCount = static_cast<std::uint32_t>(texture.size());
+    set_info.pBindings = texture.data();
+    if (vkCreateDescriptorSetLayout(device_, &set_info, nullptr,
+                                    &texture_layout_) != VK_SUCCESS) {
+      throw ac6demo::RuntimeTrap(
+          "Vulkan reached texture layout creation failed");
+    }
+    const std::array layouts{shared_layout_, constants_layout_, empty_layout_,
+                             texture_layout_};
     VkPipelineLayoutCreateInfo pipeline_info{
         VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
     pipeline_info.setLayoutCount = static_cast<std::uint32_t>(layouts.size());
@@ -288,15 +327,19 @@ private:
     }
   }
   [[nodiscard]] VkRenderPass create_render_pass(VkSampleCountFlagBits samples,
-                                                 bool depth) {
+                                                 bool depth,
+                                                 bool load = false) {
     std::array<VkAttachmentDescription, 3> attachments{};
     attachments[0].format = VK_FORMAT_R8G8B8A8_UNORM;
     attachments[0].samples = samples;
-    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].loadOp = load ? VK_ATTACHMENT_LOAD_OP_LOAD
+                                 : VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].initialLayout =
+        load ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+             : VK_IMAGE_LAYOUT_UNDEFINED;
     attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     VkAttachmentReference color{0U, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
     VkAttachmentReference depth_reference{
@@ -306,11 +349,15 @@ private:
     if (depth) {
       attachments[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
       attachments[1].samples = samples;
-      attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+      attachments[1].loadOp = load ? VK_ATTACHMENT_LOAD_OP_LOAD
+                                   : VK_ATTACHMENT_LOAD_OP_CLEAR;
       attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-      attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      attachments[1].stencilLoadOp =
+          load ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR;
       attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-      attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+      attachments[1].initialLayout =
+          load ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+               : VK_IMAGE_LAYOUT_UNDEFINED;
       attachments[1].finalLayout =
           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
       attachments[2].format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -341,7 +388,8 @@ private:
   }
   [[nodiscard]] VkPipeline create_graphics_pipeline(
       VkShaderModule vertex, VkShaderModule pixel, VkRenderPass render_pass,
-      VkSampleCountFlagBits samples, bool depth) {
+      VkSampleCountFlagBits samples, bool depth, VkShaderModule geometry,
+      VkPrimitiveTopology topology, bool alpha_blend) {
     std::array<VkPipelineShaderStageCreateInfo, 3> stages{};
     for (auto &stage : stages) {
       stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -352,12 +400,12 @@ private:
     stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     stages[1].module = pixel;
     stages[2].stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    stages[2].module = rectangle_geometry_module_;
+    stages[2].module = geometry;
     VkPipelineVertexInputStateCreateInfo vertex_input{
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
     VkPipelineInputAssemblyStateCreateInfo input_assembly{
         VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
-    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    input_assembly.topology = topology;
     VkPipelineViewportStateCreateInfo viewport{
         VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
     viewport.viewportCount = 1U;
@@ -385,6 +433,15 @@ private:
     VkPipelineColorBlendAttachmentState color{};
     color.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    if (alpha_blend) {
+      color.blendEnable = VK_TRUE;
+      color.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+      color.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      color.colorBlendOp = VK_BLEND_OP_ADD;
+      color.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+      color.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+      color.alphaBlendOp = VK_BLEND_OP_ADD;
+    }
     VkPipelineColorBlendStateCreateInfo blend{
         VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
     blend.attachmentCount = 1U;
@@ -420,14 +477,33 @@ private:
     }
     return result;
   }
-  void create_reached_pipelines(
-      std::span<const ac6demo::XenosCommand> commands) {
+  struct ReachedBatch final {
+    bool normal_draw{};
+    bool copy_draw{};
+    bool title_draw{};
+    bool post_title_draw{};
+  };
+  [[nodiscard]] ReachedBatch create_reached_pipelines(
+      const ac6demo::XenosRendererBatch &renderer_batch) {
+    const auto &commands = renderer_batch.commands;
+    ReachedBatch batch{};
     static constexpr std::string_view kNormalVertex =
         "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b";
     static constexpr std::string_view kCopyVertex =
         "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0";
     static constexpr std::string_view kPixel =
         "4913603d899eb3d5c8f5b3e2fa918ffb461320222f4748b233983ad8a2c98e25";
+    static constexpr std::string_view kTitleVertex =
+        "84e2d87ca4c7e6b6463cd007778e3e76f2d33d5b3a2bdf71bdabedf5e2949e6b";
+    static constexpr std::string_view kTitlePixel =
+        "8982431ab8c37106400e0cc23a09a9a08b6de1d952dcb7f7def0016bd5714825";
+    static constexpr std::array kOffscreenResolveCoordinates{
+        std::byte{0xBF}, std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
+        std::byte{0xBF}, std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
+        std::byte{0x40}, std::byte{0xF0}, std::byte{0x00}, std::byte{0x00},
+        std::byte{0xBF}, std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
+        std::byte{0x40}, std::byte{0xF0}, std::byte{0x00}, std::byte{0x00},
+        std::byte{0x40}, std::byte{0xF0}, std::byte{0x00}, std::byte{0x00}};
     for (const auto &command : commands) {
       const auto *draw = std::get_if<ac6demo::XenosDrawCommand>(&command);
       if (draw == nullptr ||
@@ -438,27 +514,123 @@ private:
                           draw->pixel_shader_sha256 == kPixel;
       const bool copy = draw->vertex_shader_sha256 == kCopyVertex &&
                         draw->pixel_shader_sha256 == kPixel;
-      if ((!normal && !copy) || !draw->registers || draw->index_count != 3U ||
+      const bool title = draw->vertex_shader_sha256 == kTitleVertex &&
+                         draw->pixel_shader_sha256 == kTitlePixel;
+      const bool post_title = draw->vertex_shader_sha256 == kCopyVertex &&
+                              draw->pixel_shader_sha256 == kTitlePixel;
+      if ((!normal && !copy && !title && !post_title) || !draw->registers ||
           draw->source != ac6demo::XenosIndexSource::AutoIndex) {
-        throw ac6demo::RuntimeTrap("unqualified Vulkan rectangle pipeline");
+        throw ac6demo::RuntimeTrap("unqualified Vulkan reached pipeline");
       }
       const auto &registers = *draw->registers;
-      const bool exact =
-          normal
-              ? registers.value(0x2000U) == 0x0A020280U &&
-                    registers.value(0x2104U) == 0x0000FFFFU &&
-                    registers.value(0x2180U) == 0x10010001U &&
-                    registers.value(0x2200U) == 0x00008777U &&
-                    registers.value(0x2201U) == 0x00010001U &&
-                    registers.value(0x2208U) == 0x00000004U
-              : registers.value(0x2000U) == 0x14000500U &&
-                    registers.value(0x2104U) == 0x0000000FU &&
-                    registers.value(0x2180U) == 0x00010002U &&
-                    registers.value(0x2200U) == 0x00000000U &&
-                    registers.value(0x2201U) == 0x00010001U &&
-                    registers.value(0x2208U) == 0x00000006U;
+      const bool normal_target = normal && draw->index_count == 3U &&
+          draw->primitive == ac6demo::XenosPrimitive::RectangleList &&
+          registers.value(0x2000U) == 0x0A020280U &&
+          registers.value(0x2104U) == 0x0000FFFFU &&
+          registers.value(0x2180U) == 0x10010001U &&
+          registers.value(0x2200U) == 0x00008777U &&
+          registers.value(0x2201U) == 0x00010001U &&
+          registers.value(0x2208U) == 0x00000004U;
+      const bool copy_target = copy && draw->index_count == 3U &&
+          draw->primitive == ac6demo::XenosPrimitive::RectangleList &&
+          registers.value(0x2000U) == 0x14000500U &&
+          registers.value(0x2104U) == 0x0000000FU &&
+          registers.value(0x2180U) == 0x00010002U &&
+          registers.value(0x2200U) == 0x00000000U &&
+          registers.value(0x2201U) == 0x00010001U &&
+          registers.value(0x2208U) == 0x00000006U;
+      const bool offscreen_target = (normal || copy) &&
+          draw->index_count == 3U &&
+          draw->primitive == ac6demo::XenosPrimitive::RectangleList &&
+          registers.value(0x2000U) == 0x00800050U &&
+          registers.value(0x2104U) ==
+              (normal ? 0x0000FFFFU : 0x0000000FU) &&
+          registers.value(0x2180U) ==
+              (normal ? 0x10010001U : 0x00010002U) &&
+          registers.value(0x2200U) == 0x00000000U &&
+          registers.value(0x2201U) == 0x00010001U &&
+          registers.value(0x2208U) ==
+              (normal ? 0x00000004U : 0x00000006U);
+      const bool title_target = title && draw->predicated &&
+          draw->index_count == 4U &&
+          draw->primitive == ac6demo::XenosPrimitive::QuadList &&
+          registers.value(0x2000U) == 0x14000500U &&
+          registers.value(0x2001U) == 0x00000000U &&
+          registers.value(0x2104U) == 0x0000000FU &&
+          registers.value(0x2180U) == 0x10110103U &&
+          registers.value(0x2200U) == 0x00700764U &&
+          registers.value(0x2201U) == 0x00010706U &&
+          registers.value(0x2202U) == 0x87000007U &&
+          registers.value(0x2205U) == 0x00218000U &&
+          registers.value(0x2302U) == 0x00000005U &&
+          registers.value(0x2208U) == 0x00000004U;
+      const bool post_title_target = post_title && !draw->predicated &&
+          draw->index_count == 3U &&
+          draw->primitive == ac6demo::XenosPrimitive::RectangleList &&
+          registers.value(0x2000U) == 0x14000500U &&
+          registers.value(0x2001U) == 0x00000000U &&
+          registers.value(0x2104U) == 0x0000000FU &&
+          registers.value(0x2180U) == 0x00010002U &&
+          registers.value(0x2200U) == 0x00000000U &&
+          registers.value(0x2201U) == 0x00010001U &&
+          registers.value(0x2208U) == 0x00000006U;
+      const bool exact = normal_target || copy_target || offscreen_target ||
+                         title_target || post_title_target;
       if (!exact) {
-        throw ac6demo::RuntimeTrap("Vulkan rectangle register profile changed");
+        std::ostringstream values;
+        values << "Vulkan rectangle register profile changed:" << std::hex
+               << " 2000=" << registers.value(0x2000U)
+               << " 2104=" << registers.value(0x2104U)
+               << " 2180=" << registers.value(0x2180U)
+               << " 2200=" << registers.value(0x2200U)
+               << " 2201=" << registers.value(0x2201U)
+               << " 2208=" << registers.value(0x2208U);
+        throw ac6demo::RuntimeTrap(values.str());
+      }
+      if (offscreen_target) {
+        if (normal) {
+          continue;
+        }
+        const auto fetch0 = registers.value(ac6demo::kXenosTextureFetch00);
+        const auto address = (fetch0 >> 2U) * 4U;
+        const auto payload = std::ranges::find_if(
+            renderer_batch.payloads, [address](const auto &candidate) {
+              return candidate.address == address;
+            });
+        if (payload == renderer_batch.payloads.end() ||
+            !std::ranges::equal(payload->bytes,
+                                kOffscreenResolveCoordinates)) {
+          throw ac6demo::RuntimeTrap(
+              "Vulkan offscreen resolve coordinates changed");
+        }
+        continue;
+      }
+      if (post_title_target) {
+        post_title_draw_command_ = *draw;
+        batch.post_title_draw = true;
+        continue;
+      }
+      if (normal_target) {
+        if (batch.normal_draw) {
+          throw ac6demo::RuntimeTrap(
+              "multiple qualified normal draws in one renderer batch");
+        }
+        batch.normal_draw = true;
+        normal_draw_command_ = *draw;
+      } else if (copy_target) {
+        if (batch.copy_draw) {
+          throw ac6demo::RuntimeTrap(
+              "multiple qualified copy draws in one renderer batch");
+        }
+        batch.copy_draw = true;
+        copy_draw_command_ = *draw;
+      } else {
+        if (batch.title_draw) {
+          throw ac6demo::RuntimeTrap(
+              "multiple qualified title draws in one renderer batch");
+        }
+        batch.title_draw = true;
+        title_draw_command_ = *draw;
       }
       const std::string key(draw->vertex_shader_sha256);
       if (graphics_pipelines_.contains(key)) {
@@ -469,19 +641,37 @@ private:
       if (vertex == vulkan_modules_.end() || pixel == vulkan_modules_.end()) {
         throw ac6demo::RuntimeTrap("Vulkan pipeline modules are unavailable");
       }
-      const auto samples =
-          normal ? VK_SAMPLE_COUNT_4_BIT : VK_SAMPLE_COUNT_1_BIT;
-      VkRenderPass render_pass = create_render_pass(samples, normal);
+      const auto samples = normal_target ? VK_SAMPLE_COUNT_4_BIT
+                                         : VK_SAMPLE_COUNT_1_BIT;
+      VkRenderPass render_pass = create_render_pass(samples, normal_target);
+      VkRenderPass load_render_pass = VK_NULL_HANDLE;
       try {
+        if (normal_target || title_target) {
+          load_render_pass =
+              create_render_pass(samples, normal_target, true);
+        }
         const VkPipeline pipeline = create_graphics_pipeline(
-            vertex->second, pixel->second, render_pass, samples, normal);
+            vertex->second, pixel->second, render_pass, samples, normal_target,
+            title_target ? quad_geometry_module_ : rectangle_geometry_module_,
+            title_target ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY
+                         : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            title_target);
         render_passes_.emplace(key, render_pass);
         graphics_pipelines_.emplace(key, pipeline);
+        if (normal_target) {
+          normal_load_render_pass_ = load_render_pass;
+        } else if (title_target) {
+          title_load_render_pass_ = load_render_pass;
+        }
       } catch (...) {
+        if (load_render_pass != VK_NULL_HANDLE) {
+          vkDestroyRenderPass(device_, load_render_pass, nullptr);
+        }
         vkDestroyRenderPass(device_, render_pass, nullptr);
         throw;
       }
     }
+    return batch;
   }
   void cleanup_vulkan() noexcept {
     if (!vulkan_cleanup_safe_) {
@@ -490,6 +680,8 @@ private:
       return;
     }
     if (device_ != VK_NULL_HANDLE) {
+      ac6demo::destroy_vulkan_normal_draw_target(device_, normal_draw_target_);
+      ac6demo::destroy_vulkan_normal_draw_target(device_, title_draw_target_);
       shared_memory_.cleanup(device_);
       for (const auto &[identity, pipeline] : graphics_pipelines_) {
         static_cast<void>(identity);
@@ -501,6 +693,14 @@ private:
         vkDestroyRenderPass(device_, render_pass, nullptr);
       }
       render_passes_.clear();
+      if (normal_load_render_pass_ != VK_NULL_HANDLE) {
+        vkDestroyRenderPass(device_, normal_load_render_pass_, nullptr);
+        normal_load_render_pass_ = VK_NULL_HANDLE;
+      }
+      if (title_load_render_pass_ != VK_NULL_HANDLE) {
+        vkDestroyRenderPass(device_, title_load_render_pass_, nullptr);
+        title_load_render_pass_ = VK_NULL_HANDLE;
+      }
       for (const auto &[identity, module] : vulkan_modules_) {
         static_cast<void>(identity);
         vkDestroyShaderModule(device_, module, nullptr);
@@ -510,6 +710,10 @@ private:
         vkDestroyShaderModule(device_, rectangle_geometry_module_, nullptr);
         rectangle_geometry_module_ = VK_NULL_HANDLE;
       }
+      if (quad_geometry_module_ != VK_NULL_HANDLE) {
+        vkDestroyShaderModule(device_, quad_geometry_module_, nullptr);
+        quad_geometry_module_ = VK_NULL_HANDLE;
+      }
       if (pipeline_layout_ != VK_NULL_HANDLE) {
         vkDestroyPipelineLayout(device_, pipeline_layout_, nullptr);
         pipeline_layout_ = VK_NULL_HANDLE;
@@ -517,6 +721,14 @@ private:
       if (constants_layout_ != VK_NULL_HANDLE) {
         vkDestroyDescriptorSetLayout(device_, constants_layout_, nullptr);
         constants_layout_ = VK_NULL_HANDLE;
+      }
+      if (empty_layout_ != VK_NULL_HANDLE) {
+        vkDestroyDescriptorSetLayout(device_, empty_layout_, nullptr);
+        empty_layout_ = VK_NULL_HANDLE;
+      }
+      if (texture_layout_ != VK_NULL_HANDLE) {
+        vkDestroyDescriptorSetLayout(device_, texture_layout_, nullptr);
+        texture_layout_ = VK_NULL_HANDLE;
       }
       if (shared_layout_ != VK_NULL_HANDLE) {
         vkDestroyDescriptorSetLayout(device_, shared_layout_, nullptr);
@@ -532,7 +744,8 @@ private:
   }
   void create_reached_modules(
       ac6demo::DemoSession &session,
-      std::span<const ac6demo::XenosCommand> commands) {
+      const ac6demo::XenosRendererBatch &renderer_batch) {
+    const auto &commands = renderer_batch.commands;
     std::vector<std::string> identities;
     const auto present_command = ac6demo::single_xenos_present(commands);
     for (const auto &command : commands) {
@@ -579,10 +792,27 @@ private:
     for (auto &[identity, module] : staged) {
       vulkan_modules_.emplace(std::move(identity), module);
     }
-    create_reached_pipelines(commands);
+    const auto batch = create_reached_pipelines(renderer_batch);
+    const bool trace_title_ordering =
+        std::getenv("AC6_DEMO_TRACE_TITLE_ORDERING") != nullptr;
+    if (trace_title_ordering &&
+        (batch.title_draw || batch.post_title_draw ||
+         ac6demo::single_xenos_present(commands).has_value())) {
+      std::fprintf(stderr,
+                   "AC6_TITLE_ORDER batch=%llu normal=%u title=%u post=%u copy=%u present=%u pending_n=%u pending_t=%u pending_p=%u target=%u\n",
+                   static_cast<unsigned long long>(renderer_batch.sequence),
+                   batch.normal_draw ? 1U : 0U, batch.title_draw ? 1U : 0U,
+                   batch.post_title_draw ? 1U : 0U, batch.copy_draw ? 1U : 0U,
+                   ac6demo::single_xenos_present(commands).has_value() ? 1U :
+                                                                           0U,
+                   normal_draw_pending_resolve_ ? 1U : 0U,
+                   title_draw_pending_present_ ? 1U : 0U,
+                   post_title_draw_pending_present_ ? 1U : 0U,
+                   title_draw_target_.populated() ? 1U : 0U);
+    }
     const auto reached = cache_.stats();
     shared_memory_.populate(
-        physical_, device_, shared_layout_, session, commands,
+        physical_, device_, shared_layout_, commands, renderer_batch.payloads,
         reached.shader_loads, reached.draws, reached.presents,
         reached.translated_modules,
         static_cast<std::uint32_t>(graphics_pipelines_.size()));
@@ -590,16 +820,26 @@ private:
     vkGetPhysicalDeviceProperties(physical_, &properties);
     for (const auto &command : commands) {
       const auto *draw = std::get_if<ac6demo::XenosDrawCommand>(&command);
-      if (draw == nullptr ||
-          draw->primitive != ac6demo::XenosPrimitive::RectangleList) {
-        continue;
-      }
+      static constexpr std::string_view title_vertex =
+          "84e2d87ca4c7e6b6463cd007778e3e76f2d33d5b3a2bdf71bdabedf5e2949e6b";
+      const bool title = draw != nullptr && draw->predicated &&
+          draw->primitive == ac6demo::XenosPrimitive::QuadList &&
+          draw->index_count == 4U &&
+          draw->vertex_shader_sha256 == title_vertex;
       static constexpr std::string_view copy_vertex =
           "586168ec589613862294dae90f866303312abb8756318fa8d8633c8562a83cc0";
-      static constexpr std::string_view normal_vertex =
-          "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b";
-      if (draw->vertex_shader_sha256 == copy_vertex) copy_draw_command_ = *draw;
-      if (draw->vertex_shader_sha256 == normal_vertex) normal_draw_command_ = *draw;
+      static constexpr std::string_view title_pixel =
+          "8982431ab8c37106400e0cc23a09a9a08b6de1d952dcb7f7def0016bd5714825";
+      const bool post_title = draw != nullptr && !draw->predicated &&
+          draw->primitive == ac6demo::XenosPrimitive::RectangleList &&
+          draw->index_count == 3U &&
+          draw->vertex_shader_sha256 == copy_vertex &&
+          draw->pixel_shader_sha256 == title_pixel;
+      if (draw == nullptr ||
+          (draw->primitive != ac6demo::XenosPrimitive::RectangleList &&
+           !title) || post_title) {
+        continue;
+      }
       const auto *vertex = cache_.module(draw->vertex_shader_sha256);
       const auto *pixel = cache_.module(draw->pixel_shader_sha256);
       if (vertex == nullptr || pixel == nullptr) {
@@ -611,28 +851,220 @@ private:
           properties.limits.maxViewportDimensions[0],
           properties.limits.maxViewportDimensions[1]);
     }
+    const auto draw_epoch = shared_memory_.refresh_epoch();
     static constexpr std::string_view normal_vertex =
         "93488cb9a7bbbb2f0a8bc9cf9cc6b4111102ccaba9e76d0a16ef65184ea0402b";
-    if (!normal_draw_.has_value() && shared_memory_.populated() &&
+    if (batch.normal_draw && shared_memory_.populated() &&
         shared_memory_.constant_descriptor_count() == 10U) {
+      if (copy_draw_pending_present_) {
+        throw ac6demo::RuntimeTrap(
+            "Vulkan normal draw followed its pending qualified copy");
+      }
       if (!normal_draw_command_.has_value()) {
         throw ac6demo::RuntimeTrap("Vulkan normal draw command is unavailable");
       }
+      const bool load_existing = normal_draw_pending_resolve_;
+      const VkRenderPass render_pass =
+          load_existing ? normal_load_render_pass_
+                        : render_passes_.at(std::string(normal_vertex));
       normal_draw_ = ac6demo::execute_vulkan_normal_draw(
           physical_, device_, queue_, queue_family_,
           *normal_draw_command_,
-          render_passes_.at(std::string(normal_vertex)),
+          render_pass,
           graphics_pipelines_.at(std::string(normal_vertex)), pipeline_layout_,
           shared_memory_.shared_descriptor_set(),
           shared_memory_.constant_descriptor_set(normal_vertex),
+          normal_draw_target_, load_existing,
           &vulkan_cleanup_safe_);
+      normal_draw_epoch_ = draw_epoch;
+      normal_draw_sequence_ = renderer_batch.sequence;
+      normal_draw_pending_resolve_ = true;
     }
-    if (!neutral_resolve_.has_value() && normal_draw_.has_value() &&
-        copy_draw_command_.has_value() && present_command.has_value() && ac6demo::has_reached_copy_draw(commands)) {
+    static constexpr std::string_view title_vertex =
+        "84e2d87ca4c7e6b6463cd007778e3e76f2d33d5b3a2bdf71bdabedf5e2949e6b";
+    if (batch.title_draw && title_draw_command_.has_value() &&
+        shared_memory_.constant_descriptor_count() == 15U) {
+      const bool continuing_title = title_draw_target_.populated();
+      const bool continuing_title_sequence =
+          continuing_title && title_draw_pending_present_ &&
+          !post_title_draw_pending_present_ && !copy_draw_pending_present_;
+      if ((!normal_draw_pending_resolve_ && !continuing_title) ||
+          copy_draw_pending_present_ ||
+          (title_draw_pending_present_ && !continuing_title_sequence) ||
+          renderer_batch.sequence <=
+              (title_draw_pending_present_ ? title_draw_sequence_
+                                           : normal_draw_sequence_)) {
+        throw ac6demo::RuntimeTrap("Vulkan qualified title ordering changed");
+      }
+      constexpr std::uint16_t title_vertex_fetch =
+          ac6demo::kXenosTextureFetch00 + 95U * 2U;
+      const auto &title_registers = *title_draw_command_->registers;
+      const auto title_vertex_address =
+          title_registers.value(title_vertex_fetch) & ~3U;
+      const auto title_vertex_size =
+          ac6demo::qualified_title_vertex_snapshot_size(
+              title_registers.value(0x2102U),
+              title_draw_command_->index_count);
+      if (!title_vertex_size.has_value()) {
+        throw ac6demo::RuntimeTrap(
+            "qualified title vertex window changed");
+      }
+      const auto title_vertices = std::ranges::find_if(
+          renderer_batch.payloads,
+          [title_vertex_address, title_vertex_size](const auto &payload) {
+            return payload.address == title_vertex_address &&
+                   payload.bytes.size() == *title_vertex_size;
+          });
+      if (title_vertices == renderer_batch.payloads.end()) {
+        throw ac6demo::RuntimeTrap(
+            "qualified title vertex snapshot is unavailable");
+      }
+      if (std::getenv("AC6_DEMO_WATCH_TITLE_FETCH") != nullptr) {
+        static std::uint32_t fetch_trace_count = 0U;
+        if (fetch_trace_count++ < 32U) {
+          std::fprintf(
+              stderr,
+              "AC6_TITLE_FETCH sequence=%llu predicated=%u primitive=%u "
+              "index_count=%u fetch=%08X,%08X,%08X,%08X,%08X,%08X "
+              "regs2000=%08X regs2001=%08X regs2102=%08X regs2104=%08X "
+              "regs2180=%08X "
+              "regs2200=%08X regs2201=%08X regs2202=%08X regs2205=%08X "
+              "regs2208=%08X regs2302=%08X payloads=%zu\n",
+              static_cast<unsigned long long>(renderer_batch.sequence),
+              title_draw_command_->predicated ? 1U : 0U,
+              static_cast<unsigned>(title_draw_command_->primitive),
+              static_cast<unsigned>(title_draw_command_->index_count),
+              title_registers.value(ac6demo::kXenosTextureFetch00 + 0U),
+              title_registers.value(ac6demo::kXenosTextureFetch00 + 1U),
+              title_registers.value(ac6demo::kXenosTextureFetch00 + 2U),
+              title_registers.value(ac6demo::kXenosTextureFetch00 + 3U),
+              title_registers.value(ac6demo::kXenosTextureFetch00 + 4U),
+              title_registers.value(ac6demo::kXenosTextureFetch00 + 5U),
+              title_registers.value(0x2000U), title_registers.value(0x2001U),
+              title_registers.value(0x2102U),
+              title_registers.value(0x2104U), title_registers.value(0x2180U),
+              title_registers.value(0x2200U), title_registers.value(0x2201U),
+              title_registers.value(0x2202U), title_registers.value(0x2205U),
+              title_registers.value(0x2208U), title_registers.value(0x2302U),
+              renderer_batch.payloads.size());
+          for (const auto &payload : renderer_batch.payloads) {
+            std::fprintf(stderr, "AC6_TITLE_PAYLOAD address=0x%08X size=%zu\n",
+                         payload.address, payload.bytes.size());
+          }
+        }
+      }
+      const auto title_texture =
+          ac6demo::qualified_title_texture_profile(title_registers);
+      if (!title_texture.has_value()) {
+        throw ac6demo::RuntimeTrap("qualified title texture selection changed");
+      }
+      const auto texture_address = title_texture->address;
+      const auto texture_size = title_texture->payload_size;
+      const auto texture_width = title_texture->width;
+      const auto texture_height = title_texture->height;
+      const auto texture = std::ranges::find_if(
+          renderer_batch.payloads, [texture_address, texture_size](const auto &payload) {
+            return payload.address == texture_address &&
+                   payload.bytes.size() == texture_size;
+          });
+      if (texture == renderer_batch.payloads.end()) {
+        throw ac6demo::RuntimeTrap(
+            "qualified title texture snapshot is unavailable");
+      }
+      if (const char *dump_prefix =
+              std::getenv("AC6_DEMO_DUMP_TITLE_TEXTURE_BC3_PREFIX");
+          dump_prefix != nullptr && *dump_prefix != '\0' &&
+          title_texture->encoding ==
+              ac6demo::QualifiedTitleTextureEncoding::Bc3) {
+        static bool dumped64 = false;
+        static bool dumped512 = false;
+        static bool dumped1280x720 = false;
+        bool &dumped = texture_width == 64U
+                           ? dumped64
+                           : texture_width == 512U ? dumped512
+                                                   : dumped1280x720;
+        if (!dumped) {
+          const auto path = std::string(dump_prefix) + "-" +
+                            std::to_string(texture_width) + "x" +
+                            std::to_string(texture_height) + ".bc3";
+          const auto bytes = std::string_view{
+              reinterpret_cast<const char *>(texture->bytes.data()),
+              texture->bytes.size()};
+          publish_new_file(path, bytes);
+          dumped = true;
+        }
+      }
+      if (trace_title_ordering) {
+        std::fprintf(stderr,
+                     "AC6_TITLE_TEXTURE batch=%llu address=0x%08X width=%u height=%u\n",
+                     static_cast<unsigned long long>(renderer_batch.sequence),
+                     texture_address, texture_width, texture_height);
+      }
+      title_draw_ = ac6demo::execute_vulkan_title_draw(
+          physical_, device_, queue_, queue_family_, *title_draw_command_,
+          continuing_title ? title_load_render_pass_
+                           : render_passes_.at(std::string(title_vertex)),
+          graphics_pipelines_.at(std::string(title_vertex)), pipeline_layout_,
+          shared_memory_.shared_descriptor_set(),
+          shared_memory_.constant_descriptor_set(title_vertex), empty_layout_,
+          texture_layout_, texture->bytes, texture_width, texture_height,
+          title_draw_target_,
+          continuing_title, &vulkan_cleanup_safe_);
+      title_draw_epoch_ = draw_epoch;
+      title_draw_sequence_ = renderer_batch.sequence;
+      title_draw_pending_present_ = true;
+    }
+    if (batch.post_title_draw) {
+      if (!title_draw_pending_present_ || post_title_draw_pending_present_ ||
+          renderer_batch.sequence <= title_draw_sequence_) {
+        throw ac6demo::RuntimeTrap(
+            "Vulkan qualified post-title ordering changed");
+      }
+      post_title_draw_sequence_ = renderer_batch.sequence;
+      post_title_draw_pending_present_ = true;
+    }
+    if (batch.copy_draw && normal_draw_pending_resolve_) {
+      if (!copy_draw_command_.has_value() || copy_draw_pending_present_ ||
+          renderer_batch.sequence <= normal_draw_sequence_) {
+        throw ac6demo::RuntimeTrap("Vulkan qualified copy ordering changed");
+      }
+      copy_draw_pending_present_ = true;
+      copy_draw_sequence_ = renderer_batch.sequence;
+    }
+    if (present_command.has_value() &&
+        (normal_draw_pending_resolve_ || title_draw_pending_present_)) {
+      if (title_draw_pending_present_) {
+        if (!post_title_draw_pending_present_ ||
+            !title_draw_.has_value() || !post_title_draw_command_.has_value() ||
+            renderer_batch.sequence <= post_title_draw_sequence_) {
+          throw ac6demo::RuntimeTrap(
+              "Vulkan qualified title present ordering changed");
+        }
+        neutral_resolve_ = ac6demo::execute_vulkan_title_resolve(
+            physical_, device_, queue_, queue_family_, *title_draw_,
+            *post_title_draw_command_, *present_command);
+        ac6demo::commit_reached_guest_present(
+            session, *neutral_resolve_, renderer_batch.sequence);
+        ac6demo::destroy_vulkan_normal_draw_target(device_, normal_draw_target_);
+        normal_draw_pending_resolve_ = false;
+        copy_draw_pending_present_ = false;
+        title_draw_pending_present_ = false;
+        post_title_draw_pending_present_ = false;
+        return;
+      }
+      if (!normal_draw_.has_value() || !copy_draw_pending_present_ ||
+          !copy_draw_command_.has_value() ||
+          renderer_batch.sequence <= copy_draw_sequence_) {
+        throw ac6demo::RuntimeTrap("Vulkan qualified present ordering changed");
+      }
       neutral_resolve_ = ac6demo::execute_vulkan_neutral_resolve(
           physical_, device_, queue_, queue_family_, *normal_draw_,
           *copy_draw_command_, *present_command);
-      ac6demo::commit_reached_guest_present(session, *neutral_resolve_);
+      ac6demo::commit_reached_guest_present(
+          session, *neutral_resolve_, renderer_batch.sequence);
+      ac6demo::destroy_vulkan_normal_draw_target(device_, normal_draw_target_);
+      normal_draw_pending_resolve_ = false;
+      copy_draw_pending_present_ = false;
     }
   }
   VkInstance instance_{VK_NULL_HANDLE};
@@ -645,14 +1077,34 @@ private:
   std::unordered_map<std::string, VkPipeline> graphics_pipelines_;
   VkDescriptorSetLayout shared_layout_{VK_NULL_HANDLE};
   VkDescriptorSetLayout constants_layout_{VK_NULL_HANDLE};
+  VkDescriptorSetLayout empty_layout_{VK_NULL_HANDLE};
+  VkDescriptorSetLayout texture_layout_{VK_NULL_HANDLE};
   VkPipelineLayout pipeline_layout_{VK_NULL_HANDLE};
+  VkRenderPass normal_load_render_pass_{VK_NULL_HANDLE};
+  VkRenderPass title_load_render_pass_{VK_NULL_HANDLE};
   VkShaderModule rectangle_geometry_module_{VK_NULL_HANDLE};
+  VkShaderModule quad_geometry_module_{VK_NULL_HANDLE};
   ac6demo::VulkanSharedMemory shared_memory_;
+  ac6demo::VulkanNormalDrawTarget normal_draw_target_;
+  ac6demo::VulkanNormalDrawTarget title_draw_target_;
   std::optional<ac6demo::VulkanNormalDrawResult> normal_draw_;
+  std::optional<ac6demo::VulkanNormalDrawResult> title_draw_;
   std::optional<ac6demo::VulkanNeutralResolveResult> neutral_resolve_;
   bool vulkan_cleanup_safe_{true};
   std::optional<ac6demo::XenosDrawCommand> normal_draw_command_;
   std::optional<ac6demo::XenosDrawCommand> copy_draw_command_;
+  std::optional<ac6demo::XenosDrawCommand> title_draw_command_;
+  std::optional<ac6demo::XenosDrawCommand> post_title_draw_command_;
+  bool normal_draw_pending_resolve_{};
+  bool copy_draw_pending_present_{};
+  bool title_draw_pending_present_{};
+  bool post_title_draw_pending_present_{};
+  std::uint64_t normal_draw_epoch_{};
+  std::uint64_t normal_draw_sequence_{};
+  std::uint64_t copy_draw_sequence_{};
+  std::uint64_t title_draw_epoch_{};
+  std::uint64_t title_draw_sequence_{};
+  std::uint64_t post_title_draw_sequence_{};
 #endif
 };
 [[nodiscard]] std::string json_string(std::string_view value) {
@@ -666,7 +1118,6 @@ private:
   output.push_back('"');
   return output;
 }
-
 void publish_reachability_atlas(
     const std::filesystem::path &path, const std::filesystem::path &trace,
     std::string_view movie, std::uint64_t completed_ticks,

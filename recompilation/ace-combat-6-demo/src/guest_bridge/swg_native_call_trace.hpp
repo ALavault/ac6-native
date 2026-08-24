@@ -251,8 +251,11 @@ inline void trace_swg_native_call(const PPCContext &context, std::uint32_t lr,
   // ASContext::String -- category ends up equal to whichever value the
   // CALLER of this box() passed as r4. Logging lr/r3/r4 here names that
   // caller, in evaluation order, for the whole tick-3001 batch at once.
+  const char *box_tick = std::getenv("AC6_DEMO_WATCH_SWG_BOX_TICK");
   if (std::getenv("AC6_DEMO_WATCH_SWG_BOX_CALL") != nullptr &&
-      guest_address == 0x820DA488U) {
+      guest_address == 0x820DA488U &&
+      (box_tick == nullptr || require_bridge().tick() ==
+                                  std::strtoull(box_tick, nullptr, 0))) {
     // sub_823246C0's own dispatch (the one observed caller, lr=0x82324854)
     // fetches r4 from [[this+20]+0] then advances [this+20] by 4 before this
     // call -- a program-counter fetch. r31 here is that interpreter's own

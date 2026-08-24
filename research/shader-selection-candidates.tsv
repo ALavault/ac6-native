@@ -1,0 +1,9 @@
+material_key	material_flags	texture_signature	vertex_attributes	pass	vs_candidate	ps_candidate	proof	reason_for_exclusion
+0x30000010	NU_FLAG1=0|1;NU_FLAG2=0	one local GIDX; runtime count=1	format 06/13	base	vsCstCT	psCT	PROUVÉ	
+0x30040010	NU_FLAG1=0|1;NU_FLAG2=0	one local GIDX; runtime count=1	format 06/13	HDR	vsCstCT	psCT	FORTEMENT ÉTAYÉ	exact NSXR pair; writer to material+0x14 remains missing
+0x30000090	NU_FLAG1=0;NU_FLAG2=0	one GIDX via aligned fallback	format 06/13	base	INCONNU	INCONNU	INCONNU	key absent from all 51 inventoried NSXR containers
+0x04100002	any	one local GIDX	format 06/13	Map	vsMapCstCT	psMapCTF2_Expfog	RÉFUTÉ	material key is 0x30000010, not 0x04100002
+0x04100012	any	tf0,tf1 interface	format 06/13	Map	vsMapCstCT	psMapCTF2_Detail_Expfog	RÉFUTÉ	material key mismatch and observed texture count is one
+0x04100112	any	multi-slot interface	format 06/13	Map	vsMapCstCT_Ocean	psMapCTF2_Detail_Expfog_Ocean	RÉFUTÉ	material key mismatch; slot signature alone is not selection evidence
+0x04E00011	any	tf0 interface	format 06/13	Map	vsCstCT_ProjPos_MPARTS2	psCTF_ExpFog_MPARTS2	RÉFUTÉ	material key is 0x30000010, not 0x04E00011
+0x04300010	any	tf10,tf11 interface	format 06/13	Map	vsMapOcean	psMapOcean	RÉFUTÉ	material key mismatch and global slots cannot override the direct join

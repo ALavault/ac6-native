@@ -112,9 +112,14 @@ inline void record_first_byte_difference(ReachedCopyByteDifference &first,
     std::span<const std::byte> observed_tiled,
     std::span<const std::byte> observed_edram = {},
     std::byte edram_canary = kReachedEdramCanary,
-    std::byte padding_canary = kReachedCopyPaddingCanary) {
-  if (normal_rgba8.size() != kReachedNormalLinearBytes) {
-    throw RuntimeTrap("reached copy differential normal extent is invalid");
+    std::byte padding_canary = kReachedCopyPaddingCanary,
+    bool title_1x = false) {
+  const std::size_t expected_source_bytes =
+      title_1x ? kReachedResolveLinearBytes : kReachedNormalLinearBytes;
+  if (normal_rgba8.size() != expected_source_bytes) {
+    throw RuntimeTrap(title_1x
+                          ? "reached copy differential title extent is invalid"
+                          : "reached copy differential normal extent is invalid");
   }
   if (observed_tiled.size() != kReachedResolveTiledExtentBytes) {
     throw RuntimeTrap("reached copy differential tiled extent is invalid");
@@ -128,7 +133,11 @@ inline void record_first_byte_difference(ReachedCopyByteDifference &first,
   result.normal_rgba8_sha256 = Sha256::bytes(normal_rgba8);
 
   std::vector<std::byte> expected_linear(kReachedResolveLinearBytes);
-  build_reached_copy_linear_oracle(normal_rgba8, expected_linear);
+  if (title_1x) {
+    build_reached_title_copy_linear_oracle(normal_rgba8, expected_linear);
+  } else {
+    build_reached_copy_linear_oracle(normal_rgba8, expected_linear);
+  }
   result.expected_linear_sha256 = Sha256::bytes(expected_linear);
 
   std::vector<std::byte> observed_linear(kReachedResolveLinearBytes);
@@ -163,8 +172,13 @@ inline void record_first_byte_difference(ReachedCopyByteDifference &first,
   result.linear_pixels_exact = result.pixel_mismatched_bytes == 0U;
 
   std::vector<std::byte> expected_tiled(kReachedResolveTiledExtentBytes);
-  build_reached_copy_tiled_oracle(normal_rgba8, expected_tiled,
-                                  padding_canary);
+  if (title_1x) {
+    build_reached_title_copy_tiled_oracle(normal_rgba8, expected_tiled,
+                                          padding_canary);
+  } else {
+    build_reached_copy_tiled_oracle(normal_rgba8, expected_tiled,
+                                    padding_canary);
+  }
   result.expected_tiled_sha256 = Sha256::bytes(expected_tiled);
   result.observed_tiled_sha256 = Sha256::bytes(observed_tiled);
   result.tiled_exact = std::equal(expected_tiled.begin(), expected_tiled.end(),
@@ -194,8 +208,13 @@ inline void record_first_byte_difference(ReachedCopyByteDifference &first,
   result.edram_provided = !observed_edram.empty();
   if (result.edram_provided) {
     std::vector<std::byte> expected_edram(kReachedEdramAllocationBytes);
-    materialize_reached_normal_rgba8_edram(normal_rgba8, expected_edram,
+    if (title_1x) {
+      materialize_reached_title_rgba8_edram(normal_rgba8, expected_edram,
                                             edram_canary);
+    } else {
+      materialize_reached_normal_rgba8_edram(normal_rgba8, expected_edram,
+                                              edram_canary);
+    }
     result.expected_edram_sha256 = Sha256::bytes(expected_edram);
     result.observed_edram_sha256 = Sha256::bytes(observed_edram);
     for (std::size_t offset = 0U; offset < expected_edram.size(); ++offset) {
@@ -220,6 +239,16 @@ inline void record_first_byte_difference(ReachedCopyByteDifference &first,
         ReachedCopyFailureStage::DestinationPadding;
   }
   return result;
+}
+
+[[nodiscard]] inline ReachedCopyDifferential diagnose_reached_title_copy(
+    std::span<const std::byte> title_rgba8,
+    std::span<const std::byte> observed_tiled,
+    std::span<const std::byte> observed_edram = {},
+    std::byte edram_canary = kReachedEdramCanary,
+    std::byte padding_canary = kReachedCopyPaddingCanary) {
+  return diagnose_reached_copy(title_rgba8, observed_tiled, observed_edram,
+                               edram_canary, padding_canary, true);
 }
 
 inline void require_exact_reached_copy(const ReachedCopyDifferential &result) {

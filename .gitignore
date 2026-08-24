@@ -168,3 +168,31 @@ reports/mission01-native-captures/**
 /boot.log
 /ac6-test-session-save.ac6s
 /ac6-test-functional-catalog.tsv
+
+# --- cycle 1823: heavy or proprietary working trees never belong in HEAD -----
+# These sat untracked for the whole campaign. Naming them makes `git status`
+# usable again: before this, 95 untracked entries hid the fact that six product
+# source files the build #includes were themselves untracked.
+# Vendor SDKs (5.3G): AGENTS.md forbids versioning SDKs outright.
+/sdk/
+# Xenia oracle builds and prototype trees (7.4G + 4.8G + 4.8G).
+/ac6_demo_work/
+/ac6_proto/
+/ac6_proto_2/
+# Build outputs and compiler caches.
+/recompilation/ace-combat-6-demo/install/
+/ccache-result.d
+/ccache-result.stderr
+# Session rotation marker: local signalling, not evidence.
+/SESSION_ROTATE
+
+# Run traces are byte-heavy replays, not text evidence. The 240 JSON files
+# already in analysis/demo are the durable half; no .trace has ever been
+# tracked, and analysis/demo alone holds ~1G of them.
+analysis/demo/**/*.trace
+analysis/demo/**/*.stdout.log
+analysis/demo/**/*.stderr.log
+analysis/demo/**/*.access_count
+analysis/demo/**/*.handoff_count
+analysis/demo/**/*.return_code
+analysis/demo/**/return_code

@@ -20,6 +20,13 @@ namespace ac6demo {
 
 class VfsMount;
 
+namespace guest_bridge_detail {
+
+// The native renderer exposes a working graphics path to the guest.
+inline constexpr std::int64_t kVdHsioTrainingSucceededResult = 1;
+
+} // namespace guest_bridge_detail
+
 // Build-mode query used by the command layer to reject play/replay before it
 // touches a store or trace when no generated guest object is linked.
 [[nodiscard]] bool generated_guest_available() noexcept;
@@ -42,6 +49,12 @@ class VfsMount;
     GuestMemory &memory, std::uint32_t caller_lr, std::uint32_t app,
     std::uint32_t message, std::uint32_t overlapped, std::uint32_t buffer,
     std::uint32_t length);
+
+// The reached title VS adds VGT_INDX_OFFSET to gl_VertexIndex before its
+// 13-dword fetch. Only the three observed quad windows are qualified.
+[[nodiscard]] std::optional<std::size_t>
+qualified_title_vertex_snapshot_size(std::uint32_t base_index,
+                                     std::uint32_t index_count) noexcept;
 
 struct GuestRegisterSnapshot final {
   std::uint32_t r1{};
@@ -352,7 +365,7 @@ public:
     return graphics_present_count_;
   }
   [[nodiscard]] XenosRingSnapshot xenos_ring_snapshot() const noexcept;
-  [[nodiscard]] std::vector<XenosCommand> consume_xenos_renderer_commands();
+  [[nodiscard]] std::vector<XenosRendererBatch> consume_xenos_renderer_batches();
   [[nodiscard]] const VdSwapSnapshot &vd_swap_snapshot() const noexcept {
     return vd_swap_snapshot_;
   }
@@ -392,6 +405,9 @@ public:
   }
   [[nodiscard]] bool owns_allocation(std::uint32_t address,
                                      std::size_t size) const noexcept;
+  [[nodiscard]] std::optional<std::uint32_t>
+  resolve_physical_alias(std::uint32_t address,
+                         std::size_t size) const noexcept;
   void record_allocation(std::uint32_t address, std::size_t size);
   [[nodiscard]] bool
   create_guest_thread(std::uint32_t stack_size, std::uint32_t thread_id_pointer,
@@ -451,6 +467,14 @@ public:
       std::uint32_t generated_line = 0U);
 
 private:
+  [[nodiscard]] std::vector<XenosRendererBatch> capture_xenos_renderer_batches(
+      std::span<const XenosCommand> commands,
+      std::span<const std::size_t> write_counts,
+      std::span<const XenosGuestMemoryWrite> writes) const;
+  [[nodiscard]] XenosRendererBatch capture_xenos_renderer_batch(
+      std::span<const XenosCommand> commands,
+      std::span<const std::size_t> write_counts,
+      std::span<const XenosGuestMemoryWrite> writes) const;
   [[nodiscard]] std::size_t
   apply_xenos_typed_batch(std::span<const std::uint32_t> stream);
   void resume_xenos_pending_batch();
@@ -517,9 +541,8 @@ private:
   std::uint32_t ke_timestamp_bundle_{};
   std::uint32_t xma_context_next_index_{};
   std::array<bool, 320U> xma_context_active_{};
-  // Test-only PAL XMA probe: expected logical bit and last physical context
-  // for the six observed slots. No production route consults this state.
-  std::uint32_t xma_kick_expected_bit_{1U};
+  // Test-only PAL XMA probe: last physical context selected by the guest.
+  // No production route consults this state.
   std::uint32_t xma_last_physical_context_{};
   std::uint32_t next_thread_id_{4U};
   std::uint32_t next_thread_handle_{0xE1000000U};
@@ -545,7 +568,9 @@ private:
   XenosPacketCensusSnapshot xenos_packet_census_{};
   XenosCommandProcessor xenos_command_processor_{};
   XenosTypedCommandSnapshot xenos_typed_commands_{};
-  std::vector<XenosCommand> xenos_renderer_commands_;
+  std::vector<XenosRendererBatch> xenos_renderer_batches_;
+  std::vector<XenosRendererBatch> xenos_pending_renderer_batches_;
+  std::uint64_t xenos_renderer_sequence_{};
   XenosEffectSnapshot xenos_effects_{};
   std::uint32_t xenos_cp_interrupts_pending_{};
   std::vector<std::uint32_t> xenos_pending_stream_;

@@ -1,0 +1,86 @@
+{
+  "schema": "ac6-demo-final-wptr-producer-window/v1",
+  "status": "refuted_final_wptr_write_on_observed_call",
+  "qualification": {
+    "target": "Xbox 360 AC6 PAL demo",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_program": "Default.xex",
+    "runtime_binary": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+    "runtime_binary_sha256": "7bc2a990de70cc0115377d013519a1c23868cac050f32b5ab9a47b0706a47d6a"
+  },
+  "method": {
+    "kind": "one bounded GDB window",
+    "script": "artifacts/wptr-producer-debugger-gate/window.gdb",
+    "script_sha256": "79886f2b65e867129e4da3bd9f4382b925a8d447f2602955ea8300003d707ba4",
+    "arming_condition": "GuestBridge::configure_xenos_ring(base=0x126CA000, size_log2=16)",
+    "producer_breakpoint": "sub_821B9BC8(PPCContext&, unsigned char*)",
+    "mmio_breakpoint": "GuestBridge::apply_xenos_mmio_write(..., address=0x7FC80714, ...)"
+  },
+  "observations": {
+    "final_ring": {
+      "base": "0x126CA000",
+      "size_log2": 16,
+      "gdb_record": "AC6_GDB_FINAL_RING base=0x126ca000 log2=16"
+    },
+    "first_post_final_producer_entry": {
+      "function": "0x821B9BC8",
+      "named_role": "D3D::CDevice::AddCallsToPrimaryBuffer",
+      "guest_lr": "0x821BA120",
+      "host_backtrace": [
+        "__imp__sub_821B9BC8",
+        "__imp__sub_821BA058",
+        "__imp__sub_821BA780"
+      ],
+      "r3_device": "0x10041A00",
+      "r4": "0x7F040718",
+      "r5_count": 1,
+      "device_private_plus_0x2abd": "0x16",
+      "device_private_plus_0x5404": "0x00000000",
+      "gdb_record": "AC6_GDB_WPTR_PRODUCER lr=0x821ba120 r3=0x10041a00 r4=0x7f040718 r5=0x00000001 byte10941=0x16 f21508=0x00000000"
+    }
+  },
+  "static_cross_match": {
+    "function": "0x821B9BC8",
+    "condition": "When (device[0x2ABD] & 0x02) != 0 and *(u32 *)(device + 0x5404) == 0, the PPC path reaches the no-op epilogue before its only CP_RB_WPTR store.",
+    "only_wptr_store": {
+      "address": "0x821B9D24",
+      "instruction": "stwx r9,r10,r24",
+      "guest_mmio": "0x7FC80714"
+    },
+    "evidence": "Qualified Ghidra decompilation of Default.xex in ace-combat-6-demo; the runtime observation supplies the branch operands rather than names for the private fields."
+  },
+  "ring_handoff": {
+    "pre_final_execution": "The ordered tick-0 receipt places all four observed CP_RB_WPTR writes before the second VdInitializeRingBuffer. The current primary batches are consumed synchronously and completely (22 then 3 dwords; no pending WAIT).",
+    "bridge_cross_match": "GuestBridge::configure_xenos_ring resets ring-local telemetry when base or size changes, but it does not clear the command processor, typed commands, renderer mailbox, or a pending stream. The post-final report still retains the two shader loads and 24 draws decoded from the pre-final bootstrap work.",
+    "result": "No submitted or pending first-ring work is discarded by the observed reconfiguration. A zero-submission snapshot of the final ring is therefore not evidence that the earlier bootstrap batch was lost."
+  },
+  "conclusion": {
+    "result": "The covered post-final invocation returns through the suppressing branch and therefore cannot issue CP_RB_WPTR. This is not, on its own, evidence that a final-ring publication is required for the already-completed bootstrap batch.",
+    "closed": [
+      "The native guest-to-CP MMIO bridge did not drop a WPTR store on this invocation.",
+      "The pre-final tick-0 writes cannot be treated as a submission of the final ring."
+    ],
+    "not_established": [
+      "A semantic name or rendering role for the undocumented D3D private-tail fields +0x2ABD and +0x5404.",
+      "Whether a later frontend or mission transition should create a new final-ring publication, and its producer if it does.",
+      "A native runtime fix. No code change is justified by this evidence."
+    ]
+  },
+  "artifacts": {
+    "gdb_log": {
+      "path": "artifacts/wptr-producer-debugger-gate/run.gdb.log",
+      "sha256": "61f9d26c7fc64ed9f780ab671acce5d179294ac6219b1a61797c558423b6884c"
+    },
+    "debugger_trace": {
+      "path": "artifacts/wptr-producer-debugger-gate/run.trace",
+      "sha256": "64b59b226d85a7117f777608b81ae1a67f2719ab47046c9711befc6b3cb29eb6"
+    },
+    "ordered_two_tick_probe": {
+      "path": "/fastdata/lavaulta/tmp/recoverable-deletions/ac6-demo-wptr-ordered.DQWCeY",
+      "replay_sha256": "b9bb480f6b1c895109fae135e297b42e39d8feaeae51c9ead0844a9849362dd6",
+      "report_sha256": "f0c191547835f4ac8014199e0a372d97b8deaa8372609b85a37e51e618421a68",
+      "stderr_sha256": "4b50c381aa027cea2ce449c4303bc97ccf387e5cdeab22f1b33a625aaf8e660f"
+    }
+  }
+}

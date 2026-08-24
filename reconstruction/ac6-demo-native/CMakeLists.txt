@@ -8,6 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(AC6DEMO_NATIVE_SOURCES
     src/content_store.cpp
+    src/compact_decoder.cpp
     src/ipc.cpp
     src/platform.cpp
     src/replay.cpp
@@ -60,6 +61,10 @@ if(BUILD_TESTING)
         PRIVATE AC6DEMO_NATIVE_ENABLE_TESTING=1
     )
 
+    add_executable(ac6-demo-native-compact-tests tests/compact_decoder_tests.cpp)
+    target_link_libraries(ac6-demo-native-compact-tests PRIVATE ac6-demo-native-test-core)
+    target_compile_features(ac6-demo-native-compact-tests PRIVATE cxx_std_20)
+
     add_executable(ac6-demo-native-platform-tests tests/platform_tests.cpp)
     target_link_libraries(ac6-demo-native-platform-tests PRIVATE ac6-demo-native-test-core)
     target_compile_features(ac6-demo-native-platform-tests PRIVATE cxx_std_20)
@@ -74,6 +79,7 @@ if(BUILD_TESTING)
 
     add_test(NAME ac6-demo-native-content COMMAND ac6-demo-native-content-tests)
     add_test(NAME ac6-demo-native-vfs COMMAND ac6-demo-native-vfs-tests)
+    add_test(NAME ac6-demo-native-compact COMMAND ac6-demo-native-compact-tests)
     add_test(NAME ac6-demo-native-platform COMMAND ac6-demo-native-platform-tests)
     add_test(NAME ac6-demo-native-replay COMMAND ac6-demo-native-replay-tests)
     add_test(NAME ac6-demo-native-ipc COMMAND ac6-demo-native-ipc-tests)

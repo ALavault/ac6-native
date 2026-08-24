@@ -1,0 +1,87 @@
+{
+  "schema": "ac6-demo-graphics-interrupt-source-boundary/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "architecture": "Xenon big-endian / Xenos",
+    "project": "ace-combat-6-demo",
+    "program": "Default.xex",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "basefile_sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218"
+  },
+  "scope": {
+    "backend": "headless",
+    "fresh_process": true,
+    "input": "connected neutral for every tick",
+    "max_ticks": 1100,
+    "environment": [
+      "SDL_AUDIODRIVER=dummy",
+      "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT=1",
+      "AC6_DEMO_WATCH_GRAPHICS_INTERRUPT_STATE=1"
+    ],
+    "runtime_binary": {
+      "path": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+      "sha256": "32bd700c0c9f3f02e0c6d3fdabf3d915d78b52b50b48b7d24c19e7f2110066f3"
+    }
+  },
+  "artifacts": {
+    "run_root": "/fastdata/lavaulta/tmp/ac6-graphics-interrupt-1100-fg.dqlgss",
+    "stdout": {
+      "sha256": "cd6d84ee95c16fbdd4242a6c1149c441b3436d2364b2637c908353b472176284"
+    },
+    "stderr": {
+      "sha256": "e9cab4996426791f4a4d4783944aa38c7da1ebc2869b32ce54ac5b0abab94792"
+    },
+    "replay": {
+      "sha256": "43879314f9cf480fc9c3756ec47cc2fa82e91bfc8e6ce562572ad475f7adac59"
+    },
+    "report": {
+      "sha256": "b082b53df7628b10b37f7781ad85af5048dc3388add50e83e59a2eb3fd6d60fb"
+    }
+  },
+  "observation": {
+    "outcome": {
+      "kind": "max_ticks",
+      "completed_ticks": 1100,
+      "session_state": "guest"
+    },
+    "milestones": {
+      "presents": 963,
+      "frontend": false,
+      "mission": false,
+      "terminal": false
+    },
+    "graphics": {
+      "ring_submissions": 0,
+      "ring_submitted_dwords": 0,
+      "packet_count": 0,
+      "decoded_dword_count": 0,
+      "shader_load_count": 2,
+      "draw_count": 24,
+      "effects": {
+        "scratch_writeback": 1,
+        "interrupt": 0,
+        "cpu_interrupt_count": 0,
+        "pending_interrupt_count": 0
+      }
+    },
+    "trace_markers": {
+      "graphics_interrupt_registration": 1,
+      "graphics_interrupt_call": 1099,
+      "graphics_interrupt_gate": 1099,
+      "graphics_interrupt_pm4": 0,
+      "graphics_interrupt_state_load": 0,
+      "runtime_trap": 0
+    }
+  },
+  "classification": {
+    "established": [
+      "The registered graphics callback 0x821B9710 with context 0x10041A00 is dispatched by source 0 on the observed host path.",
+      "No PM4 CPU interrupt is decoded in this neutral 1100-tick window."
+    ],
+    "not_established": [
+      "A PM4_INTERRUPT implementation or CPU-mask expansion is not justified by this run.",
+      "No frontend, mission, terminal, non-bootstrap shader, or non-black readback is established."
+    ]
+  }
+}

@@ -93,6 +93,31 @@ inline void materialize_reached_normal_rgba8_edram(
   }
 }
 
+// Materialize the qualified 1280x720 / 1x title RT0 directly into the same
+// sample-addressed EDRAM surface used by the reached mode-6 copy.
+inline void materialize_reached_title_rgba8_edram(
+    std::span<const std::byte> title_rgba8, std::span<std::byte> edram,
+    std::byte canary = kReachedEdramCanary) {
+  if (title_rgba8.size() != kReachedResolveLinearBytes) {
+    throw RuntimeTrap("reached title RGBA8 extent is invalid");
+  }
+  if (edram.size() != kReachedEdramAllocationBytes) {
+    throw RuntimeTrap("reached EDRAM allocation extent is invalid");
+  }
+
+  std::fill(edram.begin(), edram.end(), canary);
+  for (std::uint32_t y = 0U; y < kReachedResolveHeight; ++y) {
+    for (std::uint32_t x = 0U; x < kReachedResolveWidth; ++x) {
+      const std::size_t source =
+          (static_cast<std::size_t>(y) * kReachedResolveWidth + x) * 4U;
+      const std::size_t destination = reached_edram_sample_offset(x, y);
+      std::copy_n(title_rgba8.begin() + static_cast<std::ptrdiff_t>(source),
+                  4U,
+                  edram.begin() + static_cast<std::ptrdiff_t>(destination));
+    }
+  }
+}
+
 // CPU oracle for the exact reached copy profile:
 // - 640x360 source resolved to four identical sample values;
 // - 1280x720 destination;
@@ -124,6 +149,42 @@ inline void build_reached_copy_linear_oracle(
   }
 }
 
+inline void build_reached_title_copy_linear_oracle(
+    std::span<const std::byte> title_rgba8,
+    std::span<std::byte> destination_rgba8) {
+  if (title_rgba8.size() != kReachedResolveLinearBytes) {
+    throw RuntimeTrap("reached title copy source extent is invalid");
+  }
+  if (destination_rgba8.size() != kReachedResolveLinearBytes) {
+    throw RuntimeTrap("reached copy destination extent is invalid");
+  }
+
+  for (std::size_t pixel = 0U; pixel < title_rgba8.size(); pixel += 4U) {
+    destination_rgba8[pixel + 0U] = title_rgba8[pixel + 2U];
+    destination_rgba8[pixel + 1U] = title_rgba8[pixel + 1U];
+    destination_rgba8[pixel + 2U] = title_rgba8[pixel + 0U];
+    destination_rgba8[pixel + 3U] = title_rgba8[pixel + 3U];
+  }
+}
+
+// Apply the exact reached XE_SWAP texture-fetch swizzle (B, G, R, 1) to the
+// format-6 bytes produced by copy_dest_swap. The guest allocation remains in
+// copy-destination order; this is only the canonical display image.
+inline void build_reached_frontbuffer_display_rgba8(
+    std::span<const std::byte> guest_rgba8,
+    std::span<std::byte> display_rgba8) {
+  if (guest_rgba8.size() != kReachedResolveLinearBytes ||
+      display_rgba8.size() != kReachedResolveLinearBytes) {
+    throw RuntimeTrap("reached frontbuffer display extent is invalid");
+  }
+  for (std::size_t pixel = 0U; pixel < guest_rgba8.size(); pixel += 4U) {
+    display_rgba8[pixel + 0U] = guest_rgba8[pixel + 2U];
+    display_rgba8[pixel + 1U] = guest_rgba8[pixel + 1U];
+    display_rgba8[pixel + 2U] = guest_rgba8[pixel + 0U];
+    display_rgba8[pixel + 3U] = std::byte{0xFF};
+  }
+}
+
 inline void build_reached_copy_tiled_oracle(
     std::span<const std::byte> normal_rgba8,
     std::span<std::byte> destination_tiled,
@@ -133,6 +194,19 @@ inline void build_reached_copy_tiled_oracle(
   }
   std::vector<std::byte> linear(kReachedResolveLinearBytes);
   build_reached_copy_linear_oracle(normal_rgba8, linear);
+  std::fill(destination_tiled.begin(), destination_tiled.end(), padding);
+  tile_reached_rgba8(linear, destination_tiled);
+}
+
+inline void build_reached_title_copy_tiled_oracle(
+    std::span<const std::byte> title_rgba8,
+    std::span<std::byte> destination_tiled,
+    std::byte padding = kReachedCopyPaddingCanary) {
+  if (destination_tiled.size() != kReachedResolveTiledExtentBytes) {
+    throw RuntimeTrap("reached tiled copy destination extent is invalid");
+  }
+  std::vector<std::byte> linear(kReachedResolveLinearBytes);
+  build_reached_title_copy_linear_oracle(title_rgba8, linear);
   std::fill(destination_tiled.begin(), destination_tiled.end(), padding);
   tile_reached_rgba8(linear, destination_tiled);
 }

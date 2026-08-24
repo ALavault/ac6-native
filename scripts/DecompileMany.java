@@ -19,6 +19,10 @@ public class DecompileMany extends GhidraScript {
         decompiler.openProgram(currentProgram);
         for (String arg : args) {
             Address address = toAddr(arg);
+            if (address == null) {
+                printerr("invalid address " + arg);
+                continue;
+            }
             Function function = currentProgram.getFunctionManager()
                 .getFunctionContaining(address);
             if (function == null) {

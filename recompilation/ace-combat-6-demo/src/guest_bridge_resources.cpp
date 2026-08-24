@@ -4,12 +4,36 @@
 
 #include <algorithm>
 #include <charconv>
+#include <cstdio>
+#include <cstdlib>
 #include <fstream>
 #include <limits>
 #include <tuple>
 #include <vector>
 
 namespace ac6demo {
+
+namespace {
+
+void trace_vfs(std::uint64_t tick, const char *operation, std::uint32_t handle,
+               const std::filesystem::path &path, std::uint64_t offset,
+               std::uint64_t requested, std::uint64_t transferred) {
+  static const bool enabled = std::getenv("AC6_DEMO_WATCH_VFS") != nullptr;
+  static std::uint32_t records{};
+  if (!enabled || records++ >= 128U) {
+    return;
+  }
+  const auto name = path.filename().string();
+  std::fprintf(stderr,
+               "AC6_VFS tick=%llu op=%s handle=0x%08X file=%s offset=%llu "
+               "requested=%llu transferred=%llu\n",
+               static_cast<unsigned long long>(tick), operation, handle,
+               name.c_str(), static_cast<unsigned long long>(offset),
+               static_cast<unsigned long long>(requested),
+               static_cast<unsigned long long>(transferred));
+}
+
+} // namespace
 
 void GuestBridge::enable_function_reachability(bool enabled) noexcept {
   function_reachability_enabled_ = enabled;
@@ -217,6 +241,7 @@ std::uint32_t GuestBridge::open_guest_file(std::string_view xbox_path,
   const auto issued = next_file_handle_;
   next_file_handle_ += 4U;
   files_.emplace(issued, GuestFile{*path, 0U, size});
+  trace_vfs(tick_, "open", issued, *path, 0U, size, 0U);
   *handle = issued;
   return kStatusSuccess;
 }
@@ -284,6 +309,8 @@ std::uint32_t GuestBridge::read_guest_file(
   }
   *bytes_read = static_cast<std::uint32_t>(count);
   found->second.offset = position + count;
+  trace_vfs(tick_, "read", handle, found->second.path, position, requested,
+            *bytes_read);
   return kStatusSuccess;
 }
 
@@ -393,13 +420,22 @@ std::uint32_t GuestBridge::allocate_xma_context() {
   constexpr std::uint32_t kContextBytes = 64U;
   constexpr std::uint32_t kContextCount = 320U;
   const auto array = ensure_xma_context_array();
-  if (array == 0U || xma_context_next_index_ >= kContextCount) {
+  if (array == 0U) {
     return 0U;
   }
-  const auto context = array +
-                       xma_context_next_index_ * kContextBytes;
-  xma_context_active_[xma_context_next_index_] = true;
-  ++xma_context_next_index_;
+
+  std::uint32_t index = 0U;
+  for (; index < xma_context_next_index_ && xma_context_active_[index];
+       ++index) {
+  }
+  if (index >= kContextCount) {
+    return 0U;
+  }
+  if (index == xma_context_next_index_) {
+    ++xma_context_next_index_;
+  }
+  const auto context = array + index * kContextBytes;
+  xma_context_active_[index] = true;
   return context;
 }
 
@@ -437,6 +473,42 @@ bool GuestBridge::owns_allocation(std::uint32_t address, std::size_t size) const
     }
   }
   return false;
+}
+
+std::optional<std::uint32_t>
+GuestBridge::resolve_physical_alias(std::uint32_t address,
+                                    std::size_t size) const noexcept {
+  constexpr std::uint32_t kPhysicalMask = 0x1FFFFFFFU;
+  const auto physical_end = static_cast<std::uint64_t>(address) + size;
+  if (size == 0U || address > kPhysicalMask ||
+      physical_end > static_cast<std::uint64_t>(kPhysicalMask) + 1U) {
+    return std::nullopt;
+  }
+
+  std::optional<std::uint32_t> resolved;
+  constexpr std::uint64_t kAliasStride =
+      static_cast<std::uint64_t>(kPhysicalMask) + 1U;
+  for (const auto& allocation : allocations_) {
+    const auto allocation_end =
+        static_cast<std::uint64_t>(allocation.address) + allocation.size;
+    for (std::uint64_t prefix = 0U; prefix < kGuestMemoryBytes;
+         prefix += kAliasStride) {
+      const auto alias64 = prefix | address;
+      const auto alias_end = alias64 + size;
+      if (alias64 < allocation.address || alias_end > allocation_end) {
+        continue;
+      }
+      const auto alias = static_cast<std::uint32_t>(alias64);
+      if (!memory_.mapped(alias, size)) {
+        continue;
+      }
+      if (resolved.has_value() && *resolved != alias) {
+        return std::nullopt;
+      }
+      resolved = alias;
+    }
+  }
+  return resolved;
 }
 
 void GuestBridge::record_allocation(std::uint32_t address, std::size_t size) {

@@ -1,0 +1,62 @@
+{
+  "schema": "ac6-demo-title-xma-kick/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "architecture": "Xenon big-endian / Xenos"
+  },
+  "scope": {
+    "route": "START at tick 3000, released at tick 3001",
+    "fresh_process": true,
+    "backend": "headless",
+    "max_ticks": 3003,
+    "instrumentation": "AC6_DEMO_WATCH_XMA_KICK=1",
+    "runtime_binary_sha256_at_launch": "25efa2938f320f61d2f6f1bd5a13c452288cbac0ab8c61d858cadb65f10e87da",
+    "return_code": 4,
+    "replay_sha256": "28f80f18c0e95f61f21e8201b037d6784731d1827c1326b66a7765b4f69615ef",
+    "report_sha256": "b2e4b07e8e33b96b0df008cf0ffbd9ab149b58b07be3ce2455e5bb38ed840fe7",
+    "stderr_sha256": "2725bfb6f6fc269be2ff8f98a8527749393bddcd3ed599d0309765e733a91e91",
+    "retail_oracle_used": false,
+    "generated_cpp_modified": false
+  },
+  "observations": {
+    "pre_title_kicks": [
+      {"tick": 1048, "thread": 21, "address": "0x7FEA1A80", "wire": "0x01000000", "logical": "0x00000001"},
+      {"tick": 1048, "thread": 21, "address": "0x7FEA1A80", "wire": "0x02000000", "logical": "0x00000002"},
+      {"tick": 1048, "thread": 21, "address": "0x7FEA1A80", "wire": "0x04000000", "logical": "0x00000004"}
+    ],
+    "start_post_create_kick": {
+      "tick": 3001,
+      "thread": 1,
+      "address": "0x7FEA1A80",
+      "wire": "0x08000000",
+      "logical": "0x00000008",
+      "preceding_qualified_import": {
+        "lr": "0x82357298",
+        "ordinal": 548,
+        "name": "XMACreateContext",
+        "status_r3": "0x00000000"
+      }
+    }
+  },
+  "outcome": {
+    "completed_ticks": 3003,
+    "presents": 2866,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "ring_submissions": 2,
+    "submitted_dwords": 25,
+    "guest_nonblack_readback": false
+  },
+  "interpretation": {
+    "proven": "START reaches the existing bounded XMA-kick acceptance path immediately after the successful PAL context-create call.",
+    "not_proven": [
+      "the hardware-visible effect of the store",
+      "XMA packet/PCM production or audio playback",
+      "a causal path from this kick to frontend, mission, or pixels"
+    ],
+    "next_boundary": "Find the first PAL consumer of the context/output state whose required host effect remains unqualified; do not turn this observed one-hot write into a synthetic progression signal."
+  }
+}

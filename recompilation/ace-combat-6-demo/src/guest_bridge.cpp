@@ -3,9 +3,11 @@
 #include "ac6demo/graphics.hpp"
 #include "ac6demo/hash.hpp"
 #include "ac6demo/ppc.hpp"
+#include "ac6demo/xaudio_callback_cpu_contract.hpp"
 #include "ac6demo/xenon_affinity_contract.hpp"
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <charconv>
 #include <bit>
 #include <cmath>
@@ -19,15 +21,18 @@
 #include <iomanip>
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 #include "guest_bridge/transition_memory_trace.hpp"
+#include "guest_bridge/graphics_interrupt_trace.hpp"
 #include "guest_bridge/xma_import_trace.hpp"
 namespace ac6demo {
 bool initialize_guest_ansi_string(GuestMemory &memory,
@@ -78,6 +83,17 @@ bool write_guest_file_network_open_information(GuestMemory &memory,
   memory.store_u32(destination + 52U, 0U);
   return true;
 }
+
+std::optional<std::size_t>
+qualified_title_vertex_snapshot_size(std::uint32_t base_index,
+                                     std::uint32_t index_count) noexcept {
+  constexpr std::size_t kVertexStride = 13U * sizeof(std::uint32_t);
+  if (index_count != 4U ||
+      (base_index != 0U && base_index != 4U && base_index != 8U)) {
+    return std::nullopt;
+  }
+  return (base_index + index_count) * kVertexStride;
+}
 } // namespace ac6demo
 #ifdef AC6_DEMO_GENERATED_GUEST
 #include "ppc_recomp_shared.h"
@@ -88,7 +104,6 @@ bool write_guest_file_network_open_information(GuestMemory &memory,
 #include "guest_bridge/event_handle_consumer_trace.hpp"
 #include "guest_bridge/event_handle_payload_writer_trace.hpp"
 #include "guest_bridge/frontbuffer_writer_trace.hpp"
-#include "guest_bridge/graphics_interrupt_trace.hpp"
 #include "guest_bridge/queue_slot_trace.hpp"
 #include <ucontext.h>
 namespace {
@@ -253,7 +268,9 @@ thread_local ucontext_t *active_scheduler_context = nullptr;
 }
 #include "guest_bridge/affinity_trace.hpp"
 #include "guest_bridge/dynamic_object_vtable_trace.hpp"
+#include "guest_bridge/loading_resource_poll_trace.hpp"
 #include "guest_bridge/swg_native_call_trace.hpp"
+#include "guest_bridge/title_terminal_trace.hpp"
 void record_event_publication(std::uint32_t key, std::uint32_t lr,
                               std::uint8_t kind) noexcept {
   ++event_set_count;
@@ -298,6 +315,153 @@ void publish_guest_event(GuestBridge &bridge, std::uint32_t handle,
 [[nodiscard]] GuestMemory &memory_for(PPCContext &) noexcept {
   return require_bridge().memory();
 }
+
+std::atomic<std::uint64_t> title_writer_trace_order{};
+
+[[nodiscard]] bool title_writer_trace_enabled() noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_TITLE_WRITER") != nullptr;
+  return enabled;
+}
+
+[[nodiscard]] std::uint64_t next_title_writer_trace_order() noexcept {
+  return title_writer_trace_order.fetch_add(1U, std::memory_order_relaxed) + 1U;
+}
+
+void trace_title_writer(const PPCContext &context,
+                        const char *generated_name) noexcept {
+  if (!title_writer_trace_enabled() || generated_name == nullptr ||
+      active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 200U || tick > 235U) {
+    return;
+  }
+  constexpr std::array<std::string_view, 9U> targets{
+      "821A7160", "821A4808", "82119488", "82118FA0", "821185A8",
+      "82118D18", "82119048", "82118A28", "821B86F8"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+  static std::array<std::uint32_t, targets.size()> counts{};
+  const auto target_index = static_cast<std::size_t>(target - targets.begin());
+  if (counts[target_index]++ >= 256U) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto read_field = [&](std::uint32_t base,
+                              std::uint32_t offset) noexcept {
+    return base <= std::numeric_limits<std::uint32_t>::max() - offset
+               ? read_u32(base + offset)
+               : 0U;
+  };
+  const auto selector = read_u32(0x823C252CU);
+  const auto row = selector < 3U ? 0x826F61C8U + 108U * selector : 0U;
+  const auto p = read_field(row, 0x20U);
+  const auto q = read_field(row, 0x44U);
+  const auto r = read_field(row, 0x68U);
+  const auto cp = read_u32(0x826F61C0U);
+  const auto cq = read_u32(0x826F61BCU);
+  const auto cr = read_u32(0x826F630CU);
+  const auto record = *target == "82118FA0" ? context.r4.u32
+                      : (*target == "821185A8" ? context.r5.u32
+                      : ((*target == "82118D18" || *target == "82119048")
+                             ? context.r4.u32
+                             : 0U));
+  const auto dst_p = static_cast<std::uint32_t>(
+      static_cast<std::uint64_t>(p) + 52U * cp);
+  const auto dst_q = static_cast<std::uint32_t>(
+      static_cast<std::uint64_t>(q) + 20U * cq);
+  const auto dst_r = static_cast<std::uint32_t>(
+      static_cast<std::uint64_t>(r) + 4U * cr);
+  std::fprintf(
+      stderr,
+      "AC6_TITLE_WRITER order=%llu tick=%llu thread=%u function=%s "
+      "lr=0x%08X r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X "
+      "r7=0x%08X r8=0x%08X selector=%u P=0x%08X Q=0x%08X R=0x%08X "
+      "cP=%u cQ=%u cR=%u dstP=0x%08X dstQ=0x%08X dstR=0x%08X "
+      "record=0x%08X record_0=0x%08X record_4=0x%08X "
+      "record_8=0x%08X record_C=0x%08X record_14=0x%08X "
+      "record_18=0x%08X record_20=0x%08X record_24=0x%08X\n",
+      static_cast<unsigned long long>(next_title_writer_trace_order()),
+      static_cast<unsigned long long>(tick), current_guest_thread_id,
+      generated_name, static_cast<std::uint32_t>(context.lr), context.r3.u32,
+      context.r4.u32, context.r5.u32, context.r6.u32, context.r7.u32,
+      context.r8.u32, selector, p, q, r, cp, cq, cr, dst_p, dst_q, dst_r,
+      record, read_field(record, 0U), read_field(record, 4U),
+      read_field(record, 8U), read_field(record, 0x0CU),
+      read_field(record, 0x14U), read_field(record, 0x18U),
+      read_field(record, 0x20U), read_field(record, 0x24U));
+}
+
+void trace_title_writer_store(const PPCContext &context,
+                              std::uint32_t address, std::uint32_t size,
+                              std::uint32_t value,
+                              const char *generated_name,
+                              std::uint32_t generated_line) noexcept {
+  if (!title_writer_trace_enabled() || active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 200U || tick > 235U) {
+    return;
+  }
+  // Keep this probe bounded to the three qualified title vertex pairs and the
+  // selector/owner words that choose them.  The exact translated shader
+  // consumes P (fetch slot 95); keep adjacent Q observable as a coherency
+  // guard without treating it as the shader source.
+  constexpr std::array<std::pair<std::uint32_t, std::uint32_t>, 7U> ranges{{
+      {0x103FB890U, 0x103FBA30U}, {0x103F1000U, 0x103F11A0U},
+      {0x104A4890U, 0x104A4960U}, {0x10558120U, 0x105581F0U},
+      {0x823C252CU, 0x823C2530U}, {0x826F61BCU, 0x826F61C4U},
+      {0x826F630CU, 0x826F6310U}}};
+  const auto end = static_cast<std::uint64_t>(address) + size;
+  const bool intersects = std::ranges::any_of(ranges, [&](const auto &range) {
+    return address < range.second && end > range.first;
+  });
+  if (!intersects) {
+    return;
+  }
+  auto &memory = active_bridge->memory();
+  const auto aligned = address & ~3U;
+  const auto old_value = memory.mapped(aligned, 4U)
+                             ? memory.load_u32(aligned)
+                             : 0U;
+  std::fprintf(
+      stderr,
+      "AC6_TITLE_WRITER_STORE order=%llu tick=%llu thread=%u "
+      "address=0x%08X size=%u old=0x%08X value=0x%08X lr=0x%08X "
+      "function=%s generated_line=%u\n",
+      static_cast<unsigned long long>(next_title_writer_trace_order()),
+      static_cast<unsigned long long>(tick), current_guest_thread_id, address,
+      size, old_value, value, static_cast<std::uint32_t>(context.lr),
+      generated_name == nullptr ? "" : generated_name, generated_line);
+}
+
+void trace_title_writer_draw_boundary(std::uint64_t tick,
+                                      std::uint32_t thread) noexcept {
+  if (!title_writer_trace_enabled() || tick < 200U || tick > 235U) {
+    return;
+  }
+  std::fprintf(stderr,
+               "AC6_TITLE_WRITER_DRAW order=%llu tick=%llu thread=%u "
+               "address=0x103FB890 size=208\n",
+               static_cast<unsigned long long>(next_title_writer_trace_order()),
+               static_cast<unsigned long long>(tick), thread);
+}
+
 void trace_render_queue_writer(PPCContext &context, std::uint32_t address,
                                std::uint32_t value, const char *generated_name,
                                std::uint32_t generated_line) {
@@ -365,6 +529,56 @@ void trace_transition_store(PPCContext &context, std::uint32_t address,
       address, size, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
 }
+
+void trace_mode_state_store(const PPCContext &context, std::uint32_t address,
+                            std::uint32_t value,
+                            const char *generated_name,
+                            std::uint32_t generated_line) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_MODE_STATE") != nullptr &&
+      std::getenv("AC6_DEMO_WATCH_TICK_WINDOW") != nullptr;
+  if (!enabled || active_bridge == nullptr ||
+      !ac6demo::guest_bridge_detail::transition_trace_tick_allowed(
+          active_bridge->tick())) {
+    return;
+  }
+  auto &memory = active_bridge->memory();
+  if (!memory.mapped(0x827435F8U, 4U)) {
+    return;
+  }
+  const auto manager = memory.load_u32(0x827435F8U);
+  if (manager == 0U || !memory.mapped(manager, 0x1CU)) {
+    return;
+  }
+  const auto task = memory.load_u32(manager + 0x08U);
+  const std::array fields{
+      std::pair{manager + 0x08U, "manager_08"},
+      std::pair{manager + 0x0CU, "manager_0C"},
+      std::pair{manager + 0x10U, "manager_10"},
+      std::pair{manager + 0x14U, "manager_14"},
+      std::pair{manager + 0x18U, "manager_18"},
+      std::pair{task == 0U ? 0U : task + 0x0CU, "task_0C"},
+      std::pair{task == 0U ? 0U : task + 0x44U, "task_44"},
+      std::pair{task == 0U ? 0U : task + 0x70U, "task_70"},
+  };
+  const auto field = std::ranges::find_if(fields, [&](const auto &candidate) {
+    return candidate.first != 0U && candidate.first == address;
+  });
+  if (field == fields.end() || !memory.mapped(address, 4U)) {
+    return;
+  }
+  std::fprintf(
+      stderr,
+      "AC6_MODE_FIELD_STORE tick=%llu thread=%u field=%s "
+      "address=0x%08X old=0x%08X new=0x%08X lr=0x%08X "
+      "function=%s generated_line=%u manager=0x%08X task=0x%08X\n",
+      static_cast<unsigned long long>(active_bridge->tick()),
+      current_guest_thread_id, field->second, address,
+      memory.load_u32(address), value,
+      static_cast<std::uint32_t>(context.lr),
+      generated_name == nullptr ? "" : generated_name, generated_line,
+      manager, task);
+}
 #include "guest_bridge/guest_format.hpp"
 template <typename Callable>
 decltype(auto) guest_memory_access(PPCContext &context, std::uint32_t address,
@@ -396,8 +610,896 @@ decltype(auto) guest_memory_access(PPCContext &context, std::uint32_t address,
                                static_cast<std::uint32_t>(context.lr), address);
   }
 }
+
+static void trace_record_type_route(const PPCContext &context,
+                                    const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_RECORD_TYPE_ROUTE") != nullptr;
+  static const bool early_enabled =
+      std::getenv("AC6_DEMO_WATCH_RECORD_TYPE_ROUTE_EARLY") != nullptr;
+  static const bool avi_enabled =
+      std::getenv("AC6_DEMO_WATCH_AVI_RECEIVER") != nullptr;
+  if ((!enabled && !early_enabled && !avi_enabled) || generated_name == nullptr ||
+      active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  const auto window_begin = early_enabled ? 190U : 2990U;
+  const auto window_end = early_enabled ? 430U : 3040U;
+  if (tick < window_begin || tick > window_end) {
+    return;
+  }
+  const auto is_target = [&](const char *address) noexcept {
+    return std::strstr(generated_name, address) != nullptr;
+  };
+  const bool is_dispatch = is_target("8210A1C0");
+  const bool is_record_builder = is_target("82117410");
+  const bool is_record_consumer = is_target("820FEFA8");
+  const bool is_queue_worker = is_target("820FFCA0");
+  const bool is_avi_target = is_target("82165CC0");
+  const bool is_avi_child = is_dispatch && avi_enabled;
+  const bool trace_route_target =
+      (enabled || early_enabled) &&
+      (is_dispatch || is_record_builder || is_record_consumer ||
+                  is_queue_worker);
+  const bool trace_avi_target =
+      avi_enabled && (is_avi_target || is_avi_child || is_record_builder);
+  if (!trace_route_target && !trace_avi_target) {
+    return;
+  }
+  std::uint32_t record_type = 0U;
+  if (is_record_consumer &&
+      require_bridge().memory().mapped(context.r3.u32 + 64U, 4U)) {
+    record_type = require_bridge().memory().load_u32(context.r3.u32 + 64U);
+  }
+  std::uint32_t record_10c = 0U;
+  if (is_record_consumer &&
+      require_bridge().memory().mapped(context.r3.u32 + 0x10CU, 4U)) {
+    record_10c = require_bridge().memory().load_u32(context.r3.u32 + 0x10CU);
+  }
+  std::fprintf(
+      stderr,
+      "AC6_RECORD_TYPE_ROUTE tick=%llu function=%s lr=0x%08X "
+      "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X r7=0x%08X r8=0x%08X "
+      "selector=0x%04X record_type=0x%08X record_10c=0x%08X "
+      "avi_target=%u avi_child=%u\n",
+      static_cast<unsigned long long>(tick), generated_name,
+      static_cast<std::uint32_t>(context.lr), context.r3.u32, context.r4.u32,
+      context.r5.u32, context.r6.u32, context.r7.u32, context.r8.u32,
+      (is_dispatch || is_avi_target) ? (context.r6.u32 & 0xFFFFU) : 0U,
+      record_type, record_10c, is_avi_target ? 1U : 0U,
+      is_avi_child ? 1U : 0U);
+}
+
+static void trace_provider_population(const PPCContext &context,
+                                      const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_PROVIDER_POPULATION") != nullptr;
+  static std::atomic_uint32_t record_count{0U};
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 190U || tick > 430U) {
+    return;
+  }
+  constexpr std::array<std::string_view, 8U> targets{
+      "82114350", "82114798", "82114A58", "82115018",
+      "82165490", "82165AF8", "82165CC0", "82165E68"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end() ||
+      record_count.fetch_add(1U, std::memory_order_relaxed) >= 128U) {
+    return;
+  }
+  auto &memory = active_bridge->memory();
+  const auto load = [&](std::uint32_t address,
+                        std::uint32_t offset) noexcept -> std::uint32_t {
+    return address != 0U && memory.mapped(address + offset, 4U)
+               ? memory.load_u32(address + offset)
+               : 0U;
+  };
+  std::fprintf(
+      stderr,
+      "AC6_PROVIDER_POPULATION tick=%llu function=%s lr=0x%08X "
+      "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X r7=0x%08X r8=0x%08X "
+      "r20=0x%08X r3_624=0x%08X r3_628=0x%08X r3_3A8=0x%08X "
+      "r3_3AC=0x%08X r20_624=0x%08X r20_628=0x%08X r20_3A8=0x%08X "
+      "r20_3AC=0x%08X r4_12=0x%08X r4_16=0x%08X\n",
+      static_cast<unsigned long long>(tick), generated_name,
+      static_cast<std::uint32_t>(context.lr), context.r3.u32, context.r4.u32,
+      context.r5.u32, context.r6.u32, context.r7.u32, context.r8.u32,
+      context.r20.u32, load(context.r3.u32, 0x624U),
+      load(context.r3.u32, 0x628U), load(context.r3.u32, 0x3A8U),
+      load(context.r3.u32, 0x3ACU), load(context.r20.u32, 0x624U),
+      load(context.r20.u32, 0x628U), load(context.r20.u32, 0x3A8U),
+      load(context.r20.u32, 0x3ACU), load(context.r4.u32, 0x12U),
+      load(context.r4.u32, 0x16U));
+}
+
+static void trace_swg_context(const PPCContext &context,
+                              const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_SWG_CONTEXT") != nullptr;
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  const auto is_target = [&](const char *address) noexcept {
+    return std::strstr(generated_name, address) != nullptr;
+  };
+  if (!is_target("820D29E0") && !is_target("82324188") &&
+      !is_target("82165CC0") && !is_target("8210A1C0") &&
+      !is_target("82117410")) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto owner = context.r4.u32;
+  std::uint32_t owner_vtable = 0U;
+  std::uint32_t context_object = 0U;
+  std::uint32_t context_vtable = 0U;
+  std::uint32_t slot4 = 0U;
+  if (owner != 0U && memory.mapped(owner, 4U)) {
+    owner_vtable = memory.load_u32(owner);
+  }
+  if (owner != 0U && memory.mapped(owner + 0xE8U, 4U)) {
+    context_object = memory.load_u32(owner + 0xE8U);
+  }
+  if (context_object != 0U && memory.mapped(context_object, 4U)) {
+    context_vtable = memory.load_u32(context_object);
+  }
+  if (context_vtable != 0U && memory.mapped(context_vtable + 4U, 4U)) {
+    slot4 = memory.load_u32(context_vtable + 4U);
+  }
+  std::fprintf(
+      stderr,
+      "AC6_SWG_CONTEXT tick=%llu function=%s lr=0x%08X thread=%u "
+      "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X r7=0x%08X "
+      "r8=0x%08X owner_vtable=0x%08X context=0x%08X "
+      "context_vtable=0x%08X slot4=0x%08X\n",
+      static_cast<unsigned long long>(active_bridge->tick()), generated_name,
+      static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+      context.r3.u32, context.r4.u32, context.r5.u32, context.r6.u32,
+      context.r7.u32, context.r8.u32, owner_vtable, context_object,
+      context_vtable, slot4);
+}
+
+static void trace_swg_slot4(const PPCContext &context,
+                            const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_SWG_SLOT4") != nullptr;
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 190U || tick > 430U) {
+    return;
+  }
+  constexpr std::array<std::string_view, 5U> targets{
+      "820D0DB8", "820D18C8", "823233B0", "82323468", "82323808"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+  auto &memory = active_bridge->memory();
+  const auto read_field = [&](std::uint32_t base,
+                              std::uint32_t offset) noexcept -> std::uint32_t {
+    if (base == 0U || base > std::numeric_limits<std::uint32_t>::max() - offset ||
+        !memory.mapped(base + offset, 4U)) {
+      return 0U;
+    }
+    return memory.load_u32(base + offset);
+  };
+  const auto object = context.r3.u32;
+  const auto param = context.r5.u32;
+  std::fprintf(
+      stderr,
+      "AC6_SWG_SLOT4 tick=%llu function=%s lr=0x%08X thread=%u "
+      "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X r7=0x%08X r8=0x%08X "
+      "obj0=0x%08X obj10=0x%08X obj14=0x%08X obj20=0x%08X "
+      "param0=0x%08X param4=0x%08X param8=0x%08X paramc=0x%08X\n",
+      static_cast<unsigned long long>(tick), generated_name,
+      static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+      context.r3.u32, context.r4.u32, context.r5.u32, context.r6.u32,
+      context.r7.u32, context.r8.u32, read_field(object, 0U),
+      read_field(object, 0x10U), read_field(object, 0x14U),
+      read_field(object, 0x20U), read_field(param, 0U), read_field(param, 4U),
+      read_field(param, 8U), read_field(param, 0x0CU));
+}
+
+static void trace_swg_blob(const PPCContext &context,
+                           const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_SWG_BLOB") != nullptr;
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 190U || tick > 430U) {
+    return;
+  }
+  constexpr std::array<std::string_view, 3U> targets{
+      "82326B80", "82326420", "823233B0"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+  static std::uint32_t event_count = 0U;
+  if (event_count++ >= 256U) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto add = [](std::uint32_t base,
+                      std::uint32_t offset) noexcept -> std::uint32_t {
+    return base <= std::numeric_limits<std::uint32_t>::max() - offset
+               ? base + offset
+               : 0U;
+  };
+  const auto dump_words = [&](const char *label, std::uint32_t address,
+                              std::uint32_t count) noexcept {
+    std::fprintf(stderr, " %s=0x%08X", label, address);
+    for (std::uint32_t i = 0U; i < count; ++i) {
+      std::fprintf(stderr, "[%u]=0x%08X", i, read_u32(add(address, i * 4U)));
+    }
+  };
+
+  std::fprintf(stderr,
+               "AC6_SWG_BLOB tick=%llu function=%s lr=0x%08X thread=%u "
+               "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X r7=0x%08X "
+               "r8=0x%08X",
+               static_cast<unsigned long long>(tick), generated_name,
+               static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+               context.r3.u32, context.r4.u32, context.r5.u32,
+               context.r6.u32, context.r7.u32, context.r8.u32);
+  if (std::string_view(generated_name).find("82326B80") !=
+      std::string_view::npos) {
+    const auto storage = context.r3.u32;
+    const auto base = context.r4.u32;
+    const auto blob = context.r5.u32;
+    dump_words("storage", storage, 8U);
+    dump_words("base", base, 8U);
+    dump_words("blob", blob, 8U);
+    dump_words("blob_p4", read_u32(add(blob, 4U)), 4U);
+    dump_words("blob_p8", read_u32(add(blob, 8U)), 4U);
+    dump_words("blob_pc", read_u32(add(blob, 0x0CU)), 4U);
+    dump_words("blob_p10", read_u32(add(blob, 0x10U)), 4U);
+  } else {
+    const auto owner = context.r3.u32;
+    const auto storage = read_u32(add(owner, 0x20U));
+    const auto base = read_u32(storage);
+    const auto offsets = read_u32(add(storage, 0x38U));
+    const auto element = context.r4.u32;
+    const auto list_index = read_u32(add(element, 8U));
+    const auto list_entry = add(offsets, add(list_index * 8U, 4U));
+    const auto list = add(base, read_u32(list_entry));
+    const auto count = read_u32(list);
+    std::fprintf(stderr,
+                 " owner=0x%08X storage=0x%08X base=0x%08X offsets=0x%08X "
+                 "element=0x%08X list_index=0x%08X list=0x%08X count=0x%08X",
+                 owner, storage, base, offsets, element, list_index, list,
+                 count);
+    auto record = add(list, 4U);
+    for (std::uint32_t i = 0U; i < std::min(count, 4U); ++i) {
+      std::fprintf(stderr,
+                   " record%u=0x%08X/type=0x%08X/next=0x%08X/aux=0x%08X/"
+                   "draw=0x%08X",
+                   i, record, read_u32(record), read_u32(add(record, 4U)),
+                   read_u32(add(record, 8U)), read_u32(add(record, 0x0CU)));
+      record = add(base, read_u32(add(record, 4U)));
+    }
+    dump_words("storage_p20", read_u32(add(storage, 0x20U)), 4U);
+    dump_words("storage_p28", read_u32(add(storage, 0x28U)), 4U);
+  }
+  std::fputc('\n', stderr);
+}
+
+static void trace_acc_resource_join(const PPCContext &context,
+                                    const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_ACC_RESOURCE_JOIN") != nullptr;
+  static const bool title_only =
+      std::getenv("AC6_DEMO_WATCH_ACC_RESOURCE_TITLE_ONLY") != nullptr;
+  static const std::uint64_t start_tick = []() noexcept -> std::uint64_t {
+    const char *text =
+        std::getenv("AC6_DEMO_WATCH_ACC_RESOURCE_START_TICK");
+    return text == nullptr ? 0U : std::strtoull(text, nullptr, 0);
+  }();
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  if (active_bridge->tick() < start_tick ||
+      (title_only && active_bridge->tick() < 190U)) {
+    return;
+  }
+
+  constexpr std::array<std::string_view, 11U> targets{
+      "821A0180", "8219E428", "821A02C0", "8219E768", "8219E580",
+      "821A00E8", "8219F080", "820EB200", "820EA9A0", "82095DF0",
+      "821DEED8"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+  static std::array<std::uint32_t, targets.size()> counts{};
+  const auto target_index = static_cast<std::size_t>(target - targets.begin());
+  if (counts[target_index]++ >= 64U) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto object = context.r3.u32;
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto read_field = [&](std::uint32_t base,
+                              std::uint32_t offset) noexcept {
+    return base <= std::numeric_limits<std::uint32_t>::max() - offset
+               ? read_u32(base + offset)
+               : 0U;
+  };
+  const auto source = *target == "8219E580"
+                          ? read_field(object, 0x18U)
+                          : (*target == "821A0180" ? context.r5.u32
+                                                   : context.r4.u32);
+  const auto index = *target == "8219E580"
+                         ? read_field(object, 0x1CU)
+                         : (*target == "8219E428" ? context.r8.u32
+                                                   : context.r5.u32);
+  const auto table = source <= std::numeric_limits<std::uint32_t>::max() -
+                                   0x20U
+                         ? source + 0x20U
+                         : 0U;
+  const auto table_base = read_field(table, 4U);
+  const auto table_offsets = read_field(table, 12U);
+  const auto table_offset0 = read_u32(table_offsets);
+  const auto table_entry0 =
+      table_base <= std::numeric_limits<std::uint32_t>::max() - table_offset0
+          ? table_base + table_offset0
+          : 0U;
+  const auto geometry = context.r5.u32;
+  const auto draw = context.r4.u32;
+  const auto draw_index = read_field(draw, 12U);
+  const auto resource_slot =
+      object <= std::numeric_limits<std::uint32_t>::max() - 16U -
+                    4U * draw_index
+          ? read_field(object, 16U + 4U * draw_index)
+          : 0U;
+  std::fprintf(
+      stderr,
+      "AC6_ACC_RESOURCE_JOIN tick=%llu function=%s lr=0x%08X thread=%u "
+      "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X r7=0x%08X "
+      "r8=0x%08X source=0x%08X index=0x%08X table=0x%08X "
+      "table_count=0x%08X table_base=0x%08X table_offsets=0x%08X "
+      "table_parallel=0x%08X table_offset0=0x%08X table_entry0=0x%08X "
+      "table_entry0_0=0x%08X table_entry0_4=0x%08X "
+      "draw_index=0x%08X resource_slot=0x%08X "
+      "geometry_0=0x%08X geometry_4=0x%08X geometry_16=0x%08X "
+      "geometry_20=0x%08X geometry_48=0x%08X geometry_52=0x%08X\n",
+      static_cast<unsigned long long>(active_bridge->tick()), generated_name,
+      static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+      context.r3.u32, context.r4.u32, context.r5.u32, context.r6.u32,
+      context.r7.u32, context.r8.u32, source, index, table, read_u32(table),
+      table_base, table_offsets, read_field(table, 16U), table_offset0,
+      table_entry0, read_field(table_entry0, 0U), read_field(table_entry0, 4U),
+      draw_index, resource_slot, read_field(geometry, 0U),
+      read_field(geometry, 4U), read_field(geometry, 16U),
+      read_field(geometry, 20U), read_field(geometry, 48U),
+      read_field(geometry, 52U));
+}
+
+static void trace_brandlogo_draw_selector(
+    const PPCContext &context, const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_BRANDLOGO_DRAW_SELECTOR") != nullptr;
+  static const std::uint64_t start_tick = []() noexcept -> std::uint64_t {
+    const char *text =
+        std::getenv("AC6_DEMO_WATCH_BRANDLOGO_DRAW_SELECTOR_START_TICK");
+    return text == nullptr ? std::uint64_t{190U}
+                           : static_cast<std::uint64_t>(
+                                 std::strtoull(text, nullptr, 0));
+  }();
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr ||
+      active_bridge->tick() < start_tick) {
+    return;
+  }
+
+  const std::string_view function{generated_name};
+  const bool frame_gate = function.find("823266F8") != std::string_view::npos;
+  const bool list_walk = function.find("82326420") != std::string_view::npos;
+  const bool draw_call = function.find("820EB200") != std::string_view::npos &&
+                         static_cast<std::uint32_t>(context.lr) == 0x82325ED4U;
+  if (!frame_gate && !list_walk && !draw_call) {
+    return;
+  }
+
+  static std::uint32_t event_count = 0U;
+  if (event_count++ >= 512U) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto read_u8 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 1U)
+               ? memory.load_u8(address)
+               : std::uint8_t{0U};
+  };
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto add = [](std::uint32_t base, std::uint32_t offset) noexcept {
+    return base <= std::numeric_limits<std::uint32_t>::max() - offset
+               ? base + offset
+               : 0U;
+  };
+
+  if (frame_gate) {
+    const auto owner = context.r3.u32;
+    const auto frame_begin = read_u32(add(owner, 40U));
+    const auto frame_end = read_u32(add(owner, 44U));
+    const auto frame_index = read_u32(add(owner, 220U));
+    const bool valid_index =
+        frame_end >= frame_begin &&
+        frame_index < (frame_end - frame_begin) / 8U;
+    const auto frame_entry = valid_index ? add(frame_begin, frame_index * 8U)
+                                         : 0U;
+    const auto frame_offset = read_u32(frame_entry);
+    const auto frame_count = read_u32(add(frame_entry, 4U));
+    const auto storage = read_u32(add(owner, 32U));
+    const auto storage_base = read_u32(storage);
+    const auto selected_frame = add(storage_base, frame_offset);
+    std::fprintf(
+        stderr,
+        "AC6_BRANDLOGO_FRAME_GATE tick=%llu thread=%u owner=0x%08X "
+        "enabled=%u frame_index=0x%08X frame_begin=0x%08X "
+        "frame_end=0x%08X index_valid=%u frame_entry=0x%08X "
+        "frame_offset=0x%08X frame_count=0x%08X selected=0x%08X\n",
+        static_cast<unsigned long long>(active_bridge->tick()),
+        current_guest_thread_id, owner, read_u8(add(owner, 215U)), frame_index,
+        frame_begin, frame_end, valid_index ? 1U : 0U, frame_entry,
+        frame_offset, frame_count, selected_frame);
+    return;
+  }
+
+  if (list_walk) {
+    const auto owner = context.r3.u32;
+    const auto element = context.r4.u32;
+    const auto list_index = read_u32(add(element, 8U));
+    const auto storage = read_u32(add(owner, 32U));
+    const auto storage_base = read_u32(storage);
+    const auto list_offsets = read_u32(add(storage, 56U));
+    const auto list_entry =
+        list_index <= (std::numeric_limits<std::uint32_t>::max() - 4U) / 8U
+            ? add(list_offsets, list_index * 8U + 4U)
+            : 0U;
+    const auto list_offset = read_u32(list_entry);
+    const auto list = add(storage_base, list_offset);
+    const auto list_count = read_u32(list);
+    std::fprintf(
+        stderr,
+        "AC6_BRANDLOGO_LIST tick=%llu thread=%u owner=0x%08X "
+        "element=0x%08X list_index=0x%08X storage=0x%08X "
+        "base=0x%08X offsets=0x%08X entry=0x%08X offset=0x%08X "
+        "list=0x%08X count=0x%08X",
+        static_cast<unsigned long long>(active_bridge->tick()),
+        current_guest_thread_id, owner, element, list_index, storage,
+        storage_base, list_offsets, list_entry, list_offset, list, list_count);
+    auto record = add(list, 4U);
+    const auto bounded_count = std::min(list_count, 8U);
+    for (std::uint32_t index = 0U; index < bounded_count; ++index) {
+      const auto type = read_u32(record);
+      const auto next = read_u32(add(record, 4U));
+      const auto draw_index = read_u32(add(record, 12U));
+      std::fprintf(stderr,
+                   " record%u=0x%08X/type=0x%08X/next=0x%08X/draw=0x%08X",
+                   index, record, type, next, draw_index);
+      record = add(storage_base, next);
+    }
+    std::fputc('\n', stderr);
+    return;
+  }
+
+  const auto self = context.r3.u32;
+  const auto element = context.r4.u32;
+  const auto draw_index = read_u32(add(element, 12U));
+  const auto slot_address =
+      draw_index <= (std::numeric_limits<std::uint32_t>::max() - 16U) / 4U
+          ? add(self, 16U + 4U * draw_index)
+          : 0U;
+  std::fprintf(
+      stderr,
+      "AC6_BRANDLOGO_DRAW_SELECT tick=%llu thread=%u self=0x%08X "
+      "element=0x%08X type=0x%08X next=0x%08X draw_index=0x%08X "
+      "slot_address=0x%08X slot=0x%08X\n",
+      static_cast<unsigned long long>(active_bridge->tick()),
+      current_guest_thread_id, self, element, read_u32(element),
+      read_u32(add(element, 4U)), draw_index, slot_address,
+      read_u32(slot_address));
+}
+
+static void trace_brandlogo_owner_update(
+    const PPCContext &context, const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_BRANDLOGO_OWNER_UPDATE") != nullptr;
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 190U || tick > 430U) {
+    return;
+  }
+  const std::string_view function{generated_name};
+  const bool parent_loop = function.find("820DE878") != std::string_view::npos;
+  const bool child_call = function.find("82324118") != std::string_view::npos;
+  const bool owner_update = function.find("82323BB8") != std::string_view::npos;
+  const bool owner_reset = function.find("82323808") != std::string_view::npos;
+  const bool owner_callback =
+      function.find("82322D28") != std::string_view::npos ||
+      function.find("82322D68") != std::string_view::npos ||
+      function.find("82322DB0") != std::string_view::npos ||
+      function.find("823229D8") != std::string_view::npos;
+  if (!parent_loop && !child_call && !owner_update && !owner_reset &&
+      !owner_callback) {
+    return;
+  }
+  static std::uint32_t event_count = 0U;
+  if (event_count++ >= 256U) {
+    return;
+  }
+  auto &memory = active_bridge->memory();
+  const auto read_u8 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 1U)
+               ? memory.load_u8(address)
+               : std::uint8_t{0U};
+  };
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto add = [](std::uint32_t base, std::uint32_t offset) noexcept {
+    return base <= std::numeric_limits<std::uint32_t>::max() - offset
+               ? base + offset
+               : 0U;
+  };
+  const auto dump_owner = [&](std::uint32_t owner) noexcept {
+    std::fprintf(
+        stderr,
+        " owner=0x%08X f20=0x%08X f2c=0x%08X f30=0x%08X "
+        "b0=0x%02X b1=0x%02X b2=0x%02X b3=0x%02X "
+        "u216=0x%08X u220=0x%08X u224=0x%08X u228=0x%08X "
+        "u232=0x%08X u236=0x%08X u240=0x%08X u244=0x%08X "
+        "u248=0x%08X u252=0x%08X frame0=0x%08X frame1=0x%08X "
+        "ctrl=0x%08X ctrl244=0x%08X child420=0x%02X",
+        owner, read_u32(add(owner, 0x20U)), read_u32(add(owner, 0x2CU)),
+        read_u32(add(owner, 0x30U)), read_u8(add(owner, 0xD4U)),
+        read_u8(add(owner, 0xD5U)), read_u8(add(owner, 0xD6U)),
+        read_u8(add(owner, 0xD7U)), read_u32(add(owner, 216U)),
+        read_u32(add(owner, 220U)),
+        read_u32(add(owner, 224U)), read_u32(add(owner, 228U)),
+        read_u32(add(owner, 232U)), read_u32(add(owner, 236U)),
+        read_u32(add(owner, 240U)), read_u32(add(owner, 244U)),
+        read_u32(add(owner, 248U)), read_u32(add(owner, 252U)),
+        read_u32(add(owner, 40U)), read_u32(add(owner, 44U)),
+        read_u32(add(owner, 412U)),
+        read_u32(add(read_u32(add(owner, 412U)), 244U)),
+        read_u8(add(owner, 0x1A4U)));
+  };
+
+  std::fprintf(stderr,
+               "AC6_BRANDLOGO_OWNER_UPDATE tick=%llu function=%s "
+               "lr=0x%08X thread=%u r3=0x%08X r4=0x%08X r5=0x%08X",
+               static_cast<unsigned long long>(tick), generated_name,
+               static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+               context.r3.u32, context.r4.u32, context.r5.u32);
+  if (parent_loop) {
+    const auto parent = context.r3.u32;
+    const auto begin = read_u32(add(parent, 44U));
+    const auto end = read_u32(add(parent, 48U));
+    std::fprintf(stderr, " parent=0x%08X begin=0x%08X end=0x%08X",
+                 parent, begin, end);
+    for (std::uint32_t cursor = begin, n = 0U;
+         cursor != 0U && cursor < end && n < 8U; cursor += 8U, ++n) {
+      const auto child = read_u32(cursor);
+      std::fprintf(stderr, " child%u=0x%08X", n, child);
+      dump_owner(child);
+    }
+  } else if (child_call) {
+    std::fprintf(stderr, " parent_array=0x%08X child=0x%08X", context.r3.u32,
+                 context.r4.u32);
+    dump_owner(context.r4.u32);
+  } else {
+    dump_owner(context.r3.u32);
+    std::fprintf(stderr, " aux_arg=0x%08X", context.r4.u32);
+  }
+  std::fputc('\n', stderr);
+}
+
+static void trace_brandlogo_owner_store(const PPCContext &context,
+                                        std::uint32_t address,
+                                        std::uint32_t size,
+                                        std::uint32_t value,
+                                        const char *generated_name,
+                                        std::uint32_t generated_line) noexcept;
+
+static void trace_brandlogo_consumer(const PPCContext &context,
+                                     const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_BRANDLOGO_CONSUMER") != nullptr;
+  static const std::uint64_t start_tick = []() noexcept -> std::uint64_t {
+    const char *text =
+        std::getenv("AC6_DEMO_WATCH_BRANDLOGO_CONSUMER_START_TICK");
+    return text == nullptr ? 0U : std::strtoull(text, nullptr, 0);
+  }();
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  if (active_bridge->tick() < start_tick) {
+    return;
+  }
+
+  constexpr std::array<std::string_view, 8U> targets{
+      "82119488", "82118FA0", "821185A8", "821186B0",
+      "821187A8", "821188B0", "821B4D80", "821B5168"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+  static std::array<std::uint32_t, targets.size()> counts{};
+  const auto target_index = static_cast<std::size_t>(target - targets.begin());
+  if (counts[target_index]++ >= 64U) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto read_field = [&](std::uint32_t base,
+                              std::uint32_t offset) noexcept {
+    return base <= std::numeric_limits<std::uint32_t>::max() - offset
+               ? read_u32(base + offset)
+               : 0U;
+  };
+  const auto owner_count = read_u32(0x826F6310U);
+  const auto brand_owner = read_u32(0x826F6320U);
+  const auto record = *target == "821185A8" ? context.r5.u32
+                      : (*target == "82118FA0" ? context.r4.u32 : 0U);
+  std::fprintf(
+      stderr,
+      "AC6_BRANDLOGO_CONSUMER tick=%llu function=%s lr=0x%08X thread=%u "
+      "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X "
+      "renderer_resource=0x%08X owner_count=0x%08X "
+      "brand_owner=0x%08X brand_head=0x%08X "
+      "record_flags=0x%08X record_resource=0x%08X record_type=0x%08X\n",
+      static_cast<unsigned long long>(active_bridge->tick()), generated_name,
+      static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+      context.r3.u32, context.r4.u32, context.r5.u32, context.r6.u32,
+      read_u32(0x826F61B8U), owner_count, brand_owner,
+      read_field(brand_owner, 32U), read_field(record, 4U),
+      read_field(record, 8U), read_field(record, 20U));
+}
+
+static void trace_brandlogo_submit(const PPCContext &context,
+                                   const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_BRANDLOGO_SUBMIT") != nullptr;
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+
+  constexpr std::array<std::string_view, 17U> targets{
+      "821BA780", "821BA5F8", "821BA058", "821B9810",
+      "821B9BC8", "821C41F8", "821C4A60", "821C57D0",
+      "821B8ED8", "821B9120", "821BA1F8", "821BAA78",
+      "821C4CA8", "821C4D30", "821C5458", "821C5190",
+      "821B9710"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  const auto target_index = static_cast<std::size_t>(target - targets.begin());
+  const bool callback_path = target_index >= 8U || *target == "821C4A60";
+  if (tick > 225U || (!callback_path && tick < 190U)) {
+    return;
+  }
+  static std::array<std::uint32_t, targets.size()> counts{};
+  if (counts[target_index]++ >= 128U) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto read_u8 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 1U)
+               ? memory.load_u8(address)
+               : 0U;
+  };
+  const auto device_slot = read_u32(0x82000608U);
+  const auto device = read_u32(device_slot);
+  std::fprintf(
+      stderr,
+      "AC6_BRANDLOGO_SUBMIT tick=%llu function=%s lr=0x%08X thread=%u "
+      "r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X r7=0x%08X "
+      "device_slot=0x%08X device=0x%08X cursor=0x%08X bound=0x%08X "
+      "pending=0x%08X irq_queue=0x%08X primary_limit=0x%08X "
+      "mode=0x%02X flags=0x%02X primary_sink=0x%08X "
+      "ring_wptr=0x%08X ring_base=0x%08X ring_mask=0x%08X\n",
+      static_cast<unsigned long long>(tick), generated_name,
+      static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+      context.r3.u32, context.r4.u32, context.r5.u32, context.r6.u32,
+      context.r7.u32, device_slot, device, read_u32(device + 0x30U),
+      read_u32(device + 0x38U), read_u32(device + 0x2AF8U),
+      read_u32(device + 0x2A94U), read_u32(device + 0x2A9CU),
+      read_u8(device + 0x2ABCU), read_u8(device + 0x2ABDU),
+      read_u32(device + 0x5404U), read_u32(device + 0x2AC8U),
+      read_u32(device + 0x3A18U), read_u32(device + 0x3A1CU));
+}
+
+static void trace_draw_scheduler(const PPCContext &context,
+                                 const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_DRAW_SCHEDULER") != nullptr;
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 2990U || tick > 3020U) {
+    return;
+  }
+  constexpr std::array<std::string_view, 9U> targets{
+      "822DA8D8", "822E3D28", "822F0610", "822E3380", "822F84E0",
+      "821B6078", "821B5B10", "821B58B0", "821B55C0"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+
+  auto &memory = active_bridge->memory();
+  const auto node = context.r4.u32;
+  std::uint32_t vtable = 0U;
+  std::uint32_t next = 0U;
+  std::uint32_t slot3 = 0U;
+  std::uint32_t slot5 = 0U;
+  std::array<std::uint32_t, 7U> draw_fields{};
+  if (*target == "822E3380" && node != 0U && memory.mapped(node, 8U)) {
+    vtable = memory.load_u32(node);
+    next = memory.load_u32(node + 4U);
+    if (vtable <= std::numeric_limits<std::uint32_t>::max() - 24U &&
+        memory.mapped(vtable + 12U, 12U)) {
+      slot3 = memory.load_u32(vtable + 12U);
+      slot5 = memory.load_u32(vtable + 20U);
+    }
+  } else if (*target == "822F84E0" && context.r3.u32 != 0U &&
+             memory.mapped(context.r3.u32, 44U)) {
+    vtable = memory.load_u32(context.r3.u32);
+    for (std::size_t index = 0U; index < draw_fields.size(); ++index) {
+      draw_fields[index] = memory.load_u32(
+          context.r3.u32 + 16U + static_cast<std::uint32_t>(index) * 4U);
+    }
+  }
+  std::fprintf(
+      stderr,
+      "AC6_DRAW_SCHEDULER tick=%llu function=%s lr=0x%08X thread=%u "
+      "r3=0x%08X r4=0x%08X r5=0x%08X node_vtable=0x%08X "
+      "node_next=0x%08X slot3=0x%08X slot5=0x%08X "
+      "f10=0x%08X f14=0x%08X f18=0x%08X f1C=0x%08X "
+      "f20=0x%08X f24=0x%08X f28=0x%08X\n",
+      static_cast<unsigned long long>(tick), generated_name,
+      static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+      context.r3.u32, context.r4.u32, context.r5.u32, vtable, next, slot3,
+      slot5, draw_fields[0], draw_fields[1], draw_fields[2], draw_fields[3],
+      draw_fields[4], draw_fields[5], draw_fields[6]);
+}
+
+static void trace_title_vertex_allocation(
+    const PPCContext &context, const char *generated_name) noexcept {
+  static const bool enabled =
+      std::getenv("AC6_DEMO_WATCH_TITLE_VERTEX_ALLOCATION") != nullptr;
+  if (!enabled || generated_name == nullptr || active_bridge == nullptr) {
+    return;
+  }
+  constexpr std::array<std::string_view, 4U> targets{
+      "821C07F8", "821C0458", "821BEFF0", "821BEE60"};
+  const auto target = std::find_if(
+      targets.begin(), targets.end(), [&](std::string_view address) {
+        return std::string_view(generated_name).find(address) !=
+               std::string_view::npos;
+      });
+  if (target == targets.end()) {
+    return;
+  }
+  static std::array<std::uint32_t, targets.size()> counts{};
+  const auto target_index = static_cast<std::size_t>(target - targets.begin());
+  if (counts[target_index]++ >= 64U) {
+    return;
+  }
+  auto &memory = active_bridge->memory();
+  constexpr std::uint32_t kGlobalGuard = 0x827AD41EU;
+  constexpr std::uint32_t kObjectGuardOffset = 0x56ECU;
+  const bool global_mapped = memory.mapped(kGlobalGuard, 1U);
+  const auto object = context.r3.u32;
+  const bool object_guard_address_valid =
+      object <= std::numeric_limits<std::uint32_t>::max() -
+                    kObjectGuardOffset;
+  const auto object_guard_address =
+      object_guard_address_valid ? object + kObjectGuardOffset : 0U;
+  const bool object_guard_mapped = object_guard_address_valid &&
+      memory.mapped(object_guard_address, 1U);
+  std::fprintf(
+      stderr,
+      "AC6_TITLE_VERTEX_ALLOC_ENTRY tick=%llu function=%s lr=0x%08X "
+      "thread=%u r3=0x%08X r4=0x%08X r5=0x%08X r6=0x%08X "
+      "r7=0x%08X r8=0x%08X global_guard_mapped=%u "
+      "global_guard=0x%02X object_guard_mapped=%u object_guard=0x%02X\n",
+      static_cast<unsigned long long>(active_bridge->tick()), generated_name,
+      static_cast<std::uint32_t>(context.lr), current_guest_thread_id,
+      context.r3.u32, context.r4.u32, context.r5.u32, context.r6.u32,
+      context.r7.u32, context.r8.u32, global_mapped ? 1U : 0U,
+      global_mapped ? memory.load_u8(kGlobalGuard) : 0U,
+      object_guard_mapped ? 1U : 0U,
+      object_guard_mapped ? memory.load_u8(object_guard_address) : 0U);
+}
+
 extern "C" void AC6_PPC_FUNCTION_ENTRY_CONTEXT(
     PPCContext &context, const char *generated_name) noexcept {
+  trace_title_terminal_function_entry(context, generated_name);
+  trace_draw_scheduler(context, generated_name);
+  trace_swg_context(context, generated_name);
+  trace_swg_slot4(context, generated_name);
+  trace_swg_blob(context, generated_name);
+  trace_acc_resource_join(context, generated_name);
+  trace_brandlogo_draw_selector(context, generated_name);
+  trace_brandlogo_owner_update(context, generated_name);
+  trace_brandlogo_consumer(context, generated_name);
+  trace_title_writer(context, generated_name);
+  trace_brandlogo_submit(context, generated_name);
+  trace_title_vertex_allocation(context, generated_name);
+  trace_record_type_route(context, generated_name);
+  trace_provider_population(context, generated_name);
   ac6demo::guest_bridge_detail::initialize_post_resume_watch();
   (void)ac6demo::guest_bridge_detail::guest_load_site_watchers_enabled();
   AC6_PPC_SET_POST_RESUME_VECTOR_CONTEXT(context, active_bridge, generated_name, active_bridge == nullptr ? 0U : active_bridge->tick(), current_guest_thread_id);
@@ -419,14 +1521,16 @@ extern "C" void AC6_PPC_FUNCTION_ENTRY_CONTEXT(
         current_guest_thread_id);
   }
   if (active_bridge != nullptr && generated_name != nullptr) {
-    active_bridge->record_function_entry(generated_name);
+    trace_loading_provider_entry(context, generated_name);
+    trace_loading_resource_poll_entry(generated_name); active_bridge->record_function_entry(generated_name);
   }
 }
 extern "C" void AC6_PPC_SET_LOAD_SITE(const char *generated_name,
                                        std::uint32_t generated_line) noexcept {
   const bool enabled =
       ac6demo::guest_bridge_detail::guest_load_site_watchers_enabled() ||
-      ac6demo::guest_bridge_detail::post_resume_watch_enabled_fast();
+      ac6demo::guest_bridge_detail::post_resume_watch_enabled_fast() ||
+      title_terminal_trace_enabled();
   if (enabled) {
     current_load_generated_name = generated_name;
     current_load_generated_line = generated_line;
@@ -489,12 +1593,18 @@ extern "C" std::uint16_t AC6_PPC_LOAD_U16(PPCContext &context,
       current_load_generated_line);
   return value;
 }
+static void trace_as_context_counter_access(const PPCContext &context,
+                                            std::uint32_t address,
+                                            std::uint32_t value,
+                                            const char *kind);
+
 extern "C" std::uint32_t AC6_PPC_LOAD_U32(PPCContext &context,
                                           std::uint8_t *base,
                                           std::uint32_t address) {
   (void)base; ac6demo::guest_bridge_detail::trace_xma_late_access("load32", address, 4U, false, 0U, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), current_load_generated_name, current_load_generated_line);
   if (ac6demo::guest_bridge_detail::graphics_interrupt_state_load_guard(address, current_load_generated_name)) throw ac6demo::RuntimeTrap("graphics interrupt state load outside qualified range", require_bridge().tick(), static_cast<std::uint32_t>(context.lr), address);
   const auto value = guest_memory_access(context, address, [&] { return memory_for(context).load_u32(address); });
+  trace_as_context_counter_access(context, address, value, "LOAD");
   ac6demo::guest_bridge_detail::trace_controller_reader(
       address, 4U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), current_load_generated_name,
@@ -580,6 +1690,8 @@ extern "C" void AC6_PPC_STORE_U8(PPCContext &context, std::uint8_t *base,
                                  const char *generated_name,
                                  std::uint32_t generated_line) {
   (void)base;
+  trace_brandlogo_owner_store(context, address, 1U, value, generated_name,
+                              generated_line);
   ac6demo::guest_bridge_detail::trace_frontbuffer_write(
       address, 1U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
@@ -595,8 +1707,14 @@ extern "C" void AC6_PPC_STORE_U8(PPCContext &context, std::uint8_t *base,
   ac6demo::guest_bridge_detail::trace_addr_range_write(
       address, 1U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
-  guest_memory_access(context, address,
-                      [&] { memory_for(context).store_u8(address, value); });
+  trace_title_writer_store(context, address, 1U, value, generated_name,
+                           generated_line);
+  guest_memory_access(context, address, [&] {
+    const auto observation = trace_title_terminal_prepare_store(
+        context, address, 1U, generated_name, generated_line);
+    memory_for(context).store_u8(address, value);
+    trace_title_terminal_commit_store(observation);
+  });
   ac6demo::guest_bridge_detail::record_post_resume_scalar("store8", address, 1U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_xma_slot_store(
       address, 1U, value, require_bridge().tick(), current_guest_thread_id,
@@ -622,8 +1740,14 @@ extern "C" void AC6_PPC_STORE_U16(PPCContext &context, std::uint8_t *base,
   ac6demo::guest_bridge_detail::trace_addr_range_write(
       address, 2U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
-  guest_memory_access(context, address,
-                      [&] { memory_for(context).store_u16(address, value); });
+  trace_title_writer_store(context, address, 2U, value, generated_name,
+                           generated_line);
+  guest_memory_access(context, address, [&] {
+    const auto observation = trace_title_terminal_prepare_store(
+        context, address, 2U, generated_name, generated_line);
+    memory_for(context).store_u16(address, value);
+    trace_title_terminal_commit_store(observation);
+  });
   ac6demo::guest_bridge_detail::record_post_resume_scalar("store16", address, 2U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_xma_slot_store(
       address, 2U, value, require_bridge().tick(), current_guest_thread_id,
@@ -633,7 +1757,8 @@ extern "C" void AC6_PPC_STORE_U32(PPCContext &context, std::uint8_t *base,
                                   std::uint32_t address, std::uint32_t value,
                                   const char *generated_name,
                                   std::uint32_t generated_line) {
-  (void)base; trace_body_store(context, address, value, generated_name, generated_line); ac6demo::guest_bridge_detail::trace_xma_late_access("store32", address, 4U, true, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line); ac6demo::guest_bridge_detail::trace_xma_address_store(address, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  (void)base; trace_brandlogo_owner_store(context, address, 4U, value, generated_name, generated_line); trace_body_store(context, address, value, generated_name, generated_line); ac6demo::guest_bridge_detail::trace_xma_late_access("store32", address, 4U, true, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line); ac6demo::guest_bridge_detail::trace_xma_address_store(address, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  trace_as_context_counter_access(context, address, value, "STORE");
   ac6demo::guest_bridge_detail::trace_input_semantic_access(
       "store32", address, 4U, value, require_bridge().tick(),
       current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
@@ -645,6 +1770,8 @@ extern "C" void AC6_PPC_STORE_U32(PPCContext &context, std::uint8_t *base,
   trace_chunk_target_store(context, address, 4U, value, generated_name,
                            generated_line);
   trace_transition_store(context, address, 4U, value, generated_name,
+                         generated_line);
+  trace_mode_state_store(context, address, value, generated_name,
                          generated_line);
   trace_render_queue_slot_store(context, address, 4U, value, generated_name, generated_line);
   trace_render_queue_writer(context, address, value, generated_name, generated_line);
@@ -662,8 +1789,14 @@ extern "C" void AC6_PPC_STORE_U32(PPCContext &context, std::uint8_t *base,
   ac6demo::guest_bridge_detail::trace_addr_range_write(
       address, 4U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
-  guest_memory_access(context, address,
-                      [&] { memory_for(context).store_u32(address, value); });
+  trace_title_writer_store(context, address, 4U, value, generated_name,
+                           generated_line);
+  guest_memory_access(context, address, [&] {
+    const auto observation = trace_title_terminal_prepare_store(
+        context, address, 4U, generated_name, generated_line);
+    memory_for(context).store_u32(address, value);
+    trace_title_terminal_commit_store(observation);
+  });
   ac6demo::guest_bridge_detail::record_post_resume_scalar("store32", address, 4U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_xma_slot_store(
       address, 4U, value, require_bridge().tick(), current_guest_thread_id,
@@ -697,8 +1830,15 @@ extern "C" void AC6_PPC_STORE_U64(PPCContext &context, std::uint8_t *base,
       address, 8U, static_cast<std::uint32_t>(value), require_bridge().tick(),
       current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
       generated_name, generated_line);
-  guest_memory_access(context, address,
-                      [&] { memory_for(context).store_u64(address, value); });
+  trace_title_writer_store(context, address, 8U,
+                           static_cast<std::uint32_t>(value), generated_name,
+                           generated_line);
+  guest_memory_access(context, address, [&] {
+    const auto observation = trace_title_terminal_prepare_store(
+        context, address, 8U, generated_name, generated_line);
+    memory_for(context).store_u64(address, value);
+    trace_title_terminal_commit_store(observation);
+  });
   ac6demo::guest_bridge_detail::record_post_resume_scalar("store64", address, 8U, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
   ac6demo::guest_bridge_detail::trace_xma_slot_store(
       address, 8U, value, require_bridge().tick(), current_guest_thread_id,
@@ -735,18 +1875,30 @@ extern "C" void AC6_PPC_STORE_U128(PPCContext &context, std::uint8_t *base,
   ac6demo::guest_bridge_detail::trace_ib_write(
       address, 16U, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
+  const auto first_guest_dword =
+      (static_cast<std::uint32_t>(value[15U]) << 24U) |
+      (static_cast<std::uint32_t>(value[14U]) << 16U) |
+      (static_cast<std::uint32_t>(value[13U]) << 8U) |
+      static_cast<std::uint32_t>(value[12U]);
+  ac6demo::guest_bridge_detail::trace_addr_range_write(
+      address, 16U, first_guest_dword, require_bridge().tick(),
+      current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+      generated_name, generated_line);
+  trace_title_writer_store(context, address, 16U, first_guest_dword,
+                           generated_name, generated_line);
   std::array<std::byte, 16U> guest_bytes{};
+  std::array<std::uint8_t, 16U> guest_bytes_for_trace{};
   for (std::size_t index = 0U; index < guest_bytes.size(); ++index) {
-    guest_bytes[index] = static_cast<std::byte>(value[15U - index]);
+    const auto guest_byte = value[15U - index];
+    guest_bytes[index] = static_cast<std::byte>(guest_byte);
+    guest_bytes_for_trace[index] = guest_byte;
   }
   guest_memory_access(context, address, [&] {
+    const auto observation = trace_title_terminal_prepare_store(
+        context, address, 16U, generated_name, generated_line);
     memory_for(context).store_bytes(address, guest_bytes);
+    trace_title_terminal_commit_store(observation);
   });
-  std::array<std::uint8_t, 16U> guest_bytes_for_trace{};
-  std::transform(guest_bytes.begin(), guest_bytes.end(),
-                 guest_bytes_for_trace.begin(), [](std::byte byte) {
-                   return static_cast<std::uint8_t>(byte);
-                 });
   ac6demo::guest_bridge_detail::record_post_resume_bytes("store128", address, 16U, guest_bytes_for_trace.data(), require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), generated_name, generated_line);
 }
 
@@ -766,21 +1918,225 @@ static void trace_movie_frame_dispatch(const PPCContext &context,
                context.r31.u32);
 }
 
+static void trace_brandlogo_owner_vcall(const PPCContext &context,
+                                        std::uint32_t lr,
+                                        std::uint32_t target) noexcept {
+  if (std::getenv("AC6_DEMO_WATCH_BRANDLOGO_OWNER_VCALL") == nullptr ||
+      active_bridge == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 220U || tick > 240U) {
+    return;
+  }
+  constexpr std::array kCallsites{
+      std::pair<std::uint32_t, std::uint32_t>{0x82323DC8U, 1U},
+      std::pair<std::uint32_t, std::uint32_t>{0x82323DDCU, 12U},
+      std::pair<std::uint32_t, std::uint32_t>{0x82323E4CU, 0U},
+      std::pair<std::uint32_t, std::uint32_t>{0x82323E7CU, 6U},
+      std::pair<std::uint32_t, std::uint32_t>{0x82323EB4U, 10U},
+      std::pair<std::uint32_t, std::uint32_t>{0x82323F08U, 11U},
+      std::pair<std::uint32_t, std::uint32_t>{0x82323F20U, 8U},
+  };
+  const auto it = std::find_if(
+      kCallsites.begin(), kCallsites.end(),
+      [lr](const auto &entry) { return entry.first == lr; });
+  if (it == kCallsites.end()) {
+    return;
+  }
+  auto &memory = active_bridge->memory();
+  constexpr std::uint32_t kOwner = 0x2E3CED10U;
+  const auto read_u32 = [&](std::uint32_t address) noexcept {
+    return address != 0U && memory.mapped(address, 4U)
+               ? memory.load_u32(address)
+               : 0U;
+  };
+  const auto object = read_u32(kOwner + 16U);
+  if (context.r3.u32 != kOwner && context.r3.u32 != object) {
+    return;
+  }
+  const auto vtable = read_u32(context.r3.u32);
+  const auto slot_address =
+      vtable <= std::numeric_limits<std::uint32_t>::max() - it->second * 4U
+          ? vtable + it->second * 4U
+          : 0U;
+  const auto slot_target = it->second == 0U ? 0U : read_u32(slot_address);
+  std::fprintf(
+      stderr,
+      "AC6_BRANDLOGO_OWNER_VCALL tick=%llu lr=0x%08X target=0x%08X "
+      "thread=%u owner=0x%08X object=0x%08X r3=0x%08X r4=0x%08X "
+      "r5=0x%08X vtable=0x%08X slot=%u slot_target=0x%08X "
+      "u216=0x%08X u220=0x%08X u224=0x%08X b0=0x%02X b1=0x%02X "
+      "b2=0x%02X b3=0x%02X\n",
+      static_cast<unsigned long long>(tick), lr, target,
+      current_guest_thread_id, kOwner, object, context.r3.u32, context.r4.u32,
+      context.r5.u32, vtable, it->second, slot_target,
+      read_u32(kOwner + 216U), read_u32(kOwner + 220U),
+      read_u32(kOwner + 224U), memory.mapped(kOwner + 212U, 1U)
+          ? memory.load_u8(kOwner + 212U)
+          : 0U,
+      memory.mapped(kOwner + 213U, 1U) ? memory.load_u8(kOwner + 213U) : 0U,
+      memory.mapped(kOwner + 214U, 1U) ? memory.load_u8(kOwner + 214U) : 0U,
+      memory.mapped(kOwner + 215U, 1U) ? memory.load_u8(kOwner + 215U) : 0U);
+}
+
+static void trace_brandlogo_owner_store(const PPCContext &context,
+                                        std::uint32_t address,
+                                        std::uint32_t size,
+                                        std::uint32_t value,
+                                        const char *generated_name,
+                                        std::uint32_t generated_line) noexcept {
+  if (std::getenv("AC6_DEMO_WATCH_BRANDLOGO_OWNER_STORES") == nullptr ||
+      active_bridge == nullptr || generated_name == nullptr) {
+    return;
+  }
+  const auto tick = active_bridge->tick();
+  if (tick < 220U || tick > 240U) {
+    return;
+  }
+  constexpr std::uint32_t kOwner = 0x2E3CED10U;
+  if (address < kOwner + 212U || address >= kOwner + 225U || size == 0U ||
+      address > std::numeric_limits<std::uint32_t>::max() - size ||
+      address + size <= kOwner + 212U) {
+    return;
+  }
+  std::fprintf(stderr,
+               "AC6_BRANDLOGO_OWNER_STORE tick=%llu address=0x%08X "
+               "size=%u value=0x%08X offset=0x%X lr=0x%08X "
+               "function=%s line=%u thread=%u\n",
+               static_cast<unsigned long long>(tick), address, size, value,
+               address - kOwner, static_cast<std::uint32_t>(context.lr),
+               generated_name, generated_line, current_guest_thread_id);
+}
+
+static void trace_as_context_counter(const PPCContext &context,
+                                     std::uint32_t lr,
+                                     std::uint32_t target) {
+  const auto tick = require_bridge().tick();
+  if (std::getenv("AC6_DEMO_WATCH_AS_CONTEXT_COUNTER") == nullptr ||
+      lr != 0x820D3AF0U || tick < 3000U || tick > 3030U) {
+    return;
+  }
+  std::fprintf(stderr,
+               "AC6_AS_CONTEXT_COUNTER tick=%llu target=0x%08X "
+               "context=0x%08X counter_owner=0x%08X\n",
+               static_cast<unsigned long long>(tick), target,
+               context.r3.u32, context.r31.u32);
+}
+
+static void trace_as_context_counter_access(const PPCContext &context,
+                                            std::uint32_t address,
+                                            std::uint32_t value,
+                                            const char *kind) {
+  const auto tick = require_bridge().tick();
+  if (std::getenv("AC6_DEMO_WATCH_AS_CONTEXT_COUNTER") == nullptr ||
+      context.lr != 0x820D3AF0U || tick < 3000U || tick > 3030U) {
+    return;
+  }
+  std::fprintf(stderr,
+               "AC6_AS_CONTEXT_COUNTER_%s tick=%llu address=0x%08X "
+               "value=0x%08X\n",
+               kind, static_cast<unsigned long long>(tick), address, value);
+}
+
+static void trace_title_selector(const PPCContext &context, std::uint32_t lr,
+                                 std::uint32_t target) {
+  const auto tick = require_bridge().tick();
+  if (std::getenv("AC6_DEMO_WATCH_TITLE_SELECTOR") == nullptr ||
+      (lr != 0x823251B8U && lr != 0x82325250U && lr != 0x82325274U) ||
+      tick < 3000U || tick > 3035U) {
+    return;
+  }
+  std::fprintf(stderr,
+               "AC6_TITLE_SELECTOR tick=%llu lr=0x%08X target=0x%08X "
+               "object=0x%08X r4=0x%08X r10=0x%08X\n",
+               static_cast<unsigned long long>(tick), lr, target,
+               context.r3.u32, context.r4.u32, context.r10.u32);
+}
+
+static void trace_loading_consumer(const PPCContext &context, std::uint32_t lr,
+                                   std::uint32_t target) {
+  if (std::getenv("AC6_DEMO_WATCH_LOADING_CONSUMER") == nullptr ||
+      lr != 0x8218A55CU ||
+      !ac6demo::guest_bridge_detail::transition_trace_tick_allowed(
+          require_bridge().tick())) {
+    return;
+  }
+  static thread_local std::uint32_t record_count = 0U;
+  if (record_count >= 256U) {
+    return;
+  }
+  ++record_count;
+  auto &memory = require_bridge().memory();
+  const auto object = context.r3.u32;
+  std::uint32_t vtable = 0U;
+  std::uint32_t slot15 = 0U;
+  const bool object_mapped = object != 0U && memory.mapped(object, 4U);
+  if (object_mapped) {
+    vtable = memory.load_u32(object);
+    if (vtable <= std::numeric_limits<std::uint32_t>::max() - 60U &&
+        memory.mapped(vtable + 60U, 4U)) {
+      slot15 = memory.load_u32(vtable + 60U);
+    }
+  }
+  std::fprintf(stderr,
+               "AC6_LOADING_CONSUMER lr=0x%08X target=0x%08X "
+               "tick=%llu thread=%u object=0x%08X object_mapped=%u "
+               "vtable=0x%08X slot15=0x%08X r4=0x%08X\n",
+               lr, target, static_cast<unsigned long long>(require_bridge().tick()),
+               current_guest_thread_id, object, object_mapped ? 1U : 0U,
+               vtable, slot15, context.r4.u32);
+}
+
+static void trace_swg_callback_arm(const PPCContext &context,
+                                   std::uint32_t lr,
+                                   std::uint32_t target) {
+  if (std::getenv("AC6_DEMO_WATCH_SWG_CALLBACK") == nullptr ||
+      target != 0x820CDF30U) {
+    return;
+  }
+  static thread_local std::uint32_t record_count = 0U;
+  if (record_count >= 128U) {
+    return;
+  }
+  ++record_count;
+  auto &memory = require_bridge().memory();
+  const auto object = context.r3.u32;
+  std::uint32_t vtable = 0U;
+  std::uint32_t owner = 0U;
+  std::uint32_t ready = 0U;
+  std::uint32_t armed = 0U;
+  const bool mapped = object != 0U && memory.mapped(object, 10U);
+  if (mapped) {
+    vtable = memory.load_u32(object);
+    owner = memory.load_u32(object + 4U);
+    ready = memory.load_u8(object + 8U);
+    armed = memory.load_u8(object + 9U);
+  }
+  const auto global = 0x826DFC48U;
+  const auto global_value = memory.mapped(global, 1U) ? memory.load_u8(global) : 0U;
+  std::fprintf(stderr,
+               "AC6_SWG_CALLBACK_ARM tick=%llu lr=0x%08X target=0x%08X "
+               "object=0x%08X mapped=%u vtable=0x%08X owner=0x%08X "
+               "ready=%u armed=%u global_826DFC48=%u\n",
+               static_cast<unsigned long long>(require_bridge().tick()), lr,
+               target, object, mapped ? 1U : 0U, vtable, owner, ready, armed,
+               global_value);
+}
+
 extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, std::uint32_t guest_address) {
   struct QualifiedVirtualDispatchSite final {
     std::uint32_t lr;
     std::array<std::uint32_t, 6> slots;
     std::size_t slot_count;
   };
-  // These are exact return addresses from canonical-Ghidra bctrl callsites,
-  // not a generic attempt to identify callers from LR.
+  // Exact canonical-Ghidra bctrl return addresses; never a generic LR lookup.
   constexpr std::array kQualifiedVirtualDispatchSites{
+      QualifiedVirtualDispatchSite{0x8216D79CU, {13U}, 1U}, QualifiedVirtualDispatchSite{0x8216D7E8U, {14U}, 1U}, QualifiedVirtualDispatchSite{0x8219EAE8U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x8219ECBCU, {3U}, 1U}, QualifiedVirtualDispatchSite{0x8219EE94U, {3U}, 1U}, QualifiedVirtualDispatchSite{0x8219ED34U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x8219ED64U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x8219ED78U, {5U}, 1U}, QualifiedVirtualDispatchSite{0x8219ED94U, {14U}, 1U}, QualifiedVirtualDispatchSite{0x8219EDA8U, {12U}, 1U}, QualifiedVirtualDispatchSite{0x8219EDC0U, {14U}, 1U}, QualifiedVirtualDispatchSite{0x8219EDD4U, {12U}, 1U}, QualifiedVirtualDispatchSite{0x8219EE10U, {11U}, 1U}, QualifiedVirtualDispatchSite{0x8219EE34U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x8219EF4CU, {6U}, 1U}, QualifiedVirtualDispatchSite{0x8219EFA0U, {2U}, 1U}, QualifiedVirtualDispatchSite{0x8219EFC0U, {8U}, 1U}, QualifiedVirtualDispatchSite{0x8219F058U, {9U}, 1U}, QualifiedVirtualDispatchSite{0x8219F06CU, {1U}, 1U},
       QualifiedVirtualDispatchSite{0x821679B0U, {4U}, 1U},
       QualifiedVirtualDispatchSite{0x8218A3ACU, {13U}, 1U},
-      QualifiedVirtualDispatchSite{0x8219F014U, {4U}, 1U},
-      QualifiedVirtualDispatchSite{0x8219F188U, {4U}, 1U},
-      QualifiedVirtualDispatchSite{0x8219F42CU, {4U}, 1U},
-      QualifiedVirtualDispatchSite{0x8219F594U, {4U}, 1U},
+      QualifiedVirtualDispatchSite{0x8219F014U, {4U}, 1U}, QualifiedVirtualDispatchSite{0x8219F10CU, {2U}, 1U}, QualifiedVirtualDispatchSite{0x8219F124U, {7U}, 1U}, QualifiedVirtualDispatchSite{0x8219F13CU, {9U}, 1U}, QualifiedVirtualDispatchSite{0x8219F188U, {4U}, 1U}, QualifiedVirtualDispatchSite{0x8219F24CU, {2U}, 1U}, QualifiedVirtualDispatchSite{0x8219F264U, {7U}, 1U}, QualifiedVirtualDispatchSite{0x8219F27CU, {9U}, 1U}, QualifiedVirtualDispatchSite{0x8219F2C8U, {4U}, 1U}, QualifiedVirtualDispatchSite{0x8219F35CU, {6U}, 1U}, QualifiedVirtualDispatchSite{0x8219F3B0U, {2U}, 1U}, QualifiedVirtualDispatchSite{0x8219F3C8U, {7U}, 1U}, QualifiedVirtualDispatchSite{0x8219F3E0U, {9U}, 1U}, QualifiedVirtualDispatchSite{0x8219F42CU, {4U}, 1U}, QualifiedVirtualDispatchSite{0x8219F4C4U, {6U}, 1U}, QualifiedVirtualDispatchSite{0x8219F518U, {2U}, 1U}, QualifiedVirtualDispatchSite{0x8219F530U, {7U}, 1U}, QualifiedVirtualDispatchSite{0x8219F548U, {9U}, 1U}, QualifiedVirtualDispatchSite{0x8219F594U, {4U}, 1U},
+      QualifiedVirtualDispatchSite{0x821A014CU, {1U}, 1U}, QualifiedVirtualDispatchSite{0x821A01F0U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x821A02A0U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x821A0324U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x821A0398U, {1U}, 1U}, QualifiedVirtualDispatchSite{0x821A0410U, {1U}, 1U},
       QualifiedVirtualDispatchSite{0x821A36A8U, {4U}, 1U},
       QualifiedVirtualDispatchSite{0x821D2804U, {4U}, 1U},
       QualifiedVirtualDispatchSite{0x82259D30U, {4U}, 1U},
@@ -795,8 +2151,11 @@ extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, s
       QualifiedVirtualDispatchSite{0x82259DA0U, {4U}, 1U},
   };
   const auto lr = static_cast<std::uint32_t>(context.lr);
-  trace_dynamic_object_vtable(context, lr, guest_address); trace_swg_native_call(context, lr, guest_address);
-  trace_movie_frame_dispatch(context, lr, guest_address);
+  trace_brandlogo_owner_vcall(context, lr, guest_address);
+  trace_dynamic_object_vtable(context, lr, guest_address); trace_title_matrix_consumer(context, lr, guest_address); trace_swg_native_call(context, lr, guest_address);
+  trace_movie_frame_dispatch(context, lr, guest_address); trace_as_context_counter(context, lr, guest_address); trace_title_selector(context, lr, guest_address);
+  trace_loading_consumer(context, lr, guest_address);
+  trace_swg_callback_arm(context, lr, guest_address);
   if (std::getenv("AC6_DEMO_WATCH_INDIRECT_OBJECT") != nullptr && lr == 0x82321F34U) {
     auto &memory = require_bridge().memory();
     const auto object = context.r3.u32;
@@ -980,7 +2339,55 @@ extern "C" void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, s
   }
   if (const auto function = lookup_guest_function(guest_address);
       function != nullptr) {
-    invoke_body_trace_with_swg_msgi_override(function, context, base, guest_address, lr);
+    const auto resource_index_watch =
+        std::getenv("AC6_DEMO_WATCH_RESOURCE_INDEX") != nullptr &&
+        require_bridge().tick() >= 220U && require_bridge().tick() <= 240U &&
+        (lr == 0x820D5294U || lr == 0x820D52BCU || lr == 0x820D5308U);
+    const auto log_resource_index_call = [&](const char *phase) {
+      if (!resource_index_watch) {
+        return;
+      }
+      auto &memory = require_bridge().memory();
+      const auto object = lr == 0x820D52BCU ? context.r4.u32 : context.r3.u32;
+      const auto vtable = object != 0U && memory.mapped(object, 4U)
+                              ? memory.load_u32(object)
+                              : 0U;
+      const auto slot = lr == 0x820D5294U ? 6U
+                         : lr == 0x820D52BCU ? 21U
+                                             : 23U;
+      const auto slot_address =
+          vtable <= std::numeric_limits<std::uint32_t>::max() - slot * 4U
+              ? vtable + slot * 4U
+              : 0U;
+      const auto slot_target = slot_address != 0U &&
+                                       memory.mapped(slot_address, 4U)
+                                   ? memory.load_u32(slot_address)
+                                   : 0U;
+      const auto result = context.r3.u32;
+      const auto result_p4 = result != 0U && memory.mapped(result + 4U, 4U)
+                                 ? memory.load_u32(result + 4U)
+                                 : 0U;
+      const auto result_p24 = result != 0U && memory.mapped(result + 24U, 4U)
+                                  ? memory.load_u32(result + 24U)
+                                  : 0U;
+      std::fprintf(
+          stderr,
+          "AC6_RESOURCE_INDEX_CALL phase=%s tick=%llu lr=0x%08X "
+          "target=0x%08X object=0x%08X vtable=0x%08X slot=%u "
+          "slot_target=0x%08X r3=0x%08X r4=0x%08X r5=0x%08X "
+          "r29=0x%08X r31=0x%08X result=0x%08X result_p4=0x%08X "
+          "result_p24=0x%08X\n",
+          phase, static_cast<unsigned long long>(require_bridge().tick()), lr,
+          guest_address, object, vtable, slot, slot_target, context.r3.u32,
+          context.r4.u32, context.r5.u32, context.r29.u32, context.r31.u32,
+          result, result_p4, result_p24);
+    };
+    log_resource_index_call("before");
+    trace_loading_resource_poll_call(context, lr, guest_address, [&] {
+      invoke_body_trace_with_swg_msgi_override(function, context, base,
+                                               guest_address, lr);
+    });
+    log_resource_index_call("after");
     return;
   }
   throw ac6demo::RuntimeTrap("unqualified guest indirect call",
@@ -1175,6 +2582,12 @@ void update_guest_timers(GuestBridge &bridge) noexcept {
 }
 #include "guest_bridge/import_journal.hpp"
 } // namespace
+
+#include "guest_bridge/title_terminal_trace_override.hpp"
+#include "guest_bridge/qualified_loader_overrides.hpp"
+#include "guest_key_schedule.inl"
+#include "guest_mission_consumers.inl"
+
 // clang-format off
 #include "guest_bridge/kernel_data_imports.hpp"
 #include "guest_bridge/constructor.hpp"

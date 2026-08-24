@@ -72,17 +72,37 @@ class XamReturnChainMapperTests(unittest.TestCase):
         self.assertEqual(self.result["stop"]["reason"], "bound")
 
     def test_three_allowlisted_sites_bytes_and_hashes(self) -> None:
-        completed = self.run_mapper(valid_trace(lr="0xDEADBEEF"))
+        final_store = (
+            "AC6_XAM_RETURN_CHAIN_ACCESS kind=store32 address=0x829D15BC "
+            "size=4 value_be=0x12345678 tick=252 thread=1 lr=0xDEADBEEF "
+            "function=__imp__sub_822F5E58 generated_line=13109"
+        )
+        extended_sites = "\n".join((
+            "AC6_XAM_RETURN_CHAIN_ACCESS kind=load32 address=0x829D1558 "
+            "size=4 value_be=0x00000000 tick=252 thread=1 lr=0xDEADBEEF "
+            "function=__imp__sub_822F5E58 generated_line=13137",
+            "AC6_XAM_RETURN_CHAIN_ACCESS kind=store32 address=0x829D15C0 "
+            "size=4 value_be=0x12345678 tick=252 thread=1 lr=0xDEADBEEF "
+            "function=__imp__sub_822F5E58 generated_line=13139",
+            "AC6_XAM_RETURN_CHAIN_ACCESS kind=store32 address=0x829D1560 "
+            "size=4 value_be=0x00000000 tick=252 thread=1 lr=0xDEADBEEF "
+            "function=__imp__sub_822F5E58 generated_line=13141",
+            final_store,
+        ))
+        trace = valid_trace(lr="0xDEADBEEF").replace(final_store, extended_sites)
+        completed = self.run_mapper(trace.replace("accesses=3", "accesses=6"))
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertEqual(self.result["rows"], 3)
+        self.assertEqual(self.result["rows"], 6)
         self.assertEqual(self.result["target"]["xex_sha256"],
                          "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8")
         self.assertEqual(self.result["target"]["pal_basefile_sha256"],
                          "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218")
         self.assertEqual([row["guest_pc"] for row in self.result["sites"]],
-                         ["0x822F601C", "0x822F6020", "0x822F5EA0"])
+                         ["0x822F601C", "0x822F6020", "0x822F5ED0",
+                          "0x822F5ED4", "0x822F5ED8", "0x822F5EA0"])
         self.assertEqual([row["instruction_bytes"] for row in self.result["sites"]],
-                         ["a1 7f 00 48", "91 7f 00 1c", "90 7f 00 80"])
+                         ["a1 7f 00 48", "91 7f 00 1c", "81 7f 00 1c",
+                          "90 7f 00 84", "91 7f 00 24", "90 7f 00 80"])
         self.assertTrue(self.result["policy"]["lr_is_not_pc"])
 
     def test_non_allowlisted_line_and_exclusive_address_refuse(self) -> None:

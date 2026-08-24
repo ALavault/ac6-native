@@ -44,6 +44,32 @@ int main() {
   assert(exact.trace_line().find("exact=1") != std::string::npos);
   ac6demo::require_reached_copy_runtime_writeback(exact);
 
+  std::vector<std::byte> title(ac6demo::kReachedResolveLinearBytes);
+  for (std::size_t pixel = 0U; pixel < title.size(); pixel += 4U) {
+    title[pixel + 0U] = static_cast<std::byte>(pixel >> 2U);
+    title[pixel + 1U] = std::byte{0x34};
+    title[pixel + 2U] = std::byte{0xA7};
+    title[pixel + 3U] = std::byte{0xFF};
+  }
+  std::vector<std::byte> title_tiled(
+      ac6demo::kReachedResolveTiledExtentBytes);
+  ac6demo::build_reached_title_copy_tiled_oracle(title, title_tiled);
+  std::vector<std::byte> title_edram(ac6demo::kReachedEdramAllocationBytes);
+  ac6demo::materialize_reached_title_rgba8_edram(title, title_edram);
+  const auto title_exact = ac6demo::certify_reached_title_copy_runtime(
+      title, title_tiled, title_edram);
+  assert(title_exact.writeback_allowed());
+  ac6demo::require_reached_copy_runtime_writeback(title_exact);
+
+  auto title_pixel_corrupt = title_tiled;
+  title_pixel_corrupt[ac6demo::reached_rgba8_tiled_offset(37U, 41U)] ^=
+      std::byte{0x01};
+  const auto title_pixel = ac6demo::certify_reached_title_copy_runtime(
+      title, title_pixel_corrupt, title_edram);
+  assert(!title_pixel.writeback_allowed());
+  assert(title_pixel.differential.first_failed_stage ==
+         ac6demo::ReachedCopyFailureStage::CopyPixels);
+
   auto pixel_corrupt = tiled;
   const std::size_t pixel_offset = ac6demo::reached_rgba8_tiled_offset(19U, 23U);
   pixel_corrupt[pixel_offset + 2U] ^= std::byte{0x01};

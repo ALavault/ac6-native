@@ -61,7 +61,8 @@ namespace renderer_audit_detail {
 // the linear RGBA source. This is an audit artifact, not a gameplay claim.
 inline void publish_renderer_audit_screencap(
     const DemoSession &session, std::span<const std::byte> guest_linear,
-    const VulkanNeutralResolveResult &resolve) {
+    const VulkanNeutralResolveResult &resolve,
+    std::uint64_t renderer_sequence) {
   const char *directory_text =
       std::getenv("AC6_DEMO_AUDIT_SCREENCAP_DIR");
   if (directory_text == nullptr) {
@@ -109,7 +110,8 @@ inline void publish_renderer_audit_screencap(
   std::ostringstream stem;
   stem << "ac6-demo-pal-present-t" << std::setfill('0') << std::setw(12)
        << session.tick() << "-p" << std::setw(12)
-       << session.graphics_present_count() << '-'
+       << session.graphics_present_count() << "-s" << std::setw(12)
+       << renderer_sequence << '-'
        << resolve.guest_linear_rgba8_sha256.substr(0U, 16U);
   const auto png_path = directory / (stem.str() + ".png");
   const auto json_path = directory / (stem.str() + ".json");
@@ -169,11 +171,12 @@ inline void publish_renderer_audit_screencap(
     throw;
   }
   std::fprintf(stderr,
-               "AC6_AUDIT_SCREENCAP tick=%llu present=%llu path=%s "
+               "AC6_AUDIT_SCREENCAP tick=%llu present=%llu sequence=%llu path=%s "
                "png_sha256=%s rgba8_sha256=%s rgb_nonzero=%llu "
                "rgb_all_black=%u\n",
                static_cast<unsigned long long>(session.tick()),
                static_cast<unsigned long long>(session.graphics_present_count()),
+               static_cast<unsigned long long>(renderer_sequence),
                png_path.c_str(), png_sha256.c_str(),
                resolve.guest_linear_rgba8_sha256.c_str(),
                static_cast<unsigned long long>(

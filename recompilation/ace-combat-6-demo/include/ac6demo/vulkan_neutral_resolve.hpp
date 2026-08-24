@@ -35,6 +35,11 @@ struct VulkanNeutralResolveResult final {
     std::uint32_t queue_family, const VulkanNormalDrawResult &normal,
     const XenosDrawCommand &copy, const XenosPresentCommand &present);
 
+[[nodiscard]] VulkanNeutralResolveResult execute_vulkan_title_resolve(
+    VkPhysicalDevice physical, VkDevice device, VkQueue queue,
+    std::uint32_t queue_family, const VulkanNormalDrawResult &title,
+    const XenosDrawCommand &copy, const XenosPresentCommand &present);
+
 } // namespace ac6demo
 
 #endif

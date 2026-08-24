@@ -75,12 +75,21 @@ public:
   [[nodiscard]] XenosRingSnapshot xenos_ring_snapshot() const noexcept {
     return guest_.xenos_ring_snapshot();
   }
-  [[nodiscard]] std::vector<XenosCommand> consume_renderer_commands() {
-    return guest_.consume_xenos_renderer_commands();
+  [[nodiscard]] std::vector<XenosRendererBatch> consume_renderer_batches() {
+    return guest_.consume_xenos_renderer_batches();
   }
   [[nodiscard]] std::vector<std::byte>
   load_guest_bytes(std::uint32_t address, std::size_t length) const {
     return memory_.load_bytes(address, length);
+  }
+  [[nodiscard]] std::vector<std::byte>
+  load_guest_physical_bytes(std::uint32_t address, std::size_t length) const {
+    const auto alias = guest_.resolve_physical_alias(address, length);
+    if (!alias.has_value()) {
+      throw RuntimeTrap("Xenos physical range has no unique guest alias", tick(),
+                        0, address);
+    }
+    return memory_.load_bytes(*alias, length);
   }
   // Renderer effects may write only into an allocation already owned by the
   // guest bridge.  This is intentionally not a general host framebuffer

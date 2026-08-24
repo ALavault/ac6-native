@@ -45,7 +45,11 @@ extern "C" bool AC6_PPC_STWCX(PPCContext &context, std::uint32_t address,
     found->second.valid = false;
   }
   if (success) {
+    const auto observation = trace_title_terminal_prepare_store(
+        context, address, 4U, current_load_generated_name,
+        current_load_generated_line);
     memory.store_u32(address, value);
+    trace_title_terminal_commit_store(observation);
   }
   ac6demo::guest_bridge_detail::refuse_post_resume_atomic(
       "stwcx", address, 4U, require_bridge().tick(), current_guest_thread_id,
@@ -100,8 +104,12 @@ AC6_PPC_STDCX(PPCContext &context, std::uint32_t address,
   }
   if (success) {
     // As with LDARX, keep the reservation route out of the ordinary scalar
-    // probe path and classify it explicitly as unsupported.
+    // probe path and classify the committed write explicitly.
+    const auto observation = trace_title_terminal_prepare_store(
+        context, address, 8U, current_load_generated_name,
+        current_load_generated_line);
     memory.store_u64(address, value);
+    trace_title_terminal_commit_store(observation);
   }
   ac6demo::guest_bridge_detail::refuse_post_resume_atomic(
       "stdcx", address, 8U, require_bridge().tick(), current_guest_thread_id,

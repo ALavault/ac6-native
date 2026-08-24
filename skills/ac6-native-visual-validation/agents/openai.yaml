@@ -1,0 +1,4 @@
+interface:
+  display_name: "AC6 Visual Validation"
+  short_description: "Check AC6 pixels and screenshots together"
+  default_prompt: "Validate this AC6 rendering gate with raw readback and a human-visible capture."

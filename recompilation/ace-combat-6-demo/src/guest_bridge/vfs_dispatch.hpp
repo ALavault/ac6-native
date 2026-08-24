@@ -162,6 +162,28 @@
         return false;
       }
     }
+    static const bool trace_reads =
+        std::getenv("AC6_DEMO_WATCH_NT_READ_FILE") != nullptr;
+    if (trace_reads) {
+      const auto event = event_handle == 0U ? events.end()
+                                            : events.find(event_handle);
+      std::fprintf(
+          stderr,
+          "AC6_NT_READ_FILE tick=%llu thread=%u lr=0x%08X file=0x%08X "
+          "event=0x%08X iosb=0x%08X iosb_status=0x%08X "
+          "iosb_info=0x%08X buffer=0x%08X length=%u offset_ptr=0x%08X "
+          "offset=0x%016llX event_signaled=%u event_manual=%u "
+          "event_granted=%u\n",
+          static_cast<unsigned long long>(bridge.tick()),
+          current_guest_thread_id, static_cast<std::uint32_t>(context.lr),
+          context.r3.u32, event_handle, io_status,
+          memory.load_u32(io_status), memory.load_u32(io_status + 4U), buffer,
+          length, context.r10.u32,
+          static_cast<unsigned long long>(offset.value_or(0U)),
+          event == events.end() ? 0U : event->second.signaled ? 1U : 0U,
+          event == events.end() ? 0U : event->second.manual_reset ? 1U : 0U,
+          event == events.end() ? 0U : event->second.granted_thread);
+    }
     std::vector<std::byte> bytes(length);
     std::uint32_t bytes_read{};
     const auto status = bridge.read_guest_file(context.r3.u32, offset, bytes,

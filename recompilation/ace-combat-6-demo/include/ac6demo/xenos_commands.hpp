@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
@@ -33,6 +34,69 @@ private:
   std::array<std::uint32_t, kXenosRegisterCount> values_{};
 };
 
+enum class QualifiedTitleTextureEncoding : std::uint8_t { Bc3, Rgba8 };
+
+struct QualifiedTitleTextureProfile final {
+  std::uint32_t address{};
+  std::uint32_t payload_size{};
+  std::uint32_t width{};
+  std::uint32_t height{};
+  QualifiedTitleTextureEncoding encoding{QualifiedTitleTextureEncoding::Bc3};
+};
+
+[[nodiscard]] inline std::optional<QualifiedTitleTextureProfile>
+qualified_title_texture_profile(
+    const XenosRegisterSnapshot &registers) noexcept {
+  std::array<std::uint32_t, 6> words{};
+  for (std::uint16_t index = 0U; index < words.size(); ++index) {
+    words[index] = registers.value(kXenosTextureFetch00 + index);
+  }
+  const auto address = words[1] & 0xFFFFF000U;
+  words[1] &= 0x00000FFFU;
+  if (address == 0U) {
+    return std::nullopt;
+  }
+
+  struct Shape final {
+    std::array<std::uint32_t, 6> words;
+    std::uint32_t required_address;
+    std::uint32_t payload_size;
+    std::uint32_t width;
+    std::uint32_t height;
+    QualifiedTitleTextureEncoding encoding;
+  };
+  static constexpr std::array shapes{
+      Shape{{0x81000002U, 0x00000054U, 0x0007E03FU, 0x01280D10U,
+             0x00000003U, 0x00000200U},
+            0U, 0x4000U, 64U, 64U, QualifiedTitleTextureEncoding::Bc3},
+      Shape{{0x84004802U, 0x00000054U, 0x003FE1FFU, 0x01280D10U,
+             0x00000003U, 0x00000200U},
+            0U, 0x40000U, 512U, 512U,
+            QualifiedTitleTextureEncoding::Bc3},
+      Shape{{0x84004802U, 0x00000054U, 0x0059E1FFU, 0x01280D10U,
+             0x00000003U, 0x00000200U},
+            0U, 0x60000U, 512U, 720U,
+            QualifiedTitleTextureEncoding::Bc3},
+      Shape{{0x8A004802U, 0x00000054U, 0x0059E4FFU, 0x01280D10U,
+             0x00000003U, 0x00000200U},
+            0U, 0xF0000U, 1280U, 720U,
+            QualifiedTitleTextureEncoding::Bc3},
+      Shape{{0x8A000002U, 0x00000006U, 0x0059E4FFU, 0x00001414U,
+             0x00000000U, 0x00000200U},
+            0x1374A000U, 0x398000U, 1280U, 720U,
+            QualifiedTitleTextureEncoding::Rgba8},
+  };
+  for (const auto &shape : shapes) {
+    if (words == shape.words &&
+        (shape.required_address == 0U || address == shape.required_address)) {
+      return QualifiedTitleTextureProfile{
+          address, shape.payload_size, shape.width, shape.height,
+          shape.encoding};
+    }
+  }
+  return std::nullopt;
+}
+
 enum class XenosShaderStage : std::uint8_t { Vertex, Pixel };
 
 struct XenosShaderLoadCommand final {
@@ -43,11 +107,15 @@ struct XenosShaderLoadCommand final {
   // Runtime-only source for the pinned shader translator. These words are
   // never serialized into reports, traces or the installed package.
   std::vector<std::uint32_t> guest_big_endian_dwords;
+  // Zero for an immediate load, otherwise the exact guest source carried by
+  // the qualified pointer-load packet. This is runtime-only provenance.
+  std::uint32_t guest_source_address{};
 };
 
 enum class XenosPrimitive : std::uint8_t {
   PointList = 0x01U,
   RectangleList = 0x08U,
+  QuadList = 0x0DU,
 };
 enum class XenosIndexSource : std::uint8_t { AutoIndex = 0x02U };
 enum class XenosIndexFormat : std::uint8_t { Uint16, Uint32 };
@@ -83,6 +151,19 @@ struct XenosGuestMemoryWrite final {
   std::array<std::byte, 4> guest_bytes{};
 };
 
+struct XenosRendererPayload final {
+  std::uint32_t address{};
+  std::vector<std::byte> bytes;
+};
+
+// One command-processor producer boundary plus the exact guest bytes observed
+// after that boundary. This is runtime-only and is never serialized.
+struct XenosRendererBatch final {
+  std::uint64_t sequence{};
+  std::vector<XenosCommand> commands;
+  std::vector<XenosRendererPayload> payloads;
+};
+
 struct XenosEffectCounters final {
   std::uint32_t scratch_writeback{};
   std::uint32_t register_rmw{};
@@ -97,6 +178,9 @@ struct XenosEffectCounters final {
 
 struct XenosBatchResult final {
   std::vector<XenosCommand> renderer_commands;
+  // Number of staged guest writes visible when each renderer command was
+  // emitted. This keeps payload capture at the command's point of use.
+  std::vector<std::size_t> renderer_write_counts;
   std::vector<XenosGuestMemoryWrite> memory_writes;
   std::vector<std::uint8_t> cpu_interrupts;
   XenosEffectCounters effects;

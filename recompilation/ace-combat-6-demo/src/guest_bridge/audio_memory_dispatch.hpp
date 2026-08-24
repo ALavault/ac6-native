@@ -167,6 +167,23 @@
     memory.map_zero(mapped_address, mapped_size);
     bridge.record_allocation(mapped_address, mapped_size);
     context.r3.u32 = allocation;
+    if (std::getenv("AC6_DEMO_WATCH_TITLE_VERTEX_ALLOCATION") != nullptr) {
+      constexpr std::uint64_t kTargetBegin = 0x104A4890ULL;
+      constexpr std::uint64_t kTargetEnd = 0x104A4960ULL;
+      const auto mapped_begin = static_cast<std::uint64_t>(mapped_address);
+      const auto mapped_end = mapped_begin + mapped_size;
+      std::fprintf(
+          stderr,
+          "AC6_TITLE_VERTEX_PHYSICAL_ALLOC tick=%llu thread=%u "
+          "lr=0x%08X requested=0x%08X allocation=0x%08X "
+          "mapped_begin=0x%08X mapped_size=0x%zX covers_target=%u "
+          "intersects_target=%u\n",
+          static_cast<unsigned long long>(bridge.tick()),
+          current_guest_thread_id, current_import_lr, requested_size,
+          allocation, mapped_address, mapped_size,
+          mapped_begin <= kTargetBegin && mapped_end >= kTargetEnd ? 1U : 0U,
+          mapped_begin < kTargetEnd && mapped_end > kTargetBegin ? 1U : 0U);
+    }
     return true;
   }
   if (std::string_view{name} == "MmFreePhysicalMemory") {

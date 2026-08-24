@@ -1,0 +1,179 @@
+{
+  "schema": "ac6-demo-title-matrix-to-layout-record/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo",
+    "ghidra_program": "Default.xex",
+    "architecture": "PowerPC:BE:64:Xenon"
+  },
+  "dynamic_precondition": {
+    "receipt": "analysis/demo/ac6-demo-title-matrix-consumer-ab-v1.json",
+    "input": [
+      "3000,16,0,0,0,0,0,0,1",
+      "3001,0,0,0,0,0,0,0,1"
+    ],
+    "indirect_call": {
+      "lr": "0x82325ED4",
+      "vtable_slot": 7,
+      "target": "0x820EB200"
+    },
+    "scope": "START changes the element stream delivered to the same live target; it does not remove this dispatch."
+  },
+  "static_path": {
+    "evidence_command": "analyzeHeadless ghidra-projects ace-combat-6-demo -readOnly -process Default.xex -noanalysis -scriptPath scripts -postScript DecompileMany.java 0x820EB200 0x820EA9A0 0x82095DF0 0x821DEED8",
+    "consumer": {
+      "entry": "0x820EB200",
+      "behavior": "Rejects an empty resource-table slot, builds a local geometry/UV/color parameter block from the matrix consumer arguments, calls 0x820EA9A0, and calls 0x82095DF0 only when that helper returns nonzero."
+    },
+    "predicate": {
+      "entry": "0x820EA9A0",
+      "behavior": "Returns zero when either position pair or extent pair in its local parameter block is all-zero; otherwise derives normalized geometry and returns one."
+    },
+    "record_construction": {
+      "entry": "0x82095DF0",
+      "behavior": "Reserves a 0x70-byte record from a bounded arena, initializes it through 0x821DEED8, and links the record through fields at its owner."
+    },
+    "record_initialization": {
+      "entry": "0x821DEED8",
+      "direct_calls": [
+        "0x823271E4",
+        "0x822DB930",
+        "0x82327230"
+      ],
+      "behavior": "Initializes the record's transform, clipping, flags and texture-related fields. Its qualified direct body has no Vd import, CP_RB_WPTR store, primary-ring append, or PM4 decoder call."
+    }
+  },
+  "abi_cross_match": {
+    "callsite": "0x820EB3C0..0x820EB3D4",
+    "instructions": [
+      "lis r11,-0x7D7E",
+      "fmr f1,f31",
+      "addi r4,r1,0x50",
+      "subi r11,r11,0x1588",
+      "addi r3,r11,0x78",
+      "bl 0x82095DF0"
+    ],
+    "resolved_r3_owner": "0x8281EAF0",
+    "record_link_fields": [
+      "0x8281EB10",
+      "0x8281EB14"
+    ],
+    "note": "This literal PPC ABI reading supersedes the rejected assumption that the matrix-consumer object at 0x2E3DFA94 owned these link fields."
+  },
+  "rejected_field_probe": {
+    "range": "0x2E3DFAB0..0x2E3DFAC0",
+    "input": [
+      "3000,16,0,0,0,0,0,0,1",
+      "3001,0,0,0,0,0,0,0,1"
+    ],
+    "completed_ticks": 3021,
+    "result": "The only writes are the tick-40 fill and tick-2451 initialization by 0x820EAB20; no post-START write is observed. This range is not the 0x82095DF0 record link.",
+    "artifacts": {
+      "path": "/fastdata/lavaulta/tmp/recoverable-deletions/ac6-title-layout-record.ix0NFI",
+      "runtime_binary_sha256": "7bc2a990de70cc0115377d013519a1c23868cac050f32b5ab9a47b0706a47d6a",
+      "replay_sha256": "0928c2c45e6930d0f21ac625b0a92d55be281c65b01b41024fd9cf1737f2b4c3",
+      "report_sha256": "6971b126ef36b79427470357b21f163a3ac3944c0a2ae35aaaf1402fd5bde240",
+      "stderr_sha256": "af905de71e5a0a0cbf94dd5c474d2eb942eba9c28fb2d7bcc7a5829448c2b8ec"
+    }
+  },
+  "record_queue_drain": {
+    "range": "0x8281EB10..0x8281EB18",
+    "input": [
+      "3000,16,0,0,0,0,0,0,1",
+      "3001,0,0,0,0,0,0,0,1"
+    ],
+    "completed_ticks": 3021,
+    "dynamic_order": [
+      {
+        "entry": "0x821A4690",
+        "effect": "Clears the two link fields before record production."
+      },
+      {
+        "entry": "0x82095DF0",
+        "effect": "At ticks 3000 and 3001, writes 0x8281EB10 = 0x827B3A80 and advances 0x8281EB14 through 0x827B3A80..0x827B4CE0 in 0x70-byte steps."
+      },
+      {
+        "entry": "0x82118B88",
+        "effect": "Clears both link fields after the per-tick traversal."
+      }
+    ],
+    "static_consumer_join": {
+      "preparer": "0x8219DB50",
+      "behavior": "Publishes the five owner records starting at 0x8281EA78 to the traversal list, calls 0x82119488, then flushes its command queue through 0x822DA978 for its reached mode values.",
+      "traversal": "0x82119488",
+      "behavior_detail": "Walks each owner+0x20 linked record chain, grouping and emitting work via 0x82118FA0, 0x82118650 and 0x821186B0 before calling 0x82118B88.",
+      "queue_flush": [
+        "0x822DA978",
+        "0x822E3E00",
+        "0x822E3258",
+        "0x822EF008"
+      ],
+      "scope": "This proves that the 0x82095DF0 list is consumed, serialized and flushed in the reached title frame. It does not establish the later Xenos/PM4 producer or a new primary-ring publication."
+    },
+    "static_virtual_dispatch": {
+      "owner": "0x82648380",
+      "initializer": "0x822E2D88",
+      "initializer_effect": "The only qualified writer installs vtable 0x82028F84 at the owner.",
+      "basefile": {
+        "sha256": "b98a9ac1f5a2da4c0b6e3bbae1d6cf7fe8c1fc2292b1cef51cc627581aa14218",
+        "vtable_words": [
+          "0x822E2C58",
+          "0x822EEFD0",
+          "0x822EEFD0"
+        ]
+      },
+      "callsite": "0x822EF008 invokes owner vtable+8",
+      "resolved_target": "0x822EEFD0",
+      "resolved_behavior": "Reserves 0x10 bytes through 0x822E2FD8 and initializes the result through 0x822F7610 with vtable 0x8202A95C.",
+      "result": "The exact virtual target is a queue-object allocation/initialization path. Its qualified direct body contains no Vd import, CP_RB_WPTR store, primary-ring append, or PM4 decoder call."
+    },
+    "queued_object_contract": {
+      "vtable": "0x8202A95C",
+      "words": [
+        "0x822F2F20",
+        "0x822EFC90",
+        "0x822EFC98",
+        "0x822ECF00",
+        "0x822EFCA0",
+        "0x82300470",
+        "0x8230BFB0"
+      ],
+      "qualified_slot_behaviors": {
+        "0x822F2F20": "returns 0x80004001",
+        "0x822EFC90": "returns 2",
+        "0x822EFC98": "returns 1",
+        "0x822ECF00": "returns the object word at +4",
+        "0x822EFCA0": "writes the supplied next-object pointer at +4",
+        "0x82300470": "returns 0"
+      },
+      "scope": "These bounded vtable entries describe an intrusive queue object. They do not by themselves prove that any later queue scheduler executes the remaining virtual entry, and none is a direct Xenos/PM4 emission path."
+    },
+    "artifacts": {
+      "path": "/fastdata/lavaulta/tmp/recoverable-deletions/ac6-title-layout-link.J8GiYg",
+      "runtime_binary_sha256": "7bc2a990de70cc0115377d013519a1c23868cac050f32b5ab9a47b0706a47d6a",
+      "replay_sha256": "0928c2c45e6930d0f21ac625b0a92d55be281c65b01b41024fd9cf1737f2b4c3",
+      "report_sha256": "6971b126ef36b79427470357b21f163a3ac3944c0a2ae35aaaf1402fd5bde240",
+      "stderr_sha256": "942bce1b1803459824dd137e35a70598940792be7eca899e3270e94e8dac38ad"
+    },
+    "non_evidence_debugger_attempt": {
+      "script": "/fastdata/lavaulta/tmp/recoverable-deletions/title-layout-queue-dispatch/window.gdb",
+      "script_sha256": "68a24d0303e166dc3c877e4ac0e4f00396135263d75a5cd325bdabf5cbc1546e",
+      "bound": "90 seconds, neutral headless probe, max_ticks=400",
+      "result": "The debugger did not reach the first 0x82095DF0 breakpoint before the wall-time limit. It emitted no dispatch tuple and is not used as negative reachability evidence.",
+      "raw_path": "/fastdata/lavaulta/tmp/recoverable-deletions/ac6-layout-queue.q9q2uG",
+      "gdb_log_sha256": "af99d2a101040e78bc651157f8d0f909bda993451dcf30670a012bf3e1cf1d5a"
+    }
+  },
+  "conclusion": {
+    "closed": "The reached START matrix consumer produces a per-frame 0x70-byte layout-record chain that is traversed, serialized and cleared by the reached title-frame renderer path; it is not itself a direct PM4 emitter.",
+    "not_established": [
+      "Whether the 0x820EA9A0 predicate is true for each post-START element; the existing indirect-call receipt does not snapshot the local parameter block.",
+      "Whether any later queue scheduler executes the remaining 0x8202A95C virtual entry and reaches a D3D/PM4 producer.",
+      "Any non-bootstrap PM4 or primary-ring publication attributable to the post-START layout records.",
+      "Any native rendering fix. No code change follows from this static path."
+    ],
+    "next_boundary": "Return to the current qualified post-resume A/B working set: isolate a persistent guest divergence that changes a draw or readback without interpreting the one-shot load64 as START consumption; require an exact guest PC and a changed rendering artifact before promoting a PM4 path."
+  }
+}

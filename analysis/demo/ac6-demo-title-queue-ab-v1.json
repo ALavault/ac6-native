@@ -1,0 +1,58 @@
+{
+  "schema": "ac6-demo-title-queue-ab-v1",
+  "identity": {
+    "target": "Ace Combat 6 PAL demo, Xbox 360",
+    "xex": "demo-game-file/extracted/stfs-root/Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "inputs": {
+    "binary": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+    "binary_sha256": "6fda8c2f5d23b31995c9ca71dbf029f9fb2274cb1977a9dcdc835f82d08aece9",
+    "mode": "probe --until frontend --max-ticks 3600",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "instrumentation": "AC6_DEMO_WATCH_RENDER_QUEUE_SLOTS=1",
+    "queue_store_range": "[0x82386D90, 0x8238CDD0)"
+  },
+  "variants": {
+    "neutral": {
+      "input": "none",
+      "replay_sha256": "9d05c80064280812661b17a48581cdfbfe2a56af43b69225668dd1a822b07be1"
+    },
+    "start": {
+      "input": [
+        "3000,16,0,0,0,0,0,0,1",
+        "3001,0,0,0,0,0,0,0,1"
+      ],
+      "replay_sha256": "bd816e976bffb21c8f2c9b3b94fcf536859877b3b4fc11fea2722f158d06ffca"
+    }
+  },
+  "observations": {
+    "total_queue_stores": 23440,
+    "full_queue_store_trace_sha256": "a5b0826fd2b776290528d3b047f6b8a4209e6c307c48b128116ab149b005f9cc",
+    "post_start_window": {
+      "ticks": "3000..3599",
+      "queue_stores_per_variant": 4200,
+      "store_trace_sha256": "411c87fb3c4cd0203f9cab01147365af0fcbc6d194c53c9cca734fd6988fdb86",
+      "identical_between_variants": true,
+      "addresses": [
+        "0x82386DD0",
+        "0x8238CD90",
+        "0x8238CD94",
+        "0x8238CD98",
+        "0x8238CD9C"
+      ]
+    },
+    "shared_outcome": {
+      "kind": "max_ticks",
+      "completed_ticks": 3600,
+      "frontend": false,
+      "mission": false,
+      "terminal": false,
+      "presents": 3463,
+      "ring_submissions": 2,
+      "ring_submitted_dwords": 25
+    }
+  },
+  "conclusion": "The correctly timed START edge changes the replay but produces no observed change in the bounded render-queue store trace through tick 3599. This rules out this queue range as the immediate missing title-to-frontend handoff, not the rest of the guest rendering path."
+}

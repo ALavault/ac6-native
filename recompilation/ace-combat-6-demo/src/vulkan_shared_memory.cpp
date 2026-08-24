@@ -2,11 +2,13 @@
 
 #ifdef AC6_DEMO_HAVE_VULKAN_RENDERER_FRONTIER
 
+#include "ac6demo/endian.hpp"
 #include "ac6demo/hash.hpp"
 #include "ac6demo/runtime_error.hpp"
 
 #include <algorithm>
 #include <array>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <ranges>
@@ -142,7 +144,8 @@ void VulkanSharedMemory::write_buffer(VkDevice device,
 
 bool VulkanSharedMemory::populate(
     VkPhysicalDevice physical, VkDevice device, VkDescriptorSetLayout layout,
-    DemoSession &session, std::span<const XenosCommand> commands,
+    std::span<const XenosCommand> commands,
+    std::span<const XenosRendererPayload> payloads,
     std::uint32_t shader_loads, std::uint32_t draws, std::uint32_t presents,
     std::uint32_t translated_modules, std::uint32_t graphics_pipelines) {
   const bool rectangle = std::ranges::any_of(commands, [](const auto &command) {
@@ -152,31 +155,78 @@ bool VulkanSharedMemory::populate(
   const bool initial_profile =
       rectangle && graphics_pipelines == 2U && shader_loads == 5U &&
       draws == 26U && presents <= 1U && translated_modules == 4U;
+  if (payloads.empty()) {
+    return false;
+  }
   if (!populated() && !initial_profile) {
     return false;
   }
   if (populated() &&
-      (graphics_pipelines != 2U || translated_modules != 4U ||
+      (graphics_pipelines < 2U || graphics_pipelines > 3U ||
+       (translated_modules != 4U && translated_modules != 6U) ||
        shader_loads < 5U || draws < 26U)) {
     throw RuntimeTrap("Vulkan reached shared refresh profile changed");
   }
 
-  constexpr std::uint32_t guest_begin = 0x127CA03CU;
-  constexpr std::uint32_t guest_end = 0x127CA0A8U;
   constexpr VkDeviceSize segment_mask = 0x07FFFFFFU;
-  const auto guest =
-      session.load_guest_bytes(guest_begin, guest_end - guest_begin);
-  if (guest.size() != static_cast<std::size_t>(guest_end - guest_begin)) {
-    throw RuntimeTrap("Vulkan reached shared refresh extent changed");
+  constexpr VkDeviceSize segment_size = segment_mask + 1U;
+  const auto title_vertices = std::ranges::find_if(
+      payloads, [](const auto &payload) {
+        return (payload.address == 0x10348000U ||
+                payload.address == 0x103F1000U ||
+                payload.address == 0x103FB890U ||
+                payload.address == 0x104A4890U ||
+                payload.address == 0x104AF120U ||
+                payload.address == 0x10558120U) &&
+               (payload.bytes.size() == 208U ||
+                payload.bytes.size() == 416U);
+      });
+  if (title_vertices != payloads.end()) {
+    const auto bytes = std::span<const std::byte>{title_vertices->bytes};
+    const std::size_t first_vertex = bytes.size() == 416U ? 4U : 0U;
+    for (std::size_t vertex = 0U; vertex < 4U; ++vertex) {
+      const auto source_vertex = first_vertex + vertex;
+      const auto base = source_vertex * 13U * sizeof(std::uint32_t);
+      std::fprintf(
+          stderr,
+          "AC6_TITLE_VERTEX index=%zu p0=%g p1=%g p2=%g p3=%g "
+          "t0=%g t1=%g t2=%g t3=%g color=%08x\n",
+          source_vertex, bit_cast_float(read_be32(bytes, base)),
+          bit_cast_float(read_be32(bytes, base + 4U)),
+          bit_cast_float(read_be32(bytes, base + 8U)),
+          bit_cast_float(read_be32(bytes, base + 12U)),
+          bit_cast_float(read_be32(bytes, base + 16U)),
+          bit_cast_float(read_be32(bytes, base + 20U)),
+          bit_cast_float(read_be32(bytes, base + 24U)),
+          bit_cast_float(read_be32(bytes, base + 28U)),
+          read_be32(bytes, base + 48U));
+    }
   }
-  const auto digest = Sha256::bytes(guest);
+  std::vector<std::byte> version_bytes;
+  for (const auto &payload : payloads) {
+    const auto offset = payload.address & segment_mask;
+    if (payload.bytes.empty() ||
+        payload.bytes.size() > segment_size - offset) {
+      throw RuntimeTrap("Vulkan reached shared payload extent changed");
+    }
+    for (unsigned shift = 0U; shift < 32U; shift += 8U) {
+      version_bytes.push_back(
+          static_cast<std::byte>(payload.address >> shift));
+    }
+    version_bytes.insert(version_bytes.end(), payload.bytes.begin(),
+                         payload.bytes.end());
+  }
+  const auto digest = Sha256::bytes(version_bytes);
 
   if (populated()) {
     if (!shared_version_.needs_upload(digest)) {
       return false;
     }
     shared_version_.validate_candidate(digest);
-    write_buffer(device, buffers_[2], guest_begin & segment_mask, guest);
+    for (const auto &payload : payloads) {
+      write_buffer(device, buffers_[2], payload.address & segment_mask,
+                   payload.bytes);
+    }
     shared_version_.mark_uploaded(digest);
     return true;
   }
@@ -187,10 +237,13 @@ bool VulkanSharedMemory::populate(
   try {
     for (std::uint32_t index = 0; index < staged.size(); ++index) {
       staged[index] = create_buffer(
-          physical, device, index == 2U ? (guest_end & segment_mask) : 4U,
+          physical, device, index == 2U ? segment_size : 4U,
           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     }
-    write_buffer(device, staged[2], guest_begin & segment_mask, guest);
+    for (const auto &payload : payloads) {
+      write_buffer(device, staged[2], payload.address & segment_mask,
+                   payload.bytes);
+    }
     VkDescriptorPoolSize pool_size{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4U};
     VkDescriptorPoolCreateInfo pool_info{
         VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};

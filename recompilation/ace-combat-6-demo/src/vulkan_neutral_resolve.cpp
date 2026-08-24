@@ -2,13 +2,7 @@
 
 #ifdef AC6_DEMO_HAVE_VULKAN_RENDERER_FRONTIER
 
-// Preserve the previously qualified Vulkan implementation byte-for-byte under
-// an internal symbol. The public wrapper below adds an independent CPU
-// differential certificate before any result can reach guest writeback.
-#define execute_vulkan_neutral_resolve \
-  execute_vulkan_neutral_resolve_uncertified
-#include "vulkan_neutral_resolve_original.cpp"
-#undef execute_vulkan_neutral_resolve
+#include "vulkan_reached_resolve_core.inc"
 
 #include "ac6demo/reached_copy_runtime_certificate.hpp"
 
@@ -17,21 +11,48 @@
 
 namespace ac6demo {
 
-VulkanNeutralResolveResult execute_vulkan_neutral_resolve(
-    VkPhysicalDevice physical, VkDevice device, VkQueue queue,
-    std::uint32_t queue_family, const VulkanNormalDrawResult &normal,
-    const XenosDrawCommand &copy, const XenosPresentCommand &present) {
-  auto result = execute_vulkan_neutral_resolve_uncertified(
-      physical, device, queue, queue_family, normal, copy, present);
+namespace {
 
-  const auto certificate = certify_reached_copy_runtime(
-      normal.resolved_rgba8, result.tiled_bytes);
+VulkanNeutralResolveResult execute_certified_reached_resolve(
+    VkPhysicalDevice physical, VkDevice device, VkQueue queue,
+    std::uint32_t queue_family, const VulkanNormalDrawResult &source,
+    const XenosDrawCommand &copy, const XenosPresentCommand &present,
+    ResolveSource resolve_source) {
+  auto result = execute_vulkan_reached_resolve(
+      physical, device, queue, queue_family, source, copy, present,
+      resolve_source);
+
+  const auto certificate = resolve_source == ResolveSource::Title1x
+      ? certify_reached_title_copy_runtime(source.resolved_rgba8,
+                                           result.tiled_bytes)
+      : certify_reached_copy_runtime(source.resolved_rgba8,
+                                     result.tiled_bytes);
   if (std::getenv("AC6_DEMO_WATCH_COPY_DIFFERENTIAL") != nullptr) {
     const std::string trace = certificate.trace_line();
     std::fprintf(stderr, "%s\n", trace.c_str());
   }
   require_reached_copy_runtime_writeback(certificate);
   return result;
+}
+
+} // namespace
+
+VulkanNeutralResolveResult execute_vulkan_neutral_resolve(
+    VkPhysicalDevice physical, VkDevice device, VkQueue queue,
+    std::uint32_t queue_family, const VulkanNormalDrawResult &normal,
+    const XenosDrawCommand &copy, const XenosPresentCommand &present) {
+  return execute_certified_reached_resolve(
+      physical, device, queue, queue_family, normal, copy, present,
+      ResolveSource::Normal4x);
+}
+
+VulkanNeutralResolveResult execute_vulkan_title_resolve(
+    VkPhysicalDevice physical, VkDevice device, VkQueue queue,
+    std::uint32_t queue_family, const VulkanNormalDrawResult &title,
+    const XenosDrawCommand &copy, const XenosPresentCommand &present) {
+  return execute_certified_reached_resolve(
+      physical, device, queue, queue_family, title, copy, present,
+      ResolveSource::Title1x);
 }
 
 } // namespace ac6demo

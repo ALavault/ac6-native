@@ -1,0 +1,68 @@
+{
+  "schema": "ac6-demo-title-doorbell-start-v1",
+  "identity": {
+    "target": "Ace Combat 6 PAL demo, Xbox 360",
+    "xex": "demo-game-file/extracted/stfs-root/Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8"
+  },
+  "inputs": {
+    "binary": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+    "binary_sha256": "ca772b94de8317886e7709a24430e1a9fd650dffd8197fbcaef418cbbb2f960b",
+    "mode": "probe --until frontend --max-ticks 4001",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "input": [
+      "3000,16,0,0,0,0,0,0,1",
+      "3001,0,0,0,0,0,0,0,1"
+    ],
+    "instrumentation": [
+      "AC6_DEMO_WATCH_MODE_STATE=1",
+      "AC6_DEMO_WATCH_RING_KICK=1"
+    ]
+  },
+  "artifacts": {
+    "replay_sha256": "53121ccfdf45ae44f76355663ddc28ff8a3231af763b9360026f6695ea7fd0b5",
+    "report_sha256": "140c6eab348cc52476810c28a81c45440768c5e16431d9314ceff1ff91ee1581",
+    "stderr_sha256": "2f75a8b17902cd6b9444e7bdc19857cd4137a485d3efecef8b359dab2a7e46a1"
+  },
+  "doorbell": {
+    "kick_count": 4,
+    "kicks_after_tick_0": 0,
+    "bootstrap_kicks": [
+      "tick 0, lr 0x821C4A28, wptr 0x00000000 -> 0x00000016",
+      "tick 0, lr 0x821C4A28, wptr 0x00000016 -> 0x00000019",
+      "tick 0, lr 0x821C5C98, wptr 0x00000000 -> 0x00000016",
+      "tick 0, lr 0x821C5C98, wptr 0x00000016 -> 0x00000019"
+    ],
+    "device_samples": {
+      "ticks": [222, 2000, 4000],
+      "slot": "0x000101BE",
+      "device": "0x10041A00",
+      "byte10941": "0x06",
+      "bit1": true,
+      "device_plus_21508": "0x00000000",
+      "device_plus_21600": "0x00000000",
+      "counter_0x827AD2F0": 0,
+      "counter_case_minus_11": true,
+      "device_plus_22264": "0x0C000001",
+      "device_plus_22264_bit2": false
+    }
+  },
+  "readback": {
+    "ticks": [1000, 2000, 3000, 4000],
+    "nonzero_words": 0,
+    "fnv1a64": "0x4BD87A07A4536325"
+  },
+  "outcome": {
+    "kind": "max_ticks",
+    "completed_ticks": 4001,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "presents": 3864,
+    "ring_submissions": 2,
+    "ring_submitted_dwords": 25
+  },
+  "scope": "The START edge is independently shown to alter the title element stream in ac6-demo-title-matrix-consumer-ab-v1.json. This run establishes that it still does not open the D3D doorbell gate or issue a post-bootstrap MMIO ring kick through tick 4000.",
+  "conclusion": "The correctly timed title route reaches and changes CPU-side draw content but leaves the device gate closed and the Xenos ring at its bootstrap-only submissions. The next frontier is the guest producer of the 0x827AD2F0 selector or the event path that should construct/activate that producer."
+}

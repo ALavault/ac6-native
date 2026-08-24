@@ -4,7 +4,6 @@
 
 #include "ac6demo/renderer_payload_version.hpp"
 #include "ac6demo/rexglue_runtime_shader.hpp"
-#include "ac6demo/session.hpp"
 #include "ac6demo/xenos_commands.hpp"
 
 #include <array>
@@ -26,8 +25,9 @@ public:
   // Returns true when descriptors are created or guest bytes are refreshed.
   // Existing callers may discard the return value.
   bool populate(VkPhysicalDevice physical, VkDevice device,
-                VkDescriptorSetLayout layout, DemoSession &session,
+                VkDescriptorSetLayout layout,
                 std::span<const XenosCommand> commands,
+                std::span<const XenosRendererPayload> payloads,
                 std::uint32_t shader_loads, std::uint32_t draws,
                 std::uint32_t presents, std::uint32_t translated_modules,
                 std::uint32_t graphics_pipelines);
@@ -91,7 +91,7 @@ private:
   VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
   VkDescriptorSet descriptor_set_{VK_NULL_HANDLE};
   RendererPayloadVersion shared_version_;
-  std::array<ConstantSet, 2> constants_{};
+  std::array<ConstantSet, 3> constants_{};
 };
 
 } // namespace ac6demo

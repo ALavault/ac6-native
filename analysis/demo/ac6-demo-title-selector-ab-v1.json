@@ -1,0 +1,77 @@
+{
+  "schema": "ac6-demo-title-selector-ab/v1",
+  "target": {
+    "id": "ac6-demo-xbox360-pal",
+    "module": "Default.xex",
+    "xex_sha256": "de917873f601e2a2208d75ab907e918ce941a42378d0d088705ecb4477405da8",
+    "ghidra_project": "ace-combat-6-demo"
+  },
+  "inputs": {
+    "binary": "recompilation/ace-combat-6-demo/build-codegen-on/ac6-demo-recomp",
+    "binary_sha256_at_launch": "8d274a4f6ed70fb6ace9a4eb9b297eadbd0c837cde2f7bcd71eee5708178d38e",
+    "mode": "probe --until frontend --max-ticks 3036",
+    "backend": "headless",
+    "audio_driver": "dummy",
+    "fresh_store_seed_marker_sha256": "eabe0f0430060517e1df76cb8de65ba985fff3bc4119b422719c0d5d654616b3",
+    "instrumentation": "AC6_DEMO_WATCH_TITLE_SELECTOR=1",
+    "instrumentation_scope": "LR {0x823251B8, 0x82325250, 0x82325274}, ticks 3000..3035"
+  },
+  "static": {
+    "function": "0x82325160",
+    "effect": "while [object+0x14] is non-null: load index, advance pointer by four, call table[0x8264CEA8 + index*4](object)",
+    "table_evidence": {
+      "index_0x49": "0x8264CFCC -> 0x82324C80",
+      "index_0x4A": "0x8264CFD0 -> 0x82324C98",
+      "index_0x4D": "0x8264CFDC -> 0x82324CE0"
+    },
+    "separate_from_enqueue_table": "0x8264CE6C contains outer type-6 -> 0x82322A80; this probe observes 0x8264CEA8"
+  },
+  "variants": {
+    "neutral": {
+      "input": "none",
+      "return_code": 4,
+      "replay_sha256": "50244ba4f28b3e7580870dd9bab1fe14a43bc9a47ddc7bfe02a356584000ea05",
+      "report_sha256": "f20f51be4a66febd543ba43d8a83c0aa6183fee2661e6b7290f85b5dfdc3e564",
+      "stderr_sha256": "da2e501df5e108b75952dbe9147201672701ef71080463400bb6e085ec1521ba",
+      "selector_records": 472,
+      "per_tick_records": "13 at every tick except 17 at tick 3021"
+    },
+    "start": {
+      "input": [
+        "3000,16,0,0,0,0,0,0,1",
+        "3001,0,0,0,0,0,0,0,1"
+      ],
+      "return_code": 4,
+      "replay_sha256": "b4c81cf638be4cd583bba0e9a5e77e5c87f96d50c3e01126fd8580122cc9e597",
+      "report_sha256": "7661ae0a2f22ddb0a8e4b5f983ee711ae3ebf17cde31725a07be05da5f9b4171",
+      "stderr_sha256": "001250f34a826c000449f7d9acfca058b409d49849c0b631ef01d703c4a6239c",
+      "selector_records": 257,
+      "per_tick_records": {
+        "3000": 22,
+        "3001": 69,
+        "3018": 3,
+        "3030": 9,
+        "3033": 95,
+        "3034": 46,
+        "3035": 13
+      },
+      "no_records_ticks": "3002..3017, 3019..3029, 3031..3032"
+    }
+  },
+  "post_start_dispatch": {
+    "tick_3001_new_indices": ["0x0C", "0x13", "0x1A", "0x32", "0x44"],
+    "tick_3033_new_indices": ["0x49", "0x4A"],
+    "observed_targets_for_0x49_and_0x4A": ["0x82324C80", "0x82324C98", "0x820E6CD0", "0x820E6FA0"]
+  },
+  "shared_outcome": {
+    "kind": "max_ticks",
+    "completed_ticks": 3036,
+    "frontend": false,
+    "mission": false,
+    "terminal": false,
+    "presentation_notifications": 2899,
+    "ring_submissions": 2,
+    "ring_submitted_dwords": 25
+  },
+  "conclusion": "START changes and drains the reached script-dispatch list, which later receives further work; the interpreter is not quiescent. The observed table is distinct from the outer enqueue table containing sub_82322A80, so this excludes a generic script-VM stop but neither identifies the missing Xenos producer nor proves a frontend transition."
+}
