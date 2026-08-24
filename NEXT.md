@@ -1,4 +1,68 @@
-# Gate courant autoritaire — timing réel du pulse START (cycle 1823)
+# Gate courant autoritaire — piloter START au bon moment (cycle 1825)
+
+## Ce qui est établi, et ce qui est RÉFUTÉ
+
+`CONFIRMÉ` (hypothèse utilisateur) : START tombe sur le splash éditeur Bandai
+Namco Games. Image inspectée :
+`artifacts/goal-playable/title-start-timing-capture-20260824/png/frame-live-shape-inv.png`.
+
+`RÉFUTÉ`, et c'était l'hypothèse du cycle 1824 lui-même : « la timeline SWG est
+gelée ». Elle ne l'est pas. Mesure sur le binaire courant
+(`artifacts/goal-playable/swg-frame-advance-current-20260824/`) : l'owner racine
+`0x2E3CDD10` va de la frame 0 au tick 225 à la frame 85 au tick 480, soit
+exactement `(480-225)/3`. Les owners `0x2E3CE490` (1 frame) et `0x2E3CED10`
+(2 frames) sont **mono/bi-frame par conception** — leur immobilité n'est pas une
+panne, et c'est la confusion qui a produit le faux diagnostic.
+
+Longueurs mesurées (`(end-begin)/8`) : racine **2220 frames**, d'où fin du film
+à `225 + 3*2219 = tick 6882`. START au tick 3000 est donc la frame
+`(3000-225)/3 = 925` sur 2220, soit **42 % du film**.
+
+L'écran figé s'explique sans blocage guest : le film demande ensuite le handle
+`0x0E000059` (attendu au tick ~1125), et le renderer échoue fail-closed sur son
+profil de fetch BC3 1280×720 ; le dernier draw réussi reste affiché. C'est un
+manque d'affichage, pas un arrêt du jeu, et cela réconcilie la contradiction
+avec `brandlogo-list2-window-runtime-20260823` sans invoquer de régression.
+
+## Question
+
+START pressé **après** la fin du film (tick ≥ 6882) produit-il la transition ?
+
+Run en cours : `artifacts/goal-playable/start-after-brand-movie-20260824/`,
+START au tick 7200 tenu 10 ticks, borne 9000, backend headless (la question est
+causale ; le rendu est ~50× plus lent — le run vulkan à 3000 ticks a pris plus
+de trois heures).
+
+## `done_when`
+
+Soit une transition de mode est observée après l'appui, et la frontière gameplay
+devient « piloter l'entrée au bon moment » — auquel cas un run rendu produit
+ensuite la capture validée automatiquement et inspectée humainement. Soit rien
+ne bouge, et il faut alors chercher ce que le film produit à sa dernière frame
+et pourquoi le titre n'est pas armé.
+
+## Attention aux pièges déjà payés
+
+- Les boutons de `--input-at` sont en **décimal** (`std::from_chars` base 10) :
+  `0x0010` est rejeté, START vaut `16`.
+- Ne pas attendre sur un fichier `runtime.status` qui peut être résiduel d'un
+  essai précédent — attendre le processus, ou effacer l'état avant de relancer.
+- Le hook `AC6_DEMO_AUDIT_SCREENCAP_DIR` est fail-closed et fait trapper un run
+  quelconque au tick 182 ; pour une chronologie visuelle, passer par
+  `AC6_DEMO_DUMP_READBACK_PPM`.
+- Le watcher `AC6_DEMO_WATCH_BRANDLOGO_DRAW_SELECTOR` plafonne à 512 événements,
+  soit ~tick 480 avec trois owners actifs. Au-delà, il faut relever le cap ou
+  filtrer sur un seul owner.
+
+## Rappel de méthode
+
+Le renderer est « functional-enough » par décision utilisateur : ne pas le
+corriger, ne pas corriger la couleur, ne pas substituer de ressource, ne pas
+forcer de draw. Le fil couleur reste parké.
+
+---
+
+# Gate fermé — timing réel du pulse START (cycles 1823–1824)
 
 ## Redirect de priorité utilisateur — 2026-08-24
 

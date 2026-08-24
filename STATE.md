@@ -1,3 +1,72 @@
+# Cycle 1824 — START est pressé à 42 % du film de marque
+
+`CONFIRMÉ` (hypothèse utilisateur) : l'écran affiché quand START est envoyé est
+le splash éditeur **Bandai Namco Games**, pas un titre interactif. Image
+inspectée humainement :
+`artifacts/goal-playable/title-start-timing-capture-20260824/png/frame-live-shape-inv.png`.
+
+`RÉFUTÉ` — et c'est la première conclusion de ce cycle qui tombe : la timeline
+SWG **n'est pas gelée**. Sur le binaire courant, l'owner racine `0x2E3CDD10`
+passe de la frame 0 (tick 225) à la frame 85 (tick 480), soit exactement
+`(480-225)/3`. Les owners `0x2E3CE490` et `0x2E3CED10` ont des tables de 1 et 2
+frames : leur immobilité est **conforme**, pas une panne. Mesure :
+`artifacts/goal-playable/swg-frame-advance-current-20260824/`.
+
+Arithmétique qui recadre tout le problème :
+
+```
+racine 0x2E3CDD10 = 2220 frames        (end-begin)/8
+cadence            = 1 frame / 3 ticks (frame 0 au tick 225)
+fin du film        ≈ tick 6882
+START au tick 3000 = frame 925/2220    soit 42 % du film
+```
+
+L'écran figé n'est donc pas un jeu bloqué : le film demande ensuite le handle
+`0x0E000059` (attendu au tick ~1125) et le renderer échoue fail-closed sur son
+fetch BC3 1280×720 ; la dernière image réussie persiste. Cela réconcilie la
+contradiction avec `brandlogo-list2-window-runtime-20260823` sans régression.
+
+Oracle Xenia, même XEX démo, session humaine
+`ac6_demo_work/instrumentation-xenia/20260815-134231` : chargement à 15 s,
+silence disque de 20 à 58 s pendant que le film joue, START humain à 58,55 s,
+puis 514 lectures. La progression est pilotée par l'horloge du film, ni par le
+disque ni par un événement externe. Écran cible capturé :
+`ac6_demo_work/xenia-runtime-results-20260815-final/screenshots/xenia-title-check.png`.
+
+Décision utilisateur : le renderer est « functional-enough », on n'y touche pas.
+
+`frontend=false`, `mission=false`, `terminal=false`, `supported=false`.
+
+# Cycle 1824 (première rédaction, corrigée ci-dessus) — START sur un splash
+
+`CONFIRMÉ` (hypothèse utilisateur) : l'écran affiché quand START est envoyé est
+le splash éditeur **Bandai Namco Games** — sigle à trois lobes, « Games », `™` —
+et non un écran titre interactif. Image inspectée humainement :
+`artifacts/goal-playable/title-start-timing-capture-20260824/png/frame-live-shape-inv.png`
+(canal R étiré puis inversé, transformation de lecture seule ; aucun changement
+renderer).
+
+`PROUVÉ` : le readback est **byte-identique** à celui du cycle 1811 à la borne
+1160 ticks (`changed_pixels=0`). L'instrument est calibré : il détecte un pixel
+modifié d'un niveau. 429 draws pour 8 frames uniques ; seules les textures
+`0x57` (64×64) et `0x58` (512×512) sont tirées, jamais le wordmark `0x59`.
+
+`PROUVÉ` indépendamment (guest, sans instrument partagé) : le Title reste à
+l'état interne 1 du tick 2452 au tick 8000, soit 5548 ticks immobiles
+(`analysis/demo/ac6-demo-title-natural-current-8000-v1.json`).
+
+Conséquence : la question « quel producteur naturel arme `manager+0x18` depuis
+START » était mal cadrée. Il n'existe pas d'écran titre prêt à recevoir START.
+La chaîne cohérente est : timeline SWG figée sur frame 0 → le splash ne se
+termine jamais → aucun `EndMode` → listener `0x8217C890` jamais appelé →
+`manager+0x18` jamais armé. Le cycle 1789 avait nommé cette frontière avant que
+la campagne parte sur la couleur pour treize cycles.
+
+Décision utilisateur : le renderer est « functional-enough », on n'y touche
+pas ; focus sur la progression titre → menus → gameplay.
+
+`frontend=false`, `mission=false`, `terminal=false`, `supported=false`.
+
 # Cycle 1823 — consolidation, hygiène verte, pivot gameplay
 
 **Redirect de priorité utilisateur (2026-08-24)** : focus sur l'atteinte du

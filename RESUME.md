@@ -1,3 +1,41 @@
+# Reprise cycle 1824 — START tombe sur un splash figé
+
+L'hypothèse utilisateur est **confirmée** : au moment où START est envoyé,
+l'écran montre le splash éditeur Bandai Namco Games, pas un titre interactif.
+Readback byte-identique à celui du tick 1160 ; Title immobile à l'état interne 1
+du tick 2452 au tick 8000.
+
+**Ne pas chercher pourquoi la timeline SWG serait gelée : elle ne l'est pas.**
+C'est une conclusion de ce cycle qui a été mesurée puis réfutée dans le même
+cycle. L'owner racine `0x2E3CDD10` (2220 frames) avance d'une frame toutes les
+trois ticks depuis le tick 225 ; les owners à 1 et 2 frames sont immobiles par
+conception. Le film se termine vers le tick 6882, et START au tick 3000 tombe à
+42 % de sa durée.
+
+Reprendre par le résultat du run
+`artifacts/goal-playable/start-after-brand-movie-20260824/` : START au tick 7200
+(après la fin du film), borne 9000, backend headless. S'il produit une
+transition, refaire un run rendu pour la capture validée et inspectée. Sinon,
+chercher ce que la dernière frame du film produit et pourquoi le titre n'est pas
+armé.
+
+Ne pas toucher au renderer ni à la couleur (décision utilisateur :
+« functional-enough »). Ne pas rouvrir « qui arme `manager+0x18` » avant d'avoir
+le verdict de ce run.
+
+Pièges déjà payés : boutons `--input-at` en **décimal** (START = 16, `0x0010`
+est rejeté) ; ne pas attendre sur un `runtime.status` résiduel ;
+`AC6_DEMO_AUDIT_SCREENCAP_DIR` est fail-closed et trappe au tick 182 ; le
+watcher draw-selector plafonne à 512 événements (~tick 480).
+
+Outils de ce cycle : `tools/analyze_title_frame_timeline.py`
+(`timeline` / `describe` / `diff`, instrument calibré au pixel près) et
+`artifacts/goal-playable/title-start-timing-capture-20260824/run-timeline-sampled.sh`
+(échantillonneur : copier, valider 2 764 816 octets, hacher la copie, puis
+nommer — le runtime écrit non atomiquement).
+
+`frontend=false`, `mission=false`, `terminal=false`, `supported=false`.
+
 # Reprise cycle 1823 — pivot gameplay, captures obligatoires
 
 **Redirect utilisateur (2026-08-24)** : viser le début du gameplay ; produire
