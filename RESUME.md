@@ -1,3 +1,24 @@
+# Reprise cycle 1826 — le thread 1 ne va plus se coucher
+
+Le journal de publications était plafonné à 32 entrées et saturé des deux
+côtés : les conclusions « publications manquantes » et « streaming arrêté » sont
+**réfutées**. Porté à 1024, les deux chemins publient la même chose (52/2/970
+depuis les mêmes sites, 61 clés contre 60).
+
+Ne pas rouvrir « quel événement manque au chemin ring » — la question n'a pas
+d'objet.
+
+Reprendre par la seule chose qui survit hors plafond : le thread 1 cesse son
+handshake `NtSignalAndWaitForSingleObjectEx` (LR `0x821A69CC`) après le tick
+177, 5 appels contre 5611. Il n'est pas privé de réveil, il ne se couche plus.
+Chercher le prédicat invité qui fait sauter ce handshake, et ce que le régime
+d'interruption (`0x821B9768 -> 0x821C5190`, actif dès le tick 0) change dans
+l'état qu'il lit.
+
+Instrument : avant de conclure d'une absence dans un journal, vérifier sa
+capacité et s'il l'a atteinte. Trois affirmations commitées sont tombées faute
+de l'avoir fait.
+
 # Reprise cycle 1825 — ring et progression s'excluent sur `VdIsHSIOTrainingSucceeded`
 
 Mesuré à une variable près : HSIO=1 (HEAD) donne le ring mais bloque la machine

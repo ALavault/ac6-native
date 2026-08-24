@@ -1,3 +1,41 @@
+# Cycle 1826 — aucun événement ne manque : le thread 1 ne va plus se coucher
+
+`RÉFUTÉ`, et c'est une affirmation de ce dépôt qui tombe : le journal
+`event_publications` était un `std::array<…, 32U>` cessant d'enregistrer au 33ᵉ
+événement, et les deux côtés de l'A/B l'avaient saturé. Porté à 1024, le relevé
+complet montre les deux chemins publiant **la même chose** :
+
+```
+site invité      HSIO=1   HSIO=0        clés distinctes : 61 contre 60
+0x821A61F0          52       52
+0x821A688C           2        2
+0x821A6AC4         970      970
+```
+
+Les seize handles `0xE0000088…0xE00000C8` sont publiés une fois chacun des deux
+côtés. Seule `0xE0000050` est exclusive (27 contre 0) : clé d'attente du thread
+13, réveillé par le régime d'interruption — signature attendue.
+
+Tombent avec : « les dix-sept publications disparaissent » (cycle 1826), « le
+streaming s'arrête » (55 lectures contre 61, compteurs non plafonnés), et la
+lecture du cycle 1807 des seize handles comme publication en trop.
+
+Ce qui survit, mesuré hors plafond :
+
+```
+thread 1, NtSignalAndWaitForSingleObjectEx @0x821A69CC
+   HSIO=1      5 appels, dernier au tick 177
+   HSIO=0   5611 appels, dernier au tick 2999
+```
+
+Le thread 1 ne dort pas faute d'être réveillé : il ne va plus se coucher. La
+frontière est côté invité — quel prédicat fait sauter le handshake après le
+tick 177.
+
+Preuve : `artifacts/goal-playable/publication-ab-cap1024-20260824/RESULT.md`.
+
+`frontend=false`, `mission=false`, `terminal=false`, `supported=false`.
+
 # Cycle 1825 — le ring et la progression s'excluent sur un seul mot
 
 `PROUVÉ` à une variable près : `VdIsHSIOTrainingSucceeded` décide seul si la

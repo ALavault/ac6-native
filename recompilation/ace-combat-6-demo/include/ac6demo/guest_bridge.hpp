@@ -160,7 +160,10 @@ struct GuestSchedulerSnapshot final {
   std::uint64_t event_set_count{};
   std::uint32_t last_event_set_handle{};
   std::uint32_t last_event_set_thread{};
-  std::array<GuestEventPublicationSnapshot, 32U> event_publications{};
+  // 32 saturated within a few hundred ticks and silently truncated: both sides
+  // of the HSIO A/B hit the cap, and cycle 1826 read the resulting composition
+  // difference as "publications vanish". Sized for a 3000-tick window instead.
+  std::array<GuestEventPublicationSnapshot, 1024U> event_publications{};
   std::uint32_t event_publication_count{};
   std::uint32_t primary_wait_key{};
   std::uint8_t primary_wait_kind{};

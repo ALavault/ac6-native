@@ -1,3 +1,62 @@
+# Gate courant autoritaire — pourquoi le thread 1 ne revient plus attendre (cycle 1828)
+
+## RÉFUTÉ : aucun événement ne manque au chemin ring
+
+Le journal de publications était un `std::array<…, 32U>` qui cesse
+d'enregistrer au 33ᵉ événement. Les deux côtés de l'A/B du cycle 1826 l'avaient
+saturé : ce cycle mesurait donc la composition des 32 premières publications,
+pas le run. Porté à 1024, le relevé complet donne :
+
+```
+site invité      HSIO=1   HSIO=0        clés distinctes : 61 contre 60
+0x821A61F0          52       52
+0x821A688C           2        2
+0x821A6AC4         970      970
+```
+
+Les seize handles `0xE0000088…0xE00000C8`, donnés pour absents sous HSIO=1,
+sont publiés **une fois chacun des deux côtés**. Seule `0xE0000050` est
+réellement exclusive (27 contre 0) : c'est la clé d'attente du thread 13, que le
+régime d'interruption réveille — signature attendue, pas anomalie.
+
+Ne pas rouvrir « quel événement manque » : la question n'a pas d'objet.
+Ne pas rouvrir « le streaming s'arrête » : 55 lectures contre 61.
+
+Preuve : `artifacts/goal-playable/publication-ab-cap1024-20260824/RESULT.md`.
+
+## Question
+
+Le seul contraste qui survit vient de compteurs non plafonnés :
+
+```
+thread 1, NtSignalAndWaitForSingleObjectEx @0x821A69CC
+   HSIO=1      5 appels, dernier au tick 177
+   HSIO=0   5611 appels, dernier au tick 2999
+```
+
+Le thread 1 ne dort pas faute d'être réveillé : **il ne va plus se coucher**.
+Pourquoi cesse-t-il d'appeler son handshake après le tick 177 ?
+
+C'est une question côté invité. Point de départ : le corps qui contient le
+callsite dont le retour est `0x821A69CC`, et le prédicat qui y mène ; puis ce
+que le régime d'interruption (`0x821B9768 -> 0x821C5190`, actif dès le tick 0)
+change dans l'état que ce prédicat lit.
+
+## `done_when`
+
+Le prédicat qui fait sauter le handshake est nommé, avec l'état qu'il lit et
+qui diffère entre les deux chemins — ou une preuve négative bornée nomme la
+frontière suivante.
+
+## Leçon d'instrument à retenir
+
+Trois affirmations commitées sont tombées faute d'avoir mesuré l'instrument
+avant de le croire : deux au cycle 1826 (publications, streaming) et une au
+cycle 1807. Toutes trois venaient d'une liste tronquée. Avant de conclure d'une
+absence dans un journal, vérifier sa capacité et s'il l'a atteinte.
+
+---
+
 # Gate courant autoritaire — le régime d'interruption graphique (cycle 1827)
 
 ## Fermé : la divergence est au tick 0, pas au tick 177

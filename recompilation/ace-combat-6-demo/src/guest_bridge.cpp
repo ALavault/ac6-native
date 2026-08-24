@@ -194,7 +194,7 @@ thread_local std::unordered_map<std::uint32_t, GuestIndirectCall>
 thread_local bool chunk_target_store_trace_active = false;
 thread_local std::unordered_map<std::uint32_t, std::uint32_t> spinlock_owners;
 thread_local std::unordered_map<std::uint32_t, std::uint8_t> guest_irql;
-thread_local std::array<ac6demo::GuestEventPublicationSnapshot, 32U>
+thread_local std::array<ac6demo::GuestEventPublicationSnapshot, 1024U>
     event_publications{};
 thread_local std::uint32_t event_publication_count = 0U;
 thread_local std::uint32_t graphics_interrupt_callback = 0U;
