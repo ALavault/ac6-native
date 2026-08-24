@@ -1631,9 +1631,11 @@ extern "C" std::uint32_t AC6_PPC_LOAD_U32(PPCContext &context,
       address, 4U, value, require_bridge().tick(), current_guest_thread_id,
       static_cast<std::uint32_t>(context.lr), current_load_generated_name,
       current_load_generated_line);
-  if (std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS") != nullptr && (events.contains(value) || mutants.contains(value) || semaphores.contains(value) || kernel_semaphores.contains(value) || timers.contains(value) || require_bridge().is_guest_thread_handle(value))) {
+  static const bool watch_handle_consumers = std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_CONSUMERS") != nullptr;
+  static const bool watch_handle_payload = std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_PAYLOAD") != nullptr;
+  if (watch_handle_consumers && (events.contains(value) || mutants.contains(value) || semaphores.contains(value) || kernel_semaphores.contains(value) || timers.contains(value) || require_bridge().is_guest_thread_handle(value))) {
     ac6demo::guest_bridge_detail::trace_event_handle_consumer(address, value, require_bridge().tick(), current_guest_thread_id, static_cast<std::uint32_t>(context.lr), current_load_generated_name, current_load_generated_line);
-    if (std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_PAYLOAD") != nullptr) {
+    if (watch_handle_payload) {
       const auto snapshot_base = address & ~std::uint32_t{0x1FU};
       std::uint32_t words[8]{};
       std::uint32_t word_mask = 0U;
@@ -1775,7 +1777,8 @@ extern "C" void AC6_PPC_STORE_U32(PPCContext &context, std::uint8_t *base,
                          generated_line);
   trace_render_queue_slot_store(context, address, 4U, value, generated_name, generated_line);
   trace_render_queue_writer(context, address, value, generated_name, generated_line);
-  if (std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_WRITERS") != nullptr &&
+  static const bool watch_handle_writers = std::getenv("AC6_DEMO_WATCH_EVENT_HANDLE_WRITERS") != nullptr;
+  if (watch_handle_writers &&
       (events.contains(value) || mutants.contains(value) ||
        semaphores.contains(value) || kernel_semaphores.contains(value) ||
        timers.contains(value) || require_bridge().is_guest_thread_handle(value))) {
@@ -1986,8 +1989,9 @@ static void trace_brandlogo_owner_store(const PPCContext &context,
                                         std::uint32_t value,
                                         const char *generated_name,
                                         std::uint32_t generated_line) noexcept {
-  if (std::getenv("AC6_DEMO_WATCH_BRANDLOGO_OWNER_STORES") == nullptr ||
-      active_bridge == nullptr || generated_name == nullptr) {
+  static const bool on =
+      std::getenv("AC6_DEMO_WATCH_BRANDLOGO_OWNER_STORES") != nullptr;
+  if (!on || active_bridge == nullptr || generated_name == nullptr) {
     return;
   }
   const auto tick = active_bridge->tick();
@@ -2024,13 +2028,16 @@ static void trace_as_context_counter(const PPCContext &context,
                context.r3.u32, context.r31.u32);
 }
 
+// Per load and per store: getenv must stay cached here. Uncached, perf put 45%
+// of a live probe's CPU in getenv while every trace using it was disabled.
 static void trace_as_context_counter_access(const PPCContext &context,
                                             std::uint32_t address,
                                             std::uint32_t value,
                                             const char *kind) {
+  static const bool on =
+      std::getenv("AC6_DEMO_WATCH_AS_CONTEXT_COUNTER") != nullptr;
   const auto tick = require_bridge().tick();
-  if (std::getenv("AC6_DEMO_WATCH_AS_CONTEXT_COUNTER") == nullptr ||
-      context.lr != 0x820D3AF0U || tick < 3000U || tick > 3030U) {
+  if (!on || context.lr != 0x820D3AF0U || tick < 3000U || tick > 3030U) {
     return;
   }
   std::fprintf(stderr,

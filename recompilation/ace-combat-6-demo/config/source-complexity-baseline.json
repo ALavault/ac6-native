@@ -22,7 +22,7 @@
     },
     "src/guest_bridge.cpp": {
       "kind": "source",
-      "lines": 2630,
+      "lines": 2637,
       "functions": [
         {
           "name": "extern void AC6_PPC_CALL_INDIRECT(PPCContext &context, std::uint8_t *base, std::uint32_t guest_address)",

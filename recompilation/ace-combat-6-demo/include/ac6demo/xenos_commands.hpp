@@ -81,6 +81,17 @@ qualified_title_texture_profile(
              0x00000003U, 0x00000200U},
             0U, 0xF0000U, 1280U, 720U,
             QualifiedTitleTextureEncoding::Bc3},
+      // The eighth brandLogo sibling. The movie reaches it at root frame
+      // 1562 of 2220 and the run trapped here at tick 4911 with
+      // f0=0x83004802 f2=0x0013E13F; the Xenos size word decodes as
+      // width-1 = 0x13F (320) and height-1 = 0x9F (160). The payload size is
+      // read, not derived from the format: 008_NTXR is 102400 bytes on disk,
+      // and file size minus the 4096-byte header reproduces the payload of
+      // all seven already-qualified siblings exactly.
+      Shape{{0x83004802U, 0x00000054U, 0x0013E13FU, 0x01280D10U,
+             0x00000003U, 0x00000200U},
+            0U, 0x18000U, 320U, 160U,
+            QualifiedTitleTextureEncoding::Bc3},
       Shape{{0x8A000002U, 0x00000006U, 0x0059E4FFU, 0x00001414U,
              0x00000000U, 0x00000200U},
             0x1374A000U, 0x398000U, 1280U, 720U,

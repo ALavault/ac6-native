@@ -219,7 +219,10 @@ inline void trace_input_semantic_access(
       end > kNormalized;
   const bool logical = static_cast<std::uint64_t>(address) < kLogicalEnd &&
                        end > kLogicalBegin;
-  const bool tick_windowed =
+  // static: this runs on every guest load and store, and an uncached getenv
+  // here measured 39% of a live probe's whole CPU -- it walks the environment
+  // doing string compares, every access, whether or not the trace is on.
+  static const bool tick_windowed =
       std::getenv("AC6_DEMO_WATCH_TICK_WINDOW") != nullptr;
   if (!enabled || size == 0U || size > 8U || (!normalized && !logical) ||
       (tick_windowed && !transition_trace_tick_allowed(tick)) ||
