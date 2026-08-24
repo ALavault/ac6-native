@@ -1,3 +1,55 @@
+# Gate courant autoritaire — le régime d'interruption graphique (cycle 1827)
+
+## Fermé : la divergence est au tick 0, pas au tick 177
+
+Sur 1782 arêtes contre 1930, **dix seulement existent exclusivement sous
+HSIO=1**, toutes sur les threads 2 et 13, actives dès le tick 0 :
+
+```
+t2   0x821B9768 -> 0x821C5190   x1021   ticks 0..2998
+t2   0x821B9768 -> 0x822E4240   x936
+t2   0x821B9768 -> 0x822E4268   x935
+t2   KfAcquireSpinLock / KfReleaseSpinLock / KeQueryPerformanceFrequency  x1021
+t2   KeAcquireSpinLockAtRaisedIrql / KeReleaseSpinLockFromRaisedIrql      x2892
+t13  RtlEnterCriticalSection / RtlLeaveCriticalSection @0x822E4324/48     x935
+```
+
+Deux arêtes seulement sont exclusives à HSIO=0, et ce sont des `DbgPrint` au
+tick 0.
+
+`0x821C5190` est l'interface de callback de `VdGlobalDevice+0x4084` qu'un gate
+antérieur avait laissée « sans cible qualifiée ». Elle en a une : elle dispatche
+vers `0x822E4240`/`0x822E4268` et réveille le thread 13.
+
+Rien ne détourne le thread 1 au tick 177 : il cesse son handshake parce que
+l'invité attend désormais l'interruption pour piloter la complétion. C'est une
+conséquence du régime, pas sa cause. Le thread 1 n'est pas bloqué — il tourne
+encore au tick 2997 avec 1 858 344 `RtlEnterCriticalSection`.
+
+Preuve : `artifacts/goal-playable/ring-interrupt-regime-20260824/RESULT.md`.
+
+## Question
+
+L'interruption arrive 2892 fois et réveille le thread 13, et pourtant le thread
+9 cesse ses `NtReadFile` au tick 205. Que fait `0x821C5190` côté hôte, et que
+devrait-il publier pour que le streaming reprenne ?
+
+## `done_when`
+
+Le maillon entre l'interruption graphique et la reprise des lectures est nommé,
+ou une preuve négative bornée nomme la frontière suivante.
+
+## Tension à ne pas masquer
+
+Les arêtes `0x82323A4C -> 0x82323468` et `0x82326660 -> 0x82325DF8` tombent de
+1002 à 1 sous HSIO=1, ce qui suggère une timeline SWG arrêtée — mais une mesure
+directe de ce cycle
+(`artifacts/goal-playable/swg-frame-advance-current-20260824/`, binaire HSIO=1)
+montre l'owner racine avançant normalement jusqu'à la frame 85. Les deux ne sont
+pas réconciliées. Ne pas conclure sur la seule foi des arêtes.
+
+---
+
 # Gate courant autoritaire — ce qui détourne le thread 1 au tick 177 (cycle 1826)
 
 ## Fermé : l'événement est identifié
