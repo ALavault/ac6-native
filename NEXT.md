@@ -1,3 +1,61 @@
+# Gate courant autoritaire — la cible de fence de `sub_822E4018` (cycle 1829)
+
+## Fermé : le handshake sauté est une attente de fence sur un horodatage
+
+`0x821A69CC` est le retour de `NtSignalAndWaitForSingleObjectEx` dans
+`sub_821A6988`. Son seul appelant pertinent est `sub_822E4018`, une **attente de
+fence** :
+
+```
+loop:  r11 = LOAD_U64(objet+16) ; si r11 >= cible(r5) -> sortie
+       sinon signal+attente, puis reboucle
+```
+
+`sub_822E4240` écrit ce champ, et il y écrit le **timebase** :
+`r11 = PPC_READ_TIMEBASE ; stdcx. [r3+16] = r11`. Cette fonction est l'une des
+cibles du régime d'interruption graphique, appelée 936 fois sous HSIO=1 et
+**jamais** sous HSIO=0.
+
+D'où le comportement, désormais expliqué : sous HSIO=1 l'interruption
+estampille la fence à chaque tick, la condition est vraie d'emblée, le thread 1
+ne se couche plus (5 appels contre 5611, 2998 épuisements de tranche). Sous
+HSIO=0 personne n'estampille, le thread attend, et **c'est cette attente qui
+laisse le temps avancer**.
+
+Surface de défaut nommée :
+
+```c
+AC6_PPC_READ_TIMEBASE = (bridge.tick() * 50'000'000) / 60
+```
+
+constant à l'intérieur d'un tick — un estampillage par tick suffit donc à
+satisfaire toute échéance antérieure.
+
+Preuve : `artifacts/goal-playable/fence-timebase-stamp-20260824/RESULT.md`.
+
+## Question
+
+Quelle est la cible `r5` passée à `sub_822E4018` ?
+
+Sans elle, impossible de dire si la comparaison devrait échouer. Relever sur un
+run HSIO=1 borné la paire (`objet+16`, `cible`) à l'entrée de la fonction —
+deux valeurs 64 bits.
+
+## `done_when`
+
+L'écart entre fence et cible est mesuré. S'il est d'un cheveu, le défaut est la
+cadence d'estampillage ; s'il est de plusieurs ordres de grandeur, c'est
+l'échelle du timebase. Ne pas corriger avant d'avoir tranché.
+
+## Ne pas transformer en correctif prématuré
+
+Ne pas supposer le timebase faux : `50e6/60` par tick modélise un timebase Xenon
+à 50 MHz cadencé à 60 Hz. Ne pas supposer que l'interruption ne doit pas
+estampiller : sur matériel réel elle le fait probablement, et c'est peut-être sa
+cadence qui est fausse, pas son existence.
+
+---
+
 # Gate courant autoritaire — pourquoi le thread 1 ne revient plus attendre (cycle 1828)
 
 ## RÉFUTÉ : aucun événement ne manque au chemin ring
