@@ -1,6 +1,42 @@
-# Gate courant autoritaire — ce que l'invité attend sur le chemin ring (cycle 1826)
+# Gate courant autoritaire — ce qui détourne le thread 1 au tick 177 (cycle 1826)
 
-## Ce qui est établi
+## Fermé : l'événement est identifié
+
+Le thread invité 1 exécute un handshake `NtSignalAndWaitForSingleObjectEx` au
+LR **`0x821A69CC`** (signal `0xE0000048`, attente `0xE000004C`). Sous HSIO=0 il
+l'exécute **5611 fois** jusqu'au tick 2999 ; sous HSIO=1 **5 fois**, la
+dernière au tick **177**, puis plus jamais.
+
+`0xE000004C` est publié dans les deux runs : l'événement ne manque pas côté
+hôte, le thread cesse de venir l'attendre. Il part en boucle indirecte
+`0x822E559C -> 0x822F8848` (1 039 227 appels) et ne se bloque plus.
+
+Cascade mesurée : plus de blocage → 2998 épuisements de tranche sur 3000 → le
+thread 9 cesse ses `NtReadFile` au tick 205 (contre le tick 2369 sous HSIO=0)
+→ les dix-sept publications depuis le LR `0x821A61F0` disparaissent → le
+contenu du titre ne charge pas → StartUp ne franchit jamais son état 2.
+
+Corrige le cycle 1807, qui lisait les seize handles `0xE0000088…0xE00000C8`
+comme une publication **en trop** du binaire courant : ce sont au contraire les
+publications du chemin qui fonctionne.
+
+Preuve : `artifacts/goal-playable/ring-path-missing-wait-20260824/RESULT.md`.
+
+## Question
+
+Qu'est-ce qui, autour du tick 177, détourne le thread 1 de sa boucle de
+handshake ? Son dernier appel y signale `0xE0000054` et attend `0xE0000058`.
+
+Fenêtre très bornée : quelques ticks autour de 177, un seul thread, LR de
+sortie connu, boucle d'accueil `0x822E559C -> 0x822F8848`.
+
+## `done_when`
+
+Le site invité qui fait quitter la boucle est nommé, avec le prédicat qui
+dépend de la valeur HSIO — ou une preuve négative bornée nomme la frontière
+suivante.
+
+## Contexte établi au cycle 1825
 
 Un seul mot arbitre ring contre progression, et il est mesuré à une variable
 près (`artifacts/goal-playable/hsio-mode-transition-tradeoff-20260824/`) :
