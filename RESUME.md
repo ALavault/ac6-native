@@ -1,3 +1,26 @@
+# Reprise cycle 1825 — ring et progression s'excluent sur `VdIsHSIOTrainingSucceeded`
+
+Mesuré à une variable près : HSIO=1 (HEAD) donne le ring mais bloque la machine
+à états de mode ; HSIO=0 publie le Title au tick 2369 mais vide le ring. Sur le
+chemin ring, l'invité attend des événements que le port ne rend pas — 2998
+épuisements de tranche sur 3000 contre 215.
+
+`kVdHsioTrainingSucceededResult` **reste à 1**. Ne pas le passer à 0.
+
+Reprendre par : quel événement l'invité attend-il sur le chemin ring ? Première
+passe sans instrumentation nouvelle — les rapports de probe portent déjà
+`wait_key`, `wait_lr`, `wait_kind`, `wake_tick` par thread et la liste
+`event_publications`. Comparer HSIO=0 et HSIO=1 sur le premier thread bloqué
+sans réveil, puis remonter son `wait_lr`.
+
+Ne pas rouvrir : régression de binaire 22→24 août, différence de store, de code
+invité, ou « qui arme `manager+0x18` depuis START » — les quatre sont réfutés
+par mesure au cycle 1825.
+
+Rappel de méthode qui a payé ici : tester la **prémisse** avant de bisecter. Un
+seul build du bridge au 20 août a confirmé que la transition revenait, ce qui a
+justifié la recherche ; le suspect a ensuite été isolé à une variable près.
+
 # Reprise cycle 1824 — START tombe sur un splash figé
 
 L'hypothèse utilisateur est **confirmée** : au moment où START est envoyé,

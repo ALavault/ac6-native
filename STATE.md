@@ -1,3 +1,38 @@
+# Cycle 1825 — le ring et la progression s'excluent sur un seul mot
+
+`PROUVÉ` à une variable près : `VdIsHSIOTrainingSucceeded` décide seul si la
+démo affiche quelque chose ou si elle progresse.
+
+```
+HSIO=1 (HEAD)  ring 502 soumissions   mode bloqué à StartUp, Title jamais publié
+HSIO=0         ring 0 soumission      Title publié au tick 2369, état 1 au 2385
+```
+
+Le Title publié porte la vtable `0x820113E4`, le vrai
+`CModeTaskTitleDemoOffline`; les ticks 2369/2385 reproduisent exactement
+l'observation du cycle 1793, qui avait donc été faite sous HSIO=0.
+
+Signature ordonnanceur : HSIO=0 → 23 threads bloqués, 0 runnable, **215**
+épuisements de tranche sur 3000. HSIO=1 → 22 bloqués, 1 runnable, **2998**.
+Sur le chemin ring, l'invité attend des événements que le port ne rend pas.
+
+`RÉFUTÉ` par mesure : régression de binaire entre le 22 et le 24 août (le
+témoin conservé et le binaire courant donnent des résultats rigoureusement
+identiques) ; différence de store (byte-identique au store neutre) ; différence
+de code invité (même manifeste codegen). Et rétrospectivement l'objet de
+plusieurs cycles : « quel producteur naturel arme `manager+0x18` depuis
+START » n'avait pas de réponse parce que la question n'avait pas d'objet —
+sous HSIO=0, StartUp→Title se produit seule, sans START.
+
+Décision : `kVdHsioTrainingSucceededResult` **reste à 1**. Passer à 0
+échangerait un blocage contre un autre et masquerait le défaut. Le correctif
+est de servir, sur le chemin ring, ce que l'invité attend.
+
+Preuves : `reports/cycle-1825-demo-hsio-arbitrates-ring-against-progression.md`,
+`artifacts/goal-playable/hsio-mode-transition-tradeoff-20260824/RESULT.md`.
+
+`frontend=false`, `mission=false`, `terminal=false`, `supported=false`.
+
 # Cycle 1824 — START est pressé à 42 % du film de marque
 
 `CONFIRMÉ` (hypothèse utilisateur) : l'écran affiché quand START est envoyé est

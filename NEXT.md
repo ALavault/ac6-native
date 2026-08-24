@@ -1,4 +1,50 @@
-# Gate courant autoritaire — piloter START au bon moment (cycle 1825)
+# Gate courant autoritaire — ce que l'invité attend sur le chemin ring (cycle 1826)
+
+## Ce qui est établi
+
+Un seul mot arbitre ring contre progression, et il est mesuré à une variable
+près (`artifacts/goal-playable/hsio-mode-transition-tradeoff-20260824/`) :
+
+```
+HSIO=1 (HEAD)  ring 502 soumissions   mode bloqué à StartUp, Title jamais publié
+HSIO=0         ring 0 soumission      Title publié au tick 2369, état 1 au 2385
+```
+
+Signature ordonnanceur : HSIO=0 donne 23 threads bloqués, 0 runnable, 215
+épuisements de tranche sur 3000 ; HSIO=1 donne 22 bloqués, 1 runnable, **2998**
+épuisements. Sur le chemin ring, l'invité attend des événements que le port ne
+rend pas.
+
+`kVdHsioTrainingSucceededResult` reste à **1**. Ne pas le passer à 0 : cela
+échangerait un blocage contre un autre et masquerait le défaut.
+
+## Question
+
+Quel événement l'invité attend-il sur le chemin ring, et pourquoi n'est-il
+jamais publié ?
+
+Première passe sans nouvelle instrumentation : les rapports de probe portent
+déjà, par thread, `wait_key`, `wait_lr`, `wait_kind`, `wake_tick`, plus la
+liste `event_publications`. Comparer les deux côtés sur le **premier thread qui
+se bloque sans réveil** et remonter son `wait_lr`.
+
+## `done_when`
+
+Le premier `wait_key` bloqué sans publication correspondante est nommé, avec le
+site invité qui l'attend et le producteur natif qui devrait le publier — ou une
+preuve négative bornée nomme la frontière suivante.
+
+## Ne pas re-parcourir
+
+Réfutés par mesure dans le cycle 1825 : régression de binaire entre le 22 et le
+24 août (témoin et courant rigoureusement identiques) ; différence de store
+(byte-identique au store neutre) ; différence de code invité (même manifeste
+codegen) ; et l'objet même de « quel producteur arme `manager+0x18` depuis
+START » — sous HSIO=0 la chaîne StartUp→Title se produit seule, sans START.
+
+---
+
+# Gate précédent — piloter START au bon moment (cycle 1825)
 
 ## Ce qui est établi, et ce qui est RÉFUTÉ
 
