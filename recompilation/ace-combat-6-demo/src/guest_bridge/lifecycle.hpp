@@ -9,6 +9,49 @@ constexpr std::uint32_t kTebSize = 0x2E0U;
 constexpr std::uint32_t kDefaultStackSize = 0x40000U;
 constexpr std::uint32_t kGuestThreadId = 1U;
 
+// The graphics interrupt callback is really run inside a DPC scheduled by the
+// interrupt, so the guest KPCR has to say so while it runs: the handler takes
+// KeAcquireSpinLockAtRaisedIrql, whose whole contract is that IRQL is already
+// at dispatch level. Offsets are the X_KPCR/X_KPRCB layout Xenia models, which
+// this KPCR already matches at prcb_data.current_cpu (KPCR+0x100 + 0x0C = 268,
+// the byte the dispatcher has always written).
+struct GuestDpcScope final {
+  std::uint8_t previous_irql{};
+  std::uint32_t previous_dpc_active{};
+};
+
+constexpr std::uint32_t kKpcrCurrentIrql = 0x18U;
+constexpr std::uint32_t kKpcrDpcActive = 0x150U;
+
+GuestDpcScope begin_guest_dpc(GuestMemory &memory, std::uint32_t pcr,
+                              std::uint64_t tick) {
+  if (!memory.mapped(pcr + kKpcrCurrentIrql, 1U) ||
+      !memory.mapped(pcr + kKpcrDpcActive, 4U)) {
+    throw RuntimeTrap("graphics interrupt KPCR DPC fields are unavailable",
+                      tick, 0, pcr);
+  }
+  GuestDpcScope scope{memory.load_u8(pcr + kKpcrCurrentIrql),
+                      memory.load_u32(pcr + kKpcrDpcActive)};
+  // Fail closed rather than trust the offsets. A KPCR that really carries
+  // these fields cannot already be at dispatch level, nor inside a DPC, at the
+  // moment an interrupt is delivered; implausible values mean the layout is
+  // not what it is assumed to be, and writing them would corrupt guest state
+  // silently instead of saying so.
+  if (scope.previous_irql > 2U || scope.previous_dpc_active != 0U) {
+    throw RuntimeTrap("graphics interrupt KPCR DPC fields are implausible",
+                      tick, scope.previous_irql, pcr + kKpcrDpcActive);
+  }
+  memory.store_u8(pcr + kKpcrCurrentIrql, 2U);
+  memory.store_u32(pcr + kKpcrDpcActive, 1U);
+  return scope;
+}
+
+void end_guest_dpc(GuestMemory &memory, std::uint32_t pcr,
+                   const GuestDpcScope &scope) {
+  memory.store_u32(pcr + kKpcrDpcActive, scope.previous_dpc_active);
+  memory.store_u8(pcr + kKpcrCurrentIrql, scope.previous_irql);
+}
+
 ac6demo::XAudioCallbackCpuSelection select_xaudio_callback_cpu_for_client(
     GuestMemory &memory, std::uint32_t client, std::uint64_t tick) {
   const char *requested_processor =
@@ -285,10 +328,16 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
                         tick_, 0, interrupt.r13.u32);
     }
     const auto active_cpu_address = interrupt.r13.u32 + 268U;
+    const auto dpc = begin_guest_dpc(memory_, interrupt.r13.u32, tick_);
     const auto previous_active_cpu = memory_.load_u8(active_cpu_address);
     memory_.store_u8(active_cpu_address, 2U);
     const auto previous_thread_id = current_guest_thread_id;
     current_guest_thread_id = 2U;
+    const auto leave_dpc = [&] {
+      end_guest_dpc(memory_, interrupt.r13.u32, dpc);
+      memory_.store_u8(active_cpu_address, previous_active_cpu);
+      current_guest_thread_id = previous_thread_id;
+    };
     ac6demo::guest_bridge_detail::trace_graphics_interrupt_call(
         graphics_interrupt_callback, graphics_interrupt_context, source, tick_,
         current_guest_thread_id);
@@ -296,12 +345,10 @@ void GuestBridge::run_entry(std::uint32_t entry_point) {
       AC6_PPC_CALL_INDIRECT(interrupt, memory_.raw_base(),
                             graphics_interrupt_callback);
     } catch (...) {
-      memory_.store_u8(active_cpu_address, previous_active_cpu);
-      current_guest_thread_id = previous_thread_id;
+      leave_dpc();
       throw;
     }
-    memory_.store_u8(active_cpu_address, previous_active_cpu);
-    current_guest_thread_id = previous_thread_id;
+    leave_dpc();
   };
   const auto dispatch_xaudio_frame =
       [&](const ac6demo::XAudioCallbackCpuSelection &selection) {
