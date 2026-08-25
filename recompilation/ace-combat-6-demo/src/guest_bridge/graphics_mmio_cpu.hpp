@@ -4,8 +4,34 @@ extern "C" void AC6_PPC_EIEIO(PPCContext &) noexcept {}
 extern "C" void AC6_PPC_SYNC(PPCContext &) noexcept {}
 extern "C" void AC6_PPC_LWSYNC(PPCContext &) noexcept {}
 
-extern "C" std::uint64_t AC6_PPC_READ_TIMEBASE(PPCContext &) noexcept {
-  return (require_bridge().tick() * 50'000'000ULL) / 60ULL;
+extern "C" std::uint64_t AC6_PPC_READ_TIMEBASE(PPCContext &context) noexcept {
+  const auto value = (require_bridge().tick() * 50'000'000ULL) / 60ULL;
+  // Observation only, opt-in. mftb is inline, so lr here is whatever the
+  // enclosing guest function was entered with -- it cannot be keyed on the
+  // stamper's own address, which is what a first attempt got wrong and why it
+  // logged nothing. Record the first reads with lr and r3 instead and let the
+  // stamping site identify itself. sub_822E4240 stamps [r3+16] and
+  // sub_822E4018 waits for that field to reach [r3-48], so both are read here;
+  // for any other timebase reader the pair is noise, flagged by `plausible`.
+  static const bool watch = std::getenv("AC6_DEMO_WATCH_FENCE_STAMP") != nullptr;
+  static std::uint32_t seen = 0U;
+  if (watch && seen++ < 400U) {
+    auto &memory = memory_for(context);
+    const auto object = context.r3.u32;
+    const bool plausible = object >= 48U && memory.mapped(object + 16U, 8U) &&
+                           memory.mapped(object - 48U, 8U);
+    std::fprintf(stderr,
+                 "AC6_TIMEBASE_READ tick=%llu lr=0x%08X r3=0x%08X fence=%llu "
+                 "target=%llu timebase=%llu plausible=%u\n",
+                 static_cast<unsigned long long>(require_bridge().tick()),
+                 static_cast<std::uint32_t>(context.lr), object,
+                 static_cast<unsigned long long>(
+                     plausible ? memory.load_u64(object + 16U) : 0U),
+                 static_cast<unsigned long long>(
+                     plausible ? memory.load_u64(object - 48U) : 0U),
+                 static_cast<unsigned long long>(value), plausible ? 1U : 0U);
+  }
+  return value;
 }
 
 extern "C" std::uint32_t AC6_PPC_LWARX(PPCContext &context,

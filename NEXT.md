@@ -1,3 +1,55 @@
+# Gate courant autoritaire — base réelle de la structure d'attente (cycle 1830)
+
+## Écarté : l'échelle du timebase
+
+Xenia Edge, lu dans l'arbre du workspace, fixe
+`Clock::set_guest_tick_frequency(50000000)` (`src/xenia/emulator.cc:296`) —
+exactement la constante du port. `AC6_PPC_READ_TIMEBASE` n'a donc pas un
+facteur faux. Ce qui diffère est la **granularité** : `InstrEmit_mftb` émet
+`f.LoadClock()`, continue, quand le port renvoie une fonction en escalier de
+pas 833 333, constante dans un tick. Différence réelle, pas encore reliée au
+blocage.
+
+## Mesuré
+
+Le stamper est stable sur l'objet `0x82935270` et `+16` reçoit bien le
+timebase :
+
+```
+tick=1  fence=0        tb=833333        tick=4  fence=0        tb=3333333
+tick=2  fence=833333   tb=1666666       tick=5  fence=3333333  tb=4166666
+```
+
+## Question
+
+**La valeur lue comme cible est absurde** : `1154359047343833104`, soit plus de
+sept cents ans à 50 MHz. Mon adressage (`cible = objet-48`, déduit de
+`sub_822E40E8` où la cible est `LOAD_U64(r31+16)` et la fence `r31+64`) n'est
+donc pas vérifié. Deux lectures restent ouvertes : l'interruption estampille un
+autre objet que celui attendu, ou `r31` n'est pas la base supposée.
+
+Établir la base réelle en instrumentant **l'entrée de `sub_822E40E8`**, plutôt
+qu'en la déduisant d'un déplacement.
+
+## `done_when`
+
+La paire (fence, cible) est lue à des adresses vérifiées, et l'écart est
+mesuré. Ne rien corriger avant.
+
+## Anomalie à expliquer en passant
+
+Au tick 4, `+16` est relu à 0 alors que le tick 1 y avait écrit 833 333.
+L'alternance `0x822E4240` (+16) / `0x822E4268` (+24) ne l'explique pas.
+
+## Piège d'instrument déjà payé
+
+`mftb` est inline : `lr` n'y vaut pas l'adresse du stamper mais celle de la
+fonction englobante. Un premier hook keyé dessus n'a rien journalisé. Le
+plafond de 400 lectures s'épuise au tick 66 sur les sites bruyants
+(`0x821C50AC` x234) ; filtrer sur `lr=0x821B9768` avant de compter.
+
+---
+
 # Gate courant autoritaire — la cible de fence de `sub_822E4018` (cycle 1829)
 
 ## Fermé : le handshake sauté est une attente de fence sur un horodatage
