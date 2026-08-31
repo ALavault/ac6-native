@@ -1,3 +1,30 @@
+# AC6 retail NTSC-U/J — r86 : le pipeline PM4/Vd fonctionne; l'attente bloquée est un sous-allocateur adjacent (2026-08-31)
+
+- PROUVÉ (trace `AC6_NATIVE_VD_TRACE=1`, diagnostic déjà existant dans
+  `native_guest_vd.cpp`) : le pipeline PM4/Vd natif fonctionne — objet
+  `0x10001a00` découvert, `PM4_ME_INIT` (19 dwords) puis le lot IB (12
+  dwords) tous deux ACCEPTÉS. Rien n'est bloqué côté anneau graphique; ceci
+  correspond exactement à ce qui était déjà établi (r56-r75, rapport r11).
+- PROUVÉ : le readback réel écrit par `drain_locked()` est
+  `object+0x2a90` (=`0x164e0000`) **+ 0x3c** = `0x164e003c`. Mais
+  `sub_821E61A8` déréférence l'offset **+0x0** de ce même bloc — un champ
+  différent. Séparément, `object+0x2a9c` (la "limite" comparée) est stable
+  à **7**, sans rapport avec les indices d'écriture réels de l'anneau (19
+  puis 31).
+- REFORMULATION : l'attente générique `sub_821E61A8`/`sub_821E64A8`/
+  `sub_821E65B0` (dont les faits de flot de contrôle de r77-r83 restent
+  valables) est un **sous-allocateur séparé, adjacent** — probablement un
+  tampon de mise en scène de liste de commandes partageant le même objet
+  "périphérique graphique" que l'anneau Vd, mais drainé par un mécanisme
+  différent, non encore identifié. Ce n'est probablement PAS un blocage du
+  pipeline graphique lui-même.
+- DÉCISION : ne rien implémenter. Prochaine étape : trouver quel code
+  retail (pas le côté attente) écrit `object+0x2a90+0x0` directement (pas
+  via le bloc readback `+0x3c`) pour comprendre ce compteur de mise en
+  scène et son mécanisme de drainage réel.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r86-vd-pipeline-works-generic-wait-is-separate-20260831.md`.
+
 # AC6 retail NTSC-U/J — r85 : CORRECTION, r77-r84 ont tracé le mauvais objet (2026-08-31)
 
 - CORRIGÉ (majeur) : r78 a dérivé "l'objet bloqué" via `frame 1` + `print

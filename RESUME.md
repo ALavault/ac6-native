@@ -5,10 +5,11 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r86-vd-pipeline-works-generic-wait-is-separate-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r85-wrong-object-corrected-20260831.md`
-  (lire en premier : rétracte l'identité d'objet `0x1a0010` utilisée par
-  r77-r84 — leurs récits sur cet objet sont superseded, seuls leurs faits
-  de flot de contrôle des fonctions restent valables);
+  (rétracte l'identité d'objet `0x1a0010` utilisée par r77-r84 — leurs
+  récits sur cet objet sont superseded, seuls leurs faits de flot de
+  contrôle des fonctions restent valables);
 - `reports/ac6-retail-native-codegen-gate2-r11-20260831.md`;
 - `recompilation/ace-combat-6-retail/build/ntsc-uj/native/codegen-20260831-patched-final-r11/codegen-receipt.json`;
 - `recompilation/ace-combat-6-retail/build/ntsc-uj/native/build-receipt.json`;
@@ -38,16 +39,18 @@ accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
 reste ensuite sans retour et aucun gameplay visible n'est qualifié.
 
 CORRECTION r85 : r77-r84 traçaient un objet (`0x1a0010`) dérivé par une
-technique GDB non fiable (`frame 1` + `$rbp` sans info de debug). L'objet
-réel, vérifié par lecture directe de `ctx.r3` à l'entrée brute de
-`sub_821E64A8`, est `object=0x10001a00` — déjà établi comme l'objet Vd/PM4
-dans le rapport r53 (`reports/ac6-retail-native-codegen-gate2-r11-20260831.md`).
-Avec cet objet, `+0x2a90` déréférence le readback connu `0x164e0000`,
-`+0x30` est un curseur proche de l'anneau connu `0x162d0000`, `+0x2a9c=7` —
-stables sur 200 itérations, aucun champ null. Reconnecte à l'item déjà
-ouvert r53 : "le consommateur PM4/Vd natif n'est pas encore relié".
-Prochaine étape : vérifier ce lien contre `native/src/native_guest_vd.cpp`.
-Les stubs restent build-only;
+technique GDB non fiable; l'objet réel est `object=0x10001a00` (déjà connu,
+rapport r53). r86 a vérifié ce lien contre `native_guest_vd.cpp`
+(diagnostic `AC6_NATIVE_VD_TRACE=1` déjà existant) : **le pipeline PM4/Vd
+natif fonctionne** (PM4_ME_INIT 19 dwords puis lot IB 12 dwords tous deux
+acceptés). L'attente bloquée (`sub_821E61A8`) déréférence `object+0x2a90`
+offset +0x0, alors que le readback réel écrit par `drain_locked()` est à
++0x3c du même bloc — un champ différent; et `object+0x2a9c` (limite,
+stable=7) n'a aucun rapport avec les indices d'écriture réels de l'anneau
+(19, 31). L'attente est très probablement un sous-allocateur séparé
+(mise en scène de commandes?), pas le pipeline graphique lui-même.
+Prochaine étape : trouver quel code retail écrit `object+0x2a90+0x0`
+directement. Les stubs restent build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release. Toute
 sonde suivante doit être statique ou bornée au premier import/retour qui
