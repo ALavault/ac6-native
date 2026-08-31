@@ -31,28 +31,30 @@ compteur injecté ou fallback ReXGlue.
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
 3. r85 a corrigé l'identité de l'objet bloqué (`0x10001a00`, confirmé
-   indépendamment trois fois maintenant). r86 a montré que le pipeline
+   indépendamment quatre fois maintenant). r86 a montré que le pipeline
    PM4/Vd natif fonctionne réellement et que l'attente bloquée
    (`sub_821E61A8`, déréférence `object+0x2a90+0x0`) est un sous-allocateur
    adjacent. r87 avait proposé que `VdSetGraphicsInterruptCallback`
    (stub natif no-op, callback réel `0x821E63F0` jamais invoqué) explique
-   le blocage. **r88 a réfuté ce mécanisme précis** : le pointeur de
-   sous-callback à `object+0x2a94+0x10` est NUL par conception (bloc
-   fraîchement `memset`é, jamais réécrit ailleurs dans l'image) — même en
-   corrigeant le stub, le gestionnaire sauterait intentionnellement l'appel
-   du sous-callback et n'atteindrait jamais `sub_821E60A8`/`sub_821E5D60`.
-   **Après quatre cycles à resserrer puis fermer des mécanismes
-   spécifiques sans réponse finale** : la prochaine étape doit reconsidérer
-   la portée plutôt que proposer une cinquième hypothèse ponctuelle — soit
-   documenter un négatif borné pour ce sous-fil (`sub_821E6AC8` et
-   l'attente qui s'y bloque) et revenir à la migration scheduler/kernel
-   plus large déjà listée dans ce fichier, soit s'engager dans un passage
-   statique substantiellement plus coûteux (les 76 sites d'appel de
-   `sub_821E60A8`, r79) seulement si jugé utile. Ne pas écrire de valeur
-   non-nulle synthétique. Voir
-   `reports/ac6-retail-native-codegen-gate2-r88-nested-callback-is-null-by-design-20260831.md`.
-4. Une fois ce décrément fermé, reprendre la migration plus large du
-   scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
+   le blocage. r88 a réfuté ce mécanisme précis : le pointeur de
+   sous-callback à `object+0x2a94+0x10` est NUL par conception. **r89 a
+   confirmé r87/r88 par preuve mémoire vivante indépendante** :
+   `sub_821E60A8` porte son propre verrou de complétion à usage unique
+   (`object+0x2abd` bit 0x2, posé en sortie après trois portes), et ce
+   verrou est prouvé JAMAIS posé pour cet objet (`0x00` lu en sonde
+   mono-thread à l'arrêt confirmé). **Négatif borné accepté pour ce
+   sous-fil** (`sub_821E6AC8`/`0x10001a00`) : cinq cycles (r85-r89) ont
+   établi ce qui est prouvé (identité, pipeline sain, chemin de déblocage
+   identifié mais jamais atteint) et ce qui ne l'est pas (un éventuel
+   AUTRE appelant de `sub_821E60A8` pour cet objet; le rôle de
+   `object+0x540c` et de `*(0x164e0000)+0x0`, ce dernier délibérément non
+   interprété faute d'avoir trouvé son écrivain). Le passage statique sur
+   les 76 sites d'appel de `sub_821E60A8` (r79) reste ouvert mais hors de
+   portée pour l'instant — ne pas écrire de valeur non-nulle synthétique.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md`.
+4. **Prochain cycle : reprendre la migration plus large du
+   scheduler/kernel, événements et VFS/XAM** par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais
    au contenu non publié du ring.
 5. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu

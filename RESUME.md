@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r88-nested-callback-is-null-by-design-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r86-vd-pipeline-works-generic-wait-is-separate-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r85-wrong-object-corrected-20260831.md`
@@ -39,19 +40,18 @@ sans ReXGlue installé. Elle établit l'objet `0x10001a00`, son WPTR primaire
 accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
 reste ensuite sans retour et aucun gameplay visible n'est qualifié.
 
-CORRECTION r85 : l'objet réel est `0x10001a00` (confirmé 3x
-indépendamment, dernière fois r88). r86 : le pipeline PM4/Vd natif
+CORRECTION r85 : l'objet réel est `0x10001a00` (confirmé 4x
+indépendamment, dernière fois r89). r86 : le pipeline PM4/Vd natif
 fonctionne; l'attente bloquée est un sous-allocateur adjacent. r87 avait
-proposé le stub no-op `VdSetGraphicsInterruptCallback` comme cause; **r88
-a réfuté ce mécanisme précis** — le pointeur de sous-callback à
-`object+0x2a94+0x10` est nul par conception (bloc memset jamais réécrit),
-donc même en corrigeant le stub, le gestionnaire n'atteindrait jamais
-l'écriture de déblocage. Après quatre cycles à fermer des mécanismes
-spécifiques sans réponse finale, la prochaine étape doit reconsidérer la
-portée (négatif borné + retour à la liste scheduler/kernel plus large, ou
-passage statique substantiellement plus coûteux sur les 76 sites d'appel
-de `sub_821E60A8`) plutôt qu'une cinquième hypothèse ponctuelle. Les
-stubs restent build-only;
+proposé le stub no-op `VdSetGraphicsInterruptCallback` comme cause; r88
+a réfuté ce mécanisme précis. **r89 a confirmé r87/r88 par preuve mémoire
+vivante** — `sub_821E60A8` porte son propre verrou de complétion à usage
+unique (`object+0x2abd` bit 0x2), et ce verrou est prouvé jamais posé pour
+cet objet. **Négatif borné accepté pour ce sous-fil** (cinq cycles,
+r85-r89); le prochain cycle reprend la liste scheduler/kernel/VFS/XAM plus
+large de NEXT.md plutôt qu'une sixième hypothèse ponctuelle. Le passage
+statique sur les 76 sites d'appel de `sub_821E60A8` reste ouvert mais hors
+de portée pour l'instant. Les stubs restent build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release. Toute
 sonde suivante doit être statique ou bornée au premier import/retour qui

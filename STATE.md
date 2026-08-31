@@ -1,3 +1,38 @@
+# AC6 retail NTSC-U/J — r89 : le verrou de complétion confirme r87/r88, négatif borné (2026-08-31)
+
+- TROUVÉ (statique, `FindStoresAtDisplacement.java 0x2abd`) :
+  `sub_821E60A8` (0x821e60a8-0x821e61a0, corps complet vérifié) contient sa
+  propre structure verrou/relecture, jusqu'ici non tracée : trois portes
+  séquentielles (`object+0x2abc` bit 0x80 clair, un drapeau global non nul,
+  `object+0x2abd` bit 0x2 clair) gardent un appel DIRECT à
+  `sub_821E61A8(object, limite-2, 0)` — la même fonction d'attente que le
+  thread bloqué — suivi d'un verrou de complétion à usage unique
+  (`object+0x2abd` bit 0x2, posé en sortie).
+- PROUVÉ (vivant, sonde mono-thread, lecture octet-par-octet à l'arrêt
+  confirmé dans `__imp__sub_821E6AC8`) : `object+0x2abd` = `0x00` — le
+  verrou n'a JAMAIS été posé pour cet objet. `object+0x540c` = tout zéro
+  (rôle non établi ce cycle). `*(0x164e0000)+0x0` = octets bruts
+  `05 00 00 00`, volontairement NON interprété numériquement — ce champ
+  n'est écrit par aucun site connu de `native_guest_vd.cpp`
+  (`drain_locked()` écrit `+0x3c`, pas `+0x0`), donc son sens grand-boutien
+  vs. hôte reste ouvert plutôt que deviné.
+- DÉCISION : ces lectures CONFIRMENT r87/r88 (le callback d'interruption ne
+  se déclenche jamais → `sub_821E60A8` n'atteint jamais son verrou pour cet
+  objet) par une preuve mémoire vivante indépendante, sans ouvrir de
+  nouveau mécanisme de déblocage. Négatif borné pour ce sous-fil
+  (`sub_821E6AC8`/`0x10001a00`) : cinq cycles (r85-r89) ont établi ce qui
+  est prouvé et ce qui ne l'est pas; le passage statique sur les 76 sites
+  d'appel de `sub_821E60A8` reste hors de portée pour l'instant. Retour à
+  la liste scheduler/kernel/VFS/XAM plus large de NEXT.md au prochain
+  cycle.
+- HYGIÈNE SESSION : job cron ponctuel dupliqué `833b1b98` supprimé (restait
+  actif en parallèle du job récurrent `1874bb39`); arrêt des rappels
+  `ScheduleWakeup` en fin de cycle (mécanisme du mode dynamique, pas du
+  mode à intervalle fixe) — les deux ensemble doublaient la cadence réelle
+  de la boucle.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md`.
+
 # AC6 retail NTSC-U/J — r88 : la chaîne r87 n'atteint pas l'écriture de déblocage (2026-08-31)
 
 - CORRIGÉ : relecture précise de `sub_821E63F0` — l'offset `+0x10` du bloc
