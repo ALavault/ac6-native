@@ -1,3 +1,32 @@
+# AC6 retail NTSC-U/J — r80 : l'allocation de l'objet bloqué a échoué (NULL), preuve runtime (2026-08-31)
+
+- PROUVÉ (runtime, GDB sur la sonde bornée existante) : l'objet réellement
+  bloqué est `0x1a0010` (reproduit identiquement sur deux runs
+  indépendants), base mémoire invité `0x7ffef7000000`. `PPC_CONFIG_NON_VOLATILE_AS_LOCAL`
+  est actif : r31/"object" vit dans `%rbp` hôte (établi depuis le prologue
+  de `sub_821E61A8`), la base dans `%r14`.
+- PROUVÉ : TOUS les champs pertinents de cet objet sont à zéro au moment du
+  blocage — `+0x2abd=0x00`, `+0x540c=0`, `+0x34bc=0`, **`+0x2a90=0`**,
+  `+0x2a9c=0`, `+0x30=0`, `+0x38=0`, `+0x2af8=0`, `+0x2a94=0`,
+  `+0x3a44=0`, `+0x3a48=0`. L'objet n'a jamais été initialisé, ce n'est pas
+  un anneau partiellement avancé.
+- DIAGNOSTIC : `+0x2a90` (le pointeur déréférencé par l'attente) étant NULL,
+  la comparaison `sub_821E61A8` est `0 >= 4`, faux par construction — la
+  mémoire réservée non mappée se lit comme zéro sans fault. Le seul site
+  d'écriture (`sub_821E65B0:0x821e6740`) stocke sans vérification le retour
+  de l'allocateur `sub_821D74A8`; un retour NULL explique exactement l'état
+  observé. Tracé un niveau plus loin : `sub_821D74A8` est un wrapper de pool
+  avec verrou, qui appelle l'allocateur réel `sub_82222d80` via un handle de
+  tas global (`-0x4690(r11)`); ce dernier n'est pas encore examiné.
+- DÉCISION : ne rien implémenter. Prochaine étape : `sub_82222d80` et le
+  handle de tas global — statique d'abord, puis vérifier si cela aboutit à
+  un import kernel (`ExAllocatePool`-shaped) dont le stub générique
+  `kOfflineStatus` de `materialize_native_import_stubs.py` serait la cause
+  racine. N'écrire aucune valeur non-nulle synthétique dans `+0x2a90` avant
+  cette identification.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r80-null-ring-allocation-20260831.md`.
+
 # AC6 retail NTSC-U/J — r79 : l'objet est un allocateur générique, pas l'anneau Vd (2026-08-31)
 
 - PROUVÉ : le seul site qui écrit `*(object+0x2a90)` avec la valeur qui

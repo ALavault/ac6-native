@@ -30,21 +30,21 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r78 a corrigé r77 (Thread 1 est dans l'appel conditionnel `sub_821E61A8`
-   depuis `sub_821E64A8`, pas dans le spin terminal `object+0x2AF8`). r79 a
-   tracé l'écriture qui débloquerait cette attente jusqu'à `sub_821E5D60`
-   (via `sub_821E60A8 → sub_821E5E48`), gardée par un suballocateur
-   (`sub_821E54B8`) et par les champs `object+0x540c`/`+0x2abd`. Mais
-   `sub_821E60A8` a 76 sites d'appel dans tout le binaire : c'est un
-   allocateur de tampon générique, pas démontrablement l'anneau Vd/PM4.
-   **Prochaine étape immédiate** : ne plus tracer le graphe d'appel
-   statiquement (rendements décroissants). Relancer la sonde bornée
-   existante sous GDB et lire, au point d'arrêt déjà connu dans
-   `sub_821E6AC8`/`sub_821E61A8`, les valeurs réelles de
-   `object+0x2abd`, `+0x540c`, `+0x34bc`, `*(object+0x2a90)` et `+0x2a9c`
-   pour l'objet réellement bloqué. Voir
-   `reports/ac6-retail-native-codegen-gate2-r79-generic-allocator-reframe-20260831.md`,
-   et en arrière-plan r77/r78 pour la chaîne d'attente elle-même.
+3. r78 a corrigé r77; r79 a tracé la chaîne jusqu'à un suballocateur
+   générique (`sub_821E54B8`, 76 appelants); r80 a lu l'objet réellement
+   bloqué en runtime (GDB sur la sonde bornée) : `object=0x1a0010`, TOUS ses
+   champs sont à zéro, et `+0x2a90` (le pointeur déréférencé par l'attente)
+   est NULL — l'objet n'a jamais été initialisé. La cause : l'allocateur
+   `sub_821D74A8` (appelé depuis `sub_821E65B0:0x821e6738`) a renvoyé NULL;
+   son propre appelant réel est `sub_82222d80` via un handle de tas global.
+   **Prochaine étape immédiate** : tracer statiquement `sub_82222d80` et le
+   handle de tas global (`-0x4690(r11)` relatif à une constante `lis`
+   proche de `0x821d74dc`); vérifier si cela aboutit à un import kernel
+   HLE (`ExAllocatePool`-shaped) dont le stub générique `kOfflineStatus`
+   serait la cause racine. Ne pas écrire de valeur non-nulle synthétique
+   dans `+0x2a90` avant cette identification. Voir
+   `reports/ac6-retail-native-codegen-gate2-r80-null-ring-allocation-20260831.md`,
+   et en arrière-plan r77/r78/r79 pour la chaîne complète.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais
