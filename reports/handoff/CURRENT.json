@@ -4,8 +4,12 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r11-20260831.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md",
+    "scripts/DumpUsWaitFrontier.java",
+    "scripts/DumpUsWaitWriters.java",
+    "scripts/DumpUsFenceCallers.java",
     "recompilation/ace-combat-6-retail",
     "recompilation/ace-combat-6-retail/native",
     "recompilation/ace-combat-6-retail/build/ntsc-uj/native",

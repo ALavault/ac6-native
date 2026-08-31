@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — Gate 2 la frontière post-IB est une fence, décrément non localisé (r77, 2026-08-31)
+
+- PROUVÉ (statique, `ghidra-projects/ac6-us`) : le nom porté depuis r51
+  ("sub_821E6AC8 → sub_821E61A8 → sub_821E64A8, attente queue/ring") est
+  vérifié pour la première fois sur le binaire US retail lui-même (et non
+  par analogie avec le cycle 295 PAL, qui concernait un binaire différent où
+  la même valeur hex n'était pas une fonction). `sub_821E64A8` pousse un
+  paquet de deux dwords dans l'anneau puis boucle sans borne ni retry sur
+  `lwz r11,0x2af8(r31) / cmpwi r11,0 / bne` : c'est ce spin exact qui
+  bloque la sonde.
+- PROUVÉ : `object+0x2AF8` est un compteur/fence ajusté par `sub_821E5FD0`
+  (verrou + `add r11,r11,r26`). Les quatre sites d'appel direct trouvés dans
+  toute l'image (`0x821e5f80`, `0x821e6130`, `0x821ef2ac`, `0x821ef2f4`)
+  chargent tous un delta de 0 ou +1 : aucun décrément direct n'existe
+  statiquement. La seule écriture inconditionnelle à zéro est le chemin
+  d'abandon `sub_821EFAF0`, atteint uniquement depuis le *second* wait
+  (`sub_821E61A8`, borné à 5000 ticks via `sub_821E6AC8`), pas depuis le
+  spin de `sub_821E64A8`.
+- OUVERT : le décrément réel est donc indirect (probablement un callback
+  d'interruption graphique/CP enregistré, cohérent avec r53 "le consommateur
+  PM4/Vd natif n'est pas encore relié") ou passe par un chemin non encore
+  localisé; `FindDirectCallsTo` ne voit pas les dispatchs `bctrl`.
+- DÉCISION : ne pas implémenter de décrément tant que le déclencheur retail
+  réel n'est pas localisé — écrire un décrément maintenant serait l'état
+  synthétique que r53 a déjà refusé pour le readback ring. Prochaine étape :
+  scanner les dispatchs indirects (`FindVirtualDispatchSlot.java`,
+  `FindPpcBranchesTo.java`) autour de l'installation du callback
+  d'interruption graphique plutôt qu'un nouveau scan d'appels directs.
+- Aucun code natif, codegen ni test modifié ce cycle; CTest reste **9/9**
+  (non affecté, aucune source C++/Python touchée).
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md`.
+
 # AC6 retail NTSC-U/J — Gate 2 runtime natif, codegen/liaison fermés (2026-08-31)
 
 - PROUVÉ : receipt codegen r11 `pass` avec XenonAnalyse/XenonRecomp US,

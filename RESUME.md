@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r11-20260831.md`;
 - `recompilation/ace-combat-6-retail/build/ntsc-uj/native/codegen-20260831-patched-final-r11/codegen-receipt.json`;
 - `recompilation/ace-combat-6-retail/build/ntsc-uj/native/build-receipt.json`;
@@ -33,11 +34,17 @@ sans ReXGlue installé. Elle établit l'objet `0x10001a00`, son WPTR primaire
 accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
 reste ensuite sans retour et aucun gameplay visible n'est qualifié.
 
-La prochaine frontière est le scheduler/kernel et les événements après ce lot
-IB. Les stubs restent build-only; `IM_LOAD_IMMEDIATE` est borné mais sa
-traduction Xenos→SPIR-V n'est pas fermée. Ne pas revendiquer titre, M01,
-campagne, save/replay ou release. Toute sonde suivante doit être statique ou
-bornée au premier import/retour qui bloque ce thread.
+r77 (statique, `ghidra-projects/ac6-us`) a précisé cette frontière : le thread
+principal spinne sans borne dans `sub_821E64A8` (`0x821e6500..0x821e6508`) sur
+`object+0x2AF8 == 0`, un compteur/fence géré par `sub_821E5FD0`. Les quatre
+sites d'appel direct connus n'incrémentent (delta 0/+1) que; aucun décrément
+direct n'existe dans toute l'image US — le vrai déclencheur est indirect
+(callback d'interruption graphique/CP probable) et reste à localiser par scan
+de dispatch indirect avant toute implémentation. Les stubs restent build-only;
+`IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
+fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release. Toute
+sonde suivante doit être statique ou bornée au premier import/retour qui
+bloque ce thread.
 
 Le patch XenonRecomp utilisé pour r11 reste dans une copie de build ignorée;
 le checkout verrouillé et les sources générées ne doivent pas entrer dans le
