@@ -69,14 +69,25 @@ compteur injecté ou fallback ReXGlue.
    indirect `sub_821F7C80`). Aucun spin invité trouvé — le volume mesuré
    s'explique par l'absence de régulateur de cadence dans la sonde
    offline. r92 a aussi ajouté un gestionnaire `DbgPrint` (sûr, testé,
-   sans substitution varargs) mais **zéro ligne produite sur une sonde de
-   25s** — ni les deux sites d'appel statiques ni de nouvelle visibilité
-   gagnée ce cycle. **Prochain cycle : plus de piste étroite sur ce
-   fil** — reprendre le survol par fréquence mesurée
-   (`AC6_NATIVE_IMPORT_TRACE`, méthode r90) sur une fenêtre plus longue, ou
-   évaluer un régulateur de cadence minimal avant de continuer à chasser
-   des familles d'imports une par une. Voir
-   `reports/ac6-retail-native-codegen-gate2-r92-event-callers-settled-dbgprint-added-20260901.md`.
+   sans substitution varargs) mais zéro ligne produite sur une sonde de 25s.
+   **r93 a réglé (négatif) que la voie threading hôte est épuisée** comme
+   piste vers le jalon (sondes 60s/40s : rien de nouveau; `VdSwap` 0
+   hit/30s, attendu — `poll_once()` publie avant tout `VdSwap`, déjà
+   documenté dans le code). **r93 a aussi DÉMARRÉ (pas fermé) le passage
+   différé sur les 76 sites d'appel de `sub_821E60A8`** (décliné en r79,
+   r88, r89) : 10/76 vérifiés (cluster déjà caractérisé). Trouvé :
+   `sub_821E64A8` (déjà dans la chaîne d'attente tracée) est en réalité un
+   ÉCRIVAIN de paquets d'anneau — écrit 2 dwords au curseur
+   (`object+0x30`), l'avance, puis attend via `sub_821E61A8`. Un filet de
+   sécurité de dépassement (`object+0x30 > object+0x38`) partagé par 6 des
+   10 sites vérifiés n'est PAS actuellement déclenché (curseur `0x162e017c`,
+   limite `0x162eff60`, ~65 Ko d'écart, valeurs vivantes confirmées) —
+   deuxième mécanisme indépendant écarté sans rouvrir r88/r89. **Prochain
+   cycle : les 66 sites restants** (passage par lot, pas manuel un par un)
+   **ou vérifier si la boucle appelante `sub_821E65B0` est conditionnée
+   par quelque chose que ce runtime pourrait faire avancer** — piste plus
+   étroite que le callback d'interruption déjà réfuté. Voir
+   `reports/ac6-retail-native-codegen-gate2-r93-threading-avenue-exhausted-76-site-pass-started-20260901.md`.
    Conserver le poll limité au champ WPTR, jamais au contenu non publié du
    ring.
 5. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu

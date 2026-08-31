@@ -1,3 +1,46 @@
+# AC6 retail NTSC-U/J — r93 : voie threading épuisée; passage 76-sites démarré, pas fermé (2026-09-01)
+
+- RÉGLÉ : la voie threading hôte (r90-r92) est épuisée comme piste vers le
+  jalon Gate 2. Sonde 60s (`AC6_NATIVE_IMPORT_TRACE`) : mêmes 100 hits
+  génériques qu'à 20-25s. Sonde 40s (`AC6_NATIVE_VD_TRACE`) : même
+  séquence qu'établie en r11 (`PM4_ME_INIT` 19 dwords + lot IB 12 dwords),
+  rien de plus. `__imp__VdSwap` : 0 hit/30s — attendu, pas nouveau
+  (`poll_once()`/`poll_loop()` publie le premier tampon avant tout appel
+  VdSwap, per commentaire déjà présent dans `native_guest_vd.cpp:135-138`).
+- DÉMARRÉ (pas fermé) : le passage différé sur les 76 sites d'appel de
+  `sub_821E60A8` (décliné en r79, r88, r89). `FindDirectCallsTo.java`
+  confirme 76 sites; 10 dans le cluster 0x821E6xxx/0x821F1xxx déjà
+  caractérisé, vérifiés en premier.
+- TROUVÉ (nouveau) : 6 de ces 10 sites (dont `sub_821E64A8` lui-même,
+  déjà dans la chaîne d'attente tracée) partagent le motif
+  `if (*(object+0x30) > *(object+0x38)) sub_821E60A8(object)` — un
+  filet de sécurité de dépassement, pas un déclencheur d'interruption.
+  **`sub_821E64A8` est en réalité un ÉCRIVAIN de paquets d'anneau** :
+  écrit deux dwords (`0x5c8`, `0x00020000`, forme d'en-tête/charge PM4) au
+  curseur via `stwu`, avance et réécrit le curseur dans `object+0x30`,
+  puis appelle `sub_821E61A8(object,4)` — l'attente déjà tracée — si
+  `object+0x2a9c` (=7, r85) est non nul.
+- PROUVÉ (vivant, capture base fiable à l'entrée brute, méthode r85/r88) :
+  `object+0x30`=`0x162e017c` (correspond r85), `object+0x38`=`0x162eff60`
+  (correspond indépendamment au `limit=` déjà imprimé par le trace VD
+  existant depuis l'ère r11/r75 — champ maintenant identifié),
+  `object+0x2af8`=0 (déjà satisfait), `*(0x164e0000)+0`=`05 00 00 00`
+  inchangé depuis r91. Curseur ~65 Ko sous la limite : le filet de
+  dépassement n'est PAS actuellement déclenché — deuxième mécanisme
+  indépendant confirmé non-actif, sans rouvrir la réfutation r88/r89 du
+  callback d'interruption.
+- DÉCISION : 10/76 sites vérifiés, pas 76. Les 66 restants (majoritairement
+  0x821Dxxxx, territoire allocateur générique r79) ne sont pas vérifiés —
+  inconnue honnête, pas supposée sans danger. Prochain : passage par lot
+  sur les 66 restants, OU vérifier si la boucle appelante de
+  `sub_821E65B0` (1112 octets) est elle-même conditionnée par quelque
+  chose que ce runtime pourrait faire avancer — piste plus étroite que le
+  callback d'interruption déjà réfuté.
+- CTest 9/9 (aucun code natif modifié ce cycle). Gate mission01 échoue
+  toujours sur le même mismatch N2 préexistant, sans rapport.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r93-threading-avenue-exhausted-76-site-pass-started-20260901.md`.
+
 # AC6 retail NTSC-U/J — r92 : appelants événements réglés (négatif), visibilité `DbgPrint` ajoutée (2026-09-01)
 
 - RÉGLÉ (statique, `FindDirectCallsTo.java` sur les adresses guest de

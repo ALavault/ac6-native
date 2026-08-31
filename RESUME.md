@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r93-threading-avenue-exhausted-76-site-pass-started-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r92-event-callers-settled-dbgprint-added-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md`;
@@ -66,8 +67,16 @@ uniquement). Aucun spin invité trouvé — le volume s'explique par l'absence
 de régulateur de cadence dans la sonde offline. r92 a aussi ajouté un
 gestionnaire `DbgPrint` sûr (sans substitution varargs) mais zéro ligne
 produite sur 25s — négatif honnête, gardé pour une sonde future plus longue.
-Plus de piste étroite sur ce fil; prochain : survol par fréquence mesurée sur
-fenêtre plus longue, ou régulateur de cadence minimal. Les stubs restent build-only;
+**r93** a réglé (négatif) que la voie threading hôte est épuisée comme piste
+vers le jalon (sondes 60s/40s : rien de nouveau; `VdSwap` 0 hit/30s, attendu).
+r93 a aussi DÉMARRÉ (pas fermé) le passage différé sur les 76 sites d'appel
+de `sub_821E60A8` : 10/76 vérifiés. Trouvé : `sub_821E64A8` est en réalité un
+écrivain de paquets d'anneau (écrit 2 dwords au curseur, l'avance, puis
+attend). Un filet de sécurité de dépassement (6/10 sites vérifiés) n'est pas
+actuellement déclenché (curseur ~65 Ko sous la limite, valeurs vivantes
+confirmées) — mécanisme écarté sans rouvrir r88/r89. Prochain : les 66 sites
+restants (par lot) ou vérifier si `sub_821E65B0` est conditionné par quelque
+chose que ce runtime pourrait faire avancer. Les stubs restent build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release.
 
