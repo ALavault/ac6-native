@@ -17,6 +17,8 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include <array>
 #include <atomic>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <mutex>
 #include <thread>
@@ -24,6 +26,15 @@ HEADER = """// Generated build-only import boundary; never install or track this
 
 namespace {
 constexpr std::uint64_t kOfflineStatus = 0xC00000BBull;
+
+// Bounded diagnostic for the generic offline-stub fallback: which imports
+// this build has no specific handling for are actually reached at runtime.
+// Mirrors AC6_NATIVE_VD_TRACE's getenv-per-call pattern (native_guest_vd.cpp).
+void trace_offline_import(const char* name) noexcept {
+  const char* enabled = std::getenv("AC6_NATIVE_IMPORT_TRACE");
+  if (enabled == nullptr || std::strcmp(enabled, "1") != 0) return;
+  std::fprintf(stderr, "[offline-import] %s\\n", name);
+}
 std::atomic<std::uint32_t> g_next_handle{0x100u};
 std::atomic<std::uint32_t> g_next_thread_stack{0x8ef00000u};
 // Keep kernel virtual allocations in a deterministic non-image/non-stack
@@ -283,6 +294,16 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = 0u;
 """
+    if name in {"NtReleaseMutant", "NtReleaseSemaphore"}:
+        # Single guest thread until scheduler migration: no real contention
+        # is modeled, so release always succeeds immediately (matches the
+        # RtlEnterCriticalSection/RtlLeaveCriticalSection idiom above).
+        # NtReleaseMutant(handle, PreviousCount*); NtReleaseSemaphore(handle,
+        # ReleaseCount, PreviousCount*) -- both take an optional out pointer
+        # for the previous count in r4.
+        return """  if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32, 0u);
+  ctx.r3.u64 = 0u;
+"""
     if name in {"NtWaitForSingleObjectEx", "NtWaitForMultipleObjectsEx",
                 "KeWaitForSingleObject", "KeWaitForMultipleObjects"}:
         return """  if (!wait_event(ctx.r3.u32)) {
@@ -323,7 +344,9 @@ def render_body(name: str) -> str:
 """
     if name == "KeQueryPerformanceFrequency":
         return "  ctx.r3.u64 = 50000000u;\n"
-    return "  ctx.r3.u64 = kOfflineStatus;\n"
+    return f"""  trace_offline_import("{name}");
+  ctx.r3.u64 = kOfflineStatus;
+"""
 
 
 def render(mapping: Path, output: Path) -> int:

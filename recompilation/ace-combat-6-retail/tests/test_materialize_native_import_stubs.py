@@ -160,6 +160,36 @@ def test_physical_memory_binding_feeds_guest_ring_allocations(tmp_path: Path) ->
     assert "ctx.r3.u64 &= 0x1fffffffu" in text
 
 
+def test_mutant_and_semaphore_release_succeed_without_contention_model(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__NtReleaseMutant);\n"
+        "PPC_EXTERN_FUNC(__imp__NtReleaseSemaphore);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+    assert text.count("ctx.r3.u64 = 0u") == 2
+    assert text.count("PPC_STORE_U32(ctx.r4.u32, 0u)") == 2
+    assert "kOfflineStatus" not in text.split("void __imp__NtReleaseMutant")[1].split(
+        "void __imp__NtReleaseSemaphore"
+    )[0]
+
+
+def test_generic_fallback_is_traceable_and_still_returns_offline_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__KeDelayExecutionThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    assert 'trace_offline_import("KeDelayExecutionThread")' in text
+    assert "ctx.r3.u64 = kOfflineStatus" in text
+
+
 def test_vd_ring_imports_bind_to_native_guest_service(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text(

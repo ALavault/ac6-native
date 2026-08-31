@@ -23,7 +23,7 @@ compteur injecté ou fallback ReXGlue.
 
 1. Codegen direct r11 : receipt `pass`, 81 fichiers, zéro diagnostic, 229
    imports et 19 832 mappings. Le profil `native` compile et installe
-   `ac6recomp`; CTest **9/9**, pytest **126/126**, audit d’installation et
+   `ac6recomp`; CTest **9/9**, pytest **128/128** (r90), audit d’installation et
    validator ordinaire passent.
 2. Le renderer Vd natif consomme le WPTR primaire qualifié `object+10952`
    (index dwords), le readback exact `state+60` et les IB depuis la mémoire
@@ -53,10 +53,23 @@ compteur injecté ou fallback ReXGlue.
    portée pour l'instant — ne pas écrire de valeur non-nulle synthétique.
    Voir
    `reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md`.
-4. **Prochain cycle : reprendre la migration plus large du
-   scheduler/kernel, événements et VFS/XAM** par familles ABI avec une sonde
-   bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais
-   au contenu non publié du ring.
+4. r90 a ouvert la migration scheduler/kernel plus large : diagnostic
+   permanent `AC6_NATIVE_IMPORT_TRACE=1` (imite `AC6_NATIVE_VD_TRACE`) sur
+   le chemin générique `kOfflineStatus`, qui a mesuré un vrai busy-spin —
+   `NtReleaseMutant` (631 941 appels/20s) sans gestion spécifique. Corrigé
+   (succès immédiat, même idiome que `RtlEnterCriticalSection`); sonde
+   post-correctif : 100 appels génériques (contre 1 263 904). GDB confirme
+   **10 threads maintenant actifs** avec des piles d'appel inédites
+   (`sub_821F4210`, `sub_821D4C20`/`821D4F20`, `sub_821F8008`) — le thread
+   principal reste inchangé, toujours dans la chaîne fermée par r85-r89 (pas
+   de contradiction). **Prochain cycle : identifier statiquement ce que font
+   ces threads worker** (cible naturelle, jamais nommée dans ce projet), puis
+   continuer le survol par familles ABI (`AC6_NATIVE_IMPORT_TRACE` donne déjà
+   la liste triée par fréquence réelle — ne pas deviner la famille suivante,
+   la mesurer). Voir
+   `reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md`.
+   Conserver le poll limité au champ WPTR, jamais au contenu non publié du
+   ring.
 5. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.

@@ -1,3 +1,37 @@
+# AC6 retail NTSC-U/J — r90 : un busy-spin `NtReleaseMutant` bloquait la progression des threads worker, corrigé (2026-08-31)
+
+- AJOUTÉ : diagnostic permanent `AC6_NATIVE_IMPORT_TRACE=1` (imite
+  `AC6_NATIVE_VD_TRACE`) sur le chemin générique `kOfflineStatus` de
+  `materialize_native_import_stubs.py` — quels imports sans gestion
+  spécifique sont réellement atteints à l'exécution.
+- PROUVÉ (sonde bornée, 20s, runtime multi-thread par défaut) : sur
+  1 263 904 appels au chemin générique, **631 941 `NtReleaseMutant`** et
+  **631 902 `RtlNtStatusToDosError`** — un busy-spin réel et mesuré (pas
+  inféré), `NtReleaseMutant` n'ayant aucune gestion spécifique et
+  retournant systématiquement un statut d'échec.
+- CORRIGÉ : `NtReleaseMutant`/`NtReleaseSemaphore` retournent maintenant le
+  succès immédiatement (même idiome déjà établi pour
+  `RtlEnterCriticalSection`/`RtlLeaveCriticalSection` — un seul thread
+  invité tant que le scheduler n'est pas migré, aucune contention réelle
+  modélisée). Vérifié : la même sonde tombe de 1 263 904 à **100** appels
+  génériques après correction.
+- PROUVÉ (GDB, tous threads) : **10 threads maintenant actifs** (contre
+  très peu auparavant), plusieurs avec des piles d'appel jamais vues
+  (`sub_821F4210`, `sub_821D4C20`/`821D4F20`, `sub_821F8008`) et une
+  contention réelle sur `g_event_mutex`. Le thread principal reste
+  **inchangé**, toujours arrêté dans exactement la même chaîne
+  `sub_821E6AC8←sub_821E61A8←sub_821E64A8←sub_821E65B0` fermée par r85-r89 —
+  ce correctif ne contredit ni ne rouvre ce négatif borné, c'est un blocage
+  séparé sur d'autres threads.
+- CTest 9/9, pytest 128/128 (126+2 nouveaux). Gate mission01 échoue toujours
+  sur un mismatch N2 préexistant, sans rapport
+  (`reconstruction/ace-combat-6/src/retail_session.cpp`, déjà modifié avant
+  ce cycle, piste N2 abandonnée).
+- OUVERT : ce que font réellement les threads worker nouvellement actifs
+  n'est pas établi — cible naturelle d'un prochain passage statique.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md`.
+
 # AC6 retail NTSC-U/J — r89 : le verrou de complétion confirme r87/r88, négatif borné (2026-08-31)
 
 - TROUVÉ (statique, `FindStoresAtDisplacement.java 0x2abd`) :
