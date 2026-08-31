@@ -30,19 +30,20 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r77 (statique, `ghidra-projects/ac6-us`) a remplacé le nom vague
-   "scheduler/kernel après le lot IB" par un mécanisme précis : le thread
-   principal spinne sans borne dans `sub_821E64A8` sur `object+0x2AF8 == 0`,
-   un compteur/fence ajusté par `sub_821E5FD0`. Les quatre sites d'appel
-   direct trouvés (`0x821e5f80`, `0x821e6130`, `0x821ef2ac`, `0x821ef2f4`)
-   n'incrémentent que (delta 0 ou +1); aucun décrément direct n'existe dans
-   toute l'image. **Prochaine étape immédiate** : localiser le décrément réel
-   par scan de dispatch indirect (`FindVirtualDispatchSlot.java`,
-   `FindPpcBranchesTo.java`) autour de l'installation du callback
-   d'interruption graphique/CP — pas par un nouveau scan d'appels directs, qui
-   a déjà été fait et a exclu cette piste. N'implémenter le décrément natif
-   qu'une fois ce site trouvé et vérifié; voir
-   `reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md`.
+3. r78 corrige r77 : le GDB déjà capturé pour r51 montre Thread 1 (le thread
+   invité) réellement bloqué dans l'appel conditionnel `sub_821E61A8` depuis
+   `sub_821E64A8` (espace anneau insuffisant), pas dans le spin terminal
+   `object+0x2AF8` que r77 avait supposé actif. La condition qui ne se
+   satisfait jamais : `*(object+0x2a90) ` (déréférencé) vs `object+0x2a9c`.
+   `object+0x2a90` pointe vers un bloc alloué de 0x60 octets
+   (`sub_821E65B0:0x821e6740`, juste après l'appel allocateur `0x821d74a8`).
+   **Prochaine étape immédiate** : suivre ce pointeur d'allocation pour
+   trouver qui écrit son offset 0 (le vrai curseur comparé) — pas un nouveau
+   scan de déplacement plat, la cible est indirecte
+   (`*(ptr)+0`). Voir `reports/ac6-retail-native-codegen-gate2-r78-actual-wait-frame-20260831.md`
+   et, en arrière-plan, `reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md`
+   (dont la caractérisation de `object+0x2AF8` reste valable mais n'est pas
+   ce qui bloque actuellement).
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais

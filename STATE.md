@@ -1,3 +1,31 @@
+# AC6 retail NTSC-U/J — correction r78 : Thread 1 attend l'espace anneau, pas la fence (2026-08-31)
+
+- CORRECTION : r77 a caractérisé le spin terminal `object+0x2AF8` de
+  `sub_821E64A8` comme "le blocage réel" sans vérifier contre une trace
+  capturée. Le GDB déjà existant pour r51
+  (`artifacts/retail-us-native-build-gate2-r51-thread/entry-gdb-all/gdb.log:162-165`)
+  montre Thread 1 (le thread invité, distinct des 16 workers hôtes) dans
+  `sub_821E6AC8 → sub_821E61A8 → sub_821E64A8` — mais la pile confirme qu'il
+  est dans l'appel conditionnel `bl 0x821e61a8` (espace anneau insuffisant),
+  pas dans le fallthrough vers le spin `+0x2AF8`.
+- PROUVÉ : `object+0x2a90` n'est pas un curseur mais un pointeur vers un
+  bloc alloué de 0x60 octets (seul site d'écriture statique :
+  `sub_821E65B0:0x821e6740`, juste après un appel allocateur). `sub_821E61A8`
+  déréférence l'offset 0 de ce bloc et le compare à `object+0x2a9c`; la
+  condition n'est jamais satisfaite, donc la boucle rappelle
+  `sub_821E6AC8` sans jamais sortir.
+- OUVERT : qui écrit l'offset 0 du bloc pointé par `object+0x2a90` n'est pas
+  trouvé (recherche de déplacement plate insuffisante, la cible est
+  `*(ptr)+0`); et si cet anneau est spécifique au graphisme ou un mécanisme
+  générique réutilisé (8 appelants de `sub_821E64A8` très dispersés,
+  `0x82172184`..`0x821f36xx`).
+- DÉCISION : toujours aucun changement de code. Prochaine étape : suivre le
+  pointeur retourné par l'allocateur (`bl 0x821d74a8` dans `sub_821E65B0`)
+  pour trouver qui d'autre l'utilise, plutôt qu'un nouveau scan de
+  déplacement plat.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r78-actual-wait-frame-20260831.md`.
+
 # AC6 retail NTSC-U/J — Gate 2 la frontière post-IB est une fence, décrément non localisé (r77, 2026-08-31)
 
 - PROUVÉ (statique, `ghidra-projects/ac6-us`) : le nom porté depuis r51

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r78-actual-wait-frame-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r11-20260831.md`;
 - `recompilation/ace-combat-6-retail/build/ntsc-uj/native/codegen-20260831-patched-final-r11/codegen-receipt.json`;
@@ -34,13 +35,13 @@ sans ReXGlue installé. Elle établit l'objet `0x10001a00`, son WPTR primaire
 accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
 reste ensuite sans retour et aucun gameplay visible n'est qualifié.
 
-r77 (statique, `ghidra-projects/ac6-us`) a précisé cette frontière : le thread
-principal spinne sans borne dans `sub_821E64A8` (`0x821e6500..0x821e6508`) sur
-`object+0x2AF8 == 0`, un compteur/fence géré par `sub_821E5FD0`. Les quatre
-sites d'appel direct connus n'incrémentent (delta 0/+1) que; aucun décrément
-direct n'existe dans toute l'image US — le vrai déclencheur est indirect
-(callback d'interruption graphique/CP probable) et reste à localiser par scan
-de dispatch indirect avant toute implémentation. Les stubs restent build-only;
+r77 avait supposé le spin terminal `object+0x2AF8` de `sub_821E64A8` comme
+blocage actif; r78 corrige avec le GDB déjà capturé pour r51 : Thread 1 (le
+thread invité) est en fait dans l'appel conditionnel `sub_821E61A8`, bloqué
+sur `*(object+0x2a90)` (déréférencé, un pointeur vers un bloc alloué de 0x60
+octets) vs `object+0x2a9c`. Prochaine étape : suivre ce pointeur d'allocation
+(`sub_821E65B0:0x821e6738`, `bl 0x821d74a8`) pour trouver qui écrit son
+offset 0. Les stubs restent build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release. Toute
 sonde suivante doit être statique ou bornée au premier import/retour qui
