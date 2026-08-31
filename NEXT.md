@@ -23,7 +23,7 @@ compteur injecté ou fallback ReXGlue.
 
 1. Codegen direct r11 : receipt `pass`, 81 fichiers, zéro diagnostic, 229
    imports et 19 832 mappings. Le profil `native` compile et installe
-   `ac6recomp`; CTest **9/9**, pytest **128/128** (r90), audit d’installation et
+   `ac6recomp`; CTest **9/9**, pytest **129/129** (r91), audit d’installation et
    validator ordinaire passent.
 2. Le renderer Vd natif consomme le WPTR primaire qualifié `object+10952`
    (index dwords), le readback exact `state+60` et les IB depuis la mémoire
@@ -54,20 +54,24 @@ compteur injecté ou fallback ReXGlue.
    Voir
    `reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md`.
 4. r90 a ouvert la migration scheduler/kernel plus large : diagnostic
-   permanent `AC6_NATIVE_IMPORT_TRACE=1` (imite `AC6_NATIVE_VD_TRACE`) sur
-   le chemin générique `kOfflineStatus`, qui a mesuré un vrai busy-spin —
-   `NtReleaseMutant` (631 941 appels/20s) sans gestion spécifique. Corrigé
-   (succès immédiat, même idiome que `RtlEnterCriticalSection`); sonde
-   post-correctif : 100 appels génériques (contre 1 263 904). GDB confirme
-   **10 threads maintenant actifs** avec des piles d'appel inédites
-   (`sub_821F4210`, `sub_821D4C20`/`821D4F20`, `sub_821F8008`) — le thread
-   principal reste inchangé, toujours dans la chaîne fermée par r85-r89 (pas
-   de contradiction). **Prochain cycle : identifier statiquement ce que font
-   ces threads worker** (cible naturelle, jamais nommée dans ce projet), puis
-   continuer le survol par familles ABI (`AC6_NATIVE_IMPORT_TRACE` donne déjà
-   la liste triée par fréquence réelle — ne pas deviner la famille suivante,
-   la mesurer). Voir
-   `reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md`.
+   permanent `AC6_NATIVE_IMPORT_TRACE=1` a mesuré et corrigé un busy-spin
+   `NtReleaseMutant`. r91 a continué sur les threads worker qu'il a
+   révélés : `sub_821F7C80` (dispatch de callbacks, motif ordinaire) n'est
+   pas la cause; `strace` a mesuré 1 547 456 `futex`/15s imputables au
+   mutex partagé de la famille `create/set/clear/wait_event`.
+   `wait_event()` bloque désormais réellement (condition_variable, 2 ms,
+   contrat appelant inchangé) au lieu de retourner instantanément — vérifié
+   en direct (GDB : vrai `pthread_cond_wait`). **Non établi et
+   explicitement laissé ouvert** : l'impact sur le volume `futex` agrégat
+   (indiscernable avant/après par `strace`, comparaison croisée avec les
+   points d'arrêt GDB invalide car surcoûts d'instrument non comparables).
+   `NtSetEvent`/`NtClearEvent`/`wait_event` sont réellement sollicités à
+   ~5000/s mesurés — signalisation moteur légitime ou spin côté invité,
+   question ouverte. **Prochain cycle : tracer statiquement les appelants
+   réels de `NtSetEvent`/`NtClearEvent`** (quelles fonctions invité, à quel
+   point de leur flot) pour trancher cette question plutôt que la deviner.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md`.
    Conserver le poll limité au champ WPTR, jamais au contenu non publié du
    ring.
 5. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu

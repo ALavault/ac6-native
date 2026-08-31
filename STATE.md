@@ -1,3 +1,43 @@
+# AC6 retail NTSC-U/J — r91 : `wait_event` bloque désormais réellement; l'impact agrégat reste ouvert (2026-08-31)
+
+- TROUVÉ (statique) : `sub_821F7C80` (appelé par `sub_821F8008`, un des
+  threads worker activés par r90) parcourt une liste chaînée à adresse
+  statique fixe et invoque le pointeur de fonction de chaque nœud via
+  `bctrl` — un motif ordinaire de dispatch de callbacks/notifications, pas
+  une boucle manifestement cassée.
+- PROUVÉ (mesuré, `strace -f -c`, sonde bornée 15s, runtime multi-thread) :
+  **1 547 456 appels `futex`** (619 105 en erreur), tous imputables au
+  mutex `g_event_mutex` partagé par `create_event`/`set_event`/
+  `clear_event`/`wait_event` — même famille de constat que r90
+  (busy-spin mesuré), mais sur la famille d'attente d'événements, déjà
+  identifiée comme lacune connue avant même le début de cette
+  investigation (`wait_event()` retourne immédiatement au lieu de
+  bloquer).
+- CORRIGÉ : `wait_event()` bloque maintenant réellement (jusqu'à 2 ms) sur
+  un `std::condition_variable`, réveillé par `set_event`/`create_event`
+  signalé — contrat inchangé pour l'appelant (toujours `STATUS_TIMEOUT` si
+  non satisfait). Vérifié en direct (GDB) : un thread réellement dans
+  `pthread_cond_wait`, pas en spin.
+- MESURÉ (points d'arrêt GDB comptés, fenêtre 12s) : la famille
+  événements est réellement sollicitée à un rythme soutenu — `NtSetEvent`
+  13 873, `NtClearEvent` 11 619, `wait_event` 34 509, `NtCreateEvent` 24,
+  `KeSetEvent`/`KeResetEvent`/`NtPulseEvent` 0.
+- NON ÉTABLI, explicitement laissé ouvert : le volume `futex` agrégat
+  (`strace`) après correctif (1 501 150, 254 477 erreurs) est
+  statistiquement indiscernable d'avant (1 547 456) — comparer ce chiffre
+  au taux mesuré par points d'arrêt GDB (~5 000/s) n'est pas valide, les
+  deux instruments ayant des surcoûts non comparables. Ni "le correctif a
+  éliminé le spin" ni "le correctif n'a rien changé" n'est une conclusion
+  tenue par la preuve — refusé comme règle plausible sans contrôle.
+- CTest 9/9, pytest 129/129 (128+1 nouveau). Gate mission01 échoue
+  toujours sur le même mismatch N2 préexistant, sans rapport.
+- OUVERT : ce trafic `NtSetEvent`/`NtClearEvent` est-il une signalisation
+  moteur légitime par image (rien ne cadence encore à une fréquence cible
+  dans cette sonde offline) ou un motif de spin côté invité — nécessite une
+  trace statique des appelants réels, non entreprise ce cycle.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md`.
+
 # AC6 retail NTSC-U/J — r90 : un busy-spin `NtReleaseMutant` bloquait la progression des threads worker, corrigé (2026-08-31)
 
 - AJOUTÉ : diagnostic permanent `AC6_NATIVE_IMPORT_TRACE=1` (imite

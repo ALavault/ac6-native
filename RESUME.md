@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r88-nested-callback-is-null-by-design-20260831.md`;
@@ -32,7 +33,7 @@ Identités déjà scellées: XEX US
 Sous-gate codegen/liaison fermé: receipt r11 `pass`, 81 fichiers générés,
 62 629 029 octets, zéro diagnostic et aucune instruction non reconnue. Le
 guest se lie à `ppc_func_mapping.cpp` et 229 imports offline; `ac6recomp`
-peuple 19 832 mappings. Le profil natif passe CTest 9/9, pytest 128/128 (r90),
+peuple 19 832 mappings. Le profil natif passe CTest 9/9, pytest 129/129 (r91),
 l'audit d'installation et `validate.py --target ntsc-uj --runtime native`.
 
 Gate actif: runtime natif encore ouvert. La sonde r75 atteint le renderer Vd
@@ -53,16 +54,17 @@ r85-r89); le prochain cycle reprend la liste scheduler/kernel/VFS/XAM plus
 large de NEXT.md plutôt qu'une sixième hypothèse ponctuelle. Le passage
 statique sur les 76 sites d'appel de `sub_821E60A8` reste ouvert mais hors
 de portée pour l'instant. **r90** a ouvert la migration scheduler/kernel plus
-large : diagnostic permanent `AC6_NATIVE_IMPORT_TRACE=1` (imite
-`AC6_NATIVE_VD_TRACE`) a mesuré un vrai busy-spin `NtReleaseMutant`
-(631 941 appels/20s, aucune gestion spécifique); corrigé (succès immédiat,
-idiome `RtlEnterCriticalSection`); sonde post-correctif : 100 appels
-génériques. GDB confirme 10 threads maintenant actifs avec des piles d'appel
-inédites (`sub_821F4210`, `sub_821D4C20`/`821D4F20`, `sub_821F8008`) — le
-thread principal reste inchangé (chaîne fermée r85-r89, pas de
-contradiction). Prochain : identifier statiquement ce que font ces threads
-worker, puis continuer par familles ABI mesurées via
-`AC6_NATIVE_IMPORT_TRACE` plutôt que devinées. Les stubs restent build-only;
+large (busy-spin `NtReleaseMutant` mesuré et corrigé). **r91** a continué sur
+les threads worker qu'il a révélés : `sub_821F7C80` est un dispatch de
+callbacks ordinaire, pas la cause; `strace` a mesuré 1 547 456 `futex`/15s
+sur le mutex partagé de la famille `create/set/clear/wait_event`.
+`wait_event()` bloque désormais réellement (condition_variable, vérifié en
+direct), mais l'impact sur le volume `futex` agrégat reste **explicitement
+non établi** (indiscernable avant/après par mesure directe; comparaison
+croisée avec GDB invalide, surcoûts d'instrument non comparables) — ne pas
+revendiquer que le spin est éliminé. Prochain : tracer statiquement les
+appelants réels de `NtSetEvent`/`NtClearEvent` (~5000/s mesurés) pour
+trancher signalisation légitime vs. spin invité. Les stubs restent build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release.
 

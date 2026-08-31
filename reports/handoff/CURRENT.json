@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md",
     "reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md",
     "reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md",
     "reports/ac6-retail-native-codegen-gate2-r88-nested-callback-is-null-by-design-20260831.md",

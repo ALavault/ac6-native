@@ -160,6 +160,22 @@ def test_physical_memory_binding_feeds_guest_ring_allocations(tmp_path: Path) ->
     assert "ctx.r3.u64 &= 0x1fffffffu" in text
 
 
+def test_wait_event_blocks_briefly_instead_of_busy_spinning(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtWaitForSingleObjectEx);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # Still a single-shot, non-blocking-forever contract: an unsignaled wait
+    # still resolves to STATUS_TIMEOUT for the caller.
+    assert "ctx.r3.u64 = 0x102u" in text
+    assert "#include <condition_variable>" in text
+    assert "g_event_cv.wait_for(lock, std::chrono::milliseconds(2)" in text
+    assert "g_event_cv.notify_all()" in text
+
+
 def test_mutant_and_semaphore_release_succeed_without_contention_model(
     tmp_path: Path,
 ) -> None:

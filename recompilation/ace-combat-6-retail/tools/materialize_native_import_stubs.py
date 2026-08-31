@@ -16,6 +16,8 @@ HEADER = """// Generated build-only import boundary; never install or track this
 
 #include <array>
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -46,20 +48,28 @@ struct EventState {
   bool manual_reset{};
 };
 std::mutex g_event_mutex;
+std::condition_variable g_event_cv;
 std::unordered_map<std::uint32_t, EventState> g_events;
 
 void create_event(std::uint32_t key, bool manual_reset, bool signaled) {
   if (key == 0u) return;
-  std::lock_guard lock(g_event_mutex);
-  g_events[key] = EventState{signaled, manual_reset};
+  {
+    std::lock_guard lock(g_event_mutex);
+    g_events[key] = EventState{signaled, manual_reset};
+  }
+  if (signaled) g_event_cv.notify_all();
 }
 
 bool set_event(std::uint32_t key) {
   if (key == 0u) return false;
-  std::lock_guard lock(g_event_mutex);
-  EventState& event = g_events[key];
-  const bool previous = event.signaled;
-  event.signaled = true;
+  bool previous;
+  {
+    std::lock_guard lock(g_event_mutex);
+    EventState& event = g_events[key];
+    previous = event.signaled;
+    event.signaled = true;
+  }
+  g_event_cv.notify_all();
   return previous;
 }
 
@@ -72,11 +82,28 @@ bool clear_event(std::uint32_t key) {
   return previous;
 }
 
+// A guest caller not yet signaled is expected to retry (per the offline,
+// single-guest-process contract: nothing here blocks the host indefinitely).
+// Blocking briefly on a condition variable instead of returning immediately
+// keeps that same retry contract -- STATUS_TIMEOUT on an unsignaled wait --
+// while letting an actual signal (set_event) wake the waiter promptly
+// instead of every caller busy-spinning the retry as fast as the host can
+// re-issue it. r91 measured that spin at ~103,000 futex ops/sec across the
+// worker threads r90's fix unblocked; this bounds it without changing the
+// observable single-shot return contract any existing caller depends on.
 bool wait_event(std::uint32_t key) {
   if (key == 0u) return false;
-  std::lock_guard lock(g_event_mutex);
+  std::unique_lock lock(g_event_mutex);
   auto it = g_events.find(key);
-  if (it == g_events.end() || !it->second.signaled) return false;
+  if (it == g_events.end()) return false;
+  if (!it->second.signaled) {
+    g_event_cv.wait_for(lock, std::chrono::milliseconds(2), [&] {
+      auto retry = g_events.find(key);
+      return retry == g_events.end() || retry->second.signaled;
+    });
+    it = g_events.find(key);
+    if (it == g_events.end() || !it->second.signaled) return false;
+  }
   if (!it->second.manual_reset) it->second.signaled = false;
   return true;
 }
