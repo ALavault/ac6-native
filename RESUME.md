@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r87-interrupt-callback-never-fires-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r86-vd-pipeline-works-generic-wait-is-separate-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r85-wrong-object-corrected-20260831.md`
   (rétracte l'identité d'objet `0x1a0010` utilisée par r77-r84 — leurs
@@ -38,19 +39,18 @@ sans ReXGlue installé. Elle établit l'objet `0x10001a00`, son WPTR primaire
 accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
 reste ensuite sans retour et aucun gameplay visible n'est qualifié.
 
-CORRECTION r85 : r77-r84 traçaient un objet (`0x1a0010`) dérivé par une
-technique GDB non fiable; l'objet réel est `object=0x10001a00` (déjà connu,
-rapport r53). r86 a vérifié ce lien contre `native_guest_vd.cpp`
-(diagnostic `AC6_NATIVE_VD_TRACE=1` déjà existant) : **le pipeline PM4/Vd
-natif fonctionne** (PM4_ME_INIT 19 dwords puis lot IB 12 dwords tous deux
-acceptés). L'attente bloquée (`sub_821E61A8`) déréférence `object+0x2a90`
-offset +0x0, alors que le readback réel écrit par `drain_locked()` est à
-+0x3c du même bloc — un champ différent; et `object+0x2a9c` (limite,
-stable=7) n'a aucun rapport avec les indices d'écriture réels de l'anneau
-(19, 31). L'attente est très probablement un sous-allocateur séparé
-(mise en scène de commandes?), pas le pipeline graphique lui-même.
-Prochaine étape : trouver quel code retail écrit `object+0x2a90+0x0`
-directement. Les stubs restent build-only;
+CORRECTION r85 : r77-r84 traçaient le mauvais objet. L'objet réel est
+`0x10001a00` (rapport r53). r86 : le pipeline PM4/Vd natif fonctionne
+réellement; l'attente bloquée (`sub_821E61A8`, déréférence
+`object+0x2a90+0x0`) est un sous-allocateur adjacent, pas l'anneau
+graphique. r87 : `VdSetGraphicsInterruptCallback` enregistre réellement
+`callback=0x821E63F0` (vrai gestionnaire d'interruption Vd/CP, qui invoque
+un sous-callback à `context+0x2a94+0x14` via `bctrl`), mais le stub natif
+de cet import est un no-op complet — le callback n'est jamais invoqué.
+Prochaine étape : tracer le sous-callback jusqu'à
+`sub_821E60A8`/`sub_821E5D60` (l'écriture de déblocage déjà identifiée)
+pour confirmer la chaîne complète avant tout correctif. Les stubs restent
+build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release. Toute
 sonde suivante doit être statique ou bornée au premier import/retour qui

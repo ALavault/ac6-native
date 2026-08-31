@@ -1,3 +1,29 @@
+# AC6 retail NTSC-U/J — r87 : le callback d'interruption Vd retail n'est jamais invoqué (2026-08-31)
+
+- PROUVÉ : `VdSetGraphicsInterruptCallback` a deux appelants statiques.
+  `0x821f1220` enregistre réellement `callback=0x821E63F0, context=self`;
+  `0x821f15fc` désenregistre (0,0), suivi d'un appel de fermeture à
+  `sub_821E65B0` (chemin d'arrêt, sans rapport).
+- PROUVÉ : `sub_821E63F0` est le vrai gestionnaire d'interruption Vd/CP —
+  garde `source==1`, valide un sentinel de corruption (`0xBADF00D`, trap
+  sinon), charge un SOUS-callback enregistré à `context+0x2a94+0x14` et
+  l'invoque via `bctrl`, puis efface un bit de statut sous verrou.
+- PROUVÉ : le stub natif `VdSetGraphicsInterruptCallback`
+  (`materialize_native_import_stubs.py`) est un no-op complet — il
+  n'enregistre rien et n'invoque jamais le callback. `sub_821E63F0` n'est
+  donc JAMAIS appelé par ce runtime, en aucune circonstance.
+- OUVERT : la chaîne du sous-callback (`context+0x2a94+0x14`) jusqu'à
+  `sub_821E60A8`/`sub_821E5D60` (l'écriture de déblocage déjà identifiée)
+  n'est pas encore tracée instruction par instruction — seule la forme est
+  établie.
+- DÉCISION : toujours aucune implémentation — tracer le sous-callback
+  d'abord. Si confirmé, le correctif est de faire enregistrer et invoquer
+  ce callback par le service Vd natif (via `PPC_LOOKUP_FUNC`, comme le
+  stub `ExCreateThread`) lors d'une VRAIE progression d'anneau/IB observée
+  dans `drain_locked()` — jamais sur un minuteur fixe ni inconditionnellement.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r87-interrupt-callback-never-fires-20260831.md`.
+
 # AC6 retail NTSC-U/J — r86 : le pipeline PM4/Vd fonctionne; l'attente bloquée est un sous-allocateur adjacent (2026-08-31)
 
 - PROUVÉ (trace `AC6_NATIVE_VD_TRACE=1`, diagnostic déjà existant dans

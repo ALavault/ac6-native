@@ -30,27 +30,26 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r85 a corrigé l'identité de l'objet bloqué (`0x10001a00`, pas
-   `0x1a0010`). r86 a vérifié ce lien contre `native_guest_vd.cpp` avec le
-   diagnostic déjà existant `AC6_NATIVE_VD_TRACE=1` : **le pipeline PM4/Vd
-   natif fonctionne** (objet découvert, `PM4_ME_INIT` 19 dwords puis lot IB
-   12 dwords tous deux ACCEPTÉS — rien de nouveau, ceci confirme r56-r75).
-   L'attente générique bloquée (`sub_821E61A8`) déréférence l'offset +0x0
-   du bloc `object+0x2a90`, alors que le readback réel écrit par
-   `drain_locked()` est à `+0x3c` du même bloc — un champ différent. Et
-   `object+0x2a9c` (limite comparée, stable à 7) n'a aucun rapport avec les
-   indices d'écriture réels de l'anneau (19, 31). L'attente bloquée est
-   très probablement un **sous-allocateur séparé** (tampon de mise en
-   scène de liste de commandes?) partageant l'objet "périphérique
-   graphique" mais drainé par un mécanisme différent, non identifié — pas
-   le pipeline graphique lui-même.
-   **Prochaine étape immédiate** : trouver quel code retail écrit
-   `object+0x2a90+0x0` directement (pas via `+0x3c`) pour identifier ce
-   compteur et son mécanisme de drainage réel. Ne pas écrire de valeur
-   non-nulle synthétique avant cette identification. Voir
-   `reports/ac6-retail-native-codegen-gate2-r86-vd-pipeline-works-generic-wait-is-separate-20260831.md`,
-   et `reports/ac6-retail-native-codegen-gate2-r85-wrong-object-corrected-20260831.md`
-   pour le contexte de la correction d'identité.
+3. r85 a corrigé l'identité de l'objet bloqué (`0x10001a00`). r86 a montré
+   que le pipeline PM4/Vd natif fonctionne réellement et que l'attente
+   bloquée (`sub_821E61A8`, déréférence `object+0x2a90+0x0`) est un
+   sous-allocateur adjacent, pas l'anneau graphique lui-même. r87 a trouvé
+   la cause probable : `VdSetGraphicsInterruptCallback` enregistre
+   réellement `callback=0x821E63F0` (le vrai gestionnaire d'interruption
+   Vd/CP retail, qui invoque à son tour un sous-callback à
+   `context+0x2a94+0x14` via `bctrl`) — mais le stub natif de cet import
+   est un no-op complet qui n'enregistre ni n'invoque jamais rien.
+   `sub_821E63F0` n'est donc jamais appelé.
+   **Prochaine étape immédiate** : tracer le sous-callback
+   (`context+0x2a94+0x14`) jusqu'à `sub_821E60A8`/`sub_821E5D60` (l'écriture
+   de déblocage déjà identifiée dans le bloc `object+0x2a90`) pour
+   confirmer la chaîne complète. Si confirmé, le correctif est de faire
+   enregistrer et invoquer ce callback par le service Vd natif (via
+   `PPC_LOOKUP_FUNC`, comme le fait déjà le stub `ExCreateThread`) lors
+   d'une vraie progression d'anneau/IB observée dans `drain_locked()` —
+   jamais sur un minuteur fixe. Ne pas écrire de valeur non-nulle
+   synthétique avant cette confirmation. Voir
+   `reports/ac6-retail-native-codegen-gate2-r87-interrupt-callback-never-fires-20260831.md`.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais
