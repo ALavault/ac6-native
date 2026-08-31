@@ -1,3 +1,32 @@
+# AC6 retail NTSC-U/J — r95 : formatage hex du décodeur corrigé; plage de registres nommée précisément, pas corrigée (2026-09-01)
+
+- TROUVÉ ET CORRIGÉ : l'annotation d'erreur `INDIRECT_BUFFER` formatait
+  l'adresse IB et le header via `std::to_string()` (DÉCIMAL) sous un
+  préfixe littéral `"0x"` — l'alerte r94 sur une adresse IB dépassant
+  32 bits (`0x308019200`) était un artefact de formatage : c'est le
+  décimal `308019200`, en vrai hex `0x125c0000` — une adresse guest
+  ordinaire, valide, présente littéralement dans le dump d'anneau déjà
+  capturé par r94. Header : décimal `346112` = vrai hex `0x00054800`.
+  Corrigé (`to_hex()`, `snprintf("0x%08x", ...)`), vérifié sur le binaire
+  produit réel après resynchronisation de la copie build-tree.
+- CARACTÉRISÉ PRÉCISÉMENT (pas corrigé) : header `0x00054800` décodé
+  (type=0/TYPE0, base=`0x4800`=18432, count=6) — un besoin RÉEL et
+  légitime d'écrire 6 registres consécutifs au-delà de
+  `XenosState::kRegisterCount` (`0x4000`=16384). Pas un artefact de
+  désynchronisation de décodage (adresse hex maintenant résolvable et
+  valide, champs TYPE0 bien formés). Ne PAS agrandir `kRegisterCount` sans
+  base vérifiée (borne matérielle Xenos réelle non disponible ici, ou
+  scan du tampon indirect complet pour trouver le registre maximum
+  réellement touché) — deviner une constante serait exactement le type de
+  règle non contrôlée que la discipline du projet refuse.
+- CTest 9/9 (incluant le nouveau test), pytest 130/130 (inchangé). Gate
+  mission01 échoue toujours sur le même mismatch N2 préexistant.
+- OUVERT : scan du tampon indirect `0x125c0000` (2840 dwords) pour une
+  borne `kRegisterCount` vérifiée; identité du nouvel objet bloqué
+  (r94, non lue).
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r95-decode-error-hex-fixed-register-range-named-20260901.md`.
+
 # AC6 retail NTSC-U/J — r94 : double bswap EVENT_WRITE_SHD corrigé; le blocage r85-r93 est réellement résolu (2026-09-01)
 
 - TROUVÉ ET CORRIGÉ : `drain_locked()` (`native_guest_vd.cpp`) faisait

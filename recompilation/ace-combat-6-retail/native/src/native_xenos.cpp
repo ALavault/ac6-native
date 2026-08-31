@@ -1,6 +1,7 @@
 #include "ac6/native_xenos.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 
@@ -39,6 +40,17 @@ constexpr std::uint32_t type1_reg_b(std::uint32_t header) noexcept {
 Pm4Error make_error(Pm4ErrorCode code, std::size_t offset,
                     const char* detail) {
   return Pm4Error{code, offset, detail};
+}
+
+// std::to_string() formats decimals; every caller here labels the result
+// with a literal "0x" prefix, so a decimal value under that prefix reads as
+// a plausible-looking but wrong hex address (r94 found this made a genuine
+// in-range guest address, 0x125c0000, print as the decimal-as-hex-digits
+// "0x308019200" -- appearing to exceed 32 bits when it did not).
+std::string to_hex(std::uint32_t value) {
+  char buffer[11];
+  std::snprintf(buffer, sizeof(buffer), "0x%08x", value);
+  return std::string(buffer);
 }
 
 bool valid_dimensions(std::uint32_t width, std::uint32_t height) noexcept {
@@ -518,11 +530,11 @@ DecodeResult VdBridge::pump(XenosState& state,
             nested_span, candidate, nested);
         if (!nested_result.ok()) {
           error_ = nested_result.error;
-          error_.detail += " (IB 0x";
-          error_.detail += std::to_string(indirect->address);
+          error_.detail += " (IB ";
+          error_.detail += to_hex(indirect->address);
           if (nested_result.error.dword_offset < nested_span.size()) {
-            error_.detail += ", header 0x";
-            error_.detail += std::to_string(nested_span[nested_result.error.dword_offset]);
+            error_.detail += ", header ";
+            error_.detail += to_hex(nested_span[nested_result.error.dword_offset]);
           }
           error_.detail += ")";
           return false;

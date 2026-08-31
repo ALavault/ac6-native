@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r95-decode-error-hex-fixed-register-range-named-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r94-double-endian-swap-fixed-main-thread-unblocked-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r93-threading-avenue-exhausted-76-site-pass-started-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r92-event-callers-settled-dbgprint-added-20260901.md`;
@@ -60,12 +61,17 @@ et bloque maintenant via une chaîne ENTIÈREMENT NOUVELLE
 ce cycle) — progression réelle confirmée, pas une hypothèse. Aucune
 revendication de boot/titre/gameplay — la sonde expire toujours.
 
-**Nouvelle frontière (r94, pas caractérisée)** : un nouveau rejet de
-décodage boucle sans recul (`TYPE0 register range exceeds Xenos state, IB
-0x308019200` — adresse >32 bits, suspect); identité du nouvel objet
-bloqué non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
-(r79/r93) et la piste `sub_821E65B0` sont maintenant hors de propos — ils
-caractérisaient l'ANCIEN blocage, résolu.
+**r95** a corrigé le formatage hex du décodeur (l'alerte r94 sur une adresse
+IB >32 bits était `std::to_string()` décimal sous un préfixe `"0x"`
+littéral — artefact, pas un vrai problème d'adresse) et nommé PRÉCISÉMENT
+(pas corrigé) la vraie plage de registres : adresse réelle `0x125c0000`
+(valide), header réel `0x00054800` → TYPE0 base=`0x4800`=18432, count=6 —
+besoin réel et légitime au-delà de `XenosState::kRegisterCount`(`0x4000`).
+Ne pas agrandir cette constante sans base vérifiée (scan du tampon
+indirect complet, pas une supposition). Identité du nouvel objet bloqué
+(r94) toujours non lue. Le passage sur les 76 sites d'appel de
+`sub_821E60A8` (r79/r93) et la piste `sub_821E65B0` sont hors de propos —
+ils caractérisaient l'ANCIEN blocage, résolu en r94.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

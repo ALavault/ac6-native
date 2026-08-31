@@ -51,16 +51,23 @@ compteur injecté ou fallback ReXGlue.
    avant ce cycle) — progression réelle confirmée, pas une hypothèse.
    Voir
    `reports/ac6-retail-native-codegen-gate2-r94-double-endian-swap-fixed-main-thread-unblocked-20260901.md`.
-4. **Nouvelle frontière ouverte par r94, pas encore caractérisée** :
-   (a) un nouveau rejet de décodage boucle maintenant sans recul
-   (`decode_ok=0 code=5 TYPE0 register range exceeds Xenos state, IB
-   0x308019200` — l'adresse dépasse 32 bits, suspect, à vérifier en
-   premier); (b) l'identité et l'objet du nouveau blocage
-   `sub_821E6AC8`/`sub_821F03B0` ne sont pas lus. Le passage sur les 76
-   sites d'appel de `sub_821E60A8` (r79, r93 : 10/76 vérifiés) et la
-   piste `sub_821E65B0` sont maintenant hors de propos — ils
-   caractérisaient l'ANCIEN blocage, résolu. Ne pas y revenir sans raison
-   nouvelle. r90-r92 restent valables (busy-spin `NtReleaseMutant` corrigé,
+4. **r95 a corrigé le formatage hex du décodeur et nommé précisément (pas
+   corrigé) la plage de registres.** L'alerte r94 sur une adresse IB
+   >32 bits était un artefact de formatage : `std::to_string()` (décimal)
+   sous un préfixe `"0x"` littéral. Corrigé (`to_hex()`); adresse réelle
+   `0x125c0000` (valide, dans l'anneau déjà tracé), header réel
+   `0x00054800` → TYPE0, base registre `0x4800`=18432, count=6 — besoin
+   RÉEL et légitime au-delà de `XenosState::kRegisterCount`(`0x4000`).
+   **Ne pas agrandir `kRegisterCount` sans base vérifiée** (deviner une
+   borne matérielle serait une règle non contrôlée). **Prochain cycle :
+   scanner le tampon indirect complet `0x125c0000` (2840 dwords) pour
+   trouver le registre maximum réellement requis** — base concrète et
+   vérifiable, plutôt qu'une supposition. L'identité du nouvel objet
+   bloqué `sub_821E6AC8`/`sub_821F03B0` (r94) reste aussi non lue. Le
+   passage sur les 76 sites d'appel de `sub_821E60A8` (r79, r93) et la
+   piste `sub_821E65B0` sont hors de propos — ils caractérisaient
+   l'ANCIEN blocage, résolu en r94. Ne pas y revenir sans raison nouvelle.
+   r90-r92 restent valables (busy-spin `NtReleaseMutant` corrigé,
    `wait_event` bloquant, appelants événements réglés, `DbgPrint`
    disponible) — voir leurs rapports pour l'infrastructure de sonde
    toujours en place (`AC6_NATIVE_IMPORT_TRACE`, `AC6_NATIVE_VD_TRACE`).

@@ -242,6 +242,40 @@ void guest_vd_service_drains_published_dword_index() {
   assert(bus.ring_read() == 20u);
 }
 
+void indirect_buffer_decode_error_reports_real_hex_address() {
+  // r94/r95: the IB/header values were previously formatted with
+  // std::to_string() (decimal) under a literal "0x" prefix, so a genuine,
+  // in-range guest address (0x125c0000) printed as "0x308019200" -- the
+  // decimal digits of 308019200 -- appearing to exceed 32 bits when it did
+  // not. Confirm the error now reports the address in real hex.
+  MmioBus bus;
+  assert(bus.write(MmioBus::kRingSize, 256u));
+  std::vector<std::uint32_t> ring(64u, 0u);
+  constexpr std::uint32_t ib_address = 0x125c0000u;
+  ring[0] = ac6::native::pm4::type3_header(
+      ac6::native::pm4::kOpcodeIndirectBuffer, 2u);
+  ring[1] = ib_address;
+  ring[2] = 1u;
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  assert(bus.write(MmioBus::kRingWrite, 12u));
+  // A TYPE0 packet whose base register (0x4800) exceeds
+  // XenosState::kRegisterCount (0x4000): the same real, out-of-range
+  // register write r94 found live, not a fabricated case.
+  const std::vector<std::uint32_t> guest{
+      ac6::native::pm4::header(ac6::native::pm4::kType0, 1u, 0x4800u), 0u};
+  VdBridge bridge(bus);
+  bridge.set_ring_words(ring);
+  bridge.set_guest_words(ib_address, guest);
+  XenosState state;
+  std::vector<XenosCommand> output;
+  const auto result = bridge.pump(state, output);
+  assert(!result.ok());
+  assert(result.error.code == ac6::native::Pm4ErrorCode::kInvalidRegister);
+  assert(result.error.detail.find("0x125c0000") != std::string::npos);
+  assert(result.error.detail.find("0x00004800") != std::string::npos);
+  assert(result.error.detail.find("0x308019200") == std::string::npos);
+}
+
 void guest_vd_service_event_write_applies_single_endian_swap() {
   // r94: EVENT_WRITE_SHD delivery previously ran the value through
   // gpu_swap() (emulating the GPU's own byte-lane swap unit -- its result
@@ -291,6 +325,7 @@ int main() {
   decoder_enforces_hardware_predicate_and_one_register();
   ring_wrap_and_interrupt_are_bounded();
   indirect_buffers_expand_and_cycles_fail_closed();
+  indirect_buffer_decode_error_reports_real_hex_address();
   vulkan_boundary_fails_closed();
   shader_boundary_accepts_only_valid_spirv();
   guest_vd_service_drains_published_dword_index();
