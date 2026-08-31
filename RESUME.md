@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r94-double-endian-swap-fixed-main-thread-unblocked-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r93-threading-avenue-exhausted-76-site-pass-started-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r92-event-callers-settled-dbgprint-added-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md`;
@@ -39,46 +40,40 @@ peuple 19 832 mappings. Le profil natif passe CTest 9/9, pytest 130/130 (r92),
 l'audit d'installation et `validate.py --target ntsc-uj --runtime native`.
 
 Gate actif: runtime natif encore ouvert. La sonde r75 atteint le renderer Vd
-sans ReXGlue installé. Elle établit l'objet `0x10001a00`, son WPTR primaire
-`+10952`, le readback exact `state+60`, et la mémoire IB big-endian; le renderer
-accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
-reste ensuite sans retour et aucun gameplay visible n'est qualifié.
+sans ReXGlue installé; le renderer accepte `PM4_ME_INIT` (19 dwords) puis
+le lot IB bootstrap (12 dwords).
 
-CORRECTION r85 : l'objet réel est `0x10001a00` (confirmé 4x
-indépendamment, dernière fois r89). r86 : le pipeline PM4/Vd natif
-fonctionne; l'attente bloquée est un sous-allocateur adjacent. r87 avait
-proposé le stub no-op `VdSetGraphicsInterruptCallback` comme cause; r88
-a réfuté ce mécanisme précis. **r89 a confirmé r87/r88 par preuve mémoire
-vivante** — `sub_821E60A8` porte son propre verrou de complétion à usage
-unique (`object+0x2abd` bit 0x2), et ce verrou est prouvé jamais posé pour
-cet objet. **Négatif borné accepté pour ce sous-fil** (cinq cycles,
-r85-r89); le prochain cycle reprend la liste scheduler/kernel/VFS/XAM plus
-large de NEXT.md plutôt qu'une sixième hypothèse ponctuelle. Le passage
-statique sur les 76 sites d'appel de `sub_821E60A8` reste ouvert mais hors
-de portée pour l'instant. **r90** a ouvert la migration scheduler/kernel plus
-large (busy-spin `NtReleaseMutant` mesuré et corrigé). **r91** a mesuré
-1 547 456 `futex`/15s sur le mutex de la famille `create/set/clear/wait_event`
-et rendu `wait_event()` réellement bloquant (condition_variable, vérifié en
-direct), sans établir l'impact agrégat. **r92** a réglé la question ouverte
-de r91 (négatif, statique) : `NtClearEvent` a un seul appelant direct
-(`sub_821F4210`, lui-même appelé depuis neuf sites ordinaires distincts);
-`NtSetEvent` n'a aucun appelant direct (dispatch de callbacks indirect
-uniquement). Aucun spin invité trouvé — le volume s'explique par l'absence
-de régulateur de cadence dans la sonde offline. r92 a aussi ajouté un
-gestionnaire `DbgPrint` sûr (sans substitution varargs) mais zéro ligne
-produite sur 25s — négatif honnête, gardé pour une sonde future plus longue.
-**r93** a réglé (négatif) que la voie threading hôte est épuisée comme piste
-vers le jalon (sondes 60s/40s : rien de nouveau; `VdSwap` 0 hit/30s, attendu).
-r93 a aussi DÉMARRÉ (pas fermé) le passage différé sur les 76 sites d'appel
-de `sub_821E60A8` : 10/76 vérifiés. Trouvé : `sub_821E64A8` est en réalité un
-écrivain de paquets d'anneau (écrit 2 dwords au curseur, l'avance, puis
-attend). Un filet de sécurité de dépassement (6/10 sites vérifiés) n'est pas
-actuellement déclenché (curseur ~65 Ko sous la limite, valeurs vivantes
-confirmées) — mécanisme écarté sans rouvrir r88/r89. Prochain : les 66 sites
-restants (par lot) ou vérifier si `sub_821E65B0` est conditionné par quelque
-chose que ce runtime pourrait faire avancer. Les stubs restent build-only;
-`IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
-fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release.
+**FERMÉ (r94) : le blocage `sub_821E6AC8`/`0x10001a00` chassé depuis r51
+(r77-r93, identité d'objet r85, pipeline sain r86, deux mécanismes de
+déblocage réfutés r88/r93, négatif borné r89) est réellement résolu.**
+Cause réelle trouvée en r94, avec l'aide d'un avis externe reliant trois
+faits déjà connus mais jamais rapprochés : `drain_locked()` faisait passer
+les écritures `EVENT_WRITE_SHD` par `gpu_swap()` (émule le swap matériel
+GPU, résultat déjà final) PUIS `store_guest_word()` (son propre bswap) —
+deux échanges qui composaient au lieu d'annuler une seule transformation.
+Corrigé (`store_guest_bytes_raw()`, memcpy brut). Vérifié algébriquement
+contre les octets vivants (`05 00 00 00` jamais expliqués depuis r89
+devient `00 00 00 05`=5) ET en direct par reconstruction A/B isolée sur un
+seul fichier : le thread principal revient de l'ancienne chaîne d'attente
+et bloque maintenant via une chaîne ENTIÈREMENT NOUVELLE
+(`sub_821F03B0←sub_8234F558←sub_8233E0A8←sub_8233B5A0`, jamais vue avant
+ce cycle) — progression réelle confirmée, pas une hypothèse. Aucune
+revendication de boot/titre/gameplay — la sonde expire toujours.
+
+**Nouvelle frontière (r94, pas caractérisée)** : un nouveau rejet de
+décodage boucle sans recul (`TYPE0 register range exceeds Xenos state, IB
+0x308019200` — adresse >32 bits, suspect); identité du nouvel objet
+bloqué non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
+(r79/r93) et la piste `sub_821E65B0` sont maintenant hors de propos — ils
+caractérisaient l'ANCIEN blocage, résolu.
+
+**r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
+mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
+`wait_event()` réellement bloquant (r91); appelants événements réglés,
+`DbgPrint` disponible (r92, gated `AC6_NATIVE_IMPORT_TRACE`). Les stubs
+restent build-only; `IM_LOAD_IMMEDIATE` est borné mais sa traduction
+Xenos→SPIR-V n'est pas fermée. Ne pas revendiquer titre, M01, campagne,
+save/replay ou release.
 
 Le patch XenonRecomp utilisé pour r11 reste dans une copie de build ignorée;
 le checkout verrouillé et les sources générées ne doivent pas entrer dans le

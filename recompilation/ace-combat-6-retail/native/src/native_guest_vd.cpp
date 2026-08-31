@@ -36,6 +36,20 @@ void store_guest_word(std::uint8_t* base, GuestAddress address,
   std::memcpy(base + address, &encoded, sizeof(encoded));
 }
 
+// gpu_swap() emulates the Xenos GPU's own byte-lane swap unit: its result
+// IS the final byte pattern the hardware would write to memory, already in
+// the correct guest (big-endian) order once read back as raw bytes off a
+// little-endian host. Unlike store_guest_word() -- which converts a normal
+// host-native logical value into guest-BE bytes via one bswap -- writing a
+// gpu_swap() result through store_guest_word() applies a second,
+// compounding bswap and corrupts the delivered value. Use this instead for
+// anything that has already passed through gpu_swap().
+void store_guest_bytes_raw(std::uint8_t* base, GuestAddress address,
+                           std::uint32_t already_swapped_value) noexcept {
+  std::memcpy(base + address, &already_swapped_value,
+              sizeof(already_swapped_value));
+}
+
 std::uint32_t gpu_swap(std::uint32_t value, Endian endian) noexcept {
   switch (endian) {
     case Endian::kNone:
@@ -268,7 +282,10 @@ void NativeGuestVdService::drain_locked() noexcept {
       continue;
     }
     const Endian endian = static_cast<Endian>(event->address & 3u);
-    store_guest_word(base_, guest_address, gpu_swap(event->value, endian));
+    const std::uint32_t stored = gpu_swap(event->value, endian);
+    store_guest_bytes_raw(base_, guest_address, stored);
+    trace("vd event write guest=0x%08x raw_value=0x%08x endian=%u stored=0x%08x",
+          guest_address, event->value, static_cast<unsigned>(endian), stored);
   }
 }
 

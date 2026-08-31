@@ -1,3 +1,8 @@
+#ifdef NDEBUG
+#error "Every check in this suite is an assert(); NDEBUG erases them and the \
+suite then passes vacuously. Build this target with -UNDEBUG."
+#endif
+
 #include "ac6/native_vulkan_backend.h"
 #include "ac6/native_guest_memory.h"
 #include "ac6/native_guest_vd.h"
@@ -237,6 +242,45 @@ void guest_vd_service_drains_published_dword_index() {
   assert(bus.ring_read() == 20u);
 }
 
+void guest_vd_service_event_write_applies_single_endian_swap() {
+  // r94: EVENT_WRITE_SHD delivery previously ran the value through
+  // gpu_swap() (emulating the GPU's own byte-lane swap unit -- its result
+  // is already the final guest-visible byte pattern) and then through
+  // store_guest_word() (which applies its own bswap for a normal
+  // host-native logical value), compounding two swaps into a corrupted
+  // result. Verified against live retail traces before the fix: a fence
+  // value of 5 with Endian::k8In32 was landing in guest memory as bytes
+  // 05 00 00 00 (big-endian 0x05000000) instead of the correct 00 00 00 05.
+  ac6::native::GuestAddressSpace guest;
+  assert(guest.valid());
+  ac6::native::MmioBus bus;
+  ac6::native::VdBridge bridge(bus);
+  ac6::native::XenosState state;
+  ac6::native::VulkanBackend backend;
+  ac6::native::NativeGuestVdService service;
+  service.bind(guest.base(), bus, bridge, state, backend);
+  constexpr std::uint32_t ring = 0x10000u;
+  constexpr std::uint32_t fence_target = 0x30000u;
+  service.register_allocation(guest.base(), ring, 256u);
+  service.register_allocation(guest.base(), fence_target, 16u);
+  service.initialize_ring(guest.base(), ring, 5u);  // 1 << (5 + 3) bytes
+  const std::array<std::uint32_t, 4> words{
+      ac6::native::pm4::type3_header(ac6::native::pm4::kOpcodeEventWriteShd,
+                                     3u),
+      0u,                    // initiator: must satisfy (& ~0x8000003Fu) == 0
+      fence_target | 0x2u,   // address | Endian::k8In32 in the low 2 bits
+      5u};                   // value
+  for (std::size_t index = 0u; index < words.size(); ++index) {
+    const std::uint32_t encoded = __builtin_bswap32(words[index]);
+    std::memcpy(guest.base() + ring + index * 4u, &encoded, sizeof(encoded));
+  }
+  service.publish_write_address(guest.base(), ring + words.size() * 4u);
+  std::uint32_t stored = 0u;
+  std::memcpy(&stored, guest.base() + fence_target, sizeof(stored));
+  const std::uint32_t stored_be = __builtin_bswap32(stored);
+  assert(stored_be == 5u);
+}
+
 }  // namespace
 
 int main() {
@@ -250,5 +294,6 @@ int main() {
   vulkan_boundary_fails_closed();
   shader_boundary_accepts_only_valid_spirv();
   guest_vd_service_drains_published_dword_index();
+  guest_vd_service_event_write_applies_single_endian_swap();
   return 0;
 }

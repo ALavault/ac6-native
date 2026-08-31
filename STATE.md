@@ -1,3 +1,58 @@
+# AC6 retail NTSC-U/J — r94 : double bswap EVENT_WRITE_SHD corrigé; le blocage r85-r93 est réellement résolu (2026-09-01)
+
+- TROUVÉ ET CORRIGÉ : `drain_locked()` (`native_guest_vd.cpp`) faisait
+  passer les écritures `EVENT_WRITE_SHD` par `gpu_swap()` PUIS
+  `store_guest_word()` — le premier émule l'unité d'échange d'octets du
+  GPU (son résultat EST déjà le motif d'octets final), le second applique
+  SON PROPRE bswap (correct pour une valeur logique normale, faux ici) —
+  deux échanges qui se composent au lieu d'annuler une seule
+  transformation voulue. Vérifié algébriquement (Python, arithmétique
+  exacte) AVANT toute modification, contre les DEUX valeurs vivantes
+  observées : `raw=5` → octets actuels `05 00 00 00` (correspond
+  EXACTEMENT aux lectures r89/r91/r93, jamais expliquées) → octets
+  corrigés `00 00 00 05` (=5); `raw=0x162e00d4` → octets actuels
+  `d4 00 2e 16` (pas une adresse valide) → octets corrigés
+  `16 2e 00 d4` (=0x162e00d4, une adresse propre dans la plage anneau déjà
+  tracée). Correctif : nouvelle fonction `store_guest_bytes_raw()` (memcpy
+  brut, pas de second bswap), utilisée à la place de `store_guest_word()`
+  pour ce chemin uniquement.
+- VÉRIFIÉ EN DIRECT, isolé par reconstruction A/B (fichier unique
+  git-stashé puis restauré) : SANS le correctif, comportement r93 identique
+  (une seule séquence publish/accepted, pas de boucle). AVEC le correctif,
+  comportement RÉELLEMENT différent : la même étape se répète en boucle
+  (dizaines de milliers de fois/30s), maintenant REJETÉE
+  (`decode_ok=0 code=5 TYPE0 register range exceeds Xenos state, IB
+  0x308019200`) — un nouveau problème séparé, non caractérisé ce cycle.
+- **PROUVÉ (GDB, thread principal) : le blocage r85-r93 est RÉELLEMENT
+  RÉSOLU.** Le thread principal est de nouveau dans
+  `sub_821E6AC8←sub_821E61A8` mais atteint par une chaîne d'appel
+  ENTIÈREMENT DIFFÉRENTE et jamais vue auparavant :
+  `←sub_821F03B0←sub_8234F558←sub_8233E0A8←sub_8233B5A0` (contre
+  `←sub_821E64A8←sub_821E65B0←sub_8234F2C8` à chaque cycle précédent). Le
+  thread est revenu de l'ancienne chaîne, a exécuté du code invité réel
+  jamais atteint auparavant, et bloque maintenant sur une NOUVELLE
+  instance du même mécanisme d'attente — objet probablement différent,
+  non identifié ce cycle.
+- TROUVÉ (incident, en vérifiant que le nouveau test s'exécuterait
+  réellement) : les 8 fichiers de test natifs retail utilisaient
+  `assert()` SANS garde `#ifdef NDEBUG/#error` — exactement la classe de
+  défaut déjà corrigée pour la piste demo mais jamais appliquée au retail.
+  CMake force déjà `-UNDEBUG` sur ces cibles (pas de bug actif), mais à un
+  seul retrait de flag CMake près. Corrigé (garde ajoutée aux 8 fichiers);
+  `audit_test_assert_liveness.py` passe maintenant propre (suites=8
+  vacuous=0).
+- CTest 9/9 (incluant le nouveau test), pytest 130/130 (inchangé, aucun
+  changement Python ce cycle). Gate mission01 échoue toujours sur le même
+  mismatch N2 préexistant, sans rapport.
+- AUCUNE revendication de boot/titre/gameplay — la sonde expire toujours;
+  ceci est une progression réelle confirmée au-delà d'un blocage
+  spécifique longuement investigué, pas un nouveau jalon atteint.
+- OUVERT : identité du nouvel objet bloqué (non lue); nature du nouveau
+  rejet de décodage `TYPE0`/`IB 0x308019200` (adresse >32 bits, suspect,
+  à vérifier en premier) — frontière concrète du prochain cycle.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r94-double-endian-swap-fixed-main-thread-unblocked-20260901.md`.
+
 # AC6 retail NTSC-U/J — r93 : voie threading épuisée; passage 76-sites démarré, pas fermé (2026-09-01)
 
 - RÉGLÉ : la voie threading hôte (r90-r92) est épuisée comme piste vers le
