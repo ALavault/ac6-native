@@ -1,3 +1,31 @@
+# AC6 retail NTSC-U/J — r88 : la chaîne r87 n'atteint pas l'écriture de déblocage (2026-08-31)
+
+- CORRIGÉ : relecture précise de `sub_821E63F0` — l'offset `+0x10` du bloc
+  `object+0x2a94` N'EST PAS un sentinel séparé, c'est le POINTEUR DE
+  FONCTION du sous-callback lui-même (le test `0xBADF00D` est une garde
+  anti-poison, pas une condition normale); `+0x14` est son contexte. Quand
+  ce pointeur est NUL (confirmé : c'est le cas ici, le bloc est fraîchement
+  `memset`é à zéro par `sub_821E65B0` et jamais réécrit — seul écrivain via
+  déréférencement dans toute l'image : le handler lui-même, à l'offset
+  +0x0, pas +0x10/+0x14), le gestionnaire d'interruption SAUTE
+  intentionnellement l'appel du sous-callback.
+- PROUVÉ (runtime, confirmation indépendante n°3 de l'identité d'objet) :
+  `ctx.r3=0x821E63F0`, `ctx.r4=0x10001a00` au point d'entrée réel de
+  `VdSetGraphicsInterruptCallback`.
+- DÉCISION : même une correction du stub natif de cet import
+  n'atteindrait PAS `sub_821E60A8`/`sub_821E5D60` par ce chemin — la
+  chaîne causale de r87 ne tient pas telle que tracée. Rétractée comme
+  mécanisme de correction (les faits bruts restent valables). Après quatre
+  cycles à resserrer puis fermer des mécanismes spécifiques sans trouver
+  la réponse finale, la prochaine étape doit reconsidérer la portée plutôt
+  que proposer une cinquième hypothèse : soit documenter un négatif borné
+  pour ce sous-fil et revenir à la liste plus large de NEXT.md
+  (scheduler/kernel), soit s'engager dans un passage statique
+  substantiellement plus coûteux (les 76 sites d'appel de
+  `sub_821E60A8`) seulement si jugé utile.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r88-nested-callback-is-null-by-design-20260831.md`.
+
 # AC6 retail NTSC-U/J — r87 : le callback d'interruption Vd retail n'est jamais invoqué (2026-08-31)
 
 - PROUVÉ : `VdSetGraphicsInterruptCallback` a deux appelants statiques.
