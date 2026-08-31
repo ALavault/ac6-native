@@ -1,3 +1,35 @@
+# AC6 retail NTSC-U/J — r92 : appelants événements réglés (négatif), visibilité `DbgPrint` ajoutée (2026-09-01)
+
+- RÉGLÉ (statique, `FindDirectCallsTo.java` sur les adresses guest de
+  `NtSetEvent`=0x823D015C/`NtClearEvent`=0x823D017C) : question ouverte de
+  r91. `NtClearEvent` a UN appelant direct (`sub_821F4210`), lui-même
+  appelé depuis **neuf** sites distincts à travers six fonctions parentes
+  ordinaires de tailles variées (80-368 instructions) — motif « effacer un
+  drapeau de statut » diffus, pas une boucle dégénérée. `NtSetEvent` a
+  ZÉRO appelant direct — atteint uniquement via le dispatch de callbacks
+  indirect déjà caractérisé en r91 (`sub_821F7C80`). **Négatif** : aucun
+  spin invité trouvé dans le graphe d'appel statique; le volume mesuré
+  s'explique par l'absence de régulateur de fréquence d'image dans cette
+  sonde offline, pas par un défaut.
+- AJOUTÉ : gestionnaire `DbgPrint` (gated `AC6_NATIVE_IMPORT_TRACE=1`,
+  lecture brute bornée à 512 octets via `PPC_LOAD_U8`, sans substitution
+  varargs — jugée non vérifiable en sécurité depuis seulement deux sites
+  d'appel statiques). Site d'appel 1 (`sub_821EF458`) pré-formate déjà via
+  un helper type `vsnprintf` avant `DbgPrint` (aucun vararg vivant au point
+  d'appel réel); site 2 (`sub_821F5ED0`) passe une chaîne littérale + un
+  entier brut. Vérifié SÛR (compile, 17/17 tests) mais **zéro ligne
+  `[DbgPrint]` sur une sonde bornée de 25s** — négatif honnête, aucun des
+  deux sites n'est atteint dans cette fenêtre; gardé pour une sonde future
+  plus longue.
+- CTest 9/9, pytest 130/130 (129+1 nouveau). Gate mission01 échoue
+  toujours sur le même mismatch N2 préexistant, sans rapport.
+- OUVERT : aucune piste étroite restante sur ce fil événements; prochain
+  cycle devrait soit continuer le survol par fréquence mesurée
+  (`AC6_NATIVE_IMPORT_TRACE`), soit évaluer un régulateur de cadence
+  minimal.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r92-event-callers-settled-dbgprint-added-20260901.md`.
+
 # AC6 retail NTSC-U/J — r91 : `wait_event` bloque désormais réellement; l'impact agrégat reste ouvert (2026-08-31)
 
 - TROUVÉ (statique) : `sub_821F7C80` (appelé par `sub_821F8008`, un des

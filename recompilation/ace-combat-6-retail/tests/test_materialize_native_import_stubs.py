@@ -160,6 +160,24 @@ def test_physical_memory_binding_feeds_guest_ring_allocations(tmp_path: Path) ->
     assert "ctx.r3.u64 &= 0x1fffffffu" in text
 
 
+def test_dbg_print_dumps_raw_guest_string_without_synthesizing_varargs(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__DbgPrint);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    assert "PPC_LOAD_U8(guest_format + length)" in text
+    assert "AC6_NATIVE_IMPORT_TRACE" in text
+    assert "[DbgPrint] %s" in text
+    # No printf-style substitution of guest register args: only the raw
+    # format string is dumped, since a caller-side arg is not reliably
+    # readable as a specific type from this stub alone.
+    assert "ctx.r4" not in text
+    assert "ctx.r3.u64 = 0u" in text
+
+
 def test_wait_event_blocks_briefly_instead_of_busy_spinning(
     tmp_path: Path,
 ) -> None:

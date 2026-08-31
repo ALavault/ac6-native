@@ -23,7 +23,7 @@ compteur injecté ou fallback ReXGlue.
 
 1. Codegen direct r11 : receipt `pass`, 81 fichiers, zéro diagnostic, 229
    imports et 19 832 mappings. Le profil `native` compile et installe
-   `ac6recomp`; CTest **9/9**, pytest **129/129** (r91), audit d’installation et
+   `ac6recomp`; CTest **9/9**, pytest **130/130** (r92), audit d’installation et
    validator ordinaire passent.
 2. Le renderer Vd natif consomme le WPTR primaire qualifié `object+10952`
    (index dwords), le readback exact `state+60` et les IB depuis la mémoire
@@ -61,17 +61,22 @@ compteur injecté ou fallback ReXGlue.
    mutex partagé de la famille `create/set/clear/wait_event`.
    `wait_event()` bloque désormais réellement (condition_variable, 2 ms,
    contrat appelant inchangé) au lieu de retourner instantanément — vérifié
-   en direct (GDB : vrai `pthread_cond_wait`). **Non établi et
-   explicitement laissé ouvert** : l'impact sur le volume `futex` agrégat
-   (indiscernable avant/après par `strace`, comparaison croisée avec les
-   points d'arrêt GDB invalide car surcoûts d'instrument non comparables).
-   `NtSetEvent`/`NtClearEvent`/`wait_event` sont réellement sollicités à
-   ~5000/s mesurés — signalisation moteur légitime ou spin côté invité,
-   question ouverte. **Prochain cycle : tracer statiquement les appelants
-   réels de `NtSetEvent`/`NtClearEvent`** (quelles fonctions invité, à quel
-   point de leur flot) pour trancher cette question plutôt que la deviner.
-   Voir
-   `reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md`.
+   en direct (GDB : vrai `pthread_cond_wait`). **r92 a réglé la question
+   ouverte de r91** (négatif) : `FindDirectCallsTo.java` montre
+   `NtClearEvent` appelé depuis un seul site (`sub_821F4210`), lui-même
+   appelé depuis neuf sites distincts et ordinaires; `NtSetEvent` n'a
+   aucun appelant direct (atteint seulement via le dispatch de callbacks
+   indirect `sub_821F7C80`). Aucun spin invité trouvé — le volume mesuré
+   s'explique par l'absence de régulateur de cadence dans la sonde
+   offline. r92 a aussi ajouté un gestionnaire `DbgPrint` (sûr, testé,
+   sans substitution varargs) mais **zéro ligne produite sur une sonde de
+   25s** — ni les deux sites d'appel statiques ni de nouvelle visibilité
+   gagnée ce cycle. **Prochain cycle : plus de piste étroite sur ce
+   fil** — reprendre le survol par fréquence mesurée
+   (`AC6_NATIVE_IMPORT_TRACE`, méthode r90) sur une fenêtre plus longue, ou
+   évaluer un régulateur de cadence minimal avant de continuer à chasser
+   des familles d'imports une par une. Voir
+   `reports/ac6-retail-native-codegen-gate2-r92-event-callers-settled-dbgprint-added-20260901.md`.
    Conserver le poll limité au champ WPTR, jamais au contenu non publié du
    ring.
 5. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu

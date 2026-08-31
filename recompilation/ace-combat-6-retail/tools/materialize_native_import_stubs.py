@@ -183,6 +183,30 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = address;
 """
+    if name == "DbgPrint":
+        # r91/r92: DbgPrint's two static retail call sites either pass an
+        # already-formatted buffer (a caller-side vsnprintf-style helper
+        # resolves %-specifiers before calling DbgPrint) or a literal
+        # string with a raw extra register argument. Substituting the
+        # latter's specifier ourselves would mean reimplementing a PPC
+        # varargs printf, which is not verified safe against arbitrary
+        # guest format strings -- so this dumps the raw guest string
+        # unmodified (still fully resolved for the common pre-formatted
+        # case) rather than risk misreading guest registers as va_args.
+        return """  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    char message[512];
+    std::size_t length = 0;
+    const std::uint32_t guest_format = ctx.r3.u32;
+    while (length + 1 < sizeof(message)) {
+      const char byte = static_cast<char>(PPC_LOAD_U8(guest_format + length));
+      if (byte == '\\0') break;
+      message[length++] = byte;
+    }
+    message[length] = '\\0';
+    std::fprintf(stderr, "[DbgPrint] %s\\n", message);
+  }
+  ctx.r3.u64 = 0u;
+"""
     if name == "MmGetPhysicalAddress":
         return "  ctx.r3.u64 &= 0x1fffffffu;  // deterministic guest physical alias\n"
     if name in {"MmFreePhysicalMemory", "MmSetAddressProtect",

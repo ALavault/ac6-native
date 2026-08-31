@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r92-event-callers-settled-dbgprint-added-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r91-wait-event-blocks-aggregate-impact-open-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r90-mutant-release-busy-spin-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r89-latch-confirms-r87-bounded-negative-20260831.md`;
@@ -33,7 +34,7 @@ Identités déjà scellées: XEX US
 Sous-gate codegen/liaison fermé: receipt r11 `pass`, 81 fichiers générés,
 62 629 029 octets, zéro diagnostic et aucune instruction non reconnue. Le
 guest se lie à `ppc_func_mapping.cpp` et 229 imports offline; `ac6recomp`
-peuple 19 832 mappings. Le profil natif passe CTest 9/9, pytest 129/129 (r91),
+peuple 19 832 mappings. Le profil natif passe CTest 9/9, pytest 130/130 (r92),
 l'audit d'installation et `validate.py --target ntsc-uj --runtime native`.
 
 Gate actif: runtime natif encore ouvert. La sonde r75 atteint le renderer Vd
@@ -54,17 +55,19 @@ r85-r89); le prochain cycle reprend la liste scheduler/kernel/VFS/XAM plus
 large de NEXT.md plutôt qu'une sixième hypothèse ponctuelle. Le passage
 statique sur les 76 sites d'appel de `sub_821E60A8` reste ouvert mais hors
 de portée pour l'instant. **r90** a ouvert la migration scheduler/kernel plus
-large (busy-spin `NtReleaseMutant` mesuré et corrigé). **r91** a continué sur
-les threads worker qu'il a révélés : `sub_821F7C80` est un dispatch de
-callbacks ordinaire, pas la cause; `strace` a mesuré 1 547 456 `futex`/15s
-sur le mutex partagé de la famille `create/set/clear/wait_event`.
-`wait_event()` bloque désormais réellement (condition_variable, vérifié en
-direct), mais l'impact sur le volume `futex` agrégat reste **explicitement
-non établi** (indiscernable avant/après par mesure directe; comparaison
-croisée avec GDB invalide, surcoûts d'instrument non comparables) — ne pas
-revendiquer que le spin est éliminé. Prochain : tracer statiquement les
-appelants réels de `NtSetEvent`/`NtClearEvent` (~5000/s mesurés) pour
-trancher signalisation légitime vs. spin invité. Les stubs restent build-only;
+large (busy-spin `NtReleaseMutant` mesuré et corrigé). **r91** a mesuré
+1 547 456 `futex`/15s sur le mutex de la famille `create/set/clear/wait_event`
+et rendu `wait_event()` réellement bloquant (condition_variable, vérifié en
+direct), sans établir l'impact agrégat. **r92** a réglé la question ouverte
+de r91 (négatif, statique) : `NtClearEvent` a un seul appelant direct
+(`sub_821F4210`, lui-même appelé depuis neuf sites ordinaires distincts);
+`NtSetEvent` n'a aucun appelant direct (dispatch de callbacks indirect
+uniquement). Aucun spin invité trouvé — le volume s'explique par l'absence
+de régulateur de cadence dans la sonde offline. r92 a aussi ajouté un
+gestionnaire `DbgPrint` sûr (sans substitution varargs) mais zéro ligne
+produite sur 25s — négatif honnête, gardé pour une sonde future plus longue.
+Plus de piste étroite sur ce fil; prochain : survol par fréquence mesurée sur
+fenêtre plus longue, ou régulateur de cadence minimal. Les stubs restent build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release.
 
