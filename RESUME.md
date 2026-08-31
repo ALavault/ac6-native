@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r95-decode-error-hex-fixed-register-range-named-20260901.md`;
@@ -77,10 +78,15 @@ portent le bit prédicat (opcodes déjà implémentés); le premier opcode
 vraiment inconnu (`0x46`) n'apparaît qu'après, puis `0x45` se répète 257
 fois. Aucune infrastructure de prédicat n'existe dans ce code; deviner la
 sémantique matérielle risquerait une corruption visuelle silencieuse —
-refusé, besoin d'une source externe vérifiée. Prochain : soit une source
-Xenos PM4 vérifiée, soit (probablement plus haute valeur) étudier les
-opcodes `0x45`/`0x46` depuis le désassemblage invité. Identité du nouvel
-objet bloqué (r94) toujours non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
+refusé, besoin d'une source externe vérifiée. **r98** a tracé `0x45`
+(`sub_821EB8B8`, table 256 entrées via rampe 127/255) et `0x46`
+(`sub_821EBB40`, même motif curseur/limite→`sub_821E60A8` que r93/r94,
+structure = `INVALIDATE_STATE`) depuis le code réel, et les a implémentés
+en suivant des précédents établis (pas devinés). Vérifié par test unitaire
+mais sonde vivante INCHANGÉE — le décodage bute toujours sur le prédicat
+(r97) avant d'atteindre ces opcodes. **Le prédicat est maintenant le seul
+blocage vivant restant** sur ce tampon. Identité du nouvel objet bloqué
+(r94) toujours non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
 (r79/r93) et la piste `sub_821E65B0` sont hors de propos — ils
 caractérisaient l'ANCIEN blocage, résolu en r94.
 

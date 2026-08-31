@@ -82,8 +82,24 @@ compteur injecté ou fallback ReXGlue.
    étudier les opcodes `0x45`/`0x46` (257+1 paquets, la majorité du
    contenu) depuis le désassemblage invité réel — sans le risque de
    corruption silencieuse (échec bruyant, pas une exécution incorrecte).
-   Voir
-   `reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md`.
+   **r98 a fait exactement ça** : `FindInstructionScalar.java` a tracé
+   `0x45` à `sub_821EB8B8` (écrit une forme fixe de 6 dwords 256 fois,
+   empaquetant 3 tableaux uint16 fournis par l'appelant, dont le
+   producteur `sub_821F00C0` divise un compteur par 127/255 — forme de
+   rampe/table de quantification) et `0x46` à `sub_821EBB40` (atteint le
+   MÊME motif dépassement curseur/limite → `sub_821E60A8` déjà caractérisé
+   r93/r94, structure identique à `INVALIDATE_STATE`/0x3B déjà
+   implémenté). **Implémentés** en suivant des précédents établis dans ce
+   code (0x45 comme `SET_BIN_MASK`, accepté structurellement sans
+   modélisation sémantique; 0x46 identique à `INVALIDATE_STATE`) — pas
+   devinés. Vérifié : tests unitaires reproduisant les paquets réels,
+   décodage réussi. **Sonde vivante INCHANGÉE** : le décodage bute
+   toujours sur le prédicat à l'offset 239 (r97, non résolu), 0x45/0x46
+   étant plus loin dans le flux — correctif correct et vérifié, mais sans
+   effet observable tant que la question du prédicat n'est pas résolue.
+   **Le prédicat (r97) reste donc le SEUL blocage vivant restant** sur ce
+   tampon. Voir
+   `reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md`.
    L'identité du nouvel objet bloqué `sub_821E6AC8`/`sub_821F03B0` (r94)
    reste aussi non lue. Le passage sur les 76 sites d'appel de
    `sub_821E60A8` (r79, r93) et la piste `sub_821E65B0` sont hors de

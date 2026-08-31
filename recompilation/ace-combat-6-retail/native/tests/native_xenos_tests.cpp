@@ -89,6 +89,39 @@ void decoder_covers_type1_and_type2_without_silent_effects() {
   assert(output.empty());
 }
 
+void decoder_accepts_verified_retail_opcodes_0x45_and_0x46() {
+  // r98: both opcodes verified against real retail construction code
+  // (sub_821EB8B8/sub_821EBB40) -- see kOpcodeSetGammaOrDitherTable's and
+  // kOpcodeInvalidateStateExtended's definitions for what was confirmed.
+  // Reproduces the exact real packets captured from guest 0x125c0000.
+  XenosState state;
+  std::vector<XenosCommand> output;
+  const std::vector<std::uint32_t> table_entry{
+      ac6::native::pm4::header(ac6::native::pm4::kType3, 6u,
+                               ac6::native::pm4::kOpcodeSetGammaOrDitherTable
+                                   << 8u),
+      0x7u, 0x1925u, 0x30088u, 0xffffffffu, 0x1922u, 0x1u};
+  auto result = Pm4Decoder::decode_stream(table_entry, state, output);
+  assert(result.ok());
+  assert(output.empty());
+
+  const std::vector<std::uint32_t> wrong_count{
+      ac6::native::pm4::header(ac6::native::pm4::kType3, 1u,
+                               ac6::native::pm4::kOpcodeSetGammaOrDitherTable
+                                   << 8u),
+      0u};
+  assert(!Pm4Decoder::decode_stream(wrong_count, state, output).ok());
+
+  const std::vector<std::uint32_t> extended_invalidate{
+      ac6::native::pm4::header(
+          ac6::native::pm4::kType3, 1u,
+          ac6::native::pm4::kOpcodeInvalidateStateExtended << 8u),
+      0xfu};
+  result = Pm4Decoder::decode_stream(extended_invalidate, state, output);
+  assert(result.ok());
+  assert(output.empty());
+}
+
 void decoder_enforces_hardware_predicate_and_one_register() {
   XenosState state;
   std::vector<XenosCommand> output;
@@ -342,6 +375,7 @@ int main() {
   decoder_commits_only_complete_packet();
   decoder_rejects_unknown_and_bad_wait();
   decoder_covers_type1_and_type2_without_silent_effects();
+  decoder_accepts_verified_retail_opcodes_0x45_and_0x46();
   decoder_enforces_hardware_predicate_and_one_register();
   ring_wrap_and_interrupt_are_bounded();
   indirect_buffers_expand_and_cycles_fail_closed();

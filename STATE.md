@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r98 : opcodes 0x45/0x46 implémentés depuis code réel vérifié; le prédicat reste le blocage vivant (2026-09-01)
+
+- TRACÉ (méthode `FindInstructionScalar.java`, PAS deviné) : `0x45` —
+  un seul site statique (`0x821eb918`, dans `sub_821EB8B8`) construit
+  exactement le header `0xC0054500` observé, écrivant une forme fixe de
+  6 dwords 256 fois, empaquetant 3 tableaux uint16 parallèles fournis par
+  l'appelant. Le producteur de ce tableau (`sub_821F00C0`) le remplit par
+  division d'un compteur par 127/255 — forme de rampe linéaire/table de
+  quantification, cohérente avec (pas prouvée identique à) une table de
+  gamma d'affichage ou de tramage.
+- `0x46` — construit dans `sub_821EBB40`, qui atteint le MÊME motif
+  dépassement curseur/limite → `sub_821E60A8` déjà entièrement
+  caractérisé (r93/r94) pour la famille d'écrivains de paquets d'anneau,
+  avant d'écrire header `0xC0004600` payload `0xF` (correspond au paquet
+  réel exactement) — même famille productrice, même forme structurelle
+  que `INVALIDATE_STATE` (0x3B) déjà implémenté.
+- CORRIGÉ (implémentation étroite, suivant des précédents établis dans ce
+  code, pas devinée) : `kOpcodeSetGammaOrDitherTable`=0x45 traité comme
+  `SET_BIN_MASK`/`SELECT` (accepté structurellement, count==6, payload non
+  modélisé sémantiquement); `kOpcodeInvalidateStateExtended`=0x46 traité
+  IDENTIQUEMENT à `INVALIDATE_STATE` (accepté, count==1, aucun effet
+  d'état supplémentaire modélisé).
+- VÉRIFIÉ : tests unitaires reproduisant les paquets réels capturés,
+  décodage réussi. MAIS sonde vivante INCHANGÉE — le décodage bute
+  toujours sur le `DRAW_INDX_2` prédiqué à l'offset 239 (r97, non résolu
+  délibérément); 0x45/0x46 se trouvent après ce point dans le flux réel,
+  donc ce correctif, bien que correct et vérifié, n'a aucun effet
+  observable sur la sonde tant que la question du prédicat n'est pas
+  résolue — énoncé clairement plutôt que sous-entendu.
+- CTest 9/9 (incluant le nouveau test), pytest 130/130. Gate mission01
+  échoue toujours sur le même mismatch N2 préexistant.
+- OUVERT : la question du prédicat (r97) reste le seul blocage vivant
+  restant sur ce tampon spécifique; identité du nouvel objet bloqué
+  `sub_821E6AC8`/`sub_821F03B0` (r94) toujours non lue.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md`.
+
 # AC6 retail NTSC-U/J — r97 : sémantique de prédicat a besoin d'une source externe; 2 blocages + 257 paquets non implémentés cartographiés (2026-09-01)
 
 - CARACTÉRISÉ (pas de code modifié, cycle d'investigation délibéré) : sur

@@ -231,6 +231,24 @@ DecodeResult Pm4Decoder::decode_one(std::span<const std::uint32_t> words,
       // The payload is a driver state-pointer mask. The immutable native
       // state snapshot is already replaced transactionally below.
       break;
+    case pm4::kOpcodeInvalidateStateExtended:
+      if (count != 1u) {
+        return {0u, make_error(Pm4ErrorCode::kInvalidPayload, 1u,
+                               "0x46 state packet requires one payload dword")};
+      }
+      // r98: same shape and role as INVALIDATE_STATE above, verified from
+      // the retail construction site (sub_821EBB40) -- accepted, no
+      // further state effect modeled.
+      break;
+    case pm4::kOpcodeSetGammaOrDitherTable:
+      if (count != 6u) {
+        return {0u, make_error(Pm4ErrorCode::kInvalidPayload, 1u,
+                               "0x45 table packet requires six payload dwords")};
+      }
+      // r98: accepted structurally like SET_BIN_MASK/SELECT above --
+      // payload is one entry of a 256-entry table (see kOpcodeSetGammaOrDitherTable's
+      // definition for what's verified about it), not semantically modeled.
+      break;
     case pm4::kOpcodeEventWriteShd:
       if (count != 3u || (payload[0] & ~0x8000003Fu) != 0u) {
         return {0u, make_error(Pm4ErrorCode::kInvalidPayload, 1u,
