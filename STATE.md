@@ -1,3 +1,26 @@
+# AC6 retail NTSC-U/J — r81 : le push d'anneau tourne avant la création de son propre tas (2026-08-31)
+
+- PROUVÉ (runtime) : le global `0x8293B970` (handle de tas lu par
+  `sub_821D74A8`) est entièrement à zéro au moment du blocage.
+- PROUVÉ (statique) : le seul site d'écriture de `-0x4690(r31)` dans toute
+  l'image est `sub_821D5F48:0x821d6200` — et `sub_821D5F48` est déjà une
+  frame ancêtre dans notre propre pile capturée. L'appel qui descend vers le
+  push d'anneau (`0x821d6008: bl sub_82331CA8`) précède l'écriture du handle
+  (`0x821d6200`, via `bl sub_82222d80` à `0x821d61c8`) de 488 octets dans le
+  MÊME flot d'exécution linéaire, sans boucle entre les deux.
+- OUVERT : ce n'est probablement pas un bug d'ordre réel du jeu retail
+  (peu plausible pour un titre shippé) — plus probablement, `sub_82331CA8`
+  est un point d'entrée générique normalement gardé par un état/drapeau que
+  notre couche HLE satisfait prématurément. Ce garde n'est pas encore
+  localisé.
+- DÉCISION : toujours aucune implémentation — écrire une valeur non-nulle
+  synthétique masquerait un vrai bug d'ordonnancement plutôt que de le
+  corriger. Prochaine étape statique : trouver ce qui garde `sub_82331CA8`
+  (ou un ancêtre jusqu'à `_xstart`) de s'exécuter avant `0x821d6008` en
+  exécution réelle.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r81-heap-init-ordering-20260831.md`.
+
 # AC6 retail NTSC-U/J — r80 : l'allocation de l'objet bloqué a échoué (NULL), preuve runtime (2026-08-31)
 
 - PROUVÉ (runtime, GDB sur la sonde bornée existante) : l'objet réellement

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r81-heap-init-ordering-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r80-null-ring-allocation-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r79-generic-allocator-reframe-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r78-actual-wait-frame-20260831.md`;
@@ -37,14 +38,14 @@ sans ReXGlue installé. Elle établit l'objet `0x10001a00`, son WPTR primaire
 accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
 reste ensuite sans retour et aucun gameplay visible n'est qualifié.
 
-r77→r78→r79 ont tracé la chaîne d'attente jusqu'à un suballocateur générique.
-r80 a lu l'objet réellement bloqué en runtime (GDB, sonde bornée existante) :
-`object=0x1a0010` (reproduit deux fois), TOUS ses champs sont à zéro,
-`+0x2a90` (le pointeur déréférencé) est NULL — l'objet n'a jamais été
-initialisé, car son allocateur `sub_821D74A8` (via `sub_82222d80` et un
-handle de tas global) a renvoyé NULL. Prochaine étape : tracer
-statiquement `sub_82222d80` et ce handle global; vérifier un import kernel
-HLE en cause avant tout correctif. Les stubs restent build-only;
+r77→r80 ont tracé la chaîne jusqu'au global de handle de tas `0x8293B970`,
+zéro au moment du blocage. r81 a établi que ce global est écrit par
+`sub_821D5F48:0x821d6200`, une frame ANCÊTRE de notre propre pile — mais
+l'appel qui descend vers le push d'anneau (`0x821d6008`) précède cette
+écriture de 488 octets dans le même flot linéaire. Probablement pas un
+vrai bug retail; `sub_82331CA8` est vraisemblablement gardé par un état que
+notre HLE satisfait prématurément. Prochaine étape : trouver statiquement
+ce garde en amont, avant tout correctif. Les stubs restent build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release. Toute
 sonde suivante doit être statique ou bornée au premier import/retour qui

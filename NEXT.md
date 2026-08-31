@@ -30,21 +30,21 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r78 a corrigé r77; r79 a tracé la chaîne jusqu'à un suballocateur
-   générique (`sub_821E54B8`, 76 appelants); r80 a lu l'objet réellement
-   bloqué en runtime (GDB sur la sonde bornée) : `object=0x1a0010`, TOUS ses
-   champs sont à zéro, et `+0x2a90` (le pointeur déréférencé par l'attente)
-   est NULL — l'objet n'a jamais été initialisé. La cause : l'allocateur
-   `sub_821D74A8` (appelé depuis `sub_821E65B0:0x821e6738`) a renvoyé NULL;
-   son propre appelant réel est `sub_82222d80` via un handle de tas global.
-   **Prochaine étape immédiate** : tracer statiquement `sub_82222d80` et le
-   handle de tas global (`-0x4690(r11)` relatif à une constante `lis`
-   proche de `0x821d74dc`); vérifier si cela aboutit à un import kernel
-   HLE (`ExAllocatePool`-shaped) dont le stub générique `kOfflineStatus`
-   serait la cause racine. Ne pas écrire de valeur non-nulle synthétique
-   dans `+0x2a90` avant cette identification. Voir
-   `reports/ac6-retail-native-codegen-gate2-r80-null-ring-allocation-20260831.md`,
-   et en arrière-plan r77/r78/r79 pour la chaîne complète.
+3. r77→r80 ont tracé la chaîne jusqu'au global de handle de tas
+   `0x8293B970`, entièrement à zéro au moment du blocage. r81 a établi que
+   ce global est écrit par `sub_821D5F48:0x821d6200`, une frame ANCÊTRE de
+   notre propre pile capturée — mais l'appel qui descend vers le push
+   d'anneau (`0x821d6008: bl sub_82331CA8`) précède cette écriture de 488
+   octets dans le même flot linéaire, sans boucle. Ce n'est probablement
+   pas un vrai bug retail; plus probablement `sub_82331CA8` est un point
+   d'entrée générique gardé par un état que notre HLE satisfait
+   prématurément. **Prochaine étape immédiate** : trouver statiquement ce
+   qui garde `sub_82331CA8` (ou un ancêtre jusqu'à `_xstart`) de s'exécuter
+   avant `0x821d6008` en exécution réelle — pas encore un problème de
+   `+0x2a90`/tas lui-même, mais d'ordonnancement/garde en amont. Ne pas
+   écrire de valeur non-nulle synthétique avant cette identification. Voir
+   `reports/ac6-retail-native-codegen-gate2-r81-heap-init-ordering-20260831.md`,
+   et en arrière-plan r77/r78/r79/r80 pour la chaîne complète.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais
