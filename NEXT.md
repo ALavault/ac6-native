@@ -30,21 +30,23 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r77→r80 ont tracé la chaîne jusqu'au global de handle de tas
-   `0x8293B970`, entièrement à zéro au moment du blocage. r81 a établi que
-   ce global est écrit par `sub_821D5F48:0x821d6200`, une frame ANCÊTRE de
-   notre propre pile capturée — mais l'appel qui descend vers le push
-   d'anneau (`0x821d6008: bl sub_82331CA8`) précède cette écriture de 488
-   octets dans le même flot linéaire, sans boucle. Ce n'est probablement
-   pas un vrai bug retail; plus probablement `sub_82331CA8` est un point
-   d'entrée générique gardé par un état que notre HLE satisfait
-   prématurément. **Prochaine étape immédiate** : trouver statiquement ce
-   qui garde `sub_82331CA8` (ou un ancêtre jusqu'à `_xstart`) de s'exécuter
-   avant `0x821d6008` en exécution réelle — pas encore un problème de
-   `+0x2a90`/tas lui-même, mais d'ordonnancement/garde en amont. Ne pas
-   écrire de valeur non-nulle synthétique avant cette identification. Voir
-   `reports/ac6-retail-native-codegen-gate2-r81-heap-init-ordering-20260831.md`,
-   et en arrière-plan r77/r78/r79/r80 pour la chaîne complète.
+3. r81 a émis l'hypothèse que `sub_82331CA8` serait gardé prématurément
+   satisfait; r82 a réfuté cela (aucune branche conditionnelle dans ce
+   tronçon) et a ouvert une contradiction différente, non résolue : la
+   porte de `sub_821E65B0` exige `object+0x2a9c!=0`/`object+0x30!=0` pour
+   atteindre `sub_821E64A8` (la frame observée), mais r80 a lu ces deux
+   champs à zéro plus profondément dans la MÊME pile, sans écriture
+   intermédiaire ni autre thread en cause. Deux instruments GDB (point
+   d'arrêt conditionnel, watchpoints) ont échoué à trancher — voir r82 pour
+   pourquoi ne pas les répéter tels quels.
+   **Prochaine étape immédiate** : soit réduire la sonde à un seul thread
+   vivant (stub temporaire du spawn `ExCreateThread`) avant de retenter un
+   watchpoint/breakpoint conditionnel, soit revérifier statiquement si la
+   porte de `sub_821E65B0` opère sur de la mémoire fraîchement allouée
+   potentiellement non significative la première fois. Ne pas écrire de
+   valeur non-nulle synthétique avant résolution. Voir
+   `reports/ac6-retail-native-codegen-gate2-r82-gate-contradiction-open-20260831.md`,
+   et en arrière-plan r77/r78/r79/r80/r81 pour la chaîne complète.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais

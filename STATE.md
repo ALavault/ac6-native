@@ -1,3 +1,33 @@
+# AC6 retail NTSC-U/J — r82 : hypothèse r81 réfutée, nouvelle contradiction ouverte (2026-08-31)
+
+- RÉFUTÉ : `sub_82331CA8` et le tronçon de `sub_821D5F48` autour de
+  `0x821d6008` sont entièrement linéaires, sans branche conditionnelle.
+  L'hypothèse r81 ("point d'entrée gardé prématurément satisfait") ne
+  tient pas.
+- OUVERT (contradiction non résolue) : la porte de `sub_821E65B0`
+  (`0x821e65c4-0x821e65dc`) exige `object+0x2a9c!=0` ET `object+0x30!=0`
+  pour atteindre `sub_821E64A8` — exactement la frame observée sur la pile
+  de Thread 1 à chaque capture (r78/r80/r81, reproduit 5+ fois). Pourtant
+  la lecture live de r80, plus profonde dans la même pile, montre ces deux
+  champs à zéro, sans écriture intermédiaire trouvée ni autre thread
+  touchant ces fonctions.
+- INSTRUMENTS ESSAYÉS, NON CONCLUANTS : point d'arrêt conditionnel sur
+  l'entrée de `sub_821E64A8` (jamais déclenché en 20s, probablement trop
+  lent pour la fenêtre de blocage); watchpoints matériels/logiciels sur les
+  trois champs (déclenchements bruyants attribués à des threads sans
+  rapport — `NativeGuestVdService::poll_loop`, `NtClearEvent`,
+  `NtWaitForSingleObjectEx` — cohérent avec une émulation de watchpoint
+  logiciel peu fiable sur ~16-18 threads hôtes concurrents; écarté comme
+  instrument inadapté ici, pas comme négatif fiable).
+- DÉCISION : ne pas répéter ces deux expériences telles quelles. Prochaine
+  étape : réduire la sonde à un seul thread vivant (stub temporaire de
+  spawn `ExCreateThread`) avant de retenter, OU revérifier statiquement si
+  la porte de `sub_821E65B0` opère sur de la mémoire fraîchement allouée
+  potentiellement non significative la première fois, indépendamment de la
+  question du handle de tas `0x8293B970`.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r82-gate-contradiction-open-20260831.md`.
+
 # AC6 retail NTSC-U/J — r81 : le push d'anneau tourne avant la création de son propre tas (2026-08-31)
 
 - PROUVÉ (runtime) : le global `0x8293B970` (handle de tas lu par
