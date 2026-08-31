@@ -25,6 +25,22 @@
 - Resume from `reports/handoff/CURRENT.json`, its AC6 source report and working
   set. Use `workspaces/ace-combat-6/XENIA_WINE_ORACLE_HANDOFF.md` only for a
   named interactive boundary.
+- The active product tree is
+  `workspaces/ace-combat-6/recompilation/ace-combat-6-retail`. Its mandatory
+  bootstrap target is qualified NTSC-U/J retail; PAL Europe Rev 1 is the final
+  product and remains gated on successful US Mission 01 gameplay. The retired
+  `recompilation/ace-combat-6-demo` tree is a historical static-analysis archive,
+  and neighboring trees under `reconstruction/` are distinct targets.
+
+## Operational handoffs
+
+- Keep `NEXT.md` and `RESUME.md` current-only. Replace their contents when the
+  active gate changes; never prepend closed gates or historical resumes.
+- Preserve gate history in `STATE.md`, `EVIDENCE.md`, `reports/` and
+  `artifacts/`. Link to those records from the current handoff instead of
+  copying them back into it.
+- Before patching a handoff, read its exact path and current heading. Do not
+  build a multi-file patch from inferred headings.
 
 ## Target boundaries
 
@@ -36,11 +52,13 @@
   exact input, expected artefact and time limit in the handoff.
 - Use XenonRecomp/XenonAnalyse/XenosRecomp as deterministic evidence tooling;
   never edit generated output. Xenia is an oracle only.
-- Generated C++ from a revision-pinned `AC6_recomp` checkout may be used as
-  literal control-flow/ABI cross-match evidence only after qualifying the XEX
-  SHA-256. Do not copy it into the native implementation, infer semantics from
-  its generated names, or let its configured function starts override Ghidra
-  boundaries and executed validation.
+- The retail product uses generated C++ only inside the ignored
+  `recompilation/ace-combat-6-retail/build/<target>/source` working copy of the
+  revision-pinned `AC6_recomp` checkout, after exact XEX/ISO qualification.
+  Never version or install generated sources. Outside that product boundary,
+  generated C++ remains literal control-flow/ABI cross-match evidence only;
+  generated names and configured starts never override canonical Ghidra
+  boundaries or executed validation.
 - Qualify every Ghidra result by project name as well as target ID, XEX
   SHA-256, module and address. For the qualified PAL **demo** `Default.xex`,
   `workspaces/ace-combat-6/ghidra-projects/ace-combat-6-demo` is canonical.
@@ -59,13 +77,11 @@
   (`offset`, `length`, purpose, source SHA-256) and package only the bounded
   locally extracted slices required by the question.
 - Keep runtime hooks, kernel/XAM/XMA services and renderer divergence as
-  explicit boundaries. The canonical native commands from the portfolio root
-  are `cmake --build workspaces/ace-combat-6/reconstruction/ace-combat-6/build
-  -j16`, `SDL_AUDIODRIVER=dummy xvfb-run -a ctest --test-dir
-  workspaces/ace-combat-6/reconstruction/ace-combat-6/build
-  --output-on-failure`, and `cmake --install
-  workspaces/ace-combat-6/reconstruction/ace-combat-6/build --prefix "$PWD"`.
-  After installation, require `test ! -e bin/bin`.
+  explicit boundaries. The retail preparation/build/validation commands are
+  documented in `recompilation/ace-combat-6-retail/README.md`; heavy generation
+  and build still require the cgroup wrapper below. ReXGlue Xenos/Vulkan is the
+  graphics authority until PAL gameplay. After installation, require
+  `test ! -e recompilation/ace-combat-6-retail/install/<target>/bin/bin`.
 - `SDL_AUDIODRIVER=dummy` is the qualified audio configuration for AC6 Xvfb
   runs. Without it, headless startup may stall after one `PRESENT`; do not
   remove it from a headless harness or classify that stall as a guest/build
@@ -91,7 +107,8 @@
 
 - Before running Ghidra/headless analysis, an emulator, a full parallel build,
   bulk extraction or a long test, inspect current host/cgroup memory. Run only
-  one such job at a time.
+  one such job at a time per agent session. Independently bounded cgroup jobs
+  owned by other sessions do not block this session.
 - Run every heavy job in its own transient user cgroup with a wall-clock limit.
   Start from this wrapper and adjust limits only from observed capacity; never
   remove them:

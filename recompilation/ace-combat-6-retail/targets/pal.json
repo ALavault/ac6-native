@@ -1,0 +1,31 @@
+{
+  "schema": "ac6.retail-target-definition.v1",
+  "target": "pal",
+  "region": "PAL Europe Rev 1",
+  "bootstrap": false,
+  "qualification_state": "blocked-until-ntsc-uj-gameplay-pass",
+  "xex": {
+    "module": "default.xex",
+    "size": 7483392,
+    "sha256": "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+    "entry_point": "0x821F5E90",
+    "image_base": "0x82000000",
+    "title_id": "4E4D07D1",
+    "media_id": "0379EFB3",
+    "version": "v0.0.0.11"
+  },
+  "iso": {
+    "size": 7835492352,
+    "sha256": null
+  },
+  "ghidra": {
+    "project": "ghidra-projects/ace-combat-6",
+    "status": "canonical-retail-pal"
+  },
+  "configuration": {
+    "source": "canonical-retail-pal-ghidra-export",
+    "historical_seed": "patches/ac6recomp_config_*.toml",
+    "hooks": "omit-until-function-offset-bytes-and-abi-are-qualified"
+  }
+}
+

@@ -1,0 +1,276 @@
+{
+  "schema": "ac6.retail-hook-map.v1",
+  "target": "ntsc-uj",
+  "xex": {
+    "module": "default.xex",
+    "sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc"
+  },
+  "ghidra": {
+    "project": "ghidra-projects/ac6-us",
+    "program": "default.xex",
+    "language": "PowerPC:BE:64:Xenon",
+    "qualification": "artifacts/retail-us-static-route-sync-20260826/route-sync-export.summary.txt"
+  },
+  "hooks": [
+    {
+      "role": "save-route-observable",
+      "address": "0x821C3800",
+      "canonical_range": ["0x821C3800", "0x821C3C04"],
+      "qualified_ppc": {
+        "length": 1028,
+        "entry_bytes": "7d8802a6481bf1dd9421ff103d6082407c7f1b783b2b9d203d6082403f80826e",
+        "extent_sha256": "a0c9180e56b6abcb6e59ff19031248d843632e26e4af839dfe7945b4351546c8"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32",
+        "return": "original ctx.r3",
+        "post_call_reads": [12, 28, 36, 40, 44]
+      },
+      "wrapper": "rex_sub_821C3800",
+      "generated_implementation": "__imp__rex_sub_821C3800",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "save-create-task-observable",
+      "address": "0x821C5268",
+      "canonical_range": ["0x821C5268", "0x821C5708"],
+      "qualified_ppc": {
+        "length": 1184,
+        "entry_bytes": "7d8802a6481bd775dbc1ff58dbe1ff609421feb03d60823f9881016f3d208205",
+        "extent_sha256": "f8ecd6a574ca33182c4765178b8b85d40357d53c12fa66074d35c126105db735"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32",
+        "arguments": ["r3.u32 screen", "r4.u8 mode"],
+        "return": "original ctx.r3",
+        "post_call_reads": [12, 28, 36, 40, 44, 68]
+      },
+      "wrapper": "rex_sub_821C5268",
+      "generated_implementation": "__imp__rex_sub_821C5268",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "save-create-state-observable",
+      "address": "0x821C5708",
+      "canonical_range": ["0x821C5708", "0x821C59BC"],
+      "qualified_ppc": {
+        "length": 692,
+        "entry_bytes": "7d8802a6481bd2e99421ff403d60823f7c7f1b787c9423787cd633783b8b6db8",
+        "extent_sha256": "3e42b438518588d109ea6717c0fe85026133eeda6eec96ec6dbedc7a809982a7"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32",
+        "arguments": ["r3.u32 screen", "r4.u8 mode", "r6.u8 choice"],
+        "return": "original ctx.r3",
+        "post_call_reads": [12, 28, 36, 40, 44, 68]
+      },
+      "wrapper": "rex_sub_821C5708",
+      "generated_implementation": "__imp__rex_sub_821C5708",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "campaign-transition-observable",
+      "address": "0x8218F4F0",
+      "canonical_range": ["0x8218F4F0", "0x8218F81C"],
+      "qualified_ppc": {
+        "length": 812,
+        "entry_bytes": "7d8802a6481f35219421ff807c7e1b78817e000c2b0b0001419800d4419a00ac",
+        "extent_sha256": "a8383fc7bc2e0ccde30b3802c5bda082dd85ecad3593c9ca710c2e8ff4771f55"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32",
+        "return": "original ctx.r3",
+        "post_call_reads": [12, 72]
+      },
+      "wrapper": "rex_sub_8218F4F0",
+      "generated_implementation": "__imp__rex_sub_8218F4F0",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "current-level-read-observable",
+      "address": "0x820943B0",
+      "canonical_range": ["0x820943B0", "0x82094440"],
+      "qualified_ppc": {
+        "kind": "direct-call-leaf-before-0x82094440",
+        "length": 144,
+        "entry_bytes": "81630008396bfffe2b0b00034199004c3d808209398c43d85560103a7c0c002e",
+        "extent_sha256": "d95d741bbb8e9e037e2023ff9f0a28690b0bd0dd1577a516d9800562c1dd9849"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32 profile",
+        "return": "original ctx.r3 current level",
+        "post_call_reads": []
+      },
+      "wrapper": "rex_sub_820943B0",
+      "generated_implementation": "__imp__rex_sub_820943B0",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "save-manager-update-observable",
+      "address": "0x82158D90",
+      "canonical_range": ["0x82158D90", "0x82159294"],
+      "qualified_ppc": {
+        "kind": "canonical-pdata-function",
+        "length": 1284,
+        "entry_bytes": "7d8802a648229c719421ff607c7d1b78897d00402b0b0000419a04e43f208294",
+        "extent_sha256": "d46bf00930cc46de3d327e745143a86011e86b06b7678b239786c678998c8896"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32 manager",
+        "return": "original ctx.r3",
+        "post_call_reads": [48, 52, 56, 60, 64, 65, 66, 67]
+      },
+      "wrapper": "rex_sub_82158D90",
+      "generated_implementation": "__imp__rex_sub_82158D90",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "current-level-write-observable",
+      "address": "0x82196590",
+      "canonical_range": ["0x82196590", "0x82196620"],
+      "qualified_ppc": {
+        "kind": "direct-call-leaf-before-0x82196620",
+        "length": 144,
+        "entry_bytes": "81630008396bfffe2b0b00034199004c3d808219398c65b85560103a7c0c002e",
+        "extent_sha256": "63838c0c0f9867f2ed650e564a1bd81d7860f90f40c1eb9f8cf3596613e979a6"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "arguments": ["r3.u32 profile", "r4.u32 current level"],
+        "caller_filter": ["0x821A64D0", "0x821A64E8"],
+        "return": "original ctx.r3",
+        "post_call_reads": []
+      },
+      "wrapper": "rex_sub_82196590",
+      "generated_implementation": "__imp__rex_sub_82196590",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "post-mission-progression-owner-observable",
+      "address": "0x821A6400",
+      "canonical_range": ["0x821A6400", "0x821A6500"],
+      "qualified_ppc": {
+        "kind": "canonical-pdata-function",
+        "length": 256,
+        "entry_bytes": "7d8802a69181fff8fbc1ffe8fbe1fff09421ff903d6082693fc082947c7f1b78",
+        "extent_sha256": "835fcfd04e24b601e97f21e4581c4fc29f999c6a49aa84474c3e8b75a247ea1e"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32 CModeTaskInterMissionSelect",
+        "return": "original ctx.r3",
+        "post_call_reads": []
+      },
+      "wrapper": "rex_sub_821A6400",
+      "generated_implementation": "__imp__rex_sub_821A6400",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "mission01-script-step-advance-observable",
+      "address": "0x82267160",
+      "canonical_range": ["0x82267160", "0x8226723C"],
+      "qualified_ppc": {
+        "kind": "canonical-pdata-function",
+        "length": 220,
+        "entry_bytes": "7d8802a69181fff8fbe1fff09421ffa07c7f1b78817f02682b0b0000409a001c",
+        "extent_sha256": "0f625ad2d7569551f6be6876b90f0314026e718bc352b0e554ad14724ef2a2e1"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "guest_pointer": "r3.u32 scheduler self",
+        "return": "original ctx.r3",
+        "post_call_reads": [16, 20, 612, 616]
+      },
+      "wrapper": "rex_sub_82267160",
+      "generated_implementation": "__imp__rex_sub_82267160",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "mission01-counter-write-observable",
+      "address": "0x82267258",
+      "canonical_range": ["0x82267258", "0x82267398"],
+      "qualified_ppc": {
+        "kind": "canonical-pdata-function",
+        "length": 320,
+        "entry_bytes": "7d8802a64811b7c19421ff907c7d1b787cbe2b782b04ffff419a0120548b103a",
+        "extent_sha256": "005e3e0bc42af7c2756ff1d23e383999fe3b1b8a969343391a318c6111781a0d"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "arguments": ["r4.u32 counter index", "r5.u32 value record"],
+        "return": "original ctx.r3",
+        "post_call_reads": []
+      },
+      "wrapper": "rex_sub_82267258",
+      "generated_implementation": "__imp__rex_sub_82267258",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "mission01-signal-handler-observable",
+      "address": "0x822ED310",
+      "canonical_range": ["0x822ED310", "0x822ED85C"],
+      "qualified_ppc": {
+        "kind": "canonical-pdata-function",
+        "length": 1356,
+        "entry_bytes": "7d8802a6480956fd9421ff403be000007c7d1b787c9e23782f05fffd93e10050",
+        "extent_sha256": "7a61c8f71fbb43f031c48661d8661f7d9a39263dc01750ab27e81fc3da1ab146"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "arguments": ["r3.u32 owner", "r4.u32 object", "r5.s32 signal"],
+        "return": "original ctx.r3",
+        "pre_call_reads": ["r4+0x820 when object is nonzero"],
+        "post_call_reads": []
+      },
+      "wrapper": "rex_sub_822ED310",
+      "generated_implementation": "__imp__rex_sub_822ED310",
+      "decision": "include-read-only-observable"
+    },
+    {
+      "role": "mission01-objective-driver-presence-observable",
+      "address": "0x82256490",
+      "canonical_range": ["0x82256490", "0x822565CC"],
+      "qualified_ppc": {
+        "kind": "canonical-pdata-function",
+        "length": 316,
+        "entry_bytes": "7d8802a64812c5859421ff807c7d1b78396000008b9d0359997d0359480109fd",
+        "extent_sha256": "274611beba26565ee99be9be765e04141d66e15f05d5318f1a445a86e5ca81f0"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "arguments": [],
+        "return": "generated void return",
+        "post_call_reads": []
+      },
+      "wrapper": "rex_sub_82256490",
+      "generated_implementation": "__imp__rex_sub_82256490",
+      "decision": "include-bounded-call-presence-observable"
+    },
+    {
+      "role": "mission01-objective-evaluator-presence-observable",
+      "address": "0x8226C068",
+      "canonical_range": ["0x8226C068", "0x8226CC68"],
+      "qualified_ppc": {
+        "kind": "canonical-pdata-function",
+        "length": 3072,
+        "entry_bytes": "7d8802a648116975dba1ff50dbc1ff58dbe1ff609421fef07c791b7881790264",
+        "extent_sha256": "7183aac0e37d7376902848040de6e426ff6fdd62267933e5c4b3d13fe2cbec17"
+      },
+      "abi": {
+        "platform": "Xenon PPC64 big-endian",
+        "arguments": [],
+        "return": "generated void return",
+        "post_call_reads": []
+      },
+      "wrapper": "rex_sub_8226C068",
+      "generated_implementation": "__imp__rex_sub_8226C068",
+      "decision": "include-bounded-call-presence-observable"
+    }
+  ]
+}

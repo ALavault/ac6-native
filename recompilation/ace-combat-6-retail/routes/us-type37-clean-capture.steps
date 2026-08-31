@@ -1,0 +1,15 @@
+# Bounded NTSC-U/J visual diagnostic with the host diagnostics window closed.
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+key	space	0.1
+wait	type28=[^ ]*37	20
+capture	type28-37-default-no-clean
+key	Left	0.1
+sleep	1
+capture	type28-37-selected-yes-clean
+key	space	0.1
+wait	type28=[^ ]*35	20
+sleep	1
+capture	type28-35-clean

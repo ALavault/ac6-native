@@ -8,6 +8,9 @@ Start with `PREPARATION_REPORT.md`, then follow `IMPORT_PLAN.md`. The supplied
 archive and extracted proprietary files are evidence inputs, never source-tree
 deliverables.
 
-The portable product lives under `reconstruction/ace-combat-6/`. The live
-product roadmap is `GLOBAL_OFFLINE_LADDER.md`; Mission 01 evidence and gates are
-tracked in `MISSION01_LADDER.md`.
+The active NTSC-U/J retail product lives under
+`recompilation/ace-combat-6-retail/`. Its `rexglue-oracle` and `native` profiles
+are explicitly separated; ReXGlue is oracle-only. `reconstruction/ace-combat-6/`
+remains a distinct historical target and is not merged into the retail product.
+Gate state and evidence live in `reports/handoff/CURRENT.json`, `NEXT.md`,
+`RESUME.md`, `STATE.md` and `EVIDENCE.md`.

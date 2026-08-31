@@ -1,0 +1,50 @@
+{
+  "schema": "ac6.retail-target-definition.v1",
+  "target": "ntsc-uj",
+  "region": "NTSC-U/J",
+  "bootstrap": true,
+  "qualification_state": "ready",
+  "xex": {
+    "module": "default.xex",
+    "size": 7483392,
+    "sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "entry_point": "0x821F5ED0",
+    "image_base": "0x82000000",
+    "title_id": "4E4D07D1",
+    "media_id": "531C30BE",
+    "version": "v0.0.0.8"
+  },
+  "iso": {
+    "size": 7835492352,
+    "sha256": "204c5e645d79da8776699c12f17bd069f869fbdb10ae79015d1a0ef2b743c98c"
+  },
+  "ghidra": {
+    "project": "ghidra-projects/ac6-us",
+    "program": "default.xex",
+    "language": "PowerPC:BE:64:Xenon",
+    "evidence": "artifacts/retail-us-static-route-sync-20260826/route-sync-export.summary.txt",
+    "status": "qualified-canonical-xenon-import"
+  },
+  "configuration": {
+    "source": "upstream/ac6recomp_config.toml",
+    "sha256": "5c82a1798a2a48d1c91aca7e627572c0540573828d35bba2e2f0dda39618ed8a",
+    "hooks": "qualified-for-exact-ntsc-uj-xex"
+  },
+  "hook_map": {
+    "path": "targets/ntsc-uj-hook-map.json",
+    "sha256": "b63ca6e1bacc68084fa9cd5a101154d928fe268af9b725e76d053f7c6b09a7a3"
+  },
+  "profiles": {
+    "rexglue-oracle": {
+      "release_admissible": false,
+      "renderer": "ReXGlue Xenos/Vulkan",
+      "generated_cpp": "ignored build working copy"
+    },
+    "native": {
+      "release_admissible": true,
+      "renderer": "native Xenos/Vulkan",
+      "capsule_schema": "ac6.xenos-capsule.v1",
+      "rexglue_dependency": false
+    }
+  }
+}

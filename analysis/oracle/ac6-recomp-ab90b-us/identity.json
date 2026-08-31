@@ -107,6 +107,7 @@
     "linux_minimal_manifest": "analysis/oracle/ac6-recomp-ab90b-us/patches/linux-vulkan-minimal-v1.json",
     "result": "boot-title-polls-three-nonblack-present-clean-shutdown"
   },
+  "content_identity": "analysis/oracle/ac6-recomp-ab90b-us/content-identity.json",
   "xenia_identity_cross_check": {
     "commit": "16e1eb8e28a2935b75c36707b585a4f5e174ad43",
     "tree": "0ca8afcf518d9a72579e536916a4bac77beda406",

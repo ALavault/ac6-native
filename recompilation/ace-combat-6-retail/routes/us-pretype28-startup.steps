@@ -1,0 +1,9 @@
+# Bounded US startup diagnostic. Mirrors the sealed route before type28=30.
+key	Escape	0.1
+sleep	2
+capture	post-escape
+key	space	0.1
+sleep	4
+capture	post-space
+wait-pulse	type28=30	Escape+space
+capture	type28-30

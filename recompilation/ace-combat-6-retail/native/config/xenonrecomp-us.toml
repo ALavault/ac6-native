@@ -1,0 +1,119 @@
+# Direct XenonRecomp configuration for qualified NTSC-U/J analysis.
+# This file is a build-time input only. Generated C++ belongs under the ignored
+# build/ntsc-uj/native/codegen directory and is never shipped.
+
+[main]
+file_path = "assets/default.xex"
+out_directory_path = "generated"
+switch_table_file_path = "switch_tables.toml"
+
+skip_lr = true
+skip_msr = true
+ctr_as_local = true
+xer_as_local = true
+reserved_as_local = true
+cr_as_local = true
+non_argument_as_local = true
+non_volatile_as_local = true
+
+longjmp_address = 0x823CA690
+setjmp_address = 0x823CA9B0
+
+# Helpers qualified from the US basefile byte signatures. Keep these starts
+# explicit: XenonRecomp otherwise treats their save/restore islands as open.
+restgprlr_14_address = 0x82382A30
+savegprlr_14_address = 0x823829E0
+restfpr_14_address = 0x82383F7C
+savefpr_14_address = 0x82383F30
+restvmx_14_address = 0x823853E8
+savevmx_14_address = 0x82385150
+restvmx_64_address = 0x8238547C
+savevmx_64_address = 0x823851E4
+
+# Calls through these guest dispatch sites require runtime binding later.
+indirect_calls = [0x8237C368, 0x8237BA48]
+
+# Switch-owner boundaries derived from the qualified US oracle's ordered case
+# tuples.  They are the 70 non-overlapping leaf wrappers (not a copy of the
+# oracle's generated source).
+functions = [
+    { address = 0x820943B0, size = 0x90 },
+    { address = 0x820967B0, size = 0xA8 },
+    { address = 0x82096838, size = 0x20 },
+    { address = 0x820CF8D8, size = 0x200 },
+    { address = 0x820F74E0, size = 0x68 },
+    { address = 0x82118AD0, size = 0xC8 },
+    { address = 0x82119D78, size = 0x190 },
+    { address = 0x82119F08, size = 0x1E0 },
+    { address = 0x8213D5B0, size = 0x180 },
+    { address = 0x8214D330, size = 0x2C0 },
+    { address = 0x82159418, size = 0x2A0 },
+    { address = 0x82159860, size = 0xC8 },
+    { address = 0x8215A4F0, size = 0x178 },
+    { address = 0x82160FC0, size = 0x108 },
+    { address = 0x82166710, size = 0x90 },
+    { address = 0x8216D7C8, size = 0xA8 },
+    { address = 0x8218E990, size = 0x988 },
+    { address = 0x82191120, size = 0x128 },
+    { address = 0x82196590, size = 0x90 },
+    { address = 0x821974E0, size = 0x620 },
+    { address = 0x82197B00, size = 0x238 },
+    { address = 0x821998F8, size = 0x1B8 },
+    { address = 0x821A9A58, size = 0x78 },
+    { address = 0x821A9AD0, size = 0x450 },
+    { address = 0x821B2250, size = 0xE8 },
+    { address = 0x821B2338, size = 0x160 },
+    { address = 0x821B3330, size = 0xA8 },
+    { address = 0x821B3D20, size = 0x78 },
+    { address = 0x821B4F60, size = 0xF0 },
+    { address = 0x821B5050, size = 0x178 },
+    { address = 0x821B51C8, size = 0x228 },
+    { address = 0x821B68D8, size = 0x428 },
+    { address = 0x821B6D00, size = 0x1E0 },
+    { address = 0x821B74C0, size = 0x160 },
+    { address = 0x821B8530, size = 0xC8 },
+    { address = 0x821C9FB0, size = 0x3A0 },
+    { address = 0x821D0250, size = 0x138 },
+    { address = 0x821D7390, size = 0x118 },
+    { address = 0x82214D70, size = 0x230 },
+    { address = 0x82214FA0, size = 0x138 },
+    { address = 0x822150F8, size = 0x58 },
+    { address = 0x82215150, size = 0x70 },
+    { address = 0x82221D20, size = 0xB0 },
+    { address = 0x82275840, size = 0x1E0 },
+    { address = 0x822B2688, size = 0x88 },
+    { address = 0x822B2710, size = 0xF8 },
+    { address = 0x822C8C78, size = 0x230 },
+    { address = 0x822C9570, size = 0x118 },
+    { address = 0x822CFCE8, size = 0x370 },
+    { address = 0x822D1DC0, size = 0x1C0 },
+    { address = 0x822D2DB0, size = 0x1C0 },
+    { address = 0x822DB0B0, size = 0x1C0 },
+    { address = 0x822DBC88, size = 0x1B8 },
+    { address = 0x822DFF58, size = 0x290 },
+    { address = 0x822E0AA0, size = 0x1B8 },
+    { address = 0x822E2590, size = 0x290 },
+    { address = 0x822F6148, size = 0x100 },
+    { address = 0x822F6FB0, size = 0x170 },
+    { address = 0x822F8818, size = 0x1F8 },
+    { address = 0x822FA350, size = 0x1C0 },
+    { address = 0x822FA510, size = 0x720 },
+    { address = 0x82318128, size = 0xE08 },
+    { address = 0x8231F598, size = 0x228 },
+    { address = 0x8231F7C0, size = 0x1F0 },
+    { address = 0x8231F9B0, size = 0x1C8 },
+    { address = 0x8231FB78, size = 0xC0 },
+    { address = 0x8231FC38, size = 0x1B8 },
+    { address = 0x8231FDF0, size = 0x158 },
+    { address = 0x82341718, size = 0xD0 },
+    { address = 0x82349AC0, size = 0xA0 },
+    { address = 0x8235A018, size = 0xA0 },
+    { address = 0x82254210, size = 0x90 },
+    { address = 0x82254248, size = 0x4 },
+    { address = 0x8225424C, size = 0x54 },
+]
+
+external_switch_targets = [
+    { address = 0x82254248, symbol = "sub_82254248" },
+    { address = 0x8225424C, symbol = "sub_8225424C" },
+]

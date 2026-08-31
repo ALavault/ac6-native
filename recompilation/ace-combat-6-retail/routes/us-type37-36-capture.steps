@@ -1,0 +1,17 @@
+# Bounded NTSC-U/J visual diagnostic for the first route divergence.
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+present	15	10
+capture	type28-30
+key	Left	0.1
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*37	20
+present	15	10
+capture	type28-37
+key	space	0.1
+wait	type28=[^ ]*36	20
+present	15	10
+capture	type28-36

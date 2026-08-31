@@ -1,0 +1,5 @@
+# Bounded timing probe after the held cinematic handoff. This does not qualify
+# a gameplay receipt.
+include	mission01-flight-long.steps
+sleep	30
+capture	flight-hud-settle-30s

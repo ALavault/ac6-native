@@ -1,3 +1,1037 @@
+# AC6 retail NTSC-U/J — Gate 2 runtime natif, codegen/liaison fermés (2026-08-31)
+
+- PROUVÉ : receipt codegen r11 `pass` avec XenonAnalyse/XenonRecomp US,
+  81 fichiers générés, 62 629 029 octets, zéro diagnostic et
+  `unrecognized_instructions=[]`; les 70 intervalles switch et deux cibles
+  externes sont configurés depuis la qualification US.
+- PROUVÉ : guest généré compilé en 79 objets, lié avec
+  `ppc_func_mapping.cpp` et 229 définitions d'imports offline; le probe forcé
+  vérifie un symbole guest, `PPCFuncMappings` et la sentinelle, puis sort avec 0.
+- PROUVÉ : build natif `gate2-codegen-linked`, CTest 9/9 et
+  `tools/validate.py --target ntsc-uj --runtime native` passent.
+- PROUVÉ : `ac6recomp` natif, `--self-test`, installation `bin/ac6recomp` et
+  audit d'installation temporaire passent; le parseur XEX2 valide
+  `assets/default.xex`, avec déchiffrement AES-CBC, compression basic et
+  validation PE.
+- PROUVÉ : `GuestAddressSpace` réserve 4 GiB virtuels, valide les bornes 32-bit
+  et permet une vue à `0x82000000`; `NativeRuntime::boot()` exige cette
+  réservation et écrit l'image XEX décodée.
+- PROUVÉ : lecteur XDVDFS natif borné extrait `default.xex` de l'ISO US en
+  mémoire, avec chemins insensibles à la casse, bornes et cycles rejetés.
+- PROUVÉ : loader XEX2 natif déchiffre le payload AES-CBC retail, développe les
+  blocs basic et mappe l'image `0xa98000` à `0x82000000`; probes assets et ISO
+  sortent avec 0, validation PE Xenon incluse. Compression normal/LZX reste
+  fail-closed.
+- PROUVÉ : `ac6recomp` lie le guest r11 et exécute `sub_8209C0B4` avec base
+  guest alignée après mapping XEX; smoke ABI neutre uniquement, aucun point
+  d'entrée retail ni gameplay synthétique.
+- PROUVÉ : table `PPC_LOOKUP_FUNC` host est peuplée pour 19 832 mappings
+  générés, et l'entry `0x821f5ed0` se résout à `_xstart`; aucun appel entrypoint.
+- TRACE BORNÉE : avec stubs TLS, fréquence Xenon, création handle et timeout
+  événement offline, `_xstart` atteint `sub_821F9E10` en 12 s; la trace reste
+  non qualifiée et le chemin normal n'appelle pas l'entrypoint.
+- TRACE ÉTENDUE : même probe opt-in borné à 60 s finit `timeout`/124 sans
+  retour; scheduler/état SDK restent la frontière causale ouverte.
+- PROUVÉ r47 : le binding `NtAllocateVirtualMemory` réserve et zero-remplit
+  une plage guest bornée `0x10000000..0x7f000000`; les bindings CRT pool et
+  chaînes BE sont couverts par les tests ciblés, sans allocation hôte exposée.
+- PROUVÉ r49 : le probe initialise un PCR/thread guest déterministe et place
+  `r13` sur ce PCR; CTest 9/9 et pytest 122/122 restent verts.
+- PROUVÉ r50 : `VdRetrainEDRAM`/HSIO et le cycle Vd d'initialisation renvoient
+  le succès natif borné; la sonde dépasse la première attente EDRAM.
+- PROUVÉ r51 : `ExCreateThread` valide les cibles générées, clone le contexte
+  Xenon (r13 conservé), assigne une pile guest bornée et lance le shim dans un
+  worker host; GDB observe 16 workers, tandis que le thread principal attend
+  encore la queue/ring.
+- PROUVÉ r52 : après synchronisation de la copie `native-source`, le contexte
+  réellement exécuté entre avec `r1=0x8ff00000`, `r13=0x0f000000` et un PCR
+  guest initialisé; le correctif n'est plus seulement présent dans le source.
+- PROUVÉ r53 : `MmAllocatePhysicalMemoryEx` fournit les blocs guest du ring;
+  `VdEnableRingBufferRPtrWriteBack` reçoit `0x164e003c` dans un bloc valide,
+  avec readback 0 et write pointer 5 observés. Le consommateur PM4/Vd natif
+  n'est pas encore relié, donc aucun pointeur synthétique n'est injecté.
+- PROUVÉ r64–r75 : le service Vd observe le champ primaire qualifié
+  `object+10952` (et non le curseur secondaire `+10908`), publie des indices
+  dwords et écrit le readback exact `state+60`. La mémoire guest complète les
+  IB; le paquet `PM4_ME_INIT` (19 dwords) et le lot bootstrap (12 dwords) sont
+  décodés/acceptés sans ReXGlue. `PM4_REG_RMW`, `INVALIDATE_STATE`, binning,
+  `EVENT_WRITE_SHD`, `IM_LOAD_IMMEDIATE` et `NOP` ont des enveloppes bornées.
+- PROUVÉ r75 : build/CTest natif **9/9**, pytest retail **126/126**, audit
+  d'installation et validator ordinaire passent. La sonde `_xstart` bornée
+  (SDL dummy) expire après le lot IB; aucune entrée guest retournée, frame,
+  mission ou save n'est revendiquée.
+- PROVISOIRE r76 : les handles d'événements offline ont maintenant une table
+  bornée (set/clear/pulse, auto/manual reset, wait et signal-and-wait sans
+  blocage hôte). La sonde conserve l'acceptation des deux lots GPU mais expire
+  encore au même point; cette tranche ne qualifie pas le scheduler Xenon.
+- PROVISOIRE : les stubs build-only couvrent TLS, fréquence 50 MHz, mémoire
+  virtuelle, pool/chaînes, PCR, handles/événements, Vd, mémoire physique et
+  workers; ils ne remplacent pas le scheduler/kernel, le consommateur PM4 ou
+  les bindings SDK qualifiés.
+- OUVERT : les définitions d'imports sont des stubs HLE génériques, pas encore
+  le runtime SDK Xenon/XAM/Vd/XMA; scheduler/événements restent bloqués après
+  le lot IB, et la traduction `IM_LOAD_IMMEDIATE` vers SPIR-V n'est pas
+  qualifiée. Aucun boot guest retail complet, gameplay M01, renderer
+  présentable, campagne ou release n'est qualifié.
+- DÉCISION : fermer le sous-gate codegen/liaison; migrer maintenant contexte,
+  mémoire, scheduler/kernel, VFS/save, XAM/input, XMA/XAudio et Vd par
+  tranches testées, puis atteindre M01 par code invité naturel. Le patch outil
+  et le code généré restent ignorés, hors installation.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r11-20260831.md`.
+
+# AC6 retail NTSC-U/J — Gate 2 corrections statiques, codegen ouvert (2026-08-30)
+
+- PROUVÉ : PM4 hardware natif corrigé (TYPE0/TYPE1/TYPE2/TYPE3, prédicat,
+  WAIT, DRAW_INDX, SET_CONSTANT, IB et XE_SWAP), avec capsule mise à jour.
+- PROUVÉ : assertions des cinq tests C++ restent actives en Release; CTest 5/5,
+  pytest retail 113/113 et `validate.py --runtime native` passent.
+- PROUVÉ : ABI VMX128 à 128 registres, réservations PPC alignées/invalidation
+  et CR0, saves case-insensitive; spans Vd possédés par le bridge.
+- PROUVÉ : census statique de la table US: 229 imports uniques; la famille
+  réseau est déclarée offline-error sans création de socket, sans binding natif
+  encore installé.
+- OUVERT : génération XenonRecomp directe; export Ghidra US 8 163 fonctions,
+  sélection 89 propriétaires switch. L'essai complet expire à 20 min; l'essai
+  propriétaire seul finit avec 2 881 diagnostics, puis le croisement mapping
+  expire à 20 min (exit 124).
+- DÉCISION : aucun code généré n'est compilé, lié ou installé; boot/gameplay,
+  census des 229 imports et gates campagne/release restent bloqués par Gate 2.
+
+Preuve : `reports/ac6-retail-native-gate2-static-correction-20260830.md`.
+
+# AC6 retail NTSC-U/J — Gate 2 codegen r3 ouvert (2026-08-30)
+
+- PROUVÉ : XenonAnalyse/XenonRecomp US direct produced 84 ignored files in a
+  bounded r3 run; no oracle code linked.
+- PROUVÉ : helpers ABI US `save/restgpr`, `save/restfpr`, `save/restvmx` et
+  `save/restvmx_64` qualifiés par bytes; r3 conserve la réduction de huit
+  diagnostics.
+- PROUVÉ : `qualify_xenon_helpers.py` produit huit occurrences uniques et
+  alignées dans `artifacts/retail-us-native-codegen-gate2/helpers.json`.
+- OUVERT : receipt r3 `open-diagnostics`, 1 831 diagnostics (1 824 switch
+  boundary errors, `dcbst`/`mulhdu`/`frsqrte` unrecognized). Output remains
+  unqualified.
+- DÉCISION : no generated C++ enters native runtime until helper/function
+  boundaries are qualified and diagnostics reach zero.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r3-20260830.md`.
+
+# AC6 retail NTSC-U/J — Gate 1 statique fermé, capture runtime ouverte (2026-08-30)
+
+- PROUVÉ : profil `native` et capsule `ac6.xenos-capsule.v1` passent; PM4,
+  MMIO, ring/IB, endian, EDRAM, shader boundary, services offline, kernel
+  handles/timebase, ABI PPC et `NativeRuntime` lifecycle audit `nm` fail-closed.
+- VALIDATION : 106 tests Python retail, CTest native 5/5, validator native
+  pass avec `release_ready=false`.
+- OUVERT : capture oracle read-only et replay Vulkan réel; aucun gameplay ou
+  release n'est revendiqué.
+
+Preuve : `reports/ac6-retail-native-gate1-20260830.md`.
+
+# AC6 retail NTSC-U/J — Gate 0 fermé, Gate 1 actif (2026-08-30)
+
+- DÉCISION : feuille active revenue à `recompilation/ace-combat-6-retail`;
+  N2 de `reconstruction/ace-combat-6` abandonné pour cette feuille, sans
+  restauration ni fusion de ses sources.
+- PROUVÉ : identités US scellées (XEX, ISO, projet Ghidra `ac6-us`,
+  AC6_recomp, route M01) et route `771a77…b6043`.
+- PROUVÉ : XenonRecomp `ddd128…6ace` et XenosRecomp `990d03…69d1`
+  restaurés en checkouts détachés propres, hors produit.
+- CONSTAT : catalogue `.tools/knowledge-base/architecture-v1/catalog.json`
+  absent; aucune assertion générique n'en est dérivée.
+- VALIDATION : 94 tests Python retail passent.
+- GATE ACTIF : capsule `ac6.xenos-capsule.v1` et renderer Xenos/Vulkan
+  autonome, fail-closed, sans ReXGlue.
+
+Preuve : `reports/ac6-retail-native-gate0-20260830.md`.
+
+# Native US 2026-08-30 — N1b verte, N2 prêt
+
+- PROUVÉ : deux processus natifs NTSC-U/J exécutent 3 600 ticks chacun avec
+  replay, huit captures Vulkan et reçu identiques octet par octet.
+- PROUVÉ : scène complète (cité, terrain, eau, F-16, HUD, pose/caméra live),
+  `complete_render_scene=true`, `jv_eligible=true`, deux exits 0.
+- PROUVÉ : CTest 88/88, scène US explicite, cache 926/926 et frontières
+  source/ELF verts.
+- DÉCISION : N1b fermée verte. N2 premier objectif est la prochaine frontière.
+
+Preuve :
+`reports/native-us-n1b-m01-b-20260830.md`.
+
+# Native US 2026-08-30 — N1a verte, N1b prête
+
+- PROUVÉ : deux processus natifs NTSC-U/J exécutent 1 800 ticks avec pose et
+  caméra joueur live, terrain, cité, eau, F-16 et HUD Vulkan.
+- PROUVÉ : pitch, roll, yaw, throttle et frein changent chacun le frame ; sept
+  PPM, le manifeste et le replay sont identiques octet par octet entre runs.
+- PROUVÉ : deux exits 0, reçu commun `74392499…869012c`, CTest 88/88 et scène
+  US store-backed verte.
+- DÉCISION : N1a fermée verte. N1b est la prochaine frontière ;
+  `jv_eligible=false` demeure obligatoire jusque-là.
+
+Preuve :
+`reports/native-us-n1a-free-flight-20260830.md`.
+
+# Native US 2026-08-30 — N0 vert, N1a actif
+
+- PROUVÉ : cache NTSC-U/J complet, 926/926 entrées, index
+  `d7071928…1a34df5b`, 5 409 550 519 octets décodés.
+- PROUVÉ : contrat US séparé identité/route/payloads, build complet et 88/88
+  CTest sans échec.
+- PROUVÉ : frontière source/ELF et paquet 96 entrées verts, sans ReXGlue,
+  Xenia, C++ généré ni octet retail.
+- DÉCISION : N0 fermé vert. Gate actif N1a free-flight 1 800 ticks ;
+  `jv_eligible=false` reste obligatoire.
+
+Preuve :
+`reports/native-us-n0-baseline-20260830.md`.
+
+# Native US 2026-08-30 — R0 fermé négativement, N0 ouvert
+
+- PROUVÉ : rebuild NTSC-U/J `46e30186…41e5a1c`, validation statique 16/16,
+  cache Vulkan 193/193 et route unique qualifiée.
+- PROUVÉ : `1AB6` atteint `PRESENT` et contient le HUD vert, mais la capture
+  stable conserve un monde noir.
+- ÉCHEC BORNÉ : après `sync-log`, Escape fait passer `world=1` à `world=0`;
+  le wait post-edge expire, puis le runner force le teardown sans fatal guest.
+- DÉCISION : aucun second run ReXGlue. Le produit actif devient
+  `reconstruction/ace-combat-6`; gate N0 NTSC-U/J.
+
+Preuve :
+`reports/retail-us-r0-frontbuffer-validation-20260830.md`.
+
+# Retail US 2026-08-30 — 0869 fermé, frontbuffer guest restauré en source
+
+- PROUVÉ : le payload `08694231e8d17665:2+12` remplace les dérivées
+  divergentes par LOD0 sur deux ressources `mip_range=0..0`; `tf10` reste
+  inchangé.
+- PROUVÉ : le run cache 193 `ca04c848…c4b5` conserve une scène non noire après
+  `0869` et le dernier `50D9`, termine 86/86 et s'arrête proprement.
+- PROUVÉ : l'ordre guest est `0311 → HUD/UI → resolve 1AB6 → PRESENT`.
+- CORRIGÉ EN SOURCE : le fallback presenter, actif par défaut, substituait
+  `1B9C` à `1AB6` et supprimait le HUD. Il est désormais opt-in.
+- CORRIGÉ : `sync-log` interdit au wait post-Escape de consommer un ancien
+  marqueur stable. 57 tests passent.
+- NON VALIDÉ : le nouveau défaut presenter n'est pas encore rebuildé; aucun
+  reçu gameplay/debrief/save n'est promu.
+
+Preuve :
+`reports/retail-us-0869-lod-present-frontbuffer-fix-20260830.md`.
+
+# Retail US 2026-08-28 — service runtime fermé, contrat campagne v3 prêt
+
+- PROUVÉ : le walker CRT atteint `0x823CB708`, qui construit `0x829BAF30`
+  via `0x82120FD8` avant sa publication dans `0x823F9B28`.
+- CORRIGÉ : le vptr de base est `0x8205CFC4`, non `0x8275CFC4`; le vptr
+  effectif `CNuSound` est `0x8205D1A4` et `+0x168 -> 0x82124930` dépend de
+  l'état `objet+0xCECC`. Aucun patch d'initialisation forcée.
+- IMPLÉMENTÉ : gate/audit v3, débrief/visuel v2 automatisés, replay strict,
+  save/cache chaînés et orchestrateur frais M01–M15. 84 tests passent.
+- DÉCISION : le reçu M01 v2 devient historique (`gameplay_pass=0`). Le gate
+  courant est un rebuild puis une seule observation read-only du service,
+  renderer, heartbeat et teardown.
+
+Preuve :
+`reports/retail-us-mission01-campaign-service-owner-reachability-static-20260828.md`.
+
+# Retail US 2026-08-28 — loader campagne statiquement qualifié
+
+- PROUVÉ : dans le projet Ghidra US canonique, `0x8218F4F0` ne fait
+  `state=0->1` qu'après résolution `0x821D3028` puis retour `>0` de
+  `0x821D28C8`; l'agrégateur reste à zéro tant qu'une requête/enfant est
+  incomplète et renvoie `-1` sur erreur.
+- PROUVÉ : la tranche US `DATA.TBL[9]`/FHM enfant scénario 0 est complète et
+  qualifiée ; l'hypothèse « scénario US absent » est fermée, sans preuve de
+  complétude runtime du graphe.
+- DÉCISION : l'absence de `state=1->2` dans le run analogique expiré ne permet
+  pas de distinguer appel non effectué et ressources encore pendantes. Aucun
+  nouveau runtime identique.
+- PROCHAIN : qualifier statiquement ownership/ordre de vie du registre et du
+  service `vtable+0x168`, puis `FlightActive`, postprocess/resolve et teardown.
+
+La chaîne source `FlightActive`/heartbeat et le paquet MnK sont aussi qualifiés
+(activation par timestamp `<300 ms`, wrappers physiques joueur, layout
+`LT/RT/LX/LY/RX/RY`), mais aucun heartbeat runtime n'a été observé.
+Le global US `0x823F9B28` pointe initialement `CAce6Sound`; son slot
+`vtable+0x168` cible `0x823A2C30` (`li r3,0; blr`). La statique qualifie aussi
+les sites d'écriture vers `0x829BAF30` (`0x821D6380`) puis un vptr candidat
+`0x8275CFC4` (`0x823CE6AC`). Leur reachability normale, le slot terminal
+effectif et l'ordre de vie restent ouverts ; ne pas généraliser le résultat du
+vtable initial au runtime.
+
+Preuves : `reports/retail-us-mission01-campaign-loader-static-20260828.md`,
+`reports/retail-us-mission01-campaign-service-owner-static-20260828.md`,
+`reports/retail-us-mission01-flightactive-static-20260828.md`.
+
+# Retail US 2026-08-28 — sonde analogique bornée, frontière toujours ouverte
+
+- PROUVÉ : le rebuild `job-mtct7k4h-0be226ed` est validé et installé sous le
+  binaire `e93d9fbe…bd8115` (37 804 064 octets), ReXGlue/Vulkan, 16/16 tests,
+  `bin/bin` absent.
+- ÉCHEC BORNÉ : `job-mtctdvii-e9c22860` atteint seulement `2/96` sur la route
+  longstart; `type28=30` manque après 249,461 s, aucune ligne analogique,
+  `game_status=-9`, zéro fatal/trap.
+- DÉCISION : ce run n’apporte aucune preuve d’entrée. La route originale
+  qualifiée est maintenant explicitement admise au harness diagnostic, sans
+  modifier le gate produit; une corrélation read-only unique est en cours sous
+  `job-mtctm90d-3d748f51`.
+- ÉTAT : M01 gameplay v2, débrief/save checkpoint, missions 02–15, parité
+  shader/lumière et `release_ready` restent non promus; PAL reste bloqué.
+
+Preuve : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — corrélation analogique originale expirée
+
+- ÉCHEC BORNÉ : `job-mtctm90d-3d748f51` a expiré à 20 min (`exit 124`) avec
+  le binaire `e93d9fbe…bd8115`, la route originale scellée et le seed complet;
+  aucun `RESULT.json` final n’a été écrit.
+- PROUVÉ : l’artefact brut contient 50 captures, `5 587 PRESENT`, `94 type28`
+  et des boutons XAM non nuls (`0x0004/0x0010/0x1000/0x2000`), mais aucun
+  `[ac6-campaign-transition] state=1->2`, aucune ligne analogique et aucune
+  phase `world=1/hud=1`.
+- DÉCISION : corrélation non concluante, sans attribution renderer/input;
+  aucune répétition. Reprendre statiquement transition campagne, `FlightActive`,
+  postprocess/resolve et teardown; M01 v2, débrief/save, missions 02–15 et PAL
+  restent bloqués.
+
+Preuve : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — gameplay v2 candidat, sortie cinématique ouverte
+
+- PROUVÉ : le binaire `b004ee70…4d70` est buildé/validé et porte les
+  observables read-only du scheduler (`0x822ED310→0x82267160`) et de
+  l'objectif (`0x82256490→0x8226C068`).
+- PROUVÉ : la sonde HUD diagnostique atteint `cinematic=0 world=1 hud=1
+  stable=30` et produit cinq contrôles visuellement différents.
+- ÉCHEC BORNÉ : deux essais vierges calent à `type28=30`; le run cache hôte
+  atteint l'étape 75 mais manque la phase stable après l'edge `Escape` fixe.
+- ÉTAT : le manifeste de campagne garde le reçu gameplay historique attaché
+  à `d8b7b7b3…`; `debrief_pass=0`, `release_ready=false` et PAL reste bloqué.
+- PROCHAIN : une unique route diagnostique adaptative, puis seulement un
+  replay v2 et l'audit; pas de correction globale renderer, trace globale,
+  A/B, guest write ou ouverture des missions 02–15 avant succès M01.
+
+Preuve : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — frontière scheduler US qualifiée
+
+- PROUVÉ : le projet Ghidra canonique `ghidra-projects/ac6-us` (`default.xex`,
+  XEX `6eefba42…67cbbbc`) borne `0x822ED310..0x822ED467` comme handler du
+  signal `-2`, avec gardes contexte/objet puis appel de `0x82267160`.
+- PROUVÉ : `0x82267160..0x8226723B` avance le pas selon le délai du scénario,
+  remet le compteur de temps à zéro et retourne `1` à l'épuisement ; les
+  appels directs US observés sont `0x82258F8C` et `0x822ED408`.
+- PROUVÉ : `0x822ED708` et `0x8226E158` sont des offsets internes, non des
+  entrées de fonction ; aucune frontière scheduler ne reste ambiguë.
+- OUVERT : l'activation native objet/arme/compteur qui doit atteindre `-2` en
+  vol ; aucun runtime ni gameplay/debrief n'est promu par cette lecture.
+- DÉCISION : préparer une seule trace runtime bornée et read-only des gardes,
+  du signal, du retour d'avance et du premier compteur M01.
+
+Preuve : `reports/retail-us-mission01-scheduler-static-20260828.md`.
+
+# Retail US 2026-08-28 — timer M01 sans entrée, auto-complétion écartée
+
+- PROUVÉ : avec le binaire candidat `54dd900a…5711f9`, la route
+  `mission01-roundtrip-timer-candidate.steps` atteint le HUD stable puis reste
+  sans entrée pendant `300 s` ; 96/96 étapes et 28 captures sont produites.
+- PROUVÉ : arrêt propre après `755,014796 s`, `game_status=0`, aucune
+  correspondance fatale et aucun trap/timeout ; `selector=1 value=1` et les
+  transitions campagne `0→1→2` restent visibles.
+- NON PROUVÉ : aucun `[ac6-post-mission]`, terminal `0x822E3248`, setter niveau
+  2, débrief ou checkpoint de sauvegarde pendant la fenêtre temporisée.
+- DÉCISION : l'hypothèse « le scénario s'auto-complète au repos » est fermée.
+  Le gate reste le round-trip M01 ; qualifier statiquement les objectifs,
+  unités et compteurs US avant toute nouvelle entrée de vol ciblée.
+
+Preuve : `reports/retail-us-mission01-roundtrip-timer-diagnostic-20260828.md`.
+
+# Retail US 2026-08-27 — handoff corrigé atteint le HUD, visuel encore ouvert
+
+Après intégration du settle/hold Campaign dans le harness diagnostique, un run
+unique `--mission-cinematic-handoff` atteint briefing, cinématique et la phase
+`cinematic=0 world=1 hud=1 stable=30`. Le résultat est
+`diagnostic-capture-ready`, `23` captures, arrêt propre (`game_status=0`) ; le
+centre HUD est non noir (`mean=0.301670`, `stddev=0.302621`, nonblack `1.0`).
+L’avion et les hautes lumières restent surexposés, et aucun contrôle ou débrief
+n’est crédité. Le gate round-trip M01 reste ouvert.
+
+Preuve : `reports/retail-us-mission01-cinematic-handoff-candidate-20260828-r2.md`.
+
+# Retail US 2026-08-28 — bytes scénario US qualifiés par tranche
+
+- PROUVÉ : `DATA.TBL[9]` de l’ISO US qualifiée a été lu sur sa seule plage
+  `offset=16908288`, `length=13234635` ; le payload décompressé et l’enfant FHM
+  0 ont été vérifiés par SHA-256.
+- PROUVÉ : l’enfant scénario (`51c10abe…ac6d45`) passe le probe natif avec
+  `root_slots=10`, 230 unités, 434 objets, quatre sous-missions et
+  `reader_runs=666`, `reader_failure=null`.
+- DÉCISION : l’absence de ressource US est fermée pour Mission 01 ; aucune
+  preuve PAL n’est transférée et aucun payload n’est copié dans le produit.
+- OUVERT : progression naturelle, débrief, setter niveau 2 et round-trip save.
+
+Preuve : `reports/retail-us-mission01-scenario-static-qualification-20260828.md`.
+
+# Retail US 2026-08-27 — confirmation campagne qualifiée par settle/hold
+
+La route ciblée `mission01-campaign-confirm-candidate.steps` a utilisé une
+seule différence d’entrée nommée : settle `8 s`, puis edges `space` tenus
+`0,6 s` sur les écrans de configuration. Elle produit des captures distinctes
+pour difficulté/contrôles/langue, le getter
+`selector=1 value=1 lr=0x821BA918`, puis les transitions campagne
+`state=0->1` et `state=1->2`. Le diagnostic Vulkan a été arrêté après sa
+capture (`RESULT.status=fail` technique, `game_status=-9`) sans fatal/trap ; il
+ne constitue pas un reçu gameplay.
+
+La couture d’entrée est donc fermée et sa recette est réutilisable dans le
+round-trip naturel M01. Aucun override renderer, A/B ou guest write n’est
+autorisé ; `debrief_pass=0` reste inchangé. Preuve :
+`reports/retail-us-mission01-campaign-confirm-candidate-20260828.md`.
+
+# Retail US 2026-08-27 — handoff campagne figé après profil
+
+La variante `--mission-cinematic-handoff` a franchi le profil/Game Data avec le
+candidat Vulkan `54dd900a…5711f9`, puis est restée sur `CAMPAIGN / NEW GAME`
+après la langue. Aucun `[ac6-campaign-transition] state=1->2` n'est apparu ;
+`4 610` `PRESENT` ont été produits et deux captures à 12 s sont identiques
+(`62a77bf1…`). L'arrêt cgroup contrôlé porte le statut `15`, sans fatal/trap.
+
+Ce diagnostic borne une seconde couture d'entrée, sans attribution au renderer
+et sans autoriser A/B, guest write ou répétition identique. Le gate reste le
+round-trip naturel M01 ; preuve :
+`reports/retail-us-mission01-cinematic-handoff-candidate-20260828.md`.
+
+# Retail US 2026-08-27 — amorce longue figée, gate round-trip conservé
+
+La route diagnostique `mission01-flight-long.steps` a été exécutée une seule
+fois avec le candidat Vulkan `54dd900a…5711f9`. Après `8 min 25 s`, le movie
+worker produisait encore des réveils et `349` `PRESENT`, mais aucun marqueur de
+campagne, `type28` ou `selector44` n'était publié ; seules deux phases
+`world=0`/`stable=0` sont apparues. Les captures Xvfb à `23:07:40` et `23:12:21`
+ont le même SHA-256 `87a84b42…`. Le scope a été arrêté borné avec le statut
+`15`.
+
+Ce résultat est un diagnostic fail-closed de l'amorce, pas un reçu de gameplay
+et pas une attribution à Vulkan. Il n'autorise ni override renderer, ni A/B,
+ni nouvelle exécution identique. Le gate reste le round-trip naturel M01 ; le
+rapport complet est `reports/retail-us-mission01-flight-long-candidate-20260828.md`.
+
+# Retail US 2026-08-27 — tick monde vivant, phase visuelle encore instable
+
+La capture diagnostique bornée du candidat `54dd900a…5711f9` confirme
+`0x8226CEA0`/caméra actifs et une charge frontier Vulkan substantielle. Les 93
+échantillons montrent `object:0`, `camera:1` sur 85 appels après
+initialisation ; l'update objet `0x822704A0` n'est pas appelé par le tick et son
+unique référence directe reste la route `0x82256490`. La phase visuelle ne
+tient jamais 30 frames ; aucune correction renderer globale n'est retenue.
+
+Le gate reste le round-trip M01 naturel (débrief, setter niveau 2, save
+quiescent, relecture fraîche niveau 2). Le diagnostic est enregistré dans
+`reports/retail-us-mission01-world-owner-diagnostic-20260827.md` et ne ferme
+pas le gameplay.
+
+# Retail US 2026-08-27 — candidat round-trip Mission 01 prêt
+
+Quatre observables read-only qualifiés sont liés : entrée InterMissionSelect,
+setter de niveau filtré aux callsites `0x821A64D0/0x821A64E8`, transitions
+brutes du save manager et lectures de niveau sur changement. Build sans
+codegen et validation statique réussis : Python 65/65, natif 16/16, Vulkan,
+SDL dummy, zéro D3D12, `bin/bin` absent. Le candidat
+`54dd900a…5711f9` n'est pas encore promu ; le round-trip runtime reste à faire.
+
+Preuve : `reports/retail-us-mission01-persistence-observables-build-20260827.md`.
+
+# Retail US 2026-08-27 — chaîne débrief/progression Mission 01 qualifiée
+
+La fin monde `0x822E3248` est reliée canoniquement à Debriefing,
+DemoIntermission, Unlock puis InterMissionSelect. `0x821A6400` porte
+l'incrément de niveau `1 -> 2`, enregistre son `CSelectSaveLoadManager` via
+`0x82158D00`, l'actualise via `0x82158D90`, puis publie MissionTitle. La
+persistance effective et la relecture après redémarrage restent non prouvées ;
+le gate courant devient un round-trip runtime borné, sans A/B ni trace globale.
+
+Preuve : `reports/retail-us-mission01-debrief-progression-static-20260827.md`.
+
+# Retail US 2026-08-27 — quinze routes DPL/DATA.TBL qualifiées
+
+La frontière statique campagne US est fermée sans corriger artificiellement
+Ghidra : `0x821CD168` est une feuille appelée directement entre les entrées
+`.pdata` `0x821CD0D0` et `0x821CD2E8`. Le loader actif flag-2 publie la borne du
+`DATA.TBL` à `0x8293B950`, puis la feuille range les DPL directs inchangés.
+L'extraction XDVDFS du seul `DATA.TBL` depuis l'ISO exacte donne 14 824 octets,
+926 entrées et le SHA-256 `bad3a157…863b2f`, distinct du PAL.
+
+Le manifeste promeut les quinze routes statiques `1..15 → 9..23 → 9..23`.
+Validation : Python 65/65, natif 16/16, `validate.py` pass ; campagne
+`static_qualified=15`, `gameplay_pass=1`, `debrief_pass=0`, release non prête.
+Aucun codegen ni runtime n'a été lancé. Le gate courant devient la qualification
+statique de la fin Mission 01, du débrief et de l'écriture de progression.
+
+Preuve : `reports/retail-us-campaign-manifest-static-20260827.md`.
+
+# Retail US 2026-08-27 — manifeste 15 missions, frontière DPL ouverte
+
+Le sélecteur US canonique `0x821B6EE8` lit `0x820657B0` et qualifie les
+missions `1..15` vers les DPL `9..23`. Le manifeste campagne fail-closed est
+intégré à `validate.py` : 15 sélecteurs qualifiés, 0 route DATA.TBL complète,
+1 gameplay, 0 débrief, release non prête. La requête `0x821D1190` et le loader
+`0x821CC288` sont qualifiés ; le call target `0x821CD168` doit encore être
+réconcilié avec la `.pdata` canonique, puis le `DATA.TBL` US extrait de l'ISO
+exacte doit être identifié. Aucun runtime ni codegen n'a été lancé.
+
+Preuve : `reports/retail-us-campaign-manifest-static-20260827.md`.
+
+# Retail US 2026-08-27 — gate v2 construit, capture D5B4 suivante
+
+Le gate NTSC-U/J v2 est construit et validé statiquement avec le binaire
+`b869e2b1…61fde55`. Il impose 96/96, 27 captures, une phase HUD stable hors
+cinématique, un centre de monde non noir et cinq effets de contrôle. Aucun
+runtime n'a suivi le build dans cette session lourde. Le prochain gate est une
+capture RenderDoc unique `cinematic-d5b4` dans une nouvelle session. PAL reste
+fermé.
+
+# Retail US 2026-08-27 — F556 qualifié, resolve inconcluant
+
+Le premier draw F556 reçoit un fetch `tf0` valide (format 6, endian 2, tuilé,
+256×256), clamp edge et bordure noire : la piste de bordure blanche est
+fermée. `0x1C95E000` est une destination de resolve GPU; les zéros d'une
+lecture CPU sont stale. Le probe de contenu resolve n'a pas quitté le hangar,
+donc aucune correction n'est retenue. Le gate US reste fermé et le PAL bloqué.
+
+La route 96 a aussi été reclassée : ses captures `step-84`/`87`/`90`/`93`/`96`
+sont la cinématique pré-mission, pas le vol. Seule la route longue
+`flight-long2/step-87` montre un HUD/radar retail plausible au début du
+gameplay, mais sur un monde entièrement noir.
+
+Preuve : `reports/retail-us-f556-sampler-resolve-20260827.md`.
+
+# Retail US 2026-08-27 — qualification des surfaces blanches
+
+La cinématique montre désormais le relief et les avions, mais l'aplat D5B4
+orientation-dépendant et les taches blanches de la passe point-list F556 restent
+distincts. D5B4 a une cible et un fetch BC3 valides; F556 passe par une
+expansion point-sprite Vulkan correcte, avec le fetch/sampler `tf0` reçu. La
+prochaine preuve doit qualifier le contenu resolve/load sans confondre cette
+cinématique avec le HUD de gameplay.
+
+Preuve : `reports/retail-us-white-texture-static-boundary-20260827.md`.
+
+# Retail US 2026-08-27 — water-gradient inconcluant
+
+La sonde unique `ac6_fix_water_line=false` réutilise le binaire validé et
+termine proprement 89/89 opérations, sans fatal ni trap. Elle ne produit
+toutefois aucune vue de vol : après `step-69-post-weapon-confirm`, les captures
+restent identiques au hangar « Deploy with this selection? ». Elle ne confirme
+ni n'exclut donc la passe water-gradient; aucune nouvelle session n'est lancée
+sur ce seul résultat.
+
+Preuve : `reports/retail-us-stock-water-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — textures blanches : dé-swizzle et FBO écartés
+
+Le bras comparatif `--ac6_fix_deswizzle=false` conserve les surfaces blanches
+selon l'orientation; le correctif AC6 reste activé. Les observations BC3/D5B4
+restent valides (format 20, tuilé, ressource présente), ce qui déplace la cause
+vers la lumière/composition. Un bras unique `render_target_path_vulkan=fbo`
+produit une image initiale mais n'atteint pas `type28=30` en 120 s; FSI reste
+le chemin qualifié. Aucun reçu gameplay ni PAL n'est ouvert.
+
+Preuve : `reports/retail-us-stock-deswizzle-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — FSI/post-process/frontbuffer borné
+
+Le tooling renderer utilisateur comprend désormais `glslc` (shaderc 2026.1-1),
+en plus de SPIR-V Tools/glslang et de la couche Khronos. Un probe distinct de
+séquence complète (96 opérations) a atteint la campagne mais n'a pas produit
+`[ac6-campaign-transition]` et a été interrompu à `type28=30`; il n'ajoute
+aucun reçu gameplay. La route scellée 96/96 reste seulement mécanique : ses
+captures de vol ne montrent pas le HUD de cockpit. PAL reste donc fermé.
+
+Le binaire US `a150da4022425d0477e20ecfaa06cd73162fa44074f409dac8edaffa36974de9`
+est statiquement validé avec FSI ReXGlue/Vulkan. Les outils SPIR-V installés
+en espace utilisateur valident les 93 shaders (`spirv-val` 93/93 et réflexion
+`spirv-cross` 93/93). Une route longue propre atteint la cinématique 3D
+surexposée, puis le monde noir avec HUD invité ; aucun reçu Mission 01 de
+gameplay complet n'est encore obtenu.
+
+La frontière restante est bornée aux passes post-process après le compose et
+au handoff final `0x1B9C0000` → `0x1AB60000`. Le fetch swap est chargé sans
+erreur, mais la sortie présentée devient noire. Cette observation ne suffit
+pas à choisir un shader ou une barrière ; pas de nouveau rebuild/codegen et
+PAL reste fermé.
+
+Preuves : reports/retail-us-fsi-handoff-logged-runtime-20260827.md et
+reports/retail-us-flight-long2-runtime-20260827.md.
+
+# Retail US 2026-08-26 — observable propriétaire validé
+
+Le rebuild sans codegen passe et installe `64f34acf…46af5b8`. Les cinq wrappers
+CModeTaskGame/tick/objet/caméra/radio sont liés ; la cvar et les marqueurs sont
+exigés par la validation. 16/16 tests, Vulkan-only, SDL dummy, zéro D3D12 et
+zéro `bin/bin`. Le prochain runtime causal attend une nouvelle session lourde.
+
+Preuve : reports/retail-us-world-owner-observable-rebuild-20260826.md.
+
+# Retail US 2026-08-26 — propriétaires US qualifiés
+
+Ghidra canonique US et les corps générés convergent sur CModeTaskGame
+`0x8219A510`, tick monde `0x8226CEA0`, objet `0x822704A0`, caméra `0x822638B0`
+et radio `0x82271908`; `0x8219A170` est réfuté. Étendues `.pdata`, octets,
+références et appels sont reçus. Un observable read-only borné est prêt ; son
+rebuild sans codegen attend une nouvelle session lourde.
+
+Preuve : reports/retail-us-world-owner-static-qualification-20260826.md.
+
+# Retail US 2026-08-26 — soumission du monde effondrée au handoff
+
+Le hangar est franchi et le probe atteint proprement le HUD noir sans panneau.
+La cinématique soumet 969–975 draws, 91 resolves et 32 pointlists ; le handoff
+chute de 1 197/84/31 à une signature stable 106/1/0 jusqu'au HUD. Le viewport et
+la `guest_swap_texture` restent 1280x720. La rupture est en amont du swap, dans
+l'activation/dispatch/soumission du monde. Runtime consommé : 19.
+
+Preuve : reports/retail-us-flight-world-submission-collapse-20260826.md.
+
+# Retail US 2026-08-26 — divergence bornée au hangar sans panneau
+
+Le binaire validé termine proprement le probe et le panneau vert est absent.
+L'audit visuel montre toutefois le même hangar `Deploy` des étapes 70 à 87 : le
+premier A immédiat n'est pas accepté. Les étapes antérieures, le focus et les
+présentations restent corrects. Une attente de deux secondes précède désormais
+l'unique A du hangar. Runtime consommé : 18.
+
+Preuve : reports/retail-us-no-panel-hangar-divergence-20260826.md.
+
+# Retail US 2026-08-26 — rebuild résumé persistant sans panneau
+
+Le rebuild unique réutilise le code généré et passe avec un binaire installé
+`60c9fc6a…15da94`. Les 16 tests ciblés, Vulkan-only, SDL dummy, l'absence de
+D3D12 et de `bin/bin` sont validés. Le dernier résumé non vide est conservé et
+le panneau vert est opt-in, donc masqué par défaut. Le prochain runtime, dans
+une nouvelle session lourde, journalisera les signatures bornées sans panneau.
+
+Preuve : reports/retail-us-last-meaningful-rebuild-20260826.md.
+
+# Retail US 2026-08-26 — résumé de frame non autoritatif
+
+Le probe atteint 87 opérations et les captures cinématique 3D/HUD noir, mais
+reste un échec fermé (`game_status=-9`, arrêt non propre). Les compteurs sont
+nuls même sur la frame 3D visible : la frontière PRESENT vide écrase le dernier
+résumé utile. Les appels générés sont bien liés aux wrappers. La source conserve
+maintenant la dernière frame non vide ; aucun second job lourd dans cette
+session. Ce correctif et le défaut qui masque le panneau vert attendent le
+prochain rebuild unique.
+
+Preuve : reports/retail-us-black-world-frame-summary-20260826.md.
+
+# Retail US 2026-08-26 — HUD atteint, monde noir
+
+Le seuil 180 PRESENT stabilise le démarrage. La route atteint le mode vol :
+les primitives HUD sont visibles après A/Start, mais le monde 3D est noir.
+Le run de 87 opérations termine proprement sans fatal ni trap. Le prochain
+probe active uniquement le résumé de frame borné afin de compter draws,
+clears, resolves, RT et viewport sur cette frame noire.
+
+Preuve : reports/retail-us-hud-black-world-20260826.md.
+
+# Retail US 2026-08-26 — seuil 1 PRESENT réfuté
+
+Après attente du premier PRESENT, l'Escape initial arrête immédiatement toute
+présentation : une seule frame totale, aucun type28, aucune capture, fatal,
+trap ou erreur audio. Le run est interrompu par TERM au done_when et reste un
+échec. Le prochain probe attend les 180 PRESENT historiquement qualifiés avant
+toute entrée.
+
+Preuve : reports/retail-us-cinematic-hud-one-present-20260826.md.
+
+# Retail US 2026-08-26 — probe HUD non exercé
+
+La tentative de handoff HUD s'est figée avant type28 après 1 630 PRESENT,
+sans capture, fatal, trap ni erreur audio. Le focus et les impulsions restaient
+actifs. Le timeout 124 sans RESULT.json classe la session en échec interrompu.
+Le prochain probe attend obligatoirement le premier PRESENT avant toute entrée,
+ce qui fixe la divergence temporelle nommée.
+
+Preuve : reports/retail-us-cinematic-hud-startup-stall-20260826.md.
+
+# Retail US 2026-08-26 — cinématique de lancement atteinte
+
+La confirmation A depuis la carte tactique lance la cinématique 3D du F-16.
+Les captures à 15 et 35 s montrent l'avion; à 65 s, la transition reste
+floutée sans HUD. Le run termine proprement sans fatal ni trap. Le prochain
+probe applique la recette historique A puis Start et s'arrête au premier HUD
+candidat, sans contrôle de vol.
+
+Preuve : reports/retail-us-tactical-map-confirm-20260826.md.
+
+# Retail US 2026-08-26 — premier hangar franchi
+
+Le probe exact confirme A depuis le premier hangar et atteint la carte tactique
+Mission 01. Celle-ci reste stable jusqu'à 65 secondes avec A OK : elle attend
+une seconde confirmation explicite. Le run est propre, sans fatal ni trap.
+Le prochain probe ajoute uniquement cet A sur la carte.
+
+Preuve : reports/retail-us-first-hangar-confirm-20260826.md.
+
+# Retail US 2026-08-26 — divergence au premier hangar
+
+Les captures ordonnées prouvent que Space progresse avion → armes → premier
+hangar, puis que Shift renvoie aux armes. Le Space qualifié jusque-là comme
+« lancement » ne faisait que revenir au hangar. Aucun probe précédent n'a
+donc confirmé A depuis ce hangar. Le prochain probe s'arrête à l'opération 69,
+confirme A une fois, puis reste passif.
+
+Le panneau vert vient de l'appel Show() de l'application. Le nouveau cvar
+ac6_graphics_diagnostics est désactivé par défaut dans la source, mais le
+binaire installé n'est pas encore rebâti.
+
+Preuve : reports/retail-us-hangar-route-divergence-20260826.md.
+
+# Retail US 2026-08-26 — pression courte Mission 01 réfutée
+
+Le diagnostic US atteint le hangar Mission 01 et observe la transition campagne
+0→1→2. Après le seul Space de lancement tenu 0,1 s, les captures à 50, 70 et
+100 s restent au hangar A OK / B CANCEL. La pression courte n'est donc pas une
+confirmation suffisante. Le prochain probe borne uniquement ce même bouton à
+0,6 s; aucune autre touche post-lancement n'est autorisée.
+
+Preuve : reports/retail-us-mission-launch-short-press-20260826.md.
+
+# Cycle 1849 — timeline marque normale, frontière enfant fermée
+
+La négative à 3 200 ticks est requalifiée : le MovieController racine
+`0x2E3CDD10` possède 2 220 frames et n'atteint sa dernière frame qu'autour du
+tick 6 882. Son avancement est produit normalement par `0x82323BB8`, cadencé
+par `0x82322438`; la promotion parent/enfant `+0xE4/+0xE8 -> +0xF4` existe
+déjà. L'instantané `0x2E3CED10+0xDC=0` ne démontre donc aucun cue manquant et
+ne contrôle pas EndMode.
+
+La jointure exacte de la dernière entrée parent au cue Startup reste statique,
+mais elle n'est pas requise pour le prochain test causal : un probe unique,
+sans entrée, jusqu'à 7 200 ticks doit observer Title après le film naturel.
+Aucun patch produit ni état de succès n'est promu.
+
+Preuve : `reports/cycle-1849-demo-brand-movie-timeline-requalified.md` et
+`artifacts/cycle-1849/`.
+
+# Cycle 1848 — MovieController atteint, cue enfant ouvert
+
+Le probe PAL démo HSIO=1 sans entrée atteint 3 200 ticks avec ring actif
+(`1 182` soumissions, `1 089` présentations), sans frontend, mission ni
+terminal. Le parent MovieController `0x2E3CDD10` avance, alors que son enfant
+`0x2E3CED10` reste sur `DC=0` pendant la fenêtre de trace, malgré `D5=1` et
+`D6=0`. Aucun appel EndMode n'apparaît.
+
+Le garde connu de `0x82323BB8` est donc permissif; aucun patch de ces champs
+n'est causal. La suite est une jointure Ghidra statique parent→enfant pour
+nommer le cue/producteur réel, sans autre runtime ni modification produit.
+
+Preuve : `reports/cycle-1848-demo-moviecontroller-runtime-negative.md` et
+`artifacts/cycle-1848/`.
+
+# Cycle 1847 — dispatch render post-fence non causal
+
+Le plateau `0x822E559C -> 0x822F8848` est maintenant qualifié comme un update
+render/context du main loop : `0x822E559C` est le LR du dispatch indirect dans
+`0x822E5540`, non une entrée ni un wait. Son corps ne touche pas la chaîne
+StartUp/EndMode/manager; aucun correctif n'est causal.
+
+La frontière revient au flux guest SWG déjà nommé : le MovieController concret
+de Startup doit avancer de frame0 vers frame1/list1 pour sélectionner EndMode.
+La suite prépare une observation native unique de cette jointure, sans écrire
+l'état invité.
+
+Preuve : `reports/cycle-1847-demo-render-dispatch-noncausal.md` et
+`artifacts/cycle-1847/`.
+
+# Cycle 1846 — prédicat post-fence négatif borné
+
+La chaîne invitée `EndMode -> listener StartUp -> manager+0x18 -> Title` est
+qualifiée, mais n'est pas démontrée atteinte sous HSIO=1. Le garde
+MovieController `0x82323BB8` est aval et non atteint; aucune correction de
+son état n'est causale. Le dernier site guest démontré est l'indirect
+`0x822E559C -> 0x822F8848` (objet `0x82934280`, vtable `0x8202A488`, slot
+`+0x10`), dont le receiver n'est pas encore joint au listener StartUp.
+
+La négative ferme le gate sans patch ni runtime. La suite est une jointure
+Ghidra statique du receiver et des writers de `+0x0C`.
+
+Preuve : `reports/cycle-1846-demo-post-fence-predicate-bounded-negative.md`
+et `artifacts/cycle-1846/`.
+
+# Cycle 1845 — fence scratch runtime réfuté
+
+Le seul probe effectif PAL démo HSIO=1 sans entrée atteint 3 200 ticks sans
+Title, mais le ring reste sain (1 182 soumissions, 1 089 présentations). Les
+192 couples de trace source 1 montrent tous `0x16AE2000: 4 → 0` après retour
+du dispatcher `0x821B9710`, y compris les callbacks `0x821C5190`,
+`0x822E4240` et `0x822E4268`.
+
+Le `pending_wait=4` terminal est donc un instantané de borne, pas un fence
+bloqué. Aucun correctif Xenos, host, import ou PPC n'est justifié; la sonde
+temporaire est retirée. La suite doit identifier statiquement le premier
+prédicat invité encore actif avant `EndMode → manager+0x18 → Title`.
+
+Preuve : `reports/cycle-1845-demo-scratch-fence-runtime-refuted.md` et
+`artifacts/cycle-1845/`.
+
+# Cycle 1844 — producteur scratch zéro qualifié statiquement
+
+Le wait qui maintient StartUp est maintenant qualifié jusqu'à sa retraite
+attendue : `SCRATCH_REG0` publie `4` à `0x16AE2000`, puis
+`PM4_INTERRUPT(4)` livre la source 1 au dispatcher invité `0x821B9710`.
+Après retour du callback actuel `0x822E4240`, ce dispatcher doit effacer le
+bit CPU 2, donc `4 → 0`. Le host ne produit pas ce zéro.
+
+Le contrat est déjà présent statiquement dans le processeur Xenos, le ring et
+le cycle de vie. Aucun patch n'est causalement justifié. La seule suite est
+une trace native bornée de cette retraite exacte, sans A/B ni entrée.
+
+Preuve : `reports/cycle-1844-demo-scratch-fence-producer-qualified.md` et
+`artifacts/cycle-1844/`.
+
+# Cycle 1843 — Title naturel non atteint, writer scratch zéro ouvert
+
+La correction texture existante passe les validations OFF 27/27 et ON 26/26.
+Le run HSIO=1 sans entrée atteint 1 182 soumissions ring à 3 200 ticks, mais
+StartUp reste actif et aucune frame Title n'existe. Le dernier wait CP lit le
+dword `0x16AE2000` à 4 et attend 0; le producteur du retour à zéro n'est pas
+nommé. La branche s'arrête sans patch produit ni cycle mission.
+
+Preuve : `reports/cycle-1843-demo-title-natural-not-reached.md` et
+`artifacts/cycle-1843/`.
+
+# Cycle 1842 — divergence HSIO bornée, première frontière dure nommée
+
+Le sélecteur invité est qualifié : `0x821C64E8` produit le cache
+`0x827AD310`, `0x821BA780` garde `device+0x2ABD.bit1`, puis `0x821B9BC8`
+sélectionne le ring sous HSIO=1. Ce choix est intentionnel et reste inchangé.
+Le plateau worker est non causal et le `WAIT_REG_MEM` profond est conforme au
+contrat CP testé. La première frontière dure de la longue exécution est le
+profil texture BC3 320×160 rejeté au tick 4 911; sa prise en charge minimale
+et son test existent déjà dans l'arbre courant. Aucun runtime ni patch produit
+n'a été ajouté pendant ce cycle.
+
+Preuve : `reports/cycle-1842-demo-first-post-startup-divergence.md` et
+`artifacts/cycle-1842/`.
+
+# Maintenance post-cycle 1841 — handoffs opérationnels nettoyés
+
+`NEXT.md` et `RESUME.md` sont désormais current-only : 7 350 lignes cumulées
+ont été ramenées à 49, avec un seul statut courant et aucun faux gate actif.
+L'historique reste dans `STATE.md`, `EVIDENCE.md`, `reports/` et `artifacts/`.
+`AGENTS.md` impose ce contrat, exige la lecture des ancres exactes avant patch
+et nomme explicitement `recompilation/ace-combat-6-demo` comme arbre PAL démo
+actif. Aucun code produit, artefact runtime ou résultat de gate n'a changé.
+
+# Cycle 1841 — contrat threading déjà satisfait, branche bloquée sans patch
+
+`RÉFUTÉ` : ni le vol auto-reset ni la famine d'un worker runnable n'explique
+l'échec Title. Le backend courant réserve déjà le waiter via `granted_thread`
+et sert tous les threads runnable par passe. Dans le run existant, t15 exécute
+1 878 dispatches jusqu'au tick 2 997 pendant le spin massif de t1; à la borne,
+seul t1 est runnable et les 22 autres threads sont bloqués.
+
+Aucun changement produit, oracle retail ou nouveau runtime. Les validations
+post-retrait existantes restent PASS (OFF 27/27, ON 26/26), mais les critères
+finaux restent t1=5 et aucune transition `StartUp→Title` à 3 000 ticks malgré
+1 114 soumissions ring. La branche demandée est arrêtée au blocker : une suite
+doit ouvrir un gate distinct sur un prédicat invité ou service hôte post-StartUp.
+`frontend=false`, `mission=false`, `terminal=false`, `supported=false`.
+
+Preuves : `artifacts/goal-playable/threading-contract-review-20260825/`,
+`reports/cycle-1841-demo-threading-contract-already-satisfied.md`.
+
+# Cycle 1840 — les publications existent : deux sémaphores, origine invitée
+
+`PROUVÉ` dans le projet Ghidra canonique PAL démo : `0xE000005C` et
+`0xE0000130` sont créés par `NtCreateSemaphore` puis publiés par
+`NtReleaseSemaphore`. Le census antérieur `set/pulse` ne pouvait pas les voir.
+
+- `0xE0000130` : producteurs `0x820FF710/788/7F8/A88/B50`, cinq callsites
+  vers `0x822E1E70 -> 0x821A6950`; garde `[obj+0x60d0] < 256`.
+- `0xE000005C` : producteur partagé `0x822EF750`, release à `0x822EF7B4`;
+  bootstrap `0x822EF7D0 -> 0x822EF750` à `0x822EF804`, sans garde de release.
+
+Les atlas existants prouvent respectivement une et cinq publications avant le
+ledger d'attente. Les deux origines sont `guest-import`; aucun post hôte ne
+doit être ajouté et l'oracle retail n'est pas nécessaire. Frontière active :
+contrat partagé scheduler/waiters après publication invitée.
+`frontend=false`, `mission=false`, `terminal=false`, `supported=false`.
+
+Preuves : `artifacts/goal-playable/thread-producer-static-20260825/`,
+`reports/cycle-1840-demo-semaphore-producers-qualified.md`.
+
+# Cycle 1839 — rotation scheduler seule réfutée et retirée
+
+`RÉFUTÉ` : la variante round-robin déterministe échoue dans l'unique run PAL
+démo HSIO=1 borné à 3 000 ticks : thread 1 reste à 5 handshakes (critère
+`>5`), le ring atteint 1 114 soumissions, et `StartUp→Title` reste absente.
+Le reçu d'exit manque après interruption du contrôleur ; le run n'est pas
+qualifié de succès.
+
+Le curseur, le helper et leur test ont été retirés. Validation post-retrait :
+builds codegen-OFF/ON PASS, CTest OFF 27/27 et ON 26/26. Aucun correctif
+scheduler n'est conservé. Frontière active : producteurs invités des posts
+`0xE000005C` et `0xE0000130`. `frontend=false`, `mission=false`,
+`terminal=false`, `supported=false`.
+
+# Pivot retail après échec clos du cycle 1850 (26 août 2026)
+
+Le probe PAL démo codegen-ON s'est arrêté fail-closed après 5811 ticks sur
+`unsupported Xenos draw shape`, avec 1959 présentations, sans frontend ni
+mission. Ce gate et l'architecture runtime démo artisanale sont clos et
+supersédés; aucun nouveau build ou long run n'est autorisé.
+
+Le produit actif devient `recompilation/ace-combat-6-retail`, fondé sur le
+sous-module BSD-3-Clause AC6_recomp
+`09144bb092ad871584808aeead69c395edbd5200` et le renderer Xenos/Vulkan complet
+de ReXGlue. Le bootstrap NTSC-U/J est le gate courant. PAL retail reste la cible
+finale et est bloqué jusqu'au succès gameplay US. Preuve :
+`reports/cycle-1850-demo-runtime-closed-superseded.md`.
+
+Preuves : `artifacts/goal-playable/scheduler-rotation-20260825/`,
+`reports/cycle-1839-demo-scheduler-rotation-refuted.md`.
+
+# Cycle 1838 — les draineurs sont nommés : worker de file et pool de complétion
+
+`PROUVÉ` (statique pure, basefile qualifié `b98a9ac1…14218` + atlas canonique,
+zéro run) : les deux cibles de spin ont leurs décrémenteurs.
+
+1. File de rendu (`0x82386CC0`, `[obj+24784]/[24788]`) : producteurs
+   `sub_820FF710/788/7F8/A88/B50` ; initialiseur `sub_820FF9E0` qui crée le
+   worker dédié via `0x822E1D30` (unique appelant) ; draineur **`sub_820FFCA0`**
+   — pop, ++`[24788]` @0x820FFD78, dispatch `sub_820FEFA8` (mesuré thread 25).
+   À vide le worker **spinne**, il ne dort jamais sur un événement.
+2. Contexte de complétion (`0x82928B80`) : bootstrap `sub_822EF850` crée
+   l'événement `[+152]` puis **trois threads** de corps thunk
+   `0x822EF848 = b 0x822EF5B0` : attente infinie sur `[+152]` (wrapper
+   `0x821A6AF0`), au réveil ++`[ctx+8]` @0x822EF5E0, pop de la file
+   incorporée, dispatch vtable des items. Mesuré thr15 (handle 0x60 x24).
+
+Attente côté thread 1 : corps de tick `sub_822DA9C0 -> sub_822E40E8`
+(r3=`0x82928B80`) -> spin `sub_822EF7D0`. Ledger tick 260 : t15/t16/t17
+bloqués sur l'événement `0xE000005C`, t25 (worker de rendu) sur
+`0xE0000130`, et ces deux handles ne reçoivent **aucune publication dans les
+deux régimes** — la contrainte liante est le post manquant, pas seulement le
+partage de tranches. Sous HSIO=0, la causalité en miroir se confirme
+(draineurs servis, Title au tick 2369).
+
+Prochain gate : spécifier AVANT implémentation la correction minimale —
+rendre les tranches aux non-primaires sans horloge murale (rotation de
+l'ordonnanceur hôte), contre les observables fixés (handshakes t1 > 5,
+soumissions ring > 0, StartUp→Title). Preuve :
+`artifacts/goal-playable/drain-writer-census-20260825/RESULT.md`,
+`reports/cycle-1838-demo-drain-writers-named.md`.
+
+# Cycle 1837 — la garde des deux fenêtres : le thread 1 ne revient jamais au poll
+
+`PROUVÉ` (statique pure + journaux existants) : la machine de soumission de
+streaming est nommée — `sub_8219DF00(req)`, phases sur `[req+12]`, démarrage
+tant que `[req+16] < 860`, poll vers `sub_8219AF20` tant que `[req+36]==0`,
+enregistrement via `E1E28/E1E18` vers le pool `0x8261EBC8`, anneau
+`sub_821A1B50` qui pose l'événement `28`. Le thread 1 y arrive par bctrl
+depuis `sub_8219F5D0` : 99 848 polls sur ticks [66..222].
+
+La garde liante n'est pas dans la machine : dès le tick ~206, le thread 1 est
+capté par des spins de drain sans fin — `sub_820FF8D8` bouclant sur
+`[obj+24784]/[obj+24788]` (n=1,86 M d'itérations mesurées jusqu'au tick 2997),
+famille `0x822EC03C→F5CE8`, et `EF7D0 while([ctx+8]>0)`. Rien ne se draine
+quand le thread 1 mange toutes les tranches ; pas de troisième poll, pas de
+troisième fenêtre. Sous HSIO=0, ses handshakes bloquants rendent le CPU aux
+draineurs — la charge avance jusqu'à 2369. Les deux régimes confirment la
+même causalité en miroir.
+
+Prochain gate : qui décrémente `[obj+24784/88]` et `[0x82928B80+8]`
+(threads/sites de complétion), puis choix de la correction minimale contre les
+observables fixés. Preuve :
+`artifacts/goal-playable/streaming-guard-static-20260825/RESULT.md`,
+`reports/cycle-1837-demo-streaming-guard-is-a-drain-spin.md`.
+
+# Cycle 1836 — kickers morts dans les deux régimes ; pipeline de streaming nommé
+
+`RÉFUTÉ` (négative bornée, trois preuves indépendantes) : le sous-système
+kicker (`sub_821A1928`, pool `0x82774630`) n'exécute rien pendant le bootstrap,
+**ni sous HSIO=1 ni sous HSIO=0** — zéro arête indirecte sur 3000 ticks pour
+toute sa fermeture d'appelants, zéro publication des handles `04..3C` des deux
+côtés du journal 1024. Il n'est pas le levier.
+
+Instrument nouveau (observation pure) : backchain des LR sauvés aux shims
+d'événements (`AC6_DEMO_WATCH_EVENT_CALLER`). Deux chaînes fermées :
+- **Paceur** : `NtSetEvent(40)` x259 ← `sub_821C5090`+232 ← callback
+  d'interruption `sub_821B9710`+176 — estampille et pacing dans la même
+  fonction, une fois par tick.
+- **Streaming** : thread 1 soumet via `sub_8219AF20`+332 → `sub_821A1B50`+128
+  (anneau `0x82774898+152i`) → set `28` ; thread 9 attend/draine et clôt par
+  clear/pulse `2C` (`sub_821A1D10`). **Deux fenêtres seulement en 260 ticks**
+  (66→72, 205→219) ; sous HSIO=0 les lectures vont jusqu'au tick 2369.
+
+La frontière suivante est la garde qui borne les soumissions de streaming du
+thread 1 à deux occurrences. Preuves :
+`artifacts/goal-playable/kicker-caller-attribution-20260825/RESULT.md`,
+`reports/cycle-1836-demo-kickers-dead-streaming-pipeline-named.md`.
+
+# Cycle 1835 — la découple de cadence est réfutée avant implémentation
+
+`RÉFUTÉ` (statique pure, trois balayages parallèles, zéro run) : le correctif
+envisagé au cycle 1834 — délivrer l'interruption graphique au rythme du temps
+réel plutôt que par tick — tombe sur les trois points du gate. (1) Inventaire
+clos : famille de pacing complète WORK `{40,44,48,4C}` / GATE `{54,58}` /
+perf `0x82935270` (`50`) / complétion `0x82928B80` / pool workers
+`0x82774630` ; l'interruption part une fois par tick *avant* les tranches
+(`lifecycle.hpp:417-422`) et les journaux d'arêtes n'ont aucun plafond.
+(2) Neuf fonctions lisent le timebase : estampilles, stats, un spin de
+timeout — **aucun rendez-vous** ; découpler ne change aucune sémantique de
+fence. (3) Les soumissions ring sont des stores MMIO invités, rien ne les
+couple à la coïncidence interruption/tick ; un pacing temps réel casserait en
+revanche le déterminisme des replays.
+
+Le maillon nommé remplace la frontière : sous HSIO=1, les workers 4..11
+dorment depuis le tick 0 faute de kick (`sub_821A18D0`, six appelants statiques
+dont aucun ne s'exécute après la phase précoce), donc `EF7D0` spinne dans le
+thread 1, donc tout le chemin titre affame. À 60 Hz matériels, le producteur
+EST libéré chaque frame — ce qui manque au port, c'est la préemption par le
+temps et les complétions asynchrones, pas la cadence.
+
+Prochaine expérience unique : watcher opt-in sur `sub_821A18D0` et ses six
+appelants, 260 ticks headless ; identifier l'appelant kicker et sa garde, ou
+négative bornée. Aucune correction scheduler/renderer avant ce verdict.
+
+Preuve : `artifacts/goal-playable/pacing-inventory-static-20260825/RESULT.md`,
+`reports/cycle-1835-demo-interrupt-decouple-premise-refuted.md`.
+
+# Cycle 1834 — l'interruption satisait d'avance chaque attente
+
+`PROUVÉ` (statique + un run 260 ticks, instruments opt-in, zéro ligne changée) :
+les cinq handshakes du thread 1 se répartissent sur **deux** objets — la file
+de `WORK` (`{48,4C}`, via `4018`/`4080`) et le *gate* global (`{54,58}` à
+`0x82933F98`, via `EEE68`). Dernier appel au tick 177, comme sur 3000 ticks.
+
+Pourquoi ça cesse de bloquer : `sub_822E4268` (dispatch d'interruption
+graphique) estampe un timebase **et** fait `NtSetEvent([obj+104])`. Sous
+HSIO=1 l'interruption libère donc le producteur (`t12` attend `0xE0000040`)
+une fois par tick : publication x259, compteur de gate basculant 0/1, et
+chaque condition du consommateur déjà vraie à l'arrivée. Le handshake étant
+le yield de l'invité, le thread 1 ne dort plus, épuise 2998/3000 tranches et
+affame le streaming (fenêtres thread 9 aux ticks 66/205 seulement). Sous
+HSIO=0, personne ne libère `40`, le thread 1 dort 5611 fois, l'horloge avance
+par timeouts. Deux régimes faux en miroir.
+
+Référence : Xenia Edge délivre l'interruption depuis un worker temps réel
+(`graphics_system.cc:171-206,385-403`), indépendante de l'ordonnanceur ; le
+port la tire une fois par tick — même variable que l'horloge.
+
+Corrige : cycle 1833 (égalité sur le gate, pas sur la file ; la file n'a que
+`4080` de bloquant), cycles 1829/1830 (estampilleur = paceur, `[obj+24]`
++ événement). Preuve :
+`artifacts/goal-playable/gate-waiter-attribution-20260825/RESULT.md`,
+`reports/cycle-1834-demo-interrupt-pacing-pre-satisfies-every-wait.md`.
+
+Prochain gate : lister statiquement les paceurs dérivés de `[obj+104]`, puis
+décider la découple cadence d'interruption / tick avant toute correction,
+baseline ring (502 soumissions) comme garde-fou.
+
 # Cycle 1826 — aucun événement ne manque : le thread 1 ne va plus se coucher
 
 `RÉFUTÉ`, et c'est une affirmation de ce dépôt qui tombe : le journal
@@ -4212,3 +5246,1114 @@ Preuve :
 `artifacts/goal-playable/title-p1-dispatch-xref-static-20260824/BLOCKER.md`.
 Aucun runtime ni changement renderer. `frontend=false`, `mission=false`,
 `terminal=false`, `supported=false`.
+# Gate retail US — échec pré-codegen SSSE3 (26 août 2026)
+
+Le manifeste US exact est préparé. L'unique tentative lourde s'arrête avec
+Clang 21 dans `rexcore/memory.cpp` : `_mm_shuffle_epi8` requiert SSSE3, absent
+des options du target. Aucun codegen, binaire ou run gameplay n'a suivi. La
+surcouche contient le correctif CMake ciblé `-mssse3`, non rebâti dans ce gate.
+PAL reste bloqué.
+
+Preuve : `reports/retail-us-build-ssse3-boundary.md`.
+
+# Gate retail US — Vulkan valide, synchronisation de route absente (26 août 2026)
+
+Le correctif SSSE3 a permis l'unique génération et le build Clang 21/C++23.
+Les 16 tests ciblés passent, ReXGlue Vulkan et SDL dummy sont liés, D3D12 et
+`bin/bin` sont absents. La session corrigée présente le dialogue de données de
+jeu sans trap fatale mais expire à 4/96 étapes : les marqueurs `type28`,
+`selector44`, `state40` et campagne de la route scellée ne sont pas publiés par
+le host US stock. PAL reste bloqué ; le gate courant est le cross-match Ghidra
+US des quatre fonctions de synchronisation candidates. Aucun nouveau runtime
+ou rebuild avant cette qualification.
+
+Preuve : `reports/retail-us-vulkan-route-sync-boundary.md`.
+
+# Gate retail US — observables qualifiés, route échouée à 10/96 (26 août 2026)
+
+Le projet canonique `ghidra-projects/ac6-us` qualifie les quatre fonctions de
+synchronisation et leurs étendues `.pdata` depuis le XEX US exact. Les wrappers
+read-only, la carte de hooks et le relink sans codegen passent les 16 tests
+statiques ; le binaire installé est `44e75813…95d30c`.
+
+La session unique observe `type28=30`, puis `37`, mais l'état suivant est `36`
+et non le `35` exigé. Résultat : 10/96 étapes, zéro capture, aucune trap/audio
+fatale, arrêt non propre après l'échec de prédicat. Le gate US est fermé en
+échec et PAL reste bloqué. Aucun second run, A/B ou rebuild n'est autorisé.
+
+Preuve : `reports/retail-us-route-type35-failed-closed.md`.
+
+# Gate retail US — frontière RT/resolve du monde noir (26 août 2026)
+
+La route Mission 01 termine proprement avec 24 captures et sans panneau. La
+cinématique rend le monde, puis le HUD apparaît sur fond noir. Au premier HUD
+noir, CModeTaskGame et les phases objet/caméra/radio restent actives et le
+backend reçoit ~1 200 draws et 85–87 resolves. La chute ultérieure des draws
+suit l'entrée Escape/Start et n'est pas la cause initiale. Le défaut est borné
+à RT/resolve/frontbuffer. Une journalisation détaillée, read-only côté invité,
+est préparée mais non rebuildée. PAL reste bloqué.
+
+Preuve : `reports/retail-us-black-world-resolve-boundary-20260826.md`.
+
+# Gate retail US — observable resolve rebuildé (26 août 2026)
+
+Le relink unique réutilise le codegen existant et termine avec statut 0. Le
+binaire `98bf39a9…37e4e3` est validé Vulkan/SDL dummy, sans D3D12 ni `bin/bin`,
+et contient les détails RT/resolve/frontbuffer requis. Aucun runtime n'est
+lancé dans cette session. PAL reste bloqué jusqu'à la prochaine corrélation.
+
+Preuve : `reports/retail-us-resolve-observable-rebuild-20260826.md`.
+
+## Retail US — panneau diagnostics et validation bornée de `37 -> 35` (26 août 2026)
+
+Le diagnostic 15/15 atteint `type28=37` avec `NO`, applique `Left`, capture
+`YES`, valide puis atteint `type28=35`; arrêt propre et zéro fatal. Le panneau
+hôte reste toutefois visible, car sa fermeture avait précédé sa création
+ImGui. La fermeture a été resynchronisée au premier point de capture, mais la
+tentative corrective s'est arrêtée avant tout `type28` après 1 725 `PRESENT`
+et 4/15 étapes. Aucun PNG sans panneau n'a été obtenu. PAL reste bloqué.
+
+Preuve : `artifacts/retail-us-type37-clean-20260826/RESULT.json` et
+`artifacts/retail-us-type37-clean-v2-20260826/RESULT.json`.
+
+# Gate retail US — captures `30/37/36`, route révisée non atteinte (26 août 2026)
+
+L'extension autorisée capture les trois écrans et prouve que `37` propose la
+création avec `NO` sélectionné ; `space` menait donc correctement à
+l'avertissement `36`. Le `Left` inutile sur l'écran `30/OK` est déplacé après
+`37`, et la route reste à 96 étapes.
+
+La validation complète révisée ne dépasse pas le démarrage : 841 `PRESENT`,
+puis arrêt des présentations, zéro marqueur `type28`, 4/96 étapes en 913 s,
+aucun fatal/audio. La correction de sélection n'est donc pas encore validée en
+route complète et PAL reste bloqué.
+
+Preuve : `reports/retail-us-route-type35-failed-closed.md`.
+# Gate retail US — frontière intermédiaire Vulkan préparée (26 août 2026)
+
+Le runtime unique produit 24 captures sans panneau : cinématique 3D visible,
+puis HUD sur monde noir. Les deux états conservent les mêmes resolves principal
+et final et le même frontbuffer ; la cause est désormais bornée à une passe ou
+ressource intermédiaire Vulkan. Le processus a dépassé la fenêtre de nettoyage
+après `Execution complete` et le reçu reste donc en échec. Une sonde hôte
+opt-in, agrégée et échantillonnée est prête avec 22 tests légers, sans rebuild
+dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-intermediate-resolve-boundary-20260826.md.
+# Gate retail US — observable frontière Vulkan validé (26 août 2026)
+
+Le rebuild unique sans codegen termine sous cgroup avec statut 0 et installe
+`b854c984…b4de0`. La validation statique passe : Vulkan complet, SDL dummy,
+zéro D3D12, pas de `bin/bin`, et les trois marqueurs hôte sont liés. La sonde
+et le panneau diagnostics restent désactivés par défaut. Aucun runtime n'a été
+lancé dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-vulkan-frontier-observable-rebuild-20260826.md.
+# Gate retail US — sortie fragment D5B4 bornée (26 août 2026)
+
+Le runtime unique termine proprement avec 24 captures sans panneau, zéro fatal
+et le HUD noir reproduit. La transition conserve 378 draws monde D5B4, leur RT
+et 65 resolves ; disparition du pass et perte globale de composition sont
+réfutées. Un override blanc limité à la sortie finale D5B4 est préparé, false
+par défaut, avec 23 tests légers ; il n'est pas rebuildé dans cette session.
+PAL reste bloqué.
+
+Preuve : reports/retail-us-vulkan-frontier-runtime-20260826.md.
+# Gate retail US — diagnostic final-white D5B4 validé (26 août 2026)
+
+Le rebuild unique réutilise le codegen et termine sous cgroup avec statut 0.
+Le binaire installé `0f208aa3…5c4c` lie la cvar et le marqueur final-white ; la
+validation confirme Vulkan complet, SDL dummy, zéro D3D12 et aucun `bin/bin`.
+L'override et le panneau restent désactivés par défaut. Aucun runtime n'a été
+lancé dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-final-output-rebuild-20260826.md.
+# Gate retail US — final-white négatif, depth/stencil borné (26 août 2026)
+
+Le runtime final-white unique termine proprement avec 24 captures sans panneau,
+zéro fatal et marqueur confirmé. Les trois HUD restent sur monde noir et le
+centre vaut 0.0 : la valeur finale D5B4 n'est pas la cause suffisante. Un bypass
+depth/stencil limité à D5B4 est préparé, false par défaut, avec 24 tests légers,
+sans rebuild dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-final-white-runtime-20260826.md.
+# Gate retail US — bypass depth/stencil D5B4 validé (26 août 2026)
+
+Le rebuild unique réutilise le codegen et termine sous cgroup avec statut 0.
+Le binaire installé `d00b9022…eb1c` lie la cvar et le marqueur depth/stencil ;
+la validation confirme Vulkan complet, SDL dummy, zéro D3D12 et aucun
+`bin/bin`. Tous les diagnostics et le panneau restent false par défaut. Aucun
+runtime n'a été lancé dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-depth-stencil-rebuild-20260826.md.
+# Gate retail US — depth/stencil négatif, culling borné (26 août 2026)
+
+Le runtime depth/stencil unique termine proprement avec 24 captures sans
+panneau, zéro fatal et les deux marqueurs confirmés. Le monde reste noir avec
+un centre à 0.0 : le rejet Z/stencil n'est pas la cause suffisante. Un bypass
+culling limité à D5B4 est préparé, false par défaut, avec 25 tests légers, sans
+rebuild dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-depth-stencil-runtime-20260826.md.
+# Gate retail US — bypass culling D5B4 validé (26 août 2026)
+
+Le rebuild unique réutilise le codegen et termine sous cgroup avec statut 0.
+Le binaire installé `8600824e…97d1` lie la cvar et le marqueur culling ; la
+validation confirme Vulkan complet, SDL dummy, zéro D3D12 et aucun `bin/bin`.
+Tous les diagnostics et le panneau restent false par défaut. Aucun runtime n'a
+été lancé dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-cull-rebuild-20260826.md.
+# Gate retail US — culling négatif, fenêtre raster bornée (26 août 2026)
+
+Le runtime culling unique termine proprement avec 24 captures sans panneau,
+zéro fatal et trois marqueurs confirmés. Le monde reste noir avec un centre à
+0.0 : le culling n'est pas la cause suffisante. Le catalogue read-only est
+enrichi avec viewport/scissor par passe, avec 25 tests légers, sans rebuild
+dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-cull-runtime-20260826.md.
+# Gate retail US — observable fenêtre raster validé (26 août 2026)
+
+Le rebuild unique réutilise le codegen et termine sous cgroup avec statut 0.
+Le binaire installé `4b4a7140…41af` lie viewport/scissor dans le catalogue de
+passes ; la validation confirme Vulkan complet, SDL dummy, zéro D3D12 et aucun
+`bin/bin`. L'observable est read-only, panneau et overrides false par défaut.
+Aucun runtime n'a été lancé dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-raster-window-rebuild-20260826.md.
+# Gate retail US — runtime fenêtre raster fermé au hangar (26 août 2026)
+
+Le runtime unique termine techniquement proprement avec 24 captures et sans
+panneau vert, mais les captures 70 à 88 sont strictement identiques au premier
+hangar. La route n'a atteint ni carte, ni cinématique, ni HUD. Le filtre lourd
+n'a émis aucune passe D5B4. Le harness rejette désormais ce faux positif et le
+catalogue read-only inclut explicitement les frames D5B4. 26 tests légers
+passent ; aucun rebuild n'a suivi le runtime. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-raster-window-runtime-20260826.md.
+# Gate retail US — catalogue D5B4 inclusif validé (26 août 2026)
+
+Le rebuild/relink unique réutilise le codegen et termine avec statut 0. Le
+binaire installé `bec7412e…c75ac` inclut toute frame D5B4 dans le catalogue
+viewport/scissor ; la validation confirme Vulkan complet, SDL dummy, zéro
+D3D12 et aucun `bin/bin`. Le panneau et les overrides restent false par défaut.
+Aucun runtime n'a été lancé dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-inclusive-catalog-rebuild-20260826.md.
+# Gate retail US — startup arrêté pendant le brand movie (26 août 2026)
+
+Le runtime unique échoue fermé à l'opération 5, sans fatal/trap ni capture de
+route. Une observation bornée montre le générique 3D « PRODUCED BY NAMCO
+BANDAI », sans panneau vert. Les 180 PRESENT surviennent vers 8 secondes et ne
+prouvent pas le menu prêt ; l'entrée arrête la présentation avant `type28=30`.
+Le harness attend désormais 45 secondes avant toute entrée. 26 tests légers
+passent ; aucun rebuild n'a suivi. PAL reste bloqué.
+
+Preuve : reports/retail-us-brand-movie-startup-stall-20260826.md.
+# Gate retail US — settle 45 s manque le titre (26 août 2026)
+
+Le runtime unique ne relève aucun fatal/trap mais émet 1 830 PRESENT puis se
+fige sur une transition noire, sans `type28=30`, capture de route ou D5B4. La
+fenêtre est fermée après l'observation causale et le jeu retourne 0. Le settle
+après 180 PRESENT place l'entrée vers 53 s, hors de la fenêtre historique. Le
+harness emploie désormais Escape à 35 s, A à 42 s, puis une attente passive.
+26 tests légers passent ; aucun rebuild. PAL reste bloqué.
+
+Preuve : reports/retail-us-brand-movie-settle-runtime-20260826.md.
+# Gate retail US — fenêtre titre seule expire (26 août 2026)
+
+Le runtime unique continue à présenter 3 499 frames mais expire après 70 s et
+cinq opérations, sans `type28=30`, capture de route, fatal/trap ou D5B4. La
+paire 35/42 s seule est insuffisante sur ce lancement. Le harness conserve cette
+fenêtre puis applique au plus 60 s de retries conditionnels, arrêtés par l'état
+invité exact ; un échec produit désormais une capture automatique. 27 tests
+légers passent ; aucun rebuild. PAL reste bloqué.
+
+Preuve : reports/retail-us-title-window-runtime-20260826.md.
+# Gate retail US — D5B4 valide, composition bornée (26 août 2026)
+
+Le runtime unique franchit startup et hangar, exécute 88/88 opérations, produit
+24 captures et s'arrête proprement sans fatal/trap ni panneau. La cinématique
+3D est visible, puis le HUD repose sur un monde noir. 44 échantillons D5B4 ont
+des fenêtres non vides couvrant la cible pitch 640. Le resolve final vers
+`0x1AB60000` persiste ; `0x1C191000` et `0x1B9C0000` passent de 7→1 et 7→4.
+La prochaine frontière est statique, dans la chaîne de composition. PAL reste
+bloqué.
+
+Preuve : reports/retail-us-d5b4-window-valid-compose-boundary-20260826.md.
+# Gate retail US — propriétaires Resolve qualifiés (26 août 2026)
+
+La statique US qualifie `0x82337C68`/LR `0x82337CC4` comme premier propriétaire,
+`0x8234D550`/LR `0x8234D5F4` comme dernier, et `0x821E2BB8` comme ABI Resolve.
+Les records intermédiaires détaillés étaient volatils. Un catalogue hôte
+read-only persiste désormais ordinal, LR, arguments et shadow state sur les
+mêmes samples bornés que Vulkan. 28 tests passent ; aucun job lourd n'a été
+lancé. PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-resolve-static-qualification-20260826.md.
+# Gate retail US — catalogue Resolve aligné validé (26 août 2026)
+
+Le rebuild/relink unique réutilise le codegen et termine avec statut 0. Le
+binaire installé `f77554a7…572ea` lie le catalogue sample/ordinal/LR/arguments/
+shadow state et passe la validation complète. 28 tests légers, Vulkan, SDL
+dummy, zéro D3D12 et aucun `bin/bin` sont confirmés. Aucun runtime n'a été lancé
+dans cette session. PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-resolve-catalog-rebuild-20260826.md.
+
+# Gate retail US — divergence Resolve nommée (26 août 2026)
+
+Le runtime unique exécute 88/88 opérations et produit 24 captures, mais échoue
+fermé au teardown (`game_status=-2`). La cinématique 3D devient un HUD sur monde
+noir. `0x1C191000` passe 7→1 et `0x1B9C0000` 7→4 tandis que le frontbuffer final
+persiste. La couture invitée est LR `0x8234D5F4` dans `0x8234D550` : ses objets
+640×360/1280×720 disparaissent au profit de 208×144/320×360. Le panneau hôte de
+l'ancien artefact type37 est absent du run courant. PAL reste bloqué.
+
+La statique précise que `0x8234D550` résout `*(r3+0)+28` sans sélectionner
+l'objet. Les sélecteurs directs sont `0x8234EF60` (liste `manager+36`) et
+`0x8234F558` (entrée de 304 octets indexée par `state+20`).
+
+Preuve : reports/retail-us-compose-resolve-runtime-20260826.md.
+
+# Gate retail US — relink owner parent échoué fermé (26 août 2026)
+
+La statique réduit la provenance à LR parent `0x8234F0E8` (liste
+`0x8234EF60`) ou `0x8234F598` (entrée indexée `0x8234F558`). Le catalogue
+read-only `owner_lr` est prêt. L'unique relink échoue avec statut 1 car la
+synchronisation avait retiré de la copie build le hunk legacy
+`GetFrameCaptureSummary()` ; ce hunk est restauré après l'échec. Aucun second
+job lourd n'est lancé, le binaire installé validé reste intact et PAL bloqué.
+
+Preuve : reports/retail-us-compose-owner-rebuild-failed-20260826.md.
+
+# Gate retail US — catalogue owner parent validé (26 août 2026)
+
+Le relink unique corrigé termine avec statut 0, sans codegen. Le binaire
+build/install `345dca09…e4f61`, 37 686 960 octets, passe la validation complète
+et contient `owner_lr`. Le catalogue distingue désormais `0x8234F0E8` de
+`0x8234F598` sans écriture invitée. Aucun runtime n'est lancé dans cette
+session ; PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-owner-relink-20260826.md.
+
+# Gate retail US — runtime owner arrêté au film de marque (26 août 2026)
+
+Le runtime unique échoue fermé après 117,9 s et 5/88 opérations, sans
+`type28=30`, fatal ou trap. La capture montre le film Namco Bandai 3D, panneau
+absent ; aucun sample Mission 01 `owner_lr` n'est collecté. Les reçus réussis
+antérieurs montrent que `type28=30` précède l'appui A fixe. Le harness pulse
+maintenant uniquement Escape après 20 s, conditionnellement pendant 90 s, puis
+réserve A à l'état invité exact. PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-owner-startup-failure-20260826.md.
+
+# Gate retail US — runtime owner corrélé proprement (26 août 2026)
+
+Le runtime borné sur `345dca09…e4f61` termine avec `85/85` opérations,
+24 captures, `game_status=0`, `xvfb_status=0` et `clean_shutdown=true`, sans
+fatal/trap. `step-77` conserve une cinématique 3D; `step-79/82/85` montrent le
+HUD invité sur monde noir. Le panneau hôte est absent.
+
+Le catalogue read-only attribue les surfaces intermédiaires à
+`owner_lr=0x8234F0E8` (`0x8234EF60`) et le resolve final à
+`owner_lr=0x8234F598` (`0x8234F558`), vers `0x1AB60000`. D5B4 reste soumis après
+la transition noire; la frontière active est `ResolveInfo`/ownership/dump.
+PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-owner-runtime-20260826.md.
+
+# Gate retail US — `ResolveInfo` statique préparé (26 août 2026)
+
+La chaîne active est maintenant bornée à `GetResolveInfo` →
+`DumpRenderTargets` → copie EDRAM/shared memory → `MarkRangeAsResolved` →
+`RequestSwapTexture`. Une instrumentation read-only
+`ac6_log_resolve_info` consigne les champs source/destination et la plage
+EDRAM (8 premiers resolves puis 1/256). Elle est présente dans les copies
+upstream et build mais n'a pas encore été exécutée. Un seul rebuild/runtime
+reste autorisé dans une session fraîche; PAL reste bloqué.
+
+Preuve : reports/retail-us-resolve-info-static-20260826.md.
+
+# Gate retail US — runtime `ResolveInfo`/ownership (26 août 2026)
+
+Le runtime instrumenté termine proprement avec 85/85 opérations et 24
+captures. Chaque span d'ownership échantillonné sélectionne un rectangle de
+dump (`rectangles=1`), tandis que D5B4 persiste après la première capture noire.
+`world_center_mean=0`; le reçu gameplay US n'est pas atteint. La couture active
+est désormais `RequestSwapTexture` → `LoadTextureData`, instrumentée dans les
+copies source/build par `[ac6-swap-texture]`. PAL reste bloqué.
+
+Preuve : reports/retail-us-resolve-info-runtime-20260826.md.
+
+# Gate retail US — texture de swap fermée, transition manager restante (26 août 2026)
+
+Le rebuild ciblé et la validation passent avec le binaire
+`bf80b852…cca56a0a`. La route render-summary atteint 85/85 opérations, 24
+captures, le vol HUD, et s'arrête proprement sans fatal/trap ni panneau hôte.
+Les marqueurs `[ac6-swap-texture]` restent `ok` et
+`[ac6-texture-load]` montre `prepared → commit-ok` pour
+`0x1AB60000+0x398000`, avec `outdated=0x1` avant chargement et `0x0` après.
+
+La couture texture/présentation est donc réfutée comme cause suffisante. Au
+sample 2460/frame 12683, le manager passe à `flags8=0x4` et HSM
+`0x822EB1B0`, mais les frames conservent encore 1 600–1 850 draws et 82–87
+resolves ; le passage ultérieur à `0x822E71A0` et les deltas nuls sont
+postérieurs au premier noir. La frontière revient au contenu des surfaces
+intermédiaires `0x1C191000`/`0x1B9C0000` avant `0x1AB60000`. PAL reste bloqué.
+
+Preuve : reports/retail-us-texture-load-runtime-20260826.md.
+
+# Gate retail US — sonde D5B4 reportée par faux rejet statique (26 août 2026)
+
+La route `retail-us-d5b4-texture-runtime-20260826` s'est terminée proprement,
+mais le filtre D3D12 de `validate.py` a rejeté à tort l'adresse hexadécimale
+`0x00d3d120`; l'installation est donc restée sur l'ancien binaire et le
+marqueur D5B4 n'a pas été consommé. Le filtre est corrigé et testé (31 tests),
+le nouveau binaire `dce792bd…7691` est installé avec le marqueur. PAL reste
+bloqué ; un seul runtime frais est requis, sans rebuild.
+
+Preuve : reports/retail-us-d5b4-texture-runtime-20260826.md.
+
+# Gate retail US — retry sonde D5B4 déplacé au point consommateur (27 août 2026)
+
+- PROUVÉ : le runtime frais avec `dce792bd…7691` a terminé `85/85`, 24
+  captures, statut 0, arrêt propre, zéro fatal/trap et panneau hôte absent.
+- PROUVÉ : les passes `[ac6-frontier-pass]` sont présentes, mais ni le hash
+  pixel shader D5B4 (`D5B4F4A878949938`) ni la sonde placée après
+  `RequestTextures` n'apparaissent dans le log.
+- CORRIGÉ STATIQUEMENT : le marqueur read-only est maintenant placé juste
+  après la construction `Ac6FrontierPass` pour le pixel shader D5B4, dans les
+  copies upstream et build.
+- PROCHAIN : un seul rebuild/relink sous cgroup, puis une seule route fraîche
+  pour consommer la sonde. PAL reste bloqué par le reçu US de gameplay.
+
+Preuve : reports/retail-us-d5b4-texture-runtime-retry-20260827.md.
+
+# Gate retail US — rebuild sonde D5B4 relocalisée (27 août 2026)
+
+- PROUVÉ : rebuild/relink ciblé sous cgroup, statut 0, sans nouvelle
+  génération C++.
+- PROUVÉ : validation statique pass, Vulkan/ReXGlue, SDL dummy, zéro D3D12,
+  `bin/bin` absent ; binaire installé `6db8d006…0768`.
+- PROUVÉ : le binaire contient `[ac6-d5b4-texture]` et le shader
+  `D5B4F4A878949938`; 32 tests ciblés passent.
+- PROCHAIN : une seule route `render-summary` fraîche dans une session lourde
+  séparée pour établir l'atteinte du draw D5B4. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-texture-rebuild-20260827.md.
+
+# Gate retail US — sonde texture D5B4 consommée (27 août 2026)
+
+- PROUVÉ : route fraîche avec `6db8d006…0768`, `85/85`, 24 captures, statut
+  0, arrêt propre, zéro fatal/trap et panneau hôte absent.
+- PROUVÉ : `[ac6-d5b4-texture]` atteint 3 472 fois ; les fetchs sont des
+  textures tuilées format 20 (`k_DXT4_5`), `used_mask=0x1`, bases guest
+  variables autour de `0x06A40000`–`0x07601000`.
+- NON RÉSOLU : `world_center_mean=0` persiste après la cinématique ; ce n'est
+  pas encore le reçu gameplay US.
+- PRÉPARÉ : le marqueur read-only consigne maintenant masque couleur brut et
+  normalisé, rasterisation et mode EDRAM pour qualifier la cible D5B4.
+- PROCHAIN : un seul rebuild/relink puis une seule route fraîche. PAL reste
+  bloqué.
+
+Preuve : reports/retail-us-d5b4-texture-runtime-20260827.md.
+
+# Gate retail US — rebuild observables masque/cible D5B4 (27 août 2026)
+
+- PROUVÉ : rebuild/relink ciblé sous cgroup, statut 0, sans génération C++.
+- PROUVÉ : validation statique pass ; Vulkan/ReXGlue, SDL dummy, zéro D3D12,
+  `bin/bin` absent et 32 tests ciblés.
+- PROUVÉ : binaire installé `24b8d603…9856`, avec le marqueur D5B4 étendu aux
+  masques couleur brut/normalisé, rasterisation et mode EDRAM.
+- PROCHAIN : une seule route fraîche en session lourde séparée ; PAL reste
+  bloqué jusqu'au reçu gameplay US.
+
+Preuve : reports/retail-us-d5b4-target-mask-rebuild-20260827.md.
+
+# Gate retail US — masque logique D5B4 fermé (27 août 2026)
+
+- PROUVÉ : route `24b8d603…9856`, `85/85`, 24 captures, arrêt propre,
+  `game_status=0`, zéro fatal/trap et panneau hôte absent.
+- PROUVÉ : 3 406 échantillons D5B4 ont tous `RB_COLOR_MASK=0xF`,
+  `normalized_color_mask=0xF`, `raster=1`, `edram=4`.
+- RÉFUTÉ : masque couleur logique et rasterisation comme causes suffisantes du
+  monde noir.
+- PRÉPARÉ : observables read-only du chemin Vulkan, de la clé render pass et
+  des bits d’attachement.
+- PROCHAIN : un seul rebuild/relink puis une seule route fraîche ; PAL reste
+  bloqué.
+
+Preuve : reports/retail-us-d5b4-target-mask-runtime-20260827.md.
+
+# Gate retail US — rebuild attachement hôte D5B4 (27 août 2026)
+
+- PROUVÉ : rebuild/relink ciblé sous cgroup, statut 0, sans génération C++.
+- PROUVÉ : validation statique pass ; Vulkan/ReXGlue, SDL dummy, zéro D3D12,
+  `bin/bin` absent ; ctest 16/16 et suite Python 32/32.
+- PROUVÉ : binaire installé
+  `b6497489…45eaa` (37 713 112 octets), avec chemin Vulkan, clé render pass
+  et bits d’attachement ajoutés au marqueur D5B4.
+- PROCHAIN : une seule route `render-summary` fraîche dans une session lourde
+  séparée ; le reçu gameplay US manque encore et PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-host-target-rebuild-20260827.md.
+
+# Gate retail US — échec startup avant D5B4 (27 août 2026)
+
+- ÉCHEC FERMÉ : la route `render-summary` avec
+  `b6497489…45eaa` s’est arrêtée à l’opération 2 (`type28=30` non atteint),
+  après 119,7 s, avec `game_status=-9`, `clean_shutdown=false` et zéro
+  fatal/trap.
+- PROUVÉ : seuls 165 `PRESENT` du logo Bandai Namco ont été émis ; aucun
+  `type28`, `selector44`, `state40`, frontier ou D5B4 n’a été atteint.
+- PROUVÉ : la capture d’échec ne montre aucun panneau de diagnostic vert.
+- DÉCISION : aucune conclusion renderer ni rebuild n’est autorisé sur cette
+  session ; un seul retry startup avec le même binaire reste à consommer dans
+  une session lourde distincte.
+
+Preuve : reports/retail-us-d5b4-host-target-runtime-startup-failure-20260827.md.
+
+# Gate retail US — retry host-target D5B4 (27 août 2026)
+
+- PROUVÉ : le retry frais avec `b6497489…45eaa` a exécuté `85/85` opérations,
+  produit 24 captures, terminé avec statut 0, arrêt propre et zéro
+  fatal/trap.
+- PROUVÉ : D5B4 est consommé 3424 fois ; toutes les lignes ont
+  `render_path=0`, `render_pass=0x8D`, `attachments=0x3`,
+  `RB_COLOR_MASK=0xF`, `normalized_color_mask=0xF`, `raster=1`, `edram=4`.
+- RÉFUTÉ : cible/attachement hôte manquant et masque couleur comme causes
+  suffisantes du monde noir.
+- NON RÉSOLU : la cinématique (`step-77`) montre la 3D, mais les captures
+  post-cinématique 79/82/85 restent HUD/radar sur monde noir
+  (`world_center_mean=0`).
+- PROCHAIN : qualification statique de la couture composition/world-content,
+  puis au plus un rebuild/relink et un runtime frais si une divergence causale
+  est prouvée. PAL reste bloqué.
+
+Preuve : reports/retail-us-d5b4-host-target-runtime-retry-20260827.md.
+
+# Gate retail US — qualification composition/world-content (27 août 2026)
+
+- QUALIFIÉ STATIQUEMENT : `0x82337C68`/`0x82337CC4` et
+  `0x8234D550`/`0x8234D5F4` conservent les destinations de composition
+  canoniques ; aucun override de cible n'est présent.
+- QUALIFIÉ STATIQUEMENT : la chaîne Vulkan est
+  `GetResolveInfo` → `DumpRenderTargets` → compute resolve →
+  `MarkRangeAsResolved`, sous `Path::kHostRenderTargets`.
+- PRÉPARÉ : le marqueur D5B4 read-only couvre maintenant bases/formats
+  couleur-profondeur, pitch, MSAA, viewport et scissor, dans upstream et la
+  copie build ignorée.
+- PROCHAIN : un unique relink/rebuild ciblé dans une session lourde neuve,
+  validation statique, puis un runtime frais dans une session distincte.
+  PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-world-content-static-qualification-20260827.md.
+
+# Gate retail US — relink sonde composition/world-content (27 août 2026)
+
+- PROUVÉ : relink/rebuild ciblé sous cgroup, statut 0, avec réutilisation de
+  `generated/sources.cmake` et sans nouvelle génération C++.
+- PROUVÉ : validation statique pass, ctest 16/16, Vulkan/ReXGlue, SDL dummy,
+  zéro D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `43a35a00…e313a`, contenant la sonde D5B4 étendue aux bases/formats,
+  pitch, MSAA, viewport et scissor.
+- PROCHAIN : une seule route runtime fraîche dans une session lourde distincte,
+  puis comparaison de la première divergence composition/world-content.
+  PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-world-content-probe-relink-20260827.md.
+
+# Gate retail US — runtime sonde composition/world-content (27 août 2026)
+
+- ÉCHEC FERMÉ DU REÇU : la route a exécuté `85/85` et produit 24 captures,
+  mais le teardown finit `clean_shutdown=false`, `game_status=-2`, sans erreur
+  ni fatal/trap ; ce n'est pas un reçu gameplay.
+- PROUVÉ : avant/après le noir, D5B4 conserve
+  `color_base=0`, `depth_base=720`, pitch 640, MSAA 2×, render pass `0x8D` et
+  attachements `0x3` ; les frames gardent une charge élevée de draws/resolves.
+- NON RÉSOLU : les captures 79/82/85 restent HUD/radar sur monde noir après la
+  cinématique 3D.
+- PRÉPARÉ : cvar read-only `ac6_log_resolve_content` et option
+  `--mission-resolve-content` pour échantillonner la plage finale
+  `0x1AB60000` après readback borné.
+- PROCHAIN : build/relink ciblé de cette sonde dans une session lourde neuve,
+  validation statique, puis runtime séparé. PAL reste bloqué.
+
+Preuve : reports/retail-us-compose-world-content-probe-runtime-20260827.md.
+
+# Retail US — build sonde resolve-content (27 août 2026)
+
+- PROUVÉ : build/relink ciblé sous cgroup, statut 0, avec réutilisation de
+  `generated/sources.cmake` et sans nouvelle génération C++.
+- PROUVÉ : validation statique pass, ctest 16/16, Vulkan/ReXGlue, SDL dummy,
+  zéro D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `4f8142aa…0784a`, intégrant la sonde read-only du readback final
+  `0x1AB60000` activée par `--mission-resolve-content`.
+- PROCHAIN : une seule route runtime fraîche dans une session lourde séparée ;
+  gameplay US non validé et PAL fermé.
+
+Preuve : reports/retail-us-resolve-content-probe-build-20260827.md.
+
+# Retail US — runtime sonde resolve-content (27 août 2026)
+
+- PROUVÉ : runtime séparé terminé proprement (`exit=0`, `85/85`, 24
+  captures, `game_status=0`, zéro fatal/trap).
+- PROUVÉ : `step-77` conserve la 3D ; les étapes 79/82/85 restent HUD vert
+  sur monde noir, sans panneau hôte.
+- PROUVÉ : le contenu readback final riche tombe à `3448` octets non nuls et
+  `byte_sum=6108` au moment du noir.
+- QUALIFIÉ : les destinations 160×90 alternent entre `0x1AB60000` et
+  `0x1B9C0000`; le fetch swap courant n'est pas encore corrélé.
+- PROCHAIN : trace ciblée swap-source/texture-load/décision swap dans une
+  session lourde unique ; gameplay US non validé et PAL fermé.
+
+Preuve : reports/retail-us-resolve-content-probe-runtime-20260827.md.
+
+# Retail US — qualification sonde resolve double-target (27 août 2026)
+
+- QUALIFIÉ : `RequestSwapTexture` et les loads hôte restent sur la clé
+  `0x1AB60000`, invalidée/rechargée avec succès ; le contenu de cette clé
+  tombe à `3448` octets non nuls au HUD noir.
+- PRÉPARÉ : la sonde read-only couvre désormais aussi `0x1B9C0000`, l'autre
+  destination 1280×720 observée dans les `ResolveInfo` alternés.
+- PROCHAIN : un seul relink/rebuild sous cgroup, validation statique, puis un
+  runtime séparé pour comparer les deux buffers. Gameplay US non validé et
+  PAL fermé.
+
+Preuve : reports/retail-us-resolve-content-dual-target-static-20260827.md.
+
+# Retail US — build sonde resolve double-target (27 août 2026)
+
+- PROUVÉ : build/relink ciblé sous cgroup, statut 0, avec réutilisation de
+  `generated/sources.cmake` et sans nouvelle génération C++.
+- PROUVÉ : validation statique pass, ctest 16/16, Vulkan/ReXGlue, SDL dummy,
+  zéro D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `9cf04b15…e06e9`, sonde read-only couvrant `0x1AB60000` et `0x1B9C0000`.
+- PROCHAIN : une seule session runtime fraîche pour comparer les deux buffers;
+  gameplay US non validé et PAL fermé.
+
+Preuve : reports/retail-us-resolve-content-dual-target-build-20260827.md.
+
+# Retail US — runtime sonde resolve double-target (27 août 2026)
+
+- PROUVÉ : runtime séparé terminé avec `exit=0`, arrêt propre, `85/85`, 24
+  captures, `game_status=0`, zéro fatal/trap, binaire
+  `9cf04b15…e06e9`.
+- PROUVÉ : `step-77` conserve la 3D ; les étapes 79/82/85 restent HUD/radar
+  vert sur monde noir, sans panneau hôte.
+- QUALIFIÉ : les deux plages `0x1AB60000` et `0x1B9C0000` contiennent des
+  données pendant la transition ; le fetch et les loads de présentation
+  restent fixés sur `0x1AB60000`.
+- PREMIÈRE COUTURE STATIQUE : `kComputeWrite` déclare encore
+  `VK_ACCESS_SHADER_READ_BIT` alors que le resolve compute écrit le storage
+  buffer. Correction minimale à qualifier avant tout nouveau runtime.
+- PROCHAIN : patch source miroir upstream/build, unique rebuild/relink sous
+  cgroup, validation statique, puis runtime séparé. PAL reste bloqué.
+
+Preuve : reports/retail-us-resolve-content-dual-target-runtime-20260827.md.
+
+# Retail US — rebuild compute-write barrier (27 août 2026)
+
+- PROUVÉ : rebuild/relink ciblé sous cgroup, statut 0, sans nouvelle
+  génération C++ (`generated/sources.cmake` réutilisé).
+- PROUVÉ : validation statique pass, ctest 16/16, Vulkan/ReXGlue, SDL dummy,
+  zéro D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `c159cbed…a1496e1`, avec `Usage::kComputeWrite` déclaré en
+  `VK_ACCESS_SHADER_WRITE_BIT` dans upstream et copie build.
+- PROCHAIN : runtime unique séparé avec la même route et les 24 captures pour
+  vérifier la visibilité du monde ; PAL reste bloqué.
+
+Preuve : reports/retail-us-compute-write-barrier-build-20260827.md.
+
+# Retail US — runtime après correction compute-write (27 août 2026)
+
+- PROUVÉ : session runtime unique terminée après `85/85` et 24 captures ;
+  `xvfb_status=0`, aucune fatal/trap et journal complet jusqu'à
+  `Execution complete`.
+- QUALIFIÉ : `game_status=-9` et `clean_shutdown=false` sont la course d'arrêt
+  du processus pendant la fermeture, pas un crash invité ; les artefacts sont
+  exploitables et aucun retry de teardown n'est autorisé.
+- RÉFUTÉ : le passage de `VK_ACCESS_SHADER_READ_BIT` à
+  `VK_ACCESS_SHADER_WRITE_BIT` pour `kComputeWrite` ne rétablit pas le monde.
+- QUALIFIÉ : `0x1B9C0000` est intermédiaire ; le dernier resolve et le swap
+  restent sur `0x1AB60000`. Le propriétaire final est `0x8234F598` avec
+  destination `0x828C849C`, tandis que le gestionnaire monde s'exécute.
+- NON RÉSOLU : étapes 79/82/85 restent HUD vert sur monde noir ; gameplay US
+  non validé et PAL fermé.
+- PROCHAIN : qualification statique bornée de `DumpRenderTargets`/
+  resolve-copy et de l'état shader monde autour de `0x8234F598`/
+  `0x8234D5F4`, avant toute nouvelle session lourde.
+
+Preuve : reports/retail-us-compute-write-barrier-runtime-20260827.md.
+
+# Retail US — runtime sonde ownership MSAA (27 août 2026)
+
+- PROUVÉ : relink/rebuild ciblé sous cgroup sans nouvelle génération C++ ;
+  validation statique pass, ctest 16/16, suite Python 33/33, Vulkan/ReXGlue,
+  SDL dummy, zéro D3D12 et `bin/bin` absent. Binaire installé
+  `a0e9ad82…d5fbd64`.
+- PROUVÉ : `PerformTransfersAndResolveClears` a émis 56 marqueurs bornés,
+  séquences échantillonnées 1…10240, principalement des transferts couleur
+  base 0 `k1X`↔`k4X` (valeurs 0↔2) avant la transition de campagne; aucun
+  `k2X`→`k1X` du rendu monde n'a été observé.
+- QUALIFIÉ : la session s'est arrêtée contrôlément à 55/85 après la capture
+  `campaign-intro`, sans `PRESENT` ni `[ac6-campaign-transition]` ;
+  `game_status=0`, `xvfb_status=0`, zéro fatal/trap. Ce n'est pas une
+  explosion du runtime et aucune preuve Mission 01 n'est disponible dans
+  cette exécution.
+- DÉCISION : la sonde ownership ne justifie aucun correctif et ne déplace pas
+  la couture monde noir. US gameplay non validé, PAL fermé ; reprendre en
+  statique autour de `0x8234F598`/`0x8234D5F4` sans nouveau runtime, A/B,
+  codegen ou relink.
+
+Preuve : reports/retail-us-rt-transfer-probe-runtime-20260827.md.
+
+# Retail US — expérience sauvegarde/chargement (27 août 2026)
+
+- PROUVÉ : le scénario séparé `run_save_experiment.py` crée le conteneur
+  `SAVE` dans un stockage isolé puis, dans un processus neuf, atteint
+  `selector44=3 → type28=6 → type28=8 → type28=10`.
+- PROUVÉ : le reçu r5 est `pass`, 18/18 opérations, quatre captures, arrêt
+  propre (`game_status=0`, `xvfb_status=0`) et zéro fatal/trap.
+- CONSERVÉ : `save.dat` et `not_00000000.dat` sous l'artefact r5 ; le profil
+  porte un temps de campagne dans FILE 01 mais pas encore de mission, donc pas
+  de checkpoint Mission 01 ni de free-mission.
+- DÉCISION : cette preuve valide le mécanisme save/load sans modifier le gate
+  Vulkan ; le monde 3D et PAL restent bloqués par le gate graphique.
+
+Preuve : reports/retail-us-save-roundtrip-20260827.md.
+
+# Retail US 2026-08-27 — capture RenderDoc D5B4 fermée sans `.rdc`
+
+- ÉCHEC FERMÉ : la tentative unique `ac6-retail-us-renderdoc-cinematic-d5b4-20260827`
+  est restée avant `type28=30`; le worker vidéo a bouclé après les premières
+  présentations et le superviseur a retourné `124`.
+- PROUVÉ : aucun fatal/trap/SIGSEGV, aucune PNG et zéro `.rdc`; la session ne
+  qualifie ni D5B4/F556 ni l'attachement/resolve.
+- DÉCISION : ne pas répéter la capture identique. Fermer d'abord
+  statiquement la frontière d'injection/attente RenderDoc; gameplay US et PAL
+  restent fermés.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-20260827.md.
+
+# Retail US 2026-08-27 — injection RenderDoc différée non supportée sous Linux
+
+- ÉCHEC FERMÉ : la variante de lancement normal puis
+  `renderdoccmd inject` a atteint `cinematic-view-1` (72/96) mais l'outil
+  retourne `4`, avec le message d'injection dans un processus déjà lancé non
+  supportée sous Linux.
+- PROUVÉ : arrêt contrôlé, zéro fatal/trap et zéro `.rdc`; la ressource D5B4
+  et le point-list F556 restent non qualifiés.
+- DÉCISION : restaurer le wrapper de lancement RenderDoc et ne répéter aucun
+  des deux mécanismes sans outil Linux différent ou hypothèse causale nouvelle.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-injected-20260827.md.
+
+# Retail US 2026-08-27 — RenderDoc vsync désactivé sans `.rdc`
+
+- ÉCHEC FERMÉ : `renderdoccmd capture --wait-for-exit --opt-disallow-vsync`
+  atteint `96/96`, produit 27 PNG et quitte proprement, mais `renderdoc/`
+  reste vide.
+- PROUVÉ : l'hypothèse d'un blocage `vkQueuePresent`/vsync au démarrage est
+  réfutée; D5B4/F556 et leur resolve restent non qualifiés.
+- DÉCISION : ne pas répéter le wrapper avec ou sans cette option.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-vsync-20260827.md.
+
+# Retail US 2026-08-27 — touche RenderDoc F12 sans `.rdc`
+
+- ÉCHEC FERMÉ : le lancement RenderDoc avec `F12` envoyé à
+  `cinematic-view-2` atteint `96/96`, produit 27 PNG, quitte proprement et
+  ne crée aucun `.rdc`.
+- PROUVÉ : remplacer le keysym `Print` par la touche portable `F12` ne ferme
+  pas la frontière de capture; aucun fatal/trap n'est observé.
+- DÉCISION : fermer définitivement RenderDoc pour ce gate; toute reprise
+  exige un outil Linux de capture différent ou une nouvelle hypothèse causale
+  documentée.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-key-20260827.md.
+
+# Retail US 2026-08-27 — sonde ordonnée post-process prête
+
+- PROUVÉ : correctifs ReXGlue génériques SPIR-V/gamma/alpha/resolve déjà
+  présents; aucun port amont justifié.
+- PROUVÉ : binaire `9890d13f…f0f` relinké sans codegen, validation 16/16 et
+  Python 42/42, Vulkan/SDL dummy, installation plate.
+- AUTORISÉ : un seul runtime FSI, route qualifiée, sonde read-only bornée à
+  30 frames de gameplay pour identifier la première transition 1B9C→1AB6
+  riche vers noire. Aucun A/B, RenderDoc, override, rebuild, PAL ou codegen.
+
+Preuve complète : reports/retail-us-postprocess-order-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — runtime post-process arrêté avant sa fenêtre
+
+- ÉCHEC FERMÉ : 2/85, `type28=30` absent, attract cinématique visible,
+  superviseur 2, zéro fatal/trap et zéro marqueur post-process.
+- QUALIFIÉ : `--mission-render-summary` substituait une ancienne route 85; la
+  sonde autonome conserve maintenant la route qualifiée 96/96, tests 42/42.
+- PROCHAIN : après rotation imposée par trois gates lourds, un seul runtime
+  `--mission-postprocess-order`; aucun rebuild, A/B, override, PAL ou codegen.
+
+Preuve complète : reports/retail-us-postprocess-order-route-boundary-20260827.md.
+
+# Retail US 2026-08-27 — route 96 post-process complète, frontière `2EF/F59F`
+
+- QUALIFIÉ : route scellée `96/96`, 27 captures, 30 frames de sonde, 1045
+  draws et 160 resolves qualifiés avec `9890d13f…84f0f`.
+- ÉCHEC GATE : les cinq captures de contrôle conservent HUD/radar sur fond
+  noir ; teardown `game_status=-9` après fermeture de fenêtre, zéro fatal/trap.
+- PROUVÉ PAR ARTEFACT ANTÉRIEUR : le fallback `3ac747eb…ab2a` montre le monde
+  3D dans la source `tf0` de `F59F`, mais perd le HUD ; ce n'est pas un fix.
+- FRONTIÈRE : collecter `tf19`, vertex `c100/c106` et pixel `c100` du couple
+  `2EF/F59F` avant tout override. PAL, codegen et A/B restent fermés.
+
+Preuve complète : reports/retail-us-postprocess-order-route96-runtime-20260827.md.
+
+# Retail US 2026-08-27 — build sonde exposition `2EF/F59F`
+
+- Rebuild incrémental reçu à 0, uniquement `command_processor.cpp`; aucun
+  codegen, `sources.cmake` inchangé (`c604796f…f72`).
+- Validation reçue : 16/16 natifs, Python 42/42, Vulkan seul, SDL dummy,
+  installation plate.
+- Binaire installé : `687394ef…a63c`, 37 771 880 octets.
+- AUTORISÉ : une route 96 identique, sonde read-only, pour `tf19`, vertex
+  `c100/c106` et pixel `c100`; aucun A/B, override, PAL ou codegen.
+
+Preuve complète : reports/retail-us-final-compose-exposure-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — runtime exposition propre, contenu 1×1 restant
+
+- Reçu propre : `96/96`, 27 PNG, 30 frames, superviseur/jeu/Xvfb à 0, zéro
+  fatal/trap avec `687394ef…a63c`.
+- ÉCHEC GATE : `step-81-gameplay-hud.png` conserve HUD/radar sur fond noir.
+- RÉFUTÉ : PS `c100.z/w=(1,1)` sur 31 draws ; les coefficients `F59F` ne
+  suppriment pas la scène.
+- BORNÉ : `tf19` est valide, 1×1 `k_32_FLOAT`, base `1C152000`; seule sa
+  valeur finie/NaN/Inf reste à qualifier par readback exact.
+- Trois gates lourds fermés : rotation avant le prochain build/runtime.
+
+Preuve complète : reports/retail-us-final-compose-exposure-probe-runtime-20260827.md.
+
+# Retail US 2026-08-27 — build readback `1C152000`
+
+- Sonde bornée au resolve 1×1 exact, mot brut/`k8in32` et VS/PS producteur ;
+  aucune mutation renderer ou invitée.
+- Rebuild/validation à 0, 16/16 natifs, Python 42/42, aucun codegen.
+- Binaire installé `43fc9068…a5fbf`, Vulkan/SDL dummy, installation plate.
+- AUTORISÉ : une route 96 identique avec `--mission-postprocess-order` seul.
+
+Preuve complète : reports/retail-us-exposure-word-readback-build-20260827.md.
+
+# Retail US 2026-08-27 — exposition finie, `2EF/F59F` innocenté
+
+- Premier lancement arrêté avant l'observable : route `80/96`, superviseur 2,
+  zéro marqueur post-process et zéro conclusion renderer.
+- Reprise à entrée identique reçue : `96/96`, 27 PNG, arrêt propre, binaire
+  `43fc9068…a5fbf`, zéro fatal/trap.
+- 31/31 valeurs `k8in32` finies et positives, plage `0.0334736…1.148324`,
+  producteur unique `EBCCC312/2662DA78`.
+- RÉFUTÉ : exposition nulle/non finie et extinction dans `2EF/F59F`.
+- ÉCHEC GATE : HUD/radar reste sur monde noir ; prochain observable statique
+  et read-only = contenu RGBA8 décodé par producteur des resolves `1B9C`.
+
+Preuve complète : reports/retail-us-exposure-word-readback-runtime-20260827.md.
+
+# Retail US 2026-08-27 — sonde RGBA8 `1B9C` préparée
+
+- PROUVÉ : `readback_resolve=fast` lit potentiellement le slot précédent ; la
+  sonde mémorise désormais le vrai frame/draw/VS/PS pour chacun des deux slots.
+- DÉCODAGE : grille 32×18, `GetTiledOffset2D`, format/endian du resolve,
+  métriques nonzero/somme/min/max par composant ; aucune mutation renderer.
+- STATIQUE : source amont et copie de build patchées, `diff --check` propre,
+  37/37 tests `test_run_gate.py`.
+- PROCHAIN : rotation après trois gates lourds, puis rebuild incrémental et
+  validation ; runtime encore fermé.
+
+Preuve complète : reports/retail-us-1b9c-decoded-content-probe-static-20260827.md.
+
+# Retail US 2026-08-27 — build sonde RGBA8 validé
+
+- Rebuild incremental cgroup à 0 (`167/167`), pic ~7,6 GiB ;
+  `generated/sources.cmake` réutilisé, SHA `c604796f…f72`, aucun codegen.
+- Validation cgroup à 0 : binaire `f9cd73ff…25ce1`, 37 786 120 octets,
+  ReXGlue/Vulkan, SDL dummy, D3D12 absent, installation plate.
+- Suite Python complète : 42/42.
+- AUTORISÉ : une seule route 96 avec la sonde RGBA8 `1B9C`, producteur associé
+  au slot readback `fast`; runtime sans A/B ni override.
+
+Preuve complète : reports/retail-us-1b9c-decoded-content-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — `1B9C` décodé, noir en aval
+
+- Un appel de wrapper pré-créé est rejeté avant lancement (`output exists`,
+  superviseur 2) ; aucune session invitée n'est comptée.
+- La reprise correcte reçoit `96/96`, 27 captures, arrêt propre et zéro
+  fatal/trap avec `f9cd73ff…25ce1`.
+- 128 métriques RGBA8 décodées de `1B9C` : les passes `2EF/F59F`, `08DE` et
+  `6E59` gardent des RGB non nuls sur 576 échantillons.
+- ÉCHEC GATE : `step-81-gameplay-hud.png` reste HUD/radar sur fond noir ; le
+  noircissement est postérieur à `1B9C`.
+- PROCHAIN : décoder `1AB6` avec son propre couple de slots readback.
+
+Preuve complète : reports/retail-us-1b9c-decoded-content-probe-runtime-20260827.md.
+
+# Retail US 2026-08-27 — sonde finale `1AB6` préparée
+
+- Deux ensembles de métadonnées indépendants sont maintenant attachés aux
+  slots `1B9C` et `1AB6` en mode `fast`.
+- Même grille 32×18, tiling/endian ReXGlue et métriques par composant ; aucune
+  mutation renderer.
+- Rebuild/validation requis après rotation ; runtime fermé.
+
+Preuve complète : reports/retail-us-1ab6-decoded-content-probe-static-20260827.md.
+
+# Retail US 2026-08-27 — build sonde décodée `1AB6` validé
+
+- Rebuild incrémental cgroup à 0 (`167/167`), pic observé ~7,3 GiB ;
+  `generated/sources.cmake` réutilisé (`c604796f…f72`), aucun codegen.
+- Validation à 0 : 16/16 tests natifs, ReXGlue/Vulkan, SDL dummy, D3D12 absent,
+  installation plate.
+- Suite Python retail `pytest -q tests` : 51/51.
+- Binaire installé : `603f99da…7cbf1`, 37 786 368 octets ; le marqueur
+  `[ac6-postprocess-decoded]` est présent.
+- AUTORISÉ : une seule route 96 `--mission-postprocess-order` pour qualifier
+  `1AB6`; aucun A/B, override, PAL, codegen ou optimisation.
+
+Preuve complète : reports/retail-us-1ab6-decoded-content-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — première route `1AB6` arrêtée avant gameplay
+
+- La build `603f99da…7cbf1` démarre correctement sous Vulkan/SDL dummy et
+  produit 22 captures jusqu'à `step-78-cinematic-view-5`.
+- ÉCHEC GATE : le prédicat guest `cinematic=0 world=1 hud=1 stable=30` n'est
+  pas atteint; le runner termine à 2 (`game_status=-9` au teardown), zéro
+  fatal/trap et aucune ligne décodée `1B9C`/`1AB6`.
+- Les captures montrent un retard d'un écran (sélection avion/arme puis
+  briefing) par rapport à la route précédente; ce run ne qualifie donc pas le
+  renderer et ne constitue pas un A/B.
+- AUTORISÉ : une reprise strictement identique, avec le cache de cette build
+  déjà parcouru, puis qualification de `1AB6` si la fenêtre gameplay s'ouvre.
+
+Preuve complète : reports/retail-us-1ab6-decoded-content-probe-runtime-20260827.md.
+
+# Retail US 2026-08-27 — gate Mission 01 fermé
+
+Le binaire retail NTSC-U/J installé `d8b7b7b73b7fa0d2b98ca3eba6abdb42a77474ef8c375ccd1ff19c0d4e14fab8`
+est validé sous ReXGlue/Vulkan (16/16 natifs, 51/51 Python, installation
+plate). La route qualifiée `mission01-qualified-96.steps` atteint le prédicat
+`cinematic=0 world=1 hud=1 stable=30`, exécute 96/96 opérations et produit
+27 captures avec arrêt propre. Le reçu gameplay et l'audit v2 sont `pass`.
+
+La correction produit maintenant la scène en remplaçant, sous garde stricte,
+le swap sparse `0x1AB60000` par le fetch de composition `0x1B9C0000` du couple
+`2EF9631F6325FA91/F59F21F4A1E7843E`. Le cache vertex retiré reste une correction
+de résidence générale ; il n'était pas suffisant seul.
+
+Les défauts visuels signalés restent classés ouverts et non masqués : avions
+et after-effects blancs, hautes lumières ciel/eau écrêtées, plans de
+cinématique pré-mission dégradés. Les ressources BC3/D5B4 sont valides ; la
+prochaine correction devra être une preuve ciblée fragment/éclairage/blend ou
+post-process. PAL reste une cible distincte et n'est pas promu par ce gate.
+
+Preuve complète : reports/retail-us-gameplay-final-compose-20260827.md.
+
+# Retail US 2026-08-28 — run M01 autorisé, timeout startup seed complet
+
+- AUTORISÉ : un seul run runtime borné après décision explicite, sous cgroup
+  `ac6-retail-us-m01-v2-auth-20260828`, avec `SDL_AUDIODRIVER=dummy`, binaire
+  `b004ee70…4d70`, route `543a97ce…c5c7f` et seed complet
+  `/tmp/ac6-cache-seed-v2-complete`.
+- ÉCHEC FERMÉ : `2/96` après `248,723 s`, erreur
+  `log predicate not reached: type28=30`, zéro capture, `game_status=-9`,
+  `xvfb_status=0`, zéro fatal/trap.
+- OBSERVÉ : Vulkan sélectionné, environ 5,45 GiB et 73 tâches au pic ; deux
+  phases visuelles seulement (`world=0`, puis `hud=1`, `stable=0`).
+- DÉCISION : route et manifeste non promus ; prochaine exécution interdite sans
+  nouvelle hypothèse causale et autorisation distincte. Audit XPSO :
+  en-tête/version valides, zéro hash invalide ; 193 pipelines chargés depuis le
+  seed contre 164 au run v2 positif.
+
+Preuve complète : reports/retail-us-mission01-gameplay-candidate-20260828.md ;
+artefact : artifacts/retail-us-mission01-gameplay-v2-authorized-20260828/output/RESULT.json.
+
+# Retail US 2026-08-28 — XPSO-164 atteint gameplay, contrôles nuls
+
+- AUTORISÉ : seed `/tmp/ac6-cache-seed-v2-xpso164`, seule différence = XPSO
+  164 descriptions; XSH/GLCache du seed complet inchangés.
+- OBSERVÉ : route v2 `96/96`, 27 captures, `cinematic=0 world=1 hud=1
+  stable=30`, centre non noir (`0.232472/0.287361/1.0`), arrêt propre,
+  `game_status=0`, zéro fatal/trap.
+- ÉCHEC GATE : `control_changed_pixels=0` pour pitch/roll/yaw/throttle/frein;
+  reçu non promu. L'écart de 29 pipelines XPSO n'est donc pas causal pour
+  l'atteinte de la frontière gameplay.
+
+Preuve : `artifacts/retail-us-mission01-gameplay-v2-xpso164-20260828/output/RESULT.json`.
+
+# Retail US 2026-08-28 — reverse entrée Linux fermé
+
+- STATIQUE : `ac6_kbm_input.cpp` protège l'injection custom par `_WIN32` et
+  `GetAsyncKeyState`, avec `ac6_kbm_enabled=false`; Linux reste sur le driver
+  MnK stock. Bindings vérifiés: W/S pitch, A/D roulis, Q/F épaules, LMB
+  accélération, RMB frein.
+- CORRIGÉ : route v2 réalignée sur les bindings stock, puis settle 15 s
+  post-cinématique; SHA courant
+  `44c7cac85dba7f7dad42453f7232a1e5c3f44798c9f74bc5e404626d27dcc8a9`.
+- CONTRÔLE : activer `REX_AC6_KBM_ENABLED=true` force `mnk_mode` off sans
+  injection Linux et bloque l'étape 2 (`type28=30` absent); cette voie est
+  rejetée. 60 tests Python passent.
+
+Preuve : `artifacts/retail-us-mission01-gameplay-v2-kbm-oldseed-20260828/output/RESULT.json` ;
+rapport : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — settle post-cinématique et screenshot
+
+- La route courante attend 15 s après `Space` avant `Escape`; SHA
+  `44c7cac85dba7f7dad42453f7232a1e5c3f44798c9f74bc5e404626d27dcc8a9`.
+- Le test settle-15 + seed complet a expiré au startup à l'étape 2
+  (`type28=30` absent, `257,571 s`, zéro capture, zéro fatal/trap):
+  `artifacts/retail-us-mission01-gameplay-v2-stock-settle15-20260828/output/RESULT.json`.
+- Le run complet précédent a atteint `96/96`, `stable=30`, monde non noir et
+  27 captures; contrôles encore identiques (0 pixel):
+  `artifacts/retail-us-mission01-gameplay-v2-stock-complete193-20260828/output/RESULT.json`.
+- Capture utilisateur: `artifacts/retail-us-mission01-gameplay-v2-stock-route-20260828/output/step-40-language.png`.
+- Gate M01 v2, débrief/save et missions 02–15 restent fermés; prochaine
+  frontière = premier consommateur du paquet MnK stock pendant `FlightActive`.
+
+# Retail US 2026-08-28 — consommateur MnK stock qualifié statiquement
+
+- IDENTITÉ : projet `ghidra-projects/ac6-us`, `default.xex`, XEX
+  `6eefba42…67cbbbc`; generated source du même target NTSC-U/J.
+- PROUVÉ : `MnkInputDriver::GetState` écrit boutons, triggers et quatre axes
+  dans `X_INPUT_STATE`; `XamInputGetState_entry` transmet le paquet à
+  `InputSystem` sans supprimer les champs analogiques.
+- PROUVÉ : le guest US `0x8234CEB8` passe `r31+68` à `0x82390CE0` (LR
+  `0x8234CEE0`), puis `0x8234CE40` lit boutons/axes et `0x8234CC38` lit les
+  triggers. Le premier consommateur guest n'est donc pas le point de perte.
+- BORNÉ : le logger read-only positif atteint 96/96 et observe les LR XAM et
+  boutons, mais ne sérialise pas les axes; le record longstart n'a pas finalisé
+  son fichier; l'attach GDB est refusé par `ptrace_scope`.
+- DÉCISION : ne pas patcher guest/renderer. Le prochain runtime unique doit
+  corréler événement X11, paquet stock non nul, heartbeat de vol et phase
+  visuelle; ensuite seulement débrief/save et missions 02–15.
+
+Preuve complète : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — limite trace GDB
+
+- Une tentative unique a lancé le même binaire comme enfant GDB pour éviter
+  `ptrace_scope`; breakpoint `MnkInputDriver::GetState` installé.
+- ÉCHEC OUTIL : `SIGSEGV` guest à `rex_sub_821E4378` avant tout hit, route
+  `1/96`, environ 10 s, reçu `artifacts/retail-us-mission01-mnk-gdb-start-20260828/output/RESULT.json`.
+- DÉCISION : aucun état MnK n'est déduit de ce run; mode GDB perturbateur
+  abandonné. La qualification statique `GetState -> XAM -> 0x8234CEB8 ->
+  0x8234CE40/CC38` reste la preuve active.
+
+# Retail US 2026-08-28 — trace packet stock bornée non concluante
+
+- Une seule session read-only a utilisé le wrapper XAM qualifié avec le binaire
+  `c225f5e6…fc08923`, la route historique `6ef77bef…14dac4b`, le seed positif
+  et `SDL_AUDIODRIVER=dummy`, sous le cgroup
+  `ac6-retail-us-m01-inputstate-log-20260828`.
+- Reçu `artifacts/retail-us-mission01-stock-input-state-log-positive-route-20260828/output/RESULT.json`:
+  `status=fail`, `2/96`, `249,431 s`, `type28=30` absent, une capture
+  cinématique, `clean_shutdown=false`, `game_status=-9`, zéro fatal/trap.
+- Seulement deux sites XAM (`0x8234CFA4`, `0x8234CEE0`) ont été journalisés;
+  zéro paquet `xinput user=... state`, axe, trigger ou heartbeat de vol.
+  La fenêtre est fermée; aucune répétition identique, correction renderer ou
+  promotion gameplay n'est permise.
+
+# Retail US 2026-08-28 — instrumentation host réfutée, baseline propre échoue
+
+- Le probe host-side (binaire `68090b0494f42de96b4b8a5784216ce0c26df3bcd74741f5c74c15c5356919c7`)
+  n'a produit aucun état : `InputSystem::GetState` renvoie `0x48F` sans
+  périphérique, puis `0x82390CE0` synthétise le paquet en mémoire guest. Reçu :
+  `artifacts/retail-us-mission01-stock-input-host-log-positive-route-20260828/output/RESULT.json`;
+  `2/96`, `253,028 s`, `PRESENT=1829`, capture noire 1-bit, zéro fatal/trap.
+- Patch host retiré; rebuild/validate propre installé
+  `a279d55180226496b4d2b70194e13a71e122a678d87842944db7e7cc50c2c95c`
+  (37 803 744 octets), `bin/bin` absent.
+- La baseline propre avec même route/seed échoue encore :
+  `artifacts/retail-us-mission01-baseline-clean-positive-route-20260828/output/RESULT.json`,
+  `2/96`, `250,685 s`, `PRESENT=1863`, phase `world=0/hud=1`, capture
+  cinématique, `clean_shutdown=false`, `game_status=-9`, zéro fatal/trap.
+- Décision : hypothèse « instrumentation cause le timeout » réfutée; ne pas
+  répéter la route. Divergence `stock/cache/état -> type28` reste ouverte et
+  doit être réduite statiquement avant tout nouveau runtime.
+
+# Retail US 2026-08-28 — cache chaud XPSO-193 progresse, gate visuel fermé
+
+- Une seule session bornée avec baseline propre `a279d551…c95c`, route
+  historique `6ef77bef…dac4b`, seed `stock-complete193` et cgroup
+  `ac6-retail-us-m01-warmcache193-a279-20260828` a chargé 193 pipelines,
+  ajouté un 194e record et exécuté 96/96 pas (`PRESENT=16046`, `type28=94`).
+- OBSERVÉ : phases `cinematic=0 world=1 hud=1 stable=30` puis
+  `cinematic=0 world=0 hud=1`; captures 70/73 montrent le monde 3D mais
+  fortement écrêté/blanc. Les captures de vol 77/79/80/84/87/90/93/96 sont
+  identiques; cinq contrôles à 0 pixel.
+- ÉCHEC : reçu
+  `artifacts/retail-us-mission01-warmcache193-a279-20260828/output/RESULT.json`,
+  `status=fail`, `clean_shutdown=false`, `game_status=-11`, sans fatal/trap.
+  Le journal finit après `Window closing`, worker audio arrêté,
+  `TerminateTitle` et `Execution complete`; le signal est post-teardown,
+  non attribué au guest.
+- DÉCISION : cache chaud retenu comme précondition de progression, pas comme
+  fix. Aucun run identique. Gate M01 v2, débrief/save et missions 02–15 restent
+  fermés; prochaines frontières statiques = événements GTK/X11 -> `has_focus_`,
+  ordre de destruction post-`Execution complete`, producteur postprocess blanc.
+
+# Retail US 2026-08-28 — parcours original confirme le seam XAM stock
+
+- Une session diagnostique unique a utilisé `mission01-qualified-96.steps`
+  (`771a77a8…b6043`), baseline `a279d551…c95c`, cache chaud XPSO-193 et
+  `--mission-stock-input-log`, sous cgroup
+  `ac6-retail-us-m01-route-original-inputlog-20260828`.
+- Reçu :
+  `artifacts/retail-us-mission01-route-original-inputlog-20260828/output/RESULT.json`;
+  `diagnostic-capture-ready`, `96/96`, `11717 PRESENT`, `94 type28`,
+  `cinematic=0 world=1 hud=1 stable=30`, 27 captures, arrêt propre et zéro
+  fatal/trap.
+- Le wrapper XAM `0x82390CE0` voit `A=0x1000`, `START=0x0010` et
+  `LB=0x0100` sur les deux LR qualifiés; la livraison GTK/X11 -> seam n'est
+  donc pas totalement perdue. Ce logger ne couvre pas axes/triggers.
+- Les frames de vol varient (avion visible en pitch/roll, noir en yaw, gris en
+  brake), mais le parcours reste diagnostic et le HUD de référence est noir;
+  aucune causalité contrôle/renderer n'est promue. Ne pas répéter cette
+  route/seed; garder `FlightActive`, postprocess et teardown `-11` ouverts.
+
+# US full-native Linux — profil cible et reprise 2026-08-29
+
+- NTSC-U/J devient la priorité produit Linux AMD64 ; PAL reste une identité
+  séparée et aucune preuve n'est fusionnée.
+- Les identités XDVDFS du XEX, de `DATA.TBL`, `DATA00.PAC`, `DATA01.PAC` et des
+  packs médias sont qualifiées dans
+  `analysis/oracle/ac6-recomp-ab90b-us/content-identity.json` sans octets
+  retail committés.
+- Le runtime manuscrit expose désormais `RetailTarget::{Pal,NtscUj}`, policies
+  de contenu/média dédiées, mappings sélectionnés par cible et cache US séparé.
+- Build Linux/Ninja, CTest ciblé, pytest identité/retail et audit de frontière
+  passent; l’audit de cache sélectionne aussi l’identité et les ressources M01
+  par cible. Le palier retail ReXGlue reste bloqué sur la preuve M01 visible et
+  contrôlable ; aucune optimisation ni promotion gameplay.
+
+# Retail US 2026-08-30 — composition host réfutée, postprocess ouvert
+
+- Le cache qualifié 193 permet `type28=30`, campagne `0→1→2` et route 96/96.
+- Composer `1B9C + 1AB6` avant gamma donne `mean=0,996537`, `stddev=0,0197882`
+  et HUD vert `0,0` : l'hypothèse presenter est réfutée.
+- Le fallback expérimental est retiré ; rollback build/validate passe.
+- Aucun reçu gameplay/HUD promu. Gate courant : perte postprocess guest entre
+  tone-map, HUD/UI et resolve final `1AB6`.
+# 2026-08-30 — `1B9C → 0311`, sampler réfuté
+
+Les traces 1AB6 prouvent que le HUD est conservé après `0311`; la scène est
+déjà noire avant HUD. Le cache prépare bien les reloads `1B9C`. F59F et 0311
+partagent la même ressource ; l’A/B scoped point/linéaire n’améliore pas
+l’image et a été retiré. Gate actif : contenu de l’image Vulkan après upload
+`1B9C`, juste avant `0311`. Rapport courant :
+`reports/retail-us-hud-layer-compose-20260830.md`.

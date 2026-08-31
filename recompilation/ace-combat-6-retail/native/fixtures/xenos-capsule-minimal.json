@@ -1,0 +1,19 @@
+{
+  "schema": "ac6.xenos-capsule.v1",
+  "target": "ntsc-uj",
+  "source": {
+    "xex_sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "iso_sha256": "204c5e645d79da8776699c12f17bd069f869fbdb10ae79015d1a0ef2b743c98c",
+    "ghidra_project": "ghidra-projects/ac6-us",
+    "route_sha256": "771a77a8ff50eda30c5fb24309d8828bb339f91a49471368f117b65c9dbb6043"
+  },
+  "ring": {"dword_count": 64},
+  "events": [
+    {"kind": "mmio", "address": 2127564800, "value": 4096},
+    {"kind": "mmio", "address": 2127564804, "value": 256},
+    {"kind": "pm4", "dwords": [3221447680, 1398227280, 65536, 1280, 720]},
+    {"kind": "pm4", "dwords": [3221235200, 0]},
+    {"kind": "interrupt", "vector": 7},
+    {"kind": "present", "surface": 0, "sequence": 1}
+  ]
+}

@@ -1,0 +1,292 @@
+{
+  "schema": "ac6.retail-campaign-manifest.v1",
+  "target": "ntsc-uj",
+  "region": "NTSC-U/J",
+  "binary_sha256": "d8b7b7b73b7fa0d2b98ca3eba6abdb42a77474ef8c375ccd1ff19c0d4e14fab8",
+  "identity": {
+    "xex_sha256": "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+    "iso_sha256": "204c5e645d79da8776699c12f17bd069f869fbdb10ae79015d1a0ef2b743c98c",
+    "ghidra_project": "ghidra-projects/ac6-us",
+    "program": "default.xex",
+    "language": "PowerPC:BE:64:Xenon"
+  },
+  "renderer": {
+    "authority": "ReXGlue Xenos/Vulkan",
+    "vulkan": true,
+    "d3d12": false,
+    "resolution": "1280x720",
+    "scale": 1,
+    "fps": 30,
+    "enhancements": false
+  },
+  "static_evidence": {
+    "selector_to_dpl": {
+      "status": "qualified",
+      "function_address": "0x821B6EE8",
+      "table_address": "0x820657B0",
+      "mission_count": 15,
+      "mapping_rule": "dpl_resource_id = campaign_selector + 8 for selectors 1..15",
+      "evidence": "artifacts/retail-us-campaign-chain-static-20260827/us-chain.log"
+    },
+    "dpl_to_data_table": {
+      "status": "qualified",
+      "request_function_address": "0x821D1190",
+      "queue_call_target": "0x821CD168",
+      "loader_function_address": "0x821CC288",
+      "direct_id_exclusive": "0x39D",
+      "evidence": "artifacts/retail-us-campaign-chain-static-20260827/us-chain.log",
+      "queue_boundary": {
+        "kind": "direct-call-leaf-between-pdata-functions",
+        "entry": "0x821CD168",
+        "end_exclusive": "0x821CD2E8",
+        "call_site": "0x821D121C",
+        "return_addresses": ["0x821CD1BC", "0x821CD29C", "0x821CD2E0"],
+        "previous_pdata_entry": "0x821CD0D0",
+        "previous_pdata_extent": "0x94",
+        "next_pdata_entry": "0x821CD2E8",
+        "evidence": "artifacts/retail-us-campaign-leaf-static-20260827/leaf.log",
+        "pdata_evidence": "artifacts/retail-us-campaign-pdata-static-20260827/pdata.log"
+      },
+      "loader_contract": {
+        "path_address": "0x82067D30",
+        "format_flag_address": "0x8293B938",
+        "format_flag_value": 2,
+        "format_flag_store": "0x821D6248",
+        "loader_call_site": "0x821D624C",
+        "entry_count_address": "0x8293B950",
+        "record_base_offset": 8,
+        "record_size": 16,
+        "evidence": "artifacts/retail-us-campaign-loader-static-20260827/loader.log"
+      },
+      "data_table": {
+        "sha256": "bad3a157eb75c839d9d6187f69ac061dee6d075d9cd61e0aa73b533473863b2f",
+        "size": 14824,
+        "entry_count": 926,
+        "pack_count": 2,
+        "record_size": 16,
+        "file": "artifacts/retail-us-data-tbl-static-20260827/DATA.TBL",
+        "extraction_receipt": "artifacts/retail-us-data-tbl-static-20260827/RESULT.json"
+      },
+      "mapping_rule": "data_table_entry_index = dpl_resource_id for direct IDs below 0x39D"
+    },
+    "mission01_post_mission_chain": {
+      "status": "qualified",
+      "terminal_owner": "0x822E3248",
+      "debrief_factory": "0x821BC010",
+      "debrief_exit": "0x82194588",
+      "demo_intermission_factory": "0x821BC0B0",
+      "unlock_factory": "0x821BC100",
+      "inter_mission_select_factory": "0x821BC150",
+      "progression_owner": "0x821A6400",
+      "progression_setter": "0x82196590",
+      "save_manager_register": "0x82158D00",
+      "save_manager_update": "0x82158D90",
+      "mission_title_factory": "0x821BB8C0",
+      "runtime_persistence_status": "unverified",
+      "evidence": "reports/retail-us-mission01-debrief-progression-static-20260827.md",
+      "scenario_payload": {
+        "status": "qualified",
+        "data_table_entry": 9,
+        "payload_child": 0,
+        "sha256": "51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45",
+        "unit_records": 230,
+        "object_records": 434,
+        "sub_missions": 4,
+        "reader_runs": 666,
+        "reader_failure": null,
+        "evidence": "reports/retail-us-mission01-scenario-static-qualification-20260828.md"
+      }
+    },
+    "mission_payloads": {
+      "status": "qualified-structural-only",
+      "mission_range": [1, 15],
+      "evidence": "artifacts/retail-us-mission-payloads-static-20260828/manifest.json",
+      "policy": "bounded US ISO slices; no PAC copy; no objective/runtime semantics"
+    },
+    "scene_tcam": {
+      "status": "qualified-structural-only",
+      "mission_range": [1, 15],
+      "evidence": "artifacts/retail-us-scene-tcam-static-20260828/manifest.json",
+      "totals": {
+        "scene_tables": 176,
+        "scene_paths": 2950,
+        "tcam_resources": 88
+      },
+      "policy": "bounded US ISO slices; no PAC copy; no objective/runtime semantics"
+    },
+    "scenario_payloads": {
+      "status": "qualified-structural-only",
+      "mission_range": [1, 15],
+      "evidence": "artifacts/retail-us-scenario-static-20260828/manifest.json",
+      "totals": {
+        "roundtrip_pass": 15,
+        "schema_validation_pass": 15,
+        "obj_records": 6784,
+        "order_records": 43287
+      },
+      "policy": "bounded US ISO slices; no PAC copy; no objective/runtime semantics"
+    }
+  },
+  "save_round_trip": {
+    "status": "needs-final-binary-rerun",
+    "evidence": "artifacts/retail-us-save-load-20260827-r5/RESULT.json",
+    "evidence_binary_sha256": "b869e2b163716a321505d57d6b11fde8107c4cdbc629afbd4461c1b0a61fde55"
+  },
+  "campaign_run": {
+    "status": "unverified",
+    "evidence": null
+  },
+  "visual_boundary": {
+    "status": "open",
+    "evidence": "reports/retail-us-gameplay-final-compose-20260827.md",
+    "issues": [
+      "aircraft_and_after_effects_too_white",
+      "sky_and_water_highlights_clipped",
+      "pre_mission_effect_silhouettes"
+    ]
+  },
+  "release_contract": {
+    "mission_count": 15,
+    "static_route_status": "qualified",
+    "gameplay_status": "pass",
+    "debrief_status": "pass",
+    "visual_status": "pass",
+    "control_observed": true,
+    "save_round_trip_status": "pass",
+    "visual_boundary_status": "pass",
+    "dpl_to_data_table_status": "qualified",
+    "campaign_run_status": "pass"
+  },
+  "missions": [
+    {
+      "mission_id": 1,
+      "campaign_selector": 1,
+      "dpl_resource_id": 9,
+      "data_table_entry_index": 9,
+      "static_route_status": "qualified",
+      "runtime": {
+        "gameplay_status": "unverified",
+        "debrief_status": "unverified",
+        "visual_status": "open",
+        "control_observed": false,
+        "route": null,
+        "gate_receipt": null,
+        "audit_receipt": null,
+        "debrief_receipt": null,
+        "visual_receipt": null
+      }
+    },
+    {
+      "mission_id": 2,
+      "campaign_selector": 2,
+      "dpl_resource_id": 10,
+      "data_table_entry_index": 10,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 3,
+      "campaign_selector": 3,
+      "dpl_resource_id": 11,
+      "data_table_entry_index": 11,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 4,
+      "campaign_selector": 4,
+      "dpl_resource_id": 12,
+      "data_table_entry_index": 12,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 5,
+      "campaign_selector": 5,
+      "dpl_resource_id": 13,
+      "data_table_entry_index": 13,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 6,
+      "campaign_selector": 6,
+      "dpl_resource_id": 14,
+      "data_table_entry_index": 14,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 7,
+      "campaign_selector": 7,
+      "dpl_resource_id": 15,
+      "data_table_entry_index": 15,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 8,
+      "campaign_selector": 8,
+      "dpl_resource_id": 16,
+      "data_table_entry_index": 16,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 9,
+      "campaign_selector": 9,
+      "dpl_resource_id": 17,
+      "data_table_entry_index": 17,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 10,
+      "campaign_selector": 10,
+      "dpl_resource_id": 18,
+      "data_table_entry_index": 18,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 11,
+      "campaign_selector": 11,
+      "dpl_resource_id": 19,
+      "data_table_entry_index": 19,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 12,
+      "campaign_selector": 12,
+      "dpl_resource_id": 20,
+      "data_table_entry_index": 20,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 13,
+      "campaign_selector": 13,
+      "dpl_resource_id": 21,
+      "data_table_entry_index": 21,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 14,
+      "campaign_selector": 14,
+      "dpl_resource_id": 22,
+      "data_table_entry_index": 22,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    },
+    {
+      "mission_id": 15,
+      "campaign_selector": 15,
+      "dpl_resource_id": 23,
+      "data_table_entry_index": 23,
+      "static_route_status": "qualified",
+      "runtime": {"gameplay_status": "unverified", "debrief_status": "unverified", "visual_status": "unverified", "control_observed": false, "route": null, "gate_receipt": null, "audit_receipt": null, "debrief_receipt": null, "visual_receipt": null}
+    }
+  ]
+}

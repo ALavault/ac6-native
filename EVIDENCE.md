@@ -1,3 +1,929 @@
+# AC6 retail NTSC-U/J — codegen direct et liaison guest Gate 2 (2026-08-31)
+
+- Receipt r11 : XenonAnalyse/XenonRecomp US passent avec 81 fichiers générés,
+  62 629 029 octets, zéro diagnostic et `unrecognized_instructions=[]`.
+- Guest : 79 objets compilés avec `XenonUtils/ppc_context.h`, liaison à
+  `ppc_func_mapping.cpp` et 229 définitions d'imports offline; probe `noinline`
+  vérifie symboles et mapping, exit 0.
+- Intégration native : build `gate2-codegen-linked`, CTest 9/9 et validator
+  `--runtime native` passent. Cette preuve couvre codegen et liaison seulement.
+- Bootstrap : `ac6recomp <ISO|assets/>` compile, s'installe sous `bin/`,
+  self-test passe; parseur XEX2 AES-CBC/basic, validation PE et audit
+  d'installation temporaire sont verts.
+- Mémoire : `GuestAddressSpace` réserve virtuellement 4 GiB, teste accès/
+  dépassement 32-bit et est exigée au boot `NativeRuntime`; image XEX décodée
+  écrite à son adresse de chargement.
+- ISO : lecteur XDVDFS natif borné, test chemin case-insensitive et extraction
+  en mémoire de `default.xex`; aucune copie retail persistante.
+- XEX : AES-CBC XEX2 + compression basic natifs, validation PE Xenon, image
+  `0xa98000` mappée à `0x82000000` pour assets et ISO qualifiés; normal/LZX
+  rejeté.
+- Guest runtime : `ac6recomp` lie le guest r11 et affiche le smoke ABI
+  `sub_8209C0B4` après mapping; preuve d'appel généré seulement, pas de boot
+  retail/gameplay.
+- Dispatch : 19 832 pointeurs `PPC_LOOKUP_FUNC` peuplés en mémoire guest;
+  résolution entry `0x821f5ed0` vers `_xstart`, sans exécution de l'entrypoint.
+- Probe borné : après bindings provisoires TLS/timebase/handles/waits, une
+  trace opt-in atteint `sub_821F9E10` puis timeout 12 s; aucun claim gameplay.
+- Fenêtre 60 s unique (`r46`) : timeout/124 sans retour; les sondes r47/r48
+  confirment le bootstrap mémoire/pool/chaînes BE sans erreur de chargement.
+- r49 : PCR/thread guest déterministe et `r13` initialisé; r50 : retrain
+  EDRAM/HSIO Vd immédiat; la chaîne dépasse l’attente EDRAM.
+- r51 : `ExCreateThread` lance des shims guest dans des workers bornés (16
+  workers observés), mais le thread principal attend encore la queue/ring.
+- r52 : la copie `native-source` est synchronisée; GDB confirme au vrai
+  `_xstart` `r1=0x8ff00000`, `r13=0x0f000000` et les champs PCR écrits.
+- r53 : `MmAllocatePhysicalMemoryEx` fournit le bloc ring; le callback Vd
+  reçoit `0x164e003c`, bloc `0x164e0000` valide, readback 0/write 5. Le
+  consommateur PM4/Xenos natif reste à relier et aucun pointeur synthétique
+  n'est publié.
+- r64–r75 : la qualification statique corrige le WPTR primaire à
+  `object+10952`; `+10908` est le curseur secondaire. Le service publie les
+  indices en dwords, conserve le readback exact `state+60` et résout les IB
+  directement dans la mémoire guest big-endian. `PM4_ME_INIT` (19 dwords) puis
+  le lot bootstrap IB (12 dwords) sont acceptés par le backend natif.
+- r75 : CTest natif 9/9 et pytest retail 126/126; `validate.py --runtime
+  native` passe, l'audit d'installation scanne un seul `ac6recomp` sans fichier
+  interdit. La sonde `_xstart` SDL dummy expire après le lot IB; son exit 124
+  est diagnostique, pas une preuve de gameplay.
+- r76 : la génération des imports ajoute une table d'événements offline
+  déterministe (handles, set/clear/pulse et waits non bloquants). Build/CTest
+  passent 9/9 et pytest reste 126/126; la sonde expire encore après l'IB, donc
+  aucun progrès gameplay n'est déduit.
+- Bindings provisoires build-only : mémoire virtuelle, pool/chaînes, PCR,
+  TLS, timebase 50 MHz, handles/events, Vd et workers; validation unitaire,
+  pas encore SDK retail.
+- Limite : stubs d'imports génériques, sans SDK Xenon/XAM/Vd/XMA complet;
+  scheduler/événements restent la frontière après l'IB et la traduction shader
+  `IM_LOAD_IMMEDIATE` vers SPIR-V n'est pas fermée. Aucun boot guest retail,
+  gameplay M01, rendu présentable, campagne ou release n'est promu.
+
+Preuve complète : `reports/ac6-retail-native-codegen-gate2-r11-20260831.md`.
+
+# AC6 retail NTSC-U/J — correction Gate 2 et codegen borné (2026-08-30)
+
+- `pytest -q recompilation/ace-combat-6-retail/tests`: 113 passed; CTest natif
+  5/5 avec `-UNDEBUG`; validator native pass.
+- PM4 capsule `ac6.xenos-capsule.v1`: opcodes hardware Xenos, XE_SWAP `SWAP`,
+  TYPE1 à deux registres, prédicat rejeté, 7 dwords validés.
+- Census `ac6.retail-native-import-census.v1`: 229 imports uniques dans le
+  mapping US; réseau offline et aucun socket, bindings restant à migrer.
+- Export Ghidra US qualifié: 8 163 fonctions; sélection des 89 propriétaires
+  depuis le log switch r3 et croisement des débuts du mapping précédent.
+- Génération `all`: timeout 20 min; sélection propriétaire `r4`: exit 2 avec
+  2 881 diagnostics; croisement mapping `r5`: receipt absent/exit 124. Aucun
+  output promu.
+
+Preuve complète: `reports/ac6-retail-native-gate2-static-correction-20260830.md`.
+
+# AC6 retail NTSC-U/J — Gate 2 codegen r3 diagnostiqué (2026-08-30)
+
+- Une génération directe XenonAnalyse/XenonRecomp a produit 83 fichiers dans
+  `build/` ignoré avec XEX US qualifié.
+- Huit helpers ABI US ont été qualifiés par signatures bytes; r3 reste à 1 831
+  diagnostics (1 824 switch hors frontières, 7 instructions non reconnues).
+- Qualification est sérialisée dans `artifacts/retail-us-native-codegen-gate2/helpers.json`;
+  chaque signature est unique et alignée.
+- Receipt reste `open-diagnostics`, exit 2, aucune liaison runtime.
+
+Preuve complète: `reports/ac6-retail-native-codegen-gate2-r3-20260830.md`.
+
+# AC6 retail NTSC-U/J — Gate 1 statique fermé (2026-08-30)
+
+- Profil `native` isolé, capsule `ac6.xenos-capsule.v1` et convertisseur
+  capture read-only ajoutés; PM4/MMIO/ring/IB/EDRAM/Vulkan/shader boundary
+  testés fail-closed. Services offline (réseau, VFS/save, replay, XMA) ont
+  leurs contrats natifs et tests; handles, auto-reset event et timebase sont
+  aussi couverts. `NativeRuntime` relie boot média, replay, ring, save/load et
+  shutdown sans état gameplay synthétique.
+- Validation: `pytest` retail `111 passed`, CTest native `5/5 passed`,
+  `validate.py --runtime native` pass, `release_ready=false`.
+- Audit d'installation natif prêt; l'installation oracle existante échoue
+  volontairement sur contenu ReXGlue.
+- Capture oracle réelle et replay Vulkan matériel restent ouverts.
+
+Preuve complète: `reports/ac6-retail-native-gate1-20260830.md`.
+
+# AC6 retail NTSC-U/J — Gate 0 état canonique (2026-08-30)
+
+- Identités US qualifiées et scellées: XEX
+  `6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc`, ISO
+  `204c5e645d79da8776699c12f17bd069f869fbdb10ae79015d1a0ef2b743c98c`, projet
+  Ghidra `ghidra-projects/ac6-us`, AC6_recomp
+  `09144bb092ad871584808aeead69c395edbd5200`, route
+  `771a77a8ff50eda30c5fb24309d8828bb339f91a49471368f117b65c9dbb6043`.
+- XenonRecomp `ddd128bcca99fe8bfbb99bea583c972351fa6ace` et XenosRecomp
+  `990d03b28a27b50277ee5d8d942e1c5f873869d1` restaurés proprement dans
+  arbres ignorés; jamais liés ni installés.
+- N2 reconstruction abandonné pour cette feuille; historique conservé.
+- Catalogue architecture local absent, donc aucune assertion générique.
+- Validation: `pytest -q recompilation/ace-combat-6-retail/tests` = `94 passed`.
+
+Preuve complète: `reports/ac6-retail-native-gate0-20260830.md`.
+
+# AC6 retail NTSC-U/J — Gate 1 renderer natif statique (2026-08-30)
+
+- `native` build compiles sans AC6_recomp, ReXGlue, Xenia ou média retail.
+- PM4/MMIO/ring/EDRAM/present typed boundary passes; malformed packets fail
+  before state/output effect, IB and unsupported opcodes fail closed.
+- Capsule `ac6.xenos-capsule.v1` validates identity US and rejects unknown
+  fields such as retail byte payloads.
+- `pytest` retail: 102 passed; CTest native: 1/1 passed; native validator pass
+  with `release_ready=false`.
+- Oracle runtime capture and real Vulkan replay remain open; no gameplay or
+  release claim made.
+
+Preuve complète: `reports/ac6-retail-native-gate1-20260830.md`.
+
+# Native US 2026-08-30 — N1b M01-B formelle reproductible
+
+- Deux runs natifs distincts : 3 600 ticks chacun, exit 0 chacun.
+- `cmp=0` : replay, huit captures PPM et reçu v2 complet.
+- Reçu commun `90fcddb9…1caf39`; replay commun `6bf324b8…c6fead`.
+- Scène : cité 4 226, terrain 65 536, eau 31 191 cellules visibles, F-16
+  4 435 sommets/6 468 indices, HUD vert 112 pixels aux huit jalons.
+- Validation : 88/88 CTest, test scène US, cache et frontières produit verts ;
+  `complete_render_scene=true`, `jv_eligible=true`.
+
+Preuve complète :
+`reports/native-us-n1b-m01-b-20260830.md`.
+
+# Native US 2026-08-30 — N1a free-flight reproductible
+
+- Deux runs natifs distincts : 1 800 ticks chacun, exit 0 chacun.
+- `cmp=0` : replay, sept captures PPM et manifeste complet.
+- Monde : cité 4 226, terrain 65 536, eau 31 191 cellules visibles, F-16
+  4 435 sommets/6 468 indices, HUD vert 112 pixels aux sept jalons.
+- Contrôles visibles : 121 996 / 193 751 / 235 086 / 279 803 / 283 519
+  pixels changés pour pitch / roll / yaw / throttle / frein.
+- Validation : 88/88 CTest, complexité et frontières vertes ; scène US
+  explicite verte ; `jv_eligible=false` préservé.
+
+Preuve complète :
+`reports/native-us-n1a-free-flight-20260830.md`.
+
+# N0 Native US 2026-08-30 — baseline NTSC-U/J qualifiée
+
+- Cache : 926 blobs, 15 payloads et 15 mondes campagne, index
+  `d7071928…1a34df5b`; reçu statique US séparé, sans promotion runtime.
+- Build : binaire `c1e7ddb5…f65edf`; 88/88 CTest, zéro échec.
+- Produit : 260 sources + un ELF verts; paquet 96 entrées vert, SHA-256
+  `2d008a25…2a403b`, sans ReXGlue/Xenia/C++ généré/octet retail.
+- Frontière : N1a doit encore prouver deux runs identiques de 1 800 ticks,
+  cinq contrôles, pose/caméra live et scène/HUD Vulkan.
+
+Preuve complète :
+`reports/native-us-n0-baseline-20260830.md`.
+
+# R0 Retail US 2026-08-30 — frontbuffer guest incomplet
+
+- Binaire : `46e3018639c4341e8aaa2ce897fd88e558593a1ccc2f474cfb2ae974741e5a1c`.
+- Statique : 16/16 CTest, validation NTSC-U/J `pass`, installation propre.
+- Runtime unique : cache 193/193, route `771a77a8…9dbb6043`, phase
+  `cinematic=0 world=1 hud=1 stable=30` observée.
+- Renderer : resolve `1AB6`, décodage vert, puis `PRESENT`; capture HUD verte
+  sur monde noir.
+- Terminal : Escape produit `world=0`, predicate post-edge absent, zéro fatal,
+  teardown forcé et reçu `fail`.
+
+Preuve complète :
+`reports/retail-us-r0-frontbuffer-validation-20260830.md`.
+
+# Retail US 2026-08-30 — LOD 0869 et routage HUD/frontbuffer
+
+- PROUVÉ : `0869` ne noircit plus la scène avec LOD0 limité à `tf2/tf12` mip0;
+  la sortie du dernier `50D9` reste riche.
+- PROUVÉ : `0311`, `8F1C/4366` et le resolve `1AB6` partagent la chaîne guest
+  correcte; aucun mismatch de layers guest.
+- PROUVÉ : le presenter actif contournait `1AB6` au profit de `1B9C`, un seul
+  `VkImageView`, donc sans HUD post-`0311`.
+- IMPLÉMENTÉ : fallback presenter `false` par défaut; `sync-log` avant
+  `Escape`; 57 tests ciblés passent.
+- NON PROMU : les runs courants sont diagnostiques. Le correctif frontbuffer
+  doit encore être rebuildé et produire monde + HUD dans une frame stable
+  post-edge appariée.
+
+Preuve complète :
+`reports/retail-us-0869-lod-present-frontbuffer-fix-20260830.md`.
+
+# Retail US 2026-08-28 — reachability service et interfaces release fermées
+
+- Chaîne directe : `0x821F5ECC -> 0x821F7B28 -> CRT[0x823F03F4] ->
+  0x823CB708 -> 0x82120FD8`, objet `0x829BAF30`, vptr `CNuSound`
+  `0x8205D1A4`.
+- Slot terminal effectif : `+0x168 -> 0x82124930`, prédicat sur
+  `objet+0xCECC`. L'ancien `0x8275CFC4` est corrigé en `0x8205CFC4`.
+- Contrat automatisé : gameplay/audit v3, débrief/visuel v2, cinq contrôles
+  tous `>5000`, invariants ReXGlue/Vulkan sans claim pixel, replay strict,
+  cold cache M01, chaîne save/cache, aggregate campagne v1.
+- Validation : `84 passed`; manifeste courant valide, non release :
+  `gameplay_pass=0`, `campaign_run=unverified`, `release_ready=false`.
+
+Preuves :
+`artifacts/retail-us-campaign-service-owner-reachability-static-20260828/summary.json`
+et
+`reports/retail-us-mission01-campaign-service-owner-reachability-static-20260828.md`.
+
+# Retail US 2026-08-28 — loader campagne qualifié statiquement
+
+- PROUVÉ : le projet Ghidra US canonique qualifie
+  `0x8218F4F0..0x8218F81B`; `state=0->1` dépend de la résolution
+  `0x821D3028` puis du retour `>0` de `0x821D28C8`.
+- PROUVÉ : la ressource scénario US `DATA.TBL[9]`/FHM enfant 0 est qualifiée;
+  l'hypothèse « scénario US absent » est fermée.
+- NON PROUVÉ : complétude runtime du graphe, heartbeat `FlightActive`,
+  postprocess/resolve et teardown. Le run analogique a expiré avant
+  `state=1->2`; ne pas le répéter.
+
+Preuve complète : `reports/retail-us-mission01-campaign-loader-static-20260828.md`.
+
+La chaîne statique `FlightActive`/heartbeat et le layout du paquet MnK sont
+qualifiés séparément dans
+`reports/retail-us-mission01-flightactive-static-20260828.md`; le heartbeat
+runtime reste non observé.
+Le propriétaire US initial du service de transition est qualifié :
+`0x823F9B28 -> CAce6Sound`, slot `+0x168 -> 0x823A2C30` (`li r3,0; blr`).
+La même statique qualifie les sites d'écriture vers `0x829BAF30` et un vptr
+candidat `0x8275CFC4`; leur reachability normale et le slot runtime effectif
+restent ouverts.
+Voir `reports/retail-us-mission01-campaign-service-owner-static-20260828.md`.
+
+# Retail US 2026-08-28 — sonde analogique bornée, frontière non résolue
+
+- PROUVÉ : rebuild/install `job-mtct7k4h-0be226ed` sous binaire
+  `e93d9fbe…bd8115`, ReXGlue/Vulkan 1280×720/30, 16/16 tests et `bin/bin`
+  absent.
+- ÉCHEC BORNÉ : `job-mtctdvii-e9c22860` s’arrête à `2/96` (`type28=30`
+  absent), sans ligne analogique, `game_status=-9`, aucun fatal/trap.
+- DÉCISION : aucune preuve d’entrée ne peut être promue depuis cette route.
+  La route originale qualifiée est admise explicitement au harness diagnostic;
+  une corrélation read-only unique est en cours sous
+  `job-mtctm90d-3d748f51`.
+
+Preuve complète : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — corrélation analogique originale expirée
+
+- ÉCHEC BORNÉ : `job-mtctm90d-3d748f51` expire à 20 min (`exit 124`) avec le
+  binaire `e93d9fbe…bd8115`, route originale `771a77a8…9dbb6043` et seed
+  `/tmp/ac6-cache-seed-v2-complete`; aucun `RESULT.json` finalisé.
+- PROUVÉ : 50 captures jusqu’à `step-50-language`, `5 587 PRESENT`, `94
+  type28` et boutons XAM non nuls; aucun `[ac6-campaign-transition] state=1->2`,
+  aucune ligne `xinput ... analog`, aucun `world=1/hud=1`.
+- DÉCISION : pas de reçu gameplay et pas d’attribution renderer/input; ne pas
+  répéter. La prochaine frontière est statique : transition campagne,
+  `FlightActive`, postprocess/resolve, teardown `-11`.
+
+Preuve complète : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — gameplay v2 candidate and adaptive route boundary
+
+- PROUVÉ : binaire candidat `b004ee70…4d70`, route longstart
+  `6ef77bef…14dac4b`, Vulkan 1280×720/30 FPS, SDL dummy et observables
+  scheduler/objective read-only.
+- PROUVÉ : la sonde diagnostique 96/96 atteint
+  `cinematic=0 world=1 hud=1 stable=30`; centre `0.332014/0.271874/1.0`,
+  contrôles `843291/857818/905833/920970/882008` pixels.
+- ÉCHEC BORNÉ : deux gates cache/profil vierges expirent à l'étape 2 sur
+  `type28=30`, sans fatal/trap. Un run avec cache Vulkan précréé atteint
+  campagne, briefing et cinématique mais expire à l'étape 75 sans `stable=30`.
+- DÉCISION : aucun reçu gameplay/audit n'est promu; la prochaine fenêtre est
+  une seule route diagnostique adaptative de l'edge `Escape` sur
+  `stable=1→stable=30`, sans guest write, trace globale ni A/B. PAL et les
+  missions 02–15 restent bloqués.
+
+Preuve complète : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — frontière scheduler US qualifiée
+
+- PROUVÉ : dans `ghidra-projects/ac6-us` / `default.xex` (PowerPC Xenon BE,
+  XEX `6eefba42…67cbbbc`), `0x822ED310..0x822ED467` traite le signal `-2`,
+  vérifie le contexte et `(object+0x124)&0x3f`, puis appelle `0x82267160`.
+- PROUVÉ : le driver `0x82267160..0x8226723B` avance le pas du scénario et
+  retourne `1` lorsque le tableau est épuisé ; appels directs `0x82258F8C` et
+  `0x822ED408`.
+- PROUVÉ : les adresses `0x822ED708`/`0x8226E158` sont des offsets internes,
+  pas des entrées Ghidra ; le dump borné US est conservé dans l'artefact.
+- NON PROUVÉ : activation native en vol, objectif, débrief, sauvegarde ou
+  relecture ; cette preuve ne change pas `debrief_pass=0`.
+- DÉCISION : prochaine fenêtre unique, runtime borné et read-only sur `-2`,
+  les gardes, le retour du driver et le premier compteur M01 ; aucun signal
+  fabriqué, guest write, trace globale ou A/B.
+
+Preuve complète : `reports/retail-us-mission01-scheduler-static-20260828.md`.
+
+# Retail US 2026-08-28 — diagnostic temporisé sans terminal M01
+
+- PROUVÉ : la route candidate (SHA-256
+  `425d075a…466a174`) exécute 96/96 opérations, atteint
+  `cinematic=0 world=1 hud=1 stable=30`, puis capture à 60/120/180/240/300 s
+  sans entrée.
+- PROUVÉ : `RESULT.status=diagnostic-capture-ready`, durée `755,014796 s`,
+  28 captures, `game_status=0`, arrêt propre, zéro fatal/trap/timeout.
+- PROUVÉ : aucun `[ac6-post-mission]`, terminal `0x822E3248` ou
+  `[ac6-current-level-set]` après le HUD ; le niveau reste lu `1`.
+- NON PROUVÉ : réussite d'objectif, débrief, sauvegarde de fin ou reload niveau
+  2 ; le run ne vaut pas reçu gameplay.
+- DÉCISION : fermer l'hypothèse d'auto-complétion sans entrée et préparer une
+  route de contrôles dérivée statiquement des objectifs/compteurs US ; pas de
+  trace globale, A/B, guest write ou correction renderer.
+
+Preuve complète : `reports/retail-us-mission01-roundtrip-timer-diagnostic-20260828.md`.
+
+# Retail US 2026-08-27 — handoff corrigé, phase HUD qualifiée
+
+- PROUVÉ : le candidat `54dd900a…5711f9` atteint briefing/cinématique puis
+  `cinematic=0 world=1 hud=1 stable=30` ; route diagnostique `23` captures,
+  arrêt propre, Vulkan 1280×720.
+- PROUVÉ : centre de `step-86-flight-hud-candidate.png` non noir
+  (`mean=0.301670`, `stddev=0.302621`, `nonblack=1.0`).
+- PROUVÉ : campagne `selector=1` et transitions `0→1→2` sont observées avant
+  le vol ; aucun fatal/trap.
+- NON PROUVÉ : contrôles de vol, débrief, sauvegarde et parité shader/lumière ;
+  l’avion reste surexposé.
+- DÉCISION : réutiliser la recette d’entrée pour le round-trip M01 ; ne pas
+  promouvoir ce diagnostic en gameplay v2 ni ajouter d’override global.
+
+Preuve complète : `reports/retail-us-mission01-cinematic-handoff-candidate-20260828-r2.md`.
+
+# Retail US 2026-08-28 — scénario Mission 01 US qualifié
+
+- PROUVÉ : tranche `DATA.TBL[9]` de l’ISO US (`offset=16908288`,
+  `length=13234635`) et payload FHM enfant 0 vérifiés sans copier le PAC.
+- PROUVÉ : SHA-256 scénario `51c10abe543ec1b8210bf089704db640003662fcb91f3b8dbaa091ec45ac6d45`;
+  probe natif `230` unités, `434` objets, `4` sous-missions, `232` flag orders,
+  `666` lectures, aucune erreur.
+- DÉCISION : la ressource US est qualifiée pour le gate M01 ; pas de promotion
+  gameplay/debrief et pas d’écriture invitée.
+
+Preuve complète : `reports/retail-us-mission01-scenario-static-qualification-20260828.md`.
+
+# Retail US 2026-08-27 — recette Campaign/New Game qualifiée
+
+- PROUVÉ : settle `8 s` + edges `space=0,6 s` font progresser les écrans
+  difficulté, contrôles et langue ; 11 captures sont produites.
+- PROUVÉ : le getter publie `selector=1 value=1`, puis le propriétaire de
+  transition publie `state=0->1` et `state=1->2`.
+- PROUVÉ : `7 483` `PRESENT`, Vulkan 1280×720, aucun fatal/trap ; arrêt borné
+  après capture (`status=fail` technique, `game_status=-9`).
+- NON PROUVÉ : gameplay, débrief, persistance ou stabilité visuelle monde ; ce
+  n’est pas un reçu de release.
+- DÉCISION : réutiliser cette recette dans le round-trip M01 et ne pas répéter
+  le diagnostic isolé.
+
+Preuve complète : `reports/retail-us-mission01-campaign-confirm-candidate-20260828.md`.
+
+# Retail US 2026-08-27 — handoff titre/campagne borné
+
+- PROUVÉ : le handoff synchronisé franchit le profil et Game Data ; les états
+  save `type28=30→37→35→9→5→6→8→10` et 12 captures sont présents.
+- PROUVÉ : après la langue, aucune transition `state=1->2` ; l’écran
+  `CAMPAIGN / NEW GAME` et `4 610` `PRESENT` restent figés.
+- PROUVÉ : captures à 12 s identiques (`62a77bf1…`), arrêt contrôlé `15`, sans
+  fatal/trap ; aucun `RESULT.json` de gameplay n'est produit.
+- NON PROUVÉ : entrée Mission 01, gameplay, débrief, persistance ou cause
+  renderer.
+- DÉCISION : conserver le round-trip M01 comme gate et ne pas répéter ce
+  handoff sans nouvelle preuve statique.
+
+Preuve complète : `reports/retail-us-mission01-cinematic-handoff-candidate-20260828.md`.
+
+# Retail US 2026-08-27 — route longue d'amorce bornée
+
+- PROUVÉ : avec le candidat `54dd900a…5711f9` et Vulkan, le run a produit
+  `349` `PRESENT` en 1280×720 et `141 840` lignes movie worker en `8 min 25 s`.
+- PROUVÉ : aucun `[ac6-campaign-transition]`, `[ac6-save-route]`, `type28` ou
+  `selector44` ; seulement deux phases `world=0`/`stable=0`.
+- PROUVÉ : les captures Xvfb de `23:07:40` et `23:12:21` partagent le SHA-256
+  `87a84b42…`; arrêt cgroup contrôlé `exit-status=15`, sans fatal/trap.
+- NON PROUVÉ : entrée campagne, gameplay, débrief, persistance ou cause
+  renderer ; il n'existe aucun `RESULT.json` de gameplay pour ce run.
+- DÉCISION : diagnostiquer l'amorce comme bloquée et conserver le round-trip
+  M01 comme gate ; ne pas relancer la même route ni ajouter d'override global.
+
+Preuve complète : `reports/retail-us-mission01-flight-long-candidate-20260828.md`.
+
+# Retail US 2026-08-27 — diagnostic propriétaire monde
+
+- PROUVÉ : le tick US `0x8226CEA0` est appelé avec le manager qualifié
+  `0xB0D90000`/vtable `0x820644EC`, état `0->1` puis stable ; la caméra est
+  appelée dans 85/93 échantillons.
+- PROUVÉ : les frames frontier restent chargées (jusqu'à 1 757 draws et 91
+  resolves) et le run s'arrête proprement sans fatal/trap.
+- BORNÉ : aucun appel à l'update objet `0x822704A0` n'est observé ; sa seule
+  référence directe est `0x82256538` dans `0x82256490`, hors tick.
+- NON PROUVÉ : phase visuelle stable 30 frames, HUD cockpit, débrief ou
+  persistance ; le reçu est diagnostique uniquement.
+- DÉCISION : ne pas ajouter d'override renderer ; reprendre le round-trip
+  M01 décrit dans `NEXT.md`.
+
+Preuve complète : `reports/retail-us-mission01-world-owner-diagnostic-20260827.md`.
+
+# Retail US 2026-08-27 — observables de persistance validés statiquement
+
+- PROUVÉ : getter `0x820943B0..0x8209443F` et setter
+  `0x82196590..0x8219661F`, feuilles direct-call US de `0x90` octets.
+- PROUVÉ : save manager `0x82158D90..0x82159293`, fonction `.pdata` de
+  `0x504` octets ; propriétaire progression `0x821A6400..0x821A64FF`.
+- PROUVÉ : quatre wrappers forts read-only, zéro store invité, hook-map exact
+  `d7d66b01…dc9239a`.
+- VALIDATION : build sans codegen statut 0, Python 65/65, natif 16/16, Vulkan,
+  SDL dummy, zéro D3D12, `bin/bin` absent.
+- IDENTITÉ : candidat runtime `54dd900a…5711f9`, 37 797 240 octets ; reçu
+  gameplay antérieur conservé séparément et non promu.
+- OUVERT : round-trip naturel M01, opération save, quiescence et relecture
+  fraîche du niveau 2 ; `debrief_pass=0`.
+
+Preuve : `reports/retail-us-mission01-persistence-observables-build-20260827.md`.
+
+# Retail US 2026-08-27 — débrief et progression Mission 01 qualifiés
+
+- PROUVÉ : projet `ac6-us`, XEX `6eefba42…67cbbbc`, aucune preuve PAL/démo.
+- PROUVÉ : `0x822E3248` convertit l'état monde terminal 4/5 en état mission 14
+  et résultat 1, avant `CModeTaskGame -> CModeTaskDebriefing`.
+- PROUVÉ : chaîne normale Debriefing -> DemoIntermission -> Unlock ->
+  InterMissionSelect -> MissionTitle, factories et vtables RTTI canoniques.
+- PROUVÉ : `0x821A6400` est le slot `+0x2C` de
+  `CModeTaskInterMissionSelect` et appelle `0x82196590(niveau + 1)` sous 15.
+- PROUVÉ : la tâche enregistre et actualise `CSelectSaveLoadManager` par
+  `0x82158D00`/`0x82158D90`, dispatcher canonique des opérations 1 à 8.
+- OUVERT : opération choisie après M01, fin save propre et relecture fraîche du
+  niveau 2 ; `debrief_pass=0` reste fail-closed.
+- PROCHAIN : un seul round-trip runtime en deux phases, sans A/B, trace globale
+  ni mutation de l'état invité.
+
+Preuve : `reports/retail-us-mission01-debrief-progression-static-20260827.md`.
+
+# Retail US 2026-08-27 — routes campagne statiques fermées
+
+- PROUVÉ : projet `ac6-us`, XEX `6eefba42…67cbbbc`, feuille directe
+  `0x821CD168..0x821CD2E3`, appel entrant `0x821D121C`, trois `blr`, prochaine
+  entrée `.pdata` `0x821CD2E8`.
+- PROUVÉ : `0x821D6248` écrit le format `2`, `0x821D624C` appelle
+  `0x821CC288`, qui charge `sim:DATA.TBL` et publie `entry_count` à
+  `0x8293B950` ainsi que la base `file+8`.
+- PROUVÉ : ISO US `204c5e64…743c98c`, extraction XDVDFS bornée du seul
+  `DATA.TBL`, 14 824 octets, 926 entrées, 2 PACs, SHA-256
+  `bad3a157…863b2f` ; identité PAL distincte et non utilisée.
+- CONTRAT : quinze routes qualifiées, sélecteurs `1..15`, DPL et entrées
+  `DATA.TBL` `9..23`; `static_qualified=15`, `gameplay_pass=1`,
+  `debrief_pass=0`, `visual_pass=0`, `release_ready=false`.
+- VALIDATION : Python 65/65, natif 16/16, `validate.py` pass, Vulkan complet,
+  SDL dummy, zéro D3D12, `bin/bin` absent ; `--require-release` échoue comme
+  attendu.
+
+Preuve : `reports/retail-us-campaign-manifest-static-20260827.md`.
+
+# Retail US 2026-08-27 — contrat campagne 15 missions
+
+- PROUVÉ : projet `ac6-us`, XEX `6eefba42…67cbbbc`, sélecteur `0x821B6EE8`,
+  table `.rdata` `0x820657B0`, mapping missions `1..15` vers DPL `9..23`.
+- PROUVÉ : `0x821D1190` garde la voie directe à `<0x39D` et appelle
+  `0x821CD168`; `0x821CC288` charge `sim:DATA.TBL`.
+- BORNÉ : la copie `.data` `0x826919A4` n'a aucun matérialiseur PPC trouvé et
+  n'est pas promue.
+- OUVERT : `0x821CD168` n'est pas encore une frontière Ghidra canonique et
+  l'identité du `DATA.TBL` US extrait de l'ISO qualifiée manque.
+- CONTRAT : manifeste 15 missions valide mais fail-closed ;
+  `selector_qualified=15`, `static_qualified=0`, `gameplay_pass=1`,
+  `debrief_pass=0`, `release_ready=false`.
+- VALIDATION : Python 60/60, natif 16/16, `validate.py` pass, Vulkan complet,
+  SDL dummy, zéro D3D12, `bin/bin` absent ; `--require-release` échoue comme
+  attendu.
+
+Preuve : `reports/retail-us-campaign-manifest-static-20260827.md`.
+
+# Retail US 2026-08-27 — gate gameplay v2
+
+- PROUVÉ : route qualifiée 96 opérations et 27 captures ; les onze dernières
+  sont cinq vues cinématiques, HUD, pitch, roll, yaw, throttle et frein.
+- PROUVÉ : reçu `ac6.retail-gameplay-gate.v2`; v1, cinématique, centre noir et
+  contrôles à 5 000 pixels ou moins sont rejetés avant audit.
+- PROUVÉ : le signal compositor monde est maintenant publié par Vulkan ; le
+  marqueur read-only attend 30 frames `cinematic=0 world=1 hud=1`.
+- PROUVÉ : tests Python 40/40, build cgroup statut 0, validation statique statut
+  0, tests natifs 16/16, Vulkan, SDL dummy, zéro D3D12 et `bin/bin` absent.
+- IDENTITÉ : le premier préflight a refusé l'ancien binaire sans marqueur avant
+  lancement ; après synchronisation de la copie préparée, binaire installé
+  `b869e2b1…61fde55`, marqueur vérifié dans l'image.
+- NON RÉSOLU : aucun reçu visuel gameplay ; prochaine preuve autorisée = un
+  `.rdc` `cinematic-d5b4` dans une nouvelle session lourde.
+
+Preuve : `reports/retail-us-gameplay-gate-v2-build-20260827.md`.
+
+# Retail US 2026-08-27 — sonde F556/resolve
+
+- PROUVÉ : le premier draw `F556C89634BEBFEF` consomme `tf0` en format 6,
+  endian 2, tuilé 256×256; clamp `2,2,2` (edge) et bordure `0` (noire).
+- RÉFUTÉ : la bordure blanche comme cause des taches F556.
+- PROUVÉ : `0x1C95E000` est une destination de resolve GPU; les zéros observés
+  côté CPU ne décrivent pas le contenu GPU échantillonné.
+- INCONCLUANT : le probe de contenu resolve est resté dans le hangar avant F556.
+- RECLASSÉ : les étapes `84/87/90/93/96` de la route 96 sont la cinématique
+  pré-mission malgré leurs noms `flight-*`; `flight-long2/step-87` est le seul
+  candidat crédible de début de gameplay, avec HUD/radar sur monde noir.
+- GATE FERMÉ : aucun reçu gameplay US, PAL toujours bloqué.
+
+Preuve complète : `reports/retail-us-f556-sampler-resolve-20260827.md`.
+
+# Retail US 2026-08-27 — qualification statique surfaces blanches
+
+- PROUVÉ : D5B4 vise une cible couleur+profondeur valide et son fetch BC3 est
+  présent; les probes raster, culling, depth/stencil et dé-swizzle ne suppriment
+  pas l'aplat avion.
+- PROUVÉ : F556 est une passe point-list `tf0` avec expansion Vulkan et
+  coordonnées point clampées dans `[0,1]`; son fetch est format 6/endian 2,
+  clamp edge et bordure noire.
+- RECLASSÉ : les surfaces blanches observées dans cette preuve appartiennent à
+  la cinématique pré-mission, pas à un HUD de vol.
+
+Preuve complète : `reports/retail-us-white-texture-static-boundary-20260827.md`.
+
+# Retail US 2026-08-27 — water-gradient inconcluant
+
+- PROUVÉ : binaire US inchangé, 89/89 opérations, 24 captures, arrêt propre,
+  zéro fatal/trap.
+- PROUVÉ : les captures 73→89 sont toutes le même hangar (SHA-256
+  `95bd914ef3160f4d2969869662471776b2075e0e8df4f4434494e9411f11bfd9`).
+- INCONCLUANT : aucune image de vol, donc aucune décision sur
+  `ac6_fix_water_line`.
+
+Preuve complète : `reports/retail-us-stock-water-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — surfaces blanches : dé-swizzle/FBO non causaux
+
+- PROUVÉ : `--ac6_fix_deswizzle=false` conserve les aplats blancs dans les
+  captures de vol; le dé-swizzle ciblé reste activé.
+- PROUVÉ : les fetchs D5B4/BC3 observés sont présents et tuilés; aucune texture
+  nulle ou vue absente n'est démontrée.
+- BORNÉ : `render_target_path_vulkan=fbo` n'atteint pas `type28=30` en 120 s;
+  ce chemin n'est pas qualifié pour la route US.
+- GATE FERMÉ : sonde diagnostique seulement (`clean_shutdown=false`), aucun
+  reçu US et PAL toujours bloqué.
+
+Preuve complète : `reports/retail-us-stock-deswizzle-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — FSI et sortie post-process bornés
+
+- PROUVÉ : binaire US validé `a150da4022425d0477e20ecfaa06cd73162fa44074f409dac8edaffa36974de9`, sans nouvelle génération.
+- PROUVÉ : 93/93 shaders SPIR-V valides et 93/93 réflexions réussies avec le tooling utilisateur.
+- PROUVÉ : `VK_LAYER_KHRONOS_validation` 1.4.341 est visible par `vulkaninfo` via `VK_LAYER_PATH`, sans installation système.
+- PROUVÉ : sessions longues propres (`89/89` et `85/85`), sans fatal/trap ; cinématique 3D visible puis sortie noire/HUD invité.
+- PROUVÉ : les captures sans panneau n'ont pas le diagnostic hôte ; les anciens traits verts
+  provenaient de ce panneau, pas d'un HUD de cockpit qualifiant.
+- BORNÉ : dernière divergence entre passes post-process plein écran, resolves `0x1B9C0000`/`0x1AB60000` et texture swap.
+- NON PROUVÉ : cause d'un shader, d'une barrière ou d'une seule cible ; aucun correctif aveugle retenu.
+- GATE FERMÉ : pas de reçu gameplay Mission 01 avec HUD stable et cinq effets de vol ; PAL bloqué.
+
+Complément : `glslc` (shaderc 2026.1-1) est installé sous
+`/home/lavaulta/.local/bin` ; le paquet est identifié par le SHA-256
+`9741c7e0351654a9b40afd7f679c5e4fac437221597411a4885e1d5df2739115`. Le probe
+`reports/retail-us-native-hud-sequence-probe-20260827.md` a atteint `type28=30`
+mais n'a pas émis `[ac6-campaign-transition]` et a été interrompu avant la
+mission. La route 96/96 reste mécanique : ses captures de vol n'exhibent pas
+le HUD de cockpit. Aucun reçu US n'est créé.
+
+Preuves complètes : reports/retail-us-fsi-handoff-logged-runtime-20260827.md,
+reports/retail-us-flight-long2-runtime-20260827.md,
+reports/ac6-render-tooling-20260827.md et leurs artefacts associés.
+
+# Retail US 2026-08-26 — observable propriétaire validé
+
+- PROUVÉ : rebuild sans codegen, statut 0.
+- PROUVÉ : binaire installé `64f34acf…46af5b8`, 37 654 672 octets.
+- PROUVÉ : cinq wrappers qualifiés liés comme symboles forts.
+- PROUVÉ : cvar et marqueurs mode/tick exigés par `validate.py`.
+- PROUVÉ : 16/16 tests, Vulkan complet, SDL dummy, zéro D3D12/`bin/bin`.
+- PROCHAIN : une route causale unique corrélant phases et chute des draws.
+
+Preuve complète : reports/retail-us-world-owner-observable-rebuild-20260826.md.
+
+# Retail US 2026-08-26 — propriétaires US qualifiés
+
+- PROUVÉ : projet `ac6-us`, XEX `6eefba42…67cbbbc`, Xenon big-endian.
+- RÉFUTÉ : CModeTaskGame US à `0x8219A170`.
+- PROUVÉ : CModeTaskGame `0x8219A510`, `.pdata` jusqu'à `0x8219A748`.
+- PROUVÉ : tick monde `0x8226CEA0`, objet `0x822704A0`, caméra `0x822638B0`,
+  radio `0x82271908`, avec étendues et octets exacts.
+- PROUVÉ : tick monde appelle directement caméra/radio et possède 35 appels
+  indirects ; observable read-only borné préparé, zéro store invité.
+
+Preuve complète : reports/retail-us-world-owner-static-qualification-20260826.md.
+
+# Retail US 2026-08-26 — soumission du monde effondrée au handoff
+
+- PROUVÉ : hangar franchi, carte/briefing/cinématique/HUD atteints sans panneau.
+- PROUVÉ : 88/88 opérations, arrêt propre, aucune fatal ni trap.
+- PROUVÉ : cinématique 969–975 draws, 91 resolves, 32 pointlists, 1280x720.
+- PROUVÉ : pré-handoff jusqu'à 1 197/84/31 ; HUD stable à 106/1/0.
+- PROUVÉ : `guest_swap_texture` et viewport restent 1280x720.
+- RÉFUTÉ : absence globale de renderer ou simple rupture PRESENT/viewport aval.
+- BORNÉ : activation/dispatch/soumission du monde avant le swap.
+
+Preuve complète : reports/retail-us-flight-world-submission-collapse-20260826.md.
+
+# Retail US 2026-08-26 — divergence bornée au hangar sans panneau
+
+- PROUVÉ : panneau vert absent des 24 captures.
+- PROUVÉ : 87/87 opérations, arrêt propre, aucune fatal ni trap.
+- PROUVÉ VISUELLEMENT : étapes 61/64/67 correctes, puis hangar identique aux
+  étapes 70–87 (zéro pixel différent entre 70 et 87).
+- RÉFUTÉ : les libellés 73–87 prouvent carte, briefing, cinématique ou vol.
+- BORNÉ : première divergence = A immédiat sur `Deploy`; focus et clavier actifs.
+- CORRIGÉ : attente de deux secondes avant l'unique confirmation du hangar.
+
+Preuve complète : reports/retail-us-no-panel-hangar-divergence-20260826.md.
+
+# Retail US 2026-08-26 — rebuild résumé persistant sans panneau
+
+- PROUVÉ : rebuild sans codegen, statut 0.
+- PROUVÉ : binaire installé `60c9fc6a…15da94`, 37 644 224 octets.
+- PROUVÉ : 16/16 tests, Vulkan complet, SDL dummy, zéro D3D12, zéro `bin/bin`.
+- CORRIGÉ : conservation du dernier résumé non vide entre PRESENT vides.
+- CORRIGÉ : panneau diagnostic désactivé par défaut, activation explicite seule.
+- PROCHAIN : un probe signatures/HUD sans panneau dans une nouvelle session.
+
+Preuve complète : reports/retail-us-last-meaningful-rebuild-20260826.md.
+
+# Retail US 2026-08-26 — résumé de frame non autoritatif
+
+- PROUVÉ : 87 opérations, cinématique 3D puis HUD sur monde noir.
+- PROUVÉ : `capture active=yes`, mais 0/0/0 draws/clears/resolves sur les deux.
+- RÉFUTÉ : le zéro instantané qualifie l'absence de commandes graphiques.
+- PROUVÉ : Vulkan présente `guest_swap_texture` en 1280x720, format 6.
+- PROUVÉ STATIQUEMENT : les appels générés US ciblent les wrappers instrumentés.
+- CORRIGÉ EN SOURCE : conserver le dernier résumé non vide entre PRESENT vides.
+- ÉCHEC FERMÉ : `game_status=-9`, arrêt non propre, aucune fatal ni trap.
+- PROCHAIN : rebuild unique avec rétention du résumé et panneau masqué ; pas d'A/B.
+
+Preuve complète : reports/retail-us-black-world-frame-summary-20260826.md.
+
+# Retail US 2026-08-26 — mode vol, monde noir
+
+- PROUVÉ : le seuil 180 PRESENT permet le parcours complet jusqu'au HUD.
+- PROUVÉ : cinématique 3D puis HUD visible sur monde noir.
+- PROUVÉ : 87 opérations, arrêt propre, aucune trap ni fatal.
+- OUVERT : première rupture world draw → RT → resolve → swap.
+- PROCHAIN DISCRIMINANT : résumé par-frame borné déjà compilé.
+
+Preuve complète : reports/retail-us-hud-black-world-20260826.md.
+
+# Retail US 2026-08-26 — seuil de démarrage
+
+- PROUVÉ : Escape après le premier PRESENT empêche tout second PRESENT.
+- PROUVÉ : aucun type28, capture, fatal, trap ou échec audio.
+- RÉFUTÉ : une seule présentation comme seuil de stabilisation suffisant.
+- QUALIFIÉ STATIQUEMENT : seuil historique de 180 PRESENT avant entrée.
+
+Preuve complète : reports/retail-us-cinematic-hud-one-present-20260826.md.
+
+# Retail US 2026-08-26 — stall avant probe HUD
+
+- PROUVÉ : 1 630 PRESENT puis arrêt des présentations avant tout type28.
+- PROUVÉ : focus et impulsions actifs, aucun fatal, trap ou échec audio.
+- NON EXERCÉ : recette cinématique A/Start et capture HUD.
+- CORRECTION DE PROBE : attendre le premier PRESENT avant l'Escape initial.
+
+Preuve complète :
+reports/retail-us-cinematic-hud-startup-stall-20260826.md.
+
+# Retail US 2026-08-26 — lancement 3D atteint
+
+- PROUVÉ : A depuis la carte tactique lance la cinématique 3D du F-16.
+- PROUVÉ : l'avion et le pilote sont visibles à 15 s; la séquence continue à
+  35 s et reste sans HUD à 65 s.
+- PROUVÉ : le run termine proprement sans fatal ni trap.
+- OUVERT : première frame HUD après la recette qualifiée A puis Start.
+
+Preuve complète : reports/retail-us-tactical-map-confirm-20260826.md.
+
+# Retail US 2026-08-26 — carte tactique atteinte
+
+- PROUVÉ : A depuis le premier hangar atteint la carte tactique Mission 01.
+- PROUVÉ : la carte reste stable à 15/35/65 s et affiche A OK.
+- PROUVÉ : le run termine proprement sans fatal ni trap.
+- OUVERT : résultat du seul A confirmé depuis la carte tactique.
+
+Preuve complète : reports/retail-us-first-hangar-confirm-20260826.md.
+
+# Retail US 2026-08-26 — route hangar qualifiée
+
+- PROUVÉ : Space mène de la sélection avion à l'arme puis au premier hangar.
+- PROUVÉ : Shift à l'opération 70 renvoie du hangar vers les armes.
+- RÉFUTÉ : les probes 0,1/0,6 s comme essais de lancement; leur Space revenait
+  seulement des armes au hangar.
+- OUVERT : résultat d'un unique A envoyé depuis le premier hangar.
+- QUALIFIÉ SOURCE : le panneau vert est ouvert par Show(); le cvar dédié,
+  désactivé par défaut, attend encore son rebuild.
+
+Preuve complète : reports/retail-us-hangar-route-divergence-20260826.md.
+
+# Retail US 2026-08-26 — lancement Mission 01
+
+- PROUVÉ : le préfixe US atteint la transition campagne 0→1→2 et le hangar
+  Mission 01.
+- RÉFUTÉ : le bouton A de lancement tenu 0,1 s comme confirmation suffisante;
+  les captures passives à 50/70/100 s restent à A OK / B CANCEL.
+- OUVERT : résultat du seul probe à 0,6 s sur ce bouton; aucune autre entrée
+  ne doit être injectée.
+
+Preuve complète : reports/retail-us-mission-launch-short-press-20260826.md.
+
+# Cycle 1849 — timeline marque requalifiée
+
+- `PROUVÉ` : le parent `0x2E3CDD10` a 2 220 frames et avance naturellement
+  d'une frame toutes les trois ticks; sa fin est autour du tick 6 882.
+- `PROUVÉ` : `0x82323BB8` publie déjà les listes parent/enfant et produit
+  l'index `owner+0xD8` sous son garde guest normal.
+- `RÉFUTÉ` : `child+0xDC=0` à 3 200 ticks comme prédicat ou producteur à
+  corriger pour atteindre Title.
+- `OUVERT` : relier statiquement la dernière entrée du parent au cue Startup;
+  le prochain test observe d'abord Title naturel sans entrée à 7 200 ticks.
+
+Preuve complète : `reports/cycle-1849-demo-brand-movie-timeline-requalified.md`.
+
+# Cycle 1848 — MovieController runtime borné
+
+- `PROUVÉ` : le probe HSIO=1 atteint 3 200 ticks avec le ring actif (`1 182`
+  soumissions, `1 089` présentations) et sans frontend, mission ni terminal.
+- `PROUVÉ` : `0x82323BB8` atteint le parent `0x2E3CDD10` puis l'enfant
+  `0x2E3CED10`; l'enfant a `D5=1`, `D6=0`, `D8=DC=0` dans la fenêtre ciblée.
+- `RÉFUTÉ` : `D5` ou `D6` comme membre faux à corriger pour produire EndMode.
+- `OBSERVÉ` : aucun appel SWG `0x820EA4A8` avant la borne; le cue parent→enfant
+  et son producteur restent ouverts.
+
+Preuve complète : `reports/cycle-1848-demo-moviecontroller-runtime-negative.md`.
+
+# Cycle 1847 — dispatch render post-fence non causal
+
+- `PROUVÉ` : `0x822E559C` est le LR du `bctrl` de `0x822E5540` dans le main
+  loop, et son receiver dynamique appelle `0x822F8848` au slot `+0x10`.
+- `PROUVÉ` : `0x822F8848` ne contient ni import/event wait ni accès direct à
+  StartUp, EndMode, MovieController ou `manager+0x18`.
+- `RÉFUTÉ` : le plateau render/context comme producteur à corriger pour Title.
+- `OUVERT` : jointure runtime read-only du controller Startup à
+  `0x82323BB8`, frame1/list1 et EndMode.
+
+Preuve complète : `reports/cycle-1847-demo-render-dispatch-noncausal.md`.
+
+# Cycle 1846 — prédicat post-fence négatif borné
+
+- `PROUVÉ` : la chaîne aval `EndMode -> listener StartUp -> manager+0x18 ->
+  Title` existe dans le guest.
+- `PROUVÉ` : `0x82323BB8` garde l'avance MovieController par
+  `effective_enabled != 0 && owner+0xD6 == 0`.
+- `RÉFUTÉ` : traiter ce garde aval comme le correctif du stall HSIO=1; aucune
+  trace ne le montre atteint.
+- `OBSERVÉ` : le dernier dispatch guest démontré est
+  `0x822E559C -> 0x822F8848`; son receiver/producteur reste ouvert.
+
+Preuve complète : `reports/cycle-1846-demo-post-fence-predicate-bounded-negative.md`.
+
+# Cycle 1845 — fence scratch observé sain
+
+- `PROUVÉ` : le probe HSIO=1 atteint 3 200 ticks avec ring actif, 1 182
+  soumissions et 1 089 présentations; `frontend=false`, `mission=false`.
+- `PROUVÉ` : 192 entrées source 1 lisent `scratch0=4` et les 192 retours de
+  `0x821B9710` lisent `scratch0=0`.
+- `RÉFUTÉ` : un producteur zéro manquant, une complétion host absente ou une
+  instruction PPC fautive sur le fence `0x16AE2000`.
+- `OBSERVÉ, NON CAUSAL` : `pending_wait=4` à la fin de la fenêtre avec zéro
+  interruption pending; il ne contredit pas les retraites observées.
+
+Preuve complète : `reports/cycle-1845-demo-scratch-fence-runtime-refuted.md`.
+
+# Cycle 1844 — retraite du fence scratch
+
+- `PROUVÉ` : `SCRATCH_REG0=4` publie le dword attendu par
+  `WAIT_REG_MEM(0x16AE2002, 0)` à `0x16AE2000`.
+- `PROUVÉ` : `PM4_INTERRUPT(4)` est livré comme interruption graphique
+  source 1; `0x821B9710` appelle le callback inscrit puis efface son bit CPU
+  actif dans `scratch+0x0`.
+- `PROUVÉ` : le callback courant `0x822E4240(0x82935270)` retourne; le zéro
+  attendu est donc l'écriture de retraite du dispatcher, pas une complétion
+  renderer ni un import HLE.
+- `OUVERT` : vérifier dans le run réel l'entrée/sortie de cette retraite et la
+  valeur observée par le wait, avant toute correction.
+
+Preuve complète : `reports/cycle-1844-demo-scratch-fence-producer-qualified.md`.
+
+# Cycle 1843 — validation Title négative
+
+- `PROUVÉ` : build/CTest OFF 27/27 et ON 26/26 passent avec le profil texture
+  BC3 320×160 existant.
+- `PROUVÉ` : HSIO=1 initialise le ring et produit 1 182 soumissions sans
+  mismatch à 3 200 ticks.
+- `RÉFUTÉ` : `StartUp→Title` dans cette fenêtre; `frontend=false`, aucune
+  frame Title à inspecter.
+- `OBSERVÉ` : wait mémoire final sur `0x16AE2000`, valeur 4, référence 0;
+  lecteur CP qualifié, producteur du retour à zéro inconnu.
+
+Preuve complète : `reports/cycle-1843-demo-title-natural-not-reached.md`.
+
+# Cycle 1842 — sélecteur HSIO et frontière renderer
+
+- `PROUVÉ` : `0x821C64E8 -> 0x827AD310 -> 0x821BA780 ->
+  device+0x2ABD.bit1 -> 0x821B9BC8` est la première chaîne divergente; elle
+  sélectionne volontairement le ring sous HSIO=1.
+- `RÉFUTÉ` : le plateau `0x822E559C -> 0x822F8848` comme cause; les workers et
+  le ring progressent encore.
+- `OBSERVÉ, NON CAUSAL` : le dernier `WAIT_REG_MEM` à 3 000 ticks porte sur
+  `0x16AE2002`, `observed=4`, `reference=0`; son décodage et sa reprise sont
+  couverts par le test CP existant.
+- `PROUVÉ` : la première trappe de la longue exécution HSIO=1 est le profil
+  texture BC3 320×160 au tick 4 911, produit par le draw invité et lu à la
+  frontière `qualified_title_texture_profile`.
+- `PROUVÉ` : ce profil et son test ciblé sont déjà présents dans l'arbre
+  produit courant; aucune seconde correction n'est justifiée.
+
+Preuve complète :
+`reports/cycle-1842-demo-first-post-startup-divergence.md`.
+
+# Maintenance post-cycle 1841 — suppression des handoffs contradictoires
+
+## Observé
+
+- avant : `NEXT.md` 3 981 lignes, `RESUME.md` 3 369 lignes;
+- après : `NEXT.md` 29 lignes, `RESUME.md` 20 lignes;
+- un seul titre principal par fichier, tous les liens courants existent;
+- `AGENTS.md` réserve ces fichiers à l'état courant et route l'historique vers
+  les ledgers et rapports;
+- `git diff --check` et le parse de `reports/handoff/CURRENT.json` passent.
+
+## Conclusion
+
+Les instructions historiques ne peuvent plus se présenter comme gates actifs
+dans les deux fichiers de reprise. Aucun build ou runtime n'était requis.
+
+# Cycle 1841 — le correctif threading proposé n'a pas de défaut cible
+
+## Observé
+
+- `publish_guest_event` réserve déjà un waiter auto-reset dans
+  `granted_thread`; seul ce waiter peut consommer la réservation.
+- `run_runnable_threads` sert le primaire puis chaque thread runnable dans la
+  même passe, avec yield toutes les 10 000 opérations mémoire et plafond de
+  256 activations.
+- Run cycle 1839 : t15 atteint 1 878 dispatches, dernier tick 2 997, pendant
+  que t1 atteint 1 038 811 appels dans sa boucle; état final 1 runnable/22
+  bloqués.
+- Les critères runtime sont ring=1 114 PASS, t1=5 FAIL, Title absente FAIL.
+- Validation source courante post-retrait : OFF 27/27, ON 26/26.
+
+## Conclusion
+
+L'auto-reset et la fairness demandés sont déjà effectifs; aucun patch produit
+n'est causalement justifié. La branche s'arrête après la borne de batches. Une
+suite doit nommer un prédicat invité ou service hôte post-StartUp distinct.
+
+Preuves : `artifacts/goal-playable/threading-contract-review-20260825/`,
+`reports/cycle-1841-demo-threading-contract-already-satisfied.md`.
+
+# Cycle 1840 — qualification des producteurs de sémaphores
+
+## Observé
+
+- Projet Ghidra `ace-combat-6-demo`, cible `ac6-demo-xbox360-pal`, module
+  `Default.xex` PAL démo qualifié.
+- `0xE0000130` : `NtCreateSemaphore`; cinq producteurs appellent le wrapper
+  `0x822E1E70`, dont l'import final est `NtReleaseSemaphore` ordinal 243.
+- `0xE000005C` : `NtCreateSemaphore`; `0x822EF750` appelle directement
+  `NtReleaseSemaphore` à `0x822EF7B4` après l'enqueue.
+- Les atlas existants atteignent le premier producteur une fois et le second
+  cinq fois avant les attentes observées.
+
+## Conclusion
+
+L'absence de publications dans le census antérieur est une limite de
+couverture (`set/pulse` seulement), pas une absence d'exécution. Les deux
+origines sont `guest-import`; l'état bloqué ultérieur correspond à des
+sémaphores redevenus vides. L'oracle `AC6_recomp` n'est pas requis.
+
+Preuves : `artifacts/goal-playable/thread-producer-static-20260825/RESULT.md`,
+`reports/cycle-1840-demo-semaphore-producers-qualified.md`.
+
+# Cycle 1839 — rotation seule réfutée
+
+## Observé
+
+- Variante : builds codegen-OFF/ON PASS ; CTest OFF 27/27, ON 26/26.
+- Run unique HSIO=1 : rapport `max_ticks`, 3 000 ticks ; marqueur d'exit
+  absent après interruption du contrôleur, donc run non qualifié comme succès.
+- Thread 1 : 5 handshakes ; critère `>5` échoué.
+- Ring : 1 114 soumissions ; critère `>0` passé.
+- `StartUp→Title` : absente ; critère échoué.
+- Scheduler : 2 998 épuisements de tranche, dernière tranche à 256 activations.
+- Après retrait : builds PASS ; CTest OFF 27/27, ON 26/26.
+
+## Conclusion
+
+La rotation déterministe seule ne satisfait pas le gate et n'est pas
+conservée. Les producteurs invités absents des posts `0xE000005C` et
+`0xE0000130` redeviennent la frontière causale nommée.
+
+Preuves : `artifacts/goal-playable/scheduler-rotation-20260825/`,
+`reports/cycle-1839-demo-scheduler-rotation-refuted.md`.
+
 # Cycle 1822 — stores `MovieController+0x14c/+0x15c`
 
 - `PROUVÉ` — `0x82323BD0: or r30,r4,r4` identifie le second argument de
@@ -106,6 +1032,21 @@
 
 Preuves complètes :
 `artifacts/goal-playable/title-p1-dispatch-xref-static-20260824/`.
+
+# Cycle 1850 et pivot retail
+
+- `PROUVÉ` : le probe démo qualifié termine en trap après 5811 ticks avec le
+  diagnostic `unsupported Xenos draw shape`; `frontend=false`,
+  `mission=false`, `terminal=false`.
+- `PROUVÉ` : le rapport primaire et les logs complets restent sous
+  `artifacts/cycle-1850/`.
+- `DÉCISION` : le runtime démo artisanal est archivé et supersédé; ses caches,
+  rapports et preuves ne qualifient pas le produit retail.
+- `PRODUIT COURANT` : AC6_recomp
+  `09144bb092ad871584808aeead69c395edbd5200`, ReXGlue Vulkan complet,
+  bootstrap NTSC-U/J avant PAL retail.
+
+Synthèse : `reports/cycle-1850-demo-runtime-closed-superseded.md`.
 
 # Preuve courante — cycle 1814 (24 août 2026)
 
@@ -4082,3 +5023,1153 @@ Preuves complètes :
 
 Preuves complètes :
 `artifacts/goal-playable/title-p1-dispatch-xref-static-20260824/`.
+# Gate retail US — frontière SSSE3 (26 août 2026)
+
+- `PROUVÉ` : XEX/ISO US, commit upstream et SDK sont qualifiés par le manifeste.
+- `PROUVÉ` : la première erreur Clang est l'intrinsèque `_mm_shuffle_epi8`
+  compilée sans la feature SSSE3 dans `rexcore/memory.cpp`.
+- `PROUVÉ` : statut Ninja 1, aucun `generated/`, reçu ou binaire produit.
+- `NON EXÉCUTÉ` : validations aval et capture d'audit gameplay.
+- `BLOQUÉ` : PAL jusqu'à un succès gameplay US audité.
+
+Preuve : `reports/retail-us-build-ssse3-boundary.md`.
+
+## Retail US Vulkan — frontière de synchronisation de route (26 août 2026)
+
+Le binaire installé
+`ee41a8c33db3f9a1364ab4e7e59a31e54c7f7373d49afd83fc126eb671168af3`
+passe les 16 tests ciblés avec Vulkan complet, SDL dummy, zéro symbole D3D12
+et zéro `bin/bin`. Le run corrigé produit des `PRESENT` continus et affiche le
+dialogue retail de création des données, mais expire à 4/96 étapes sans trap :
+le premier prédicat `type28=30` et les trois autres familles de marqueurs sont
+absents du host US. La capture système et le résultat complet sont conservés ;
+ils ne constituent pas une preuve gameplay. Le prochain travail est le
+cross-match statique qualifié des quatre fonctions candidates US ; PAL reste
+bloqué.
+
+Preuve : `reports/retail-us-vulkan-route-sync-boundary.md` ; artefacts :
+`artifacts/retail-us-gate-dummy-audio-20260826/`.
+
+## Retail US — observables qualifiés, première divergence `37 -> 36` (26 août 2026)
+
+- `PROUVÉ` : projet `ghidra-projects/ac6-us`, programme `default.xex`, langage
+  `PowerPC:BE:64:Xenon`, XEX `6eefba42…67cbbbc`.
+- `PROUVÉ` : quatre entrées/étendues `.pdata`, octets et ABI scellés par
+  `ac6.retail-hook-map.v1` (`2c67cc1f…5778b4`).
+- `PROUVÉ` : wrappers post-appel read-only, aucun store invité ; relink sans
+  codegen ; 16/16 tests, Vulkan, SDL dummy, zéro D3D12 et zéro `bin/bin`.
+- `PROUVÉ` : la route publie `type28=30 -> 37 -> 36`, puis expire sur le
+  prédicat `type28=35` à 10/96 étapes.
+- `RÉFUTÉ` : succès gameplay US ; zéro des 27 captures et aucun arrêt propre.
+- `BLOQUÉ` : PAL Europe Rev 1 et toute nouvelle exécution tant qu'une nouvelle
+  décision explicite ne redéfinit pas ce gate.
+
+Preuve : `reports/retail-us-route-type35-failed-closed.md` ; résultat
+`artifacts/retail-us-gate-route-sync-20260826/RESULT.json`.
+
+## Retail US — captures de la sélection et validation révisée (26 août 2026)
+
+- `PROUVÉ VISUELLEMENT` : `30` est un écran à bouton unique `OK`; `37` est
+  `Create new Game Data?` avec `NO` sélectionné; sa validation produit `36`.
+- `PROUVÉ STATIQUEMENT` : dans `0x821C4FB0`, le résultat non nul écrit `36` et
+  le chemin succès écrit `35` à `screen+0x1C`.
+- `CORRIGÉ` : le même `Left` est déplacé après `37`; route toujours 96 étapes,
+  SHA-256 `74e3f395…d81c8f`.
+- `NON VALIDÉ` : le run complet révisé s'arrête avant tout `type28` après 841
+  `PRESENT`, à 4/96 étapes, sans fatal ni erreur SDL/XAudio.
+- `BLOQUÉ` : nouvelle exécution identique et PAL sans nouvelle autorisation.
+
+Captures : `artifacts/retail-us-type37-36-visual-20260826/` ; reçu complet :
+`artifacts/retail-us-gate-type37-selection-20260826/RESULT.json`.
+
+## Retail US — couture `NO -> YES -> 35` et recapture propre (26 août 2026)
+
+- `PROUVÉ AU RUNTIME` : dans le diagnostic 15/15, `type28=37` affiche `NO`,
+  `Left` sélectionne `YES`, puis `space` atteint `type28=35`.
+- `RÉFUTÉ` : le panneau diagnostics absorbe `Left`; la sélection change alors
+  qu'il est visible.
+- `NON AUDITABLE VISUELLEMENT` : ces trois PNG restent obstrués par le panneau,
+  dont le clic de fermeture avait précédé la création ImGui.
+- `CORRIGÉ DANS LE HARNESS` : fermeture différée au premier point de capture,
+  réservée aux routes diagnostiques et sans rebuild.
+- `NON ATTEINT` : la recapture corrective expire à 4/15 étapes après 1 725
+  `PRESENT`, zéro `type28`, aucun fatal et aucun PNG.
+
+Preuves : `artifacts/retail-us-type37-clean-20260826/RESULT.json` et
+`artifacts/retail-us-type37-clean-v2-20260826/RESULT.json`.
+
+## Retail US — monde soumis mais composition noire (26 août 2026)
+
+- `PROUVÉ` : runtime statut 0, arrêt propre, zéro fatal/trap, 24 captures et
+  panneau hôte absent.
+- `PROUVÉ` : cinématique 3D visible, puis HUD/radar verts sur fond noir.
+- `PROUVÉ` : au premier HUD noir, objet/caméra/radio restent actifs et le
+  backend reçoit ~1 100–1 200 draws, 85–87 resolves et 28 pointlists.
+- `RÉFUTÉ` : disparition de la soumission gameplay comme cause du premier
+  écran noir ; la chute à 27/106 draws est postérieure et suit Escape/Start.
+- `OUVERT` : premier resolve ou changement de RT qui perd la scène avant le
+  frontbuffer. L'observable exact est patché, testé, non rebuildé.
+
+Preuve : `reports/retail-us-black-world-resolve-boundary-20260826.md` et
+`artifacts/retail-us-world-owner-runtime-20260826/RESULT.json`.
+
+## Retail US — binaire resolve qualifié (26 août 2026)
+
+- `PROUVÉ` : relink statut 0 avec réutilisation de
+  `generated/sources.cmake`, sans codegen.
+- `PROUVÉ` : binaire installé `98bf39a9…37e4e3`, 37 659 144 octets.
+- `PROUVÉ` : Vulkan complet, SDL dummy, zéro D3D12, absence de `bin/bin` et 21
+  tests légers réussis.
+- `PROUVÉ` : marqueurs RT/resolve/frontbuffer présents et exigés par la
+  validation.
+- `NON EXÉCUTÉ` : corrélation runtime de la dernière frame 3D au premier HUD
+  noir ; elle est réservée au job lourd unique de la prochaine session.
+
+Preuve : `reports/retail-us-resolve-observable-rebuild-20260826.md`.
+# Retail US 2026-08-26 — frontière intermédiaire Vulkan
+
+- PROUVÉ VISUELLEMENT : étape 80 en 3D, étapes 82 et 88 avec HUD sur monde noir ; 24 captures, panneau absent.
+- PROUVÉ : zéro fatal/trap et journal allant jusqu'à `Execution complete`.
+- ÉCHEC FERMÉ : délai de nettoyage dépassé, `game_status=-9`, arrêt non propre.
+- PROUVÉ : mêmes destinations/LR de resolve principal et final, même frontbuffer entre image 3D et HUD noir.
+- RÉFUTÉ : changement des extrémités resolve/frontbuffer comme cause de la première perte du monde.
+- PRÉPARÉ : sonde hôte opt-in des passes Vulkan et plages de resolve intermédiaires, bornée à 4 candidats puis 1/60.
+- VALIDÉ LÉGÈREMENT : 22/22 tests et `diff --check`; aucun rebuild dans cette session lourde.
+
+Preuve : `reports/retail-us-intermediate-resolve-boundary-20260826.md`.
+# Retail US 2026-08-26 — binaire frontière Vulkan qualifié
+
+- PROUVÉ : rebuild/relink unique sous cgroup, statut 0, pic mémoire ~2,3 Gio.
+- PROUVÉ : réutilisation de `generated/sources.cmake`, aucun codegen.
+- PROUVÉ : binaire build/install identique, `b854c984…b4de0`, 37 674 768 octets.
+- PROUVÉ : validation statut 0, Vulkan complet, SDL dummy, zéro D3D12 et absence de `bin/bin`.
+- PROUVÉ : marqueurs frame/pass/resolve présents ; sonde `false` par défaut.
+- NON EXÉCUTÉ : runtime causal et audit visuel, réservés à la prochaine session lourde.
+
+Preuve : `reports/retail-us-vulkan-frontier-observable-rebuild-20260826.md`.
+# Retail US 2026-08-26 — frontière après fragment monde
+
+- PROUVÉ : runtime effectif statut 0, arrêt propre, 24 captures, zéro fatal/trap, panneau absent.
+- PROUVÉ VISUELLEMENT : cinématique 3D à l'étape 80 ; HUD noir aux étapes 82, 85 et 88.
+- PROUVÉ : `sample 2400 -> 2460` conserve 60 passes, 65 resolves et le frontbuffer.
+- PROUVÉ : 378 draws D5B4 monde subsistent vers EDRAM 4, depth 720/1, pitch 640, MSAA 1.
+- RÉFUTÉ : absence de pass monde ou perte globale des resolves comme première cause.
+- PRÉPARÉ : override blanc de la seule sortie finale RT0 D5B4, opt-in, sans panneau ni écriture invitée.
+- VALIDÉ LÉGÈREMENT : 23/23 tests et `diff --check`; aucun rebuild après le runtime lourd.
+
+Preuve : `reports/retail-us-vulkan-frontier-runtime-20260826.md`.
+# Retail US 2026-08-26 — binaire final-white D5B4 qualifié
+
+- PROUVÉ : rebuild/relink unique sous cgroup, statut 0, pic mémoire ~2,2 Gio.
+- PROUVÉ : codegen existant réutilisé ; seul le traducteur SPIR-V modifié est recompilé.
+- PROUVÉ : build/install identiques, `0f208aa3…5c4c`, 37 676 704 octets.
+- PROUVÉ : validation statut 0, Vulkan complet, SDL dummy, zéro D3D12, aucun `bin/bin`.
+- PROUVÉ : cvar et marqueur final-white liés ; override `false` par défaut.
+- VALIDÉ LÉGÈREMENT : 23/23 tests et `diff --check`.
+- NON EXÉCUTÉ : bras visuel final-white, réservé à la prochaine session lourde.
+
+Preuve : `reports/retail-us-d5b4-final-output-rebuild-20260826.md`.
+# Retail US 2026-08-26 — final-white D5B4 négatif
+
+- PROUVÉ : runtime statut 0, arrêt propre, 88/88 étapes, 24 captures, zéro fatal/trap.
+- PROUVÉ : marqueur final-white exactement une fois et dump D5B4 exact présent.
+- PROUVÉ VISUELLEMENT : cinématique 3D puis trois HUD sur monde noir, panneau absent.
+- PROUVÉ : `world_center_mean=0.0` malgré la sortie RT0 D5B4 forcée à blanc.
+- RÉFUTÉ : valeur lumière/sortie finale D5B4 comme cause suffisante du monde noir.
+- PRÉPARÉ : bypass depth/stencil limité aux draws D5B4, conservant final-white comme baseline.
+- VALIDÉ LÉGÈREMENT : 24/24 tests et `diff --check`; aucun rebuild après le runtime lourd.
+
+Preuve : `reports/retail-us-d5b4-final-white-runtime-20260826.md`.
+# Retail US 2026-08-26 — binaire bypass depth/stencil qualifié
+
+- PROUVÉ : rebuild/relink unique sous cgroup, statut 0, codegen réutilisé.
+- PROUVÉ : build/install identiques, `d00b9022…eb1c`, 37 681 672 octets.
+- PROUVÉ : validation statut 0, Vulkan complet, SDL dummy, zéro D3D12, aucun `bin/bin`.
+- PROUVÉ : cvar et marqueur depth/stencil liés ; tous les diagnostics false par défaut.
+- VALIDÉ LÉGÈREMENT : 24/24 tests et `diff --check`.
+- NON EXÉCUTÉ : bras visuel depth/stencil, réservé à la prochaine session lourde.
+
+Preuve : `reports/retail-us-d5b4-depth-stencil-rebuild-20260826.md`.
+# Retail US 2026-08-26 — bypass depth/stencil négatif
+
+- PROUVÉ : runtime statut 0, arrêt propre, 88/88 étapes, 24 captures, zéro fatal/trap.
+- PROUVÉ : marqueurs final-white et depth/stencil exactement une fois chacun.
+- PROUVÉ VISUELLEMENT : trois HUD sur monde noir, panneau absent.
+- PROUVÉ : `world_center_mean=0.0` malgré sortie blanche et depth/stencil neutralisé.
+- RÉFUTÉ : rejet depth/stencil D5B4 comme cause suffisante.
+- PRÉPARÉ : bypass front/back culling limité aux draws D5B4, conservant les deux bras précédents.
+- VALIDÉ LÉGÈREMENT : 25/25 tests et `diff --check`; aucun rebuild après le runtime lourd.
+
+Preuve : `reports/retail-us-d5b4-depth-stencil-runtime-20260826.md`.
+# Retail US 2026-08-26 — binaire bypass culling qualifié
+
+- PROUVÉ : rebuild/relink unique sous cgroup, statut 0, pic mémoire ~1,2 Gio, codegen réutilisé.
+- PROUVÉ : build/install identiques, `8600824e…97d1`, 37 682 448 octets.
+- PROUVÉ : validation statut 0, Vulkan complet, SDL dummy, zéro D3D12, aucun `bin/bin`.
+- PROUVÉ : cvar et marqueur culling liés ; tous les diagnostics false par défaut.
+- VALIDÉ LÉGÈREMENT : 25/25 tests et `diff --check`.
+- NON EXÉCUTÉ : bras visuel culling, réservé à la prochaine session lourde.
+
+Preuve : `reports/retail-us-d5b4-cull-rebuild-20260826.md`.
+# Retail US 2026-08-26 — bypass culling négatif
+
+- PROUVÉ : runtime statut 0, arrêt propre, 88/88 étapes, 24 captures, zéro fatal/trap.
+- PROUVÉ : trois marqueurs D5B4 exactement une fois chacun.
+- PROUVÉ VISUELLEMENT : trois HUD sur monde noir, panneau absent.
+- PROUVÉ : `world_center_mean=0.0` malgré sortie blanche, depth/stencil et culling neutralisés.
+- RÉFUTÉ : front/back culling D5B4 comme cause suffisante.
+- PRÉPARÉ : catalogue read-only viewport/scissor par passe, sans nouvelle mutation runtime.
+- VALIDÉ LÉGÈREMENT : 25/25 tests et `diff --check`; aucun rebuild après le runtime lourd.
+
+Preuve : `reports/retail-us-d5b4-cull-runtime-20260826.md`.
+# Retail US 2026-08-26 — binaire fenêtre raster qualifié
+
+- PROUVÉ : rebuild/relink unique sous cgroup, statut 0, pic mémoire ~2,5 Gio, codegen réutilisé.
+- PROUVÉ : build/install identiques, `4b4a7140…41af`, 37 686 648 octets.
+- PROUVÉ : validation statut 0, Vulkan complet, SDL dummy, zéro D3D12, aucun `bin/bin`.
+- PROUVÉ : marqueur de passe lié avec viewport/scissor ; observable read-only.
+- VALIDÉ LÉGÈREMENT : 25/25 tests et `diff --check`.
+- NON EXÉCUTÉ : catalogue runtime D5B4, réservé à la prochaine session lourde.
+
+Preuve : `reports/retail-us-d5b4-raster-window-rebuild-20260826.md`.
+# Retail US 2026-08-26 — runtime fenêtre raster non concluant
+
+- PROUVÉ : wrapper/jeu/Xvfb statut 0, arrêt propre, 88/88 opérations, 24 captures.
+- PROUVÉ VISUELLEMENT : panneau vert absent.
+- PROUVÉ : captures 70–88 identiques, SHA-256 `666ec8bf…f49259`, 0 pixel changé entre hangar et prétendue carte.
+- RÉFUTÉ : le reçu générique `diagnostic-capture-ready` comme preuve de progression sémantique.
+- PROUVÉ : quatre catalogues 628/41, aucune passe D5B4 ; le filtre lourd omet la frontière recherchée.
+- PRÉPARÉ : inclusion read-only des frames D5B4 et rejet du handoff resté au hangar.
+- VALIDÉ LÉGÈREMENT : 26/26 tests, compilation Python et `diff --check`.
+
+Preuve : `reports/retail-us-d5b4-raster-window-runtime-20260826.md`.
+# Retail US 2026-08-26 — catalogue D5B4 inclusif qualifié
+
+- PROUVÉ : rebuild/relink unique sous cgroup, statut 0, codegen réutilisé.
+- PROUVÉ : build/install identiques, `bec7412e…c75ac`, 37 686 656 octets.
+- PROUVÉ : validation statut 0, Vulkan complet, SDL dummy, zéro D3D12 et aucun `bin/bin`.
+- PROUVÉ : toute frame contenant D5B4 devient candidate du catalogue read-only.
+- VALIDÉ LÉGÈREMENT : 26/26 tests, upstream/build identiques et `diff --check`.
+- NON EXÉCUTÉ : runtime D5B4 inclusif, réservé à la prochaine session lourde.
+
+Preuve : `reports/retail-us-d5b4-inclusive-catalog-rebuild-20260826.md`.
+# Retail US 2026-08-26 — startup brand movie qualifié
+
+- PROUVÉ : runtime limité à 910 s, échec opération 5, zéro fatal/trap et zéro capture de route.
+- PROUVÉ VISUELLEMENT : scène 3D du générique Namco Bandai, panneau vert absent.
+- PROUVÉ : 1 732 PRESENT puis arrêt ; aucun `type28=30`, aucune passe D5B4.
+- RÉFUTÉ : 180 PRESENT comme prédicat suffisant de disponibilité du menu.
+- PROUVÉ : reçus réussis antérieurs atteignent `type28=30` vers 45 s après lancement.
+- PRÉPARÉ : settle de 45 s avant toute entrée, limité aux routes handoff/render-summary.
+- VALIDÉ LÉGÈREMENT : compilation Python, 26/26 tests et `diff --check`.
+
+Preuve : `reports/retail-us-brand-movie-startup-stall-20260826.md`.
+# Retail US 2026-08-26 — fenêtre titre 35/42 s requalifiée
+
+- PROUVÉ : runtime échec fermé, opération 6, 1 830 PRESENT, zéro fatal/trap.
+- PROUVÉ VISUELLEMENT : transition entièrement noire, panneau vert absent.
+- PROUVÉ : aucun `type28=30`, aucune capture de route, aucune passe D5B4.
+- RÉFUTÉ : settle de 45 s après 180 PRESENT, qui place l'entrée vers 53 s.
+- PROUVÉ HISTORIQUEMENT : Escape 35 s, A 42 s, dialogue Game Data visible à 50 s.
+- PRÉPARÉ : séquence absolue 35/42 s puis attente passive, sans pulses aveugles.
+- VALIDÉ LÉGÈREMENT : compilation Python, 26/26 tests et `diff --check`.
+
+Preuve : `reports/retail-us-brand-movie-settle-runtime-20260826.md`.
+# Retail US 2026-08-26 — fenêtre titre variable bornée
+
+- PROUVÉ : runtime échec fermé après 70 s/5 opérations, 3 499 PRESENT.
+- PROUVÉ : aucun `type28=30`, aucune capture de route, aucun fatal/trap ni D5B4.
+- RÉFUTÉ : paire 35/42 s seule comme garantie sur chaque lancement actuel.
+- PRÉPARÉ : retries Escape/A conditionnels, bornés localement à 60 s.
+- PRÉPARÉ : capture automatique de l'écran avant teardown sur échec diagnostique.
+- VALIDÉ LÉGÈREMENT : compilation Python, 27/27 tests et `diff --check`.
+
+Preuve : `reports/retail-us-title-window-runtime-20260826.md`.
+# Retail US 2026-08-26 — D5B4 valide, monde noir composé
+
+- PROUVÉ : 88/88 opérations, 24 captures, arrêt propre, statut 0, zéro fatal/trap.
+- PROUVÉ VISUELLEMENT : cinématique 3D puis HUD/radar sur monde noir, panneau absent.
+- PROUVÉ : garde hangar franchie, 921 599 pixels changés vers la carte tactique.
+- PROUVÉ : 44 échantillons D5B4, scissor 640×720 couvrant la cible pitch 640.
+- RÉFUTÉ : viewport/scissor D5B4 comme cause suffisante du monde noir.
+- PROUVÉ : resolve final `0x1AB60000` stable ; `0x1C191000` 7→1 et `0x1B9C0000` 7→4.
+- PROCHAIN : qualifier statiquement le premier producteur/consommateur différent de cette chaîne.
+
+Preuve : `reports/retail-us-d5b4-window-valid-compose-boundary-20260826.md`.
+# Retail US 2026-08-26 — propriétaires Resolve et observable aligné
+
+- PROUVÉ STATIQUEMENT : `0x82337C68` possède LR `0x82337CC4`, table `0x82864C88+index×52`.
+- PROUVÉ STATIQUEMENT : `0x8234D550` possède LR `0x8234D5F4`, destination `*(object+0)+28`.
+- PROUVÉ : `0x821E2BB8` est Resolve ; `0x821E4630` est la couture Clear voisine.
+- MANQUANT : records intermédiaires persistés reliant LR/objet à `0x1C191000`/`0x1B9C0000`.
+- PRÉPARÉ : catalogue read-only sample/ordinal/LR/arguments/RT/depth/viewport aligné sur Vulkan.
+- VALIDÉ LÉGÈREMENT : 28/28 tests et `diff --check`.
+
+Preuve : `reports/retail-us-compose-resolve-static-qualification-20260826.md`.
+# Retail US 2026-08-26 — catalogue Resolve aligné rebuildé
+
+- PROUVÉ : rebuild/relink unique sous cgroup, statut 0, codegen réutilisé.
+- PROUVÉ : build/install identiques, `f77554a7…572ea`, 37 686 952 octets.
+- PROUVÉ : validation statut `pass`, Vulkan complet, SDL dummy, zéro D3D12/`bin/bin`.
+- PROUVÉ : marqueur sample/ordinal/LR/arguments/RT/depth/viewport lié.
+- VALIDÉ LÉGÈREMENT : 28/28 tests, upstream/build identiques et `diff --check`.
+- NON EXÉCUTÉ : corrélation runtime des deux catalogues, réservée à la prochaine session lourde.
+
+Preuve : `reports/retail-us-compose-resolve-catalog-rebuild-20260826.md`.
+
+# Retail US 2026-08-26 — divergence du resolve final corrélée
+
+- PROUVÉ : 88/88 opérations et 24 captures ; échec fermé au teardown `game_status=-2`.
+- PROUVÉ VISUELLEMENT : cinématique 3D puis HUD/radar sur monde noir.
+- PROUVÉ VISUELLEMENT : fenêtre « AC6 Graphics Diagnostics » absente du run courant.
+- PROUVÉ : `0x1C191000` 7→1, `0x1B9C0000` 7→4, `0x1AB60000` stable à 1.
+- PROUVÉ : au sample 2040, 91 appels invités et 91 resolves physiques sont alignés.
+- QUALIFIÉ : LR `0x8234D5F4` perd 6 objets 640×360 et 3 objets 1280×720 pendant la transition.
+- QUALIFIÉ STATIQUEMENT : `0x8234D550` résout `*(r3+0)+28` sans choisir l'objet.
+- PROCHAIN : qualifier les sélecteurs `0x8234EF60` et `0x8234F558`.
+
+Preuve : `reports/retail-us-compose-resolve-runtime-20260826.md`.
+
+# Retail US 2026-08-26 — observable du propriétaire parent prêt
+
+- QUALIFIÉ STATIQUEMENT : LR parent `0x8234F0E8` identifie la liste `0x8234EF60`.
+- QUALIFIÉ STATIQUEMENT : LR parent `0x8234F598` identifie l'entrée `0x8234F558`.
+- PRÉPARÉ : `owner_lr` lit seulement `r1+152` sous LR exact `0x8234D5F4`.
+- ÉCHEC FERMÉ : relink statut 1, symbole legacy `GetFrameCaptureSummary()` retiré par la synchronisation.
+- RÉPARÉ : hunk legacy restauré dans la copie build ; aucun second job lourd.
+- PRÉSERVÉ : binaire installé validé `f77554a7…572ea` intact.
+- VALIDÉ LÉGÈREMENT : 28/28 tests et `diff --check`.
+
+Preuve : `reports/retail-us-compose-owner-rebuild-failed-20260826.md`.
+
+# Retail US 2026-08-26 — catalogue du propriétaire parent relié
+
+- PROUVÉ : relink unique statut 0, aucun codegen.
+- PROUVÉ : build/install identiques, `345dca09…e4f61`, 37 686 960 octets.
+- PROUVÉ : validation statique `pass`, Vulkan complet, SDL dummy, zéro D3D12/`bin/bin`.
+- PROUVÉ : marqueur `[ac6-compose-resolve] ... owner_lr=...` lié.
+- VALIDÉ LÉGÈREMENT : 28/28 tests et `diff --check`.
+- NON EXÉCUTÉ : runtime causal, réservé à la prochaine session lourde.
+
+Preuve : `reports/retail-us-compose-owner-relink-20260826.md`.
+
+# Retail US 2026-08-26 — runtime owner non consommable, startup corrigé
+
+- ÉCHEC FERMÉ : 5/88 opérations, 117,9 s, `type28=30` absent, `game_status=-9`.
+- PROUVÉ VISUELLEMENT : film Namco Bandai 3D encore affiché, panneau absent.
+- PROUVÉ : aucun fatal/trap et aucun sample Mission 01 `owner_lr`.
+- PROUVÉ PAR DEUX REÇUS : `type28=30` précédait leur appui A programmé.
+- PRÉPARÉ : Escape seul, conditionnel après 20 s, borné à 90 s ; A après prédicat.
+- VALIDÉ LÉGÈREMENT : 28/28 tests produit, 19/19 runner, `py_compile`, `diff --check`.
+
+Preuve : `reports/retail-us-compose-owner-startup-failure-20260826.md`.
+
+# Retail US 2026-08-26 — runtime owner terminé proprement
+
+- PROUVÉ : route diagnostique `85/85`, 24 captures, `game_status=0`,
+  `xvfb_status=0`, arrêt propre et zéro fatal/trap.
+- PROUVÉ VISUELLEMENT : `step-77` conserve la 3D; `step-79/82/85` montrent le
+  HUD invité sur monde noir; le panneau « AC6 Graphics Diagnostics » est absent.
+- PROUVÉ : `0x8234F0E8` fournit les surfaces de composition et `0x8234F598` le
+  resolve final vers `0x1AB60000`.
+- PROUVÉ : D5B4 persiste après la transition noire; les essais white/depth/cull
+  précédents n'ont pas restauré le monde.
+- PROCHAIN : qualifier statiquement `ResolveInfo`, l'ownership map,
+  `DumpRenderTargets` et `RequestSwapTexture`; aucun reçu gameplay US ni PAL
+  n'est encore autorisé.
+
+Preuve : `reports/retail-us-compose-owner-runtime-20260826.md`.
+
+# Retail US 2026-08-26 — ResolveInfo statique borné
+
+- PROUVÉ STATIQUEMENT : `GetResolveInfo` sépare source EDRAM, destination
+  tuilée et plage de dump; aucun champ n'est synthétisé par AC6.
+- PROUVÉ STATIQUEMENT : `DumpRenderTargets` consomme exclusivement la carte
+  d'ownership puis écrit dans `edram_buffer_` avant la copie compute.
+- PROUVÉ STATIQUEMENT : la destination est réservée avant dispatch et marquée
+  GPU-écrite après dispatch, puis invalidée pour `RequestSwapTexture`.
+- PRÉPARÉ : marqueur `[ac6-resolve-info]` borné et read-only (8 puis 1/256),
+  activé par le harness render-summary.
+- PROCHAIN : un seul rebuild/runtime dans une session fraîche pour comparer la
+  première divergence aux frames US déjà capturées; pas de PAL avant gameplay.
+
+Preuve : `reports/retail-us-resolve-info-static-20260826.md`.
+
+# Retail US 2026-08-26 — runtime ResolveInfo/ownership
+
+- PROUVÉ : route diagnostique `85/85`, 24 captures, `game_status=0`, arrêt
+  propre et zéro fatal/trap avec le binaire `6b9c714a…e7b265`.
+- PROUVÉ : `[ac6-resolve-info]` et `[ac6-resolve-dump]` ont été émis ; chaque
+  échantillon de dump a `rectangles=1`, donc l'ownership vide est exclue.
+- PROUVÉ : D5B4 (`A1863AF658456A14` / `D5B4F4A878949938`) persiste aux samples
+  2460–2640 ; le monde reste noir (`world_center_mean=0`).
+- PROCHAIN : observer `RequestSwapTexture` → `LoadTextureData` avec le cvar
+  borné `ac6_log_swap_texture`.
+
+Preuve : `reports/retail-us-resolve-info-runtime-20260826.md`.
+
+# Retail US 2026-08-26 — chargement de la texture de swap qualifié
+
+- PROUVÉ : rebuild/relink sans codegen, validation pass, binaire
+  `bf80b852…cca56a0a`.
+- PROUVÉ : 85/85 opérations, 24 captures, arrêt propre, statut 0, zéro
+  fatal/trap et panneau hôte absent.
+- PROUVÉ : fetch swap stable (`1280×720`, format 6, base `0x1AB60000`) et
+  statut `ok`.
+- PROUVÉ : chaque échantillon texture est `prepared → commit-ok`, plage
+  `0x1AB60000+0x398000`, invalidation `outdated=0x1→0`.
+- RÉFUTÉ : sélection de texture, watches/invalidation et chargement résident
+  comme causes suffisantes du monde noir.
+- PROUVÉ : la transition HSM arrive pendant des frames encore chargées ; la
+  chute après `0x822E71A0` est postérieure au premier noir.
+- PROCHAIN : qualification statique du contenu/producteur des surfaces
+  intermédiaires `0x1C191000`/`0x1B9C0000` avant `0x1AB60000`, puis un seul
+  correctif/runtime si une branche fautive est prouvée.
+
+Preuve : `reports/retail-us-texture-load-runtime-20260826.md`.
+
+# Retail US 2026-08-26 — sonde D5B4 reportée
+
+- ÉCHEC FERMÉ : le runtime de sonde a utilisé `bf80…a0a` après un faux rejet
+  du filtre D3D12 sur l'adresse `0x00d3d120`; aucune ligne D5B4 n'est probante.
+- CORRIGÉ : le filtre borne maintenant le texte des symboles (`31` tests),
+  sans changer la politique Vulkan-only.
+- PROUVÉ : installation actuelle `dce792bd…7691`, marqueur
+  `[ac6-d5b4-texture]` présent.
+- PROCHAIN : une seule route render-summary fraîche pour consommer la sonde;
+  aucun rebuild supplémentaire.
+
+Preuve : `reports/retail-us-d5b4-texture-runtime-20260826.md`.
+
+# Retail US 2026-08-27 — retry sonde D5B4 au point consommateur
+
+- PROUVÉ : binaire `dce792bd…7691`, route `85/85`, 24 captures, statut 0,
+  arrêt propre, zéro fatal/trap et panneau hôte absent.
+- PROUVÉ : les passes `[ac6-frontier-pass]` sont émises, mais ni le hash
+  pixel shader D5B4 (`D5B4F4A878949938`) ni la sonde `[ac6-d5b4-texture]`
+  n'apparaissent dans le log.
+- CORRIGÉ : la sonde read-only est déplacée juste après `Ac6FrontierPass`
+  lorsque `pixel_shader == kAc6D5b4PixelShader`, dans upstream et build.
+- PROCHAIN : un seul rebuild/relink puis une seule route fraîche ; aucun PAL
+  avant le reçu gameplay US.
+
+Preuve : `reports/retail-us-d5b4-texture-runtime-retry-20260827.md`.
+
+# Retail US 2026-08-27 — rebuild sonde D5B4 relocalisée
+
+- PROUVÉ : rebuild/relink ciblé sous cgroup, statut 0, sans nouvelle
+  génération C++.
+- PROUVÉ : validation statique pass, Vulkan/ReXGlue complet, SDL dummy, zéro
+  D3D12 et aucun `bin/bin`.
+- PROUVÉ : binaire installé `6db8d006…0768`, avec `[ac6-d5b4-texture]` et
+  `D5B4F4A878949938`; 32 tests ciblés passent.
+- PROCHAIN : une seule route `render-summary` fraîche dans une session
+  lourde séparée ; le reçu US gameplay n'est pas encore atteint.
+
+Preuve : `reports/retail-us-d5b4-texture-rebuild-20260827.md`.
+
+# Retail US 2026-08-27 — sonde texture D5B4 consommée
+
+- PROUVÉ : binaire `6db8d006…0768`, route `85/85`, 24 captures, arrêt propre,
+  statut 0, zéro fatal/trap et panneau hôte absent.
+- PROUVÉ : la sonde `[ac6-d5b4-texture]` produit 3 472 lignes ; les fetchs
+  D5B4 sont des textures tuilées format 20 (`k_DXT4_5`) avec `used_mask=0x1`.
+- NON RÉSOLU : les captures terminales restent HUD/radar sur monde noir
+  (`world_center_mean=0`), donc le reçu gameplay US manque encore.
+- PRÉPARÉ : ajout read-only de `RB_COLOR_MASK`, `normalized_color_mask`,
+  `is_rasterization_done` et `edram_mode` au prochain échantillon D5B4.
+
+Preuve : `reports/retail-us-d5b4-texture-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — rebuild observables masque/cible D5B4
+
+- PROUVÉ : rebuild/relink ciblé sous cgroup, sans génération C++ ; validation
+  statique pass, Vulkan/ReXGlue, SDL dummy, zéro D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé `24b8d603…9856`, 32 tests ciblés passés.
+- PROUVÉ : le marqueur D5B4 consigne désormais `RB_COLOR_MASK`,
+  `normalized_color_mask`, rasterisation et mode EDRAM.
+- PROCHAIN : une seule route `render-summary` fraîche dans une session lourde
+  séparée ; le reçu gameplay US manque encore.
+
+Preuve : `reports/retail-us-d5b4-target-mask-rebuild-20260827.md`.
+
+# Retail US 2026-08-27 — masque logique D5B4 fermé
+
+- PROUVÉ : runtime `24b8d603…9856`, 85/85, 24 captures, arrêt propre,
+  `game_status=0`, zéro fatal/trap.
+- PROUVÉ : 3 406 échantillons D5B4 ; tous `RB_COLOR_MASK=0xF`,
+  `normalized_color_mask=0xF`, rasterisation active, `edram=4`.
+- RÉFUTÉ : masque logique couleur et rasterisation comme causes suffisantes du
+  monde noir.
+- PROCHAIN : qualifier chemin Vulkan/render pass/attachements avec une sonde
+  read-only, puis corriger uniquement la première divergence prouvée.
+
+Preuve : `reports/retail-us-d5b4-target-mask-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — rebuild observables d’attachement hôte D5B4
+
+- PROUVÉ : rebuild/relink ciblé sous cgroup, statut 0, sans génération C++.
+- PROUVÉ : validation statique pass ; Vulkan/ReXGlue, SDL dummy, zéro D3D12,
+  `bin/bin` absent ; ctest 16/16 et suite Python 32/32.
+- PROUVÉ : binaire installé
+  `b6497489…45eaa` (37 713 112 octets), avec chemin Vulkan, clé render pass
+  et `depth_and_color_used` ajoutés au marqueur D5B4.
+- PROCHAIN : une seule route `render-summary` fraîche dans une session lourde
+  séparée pour qualifier l’attachement au premier frame noir.
+
+Preuve : `reports/retail-us-d5b4-host-target-rebuild-20260827.md`.
+
+# Retail US 2026-08-27 — échec startup avant D5B4
+
+- ÉCHEC FERMÉ : runtime `render-summary` avec
+  `b6497489…45eaa`, opération 2 (`type28=30` non atteint), après 119,7 s ;
+  `game_status=-9`, `clean_shutdown=false`, zéro fatal/trap.
+- PROUVÉ : 165 `PRESENT` seulement, tous sur le logo Bandai Namco ; aucun
+  `type28`, `selector44`, `state40`, frontier ou `[ac6-d5b4-texture]`.
+- PROUVÉ : capture d’échec sans panneau de diagnostic vert.
+- DÉCISION : la session ne qualifie pas le render pass/les attachements et ne
+  justifie aucun rebuild ; un retry startup borné reste prévu.
+
+Preuve : `reports/retail-us-d5b4-host-target-runtime-startup-failure-20260827.md`.
+
+# Retail US 2026-08-27 — qualification statique composition/world-content
+
+- QUALIFIÉ : les propriétaires composition `0x8234F0E8` et `0x8234F598` sont
+  reliés aux appels Resolve canoniques `0x82337CC4` et `0x8234D5F4` ; les corps
+  PPC générés ne forcent aucune destination.
+- QUALIFIÉ : `VulkanRenderTargetCache::Resolve` conserve la chaîne
+  `GetResolveInfo` → `DumpRenderTargets` → compute resolve et le marquage de la
+  plage après dispatch.
+- PRÉPARÉ : extension read-only du marqueur D5B4 aux bases/formats, pitch,
+  MSAA, viewport et scissor ; aucune nouvelle génération ni runtime dans cette
+  session.
+
+Preuve : `reports/retail-us-compose-world-content-static-qualification-20260827.md`.
+
+# Retail US 2026-08-27 — relink sonde composition/world-content
+
+- PROUVÉ : build/relink sous cgroup terminé avec statut 0, sans nouvelle
+  génération C++ ; `generated/sources.cmake` réutilisé.
+- PROUVÉ : validation statique `16/16`, Vulkan/ReXGlue, SDL dummy, zéro D3D12
+  et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `43a35a00c3196874e00b474277df32ddd310754b0d83a6af3f1d19d0aa9e313a` avec la
+  sonde D5B4 étendue.
+- PROCHAIN : runtime unique dans une session lourde séparée ; le gameplay US
+  reste non validé et PAL fermé.
+
+Preuve : `reports/retail-us-compose-world-content-probe-relink-20260827.md`.
+
+# Retail US 2026-08-27 — runtime sonde composition/world-content
+
+- ÉCHEC FERMÉ DU REÇU : `85/85`, 24 captures, mais teardown
+  `clean_shutdown=false`, `game_status=-2`, zéro fatal/trap.
+- PROUVÉ : D5B4 garde la même cible/attachements avant et après le noir
+  (`color_base=0`, `depth_base=720`, pitch 640, MSAA 2×, render pass `0x8D`,
+  attachements `0x3`) ; les draws/resolves restent nombreux.
+- NON RÉSOLU : 3D visible à l'étape 77, monde noir avec HUD aux étapes 79/82/85.
+- PRÉPARÉ : readback borné de contenu final via `ac6_log_resolve_content` et
+  `--mission-resolve-content`.
+
+Preuve : `reports/retail-us-compose-world-content-probe-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — build sonde resolve-content
+
+- PROUVÉ : build/relink sous cgroup terminé avec statut 0 ;
+  `generated/sources.cmake` réutilisé, aucune génération C++.
+- PROUVÉ : validation statique `16/16`, Vulkan/ReXGlue, SDL dummy, zéro
+  D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `4f8142aa926ecb467d1743f6e2eb25ad05cc921ced7fc915a84dbcf1fa0784a` ; la
+  sonde read-only `ac6_log_resolve_content` couvre la plage finale
+  `0x1AB60000` par quatre fenêtres bornées.
+- PROCHAIN : runtime unique séparé avec `--mission-resolve-content`, puis
+  décision sur la première divergence de contenu. PAL reste fermé.
+
+Preuve : `reports/retail-us-resolve-content-probe-build-20260827.md`.
+
+# Retail US 2026-08-27 — runtime sonde resolve-content
+
+- PROUVÉ : `RESULT.json` est propre (`clean_shutdown=true`, `game_status=0`,
+  `85/85`, 24 captures) avec le binaire `4f8142aa…0784a`.
+- PROUVÉ : comparaison visuelle : cinématique 3D à l'étape 77, puis monde
+  noir avec HUD vert aux étapes 79/82/85 ; aucune interface de diagnostic hôte.
+- PROUVÉ : readback borné `0x1AB60000` riche avant la transition puis réduit à
+  `nonzero_bytes=3448`, `byte_sum=6108` pendant le HUD noir.
+- QUALIFIÉ : les `ResolveInfo` 160×90 alternent entre `0x1AB60000` et
+  `0x1B9C0000`; la couture restante est le choix/chargement de texture swap.
+- PROCHAIN : une trace runtime ciblée `--mission-swap-source-probe`, sans
+  rebuild ni génération C++, puis décision sur la première divergence.
+
+Preuve : `reports/retail-us-resolve-content-probe-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — sonde resolve double-target préparée
+
+- QUALIFIÉ : les logs `[ac6-swap-texture]` et `[ac6-texture-load]` confirment
+  la clé `0x1AB60000` et son rechargement après invalidation ; le readback
+  final devient quasi vide à la transition noire.
+- PRÉPARÉ : extension read-only de `ac6_log_resolve_content` à
+  `0x1B9C0000`, sans écriture invitée ni modification du resolve.
+- PROCHAIN : build/relink unique sous cgroup puis runtime séparé pour mesurer
+  les deux destinations. PAL reste fermé.
+
+Preuve : `reports/retail-us-resolve-content-dual-target-static-20260827.md`.
+
+# Retail US 2026-08-27 — build sonde resolve double-target
+
+- PROUVÉ : build/relink cgroup terminé avec statut 0 ; codegen existant
+  réutilisé, aucune nouvelle génération C++.
+- PROUVÉ : validation statique `16/16`, Vulkan/ReXGlue, SDL dummy, zéro
+  D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `9cf04b15637ea6c7924ce01d388006bc85111b4675858cd37cb548d70b7e06e9` ; la
+  sonde couvre désormais les destinations `0x1AB60000` et `0x1B9C0000`.
+- PROCHAIN : runtime unique séparé avec `--mission-resolve-content`, puis
+  décision sur la première divergence. PAL reste fermé.
+
+Preuve : `reports/retail-us-resolve-content-dual-target-build-20260827.md`.
+
+# Retail US 2026-08-27 — runtime sonde resolve double-target
+
+- PROUVÉ : `RESULT.json` propre (`clean_shutdown=true`, `game_status=0`,
+  `85/85`, 24 captures) avec le binaire `9cf04b15…e06e9`.
+- PROUVÉ : la cinématique 77 montre la 3D ; les captures 79/82/85 montrent le
+  monde noir et le HUD invité vert, sans diagnostic hôte.
+- QUALIFIÉ : les deux destinations `0x1AB60000` et `0x1B9C0000` sont alimentées
+  pendant la transition, mais `ac6-swap-texture`/`ac6-texture-load` présentent
+  toujours la clé 1AB ; 1AB devient quasi vide plus tard.
+- COUTURE À CORRIGER : le resolve compute utilise `Usage::kComputeWrite`, dont
+  `GetUsageMasks` associe actuellement l'accès Vulkan read au lieu de write.
+  Aucun override de destination ou de renderer n'est justifié.
+
+Preuve : `reports/retail-us-resolve-content-dual-target-runtime-20260827.md`.
+
+# Retail US 2026-08-27 — rebuild compute-write barrier
+
+- PROUVÉ : rebuild/relink cgroup terminé avec statut 0, sans nouvelle
+  génération C++ ; `generated/sources.cmake` réutilisé.
+- PROUVÉ : validation statique `16/16`, Vulkan/ReXGlue, SDL dummy, zéro
+  D3D12 et `bin/bin` absent.
+- PROUVÉ : binaire installé
+  `c159cbedb5b1f9f8cc661bf1f2ffbae5e7015035e329cd74a3911d293a1496e1`.
+- CORRIGÉ : `Usage::kComputeWrite` utilise désormais
+  `VK_ACCESS_SHADER_WRITE_BIT`, avec test source dédié 27/27.
+- PROCHAIN : une session runtime séparée avec la route qualifiée ; gameplay US
+  non validé et PAL fermé.
+
+Preuve : `reports/retail-us-compute-write-barrier-build-20260827.md`.
+
+# Retail US 2026-08-27 — runtime après correction compute-write
+
+- PROUVÉ : runtime unique terminé après `85/85`, 24 captures et
+  `xvfb_status=0`; `error` vide, zéro fatal/trap, journal jusqu'à
+  `Execution complete`.
+- QUALIFIÉ : `clean_shutdown=false`, `game_status=-9` correspond au teardown
+  post-route ; il ne s'agit pas d'une trap invitée et les captures restent
+  valides.
+- RÉFUTÉ : la correction du masque Vulkan `kComputeWrite` n'a aucun effet
+  visuel ; la cinématique `step-77` reste 3D et 79/82/85 restent HUD/radar sur
+  monde noir, sans panneau hôte.
+- QUALIFIÉ : les readbacks `0x1AB60000`/`0x1B9C0000` restent alimentés,
+  `0x1B9C0000` est intermédiaire, et le dernier resolve/swap est `0x1AB60000`.
+  Le propriétaire final est `0x8234F598` → `0x828C849C`; le gestionnaire
+  monde observe toujours ses phases objet/caméra/radio.
+- DÉCISION : fermer la piste swap-target et compute-barrier ; analyser
+  statiquement la composition host/resolve-copy et l'état shader monde avant
+  tout nouveau runtime. Gameplay US non validé, PAL fermé.
+
+Preuve complète : reports/retail-us-compute-write-barrier-runtime-20260827.md.
+
+# Retail US 2026-08-27 — runtime sonde ownership MSAA
+
+- PROUVÉ : binaire `a0e9ad827f6196425786081cf532bbabfe1ba2d535153e8c23cffac00d5fbd64`
+  relinké/validé avec la sonde read-only ; ctest 16/16 et suite Python 33/33.
+- PROUVÉ : 56 lignes `[ac6-rt-transfer]` montrent le chemin ownership Vulkan
+  actif (couleur base 0, `k1X`↔`k4X`, valeurs 0↔2), mais uniquement avant la
+  campagne; aucun `k2X`→`k1X` du rendu monde.
+- QUALIFIÉ : route interrompue à 55/85 après `campaign-intro`, sans
+  `ac6-campaign-transition` ni `PRESENT`; fermeture contrôlée, `game_status=0`,
+  `xvfb_status=0`, zéro fatal/trap. Pas de reçu gameplay.
+- DÉCISION : résultat négatif/inconclusif pour le monde noir ; aucune
+  modification de transfert. Le gate US et PAL restent fermés, prochaine
+  étape statique sur composition et état shader monde.
+
+Preuve complète : reports/retail-us-rt-transfer-probe-runtime-20260827.md.
+
+# Retail US 2026-08-27 — retry host-target D5B4
+
+- PROUVÉ : runtime `b6497489…45eaa`, route `85/85`, 24 captures, statut 0,
+  arrêt propre, zéro fatal/trap et panneau hôte absent.
+- PROUVÉ : 3424 échantillons D5B4 ; tous passent par le chemin Vulkan hôte
+  (`render_path=0`) avec render pass `0x8D`, attachements `0x3`, masques
+  couleur `0xF`, rasterisation et EDRAM actifs.
+- NON RÉSOLU : `step-77-mission-cinematic.png` conserve la 3D, mais les
+  captures 79/82/85 restent HUD/radar sur monde noir, `world_center_mean=0`.
+- DÉCISION : qualifier statiquement composition/world-content avant toute
+  nouvelle session lourde. PAL demeure fermé.
+
+Preuve : `reports/retail-us-d5b4-host-target-runtime-retry-20260827.md`.
+
+# Retail US 2026-08-26 — échec de handoff texture non causal
+
+- ÉCHEC FERMÉ : `retail-us-swap-texture-runtime-20260826` est resté sur le
+  prompt du premier hangar après l'appui A ; aucun crash ni fatal/trap.
+- PROUVÉ : 41 échantillons swap `status=ok`, clé finale inchangée.
+- CORRIGÉ PAR REPRISE : la route suivante franchit le hangar et atteint le
+  vol ; l'échec est classé timing d'entrée, pas régression graphique.
+
+Preuve : `reports/retail-us-swap-texture-runtime-20260826.md`.
+
+# Retail US 2026-08-27 — save/load roundtrip séparé
+
+- `run_save_experiment.py` crée un stockage isolé et conserve le conteneur
+  `SAVE` (`save.dat`, 129112 octets) sans écriture dans la mémoire invitée.
+- Le load-only r5 atteint les marqueurs `selector44=3`, `type28=6`,
+  `type28=8` et `type28=10`, avec 18/18 opérations, quatre PNG, arrêt propre
+  et zéro fatal/trap.
+- `step-17-save-load-complete.png` affiche `Set Autosave to ON?`; le profil
+  n'est toutefois pas encore un checkpoint Mission 01.
+
+Preuve complète : reports/retail-us-save-roundtrip-20260827.md.
+
+# Retail US 2026-08-27 — capture RenderDoc D5B4 fermée sans `.rdc`
+
+- ÉCHEC FERMÉ : la tentative unique `ac6-retail-us-renderdoc-cinematic-d5b4-20260827`
+  est restée avant `type28=30`; le worker vidéo a bouclé après les premières
+  présentations et le superviseur a retourné `124`.
+- PROUVÉ : aucun fatal/trap/SIGSEGV, aucune PNG et zéro `.rdc`; la session ne
+  qualifie ni D5B4/F556 ni l'attachement/resolve.
+- DÉCISION : ne pas répéter la capture identique. Fermer d'abord
+  statiquement la frontière d'injection/attente RenderDoc; gameplay US et PAL
+  restent fermés.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-20260827.md.
+
+# Retail US 2026-08-27 — injection RenderDoc différée non supportée sous Linux
+
+- ÉCHEC FERMÉ : la variante de lancement normal puis
+  `renderdoccmd inject` a atteint `cinematic-view-1` (72/96) mais l'outil
+  retourne `4`, avec le message d'injection dans un processus déjà lancé non
+  supportée sous Linux.
+- PROUVÉ : arrêt contrôlé, zéro fatal/trap et zéro `.rdc`; la ressource D5B4
+  et le point-list F556 restent non qualifiés.
+- DÉCISION : restaurer le wrapper de lancement RenderDoc et ne répéter aucun
+  des deux mécanismes sans outil Linux différent ou hypothèse causale nouvelle.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-injected-20260827.md.
+
+# Retail US 2026-08-27 — RenderDoc vsync désactivé sans `.rdc`
+
+- `--opt-disallow-vsync` lève le blocage initial : route `96/96`, 27 PNG,
+  arrêt propre, zéro fatal/trap.
+- `renderdoc/` contient zéro `.rdc`; D5B4/F556 et le resolve ne sont pas
+  observables dans cette session.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-vsync-20260827.md.
+
+# Retail US 2026-08-27 — RenderDoc F12 sans `.rdc`
+
+- La touche `F12` au point `cinematic-view-2` donne route `96/96`, 27 PNG,
+  `clean_shutdown=true`, `game_status=0`, `xvfb_status=0` et zéro fatal/trap.
+- Aucun `.rdc` n'est produit; la frontière RenderDoc Linux est fermée pour ce
+  gate et aucune analyse D5B4/F556 ne peut être revendiquée.
+
+Preuve complète : reports/retail-us-renderdoc-cinematic-d5b4-key-20260827.md.
+
+# Retail US 2026-08-27 — build sonde post-process ordonnée
+
+- Le fork qualifié contient déjà les corrections génériques candidates; la
+  divergence est restreinte à la chaîne plein écran entre 1B9C et 1AB6.
+- `ac6_log_postprocess_order` ne modifie aucun état et s'arrête après 30 frames
+  `cinematic=0, world=1`; il corrèle draws, fetches, constantes, resolves et
+  échantillons de contenu.
+- Rebuild/validation reçus : binaire `9890d13f…f0f`, 16/16 tests natifs,
+  Python 42/42, sorties lourdes avec marqueurs de statut 0.
+
+Preuve complète : reports/retail-us-postprocess-order-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — frontière de route avant sonde
+
+- `RESULT.json` : 2/85, erreur `log predicate not reached: type28=30`, sortie
+  superviseur 2, processus invité terminé par le runner, aucun fatal/trap.
+- La capture d'échec montre l'attract cinématique rendu; aucun marqueur
+  `[ac6-postprocess-*]` n'a été produit, donc aucune preuve renderer nouvelle.
+- Le routage statique est corrigé sans rebuild : la sonde autonome utilise les
+  96 opérations/27 captures scellées; suite Python 42/42.
+
+Preuve complète : reports/retail-us-postprocess-order-route-boundary-20260827.md.
+
+# Retail US 2026-08-27 — chaîne post-process ordonnée sur route 96
+
+- `artifacts/retail-us-postprocess-order-route96-runtime-20260827/RESULT.json` :
+  route `96/96`, 27 PNG, binaire `9890d13f…84f0f`, erreur vide, zéro
+  fatal/trap ; arrêt non propre isolé au teardown (`game_status=-9`).
+- Le log borne la chaîne `17E5 -> F59F -> 9982/0869/08DE -> 0311 -> HUD/UI ->
+  1AB6` sur 30 frames ; l'entrée `1B9C` et la sortie `1AB6` ne sont pas vides.
+- Les captures 81/84/87/90/93 restent HUD/radar sur fond noir : aucun reçu
+  gameplay.
+- L'ancien fallback qualifié `3ac747eb…ab2a` rend avions/terrain/ciel/eau à
+  l'étape 82 depuis la source `F59F tf0`; il borne la divergence en aval sans
+  constituer un correctif.
+- Le microcode désigne comme prochain observable minimal le facteur vertex
+  `2EF:tf19 -> o0.z` et les coefficients pixel `F59F:c100.z/w`.
+
+Preuve complète : reports/retail-us-postprocess-order-route96-runtime-20260827.md.
+
+# Retail US 2026-08-27 — validation sonde exposition finale
+
+- Les marqueurs build/validation/Python valent tous `0`; 16/16 tests natifs et
+  42/42 tests Python passent.
+- `static-validation.json` atteste ReXGlue/Vulkan, SDL dummy, zéro D3D12 et
+  `bin_bin_absent=true`.
+- `generated/sources.cmake` reste `c604796f…f72`, mtime 26 août : aucune
+  génération C++ supplémentaire.
+- Binaire qualifié : `687394ef…a63c` ; la sonde ne change aucun rendu.
+
+Preuve complète : reports/retail-us-final-compose-exposure-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — exposition `2EF/F59F` qualifiée
+
+- `RESULT.json` : diagnostic prêt, route `96/96`, 27 captures, arrêt propre,
+  binaire `687394ef…a63c`, erreur vide et zéro fatal/trap.
+- 31/31 draws : VS `c106=(0.25,0.5,0,0)`, PS `c100=(0,0,1,1)` ; aucune
+  extinction par coefficient.
+- 31/31 fetches vertex : `tf19=1C152000`, valide, 1×1, format 36
+  (`k_32_FLOAT`), tiled, `k8in32`.
+- La fonction d'exposition du microcode est positive pour toute entrée finie
+  non négative ; le mot brut du resolve reste l'observable minimal.
+- Inspection visuelle : capture 81, HUD vert sur monde noir, aucun gameplay.
+
+Preuve complète : reports/retail-us-final-compose-exposure-probe-runtime-20260827.md.
+
+# Retail US 2026-08-27 — validation readback exposition
+
+- Build, validation et tests Python ont chacun un marqueur de statut `0`.
+- 16/16 tests natifs et 42/42 tests Python passent.
+- `static-validation.json` : binaire `43fc9068…a5fbf`, ReXGlue/Vulkan, SDL
+  dummy, zéro D3D12, `bin_bin_absent=true`.
+- `sources.cmake` reste `c604796f…f72` : aucun codegen.
+
+Preuve complète : reports/retail-us-exposure-word-readback-build-20260827.md.
+
+# Retail US 2026-08-27 — mot d'exposition qualifié
+
+- L'essai initial ne franchit pas la fenêtre (`80/96`, 22 captures,
+  superviseur 2) et ne produit aucun marqueur exploitable.
+- La reprise strictement identique reçoit `96/96`, 27 captures,
+  `clean_shutdown=true`, jeu/Xvfb/superviseur à 0 et zéro fatal/trap.
+- Les 31 resolves `1C152000` décodent en floats finis positifs : min
+  `0.03347363323`, max `1.148323894`, moyenne `0.5740333768`.
+- Les 31 producteurs sont `EBCCC312988F6750/2662DA784858A2F4` ; avec les
+  constantes qualifiées, `2EF/F59F` conserve un facteur strictement positif.
+- Inspection visuelle : HUD/radar sur fond noir, aucun reçu gameplay.
+
+Preuve complète : reports/retail-us-exposure-word-readback-runtime-20260827.md.
+
+# Retail US 2026-08-27 — corrélation du slot readback préparée
+
+- Le runner qualifié active `--readback_resolve=fast`; l'index lu peut différer
+  de l'index écrit lors du resolve courant.
+- Les métadonnées producteur/layout sont stockées par slot et consommées avec
+  le même `read_index` que les octets Vulkan.
+- 576 pixels tiled/endian sont échantillonnés par resolve `1B9C` exact ; quatre
+  séries nonzero/somme/min/max permettront de distinguer couleur et noir.
+- `git diff --check` passe ; 37/37 tests ciblés passent. Build/runtime non faits.
+
+Preuve complète : reports/retail-us-1b9c-decoded-content-probe-static-20260827.md.
+
+# Retail US 2026-08-27 — validation build sonde `1B9C`
+
+- `build-exit-status.txt=0`, `167/167` ; `validate-exit-status.txt=0`.
+- Binaire exact `f9cd73ffa92e25f011e4f5c1fa8828ac327b2aad66ed22389e7879dfeae25ce1`.
+- `static-validation.json` : full ReXGlue Vulkan, SDL dummy, D3D12 `0`,
+  `bin_bin_absent=true`; installation plate.
+- `sources.cmake` SHA `c604796f…f72`, mtime 26 août ; codegen non exécuté.
+- `python-tests-exit-status.txt=0`, 42/42 tests.
+- Route 96 et sonde RGBA8 désormais autorisées pour le prochain runtime.
+
+Preuve complète : reports/retail-us-1b9c-decoded-content-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — contenu `1B9C` non noir
+
+- Le wrapper pré-créé échoue avant le jeu (`output exists`, superviseur 2) ;
+  la reprise identique seule est comptée : route `96/96`, 27 captures,
+  arrêt propre et zéro fatal/trap.
+- 128 lignes décodées `1B9C` sur 30 frames ; les passes de composition gardent
+  des RGB non nuls (exemple `2EF/F59F` : `576,576,576` non nuls).
+- L'image finale visible reste noire malgré HUD/radar ; le contenu brut `1AB6`
+  n'est pas encore décodé et ne peut pas être attribué causalement.
+
+Preuve complète : reports/retail-us-1b9c-decoded-content-probe-runtime-20260827.md.
+
+# Retail US 2026-08-27 — extension statique `1AB6`
+
+- Métadonnées producteur/layout séparées pour les deux adresses et leurs slots
+  `fast`, grille tiled/endian commune de 576 pixels.
+- `git diff --check` et tests Python ciblés conservés ; build/runtime à venir.
+
+Preuve complète : reports/retail-us-1ab6-decoded-content-probe-static-20260827.md.
+
+# Retail US 2026-08-27 — validation build sonde décodée `1AB6`
+
+- `build-exit-status.txt=0`, `167/167`; `validate-exit-status.txt=0`, 16/16
+  tests natifs.
+- Suite Python retail `python-tests-exit-status.txt=0`, `51/51` (`pytest -q
+  tests`).
+- `static-validation.json` : binaire `603f99da…7cbf1`, ReXGlue/Vulkan, SDL
+  dummy, zéro D3D12, `bin_bin_absent=true`; installation plate.
+- `generated/sources.cmake` reste `c604796f…f72`, sans génération C++ ; le
+  binaire contient le marqueur `[ac6-postprocess-decoded]`.
+- La route 96 `--mission-postprocess-order` est maintenant la seule mesure
+  runtime autorisée pour décoder les deux cibles.
+
+Preuve complète : reports/retail-us-1ab6-decoded-content-probe-build-20260827.md.
+
+# Retail US 2026-08-27 — route `1AB6` non qualifiée (startup timing)
+
+- `RESULT.json` : 22 captures, arrêt sur le prédicat
+  `cinematic=0 world=1 hud=1 stable=30`, superviseur 2, Xvfb 0, teardown
+  invité `-9`, zéro fatal/trap.
+- Le binaire validé `603f99da…7cbf1` a lancé correctement; aucune ligne
+  `[ac6-postprocess-decoded]` n'est présente, donc aucun octet `1AB6` n'est
+  attribué causalement.
+- `step-80-failure-observation.png` reste sur l'écran briefing; le retard
+  d'un écran est une frontière de chargement guest, pas une preuve de
+  divergence renderer.
+- Une reprise identique est autorisée après ce run avorté avant l'observable.
+
+Preuve complète : reports/retail-us-1ab6-decoded-content-probe-runtime-20260827.md.
+
+# Retail US 2026-08-27 — gameplay Mission 01 validé, shader boundary explicitée
+
+- PROUVÉ : le build/install Vulkan final (`d8b7b7b7…14fab8`) passe la
+  validation statique, 16/16 tests natifs et 51/51 tests Python ; `bin/bin`
+  est absent.
+- PROUVÉ : la route qualifiée `mission01-qualified-96.steps` est exécutée
+  96/96 (`771a77a8…b6043`), avec 27 captures, arrêt propre, zéro fatal/trap,
+  monde centre non noir (`mean=0.332281`, `nonblack_fraction=1.0`) et cinq
+  entrées de contrôle dépassant le seuil de différence.
+- PROUVÉ : le reçu et l'audit `ac6.retail-gameplay-audit.v2` sont à `pass` ;
+  le prédicat guest `cinematic=0 world=1 hud=1 stable=30` est atteint.
+- CORRIGÉ : le handoff final qualifié présente la source de composition
+  `0x1B9C0000` seulement lorsque le swap `0x1AB60000` est sparse, sous le couple
+  `2EF9631F6325FA91/F59F21F4A1E7843E`.
+- RÉSIDUEL EXPLICITE : ciel/eau écrêtés, avion/after-effects trop blancs et
+  artefacts de cinématique pré-mission persistent. Les fetchs BC3/D5B4 et
+  F556 ont image/vue/descripteur valides ; la texture absente est réfutée.
+  Cette parité fragment/éclairage/blend/post-process reste ouverte et aucun
+  clamp global n'est justifié.
+
+Preuve complète : reports/retail-us-gameplay-final-compose-20260827.md.
+
+# Retail US 2026-08-28 — run M01 autorisé, seed complet non concluant
+
+- Le seed `/tmp/ac6-cache-seed-v2-complete` contient `cache/` et
+  `cache-root/`, sans symlink ; preflight accepté.
+- Résultat borné : route v2 `2/96`, `status=fail`, timeout exact
+  `log predicate not reached: type28=30`, 0 capture, 0 fatal/trap,
+  `clean_shutdown=false`, `game_status=-9`, `xvfb_status=0`.
+- Le processus a bien sélectionné ReXGlue/Vulkan et présenté des frames ; la
+  phase n'a jamais dépassé `cinematic=0 world=0 hud=1 stable=0`.
+- Les deux XPSO comparés ont en-tête/version valides et zéro hash de
+  description invalide ; différence observée : 193 descriptions contre 164.
+- Aucun reçu gameplay v2, débrief, save/reload ou preuve missions 02–15 n'est
+  promu. `release_ready=false` reste inchangé.
+
+Preuve :
+`artifacts/retail-us-mission01-gameplay-v2-authorized-20260828/output/RESULT.json` ;
+analyse complète : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+## Gate M01 v2 — XPSO-164
+
+Le seed `/tmp/ac6-cache-seed-v2-xpso164` ne remplace que
+`4E4D07D1.fsi.vk.xpso` par la version 164 descriptions; XSH et GLCache restent
+identiques au seed complet. Le reçu
+`artifacts/retail-us-mission01-gameplay-v2-xpso164-20260828/output/RESULT.json`
+atteste `96/96`, 27 captures, `cinematic=0 world=1 hud=1 stable=30`, centre
+non noir, arrêt propre et zéro fatal/trap. Les cinq captures de contrôle ont
+exactement 0 pixel différent. Conclusion: les 29 descriptions XPSO
+supplémentaires ne causent pas le timeout startup et ne ferment pas le gate
+contrôles.
+
+## Reverse entrée — Linux
+
+Le binaire installé est un ELF x86-64 PIE, non setuid; chaînes cvar et
+marqueurs de phase présentes. Le code custom `ac6_kbm_input.cpp` utilise
+`GetAsyncKeyState` sous `#if defined(_WIN32)` et est désactivé par défaut. Le
+driver MnK stock ReXGlue expose W/S (pitch), A/D (roulis), Q/F (épaules), LMB
+(accélération) et RMB (frein). La route v2 est alignée sur ces touches et
+attend 15 s avant `Escape`, SHA courant
+`44c7cac85dba7f7dad42453f7232a1e5c3f44798c9f74bc5e404626d27dcc8a9`.
+
+Le contrôle borné avec `REX_AC6_KBM_ENABLED=true` journalise la désactivation
+de `mnk_mode`, mais aucune injection Linux; il expire à l'étape 2. La voie
+KBM custom est donc exclue du produit Linux. Le prochain signal discriminant
+est le paquet MnK stock consommé pendant `FlightActive`, par statique ou une
+trace unique bornée.
+
+## Gate M01 v2 — settle stock post-cinématique (28 août 2026)
+
+La route courante ajoute un settle de 15 s après l'appui `Space` avant
+`Escape`, d'après la route historique dont les contrôles produisaient des
+différences; hash `44c7cac85dba7f7dad42453f7232a1e5c3f44798c9f74bc5e404626d27dcc8a9`.
+Les tests de forme passent. Le run dédié avec seed complet échoue au startup
+(`executed_steps=2`, `type28=30` absent, `257,571 s`, zéro capture, zéro
+fatal/trap):
+`artifacts/retail-us-mission01-gameplay-v2-stock-settle15-20260828/output/RESULT.json`.
+
+Le run distinct complet + route hash précédent a atteint la frontière
+`96/96`, `cinematic=0 world=1 hud=1 stable=30`, monde non noir et 27 captures,
+mais `control_changed_pixels` reste nul pour les cinq actions:
+`artifacts/retail-us-mission01-gameplay-v2-stock-complete193-20260828/output/RESULT.json`.
+La capture `artifacts/retail-us-mission01-gameplay-v2-stock-route-20260828/output/step-40-language.png`
+montre le menu Campagne/New Game/Normal demandé par l'utilisateur. Le gate
+M01 v2 n'est pas promu; débrief/save et missions 02–15 restent fermés.
+
+# Retail US 2026-08-28 — limite trace GDB
+
+- Une tentative unique a lancé le même binaire comme enfant GDB pour éviter
+  `ptrace_scope`; le breakpoint `MnkInputDriver::GetState` était installé.
+- ÉCHEC OUTIL : `SIGSEGV` guest à `rex_sub_821E4378` avant tout hit, route
+  `1/96`, environ 10 s; reçu
+  `artifacts/retail-us-mission01-mnk-gdb-start-20260828/output/RESULT.json`.
+- DÉCISION : aucun état MnK n'est inféré; le mode GDB perturbateur est
+  abandonné. La preuve active reste la chaîne statique US
+  `GetState -> XAM -> 0x8234CEB8 -> 0x8234CE40/CC38`.
+
+# Retail US 2026-08-28 — consommateur MnK stock qualifié statiquement
+
+- IDENTITÉ : `ghidra-projects/ac6-us` / `default.xex`, XEX
+  `6eefba42…67cbbbc`; aucune preuve PAL/démo.
+- STATIQUE : `MnkInputDriver::GetState` remplit `buttons`, `LT/RT`,
+  `LX/LY/RX/RY`; XAM appelle `InputSystem::GetState` et conserve ces huit
+  champs. Le guest `0x8234CEB8` transmet `r31+68` à `0x82390CE0` (LR
+  `0x8234CEE0`), puis `0x8234CE40` consomme les sticks et
+  `0x8234CC38` les triggers.
+- RUNTIME BORNÉ : le logger positif (`…stock-input-log-positive-route…`) fait
+  96/96, arrêt propre, LR XAM et boutons; il n'enregistre pas les axes. Le
+  record longstart n'a pas publié de fichier; l'attach GDB est refusé par
+  `ptrace_scope`. Aucun de ces essais ne promeut le gameplay.
+- DÉCISION : le premier consommateur n'est plus une hypothèse ouverte. La
+  prochaine preuve doit seulement corréler paquet stock non nul, heartbeat de
+  vol et image visuelle; pas d'injection Linux, guest write, A/B ou hack global.
+
+Preuve : `reports/retail-us-mission01-gameplay-candidate-20260828.md`.
+
+# Retail US 2026-08-28 — trace packet stock bornée non concluante
+
+- Session unique read-only au wrapper XAM, binaire `c225f5e6…fc08923`, route
+  historique `6ef77bef…14dac4b`, seed positif, `SDL_AUDIODRIVER=dummy`, cgroup
+  `ac6-retail-us-m01-inputstate-log-20260828`.
+- Reçu
+  `artifacts/retail-us-mission01-stock-input-state-log-positive-route-20260828/output/RESULT.json`:
+  `status=fail`, `2/96`, `249,431 s`, `type28=30` absent, capture cinématique
+  unique, `clean_shutdown=false`, `game_status=-9`, zéro fatal/trap.
+- Journal: deux sites XAM (`0x8234CFA4`, `0x8234CEE0`), zéro ligne
+  `xinput user=... state`, zéro axe/trigger/heartbeat de vol; phases seulement
+  `world=0` puis `hud=1 stable=0`.
+- Conclusion : fenêtre fermée sans signal packet; pas de répétition identique,
+  pas de patch renderer et aucune promotion gameplay.
+
+# Retail US 2026-08-28 — instrumentation host réfutée, baseline propre échoue
+
+- Le probe host-side a été exécuté une fois avec `68090b0494f42de96b4b8a5784216ce0c26df3bcd74741f5c74c15c5356919c7`:
+  `2/96`, `253,028 s`, `PRESENT=1829`, aucune ligne packet host et capture
+  noire 1-bit; `type28=30` absent, `clean_shutdown=false`, `game_status=-9`,
+  zéro fatal/trap. Reçu :
+  `artifacts/retail-us-mission01-stock-input-host-log-positive-route-20260828/output/RESULT.json`.
+- La qualification statique explique cette absence : le stock
+  `InputSystem::GetState` retourne `0x48F` sans device; le wrapper guest
+  `0x82390CE0` écrit alors lui-même le paquet de 16 octets. Le probe host ne
+  couvre donc pas le paquet synthétique.
+- Le patch host a été retiré du working copy ignoré. Rebuild/validate propre :
+  SHA installé `a279d55180226496b4d2b70194e13a71e122a678d87842944db7e7cc50c2c95c`,
+  37 803 744 octets, `validate.py=0`, `bin/bin` absent.
+- La baseline propre, même route/seed, reproduit la frontière :
+  `2/96`, `250,685 s`, `PRESENT=1863`, phase `world=0/hud=1`, capture
+  cinématique 375 704 octets, `type28=30` absent, arrêt forcé, zéro fatal/trap.
+  Reçu :
+  `artifacts/retail-us-mission01-baseline-clean-positive-route-20260828/output/RESULT.json`.
+- La cause « instrumentation » est réfutée. Aucun nouveau runtime identique;
+  poursuivre par statique sur `stock/cache/état -> type28`, puis seulement une
+  frontière runtime réellement différente si une hypothèse causale subsiste.
+
+# Retail US 2026-08-28 — cache chaud XPSO-193
+
+- Test unique d'une hypothèse distincte : seed `stock-complete193` (193
+  descriptions XPSO), baseline `a279d551…c95c`, route historique
+  `6ef77bef…dac4b`, Vulkan, `SDL_AUDIODRIVER=dummy`, fenêtre 900 s,
+  cgroup `ac6-retail-us-m01-warmcache193-a279-20260828`.
+- Reçu :
+  `artifacts/retail-us-mission01-warmcache193-a279-20260828/output/RESULT.json`.
+  Progression `96/96`, `PRESENT=16046`, `type28=94`, phases
+  `cinematic=0 world=1 hud=1 stable=30` puis `world=0/hud=1`; 20 captures.
+  Le cache a été effectivement consommé (`Created 193 graphics pipelines`) et
+  a ajouté un 194e record.
+- Limites : monde 3D non noir mais très surexposé; captures de vol
+  étapes 77/79/80/84/87/90/93/96 identiques; cinq contrôles à zéro pixel.
+  Reçu `status=fail`, `clean_shutdown=false`, `game_status=-11`,
+  `xvfb_status=0`, aucun fatal/trap. Le log contient la séquence de fermeture
+  (`Window closing`, audio arrêté, `TerminateTitle`, `Execution complete`),
+  donc le `-11` est post-teardown observable et non localisé au guest.
+- Conclusion : cache chaud = précondition de progression startup, pas preuve
+  de parité renderer/input ni d'arrêt propre. Pas de répétition identique;
+  analyse statique requise sur focus/événements, durée de vie teardown et
+  producteur postprocess.
+# Retail US 2026-08-28 — parcours original + XAM stock
+
+- Hypothèse bornée : le parcours `mission01-qualified-96.steps` pourrait
+  laisser la simulation interactive; baseline `a279d551…c95c`, cache chaud
+  `stock-complete193`, logger `--mission-stock-input-log`, cgroup
+  `ac6-retail-us-m01-route-original-inputlog-20260828`, fenêtre 900 s.
+- Reçu :
+  `artifacts/retail-us-mission01-route-original-inputlog-20260828/output/RESULT.json`;
+  `diagnostic-capture-ready`, `96/96`, arrêt propre, `11717 PRESENT`,
+  `94 type28`, phase stable `cinematic=0 world=1 hud=1`, zéro fatal/trap.
+- Au seam XAM `0x82390CE0`, LR `0x8234CFA4`/`0x8234CEE0`, les boutons
+  `A=0x1000`, `START=0x0010`, `LB=0x0100` apparaissent. Le logger ne lit pas
+  les axes/triggers; les images de vol varient mais ne prouvent pas une
+  causalité d'entrée.
+- Décision : la perte totale des événements GTK/X11 est réduite pour le chemin
+  boutons/XAM, sans promotion du contrôle de vol ni du renderer. Ne pas
+  répéter; statique restante = `FlightActive`, producteur postprocess et
+  teardown `-11`.
+
+# US full-native Linux — profil cible et reprise 2026-08-29
+
+- Identités XDVDFS US qualifiées et bornées dans
+  `analysis/oracle/ac6-recomp-ab90b-us/content-identity.json`; aucun octet
+  retail n'est committé.
+- `RetailTarget` sépare désormais PAL et NTSC-U/J dans l'importeur, les médias,
+  frontend, campagne, monde, session et caches.
+- Build Linux/Ninja, 4 tests CTest pertinents (2 fixtures ignorées), 28 tests
+  Python (11 sous-tests) et boundary audit natif passent. L’audit de cache
+  accepte désormais le profil `ntsc-uj` et conserve la compatibilité PAL.
+- Le gate retail M01 reste `gameplay_pass=false` : la prochaine fenêtre runtime
+  doit encore qualifier input `FlightActive`, monde/HUD et teardown en une seule
+  exécution bornée.
+
+# Retail US 2026-08-30 — scène/HUD et postprocess
+
+- Rapport : `reports/retail-us-hud-layer-compose-20260830.md`.
+- Run discriminant cache 193 :
+  `artifacts/retail-us-hud-pre-gamma-warm193-runtime-20260830/`, route 96/96,
+  monde `mean=0,996537`, HUD vert `0,0`, cinq deltas `180786`.
+- Rollback validé :
+  `artifacts/retail-us-hud-pre-gamma-rollback-build-20260830/`, build/validate
+  statuts 0, 54 tests Python, installation plate.
+
+# Retail US 2026-08-30 — frontière `1B9C → 0311`
+
+- `1AB6` décodée contient le HUD clairsemé sur une scène déjà noire ; l’ordre
+  guest est `0311`, HUD/UI, resolve final. Le HUD n’est pas écrasé.
+- Run refresh propre, cache 193 et route originale 96/96 : `8418 prepared`,
+  `2911 clean`, une clé 1280×720/pitch 1280/format 6. L’absence de reload est
+  réfutée.
+- Fetch qualifié : F59F/0311 partagent adresse, format, endian, swizzle, signe
+  et mip ; seule différence utile, filtrage point contre linéaire.
+- A/B unique `0311 → point` : 96/96, teardown propre, scène toujours noire.
+  Override retiré ; rollback build/validate 0, 54 tests, binaire
+  `15a7f5c894894d0214eaa4f462396613c744f781cf73d8548845a7c90ec2a291`.
+- Prochaine preuve : texels de l’image host après upload `1B9C`, avant `0311`.
+- Le fallback host combiné est absent de la source courante.

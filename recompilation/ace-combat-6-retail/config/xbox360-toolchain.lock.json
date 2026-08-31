@@ -1,0 +1,44 @@
+{
+  "schema": "ac6.xbox360-toolchain-lock.v1",
+  "purpose": "Gate 0 static tooling only; no tool is a product dependency.",
+  "tools": {
+    "XenonRecomp": {
+      "repository": "https://github.com/hedge-dev/XenonRecomp.git",
+      "commit": "ddd128bcca99fe8bfbb99bea583c972351fa6ace",
+      "checkout": ".tools/xenonrecomp-source/XenonRecomp",
+      "checkout_root": "portfolio root",
+      "submodules": {
+        "thirdparty/fmt": "873670ba3f9e7bc77ec2c1c94b04f1f8bef77e9f",
+        "thirdparty/libmspack": "305907723a4e7ab2018e58040059ffb5e77db837",
+        "thirdparty/simde": "a532a12ca9bbdc5e6547eb602e6256b71a5377d4",
+        "thirdparty/tiny-AES-c": "23856752fbd139da0b8ca6e471a13d5bcc99a08d",
+        "thirdparty/tomlplusplus": "c4369ae1d8955cae20c4ab40b9813ef4b60e48be",
+        "thirdparty/xxHash": "2bf8313b934633b2a5b7e8fd239645b85e10c852"
+      },
+      "status": "clean-detached"
+    },
+    "XenosRecomp": {
+      "repository": "https://github.com/hedge-dev/XenosRecomp.git",
+      "commit": "990d03b28a27b50277ee5d8d942e1c5f873869d1",
+      "checkout": ".tools/xenosrecomp-source/XenosRecomp",
+      "checkout_root": "portfolio root",
+      "submodules": {
+        "thirdparty/dxc-bin": "737ac9f51c3d06f0cd1ee7e14dc065bafd52310d",
+        "thirdparty/fmt": "873670ba3f9e7bc77ec2c1c94b04f1f8bef77e9f",
+        "thirdparty/smol-v": "9dd54c379ac29fa148cb1b829bb939ba7381d8f4",
+        "thirdparty/xxHash": "2bf8313b934633b2a5b7e8fd239645b85e10c852",
+        "thirdparty/zstd": "f7a8bb1263448e5028aceeba606a08fe3809550f"
+      },
+      "status": "clean-detached"
+    }
+  },
+  "architecture_catalog": {
+    "path": ".tools/knowledge-base/architecture-v1/catalog.json",
+    "status": "absent; no generic claims derived"
+  },
+  "product_boundary": {
+    "generated_cpp": "ignored build working copy only",
+    "oracle_dependency": false,
+    "retail_media_tracked": false
+  }
+}
