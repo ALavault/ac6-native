@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md`;
@@ -84,9 +85,16 @@ refusé, besoin d'une source externe vérifiée. **r98** a tracé `0x45`
 structure = `INVALIDATE_STATE`) depuis le code réel, et les a implémentés
 en suivant des précédents établis (pas devinés). Vérifié par test unitaire
 mais sonde vivante INCHANGÉE — le décodage bute toujours sur le prédicat
-(r97) avant d'atteindre ces opcodes. **Le prédicat est maintenant le seul
-blocage vivant restant** sur ce tampon. Identité du nouvel objet bloqué
-(r94) toujours non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
+(r97) avant d'atteindre ces opcodes. **r99** a tracé les deux paquets
+prédiqués jusqu'à leur construction réelle : `DRAW_INDX_2` — bit constante
+figée; `WAIT_REG_MEM` — bit GENUINEMENT conditionnel, chemin prédiqué lit
+`object+0x2a94`/`0xBADF00D` (exactement les champs du callback imbriqué
+r87/r88), branche alternative retourne directement dans `sub_821E63F0`
+(le gestionnaire d'interruption déjà désassemblé). **Le prédicat rejoint
+donc la lacune callback d'interruption déjà documentée (r85-r89), pas une
+inconnue indépendante** — ceci renforce le refus r97 de deviner. Toujours
+aucun correctif implémenté. Identité du nouvel objet bloqué (r94) toujours
+non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
 (r79/r93) et la piste `sub_821E65B0` sont hors de propos — ils
 caractérisaient l'ANCIEN blocage, résolu en r94.
 

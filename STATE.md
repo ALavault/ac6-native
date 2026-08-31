@@ -1,3 +1,38 @@
+# AC6 retail NTSC-U/J — r99 : le prédicat rejoint la lacune callback d'interruption déjà connue, pas une inconnue indépendante (2026-09-01)
+
+- TRACÉ les DEUX paquets prédiqués du tampon jusqu'à leur site de
+  construction réel (`FindInstructionScalar.java`, pas deviné) :
+  `DRAW_INDX_2` (`0x821e14a0`, `Function_821E1248`) — bit prédicat CONSTANTE
+  figée à la compilation, jamais calculée à ce site. `WAIT_REG_MEM`
+  (`0x821e637c`, `Function_821E6280`, MÊME cluster 0x821E6xxx que
+  `sub_821E60A8`) — bit prédicat GENUINEMENT conditionnel (`rlwinm.
+  r10,r5,0,0x1d,0x1d; beq` sur bit 2 de l'argument r5), et le chemin
+  prédiqué lit `object+0x2a94` et compare contre `0xBADF00D` — EXACTEMENT
+  les champs du callback imbriqué déjà caractérisés r87/r88. La branche
+  alternative (drapeau clair) retourne immédiatement; l'instruction
+  SUIVANTE est l'entrée de `sub_821E63F0` lui-même (le gestionnaire
+  d'interruption déjà entièrement désassemblé r87/r88).
+- CONCLUSION : ce n'est PAS deux occurrences indépendantes de prédication
+  matérielle — le chemin `WAIT_REG_MEM` prédiqué est directement lié à la
+  lacune callback d'interruption déjà documentée sur cinq cycles
+  (r85-r89) : stub natif no-op, callback jamais invoqué, pointeur
+  imbriqué nul par conception. **Ceci renforce, plutôt qu'il ne résout,**
+  le refus r97 de deviner — un correctif "prédicat toujours vrai" risque
+  maintenant d'interagir mal avec cette lacune déjà connue, pas seulement
+  de deviner une sémantique matérielle isolée.
+- DÉCISION : toujours aucun correctif de prédicat implémenté. Aucun
+  changement de code natif ce cycle.
+- OUVERT, deux options plus précisément cadrées que r97 : (1) tracer
+  l'appelant de `Function_821E6280` pour voir ce qui détermine le bit 2 de
+  r5 et s'il corrèle avec l'enregistrement du callback déjà confirmé
+  (r87) — question statique bornée, pas une supposition matérielle;
+  (2) le bit prédicat de `DRAW_INDX_2`, constante figée sans condition
+  calculée à son site, est le plus sûr des deux si un correctif étroit
+  spécifique à cet opcode est voulu — mais n'unbloquerait pas seul le
+  tampon (`WAIT_REG_MEM` prédiqué apparaît plus loin, non résolu).
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md`.
+
 # AC6 retail NTSC-U/J — r98 : opcodes 0x45/0x46 implémentés depuis code réel vérifié; le prédicat reste le blocage vivant (2026-09-01)
 
 - TRACÉ (méthode `FindInstructionScalar.java`, PAS deviné) : `0x45` —

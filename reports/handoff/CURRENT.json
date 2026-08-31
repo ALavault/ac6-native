@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md",

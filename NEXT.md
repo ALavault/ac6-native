@@ -98,8 +98,25 @@ compteur injecté ou fallback ReXGlue.
    étant plus loin dans le flux — correctif correct et vérifié, mais sans
    effet observable tant que la question du prédicat n'est pas résolue.
    **Le prédicat (r97) reste donc le SEUL blocage vivant restant** sur ce
-   tampon. Voir
-   `reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md`.
+   tampon. **r99 a tracé les DEUX paquets prédiqués jusqu'à leur
+   construction réelle** : `DRAW_INDX_2` — bit constante figée, jamais
+   calculée. `WAIT_REG_MEM` — bit GENUINEMENT conditionnel (bit 2 d'un
+   argument), et le chemin prédiqué lit `object+0x2a94`/compare
+   `0xBADF00D` — EXACTEMENT les champs du callback imbriqué r87/r88; la
+   branche alternative retourne directement dans `sub_821E63F0` (le
+   gestionnaire d'interruption déjà désassemblé). **Ce n'est pas deux
+   occurrences indépendantes de prédication — le prédicat rejoint
+   directement la lacune callback d'interruption déjà documentée sur cinq
+   cycles (r85-r89).** Ceci RENFORCE le refus r97 de deviner : un
+   correctif "toujours vrai" risquerait d'interagir mal avec cette lacune
+   connue, pas seulement de deviner une sémantique isolée. Toujours aucun
+   correctif implémenté. **Prochain cycle, options plus précisément
+   cadrées** : (1) tracer l'appelant de `Function_821E6280` pour voir ce
+   qui détermine le bit 2 de r5, et s'il corrèle avec l'enregistrement du
+   callback déjà confirmé (r87) — question statique bornée; (2) un
+   correctif étroit spécifique à `DRAW_INDX_2` seul (bit constant, plus
+   sûr) — mais n'unbloquerait pas seul le tampon. Voir
+   `reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md`.
    L'identité du nouvel objet bloqué `sub_821E6AC8`/`sub_821F03B0` (r94)
    reste aussi non lue. Le passage sur les 76 sites d'appel de
    `sub_821E60A8` (r79, r93) et la piste `sub_821E65B0` sont hors de
