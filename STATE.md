@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — r97 : sémantique de prédicat a besoin d'une source externe; 2 blocages + 257 paquets non implémentés cartographiés (2026-09-01)
+
+- CARACTÉRISÉ (pas de code modifié, cycle d'investigation délibéré) : sur
+  les 281 paquets TYPE3 du tampon `0x125c0000` déjà capturé (r96), SEULS
+  2 portent le bit prédicat (`DRAW_INDX_2`=0x36 offset 239,
+  `WAIT_REG_MEM`=0x3c offset 294) — TOUS DEUX déjà des opcodes
+  implémentés. Le premier opcode VRAIMENT inconnu (`0x46`) apparaît
+  seulement à l'offset 400, après les deux paquets prédiqués; `0x45` se
+  répète ensuite 257 fois — l'échelle réelle du travail restant.
+- REFUSÉ DE DEVINER : `grep -rn "predicat"` ne trouve QU'UN SEUL résultat
+  dans tout le code — le message de rejet lui-même. Aucun registre de
+  prédicat, aucun drapeau d'activation, aucun état de requête
+  d'occlusion. Le test préexistant (avant cette session) valide
+  explicitement ce rejet comme comportement correct — lecture d'un choix
+  délibéré, pas un oubli. La règle plausible ("prédicat jamais activé →
+  exécuter sans condition", cohérente avec les conventions PM4/CP
+  générales) N'EST PAS vérifiée contre ce code, ce contenu, ou une
+  documentation Xenos citée dans cet espace de travail — deviner ici
+  risquerait une corruption VISUELLE SILENCIEUSE (pire que le rejet
+  bruyant actuel), exactement le type de règle non contrôlée que la
+  discipline du projet refuse. Politique oracle du projet : "non" pendant
+  toute la campagne.
+- OUVERT, deux options indépendantes, aucune ne dépend de l'autre :
+  (1) obtenir une source vérifiée pour la sémantique de prédicat PM4
+  Xenos, correctif alors étroit (`native_xenos.cpp:169-171`); (2) étudier
+  les opcodes `0x45`/`0x46` (257+1 paquets) depuis le désassemblage
+  invité réel — cible probablement plus haute valeur, et sans le risque
+  de corruption silencieuse (un opcode non implémenté échoue bruyamment).
+- Aucun changement de gate mission01/ctest ce cycle (pas de code natif
+  modifié).
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md`.
+
 # AC6 retail NTSC-U/J — r96 : registre Xenos élargi depuis contenu réel; TYPE3 prédicat nommé comme prochaine lacune (2026-09-01)
 
 - SCANNÉ (méthode vérifiée) : dump GDB complet du tampon indirect

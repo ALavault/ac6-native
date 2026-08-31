@@ -65,12 +65,25 @@ compteur injecté ou fallback ReXGlue.
    devinée), couvre le besoin observé avec marge. **Vérifié en direct** :
    rejet de plage de registres disparu; publication d'anneau avance de
    31 à 37 dwords (record de progression) avant un NOUVEAU rejet distinct,
-   délibéré : `predicated TYPE3 packets are not supported` — sémantique
-   d'exécution prédiquée non implémentée, travail de fonctionnalité réel,
-   pas un bug. **Prochain cycle : implémenter l'exécution prédiquée des
-   paquets TYPE3** (lire le registre/drapeau de prédicat que le décodeur
-   suit déjà, déterminer la sémantique saut-vs-exécution correcte). Voir
-   `reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md`.
+   délibéré : `predicated TYPE3 packets are not supported`. **r97 a
+   caractérisé ce rejet sans deviner de correctif** : seuls 2 des 281
+   paquets TYPE3 du tampon portent le bit prédicat (`DRAW_INDX_2`,
+   `WAIT_REG_MEM` — tous deux déjà implémentés); le premier opcode
+   VRAIMENT inconnu (`0x46`) n'apparaît qu'à l'offset 400, après les deux
+   prédiqués; `0x45` se répète ensuite 257 fois. Aucune infrastructure de
+   prédicat n'existe dans ce code (`grep` : un seul résultat, le message
+   de rejet lui-même); un test préexistant valide ce rejet comme
+   délibéré. Deviner la sémantique matérielle risquerait une corruption
+   visuelle SILENCIEUSE — refusé, besoin d'une source externe vérifiée
+   (politique oracle du projet : "non" toute la campagne). **Prochain
+   cycle, deux options indépendantes** : (1) obtenir une source Xenos PM4
+   vérifiée pour le prédicat, correctif alors étroit
+   (`native_xenos.cpp:169-171`); (2) **probablement plus haute valeur** :
+   étudier les opcodes `0x45`/`0x46` (257+1 paquets, la majorité du
+   contenu) depuis le désassemblage invité réel — sans le risque de
+   corruption silencieuse (échec bruyant, pas une exécution incorrecte).
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md`.
    L'identité du nouvel objet bloqué `sub_821E6AC8`/`sub_821F03B0` (r94)
    reste aussi non lue. Le passage sur les 76 sites d'appel de
    `sub_821E60A8` (r79, r93) et la piste `sub_821E65B0` sont hors de

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r95-decode-error-hex-fixed-register-range-named-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r94-double-endian-swap-fixed-main-thread-unblocked-20260901.md`;
@@ -70,9 +71,16 @@ propre 371 TYPE0+281 TYPE3) : registre maximum réel `0x5002`. Corrigé :
 `XenosState::kRegisterCount` `0x4000`→`0x8000` (borne dérivée du format
 `low_register_of`, pas devinée). Vérifié en direct : rejet disparu,
 publication d'anneau avance à 37 dwords (record) avant un nouveau rejet
-délibéré : `predicated TYPE3 packets are not supported` — travail de
-fonctionnalité réel, prochain cycle. Identité du nouvel objet bloqué (r94)
-toujours non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
+délibéré : `predicated TYPE3 packets are not supported`. **r97** a
+caractérisé ce rejet SANS deviner de correctif : seuls 2/281 paquets TYPE3
+portent le bit prédicat (opcodes déjà implémentés); le premier opcode
+vraiment inconnu (`0x46`) n'apparaît qu'après, puis `0x45` se répète 257
+fois. Aucune infrastructure de prédicat n'existe dans ce code; deviner la
+sémantique matérielle risquerait une corruption visuelle silencieuse —
+refusé, besoin d'une source externe vérifiée. Prochain : soit une source
+Xenos PM4 vérifiée, soit (probablement plus haute valeur) étudier les
+opcodes `0x45`/`0x46` depuis le désassemblage invité. Identité du nouvel
+objet bloqué (r94) toujours non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
 (r79/r93) et la piste `sub_821E65B0` sont hors de propos — ils
 caractérisaient l'ANCIEN blocage, résolu en r94.
 
