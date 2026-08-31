@@ -30,20 +30,21 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r78 corrige r77 : le GDB déjà capturé pour r51 montre Thread 1 (le thread
-   invité) réellement bloqué dans l'appel conditionnel `sub_821E61A8` depuis
-   `sub_821E64A8` (espace anneau insuffisant), pas dans le spin terminal
-   `object+0x2AF8` que r77 avait supposé actif. La condition qui ne se
-   satisfait jamais : `*(object+0x2a90) ` (déréférencé) vs `object+0x2a9c`.
-   `object+0x2a90` pointe vers un bloc alloué de 0x60 octets
-   (`sub_821E65B0:0x821e6740`, juste après l'appel allocateur `0x821d74a8`).
-   **Prochaine étape immédiate** : suivre ce pointeur d'allocation pour
-   trouver qui écrit son offset 0 (le vrai curseur comparé) — pas un nouveau
-   scan de déplacement plat, la cible est indirecte
-   (`*(ptr)+0`). Voir `reports/ac6-retail-native-codegen-gate2-r78-actual-wait-frame-20260831.md`
-   et, en arrière-plan, `reports/ac6-retail-native-codegen-gate2-r77-fence-frontier-20260831.md`
-   (dont la caractérisation de `object+0x2AF8` reste valable mais n'est pas
-   ce qui bloque actuellement).
+3. r78 a corrigé r77 (Thread 1 est dans l'appel conditionnel `sub_821E61A8`
+   depuis `sub_821E64A8`, pas dans le spin terminal `object+0x2AF8`). r79 a
+   tracé l'écriture qui débloquerait cette attente jusqu'à `sub_821E5D60`
+   (via `sub_821E60A8 → sub_821E5E48`), gardée par un suballocateur
+   (`sub_821E54B8`) et par les champs `object+0x540c`/`+0x2abd`. Mais
+   `sub_821E60A8` a 76 sites d'appel dans tout le binaire : c'est un
+   allocateur de tampon générique, pas démontrablement l'anneau Vd/PM4.
+   **Prochaine étape immédiate** : ne plus tracer le graphe d'appel
+   statiquement (rendements décroissants). Relancer la sonde bornée
+   existante sous GDB et lire, au point d'arrêt déjà connu dans
+   `sub_821E6AC8`/`sub_821E61A8`, les valeurs réelles de
+   `object+0x2abd`, `+0x540c`, `+0x34bc`, `*(object+0x2a90)` et `+0x2a9c`
+   pour l'objet réellement bloqué. Voir
+   `reports/ac6-retail-native-codegen-gate2-r79-generic-allocator-reframe-20260831.md`,
+   et en arrière-plan r77/r78 pour la chaîne d'attente elle-même.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais

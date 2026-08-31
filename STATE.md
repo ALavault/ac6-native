@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r79 : l'objet est un allocateur générique, pas l'anneau Vd (2026-08-31)
+
+- PROUVÉ : le seul site qui écrit `*(object+0x2a90)` avec la valeur qui
+  débloquerait `sub_821E61A8` est `sub_821E5D60` (appelé depuis
+  `sub_821E5E48`, lui-même appelé depuis `sub_821E60A8`), et cette écriture
+  est conditionnelle à `object+0x540c == 0` ET un bit de `object+0x2abd`.
+- PROUVÉ : la porte `sub_821E54B8` (appelée avant l'avance du curseur) n'est
+  pas un simple booléen mais un **suballocateur** (bump-allocation depuis un
+  pool `object+0x34bc`, appel indirect de secours, budget `+0x3a44/+0x3a48`);
+  en échec il positionne le bit `0x20` de `object+0x2abd`.
+- REFORMULATION : `sub_821E60A8` a 76 sites d'appel statiques répartis sur
+  quasi tout le binaire (de `0x820fd2e8` à `0x821f1780`). L'objet tracé
+  depuis r77/r78 est donc un allocateur de tampon de commandes générique
+  réutilisé par le moteur, pas démontrablement l'anneau Vd/PM4.
+- DÉCISION : arrêter le traçage statique du graphe d'appel (rendements
+  décroissants sur un point d'entrée à 76 sites); la prochaine étape est une
+  lecture runtime (GDB sur la sonde bornée déjà existante) des champs
+  `object+0x2abd`, `+0x540c`, `+0x34bc`, `*(object+0x2a90)` et `+0x2a9c` au
+  point d'arrêt déjà connu, pas une nouvelle recherche statique.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r79-generic-allocator-reframe-20260831.md`.
+
 # AC6 retail NTSC-U/J — correction r78 : Thread 1 attend l'espace anneau, pas la fence (2026-08-31)
 
 - CORRECTION : r77 a caractérisé le spin terminal `object+0x2AF8` de
