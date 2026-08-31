@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r95-decode-error-hex-fixed-register-range-named-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r94-double-endian-swap-fixed-main-thread-unblocked-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r93-threading-avenue-exhausted-76-site-pass-started-20260901.md`;
@@ -61,17 +62,19 @@ et bloque maintenant via une chaîne ENTIÈREMENT NOUVELLE
 ce cycle) — progression réelle confirmée, pas une hypothèse. Aucune
 revendication de boot/titre/gameplay — la sonde expire toujours.
 
-**r95** a corrigé le formatage hex du décodeur (l'alerte r94 sur une adresse
-IB >32 bits était `std::to_string()` décimal sous un préfixe `"0x"`
-littéral — artefact, pas un vrai problème d'adresse) et nommé PRÉCISÉMENT
-(pas corrigé) la vraie plage de registres : adresse réelle `0x125c0000`
-(valide), header réel `0x00054800` → TYPE0 base=`0x4800`=18432, count=6 —
-besoin réel et légitime au-delà de `XenosState::kRegisterCount`(`0x4000`).
-Ne pas agrandir cette constante sans base vérifiée (scan du tampon
-indirect complet, pas une supposition). Identité du nouvel objet bloqué
-(r94) toujours non lue. Le passage sur les 76 sites d'appel de
-`sub_821E60A8` (r79/r93) et la piste `sub_821E65B0` sont hors de propos —
-ils caractérisaient l'ANCIEN blocage, résolu en r94.
+**r95** a corrigé le formatage hex du décodeur (artefact `std::to_string()`
+décimal, pas un vrai problème d'adresse) et nommé précisément (pas corrigé)
+la vraie plage de registres. **r96** a scanné le tampon indirect complet
+(dump GDB + parseur Python, logique de décodage exacte du projet, flux
+propre 371 TYPE0+281 TYPE3) : registre maximum réel `0x5002`. Corrigé :
+`XenosState::kRegisterCount` `0x4000`→`0x8000` (borne dérivée du format
+`low_register_of`, pas devinée). Vérifié en direct : rejet disparu,
+publication d'anneau avance à 37 dwords (record) avant un nouveau rejet
+délibéré : `predicated TYPE3 packets are not supported` — travail de
+fonctionnalité réel, prochain cycle. Identité du nouvel objet bloqué (r94)
+toujours non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
+(r79/r93) et la piste `sub_821E65B0` sont hors de propos — ils
+caractérisaient l'ANCIEN blocage, résolu en r94.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

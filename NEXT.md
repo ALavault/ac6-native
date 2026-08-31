@@ -53,26 +53,35 @@ compteur injecté ou fallback ReXGlue.
    `reports/ac6-retail-native-codegen-gate2-r94-double-endian-swap-fixed-main-thread-unblocked-20260901.md`.
 4. **r95 a corrigé le formatage hex du décodeur et nommé précisément (pas
    corrigé) la plage de registres.** L'alerte r94 sur une adresse IB
-   >32 bits était un artefact de formatage : `std::to_string()` (décimal)
-   sous un préfixe `"0x"` littéral. Corrigé (`to_hex()`); adresse réelle
-   `0x125c0000` (valide, dans l'anneau déjà tracé), header réel
-   `0x00054800` → TYPE0, base registre `0x4800`=18432, count=6 — besoin
-   RÉEL et légitime au-delà de `XenosState::kRegisterCount`(`0x4000`).
-   **Ne pas agrandir `kRegisterCount` sans base vérifiée** (deviner une
-   borne matérielle serait une règle non contrôlée). **Prochain cycle :
-   scanner le tampon indirect complet `0x125c0000` (2840 dwords) pour
-   trouver le registre maximum réellement requis** — base concrète et
-   vérifiable, plutôt qu'une supposition. L'identité du nouvel objet
-   bloqué `sub_821E6AC8`/`sub_821F03B0` (r94) reste aussi non lue. Le
-   passage sur les 76 sites d'appel de `sub_821E60A8` (r79, r93) et la
-   piste `sub_821E65B0` sont hors de propos — ils caractérisaient
-   l'ANCIEN blocage, résolu en r94. Ne pas y revenir sans raison nouvelle.
-   r90-r92 restent valables (busy-spin `NtReleaseMutant` corrigé,
-   `wait_event` bloquant, appelants événements réglés, `DbgPrint`
-   disponible) — voir leurs rapports pour l'infrastructure de sonde
-   toujours en place (`AC6_NATIVE_IMPORT_TRACE`, `AC6_NATIVE_VD_TRACE`).
-   Conserver le poll limité au champ WPTR, jamais au contenu non publié du
-   ring; ne jamais écrire de valeur synthétique pour faire avancer le
+   >32 bits était un artefact de formatage; adresse réelle `0x125c0000`
+   (valide), header réel `0x00054800` → TYPE0 base=`0x4800`, count=6.
+   **r96 a scanné le tampon indirect complet** (2840 dwords, dump GDB +
+   parseur Python utilisant la logique de décodage exacte du projet, flux
+   propre : 371 TYPE0 + 281 TYPE3, aucune désynchronisation) : registre
+   maximum réellement touché `0x5002`. **Corrigé** :
+   `XenosState::kRegisterCount` `0x4000`→`0x8000` — borne dérivée du
+   FORMAT (`low_register_of` masque 15 bits, `0x8000` est la plage
+   complète adressable par ce champ, pas une constante matérielle
+   devinée), couvre le besoin observé avec marge. **Vérifié en direct** :
+   rejet de plage de registres disparu; publication d'anneau avance de
+   31 à 37 dwords (record de progression) avant un NOUVEAU rejet distinct,
+   délibéré : `predicated TYPE3 packets are not supported` — sémantique
+   d'exécution prédiquée non implémentée, travail de fonctionnalité réel,
+   pas un bug. **Prochain cycle : implémenter l'exécution prédiquée des
+   paquets TYPE3** (lire le registre/drapeau de prédicat que le décodeur
+   suit déjà, déterminer la sémantique saut-vs-exécution correcte). Voir
+   `reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md`.
+   L'identité du nouvel objet bloqué `sub_821E6AC8`/`sub_821F03B0` (r94)
+   reste aussi non lue. Le passage sur les 76 sites d'appel de
+   `sub_821E60A8` (r79, r93) et la piste `sub_821E65B0` sont hors de
+   propos — ils caractérisaient l'ANCIEN blocage, résolu en r94. Ne pas y
+   revenir sans raison nouvelle. r90-r92 restent valables (busy-spin
+   `NtReleaseMutant` corrigé, `wait_event` bloquant, appelants événements
+   réglés, `DbgPrint` disponible) — voir leurs rapports pour
+   l'infrastructure de sonde toujours en place (`AC6_NATIVE_IMPORT_TRACE`,
+   `AC6_NATIVE_VD_TRACE`). Conserver le poll limité au champ WPTR, jamais
+   au contenu non publié du ring; ne jamais écrire de valeur synthétique
+   pour faire avancer le
    décodeur.
 5. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.

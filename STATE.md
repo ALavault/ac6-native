@@ -1,3 +1,34 @@
+# AC6 retail NTSC-U/J — r96 : registre Xenos élargi depuis contenu réel; TYPE3 prédicat nommé comme prochaine lacune (2026-09-01)
+
+- SCANNÉ (méthode vérifiée) : dump GDB complet du tampon indirect
+  2840 dwords à `0x125c0000` (capture base fiable, entrée brute), parsé
+  en Python avec la logique de décodage PM4 EXACTE du projet
+  (`type_of`/`count_of`/`low_register_of`/`one_reg_of`, copiée, pas
+  devinée). Flux propre bout en bout : 371 `TYPE0` + 281 `TYPE3`, aucune
+  désynchronisation. Registre maximum réellement touché : `0x5002`.
+- CORRIGÉ : `XenosState::kRegisterCount` passé de `0x4000` à `0x8000` —
+  borne dérivée du FORMAT (`low_register_of` masque à 15 bits, `0x8000`
+  est la plage complète adressable par ce champ), pas une constante
+  matérielle devinée. Couvre le besoin observé (`0x5003`) avec marge.
+- VÉRIFIÉ EN DIRECT : rejet de plage de registres disparu; le compteur de
+  publication d'anneau AVANCE de 31 à 37 dwords (plus de contenu invité
+  soumis que jamais observé auparavant) avant un NOUVEAU rejet distinct :
+  `predicated TYPE3 packets are not supported (IB 0x125c0000, header
+  0xc0003601)` — une garde délibérée (`header & 1`), travail de
+  fonctionnalité réel (sémantique d'exécution prédicée), pas un bug, pas
+  entrepris ce cycle.
+- Tests : `indirect_buffer_decode_error_reports_real_hex_address` (r95)
+  utilisait le registre `0x4800`, maintenant dans la plage — corrigé pour
+  utiliser un dépassement de compte à la limite haute; nouveau test
+  `register_count_covers_type0_full_field_width` reproduisant le paquet
+  réel de r95 (accepté maintenant).
+- CTest 9/9, pytest 130/130. Gate mission01 échoue toujours sur le même
+  mismatch N2 préexistant.
+- OUVERT : implémenter l'exécution prédiquée des paquets TYPE3; identité
+  du nouvel objet bloqué `sub_821E6AC8`/`sub_821F03B0` (r94, non lue).
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r96-register-count-widened-predicate-gap-named-20260901.md`.
+
 # AC6 retail NTSC-U/J — r95 : formatage hex du décodeur corrigé; plage de registres nommée précisément, pas corrigée (2026-09-01)
 
 - TROUVÉ ET CORRIGÉ : l'annotation d'erreur `INDIRECT_BUFFER` formatait

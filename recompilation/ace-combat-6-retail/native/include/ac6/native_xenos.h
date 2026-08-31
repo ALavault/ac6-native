@@ -138,7 +138,15 @@ using XenosCommand = std::variant<DrawPacket, ResolvePacket, PresentPacket,
 
 class XenosState final {
  public:
-  static constexpr std::size_t kRegisterCount = 0x4000;
+  // TYPE0's base-register field (native_xenos.cpp's low_register_of()) is
+  // 15 bits (`header & 0x7FFFu`), so 0x8000 is the full range that format
+  // can ever address -- not a guessed hardware limit, but the complete
+  // space TYPE0 packets can name. r95/r96: a real retail indirect buffer
+  // (2840 dwords at guest 0x125c0000) was found writing register 0x5002,
+  // rejected by the previous 0x4000 bound; parsing that buffer's full
+  // TYPE0 stream found no register above 0x5002, so 0x8000 covers it with
+  // headroom for content this session hasn't captured yet.
+  static constexpr std::size_t kRegisterCount = 0x8000;
   static constexpr std::uint32_t kMaxEdramBytes = 0xA00000;
 
   explicit XenosState(std::uint32_t edram_bytes = kMaxEdramBytes) noexcept;

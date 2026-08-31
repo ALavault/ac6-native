@@ -258,11 +258,14 @@ void indirect_buffer_decode_error_reports_real_hex_address() {
   ring[2] = 1u;
   assert(bus.write(MmioBus::kRingRead, 0u));
   assert(bus.write(MmioBus::kRingWrite, 12u));
-  // A TYPE0 packet whose base register (0x4800) exceeds
-  // XenosState::kRegisterCount (0x4000): the same real, out-of-range
-  // register write r94 found live, not a fabricated case.
+  // r96 widened kRegisterCount to 0x8000 (TYPE0's own 15-bit base-register
+  // field width), so a base of 0x4800 -- the real register r94 originally
+  // found live -- is in range now. Use a count that overruns the top of
+  // the (still finite) register file instead, to keep exercising this
+  // exact rejection path and its hex formatting.
   const std::vector<std::uint32_t> guest{
-      ac6::native::pm4::header(ac6::native::pm4::kType0, 1u, 0x4800u), 0u};
+      ac6::native::pm4::header(ac6::native::pm4::kType0, 3u, 0x7ffeu), 0u, 0u,
+      0u};
   VdBridge bridge(bus);
   bridge.set_ring_words(ring);
   bridge.set_guest_words(ib_address, guest);
@@ -272,8 +275,25 @@ void indirect_buffer_decode_error_reports_real_hex_address() {
   assert(!result.ok());
   assert(result.error.code == ac6::native::Pm4ErrorCode::kInvalidRegister);
   assert(result.error.detail.find("0x125c0000") != std::string::npos);
-  assert(result.error.detail.find("0x00004800") != std::string::npos);
+  assert(result.error.detail.find("0x00027ffe") != std::string::npos);
   assert(result.error.detail.find("0x308019200") == std::string::npos);
+}
+
+void register_count_covers_type0_full_field_width() {
+  // r96: register 0x4800 -- rejected under the old 0x4000 bound, the
+  // exact live content r94 found -- is now accepted. r95's own decode
+  // (header 0x00054800, base 0x4800, count 6) is the real packet this
+  // reproduces.
+  XenosState state;
+  std::vector<XenosCommand> output;
+  const std::array<std::uint32_t, 7> stream{
+      ac6::native::pm4::header(ac6::native::pm4::kType0, 6u, 0x4800u),
+      0u, 0u, 0u, 0u, 0u, 0u};
+  const auto result = Pm4Decoder::decode_stream(stream, state, output);
+  assert(result.ok());
+  assert(output.empty());
+  assert(state.register_value(0x4800u) == 0u);
+  assert(state.register_value(0x4805u) == 0u);
 }
 
 void guest_vd_service_event_write_applies_single_endian_swap() {
@@ -326,6 +346,7 @@ int main() {
   ring_wrap_and_interrupt_are_bounded();
   indirect_buffers_expand_and_cycles_fail_closed();
   indirect_buffer_decode_error_reports_real_hex_address();
+  register_count_covers_type0_full_field_width();
   vulkan_boundary_fails_closed();
   shader_boundary_accepts_only_valid_spirv();
   guest_vd_service_drains_published_dword_index();
