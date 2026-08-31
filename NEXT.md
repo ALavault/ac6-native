@@ -30,23 +30,23 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r81 a émis l'hypothèse que `sub_82331CA8` serait gardé prématurément
-   satisfait; r82 a réfuté cela (aucune branche conditionnelle dans ce
-   tronçon) et a ouvert une contradiction différente, non résolue : la
-   porte de `sub_821E65B0` exige `object+0x2a9c!=0`/`object+0x30!=0` pour
-   atteindre `sub_821E64A8` (la frame observée), mais r80 a lu ces deux
-   champs à zéro plus profondément dans la MÊME pile, sans écriture
-   intermédiaire ni autre thread en cause. Deux instruments GDB (point
-   d'arrêt conditionnel, watchpoints) ont échoué à trancher — voir r82 pour
-   pourquoi ne pas les répéter tels quels.
-   **Prochaine étape immédiate** : soit réduire la sonde à un seul thread
-   vivant (stub temporaire du spawn `ExCreateThread`) avant de retenter un
-   watchpoint/breakpoint conditionnel, soit revérifier statiquement si la
-   porte de `sub_821E65B0` opère sur de la mémoire fraîchement allouée
-   potentiellement non significative la première fois. Ne pas écrire de
-   valeur non-nulle synthétique avant résolution. Voir
-   `reports/ac6-retail-native-codegen-gate2-r82-gate-contradiction-open-20260831.md`,
-   et en arrière-plan r77/r78/r79/r80/r81 pour la chaîne complète.
+3. Contradiction ouverte depuis r82 (porte de `sub_821E65B0` exige des
+   champs non-nuls, r80 les a lus à zéro plus profondément dans la même
+   pile) : r83 a réfuté une deuxième hypothèse (l'escalade `sub_821E6A08`
+   est de la pure télémétrie, ne touche aucun champ `object`) et établi que
+   `object=0x1a0010` est hors image XEX ET hors plage
+   `NtAllocateVirtualMemory` — probablement un pointeur du tas propre au
+   jeu, sans plus de précision.
+   **Prochaine étape immédiate, non spéculative cette fois** : construire
+   la variante de sonde à thread unique proposée depuis r82 (no-op
+   temporaire et NON COMMITÉ du spawn `ExCreateThread`), rebuild, relire la
+   porte de `sub_821E65B0` (`0x821e65c4`) au point exact du check sans
+   contention multi-thread, puis révoquer le changement temporaire. Arrêter
+   de proposer de nouvelles hypothèses statiques une à une (rendements
+   décroissants, cf. r79). Ne pas écrire de valeur non-nulle synthétique
+   avant résolution. Voir
+   `reports/ac6-retail-native-codegen-gate2-r83-escalation-is-telemetry-20260831.md`,
+   et en arrière-plan r77/r78/r79/r80/r81/r82 pour la chaîne complète.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais

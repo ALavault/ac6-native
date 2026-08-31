@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r83 : l'escalade n'est que télémétrie; l'adresse de l'objet reste inexpliquée (2026-08-31)
+
+- RÉFUTÉ : `sub_821E6A08` (l'escalade appelée au timeout de
+  `sub_821E61A8`) ne touche aucun des champs `object` — c'est un compteur
+  de performance pur (accumulation `mftb`, callback de profiling optionnel).
+  N'explique pas la contradiction r82.
+- NOUVEAU FAIT : `object=0x1a0010` (reproduit 5+ fois) est entièrement hors
+  de l'image XEX statique (`0x82000400..0x82ac2dc7`) ET sous la plage de
+  l'allocateur bump `NtAllocateVirtualMemory` (`0x10000000..0x7f000000`,
+  r47). N'explique pas encore la contradiction, mais exclut une
+  coïncidence avec les régions bootstrap PCR/thread (r49) et resserre
+  l'hypothèse vers un pointeur du tas propre au jeu.
+- DÉCISION : arrêter d'itérer des hypothèses une à une sur cette
+  contradiction (rendements décroissants, même mise en garde que le scan
+  d'appels à 76 sites de r79). Prochaine étape concrète : construire une
+  variante de sonde à thread unique (no-op temporaire, non committé, du
+  spawn `ExCreateThread`) pour éliminer les ~16-18 threads hôtes
+  concurrents qui ont rendu les watchpoints peu fiables (r82), puis
+  relire la porte de `sub_821E65B0` au point exact du check.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r83-escalation-is-telemetry-20260831.md`.
+
 # AC6 retail NTSC-U/J — r82 : hypothèse r81 réfutée, nouvelle contradiction ouverte (2026-08-31)
 
 - RÉFUTÉ : `sub_82331CA8` et le tronçon de `sub_821D5F48` autour de
