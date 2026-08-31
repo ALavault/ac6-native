@@ -30,24 +30,26 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. r84 a exécuté l'expérience à thread unique (r82/r83) et corrigé un bug
-   d'endianness dans la méthode GDB elle-même (`x/xw` affiche la mémoire
-   invitée big-endian comme little-endian — les lectures à zéro restent
-   valables, seule une lecture non-nulle de ce cycle avait besoin de la
-   correction). Chronologie établie : `sub_821E65B0` initialise
-   `+0x2a9c=3` la première fois qu'il est zéro, un push via
-   `sub_821E5D60` l'amène à 5, et C'EST CET APPEL (avec +0x2a9c=5 réel) qui
-   finit bloqué. Les deux seuls écrivains statiques de `+0x2a9c`
-   n'écrivent jamais zéro — comment il redevient zéro plus tard dans le
-   même appel reste sans écrivain identifié.
-   **Prochaine étape immédiate** : relire `+0x2a9c` à plusieurs points À
-   L'INTÉRIEUR du même appel bloqué (pas seulement à la porte), avec la
-   correction d'endianness appliquée, sur la sonde à thread unique (le
-   no-op `ExCreateThread` est un changement temporaire non committé — le
-   refaire, ne pas le committer). Ne pas écrire de valeur non-nulle
-   synthétique avant résolution. Voir
-   `reports/ac6-retail-native-codegen-gate2-r84-endian-misread-and-timeline-20260831.md`,
-   et en arrière-plan r77/r78/r79/r80/r81/r82/r83 pour la chaîne complète.
+3. **CORRECTION r85** : tout le fil r77-r84 ("objet bloqué = 0x1a0010")
+   tracait un objet dérivé par une technique GDB non fiable
+   (`frame 1` + `$rbp` pendant un arrêt dans une frame plus profonde, sans
+   info de debug). Une méthode fiable (breakpoint à l'entrée brute de
+   `sub_821E64A8`, lecture directe de `ctx.r3`) donne
+   **`object = 0x10001a00`** — l'objet Vd/PM4 déjà établi bien avant ce fil
+   (`reports/ac6-retail-native-codegen-gate2-r11-20260831.md`, tranche
+   r53 : "l'objet à 0x10001a00, le ring 0x162d0000 et le readback"). Avec
+   cet objet correct, `+0x2a90` déréférence exactement le readback connu
+   `0x164e0000`, `+0x30` est un curseur proche de l'anneau connu
+   `0x162d0000`, `+0x2a9c=7` — les trois STABLES sur 200 itérations. Les
+   récits "objet null"/"contradiction" de r77-r84 sont rétractés; les
+   faits de flot de contrôle des fonctions restent valables.
+   **Prochaine étape immédiate** : ceci reconnecte à l'item déjà ouvert r53
+   ("le consommateur PM4/Vd natif n'est pas encore relié") — vérifier ce
+   lien contre `native/src/native_guest_vd.cpp` (déterminer précisément ce
+   qui devrait faire avancer le readback `0x164e0000` au-delà du curseur
+   `0x162e017c`) avant d'ouvrir une nouvelle piste spéculative. Ne pas
+   écrire de valeur non-nulle synthétique avant cette vérification. Voir
+   `reports/ac6-retail-native-codegen-gate2-r85-wrong-object-corrected-20260831.md`.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais

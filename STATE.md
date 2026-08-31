@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — r85 : CORRECTION, r77-r84 ont tracé le mauvais objet (2026-08-31)
+
+- CORRIGÉ (majeur) : r78 a dérivé "l'objet bloqué" via `frame 1` + `print
+  $rbp` pendant que GDB était arrêté dans `sub_821E6AC8` (frame 0) — une
+  technique non fiable sur un binaire sans info de debug (le `%rbp` affiché
+  reflétait probablement l'usage LOCAL de `sub_821E6AC8` lui-même, pas une
+  valeur correctement dérouler pour la frame appelante). Cela a donné
+  `0x1a0010`, jamais recoupé avant ce cycle.
+- PROUVÉ : une méthode fiable (breakpoint à l'entrée BRUTE de
+  `sub_821E64A8`, lecture directe de `ctx.r3` via `$rdi`, aucun changement
+  de registre encore effectué) donne **`object = 0x10001a00`** — qui
+  correspond EXACTEMENT à l'objet Vd/PM4 déjà établi dans
+  `reports/ac6-retail-native-codegen-gate2-r11-20260831.md` (tranche r53,
+  "l'objet à 0x10001a00, le ring 0x162d0000 et le readback"), une
+  investigation totalement indépendante d'avant ce fil r77.
+- PROUVÉ : avec l'objet correct, `+0x2a90` déréférence exactement l'adresse
+  de readback déjà connue `0x164e0000`, et `+0x30` est un curseur proche de
+  l'anneau déjà connu `0x162d0000`; `+0x2a9c=7`. Les trois champs sont
+  STABLES sur 200 itérations de la boucle (sonde à thread unique,
+  déterministe) — aucun des constats "objet null"/"contradiction" de
+  r77-r84 ne s'applique à cet objet.
+- DÉCISION : rétracter l'identité `0x1a0010` et tout ce qui en dépend
+  directement (valeurs de champs, récits "allocation NULL"/"ordre
+  d'init"/"contradiction de porte"). Les faits de flot de contrôle
+  (structure de `sub_821E64A8`/`sub_821E61A8`/`sub_821E6AC8`/
+  `sub_821E5D60`/`sub_821E6A08`) restent valables, lus depuis le
+  désassemblage indépendamment de l'objet. Reconnecte l'investigation à
+  l'item déjà ouvert r53 : "le consommateur PM4/Vd natif n'est pas encore
+  relié" — prochaine étape : vérifier ce lien avec
+  `native/src/native_guest_vd.cpp` avant toute nouvelle piste.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r85-wrong-object-corrected-20260831.md`.
+
 # AC6 retail NTSC-U/J — r84 : bug d'endianness dans la méthode, chronologie réelle établie (2026-08-31)
 
 - EXÉCUTÉ : la variante de sonde à thread unique proposée par r83 (no-op
