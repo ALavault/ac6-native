@@ -30,23 +30,24 @@ compteur injecté ou fallback ReXGlue.
    guest big-endian. La sonde r75 accepte `PM4_ME_INIT` (19 dwords) puis le lot
    IB bootstrap (12 dwords); elle expire encore après cette étape, sans retour
    guest ni gameplay visible.
-3. Contradiction ouverte depuis r82 (porte de `sub_821E65B0` exige des
-   champs non-nuls, r80 les a lus à zéro plus profondément dans la même
-   pile) : r83 a réfuté une deuxième hypothèse (l'escalade `sub_821E6A08`
-   est de la pure télémétrie, ne touche aucun champ `object`) et établi que
-   `object=0x1a0010` est hors image XEX ET hors plage
-   `NtAllocateVirtualMemory` — probablement un pointeur du tas propre au
-   jeu, sans plus de précision.
-   **Prochaine étape immédiate, non spéculative cette fois** : construire
-   la variante de sonde à thread unique proposée depuis r82 (no-op
-   temporaire et NON COMMITÉ du spawn `ExCreateThread`), rebuild, relire la
-   porte de `sub_821E65B0` (`0x821e65c4`) au point exact du check sans
-   contention multi-thread, puis révoquer le changement temporaire. Arrêter
-   de proposer de nouvelles hypothèses statiques une à une (rendements
-   décroissants, cf. r79). Ne pas écrire de valeur non-nulle synthétique
-   avant résolution. Voir
-   `reports/ac6-retail-native-codegen-gate2-r83-escalation-is-telemetry-20260831.md`,
-   et en arrière-plan r77/r78/r79/r80/r81/r82 pour la chaîne complète.
+3. r84 a exécuté l'expérience à thread unique (r82/r83) et corrigé un bug
+   d'endianness dans la méthode GDB elle-même (`x/xw` affiche la mémoire
+   invitée big-endian comme little-endian — les lectures à zéro restent
+   valables, seule une lecture non-nulle de ce cycle avait besoin de la
+   correction). Chronologie établie : `sub_821E65B0` initialise
+   `+0x2a9c=3` la première fois qu'il est zéro, un push via
+   `sub_821E5D60` l'amène à 5, et C'EST CET APPEL (avec +0x2a9c=5 réel) qui
+   finit bloqué. Les deux seuls écrivains statiques de `+0x2a9c`
+   n'écrivent jamais zéro — comment il redevient zéro plus tard dans le
+   même appel reste sans écrivain identifié.
+   **Prochaine étape immédiate** : relire `+0x2a9c` à plusieurs points À
+   L'INTÉRIEUR du même appel bloqué (pas seulement à la porte), avec la
+   correction d'endianness appliquée, sur la sonde à thread unique (le
+   no-op `ExCreateThread` est un changement temporaire non committé — le
+   refaire, ne pas le committer). Ne pas écrire de valeur non-nulle
+   synthétique avant résolution. Voir
+   `reports/ac6-retail-native-codegen-gate2-r84-endian-misread-and-timeline-20260831.md`,
+   et en arrière-plan r77/r78/r79/r80/r81/r82/r83 pour la chaîne complète.
 4. Une fois ce décrément fermé, reprendre la migration plus large du
    scheduler/kernel, événements et VFS/XAM par familles ABI avec une sonde
    bornée et des tests ciblés; conserver le poll limité au champ WPTR, jamais

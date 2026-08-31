@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r84-endian-misread-and-timeline-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r83-escalation-is-telemetry-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r82-gate-contradiction-open-20260831.md`;
 - `reports/ac6-retail-native-codegen-gate2-r81-heap-init-ordering-20260831.md`;
@@ -40,14 +41,16 @@ sans ReXGlue installé. Elle établit l'objet `0x10001a00`, son WPTR primaire
 accepte `PM4_ME_INIT` (19 dwords) puis le lot IB bootstrap (12 dwords). Le guest
 reste ensuite sans retour et aucun gameplay visible n'est qualifié.
 
-Contradiction ouverte depuis r82 (porte de `sub_821E65B0` exige des champs
-`object` non-nuls; r80 les a lus à zéro plus profondément dans la même
-pile). r83 a réfuté une deuxième hypothèse (l'escalade `sub_821E6A08` est
-de la pure télémétrie) et établi `object=0x1a0010` hors image XEX et hors
-plage `NtAllocateVirtualMemory`. Prochaine étape, non spéculative :
-construire une sonde à thread unique (no-op temporaire et non committé du
-spawn `ExCreateThread`) pour relire la porte sans contention multi-thread.
-Les stubs restent build-only;
+r84 a exécuté l'expérience à thread unique et corrigé un bug d'endianness
+dans la méthode GDB (`x/xw` affiche la mémoire invitée big-endian comme
+little-endian; les lectures à zéro restent valables). Chronologie établie :
+`sub_821E65B0` initialise `+0x2a9c=3`, un push l'amène à 5, et c'est cet
+appel (+0x2a9c=5 réel) qui finit bloqué — mais aucun écrivain statique de
+`+0x2a9c` n'écrit jamais zéro, donc comment il redevient zéro reste
+ouvert. Prochaine étape : relire `+0x2a9c` À L'INTÉRIEUR du même appel
+bloqué (pas juste à la porte), endianness corrigée, sonde à thread unique
+(no-op `ExCreateThread` temporaire, ne pas committer). Les stubs restent
+build-only;
 `IM_LOAD_IMMEDIATE` est borné mais sa traduction Xenos→SPIR-V n'est pas
 fermée. Ne pas revendiquer titre, M01, campagne, save/replay ou release. Toute
 sonde suivante doit être statique ou bornée au premier import/retour qui

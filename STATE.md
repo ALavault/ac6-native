@@ -1,3 +1,30 @@
+# AC6 retail NTSC-U/J — r84 : bug d'endianness dans la méthode, chronologie réelle établie (2026-08-31)
+
+- EXÉCUTÉ : la variante de sonde à thread unique proposée par r83 (no-op
+  temporaire et non committé de `ExCreateThread`, changement révoqué après
+  usage, CTest 9/9 revérifié après revert).
+- CORRIGÉ (méthode) : `x/1xw` de GDB affiche la mémoire invitée (big-endian)
+  comme si elle était little-endian. La lecture "0x05000000" de ce cycle
+  était en réalité **5** une fois corrigée — cohérent avec l'init
+  `sub_821E65B0` (= 3 si ancien était zéro, nouvellement lu ce cycle) plus
+  un push via `sub_821E5D60` (+2, r79). Les lectures à zéro de r80-r83
+  restent valables (zéro est invariant par endianness) — aucune conclusion
+  antérieure à corriger.
+- PROUVÉ : le premier appel à `sub_821E65B0` (objet frais, +0x2a9c=0) saute
+  bien l'appel à `sub_821E64A8` (confirmé octet par octet sur le code x86
+  compilé); le deuxième appel, avec +0x2a9c=5 (réel), entre dans l'appel —
+  c'est CE MÊME appel qui finit bloqué.
+- OUVERT (resserré, pas résolu) : les deux seuls écrivains statiques de
+  +0x2a9c (`sub_821E5D60`: +=2; `sub_821E65B0`: =3 si zéro) n'écrivent
+  jamais zéro. Comment le compteur redevient zéro plus tard dans le même
+  appel bloqué reste sans écrivain identifié.
+- DÉCISION : noter la correction d'endianness pour toute lecture GDB
+  future de cette investigation. Prochaine étape : relire +0x2a9c à
+  plusieurs points À L'INTÉRIEUR du même appel bloqué (pas seulement à la
+  porte) avec la correction appliquée, sur la sonde à thread unique.
+
+Preuve : `reports/ac6-retail-native-codegen-gate2-r84-endian-misread-and-timeline-20260831.md`.
+
 # AC6 retail NTSC-U/J — r83 : l'escalade n'est que télémétrie; l'adresse de l'objet reste inexpliquée (2026-08-31)
 
 - RÉFUTÉ : `sub_821E6A08` (l'escalade appelée au timeout de
