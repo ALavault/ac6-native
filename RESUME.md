@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r120-sub_821d4988-posts-an-async-message-not-a-log-string-r119s-speculation-corrected-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r119-real-path-is-a-bounded-retry-loop-checking-per-thread-status-at-ctx-r13-plus-336-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r118-r117s-case3-target-was-wrong-real-bailout-gated-by-a-global-mode-byte-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r117-full-causal-chain-closed-write-site-to-crash-20260901.md`;
@@ -371,6 +372,13 @@ succès/échec réutilise le couple `sub_821F4E70`/`sub_821F50A0` déjà lu
 par r117 (champ par thread à `ctx.r13+336`). Cause exacte non établie.
 Aucun code modifié. Prochain cycle : instrumenter `ctx.r13` et le
 compteur, lire la chaîne de `sub_821D4988`.
+
+**r120 corrige une spéculation de r119** : `sub_821D4988` n'est PAS un
+appel de log (adresse de chaîne présumée = 128 octets de zéros). C'est
+un producteur qui poste dans un tampon circulaire protégé (vraie
+section critique depuis r116) puis attend via `sub_821F5988`. Ne
+change pas la chaîne causale — le compteur `+22896` décide toujours.
+Aucun code modifié. Prochaines étapes inchangées (`ctx.r13`, compteur).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

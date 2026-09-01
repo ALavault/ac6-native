@@ -631,7 +631,21 @@ compteur injecté ou fallback ReXGlue.
     le compteur `+22896`; lire la chaîne de `sub_821D4988` pour nommer
     le sous-système en échec directement. Voir
     `reports/ac6-retail-native-codegen-gate2-r119-real-path-is-a-bounded-retry-loop-checking-per-thread-status-at-ctx-r13-plus-336-20260901.md`.
-34. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+35. **r120 corrige une spéculation non vérifiée de r119 :** `sub_821D4988`
+    ne "ressemble" PAS à un log, ce N'EN EST PAS UN. Adresse de chaîne
+    présumée lue via `DumpBytes.java` (read-only) : 128 octets de
+    zéros. Lecture de la fonction elle-même : elle poste
+    `{buffer, flags}` dans un TAMPON CIRCULAIRE protégé par de vraies
+    sections critiques (r116), puis attend via `sub_821F5988`
+    (résultat famille `258`/`STATUS_TIMEOUT`) — motif producteur
+    classique, pas un `printf`. Ne change PAS la chaîne causale de
+    r119 (le compteur `+22896` décide toujours) — corrige juste une
+    description avant qu'elle n'induise en erreur. Aucun code modifié
+    (lecture statique pure). **Prochain cycle** : reprendre les
+    étapes de r119 — instrumenter `ctx.r13` et le compteur `+22896`.
+    Voir
+    `reports/ac6-retail-native-codegen-gate2-r120-sub_821d4988-posts-an-async-message-not-a-log-string-r119s-speculation-corrected-20260901.md`.
+36. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

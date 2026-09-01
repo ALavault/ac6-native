@@ -1,3 +1,27 @@
+# AC6 retail NTSC-U/J — r120 : `sub_821D4988` poste un message asynchrone dans un tampon circulaire, ce n'est PAS un appel de log — spéculation de r119 corrigée (2026-09-01)
+
+- r119 décrivait `sub_821D4988` comme "ressemblant à un appel de
+  log/diagnostic" — pure spéculation d'après la FORME de l'appel,
+  jamais vérifiée. Adresse de la chaîne présumée calculée
+  (`0x8275a414`) et lue via `DumpBytes.java` (read-only) : **128 octets
+  de zéros**, pas une chaîne.
+- **Lu la fonction elle-même** : ce n'est PAS un logger — elle empaquette
+  `{buffer, flags}` dans un TAMPON CIRCULAIRE protégé par
+  `RtlEnterCriticalSection`/`RtlLeaveCriticalSection` (mutex RÉEL depuis
+  r116), gère un curseur d'écriture (mod 64) et un compteur, puis
+  appelle `sub_821F5988` qui vérifie un résultat de la FAMILLE
+  `258`/`STATUS_TIMEOUT` déjà vue ailleurs dans ce code
+  (`wait_event()`). C'est un motif PRODUCTEUR classique (poster un
+  travail + attendre), pas un `printf`.
+- **Ne change pas la chaîne causale de r119** (le compteur à `+22896`
+  décide toujours) — corrige une description non vérifiée avant
+  qu'elle n'induise en erreur un futur cycle cherchant une chaîne
+  d'erreur lisible qui n'existe pas. Aucun code modifié (lecture
+  statique pure, aucune instrumentation cette fois). **Prochain
+  cycle** : les prochaines étapes de r119 restent inchangées —
+  instrumenter `ctx.r13` et le compteur `+22896`. Voir
+  `reports/ac6-retail-native-codegen-gate2-r120-sub_821d4988-posts-an-async-message-not-a-log-string-r119s-speculation-corrected-20260901.md`.
+
 # AC6 retail NTSC-U/J — r119 : l'octet de mode global vaut 2 (pas 0 ni 1) — le -1 vient d'une boucle de nouvelle tentative bornée sur un état par thread (2026-09-01)
 
 - **Correction directe, ENCORE** : avant d'instrumenter, ce cycle avait
