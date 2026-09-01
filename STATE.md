@@ -1,3 +1,45 @@
+# AC6 retail NTSC-U/J — r129 : l'écrivain trouvé — un VRAI nom de fichier `game:\DATA00.PAC`, et ce fichier existe RÉELLEMENT sur l'ISO retail déjà qualifié de ce projet (2026-09-01)
+
+- **Meilleur instrument** : un script Python précis (recherche de la
+  séquence exacte `lis(-2104229888)` + `addi(-18116)` sur TOUS les
+  fichiers générés) trouve 3 correspondances — 2 dans `sub_821CC508`
+  (déjà connu, lecteur) et **1 dans `sub_821CC370`**, une fonction
+  différente que l'outil Ghidra général (r128) avait manquée.
+- **`sub_821CC370(type, value)` = `table[type] = value`** — L'ÉCRIVAIN.
+  Ses SEULS deux appelants sont dans `Function_821D5F48` elle-même,
+  TRÈS TÔT (avant GATE1/GATE2) : `sub_821CC370(0, 0x82067d40)` puis
+  `sub_821CC370(1, 0x82067d54)`.
+- **`0x82067d40` est un VRAI NOM DE FICHIER, PAS un handle** :
+  `DumpBytes.java` révèle `"game:\DATA00.PAC"` (0x82067d54 =
+  `"game:\DATA01..."`). La table démarre avec des pointeurs de CHAÎNES
+  DE NOM DE FICHIER, un par "type" — du code intermédiaire (pas encore
+  localisé) doit lire cette chaîne, appeler `NtCreateFile`, et
+  remplacer le slot par un VRAI handle ou `INVALID_HANDLE_VALUE` en
+  cas d'échec — expliquant PARFAITEMENT la capture de r127
+  (`0xFFFFFFFF`, pas la chaîne d'origine).
+- **LE FICHIER EXISTE RÉELLEMENT** — TOUTE cette investigation
+  (r105-r128) a fait tourner la sonde contre `assets/` (contient
+  UNIQUEMENT `default.xex`, confirmé par listing direct) — jamais
+  contre le VRAI média. `targets/ntsc-uj.json` cite déjà un ISO
+  qualifié par SHA-256 (`204c5e6...`); ce fichier EXISTE à la racine
+  du workspace, `sha256sum` confirme une correspondance EXACTE. Un
+  `strings` brut sur cet ISO trouve LITTÉRALEMENT `DATA00.PAC` ET
+  `DATA01.PAC`. **CE N'EST PAS un blocage de contenu manquant** — le
+  contenu existe, sur un média DÉJÀ qualifié par ce projet, simplement
+  jamais pointé par cette investigation.
+- **Ferme la question pratique de r122/r123/r127** (y a-t-il du vrai
+  contenu à lire?) — OUI. Le correctif est maintenant entièrement
+  déterminé en FORME (même s'il reste à implémenter) :
+  `NtCreateFile` doit traduire les chemins `game:\` via
+  `read_xdvdfs_file` existant quand le runtime démarre contre un ISO
+  (jamais fait par cette sonde jusqu'ici); `NtReadFile` doit servir de
+  VRAIS octets. Aucun code natif modifié (analyse statique pure +
+  vérifications de hash/strings hors de l'arbre suivi par git).
+  **Prochain cycle** : implémenter `NtCreateFile`/`NtReadFile` contre
+  `read_xdvdfs_file`, PUIS relancer la sonde contre l'ISO qualifié (pas
+  `assets/`) — nouveau prérequis établi ce cycle. Voir
+  `reports/ac6-retail-native-codegen-gate2-r129-writer-found-real-content-exists-the-probe-just-never-used-the-qualified-iso-20260901.md`.
+
 # AC6 retail NTSC-U/J — r128 : les watchpoints GDB sont AUSSI peu fiables sur cette sonde (étend r104) — une piste de première tentative RÉTRACTÉE (2026-09-01)
 
 - **Deux techniques statiques épuisées, toutes deux négatives** :

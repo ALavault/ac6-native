@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r129-writer-found-real-content-exists-the-probe-just-never-used-the-qualified-iso-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r128-gdb-watchpoints-are-also-unreliable-on-this-probe-a-false-lead-retracted-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r127-the-file-handle-is-invalid-handle-value-ntcreatefile-never-produced-a-real-one-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r126-rtlntstatustodoserror-implemented-verified-live-necessary-not-sufficient-20260901.md`;
@@ -471,6 +472,18 @@ différentes et incohérentes (déclenchements fantômes, 18 threads).
 `sub_82346428` reste un candidat NON confirmé. Aucun code modifié.
 Prochain cycle : instrumentation build-tree fiable, pas de watchpoints
 GDB ici.
+
+**r129 — l'écrivain trouvé : `sub_821CC370` écrit `table[0] =
+"game:\DATA00.PAC"`** (un VRAI nom de fichier, pas un handle — du code
+intermédiaire non localisé le remplace ensuite par un handle ou
+`INVALID_HANDLE_VALUE`). **TOUTE l'investigation r105-r128 tournait
+contre `assets/` (seulement `default.xex`) — jamais contre le vrai
+média.** L'ISO retail qualifié EXISTE à la racine du workspace (hash
+SHA-256 confirmé EXACT contre `targets/ntsc-uj.json`); `DATA00.PAC`/
+`DATA01.PAC` y existent LITTÉRALEMENT (`strings`). **CE N'EST PAS un
+blocage de contenu manquant** — le correctif est entièrement déterminé
+en forme : `NtCreateFile`→`read_xdvdfs_file`, `NtReadFile`→vrais
+octets, PUIS relancer contre l'ISO. Aucun code modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

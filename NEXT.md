@@ -811,7 +811,30 @@ compteur injecté ou fallback ReXGlue.
     build-tree fiable sur `sub_82346428` (candidat à vérifier
     proprement) et le cluster `Function_82390F48`. Voir
     `reports/ac6-retail-native-codegen-gate2-r128-gdb-watchpoints-are-also-unreliable-on-this-probe-a-false-lead-retracted-20260901.md`.
-52. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+53. **r129 — l'écrivain trouvé : un VRAI nom de fichier `game:\DATA00.PAC`,
+    et ce fichier existe RÉELLEMENT sur l'ISO retail déjà qualifié de
+    ce projet — CE N'EST PAS un blocage de contenu manquant.** Script
+    Python précis trouve `sub_821CC370(type, value) = table[type] =
+    value` — l'écrivain, appelé UNIQUEMENT deux fois, très tôt dans
+    `Function_821D5F48` : `sub_821CC370(0, 0x82067d40)` puis `(1,
+    0x82067d54)`. **`0x82067d40` = `"game:\DATA00.PAC"`** (octets
+    lus directement) — la table démarre avec des CHAÎNES DE NOM DE
+    FICHIER, pas des handles; du code intermédiaire (pas localisé)
+    doit les remplacer par un vrai handle ou `INVALID_HANDLE_VALUE` à
+    l'échec — expliquant parfaitement la capture `0xFFFFFFFF` de r127.
+    **TOUTE l'investigation r105-r128 tournait contre `assets/`**
+    (contient SEULEMENT `default.xex`) — **jamais contre le vrai
+    média**. L'ISO qualifié (`targets/ntsc-uj.json`, SHA-256
+    `204c5e6...`) EXISTE à la racine du workspace, hash confirmé EXACT;
+    `strings` trouve littéralement `DATA00.PAC`/`DATA01.PAC` dessus.
+    Ferme la question pratique de r122/123/127 : le contenu EXISTE,
+    sur un média déjà qualifié. Correctif entièrement déterminé en
+    forme : `NtCreateFile`→`read_xdvdfs_file` (chemins `game:\`),
+    `NtReadFile`→vrais octets. Aucun code modifié. **Prochain cycle** :
+    implémenter les deux, PUIS relancer la sonde contre l'ISO qualifié
+    (pas `assets/`) — nouveau prérequis établi ce cycle. Voir
+    `reports/ac6-retail-native-codegen-gate2-r129-writer-found-real-content-exists-the-probe-just-never-used-the-qualified-iso-20260901.md`.
+54. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
