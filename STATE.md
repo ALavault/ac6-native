@@ -1,3 +1,42 @@
+# AC6 retail NTSC-U/J — r132 : le crash `sub_821F7C80` est une liste de notification CORROMPUE — `NtReadFile` est EXCLU comme cause (mesuré, pas supposé) (2026-09-01)
+
+- **Lecture statique de `sub_821F7C80`** (0x821F7C80-0x821F7CDC, convention
+  `__savegprlr`/`__restgprlr` standard MSVC Xbox 360, confirmée par
+  symétrie avec `sub_821F7CE0` juste après) : c'est une **diffusion de
+  notification** — sous `RtlEnterCriticalSection`/`RtlLeaveCriticalSection`
+  (objet `0x823F0C30`), parcourt une liste doublement chaînée intrusive
+  (sentinelle `0x823F0C4C`), appelle `*(node+8)` pour chaque nœud.
+  `sub_821F7CE0` est la fonction d'insertion/retrait correspondante —
+  **UN SEUL site d'appel dans tout le code** (`sub_82383740`), enregistrant
+  UN nœud fixe (`0x82915FD8`, pointeur de fonction réel `0x82389BF8`).
+  `DumpBytes.java` confirme que `0x823F0C4C` est CORRECTEMENT
+  auto-référencé dans l'image XEX statique (init de données, pas de code
+  requis) — écarte "jamais initialisé".
+- **Mesure en direct** (diagnostic temporaire `AC6_R132_DIAG`, ajouté puis
+  ENTIÈREMENT annulé — `grep -c "r132"` retourne 0, ctest 9/9, 139/139
+  Python après) : la diffusion réussit proprement ~17 fois de suite
+  (sentinelle et nœud corrects), PUIS le dernier appel avant le crash lit
+  `head=0x00009182` — NI la sentinelle NI le nœud connu. **La mémoire de la
+  sentinelle a été écrasée par une valeur de garbage entre deux appels.**
+  `0x9182` correspond EXACTEMENT au registre `rcx` capturé au fault de
+  r131. Le changement d'argument (1→0) sur l'appel qui crashe est normal
+  (site d'appel légitime distinct dans `sub_82390B18`, `li r3,0x0` visible
+  en désassemblage) — PAS un symptôme.
+- **`NtReadFile` EXCLU comme écrivain, par mesure directe, pas par
+  supposition** : un second diagnostic temporaire trace CHAQUE appel
+  `NtReadFile`. Il n'y en a qu'UN SEUL avant le crash, avec `length=0` —
+  ZÉRO octet copié, donc AUCUN écrasement possible par ce chemin. Écarte
+  définitivement le nouveau code de r130/r131 comme cause.
+- **Aucun code source modifié ce cycle** — deux instrumentations
+  temporaires, prises, puis annulées et vérifiées annulées.
+  **Prochain cycle** : trouver le VRAI écrivain de `0x823F0C4C` (les
+  watchpoints GDB sont déjà connus peu fiables sur cette sonde à 18
+  threads réels, r128 — ne pas réessayer sans nouvel argument). Approche
+  proposée : bissection par snapshots d'entrée/sortie supplémentaires
+  dans les fonctions candidates entre le dernier appel sain et celui qui
+  crashe. Voir
+  `reports/ac6-retail-native-codegen-gate2-r132-sub_821f7c80-crash-is-a-corrupted-notification-list-ntreadfile-ruled-out-as-cause-20260901.md`.
+
 # AC6 retail NTSC-U/J — r131 : le crash original de r100 (`sub_821D6C20`) est CONFIRMÉ DISPARU — nouveau crash déterministe dans `sub_821F7C80` (2026-09-01)
 
 - **Cause réelle du "not found" de r130** : ce n'était PAS un bug de

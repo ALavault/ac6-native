@@ -855,7 +855,25 @@ compteur injecté ou fallback ReXGlue.
     exact et son lien probable avec le contenu de `DATA.TBL`/
     `DATA00.PAC`/`DATA01.PAC` tout juste lisible. Voir
     `reports/ac6-retail-native-codegen-gate2-r131-xdvdfs-maximum-size-parameter-was-rejecting-every-open-r100s-original-crash-site-is-confirmed-gone-20260901.md`.**
-55. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+55. **r132 : le nouveau crash `sub_821F7C80` (r131) est causé par une
+    LISTE DE NOTIFICATION CORROMPUE — `sub_821F7C80` diffuse un
+    appel à tous les nœuds d'une liste chaînée intrusive (sentinelle
+    `0x823F0C4C`, un seul enregistrant réel `0x82915FD8` avec un
+    pointeur de fonction `0x82389BF8`). Mesuré en direct
+    (`AC6_R132_DIAG`, diagnostic temporaire, entièrement annulé) : la
+    diffusion réussit proprement ~17 fois, puis le dernier appel avant
+    le crash lit `head=0x00009182` — ni la sentinelle ni le nœud
+    connu — LA MÉMOIRE A ÉTÉ ÉCRASÉE entre deux appels. `NtReadFile`
+    est EXCLU comme écrivain PAR MESURE DIRECTE (un seul appel avant
+    le crash, `length=0`, donc zéro octet copié). L'écrivain réel
+    n'est PAS localisé. Aucun code source modifié ce cycle.
+    **Prochain cycle** : trouver l'écrivain de `0x823F0C4C` par
+    bissection (snapshots d'entrée/sortie de fonctions candidates
+    entre le dernier appel sain et celui qui crashe) — pas de
+    watchpoint GDB (peu fiable sur cette sonde à 18 threads, r128).
+    Voir
+    `reports/ac6-retail-native-codegen-gate2-r132-sub_821f7c80-crash-is-a-corrupted-notification-list-ntreadfile-ruled-out-as-cause-20260901.md`.**
+56. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r132-sub_821f7c80-crash-is-a-corrupted-notification-list-ntreadfile-ruled-out-as-cause-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r131-xdvdfs-maximum-size-parameter-was-rejecting-every-open-r100s-original-crash-site-is-confirmed-gone-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r130-ntcreatefile-ntreadfile-implemented-and-called-with-real-filenames-xdvdfs-lookup-fails-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r129-writer-found-real-content-exists-the-probe-just-never-used-the-qualified-iso-20260901.md`;
@@ -516,6 +517,22 @@ remplacé par un nouveau crash déterministe (reproduit 2/2) dans
 `sub_821F7C80` <- `sub_82390B18` <- `sub_821F8008` <- thread
 `ExCreateThread`, forme de pointeur nul (`rbp=rdx=r13=r15=0`), mécanisme
 pas encore établi. Prochain cycle : désassembler `sub_821F7C80`.
+
+**r132 — le crash `sub_821F7C80` (nouveau depuis r131) est une liste de
+notification CORROMPUE.** Lecture statique + génération C++ confirment :
+`sub_821F7C80` diffuse un appel à tous les nœuds d'une liste doublement
+chaînée (sentinelle `0x823F0C4C`, correctement auto-référencée dans
+l'image XEX statique — pas un problème d'init). Mesure en direct
+(diagnostic temporaire `AC6_R132_DIAG`, entièrement annulé après usage) :
+la diffusion réussit proprement ~17 fois avec le seul nœud réel enregistré
+(`0x82915FD8`, fn=`0x82389BF8`), puis le DERNIER appel avant le crash lit
+`head=0x00009182` — ni la sentinelle ni le nœud connu. La mémoire a été
+écrasée entre deux appels par quelque chose d'autre. `NtReadFile` est
+EXCLU comme écrivain PAR MESURE DIRECTE (un seul appel avant le crash,
+`length=0`, zéro octet copié) — donc le nouveau code r130/r131 n'est PAS
+en cause. L'écrivain réel n'est pas localisé. Aucun code source modifié.
+Prochain cycle : bissection par snapshots supplémentaires pour localiser
+l'écrivain (pas de watchpoint GDB, peu fiable ici depuis r128).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
