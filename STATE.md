@@ -1,3 +1,46 @@
+# AC6 retail NTSC-U/J — r141 : CORRIGE r139 — `sub_82338388` NE renvoie PAS le résultat de `sub_82339AA8` directement (2026-09-01)
+
+- **Suivant l'instruction de r140** : instrumentation À L'INTÉRIEUR de
+  `sub_82344058` — appelée EXACTEMENT 5 fois dans toute la session,
+  renvoyant `1,2,3,4,5` en séquence, **JAMAIS 0**. Ceci contredit à lui
+  seul l'affirmation de r139 selon laquelle le `0` observé transiterait
+  par `sub_82339AA8 → sub_82344058`.
+- **Mesure combinée décisive** (entrée/sortie de `sub_82339AA8` +
+  `sub_82344058` + `sub_822834C0` dans LA MÊME session) : pour NOTRE
+  requête exacte (`cat=1, réglage=3, idx=4, flags=0`, confirmée par les
+  arguments) — `sub_82339AA8 RETURN=0x00000002` (RÉUSSIT, renvoie 2,
+  RÉEL et POSITIF) — mais `sub_822834C0` rapporte ENSUITE
+  `sub_82338388 returned=0x00000000`. **`sub_82338388` NE renvoie PAS
+  le résultat de `sub_82339AA8` directement** — corrige r139.
+- **Où la transformation a réellement lieu** : sur le chemin succès,
+  `sub_82338388` appelle `sub_821F4128([r1+80], -1)` (PAS sur l'entier
+  retourné, sur un TAMPON DE SORTIE que `sub_82339AA8` a rempli via son
+  propre argument `r9`), puis lit `[r1+88]` (un AUTRE local 64-bit,
+  sign-extend des 32 bits bas) comme vrai retour. Le `2` de
+  `sub_82339AA8` (un ID de séquence interne) est ABANDONNÉ sur ce
+  chemin.
+- **Nouvelle piste principale (nommée, pas affirmée)** : le `0` pourrait
+  être l'un des PROPRES PARAMÈTRES D'ENTRÉE de la requête (`p4=0` dans
+  la trace) renvoyé en écho via ce tampon de sortie — auquel cas ce
+  serait un résultat ENTIÈREMENT ATTENDU et CORRECT, pas un signe de
+  ressource vide/non initialisée. Pas encore établi.
+- **Corrige une PRÉMISSE structurante** du rapport de r139 (pas
+  seulement resserre entre deux possibilités comme r138/r140) — la
+  chaîne causale en 10 étapes reste correcte à CHAQUE maillon SAUF
+  l'affirmation spécifique sur QUELLE valeur devient ce `0` et
+  POURQUOI ; le `0` observable lui-même et tout ce qui en découle
+  restent exacts.
+- **Aucun code source modifié ce cycle** — 3 diagnostics temporaires,
+  annulés et vérifiés (ctest 9/9, 139/139 Python après reconstruction
+  propre).
+  **Prochain cycle** : lire `sub_821F7538` (le vrai corps derrière
+  `sub_821F4128`) — c'est LUI qui produit le `0` final. Identifier ce
+  que `sub_82339AA8` écrit dans son tampon de sortie (`r9`/`r1+80` de
+  l'appelant) pendant une requête réussie, en le reliant au layout de
+  champs de `sub_823455D8` (déjà lu en r139) pour voir si le `0` est
+  littéralement `p4=0` de la requête elle-même. Voir
+  `reports/ac6-retail-native-codegen-gate2-r141-corrects-r139-sub_82338388-does-not-return-sub_82339aa8s-result-directly-20260901.md`.
+
 # AC6 retail NTSC-U/J — r140 : l'init de la table config s'exécute RÉELLEMENT avant la requête défaillante — réfute l'hypothèse de timing, le mécanisme réel est plus profond (2026-09-01)
 
 - **Hypothèse testée** (issue de r139) : lecture de `sub_82344058`

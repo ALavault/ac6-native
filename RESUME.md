@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r141-corrects-r139-sub_82338388-does-not-return-sub_82339aa8s-result-directly-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md`;
@@ -659,6 +660,19 @@ mécanisme réel est dans la logique BST de `sub_82344058` (chemin
 "trouvé" vs "compteur frais"), pas dans l'init. Deuxième résultat
 négatif consécutif (après r138). Aucun code modifié. Prochain cycle :
 instrumenter l'intérieur de `sub_82344058` pour distinguer les chemins.
+
+**r141 — CORRIGE r139 : `sub_82338388` ne renvoie PAS le résultat de
+`sub_82339AA8` directement.** `sub_82344058` (instrumenté à
+l'intérieur) : 5 appels, renvoie 1,2,3,4,5, JAMAIS 0. Mesure combinée :
+`sub_82339AA8` RÉUSSIT pour notre requête exacte (cat=1,réglage=3,
+idx=4,flags=0), renvoie 2 — mais `sub_822834C0` rapporte ensuite
+`sub_82338388 returned=0`. Sur le chemin succès, `sub_82338388` lit en
+réalité un TAMPON DE SORTIE (via `sub_821F4128`/`[r1+88]`), pas
+l'entier `2` (abandonné). Piste : `0` pourrait être `p4=0` de la
+requête elle-même renvoyé en écho — résultat correct, pas une
+ressource vide. Corrige une prémisse structurante de r139. Aucun code
+modifié. Prochain cycle : lire `sub_821F7538`, identifier le tampon de
+sortie de `sub_82339AA8`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

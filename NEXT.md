@@ -1062,7 +1062,32 @@ compteur injecté ou fallback ReXGlue.
     si un nœud existant est trouvé ; compter les appels totaux pour
     éviter un trou de corrélation. Voir
     `reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md`.**
-64. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+64. **r141 : CORRIGE r139 — `sub_82338388` NE renvoie PAS le résultat
+    de `sub_82339AA8` directement.** Instrumentation à l'intérieur de
+    `sub_82344058` : appelée exactement 5 fois, renvoie `1,2,3,4,5`,
+    JAMAIS 0 — contredit à lui seul l'affirmation de r139. Mesure
+    combinée décisive : pour notre requête exacte
+    (`cat=1,réglage=3,idx=4,flags=0`, confirmée par ses arguments),
+    `sub_82339AA8 RETURN=2` (réussit, réel et positif) — mais
+    `sub_822834C0` rapporte ENSUITE `sub_82338388 returned=0`. Sur le
+    chemin succès, `sub_82338388` appelle en réalité
+    `sub_821F4128([r1+80],-1)` (sur un TAMPON DE SORTIE que
+    `sub_82339AA8` a rempli, pas sur l'entier `2` retourné, qui est
+    ABANDONNÉ), puis lit `[r1+88]` comme vrai retour. Nouvelle piste
+    (nommée, pas affirmée) : le `0` pourrait être l'un des propres
+    paramètres d'entrée de la requête (`p4=0`) renvoyé en écho — un
+    résultat ENTIÈREMENT CORRECT, pas une ressource vide. Corrige une
+    PRÉMISSE structurante de r139 (pas juste resserre entre deux
+    possibilités) — la chaîne en 10 étapes reste correcte partout SAUF
+    sur QUELLE valeur devient ce `0` et POURQUOI. Aucun code source
+    modifié ce cycle (3 diagnostics temporaires, annulés et vérifiés,
+    ctest 9/9 + 139/139 Python après reconstruction propre).
+    **Prochain cycle** : lire `sub_821F7538` (vrai corps derrière
+    `sub_821F4128`, produit le `0` final) ; identifier ce que
+    `sub_82339AA8` écrit dans son tampon de sortie pendant une requête
+    réussie, relié au layout de `sub_823455D8` (r139). Voir
+    `reports/ac6-retail-native-codegen-gate2-r141-corrects-r139-sub_82338388-does-not-return-sub_82339aa8s-result-directly-20260901.md`.**
+65. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
