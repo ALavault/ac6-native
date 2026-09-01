@@ -1342,6 +1342,25 @@ compteur injecté ou fallback ReXGlue.
     dans le scan Ghidra statique. Voir
     `reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md`.
 
+79. **r155 : un xref Ghidra `-noanalysis` est CONTREDIT par
+    l'instrumentation live — `sub_82390880` n'est jamais entré ce
+    run.** Scan Ghidra réel (`Ac6Xrefs.java`, base de références) sur
+    l'adresse réelle du thunk `NtQueryInformationFile` (`0x823D031C`,
+    lue dans `ppc_func_mapping.cpp`) : 1 seule xref, dans
+    `sub_82390880` — d'accord avec r146/r147 et le grep littéral (2
+    méthodes statiques concordantes). Un `fprintf` inconditionnel en
+    entrée de `__imp__sub_82390880` (présence vérifiée via `objdump`
+    dans le binaire compilé) ne s'affiche JAMAIS sur un run où
+    `NtQueryInformationFile` se déclenche pourtant. Réconciliation
+    plausible non vérifiée : appel indirect contournant le corps
+    compilé, invisible à un scan `-noanalysis`. Applique "mesurer
+    l'instrument" dans l'autre sens — 2 méthodes statiques
+    concordantes étaient toutes deux fausses. Fil `sub_82390880` reste
+    fermé (r154), raison maintenant documentée ; résoudre pour de vrai
+    demanderait une passe Ghidra `-analysis` complète. Aucun code
+    modifié (diagnostic annulé, ctest 9/9). Voir
+    `reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

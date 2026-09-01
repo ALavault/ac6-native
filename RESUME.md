@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r152-r150-and-r151-are-the-same-chain-sub_822834c0-returns-the-garbage-size-directly-20260901.md`;
@@ -849,6 +850,19 @@ un appel littéral (contrairement à r152). Fil fermé coût/bénéfice
 route séparée). Gate 2 : les 2 frontières nommées sont de nouveau
 bloquées, comme au moment de r144. Prochain : audits de maintenance
 (pattern r144).
+
+**r155 — un xref Ghidra `-noanalysis` est CONTREDIT par
+l'instrumentation live — `sub_82390880` n'est jamais entré ce run.**
+Scan Ghidra réel (base de références, pas texte) sur l'adresse réelle
+du thunk `NtQueryInformationFile` (`0x823D031C`) : 1 seule xref, dans
+`sub_82390880` — d'accord avec r146/147 et le grep littéral (2
+méthodes statiques concordantes). `fprintf` inconditionnel en entrée
+(présence vérifiée via `objdump` dans le binaire) ne s'affiche JAMAIS
+alors que l'import se déclenche pourtant. Réconciliation plausible non
+vérifiée : appel indirect invisible à un scan `-noanalysis`. 2
+méthodes statiques concordantes étaient toutes deux fausses — seule
+l'instrumentation live l'a détecté. Fil reste fermé (r154), raison
+documentée.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

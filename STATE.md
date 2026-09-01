@@ -1,3 +1,35 @@
+# AC6 retail NTSC-U/J — r155 : un xref Ghidra `-noanalysis` est CONTREDIT par l'instrumentation live — `sub_82390880` n'est jamais entré ce run (2026-09-01)
+
+- **Scan Ghidra statique réel** (`Ac6Xrefs.java`, base de données de
+  références, pas du texte) sur l'adresse réelle du thunk
+  `NtQueryInformationFile` (`0x823D031C`, lue dans
+  `ppc_func_mapping.cpp`) : 1 seule xref, `bl 0x823d031c` à
+  `0x823908a4`, DANS `sub_82390880`. D'ACCORD avec r146/r147 et avec le
+  grep littéral du C++ généré — 2 méthodes statiques concordantes.
+- **CONTREDIT par l'instrumentation live** : `fprintf` INCONDITIONNEL
+  (pas de garde `getenv`, pour éliminer toute cause environnementale)
+  placé en première instruction de `__imp__sub_82390880`, PRÉSENCE
+  vérifiée dans le binaire compilé via `objdump` — ne s'affiche JAMAIS
+  sur un run complet où `NtQueryInformationFile` se déclenche pourtant
+  bien (trace d'import). `sub_82390880` n'est RÉELLEMENT jamais entré
+  ce run.
+- **Réconciliation plausible (NON vérifiée)** : le scan Ghidra était
+  `-noanalysis` — son gestionnaire de références ne résout pas les
+  appels indirects (`bctrl` via adresse chargée d'une table) ; un appel
+  indirect vers `0x823D031C` contournerait entièrement le corps compilé
+  de `sub_82390880` sans laisser de xref visible sans analyse complète.
+- **DÉCISION** : applique le principe CLAUDE.md "mesurer l'instrument"
+  dans l'autre sens — 2 méthodes statiques CONCORDANTES étaient toutes
+  deux fausses ; seule l'instrumentation live contrôlée l'a détecté.
+  Le fil `sub_82390880` reste fermé (r154), maintenant avec la raison
+  documentée. Résoudre pour de vrai demanderait une passe Ghidra
+  `-analysis` complète — investissement plus important que ce que ce
+  fil (sans levier depuis r147) justifie.
+- **Aucun code source modifié ce cycle** — 1 diagnostic temporaire
+  (inconditionnel), annulé et vérifié (ctest 9/9 après reconstruction
+  propre). Voir
+  `reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md`.
+
 # AC6 retail NTSC-U/J — r154 : `backtrace()` échoue sous élision d'appel terminal ; le fil `sub_82390880` fermé coût/bénéfice — les 2 frontières nommées sont à nouveau bloquées (2026-09-01)
 
 - **`backtrace()` PEU FIABLE ici** : instrumenter `sub_82390880` (site
