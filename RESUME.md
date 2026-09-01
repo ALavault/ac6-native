@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r157-xenia-edge-oracle-boots-past-data-tbl-real-title-screen-confirms-datatbl-stall-is-recompilation-specific-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md`;
@@ -891,6 +892,13 @@ slot de pile `[r1+88]` est maintenant défendable. Priorité : obtenir
 la release Xenia Edge pinnée pour qualifier pleinement, puis
 comparaison ciblée. Preuves dans
 `reports/ac6-retail-native-xenia-edge-oracle-r157-20260901/`.
+
+**r158 — release Xenia Edge PINNÉE (`60ff861`) reproduit r157 et va
+plus loin — résultat maintenant QUALIFIÉ.** Téléchargée via l'API
+GitHub Releases, SHA-256 vérifié exact. Écran légal PIXEL-IDENTIQUE à
+r157 (même hash malgré 2 binaires différents) ; va plus loin (crédits
+imagerie satellite, puis écran ESRB réel). r157 passe de PROVISOIRE à
+QUALIFIÉ. Prochain : comparaison ciblée au point exact `[r1+88]`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

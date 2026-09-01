@@ -1,0 +1,4 @@
+f55350740938da01ccc1582ed4875d2d1e669d5f1939c47c9fa5c79da2cbbba7  01-trademark-screen.png
+480dead810b73e0d350933207727cf1fa3897d45e745d816f43e2845cf68df33  02-imagery-credits-screen.png
+0647d074ad4e1fe40acc7d7b84cb1f5f455fc6c9584947ce479c42e33cc45d0f  03-esrb-online-notice.png
+5efcf398b85c27100b7cfe774078ce43709e029c3390e322cc8c89aace9c54f4  xenia-edge.log

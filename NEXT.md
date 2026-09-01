@@ -1402,6 +1402,19 @@ compteur injecté ou fallback ReXGlue.
     `[r1+88]`. Voir
     `reports/ac6-retail-native-codegen-gate2-r157-xenia-edge-oracle-boots-past-data-tbl-real-title-screen-confirms-datatbl-stall-is-recompilation-specific-20260901.md`.
 
+82. **r158 : release Xenia Edge PINNÉE (`60ff861`) reproduit r157 et va
+    plus loin — résultat maintenant QUALIFIÉ.** Téléchargée via l'API
+    GitHub Releases, SHA-256 vérifié exact (`c2cac2a0...`, match avec
+    `scripts/run_xenia_edge_native.sh`/cycle-1734). Reproduit r157 à
+    l'identique (écran légal PIXEL-IDENTIQUE, même hash SHA-256, malgré
+    2 binaires différents) et va plus loin (écran crédits imagerie
+    satellite, puis écran d'avis ESRB réel). r157 passe de PROVISOIRE
+    à QUALIFIÉ : le blocage DATA.TBL est confirmé spécifique à notre
+    recompilation sur une base solide. Aucun code modifié. **Prochain
+    cycle (PRIORITAIRE)** : comparaison ciblée au point exact de
+    lecture `[r1+88]` maintenant qu'un oracle qualifié existe. Voir
+    `reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

@@ -1,3 +1,28 @@
+# AC6 retail NTSC-U/J — r158 : release Xenia Edge PINNÉE (60ff861) reproduit r157 et va plus loin (écran ESRB) — résultat maintenant QUALIFIÉ (2026-09-01)
+
+- **Release pinnée obtenue** : `has207/xenia-edge` tag `60ff861`,
+  téléchargée via l'API GitHub Releases, SHA-256 vérifié
+  `c2cac2a0...` = EXACTEMENT le hash pinné par
+  `scripts/run_xenia_edge_native.sh` et `cycle-1734`. Installée à
+  `.tools/xenia-edge-60ff861/`.
+- **REPRODUIT r157 à l'identique** : même titre `4E4D07D1`, même
+  séquence shaders/pipelines, et l'écran légal/marques déposées est
+  PIXEL-IDENTIQUE (même hash SHA-256 exact que la capture r157) malgré
+  2 binaires AppImage différents — forte preuve de reproductibilité.
+- **VA PLUS LOIN que r157** : atteint un 2e écran de crédits (imagerie
+  satellite : Japan Space Imaging, GeoEye, INTA Spaceturk,
+  DigitalGlobe/HitachiSoft, Bink Video) PUIS un vrai écran d'avis ESRB
+  ("Game experience may change during online play") — un point encore
+  plus avancé de la séquence de boot réelle.
+- **DÉCISION** : le résultat de r157 passe de PROVISOIRE à QUALIFIÉ.
+  La conclusion (blocage DATA.TBL spécifique à notre recompilation, pas
+  au vrai jeu) tient maintenant sur une capture oracle pleinement
+  qualifiée et reproductible.
+- **Aucun code source modifié** — preuves dans
+  `reports/ac6-retail-native-xenia-edge-oracle-r158-pinned-20260901/`.
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md`.
+
 # AC6 retail NTSC-U/J — r157 : ORACLE Xenia Edge BOOTE au-delà de TOUT ce que notre recompilation atteint — le blocage DATA.TBL/pile non initialisée est CONFIRMÉ spécifique à notre recompilation (2026-09-01)
 
 - **RÉSULTAT MAJEUR** : Xenia Edge (build non pinné, provenance non
