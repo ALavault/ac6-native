@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md",

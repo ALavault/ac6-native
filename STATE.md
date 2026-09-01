@@ -1,3 +1,39 @@
+# AC6 retail NTSC-U/J — r156 : INVESTISSEMENT AUTORISÉ (oracle + analyse complète) — `sub_821F5630` résolu (dispatch indirect), Xenia natif confirmé bloqué sur NTSC-U/J aussi (2026-09-01)
+
+- **Utilisateur a autorisé "Oracle and invest"** — première vraie
+  utilisation d'un oracle depuis le début de cette campagne.
+- **Analyse Ghidra COMPLÈTE (`-analysis`, pas `-noanalysis`)** sur une
+  COPIE scratch du projet (le projet canonique read-only n'est PAS
+  modifié) : 8 xrefs vers le thunk `NtQueryInformationFile` au lieu de
+  1 — 7 nouvelles, toutes `COMPUTED_CALL` (`bctrl`, invisibles à
+  `-noanalysis` ET au grep littéral du C++ généré). `sub_821F5630`
+  (la fonction que le backtrace de r154 avait nommée) EST un vrai
+  appelant : `PPC_CALL_INDIRECT_FUNC(ctr.u32)` après double
+  déréférencement vtable (`+1996` puis `+32`) — un dispatcher
+  GÉNÉRIQUE de fournisseur, pas un appel direct nommé.
+- **CORRIGE r154** : l'hypothèse "élision d'appel terminal -O3" était
+  FAUSSE — la vraie raison est structurelle (appel indirect invisible
+  au grep littéral), pas une optimisation qui efface des frames.
+- **Affine r150** : `sub_82390880` (appel direct, capture vidéo debug,
+  r147) et `sub_821F5630` (appel indirect, dispatch générique) sont
+  2 sites SANS RAPPORT vers le même thunk. DATA.TBL passe par
+  `sub_821F5630`, PAS par l'idiome capture vidéo de r147 — la question
+  ouverte depuis r150 est maintenant FERMÉE avec une vraie réponse.
+- **Session Xenia RÉELLE** contre l'ISO NTSC-U/J CORRECT (pas le PAL
+  `game-files/default.xex` des scripts existants) : bloque au MÊME
+  point que la limitation déjà documentée pour PAL
+  (`XENIA_WINE_ORACLE_HANDOFF.md` : écran noir, `SDL_OpenAudioDevice()
+  failed`) — confirmé pour NTSC-U/J aussi, 7min20s sans progression de
+  log, capture d'écran à l'appui. Négatif réel, nouveau point de
+  donnée, pas une simple relecture.
+- **DÉCISION** : le fil `sub_82390880`/`sub_821F5630` est fermé avec
+  une réponse VÉRIFIÉE. Xenia natif Linux confirmé non viable pour ce
+  titre aussi ; la route Wine (documentée seulement pour PAL) serait un
+  investissement séparé, plus important, pas tenté ce cycle.
+- **Aucun code source modifié** — copie scratch Ghidra et session
+  Xenia toutes deux hors du dépôt versionné. Voir
+  `reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md`.
+
 # AC6 retail NTSC-U/J — r155 : un xref Ghidra `-noanalysis` est CONTREDIT par l'instrumentation live — `sub_82390880` n'est jamais entré ce run (2026-09-01)
 
 - **Scan Ghidra statique réel** (`Ac6Xrefs.java`, base de données de

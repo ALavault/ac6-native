@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md`;
@@ -863,6 +864,20 @@ vérifiée : appel indirect invisible à un scan `-noanalysis`. 2
 méthodes statiques concordantes étaient toutes deux fausses — seule
 l'instrumentation live l'a détecté. Fil reste fermé (r154), raison
 documentée.
+
+**r156 — INVESTISSEMENT AUTORISÉ (oracle + analyse Ghidra complète) —
+`sub_821F5630` résolu, Xenia natif confirmé bloqué sur NTSC-U/J
+aussi.** Utilisateur a autorisé "Oracle and invest". Analyse `-analysis`
+complète (copie scratch) : 8 xrefs vers le thunk `NtQueryInformationFile`
+(au lieu de 1) — `sub_821F5630` confirmé comme dispatcher générique
+indirect (`bctrl` après double vtable +1996/+32). Corrige r154
+("élision -O3" était faux). Affine r150 : DATA.TBL passe par
+`sub_821F5630`, pas par l'idiome capture vidéo de `sub_82390880`
+(r147) — question fermée avec une vraie réponse. Session Xenia réelle
+contre l'ISO NTSC-U/J correct : bloque au même point que la
+limitation déjà documentée pour PAL (écran noir, échec audio) —
+confirmé pour NTSC-U/J aussi. Route Wine pour NTSC-U/J = investissement
+séparé, non tenté.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

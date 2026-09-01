@@ -1361,6 +1361,29 @@ compteur injecté ou fallback ReXGlue.
     modifié (diagnostic annulé, ctest 9/9). Voir
     `reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md`.
 
+80. **r156 : INVESTISSEMENT AUTORISÉ (oracle + analyse Ghidra complète)
+    — `sub_821F5630` résolu (dispatch indirect vtable), Xenia natif
+    confirmé bloqué sur NTSC-U/J aussi.** Utilisateur a autorisé
+    "Oracle and invest" — première utilisation d'oracle de la
+    campagne. Analyse Ghidra `-analysis` complète (copie scratch, projet
+    canonique NON modifié) : 8 xrefs vers le thunk
+    `NtQueryInformationFile` (au lieu de 1 en `-noanalysis`) — 7
+    `COMPUTED_CALL` (`bctrl`) invisibles au grep littéral. `sub_821F5630`
+    confirmé comme vrai appelant : dispatcher générique de fournisseur
+    (`PPC_CALL_INDIRECT_FUNC` après double déréférencement vtable
+    +1996/+32). CORRIGE r154 (l'hypothèse "élision -O3" était fausse —
+    appel indirect, pas élision). AFFINE r150 : `sub_82390880` (capture
+    vidéo, r147) et `sub_821F5630` (dispatch générique) sont 2 sites
+    sans rapport ; DATA.TBL passe par `sub_821F5630`. Question fermée
+    avec une vraie réponse. Session Xenia réelle contre l'ISO NTSC-U/J
+    CORRECT (pas le PAL des scripts existants) : bloque au même point
+    que la limitation déjà documentée pour PAL (écran noir, échec audio
+    SDL) — confirmé pour NTSC-U/J aussi, négatif réel nouveau. Xenia
+    natif Linux non viable pour ce titre ; route Wine (PAL seulement
+    pour l'instant) = investissement séparé plus important, non tenté.
+    Aucun code modifié. Voir
+    `reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;
