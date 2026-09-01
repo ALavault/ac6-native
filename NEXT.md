@@ -923,7 +923,33 @@ compteur injecté ou fallback ReXGlue.
     `0x8293B950-5C` (remplis par LA BRANCHE PRISE) sont en fait les vrais
     champs pertinents plutôt que `0x8293B94C`. Voir
     `reports/ac6-retail-native-codegen-gate2-r134-zero-length-read-traced-to-a-boolean-gated-store-that-never-populates-a-descriptor-field-20260901.md`.**
-58. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+58. **r135 : CAUSE RACINE FERMÉE — une allocation de 16 octets sur le tas
+    guest (`sub_82222D80`, un vrai allocateur du JEU, pas un stub HLE)
+    renvoie NULL, jamais vérifiée, et se propage à travers 5 fonctions
+    réelles jusqu'au crash `sub_821F7C80` (r131).** Corrige r134 sur deux
+    points DANS LE MÊME CYCLE : le drapeau `0x8293B938` EST à 2 et
+    `0x8293B94C` EST écrit (pas "jamais rempli" comme supposé) ; et une
+    première attribution erronée du code de vérification à
+    `sub_821CC508` (par proximité de ligne, sans vérifier la frontière de
+    fonction) a été corrigée en `sub_821CC288` via un compteur d'appels
+    en direct. Chaîne complète mesurée : allocation 16 octets échoue
+    (NULL, non vérifiée) → `8` stocké comme "pointeur record" →
+    `sub_821CC508` lit une taille de fichier de `0` près de l'adresse
+    zéro → `NtReadFile(length=0)` → tampon `DATA.TBL` jamais rempli →
+    `sub_82234B88` lit du poison comme en-tête → pointeur sauvage →
+    corruption de la liste de notification → crash. Point le plus
+    profond atteint par cette investigation : un allocateur de tas RÉEL
+    du jeu qui échoue. Question ouverte : ce tas est-il jamais initialisé
+    par ce runtime natif, ou cette investigation atteint-elle pour la
+    première fois un état réel et correct du jeu (pas un bug) ? Aucun
+    code source modifié ce cycle (7 diagnostics temporaires, tous
+    annulés et vérifiés, ctest 9/9 + 139/139 Python après reconstruction
+    propre). **Prochain cycle** : lire `sub_82222D80`/`sub_82221C68` en
+    entier, tracer l'objet tas jusqu'à son initialisation. NE PAS ajouter
+    de vérification défensive à `sub_821CC288` (patcherait un symptôme
+    dans du code que ce projet ne possède pas). Voir
+    `reports/ac6-retail-native-codegen-gate2-r135-root-cause-closed-a-16-byte-guest-heap-allocation-returns-null-unchecked-20260901.md`.**
+59. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

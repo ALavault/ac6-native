@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r135-root-cause-closed-a-16-byte-guest-heap-allocation-returns-null-unchecked-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r134-zero-length-read-traced-to-a-boolean-gated-store-that-never-populates-a-descriptor-field-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r133-writer-found-sub_82234b88-parses-a-zero-length-ntreadfile-buffer-as-a-real-header-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r132-sub_821f7c80-crash-is-a-corrupted-notification-list-ntreadfile-ruled-out-as-cause-20260901.md`;
@@ -570,6 +571,25 @@ import manquant — code déjà exécuté prenant la mauvaise branche. Aucun
 code modifié. Prochain cycle : identifier le drapeau `0x8293B938`,
 déterminer si son état zéro est correct ici ou si les champs
 `0x8293B950-5C` sont les vrais champs pertinents.
+
+**r135 — CAUSE RACINE FERMÉE.** Corrige r134 sur deux points dans le
+MÊME cycle : le drapeau `0x8293B938` EST à 2, `0x8293B94C` EST écrit ;
+et une première attribution erronée (`sub_821CC508` au lieu de
+`sub_821CC288`, par proximité de ligne sans vérifier la frontière de
+fonction) auto-corrigée via un compteur d'appels en direct. Vraie cause :
+`sub_821CC288` réaffecte r31 comme retour de `sub_82222D80` — un VRAI
+ALLOCATEUR DE TAS DU JEU (pas un stub HLE), mesuré en direct :
+`sub_82222D80(taille=16) renvoie NULL`, jamais vérifié, `NULL+8=8` stocké
+comme "pointeur record". Chaîne complète : allocation échoue → `8` comme
+record → `sub_821CC508` lit taille=0 près de l'adresse zéro →
+`NtReadFile(length=0)` → tampon `DATA.TBL` jamais rempli →
+`sub_82234B88` lit du poison comme en-tête → pointeur sauvage → liste de
+notification corrompue → crash `sub_821F7C80`. Point le plus profond
+atteint : un allocateur RÉEL du jeu qui échoue. Question ouverte : le tas
+est-il jamais initialisé par ce runtime, ou est-ce un état réel/correct
+du jeu jamais atteint avant ? Aucun code modifié. Prochain cycle : lire
+`sub_82222D80`/`sub_82221C68`, tracer l'objet tas. NE PAS ajouter de
+vérification défensive à `sub_821CC288`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

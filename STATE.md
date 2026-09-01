@@ -1,3 +1,50 @@
+# AC6 retail NTSC-U/J — r135 : CAUSE RACINE FERMÉE — une allocation de 16 octets sur le tas guest (`sub_82222D80`) renvoie NULL, jamais vérifiée, et se propage à travers 5 fonctions réelles jusqu'au crash (2026-09-01)
+
+- **Corrige r134 sur deux points, dans ce MÊME cycle** : (1) le drapeau
+  `0x8293B938` EST bien mis à 2 (non-zéro) — `0x8293B94C` EST bien écrit,
+  ce n'est PAS un champ jamais rempli comme r134 le supposait ; (2) une
+  première lecture erronée avait attribué le code de vérification du
+  drapeau à `sub_821CC508` par proximité de ligne, sans vérifier la
+  frontière `PPC_FUNC_IMPL` — un compteur d'appels en direct sur
+  `sub_821CC508` (UN SEUL appel, `arg1=0x829ddd80`, réel et non-nul) a
+  contredit la mesure précédente et révélé que le code appartient en
+  réalité à `sub_821CC288`, une fonction DIFFÉRENTE. Erreur auto-corrigée
+  dans le même cycle, avant tout rapport ou commit.
+- **`sub_821CC288` ne prend PAS son propre argument dans r31`** — r31 y
+  est RÉAFFECTÉ comme valeur de retour de `sub_82222D80` (un ALLOCATEUR
+  DE TAS GUEST RÉEL et COMPILÉ, PAS un stub HLE). Mesuré en direct :
+  `sub_82222D80(taille=16) renvoie r31=0x00000000` — **L'ALLOCATION
+  ÉCHOUE (NULL), et n'est JAMAIS VÉRIFIÉE** avant que `r31+8=8` soit
+  stocké comme pointeur de descripteur dans `0x8293B94C`.
+- **CHAÎNE CAUSALE COMPLÈTE, CHAQUE MAILLON MESURÉ EN DIRECT** :
+  allocation 16 octets échoue (NULL, non vérifiée) → `8` stocké comme
+  "pointeur record" → `sub_821CC508` lit `[8+8]=[0x10]` (mémoire
+  quasi-nulle) comme taille de fichier → `0` → calcul de taille de chunk
+  donne `0` → `NtReadFile(length=0)` → tampon `DATA.TBL` jamais rempli →
+  `sub_82234B88` lit des octets de poison comme un vrai en-tête →
+  pointeur sauvage → boucle d'échange d'octets écrase la liste de
+  notification → `sub_821F7C80` (crash de r131) marche sur la sentinelle
+  corrompue → SIGSEGV. **C'est le point le plus profond atteint par cette
+  investigation** — un vrai allocateur de tas du JEU LUI-MÊME (code
+  compilé réel, pas un de nos stubs) qui échoue.
+- **Question ouverte (nommée, pas devinée)** : pourquoi cette allocation
+  de 16 octets échoue-t-elle ? Le tas backing cet allocateur est-il
+  jamais initialisé par ce runtime natif (une étape que le vrai matériel
+  effectuerait plus tôt) ? OU cette investigation atteint-elle
+  simplement, pour la première fois, un état RÉEL et CORRECT du jeu (tas
+  vide/épuisé par conception à ce stade) — pas un bug à corriger du
+  tout ?
+- **Aucun code source modifié ce cycle** — 7 diagnostics temporaires,
+  tous annulés et vérifiés (ctest 9/9, 139/139 Python après
+  reconstruction propre).
+  **Prochain cycle** : lire `sub_82222D80` et son appelé
+  `sub_82221C68` (recherche de classe de taille) en entier ; tracer
+  l'argument "objet tas" jusqu'à son initialisation ; déterminer si ce
+  runtime natif doit préparer ce tas plus tôt. NE PAS ajouter de
+  vérification défensive à `sub_821CC288` — ce serait patcher un
+  symptôme dans du code que ce projet ne possède pas. Voir
+  `reports/ac6-retail-native-codegen-gate2-r135-root-cause-closed-a-16-byte-guest-heap-allocation-returns-null-unchecked-20260901.md`.
+
 # AC6 retail NTSC-U/J — r134 : la lecture de longueur zéro tracée jusqu'à un store conditionnel (booléen) JAMAIS pris — pas un import manquant, corrige r133 (2026-09-01)
 
 - **Chaîne d'appel** (`addr2line` sur une capture `backtrace()`) :
