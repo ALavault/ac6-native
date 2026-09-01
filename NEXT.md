@@ -468,7 +468,26 @@ compteur injecté ou fallback ReXGlue.
     bug invité réel (façon r108) vs. pile de 64 Ko insuffisante pour ce
     thread. Voir
     `reports/ac6-retail-native-codegen-gate2-r111-nondeterminism-source-is-a-real-background-thread-race-20260901.md`.
-18. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+19. **r112 a trouvé que dix-huit threads démarrent en parallèle, avec
+    deux sites de crash distincts, et a capturé l'instruction de crash
+    exacte.** Un lot de dix répétitions `gdb --batch` (technique
+    passive de r111) montre 18 `[New Thread ...]` par exécution, pas
+    un seul — et deux sites de crash reproductibles, tous deux atteints
+    via le même trampoline `sub_821F8008` : `sub_82346428` (via
+    `sub_823453E8`, 2/10) et `sub_821D4C20` (direct, 2/10).
+    **Instruction capturée en direct** : `call *(%r12,%rax,2)` avec
+    `rax=0` — appel indirect via `[r12]`, suivi (si atteint) d'un
+    `RtlEnterCriticalSection` sur le même objet — dispatch façon
+    vtable AVANT acquisition du verrou censé le protéger, cohérent
+    avec une course de lecture non synchronisée (valeur de `r12` non
+    capturée — taux de reproduction très variable, 2/10 puis 0/18,
+    a empêché une nouvelle capture ce cycle). Aucun code modifié
+    (investigation gdb/objdump pure). **Prochain cycle** : recapturer
+    `r12`; tracer `sub_821D4C20`; vérifier si `ExCreateThread` devrait
+    lancer ces 18 threads avec un ordre/rythme que le stub actuel ne
+    modélise pas (threads suspendus jusqu'à reprise, par ex.). Voir
+    `reports/ac6-retail-native-codegen-gate2-r112-eighteen-threads-spawn-concurrently-crash-is-an-unsynchronized-vtable-read-20260901.md`.
+20. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

@@ -1,3 +1,31 @@
+# AC6 retail NTSC-U/J — r112 : dix-huit threads démarrent en parallèle; le crash est un appel indirect via un pointeur apparemment pas encore prêt (2026-09-01)
+
+- Un lot de dix répétitions `gdb --batch` (même technique passive que
+  r111) montre **dix-huit lignes `[New Thread ...]` par exécution** —
+  bien plus qu'un seul thread d'arrière-plan. **Deux sites de crash
+  distincts et reproductibles**, tous deux atteints via le même
+  trampoline d'entrée de thread `sub_821F8008` : `sub_82346428` (via
+  `sub_823453E8`, 2/10) et `sub_821D4C20` (directement, 2/10). 6/10
+  n'ont produit aucun crash dans la borne de 15s.
+- **Instruction de crash capturée en direct** : `call *(%r12,%rax,2)`
+  avec `rax=0` — un appel indirect via le pointeur situé en `[r12]`,
+  suivi IMMÉDIATEMENT (si atteint) d'un `__imp__RtlEnterCriticalSection`
+  sur le même objet — code SUR LE POINT de dispatcher via un pointeur
+  façon vtable AVANT d'acquérir le verrou censé le protéger. Forme
+  cohérente avec une lecture non synchronisée en course avec l'écriture
+  d'un autre thread, sans preuve directe (valeur de `r12` non capturée
+  — le taux de reproduction du crash a fluctué de façon marquée, de
+  2/10 dans un lot à 0/18 dans le suivant, empêchant une nouvelle
+  capture dans le budget de ce cycle).
+- Aucun code natif ni généré modifié (investigation entièrement par
+  `gdb --batch`/`objdump`, aucune édition). `ctest` 9/9 (vérification
+  de routine, rien édité). **Prochain cycle** : recapturer `r12`;
+  tracer `sub_821D4C20` (crash plus proche du trampoline, potentiellement
+  plus simple); vérifier si le harnais `ExCreateThread` devrait lancer
+  ces dix-huit threads avec un ordre/rythme (ex. threads suspendus
+  jusqu'à reprise explicite) que le stub actuel ne modélise pas. Voir
+  `reports/ac6-retail-native-codegen-gate2-r112-eighteen-threads-spawn-concurrently-crash-is-an-unsynchronized-vtable-read-20260901.md`.
+
 # AC6 retail NTSC-U/J — r111 : la source du non-déterminisme de r110 est une VRAIE course entre threads — `ExCreateThread` lance un vrai thread hôte qui segfault en code invité (2026-09-01)
 
 - Instrumentation de 46 points de contrôle dans la région GATE1-5, puis

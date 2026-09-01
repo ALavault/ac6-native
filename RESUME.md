@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r112-eighteen-threads-spawn-concurrently-crash-is-an-unsynchronized-vtable-read-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r111-nondeterminism-source-is-a-real-background-thread-race-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r110-probe-is-run-to-run-nondeterministic-without-gdb-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r109-post-gate2-dispatcher-resolves-cleanly-real-stall-still-downstream-20260901.md`;
@@ -278,6 +279,16 @@ thread principal variait donc vraiment d'une exécution à l'autre, mais
 `sub_821D5F48`. Cause exacte du crash non établie, deviner refusé.
 Aucun code modifié. Prochain cycle : tracer `sub_82346428` (offset
 +414) statiquement.
+
+**r112 a trouvé que dix-huit threads démarrent en parallèle** (pas un
+seul comme r111 le suggérait), avec deux sites de crash reproductibles
+sous le même trampoline `sub_821F8008` : `sub_82346428` et
+`sub_821D4C20`. Instruction de crash capturée en direct : `call
+*(%r12,%rax,2)` avec `rax=0`, suivi (si atteint) d'un
+`RtlEnterCriticalSection` sur le même objet — dispatch vtable avant
+verrouillage, cohérent avec une course de lecture non synchronisée
+(non prouvé — `r12` non capturé, taux de reproduction très variable).
+Aucun code modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
