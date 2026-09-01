@@ -669,7 +669,29 @@ compteur injecté ou fallback ReXGlue.
     native existante, vérifier la convention d'appel réelle d'abord,
     puis re-vérifier en direct que `0x82935d98` s'écrit enfin. Voir
     `reports/ac6-retail-native-codegen-gate2-r121-real-cause-found-ntreadfile-ntcreatefile-are-unimplemented-status-field-never-updated-20260901.md`.
-38. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+39. **r122 — convention d'appel réelle de `NtCreateFile`/`NtReadFile`
+    vérifiée par désassemblage; implémentation DÉLIBÉRÉMENT
+    DIFFÉRÉE.** Sept sites d'appel réels trouvés (groupés dans une
+    seule région — un unique wrapper CRT-style). Désassemblage complet
+    de `Function_82390F48` (la plus petite fonction contenant les deux
+    appels) confirme directement la convention : `NtCreateFile(r3=&Handle,
+    r4=DesiredAccess, r5=&ObjectAttributes, r6=&IoStatusBlock,
+    r7=AllocationSize, r8=FileAttributes, r9=ShareAccess,
+    r10=CreateDisposition)`; `NtReadFile(r3=Handle, r4=Event,
+    r5=ApcRoutine, r6=ApcContext, r7=&IoStatusBlock, r8=Buffer,
+    r9=Length, r10=&ByteOffset)` — 8 registres seulement, correspond à
+    l'ordre NT/XDK réel. `ObjectAttributes` partiellement résolu : une
+    VRAIE `ANSI_STRING` pointant vers `"\Device\Harddisk0\Partition1"`
+    (Length=28, confirmé octet par octet). **PAS assez pour
+    implémenter en sécurité** — layout complet non résolu (RootDirectory
+    vs ObjectName, nom de fichier par appel). Décision délibérée de
+    différer plutôt que de risquer le motif "implémenté avant
+    vérification complète" (déjà vécu en r115). Aucun code modifié.
+    **Prochain cycle** : résoudre le layout complet d'`OBJECT_ATTRIBUTES`
+    avant d'implémenter, puis implémenter contre l'infrastructure
+    XDVDFS/média existante. Voir
+    `reports/ac6-retail-native-codegen-gate2-r122-ntcreatefile-ntreadfile-calling-convention-verified-from-disassembly-implementation-deferred-20260901.md`.
+40. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r122-ntcreatefile-ntreadfile-calling-convention-verified-from-disassembly-implementation-deferred-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r121-real-cause-found-ntreadfile-ntcreatefile-are-unimplemented-status-field-never-updated-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r120-sub_821d4988-posts-an-async-message-not-a-log-string-r119s-speculation-corrected-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r119-real-path-is-a-bounded-retry-loop-checking-per-thread-status-at-ctx-r13-plus-336-20260901.md`;
@@ -393,6 +394,16 @@ attend RÉELLEMENT une lecture de fichier jamais implémentée** —
 cohérent avec toute la chaîne depuis r109. Aucun code modifié.
 Prochain cycle : implémenter `NtCreateFile`/`NtReadFile` contre
 l'infrastructure XDVDFS/média existante.
+
+**r122 — convention d'appel de `NtCreateFile`/`NtReadFile` vérifiée par
+désassemblage réel** (7 sites d'appel groupés, un seul wrapper CRT-style
+désassemblé intégralement) : `r3-r10` seulement, ordre NT/XDK réel.
+`ObjectAttributes` partiellement résolu (ANSI_STRING confirmée vers
+`"\Device\Harddisk0\Partition1"`, Length=28 vérifié). Implémentation
+DÉLIBÉRÉMENT différée — layout complet pas encore résolu, risque du
+motif "implémenté avant vérification complète" (r115). Aucun code
+modifié. Prochain cycle : finir le layout d'OBJECT_ATTRIBUTES avant
+d'implémenter.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

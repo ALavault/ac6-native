@@ -1,3 +1,35 @@
+# AC6 retail NTSC-U/J — r122 : convention d'appel réelle de `NtCreateFile`/`NtReadFile` vérifiée par désassemblage — implémentation différée (2026-09-01)
+
+- **Sept sites d'appel réels trouvés** (`FindDirectCallsTo.java`,
+  read-only), tous groupés dans une seule petite région — un unique
+  wrapper CRT-style, pas d'appels dispersés. La plus petite fonction
+  contenant LES DEUX appels, `Function_82390F48` (307 octets),
+  désassemblée intégralement (`DumpRange.java`, read-only).
+- **Convention d'appel confirmée directement depuis le code machine
+  réel** (pas supposée d'une spec externe) : `NtCreateFile(r3=&Handle,
+  r4=DesiredAccess, r5=&ObjectAttributes, r6=&IoStatusBlock,
+  r7=AllocationSize, r8=FileAttributes, r9=ShareAccess,
+  r10=CreateDisposition)`; `NtReadFile(r3=Handle, r4=Event,
+  r5=ApcRoutine, r6=ApcContext, r7=&IoStatusBlock, r8=Buffer,
+  r9=Length, r10=&ByteOffset)` — correspond exactement à l'ordre réel
+  NT/XDK (8 premiers registres seulement; 9e argument jamais fourni ici).
+- **`ObjectAttributes` partiellement résolu** : une `ANSI_STRING`
+  réelle (`{Length:u16, MaxLength:u16, Buffer:ptr}`) pointant vers une
+  chaîne statique confirmée par lecture d'octets (`DumpBytes.java`) :
+  `Length=28` correspond EXACTEMENT à `"\Device\Harddisk0\Partition1"`
+  (28 caractères) — un chemin de partition Xbox 360 plausible et
+  bien formé.
+- **PAS assez pour implémenter en sécurité** : quel offset est
+  `RootDirectory` vs `ObjectName`, et le nom de fichier par appel
+  (construit via sprintf séparément) restent à résoudre. Décision
+  délibérée de DIFFÉRER l'implémentation plutôt que de risquer le
+  motif "implémenté avant vérification complète" que r115 avait déjà
+  signalé sur lui-même. Aucun code modifié (travail read-only pur;
+  un script Ghidra jetable supprimé avant ce rapport). **Prochain
+  cycle** : résoudre le layout complet d'`OBJECT_ATTRIBUTES` avant
+  d'implémenter. Voir
+  `reports/ac6-retail-native-codegen-gate2-r122-ntcreatefile-ntreadfile-calling-convention-verified-from-disassembly-implementation-deferred-20260901.md`.
+
 # AC6 retail NTSC-U/J — r121 : CAUSE RÉELLE TROUVÉE — `NtReadFile`/`NtCreateFile` ne sont pas implémentés, le champ de statut n'est jamais mis à jour (2026-09-01)
 
 - **Auto-correction en cours de route** : r117/r119 avaient LU À
