@@ -1,3 +1,26 @@
+# AC6 retail NTSC-U/J — r152 : r150 et r151 sont la MÊME chaîne — `sub_822834C0` renvoie directement la taille garbage (2026-09-01)
+
+- **Lien établi entre r150 et r151** : `backtrace()` capturé au moment où
+  `sub_82222D80` reçoit `r4=0xfeffffee` (gdb avec condition sur `ctx`
+  échoue — pas de DWARF locals dans ce build ; `backtrace()`+`addr2line`
+  fonctionne). Résolu : `sub_82222D80` <- `sub_821CC288` <-
+  `sub_821D5F48` <- `sub_821D7DE0` <- `_xstart`.
+- **`sub_821CC288` CONFIRME l'attribution de r135** (auto-corrigée en
+  cycle contre `sub_821CC508` plus tôt cette session) : son seul appel
+  avant `sub_82222D80` est `sub_822834C0` — EXACTEMENT la fonction que
+  r150 avait déjà instrumentée (son appel à `sub_82338388` renvoyant
+  `1`). `rotlwi r30,r3,0` est une copie de registre pure : le retour de
+  `sub_822834C0` DEVIENT directement `r4` (la taille) sans rien entre
+  les deux.
+  **Donc le retour de `sub_822834C0` EST la taille garbage** — pas une
+  valeur qui y contribue seulement.
+- **N'établit PAS encore** : l'arithmétique EXACTE à l'intérieur de
+  `sub_822834C0` reliant "`sub_82338388` renvoie `1`" à "`sub_822834C0`
+  renvoie `0xfeffffee`" — c'est maintenant une trace À L'INTÉRIEUR
+  D'UNE SEULE FONCTION, plus une chaîne multi-fonctions.
+- **Aucun code source modifié ce cycle** — 1 diagnostic temporaire,
+  annulé et vérifié (ctest 9/9 après reconstruction propre).
+
 # AC6 retail NTSC-U/J — r151 : la taille garbage d'allocation (r135/r137) est TOUJOURS atteinte après les 3 correctifs — valeur exacte différente, même classe (2026-09-01)
 
 - **Retrace du point 1 de la liste "Next" de r150** : `sub_82222D80`

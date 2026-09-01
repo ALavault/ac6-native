@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r152-r150-and-r151-are-the-same-chain-sub_822834c0-returns-the-garbage-size-directly-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md`;
@@ -811,6 +812,17 @@ d'exécution" est généralisé sur cette chaîne. N'établit pas encore si
 `0xfeffffee` traverse le même chemin que r139-r142 avaient tracé.
 Aucun code modifié. Prochain : vérifier ce chemin exact, puis
 re-mesurer la requête catégorie=1/réglage=3 de r139.
+
+**r152 — r150 et r151 sont la MÊME chaîne — `sub_822834C0` renvoie
+directement la taille garbage.** `backtrace()`+`addr2line` (gdb sur
+`ctx` échoue, pas de DWARF locals) montre : appelant direct de
+`sub_82222D80` = `sub_821CC288` (confirme r135), dont le seul appel
+avant est `sub_822834C0` — la fonction que r150 avait déjà
+instrumentée. Copie de registre pure entre les deux : le retour de
+`sub_822834C0` EST la taille garbage. r150 et r151 ne sont donc pas
+deux mécanismes séparés. N'établit pas encore l'arithmétique exacte
+interne à `sub_822834C0`. Aucun code modifié. Prochain : tracer
+l'intérieur de cette seule fonction.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

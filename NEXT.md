@@ -1288,6 +1288,23 @@ compteur injecté ou fallback ReXGlue.
     réglage=3 de r139 contre le binaire actuel. Voir
     `reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md`.
 
+76. **r152 : r150 et r151 sont la MÊME chaîne — `sub_822834C0` renvoie
+    directement la taille garbage.** `backtrace()`+`addr2line` (gdb avec
+    condition sur `ctx` échoue — pas de DWARF locals) au moment où
+    `sub_82222D80` reçoit `0xfeffffee` : appelant direct = `sub_821CC288`
+    (confirme r135), dont le seul appel avant `sub_82222D80` est
+    `sub_822834C0` — exactement la fonction que r150 avait déjà
+    instrumentée. `rotlwi r30,r3,0` est une copie pure : le retour de
+    `sub_822834C0` devient directement la taille. r150 et r151 ne sont
+    donc pas deux mécanismes séparés mais deux points de la même chaîne.
+    N'établit pas encore l'arithmétique exacte À L'INTÉRIEUR de
+    `sub_822834C0` reliant son `sub_82338388`=`1` à son retour
+    `0xfeffffee`. Aucun code modifié ce cycle (diagnostic temporaire
+    annulé, ctest 9/9 après reconstruction propre). **Prochain cycle** :
+    tracer l'intérieur de `sub_822834C0` (trace mono-fonction, pas
+    multi-sauts). Voir
+    `reports/ac6-retail-native-codegen-gate2-r152-r150-and-r151-are-the-same-chain-sub_822834c0-returns-the-garbage-size-directly-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;
