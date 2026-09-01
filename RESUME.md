@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r136-heap-creation-succeeds-with-a-real-handle-the-failure-is-inside-the-allocator-itself-20260901.md`;
@@ -629,6 +630,24 @@ jamais 0). Piste réfutée. Non établi : si l'appel #3 défaillant (r137)
 atteint même cette chaîne — comptage non corrélé à l'appel spécifique.
 Aucun code modifié. Prochain cycle : établir la vraie chaîne d'appel de
 #3 (compteur comme r135) avant de lire plus loin.
+
+**r139 — CHAÎNE COMPLÈTE FERMÉE.** Chaîne d'appel de l'appel #3
+défaillant confirmée (compteur+backtrace) : `_xstart → sub_821D7DE0 →
+sub_821D5F48 → sub_821CC288 → sub_82222D80(size=0xfefffff9)`.
+Correspondance exacte calculée puis VÉRIFIÉE EN DIRECT :
+`sub_82338388(cat=1,réglage=3,idx=4)` renvoie légitimement `0` (le pool
+interne fonctionne, r138) ; `sub_822834C0` accepte `0` comme valide,
+mais `sub_82339D10` exige STRICTEMENT `>0` et renvoie l'erreur codée en
+dur `0xFEFF0000|65529=0xFEFFFFF9` — identique bit pour bit à la taille
+garbage de r137. Chaîne complète en 10 étapes du crash jusqu'à cette
+requête : requête légitime=0 → acceptée → garde stricte échoue →
+propagée sans contrôle comme "taille" → allocation ~4Go rejetée →
+échec jamais vérifié → `8` comme pointeur → taille=0 →
+`NtReadFile(length=0)` → poison lu comme en-tête → liste corrompue →
+crash. PAS de corruption mémoire, PAS un de nos stubs — du vrai code
+guest à contrats de retour incompatibles. Aucun code modifié. Question
+finale : catégorie=1/réglage=3 — état réel du jeu ou trou
+d'initialisation du runtime ? Ne rien corriger avant de répondre.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

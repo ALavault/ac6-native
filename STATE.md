@@ -1,3 +1,51 @@
+# AC6 retail NTSC-U/J — r139 : CHAÎNE COMPLÈTE FERMÉE — une requête de compte renvoie LÉGITIMEMENT zéro et échoue une garde stricte `>0`, produisant la taille garbage EXACTE (2026-09-01)
+
+- **Chaîne d'appel de l'appel #3 défaillant CONFIRMÉE** (compteur
+  d'appels + backtrace, exactement l'exigence de r138) :
+  `_xstart → sub_821D7DE0 → sub_821D5F48 → sub_821CC288 →
+  sub_82222D80(size=0xfefffff9)` — ferme le trou de corrélation que r138
+  avait laissé ouvert.
+- **Correspondance EXACTE trouvée par calcul** : `sub_82339D10` (appelée
+  via `sub_822834C0`→`sub_82338568`, PAS `sub_82338410` — corrige une
+  petite erreur de lecture de ce cycle lui-même) exige `compte > 0` ;
+  sinon renvoie `0xFEFF0000 | 65529 = 0xFEFFFFF9` — CORRESPONDANCE EXACTE,
+  bit pour bit, avec la taille garbage de r137 (pas approximative comme
+  la piste réfutée de r138).
+- **VÉRIFIÉ EN DIRECT (pas seulement la correspondance statique)** :
+  `sub_82338388(catégorie=1, réglage=3, index=4)` renvoie EXACTEMENT `0`
+  — LÉGITIME sous son propre contrat (le pool interne, déjà confirmé
+  peuplé et fonctionnel en r138, réussit RÉELLEMENT cette requête).
+  `sub_822834C0` accepte `0` comme valide (contrôle `>=0`), mais
+  `sub_82339D10` exige STRICTEMENT `>0` et rejette `0` avec l'erreur
+  codée en dur.
+- **CHAÎNE CAUSALE COMPLÈTE EN 10 ÉTAPES, CHAQUE MAILLON MESURÉ EN
+  DIRECT** : requête catégorie=1/réglage=3 renvoie légitimement 0 →
+  `sub_822834C0` accepte comme valide → `sub_82339D10` exige `>0`,
+  rejette avec erreur codée en dur → propagée sans contrôle comme
+  "taille" par 3 fonctions successives → `sub_821CC288` ne vérifie
+  JAMAIS cette valeur comme code d'erreur → allocation ~4Go rejetée
+  (NULL) → `sub_821CC288` ne vérifie PAS l'échec d'allocation → `8`
+  stocké comme pointeur descripteur → taille de fichier lue comme 0 →
+  `NtReadFile(length=0)` → tampon `DATA.TBL` jamais rempli →
+  `sub_82234B88` lit du poison comme en-tête → pointeur sauvage →
+  liste de notification corrompue → crash `sub_821F7C80`.
+- **Ce n'est PAS de la corruption mémoire, PAS une lecture non
+  initialisée, PAS un de nos stubs HLE** — c'est du VRAI code guest
+  compilé passant une valeur légitimement zéro à un AUTRE vrai code
+  guest avec un contrat différent, et un troisième morceau de code
+  guest qui ne vérifie JAMAIS l'erreur qui en résulte.
+- **Aucun code source modifié ce cycle** — 4 diagnostics temporaires,
+  tous annulés et vérifiés (ctest 9/9, 139/139 Python après
+  reconstruction propre).
+  **Question finale restante (nommée, pas devinée)** : que représente
+  sémantiquement catégorie=1/réglage=3/index=4 ? Est-ce un état RÉEL et
+  CORRECT du jeu que cette investigation atteint pour la première fois
+  (rien à corriger), ou un trou du runtime natif (une étape
+  d'initialisation manquante) ? NE PAS ajouter de correctif défensif à
+  `sub_821CC288`/`sub_822834C0`/`sub_82339D10` avant de répondre à
+  cette question. Voir
+  `reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md`.
+
 # AC6 retail NTSC-U/J — r138 : RÉSULTAT NÉGATIF — le chemin d'erreur de lookup config n'est PAS la source de la taille garbage (2026-09-01)
 
 - **Hypothèse testée** (issue de r137) : lecture statique de

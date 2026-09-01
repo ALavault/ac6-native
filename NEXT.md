@@ -1012,7 +1012,37 @@ compteur injecté ou fallback ReXGlue.
     succès, jamais lu) ; sinon remonter à
     `sub_82283530`/`sub_822836A8`. Voir
     `reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md`.**
-62. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+62. **r139 : CHAÎNE COMPLÈTE FERMÉE — une requête catégorie=1/réglage=3
+    renvoie LÉGITIMEMENT zéro et échoue une garde stricte `>0`,
+    produisant la taille garbage EXACTE.** Chaîne d'appel de l'appel #3
+    défaillant CONFIRMÉE (compteur + backtrace) : `_xstart →
+    sub_821D7DE0 → sub_821D5F48 → sub_821CC288 →
+    sub_82222D80(size=0xfefffff9)`. Correspondance EXACTE calculée :
+    `sub_82339D10` exige `compte>0`, sinon renvoie
+    `0xFEFF0000|65529=0xFEFFFFF9` — bit pour bit identique à la taille
+    garbage de r137. Vérifié EN DIRECT : `sub_82338388(cat=1,réglage=3,
+    idx=4)` renvoie EXACTEMENT `0`, légitimement (le pool interne,
+    déjà confirmé fonctionnel en r138, réussit réellement la requête) ;
+    `sub_822834C0` accepte `0` comme valide (`>=0`), mais
+    `sub_82339D10` exige STRICTEMENT `>0`. Chaîne causale complète en
+    10 étapes, chaque maillon mesuré : requête légitime=0 → acceptée
+    comme valide → garde stricte rejette avec erreur codée en dur →
+    propagée SANS AUCUN contrôle comme "taille" à travers 3 fonctions
+    → allocation ~4Go rejetée → échec d'allocation JAMAIS vérifié → `8`
+    stocké comme pointeur → taille fichier lue comme 0 →
+    `NtReadFile(length=0)` → tampon jamais rempli → poison lu comme
+    en-tête → pointeur sauvage → liste de notification corrompue →
+    crash `sub_821F7C80`. **PAS de corruption mémoire, PAS un de nos
+    stubs HLE** — du vrai code guest avec des contrats de retour
+    incompatibles, jamais vérifiés. Aucun code source modifié ce cycle
+    (4 diagnostics temporaires, tous annulés et vérifiés, ctest 9/9 +
+    139/139 Python après reconstruction propre). **Question finale
+    restante** : catégorie=1/réglage=3/index=4 — état réel/correct du
+    jeu jamais atteint avant, ou trou d'initialisation du runtime
+    natif ? NE PAS corriger `sub_821CC288`/`sub_822834C0`/
+    `sub_82339D10` avant de répondre. Voir
+    `reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md`.**
+63. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
