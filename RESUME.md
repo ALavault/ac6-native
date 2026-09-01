@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r133-writer-found-sub_82234b88-parses-a-zero-length-ntreadfile-buffer-as-a-real-header-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r132-sub_821f7c80-crash-is-a-corrupted-notification-list-ntreadfile-ruled-out-as-cause-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r131-xdvdfs-maximum-size-parameter-was-rejecting-every-open-r100s-original-crash-site-is-confirmed-gone-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r130-ntcreatefile-ntreadfile-implemented-and-called-with-real-filenames-xdvdfs-lookup-fails-20260901.md`;
@@ -533,6 +534,26 @@ EXCLU comme écrivain PAR MESURE DIRECTE (un seul appel avant le crash,
 en cause. L'écrivain réel n'est pas localisé. Aucun code source modifié.
 Prochain cycle : bissection par snapshots supplémentaires pour localiser
 l'écrivain (pas de watchpoint GDB, peu fiable ici depuis r128).
+
+**r133 — L'ÉCRIVAIN EST TROUVÉ.** Un watch global dans les macros
+`PPC_STORE_*` partagées (`generated/ppc_context.h`) capture la corruption
+en direct : 12 écritures `STORE_U32` séquentielles depuis `0x823F0C32`
+dont les octets combinés donnent EXACTEMENT `0x00009182` (la valeur de
+r132). Pile (`addr2line`) : `_xstart → sub_821D7DE0 → sub_821D5F48 →
+sub_821CC508 → sub_82234B88`. `sub_82234B88` parse un enregistrement
+depuis son argument source `r4` (jamais `0x823F0C30` littéralement).
+Mesuré : `r4 = 0x173a0020` = EXACTEMENT l'adresse cible du seul appel
+`NtReadFile` de la session (`length=0`, `bytes_read=0`) — le tampon
+contient des octets de poison (`fe fe fe fe`), pas du vrai `DATA.TBL`.
+Chaîne causale complète : lecture zéro → tampon jamais rempli → poison lu
+comme champ de stride → pointeur sauvage → boucle d'échange d'octets
+écrase la liste de notification → crash de r131. Question restante :
+pourquoi une lecture de longueur zéro ? `NtCreateFile` ne renvoie jamais
+de taille ici — un titre réel l'apprend via `NtQueryInformationFile`/
+`GetFileSizeEx`, non implémenté. Aucun code source modifié ce cycle.
+Prochain cycle : tracer qui détermine la longueur demandée, implémenter
+le vrai mécanisme de taille (déjà connu via `locate_xdvdfs_file`),
+revérifier EN DIRECT.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

@@ -873,7 +873,35 @@ compteur injecté ou fallback ReXGlue.
     watchpoint GDB (peu fiable sur cette sonde à 18 threads, r128).
     Voir
     `reports/ac6-retail-native-codegen-gate2-r132-sub_821f7c80-crash-is-a-corrupted-notification-list-ntreadfile-ruled-out-as-cause-20260901.md`.**
-56. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+56. **r133 : L'ÉCRIVAIN DE LA CORRUPTION (r132) EST TROUVÉ — `sub_82234B88`
+    parse un tampon `DATA.TBL` que `NtReadFile` n'a JAMAIS rempli.** Un
+    watch global ajouté dans les macros `PPC_STORE_*` partagées (au lieu
+    de deviner quelle fonction instrumenter) capture 12 écritures
+    `STORE_U32` séquentielles depuis `0x823F0C32`, dont les octets
+    combinés donnent EXACTEMENT `0x00009182` — la valeur corrompue de
+    r132. Pile : `_xstart → sub_821D7DE0 → sub_821D5F48 → sub_821CC508 →
+    sub_82234B88` (les deux fonctions du milieu sont la boucle de relance
+    déjà tracée depuis r117). `sub_82234B88` parse un en-tête depuis son
+    argument source `r4` pour calculer des bases de tableaux à
+    échanger-en-place — SANS jamais référencer `0x823F0C30`
+    littéralement. Mesuré en direct : `r4 = 0x173a0020`, EXACTEMENT
+    l'adresse cible du seul appel `NtReadFile` de la session, qui
+    demandait `length=0` et copiait `bytes_read=0` — le tampon contient
+    des octets de POISON (`fe fe fe fe`), pas du vrai contenu. Chaîne
+    causale complète et déterministe. Question restante (nommée) :
+    pourquoi le jeu demande-t-il une lecture de longueur zéro ?
+    `NtCreateFile` de ce projet ne renvoie jamais de taille — un titre
+    réel l'apprend via `NtQueryInformationFile`/`GetFileSizeEx`, aucun
+    implémenté ici. Aucun code source modifié ce cycle (3 diagnostics
+    temporaires, tous annulés et vérifiés, ctest 9/9 + 139/139 Python
+    après reconstruction propre). **Prochain cycle** : tracer l'appel
+    entre `NtCreateFile("DATA.TBL")` et la lecture de longueur zéro pour
+    trouver qui détermine la longueur demandée ; implémenter le vrai
+    mécanisme de taille (déjà connu du runtime via
+    `NativeGuestMediaService`/`locate_xdvdfs_file`) ; relancer la sonde
+    et vérifier EN DIRECT que le crash `sub_821F7C80` disparaît. Voir
+    `reports/ac6-retail-native-codegen-gate2-r133-writer-found-sub_82234b88-parses-a-zero-length-ntreadfile-buffer-as-a-real-header-20260901.md`.**
+57. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

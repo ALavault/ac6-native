@@ -1,3 +1,52 @@
+# AC6 retail NTSC-U/J — r133 : L'ÉCRIVAIN EST TROUVÉ — `sub_82234B88` parse un tampon `DATA.TBL` que `NtReadFile` n'a JAMAIS rempli (`length=0`), lit des octets de poison comme un vrai en-tête (2026-09-01)
+
+- **Méthode** : au lieu de deviner quelle fonction instrumenter, un WATCH
+  GLOBAL a été ajouté dans `PPC_STORE_U8/U16/U32/U64` (macros partagées,
+  `generated/ppc_context.h`, UN SEUL fichier, tous les sites d'appel du
+  codebase passent par là) — imprime toute écriture dans
+  `[0x823F0C30, 0x823F0C60)`. Évite de refaire les watchpoints GDB peu
+  fiables (r128).
+- **Écrivain trouvé** : 12 écritures `STORE_U32` séquentielles décalées de
+  4 octets, base `0x823F0C32`. Les octets combinés à `0x823F0C4C-0x4F`
+  donnent EXACTEMENT `0x00009182` — la valeur corrompue observée en r132.
+  Pile d'appels (`addr2line`) : `_xstart → sub_821D7DE0 → sub_821D5F48 →
+  sub_821CC508 → sub_82234B88`. Les deux fonctions du milieu sont EXACTEMENT
+  la boucle de relance déjà tracée depuis r117.
+- **`sub_82234B88`** (lu directement dans le C++ généré) : parse un
+  enregistrement depuis `r4` (source) vers `r3` (dest), calcule des bases
+  de tableaux à partir d'un champ 16-bit lu dans l'EN-TÊTE de `r4`, puis
+  échange les octets en place sur 4 tableaux parallèles — SANS JAMAIS
+  référencer `0x823F0C30` littéralement. La corruption dépend ENTIÈREMENT
+  du contenu de `r4`.
+- **Mesuré en direct** : `r4` (source de `sub_82234B88`) = `0x173a0020`,
+  EXACTEMENT l'adresse cible du SEUL appel `NtReadFile` de la session, qui
+  demandait `length=0` et a copié `bytes_read=0`. Les octets d'en-tête lus
+  (`fe fe fe fe`) sont un motif de poison/mémoire non initialisée
+  classique — PAS du contenu réel de `DATA.TBL`.
+- **CHAÎNE CAUSALE COMPLÈTE** : lecture de longueur ZÉRO → tampon jamais
+  rempli → octets de poison lus comme un vrai champ de stride → pointeur
+  de base de tableau SAUVAGE → boucle d'échange d'octets écrase la section
+  critique + liste de notification à deux fonctions de distance →
+  `sub_821F7C80` (crash de r131) marche sur la sentinelle corrompue →
+  SIGSEGV. Déterministe, pas une course.
+- **Question restante (nommée, pas devinée)** : pourquoi le jeu demande-t-il
+  une lecture de longueur ZÉRO ? `NtCreateFile` de ce projet ne renvoie
+  qu'un handle + statut, jamais une taille — un titre réel apprend la
+  taille via `NtQueryInformationFile`/`GetFileSizeEx`/un champ IoStatusBlock,
+  AUCUN implémenté ici. Hypothèse la plus probable : le mécanisme de
+  requête de taille du jeu renvoie 0 (non implémenté), et le jeu demande
+  alors exactement ça.
+- **Aucun code source modifié ce cycle** — trois instrumentations
+  temporaires, toutes annulées et vérifiées annulées (ctest 9/9, 139/139
+  Python après une reconstruction PROPRE complète).
+  **Prochain cycle** : tracer l'appel entre `NtCreateFile("DATA.TBL")` et
+  la lecture de longueur zéro pour trouver QUI détermine la longueur
+  demandée ; implémenter le vrai mécanisme de taille (déjà connu du
+  runtime via `NativeGuestMediaService`/`locate_xdvdfs_file`, juste pas
+  exposé par le bon import) ; relancer la sonde et vérifier EN DIRECT que
+  le crash `sub_821F7C80` disparaît. Voir
+  `reports/ac6-retail-native-codegen-gate2-r133-writer-found-sub_82234b88-parses-a-zero-length-ntreadfile-buffer-as-a-real-header-20260901.md`.
+
 # AC6 retail NTSC-U/J — r132 : le crash `sub_821F7C80` est une liste de notification CORROMPUE — `NtReadFile` est EXCLU comme cause (mesuré, pas supposé) (2026-09-01)
 
 - **Lecture statique de `sub_821F7C80`** (0x821F7C80-0x821F7CDC, convention
