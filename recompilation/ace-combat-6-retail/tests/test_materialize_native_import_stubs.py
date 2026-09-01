@@ -352,10 +352,46 @@ def test_mutant_and_semaphore_release_succeed_without_contention_model(
     assert MODULE.render(mapping, output) == 2
     text = output.read_text()
     assert text.count("ctx.r3.u64 = 0u") == 2
-    assert text.count("PPC_STORE_U32(ctx.r4.u32, 0u)") == 2
-    assert "kOfflineStatus" not in text.split("void __imp__NtReleaseMutant")[1].split(
+    mutant_body = text.split("void __imp__NtReleaseMutant")[1].split(
         "void __imp__NtReleaseSemaphore"
     )[0]
+    semaphore_body = text.split("void __imp__NtReleaseSemaphore")[1]
+    # NtReleaseMutant(handle, PreviousCount*): r4 is the out pointer.
+    assert "PPC_STORE_U32(ctx.r4.u32, 0u)" in mutant_body
+    # NtReleaseSemaphore(handle, ReleaseCount, PreviousCount*): r4 is the
+    # ReleaseCount integer, not a pointer -- r5 is the real out pointer, and
+    # the release must actually signal the semaphore's wait state (r145).
+    assert "PPC_STORE_U32(ctx.r5.u32, 0u)" in semaphore_body
+    assert "ctx.r4.u32" not in semaphore_body
+    assert "set_event(ctx.r3.u32)" in semaphore_body
+    assert "kOfflineStatus" not in mutant_body
+    assert "kOfflineStatus" not in semaphore_body
+
+
+def test_create_semaphore_registers_a_waitable_event(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__NtCreateSemaphore);\n"
+        "PPC_EXTERN_FUNC(__imp__NtCreateTimer);\n"
+        "PPC_EXTERN_FUNC(__imp__NtCreateMutant);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 3
+    text = output.read_text()
+    semaphore_body = text.split("void __imp__NtCreateSemaphore")[1].split(
+        "void __imp__NtCreateTimer"
+    )[0]
+    # r145: a real NT signature -- r5=InitialCount, r6=MaximumCount --
+    # confirmed against this XEX's own NtCreateSemaphore call site. Only
+    # NtCreateSemaphore registers with create_event(); NtCreateTimer and
+    # NtCreateMutant keep the prior generic handle-only allocation, since
+    # nothing in this project's own tracing has shown either needs to
+    # participate in the same wait/signal model.
+    assert "create_event(handle, /*manual_reset=*/false, /*signaled=*/ctx.r5.s32 > 0)" in (
+        semaphore_body
+    )
+    timer_and_mutant = text.split("void __imp__NtCreateTimer")[1]
+    assert "create_event(" not in timer_and_mutant
 
 
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(

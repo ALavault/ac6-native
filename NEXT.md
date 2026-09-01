@@ -1152,6 +1152,36 @@ compteur injecté ou fallback ReXGlue.
     disponible OU si de nouvelles preuves de progression de la sonde
     apparaissent. Voir
     `reports/ac6-retail-native-codegen-gate2-r144-both-named-frontiers-confirmed-blocked-maintenance-audits-clean-20260901.md`.**
+69. **r145 : VRAI CORRECTIF — `NtCreateSemaphore` n'enregistrait JAMAIS
+    d'objet attendable (timeout garanti structurel) ; `NtReleaseSemaphore`
+    utilisait le mauvais registre comme pointeur de sortie (corruption
+    mémoire).** Réouvre un terrain que r144 avait déclaré bloqué en
+    creusant le POURQUOI du timeout de r142. `wait_event()` renvoie
+    `false` immédiatement pour tout handle absent de `g_events` ;
+    `NtCreateSemaphore` partageait un stub générique avec
+    `NtCreateTimer`/`NtCreateMutant` qui n'appelle jamais
+    `create_event()`. Mesuré en direct : les handles exacts que
+    `sub_82338388` attend (`0x12e`, `0x131`, les mêmes que r142) sont
+    des sémaphores — tout wait dessus était un STATUS_TIMEOUT garanti,
+    indépendant de toute activité réelle de `NtReleaseSemaphore`.
+    Second bug : la vraie signature NT de `NtReleaseSemaphore` est
+    `(HANDLE, LONG ReleaseCount, PLONG PreviousCount)` — `r4`=entier,
+    `r5`=vrai pointeur ; l'ancien stub écrivait via `r4` pour Semaphore
+    ET Mutant, corrompant la mémoire à l'adresse=ReleaseCount pour
+    Semaphore. CORRIGÉ : `NtCreateSemaphore` enregistre maintenant
+    `create_event(handle, manual_reset=false, signaled=InitialCount>0)`
+    (r5, confirmé par désassemblage) ; `NtReleaseSemaphore` appelle
+    `set_event(r3)` et écrit via `r5`. `NtCreateTimer`/`NtCreateMutant`/
+    `NtReleaseMutant` inchangés (déjà corrects / aucune preuve de besoin).
+    Tests : 140/140 (était 139/139). **Vérifié en direct : le correctif
+    est réel mais INSUFFISANT pour changer le crash r131** — la sonde
+    plante toujours au même site exact (`sub_821F7C80`, backtrace gdb
+    identique) — cohérent avec r142 : `[r1+88]` n'est écrit par rien,
+    que l'attente réussisse ou expire. Correctif CONSERVÉ et committé
+    sur ses propres mérites (2 vrais bugs, signature NT confirmée,
+    testé, pourrait affecter d'autres patterns non tracés). Les
+    déterminations de r144 tiennent pour ses 2 frontières nommées. Voir
+    `reports/ac6-retail-native-codegen-gate2-r145-real-fix-ntcreatesemaphore-never-registered-a-waitable-object-ntreleasesemaphore-wrong-register-20260901.md`.**
 
 ## Frontières
 

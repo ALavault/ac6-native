@@ -1,3 +1,64 @@
+# AC6 retail NTSC-U/J — r145 : VRAI CORRECTIF — `NtCreateSemaphore` n'enregistrait JAMAIS d'objet attendable ; `NtReleaseSemaphore` utilisait le MAUVAIS registre comme pointeur de sortie (2026-09-01)
+
+- **Réouvre un terrain que r144 a déclaré bloqué** : la conclusion "aucun
+  travail actionnable" de r144 est re-vérifiée avant d'être acceptée — le
+  POURQUOI du timeout de r142 (structurel vs course réelle) valait la
+  peine d'être creusé.
+- **`wait_event()` renvoie `false` IMMÉDIATEMENT (aucune attente réelle)
+  pour tout handle absent de `g_events`.** `NtCreateSemaphore` partageait
+  un stub GÉNÉRIQUE avec `NtCreateTimer`/`NtCreateMutant` qui alloue
+  SEULEMENT un numéro de handle — JAMAIS `create_event()`. Diagnostic en
+  direct : les handles exacts que `sub_82338388` attend (`0x12e`,
+  `0x131`, les MÊMES que r142) sont créés via `NtCreateSemaphore` —
+  TOUT `NtWaitForSingleObjectEx` dessus est un `STATUS_TIMEOUT`
+  GARANTI et DÉTERMINISTE, indépendamment de toute activité RÉELLE de
+  `NtReleaseSemaphore` ailleurs dans le jeu. **Un bug STRUCTUREL de
+  notre propre stub HLE, pas une course.**
+- **Second bug trouvé en confirmant la convention d'appel réelle** (via
+  désassemblage des vrais sites d'appel de cette XEX) : la vraie
+  signature NT de `NtReleaseSemaphore` est `(HANDLE, LONG ReleaseCount,
+  PLONG PreviousCount)` — `r4`=ReleaseCount (un ENTIER), `r5`=le VRAI
+  pointeur de sortie. L'ancien stub partagé avec `NtReleaseMutant`
+  écrivait via `r4` pour LES DEUX — pour Semaphore, ceci écrit
+  `PPC_STORE_U32(ctx.r4.u32, 0u)` à l'adresse = ReleaseCount, PAS un
+  vrai pointeur — une VRAIE corruption mémoire distincte.
+- **CORRECTIF** : `NtCreateSemaphore` est maintenant son propre cas —
+  enregistre le handle via `create_event(handle, manual_reset=false,
+  signaled=InitialCount>0)` (r5, confirmé par désassemblage). Un
+  auto-reset event correspond exactement au contrat sémaphore ("un
+  permis consommé par attente réussie"). `NtCreateTimer`/`NtCreateMutant`
+  INCHANGÉS (aucune preuve qu'ils participent au même modèle).
+  `NtReleaseSemaphore` est maintenant son propre cas — appelle
+  `set_event(r3)` et écrit via `r5` (le bon registre). `NtReleaseMutant`
+  INCHANGÉ (son propre usage de `r4` était déjà correct).
+- **Tests** : test existant scindé pour vérifier chaque import
+  séparément ; nouveau `test_create_semaphore_registers_a_waitable_event`.
+  Suite complète : 140/140 (était 139/139), 27/27 dans ce fichier
+  (était 26/26).
+- **VÉRIFIÉ EN DIRECT : le correctif est réel, mais INSUFFISANT pour
+  changer le résultat du crash r131** — la sonde plante TOUJOURS au
+  MÊME site (`sub_821F7C80`), MÊME chaîne d'appel (backtrace gdb
+  confirmé). PAS un échec de ce correctif — cohérent avec la propre
+  découverte SÉPARÉE de r142 : la valeur finale de `sub_82338388` vient
+  de `[r1+88]`, un AUTRE slot de pile que RIEN n'écrit, QUE l'attente
+  réussisse OU expire. Corriger l'attente ne remplit pas ce slot non
+  lié.
+- **DÉCISION** : correctif conservé et committé MALGRÉ ne pas changer le
+  crash actuellement investigué — sur ses propres mérites : corrige 2
+  vrais bugs étayés par preuves (timeout garanti structurel + corruption
+  mémoire), correspond à la signature NT documentée confirmée par
+  désassemblage réel, entièrement testé, pourrait affecter d'autres
+  patterns d'attente/signal ailleurs dans le binaire retail non encore
+  tracés. Même précédent que r130-r131.
+- **Gates** : mission01 (même échec pré-existant), ctest 9/9, Python
+  140/140, `git status` propre (2 fichiers source intentionnels +
+  submodule pré-existant non lié), démo 185 inchangé.
+  **Prochain cycle** : les déterminations de r144 tiennent pour les 2
+  frontières qu'il a nommées — ce cycle n'a changé ni l'une ni l'autre.
+  Vérifier si ce correctif a un effet observable ailleurs dans la sonde
+  (une autre attente maintenant correctement signalée). Voir
+  `reports/ac6-retail-native-codegen-gate2-r145-real-fix-ntcreatesemaphore-never-registered-a-waitable-object-ntreleasesemaphore-wrong-register-20260901.md`.
+
 # AC6 retail NTSC-U/J — r144 : les deux frontières nommées sont CONFIRMÉES BLOQUÉES — audits de maintenance propres, AUCUN travail Gate 2 actionnable actuellement disponible (2026-09-01)
 
 - **Le pivot de r143 vérifié AVANT d'agir dessus** : `IM_LOAD_IMMEDIATE`

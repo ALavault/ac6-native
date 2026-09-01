@@ -498,7 +498,26 @@ def render_body(name: str) -> str:
   create_event(handle, ctx.r6.u32 == 0u, ctx.r7.u32 != 0u);
   ctx.r3.u64 = 0u;
 """
-    if name in {"NtCreateSemaphore", "NtCreateTimer", "NtCreateMutant"}:
+    if name == "NtCreateSemaphore":
+        # r145: real signature (documented NT API, confirmed against this
+        # XEX's own call site sub_821F5798, disassembled directly) is
+        # NtCreateSemaphore(OUT PHANDLE, IN POBJECT_ATTRIBUTES OPTIONAL,
+        # IN LONG InitialCount, IN LONG MaximumCount) -- r5=InitialCount,
+        # r6=MaximumCount. The generic handle-allocation stub this import
+        # previously shared with NtCreateTimer/NtCreateMutant never
+        # registered the handle in g_events, so any NtWaitForSingleObjectEx
+        # on a semaphore was a guaranteed, deterministic STATUS_TIMEOUT
+        # regardless of real NtReleaseSemaphore activity elsewhere in the
+        # guest -- traced live to sub_82338388's own wait (r142) always
+        # timing out on exactly this handle class. A semaphore's wait
+        # contract (one permit consumed per successful wait) matches this
+        # project's existing auto-reset event model directly.
+        return """  const std::uint32_t handle = g_next_handle.fetch_add(1u);
+  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32, handle);
+  create_event(handle, /*manual_reset=*/false, /*signaled=*/ctx.r5.s32 > 0);
+  ctx.r3.u64 = 0u;
+"""
+    if name in {"NtCreateTimer", "NtCreateMutant"}:
         return """  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32,
                                              g_next_handle.fetch_add(1u));
   ctx.r3.u64 = 0u;
@@ -538,14 +557,30 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = 0u;
 """
-    if name in {"NtReleaseMutant", "NtReleaseSemaphore"}:
-        # Single guest thread until scheduler migration: no real contention
-        # is modeled, so release always succeeds immediately (matches the
+    if name == "NtReleaseMutant":
+        # NtReleaseMutant(handle, PreviousCount*) -- r4 is the optional out
+        # pointer for the previous count. Single guest thread until
+        # scheduler migration: no real contention is modeled, so release
+        # always succeeds immediately (matches the
         # RtlEnterCriticalSection/RtlLeaveCriticalSection idiom above).
-        # NtReleaseMutant(handle, PreviousCount*); NtReleaseSemaphore(handle,
-        # ReleaseCount, PreviousCount*) -- both take an optional out pointer
-        # for the previous count in r4.
         return """  if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32, 0u);
+  ctx.r3.u64 = 0u;
+"""
+    if name == "NtReleaseSemaphore":
+        # r145: the real signature (documented NT API) is
+        # NtReleaseSemaphore(HANDLE, LONG ReleaseCount, PLONG PreviousCount)
+        # -- r4 is ReleaseCount, an integer, NOT a pointer; r5 is the actual
+        # PreviousCount* out pointer. The previous, shared stub with
+        # NtReleaseMutant wrote through r4 for both, which for a semaphore
+        # meant writing PPC_STORE_U32 to whatever small integer ReleaseCount
+        # happened to be -- a real, separate bug from the missing g_events
+        # registration this cycle also fixes (NtCreateSemaphore, above).
+        # This project's existing auto-reset event model has no notion of a
+        # semaphore's real count beyond signaled/not, so PreviousCount is
+        # still reported as 0 -- unchanged in spirit from the prior stub,
+        # just through the correct register.
+        return """  set_event(ctx.r3.u32);
+  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, 0u);
   ctx.r3.u64 = 0u;
 """
     if name in {"NtWaitForSingleObjectEx", "NtWaitForMultipleObjectsEx",

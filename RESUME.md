@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r145-real-fix-ntcreatesemaphore-never-registered-a-waitable-object-ntreleasesemaphore-wrong-register-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r144-both-named-frontiers-confirmed-blocked-maintenance-audits-clean-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r143-cost-benefit-check-closes-the-data-tbl-subthread-pivoting-to-the-next-gate2-frontier-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r142-the-zero-is-a-read-of-stale-uninitialized-stack-memory-not-a-real-value-20260901.md`;
@@ -714,6 +715,25 @@ confiné à l'arbre N2 abandonné (pas nouveau). Aucun code modifié.
 **La boucle standing (`/loop`) est ARRÊTÉE** — de nouveaux
 déclenchements sans oracle ni nouvelle piste ne feraient que
 re-dériver cette même conclusion.
+
+**r145 — VRAI CORRECTIF, réouvre un terrain que r144 avait déclaré
+bloqué.** `NtCreateSemaphore` n'enregistrait JAMAIS d'objet attendable
+(`wait_event()` renvoie `false` immédiatement pour tout handle absent
+de `g_events` ; le stub générique partagé avec Timer/Mutant n'appelait
+jamais `create_event()`) — mesuré en direct : les handles exacts que
+`sub_82338388` attend (`0x12e`, `0x131`) sont des sémaphores, timeout
+GARANTI et STRUCTUREL. Second bug : `NtReleaseSemaphore` écrivait via
+`r4` (partagé avec `NtReleaseMutant`) alors que la vraie signature NT
+met le pointeur en `r5` et l'entier `ReleaseCount` en `r4` — corruption
+mémoire réelle. CORRIGÉ : `NtCreateSemaphore` enregistre via
+`create_event(handle, manual_reset=false, signaled=InitialCount>0)`
+(r5, confirmé par désassemblage) ; `NtReleaseSemaphore` signale via
+`set_event(r3)` et écrit via `r5`. Tests 140/140 (était 139/139).
+Vérifié en direct : correctif réel mais INSUFFISANT pour changer le
+crash r131 (même site exact `sub_821F7C80`, backtrace identique) —
+cohérent avec r142 (`[r1+88]` jamais écrit, succès ou échec de
+l'attente). Correctif CONSERVÉ et committé sur ses propres mérites.
+Les déterminations de r144 tiennent pour ses 2 frontières nommées.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
