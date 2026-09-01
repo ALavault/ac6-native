@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r157-xenia-edge-oracle-boots-past-data-tbl-real-title-screen-confirms-datatbl-stall-is-recompilation-specific-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r155-ghidra-noanalysis-xref-contradicted-by-live-instrumentation-sub_82390880-genuinely-never-entered-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md`;
@@ -878,6 +879,18 @@ contre l'ISO NTSC-U/J correct : bloque au même point que la
 limitation déjà documentée pour PAL (écran noir, échec audio) —
 confirmé pour NTSC-U/J aussi. Route Wine pour NTSC-U/J = investissement
 séparé, non tenté.
+
+**r157 — ORACLE Xenia Edge BOOTE au-delà de tout ce que notre
+recompilation atteint — le blocage DATA.TBL est CONFIRMÉ spécifique à
+notre recompilation.** Xenia Edge (capture PROVISOIRE, build non
+pinné) contre l'ISO NTSC-U/J correct : écran légal réel, écran-titre
+réel avec cinématique, >2000 frames, shaders/pipelines Vulkan réels —
+bien au-delà de tout ce que la recompilation native atteint. RENVERSE
+la clôture coût/bénéfice de r144 : un vrai fix natif au niveau du
+slot de pile `[r1+88]` est maintenant défendable. Priorité : obtenir
+la release Xenia Edge pinnée pour qualifier pleinement, puis
+comparaison ciblée. Preuves dans
+`reports/ac6-retail-native-xenia-edge-oracle-r157-20260901/`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

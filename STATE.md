@@ -1,3 +1,33 @@
+# AC6 retail NTSC-U/J — r157 : ORACLE Xenia Edge BOOTE au-delà de TOUT ce que notre recompilation atteint — le blocage DATA.TBL/pile non initialisée est CONFIRMÉ spécifique à notre recompilation (2026-09-01)
+
+- **RÉSULTAT MAJEUR** : Xenia Edge (build non pinné, provenance non
+  établie — CAPTURE PROVISOIRE, pas qualifiée) contre l'ISO NTSC-U/J
+  CORRECT (hash vérifié) boote le titre réel : écran légal/marques
+  déposées rendu correctement, PUIS écran-titre avec fond cinématique
+  réel (pont, avion de chasse) — shaders Xenos traduits, pipelines
+  Vulkan réels, >2000 frames. Va BIEN au-delà de tout ce que cette
+  campagne a jamais atteint côté recompilation native.
+- **ÉTABLIT** : le blocage `sub_821F7C80`/pile non initialisée
+  `[r1+88]` (tracé r130-r153, fermé "aucun levier" par r144) est
+  maintenant montré CONFIRMÉ SPÉCIFIQUE À NOTRE RECOMPILATION — le
+  vrai jeu (émulé fidèlement) ne bloque PAS ici. Renverse la clôture
+  coût/bénéfice de r144 pour ce sous-fil : un vrai fix natif est
+  maintenant défendable, pas une supposition.
+- **N'ÉTABLIT PAS** : accès `DATA.TBL` par nom dans le log (pas de
+  log par nom de fichier à ce niveau de verbosité) ; la valeur réelle
+  attendue à `[r1+88]` (Xenia Edge a sa propre implémentation de pile,
+  pas une preuve directe du matériel réel) ; ce n'est PAS une capture
+  oracle QUALIFIÉE (le binaire ne correspond pas à la release pinnée
+  `c2cac2a0...` du script existant — provenance à établir).
+- **DÉCISION** : le résultat le plus significatif de cette session sur
+  le sous-fil DATA.TBL. Nommé comme investigation prioritaire :
+  obtenir la release Xenia Edge pinnée pour qualifier pleinement cette
+  capture, puis comparer ciblé au point exact de lecture `[r1+88]`.
+- **Aucun code source modifié** — capture oracle hors dépôt versionné
+  sauf le rapport et son répertoire de preuves
+  (`reports/ac6-retail-native-xenia-edge-oracle-r157-20260901/`). Voir
+  `reports/ac6-retail-native-codegen-gate2-r157-xenia-edge-oracle-boots-past-data-tbl-real-title-screen-confirms-datatbl-stall-is-recompilation-specific-20260901.md`.
+
 # AC6 retail NTSC-U/J — r156 : INVESTISSEMENT AUTORISÉ (oracle + analyse complète) — `sub_821F5630` résolu (dispatch indirect), Xenia natif confirmé bloqué sur NTSC-U/J aussi (2026-09-01)
 
 - **Utilisateur a autorisé "Oracle and invest"** — première vraie

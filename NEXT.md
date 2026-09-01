@@ -1384,6 +1384,24 @@ compteur injecté ou fallback ReXGlue.
     Aucun code modifié. Voir
     `reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md`.
 
+81. **r157 : ORACLE Xenia Edge BOOTE au-delà de TOUT ce que notre
+    recompilation atteint — le blocage DATA.TBL/pile non initialisée
+    est CONFIRMÉ spécifique à notre recompilation.** Xenia Edge (build
+    non pinné, capture PROVISOIRE) contre l'ISO NTSC-U/J correct
+    (hash vérifié `204c5e6...`) : écran légal réel, écran-titre réel
+    avec cinématique (pont, avion), >2000 frames, shaders/pipelines
+    Vulkan réels. Preuve que le vrai jeu (émulé fidèlement) ne bloque
+    PAS là où notre recompilation bloque depuis r130. RENVERSE la
+    clôture coût/bénéfice de r144 pour ce sous-fil : un vrai fix natif
+    est maintenant défendable. N'établit pas encore la valeur réelle
+    attendue à `[r1+88]`, ni une capture pleinement qualifiée (release
+    Xenia Edge pinnée `c2cac2a0...` à retrouver). Aucun code modifié —
+    preuves dans `reports/ac6-retail-native-xenia-edge-oracle-r157-20260901/`.
+    **Prochain cycle (PRIORITAIRE)** : obtenir la release pinnée pour
+    qualifier pleinement, puis comparaison ciblée au point exact
+    `[r1+88]`. Voir
+    `reports/ac6-retail-native-codegen-gate2-r157-xenia-edge-oracle-boots-past-data-tbl-real-title-screen-confirms-datatbl-stall-is-recompilation-specific-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;
