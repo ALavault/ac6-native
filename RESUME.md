@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r118-r117s-case3-target-was-wrong-real-bailout-gated-by-a-global-mode-byte-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r117-full-causal-chain-closed-write-site-to-crash-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r116-real-critical-sections-eliminate-the-race-expose-r101s-original-null-global-deterministically-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r115-suspended-thread-creation-implemented-reduces-but-does-not-eliminate-crashes-20260901.md`;
@@ -350,6 +351,15 @@ avant l'écriture → `sub_821D7DE0` n'abandonne pas → `sub_821D6C20` lit
 le nul → crash. Ce n'est pas un nouveau mécanisme : c'est LA cause
 racine réelle du crash original de r100. Aucun code modifié. Prochain
 cycle : tracer `case 3` de `sub_821CC508` jusqu'à son retour exact.
+
+**r118 corrige r117 par son nom : "case 3" était la mauvaise cible sous
+le build actuel.** État réel = 0, pas 3 (jamais revérifié par r117).
+Tracé jusqu'au MÊME corps case-3, mais un print dedans n'a jamais
+déclenché — non atteint. Résolu : deux portes précèdent le dispatch
+par état dans `sub_821CC508`, dont un OCTET GLOBAL qui doit valoir
+exactement 1; sinon ça saute vers `loc_821CC800` puis `loc_821CCD4C`,
+une troisième région jamais examinée. Aucun code modifié. Prochain
+cycle : lire cet octet, tracer `loc_821CCD4C`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

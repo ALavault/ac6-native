@@ -1,3 +1,33 @@
+# AC6 retail NTSC-U/J — r118 : la cible "case 3" de r117 était fausse — le vrai bailout est contrôlé par un octet de mode global, jamais examiné (2026-09-01)
+
+- **Correction nommée de r117** : r117 avait cité "état=3" (repris de
+  r109, JAMAIS revérifié sous le build actuel r108/r116-corrigé) sans
+  reconfirmer la valeur elle-même — seulement le retour (-1) et la
+  branche de secours. Ré-instrumenté les deux (lecture de l'état ET
+  corps du case 3) dans la MÊME exécution : `state(+324)=0`, PAS 3.
+  **La valeur d'état n'est pas fixe** — elle dépend de tout ce qui
+  s'exécute avant, et les corrections de r108/r116 l'ont déplacée.
+- Tracé l'état 0 : `loc_821CC5BC` (case 0) tombe en fallthrough à
+  travers `loc_821CC5E0→...→loc_821CC5EC`, écrivant l'état à 2 puis 7
+  puis 3, retombant dans le MÊME corps "case 3" que r117 avait lu. Un
+  print placé dans ce corps n'a JAMAIS déclenché dans les deux
+  exécutions instrumentées — preuve directe qu'il n'est pas atteint.
+- **Résolu en relisant `sub_821CC508` depuis son entrée** : DEUX portes
+  précèdent le dispatch par état, toutes deux déjà présentes dans la
+  transcription de r109 mais jamais suivies : (1) porte "déjà fait" sur
+  bit0 de `320(r31)`; (2) un OCTET GLOBAL (`lis r21,-32108` / déplacement
+  `-18120`) — si ≠1, saute vers `loc_821CC800` (PAS le switch par état);
+  si ≠2 là aussi, saute vers `loc_821CCD4C` — une TROISIÈME région
+  jamais examinée. Le dispatch par état n'est atteint QUE si cet octet
+  vaut exactement 1.
+- Aucun code natif modifié (deux tours d'instrumentation sur deux
+  fichiers, tous restaurés; `ctest` 9/9 reconfirmé). L'ABSENCE de sortie
+  du print case-3 est elle-même la preuve qui écarte le mécanisme de
+  r117. **Prochain cycle** : lire/instrumenter cet octet global et
+  confirmer que `loc_821CCD4C` est bien emprunté avant de le tracer.
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r118-r117s-case3-target-was-wrong-real-bailout-gated-by-a-global-mode-byte-20260901.md`.
+
 # AC6 retail NTSC-U/J — r117 : chaîne causale COMPLÈTE fermée — le site d'écriture de `0x82935d98` identifié, jamais atteint à cause du bailout déjà caractérisé par r109 (2026-09-01)
 
 - **`FindPpcAddressMaterialization.java` (read-only) trouve UNE SEULE

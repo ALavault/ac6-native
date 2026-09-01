@@ -595,7 +595,25 @@ compteur injecté ou fallback ReXGlue.
     jusqu'à son retour exact, vérifier d'abord une lacune du harnais
     (façon r108) avant un bug invité. Voir
     `reports/ac6-retail-native-codegen-gate2-r117-full-causal-chain-closed-write-site-to-crash-20260901.md`.
-30. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+31. **r118 corrige r117 par son nom : la cible "case 3" était fausse
+    sous le build actuel.** r117 avait repris "état=3" de r109 SANS le
+    revérifier sous le build r108/r116-corrigé. Ré-instrumenté état+case3
+    dans la MÊME exécution : `state(+324)=0`, pas 3 — la valeur d'état
+    n'est pas fixe, elle dépend de l'historique d'exécution que r108/r116
+    ont changé. Tracé l'état 0 (case 0 tombe en fallthrough dans le MÊME
+    corps "case 3") — un print placé dedans n'a JAMAIS déclenché,
+    prouvant qu'il n'est pas atteint. **Résolu** en relisant
+    `sub_821CC508` depuis l'entrée : DEUX portes précèdent le dispatch
+    par état (déjà visibles dans la transcription de r109, jamais
+    suivies) — la seconde, un OCTET GLOBAL (`lis r21,-32108`/`-18120`),
+    doit valoir EXACTEMENT 1 pour atteindre le switch par état; sinon
+    ça saute vers `loc_821CC800` puis, si ≠2, vers `loc_821CCD4C` — une
+    TROISIÈME région jamais examinée. Aucun code modifié (deux tours
+    d'instrumentation sur deux fichiers, tous restaurés). **Prochain
+    cycle** : lire/instrumenter cet octet global, confirmer
+    `loc_821CCD4C` avant de le tracer. Voir
+    `reports/ac6-retail-native-codegen-gate2-r118-r117s-case3-target-was-wrong-real-bailout-gated-by-a-global-mode-byte-20260901.md`.
+32. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
