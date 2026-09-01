@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r114-root-cause-found-null-guest-function-pointer-plus-excreatethread-ignores-creationflags-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r113-r12-is-unmapped-garbage-and-the-original-main-thread-crash-still-happens-intermittently-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r112-eighteen-threads-spawn-concurrently-crash-is-an-unsynchronized-vtable-read-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r111-nondeterminism-source-is-a-real-background-thread-race-20260901.md`;
@@ -298,6 +299,20 @@ THREAD PRINCIPAL, après r108.** Ne contredit pas la découverte
 spécifique de r108 (l'allocation GATE2 réussit vraiment) mais montre
 que "la chaîne de crash est fermée" n'a jamais été universelle. Non
 reproduit dans 15 tentatives de suivi. Aucun code modifié.
+
+**r114 — CAUSE RACINE TROUVÉE.** Les deux crashes de threads
+d'arrière-plan (r112/r113) partagent l'instruction ET la valeur de
+`r12` EXACTES — `objdump` confirme `r12` est une constante figée à la
+compilation, pas une lecture runtime, correspondant exactement à la
+macro `PPC_CALL_INDIRECT_FUNC` (`rex/ppc/context.h:126-131`).
+`rax=0` aux deux crashes = appel d'un pointeur de fonction invité NUL,
+sans vérification, débordement d'adresse. **Cause du nul** :
+`ExCreateThread` ne lit jamais `CreationFlags` (r9) — signature XDK
+publique, à revérifier — donc les 18 threads démarrent tous
+immédiatement au lieu d'attendre une reprise explicite. Corrige r112
+("course non synchronisée" → déterministe) et affine r113. Aucun code
+modifié — changement d'infrastructure trop lourd pour ce cycle;
+implémentation prévue pour un prochain cycle dédié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

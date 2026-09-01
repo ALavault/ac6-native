@@ -504,7 +504,34 @@ compteur injecté ou fallback ReXGlue.
     `sub_821D6C20` avec désassemblage complet; envisager un balayage
     plus long vu le taux de reproduction ~10-20%. Voir
     `reports/ac6-retail-native-codegen-gate2-r113-r12-is-unmapped-garbage-and-the-original-main-thread-crash-still-happens-intermittently-20260901.md`.
-22. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+23. **r114 a trouvé la CAUSE RACINE complète : appel via un pointeur de
+    fonction invité NUL, et le stub `ExCreateThread` ne lit jamais
+    `CreationFlags`.** `sub_821D4C20` (2e site de r112) capturé avec
+    désassemblage complet : instruction et valeur de `r12` IDENTIQUES à
+    `sub_82346428` — `objdump` confirme `r12` est une CONSTANTE figée à
+    la compilation (`movabs $0xffffffff7e980000`), pas une lecture
+    mémoire runtime. Correspond exactement à la macro
+    `PPC_CALL_INDIRECT_FUNC` (`rex/ppc/context.h:126-131`) : le
+    compilateur replie la partie constante dans `r12`, laissant `y*2`
+    (`rax*2`) comme seule partie variable. **`rax=0` aux deux crashes
+    signifie `y=0`** — appel d'un pointeur de fonction invité NUL, sans
+    vérification, provoquant le débordement d'adresse observé.
+    **Mécanisme entièrement expliqué.** Cause du pointeur nul :
+    `ExCreateThread` (`tools/materialize_native_import_stubs.py:271-301`)
+    lit r3/r6/r7/r8 mais JAMAIS r9 (`CreationFlags`, qui porterait
+    `CREATE_SUSPENDED` sur le vrai matériel — signature XDK publique, à
+    revérifier). Les 18 threads démarrent donc tous immédiatement,
+    expliquant le mécanisme ET la sensibilité au timing depuis r110.
+    Corrige r112 ("course non synchronisée" → déterministe une fois
+    `y=0` connu) et affine r113 (`r12` jamais non initialisé — c'est le
+    SLOT de pointeur invité en amont qui est encore nul). Aucun code
+    modifié — changement d'infrastructure trop lourd pour ce cycle.
+    **Prochain cycle** : implémenter la création suspendue dans
+    `ExCreateThread` (lire r9, parquer le thread jusqu'à un vrai
+    `NtResumeThread`/`KeResumeThread`), vérifier la valeur réelle de
+    `CREATE_SUSPENDED`, puis re-tester si les crashes cessent. Voir
+    `reports/ac6-retail-native-codegen-gate2-r114-root-cause-found-null-guest-function-pointer-plus-excreatethread-ignores-creationflags-20260901.md`.
+24. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

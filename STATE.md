@@ -1,3 +1,39 @@
+# AC6 retail NTSC-U/J — r114 : CAUSE RACINE TROUVÉE — appel via un pointeur de fonction invité NUL, et le stub `ExCreateThread` ne lit jamais `CreationFlags` (2026-09-01)
+
+- `sub_821D4C20` (deuxième site nommé par r112) capturé avec
+  désassemblage complet : **instruction et valeur de `r12` IDENTIQUES**
+  à `sub_82346428` (r112/r113) — trop précis pour être une coïncidence
+  de mémoire réutilisée. `objdump` statique confirme : `r12` est une
+  **constante figée à la compilation** (`movabs $0xffffffff7e980000`),
+  PAS une lecture mémoire runtime.
+- Correspond exactement à la macro `PPC_CALL_INDIRECT_FUNC`
+  (`rex/ppc/context.h:126-131`) : `PPC_LOOKUP_FUNC(x,y) =
+  *(PPCFunc**)(x + PPC_IMAGE_BASE + PPC_IMAGE_SIZE +
+  (uint64_t(uint32_t(y)-PPC_CODE_BASE)*2))`. Le compilateur replie la
+  partie constante dans `r12`; `y*2` (= `rax*2`) est la seule partie
+  variable. **`rax=0` capturé aux deux crashes signifie `y=0`** — le
+  code invité appelle un pointeur de fonction NUL. Sans vérification
+  de nullité, `uint32_t(0)-PPC_CODE_BASE` déborde en arithmétique
+  32-bit non signée, produisant l'adresse hôte non mappée observée.
+  **Mécanisme de crash entièrement expliqué**, plus une hypothèse.
+- **Cause du pointeur nul** : le vrai stub `ExCreateThread`
+  (`tools/materialize_native_import_stubs.py:271-301`) lit r3
+  (Handle), r6 (XapiThreadStartup), r7 (StartAddress), r8
+  (StartContext) mais **JAMAIS r9 (`CreationFlags`, qui porte
+  `CREATE_SUSPENDED` sur le vrai matériel)** — signature XDK publique
+  bien documentée, à revérifier contre une source faisant autorité.
+  Les dix-huit threads démarrent donc TOUS immédiatement, quelle que
+  soit la demande du jeu — explique le mécanisme ET la sensibilité au
+  timing documentée depuis r110.
+- **Corrige r112** ("lecture vtable non synchronisée" → en réalité
+  déterministe une fois `y=0` connu, pas une vraie course mémoire) et
+  affine r113 (`r12` n'a jamais été une valeur non initialisée — c'est
+  le SLOT de pointeur de fonction invité, plus en amont, qui est
+  encore nul). Aucun code modifié — un changement de ce poids
+  (infrastructure de cycle de vie des threads) mérite son propre
+  cycle avec couverture de tests dédiée. Voir
+  `reports/ac6-retail-native-codegen-gate2-r114-root-cause-found-null-guest-function-pointer-plus-excreatethread-ignores-creationflags-20260901.md`.
+
 # AC6 retail NTSC-U/J — r113 : `r12` confirmé mémoire non mappée, ET le crash original `sub_821D6C20` du thread principal se produit toujours par intermittence après r108 (2026-09-01)
 
 - **`r12` capturé au crash `sub_82346428`** : `0x7ffe75980000`,
