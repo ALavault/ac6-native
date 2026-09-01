@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r128-gdb-watchpoints-are-also-unreliable-on-this-probe-a-false-lead-retracted-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r127-the-file-handle-is-invalid-handle-value-ntcreatefile-never-produced-a-real-one-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r126-rtlntstatustodoserror-implemented-verified-live-necessary-not-sufficient-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r125-entire-chain-closed-two-unimplemented-imports-ntreadfile-and-rtlntstatustodoserror-20260901.md`;
@@ -460,6 +461,16 @@ produit de vrai handle pour la table qui l'alimente (entrée 0 à
 via un handle invalide. Le problème est EN AMONT de `NtReadFile`.
 Aucun code modifié. Prochain cycle : localiser l'écrivain de
 `0x8293b93c`.
+
+**r128 — les watchpoints GDB sont AUSSI peu fiables sur cette sonde
+(étend r104).** Deux techniques statiques épuisées pour trouver
+l'écrivain de `0x8293b93c` (négatives). Watchpoint GDB tenté :
+déclenché avec une pile prometteuse via `sub_82346428`, mais RÉTRACTÉ
+après vérification — deux répétitions donnent des piles complètement
+différentes et incohérentes (déclenchements fantômes, 18 threads).
+`sub_82346428` reste un candidat NON confirmé. Aucun code modifié.
+Prochain cycle : instrumentation build-tree fiable, pas de watchpoints
+GDB ici.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

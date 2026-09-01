@@ -791,7 +791,27 @@ compteur injecté ou fallback ReXGlue.
     localiser l'écrivain de `0x8293b93c` — cluster
     `Function_82390F48` de r122/r123, ou site séparé? Voir
     `reports/ac6-retail-native-codegen-gate2-r127-the-file-handle-is-invalid-handle-value-ntcreatefile-never-produced-a-real-one-20260901.md`.
-50. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+51. **r128 — les watchpoints GDB sont AUSSI peu fiables sur cette sonde
+    (étend r104); une piste de première tentative RÉTRACTÉE.** Deux
+    techniques statiques épuisées, négatives (matérialisation
+    lis+addi/ori absente pour `0x8293b93c`; grep exhaustif des stores
+    `-18116` trouve 2 sites mais avec une base différente `-32099`;
+    image statique du XEX confirmée à zéro, pas `0xFFFFFFFF`). Nouvelle
+    technique tentée : watchpoint GDB passif (pose puis `continue`, PAS
+    le pas-à-pas déjà retiré par r104). Première tentative : déclenché
+    avec pile traversant `sub_82346428` (le crash de thread
+    d'arrière-plan de r111-r116) — semblait une connexion réelle.
+    **RÉTRACTÉ après vérification de reproductibilité** : deux
+    répétitions déclenchent avec des piles COMPLÈTEMENT DIFFÉRENTES et
+    incohérentes, `New value=<unreadable>` à chaque fois — GDB produit
+    des déclenchements FANTÔMES sur cette sonde à 18 threads, pas de
+    vrais événements d'écriture. Étend r104 à une deuxième
+    fonctionnalité GDB. Aucun code modifié. **Prochain cycle** : NE PAS
+    utiliser de watchpoints GDB ici; utiliser l'instrumentation
+    build-tree fiable sur `sub_82346428` (candidat à vérifier
+    proprement) et le cluster `Function_82390F48`. Voir
+    `reports/ac6-retail-native-codegen-gate2-r128-gdb-watchpoints-are-also-unreliable-on-this-probe-a-false-lead-retracted-20260901.md`.
+52. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r128 : les watchpoints GDB sont AUSSI peu fiables sur cette sonde (étend r104) — une piste de première tentative RÉTRACTÉE (2026-09-01)
+
+- **Deux techniques statiques épuisées, toutes deux négatives** :
+  `FindPpcAddressMaterialization.java` (read-only) ne trouve AUCUNE
+  paire lis+addi/ori construisant `0x8293b93c`; grep exhaustif de
+  TOUS les stores utilisant le déplacement `-18116` dans tout le code
+  généré trouve exactement deux stores directs, mais tous deux avec
+  une base DIFFÉRENTE (`-32099`, pas `-32108`) — ni l'un ni l'autre
+  n'écrit notre adresse cible. `DumpBytes.java` confirme aussi que
+  l'image statique du XEX à cette adresse est ZÉRO, pas `0xFFFFFFFF` —
+  écarte l'hypothèse d'un initialiseur statique.
+- **Nouvelle technique tentée : un WATCHPOINT GDB** (passif, pose puis
+  `continue` — PAS le pas-à-pas interactif déjà retiré par r104).
+  **Première tentative** : déclenché avec `Old value=0xFFFFFFFF` et une
+  pile d'appels traversant `sub_82346428` — la fonction même du crash
+  de thread d'arrière-plan investigué en r111-r116. Ressemblait à une
+  connexion réelle, excitante.
+- **RÉTRACTÉ après vérification de reproductibilité** (discipline
+  "mesurer l'instrument" de CLAUDE.md) : deux répétitions IDENTIQUES
+  déclenchent avec des piles d'appels COMPLÈTEMENT DIFFÉRENTES et
+  MUTUELLEMENT INCOHÉRENTES (`wait_event`/`NtSignalAndWaitForSingleObjectEx`,
+  puis un futex/condition-variable brut sans frame invité) —
+  `New value=<unreadable>` à chaque fois. **Ceci N'EST PAS un vrai
+  événement d'écriture capturé trois fois à trois endroits différents
+  — c'est GDB produisant des déclenchements FANTÔMES** dans cette
+  sonde fortement multi-threadée (18 threads).
+- **Étend la découverte de r104** (le pas-à-pas interactif est peu
+  fiable) à une DEUXIÈME fonctionnalité GDB : les watchpoints AUSSI.
+  La piste `sub_82346428` de la première tentative est explicitement
+  RÉTRACTÉE — pas confirmée, pas un résultat établi. L'écrivain de
+  `0x8293b93c` reste NON IDENTIFIÉ. Aucun code natif modifié. **Prochain
+  cycle** : NE PAS utiliser de watchpoints GDB sur cette sonde sans
+  confirmation indépendante; utiliser l'instrumentation build-tree
+  fiable (technique validée depuis r105) sur `sub_82346428` (candidat
+  encore à vérifier proprement) et le cluster `Function_82390F48`. Voir
+  `reports/ac6-retail-native-codegen-gate2-r128-gdb-watchpoints-are-also-unreliable-on-this-probe-a-false-lead-retracted-20260901.md`.
+
 # AC6 retail NTSC-U/J — r127 : le handle de fichier de `sub_821F4E70` est TOUJOURS `INVALID_HANDLE_VALUE` — `NtCreateFile` n'a jamais produit de vrai handle (2026-09-01)
 
 - **Une seule exécution instrumentée** (crash déterministe) sur les
