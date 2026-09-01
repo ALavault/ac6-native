@@ -166,10 +166,31 @@ DecodeResult Pm4Decoder::decode_one(std::span<const std::uint32_t> words,
   const Pm4Error length_error = require_words(1u + count);
   if (length_error) return {0u, length_error};
   const std::uint32_t opcode = opcode_of(header);
-  if ((header & 1u) != 0u) {
-    return {0u, make_error(Pm4ErrorCode::kInvalidPayload, 0u,
-                           "predicated TYPE3 packets are not supported")};
-  }
+  // r100: bit 0 (predicate-enable) is decoded like any other TYPE3 packet,
+  // never used to gate or reject decode. This is a decode policy for the
+  // content this decoder has actually seen (r96's 281-packet TYPE3 census),
+  // not a hardware-predication claim:
+  //  - both predicated packets in that content build their header's bit 0
+  //    from a fixed compile-time constant at their construction site
+  //    (DRAW_INDX_2: `0x821e14a0`; WAIT_REG_MEM: `0x821e637c` -- r99), never
+  //    from a computed condition -- so there is no data-dependent predicate
+  //    *value* being lost by ignoring it;
+  //  - none of the census's ten opcodes
+  //    (0x21,0x2b,0x36,0x3b,0x3c,0x45,0x46,0x54,0x58,0x60) sets a predicate
+  //    condition register, and this file defines no such opcode at all
+  //    (`grep kOpcode` above), so there is no observed instruction that
+  //    would ever move the guest's intended predicate state away from
+  //    reset/enabled for this content;
+  //  - the WAIT_REG_MEM predicate-false alternative (r99) is a guest-side
+  //    branch that skips emitting the packet entirely and returns straight
+  //    into the already-characterized interrupt handler (`sub_821E63F0`,
+  //    r85-r89) -- it is not a second decoder-side state this file needs to
+  //    model.
+  // Known gap this leaves open: a future capture that actually carries a
+  // predicate-setting opcode, or a predicate value computed at emission
+  // time, would decode identically to its unconditional form -- this is a
+  // narrower guarantee than true hardware predication, stated here rather
+  // than hidden.
   const std::span<const std::uint32_t> payload(words.data() + 1u, count);
   switch (opcode) {
     case pm4::kOpcodeNop:

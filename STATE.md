@@ -1,3 +1,42 @@
+# AC6 retail NTSC-U/J — r100 : rejet prédicat retiré (évidence bornée), nouveau plantage d'appel indirect dans `_xstart` (2026-09-01)
+
+- Trace statique de `Function_821E6280` commencée (r97-r100, 5 niveaux de
+  profondeur) puis abandonnée sur avis externe : la question réelle n'était
+  pas "quand ce contenu émet-il le paquet prédiqué" (déjà répondu par
+  l'observation runtime) mais "que doit faire le DÉCODEUR", question que la
+  trace statique ne pouvait pas trancher plus loin.
+- **RETIRÉ le rejet `native_xenos.cpp:169-171`** (`predicated TYPE3 packets
+  are not supported`) sur 4 preuves indépendantes déjà établies : (1) les
+  DEUX bits prédicat captures sont des constantes figées à la compilation
+  (r99), jamais une valeur calculée; (2) le recensement complet des 281
+  paquets TYPE3 (r96) ne contient AUCUN opcode de positionnement de
+  prédicat, et ce fichier n'en définit aucun; (3) le backend Vulkan
+  (`WaitPacket`) ignorait déjà le bit prédicat, ne vérifiant que le
+  sélecteur; (4) la branche alternative `WAIT_REG_MEM` (r99) retourne
+  directement dans le gestionnaire d'interruption déjà caractérisé
+  (r85-r89), pas un second état à modéliser. Politique de décodage
+  documentée comme telle (pas une revendication matérielle), lacune
+  explicitement énoncée dans le commentaire.
+- **Deuxième bug pré-existant trouvé et corrigé** (sans rapport avec le
+  prédicat) : `indirect_buffer_decode_error_reports_real_hex_address`
+  (introduit r95/r96) fixait `ring[2]=1u` (compte de dwords IB) alors que
+  le contenu invité faisait 4 dwords — le décodeur tronquait avant
+  d'atteindre le contrôle de plage de registre que le test voulait
+  exercer. Vérifié pré-existant (git stash sur l'arbre r99 non modifié,
+  même échec). Corrigé (`ring[2]=4u`).
+- Vérifié en direct : la sonde dépasse largement le record précédent
+  (`vd publish write=49` contre 37 en r96), nouvelles allocations
+  jusqu'à 2 Mo (échelle texture/vertex, jamais vue), un `vd swap commit`,
+  quatre cycles de publication avec une valeur de fence qui s'incrémente
+  (7,9,11,13). **Puis SIGSEGV** (pas l'expiration habituelle) : appel
+  indirect corrompu dans `sub_821D6C20` (`call *(%rcx,%rax,1)` avec
+  `rax` dans la plage d'un pointeur hôte, pas une adresse invité
+  plausible), atteint via `_xstart → sub_821D7DE0 → sub_821D6C20`.
+  Nouvelle frontière nommée, pas encore caractérisée. Tous les gates
+  requis passent (9/9 ctest, 130/130 pytest scoped à `tests/`, audits
+  standards; N2 pré-existant inchangé). Voir
+  `reports/ac6-retail-native-codegen-gate2-r100-predicate-decode-fixed-new-indirect-call-crash-20260901.md`.
+
 # AC6 retail NTSC-U/J — r99 : le prédicat rejoint la lacune callback d'interruption déjà connue, pas une inconnue indépendante (2026-09-01)
 
 - TRACÉ les DEUX paquets prédiqués du tampon jusqu'à leur site de

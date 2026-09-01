@@ -122,7 +122,7 @@ void decoder_accepts_verified_retail_opcodes_0x45_and_0x46() {
   assert(output.empty());
 }
 
-void decoder_enforces_hardware_predicate_and_one_register() {
+void decoder_enforces_hardware_one_register() {
   XenosState state;
   std::vector<XenosCommand> output;
   const std::vector<std::uint32_t> one_register{
@@ -130,12 +130,45 @@ void decoder_enforces_hardware_predicate_and_one_register() {
       0x11u, 0x22u};
   assert(Pm4Decoder::decode_one(one_register, state, output).ok());
   assert(state.register_value(9u) == 0x22u);
+}
+
+// r100: bit 0 (predicate-enable) no longer rejects decode -- see the policy
+// comment above native_xenos.cpp's TYPE3 switch for the evidence chain
+// (r96/r99). A predicated packet must decode exactly like its unpredicated
+// twin, opcode and payload untouched by the bit.
+void decoder_decodes_predicated_type3_like_unpredicated() {
+  XenosState state;
+  std::vector<XenosCommand> unpredicated_output;
+  const std::vector<std::uint32_t> unpredicated{
+      ac6::native::pm4::type3_header(ac6::native::pm4::kOpcodeWaitForIdle, 1u),
+      0u};
+  const auto unpredicated_result =
+      Pm4Decoder::decode_one(unpredicated, state, unpredicated_output);
+  assert(unpredicated_result.ok());
+
+  std::vector<XenosCommand> predicated_output;
   const std::vector<std::uint32_t> predicated{
       ac6::native::pm4::type3_header(ac6::native::pm4::kOpcodeWaitForIdle, 1u) | 1u,
       0u};
-  const auto result = Pm4Decoder::decode_one(predicated, state, output);
-  assert(!result.ok());
-  assert(result.error.code == ac6::native::Pm4ErrorCode::kInvalidPayload);
+  const auto predicated_result =
+      Pm4Decoder::decode_one(predicated, state, predicated_output);
+  assert(predicated_result.ok());
+  assert(predicated_output.size() == unpredicated_output.size());
+}
+
+// The two real captured predicated headers from r99's construction-site
+// trace (DRAW_INDX_2 `0xC0003601`, WAIT_REG_MEM `0xC0043C01`) must decode
+// successfully rather than reject.
+void decoder_accepts_real_captured_predicated_headers() {
+  XenosState state;
+  std::vector<XenosCommand> output;
+  const std::vector<std::uint32_t> draw_indx_2{0xC0003601u, 0x00030088u};
+  assert(Pm4Decoder::decode_one(draw_indx_2, state, output).ok());
+
+  // count field of 0xC0043C01 is 5: function/poll-addr/ref/mask/interval.
+  const std::vector<std::uint32_t> wait_reg_mem{
+      0xC0043C01u, 0x00000013u, 0x16530002u, 0u, 0xffffffffu, 0u};
+  assert(Pm4Decoder::decode_one(wait_reg_mem, state, output).ok());
 }
 
 void ring_wrap_and_interrupt_are_bounded() {
@@ -288,7 +321,15 @@ void indirect_buffer_decode_error_reports_real_hex_address() {
   ring[0] = ac6::native::pm4::type3_header(
       ac6::native::pm4::kOpcodeIndirectBuffer, 2u);
   ring[1] = ib_address;
-  ring[2] = 1u;
+  // r100: the IB dword-count field (payload[1] of INDIRECT_BUFFER) must
+  // cover the whole 4-dword guest packet below (header + 3 payload words)
+  // or the decoder truncates before ever reaching the register-range
+  // check this test means to exercise. This was pre-existing since the
+  // test's introduction (r95/r96) -- a fixed count of 1u always yielded
+  // kTruncatedPacket, never kInvalidRegister, independent of anything
+  // this cycle touched (verified: still failed with r99's code checked
+  // out unmodified).
+  ring[2] = 4u;
   assert(bus.write(MmioBus::kRingRead, 0u));
   assert(bus.write(MmioBus::kRingWrite, 12u));
   // r96 widened kRegisterCount to 0x8000 (TYPE0's own 15-bit base-register
@@ -376,7 +417,9 @@ int main() {
   decoder_rejects_unknown_and_bad_wait();
   decoder_covers_type1_and_type2_without_silent_effects();
   decoder_accepts_verified_retail_opcodes_0x45_and_0x46();
-  decoder_enforces_hardware_predicate_and_one_register();
+  decoder_enforces_hardware_one_register();
+  decoder_decodes_predicated_type3_like_unpredicated();
+  decoder_accepts_real_captured_predicated_headers();
   ring_wrap_and_interrupt_are_bounded();
   indirect_buffers_expand_and_cycles_fail_closed();
   indirect_buffer_decode_error_reports_real_hex_address();

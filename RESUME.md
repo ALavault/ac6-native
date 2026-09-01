@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r100-predicate-decode-fixed-new-indirect-call-crash-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r97-predicate-semantics-need-external-source-20260901.md`;
@@ -97,6 +98,24 @@ aucun correctif implémenté. Identité du nouvel objet bloqué (r94) toujours
 non lue. Le passage sur les 76 sites d'appel de `sub_821E60A8`
 (r79/r93) et la piste `sub_821E65B0` sont hors de propos — ils
 caractérisaient l'ANCIEN blocage, résolu en r94.
+
+**r100 a retiré le rejet des paquets TYPE3 prédiqués** (`native_xenos.cpp:169-171`)
+sur 4 preuves indépendantes (bits captures figés à la compilation r99, aucun
+opcode de positionnement de prédicat dans le recensement complet r96, backend
+Vulkan déjà indifférent au bit, branche alternative `WAIT_REG_MEM` retourne
+proprement dans le gestionnaire d'interruption déjà connu) — politique de
+décodage documentée, pas une revendication matérielle. A aussi corrigé un
+second bug pré-existant sans rapport (`ring[2]` mal dimensionné dans un test
+r95/r96). **Vérifié en direct : record de progression** (`vd publish
+write=49`, contre 37 en r96), nouvelles allocations jusqu'à 2 Mo, un swap
+commit, quatre incréments de fence — **puis SIGSEGV**, pas l'expiration
+habituelle : appel indirect corrompu dans `sub_821D6C20`
+(`_xstart→sub_821D7DE0→sub_821D6C20`), `rax` dans la plage d'un pointeur hôte
+au lieu d'une adresse invité. Nouvelle frontière nommée, non caractérisée —
+c'est la prochaine question, pas une suite du fil prédicat (clos pour le
+contenu observé). L'identité de l'ancien objet bloqué `sub_821E6AC8`/
+`sub_821F03B0` (r94) est probablement caduque : la sonde ne l'atteint plus
+avant le nouveau plantage.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

@@ -129,7 +129,31 @@ compteur injecté ou fallback ReXGlue.
    au contenu non publié du ring; ne jamais écrire de valeur synthétique
    pour faire avancer le
    décodeur.
-5. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+5. **r100 a retiré le rejet du prédicat TYPE3** sur 4 preuves indépendantes
+   (bits captures constants r99, aucun opcode prédicat dans le recensement
+   complet r96, backend Vulkan déjà indifférent au bit, branche alternative
+   `WAIT_REG_MEM` propre r99) — politique de décodage pour le contenu
+   observé, pas une revendication matérielle générale; la lacune (un futur
+   contenu avec un vrai opcode de prédicat déciderait pareil) est nommée
+   dans le commentaire du code. A aussi corrigé un second bug pré-existant
+   sans rapport (`ring[2]` sous-dimensionné dans un test r95/r96, vérifié
+   antérieur à ce cycle par `git stash`). **Vérifié en direct** : record de
+   progression, `vd publish write=49` (record précédent 37), nouvelles
+   allocations jusqu'à 2 Mo jamais vues, un `vd swap commit`, quatre cycles
+   de fence incrémentée. **Puis SIGSEGV** (pas l'expiration habituelle du
+   probe) : appel indirect corrompu (`call *(%rcx,%rax,1)`) dans
+   `sub_821D6C20`, atteint via `_xstart→sub_821D7DE0→sub_821D6C20`, `rax`
+   dans la plage d'un pointeur hôte plutôt qu'une adresse invité valide (24
+   heures de trace obtenues via un core dump `apport`, pas `gdb` en direct
+   — la fenêtre du crash est sensible à l'ordonnancement et un `gdb` attaché
+   ne l'a pas reproduit à 60s ni 180s). **Prochaine frontière concrète** :
+   caractériser `sub_821D6C20` depuis une passe Ghidra propre — ce qui
+   positionne le registre fautif au site d'appel — plutôt qu'une suite du
+   fil prédicat, désormais clos pour le contenu observé. L'ancien fil
+   d'objet bloqué `sub_821E6AC8`/`sub_821F03B0` (r94) est probablement
+   caduc : la sonde ne l'atteint plus avant ce nouveau plantage. Voir
+   `reports/ac6-retail-native-codegen-gate2-r100-predicate-decode-fixed-new-indirect-call-crash-20260901.md`.
+6. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
