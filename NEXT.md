@@ -834,7 +834,28 @@ compteur injecté ou fallback ReXGlue.
     implémenter les deux, PUIS relancer la sonde contre l'ISO qualifié
     (pas `assets/`) — nouveau prérequis établi ce cycle. Voir
     `reports/ac6-retail-native-codegen-gate2-r129-writer-found-real-content-exists-the-probe-just-never-used-the-qualified-iso-20260901.md`.
-54. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+54. **r130-r131 : `NtCreateFile`/`NtReadFile` implémentés contre un nouveau
+    `NativeGuestMediaService`, vérifiés en direct contre le VRAI ISO
+    qualifié pour la première fois de toute l'investigation. Le "not
+    found" initial de r130 (les trois fichiers `DATA00.PAC`/
+    `DATA01.PAC`/`DATA.TBL`) était un bug du PARAMÈTRE `maximum_size` de
+    `read_xdvdfs_file` (rejette tout appel >16MiB, indépendamment de la
+    taille réelle du fichier) — pas un bug de recherche dans l'arbre.
+    Corrigé par une nouvelle `locate_xdvdfs_file()` (résout offset/taille
+    sans copie ni plafond) + lecture STREAMÉE directement depuis l'ISO
+    (jamais un préchargement complet — `DATA00.PAC` fait ~2,1GiB).
+    Les trois `NtCreateFile` réussissent maintenant en direct.**
+    **LE CRASH ORIGINAL DE r100 (`sub_821D6C20`) EST CONFIRMÉ DISPARU** —
+    remplacé par un nouveau crash déterministe dans `sub_821F7C80`
+    (appelé via `sub_82390B18` <- `sub_821F8008` <- thread
+    `ExCreateThread`), forme de déréférencement de pointeur nul
+    (`rbp=rdx=r13=r15=0`), mécanisme pas encore établi par
+    désassemblage. **Prochain cycle** : désassembler `sub_821F7C80`
+    (vérifier complétude `.pdata` d'abord) pour localiser le champ nul
+    exact et son lien probable avec le contenu de `DATA.TBL`/
+    `DATA00.PAC`/`DATA01.PAC` tout juste lisible. Voir
+    `reports/ac6-retail-native-codegen-gate2-r131-xdvdfs-maximum-size-parameter-was-rejecting-every-open-r100s-original-crash-site-is-confirmed-gone-20260901.md`.**
+55. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

@@ -5,6 +5,8 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r131-xdvdfs-maximum-size-parameter-was-rejecting-every-open-r100s-original-crash-site-is-confirmed-gone-20260901.md`;
+- `reports/ac6-retail-native-codegen-gate2-r130-ntcreatefile-ntreadfile-implemented-and-called-with-real-filenames-xdvdfs-lookup-fails-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r129-writer-found-real-content-exists-the-probe-just-never-used-the-qualified-iso-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r128-gdb-watchpoints-are-also-unreliable-on-this-probe-a-false-lead-retracted-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r127-the-file-handle-is-invalid-handle-value-ntcreatefile-never-produced-a-real-one-20260901.md`;
@@ -484,6 +486,36 @@ SHA-256 confirmé EXACT contre `targets/ntsc-uj.json`); `DATA00.PAC`/
 blocage de contenu manquant** — le correctif est entièrement déterminé
 en forme : `NtCreateFile`→`read_xdvdfs_file`, `NtReadFile`→vrais
 octets, PUIS relancer contre l'ISO. Aucun code modifié.
+
+**r130 — `NtCreateFile`/`NtReadFile` implémentés** contre un nouveau
+`NativeGuestMediaService` (patron `native_guest_vd_service()`), branché
+dans `NativeRuntime::boot()`. `NtReadFile` complète toujours de façon
+synchrone (jamais `STATUS_PENDING`, contrainte r125/r126). Première
+vérification en direct de toute l'investigation contre le VRAI ISO
+qualifié : `NtCreateFile` appelé avec exactement les noms prédits par
+r129, mais les trois rapportent `-> not found` ce cycle-là — cause
+diagnostiquée et corrigée en r131 (ci-dessous), pas encore comprise à
+ce stade.
+
+**r131 — cause du "not found" trouvée : ce n'est PAS un bug de recherche
+dans l'arbre XDVDFS.** Un diagnostic autonome confirme que
+`read_directory()` trouve correctement les 13 entrées racine (dont
+`DATA00.PAC`/`DATA01.PAC`/`DATA.TBL`). Le vrai bug : `read_xdvdfs_file()`
+rejette tout appel dont le PARAMÈTRE `maximum_size` dépasse 16MiB —
+indépendamment de la taille réelle du fichier demandé — et
+`NativeGuestMediaService` (r130) passait 512MiB, donc CHAQUE appel
+échouait, même pour `DATA.TBL` (14 824 octets). Corrigé par une nouvelle
+`locate_xdvdfs_file()` (résout offset/taille sans copie ni plafond,
+factorisée à partir des mêmes validations) + lecture STREAMÉE
+directement depuis l'ISO à la demande (jamais un préchargement complet
+— `DATA00.PAC` fait ~2,1GiB). `read_xdvdfs_file` elle-même est
+inchangée dans son contrat (3 tests existants passent tels quels).
+**Vérifié en direct : les trois `NtCreateFile` réussissent maintenant.**
+**LE CRASH ORIGINAL DE r100 (`sub_821D6C20`) EST CONFIRMÉ DISPARU** —
+remplacé par un nouveau crash déterministe (reproduit 2/2) dans
+`sub_821F7C80` <- `sub_82390B18` <- `sub_821F8008` <- thread
+`ExCreateThread`, forme de pointeur nul (`rbp=rdx=r13=r15=0`), mécanisme
+pas encore établi. Prochain cycle : désassembler `sub_821F7C80`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

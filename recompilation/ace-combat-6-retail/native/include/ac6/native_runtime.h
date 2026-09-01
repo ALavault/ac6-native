@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ac6/native_frontend.h"
+#include "ac6/native_guest_media.h"
 #include "ac6/native_guest_memory.h"
 #include "ac6/native_guest_vd.h"
 #include "ac6/native_ppc_abi.h"

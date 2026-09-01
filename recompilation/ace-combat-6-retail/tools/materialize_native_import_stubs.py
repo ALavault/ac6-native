@@ -12,6 +12,7 @@ from pathlib import Path
 IMPORT = re.compile(r"__imp__([A-Za-z0-9_]+)")
 HEADER = """// Generated build-only import boundary; never install or track this file.
 #include \"ppc_context.h\"
+#include \"ac6/native_guest_media.h\"
 #include \"ac6/native_guest_vd.h\"
 
 #include <array>
@@ -24,6 +25,9 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include <cstring>
 #include <memory>
 #include <mutex>
+#include <optional>
+#include <string>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 
@@ -38,6 +42,23 @@ void trace_offline_import(const char* name) noexcept {
   if (enabled == nullptr || std::strcmp(enabled, "1") != 0) return;
   std::fprintf(stderr, "[offline-import] %s\\n", name);
 }
+// r129: strips a leading drive-letter-style prefix (e.g. "game:") the
+// way this XEX's own DATA00.PAC path uses, byte-confirmed on the real
+// title, and normalizes separators, leaving a path relative to
+// whatever media the runtime was booted against.
+std::string guest_path_to_relative(std::string_view raw) {
+  std::string path(raw);
+  const std::size_t colon = path.find(':');
+  if (colon != std::string::npos) path.erase(0, colon + 1);
+  while (!path.empty() && (path.front() == '\\\\' || path.front() == '/')) {
+    path.erase(0, 1);
+  }
+  for (char& c : path) {
+    if (c == '\\\\') c = '/';
+  }
+  return path;
+}
+
 std::atomic<std::uint32_t> g_next_handle{0x100u};
 std::atomic<std::uint32_t> g_next_thread_stack{0x8ef00000u};
 // Keep kernel virtual allocations in a deterministic non-image/non-stack
@@ -390,6 +411,86 @@ def render_body(name: str) -> str:
   if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32,
                                        was_already_running ? 0u : 1u);
   ctx.r3.u64 = 0u;
+"""
+    if name == "NtCreateFile":
+        # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
+        # call sites only ever populate the first 8 (r3..r10) --
+        # CreateOptions (the 9th, stack-passed) is unread here, matching
+        # every other stub in this file. ObjectAttributes (r5) is the
+        # reduced 3-field Xbox 360 layout r123 confirmed byte-by-byte:
+        # {RootDirectory:u32, ObjectName:ptr-to-ANSI_STRING, Attributes:u32}.
+        # The ANSI_STRING's own {Length:u16, MaximumLength:u16, Buffer:ptr}
+        # layout is also byte-confirmed (r123) from a real "\Device\..."
+        # string read directly off the XEX. r129 found a real title path
+        # ("game:\DATA00.PAC") flows through this exact structure shape,
+        # and confirmed that file genuinely exists on this project's own
+        # already-qualified retail ISO -- this is not fabricated content,
+        # it opens whatever media the runtime was actually booted against
+        # (native_guest_media_service(), bound once at NativeRuntime::boot()
+        # to the same MediaInput every other boot-time read already uses).
+        return """  const std::uint32_t object_attributes = ctx.r5.u32;
+  const std::uint32_t object_name = object_attributes != 0u
+      ? PPC_LOAD_U32(object_attributes + 4u) : 0u;
+  std::uint32_t status = 0xC0000034u;  // STATUS_OBJECT_NAME_NOT_FOUND
+  std::uint32_t handle = 0u;
+  if (object_name != 0u) {
+    const std::uint16_t length = PPC_LOAD_U16(object_name + 0u);
+    const std::uint32_t buffer = PPC_LOAD_U32(object_name + 4u);
+    if (buffer != 0u) {
+      const std::string_view raw(
+          reinterpret_cast<const char*>(base + buffer), length);
+      const std::string relative = guest_path_to_relative(raw);
+      const std::optional<std::uint32_t> opened =
+          ac6::native::native_guest_media_service().open_file(relative);
+      if (opened.has_value()) {
+        handle = *opened;
+        status = 0u;  // STATUS_SUCCESS
+      }
+      if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+        std::fprintf(stderr, "[NtCreateFile] \\"%s\\" -> %s\\n",
+                      relative.c_str(), opened.has_value() ? "ok" : "not found");
+      }
+    }
+  }
+  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32, handle);
+  if (ctx.r6.u32 != 0u) {
+    PPC_STORE_U32(ctx.r6.u32 + 0u, status);
+    PPC_STORE_U32(ctx.r6.u32 + 4u, 0u);
+  }
+  ctx.r3.u64 = status;
+"""
+    if name == "NtReadFile":
+        # r124: real signature confirmed live from the one guest caller
+        # this project has instrumented -- r3=Handle, r7=&IoStatusBlock,
+        # r8=Buffer, r9=Length, r10=&ByteOffset (a 64-bit big-endian pair).
+        # Completes synchronously with a real STATUS_SUCCESS/STATUS_END_OF_FILE
+        # rather than STATUS_PENDING -- r125/r126 named the risk of an
+        # unconditional STATUS_PENDING stub (the caller's retry counter
+        # only decrements on a recognized failure, never on pending, so a
+        # stub that never truly completes would hang instead of crash);
+        # this harness has no real DMA to model asynchronously, so the
+        # honest offline behavior is to finish the read immediately.
+        return """  std::uint64_t offset = 0u;
+  if (ctx.r10.u32 != 0u) {
+    const std::uint32_t hi = PPC_LOAD_U32(ctx.r10.u32 + 0u);
+    const std::uint32_t lo = PPC_LOAD_U32(ctx.r10.u32 + 4u);
+    offset = (static_cast<std::uint64_t>(hi) << 32) | lo;
+  }
+  std::uint32_t bytes_read = 0u;
+  std::uint8_t* dest = ctx.r8.u32 != 0u ? (base + ctx.r8.u32) : nullptr;
+  const bool known_handle = ac6::native::native_guest_media_service().read_file(
+      ctx.r3.u32, offset, dest, ctx.r9.u32, bytes_read);
+  std::uint32_t status = 0xC0000008u;  // STATUS_INVALID_HANDLE
+  if (known_handle) {
+    status = (bytes_read == 0u && ctx.r9.u32 != 0u)
+        ? 0xC0000011u   // STATUS_END_OF_FILE
+        : 0u;           // STATUS_SUCCESS
+  }
+  if (ctx.r7.u32 != 0u) {
+    PPC_STORE_U32(ctx.r7.u32 + 0u, status);
+    PPC_STORE_U32(ctx.r7.u32 + 4u, bytes_read);
+  }
+  ctx.r3.u64 = status;
 """
     if name == "NtCreateEvent":
         return """  const std::uint32_t handle = g_next_handle.fetch_add(1u);

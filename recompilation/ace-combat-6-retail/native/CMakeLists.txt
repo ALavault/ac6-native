@@ -16,6 +16,7 @@ add_library(ac6_native_xenos STATIC
   src/native_frontend.cpp
   src/native_guest_memory.cpp
   src/native_guest_vd.cpp
+  src/native_guest_media.cpp
   src/native_xex.cpp
   src/native_xdvdfs.cpp
   src/native_runtime.cpp

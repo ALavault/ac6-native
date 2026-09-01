@@ -70,6 +70,59 @@ def test_thread_create_writes_guest_handle_without_host_thread(tmp_path: Path) -
     assert "ctx.r3.u64 = 0u" in text
 
 
+def test_create_file_reads_object_attributes_and_opens_via_media_service(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtCreateFile);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r122/r123: ObjectAttributes {RootDirectory, ObjectName, Attributes} at
+    # +0/+4/+8; ANSI_STRING {Length, MaximumLength, Buffer} at +0/+2/+4.
+    assert "PPC_LOAD_U32(object_attributes + 4u)" in text
+    assert "PPC_LOAD_U16(object_name + 0u)" in text
+    assert "PPC_LOAD_U32(object_name + 4u)" in text
+    assert "native_guest_media_service().open_file(relative)" in text
+    assert "guest_path_to_relative(raw)" in text
+    assert "[NtCreateFile]" in text
+    assert "0xC0000034u" in text  # STATUS_OBJECT_NAME_NOT_FOUND on a real miss
+    assert "PPC_STORE_U32(ctx.r3.u32, handle)" in text
+    assert "kOfflineStatus" not in text.split("void __imp__NtCreateFile(")[1].split(
+        "\n}\n"
+    )[0]
+
+
+def test_read_file_completes_synchronously_not_pending_forever(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtReadFile);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__NtReadFile(")[1].split("\n}\n")[0]
+    # r125's own design constraint: a stub that always claims pending would
+    # hang the caller's retry loop rather than crash it -- must not appear.
+    assert "0x103" not in body  # STATUS_PENDING
+    assert "native_guest_media_service().read_file(" in body
+    assert "0xC0000011u" in body  # STATUS_END_OF_FILE, real completion
+    assert "PPC_STORE_U32(ctx.r7.u32 + 0u, status)" in body
+    assert "PPC_STORE_U32(ctx.r7.u32 + 4u, bytes_read)" in body
+    assert "kOfflineStatus" not in body
+
+
+def test_guest_path_to_relative_strips_drive_prefix(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtCreateFile);\n")
+    output = tmp_path / "stubs.cpp"
+    MODULE.render(mapping, output)
+    text = output.read_text()
+    helper = text.split("std::string guest_path_to_relative(")[1].split("\n}\n")[0]
+    assert "path.find(':')" in helper
+    assert "c = '/'" in helper
+
+
 def test_thread_create_honors_creation_flags_suspended_bit(
     tmp_path: Path,
 ) -> None:

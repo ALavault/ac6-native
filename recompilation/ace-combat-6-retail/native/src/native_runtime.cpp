@@ -46,6 +46,7 @@ bool NativeRuntime::boot() {
     fail("media disappeared before boot");
     return false;
   }
+  native_guest_media_service().bind(media_);
   XexImage image;
   XexMetadata metadata;
   if (media_.kind == MediaKind::kAssetsDirectory) {

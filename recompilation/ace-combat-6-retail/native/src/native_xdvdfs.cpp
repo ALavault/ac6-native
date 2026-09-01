@@ -211,38 +211,15 @@ bool split_path(std::string_view path, std::vector<std::string>& parts,
   return true;
 }
 
-}  // namespace
-
-bool read_xdvdfs_file(const std::filesystem::path& iso,
-                      std::string_view internal_path,
-                      std::vector<std::uint8_t>& bytes,
-                      std::size_t maximum_size, XdvdfsFile* file,
-                      std::string* error) {
-  bytes.clear();
-  if (maximum_size == 0u || maximum_size > 16u * 1024u * 1024u) {
-    fail(error, "XDVDFS maximum extraction size is invalid");
-    return false;
-  }
+bool locate(std::ifstream& stream, std::uint64_t file_size,
+           std::string_view internal_path, Volume& volume, Entry& target,
+           std::string* error) {
   std::vector<std::string> parts;
   if (!split_path(internal_path, parts, error)) return false;
-  std::error_code ec;
-  const std::uintmax_t size = std::filesystem::file_size(iso, ec);
-  if (ec || size > std::numeric_limits<std::uint64_t>::max()) {
-    fail(error, "ISO file size is invalid");
-    return false;
-  }
-  std::ifstream stream(iso, std::ios::binary);
-  if (!stream) {
-    fail(error, "unable to open ISO");
-    return false;
-  }
-  const std::uint64_t file_size = static_cast<std::uint64_t>(size);
-  Volume volume;
   if (!find_volume(stream, file_size, volume, error)) return false;
   std::uint32_t sector = volume.root_sector;
   std::uint32_t length = volume.root_size;
   std::unordered_set<std::uint64_t> visited;
-  Entry target;
   for (std::size_t depth = 0u; depth != parts.size(); ++depth) {
     std::vector<Entry> entries;
     if (!read_directory(stream, file_size, volume, sector, length, visited,
@@ -264,7 +241,7 @@ bool read_xdvdfs_file(const std::filesystem::path& iso,
         return false;
       }
       target = *found;
-      break;
+      return true;
     }
     if (!directory) {
       fail(error, "internal path crosses a file");
@@ -272,6 +249,46 @@ bool read_xdvdfs_file(const std::filesystem::path& iso,
     }
     sector = found->sector;
     length = found->size;
+  }
+  return true;
+}
+
+bool open_iso(const std::filesystem::path& iso, std::ifstream& stream,
+             std::uint64_t& file_size, std::string* error) {
+  std::error_code ec;
+  const std::uintmax_t size = std::filesystem::file_size(iso, ec);
+  if (ec || size > std::numeric_limits<std::uint64_t>::max()) {
+    fail(error, "ISO file size is invalid");
+    return false;
+  }
+  stream.open(iso, std::ios::binary);
+  if (!stream) {
+    fail(error, "unable to open ISO");
+    return false;
+  }
+  file_size = static_cast<std::uint64_t>(size);
+  return true;
+}
+
+}  // namespace
+
+bool read_xdvdfs_file(const std::filesystem::path& iso,
+                      std::string_view internal_path,
+                      std::vector<std::uint8_t>& bytes,
+                      std::size_t maximum_size, XdvdfsFile* file,
+                      std::string* error) {
+  bytes.clear();
+  if (maximum_size == 0u || maximum_size > 16u * 1024u * 1024u) {
+    fail(error, "XDVDFS maximum extraction size is invalid");
+    return false;
+  }
+  std::ifstream stream;
+  std::uint64_t file_size = 0u;
+  if (!open_iso(iso, stream, file_size, error)) return false;
+  Volume volume;
+  Entry target;
+  if (!locate(stream, file_size, internal_path, volume, target, error)) {
+    return false;
   }
   if (target.size > maximum_size) {
     fail(error, "bounded XDVDFS extraction rejected file");
@@ -285,6 +302,23 @@ bool read_xdvdfs_file(const std::filesystem::path& iso,
   if (file != nullptr) {
     *file = XdvdfsFile{data_offset, target.sector, target.size};
   }
+  return true;
+}
+
+bool locate_xdvdfs_file(const std::filesystem::path& iso,
+                        std::string_view internal_path, XdvdfsFile& file,
+                        std::string* error) {
+  std::ifstream stream;
+  std::uint64_t file_size = 0u;
+  if (!open_iso(iso, stream, file_size, error)) return false;
+  Volume volume;
+  Entry target;
+  if (!locate(stream, file_size, internal_path, volume, target, error)) {
+    return false;
+  }
+  file = XdvdfsFile{
+      volume.game_offset + static_cast<std::uint64_t>(target.sector) * kSectorSize,
+      target.sector, target.size};
   return true;
 }
 

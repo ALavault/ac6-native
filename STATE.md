@@ -1,3 +1,64 @@
+# AC6 retail NTSC-U/J — r131 : le crash original de r100 (`sub_821D6C20`) est CONFIRMÉ DISPARU — nouveau crash déterministe dans `sub_821F7C80` (2026-09-01)
+
+- **Cause réelle du "not found" de r130** : ce n'était PAS un bug de
+  recherche dans l'arbre XDVDFS (un diagnostic autonome confirme les 13
+  entrées racine trouvées correctement, `DATA00.PAC`/`DATA01.PAC`/
+  `DATA.TBL` inclus). C'est `read_xdvdfs_file()` elle-même qui rejette
+  tout appel où `maximum_size > 16MiB` — un contrôle sur le PARAMÈTRE du
+  CALLER, pas sur la taille réelle du fichier. `NativeGuestMediaService`
+  (r130) passait `512MiB`, donc CHAQUE appel échouait, y compris pour
+  `DATA.TBL` (14 824 octets).
+- **Élever la constante ne suffit pas** : `DATA00.PAC` fait ~2,1GiB et
+  `DATA01.PAC` ~633MiB — charger ça entièrement en mémoire à chaque
+  `NtCreateFile` est la mauvaise forme, indépendamment du plafond.
+- **Correctif** : nouvelle `locate_xdvdfs_file()` (mêmes validations que
+  `read_xdvdfs_file`, factorisées, mais SANS copie ni plafond de
+  taille — elle ne fait que résoudre offset/taille).
+  `NativeGuestMediaService` l'utilise en mode ISO et STREAME chaque
+  lecture directement depuis le fichier ISO à la demande, au lieu de
+  précharger tout le fichier. `read_xdvdfs_file` elle-même est
+  INCHANGÉE dans son contrat (mêmes 3 tests existants passent tels
+  quels).
+- **Vérifié en direct contre l'ISO qualifié** : les trois
+  `NtCreateFile("DATA00.PAC"/"DATA01.PAC"/"DATA.TBL")` réussissent
+  maintenant (`-> ok`), alors que r130 rapportait `-> not found` pour
+  les trois.
+- **LE CRASH ORIGINAL DE r100 (`sub_821D6C20`) NE SE REPRODUIT PLUS** —
+  première fois dans tout l'arc r100-r131 que ce site précis n'apparaît
+  pas. La sonde progresse bien plus loin (plus de threads, plus
+  d'imports Vd).
+- **Nouveau crash déterministe** (reproduit identique sur 2 runs `gdb`
+  indépendants) : `sub_821F7C80` <- `sub_82390B18` <- `sub_821F8008`
+  <- routine du thread `ExCreateThread` (`0x821eede0`). Registres à la
+  faute : `rbp=0`, `rdx=0`, `r13=0`, `r15=0` — forme de déréférencement
+  de pointeur nul, mécanisme PAS ENCORE établi par désassemblage.
+  **Prochain cycle** : désassembler `sub_821F7C80` (vérifier
+  complétude via `.pdata` d'abord) pour localiser le champ nul exact.
+  Voir `reports/ac6-retail-native-codegen-gate2-r131-xdvdfs-maximum-size-parameter-was-rejecting-every-open-r100s-original-crash-site-is-confirmed-gone-20260901.md`.
+
+# AC6 retail NTSC-U/J — r130 : `NtCreateFile`/`NtReadFile` implémentés contre `NativeGuestMediaService`, appelés en direct avec les vrais noms de fichiers — la recherche XDVDFS échoue encore (cause trouvée et corrigée en r131) (2026-09-01)
+
+- Nouveau service singleton `NativeGuestMediaService`
+  (`native_guest_media.h`/`.cpp`, suit le patron existant de
+  `native_guest_vd_service()`) : `bind()`, `open_file()`, `read_file()`,
+  `close_file()`. Enregistré dans `NativeRuntime::boot()`.
+- `NtCreateFile`/`NtReadFile` implémentés dans
+  `tools/materialize_native_import_stubs.py` contre la convention
+  d'appel et le layout `OBJECT_ATTRIBUTES` déjà confirmés octet par
+  octet en r122/r123 (pas re-dérivés). `NtReadFile` complète
+  TOUJOURS de façon SYNCHRONE (jamais `STATUS_PENDING`), par
+  contrainte nommée en r125/r126 : un stub pending inconditionnel
+  transformerait ce crash en boucle infinie.
+- **Première vérification en direct de toute cette investigation
+  contre le VRAI ISO qualifié** (r105-r129 n'avaient testé que
+  `assets/`, qui ne contient que `default.xex`). Trace confirmée :
+  `NtCreateFile` est appelé avec EXACTEMENT les noms de fichiers prédits
+  par r129 (`DATA00.PAC`, `DATA01.PAC`, `DATA.TBL`) — mais les trois
+  rapportent `-> not found` ce cycle (cause diagnostiquée et corrigée
+  en r131, voir ci-dessus).
+- 139/139 tests Python (était 136/136), 9/9 `ctest`. Voir
+  `reports/ac6-retail-native-codegen-gate2-r130-ntcreatefile-ntreadfile-implemented-and-called-with-real-filenames-xdvdfs-lookup-fails-20260901.md`.
+
 # AC6 retail NTSC-U/J — r129 : l'écrivain trouvé — un VRAI nom de fichier `game:\DATA00.PAC`, et ce fichier existe RÉELLEMENT sur l'ISO retail déjà qualifié de ce projet (2026-09-01)
 
 - **Meilleur instrument** : un script Python précis (recherche de la
