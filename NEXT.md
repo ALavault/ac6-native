@@ -1087,7 +1087,30 @@ compteur injecté ou fallback ReXGlue.
     `sub_82339AA8` écrit dans son tampon de sortie pendant une requête
     réussie, relié au layout de `sub_823455D8` (r139). Voir
     `reports/ac6-retail-native-codegen-gate2-r141-corrects-r139-sub_82338388-does-not-return-sub_82339aa8s-result-directly-20260901.md`.**
-65. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+65. **r142 : le `0` est une lecture de mémoire de pile JAMAIS ÉCRITE, pas
+    une vraie valeur — `sub_82338388` timeout réellement et son
+    "résultat" n'a jamais été rempli.** `sub_821F7538` (lu suite à r141)
+    est une vraie boucle d'attente kernel `NtWaitForSingleObjectEx`.
+    Mesuré en direct (diagnostic ciblé après qu'un premier essai non
+    filtré ait produit >300 Mo de logs, jeté sans lecture) :
+    `sub_821F4128` renvoie `0x102` (STATUS_TIMEOUT, PAS succès) et
+    `[r1+88]` (d'où `sub_82338388` tire sa "valeur de retour") est
+    IDENTIQUE avant et après l'appel dans les deux cas observés — DE LA
+    MÉMOIRE DE PILE JAMAIS ÉCRITE par cet appel ni par aucune fonction
+    tracée, pas un vrai résultat calculé. Forme suggestive d'un local
+    `IO_STATUS_BLOCK`-style qu'une convention de complétion asynchrone
+    non modélisée par nos stubs HLE remplirait normalement — plausible,
+    pas établi. Aucun code source modifié ce cycle (2 diagnostics
+    temporaires, annulés et vérifiés, ctest 9/9 + 139/139 Python après
+    reconstruction propre). **Prochain cycle / évaluation
+    coût-bénéfice** : chercher un écrivain de ce slot de pile ailleurs
+    dans le binaire ; si aucun n'existe, c'est un comportement de lecture
+    non initialisée du jeu retail lui-même. Étant donné la profondeur
+    déjà atteinte (r129-r142), évaluer si pousser CE sous-fil précis
+    reste le meilleur usage des prochains cycles face à d'autres
+    frontières Gate 2. Voir
+    `reports/ac6-retail-native-codegen-gate2-r142-the-zero-is-a-read-of-stale-uninitialized-stack-memory-not-a-real-value-20260901.md`.**
+66. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

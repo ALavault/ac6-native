@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r142-the-zero-is-a-read-of-stale-uninitialized-stack-memory-not-a-real-value-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r141-corrects-r139-sub_82338388-does-not-return-sub_82339aa8s-result-directly-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md`;
@@ -673,6 +674,18 @@ requête elle-même renvoyé en écho — résultat correct, pas une
 ressource vide. Corrige une prémisse structurante de r139. Aucun code
 modifié. Prochain cycle : lire `sub_821F7538`, identifier le tampon de
 sortie de `sub_82339AA8`.
+
+**r142 — le `0` est une lecture de pile JAMAIS ÉCRITE, pas une vraie
+valeur.** `sub_821F7538` (kernel `NtWaitForSingleObjectEx`) : mesuré,
+`sub_821F4128` renvoie `0x102` (STATUS_TIMEOUT, pas succès) et
+`[r1+88]` (source du "retour" de `sub_82338388`) est identique
+avant/après l'appel — mémoire de pile jamais écrite par rien de tracé,
+pas un résultat calculé. Forme suggestive d'un `IO_STATUS_BLOCK` non
+rempli par nos stubs HLE synchrones — plausible, pas établi. Aucun
+code modifié (2 diagnostics, dont un jeté sans lecture pour excès de
+volume). Étant donné la profondeur déjà atteinte (r129-r142), évaluer
+le coût-bénéfice de pousser plus loin ce sous-fil précis vs explorer
+d'autres frontières Gate 2.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

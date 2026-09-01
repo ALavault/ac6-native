@@ -1,3 +1,53 @@
+# AC6 retail NTSC-U/J — r142 : le `0` est une lecture de mémoire de PILE JAMAIS ÉCRITE, pas une vraie valeur — `sub_82338388` timeout et son "résultat" n'a jamais été rempli (2026-09-01)
+
+- **Suivant l'instruction de r141** : lecture de `sub_821F7538` — une
+  VRAIE boucle d'attente kernel (`NtWaitForSingleObjectEx`). Un premier
+  diagnostic non filtré a produit >300 Mo de logs avant crash (ce
+  chemin est un point de sondage CHAUD, pas rare comme supposé) — jeté
+  SANS ÊTRE LU (discipline de l'instrument), puis resserré au SEUL
+  appel pertinent : l'usage par `sub_82338388` du résultat de
+  l'attente.
+- **Mesuré en direct, décisif** :
+  ```
+  pre-wait: handle=0x12e pré-existant[pile+88..95]=0
+  post-wait: sub_821F4128 renvoie=0x102 (STATUS_TIMEOUT!) [pile+88..95]=0 (INCHANGÉ)
+  ```
+  DEUX FAITS CERTAINS : (1) **l'attente EXPIRE RÉELLEMENT**
+  (`STATUS_TIMEOUT=0x102`), ne réussit PAS ; (2) **`[r1+88]` n'est
+  JAMAIS écrit** par cet appel, par notre stub HLE
+  `NtWaitForSingleObjectEx`, ni par AUCUNE fonction tracée — sa valeur
+  AVANT et APRÈS l'appel est IDENTIQUE dans les deux cas observés.
+- **`sub_82338388` renvoie une lecture sign-extendue de `[r1+88]`** —
+  de la MÉMOIRE DE PILE PÉRIMÉE, laissée par un appel ANTÉRIEUR sans
+  rapport ayant occupé la même zone — PAS un compte, PAS une valeur de
+  config, PAS un statut d'attente, PAS quoi que ce soit que
+  `sub_82338388` ait calculé.
+- **Forme suggestive** : `[r1+80]`/`[r1+88]` ressemble à un local de
+  style `IO_STATUS_BLOCK` Windows (`{Status; Information;}`) qu'une
+  convention de complétion asynchrone (APC, callback I/O réel)
+  remplirait normalement — que nos stubs HLE synchrones ne modélisent
+  pas. Plausible, PAS établi — aucun écrivain trouvé dans toute la
+  chaîne tracée.
+- **Aucun code source modifié ce cycle** — 2 diagnostics temporaires
+  (le premier jeté sans lecture pour être disproportionnellement
+  chaud, le second bien ciblé), annulés et vérifiés (ctest 9/9,
+  139/139 Python après reconstruction propre).
+  **Prochain cycle / évaluation coût-bénéfice** : chercher un
+  écrivain de `[r1+88]` ailleurs dans le binaire (un autre appelant du
+  même import kernel qui écrit à un offset de pile équivalent) ; si
+  aucun n'existe nulle part, c'est un comportement de LECTURE DE PILE
+  NON INITIALISÉE du jeu retail LUI-MÊME, et la question devient si le
+  modèle de pile de ce projet produit un contenu résiduel DIFFÉRENT du
+  vrai matériel Xbox 360 à ce point précis. **Étant donné la
+  profondeur déjà atteinte (r129-r142) et la nature étroite de cette
+  dernière question, une évaluation coût-bénéfice est justifiée avant
+  de continuer CE sous-fil précis** — considérer si la chaîne DATA.TBL
+  (déjà un cas d'école exceptionnellement complet de la discipline
+  d'évidence de ce projet) a plus de valeur comme démonstration
+  achevée que comme piste à pousser davantage, face à d'autres
+  frontières Gate 2 potentiellement plus productives. Voir
+  `reports/ac6-retail-native-codegen-gate2-r142-the-zero-is-a-read-of-stale-uninitialized-stack-memory-not-a-real-value-20260901.md`.
+
 # AC6 retail NTSC-U/J — r141 : CORRIGE r139 — `sub_82338388` NE renvoie PAS le résultat de `sub_82339AA8` directement (2026-09-01)
 
 - **Suivant l'instruction de r140** : instrumentation À L'INTÉRIEUR de
