@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r168-vdqueryvideomode-is-a-real-gap-struct-fill-not-a-contract-shape-fix-deferred-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r167-real-fix-netdll-xnetstartup-wsastartup-reported-failure-on-an-offline-boundary-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r166-thread-stack-allocator-confirms-same-thread-history-dependence-no-further-bounded-fix-exists-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md`;
@@ -986,6 +987,14 @@ transparents renvoient la valeur de l'import sans modification ;
 `kOfflineStatus` non-nul = échec sous la convention `== 0` standard,
 faux ici. Corrigé : `0u`. Tests 150/150 (+2), ctest 9/9, crash
 inchangé.
+
+**r168 — `VdQueryVideoMode` est un VRAI trou (remplissage de struct),
+pas un fix de forme — différé.** Contrat réel = struct via pointeur ;
+2 sites d'appel réels font de vrais calculs sur les champs. Layout
+d'octets exact non localisé côté Xenia, et de toute façon une
+réimplémentation indépendante n'est pas une source autorisée pour les
+offsets de ce binaire. Différé pour un futur cycle dédié plutôt que
+bâclé.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

@@ -1544,6 +1544,21 @@ compteur injecté ou fallback ReXGlue.
     chaîne). Voir
     `reports/ac6-retail-native-codegen-gate2-r167-real-fix-netdll-xnetstartup-wsastartup-reported-failure-on-an-offline-boundary-20260901.md`.
 
+92. **r168 : `VdQueryVideoMode` est un VRAI trou (remplissage de
+    struct), pas un fix de forme — différé.** Contrat réel = struct
+    via pointeur, pas une valeur de retour ; les 2 sites d'appel réels
+    lisent plusieurs champs et font de vrais calculs dessus. Source
+    publique Xenia consultée pour le contrat XDK
+    (`X_VIDEO_MODE`), mais son layout d'octets exact n'a pas été
+    localisé, et une réimplémentation indépendante n'est de toute
+    façon pas une source autorisée pour les offsets de CE binaire.
+    Différé, pas bâclé — nommé comme trou réel pour un futur cycle
+    dédié (dériver le layout depuis la désassemblation de ce XEX).
+    Aucun code modifié. **Prochain cycle** : dériver le layout réel,
+    puis vérifier `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
+    `VdGetCurrentDisplayInformation` (même famille potentielle). Voir
+    `reports/ac6-retail-native-codegen-gate2-r168-vdqueryvideomode-is-a-real-gap-struct-fill-not-a-contract-shape-fix-deferred-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

@@ -1,3 +1,24 @@
+# AC6 retail NTSC-U/J — r168 : `VdQueryVideoMode` est un VRAI trou (remplissage de struct), pas un fix de forme comme r162-r167 — différé (2026-09-01)
+
+- **Différent des fixes précédents** : contrat réel = remplissage de
+  struct via pointeur (`r3 = &struct`), pas juste une valeur de retour.
+  Les 2 sites d'appel réels lisent PLUSIEURS champs de la struct après
+  l'appel et font de VRAIS calculs dessus (pas une coïncidence comme
+  RtlTryEnterCriticalSection).
+- **Source publique consultée** (`has207/xenia-edge`,
+  `xboxkrnl_video.cc`) confirme le vrai contrat XDK
+  (`X_VIDEO_MODE` : display_width/height, refresh_rate, is_interlaced,
+  etc.) mais son layout exact d'octets N'A PAS été localisé, et de
+  toute façon une réimplémentation indépendante n'est PAS une source
+  autorisée pour les offsets réels de CE binaire — répéterait
+  exactement le pattern d'hypothèse non vérifiée que la discipline du
+  projet refuse.
+- **DÉCISION** : différé, pas bâclé. Nommé comme trou réel, plus
+  important en portée que la famille r148-r167, pour un futur cycle
+  dédié : dériver le layout réel depuis la désassemblation de CE XEX.
+- **Aucun code modifié, aucun build ce cycle**. Voir
+  `reports/ac6-retail-native-codegen-gate2-r168-vdqueryvideomode-is-a-real-gap-struct-fill-not-a-contract-shape-fix-deferred-20260901.md`.
+
 # AC6 retail NTSC-U/J — r167 : VRAI CORRECTIF — `NetDll_XNetStartup`/`NetDll_WSAStartup` signalaient un échec sur une frontière hors-ligne (2026-09-01)
 
 - **Wrappers transparents identifiés** (`sub_821FCCE0`/`sub_821FCED0`,
