@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r101-crash-root-cause-uninitialized-service-singleton-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r100-predicate-decode-fixed-new-indirect-call-crash-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r98-opcodes-0x45-0x46-implemented-from-verified-code-20260901.md`;
@@ -116,6 +117,19 @@ c'est la prochaine question, pas une suite du fil prédicat (clos pour le
 contenu observé). L'identité de l'ancien objet bloqué `sub_821E6AC8`/
 `sub_821F03B0` (r94) est probablement caduque : la sonde ne l'atteint plus
 avant le nouveau plantage.
+
+**r101 a tracé le plantage r100 jusqu'à sa cause exacte, sans deviner de
+correctif.** `sub_821D6C20` lit un pointeur d'objet global (`0x82935d98`)
+et déréférence sa vtable ~24 fois; la valeur RUNTIME (lue directement dans
+le core dump du plantage, pas seulement l'image statique) est
+`0x00000000` — un vrai pointeur nul. Le site de construction réel existe
+(motif singleton paresseux juste avant `sub_821D6C20`, qui réussit un
+appel virtuel différent juste après), mais `sub_821D7DE0` (seul appelant
+de `sub_821D6C20`) ne l'atteint jamais avant d'appeler `sub_821D6C20` —
+vérifié par dump complet. Trois explications restent ouvertes (boot plus
+large non atteint, race multi-thread perdue par la sonde mono-thread,
+stub d'import encore no-op) — refusé de deviner laquelle, même discipline
+que r97. Aucun code modifié ce cycle.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

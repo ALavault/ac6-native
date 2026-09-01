@@ -1,3 +1,31 @@
+# AC6 retail NTSC-U/J — r101 : le plantage `sub_821D6C20` est un singleton de service lu avant construction sur ce chemin (2026-09-01)
+
+- Tracé mécaniquement le plantage r100 jusqu'à sa cause exacte, sans
+  deviner de correctif. `sub_821D6C20` (`DumpRange.java`, projet `ac6-us`)
+  répète ~24 fois le motif : charger le pointeur global `0x82935d98`,
+  déréférencer sa vtable, appeler le slot `0xE4`. `FindInstructionScalar.java
+  0x5d98` : 26 occurrences dans TOUT l'exécutable, toutes des LECTURES,
+  toutes dans cette seule fonction.
+- **Valeur runtime au moment du plantage lue directement dans le core dump
+  `apport`** (pas seulement l'image statique) : `0x00000000` — pointeur
+  réellement nul, pas un artefact de formatage. C'est la cause mécanique
+  exacte du `bctrl` sauvage (déréférencer une vtable nulle produit une
+  cible d'appel indirect invalide).
+- **Trouvé le site de construction réel** (`FindPpcAddressMaterialization.java`) :
+  un motif singleton paresseux classique juste avant le prologue de
+  `sub_821D6C20` (`0x821d6be8 stw r3,0x0(r11)` — le SEUL site d'écriture
+  dans tout l'exécutable), qui réussit un appel virtuel différent (slot
+  `0xE0`) juste après — l'objet est réel et constructible.
+- **`sub_821D7DE0`** (`FindDirectCallsTo.java` : seul appelant de
+  `sub_821D6C20`, confirme la trace r100) **n'atteint jamais ce site de
+  construction** avant d'appeler `sub_821D6C20` — vérifié par dump complet
+  de son corps. Trois explications restent compatibles avec cette preuve
+  (boot plus large non atteint par la sonde, race multi-thread que la
+  sonde mono-thread ne peut pas gagner, stub d'import/XAM encore no-op) —
+  aucune n'est distinguée par ce cycle. **Refusé de deviner** — même
+  discipline que r97. Aucun code natif modifié. Voir
+  `reports/ac6-retail-native-codegen-gate2-r101-crash-root-cause-uninitialized-service-singleton-20260901.md`.
+
 # AC6 retail NTSC-U/J — r100 : rejet prédicat retiré (évidence bornée), nouveau plantage d'appel indirect dans `_xstart` (2026-09-01)
 
 - Trace statique de `Function_821E6280` commencée (r97-r100, 5 niveaux de

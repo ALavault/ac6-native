@@ -153,7 +153,33 @@ compteur injecté ou fallback ReXGlue.
    d'objet bloqué `sub_821E6AC8`/`sub_821F03B0` (r94) est probablement
    caduc : la sonde ne l'atteint plus avant ce nouveau plantage. Voir
    `reports/ac6-retail-native-codegen-gate2-r100-predicate-decode-fixed-new-indirect-call-crash-20260901.md`.
-6. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+6. **r101 a tracé le plantage r100 (`sub_821D6C20`) jusqu'à sa cause
+   exacte, sans deviner de correctif.** `sub_821D6C20` répète ~24 fois le
+   motif charger-un-pointeur-global→déréférencer-sa-vtable→appeler-un-slot
+   (`FindInstructionScalar.java 0x5d98` : 26 occurrences dans TOUT
+   l'exécutable, toutes des lectures, toutes dans cette seule fonction).
+   **Valeur runtime lue directement dans le core dump `apport` du
+   plantage** (pas l'image statique) : `0x00000000` — un vrai pointeur
+   nul, cause mécanique exacte du `bctrl` sauvage. Le site de construction
+   réel existe (`FindPpcAddressMaterialization.java` : motif singleton
+   paresseux juste avant le prologue de `sub_821D6C20`, `0x821d6be8` —
+   seul site d'écriture dans tout l'exécutable — qui réussit un appel
+   virtuel différent juste après, l'objet est réel et constructible), mais
+   `sub_821D7DE0` (`FindDirectCallsTo.java` : seul appelant de
+   `sub_821D6C20`) ne l'atteint JAMAIS avant d'appeler `sub_821D6C20` —
+   vérifié par dump complet de son corps. Trois explications restent
+   compatibles avec cette preuve et aucune n'est distinguée : boot plus
+   large de `_xstart` non atteint par cette sonde mono-thread, race
+   multi-thread que la sonde ne peut pas gagner (un seul thread invité
+   déterministe via `initialize_probe_thread`), ou stub d'import/XAM
+   encore no-op qui déclencherait la construction. **Refusé de deviner**
+   — même discipline que r97 sur le prédicat. Aucun code natif modifié.
+   **Prochain cycle** : identifier la fonction contenant le bloc de
+   construction (`0x821d6b60`-`0x821d6c1c`, pas encore nommée) et tracer
+   SES appelants pour trancher entre ces trois hypothèses — question
+   statique bornée, pas une suite du fil prédicat (clos). Voir
+   `reports/ac6-retail-native-codegen-gate2-r101-crash-root-cause-uninitialized-service-singleton-20260901.md`.
+7. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
