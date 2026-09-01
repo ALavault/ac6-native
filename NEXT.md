@@ -210,7 +210,43 @@ compteur injecté ou fallback ReXGlue.
    comparaison côté appelant, pas sur l'entrée de fonction ambiguë) et
    tracer `sub_821F5B18` pour trancher diagnostic-seulement vs fatal. Voir
    `reports/ac6-retail-native-codegen-gate2-r102-crash-chain-traced-to-shared-bailout-and-swallowed-failure-20260901.md`.
-8. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+8. **r103 a corrigé l'hypothèse r102 (elle-même), sans deviner de
+   remplacement.** Traçage GDB filtré par adresse d'appelant (évite le
+   problème de callee ambigu de r102), reproductible sur 2 runs
+   identiques : seuls GATE1 (`sub_82338300`) et GATE2 (`sub_821F4078`)
+   des 5 gardes internes de `Function_821D5F48` sont atteints avant
+   `sub_821D6C20`. Mais la valeur de retour RÉELLE de GATE2
+   (`r3=0x8feffcb0`, lue via un breakpoint temporaire à l'adresse de
+   retour, offset `PPCContext::r3`=8 confirmé depuis les headers, pas
+   deviné) est NON NULLE — son propre test (`cmplwi cr6,r31,0; beq
+   cr6,bailout`) ne peut donc PAS causer le bailout, contrairement à ce
+   que r102 supposait pour "un des 5 gardes". Relu intégralement le bloc
+   entre le test de GATE2 et l'appel de GATE3 (~115 instructions, 3
+   structures locales convergentes) : **aucune branche ne sort de cette
+   plage** par lecture statique — pourtant GATE3 (`sub_821CC508`) n'est
+   JAMAIS atteint sur les 2 runs reproductibles. Tentative de casser sans
+   condition sur GATE3 seul : expiré à 240s sans le moindre coup ni
+   crash. **Refusé d'interpréter ce hang comme "jamais appelé"** — ce
+   projet a déjà documenté (r100/r101) que les sessions GDB attachées se
+   comportent très différemment en timing des runs natifs sur cette sonde
+   précise, et le code a un historique connu de comportement multi-thread
+   sensible au timing (r90/r91) — un breakpoint supplémentaire changeant
+   quel côté d'une race interne est pris est une hypothèse réelle, pas un
+   prétexte. Le modèle structurel (une fonction, deux sorties, un site de
+   construction atteignable seulement après les 5 gardes) reste correct
+   en tant que fait STATIQUE (r101/r102 inchangés sur ce point) — ce qui
+   était faux, c'est de supposer que N'IMPORTE LEQUEL des gardes cause le
+   bailout par son PROPRE test; GATE2 réfute ça pour lui-même. Aucun code
+   natif modifié. **Prochain cycle** : (a) tracer pas-à-pas (pas par
+   breakpoint) le bloc GATE2→GATE3 pour observer directement pourquoi
+   GATE3 n'est pas atteint plutôt que de se fier à l'absence de coup de
+   breakpoint; (b) réexaminer si un des ~10 appels imbriqués de ce bloc
+   (`sub_82221DD0`, `sub_82221F40`, `sub_82222D80`, `sub_823D009C`,
+   `sub_821CC288`, `sub_821CC370`, `sub_821CC008`) pourrait lui-même ne
+   pas retourner normalement (transfert style longjmp, un stub natif géré
+   différemment du vrai matériel). Voir
+   `reports/ac6-retail-native-codegen-gate2-r103-r102-gate-hypothesis-corrected-real-divergence-still-open-20260901.md`.
+9. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

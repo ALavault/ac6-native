@@ -1,3 +1,30 @@
+# AC6 retail NTSC-U/J — r103 : l'hypothèse r102 corrigée, la vraie divergence reste ouverte (2026-09-01)
+
+- Tracé en direct les 5 gardes de `Function_821D5F48` avec des breakpoints
+  filtrés par adresse d'appelant (évite le problème de callee ambigu de
+  r102) : reproductible sur 2 runs identiques, seuls GATE1
+  (`sub_82338300`) et GATE2 (`sub_821F4078`) sont atteints avant
+  `REACHED_CRASH_SITE`.
+- **Corrigé l'hypothèse r102** : la valeur de retour réelle de GATE2
+  (`r3=0x8feffcb0`, lue via un breakpoint temporaire sur l'adresse de
+  retour, offset `PPCContext::r3` = 8 confirmé depuis `rex/ppc/context.h`
+  et `types.h`, pas deviné) est NON NULLE — son propre test
+  (`cmplwi cr6,r31,0; beq cr6,bailout`) ne se déclenche donc PAS. Le
+  modèle "un des 5 gardes échoue par son propre test" est trop simple.
+- Relu intégralement le bloc entre le test de GATE2 et l'appel de GATE3
+  (~115 instructions, 3 structures locales convergentes) : **aucune
+  branche ne sort de cette plage**. Par cette lecture, GATE3 devrait être
+  atteint sans condition — pourtant il ne l'est jamais sur 2 runs
+  reproductibles.
+- Tentative de casser sans condition sur `sub_821CC508` seul : expiré à
+  240s sans le moindre coup, ni crash. **Pas interprété comme "jamais
+  appelé"** — ce projet a déjà documenté (r100/r101) que les sessions GDB
+  attachées se comportent très différemment en timing des runs natifs sur
+  cette sonde précise, et le code a un historique connu de comportement
+  multi-thread sensible au timing (r90/r91). Refusé de conclure sans
+  preuve plus solide qu'un hang de 240s. Aucun code modifié. Voir
+  `reports/ac6-retail-native-codegen-gate2-r103-r102-gate-hypothesis-corrected-real-divergence-still-open-20260901.md`.
+
 # AC6 retail NTSC-U/J — r102 : chaîne causale complète — un bailout partagé que l'appelant n'honore pas (2026-09-01)
 
 - Identifié la fonction contenant le site de construction (r101) via

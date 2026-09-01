@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r103-r102-gate-hypothesis-corrected-real-divergence-still-open-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r102-crash-chain-traced-to-shared-bailout-and-swallowed-failure-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r101-crash-root-cause-uninitialized-service-singleton-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r100-predicate-decode-fixed-new-indirect-call-crash-20260901.md`;
@@ -146,6 +147,19 @@ infructueuse (rapportée honnêtement, pas cachée) : `finish` sur
 nommée sans l'affirmer : `sub_821F5B18` pourrait être fatal sur le vrai
 matériel, un stub natif qui retourne expliquerait tout. Aucun code
 modifié.
+
+**r103 a corrigé l'hypothèse r102, elle-même.** Un traçage GDB filtré par
+adresse d'appelant (reproductible sur 2 runs) montre que seuls GATE1 et
+GATE2 des 5 gardes sont atteints. Mais la valeur de retour RÉELLE de
+GATE2 (`0x8feffcb0`, lue proprement via l'offset `PPCContext::r3`) est
+NON NULLE — son propre test ne peut donc pas causer le bailout, contrairement
+à ce que r102 supposait. Relecture complète du bloc entre GATE2 et GATE3 :
+aucune sortie de branche trouvée statiquement, pourtant GATE3 n'est jamais
+atteint en direct. Une tentative de casser sans condition sur GATE3 a
+expiré à 240s sans résultat — **refusé de l'interpréter comme "jamais
+appelé"**, ce projet ayant déjà documenté que les sessions GDB attachées
+se comportent différemment en timing sur cette sonde précise. Vraie
+divergence toujours ouverte. Aucun code modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
