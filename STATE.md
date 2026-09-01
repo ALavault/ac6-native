@@ -1,3 +1,37 @@
+# AC6 retail NTSC-U/J — r136 : la création du tas RÉUSSIT avec un vrai handle (`0x16F70000`) — l'échec est DANS la logique propre de l'allocateur, pas un tas manquant (2026-09-01)
+
+- **Porte de création du tas mesurée en direct** : `sub_821D5F48` (même
+  fonction de boucle de relance tracée depuis r117) garde la création du
+  tas sur SON PROPRE arg1. Mesuré : `r31(own arg1)=0x16f70000` (RÉEL,
+  non-nul) → `sub_82221DD0(pool=0x16f70000)` RENVOIE `0x16f70000`, stocké
+  globalement. **La création du tas RÉUSSIT.** Écarte "le tas n'est
+  jamais créé" (une des deux branches de la question ouverte de r135).
+- **`0x16F70000` est dans l'espace d'adressage guest réservé** (4GiB
+  complet, `GuestAddressSpace::kAddressSpaceSize`, `native_guest_memory.h`)
+  — écarte aussi un problème de mapping du runtime natif pour CETTE
+  adresse.
+- **`sub_82221DD0(pool)` ne prend qu'UN SEUL argument** — pas de
+  paramètre de TAILLE. Initialise un bloc de contrôle en place :
+  plusieurs têtes de liste-libre à des offsets denses (4,8,12,...,62+),
+  TOUTES mises à ZÉRO (vides), plus un pointeur style vtable à l'offset
+  0. Aucune réservation/allocation de mémoire de support pour l'arène
+  elle-même dans cette init.
+- **Conclusion révisée** : puisque TOUTES les listes-libres démarrent
+  vides et qu'aucune taille n'est enregistrée, TOUTE allocation
+  (y compris nos 16 octets) doit emprunter un chemin "faire grossir le
+  tas / committer plus de mémoire" — c'est LÀ, pas dans l'existence du
+  tas, que l'échec se situe réellement.
+- **Aucun code source modifié ce cycle** — 1 diagnostic temporaire,
+  annulé et vérifié (ctest 9/9, 139/139 Python après reconstruction
+  propre).
+  **Prochain cycle** : lire `sub_82222D80` en entier (seul son
+  dispatch de classe de taille a été lu en r135) et `sub_82222908` (la
+  branche pour les grandes classes) pour trouver le vrai appel de
+  croissance/commit — vérifier s'il atteint un import kernel HLE
+  (un vrai trou de ce projet) ou dépend d'un état guest pas encore
+  atteint par la sonde. Voir
+  `reports/ac6-retail-native-codegen-gate2-r136-heap-creation-succeeds-with-a-real-handle-the-failure-is-inside-the-allocator-itself-20260901.md`.
+
 # AC6 retail NTSC-U/J — r135 : CAUSE RACINE FERMÉE — une allocation de 16 octets sur le tas guest (`sub_82222D80`) renvoie NULL, jamais vérifiée, et se propage à travers 5 fonctions réelles jusqu'au crash (2026-09-01)
 
 - **Corrige r134 sur deux points, dans ce MÊME cycle** : (1) le drapeau

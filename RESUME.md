@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r136-heap-creation-succeeds-with-a-real-handle-the-failure-is-inside-the-allocator-itself-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r135-root-cause-closed-a-16-byte-guest-heap-allocation-returns-null-unchecked-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r134-zero-length-read-traced-to-a-boolean-gated-store-that-never-populates-a-descriptor-field-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r133-writer-found-sub_82234b88-parses-a-zero-length-ntreadfile-buffer-as-a-real-header-20260901.md`;
@@ -590,6 +591,18 @@ est-il jamais initialisé par ce runtime, ou est-ce un état réel/correct
 du jeu jamais atteint avant ? Aucun code modifié. Prochain cycle : lire
 `sub_82222D80`/`sub_82221C68`, tracer l'objet tas. NE PAS ajouter de
 vérification défensive à `sub_821CC288`.
+
+**r136 — la création du tas RÉUSSIT (écarte une branche de la question
+ouverte de r135).** Mesuré : `sub_821D5F48` garde la création du tas sur
+son propre arg1 = `0x16f70000` (réel) ; `sub_82221DD0(pool)` renvoie ce
+même handle, stocké globalement. `0x16F70000` est dans l'espace guest
+réservé (4GiB). `sub_82221DD0` prend UN SEUL argument (pas de taille) et
+initialise un bloc de contrôle avec TOUTES les listes-libres à zéro —
+aucune arène réservée. Conclusion : l'échec de l'allocation 16 octets
+(r135) est dans le chemin "faire-grossir-le-tas" de l'allocateur
+lui-même, pas dans l'existence du tas. Aucun code modifié. Prochain
+cycle : lire `sub_82222D80` en entier et `sub_82222908` pour trouver le
+vrai appel de croissance/commit.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

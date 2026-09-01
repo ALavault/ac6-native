@@ -949,7 +949,26 @@ compteur injecté ou fallback ReXGlue.
     de vérification défensive à `sub_821CC288` (patcherait un symptôme
     dans du code que ce projet ne possède pas). Voir
     `reports/ac6-retail-native-codegen-gate2-r135-root-cause-closed-a-16-byte-guest-heap-allocation-returns-null-unchecked-20260901.md`.**
-59. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+59. **r136 : la création du tas RÉUSSIT (handle réel `0x16F70000`) —
+    l'échec de l'allocation de 16 octets (r135) est DANS la logique
+    propre de l'allocateur, pas un tas manquant.** Mesuré en direct :
+    `sub_821D5F48` garde la création du tas sur son propre arg1
+    (`0x16f70000`, non-nul) ; `sub_82221DD0(pool)` renvoie ce même
+    handle. `0x16F70000` est dans l'espace d'adressage guest réservé
+    (4GiB complet). `sub_82221DD0` ne prend qu'UN argument (pas de
+    taille) et initialise un bloc de contrôle avec TOUTES les
+    listes-libres à zéro (vides) — aucune arène de mémoire réservée.
+    Conclusion : toute allocation doit emprunter un chemin
+    "faire-grossir-le-tas", et c'est LÀ que l'échec se situe réellement,
+    pas dans l'existence du tas. Aucun code source modifié ce cycle
+    (1 diagnostic temporaire, annulé et vérifié, ctest 9/9 + 139/139
+    Python après reconstruction propre). **Prochain cycle** : lire
+    `sub_82222D80` en entier et `sub_82222908` (branche grandes classes)
+    pour trouver le vrai appel de croissance/commit ; vérifier s'il
+    atteint un import kernel HLE non implémenté ou dépend d'un état
+    guest pas encore atteint. Voir
+    `reports/ac6-retail-native-codegen-gate2-r136-heap-creation-succeeds-with-a-real-handle-the-failure-is-inside-the-allocator-itself-20260901.md`.**
+60. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
