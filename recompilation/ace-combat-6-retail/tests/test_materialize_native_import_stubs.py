@@ -532,6 +532,28 @@ def test_rtl_try_enter_critical_section_returns_a_real_boolean_not_a_status(
     assert "ctx.r3.u64 = 1u;" in body
 
 
+@pytest.mark.parametrize("name", ["NetDll_XNetStartup", "NetDll_WSAStartup"])
+def test_net_startup_reports_success_not_a_status(
+    tmp_path: Path, name: str
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(f"PPC_EXTERN_FUNC(__imp__{name});\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r167: the real contract is INT (0 = success), the WinSock/XNet
+    # convention, not an NTSTATUS. This XEX's own thin wrapper functions
+    # (sub_821FCCE0/sub_821FCED0) return this call's value completely
+    # unmodified as their own result, so kOfflineStatus (nonzero) would
+    # read as failure under the standard "== 0 means success" check --
+    # wrong for an offline-only stub with no real network condition to
+    # fail on, matching this project's own established offline-boundary
+    # convention of succeeding past an absent network.
+    body = text.split(f"void __imp__{name}")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(
     tmp_path: Path,
 ) -> None:

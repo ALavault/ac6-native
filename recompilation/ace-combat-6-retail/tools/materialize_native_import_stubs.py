@@ -546,6 +546,27 @@ def render_body(name: str) -> str:
         # "lock always available" stub (this project models no real
         # per-thread contention) should actually report.
         return "  ctx.r3.u64 = 1u;\n"
+    if name in {"NetDll_XNetStartup", "NetDll_WSAStartup"}:
+        # r167: real signature is INT (0 = success), the WinSock/XNet
+        # convention, not an NTSTATUS. sub_821FCCE0/sub_821FCED0 (this
+        # XEX's own two thin wrapper functions around these imports,
+        # reached indirectly rather than by a literal `bl`, matching the
+        # same computed-call pattern r156 found for a different import --
+        # not re-derived in full this cycle, deferred as a separate
+        # question) each return this call's own value completely
+        # unmodified as their own result: `bl 0x823d06bc` /
+        # `addi r1,r1,0x70` / `... / blr` -- r3 is never touched between
+        # the call and the wrapper's own return. The generic
+        # offline-import fallback's kOfflineStatus (0xC00000BB) is
+        # nonzero, which a real caller checking "== 0 means success" (the
+        # standard WinSock/XNet convention) would read as failure, on an
+        # offline-only stub that has no real network condition to report
+        # as a failure in the first place -- this project's own established
+        # "Offline-only HLE boundary; no socket or host I/O side effect"
+        # pattern (used elsewhere in this file) already treats an absent
+        # network as something to succeed past, not fail on. 0 (success)
+        # is the correct shape and the correct offline-boundary behavior.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

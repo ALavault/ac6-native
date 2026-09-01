@@ -1,3 +1,21 @@
+# AC6 retail NTSC-U/J — r167 : VRAI CORRECTIF — `NetDll_XNetStartup`/`NetDll_WSAStartup` signalaient un échec sur une frontière hors-ligne (2026-09-01)
+
+- **Wrappers transparents identifiés** (`sub_821FCCE0`/`sub_821FCED0`,
+  atteints indirectement, pas via `bl` direct — même motif que r156)
+  renvoient la valeur de l'import SANS MODIFICATION comme leur propre
+  résultat (`bl ... / addi r1,r1,0x70 / blr` — r3 jamais touché).
+- **Vrai contrat WinSock/XNet** : `INT`, 0 = succès. `kOfflineStatus`
+  (non-nul) = échec sous la convention standard `== 0` — faux pour une
+  frontière hors-ligne sans vraie condition d'échec, alors que le
+  projet a déjà établi la convention "offline-only... succeeds past
+  absent network" pour d'autres stubs similaires.
+- **Corrigé** : renvoie `0u` (succès) au lieu de `kOfflineStatus`.
+- Tests 150/150 (148/148 → +2). Import trace confirme les 2 imports
+  ne sont plus "offline-import" non gérés. `ctest` 9/9. Crash
+  `sub_821F7C80` inchangé (ce fix s'exécute bien avant cette chaîne).
+- Voir
+  `reports/ac6-retail-native-codegen-gate2-r167-real-fix-netdll-xnetstartup-wsastartup-reported-failure-on-an-offline-boundary-20260901.md`.
+
 # AC6 retail NTSC-U/J — r166 : l'allocateur de pile de threads confirme la dépendance à l'historique du MÊME thread — aucun autre fix borné n'existe (2026-09-01)
 
 - **Mécanisme confirmé** : `ExCreateThread` alloue chaque nouveau

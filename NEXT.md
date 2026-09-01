@@ -1533,6 +1533,17 @@ compteur injecté ou fallback ReXGlue.
     code modifié. Voir
     `reports/ac6-retail-native-codegen-gate2-r166-thread-stack-allocator-confirms-same-thread-history-dependence-no-further-bounded-fix-exists-20260901.md`.
 
+91. **r167 : VRAI CORRECTIF — `NetDll_XNetStartup`/`NetDll_WSAStartup`
+    signalaient un échec sur une frontière hors-ligne.** Wrappers
+    transparents (`sub_821FCCE0`/`sub_821FCED0`, atteints
+    indirectement) renvoient la valeur de l'import sans modification.
+    Vrai contrat WinSock/XNet : `INT`, 0=succès ; `kOfflineStatus`
+    (non-nul)=échec sous la convention standard, faux pour une
+    frontière sans vraie condition d'échec. Corrigé : `0u`. Tests
+    150/150 (+2), ctest 9/9, crash inchangé (fix en amont de cette
+    chaîne). Voir
+    `reports/ac6-retail-native-codegen-gate2-r167-real-fix-netdll-xnetstartup-wsastartup-reported-failure-on-an-offline-boundary-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

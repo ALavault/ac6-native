@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r167-real-fix-netdll-xnetstartup-wsastartup-reported-failure-on-an-offline-boundary-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r166-thread-stack-allocator-confirms-same-thread-history-dependence-no-further-bounded-fix-exists-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md`;
@@ -978,6 +979,13 @@ combiné à `mmap(MAP_ANONYMOUS)` (zéro au premier touché), le garbage à
 Aucun fix borné possible sans investissement général de fidélité
 ouvert ou valeur codée en dur (refusée). Ferme le volet mécanisme de
 r161 — l'arc DATA.TBL est complet aux deux niveaux.
+
+**r167 — VRAI CORRECTIF — `NetDll_XNetStartup`/`NetDll_WSAStartup`
+signalaient un échec sur une frontière hors-ligne.** Wrappers
+transparents renvoient la valeur de l'import sans modification ;
+`kOfflineStatus` non-nul = échec sous la convention `== 0` standard,
+faux ici. Corrigé : `0u`. Tests 150/150 (+2), ctest 9/9, crash
+inchangé.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
