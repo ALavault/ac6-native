@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r117-full-causal-chain-closed-write-site-to-crash-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r116-real-critical-sections-eliminate-the-race-expose-r101s-original-null-global-deterministically-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r115-suspended-thread-creation-implemented-reduces-but-does-not-eliminate-crashes-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r114-root-cause-found-null-guest-function-pointer-plus-excreatethread-ignores-creationflags-20260901.md`;
@@ -337,6 +338,18 @@ d'arrière-plan, mais le thread principal plante DÉTERMINISTIQUEMENT
 que r101 avait trouvé au tout début de cet arc, jamais corrigé,
 masqué par la course. Amélioration nette réelle; ne ferme pas Gate 2.
 Prochain cycle : rouvrir `0x82935d98` directement.
+
+**r117 — chaîne causale COMPLÈTE fermée.** `0x82935d98` n'a qu'un
+SEUL site d'écriture dans tout le XEX (`FindPpcAddressMaterialization.java`,
+read-only), à l'intérieur de `sub_821D5F48` lui-même, ~1100 lignes
+après la boucle post-GATE2 que r105-r109 avaient déjà caractérisée.
+Vérifié en UNE SEULE exécution (crash déterministe depuis r116) :
+`sub_821CC508` retourne -1 pour l'état 3 (même échec que r109 avait
+déjà capturé) → sortie de secours `loc_821D6138` → `return;` GENUINE
+avant l'écriture → `sub_821D7DE0` n'abandonne pas → `sub_821D6C20` lit
+le nul → crash. Ce n'est pas un nouveau mécanisme : c'est LA cause
+racine réelle du crash original de r100. Aucun code modifié. Prochain
+cycle : tracer `case 3` de `sub_821CC508` jusqu'à son retour exact.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

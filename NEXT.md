@@ -574,7 +574,28 @@ compteur injecté ou fallback ReXGlue.
     déterministe, l'instrumentation build-tree (r105/r108) suffit en
     UN seul run au lieu d'un balayage répété. Voir
     `reports/ac6-retail-native-codegen-gate2-r116-real-critical-sections-eliminate-the-race-expose-r101s-original-null-global-deterministically-20260901.md`.
-28. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+29. **r117 — chaîne causale COMPLÈTE fermée, du crash au site
+    d'écriture manqué.** `FindPpcAddressMaterialization.java`
+    (read-only) trouve UNE SEULE matérialisation de `0x82935d98` dans
+    tout le XEX, à l'intérieur de `sub_821D5F48` lui-même (la même
+    fonction de ~1700 lignes déjà caractérisée par r105-r109),
+    ~1100 lignes APRÈS la boucle post-GATE2. **Vérifié en UNE SEULE
+    exécution** (crash déterministe depuis r116) : `post-GATE2 dispatch
+    ret=-1` → `BAILOUT sub_821D5F48 exits early via loc_821D6138 --
+    0x82935d98 NEVER written`. Chaîne complète : `sub_821CC508` retourne
+    -1 pour l'état 3 (déjà capturé par r109) → sortie de secours →
+    `return;` GENUINE avant l'écriture → `sub_821D7DE0` n'abandonne pas
+    (r102) → `sub_821D6C20` lit le nul → crash. **Ce n'est PAS un
+    nouveau mécanisme** — c'est le MÊME échec d'état 3 que r109 avait
+    déjà trouvé, maintenant compris comme LA cause racine réelle du
+    crash de r100. Aperçu statique de `case 3`
+    (`loc_821CC5EC`) : routine substantielle d'allocation/init de pool
+    (`sub_821F4170`+`sub_821F3BF0`), pas encore tracée jusqu'au retour
+    exact. Aucun code modifié. **Prochain cycle** : tracer `case 3`
+    jusqu'à son retour exact, vérifier d'abord une lacune du harnais
+    (façon r108) avant un bug invité. Voir
+    `reports/ac6-retail-native-codegen-gate2-r117-full-causal-chain-closed-write-site-to-crash-20260901.md`.
+30. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

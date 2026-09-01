@@ -1,3 +1,33 @@
+# AC6 retail NTSC-U/J — r117 : chaîne causale COMPLÈTE fermée — le site d'écriture de `0x82935d98` identifié, jamais atteint à cause du bailout déjà caractérisé par r109 (2026-09-01)
+
+- **`FindPpcAddressMaterialization.java` (read-only) trouve UNE SEULE
+  matérialisation** de `0x82935d98` dans tout le XEX : `821d6be0
+  lis r11,-0x7d6d ; addi r11,r11,0x5d98`. Le code généré correspondant
+  (`stw r3,0(r11)`) se trouve DANS `sub_821D5F48` lui-même — la même
+  fonction de ~1700 lignes que r105-r109 avaient déjà caractérisée
+  (GATE1-5, boucle post-GATE2) — à ~1100 lignes APRÈS cette boucle.
+- **Vérifié en direct en UNE SEULE exécution** (le crash étant
+  désormais déterministe grâce à r116, plus besoin de balayage répété) :
+  `post-GATE2 dispatch ret=-1` puis `BAILOUT sub_821D5F48 exits early
+  via loc_821D6138 -- 0x82935d98 NEVER written`. **Chaîne causale
+  complète fermée, bout en bout** : `sub_821CC508` retourne -1 pour
+  l'état 3 (déjà capturé par r109) → branche de secours `loc_821D6138`
+  → `return;` GENUINE ~1100 lignes avant l'écriture → `sub_821D7DE0` ne
+  vérifie/n'abandonne pas (r102) → `sub_821D6C20` lit `0x82935d98`
+  toujours nul → crash.
+- **Ce n'est PAS un nouveau mécanisme** — c'est le MÊME échec d'état 3
+  de `sub_821CC508` que r109 avait déjà capturé, maintenant compris
+  comme la cause racine RÉELLE du crash original de r100, pas un
+  problème séparé. Premier coup d'œil statique sur `case 3`
+  (`loc_821CC5EC`) : routine substantielle d'allocation/init de pool
+  de tampons (`sub_821F4170`+`sub_821F3BF0`), pas encore tracée
+  jusqu'à son retour exact.
+- Aucun code natif modifié (instrumentation restaurée; `ctest` 9/9
+  reconfirmé). **Prochain cycle** : tracer `case 3` de `sub_821CC508`
+  jusqu'à son point de retour exact — vérifier d'abord une lacune du
+  harnais (façon r108) avant de supposer un bug du code invité. Voir
+  `reports/ac6-retail-native-codegen-gate2-r117-full-causal-chain-closed-write-site-to-crash-20260901.md`.
+
 # AC6 retail NTSC-U/J — r116 : les vraies sections critiques éliminent complètement les crashes r111-r115 — elles masquaient le null global ORIGINAL de r101, maintenant déterministe (2026-09-01)
 
 - **D'abord testé la question ouverte de r115.** Trace ajoutée (gated
