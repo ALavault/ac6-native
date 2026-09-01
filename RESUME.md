@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r152-r150-and-r151-are-the-same-chain-sub_822834c0-returns-the-garbage-size-directly-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md`;
@@ -836,6 +837,18 @@ session — seule la valeur garbage exacte a changé (`0` → `1`/
 question du mécanisme : aucun nouveau levier natif (cohérent avec
 r144). Prochain : identifier l'appelant de `sub_82390880` sur le
 handle DATA.TBL (ouvert depuis r150).
+
+**r154 — `backtrace()` échoue sous élision d'appel terminal ; fil
+`sub_82390880` fermé coût/bénéfice — les 2 frontières nommées sont à
+nouveau bloquées.** Instrumenter `sub_82390880` ne déclenche jamais ;
+instrumenter le stub lui-même montre un backtrace résolvant vers
+`sub_821F5630`, qui n'appelle PAS littéralement l'import (élision
+`-O3`). `backtrace()` seul n'est pas fiable sans vérification contre
+un appel littéral (contrairement à r152). Fil fermé coût/bénéfice
+(r147 : capture vidéo debug ; r150-r153 : chaîne DATA.TBL fermée par
+route séparée). Gate 2 : les 2 frontières nommées sont de nouveau
+bloquées, comme au moment de r144. Prochain : audits de maintenance
+(pattern r144).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

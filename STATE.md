@@ -1,3 +1,32 @@
+# AC6 retail NTSC-U/J — r154 : `backtrace()` échoue sous élision d'appel terminal ; le fil `sub_82390880` fermé coût/bénéfice — les 2 frontières nommées sont à nouveau bloquées (2026-09-01)
+
+- **`backtrace()` PEU FIABLE ici** : instrumenter `sub_82390880` (site
+  d'appel littéral unique selon r146/r147) ne déclenche JAMAIS, alors
+  que `NtQueryInformationFile`/`NtSetInformationFile` se déclenchent
+  bien juste après l'ouverture de DATA.TBL. Instrumenter le stub lui-
+  même montre un backtrace résolvant vers `sub_821F5630` — mais lire
+  cette fonction en entier (68 lignes) montre qu'elle n'appelle PAS
+  littéralement `NtQueryInformationFile` (son seul appel va vers
+  `sub_821F75B8`, qui lui-même n'appelle qu'un helper RTL). Conclusion :
+  optimisation d'appel terminal (`-O3`) élidant des frames réelles —
+  `backtrace()` seul n'est PAS une preuve fiable de l'appelant ici (à
+  la différence de r152, où chaque frame avait été vérifiée contre un
+  appel littéral du source).
+- **Fil `sub_82390880`/DATA.TBL FERMÉ coût/bénéfice** : re-dériver le
+  vrai chemin demanderait un scan Ghidra statique du XEX réel — travail
+  réel mais dont r147 avait déjà établi la non-pertinence (capture
+  vidéo debug, sans rapport avec l'échec DATA.TBL), et r150-r153 ont
+  depuis fermé la chaîne causale DATA.TBL par une route ENTIÈREMENT
+  séparée (`sub_821CC288→sub_82222D80`) qui n'en dépend pas.
+- **Les 2 frontières nommées de Gate 2 sont À NOUVEAU bloquées** :
+  chaîne DATA.TBL entièrement tracée (r144, re-confirmé r153) ;
+  `IM_LOAD_IMMEDIATE`→SPIR-V bloqué par politique (pas d'oracle, r144).
+  3 vrais correctifs natifs trouvés cette session (r145/r148/r149)
+  conservés sur leurs propres mérites.
+- **Aucun code source modifié ce cycle** — 2 diagnostics temporaires,
+  annulés et vérifiés (ctest 9/9 après reconstruction propre). Voir
+  `reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md`.
+
 # AC6 retail NTSC-U/J — r153 : le mécanisme de r141/r142 est RE-CONFIRMÉ octet-par-octet contre le binaire actuel — chaîne DATA.TBL close (2026-09-01)
 
 - **Trace complète, purement statique** (pas de diagnostic ce cycle) de

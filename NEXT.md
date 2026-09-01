@@ -1321,6 +1321,27 @@ compteur injecté ou fallback ReXGlue.
     3 cycles). Voir
     `reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md`.
 
+78. **r154 : `backtrace()` échoue sous élision d'appel terminal ; fil
+    `sub_82390880` fermé coût/bénéfice — les 2 frontières nommées sont
+    À NOUVEAU bloquées.** Instrumenter `sub_82390880` (site d'appel
+    littéral unique selon r146/r147) ne déclenche jamais ; instrumenter
+    le stub `NtQueryInformationFile` lui-même montre un backtrace
+    résolvant vers `sub_821F5630`, mais cette fonction (lue en entier)
+    n'appelle PAS littéralement l'import — signe d'élision d'appel
+    terminal `-O3`. NOTE MÉTHODOLOGIQUE : `backtrace()` seul n'est pas
+    fiable ici sans vérification contre un appel littéral du source
+    (contrairement à r152, où chaque frame avait été croisée). Fil
+    fermé coût/bénéfice : r147 avait déjà établi la non-pertinence
+    (capture vidéo debug), et r150-r153 ont fermé la chaîne DATA.TBL
+    par une route séparée qui n'en dépend pas. Les 2 frontières
+    nommées de Gate 2 (chaîne DATA.TBL, `IM_LOAD_IMMEDIATE`→SPIR-V)
+    sont de nouveau toutes deux bloquées, comme au moment de r144.
+    Aucun code modifié (2 diagnostics annulés, ctest 9/9). **Prochain
+    cycle** : audits de maintenance en lecture seule (pattern r144),
+    en attendant une nouvelle frontière ou une décision d'investir
+    dans le scan Ghidra statique. Voir
+    `reports/ac6-retail-native-codegen-gate2-r154-backtrace-caller-id-fails-under-tail-call-elision-sub_82390880-thread-closed-cost-benefit-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;
