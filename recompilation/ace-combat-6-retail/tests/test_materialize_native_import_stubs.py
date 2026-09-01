@@ -416,6 +416,27 @@ def test_ob_reference_object_by_handle_writes_the_real_handle_through(
     assert "ctx.r3.u64 = 0u;" in body
 
 
+def test_ke_set_affinity_thread_returns_a_real_mask_not_a_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__KeSetAffinityThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r148: the real contract returns the previous affinity mask itself in
+    # r3, not an NTSTATUS -- the generic offline fallback's negative
+    # kOfflineStatus tripped this XEX's own caller's "< 0" sanity guard
+    # every time. Both the return value and the *PreviousAffinity output
+    # report the same small, in-range mask (core 0) so the caller's own
+    # bit-scan over it stays meaningful instead of reading uninitialized
+    # stack memory.
+    body = text.split("void __imp__KeSetAffinityThread")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U32(ctx.r5.u32, 1u)" in body
+    assert "ctx.r3.u64 = 1u;" in body
+
+
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(
     tmp_path: Path,
 ) -> None:

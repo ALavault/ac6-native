@@ -437,6 +437,34 @@ def render_body(name: str) -> str:
         return """  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, ctx.r3.u32);
   ctx.r3.u64 = 0u;
 """
+    if name == "KeSetAffinityThread":
+        # r148: real signature (this project's own reduced Xbox 360 kernel
+        # form; confirmed at this XEX's own single call site, reached only
+        # after this cycle's ObReferenceObjectByHandle fix) is
+        # (Handle, DWORD Affinity, DWORD* PreviousAffinity). Unlike an
+        # NTSTATUS-returning import, the real Windows/Xbox kernel
+        # contract for this call returns the *previous* affinity mask
+        # itself in r3, not a status code -- confirmed by this XEX's own
+        # caller, which treats r3 as a raw mask (`cntlzw`/`subfic` to find
+        # the previous core index from it), not as an error code, once
+        # past its own `< 0` sanity guard.
+        #
+        # The generic offline-import fallback this call previously fell
+        # through to returned kOfflineStatus (negative as a signed mask),
+        # which the caller's own `< 0` guard reads as failure every time,
+        # and never wrote *PreviousAffinity, leaving the caller's own
+        # bit-scan over that uninitialized stack slot to produce a
+        # meaningless "previous core index". This project models no real
+        # per-core thread affinity (a single host-scheduled execution
+        # model, matching every other thread-management stub here), so
+        # there is no genuine "previous" mask to report; core 0
+        # (mask 0x1, the lowest hardware thread on this title's 6-thread
+        # Xenon topology) is a safe, always-in-range default that keeps
+        # the caller's own bit-scan meaningful instead of reading
+        # uninitialized memory.
+        return """  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, 1u);
+  ctx.r3.u64 = 1u;
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

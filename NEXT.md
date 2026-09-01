@@ -1237,6 +1237,22 @@ compteur injecté ou fallback ReXGlue.
     décider s'il nécessite une vraie gestion. Voir
     `reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md`.**
 
+73. **r149 : VRAI CORRECTIF — `KeSetAffinityThread` renvoyait un code
+    de statut négatif là où le vrai contrat attend un masque
+    d'affinité positif.** Suivant r148, le seul site d'appel confirme
+    `(Handle, Affinity, PreviousAffinity*)` — le vrai contrat renvoie
+    le MASQUE PRÉCÉDENT dans r3 (pas un statut), et l'appelant calcule
+    l'index du cœur via bit-scan sur `*PreviousAffinity` (jamais
+    écrit). CORRIGÉ : renvoie `1u` (masque "cœur 0") dans r3 ET via la
+    sortie. Tests 142/142 (était 141/141). Vérifié en direct :
+    `KeSetAffinityThread` n'apparaît plus comme non géré ; statuts non
+    mappés chutent de 19 à 2. Crash `sub_821F7C80` persiste (chaîne
+    séparée). Conservé sur ses propres mérites, même précédent que
+    r145/r148. **Prochain cycle** : `ObDereferenceObject`/
+    `KeSetBasePriorityThread` restent les imports non gérés les plus
+    fréquents, priorité plus basse (retours jamais vérifiés). Voir
+    `reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md`.**
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

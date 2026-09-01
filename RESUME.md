@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r147-sub_82390880-is-a-movie-capture-debug-feature-unrelated-to-data-tbl-not-implementing-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r146-r145s-fix-reaches-new-ground-ntqueryinformationfile-ntsetinformationfile-now-hit-20260901.md`;
@@ -772,6 +773,19 @@ Tests 141/141. Vérifié en direct : nouveaux imports jamais vus en aval
 crash `sub_821F7C80` persiste (chaîne causale séparée). Conservé sur
 ses propres mérites. Prochain cycle : lire les sites d'appel de
 `KeSetAffinityThread`.
+
+**r149 — VRAI CORRECTIF, même précédent que r145/r148.**
+`KeSetAffinityThread` (seul site d'appel, atteint depuis le correctif
+r148) renvoyait `kOfflineStatus` (négatif) là où le vrai contrat NT
+renvoie le masque d'affinité PRÉCÉDENT lui-même dans r3 (pas un
+statut) — l'appelant fait un bit-scan sur `*PreviousAffinity` (jamais
+écrit) pour trouver l'index du cœur. CORRIGÉ : renvoie `1u` ("cœur 0")
+dans r3 ET via la sortie. Tests 142/142. Vérifié en direct : import
+n'apparaît plus comme non géré, statuts non mappés chutent de 19 à 2.
+Crash `sub_821F7C80` persiste (chaîne séparée). Conservé sur ses
+propres mérites. Prochain cycle : `ObDereferenceObject`/
+`KeSetBasePriorityThread` (priorité plus basse, retours jamais
+vérifiés).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

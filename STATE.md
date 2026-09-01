@@ -1,3 +1,44 @@
+# AC6 retail NTSC-U/J — r149 : VRAI CORRECTIF — `KeSetAffinityThread` renvoyait un code de statut négatif là où le vrai contrat attend un masque d'affinité positif (2026-09-01)
+
+- **Suivant le "prochain" de r148** : lecture du seul site d'appel de
+  `KeSetAffinityThread` (atteint seulement depuis le correctif
+  `ObReferenceObjectByHandle` de r148) — signature réelle
+  `(Handle, DWORD Affinity, DWORD* PreviousAffinity)`.
+- **DEUX problèmes trouvés** : (1) le vrai contrat NT renvoie le MASQUE
+  D'AFFINITÉ PRÉCÉDENT lui-même dans `r3`, PAS un code de statut —
+  confirmé par l'appelant lui-même qui calcule `31 -
+  compte_zéros_de_tête(masque)` pour trouver l'INDEX du cœur précédent.
+  Un masque réel sur une topologie Xenon à 6 threads matériels est
+  toujours petit et non-négatif — le garde `blt` de l'appelant est du
+  code MORT sur le vrai matériel ; l'ancien `kOfflineStatus` générique
+  (négatif comme masque signé) le déclenchait à CHAQUE appel. (2) la
+  sortie `*PreviousAffinity` n'était JAMAIS écrite — même passé le
+  garde, le bit-scan tournerait sur de la pile non initialisée (même
+  classe de bug que le `KeResumeThread` de r148).
+- **CORRECTIF** : renvoie `1u` dans `r3` (un vrai masque, pas un
+  statut) et écrit `1u` via `*PreviousAffinity` — "cœur 0", toujours
+  dans la plage valide. Ce projet ne modélise aucune affinité de cœur
+  réelle (ordonnancement hôte unique) — une valeur petite, cohérente,
+  garde le bit-scan de l'appelant significatif.
+- **Tests** : nouveau
+  `test_ke_set_affinity_thread_returns_a_real_mask_not_a_status`. Suite
+  complète : 142/142 (était 141/141), 29/29 dans ce fichier.
+- **VÉRIFIÉ EN DIRECT** : `KeSetAffinityThread` n'apparaît plus comme
+  import non géré. Le compte de statuts `RtlNtStatusToDosError` non
+  mappés CHUTE de 19 à 2 dans la même session — cohérent avec cette
+  chaîne d'appel réussissant maintenant au lieu d'échouer en boucle. Le
+  crash `sub_821F7C80` persiste au même site (chaîne causale séparée).
+- **DÉCISION** : conservé et committé sur ses propres mérites, même
+  précédent que r145/r148.
+- **Gates** : mission01 (même échec pré-existant), ctest 9/9, Python
+  142/142, `git status` propre, démo 185 inchangé.
+  **Prochain cycle** : `ObDereferenceObject` (35 appels) et
+  `KeSetBasePriorityThread` (17 appels) restent les 2 imports non gérés
+  les plus fréquents — aucun site échantillonné ne vérifie leur retour
+  (trouvaille de r148), priorité plus basse, mais à re-vérifier
+  rapidement maintenant que plus de code s'exécute après eux. Voir
+  `reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md`.
+
 # AC6 retail NTSC-U/J — r148 : VRAI CORRECTIF — `ObReferenceObjectByHandle` n'écrivait JAMAIS sa sortie, échouant un `KeResumeThread` sur de la mémoire de pile non initialisée (2026-09-01)
 
 - **Suivant le "prochain" de r147** : la trace complète contre le binaire
