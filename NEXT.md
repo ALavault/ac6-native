@@ -901,7 +901,29 @@ compteur injecté ou fallback ReXGlue.
     `NativeGuestMediaService`/`locate_xdvdfs_file`) ; relancer la sonde
     et vérifier EN DIRECT que le crash `sub_821F7C80` disparaît. Voir
     `reports/ac6-retail-native-codegen-gate2-r133-writer-found-sub_82234b88-parses-a-zero-length-ntreadfile-buffer-as-a-real-header-20260901.md`.**
-57. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+57. **r134 : la lecture de longueur zéro (r133) tracée jusqu'à un store
+    CONDITIONNEL jamais pris dans `sub_821CC508` — corrige l'hypothèse
+    "import de taille manquant" de r133.** Chaîne d'appel (`addr2line`) :
+    `_xstart → sub_821D7DE0 → sub_821D5F48 → sub_821CC508 → sub_821F4E70
+    → NtReadFile`. Mesuré en direct : `r30(record)=0x00000008` (quasi-nul,
+    pas une vraie adresse), calculé via `[r26-18100]` où
+    `r26=0x82940000` (MÊME base que la table de r129) —
+    `r26-18100=0x8293B94C`, exactement 16 octets après `0x8293B93C` (la
+    table de r129). Un SEUL écrivain trouvé (même technique de grep que
+    r129) : un store gardé par un drapeau octet à `0x8293B938` (4 octets
+    avant la table de r129) — si NON-ZÉRO, écrit `0x8293B94C` ; si ZÉRO
+    (état observé), une branche ALTERNATIVE remplit 4 AUTRES champs
+    (`0x8293B950/54/58/5C`) mais jamais celui-ci. Ce n'est PAS un import
+    manquant — c'est du code déjà exécuté prenant la mauvaise branche.
+    Aucun code source modifié ce cycle (3 diagnostics temporaires, tous
+    annulés et vérifiés, ctest 9/9 + 139/139 Python après reconstruction
+    propre). **Prochain cycle** : trouver ce que représente le drapeau
+    `0x8293B938` (grep des stores vers `-18120(r26)`) ; déterminer si son
+    état zéro est correct à ce point d'exécution, ou si les champs
+    `0x8293B950-5C` (remplis par LA BRANCHE PRISE) sont en fait les vrais
+    champs pertinents plutôt que `0x8293B94C`. Voir
+    `reports/ac6-retail-native-codegen-gate2-r134-zero-length-read-traced-to-a-boolean-gated-store-that-never-populates-a-descriptor-field-20260901.md`.**
+58. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

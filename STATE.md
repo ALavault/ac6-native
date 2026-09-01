@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r134 : la lecture de longueur zéro tracée jusqu'à un store conditionnel (booléen) JAMAIS pris — pas un import manquant, corrige r133 (2026-09-01)
+
+- **Chaîne d'appel** (`addr2line` sur une capture `backtrace()`) :
+  `_xstart → sub_821D7DE0 → sub_821D5F48 → sub_821CC508 → sub_821F4E70 →
+  NtReadFile`. `sub_821F4E70` (déjà nommée r124) transmet son ARG3
+  (`ctx.r9`, inchangé) comme `Length` de `NtReadFile` — fourni par
+  `sub_821CC508`.
+- **Calcul de taille de chunk mesuré en direct** : `r30(record)=0x00000008`
+  — PAS une vraie adresse guest, une valeur quasi-nulle !
+  `filesize_field[r30+8]=0` (lecture près de l'adresse zéro),
+  `chunk_cap=262144`, résultat `r27=0`. **Ce n'est PAS un import de taille
+  manquant** (hypothèse de r133, maintenant CORRIGÉE) — c'est le POINTEUR
+  utilisé pour chercher la taille qui est quasi-nul.
+- **`r30` calculé via `[r26-18100]`, où `r26=0x82940000`** (MÊME base que
+  la table de r129). `r26-18100 = 0x8293B94C` — EXACTEMENT 16 octets
+  après `0x8293B93C` (la table nom-de-fichier/handle de r129) !
+- **Un SEUL écrivain trouvé** (même technique de grep que r129) — DANS
+  `sub_821CC508` lui-même : un store CONDITIONNEL, gardé par un octet
+  drapeau à `0x8293B938` (4 octets AVANT la table de r129). Si le drapeau
+  est NON-ZÉRO → écrit `0x8293B94C` (le champ dont on a besoin). Si ZÉRO
+  (état actuel observé) → branche ALTERNATIVE qui remplit 4 AUTRES champs
+  (`0x8293B950/54/58/5C`) mais JAMAIS `0x8293B94C`.
+- **Ce n'est pas un import manquant — c'est du code DÉJÀ exécuté prenant
+  la mauvaise branche.** Corrige explicitement la propre hypothèse de r133
+  (import `NtQueryInformationFile` manquant), par discipline de correction
+  du prédécesseur immédiat.
+- **Aucun code source modifié ce cycle** — 3 diagnostics temporaires,
+  tous annulés et vérifiés (ctest 9/9, 139/139 Python après reconstruction
+  propre).
+  **Prochain cycle** : trouver ce que représente le drapeau `0x8293B938`
+  (grep des stores vers `-18120(r26)`, même technique) ; déterminer si son
+  état actuel (zéro) est correct pour ce point d'exécution ou si c'est un
+  vrai trou HLE ; si le drapeau=0 est l'état normal, les champs
+  `0x8293B950-5C` (que CETTE branche remplit) sont peut-être les vrais
+  champs à lire, pas `0x8293B94C`. Voir
+  `reports/ac6-retail-native-codegen-gate2-r134-zero-length-read-traced-to-a-boolean-gated-store-that-never-populates-a-descriptor-field-20260901.md`.
+
 # AC6 retail NTSC-U/J — r133 : L'ÉCRIVAIN EST TROUVÉ — `sub_82234B88` parse un tampon `DATA.TBL` que `NtReadFile` n'a JAMAIS rempli (`length=0`), lit des octets de poison comme un vrai en-tête (2026-09-01)
 
 - **Méthode** : au lieu de deviner quelle fonction instrumenter, un WATCH

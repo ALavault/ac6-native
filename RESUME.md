@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r134-zero-length-read-traced-to-a-boolean-gated-store-that-never-populates-a-descriptor-field-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r133-writer-found-sub_82234b88-parses-a-zero-length-ntreadfile-buffer-as-a-real-header-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r132-sub_821f7c80-crash-is-a-corrupted-notification-list-ntreadfile-ruled-out-as-cause-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r131-xdvdfs-maximum-size-parameter-was-rejecting-every-open-r100s-original-crash-site-is-confirmed-gone-20260901.md`;
@@ -554,6 +555,21 @@ de taille ici — un titre réel l'apprend via `NtQueryInformationFile`/
 Prochain cycle : tracer qui détermine la longueur demandée, implémenter
 le vrai mécanisme de taille (déjà connu via `locate_xdvdfs_file`),
 revérifier EN DIRECT.
+
+**r134 — la lecture de longueur zéro tracée jusqu'à un store CONDITIONNEL
+jamais pris ; corrige l'hypothèse "import manquant" de r133.** Chaîne
+(`addr2line`) : `_xstart → sub_821D7DE0 → sub_821D5F48 → sub_821CC508 →
+sub_821F4E70 → NtReadFile`. Mesuré : `r30(record)=0x00000008` (quasi-nul),
+calculé via `[r26-18100]` où `r26=0x82940000` = MÊME base que la table de
+r129 ; `r26-18100=0x8293B94C`, exactement 16 octets après `0x8293B93C`.
+Un seul écrivain (même technique de grep que r129) : store gardé par un
+drapeau octet à `0x8293B938` (4 octets avant la table de r129) — si
+non-zéro écrit `0x8293B94C` ; si zéro (état observé), branche
+alternative remplit `0x8293B950/54/58/5C` mais jamais notre champ. Pas un
+import manquant — code déjà exécuté prenant la mauvaise branche. Aucun
+code modifié. Prochain cycle : identifier le drapeau `0x8293B938`,
+déterminer si son état zéro est correct ici ou si les champs
+`0x8293B950-5C` sont les vrais champs pertinents.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
