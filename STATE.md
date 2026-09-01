@@ -1,3 +1,32 @@
+# AC6 retail NTSC-U/J — r159 : la vraie désassemblation Ghidra montre que la lecture non initialisée est FIDÈLE octet-par-octet — CORRIGE r157/r158 (2026-09-01)
+
+- **Désassemblation RÉELLE** (`Ac6XenonDisasm`, pas le C++ généré) de
+  `sub_82338568` ET `sub_823382A8` : `ld r31,0x58(r1)` (= offset 88)
+  EXISTE littéralement dans le binaire retail réel, inconditionnel ;
+  `sub_823382A8` n'écrit QUE les offsets +0 et +4, jamais +8 — vérifié
+  contre les instructions réelles, pas seulement le C++ généré.
+- **CORRIGE r157/r158** : leur formulation "confirmé spécifique à notre
+  recompilation" est INEXACTE. Le C++ généré que r130-r153 lisent
+  depuis le début est une traduction FIDÈLE du vrai binaire — AUCUN
+  bug de traduction XenonRecomp ici. Ce que r157/r158 ont bien établi
+  (le vrai jeu boote sans planter) reste valable ; leur interprétation
+  causale (mauvaise traduction) ne l'est pas.
+- **Explication corrigée** : chaque environnement (notre recompilation,
+  Xenia Edge, le vrai matériel) a son propre historique d'exécution
+  antérieur, donc son propre contenu de pile résiduel à cette adresse
+  — TOUS lisent une mémoire génuinement non initialisée, avec des
+  octets différents. C'est exactement la formulation de r150
+  ("jamais fixée à 0 par quoi que ce soit — ce que la pile contenait
+  par hasard") qui était correcte depuis le début.
+- **Implication pour un fix** : plus étroit que r157/r158 ne le
+  suggéraient — pas "corriger une mauvaise traduction" (il n'y en a
+  pas), mais potentiellement "reproduire le motif de réutilisation de
+  pile du vrai matériel" — frôle la valeur synthétique/codée en dur que
+  la discipline du projet refuse (précédent r53). Décision non prise.
+- **Aucun code modifié, pas de build ce cycle** — désassemblation
+  statique pure. Voir
+  `reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md`.
+
 # AC6 retail NTSC-U/J — r158 : release Xenia Edge PINNÉE (60ff861) reproduit r157 et va plus loin (écran ESRB) — résultat maintenant QUALIFIÉ (2026-09-01)
 
 - **Release pinnée obtenue** : `has207/xenia-edge` tag `60ff861`,

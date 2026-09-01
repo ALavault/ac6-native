@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r157-xenia-edge-oracle-boots-past-data-tbl-real-title-screen-confirms-datatbl-stall-is-recompilation-specific-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md`;
@@ -899,6 +900,18 @@ GitHub Releases, SHA-256 vérifié exact. Écran légal PIXEL-IDENTIQUE à
 r157 (même hash malgré 2 binaires différents) ; va plus loin (crédits
 imagerie satellite, puis écran ESRB réel). r157 passe de PROVISOIRE à
 QUALIFIÉ. Prochain : comparaison ciblée au point exact `[r1+88]`.
+
+**r159 — la vraie désassemblation Ghidra montre que la lecture non
+initialisée est FIDÈLE octet-par-octet — CORRIGE r157/r158.**
+`Ac6XenonDisasm` sur `sub_82338568`/`sub_823382A8` : `ld r31,0x58(r1)`
+existe littéralement dans le vrai binaire, aucun bug de traduction
+XenonRecomp. La formulation "confirmé spécifique à notre
+recompilation" de r157/r158 est CORRIGÉE : chaque environnement a son
+propre historique d'exécution → son propre contenu de pile résiduel.
+L'observation oracle (le jeu boote) reste valable ; l'interprétation
+causale ne l'est pas. Rejoint r150. Implication pour un fix plus
+étroite qu'anticipé (frôle la valeur synthétique refusée, précédent
+r53) — décision non prise.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

@@ -1415,6 +1415,23 @@ compteur injecté ou fallback ReXGlue.
     lecture `[r1+88]` maintenant qu'un oracle qualifié existe. Voir
     `reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md`.
 
+83. **r159 : la vraie désassemblation Ghidra montre que la lecture non
+    initialisée est FIDÈLE octet-par-octet — CORRIGE r157/r158.**
+    `Ac6XenonDisasm` (pas le C++ généré) sur `sub_82338568` et
+    `sub_823382A8` : `ld r31,0x58(r1)` (offset 88) existe littéralement
+    dans le vrai binaire ; `sub_823382A8` n'écrit que +0/+4. Aucun bug
+    de traduction XenonRecomp. CORRIGE la formulation "confirmé
+    spécifique à notre recompilation" de r157/r158 : chaque
+    environnement (nous, Xenia Edge, vrai matériel) a son propre
+    historique d'exécution → son propre contenu de pile résiduel à
+    cette adresse. L'observation oracle (le vrai jeu boote) reste
+    valable ; l'interprétation causale (mauvaise traduction) ne l'est
+    pas. Rejoint la formulation originale de r150. Implication pour un
+    fix plus étroite qu'anticipé — frôle la valeur synthétique que le
+    projet refuse (précédent r53) ; décision non prise. Aucun code
+    modifié. Voir
+    `reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

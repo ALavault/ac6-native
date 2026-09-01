@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r157-xenia-edge-oracle-boots-past-data-tbl-real-title-screen-confirms-datatbl-stall-is-recompilation-specific-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r156-oracle-and-full-analysis-investment-sub_821f5630-indirect-caller-resolved-xenia-stalls-confirmed-20260901.md",
