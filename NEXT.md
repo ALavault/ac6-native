@@ -1478,6 +1478,19 @@ compteur injecté ou fallback ReXGlue.
     Voir
     `reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md`.
 
+87. **r163 : VRAI CORRECTIF — `KeQueryBasePriorityThread` : valeur de
+    retour RÉELLEMENT clampée et utilisée.** Contrairement à ses
+    frères r162, son unique site d'appel réel (`sub_821F3EA0`) clampe
+    réellement le retour à [-16,15] et le renvoie. `kOfflineStatus`
+    (-1073741381 signé) déclenchait TOUJOURS le clamp plancher (-15)
+    — conséquence observable, pas seulement latente. Corrigé : renvoie
+    `0u`. Tests 145/145 (+1), ctest 9/9, crash inchangé. Famille
+    `ObDereferenceObject`/`KeSetBasePriorityThread`/
+    `KeQueryBasePriorityThread` maintenant close. **Prochain cycle** :
+    scan de l'import trace pour un autre stub à fort volume d'appels
+    non encore adressé. Voir
+    `reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

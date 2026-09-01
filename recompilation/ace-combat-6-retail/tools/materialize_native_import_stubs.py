@@ -498,6 +498,25 @@ def render_body(name: str) -> str:
         # NTSTATUS-shaped kOfflineStatus sentinel a plain-LONG-returning
         # import should never produce.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "KeQueryBasePriorityThread":
+        # r163: real signature (PKTHREAD Thread) -> LONG, the thread's
+        # current base priority increment -- not an NTSTATUS. This XEX's
+        # own single static call site (sub_821F3EA0, the only xref to
+        # this import thunk) is the one KeSetBasePriorityThread/
+        # ObDereferenceObject sibling that actually USES the return
+        # value: it clamps it to [-16, 15] and returns that as its own
+        # result. The generic offline-import fallback this call
+        # previously fell through to returned kOfflineStatus
+        # (0xC00000BB), a large negative value as signed LONG, which the
+        # caller's own `cmpwi cr6,r31,-0x10` clamp always caught, making
+        # every query of this thread's priority report the clamp floor
+        # (-15) unconditionally rather than a real, in-range value. This
+        # project tracks no real per-thread priority increment (matching
+        # the "single host-scheduled execution model" already established
+        # for KeSetAffinityThread/KeSetBasePriorityThread above), so 0
+        # (baseline/normal priority) is the safe, in-range default that
+        # keeps the caller's own clamp a no-op instead of always firing.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

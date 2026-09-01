@@ -1,3 +1,22 @@
+# AC6 retail NTSC-U/J — r163 : VRAI CORRECTIF — `KeQueryBasePriorityThread` : valeur de retour RÉELLEMENT clampée et utilisée par un appelant (2026-09-01)
+
+- **Différent de ses frères r162** : `ObDereferenceObject`/
+  `KeSetBasePriorityThread` avaient leur retour toujours jeté ; SON
+  unique site d'appel réel (`sub_821F3EA0`, seul xref vers
+  `0x823D010C`) clampe RÉELLEMENT le retour à [-16,15] et le renvoie
+  comme son propre résultat.
+- **kOfflineStatus (0xC00000BB) = -1073741381 signé, TOUJOURS < -16** →
+  chaque requête de priorité renvoyait systématiquement le plancher du
+  clamp (-15), pas une valeur réelle — conséquence OBSERVABLE, pas
+  seulement latente (contrairement aux 2 fixes r162).
+- **Corrigé** : renvoie `0u` (priorité normale/baseline) — garde le
+  clamp de l'appelant en no-op au lieu de toujours se déclencher.
+- Tests 145/145 (144/144 → +1). Import trace confirme non-géré →
+  géré. `ctest` 9/9. Crash `sub_821F7C80` inchangé (gdb).
+- **Famille close** : `ObDereferenceObject`/`KeSetBasePriorityThread`/
+  `KeQueryBasePriorityThread` sont maintenant TOUS corrigés. Voir
+  `reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md`.
+
 # AC6 retail NTSC-U/J — r162 : VRAI CORRECTIF — `ObDereferenceObject`/`KeSetBasePriorityThread` renvoyaient un code de statut au lieu d'un compteur réel (2026-09-01)
 
 - **Bug de forme de contrat, même catégorie que r148** :

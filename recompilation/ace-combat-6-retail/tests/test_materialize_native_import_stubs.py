@@ -472,6 +472,25 @@ def test_ke_set_base_priority_thread_returns_a_plain_increment_not_a_status(
     assert "ctx.r3.u64 = 0u;" in body
 
 
+def test_ke_query_base_priority_thread_returns_an_in_range_value_not_a_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__KeQueryBasePriorityThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r163: the real contract is (PKTHREAD) -> LONG current priority
+    # increment, not an NTSTATUS. Unlike KeSetBasePriorityThread/
+    # ObDereferenceObject, this XEX's own single call site (sub_821F3EA0)
+    # actually uses the return value (clamps it to [-16, 15] and returns
+    # that as its own result) -- the old kOfflineStatus sentinel always
+    # hit the clamp floor. 0 keeps the caller's clamp a no-op.
+    body = text.split("void __imp__KeQueryBasePriorityThread")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(
     tmp_path: Path,
 ) -> None:

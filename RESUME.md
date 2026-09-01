@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r161-decisive-live-value-xenia-edge-leaves-14824-not-a-catastrophic-garbage-allocation-size-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r160-xenia-edge-live-breakpoint-works-but-jit-register-decoding-is-a-separate-uninvested-effort-20260901.md`;
@@ -944,6 +945,14 @@ chacun jette le retour — confirme la dépriorisation déjà notée dans
 le code. Corrigé quand même, même principe que r148. Aucun effet
 observable (crash inchangé). Tests 144/144 (+2), ctest 9/9. Prochain :
 `KeQueryBasePriorityThread` (même famille).
+
+**r163 — VRAI CORRECTIF — `KeQueryBasePriorityThread` : valeur de
+retour RÉELLEMENT clampée et utilisée.** Contrairement à r162, son
+unique site d'appel réel clampe le retour à [-16,15] et le renvoie —
+`kOfflineStatus` déclenchait TOUJOURS le clamp plancher (-15),
+conséquence observable. Corrigé : renvoie `0u`. Tests 145/145 (+1),
+ctest 9/9. Famille close (les 3 stubs de cette famille sont
+maintenant tous corrigés).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
