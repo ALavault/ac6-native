@@ -410,7 +410,22 @@ compteur injecté ou fallback ReXGlue.
     que le crash r100 l'a rendue caduque) avant d'implémenter un
     quelconque chemin de signal. Voir
     `reports/ac6-retail-native-codegen-gate2-r108-mmquerystatistics-was-the-uninitialized-source-fixed-20260901.md`.
-14. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+14. **r109 a réfuté, par mesure directe, une hypothèse plausible pour le
+    blocage post-GATE2.** `Function_821D5F48` contient (après GATE2) une
+    boucle appelant `sub_821CC508(r29)` tant qu'il retourne 0 — forme
+    identique au motif de poll mémoire déjà documenté côté démo
+    (r1829-1833, superseded). **Vérifié en direct** (instrumentation
+    temporaire à deux tours, restaurée; `ctest` 9/9 reconfirmé) : la
+    boucle NE tourne PAS — `sub_821CC508` retourne `-1` dès le premier
+    appel (état `3`), prend la sortie de secours partagée, et
+    `Function_821D5F48` retourne proprement `r3=0` à `sub_821D7DE0` en
+    microsecondes. Aucun code natif modifié. **Le blocage réel de 30s
+    reste en aval**, non atteint par ce cycle — prochain candidat :
+    tracer `sub_821D7DE0` lui-même (ce qu'il fait du retour `r3=0`),
+    avec la même technique d'instrumentation validée plutôt que GDB
+    (retiré par r104 pour cette sonde). Voir
+    `reports/ac6-retail-native-codegen-gate2-r109-post-gate2-dispatcher-resolves-cleanly-real-stall-still-downstream-20260901.md`.
+15. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

@@ -1,3 +1,29 @@
+# AC6 retail NTSC-U/J — r109 : la boucle de dispatch post-GATE2 se résout en un seul appel — le vrai blocage reste en aval (2026-09-01)
+
+- Après r108, la lecture de `Function_821D5F48` vers l'avant révèle une
+  boucle ressemblant exactement au motif déjà documenté (poll mémoire
+  direct, cf. le suivi démo superseded r1829-1833) : `loc_821D6358`
+  appelle `sub_821CC508(r29)` en boucle tant qu'il retourne 0.
+  `sub_821CC508` contient lui-même un dispatch par table de fonctions
+  indexé sur un champ à `r29+324`, sans aucun appel `__imp__*Wait*`.
+  **Vérifié en direct plutôt que supposé** à partir de la seule forme
+  (discipline "instrument avant de faire confiance") : deux tours
+  d'instrumentation temporaire (`AC6_R109_DIAG`, restaurée après
+  usage) — quatorze points de contrôle après chaque `bl` entre le
+  succès de GATE2 et la boucle, puis la boucle elle-même.
+- **Résultat : la boucle ne tourne PAS** — `sub_821CC508` retourne `-1`
+  dès le premier appel (état `3`), ce qui prend immédiatement la
+  branche `blt→loc_821D6138` (la même sortie de secours partagée) et
+  `Function_821D5F48` retourne proprement `r3=0` à `sub_821D7DE0`, sans
+  boucler ni planter. **Hypothèse réfutée par mesure directe** — la
+  forme du code seule aurait facilement pu être rapportée comme "la"
+  réponse sans être exécutée.
+- Aucun code natif modifié (deux tours d'instrumentation, tous deux
+  restaurés; `ctest` 9/9 reconfirmé). **Le vrai blocage de 30s reste en
+  aval**, dans du code que ce cycle n'a pas atteint — prochain candidat :
+  `sub_821D7DE0` lui-même, ce qu'il fait du retour `r3=0`. Voir
+  `reports/ac6-retail-native-codegen-gate2-r109-post-gate2-dispatcher-resolves-cleanly-real-stall-still-downstream-20260901.md`.
+
 # AC6 retail NTSC-U/J — r108 : la chaîne de crash GATE2 (r100-r107) est fermée — `MmQueryStatistics` n'écrivait jamais son tampon de sortie (2026-09-01)
 
 - **r106 s'est trompé de cadre.** Le pointeur mystère (`0x8feffd1c`)

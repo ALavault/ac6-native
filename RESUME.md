@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r109-post-gate2-dispatcher-resolves-cleanly-real-stall-still-downstream-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r108-mmquerystatistics-was-the-uninitialized-source-fixed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r107-xex-stack-size-ruled-out-parsed-but-unused-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r106-uninitialized-stack-slot-pinpointed-outside-xstart-own-frame-20260901.md`;
@@ -238,6 +239,16 @@ borne de 30s SANS crash, contre SIGSEGV systématique depuis r100.
 Prochain cycle : ré-appliquer l'étape 1 du plan en cours pour ce que le
 guest attend réellement post-GATE2 (ne pas supposer que c'est encore
 `sub_821E6AC8` sans re-tracer).
+
+**r109 a réfuté par mesure directe l'hypothèse d'une boucle de poll
+mémoire dans `Function_821D5F48`.** Sa forme (`loc_821D6358` appelant
+`sub_821CC508` tant qu'il retourne 0) ressemblait exactement au motif
+déjà documenté côté démo — vérifiée en direct (instrumentation
+temporaire à deux tours, restaurée), elle ne tourne PAS : retour `-1`
+dès le premier appel, sortie de secours propre, `r3=0` renvoyé à
+`sub_821D7DE0` en microsecondes. Aucun code modifié. Le blocage réel de
+30s reste en aval, non atteint — prochain candidat : `sub_821D7DE0`
+lui-même.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
