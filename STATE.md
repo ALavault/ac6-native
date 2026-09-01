@@ -1,3 +1,51 @@
+# AC6 retail NTSC-U/J — r150 : la valeur de pile périmée (r139/r142) a CHANGÉ de `0` à `1` après les 3 correctifs de cette session — DATA.TBL traverse maintenant l'idiome de troncature — site de crash INCHANGÉ (2026-09-01)
+
+- **Pourquoi cette vérification valait la peine** : 3 correctifs réels
+  cette session (r145, r148, r149) ont chacun changé le vrai
+  ordonnancement/flux d'exécution du jeu. r142 avait établi que le
+  "retour" de `sub_82338388` est une lecture de mémoire de PILE JAMAIS
+  ÉCRITE — une valeur ENTIÈREMENT fonction de ce que le code
+  précédent, sans rapport, a laissé sur ce slot exact. Vérifier à
+  nouveau plutôt que de supposer que la caractérisation de r139-r142
+  (un `0` effectivement fixe) tient toujours.
+- **LA VALEUR A CHANGÉ** : mesuré en direct sur le MÊME site que
+  r139/r141/r142 — **`sub_82338388` renvoie maintenant `1`, PAS `0`.**
+  Ceci CONFIRME (ne contredit PAS) la caractérisation de r142 : la
+  valeur n'a jamais été fixée à `0` par quoi que ce soit dans le code
+  tracé — c'était ce que la pile contenait par hasard, et les
+  correctifs de cette session ont changé ce que la pile contient.
+- **Changement encore plus surprenant** : la même session montre
+  `NtQueryInformationFile`/`NtSetInformationFile` (idiome de
+  troncature identifié par r146/r147 comme "capture vidéo de debug")
+  s'exécuter sur le handle qui vient d'ouvrir **DATA.TBL** ! Soit
+  `sub_821E9F50`/`sub_821EA2F8` sont des utilitaires plus GÉNÉRAUX que
+  la lecture étroite de r147 (un seul des appelants possibles avait été
+  tracé jusqu'à la chaîne "capture vidéo"), soit c'est un chemin de
+  code réellement NOUVEAU exposé par les correctifs de cette session.
+  La conclusion de r147 n'est PAS contredite par une preuve directe
+  pour CE site précis, mais elle n'est plus toute l'histoire.
+- **Site de crash INCHANGÉ** : `sub_821F7C80` se reproduit toujours à
+  l'identique (backtrace gdb confirmé), malgré ces deux changements.
+- **DÉCISION** : enregistré comme un changement significatif et
+  CONFIRMÉ des propres mesures antérieures de cette investigation — pas
+  une contradiction, mais un rappel que les valeurs intermédiaires de
+  la chaîne causale DATA.TBL (établies sur r130-r142) ont été mesurées
+  contre un binaire qui ne correspond plus à l'état committé actuel.
+  Retracer ENTIÈREMENT cette chaîne depuis `sub_821CC288` contre le
+  binaire ACTUEL est une entreprise substantielle, comparable en
+  ampleur à tout l'arc r130-r142 — explicitement PAS tentée ce cycle
+  (le faire à la hâte risquerait de re-dériver des conclusions
+  périmées contre une cible mouvante).
+- **Aucun code source modifié ce cycle** — 1 diagnostic temporaire,
+  annulé et vérifié (ctest 9/9, 142/142 Python après reconstruction
+  propre).
+  **Prochain cycle** : re-tracer en UNE passe consolidée les mesures
+  clés de r130-r142 (taille d'allocation de r135, valeur garbage de
+  r137, requête catégorie/réglage de r139, trace de contenu de pile de
+  r141/r142) contre le binaire ACTUEL — traiter comme un NOUVEAU fil
+  d'investigation multi-cycles, pas un correctif d'un seul cycle. Voir
+  `reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md`.
+
 # AC6 retail NTSC-U/J — r149 : VRAI CORRECTIF — `KeSetAffinityThread` renvoyait un code de statut négatif là où le vrai contrat attend un masque d'affinité positif (2026-09-01)
 
 - **Suivant le "prochain" de r148** : lecture du seul site d'appel de

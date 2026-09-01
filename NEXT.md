@@ -1253,6 +1253,25 @@ compteur injecté ou fallback ReXGlue.
     fréquents, priorité plus basse (retours jamais vérifiés). Voir
     `reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md`.**
 
+74. **r150 : la valeur de pile périmée (r139/r142) a CHANGÉ de `0` à
+    `1` après les 3 correctifs de cette session — site de crash
+    INCHANGÉ.** Mesuré en direct sur le même site que
+    r139/r141/r142 : `sub_82338388` renvoie maintenant `1`, pas `0` —
+    confirme (ne contredit pas) la caractérisation de r142
+    (mémoire de pile jamais écrite, sensible à l'historique
+    d'exécution). Plus surprenant : `NtQueryInformationFile`/
+    `NtSetInformationFile` (idiome "capture vidéo" de r146/r147)
+    s'exécutent maintenant sur le handle DATA.TBL lui-même — la
+    conclusion de r147 n'est pas contredite pour son propre site, mais
+    n'est plus toute l'histoire. Le crash `sub_821F7C80` persiste
+    identique malgré ces deux changements. Aucun code modifié ce
+    cycle (diagnostic temporaire annulé, ctest 9/9 + 142/142 Python
+    après reconstruction propre). **Prochain cycle (NOUVEAU FIL
+    MULTI-CYCLES)** : re-tracer en une passe consolidée les mesures
+    clés de r130-r142 contre le binaire ACTUEL — ne PAS supposer
+    qu'une seule d'entre elles tient encore isolément. Voir
+    `reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md`.**
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

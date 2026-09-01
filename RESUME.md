@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r147-sub_82390880-is-a-movie-capture-debug-feature-unrelated-to-data-tbl-not-implementing-20260901.md`;
@@ -786,6 +787,18 @@ Crash `sub_821F7C80` persiste (chaîne séparée). Conservé sur ses
 propres mérites. Prochain cycle : `ObDereferenceObject`/
 `KeSetBasePriorityThread` (priorité plus basse, retours jamais
 vérifiés).
+
+**r150 — la valeur de pile périmée (r139/r142) a CHANGÉ de `0` à `1`
+après les 3 correctifs de cette session — site de crash INCHANGÉ.**
+Mesuré sur le même site que r139/r141/r142 : `sub_82338388` renvoie
+maintenant `1`. Confirme (ne contredit pas) r142 : mémoire de pile
+jamais écrite, sensible à l'historique d'exécution. Plus surprenant :
+`NtQueryInformationFile`/`NtSetInformationFile` (idiome "capture
+vidéo" r146/147) s'exécutent maintenant sur le handle DATA.TBL
+lui-même. Le crash `sub_821F7C80` persiste identique. Aucun code
+modifié. **NOUVEAU FIL MULTI-CYCLES nommé** : re-tracer en une passe
+consolidée les mesures clés de r130-r142 contre le binaire ACTUEL —
+ne pas supposer qu'une seule tient encore isolément.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
