@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r126-rtlntstatustodoserror-implemented-verified-live-necessary-not-sufficient-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r125-entire-chain-closed-two-unimplemented-imports-ntreadfile-and-rtlntstatustodoserror-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r124-connection-confirmed-sub_821f4e70-directly-dispatches-to-ntreadfile-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r123-object-attributes-resolved-and-the-read-is-fixed-offset-on-a-possibly-absent-hdd-partition-20260901.md`;
@@ -442,6 +443,14 @@ Ce harnais : NtReadFile→kOfflineStatus→inchangé→boucle échoue→abandon
 suffit (PENDING indéfiniment = boucle infinie, pas un correctif).
 Aucun code modifié. Prochain cycle : implémenter les deux, avec
 complétion RÉELLE conçue soigneusement — cycle dédié.
+
+**r126 — `RtlNtStatusToDosError` implémenté, vérifié en direct
+(43 conversions confirmées), NÉCESSAIRE mais PAS suffisant seul**
+exactement comme r125 l'avait prédit — site de crash inchangé
+(`sub_821D6C20`). Infrastructure réelle, sans risque de masquage,
+gardée. `NtReadFile` reste délibérément non implémenté. Suite 136/136.
+Prochain cycle : tracer l'origine du handle de fichier de
+`sub_821F4E70` avant de concevoir son correctif.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

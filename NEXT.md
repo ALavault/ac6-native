@@ -755,7 +755,25 @@ compteur injecté ou fallback ReXGlue.
     complétion RÉELLE — mérite son propre cycle dédié (façon r108/r116).
     Voir
     `reports/ac6-retail-native-codegen-gate2-r125-entire-chain-closed-two-unimplemented-imports-ntreadfile-and-rtlntstatustodoserror-20260901.md`.
-46. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+47. **r126 — `RtlNtStatusToDosError` implémenté et vérifié en direct;
+    NÉCESSAIRE mais PAS suffisant seul, exactement comme prédit par
+    r125.** Implémenté la première moitié du correctif en deux parties :
+    `STATUS_SUCCESS→ERROR_SUCCESS`, `STATUS_PENDING(0x103)→
+    ERROR_IO_PENDING(997)`, défaut = `ERROR_MR_MID_NOT_FOUND(317)`
+    (vrai défaut Windows NT documenté, pas deviné), tracé via
+    `AC6_NATIVE_IMPORT_TRACE`. 1 nouveau test, suite 136/136.
+    **Vérifié en direct** : les 43 appels (décompte exact de r121)
+    convertissent `0xc00000bb` (`kOfflineStatus`, toujours depuis
+    `NtReadFile` non implémenté) et retombent sur `317` correctement.
+    **Comme prédit, n'arrête PAS le crash seul** — site de crash
+    INCHANGÉ (`gdb --batch`, `sub_821D6C20`, identique depuis r116).
+    Infrastructure réelle, sans risque de masquage. `NtReadFile` reste
+    délibérément non implémenté. Gates : `ctest` 9/9, pytest 136/136,
+    démo inchangé (185). **Prochain cycle** : tracer l'origine du
+    handle de fichier de `sub_821F4E70` avant de concevoir le
+    correctif `NtReadFile`. Voir
+    `reports/ac6-retail-native-codegen-gate2-r126-rtlntstatustodoserror-implemented-verified-live-necessary-not-sufficient-20260901.md`.
+48. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

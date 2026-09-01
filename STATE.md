@@ -1,3 +1,34 @@
+# AC6 retail NTSC-U/J — r126 : `RtlNtStatusToDosError` implémenté et vérifié en direct — NÉCESSAIRE mais PAS suffisant seul, exactement comme prédit par r125 (2026-09-01)
+
+- **Implémenté la première moitié du correctif en deux parties de r125.**
+  `STATUS_SUCCESS(0)`→`ERROR_SUCCESS(0)`, `STATUS_PENDING(0x103)`→
+  `ERROR_IO_PENDING(997)` (les deux valeurs directement tracées depuis
+  r109), défaut pour le reste = `ERROR_MR_MID_NOT_FOUND(317)` — le VRAI
+  défaut documenté de Windows NT, pas une valeur devinée. Cas par
+  défaut tracé via `AC6_NATIVE_IMPORT_TRACE`. 1 nouveau test, suite
+  136/136 (134/134 avant).
+- **Vérifié en direct — fonctionne exactement comme conçu, ET comme
+  prédit** : rejoué avec trace activée — les 43 appels (décompte EXACT
+  de r121) convertissent `0xc00000bb` (`kOfflineStatus`, toujours
+  depuis le stub `NtReadFile` non implémenté) et retombent
+  correctement sur `317` au lieu de le laisser passer inchangé. **Comme
+  r125 l'avait explicitement prédit, ceci seul n'arrête PAS le
+  crash** — confirmé via capture `gdb --batch` directe : site de crash
+  INCHANGÉ, identique à chaque cycle depuis r116 (`sub_821D6C20`).
+- Infrastructure réelle, indépendamment justifiée, sans risque de
+  masquer quoi que ce soit (les statuts non mappés retombent sur un
+  vrai défaut documenté et tracé, pas un sentinelle interne silencieux).
+  `NtReadFile` reste délibérément non implémenté — la contrainte de
+  conception de r125 (PENDING indéfiniment = boucle infinie) et
+  l'incertitude de r122/r123 (quel fichier, le cas échéant) restent à
+  résoudre avant d'implémenter sans précipitation.
+- Gates : `ctest` 9/9, audit mission01 échoue sur le même échec
+  préexistant sans rapport, compteur démo inchangé (185), pytest
+  136/136. **Prochain cycle** : tracer l'origine du handle de fichier
+  de `sub_821F4E70` (même cluster que r122/r123, ou site séparé?) avant
+  de concevoir le correctif `NtReadFile`. Voir
+  `reports/ac6-retail-native-codegen-gate2-r126-rtlntstatustodoserror-implemented-verified-live-necessary-not-sufficient-20260901.md`.
+
 # AC6 retail NTSC-U/J — r125 : CHAÎNE COMPLÈTE FERMÉE — deux imports non implémentés (`NtReadFile` ET `RtlNtStatusToDosError`) produisent ensemble la valeur de statut que la boucle ne peut jamais accepter (2026-09-01)
 
 - **`loc_821F4FE4` tracé** : appelle `sub_821F75B8(ctx.r3=statut NTSTATUS

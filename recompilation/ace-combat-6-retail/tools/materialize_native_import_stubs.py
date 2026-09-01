@@ -455,6 +455,46 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = 0u;
 """
+    if name == "RtlNtStatusToDosError":
+        # r125: a real, documented, stateless Win32 API -- converts an
+        # NTSTATUS (r3) to the equivalent Win32 error code (returned in
+        # r3). Previously fell through to the generic offline stub,
+        # which returns kOfflineStatus regardless of input; traced
+        # (r121) as this build's single most-called unimplemented
+        # import (43 calls in one probe run). r125 traced its specific
+        # role in the GATE2 crash chain: sub_821F75B8 calls this on a
+        # failed NtReadFile status before caching the *converted*
+        # value in a per-thread field a retry loop (sub_821CC508) polls
+        # for exactly 997 (== the real ERROR_IO_PENDING this function
+        # is supposed to produce from STATUS_PENDING) -- with the
+        # generic stub, that conversion never happens, so the loop can
+        # never recognize "still pending" and exhausts its retries.
+        #
+        # Only the two values this project has directly verified as
+        # relevant this cycle are mapped explicitly (STATUS_SUCCESS and
+        # STATUS_PENDING); anything else falls back to
+        # ERROR_MR_MID_NOT_FOUND (317), the real Windows NT behavior
+        # for a status with no explicit table entry -- not a guess at
+        # what an unverified code *should* mean, but this API's own
+        # documented default. Traced (AC6_NATIVE_IMPORT_TRACE-gated)
+        # so a future cycle can see which other NTSTATUS values this
+        # title actually converts before adding more entries.
+        return """  const std::uint32_t status = ctx.r3.u32;
+  std::uint32_t dos_error;
+  switch (status) {
+    case 0x00000000u: dos_error = 0u; break;      // STATUS_SUCCESS -> ERROR_SUCCESS
+    case 0x00000103u: dos_error = 997u; break;     // STATUS_PENDING -> ERROR_IO_PENDING
+    default:
+      if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+        std::fprintf(stderr,
+                      "[RtlNtStatusToDosError] unmapped status=0x%08x\\n",
+                      status);
+      }
+      dos_error = 317u;  // ERROR_MR_MID_NOT_FOUND: real default for no mapping
+      break;
+  }
+  ctx.r3.u64 = dos_error;
+"""
     if name == "KeTlsAlloc":
         return """  static thread_local std::uint32_t next = 0u;
   if (next >= g_tls_values.size()) {

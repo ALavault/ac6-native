@@ -305,6 +305,24 @@ def test_mutant_and_semaphore_release_succeed_without_contention_model(
     )[0]
 
 
+def test_nt_status_to_dos_error_maps_pending_to_io_pending(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlNtStatusToDosError);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # STATUS_SUCCESS -> ERROR_SUCCESS
+    assert "case 0x00000000u: dos_error = 0u;" in text
+    # STATUS_PENDING -> ERROR_IO_PENDING (r125's traced fix target)
+    assert "case 0x00000103u: dos_error = 997u;" in text
+    # Real Windows default for an unmapped status: ERROR_MR_MID_NOT_FOUND.
+    assert "dos_error = 317u;" in text
+    body = text.split("void __imp__RtlNtStatusToDosError(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
+
+
 def test_generic_fallback_is_traceable_and_still_returns_offline_status(
     tmp_path: Path,
 ) -> None:
