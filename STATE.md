@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — r104 : le traçage GDB en direct sur cette sonde est peu fiable; les deux lectures statiques s'accordent (2026-09-01)
+
+- Désassemblé le code HÔTE COMPILÉ (x86, pas juste le PPC invité) à
+  l'adresse de retour de GATE2 (220 instructions) : confirme exactement
+  la même absence de branche de sortie entre GATE2 et GATE3 que la
+  lecture PPC de r103. Un fait nouveau : `RtlInitializeCriticalSection`
+  (un stub d'import natif réel, pas une fonction générée) est appelé
+  DEUX fois dans cet intervalle — noté pour un futur cycle, pas poursuivi.
+  Écarté l'ambiguïté de symbole comme explication : `sub_821CC508` et
+  `__imp__sub_821CC508` résolvent à la MÊME adresse.
+- **4 sessions GDB en direct, 3 résultats DIFFÉRENTS**, rapportées sans
+  tri sélectif : (1) `gates2.gdb` — reproductible 2x, GATE1+GATE2
+  seulement; (2) `gate3_check.gdb` non conditionné — expiré 240s sans
+  rien; (3) `gates3.gdb` — contenait une vraie erreur de script (adresse
+  hôte fixe d'une session précédente, invalide sous PIE), expiré après
+  GATE1 seul; (4) `gates4.gdb` — version corrigée de (3), **N'ATTEINT
+  MÊME PAS GATE2** cette fois. Cet éventail est LA découverte : le
+  traçage `ptrace` de GDB change mesurablement le comportement
+  d'exécution de cette sonde précise, run après run — pas une nouvelle
+  découverte sur le jeu invité, une découverte sur la fiabilité de
+  l'instrument (même discipline que CLAUDE.md : "mesurer l'instrument
+  avant de lui faire confiance").
+- **Décidé d'arrêter le traçage GDB en direct pour cette question** —
+  disqualifié après 3 résultats différents sur 4 tentatives sans bug de
+  script commun. La preuve STATIQUE (PPC invité ET x86 hôte, indépendantes,
+  concordantes) reste le signal fiable : aucune sortie de contrôle entre
+  GATE2 et GATE3. La question "pourquoi GATE3 n'a jamais été vu en
+  direct" de r103 est mieux expliquée comme un artefact GDB que comme un
+  comportement réel. Le modèle structurel r102 reste valable; QUEL garde
+  échoue (si un garde échoue du tout) reste non établi — ni confirmé ni
+  réfuté ce cycle. Aucun code modifié. Voir
+  `reports/ac6-retail-native-codegen-gate2-r104-gdb-live-tracing-unreliable-static-evidence-shows-no-skip-20260901.md`.
+
 # AC6 retail NTSC-U/J — r103 : l'hypothèse r102 corrigée, la vraie divergence reste ouverte (2026-09-01)
 
 - Tracé en direct les 5 gardes de `Function_821D5F48` avec des breakpoints

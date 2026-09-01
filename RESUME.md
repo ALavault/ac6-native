@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r104-gdb-live-tracing-unreliable-static-evidence-shows-no-skip-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r103-r102-gate-hypothesis-corrected-real-divergence-still-open-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r102-crash-chain-traced-to-shared-bailout-and-swallowed-failure-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r101-crash-root-cause-uninitialized-service-singleton-20260901.md`;
@@ -160,6 +161,20 @@ expiré à 240s sans résultat — **refusé de l'interpréter comme "jamais
 appelé"**, ce projet ayant déjà documenté que les sessions GDB attachées
 se comportent différemment en timing sur cette sonde précise. Vraie
 divergence toujours ouverte. Aucun code modifié.
+
+**r104 a désassemblé le code HÔTE compilé** (pas seulement le PPC invité)
+au point de retour de GATE2 : confirme exactement la même absence de
+branche de sortie vers GATE3 que la lecture PPC de r103 — les deux
+lectures statiques concordent, aucune sortie de contrôle. Écarté
+l'ambiguïté de symbole GDB comme explication (`sub_821CC508` et
+`__imp__sub_821CC508` résolvent à la même adresse). **4 sessions GDB en
+direct au total (r103+r104), 3 résultats DIFFÉRENTS** — c'est la vraie
+découverte : le traçage `ptrace` change mesurablement le comportement de
+cette sonde run après run, pas une découverte sur le jeu invité. **Décidé
+d'arrêter le traçage GDB en direct** pour cette question précise; la
+question "pourquoi GATE3 n'apparaît jamais en direct" de r103 est mieux
+expliquée comme un artefact GDB. Le modèle structurel r102 reste valable;
+quel garde échoue (si un échoue) reste non établi. Aucun code modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

@@ -246,7 +246,41 @@ compteur injecté ou fallback ReXGlue.
    pas retourner normalement (transfert style longjmp, un stub natif géré
    différemment du vrai matériel). Voir
    `reports/ac6-retail-native-codegen-gate2-r103-r102-gate-hypothesis-corrected-real-divergence-still-open-20260901.md`.
-9. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+9. **r104 a clos la piste de traçage GDB en direct comme peu fiable pour
+   cette sonde, après vérification statique croisée.** Désassemblé le
+   code HÔTE compilé (x86, 220 instructions à partir de l'adresse de
+   retour de GATE2) : concorde exactement avec la lecture PPC invité de
+   r103 — aucune branche ne sort de l'intervalle GATE2→GATE3 dans les
+   DEUX représentations, indépendamment. Fait nouveau noté (pas
+   poursuivi) : `RtlInitializeCriticalSection` (un vrai stub d'import
+   natif) est appelé DEUX fois dans cet intervalle. Écarté l'ambiguïté de
+   symbole GDB comme explication (`sub_821CC508` et
+   `__imp__sub_821CC508` résolvent à la même adresse). **4 sessions GDB
+   en direct au total (r103+r104), 3 résultats DIFFÉRENTS** sur des
+   scripts structurellement quasi identiques — c'est la découverte : le
+   traçage `ptrace` de GDB change mesurablement le comportement
+   d'exécution de cette sonde précise, run après run (au-delà de la
+   sensibilité au timing déjà documentée r90/r91/r100/r101). **Décidé
+   d'arrêter le traçage GDB en direct pour cette question** — disqualifié
+   après 3 résultats différents sur 4 tentatives sans bug de script
+   commun à toutes. La preuve STATIQUE (concordante sur les deux
+   représentations) reste le signal fiable : aucune sortie de contrôle
+   entre GATE2 et GATE3. La question de r103 ("pourquoi GATE3 n'apparaît
+   jamais en direct") est mieux expliquée comme un artefact GDB que comme
+   un comportement réel. Le modèle structurel r102 (une fonction, deux
+   sorties, un bailout partagé) reste valable en tant que fait statique;
+   **quel garde échoue, si un échoue du tout, reste non établi** — ni
+   confirmé ni réfuté ce cycle. Aucun code natif modifié. **Prochain
+   cycle** : ne PAS reprendre le traçage GDB en direct pour cette
+   question précise; utiliser soit la méthode fiable déjà établie
+   (run natif borné jusqu'à completion + inspection du core dump
+   `apport`, comme r100/r101), soit une instrumentation temporaire dans
+   le code généré `ppc_recomp` de `Function_821D5F48` (fichier C++
+   ordinaire dans l'arbre de build, jamais commité) — pas encore tentée.
+   `RtlInitializeCriticalSection` appelé deux fois mérite une vérification
+   contre la table des stubs d'import natifs de ce projet. Voir
+   `reports/ac6-retail-native-codegen-gate2-r104-gdb-live-tracing-unreliable-static-evidence-shows-no-skip-20260901.md`.
+10. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
