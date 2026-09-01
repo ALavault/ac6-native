@@ -613,7 +613,25 @@ compteur injecté ou fallback ReXGlue.
     cycle** : lire/instrumenter cet octet global, confirmer
     `loc_821CCD4C` avant de le tracer. Voir
     `reports/ac6-retail-native-codegen-gate2-r118-r117s-case3-target-was-wrong-real-bailout-gated-by-a-global-mode-byte-20260901.md`.
-32. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+33. **r119 — l'octet de mode global vaut RÉELLEMENT 2 (pas 0 ni 1); le
+    -1 vient d'une boucle de nouvelle tentative bornée.** Ce cycle avait
+    RE-supposé l'octet à 0 par déduction avant de l'instrumenter — même
+    piège que r118 venait de corriger. Instrumentation directe :
+    `octet = 2`. Chemin réel : `loc_821CC800` tombe en fallthrough dans
+    une TROISIÈME table de dispatch (base `-32227/-14244`), distincte
+    des deux précédentes. Origine du -1 tracée précisément : un
+    compteur de nouvelles tentatives à `+22896` de l'objet — atteint 0
+    → `sub_821D4988` (log/diagnostic) → retourne -1; sinon décrémente
+    et boucle. La condition réutilise le MÊME couple
+    `sub_821F4E70`/`sub_821F50A0`→`sub_821F75F0` (champ PAR THREAD à
+    `ctx.r13+336`) déjà lu par r117 — mécanisme juste, mal attribué au
+    switch à l'époque. Cause exacte non établie (contenu réel de
+    `ctx.r13+336`, valeur initiale du compteur) — deviner refusé.
+    Aucun code modifié. **Prochain cycle** : instrumenter `ctx.r13` et
+    le compteur `+22896`; lire la chaîne de `sub_821D4988` pour nommer
+    le sous-système en échec directement. Voir
+    `reports/ac6-retail-native-codegen-gate2-r119-real-path-is-a-bounded-retry-loop-checking-per-thread-status-at-ctx-r13-plus-336-20260901.md`.
+34. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

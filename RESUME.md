@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r119-real-path-is-a-bounded-retry-loop-checking-per-thread-status-at-ctx-r13-plus-336-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r118-r117s-case3-target-was-wrong-real-bailout-gated-by-a-global-mode-byte-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r117-full-causal-chain-closed-write-site-to-crash-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r116-real-critical-sections-eliminate-the-race-expose-r101s-original-null-global-deterministically-20260901.md`;
@@ -360,6 +361,16 @@ par état dans `sub_821CC508`, dont un OCTET GLOBAL qui doit valoir
 exactement 1; sinon ça saute vers `loc_821CC800` puis `loc_821CCD4C`,
 une troisième région jamais examinée. Aucun code modifié. Prochain
 cycle : lire cet octet, tracer `loc_821CCD4C`.
+
+**r119 — l'octet de mode global vaut RÉELLEMENT 2** (ce cycle avait
+re-supposé 0 par déduction avant de l'instrumenter — même piège que
+r118 venait de corriger). Chemin réel : troisième table de dispatch;
+le -1 vient d'un compteur de nouvelles tentatives (`+22896`) qui,
+épuisé, log via `sub_821D4988` et abandonne; la condition
+succès/échec réutilise le couple `sub_821F4E70`/`sub_821F50A0` déjà lu
+par r117 (champ par thread à `ctx.r13+336`). Cause exacte non établie.
+Aucun code modifié. Prochain cycle : instrumenter `ctx.r13` et le
+compteur, lire la chaîne de `sub_821D4988`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

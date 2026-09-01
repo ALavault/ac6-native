@@ -1,3 +1,31 @@
+# AC6 retail NTSC-U/J — r119 : l'octet de mode global vaut 2 (pas 0 ni 1) — le -1 vient d'une boucle de nouvelle tentative bornée sur un état par thread (2026-09-01)
+
+- **Correction directe, ENCORE** : avant d'instrumenter, ce cycle avait
+  RE-supposé l'octet à 0 par déduction plutôt que par lecture — la même
+  erreur que r118 venait de corriger. Instrumentation directe :
+  **`octet de mode global = 2`**, ni 0 ni 1. Nommé explicitement comme
+  un second piège de déduction évité de justesse.
+- **Chemin réel** : avec octet=2, `loc_821CC800` tombe en fallthrough
+  (PAS vers `loc_821CCD4C`) dans une TROISIÈME table de dispatch,
+  distincte des deux précédentes (base `-32227/-14244`).
+- **Origine du -1 tracée précisément** : une SEULE assignation `-1`
+  dans tout ce switch, à `loc_821CCCD8`, atteinte depuis
+  `loc_821CCAB0` — un compteur de nouvelles tentatives (`+22896` de
+  l'objet) : s'il atteint 0, appelle `sub_821D4988` (forme d'un
+  log/diagnostic) puis retourne -1; sinon décrémente et boucle
+  (état=3). La condition de succès/échec réutilise le MÊME couple
+  `sub_821F4E70`/`sub_821F50A0`→`sub_821F75F0` que r117 avait déjà lu
+  (lecture d'un champ PAR THREAD à `ctx.r13+336`) — mal attribué au
+  mauvais switch à l'époque, mais le mécanisme lui-même était juste.
+- **C'est une boucle de nouvelle tentative bornée qui abandonne** —
+  cause exacte (ce que `ctx.r13+336` contient réellement, valeur
+  initiale du compteur) non établie ce cycle, deviner refusé. Aucun
+  code natif modifié (instrumentation restaurée; `ctest` 9/9
+  reconfirmé). **Prochain cycle** : instrumenter `ctx.r13` lui-même et
+  le compteur `+22896`; lire la chaîne de `sub_821D4988` pour nommer
+  directement le sous-système en échec. Voir
+  `reports/ac6-retail-native-codegen-gate2-r119-real-path-is-a-bounded-retry-loop-checking-per-thread-status-at-ctx-r13-plus-336-20260901.md`.
+
 # AC6 retail NTSC-U/J — r118 : la cible "case 3" de r117 était fausse — le vrai bailout est contrôlé par un octet de mode global, jamais examiné (2026-09-01)
 
 - **Correction nommée de r117** : r117 avait cité "état=3" (repris de
