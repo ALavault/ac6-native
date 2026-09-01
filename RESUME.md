@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r125-entire-chain-closed-two-unimplemented-imports-ntreadfile-and-rtlntstatustodoserror-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r124-connection-confirmed-sub_821f4e70-directly-dispatches-to-ntreadfile-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r123-object-attributes-resolved-and-the-read-is-fixed-offset-on-a-possibly-absent-hdd-partition-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r122-ntcreatefile-ntreadfile-calling-convention-verified-from-disassembly-implementation-deferred-20260901.md`;
@@ -428,6 +429,19 @@ depuis r109. Reformule le correctif : candidat = retourner 259 au
 premier appel puis faire évoluer l'IoStatusBlock. PAS implémenté.
 Aucun code modifié. Prochain cycle : tracer `loc_821F4FE4`, concevoir
 le stub.
+
+**r125 — CHAÎNE COMPLÈTE FERMÉE, du crash de r100 à ses deux causes
+exactes.** `sub_821F75B8` (setter EXACT de `sub_821F75F0`, r117/r119)
+appelle `RtlNtStatusToDosError` (import le PLUS appelé non implémenté,
+43×) avant d'écrire dans le champ de statut. `RtlNtStatusToDosError`
+convertit `STATUS_PENDING(0x103)`→`ERROR_IO_PENDING(997)` — la
+constante 997 poursuivie depuis r109 a maintenant une source
+confirmée. Vrai matériel : NtReadFile→PENDING→997→boucle continue.
+Ce harnais : NtReadFile→kOfflineStatus→inchangé→boucle échoue→abandon
+-1→`0x82935d98` jamais écrit→crash. Ni l'un ni l'autre import seul ne
+suffit (PENDING indéfiniment = boucle infinie, pas un correctif).
+Aucun code modifié. Prochain cycle : implémenter les deux, avec
+complétion RÉELLE conçue soigneusement — cycle dédié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

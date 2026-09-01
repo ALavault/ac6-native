@@ -732,7 +732,30 @@ compteur injecté ou fallback ReXGlue.
     **Prochain cycle** : tracer `loc_821F4FE4`; concevoir un stub
     `NtReadFile` correct. Voir
     `reports/ac6-retail-native-codegen-gate2-r124-connection-confirmed-sub_821f4e70-directly-dispatches-to-ntreadfile-20260901.md`.
-44. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+45. **r125 — CHAÎNE COMPLÈTE FERMÉE : deux imports non implémentés
+    (`NtReadFile` ET `RtlNtStatusToDosError`) produisent ensemble la
+    valeur que la boucle ne peut jamais accepter.** `loc_821F4FE4`
+    appelle `sub_821F75B8` — LE setter EXACT correspondant au getter
+    déjà tracé par r117/r119 (`sub_821F75F0`, voisin immédiat), écrit
+    dans `[[ctx.r13+256]+352]`, l'adresse EXACTE de r119/r121. Avant
+    d'écrire, appelle `__imp__RtlNtStatusToDosError` — l'import non
+    implémenté LE PLUS appelé de toute la trace (43×, r121) — qui
+    retombe dans le MÊME stub générique. **`RtlNtStatusToDosError`
+    convertit NTSTATUS→Win32 : `STATUS_PENDING(0x103)`→
+    `ERROR_IO_PENDING(997)` — LA constante 997 poursuivie depuis r109 a
+    maintenant une source confirmée.** Chaîne complète bout en bout :
+    vrai matériel = NtReadFile→PENDING→conversion→997→boucle reconnaît
+    "en cours"→continue jusqu'à complétion réelle; CE harnais =
+    NtReadFile→kOfflineStatus→conversion inchangée→boucle ne reconnaît
+    RIEN→compteur épuisé→abandon -1→`0x82935d98` jamais écrit→crash de
+    r100. **Ni l'un ni l'autre import seul ne suffit** — PENDING
+    indéfiniment transformerait le crash en boucle INFINIE. Aucun code
+    modifié. **Prochain cycle** : implémenter `RtlNtStatusToDosError`
+    (petite table, faible risque) + concevoir `NtReadFile` pour une
+    complétion RÉELLE — mérite son propre cycle dédié (façon r108/r116).
+    Voir
+    `reports/ac6-retail-native-codegen-gate2-r125-entire-chain-closed-two-unimplemented-imports-ntreadfile-and-rtlntstatustodoserror-20260901.md`.
+46. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

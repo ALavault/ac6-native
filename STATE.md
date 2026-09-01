@@ -1,3 +1,41 @@
+# AC6 retail NTSC-U/J — r125 : CHAÎNE COMPLÈTE FERMÉE — deux imports non implémentés (`NtReadFile` ET `RtlNtStatusToDosError`) produisent ensemble la valeur de statut que la boucle ne peut jamais accepter (2026-09-01)
+
+- **`loc_821F4FE4` tracé** : appelle `sub_821F75B8(ctx.r3=statut NTSTATUS
+  échoué)` puis retourne 0. **`sub_821F75B8` EST le setter EXACT
+  correspondant au getter déjà tracé par r117/r119** (`sub_821F75F0`,
+  voisin immédiat en adresse) — écrit dans `[[ctx.r13+256]+352]`,
+  l'adresse EXACTE que r119 a instrumentée en direct et que r121 a
+  trouvée contenant `0xC00000BB`.
+- **Avant d'écrire, appelle `__imp__RtlNtStatusToDosError`** — l'import
+  non implémenté LE PLUS appelé de toute la trace (43 appels, r121) —
+  qui retombe dans le MÊME stub générique, retournant `kOfflineStatus`
+  quel que soit son entrée.
+- **`RtlNtStatusToDosError` est une VRAIE API Windows NT documentée** :
+  convertit un NTSTATUS en code d'erreur Win32. `STATUS_PENDING=0x103`
+  se convertit en `ERROR_IO_PENDING=997` — **LA constante `997`
+  poursuivie depuis r109 a maintenant une source confirmée** : ce n'est
+  PAS un NTSTATUS direct, c'est la forme CONVERTIE de STATUS_PENDING.
+- **Chaîne complète, bout en bout** : vrai matériel — `NtReadFile`→
+  STATUS_PENDING(0x103)→`RtlNtStatusToDosError`→ERROR_IO_PENDING(997)→
+  champ de statut→boucle reconnaît 997 comme "en cours, pas un échec"→
+  continue de sonder jusqu'à complétion réelle. CE harnais —
+  `NtReadFile`→kOfflineStatus(0xC00000BB, pas un vrai NTSTATUS)→
+  `RtlNtStatusToDosError`→MÊME 0xC00000BB inchangé→champ de statut→
+  boucle ne reconnaît RIEN (ni 0, ni 997, ni r30==1)→compteur épuisé→
+  abandon -1→`sub_821D5F48` sort tôt (r117)→`0x82935d98` jamais écrit→
+  `sub_821D6C20` déréférence le nul→crash de r100.
+- **Ni l'un ni l'autre import seul ne suffirait** : `RtlNtStatusToDosError`
+  correct n'a rien de réel à convertir sans un vrai STATUS_PENDING de
+  `NtReadFile`; `NtReadFile` retournant STATUS_PENDING indéfiniment
+  transformerait le crash en boucle INFINIE (le compteur ne décrémente
+  que sur un échec RECONNU, pas sur "en attente") — pas encore un
+  correctif fonctionnel. Aucun code natif modifié. **Prochain cycle** :
+  implémenter `RtlNtStatusToDosError` (petite table sans état,
+  faible risque); concevoir `NtReadFile` pour que la lecture se
+  termine RÉELLEMENT (pas juste "en attente" pour toujours) — mérite
+  son propre cycle dédié avec tests (façon r108/r116). Voir
+  `reports/ac6-retail-native-codegen-gate2-r125-entire-chain-closed-two-unimplemented-imports-ntreadfile-and-rtlntstatustodoserror-20260901.md`.
+
 # AC6 retail NTSC-U/J — r124 : connexion confirmée EN DIRECT — `sub_821F4E70` dispatche directement vers `NtReadFile`, et son appelant attend explicitement `STATUS_PENDING` comme issue normale (2026-09-01)
 
 - **Instrumentation d'UNE seule exécution** (crash déterministe depuis
