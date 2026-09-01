@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r115 : `ExCreateThread` respecte maintenant `CreationFlags` — réduit mais N'ÉLIMINE PAS les crashes de r112-r114 (2026-09-01)
+
+- **Implémenté l'étape suivante nommée par r114.** Confirmé d'abord que
+  `NtResumeThread`/`KeResumeThread` sont de VRAIS imports utilisés par
+  ce XEX (`ppc_recomp_shared.h` lignes 19516/19667) avant d'implémenter
+  quoi que ce soit. `ExCreateThread` lit maintenant `creation_flags =
+  ctx.r9.u32` (7e argument entier PPC, convention XDK publique — signalé
+  comme connaissance externe non vérifiée dans ce dépôt, à recontrôler).
+  Si le bit `CREATE_SUSPENDED` (0x4) est posé, le thread `std::thread`
+  généré bloque via un nouveau `park_until_resumed()` (attente NON
+  bornée, délibérément distincte du `wait_event()` borné à 2ms de r91 —
+  réutiliser ce dernier aurait laissé le code invité s'exécuter après
+  2ms même sans reprise réelle) avant d'exécuter le shim invité.
+  `NtResumeThread`/`KeResumeThread` signalent l'événement associé au
+  handle du thread (même compteur `g_next_handle` partagé, aucune
+  collision de clé).
+- Tests : 3 nouveaux (dont un vérifiant EXPLICITEMENT que
+  `park_until_resumed` n'utilise PAS `wait_for`, garde contre l'erreur
+  de borner l'attente par erreur), 1 test existant mis à jour pour la
+  nouvelle liste de capture du lambda. Suite complète 134/134 (131/131
+  avant ce cycle).
+- **Vérifié en direct, résultat honnête** : rejouée la même sonde
+  `gdb --batch` répétée 15 fois — `sub_82346428` (1er site nommé par
+  r111-r114) N'A PAS planté cette fois, mais `sub_821D4C20` et le crash
+  ORIGINAL `sub_821D6C20` (r100) ont TOUS DEUX planté encore une fois
+  chacun (2/15, contre 4/10 dans le lot comparable de r112 — direction
+  seulement, pas un taux quantifié avec confiance sur si peu
+  d'échantillons). **PAS une correction complète.** Deux explications
+  ouvertes, non tranchées : (1) tous les dix-huit threads ne sont peut-
+  être pas créés avec `CREATE_SUSPENDED`; (2) l'ordonnancement de la
+  reprise elle-même pourrait avoir sa propre course indépendante de la
+  suspension. Deviner refusé.
+- Gates : `ctest` 9/9, audit mission01 échoue sur le même échec
+  préexistant sans rapport (`retail_session.cpp`), compteur soumodule
+  démo inchangé (185), pytest 134/134. Voir
+  `reports/ac6-retail-native-codegen-gate2-r115-suspended-thread-creation-implemented-reduces-but-does-not-eliminate-crashes-20260901.md`.
+
 # AC6 retail NTSC-U/J — r114 : CAUSE RACINE TROUVÉE — appel via un pointeur de fonction invité NUL, et le stub `ExCreateThread` ne lit jamais `CreationFlags` (2026-09-01)
 
 - `sub_821D4C20` (deuxième site nommé par r112) capturé avec

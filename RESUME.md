@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r115-suspended-thread-creation-implemented-reduces-but-does-not-eliminate-crashes-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r114-root-cause-found-null-guest-function-pointer-plus-excreatethread-ignores-creationflags-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r113-r12-is-unmapped-garbage-and-the-original-main-thread-crash-still-happens-intermittently-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r112-eighteen-threads-spawn-concurrently-crash-is-an-unsynchronized-vtable-read-20260901.md`;
@@ -313,6 +314,16 @@ immédiatement au lieu d'attendre une reprise explicite. Corrige r112
 ("course non synchronisée" → déterministe) et affine r113. Aucun code
 modifié — changement d'infrastructure trop lourd pour ce cycle;
 implémentation prévue pour un prochain cycle dédié.
+
+**r115 a implémenté la suspension de création de r114 —
+`ExCreateThread` lit maintenant `CreationFlags`, avec
+`NtResumeThread`/`KeResumeThread`** (les deux confirmés réellement
+importés avant implémentation). `park_until_resumed()` attend SANS
+borne (distinct du `wait_event()` borné 2ms), 3 nouveaux tests, suite
+134/134. **Résultat honnête** : réduit mais N'ÉLIMINE PAS les crashes —
+`sub_821D4C20` et le crash original `sub_821D6C20` ont chacun planté
+une fois sur 15 essais. Deux explications ouvertes non tranchées (pas
+tous les threads suspendus, ou course de reprise indépendante).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

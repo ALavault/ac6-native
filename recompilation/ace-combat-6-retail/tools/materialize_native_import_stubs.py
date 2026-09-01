@@ -108,6 +108,22 @@ bool wait_event(std::uint32_t key) {
   return true;
 }
 
+// r114: a suspended-created thread must block indefinitely until an
+// explicit resume, unlike wait_event()'s bounded single-shot retry
+// contract (designed for guest Nt*Wait* polling, not for parking a
+// host std::thread before it ever runs guest code). Reuses the same
+// g_events map/mutex/cv -- thread handles and event/semaphore/mutant
+// handles already share one monotonic counter (g_next_handle), so
+// there is no key collision between them.
+void park_until_resumed(std::uint32_t key) {
+  if (key == 0u) return;
+  std::unique_lock lock(g_event_mutex);
+  g_event_cv.wait(lock, [&] {
+    auto it = g_events.find(key);
+    return it == g_events.end() || it->second.signaled;
+  });
+}
+
 std::uint32_t allocate_guest(uint8_t* base, std::uint32_t requested) {
   if (requested == 0u) return 0u;
   const std::uint64_t rounded =
@@ -269,12 +285,26 @@ def render_body(name: str) -> str:
   ctx.r3.u64 = 0u;
 """
     if name == "ExCreateThread":
+        # r114: the real ExCreateThread(Handle, StackSize, ThreadId,
+        # XapiThreadStartup, StartAddress, StartContext, CreationFlags)
+        # takes CreationFlags in r9 (7th integer arg, PPC ABI r3..r9) --
+        # this stub previously never read it, so every spawned thread ran
+        # immediately regardless of what the guest requested. Traced
+        # directly to two reproducible SIGSEGVs (sub_82346428,
+        # sub_821D4C20): both are a null guest function pointer invoked
+        # through PPC_CALL_INDIRECT_FUNC before some other, not-yet-run
+        # initialization had populated it -- consistent with a thread the
+        # guest meant to create suspended (CREATE_SUSPENDED, the same bit
+        # value 0x4 Win32 uses; Xbox 360's XDK mirrors that convention)
+        # running ahead of its own setup instead of waiting for an
+        # explicit resume.
         return """  const std::uint32_t output_handle = ctx.r3.u32;
   const std::uint32_t shim_address = ctx.r6.u32;
   const std::uint32_t routine_address = ctx.r7.u32;
   const std::uint32_t routine_argument = ctx.r8.u32;
-  if (output_handle != 0u) PPC_STORE_U32(output_handle,
-                                         g_next_handle.fetch_add(1u));
+  const std::uint32_t creation_flags = ctx.r9.u32;
+  const std::uint32_t handle = g_next_handle.fetch_add(1u);
+  if (output_handle != 0u) PPC_STORE_U32(output_handle, handle);
   if (shim_address < PPC_CODE_BASE ||
       shim_address >= PPC_CODE_BASE + PPC_CODE_SIZE ||
       routine_address < PPC_CODE_BASE ||
@@ -291,12 +321,33 @@ def render_body(name: str) -> str:
   worker.r1.u32 = g_next_thread_stack.fetch_sub(0x10000u);
   worker.r3.u32 = routine_address;
   worker.r4.u32 = routine_argument;
+  constexpr std::uint32_t kCreateSuspended = 0x00000004u;
+  const bool start_suspended = (creation_flags & kCreateSuspended) != 0u;
+  if (start_suspended) create_event(handle, /*manual_reset=*/true,
+                                     /*signaled=*/false);
   try {
-    std::thread([shim, worker, base]() mutable { shim(worker, base); }).detach();
+    std::thread([shim, worker, base, handle, start_suspended]() mutable {
+      if (start_suspended) park_until_resumed(handle);
+      shim(worker, base);
+    }).detach();
   } catch (...) {
     ctx.r3.u64 = 0xC0000017u;  // host thread creation failed
     return;
   }
+  ctx.r3.u64 = 0u;
+"""
+    if name in {"NtResumeThread", "KeResumeThread"}:
+        # r114: releases a thread ExCreateThread parked on CREATE_SUSPENDED.
+        # No nested suspend count is modeled (this project spawns each
+        # thread with at most one pending suspension) -- the previous
+        # count is reported as 1 the first time this resumes a still-
+        # parked thread, 0 on a redundant call against an already-running
+        # one, matching NtResumeThread's real "previous count" contract
+        # for that single-suspension case without asserting anything about
+        # a nesting depth this harness never creates.
+        return """  const bool was_already_running = set_event(ctx.r3.u32);
+  if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32,
+                                       was_already_running ? 0u : 1u);
   ctx.r3.u64 = 0u;
 """
     if name == "NtCreateEvent":

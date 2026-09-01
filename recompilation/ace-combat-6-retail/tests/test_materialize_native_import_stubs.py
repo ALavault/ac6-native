@@ -70,6 +70,56 @@ def test_thread_create_writes_guest_handle_without_host_thread(tmp_path: Path) -
     assert "ctx.r3.u64 = 0u" in text
 
 
+def test_thread_create_honors_creation_flags_suspended_bit(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__ExCreateThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    assert "const std::uint32_t creation_flags = ctx.r9.u32" in text
+    assert "kCreateSuspended = 0x00000004u" in text
+    assert "(creation_flags & kCreateSuspended) != 0u" in text
+    assert "if (start_suspended) create_event(handle" in text
+    assert "/*manual_reset=*/true," in text
+    assert "/*signaled=*/false);" in text
+    assert "if (start_suspended) park_until_resumed(handle)" in text
+
+
+def test_park_until_resumed_blocks_indefinitely_not_bounded(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__ExCreateThread);\n")
+    output = tmp_path / "stubs.cpp"
+    MODULE.render(mapping, output)
+    text = output.read_text()
+    # park_until_resumed() must not reuse wait_event()'s bounded 2ms retry
+    # contract (that would let a suspended thread's guest code run before
+    # an actual resume, reintroducing r114's crash) -- it uses an
+    # unbounded g_event_cv.wait(), not wait_for().
+    park_body = text.split("void park_until_resumed")[1].split("\n}\n")[0]
+    assert "g_event_cv.wait(lock" in park_body
+    assert "wait_for" not in park_body
+
+
+def test_resume_thread_releases_a_parked_thread(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__NtResumeThread);\n"
+        "PPC_EXTERN_FUNC(__imp__KeResumeThread);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+    for symbol in ("__imp__NtResumeThread", "__imp__KeResumeThread"):
+        body = text.split(f"void {symbol}(")[1].split("\n}\n")[0]
+        assert "set_event(ctx.r3.u32)" in body
+        assert "was_already_running ? 0u : 1u" in body
+        assert "ctx.r3.u64 = 0u" in body
+
+
 def test_wait_contract_times_out_without_blocking_host(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__NtWaitForSingleObjectEx);\n")
@@ -154,7 +204,7 @@ def test_thread_binding_dispatches_only_generated_guest_targets(tmp_path: Path) 
     assert MODULE.render(mapping, output) == 1
     text = output.read_text()
     assert "PPC_LOOKUP_FUNC(base, shim_address)" in text
-    assert "std::thread([shim, worker, base]" in text
+    assert "std::thread([shim, worker, base, handle, start_suspended]" in text
     assert "worker.r1.u32 = g_next_thread_stack.fetch_sub(0x10000u)" in text
     assert "routine_address < PPC_CODE_BASE" in text
 

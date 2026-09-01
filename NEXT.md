@@ -531,7 +531,29 @@ compteur injecté ou fallback ReXGlue.
     `NtResumeThread`/`KeResumeThread`), vérifier la valeur réelle de
     `CREATE_SUSPENDED`, puis re-tester si les crashes cessent. Voir
     `reports/ac6-retail-native-codegen-gate2-r114-root-cause-found-null-guest-function-pointer-plus-excreatethread-ignores-creationflags-20260901.md`.
-24. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+25. **r115 a implémenté l'étape suivante de r114 : `ExCreateThread`
+    respecte maintenant `CreationFlags`, avec `NtResumeThread`/
+    `KeResumeThread`.** Confirmé d'abord que ces deux imports sont
+    RÉELLEMENT utilisés par ce XEX avant d'implémenter. Nouveau
+    `park_until_resumed()` (attente NON bornée, distincte du
+    `wait_event()` borné 2ms de r91) parque le thread créé avec
+    `CREATE_SUSPENDED` (0x4, convention XDK publique à revérifier)
+    jusqu'à un vrai resume. 3 nouveaux tests (dont un garde explicite
+    contre la réutilisation accidentelle de `wait_for`), suite complète
+    134/134. **Résultat vérifié en direct, honnête** : `sub_82346428`
+    n'a pas planté sur 15 essais, mais `sub_821D4C20` ET le crash
+    ORIGINAL `sub_821D6C20` (r100) ont chacun planté une fois — **PAS
+    une correction complète**, réduction directionnelle seulement (pas
+    de taux quantifié fiable sur 15 échantillons). Deux explications
+    ouvertes non tranchées : tous les 18 threads ne sont peut-être pas
+    créés suspendus, OU l'ordonnancement du resume a sa propre course.
+    Gates : `ctest` 9/9, pytest 134/134, compteur démo inchangé (185).
+    **Prochain cycle** : instrumenter quels appels `ExCreateThread`
+    posent réellement `CREATE_SUSPENDED`; tracer la dépendance de
+    reprise pour les threads qui plantent encore; refaire un balayage
+    plus large avant de conclure. Voir
+    `reports/ac6-retail-native-codegen-gate2-r115-suspended-thread-creation-implemented-reduces-but-does-not-eliminate-crashes-20260901.md`.
+26. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
