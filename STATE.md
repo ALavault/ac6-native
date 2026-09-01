@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r127 : le handle de fichier de `sub_821F4E70` est TOUJOURS `INVALID_HANDLE_VALUE` — `NtCreateFile` n'a jamais produit de vrai handle (2026-09-01)
+
+- **Une seule exécution instrumentée** (crash déterministe) sur les
+  deux sites d'appel de `sub_821F4E70` dans `sub_821CC508` : le handle
+  n'est PAS passé directement — il vient d'une PETITE TABLE GLOBALE,
+  indexée par un octet "type" sur l'objet d'état de l'appelant.
+- **`type_byte=0`, `table_index=0`, `handle=0xFFFFFFFF`** (×6, décompte
+  exact de r121). **`0xFFFFFFFF` EST `INVALID_HANDLE_VALUE`** — le
+  sentinelle standard Win32/NT écrit quand la création d'un handle
+  échoue. **Décisif à lui seul** : `sub_821F4E70` appelle `NtReadFile`
+  avec un handle INVALIDE à CHAQUE tentative — aucune implémentation
+  correcte de la sémantique pending/complétion de `NtReadFile` ne peut
+  produire une vraie lecture contre un handle qui n'a jamais été
+  valide.
+- **Confirmé comme une VRAIE écriture délibérée**, pas un zero-fill :
+  `GuestAddressSpace` garantit un remplissage à zéro au premier
+  contact — `0xFFFFFFFF` (tous bits à 1) ne peut PAS résulter d'une
+  adresse jamais touchée. Du code invité a authentiquement écrit
+  `INVALID_HANDLE_VALUE` ici, très probablement après l'échec d'un
+  `NtCreateFile` antérieur (stub générique, r121) qui n'a jamais écrit
+  de vrai handle à son paramètre de sortie.
+  `FindPpcAddressMaterialization.java` (read-only) ne trouve AUCUNE
+  paire lis+addi construisant cette adresse ailleurs — l'écrivain
+  utilise probablement le MÊME registre de base `r24`-style que ce
+  cycle a vu réutilisé partout, matérialisé indépendamment dans une
+  autre fonction. PAS ENCORE localisé.
+- **Reformule/affine le prochain correctif** : le problème n'est pas
+  vraiment la sémantique pending de `NtReadFile` — il est EN AMONT, au
+  `NtCreateFile` censé peupler l'entrée 0 de la table à `0x8293b93c`.
+  Même un `NtReadFile` parfaitement conçu échouerait immédiatement
+  avec un handle invalide. Aucun code natif modifié (instrumentation
+  restaurée; `ctest` 9/9 reconfirmé). **Prochain cycle** : localiser
+  l'écrivain de `0x8293b93c` — est-ce le cluster `Function_82390F48`
+  de r122/r123 (partition disque dur), ou un troisième site d'appel
+  `NtCreateFile` non encore trouvé? Voir
+  `reports/ac6-retail-native-codegen-gate2-r127-the-file-handle-is-invalid-handle-value-ntcreatefile-never-produced-a-real-one-20260901.md`.
+
 # AC6 retail NTSC-U/J — r126 : `RtlNtStatusToDosError` implémenté et vérifié en direct — NÉCESSAIRE mais PAS suffisant seul, exactement comme prédit par r125 (2026-09-01)
 
 - **Implémenté la première moitié du correctif en deux parties de r125.**

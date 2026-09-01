@@ -773,7 +773,25 @@ compteur injecté ou fallback ReXGlue.
     handle de fichier de `sub_821F4E70` avant de concevoir le
     correctif `NtReadFile`. Voir
     `reports/ac6-retail-native-codegen-gate2-r126-rtlntstatustodoserror-implemented-verified-live-necessary-not-sufficient-20260901.md`.
-48. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+49. **r127 — le handle de fichier de `sub_821F4E70` est TOUJOURS
+    `INVALID_HANDLE_VALUE` — `NtCreateFile` n'a jamais produit de vrai
+    handle.** Instrumentation d'une seule exécution (crash
+    déterministe) sur les deux sites d'appel : le handle vient d'une
+    PETITE TABLE GLOBALE indexée par un octet "type" (=0). Capturé :
+    `handle=0xFFFFFFFF` (×6, décompte exact de r121) —
+    `INVALID_HANDLE_VALUE`, sentinelle standard Win32/NT. **Décisif à
+    lui seul** : aucune implémentation correcte de `NtReadFile` ne peut
+    lire via un handle jamais valide. Confirmé comme VRAIE écriture
+    délibérée (pas zero-fill — `GuestAddressSpace` garantit zéro au
+    premier contact). `FindPpcAddressMaterialization.java` ne trouve
+    PAS l'écrivain directement (probablement le même registre de base
+    `r24`-style, matérialisé ailleurs). **Reformule le correctif** : le
+    problème est EN AMONT de `NtReadFile`, au `NtCreateFile` censé
+    peupler cette table. Aucun code modifié. **Prochain cycle** :
+    localiser l'écrivain de `0x8293b93c` — cluster
+    `Function_82390F48` de r122/r123, ou site séparé? Voir
+    `reports/ac6-retail-native-codegen-gate2-r127-the-file-handle-is-invalid-handle-value-ntcreatefile-never-produced-a-real-one-20260901.md`.
+50. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

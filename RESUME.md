@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r127-the-file-handle-is-invalid-handle-value-ntcreatefile-never-produced-a-real-one-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r126-rtlntstatustodoserror-implemented-verified-live-necessary-not-sufficient-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r125-entire-chain-closed-two-unimplemented-imports-ntreadfile-and-rtlntstatustodoserror-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r124-connection-confirmed-sub_821f4e70-directly-dispatches-to-ntreadfile-20260901.md`;
@@ -451,6 +452,14 @@ exactement comme r125 l'avait prédit — site de crash inchangé
 gardée. `NtReadFile` reste délibérément non implémenté. Suite 136/136.
 Prochain cycle : tracer l'origine du handle de fichier de
 `sub_821F4E70` avant de concevoir son correctif.
+
+**r127 — le handle de fichier de `sub_821F4E70` est TOUJOURS
+`INVALID_HANDLE_VALUE`(0xFFFFFFFF)** — `NtCreateFile` n'a jamais
+produit de vrai handle pour la table qui l'alimente (entrée 0 à
+`0x8293b93c`). Décisif seul : aucun `NtReadFile` correct ne peut lire
+via un handle invalide. Le problème est EN AMONT de `NtReadFile`.
+Aucun code modifié. Prochain cycle : localiser l'écrivain de
+`0x8293b93c`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
