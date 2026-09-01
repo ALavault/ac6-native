@@ -487,7 +487,24 @@ compteur injecté ou fallback ReXGlue.
     lancer ces 18 threads avec un ordre/rythme que le stub actuel ne
     modélise pas (threads suspendus jusqu'à reprise, par ex.). Voir
     `reports/ac6-retail-native-codegen-gate2-r112-eighteen-threads-spawn-concurrently-crash-is-an-unsynchronized-vtable-read-20260901.md`.
-20. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+21. **r113 a confirmé `r12` non mappé au crash `sub_82346428`, ET
+    trouvé que le crash ORIGINAL `sub_821D6C20` (r100) se produit
+    toujours, par intermittence, sur le THREAD PRINCIPAL, après r108.**
+    `r12` capturé = `0x7ffe75980000`, confirmé inaccessible par gdb —
+    pas nul, véritablement invalide, cohérent avec une origine non
+    initialisée (même classe que `MmQueryStatistics`/r108, champ
+    différent non identifié). **Séparément** : une capture a montré
+    `sub_821D6C20` planter à nouveau sur le thread principal (`main →
+    __xstart → sub_821D7DE0 → sub_821D6C20`), pas sur un thread
+    d'arrière-plan — ne contredit pas la découverte spécifique de r108
+    (l'allocation GATE2 réussit vraiment) mais montre que "la chaîne de
+    crash est fermée" n'a jamais été une affirmation universelle. Non
+    reproduit dans 15 tentatives de suivi. Aucun code modifié
+    (investigation gdb pure). **Prochain cycle** : recapturer
+    `sub_821D6C20` avec désassemblage complet; envisager un balayage
+    plus long vu le taux de reproduction ~10-20%. Voir
+    `reports/ac6-retail-native-codegen-gate2-r113-r12-is-unmapped-garbage-and-the-original-main-thread-crash-still-happens-intermittently-20260901.md`.
+22. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

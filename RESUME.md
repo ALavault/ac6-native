@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r113-r12-is-unmapped-garbage-and-the-original-main-thread-crash-still-happens-intermittently-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r112-eighteen-threads-spawn-concurrently-crash-is-an-unsynchronized-vtable-read-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r111-nondeterminism-source-is-a-real-background-thread-race-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r110-probe-is-run-to-run-nondeterministic-without-gdb-20260901.md`;
@@ -289,6 +290,14 @@ sous le même trampoline `sub_821F8008` : `sub_82346428` et
 verrouillage, cohérent avec une course de lecture non synchronisée
 (non prouvé — `r12` non capturé, taux de reproduction très variable).
 Aucun code modifié.
+
+**r113 a confirmé `r12` non mappé au crash `sub_82346428`
+(`0x7ffe75980000`, inaccessible), ET trouvé que le crash ORIGINAL
+`sub_821D6C20` (r100) se produit toujours, par intermittence, sur le
+THREAD PRINCIPAL, après r108.** Ne contredit pas la découverte
+spécifique de r108 (l'allocation GATE2 réussit vraiment) mais montre
+que "la chaîne de crash est fermée" n'a jamais été universelle. Non
+reproduit dans 15 tentatives de suivi. Aucun code modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

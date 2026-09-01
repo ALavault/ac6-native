@@ -1,3 +1,29 @@
+# AC6 retail NTSC-U/J — r113 : `r12` confirmé mémoire non mappée, ET le crash original `sub_821D6C20` du thread principal se produit toujours par intermittence après r108 (2026-09-01)
+
+- **`r12` capturé au crash `sub_82346428`** : `0x7ffe75980000`,
+  **confirmé NON MAPPÉ** (`gdb`: "Cannot access memory at address").
+  Pas un pointeur nul, pas un pointeur valide vers le mauvais objet —
+  une valeur véritablement invalide, cohérente avec (sans le prouver)
+  une origine réellement non initialisée, même classe que la
+  découverte `MmQueryStatistics` de r108 mais pour un champ différent
+  et non identifié.
+- **Découverte séparée et plus importante** : une capture a montré le
+  crash ORIGINAL `sub_821D6C20` (celui de r100) se produire à nouveau,
+  cette fois sur le THREAD PRINCIPAL (`main → __xstart →
+  sub_821D7DE0 → sub_821D6C20`), PAS sur un thread d'arrière-plan. Ceci
+  ne contredit pas la découverte spécifique de r108 (l'allocation GATE2
+  réussit vraiment, vérifié en direct et reproductible) mais montre que
+  "la chaîne de crash est fermée" n'a JAMAIS été une affirmation
+  universelle établie — le site continue de planter par intermittence.
+  Non reproduit dans 15 tentatives de suivi (même fenêtre de timing
+  étroite et sensible à la charge que documentée en r112).
+- Aucun code natif ni généré modifié (investigation `gdb --batch` pure).
+  **Prochain cycle** : recapturer `sub_821D6C20` avec désassemblage
+  complet pour l'instruction exacte; envisager un balayage plus long en
+  arrière-plan plutôt que des lots interactifs courts, vu le taux de
+  reproduction ~10-20% observé pour les deux sites. Voir
+  `reports/ac6-retail-native-codegen-gate2-r113-r12-is-unmapped-garbage-and-the-original-main-thread-crash-still-happens-intermittently-20260901.md`.
+
 # AC6 retail NTSC-U/J — r112 : dix-huit threads démarrent en parallèle; le crash est un appel indirect via un pointeur apparemment pas encore prêt (2026-09-01)
 
 - Un lot de dix répétitions `gdb --batch` (même technique passive que
