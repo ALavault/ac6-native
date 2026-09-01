@@ -179,7 +179,38 @@ compteur injecté ou fallback ReXGlue.
    SES appelants pour trancher entre ces trois hypothèses — question
    statique bornée, pas une suite du fil prédicat (clos). Voir
    `reports/ac6-retail-native-codegen-gate2-r101-crash-root-cause-uninitialized-service-singleton-20260901.md`.
-7. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+7. **r102 a complété la chaîne causale du plantage r100/r101, sans
+   deviner de correctif.** Le site de construction du singleton (r101)
+   appartient à `Function_821D5F48` (`0x821d5f48`-`0x821d6c1b`,
+   `GetFuncBounds.java`), qui EST le premier appel de `sub_821D7DE0`
+   (`0x821d7dec bl 0x821d5f48`) — r101 était imprécis en disant que
+   `sub_821D7DE0` "n'atteint jamais" le site : il atteint bien la
+   fonction contenante. Dump complet (822 lignes) : aucun `blr`,
+   exactement 2 sorties. Le bailout précoce (`0x821d6138`, `r3=0`) est la
+   cible PARTAGÉE de 5 gardes internes distinctes (après
+   `bl 0x82338300`, `0x821f4078`, `0x821cc508`, `0x821d28c8`,
+   `0x821d5600`) — n'importe laquelle en échec saute au bailout,
+   contournant la construction (`0x821d6be8`), atteignable seulement si
+   les 5 réussissent. **`sub_821D7DE0` distingue l'échec** (appelle un
+   diagnostic `sub_821F5B18` seulement si retour=0) **mais ne s'arrête
+   pas** — les deux chemins reconvergent et continuent inconditionnellement
+   vers `sub_821D6C20`. Chaîne causale mécanique complète. Tentative GDB
+   en direct pour identifier LEQUEL des 5 gardes échoue : partiellement
+   infructueuse, rapportée honnêtement plutôt que cachée — casser sur les
+   5 fonctions-garde est ambigu (réutilisées ailleurs dans l'exécutable);
+   casser sur `Function_821D5F48` elle-même (appelant unique confirmé) +
+   `finish` a expiré à 90s (probablement surcoût `ptrace` sur ~800
+   instructions et leurs appels imbriqués, pas une preuve de blocage — le
+   crash prouve que la fonction retourne bien). Piste nommée SANS
+   l'affirmer : si `sub_821F5B18` est un chemin fatal sur le vrai
+   matériel (halt/exception plutôt qu'un retour), un stub natif qui
+   retourne simplement expliquerait tout — hypothèse à vérifier, pas un
+   fait établi. Aucun code natif modifié. **Prochain cycle** : identifier
+   précisément quel garde échoue (breakpoint calculé sur l'instruction de
+   comparaison côté appelant, pas sur l'entrée de fonction ambiguë) et
+   tracer `sub_821F5B18` pour trancher diagnostic-seulement vs fatal. Voir
+   `reports/ac6-retail-native-codegen-gate2-r102-crash-chain-traced-to-shared-bailout-and-swallowed-failure-20260901.md`.
+8. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

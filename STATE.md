@@ -1,3 +1,33 @@
+# AC6 retail NTSC-U/J — r102 : chaîne causale complète — un bailout partagé que l'appelant n'honore pas (2026-09-01)
+
+- Identifié la fonction contenant le site de construction (r101) via
+  `GetFuncBounds.java` : `Function_821D5F48` (`0x821d5f48`-`0x821d6c1b`,
+  ~820 instructions) — c'est EXACTEMENT le premier appel de
+  `sub_821D7DE0` (`0x821d7dec bl 0x821d5f48`). r101 était donc imprécis :
+  le chemin ATTEINT bien la fonction contenante, pas nécessairement le
+  bloc précis.
+- Dumpé la fonction entière (822 lignes) : **aucun `blr`**, exactement
+  DEUX sorties (branches partagées vers l'épilogue `0x82382a48`). Le
+  bailout précoce (`0x821d6138`, `r3=0`) est la cible PARTAGÉE de 5
+  gardes internes distinctes (après `bl 0x82338300`, `0x821f4078`,
+  `0x821cc508`, `0x821d28c8`, `0x821d5600`) — n'importe laquelle en échec
+  saute directement au bailout, contournant la construction du singleton
+  à `0x821d6be8`, atteignable seulement si les 5 réussissent.
+- **`sub_821D7DE0` distingue bien l'échec** (appelle un diagnostic
+  `sub_821F5B18` seulement si le retour est 0) **mais ne s'arrête pas** —
+  les deux chemins reconvergent à `0x821d7e0c` et continuent
+  inconditionnellement vers `sub_821D6C20`. Chaîne causale complète, sans
+  deviner QUEL garde échoue.
+- Tentative en direct (breakpoints GDB) partiellement infructueuse,
+  rapportée honnêtement : casser sur les 5 fonctions-garde est ambigu
+  (appelées ailleurs aussi); casser sur `Function_821D5F48` elle-même
+  (appelant unique confirmé) + `finish` a expiré à 90s (probablement le
+  surcoût `ptrace`, pas une preuve que la fonction bloque — le crash
+  prouve qu'elle retourne). Piste nommée sans l'affirmer : si
+  `sub_821F5B18` est fatal sur le vrai matériel, un stub natif qui
+  retourne au lieu d'arrêter expliquerait tout. Aucun code modifié. Voir
+  `reports/ac6-retail-native-codegen-gate2-r102-crash-chain-traced-to-shared-bailout-and-swallowed-failure-20260901.md`.
+
 # AC6 retail NTSC-U/J — r101 : le plantage `sub_821D6C20` est un singleton de service lu avant construction sur ce chemin (2026-09-01)
 
 - Tracé mécaniquement le plantage r100 jusqu'à sa cause exacte, sans

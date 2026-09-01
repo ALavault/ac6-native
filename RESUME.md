@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r102-crash-chain-traced-to-shared-bailout-and-swallowed-failure-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r101-crash-root-cause-uninitialized-service-singleton-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r100-predicate-decode-fixed-new-indirect-call-crash-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r99-predicate-connects-to-interrupt-callback-gap-20260901.md`;
@@ -130,6 +131,21 @@ vérifié par dump complet. Trois explications restent ouvertes (boot plus
 large non atteint, race multi-thread perdue par la sonde mono-thread,
 stub d'import encore no-op) — refusé de deviner laquelle, même discipline
 que r97. Aucun code modifié ce cycle.
+
+**r102 a complété la chaîne causale du plantage r100/r101.** Le site de
+construction du singleton (r101) appartient à `Function_821D5F48`
+(`0x821d5f48`-`0x821d6c1b`), qui EST le premier appel de `sub_821D7DE0`.
+Cette fonction a exactement 2 sorties : la construction (fin normale) ou
+un bailout partagé (`r3=0`) atteignable par 5 gardes internes distinctes
+échouant. `sub_821D7DE0` vérifie le retour, appelle un diagnostic
+(`sub_821F5B18`) sur échec, mais continue quand même vers
+`sub_821D6C20` sans s'arrêter — chaîne mécanique complète, sans deviner
+quel garde échoue précisément. Tentative GDB en direct partiellement
+infructueuse (rapportée honnêtement, pas cachée) : `finish` sur
+`Function_821D5F48` a expiré à 90s, probablement surcoût `ptrace`. Piste
+nommée sans l'affirmer : `sub_821F5B18` pourrait être fatal sur le vrai
+matériel, un stub natif qui retourne expliquerait tout. Aucun code
+modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
