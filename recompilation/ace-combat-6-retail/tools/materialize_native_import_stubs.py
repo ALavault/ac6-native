@@ -465,6 +465,39 @@ def render_body(name: str) -> str:
         return """  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, 1u);
   ctx.r3.u64 = 1u;
 """
+    if name == "ObDereferenceObject":
+        # r162: real signature (PVOID Object) -> LONG, the object's new
+        # reference count after the decrement -- not an NTSTATUS. Checked
+        # against all 18 of this XEX's own static call sites
+        # (sub_821F3DA0, sub_821F3EA0, sub_821F3F30, sub_821EF308,
+        # sub_823ADBD8, and the rest the campaign's own xref scan found):
+        # every one of them discards r3 immediately after this call
+        # (overwritten by an unrelated return value, or the call is the
+        # last thing done before an unconditional `li r3,<constant>`).
+        # There is no genuine "new reference count" this project's
+        # opaque-handle model can report, so the return value is
+        # observably inert either way -- but the generic offline-import
+        # fallback this call previously fell through to still returned
+        # kOfflineStatus, an NTSTATUS-shaped negative value where the
+        # real contract is a small non-negative count. Matches
+        # KeSetAffinityThread's own r148 precedent: fix the contract
+        # shape even where no currently-traced caller depends on it, so
+        # a future caller that does check it does not inherit a
+        # status-shaped value from a plain-count-returning import.
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "KeSetBasePriorityThread":
+        # r162: real signature (PKTHREAD Thread, LONG Increment) -> LONG,
+        # the *previous* base priority increment -- not an NTSTATUS.
+        # Checked against all 3 of this XEX's own static call sites
+        # (sub_821F3DA0, sub_821EF308, sub_823ADBD8): each discards r3
+        # immediately after this call the same way ObDereferenceObject's
+        # own call sites do (r3 unconditionally overwritten before the
+        # function returns). Same contract-shape correction as
+        # ObDereferenceObject above and KeSetAffinityThread (r148): 0 is
+        # a safe, in-range "previous increment" default, not the
+        # NTSTATUS-shaped kOfflineStatus sentinel a plain-LONG-returning
+        # import should never produce.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

@@ -437,6 +437,41 @@ def test_ke_set_affinity_thread_returns_a_real_mask_not_a_status(
     assert "ctx.r3.u64 = 1u;" in body
 
 
+def test_ob_dereference_object_returns_a_plain_count_not_a_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__ObDereferenceObject);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r162: the real contract is (PVOID Object) -> LONG new reference
+    # count, not an NTSTATUS -- the generic offline fallback's
+    # kOfflineStatus is NTSTATUS-shaped and wrong here even though every
+    # one of this XEX's own 18 static call sites currently discards the
+    # return value.
+    body = text.split("void __imp__ObDereferenceObject")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
+def test_ke_set_base_priority_thread_returns_a_plain_increment_not_a_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__KeSetBasePriorityThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r162: the real contract is (PKTHREAD, LONG) -> LONG previous
+    # increment, not an NTSTATUS -- same contract-shape fix as
+    # ObDereferenceObject above, for the same reason (all 3 of this
+    # XEX's own static call sites discard the return value today).
+    body = text.split("void __imp__KeSetBasePriorityThread")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(
     tmp_path: Path,
 ) -> None:

@@ -1464,6 +1464,20 @@ compteur injecté ou fallback ReXGlue.
     de fix native séparément scopée. Aucun code modifié. Voir
     `reports/ac6-retail-native-codegen-gate2-r161-decisive-live-value-xenia-edge-leaves-14824-not-a-catastrophic-garbage-allocation-size-20260901.md`.
 
+86. **r162 : VRAI CORRECTIF — `ObDereferenceObject`/
+    `KeSetBasePriorityThread` renvoyaient un code de statut au lieu
+    d'un compteur réel.** Même catégorie de bug que r148
+    (KeSetAffinityThread) : contrat réel `LONG`, pas NTSTATUS ;
+    fallback générique renvoyait `kOfflineStatus`. Vérifié contre
+    TOUS les sites d'appel réels (18+3, via Ac6Xrefs/Ac6XenonDisasm) :
+    chacun jette la valeur de retour — confirme la dépriorisation déjà
+    notée. Corrigé quand même (même principe que r148 : forme fausse
+    reste fausse). Aucun effet observable sur le run actuel (crash
+    inchangé). Tests 144/144 (+2), ctest 9/9. **Prochain cycle** :
+    `KeQueryBasePriorityThread` (même famille, pas encore vérifié).
+    Voir
+    `reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

@@ -1,3 +1,26 @@
+# AC6 retail NTSC-U/J — r162 : VRAI CORRECTIF — `ObDereferenceObject`/`KeSetBasePriorityThread` renvoyaient un code de statut au lieu d'un compteur réel (2026-09-01)
+
+- **Bug de forme de contrat, même catégorie que r148** :
+  `ObDereferenceObject`/`KeSetBasePriorityThread` ont un vrai contrat
+  `LONG` (compteur/increment précédent), pas NTSTATUS — le fallback
+  générique renvoyait `kOfflineStatus` (0xC00000BB), une sentinelle
+  NTSTATUS négative fausse.
+- **Vérifié statiquement contre TOUS les sites d'appel réels** (18 pour
+  ObDereferenceObject, 3 pour KeSetBasePriorityThread, via
+  `Ac6Xrefs`/`Ac6XenonDisasm`) : chacun jette la valeur de retour
+  immédiatement — confirme (ne contredit pas) la note de
+  dépriorisation déjà présente dans le code.
+- **Corrigé quand même** : même principe que r148 — une forme fausse
+  reste fausse même si aucun appelant tracé actuellement n'en dépend ;
+  un futur chemin de code pourrait en hériter. Les 2 stubs renvoient
+  maintenant `0u`.
+- **Aucun effet observable sur le run actuel** (contrairement à r148) —
+  correctif de forme, pas de comportement. Crash `sub_821F7C80`
+  inchangé (confirmé gdb).
+- Tests 144/144 (142/142 → +2). Import trace confirme les 2 imports
+  ne sont plus "offline-import" non gérés. `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md`.
+
 # AC6 retail NTSC-U/J — r161 : MESURE LIVE DÉCISIVE — Xenia Edge laisse `0x39e8` (14824), PAS une taille garbage catastrophique — la chaîne causale DATA.TBL est maintenant PROUVÉE dépendante de l'environnement (2026-09-01)
 
 - **Méthode principielle** : désassemblation du code JIT réel au point

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r161-decisive-live-value-xenia-edge-leaves-14824-not-a-catastrophic-garbage-allocation-size-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r160-xenia-edge-live-breakpoint-works-but-jit-register-decoding-is-a-separate-uninvested-effort-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md`;
@@ -934,6 +935,15 @@ Convertit le modèle de r150 en FAIT PROUVÉ : chaque environnement a
 son propre contenu de pile résiduel — notre recompilation
 (`0xfeffffee`) est l'exception catastrophique. Ferme le fil de
 comparaison live DATA.TBL (r150-r161).
+
+**r162 — VRAI CORRECTIF — `ObDereferenceObject`/
+`KeSetBasePriorityThread` renvoyaient un code de statut au lieu d'un
+compteur réel.** Même catégorie de bug que r148 : contrat réel `LONG`,
+pas NTSTATUS. Vérifié contre TOUS les sites d'appel réels (18+3) :
+chacun jette le retour — confirme la dépriorisation déjà notée dans
+le code. Corrigé quand même, même principe que r148. Aucun effet
+observable (crash inchangé). Tests 144/144 (+2), ctest 9/9. Prochain :
+`KeQueryBasePriorityThread` (même famille).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
