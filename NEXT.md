@@ -1305,6 +1305,22 @@ compteur injecté ou fallback ReXGlue.
     multi-sauts). Voir
     `reports/ac6-retail-native-codegen-gate2-r152-r150-and-r151-are-the-same-chain-sub_822834c0-returns-the-garbage-size-directly-20260901.md`.
 
+77. **r153 : le mécanisme de r141/r142 est RE-CONFIRMÉ octet-par-octet
+    contre le binaire actuel — chaîne DATA.TBL close.** Trace purement
+    statique (pas de diagnostic) de `sub_822834C0` → `sub_82338568` →
+    `sub_82339D10` jusqu'à la lecture du slot de pile : `[r1+88]`
+    n'est écrit par AUCUNE fonction de la chaîne (vérifié en lisant
+    `sub_823382A8` et `sub_82339D10` en entier). Même mécanisme
+    qu'avant les 3 correctifs — seule la valeur garbage exacte a
+    changé. Ferme la question ouverte par r150/r151/r152 : le
+    mécanisme n'a PAS changé, aucun nouveau levier natif. La chaîne
+    `sub_821CC288→sub_82222D80` est CLOSE contre le binaire actuel ;
+    pas de retrace supplémentaire nécessaire. Aucun code/diagnostic ce
+    cycle. **Prochain cycle** : identifier l'appelant précis de
+    `sub_82390880` sur le handle DATA.TBL (item ouvert depuis r150,
+    3 cycles). Voir
+    `reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

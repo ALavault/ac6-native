@@ -1,3 +1,29 @@
+# AC6 retail NTSC-U/J — r153 : le mécanisme de r141/r142 est RE-CONFIRMÉ octet-par-octet contre le binaire actuel — chaîne DATA.TBL close (2026-09-01)
+
+- **Trace complète, purement statique** (pas de diagnostic ce cycle) de
+  `sub_822834C0` → `sub_82338568` → `sub_82339D10`, jusqu'à la lecture
+  du slot de pile. Confirme le MÊME mécanisme que r141/r142 : le slot
+  `[r1+88]` de la frame de `sub_82338568` n'est écrit par AUCUNE
+  fonction de la chaîne (`sub_823382A8` n'écrit que +0/+4 ;
+  `sub_82339D10` n'écrit RIEN via son pointeur `r28`) — vérifié en
+  lisant les 2 fonctions en entier. `sub_82339D10` prend la branche
+  succès (via `sub_82343F20`, confirmé 5/5 par r138 ; `sub_82344058`,
+  confirmé renvoyer 1..5 par r140/r141), ce qui fait prendre à
+  `sub_82338568` la branche qui DISCARD le résultat réel et lit
+  `[r1+88]` — mémoire jamais écrite — comme valeur de retour.
+- **Seul ce qui a changé** : la valeur garbage exacte occupant ce slot
+  (`0` avant les 3 correctifs, `1`/`0xfeffffee` maintenant) — exactement
+  la conséquence prédite par r150/r151/r152, maintenant PROUVÉE plutôt
+  que supposée.
+- **DÉCISION** : ferme la question "le mécanisme a-t-il changé ?" —
+  NON. Aucun nouveau levier natif actionnable (cohérent avec la
+  conclusion coût/bénéfice de r144). La chaîne DATA.TBL
+  `sub_821CC288→sub_82222D80` est maintenant close contre le binaire
+  actuel ; pas besoin de re-tracer davantage.
+- **Aucun code modifié, aucun diagnostic ce cycle** — lecture statique
+  pure du code déjà généré. Voir
+  `reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md`.
+
 # AC6 retail NTSC-U/J — r152 : r150 et r151 sont la MÊME chaîne — `sub_822834C0` renvoie directement la taille garbage (2026-09-01)
 
 - **Lien établi entre r150 et r151** : `backtrace()` capturé au moment où

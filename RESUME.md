@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r153-r141-r142s-mechanism-fully-reconfirmed-byte-for-byte-against-the-current-binary-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r152-r150-and-r151-are-the-same-chain-sub_822834c0-returns-the-garbage-size-directly-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md`;
@@ -823,6 +824,18 @@ instrumentée. Copie de registre pure entre les deux : le retour de
 deux mécanismes séparés. N'établit pas encore l'arithmétique exacte
 interne à `sub_822834C0`. Aucun code modifié. Prochain : tracer
 l'intérieur de cette seule fonction.
+
+**r153 — le mécanisme de r141/r142 est RE-CONFIRMÉ octet-par-octet
+contre le binaire actuel — chaîne DATA.TBL close.** Trace purement
+statique (pas de diagnostic) de `sub_822834C0` → `sub_82338568` →
+`sub_82339D10` : `[r1+88]` n'est écrit par AUCUNE fonction de la
+chaîne (`sub_823382A8` n'écrit que +0/+4, `sub_82339D10` n'écrit rien
+via son pointeur). Même mécanisme qu'avant les 3 correctifs de cette
+session — seule la valeur garbage exacte a changé (`0` → `1`/
+`0xfeffffee`), exactement comme prédit par r150/r151/r152. Ferme la
+question du mécanisme : aucun nouveau levier natif (cohérent avec
+r144). Prochain : identifier l'appelant de `sub_82390880` sur le
+handle DATA.TBL (ouvert depuis r150).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
