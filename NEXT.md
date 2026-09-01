@@ -319,7 +319,45 @@ compteur injecté ou fallback ReXGlue.
     ou accepter et scoper cela comme une limitation du harnais mono-thread.
     Voir
     `reports/ac6-retail-native-codegen-gate2-r105-crash-root-cause-uninitialized-stack-oversized-allocation-20260901.md`.
-11. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+11. **r106 a précisément localisé le slot de pile non initialisé de r105,
+    sans deviner de correctif.** Même technique (instrumentation
+    temporaire du source généré, jamais commitée, restaurée après usage;
+    `ctest` 9/9 reconfirmé) — ajouté un `fprintf` unique au site de
+    lecture, imprimant l'adresse invité résolue et la valeur, éliminant
+    tout risque d'erreur de calcul manuel. **Résultat direct** :
+    `guest_addr=0x8feffd1c value=0x400000 (ctx.r1.u32=0x8feffcb0)` —
+    concorde exactement avec le calcul de cadre (r1 initial `0x8ff00000`
+    moins les prologues de `_xstart` `-0x1f0`, `sub_821D7DE0` `-0x70`,
+    `Function_821D5F48` `-0xf0`, plus 108). **Cette adresse est SOUS
+    `0x8feffe10` — hors du cadre de `_xstart` LUI-MÊME**, pas seulement
+    de `Function_821D5F48`/`sub_821D7DE0`. `_xstart` étant le point
+    d'entrée XEX (aucun appelant invité), rien dans la chaîne d'appel PPC
+    tracée jusqu'ici ne possède cette mémoire. **Erreur de calcul manuel
+    auto-corrigée avant de tromper le rapport** : un premier calcul (avant
+    l'instrumentation directe) oubliait le propre prologue de `_xstart`,
+    donnant une adresse fausse lue à zéro dans l'ancien core dump du
+    plantage r100/101 — semblait d'abord contredire ce cycle. Recalculé
+    correctement et relu la BONNE adresse dans le même core dump : zéro
+    AUSSI — cohérent, pas contradictoire, car le core dump capture l'état
+    au moment du plantage `sub_821D6C20`, bien plus tardif, après que
+    cette région de pile a probablement été réutilisée. Pas de preuve de
+    non-déterminisme réel (`GuestAddressSpace` utilise
+    `MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE`, garanti zéro par Linux,
+    vérifié directement dans `native_guest_memory.cpp`). **Toujours aucun
+    correctif implémenté** : l'origine de cette valeur nécessite soit de
+    tracer une séquence de boot noyau/chargeur PLUS LARGE que ce que ce
+    harnais reproduit (`initialize_probe_thread` est minimal — PCR/TLS de
+    base, pas un bring-up noyau complet), soit d'accepter cela comme une
+    limitation de portée du harnais mono-thread. Deviner une valeur à
+    écrire là masquerait potentiellement une vraie lacune — refusé, même
+    discipline que r97/r105. Aucun code natif modifié. **Prochain cycle** :
+    soit tracer plus large (documentation externe des conventions de
+    bring-up de thread/pile du noyau Xenon, hors de portée d'une simple
+    désassemblage statique du titre), soit scoper explicitement ceci
+    comme limitation du harnais `initialize_probe_thread` et investiguer
+    ce qu'un bring-up plus complet devrait fournir. Voir
+    `reports/ac6-retail-native-codegen-gate2-r106-uninitialized-stack-slot-pinpointed-outside-xstart-own-frame-20260901.md`.
+12. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

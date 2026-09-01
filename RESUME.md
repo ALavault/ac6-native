@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r106-uninitialized-stack-slot-pinpointed-outside-xstart-own-frame-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r105-crash-root-cause-uninitialized-stack-oversized-allocation-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r104-gdb-live-tracing-unreliable-static-evidence-shows-no-skip-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r103-r102-gate-hypothesis-corrected-real-divergence-still-open-20260901.md`;
@@ -192,6 +193,21 @@ une séquence d'appels réelle du matériel vs. vraie lacune du harnais
 mono-thread), deviner une valeur risquerait de masquer une vraie lacune.
 Technique d'instrumentation temporaire du code généré validée comme
 alternative fiable à GDB pour cette sonde.
+
+**r106 a précisément localisé le slot de pile non initialisé de r105.**
+Instrumentation directe (même technique, restaurée après usage) : adresse
+invité `0x8feffd1c`, valeur `0x400000`, confirmées en direct et par calcul
+manuel une fois corrigé. **Cette adresse est SOUS le cadre de `_xstart`
+lui-même** — hors de toute la chaîne d'appel PPC tracée, puisque
+`_xstart` est le point d'entrée XEX sans appelant invité. Une erreur de
+calcul manuel a été auto-corrigée avant de tromper le rapport (le premier
+calcul, faux, semblait contredire la lecture du core dump; recalculé
+correctement, les deux lectures du core dump concordent — différence de
+MOMENT dans l'exécution, pas de non-déterminisme). Toujours aucun
+correctif : l'origine nécessite soit de tracer une séquence de boot
+noyau/chargeur plus large que ce harnais ne reproduit, soit d'accepter
+cela comme une limitation de portée du harnais mono-thread. Aucun code
+modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

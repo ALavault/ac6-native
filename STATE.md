@@ -1,3 +1,38 @@
+# AC6 retail NTSC-U/J — r106 : le slot de pile non initialisé localisé hors du cadre de `_xstart` lui-même (2026-09-01)
+
+- Même technique que r105 (instrumentation temporaire du source généré,
+  jamais commitée, restaurée après usage; `ctest` 9/9 reconfirmé). Ajouté
+  un `fprintf` UNIQUE au site de lecture lui-même, imprimant l'adresse
+  invité résolue, la valeur lue et `ctx.r1.u32` — élimine tout risque
+  d'erreur de calcul manuel.
+- **Résultat direct** : `guest_addr=0x8feffd1c value=0x400000
+  (ctx.r1.u32=0x8feffcb0)`. Concorde EXACTEMENT avec le calcul de cadre
+  fait à la main UNE FOIS corrigé : r1 initial du harnais (`0x8ff00000`)
+  moins le prologue de `_xstart` (`-0x1f0`) moins celui de
+  `sub_821D7DE0` (`-0x70`) moins celui de `Function_821D5F48` (`-0xf0`)
+  plus 108 = `0x8feffd1c`. **Cette adresse est SOUS `0x8feffe10` — hors
+  du cadre de `_xstart` LUI-MÊME**, pas seulement hors de celui de
+  `Function_821D5F48`/`sub_821D7DE0`. `_xstart` étant le point d'entrée
+  XEX (aucun appelant invité), rien dans la chaîne d'appel PPC tracée ne
+  possède cette mémoire.
+- **Erreur de calcul auto-corrigée avant de tromper le rapport** : un
+  premier calcul manuel (avant l'instrumentation directe) oubliait le
+  propre prologue de `_xstart`, donnant une adresse fausse
+  (`0x8fefff0c`) lue à zéro dans l'ancien core dump du plantage r100/101
+  — ce qui semblait d'abord contredire ce cycle. Recalculé correctement
+  et relu la BONNE adresse dans le même core dump : zéro AUSSI —
+  cohérent, pas contradictoire : le core dump capture l'état à un moment
+  BEAUCOUP plus tardif (le plantage `sub_821D6C20`), après que cette
+  région de pile a presque certainement été réutilisée. Pas de preuve de
+  non-déterminisme réel (`GuestAddressSpace` utilise `MAP_ANONYMOUS`,
+  garanti zéro par Linux, vérifié directement dans le source).
+- **Toujours aucun correctif implémenté** : l'origine de cette valeur
+  nécessite soit de tracer une séquence de boot noyau/chargeur PLUS
+  LARGE que ce que ce harnais reproduit (`initialize_probe_thread` est
+  minimal), soit d'accepter cela comme une limitation de portée du
+  harnais. Aucun code natif modifié. Voir
+  `reports/ac6-retail-native-codegen-gate2-r106-uninitialized-stack-slot-pinpointed-outside-xstart-own-frame-20260901.md`.
+
 # AC6 retail NTSC-U/J — r105 : cause racine trouvée — une pile non initialisée pilote une allocation surdimensionnée (2026-09-01)
 
 - Suivant la recommandation r104, instrumenté DIRECTEMENT le source
