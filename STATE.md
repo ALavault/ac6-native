@@ -1,3 +1,39 @@
+# AC6 retail NTSC-U/J — r105 : cause racine trouvée — une pile non initialisée pilote une allocation surdimensionnée (2026-09-01)
+
+- Suivant la recommandation r104, instrumenté DIRECTEMENT le source
+  généré (`ppc_recomp.23.cpp`, jamais maintenu à la main, dans l'arbre de
+  build ignoré par git) avec des `fprintf` temporaires gardés par une
+  variable d'env (`AC6_R105_DIAG`), reconstruit, exécuté NATIVEMENT (zéro
+  GDB, zéro `ptrace`), puis RESTAURÉ depuis une sauvegarde avant tout
+  commit. `ctest` 9/9 reconfirmé après restauration, `git status` propre.
+- **Résultat reproductible sur 2 runs identiques** : GATE2
+  (`sub_821F4078`) échoue réellement, causant le bailout puis le SIGSEGV
+  déjà connu. **Ceci rétracte la lecture GDB de r103** (`r3=0x8feffcb0`
+  non nul) — exactement le type d'artefact que r104 avait mis en garde
+  contre, sans encore le prouver concrètement.
+- Tracé GATE2 jusqu'à sa vraie cause : son `bl 0x823d012c` est en réalité
+  le nom résolu par XenonRecomp pour l'import noyau
+  **`MmAllocatePhysicalMemoryEx`**. Instrumenté ses arguments/retour :
+  parmi 17 appels de ce cycle, UN SEUL échoue, demandant
+  **`r4=0xffc00000`** (`-4 Mo` signé, soit ~4,09 Go non signés) — refusé
+  à juste titre par `allocate_guest()`.
+- **Origine de la taille tracée jusqu'à sa source** : `r11 - 0x800000`
+  (8 Mo), où `r11` vient de `lwz r11,108(r1)` — un slot de pile LOCAL.
+  Grep exhaustif du corps entier de `Function_821D5F48` (1700+ lignes) :
+  **aucune écriture** à cet offset nulle part. Vérifié aussi l'appelant
+  unique confirmé (`sub_821D7DE0`, r102/r103) : n'écrit rien non plus
+  avant son `bl`. **C'est de la mémoire de pile non initialisée dans ce
+  harnais** — 4 Mo au lieu d'au moins 8 Mo attendus.
+- **Décidé de ne PAS implémenter de correctif** : deux explications
+  restent compatibles (dépendance cachée à une séquence d'appels réelle
+  du matériel véritable qui laisse une valeur résiduelle appropriée là,
+  vs. une vraie lacune du harnais mono-thread) et ce cycle ne peut pas
+  trancher — deviner une valeur synthétique masquerait potentiellement
+  une vraie lacune plutôt que de la fermer. Aucun code natif modifié
+  (toutes les modifications étaient dans l'arbre de build généré,
+  restaurées). Voir
+  `reports/ac6-retail-native-codegen-gate2-r105-crash-root-cause-uninitialized-stack-oversized-allocation-20260901.md`.
+
 # AC6 retail NTSC-U/J — r104 : le traçage GDB en direct sur cette sonde est peu fiable; les deux lectures statiques s'accordent (2026-09-01)
 
 - Désassemblé le code HÔTE COMPILÉ (x86, pas juste le PPC invité) à

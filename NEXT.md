@@ -280,7 +280,46 @@ compteur injecté ou fallback ReXGlue.
    `RtlInitializeCriticalSection` appelé deux fois mérite une vérification
    contre la table des stubs d'import natifs de ce projet. Voir
    `reports/ac6-retail-native-codegen-gate2-r104-gdb-live-tracing-unreliable-static-evidence-shows-no-skip-20260901.md`.
-10. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+10. **r105 a trouvé la cause racine mécanique du plantage r100-r104, sans
+    implémenter de correctif.** Suivant la recommandation r104 (arrêter
+    GDB, instrumenter le code généré), instrumenté temporairement
+    `ppc_recomp.23.cpp`/`.26.cpp` (source GÉNÉRÉ, jamais maintenu à la
+    main, dans l'arbre de build ignoré par git — jamais commité,
+    restauré depuis sauvegarde avant tout commit, `ctest` 9/9 reconfirmé
+    après) avec des `fprintf` gardés par `AC6_R105_DIAG`, reconstruit,
+    exécuté NATIVEMENT (zéro GDB/`ptrace`). **Résultat reproductible sur
+    2 runs** : GATE2 (`sub_821F4078`) échoue réellement — **rétractant
+    la lecture GDB de r103** (`r3=0x8feffcb0` non nul), exactement
+    l'artefact que r104 avait anticipé sans le prouver. Tracé GATE2
+    jusqu'à sa vraie cause : son `bl 0x823d012c` est le nom résolu par
+    XenonRecomp pour l'import noyau **`MmAllocatePhysicalMemoryEx`**.
+    Instrumenté ses arguments : sur 17 appels ce cycle, UN SEUL échoue,
+    demandant **`r4=0xffc00000`** (`-4 Mo` signé ≈ 4,09 Go non signés),
+    refusé à juste titre par `allocate_guest()`. **Tracé la taille
+    jusqu'à sa source** : `r11 - 0x800000` (8 Mo), où `r11` vient de
+    `lwz r11,108(r1)` — un slot de pile LOCAL. Grep exhaustif du corps
+    entier de `Function_821D5F48` (1700+ lignes) : **aucune écriture** à
+    cet offset. Vérifié l'appelant unique confirmé (`sub_821D7DE0`,
+    r102/r103) : n'écrit rien non plus avant son `bl`. **C'est de la
+    mémoire de pile non initialisée dans ce harnais** (contient 4 Mo au
+    lieu des ≥8 Mo attendus). **Décidé de ne PAS deviner de correctif** :
+    deux explications restent ouvertes — (1) dépendance cachée à une
+    séquence d'appels du VRAI matériel qui laisse une valeur résiduelle
+    appropriée à cet endroit physique de la pile, séquence que ce projet
+    n'a pas encore tracée; (2) une vraie lacune de CE harnais
+    spécifiquement (thread invité unique de `initialize_probe_thread`,
+    déjà nommé comme limitation r101/r102). Écrire une valeur synthétique
+    pour faire réussir cet appel masquerait potentiellement une vraie
+    lacune plutôt que de la fermer — refusé, même discipline que r97.
+    Aucun code natif modifié. Technique d'instrumentation temporaire du
+    code généré validée comme alternative fiable à GDB pour cette sonde
+    (à préférer désormais, per r104). **Prochain cycle** : tracer plus en
+    amont dans `_xstart` ce qui pourrait laisser une valeur résiduelle à
+    cet emplacement physique de pile sur un boot complet/le vrai matériel,
+    ou accepter et scoper cela comme une limitation du harnais mono-thread.
+    Voir
+    `reports/ac6-retail-native-codegen-gate2-r105-crash-root-cause-uninitialized-stack-oversized-allocation-20260901.md`.
+11. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r105-crash-root-cause-uninitialized-stack-oversized-allocation-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r104-gdb-live-tracing-unreliable-static-evidence-shows-no-skip-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r103-r102-gate-hypothesis-corrected-real-divergence-still-open-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r102-crash-chain-traced-to-shared-bailout-and-swallowed-failure-20260901.md`;
@@ -175,6 +176,22 @@ d'arrêter le traçage GDB en direct** pour cette question précise; la
 question "pourquoi GATE3 n'apparaît jamais en direct" de r103 est mieux
 expliquée comme un artefact GDB. Le modèle structurel r102 reste valable;
 quel garde échoue (si un échoue) reste non établi. Aucun code modifié.
+
+**r105 a trouvé la cause racine du plantage.** Suivant r104, instrumenté
+directement le source GÉNÉRÉ (jamais commité, restauré après usage) et
+exécuté nativement (zéro GDB). Résultat reproductible : GATE2
+(`sub_821F4078`) échoue réellement (rétractant la lecture GDB non fiable
+de r103) — son import réel est `MmAllocatePhysicalMemoryEx`, appelé avec
+une taille `0xffc00000` (~4,09 Go, un débordement signé de `-4 Mo`).
+Tracé jusqu'à sa source : `r11 - 8 Mo`, où `r11` vient d'un slot de pile
+(`108(r1)`) que RIEN dans `Function_821D5F48` ni son unique appelant
+`sub_821D7DE0` n'écrit jamais — mémoire de pile non initialisée dans ce
+harnais (contient 4 Mo au lieu des ≥8 Mo attendus). **Aucun correctif
+implémenté** : deux explications restent ouvertes (dépendance cachée à
+une séquence d'appels réelle du matériel vs. vraie lacune du harnais
+mono-thread), deviner une valeur risquerait de masquer une vraie lacune.
+Technique d'instrumentation temporaire du code généré validée comme
+alternative fiable à GDB pour cette sonde.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
