@@ -1491,6 +1491,18 @@ compteur injecté ou fallback ReXGlue.
     non encore adressé. Voir
     `reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md`.
 
+88. **r164 : scan des stubs offline-import restants — AUCUN autre bug
+    de forme trouvé.** `RtlTryEnterCriticalSection` (5 sites réels)
+    coche déjà juste par chance (`kOfflineStatus` non-nul = "verrou
+    acquis" comme un vrai `1`) ; `KeEnterCriticalRegion`/
+    `KeLeaveCriticalRegion` (VOID réel) ont leur retour genuinement
+    jeté. Aucun ne change le flux de contrôle actuellement — fix
+    cosmétique seulement, non entrepris. Ferme le fil de scan ouvert
+    par r163. Aucun code modifié. **Prochain cycle** : investissement
+    séparé (route Wine/Xenia pour NTSC-U/J, r156/157) ou nouvelle
+    frontière. Voir
+    `reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

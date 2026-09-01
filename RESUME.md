@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r161-decisive-live-value-xenia-edge-leaves-14824-not-a-catastrophic-garbage-allocation-size-20260901.md`;
@@ -953,6 +954,12 @@ unique site d'appel réel clampe le retour à [-16,15] et le renvoie —
 conséquence observable. Corrigé : renvoie `0u`. Tests 145/145 (+1),
 ctest 9/9. Famille close (les 3 stubs de cette famille sont
 maintenant tous corrigés).
+
+**r164 — scan des stubs offline-import restants — AUCUN autre bug de
+forme trouvé.** `RtlTryEnterCriticalSection` coche déjà juste par
+chance ; `KeEnterCriticalRegion`/`KeLeaveCriticalRegion` (VOID réel)
+ont leur retour jeté. Aucun ne change le flux de contrôle. Ferme le
+fil de scan ouvert par r163, résultat négatif documenté.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r164 : scan des stubs offline-import restants — AUCUN autre bug de forme trouvé (2026-09-01)
+
+- **Scan complet** des imports offline restants (fréquence ≤2/run) :
+  `RtlTryEnterCriticalSection` (5 sites réels) coche déjà juste par
+  chance (`kOfflineStatus` non-nul évalue "verrou acquis" — même
+  résultat qu'un vrai `1`) ; `KeEnterCriticalRegion`/
+  `KeLeaveCriticalRegion` (VOID réel) ont leur retour genuinement jeté
+  (écrasé par l'instruction suivante).
+- **DÉCISION** : aucun autre fix à haute valeur à ce palier de
+  fréquence. Contrairement à r163, aucun des deux ne change le flux de
+  contrôle actuellement — corriger la forme serait cosmétique
+  (principe r162), pas entrepris ce cycle sans raison spécifique.
+  Ferme le fil de scan ouvert par r163 avec un résultat négatif
+  documenté.
+- **Aucun code modifié, aucun build ce cycle**. Voir
+  `reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md`.
+
 # AC6 retail NTSC-U/J — r163 : VRAI CORRECTIF — `KeQueryBasePriorityThread` : valeur de retour RÉELLEMENT clampée et utilisée par un appelant (2026-09-01)
 
 - **Différent de ses frères r162** : `ObDereferenceObject`/
