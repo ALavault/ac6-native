@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r124-connection-confirmed-sub_821f4e70-directly-dispatches-to-ntreadfile-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r123-object-attributes-resolved-and-the-read-is-fixed-offset-on-a-possibly-absent-hdd-partition-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r122-ntcreatefile-ntreadfile-calling-convention-verified-from-disassembly-implementation-deferred-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r121-real-cause-found-ntreadfile-ntcreatefile-are-unimplemented-status-field-never-updated-20260901.md`;
@@ -416,6 +417,17 @@ potentiel : peut-être juste un vrai statut d'échec NT au lieu de
 `kOfflineStatus`. PAS ENCORE connecté à la table de dispatch de
 `sub_821F4E70`. Aucun code modifié. Prochain cycle : établir cette
 connexion, puis tester l'hypothèse en direct.
+
+**r124 — connexion confirmée EN DIRECT : `sub_821F4E70` dispatche vers
+`NtReadFile`.** Instrumentation d'une exécution (crash déterministe) :
+target=NtReadFile ×6 = décompte exact de r121. Mapping registres
+confirmé (`r7=&IoStatusBlock`, `259`/STATUS_PENDING pré-écrit).
+L'appelant reconnaît EXPLICITEMENT STATUS_PENDING comme issue normale
+— confirme depuis la logique du jeu toute la lecture "pending, retry"
+depuis r109. Reformule le correctif : candidat = retourner 259 au
+premier appel puis faire évoluer l'IoStatusBlock. PAS implémenté.
+Aucun code modifié. Prochain cycle : tracer `loc_821F4FE4`, concevoir
+le stub.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

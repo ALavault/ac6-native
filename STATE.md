@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — r124 : connexion confirmée EN DIRECT — `sub_821F4E70` dispatche directement vers `NtReadFile`, et son appelant attend explicitement `STATUS_PENDING` comme issue normale (2026-09-01)
+
+- **Instrumentation d'UNE seule exécution** (crash déterministe depuis
+  r116) sur le site `bctrl` de `sub_821F4E70` : `dispatch
+  target=0x823d035c` (×6, correspond EXACTEMENT au décompte de 6 appels
+  `NtReadFile` de r121). **`0x823d035c` EST l'adresse d'import de
+  `NtReadFile`** — connexion établie EN DIRECT, pas par inférence
+  statique. Ce n'est PAS le cluster `Function_82390F48`/`Function_82391A40`
+  de r122/r123 — un site d'appel séparé, plus central.
+- **Mapping complet des registres confirmé**, correspondant exactement
+  à la signature réelle de `NtReadFile` (r122) : `r3=Handle(=r30),
+  r4=[r31+16](Event), r5=0, r6=0/r31, r7=r31(&IoStatusBlock),
+  r8=Buffer, r9=Length, r10=&ByteOffset`. `r31+0` (Status) mis à `259`
+  (`STATUS_PENDING`) JUSTE AVANT l'appel — idiome standard de driver NT.
+- **L'appelant reconnaît EXPLICITEMENT `STATUS_PENDING` comme issue
+  NORMALE** : `if (r3<0) goto ...; if (r3==259) goto MÊME endroit; else
+  succès`. Ceci confirme, depuis la LOGIQUE MÊME du jeu (pas une
+  inférence), que toute la lecture "997/pending, retry" établie depuis
+  r109 est correcte. Notre harnais retourne `kOfflineStatus`
+  (0xC00000BB) qui ne correspond à AUCUNE des issues reconnues.
+- **Reformule encore le correctif** : puisque `STATUS_PENDING` est déjà
+  une issue attendue par le code réel, un simple "statut d'échec
+  différent" (hypothèse de r123) semble moins prometteur — le
+  candidat le plus prometteur devient : retourner `259` au premier
+  appel (comme le vrai matériel), puis faire évoluer l'`IoStatusBlock`
+  vers un vrai statut de complétion avant l'épuisement du compteur de
+  nouvelle tentative. PAS encore conçu ni implémenté.
+- Aucun code natif modifié (instrumentation restaurée; `ctest` 9/9
+  reconfirmé). **Prochain cycle** : tracer `loc_821F4FE4` (issue non
+  reconnue); concevoir (sans implémenter) un stub `NtReadFile` correct.
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r124-connection-confirmed-sub_821f4e70-directly-dispatches-to-ntreadfile-20260901.md`.
+
 # AC6 retail NTSC-U/J — r123 : `OBJECT_ATTRIBUTES` entièrement résolu — la lecture est à décalage fixe sur une partition disque dur peut-être absente (2026-09-01)
 
 - **Structure `OBJECT_ATTRIBUTES` Xbox 360 (réduite, 3 champs, 12

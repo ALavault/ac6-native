@@ -712,7 +712,27 @@ compteur injecté ou fallback ReXGlue.
     cycle** : établir la connexion à `sub_821F4E70`; si connecté,
     tester l'hypothèse "statut d'échec" en direct. Voir
     `reports/ac6-retail-native-codegen-gate2-r123-object-attributes-resolved-and-the-read-is-fixed-offset-on-a-possibly-absent-hdd-partition-20260901.md`.
-42. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+43. **r124 — connexion confirmée EN DIRECT : `sub_821F4E70` dispatche
+    vers `NtReadFile`, l'appelant attend `STATUS_PENDING` comme issue
+    normale.** Instrumentation d'une seule exécution (crash
+    déterministe, r116) sur le `bctrl` : `target=0x823d035c` (×6 =
+    décompte exact de r121) — l'adresse d'import de `NtReadFile`
+    elle-même, PAS le cluster `Function_82390F48` de r122/r123 (site
+    séparé). Mapping complet des registres confirmé, correspond
+    exactement à la signature réelle : `r7=r31=&IoStatusBlock`,
+    `r31+0` mis à `259`(`STATUS_PENDING`) juste avant l'appel.
+    **L'appelant reconnaît EXPLICITEMENT `STATUS_PENDING` comme issue
+    normale** (`r3<0` OU `r3==259` → même branche) — confirme depuis
+    la LOGIQUE DU JEU (pas une inférence) toute la lecture
+    "997/pending, retry" établie depuis r109. `kOfflineStatus` ne
+    correspond à AUCUNE issue reconnue. **Reformule le correctif** :
+    candidat prometteur = retourner `259` au premier appel puis faire
+    évoluer l'IoStatusBlock vers un vrai statut avant épuisement du
+    compteur — PAS encore conçu ni implémenté. Aucun code modifié.
+    **Prochain cycle** : tracer `loc_821F4FE4`; concevoir un stub
+    `NtReadFile` correct. Voir
+    `reports/ac6-retail-native-codegen-gate2-r124-connection-confirmed-sub_821f4e70-directly-dispatches-to-ntreadfile-20260901.md`.
+44. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
