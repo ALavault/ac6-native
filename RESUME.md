@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r147-sub_82390880-is-a-movie-capture-debug-feature-unrelated-to-data-tbl-not-implementing-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r146-r145s-fix-reaches-new-ground-ntqueryinformationfile-ntsetinformationfile-now-hit-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r145-real-fix-ntcreatesemaphore-never-registered-a-waitable-object-ntreleasesemaphore-wrong-register-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r144-both-named-frontiers-confirmed-blocked-maintenance-audits-clean-20260901.md`;
@@ -748,6 +749,15 @@ DATA.TBL. Trouvaille enregistrée, pas implémentée (nécessiterait un
 suivi de position non existant, lien avec le crash actif non établi).
 Aucun code modifié. Prochain cycle : tracer les appelants de
 `sub_82390880` avant de décider.
+
+**r147 — `sub_82390880` est une fonctionnalité de CAPTURE VIDÉO de
+debug, CONFIRMÉE sans rapport avec DATA.TBL.** Ses 2 sites d'appel
+construisent des noms via `sprintf("%d%s")` ; les octets juste après ce
+format dans l'image XEX révèlent `"D3D: Unable to create movie capture
+file segment %s.\n"`. `NtQueryInformationFile`/`NtSetInformationFile`
+NE sont PAS implémentés — piste fermée, scope creep évité. Aucun code
+modifié. Prochain cycle : chercher d'autres effets observables du
+correctif du sémaphore de r145.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

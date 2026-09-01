@@ -1201,6 +1201,21 @@ compteur injecté ou fallback ReXGlue.
     l'implémentation vaut l'infrastructure requise. Voir
     `reports/ac6-retail-native-codegen-gate2-r146-r145s-fix-reaches-new-ground-ntqueryinformationfile-ntsetinformationfile-now-hit-20260901.md`.**
 
+71. **r147 : `sub_82390880` est une fonctionnalité de CAPTURE VIDÉO de
+    debug — CONFIRMÉ sans rapport avec DATA.TBL, PAS implémenté.**
+    Suivant r146 : les 2 sites d'appel de `sub_82390880` sont dans un
+    helper d'ouverture de fichier en boucle construisant des noms via
+    `sprintf("%d%s", ...)`. Preuve décisive : les octets juste après ce
+    format dans l'image XEX statique révèlent `"D3D: Unable to create
+    movie capture file segment %s.\n"` — une fonctionnalité de capture
+    vidéo de debug/développeur, PAS liée à DATA.TBL ni à la chaîne de
+    crash `sub_821F7C80`. `NtQueryInformationFile`/`NtSetInformationFile`
+    NE sont PAS implémentés — scope creep évité. Aucun code modifié ce
+    cycle. **Prochain cycle** : chercher d'autres effets observables du
+    correctif du sémaphore de r145 avant d'investir davantage dans ce
+    fil de capture vidéo maintenant fermé. Voir
+    `reports/ac6-retail-native-codegen-gate2-r147-sub_82390880-is-a-movie-capture-debug-feature-unrelated-to-data-tbl-not-implementing-20260901.md`.**
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

@@ -1,3 +1,33 @@
+# AC6 retail NTSC-U/J — r147 : `sub_82390880` est une fonctionnalité de CAPTURE VIDÉO de debug — CONFIRMÉ sans rapport avec DATA.TBL, PAS implémenté (2026-09-01)
+
+- **Suivant le "prochain" de r146** : `sub_82390880` a exactement 2 sites
+  d'appel, tous deux dans un helper d'ouverture de fichier en boucle,
+  dispatché par mode (`sub_821F4C10`), qui construit un nom de fichier
+  via `sprintf` avec le format `"%d%s"` (segments numérotés) avant
+  d'ouvrir et tronquer chacun.
+- **PREUVE DÉCISIVE** : lecture des octets juste après ce format
+  `"%d%s"` dans l'image XEX statique (`DumpBytes.java` à `0x82068170`) —
+  à `0x82068178` : **`"D3D: Unable to create movie capture file segment
+  %s.\n"`**. TOUTE cette boucle d'ouverture/troncature de fichiers est
+  une **fonctionnalité de CAPTURE VIDÉO de debug/développeur** — des
+  fichiers de segments vidéo numérotés — preuve DIRECTE et NON AMBIGUË
+  tirée des propres données du binaire retail.
+- **DÉCISION** : `NtQueryInformationFile`/`NtSetInformationFile` NE sont
+  PAS implémentés ce cycle — cette piste spécifique est FERMÉE. Le site
+  d'appel signalé par r146 est confirmé sans rapport avec DATA.TBL, la
+  boucle de relance (`sub_821D5F48`/`sub_821CC508`) ou la chaîne de
+  crash `sub_821F7C80`. Construire l'infrastructure de suivi de
+  position pour servir une fonctionnalité de capture de debug serait
+  exactement le genre de scope creep que ce projet interdit.
+- **Aucun code source modifié ce cycle.**
+  **Prochain cycle** : la détermination de r144 (aucun travail Gate 2
+  actionnable au-delà du correctif réel de r145) est reconfirmée pour
+  ce fil précis. Chercher D'AUTRES effets observables du correctif du
+  sémaphore de r145 (même méthodologie que r146 : vérifier le lien avec
+  la chaîne de crash active AVANT d'investir) plutôt que de continuer
+  sur cette piste de capture vidéo maintenant fermée. Voir
+  `reports/ac6-retail-native-codegen-gate2-r147-sub_82390880-is-a-movie-capture-debug-feature-unrelated-to-data-tbl-not-implementing-20260901.md`.
+
 # AC6 retail NTSC-U/J — r146 : le correctif de r145 atteint un terrain RÉELLEMENT NOUVEAU — `NtQueryInformationFile`/`NtSetInformationFile` atteints pour la première fois (2026-09-01)
 
 - **Suivant le "prochain" de r145** : `AC6_NATIVE_IMPORT_TRACE=1` complet
