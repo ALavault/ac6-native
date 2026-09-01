@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md",

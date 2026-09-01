@@ -1,3 +1,21 @@
+# AC6 retail NTSC-U/J — r151 : la taille garbage d'allocation (r135/r137) est TOUJOURS atteinte après les 3 correctifs — valeur exacte différente, même classe (2026-09-01)
+
+- **Retrace du point 1 de la liste "Next" de r150** : `sub_82222D80`
+  (l'allocateur identifié par r135) reçoit toujours un 4e appel avec une
+  taille garbage classe ~4 GiB (`0xfeffffee`, préfixe `0xFEFF....`) —
+  PAS la valeur exacte de r137 (`0xfefffff8`-classe), mais le MÊME motif.
+  Confirme une 2e fois (après le slot `sub_82338388` de r150) que le
+  mécanisme "valeur périmée sensible à l'historique d'exécution" est
+  généralisé sur cette chaîne, pas isolé à un seul slot.
+- **N'établit PAS encore** : si `0xfeffffee` traverse le même chemin
+  `sub_82339AA8`/`sub_82338388`/`[r1+88]` que r139-r142 avaient tracé, ou
+  un chemin différent — reste à vérifier. Voir
+  `reports/ac6-retail-native-codegen-gate2-r151-*.md`.
+- **Aucun code source modifié ce cycle** — 1 diagnostic temporaire sur
+  `sub_82222D80`, annulé et vérifié (ctest 9/9 après reconstruction
+  propre). `git status` ne montre que l'état sale préexistant, sans
+  rapport (conversion submodule demo, arbre `reconstruction/`).
+
 # AC6 retail NTSC-U/J — r150 : la valeur de pile périmée (r139/r142) a CHANGÉ de `0` à `1` après les 3 correctifs de cette session — DATA.TBL traverse maintenant l'idiome de troncature — site de crash INCHANGÉ (2026-09-01)
 
 - **Pourquoi cette vérification valait la peine** : 3 correctifs réels

@@ -1272,6 +1272,22 @@ compteur injecté ou fallback ReXGlue.
     qu'une seule d'entre elles tient encore isolément. Voir
     `reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md`.**
 
+75. **r151 : la taille garbage d'allocation (r135/r137) est TOUJOURS
+    atteinte après les 3 correctifs — même classe, valeur différente.**
+    Diagnostic sur `sub_82222D80` (l'allocateur) : le 4e appel de la
+    sonde reçoit toujours une taille classe ~4 GiB (`0xfeffffee`,
+    préfixe `0xFEFF....`), pas la valeur exacte de r137
+    (`0xfefffff8`-classe) mais le même motif "pile jamais écrite" que
+    r150 avait déjà trouvé sur `sub_82338388`. 2e confirmation
+    indépendante que ce mécanisme est généralisé sur la chaîne, pas
+    isolé à un seul slot. N'établit PAS encore si `0xfeffffee` traverse
+    le même chemin `sub_82339AA8`/`sub_82338388`/`[r1+88]` que r139-r142
+    avaient tracé. Aucun code modifié ce cycle (diagnostic temporaire
+    annulé, ctest 9/9 après reconstruction propre). **Prochain cycle** :
+    vérifier ce chemin exact, puis re-mesurer la requête catégorie=1/
+    réglage=3 de r139 contre le binaire actuel. Voir
+    `reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

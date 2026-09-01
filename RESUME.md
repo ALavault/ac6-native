@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r151-allocation-garbage-size-still-reached-post-r145-r148-r149-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r150-the-stale-stack-value-changed-from-0-to-1-after-three-fixes-crash-site-unchanged-full-retrace-needed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r149-real-fix-kesetaffinitythread-returned-a-status-code-instead-of-a-real-affinity-mask-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md`;
@@ -799,6 +800,17 @@ lui-même. Le crash `sub_821F7C80` persiste identique. Aucun code
 modifié. **NOUVEAU FIL MULTI-CYCLES nommé** : re-tracer en une passe
 consolidée les mesures clés de r130-r142 contre le binaire ACTUEL —
 ne pas supposer qu'une seule tient encore isolément.
+
+**r151 — la taille garbage d'allocation (r135/r137) est TOUJOURS
+atteinte après les 3 correctifs — même classe, valeur différente.**
+Diagnostic sur `sub_82222D80` : 4e appel de la sonde reçoit toujours
+une taille ~4 GiB classe `0xFEFF....` (`0xfeffffee`, pas la valeur
+exacte de r137). 2e confirmation indépendante (après le slot de r150)
+que le mécanisme "pile jamais écrite, sensible à l'historique
+d'exécution" est généralisé sur cette chaîne. N'établit pas encore si
+`0xfeffffee` traverse le même chemin que r139-r142 avaient tracé.
+Aucun code modifié. Prochain : vérifier ce chemin exact, puis
+re-mesurer la requête catégorie=1/réglage=3 de r139.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
