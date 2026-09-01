@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r137 : la taille demandée par l'allocation qui échoue est du GARBAGE (`0xFEFFFFF9`), PAS 16 octets — corrige r135/r136 (2026-09-01)
+
+- **Corrige la propre hypothèse de travail de cette investigation** : r135
+  a caractérisé l'appel comme "une allocation de 16 octets" en prenant au
+  pied de la lettre l'immédiat `li r5,16` de `sub_821CC288`. Ce cycle
+  trace directement l'usage des paramètres de `sub_82222D80` : **`r5` sert
+  au helper `sub_82221C68`** (classe de taille), la VRAIE taille est
+  **`r4`**, réglé depuis `r30` — le retour d'un appel, PAS le littéral 16.
+- **4 allocations au total dans cette session** (pas une seule) — mesurées
+  en direct : #1 classe=5 (LARGE, réussit `0x16f90200`), #2 classe=-1
+  (SMALL, réussit `0x16fa0000`), **#3 classe=-1 (SMALL, ÉCHOUE →
+  `0x00000000`)**, #4 classe=0 (LARGE, réussit `0x173a0020` — CONFIRME que
+  le tampon `DATA.TBL` de r132/r133 EST correctement alloué ; son
+  problème reste la lecture de longueur zéro, pas l'échec d'allocation).
+- **L'appel #3 n'est PAS unique dans sa classe** (#2 prend le MÊME chemin
+  `classe=-1` et réussit) — écarte "cette classe de taille échoue
+  toujours".
+- **Taille réellement demandée pour l'appel #3, mesurée en direct** :
+  `0xFEFFFFF9` (soit `-16777223` en signé) — DU GARBAGE, PAS 16.
+  `sub_822834C0` (censé calculer cette taille) N'OPÈRE PAS sur le tampon
+  que `sub_82283728` a rempli — il appelle
+  `sub_82338388`/`sub_82338568`/`sub_82338410` avec des arguments FIXES
+  (1,3,4,0), forme plus cohérente avec une requête de config/état qu'un
+  calcul de longueur de chaîne. **L'hypothèse "longueur de chaîne" de ce
+  cycle lui-même n'est PAS vérifiée** — nommée explicitement pour ne pas
+  être silencieusement portée au cycle suivant (comme "16 octets" l'a
+  été).
+- **Aucun code source modifié ce cycle** — 2 diagnostics temporaires,
+  annulés et vérifiés (ctest 9/9, 139/139 Python après reconstruction
+  propre).
+  **Prochain cycle** : lire `sub_82283728` et
+  `sub_82338388`/`sub_82338568`/`sub_82338410` EN ENTIER sans supposer
+  leur sémantique ; comparer les tailles RÉELLES demandées par les appels
+  #2 (réussit) et #3 (échoue) — même classe de taille, donc ce qui
+  diffère EST l'argument de taille lui-même. Voir
+  `reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md`.
+
 # AC6 retail NTSC-U/J — r136 : la création du tas RÉUSSIT avec un vrai handle (`0x16F70000`) — l'échec est DANS la logique propre de l'allocateur, pas un tas manquant (2026-09-01)
 
 - **Porte de création du tas mesurée en direct** : `sub_821D5F48` (même

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r136-heap-creation-succeeds-with-a-real-handle-the-failure-is-inside-the-allocator-itself-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r135-root-cause-closed-a-16-byte-guest-heap-allocation-returns-null-unchecked-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r134-zero-length-read-traced-to-a-boolean-gated-store-that-never-populates-a-descriptor-field-20260901.md`;
@@ -603,6 +604,20 @@ aucune arène réservée. Conclusion : l'échec de l'allocation 16 octets
 lui-même, pas dans l'existence du tas. Aucun code modifié. Prochain
 cycle : lire `sub_82222D80` en entier et `sub_82222908` pour trouver le
 vrai appel de croissance/commit.
+
+**r137 — la taille demandée par l'allocation qui échoue est du GARBAGE
+(`0xFEFFFFF9`), PAS 16 octets ; corrige la propre hypothèse de r135/r136.**
+`r5=16` sert au helper de classe de taille, PAS la taille réelle
+(`r4=r30`, retour d'un appel). 4 allocations mesurées dans la session :
+#2 et #3 prennent la MÊME classe (-1/SMALL), #2 réussit, #3 échoue —
+écarte "cette classe échoue toujours". #4 confirme que le tampon
+`DATA.TBL` de r132/r133 EST bien alloué (`0x173a0020`). Taille réelle
+de #3 : `0xFEFFFFF9` (garbage). `sub_822834C0` n'opère PAS sur le
+tampon de `sub_82283728` — appelle 3 helpers avec des arguments fixes,
+forme plus proche d'une requête config/état qu'un calcul de longueur
+(hypothèse non vérifiée, nommée explicitement). Aucun code modifié.
+Prochain cycle : lire `sub_82283728` et les 3 helpers en entier,
+comparer les tailles réelles de #2 vs #3.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

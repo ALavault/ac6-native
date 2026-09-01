@@ -968,7 +968,31 @@ compteur injecté ou fallback ReXGlue.
     atteint un import kernel HLE non implémenté ou dépend d'un état
     guest pas encore atteint. Voir
     `reports/ac6-retail-native-codegen-gate2-r136-heap-creation-succeeds-with-a-real-handle-the-failure-is-inside-the-allocator-itself-20260901.md`.**
-60. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+60. **r137 : la taille demandée par l'allocation qui échoue (r135/r136)
+    est du GARBAGE (`0xFEFFFFF9`), PAS 16 octets — corrige la propre
+    hypothèse de travail de cette investigation.** `sub_821CC288` appelle
+    `sub_82222D80` avec `r5=16` (sert au helper de classe de taille
+    `sub_82221C68`, PAS la taille réelle) et `r4=r30` (la VRAIE taille,
+    retour d'un appel). Mesuré en direct : 4 allocations au total dans la
+    session, pas une seule. #1 classe=5 (LARGE, réussit), #2 classe=-1
+    (SMALL, réussit `0x16fa0000`), **#3 classe=-1 (SMALL, ÉCHOUE)** — la
+    MÊME classe que #2, qui réussit, écartant "cette classe échoue
+    toujours". #4 classe=0 (LARGE, réussit `0x173a0020` — confirme que le
+    tampon `DATA.TBL` de r132/r133 EST bien alloué, son problème reste
+    la lecture de longueur zéro). Taille réellement demandée par #3 :
+    `0xFEFFFFF9` — du garbage. `sub_822834C0` (censé calculer cette
+    taille) n'opère PAS sur le tampon rempli par `sub_82283728` — appelle
+    `sub_82338388`/`sub_82338568`/`sub_82338410` avec des arguments
+    fixes, forme plus proche d'une requête config/état qu'un calcul de
+    longueur de chaîne (hypothèse non vérifiée, nommée explicitement).
+    Aucun code source modifié ce cycle (2 diagnostics temporaires,
+    annulés et vérifiés, ctest 9/9 + 139/139 Python après reconstruction
+    propre). **Prochain cycle** : lire `sub_82283728` et les 3 helpers
+    de `sub_822834C0` EN ENTIER sans supposer leur sémantique ; comparer
+    les tailles réelles demandées par les appels #2 (réussit) et #3
+    (échoue), même classe de taille. Voir
+    `reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md`.**
+61. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
