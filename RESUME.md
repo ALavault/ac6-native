@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r146-r145s-fix-reaches-new-ground-ntqueryinformationfile-ntsetinformationfile-now-hit-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r145-real-fix-ntcreatesemaphore-never-registered-a-waitable-object-ntreleasesemaphore-wrong-register-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r144-both-named-frontiers-confirmed-blocked-maintenance-audits-clean-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r143-cost-benefit-check-closes-the-data-tbl-subthread-pivoting-to-the-next-gate2-frontier-20260901.md`;
@@ -734,6 +735,19 @@ crash r131 (même site exact `sub_821F7C80`, backtrace identique) —
 cohérent avec r142 (`[r1+88]` jamais écrit, succès ou échec de
 l'attente). Correctif CONSERVÉ et committé sur ses propres mérites.
 Les déterminations de r144 tiennent pour ses 2 frontières nommées.
+
+**r146 — le correctif de r145 atteint un terrain RÉELLEMENT NOUVEAU.**
+Trace complète confirme un ensemble d'imports jamais vu avant
+(`NtQueryInformationFile`, `NtSetInformationFile`,
+`NetDll_XNetStartup`, `XamShowMessageBoxUIEx`) — preuve directe que le
+correctif du sémaphore change le vrai ordonnancement du jeu, même si
+le crash `sub_821F7C80` persiste. `NtQueryInformationFile`
+(`sub_82390880`) fait partie d'un idiome "tronquer à la position
+actuelle" (classes 14/20/19), plus probablement lié à un save/log qu'à
+DATA.TBL. Trouvaille enregistrée, pas implémentée (nécessiterait un
+suivi de position non existant, lien avec le crash actif non établi).
+Aucun code modifié. Prochain cycle : tracer les appelants de
+`sub_82390880` avant de décider.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

@@ -1,3 +1,42 @@
+# AC6 retail NTSC-U/J — r146 : le correctif de r145 atteint un terrain RÉELLEMENT NOUVEAU — `NtQueryInformationFile`/`NtSetInformationFile` atteints pour la première fois (2026-09-01)
+
+- **Suivant le "prochain" de r145** : `AC6_NATIVE_IMPORT_TRACE=1` complet
+  contre l'ISO qualifiée atteint `NtQueryInformationFile`,
+  `NtSetInformationFile`, `NetDll_XNetStartup`, `NetDll_WSAStartup`,
+  `XamShowMessageBoxUIEx`, `ExRegisterTitleTerminateNotification` —
+  AUCUN n'apparaît dans les traces précédentes de cette investigation
+  (r130-r133 listaient `XamLoaderLaunchTitle`, `XamShowDirtyDiscErrorUI`,
+  `VdGetSystemCommandBuffer` — un ensemble DIFFÉRENT). **Preuve directe
+  que le correctif du sémaphore a changé le vrai ordonnancement/
+  progression du jeu**, pas juste de la comptabilité interne — un
+  chemin qui bloquait avant sur une attente de sémaphore toujours
+  ratée progresse maintenant mesurablement plus loin, même si le crash
+  `sub_821F7C80` lui-même reste inchangé.
+- **Ce que fait le nouveau site d'appel** : `NtQueryInformationFile`
+  (site unique, `sub_82390880`) confirme la vraie signature NT standard
+  (r3=Handle, r4=&IoStatusBlock, r5=&FileInformation, r6=Length,
+  r7=FileInformationClass) directement par désassemblage. Séquence de 3
+  appels : query position (classe 14) → set EndOfFile (classe 20) à
+  cette position → set Allocation (classe 19) à la même position — un
+  idiome standard "tronquer ce handle à sa position actuelle", plus
+  probablement lié à un fichier de save/log qu'à DATA.TBL.
+- **DÉCISION** : trouvaille enregistrée, PAS agie ce cycle. Implémenter
+  ces imports nécessiterait d'ajouter un suivi de position de fichier
+  guest-visible à `NativeGuestMediaService` (notre `NtReadFile` utilise
+  toujours un offset explicite, jamais de position implicite) — et le
+  lien de ce site d'appel avec le crash Gate 2 actif n'est PAS établi.
+  L'implémenter maintenant serait du scope creep non étayé par les
+  preuves de ce cycle.
+- **Aucun code source modifié ce cycle.**
+  **Prochain cycle** : tracer les appelants de `sub_82390880` pour
+  déterminer s'il appartient au chemin de sauvegarde déjà modélisé par
+  `AtomicSaveStore`, ou à un mécanisme log/temp sans rapport, AVANT de
+  décider si l'implémentation vaut l'infrastructure de suivi de
+  position qu'elle nécessiterait. Continuer à vérifier systématiquement
+  "ce correctif a-t-il changé un comportement observable ailleurs" après
+  chaque vrai correctif natif. Voir
+  `reports/ac6-retail-native-codegen-gate2-r146-r145s-fix-reaches-new-ground-ntqueryinformationfile-ntsetinformationfile-now-hit-20260901.md`.
+
 # AC6 retail NTSC-U/J — r145 : VRAI CORRECTIF — `NtCreateSemaphore` n'enregistrait JAMAIS d'objet attendable ; `NtReleaseSemaphore` utilisait le MAUVAIS registre comme pointeur de sortie (2026-09-01)
 
 - **Réouvre un terrain que r144 a déclaré bloqué** : la conclusion "aucun

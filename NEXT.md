@@ -1183,6 +1183,24 @@ compteur injecté ou fallback ReXGlue.
     déterminations de r144 tiennent pour ses 2 frontières nommées. Voir
     `reports/ac6-retail-native-codegen-gate2-r145-real-fix-ntcreatesemaphore-never-registered-a-waitable-object-ntreleasesemaphore-wrong-register-20260901.md`.**
 
+70. **r146 : le correctif de r145 atteint un terrain RÉELLEMENT NOUVEAU
+    — `NtQueryInformationFile`/`NtSetInformationFile` atteints pour la
+    première fois.** Trace complète confirme un ensemble d'imports
+    différent de toutes les traces précédentes (r130-r133) — preuve
+    directe que le correctif du sémaphore a changé le vrai
+    ordonnancement du jeu. `NtQueryInformationFile`
+    (`sub_82390880`, signature NT standard confirmée par
+    désassemblage) fait partie d'un idiome "tronquer à la position
+    actuelle" (query position classe 14 → set EndOfFile classe 20 → set
+    Allocation classe 19), plus probablement lié à un fichier de
+    save/log qu'à DATA.TBL. Trouvaille enregistrée, PAS implémentée ce
+    cycle — nécessiterait un suivi de position de fichier non existant
+    dans `NativeGuestMediaService`, et le lien avec le crash Gate 2
+    actif n'est pas établi. Aucun code modifié ce cycle. **Prochain
+    cycle** : tracer les appelants de `sub_82390880` avant de décider si
+    l'implémentation vaut l'infrastructure requise. Voir
+    `reports/ac6-retail-native-codegen-gate2-r146-r145s-fix-reaches-new-ground-ntqueryinformationfile-ntsetinformationfile-now-hit-20260901.md`.**
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;
