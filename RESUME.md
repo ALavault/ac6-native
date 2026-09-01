@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r136-heap-creation-succeeds-with-a-real-handle-the-failure-is-inside-the-allocator-itself-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r135-root-cause-closed-a-16-byte-guest-heap-allocation-returns-null-unchecked-20260901.md`;
@@ -618,6 +619,16 @@ forme plus proche d'une requête config/état qu'un calcul de longueur
 (hypothèse non vérifiée, nommée explicitement). Aucun code modifié.
 Prochain cycle : lire `sub_82283728` et les 3 helpers en entier,
 comparer les tailles réelles de #2 vs #3.
+
+**r138 — RÉSULTAT NÉGATIF : le chemin d'erreur config (piste de r137)
+N'EST PAS la source de la taille garbage.** `sub_82339AA8` renvoie
+`0xFEFFFFF8` si `sub_82343F20(0x82910000)` renvoie 0 — mais mesuré en
+direct, `sub_82343F20` (une opération pop-de-pool, pas un simple test
+booléen) réussit 5/5 fois dans la session (compteur 16,16,15,14,13,
+jamais 0). Piste réfutée. Non établi : si l'appel #3 défaillant (r137)
+atteint même cette chaîne — comptage non corrélé à l'appel spécifique.
+Aucun code modifié. Prochain cycle : établir la vraie chaîne d'appel de
+#3 (compteur comme r135) avant de lire plus loin.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

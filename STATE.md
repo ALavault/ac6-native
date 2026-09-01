@@ -1,3 +1,37 @@
+# AC6 retail NTSC-U/J — r138 : RÉSULTAT NÉGATIF — le chemin d'erreur de lookup config n'est PAS la source de la taille garbage (2026-09-01)
+
+- **Hypothèse testée** (issue de r137) : lecture statique de
+  `sub_82338388`→`sub_82339AA8`→`sub_82343F20(0x82910000)` — si CETTE
+  dernière renvoie 0, `sub_82339AA8` renvoie une constante d'erreur codée
+  en dur `(-16842752)|65528 = 0xFEFFFFF8`, à un bit de la taille garbage
+  mesurée en r137 (`0xFEFFFFF9`) — piste plausible, prometteuse.
+- **RÉFUTÉE par mesure directe** : `sub_82343F20` n'est PAS un simple
+  test "fournisseur enregistré ?" comme d'abord supposé sur sa lecture
+  partielle — c'est une opération "POP D'UN POOL" (liste chaînée libre à
+  `object+1388`/`+1392`). Mesuré en direct sur TOUS les appels de la
+  session : **5 appels, 5 succès** (compteur 16,16,15,14,13, chacun
+  renvoie une adresse réelle et valide, jamais 0). **CE chemin d'erreur
+  n'est JAMAIS emprunté dans cette session** — écarte cette piste
+  spécifique comme source de la taille garbage.
+- **Discipline appliquée à soi-même** : la lecture statique qui a motivé
+  cette hypothèse était plausible mais fausse — exactement le genre de
+  "règle plausible sans contrôle" que ce projet refuse sans vérification
+  en direct, et la vérification la réfute.
+- **Ce qui N'EST PAS établi** : si l'appel #3 (défaillant, r137) de
+  `sub_822834C0` atteint même RÉELLEMENT `sub_82339AA8`/`sub_82343F20` —
+  ce diagnostic comptait TOUS les appels de la session sans corréler
+  aucun à l'appel spécifique défaillant (le même type d'erreur
+  d'attribution que r135 avait auto-corrigée).
+- **Aucun code source modifié ce cycle** — 2 diagnostics temporaires,
+  annulés et vérifiés (ctest 9/9, 139/139 Python après reconstruction
+  propre).
+  **Prochain cycle** : établir D'ABORD la vraie chaîne d'appel de
+  l'appel #3 défaillant (même technique de compteur d'appels que r135) ;
+  SI c'est la bonne chaîne, lire `sub_823455D8` (chemin succès, jamais
+  lu) ; SINON, remonter à `sub_82283530`/`sub_822836A8` (appelés dans
+  `sub_82283728`, jamais lus). Voir
+  `reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md`.
+
 # AC6 retail NTSC-U/J — r137 : la taille demandée par l'allocation qui échoue est du GARBAGE (`0xFEFFFFF9`), PAS 16 octets — corrige r135/r136 (2026-09-01)
 
 - **Corrige la propre hypothèse de travail de cette investigation** : r135

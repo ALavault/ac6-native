@@ -992,7 +992,27 @@ compteur injecté ou fallback ReXGlue.
     les tailles réelles demandées par les appels #2 (réussit) et #3
     (échoue), même classe de taille. Voir
     `reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md`.**
-61. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+61. **r138 : RÉSULTAT NÉGATIF — le chemin d'erreur de lookup config
+    (piste de r137) N'EST PAS la source de la taille garbage.**
+    Hypothèse : `sub_82339AA8` renvoie une constante d'erreur codée en
+    dur `0xFEFFFFF8` (à un bit de `0xFEFFFFF9`, la taille garbage de
+    r137) si `sub_82343F20(0x82910000)` renvoie 0. Mesuré en direct :
+    `sub_82343F20` est en réalité une opération "POP D'UN POOL" (pas un
+    simple test booléen comme d'abord supposé sur lecture partielle) —
+    5 appels dans la session, 5 SUCCÈS (compteur 16,16,15,14,13, jamais
+    0). Ce chemin d'erreur spécifique n'est jamais emprunté — piste
+    réfutée. Ce qui N'EST PAS établi : si l'appel #3 défaillant (r137)
+    atteint même cette chaîne (comptage non corrélé à l'appel
+    spécifique — même type d'erreur d'attribution que r135 avait
+    auto-corrigée, nommé explicitement ici). Aucun code source modifié
+    ce cycle (2 diagnostics temporaires, annulés et vérifiés, ctest 9/9
+    + 139/139 Python après reconstruction propre). **Prochain cycle** :
+    établir D'ABORD la vraie chaîne d'appel de l'appel #3 (compteur
+    d'appels comme r135) ; si confirmée, lire `sub_823455D8` (chemin
+    succès, jamais lu) ; sinon remonter à
+    `sub_82283530`/`sub_822836A8`. Voir
+    `reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md`.**
+62. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
