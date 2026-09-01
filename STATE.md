@@ -1,3 +1,43 @@
+# AC6 retail NTSC-U/J — r144 : les deux frontières nommées sont CONFIRMÉES BLOQUÉES — audits de maintenance propres, AUCUN travail Gate 2 actionnable actuellement disponible (2026-09-01)
+
+- **Le pivot de r143 vérifié AVANT d'agir dessus** : `IM_LOAD_IMMEDIATE`
+  Xenos→SPIR-V est EXPLICITEMENT bloqué par POLITIQUE — le traducteur
+  (`native_shader_translator.cpp`) refuse déjà, EN DUR, tout microcode
+  Xenos, avec son propre commentaire : "reste un input fail-closed
+  explicite jusqu'à ce que ses signatures de fetch AC6 soient qualifiées
+  contre l'oracle offline scellé de référence." Ce projet n'a utilisé
+  AUCUN oracle sur toute la campagne — un vrai BLOCAGE QUALIFIÉ selon la
+  propre définition de ce projet.
+- **Aussi actuellement INATTEIGNABLE** : le crash tracé r130-r143 se
+  produit pendant le chargement de ressources PRÉCOCE, bien avant que le
+  jeu n'atteigne la soumission de commandes GPU. Implémenter la
+  traduction de shaders maintenant n'aurait AUCUNE sonde pour l'exercer.
+- **Fermeture de r143 re-vérifiée** : pas de correctif défensif
+  légitime disponible pour `sub_821CC288` (code guest retail, pas le
+  runtime de ce projet — le raisonnement de r142/r143 tient toujours).
+- **Audits de maintenance routiniers exécutés** (tous les outils
+  bon-marché/toujours-sûrs de CLAUDE.md) : `audit_claude_md_numbers`,
+  `audit_contract_derivations`, `audit_ac6_contract_addresses`,
+  `audit_instrument_discipline_index` — TOUS PASSENT proprement. SEUL
+  `audit_ac6_contract_artifacts` échoue, sur 3 chemins TOUS sous l'arbre
+  N2 `reconstruction/ace-combat-6`, EXPLICITEMENT ABANDONNÉ selon la
+  section "Frontières" de NEXT.md elle-même — pas nouveau, pas
+  actionnable (même nature que le mismatch `retail_session.cpp` déjà
+  connu depuis r107).
+- **DÉCISION** : aucun travail Gate 2 actionnable, dans le périmètre, non
+  bloqué n'est actuellement disponible. Nommé explicitement plutôt que
+  masqué par une tâche de faible valeur.
+- **Aucun code source modifié ce cycle.**
+  **Prochain cycle** : re-vérifier cette détermination SI (1) une
+  session oracle devient disponible pour cette campagne, OU (2) de
+  nouvelles preuves montrent que la sonde peut progresser au-delà de son
+  point de crash actuel par un moyen non encore considéré. En l'absence
+  des deux, de nouveaux déclenchements de la boucle à la cadence
+  actuelle ne feraient que re-dériver cette même conclusion — la boucle
+  est ARRÊTÉE plutôt que de continuer à sonder sans nouvelle
+  information. Voir
+  `reports/ac6-retail-native-codegen-gate2-r144-both-named-frontiers-confirmed-blocked-maintenance-audits-clean-20260901.md`.
+
 # AC6 retail NTSC-U/J — r143 : vérification coût-bénéfice — ferme le sous-fil DATA.TBL à sa profondeur actuelle, PIVOT vers la prochaine frontière Gate 2 (2026-09-01)
 
 - **Vérification nommée par r142** : d'autres appelants de

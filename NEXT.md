@@ -1132,6 +1132,26 @@ compteur injecté ou fallback ReXGlue.
 67. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
+68. **r144 : les deux frontières nommées (traduction de shaders,
+    chaîne de crash DATA.TBL) sont CONFIRMÉES BLOQUÉES.**
+    `IM_LOAD_IMMEDIATE`→SPIR-V est bloqué par POLITIQUE explicite du
+    projet (`ShaderTranslator::translate` refuse en dur tout microcode
+    Xenos jusqu'à qualification par un oracle — jamais utilisé sur
+    toute la campagne, un vrai blocage qualifié) ET actuellement
+    INATTEIGNABLE (le crash r130-r143 se produit bien avant toute
+    soumission de commandes GPU). La fermeture du sous-fil DATA.TBL par
+    r143 est re-vérifiée : aucun correctif légitime disponible (code
+    guest, pas le runtime de ce projet). Audits de maintenance
+    routiniers tous propres (`audit_claude_md_numbers`,
+    `audit_contract_derivations`, `audit_ac6_contract_addresses`,
+    `audit_instrument_discipline_index`) ; seul
+    `audit_ac6_contract_artifacts` échoue, entièrement confiné à l'arbre
+    N2 abandonné. **Aucun travail Gate 2 actionnable actuellement
+    disponible** — nommé explicitement. Aucun code modifié ce cycle.
+    **Prochain cycle** : re-vérifier SI une session oracle devient
+    disponible OU si de nouvelles preuves de progression de la sonde
+    apparaissent. Voir
+    `reports/ac6-retail-native-codegen-gate2-r144-both-named-frontiers-confirmed-blocked-maintenance-audits-clean-20260901.md`.**
 
 ## Frontières
 

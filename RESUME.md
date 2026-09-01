@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r144-both-named-frontiers-confirmed-blocked-maintenance-audits-clean-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r143-cost-benefit-check-closes-the-data-tbl-subthread-pivoting-to-the-next-gate2-frontier-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r142-the-zero-is-a-read-of-stale-uninitialized-stack-memory-not-a-real-value-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r141-corrects-r139-sub_82338388-does-not-return-sub_82339aa8s-result-directly-20260901.md`;
@@ -701,6 +702,18 @@ décroissants confirmés. r130-r131 restent un vrai succès (ferment le
 crash de r100) indépendamment. Le crash `sub_821F7C80` reste ouvert,
 documenté. **PIVOT vers `IM_LOAD_IMMEDIATE` Xenos→SPIR-V**, prochaine
 frontière Gate 2 ouverte.
+
+**r144 — les deux frontières nommées sont CONFIRMÉES BLOQUÉES ; aucun
+travail Gate 2 actionnable actuellement disponible.**
+`IM_LOAD_IMMEDIATE`→SPIR-V : bloqué par POLITIQUE explicite (oracle
+jamais utilisé sur toute la campagne) ET inatteignable (le crash
+r130-r143 se produit bien avant toute soumission GPU). Fermeture du
+sous-fil DATA.TBL par r143 re-vérifiée, tient. Audits de maintenance
+routiniers tous propres ; seul `audit_ac6_contract_artifacts` échoue,
+confiné à l'arbre N2 abandonné (pas nouveau). Aucun code modifié.
+**La boucle standing (`/loop`) est ARRÊTÉE** — de nouveaux
+déclenchements sans oracle ni nouvelle piste ne feraient que
+re-dériver cette même conclusion.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
