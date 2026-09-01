@@ -1,3 +1,42 @@
+# AC6 retail NTSC-U/J — r108 : la chaîne de crash GATE2 (r100-r107) est fermée — `MmQueryStatistics` n'écrivait jamais son tampon de sortie (2026-09-01)
+
+- **r106 s'est trompé de cadre.** Le pointeur mystère (`0x8feffd1c`)
+  n'est pas hors de toute chaîne d'appel tracée : `Function_821D5F48`
+  passe `r1+96` en argument à `sub_821F4820` (`addi r3,r1,96; bl
+  0x821f4820`), qui écrit à travers ce pointeur (`r31+12` dans son
+  propre corps généré, `ppc_recomp.27.cpp`) — exactement `r1+108`, le
+  slot lu juste après. Une recherche d'écritures indexée sur `ctx.r1`
+  dans l'appelant ne peut pas voir une écriture faite via un autre
+  registre dans une fonction appelée : une évasion de pointeur de cadre.
+- **Cause racine identifiée** : `sub_821F4820` obtient sa valeur d'un
+  appel à `__imp__MmQueryStatistics`, un stub HLE matérialisé par
+  `tools/materialize_native_import_stubs.py` qui, avant ce cycle,
+  n'avait aucun cas dédié et tombait dans le générique
+  (`ctx.r3.u64 = kOfflineStatus;`) — qui ne touche JAMAIS la mémoire
+  invité pointée par le tampon de sortie. La valeur "non initialisée"
+  de r105/r106 était les octets périmés déjà présents dans le tampon de
+  pile de `sub_821F4820`, jamais du territoire noyau/chargeur.
+- **Corrigé** : ajout d'un cas `MmQueryStatistics` écrivant les deux
+  champs réellement lus (`+4`, `+12`) avec des valeurs dérivées de la
+  RAM physique unifiée bien documentée de la Xbox 360 (512 Mo, granularité
+  de page 4 Ko déjà établie par le `rlwinm`-12 de l'appelant) :
+  `0x20000` pages totales, `0x18000` (384 Mo) disponibles. Les champs
+  non lus ailleurs sont mis à zéro plutôt que devinés.
+- **Vérifié en direct, pas seulement par lecture du désassemblage** :
+  instrumentation temporaire (`AC6_R108_DIAG`, restaurée après usage) —
+  `field+12=0x18000000`, puis `alloc result r3=0x16f70000` (non nul :
+  l'allocation RÉUSSIT désormais, contre échec à chaque cycle précédent).
+  Sonde d'entrée bornée rejouée sans instrumentation : atteint la borne
+  de 30s SANS crash — une amélioration stricte par rapport à tous les
+  cycles depuis r100 (qui se terminaient tous par un SIGSEGV dans
+  `sub_821D6C20`).
+- Corrige explicitement la conclusion de r106 ("rien dans la chaîne
+  tracée ne possède cette mémoire") — nommée par cycle, per la
+  discipline du projet. Le nouveau point d'arrêt de la sonde (bloquée à
+  la borne, aucun crash) reste à investiguer : c'est la frontière
+  d'attente/ordonnanceur post-IB déjà nommée par le plan en cours. Voir
+  `reports/ac6-retail-native-codegen-gate2-r108-mmquerystatistics-was-the-uninitialized-source-fixed-20260901.md`.
+
 # AC6 retail NTSC-U/J — r107 : la taille de pile déclarée du XEX écartée — analysée mais jamais utilisée (2026-09-01)
 
 - Hypothèse concrète et vérifiable : ce projet analyse DÉJÀ un champ XEX

@@ -47,6 +47,18 @@ def test_timebase_frequency_is_xenon_qualified(tmp_path: Path) -> None:
     assert "ctx.r3.u64 = 50000000u" in output.read_text()
 
 
+def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    assert "PPC_STORE_U32(buffer + 4, kTotalPhysicalPages)" in text
+    assert "PPC_STORE_U32(buffer + 12, kAvailablePhysicalPages)" in text
+    assert "kAvailablePhysicalPages = 0x18000u" in text
+    assert "ctx.r3.u64 = 0u" in text
+
+
 def test_thread_create_writes_guest_handle_without_host_thread(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__ExCreateThread);\n")

@@ -381,7 +381,36 @@ compteur injecté ou fallback ReXGlue.
     chargeur plus large (hors de portée du désassemblage statique seul),
     ou scoper explicitement ceci comme limitation du harnais. Voir
     `reports/ac6-retail-native-codegen-gate2-r107-xex-stack-size-ruled-out-parsed-but-unused-20260901.md`.
-13. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+13. **r108 a fermé la chaîne de crash GATE2 (r100-r107) — corrige r106
+    par son nom.** r106 s'était trompé de cadre : le pointeur mystère
+    (`0x8feffd1c`) N'est PAS hors de toute chaîne d'appel tracée — c'est
+    une évasion de pointeur de cadre invisible à une recherche
+    d'écritures indexée sur `ctx.r1` seul. `Function_821D5F48` passe
+    `r1+96` à `sub_821F4820`, qui écrit `r31+12` (= `r1+108`) à travers
+    ce pointeur, depuis une valeur obtenue via `__imp__MmQueryStatistics`.
+    **Cause racine réelle** : ce stub HLE (`tools/materialize_native_import_stubs.py`)
+    n'avait aucun cas dédié et tombait dans le générique
+    (`ctx.r3.u64 = kOfflineStatus;`), qui ne touche JAMAIS la mémoire
+    invité du tampon de sortie — la valeur "non initialisée" était des
+    octets de pile périmés, jamais du territoire noyau/chargeur.
+    **Corrigé** : nouveau cas `MmQueryStatistics` écrivant les deux
+    champs réellement lus (RAM physique 512 Mo bien documentée de la
+    Xbox 360, granularité 4 Ko déjà établie par le `rlwinm`-12 de
+    l'appelant : `0x20000` pages totales, `0x18000`=384 Mo disponibles;
+    champs non lus ailleurs mis à zéro, pas devinés). **Vérifié en
+    direct** (instrumentation temporaire, restaurée) :
+    `field+12=0x18000000`, allocation RÉUSSIT désormais
+    (`r3=0x16f70000`, non nul, contre échec systématique avant). Sonde
+    d'entrée rejouée sans instrumentation : atteint la borne de 30s SANS
+    crash, contre SIGSEGV systématique dans `sub_821D6C20` à chaque
+    cycle depuis r100. **Prochain cycle** : ré-appliquer l'étape 1 du
+    plan en cours (vérification statique de ce qu'attend réellement le
+    guest post-GATE2 — NE PAS supposer que c'est encore
+    `sub_821E6AC8`, cette chaîne d'appel n'a pas été re-tracée depuis
+    que le crash r100 l'a rendue caduque) avant d'implémenter un
+    quelconque chemin de signal. Voir
+    `reports/ac6-retail-native-codegen-gate2-r108-mmquerystatistics-was-the-uninitialized-source-fixed-20260901.md`.
+14. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

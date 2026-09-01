@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r108-mmquerystatistics-was-the-uninitialized-source-fixed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r107-xex-stack-size-ruled-out-parsed-but-unused-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r106-uninitialized-stack-slot-pinpointed-outside-xstart-own-frame-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r105-crash-root-cause-uninitialized-stack-oversized-allocation-20260901.md`;
@@ -218,6 +219,25 @@ JAMAIS consulté ailleurs dans le harnais (`r1` codé en dur), et 256 Ko
 n'explique pas une quantité de 4/8 Mo. Résultat négatif documenté,
 écartant proprement une hypothèse plausible plutôt que de la laisser non
 testée. Aucun code modifié.
+
+**r108 a fermé la chaîne de crash GATE2 (r100-r107) et corrige r106 par
+son nom.** r106 s'était trompé de cadre : le pointeur mystère
+(`0x8feffd1c`) est écrit par `sub_821F4820`, via une évasion de pointeur
+(`Function_821D5F48` lui passe `r1+96`; il écrit `r31+12`) invisible à
+une recherche indexée sur `ctx.r1` seul. Cause racine réelle : le stub
+HLE `__imp__MmQueryStatistics` (`tools/materialize_native_import_stubs.py`)
+n'avait aucun cas dédié et ne touchait jamais la mémoire invité du
+tampon de sortie — les octets étaient de la pile périmée, pas du
+territoire noyau/chargeur. **Corrigé** : nouveau cas écrivant les deux
+champs lus (RAM physique 512 Mo bien documentée de la Xbox 360, page
+4 Ko déjà établie par le code invité : `0x20000` pages totales,
+`0x18000`=384 Mo disponibles). **Vérifié en direct** :
+`field+12=0x18000000`, l'allocation RÉUSSIT désormais (`r3=0x16f70000`,
+non nul). Sonde d'entrée rejouée sans instrumentation : atteint la
+borne de 30s SANS crash, contre SIGSEGV systématique depuis r100.
+Prochain cycle : ré-appliquer l'étape 1 du plan en cours pour ce que le
+guest attend réellement post-GATE2 (ne pas supposer que c'est encore
+`sub_821E6AC8` sans re-tracer).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

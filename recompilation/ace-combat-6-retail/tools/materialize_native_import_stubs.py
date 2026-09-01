@@ -395,6 +395,43 @@ def render_body(name: str) -> str:
 """
     if name == "KeQueryPerformanceFrequency":
         return "  ctx.r3.u64 = 50000000u;\n"
+    if name == "MmQueryStatistics":
+        # r108: the generic offline-import default below only sets ctx.r3
+        # (a status code) and never touches the guest output buffer the
+        # caller passed in ctx.r3 -- but MmQueryStatistics's real contract is
+        # to fill that buffer. r108 traced this precisely: sub_821F4820
+        # (generated/ppc_recomp.27.cpp) hands this stub a 104-byte buffer
+        # (its own Length field, set by the caller before the call) and,
+        # after this call returns, reads fields at +4 and +12 unconditionally
+        # -- no status check gates the read. Left unwritten, those fields
+        # carry whatever stale bytes already occupied that stack slot, which
+        # is exactly r105/r106's "uninitialized" 0x400000 at
+        # Function_821D5F48's frame+108 (== sub_821F4820's own +12,
+        # PPC_STORE_U32(r31.u32 + 12, ...) in ppc_recomp.27.cpp): a
+        # rlwinm-by-12 (pages-to-bytes) transform of this field, consumed a
+        # few instructions later as an available-memory figure the caller
+        # subtracts 0x800000 (8MiB) from -- which underflows when the field
+        # is left at zero-or-small garbage.
+        #
+        # Real hardware never returns uninitialized kernel memory here,
+        # so this fills the two fields sub_821F4820 actually reads with a
+        # deterministic pair derived from the Xbox 360's well-documented
+        # unified 512MiB (0x20000000-byte) physical memory, at the 4KiB page
+        # granularity the caller's own rlwinm-12 shift already establishes:
+        # total = 0x20000 pages, available = 0x18000 pages (384MiB), leaving
+        # headroom for the OS/kernel reservation without asserting its exact
+        # real figure. The two fields consumed nowhere else in the traced
+        # call graph (+16, +20) are zeroed rather than guessed at, matching
+        # this stub's own no-fabrication discipline for anything unread.
+        return """  constexpr std::uint32_t kTotalPhysicalPages = 0x20000u;
+  constexpr std::uint32_t kAvailablePhysicalPages = 0x18000u;
+  const std::uint32_t buffer = ctx.r3.u32;
+  PPC_STORE_U32(buffer + 4, kTotalPhysicalPages);
+  PPC_STORE_U32(buffer + 12, kAvailablePhysicalPages);
+  PPC_STORE_U32(buffer + 16, 0u);
+  PPC_STORE_U32(buffer + 20, 0u);
+  ctx.r3.u64 = 0u;
+"""
     return f"""  trace_offline_import("{name}");
   ctx.r3.u64 = kOfflineStatus;
 """
