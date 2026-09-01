@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r107-xex-stack-size-ruled-out-parsed-but-unused-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r106-uninitialized-stack-slot-pinpointed-outside-xstart-own-frame-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r105-crash-root-cause-uninitialized-stack-oversized-allocation-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r104-gdb-live-tracing-unreliable-static-evidence-shows-no-skip-20260901.md`;
@@ -208,6 +209,15 @@ correctif : l'origine nécessite soit de tracer une séquence de boot
 noyau/chargeur plus large que ce harnais ne reproduit, soit d'accepter
 cela comme une limitation de portée du harnais mono-thread. Aucun code
 modifié.
+
+**r107 a écarté une hypothèse concrète pour la valeur mystère de r106.**
+Ce projet analyse déjà `stack_size` depuis l'en-tête XEX
+(`native_xex.cpp`) — vérifié directement (diagnostic temporaire dans
+`ac6recomp_main.cpp`, tracké, restauré après usage) : `0x40000` (256 Ko),
+JAMAIS consulté ailleurs dans le harnais (`r1` codé en dur), et 256 Ko
+n'explique pas une quantité de 4/8 Mo. Résultat négatif documenté,
+écartant proprement une hypothèse plausible plutôt que de la laisser non
+testée. Aucun code modifié.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

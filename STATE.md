@@ -1,3 +1,24 @@
+# AC6 retail NTSC-U/J — r107 : la taille de pile déclarée du XEX écartée — analysée mais jamais utilisée (2026-09-01)
+
+- Hypothèse concrète et vérifiable : ce projet analyse DÉJÀ un champ XEX
+  déclaré (`kHeaderDefaultStackSize`, tag `0x00020200`) dans
+  `native_xex.cpp` — pourrait-il expliquer la valeur mystère de r106?
+  Ajouté UNE ligne de diagnostic temporaire dans le fichier hôte
+  maintenu à la main (`ac6recomp_main.cpp`, tracké, restauré après
+  usage; `ctest` 9/9 reconfirmé), imprimant `stack_size`.
+- **Résultat** : `stack_size=0x40000` (256 Ko). **Écarté** : (1) ce
+  harnais analyse ce champ mais ne l'utilise JAMAIS nulle part ailleurs
+  (`r1` codé en dur à `0x8ff00000` sans égard à la valeur déclarée du
+  titre — une vraie lacune de fidélité, indépendante, notée mais pas
+  corrigée); (2) 256 Ko n'explique PAS de façon plausible une quantité de
+  4 Mo/8 Mo — écarté par mesure directe, pas par déduction supplémentaire.
+- **Résultat négatif documenté**, dans l'esprit de la discipline du
+  projet (CLAUDE.md cite les cycles 1111/1113 pour ce même motif) :
+  élimine proprement une hypothèse plausible plutôt que de la laisser
+  comme supposition non testée pour un futur cycle. Aucun code natif
+  modifié. Voir
+  `reports/ac6-retail-native-codegen-gate2-r107-xex-stack-size-ruled-out-parsed-but-unused-20260901.md`.
+
 # AC6 retail NTSC-U/J — r106 : le slot de pile non initialisé localisé hors du cadre de `_xstart` lui-même (2026-09-01)
 
 - Même technique que r105 (instrumentation temporaire du source généré,

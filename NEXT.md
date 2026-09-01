@@ -357,7 +357,31 @@ compteur injecté ou fallback ReXGlue.
     comme limitation du harnais `initialize_probe_thread` et investiguer
     ce qu'un bring-up plus complet devrait fournir. Voir
     `reports/ac6-retail-native-codegen-gate2-r106-uninitialized-stack-slot-pinpointed-outside-xstart-own-frame-20260901.md`.
-12. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+12. **r107 a écarté une hypothèse concrète et vérifiable pour la valeur
+    mystère de r106, sans deviner de correctif.** Ce projet analyse déjà
+    un champ XEX déclaré (`kHeaderDefaultStackSize`, tag `0x00020200`)
+    dans `native_xex.cpp` — candidat plausible pour ce qui devrait
+    occuper l'adresse trouvée par r106. Vérifié directement (une ligne de
+    diagnostic temporaire dans `ac6recomp_main.cpp`, fichier hôte
+    maintenu à la main et TRACKÉ, restauré depuis sauvegarde après usage;
+    `ctest` 9/9 reconfirmé) : `stack_size=0x40000` (256 Ko). **Écarté sur
+    deux points** : (1) ce harnais analyse ce champ mais ne l'utilise
+    JAMAIS ailleurs (`grep` complet : aucun hit avant ce cycle) — `r1` est
+    codé en dur à `0x8ff00000` sans égard à la valeur déclarée du titre,
+    une vraie lacune de fidélité indépendante, notée mais pas corrigée
+    ici (ne pas la vendre comme un correctif du plantage r105/r106 sans
+    qu'un futur cycle vérifie qu'elle change réellement la valeur à
+    `0x8feffd1c`); (2) 256 Ko n'explique pas de façon plausible une
+    quantité de 4 Mo/8 Mo — écarté par mesure directe, pas par déduction.
+    **Résultat négatif documenté**, même discipline que les cycles
+    1111/1113 cités dans CLAUDE.md : élimine proprement une hypothèse
+    plausible plutôt que de la laisser comme supposition non testée pour
+    un futur cycle. Aucun code natif modifié. **Les deux options de
+    r106 restent inchangées** : tracer une séquence de boot noyau/
+    chargeur plus large (hors de portée du désassemblage statique seul),
+    ou scoper explicitement ceci comme limitation du harnais. Voir
+    `reports/ac6-retail-native-codegen-gate2-r107-xex-stack-size-ruled-out-parsed-but-unused-20260901.md`.
+13. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
