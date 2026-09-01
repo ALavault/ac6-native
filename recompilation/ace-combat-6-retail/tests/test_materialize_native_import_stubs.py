@@ -394,6 +394,28 @@ def test_create_semaphore_registers_a_waitable_event(tmp_path: Path) -> None:
     assert "create_event(" not in timer_and_mutant
 
 
+def test_ob_reference_object_by_handle_writes_the_real_handle_through(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__ObReferenceObjectByHandle);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r147: (Handle, ObjectType, PVOID* Object) -- every call site this
+    # project has traced treats the returned object as an opaque token
+    # immediately re-passed to another kernel thread API, never
+    # dereferenced directly, so the real handle itself is a safe stand-in.
+    # This also fixes a real thread-resume bug: KeResumeThread is called
+    # on this output at one call site without checking this call's own
+    # status, so an unwritten *Object left a parked ExCreateThread worker
+    # unresumable.
+    body = text.split("void __imp__ObReferenceObjectByHandle")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U32(ctx.r5.u32, ctx.r3.u32)" in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(
     tmp_path: Path,
 ) -> None:

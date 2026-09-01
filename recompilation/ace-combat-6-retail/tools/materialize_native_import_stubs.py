@@ -412,6 +412,31 @@ def render_body(name: str) -> str:
                                        was_already_running ? 0u : 1u);
   ctx.r3.u64 = 0u;
 """
+    if name == "ObReferenceObjectByHandle":
+        # r147: real signature (this project's own reduced Xbox 360 kernel
+        # form, confirmed consistent across every call site this cycle
+        # checked -- sub_821EF2xx, sub_821F3Dxx, sub_821F3Exx,
+        # sub_823ADCxx) is (Handle, ObjectType, PVOID* Object). Every one
+        # of those call sites treats the returned "object" purely as an
+        # opaque token immediately re-passed to another kernel thread API
+        # (KeSetBasePriorityThread/KeQueryBasePriorityThread/
+        # ObDereferenceObject) -- never dereferenced by guest code itself
+        # -- so this project's own handles (already-opaque integers) serve
+        # directly as that token: write the handle back out as the object.
+        #
+        # The generic offline-import fallback this call previously fell
+        # through to never wrote *Object at all. One call site
+        # (sub_823ADE00 in the generated tree) does not even check this
+        # call's own return status before immediately calling
+        # KeResumeThread on that unwritten, uninitialized *Object -- the
+        # real handle a matching ExCreateThread(..., CREATE_SUSPENDED)
+        # parked never reaches KeResumeThread's real set_event() dispatch,
+        # so that worker thread can never actually resume. Writing the
+        # real handle through fixes that thread-resume path directly, not
+        # just this import's own status.
+        return """  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, ctx.r3.u32);
+  ctx.r3.u64 = 0u;
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

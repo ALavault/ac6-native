@@ -1,3 +1,51 @@
+# AC6 retail NTSC-U/J — r148 : VRAI CORRECTIF — `ObReferenceObjectByHandle` n'écrivait JAMAIS sa sortie, échouant un `KeResumeThread` sur de la mémoire de pile non initialisée (2026-09-01)
+
+- **Suivant le "prochain" de r147** : la trace complète contre le binaire
+  r145/r147 montre `ObReferenceObjectByHandle` comme l'import non géré
+  le PLUS FRÉQUENT de cette session (35 appels) — tombant à chaque fois
+  sur le stub générique offline (retourne `kOfflineStatus`, n'écrit
+  rien).
+- **4 sites d'appel indépendants lus** : signature réelle cohérente
+  `(Handle, ObjectType, PVOID* Object)`. TOUS traitent l'"objet" renvoyé
+  comme un jeton OPAQUE immédiatement repassé à une AUTRE API kernel de
+  thread (`KeSetBasePriorityThread`/`KeQueryBasePriorityThread`/
+  `ObDereferenceObject`/`KeResumeThread`) — JAMAIS déréférencé
+  directement. Nos propres handles (déjà des entiers opaques)
+  fonctionnent directement comme ce jeton.
+- **VRAI BUG SÉPARÉ trouvé** : un site d'appel (après un
+  `ExCreateThread`) appelle `KeResumeThread` sur la sortie
+  d'`ObReferenceObjectByHandle` SANS MÊME vérifier son statut — comme
+  l'ancien stub générique n'écrivait JAMAIS `*Object`, `KeResumeThread`
+  recevait de la MÉMOIRE DE PILE NON INITIALISÉE au lieu du VRAI handle
+  de thread — le thread parqué sous `CREATE_SUSPENDED` ne pouvait JAMAIS
+  réellement reprendre.
+- **CORRECTIF** : `ObReferenceObjectByHandle` écrit maintenant le vrai
+  handle directement comme "objet" et renvoie SUCCESS.
+  `KeSetBasePriorityThread`/`KeQueryBasePriorityThread`/
+  `ObDereferenceObject`/`KeSetAffinityThread` (nouveau, jamais vu avant)
+  restent des stubs génériques inchangés — aucun site échantillonné ne
+  vérifie leur retour.
+- **Tests** : nouveau
+  `test_ob_reference_object_by_handle_writes_the_real_handle_through`.
+  Suite complète : 141/141 (était 140/140), 28/28 dans ce fichier.
+- **VÉRIFIÉ EN DIRECT** : `ObReferenceObjectByHandle` n'apparaît PLUS
+  comme import non géré — le correctif est réellement exercé. De
+  NOUVEAUX imports jamais vus dans TOUTE cette investigation
+  apparaissent en aval (`KeSetAffinityThread`). Le crash
+  `sub_821F7C80` persiste au MÊME site exact — attendu, chaîne causale
+  totalement séparée (r130-r142).
+- **DÉCISION** : conservé et committé sur ses propres mérites, même
+  précédent que r145 — 2 vrais bugs corrigés, changement de
+  comportement observable confirmé, indépendant du crash actuellement
+  investigué.
+- **Gates** : mission01 (même échec pré-existant), ctest 9/9, Python
+  141/141, `git status` propre, démo 185 inchangé.
+  **Prochain cycle** : lire les sites d'appel de `KeSetAffinityThread`
+  (jamais vu avant) avant de décider s'il nécessite une vraie gestion.
+  Continuer à vérifier systématiquement l'effet observable de chaque
+  correctif natif réel. Voir
+  `reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md`.
+
 # AC6 retail NTSC-U/J — r147 : `sub_82390880` est une fonctionnalité de CAPTURE VIDÉO de debug — CONFIRMÉ sans rapport avec DATA.TBL, PAS implémenté (2026-09-01)
 
 - **Suivant le "prochain" de r146** : `sub_82390880` a exactement 2 sites

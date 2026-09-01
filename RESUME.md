@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r147-sub_82390880-is-a-movie-capture-debug-feature-unrelated-to-data-tbl-not-implementing-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r146-r145s-fix-reaches-new-ground-ntqueryinformationfile-ntsetinformationfile-now-hit-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r145-real-fix-ntcreatesemaphore-never-registered-a-waitable-object-ntreleasesemaphore-wrong-register-20260901.md`;
@@ -758,6 +759,19 @@ file segment %s.\n"`. `NtQueryInformationFile`/`NtSetInformationFile`
 NE sont PAS implémentés — piste fermée, scope creep évité. Aucun code
 modifié. Prochain cycle : chercher d'autres effets observables du
 correctif du sémaphore de r145.
+
+**r148 — VRAI CORRECTIF, même précédent que r145.**
+`ObReferenceObjectByHandle` (import non géré le plus fréquent, 35
+appels) n'écrivait jamais sa sortie ; 4 sites d'appel confirment un
+usage cohérent en jeton opaque. Bug séparé : un site appelle
+`KeResumeThread` sur cette sortie sans vérifier le statut — recevait de
+la pile non initialisée au lieu du vrai handle, empêchant un thread
+parqué de reprendre. CORRIGÉ : écrit le vrai handle, renvoie SUCCESS.
+Tests 141/141. Vérifié en direct : nouveaux imports jamais vus en aval
+(`KeSetAffinityThread`) — changement de comportement réel confirmé. Le
+crash `sub_821F7C80` persiste (chaîne causale séparée). Conservé sur
+ses propres mérites. Prochain cycle : lire les sites d'appel de
+`KeSetAffinityThread`.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

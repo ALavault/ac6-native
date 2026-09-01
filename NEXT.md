@@ -1216,6 +1216,27 @@ compteur injecté ou fallback ReXGlue.
     fil de capture vidéo maintenant fermé. Voir
     `reports/ac6-retail-native-codegen-gate2-r147-sub_82390880-is-a-movie-capture-debug-feature-unrelated-to-data-tbl-not-implementing-20260901.md`.**
 
+72. **r148 : VRAI CORRECTIF — `ObReferenceObjectByHandle` n'écrivait
+    JAMAIS sa sortie, échouant un `KeResumeThread` sur de la mémoire de
+    pile non initialisée.** Import non géré le plus fréquent de la
+    session (35 appels). 4 sites d'appel confirment une signature
+    cohérente `(Handle, ObjectType, PVOID* Object)`, traitée partout
+    comme un jeton opaque repassé à une autre API kernel — jamais
+    déréférencée. Bug séparé trouvé : un site appelle `KeResumeThread`
+    sur cette sortie SANS vérifier le statut — l'ancien stub
+    n'écrivait jamais `*Object`, donc `KeResumeThread` recevait de la
+    pile non initialisée au lieu du vrai handle, empêchant un thread
+    parqué de reprendre. CORRIGÉ : écrit le vrai handle comme "objet",
+    renvoie SUCCESS. Tests 141/141 (était 140/140). Vérifié en direct :
+    l'import n'apparaît plus comme non géré, de nouveaux imports jamais
+    vus apparaissent en aval (`KeSetAffinityThread`) — changement de
+    comportement réel confirmé. Le crash `sub_821F7C80` persiste au
+    même site (chaîne causale séparée, r130-r142). Conservé et committé
+    sur ses propres mérites, même précédent que r145. **Prochain
+    cycle** : lire les sites d'appel de `KeSetAffinityThread` avant de
+    décider s'il nécessite une vraie gestion. Voir
+    `reports/ac6-retail-native-codegen-gate2-r148-real-fix-obreferenceobjectbyhandle-never-wrote-its-output-stranding-a-resumed-thread-20260901.md`.**
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;
