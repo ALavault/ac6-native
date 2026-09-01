@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r160 : le breakpoint live de Xenia Edge ATTEINT l'instruction exacte `[r1+88]` mais décoder ses registres JIT est un effort séparé, non investi (2026-09-01)
+
+- **Breakpoint Xenia Edge (`break_on_instruction=0x823385d0`) FONCTIONNE**,
+  sous gdb : SIGTRAP capturé exactement à l'instruction cible (`rcx`
+  contient l'adresse `0x823385d0` telle quelle) — confirme que ce
+  chemin de code est RÉELLEMENT atteint en boot normal, pas mort/évité.
+- **Décodage des registres JIT NON abouti** : `rax`/`rbx`/`r10`
+  (`0x7018f8xx`, dans la plage des adresses de pile invité déjà vues
+  dans le log) inaccessibles directement via `x` gdb ; `r12`/`r13`
+  (`0x8291...`) accessibles mais lus à zéro, relation avec `r1` invité
+  non établie.
+- **DÉCISION** : mécanisme viable et vérifié, mais décoder la
+  convention de registres JIT de Xenia Edge (binaire release, sans
+  symboles) est un investissement séparé, plus important, au
+  bénéfice incertain — deviendrait exactement le pattern "règle
+  plausible sans contrôle" que le projet refuse (précédent r111/r113).
+  Arrêté ici, coût/bénéfice (pattern r144/r154).
+- **Aucun code modifié, aucun build ce cycle**. Voir
+  `reports/ac6-retail-native-codegen-gate2-r160-xenia-edge-live-breakpoint-works-but-jit-register-decoding-is-a-separate-uninvested-effort-20260901.md`.
+
 # AC6 retail NTSC-U/J — r159 : la vraie désassemblation Ghidra montre que la lecture non initialisée est FIDÈLE octet-par-octet — CORRIGE r157/r158 (2026-09-01)
 
 - **Désassemblation RÉELLE** (`Ac6XenonDisasm`, pas le C++ généré) de

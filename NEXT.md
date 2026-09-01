@@ -1432,6 +1432,17 @@ compteur injecté ou fallback ReXGlue.
     modifié. Voir
     `reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md`.
 
+84. **r160 : le breakpoint live de Xenia Edge ATTEINT l'instruction
+    exacte `[r1+88]` mais décoder ses registres JIT est un effort
+    séparé, non investi.** `break_on_instruction=0x823385d0` sous gdb :
+    SIGTRAP capturé exactement là (rcx=adresse cible) — confirme le
+    chemin RÉELLEMENT atteint en boot normal. Décodage des registres
+    JIT (quel registre host = r1 invité) NON abouti — binaire release
+    sans symboles, effort de rétro-ingénierie séparé et plus important,
+    bénéfice incertain, frôlerait une règle non contrôlée. Arrêté ici
+    coût/bénéfice (pattern r144/r154). Aucun code modifié. Voir
+    `reports/ac6-retail-native-codegen-gate2-r160-xenia-edge-live-breakpoint-works-but-jit-register-decoding-is-a-separate-uninvested-effort-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;
