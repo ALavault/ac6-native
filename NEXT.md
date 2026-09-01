@@ -1110,7 +1110,26 @@ compteur injecté ou fallback ReXGlue.
     reste le meilleur usage des prochains cycles face à d'autres
     frontières Gate 2. Voir
     `reports/ac6-retail-native-codegen-gate2-r142-the-zero-is-a-read-of-stale-uninitialized-stack-memory-not-a-real-value-20260901.md`.**
-66. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+66. **r143 : vérification coût-bénéfice — ferme le sous-fil DATA.TBL
+    (r130-r142, 13 cycles) à sa profondeur actuelle, PIVOT vers cette
+    frontière (`IM_LOAD_IMMEDIATE`).** Vérification nommée par r142 :
+    d'autres appelants du wrapper d'attente générique
+    `sub_821F4128`/`sub_821F7538` ne lisent AUCUN slot de pile pareil
+    après l'appel (`sub_821F4128` a 12 appelants dans des fichiers
+    différents — générique, pas spécifique à DATA.TBL) — preuve CONTRE
+    la théorie `IO_STATUS_BLOCK`. Décision : ce sous-fil a tracé un vrai
+    crash à travers 11 mécanismes distincts, chacun mesuré en direct,
+    jusqu'à une lecture de pile non initialisée dont la résolution
+    complète exigerait de comparer la disposition de pile de cette
+    recompilation au vrai matériel — sans technique établie pour ça sans
+    oracle, et sans correctif concret distinct de ce que r130-r131 ont
+    déjà livré. Rendements décroissants confirmés par la vérification de
+    ce cycle. Ce qui reste vrai : r130-r131 ont réellement fermé le
+    crash original de r100 (résultat indépendant) ; le nouveau crash
+    `sub_821F7C80` reste ouvert, entièrement documenté. Aucun code
+    modifié ce cycle. Voir
+    `reports/ac6-retail-native-codegen-gate2-r143-cost-benefit-check-closes-the-data-tbl-subthread-pivoting-to-the-next-gate2-frontier-20260901.md`.**
+67. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

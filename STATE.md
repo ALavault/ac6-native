@@ -1,3 +1,56 @@
+# AC6 retail NTSC-U/J — r143 : vérification coût-bénéfice — ferme le sous-fil DATA.TBL à sa profondeur actuelle, PIVOT vers la prochaine frontière Gate 2 (2026-09-01)
+
+- **Vérification nommée par r142** : d'autres appelants de
+  `sub_821F4128`/`sub_821F7538` (le wrapper d'attente kernel générique)
+  lisent-ils AUSSI un slot de pile pareillement après l'appel (suggérant
+  une vraie convention `IO_STATUS_BLOCK`) ? `sub_821F4128` a des
+  appelants dans **DOUZE** fichiers générés différents — un wrapper
+  d'attente GÉNÉRIQUE utilisé partout, pas quelque chose de spécifique à
+  DATA.TBL. Un site d'appel échantillonné (`ppc_recomp.11.cpp:11858`)
+  NE lit AUCUN slot de pile adjacent après l'attente — va DIRECTEMENT à
+  un travail sans rapport. **Ceci est une preuve CONTRE la théorie
+  `IO_STATUS_BLOCK`**, pas pour elle.
+- **DÉCISION** : ce sous-fil (r130-r142, 13 cycles) a tracé un vrai
+  crash depuis `sub_821F7C80` (SIGSEGV) à travers 11 mécanismes
+  DISTINCTS, chacun MESURÉ EN DIRECT, jusqu'à UNE SEULE feuille :
+  `sub_82338388` renvoie du contenu de pile non initialisé parce qu'une
+  attente kernel expire et que rien ne remplit la valeur lue ensuite.
+  Chaque maillon est étayé par une mesure en direct ; plusieurs
+  conclusions intermédiaires de cette investigation ont été attrapées
+  et corrigées dans le même cycle ou le suivant (r135 a attrapé sa
+  propre erreur d'attribution de frontière de fonction en plein cycle,
+  r138 et r140 ont chacun testé et réfuté une hypothèse spécifique en
+  direct plutôt que d'accepter une lecture statique plausible, r141 a
+  corrigé une prémisse structurante affirmée par r139). C'est un cas
+  d'école complet et bien étayé selon les propres standards de ce
+  projet.
+- **Continuer plus loin dans CETTE SEULE feuille a des rendements
+  fortement décroissants** : même une réponse concluante n'expliquerait
+  QUE pourquoi la disposition de pile de CETTE recompilation diffère de
+  celle du vrai matériel — une question sans technique établie pour y
+  répondre sans oracle (explicitement hors périmètre de toute cette
+  campagne) — et ne pointerait vers AUCUN correctif concret distinct de
+  ce que r130-r131 ont déjà livré (le vrai gain livrable de tout cet
+  arc : `NtCreateFile`/`NtReadFile` contre du média réel, et le
+  correctif `maximum_size` XDVDFS).
+- **Ce qui reste vrai et committé** : les correctifs de r130-r131
+  (`NativeGuestMediaService`, `NtCreateFile`/`NtReadFile`, correctif
+  XDVDFS) sont réels, testés, et ont RÉELLEMENT fermé le crash original
+  de r100 — ce résultat tient indépendamment du reste de ce sous-fil.
+  Le nouveau crash `sub_821F7C80` exposé depuis r131 est réel et
+  reproductible, mais se termine maintenant dans un comportement de
+  contenu de pile du code retail que ce projet ne peut pas résoudre
+  davantage sans effort disproportionné ; laissé ouvert, entièrement
+  documenté, plutôt que patché avec une supposition non vérifiée.
+- **Aucun code source modifié ce cycle** — vérification statique pure
+  (grep, lecture de fichiers) + décision. Gates inchangées depuis l'état
+  propre et vérifié de r142.
+  **Prochain cycle** : PIVOT vers le prochain élément ouvert de
+  `NEXT.md` — la traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V, la ligne
+  de clôture encore ouverte du backlog. Lire son contexte existant
+  avant de commencer une investigation fraîche. Voir
+  `reports/ac6-retail-native-codegen-gate2-r143-cost-benefit-check-closes-the-data-tbl-subthread-pivoting-to-the-next-gate2-frontier-20260901.md`.
+
 # AC6 retail NTSC-U/J — r142 : le `0` est une lecture de mémoire de PILE JAMAIS ÉCRITE, pas une vraie valeur — `sub_82338388` timeout et son "résultat" n'a jamais été rempli (2026-09-01)
 
 - **Suivant l'instruction de r141** : lecture de `sub_821F7538` — une

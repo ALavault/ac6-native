@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r143-cost-benefit-check-closes-the-data-tbl-subthread-pivoting-to-the-next-gate2-frontier-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r142-the-zero-is-a-read-of-stale-uninitialized-stack-memory-not-a-real-value-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r141-corrects-r139-sub_82338388-does-not-return-sub_82339aa8s-result-directly-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md`;
@@ -686,6 +687,20 @@ code modifié (2 diagnostics, dont un jeté sans lecture pour excès de
 volume). Étant donné la profondeur déjà atteinte (r129-r142), évaluer
 le coût-bénéfice de pousser plus loin ce sous-fil précis vs explorer
 d'autres frontières Gate 2.
+
+**r143 — vérification coût-bénéfice, FERME le sous-fil DATA.TBL,
+PIVOT.** Vérification nommée par r142 : d'autres appelants du wrapper
+d'attente générique (`sub_821F4128`, 12 appelants) ne lisent aucun slot
+de pile pareil après l'appel — preuve CONTRE la théorie
+`IO_STATUS_BLOCK`. Décision : 13 cycles (r130-r142), 11 mécanismes
+distincts mesurés en direct, jusqu'à une lecture de pile non
+initialisée dont la résolution exigerait de comparer contre le vrai
+matériel — pas de technique établie sans oracle, pas de correctif
+concret distinct de r130-r131 (déjà livrés et réels). Rendements
+décroissants confirmés. r130-r131 restent un vrai succès (ferment le
+crash de r100) indépendamment. Le crash `sub_821F7C80` reste ouvert,
+documenté. **PIVOT vers `IM_LOAD_IMMEDIATE` Xenos→SPIR-V**, prochaine
+frontière Gate 2 ouverte.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
