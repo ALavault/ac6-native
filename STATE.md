@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — r161 : MESURE LIVE DÉCISIVE — Xenia Edge laisse `0x39e8` (14824), PAS une taille garbage catastrophique — la chaîne causale DATA.TBL est maintenant PROUVÉE dépendante de l'environnement (2026-09-01)
+
+- **Méthode principielle** : désassemblation du code JIT réel au point
+  de trap (`x/40i $rip`) plutôt que deviner — révèle littéralement
+  `mov 0x30(%rsi),%rbx` (rsi=PPCContext*, r1 invité à ctx+0x30, CONFIRMÉ
+  contre le vrai source public `has207/xenia-edge`) puis
+  `movbe 0x58(%rdi,%rax,1),%rbx` (rdi=base mémoire invité, chargement
+  swappé big-endian) — l'instruction CIBLE elle-même.
+- **VALEUR MESURÉE** : adresse hôte cible = `rdi + r1 + 0x58` =
+  `0x17018f908`. Octets bruts (ordre d'adresse) : `00 00 00 00 00 00 39
+  e8` = big-endian 64-bit = **`0x39e8` = 14824 décimal**.
+- **VÉRIFICATION CROISÉE** : les octets `[r1+84..+87]` (juste avant)
+  lisent `00 00 00 01` = 1 exactement — l'invariant connu et
+  indépendamment dérivé de r159 (`sub_823382A8` écrit `1` à cet
+  offset). Confirme tout le calcul d'adresse. 2 méthodes de lecture
+  gdb indépendantes concordent.
+- **ÉTABLIT DE FAÇON DÉCISIVE** : Xenia Edge laisse une petite valeur
+  ORDINAIRE (14824) à cet emplacement — PAS une classe ~4 GiB
+  catastrophique. Convertit le modèle plausible de r150 en FAIT PROUVÉ :
+  chaque environnement a son propre contenu de pile résiduel
+  génuinement non initialisé — notre recompilation (`0xfeffffee`) est
+  l'exception catastrophique, pas la norme.
+- **N'ÉTABLIT PAS** : la vraie valeur matériel réel (Xenia Edge a sa
+  propre histoire d'allocation) ; une recette de fix (reproduire la
+  valeur de Xenia Edge serait la valeur synthétique refusée, précédent
+  r53) ; pourquoi le pattern de réutilisation de pile de NOTRE
+  recompilation diffère assez pour être catastrophique.
+- **DÉCISION** : ferme le fil de comparaison live DATA.TBL (r150-r161).
+  Tout travail futur serait une investigation de fix native
+  séparément scopée, pas une continuation de la comparaison oracle.
+- **Aucun code modifié, aucun build ce cycle**. Voir
+  `reports/ac6-retail-native-codegen-gate2-r161-decisive-live-value-xenia-edge-leaves-14824-not-a-catastrophic-garbage-allocation-size-20260901.md`.
+
 # AC6 retail NTSC-U/J — r160 : le breakpoint live de Xenia Edge ATTEINT l'instruction exacte `[r1+88]` mais décoder ses registres JIT est un effort séparé, non investi (2026-09-01)
 
 - **Breakpoint Xenia Edge (`break_on_instruction=0x823385d0`) FONCTIONNE**,

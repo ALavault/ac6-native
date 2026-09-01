@@ -1443,6 +1443,27 @@ compteur injecté ou fallback ReXGlue.
     coût/bénéfice (pattern r144/r154). Aucun code modifié. Voir
     `reports/ac6-retail-native-codegen-gate2-r160-xenia-edge-live-breakpoint-works-but-jit-register-decoding-is-a-separate-uninvested-effort-20260901.md`.
 
+85. **r161 : MESURE LIVE DÉCISIVE — Xenia Edge laisse `0x39e8` (14824),
+    PAS une taille garbage catastrophique — la chaîne causale DATA.TBL
+    est PROUVÉE dépendante de l'environnement.** Désassemblation du
+    code JIT réel au point de trap (méthode principielle, pas une
+    supposition) : `rsi`=PPCContext* (r1 invité à ctx+0x30, confirmé
+    contre le source public has207/xenia-edge), `rdi`=base mémoire
+    invité, `movbe 0x58(%rdi,%rax,1),%rbx` = l'instruction cible
+    elle-même. Valeur mesurée à l'adresse hôte calculée
+    (`0x17018f908`) : `0x39e8` = 14824, vérifié par 2 méthodes de
+    lecture gdb indépendantes ET par un invariant connu adjacent
+    (offset+4=1, dérivé indépendamment de r159) qui confirme tout le
+    calcul d'adresse. Convertit le modèle plausible de r150 en FAIT
+    PROUVÉ : chaque environnement a son propre contenu de pile
+    résiduel — notre recompilation (`0xfeffffee`) est l'exception
+    catastrophique, pas la norme. N'établit pas la vraie valeur du
+    matériel réel, ni une recette de fix (reproduire Xenia Edge serait
+    une valeur synthétique refusée). Ferme le fil de comparaison live
+    DATA.TBL (r150-r161) ; tout travail futur serait une investigation
+    de fix native séparément scopée. Aucun code modifié. Voir
+    `reports/ac6-retail-native-codegen-gate2-r161-decisive-live-value-xenia-edge-leaves-14824-not-a-catastrophic-garbage-allocation-size-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r161-decisive-live-value-xenia-edge-leaves-14824-not-a-catastrophic-garbage-allocation-size-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r160-xenia-edge-live-breakpoint-works-but-jit-register-decoding-is-a-separate-uninvested-effort-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r159-real-disassembly-shows-the-uninitialized-read-is-byte-for-byte-faithful-corrects-r157-r158-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r158-pinned-xenia-edge-release-qualifies-r157-fully-progresses-past-esrb-notice-20260901.md`;
@@ -921,6 +922,18 @@ exactement là — confirme le chemin réellement atteint en boot normal.
 Décodage des registres JIT (quel host reg = r1 invité) NON abouti —
 rétro-ingénierie séparée sur binaire sans symboles, bénéfice incertain.
 Arrêté coût/bénéfice (pattern r144/r154).
+
+**r161 — MESURE LIVE DÉCISIVE — Xenia Edge laisse `0x39e8` (14824), PAS
+une taille garbage catastrophique.** Désassemblation du code JIT réel
+au point de trap (méthode principielle) : `rsi`=PPCContext* (r1 invité
+à ctx+0x30, confirmé contre le source public), `rdi`=base mémoire
+invité, `movbe 0x58(%rdi,%rax,1),%rbx` = instruction cible. Valeur
+mesurée à `0x17018f908` : `0x39e8`=14824, vérifiée par 2 méthodes gdb
+indépendantes + un invariant connu adjacent (offset+4=1, r159).
+Convertit le modèle de r150 en FAIT PROUVÉ : chaque environnement a
+son propre contenu de pile résiduel — notre recompilation
+(`0xfeffffee`) est l'exception catastrophique. Ferme le fil de
+comparaison live DATA.TBL (r150-r161).
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
