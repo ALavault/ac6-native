@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r111-nondeterminism-source-is-a-real-background-thread-race-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r110-probe-is-run-to-run-nondeterministic-without-gdb-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r109-post-gate2-dispatcher-resolves-cleanly-real-stall-still-downstream-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r108-mmquerystatistics-was-the-uninitialized-source-fixed-20260901.md`;
@@ -264,6 +265,19 @@ conclusions "GATE2 sans crash" (r108) et "boucle résolue proprement"
 typique. Cause non identifiée, deviner refusé. Aucun code modifié.
 Prochain cycle : toute conclusion doit désormais s'appuyer sur
 plusieurs exécutions.
+
+**r111 a trouvé la source réelle du non-déterminisme de r110 : une
+VRAIE course entre threads.** Capture directe d'un crash via `gdb
+--batch -ex run -ex bt` (deux exécutions sur quatre) : SIGSEGV dans
+`__imp__sub_82346428` (via `sub_823453E8`←`sub_821F8008`) sur un VRAI
+thread OS séparé (`start_thread`/`__clone3` visibles). Vérifié :
+`ExCreateThread` lance réellement un `std::thread` détaché avec
+seulement 64 Ko de pile — pas un stub inerte. Le blocage apparent du
+thread principal variait donc vraiment d'une exécution à l'autre, mais
+à cause de cette course, pas d'un non-déterminisme interne à
+`sub_821D5F48`. Cause exacte du crash non établie, deviner refusé.
+Aucun code modifié. Prochain cycle : tracer `sub_82346428` (offset
++414) statiquement.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

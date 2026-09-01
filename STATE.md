@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r111 : la source du non-déterminisme de r110 est une VRAIE course entre threads — `ExCreateThread` lance un vrai thread hôte qui segfault en code invité (2026-09-01)
+
+- Instrumentation de 46 points de contrôle dans la région GATE1-5, puis
+  **capture directe du crash via `gdb --batch -ex run -ex bt`** — usage
+  passif (laisser tourner jusqu'au signal), distinct du pas-à-pas
+  interactif que r103/r104 avaient jugé peu fiable pour cette sonde.
+  Deux exécutions sur quatre reproduisent un SIGSEGV identique :
+  ```
+  [New Thread ...]
+  Thread 15 "ac6recomp" received signal SIGSEGV
+  #0 __imp__sub_82346428 ()
+  #1 __imp__sub_823453E8 ()
+  #2 __imp__sub_821F8008 ()
+  #3 libstdc++.so.6 (?? )
+  #4 start_thread
+  #5 __clone3
+  ```
+- **Ce crash n'est PAS sur le thread principal** — `[New Thread ...]` et
+  les cadres `start_thread`/`__clone3` montrent un VRAI thread OS
+  séparé. Vérifié directement (`tools/materialize_native_import_stubs.py`
+  lignes 271-301) : `ExCreateThread` lance réellement un `std::thread`
+  détaché exécutant du code invité, avec une pile de seulement 64 Ko
+  (`g_next_thread_stack.fetch_sub(0x10000u)`) — pas un stub no-op.
+  **Résout le non-déterminisme de r110 sans le contredire** : le
+  "moment" où le thread principal semble bloquer variait réellement
+  d'une exécution à l'autre, mais la CAUSE est une course avec ce
+  second thread qui plante, pas un non-déterminisme dans
+  `sub_821D5F48` lui-même.
+- Cause exacte du crash dans `sub_82346428` (offset +414) non établie
+  ce cycle — deviner refusé. Aucun code natif modifié (instrumentation
+  restaurée; `ctest` 9/9 reconfirmé). **Prochain cycle** : tracer
+  `sub_82346428` statiquement pour localiser l'instruction exacte, puis
+  évaluer si c'est un vrai bug de code invité (façon r108) ou une
+  limitation du harnais (pile de 64 Ko potentiellement insuffisante).
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r111-nondeterminism-source-is-a-real-background-thread-race-20260901.md`.
+
 # AC6 retail NTSC-U/J — r110 : la sonde est non-déterministe d'une exécution à l'autre, MÊME sans GDB — r108/r109 ont besoin d'une réserve (2026-09-01)
 
 - En traçant `sub_821D7DE0` (prochaine étape nommée par r108), r110

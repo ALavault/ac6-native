@@ -446,7 +446,29 @@ compteur injecté ou fallback ReXGlue.
     rapportée; puis caractériser où (probablement dans GATE1-GATE5,
     avant `loc_821D6358`) la divergence entre exécutions apparaît. Voir
     `reports/ac6-retail-native-codegen-gate2-r110-probe-is-run-to-run-nondeterministic-without-gdb-20260901.md`.
-16. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+17. **r111 a trouvé la source réelle du non-déterminisme de r110 : une
+    VRAIE course entre threads, pas un artefact de mesure.** 46 points
+    de contrôle dans la région GATE1-5, puis capture directe d'un crash
+    via `gdb --batch -ex run -ex bt` (usage passif, distinct du
+    pas-à-pas que r103/r104 avaient jugé peu fiable) : deux exécutions
+    sur quatre reproduisent un SIGSEGV identique dans
+    `__imp__sub_82346428`, appelé via `sub_823453E8`←`sub_821F8008`,
+    sur un **VRAI thread OS séparé** (`start_thread`/`__clone3` dans la
+    pile). Vérifié directement : `ExCreateThread`
+    (`tools/materialize_native_import_stubs.py:271-301`) lance
+    réellement un `std::thread` détaché avec seulement 64 Ko de pile
+    (`g_next_thread_stack.fetch_sub(0x10000u)`) — pas un stub inerte.
+    **Résout r110 sans le contredire** : le point de blocage apparent du
+    thread principal variait vraiment d'une exécution à l'autre, mais à
+    cause d'une course avec ce second thread qui plante, pas d'un
+    non-déterminisme dans `sub_821D5F48` lui-même. Cause exacte du crash
+    (offset +414 dans `sub_82346428`) non établie — deviner refusé.
+    Aucun code natif modifié. **Prochain cycle** : tracer
+    `sub_82346428` statiquement pour l'instruction exacte, puis évaluer
+    bug invité réel (façon r108) vs. pile de 64 Ko insuffisante pour ce
+    thread. Voir
+    `reports/ac6-retail-native-codegen-gate2-r111-nondeterminism-source-is-a-real-background-thread-race-20260901.md`.
+18. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
