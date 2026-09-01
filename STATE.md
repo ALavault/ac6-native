@@ -1,3 +1,43 @@
+# AC6 retail NTSC-U/J — r121 : CAUSE RÉELLE TROUVÉE — `NtReadFile`/`NtCreateFile` ne sont pas implémentés, le champ de statut n'est jamais mis à jour (2026-09-01)
+
+- **Auto-correction en cours de route** : r117/r119 avaient LU À
+  L'ENVERS la branche de `sub_821F75F0` (`bne cr6,loc_821F7608` sur
+  `r13+336≠0` → retourne 0; SUR `==0` → lit la valeur indirectée —
+  l'inverse de ce que les deux rapports décrivaient). Le premier tour
+  d'instrumentation a reproduit cette même inversion et affiché un
+  sentinelle placeholder — repéré immédiatement, corrigé, reconstruit
+  dans le MÊME cycle plutôt que rapporté comme résultat.
+- **Avec la logique corrigée** : `ctx.r13=0x0f000000`,
+  `p256=PPC_LOAD_U32(r13+256)=0x0f001000`,
+  `indirected=PPC_LOAD_U32(p256+352)=0xC00000BB`. **`0xC00000BB` EST
+  `kOfflineStatus`** — la constante EXACTE que
+  `materialize_native_import_stubs.py` renvoie pour TOUT import sans
+  stub dédié. Le stub générique n'écrit JAMAIS en mémoire invité (juste
+  `ctx.r3`) — sa présence en mémoire à `0x0f001160` signifie que du
+  CODE INVITÉ a lui-même copié le retour d'un import non implémenté
+  dans ce champ.
+- **`ctx.r13 = kProbePcrAddress`** (`0x0f000000`), une constante
+  DÉLIBÉRÉE du harnais (`native/src/ac6recomp_main.cpp:17-30`) —
+  n'initialise QUE quelques offsets; `kProbeThreadAddress+0x160`
+  (=`0x0f001160`) n'en fait PAS partie.
+- **Confirmé via `AC6_NATIVE_IMPORT_TRACE` (mécanisme déjà existant,
+  aucune nouvelle instrumentation)** : `NtReadFile` (6 appels) ET
+  `NtCreateFile` (4 appels) — la paire canonique d'E/S fichier
+  asynchrone — tombent TOUTES DEUX dans le stub générique. Le vrai
+  contrat de `NtReadFile` écrit le statut dans un `IO_STATUS_BLOCK`
+  fourni par l'appelant; le stub générique n'y touche jamais. **La
+  boucle de nouvelle tentative attend RÉELLEMENT et CORRECTEMENT une
+  lecture de fichier qui n'a jamais été implémentée** — cohérent avec
+  TOUTE la chaîne (997/ERROR_IO_PENDING, retry-puis-abandon, ce champ
+  de statut).
+- Aucun code natif modifié (deux tours d'instrumentation restaurés;
+  `ctest` 9/9 reconfirmé) — implémenter `NtCreateFile`/`NtReadFile`
+  mérite son propre cycle dédié (façon r108). **Prochain cycle** :
+  implémenter contre l'infrastructure XDVDFS/média native existante,
+  vérifier la convention d'appel réelle avant d'implémenter, puis
+  re-vérifier en direct. Voir
+  `reports/ac6-retail-native-codegen-gate2-r121-real-cause-found-ntreadfile-ntcreatefile-are-unimplemented-status-field-never-updated-20260901.md`.
+
 # AC6 retail NTSC-U/J — r120 : `sub_821D4988` poste un message asynchrone dans un tampon circulaire, ce n'est PAS un appel de log — spéculation de r119 corrigée (2026-09-01)
 
 - r119 décrivait `sub_821D4988` comme "ressemblant à un appel de

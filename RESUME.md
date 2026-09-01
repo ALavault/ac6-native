@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r121-real-cause-found-ntreadfile-ntcreatefile-are-unimplemented-status-field-never-updated-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r120-sub_821d4988-posts-an-async-message-not-a-log-string-r119s-speculation-corrected-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r119-real-path-is-a-bounded-retry-loop-checking-per-thread-status-at-ctx-r13-plus-336-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r118-r117s-case3-target-was-wrong-real-bailout-gated-by-a-global-mode-byte-20260901.md`;
@@ -379,6 +380,19 @@ un producteur qui poste dans un tampon circulaire protégé (vraie
 section critique depuis r116) puis attend via `sub_821F5988`. Ne
 change pas la chaîne causale — le compteur `+22896` décide toujours.
 Aucun code modifié. Prochaines étapes inchangées (`ctx.r13`, compteur).
+
+**r121 — CAUSE RÉELLE TROUVÉE.** Auto-correction : r117/r119 avaient lu
+à l'envers une branche de `sub_821F75F0` (repéré via un sentinelle
+placeholder, corrigé dans le même cycle). Avec la logique corrigée :
+`ctx.r13=kProbePcrAddress` (constante délibérée du harnais) →
+`indirected=0xC00000BB` = `kOfflineStatus` EXACTEMENT — du code invité
+a copié le retour d'un import non implémenté dans ce champ de statut.
+Confirmé via `AC6_NATIVE_IMPORT_TRACE` (existant) : `NtReadFile`
+(6×)/`NtCreateFile` (4×) tombent dans le stub générique. **La boucle
+attend RÉELLEMENT une lecture de fichier jamais implémentée** —
+cohérent avec toute la chaîne depuis r109. Aucun code modifié.
+Prochain cycle : implémenter `NtCreateFile`/`NtReadFile` contre
+l'infrastructure XDVDFS/média existante.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

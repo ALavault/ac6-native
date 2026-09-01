@@ -645,7 +645,31 @@ compteur injecté ou fallback ReXGlue.
     étapes de r119 — instrumenter `ctx.r13` et le compteur `+22896`.
     Voir
     `reports/ac6-retail-native-codegen-gate2-r120-sub_821d4988-posts-an-async-message-not-a-log-string-r119s-speculation-corrected-20260901.md`.
-36. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+37. **r121 — CAUSE RÉELLE TROUVÉE : `NtReadFile`/`NtCreateFile` ne sont
+    pas implémentés, le champ de statut attendu n'est jamais mis à
+    jour.** Auto-correction en route : r117/r119 avaient lu à l'envers
+    la branche de `sub_821F75F0` — repéré via un sentinelle placeholder
+    dans le premier tour d'instrumentation, corrigé dans le même
+    cycle. Avec la logique corrigée : `ctx.r13=0x0f000000` (=
+    `kProbePcrAddress`, constante DÉLIBÉRÉE du harnais,
+    `ac6recomp_main.cpp:17-30`, n'initialisant que quelques offsets) →
+    `p256=0x0f001000` → `indirected=0xC00000BB` = **`kOfflineStatus`**
+    EXACTEMENT, la constante que le stub générique renvoie pour tout
+    import sans implémentation dédiée — mais qui n'écrit JAMAIS en
+    mémoire invité elle-même, donc sa présence à `0x0f001160` prouve
+    que du code invité l'y a copiée depuis un appel antérieur.
+    **Confirmé via `AC6_NATIVE_IMPORT_TRACE`** (mécanisme existant,
+    aucune nouvelle instrumentation) : `NtReadFile` (6×) ET
+    `NtCreateFile` (4×) tombent toutes deux dans le stub générique —
+    la boucle attend RÉELLEMENT et CORRECTEMENT une lecture de fichier
+    jamais implémentée. Cohérent avec toute la chaîne établie depuis
+    r109. Aucun code modifié — implémenter mérite son propre cycle
+    (façon r108). **Prochain cycle** : implémenter
+    `NtCreateFile`/`NtReadFile` contre l'infrastructure XDVDFS/média
+    native existante, vérifier la convention d'appel réelle d'abord,
+    puis re-vérifier en direct que `0x82935d98` s'écrit enfin. Voir
+    `reports/ac6-retail-native-codegen-gate2-r121-real-cause-found-ntreadfile-ntcreatefile-are-unimplemented-status-field-never-updated-20260901.md`.
+38. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
