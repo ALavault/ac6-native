@@ -553,7 +553,28 @@ compteur injecté ou fallback ReXGlue.
     reprise pour les threads qui plantent encore; refaire un balayage
     plus large avant de conclure. Voir
     `reports/ac6-retail-native-codegen-gate2-r115-suspended-thread-creation-implemented-reduces-but-does-not-eliminate-crashes-20260901.md`.
-26. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+27. **r116 — les vraies sections critiques éliminent COMPLÈTEMENT les
+    crashes r111-r115, exposant le null global ORIGINAL de r101,
+    maintenant déterministe.** Trace ajoutée d'abord (motif `DbgPrint`)
+    : AUCUN des 18 threads ne demande `CREATE_SUSPENDED` — réfute
+    l'hypothèse centrale de r114/r115. Vrai bug trouvé :
+    `RtlEnterCriticalSection`/`RtlLeaveCriticalSection` étaient des
+    no-ops sous l'hypothèse "un seul thread invité" (réfutée par ce
+    projet même). Corrigé avec de vrais `std::recursive_mutex` par
+    objet (clés sur l'adresse invité, motif `g_events`). 4 tests,
+    suite 135/135. **Vérifié en direct** : 25 exécutions — ZÉRO crash
+    de thread d'arrière-plan (élimination complète), MAIS le thread
+    principal plante DÉTERMINISTIQUEMENT (25/25) dans `sub_821D6C20`
+    avec `rbp = 0x82935d98` — **exactement le global nul de r101**,
+    jamais réellement corrigé, masqué jusqu'ici par la course. Gates :
+    `ctest` 9/9, pytest 135/135, démo inchangé (185). **Prochain
+    cycle** : rouvrir directement `0x82935d98` (r101); vérifier la
+    pertinence de commits antérieurs à cette session (DPC/interruption
+    graphique) avant de re-dériver; le crash étant maintenant
+    déterministe, l'instrumentation build-tree (r105/r108) suffit en
+    UN seul run au lieu d'un balayage répété. Voir
+    `reports/ac6-retail-native-codegen-gate2-r116-real-critical-sections-eliminate-the-race-expose-r101s-original-null-global-deterministically-20260901.md`.
+28. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

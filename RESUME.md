@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r116-real-critical-sections-eliminate-the-race-expose-r101s-original-null-global-deterministically-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r115-suspended-thread-creation-implemented-reduces-but-does-not-eliminate-crashes-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r114-root-cause-found-null-guest-function-pointer-plus-excreatethread-ignores-creationflags-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r113-r12-is-unmapped-garbage-and-the-original-main-thread-crash-still-happens-intermittently-20260901.md`;
@@ -324,6 +325,18 @@ borne (distinct du `wait_event()` borné 2ms), 3 nouveaux tests, suite
 `sub_821D4C20` et le crash original `sub_821D6C20` ont chacun planté
 une fois sur 15 essais. Deux explications ouvertes non tranchées (pas
 tous les threads suspendus, ou course de reprise indépendante).
+
+**r116 — vraies sections critiques, élimination complète des crashes
+r111-r115, expose le null global ORIGINAL de r101, maintenant
+déterministe.** `RtlEnterCriticalSection`/`RtlLeaveCriticalSection`
+étaient des no-ops (aucun des 18 threads ne demande
+`CREATE_SUSPENDED`, réfutant r114/r115) — corrigé avec de vrais
+`std::recursive_mutex` par objet. 25 exécutions : ZÉRO crash
+d'arrière-plan, mais le thread principal plante DÉTERMINISTIQUEMENT
+(25/25) dans `sub_821D6C20`, `rbp = 0x82935d98` — le global nul EXACT
+que r101 avait trouvé au tout début de cet arc, jamais corrigé,
+masqué par la course. Amélioration nette réelle; ne ferme pas Gate 2.
+Prochain cycle : rouvrir `0x82935d98` directement.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

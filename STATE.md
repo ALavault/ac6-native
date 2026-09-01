@@ -1,3 +1,38 @@
+# AC6 retail NTSC-U/J — r116 : les vraies sections critiques éliminent complètement les crashes r111-r115 — elles masquaient le null global ORIGINAL de r101, maintenant déterministe (2026-09-01)
+
+- **D'abord testé la question ouverte de r115.** Trace ajoutée (gated
+  `AC6_NATIVE_IMPORT_TRACE`, même motif que `DbgPrint`) : **AUCUN** des
+  dix-huit threads ne demande `CREATE_SUSPENDED` — l'hypothèse centrale
+  de r114/r115 est réfutée directement. La correction de r115 était
+  correcte mais un no-op pour ce jeu précis.
+- **Le vrai bug** : `RtlEnterCriticalSection`/`RtlLeaveCriticalSection`
+  étaient de purs no-ops, sous l'hypothèse (maintenant réfutée par ce
+  projet lui-même, r111-r115) d'"un seul thread invité". Avec dix-huit
+  vrais threads concurrents et AUCUNE exclusion mutuelle réelle, tout
+  ce que le jeu comptait protéger courait sans protection.
+- **Corrigé** : de vrais `std::recursive_mutex` par objet, clés sur
+  l'adresse invité de l'objet `RTL_CRITICAL_SECTION` (même motif que
+  `g_events`). 4 tests nouveaux/mis à jour, suite 135/135.
+- **Vérifié en direct — résultat majeur** : balayage de 25 exécutions —
+  **ZÉRO crash de thread d'arrière-plan** (`sub_82346428`,
+  `sub_821D4C20`) — élimination complète, pas une réduction. MAIS le
+  thread principal plante maintenant DÉTERMINISTIQUEMENT, à CHAQUE
+  exécution (25/25), dans `sub_821D6C20` — le site ORIGINAL de r100.
+  Capturé : `rbp = 0x82935d98` — **exactement le global nul que r101
+  avait identifié tout au début de cet arc d'investigation**, jamais
+  réellement corrigé, jusqu'ici masqué par la course que r111-r115 ont
+  caractérisée sans savoir qu'elle cachait un bug plus ancien déjà
+  diagnostiqué.
+- Amélioration nette réelle et indépendamment justifiée (élimine un
+  vrai bug de multithreading, ne ferme pas Gate 2). Gates : `ctest`
+  9/9, pytest 135/135, compteur démo inchangé (185). **Prochain
+  cycle** : rouvrir directement la découverte de r101 (`0x82935d98`),
+  vérifier si des commits antérieurs à cette session (DPC/interruption
+  graphique, "the real waiter is an equality wait on a sequence
+  counter") sont pertinents avant de re-dériver du travail déjà établi.
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r116-real-critical-sections-eliminate-the-race-expose-r101s-original-null-global-deterministically-20260901.md`.
+
 # AC6 retail NTSC-U/J — r115 : `ExCreateThread` respecte maintenant `CreationFlags` — réduit mais N'ÉLIMINE PAS les crashes de r112-r114 (2026-09-01)
 
 - **Implémenté l'étape suivante nommée par r114.** Confirmé d'abord que

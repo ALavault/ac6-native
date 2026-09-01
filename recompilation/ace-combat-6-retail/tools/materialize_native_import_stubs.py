@@ -22,6 +22,7 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
@@ -50,6 +51,28 @@ struct EventState {
 std::mutex g_event_mutex;
 std::condition_variable g_event_cv;
 std::unordered_map<std::uint32_t, EventState> g_events;
+
+// r116: RtlEnterCriticalSection/RtlLeaveCriticalSection were no-ops under
+// the (now-disproven -- r111-r115 traced eighteen real concurrent host
+// threads spawned via ExCreateThread) assumption of a single guest
+// thread. Keyed by the guest RTL_CRITICAL_SECTION object's own address,
+// same pattern as g_events keyed by handle. std::recursive_mutex because
+// the real API allows the same thread to re-enter a critical section it
+// already holds.
+std::mutex g_critical_sections_mutex;
+std::unordered_map<std::uint32_t, std::unique_ptr<std::recursive_mutex>>
+    g_critical_sections;
+
+std::recursive_mutex& critical_section_for(std::uint32_t key) {
+  std::lock_guard lock(g_critical_sections_mutex);
+  auto it = g_critical_sections.find(key);
+  if (it == g_critical_sections.end()) {
+    it = g_critical_sections
+             .emplace(key, std::make_unique<std::recursive_mutex>())
+             .first;
+  }
+  return *it->second;
+}
 
 void create_event(std::uint32_t key, bool manual_reset, bool signaled) {
   if (key == 0u) return;
@@ -232,10 +255,21 @@ def render_body(name: str) -> str:
         return "  ctx.r3.u64 = 0u;  // guest reservation is released at teardown\n"
     if name == "NtQueryVirtualMemory":
         return "  ctx.r3.u64 = 0u;  // reserved guest space has no host VM query\n"
-    if name in {"RtlEnterCriticalSection", "RtlLeaveCriticalSection",
-                "RtlInitializeCriticalSection",
+    if name in {"RtlInitializeCriticalSection",
                 "RtlInitializeCriticalSectionAndSpinCount"}:
-        return "  ctx.r3.u64 = 0u;  // single guest thread until scheduler migration\n"
+        # r116: force the backing mutex to exist so a racing Enter never
+        # finds an absent entry; the real API has no failure mode a guest
+        # here would observe.
+        return "  critical_section_for(ctx.r3.u32);\n  ctx.r3.u64 = 0u;\n"
+    if name == "RtlEnterCriticalSection":
+        # r116: real mutual exclusion -- was a no-op under a single-guest-
+        # thread assumption this project's own ExCreateThread work
+        # (r111-r115) has since disproven (eighteen real concurrent host
+        # threads). recursive_mutex allows a thread already holding this
+        # section to re-enter it, matching the real API's contract.
+        return "  critical_section_for(ctx.r3.u32).lock();\n  ctx.r3.u64 = 0u;\n"
+    if name == "RtlLeaveCriticalSection":
+        return "  critical_section_for(ctx.r3.u32).unlock();\n  ctx.r3.u64 = 0u;\n"
     if name == "KeGetCurrentProcessType":
         return "  ctx.r3.u64 = 0u;  // title process\n"
     if name == "ExGetXConfigSetting":
@@ -323,6 +357,13 @@ def render_body(name: str) -> str:
   worker.r4.u32 = routine_argument;
   constexpr std::uint32_t kCreateSuspended = 0x00000004u;
   const bool start_suspended = (creation_flags & kCreateSuspended) != 0u;
+  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr,
+                  "[ExCreateThread] handle=%u routine=0x%08x flags=0x%08x "
+                  "suspended=%d\\n",
+                  handle, routine_address, creation_flags,
+                  start_suspended ? 1 : 0);
+  }
   if (start_suspended) create_event(handle, /*manual_reset=*/true,
                                      /*signaled=*/false);
   try {

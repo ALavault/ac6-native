@@ -85,6 +85,8 @@ def test_thread_create_honors_creation_flags_suspended_bit(
     assert "/*manual_reset=*/true," in text
     assert "/*signaled=*/false);" in text
     assert "if (start_suspended) park_until_resumed(handle)" in text
+    assert '"[ExCreateThread] handle=%u routine=0x%08x flags=0x%08x "' in text
+    assert "AC6_NATIVE_IMPORT_TRACE" in text
 
 
 def test_park_until_resumed_blocks_indefinitely_not_bounded(
@@ -167,6 +169,35 @@ def test_pool_and_string_bindings_are_guest_memory_only(tmp_path: Path) -> None:
     assert "allocate_guest(base, ctx.r3.u32)" in text
     assert "PPC_STORE_U16(destination + 0u" in text
     assert "PPC_STORE_U32(destination + 4u, source)" in text
+
+
+def test_critical_sections_use_real_mutual_exclusion(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__RtlEnterCriticalSection);\n"
+        "PPC_EXTERN_FUNC(__imp__RtlLeaveCriticalSection);\n"
+        "PPC_EXTERN_FUNC(__imp__RtlInitializeCriticalSection);\n"
+        "PPC_EXTERN_FUNC(__imp__RtlInitializeCriticalSectionAndSpinCount);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 4
+    text = output.read_text()
+    # r116: must not still be the stale single-guest-thread no-op.
+    assert "single guest thread" not in text
+    assert "critical_section_for(ctx.r3.u32).lock()" in text
+    assert "critical_section_for(ctx.r3.u32).unlock()" in text
+    enter_body = text.split("void __imp__RtlEnterCriticalSection(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "lock()" in enter_body
+    leave_body = text.split("void __imp__RtlLeaveCriticalSection(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "unlock()" in leave_body
+    # Backing storage keyed by the guest critical-section object's own
+    # address, same pattern g_events already uses for handles.
+    assert "std::recursive_mutex" in text
+    assert "g_critical_sections" in text
 
 
 def test_crt_bootstrap_bindings_return_success(tmp_path: Path) -> None:
