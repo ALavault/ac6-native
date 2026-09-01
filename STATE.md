@@ -1,3 +1,43 @@
+# AC6 retail NTSC-U/J — r140 : l'init de la table config s'exécute RÉELLEMENT avant la requête défaillante — réfute l'hypothèse de timing, le mécanisme réel est plus profond (2026-09-01)
+
+- **Hypothèse testée** (issue de r139) : lecture de `sub_82344058`
+  (celle qui calcule le retour de `sub_82338388`) montre un COMPTEUR
+  MONOTONE à `table+80`, retourné AVANT incrémentation comme "ID". Son
+  sibling `sub_82344150(table)` l'initialise à `1` (pas 0). Hypothèse :
+  si `sub_82344150(0x82910000)` n'a pas encore tourné au moment de la
+  requête défaillante, le compteur resterait à sa valeur `.bss` par
+  défaut (0), expliquant le `0` mesuré en r139.
+- **RÉFUTÉE par mesure directe** : `sub_82338848` (init maître) ET
+  `sub_82344150(0x82910000)` (fixe `[table+80]=1`) S'EXÉCUTENT BIEN,
+  dans le bon ordre, AVANT la requête défaillante — ET la requête
+  renvoie QUAND MÊME `0`. Écarte complètement "la table n'est jamais
+  initialisée".
+- **Le mécanisme réel est ailleurs** : `sub_82344058` fait D'ABORD une
+  recherche dans un arbre binaire (BST) avant d'atteindre le chemin
+  compteur (`loc_8234410C`) — le chemin emprunté dépend de si une
+  entrée existe DÉJÀ pour cette clé. Soit un ID=0 a été stocké par une
+  requête ANTÉRIEURE (avant que le compteur atteigne 1 — possible si
+  cette requête précédente a eu lieu avant `sub_82344150`, ce que ce
+  cycle n'a PAS vérifié), soit la lecture de ce cycle du chemin
+  "trouvé" est simplement incorrecte — pas assez de preuves pour
+  trancher.
+- **Deuxième résultat négatif consécutif dans ce sous-fil** (après
+  celui de r138) — conservé dans le dossier pour la même raison : une
+  hypothèse plausible et bien raisonnée testée en direct et réfutée,
+  ce qui RESSERRE où se trouve le vrai mécanisme sans encore le
+  trouver.
+- **Aucun code source modifié ce cycle** — 3 diagnostics temporaires,
+  annulés et vérifiés (ctest 9/9, 139/139 Python après reconstruction
+  propre).
+  **Prochain cycle** : instrumenter directement L'INTÉRIEUR de
+  `sub_82344058` pour distinguer le chemin "arbre vide/compteur frais"
+  du chemin "nœud existant trouvé" ; si nœud existant trouvé, dumper
+  DIRECTEMENT son champ ID stocké au lieu de l'inférer ; compter
+  combien de fois `sub_82344058` tourne au total dans la session pour
+  éviter le même type de trou de corrélation déjà attrapé en r135/r138.
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md`.
+
 # AC6 retail NTSC-U/J — r139 : CHAÎNE COMPLÈTE FERMÉE — une requête de compte renvoie LÉGITIMEMENT zéro et échoue une garde stricte `>0`, produisant la taille garbage EXACTE (2026-09-01)
 
 - **Chaîne d'appel de l'appel #3 défaillant CONFIRMÉE** (compteur

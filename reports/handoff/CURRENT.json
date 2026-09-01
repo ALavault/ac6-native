@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md",

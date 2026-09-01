@@ -1042,7 +1042,27 @@ compteur injecté ou fallback ReXGlue.
     natif ? NE PAS corriger `sub_821CC288`/`sub_822834C0`/
     `sub_82339D10` avant de répondre. Voir
     `reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md`.**
-63. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+63. **r140 : l'init de la table config s'exécute RÉELLEMENT avant la
+    requête défaillante — réfute l'hypothèse de timing de r139, le
+    mécanisme réel est plus profond.** `sub_82344058` (calcule le
+    retour de `sub_82338388`) utilise un compteur monotone à
+    `table+80`, initialisé à `1` par `sub_82344150`. Hypothèse testée :
+    si cette init n'avait pas encore tourné, le compteur resterait à 0
+    (`.bss`), expliquant le résultat de r139. RÉFUTÉE en direct :
+    `sub_82338848`/`sub_82344150(0x82910000)` s'exécutent bien AVANT la
+    requête, et celle-ci renvoie quand même `0`. Le mécanisme réel doit
+    être dans la logique de recherche/insertion BST de `sub_82344058`
+    elle-même (chemin "trouvé" vs "compteur frais"), pas dans
+    l'initialisation. Deuxième résultat négatif consécutif dans ce
+    sous-fil (après r138), conservé pour resserrer où chercher. Aucun
+    code source modifié ce cycle (3 diagnostics temporaires, annulés et
+    vérifiés, ctest 9/9 + 139/139 Python après reconstruction propre).
+    **Prochain cycle** : instrumenter L'INTÉRIEUR de `sub_82344058`
+    pour distinguer les deux chemins et dumper directement l'ID stocké
+    si un nœud existant est trouvé ; compter les appels totaux pour
+    éviter un trou de corrélation. Voir
+    `reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md`.**
+64. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

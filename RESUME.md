@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r140-the-config-table-init-genuinely-runs-first-refuting-a-timing-hypothesis-real-mechanism-is-deeper-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r139-full-chain-closed-a-count-query-legitimately-returns-zero-and-fails-a-strict-positive-check-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r138-negative-result-the-config-lookup-error-path-is-not-the-source-of-the-garbage-size-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r137-the-failing-allocation-request-size-is-garbage-not-16-bytes-corrects-r135-r136-20260901.md`;
@@ -648,6 +649,16 @@ crash. PAS de corruption mémoire, PAS un de nos stubs — du vrai code
 guest à contrats de retour incompatibles. Aucun code modifié. Question
 finale : catégorie=1/réglage=3 — état réel du jeu ou trou
 d'initialisation du runtime ? Ne rien corriger avant de répondre.
+
+**r140 — réfute l'hypothèse de timing de r139.** `sub_82344058` utilise
+un compteur monotone à `table+80` (init à 1 par `sub_82344150`) comme
+"ID" retourné. Hypothèse : init pas encore exécutée → compteur resté à
+0. RÉFUTÉE en direct : `sub_82338848`/`sub_82344150(0x82910000)`
+s'exécutent bien AVANT la requête, qui renvoie quand même `0`. Le
+mécanisme réel est dans la logique BST de `sub_82344058` (chemin
+"trouvé" vs "compteur frais"), pas dans l'init. Deuxième résultat
+négatif consécutif (après r138). Aucun code modifié. Prochain cycle :
+instrumenter l'intérieur de `sub_82344058` pour distinguer les chemins.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
