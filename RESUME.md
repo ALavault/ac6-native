@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r123-object-attributes-resolved-and-the-read-is-fixed-offset-on-a-possibly-absent-hdd-partition-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r122-ntcreatefile-ntreadfile-calling-convention-verified-from-disassembly-implementation-deferred-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r121-real-cause-found-ntreadfile-ntcreatefile-are-unimplemented-status-field-never-updated-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r120-sub_821d4988-posts-an-async-message-not-a-log-string-r119s-speculation-corrected-20260901.md`;
@@ -404,6 +405,17 @@ DÉLIBÉRÉMENT différée — layout complet pas encore résolu, risque du
 motif "implémenté avant vérification complète" (r115). Aucun code
 modifié. Prochain cycle : finir le layout d'OBJECT_ATTRIBUTES avant
 d'implémenter.
+
+**r123 — `OBJECT_ATTRIBUTES` résolu; la lecture est à décalage fixe sur
+un disque dur peut-être absent.** `ObjectName` pointe DIRECTEMENT vers
+`"\Device\Harddisk0\Partition1"` (pas de nom de fichier par appel).
+Lecture 0x400 octets à décalage 0x800, fixes — sonde de structure
+système, pas chargeur d'actifs. Titre disque-uniquement → l'échec
+pourrait être ATTENDU sur le vrai matériel. Reformule le correctif
+potentiel : peut-être juste un vrai statut d'échec NT au lieu de
+`kOfflineStatus`. PAS ENCORE connecté à la table de dispatch de
+`sub_821F4E70`. Aucun code modifié. Prochain cycle : établir cette
+connexion, puis tester l'hypothèse en direct.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

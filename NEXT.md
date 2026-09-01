@@ -691,7 +691,28 @@ compteur injecté ou fallback ReXGlue.
     avant d'implémenter, puis implémenter contre l'infrastructure
     XDVDFS/média existante. Voir
     `reports/ac6-retail-native-codegen-gate2-r122-ntcreatefile-ntreadfile-calling-convention-verified-from-disassembly-implementation-deferred-20260901.md`.
-40. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+41. **r123 — `OBJECT_ATTRIBUTES` entièrement résolu; la lecture est à
+    décalage fixe sur une partition disque dur peut-être absente.**
+    Structure Xbox 360 réduite (3 champs, 12 octets) confirmée octet
+    par octet : `RootDirectory=0`, `ObjectName`→ANSI_STRING statique
+    (MÊME chaîne `"\Device\Harddisk0\Partition1"` de r122),
+    `Attributes=0x40`=`OBJ_CASE_INSENSITIVE`. **`ObjectName` pointe
+    DIRECTEMENT vers le périphérique — le tampon sprintf du nom de
+    fichier par appel n'est JAMAIS référencé.** Lecture à
+    décalage/longueur FIXES (0x800/0x400) — reformule l'hypothèse :
+    sonde de structure système fixe sur un DISQUE DUR, pas un
+    chargeur d'actifs générique. Titre disque-uniquement → l'échec
+    pourrait être ATTENDU sur le vrai matériel (pas de HDD). Graphe
+    d'appel tracé (`Function_82390F48`←`Function_82391A40`←1 appelant),
+    PAS ENCORE connecté à la table de dispatch INDIRECTE de
+    `sub_821F4E70`. **Reformule le correctif potentiel** : peut-être
+    juste retourner un VRAI statut d'échec NT au lieu de
+    `kOfflineStatus`, bien plus petit que "implémenter la lecture" —
+    hypothèse concrète, PAS établie. Aucun code modifié. **Prochain
+    cycle** : établir la connexion à `sub_821F4E70`; si connecté,
+    tester l'hypothèse "statut d'échec" en direct. Voir
+    `reports/ac6-retail-native-codegen-gate2-r123-object-attributes-resolved-and-the-read-is-fixed-offset-on-a-possibly-absent-hdd-partition-20260901.md`.
+42. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 

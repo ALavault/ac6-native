@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — r123 : `OBJECT_ATTRIBUTES` entièrement résolu — la lecture est à décalage fixe sur une partition disque dur peut-être absente (2026-09-01)
+
+- **Structure `OBJECT_ATTRIBUTES` Xbox 360 (réduite, 3 champs, 12
+  octets) confirmée octet par octet** : `RootDirectory=0`,
+  `ObjectName`→pointeur `ANSI_STRING` (la MÊME chaîne statique
+  `"\Device\Harddisk0\Partition1"` déjà vérifiée en r122),
+  `Attributes=0x40` (= `OBJ_CASE_INSENSITIVE`, convention NT standard).
+  **`ObjectName` pointe DIRECTEMENT vers le chemin de périphérique
+  statique — le tampon sprintf du nom de fichier par appel n'est
+  JAMAIS référencé par ObjectAttributes.**
+- **La lecture est à décalage/longueur FIXES** (0x800/0x400), pas
+  pilotée par un chemin — reformule l'hypothèse : ceci ressemble à une
+  sonde de structure système fixe sur une PARTITION DISQUE DUR, pas à
+  un chargeur d'actifs générique. Un titre disque-uniquement comme AC6
+  n'a AUCUNE garantie de disposer de `\Device\Harddisk0\Partition1` —
+  sur le vrai matériel, cet échec pourrait être une défaillance PROPRE
+  et ATTENDUE (pas de disque dur), pas un vrai chargement de fichier.
+- Graphe d'appel tracé un niveau plus loin : `Function_82390F48` ←
+  `Function_82391A40` (qui appelle AUSSI directement `NtCreateFile`/
+  `NtReadFile`) ← un seul appelant. PAS ENCORE connecté à la table de
+  dispatch INDIRECTE (`bctrl`) de `sub_821F4E70` — `FindDirectCallsTo.java`
+  ne voit que les appels directs.
+- **Reformule le correctif potentiel** : si confirmé, la bonne
+  correction pourrait être bien plus petite que "implémenter la
+  lecture de fichier" — juste retourner un VRAI statut d'échec NT
+  (au lieu de `kOfflineStatus`) pour que le chemin d'erreur déjà écrit
+  du jeu s'exécute normalement. Hypothèse concrète, PAS encore établie.
+  Aucun code natif modifié (travail read-only; script jetable
+  supprimé). **Prochain cycle** : établir la connexion (ou son absence)
+  entre ce cluster et la table de dispatch de `sub_821F4E70`; si
+  connecté, tester l'hypothèse "statut d'échec" en direct. Voir
+  `reports/ac6-retail-native-codegen-gate2-r123-object-attributes-resolved-and-the-read-is-fixed-offset-on-a-possibly-absent-hdd-partition-20260901.md`.
+
 # AC6 retail NTSC-U/J — r122 : convention d'appel réelle de `NtCreateFile`/`NtReadFile` vérifiée par désassemblage — implémentation différée (2026-09-01)
 
 - **Sept sites d'appel réels trouvés** (`FindDirectCallsTo.java`,
