@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md`;
@@ -960,6 +961,12 @@ forme trouvé.** `RtlTryEnterCriticalSection` coche déjà juste par
 chance ; `KeEnterCriticalRegion`/`KeLeaveCriticalRegion` (VOID réel)
 ont leur retour jeté. Aucun ne change le flux de contrôle. Ferme le
 fil de scan ouvert par r163, résultat négatif documenté.
+
+**r165 — correctifs cosmétiques de forme — `RtlTryEnterCriticalSection`/
+`KeEnterCriticalRegion`/`KeLeaveCriticalRegion`.** Les 3 candidats de
+r164 implémentés (VOID→`0u`, BOOLEAN→`1u` canonique). Aucun changement
+de flux de contrôle observé (attendu). Tests 148/148 (+3), ctest 9/9.
+Ferme le balayage forme-de-contrat NTSTATUS-vs-réel lancé par r148.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

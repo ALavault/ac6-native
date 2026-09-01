@@ -1503,6 +1503,19 @@ compteur injecté ou fallback ReXGlue.
     frontière. Voir
     `reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md`.
 
+89. **r165 : correctifs cosmétiques de forme — `RtlTryEnterCriticalSection`/
+    `KeEnterCriticalRegion`/`KeLeaveCriticalRegion`.** Implémente les 3
+    candidats de r164 (même principe défensif que r162) : VOID → `0u`,
+    BOOLEAN → `1u` canonique au lieu de `kOfflineStatus`. Aucun
+    changement de flux de contrôle observé (attendu, confirmé r164 par
+    avance). Tests 148/148 (+3), ctest 9/9, crash inchangé. Ferme le
+    balayage forme-de-contrat NTSTATUS-vs-réel lancé par r148 — chaque
+    stub offline-import jamais surfacé par la trace live a maintenant
+    été vérifié et corrigé si nécessaire (r148, r162, r163, r165).
+    **Prochain cycle** : investissement séparé (route Wine/Xenia pour
+    NTSC-U/J) ou nouvelle frontière. Voir
+    `reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

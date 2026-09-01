@@ -3,6 +3,8 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -489,6 +491,45 @@ def test_ke_query_base_priority_thread_returns_an_in_range_value_not_a_status(
     body = text.split("void __imp__KeQueryBasePriorityThread")[1]
     assert "kOfflineStatus" not in body
     assert "ctx.r3.u64 = 0u;" in body
+
+
+@pytest.mark.parametrize(
+    "name", ["KeEnterCriticalRegion", "KeLeaveCriticalRegion"]
+)
+def test_critical_region_enter_leave_are_void_not_a_status(
+    tmp_path: Path, name: str
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(f"PPC_EXTERN_FUNC(__imp__{name});\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r164: the real contract is VOID -- no return value at all. This
+    # XEX's own real call sites discard r3 (overwritten before anything
+    # reads it), matching the real contract's own expectation, but the
+    # generic offline fallback's kOfflineStatus is still the wrong shape
+    # for a VOID-returning kernel call.
+    body = text.split(f"void __imp__{name}")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
+def test_rtl_try_enter_critical_section_returns_a_real_boolean_not_a_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlTryEnterCriticalSection);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r164: the real contract is BOOLEAN (nonzero = lock acquired). This
+    # XEX's own 5 real call sites do check the return value with a
+    # zero-vs-nonzero test; kOfflineStatus was already nonzero so this
+    # changes no currently-observed control flow, but a canonical 1 is
+    # the correct shape for a "lock always available" stub.
+    body = text.split("void __imp__RtlTryEnterCriticalSection")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 1u;" in body
 
 
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(

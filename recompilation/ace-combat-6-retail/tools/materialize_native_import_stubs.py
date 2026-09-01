@@ -517,6 +517,35 @@ def render_body(name: str) -> str:
         # (baseline/normal priority) is the safe, in-range default that
         # keeps the caller's own clamp a no-op instead of always firing.
         return "  ctx.r3.u64 = 0u;\n"
+    if name in {"KeEnterCriticalRegion", "KeLeaveCriticalRegion"}:
+        # r164: real signature is VOID -- no return value at all. Checked
+        # against this XEX's own real static call sites (2 each, thunks
+        # 0x823D068C/0x823D067C): the one traced in full (sub_821F3540's
+        # call to KeEnterCriticalRegion) has r3 overwritten by the very
+        # next instruction before anything reads it, matching the real
+        # VOID contract's own expectation that no caller ever checks a
+        # return value here. The generic offline-import fallback's
+        # kOfflineStatus was already harmless at this call site (nothing
+        # reads it), but is still the wrong shape for a VOID-returning
+        # kernel call -- fixed for the same defensive-correctness reason
+        # as the ObDereferenceObject/KeSetBasePriorityThread family (r162):
+        # a status-shaped sentinel should never leak out of an import
+        # whose real contract has no return value to shape at all.
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "RtlTryEnterCriticalSection":
+        # r164: real signature is BOOLEAN (nonzero = lock acquired). This
+        # XEX's own 5 real static call sites (thunk 0x823D00AC) do check
+        # the return value (a zero-vs-nonzero test, e.g. sub_8233CF78's
+        # `cmplwi r3,0x0 / beq <skip-critical-section>`) -- the generic
+        # offline-import fallback's kOfflineStatus was already nonzero, so
+        # it already evaluated as "lock acquired" under every traced
+        # caller's own test, and this fix changes no observed control
+        # flow. It is made anyway for the same reason as the VOID pair
+        # above: an NTSTATUS-shaped sentinel is the wrong shape for a
+        # BOOLEAN-returning import, and a canonical `1` is what a real
+        # "lock always available" stub (this project models no real
+        # per-thread contention) should actually report.
+        return "  ctx.r3.u64 = 1u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

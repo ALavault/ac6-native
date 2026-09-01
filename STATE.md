@@ -1,3 +1,21 @@
+# AC6 retail NTSC-U/J — r165 : correctifs cosmétiques de forme — `RtlTryEnterCriticalSection`/`KeEnterCriticalRegion`/`KeLeaveCriticalRegion` (2026-09-01)
+
+- **Implémente les 3 candidats identifiés par r164** (même principe
+  défensif que r162, même sans effet observé) : `KeEnterCriticalRegion`/
+  `KeLeaveCriticalRegion` (VOID réel) renvoient `0u` ; `RtlTryEnterCriticalSection`
+  (BOOLEAN réel) renvoie `1u` (canonique) au lieu de `kOfflineStatus`.
+- **Aucun changement de flux de contrôle observé** (confirmé r164 par
+  avance) — correctif de forme pur.
+- Tests 148/148 (145/145 → +3). Import trace confirme les 3 imports
+  ne sont plus "offline-import" non gérés. `ctest` 9/9. Crash
+  `sub_821F7C80` inchangé (gdb).
+- **DÉCISION** : ferme le balayage forme-de-contrat NTSTATUS-vs-réel
+  lancé par r148 — chaque stub offline-import jamais surfacé par la
+  trace live a maintenant été vérifié contre son vrai contrat noyau
+  Xbox 360, et chaque écart réel corrigé (r148, r162, r163, r165).
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md`.
+
 # AC6 retail NTSC-U/J — r164 : scan des stubs offline-import restants — AUCUN autre bug de forme trouvé (2026-09-01)
 
 - **Scan complet** des imports offline restants (fréquence ≤2/run) :

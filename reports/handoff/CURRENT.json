@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r162-real-fix-obdereferenceobject-ketesetbasepriority-thread-returned-a-status-code-instead-of-a-real-count-20260901.md",
