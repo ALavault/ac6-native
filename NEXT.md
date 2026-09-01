@@ -1516,6 +1516,23 @@ compteur injecté ou fallback ReXGlue.
     NTSC-U/J) ou nouvelle frontière. Voir
     `reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md`.
 
+90. **r166 : l'allocateur de pile de threads confirme la dépendance à
+    l'historique du MÊME thread — aucun autre fix borné n'existe.**
+    `ExCreateThread` alloue chaque thread depuis un compteur global
+    décroissant, tranches de 64 Kio jamais réutilisées entre threads ;
+    combiné à `mmap(MAP_ANONYMOUS)` (zéro garanti au premier touché),
+    le garbage à `[r1+88]` vient forcément de l'historique d'appel du
+    MÊME thread, pas d'une contamination croisée ni d'un échec de
+    zéro-init. Zéro-remplir les tranches fraîches ne changerait rien
+    (déjà zéro au premier touché ; la collision vient APRÈS création,
+    via le propre graphe d'appel du thread). Rendre la valeur sûre
+    exigerait soit un investissement général de fidélité HLE ouvert,
+    soit une valeur codée en dur (refusée, précédent r53). Ferme le
+    volet mécanisme de la question de r161 — l'arc DATA.TBL est
+    maintenant complet aux deux niveaux (valeur + mécanisme). Aucun
+    code modifié. Voir
+    `reports/ac6-retail-native-codegen-gate2-r166-thread-stack-allocator-confirms-same-thread-history-dependence-no-further-bounded-fix-exists-20260901.md`.
+
 ## Frontières
 
 Le N2 `reconstruction/ace-combat-6` est abandonné pour cette feuille de route;

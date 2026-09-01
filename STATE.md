@@ -1,3 +1,26 @@
+# AC6 retail NTSC-U/J — r166 : l'allocateur de pile de threads confirme la dépendance à l'historique du MÊME thread — aucun autre fix borné n'existe (2026-09-01)
+
+- **Mécanisme confirmé** : `ExCreateThread` alloue chaque nouveau
+  thread invité depuis un compteur global `g_next_thread_stack`
+  décroissant, tranches de 64 Kio JAMAIS réutilisées entre threads.
+  Combiné à `mmap(MAP_ANONYMOUS)` (zéro garanti au premier touché),
+  le garbage à `[r1+88]` vient forcément de l'historique d'appel du
+  MÊME thread (pas de contamination inter-thread, pas un échec de
+  zéro-initialisation).
+- **Pourquoi aucun fix borné n'existe** : zéro-remplir explicitement
+  les tranches fraîches ne changerait rien (déjà garanti zéro au
+  premier touché) — la collision se produit APRÈS la création du
+  thread, via son propre graphe d'appel. Rendre cette valeur sûre
+  exigerait soit (a) un investissement général de fidélité HLE ouvert
+  (pas cette portée), soit (b) coder en dur une valeur — le pattern
+  synthétique refusé (précédent r53).
+- **DÉCISION** : ferme le volet mécanisme de la question laissée
+  ouverte par r161. L'arc d'investigation DATA.TBL est maintenant
+  complet aux deux niveaux (valeur : r161 ; mécanisme : r166). Aucun
+  travail supplémentaire mis en file sur ce fil précis.
+- **Aucun code modifié, aucun build ce cycle**. Voir
+  `reports/ac6-retail-native-codegen-gate2-r166-thread-stack-allocator-confirms-same-thread-history-dependence-no-further-bounded-fix-exists-20260901.md`.
+
 # AC6 retail NTSC-U/J — r165 : correctifs cosmétiques de forme — `RtlTryEnterCriticalSection`/`KeEnterCriticalRegion`/`KeLeaveCriticalRegion` (2026-09-01)
 
 - **Implémente les 3 candidats identifiés par r164** (même principe

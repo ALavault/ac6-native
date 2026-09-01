@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r166-thread-stack-allocator-confirms-same-thread-history-dependence-no-further-bounded-fix-exists-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r165-cosmetic-contract-shape-fixes-rtltryentercriticalsection-keenter-leave-criticalregion-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r164-remaining-low-frequency-offline-imports-checked-no-further-shape-bugs-found-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r163-real-fix-kequerybasepriority-thread-return-value-was-actually-clamped-and-used-20260901.md`;
@@ -967,6 +968,16 @@ fil de scan ouvert par r163, résultat négatif documenté.
 r164 implémentés (VOID→`0u`, BOOLEAN→`1u` canonique). Aucun changement
 de flux de contrôle observé (attendu). Tests 148/148 (+3), ctest 9/9.
 Ferme le balayage forme-de-contrat NTSTATUS-vs-réel lancé par r148.
+
+**r166 — l'allocateur de pile de threads confirme la dépendance à
+l'historique du MÊME thread — aucun autre fix borné n'existe.**
+`ExCreateThread` alloue chaque thread depuis un compteur global
+décroissant (tranches 64 Kio jamais réutilisées entre threads) ;
+combiné à `mmap(MAP_ANONYMOUS)` (zéro au premier touché), le garbage à
+`[r1+88]` vient forcément de l'historique d'appel du MÊME thread.
+Aucun fix borné possible sans investissement général de fidélité
+ouvert ou valeur codée en dur (refusée). Ferme le volet mécanisme de
+r161 — l'arc DATA.TBL est complet aux deux niveaux.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);
