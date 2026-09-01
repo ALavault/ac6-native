@@ -5,6 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord:
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r110-probe-is-run-to-run-nondeterministic-without-gdb-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r109-post-gate2-dispatcher-resolves-cleanly-real-stall-still-downstream-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r108-mmquerystatistics-was-the-uninitialized-source-fixed-20260901.md`;
 - `reports/ac6-retail-native-codegen-gate2-r107-xex-stack-size-ruled-out-parsed-but-unused-20260901.md`;
@@ -249,6 +250,20 @@ dès le premier appel, sortie de secours propre, `r3=0` renvoyé à
 `sub_821D7DE0` en microsecondes. Aucun code modifié. Le blocage réel de
 30s reste en aval, non atteint — prochain candidat : `sub_821D7DE0`
 lui-même.
+
+**r110 a trouvé que la sonde est non-déterministe d'une exécution à
+l'autre, MÊME sans GDB.** En traçant `sub_821D7DE0`, corrige une erreur
+de portée dans r109 (qui avait déduit un retour propre de l'absence de
+prints, jamais observé directement) — les marqueurs directs confirment
+que la boucle post-GATE2 sort bien proprement, conclusion de r109
+maintenue. **Mais** cinq exécutions identiques du même binaire donnent
+des résultats différents : 3/5 restent bloquées avant même d'atteindre
+la boucle post-GATE2, 2/5 progressent au-delà, une segfault. Les
+conclusions "GATE2 sans crash" (r108) et "boucle résolue proprement"
+(r109) décrivaient chacune UNE seule exécution, pas le comportement
+typique. Cause non identifiée, deviner refusé. Aucun code modifié.
+Prochain cycle : toute conclusion doit désormais s'appuyer sur
+plusieurs exécutions.
 
 **r90-r92 (infrastructure toujours valable)** : busy-spin `NtReleaseMutant`
 mesuré et corrigé (r90, diagnostic permanent `AC6_NATIVE_IMPORT_TRACE`);

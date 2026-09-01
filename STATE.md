@@ -1,3 +1,36 @@
+# AC6 retail NTSC-U/J — r110 : la sonde est non-déterministe d'une exécution à l'autre, MÊME sans GDB — r108/r109 ont besoin d'une réserve (2026-09-01)
+
+- En traçant `sub_821D7DE0` (prochaine étape nommée par r108), r110
+  corrige une erreur de portée dans r109 : "la fonction retourne
+  proprement" avait été DÉDUITE de l'absence de prints supplémentaires,
+  jamais observée directement — `sub_821D5F48` fait 1700 lignes
+  (18586-20291), et tout le travail r105-r109 (GATE2, la boucle
+  `loc_821D6358`) se trouve à l'INTÉRIEUR de cette seule fonction, pas
+  dans des fonctions séparées. Des marqueurs posés directement sur les
+  deux chemins possibles (`loc_821D6138` return vs. fallthrough) ont
+  confirmé que la branche de sortie EST bien prise — la conclusion de
+  r109 sur la boucle elle-même tient.
+- **Mais** cinq exécutions successives du MÊME binaire, mêmes entrées,
+  même instrumentation, bornées à 20s chacune, donnent des résultats
+  DIFFÉRENTS : 3 sur 5 restent bloquées juste après l'entrée de
+  `sub_821D7DE0` (à l'intérieur de `sub_821D5F48`, AVANT même d'atteindre
+  la boucle post-GATE2); 2 sur 5 progressent jusqu'à la boucle de
+  préchauffe. Une exécution isolée a même segfault. **Non-déterminisme
+  réel, sans GDB** — distinct de l'instabilité GDB déjà retirée par r104.
+- **Conséquence** : les conclusions "GATE2 réussit sans crash" (r108) et
+  "la boucle se résout proprement" (r109) décrivent le résultat d'UNE
+  seule exécution chacune, pas le comportement typique de la sonde.
+  Aucune cause identifiée ce cycle (candidats : une autre lecture de
+  pile réellement non initialisée dont le contenu dépend de la mise en
+  page du processus hôte malgré la garantie zero-fill de
+  `GuestAddressSpace`, ou une vérification sensible au timing) —
+  deviner refusé, même discipline que les cycles 1111/1113. Aucun code
+  natif modifié (trois tours d'instrumentation, tous restaurés; `ctest`
+  9/9 reconfirmé). **Prochain cycle : toute conclusion sur le
+  comportement de la sonde doit désormais s'appuyer sur PLUSIEURS
+  exécutions, pas une seule.** Voir
+  `reports/ac6-retail-native-codegen-gate2-r110-probe-is-run-to-run-nondeterministic-without-gdb-20260901.md`.
+
 # AC6 retail NTSC-U/J — r109 : la boucle de dispatch post-GATE2 se résout en un seul appel — le vrai blocage reste en aval (2026-09-01)
 
 - Après r108, la lecture de `Function_821D5F48` vers l'avant révèle une

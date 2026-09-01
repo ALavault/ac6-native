@@ -425,7 +425,28 @@ compteur injecté ou fallback ReXGlue.
     avec la même technique d'instrumentation validée plutôt que GDB
     (retiré par r104 pour cette sonde). Voir
     `reports/ac6-retail-native-codegen-gate2-r109-post-gate2-dispatcher-resolves-cleanly-real-stall-still-downstream-20260901.md`.
-15. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
+15. **r110 a trouvé que la sonde est non-déterministe d'une exécution à
+    l'autre, même sans GDB — corrige r109 sur une erreur de portée (pas
+    sur sa conclusion substantielle).** r109 avait DÉDUIT que
+    `sub_821D5F48` retournait proprement à partir de l'absence de
+    prints supplémentaires — jamais observé directement. r110 pose des
+    marqueurs sur les deux chemins possibles et confirme que la branche
+    de sortie EST bien prise (conclusion de r109 sur la boucle
+    confirmée). **Mais** cinq exécutions identiques (même binaire,
+    mêmes entrées, 20s chacune) donnent des résultats différents : 3/5
+    restent bloquées juste après l'entrée de `sub_821D7DE0` (avant même
+    la boucle post-GATE2); 2/5 progressent jusqu'à la boucle de
+    préchauffe; une exécution isolée a segfault. **Conséquence** : les
+    conclusions "GATE2 réussit sans crash" (r108) et "la boucle se
+    résout proprement" (r109) décrivaient le résultat d'UNE seule
+    exécution chacune, pas le comportement typique. Cause non identifiée
+    (deviner refusé, même discipline que 1111/1113). Aucun code natif
+    modifié. **Prochain cycle : toute conclusion sur le comportement de
+    la sonde doit s'appuyer sur PLUSIEURS exécutions** avant d'être
+    rapportée; puis caractériser où (probablement dans GATE1-GATE5,
+    avant `loc_821D6358`) la divergence entre exécutions apparaît. Voir
+    `reports/ac6-retail-native-codegen-gate2-r110-probe-is-run-to-run-nondeterministic-without-gdb-20260901.md`.
+16. La traduction `IM_LOAD_IMMEDIATE` Xenos→SPIR-V reste ouverte. Aucun rendu
    présentable, titre, M01, campagne, save/replay ou mode offline n’est promu.
    Ne pas optimiser avant le début visible de gameplay.
 
