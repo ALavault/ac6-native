@@ -1341,6 +1341,25 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = 0u;
 """
+    if name == "XamAlloc":
+        # r195: DWORD XamAlloc(DWORD Type, SIZE_T Size, PVOID* pAddress) --
+        # a Win32-style DWORD status (0 = ERROR_SUCCESS), not an NTSTATUS.
+        # Real call site 0x821fd440 confirms r3=Type, r4=Size, r5=pAddress
+        # (out): treats the return as signed and branches to its own error
+        # path only when negative, so kOfflineStatus (0xC00000BB, negative
+        # as signed 32-bit) always took that error path -- every one of
+        # this XEX's 3 real call sites was a guaranteed allocation
+        # failure. Reuses the existing allocate_guest bump allocator, same
+        # as ExAllocatePool/MmAllocatePhysicalMemoryEx above.
+        return """  const std::uint32_t address = allocate_guest(base, ctx.r4.u32);
+  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, address);
+  ctx.r3.u64 = address != 0u ? 0u : 0xeu;  // ERROR_OUTOFMEMORY
+"""
+    if name == "XamFree":
+        # r195: DWORD XamFree(PVOID pAddress) -- same "guest reservation
+        # lifetime owned by the bump allocator, never freed individually"
+        # precedent as ExFreePool/RtlFreeAnsiString above.
+        return "  ctx.r3.u64 = 0u;  // guest reservation is released at teardown\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

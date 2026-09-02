@@ -1,3 +1,19 @@
+# AC6 retail NTSC-U/J — r195 : VRAI CORRECTIF — `XamAlloc`/`XamFree` utilisent l'allocateur bump invité (2026-09-02)
+
+- `DWORD XamAlloc(DWORD Type, SIZE_T Size, PVOID* pAddress)`/`DWORD
+  XamFree(PVOID pAddress)` : statut Win32 (0=succès), pas un NTSTATUS.
+  Site réel `0x821fd440` confirme `r3=Type,r4=Size,r5=&pAddress`;
+  l'appelant traite le retour comme SIGNÉ et ne prend son chemin d'erreur
+  que si négatif — `kOfflineStatus` (0xC00000BB) est négatif en 32 bits
+  signé, donc les 3 sites d'appel réels `XamAlloc` de ce XEX échouaient
+  systématiquement.
+- Corrigé : réutilise `allocate_guest` (même mécanisme
+  qu'`ExAllocatePool`/`MmAllocatePhysicalMemoryEx`), écrit l'adresse
+  réelle via `pAddress`, retourne 0 ou `ERROR_OUTOFMEMORY` (0xE).
+  `XamFree` : no-op retournant 0, même précédent qu'`ExFreePool`.
+- Tests 182/182 (181/181 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r195-real-fix-xamalloc-xamfree-use-the-guest-bump-allocator-20260902.md`.
+
 # AC6 retail NTSC-U/J — r194 : VRAI CORRECTIF — `KeDelayExecutionThread` attend réellement (2026-09-02)
 
 - Site d'appel réel unique `0x821f74e8`, dans un wrapper qui convertit

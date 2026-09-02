@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r194 cité comme `source_report`;
+- le report r195 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -59,10 +59,13 @@ au lieu du no-op offline qui laissait l'exécution continuer après un
 point jamais prévu comme atteignable). r194 a corrigé
 `KeDelayExecutionThread` (retournait instantanément au lieu d'attendre —
 maintenant un vrai `std::this_thread::sleep_for` sur l'intervalle
-relatif réel lu depuis la mémoire invitée).
+relatif réel lu depuis la mémoire invitée). r195 a corrigé
+`XamAlloc`/`XamFree` (statut Win32 signé, pas un NTSTATUS — le no-op
+offline échouait systématiquement aux 3 sites d'appel réels
+`XamAlloc`; utilise maintenant `allocate_guest`).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r194, méthode r90/r93/r164) pour d'autres candidats.
+r148-r195, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

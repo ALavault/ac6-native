@@ -1251,3 +1251,23 @@ def test_ke_delay_execution_thread_actually_sleeps(tmp_path: Path) -> None:
     assert "PPC_LOAD_U64(ctx.r5.u32)" in body
     assert "std::this_thread::sleep_for" in body
     assert "interval < 0" in body
+
+
+def test_xam_alloc_and_free_use_the_guest_bump_allocator(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__XamAlloc);\n"
+        "PPC_EXTERN_FUNC(__imp__XamFree);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+
+    alloc_body = text.split("void __imp__XamAlloc(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in alloc_body
+    assert "allocate_guest(base, ctx.r4.u32)" in alloc_body
+    assert "PPC_STORE_U32(ctx.r5.u32, address)" in alloc_body
+
+    free_body = text.split("void __imp__XamFree(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in free_body
+    assert "ctx.r3.u64 = 0u" in free_body
