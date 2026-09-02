@@ -1,3 +1,22 @@
+# AC6 retail NTSC-U/J — r181 : VRAI CORRECTIF — `XamInputGetKeystrokeEx` renvoie `ERROR_EMPTY` (2026-09-02)
+
+- Dernier import restant de la famille `XamInput*` (r180 avait couvert
+  `GetState`/`SetState`/`GetCapabilities`). Contrat réel : `DWORD
+  XamInputGetKeystrokeEx(DWORD, DWORD, PXINPUT_KEYSTROKE)`, forme
+  différente — la réponse normale en régime établi est `ERROR_EMPTY`
+  (`0x4306`), pas un succès avec sortie peuplée.
+- Le seul site d'appel réel (`0x82390de0`) n'inspecte pas la valeur de
+  retour lui-même; `kOfflineStatus` reste un statut NT absurde pour cette
+  API en forme d'erreur Win32 quoi qu'il arrive.
+- Corrigé : `0x4306` (`ERROR_EMPTY`) sans condition — réponse réelle et
+  valide ne nécessitant aucune écriture de sortie. Aucune file d'événements
+  keystroke (appui/relâchement) n'existe encore dans ce projet
+  (`NativeGuestInputService`, r180, n'expose que l'état courant sondé, pas
+  une file discrète) — nommé comme trou plutôt que fabriquer des
+  événements.
+- Tests 165/165 (164/164 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r181-real-fix-xaminputgetkeystrokeex-returns-error-empty-20260902.md`.
+
 # AC6 retail NTSC-U/J — r180 : VRAI CORRECTIF — backend d'entrée manette natif SDL2 (2026-09-02)
 
 - Utilisateur a explicitement autorisé SDL2 pour ce backend. `XamInputGetState`/

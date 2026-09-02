@@ -896,6 +896,24 @@ def render_body(name: str) -> str:
   PPC_STORE_U16(ctx.r5.u32 + 0x2, 0u);  // Flags: no FFB/wireless/voice claimed
   ctx.r3.u64 = 0u;
 """
+    if name == "XamInputGetKeystrokeEx":
+        # r181: real signature is DWORD XamInputGetKeystrokeEx(DWORD
+        # dwUserIndex, DWORD dwFlags, PXINPUT_KEYSTROKE pKeystroke) --
+        # polls a queue of menu-navigation "virtual key" events (D-pad/
+        # button presses treated as keystrokes for UI navigation), a
+        # different real contract from GetState/SetState/GetCapabilities
+        # (r180): the normal, expected steady-state answer is
+        # ERROR_EMPTY (0x4306, no new keystroke queued), not
+        # ERROR_SUCCESS with populated output. This XEX's own one real
+        # call site (0x82390de0, a thin any-user-index-normalizing
+        # wrapper) never inspects the return value itself -- the
+        # generic offline fallback's kOfflineStatus (0xC00000BB) is a
+        # nonsensical NT status for this Win32-error-shaped API either
+        # way, so this corrects the shape without asserting any
+        # particular keystroke queue behavior this project has not
+        # implemented (no press/release edge tracking exists yet --
+        # naming that gap here rather than fabricating queued events).
+        return "  ctx.r3.u64 = 0x4306u;  // ERROR_EMPTY\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

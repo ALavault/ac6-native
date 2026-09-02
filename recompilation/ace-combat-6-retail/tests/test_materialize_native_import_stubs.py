@@ -131,6 +131,23 @@ def test_xam_input_get_capabilities_matches_confirmed_offsets(
     assert "0x48fu" in body
 
 
+def test_xam_input_get_keystroke_ex_returns_error_empty(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamInputGetKeystrokeEx);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r181: real contract's normal, steady-state answer is ERROR_EMPTY
+    # (0x4306, no new menu-navigation keystroke queued) -- a different
+    # shape than GetState/SetState/GetCapabilities (r180), since no
+    # press/release edge-tracking queue exists yet in this project.
+    body = text.split("void __imp__XamInputGetKeystrokeEx")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0x4306u;" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

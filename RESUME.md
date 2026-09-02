@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r180 cité comme `source_report`;
+- le report r181 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -23,10 +23,11 @@ backend d'entrée manette natif via SDL2 (`NativeGuestInputService`,
 du contrat de transfert (code d'erreur `0x48F`, offsets
 `XINPUT_CAPABILITIES`). Aucune manette physique dans ce bac à sable — le
 symptôme « contrôles nuls » reste à confirmer par une future observation
-runtime avec un vrai périphérique.
+runtime avec un vrai périphérique. r181 a fermé le dernier import de la
+famille `XamInput*` (`XamInputGetKeystrokeEx`, renvoie `ERROR_EMPTY`).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r180, méthode r90/r93/r164) pour d'autres candidats.
+r148-r181, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

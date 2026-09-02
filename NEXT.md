@@ -36,7 +36,10 @@ fallback ReXGlue.
   `native-source/`), pas seulement `build.py` — voir RESUME.md. Aucune
   manette physique disponible ici; le symptôme « contrôles nuls » reste à
   confirmer par une future observation runtime.
-- Suite pytest 164/164, `ctest` 10/10.
+- r181 a corrigé `XamInputGetKeystrokeEx` (dernier import de la famille
+  `XamInput*`) : renvoie `ERROR_EMPTY` (0x4306) sans condition — forme
+  réelle valide, aucune file de keystrokes n'existe encore.
+- Suite pytest 165/165, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -47,7 +50,7 @@ fallback ReXGlue.
    disponible) que le backend d'entrée r180 résout effectivement le
    symptôme historique « contrôles nuls ».
 2. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r180, méthode r90/r93/r164) pour d'autres candidats.
+   r148-r181, méthode r90/r93/r164) pour d'autres candidats.
 3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
@@ -63,9 +66,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r181-real-fix-xaminputgetkeystrokeex-returns-error-empty-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r180-real-fix-native-sdl2-controller-input-backend-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r179-real-fix-kequerysystemtime-fills-a-real-changing-filetime-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r180).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r181).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.
