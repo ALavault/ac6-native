@@ -1862,6 +1862,22 @@ def render_body(name: str) -> str:
     ctx.r3.u64 = 0u;
   }
 """
+    if name == "XamTaskCloseHandle":
+        # r230: r198 deferred both XamTaskSchedule and XamTaskCloseHandle
+        # together, reasoning that fixing either needs a real guest
+        # -callback execution subsystem. That is true for
+        # XamTaskSchedule (it schedules a guest callback this project
+        # never invokes) but not for this import: its one real call site
+        # (0x82391e00, inside Function_82391A40's large save-content-scan
+        # path) calls it as `func_0x823d09bc(auStack_4b0[0])` on a
+        # sibling line immediately after a successful XamTaskSchedule
+        # call, and DISCARDS the return value outright -- no check of any
+        # kind, the same "retour ignoré par tous les appelants réels"
+        # shape already fixed for KeLockL2/KeUnlockL2 (r197),
+        # IoDismountVolume (r204), XamVoiceClose (r208) and
+        # XMsgCancelIORequest (r215). Unconditional success is honest
+        # regardless of whether the handle being closed is real.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

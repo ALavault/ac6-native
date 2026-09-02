@@ -255,7 +255,13 @@ fallback ReXGlue.
   réels, le plus haut compte tracé) confirmé déjà adéquat : les 4 sites
   tracés vérifient tous le statut avant de continuer, même famille que
   le chantier save/reload de r202, pas un bug de forme de contrat.
-- Suite pytest 208/208 (207 + 1 skip, inchangée), `ctest` 10/10.
+- r230 a corrigé `XamTaskCloseHandle` (r198 avait différé ce couple avec
+  `XamTaskSchedule` ensemble, mais son unique vrai site d'appel ignore
+  totalement le retour — même motif que `KeLockL2`/`IoDismountVolume`/
+  `XamVoiceClose`/`XMsgCancelIORequest`. `XamTaskSchedule` lui-même reste
+  différé). `__C_specific_handler` vérifié : zéro référence dans ce XEX,
+  cohérent avec r202 (SEH jamais réellement invoqué dans ce build).
+- Suite pytest 209/209 (208 + 1 skip), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -290,6 +296,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r230-real-fix-xamtaskclosehandle-returns-success-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r229-doc-unreached-cluster-plus-ntsetinformationfile-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r228-real-fix-xamusergetxuid-fills-a-zero-xuid-for-user-zero-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r227-real-fix-xamusergetsignininfo-fills-the-gating-bit-for-user-zero-20260903.md`;

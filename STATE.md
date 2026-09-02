@@ -10567,3 +10567,19 @@ touchée; pytest 208/208 (207+1 skip), `ctest` 10/10 reproduits.
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r229-doc-unreached-cluster-plus-ntsetinformationfile-already-adequate-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r230 corrige réellement `XamTaskCloseHandle`
+
+r198 avait différé `XamTaskSchedule`/`XamTaskCloseHandle` ensemble comme
+nécessitant un sous-système d'exécution de callback invité. Vrai pour
+`XamTaskSchedule`, mais l'unique vrai site d'appel de `XamTaskCloseHandle`
+(`0x82391e00`, dans `Function_82391A40`) ignore totalement son retour —
+même motif que `KeLockL2`/`IoDismountVolume`/`XamVoiceClose`/
+`XMsgCancelIORequest`. `STATUS_SUCCESS` inconditionnel;
+`XamTaskSchedule` reste différé (son propre besoin de sous-système de
+callback n'est pas résolu par ce fix). `__C_specific_handler` vérifié :
+zéro référence dans ce XEX, cohérent avec la fermeture SEH de r202.
+pytest 209/209 (208+1 skip), `ctest` 10/10.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r230-real-fix-xamtaskclosehandle-returns-success-20260903.md`.
