@@ -177,11 +177,12 @@ fallback ReXGlue.
   avant).
 - r217 a corrigé `VdSetDisplayMode` (retour ignoré — `STATUS_SUCCESS`
   sans condition). Vérifié aussi, non corrigé : `VdPersistDisplay`
-  (territoire renderer natif fail-closed). Le reste de la liste
-  générique (~87 imports) se concentre désormais dans une poignée de
-  gros chantiers déjà documentés; les petites victoires isolées se
-  raréfient.
-- Suite pytest 203/203, `ctest` 10/10.
+  (territoire renderer natif fail-closed).
+- r218 (documentation seule) : bilan complet du balayage r169-r217
+  (125→87 imports restants), catégorisé par gros chantier. Voir ce
+  rapport avant de reprendre le balayage — il évite de redécouvrir la
+  carte des chantiers restants.
+- Suite pytest 203/203, `ctest` 10/10 (inchangés depuis r217).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -216,9 +217,10 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
+  (bilan par gros chantier — à lire avant de reprendre le balayage);
 - `reports/ac6-retail-native-codegen-gate2-r217-real-fix-vdsetdisplaymode-always-succeeds-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r216-real-fix-nt-timer-family-actually-fires-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r217).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r218).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

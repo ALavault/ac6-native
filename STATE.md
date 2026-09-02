@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r218 : DOCUMENTATION SEULE — bilan du balayage r169-r217 (2026-09-02)
+
+- Aucun changement de code. Bilan complet du balayage des imports
+  offline (125→87 restants) : catégorise ce qui est corrigé (bugs réels,
+  fixes cosmétiques à retour ignoré, corrections de cycles antérieurs,
+  déjà-adéquats confirmés) et ce qui reste, par gros chantier (réseau
+  NetDll_*, SEH, écriture de sauvegarde, famille XMsg, moteur printf,
+  grappe identité/profil XamGetExecutionId, trampolines UI non tracés,
+  clé console hors de portée permanente, imports réellement
+  inatteignables 0 site, `XamTaskCloseHandle` inerte sans
+  `XamTaskSchedule`, `NtDuplicateObject` re-examiné — signature réduite
+  à 3 registres sur 7, risque réel d'écriture sauvage si corrigé
+  naïvement).
+- Voir
+  `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
+  pour le détail complet par catégorie.
+
 # AC6 retail NTSC-U/J — r217 : VRAI CORRECTIF — `VdSetDisplayMode` réussit toujours (2026-09-02)
 
 - Site réel unique `0x821f075c` (même fonction que

@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r217 cité comme `source_report`;
+- le report r218 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -135,10 +135,12 @@ classe que r145). r217 a corrigé `VdSetDisplayMode` (retour ignoré —
 la liste générique (~87 imports) se concentre désormais dans une
 poignée de gros chantiers déjà documentés (réseau, SEH, écriture de
 sauvegarde, XMsg, printf, identité/profil, trampolines UI) — les
-petites victoires isolées se raréfient.
+petites victoires isolées se raréfient. r218 (documentation seule) est
+un bilan complet du balayage r169-r217 (125→87 imports restants),
+catégorisé par gros chantier — le lire avant de reprendre le balayage.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r217, méthode r90/r93/r164) pour d'autres candidats.
+r148-r218, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
