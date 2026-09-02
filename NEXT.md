@@ -210,7 +210,13 @@ fallback ReXGlue.
   branchement « code non concordant » de l'appelant sont des retours
   propres, pas des erreurs — retourne `STATUS_SUCCESS`; struct-fill non
   fait, signature au-delà de 4 paramètres pas assez confirmée).
-- Suite pytest 205/205, `ctest` 10/10.
+- r224 (documentation seule) : les trampolines `XamShow*` sont en
+  réalité les cibles de repli d'une table de résolution dynamique (≥14
+  entrées) IDENTIQUE au mécanisme déjà confirmé actif par r212 pour
+  `XexGetModuleHandle`/`XexGetProcedureAddress` — confirmées
+  atteignables (pas du code mort), mais toujours non implémenté (la
+  fonction résolveur qui lit cette table reste à tracer).
+- Suite pytest 205/205, `ctest` 10/10 (inchangés).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -245,11 +251,11 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r224-doc-xamshow-trampolines-are-the-fallback-table-from-r212-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r223-real-fix-xamuserreadprofilesettings-returns-success-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r222-real-fix-xamshowmessageboxuiex-completes-synchronously-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
   (bilan par gros chantier — à lire avant de reprendre le balayage);
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r223).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r224).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r223 cité comme `source_report`;
+- le report r224 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -159,10 +159,14 @@ l'appelant par construction; écrit `pMessageBoxResult`/
 `XamUserReadProfileSettings` (les deux cibles de branchement de
 l'appelant sont des retours propres — retourne `STATUS_SUCCESS`;
 struct-fill non fait, signature au-delà de 4 paramètres pas assez
-confirmée).
+confirmée). r224 (documentation seule) a trouvé que les trampolines
+`XamShow*` sont les cibles de repli d'une table de résolution
+dynamique (≥14 entrées) IDENTIQUE au mécanisme de r212 pour
+`XexGetModuleHandle` — confirmées atteignables, toujours non
+implémenté (résolveur de la table à tracer).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r223, méthode r90/r93/r164) pour d'autres candidats.
+r148-r224, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

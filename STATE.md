@@ -1,3 +1,26 @@
+# AC6 retail NTSC-U/J — r224 : DOCUMENTATION SEULE — les trampolines `XamShow*` sont la même table de repli dynamique que r212 (2026-09-02/03)
+
+- Recherche binaire brute de l'adresse propre du trampoline
+  `XamShowMarketplaceUI` (`0x821f4680`) dans le XEX qualifié : trouvée
+  comme entrée d'une VRAIE table `{adresse_fonction, tag}` d'au moins
+  14 entrées, toutes avec le même motif de tag `0x4000____` — EXACTEMENT
+  la forme du mécanisme de compatibilité ascendante déjà analysé par
+  r212 pour `XexGetModuleHandle`/`XexGetProcedureAddress` (résolution
+  dynamique échoue toujours dans ce build → repli sur adresse statique
+  fixe). Cette table EST la liste de ces adresses de repli.
+- Conséquence : les trampolines `XamShow*` (bloc « non tracé » de r206/
+  r212) sont RÉELLEMENT atteints via ce même mécanisme confirmé actif —
+  pas du code orphelin comme la priorisation précédente le suggérait
+  implicitement. Correction de priorisation, pas de correction d'un fix
+  antérieur.
+- Non implémenté : confirmer l'atteignabilité ne détermine pas la
+  valeur sûre à retourner pour chacun — nécessite de tracer la fonction
+  résolveur qui lit cette table (équivalent de `Function_821FCCE0` de
+  r212 mais pour cette table à entrées multiples), effort pluri-cycle.
+- Aucun changement de code. Tests 205/205, `ctest` 10/10 (inchangés).
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r224-doc-xamshow-trampolines-are-the-fallback-table-from-r212-20260902.md`.
+
 # AC6 retail NTSC-U/J — r223 : VRAI CORRECTIF — `XamUserReadProfileSettings` retourne succès (2026-09-02)
 
 - Tracé les deux cibles de branchement « ne correspond pas au code
