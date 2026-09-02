@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r206 cité comme `source_report`;
+- le report r207 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -101,9 +101,12 @@ famille `XAudioRegisterRenderDriverClient`/`Unregister`/
 `SubmitRenderDriverFrame` (Unregister bloquait systématiquement l'init
 audio, vérifié en signé). Vérifié aussi, non corrigé :
 `XamGetExecutionId`, `XamShowMessageBoxUIEx`, 6 dialogues `XamShow*`.
+r207 a corrigé `XamVoiceHeadsetPresent` (booléen, pas NTSTATUS — signalait
+« casque présent » à tort). Vérifié aussi, non corrigé : `XamVoiceCreate`
+(échec actuel déjà honnête).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r206, méthode r90/r93/r164) pour d'autres candidats.
+r148-r207, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

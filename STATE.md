@@ -1,3 +1,19 @@
+# AC6 retail NTSC-U/J — r207 : VRAI CORRECTIF — `XamVoiceHeadsetPresent` signale l'absence (2026-09-02)
+
+- `BOOL XamVoiceHeadsetPresent(HANDLE)` : booléen simple, pas un
+  NTSTATUS. Site réel `0x82206900` compare directement à zéro (pas de
+  vérification de statut signé). `kOfflineStatus` (non nul) était lu
+  comme VRAI (« casque présent ») à chaque appel — aucun périphérique
+  micro/casque réel dans ce projet.
+- Corrigé : retourne `0` (FAUX) sans condition — stable dans la logique
+  de détection de changement de l'appelant.
+- Vérifié aussi, non corrigé : `XamVoiceCreate` (site réel `0x82207620`,
+  vérifié en signé — l'échec actuel semble déjà être le résultat
+  honnête vu l'absence de vrai microphone; pas de fix forcé sans
+  confirmation que « réussir avec un faux handle » serait meilleur).
+- Tests 193/193 (192/192 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r207-real-fix-xamvoiceheadsetpresent-reports-absent-20260902.md`.
+
 # AC6 retail NTSC-U/J — r206 : VRAI CORRECTIF — famille `XAudioRegisterRenderDriverClient`/`Unregister`/`SubmitRenderDriverFrame` (2026-09-02)
 
 - `XAudioUnregisterRenderDriverClient` (site réel `0x823a664c`) : retour

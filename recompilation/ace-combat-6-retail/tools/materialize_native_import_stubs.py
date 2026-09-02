@@ -1522,6 +1522,19 @@ def render_body(name: str) -> str:
         # frame to; accepting and discarding it is honest, not a
         # fabricated success.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamVoiceHeadsetPresent":
+        # r207: BOOL XamVoiceHeadsetPresent(HANDLE hVoice) -- a plain
+        # boolean, not an NTSTATUS. Real call site 0x82206900 compares
+        # the result directly against zero (`cmpwi cr6,r3,0x0`, no
+        # signed status check), so kOfflineStatus (nonzero) was
+        # currently read as TRUE ("headset present") on every call --
+        # this project has no real microphone/headset device, so FALSE
+        # is the honest report, not a guess. The caller's own
+        # change-detection logic (comparing this call's result against
+        # its last stored reading) is stable under a constant FALSE: it
+        # never spuriously reports "presence changed" once the first
+        # reading settles.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in
