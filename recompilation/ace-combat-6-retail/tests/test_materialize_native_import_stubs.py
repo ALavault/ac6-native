@@ -1206,3 +1206,31 @@ def test_semaphore_and_try_spinlock_use_real_mutual_exclusion(
         "\n}\n"
     )[0]
     assert "set_event(ctx.r3.u32)" in release_body
+
+
+def test_kebugcheck_family_aborts_instead_of_returning(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__KeBugCheck);\n"
+        "PPC_EXTERN_FUNC(__imp__KeBugCheckEx);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+    assert "kOfflineStatus" not in text.split("void __imp__KeBugCheck(")[
+        1
+    ].split("\n}\n")[0]
+    assert "kOfflineStatus" not in text.split("void __imp__KeBugCheckEx(")[
+        1
+    ].split("\n}\n")[0]
+
+    bugcheck_body = text.split("void __imp__KeBugCheck(")[1].split("\n}\n")[0]
+    assert "std::abort()" in bugcheck_body
+    assert "ctx.r3.u32" in bugcheck_body
+
+    bugcheckex_body = text.split("void __imp__KeBugCheckEx(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "std::abort()" in bugcheckex_body
+    assert "ctx.r4.u32" in bugcheckex_body
+    assert "ctx.r7.u32" in bugcheckex_body

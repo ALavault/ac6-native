@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r193 : VRAI CORRECTIF — `KeBugCheck`/`KeBugCheckEx` s'arrêtent au lieu de continuer silencieusement (2026-09-02)
+
+- `VOID KeBugCheck(ULONG)`/`VOID KeBugCheckEx(ULONG, ULONG_PTR×4)` sont des
+  API NT documentées qui NE RETOURNENT JAMAIS (arrêt matériel réel). Le
+  no-op offline générique retournait normalement avec `kOfflineStatus` —
+  un vrai risque d'exécution après un point que le code compilé de ce XEX
+  n'a jamais prévu de reprendre.
+- Sites d'appel réels distingués précisément (une recherche par
+  sous-chaîne naïve confond `KeBugCheck`/`KeBugCheckEx`) :
+  `KeBugCheck` (`823d054c`) 7 références (6 appels + 1 saut de queue
+  réel); `KeBugCheckEx` (`823d03ec`) 4 appels réels.
+- Corrigé : trace un diagnostic (code/paramètres réels lus depuis
+  r3-r7, rien inventé) puis `std::abort()` — respecte le contrat « ne
+  retourne jamais » réel au lieu de fabriquer une continuation.
+- Tests 180/180 (179/179 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r193-real-fix-kebugcheck-family-aborts-instead-of-silently-continuing-20260902.md`.
+
 # AC6 retail NTSC-U/J — r192 : VRAI CORRECTIF — sémaphores/try-spinlock obtiennent une vraie exclusion mutuelle (2026-09-02)
 
 - `KeTryToAcquireSpinLockAtRaisedIrql` (site réel `0x823a8bf4`, masqué en

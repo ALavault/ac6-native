@@ -1283,6 +1283,37 @@ def render_body(name: str) -> str:
         return """  set_event(ctx.r3.u32);
   ctx.r3.u64 = 0u;
 """
+    if name == "KeBugCheck":
+        # r193: VOID KeBugCheck(ULONG BugCheckCode) -- documented, never
+        # returns (a real hardware halt). 6 real calls plus 1 real tail
+        # jump across this XEX (0x8238329c, 0x82383344, 0x821ed328,
+        # 0x821ed47c, 0x82389a88, 0x82386cd0, 0x823831dc). The generic
+        # offline no-op previously returned normally with kOfflineStatus,
+        # letting the recompiled guest fall through into code the real
+        # console would never reach after a bugcheck -- a genuine
+        # execute-past-fatal risk, not a status-shape cosmetic. Aborting
+        # here instead matches real "never returns" semantics rather than
+        # inventing a continuation this XEX's own compiled code does not
+        # expect on real hardware.
+        return """  std::fprintf(stderr, "[KeBugCheck] fatal stop code=0x%08x\\n",
+               static_cast<unsigned>(ctx.r3.u32));
+  std::abort();
+"""
+    if name == "KeBugCheckEx":
+        # r193: VOID KeBugCheckEx(ULONG BugCheckCode, ULONG_PTR Parameter1,
+        # ULONG_PTR Parameter2, ULONG_PTR Parameter3, ULONG_PTR Parameter4)
+        # -- same never-returns contract as KeBugCheck, 4 real call sites
+        # (0x821fa75c, 0x821f9e74, 0x821faa4c, 0x821f90f4).
+        return """  std::fprintf(stderr,
+               "[KeBugCheckEx] fatal stop code=0x%08x p1=0x%08x p2=0x%08x "
+               "p3=0x%08x p4=0x%08x\\n",
+               static_cast<unsigned>(ctx.r3.u32),
+               static_cast<unsigned>(ctx.r4.u32),
+               static_cast<unsigned>(ctx.r5.u32),
+               static_cast<unsigned>(ctx.r6.u32),
+               static_cast<unsigned>(ctx.r7.u32));
+  std::abort();
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in
