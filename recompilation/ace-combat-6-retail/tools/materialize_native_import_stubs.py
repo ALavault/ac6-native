@@ -1252,6 +1252,37 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = 0u;
 """
+    if name == "KeTryToAcquireSpinLockAtRaisedIrql":
+        # r192: BOOLEAN KeTryToAcquireSpinLockAtRaisedIrql(PKSPIN_LOCK
+        # SpinLock) -- same lock object identity as KfAcquireSpinLock
+        # (r191), non-blocking variant. Real call site 0x823a8bf4 masks
+        # the return through rlwinm to its low 8 bits, confirming a
+        # BOOLEAN, not a status.
+        return "  ctx.r3.u64 = spin_lock_for(ctx.r3.u32).try_lock() ? 1u : 0u;\n"
+    if name == "KeInitializeSemaphore":
+        # r192: VOID KeInitializeSemaphore(PKSEMAPHORE Semaphore, LONG
+        # Count, LONG Limit) -- real call site 0x823add7c initializes a
+        # standard KSEMAPHORE dispatcher-object header (self-referential
+        # list at Semaphore+0x8) before this call. Same auto-reset event
+        # model r145 already uses for NtCreateSemaphore, keyed by the
+        # Semaphore object's own guest address like KeSetEvent/KeResetEvent
+        # (Ke* variants operate on the object directly, not a handle).
+        return """  create_event(ctx.r3.u32, /*manual_reset=*/false,
+               /*signaled=*/ctx.r4.s32 > 0);
+  ctx.r3.u64 = 0u;
+"""
+    if name == "KeReleaseSemaphore":
+        # r192: LONG KeReleaseSemaphore(PKSEMAPHORE Semaphore, KPRIORITY
+        # Increment, LONG Adjustment, BOOLEAN Wait) -- real call sites
+        # 0x823ad268/0x823ad8d4 confirm r3=Semaphore, r4=Increment=1.
+        # Unlike NtReleaseSemaphore (r145), the previous count is the
+        # function's own return value (r3), not an out-pointer. Same
+        # "previous count unmodeled, always 0" precedent as r145: this
+        # project's event model has no notion of a semaphore's real count
+        # beyond signaled/not.
+        return """  set_event(ctx.r3.u32);
+  ctx.r3.u64 = 0u;
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

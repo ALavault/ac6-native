@@ -1173,3 +1173,36 @@ def test_spinlock_and_irql_primitives_use_real_mutual_exclusion(
     # real IRQL is per-thread state, so the same thread legitimately nests
     # Raise/Lower pairs without that being a self-reacquisition.
     assert "std::recursive_mutex g_dpc_level_mutex" in text
+
+
+def test_semaphore_and_try_spinlock_use_real_mutual_exclusion(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__KeTryToAcquireSpinLockAtRaisedIrql);\n"
+        "PPC_EXTERN_FUNC(__imp__KeInitializeSemaphore);\n"
+        "PPC_EXTERN_FUNC(__imp__KeReleaseSemaphore);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 3
+    text = output.read_text()
+    assert "kOfflineStatus" not in text.split(
+        "void __imp__KeTryToAcquireSpinLockAtRaisedIrql("
+    )[1].split("\n}\n")[0]
+
+    try_body = text.split(
+        "void __imp__KeTryToAcquireSpinLockAtRaisedIrql("
+    )[1].split("\n}\n")[0]
+    assert "spin_lock_for(ctx.r3.u32).try_lock()" in try_body
+
+    init_body = text.split("void __imp__KeInitializeSemaphore(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "create_event(ctx.r3.u32" in init_body
+    assert "ctx.r4.s32 > 0" in init_body
+
+    release_body = text.split("void __imp__KeReleaseSemaphore(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "set_event(ctx.r3.u32)" in release_body

@@ -72,7 +72,13 @@ fallback ReXGlue.
   — vraie exclusion mutuelle, même risque de concurrence réelle que r116
   mais pour une famille bien plus répandue (88-110 sites d'appel réels par
   fonction).
-- Suite pytest 178/178, `ctest` 10/10.
+- r192 a corrigé le reste de cette famille : `KeTryToAcquireSpinLockAtRaisedIrql`
+  (variante non bloquante) et `KeInitializeSemaphore`/`KeReleaseSemaphore`
+  (un vrai `KSEMAPHORE` jamais relâché — tout wait expirait toujours).
+  Vérifié aussi, non corrigé : `NtQueryInformationFile` (bloqué par le
+  média en lecture seule, même famille que r178); `sprintf`/`_vsnprintf`
+  (moteur printf varargs, hors scope d'un cycle borné).
+- Suite pytest 179/179, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -103,9 +109,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r192-real-fix-semaphore-and-try-spinlock-primitives-get-real-mutual-exclusion-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r191-real-fix-spinlock-and-irql-primitives-get-real-mutual-exclusion-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r190-real-fix-ntqueryvolumeinformationfile-fills-real-fs-size-info-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r191).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r192).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

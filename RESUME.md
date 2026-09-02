@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r191 cité comme `source_report`;
+- le report r192 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -46,10 +46,17 @@ d'allocation FATX 16 Kio). r191 a corrigé les primitives spinlock/IRQL
 88-110 sites d'appel réels par fonction, même risque de concurrence
 réelle que r116 (`spin_lock_for` non récursif comme un vrai spinlock;
 `g_dpc_level_mutex` récursif car l'IRQL réel est un état par thread, pas
-une identité d'objet).
+une identité d'objet). r192 a fermé le reste de cette famille :
+`KeTryToAcquireSpinLockAtRaisedIrql` (variante non bloquante) et
+`KeInitializeSemaphore`/`KeReleaseSemaphore` (un vrai `KSEMAPHORE` jamais
+relâché — tout `KeWaitForSingleObject` dessus expirait toujours). Vérifié
+aussi sans corriger : `NtQueryInformationFile`/`NtSetInformationFile`
+(séquence de finalisation de fichier, bloquée par le média en lecture
+seule) et `sprintf`/`_vsnprintf` (moteur printf varargs, hors scope d'un
+cycle borné).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r191, méthode r90/r93/r164) pour d'autres candidats.
+r148-r192, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

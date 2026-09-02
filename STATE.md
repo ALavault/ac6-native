@@ -1,3 +1,28 @@
+# AC6 retail NTSC-U/J — r192 : VRAI CORRECTIF — sémaphores/try-spinlock obtiennent une vraie exclusion mutuelle (2026-09-02)
+
+- `KeTryToAcquireSpinLockAtRaisedIrql` (site réel `0x823a8bf4`, masqué en
+  BOOLEAN via `rlwinm`) : variante non bloquante de `KfAcquireSpinLock`
+  (r191), réutilise `spin_lock_for(key).try_lock()`.
+- `KeInitializeSemaphore`/`KeReleaseSemaphore` (sites réels `0x823add7c`,
+  `0x823ad268`, `0x823ad8d4`) : un vrai `KSEMAPHORE` (en-tête dispatcher
+  auto-référencé) était initialisé mais jamais relâché — tout
+  `KeWaitForSingleObject` sur ce sémaphore expirait toujours en TIMEOUT.
+  Réutilise le modèle événement auto-reset de r145
+  (`NtCreateSemaphore`/`NtReleaseSemaphore`), clé = adresse invitée de
+  l'objet directement (motif `Ke*` déjà établi par
+  `KeSetEvent`/`KeResetEvent`). Compte précédent non modélisé, retourné 0
+  — même précédent que r145, mais via la valeur de retour (pas un
+  pointeur de sortie) puisque c'est le vrai contrat `KeReleaseSemaphore`.
+- Vérifié aussi, non corrigé : `NtQueryInformationFile` (site réel unique
+  `0x823908a4`) fait partie d'une séquence de finalisation de fichier
+  (lit la position d'écriture, puis `NtSetInformationFile` positionne
+  EndOfFile/AllocationSize à cette position) — bloqué par le média invité
+  en lecture seule, même famille que r178. `sprintf`/`_vsnprintf` (7+2
+  sites réels) nécessiteraient un moteur printf varargs complet — hors
+  scope d'un cycle borné, non tenté.
+- Tests 179/179 (178/178 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r192-real-fix-semaphore-and-try-spinlock-primitives-get-real-mutual-exclusion-20260902.md`.
+
 # AC6 retail NTSC-U/J — r191 : VRAI CORRECTIF — primitives spinlock/IRQL obtiennent une vraie exclusion mutuelle (2026-09-02)
 
 - `KfAcquireSpinLock`/`KfReleaseSpinLock`, `KeAcquireSpinLockAtRaisedIrql`/
