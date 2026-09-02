@@ -21,16 +21,19 @@ fallback ReXGlue.
 
 - La famille de configuration plateforme Vd/X ouverte par r168 est
   entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175).
-- r176/r177 ont corrigé `XamUserGetSigninState`/`XamGetSystemVersion`
-  (connexion locale index 0; version sous tous les seuils observés).
-- r178 (documentation seule, aucun code touché) : `XexCheckExecutablePrivilege`
-  vérifié, aucune preuve locale ne fixe la sémantique de ses IDs de
-  privilège — nommé, non corrigé (précédent r164). Le backend d'entrée
-  manette natif (candidat le plus prometteur pour « contrôles nuls »)
-  nécessite une **décision de cadrage explicite** (choix de dépendance,
-  nouveau sous-système) avant toute implémentation — ce n'est pas un
-  simple fix de stub généré comme r169-r177.
-- Suite pytest 160/160, `ctest` 9/9 (inchangé depuis r177).
+- r176/r177 ont corrigé `XamUserGetSigninState`/`XamGetSystemVersion`.
+- r178 (documentation seule) : `XexCheckExecutablePrivilege` vérifié, non
+  corrigé (précédent r164, sémantique de privilège non déterminable
+  localement).
+- r179 a corrigé `KeQuerySystemTime` (remplissage de FILETIME via pointeur,
+  utilise l'horloge murale réelle de l'hôte) — les 4 sites d'appel réels
+  exigeaient tous une valeur changeante (date calendaire, delta de temps,
+  graine de session).
+- **Bloqué sur une décision utilisateur** : le backend d'entrée manette
+  natif (candidat le plus prometteur pour « contrôles nuls ») nécessite un
+  choix de dépendance et un nouveau sous-système — ne pas commencer sans
+  confirmation explicite.
+- Suite pytest 161/161, `ctest` 9/9.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -41,7 +44,7 @@ fallback ReXGlue.
    — go/no-go et choix de dépendance hôte (ex. SDL2) avant toute
    implémentation. Ne pas commencer sans confirmation explicite.
 2. En l'absence de cette décision, continuer le balayage des imports
-   offline restants (mêmes outils que r148-r178, méthode r90/r93/r164)
+   offline restants (mêmes outils que r148-r179, méthode r90/r93/r164)
    pour des candidats ne nécessitant pas de nouvelle infrastructure.
 3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
@@ -58,9 +61,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r179-real-fix-kequerysystemtime-fills-a-real-changing-filetime-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r178-xexcheckexecutableprivilege-checked-no-safe-fix-identified-input-backend-needs-scoping-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r177-real-fix-xamgetsystemversion-stays-below-every-observed-threshold-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r178).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r179).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

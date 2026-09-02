@@ -15,6 +15,7 @@ La famille de configuration plateforme Vd/X ouverte par r168 est
 entièrement fermée depuis r175. r176/r177 ont corrigé
 `XamUserGetSigninState`/`XamGetSystemVersion`. r178 (doc seule) a vérifié
 `XexCheckExecutablePrivilege` sans trouver de fix sûr (précédent r164).
+r179 a corrigé `KeQuerySystemTime` (FILETIME réel via l'horloge de l'hôte).
 
 **Bloqué sur une décision utilisateur** : le backend d'entrée manette natif
 (`XamInputGetState`/`SetState`/`GetCapabilities`) est le candidat le plus
@@ -25,7 +26,7 @@ sous-système, pas un fix de stub généré. **Ne pas commencer sans
 confirmation explicite.**
 
 En l'absence de cette décision, continuer le balayage des imports offline
-restants (mêmes outils que r148-r178, méthode r90/r93/r164) pour des
+restants (mêmes outils que r148-r179, méthode r90/r93/r164) pour des
 candidats ne nécessitant pas de nouvelle infrastructure.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses

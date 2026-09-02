@@ -49,6 +49,27 @@ def test_timebase_frequency_is_xenon_qualified(tmp_path: Path) -> None:
     assert "ctx.r3.u64 = 50000000u" in output.read_text()
 
 
+def test_ke_query_system_time_fills_a_real_changing_filetime(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__KeQuerySystemTime);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r179: real contract is VOID KeQuerySystemTime(PLARGE_INTEGER) -- a
+    # struct-fill through r3 (a FILETIME tick count), not a status. All
+    # four of this XEX's real call sites need a real, changing wall-clock
+    # value (calendar-field conversion, an elapsed-time delta, a
+    # session/seed value) -- a fixed constant would break every one of
+    # them differently.
+    body = text.split("void __imp__KeQuerySystemTime")[1]
+    assert "kOfflineStatus" not in body
+    assert "std::chrono::system_clock::now()" in body
+    assert "116444736000000000LL" in body
+    assert "PPC_STORE_U64(ctx.r3.u32," in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

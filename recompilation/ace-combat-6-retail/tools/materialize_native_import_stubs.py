@@ -26,6 +26,7 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <ratio>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -1071,6 +1072,34 @@ def render_body(name: str) -> str:
 """
     if name == "KeQueryPerformanceFrequency":
         return "  ctx.r3.u64 = 50000000u;\n"
+    if name == "KeQuerySystemTime":
+        # r179: real signature is VOID KeQuerySystemTime(PLARGE_INTEGER
+        # SystemTime) -- a struct-fill through r3 (a single 64-bit FILETIME
+        # tick count, 100ns units since 1601-01-01), not a status. The
+        # generic offline-import fallback previously wrote nothing through
+        # that pointer. All FOUR of this XEX's real call sites read the
+        # result back and do real work with it, not a discarded read:
+        #   two feed it straight into RtlTimeToTimeFields (0x821f4bb4,
+        #   0x821f5abc) to populate a real year/month/day/hour/min/sec
+        #   struct -- a fixed small constant would render as a nonsensical
+        #   date (e.g. 1601 or 1970), not a real one;
+        #   0x821f7f00 computes an elapsed-time delta between two saved
+        #   timestamps to drive what reads as a real timer/animation gate
+        #   -- a fixed constant would freeze that delta at zero forever;
+        #   0x82392cf8 takes the low 32 bits as what reads as a
+        #   session/seed value -- a fixed constant would make it
+        #   constant across runs instead of unique.
+        # All four need a real, changing wall-clock value, not an
+        # arbitrary fixed one. Uses the host's own current time (fully
+        # deterministic per real run, exactly matching what real hardware
+        # provides, not a synthetic value chosen to force any specific
+        # comparison outcome).
+        return """  const auto now = std::chrono::system_clock::now().time_since_epoch();
+  const std::int64_t hundred_ns =
+      std::chrono::duration_cast<std::chrono::duration<std::int64_t, std::ratio<1, 10000000>>>(now).count();
+  constexpr std::int64_t kFiletimeEpochOffset = 116444736000000000LL;  // 1601-1970 in 100ns units
+  PPC_STORE_U64(ctx.r3.u32, static_cast<std::uint64_t>(hundred_ns + kFiletimeEpochOffset));
+"""
     if name == "MmQueryStatistics":
         # r108: the generic offline-import default below only sets ctx.r3
         # (a status code) and never touches the guest output buffer the

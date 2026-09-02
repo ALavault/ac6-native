@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r179 : VRAI CORRECTIF — `KeQuerySystemTime` remplit un FILETIME réel et changeant (2026-09-02)
+
+- `KeQuerySystemTime` (contrat réel : `VOID KeQuerySystemTime(PLARGE_INTEGER)`
+  — remplissage de struct via pointeur, même catégorie que `VdQueryVideoMode`
+  r168/r169, pas un statut). Le fallback générique n'écrivait rien à
+  travers le pointeur. Les 4 sites d'appel réels de ce XEX exigent tous une
+  valeur RÉELLE et CHANGEANTE : 2 alimentent `RtlTimeToTimeFields` (date
+  calendaire réelle, une constante fixe donnerait une date absurde); 1
+  calcule un delta de temps écoulé entre deux horodatages (une constante
+  figerait ce delta à zéro pour toujours — un minuteur/animation en attente
+  ne progresserait jamais); 1 prend les 32 bits bas comme graine de session
+  (une constante la rendrait identique à chaque run).
+- Corrigé : utilise l'horloge murale réelle de l'hôte
+  (`std::chrono::system_clock::now()`), convertie vers l'époque FILETIME
+  Windows (offset standard `116444736000000000`, non inventé), écrite via
+  `PPC_STORE_U64`. Compile proprement contre le vrai toolchain
+  (`<ratio>` ajouté aux includes).
+- Tests 161/161 (160/160 → +1). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r179-real-fix-kequerysystemtime-fills-a-real-changing-filetime-20260902.md`.
+
 # AC6 retail NTSC-U/J — r178 : `XexCheckExecutablePrivilege` vérifié sans fix sûr; backend d'entrée natif nécessite une décision de cadrage (2026-09-02)
 
 - `XexCheckExecutablePrivilege` (3 sites d'appel réels, IDs de privilège
