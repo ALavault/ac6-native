@@ -139,7 +139,9 @@ fallback ReXGlue.
 - r207 a corrigé `XamVoiceHeadsetPresent` (booléen, pas NTSTATUS —
   signalait « casque présent » à tort). Vérifié aussi, non corrigé :
   `XamVoiceCreate` (échec actuel déjà honnête, pas de fix forcé).
-- Suite pytest 193/193, `ctest` 10/10.
+- r208 a corrigé `XamVoiceClose` (retour ignoré aux 3 sites d'appel
+  réels — `STATUS_SUCCESS` sans condition).
+- Suite pytest 194/194, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -174,9 +176,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r208-real-fix-xamvoiceclose-always-succeeds-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r207-real-fix-xamvoiceheadsetpresent-reports-absent-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r206-real-fix-xaudio-render-driver-client-family-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r207).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r208).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

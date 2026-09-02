@@ -1,3 +1,14 @@
+# AC6 retail NTSC-U/J — r208 : VRAI CORRECTIF — `XamVoiceClose` réussit toujours (2026-09-02)
+
+- `VOID XamVoiceClose(HANDLE)` : 3 sites d'appel réels, tous vérifiés
+  individuellement ce cycle — chacun ignore totalement la valeur de
+  retour.
+- Corrigé : `STATUS_SUCCESS` sans condition — même classe que
+  `KeLockL2`/`KeUnlockL2`/`KiApcNormalRoutineNop` (r197) et la famille
+  `IoDismountVolume` (r204).
+- Tests 194/194 (193/193 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r208-real-fix-xamvoiceclose-always-succeeds-20260902.md`.
+
 # AC6 retail NTSC-U/J — r207 : VRAI CORRECTIF — `XamVoiceHeadsetPresent` signale l'absence (2026-09-02)
 
 - `BOOL XamVoiceHeadsetPresent(HANDLE)` : booléen simple, pas un

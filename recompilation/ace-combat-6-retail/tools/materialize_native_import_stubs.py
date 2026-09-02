@@ -1535,6 +1535,12 @@ def render_body(name: str) -> str:
         # never spuriously reports "presence changed" once the first
         # reading settles.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamVoiceClose":
+        # r208: VOID XamVoiceClose(HANDLE hVoice) -- all 3 real call
+        # sites (0x82207528, 0x82207694, 0x82206fa0) discard the return
+        # value outright, no check at all -- same class of fix as
+        # r197's KeLockL2/KeUnlockL2/KiApcNormalRoutineNop.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in
