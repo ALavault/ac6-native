@@ -18,8 +18,8 @@
   constraints. Run commands from the portfolio root; every path below is
   portfolio-root-relative.
 - Before adding analysis or build machinery, use the available procedures in
-  `docs/native-recompilation-tools.md`, the architecture catalog at
-  `.tools/knowledge-base/architecture-v1/catalog.json`, and the scripts under
+  `docs/STATIC_EVIDENCE_TOOLING.md`,
+  `recompilation/ace-combat-6-retail/README.md`, and the scripts under
   `workspaces/ace-combat-6/tools/` and `workspaces/ace-combat-6/scripts/`.
   Reuse their structured outputs and focused tests instead of duplicating them.
 - Resume from `reports/handoff/CURRENT.json`, its AC6 source report and working
@@ -67,10 +67,10 @@
   with demo evidence. Treat
   `workspaces/ace-combat-6/ghidra-projects/ace-combat-6-corrected` as historical/needs-revalidation
   until its bytes are reconciled; never merge exports from both projects.
-- For generic Xenon/Xenos, guest-memory and recompilation interpretation,
-  consult the local, provenance-checked architecture catalog at
-  `.tools/knowledge-base/architecture-v1/catalog.json`; it supports but never
-  replaces binary-qualified AC6 evidence.
+- The provenance-checked architecture catalog is currently absent, as recorded
+  by `recompilation/ace-combat-6-retail/config/xbox360-toolchain.lock.json`.
+  Do not derive generic Xenon/Xenos or guest-memory claims from it until it is
+  restored and qualified; binary-qualified AC6 evidence remains authoritative.
 - Do not upload `DATA00.PAC`, `DATA01.PAC`, or another retail container at or
   above 512,000,000 bytes to ChatGPT. When external review needs bytes from a
   large container, provide a manifest of exact file-relative ranges

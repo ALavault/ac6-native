@@ -1,3 +1,16 @@
+# AC6 retail NTSC-U/J — revalidation persistée r167 (2026-09-02)
+
+- PROUVÉ : `pytest.log` et `pytest.exit-status` sous
+  `artifacts/retail-us-native-r167-evidence-refresh-20260902/` enregistrent
+  150 tests passés, 1 skip explicite et exit 0.
+- PROUVÉ : `validate.log` et `validate.exit-status` enregistrent le self-test,
+  les 9 binaires natifs, l'audit d'installation, l'audit de symboles et la
+  capsule Xenos, exit 0. `release_ready=false` reste attendu.
+- DÉCLASSÉ : les observations live/GDB décrites initialement en r167 n'avaient
+  aucun artefact persistant. Elles ne sont plus utilisées comme preuve du
+  correctif; désassemblage des wrappers, tests ciblés et validation native
+  fraîche suffisent au gate corrigé.
+
 # AC6 retail NTSC-U/J — codegen direct et liaison guest Gate 2 (2026-08-31)
 
 - Receipt r11 : XenonAnalyse/XenonRecomp US passent avec 81 fichiers générés,

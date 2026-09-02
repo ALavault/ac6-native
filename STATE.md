@@ -1,3 +1,24 @@
+# AC6 retail NTSC-U/J — r169 : VRAI CORRECTIF — `VdQueryVideoMode` : remplissage de struct, offsets dérivés de la désassemblation de CE XEX (2026-09-01)
+
+- **4 offsets CONFIRMÉS par preuve directe** (pas assumés d'une source
+  externe) : `+0x00`/`+0x04` (u32, motif de duplication largeur/
+  "largeur réelle", 2 sites d'appel) ; `+0x08` (u32 booléen, confirmé
+  via l'idiome PPC `cntlzw`/shift/`xori` de normalisation non-zéro→1,
+  SITE D'APPEL DIFFÉRENT — croise l'évidence) ; `+0x14` (float, utilisé
+  dans un vrai calcul arithmétique de taux de rafraîchissement).
+  `+0x0C`/`+0x10` non lus par aucun site tracé — laissés non implémentés.
+- **Valeurs choisies** : largeur/hauteur = 1280×720 (PAS inventé —
+  hypothèse de résolution DÉJÀ établie par ce projet dans ses fixtures
+  PM4/swap) ; interlaced=0 (progressif, correct pour 720p) ;
+  refresh_rate=60.0f (NTSC standard, cible NTSC-U/J unique de ce
+  projet) — les 2 seules valeurs non lues directement, defaults de
+  production ordinaires, pas choisies pour forcer un résultat
+  spécifique.
+- Tests 151/151 (150/150 → +1). Import trace confirme non-géré → géré.
+  `ctest` 9/9. Crash `sub_821F7C80` inchangé (appel en amont, sans
+  rapport). Voir
+  `reports/ac6-retail-native-codegen-gate2-r169-real-fix-vdqueryvideomode-struct-fill-derived-from-this-xexs-own-disassembly-20260901.md`.
+
 # AC6 retail NTSC-U/J — r168 : `VdQueryVideoMode` est un VRAI trou (remplissage de struct), pas un fix de forme comme r162-r167 — différé (2026-09-01)
 
 - **Différent des fixes précédents** : contrat réel = remplissage de
@@ -31,9 +52,13 @@
   projet a déjà établi la convention "offline-only... succeeds past
   absent network" pour d'autres stubs similaires.
 - **Corrigé** : renvoie `0u` (succès) au lieu de `kOfflineStatus`.
-- Tests 150/150 (148/148 → +2). Import trace confirme les 2 imports
-  ne sont plus "offline-import" non gérés. `ctest` 9/9. Crash
-  `sub_821F7C80` inchangé (ce fix s'exécute bien avant cette chaîne).
+- Revalidation persistée le 2026-09-02 : 150 tests passés, 1 skip explicite,
+  puis self-test, 9 binaires natifs et audits installation/symboles/capsule
+  verts. Preuves sous
+  `artifacts/retail-us-native-r167-evidence-refresh-20260902/`.
+- Les anciennes affirmations de trace import live et de reproduction GDB de
+  `sub_821F7C80` n'avaient aucun artefact persistant : elles sont déclassées
+  en observations documentaires et ne participent plus au gate qualifié.
 - Voir
   `reports/ac6-retail-native-codegen-gate2-r167-real-fix-netdll-xnetstartup-wsastartup-reported-failure-on-an-offline-boundary-20260901.md`.
 

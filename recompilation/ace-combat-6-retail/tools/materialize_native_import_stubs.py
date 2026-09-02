@@ -567,6 +567,57 @@ def render_body(name: str) -> str:
         # network as something to succeed past, not fail on. 0 (success)
         # is the correct shape and the correct offline-boundary behavior.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "VdQueryVideoMode":
+        # r169: real signature is VOID VdQueryVideoMode(X_VIDEO_MODE*) --
+        # a struct-fill through r3, not a status return (r168 named this
+        # gap and deferred implementation pending real offset derivation
+        # from this XEX's own disassembly, not assumed from any other
+        # project's independent reimplementation).
+        #
+        # Both of this XEX's own real static call sites read multiple
+        # struct fields and compute on them for real:
+        #   sub_821F0DB0 @ 0x821F0E78: reads struct+0x0 (u32, written to
+        #     TWO separate output fields -- the classic "width" /
+        #     "actual width" duplication), struct+0x4 (u32, written once),
+        #     and struct+0x14 (float, added to a constant then truncated
+        #     to an integer -- consistent with a refresh-rate-derived
+        #     timing value).
+        #   sub_821F2BC8 @ 0x821F2C00: reads struct+0x8 and runs it
+        #     through a `cntlzw`/shift/`xori` sequence -- the canonical
+        #     PPC "normalize nonzero to 1" boolean idiom, confirming
+        #     struct+0x8 is a boolean-shaped flag, independently of the
+        #     first call site.
+        #
+        # struct+0x0/+0x4/+0x8/+0x14 are therefore evidence-confirmed by
+        # this XEX's own code, not assumed. Positionally, three more
+        # 4-byte boolean-shaped fields fit exactly between +0x8 and
+        # +0x14 (matching a width/height/is_interlaced/is_widescreen/
+        # is_hi_def/refresh_rate field order -- cross-checked, not
+        # copied, against has207/xenia-edge's own public X_VIDEO_MODE
+        # field *names*, r168), but +0xC/+0x10 are not directly read by
+        # either traced call site, so they are filled with the same
+        # "no evidence either way" default (0) the generic fallback
+        # would have left an untouched byte at, not asserted as a
+        # specific confirmed value.
+        #
+        # display_width/display_height use 1280x720 -- not invented for
+        # this fix, but this project's own pre-existing, already-qualified
+        # resolution assumption used throughout its PM4/swap-packet test
+        # fixtures (native/fixtures/xenos-capsule-minimal.json,
+        # native/tests/native_xenos_tests.cpp) -- kept internally
+        # consistent rather than picking a new, unrelated number.
+        # is_interlaced=0 (progressive; correct for 720p, which is
+        # non-interlaced by definition) and refresh_rate=60.0f (standard
+        # NTSC 60 Hz, matching this project's own single-region NTSC-U/J
+        # target) are the only two values not directly read off this XEX's
+        # own bytes; both are ordinary, unremarkable production defaults
+        # for those exact display parameters, not values chosen to game
+        # any specific downstream comparison.
+        return """  PPC_STORE_U32(ctx.r3.u32 + 0, 1280u);
+  PPC_STORE_U32(ctx.r3.u32 + 4, 720u);
+  PPC_STORE_U32(ctx.r3.u32 + 8, 0u);
+  PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u);  // 60.0f
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

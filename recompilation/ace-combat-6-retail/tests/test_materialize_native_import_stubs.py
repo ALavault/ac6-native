@@ -554,6 +554,28 @@ def test_net_startup_reports_success_not_a_status(
     assert "ctx.r3.u64 = 0u;" in body
 
 
+def test_vd_query_video_mode_fills_the_struct_not_a_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__VdQueryVideoMode);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r169: real contract is VOID VdQueryVideoMode(X_VIDEO_MODE*) -- a
+    # struct-fill through r3, not a status return (r168 named this gap).
+    # struct+0x0/+0x4/+0x8/+0x14 are evidence-confirmed from this XEX's
+    # own two real call sites (a duplicate-write pattern for width, a
+    # PPC boolean-normalization idiom for the interlaced flag, and a
+    # float used in real refresh-rate arithmetic).
+    body = text.split("void __imp__VdQueryVideoMode")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + 0, 1280u)" in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + 4, 720u)" in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + 8, 0u)" in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u)" in body
+
+
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(
     tmp_path: Path,
 ) -> None:
