@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r169-real-fix-vdqueryvideomode-struct-fill-derived-from-this-xexs-own-disassembly-20260901.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r170-real-fixes-vdqueryvideoflags-vdgetcurrentdisplaygamma-vdgetcurrentdisplayinformation-20260902.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r170-real-fixes-vdqueryvideoflags-vdgetcurrentdisplaygamma-vdgetcurrentdisplayinformation-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r169-real-fix-vdqueryvideomode-struct-fill-derived-from-this-xexs-own-disassembly-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r168-vdqueryvideomode-is-a-real-gap-struct-fill-not-a-contract-shape-fix-deferred-20260901.md",
     "reports/ac6-retail-native-codegen-gate2-r167-real-fix-netdll-xnetstartup-wsastartup-reported-failure-on-an-offline-boundary-20260901.md",

@@ -618,6 +618,67 @@ def render_body(name: str) -> str:
   PPC_STORE_U32(ctx.r3.u32 + 8, 0u);
   PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u);  // 60.0f
 """
+    if name == "VdQueryVideoFlags":
+        # r170: real signature is DWORD VdQueryVideoFlags(VOID) -- a flags
+        # bitmask return value, not a status code. This XEX's one real call
+        # site (0x821f31cc) only tests bit 0 of the return
+        # (`rlwinm. r11,r3,0,31,31; bne ...`) to pick between two ways of
+        # computing a display height. The generic offline-import fallback
+        # previously returned `kOfflineStatus` (0xC00000BB) here -- an
+        # NTSTATUS constant whose low bit happens to be 1, which forced the
+        # same branch every time not because that branch is correct, but
+        # because a status code was reused as if it were a flags value. The
+        # real contract has no status/failure shape at all.
+        # No evidence at this one call site favors either branch outcome, so
+        # the fix is the neutral flags-shaped value -- no flags set -- not a
+        # value picked to force a particular downstream comparison (r53's
+        # precedent, reaffirmed by r169).
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "VdGetCurrentDisplayGamma":
+        # r170: real signature is VOID VdGetCurrentDisplayGamma(DWORD* type,
+        # FLOAT* value) -- two pointer outputs, not a status return. This
+        # XEX's one real call site (0x821eb454) sets up `r3`/`r4` as two
+        # adjacent stack slots, then reads them back as an integer
+        # (`lwz r14,0x54(r1)`) and a float (`lfs f2,0x50(r1)`) and compares
+        # both against a cached table entry to decide whether to rebuild a
+        # gamma-correction table. That cache starts uninitialized, so the
+        # rebuild path is taken on the first call regardless of the exact
+        # values supplied here -- no crash or hang risk either way, and no
+        # call site reads a value that would let this XEX's own disassembly
+        # pin the real type/gamma constants. type=0 and gamma=2.2 are
+        # ordinary production defaults (a generic curve index and a
+        # standard display gamma), not read from this XEX's own bytes and
+        # not chosen to force a specific downstream comparison.
+        return """  PPC_STORE_U32(ctx.r3.u32, 0u);
+  PPC_STORE_U32(ctx.r4.u32, 0x400ccccdu);  // 2.2f
+"""
+    if name == "VdGetCurrentDisplayInformation":
+        # r170: struct-fill call (`r3 = &struct`), evidence-confirmed across
+        # ALL THREE of this XEX's own real call sites, cross-validated
+        # against r169's VdQueryVideoMode fix:
+        #   0x821f0764 (struct at [r1+0x170]): reads struct+0x48/+0x4a/+0x56
+        #   as three separate u16 fields and forwards them verbatim into
+        #   the SAME cached output fields (0x5414/0x5418/0x541c) that
+        #   VdQueryVideoMode (r169) fills from its own struct+0x00/+0x04 --
+        #   independent confirmation that 0x5414=width, 0x5418=height,
+        #   0x541c=actual_width are real, distinct fields (not always-equal
+        #   duplicates: here width and actual_width come from two DIFFERENT
+        #   struct offsets, +0x48 and +0x56).
+        #   0x821ea4d8 and 0x821ea2a4 (structs at [r1+0x60] and
+        #   [r1+0x1a0]) both additionally read a byte at struct+0x05 into a
+        #   normalize/compare idiom, confirming a real boolean-shaped field
+        #   there -- but its comparison target (`!= 1`, feeding an
+        #   unrelated flags bitfield deep in caller logic) does not pin
+        #   what value is correct, so it is named here and left
+        #   unimplemented rather than guessed.
+        # Values: width/actual_width=1280, height=720 -- this project's own
+        # pre-existing resolution assumption (r169), not invented; no
+        # evidence distinguishes width from actual_width for this project's
+        # single fixed target, so the same value is used for both.
+        return """  PPC_STORE_U16(ctx.r3.u32 + 0x48, 1280u);
+  PPC_STORE_U16(ctx.r3.u32 + 0x4a, 720u);
+  PPC_STORE_U16(ctx.r3.u32 + 0x56, 1280u);
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

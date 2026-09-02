@@ -11,18 +11,34 @@ Lire d'abord :
 
 ## Frontière active
 
-`VdQueryVideoMode` est fixé (r169) : offsets `+0x00`/`+0x04`/`+0x08`/`+0x14`
-dérivés des deux sites d'appel réels de ce XEX, remplissage depuis l'état Vd
-natif. `+0x0C`/`+0x10` restent non lus et non implémentés.
+`VdQueryVideoMode` (r169) et `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
+`VdGetCurrentDisplayInformation` (r170) sont fixés. Aucun autre import Vd
+n'est actuellement nommé comme trou non vérifié. La prochaine frontière
+nécessite un nouveau balayage des offline-imports (mêmes outils : xrefs
+directs/indirects bornés, `check_listing_against_pdata.py`,
+`count_indirect_branches.py`) pour en identifier un — ne pas supposer qu'un
+import est un remplissage de structure sans lire ses sites d'appel réels
+(r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`).
 
-Les trois imports Vd voisins — `VdQueryVideoFlags`, `VdGetCurrentDisplayGamma`,
-`VdGetCurrentDisplayInformation` — ne sont pas encore vérifiés pour le même
-type de trou. Commencer statiquement dans `ghidra-projects/ac6-us.gpr` /
-programme `default.xex` pour chacun : fermer les xrefs directs et indirects,
-déterminer si c'est un remplissage de structure ou une simple forme de
-contrat, typer les offsets lus, puis seulement implémenter le remplissage
-depuis l'état Vd natif existant. Ne pas copier un layout depuis une
-réimplémentation indépendante.
+Reste ouvert, non implémenté : `VdGetCurrentDisplayInformation` struct+0x05
+(champ booléen réel, confirmé à 2 sites d'appel, valeur correcte non
+tracée).
+
+## Environnement de session
+
+Si `.tools/xenonrecomp-source`, `.tools/ghidra_12.1.2_PUBLIC` ou les
+extensions Ghidra sous `ghidra-user/.ghidra/.ghidra_12.1.2_PUBLIC/Extensions/`
+sont absents (sandbox réinitialisé), les restaurer avant toute analyse :
+`XenonRecomp` depuis le commit épinglé dans
+`recompilation/ace-combat-6-retail/config/xbox360-toolchain.lock.json`;
+Ghidra 12.1.2 depuis sa release publique officielle
+(`NationalSecurityAgency/ghidra`, tag `Ghidra_12.1.2_build`); les extensions
+`GhidraXenon`/`XEXLoaderWV` en les copiant depuis les copies déjà trackées
+dans ce dépôt (`ghidra-user/.ghidra/.ghidra_12.1.2_PUBLIC/Extensions/`) vers
+`<install Ghidra>/Ghidra/Extensions/` — ne jamais installer une version non
+épinglée de ces extensions. Invoquer `analyzeHeadless` avec
+`JAVA_TOOL_OPTIONS="-Duser.home=$PWD/ghidra-user"` (voir
+`analysis/microexec/README.md`).
 
 ## Validation minimale
 

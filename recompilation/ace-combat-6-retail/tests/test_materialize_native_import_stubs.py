@@ -576,6 +576,59 @@ def test_vd_query_video_mode_fills_the_struct_not_a_status(
     assert "PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u)" in body
 
 
+def test_vd_query_video_flags_returns_a_flag_value_not_a_status(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__VdQueryVideoFlags);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r170: real contract is DWORD VdQueryVideoFlags(VOID) -- a flags
+    # bitmask, not a status. The generic offline fallback's kOfflineStatus
+    # (0xC00000BB) has bit 0 set, which forced this XEX's one real call
+    # site's branch by coincidence, not by real flag semantics.
+    body = text.split("void __imp__VdQueryVideoFlags")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
+def test_vd_get_current_display_gamma_fills_both_pointer_outputs(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__VdGetCurrentDisplayGamma);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r170: real contract is VOID VdGetCurrentDisplayGamma(DWORD*, FLOAT*)
+    # -- two pointer outputs (evidence-confirmed at this XEX's one real call
+    # site, 0x821eb454), not a status return.
+    body = text.split("void __imp__VdGetCurrentDisplayGamma")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U32(ctx.r3.u32, 0u)" in body
+    assert "PPC_STORE_U32(ctx.r4.u32, 0x400ccccdu)" in body
+
+
+def test_vd_get_current_display_information_fills_width_height_fields(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__VdGetCurrentDisplayInformation);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r170: struct-fill call, cross-validated against r169's
+    # VdQueryVideoMode fix -- this XEX's own call site at 0x821f0764 reads
+    # struct+0x48/+0x4a/+0x56 and forwards them into the same downstream
+    # fields (0x5414/0x5418/0x541c) VdQueryVideoMode fills.
+    body = text.split("void __imp__VdGetCurrentDisplayInformation")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U16(ctx.r3.u32 + 0x48, 1280u)" in body
+    assert "PPC_STORE_U16(ctx.r3.u32 + 0x4a, 720u)" in body
+    assert "PPC_STORE_U16(ctx.r3.u32 + 0x56, 1280u)" in body
+
+
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(
     tmp_path: Path,
 ) -> None:

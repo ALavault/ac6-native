@@ -1,3 +1,35 @@
+# AC6 retail NTSC-U/J — r170 : VRAIS CORRECTIFS — `VdQueryVideoFlags`, `VdGetCurrentDisplayGamma`, `VdGetCurrentDisplayInformation` (2026-09-02)
+
+- **`VdQueryVideoFlags` n'est PAS un remplissage de struct** contrairement à
+  l'hypothèse de r168/r169 : contrat réel = valeur de retour bitmask
+  (`DWORD VdQueryVideoFlags(VOID)`). Le seul site d'appel réel
+  (`0x821f31cc`) ne teste que le bit 0 du retour. Le fallback générique
+  renvoyait `kOfflineStatus` (0xC00000BB, bit 0 = 1 par coïncidence — impair)
+  ce qui forçait la même branche sans rapport avec le vrai comportement
+  matériel. Corrigé : `0u` (aucun flag), valeur neutre non choisie pour
+  forcer un résultat.
+- **`VdGetCurrentDisplayGamma`** : contrat réel = 2 sorties par pointeur
+  (`DWORD* type, FLOAT* value`), confirmé au site d'appel `0x821eb454`. Le
+  cache en aval démarre non initialisé donc la reconstruction de table a
+  lieu au premier appel quelle que soit la valeur fournie — aucun risque de
+  crash. Valeurs = defaults de production ordinaires (`type=0`,
+  `gamma=2.2`), non lues des octets de ce XEX, non choisies pour forcer un
+  résultat.
+- **`VdGetCurrentDisplayInformation`** : remplissage de struct confirmé aux
+  TROIS sites d'appel réels. `0x821f0764` valide r169 de façon croisée :
+  struct+0x48/+0x4a/+0x56 (u16) sont transmis EXACTEMENT vers les mêmes
+  champs de sortie (0x5414/0x5418/0x541c) que `VdQueryVideoMode` remplit —
+  et ici largeur (+0x48) et largeur-réelle (+0x56) viennent de DEUX offsets
+  DIFFÉRENTS, confirmant que ce sont des champs réels distincts (pas
+  toujours identiques comme r169 l'a vu par coïncidence). Les deux autres
+  sites (`0x821ea4d8`, `0x821ea2a4`) confirment un champ booléen réel à
+  struct+0x05, mais sa cible de comparaison (`!= 1`) alimente une logique
+  aval non tracée cette fois — nommé, non implémenté (précédent r168).
+  Implémenté : +0x48/+0x56=1280, +0x4a=720 (réutilise l'hypothèse de
+  résolution déjà établie par r169).
+- Tests 154/154 (151/151 → +3). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r170-real-fixes-vdqueryvideoflags-vdgetcurrentdisplaygamma-vdgetcurrentdisplayinformation-20260902.md`.
+
 # AC6 retail NTSC-U/J — r169 : VRAI CORRECTIF — `VdQueryVideoMode` : remplissage de struct, offsets dérivés de la désassemblation de CE XEX (2026-09-01)
 
 - **4 offsets CONFIRMÉS par preuve directe** (pas assumés d'une source
