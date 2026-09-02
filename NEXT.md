@@ -246,7 +246,16 @@ fallback ReXGlue.
   XUID de sortie 8 octets; l'un des trois utilise le buffer sans
   aucune vérification de statut. Remplit XUID=0 pour l'utilisateur 0,
   même convention que r227; les autres index gardent l'échec offline).
-- Suite pytest 208/208 (207 + 1 skip), `ctest` 10/10.
+- r229 (documentation seule) : 11 imports confirmés MORTS dans ce build
+  (zéro appelant réel) — `XamWriteGamerTile`, tout le cluster
+  `XamContent{GetDeviceState,GetDeviceData,Close,Delete,SetThumbnail,
+  CreateEnumerator}`, `NtQueryDirectoryFile`, `NtReadFileScatter`,
+  `StfsControlDevice`, `StfsCreateDevice`, `XamLoaderLaunchTitle`,
+  `XamContentCreateEx`, `XamEnumerate`. `NtSetInformationFile` (9 sites
+  réels, le plus haut compte tracé) confirmé déjà adéquat : les 4 sites
+  tracés vérifient tous le statut avant de continuer, même famille que
+  le chantier save/reload de r202, pas un bug de forme de contrat.
+- Suite pytest 208/208 (207 + 1 skip, inchangée), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -281,6 +290,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r229-doc-unreached-cluster-plus-ntsetinformationfile-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r228-real-fix-xamusergetxuid-fills-a-zero-xuid-for-user-zero-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r227-real-fix-xamusergetsignininfo-fills-the-gating-bit-for-user-zero-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md`;

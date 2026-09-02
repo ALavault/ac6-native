@@ -10546,3 +10546,24 @@ l'échec offline existant. pytest 208/208 (207+1 skip), `ctest` 10/10.
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r228-real-fix-xamusergetxuid-fills-a-zero-xuid-for-user-zero-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r229 (documentation seule) : cluster mort + `NtSetInformationFile` déjà adéquat
+
+11 imports confirmés SANS AUCUN appelant réel dans ce build :
+`XamWriteGamerTile`, tout le cluster
+`XamContent{GetDeviceState,GetDeviceData,Close,Delete,SetThumbnail,
+CreateEnumerator}`, `NtQueryDirectoryFile`, `NtReadFileScatter`,
+`Stfs{Control,Create}Device`, `XamLoaderLaunchTitle` (ses 2 seules
+références sont des sauts CONDITIONNELS internes à sa propre fonction,
+même motif que le cluster trampoline fermé par r225), `XamContentCreateEx`,
+`XamEnumerate`. Aucun fix n'est possible ni nécessaire pour un import
+sans appelant réel. `NtSetInformationFile` (9 sites réels, le plus haut
+compte tracé ce balayage) : 4 sites tracés, tous vérifient le statut de
+retour avant de continuer, même famille que le chantier save/reload de
+r202 (`Function_82392040` appelle les mêmes fonctions d'écriture que
+`Function_82392878`) — le générique `kOfflineStatus` y est déjà la
+réponse honnête correcte, pas un bug de forme de contrat. Aucune source
+touchée; pytest 208/208 (207+1 skip), `ctest` 10/10 reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r229-doc-unreached-cluster-plus-ntsetinformationfile-already-adequate-20260903.md`.

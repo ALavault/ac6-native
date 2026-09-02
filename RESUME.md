@@ -182,10 +182,16 @@ par-joueur — remplit XUID=0 et le bit à 0 pour l'utilisateur 0, même
 convention que r176). r228 a corrigé `XamUserGetXUID` (wrapper à
 remappage d'arguments confirmé par désassemblage brut, insère
 `dwFlags=7`; 3 vrais appelants tracés confirment un XUID 8 octets —
-remplit XUID=0 pour l'utilisateur 0, même convention que r227).
+remplit XUID=0 pour l'utilisateur 0, même convention que r227). r229
+(documentation seule) a confirmé 11 imports morts (zéro appelant réel :
+`XamWriteGamerTile`, tout le cluster `XamContent*`,
+`NtQueryDirectoryFile`, `NtReadFileScatter`, `Stfs{Control,Create}Device`,
+`XamLoaderLaunchTitle`, `XamContentCreateEx`, `XamEnumerate`) et
+`NtSetInformationFile` déjà adéquat (9 sites réels, tous vérifient le
+statut, même chantier save/reload que r202).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r228, méthode r90/r93/r164) pour d'autres candidats.
+r148-r229, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
