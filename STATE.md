@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r213 : VRAI CORRECTIF — `ExTerminateThread` déroule proprement son propre thread (2026-09-02)
+
+- `VOID ExTerminateThread(DWORD)` : ne retourne jamais (même preuve que
+  r193/r209 — aucun épilogue après son 2e site d'appel réel
+  `0x82390b38`). Contrairement à `KeBugCheck`/`XamLoaderTerminateTitle`,
+  ne termine QUE le thread appelant, pas tout le processus/titre — les
+  threads invités tournent en vrais `std::thread` détachés
+  (`ExCreateThread`, r111-r115).
+- Corrigé : nouveau type `ac6::native::GuestThreadTerminated` dans le
+  VRAI header `native/include/ac6/native_runtime.h`. `ExTerminateThread`
+  le lance; le lambda de `ExCreateThread` ET l'appel de sonde
+  d'entrée principale (`native/src/ac6recomp_main.cpp`) le rattrapent
+  désormais pour laisser leur thread se terminer proprement au lieu de
+  faire s'échapper l'exception (ce qui appellerait `std::terminate()`
+  sur tout le processus). `tools/prepare.py` relancé avant build
+  (édition de vrais fichiers `native/`).
+- Corrigé aussi : `ExRegisterTitleTerminateNotification` (9 sites
+  réels, 2 tracés — retour totalement ignoré partout, même classe que
+  `KeLockL2`/`KeUnlockL2`).
+- Tests 199/199 (196/196 → +3). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r213-real-fix-exterminatethread-unwinds-its-own-thread-cleanly-20260902.md`.
+
 # AC6 retail NTSC-U/J — r212 : DOCUMENTATION SEULE — l'échec de `XexGetModuleHandle`/`XexGetProcedureAddress` EST le bon chemin de repli (2026-09-02)
 
 - Les deux sites d'appel réels suivent le motif standard Xbox 360 de

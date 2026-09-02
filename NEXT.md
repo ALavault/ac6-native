@@ -162,7 +162,12 @@ fallback ReXGlue.
   statique (motif de compatibilité ascendante Xbox 360), confirmé
   adéquat, aucun fix nécessaire. `XamContentCreateEx` vérifié, même
   territoire save/reload que r202.
-- Suite pytest 196/196, `ctest` 10/10 (inchangés depuis r210).
+- r213 a corrigé `ExTerminateThread` (ne retourne jamais, termine
+  seulement son propre thread — `GuestThreadTerminated`, rattrapé par
+  `ExCreateThread` et la sonde d'entrée principale) et
+  `ExRegisterTitleTerminateNotification` (retour ignoré partout).
+  Édite de vrais fichiers `native/` — `prepare.py` relancé.
+- Suite pytest 199/199, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -197,9 +202,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r213-real-fix-exterminatethread-unwinds-its-own-thread-cleanly-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r212-doc-xexgetmodulehandle-failure-is-the-safe-fallback-path-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r211-doc-xamgetexecutionid-gates-more-than-scoped-real-signature-is-pointer-to-pointer-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r212).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r213).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

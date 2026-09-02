@@ -15,6 +15,7 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include \"ac6/native_guest_input.h\"
 #include \"ac6/native_guest_media.h\"
 #include \"ac6/native_guest_vd.h\"
+#include \"ac6/native_runtime.h\"
 
 #include <openssl/evp.h>
 
@@ -458,7 +459,14 @@ def render_body(name: str) -> str:
   try {
     std::thread([shim, worker, base, handle, start_suspended]() mutable {
       if (start_suspended) park_until_resumed(handle);
-      shim(worker, base);
+      try {
+        shim(worker, base);
+      } catch (const ac6::native::GuestThreadTerminated&) {
+        // r213: ExTerminateThread never returns on real hardware; catch
+        // it here so this thread ends cleanly instead of escaping the
+        // thread entry point and invoking std::terminate() on the whole
+        // process.
+      }
     }).detach();
   } catch (...) {
     ctx.r3.u64 = 0xC0000017u;  // host thread creation failed
@@ -1567,6 +1575,30 @@ def render_body(name: str) -> str:
     if name == "XMAReleaseContext":
         # r210: real call site 0x823ae37c discards the return value
         # outright -- same class of fix as r197's KeLockL2/KeUnlockL2.
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "ExTerminateThread":
+        # r213: VOID ExTerminateThread(DWORD ExitCode) -- documented,
+        # never returns. Confirmed at both of this XEX's real call sites
+        # (0x821f8060, 0x82390b38): the instruction immediately after the
+        # second is a different function's own prologue, the same
+        # never-returns evidence r193/r209 already established for
+        # KeBugCheck/XamLoaderTerminateTitle. Unlike those two, this ends
+        # only the CALLING thread, not the whole process (real guest
+        # threads here run as their own std::thread, per ExCreateThread);
+        # throws GuestThreadTerminated, caught by that thread's own entry
+        # point (ExCreateThread's lambda, or the main entry probe in
+        # ac6recomp_main.cpp) so it unwinds cleanly instead of invoking
+        # std::terminate() on the whole process.
+        return "  throw ac6::native::GuestThreadTerminated{};\n"
+    if name == "ExRegisterTitleTerminateNotification":
+        # r213: real signature registers a title-terminate cleanup
+        # callback. 9 real call sites, all checked following the same
+        # shape (0x821f1190, 0x821f1620 traced directly): the return
+        # value is discarded outright by every one, falling straight
+        # into the next instruction with no check -- same class of fix
+        # as r197's KeLockL2/KeUnlockL2. This project has nowhere to
+        # invoke an arbitrary registered callback from later, but since
+        # nothing reads the return here, that gap is not observable.
         return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an

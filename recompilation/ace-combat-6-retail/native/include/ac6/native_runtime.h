@@ -21,6 +21,17 @@
 
 namespace ac6::native {
 
+// r213: thrown by the ExTerminateThread guest import to unwind the
+// current native thread cleanly. ExTerminateThread never returns on real
+// hardware (confirmed at this XEX's own real call sites: the compiler
+// emits no epilogue after either one). Guest threads run as plain C++
+// function calls on their own std::thread (see ExCreateThread), so a
+// bare throw would otherwise escape the thread entry point and invoke
+// std::terminate() on the whole process for what should only end one
+// thread -- every guest thread entry point must catch this by value and
+// let the thread return normally afterward.
+struct GuestThreadTerminated final {};
+
 enum class RuntimeState : std::uint8_t {
   kCreated,
   kBooted,

@@ -139,8 +139,16 @@ int main(int argc, char** argv) {
     guest_context.r1.u32 = 0x8ff00000u;
     initialize_probe_thread(guest_context, runtime->guest_address_space().base(),
                             runtime->xex_metadata()->tls_address);
-    entry_function(guest_context, runtime->guest_address_space().base());
-    std::cout << "ac6recomp: generated entry returned\n";
+    try {
+      entry_function(guest_context, runtime->guest_address_space().base());
+      std::cout << "ac6recomp: generated entry returned\n";
+    } catch (const ac6::native::GuestThreadTerminated&) {
+      // r213: ExTerminateThread never returns on real hardware -- this
+      // main-thread entry probe is the one guest thread invocation this
+      // file drives directly (not through ExCreateThread's own catch),
+      // so it needs the same unwind-cleanly handling.
+      std::cout << "ac6recomp: generated entry terminated its own thread\n";
+    }
   }
 #endif
   if (!runtime->shutdown()) {

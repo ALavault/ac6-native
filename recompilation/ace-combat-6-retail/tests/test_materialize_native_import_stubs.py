@@ -1510,3 +1510,40 @@ def test_xma_context_family(tmp_path: Path) -> None:
     )[0]
     assert "kOfflineStatus" not in release_body
     assert "ctx.r3.u64 = 0u" in release_body
+
+
+def test_ex_terminate_thread_throws_instead_of_returning(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__ExTerminateThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__ExTerminateThread(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
+    assert "throw ac6::native::GuestThreadTerminated{}" in body
+
+
+def test_ex_create_thread_catches_guest_thread_terminated(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__ExCreateThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    assert "catch (const ac6::native::GuestThreadTerminated&)" in text
+
+
+def test_ex_register_title_terminate_notification_always_succeeds(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__ExRegisterTitleTerminateNotification);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split(
+        "void __imp__ExRegisterTitleTerminateNotification("
+    )[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u" in body
