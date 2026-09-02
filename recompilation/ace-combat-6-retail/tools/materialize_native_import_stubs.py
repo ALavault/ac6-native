@@ -1823,6 +1823,45 @@ def render_body(name: str) -> str:
     ctx.r3.u64 = 0u;
   }
 """
+    if name == "XamUserGetXUID":
+        # r228: r211 verified this import without confirming a fix. Its
+        # single wrapper (Function_821F4618 at 0x821f4618, the SAME
+        # address r225 found bracketing the r224/r225 dispatch-table
+        # region -- an unrelated coincidence of unlabeled code layout,
+        # not a connection to that closed thread) was traced by raw
+        # disassembly: `or r5,r4,r4` then `li r4,0x7` immediately before
+        # `bl 0x823cfedc` -- the wrapper takes (dwUserIndex, pXuid) and
+        # remaps to the real 3-argument
+        # XamUserGetXUID(DWORD dwUserIndex, DWORD dwFlags, PXUID pXuid)
+        # contract with a literal dwFlags=7, the same "wrapper remaps a
+        # reduced argument list onto the real signature" pattern already
+        # resolved for NtSetTimerEx (r216) and XamShowMessageBoxUIEx
+        # (r221/r222). 6 real callers of the wrapper found; 3 traced
+        # confirm an 8-byte XUID output (Function_821CFCE0 loops
+        # dwUserIndex 0..3 comparing each retrieved XUID against a
+        # caller-supplied one; Function_821CFDD8 returns the 8-byte
+        # value directly as its own return; Function_821CE9A0 copies it
+        # unconditionally into a struct field with no status check at
+        # all -- the same "buffer read regardless of status" risk class
+        # as r226/r227). The generic offline default never wrote this
+        # buffer. Fills 8 bytes of zero (no real Xbox Live XUID exists
+        # offline, same convention as r227's XUID field) for the same
+        # user 0 this file already treats as signed in locally (r176),
+        # and returns STATUS_SUCCESS; other indices keep the existing
+        # offline failure.
+        return """  const std::uint32_t user_index = ctx.r3.u32;
+  const std::uint32_t xuid = ctx.r5.u32;
+  if (user_index != 0u) {
+    trace_offline_import("XamUserGetXUID");
+    ctx.r3.u64 = kOfflineStatus;
+  } else {
+    if (xuid != 0u) {
+      PPC_STORE_U32(xuid + 0u, 0u);
+      PPC_STORE_U32(xuid + 4u, 0u);
+    }
+    ctx.r3.u64 = 0u;
+  }
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

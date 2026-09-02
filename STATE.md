@@ -10528,3 +10528,21 @@ Rien au-delà de +8 n'a été lu par un appelant tracé, donc rien au-delà n'es
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r227-real-fix-xamusergetsignininfo-fills-the-gating-bit-for-user-zero-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r228 corrige réellement `XamUserGetXUID`
+
+Escalade de r211. Le wrapper (`Function_821F4618`) est cette fois un
+VRAI remappeur d'arguments, pas un passthrough pur : désassemblage brut
+confirme `or r5,r4,r4` puis `li r4,0x7` avant `bl` — il prend
+`(dwUserIndex, pXuid)` et insère `dwFlags=7` littéral pour appeler le
+vrai import à 3 arguments `XamUserGetXUID(DWORD, DWORD, PXUID)`, même
+motif que `NtSetTimerEx`/`XamShowMessageBoxUIEx`. 6 vrais appelants du
+wrapper trouvés via `ReferencesTo.java`; 3 tracés confirment un XUID de
+sortie 8 octets — l'un des trois (`Function_821CE9A0`) copie le buffer
+dans une struct SANS AUCUNE vérification de statut, même classe de
+risque que r226/r227. Le fix remplit XUID=0 (8 octets) pour
+l'utilisateur 0, même convention que r227; les autres index gardent
+l'échec offline existant. pytest 208/208 (207+1 skip), `ctest` 10/10.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r228-real-fix-xamusergetxuid-fills-a-zero-xuid-for-user-zero-20260903.md`.
