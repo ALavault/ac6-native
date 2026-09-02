@@ -10625,3 +10625,23 @@ source touchée; pytest 209/209 (208+1 skip), `ctest` 10/10 reproduits.
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r232-doc-xamsession-pair-fully-traced-already-adequate-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r233 (documentation seule) : derniers candidats re-confirmés
+
+`NtDuplicateObject` (site réel unique déjà géré gracieusement — `if
+(iVar1<0) Function_821F75B8(); return iVar1>=0;`), `XamVoiceCreate` (site
+réel unique, gate `-1<lVar4` déjà sûr) et `XamVoiceSubmitPacket` (2 sites
+réels, tous deux `iVar<0` gérés, dépendent d'un handle que
+`XamVoiceCreate` ne produit jamais) re-confirmés déjà adéquats.
+`XexCheckExecutablePrivilege` (3 sites réels, tous testent un booléen) :
+la tentation d'un fix « défaut = privilège refusé en offline » a été
+examinée et REFUSÉE À NOUVEAU — r178 avait déjà pesé exactement ce
+compromis (aucun cas de contrôle dans ce XEX ne fixe la bonne réponse
+pour ces IDs de privilège précis; passer à « refusé » risquerait
+d'introduire un chemin d'échec qui ne s'exécute pas actuellement, plus
+risqué que le statu quo). Aucune preuve nouvelle ne renverse cette
+décision. Aucune source touchée; pytest 209/209 (208+1 skip), `ctest`
+10/10 reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r233-doc-remaining-voice-and-privilege-imports-already-handled-20260903.md`.

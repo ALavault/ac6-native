@@ -197,10 +197,16 @@ imports `NetDll_*` : 26 morts, 3 déjà adéquats (gardés par un handle
 socket toujours `-1` puisque `socket`/`connect` sont morts). r232
 (documentation seule) a clos `XamSessionCreateHandle`/
 `XamSessionRefObjByHandle` (1+11 sites réels tracés, tous vérifient le
-statut — déjà adéquats).
+statut — déjà adéquats). r233 (documentation seule) re-confirme
+`NtDuplicateObject`/`XamVoiceCreate`/`XamVoiceSubmitPacket` déjà
+adéquats et refuse À NOUVEAU un fix pour `XexCheckExecutablePrivilege`
+(pas de cas de contrôle, décision de r178 tenue).
 
-Continuer le balayage des imports offline restants (mêmes outils que
-r148-r232, méthode r90/r93/r164) pour d'autres candidats.
+Le balayage (mêmes outils que r148-r233, méthode r90/r93/r164) a
+désormais couvert la quasi-totalité du catalogue r218 individuellement.
+Ce qui reste se range en 4 catégories déjà nommées (sous-système non
+construit, politique renderer, hors périmètre définitif, pas de cas de
+contrôle) — voir NEXT.md « Prochaine décision » avant de continuer.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

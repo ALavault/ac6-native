@@ -274,6 +274,13 @@ fallback ReXGlue.
   l'objet référencé ou retournent l'échec honnêtement sinon. Le
   générique offline est déjà correct partout; paire close, aucun fix
   nécessaire.
+- r233 (documentation seule) : `NtDuplicateObject`/`XamVoiceCreate`/
+  `XamVoiceSubmitPacket` re-confirmés déjà adéquats (tous les sites
+  réels vérifient le statut). `XexCheckExecutablePrivilege` : la
+  tentation d'un fix (« défaut = privilège refusé, offline ») a été
+  examinée et EXPLICITEMENT refusée à nouveau — r178 avait déjà pesé
+  exactement ce compromis sans contrôle disponible pour trancher; aucune
+  preuve nouvelle ne renverse cette décision.
 - Suite pytest 209/209 (208 + 1 skip, inchangée), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -288,8 +295,19 @@ fallback ReXGlue.
    d'allocation contre une valeur attendue non retracée) échoue en
    pratique, tracer la source de cette valeur avant d'ajuster les
    constantes.
-3. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r202, méthode r90/r93/r164) pour d'autres candidats.
+3. Le balayage (mêmes outils que r148-r233, méthode r90/r93/r164) a
+   désormais examiné individuellement la quasi-totalité du catalogue
+   r218. Ce qui reste non corrigé se range dans 4 catégories déjà
+   nommées : (a) imports nécessitant un sous-système délibérément non
+   construit (`XamTaskSchedule`, écriture save/reload,
+   `XamVoiceCreate`/`SubmitPacket`); (b) imports bloqués par la
+   politique renderer (`VdGetSystemCommandBuffer`/`VdPersistDisplay`);
+   (c) imports définitivement hors périmètre (`XeKeysConsole*`);
+   (d) imports sans cas de contrôle pour trancher
+   (`XexCheckExecutablePrivilege`, `NtDuplicateObject` côté
+   implémentation réelle). `_vsnprintf`/`sprintf` (moteur printf
+   varargs) reste le seul candidat ni mort, ni adéquat, ni bloqué — juste
+   plus grand qu'un cycle borné (r192).
 4. Si le frontier « save/reload » est un jour repris : r202 a tracé sa
    forme binaire réelle (`NtOpenFile`→`NtDeviceIoControlFile`→boucle
    `NtWriteFile` dans `Function_82392878`/la fonction à `0x82392978`) —
@@ -309,6 +327,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r233-doc-remaining-voice-and-privilege-imports-already-handled-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r232-doc-xamsession-pair-fully-traced-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r231-doc-networking-cluster-dead-or-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r230-real-fix-xamtaskclosehandle-returns-success-20260903.md`;
