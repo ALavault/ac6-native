@@ -1731,6 +1731,25 @@ def render_body(name: str) -> str:
   if (overlapped != 0u) PPC_STORE_U32(overlapped + 0x14, 0u);
   ctx.r3.u64 = 0u;
 """
+    if name == "XamUserReadProfileSettings":
+        # r223: r219 found this import's own caller checks for specific
+        # return codes (0x7a/122, 0x3e5/997) rather than any-nonzero, and
+        # r220 first flagged this as needing the same async-completion
+        # care as XamShowMessageBoxUIEx. Traced both of the caller's own
+        # "not that specific code" branch targets this cycle
+        # (0x821ce6dc, 0x821ce8c8): both are the caller's own clean,
+        # successful return path (one plain `return 0`, one setting an
+        # internal flag byte and returning 1) -- neither is an error
+        # path, so any return value other than those two specific codes
+        # is already handled safely by this caller. The traced call site
+        # requests zero settings (dwNumSettingIds=0, pdwSettingIds=NULL),
+        # so STATUS_SUCCESS is the honest match; this cycle did not
+        # confirm which register holds pcbResults/pResults for this
+        # import's own (still-ambiguous beyond 7 parameters) real
+        # signature closely enough to write through it, so only the
+        # return status is fixed, matching this project's own "don't
+        # assert an unconfirmed field" discipline.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

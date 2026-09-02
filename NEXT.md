@@ -206,7 +206,11 @@ fallback ReXGlue.
   construction, pas une convention à confirmer séparément. Écrit
   `pMessageBoxResult`/`pOverlapped+0x14` à 0, retourne `STATUS_SUCCESS`
   jamais 997, saute le helper d'attente asynchrone).
-- Suite pytest 204/204, `ctest` 10/10.
+- r223 a corrigé `XamUserReadProfileSettings` (les deux cibles de
+  branchement « code non concordant » de l'appelant sont des retours
+  propres, pas des erreurs — retourne `STATUS_SUCCESS`; struct-fill non
+  fait, signature au-delà de 4 paramètres pas assez confirmée).
+- Suite pytest 205/205, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -241,11 +245,11 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r223-real-fix-xamuserreadprofilesettings-returns-success-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r222-real-fix-xamshowmessageboxuiex-completes-synchronously-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r221-doc-xamshowmessageboxuiex-signature-resolved-stack-arg-convention-still-unconfirmed-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
   (bilan par gros chantier — à lire avant de reprendre le balayage);
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r222).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r223).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

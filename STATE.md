@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r223 : VRAI CORRECTIF — `XamUserReadProfileSettings` retourne succès (2026-09-02)
+
+- Tracé les deux cibles de branchement « ne correspond pas au code
+  spécifique » de l'appelant (`0x821ce6dc`, `0x821ce8c8`) : AUCUNE
+  n'est un chemin d'erreur — l'une est un simple `return 0` propre,
+  l'autre pose un drapeau interne et retourne 1. N'importe quelle
+  valeur de retour hors 0x7a/0x3e5 est donc déjà gérée sans risque.
+  Site d'appel réel : `dwNumSettingIds=0`/`pdwSettingIds=NULL` (appel
+  dégénéré, zéro réglage demandé).
+- Corrigé : retourne `STATUS_SUCCESS`. Signature réelle au-delà des 4
+  premiers paramètres pas assez confirmée pour écrire via
+  `pcbResults`/`pResults` (8 registres + 1 argument pile observés, 2 de
+  plus que la forme à 7 paramètres classique) — seul le statut de
+  retour est corrigé.
+- Tests 205/205 (204/204 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r223-real-fix-xamuserreadprofilesettings-returns-success-20260902.md`.
+
 # AC6 retail NTSC-U/J — r222 : VRAI CORRECTIF — `XamShowMessageBoxUIEx` s'achève de manière synchrone (2026-09-02)
 
 - Réexamen de la réserve de r221 : lire un argument pile via

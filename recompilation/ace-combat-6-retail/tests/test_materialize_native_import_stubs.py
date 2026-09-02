@@ -1640,3 +1640,16 @@ def test_xam_show_message_box_ui_ex_completes_synchronously(tmp_path: Path) -> N
     assert "PPC_STORE_U32(overlapped + 0x14, 0u)" in body
     assert "PPC_STORE_U32(ctx.r10.u32, 0u)" in body
     assert "ctx.r3.u64 = 0u" in body
+
+
+def test_xam_user_read_profile_settings_returns_success(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamUserReadProfileSettings);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__XamUserReadProfileSettings(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u" in body

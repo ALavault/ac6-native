@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r222 cité comme `source_report`;
+- le report r223 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -155,10 +155,14 @@ reste non implémenté : convention `ctx.r1.u32 + 0x54` pour un argument
 pile depuis un stub natif non confirmée (recherché, résultat négatif). r222 a corrigé `XamShowMessageBoxUIEx`
 (la réserve de r221 ne s'appliquait pas — `ctx.r1.u32` EST le `r1` de
 l'appelant par construction; écrit `pMessageBoxResult`/
-`pOverlapped+0x14` à 0, retourne `STATUS_SUCCESS` jamais 997).
+`pOverlapped+0x14` à 0, retourne `STATUS_SUCCESS` jamais 997). r223 a corrigé
+`XamUserReadProfileSettings` (les deux cibles de branchement de
+l'appelant sont des retours propres — retourne `STATUS_SUCCESS`;
+struct-fill non fait, signature au-delà de 4 paramètres pas assez
+confirmée).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r222, méthode r90/r93/r164) pour d'autres candidats.
+r148-r223, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
