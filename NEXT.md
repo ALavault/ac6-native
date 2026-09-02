@@ -182,6 +182,14 @@ fallback ReXGlue.
   (125→87 imports restants), catégorisé par gros chantier. Voir ce
   rapport avant de reprendre le balayage — il évite de redécouvrir la
   carte des chantiers restants.
+- r219 (documentation seule) : corrige r209/r211 — la porte
+  `XamGetExecutionId` (5 appelants réels tracés jusqu'à LEURS propres
+  appelants) est TOUJOURS contournée (valeur de contrôle littérale 0
+  partout), jamais un vrai blocage. `XamUserCreateStatsEnumerator`/
+  `XamUserCreateAchievementEnumerator` confirmés déjà adéquats;
+  `XamUserReadProfileSettings` reste différé mais pour son propre
+  contrat d'achèvement asynchrone (même famille que
+  `XamShowMessageBoxUIEx`), pas la porte.
 - Suite pytest 203/203, `ctest` 10/10 (inchangés depuis r217).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -217,10 +225,10 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r219-doc-corrects-r209-r211-xamgetexecutionid-gate-is-always-bypassed-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
   (bilan par gros chantier — à lire avant de reprendre le balayage);
-- `reports/ac6-retail-native-codegen-gate2-r217-real-fix-vdsetdisplaymode-always-succeeds-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r218).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r219).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

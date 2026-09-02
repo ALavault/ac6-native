@@ -1,3 +1,22 @@
+# AC6 retail NTSC-U/J — r219 : DOCUMENTATION SEULE — corrige r209/r211 : la porte `XamGetExecutionId` est TOUJOURS contournée (2026-09-02)
+
+- Tracé les 5 appelants réels du wrapper `0x821f7668` jusqu'à LEURS
+  propres appelants : les 5 passent une valeur de contrôle LITTÉRALE
+  `0` (`li r3,0x0`). La logique du wrapper (`beq` sur contrôle==0 →
+  raccourci succès SANS jamais appeler le vrai `XamGetExecutionId`)
+  signifie que cette porte est TOUJOURS contournée dans ce XEX — pas
+  un cas partiel, un chemin jamais exercé.
+- Conséquence : `XamUserCreateStatsEnumerator`/
+  `XamUserCreateAchievementEnumerator` sont en réalité déjà adéquats
+  (tout appelant traite un retour non nul comme un skip propre — même
+  case que `XamUserAreUsersFriends`). `XamUserReadProfileSettings` reste
+  différé, mais pour la VRAIE raison : son propre contrat d'achèvement
+  asynchrone (codes 0x7a/0x3e5, même famille que
+  `XamShowMessageBoxUIEx` de r206), pas la porte `XamGetExecutionId`.
+- Aucun changement de code. Tests 203/203, `ctest` 10/10 (inchangés).
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r219-doc-corrects-r209-r211-xamgetexecutionid-gate-is-always-bypassed-20260902.md`.
+
 # AC6 retail NTSC-U/J — r218 : DOCUMENTATION SEULE — bilan du balayage r169-r217 (2026-09-02)
 
 - Aucun changement de code. Bilan complet du balayage des imports
