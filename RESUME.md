@@ -171,10 +171,14 @@ n'existe AUCUNE preuve statique d'un résolveur qui lirait cette table
 référence. Les 2 adresses voisines qui ont de vrais appelants
 directs (`0x821f4680`, `0x821f4678`) ne portent aucun symbole Ghidra
 et sont du `.text` interne déjà recompilé, pas des gaps de stub
-d'import — ce fil est clos, hors périmètre du balayage.
+d'import — ce fil est clos, hors périmètre du balayage. r226 a corrigé
+`XamUserGetName` (2 vrais appelants confirment `cchUserName=0x10`;
+l'un ignorait le statut de retour et utilisait un buffer jamais écrit
+— écrit maintenant un nom ASCII synthétique et retourne
+`STATUS_SUCCESS`).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r225, méthode r90/r93/r164) pour d'autres candidats.
+r148-r226, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

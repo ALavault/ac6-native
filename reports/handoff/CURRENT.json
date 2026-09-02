@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md",
     "reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md",
     "reports/ac6-retail-native-codegen-gate2-r224-doc-xamshow-trampolines-are-the-fallback-table-from-r212-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r201-real-fix-ntopenfile-reuses-ntcreatefiles-media-service-path-20260902.md",

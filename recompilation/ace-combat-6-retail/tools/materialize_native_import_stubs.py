@@ -1750,6 +1750,37 @@ def render_body(name: str) -> str:
         # return status is fixed, matching this project's own "don't
         # assert an unconfirmed field" discipline.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamUserGetName":
+        # r226: two real call sites in this XEX, both independently
+        # confirming the documented XamUserGetName(DWORD dwUserIndex,
+        # LPSTR szUserName, DWORD cchUserName) contract --
+        # Function_82161B08 (0x82161bb8) calls func_0x821f4410 with a
+        # literal cchUserName=0x10 and NEVER checks the return value
+        # before using the buffer downstream, and Function_821CFD50
+        # (0x821cfd98) independently calls it with the same literal
+        # 0x10 and returns the buffer pointer only when the return is
+        # exactly 0. The generic offline default only sets ctx.r3 (a
+        # status) and never touches ctx.r4's buffer -- for the first
+        # caller specifically that is a real uninitialized-read risk
+        # (r183's class of bug: unread buffer treated as valid
+        # regardless of status), not a cosmetic gap. Writes a short,
+        # explicitly-synthetic ASCII name (no real gamertag exists
+        # offline) truncated/null-terminated to the confirmed 16-byte
+        # buffer, and returns STATUS_SUCCESS so both callers' own
+        # success paths are taken honestly.
+        return """  const std::uint32_t buffer = ctx.r4.u32;
+  const std::uint32_t length = ctx.r5.u32;
+  static constexpr char kOfflinePlayerName[] = "Player";
+  if (length != 0u) {
+    std::uint32_t copy_len = static_cast<std::uint32_t>(sizeof(kOfflinePlayerName) - 1u);
+    if (copy_len > length - 1u) copy_len = length - 1u;
+    for (std::uint32_t i = 0; i < copy_len; ++i) {
+      PPC_STORE_U8(buffer + i, static_cast<std::uint8_t>(kOfflinePlayerName[i]));
+    }
+    PPC_STORE_U8(buffer + copy_len, 0u);
+  }
+  ctx.r3.u64 = 0u;
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

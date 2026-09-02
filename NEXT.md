@@ -226,7 +226,13 @@ fallback ReXGlue.
   directs — mais ce sont des adresses `.text` internes ordinaires déjà
   recompilées par XenonRecomp, PAS des gaps de stub d'import : ce fil de
   recherche est clos et hors périmètre du balayage.
-- Suite pytest 205/205, `ctest` 10/10 (inchangés).
+- r226 a corrigé `XamUserGetName` (2 vrais sites d'appel confirment
+  indépendamment `cchUserName=0x10`; l'un des deux appelants n'a jamais
+  vérifié le statut de retour et utilisait le buffer sans condition —
+  même classe de risque que r183. Écrit un nom ASCII synthétique
+  explicite (« Player »), tronqué/terminé à la taille confirmée,
+  retourne `STATUS_SUCCESS`).
+- Suite pytest 206/206 (205 + 1 skip), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -261,6 +267,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r224-doc-xamshow-trampolines-are-the-fallback-table-from-r212-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r223-real-fix-xamuserreadprofilesettings-returns-success-20260902.md`;

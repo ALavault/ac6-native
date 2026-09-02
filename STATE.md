@@ -10489,3 +10489,21 @@ aucune source touchée).
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r226 corrige réellement `XamUserGetName`
+
+2 vrais sites d'appel (`0x82161bb8`, `0x821cfd98`) confirment
+indépendamment la signature documentée
+`XamUserGetName(DWORD dwUserIndex, LPSTR szUserName, DWORD cchUserName)`
+avec `cchUserName=0x10` littéral aux deux sites. `Function_82161B08`
+n'a jamais vérifié le statut de retour et utilisait le buffer sans
+condition en aval — même classe de risque de lecture non initialisée
+que r183 (`RtlImageXexHeaderField`), puisque le stub générique
+n'écrivait jamais ce buffer. Le fix écrit un nom ASCII synthétique
+explicite (« Player », aucun vrai gamertag n'existe hors ligne),
+tronqué/terminé par null à la taille confirmée par l'appelant, et
+retourne `STATUS_SUCCESS` sans condition. pytest 206/206 (205+1 skip),
+`ctest` 10/10.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md`.
