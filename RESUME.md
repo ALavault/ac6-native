@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r189 cité comme `source_report`;
+- le report r190 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -37,12 +37,12 @@ fixe). r187 a corrigé `RtlUnicodeToMultiByteN` (convertit et renvoie
 `STATUS_SUCCESS`). r188 a corrigé
 `RtlUnicodeStringToAnsiString`/`RtlFreeAnsiString` (allocation réelle via
 `allocate_guest`). r189 a corrigé `NtQueryFullAttributesFile` (ajoute
-`NativeGuestMediaService::file_size()`).
+`NativeGuestMediaService::file_size()`). r190 a corrigé
+`NtQueryVolumeInformationFile` (FileFsSizeInformation, unité
+d'allocation FATX 16 Kio).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r189, méthode r90/r93/r164) pour d'autres candidats.
-`NtQueryVolumeInformationFile` (3 sites) est un candidat plausible
-maintenant que `file_size()` existe.
+r148-r190, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

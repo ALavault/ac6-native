@@ -1536,6 +1536,57 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = status;
 """
+    if name == "NtQueryVolumeInformationFile":
+        # r190: real signature is NTSTATUS
+        # NtQueryVolumeInformationFile(HANDLE FileHandle, PIO_STATUS_BLOCK
+        # IoStatusBlock, PVOID FsInformation, ULONG Length,
+        # FS_INFORMATION_CLASS FsInformationClass) -- a struct-fill
+        # through r5, not a discarded status. ALL THREE of this XEX's
+        # real call sites pass FsInformationClass=3
+        # (FileFsSizeInformation) and Length=0x18 (24, exactly
+        # sizeof(FILE_FS_SIZE_INFORMATION): two LARGE_INTEGERs + two
+        # ULONGs). One call site computes real free/total byte counts
+        # from the queried fields (SectorsPerAllocationUnit *
+        # BytesPerSector * {Available,Total}AllocationUnits) and reports
+        # them to its own caller -- a real disk-space check, not a
+        # discarded read.
+        #
+        # Only FileFsSizeInformation is implemented; any other requested
+        # class returns STATUS_INVALID_INFO_CLASS rather than a guessed
+        # struct shape this XEX has no traced call site for.
+        #
+        # Values: SectorsPerAllocationUnit=0x20, BytesPerSector=0x200 --
+        # a 0x4000 (16KiB) allocation unit, the real Xbox 360 FATX
+        # filesystem's own documented default cluster size for large
+        # partitions, not invented for this fix. Total/available space:
+        # 8 GiB, an ordinary generous default (this project's own guest
+        # media is read-only and does not yet support real writes, so
+        # "plenty of free space" avoids a false disk-full block without
+        # asserting a specific real console's exact partition size).
+        # A second call site compares the computed bytes-per-unit against
+        # a caller-supplied expected value not traced by this cycle; this
+        # fix cannot guarantee that comparison passes and does not assert
+        # that it does.
+        return """  if (ctx.r7.u32 != 3u) {
+    ctx.r3.u64 = 0xc0000003u;  // STATUS_INVALID_INFO_CLASS
+    return;
+  }
+  constexpr std::uint32_t kSectorsPerAllocationUnit = 0x20u;
+  constexpr std::uint32_t kBytesPerSector = 0x200u;
+  constexpr std::uint64_t kAllocationUnitBytes =
+      static_cast<std::uint64_t>(kSectorsPerAllocationUnit) * kBytesPerSector;
+  constexpr std::uint64_t kTotalBytes = 8ull * 1024ull * 1024ull * 1024ull;
+  constexpr std::uint64_t kTotalAllocationUnits = kTotalBytes / kAllocationUnitBytes;
+  PPC_STORE_U64(ctx.r5.u32 + 0x0, kTotalAllocationUnits);   // TotalAllocationUnits
+  PPC_STORE_U64(ctx.r5.u32 + 0x8, kTotalAllocationUnits);   // AvailableAllocationUnits
+  PPC_STORE_U32(ctx.r5.u32 + 0x10, kSectorsPerAllocationUnit);
+  PPC_STORE_U32(ctx.r5.u32 + 0x14, kBytesPerSector);
+  if (ctx.r4.u32 != 0u) {
+    PPC_STORE_U32(ctx.r4.u32 + 0u, 0u);   // IoStatusBlock.Status
+    PPC_STORE_U32(ctx.r4.u32 + 4u, 0x18u);  // IoStatusBlock.Information
+  }
+  ctx.r3.u64 = 0u;  // STATUS_SUCCESS
+"""
     if name == "MmQueryStatistics":
         # r108: the generic offline-import default below only sets ctx.r3
         # (a status code) and never touches the guest output buffer the

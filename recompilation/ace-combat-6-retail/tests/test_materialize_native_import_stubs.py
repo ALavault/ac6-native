@@ -359,6 +359,30 @@ def test_nt_query_full_attributes_file_fills_the_real_struct(
     assert "0xC0000034u" in body  # STATUS_OBJECT_NAME_NOT_FOUND on a real miss
 
 
+def test_nt_query_volume_information_file_fills_real_fs_size_info(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtQueryVolumeInformationFile);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r190: real contract is NTSTATUS
+    # NtQueryVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID,
+    # ULONG, FS_INFORMATION_CLASS) -- all three of this XEX's real call
+    # sites request FileFsSizeInformation (class 3, 0x18 bytes); one
+    # computes real free/total byte counts from the queried fields.
+    body = text.split("void __imp__NtQueryVolumeInformationFile")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r7.u32 != 3u" in body
+    assert "0xc0000003u" in body  # STATUS_INVALID_INFO_CLASS
+    assert "kSectorsPerAllocationUnit = 0x20u" in body
+    assert "kBytesPerSector = 0x200u" in body
+    assert "PPC_STORE_U64(ctx.r5.u32 + 0x0, kTotalAllocationUnits)" in body
+    assert "PPC_STORE_U64(ctx.r5.u32 + 0x8, kTotalAllocationUnits)" in body
+    assert "ctx.r3.u64 = 0u;  // STATUS_SUCCESS" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

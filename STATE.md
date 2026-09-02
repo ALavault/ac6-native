@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r190 : VRAI CORRECTIF — `NtQueryVolumeInformationFile` remplit un vrai FS_SIZE_INFORMATION (2026-09-02)
+
+- Contrat réel : struct-fill via r5, pas un statut ignoré. Les 3 sites
+  d'appel réels demandent tous `FileFsSizeInformation` (classe 3,
+  0x18 octets); un site calcule les octets libres/totaux réels
+  (SectorsPerAllocationUnit × BytesPerSector × AllocationUnits) et les
+  reporte à son appelant — vrai contrôle d'espace disque.
+- Seul `FileFsSizeInformation` est implémenté; toute autre classe demandée
+  renvoie `STATUS_INVALID_INFO_CLASS` plutôt qu'un layout deviné sans site
+  d'appel tracé.
+- Valeurs : unité d'allocation 0x4000 (16 Kio, taille de cluster FATX
+  Xbox 360 documentée par défaut pour grandes partitions — pas inventée);
+  espace total/disponible = 8 Gio, défaut généreux ordinaire (le média
+  invité est en lecture seule ici, aucune écriture réelle n'est câblée,
+  donc « assez d'espace libre » évite un faux blocage sans affirmer une
+  taille de partition console précise).
+- Un 2e site compare l'unité d'allocation calculée à une valeur attendue
+  fournie par l'appelant, non retracée ce cycle — nommé honnêtement, pas
+  affirmé comme résolu.
+- Tests 177/177 (176/176 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r190-real-fix-ntqueryvolumeinformationfile-fills-real-fs-size-info-20260902.md`.
+
 # AC6 retail NTSC-U/J — r189 : VRAI CORRECTIF — `NtQueryFullAttributesFile` remplit le vrai struct (2026-09-02)
 
 - Contrat réel : `NTSTATUS NtQueryFullAttributesFile(POBJECT_ATTRIBUTES,
