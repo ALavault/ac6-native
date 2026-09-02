@@ -1376,6 +1376,22 @@ def render_body(name: str) -> str:
         # same "native side owns this subsystem's lifecycle" precedent as
         # VdRetrainEDRAM and friends above.
         return "  ctx.r3.u64 = 0u;\n"
+    if name in {"KeLockL2", "KeUnlockL2"}:
+        # r197: real hardware L2-cache-way locking, irrelevant to a
+        # host-side interpreter (no cache-way partitioning to emulate).
+        # Both real call sites (0x821eded0, 0x821eea94) discard the
+        # return value outright -- the caller falls straight into the
+        # next instruction with no check at all, so this is not even a
+        # status-shape question, just noise from the generic fallback.
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "KiApcNormalRoutineNop":
+        # r197: literally a no-op by its own documented name/purpose --
+        # the default "NormalRoutine" callback for a kernel APC that has
+        # no real user-mode routine. Its single real call site
+        # (0x821e6908) also discards the return value, confirming the
+        # generic fallback's only actual defect here was the traced
+        # kOfflineStatus noise, not observable behavior.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

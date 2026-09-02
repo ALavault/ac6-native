@@ -1294,3 +1294,19 @@ def test_ob_symbolic_link_registration_always_succeeds(tmp_path: Path) -> None:
     )[0]
     assert "kOfflineStatus" not in delete_body
     assert "ctx.r3.u64 = 0u" in delete_body
+
+
+def test_l2_lock_and_apc_nop_always_succeed(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__KeLockL2);\n"
+        "PPC_EXTERN_FUNC(__imp__KeUnlockL2);\n"
+        "PPC_EXTERN_FUNC(__imp__KiApcNormalRoutineNop);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 3
+    text = output.read_text()
+    for name in ("KeLockL2", "KeUnlockL2", "KiApcNormalRoutineNop"):
+        body = text.split(f"void __imp__{name}(")[1].split("\n}\n")[0]
+        assert "kOfflineStatus" not in body
+        assert "ctx.r3.u64 = 0u" in body

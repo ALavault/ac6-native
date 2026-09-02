@@ -1,3 +1,22 @@
+# AC6 retail NTSC-U/J — r197 : VRAI CORRECTIF — `KeLockL2`/`KeUnlockL2`/`KiApcNormalRoutineNop` réussissent toujours (2026-09-02)
+
+- 3 imports à site d'appel réel unique dont l'appelant IGNORE totalement
+  la valeur de retour (aucun `cmpwi`/branche après l'appel).
+  `KeLockL2`/`KeUnlockL2` (`0x821eded0`, `0x821eea94`) : verrouillage de
+  voies de cache L2 matériel réel, sans équivalent côté hôte à émuler.
+  `KiApcNormalRoutineNop` (`0x821e6908`) : no-op documenté par son propre
+  nom — routine APC par défaut sans routine utilisateur réelle.
+- Corrigé : `STATUS_SUCCESS` sans condition pour les trois — même
+  précédent que `VdRetrainEDRAM`.
+- Vérifié aussi, non corrigé : `XamSessionCreateHandle`/
+  `XamSessionRefObjByHandle` (11+1 sites réels, famille de wrappers
+  télémétrie autour de `0x821fd3e8`-`0x821fd9xx`, objet résolu semble
+  seulement journalisé, pas déréférencé — pas assez tracé pour un vrai
+  fix); `NtDuplicateObject` (1 site réel, seulement 3 registres passés,
+  aucun handle de sortie capturé — signature ambiguë).
+- Tests 184/184 (183/183 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r197-real-fix-kelockl2-keunlockl2-kiapcnormalroutinenop-always-succeed-20260902.md`.
+
 # AC6 retail NTSC-U/J — r196 : VRAI CORRECTIF — `ObCreateSymbolicLink`/`ObDeleteSymbolicLink` réussissent toujours (2026-09-02)
 
 - Site réel `0x821ea034` : boucle réelle de réessai de montage de

@@ -92,7 +92,12 @@ fallback ReXGlue.
   réelle de montage de périphérique — le no-op offline échouait
   systématiquement, un vrai blocage de boot — retourne maintenant
   `STATUS_SUCCESS` sans condition).
-- Suite pytest 183/183, `ctest` 10/10.
+- r197 a corrigé `KeLockL2`/`KeUnlockL2`/`KiApcNormalRoutineNop` (retour
+  ignoré par tous les appelants réels — `STATUS_SUCCESS` sans condition).
+  Vérifié aussi, non corrigé : `XamSessionCreateHandle`/
+  `XamSessionRefObjByHandle` (pas assez tracé) et `NtDuplicateObject`
+  (signature ambiguë).
+- Suite pytest 184/184, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -123,9 +128,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r197-real-fix-kelockl2-keunlockl2-kiapcnormalroutinenop-always-succeed-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r196-real-fix-obcreatesymboliclink-obdeletesymboliclink-always-succeed-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r195-real-fix-xamalloc-xamfree-use-the-guest-bump-allocator-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r196).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r197).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

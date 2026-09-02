@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r196 cité comme `source_report`;
+- le report r197 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -65,10 +65,15 @@ offline échouait systématiquement aux 3 sites d'appel réels
 `XamAlloc`; utilise maintenant `allocate_guest`). r196 a corrigé
 `ObCreateSymbolicLink`/`ObDeleteSymbolicLink` (boucle réelle de montage
 de périphérique au boot — le no-op offline échouait systématiquement —
-retourne maintenant `STATUS_SUCCESS` sans condition).
+retourne maintenant `STATUS_SUCCESS` sans condition). r197 a corrigé
+`KeLockL2`/`KeUnlockL2`/`KiApcNormalRoutineNop` (retour ignoré par tous
+les appelants réels). Vérifié aussi, non corrigé :
+`XamSessionCreateHandle`/`XamSessionRefObjByHandle` (11+1 sites réels,
+famille de wrappers télémétrie, pas assez tracé) et `NtDuplicateObject`
+(signature ambiguë, aucun handle de sortie capturé).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r196, méthode r90/r93/r164) pour d'autres candidats.
+r148-r197, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
