@@ -1552,6 +1552,22 @@ def render_body(name: str) -> str:
         # title-exit path, not a fault, so a clean std::exit(0) is the
         # honest match rather than std::abort().
         return "  std::exit(0);\n"
+    if name == "XMACreateContext":
+        # r210: real call site 0x823aec8c confirms r3 as an output
+        # handle pointer -- reads back the same storage slot immediately
+        # after success to feed a follow-up query call. Return checked
+        # signed (blt error), so kOfflineStatus (negative) currently
+        # blocks all XMA (compressed audio) context setup unconditionally.
+        # Same handle-bookkeeping precedent as XAudioRegisterRenderDriverClient
+        # (r206): allocate from g_next_handle, write through the output
+        # pointer, succeed.
+        return """  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32, g_next_handle.fetch_add(1u));
+  ctx.r3.u64 = 0u;
+"""
+    if name == "XMAReleaseContext":
+        # r210: real call site 0x823ae37c discards the return value
+        # outright -- same class of fix as r197's KeLockL2/KeUnlockL2.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

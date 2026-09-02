@@ -1,3 +1,18 @@
+# AC6 retail NTSC-U/J — r210 : VRAI CORRECTIF — `XMACreateContext`/`XMAReleaseContext` (2026-09-02)
+
+- `XMACreateContext` (site réel `0x823aec8c`) : `r3` pointeur de sortie
+  handle (confirmé — relu immédiatement après succès). Vérifié en
+  signé — `kOfflineStatus` bloquait systématiquement toute
+  initialisation de contexte audio XMA. `XMAReleaseContext` (site réel
+  `0x823ae37c`) : retour totalement ignoré.
+- Corrigé : Create alloue un handle via `g_next_handle` et l'écrit en
+  sortie; Release réussit sans condition.
+- Vérifié aussi, non corrigé : `XamVoiceSubmitPacket` (dépend d'un
+  handle que seul `XamVoiceCreate` produit, laissé en échec honnête par
+  r207 — fixer Submit seul serait inerte).
+- Tests 196/196 (195/195 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r210-real-fix-xmacreatecontext-xmareleasecontext-20260902.md`.
+
 # AC6 retail NTSC-U/J — r209 : VRAI CORRECTIF — `XamLoaderTerminateTitle` termine proprement (2026-09-02)
 
 - `VOID XamLoaderTerminateTitle(VOID)` : ne retourne jamais sur vrai

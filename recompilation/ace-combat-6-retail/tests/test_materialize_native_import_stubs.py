@@ -1486,3 +1486,27 @@ def test_xam_loader_terminate_title_exits_cleanly(tmp_path: Path) -> None:
     )[0]
     assert "kOfflineStatus" not in body
     assert "std::exit(0)" in body
+
+
+def test_xma_context_family(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__XMACreateContext);\n"
+        "PPC_EXTERN_FUNC(__imp__XMAReleaseContext);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+
+    create_body = text.split("void __imp__XMACreateContext(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in create_body
+    assert "g_next_handle.fetch_add(1u)" in create_body
+    assert "PPC_STORE_U32(ctx.r3.u32" in create_body
+
+    release_body = text.split("void __imp__XMAReleaseContext(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in release_body
+    assert "ctx.r3.u64 = 0u" in release_body
