@@ -576,6 +576,23 @@ def test_vd_query_video_mode_fills_the_struct_not_a_status(
     assert "PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u)" in body
 
 
+def test_xget_game_region_returns_the_privileged_exact_match_code(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XGetGameRegion);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r172: real contract is DWORD XGetGameRegion(VOID). 0x101 is the one
+    # value this XEX's own code (two of its three real call sites) treats
+    # as the privileged, exact-match region code, not merely a naming
+    # convention pick.
+    body = text.split("void __imp__XGetGameRegion")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0x101u;" in body
+
+
 def test_xget_video_mode_fills_the_refresh_rate_field(
     tmp_path: Path,
 ) -> None:

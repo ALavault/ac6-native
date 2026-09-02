@@ -12,13 +12,10 @@ Lire d'abord :
 ## Frontière active
 
 `VdQueryVideoMode` (r169), `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
-`VdGetCurrentDisplayInformation` (r170) et `XGetVideoMode` (r171) sont
-fixés. Candidat le plus prometteur actuellement identifié, non implémenté :
-`XGetGameRegion` (3 sites d'appel réels, ex. `0x821babdc`) — sa valeur de
-retour est stockée puis relue et comparée à plusieurs constantes précises
-qui contrôlent un vrai branchement (potentiel bug de détection de région).
-Analyser ses 3 sites avant d'implémenter. `XGetAVPack`/`XGetLanguage`
-(1 site chacun) ne sont pas encore vérifiés.
+`VdGetCurrentDisplayInformation` (r170), `XGetVideoMode` (r171) et
+`XGetGameRegion` (r172, renvoie `0x101`) sont fixés. `XGetAVPack`
+(`0x821f5d14`) et `XGetLanguage` (`0x821f5d9c`), chacun 1 site d'appel réel,
+ne sont pas encore vérifiés pour le même type de trou.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`).

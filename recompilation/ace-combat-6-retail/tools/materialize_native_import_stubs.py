@@ -700,6 +700,39 @@ def render_body(name: str) -> str:
         # 60.0f (`0x42700000`), the same NTSC default r169 used, not
         # invented for this fix.
         return "  PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u);  // 60.0f\n"
+    if name == "XGetGameRegion":
+        # r172: real signature is DWORD XGetGameRegion(VOID) -- a region
+        # code, not a status. All THREE of this XEX's real call sites read
+        # it, and the exact numeric value matters (not just membership in
+        # an accepted set):
+        #
+        # `0x821babdc` (sub_821BAB90): the return value is cached, then
+        # compared for equality against exactly four constants --
+        # `0x1ff`/`0x101`/`0x102`/`0x1fc` -- with all four branching to the
+        # SAME target. Any of the four gives identical behavior here.
+        #
+        # `0x821f4a68` (a cached language-code helper): extracts byte1
+        # (bits 8-15) of the return. `0x101` and `0x102` both have
+        # byte1=0x01, taking the same branch as each other, which then
+        # further distinguishes `r3==0x101` exactly (-> cached code 20)
+        # from any other byte1=0x01 value including `0x102` (-> code 21).
+        #
+        # `0x821f4b0c` (a cached region-category helper): extracts byte2
+        # (bits 16-23). `0x101`, `0x102`, `0x1ff` and `0x1fc` all have
+        # byte2=0x01, taking the same branch, which then distinguishes
+        # `r3==0x101` exactly (-> category 2) from any other byte2=0x01
+        # value including `0x102`/`0x1ff`/`0x1fc` (-> category 7, a
+        # fallback/generic-NTSC-family category rather than the primary
+        # one).
+        #
+        # `0x101` is therefore not an arbitrary pick between two
+        # equally-plausible codes: it is the ONE value this XEX's own code
+        # treats as the privileged, exact-match case in both consumer
+        # functions, with every other accepted code (`0x102` included)
+        # falling to a secondary/fallback grouping -- independent
+        # corroboration from this XEX's own control flow, not merely the
+        # "-us"/"ntsc-uj" naming convention this project already targets.
+        return "  ctx.r3.u64 = 0x101u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

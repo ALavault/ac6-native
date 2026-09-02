@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r172 : VRAI CORRECTIF — `XGetGameRegion` renvoie le code de région privilégié à correspondance exacte (2026-09-02)
+
+- `XGetGameRegion` (contrat réel : `DWORD XGetGameRegion(VOID)`) est lu par
+  ses 3 vrais sites d'appel; contrairement au 1er (`0x821babdc`, où les 4
+  constantes `0x1ff`/`0x101`/`0x102`/`0x1fc` mènent à la MÊME branche), les
+  2 autres montrent que la valeur EXACTE compte :
+  - `0x821f4a68` : extrait byte1 (bits 8-15). `0x101`/`0x102` partagent
+    byte1=0x01 et prennent la même branche, mais `r3==0x101` EXACT donne
+    le code caché 20, tout autre byte1=0x01 (dont `0x102`) donne 21.
+  - `0x821f4b0c` : extrait byte2 (bits 16-23). Les 4 constantes partagent
+    byte2=0x01 et prennent la même branche, mais `r3==0x101` EXACT donne
+    catégorie 2, tout autre (dont `0x102`/`0x1ff`/`0x1fc`) donne
+    catégorie 7 (repli/générique).
+- `0x101` n'est donc pas un choix arbitraire entre codes également
+  plausibles pour une cible « -us »/« ntsc-uj » (la convention de nommage
+  seule serait une base faible) : c'est la SEULE valeur que le contrôle de
+  flux propre de ce XEX traite comme cas privilégié à correspondance
+  exacte dans DEUX fonctions consommatrices indépendantes — aucun site
+  n'inverse ce traitement en faveur de `0x102`.
+- Tests 156/156 (155/155 → +1). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r172-real-fix-xgetgameregion-returns-the-privileged-exact-match-region-code-20260902.md`.
+
 # AC6 retail NTSC-U/J — r171 : VRAI CORRECTIF — `XGetVideoMode` remplit le champ refresh-rate utilisé comme diviseur (2026-09-02)
 
 - `XGetVideoMode` (contrat réel : `VOID XGetVideoMode(XVIDEO_MODE*)`) est le

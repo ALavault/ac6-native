@@ -19,6 +19,9 @@ fallback ReXGlue.
 
 ## État courant
 
+- r172 a corrigé `XGetGameRegion` : renvoie `0x101` désormais — corroboré
+  par 2 des 3 sites d'appel réels comme code privilégié à correspondance
+  exacte (pas un choix arbitraire de convention de nommage).
 - r171 a corrigé `XGetVideoMode` : struct+0x14 (refresh-rate float,
   offset identique à r169) était lu comme DIVISEUR réel
   (`fdivs f1,f31,f0`) sans être rempli — corrigé à 60.0f. Seul cet offset
@@ -46,19 +49,19 @@ fallback ReXGlue.
 
 ## Prochaine décision
 
-1. `XGetGameRegion` (3 sites d'appel réels, ex. `0x821babdc`) : la valeur de
-   retour est stockée puis relue et comparée à plusieurs constantes précises
-   (`0x1ff`, `0x101`, `0x102`, `0x1fc`) qui contrôlent un vrai branchement —
-   candidat le plus prometteur actuellement identifié. Analyser les 3 sites
-   pour déterminer la valeur de région correcte avant d'implémenter.
-2. `XGetAVPack` (`0x821f5d14`) et `XGetLanguage` (`0x821f5d9c`), chacun 1 site
+1. `XGetAVPack` (`0x821f5d14`) et `XGetLanguage` (`0x821f5d9c`), chacun 1 site
    d'appel réel, ne sont pas encore vérifiés pour le même type de trou.
-3. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
+2. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
    consomme ce champ pour déterminer sa vraie valeur, ou documenter qu'aucune
    preuve statique supplémentaire n'est atteignable.
+3. Balayer plus largement les imports offline restants (mêmes outils que
+   r148-r172) pour identifier le prochain trou une fois ces deux fermés.
 4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
-   `VdQueryVideoFlags` était fausse.
+   `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
+   parmi plusieurs candidates également plausibles est arbitraire sans lire
+   comment CE XEX la consomme — r172 a montré que le contrôle de flux propre
+   du binaire tranche entre `0x101` et `0x102`.
 
 `done_when` : layout binaire qualifié, implémentation sans valeur devinée,
 tests ciblés verts, CTest 9/9 et validation native fraîche. Si le layout reste
@@ -68,9 +71,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r172-real-fix-xgetgameregion-returns-the-privileged-exact-match-region-code-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r171-real-fix-xgetvideomode-fills-the-refresh-rate-field-used-as-a-division-divisor-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r170-real-fixes-vdqueryvideoflags-vdgetcurrentdisplaygamma-vdgetcurrentdisplayinformation-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r169-real-fix-vdqueryvideomode-struct-fill-derived-from-this-xexs-own-disassembly-20260901.md`;
 - `STATE.md` et `EVIDENCE.md` pour l'historique.
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
