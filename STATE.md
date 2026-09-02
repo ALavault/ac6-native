@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r220 : DOCUMENTATION SEULE — protocole d'achèvement overlapped partiellement tracé, non implémenté (2026-09-02)
+
+- Suite à r219 : tracé le helper d'attente générique
+  (`Function_821F50F8`) que `XamShowMessageBoxUIEx` invoque quand son
+  retour initial est 997 (ERROR_IO_PENDING). Confirmé : lit
+  `*pOverlapped` (+0, comparé à 0x3e5) puis +4 comme résultat réel —
+  layout OVERLAPPED standard (Internal@0/InternalHigh@4). Une
+  complétion synchrone (même précédent que `NtReadFile`, r124/r126)
+  est architecturalement possible en principe.
+- Non implémenté : reconstituer QUELLE adresse pile porte réellement
+  `pOverlapped` a exigé de suivre plusieurs adresses relatives à la
+  pile candidates (`&r1+0xcc`, `&r1+0x68`, `&r1+0x70`, `&r1+0x60`) sans
+  confirmation suffisante du nombre/ordre exact des paramètres réels de
+  cette version du SDK — écrire au mauvais offset corromprait un état
+  local non lié plutôt que le bon. Arrêté avant d'implémenter plutôt
+  que deviner un offset.
+- Aucun changement de code. Tests 203/203, `ctest` 10/10 (inchangés).
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r220-doc-overlapped-completion-protocol-partially-traced-not-implemented-20260902.md`.
+
 # AC6 retail NTSC-U/J — r219 : DOCUMENTATION SEULE — corrige r209/r211 : la porte `XamGetExecutionId` est TOUJOURS contournée (2026-09-02)
 
 - Tracé les 5 appelants réels du wrapper `0x821f7668` jusqu'à LEURS

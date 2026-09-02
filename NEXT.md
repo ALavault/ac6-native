@@ -190,6 +190,11 @@ fallback ReXGlue.
   `XamUserReadProfileSettings` reste différé mais pour son propre
   contrat d'achèvement asynchrone (même famille que
   `XamShowMessageBoxUIEx`), pas la porte.
+- r220 (documentation seule) : protocole d'achèvement overlapped
+  partiellement tracé (layout Internal@0/InternalHigh@4 confirmé via le
+  helper d'attente `Function_821F50F8`) mais NON implémenté — l'adresse
+  pile réelle de `pOverlapped` reste ambiguë entre plusieurs candidates,
+  risque réel d'écriture au mauvais offset.
 - Suite pytest 203/203, `ctest` 10/10 (inchangés depuis r217).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -225,10 +230,11 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r220-doc-overlapped-completion-protocol-partially-traced-not-implemented-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r219-doc-corrects-r209-r211-xamgetexecutionid-gate-is-always-bypassed-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
   (bilan par gros chantier — à lire avant de reprendre le balayage);
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r219).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r220).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r219 cité comme `source_report`;
+- le report r220 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -144,10 +144,14 @@ appelants) est TOUJOURS contournée (contrôle littéral 0 partout).
 `XamUserCreateStatsEnumerator`/`XamUserCreateAchievementEnumerator`
 confirmés déjà adéquats; `XamUserReadProfileSettings` reste différé
 pour son propre contrat d'achèvement asynchrone (même famille que
-`XamShowMessageBoxUIEx`).
+`XamShowMessageBoxUIEx`). r220 (documentation seule) a partiellement
+tracé le protocole d'achèvement overlapped (layout
+Internal@0/InternalHigh@4 confirmé) mais NON implémenté — adresse pile
+réelle de `pOverlapped` ambiguë entre plusieurs candidates, risque réel
+d'écriture au mauvais offset.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r219, méthode r90/r93/r164) pour d'autres candidats.
+r148-r220, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
