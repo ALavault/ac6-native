@@ -12,10 +12,11 @@ Lire d'abord :
 ## Frontière active
 
 `VdQueryVideoMode` (r169), `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
-`VdGetCurrentDisplayInformation` (r170), `XGetVideoMode` (r171) et
-`XGetGameRegion` (r172, renvoie `0x101`) sont fixés. `XGetAVPack`
-(`0x821f5d14`) et `XGetLanguage` (`0x821f5d9c`), chacun 1 site d'appel réel,
-ne sont pas encore vérifiés pour le même type de trou.
+`VdGetCurrentDisplayInformation` (r170), `XGetVideoMode` (r171),
+`XGetGameRegion` (r172, renvoie `0x101`) et `XGetAVPack` (r173, renvoie
+`0u`) sont fixés. `XGetLanguage` (`0x821f5d9c`, 1 site d'appel réel) reste
+le dernier import non vérifié de cette famille — sa valeur exacte compte
+(résultat relu et borné-vérifié), à dériver dans un cycle dédié.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`).

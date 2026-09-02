@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r172-real-fix-xgetgameregion-returns-the-privileged-exact-match-region-code-20260902.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r173-real-fix-xgetavpack-avoids-the-four-skip-setup-values-20260902.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r173-real-fix-xgetavpack-avoids-the-four-skip-setup-values-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r172-real-fix-xgetgameregion-returns-the-privileged-exact-match-region-code-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r171-real-fix-xgetvideomode-fills-the-refresh-rate-field-used-as-a-division-divisor-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r170-real-fixes-vdqueryvideoflags-vdgetcurrentdisplaygamma-vdgetcurrentdisplayinformation-20260902.md",

@@ -576,6 +576,22 @@ def test_vd_query_video_mode_fills_the_struct_not_a_status(
     assert "PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u)" in body
 
 
+def test_xget_avpack_avoids_the_four_skip_setup_values(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XGetAVPack);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r173: this XEX's one real call site only checks equality against
+    # {0x3, 0x6, 0x8, 0x4}, all branching to the same "skip setup" target;
+    # the value is never stored or read again. 0u avoids all four.
+    body = text.split("void __imp__XGetAVPack")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
 def test_xget_game_region_returns_the_privileged_exact_match_code(
     tmp_path: Path,
 ) -> None:

@@ -1,3 +1,16 @@
+# AC6 retail NTSC-U/J — r173 : VRAI CORRECTIF — `XGetAVPack` évite les 4 valeurs qui sautent la configuration (2026-09-02)
+
+- `XGetAVPack` (contrat réel : `DWORD XGetAVPack(VOID)`). Le seul site
+  d'appel réel (`0x821f5d14`) compare le retour à exactement 4 valeurs
+  (`0x3`/`0x6`/`0x8`/`0x4`) qui mènent TOUTES à la même cible (« sauter la
+  configuration »); la valeur n'est ni stockée ni relue ensuite. Toute
+  valeur hors de cet ensemble est donc comportementalement identique ici —
+  contrairement à `XGetGameRegion` (r172), aucune preuve ne distingue les
+  valeurs restantes. Corrigé : `0u`, la plus simple hors de l'ensemble,
+  non asserté comme correspondant à une sémantique AV-pack précise.
+- Tests 157/157 (156/156 → +1). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r173-real-fix-xgetavpack-avoids-the-four-skip-setup-values-20260902.md`.
+
 # AC6 retail NTSC-U/J — r172 : VRAI CORRECTIF — `XGetGameRegion` renvoie le code de région privilégié à correspondance exacte (2026-09-02)
 
 - `XGetGameRegion` (contrat réel : `DWORD XGetGameRegion(VOID)`) est lu par

@@ -19,6 +19,9 @@ fallback ReXGlue.
 
 ## État courant
 
+- r173 a corrigé `XGetAVPack` : renvoie `0u`, hors de l'ensemble
+  `{0x3,0x6,0x8,0x4}` que le seul site d'appel réel traite spécialement
+  (saut de configuration); aucune preuve ne distingue les autres valeurs.
 - r172 a corrigé `XGetGameRegion` : renvoie `0x101` désormais — corroboré
   par 2 des 3 sites d'appel réels comme code privilégié à correspondance
   exacte (pas un choix arbitraire de convention de nommage).
@@ -49,8 +52,10 @@ fallback ReXGlue.
 
 ## Prochaine décision
 
-1. `XGetAVPack` (`0x821f5d14`) et `XGetLanguage` (`0x821f5d9c`), chacun 1 site
-   d'appel réel, ne sont pas encore vérifiés pour le même type de trou.
+1. `XGetLanguage` (`0x821f5d9c`, 1 site d'appel réel) reste le dernier
+   import non vérifié de cette famille — son résultat est relu et
+   borné-vérifié (contrairement à `XGetAVPack`), donc la valeur exacte
+   compte : dériver et implémenter dans un cycle dédié.
 2. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
    consomme ce champ pour déterminer sa vraie valeur, ou documenter qu'aucune
    preuve statique supplémentaire n'est atteignable.
@@ -71,9 +76,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r173-real-fix-xgetavpack-avoids-the-four-skip-setup-values-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r172-real-fix-xgetgameregion-returns-the-privileged-exact-match-region-code-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r171-real-fix-xgetvideomode-fills-the-refresh-rate-field-used-as-a-division-divisor-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r170-real-fixes-vdqueryvideoflags-vdgetcurrentdisplaygamma-vdgetcurrentdisplayinformation-20260902.md`;
 - `STATE.md` et `EVIDENCE.md` pour l'historique.
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit

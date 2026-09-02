@@ -733,6 +733,19 @@ def render_body(name: str) -> str:
         # corroboration from this XEX's own control flow, not merely the
         # "-us"/"ntsc-uj" naming convention this project already targets.
         return "  ctx.r3.u64 = 0x101u;\n"
+    if name == "XGetAVPack":
+        # r173: real signature is DWORD XGetAVPack(VOID) -- an AV-cable
+        # type code, not a status. This XEX's one real call site
+        # (0x821f5d14) only checks the return for equality against four
+        # specific values -- 0x3/0x6/0x8/0x4 -- all branching to the SAME
+        # "skip this setup" target (0x821f5eac); the return value is never
+        # stored or read again afterward. Any value outside that four-item
+        # set behaves identically here (proceeds into a language-menu
+        # table setup this project's Gate 2 target needs to reach). 0u is
+        # the simplest such value -- not asserted to match any specific
+        # real AV-pack enum meaning, only to avoid the four values this
+        # XEX's own code treats specially.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --
