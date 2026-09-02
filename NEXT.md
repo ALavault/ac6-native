@@ -268,6 +268,12 @@ fallback ReXGlue.
   appelants, et ces 3 chaînes sont de toute façon gardées par un champ
   handle-socket qui reste toujours `-1` puisque `socket`/`connect` sont
   eux-mêmes morts. Bucket fermé, pas seulement réduit.
+- r232 (documentation seule) : `XamSessionCreateHandle`/
+  `XamSessionRefObjByHandle` (r197 : « pas assez tracé ») entièrement
+  tracés — 1 + 11 sites réels, TOUS vérifient le statut avant d'utiliser
+  l'objet référencé ou retournent l'échec honnêtement sinon. Le
+  générique offline est déjà correct partout; paire close, aucun fix
+  nécessaire.
 - Suite pytest 209/209 (208 + 1 skip, inchangée), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -303,6 +309,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r232-doc-xamsession-pair-fully-traced-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r231-doc-networking-cluster-dead-or-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r230-real-fix-xamtaskclosehandle-returns-success-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r229-doc-unreached-cluster-plus-ntsetinformationfile-already-adequate-20260903.md`;

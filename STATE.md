@@ -10606,3 +10606,22 @@ reproduits.
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r231-doc-networking-cluster-dead-or-already-adequate-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r232 (documentation seule) : paire `XamSession*` close
+
+r197 avait flaggé `XamSessionCreateHandle`/`XamSessionRefObjByHandle`
+comme « pas assez tracé ». Désormais entièrement tracés : 1 site réel
+pour `XamSessionCreateHandle`, 11 pour `XamSessionRefObjByHandle` (tous
+décompilés). Motif identique partout : `uVar = func_0x823d08dc(handle,
+&obj_out); if (uVar == 0) { ...utilise obj_out... }` ou l'équivalent
+`if (uVar != 0) return uVar;` — aucun appelant n'utilise l'objet
+référencé sans vérifier d'abord le statut, et tous retournent l'échec
+honnêtement sinon. La plupart enchaînent ensuite sur le vrai
+`XMsgStartIORequest` (r203) — confirme que cette famille fait du vrai
+trafic IPC, mais cela ne se traduit par AUCUN bug de forme de contrat
+pour cette paire : le générique offline `kOfflineStatus` y est déjà la
+réponse correcte partout. Paire close, aucun fix nécessaire. Aucune
+source touchée; pytest 209/209 (208+1 skip), `ctest` 10/10 reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r232-doc-xamsession-pair-fully-traced-already-adequate-20260903.md`.
