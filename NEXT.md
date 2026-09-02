@@ -110,7 +110,14 @@ fallback ReXGlue.
 - r201 a corrigé `NtOpenFile` (9 sites d'appel réels — le plus haut
   compte du balayage — rejoint le chemin média déjà correct de
   `NtCreateFile`, même contrat de registres r3/r5/r6).
-- Suite pytest 188/188, `ctest` 10/10.
+- r202 (documentation seule) : `NtWriteFile`/`NtDeviceIoControlFile`
+  tracés comme un vrai écriveur de sauvegarde (forme FATX classique) —
+  c'est la frontière « save/reload » de Gate 2 au niveau binaire, non
+  implémentée (nécessite un vrai support d'écriture). SEH
+  (`RtlRaiseException`/`RtlUnwind`/`RtlCaptureContext`) et clé console
+  (`XeKeysConsolePrivateKeySign`/`Verification`, hors de portée
+  permanente) vérifiés sans fix sûr.
+- Suite pytest 188/188, `ctest` 10/10 (inchangés depuis r201).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -125,8 +132,12 @@ fallback ReXGlue.
    pratique, tracer la source de cette valeur avant d'ajuster les
    constantes.
 3. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r190, méthode r90/r93/r164) pour d'autres candidats.
-4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+   r148-r202, méthode r90/r93/r164) pour d'autres candidats.
+4. Si le frontier « save/reload » est un jour repris : r202 a tracé sa
+   forme binaire réelle (`NtOpenFile`→`NtDeviceIoControlFile`→boucle
+   `NtWriteFile` dans `Function_82392878`/la fonction à `0x82392978`) —
+   partir de ces adresses plutôt que de redécouvrir la forme.
+5. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
    parmi plusieurs candidates également plausibles est arbitraire sans lire
@@ -141,9 +152,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r202-doc-real-save-write-path-found-seh-and-console-key-imports-checked-no-safe-fix-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r201-real-fix-ntopenfile-reuses-ntcreatefiles-media-service-path-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r200-real-fix-xnotifygetnext-reports-no-notification-pending-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r201).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r202).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

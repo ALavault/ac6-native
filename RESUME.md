@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r201 cité comme `source_report`;
+- le report r202 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -81,10 +81,18 @@ sans condition). r200 a corrigé `XNotifyGetNext`/`XNotifyPositionUI`
 id depuis la pile non initialisée — retourne maintenant « aucune
 notification »). r201 a corrigé `NtOpenFile` (9 sites d'appel réels —
 rejoint le chemin média déjà correct de `NtCreateFile`, même contrat de
-registres r3/r5/r6).
+registres r3/r5/r6). r202 (documentation seule, aucun changement de
+code) a tracé `NtWriteFile`/`NtDeviceIoControlFile` comme un vrai
+écriveur de sauvegarde FATX (`NtOpenFile`→IOCTL géométrie→boucle
+`NtWriteFile` à décalage croissant dans `Function_82392878`/la fonction
+à `0x82392978`) — la forme binaire réelle de la frontière save/reload
+de Gate 2, non implémentée. Vérifié aussi, non corrigé : SEH
+(`RtlRaiseException`/`RtlUnwind`/`RtlCaptureContext`) et
+`XeKeysConsolePrivateKeySign`/`Verification` (clé matérielle console,
+hors de portée permanente).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r201, méthode r90/r93/r164) pour d'autres candidats.
+r148-r202, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r202 : DOCUMENTATION SEULE — chemin réel d'écriture de sauvegarde tracé; SEH et clé console vérifiés, aucun fix sûr (2026-09-02)
+
+- `NtWriteFile` (8 sites réels)/`NtDeviceIoControlFile` (3 sites réels,
+  même voisinage) forment un vrai ÉCRIVEUR DE FICHIER DE SAUVEGARDE :
+  `NtOpenFile` → IOCTL de géométrie de volume → boucle `NtWriteFile` à
+  décalage croissant dimensionnée sur cette géométrie (motif FATX
+  classique, pas de la télémétrie). C'est la forme binaire concrète de
+  la frontière « save/reload » déjà nommée bloquée par Gate 2 dans
+  `NEXT.md`. Non implémenté : nécessiterait un vrai support d'écriture
+  dans `NativeGuestMediaService` (lecture seule aujourd'hui) plus le
+  décodage du code IOCTL réel — deux efforts propres, pas un fix borné.
+  Adresses nommées pour un futur cycle save/reload.
+- Vérifié aussi, non corrigé : `RtlRaiseException`/`RtlUnwind`/
+  `RtlCaptureContext` (moteur SEH complet nécessaire, aucune primitive
+  seule n'est utile isolément); `XeKeysConsolePrivateKeySign`/
+  `XeKeysConsoleSignatureVerification` (clé privée matérielle
+  spécifique à la console — hors de portée DE FAÇON PERMANENTE, pas
+  juste ce cycle).
+- Aucun changement de code ce cycle. Tests 188/188, `ctest` 10/10
+  (inchangés depuis r201). Voir
+  `reports/ac6-retail-native-codegen-gate2-r202-doc-real-save-write-path-found-seh-and-console-key-imports-checked-no-safe-fix-20260902.md`.
+
 # AC6 retail NTSC-U/J — r201 : VRAI CORRECTIF — `NtOpenFile` réutilise le chemin média de `NtCreateFile` (2026-09-02)
 
 - `NtOpenFile` : 9 sites d'appel réels, le plus haut compte trouvé dans
