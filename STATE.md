@@ -1,3 +1,29 @@
+# AC6 retail NTSC-U/J — r176 : VRAI CORRECTIF — `XamUserGetSigninState` : index 0 signalé connecté localement (2026-09-02)
+
+- Balayage frais des 151 imports restants sur le fallback générique
+  (méthode r90/r93/r164), motivé par le symptôme historique « XPSO-164
+  atteint gameplay, contrôles nuls » (STATE.md).
+- `XamUserGetSigninState` (contrat réel : `DWORD
+  XamUserGetSigninState(DWORD dwUserIndex)`, énumération réelle 0/1/2, pas
+  un statut). `0x821f4428` (résolution du joueur connecté) boucle les
+  index 0..3 et teste l'égalité EXACTE à 1 pour trouver l'utilisateur actif
+  — sinon tombe dans un chemin totalement différent (invite de connexion).
+  `kOfflineStatus` n'égale jamais 1 : le jeu tombait TOUJOURS dans ce
+  chemin de repli — bug réel, pas cosmétique, contribuant plausiblement à
+  un flux qui n'atteint jamais le gameplay faute d'utilisateur « connecté ».
+  `0x82206954` teste le résultat contre 0 pour sauter une mise à jour par
+  joueur — cohérent avec le même énumérateur.
+- Corrigé : index 0 → 1 (connecté localement, cohérent avec la convention
+  hors-ligne établie par ce projet); tout autre index → 0.
+- Tests 159/159 (158/158 → +1). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r176-real-fix-xamusergetsigninstate-reports-index-zero-signed-in-locally-20260902.md`.
+- **Prochains candidats identifiés, non implémentés** : `XamGetSystemVersion`
+  (contrôle aussi ce même flux `0x821f4428` via un seuil de version, encore
+  sur le fallback générique); `XamInputGetState`/`XamInputSetState`/
+  `XamInputGetCapabilities` (E/S manette réelle — nécessite un backend
+  d'entrée natif qui n'existe pas encore sous `native/`, tâche plus large
+  qu'un simple fix de forme de contrat).
+
 # AC6 retail NTSC-U/J — r175 : VRAI CORRECTIF — `VdGetCurrentDisplayInformation` struct+0x05 tracé jusqu'à un choix d'algorithme de scaling réel (2026-09-02)
 
 - r170 avait confirmé struct+0x05 comme champ booléen réel mais différé son

@@ -608,6 +608,26 @@ def test_xget_language_returns_english(
     assert "ctx.r3.u64 = 1u;" in body
 
 
+def test_xam_user_get_signin_state_reports_index_zero_signed_in_locally(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamUserGetSigninState);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r176: real contract is DWORD XamUserGetSigninState(DWORD
+    # dwUserIndex) -- a real enum (0/1/2), not a status. This XEX's real
+    # call sites test the result for exact equality against 1 (signed in
+    # locally) to pick the active user, and against 0 to gate further
+    # per-player updates; kOfflineStatus never equalled 1, so this always
+    # fell through to a sign-in-prompt fallback path.
+    body = text.split("void __imp__XamUserGetSigninState")[1]
+    assert "kOfflineStatus" not in body
+    assert "user_index == 0u" in body
+    assert "1u : 0u" in body
+
+
 def test_xget_game_region_returns_the_privileged_exact_match_code(
     tmp_path: Path,
 ) -> None:

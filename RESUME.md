@@ -12,10 +12,20 @@ Lire d'abord :
 ## Frontière active
 
 La famille de configuration plateforme Vd/X ouverte par r168 est
-entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175). Aucun
-trou n'y est actuellement nommé. Prochaine étape : un balayage plus large
-des imports offline restants (mêmes outils que r148-r175, ex. méthode
-r90/r93/r164) pour identifier le prochain candidat.
+entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175). r176 a
+corrigé `XamUserGetSigninState` (index 0 → connecté localement). Candidats
+identifiés, non implémentés :
+
+- `XamGetSystemVersion` : contrôle aussi le flux `0x821f4428` via un seuil
+  de version, encore sur le fallback générique.
+- `XamInputGetState`/`XamInputSetState`/`XamInputGetCapabilities` : E/S
+  manette réelle, candidat plausible pour le symptôme historique
+  « contrôles nuls », mais nécessite un vrai backend d'entrée natif
+  (absent de `native/`) — tâche matériellement plus grande qu'un fix de
+  forme de contrat.
+
+Sinon, continuer le balayage des imports offline restants (mêmes outils
+que r148-r176, méthode r90/r93/r164).
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

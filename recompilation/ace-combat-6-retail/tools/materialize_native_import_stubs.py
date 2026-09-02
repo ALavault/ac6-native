@@ -769,6 +769,36 @@ def render_body(name: str) -> str:
         # specific to this XEX's own compiled layout (unlike a struct byte
         # offset), and consistent with this project's own NTSC-U/J target.
         return "  ctx.r3.u64 = 1u;\n"
+    if name == "XamUserGetSigninState":
+        # r176: real signature is DWORD XamUserGetSigninState(DWORD
+        # dwUserIndex), a real enum (0=not signed in, 1=signed in locally,
+        # 2=signed in to Xbox Live), not a status. This XEX's real call
+        # sites gate real control flow on it, not merely a discarded read:
+        #
+        # `0x821f4428` (a sign-in resolution helper): loops user indices
+        # 0..3 (or checks one specific index) calling this import and
+        # testing `cmpwi cr6,r3,0x1` -- the FIRST index whose result is
+        # EXACTLY 1 is treated as the active signed-in user (stores a
+        # success code and proceeds); if none matches, it falls through to
+        # a different function entirely (a sign-in prompt/fallback path).
+        # The generic offline-import fallback's kOfflineStatus
+        # (0xC00000BB) never equals 1 for any index, so this always fell
+        # through to that fallback path -- a real, consequential bug, not
+        # a cosmetic one.
+        # `0x82206954` (an unrelated per-player update function): tests
+        # the result against 0 (`cmpwi cr6,r29,0x0`) to gate a further
+        # update -- 0 is real hardware's own "not signed in" sentinel,
+        # consistent with the same enum.
+        #
+        # This project's own established convention throughout this file
+        # is single-player, fully offline (every stub here is commented
+        # "Offline-only HLE boundary; no socket or host I/O side effect"),
+        # so index 0 is signed in LOCALLY (1) -- not to Live (2), which
+        # would assert real network/account state this project has never
+        # modeled -- and every other index is not signed in (0).
+        return """  const std::uint32_t user_index = ctx.r3.u32;
+  ctx.r3.u64 = (user_index == 0u) ? 1u : 0u;
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

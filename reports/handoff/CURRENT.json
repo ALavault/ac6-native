@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r175-real-fix-vdgetcurrentdisplayinformation-struct-plus-0x05-traced-to-a-scaler-choice-20260902.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r176-real-fix-xamusergetsigninstate-reports-index-zero-signed-in-locally-20260902.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r176-real-fix-xamusergetsigninstate-reports-index-zero-signed-in-locally-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r175-real-fix-vdgetcurrentdisplayinformation-struct-plus-0x05-traced-to-a-scaler-choice-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r169-real-fix-vdqueryvideomode-struct-fill-derived-from-this-xexs-own-disassembly-20260901.md",
     "artifacts/retail-us-native-r167-evidence-refresh-20260902/pytest.log",

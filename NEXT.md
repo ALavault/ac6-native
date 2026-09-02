@@ -19,25 +19,33 @@ fallback ReXGlue.
 
 ## État courant
 
-- La famille de configuration plateforme Vd/X ouverte par r168
-  (`VdQueryVideoMode`, `VdQueryVideoFlags`, `VdGetCurrentDisplayGamma`,
-  `VdGetCurrentDisplayInformation`, `XGetVideoMode`, `XGetGameRegion`,
-  `XGetAVPack`, `XGetLanguage`) est entièrement fermée depuis r175. Aucun
-  trou n'y est actuellement nommé; le détail des corrections (offsets,
-  preuves par site d'appel, valeurs choisies) est dans `STATE.md` r169-r175
-  et les rapports individuels — ne pas le dupliquer ici.
-- Suite pytest 158/158, `ctest` 9/9.
+- La famille de configuration plateforme Vd/X ouverte par r168 est
+  entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175).
+- r176 a corrigé `XamUserGetSigninState` (énumération réelle de connexion,
+  pas un statut) : index 0 → connecté localement (1), reste → non connecté
+  (0). Un site d'appel réel bouclait les index en testant l'égalité EXACTE
+  à 1 pour trouver l'utilisateur actif, tombant TOUJOURS dans un chemin de
+  repli (invite de connexion) avec `kOfflineStatus` — bug réel, motivé par
+  le symptôme historique « contrôles nuls » (STATE.md).
+- Suite pytest 159/159, `ctest` 9/9.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
 
 ## Prochaine décision
 
-1. Aucun trou n'est actuellement nommé dans la famille de configuration
-   Vd/X (r168-r175 tous fermés). Balayer plus largement les imports
-   offline restants (mêmes outils que r148-r175, ex. méthode r90/r93/r164)
-   pour identifier le prochain candidat.
-2. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+1. `XamGetSystemVersion` : contrôle aussi le flux `0x821f4428` (celui que
+   r176 vient de corriger) via un seuil de version (`0x20096b00`) avant
+   même d'atteindre la boucle de connexion pour le chemin
+   `dwUserIndex==0xff`; encore sur le fallback générique, à vérifier.
+2. `XamInputGetState`/`XamInputSetState`/`XamInputGetCapabilities` (E/S
+   manette réelle) : candidat plausible pour « contrôles nuls » mais
+   nécessite un vrai backend d'entrée natif (absent de `native/`) — tâche
+   matériellement plus grande qu'un fix de forme de contrat, nommée mais
+   pas entreprise.
+3. Continuer le balayage des imports offline restants (mêmes outils que
+   r148-r176, méthode r90/r93/r164) au-delà de ces deux candidats.
+4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
    parmi plusieurs candidates également plausibles est arbitraire sans lire
@@ -52,8 +60,8 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
-- `reports/ac6-retail-native-codegen-gate2-r175-real-fix-vdgetcurrentdisplayinformation-struct-plus-0x05-traced-to-a-scaler-choice-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r175).
+- `reports/ac6-retail-native-codegen-gate2-r176-real-fix-xamusergetsigninstate-reports-index-zero-signed-in-locally-20260902.md`;
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r176).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.
