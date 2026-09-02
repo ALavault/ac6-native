@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r178 : `XexCheckExecutablePrivilege` vérifié sans fix sûr; backend d'entrée natif nécessite une décision de cadrage (2026-09-02)
+
+- `XexCheckExecutablePrivilege` (3 sites d'appel réels, IDs de privilège
+  DIFFÉRENTS 0xa et 0x17) : `kOfflineStatus` étant non-nul, tous les sites
+  évaluent actuellement « privilège accordé » — comportement coïncidemment
+  non cassé, même catégorie que r164 pour `RtlTryEnterCriticalSection`.
+  Aucune preuve locale ne fixe la sémantique réelle de ces IDs; deviner
+  « refusé » risquerait d'INTRODUIRE un nouveau chemin de repli qui
+  n'existe pas actuellement. Nommé, non corrigé, suivant le précédent r164.
+- Backend d'entrée manette natif (`XamInputGetState`/`SetState`/
+  `GetCapabilities`) : candidat le plus prometteur pour « contrôles nuls »,
+  mais `native/CMakeLists.txt` ne lie AUCUNE bibliothèque d'entrée hôte —
+  implémenter une vraie E/S manette nécessite un nouveau choix de
+  dépendance, du travail Ghidra supplémentaire (layout de struct réel) et
+  de nouveaux fichiers source — pas un simple fix de stub généré. Décision
+  de cadrage explicite nécessaire avant toute implémentation; non
+  entrepris ce cycle.
+- Aucun code natif modifié, aucun build touché ce cycle. Voir
+  `reports/ac6-retail-native-codegen-gate2-r178-xexcheckexecutableprivilege-checked-no-safe-fix-identified-input-backend-needs-scoping-20260902.md`.
+
 # AC6 retail NTSC-U/J — r177 : VRAI CORRECTIF — `XamGetSystemVersion` reste sous tous les seuils observés (2026-09-02)
 
 - `XamGetSystemVersion` (contrat réel : `DWORD XamGetSystemVersion(VOID)`,

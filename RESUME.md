@@ -12,19 +12,21 @@ Lire d'abord :
 ## Frontière active
 
 La famille de configuration plateforme Vd/X ouverte par r168 est
-entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175). r176 a
-corrigé `XamUserGetSigninState` (index 0 → connecté localement); r177 a
-corrigé `XamGetSystemVersion` (nécessaire pour que r176 s'applique
-réellement à son site d'appel). Candidat identifié, non implémenté :
+entièrement fermée depuis r175. r176/r177 ont corrigé
+`XamUserGetSigninState`/`XamGetSystemVersion`. r178 (doc seule) a vérifié
+`XexCheckExecutablePrivilege` sans trouver de fix sûr (précédent r164).
 
-- `XamInputGetState`/`XamInputSetState`/`XamInputGetCapabilities` : E/S
-  manette réelle, candidat le plus prometteur pour le symptôme historique
-  « contrôles nuls », mais nécessite un vrai backend d'entrée natif
-  (absent de `native/`) — tâche matériellement plus grande qu'un fix de
-  forme de contrat.
+**Bloqué sur une décision utilisateur** : le backend d'entrée manette natif
+(`XamInputGetState`/`SetState`/`GetCapabilities`) est le candidat le plus
+prometteur pour le symptôme historique « contrôles nuls », mais
+`native/CMakeLists.txt` ne lie aucune bibliothèque d'entrée hôte —
+l'implémenter exige un nouveau choix de dépendance et un nouveau
+sous-système, pas un fix de stub généré. **Ne pas commencer sans
+confirmation explicite.**
 
-Sinon, continuer le balayage des imports offline restants (mêmes outils
-que r148-r177, méthode r90/r93/r164).
+En l'absence de cette décision, continuer le balayage des imports offline
+restants (mêmes outils que r148-r178, méthode r90/r93/r164) pour des
+candidats ne nécessitant pas de nouvelle infrastructure.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

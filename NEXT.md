@@ -21,25 +21,28 @@ fallback ReXGlue.
 
 - La famille de configuration plateforme Vd/X ouverte par r168 est
   entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175).
-- r176 a corrigé `XamUserGetSigninState` (index 0 → connecté localement).
-  r177 a corrigé `XamGetSystemVersion` (`0x20000000`, sous tous les seuils
-  observés) — nécessaire pour que le correctif r176 s'applique réellement
-  à son site d'appel (un seuil trop haut sautait entièrement la boucle de
-  connexion que r176 a corrigée).
-- Suite pytest 160/160, `ctest` 9/9.
+- r176/r177 ont corrigé `XamUserGetSigninState`/`XamGetSystemVersion`
+  (connexion locale index 0; version sous tous les seuils observés).
+- r178 (documentation seule, aucun code touché) : `XexCheckExecutablePrivilege`
+  vérifié, aucune preuve locale ne fixe la sémantique de ses IDs de
+  privilège — nommé, non corrigé (précédent r164). Le backend d'entrée
+  manette natif (candidat le plus prometteur pour « contrôles nuls »)
+  nécessite une **décision de cadrage explicite** (choix de dépendance,
+  nouveau sous-système) avant toute implémentation — ce n'est pas un
+  simple fix de stub généré comme r169-r177.
+- Suite pytest 160/160, `ctest` 9/9 (inchangé depuis r177).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
 
 ## Prochaine décision
 
-1. `XamInputGetState`/`XamInputSetState`/`XamInputGetCapabilities` (E/S
-   manette réelle) : candidat le plus prometteur pour « contrôles nuls »
-   mais nécessite un vrai backend d'entrée natif (absent de `native/`) —
-   tâche matériellement plus grande qu'un fix de forme de contrat, nommée
-   mais pas entreprise.
-2. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r177, méthode r90/r93/r164) au-delà de ce candidat.
+1. **Bloqué sur une décision utilisateur** : backend d'entrée manette natif
+   — go/no-go et choix de dépendance hôte (ex. SDL2) avant toute
+   implémentation. Ne pas commencer sans confirmation explicite.
+2. En l'absence de cette décision, continuer le balayage des imports
+   offline restants (mêmes outils que r148-r178, méthode r90/r93/r164)
+   pour des candidats ne nécessitant pas de nouvelle infrastructure.
 3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
@@ -55,8 +58,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r178-xexcheckexecutableprivilege-checked-no-safe-fix-identified-input-backend-needs-scoping-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r177-real-fix-xamgetsystemversion-stays-below-every-observed-threshold-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r177).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r178).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.
