@@ -1486,6 +1486,18 @@ def render_body(name: str) -> str:
         # value outright -- no check at all, same class of fix as
         # r197's KeLockL2/KeUnlockL2/KiApcNormalRoutineNop.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamNotifyCreateListener":
+        # r205: HANDLE XamNotifyCreateListener(ULONGLONG qwAreas) -- the
+        # real API returns a HANDLE, not an NTSTATUS. Real call site
+        # 0x82204f08 checks the result with `cmplwi r3,0x0; beq
+        # <retry-path>` (zero/invalid handle triggers retry), so
+        # kOfflineStatus (nonzero, since it is a status code being
+        # misread as a handle) was masquerading as a *valid* handle --
+        # dishonest even though r200's XNotifyGetNext fix already made
+        # any consumer of that handle harmless (it ignores its own
+        # handle argument entirely now). Allocates a real handle from
+        # the same counter NtCreateTimer/NtCreateMutant already use.
+        return "  ctx.r3.u64 = g_next_handle.fetch_add(1u);\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

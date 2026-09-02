@@ -1,3 +1,16 @@
+# AC6 retail NTSC-U/J — r205 : VRAI CORRECTIF — `XamNotifyCreateListener` retourne un vrai handle (2026-09-02)
+
+- `HANDLE XamNotifyCreateListener(...)` retourne un HANDLE, pas un
+  NTSTATUS. Site réel `0x82204f08` : `cmplwi r3,0x0; beq <retry>` —
+  n'importe quelle valeur non nulle est lue comme « handle acquis ».
+  `kOfflineStatus` (non nul) faisait donc passer un code de statut pour
+  un handle valide — pas un bug observable actuellement (r200 a rendu
+  tout consommateur du handle inoffensif), mais malhonnête.
+- Corrigé : alloue un vrai handle via `g_next_handle`, même compteur
+  que `NtCreateTimer`/`NtCreateMutant`.
+- Tests 191/191 (190/190 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r205-real-fix-xamnotifycreatelistener-returns-a-real-handle-20260902.md`.
+
 # AC6 retail NTSC-U/J — r204 : VRAI CORRECTIF — `IoDismountVolume`/`IoDismountVolumeByFileHandle` réussissent toujours (2026-09-02)
 
 - `IoDismountVolume` (2 sites réels, dans la même fonction que

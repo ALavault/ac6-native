@@ -1405,3 +1405,16 @@ def test_io_dismount_volume_family_always_succeeds(tmp_path: Path) -> None:
         body = text.split(f"void __imp__{name}(")[1].split("\n}\n")[0]
         assert "kOfflineStatus" not in body
         assert "ctx.r3.u64 = 0u" in body
+
+
+def test_xam_notify_create_listener_returns_a_real_handle(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamNotifyCreateListener);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__XamNotifyCreateListener(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in body
+    assert "g_next_handle.fetch_add(1u)" in body
