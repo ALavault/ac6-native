@@ -1484,6 +1484,58 @@ def render_body(name: str) -> str:
   PPC_STORE_U16(ctx.r3.u32 + 0x2, 0u);
   PPC_STORE_U32(ctx.r3.u32 + 0x4, 0u);
 """
+    if name == "NtQueryFullAttributesFile":
+        # r189: real signature is NTSTATUS
+        # NtQueryFullAttributesFile(POBJECT_ATTRIBUTES ObjectAttributes,
+        # PFILE_NETWORK_OPEN_INFORMATION FileInformation) -- struct-fill
+        # through r4 plus a real NTSTATUS return, not a discarded status.
+        # Reuses the exact ObjectAttributes/ANSI_STRING path-extraction
+        # shape r122/r123 already confirmed for NtCreateFile. Both of
+        # this XEX's real call sites confirm the standard
+        # FILE_NETWORK_OPEN_INFORMATION layout (52 bytes: four
+        # LARGE_INTEGER timestamps, AllocationSize, EndOfFile, then a
+        # ULONG FileAttributes) by reading FileAttributes at struct+0x30
+        # -- exactly the real, Microsoft-published offset -- and, at the
+        # second site, all seven fields. Matching NtCreateFile's own
+        # discipline: a real file that does not exist in the bound media
+        # is a normal, expected failure
+        # (STATUS_OBJECT_NAME_NOT_FOUND), not a fabricated error.
+        # Adds NativeGuestMediaService::file_size() (native_guest_media.h)
+        # -- a small accessor on the existing service, not a new
+        # subsystem -- since no import needed a file's real size without
+        # a full read until now.
+        return """  const std::uint32_t object_attributes = ctx.r3.u32;
+  const std::uint32_t object_name = object_attributes != 0u
+      ? PPC_LOAD_U32(object_attributes + 4u) : 0u;
+  std::uint32_t status = 0xC0000034u;  // STATUS_OBJECT_NAME_NOT_FOUND
+  if (object_name != 0u) {
+    const std::uint16_t length = PPC_LOAD_U16(object_name + 0u);
+    const std::uint32_t buffer = PPC_LOAD_U32(object_name + 4u);
+    if (buffer != 0u) {
+      const std::string_view raw(
+          reinterpret_cast<const char*>(base + buffer), length);
+      const std::string relative = guest_path_to_relative(raw);
+      const std::optional<std::uint32_t> opened =
+          ac6::native::native_guest_media_service().open_file(relative);
+      if (opened.has_value()) {
+        const std::optional<std::uint64_t> size =
+            ac6::native::native_guest_media_service().file_size(*opened);
+        ac6::native::native_guest_media_service().close_file(*opened);
+        if (ctx.r4.u32 != 0u) {
+          for (std::uint32_t offset = 0u; offset < 0x30u; offset += 4u) {
+            PPC_STORE_U32(ctx.r4.u32 + offset, 0u);  // timestamps: unread by this XEX's own call sites
+          }
+          const std::uint64_t real_size = size.value_or(0u);
+          PPC_STORE_U64(ctx.r4.u32 + 0x20, real_size);  // AllocationSize
+          PPC_STORE_U64(ctx.r4.u32 + 0x28, real_size);  // EndOfFile
+          PPC_STORE_U32(ctx.r4.u32 + 0x30, 0x80u);      // FILE_ATTRIBUTE_NORMAL
+        }
+        status = 0u;  // STATUS_SUCCESS
+      }
+    }
+  }
+  ctx.r3.u64 = status;
+"""
     if name == "MmQueryStatistics":
         # r108: the generic offline-import default below only sets ctx.r3
         # (a status code) and never touches the guest output buffer the

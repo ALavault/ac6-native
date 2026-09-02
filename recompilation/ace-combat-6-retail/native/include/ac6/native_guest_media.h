@@ -43,6 +43,12 @@ class NativeGuestMediaService final {
 
   void close_file(std::uint32_t handle) noexcept;
 
+  // Returns the real size of an already-open file, or nullopt for an
+  // unknown handle -- used by imports that report file attributes/size
+  // without a full open/read/close cycle (e.g. NtQueryFullAttributesFile).
+  [[nodiscard]] std::optional<std::uint64_t> file_size(
+      std::uint32_t handle) noexcept;
+
  private:
   struct OpenFile final {
     // Assets-directory mode (small, dev-only fixtures): fully cached.

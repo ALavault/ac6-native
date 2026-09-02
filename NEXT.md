@@ -60,7 +60,10 @@ fallback ReXGlue.
 - r188 a corrigé `RtlUnicodeStringToAnsiString`/`RtlFreeAnsiString`
   (allocation réelle via `allocate_guest`, conversion, libération
   cohérente avec le précédent `ExFreePool`).
-- Suite pytest 175/175, `ctest` 10/10.
+- r189 a corrigé `NtQueryFullAttributesFile` (réutilise la forme
+  ObjectAttributes de `NtCreateFile`; ajoute
+  `NativeGuestMediaService::file_size()`).
+- Suite pytest 176/176, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -70,9 +73,11 @@ fallback ReXGlue.
 1. Confirmer par une observation runtime (avec un vrai périphérique quand
    disponible) que le backend d'entrée r180 résout effectivement le
    symptôme historique « contrôles nuls ».
-2. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r188, méthode r90/r93/r164) pour d'autres candidats.
-3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+2. `NtQueryVolumeInformationFile` (3 sites d'appel réels) : candidat
+   plausible maintenant que `file_size()` existe.
+3. Continuer le balayage des imports offline restants (mêmes outils que
+   r148-r189, méthode r90/r93/r164) pour d'autres candidats.
+4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
    parmi plusieurs candidates également plausibles est arbitraire sans lire
@@ -87,9 +92,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r189-real-fix-ntqueryfullattributesfile-fills-the-real-struct-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r188-real-fixes-rtlunicodestringtoansistring-rtlfreeansistring-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r187-real-fix-rtlunicodetomultibyten-converts-and-succeeds-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r188).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r189).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

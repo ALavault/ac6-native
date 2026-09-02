@@ -334,6 +334,31 @@ def test_rtl_free_ansi_string_clears_the_struct(tmp_path: Path) -> None:
     assert "PPC_STORE_U32(ctx.r3.u32 + 0x4, 0u)" in body
 
 
+def test_nt_query_full_attributes_file_fills_the_real_struct(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtQueryFullAttributesFile);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r189: real contract is NTSTATUS
+    # NtQueryFullAttributesFile(POBJECT_ATTRIBUTES,
+    # PFILE_NETWORK_OPEN_INFORMATION) -- reuses NtCreateFile's own
+    # confirmed ObjectAttributes/ANSI_STRING path shape (r122/r123). Both
+    # of this XEX's real call sites confirm the real
+    # FILE_NETWORK_OPEN_INFORMATION layout (FileAttributes at +0x30).
+    body = text.split("void __imp__NtQueryFullAttributesFile")[1]
+    assert "kOfflineStatus" not in body
+    assert "guest_path_to_relative(raw)" in body
+    assert "native_guest_media_service().open_file(relative)" in body
+    assert "native_guest_media_service().file_size(*opened)" in body
+    assert "PPC_STORE_U64(ctx.r4.u32 + 0x20, real_size)" in body
+    assert "PPC_STORE_U64(ctx.r4.u32 + 0x28, real_size)" in body
+    assert "PPC_STORE_U32(ctx.r4.u32 + 0x30, 0x80u)" in body
+    assert "0xC0000034u" in body  # STATUS_OBJECT_NAME_NOT_FOUND on a real miss
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

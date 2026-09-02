@@ -1,3 +1,21 @@
+# AC6 retail NTSC-U/J — r189 : VRAI CORRECTIF — `NtQueryFullAttributesFile` remplit le vrai struct (2026-09-02)
+
+- Contrat réel : `NTSTATUS NtQueryFullAttributesFile(POBJECT_ATTRIBUTES,
+  PFILE_NETWORK_OPEN_INFORMATION)` — réutilise la forme
+  ObjectAttributes/ANSI_STRING déjà confirmée par r122/r123 pour
+  `NtCreateFile`. Les 2 sites d'appel réels confirment le layout standard
+  `FILE_NETWORK_OPEN_INFORMATION` (52 octets) en lisant `FileAttributes` à
+  struct+0x30 — offset réel Microsoft exact.
+- Corrigé selon la même discipline que `NtCreateFile` : un fichier réel
+  absent du média lié est un échec normal et attendu
+  (`STATUS_OBJECT_NAME_NOT_FOUND`), pas une erreur fabriquée. Ajoute
+  `NativeGuestMediaService::file_size()` — un petit accesseur sur le
+  service média EXISTANT, pas un nouveau sous-système (aucun import
+  n'avait besoin de la taille réelle sans cycle complet open/read/close
+  jusqu'ici). Timestamps laissés à 0 (aucun site ne les lit).
+- Tests 176/176 (175/175 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r189-real-fix-ntqueryfullattributesfile-fills-the-real-struct-20260902.md`.
+
 # AC6 retail NTSC-U/J — r188 : VRAIS CORRECTIFS — `RtlUnicodeStringToAnsiString`/`RtlFreeAnsiString` (2026-09-02)
 
 - Compagnons allocation/libération réels, découverts ensemble à des

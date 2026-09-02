@@ -112,6 +112,15 @@ void NativeGuestMediaService::close_file(std::uint32_t handle) noexcept {
   files_.erase(handle);
 }
 
+std::optional<std::uint64_t> NativeGuestMediaService::file_size(
+    std::uint32_t handle) noexcept {
+  std::lock_guard lock(mutex_);
+  const auto it = files_.find(handle);
+  if (it == files_.end()) return std::nullopt;
+  const OpenFile& opened = it->second;
+  return opened.streamed ? opened.size : opened.bytes.size();
+}
+
 NativeGuestMediaService& native_guest_media_service() noexcept {
   static NativeGuestMediaService service;
   return service;
