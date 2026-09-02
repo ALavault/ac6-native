@@ -1418,3 +1418,34 @@ def test_xam_notify_create_listener_returns_a_real_handle(tmp_path: Path) -> Non
     )[0]
     assert "kOfflineStatus" not in body
     assert "g_next_handle.fetch_add(1u)" in body
+
+
+def test_xaudio_render_driver_client_family(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__XAudioRegisterRenderDriverClient);\n"
+        "PPC_EXTERN_FUNC(__imp__XAudioUnregisterRenderDriverClient);\n"
+        "PPC_EXTERN_FUNC(__imp__XAudioSubmitRenderDriverFrame);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 3
+    text = output.read_text()
+
+    register_body = text.split(
+        "void __imp__XAudioRegisterRenderDriverClient("
+    )[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in register_body
+    assert "g_next_handle.fetch_add(1u)" in register_body
+    assert "PPC_STORE_U32(ctx.r4.u32" in register_body
+
+    unregister_body = text.split(
+        "void __imp__XAudioUnregisterRenderDriverClient("
+    )[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in unregister_body
+    assert "ctx.r3.u64 = 0u" in unregister_body
+
+    submit_body = text.split("void __imp__XAudioSubmitRenderDriverFrame(")[
+        1
+    ].split("\n}\n")[0]
+    assert "kOfflineStatus" not in submit_body
+    assert "ctx.r3.u64 = 0u" in submit_body

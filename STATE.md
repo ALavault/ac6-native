@@ -1,3 +1,24 @@
+# AC6 retail NTSC-U/J — r206 : VRAI CORRECTIF — famille `XAudioRegisterRenderDriverClient`/`Unregister`/`SubmitRenderDriverFrame` (2026-09-02)
+
+- `XAudioUnregisterRenderDriverClient` (site réel `0x823a664c`) : retour
+  vérifié en SIGNÉ — `kOfflineStatus` (négatif) faisait échouer TOUJOURS
+  le chemin de réinit avant même d'atteindre l'appel Register suivant —
+  vrai blocage d'ordre d'initialisation.
+  `XAudioRegisterRenderDriverClient` (site réel `0x823a667c`) : `r4` est
+  un pointeur de sortie handle (confirmé — relit la même case que
+  Unregister). `XAudioSubmitRenderDriverFrame` (site réel `0x823a68c0`) :
+  retour totalement ignoré. Aucun vrai pipeline audio à fabriquer —
+  pure gestion de handle + remise de trame sans conséquence.
+- Corrigé : Register alloue un handle via `g_next_handle` et l'écrit en
+  sortie; Unregister/Submit réussissent sans condition.
+- Vérifié aussi, non corrigé : `XamGetExecutionId` (champ de struct non
+  confirmé indépendamment); `XamShowMessageBoxUIEx` (contrat UI
+  asynchrone ERROR_IO_PENDING, sous-système d'attente overlapped non
+  implémenté); `XamShowSigninUI` et 6 dialogues `XamShow*` frères
+  (trampolines à une instruction, appelants non tracés individuellement).
+- Tests 192/192 (191/191 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r206-real-fix-xaudio-render-driver-client-family-20260902.md`.
+
 # AC6 retail NTSC-U/J — r205 : VRAI CORRECTIF — `XamNotifyCreateListener` retourne un vrai handle (2026-09-02)
 
 - `HANDLE XamNotifyCreateListener(...)` retourne un HANDLE, pas un

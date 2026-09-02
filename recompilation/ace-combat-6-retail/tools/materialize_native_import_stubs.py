@@ -1498,6 +1498,30 @@ def render_body(name: str) -> str:
         # handle argument entirely now). Allocates a real handle from
         # the same counter NtCreateTimer/NtCreateMutant already use.
         return "  ctx.r3.u64 = g_next_handle.fetch_add(1u);\n"
+    if name == "XAudioRegisterRenderDriverClient":
+        # r206: real call site 0x823a667c (inside Function_823A6620)
+        # confirms r4 as an output handle pointer -- the same
+        # storage slot XAudioUnregisterRenderDriverClient's own real
+        # call site (0x823a664c, same function) reads the handle back
+        # from. This project has no real audio-render-driver pipeline
+        # to back a handle with (XAudioSubmitRenderDriverFrame's own
+        # return is discarded by its one real call site, confirming
+        # nothing downstream needs real audio output), so this is pure
+        # handle bookkeeping -- allocate one from the same counter
+        # NtCreateTimer/NtCreateMutant already use, matching that
+        # precedent.
+        return """  if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32, g_next_handle.fetch_add(1u));
+  ctx.r3.u64 = 0u;
+"""
+    if name == "XAudioUnregisterRenderDriverClient":
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "XAudioSubmitRenderDriverFrame":
+        # r206: real call site 0x823a68c0 discards the return value
+        # entirely -- same class of fix as r197's KeLockL2/KeUnlockL2.
+        # No real audio output device exists to render the submitted
+        # frame to; accepting and discarding it is honest, not a
+        # fabricated success.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in
