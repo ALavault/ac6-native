@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r197 cité comme `source_report`;
+- le report r198 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -70,10 +70,14 @@ retourne maintenant `STATUS_SUCCESS` sans condition). r197 a corrigé
 les appelants réels). Vérifié aussi, non corrigé :
 `XamSessionCreateHandle`/`XamSessionRefObjByHandle` (11+1 sites réels,
 famille de wrappers télémétrie, pas assez tracé) et `NtDuplicateObject`
-(signature ambiguë, aucun handle de sortie capturé).
+(signature ambiguë, aucun handle de sortie capturé). r198 a corrigé
+`XamTaskShouldExit` (défaut « continue le travail »). Vérifié aussi, non
+corrigé : `XamTaskSchedule`/`XamTaskCloseHandle` (sous-système de
+callback invité, hors scope d'un cycle borné) et
+`VdGetSystemCommandBuffer` (hors politique du renderer natif).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r197, méthode r90/r93/r164) pour d'autres candidats.
+r148-r198, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

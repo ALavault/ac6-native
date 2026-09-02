@@ -1392,6 +1392,18 @@ def render_body(name: str) -> str:
         # generic fallback's only actual defect here was the traced
         # kOfflineStatus noise, not observable behavior.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamTaskShouldExit":
+        # r198: BOOLEAN XamTaskShouldExit(VOID) -- no parameters (this
+        # XEX's own real call site 0x82391950, inside Function_823917F8,
+        # passes no explicit argument before the call). Queries whether
+        # the calling XamTask worker should abort early. This project has
+        # no XamTaskSchedule-driven worker execution yet (see r198's
+        # report for why that stays a generic no-op), so there is no real
+        # exit signal to report; kOfflineStatus previously read as
+        # nonzero/"should exit", making that call site's worker loop
+        # abort immediately on every iteration. FALSE (keep working) is
+        # the honest default absent any real signaling mechanism.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

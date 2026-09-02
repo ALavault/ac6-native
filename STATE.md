@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r198 : VRAI CORRECTIF — `XamTaskShouldExit` reste au travail par défaut (2026-09-02)
+
+- `BOOLEAN XamTaskShouldExit(VOID)` : sans paramètre (site réel
+  `0x82391950`). Le no-op offline (`kOfflineStatus` non nul) était lu
+  comme « doit sortir = vrai » — la boucle de travail de ce site
+  abandonnait immédiatement à chaque passage.
+- Corrigé : retourne `0` (FAUX, continue le travail) — défaut honnête en
+  l'absence de tout mécanisme de signal de sortie réel.
+- Vérifié aussi, non corrigé : `XamTaskSchedule`/`XamTaskCloseHandle`
+  (site réel `0x82391df0`/`0x82391e00` — appelle en vrai un pointeur de
+  fonction invité en tâche de fond, nécessiterait un sous-système
+  d'exécution de callback invité entier, hors scope d'un cycle borné);
+  `VdGetSystemCommandBuffer` (site réel `0x821f061c` — plomberie
+  graphique, hors politique du renderer natif fail-closed).
+- Tests 185/185 (184/184 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r198-real-fix-xamtaskshouldexit-defaults-to-keep-working-20260902.md`.
+
 # AC6 retail NTSC-U/J — r197 : VRAI CORRECTIF — `KeLockL2`/`KeUnlockL2`/`KiApcNormalRoutineNop` réussissent toujours (2026-09-02)
 
 - 3 imports à site d'appel réel unique dont l'appelant IGNORE totalement

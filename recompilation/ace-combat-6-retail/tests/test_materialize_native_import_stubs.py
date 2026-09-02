@@ -1310,3 +1310,14 @@ def test_l2_lock_and_apc_nop_always_succeed(tmp_path: Path) -> None:
         body = text.split(f"void __imp__{name}(")[1].split("\n}\n")[0]
         assert "kOfflineStatus" not in body
         assert "ctx.r3.u64 = 0u" in body
+
+
+def test_xam_task_should_exit_defaults_to_keep_working(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamTaskShouldExit);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__XamTaskShouldExit(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u" in body
