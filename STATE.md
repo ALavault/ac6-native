@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r177 : VRAI CORRECTIF — `XamGetSystemVersion` reste sous tous les seuils observés (2026-09-02)
+
+- `XamGetSystemVersion` (contrat réel : `DWORD XamGetSystemVersion(VOID)`,
+  numéro de build, pas un statut). 5 sites d'appel réels le comparent à un
+  seuil. 4 d'entre eux dégradent proprement quelle que soit la valeur
+  (sondage de fonctionnalité optionnelle déjà en échec via
+  `XexGetModuleHandle`/`XexGetProcedureAddress`, ou choix cache/no-cache
+  vers la MÊME fonction). Le 5e (`0x821f4440`, le helper de résolution de
+  connexion que r176 vient de corriger) SAUTE ENTIÈREMENT la boucle de
+  connexion si `>= 0x20096b00` — une valeur trop haute annulerait
+  silencieusement le correctif r176.
+- Corrigé : `0x20000000`, sous tous les seuils observés (le plus bas est
+  `0x20096b00`) — nécessaire pour que r176 s'applique réellement à ce site,
+  et confirmé sans risque aux 4 autres sites.
+- Tests 160/160 (159/159 → +1). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r177-real-fix-xamgetsystemversion-stays-below-every-observed-threshold-20260902.md`.
+
 # AC6 retail NTSC-U/J — r176 : VRAI CORRECTIF — `XamUserGetSigninState` : index 0 signalé connecté localement (2026-09-02)
 
 - Balayage frais des 151 imports restants sur le fallback générique

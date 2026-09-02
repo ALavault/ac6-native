@@ -628,6 +628,24 @@ def test_xam_user_get_signin_state_reports_index_zero_signed_in_locally(
     assert "1u : 0u" in body
 
 
+def test_xam_get_system_version_stays_below_every_observed_threshold(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamGetSystemVersion);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r177: this XEX's own call sites compare the result against version
+    # thresholds to gate optional feature probing; every examined branch
+    # is safe either way except 0x821f4440 (r176's XamUserGetSigninState
+    # fix), where >= 0x20096b00 skips the signin loop entirely. A value
+    # below every observed threshold is required for r176 to matter here.
+    body = text.split("void __imp__XamGetSystemVersion")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0x20000000u;" in body
+
+
 def test_xget_game_region_returns_the_privileged_exact_match_code(
     tmp_path: Path,
 ) -> None:

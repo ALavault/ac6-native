@@ -799,6 +799,27 @@ def render_body(name: str) -> str:
         return """  const std::uint32_t user_index = ctx.r3.u32;
   ctx.r3.u64 = (user_index == 0u) ? 1u : 0u;
 """
+    if name == "XamGetSystemVersion":
+        # r177: real signature is DWORD XamGetSystemVersion(VOID) -- a
+        # dashboard build number, not a status. Every real call site
+        # (0x821fcd04, 0x821fcef0, 0x82210ed4, 0x82210fac, and r176's own
+        # 0x821f4440) compares it against a version threshold to decide
+        # whether to probe for optional, newer-dashboard-only
+        # functionality (via XexGetModuleHandle/XexGetProcedureAddress,
+        # both still unimplemented and already safely fail-closed) or take
+        # a simpler/cached fallback path -- every examined branch degrades
+        # to a working path regardless of which side of the threshold is
+        # taken, EXCEPT 0x821f4440 (the sign-in resolution helper r176
+        # just fixed): there, `>= 0x20096b00` skips the signin-state loop
+        # entirely, going straight to a different, unexamined function.
+        # Returning a value BELOW every observed threshold (0x20096b00 is
+        # the lowest) is therefore not just a safe default -- it is
+        # required for r176's fix to actually be exercised at that call
+        # site, and every other call site's own branches confirm a low
+        # value degrades safely elsewhere too. 0x20000000: a plausible,
+        # round dashboard-version-shaped value, not read from this XEX's
+        # own bytes and clearly below every real threshold found.
+        return "  ctx.r3.u64 = 0x20000000u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --
