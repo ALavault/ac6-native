@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r208 cité comme `source_report`;
+- le report r209 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -104,10 +104,14 @@ audio, vérifié en signé). Vérifié aussi, non corrigé :
 r207 a corrigé `XamVoiceHeadsetPresent` (booléen, pas NTSTATUS — signalait
 « casque présent » à tort). Vérifié aussi, non corrigé : `XamVoiceCreate`
 (échec actuel déjà honnête). r208 a corrigé `XamVoiceClose` (retour
-ignoré aux 3 sites d'appel réels).
+ignoré aux 3 sites d'appel réels). r209 a corrigé
+`XamLoaderTerminateTitle` (ne retourne jamais — `std::exit(0)`).
+Addenda : `XamGetExecutionId` (r206) garde en réalité au moins 4 sites
+d'appel réels de `XamUserReadProfileSettings` — portée plus large,
+toujours non corrigé.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r208, méthode r90/r93/r164) pour d'autres candidats.
+r148-r209, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

@@ -1541,6 +1541,17 @@ def render_body(name: str) -> str:
         # value outright, no check at all -- same class of fix as
         # r197's KeLockL2/KeUnlockL2/KiApcNormalRoutineNop.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamLoaderTerminateTitle":
+        # r209: VOID XamLoaderTerminateTitle(VOID) -- documented, never
+        # returns (tears down the running title). Confirmed at this
+        # XEX's own second real call site (0x821f608c): the very next
+        # instruction (0x821f6090) is a *different function's own
+        # prologue* -- the compiler emitted no epilogue at all after this
+        # call, meaning it never expected control to return here. Same
+        # never-returns class as r193's KeBugCheck, but this is a normal
+        # title-exit path, not a fault, so a clean std::exit(0) is the
+        # honest match rather than std::abort().
+        return "  std::exit(0);\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

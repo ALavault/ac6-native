@@ -1,3 +1,22 @@
+# AC6 retail NTSC-U/J — r209 : VRAI CORRECTIF — `XamLoaderTerminateTitle` termine proprement (2026-09-02)
+
+- `VOID XamLoaderTerminateTitle(VOID)` : ne retourne jamais sur vrai
+  matériel. Site réel `0x821f608c` concluant : l'instruction suivante
+  (`0x821f6090`) est le PROLOGUE d'une AUTRE fonction — aucun épilogue
+  émis après cet appel. Même classe que `KeBugCheck` (r193), mais
+  sortie normale, pas un fault.
+- Corrigé : `std::exit(0)` (pas `std::abort()`, puisque c'est une
+  sortie de titre normale demandée, pas un crash).
+- Tests 195/195 (194/194 → +1). `ctest` 10/10.
+- **Addenda** : `XamGetExecutionId` (différé en r206) s'est révélé
+  garder AU MOINS 4 sites d'appel réels de `XamUserReadProfileSettings`
+  via le même wrapper (`0x821f7668`) — portée plus large que ce que
+  r206 avait cadré. Toujours non corrigé (champ de struct non confirmé,
+  valeur de vérification par site non tracée) — nommé pour un futur
+  cycle.
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r209-real-fix-xamloaderterminatetitle-exits-cleanly-20260902.md`.
+
 # AC6 retail NTSC-U/J — r208 : VRAI CORRECTIF — `XamVoiceClose` réussit toujours (2026-09-02)
 
 - `VOID XamVoiceClose(HANDLE)` : 3 sites d'appel réels, tous vérifiés
