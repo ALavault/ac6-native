@@ -1,3 +1,18 @@
+# AC6 retail NTSC-U/J — r196 : VRAI CORRECTIF — `ObCreateSymbolicLink`/`ObDeleteSymbolicLink` réussissent toujours (2026-09-02)
+
+- Site réel `0x821ea034` : boucle réelle de réessai de montage de
+  périphérique (lettre de lecteur). Le no-op offline (`kOfflineStatus`
+  négatif) prenait TOUJOURS le chemin d'échec de cette boucle — un vrai
+  blocage de séquence de boot, dans le territoire même de « atteindre le
+  gameplay Mission01 » que Gate 2 vise encore.
+- Corrigé : retourne `STATUS_SUCCESS` sans condition pour les deux
+  imports. La résolution de chemin de ce projet
+  (`guest_path_to_relative`) ne consulte jamais de table de liens
+  symboliques enregistrée — même précédent que `VdRetrainEDRAM` (« le
+  côté natif possède déjà le cycle de vie de ce sous-système »).
+- Tests 183/183 (182/182 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r196-real-fix-obcreatesymboliclink-obdeletesymboliclink-always-succeed-20260902.md`.
+
 # AC6 retail NTSC-U/J — r195 : VRAI CORRECTIF — `XamAlloc`/`XamFree` utilisent l'allocateur bump invité (2026-09-02)
 
 - `DWORD XamAlloc(DWORD Type, SIZE_T Size, PVOID* pAddress)`/`DWORD

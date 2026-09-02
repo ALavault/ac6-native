@@ -1271,3 +1271,26 @@ def test_xam_alloc_and_free_use_the_guest_bump_allocator(tmp_path: Path) -> None
     free_body = text.split("void __imp__XamFree(")[1].split("\n}\n")[0]
     assert "kOfflineStatus" not in free_body
     assert "ctx.r3.u64 = 0u" in free_body
+
+
+def test_ob_symbolic_link_registration_always_succeeds(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__ObCreateSymbolicLink);\n"
+        "PPC_EXTERN_FUNC(__imp__ObDeleteSymbolicLink);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+
+    create_body = text.split("void __imp__ObCreateSymbolicLink(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in create_body
+    assert "ctx.r3.u64 = 0u" in create_body
+
+    delete_body = text.split("void __imp__ObDeleteSymbolicLink(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in delete_body
+    assert "ctx.r3.u64 = 0u" in delete_body

@@ -88,7 +88,11 @@ fallback ReXGlue.
 - r195 a corrigé `XamAlloc`/`XamFree` (statut Win32 signé — le no-op
   offline échouait systématiquement aux 3 sites d'appel réels — utilise
   maintenant `allocate_guest`).
-- Suite pytest 182/182, `ctest` 10/10.
+- r196 a corrigé `ObCreateSymbolicLink`/`ObDeleteSymbolicLink` (boucle
+  réelle de montage de périphérique — le no-op offline échouait
+  systématiquement, un vrai blocage de boot — retourne maintenant
+  `STATUS_SUCCESS` sans condition).
+- Suite pytest 183/183, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -119,9 +123,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r196-real-fix-obcreatesymboliclink-obdeletesymboliclink-always-succeed-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r195-real-fix-xamalloc-xamfree-use-the-guest-bump-allocator-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r194-real-fix-kedelayexecutionthread-actually-sleeps-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r195).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r196).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

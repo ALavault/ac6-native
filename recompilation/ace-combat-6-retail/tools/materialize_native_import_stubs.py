@@ -1360,6 +1360,22 @@ def render_body(name: str) -> str:
         # lifetime owned by the bump allocator, never freed individually"
         # precedent as ExFreePool/RtlFreeAnsiString above.
         return "  ctx.r3.u64 = 0u;  // guest reservation is released at teardown\n"
+    if name in {"ObCreateSymbolicLink", "ObDeleteSymbolicLink"}:
+        # r196: NTSTATUS ObCreateSymbolicLink(POBJECT_STRING
+        # SymbolicLinkName, POBJECT_STRING DeviceName)/NTSTATUS
+        # ObDeleteSymbolicLink(POBJECT_STRING SymbolicLinkName) -- device
+        # drive-letter mount/unmount registration during boot. Real call
+        # site 0x821ea034 (inside Function_821E9F50) is a mount-candidate
+        # retry loop: the generic offline no-op's kOfflineStatus (negative)
+        # took its error branch unconditionally, so this loop could never
+        # observe a successful mount through this path -- a real
+        # boot-sequence blocker, not a cosmetic status. This project's own
+        # path resolution (guest_path_to_relative, used by
+        # NtCreateFile/NtOpenFile) never consults a registered symlink
+        # table, so there is no real lookup this fix needs to back --
+        # same "native side owns this subsystem's lifecycle" precedent as
+        # VdRetrainEDRAM and friends above.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

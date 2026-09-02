@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r195 cité comme `source_report`;
+- le report r196 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -62,10 +62,13 @@ maintenant un vrai `std::this_thread::sleep_for` sur l'intervalle
 relatif réel lu depuis la mémoire invitée). r195 a corrigé
 `XamAlloc`/`XamFree` (statut Win32 signé, pas un NTSTATUS — le no-op
 offline échouait systématiquement aux 3 sites d'appel réels
-`XamAlloc`; utilise maintenant `allocate_guest`).
+`XamAlloc`; utilise maintenant `allocate_guest`). r196 a corrigé
+`ObCreateSymbolicLink`/`ObDeleteSymbolicLink` (boucle réelle de montage
+de périphérique au boot — le no-op offline échouait systématiquement —
+retourne maintenant `STATUS_SUCCESS` sans condition).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r195, méthode r90/r93/r164) pour d'autres candidats.
+r148-r196, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
