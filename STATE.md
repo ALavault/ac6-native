@@ -10507,3 +10507,24 @@ retourne `STATUS_SUCCESS` sans condition. pytest 206/206 (205+1 skip),
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r227 corrige réellement `XamUserGetSigninInfo`
+
+Escalade de r211 (vérifié sans fix confirmé). Le seul appelant direct de
+l'import est un wrapper passthrough (`Function_821F5190`), confirmé par
+désassemblage brut (`mfspr`/`stw`/`stwu` puis `bl` immédiat, aucun registre
+touché) : il transmet ses propres r3/r4/r5 sans modification. 6 vrais
+appelants du wrapper trouvés via `ReferencesTo.java`; 3 tracés
+(`0x821cf060`, `0x821b66bc`, `0x821ce6f0`), tous appelant avec la forme
+`(dwUserIndex, 0, &buffer_pile_12_octets)` et lisant TOUS le même bit à
+l'offset +8 (`>>1 & 1`) qui conditionne l'exécution de leur propre logique
+par-joueur réelle — le stub générique ne l'écrivait jamais, donc ce bit de
+garde lisait toujours des octets de pile non initialisés. Le fix remplit
+XUID=0 (+0..+7) et le bit de garde à 0 (+8) pour l'utilisateur 0, même
+convention que `XamUserGetSigninState` (r176, index 0 = signé localement);
+les autres index gardent l'échec offline `kOfflineStatus` déjà existant.
+Rien au-delà de +8 n'a été lu par un appelant tracé, donc rien au-delà n'est
+écrit. pytest 207/207 (206+1 skip), `ctest` 10/10.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r227-real-fix-xamusergetsignininfo-fills-the-gating-bit-for-user-zero-20260903.md`.

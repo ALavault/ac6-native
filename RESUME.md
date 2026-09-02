@@ -175,10 +175,14 @@ d'import — ce fil est clos, hors périmètre du balayage. r226 a corrigé
 `XamUserGetName` (2 vrais appelants confirment `cchUserName=0x10`;
 l'un ignorait le statut de retour et utilisait un buffer jamais écrit
 — écrit maintenant un nom ASCII synthétique et retourne
-`STATUS_SUCCESS`).
+`STATUS_SUCCESS`). r227 a corrigé `XamUserGetSigninInfo` (wrapper
+passthrough confirmé par désassemblage brut; 3 vrais appelants tracés
+lisent tous un seul bit de garde à +8 qui conditionne la vraie logique
+par-joueur — remplit XUID=0 et le bit à 0 pour l'utilisateur 0, même
+convention que r176).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r226, méthode r90/r93/r164) pour d'autres candidats.
+r148-r227, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

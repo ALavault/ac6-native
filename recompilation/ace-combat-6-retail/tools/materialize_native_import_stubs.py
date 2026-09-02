@@ -1781,6 +1781,48 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = 0u;
 """
+    if name == "XamUserGetSigninInfo":
+        # r227: r211 verified this import without confirming a fix; this
+        # cycle traced its single wrapper (Function_821F5190 at
+        # 0x821f5190 -- confirmed via raw disassembly to be a pure
+        # register-forwarding passthrough: its prologue never touches
+        # r3/r4/r5 before `bl` at 0x821f519c) and, through it, 6 real
+        # callers of the wrapper. Every traced caller passes the same
+        # 3-argument shape -- (dwUserIndex, dwFlags=0 literal,
+        # pSigninInfo) -- matching the documented
+        # XamUserGetSigninInfo(DWORD, DWORD, PXUSER_SIGNIN_INFO)
+        # contract, and every one of them reads exactly one field back:
+        # a bit at offset +8 (`>> 1 & 1`), gating whether the caller's
+        # own real-profile logic runs at all (bit set == skip). The
+        # generic offline default never writes that field, so it always
+        # read stale stack bytes as this gate -- the same uninitialized
+        # -read-as-control-flow risk class as r226/r183, but for a bit
+        # that decides whether real per-player state gets initialized at
+        # all, not merely a display string. Fills only the two fields
+        # this evidence confirms (XUID at +0..+7, dwInfoFlags at +8) for
+        # the same offline user 0 this file's own XamUserGetSigninState
+        # (r176) already treats as signed in locally -- XUID zero (no
+        # real Xbox Live identity exists offline) and the gating bit
+        # clear (so every traced caller's real-profile path runs, not
+        # its skip path). Other user indices keep the prior offline
+        # failure this file already used everywhere, matching r176's own
+        # "only index 0 is signed in" convention; nothing beyond offset
+        # +8 was read by any traced caller, so nothing beyond it is
+        # written.
+        return """  const std::uint32_t user_index = ctx.r3.u32;
+  const std::uint32_t info = ctx.r5.u32;
+  if (user_index != 0u) {
+    trace_offline_import("XamUserGetSigninInfo");
+    ctx.r3.u64 = kOfflineStatus;
+  } else {
+    if (info != 0u) {
+      PPC_STORE_U32(info + 0u, 0u);
+      PPC_STORE_U32(info + 4u, 0u);
+      PPC_STORE_U32(info + 8u, 0u);
+    }
+    ctx.r3.u64 = 0u;
+  }
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

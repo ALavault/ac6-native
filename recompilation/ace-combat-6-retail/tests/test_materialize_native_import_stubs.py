@@ -1669,3 +1669,20 @@ def test_xam_user_get_name_writes_a_synthetic_name_and_succeeds(
     assert "ctx.r4.u32" in body
     assert "ctx.r5.u32" in body
     assert "ctx.r3.u64 = 0u" in body
+
+
+def test_xam_user_get_signin_info_fills_the_confirmed_fields_for_user_zero(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamUserGetSigninInfo);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__XamUserGetSigninInfo(")[1].split("\n}\n")[0]
+    assert "ctx.r3.u32" in body
+    assert "ctx.r5.u32" in body
+    assert "user_index != 0u" in body
+    assert "kOfflineStatus" in body
+    assert "PPC_STORE_U32(info + 8u, 0u)" in body
+    assert "ctx.r3.u64 = 0u" in body

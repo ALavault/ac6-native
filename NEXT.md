@@ -232,7 +232,14 @@ fallback ReXGlue.
   même classe de risque que r183. Écrit un nom ASCII synthétique
   explicite (« Player »), tronqué/terminé à la taille confirmée,
   retourne `STATUS_SUCCESS`).
-- Suite pytest 206/206 (205 + 1 skip), `ctest` 10/10.
+- r227 a corrigé `XamUserGetSigninInfo` (escalade de r211 : le wrapper
+  passthrough confirmé par désassemblage brut, 6 vrais appelants, 3
+  tracés — tous lisent un seul bit à l'offset +8 qui conditionne
+  l'exécution de la vraie logique par-joueur. Remplit XUID=0 et le bit
+  de garde à 0 pour l'utilisateur 0 (même convention que
+  `XamUserGetSigninState`, r176); les autres index gardent l'échec
+  offline existant).
+- Suite pytest 207/207 (206 + 1 skip), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -267,6 +274,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r227-real-fix-xamusergetsignininfo-fills-the-gating-bit-for-user-zero-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r224-doc-xamshow-trampolines-are-the-fallback-table-from-r212-20260902.md`;
