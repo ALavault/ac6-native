@@ -1,3 +1,15 @@
+# AC6 retail NTSC-U/J — r215 : VRAI CORRECTIF — `XMsgCancelIORequest` réussit toujours (2026-09-02)
+
+- `XMsgCancelIORequest` (famille `XMsg` de r203) : 3 sites d'appel
+  réels, tous vérifiés individuellement — retour totalement ignoré
+  partout.
+- Corrigé : `STATUS_SUCCESS` sans condition — même classe que
+  `KeLockL2`/`KeUnlockL2` (r197). Le transport `XMsg` reste différé
+  (r203), donc jamais de vraie requête en vol à annuler — succès
+  honnête quel que soit l'état du transport.
+- Tests 201/201 (200/200 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r215-real-fix-xmsgcanceliorequest-always-succeeds-20260902.md`.
+
 # AC6 retail NTSC-U/J — r214 : VRAI CORRECTIF — `HalReturnToFirmware` termine proprement (2026-09-02)
 
 - `VOID HalReturnToFirmware(...)` : ne retourne jamais (redémarre/arrête

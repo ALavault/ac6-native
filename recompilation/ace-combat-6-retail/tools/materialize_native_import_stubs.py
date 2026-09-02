@@ -1613,6 +1613,15 @@ def render_body(name: str) -> str:
         # honest match rather than falling through to whatever the
         # compiler's own (never-reached-on-real-hardware) epilogue does.
         return "  std::exit(0);\n"
+    if name == "XMsgCancelIORequest":
+        # r215: cancels an in-flight XMsg IO request. All 3 real call
+        # sites (0x821f47b8, 0x82206efc, 0x822075c0) discard the return
+        # value outright, no check at all -- same class of fix as r197's
+        # KeLockL2/KeUnlockL2. This project's XMsg transport itself is
+        # deferred (r203, XMsgStartIORequest), so there is never a real
+        # in-flight request for this to cancel; unconditional success is
+        # honest regardless.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

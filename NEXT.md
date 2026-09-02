@@ -169,7 +169,9 @@ fallback ReXGlue.
   Édite de vrais fichiers `native/` — `prepare.py` relancé.
 - r214 a corrigé `HalReturnToFirmware` (ne retourne jamais, arrêt
   niveau console — `std::exit(0)`).
-- Suite pytest 200/200, `ctest` 10/10.
+- r215 a corrigé `XMsgCancelIORequest` (retour ignoré aux 3 sites
+  d'appel réels — `STATUS_SUCCESS` sans condition).
+- Suite pytest 201/201, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -204,9 +206,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r215-real-fix-xmsgcanceliorequest-always-succeeds-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r214-real-fix-halreturntofirmware-exits-cleanly-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r213-real-fix-exterminatethread-unwinds-its-own-thread-cleanly-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r214).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r215).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.
