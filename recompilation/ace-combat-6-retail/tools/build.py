@@ -157,6 +157,7 @@ def main() -> int:
         run(["cmake", "--build", str(build), "--target", "ac6_native_frontend_tests",
              "ac6_native_runtime_tests", "ac6_native_xex_tests",
              "ac6_native_xdvdfs_tests", "ac6_native_guest_memory_tests",
+             "ac6_native_guest_input_tests",
              *guest_targets, "-j2"])
         run(["ctest", "--test-dir", str(build), "--output-on-failure"])
         install_prefix = root / "native-install"
@@ -170,6 +171,7 @@ def main() -> int:
             str((build / "ac6_native_xex_tests").resolve()),
             str((build / "ac6_native_xdvdfs_tests").resolve()),
             str((build / "ac6_native_guest_memory_tests").resolve()),
+            str((build / "ac6_native_guest_input_tests").resolve()),
         ]
         if guest is not None:
             test_binaries.append(str((build / "ac6_native_guest_link_test").resolve()))
@@ -183,7 +185,7 @@ def main() -> int:
             "test_binaries": test_binaries,
             "compiler": "CMake native renderer",
             "status": "gate2-codegen-linked" if guest is not None else "gate1-built",
-            "ctest": "9/9" if guest is not None else "8/8",
+            "ctest": "10/10" if guest is not None else "9/9",
             "guest_codegen": str(guest[0].parent.resolve()) if guest is not None else None,
             "guest_link_test": str((build / "ac6_native_guest_link_test").resolve()) if guest is not None else None,
             "install_prefix": str(install_prefix.resolve()),

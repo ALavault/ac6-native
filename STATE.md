@@ -1,3 +1,40 @@
+# AC6 retail NTSC-U/J — r180 : VRAI CORRECTIF — backend d'entrée manette natif SDL2 (2026-09-02)
+
+- Utilisateur a explicitement autorisé SDL2 pour ce backend. `XamInputGetState`/
+  `XamInputSetState`/`XamInputGetCapabilities` étaient entièrement non
+  implémentés — candidat le plus prometteur pour « contrôles nuls ».
+- Nouveau service `NativeGuestInputService`
+  (`native/include/ac6/native_guest_input.h`/`native/src/native_guest_input.cpp`),
+  même patron singleton que `native_guest_vd_service()`/`native_guest_media_service()`,
+  enveloppant l'API `SDL_GameController`.
+- Preuve réelle du contrat de transfert : le site d'appel réel
+  `0x8234cedc` confirme la forme `(dwUserIndex, &XINPUT_STATE)` et le code
+  d'erreur réel `0x48F` (`ERROR_DEVICE_NOT_CONNECTED`); `0x82390d48`
+  confirme struct+0x1 (SubType)/+0x2 (Flags) octet pour octet contre le
+  layout `XINPUT_CAPABILITIES` publié par Microsoft (ABI fixe multi-
+  plateforme, même catégorie que `XC_LANGUAGE_ENGLISH` r174, pas un offset
+  deviné propre à ce XEX).
+- **Découverte environnementale** : modifier `native/` exige de relancer
+  `tools/prepare.py --profile native` (qui resynchronise le snapshot
+  `native-source/`) — `build.py` seul ne le fait pas. Toutes les corrections
+  r148-r179 n'avaient touché que `tools/materialize_native_import_stubs.py`
+  (régénéré à chaque build), jamais `native/` lui-même, d'où la découverte
+  tardive.
+- Bug réel d'ordre de liaison statique découvert et corrigé
+  (`target_link_libraries(ac6_native_guest PRIVATE ac6_native_xenos)`) —
+  rien dans `ac6_native_xenos` ne référençait le nouveau service (contrairement
+  à Vd/média, atteints via `NativeRuntime`), donc `ld` n'extrayait jamais
+  l'objet avant que `ac6_native_guest` (qui l'appelle) ne soit traité.
+  `build.py`/`validate.py` avaient aussi des comptages 9/8 binaires codés
+  en dur — mis à jour à 10/9.
+- Tests 164/164 (163/163 → +3). `ctest` 10/10 (9/9 → +1, nouveau
+  `ac6_native_guest_input_tests`). `tools/validate.py --runtime native`
+  passe de bout en bout. Voir
+  `reports/ac6-retail-native-codegen-gate2-r180-real-fix-native-sdl2-controller-input-backend-20260902.md`.
+- Aucune manette physique dans ce bac à sable — le symptôme « contrôles
+  nuls » lui-même reste à confirmer par une observation runtime future
+  avec un vrai périphérique, non entreprise ce cycle.
+
 # AC6 retail NTSC-U/J — r179 : VRAI CORRECTIF — `KeQuerySystemTime` remplit un FILETIME réel et changeant (2026-09-02)
 
 - `KeQuerySystemTime` (contrat réel : `VOID KeQuerySystemTime(PLARGE_INTEGER)`

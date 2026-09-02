@@ -82,7 +82,7 @@ def main() -> int:
         build_receipt = json.loads(build_receipt_path.read_text(encoding="utf-8"))
         guest_linked = isinstance(build_receipt.get("guest_codegen"), str)
         expected_status = "gate2-codegen-linked" if guest_linked else "gate1-built"
-        expected_ctest = "9/9" if guest_linked else "8/8"
+        expected_ctest = "10/10" if guest_linked else "9/9"
         if (
             manifest.get("profile") != "native"
             or build_receipt.get("profile") != "native"
@@ -96,7 +96,7 @@ def main() -> int:
             parser.error("native ac6recomp binary is missing")
         checked([str(native_binary), "--self-test"])
         test_binaries = build_receipt.get("test_binaries")
-        expected_tests = 9 if guest_linked else 8
+        expected_tests = 10 if guest_linked else 9
         if not isinstance(test_binaries, list) or len(test_binaries) != expected_tests:
             parser.error("native test binary manifest is incomplete")
         test_paths = [Path(value) for value in test_binaries if isinstance(value, str)]

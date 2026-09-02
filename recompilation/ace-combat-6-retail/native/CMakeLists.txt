@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(ac6_native_xenos LANGUAGES CXX)
 
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+find_package(SDL2 REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,12 +18,13 @@ add_library(ac6_native_xenos STATIC
   src/native_guest_memory.cpp
   src/native_guest_vd.cpp
   src/native_guest_media.cpp
+  src/native_guest_input.cpp
   src/native_xex.cpp
   src/native_xdvdfs.cpp
   src/native_runtime.cpp
 )
 target_include_directories(ac6_native_xenos PUBLIC include)
-target_link_libraries(ac6_native_xenos PUBLIC OpenSSL::Crypto)
+target_link_libraries(ac6_native_xenos PUBLIC OpenSSL::Crypto SDL2::SDL2)
 target_compile_options(ac6_native_xenos PRIVATE
   $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Wconversion>
 )
@@ -62,6 +64,12 @@ if(AC6_NATIVE_GUEST_DIR)
   endif()
   list(APPEND AC6_NATIVE_GUEST_SOURCES "${AC6_NATIVE_IMPORT_STUBS}")
   add_library(ac6_native_guest STATIC ${AC6_NATIVE_GUEST_SOURCES})
+  # The generated import stubs call into ac6_native_xenos services (Vd,
+  # media, input, ...); declaring the dependency lets CMake order the
+  # final static-archive link correctly instead of relying on the
+  # accidental extraction order that happened to work while nothing in
+  # ac6_native_xenos itself referenced native_guest_input_service.
+  target_link_libraries(ac6_native_guest PRIVATE ac6_native_xenos)
   target_include_directories(ac6_native_guest PUBLIC
     "${AC6_NATIVE_GUEST_DIR}"
     "${AC6_NATIVE_SIMDE_DIR}"
@@ -122,4 +130,9 @@ if(BUILD_TESTING)
   target_link_libraries(ac6_native_guest_memory_tests PRIVATE ac6_native_xenos)
   target_compile_options(ac6_native_guest_memory_tests PRIVATE ${AC6_TEST_NO_NDEBUG})
   add_test(NAME ac6_native_guest_memory_tests COMMAND ac6_native_guest_memory_tests)
+
+  add_executable(ac6_native_guest_input_tests tests/native_guest_input_tests.cpp)
+  target_link_libraries(ac6_native_guest_input_tests PRIVATE ac6_native_xenos)
+  target_compile_options(ac6_native_guest_input_tests PRIVATE ${AC6_TEST_NO_NDEBUG})
+  add_test(NAME ac6_native_guest_input_tests COMMAND ac6_native_guest_input_tests)
 endif()

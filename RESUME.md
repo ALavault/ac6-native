@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r175 cité comme `source_report`;
+- le report r180 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -15,19 +15,18 @@ La famille de configuration plateforme Vd/X ouverte par r168 est
 entièrement fermée depuis r175. r176/r177 ont corrigé
 `XamUserGetSigninState`/`XamGetSystemVersion`. r178 (doc seule) a vérifié
 `XexCheckExecutablePrivilege` sans trouver de fix sûr (précédent r164).
-r179 a corrigé `KeQuerySystemTime` (FILETIME réel via l'horloge de l'hôte).
+r179 a corrigé `KeQuerySystemTime`. r180 (autorisé explicitement par
+l'utilisateur : « utilise SDL2 pour le backend d'entrée ») a implémenté le
+backend d'entrée manette natif via SDL2 (`NativeGuestInputService`,
+`native/include/ac6/native_guest_input.h`) —
+`XamInputGetState`/`SetState`/`GetCapabilities` fonctionnels, preuve réelle
+du contrat de transfert (code d'erreur `0x48F`, offsets
+`XINPUT_CAPABILITIES`). Aucune manette physique dans ce bac à sable — le
+symptôme « contrôles nuls » reste à confirmer par une future observation
+runtime avec un vrai périphérique.
 
-**Bloqué sur une décision utilisateur** : le backend d'entrée manette natif
-(`XamInputGetState`/`SetState`/`GetCapabilities`) est le candidat le plus
-prometteur pour le symptôme historique « contrôles nuls », mais
-`native/CMakeLists.txt` ne lie aucune bibliothèque d'entrée hôte —
-l'implémenter exige un nouveau choix de dépendance et un nouveau
-sous-système, pas un fix de stub généré. **Ne pas commencer sans
-confirmation explicite.**
-
-En l'absence de cette décision, continuer le balayage des imports offline
-restants (mêmes outils que r148-r179, méthode r90/r93/r164) pour des
-candidats ne nécessitant pas de nouvelle infrastructure.
+Continuer le balayage des imports offline restants (mêmes outils que
+r148-r180, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
@@ -50,9 +49,34 @@ dans ce dépôt (`ghidra-user/.ghidra/.ghidra_12.1.2_PUBLIC/Extensions/`) vers
 `JAVA_TOOL_OPTIONS="-Duser.home=$PWD/ghidra-user"` (voir
 `analysis/microexec/README.md`).
 
+## Modifier `native/` lui-même (pas seulement les stubs générés)
+
+`build.py` compile depuis `build/<target>/native/native-source/`, une
+COPIE de `native/` faite une fois par `tools/prepare.py --profile native`
+(`shutil.copytree`) — elle ne se resynchronise PAS automatiquement à
+chaque build. r148-r179 n'avaient touché que
+`tools/materialize_native_import_stubs.py` (régénéré à chaque build par
+`build.py` lui-même), jamais `native/`, d'où ce piège resté invisible
+jusqu'à r180. Après toute modification de `native/` (nouveaux
+fichiers, `CMakeLists.txt`, etc.), relancer d'abord :
+
+```sh
+python3 recompilation/ace-combat-6-retail/tools/prepare.py \
+  --target ntsc-uj --profile native --xex <default.xex qualifié> --iso <iso qualifiée>
+```
+
+Pour le profil `native`, ceci ne fait que resynchroniser `native/` vers
+`native-source/` et vérifier les hachages XEX/ISO fournis (pas de copie
+d'assets retail ni de clone `AC6_recomp`) — rapide et sûr à relancer.
+`game-files/default.xex` n'est PAS le XEX US retail qualifié (c'est le XEX
+de la démo PAL, hachage différent) : extraire le vrai depuis l'ISO
+qualifiée avec `tools/extract_xdvdfs_file.py --target ntsc-uj --path
+default.xex --max-bytes 8000000` si besoin d'un `--xex` frais.
+
 ## Validation minimale
 
-Après un changement natif :
+Après un changement natif (aux stubs générés OU à `native/` lui-même,
+après avoir relancé `prepare.py` si nécessaire) :
 
 ```sh
 python3 recompilation/ace-combat-6-retail/tools/build.py \
@@ -61,7 +85,7 @@ python3 recompilation/ace-combat-6-retail/tools/validate.py \
   --target ntsc-uj --runtime native
 ```
 
-Le build courant enregistre CTest 9/9. `release_ready=false` reste attendu.
+Le build courant enregistre CTest 10/10. `release_ready=false` reste attendu.
 Ne pas lancer d'oracle, d'A/B ou de trace globale sans ambiguïté causale
 nommée. PAL reste bloqué jusqu'au gameplay Mission 01 US visible.
 

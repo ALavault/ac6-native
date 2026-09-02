@@ -25,27 +25,29 @@ fallback ReXGlue.
 - r178 (documentation seule) : `XexCheckExecutablePrivilege` vérifié, non
   corrigé (précédent r164, sémantique de privilège non déterminable
   localement).
-- r179 a corrigé `KeQuerySystemTime` (remplissage de FILETIME via pointeur,
-  utilise l'horloge murale réelle de l'hôte) — les 4 sites d'appel réels
-  exigeaient tous une valeur changeante (date calendaire, delta de temps,
-  graine de session).
-- **Bloqué sur une décision utilisateur** : le backend d'entrée manette
-  natif (candidat le plus prometteur pour « contrôles nuls ») nécessite un
-  choix de dépendance et un nouveau sous-système — ne pas commencer sans
-  confirmation explicite.
-- Suite pytest 161/161, `ctest` 9/9.
+- r179 a corrigé `KeQuerySystemTime` (FILETIME réel via l'horloge de
+  l'hôte).
+- r180 (autorisé explicitement par l'utilisateur) : backend d'entrée
+  manette natif via SDL2 (`NativeGuestInputService`) —
+  `XamInputGetState`/`SetState`/`GetCapabilities` implémentés avec preuve
+  réelle du contrat de transfert (code d'erreur `0x48F`, offsets
+  `XINPUT_CAPABILITIES`). Découverte importante : modifier `native/`
+  nécessite `tools/prepare.py --profile native` (resynchronise
+  `native-source/`), pas seulement `build.py` — voir RESUME.md. Aucune
+  manette physique disponible ici; le symptôme « contrôles nuls » reste à
+  confirmer par une future observation runtime.
+- Suite pytest 164/164, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
 
 ## Prochaine décision
 
-1. **Bloqué sur une décision utilisateur** : backend d'entrée manette natif
-   — go/no-go et choix de dépendance hôte (ex. SDL2) avant toute
-   implémentation. Ne pas commencer sans confirmation explicite.
-2. En l'absence de cette décision, continuer le balayage des imports
-   offline restants (mêmes outils que r148-r179, méthode r90/r93/r164)
-   pour des candidats ne nécessitant pas de nouvelle infrastructure.
+1. Confirmer par une observation runtime (avec un vrai périphérique quand
+   disponible) que le backend d'entrée r180 résout effectivement le
+   symptôme historique « contrôles nuls ».
+2. Continuer le balayage des imports offline restants (mêmes outils que
+   r148-r180, méthode r90/r93/r164) pour d'autres candidats.
 3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
@@ -61,9 +63,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r180-real-fix-native-sdl2-controller-input-backend-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r179-real-fix-kequerysystemtime-fills-a-real-changing-filetime-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r178-xexcheckexecutableprivilege-checked-no-safe-fix-identified-input-backend-needs-scoping-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r179).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r180).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

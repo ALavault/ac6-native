@@ -12,6 +12,7 @@ from pathlib import Path
 IMPORT = re.compile(r"__imp__([A-Za-z0-9_]+)")
 HEADER = """// Generated build-only import boundary; never install or track this file.
 #include \"ppc_context.h\"
+#include \"ac6/native_guest_input.h\"
 #include \"ac6/native_guest_media.h\"
 #include \"ac6/native_guest_vd.h\"
 
@@ -821,6 +822,80 @@ def render_body(name: str) -> str:
         # round dashboard-version-shaped value, not read from this XEX's
         # own bytes and clearly below every real threshold found.
         return "  ctx.r3.u64 = 0x20000000u;\n"
+    if name == "XamInputGetState":
+        # r180: real signature is DWORD XamInputGetState(DWORD dwUserIndex,
+        # XINPUT_STATE* pState) -- struct-fill through r4, return is a real
+        # error code, not a discarded status. This XEX's own real call
+        # site (0x8234cedc, `lwz r3,0x4(r31); addi r4,r31,0x44; bl ...`)
+        # confirms the (index, &struct) argument shape and, critically, the
+        # error contract: `cmplwi cr6,r3,0x48f` -- 0x48F is the real
+        # ERROR_DEVICE_NOT_CONNECTED Win32 code, confirmed by this XEX's
+        # own comparison, not assumed. XINPUT_STATE/XINPUT_GAMEPAD's byte
+        # layout is Microsoft's own fixed, published cross-platform ABI
+        # (identical on Windows and Xbox 360), not this XEX's own compiled
+        # struct -- safe external protocol knowledge, the same category as
+        # XC_LANGUAGE_ENGLISH (r174), not a guessed offset.
+        # Named per this project's user go-ahead to use SDL2 for real
+        # controller state (native/include/ac6/native_guest_input.h).
+        return """  const std::uint32_t user_index = ctx.r3.u32;
+  ac6::native::NativeGuestInputService::GamepadState pad{};
+  if (!ac6::native::native_guest_input_service().get_state(user_index, pad)) {
+    ctx.r3.u64 = 0x48fu;  // ERROR_DEVICE_NOT_CONNECTED
+    return;
+  }
+  PPC_STORE_U32(ctx.r4.u32 + 0x0, pad.packet_number);
+  PPC_STORE_U16(ctx.r4.u32 + 0x4, pad.buttons);
+  PPC_STORE_U8(ctx.r4.u32 + 0x6, pad.left_trigger);
+  PPC_STORE_U8(ctx.r4.u32 + 0x7, pad.right_trigger);
+  PPC_STORE_U16(ctx.r4.u32 + 0x8, static_cast<std::uint16_t>(pad.thumb_lx));
+  PPC_STORE_U16(ctx.r4.u32 + 0xa, static_cast<std::uint16_t>(pad.thumb_ly));
+  PPC_STORE_U16(ctx.r4.u32 + 0xc, static_cast<std::uint16_t>(pad.thumb_rx));
+  PPC_STORE_U16(ctx.r4.u32 + 0xe, static_cast<std::uint16_t>(pad.thumb_ry));
+  ctx.r3.u64 = 0u;
+"""
+    if name == "XamInputSetState":
+        # r180: real signature is DWORD XamInputSetState(DWORD dwUserIndex,
+        # XINPUT_VIBRATION* pVibration) -- struct-read through r4 (two u16
+        # motor speeds, Microsoft's own fixed ABI, same category as
+        # XINPUT_STATE above), same real error contract as
+        # XamInputGetState (0x48F when not connected). Best-effort: a real
+        # console accepts this call for a connected pad even on hardware
+        # without motors, matched by
+        # NativeGuestInputService::set_vibration's own contract.
+        return """  const std::uint32_t user_index = ctx.r3.u32;
+  const std::uint16_t left_motor = PPC_LOAD_U16(ctx.r4.u32 + 0x0);
+  const std::uint16_t right_motor = PPC_LOAD_U16(ctx.r4.u32 + 0x2);
+  if (!ac6::native::native_guest_input_service().set_vibration(
+          user_index, left_motor, right_motor)) {
+    ctx.r3.u64 = 0x48fu;  // ERROR_DEVICE_NOT_CONNECTED
+    return;
+  }
+  ctx.r3.u64 = 0u;
+"""
+    if name == "XamInputGetCapabilities":
+        # r180: real signature is DWORD XamInputGetCapabilities(DWORD
+        # dwUserIndex, DWORD dwFlags, XINPUT_CAPABILITIES* pCaps) --
+        # struct-fill through r5. This XEX's own real call site
+        # (0x82390d48) confirms two fields byte-for-byte against
+        # Microsoft's own fixed XINPUT_CAPABILITIES layout: `lbz
+        # r11,0x61(r1)` reads struct+0x1 (SubType) and `lhz r11,0x62(r1)`
+        # reads struct+0x2 (Flags) -- exactly the real ABI's own offsets.
+        # Only those two fields (plus Type, adjacent and unambiguous) are
+        # filled with confirmed-shape values; the Gamepad/Vibration
+        # capability sub-structs are not read by this XEX's own examined
+        # call site, so they are left at 0 rather than asserted, matching
+        # this project's own established discipline (r169's own
+        # unconfirmed offsets).
+        return """  const std::uint32_t user_index = ctx.r3.u32;
+  if (!ac6::native::native_guest_input_service().is_connected(user_index)) {
+    ctx.r3.u64 = 0x48fu;  // ERROR_DEVICE_NOT_CONNECTED
+    return;
+  }
+  PPC_STORE_U8(ctx.r5.u32 + 0x0, 1u);   // XINPUT_DEVTYPE_GAMEPAD
+  PPC_STORE_U8(ctx.r5.u32 + 0x1, 1u);   // XINPUT_DEVSUBTYPE_GAMEPAD
+  PPC_STORE_U16(ctx.r5.u32 + 0x2, 0u);  // Flags: no FFB/wireless/voice claimed
+  ctx.r3.u64 = 0u;
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

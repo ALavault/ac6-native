@@ -70,6 +70,67 @@ def test_ke_query_system_time_fills_a_real_changing_filetime(
     assert "PPC_STORE_U64(ctx.r3.u32," in body
 
 
+def test_xam_input_get_state_fills_the_real_xinput_struct(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamInputGetState);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r180: real contract is DWORD XamInputGetState(DWORD, XINPUT_STATE*)
+    # -- struct-fill through r4. This XEX's own real call site
+    # (0x8234cedc) confirms the (index, &struct) argument shape and the
+    # 0x48F ERROR_DEVICE_NOT_CONNECTED error contract.
+    body = text.split("void __imp__XamInputGetState")[1]
+    assert "kOfflineStatus" not in body
+    assert "native_guest_input_service().get_state(user_index, pad)" in body
+    assert "0x48fu" in body
+    assert "PPC_STORE_U32(ctx.r4.u32 + 0x0, pad.packet_number)" in body
+    assert "PPC_STORE_U16(ctx.r4.u32 + 0x4, pad.buttons)" in body
+    assert "PPC_STORE_U8(ctx.r4.u32 + 0x6, pad.left_trigger)" in body
+    assert "PPC_STORE_U8(ctx.r4.u32 + 0x7, pad.right_trigger)" in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
+def test_xam_input_set_state_reads_the_real_xinput_vibration_struct(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamInputSetState);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r180: real contract is DWORD XamInputSetState(DWORD,
+    # XINPUT_VIBRATION*) -- struct-read through r4, same 0x48F error
+    # contract as XamInputGetState.
+    body = text.split("void __imp__XamInputSetState")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_LOAD_U16(ctx.r4.u32 + 0x0)" in body
+    assert "PPC_LOAD_U16(ctx.r4.u32 + 0x2)" in body
+    assert "native_guest_input_service().set_vibration(" in body
+    assert "0x48fu" in body
+
+
+def test_xam_input_get_capabilities_matches_confirmed_offsets(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamInputGetCapabilities);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r180: this XEX's own real call site (0x82390d48) reads struct+0x1
+    # (SubType) and struct+0x2 (Flags) -- exactly Microsoft's own
+    # XINPUT_CAPABILITIES offsets, confirmed byte-for-byte.
+    body = text.split("void __imp__XamInputGetCapabilities")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U8(ctx.r5.u32 + 0x0, 1u)" in body
+    assert "PPC_STORE_U8(ctx.r5.u32 + 0x1, 1u)" in body
+    assert "PPC_STORE_U16(ctx.r5.u32 + 0x2, 0u)" in body
+    assert "0x48fu" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

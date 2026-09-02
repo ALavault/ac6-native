@@ -8,6 +8,11 @@ ISO, PAC, generated C++ or an oracle SDK.
 The host-side XEX decoder uses OpenSSL `libcrypto` for AES-128-CBC; no
 XenonRecomp/XenosRecomp or ReXGlue library is linked into the native product.
 
+`NativeGuestInputService` (`include/ac6/native_guest_input.h`) wraps SDL2's
+`SDL_GameController` API to serve `XamInputGetState`/`SetState`/
+`GetCapabilities` real controller state (r180). SDL2 is a real, linked
+runtime dependency of this product for that reason alone.
+
 The frontend contract accepts one existing ISO or `assets/` directory and maps
 mutable state to XDG data storage; it does not copy or reinterpret retail data.
 
