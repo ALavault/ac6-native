@@ -192,10 +192,12 @@ statut, même chantier save/reload que r202). r230 a corrigé
 `XamTaskCloseHandle` (r198 l'avait différé avec `XamTaskSchedule`, mais
 son unique appelant réel ignore le retour — `STATUS_SUCCESS`
 inconditionnel; `XamTaskSchedule` reste différé). `__C_specific_handler`
-vérifié mort (zéro référence).
+vérifié mort (zéro référence). r231 (documentation seule) a clos les 29
+imports `NetDll_*` : 26 morts, 3 déjà adéquats (gardés par un handle
+socket toujours `-1` puisque `socket`/`connect` sont morts).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r230, méthode r90/r93/r164) pour d'autres candidats.
+r148-r231, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

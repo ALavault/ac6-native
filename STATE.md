@@ -10583,3 +10583,26 @@ pytest 209/209 (208+1 skip), `ctest` 10/10.
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r230-real-fix-xamtaskclosehandle-returns-success-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r231 (documentation seule) : cluster réseau clos (29/29)
+
+Les 29 imports `NetDll_*` catalogués par r218 comme chantier non touché
+sont désormais clos, pas seulement réduits. 26 n'ont AUCUN appelant réel
+(ni direct, ni via trampoline) : `WSACleanup`, `XNetCleanup`,
+`XNetCreateKey`, `XNetGetTitleXnAddr`, `XNetInAddrToXnAddr`,
+`XNetQosListen`, `XNetQosRelease`, `XNetQosServiceLookup`, `XNetRandom`,
+`XNetRegisterKey`, `XNetXnAddrToInAddr`, `accept`, `bind`, `closesocket`,
+`connect`, `getsockname`, `getsockopt`, `ioctlsocket`, `listen`, `recv`,
+`recvfrom`, `select`, `send`, `sendto`, `setsockopt`, `shutdown`,
+`socket`. Les 3 restants (`WSAGetLastError` 4 appelants réels,
+`___WSAFDIsSet` 3 appelants réels, `XNetQosLookup` 1 appelant réel via
+son propre wrapper) sont déjà adéquats : le générique offline négatif
+ne correspond jamais aux valeurs précises comparées par leurs appelants
+(`0x2733`, `0x2747`, `1`, `0`), ET ces 3 chaînes sont de toute façon
+gardées par un champ handle-socket qui reste `-1` en pratique puisque
+`socket`/`connect` (les seuls moyens de le rendre valide) sont eux-mêmes
+morts. Aucune source touchée; pytest 209/209 (208+1 skip), `ctest` 10/10
+reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r231-doc-networking-cluster-dead-or-already-adequate-20260903.md`.

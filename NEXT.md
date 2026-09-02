@@ -261,7 +261,14 @@ fallback ReXGlue.
   `XamVoiceClose`/`XMsgCancelIORequest`. `XamTaskSchedule` lui-même reste
   différé). `__C_specific_handler` vérifié : zéro référence dans ce XEX,
   cohérent avec r202 (SEH jamais réellement invoqué dans ce build).
-- Suite pytest 209/209 (208 + 1 skip), `ctest` 10/10.
+- r231 (documentation seule) : les 29 imports `NetDll_*` sont clos —
+  26 sans aucun appelant réel, et les 3 restants
+  (`WSAGetLastError`/`___WSAFDIsSet`/`XNetQosLookup`) déjà adéquats : le
+  générique offline ne correspond jamais aux valeurs comparées par leurs
+  appelants, et ces 3 chaînes sont de toute façon gardées par un champ
+  handle-socket qui reste toujours `-1` puisque `socket`/`connect` sont
+  eux-mêmes morts. Bucket fermé, pas seulement réduit.
+- Suite pytest 209/209 (208 + 1 skip, inchangée), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -296,6 +303,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r231-doc-networking-cluster-dead-or-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r230-real-fix-xamtaskclosehandle-returns-success-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r229-doc-unreached-cluster-plus-ntsetinformationfile-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r228-real-fix-xamusergetxuid-fills-a-zero-xuid-for-user-zero-20260903.md`;
