@@ -746,6 +746,17 @@ def render_body(name: str) -> str:
         # real AV-pack enum meaning, only to avoid the four values this
         # XEX's own code treats specially.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XGetLanguage":
+        # r174: real signature is DWORD XGetLanguage(VOID) -- a language
+        # ID, not a status. This XEX's one real call site (0x821f5d9c)
+        # feeds the result into a bounds check against 10 and then (beyond
+        # this call site's own visible instructions) a per-language lookup
+        # table, so the exact value matters unlike XGetAVPack above. 1 is
+        # the real Xbox 360 XDK's own standardized `XC_LANGUAGE_ENGLISH`
+        # constant -- a platform-wide protocol value, not something
+        # specific to this XEX's own compiled layout (unlike a struct byte
+        # offset), and consistent with this project's own NTSC-U/J target.
+        return "  ctx.r3.u64 = 1u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

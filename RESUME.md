@@ -13,10 +13,13 @@ Lire d'abord :
 
 `VdQueryVideoMode` (r169), `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
 `VdGetCurrentDisplayInformation` (r170), `XGetVideoMode` (r171),
-`XGetGameRegion` (r172, renvoie `0x101`) et `XGetAVPack` (r173, renvoie
-`0u`) sont fixés. `XGetLanguage` (`0x821f5d9c`, 1 site d'appel réel) reste
-le dernier import non vérifié de cette famille — sa valeur exacte compte
-(résultat relu et borné-vérifié), à dériver dans un cycle dédié.
+`XGetGameRegion` (r172, renvoie `0x101`), `XGetAVPack` (r173, renvoie `0u`)
+et `XGetLanguage` (r174, renvoie `1`) sont fixés. Ferme la famille de
+configuration plateforme ouverte par r171. Aucun autre import de cette
+famille n'est actuellement identifié comme non vérifié; la prochaine
+frontière est `VdGetCurrentDisplayInformation` struct+0x05 (r170, champ
+booléen réel non implémenté), puis un balayage plus large des imports
+offline restants.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`).

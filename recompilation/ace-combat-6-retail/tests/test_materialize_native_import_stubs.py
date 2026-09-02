@@ -592,6 +592,22 @@ def test_xget_avpack_avoids_the_four_skip_setup_values(
     assert "ctx.r3.u64 = 0u;" in body
 
 
+def test_xget_language_returns_english(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XGetLanguage);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r174: this XEX's one real call site bounds-checks the result against
+    # 10 and indexes a per-language table with it. 1 is the real Xbox 360
+    # XDK's own standardized XC_LANGUAGE_ENGLISH constant.
+    body = text.split("void __imp__XGetLanguage")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 1u;" in body
+
+
 def test_xget_game_region_returns_the_privileged_exact_match_code(
     tmp_path: Path,
 ) -> None:

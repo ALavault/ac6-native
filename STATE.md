@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r174 : VRAI CORRECTIF — `XGetLanguage` renvoie l'anglais (2026-09-02)
+
+- `XGetLanguage` (contrat réel : `DWORD XGetLanguage(VOID)`). Le seul site
+  d'appel réel (`0x821f5d9c`) conserve la valeur (`r31`), la borne-vérifie
+  contre `10`, et l'utilise pour indexer une table de correspondance par
+  langue — contrairement à `XGetAVPack`, la valeur exacte compte ici.
+  Corrigé : `1`, la constante XDK Xbox 360 standardisée
+  `XC_LANGUAGE_ENGLISH` — une valeur de protocole fixe (pas spécifique à
+  la compilation de ce XEX, contrairement à un offset de struct), sûre
+  vis-à-vis du contrôle de borne et cohérente avec la cible NTSC-U/J.
+- Ferme la famille des imports de configuration plateforme ouverte par
+  r171 (`XGetVideoMode`/`XGetGameRegion`/`XGetAVPack`/`XGetLanguage`) —
+  aucun autre import de cette famille n'est actuellement identifié comme
+  non vérifié.
+- Tests 158/158 (157/157 → +1). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r174-real-fix-xgetlanguage-returns-english-20260902.md`.
+
 # AC6 retail NTSC-U/J — r173 : VRAI CORRECTIF — `XGetAVPack` évite les 4 valeurs qui sautent la configuration (2026-09-02)
 
 - `XGetAVPack` (contrat réel : `DWORD XGetAVPack(VOID)`). Le seul site

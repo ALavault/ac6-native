@@ -19,6 +19,11 @@ fallback ReXGlue.
 
 ## État courant
 
+- r174 a corrigé `XGetLanguage` : renvoie `1` (`XC_LANGUAGE_ENGLISH`,
+  constante XDK standardisée) — la valeur exacte compte ici (résultat
+  borné-vérifié contre 10 et utilisé comme index de table). Ferme la
+  famille de configuration plateforme ouverte par r171; aucun autre import
+  de cette famille n'est actuellement identifié comme non vérifié.
 - r173 a corrigé `XGetAVPack` : renvoie `0u`, hors de l'ensemble
   `{0x3,0x6,0x8,0x4}` que le seul site d'appel réel traite spécialement
   (saut de configuration); aucune preuve ne distingue les autres valeurs.
@@ -52,16 +57,13 @@ fallback ReXGlue.
 
 ## Prochaine décision
 
-1. `XGetLanguage` (`0x821f5d9c`, 1 site d'appel réel) reste le dernier
-   import non vérifié de cette famille — son résultat est relu et
-   borné-vérifié (contrairement à `XGetAVPack`), donc la valeur exacte
-   compte : dériver et implémenter dans un cycle dédié.
-2. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
+1. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
    consomme ce champ pour déterminer sa vraie valeur, ou documenter qu'aucune
    preuve statique supplémentaire n'est atteignable.
-3. Balayer plus largement les imports offline restants (mêmes outils que
-   r148-r172) pour identifier le prochain trou une fois ces deux fermés.
-4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+2. Balayer plus largement les imports offline restants (mêmes outils que
+   r148-r174, ex. méthode r90/r93/r164) pour identifier le prochain trou une
+   fois struct+0x05 fermé.
+3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
    parmi plusieurs candidates également plausibles est arbitraire sans lire
@@ -76,9 +78,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r174-real-fix-xgetlanguage-returns-english-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r173-real-fix-xgetavpack-avoids-the-four-skip-setup-values-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r172-real-fix-xgetgameregion-returns-the-privileged-exact-match-region-code-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r171-real-fix-xgetvideomode-fills-the-refresh-rate-field-used-as-a-division-divisor-20260902.md`;
 - `STATE.md` et `EVIDENCE.md` pour l'historique.
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
