@@ -167,7 +167,9 @@ fallback ReXGlue.
   `ExCreateThread` et la sonde d'entrée principale) et
   `ExRegisterTitleTerminateNotification` (retour ignoré partout).
   Édite de vrais fichiers `native/` — `prepare.py` relancé.
-- Suite pytest 199/199, `ctest` 10/10.
+- r214 a corrigé `HalReturnToFirmware` (ne retourne jamais, arrêt
+  niveau console — `std::exit(0)`).
+- Suite pytest 200/200, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -202,9 +204,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r214-real-fix-halreturntofirmware-exits-cleanly-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r213-real-fix-exterminatethread-unwinds-its-own-thread-cleanly-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r212-doc-xexgetmodulehandle-failure-is-the-safe-fallback-path-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r213).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r214).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

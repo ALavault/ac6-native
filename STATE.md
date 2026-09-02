@@ -1,3 +1,16 @@
+# AC6 retail NTSC-U/J — r214 : VRAI CORRECTIF — `HalReturnToFirmware` termine proprement (2026-09-02)
+
+- `VOID HalReturnToFirmware(...)` : ne retourne jamais (redémarre/arrête
+  la console). Site réel unique `0x821f7e6c` — preuve plus faible que
+  r193/r209/r213 (un épilogue normal EST émis après l'appel), mais un
+  compilateur ignorant qu'un callee ne retourne jamais en émet un quand
+  même par prudence; le contrat documenté reste gouvernant.
+- Corrigé : `std::exit(0)` — même classe que `XamLoaderTerminateTitle`
+  (r209), puisque c'est un arrêt niveau CONSOLE ENTIÈRE, pas par thread
+  (le déroulement `GuestThreadTerminated` de r213 ne s'applique pas ici).
+- Tests 200/200 (199/199 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r214-real-fix-halreturntofirmware-exits-cleanly-20260902.md`.
+
 # AC6 retail NTSC-U/J — r213 : VRAI CORRECTIF — `ExTerminateThread` déroule proprement son propre thread (2026-09-02)
 
 - `VOID ExTerminateThread(DWORD)` : ne retourne jamais (même preuve que

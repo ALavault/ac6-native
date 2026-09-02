@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r213 cité comme `source_report`;
+- le report r214 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -122,10 +122,12 @@ nécessaire. r213 a corrigé `ExTerminateThread` (ne retourne jamais,
 termine seulement son propre thread via `GuestThreadTerminated`,
 rattrapé par `ExCreateThread` et la sonde d'entrée principale — édite
 de vrais fichiers `native/`, `prepare.py` relancé) et
-`ExRegisterTitleTerminateNotification` (retour ignoré partout).
+`ExRegisterTitleTerminateNotification` (retour ignoré partout). r214 a
+corrigé `HalReturnToFirmware` (ne retourne jamais, arrêt niveau console
+— `std::exit(0)`).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r213, méthode r90/r93/r164) pour d'autres candidats.
+r148-r214, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

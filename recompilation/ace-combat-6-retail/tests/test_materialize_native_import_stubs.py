@@ -1547,3 +1547,16 @@ def test_ex_register_title_terminate_notification_always_succeeds(
     )[1].split("\n}\n")[0]
     assert "kOfflineStatus" not in body
     assert "ctx.r3.u64 = 0u" in body
+
+
+def test_hal_return_to_firmware_exits_cleanly(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__HalReturnToFirmware);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__HalReturnToFirmware(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in body
+    assert "std::exit(0)" in body

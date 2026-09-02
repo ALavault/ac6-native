@@ -1600,6 +1600,19 @@ def render_body(name: str) -> str:
         # invoke an arbitrary registered callback from later, but since
         # nothing reads the return here, that gap is not observable.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "HalReturnToFirmware":
+        # r214: VOID HalReturnToFirmware(HAL_RETURN_TYPE Routine) --
+        # documented to never return (reboots/halts the console). This
+        # XEX's single real call site (0x821f7e6c, r3=1) is conditionally
+        # gated and the compiler did emit a normal epilogue after it --
+        # weaker evidence than r193/r209/r213's "no epilogue at all"
+        # cases, since a compiler unaware a callee never returns still
+        # generates one defensively. Real documented semantics still
+        # govern: this is a whole-console exit, not per-thread, so
+        # std::exit(0) (r209's XamLoaderTerminateTitle precedent) is the
+        # honest match rather than falling through to whatever the
+        # compiler's own (never-reached-on-real-hardware) epilogue does.
+        return "  std::exit(0);\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in
