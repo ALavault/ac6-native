@@ -1447,6 +1447,34 @@ def render_body(name: str) -> str:
         # (repositions the system notification popup on screen). Real
         # call site 0x821ce0ec discards the return value outright.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XAudioGetVoiceCategoryVolumeChangeMask":
+        # r203: HRESULT XAudioGetVoiceCategoryVolumeChangeMask(DWORD
+        # Handle, PDWORD pChangeMask) -- real call site 0x823ad1fc
+        # confirms r3=Handle, r4=&pChangeMask; on success, the caller
+        # loops over 2 volume categories testing bits of *pChangeMask to
+        # decide whether to re-query each one via
+        # XAudioGetVoiceCategoryVolume. This project has no real
+        # volume-mixer subsystem to report changes from, so "nothing
+        # changed" (mask 0) is the honest default -- and, as a direct
+        # consequence, the per-category re-query this gates almost never
+        # fires, which is the correct behavior absent a real change
+        # source, not a workaround.
+        return """  if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32, 0u);
+  ctx.r3.u64 = 0u;
+"""
+    if name == "XAudioGetVoiceCategoryVolume":
+        # r203: HRESULT XAudioGetVoiceCategoryVolume(DWORD CategoryIndex,
+        # float* pVolume) -- real call site 0x823ad22c, gated by the
+        # change-mask above. Full volume (1.0f) is the honest default
+        # absent a real per-category mixer to read from.
+        return """  if (ctx.r4.u32 != 0u) {
+    constexpr float kFullVolume = 1.0f;
+    std::uint32_t bits;
+    std::memcpy(&bits, &kFullVolume, sizeof(bits));
+    PPC_STORE_U32(ctx.r4.u32, bits);
+  }
+  ctx.r3.u64 = 0u;
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

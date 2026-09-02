@@ -1364,3 +1364,29 @@ def test_nt_open_file_reuses_the_create_file_media_service_path(
     assert "0xC0000034u" in text  # STATUS_OBJECT_NAME_NOT_FOUND on a real miss
     body = text.split("void __imp__NtOpenFile(")[1].split("\n}\n")[0]
     assert "kOfflineStatus" not in body
+
+
+def test_xaudio_voice_category_volume_reports_no_change_full_volume(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__XAudioGetVoiceCategoryVolumeChangeMask);\n"
+        "PPC_EXTERN_FUNC(__imp__XAudioGetVoiceCategoryVolume);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+
+    mask_body = text.split(
+        "void __imp__XAudioGetVoiceCategoryVolumeChangeMask("
+    )[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in mask_body
+    assert "PPC_STORE_U32(ctx.r4.u32, 0u)" in mask_body
+
+    volume_body = text.split("void __imp__XAudioGetVoiceCategoryVolume(")[
+        1
+    ].split("\n}\n")[0]
+    assert "kOfflineStatus" not in volume_body
+    assert "kFullVolume = 1.0f" in volume_body
+    assert "PPC_STORE_U32(ctx.r4.u32, bits)" in volume_body

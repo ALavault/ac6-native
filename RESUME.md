@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r202 cité comme `source_report`;
+- le report r203 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -89,10 +89,13 @@ code) a tracé `NtWriteFile`/`NtDeviceIoControlFile` comme un vrai
 de Gate 2, non implémentée. Vérifié aussi, non corrigé : SEH
 (`RtlRaiseException`/`RtlUnwind`/`RtlCaptureContext`) et
 `XeKeysConsolePrivateKeySign`/`Verification` (clé matérielle console,
-hors de portée permanente).
+hors de portée permanente). r203 corrige r197 : `0x823cfe4c` est le vrai
+import `XMsgStartIORequest` (17 sites réels, transport IPC), pas une
+fonction interne de télémétrie comme r197 l'affirmait — corrigé aussi :
+`XAudioGetVoiceCategoryVolumeChangeMask`/`XAudioGetVoiceCategoryVolume`.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r202, méthode r90/r93/r164) pour d'autres candidats.
+r148-r203, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

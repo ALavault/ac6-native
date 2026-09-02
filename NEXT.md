@@ -117,7 +117,14 @@ fallback ReXGlue.
   (`RtlRaiseException`/`RtlUnwind`/`RtlCaptureContext`) et clé console
   (`XeKeysConsolePrivateKeySign`/`Verification`, hors de portée
   permanente) vérifiés sans fix sûr.
-- Suite pytest 188/188, `ctest` 10/10 (inchangés depuis r201).
+- r203 corrige r197 : `0x823cfe4c` est le vrai import
+  `XMsgStartIORequest` (17 sites réels), pas une fonction interne de
+  télémétrie — la famille `XamSession*` de r197 fait du vrai trafic
+  IPC, effort de fix plus large que pensé, toujours différé. Corrigé
+  aussi : `XAudioGetVoiceCategoryVolumeChangeMask`/
+  `XAudioGetVoiceCategoryVolume` (masque « rien n'a changé », volume
+  plein par défaut).
+- Suite pytest 189/189, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -152,9 +159,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r203-real-fix-xaudio-voice-category-volume-corrects-r197-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r202-doc-real-save-write-path-found-seh-and-console-key-imports-checked-no-safe-fix-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r201-real-fix-ntopenfile-reuses-ntcreatefiles-media-service-path-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r202).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r203).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

@@ -1,3 +1,27 @@
+# AC6 retail NTSC-U/J — r203 : VRAI CORRECTIF — `XAudioGetVoiceCategoryVolume`/`VolumeChangeMask`; corrige r197 (2026-09-02)
+
+- **Correction de r197** : `0x823cfe4c` N'EST PAS une fonction interne
+  non importée comme r197 l'affirmait — c'est le vrai import
+  `XMsgStartIORequest` (17 sites d'appel réels, confirmé). La constante
+  `0xfb` que r197 appelait un « id d'événement télémétrie » est en
+  réalité le paramètre `MessageType` de cet appel. La famille de
+  wrappers `XamSession*` de r197 fait donc du VRAI trafic IPC via
+  `XMsgStartIORequest`, pas de la télémétrie — une découverte plus
+  large que ce que r197 pensait, corrigée ici par nom et numéro de
+  cycle comme l'exige la discipline de preuve de ce projet.
+- `XMsgStartIORequest` (17 sites)/`XMsgInProcessCall` (6 sites) : vrai
+  transport de dispatch de messages inter-sous-système utilisé par de
+  nombreuses API XAM de haut niveau. Nécessiterait d'énumérer et
+  comprendre les types de messages distincts sur 17+ sites — effort
+  bien plus large qu'un fix borné, non tenté.
+- Corrigé : `XAudioGetVoiceCategoryVolumeChangeMask`/
+  `XAudioGetVoiceCategoryVolume` (sites réels `0x823ad1fc`/`0x823ad22c`,
+  confondus par une recherche par sous-chaîne naïve — même piège que
+  r193). Aucun mixeur de volume réel : « rien n'a changé » (masque 0)
+  et volume plein (1.0f) sont les défauts honnêtes.
+- Tests 189/189 (188/188 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r203-real-fix-xaudio-voice-category-volume-corrects-r197-20260902.md`.
+
 # AC6 retail NTSC-U/J — r202 : DOCUMENTATION SEULE — chemin réel d'écriture de sauvegarde tracé; SEH et clé console vérifiés, aucun fix sûr (2026-09-02)
 
 - `NtWriteFile` (8 sites réels)/`NtDeviceIoControlFile` (3 sites réels,
