@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r217 : VRAI CORRECTIF — `VdSetDisplayMode` réussit toujours (2026-09-02)
+
+- Site réel unique `0x821f075c` (même fonction que
+  `VdGetSystemCommandBuffer` de r198) : retour totalement ignoré.
+- Corrigé : `STATUS_SUCCESS` sans condition — même précédent que
+  `VdRetrainEDRAM`.
+- Vérifié aussi, non corrigé : `VdPersistDisplay` (site réel
+  `0x821f09d8` — VÉRIFIE le retour et alimente une soumission de
+  frame réelle — territoire renderer natif fail-closed, hors scope).
+- Tests 203/203 (202/202 → +1). `ctest` 10/10. Le reste de la liste
+  générique (~87 imports) se concentre désormais dans une poignée de
+  gros chantiers déjà documentés (réseau NetDll_*, SEH, écriture de
+  sauvegarde, famille XMsg, moteur printf, grappe identité/profil
+  XamGetExecutionId, trampolines UI Xam non tracés) — les petites
+  victoires isolées se raréfient. Voir
+  `reports/ac6-retail-native-codegen-gate2-r217-real-fix-vdsetdisplaymode-always-succeeds-20260902.md`.
+
 # AC6 retail NTSC-U/J — r216 : VRAI CORRECTIF — la famille `NtSetTimerEx`/`NtCancelTimer`/`NtCreateTimer` se déclenche réellement (2026-09-02)
 
 - Signature réelle à 8 arguments de `NtSetTimerEx` entièrement résolue

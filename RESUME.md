@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r216 cité comme `source_report`;
+- le report r217 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -129,10 +129,16 @@ aux 3 sites d'appel réels). r216 a corrigé
 `NtSetTimerEx`/`NtCancelTimer`/`NtCreateTimer` (signature 8 arguments
 résolue via son wrapper; minuteur réel via `std::thread`, enregistré
 dans `g_events` — `NtCreateTimer` ne l'enregistrait jamais avant, même
-classe que r145).
+classe que r145). r217 a corrigé `VdSetDisplayMode` (retour ignoré —
+`STATUS_SUCCESS` sans condition). Vérifié aussi, non corrigé :
+`VdPersistDisplay` (territoire renderer natif fail-closed). Le reste de
+la liste générique (~87 imports) se concentre désormais dans une
+poignée de gros chantiers déjà documentés (réseau, SEH, écriture de
+sauvegarde, XMsg, printf, identité/profil, trampolines UI) — les
+petites victoires isolées se raréfient.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r216, méthode r90/r93/r164) pour d'autres candidats.
+r148-r217, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

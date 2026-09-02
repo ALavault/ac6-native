@@ -1700,6 +1700,12 @@ def render_body(name: str) -> str:
         return """  cancel_timer(ctx.r3.u32);
   ctx.r3.u64 = 0u;
 """
+    if name == "VdSetDisplayMode":
+        # r217: real call site 0x821f075c discards the return value
+        # outright -- falls straight into the next call's own setup with
+        # no check at all. Same class of fix as VdRetrainEDRAM and
+        # friends above: the native renderer owns the Vd lifecycle.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

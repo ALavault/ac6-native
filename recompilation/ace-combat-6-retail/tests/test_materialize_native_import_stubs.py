@@ -1610,3 +1610,14 @@ def test_nt_set_timer_ex_actually_fires_and_signals(tmp_path: Path) -> None:
 
     assert "std::this_thread::sleep_for(initial_delay)" in text
     assert "cancelled->load()" in text
+
+
+def test_vd_set_display_mode_always_succeeds(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__VdSetDisplayMode);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__VdSetDisplayMode(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u" in body
