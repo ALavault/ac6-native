@@ -4,9 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r183-real-fix-rtlimagexexheaderfield-reports-not-present-20260902.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r184-real-fix-xecryptsha-computes-a-real-digest-20260902.md",
   "working_set": [
-    "reports/ac6-retail-native-codegen-gate2-r183-real-fix-rtlimagexexheaderfield-reports-not-present-20260902.md",
+    "reports/ac6-retail-native-codegen-gate2-r184-real-fix-xecryptsha-computes-a-real-digest-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r180-real-fix-native-sdl2-controller-input-backend-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r178-xexcheckexecutableprivilege-checked-no-safe-fix-identified-input-backend-needs-scoping-20260902.md",
     "reports/ac6-retail-native-codegen-gate2-r177-real-fix-xamgetsystemversion-stays-below-every-observed-threshold-20260902.md",

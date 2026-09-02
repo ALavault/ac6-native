@@ -46,7 +46,10 @@ fallback ReXGlue.
   valeur de retour EST le pointeur de champ ici (pas un statut); les 2
   sites d'appel réels le déréférencent quand non nul, donc
   `kOfflineStatus` était un vrai risque de crash, pas un trou cosmétique.
-- Suite pytest 167/167, `ctest` 10/10.
+- r184 a corrigé `XeCryptSha` : calcule un VRAI condensé SHA-1 (OpenSSL
+  EVP) sur les octets invités réels — le condensé alimente une
+  comparaison réelle en aval, donc un condensé absent échouait toujours.
+- Suite pytest 168/168, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -57,7 +60,7 @@ fallback ReXGlue.
    disponible) que le backend d'entrée r180 résout effectivement le
    symptôme historique « contrôles nuls ».
 2. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r183, méthode r90/r93/r164) pour d'autres candidats.
+   r148-r184, méthode r90/r93/r164) pour d'autres candidats.
 3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
@@ -73,9 +76,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r184-real-fix-xecryptsha-computes-a-real-digest-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r183-real-fix-rtlimagexexheaderfield-reports-not-present-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r182-real-fix-xamusercheckprivilege-grants-and-succeeds-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r183).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r184).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

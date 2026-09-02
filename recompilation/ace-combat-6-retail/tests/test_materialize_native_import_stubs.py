@@ -184,6 +184,28 @@ def test_rtl_image_xex_header_field_reports_not_present(
     assert "ctx.r3.u64 = 0u;" in body
 
 
+def test_xe_crypt_sha_computes_a_real_digest(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XeCryptSha);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r184: real signature is VOID XeCryptSha(pbInput1, cbInput1,
+    # pbInput2, cbInput2, pbInput3, cbInput3, pbDigest, cbDigestSize) --
+    # this XEX's own real call site populates all 8 arg registers with
+    # cbDigestSize=0x14 (SHA-1). Computes the actual digest (OpenSSL EVP,
+    # same pattern as native_xex.cpp's AES-CBC use) over real guest
+    # bytes -- a garbage/absent digest would fail a real reference-hash
+    # comparison downstream.
+    body = text.split("void __imp__XeCryptSha")[1]
+    assert "kOfflineStatus" not in body
+    assert "EVP_sha1()" in body
+    assert "EVP_DigestUpdate(sha1_ctx, base + ctx.r3.u32, ctx.r4.u32)" in body
+    assert "EVP_DigestUpdate(sha1_ctx, base + ctx.r5.u32, ctx.r6.u32)" in body
+    assert "EVP_DigestUpdate(sha1_ctx, base + ctx.r7.u32, ctx.r8.u32)" in body
+    assert "PPC_STORE_U8(ctx.r9.u32 + i, digest[i])" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

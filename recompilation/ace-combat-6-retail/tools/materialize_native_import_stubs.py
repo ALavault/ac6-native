@@ -16,6 +16,9 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include \"ac6/native_guest_media.h\"
 #include \"ac6/native_guest_vd.h\"
 
+#include <openssl/evp.h>
+
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -963,6 +966,50 @@ def render_body(name: str) -> str:
         # call sites' own default-handling paths for that case are
         # well-defined and exercised deliberately, not merely tolerated.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XeCryptSha":
+        # r184: real signature is VOID XeCryptSha(const BYTE* pbInput1,
+        # DWORD cbInput1, const BYTE* pbInput2, DWORD cbInput2, const
+        # BYTE* pbInput3, DWORD cbInput3, BYTE* pbDigest, DWORD
+        # cbDigestSize) -- confirmed by this XEX's own real call site
+        # (0x82390f04): all 8 integer argument registers (r3..r10) are
+        # populated, and r10 (cbDigestSize) is 0x14 -- exactly the SHA-1
+        # digest length, not a status code. Real contract's return value
+        # is not checked by this XEX's own call site.
+        #
+        # The generic offline-import fallback previously wrote nothing
+        # through pbDigest at all. At 0x82390f04, the computed digest
+        # feeds a comparison (`bl 0x823d0abc` immediately after, using
+        # the digest as an input) whose result gates real control flow --
+        # a garbage/absent digest would fail every such comparison
+        # against a real reference hash. This computes the ACTUAL SHA-1
+        # (OpenSSL EVP, already linked and used the same way for this
+        # file's AES-CBC XEX decode, native/src/native_xex.cpp) over
+        # whatever real guest bytes are present, not a fabricated digest
+        # -- the one case in this file where "real value" has no
+        # ambiguity to resolve, since the algorithm computes it exactly.
+        return """  EVP_MD_CTX* sha1_ctx = EVP_MD_CTX_new();
+  if (sha1_ctx != nullptr && EVP_DigestInit_ex(sha1_ctx, EVP_sha1(), nullptr) == 1) {
+    if (ctx.r4.u32 != 0u) {
+      EVP_DigestUpdate(sha1_ctx, base + ctx.r3.u32, ctx.r4.u32);
+    }
+    if (ctx.r6.u32 != 0u) {
+      EVP_DigestUpdate(sha1_ctx, base + ctx.r5.u32, ctx.r6.u32);
+    }
+    if (ctx.r8.u32 != 0u) {
+      EVP_DigestUpdate(sha1_ctx, base + ctx.r7.u32, ctx.r8.u32);
+    }
+    std::array<std::uint8_t, EVP_MAX_MD_SIZE> digest{};
+    unsigned int digest_length = 0;
+    if (EVP_DigestFinal_ex(sha1_ctx, digest.data(), &digest_length) == 1) {
+      const std::uint32_t copy_length =
+          std::min<std::uint32_t>(ctx.r10.u32, digest_length);
+      for (std::uint32_t i = 0; i < copy_length; ++i) {
+        PPC_STORE_U8(ctx.r9.u32 + i, digest[i]);
+      }
+    }
+  }
+  if (sha1_ctx != nullptr) EVP_MD_CTX_free(sha1_ctx);
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

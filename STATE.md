@@ -1,3 +1,21 @@
+# AC6 retail NTSC-U/J — r184 : VRAI CORRECTIF — `XeCryptSha` calcule un vrai condensé SHA-1 (2026-09-02)
+
+- Contrat réel : `VOID XeCryptSha(pbInput1, cbInput1, pbInput2, cbInput2,
+  pbInput3, cbInput3, pbDigest, cbDigestSize)` — confirmé par le site
+  d'appel réel `0x82390f04` : les 8 registres d'arguments entiers sont
+  tous peuplés, `r10` (cbDigestSize) = `0x14` (longueur SHA-1 exacte).
+- Le condensé calculé alimente immédiatement une comparaison
+  (`0x823d0abc`) qui contrôle un vrai branchement — un condensé
+  absent/garbage échouerait toute comparaison réelle en aval.
+- Corrigé : calcule le VRAI SHA-1 (interface EVP d'OpenSSL, même patron
+  que `native_xex.cpp` pour l'AES-CBC, `OpenSSL::Crypto` déjà lié) sur les
+  octets invités réels des tampons fournis — le seul cas de ce balayage
+  où « la vraie valeur » n'a aucune ambiguïté à résoudre : l'algorithme la
+  calcule exactement.
+- Tests 168/168 (167/167 → +1). `ctest` 10/10 (confirme la compilation/
+  liaison du nouveau code EVP). Voir
+  `reports/ac6-retail-native-codegen-gate2-r184-real-fix-xecryptsha-computes-a-real-digest-20260902.md`.
+
 # AC6 retail NTSC-U/J — r183 : VRAI CORRECTIF — `RtlImageXexHeaderField` signale « absent » (2026-09-02)
 
 - Contrat réel : `PVOID RtlImageXexHeaderField(PVOID, DWORD)` — CONTRAIREMENT
