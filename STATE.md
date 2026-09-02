@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r183 : VRAI CORRECTIF — `RtlImageXexHeaderField` signale « absent » (2026-09-02)
+
+- Contrat réel : `PVOID RtlImageXexHeaderField(PVOID, DWORD)` — CONTRAIREMENT
+  à presque tous les autres imports corrigés jusqu'ici, la valeur de retour
+  ELLE-MÊME est le pointeur de champ (0 = absent), pas un code de statut.
+- Les 2 sites d'appel réels DÉRÉFÉRENCENT la valeur de retour quand elle
+  est non nulle : `0x821f7d88` fait `lwz r30,0x0(r3)` directement;
+  `0x82390e40` stocke la valeur brute comme donnée de champ pour son
+  propre appelant. `kOfflineStatus` étant non nul, les deux sites
+  traitaient un champ non implémenté/absent comme « trouvé » — risque réel
+  de crash (déréférencement de `0xC00000BB` comme pointeur invité), pas un
+  trou cosmétique.
+- Corrigé : `0u` (absent) sans condition — aucune preuve locale que ces
+  champs d'en-tête optionnels (`0x20401`, `0x40006`) sont réellement
+  présents dans l'en-tête de ce XEX (aucun analyseur de table de champs
+  d'en-tête n'existe encore sous `native/`); les deux sites ont un chemin
+  de traitement par défaut bien défini pour le cas « absent ».
+- Tests 167/167 (166/166 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r183-real-fix-rtlimagexexheaderfield-reports-not-present-20260902.md`.
+
 # AC6 retail NTSC-U/J — r182 : VRAI CORRECTIF — `XamUserCheckPrivilege` accorde et réussit (2026-09-02)
 
 - `0x823cfe8c`, que le rapport r176 avait seulement nommé « une fonction

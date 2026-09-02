@@ -941,6 +941,28 @@ def render_body(name: str) -> str:
         return """  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, 1u);
   ctx.r3.u64 = 0u;
 """
+    if name == "RtlImageXexHeaderField":
+        # r183: real signature is PVOID RtlImageXexHeaderField(PVOID
+        # XexHeaderBase, DWORD ImageFlags) -- unlike almost every other
+        # import in this file, the RETURN VALUE ITSELF is the field
+        # pointer (0 means "not present"), not a status code at all. This
+        # XEX's own two real call sites both then DEREFERENCE that
+        # pointer when it is nonzero:
+        #   0x821f7d88 (field 0x20401): `cmplwi r3,0x0; beq <default>` --
+        #   if nonzero, `lwz r30,0x0(r3)` dereferences it immediately.
+        #   0x82390e40 (field 0x40006): the raw return is stored directly
+        #   as an output field's own value and later treated as present.
+        # The generic offline-import fallback's kOfflineStatus
+        # (0xC00000BB) is nonzero, so BOTH call sites currently treat an
+        # unimplemented, non-existent field as "found" and dereference
+        # 0xC00000BB as a guest pointer -- a real crash risk, not a
+        # cosmetic gap. This project has no reachable evidence that either
+        # optional header field is actually present in this XEX's own
+        # header (no header-field-table parser exists yet under
+        # `native/`), so the honest, safe answer is "not present": both
+        # call sites' own default-handling paths for that case are
+        # well-defined and exercised deliberately, not merely tolerated.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

@@ -166,6 +166,24 @@ def test_xam_user_check_privilege_grants_and_succeeds(
     assert "ctx.r3.u64 = 0u;" in body
 
 
+def test_rtl_image_xex_header_field_reports_not_present(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlImageXexHeaderField);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r183: real contract is PVOID RtlImageXexHeaderField(PVOID, DWORD) --
+    # the return value itself is the field pointer (0 = not present), not
+    # a status. Both of this XEX's real call sites dereference a nonzero
+    # return, so kOfflineStatus (nonzero) was a real crash risk, not a
+    # cosmetic gap.
+    body = text.split("void __imp__RtlImageXexHeaderField")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")
