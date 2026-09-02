@@ -667,17 +667,29 @@ def render_body(name: str) -> str:
         #   0x821ea4d8 and 0x821ea2a4 (structs at [r1+0x60] and
         #   [r1+0x1a0]) both additionally read a byte at struct+0x05 into a
         #   normalize/compare idiom, confirming a real boolean-shaped field
-        #   there -- but its comparison target (`!= 1`, feeding an
-        #   unrelated flags bitfield deep in caller logic) does not pin
-        #   what value is correct, so it is named here and left
-        #   unimplemented rather than guessed.
+        #   there.
         # Values: width/actual_width=1280, height=720 -- this project's own
         # pre-existing resolution assumption (r169), not invented; no
         # evidence distinguishes width from actual_width for this project's
         # single fixed target, so the same value is used for both.
+        #
+        # r175: struct+0x05 traced to a real algorithm choice at BOTH call
+        # sites, not a cosmetic flag. At 0x821ea4d8, `value==1` selects
+        # 0x821eb778 (a genuine bilinear-style LINEAR INTERPOLATION scaler
+        # -- computes a fractional blend between two neighbor lookups,
+        # `subf r9,r9,r8` then scaled) over `value!=1` selecting 0x821eb6e0
+        # (a simpler NEAREST-NEIGHBOR scaler -- direct per-element
+        # lookup/duplicate, no blend). At 0x821ea2a4, `value!=1` sets a bit
+        # in a persisted flags byte that `value==1` leaves clear -- the
+        # same direction (1 = the plain/default case, not-1 = a marked
+        # deviation) at both sites. A higher-quality interpolated scaler is
+        # the physically sensible choice for this project's own
+        # already-established HD/widescreen target (1280x720), and no
+        # evidence at either site points the other way. 1u.
         return """  PPC_STORE_U16(ctx.r3.u32 + 0x48, 1280u);
   PPC_STORE_U16(ctx.r3.u32 + 0x4a, 720u);
   PPC_STORE_U16(ctx.r3.u32 + 0x56, 1280u);
+  PPC_STORE_U8(ctx.r3.u32 + 0x5, 1u);
 """
     if name == "XGetVideoMode":
         # r171: real signature is VOID XGetVideoMode(XVIDEO_MODE*) -- a

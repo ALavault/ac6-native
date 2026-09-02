@@ -693,6 +693,12 @@ def test_vd_get_current_display_information_fills_width_height_fields(
     assert "PPC_STORE_U16(ctx.r3.u32 + 0x48, 1280u)" in body
     assert "PPC_STORE_U16(ctx.r3.u32 + 0x4a, 720u)" in body
     assert "PPC_STORE_U16(ctx.r3.u32 + 0x56, 1280u)" in body
+    # r175: struct+0x05 traced to a real algorithm choice at both call
+    # sites (linear-interpolation vs nearest-neighbor scaler at
+    # 0x821ea4d8; a persisted deviation flag at 0x821ea2a4), both agreeing
+    # that 1 is the plain/default case -- the physically sensible choice
+    # for this project's own HD/widescreen target.
+    assert "PPC_STORE_U8(ctx.r3.u32 + 0x5, 1u)" in body
 
 
 def test_nt_status_to_dos_error_maps_pending_to_io_pending(

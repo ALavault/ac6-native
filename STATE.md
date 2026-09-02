@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r175 : VRAI CORRECTIF — `VdGetCurrentDisplayInformation` struct+0x05 tracé jusqu'à un choix d'algorithme de scaling réel (2026-09-02)
+
+- r170 avait confirmé struct+0x05 comme champ booléen réel mais différé son
+  implémentation (le comparateur immédiat ne fixait pas de valeur). Ce
+  cycle trace plus loin, dans les DEUX fonctions que la comparaison
+  sélectionne réellement.
+- `0x821ea4d8` : `valeur==1` sélectionne `0x821eb778`, un vrai scaler par
+  INTERPOLATION LINÉAIRE (combine deux lookups voisins par calcul de
+  différence avant mise à l'échelle); `valeur!=1` sélectionne `0x821eb6e0`,
+  un scaler PLUS PROCHE VOISIN (lookup direct, sans combinaison). `0x821ea2a4` :
+  `valeur!=1` positionne un bit dans un octet de flags persisté que
+  `valeur==1` laisse à zéro — même direction aux deux sites (1 = cas
+  par défaut/non marqué).
+- Corrigé : struct+0x05 = 1 (u8). Le scaler interpolé de meilleure qualité
+  est le choix physiquement sensé pour la cible HD/widescreen déjà établie
+  par ce projet (1280x720, r169); aucune preuve aux deux sites ne pointe
+  dans l'autre sens.
+- Ferme tout trou actuellement nommé dans la famille de configuration
+  plateforme Vd/X ouverte par r168.
+- Tests 158/158 (assertion ajoutée, pas de nouveau test). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r175-real-fix-vdgetcurrentdisplayinformation-struct-plus-0x05-traced-to-a-scaler-choice-20260902.md`.
+
 # AC6 retail NTSC-U/J — r174 : VRAI CORRECTIF — `XGetLanguage` renvoie l'anglais (2026-09-02)
 
 - `XGetLanguage` (contrat réel : `DWORD XGetLanguage(VOID)`). Le seul site

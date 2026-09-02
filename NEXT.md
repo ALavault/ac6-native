@@ -19,51 +19,25 @@ fallback ReXGlue.
 
 ## État courant
 
-- r174 a corrigé `XGetLanguage` : renvoie `1` (`XC_LANGUAGE_ENGLISH`,
-  constante XDK standardisée) — la valeur exacte compte ici (résultat
-  borné-vérifié contre 10 et utilisé comme index de table). Ferme la
-  famille de configuration plateforme ouverte par r171; aucun autre import
-  de cette famille n'est actuellement identifié comme non vérifié.
-- r173 a corrigé `XGetAVPack` : renvoie `0u`, hors de l'ensemble
-  `{0x3,0x6,0x8,0x4}` que le seul site d'appel réel traite spécialement
-  (saut de configuration); aucune preuve ne distingue les autres valeurs.
-- r172 a corrigé `XGetGameRegion` : renvoie `0x101` désormais — corroboré
-  par 2 des 3 sites d'appel réels comme code privilégié à correspondance
-  exacte (pas un choix arbitraire de convention de nommage).
-- r171 a corrigé `XGetVideoMode` : struct+0x14 (refresh-rate float,
-  offset identique à r169) était lu comme DIVISEUR réel
-  (`fdivs f1,f31,f0`) sans être rempli — corrigé à 60.0f. Seul cet offset
-  est implémenté (aucune preuve pour les autres à ce site).
-- r169 a corrigé `VdQueryVideoMode` (remplissage de struct, `+0x00`/`+0x04`/
-  `+0x08`/`+0x14`). r170 a fixé les trois imports Vd voisins nommés
-  par r168/r169 :
-  - `VdQueryVideoFlags` n'était PAS un remplissage de struct (hypothèse de
-    r168/r169 infirmée) — simple valeur de retour bitmask, corrigée (`0u`,
-    plus `kOfflineStatus` dont le bit 0 forçait une branche par coïncidence).
-  - `VdGetCurrentDisplayGamma` : 2 sorties par pointeur remplies (`type=0`,
-    `gamma=2.2`), aucun risque de crash identifié (cache aval non
-    initialisé au premier appel).
-  - `VdGetCurrentDisplayInformation` : remplissage de struct confirmé aux 3
-    sites d'appel réels, `+0x48`/`+0x4a`/`+0x56` implémentés (validation
-    croisée directe avec r169). `+0x05` (champ booléen réel, confirmé à 2
-    sites) reste non implémenté — sa cible de comparaison n'est pas encore
-    tracée.
-  - Suite pytest 154/154, `ctest` 9/9.
-- Aucun autre import Vd n'est actuellement nommé comme trou non vérifié;
-  identifier le prochain nécessite un nouveau balayage des offline-imports.
+- La famille de configuration plateforme Vd/X ouverte par r168
+  (`VdQueryVideoMode`, `VdQueryVideoFlags`, `VdGetCurrentDisplayGamma`,
+  `VdGetCurrentDisplayInformation`, `XGetVideoMode`, `XGetGameRegion`,
+  `XGetAVPack`, `XGetLanguage`) est entièrement fermée depuis r175. Aucun
+  trou n'y est actuellement nommé; le détail des corrections (offsets,
+  preuves par site d'appel, valeurs choisies) est dans `STATE.md` r169-r175
+  et les rapports individuels — ne pas le dupliquer ici.
+- Suite pytest 158/158, `ctest` 9/9.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
 
 ## Prochaine décision
 
-1. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
-   consomme ce champ pour déterminer sa vraie valeur, ou documenter qu'aucune
-   preuve statique supplémentaire n'est atteignable.
-2. Balayer plus largement les imports offline restants (mêmes outils que
-   r148-r174, ex. méthode r90/r93/r164) pour identifier le prochain trou une
-   fois struct+0x05 fermé.
-3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+1. Aucun trou n'est actuellement nommé dans la famille de configuration
+   Vd/X (r168-r175 tous fermés). Balayer plus largement les imports
+   offline restants (mêmes outils que r148-r175, ex. méthode r90/r93/r164)
+   pour identifier le prochain candidat.
+2. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
    parmi plusieurs candidates également plausibles est arbitraire sans lire
@@ -78,10 +52,8 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
-- `reports/ac6-retail-native-codegen-gate2-r174-real-fix-xgetlanguage-returns-english-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r173-real-fix-xgetavpack-avoids-the-four-skip-setup-values-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r172-real-fix-xgetgameregion-returns-the-privileged-exact-match-region-code-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique.
+- `reports/ac6-retail-native-codegen-gate2-r175-real-fix-vdgetcurrentdisplayinformation-struct-plus-0x05-traced-to-a-scaler-choice-20260902.md`;
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r175).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

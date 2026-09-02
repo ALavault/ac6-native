@@ -5,28 +5,22 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r168 cité comme `source_report`;
+- le report r175 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
 ## Frontière active
 
-`VdQueryVideoMode` (r169), `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
-`VdGetCurrentDisplayInformation` (r170), `XGetVideoMode` (r171),
-`XGetGameRegion` (r172, renvoie `0x101`), `XGetAVPack` (r173, renvoie `0u`)
-et `XGetLanguage` (r174, renvoie `1`) sont fixés. Ferme la famille de
-configuration plateforme ouverte par r171. Aucun autre import de cette
-famille n'est actuellement identifié comme non vérifié; la prochaine
-frontière est `VdGetCurrentDisplayInformation` struct+0x05 (r170, champ
-booléen réel non implémenté), puis un balayage plus large des imports
-offline restants.
+La famille de configuration plateforme Vd/X ouverte par r168 est
+entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175). Aucun
+trou n'y est actuellement nommé. Prochaine étape : un balayage plus large
+des imports offline restants (mêmes outils que r148-r175, ex. méthode
+r90/r93/r164) pour identifier le prochain candidat.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
-sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`).
-
-Reste ouvert, non implémenté : `VdGetCurrentDisplayInformation` struct+0x05
-(champ booléen réel, confirmé à 2 sites d'appel, valeur correcte non
-tracée).
+sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
+ni qu'une valeur parmi plusieurs candidates plausibles est arbitraire sans
+lire comment CE XEX la consomme (r172, r175).
 
 ## Environnement de session
 
