@@ -1,3 +1,24 @@
+# AC6 retail NTSC-U/J — r221 : DOCUMENTATION SEULE — signature réelle de `XamShowMessageBoxUIEx` résolue, convention d'accès aux arguments pile toujours non confirmée (2026-09-02)
+
+- Numéroté méthodiquement chaque adresse relative à la pile du wrapper
+  (`Function_821F5BA8`) : signature réelle à 9 paramètres entièrement
+  résolue contre le site d'appel réel, `pOverlapped` identifié comme le
+  9e argument (passé sur la pile, valeur = buffer local à
+  `r1+0x68`), zéro-initialisé avant l'appel. Le helper d'attente (r220)
+  opère sur `pOverlapped+8` (convention XAM réelle de réutilisation des
+  champs Offset/OffsetHigh). Le résultat final (bouton pressé) est lu à
+  `pOverlapped+0x14` si l'appel initial ne retourne PAS 997.
+- Non implémenté : écrire ce fix exigerait de lire le 9e argument
+  (passé sur la pile) depuis le stub natif via `ctx.r1.u32 + 0x54`
+  (raisonnement ABI PowerPC standard), mais AUCUN cas existant dans ce
+  projet ne lit un argument pile au-delà de r10 pour confirmer cette
+  convention spécifiquement pour l'accès stub natif. Recherché un
+  exemple confirmé dans le code PPC généré — résultat négatif (faux
+  positif, usage local non lié à un argument). Toujours non implémenté.
+- Aucun changement de code. Tests 203/203, `ctest` 10/10 (inchangés).
+  Voir
+  `reports/ac6-retail-native-codegen-gate2-r221-doc-xamshowmessageboxuiex-signature-resolved-stack-arg-convention-still-unconfirmed-20260902.md`.
+
 # AC6 retail NTSC-U/J — r220 : DOCUMENTATION SEULE — protocole d'achèvement overlapped partiellement tracé, non implémenté (2026-09-02)
 
 - Suite à r219 : tracé le helper d'attente générique

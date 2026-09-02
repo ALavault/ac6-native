@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r220 cité comme `source_report`;
+- le report r221 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -148,10 +148,14 @@ pour son propre contrat d'achèvement asynchrone (même famille que
 tracé le protocole d'achèvement overlapped (layout
 Internal@0/InternalHigh@4 confirmé) mais NON implémenté — adresse pile
 réelle de `pOverlapped` ambiguë entre plusieurs candidates, risque réel
-d'écriture au mauvais offset.
+d'écriture au mauvais offset. r221 (documentation seule) a résolu la
+signature réelle à 9 paramètres de `XamShowMessageBoxUIEx`
+(`pOverlapped` = 9e argument pile, résultat à `pOverlapped+0x14`) mais
+reste non implémenté : convention `ctx.r1.u32 + 0x54` pour un argument
+pile depuis un stub natif non confirmée (recherché, résultat négatif).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r220, méthode r90/r93/r164) pour d'autres candidats.
+r148-r221, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

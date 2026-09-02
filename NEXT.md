@@ -195,6 +195,12 @@ fallback ReXGlue.
   helper d'attente `Function_821F50F8`) mais NON implémenté — l'adresse
   pile réelle de `pOverlapped` reste ambiguë entre plusieurs candidates,
   risque réel d'écriture au mauvais offset.
+- r221 (documentation seule) : signature réelle à 9 paramètres de
+  `XamShowMessageBoxUIEx` entièrement résolue (`pOverlapped` = 9e
+  argument pile, résultat final à `pOverlapped+0x14`). Toujours non
+  implémenté : convention d'accès `ctx.r1.u32 + 0x54` pour un argument
+  pile depuis un stub natif non confirmée par un exemple existant dans
+  ce projet (recherché, résultat négatif).
 - Suite pytest 203/203, `ctest` 10/10 (inchangés depuis r217).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -230,11 +236,11 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r221-doc-xamshowmessageboxuiex-signature-resolved-stack-arg-convention-still-unconfirmed-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r220-doc-overlapped-completion-protocol-partially-traced-not-implemented-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r219-doc-corrects-r209-r211-xamgetexecutionid-gate-is-always-bypassed-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
   (bilan par gros chantier — à lire avant de reprendre le balayage);
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r220).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r221).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.
