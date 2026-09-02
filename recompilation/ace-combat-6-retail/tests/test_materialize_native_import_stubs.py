@@ -148,6 +148,24 @@ def test_xam_input_get_keystroke_ex_returns_error_empty(
     assert "ctx.r3.u64 = 0x4306u;" in body
 
 
+def test_xam_user_check_privilege_grants_and_succeeds(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XamUserCheckPrivilege);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r182: real contract is DWORD XamUserCheckPrivilege(DWORD, DWORD,
+    # LPBOOL) -- both the return (checked == 0 for ERROR_SUCCESS) and the
+    # output bool (checked == 1) are consumed by this XEX's own real call
+    # sites (0x82206bcc/0x821f44ac).
+    body = text.split("void __imp__XamUserCheckPrivilege")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U32(ctx.r5.u32, 1u)" in body
+    assert "ctx.r3.u64 = 0u;" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

@@ -914,6 +914,33 @@ def render_body(name: str) -> str:
         # implemented (no press/release edge tracking exists yet --
         # naming that gap here rather than fabricating queued events).
         return "  ctx.r3.u64 = 0x4306u;  // ERROR_EMPTY\n"
+    if name == "XamUserCheckPrivilege":
+        # r182: real signature is DWORD XamUserCheckPrivilege(DWORD
+        # dwUserIndex, DWORD dwPrivilegeType, LPBOOL pfResult) -- a
+        # struct-fill (the bool) PLUS a real status return, not just a
+        # discarded status. This XEX's own real call sites confirm both
+        # halves of the contract are consumed:
+        #   0x82206bcc/0x82206bf0 (a restriction-flag gate) check the
+        #   return for equality against 0 (ERROR_SUCCESS) with
+        #   `cmplwi r3,0x0; bne <treat as restricted/skip>`, then read
+        #   back the bool at r5 (`lwz r11,0x60(r1)`) and again branch the
+        #   SAME way when it is 1 (granted) as when the call failed --
+        #   only "query succeeded AND privilege denied" takes the other
+        #   path.
+        #   0x821f44ac (the sign-in-resolution helper r176 fixed) returns
+        #   this call's raw result as ITS OWN return value with no
+        #   further check -- kOfflineStatus (0xC00000BB) is a nonsensical
+        #   NT status handed straight to that function's own caller in
+        #   place of a real Win32 error code.
+        # Fixed: ERROR_SUCCESS (0) with the bool set to TRUE (privilege
+        # granted) -- consistent with this project's own established
+        # single, unrestricted offline-profile assumption (r176's
+        # "signed in locally, not to Live" reasoning), not a value chosen
+        # to force either branch at the one call site where the outcome
+        # actually differs.
+        return """  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, 1u);
+  ctx.r3.u64 = 0u;
+"""
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --

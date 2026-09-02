@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r182 : VRAI CORRECTIF — `XamUserCheckPrivilege` accorde et réussit (2026-09-02)
+
+- `0x823cfe8c`, que le rapport r176 avait seulement nommé « une fonction
+  différente (chemin de repli) » sans l'identifier, s'avère être le thunk
+  de `XamUserCheckPrivilege` (confirmé par correspondance d'adresse).
+- Contrat réel : `DWORD XamUserCheckPrivilege(DWORD, DWORD, LPBOOL)` —
+  remplissage de struct (le bool) PLUS un vrai statut de retour, pas un
+  statut ignoré. `0x82206bcc`/`0x82206bf0` testent le retour contre 0
+  (`ERROR_SUCCESS`) ET relisent le bool de sortie (`==1`) — échec de
+  l'appel et privilège ACCORDÉ mènent à la MÊME branche; seul « appel
+  réussi ET privilège refusé » diverge. `0x821f44ac` (le helper de
+  résolution de connexion de r176) renvoie ce résultat brut comme SA
+  PROPRE valeur de retour sans autre vérification.
+- Corrigé : `ERROR_SUCCESS` (0), bool de sortie = `TRUE` (accordé) —
+  cohérent avec l'hypothèse de profil hors-ligne unique et non restreint
+  déjà établie (r176), pas une valeur choisie pour forcer le seul site où
+  le résultat diverge réellement.
+- Tests 166/166 (165/165 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r182-real-fix-xamusercheckprivilege-grants-and-succeeds-20260902.md`.
+
 # AC6 retail NTSC-U/J — r181 : VRAI CORRECTIF — `XamInputGetKeystrokeEx` renvoie `ERROR_EMPTY` (2026-09-02)
 
 - Dernier import restant de la famille `XamInput*` (r180 avait couvert
