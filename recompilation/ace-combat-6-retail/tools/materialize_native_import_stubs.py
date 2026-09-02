@@ -1404,6 +1404,18 @@ def render_body(name: str) -> str:
         # abort immediately on every iteration. FALSE (keep working) is
         # the honest default absent any real signaling mechanism.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "NtFlushBuffersFile":
+        # r199: NTSTATUS NtFlushBuffersFile(HANDLE FileHandle,
+        # PIO_STATUS_BLOCK IoStatusBlock). Both of this XEX's real call
+        # sites (0x82392848, 0x8239130c) pass a handle and an
+        # IoStatusBlock output pointer that neither call site reads back
+        # afterward -- one checks only success/failure (`blt`), the other
+        # discards the return entirely. This project's guest media is
+        # read-only (r189/r190/r197): there is never a pending write to
+        # flush, so unconditional success is the honest contract, not a
+        # guess -- matching the read-only-media precedent already used
+        # for NtQueryFullAttributesFile/NtQueryVolumeInformationFile.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

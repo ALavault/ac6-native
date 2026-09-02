@@ -1,3 +1,16 @@
+# AC6 retail NTSC-U/J — r199 : VRAI CORRECTIF — `NtFlushBuffersFile` réussit toujours (2026-09-02)
+
+- `NTSTATUS NtFlushBuffersFile(HANDLE, PIO_STATUS_BLOCK)` : 2 sites
+  d'appel réels (`0x82392848`, `0x8239130c`), aucun ne relit
+  `IoStatusBlock` après l'appel — l'un vérifie seulement succès/échec,
+  l'autre ignore totalement le retour. Le média invité de ce projet est
+  en lecture seule (r189/r190/r197) : jamais d'écriture en attente à
+  purger.
+- Corrigé : retourne `STATUS_SUCCESS` sans condition. `IoStatusBlock`
+  laissé non écrit puisqu'aucun site d'appel réel ne le relit.
+- Tests 186/186 (185/185 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r199-real-fix-ntflushbuffersfile-always-succeeds-20260902.md`.
+
 # AC6 retail NTSC-U/J — r198 : VRAI CORRECTIF — `XamTaskShouldExit` reste au travail par défaut (2026-09-02)
 
 - `BOOLEAN XamTaskShouldExit(VOID)` : sans paramètre (site réel
