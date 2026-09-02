@@ -714,20 +714,28 @@ def test_create_semaphore_registers_a_waitable_event(tmp_path: Path) -> None:
     output = tmp_path / "stubs.cpp"
     assert MODULE.render(mapping, output) == 3
     text = output.read_text()
+    # render() sorts imports alphabetically: NtCreateMutant,
+    # NtCreateSemaphore, NtCreateTimer.
+    mutant_body = text.split("void __imp__NtCreateMutant")[1].split(
+        "void __imp__NtCreateSemaphore"
+    )[0]
     semaphore_body = text.split("void __imp__NtCreateSemaphore")[1].split(
         "void __imp__NtCreateTimer"
     )[0]
+    timer_body = text.split("void __imp__NtCreateTimer")[1]
     # r145: a real NT signature -- r5=InitialCount, r6=MaximumCount --
-    # confirmed against this XEX's own NtCreateSemaphore call site. Only
-    # NtCreateSemaphore registers with create_event(); NtCreateTimer and
-    # NtCreateMutant keep the prior generic handle-only allocation, since
-    # nothing in this project's own tracing has shown either needs to
-    # participate in the same wait/signal model.
+    # confirmed against this XEX's own NtCreateSemaphore call site.
     assert "create_event(handle, /*manual_reset=*/false, /*signaled=*/ctx.r5.s32 > 0)" in (
         semaphore_body
     )
-    timer_and_mutant = text.split("void __imp__NtCreateTimer")[1]
-    assert "create_event(" not in timer_and_mutant
+    # r216: NtCreateTimer now also registers with create_event() (auto-
+    # reset, matching this XEX's own NtSetTimerEx call site forcing
+    # SynchronizationTimer) so a real wait actually observes the timer's
+    # real fire; NtCreateMutant keeps the prior generic handle-only
+    # allocation, since nothing in this project's own tracing has shown
+    # it needs to participate in the same wait/signal model.
+    assert "create_event(handle, /*manual_reset=*/false, /*signaled=*/false)" in timer_body
+    assert "create_event(" not in mutant_body
 
 
 def test_ob_reference_object_by_handle_writes_the_real_handle_through(
@@ -1095,13 +1103,14 @@ def test_generic_fallback_is_traceable_and_still_returns_offline_status(
     tmp_path: Path,
 ) -> None:
     mapping = tmp_path / "mapping.cpp"
-    # r194: KeDelayExecutionThread got a real fix (actually sleeps); use a
-    # still-generic import as the fallback-shape example instead.
-    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtCancelTimer);\n")
+    # r194: KeDelayExecutionThread got a real fix (actually sleeps); r216:
+    # NtCancelTimer got a real fix too. Use a still-generic import as the
+    # fallback-shape example instead.
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtDuplicateObject);\n")
     output = tmp_path / "stubs.cpp"
     assert MODULE.render(mapping, output) == 1
     text = output.read_text()
-    assert 'trace_offline_import("NtCancelTimer")' in text
+    assert 'trace_offline_import("NtDuplicateObject")' in text
     assert "ctx.r3.u64 = kOfflineStatus" in text
 
 
@@ -1573,3 +1582,31 @@ def test_xmsg_cancel_io_request_always_succeeds(tmp_path: Path) -> None:
     )[0]
     assert "kOfflineStatus" not in body
     assert "ctx.r3.u64 = 0u" in body
+
+
+def test_nt_set_timer_ex_actually_fires_and_signals(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__NtSetTimerEx);\n"
+        "PPC_EXTERN_FUNC(__imp__NtCancelTimer);\n"
+        "PPC_EXTERN_FUNC(__imp__NtCreateTimer);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 3
+    text = output.read_text()
+
+    set_timer_body = text.split("void __imp__NtSetTimerEx(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in set_timer_body
+    assert "PPC_LOAD_U64(ctx.r4.u32)" in set_timer_body
+    assert "set_timer(ctx.r3.u32, due_time" in set_timer_body
+
+    cancel_body = text.split("void __imp__NtCancelTimer(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in cancel_body
+    assert "cancel_timer(ctx.r3.u32)" in cancel_body
+
+    assert "std::this_thread::sleep_for(initial_delay)" in text
+    assert "cancelled->load()" in text

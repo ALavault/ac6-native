@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r216 : VRAI CORRECTIF — la famille `NtSetTimerEx`/`NtCancelTimer`/`NtCreateTimer` se déclenche réellement (2026-09-02)
+
+- Signature réelle à 8 arguments de `NtSetTimerEx` entièrement résolue
+  via le wrapper (`0x82204c54`/`0x82390ab0`) : `TimerApcRoutine=NULL`,
+  `TimerType=1` (Synchronization), `DueTime≈-101984` (100ns, ~10,2ms
+  relatif), `Period=0` (unique). Attendu via `NtWaitForSingleObjectEx`
+  sur le même handle (déjà modélisé par `g_events`), pas via l'APC.
+  `NtCreateTimer` partageait le stub générique avec `NtCreateMutant` —
+  n'enregistrait JAMAIS le handle dans `g_events`, donc même un
+  minuteur réel se serait toujours soldé en TIMEOUT (même classe que
+  r145 pour `NtCreateSemaphore`).
+- Corrigé : `NtCreateTimer` enregistre maintenant via `create_event`
+  (auto-reset). `NtSetTimerEx` lit le vrai `DueTime` 64 bits et lance
+  un `std::thread` détaché (`set_timer()`) qui dort puis appelle
+  `set_event()`, se répétant sur `Period` si non nul. `NtCancelTimer`
+  pose un drapeau d'annulation par minuteur (`cancel_timer()`) vérifié
+  avant chaque déclenchement.
+- Tests 202/202 (201/201 → +1, 1 reciblé). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r216-real-fix-nt-timer-family-actually-fires-20260902.md`.
+
 # AC6 retail NTSC-U/J — r215 : VRAI CORRECTIF — `XMsgCancelIORequest` réussit toujours (2026-09-02)
 
 - `XMsgCancelIORequest` (famille `XMsg` de r203) : 3 sites d'appel

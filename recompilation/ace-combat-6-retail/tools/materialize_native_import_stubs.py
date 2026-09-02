@@ -210,6 +210,51 @@ void park_until_resumed(std::uint32_t key) {
   });
 }
 
+// r216: real signature (documented, and confirmed at this XEX's own
+// single real call site, traced through its wrapper) is NtSetTimerEx(
+// HANDLE TimerHandle, PLARGE_INTEGER DueTime, PTIMERAPCROUTINE
+// TimerApcRoutine, TIMER_TYPE TimerType, PVOID TimerContext, LONG
+// Period, BOOLEAN ResumeContext, ULONG Flags) -- 8 params fit the PPC
+// ABI's r3..r10 directly. The one real call site passes a NULL
+// TimerApcRoutine and a negative (relative) DueTime of about -10.2ms
+// with Period=0 (one-shot); this timer is waited on via
+// NtWaitForSingleObjectEx (already modeled through g_events on the same
+// handle), not an APC callback this project would need to invoke. Each
+// timer's own cancellation flag lets NtCancelTimer suppress a pending
+// fire without needing to join or interrupt the sleeping host thread.
+std::mutex g_timers_mutex;
+std::unordered_map<std::uint32_t, std::shared_ptr<std::atomic<bool>>>
+    g_timer_cancelled;
+
+void set_timer(std::uint32_t key, std::int64_t due_time_100ns,
+               std::int32_t period_ms) {
+  if (key == 0u) return;
+  auto cancelled = std::make_shared<std::atomic<bool>>(false);
+  {
+    std::lock_guard lock(g_timers_mutex);
+    g_timer_cancelled[key] = cancelled;
+  }
+  if (due_time_100ns >= 0) return;  // absolute due time, untraced: no-op
+  const auto initial_delay =
+      std::chrono::duration<std::int64_t, std::ratio<1, 10000000>>(
+          -due_time_100ns);
+  std::thread([key, cancelled, initial_delay, period_ms]() mutable {
+    std::this_thread::sleep_for(initial_delay);
+    for (;;) {
+      if (cancelled->load()) return;
+      set_event(key);
+      if (period_ms <= 0) return;
+      std::this_thread::sleep_for(std::chrono::milliseconds(period_ms));
+    }
+  }).detach();
+}
+
+void cancel_timer(std::uint32_t key) {
+  std::lock_guard lock(g_timers_mutex);
+  auto it = g_timer_cancelled.find(key);
+  if (it != g_timer_cancelled.end()) it->second->store(true);
+}
+
 std::uint32_t allocate_guest(uint8_t* base, std::uint32_t requested) {
   if (requested == 0u) return 0u;
   const std::uint64_t rounded =
@@ -1197,9 +1242,23 @@ def render_body(name: str) -> str:
   create_event(handle, /*manual_reset=*/false, /*signaled=*/ctx.r5.s32 > 0);
   ctx.r3.u64 = 0u;
 """
-    if name in {"NtCreateTimer", "NtCreateMutant"}:
+    if name == "NtCreateMutant":
         return """  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32,
                                              g_next_handle.fetch_add(1u));
+  ctx.r3.u64 = 0u;
+"""
+    if name == "NtCreateTimer":
+        # r216: registers the handle in g_events (auto-reset, matching
+        # this XEX's own real NtSetTimerEx call site forcing
+        # TimerType=SynchronizationTimer=1) so NtWaitForSingleObjectEx
+        # on it actually observes NtSetTimerEx's real fire via
+        # set_timer()/set_event() -- previously shared the generic
+        # handle-only stub with NtCreateMutant, which never registered
+        # anything, so a real wait on a real timer was a guaranteed
+        # STATUS_TIMEOUT regardless of the timer ever firing.
+        return """  const std::uint32_t handle = g_next_handle.fetch_add(1u);
+  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32, handle);
+  create_event(handle, /*manual_reset=*/false, /*signaled=*/false);
   ctx.r3.u64 = 0u;
 """
     if name == "NtSetEvent":
@@ -1622,6 +1681,25 @@ def render_body(name: str) -> str:
         # in-flight request for this to cancel; unconditional success is
         # honest regardless.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "NtSetTimerEx":
+        # r216: real call site traced through its wrapper at
+        # 0x82204c54/0x82390ab0: r3=TimerHandle, r4=DueTime,
+        # r8=Period (masked to a byte by the wrapper; 0 at this call
+        # site = one-shot). TimerApcRoutine (r5) is NULL here -- no APC
+        # to invoke.
+        return """  std::int64_t due_time = 0;
+  if (ctx.r4.u32 != 0u) {
+    due_time = static_cast<std::int64_t>(PPC_LOAD_U64(ctx.r4.u32));
+  }
+  set_timer(ctx.r3.u32, due_time, static_cast<std::int32_t>(ctx.r8.u32));
+  ctx.r3.u64 = 0u;
+"""
+    if name == "NtCancelTimer":
+        # r216: single real call site passes r4=0 (CurrentState* not
+        # requested) -- no output to write.
+        return """  cancel_timer(ctx.r3.u32);
+  ctx.r3.u64 = 0u;
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in
