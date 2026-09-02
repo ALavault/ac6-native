@@ -1,3 +1,18 @@
+# AC6 retail NTSC-U/J — r201 : VRAI CORRECTIF — `NtOpenFile` réutilise le chemin média de `NtCreateFile` (2026-09-02)
+
+- `NtOpenFile` : 9 sites d'appel réels, le plus haut compte trouvé dans
+  ce balayage. Site `0x821f7308` confirme la signature réelle à 6
+  arguments : `FileHandle`/`ObjectAttributes`/`IoStatusBlock` exactement
+  aux mêmes positions r3/r5/r6 que `NtCreateFile` (r122/r123/r129).
+- Corrigé : `NtOpenFile` rejoint le `render_body` de `NtCreateFile`
+  (même chemin `ObjectAttributes`→`ANSI_STRING`→
+  `native_guest_media_service().open_file()`). Nettoyage incident : le
+  message de trace était littéralement `"[NtCreateFile]"` — devient une
+  f-string interpolant le vrai nom pour ne pas mal étiqueter les appels
+  `NtOpenFile`.
+- Tests 188/188 (187/187 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r201-real-fix-ntopenfile-reuses-ntcreatefiles-media-service-path-20260902.md`.
+
 # AC6 retail NTSC-U/J — r200 : VRAI CORRECTIF — `XNotifyGetNext` signale l'absence de notification (2026-09-02)
 
 - `BOOL XNotifyGetNext(...)` : 4 sites d'appel réels. Site `0x82165868`

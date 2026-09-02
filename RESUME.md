@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r200 cité comme `source_report`;
+- le report r201 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -79,10 +79,12 @@ corrigé `NtFlushBuffersFile` (média en lecture seule — `STATUS_SUCCESS`
 sans condition). r200 a corrigé `XNotifyGetNext`/`XNotifyPositionUI`
 (le no-op offline signalait une notification à chaque appel, lisant un
 id depuis la pile non initialisée — retourne maintenant « aucune
-notification »).
+notification »). r201 a corrigé `NtOpenFile` (9 sites d'appel réels —
+rejoint le chemin média déjà correct de `NtCreateFile`, même contrat de
+registres r3/r5/r6).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r200, méthode r90/r93/r164) pour d'autres candidats.
+r148-r201, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

@@ -107,7 +107,10 @@ fallback ReXGlue.
 - r200 a corrigé `XNotifyGetNext`/`XNotifyPositionUI` (le no-op offline
   signalait une notification à chaque appel, lisant un id depuis la
   pile non initialisée — retourne maintenant « aucune notification »).
-- Suite pytest 187/187, `ctest` 10/10.
+- r201 a corrigé `NtOpenFile` (9 sites d'appel réels — le plus haut
+  compte du balayage — rejoint le chemin média déjà correct de
+  `NtCreateFile`, même contrat de registres r3/r5/r6).
+- Suite pytest 188/188, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -138,9 +141,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r201-real-fix-ntopenfile-reuses-ntcreatefiles-media-service-path-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r200-real-fix-xnotifygetnext-reports-no-notification-pending-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r199-real-fix-ntflushbuffersfile-always-succeeds-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r200).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r201).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

@@ -1073,8 +1073,19 @@ def render_body(name: str) -> str:
   }
   if (sha1_ctx != nullptr) EVP_MD_CTX_free(sha1_ctx);
 """
-    if name == "NtCreateFile":
-        # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
+    if name in {"NtCreateFile", "NtOpenFile"}:
+        # r122/r123/r129 (NtCreateFile); r200 extends this to NtOpenFile
+        # (9 real call sites, e.g. 0x821f7308) after confirming its real
+        # 6-arg signature (PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES,
+        # PIO_STATUS_BLOCK, ULONG ShareAccess, ULONG OpenOptions) puts
+        # FileHandle/ObjectAttributes/IoStatusBlock at the exact same
+        # r3/r5/r6 positions NtCreateFile already uses -- this project's
+        # media service never distinguishes create-vs-open (it is
+        # read-only, so "open" is the only real operation either import
+        # performs), so the identical body is a direct consequence of the
+        # identical register contract, not an assumption.
+        #
+        # The real 9-arg NT signature for NtCreateFile, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --
         # CreateOptions (the 9th, stack-passed) is unread here, matching
         # every other stub in this file. ObjectAttributes (r5) is the
@@ -1089,35 +1100,35 @@ def render_body(name: str) -> str:
         # it opens whatever media the runtime was actually booted against
         # (native_guest_media_service(), bound once at NativeRuntime::boot()
         # to the same MediaInput every other boot-time read already uses).
-        return """  const std::uint32_t object_attributes = ctx.r5.u32;
+        return f"""  const std::uint32_t object_attributes = ctx.r5.u32;
   const std::uint32_t object_name = object_attributes != 0u
       ? PPC_LOAD_U32(object_attributes + 4u) : 0u;
   std::uint32_t status = 0xC0000034u;  // STATUS_OBJECT_NAME_NOT_FOUND
   std::uint32_t handle = 0u;
-  if (object_name != 0u) {
+  if (object_name != 0u) {{
     const std::uint16_t length = PPC_LOAD_U16(object_name + 0u);
     const std::uint32_t buffer = PPC_LOAD_U32(object_name + 4u);
-    if (buffer != 0u) {
+    if (buffer != 0u) {{
       const std::string_view raw(
           reinterpret_cast<const char*>(base + buffer), length);
       const std::string relative = guest_path_to_relative(raw);
       const std::optional<std::uint32_t> opened =
           ac6::native::native_guest_media_service().open_file(relative);
-      if (opened.has_value()) {
+      if (opened.has_value()) {{
         handle = *opened;
         status = 0u;  // STATUS_SUCCESS
-      }
-      if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
-        std::fprintf(stderr, "[NtCreateFile] \\"%s\\" -> %s\\n",
+      }}
+      if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {{
+        std::fprintf(stderr, "[{name}] \\"%s\\" -> %s\\n",
                       relative.c_str(), opened.has_value() ? "ok" : "not found");
-      }
-    }
-  }
+      }}
+    }}
+  }}
   if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32, handle);
-  if (ctx.r6.u32 != 0u) {
+  if (ctx.r6.u32 != 0u) {{
     PPC_STORE_U32(ctx.r6.u32 + 0u, status);
     PPC_STORE_U32(ctx.r6.u32 + 4u, 0u);
-  }
+  }}
   ctx.r3.u64 = status;
 """
     if name == "NtReadFile":

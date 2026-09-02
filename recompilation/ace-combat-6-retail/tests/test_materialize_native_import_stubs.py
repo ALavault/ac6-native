@@ -1347,3 +1347,20 @@ def test_xnotify_family_reports_no_notification_pending(tmp_path: Path) -> None:
         body = text.split(f"void __imp__{name}(")[1].split("\n}\n")[0]
         assert "kOfflineStatus" not in body
         assert "ctx.r3.u64 = 0u" in body
+
+
+def test_nt_open_file_reuses_the_create_file_media_service_path(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtOpenFile);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    assert "native_guest_media_service().open_file(relative)" in text
+    assert "guest_path_to_relative(raw)" in text
+    assert "[NtOpenFile]" in text
+    assert "[NtCreateFile]" not in text
+    assert "0xC0000034u" in text  # STATUS_OBJECT_NAME_NOT_FOUND on a real miss
+    body = text.split("void __imp__NtOpenFile(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
