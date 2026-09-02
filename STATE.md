@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r222 : VRAI CORRECTIF — `XamShowMessageBoxUIEx` s'achève de manière synchrone (2026-09-02)
+
+- Réexamen de la réserve de r221 : lire un argument pile via
+  `ctx.r1.u32 + 0x54` n'est PAS une supposition ABI — les stubs natifs
+  reçoivent `ctx` inchangé de l'appelant (aucune poussée de frame en
+  traversant vers un stub natif), donc `ctx.r1.u32` EST le `r1` de
+  l'appelant au moment du `bl`, par construction directe, pas par
+  convention à part confirmer. Le désassemblage montre déjà ce que
+  l'appelant y a écrit.
+- Corrigé : écrit `pMessageBoxResult` (r10) et `pOverlapped+0x14`
+  (lu via `ctx.r1.u32 + 0x54`) à 0 (« bouton 0 » par défaut) et
+  retourne `STATUS_SUCCESS` — JAMAIS 997, donc l'appelant saute
+  toujours le helper d'attente asynchrone et lit le résultat
+  directement.
+- Tests 204/204 (203/203 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r222-real-fix-xamshowmessageboxuiex-completes-synchronously-20260902.md`.
+
 # AC6 retail NTSC-U/J — r221 : DOCUMENTATION SEULE — signature réelle de `XamShowMessageBoxUIEx` résolue, convention d'accès aux arguments pile toujours non confirmée (2026-09-02)
 
 - Numéroté méthodiquement chaque adresse relative à la pile du wrapper

@@ -1706,6 +1706,31 @@ def render_body(name: str) -> str:
         # no check at all. Same class of fix as VdRetrainEDRAM and
         # friends above: the native renderer owns the Vd lifecycle.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamShowMessageBoxUIEx":
+        # r222: real 9-arg signature fully resolved (r221) against this
+        # XEX's single real call site (0x821f5c30): r10=pMessageBoxResult,
+        # and the 9th arg (pOverlapped, stack-passed) sits at the
+        # caller's own r1+0x54 -- confirmed directly from that call
+        # site's own `stw r5,0x54(r1)` (r5 = &(local OVERLAPPED-shaped
+        # buffer)), not assumed from ABI convention alone: native stubs
+        # receive `ctx` unchanged from the caller (no frame push), so
+        # ctx.r1.u32 IS the caller's own r1 at the `bl`, and
+        # ctx.r1.u32+0x54 reads exactly what that `stw` wrote.
+        #
+        # The caller only invokes the async completion-wait helper
+        # (r220) when this call returns exactly 997
+        # (ERROR_IO_PENDING); any other return skips straight to reading
+        # the final button-pressed result at pOverlapped+0x14 (this
+        # XEX's own `lwz r3,0x7c(r1)`, i.e. (r1+0x68)+0x14). No real UI
+        # exists to ask the user anything, so "button 0" is the honest
+        # default -- completing synchronously (not 997) means the
+        # caller never touches pOverlapped's Internal/InternalHigh
+        # fields at all on this path.
+        return """  if (ctx.r10.u32 != 0u) PPC_STORE_U32(ctx.r10.u32, 0u);
+  const std::uint32_t overlapped = PPC_LOAD_U32(ctx.r1.u32 + 0x54);
+  if (overlapped != 0u) PPC_STORE_U32(overlapped + 0x14, 0u);
+  ctx.r3.u64 = 0u;
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in
