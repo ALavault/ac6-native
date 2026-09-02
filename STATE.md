@@ -1,3 +1,15 @@
+# AC6 retail NTSC-U/J — r204 : VRAI CORRECTIF — `IoDismountVolume`/`IoDismountVolumeByFileHandle` réussissent toujours (2026-09-02)
+
+- `IoDismountVolume` (2 sites réels, dans la même fonction que
+  `XamTaskShouldExit` de r198)/`IoDismountVolumeByFileHandle` (1 site
+  réel, queue de nettoyage inconditionnelle de l'écriveur de
+  sauvegarde tracé par r202 — atteinte sur succès ET échec) : retour
+  totalement ignoré par tous les appelants réels.
+- Corrigé : `STATUS_SUCCESS` sans condition pour les deux — même classe
+  que `KeLockL2`/`KeUnlockL2`/`KiApcNormalRoutineNop` (r197).
+- Tests 190/190 (189/189 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r204-real-fix-iodismountvolume-family-always-succeeds-20260902.md`.
+
 # AC6 retail NTSC-U/J — r203 : VRAI CORRECTIF — `XAudioGetVoiceCategoryVolume`/`VolumeChangeMask`; corrige r197 (2026-09-02)
 
 - **Correction de r197** : `0x823cfe4c` N'EST PAS une fonction interne

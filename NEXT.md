@@ -124,7 +124,10 @@ fallback ReXGlue.
   aussi : `XAudioGetVoiceCategoryVolumeChangeMask`/
   `XAudioGetVoiceCategoryVolume` (masque « rien n'a changé », volume
   plein par défaut).
-- Suite pytest 189/189, `ctest` 10/10.
+- r204 a corrigé `IoDismountVolume`/`IoDismountVolumeByFileHandle`
+  (retour ignoré par tous les appelants réels — `STATUS_SUCCESS` sans
+  condition).
+- Suite pytest 190/190, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -159,9 +162,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r204-real-fix-iodismountvolume-family-always-succeeds-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r203-real-fix-xaudio-voice-category-volume-corrects-r197-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r202-doc-real-save-write-path-found-seh-and-console-key-imports-checked-no-safe-fix-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r203).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r204).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

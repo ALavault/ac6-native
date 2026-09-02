@@ -1475,6 +1475,17 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = 0u;
 """
+    if name in {"IoDismountVolume", "IoDismountVolumeByFileHandle"}:
+        # r204: NTSTATUS IoDismountVolume(...)/NTSTATUS
+        # IoDismountVolumeByFileHandle(HANDLE FileHandle). Real call
+        # sites (IoDismountVolume: 0x82391984, 0x823919b8, inside
+        # Function_823917F8 alongside r198's XamTaskShouldExit fix;
+        # IoDismountVolumeByFileHandle: 0x82392d6c, the unconditional
+        # cleanup tail of r202's traced save-write function, reached on
+        # both the success and failure path) all discard the return
+        # value outright -- no check at all, same class of fix as
+        # r197's KeLockL2/KeUnlockL2/KiApcNormalRoutineNop.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

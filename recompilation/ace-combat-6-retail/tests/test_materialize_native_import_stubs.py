@@ -1390,3 +1390,18 @@ def test_xaudio_voice_category_volume_reports_no_change_full_volume(
     assert "kOfflineStatus" not in volume_body
     assert "kFullVolume = 1.0f" in volume_body
     assert "PPC_STORE_U32(ctx.r4.u32, bits)" in volume_body
+
+
+def test_io_dismount_volume_family_always_succeeds(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__IoDismountVolume);\n"
+        "PPC_EXTERN_FUNC(__imp__IoDismountVolumeByFileHandle);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+    for name in ("IoDismountVolume", "IoDismountVolumeByFileHandle"):
+        body = text.split(f"void __imp__{name}(")[1].split("\n}\n")[0]
+        assert "kOfflineStatus" not in body
+        assert "ctx.r3.u64 = 0u" in body
