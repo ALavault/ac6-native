@@ -1,3 +1,17 @@
+# AC6 retail NTSC-U/J — r186 : VRAIS CORRECTIFS — `RtlFillMemoryUlong`/`RtlCompareMemoryUlong` (2026-09-02)
+
+- Primitives RTL standard à algorithme fixe et connu (même catégorie que
+  r184/r185 — aucune ambiguïté à résoudre). `RtlFillMemoryUlong` : le seul
+  site d'appel réel (`0x821f3354`) remplit un buffer local de 0x320
+  octets avec le motif `0x80000000` — le fallback générique n'écrivait
+  rien, laissant la mémoire de pile garbage au lieu du motif attendu.
+  `RtlCompareMemoryUlong` : compagnon réel, compare contre un motif
+  répété et renvoie la longueur du préfixe correspondant.
+- Corrigés selon l'algorithme fixe standard (remplir/comparer par blocs
+  de 4 octets).
+- Tests 172/172 (170/170 → +2). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r186-real-fixes-rtlfillmemoryulong-rtlcomparememoryulong-20260902.md`.
+
 # AC6 retail NTSC-U/J — r185 : VRAIS CORRECTIFS — `RtlTimeToTimeFields`/`RtlTimeFieldsToTime` complètent r179 (2026-09-02)
 
 - 2 de 4 sites d'appel réels de `KeQuerySystemTime` (r179) alimentent

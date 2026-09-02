@@ -245,6 +245,40 @@ def test_rtl_time_fields_to_time_is_the_real_inverse(
     assert "ctx.r3.u64 = 1u;" in body
 
 
+def test_rtl_fill_memory_ulong_fills_with_the_real_pattern(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlFillMemoryUlong);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r186: real signature is VOID RtlFillMemoryUlong(PVOID, ULONG,
+    # ULONG) -- a standard, fixed-algorithm NT RTL primitive (fill
+    # Length/4 ULONGs with Pattern), not a guessed value.
+    body = text.split("void __imp__RtlFillMemoryUlong")[1]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r4.u32 / 4u" in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + i * 4u, ctx.r5.u32)" in body
+
+
+def test_rtl_compare_memory_ulong_returns_the_matched_prefix_length(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlCompareMemoryUlong);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r186: real signature is ULONG RtlCompareMemoryUlong(PVOID, ULONG,
+    # ULONG) -- returns the byte count of the longest matching ULONG
+    # prefix, the standard NT RTL companion to RtlFillMemoryUlong.
+    body = text.split("void __imp__RtlCompareMemoryUlong")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_LOAD_U32(ctx.r3.u32 + matched_words * 4u) != ctx.r5.u32" in body
+    assert "ctx.r3.u64 = matched_words * 4u;" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

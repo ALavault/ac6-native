@@ -1360,6 +1360,36 @@ def render_body(name: str) -> str:
   PPC_STORE_U64(ctx.r4.u32, static_cast<std::uint64_t>(unix_hundred_ns + kFiletimeEpochOffset));
   ctx.r3.u64 = 1u;  // TRUE
 """
+    if name == "RtlFillMemoryUlong":
+        # r186: real signature is VOID RtlFillMemoryUlong(PVOID
+        # Destination, ULONG Length, ULONG Pattern) -- a standard,
+        # publicly documented NT RTL primitive with one fixed algorithm
+        # (fill `Length / 4` ULONGs with `Pattern`), the same
+        # no-ambiguity-to-resolve category as r184's SHA-1 and r185's
+        # calendar conversion, not a guessed value. This XEX's one real
+        # call site (0x821f3354) fills a local buffer with pattern
+        # `0x80000000` -- previously left as whatever stack garbage was
+        # present, since the generic offline fallback never wrote through
+        # the pointer at all.
+        return """  const std::uint32_t word_count = ctx.r4.u32 / 4u;
+  for (std::uint32_t i = 0; i < word_count; ++i) {
+    PPC_STORE_U32(ctx.r3.u32 + i * 4u, ctx.r5.u32);
+  }
+"""
+    if name == "RtlCompareMemoryUlong":
+        # r186: real signature is ULONG RtlCompareMemoryUlong(PVOID
+        # Source, ULONG Length, ULONG Pattern) -- the standard NT RTL
+        # companion to RtlFillMemoryUlong above: compares `Length / 4`
+        # ULONGs against `Pattern` and returns the byte count of the
+        # longest matching prefix from the start (stopping at the first
+        # mismatched ULONG). Same fixed-algorithm, no-ambiguity category.
+        return """  const std::uint32_t word_count = ctx.r4.u32 / 4u;
+  std::uint32_t matched_words = 0u;
+  for (; matched_words < word_count; ++matched_words) {
+    if (PPC_LOAD_U32(ctx.r3.u32 + matched_words * 4u) != ctx.r5.u32) break;
+  }
+  ctx.r3.u64 = matched_words * 4u;
+"""
     if name == "MmQueryStatistics":
         # r108: the generic offline-import default below only sets ctx.r3
         # (a status code) and never touches the guest output buffer the
