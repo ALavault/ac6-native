@@ -1115,3 +1115,61 @@ def test_vd_ring_imports_bind_to_native_guest_service(tmp_path: Path) -> None:
     assert "native_guest_vd_service().initialize_ring" in text
     assert "native_guest_vd_service().enable_readback" in text
     assert "ctx.r3.u64 = 0u" in text
+
+
+def test_spinlock_and_irql_primitives_use_real_mutual_exclusion(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__KfAcquireSpinLock);\n"
+        "PPC_EXTERN_FUNC(__imp__KfReleaseSpinLock);\n"
+        "PPC_EXTERN_FUNC(__imp__KeAcquireSpinLockAtRaisedIrql);\n"
+        "PPC_EXTERN_FUNC(__imp__KeReleaseSpinLockFromRaisedIrql);\n"
+        "PPC_EXTERN_FUNC(__imp__KeRaiseIrqlToDpcLevel);\n"
+        "PPC_EXTERN_FUNC(__imp__KfLowerIrql);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 6
+    text = output.read_text()
+    # r191: must not still be the stale kOfflineStatus no-op.
+    assert "kOfflineStatus" not in text.split("void __imp__KfAcquireSpinLock(")[
+        1
+    ].split("\n}\n")[0]
+    assert "spin_lock_for(ctx.r3.u32).lock()" in text
+    assert "spin_lock_for(ctx.r3.u32).unlock()" in text
+    assert "g_dpc_level_mutex.lock()" in text
+    assert "g_dpc_level_mutex.unlock()" in text
+
+    acquire_body = text.split("void __imp__KfAcquireSpinLock(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "spin_lock_for(ctx.r3.u32).lock()" in acquire_body
+
+    release_body = text.split("void __imp__KfReleaseSpinLock(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "spin_lock_for(ctx.r3.u32).unlock()" in release_body
+
+    raised_acquire_body = text.split(
+        "void __imp__KeAcquireSpinLockAtRaisedIrql("
+    )[1].split("\n}\n")[0]
+    assert "spin_lock_for(ctx.r3.u32).lock()" in raised_acquire_body
+
+    raised_release_body = text.split(
+        "void __imp__KeReleaseSpinLockFromRaisedIrql("
+    )[1].split("\n}\n")[0]
+    assert "spin_lock_for(ctx.r3.u32).unlock()" in raised_release_body
+
+    raise_body = text.split("void __imp__KeRaiseIrqlToDpcLevel(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "g_dpc_level_mutex.lock()" in raise_body
+
+    lower_body = text.split("void __imp__KfLowerIrql(")[1].split("\n}\n")[0]
+    assert "g_dpc_level_mutex.unlock()" in lower_body
+
+    # r191: g_dpc_level_mutex must be recursive -- unlike a spinlock object,
+    # real IRQL is per-thread state, so the same thread legitimately nests
+    # Raise/Lower pairs without that being a self-reacquisition.
+    assert "std::recursive_mutex g_dpc_level_mutex" in text

@@ -1,3 +1,33 @@
+# AC6 retail NTSC-U/J — r191 : VRAI CORRECTIF — primitives spinlock/IRQL obtiennent une vraie exclusion mutuelle (2026-09-02)
+
+- `KfAcquireSpinLock`/`KfReleaseSpinLock`, `KeAcquireSpinLockAtRaisedIrql`/
+  `KeReleaseSpinLockFromRaisedIrql`, `KeRaiseIrqlToDpcLevel`/`KfLowerIrql`
+  étaient tous encore le no-op offline générique. Signatures NT/Xbox 360
+  documentées standard (connaissance externe protocolaire, même classe que
+  `XINPUT_STATE`/`TIME_FIELDS` déjà acceptée par ce projet).
+- Preuve réelle : site d'appel `0x821e5fd0` de ce XEX — `KfAcquireSpinLock`
+  (`0x821e600c`) et `KfReleaseSpinLock` (`0x821e6060`) encadrent un vrai
+  ajout de file (`0x821e6020`-`0x6054`). Sites d'appel réels : dizaines à
+  88-110 selon la fonction — famille répandue sur la majorité de la plage
+  d'adresses du moteur, jamais touchée avant. Même risque de concurrence
+  réelle que r116 (r111-r115 : vrais threads hôtes concurrents via
+  `ExCreateThread`), pour une primitive bien plus utilisée.
+- `spin_lock_for(key)` : nouvel aide, calqué sur `critical_section_for` de
+  r116, `std::mutex` NON récursif (un vrai spinlock n'est pas réentrant non
+  plus — l'auto-réacquisition bloque aussi sur le vrai matériel).
+  `g_dpc_level_mutex` (pour Raise/LowerIrql, sans objet de verrou associé)
+  EST `std::recursive_mutex` : l'IRQL réel est un état par thread, pas une
+  identité d'objet — un même thread relève légitimement l'IRQL en
+  imbriqué; un mutex simple provoquerait un auto-blocage sur le premier
+  Raise imbriqué.
+- « Ancien IRQL » retourné par `KfAcquireSpinLock`/`KeRaiseIrqlToDpcLevel` :
+  `PASSIVE_LEVEL` (0), non tracé jusqu'à un consommateur ce cycle — nommé
+  honnêtement.
+- Tests 178/178 (177/177 → +1). `ctest` 10/10 (aucun fichier `native/`
+  touché, seul l'outil de génération de stubs — pas de re-run
+  `prepare.py` nécessaire). Voir
+  `reports/ac6-retail-native-codegen-gate2-r191-real-fix-spinlock-and-irql-primitives-get-real-mutual-exclusion-20260902.md`.
+
 # AC6 retail NTSC-U/J — r190 : VRAI CORRECTIF — `NtQueryVolumeInformationFile` remplit un vrai FS_SIZE_INFORMATION (2026-09-02)
 
 - Contrat réel : struct-fill via r5, pas un statut ignoré. Les 3 sites

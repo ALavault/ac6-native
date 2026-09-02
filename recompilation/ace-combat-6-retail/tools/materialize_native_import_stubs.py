@@ -100,6 +100,42 @@ std::recursive_mutex& critical_section_for(std::uint32_t key) {
   return *it->second;
 }
 
+// r191: Kf/KeAcquireSpinLock*/Kf/KeReleaseSpinLock* were no-ops -- the
+// same real-concurrency risk r116 already fixed for critical sections
+// (r111-r115's confirmed real concurrent host threads), but for a
+// pervasively-used primitive: this XEX's own real call sites number in
+// the dozens to low hundreds per function, spanning most of the engine's
+// address range. Keyed by the guest KSPIN_LOCK object's own address, same
+// technique as critical_section_for. Plain std::mutex, not recursive: a
+// real spinlock is not re-entrant either (self-reacquisition deadlocks on
+// real hardware too).
+std::mutex g_spin_locks_mutex;
+std::unordered_map<std::uint32_t, std::unique_ptr<std::mutex>> g_spin_locks;
+
+std::mutex& spin_lock_for(std::uint32_t key) {
+  std::lock_guard lock(g_spin_locks_mutex);
+  auto it = g_spin_locks.find(key);
+  if (it == g_spin_locks.end()) {
+    it = g_spin_locks.emplace(key, std::make_unique<std::mutex>()).first;
+  }
+  return *it->second;
+}
+
+// r191: KeRaiseIrqlToDpcLevel/KfLowerIrql (88-110 real call sites each)
+// are unpaired with a specific lock object -- on real single-core
+// hardware, raising to DISPATCH_LEVEL alone is sufficient mutual
+// exclusion (no DPC or lower-IRQL code can preempt), but that guarantee
+// does not hold across this project's own real concurrent host threads
+// (r111-r115) without an explicit lock. One global mutex emulates "no
+// other DPC-level-or-higher code runs concurrently" -- the real semantic
+// these two functions provide, not a per-object one since none exists at
+// this call shape. recursive_mutex, unlike spin_lock_for's plain mutex:
+// real IRQL is per-thread state, not an object identity, so the same
+// thread legitimately raises to DPC level while already there (a nested
+// Raise/Lower pair is not a self-reacquisition of the same object the
+// way a real spinlock forbids -- it is routine kernel control flow).
+std::recursive_mutex g_dpc_level_mutex;
+
 void create_event(std::uint32_t key, bool manual_reset, bool signaled) {
   if (key == 0u) return;
   {
@@ -296,6 +332,33 @@ def render_body(name: str) -> str:
         return "  critical_section_for(ctx.r3.u32).lock();\n  ctx.r3.u64 = 0u;\n"
     if name == "RtlLeaveCriticalSection":
         return "  critical_section_for(ctx.r3.u32).unlock();\n  ctx.r3.u64 = 0u;\n"
+    if name == "KfAcquireSpinLock":
+        # r191: KIRQL KfAcquireSpinLock(PKSPIN_LOCK SpinLock) -- real call
+        # site 0x821e600c protects a real queue-append (0x821e6020-0x6054)
+        # between this and the matching KfReleaseSpinLock at 0x821e6060.
+        # Returned "old IRQL" is never traced back to a consumer in this
+        # XEX's own call sites examined so far; PASSIVE_LEVEL (0) is the
+        # only value real code below DISPATCH_LEVEL can observe itself at.
+        return "  spin_lock_for(ctx.r3.u32).lock();\n  ctx.r3.u64 = 0u;\n"
+    if name == "KfReleaseSpinLock":
+        return "  spin_lock_for(ctx.r3.u32).unlock();\n  ctx.r3.u64 = 0u;\n"
+    if name == "KeAcquireSpinLockAtRaisedIrql":
+        # r191: VOID KeAcquireSpinLockAtRaisedIrql(PKSPIN_LOCK SpinLock) --
+        # same lock object identity as KfAcquireSpinLock, but the real API
+        # assumes the caller already raised IRQL itself, so it does not
+        # return one.
+        return "  spin_lock_for(ctx.r3.u32).lock();\n  ctx.r3.u64 = 0u;\n"
+    if name == "KeReleaseSpinLockFromRaisedIrql":
+        return "  spin_lock_for(ctx.r3.u32).unlock();\n  ctx.r3.u64 = 0u;\n"
+    if name == "KeRaiseIrqlToDpcLevel":
+        # r191: KIRQL KeRaiseIrqlToDpcLevel(VOID) -- no lock object
+        # parameter; see g_dpc_level_mutex above for why this is
+        # recursive_mutex, not spin_lock_for's plain mutex. Old IRQL
+        # returned as PASSIVE_LEVEL (0) for the same reason as
+        # KfAcquireSpinLock: untraced to a consumer in this XEX so far.
+        return "  g_dpc_level_mutex.lock();\n  ctx.r3.u64 = 0u;\n"
+    if name == "KfLowerIrql":
+        return "  g_dpc_level_mutex.unlock();\n  ctx.r3.u64 = 0u;\n"
     if name == "KeGetCurrentProcessType":
         return "  ctx.r3.u64 = 0u;  // title process\n"
     if name == "ExGetXConfigSetting":

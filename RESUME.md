@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r190 cité comme `source_report`;
+- le report r191 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -39,10 +39,17 @@ fixe). r187 a corrigé `RtlUnicodeToMultiByteN` (convertit et renvoie
 `allocate_guest`). r189 a corrigé `NtQueryFullAttributesFile` (ajoute
 `NativeGuestMediaService::file_size()`). r190 a corrigé
 `NtQueryVolumeInformationFile` (FileFsSizeInformation, unité
-d'allocation FATX 16 Kio).
+d'allocation FATX 16 Kio). r191 a corrigé les primitives spinlock/IRQL
+(`KfAcquireSpinLock`/`KfReleaseSpinLock`,
+`KeAcquireSpinLockAtRaisedIrql`/`KeReleaseSpinLockFromRaisedIrql`,
+`KeRaiseIrqlToDpcLevel`/`KfLowerIrql`) — vraie exclusion mutuelle,
+88-110 sites d'appel réels par fonction, même risque de concurrence
+réelle que r116 (`spin_lock_for` non récursif comme un vrai spinlock;
+`g_dpc_level_mutex` récursif car l'IRQL réel est un état par thread, pas
+une identité d'objet).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r190, méthode r90/r93/r164) pour d'autres candidats.
+r148-r191, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
