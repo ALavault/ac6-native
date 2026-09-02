@@ -1,3 +1,24 @@
+# AC6 retail NTSC-U/J — r188 : VRAIS CORRECTIFS — `RtlUnicodeStringToAnsiString`/`RtlFreeAnsiString` (2026-09-02)
+
+- Compagnons allocation/libération réels, découverts ensemble à des
+  adresses adjacentes (`0x823927f0`/`0x8239281c`) dans la même fonction.
+- `RtlUnicodeStringToAnsiString` (contrat réel : `NTSTATUS
+  RtlUnicodeStringToAnsiString(PANSI_STRING, PCUNICODE_STRING, BOOLEAN)`) :
+  le seul site d'appel réel confirme `AllocateDestinationString=1` et le
+  contrat NTSTATUS réel (même convention que r187); `RtlFreeAnsiString`
+  est appelé en cas de succès, confirmant qu'une vraie allocation est
+  attendue. Layout `ANSI_STRING` {Length@0,MaxLength@2,Buffer@4} déjà
+  confirmé par r122/r123; `UNICODE_STRING` = même forme fixe Microsoft
+  avec buffer WCHAR — connaissance de protocole externe, pas un offset
+  deviné.
+- Corrigé : alloue via `allocate_guest` (même aide que `ExAllocatePool`),
+  convertit avec le même mapping que r187, termine par NUL, remplit
+  Length/MaxLength/Buffer. `RtlFreeAnsiString` vide les champs plutôt que
+  d'inventer une libération par allocation — même précédent que
+  `ExFreePool` (pages jamais réclamées individuellement).
+- Tests 175/175 (173/173 → +2). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r188-real-fixes-rtlunicodestringtoansistring-rtlfreeansistring-20260902.md`.
+
 # AC6 retail NTSC-U/J — r187 : VRAI CORRECTIF — `RtlUnicodeToMultiByteN` convertit et réussit (2026-09-02)
 
 - Contrat réel : `NTSTATUS RtlUnicodeToMultiByteN(PCHAR, ULONG, PULONG,

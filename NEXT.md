@@ -57,7 +57,10 @@ fallback ReXGlue.
 - r187 a corrigé `RtlUnicodeToMultiByteN` : convertit et renvoie
   `STATUS_SUCCESS` — le seul site d'appel réel prenait TOUJOURS la branche
   d'échec avec `kOfflineStatus` (NTSTATUS négatif).
-- Suite pytest 173/173, `ctest` 10/10.
+- r188 a corrigé `RtlUnicodeStringToAnsiString`/`RtlFreeAnsiString`
+  (allocation réelle via `allocate_guest`, conversion, libération
+  cohérente avec le précédent `ExFreePool`).
+- Suite pytest 175/175, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -68,7 +71,7 @@ fallback ReXGlue.
    disponible) que le backend d'entrée r180 résout effectivement le
    symptôme historique « contrôles nuls ».
 2. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r187, méthode r90/r93/r164) pour d'autres candidats.
+   r148-r188, méthode r90/r93/r164) pour d'autres candidats.
 3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
@@ -84,9 +87,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r188-real-fixes-rtlunicodestringtoansistring-rtlfreeansistring-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r187-real-fix-rtlunicodetomultibyten-converts-and-succeeds-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r186-real-fixes-rtlfillmemoryulong-rtlcomparememoryulong-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r187).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r188).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

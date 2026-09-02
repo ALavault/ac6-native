@@ -1420,6 +1420,70 @@ def render_body(name: str) -> str:
   if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, written);
   ctx.r3.u64 = 0u;  // STATUS_SUCCESS
 """
+    if name == "RtlUnicodeStringToAnsiString":
+        # r188: real signature is NTSTATUS
+        # RtlUnicodeStringToAnsiString(PANSI_STRING DestinationString,
+        # PCUNICODE_STRING SourceString, BOOLEAN
+        # AllocateDestinationString). This project's own r122/r123
+        # already confirmed the real ANSI_STRING layout {Length@0,
+        # MaximumLength@2, Buffer@4} for this XEX; UNICODE_STRING is the
+        # same fixed, Microsoft-published shape with a WCHAR* buffer --
+        # external protocol knowledge, not a guessed offset. This XEX's
+        # one real call site (0x823927f0) confirms the argument shape
+        # (r3=Destination, r4=Source, r5=AllocateDestinationString=1) and
+        # the real NTSTATUS success contract (>= 0 is success, matching
+        # RtlUnicodeToMultiByteN's own confirmed contract, r187); on
+        # success it later calls RtlFreeAnsiString on the same
+        # destination, confirming a real allocation is expected.
+        # AllocateDestinationString=0 (caller-supplied buffer) is also
+        # handled, respecting the destination's own MaximumLength, though
+        # not exercised by this XEX's own traced call site.
+        return """  const std::uint16_t source_length = PPC_LOAD_U16(ctx.r4.u32 + 0x0);
+  const std::uint32_t source_buffer = PPC_LOAD_U32(ctx.r4.u32 + 0x4);
+  const std::uint32_t char_count = source_length / 2u;
+  const std::uint32_t needed_bytes = char_count + 1u;  // + NUL terminator
+  std::uint32_t dest_buffer = 0u;
+  if (ctx.r5.u32 != 0u) {
+    dest_buffer = allocate_guest(base, needed_bytes);
+    if (dest_buffer == 0u) {
+      ctx.r3.u64 = 0xc0000017u;  // STATUS_NO_MEMORY
+      return;
+    }
+    PPC_STORE_U16(ctx.r3.u32 + 0x2, static_cast<std::uint16_t>(needed_bytes));
+  } else {
+    dest_buffer = PPC_LOAD_U32(ctx.r3.u32 + 0x4);
+    const std::uint16_t max_length = PPC_LOAD_U16(ctx.r3.u32 + 0x2);
+    if (dest_buffer == 0u || needed_bytes > max_length) {
+      ctx.r3.u64 = 0x80000005u;  // STATUS_BUFFER_OVERFLOW
+      return;
+    }
+  }
+  std::uint32_t written = 0u;
+  for (; written < char_count; ++written) {
+    const std::uint16_t code_unit = PPC_LOAD_U16(source_buffer + written * 2u);
+    PPC_STORE_U8(dest_buffer + written,
+                 code_unit <= 0xffu ? static_cast<std::uint8_t>(code_unit) : 0x3fu);
+  }
+  PPC_STORE_U8(dest_buffer + written, 0u);
+  PPC_STORE_U16(ctx.r3.u32 + 0x0, static_cast<std::uint16_t>(written));
+  PPC_STORE_U32(ctx.r3.u32 + 0x4, dest_buffer);
+  ctx.r3.u64 = 0u;  // STATUS_SUCCESS
+"""
+    if name == "RtlFreeAnsiString":
+        # r188: real signature is VOID RtlFreeAnsiString(PANSI_STRING
+        # AnsiString) -- releases the buffer RtlUnicodeStringToAnsiString
+        # allocated above. This project's own established convention
+        # (ExFreePool, this file) is that guest pool pages are never
+        # individually reclaimed -- `allocate_guest`'s bump allocator has
+        # no free path -- so this clears the ANSI_STRING fields (the real,
+        # observable part of "freeing" from the caller's perspective) and
+        # leaves the actual page reclaimed with the guest, matching
+        # ExFreePool's own precedent exactly rather than inventing a
+        # dangling-pointer risk with a fake per-allocation free.
+        return """  PPC_STORE_U16(ctx.r3.u32 + 0x0, 0u);
+  PPC_STORE_U16(ctx.r3.u32 + 0x2, 0u);
+  PPC_STORE_U32(ctx.r3.u32 + 0x4, 0u);
+"""
     if name == "MmQueryStatistics":
         # r108: the generic offline-import default below only sets ctx.r3
         # (a status code) and never touches the guest output buffer the

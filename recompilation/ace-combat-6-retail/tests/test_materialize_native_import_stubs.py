@@ -297,6 +297,43 @@ def test_rtl_unicode_to_multi_byte_n_converts_and_succeeds(
     assert "ctx.r3.u64 = 0u;  // STATUS_SUCCESS" in body
 
 
+def test_rtl_unicode_string_to_ansi_string_allocates_and_converts(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlUnicodeStringToAnsiString);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r188: real contract is NTSTATUS
+    # RtlUnicodeStringToAnsiString(PANSI_STRING, PCUNICODE_STRING,
+    # BOOLEAN). This XEX's own real call site confirms
+    # AllocateDestinationString=1 and the real NTSTATUS success contract
+    # (matching r187's own confirmed RtlUnicodeToMultiByteN contract);
+    # RtlFreeAnsiString is called on success, confirming a real
+    # allocation is expected.
+    body = text.split("void __imp__RtlUnicodeStringToAnsiString")[1]
+    assert "kOfflineStatus" not in body
+    assert "allocate_guest(base, needed_bytes)" in body
+    assert "PPC_STORE_U16(ctx.r3.u32 + 0x0, static_cast<std::uint16_t>(written))" in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + 0x4, dest_buffer)" in body
+    assert "ctx.r3.u64 = 0u;  // STATUS_SUCCESS" in body
+
+
+def test_rtl_free_ansi_string_clears_the_struct(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlFreeAnsiString);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r188: matches this file's own ExFreePool precedent -- guest pool
+    # pages are never individually reclaimed, so this clears the
+    # ANSI_STRING fields rather than inventing a per-allocation free.
+    body = text.split("void __imp__RtlFreeAnsiString")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + 0x4, 0u)" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")
