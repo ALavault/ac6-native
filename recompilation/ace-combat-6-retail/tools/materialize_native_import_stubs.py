@@ -1416,6 +1416,26 @@ def render_body(name: str) -> str:
         # guess -- matching the read-only-media precedent already used
         # for NtQueryFullAttributesFile/NtQueryVolumeInformationFile.
         return "  ctx.r3.u64 = 0u;\n"
+    if name == "XNotifyGetNext":
+        # r200: BOOL XNotifyGetNext(HANDLE hNotification, DWORD
+        # dwMsgFilter, PDWORD pdwId, PULARGE_INTEGER pParam) -- 4 real
+        # call sites (0x82165868, 0x8215ca64, 0x821ce1c0, 0x82204590).
+        # Real call site 0x82165868 confirms the contract: `cmpwi r3,0x0;
+        # beq skip` treats zero as "no notification pending" and only
+        # reads *pdwId when nonzero. kOfflineStatus is nonzero, so this
+        # XEX's own real code was reading a notification id from a stack
+        # slot this project's stub never wrote -- uninitialized memory
+        # driving a real branch, on every single call, not just a
+        # cosmetic status mismatch. This project has no real
+        # notification queue to drain, so "no notification pending" (0)
+        # is the honest, safe default -- same class of fix as r198's
+        # XamTaskShouldExit.
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "XNotifyPositionUI":
+        # r200: VOID XNotifyPositionUI(DWORD Position) -- cosmetic
+        # (repositions the system notification popup on screen). Real
+        # call site 0x821ce0ec discards the return value outright.
+        return "  ctx.r3.u64 = 0u;\n"
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

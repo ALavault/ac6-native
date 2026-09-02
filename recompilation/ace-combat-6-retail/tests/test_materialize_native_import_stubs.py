@@ -1332,3 +1332,18 @@ def test_nt_flush_buffers_file_always_succeeds(tmp_path: Path) -> None:
     body = text.split("void __imp__NtFlushBuffersFile(")[1].split("\n}\n")[0]
     assert "kOfflineStatus" not in body
     assert "ctx.r3.u64 = 0u" in body
+
+
+def test_xnotify_family_reports_no_notification_pending(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__XNotifyGetNext);\n"
+        "PPC_EXTERN_FUNC(__imp__XNotifyPositionUI);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+    for name in ("XNotifyGetNext", "XNotifyPositionUI"):
+        body = text.split(f"void __imp__{name}(")[1].split("\n}\n")[0]
+        assert "kOfflineStatus" not in body
+        assert "ctx.r3.u64 = 0u" in body

@@ -104,7 +104,10 @@ fallback ReXGlue.
   politique du renderer natif).
 - r199 a corrigé `NtFlushBuffersFile` (média en lecture seule, jamais
   d'écriture en attente — `STATUS_SUCCESS` sans condition).
-- Suite pytest 186/186, `ctest` 10/10.
+- r200 a corrigé `XNotifyGetNext`/`XNotifyPositionUI` (le no-op offline
+  signalait une notification à chaque appel, lisant un id depuis la
+  pile non initialisée — retourne maintenant « aucune notification »).
+- Suite pytest 187/187, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -135,9 +138,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r200-real-fix-xnotifygetnext-reports-no-notification-pending-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r199-real-fix-ntflushbuffersfile-always-succeeds-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r198-real-fix-xamtaskshouldexit-defaults-to-keep-working-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r199).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r200).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

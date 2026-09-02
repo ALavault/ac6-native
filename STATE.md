@@ -1,3 +1,17 @@
+# AC6 retail NTSC-U/J — r200 : VRAI CORRECTIF — `XNotifyGetNext` signale l'absence de notification (2026-09-02)
+
+- `BOOL XNotifyGetNext(...)` : 4 sites d'appel réels. Site `0x82165868`
+  confirme le contrat (`cmpwi r3,0x0; beq` → 0=aucune notification,
+  sinon lit `*pdwId`). `kOfflineStatus` non nul faisait croire à une
+  notification à CHAQUE appel, lisant un id de notification depuis une
+  case pile jamais écrite par ce projet — un vrai branchement sur
+  mémoire non initialisée, à chaque appel.
+- Corrigé : retourne `0` (FAUX) sans condition — même classe que
+  `XamTaskShouldExit` (r198). `XNotifyPositionUI` (cosmétique, retour
+  ignoré par son site d'appel réel) corrigé au même titre.
+- Tests 187/187 (186/186 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r200-real-fix-xnotifygetnext-reports-no-notification-pending-20260902.md`.
+
 # AC6 retail NTSC-U/J — r199 : VRAI CORRECTIF — `NtFlushBuffersFile` réussit toujours (2026-09-02)
 
 - `NTSTATUS NtFlushBuffersFile(HANDLE, PIO_STATUS_BLOCK)` : 2 sites

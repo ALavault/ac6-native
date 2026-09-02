@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r199 cité comme `source_report`;
+- le report r200 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -76,10 +76,13 @@ corrigé : `XamTaskSchedule`/`XamTaskCloseHandle` (sous-système de
 callback invité, hors scope d'un cycle borné) et
 `VdGetSystemCommandBuffer` (hors politique du renderer natif). r199 a
 corrigé `NtFlushBuffersFile` (média en lecture seule — `STATUS_SUCCESS`
-sans condition).
+sans condition). r200 a corrigé `XNotifyGetNext`/`XNotifyPositionUI`
+(le no-op offline signalait une notification à chaque appel, lisant un
+id depuis la pile non initialisée — retourne maintenant « aucune
+notification »).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r199, méthode r90/r93/r164) pour d'autres candidats.
+r148-r200, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
