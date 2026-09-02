@@ -216,6 +216,16 @@ fallback ReXGlue.
   `XexGetModuleHandle`/`XexGetProcedureAddress` — confirmées
   atteignables (pas du code mort), mais toujours non implémenté (la
   fonction résolveur qui lit cette table reste à tracer).
+- r225 (documentation seule) corrige r224 : `scripts/ReferencesTo.java`
+  (déjà présent, interroge par adresse brute) montre que 12 des 14
+  entrées de la table n'ont AUCUNE référence dans ce XEX, et que la base
+  de la table elle-même n'en a aucune non plus — il n'existe aucune
+  preuve statique d'une fonction résolveur qui lirait cette table en
+  boucle. Seules 2 adresses voisines (`0x821f4680`, `0x821f4678`, ni
+  l'une ni l'autre porteuse d'un symbole Ghidra) ont de vrais appelants
+  directs — mais ce sont des adresses `.text` internes ordinaires déjà
+  recompilées par XenonRecomp, PAS des gaps de stub d'import : ce fil de
+  recherche est clos et hors périmètre du balayage.
 - Suite pytest 205/205, `ctest` 10/10 (inchangés).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -251,6 +261,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r224-doc-xamshow-trampolines-are-the-fallback-table-from-r212-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r223-real-fix-xamuserreadprofilesettings-returns-success-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`

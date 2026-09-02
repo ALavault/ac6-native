@@ -163,10 +163,18 @@ confirmée). r224 (documentation seule) a trouvé que les trampolines
 `XamShow*` sont les cibles de repli d'une table de résolution
 dynamique (≥14 entrées) IDENTIQUE au mécanisme de r212 pour
 `XexGetModuleHandle` — confirmées atteignables, toujours non
-implémenté (résolveur de la table à tracer).
+implémenté (résolveur de la table à tracer). r225 (documentation
+seule) corrige r224 : `scripts/ReferencesTo.java` (déjà présent,
+interroge par adresse brute sans besoin de symbole) montre qu'il
+n'existe AUCUNE preuve statique d'un résolveur qui lirait cette table
+— 12/14 entrées et la base de la table elle-même n'ont aucune
+référence. Les 2 adresses voisines qui ont de vrais appelants
+directs (`0x821f4680`, `0x821f4678`) ne portent aucun symbole Ghidra
+et sont du `.text` interne déjà recompilé, pas des gaps de stub
+d'import — ce fil est clos, hors périmètre du balayage.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r224, méthode r90/r93/r164) pour d'autres candidats.
+r148-r225, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

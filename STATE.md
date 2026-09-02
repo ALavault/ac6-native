@@ -10461,3 +10461,31 @@ partagent la même ressource ; l’A/B scoped point/linéaire n’améliore pas
 l’image et a été retiré. Gate actif : contenu de l’image Vulkan après upload
 `1B9C`, juste avant `0311`. Rapport courant :
 `reports/retail-us-hud-layer-compose-20260830.md`.
+
+# Gate 2 retail US 2026-09-03 — r225 (documentation seule) : pas de résolveur statique pour la table r224
+
+`scripts/ReferencesTo.java` (déjà présent, interroge `ReferenceManager` par
+adresse brute, pas besoin de symbole) montre que 12 des 14 entrées de la
+table de repli trouvée par r224 n'ont AUCUNE référence dans ce XEX — ni `bl`
+direct, ni indirect résolu statiquement. Seule `0x821f4680` (candidate
+`XamShowMarketplaceUI` de r224) a un vrai site d'appel (`82140d10`, `bl`
+ordinaire), et une adresse voisine non listée dans la table, `0x821f4678`,
+en a deux (`82140c10`, `8215cbc4`). La base de la table elle-même
+(`0x821f44d8`) n'a aucune référence : rien ne la charge comme pointeur de
+base pour un accès indexé, nulle part que ce passage statique puisse voir.
+
+Conséquence : l'hypothèse « fonction résolveur qui lit la table en boucle »
+de r224 ne tient pas — aucune preuve statique ne la soutient. Ce qui existe
+réellement est plus simple : quelques-unes de ces adresses sont appelées
+DIRECTEMENT par des `bl` fixes ordinaires depuis des sites d'appel précis,
+comme n'importe quel autre helper interne statiquement lié de ce XEX — pas
+via une indirection pilotée par table. De plus, ni `0x821f4680` ni
+`0x821f4678` ne portent de symbole Ghidra : ce sont des adresses `.text`
+internes ordinaires du XEX qualifié, déjà recompilées normalement par
+XenonRecomp — PAS des gaps de stub d'import offline. Tout ce fil de
+recherche est donc hors du périmètre du balayage d'imports offline; retiré
+de la liste des pistes actives. `ctest` 10/10, pytest 205/205 (inchangés,
+aucune source touchée).
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md`.
