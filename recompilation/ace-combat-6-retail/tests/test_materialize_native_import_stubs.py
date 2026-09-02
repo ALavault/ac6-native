@@ -1095,11 +1095,13 @@ def test_generic_fallback_is_traceable_and_still_returns_offline_status(
     tmp_path: Path,
 ) -> None:
     mapping = tmp_path / "mapping.cpp"
-    mapping.write_text("PPC_EXTERN_FUNC(__imp__KeDelayExecutionThread);\n")
+    # r194: KeDelayExecutionThread got a real fix (actually sleeps); use a
+    # still-generic import as the fallback-shape example instead.
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtCancelTimer);\n")
     output = tmp_path / "stubs.cpp"
     assert MODULE.render(mapping, output) == 1
     text = output.read_text()
-    assert 'trace_offline_import("KeDelayExecutionThread")' in text
+    assert 'trace_offline_import("NtCancelTimer")' in text
     assert "ctx.r3.u64 = kOfflineStatus" in text
 
 
@@ -1234,3 +1236,18 @@ def test_kebugcheck_family_aborts_instead_of_returning(tmp_path: Path) -> None:
     assert "std::abort()" in bugcheckex_body
     assert "ctx.r4.u32" in bugcheckex_body
     assert "ctx.r7.u32" in bugcheckex_body
+
+
+def test_ke_delay_execution_thread_actually_sleeps(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__KeDelayExecutionThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp__KeDelayExecutionThread(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "kOfflineStatus" not in body
+    assert "PPC_LOAD_U64(ctx.r5.u32)" in body
+    assert "std::this_thread::sleep_for" in body
+    assert "interval < 0" in body

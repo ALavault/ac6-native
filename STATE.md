@@ -1,3 +1,23 @@
+# AC6 retail NTSC-U/J — r194 : VRAI CORRECTIF — `KeDelayExecutionThread` attend réellement (2026-09-02)
+
+- Site d'appel réel unique `0x821f74e8`, dans un wrapper qui convertit
+  des millisecondes en un vrai `LARGE_INTEGER` relatif négatif (100 ns)
+  avant l'appel. Ce wrapper normalise déjà tout statut en 0 ou 0xC0, et
+  `kOfflineStatus` tombait par accident dans la branche 0 — le statut
+  n'était donc jamais le vrai bug. Le vrai bug : le no-op offline
+  retournait instantanément, transformant un vrai délai calculé en zéro
+  temps écoulé.
+- Corrigé : lit le vrai `Interval` 64 bits, si négatif (relatif — seule
+  forme produite par ce site d'appel réel) convertit en durée
+  `std::chrono` et `std::this_thread::sleep_for` réel, puis
+  `STATUS_SUCCESS`. Un `Interval` positif (absolu) reste non géré plutôt
+  que deviné.
+- Un test préexistant utilisait `KeDelayExecutionThread` comme exemple du
+  no-op générique; reciblé sur `NtCancelTimer` (toujours générique) plutôt
+  que supprimé.
+- Tests 181/181 (180/180 → +1, 1 reciblé). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r194-real-fix-kedelayexecutionthread-actually-sleeps-20260902.md`.
+
 # AC6 retail NTSC-U/J — r193 : VRAI CORRECTIF — `KeBugCheck`/`KeBugCheckEx` s'arrêtent au lieu de continuer silencieusement (2026-09-02)
 
 - `VOID KeBugCheck(ULONG)`/`VOID KeBugCheckEx(ULONG, ULONG_PTR×4)` sont des

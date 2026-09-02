@@ -82,7 +82,10 @@ fallback ReXGlue.
   vrai matériel; le no-op offline retournait normalement — vrai risque
   d'exécution après un point jamais prévu comme atteignable — maintenant
   `std::abort()` avec diagnostic réel).
-- Suite pytest 180/180, `ctest` 10/10.
+- r194 a corrigé `KeDelayExecutionThread` (le no-op offline retournait
+  instantanément au lieu d'attendre — maintenant un vrai
+  `std::this_thread::sleep_for` sur l'intervalle relatif réel).
+- Suite pytest 181/181, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -113,9 +116,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r194-real-fix-kedelayexecutionthread-actually-sleeps-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r193-real-fix-kebugcheck-family-aborts-instead-of-silently-continuing-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r192-real-fix-semaphore-and-try-spinlock-primitives-get-real-mutual-exclusion-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r193).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r194).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

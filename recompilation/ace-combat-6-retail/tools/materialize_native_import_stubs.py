@@ -1314,6 +1314,33 @@ def render_body(name: str) -> str:
                static_cast<unsigned>(ctx.r7.u32));
   std::abort();
 """
+    if name == "KeDelayExecutionThread":
+        # r194: NTSTATUS KeDelayExecutionThread(KPROCESSOR_MODE WaitMode,
+        # BOOLEAN Alertable, PLARGE_INTEGER Interval) -- single real call
+        # site 0x821f74e8, inside a wrapper (0x821f7498) that converts a
+        # millisecond count to a negative (relative) 100ns LARGE_INTEGER
+        # itself before this call, or a fixed 0x8000000000000000 sentinel
+        # for an infinite/"forever" wait when passed -1ms. That caller
+        # normalizes every return value to 0 or 0xC0 (STATUS_USER_APC),
+        # and the generic offline no-op already produced 0 there by
+        # accident (kOfflineStatus matches neither compared constant) --
+        # so the observable status was never the bug. The real bug is
+        # timing: the no-op returned instantly instead of actually
+        # delaying, collapsing a real wait into zero elapsed time. Only
+        # the relative (negative) form is handled, since that is the only
+        # form this XEX's own real call site produces; a positive
+        # (absolute) Interval is left unhandled rather than guessed.
+        return """  if (ctx.r5.u32 != 0u) {
+    const std::int64_t interval =
+        static_cast<std::int64_t>(PPC_LOAD_U64(ctx.r5.u32));
+    if (interval < 0) {
+      std::this_thread::sleep_for(
+          std::chrono::duration<std::int64_t, std::ratio<1, 10000000>>(
+              -interval));
+    }
+  }
+  ctx.r3.u64 = 0u;
+"""
     if name == "RtlNtStatusToDosError":
         # r125: a real, documented, stateless Win32 API -- converts an
         # NTSTATUS (r3) to the equivalent Win32 error code (returned in

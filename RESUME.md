@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r193 cité comme `source_report`;
+- le report r194 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -56,10 +56,13 @@ seule) et `sprintf`/`_vsnprintf` (moteur printf varargs, hors scope d'un
 cycle borné). r193 a corrigé `KeBugCheck`/`KeBugCheckEx` (ne retournent
 jamais sur vrai matériel; maintenant `std::abort()` avec diagnostic réel
 au lieu du no-op offline qui laissait l'exécution continuer après un
-point jamais prévu comme atteignable).
+point jamais prévu comme atteignable). r194 a corrigé
+`KeDelayExecutionThread` (retournait instantanément au lieu d'attendre —
+maintenant un vrai `std::this_thread::sleep_for` sur l'intervalle
+relatif réel lu depuis la mémoire invitée).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r193, méthode r90/r93/r164) pour d'autres candidats.
+r148-r194, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
