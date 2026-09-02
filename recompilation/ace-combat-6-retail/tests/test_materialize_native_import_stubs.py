@@ -576,6 +576,23 @@ def test_vd_query_video_mode_fills_the_struct_not_a_status(
     assert "PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u)" in body
 
 
+def test_xget_video_mode_fills_the_refresh_rate_field(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__XGetVideoMode);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r171: real contract is VOID XGetVideoMode(XVIDEO_MODE*) -- the same
+    # struct type VdQueryVideoMode (r169) fills. This XEX's one real call
+    # site reads struct+0x14 as a float and uses it as a division divisor
+    # -- left unimplemented, that divisor is uninitialized stack garbage.
+    body = text.split("void __imp__XGetVideoMode")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u)" in body
+
+
 def test_vd_query_video_flags_returns_a_flag_value_not_a_status(
     tmp_path: Path,
 ) -> None:

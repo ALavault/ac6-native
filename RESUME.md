@@ -11,14 +11,17 @@ Lire d'abord :
 
 ## Frontière active
 
-`VdQueryVideoMode` (r169) et `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
-`VdGetCurrentDisplayInformation` (r170) sont fixés. Aucun autre import Vd
-n'est actuellement nommé comme trou non vérifié. La prochaine frontière
-nécessite un nouveau balayage des offline-imports (mêmes outils : xrefs
-directs/indirects bornés, `check_listing_against_pdata.py`,
-`count_indirect_branches.py`) pour en identifier un — ne pas supposer qu'un
-import est un remplissage de structure sans lire ses sites d'appel réels
-(r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`).
+`VdQueryVideoMode` (r169), `VdQueryVideoFlags`/`VdGetCurrentDisplayGamma`/
+`VdGetCurrentDisplayInformation` (r170) et `XGetVideoMode` (r171) sont
+fixés. Candidat le plus prometteur actuellement identifié, non implémenté :
+`XGetGameRegion` (3 sites d'appel réels, ex. `0x821babdc`) — sa valeur de
+retour est stockée puis relue et comparée à plusieurs constantes précises
+qui contrôlent un vrai branchement (potentiel bug de détection de région).
+Analyser ses 3 sites avant d'implémenter. `XGetAVPack`/`XGetLanguage`
+(1 site chacun) ne sont pas encore vérifiés.
+
+Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`).
 
 Reste ouvert, non implémenté : `VdGetCurrentDisplayInformation` struct+0x05
 (champ booléen réel, confirmé à 2 sites d'appel, valeur correcte non

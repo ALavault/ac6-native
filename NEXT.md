@@ -19,8 +19,12 @@ fallback ReXGlue.
 
 ## État courant
 
+- r171 a corrigé `XGetVideoMode` : struct+0x14 (refresh-rate float,
+  offset identique à r169) était lu comme DIVISEUR réel
+  (`fdivs f1,f31,f0`) sans être rempli — corrigé à 60.0f. Seul cet offset
+  est implémenté (aucune preuve pour les autres à ce site).
 - r169 a corrigé `VdQueryVideoMode` (remplissage de struct, `+0x00`/`+0x04`/
-  `+0x08`/`+0x14`). r170 vient de fixer les trois imports Vd voisins nommés
+  `+0x08`/`+0x14`). r170 a fixé les trois imports Vd voisins nommés
   par r168/r169 :
   - `VdQueryVideoFlags` n'était PAS un remplissage de struct (hypothèse de
     r168/r169 infirmée) — simple valeur de retour bitmask, corrigée (`0u`,
@@ -42,14 +46,17 @@ fallback ReXGlue.
 
 ## Prochaine décision
 
-1. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
+1. `XGetGameRegion` (3 sites d'appel réels, ex. `0x821babdc`) : la valeur de
+   retour est stockée puis relue et comparée à plusieurs constantes précises
+   (`0x1ff`, `0x101`, `0x102`, `0x1fc`) qui contrôlent un vrai branchement —
+   candidat le plus prometteur actuellement identifié. Analyser les 3 sites
+   pour déterminer la valeur de région correcte avant d'implémenter.
+2. `XGetAVPack` (`0x821f5d14`) et `XGetLanguage` (`0x821f5d9c`), chacun 1 site
+   d'appel réel, ne sont pas encore vérifiés pour le même type de trou.
+3. `VdGetCurrentDisplayInformation` struct+0x05 : tracer la logique aval qui
    consomme ce champ pour déterminer sa vraie valeur, ou documenter qu'aucune
    preuve statique supplémentaire n'est atteignable.
-2. Balayer les imports offline restants (mêmes outils que r148-r170 :
-   xrefs directs/indirects bornés, `check_listing_against_pdata.py`,
-   `count_indirect_branches.py`) pour identifier le prochain trou de forme de
-   contrat ou de remplissage de structure.
-3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse.
 
@@ -61,9 +68,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r171-real-fix-xgetvideomode-fills-the-refresh-rate-field-used-as-a-division-divisor-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r170-real-fixes-vdqueryvideoflags-vdgetcurrentdisplaygamma-vdgetcurrentdisplayinformation-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r169-real-fix-vdqueryvideomode-struct-fill-derived-from-this-xexs-own-disassembly-20260901.md`;
-- `reports/ac6-retail-native-codegen-gate2-r168-vdqueryvideomode-is-a-real-gap-struct-fill-not-a-contract-shape-fix-deferred-20260901.md`;
 - `STATE.md` et `EVIDENCE.md` pour l'historique.
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit

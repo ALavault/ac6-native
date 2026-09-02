@@ -1,3 +1,24 @@
+# AC6 retail NTSC-U/J — r171 : VRAI CORRECTIF — `XGetVideoMode` remplit le champ refresh-rate utilisé comme diviseur (2026-09-02)
+
+- `XGetVideoMode` (contrat réel : `VOID XGetVideoMode(XVIDEO_MODE*)`) est le
+  wrapper XAM réel de `VdQueryVideoMode` sur le matériel réel — même type de
+  struct. Le seul site d'appel réel de ce XEX (`0x82339798`) lit
+  struct+0x14 comme float et l'utilise comme DIVISEUR réel
+  (`fdivs f1,f31,f0`) — offset identique à celui confirmé par r169,
+  corroboration indépendante depuis un second site d'appel réel.
+- Non implémenté auparavant, ce diviseur était la mémoire de pile non
+  initialisée de ce XEX — risque réel de division par une valeur proche de
+  zéro produisant Inf/NaN propagé dans le calcul flottant du guest. Corrigé :
+  struct+0x14 = 60.0f (même défaut NTSC que r169). Seul cet offset est
+  implémenté (aucune preuve de lecture pour +0x00/+0x04/+0x08 à ce site).
+- Tests 155/155 (154/154 → +1). `ctest` 9/9. Voir
+  `reports/ac6-retail-native-codegen-gate2-r171-real-fix-xgetvideomode-fills-the-refresh-rate-field-used-as-a-division-divisor-20260902.md`.
+- **Prochain candidat identifié, non implémenté** : `XGetGameRegion` (3
+  sites d'appel réels, ex. `0x821babdc`) — la valeur de retour est stockée
+  puis relue et comparée à plusieurs constantes précises (`0x1ff`, `0x101`,
+  `0x102`, `0x1fc`) qui contrôlent un vrai branchement — bug de région
+  plausible, mais la valeur correcte nécessite d'analyser les 3 sites.
+
 # AC6 retail NTSC-U/J — r170 : VRAIS CORRECTIFS — `VdQueryVideoFlags`, `VdGetCurrentDisplayGamma`, `VdGetCurrentDisplayInformation` (2026-09-02)
 
 - **`VdQueryVideoFlags` n'est PAS un remplissage de struct** contrairement à

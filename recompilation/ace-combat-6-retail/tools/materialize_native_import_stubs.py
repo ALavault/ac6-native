@@ -679,6 +679,27 @@ def render_body(name: str) -> str:
   PPC_STORE_U16(ctx.r3.u32 + 0x4a, 720u);
   PPC_STORE_U16(ctx.r3.u32 + 0x56, 1280u);
 """
+    if name == "XGetVideoMode":
+        # r171: real signature is VOID XGetVideoMode(XVIDEO_MODE*) -- a
+        # struct-fill through r3, the same real XDK output struct
+        # VdQueryVideoMode (r169) fills (XGetVideoMode is the XAM-level
+        # wrapper around it on real hardware). This XEX's one real call
+        # site (0x82339794-0x82339798, struct at [r1+0x60]) reads
+        # struct+0x14 as a float (`lfs f0,0x74(r1)`) and uses it in REAL
+        # consequential arithmetic: compared against a sentinel constant,
+        # then used as the divisor of `fdivs f1,f31,f0`. Left
+        # unimplemented, that divisor is whatever garbage occupies this
+        # stack slot -- a real risk of a spurious near-zero divide
+        # producing Inf/NaN that propagates into further guest float math.
+        # This exactly matches VdQueryVideoMode's own struct+0x14
+        # (refresh-rate-shaped float), corroborating the shared struct
+        # type from a second, independent real call site in this XEX.
+        # Only +0x14 is read at this one call site, so only it is filled
+        # -- +0x00/+0x04/+0x08 are not asserted here without their own
+        # reading evidence at this call site, per r169's own discipline.
+        # 60.0f (`0x42700000`), the same NTSC default r169 used, not
+        # invented for this fix.
+        return "  PPC_STORE_U32(ctx.r3.u32 + 0x14, 0x42700000u);  // 60.0f\n"
     if name == "NtCreateFile":
         # r122/r123/r129: the real 9-arg NT signature, but this XEX's own
         # call sites only ever populate the first 8 (r3..r10) --
