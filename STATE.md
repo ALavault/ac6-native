@@ -1,3 +1,25 @@
+# AC6 retail NTSC-U/J — r211 : DOCUMENTATION SEULE — portée réelle de `XamGetExecutionId`, signature pointeur-vers-pointeur (2026-09-02)
+
+- Escalade : le wrapper `0x821f7668` déjà tracé par r206/r209 garde
+  AUSSI `XamUserCreateStatsEnumerator` (2 sites) et
+  `XamUserCreateAchievementEnumerator` (1 site) — portée totale
+  confirmée : au moins 7 sites d'appel réels à travers 3 API distinctes.
+- Correction : la vraie signature est `DWORD
+  XamGetExecutionId(PXAM_EXECUTION_INFO *ppInfo)` — un pointeur-VERS-un-
+  pointeur (double indirection confirmée dans le wrapper), pas un
+  remplissage de struct dans un buffer appelant comme r206 l'avait
+  décrit. Le champ à +0xC de la structure pointée n'est pas confirmé
+  indépendamment — pas de valeur écrite pour éviter une supposition.
+- Vérifié aussi, aucun fix nécessaire : `XamUserAreUsersFriends` (site
+  réel `0x82205518` — l'appelant ne vérifie JAMAIS le retour, ne lit
+  que son propre buffer pré-rempli — comportement déjà correct).
+- Vérifié aussi, non corrigé : `XamUserGetXUID`/`XamUserGetSigninInfo`
+  (motif de wrapper différent, masque des bits de la VALEUR DE RETOUR
+  elle-même contre `0x70000` — signification non confirmée).
+- Aucun changement de code ce cycle. Tests 196/196, `ctest` 10/10
+  (inchangés depuis r210). Voir
+  `reports/ac6-retail-native-codegen-gate2-r211-doc-xamgetexecutionid-gates-more-than-scoped-real-signature-is-pointer-to-pointer-20260902.md`.
+
 # AC6 retail NTSC-U/J — r210 : VRAI CORRECTIF — `XMACreateContext`/`XMAReleaseContext` (2026-09-02)
 
 - `XMACreateContext` (site réel `0x823aec8c`) : `r3` pointeur de sortie

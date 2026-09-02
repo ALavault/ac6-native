@@ -150,7 +150,14 @@ fallback ReXGlue.
   systématiquement l'init audio XMA, vérifié en signé). Vérifié aussi,
   non corrigé : `XamVoiceSubmitPacket` (dépend d'un handle que
   `XamVoiceCreate` ne produit jamais — fixer seul serait inerte).
-- Suite pytest 196/196, `ctest` 10/10.
+- r211 (documentation seule) : escalade de `XamGetExecutionId` — garde
+  en réalité au moins 7 sites d'appel réels (`XamUserReadProfileSettings`
+  ×4, `XamUserCreateStatsEnumerator` ×2,
+  `XamUserCreateAchievementEnumerator` ×1); vraie signature = pointeur-
+  vers-pointeur, pas remplissage de struct. `XamUserAreUsersFriends`
+  vérifié adéquat sans fix. `XamUserGetXUID`/`GetSigninInfo` vérifiés,
+  non corrigés (motif de masquage de retour non confirmé).
+- Suite pytest 196/196, `ctest` 10/10 (inchangés depuis r210).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -185,9 +192,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r211-doc-xamgetexecutionid-gates-more-than-scoped-real-signature-is-pointer-to-pointer-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r210-real-fix-xmacreatecontext-xmareleasecontext-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r209-real-fix-xamloaderterminatetitle-exits-cleanly-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r210).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r211).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.
