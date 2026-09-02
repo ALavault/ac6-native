@@ -157,6 +157,11 @@ fallback ReXGlue.
   vers-pointeur, pas remplissage de struct. `XamUserAreUsersFriends`
   vérifié adéquat sans fix. `XamUserGetXUID`/`GetSigninInfo` vérifiés,
   non corrigés (motif de masquage de retour non confirmé).
+- r212 (documentation seule) : `XexGetModuleHandle`/
+  `XexGetProcedureAddress` — l'échec actuel EST le bon chemin de repli
+  statique (motif de compatibilité ascendante Xbox 360), confirmé
+  adéquat, aucun fix nécessaire. `XamContentCreateEx` vérifié, même
+  territoire save/reload que r202.
 - Suite pytest 196/196, `ctest` 10/10 (inchangés depuis r210).
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -192,9 +197,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r212-doc-xexgetmodulehandle-failure-is-the-safe-fallback-path-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r211-doc-xamgetexecutionid-gates-more-than-scoped-real-signature-is-pointer-to-pointer-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r210-real-fix-xmacreatecontext-xmareleasecontext-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r211).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r212).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

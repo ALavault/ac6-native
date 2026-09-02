@@ -1,3 +1,21 @@
+# AC6 retail NTSC-U/J — r212 : DOCUMENTATION SEULE — l'échec de `XexGetModuleHandle`/`XexGetProcedureAddress` EST le bon chemin de repli (2026-09-02)
+
+- Les deux sites d'appel réels suivent le motif standard Xbox 360 de
+  compatibilité ascendante : sonder un export XAM plus récent, sinon
+  retomber sur une implémentation statique déjà liée. `kOfflineStatus`
+  fait échouer systématiquement, ce qui route TOUJOURS vers le repli
+  statique — le même chemin qu'un vrai dashboard plus ancien prendrait
+  aussi. Ce n'est PAS un bug négligé : le corriger nécessiterait de
+  synthétiser un vrai pointeur de fonction appelable invité pour
+  `bctrl`, plus risqué (crash) que le repli actuel, pour aucun gain.
+  Confirmé adéquat, aucun fix prévu.
+- Vérifié aussi, pas de nouveau fix : `XamContentCreateEx` (site réel
+  unique, plusieurs validations de paramètres avant l'import; quand
+  atteint, appartient au territoire save/reload déjà différé par r202).
+- Aucun changement de code ce cycle. Tests 196/196, `ctest` 10/10
+  (inchangés depuis r210). Voir
+  `reports/ac6-retail-native-codegen-gate2-r212-doc-xexgetmodulehandle-failure-is-the-safe-fallback-path-20260902.md`.
+
 # AC6 retail NTSC-U/J — r211 : DOCUMENTATION SEULE — portée réelle de `XamGetExecutionId`, signature pointeur-vers-pointeur (2026-09-02)
 
 - Escalade : le wrapper `0x821f7668` déjà tracé par r206/r209 garde

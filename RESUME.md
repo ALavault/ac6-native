@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r211 cité comme `source_report`;
+- le report r212 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -115,10 +115,13 @@ seul serait inerte sans `XamVoiceCreate`). r211 (documentation seule)
 escalade `XamGetExecutionId` — garde en réalité au moins 7 sites
 d'appel réels; vraie signature = pointeur-vers-pointeur, pas
 remplissage de struct. `XamUserAreUsersFriends` vérifié déjà adéquat.
-`XamUserGetXUID`/`GetSigninInfo` vérifiés, non corrigés.
+`XamUserGetXUID`/`GetSigninInfo` vérifiés, non corrigés. r212
+(documentation seule) confirme que l'échec de `XexGetModuleHandle`/
+`XexGetProcedureAddress` EST le bon chemin de repli statique, aucun fix
+nécessaire.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r211, méthode r90/r93/r164) pour d'autres candidats.
+r148-r212, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
