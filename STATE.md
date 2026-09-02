@@ -10645,3 +10645,32 @@ décision. Aucune source touchée; pytest 209/209 (208+1 skip), `ctest`
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r233-doc-remaining-voice-and-privilege-imports-already-handled-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r234 (documentation seule) : balayage d'imports offline déclaré clos
+
+`sprintf` (7 sites réels, 4 décompilés ce cycle) / `_vsnprintf` (2 sites
+réels) : formats hétérogènes dans du code de diagnostic save/reload déjà
+reconnaissable (`Function_821E9F50` construit des chemins de répertoire
+de sauvegarde) — confirme r192, un vrai moteur printf varargs est
+nécessaire, pas un cas particulier borné. **Le balayage d'imports
+offline (r148-r233) est déclaré à son point d'arrêt naturel** : sur les
+~125 stubs génériques du début de ce balayage, des dizaines ont reçu un
+vrai fix dérivé de preuve (r169-r230), et chaque autre candidat restant
+a désormais une disposition tracée et nommée : mort (`XamContent*`,
+`XamWriteGamerTile`, `NtQueryDirectoryFile`, `NtReadFileScatter`,
+`Stfs*Device`, `XamLoaderLaunchTitle`, `XamContentCreateEx`,
+`XamEnumerate`, `__C_specific_handler`, 26/29 `NetDll_*`); déjà adéquat
+(`NtSetInformationFile`, les 3 `NetDll_*` restants, la paire
+`XamSession*`, `NtDuplicateObject`, `XamVoiceCreate`/`SubmitPacket`,
+`XexGetModuleHandle`/`GetProcedureAddress`, `XamUserAreUsersFriends`,
+`XamGetExecutionId`, `XamUserCreate{Achievement,Stats}Enumerator`);
+bloqué par sous-système non construit (`XamTaskSchedule`, écriture
+save/reload, moteur printf varargs); bloqué par politique renderer
+(`VdGetSystemCommandBuffer`/`VdPersistDisplay`); définitivement hors
+périmètre (`XeKeysConsole*`); ou sans cas de contrôle
+(`XexCheckExecutablePrivilege`). Aucun candidat restant ne correspond
+plus à la méthode de ce balayage. Aucune source touchée; pytest 209/209
+(208+1 skip), `ctest` 10/10 reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r234-doc-offline-import-sweep-at-its-natural-stopping-point-20260903.md`.

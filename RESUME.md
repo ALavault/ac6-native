@@ -200,13 +200,20 @@ socket toujours `-1` puisque `socket`/`connect` sont morts). r232
 statut — déjà adéquats). r233 (documentation seule) re-confirme
 `NtDuplicateObject`/`XamVoiceCreate`/`XamVoiceSubmitPacket` déjà
 adéquats et refuse À NOUVEAU un fix pour `XexCheckExecutablePrivilege`
-(pas de cas de contrôle, décision de r178 tenue).
+(pas de cas de contrôle, décision de r178 tenue). r234 (documentation
+seule) scope `sprintf`/`_vsnprintf` (7+2 sites réels, moteur printf
+varargs complet nécessaire, hors cycle borné) et **déclare le balayage
+des imports offline (r148-r233) à son point d'arrêt naturel** : chaque
+candidat restant a une disposition tracée et nommée, aucun ne
+correspond plus à la méthode « fix borné à un import ».
 
-Le balayage (mêmes outils que r148-r233, méthode r90/r93/r164) a
-désormais couvert la quasi-totalité du catalogue r218 individuellement.
-Ce qui reste se range en 4 catégories déjà nommées (sous-système non
-construit, politique renderer, hors périmètre définitif, pas de cas de
-contrôle) — voir NEXT.md « Prochaine décision » avant de continuer.
+Ce fil de travail spécifique (balayage des stubs d'import offline) n'a
+plus de candidat borné. Les pistes restantes (confirmation runtime du
+backend d'entrée r180, décision de périmètre pour construire
+save/reload ou le moteur printf varargs) nécessitent soit une ressource
+externe (périphérique physique), soit une décision explicite qui n'est
+pas la mienne à prendre seul — voir NEXT.md « Prochaine décision » pour
+le détail avant toute reprise.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),
