@@ -49,7 +49,10 @@ fallback ReXGlue.
 - r184 a corrigé `XeCryptSha` : calcule un VRAI condensé SHA-1 (OpenSSL
   EVP) sur les octets invités réels — le condensé alimente une
   comparaison réelle en aval, donc un condensé absent échouait toujours.
-- Suite pytest 168/168, `ctest` 10/10.
+- r185 a corrigé `RtlTimeToTimeFields`/`RtlTimeFieldsToTime` (via C++20
+  `<chrono>`) — complète le fix r179 (`KeQuerySystemTime`), resté
+  incomplet seul puisque ces 2 imports étaient encore des no-op.
+- Suite pytest 170/170, `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
@@ -59,9 +62,12 @@ fallback ReXGlue.
 1. Confirmer par une observation runtime (avec un vrai périphérique quand
    disponible) que le backend d'entrée r180 résout effectivement le
    symptôme historique « contrôles nuls ».
-2. Continuer le balayage des imports offline restants (mêmes outils que
-   r148-r184, méthode r90/r93/r164) pour d'autres candidats.
-3. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+2. `RtlCompareMemoryUlong` (7 sites d'appel réels) et `RtlFillMemoryUlong`
+   (1) sont des primitives RTL standard non encore vérifiées — candidats
+   plausiblement à faible ambiguïté (algorithme connu).
+3. Continuer le balayage des imports offline restants (mêmes outils que
+   r148-r185, méthode r90/r93/r164) pour d'autres candidats.
+4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
    parmi plusieurs candidates également plausibles est arbitraire sans lire
@@ -76,9 +82,9 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r185-real-fix-rtltimetotimefields-and-inverse-complete-r179-20260902.md`;
 - `reports/ac6-retail-native-codegen-gate2-r184-real-fix-xecryptsha-computes-a-real-digest-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r183-real-fix-rtlimagexexheaderfield-reports-not-present-20260902.md`;
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r184).
+- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r185).
 
 Le catalogue d'architecture local manque; aucune assertion générique ne doit
 en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.

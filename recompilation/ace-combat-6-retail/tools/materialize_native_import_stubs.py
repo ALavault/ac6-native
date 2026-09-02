@@ -1289,6 +1289,77 @@ def render_body(name: str) -> str:
   constexpr std::int64_t kFiletimeEpochOffset = 116444736000000000LL;  // 1601-1970 in 100ns units
   PPC_STORE_U64(ctx.r3.u32, static_cast<std::uint64_t>(hundred_ns + kFiletimeEpochOffset));
 """
+    if name == "RtlTimeToTimeFields":
+        # r185: real signature is VOID RtlTimeToTimeFields(PLARGE_INTEGER
+        # Time, PTIME_FIELDS TimeFields) -- the real companion this XEX's
+        # own two of r179's four KeQuerySystemTime call sites (0x821f4bb4,
+        # 0x821f5abc) feed straight into, to populate a real calendar
+        # struct. Left as the generic offline fallback, r179's own fix
+        # was still incomplete: the FILETIME it computes was being handed
+        # to a no-op that never wrote the TIME_FIELDS output at all, so
+        # the calendar struct stayed uninitialized regardless. This XEX's
+        # own real call sites read back struct+0x0/+0x2/+0x4/+0x6/+0x8/
+        # +0xa/+0xc/+0xe as Year/Month/Day/Hour/Minute/Second/
+        # Millisecond/Weekday -- the real, standard Win32 TIME_FIELDS
+        # layout, confirmed byte-for-byte at this XEX's own call sites,
+        # not assumed. Uses C++20 <chrono>'s own calendar conversion (the
+        # real, standard Gregorian algorithm -- no ambiguity to resolve,
+        # the same category as r184's real SHA-1) rather than a
+        # hand-rolled reimplementation.
+        return """  const std::int64_t hundred_ns = static_cast<std::int64_t>(PPC_LOAD_U64(ctx.r3.u32));
+  constexpr std::int64_t kFiletimeEpochOffset = 116444736000000000LL;  // 1601-1970 in 100ns units
+  const std::chrono::system_clock::time_point time_point{
+      std::chrono::duration_cast<std::chrono::system_clock::duration>(
+          std::chrono::duration<std::int64_t, std::ratio<1, 10000000>>(
+              hundred_ns - kFiletimeEpochOffset))};
+  const auto day_point = std::chrono::floor<std::chrono::days>(time_point);
+  const std::chrono::year_month_day ymd{day_point};
+  const std::chrono::weekday weekday{day_point};
+  const std::chrono::hh_mm_ss<std::chrono::milliseconds> time_of_day{
+      std::chrono::duration_cast<std::chrono::milliseconds>(time_point - day_point)};
+  PPC_STORE_U16(ctx.r4.u32 + 0x0, static_cast<std::uint16_t>(static_cast<int>(ymd.year())));
+  PPC_STORE_U16(ctx.r4.u32 + 0x2, static_cast<std::uint16_t>(static_cast<unsigned>(ymd.month())));
+  PPC_STORE_U16(ctx.r4.u32 + 0x4, static_cast<std::uint16_t>(static_cast<unsigned>(ymd.day())));
+  PPC_STORE_U16(ctx.r4.u32 + 0x6, static_cast<std::uint16_t>(time_of_day.hours().count()));
+  PPC_STORE_U16(ctx.r4.u32 + 0x8, static_cast<std::uint16_t>(time_of_day.minutes().count()));
+  PPC_STORE_U16(ctx.r4.u32 + 0xa, static_cast<std::uint16_t>(time_of_day.seconds().count()));
+  PPC_STORE_U16(ctx.r4.u32 + 0xc, static_cast<std::uint16_t>(time_of_day.subseconds().count()));
+  PPC_STORE_U16(ctx.r4.u32 + 0xe, static_cast<std::uint16_t>(weekday.c_encoding()));
+"""
+    if name == "RtlTimeFieldsToTime":
+        # r185: the real inverse of RtlTimeToTimeFields above --
+        # `BOOLEAN RtlTimeFieldsToTime(PTIME_FIELDS TimeFields,
+        # PLARGE_INTEGER Time)`. This XEX's own real call site
+        # (0x821fb3a4) confirms the same TIME_FIELDS field offsets
+        # (writing them before the call) and the return contract: `rlwinm.
+        # r11,r3,0,0x18,0x1f; beq <treat as failure>` -- the low byte of
+        # the return is the real BOOLEAN (nonzero = TRUE = fields were
+        # valid), matching the real XDK contract exactly.
+        return """  const int year = static_cast<int>(PPC_LOAD_U16(ctx.r3.u32 + 0x0));
+  const unsigned month = PPC_LOAD_U16(ctx.r3.u32 + 0x2);
+  const unsigned day = PPC_LOAD_U16(ctx.r3.u32 + 0x4);
+  const unsigned hour = PPC_LOAD_U16(ctx.r3.u32 + 0x6);
+  const unsigned minute = PPC_LOAD_U16(ctx.r3.u32 + 0x8);
+  const unsigned second = PPC_LOAD_U16(ctx.r3.u32 + 0xa);
+  const unsigned millisecond = PPC_LOAD_U16(ctx.r3.u32 + 0xc);
+  const std::chrono::year_month_day ymd{std::chrono::year{year},
+                                        std::chrono::month{month},
+                                        std::chrono::day{day}};
+  if (!ymd.ok()) {
+    ctx.r3.u64 = 0u;  // FALSE: invalid fields, matching the real contract
+    return;
+  }
+  const std::chrono::sys_days day_point{ymd};
+  const auto time_since_midnight = std::chrono::hours{hour} + std::chrono::minutes{minute} +
+      std::chrono::seconds{second} + std::chrono::milliseconds{millisecond};
+  const auto time_point = day_point + time_since_midnight;
+  constexpr std::int64_t kFiletimeEpochOffset = 116444736000000000LL;  // 1601-1970 in 100ns units
+  const std::int64_t unix_hundred_ns = std::chrono::duration_cast<
+      std::chrono::duration<std::int64_t, std::ratio<1, 10000000>>>(
+      time_point.time_since_epoch()).count();
+  PPC_STORE_U64(ctx.r4.u32, static_cast<std::uint64_t>(unix_hundred_ns + kFiletimeEpochOffset));
+  ctx.r3.u64 = 1u;  // TRUE
+"""
     if name == "MmQueryStatistics":
         # r108: the generic offline-import default below only sets ctx.r3
         # (a status code) and never touches the guest output buffer the

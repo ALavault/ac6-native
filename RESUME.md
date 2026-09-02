@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r184 cité comme `source_report`;
+- le report r185 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -29,10 +29,14 @@ r182 a corrigé `XamUserCheckPrivilege` (`ERROR_SUCCESS` + bool `TRUE`).
 r183 a corrigé `RtlImageXexHeaderField` (renvoie `0`/absent — la valeur de
 retour EST le pointeur de champ ici; un site d'appel le déréférence
 directement, donc `kOfflineStatus` était un vrai risque de crash). r184 a
-corrigé `XeCryptSha` (VRAI SHA-1 via OpenSSL EVP, déjà lié).
+corrigé `XeCryptSha` (VRAI SHA-1 via OpenSSL EVP, déjà lié). r185 a corrigé
+`RtlTimeToTimeFields`/`RtlTimeFieldsToTime` (C++20 `<chrono>`) — complète
+r179, resté incomplet seul.
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r184, méthode r90/r93/r164) pour d'autres candidats.
+r148-r185, méthode r90/r93/r164) pour d'autres candidats.
+`RtlCompareMemoryUlong` (7 sites)/`RtlFillMemoryUlong` (1) sont des
+primitives RTL standard non encore vérifiées.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

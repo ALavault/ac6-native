@@ -206,6 +206,45 @@ def test_xe_crypt_sha_computes_a_real_digest(tmp_path: Path) -> None:
     assert "PPC_STORE_U8(ctx.r9.u32 + i, digest[i])" in body
 
 
+def test_rtl_time_to_time_fields_fills_a_real_calendar_struct(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlTimeToTimeFields);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r185: real contract is VOID RtlTimeToTimeFields(PLARGE_INTEGER,
+    # PTIME_FIELDS) -- the real companion r179's KeQuerySystemTime fix
+    # feeds into. This XEX's own real call site confirms the standard
+    # Win32 TIME_FIELDS field offsets. Uses C++20 <chrono>'s own real
+    # Gregorian calendar conversion, not a hand-rolled reimplementation.
+    body = text.split("void __imp__RtlTimeToTimeFields")[1]
+    assert "kOfflineStatus" not in body
+    assert "std::chrono::year_month_day" in body
+    assert "PPC_STORE_U16(ctx.r4.u32 + 0x0," in body
+    assert "PPC_STORE_U16(ctx.r4.u32 + 0xe," in body
+
+
+def test_rtl_time_fields_to_time_is_the_real_inverse(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlTimeFieldsToTime);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r185: real contract is BOOLEAN RtlTimeFieldsToTime(PTIME_FIELDS,
+    # PLARGE_INTEGER) -- this XEX's own real call site confirms both the
+    # same TIME_FIELDS offsets and the BOOLEAN return contract (low byte
+    # of r3, nonzero = valid fields).
+    body = text.split("void __imp__RtlTimeFieldsToTime")[1]
+    assert "kOfflineStatus" not in body
+    assert "ymd.ok()" in body
+    assert "PPC_STORE_U64(ctx.r4.u32," in body
+    assert "ctx.r3.u64 = 1u;" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

@@ -1,3 +1,22 @@
+# AC6 retail NTSC-U/J — r185 : VRAIS CORRECTIFS — `RtlTimeToTimeFields`/`RtlTimeFieldsToTime` complètent r179 (2026-09-02)
+
+- 2 de 4 sites d'appel réels de `KeQuerySystemTime` (r179) alimentent
+  directement `RtlTimeToTimeFields` pour peupler un vrai struct
+  calendaire — le fix r179 restait INCOMPLET seul : le FILETIME calculé
+  était transmis à un no-op qui n'écrivait jamais `TimeFields`.
+- Layout `TIME_FIELDS` standard Win32 confirmé octet pour octet aux 2
+  sites d'appel réels : +0x0/0x2/0x4/0x6/0x8/0xa/0xc/0xe = Année/Mois/
+  Jour/Heure/Minute/Seconde/Milliseconde/JourSemaine.
+  `RtlTimeFieldsToTime` (inverse réelle) : même layout confirmé à son site
+  d'appel réel, plus le contrat de retour BOOLEAN (octet bas de r3).
+- Corrigés via les facilités calendaires C++20 `<chrono>`
+  (`year_month_day`, `weekday`, `hh_mm_ss`) — algorithme grégorien réel et
+  standard, pas une réimplémentation manuelle; vérifié par compilation
+  autonome avant intégration.
+- Tests 170/170 (168/168 → +2). `ctest` 10/10 (confirme la compilation du
+  nouveau code `<chrono>`). Voir
+  `reports/ac6-retail-native-codegen-gate2-r185-real-fix-rtltimetotimefields-and-inverse-complete-r179-20260902.md`.
+
 # AC6 retail NTSC-U/J — r184 : VRAI CORRECTIF — `XeCryptSha` calcule un vrai condensé SHA-1 (2026-09-02)
 
 - Contrat réel : `VOID XeCryptSha(pbInput1, cbInput1, pbInput2, cbInput2,
