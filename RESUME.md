@@ -5,7 +5,7 @@ Reprendre depuis `recompilation/ace-combat-6-retail`.
 Lire d'abord :
 
 - `reports/handoff/CURRENT.json`;
-- le report r186 cité comme `source_report`;
+- le report r187 cité comme `source_report`;
 - `NEXT.md`;
 - `STATE.md` et `EVIDENCE.md` seulement pour une question historique nommée.
 
@@ -33,10 +33,11 @@ corrigé `XeCryptSha` (VRAI SHA-1 via OpenSSL EVP, déjà lié). r185 a corrigé
 `RtlTimeToTimeFields`/`RtlTimeFieldsToTime` (C++20 `<chrono>`) — complète
 r179, resté incomplet seul. r186 a corrigé
 `RtlFillMemoryUlong`/`RtlCompareMemoryUlong` (algorithme RTL standard
-fixe).
+fixe). r187 a corrigé `RtlUnicodeToMultiByteN` (convertit et renvoie
+`STATUS_SUCCESS`).
 
 Continuer le balayage des imports offline restants (mêmes outils que
-r148-r186, méthode r90/r93/r164) pour d'autres candidats.
+r148-r187, méthode r90/r93/r164) pour d'autres candidats.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

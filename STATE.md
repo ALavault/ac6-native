@@ -1,3 +1,20 @@
+# AC6 retail NTSC-U/J — r187 : VRAI CORRECTIF — `RtlUnicodeToMultiByteN` convertit et réussit (2026-09-02)
+
+- Contrat réel : `NTSTATUS RtlUnicodeToMultiByteN(PCHAR, ULONG, PULONG,
+  PCWCH, ULONG)`. Le seul site d'appel réel (`0x821f4758`) confirme la
+  forme des arguments ET le contrat NTSTATUS (`bge` = tout retour non
+  négatif est un succès) — `kOfflineStatus` étant un NTSTATUS
+  authentiquement négatif, ce site prenait TOUJOURS la branche d'échec
+  vers `RtlNtStatusToDosError` (déjà implémenté, r126) au lieu de
+  convertir quoi que ce soit.
+- Corrigé : convertit chaque unité UTF-16 vers son octet bas pour les
+  points de code ≤ 0xFF (mapping Latin-1 standard) et le caractère de
+  remplacement conventionnel `?` (0x3F) au-delà — comportement NT
+  standard, pas une valeur choisie pour forcer un résultat. Renvoie
+  `STATUS_SUCCESS`.
+- Tests 173/173 (172/172 → +1). `ctest` 10/10. Voir
+  `reports/ac6-retail-native-codegen-gate2-r187-real-fix-rtlunicodetomultibyten-converts-and-succeeds-20260902.md`.
+
 # AC6 retail NTSC-U/J — r186 : VRAIS CORRECTIFS — `RtlFillMemoryUlong`/`RtlCompareMemoryUlong` (2026-09-02)
 
 - Primitives RTL standard à algorithme fixe et connu (même catégorie que

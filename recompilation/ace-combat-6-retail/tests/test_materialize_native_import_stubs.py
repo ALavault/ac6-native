@@ -279,6 +279,24 @@ def test_rtl_compare_memory_ulong_returns_the_matched_prefix_length(
     assert "ctx.r3.u64 = matched_words * 4u;" in body
 
 
+def test_rtl_unicode_to_multi_byte_n_converts_and_succeeds(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlUnicodeToMultiByteN);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    # r187: real contract is NTSTATUS RtlUnicodeToMultiByteN(PCHAR, ULONG,
+    # PULONG, PCWCH, ULONG). This XEX's own real call site confirms the
+    # arg shape and the real NTSTATUS success contract (>= 0 is success).
+    body = text.split("void __imp__RtlUnicodeToMultiByteN")[1]
+    assert "kOfflineStatus" not in body
+    assert "PPC_LOAD_U16(ctx.r6.u32 + written * 2u)" in body
+    assert "0x3fu" in body
+    assert "ctx.r3.u64 = 0u;  // STATUS_SUCCESS" in body
+
+
 def test_query_statistics_fills_pages_the_caller_reads(tmp_path: Path) -> None:
     mapping = tmp_path / "mapping.cpp"
     mapping.write_text("PPC_EXTERN_FUNC(__imp__MmQueryStatistics);\n")

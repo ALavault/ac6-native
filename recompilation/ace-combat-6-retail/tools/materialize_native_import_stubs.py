@@ -1390,6 +1390,36 @@ def render_body(name: str) -> str:
   }
   ctx.r3.u64 = matched_words * 4u;
 """
+    if name == "RtlUnicodeToMultiByteN":
+        # r187: real signature is NTSTATUS
+        # RtlUnicodeToMultiByteN(PCHAR MultiByteString, ULONG
+        # MaxBytesInMultiByteString, PULONG BytesInMultiByteString, PCWCH
+        # UnicodeString, ULONG BytesInUnicodeString). This XEX's one real
+        # call site (0x821f4758) confirms the argument shape (r3=dest,
+        # r4=maxDestBytes, r5=&bytesWritten [NULL here], r6=srcUTF16,
+        # r7=srcByteLen) and the real NTSTATUS success contract:
+        # `cmpwi r3,0x0; bge <success>` -- any non-negative return is
+        # success (matching NTSTATUS convention), not a discarded status;
+        # a negative return branches into RtlNtStatusToDosError (already
+        # implemented, r126).
+        # Converts each UTF-16 code unit to its low byte for codepoints
+        # <= 0xFF (a real, standard Latin-1-shaped mapping) and the
+        # conventional '?' (0x3F) replacement for anything higher --
+        # ordinary NT default-unmappable-character behavior, not a value
+        # chosen to force a particular result. This project's own guest
+        # strings are file paths/titles, not general Unicode text.
+        return """  const std::uint32_t max_dest_bytes = ctx.r4.u32;
+  const std::uint32_t char_count =
+      std::min<std::uint32_t>(ctx.r7.u32 / 2u, max_dest_bytes);
+  std::uint32_t written = 0u;
+  for (; written < char_count; ++written) {
+    const std::uint16_t code_unit = PPC_LOAD_U16(ctx.r6.u32 + written * 2u);
+    PPC_STORE_U8(ctx.r3.u32 + written,
+                 code_unit <= 0xffu ? static_cast<std::uint8_t>(code_unit) : 0x3fu);
+  }
+  if (ctx.r5.u32 != 0u) PPC_STORE_U32(ctx.r5.u32, written);
+  ctx.r3.u64 = 0u;  // STATUS_SUCCESS
+"""
     if name == "MmQueryStatistics":
         # r108: the generic offline-import default below only sets ctx.r3
         # (a status code) and never touches the guest output buffer the
