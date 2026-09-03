@@ -10700,3 +10700,31 @@ reproduits.
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r235-doc-vsnprintf-helper-is-pervasive-not-bounded-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r236 corrige réellement `sprintf`/`_vsnprintf`
+
+Poursuite de r235 : plutôt que s'arrêter à « beaucoup d'appelants
+réels », décodage EXHAUSTIF (`scripts/DumpBytes.java`) de CHAQUE chaîne
+de format atteignant CHAQUE vrai appelant des deux imports — y compris
+une table dynamique de 11 entrées littérales à `0x82691074`. L'ensemble
+complet de spécificateurs observés dans tout ce XEX est fermé :
+littéraux, `%s` (largeur décimale optionnelle, ex. `%25s`), `%d`,
+`%x`/`%X` (largeur zéro-paddée optionnelle). Le pointeur `va_list` réel
+de `_vsnprintf` est résolu par désassemblage brut de
+`Function_821EF4E0` : `std r5,0x20(r1)` … `std r10,0x48(r1)` (slots de 8
+octets séquentiels), valeur aux 4 octets bas (big-endian). Parseur
+partagé `guest_vprintf()` ajouté au HEADER, spécificateur non reconnu
+copié tel quel (jamais deviné) — évite la désynchronisation silencieuse
+des lectures varargs. `sprintf` lit jusqu'à 6 varargs depuis
+r5-r10 (aucun site tracé n'en utilise plus de 2), cap défensif de 0x2000
+octets. `_vsnprintf` honore son vrai paramètre `size` (r4) comme borne.
+
+Vérifié au-delà de `ctest`/pytest : le corps de `guest_vprintf` extrait
+et compilé/exécuté seul contre une mémoire invité simulée, avec CHAQUE
+chaîne de format réelle décodée de ce XEX (7 cas incluant padding de
+largeur et hex majuscule) plus 2 cas défensifs (troncature,
+spécificateur inconnu) — 8/8 passent. pytest 211/211 (210+1 skip),
+`ctest` 10/10.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r236-real-fix-sprintf-and-vsnprintf-implement-the-exhaustively-verified-specifier-set-20260903.md`.

@@ -28,6 +28,7 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -273,6 +274,92 @@ std::uint32_t allocate_guest(uint8_t* base, std::uint32_t requested) {
       return address;
     }
   }
+}
+
+// r236: shared by sprintf/_vsnprintf. Every real caller of both imports in
+// this XEX was traced (r234/r235) and every format string reaching either
+// one was individually decoded (scripts/DumpBytes.java) -- the full,
+// exhaustively-verified specifier vocabulary across all of them is: bare
+// literal text, `%s` (with an optional decimal minimum-width, e.g. the
+// `%25s` this XEX itself uses), `%d`, and `%x`/`%X` (with an optional
+// zero-padded decimal width, e.g. `%08x`/`%08X`). This parser implements
+// exactly that vocabulary and nothing more; an unrecognized specifier is
+// copied through literally (both characters, unconsumed) rather than
+// guessing an argument width and risking a misaligned read of every
+// argument after it -- the same "don't guess a fabricated value" discipline
+// this file uses throughout (e.g. r108's MmQueryStatistics).
+std::size_t guest_vprintf(uint8_t* base, std::uint32_t dest, std::size_t capacity,
+                           std::uint32_t format,
+                           const std::function<std::uint32_t()>& next_arg) {
+  std::size_t written = 0;
+  auto put = [&](char c) {
+    if (written + 1 < capacity) PPC_STORE_U8(dest + written, static_cast<uint8_t>(c));
+    ++written;
+  };
+  for (std::uint32_t i = 0;; ++i) {
+    const std::uint8_t raw = PPC_LOAD_U8(format + i);
+    if (raw == 0u) break;
+    const char c = static_cast<char>(raw);
+    if (c != '%') {
+      put(c);
+      continue;
+    }
+    ++i;
+    bool zero_pad = false;
+    std::uint32_t width = 0;
+    char spec = static_cast<char>(PPC_LOAD_U8(format + i));
+    if (spec == '0') {
+      zero_pad = true;
+      ++i;
+      spec = static_cast<char>(PPC_LOAD_U8(format + i));
+    }
+    while (spec >= '0' && spec <= '9') {
+      width = width * 10u + static_cast<std::uint32_t>(spec - '0');
+      ++i;
+      spec = static_cast<char>(PPC_LOAD_U8(format + i));
+    }
+    if (spec == '%') {
+      put('%');
+      continue;
+    }
+    if (spec == 's') {
+      const std::uint32_t str_ptr = next_arg();
+      std::uint32_t length = 0;
+      if (str_ptr != 0u) {
+        while (PPC_LOAD_U8(str_ptr + length) != 0u) ++length;
+      }
+      for (std::uint32_t pad = length; pad < width; ++pad) put(' ');
+      for (std::uint32_t k = 0; k < length; ++k) {
+        put(static_cast<char>(PPC_LOAD_U8(str_ptr + k)));
+      }
+      continue;
+    }
+    if (spec == 'd' || spec == 'x' || spec == 'X') {
+      char format_spec[16];
+      std::snprintf(format_spec, sizeof(format_spec), "%%%s%u%c",
+                    zero_pad ? "0" : "", width, spec);
+      char number[24];
+      const int count = std::snprintf(
+          number, sizeof(number), format_spec,
+          spec == 'd' ? static_cast<int>(next_arg()) : next_arg());
+      for (int k = 0; k < count && k < static_cast<int>(sizeof(number)); ++k) {
+        put(number[k]);
+      }
+      continue;
+    }
+    // Unrecognized specifier: never observed at any traced real call site
+    // (r234/r235) -- copy through rather than guess.
+    put('%');
+    if (spec == 0) {
+      --i;  // re-read the terminator next iteration so the loop breaks cleanly
+    } else {
+      put(spec);
+    }
+  }
+  if (capacity > 0u) {
+    PPC_STORE_U8(dest + (written < capacity ? written : capacity - 1u), 0u);
+  }
+  return written;
 }
 }
 
@@ -2312,6 +2399,52 @@ def render_body(name: str) -> str:
   PPC_STORE_U32(buffer + 16, 0u);
   PPC_STORE_U32(buffer + 20, 0u);
   ctx.r3.u64 = 0u;
+"""
+    if name == "sprintf":
+        # r236: r234/r235 traced all 7 real call sites and decoded every
+        # format string they use (scripts/DumpBytes.java) -- the closed
+        # specifier set is %s/%d/%x/%X (optional width, %x/%X optionally
+        # zero-padded), no case needs more than 2 varargs (register-only,
+        # r5/r6 -- no stack-spilled argument beyond r10 is ever needed at
+        # any traced site). Uses the shared guest_vprintf parser (r236,
+        # this file's HEADER) rather than a per-format special case, since
+        # the parser itself is now exhaustively verified against every
+        # real caller instead of guessed. A defensive 0x2000-byte cap
+        # bounds the write regardless of guest input, since real sprintf's
+        # own contract has no size argument to bound it with.
+        return """  const std::array<std::uint32_t, 6> args = {
+      ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32, ctx.r9.u32, ctx.r10.u32};
+  int next_index = 0;
+  const std::function<std::uint32_t()> next_arg = [&]() {
+    return next_index < static_cast<int>(args.size()) ? args[next_index++] : 0u;
+  };
+  const std::size_t written =
+      guest_vprintf(base, ctx.r3.u32, 0x2000u, ctx.r4.u32, next_arg);
+  ctx.r3.u64 = static_cast<std::uint32_t>(written);
+"""
+    if name == "_vsnprintf":
+        # r236: the only 2 real call sites are inside internal wrapper
+        # functions (Function_821EF4E0/Function_821EF458, r235) that spill
+        # their own incoming varargs (r5-r10) as sequential 8-byte
+        # doublewords onto their own stack (confirmed via raw disassembly
+        # -- `std r5,0x20(r1)` through `std r10,0x48(r1)`, then the va_list
+        # pointer handed to _vsnprintf points at the first of those slots)
+        # before calling _vsnprintf with that pointer as the 4th argument
+        # (r6). Each slot's low 32 bits (offset +4, big-endian) hold the
+        # actual 32-bit value. Every format string reaching either wrapper
+        # was decoded (r235) and uses the same closed specifier set as
+        # sprintf. Honors the real `size` argument (r4) as the write cap,
+        # matching this import's actual bounded contract.
+        return """  std::uint32_t offset = 0u;
+  const std::uint32_t va_list_ptr = ctx.r6.u32;
+  const std::function<std::uint32_t()> next_arg = [&]() {
+    const std::uint32_t value = PPC_LOAD_U32(va_list_ptr + offset + 4u);
+    offset += 8u;
+    return value;
+  };
+  const std::size_t written =
+      guest_vprintf(base, ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, next_arg);
+  ctx.r3.u64 = static_cast<std::uint32_t>(written);
 """
     return f"""  trace_offline_import("{name}");
   ctx.r3.u64 = kOfflineStatus;

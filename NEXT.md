@@ -302,18 +302,31 @@ fallback ReXGlue.
   r234 avec bien plus de preuve : une implémentation partielle
   désynchroniserait silencieusement les lectures varargs sur tout
   spécificateur non couvert — pire que le no-op honnête actuel.
-- Suite pytest 209/209 (208 + 1 skip, inchangée), `ctest` 10/10.
+- r236 a corrigé `sprintf`/`_vsnprintf` : DÉCODAGE EXHAUSTIF (pas
+  échantillonné) de CHAQUE chaîne de format atteignant CHAQUE vrai
+  appelant des deux imports (y compris une table dynamique de 11
+  entrées littérales) — l'ensemble complet de spécificateurs observés
+  est fermé : littéraux, `%s` (largeur décimale optionnelle),
+  `%d`, `%x`/`%X` (largeur zéro-paddée optionnelle). Le pointeur
+  `va_list` réel de `_vsnprintf` est résolu par désassemblage brut
+  (`std r5,0x20(r1)`…`std r10,0x48(r1)`, slots de 8 octets, valeur aux
+  4 octets bas). Parseur partagé `guest_vprintf()` ajouté (HEADER),
+  spécificateur non reconnu copié tel quel plutôt que deviné. Vérifié
+  par un smoke-test runtime autonome (8/8) contre CHAQUE chaîne de
+  format réelle décodée, en plus de `ctest`/pytest.
+- Suite pytest 211/211 (210 + 1 skip), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
 - PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
 
 ## Prochaine décision
 
-Le balayage des imports offline (r148-r234) est clos : plus aucun
-candidat borné n'y reste. Les 3 pistes suivantes restent ouvertes, mais
-aucune n'est actionnable sans une ressource externe ou une décision de
-périmètre explicite — ce ne sont pas des tâches à reprendre seul sans
-cette décision :
+Le balayage des imports offline (r148-r236) est clos : plus aucun
+candidat borné n'y reste, y compris `sprintf`/`_vsnprintf` (r236, corrigé
+après décodage exhaustif de tout appelant réel). Les 2 pistes suivantes
+restent ouvertes, mais aucune n'est actionnable sans une ressource
+externe ou une décision de périmètre explicite — ce ne sont pas des
+tâches à reprendre seul sans cette décision :
 
 1. Confirmer par une observation runtime (avec un vrai périphérique quand
    disponible — absent de cet environnement) que le backend d'entrée
@@ -324,15 +337,14 @@ cette décision :
    constantes — conditionné à une observation qui n'a pas eu lieu.
 3. Une décision explicite de aller/pas-aller pour construire l'un des
    sous-systèmes nommés par r234 (écriture save/reload, exécution de
-   callback invité pour `XamTaskSchedule`, moteur printf varargs) serait
-   la prochaine frontière substantielle du balayage d'imports — aucun
-   n'est un fix borné à un cycle, et en démarrer un sans décision de
-   périmètre explicite violerait la discipline du projet contre
-   l'invention de portée. Si le frontier « save/reload » est un jour
-   repris : r202 a tracé sa forme binaire réelle
-   (`NtOpenFile`→`NtDeviceIoControlFile`→boucle `NtWriteFile` dans
-   `Function_82392878`/la fonction à `0x82392978`) — partir de ces
-   adresses plutôt que de redécouvrir la forme.
+   callback invité pour `XamTaskSchedule`) serait la prochaine frontière
+   substantielle du balayage d'imports — aucun n'est un fix borné à un
+   cycle, et en démarrer un sans décision de périmètre explicite
+   violerait la discipline du projet contre l'invention de portée. Si le
+   frontier « save/reload » est un jour repris : r202 a tracé sa forme
+   binaire réelle (`NtOpenFile`→`NtDeviceIoControlFile`→boucle
+   `NtWriteFile` dans `Function_82392878`/la fonction à `0x82392978`) —
+   partir de ces adresses plutôt que de redécouvrir la forme.
 5. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
@@ -348,6 +360,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r236-real-fix-sprintf-and-vsnprintf-implement-the-exhaustively-verified-specifier-set-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r235-doc-vsnprintf-helper-is-pervasive-not-bounded-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r234-doc-offline-import-sweep-at-its-natural-stopping-point-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r233-doc-remaining-voice-and-privilege-imports-already-handled-20260903.md`;

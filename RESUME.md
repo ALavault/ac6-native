@@ -210,14 +210,21 @@ correspond plus à la méthode « fix borné à un import ». r235
 consommateur interne a 28 appelants réels répartis sur ≥4 fonctions,
 la plupart avec des formats non décodés — réaffirme r234 avec bien plus
 de preuve, une implémentation partielle serait pire que le statu quo.
+r236 a corrigé `sprintf`/`_vsnprintf` : décodage EXHAUSTIF (pas
+échantillonné) de chaque chaîne de format atteignant chaque vrai
+appelant des deux imports — l'ensemble complet observé est fermé
+(littéraux, `%s`, `%d`, `%x`/`%X`, largeurs optionnelles). Pointeur
+`va_list` de `_vsnprintf` résolu par désassemblage brut. Parseur partagé
+`guest_vprintf()` ajouté, vérifié par smoke-test runtime autonome (8/8)
+contre chaque chaîne de format réelle.
 
 Ce fil de travail spécifique (balayage des stubs d'import offline) n'a
 plus de candidat borné. Les pistes restantes (confirmation runtime du
 backend d'entrée r180, décision de périmètre pour construire
-save/reload ou le moteur printf varargs) nécessitent soit une ressource
-externe (périphérique physique), soit une décision explicite qui n'est
-pas la mienne à prendre seul — voir NEXT.md « Prochaine décision » pour
-le détail avant toute reprise.
+save/reload ou le mécanisme de callback `XamTaskSchedule`) nécessitent
+soit une ressource externe (périphérique physique), soit une décision
+explicite qui n'est pas la mienne à prendre seul — voir NEXT.md
+« Prochaine décision » pour le détail avant toute reprise.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

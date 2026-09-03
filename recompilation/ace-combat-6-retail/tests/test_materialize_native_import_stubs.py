@@ -1713,3 +1713,33 @@ def test_xam_task_close_handle_returns_success(tmp_path: Path) -> None:
     body = text.split("void __imp__XamTaskCloseHandle(")[1].split("\n}\n")[0]
     assert "kOfflineStatus" not in body
     assert "ctx.r3.u64 = 0u" in body
+
+
+def test_sprintf_uses_the_shared_guest_vprintf_parser(tmp_path: Path) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__sprintf);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    assert "guest_vprintf(" in text
+    body = text.split("void __imp__sprintf(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r5.u32" in body
+    assert "ctx.r10.u32" in body
+    assert "guest_vprintf(base, ctx.r3.u32, 0x2000u, ctx.r4.u32, next_arg)" in body
+
+
+def test_vsnprintf_reads_varargs_from_the_guest_va_list_pointer(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp___vsnprintf);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    text = output.read_text()
+    body = text.split("void __imp___vsnprintf(")[1].split("\n}\n")[0]
+    assert "kOfflineStatus" not in body
+    assert "ctx.r6.u32" in body
+    assert "PPC_LOAD_U32(va_list_ptr + offset + 4u)" in body
+    assert "offset += 8u" in body
+    assert "guest_vprintf(base, ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, next_arg)" in body
