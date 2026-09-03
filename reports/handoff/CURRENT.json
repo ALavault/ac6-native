@@ -4,8 +4,9 @@
   "active_gate": "retail-us-native-runtime-gate2",
   "active_product": "recompilation/ace-combat-6-retail",
   "target": "ntsc-uj",
-  "source_report": "reports/ac6-retail-native-codegen-gate2-r236-real-fix-sprintf-and-vsnprintf-implement-the-exhaustively-verified-specifier-set-20260903.md",
+  "source_report": "reports/ac6-retail-native-codegen-gate2-r237-doc-xamtaskschedule-callback-is-the-same-save-reload-frontier-20260903.md",
   "working_set": [
+    "reports/ac6-retail-native-codegen-gate2-r237-doc-xamtaskschedule-callback-is-the-same-save-reload-frontier-20260903.md",
     "reports/ac6-retail-native-codegen-gate2-r236-real-fix-sprintf-and-vsnprintf-implement-the-exhaustively-verified-specifier-set-20260903.md",
     "reports/ac6-retail-native-codegen-gate2-r235-doc-vsnprintf-helper-is-pervasive-not-bounded-20260903.md",
     "reports/ac6-retail-native-codegen-gate2-r234-doc-offline-import-sweep-at-its-natural-stopping-point-20260903.md",

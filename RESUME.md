@@ -216,13 +216,19 @@ appelant des deux imports — l'ensemble complet observé est fermé
 (littéraux, `%s`, `%d`, `%x`/`%X`, largeurs optionnelles). Pointeur
 `va_list` de `_vsnprintf` résolu par désassemblage brut. Parseur partagé
 `guest_vprintf()` ajouté, vérifié par smoke-test runtime autonome (8/8)
-contre chaque chaîne de format réelle.
+contre chaque chaîne de format réelle. r237 (documentation seule) a
+réexaminé `XamTaskSchedule` après avoir remarqué que `ExCreateThread`
+(r114) établit déjà un vrai mécanisme d'appel vers du code invité
+(`PPC_LOOKUP_FUNC`) — confirmé faire partie du MÊME chantier save/reload
+que `XamTaskCloseHandle` était séparé de (r230), pas un sous-système
+indépendant : sa vraie routine EST le corps de la fonction de
+scan/écriture de sauvegarde déjà tracée.
 
 Ce fil de travail spécifique (balayage des stubs d'import offline) n'a
 plus de candidat borné. Les pistes restantes (confirmation runtime du
 backend d'entrée r180, décision de périmètre pour construire
-save/reload ou le mécanisme de callback `XamTaskSchedule`) nécessitent
-soit une ressource externe (périphérique physique), soit une décision
+save/reload — qui inclut désormais `XamTaskSchedule`) nécessitent soit
+une ressource externe (périphérique physique), soit une décision
 explicite qui n'est pas la mienne à prendre seul — voir NEXT.md
 « Prochaine décision » pour le détail avant toute reprise.
 

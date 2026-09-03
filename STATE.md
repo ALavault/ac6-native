@@ -10728,3 +10728,29 @@ spécificateur inconnu) — 8/8 passent. pytest 211/211 (210+1 skip),
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r236-real-fix-sprintf-and-vsnprintf-implement-the-exhaustively-verified-specifier-set-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r237 (documentation seule) : `XamTaskSchedule` confirmé même chantier que save/reload
+
+Réexamen après avoir remarqué que `ExCreateThread` (r114) établit déjà
+un mécanisme réel de rappel vers du code invité recompilé
+(`PPC_LOOKUP_FUNC(base, adresse) → PPCFunc*`, invoqué avec un
+`PPCContext` préparé) — « pas de sous-système de callback » n'est donc
+plus, en soi, une raison de différer. L'unique vrai site d'appel de
+`XamTaskSchedule` (`0x82391df0`, dans `Function_82391A40`) est résolu
+par désassemblage brut : `r3`=routine fixe `0x823917f8`, `r4`=contexte
+(`r11+0x6310`), `r5`=options (`0x02080002`), `r6`=pointeur de sortie
+pour un handle. Mais la routine `0x823917f8` EST le corps de cette même
+fonction de scan/écriture de contenu de sauvegarde — l'invoquer
+correctement déclencherait immédiatement le même mur d'écriture
+save/reload déjà différé partout ailleurs (r202/r229). `XamTaskSchedule`
+reste donc confirmé faire partie de ce chantier, pas un blocage séparé
+(contrairement à `XamTaskCloseHandle`, correctement séparé par r230).
+Risque identifié si ce chemin devient un jour atteignable : le défaut
+générique actuel échoue proprement au niveau de l'appel, mais
+l'exécution continue ensuite et lit un global (`uRam82916320`) que seule
+la vraie routine écrirait — s'il est zéro-initialisé par défaut, cela
+pourrait signaler un « scan terminé » qui n'a jamais eu lieu. Aucune
+source touchée; pytest 211/211 (210+1 skip), `ctest` 10/10 reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r237-doc-xamtaskschedule-callback-is-the-same-save-reload-frontier-20260903.md`.
