@@ -319,13 +319,30 @@ fallback ReXGlue.
   rappel vers du code invité (`PPC_LOOKUP_FUNC`) — « pas de sous-système
   de callback » n'est donc plus une raison de différer en soi. Le seul
   site d'appel réel (désassemblage brut) résout la vraie signature :
-  routine fixe `0x823917f8`, contexte, options, handle de sortie. Mais
-  invoquer réellement cette routine ferait immédiatement écrire du
-  contenu de sauvegarde réel — le même mur d'écriture save/reload déjà
-  différé (r202) partout ailleurs. `XamTaskSchedule` reste confirmé
-  faire partie de ce même chantier, pas un blocage séparé; risque de
-  faux-signal-de-succès identifié si jamais ce chemin devient atteignable
-  (global `uRam82916320` lu sans être écrit en cas d'échec).
+  routine fixe `0x823917f8`, contexte, options, handle de sortie. À
+  l'époque supposé lié au chantier save/reload (r202) — **corrigé par
+  r238 ci-dessous : c'est en fait la gestion du cache disque→disque dur,
+  pas la sauvegarde**.
+- r238 (documentation seule) corrige r202 ET r237 : les chaînes de
+  chemin réelles ouvertes par `Function_82392878`/`Function_82392978`
+  (décodées cette fois, pas seulement la forme de l'appel) sont
+  `\Device\Harddisk0\Partition1`, `\Device\Harddisk0\WindowsPartition`,
+  `\Device\Harddisk0\Cache%u\` — la gestion du **cache disque dur
+  disque→HDD** du dashboard Xbox 360 (une fonctionnalité réelle et
+  documentée, complètement distincte des données de sauvegarde
+  utilisateur), pas un écriveur de sauvegarde. `XamTaskSchedule` (r237)
+  planifie exactement cette même chaîne de cache, pas une sauvegarde.
+  L'absence de disque dur compatible est une condition NORMALE et
+  pleinement supportée sur le vrai matériel (`\Device\Harddisk0\...`
+  échoue proprement); `NtCreateFile`/`NtOpenFile` de ce projet route déjà
+  tout chemin invité via `native_guest_media_service()` (lié uniquement
+  à l'ISO retail), donc un chemin de disque dur y échoue déjà
+  honnêtement (`STATUS_OBJECT_NAME_NOT_FOUND`) — exactement l'équivalent
+  du comportement matériel réel sans disque dur. **Aucun fix nécessaire
+  ici; aucune nouvelle portée d'ingénierie (formatage FATX, etc.) n'est
+  justifiée par ce fil.** Le vrai chemin d'écriture de sauvegarde
+  utilisateur, s'il existe, n'a PAS été localisé dans ce build qualifié
+  (`XamContentCreateEx`/`XamContent*` restent confirmés morts, r229).
 - Suite pytest 211/211 (210 + 1 skip, inchangée), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -333,14 +350,26 @@ fallback ReXGlue.
 
 ## Prochaine décision
 
-Le balayage des imports offline (r148-r237) est clos : plus aucun
+Le balayage des imports offline (r148-r238) est clos : plus aucun
 candidat borné n'y reste, y compris `sprintf`/`_vsnprintf` (r236, corrigé
-après décodage exhaustif de tout appelant réel) et `XamTaskSchedule`
-(r237 : confirmé faire partie du chantier save/reload, pas un blocage
-séparé — voir ci-dessous). Les 2 pistes suivantes restent ouvertes, mais
-aucune n'est actionnable sans une ressource externe ou une décision de
-périmètre explicite — ce ne sont pas des tâches à reprendre seul sans
-cette décision :
+après décodage exhaustif de tout appelant réel). r238 corrige r202 ET
+r237 : la chaîne `NtOpenFile`→`NtDeviceIoControlFile`→`NtWriteFile`
+tracée par r202, et la routine de `XamTaskSchedule` que r237 y avait
+rattachée, ouvrent en réalité `\Device\Harddisk0\Partition1`/
+`WindowsPartition`/`Cache%u\` — la gestion du cache disque→disque dur du
+dashboard, PAS un écriveur de sauvegarde utilisateur. L'absence de
+disque dur compatible est une condition normale sur le vrai matériel, et
+`NtCreateFile`/`NtOpenFile` de ce projet échoue déjà honnêtement sur ces
+chemins (`STATUS_OBJECT_NAME_NOT_FOUND`, via `native_guest_media_service()`
+lié uniquement à l'ISO retail) — exactement l'équivalent du comportement
+matériel sans disque dur. **Aucun fix n'est nécessaire ici, et aucune
+nouvelle portée d'ingénierie (formatage FATX, sous-système d'écriture)
+n'est justifiée par ce fil.** Le vrai chemin d'écriture de sauvegarde
+utilisateur, s'il existe dans ce build qualifié, n'a PAS été localisé
+(`XamContentCreateEx`/`XamContent*` restent confirmés morts, r229) — ce
+n'est donc plus une décision de périmètre en attente, faute d'un
+candidat à décider. Les 2 pistes suivantes restent ouvertes, mais aucune
+n'est actionnable sans une ressource externe :
 
 1. Confirmer par une observation runtime (avec un vrai périphérique quand
    disponible — absent de cet environnement) que le backend d'entrée
@@ -349,28 +378,12 @@ cette décision :
    d'allocation contre une valeur attendue non retracée) échoue en
    pratique, tracer la source de cette valeur avant d'ajuster les
    constantes — conditionné à une observation qui n'a pas eu lieu.
-3. Une décision explicite de aller/pas-aller pour construire le chantier
-   save/reload (écriture réelle `NtWriteFile`/`NtDeviceIoControlFile`)
-   serait la prochaine frontière substantielle du balayage d'imports.
-   r237 a confirmé que `XamTaskSchedule` fait partie de CE MÊME chantier
-   (pas un sous-système séparé) : `ExCreateThread` (r114) prouve déjà
-   qu'appeler du code invité depuis un stub natif est mécaniquement
-   possible (`PPC_LOOKUP_FUNC`), mais la vraie routine de
-   `XamTaskSchedule` (`0x823917f8`) est elle-même le corps de la même
-   fonction de scan/écriture de contenu de sauvegarde
-   (`Function_82391A40`) — l'invoquer correctement nécessite le même
-   support d'écriture, pas un sous-système indépendant. Un fix isolé
-   sans ce support ne produirait pas un comportement correct. En
-   démarrer un sans décision de périmètre explicite violerait la
-   discipline du projet contre l'invention de portée. Si repris : r202 a
-   tracé sa forme binaire réelle
-   (`NtOpenFile`→`NtDeviceIoControlFile`→boucle `NtWriteFile` dans
-   `Function_82392878`/la fonction à `0x82392978`), et r237 a résolu la
-   signature réelle de `XamTaskSchedule` (routine `0x823917f8`, contexte
-   `r11+0x6310`, options `0x02080002`, handle de sortie) à implémenter
-   au même moment via le motif `PPC_LOOKUP_FUNC` de r114 — partir de ces
-   adresses plutôt que de redécouvrir la forme.
-5. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
+3. Si un vrai chemin d'écriture de sauvegarde est un jour localisé dans
+   un build qualifié futur (ce n'est PAS celui que r202 avait tracé —
+   voir r238), reprendre le balayage depuis ce nouveau point plutôt que
+   depuis `Function_82392878`/`Function_82392978`, qui sont maintenant
+   résolus comme gestion de cache disque dur, sans rapport.
+4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
    sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
    `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
    parmi plusieurs candidates également plausibles est arbitraire sans lire
@@ -385,6 +398,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r238-doc-r202-save-reload-writer-was-actually-hdd-cache-formatting-already-adequate-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r237-doc-xamtaskschedule-callback-is-the-same-save-reload-frontier-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r236-real-fix-sprintf-and-vsnprintf-implement-the-exhaustively-verified-specifier-set-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r235-doc-vsnprintf-helper-is-pervasive-not-bounded-20260903.md`;

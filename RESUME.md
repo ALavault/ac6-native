@@ -219,18 +219,25 @@ appelant des deux imports — l'ensemble complet observé est fermé
 contre chaque chaîne de format réelle. r237 (documentation seule) a
 réexaminé `XamTaskSchedule` après avoir remarqué que `ExCreateThread`
 (r114) établit déjà un vrai mécanisme d'appel vers du code invité
-(`PPC_LOOKUP_FUNC`) — confirmé faire partie du MÊME chantier save/reload
-que `XamTaskCloseHandle` était séparé de (r230), pas un sous-système
-indépendant : sa vraie routine EST le corps de la fonction de
-scan/écriture de sauvegarde déjà tracée.
+(`PPC_LOOKUP_FUNC`) — supposé alors faire partie du chantier save/reload.
+**r238 corrige r202 ET r237** : les chemins réels ouverts
+(`\Device\Harddisk0\Partition1`/`WindowsPartition`/`Cache%u\`, décodés
+en octets) montrent qu'il s'agit de la gestion du cache disque→disque
+dur du dashboard, PAS d'un écriveur de sauvegarde. L'absence de disque
+dur est une condition normale sur le vrai matériel; `NtCreateFile`/
+`NtOpenFile` échoue déjà honnêtement sur ces chemins via
+`native_guest_media_service()` — aucun fix n'est nécessaire, et aucune
+portée d'ingénierie (formatage FATX) n'est justifiée. Le vrai chemin de
+sauvegarde utilisateur, s'il existe, n'a pas été localisé dans ce build
+qualifié (`XamContent*` reste mort, r229).
 
 Ce fil de travail spécifique (balayage des stubs d'import offline) n'a
-plus de candidat borné. Les pistes restantes (confirmation runtime du
-backend d'entrée r180, décision de périmètre pour construire
-save/reload — qui inclut désormais `XamTaskSchedule`) nécessitent soit
-une ressource externe (périphérique physique), soit une décision
-explicite qui n'est pas la mienne à prendre seul — voir NEXT.md
-« Prochaine décision » pour le détail avant toute reprise.
+plus de candidat borné, et la « décision de périmètre save/reload »
+n'a plus de candidat concret à décider (r238). Les pistes restantes
+(confirmation runtime du backend d'entrée r180, tracer un futur vrai
+chemin de sauvegarde s'il est localisé) nécessitent soit une ressource
+externe (périphérique physique), soit une nouvelle découverte — voir
+NEXT.md « Prochaine décision » pour le détail avant toute reprise.
 
 Ne pas supposer qu'un import est un remplissage de structure sans lire ses
 sites d'appel réels (r170 a infirmé cette hypothèse pour `VdQueryVideoFlags`),

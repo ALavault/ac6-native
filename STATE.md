@@ -10754,3 +10754,36 @@ source touchée; pytest 211/211 (210+1 skip), `ctest` 10/10 reproduits.
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r237-doc-xamtaskschedule-callback-is-the-same-save-reload-frontier-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r238 corrige r202 ET r237 : gestion du cache disque dur, pas un écriveur de sauvegarde
+
+Décodage des chaînes de chemin réelles ouvertes par
+`Function_82392878`/`Function_82392978` (r202) et par la routine de
+`XamTaskSchedule` (r237) — pas seulement la forme de l'appel cette
+fois : `\Device\Harddisk0\Partition1`, `\Device\Harddisk0\
+WindowsPartition`, `\Device\Harddisk0\Cache%u\` (`scripts/DumpBytes.java`,
+ASCII étroit confirmé octet par octet). Ce sont les noms de périphérique
+réels du noyau Xbox 360 pour les partitions du DISQUE DUR de la console,
+spécifiquement la gestion du **cache disque→disque dur** géré par le
+dashboard (une fonctionnalité réelle, documentée, entièrement distincte
+des données de sauvegarde utilisateur) — pas un écriveur de sauvegarde.
+Remonté d'un cran (`Function_823913F8`, `Function_82391E80`,
+`Function_8234DB68`) : gardé par une vérification de configuration
+(comparaisons littérales `"game"`/`"cache"`), et c'est exactement la
+chaîne vers laquelle la routine de `XamTaskSchedule` (`0x823917f8`)
+résout. L'absence de disque dur compatible est une condition NORMALE et
+pleinement supportée sur le vrai matériel (`\Device\Harddisk0\...`
+échoue proprement); `NtCreateFile`/`NtOpenFile` de ce projet route déjà
+tout chemin invité via `native_guest_media_service()` (lié uniquement à
+l'ISO retail qualifiée) — un chemin de disque dur y échoue donc déjà
+honnêtement (`STATUS_OBJECT_NAME_NOT_FOUND`), exactement l'équivalent du
+comportement matériel réel sans disque dur. **Aucun fix nécessaire;
+aucune nouvelle portée d'ingénierie (formatage FATX, sous-système
+d'écriture) n'est justifiée par ce fil.** Le vrai chemin d'écriture de
+sauvegarde utilisateur, s'il existe, n'a PAS été localisé dans ce build
+qualifié (`XamContentCreateEx`/`XamContent*` restent confirmés morts,
+r229). Aucune source touchée; pytest 211/211 (210+1 skip), `ctest`
+10/10 reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r238-doc-r202-save-reload-writer-was-actually-hdd-cache-formatting-already-adequate-20260903.md`.
