@@ -291,6 +291,17 @@ fallback ReXGlue.
   aucun ne correspond plus à la méthode de ce balayage (fix borné à un
   seul import, dérivé de preuve). Rouvrir n'importe lequel exige une
   preuve nouvelle, pas un nouveau passage sur les mêmes sites d'appel.
+- r235 (documentation seule) : tentative de réduire encore le périmètre
+  de `_vsnprintf` — les spécificateurs des 7 sites `sprintf` sont bien un
+  petit ensemble fermé (`%s`/`%d`/`%x`/`%X`), mais le vrai consommateur
+  de `_vsnprintf` (`Function_821EF4E0`/`Function_821EF458`, des wrappers
+  qui transmettent leurs propres varargs) a 20 + 8 vrais appelants réels
+  répartis sur au moins 4 fonctions distinctes, la plupart avec des
+  chaînes de format non encore décodées — un seul chemin (dump crash
+  `Function_821EF878`) est confirmé mort, les autres non. Réaffirme
+  r234 avec bien plus de preuve : une implémentation partielle
+  désynchroniserait silencieusement les lectures varargs sur tout
+  spécificateur non couvert — pire que le no-op honnête actuel.
 - Suite pytest 209/209 (208 + 1 skip, inchangée), `ctest` 10/10.
 - La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
   `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
@@ -337,6 +348,7 @@ observation runtime.
 ## Preuves courantes
 
 - `reports/handoff/CURRENT.json`;
+- `reports/ac6-retail-native-codegen-gate2-r235-doc-vsnprintf-helper-is-pervasive-not-bounded-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r234-doc-offline-import-sweep-at-its-natural-stopping-point-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r233-doc-remaining-voice-and-privilege-imports-already-handled-20260903.md`;
 - `reports/ac6-retail-native-codegen-gate2-r232-doc-xamsession-pair-fully-traced-already-adequate-20260903.md`;

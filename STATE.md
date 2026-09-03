@@ -10674,3 +10674,29 @@ plus à la méthode de ce balayage. Aucune source touchée; pytest 209/209
 
 Preuve :
 `reports/ac6-retail-native-codegen-gate2-r234-doc-offline-import-sweep-at-its-natural-stopping-point-20260903.md`.
+
+# Gate 2 retail US 2026-09-03 — r235 (documentation seule) : `_vsnprintf` réaffirmé hors cycle borné, avec bien plus de preuve
+
+Tentative de réduire davantage le périmètre de `_vsnprintf` : les
+spécificateurs des 7 sites `sprintf` sont un petit ensemble fermé
+(`%s`/`%d`/`%x`/`%X`, largeurs fixes zéro-paddées, décodés via
+`scripts/DumpBytes.java`), mais le vrai consommateur de `_vsnprintf`
+(`Function_821EF4E0`/`Function_821EF458`, wrappers qui transmettent
+leurs propres varargs vers un pointeur `va_list`-style construit sur
+leur propre pile, même convention que r222) a **20 + 8 vrais appelants
+réels** trouvés via `ReferencesTo.java`, répartis sur au moins 4
+fonctions distinctes, la plupart avec des chaînes de format encore non
+décodées. Une seule chaîne (`Function_821EF878`, un dump crash/version
+gardé par un code de statut précis, remontant à `Function_821E6AC8` qui
+n'a AUCUN appelant) est confirmée morte; les autres non — donc ce n'est
+PAS un ensemble fermé de quelques formats connus comme espéré. Une
+implémentation partielle couvrant seulement les spécificateurs déjà vus
+désynchroniserait silencieusement la lecture des varargs sur tout
+spécificateur non couvert dans les chemins non encore décodés — pire
+que le no-op honnête actuel (le buffer n'est jamais écrit). Réaffirme
+r234, avec beaucoup plus de preuve concrète que l'estimation initiale.
+Aucune source touchée; pytest 209/209 (208+1 skip), `ctest` 10/10
+reproduits.
+
+Preuve :
+`reports/ac6-retail-native-codegen-gate2-r235-doc-vsnprintf-helper-is-pervasive-not-bounded-20260903.md`.

@@ -205,7 +205,11 @@ seule) scope `sprintf`/`_vsnprintf` (7+2 sites réels, moteur printf
 varargs complet nécessaire, hors cycle borné) et **déclare le balayage
 des imports offline (r148-r233) à son point d'arrêt naturel** : chaque
 candidat restant a une disposition tracée et nommée, aucun ne
-correspond plus à la méthode « fix borné à un import ».
+correspond plus à la méthode « fix borné à un import ». r235
+(documentation seule) a creusé `_vsnprintf` plus loin : son vrai
+consommateur interne a 28 appelants réels répartis sur ≥4 fonctions,
+la plupart avec des formats non décodés — réaffirme r234 avec bien plus
+de preuve, une implémentation partielle serait pire que le statu quo.
 
 Ce fil de travail spécifique (balayage des stubs d'import offline) n'a
 plus de candidat borné. Les pistes restantes (confirmation runtime du
