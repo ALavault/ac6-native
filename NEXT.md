@@ -1,6 +1,15 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r425 — `VdSwap` (le vrai appel noyau de présentation) EST appelé par le jeu invité (5x/25s, jamais vérifié avant), et son chemin de validation drain parfois du contenu réellement neuf de l'anneau (`vd swap commit`, 1/5 appels) — mais MÊME ALORS, le lot décodé ne contient jamais de paquet `Present`, malgré du rendu réel (jusqu'à 50 tirages dans un autre lot). Ferme l'hypothèse r292-r296 (bug de scrutation/découverte) : la découverte fonctionne, le drainage a lieu, il manque simplement le paquet `XE_SWAP` lui-même dans le flux (PAS un blocage qualifié).**
+0. **r426 — confirmé au niveau octet : aucun paquet PM4 `XE_SWAP` (opcode `0x64`) n'apparaît jamais autour du curseur transmis à `VdSwap`, sur les 5 appels capturés — de vrais paquets PM4 existent juste avant (opcodes `0x36`/`0x46`/`0x3c`, en-têtes de type 3 authentiques). Une fenêtre de sonde 3× plus longue (75s vs 25s) ne change rien : l'anneau plafonne au même niveau, le jeu ne progresse PAS vers un swap avec plus de temps. Correction méthodologique en cours de route : `ctx.r3` de `__imp__VdSwap` vit à `ctx+0x00`, pas `ctx+0x08` (même piège que r412, corrigé avant publication) (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r426-no-xe-swap-packet-ever-appears-near-vdswap-cursor-confirmed-byte-level-20260908.md`.
+   **Nommé pour r427** : lire `sub_821F03B0` ligne par ligne (et
+   remonter `sub_8234F558`/`sub_8233E0A8`/`sub_8233B5A0` si
+   nécessaire) pour localiser soit la condition qui gate l'émission du
+   paquet `XE_SWAP`, soit ce qui bloque le jeu tôt et l'empêche de
+   progresser vers son premier swap réel.
+
+1. **r425 — `VdSwap` (le vrai appel noyau de présentation) EST appelé par le jeu invité (5x/25s, jamais vérifié avant), et son chemin de validation drain parfois du contenu réellement neuf de l'anneau (`vd swap commit`, 1/5 appels) — mais MÊME ALORS, le lot décodé ne contient jamais de paquet `Present`, malgré du rendu réel (jusqu'à 50 tirages dans un autre lot). Ferme l'hypothèse r292-r296 (bug de scrutation/découverte) : la découverte fonctionne, le drainage a lieu, il manque simplement le paquet `XE_SWAP` lui-même dans le flux (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r425-vdswap-called-but-never-carries-a-present-packet-even-on-clean-commit-20260908.md`.
    **Nommé pour r426** : lire `sub_821F03B0` (l'appelant direct de
