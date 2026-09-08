@@ -1,6 +1,15 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r420 — cause racine du blocage d'arrêt trouvée SANS capture en direct : `VulkanDevice::~VulkanDevice()` est correct et complet (`vkDeviceWaitIdle`/`vkDestroyDevice`/`vkDestroyInstance`) — RÉFUTE l'hypothèse de r419. La vraie cause : `NativeRuntime::shutdown()` appelle `native_guest_threads_stop_and_join()` EN PREMIER, qui fait un `thread.join()` INCONDITIONNEL et SANS DÉLAI sur chaque thread invité `ExCreateThread` enregistré. Le mécanisme d'arrêt propre (r277/r417) ne fonctionne que si le thread ciblé est précisément dans un stub d'attente au moment de l'arrêt — sinon `.join()` bloque pour toujours, `shutdown()` ne retourne jamais, `runtime` (donc `offscreen_device_`) n'est jamais détruit. Explique tout ce qu'ont observé r418/r419 sans capture en direct (PAS un blocage qualifié).**
+0. **r421 — le thread précis identifié EN DIRECT (contournement `ptrace_scope` : gdb LANCE le processus au lieu de s'y attacher) : bloqué dans `__imp__KeRaiseIrqlToDpcLevel`, en train d'exécuter du vrai code de jeu (10 niveaux PPC imbriqués, `sub_821F8008<-...<-sub_823A8F90`), sur un `std::recursive_mutex` global `g_dpc_level_mutex` (`tools/materialize_native_import_stubs.py:186`, choix de conception r191 documenté) — implémenté en `lock()`/`unlock()` BRUT, sans garde RAII, architecturalement inévitable puisque Raise/Lower sont deux fonctions PPC générées séparées. Une exception `GuestThreadTerminated` (r277/r417) levée entre les deux orpheline le verrou pour toujours. Explique tout r418-r420 (PAS un blocage qualifié — correctif à concevoir, pas de conception unilatérale).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r421-hang-thread-pinned-live-blocked-on-non-raii-global-irql-mutex-20260908.md`.
+   **Nommé pour r422** : concevoir et vérifier en direct un correctif
+   (IRQL réellement `thread_local`, ou garde d'exception qui libère
+   l'IRQL résiduel dans le chemin `GuestThreadTerminated`) ; confirmer
+   que `shutdown()` retourne en lancement AUTONOME (pas seulement sous
+   gdb, cf. r419).
+
+1. **r420 — cause racine du blocage d'arrêt trouvée SANS capture en direct : `VulkanDevice::~VulkanDevice()` est correct et complet (`vkDeviceWaitIdle`/`vkDestroyDevice`/`vkDestroyInstance`) — RÉFUTE l'hypothèse de r419. La vraie cause : `NativeRuntime::shutdown()` appelle `native_guest_threads_stop_and_join()` EN PREMIER, qui fait un `thread.join()` INCONDITIONNEL et SANS DÉLAI sur chaque thread invité `ExCreateThread` enregistré. Le mécanisme d'arrêt propre (r277/r417) ne fonctionne que si le thread ciblé est précisément dans un stub d'attente au moment de l'arrêt — sinon `.join()` bloque pour toujours, `shutdown()` ne retourne jamais, `runtime` (donc `offscreen_device_`) n'est jamais détruit. Explique tout ce qu'ont observé r418/r419 sans capture en direct (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r420-shutdown-hang-root-caused-unconditional-timeoutless-thread-join-20260908.md`.
    **Nommé pour r421** : identifier PRÉCISÉMENT quel thread invité
