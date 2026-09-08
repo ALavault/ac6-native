@@ -1,6 +1,27 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r410 — l'écrivain de `0x100007f0..+0xc` n'est PAS un sous-système sans rapport : c'est le tas général lui-même, agissant comme client de sa propre API. `sub_8237FA50` (`push_back` d'un tableau croissant global, appelé depuis la boucle des constructeurs statiques C++, `sub_821F7B28`) libère son propre tampon (`free(0x10000770)`, pile d'appel exacte capturée : `sub_821FA6F8<-sub_821FA9E0<-sub_823857E0<-sub_8237FA50<-sub_8237FB58<-sub_821F7B28<-__xstart`) puis continue d'écrire à travers un pointeur de fin resté périmé — un use-after-free interne à un agrandissement de tampon, pas une corruption externe. CORRIGE la version précédente de r410 elle-même (« sans rapport avec l'allocateur », réfutée par la lecture directe du code PPC de `sub_8237FA50`/`sub_821F7B28`) (PAS un blocage qualifié).**
+0. **r411 — le commit du redimensionnement du tableau croissant ne s'exécute JAMAIS : `begin` (`0x82a5eef0`) n'est écrit qu'UNE SEULE FOIS dans tout le run (`seq=2`, création), jamais après — y compris après une croissance réelle et confirmée en direct (`alloc(256o)->0x100015a0`, `free(0x10000770)`, `seq=5`/`6`). Le tableau continue ensuite d'écrire indéfiniment dans son tampon déjà libéré (`end` avance de 4 octets à chaque appel, 17 déclenchements consécutifs captés, `seq` figé à `6` — aucune nouvelle allocation ne se produit) : un débordement de tas NON BORNÉ, pas un simple use-after-free ponctuel. CORRIGE/PRÉCISE r410 (la lecture complète de `sub_821FA9E0` réfute l'hypothèse d'un bug dans le `realloc()` lui-même — il est textuellement correct) (PAS un blocage qualifié).**
+   `r419_grow_alloc_ret.gdb` capture l'allocation interne en direct
+   (entrée ET retour) : `seq=5`, `r5(size)=0x100`, pile
+   `sub_821F9E10<-sub_821FA9E0<-sub_823857E0<-sub_8237FA50<-
+   sub_8237FB58<-sub_821F7B28<-__xstart`, retour `r3=0x100015a0` — une
+   adresse neuve, distincte. `r421_begin_full_history.gdb` (point
+   d'observation matériel sur `begin` armé dès l'entrée du
+   constructeur, run complet jusqu'à `total-seq=883`) montre que
+   `0x100015a0` n'est JAMAIS stocké dans `begin` — le chemin de commit
+   `loc_8237FAF0` (texte cité par r410) n'exécute pas malgré un retour
+   non nul confirmé. `r420_globals_watch.gdb` montre que `end` continue
+   ensuite d'avancer de 4 octets par appel, sans aucun nouvel
+   alloc/free, jusqu'à au moins `0x10000834` (17 déclenchements) —
+   la capacité n'est jamais revérifiée avec succès. Voir
+   `reports/ac6-retail-native-codegen-gate2-r411-grow-commit-never-executes-array-overflows-its-freed-buffer-forever-20260908.md`.
+   **Nommé pour r412** : lire `sub_82385AF0` (requête de capacité) en
+   entier, ou isoler par point d'arrêt x86 la branche exacte
+   `cmplwi r3,0`/`bne` juste après le premier `bl sub_823857E0` de
+   `sub_8237FA50` pour capturer en direct `cr0`/`r3` à cet instant
+   précis lors de l'épisode `seq=5`/`6`.
+
+1. **r410 — l'écrivain de `0x100007f0..+0xc` n'est PAS un sous-système sans rapport : c'est le tas général lui-même, agissant comme client de sa propre API. `sub_8237FA50` (`push_back` d'un tableau croissant global, appelé depuis la boucle des constructeurs statiques C++, `sub_821F7B28`) libère son propre tampon (`free(0x10000770)`, pile d'appel exacte capturée : `sub_821FA6F8<-sub_821FA9E0<-sub_823857E0<-sub_8237FA50<-sub_8237FB58<-sub_821F7B28<-__xstart`) puis continue d'écrire à travers un pointeur de fin resté périmé — un use-after-free interne à un agrandissement de tampon, pas une corruption externe. CORRIGE la version précédente de r410 elle-même (« sans rapport avec l'allocateur », réfutée par la lecture directe du code PPC de `sub_8237FA50`/`sub_821F7B28`) (PAS un blocage qualifié).**
    `0x10000770` = exactement le pointeur retourné par `seq=2` (r409,
    128 octets) ; le tampon du tableau croissant global (globales de
    contrôle invité `0x82a5eef0`/`0x82a5eeec`) EST ce bloc. `end` du
