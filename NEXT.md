@@ -1,6 +1,13 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r429 — tampon frontal confirmé par motif de double-tamponnage (`r4+20` alterne entre exactement 2 adresses fixes sur les appels 2-5) ; dimensions réelles de la cible obtenues en direct (`1280×720`, `NativeGuestVdService::bind_offscreen`, déjà câblé dans le runtime réel — le vide de r294 est comblé). Correctif ENTIÈREMENT SPÉCIFIÉ (paquet PM4 `XE_SWAP` 5 mots, dimensions interrogées en direct, PAS codées en dur) mais PAS ENCORE appliqué : l'emplacement exact d'écriture dans l'anneau n'est pas confirmé avec assez de certitude, risque de corrompre un paquet déjà valide (PAS un blocage qualifié — prudence délibérée, pas un obstacle réel).**
+0. **r430 — correctif appliqué et vérifié en direct : `VdSwap` déclenche désormais un vrai présent Vulkan (`present_count` progresse 1→5 sur les 5 appels de la fenêtre). Le plan d'injection PM4 de r429 est ABANDONNÉ : `discover_write_index_locked` lit l'index d'écriture depuis le champ `+10952` de l'objet dispositif du jeu, PAS depuis le curseur `VdSwap` — il n'existe pas de « bon emplacement » où injecter un paquet dans l'anneau à partir de ce curseur. Cohérent avec le matériel réel : `VdSwap` programme directement l'affichage, ce n'est pas une commande PM4. Correctif = appel direct à `backend_->present_to_offscreen(...)`, aucune écriture de mémoire invitée, aucun risque de corruption. `presented_frames=0` s'affiche TOUJOURS — attendu, défaut séparé déjà nommé (r292, code mort `submit_ring()`), hors périmètre de ce correctif. `ctest` natif 11/11, lancement autonome propre (PAS un blocage qualifié — chaîne r418-r430 close pour le mécanisme de présentation).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r430-vdswap-present-fix-applied-and-live-verified-present-count-increments-20260908.md`.
+   **Nommé pour r431** : reconnecter `diagnostics_.presented_frames` à
+   `backend_.present_count()` sur le chemin réel, pas seulement dans
+   le code mort `submit_ring()`.
+
+1. **r429 — tampon frontal confirmé par motif de double-tamponnage (`r4+20` alterne entre exactement 2 adresses fixes sur les appels 2-5) ; dimensions réelles de la cible obtenues en direct (`1280×720`, `NativeGuestVdService::bind_offscreen`, déjà câblé dans le runtime réel — le vide de r294 est comblé). Correctif ENTIÈREMENT SPÉCIFIÉ (paquet PM4 `XE_SWAP` 5 mots, dimensions interrogées en direct, PAS codées en dur) mais PAS ENCORE appliqué : l'emplacement exact d'écriture dans l'anneau n'est pas confirmé avec assez de certitude, risque de corrompre un paquet déjà valide (PAS un blocage qualifié — prudence délibérée, pas un obstacle réel).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r429-front-buffer-and-dimensions-confirmed-fix-designed-not-yet-applied-20260908.md`.
    **Nommé pour r430** : confirmer précisément l'emplacement

@@ -3,12 +3,15 @@
 #include "ac6/native_vulkan_backend.h"
 #include "ac6/native_xenos.h"
 
+#include <atomic>
 #include <cstdint>
 #include <thread>
 #include <mutex>
 #include <vector>
 
 namespace ac6::native {
+
+class VulkanOffscreenTarget;
 
 // Guest-facing Vd service used by the build-only Xenon import boundary. It
 // observes the guest ring, decodes complete PM4 packets through VdBridge and
@@ -22,6 +25,14 @@ class NativeGuestVdService final {
 
   void bind(std::uint8_t* base, MmioBus& bus, VdBridge& bridge,
             XenosState& state, VulkanBackend& backend) noexcept;
+  // Optional non-owning offscreen target: when bound, every PRESENT packet
+  // accepted by submit() is executed on the target (opaque black) before
+  // the guest read-pointer writeback. Null (default) keeps pure-validation
+  // behavior. A failed present executes nothing and skips the guest
+  // writeback; the bus decode cursor has already advanced, exactly as with
+  // any accepted decode whose backend step rejects.
+  void bind_offscreen(VulkanOffscreenTarget* target) noexcept;
+  void unbind() noexcept;
   void register_allocation(std::uint8_t* base, GuestAddress guest_address,
                            std::uint32_t bytes) noexcept;
   void initialize_ring(std::uint8_t* base, GuestAddress physical_base,
@@ -53,6 +64,7 @@ class NativeGuestVdService final {
   VdBridge* bridge_{};
   XenosState* state_{};
   VulkanBackend* backend_{};
+  VulkanOffscreenTarget* present_target_{};
   GuestAddress ring_base_{};
   GuestAddress ring_guest_base_{};
   std::uint32_t ring_size_{};
@@ -61,6 +73,7 @@ class NativeGuestVdService final {
   std::vector<std::uint32_t> ring_words_{};
   std::vector<Allocation> allocations_{};
   bool poller_started_{};
+  std::atomic<bool> stop_poller_{false};
 };
 
 NativeGuestVdService& native_guest_vd_service() noexcept;
