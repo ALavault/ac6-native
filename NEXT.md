@@ -1,6 +1,19 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r458 — le rejet MSAA nommé par r457 est confirmé un VRAI trou de couverture, pas un bug de décodage : une trace de diagnostic locale (`AC6_NATIVE_VD_TRACE`, non committée) sur `derive_edram_render_target()` montre `RB_SURFACE_INFO=0x0a020280` → `msaa_bits=2` = un vrai encodage Xenos 4× MSAA (pas une valeur corrompue). **Corrige la prévision de r457** (qui supposait « probablement un autre correctif ciblé sans oracle, même modèle ») : `PinnedShaderRuntime` ne sait simplement pas encore créer/résoudre une cible EDRAM multi-échantillonnée — un vrai morceau de travail de moteur de rendu (image Vulkan multisample + résolution), pas une correction d'une ligne. Non implémenté ce cycle (dimensionnement hors périmètre d'un cycle d'investigation). `ctest` 11/11, aucune régression. Toujours NON committé (PAS un blocage qualifié).**
+0. **r459 — support d'une cible EDRAM multi-échantillonnée IMPLÉMENTÉ dans `PinnedShaderRuntime` : `edram_image_` devient l'image Vulkan multi-échantillonnée elle-même (persistante entre tirages, mêmes sémantiques clear/load que le chemin 1×), résolue explicitement (`vkCmdResolveImage`) vers une nouvelle image compagnon 1× (`edram_resolve_image_`) une seule fois, à la présentation — PAS via une résolution automatique de sous-passe par tirage, qui aurait perdu l'accumulation entre tirages successifs sur la même cible. `PipelineKey`/le cache de passes incluent maintenant `sample_count`. Le cas `sample_count==1` reste bit-pour-bit inchangé. **Vérifié sans régression** : `ctest` 11/11, et un lancement réel confirme la disparition totale du motif de rejet MSAA (0 occurrence, contre 1 auparavant) ; `presented_frames=5 state=2` inchangé. Les 9 replis restants portent maintenant deux motifs SANS RAPPORT avec MSAA (couverture du registre épinglé, déjà connu ; et un nouveau, non investigué, sur les masques d'écriture partiels). **Non établi, signalé honnêtement** : la géométrie de tuile EDRAM (pitch/origine) n'a PAS été ajustée pour `sample_count > 1` — aucune preuve citable (retail ou oracle) pour la disposition exacte des échantillons par tuile dans ce dépôt ; deviner aurait violé la discipline « pas de règle plausible sans contrôle ». Toujours NON committé (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r459-msaa-plumbing-implemented-and-verified-eliminates-its-own-rejection-tile-geometry-under-msaa-flagged-unverified-20260908.md`.
+   **Nommé pour r460** : (1) le motif de rejet du registre épinglé
+   (couverture des 271 variantes, r456) nécessite probablement une
+   session oracle — décision utilisateur ; (2) le nouveau motif
+   « partial render-target write masks are not qualified this cycle »
+   observé une fois, sans rapport avec MSAA, non investigué. Reste
+   ouvert sinon : une fois le câblage jugé mûr, reconsidérer le
+   committage groupé de l'arriéré (r433/r434/r438/r454-r459) ; mise à
+   jour de `tools/prepare.py`/`tools/build.py` pour le chemin ISO par
+   défaut (confort, pas une nécessité).
+
+1. **r458 — le rejet MSAA nommé par r457 est confirmé un VRAI trou de couverture, pas un bug de décodage : une trace de diagnostic locale (`AC6_NATIVE_VD_TRACE`, non committée) sur `derive_edram_render_target()` montre `RB_SURFACE_INFO=0x0a020280` → `msaa_bits=2` = un vrai encodage Xenos 4× MSAA (pas une valeur corrompue). **Corrige la prévision de r457** (qui supposait « probablement un autre correctif ciblé sans oracle, même modèle ») : `PinnedShaderRuntime` ne sait simplement pas encore créer/résoudre une cible EDRAM multi-échantillonnée — un vrai morceau de travail de moteur de rendu (image Vulkan multisample + résolution), pas une correction d'une ligne. Non implémenté ce cycle (dimensionnement hors périmètre d'un cycle d'investigation). `ctest` 11/11, aucune régression. Toujours NON committé (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r458-msaa-rejection-confirmed-genuine-4x-msaa-not-a-decode-bug-real-coverage-gap-named-for-r459-20260908.md`.
    **Nommé pour r459** : (1) dimensionner et implémenter le support
