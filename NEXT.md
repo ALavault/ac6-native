@@ -1,6 +1,36 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r406 — corrige r404 : ordre exact établi en direct par capture fusionnée (points d'observation matériel + compteur de séquence). Le nœud du bucket 17 (`0x10082aa0`) est un reliquat ORDINAIRE créé par un split normal (`seq=874`) ; le pool de `sub_8236E868` (`seq=877`, trois appels plus tard, zéro libération entre les deux) est obtenu via `sub_821F92B8` (chemin "croissance", jamais lu) et recouvre cette adresse déjà distribuée (PAS un blocage qualifié).**
+0. **r407 — `sub_821F92B8` lue en entier : DEUX chemins possibles (table de 64 segments existants / réserve-puis-commit via `NtAllocateVirtualMemory`) ; un seul segment existe dans l'instantané déjà capturé et semble épuisé (`+0x30=12`), mais lequel des deux chemins l'appel `seq=877` a pris N'EST PAS établi (PAS un blocage qualifié).**
+   Suite de r406 : `sub_821F92B8` (`ppc_recomp.27.cpp:12734`) commence
+   par une recherche dans une table de 64 pointeurs de segments
+   (`heap+96`..`+352`). Un seul slot non nul dans l'instantané déjà
+   capturé par r401 (`heap2_call1_size1.bin`) : segment
+   `[0x10000000, 0x10100000)` (1 Mo), dont le champ comparé à la taille
+   demandée (`+0x30`) vaut `12` — bien inférieur aux deux requêtes de ce
+   fil (8888 octets, `0x80310` octets), suggérant un segment épuisé.
+   Si aucune entrée ne convient, la fonction appelle
+   `NtAllocateVirtualMemory` (`0x823D037C`) : RÉSERVE seule
+   (`0x60002000`, boucle de repli qui divise par deux) puis COMMIT
+   séparé (`0x60001000`) — corrige une première version de ce rapport
+   qui décodait `0x60002000` comme `RESERVE|COMMIT` combinés sans avoir
+   vérifié les constantes dans `xtypes.h`. Le stub hôte délègue à
+   `BaseHeap::Alloc` (`upstream/.../rexglue-sdk/src/system/xmemory.cpp`,
+   2070 lignes, non lue), dans le MÊME fichier que
+   `MmAllocatePhysicalMemoryEx` — le candidat que r389 avait déjà mis
+   en cause pour un chevauchement structurellement identique ; le
+   rapprochement est donc plus direct qu'il n'y paraissait, sans être
+   confirmé. **Quel chemin `seq=877` a réellement pris N'EST PAS
+   capturé ce cycle** (le journal de r406 ne loggue que l'ENTRÉE de
+   `sub_821F92B8`, pas ses branches internes) — une première version de
+   ce rapport l'affirmait à tort, corrigée avant publication. Voir
+   `reports/ac6-retail-native-codegen-gate2-r407-sub821f92b8-read-calls-ntallocatevirtualmemory-not-mmallocatephysical-20260908.md`.
+   **Nommé pour r408** : étendre la capture fusionnée avec des points
+   d'arrêt sur `sub_821F8368` (chemin segment existant) ET
+   `NtAllocateVirtualMemory` (chemin noyau) pour trancher directement
+   lequel `seq=877` emprunte ; si noyau, capturer la plage retournée et
+   la comparer à `0x10082aa0` (précédent r1111/r1113).
+
+1. **r406 — corrige r404 : ordre exact établi en direct par capture fusionnée (points d'observation matériel + compteur de séquence). Le nœud du bucket 17 (`0x10082aa0`) est un reliquat ORDINAIRE créé par un split normal (`seq=874`) ; le pool de `sub_8236E868` (`seq=877`, trois appels plus tard, zéro libération entre les deux) est obtenu via `sub_821F92B8` (chemin "croissance", jamais lu) et recouvre cette adresse déjà distribuée (PAS un blocage qualifié).**
    Une relecture du journal de libérations déjà capturé par r404
    (`r405_free_check_r5.log`) a montré que 40 des 47 pointeurs libérés
    tombent DANS la plage du pool (`[0x10011c60, 0x10091f80)`) — mais
