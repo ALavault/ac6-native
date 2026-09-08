@@ -1,6 +1,39 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r402 — les traces microexec de r401 confirmées réelles (pas un chemin d'erreur), écritures concrètes capturées, sémantique exacte encore ouverte (PAS un blocage qualifié).**
+0. **r403 — mécanisme exact localisé : le nœud `0x10082aa0` a été à moitié inséré dans le bucket 17, ses champs de chaînage retour jamais écrits ; `sub_821F9E10`'s triple-vérification refuse À RAISON de le retirer, donc le vrai défaut est en amont (PAS un blocage qualifié).**
+   Lecture complète de `sub_821F9E10` depuis `loc_821F9EC4` jusqu'au
+   retour commun `loc_821FA528`. Une première lecture (déchaînement à
+   triple vérification lui-même fautif, même famille que r356/r382) a
+   été **écrite puis réfutée avant publication** par un contrôle direct :
+   les avertissements `Uninitialized memory read` du rejeu microexec de
+   r402 (`821fa06c`/`821fa070` pour `call1`, `821f9f04`/`821f9f08` pour
+   `call2`), comptés en instructions depuis les labels connus,
+   correspondent exactement à `lwz r9,0(r11)`/`lwz r7,4(r10)` — les
+   champs retour du nœud trouvé (`0x10082aa8`/`0x10082aac`) sont NULS,
+   confirmé en relisant ces deux adresses dans l'instantané déjà
+   capturé (les deux valent `0x00000000`). Avec ces liens à zéro, la
+   deuxième des trois comparaisons échoue et les deux `stw` qui
+   réécriraient l'en-tête du bucket 17 ne s'exécutent jamais — **le
+   déchaînement refuse À RAISON de retirer un nœud dont les liens retour
+   ne correspondent pas à son bucket.** Le vrai défaut est donc en amont :
+   quelque chose a écrit l'en-tête du bucket 17 (`0x10000208`,
+   `[0]=[4]=0x10082aa8`) SANS écrire les champs retour du nœud lui-même —
+   une insertion à moitié faite, pas encore tracée jusqu'à son écrivain.
+   Ceci confirme et affine le verdict r401/r402 (pas de mauvaise
+   traduction de codegen dans `sub_821F9E10`) plutôt que de le
+   contredire. Voir
+   `reports/ac6-retail-native-codegen-gate2-r403-bucket17-header-not-updated-20260908.md`.
+   **Nommé pour r404** : point d'observation matériel sur `0x10000208`
+   ET sur `0x10082aa8`/`0x10082aac` depuis le début du processus
+   (technique r371/r389, déjà nommée par r389 pour la sentinelle et
+   jamais exécutée) pour capturer l'écrivain exact de l'en-tête sans les
+   champs retour. Deux candidats déjà visibles dans le corps de
+   `sub_821F9E10`, ni l'un ni l'autre lu en entier : le chemin de
+   réinsertion du reliquat (`loc_821FA1D4`) et le chemin de bloc neuf via
+   `NtAllocateVirtualMemory` (`loc_821FA564`). Aucun correctif tant que
+   l'écrivain n'est pas confirmé en direct (précédent r1111/r1113).
+
+1. **r402 — les traces microexec de r401 confirmées réelles (pas un chemin d'erreur), écritures concrètes capturées, sémantique exacte encore ouverte (PAS un blocage qualifié).**
    Doute soulevé avant publication de r401 (deux imports host non
    stubés dans le prologue, `KeGetCurrentProcessType`/`KeBugCheckEx`,
    auraient pu faire bifurquer la trace vers un chemin d'erreur avec
