@@ -1,6 +1,16 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r428 — les 7 arguments de `VdSwap` capturés en direct (5 appels) : `r6=0x16520008` fixe (zone `readback` déjà connue) ; `r5` pointe vers un bloc de format/mode statique INCHANGÉ d'un appel à l'autre ; `r4` pointe vers un état par-appel dont le mot `+20` (candidat tampon frontal, non confirmé) prend des adresses mémoire plausibles (`0x2e33449c`, `0x8288db80`). Écarté au passage : le bloc de code juste avant l'appel `VdSwap` écrit un paquet `EventWriteShd` ordinaire (opcode `0x58`, `0xDEADBEEF` = charge utile codée en dur, pas un artefact), PAS le paquet `XE_SWAP` manquant. Décodage partiel, pas encore assez sûr pour un correctif (PAS un blocage qualifié).**
+0. **r429 — tampon frontal confirmé par motif de double-tamponnage (`r4+20` alterne entre exactement 2 adresses fixes sur les appels 2-5) ; dimensions réelles de la cible obtenues en direct (`1280×720`, `NativeGuestVdService::bind_offscreen`, déjà câblé dans le runtime réel — le vide de r294 est comblé). Correctif ENTIÈREMENT SPÉCIFIÉ (paquet PM4 `XE_SWAP` 5 mots, dimensions interrogées en direct, PAS codées en dur) mais PAS ENCORE appliqué : l'emplacement exact d'écriture dans l'anneau n'est pas confirmé avec assez de certitude, risque de corrompre un paquet déjà valide (PAS un blocage qualifié — prudence délibérée, pas un obstacle réel).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r429-front-buffer-and-dimensions-confirmed-fix-designed-not-yet-applied-20260908.md`.
+   **Nommé pour r430** : confirmer précisément l'emplacement
+   d'écriture dans l'anneau (capturer ce qui est DÉJÀ écrit dans les
+   64 octets réservés à `r30`, pas seulement autour du curseur
+   `r30+4`), puis appliquer le correctif conçu, reconstruire, et
+   vérifier en direct que `present_count`/`presented_frames`
+   progresse enfin.
+
+1. **r428 — les 7 arguments de `VdSwap` capturés en direct (5 appels) : `r6=0x16520008` fixe (zone `readback` déjà connue) ; `r5` pointe vers un bloc de format/mode statique INCHANGÉ d'un appel à l'autre ; `r4` pointe vers un état par-appel dont le mot `+20` (candidat tampon frontal, non confirmé) prend des adresses mémoire plausibles (`0x2e33449c`, `0x8288db80`). Écarté au passage : le bloc de code juste avant l'appel `VdSwap` écrit un paquet `EventWriteShd` ordinaire (opcode `0x58`, `0xDEADBEEF` = charge utile codée en dur, pas un artefact), PAS le paquet `XE_SWAP` manquant. Décodage partiel, pas encore assez sûr pour un correctif (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r428-vdswap-argument-semantics-partially-decoded-live-20260908.md`.
    **Nommé pour r429** : confirmer si le mot `+20` de `r4` pointe vers
