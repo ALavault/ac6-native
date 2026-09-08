@@ -1,6 +1,13 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r418 — `presented_frames=0` est du câblage mort déjà documenté par r292 (`submit_ring()` jamais appelé par le vrai runtime, seul appelant = un test), SANS RAPPORT avec r399-r417. Le vrai chemin GPU (`NativeGuestVdService`) montre une nette amélioration sur le binaire corrigé par r414 : l'anneau ne se tait plus après une salve (11 salves contre 5 avant, `write_index` en progression continue) — mais `present=0` dans TOUTES les salves, aucun paquet de présentation jamais émis. Nouveau symptôme sans rapport apparent : le processus met ~100-150s de trop à sortir avec `AC6_NATIVE_VD_TRACE=1` activé, non corrélé de façon confirmée à ce drapeau (PAS un blocage qualifié — piste ouverte, pas caractérisée).**
+0. **r419 — le blocage d'arrêt de r418 CONFIRMÉ réel, PAS spécifique à `AC6_NATIVE_VD_TRACE` : un lancement autonome (sans gdb, sans le drapeau de trace) ne se termine JAMAIS de lui-même après avoir imprimé `generated entry terminated its own thread` (`timeout 60` sans effet, `3:49` CPU observé avant arrêt forcé). CORRECTION MÉTHODOLOGIQUE : toutes les vérifications "sortie normale" de r414-r417 étaient sous gdb, dont le `quit` de fin de script tue l'inférieur de force — aucune ne prouve une vraie auto-terminaison. Inventaire des fils : des threads pilote Vulkan (`vkcf`/`vkrt`/`vkps`) sont désormais VIVANTS, jamais observés avant r414 — hypothèse non vérifiée : destruction Vulkan (`vkDestroyDevice`/`vkDestroyInstance`) manquante de la séquence d'arrêt (PAS un blocage qualifié — l'attache ptrace a été refusée par ce bac à sable, pas de contournement tenté).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r419-process-never-exits-standalone-not-vd-trace-specific-vulkan-driver-threads-now-alive-20260908.md`.
+   **Nommé pour r420** : lire `native/src/native_vulkan_backend.cpp`
+   (jamais lu) pour localiser la séquence de destruction Vulkan et si
+   `shutdown()` l'appelle réellement.
+
+1. **r418 — `presented_frames=0` est du câblage mort déjà documenté par r292 (`submit_ring()` jamais appelé par le vrai runtime, seul appelant = un test), SANS RAPPORT avec r399-r417. Le vrai chemin GPU (`NativeGuestVdService`) montre une nette amélioration sur le binaire corrigé par r414 : l'anneau ne se tait plus après une salve (11 salves contre 5 avant, `write_index` en progression continue) — mais `present=0` dans TOUTES les salves, aucun paquet de présentation jamais émis. Nouveau symptôme sans rapport apparent : le processus met ~100-150s de trop à sortir avec `AC6_NATIVE_VD_TRACE=1` activé, non corrélé de façon confirmée à ce drapeau (PAS un blocage qualifié — piste ouverte, pas caractérisée).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r418-gpu-ring-no-longer-goes-silent-still-zero-present-packets-new-shutdown-hang-with-vd-trace-20260908.md`.
    **Nommé pour r419** : (1) isoler si le nouvel arrêt de processus
