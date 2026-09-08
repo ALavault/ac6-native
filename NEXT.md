@@ -1,6 +1,16 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r435 — adresses invité réelles capturées en direct (`AC6_NATIVE_VD_TRACE`) : `index_address`/`vertex_address` toujours `0x00000000` (tirages auto-indexés), `fetch_const[0]` porte l'adresse réelle (`0x1274027b`, `0x126c01df`…) — environ **310 Mio**, très au-delà des **64 Mio** du SSBO à décalage direct de `PinnedShaderRuntime` (confirme r434 avec des valeurs mesurées, pas déduites). **Découverte séparée et prioritaire, non liée à cette instrumentation (vérifié 3 façons : trace désactivée, fichier remis à l'état du commit r432, 3 lancements consécutifs)** : un `SIGSEGV` reproductible du thread d'entrée (`sub_821D6C20` ← `sub_821D7DE0` ← `__xstart`), après plusieurs cycles `vd drain`/`vd swap` réussis — **contredit directement la clôture « aucun blocage connu » affirmée par r431/r432**. Pas encore désassemblé/root-causé ce cycle (PAS un blocage qualifié — priorité de fait pour la suite, pas un arrêt).**
+0. **r436 — le SIGSEGV de r435 est root-causé en direct (gdb, 3 points d'arrêt successifs sur le même lancement) : `sub_821D6C20` déréférence un pointeur d'objet global NUL à l'adresse invité `0x82935D98` (`object_ptr=0x0`, `vtable_ptr=0x0`, `ctr_candidate=0x0` — chaîne complète mesurée, pas déduite). Codegen vérifié FIDÈLE (6 instructions x86 correspondent une pour une à `ppc_recomp.23.cpp:20296`) — ce n'est PAS un bug de codegen, `PPC_CALL_INDIRECT_FUNC(0)` échoue légitimement à résoudre l'adresse invité `0x0`. Ce site n'avait JAMAIS été atteint avant ce cycle (r346, ~90 s de mesure directe, confirmait déjà zéro appel) — débloqué seulement par les correctifs r413-r424, donc pas une régression récente, un défaut préexistant révélé pour la première fois. **Pas encore corrigé** : il faut d'abord tracer qui devrait peupler ce pointeur (PAS un blocage qualifié — préalable nécessaire avant tout correctif).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r436-segv-root-caused-null-global-object-pointer-at-0x82935d98-vtable-dispatch-20260908.md`.
+   **Nommé pour r437** : tracer les sites d'écriture du pointeur
+   global à `0x82935D98` (statiques dans le XEX ou dynamiques via un
+   stub hôte) pour déterminer si un stub hôte manquant ou un
+   changement d'ordre d'exécution introduit par un correctif
+   antérieur (r413/r422/r430) en est la cause, avant tout correctif
+   sur `sub_821D6C20` lui-même.
+
+1. **r435 — adresses invité réelles capturées en direct (`AC6_NATIVE_VD_TRACE`) : `index_address`/`vertex_address` toujours `0x00000000` (tirages auto-indexés), `fetch_const[0]` porte l'adresse réelle (`0x1274027b`, `0x126c01df`…) — environ **310 Mio**, très au-delà des **64 Mio** du SSBO à décalage direct de `PinnedShaderRuntime` (confirme r434 avec des valeurs mesurées, pas déduites). **Découverte séparée et prioritaire, non liée à cette instrumentation (vérifié 3 façons : trace désactivée, fichier remis à l'état du commit r432, 3 lancements consécutifs)** : un `SIGSEGV` reproductible du thread d'entrée (`sub_821D6C20` ← `sub_821D7DE0` ← `__xstart`), après plusieurs cycles `vd drain`/`vd swap` réussis — **contredit directement la clôture « aucun blocage connu » affirmée par r431/r432**. Pas encore désassemblé/root-causé ce cycle (PAS un blocage qualifié — priorité de fait pour la suite, pas un arrêt).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r435-real-draw-addresses-captured-fetch-constants-outside-64mib-window-plus-newly-reproducible-entry-thread-segv-20260908.md`.
    **Nommé pour r436 (priorité élevée)** : investiguer
