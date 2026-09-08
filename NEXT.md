@@ -1,6 +1,26 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r412 — cause racine confirmée au niveau instruction : `sub_821F90A8` (requête de capacité, sous `sub_82385AF0`) retourne délibérément `-1` (sentinelle "libéré") une fois le tampon rendu au tas ; `sub_8237FA50` compare ce retour au besoin avec `cmplw` (NON SIGNÉ) — `-1` devient `0xFFFFFFFF`, "capacité maximale", et la revérification de capacité est désactivée pour toujours après la première libération. Capturé en direct sur 188 requêtes consécutives : `0x80`(=128, correct) tant que le bloc est marqué en cours d'utilisation, `-1` systématiquement après (PAS un blocage qualifié).**
+0. **r413 — le commit manquant de r411 EXPLIQUÉ : le correctif INVENTÉ de r366 (`tools/apply_sub_821fa9e0_leave_fix.py`, fuite de section critique, 2026-09-07) réutilise `ctx.r3` comme registre de travail pour l'appel `RtlLeaveCriticalSection` SANS sauvegarder/restaurer la valeur de retour qu'il vient de recharger deux lignes plus haut — `sub_821FA9E0` retourne donc `0` au lieu du nouveau pointeur `0x100015a0` à chaque fois que le verrou a été pris (systématiquement, pour toute croissance réelle). CE N'EST PAS un bug retail : c'est une régression introduite par ce correctif appliqué à la recompilation elle-même (PAS un blocage qualifié).**
+   `r424_return_chain.gdb` capture les trois étages en un seul run :
+   `sub_821F9E10` retourne correctement `0x100015a0` ; `sub_821FA9E0`
+   (le `realloc()` qui l'englobe) retourne `0x0` ; `sub_823857E0` et
+   `sub_8237FA50` propagent fidèlement ce `0` déjà perdu. Désassemblage
+   x86 statique (`sub_821FA9E0+2637`..`+2678`) localise l'instruction
+   exacte : le rechargement correct (`lwz r3,356(r31)`, `+2637`) est
+   immédiatement suivi, si le drapeau "verrou tenu" est mis, par
+   `add $0x580,%ebp; ...; mov %rax,(%rbx)` (`+2657`..`+2669`) qui
+   écrase `ctx.r3` avec le pointeur de section critique
+   (`r27+1408=r27+0x580`, le même offset que `RtlEnterCriticalSection`)
+   avant `call RtlLeaveCriticalSection` — jamais restauré ensuite. Voir
+   `reports/ac6-retail-native-codegen-gate2-r413-missing-commit-explained-r366-invented-fix-clobbers-its-own-return-value-20260908.md`.
+   **Nommé pour r414** : appliquer et vérifier en direct un correctif
+   qui sauvegarde `ctx.r3` avant le bloc `if` et le restaure après
+   `RtlLeaveCriticalSection`, confirmer par capture live que
+   `sub_821FA9E0` retourne désormais le bon pointeur, que
+   `sub_8237FA50` commet `begin`, et mesurer si le débordement
+   r410/r411/r412 disparaît sur un run complet.
+
+1. **r412 — cause racine confirmée au niveau instruction : `sub_821F90A8` (requête de capacité, sous `sub_82385AF0`) retourne délibérément `-1` (sentinelle "libéré") une fois le tampon rendu au tas ; `sub_8237FA50` compare ce retour au besoin avec `cmplw` (NON SIGNÉ) — `-1` devient `0xFFFFFFFF`, "capacité maximale", et la revérification de capacité est désactivée pour toujours après la première libération. Capturé en direct sur 188 requêtes consécutives : `0x80`(=128, correct) tant que le bloc est marqué en cours d'utilisation, `-1` systématiquement après (PAS un blocage qualifié).**
    `r422_capacity_query.gdb` — lecture CORRIGÉE (la valeur de retour
    de `sub_821F90A8` est stockée dans `ctx.r3` en mémoire, PAS laissée
    dans `%rax` au `ret` x86 ; une première tentative lisant `$rax`
