@@ -36,3 +36,11 @@ stub 0x823D007C RtlEnterCriticalSection no-op
 stub 0x823D008C RtlLeaveCriticalSection no-op
 
 capture gpr:r3
+
+# Added after review: close off any risk of walking into an unstubbed
+# import if a different bucket path is taken than expected, and dump the
+# heap region's final bytes (file: regions are not write-detected by the
+# poison mechanism, so this is the only way to see what actually changed).
+stub 0x823D03FC KeGetCurrentProcessType no-op
+stub 0x823D03EC KeBugCheckEx no-op
+dump heap

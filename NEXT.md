@@ -1,6 +1,32 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r400 — arbre stabilisé, gate JF restauré (PAS un blocage qualifié).**
+0. **r402 — les traces microexec de r401 confirmées réelles (pas un chemin d'erreur), écritures concrètes capturées, sémantique exacte encore ouverte (PAS un blocage qualifié).**
+   Doute soulevé avant publication de r401 (deux imports host non
+   stubés dans le prologue, `KeGetCurrentProcessType`/`KeBugCheckEx`,
+   auraient pu faire bifurquer la trace vers un chemin d'erreur avec
+   `callee_entries=0` et ~200 pas). Fermé : `heap+20` vaut `0x2` dans
+   les deux instantanés (bit testé = 0, le prologue saute PAR-DESSUS
+   ces imports) ; rejoué avec les deux imports stubés en plus,
+   résultat identique (`steps=212`/`127`, `stubbed_calls=2` inchangé —
+   jamais atteints). Les instantanés `dump heap` post-exécution
+   montrent des écritures substantielles et cohérentes avec les
+   adresses déjà connues de la campagne (`call1` : 9 plages, dont le
+   champ sentinelle `0x10000184` et le champ de chaînage propre du nœud
+   `0x1009fa10` ; `call2` : seulement 2 octets). **Le verdict de r401
+   (concordance, pas de mauvaise traduction de codegen) tient et est
+   mieux fondé** — pas rétracté. Reste ouvert : la sémantique exacte des
+   champs écrits à `0x10082ac8`/`0x10082acc` (chaînage de freelist vs.
+   tags de bornage physiques) et quelle branche exacte `call1` (bucket 2,
+   VIDE selon le contrôle direct de cette table) a réellement prise pour
+   quand même retourner `0x10082ab0` avec ces écritures. Voir
+   `reports/ac6-retail-native-codegen-gate2-r402-microexec-writes-confirm-real-path-20260908.md`.
+   **Nommé pour r403** : lire `sub_821F9E10` en entier depuis
+   `loc_821F9EC4` à travers `loc_821F9F80` pour trancher la sémantique
+   des champs et la branche réellement prise, en utilisant le harnais
+   microexec maintenant fonctionnel sur `ac6-us` plutôt que
+   l'observation uniquement live.
+
+1. **r400 — arbre stabilisé, gate JF restauré (PAS un blocage qualifié).**
    La situation d'arbre non committé nommée "décision de l'utilisateur,
    inchangée" depuis r239 (~160 cycles) bloquait en pratique le gate
    `mission01-final-gate-v3.json` (`evidence size mismatch`), pas
