@@ -1,6 +1,17 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r450 — correction majeure de cadrage, EN DIRECT : `0xFE` (r449) N'EST PAS de la mémoire jamais initialisée — point d'arrêt matériel sur l'octet exact (`0x173b0038`) depuis le tout début du process : `Old value=0, New value=254`, écrit par `sub_823830F0` appelé depuis `sub_821D5F48`. `sub_823830F0` décompilée = un vrai `memset` générique (motif classique alignement+mots+queue). **`sub_821D5F48` appelle `memset(pool, 0xFE, taille)` DÉLIBÉRÉMENT juste après l'allocation** — un motif de « poison »/sentinelle normal, PAS un oubli. La vraie question se déplace encore : pourquoi rien ne réécrit ce pool avec de vraies données avant que `sub_821CC508` ne le lise. Cohérent avec un pipeline de contenu asynchrone (PAC) dont le déclencheur/achèvement n'a jamais lieu dans cet environnement offline (PAS un blocage qualifié).**
+0. **r451 — CAUSE RACINE ULTIME ET COMPLÈTE, ferme la chaîne r399-r451 : `tools/prepare.py` (ligne ~400-402) ne copie QUE `default.xex` dans `build/ntsc-uj/source/assets/` — `DATA00.PAC`/`DATA01.PAC`/`DATA.TBL`/les paquets de contenu ne sont JAMAIS copiés, alors qu'ils existent bel et bien dans `game-files/` (et les deux ISO complètes dans `disc-image/`). Point d'arrêt matériel réarmé et laissé actif jusqu'au crash : confirme définitivement AUCUN second écrivain sur le pool (r450). La trace `NtReadFile` de r448 montre `queue+332=0` — EXACTEMENT le symptôme déjà documenté par r276 (bien avant cette session), dont le correctif existant (`NtQueryInformationFile` remplit de vraies tailles via `native_guest_media_service()`) ne peut rien faire pour un fichier que le service ne trouve jamais, puisqu'il n'a jamais été monté. **Chaîne causale complète en 10 étapes, chaque maillon soutenu par une preuve mesurée, de `prepare.py` jusqu'au `SIGSEGV`.** Reste ouvert : le chemin/format exact attendu par le service de fichiers natif, et l'extension réelle de `prepare.py` (PAS un blocage qualifié — changement à faible risque mais qui mérite son propre cycle de vérification).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r451-final-root-cause-prepare-py-never-stages-the-pac-content-files-only-the-xex-20260908.md`.
+   **Nommé pour r452** : vérifier le chemin/format exact attendu par
+   `native_guest_media_service()` pour `DATA00.PAC`, étendre
+   `tools/prepare.py` pour copier les fichiers de contenu réels
+   depuis `game-files/`, reconstruire, relancer le probe, vérifier si
+   le crash disparaît enfin. Reste ouvert sinon : décision de
+   committage de l'arriéré `native_vulkan_backend.cpp`
+   (r433/r434/r438).
+
+1. **r450 — correction majeure de cadrage, EN DIRECT : `0xFE` (r449) N'EST PAS de la mémoire jamais initialisée — point d'arrêt matériel sur l'octet exact (`0x173b0038`) depuis le tout début du process : `Old value=0, New value=254`, écrit par `sub_823830F0` appelé depuis `sub_821D5F48`. `sub_823830F0` décompilée = un vrai `memset` générique (motif classique alignement+mots+queue). **`sub_821D5F48` appelle `memset(pool, 0xFE, taille)` DÉLIBÉRÉMENT juste après l'allocation** — un motif de « poison »/sentinelle normal, PAS un oubli. La vraie question se déplace encore : pourquoi rien ne réécrit ce pool avec de vraies données avant que `sub_821CC508` ne le lise. Cohérent avec un pipeline de contenu asynchrone (PAC) dont le déclencheur/achèvement n'a jamais lieu dans cet environnement offline (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r450-0xfe-is-a-deliberate-memset-poison-pattern-live-watched-the-write-real-question-is-why-nothing-overwrites-it-with-real-data-20260908.md`.
    **Nommé pour r451** : tracer ce qui devrait réécrire le pool après
