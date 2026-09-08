@@ -1,6 +1,14 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r421 — le thread précis identifié EN DIRECT (contournement `ptrace_scope` : gdb LANCE le processus au lieu de s'y attacher) : bloqué dans `__imp__KeRaiseIrqlToDpcLevel`, en train d'exécuter du vrai code de jeu (10 niveaux PPC imbriqués, `sub_821F8008<-...<-sub_823A8F90`), sur un `std::recursive_mutex` global `g_dpc_level_mutex` (`tools/materialize_native_import_stubs.py:186`, choix de conception r191 documenté) — implémenté en `lock()`/`unlock()` BRUT, sans garde RAII, architecturalement inévitable puisque Raise/Lower sont deux fonctions PPC générées séparées. Une exception `GuestThreadTerminated` (r277/r417) levée entre les deux orpheline le verrou pour toujours. Explique tout r418-r420 (PAS un blocage qualifié — correctif à concevoir, pas de conception unilatérale).**
+0. **r422 — correctif appliqué et vérifié en direct : `raise_dpc_level()`/`lower_dpc_level()`/`release_residual_dpc_level()` (nouveau, `native_guest_threads.h/.cpp`) — garde d'exception qui libère l'IRQL résiduel d'un thread au moment où `GuestThreadTerminated` est attrapée, au lieu d'orpheliner `g_dpc_level_mutex` pour toujours. `tools/materialize_native_import_stubs.py` régénère `KeRaiseIrqlToDpcLevel`/`KfLowerIrql` et le catch `ExCreateThread` en conséquence ; même garde ajoutée dans `ac6recomp_main.cpp`. **4/4 lancements AUTONOMES** (pas sous gdb, avec ET sans `AC6_NATIVE_VD_TRACE=1`) sortent proprement (`exit=0`), dans le délai exact de leur fenêtre de sonde. `ctest` natif 10/10, `pytest` 222/1-skip, gates + `ctest` racine verts (PAS un blocage qualifié — chaîne r418-r422 close).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r422-irql-mutex-fix-applied-and-live-verified-shutdown-hang-gone-20260908.md`.
+   **Nommé pour r423** : aucun blocage restant identifié. Ligne ouverte
+   la moins chère : un test ciblé simulant « IRQL élevé puis
+   `GuestThreadTerminated` ». Sinon, revenir à `presented_frames=0`/
+   `present=0` (r418, jamais résolu) comme prochaine question produit.
+
+1. **r421 — le thread précis identifié EN DIRECT (contournement `ptrace_scope` : gdb LANCE le processus au lieu de s'y attacher) : bloqué dans `__imp__KeRaiseIrqlToDpcLevel`, en train d'exécuter du vrai code de jeu (10 niveaux PPC imbriqués, `sub_821F8008<-...<-sub_823A8F90`), sur un `std::recursive_mutex` global `g_dpc_level_mutex` (`tools/materialize_native_import_stubs.py:186`, choix de conception r191 documenté) — implémenté en `lock()`/`unlock()` BRUT, sans garde RAII, architecturalement inévitable puisque Raise/Lower sont deux fonctions PPC générées séparées. Une exception `GuestThreadTerminated` (r277/r417) levée entre les deux orpheline le verrou pour toujours. Explique tout r418-r420 (PAS un blocage qualifié — correctif à concevoir, pas de conception unilatérale).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r421-hang-thread-pinned-live-blocked-on-non-raii-global-irql-mutex-20260908.md`.
    **Nommé pour r422** : concevoir et vérifier en direct un correctif

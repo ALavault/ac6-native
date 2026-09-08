@@ -16,6 +16,7 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include \"ac6/native_guest_media.h\"
 #include \"ac6/native_guest_vd.h\"
 #include \"ac6/native_runtime.h\"
+#include \"ac6/native_guest_threads.h\"
 
 #include <openssl/evp.h>
 
@@ -37,6 +38,7 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include <string_view>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 namespace {
 constexpr std::uint64_t kOfflineStatus = 0xC00000BBull;
@@ -75,6 +77,19 @@ std::atomic<std::uint32_t> g_next_virtual{0x10000000u};
 struct EventState {
   bool signaled{};
   bool manual_reset{};
+  // r285: an auto-reset event's outstanding, not-yet-claimed signals. Two
+  // threads legitimately waiting on the same auto-reset key (a real,
+  // observed shape -- r284 traced the retail game's own generic "kick and
+  // wait for target" utility used concurrently by two threads on one
+  // shared handle pair) used to race on a single `signaled` bool: whichever
+  // thread reacquired g_event_mutex first consumed it, and the other saw
+  // `signaled == false` and reported a false STATUS_TIMEOUT for a signal
+  // that had, in fact, just fired. Counting releases instead of a single
+  // flag means every set_event() call is honored by exactly one wait_event()
+  // call, in whatever order they reacquire the lock -- never zero, never
+  // more than one per signal, and never a spurious timeout for a signal
+  // that already happened.
+  std::uint64_t pending_releases{};
 };
 std::mutex g_event_mutex;
 std::condition_variable g_event_cv;
@@ -102,6 +117,38 @@ std::recursive_mutex& critical_section_for(std::uint32_t key) {
   return *it->second;
 }
 
+// r282 (diagnostic only): a low-frequency, non-flooding view of which
+// critical sections are currently held and by which host thread -- tests
+// the hypothesis that a wait stub throwing GuestThreadTerminated while a
+// section is held leaks it locked forever (the raw lock()/unlock() pair
+// above has no RAII across that unwind, so a section left locked when its
+// holder's stack unwinds through the entry lambda's catch is never
+// unlocked). A per-call trace (tried first) produced over 100k
+// lines/second and an unrelated host heap corruption abort before any
+// useful signal appeared; this heartbeat replaces it.
+std::mutex g_held_sections_mutex;
+std::unordered_map<std::uint32_t, std::uint64_t> g_held_sections;
+
+void start_held_sections_heartbeat_once() {
+  static std::once_flag once;
+  std::call_once(once, [] {
+    std::thread([] {
+      for (;;) {
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::lock_guard lock(g_held_sections_mutex);
+        if (g_held_sections.empty()) continue;
+        std::fprintf(stderr, "[held-critical-sections] count=%zu:",
+                     g_held_sections.size());
+        for (const auto& entry : g_held_sections) {
+          std::fprintf(stderr, " key=0x%08x tid=%llu", entry.first,
+                       static_cast<unsigned long long>(entry.second));
+        }
+        std::fprintf(stderr, "\\n");
+      }
+    }).detach();
+  });
+}
+
 // r191: Kf/KeAcquireSpinLock*/Kf/KeReleaseSpinLock* were no-ops -- the
 // same real-concurrency risk r116 already fixed for critical sections
 // (r111-r115's confirmed real concurrent host threads), but for a
@@ -123,21 +170,6 @@ std::mutex& spin_lock_for(std::uint32_t key) {
   return *it->second;
 }
 
-// r191: KeRaiseIrqlToDpcLevel/KfLowerIrql (88-110 real call sites each)
-// are unpaired with a specific lock object -- on real single-core
-// hardware, raising to DISPATCH_LEVEL alone is sufficient mutual
-// exclusion (no DPC or lower-IRQL code can preempt), but that guarantee
-// does not hold across this project's own real concurrent host threads
-// (r111-r115) without an explicit lock. One global mutex emulates "no
-// other DPC-level-or-higher code runs concurrently" -- the real semantic
-// these two functions provide, not a per-object one since none exists at
-// this call shape. recursive_mutex, unlike spin_lock_for's plain mutex:
-// real IRQL is per-thread state, not an object identity, so the same
-// thread legitimately raises to DPC level while already there (a nested
-// Raise/Lower pair is not a self-reacquisition of the same object the
-// way a real spinlock forbids -- it is routine kernel control flow).
-std::recursive_mutex g_dpc_level_mutex;
-
 void create_event(std::uint32_t key, bool manual_reset, bool signaled) {
   if (key == 0u) return;
   {
@@ -155,6 +187,11 @@ bool set_event(std::uint32_t key) {
     EventState& event = g_events[key];
     previous = event.signaled;
     event.signaled = true;
+    // r285: one more release available for an auto-reset key -- see
+    // EventState::pending_releases. A manual-reset event stays level-
+    // triggered (every waiter sees it, none consume it), so it never
+    // accrues pending releases.
+    if (!event.manual_reset) ++event.pending_releases;
   }
   g_event_cv.notify_all();
   return previous;
@@ -166,6 +203,7 @@ bool clear_event(std::uint32_t key) {
   EventState& event = g_events[key];
   const bool previous = event.signaled;
   event.signaled = false;
+  event.pending_releases = 0;  // r285: an explicit clear discards any credit
   return previous;
 }
 
@@ -178,20 +216,267 @@ bool clear_event(std::uint32_t key) {
 // re-issue it. r91 measured that spin at ~103,000 futex ops/sec across the
 // worker threads r90's fix unblocked; this bounds it without changing the
 // observable single-shot return contract any existing caller depends on.
+//
+// r285: r91's single `signaled` bool is correct with exactly one waiter,
+// but r284 traced two real, concurrent waiters on one auto-reset handle
+// (the retail game's own generic "kick and wait for target" utility, used
+// by two threads at once) racing to reacquire g_event_mutex after a shared
+// notify_all() -- the loser saw `signaled == false` (the winner had already
+// reset it) and reported a false timeout for a signal that DID fire. This
+// waits for a `pending_releases` credit instead of a one-shot flag: every
+// set_event() adds one, every successful wait_event() consumes one, so
+// N signals correctly satisfy N waiters (in whatever order they reacquire
+// the lock) instead of at most one of them, with the rest starved by a
+// race they did not need to lose. Still bounded to a 2 ms attempt, same
+// as before: this does not change the "never blocks indefinitely"
+// contract, only who gets credited when more than one thread is waiting.
+// r289 (diagnostic only): r288 showed neither wait_event() nor
+// wait_mutant() ever exceeds its own ~2 ms bound (exactly 2 anomalies in
+// a clean 75 s window, both single-digit ms over the threshold) -- so a
+// multi-second stall is not a single call running long. It could still be
+// the GUEST not calling at all for a second or more (busy elsewhere, or
+// blocked on something unrelated), which this cannot distinguish from
+// "calling constantly but always resolving fast" without a call-rate
+// signal. A low-frequency heartbeat (same technique as r282's
+// g_held_sections, not a per-call trace) reports the running call count
+// once a second: a stall shows as the same count printed back-to-back;
+// continuous polling shows it climbing every tick.
+std::atomic<std::uint64_t> g_wait_event_calls{0};
+std::atomic<std::uint64_t> g_wait_mutant_calls{0};
+// r289 (same cycle): the aggregate counts above turned out to be
+// swamped by hundreds of thousands of calls/sec from callers with no
+// relation to the frame handshake (some other spin-polling site
+// elsewhere in the engine) -- the aggregate rate never dipped even once
+// across a 75 s window, which is not informative about the two specific
+// threads r283-r287 have been chasing. These two counters are scoped to
+// the exact handles r285/r286 already confirmed belong to that
+// handshake's shared gate object: 0x121 (manual-reset event) and 0x120
+// (Mutant).
+std::atomic<std::uint64_t> g_wait_event_calls_gate121{0};
+std::atomic<std::uint64_t> g_wait_mutant_calls_gate120{0};
+
+void start_wait_call_heartbeat_once() {
+  static std::once_flag once;
+  std::call_once(once, [] {
+    std::thread([] {
+      std::uint64_t last_event = 0;
+      std::uint64_t last_mutant = 0;
+      std::uint64_t last_gate121 = 0;
+      std::uint64_t last_gate120 = 0;
+      for (;;) {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        const std::uint64_t event_calls = g_wait_event_calls.load();
+        const std::uint64_t mutant_calls = g_wait_mutant_calls.load();
+        const std::uint64_t gate121_calls = g_wait_event_calls_gate121.load();
+        const std::uint64_t gate120_calls = g_wait_mutant_calls_gate120.load();
+        std::fprintf(stderr,
+                     "[wait-call-heartbeat] wait_event_calls=%llu "
+                     "(+%llu) wait_mutant_calls=%llu (+%llu) "
+                     "gate121_calls=%llu (+%llu) gate120_calls=%llu (+%llu)\\n",
+                     static_cast<unsigned long long>(event_calls),
+                     static_cast<unsigned long long>(event_calls - last_event),
+                     static_cast<unsigned long long>(mutant_calls),
+                     static_cast<unsigned long long>(mutant_calls - last_mutant),
+                     static_cast<unsigned long long>(gate121_calls),
+                     static_cast<unsigned long long>(gate121_calls - last_gate121),
+                     static_cast<unsigned long long>(gate120_calls),
+                     static_cast<unsigned long long>(gate120_calls - last_gate120));
+        last_event = event_calls;
+        last_mutant = mutant_calls;
+        last_gate121 = gate121_calls;
+        last_gate120 = gate120_calls;
+      }
+    }).detach();
+  });
+}
+
 bool wait_event(std::uint32_t key) {
   if (key == 0u) return false;
+  if (std::getenv("AC6_NATIVE_WAIT_TIMING_TRACE") != nullptr) {
+    start_wait_call_heartbeat_once();
+    g_wait_event_calls.fetch_add(1, std::memory_order_relaxed);
+    if (key == 0x121u) {
+      g_wait_event_calls_gate121.fetch_add(1, std::memory_order_relaxed);
+    }
+  }
+  // r288 (diagnostic only): this call is supposed to be bounded to ~2 ms
+  // (r91); r287 proved the guest's own frame handshake CAN complete a
+  // full cycle in under 120 ms, yet every prior cycle also measured
+  // multi-second gaps between cycles for reasons none of r284-r287's
+  // fixes changed. Anomaly-only (prints nothing for a normal call, so
+  // this cannot flood the way an unconditional per-call trace did in
+  // r282) -- names which specific bounded primitive, if any, is actually
+  // exceeding its own bound, and by how much.
+  const auto call_start = std::chrono::steady_clock::now();
+  auto try_claim = [](EventState& event) {
+    if (event.manual_reset) return event.signaled;
+    if (event.pending_releases == 0u) return false;
+    if (--event.pending_releases == 0u) event.signaled = false;
+    return true;
+  };
   std::unique_lock lock(g_event_mutex);
   auto it = g_events.find(key);
   if (it == g_events.end()) return false;
-  if (!it->second.signaled) {
+  bool result;
+  if (try_claim(it->second)) {
+    result = true;
+  } else {
     g_event_cv.wait_for(lock, std::chrono::milliseconds(2), [&] {
       auto retry = g_events.find(key);
-      return retry == g_events.end() || retry->second.signaled;
+      return retry == g_events.end() ||
+             (retry->second.manual_reset ? retry->second.signaled
+                                          : retry->second.pending_releases > 0u);
     });
     it = g_events.find(key);
-    if (it == g_events.end() || !it->second.signaled) return false;
+    result = it != g_events.end() && try_claim(it->second);
   }
-  if (!it->second.manual_reset) it->second.signaled = false;
+  if (std::getenv("AC6_NATIVE_WAIT_TIMING_TRACE") != nullptr) {
+    const auto elapsed_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - call_start)
+            .count();
+    if (elapsed_ms > 5) {
+      std::fprintf(stderr,
+                   "[wait_event SLOW] key=0x%08x elapsed_ms=%lld result=%d\\n",
+                   key, static_cast<long long>(elapsed_ms), result ? 1 : 0);
+    }
+  }
+  return result;
+}
+
+// r286: a Mutant is not an event. r285's own diagnostic trace confirmed
+// this project's `sub_82345C88`/`sub_82345CE0` pair (the retail game's
+// generic "kick and wait for target" utility, r283/r284) treats
+// `*(gate+0)` as a real Xbox 360 Mutant -- acquired by a wait, released via
+// `NtReleaseMutant` (traced: `initial_owner=0`, an unowned-at-creation
+// mutex) -- not an auto- or manual-reset event. `NtCreateMutant` used to
+// register nothing at all in `g_events`, so any real wait on it failed
+// instantly (a map-lookup miss, not the intended 2 ms bounded contention
+// wait), and `NtSignalAndWaitForSingleObjectEx`'s "signal" side called the
+// generic `set_event()` on it regardless -- silently fabricating a phantom
+// auto-reset EventState via `g_events[key]`'s auto-vivifying `operator[]`,
+// with no ownership tracking, no recursion count, and no way to reject a
+// release from a thread that never acquired it. This gives Mutants their
+// own single-owner model instead.
+struct MutantState {
+  std::mutex mutex;  // r287: protects the three fields below, per-key --
+                      // see the "r287" comment on g_mutants for why.
+  bool owned = false;
+  std::uint64_t owner_tid = 0;      // 0 == unowned; a hashed std::thread::id
+  std::uint32_t recursion_count = 0;
+};
+// r287: this used to share g_event_mutex (r286's own revision, made to
+// avoid adding a second independently-contended lock to every single
+// Nt*Wait*/Nt*Signal* call site engine-wide). That traded one problem for
+// a worse one this cycle's own instrumentation caught directly: an
+// unrelated third thread hammering ITS OWN, completely different Mutant
+// through this same one shared lock thousands of times per second
+// (traced: 6,922 acquisitions in a 15 s window, versus 15 and 3 for the
+// two threads r283-r286 were actually chasing) starved them of the SAME
+// lock for seconds at a time under Linux's non-FIFO futex contention --
+// explaining exactly the "every step is bounded to ~2 ms yet the loop
+// only advances every few seconds" mystery r286 measured but could not
+// attribute. Fixed the way this project's own `critical_section_for`/
+// `g_critical_sections` already model exactly this shape: one lock per
+// KEY (per Mutant object), not one lock shared by every Mutant in the
+// whole engine. `g_mutants_registry_mutex` protects only the structural
+// map lookup/insert itself (rare: creation only, and the read-only
+// lookup below is a single hash probe held for nanoseconds); it never
+// serializes one Mutant's acquire/release against another's.
+std::mutex g_mutants_registry_mutex;
+std::unordered_map<std::uint32_t, std::unique_ptr<MutantState>> g_mutants;
+
+inline std::uint64_t current_thread_tid() {
+  return static_cast<std::uint64_t>(
+      std::hash<std::thread::id>{}(std::this_thread::get_id()));
+}
+
+bool is_mutant(std::uint32_t key) {
+  std::lock_guard lock(g_mutants_registry_mutex);
+  return g_mutants.find(key) != g_mutants.end();
+}
+
+// One immediate attempt: acquires (or recursively re-acquires, matching
+// the real API's contract that the owning thread may re-wait on its own
+// mutant) if unowned or already owned by this thread; otherwise fails
+// without blocking, for the caller to retry under the same bounded 2 ms
+// contract every other wait stub here already uses.
+bool try_acquire_mutant(std::uint32_t key) {
+  MutantState* state;
+  {
+    std::lock_guard registry_lock(g_mutants_registry_mutex);
+    auto it = g_mutants.find(key);
+    if (it == g_mutants.end()) return false;
+    state = it->second.get();
+  }
+  std::lock_guard lock(state->mutex);
+  const std::uint64_t tid = current_thread_tid();
+  if (state->owned && state->owner_tid != tid) return false;
+  state->owned = true;
+  state->owner_tid = tid;
+  ++state->recursion_count;
+  return true;
+}
+
+// Bounded, matching wait_event()'s own "never blocks indefinitely" bound
+// (r91) -- a short busy-poll rather than a condition-variable wait, since
+// a mutant's release is not modeled through g_event_cv at all.
+bool wait_mutant(std::uint32_t key) {
+  // r288 (diagnostic only, anomaly-gated -- see wait_event's own r288
+  // comment above for why): names whether THIS specific bounded primitive
+  // is where a slow cycle's time actually goes.
+  if (std::getenv("AC6_NATIVE_WAIT_TIMING_TRACE") != nullptr) {
+    start_wait_call_heartbeat_once();
+    g_wait_mutant_calls.fetch_add(1, std::memory_order_relaxed);
+    if (key == 0x120u) {
+      g_wait_mutant_calls_gate120.fetch_add(1, std::memory_order_relaxed);
+    }
+  }
+  const auto call_start = std::chrono::steady_clock::now();
+  bool result = try_acquire_mutant(key);
+  if (!result) {
+    const auto deadline = call_start + std::chrono::milliseconds(2);
+    do {
+      std::this_thread::sleep_for(std::chrono::microseconds(200));
+      if (try_acquire_mutant(key)) {
+        result = true;
+        break;
+      }
+    } while (std::chrono::steady_clock::now() < deadline);
+  }
+  if (std::getenv("AC6_NATIVE_WAIT_TIMING_TRACE") != nullptr) {
+    const auto elapsed_ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - call_start)
+            .count();
+    if (elapsed_ms > 5) {
+      std::fprintf(stderr,
+                   "[wait_mutant SLOW] key=0x%08x elapsed_ms=%lld result=%d\\n",
+                   key, static_cast<long long>(elapsed_ms), result ? 1 : 0);
+    }
+  }
+  return result;
+}
+
+// Only the current owner may release, and only as many times as it
+// acquired (recursion): matches the real API's STATUS_MUTANT_NOT_OWNED
+// contract instead of silently succeeding for any caller.
+bool release_mutant(std::uint32_t key) {
+  MutantState* state;
+  {
+    std::lock_guard registry_lock(g_mutants_registry_mutex);
+    auto it = g_mutants.find(key);
+    if (it == g_mutants.end()) return false;
+    state = it->second.get();
+  }
+  std::lock_guard lock(state->mutex);
+  if (!state->owned || state->owner_tid != current_thread_tid()) {
+    return false;
+  }
+  if (--state->recursion_count == 0u) {
+    state->owned = false;
+    state->owner_tid = 0u;
+  }
   return true;
 }
 
@@ -202,13 +487,66 @@ bool wait_event(std::uint32_t key) {
 // g_events map/mutex/cv -- thread handles and event/semaphore/mutant
 // handles already share one monotonic counter (g_next_handle), so
 // there is no key collision between them.
+// r278: the Nt/Ke wait and signal imports accept either a small integer
+// handle (the NtCreateEvent family, tracked in g_events) or a guest POINTER
+// to a live dispatcher object. The second form is real in this boot: the
+// task dispatcher sub_821D4C20 polls NtWaitForSingleObjectEx on its own
+// low-region KEVENT headers (observed 0x100046F4 / 0x10004744, ~200k+ polls
+// per 3 s window) because the handle-only model returned STATUS_TIMEOUT
+// forever. For pointers, model the standard NT dispatcher header the
+// guest's inline KeInitializeEvent writes: SignalState at object+4,
+// byte 0 = Type (0 = notification, 1 = synchronization).
+constexpr std::uint32_t kMaxGuestHandle = 0x10000u;
+
+inline bool is_guest_object_key(std::uint32_t key) {
+  return key >= kMaxGuestHandle && key <= 0xFFFFFFF8u;
+}
+
+// Returns true when the object is signaled; a synchronization event's
+// signal is consumed, a notification event's is left set.
+inline bool wait_guest_object(uint8_t* base, std::uint32_t ptr) {
+  if (!is_guest_object_key(ptr)) return false;
+  const std::uint32_t state = PPC_LOAD_U32(ptr + 4u);
+  if (state == 0u) return false;
+  if (PPC_LOAD_U8(ptr + 0u) == 1u) PPC_STORE_U32(ptr + 4u, 0u);
+  return true;
+}
+
+inline void set_guest_object(uint8_t* base, std::uint32_t ptr) {
+  if (!is_guest_object_key(ptr)) return;
+  if (PPC_LOAD_U8(ptr + 0u) == 1u) {
+    PPC_STORE_U32(ptr + 4u, 1u);
+  } else {
+    const std::uint32_t state = PPC_LOAD_U32(ptr + 4u);
+    if (state < 0x7FFFFFFFu) PPC_STORE_U32(ptr + 4u, state + 1u);
+  }
+}
+
+inline void clear_guest_object(uint8_t* base, std::uint32_t ptr) {
+  if (is_guest_object_key(ptr)) PPC_STORE_U32(ptr + 4u, 0u);
+}
+
+inline void reset_guest_object(uint8_t* base, std::uint32_t ptr) {
+  if (is_guest_object_key(ptr)) PPC_STORE_U32(ptr + 4u, 0u);
+}
+
 void park_until_resumed(std::uint32_t key) {
   if (key == 0u) return;
   std::unique_lock lock(g_event_mutex);
-  g_event_cv.wait(lock, [&] {
+  // r277: bounded wait so a parked thread also polls the shutdown stop flag
+  // (the stop_and_join joins every registered worker; nothing notifies this
+  // cv from outside the stubs translation unit).
+  while (!g_event_cv.wait_for(lock, std::chrono::milliseconds(100), [&] {
     auto it = g_events.find(key);
     return it == g_events.end() || it->second.signaled;
-  });
+  })) {
+    if (ac6::native::native_guest_threads_stop_requested()) break;
+  }
+  // r277: shutdown ends parked threads through their entry lambda's
+  // GuestThreadTerminated catch so the registry join can finish.
+  if (ac6::native::native_guest_threads_stop_requested()) {
+    throw ac6::native::GuestThreadTerminated{};
+  }
 }
 
 // r216: real signature (documented, and confirmed at this XEX's own
@@ -379,24 +717,53 @@ def render_body(name: str) -> str:
     ctx.r3.u64 = 0xC0000017u;  // STATUS_NO_MEMORY
     return;
   }
+  // r281: the documented NT contract for a caller-supplied BaseAddress is
+  // that the region is rounded outward to page boundaries -- the base DOWN
+  // to a page, the end (base + size) UP to a page -- and BOTH the rounded
+  // base and the rounded size are written back. This stub rounded the base
+  // down to 64 KiB and wrote the raw size back: the guest RTL heap
+  // (sub_821F92B8/sub_821F9150/sub_821F8368) then read committed_end =
+  // base_out + size_out short by the misalignment (traced on the US ISO:
+  // commit 0x5C050 at 0x2E780000 -> committed end 0x2E7DC050; next commit
+  // requested at 0x2E7DC050 came back as 0x2E7D0000 + 0x50000), its
+  // uncommitted-range list and free list overlapped, and the sorted
+  // free-list insert sub_821F8A00 spun forever. Page size: every heap call
+  // carries 0x20000000 (the large-page bit) and the heap itself counts
+  // pages as size >> 16 (sub_821F8368: NumberOfUnCommittedPages -= the
+  // big-endian high half of the written-back size), so that bit selects
+  // 64 KiB pages; without it the NT default 4 KiB page applies.
+  const std::uint32_t allocation_type = ctx.r5.u32;
+  const std::uint32_t page_size =
+      (allocation_type & 0x20000000u) != 0u ? 0x10000u : 0x1000u;
+  const std::uint32_t page_mask = page_size - 1u;
   std::uint32_t address = PPC_LOAD_U32(ctx.r3.u32);
+  std::uint32_t region_size = 0u;
   if (address == 0u) {
-    address = allocate_guest(base, requested);
+    region_size = (requested + page_mask) & ~page_mask;
+    address = allocate_guest(base, region_size);
     if (address == 0u) {
       ctx.r3.u64 = 0xC0000017u;  // STATUS_NO_MEMORY
       return;
     }
   } else {
-    address &= 0xffff0000u;
-    if (static_cast<std::uint64_t>(address) + requested > 0x7f000000ull) {
+    const std::uint64_t start = address & ~static_cast<std::uint64_t>(page_mask);
+    const std::uint64_t end =
+        (static_cast<std::uint64_t>(address) + requested + page_mask) &
+        ~static_cast<std::uint64_t>(page_mask);
+    if (end > 0x7f000000ull || end <= start) {
       ctx.r3.u64 = 0xC0000017u;  // STATUS_NO_MEMORY
       return;
     }
+    address = static_cast<std::uint32_t>(start);
+    region_size = static_cast<std::uint32_t>(end - start);
+    // The 4 GiB guest reservation is already backed; a commit inside a
+    // reserved range leaves existing contents alone, as NT does for pages
+    // that are already committed.
   }
   PPC_STORE_U32(ctx.r3.u32, address);
-  PPC_STORE_U32(ctx.r4.u32, requested);
+  PPC_STORE_U32(ctx.r4.u32, region_size);
   ac6::native::native_guest_vd_service().register_allocation(
-      base, address, requested);
+      base, address, region_size);
   ctx.r3.u64 = 0u;
 """
     if name == "ExAllocatePool":
@@ -462,9 +829,45 @@ def render_body(name: str) -> str:
         # (r111-r115) has since disproven (eighteen real concurrent host
         # threads). recursive_mutex allows a thread already holding this
         # section to re-enter it, matching the real API's contract.
-        return "  critical_section_for(ctx.r3.u32).lock();\n  ctx.r3.u64 = 0u;\n"
+        # r282: a raw blocking lock() here is what turned an abandoned
+        # section into a permanent shutdown hang. A wait-family stub can
+        # throw GuestThreadTerminated (r213/r277's stop_requested() check)
+        # while a worker holds a section entered here; that unwind skips
+        # RtlLeaveCriticalSection (a separate, later guest call this host
+        # call has no RAII tie to), leaking the recursive_mutex locked
+        # forever -- confirmed at runtime: the g_held_sections heartbeat
+        # below showed the SAME two keys held by the SAME two threads for
+        # the entire remainder of every hung run. Any later thread that
+        # calls lock() on one of those two keys then blocks in the kernel
+        # forever, never reaching its own stop check, and
+        # native_guest_threads_stop_and_join()'s join() on it never
+        # returns. Bounded polling (the same technique wait_event/
+        # park_until_resumed already use) makes acquisition itself
+        # interruptible: the leaked mutex still exists, but nothing waits
+        # on it past shutdown.
+        return """  auto& section = critical_section_for(ctx.r3.u32);
+  while (!section.try_lock()) {
+    if (ac6::native::native_guest_threads_stop_requested()) {
+      throw ac6::native::GuestThreadTerminated{};
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    start_held_sections_heartbeat_once();
+    std::lock_guard lock(g_held_sections_mutex);
+    g_held_sections[ctx.r3.u32] = static_cast<std::uint64_t>(
+        std::hash<std::thread::id>{}(std::this_thread::get_id()));
+  }
+  ctx.r3.u64 = 0u;
+"""
     if name == "RtlLeaveCriticalSection":
-        return "  critical_section_for(ctx.r3.u32).unlock();\n  ctx.r3.u64 = 0u;\n"
+        return """  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::lock_guard lock(g_held_sections_mutex);
+    g_held_sections.erase(ctx.r3.u32);
+  }
+  critical_section_for(ctx.r3.u32).unlock();
+  ctx.r3.u64 = 0u;
+"""
     if name == "KfAcquireSpinLock":
         # r191: KIRQL KfAcquireSpinLock(PKSPIN_LOCK SpinLock) -- real call
         # site 0x821e600c protects a real queue-append (0x821e6020-0x6054)
@@ -485,13 +888,18 @@ def render_body(name: str) -> str:
         return "  spin_lock_for(ctx.r3.u32).unlock();\n  ctx.r3.u64 = 0u;\n"
     if name == "KeRaiseIrqlToDpcLevel":
         # r191: KIRQL KeRaiseIrqlToDpcLevel(VOID) -- no lock object
-        # parameter; see g_dpc_level_mutex above for why this is
-        # recursive_mutex, not spin_lock_for's plain mutex. Old IRQL
-        # returned as PASSIVE_LEVEL (0) for the same reason as
+        # parameter; see native_guest_threads.cpp's g_dpc_level_mutex for
+        # why this is a recursive_mutex, not spin_lock_for's plain mutex.
+        # Old IRQL returned as PASSIVE_LEVEL (0) for the same reason as
         # KfAcquireSpinLock: untraced to a consumer in this XEX so far.
-        return "  g_dpc_level_mutex.lock();\n  ctx.r3.u64 = 0u;\n"
+        # r422: goes through raise_dpc_level() (native_guest_threads.h),
+        # not the mutex directly, so a GuestThreadTerminated thrown before
+        # the matching KfLowerIrql can be released by
+        # release_residual_dpc_level() in the catch block below instead
+        # of orphaning the mutex forever.
+        return "  ac6::native::raise_dpc_level();\n  ctx.r3.u64 = 0u;\n"
     if name == "KfLowerIrql":
-        return "  g_dpc_level_mutex.unlock();\n  ctx.r3.u64 = 0u;\n"
+        return "  ac6::native::lower_dpc_level();\n  ctx.r3.u64 = 0u;\n"
     if name == "KeGetCurrentProcessType":
         return "  ctx.r3.u64 = 0u;  // title process\n"
     if name == "ExGetXConfigSetting":
@@ -577,19 +985,52 @@ def render_body(name: str) -> str:
   worker.r1.u32 = g_next_thread_stack.fetch_sub(0x10000u);
   worker.r3.u32 = routine_address;
   worker.r4.u32 = routine_argument;
-  constexpr std::uint32_t kCreateSuspended = 0x00000004u;
+  // r280: the kernel CREATE_SUSPENDED bit is 0x1, not the Win32 0x4 r114
+  // assumed. Primary evidence: this XEX's own thread-create wrapper
+  // sub_821F7A18 computes ExCreateThread's CreationFlags (r9) as
+  // (game_flags >> 2) & 1 -- it maps the Win32 CREATE_SUSPENDED bit 2 down
+  // to kernel bit 0 -- and both pools that pass game flag 4 (sub_821D4B30
+  // for the 0x821D4C20 dispatchers, sub_821D4CD8 for the 0x821D4F20 pool)
+  // create their events after the thread and only then call the
+  // NtResumeThread wrapper sub_821F5990. With 0x4 those threads ran before
+  // their event handles existed (traced as flags=0x00000001 suspended=0).
+  constexpr std::uint32_t kCreateSuspended = 0x00000001u;
   const bool start_suspended = (creation_flags & kCreateSuspended) != 0u;
   if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
     std::fprintf(stderr,
-                  "[ExCreateThread] handle=%u routine=0x%08x flags=0x%08x "
-                  "suspended=%d\\n",
-                  handle, routine_address, creation_flags,
-                  start_suspended ? 1 : 0);
+                 "[ExCreateThread] handle=%u routine=0x%08x flags=0x%08x "
+                 "suspended=%d\\n",
+                 handle, routine_address, creation_flags,
+                 start_suspended ? 1 : 0);
+  }
+  // r305 (diagnostic only): r304 found routine=0x823453e8 (the r283
+  // worker-thread routine) is spawned FRESH, repeatedly (8x in a single
+  // 15s window), not a fixed pool of 8 long-lived threads -- only 1 of
+  // those 8 led to sub_8233B378 (r303). The existing trace above prints
+  // the routine address but not routine_argument, so it cannot say
+  // which of several 0x823453e8 threads carries which per-invocation
+  // task. This is its own dedicated env var (NOT AC6_NATIVE_IMPORT_TRACE,
+  // which floods -- r282/r288/r289/r304), filtered to only this one
+  // routine address so it stays low-volume even over a long window.
+  if (routine_address == 0x823453e8u &&
+      std::getenv("AC6_NATIVE_WORKER_SPAWN_TRACE") != nullptr) {
+    // r305 (same cycle): sub_823453E8's own body (read in full) is a
+    // generic per-task trampoline itself -- it loads a function pointer
+    // from *(routine_argument+20) and an argument from
+    // *(routine_argument+24), then calls through it indirectly. THIS is
+    // the real task-type discriminator, one level deeper than the
+    // routine_argument pointer alone can show.
+    const std::uint32_t task_function = PPC_LOAD_U32(routine_argument + 20u);
+    const std::uint32_t task_argument = PPC_LOAD_U32(routine_argument + 24u);
+    std::fprintf(stderr,
+                 "[worker-spawn] handle=%u routine_argument=0x%08x "
+                 "task_function=0x%08x task_argument=0x%08x\\n",
+                 handle, routine_argument, task_function, task_argument);
   }
   if (start_suspended) create_event(handle, /*manual_reset=*/true,
                                      /*signaled=*/false);
   try {
-    std::thread([shim, worker, base, handle, start_suspended]() mutable {
+    std::thread guest_thread([shim, worker, base, handle, start_suspended]() mutable {
       if (start_suspended) park_until_resumed(handle);
       try {
         shim(worker, base);
@@ -598,8 +1039,16 @@ def render_body(name: str) -> str:
         // it here so this thread ends cleanly instead of escaping the
         // thread entry point and invoking std::terminate() on the whole
         // process.
+        // r422: this thread may have raised IRQL (KeRaiseIrqlToDpcLevel)
+        // and been terminated here before its matching KfLowerIrql --
+        // release whatever it still holds instead of orphaning the
+        // shared g_dpc_level_mutex for every other thread forever.
+        ac6::native::release_residual_dpc_level();
       }
-    }).detach();
+    });
+    // r277: joinable registry entry instead of detach(); shutdown joins
+    // every worker so stub globals outlive their last use.
+    ac6::native::native_guest_threads_register(std::move(guest_thread));
   } catch (...) {
     ctx.r3.u64 = 0xC0000017u;  // host thread creation failed
     return;
@@ -1282,6 +1731,17 @@ def render_body(name: str) -> str:
         # stub that never truly completes would hang instead of crash);
         # this harness has no real DMA to model asynchronously, so the
         # honest offline behavior is to finish the read immediately.
+        # r240/r241: the PAC path still fails with handle=0x829xxxxx (image
+        # FILE_OBJECT, not small HANDLE) and offset=0xfefefefe (stack
+        # garbage, not 0). Static trace (r241) proved the two direct
+        # `bl NtReadFile` sites in this XEX (0x82391020 in Function_82390F48,
+        # 0x82391b58 in Function_82391A40) both pass r4=r5=r6=0, r7/r8/r10 =
+        # stack buffers, r9=0x400, ByteOffset 0x800 -- confirmed in the
+        # active generated code too. A call with r4=0x134/r8=0/r9=0x40000
+        # therefore comes from no direct site; the lr/r1 trace below names
+        # the true caller on the next honest probe instead of guessing.
+        # No fallback: a fabricated STATUS_SUCCESS with a wrong buffer or
+        # offset would corrupt PAC data or write to the wrong place.
         return """  std::uint64_t offset = 0u;
   if (ctx.r10.u32 != 0u) {
     const std::uint32_t hi = PPC_LOAD_U32(ctx.r10.u32 + 0u);
@@ -1290,6 +1750,46 @@ def render_body(name: str) -> str:
   }
   std::uint32_t bytes_read = 0u;
   std::uint8_t* dest = ctx.r8.u32 != 0u ? (base + ctx.r8.u32) : nullptr;
+  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr, "[NtReadFile] r1=0x%08x r3=0x%08x r4=0x%08x r5=0x%08x r6=0x%08x r7=0x%08x r8=0x%08x r9=0x%08x r10=0x%08x offset=%llu\\n",
+                 ctx.r1.u32,
+                 ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, ctx.r6.u32, ctx.r7.u32, ctx.r8.u32, ctx.r9.u32, ctx.r10.u32,
+                 static_cast<unsigned long long>(offset));
+    if (ctx.r3.u32 != 0u && ctx.r3.u32 >= 0x82000000u && ctx.r3.u32 < 0x83000000u) {
+      std::fprintf(stderr, "[NtReadFile] *r3 dump:");
+      for (int i=0;i<16;i++) std::fprintf(stderr, " %08x", PPC_LOAD_U32(ctx.r3.u32 + i*4));
+      std::fprintf(stderr, "\\n");
+    }
+    if (ctx.r10.u32 != 0u && ctx.r10.u32 >= 0x82000000u && ctx.r10.u32 < 0x90000000u) {
+      std::fprintf(stderr, "[NtReadFile] *r10 dump: %08x %08x\\n",
+                   PPC_LOAD_U32(ctx.r10.u32), PPC_LOAD_U32(ctx.r10.u32+4));
+    }
+    // r275: name the caller without ctx.lr (PPC_CONFIG_SKIP_LR is defined).
+    // The guest frame chain keeps the return address at *(r1+4) and the
+    // parent frame at *(r1); dump three levels so the true NtReadFile
+    // caller on the entry thread is attributed from evidence, not guessed.
+    std::uint32_t frame = ctx.r1.u32;
+    for (int depth = 0; depth < 3 && frame != 0u && frame >= 0x82000000u &&
+                        frame < 0x90000000u; ++depth) {
+      std::fprintf(stderr, "[NtReadFile] backchain[%d] lr=0x%08x next_frame=0x%08x\\n",
+                   depth, PPC_LOAD_U32(frame + 4u), PPC_LOAD_U32(frame));
+      frame = PPC_LOAD_U32(frame);
+    }
+    // r275: the PAC read pipeline's producers. 0x82778EB0 = the arena global
+    // written by sub_821D5F48 (r24-29008) before it allocates the queue
+    // buffer; 0x8293B930/94C/938 = the pool cluster read by sub_821CC508;
+    // the queue header window is derived from the async block (r7-22860).
+    std::fprintf(stderr, "[NtReadFile] globals: arena=0x%08x pool_obj=0x%08x pool=0x%08x gate=%u initcnt=%u\\n",
+                 PPC_LOAD_U32(0x82758EB0u), PPC_LOAD_U32(0x8293B930u),
+                 PPC_LOAD_U32(0x8293B94Cu), PPC_LOAD_U32(0x8293B938u) & 0xFFu,
+                 PPC_LOAD_U32(0x8293B950u));
+    if (ctx.r7.u32 >= 22860u && ctx.r7.u32 < 0x90000000u) {
+      const std::uint32_t q = ctx.r7.u32 - 22860u;
+      std::fprintf(stderr, "[NtReadFile] queue@0x%08x: r316=%08x r320=%08x r324=%08x r328=%08x r332=%08x r340=%08x\\n",
+                   q, PPC_LOAD_U32(q + 316), PPC_LOAD_U32(q + 320), PPC_LOAD_U32(q + 324),
+                   PPC_LOAD_U32(q + 328), PPC_LOAD_U32(q + 332), PPC_LOAD_U32(q + 340));
+    }
+  }
   const bool known_handle = ac6::native::native_guest_media_service().read_file(
       ctx.r3.u32, offset, dest, ctx.r9.u32, bytes_read);
   std::uint32_t status = 0xC0000008u;  // STATUS_INVALID_HANDLE
@@ -1297,6 +1797,9 @@ def render_body(name: str) -> str:
     status = (bytes_read == 0u && ctx.r9.u32 != 0u)
         ? 0xC0000011u   // STATUS_END_OF_FILE
         : 0u;           // STATUS_SUCCESS
+  } else if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr, "[NtReadFile] invalid handle=0x%08x offset=%llu len=%u\\n",
+                 ctx.r3.u32, static_cast<unsigned long long>(offset), ctx.r9.u32);
   }
   if (ctx.r7.u32 != 0u) {
     PPC_STORE_U32(ctx.r7.u32 + 0u, status);
@@ -1307,7 +1810,16 @@ def render_body(name: str) -> str:
     if name == "NtCreateEvent":
         return """  const std::uint32_t handle = g_next_handle.fetch_add(1u);
   if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32, handle);
-  create_event(handle, ctx.r6.u32 == 0u, ctx.r7.u32 != 0u);
+  const bool manual_reset = ctx.r6.u32 == 0u;
+  create_event(handle, manual_reset, ctx.r7.u32 != 0u);
+  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    // r285 (diagnostic only): creation is rare (not a hot loop), so this
+    // is safe to print unconditionally under the trace gate -- confirms
+    // whether a specific handle is manual- or auto-reset without needing
+    // to inspect g_events by hand.
+    std::fprintf(stderr, "[NtCreateEvent] handle=0x%08x manual_reset=%d initial=%d\\n",
+                 handle, manual_reset ? 1 : 0, ctx.r7.u32 != 0u ? 1 : 0);
+  }
   ctx.r3.u64 = 0u;
 """
     if name == "NtCreateSemaphore":
@@ -1330,8 +1842,35 @@ def render_body(name: str) -> str:
   ctx.r3.u64 = 0u;
 """
     if name == "NtCreateMutant":
-        return """  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32,
-                                             g_next_handle.fetch_add(1u));
+        # r286: real signature is NtCreateMutant(OUT PHANDLE, IN
+        # POBJECT_ATTRIBUTES OPTIONAL, IN BOOLEAN InitialOwner) -- r5 is
+        # InitialOwner. Confirmed live (diagnostic trace, kept -- creation
+        # is rare, not a hot loop) that this XEX's own real call site
+        # passes InitialOwner=FALSE (unowned at creation); registers in
+        # g_mutants either way. Previously this stub registered nothing at
+        # all, so a real wait on it (NtWaitForSingleObjectEx or the wait
+        # side of NtSignalAndWaitForSingleObjectEx) failed instantly (a
+        # map-lookup miss) instead of correctly contending for ownership,
+        # and NtReleaseMutant/the signal side of NtSignalAndWaitForSingle-
+        # ObjectEx had nothing to act on.
+        return """  const std::uint32_t handle = g_next_handle.fetch_add(1u);
+  if (ctx.r3.u32 != 0u) PPC_STORE_U32(ctx.r3.u32, handle);
+  {
+    // r287: per-key MutantState, registered under the registry lock only
+    // (held briefly, for the insert) -- see g_mutants above.
+    auto mutant = std::make_unique<MutantState>();
+    if (ctx.r5.u32 != 0u) {
+      mutant->owned = true;
+      mutant->owner_tid = current_thread_tid();
+      mutant->recursion_count = 1u;
+    }
+    std::lock_guard lock(g_mutants_registry_mutex);
+    g_mutants[handle] = std::move(mutant);
+  }
+  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr, "[NtCreateMutant] handle=0x%08x initial_owner=%d\\n",
+                 handle, ctx.r5.u32 != 0u ? 1 : 0);
+  }
   ctx.r3.u64 = 0u;
 """
     if name == "NtCreateTimer":
@@ -1349,7 +1888,16 @@ def render_body(name: str) -> str:
   ctx.r3.u64 = 0u;
 """
     if name == "NtSetEvent":
-        return """  const bool previous = set_event(ctx.r3.u32);
+        return """  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr, "[NtSetEvent] target=0x%08x r4=0x%08x\\n",
+                 ctx.r3.u32, ctx.r4.u32);
+  }
+  if (is_guest_object_key(ctx.r3.u32)) {
+    set_guest_object(base, ctx.r3.u32);
+    ctx.r3.u64 = 0u;
+    return;
+  }
+  const bool previous = set_event(ctx.r3.u32);
   if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32, previous ? 1u : 0u);
   ctx.r3.u64 = 0u;
 """
@@ -1372,11 +1920,61 @@ def render_body(name: str) -> str:
   ctx.r3.u64 = previous ? 1u : 0u;
 """
     if name == "KeSetEvent":
-        return """  const bool previous = set_event(ctx.r3.u32);
+        return """  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr, "[KeSetEvent] target=0x%08x r4=0x%08x\\n",
+                 ctx.r3.u32, ctx.r4.u32);
+  }
+  if (is_guest_object_key(ctx.r3.u32)) {
+    set_guest_object(base, ctx.r3.u32);
+    ctx.r3.u64 = 0u;
+    return;
+  }
+  const bool previous = set_event(ctx.r3.u32);
   ctx.r3.u64 = previous ? 1u : 0u;
 """
     if name == "NtSignalAndWaitForSingleObjectEx":
-        return """  set_event(ctx.r3.u32);
+        # r284 (diagnostic addition): trace the signal/wait handle pair and
+        # thread id -- bounded by the same AC6_NATIVE_IMPORT_TRACE gate as
+        # every other stub; this import's own guest-side retry loop caps
+        # call volume the same way NtWaitForSingleObjectEx's does.
+        #
+        # r286: the "signal" side previously called the generic
+        # `set_event()` on ANY handle, silently fabricating a phantom
+        # auto-reset EventState (via `g_events[key]`'s auto-vivifying
+        # `operator[]`) for a real Mutant this project's own r283/r284/r285
+        # tracing confirmed is used here -- with no ownership check, no
+        # STATUS_MUTANT_NOT_OWNED, and no actual release semantics. A
+        # Mutant must be released, not "set"; and the wait side must
+        # acquire it, not just observe a boolean.
+        return """  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr, "[NtSignalAndWaitForSingleObjectEx] signal=0x%08x wait=0x%08x tid=%zu\\n",
+                 ctx.r3.u32, ctx.r4.u32,
+                 std::hash<std::thread::id>{}(std::this_thread::get_id()));
+  }
+  if (is_mutant(ctx.r3.u32)) {
+    // r286 (revised, same cycle): this XEX's own guest code never checks
+    // this call's return status before proceeding straight to the wait
+    // side regardless (traced: sub_82345CE0 falls through to its plain
+    // wait unconditionally) -- an early return here on a failed release
+    // would silently skip that wait, a real behavior change from the
+    // prior always-succeeds model that empirically made no observable
+    // difference to the traced stall either way. release_mutant() is
+    // still attempted (real bookkeeping when this thread IS the tracked
+    // owner) but never blocks reaching the wait side.
+    release_mutant(ctx.r3.u32);
+  } else if (is_guest_object_key(ctx.r3.u32)) {
+    set_guest_object(base, ctx.r3.u32);
+  } else {
+    set_event(ctx.r3.u32);
+  }
+  if (is_mutant(ctx.r4.u32)) {
+    ctx.r3.u64 = wait_mutant(ctx.r4.u32) ? 0u : 0x102u;
+    return;
+  }
+  if (is_guest_object_key(ctx.r4.u32)) {
+    ctx.r3.u64 = wait_guest_object(base, ctx.r4.u32) ? 0u : 0x102u;
+    return;
+  }
   if (!wait_event(ctx.r4.u32)) {
     ctx.r3.u64 = 0x102u;  // STATUS_TIMEOUT; offline event pair not signaled
     return;
@@ -1384,13 +1982,23 @@ def render_body(name: str) -> str:
   ctx.r3.u64 = 0u;
 """
     if name == "NtReleaseMutant":
-        # NtReleaseMutant(handle, PreviousCount*) -- r4 is the optional out
-        # pointer for the previous count. Single guest thread until
-        # scheduler migration: no real contention is modeled, so release
-        # always succeeds immediately (matches the
-        # RtlEnterCriticalSection/RtlLeaveCriticalSection idiom above).
-        return """  if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32, 0u);
-  ctx.r3.u64 = 0u;
+        # r286: NtReleaseMutant(handle, PreviousCount*) -- r4 is the
+        # optional out pointer for the previous count. The "single guest
+        # thread, no real contention" premise this stub used to document
+        # was already disproven engine-wide by r111-r115's confirmed real
+        # concurrent host threads; for THIS specific handle class it was
+        # additionally moot, since NtCreateMutant never registered
+        # anything for this stub to act on. Now releases the real,
+        # tracked Mutant (see g_mutants above): only the current owner may
+        # release, matching the real STATUS_MUTANT_NOT_OWNED contract
+        # instead of always succeeding regardless of caller.
+        return """  const bool released = release_mutant(ctx.r3.u32);
+  if (released) {
+    if (ctx.r4.u32 != 0u) PPC_STORE_U32(ctx.r4.u32, 0u);
+    ctx.r3.u64 = 0u;
+  } else {
+    ctx.r3.u64 = 0xC0000046u;  // STATUS_MUTANT_NOT_OWNED
+  }
 """
     if name == "NtReleaseSemaphore":
         # r145: the real signature (documented NT API) is
@@ -1411,12 +2019,37 @@ def render_body(name: str) -> str:
 """
     if name in {"NtWaitForSingleObjectEx", "NtWaitForMultipleObjectsEx",
                 "KeWaitForSingleObject", "KeWaitForMultipleObjects"}:
-        return """  if (!wait_event(ctx.r3.u32)) {
+        # r280: the four imports share one body but must trace under their
+        # own names -- r278/r279 read "[NtWaitForSingleObjectEx]" lines that
+        # this shared label also printed for the three other imports.
+        return ("""  // r277: shutdown stop -- end this worker through its entry catch.
+  if (ac6::native::native_guest_threads_stop_requested()) {
+    throw ac6::native::GuestThreadTerminated{};
+  }
+  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    // r284: thread id added to attribute a flood of retries (STATUS_TIMEOUT
+    // -> guest-side retry loop) to a specific thread without a per-thread
+    // filter -- the print volume is unchanged, only the format string grew.
+    std::fprintf(stderr, "[NtWaitForSingleObjectEx] handle=0x%08x r4=0x%08x tid=%zu\\n",
+                 ctx.r3.u32, ctx.r4.u32,
+                 std::hash<std::thread::id>{}(std::this_thread::get_id()));
+  }
+  // r286: a Mutant must be ACQUIRED by a wait, not merely observed as a
+  // signaled/unsignaled boolean -- see g_mutants above.
+  if (is_mutant(ctx.r3.u32)) {
+    ctx.r3.u64 = wait_mutant(ctx.r3.u32) ? 0u : 0x102u;
+    return;
+  }
+  if (is_guest_object_key(ctx.r3.u32)) {
+    ctx.r3.u64 = wait_guest_object(base, ctx.r3.u32) ? 0u : 0x102u;
+    return;
+  }
+  if (!wait_event(ctx.r3.u32)) {
     ctx.r3.u64 = 0x102u;  // STATUS_TIMEOUT; offline, non-blocking
     return;
   }
   ctx.r3.u64 = 0u;
-"""
+""").replace("[NtWaitForSingleObjectEx]", "[" + name + "]")
     if name == "KeTryToAcquireSpinLockAtRaisedIrql":
         # r192: BOOLEAN KeTryToAcquireSpinLockAtRaisedIrql(PKSPIN_LOCK
         # SpinLock) -- same lock object identity as KfAcquireSpinLock
@@ -1495,7 +2128,10 @@ def render_body(name: str) -> str:
         # the relative (negative) form is handled, since that is the only
         # form this XEX's own real call site produces; a positive
         # (absolute) Interval is left unhandled rather than guessed.
-        return """  if (ctx.r5.u32 != 0u) {
+        return """  if (ac6::native::native_guest_threads_stop_requested()) {
+    throw ac6::native::GuestThreadTerminated{};
+  }
+  if (ctx.r5.u32 != 0u) {
     const std::int64_t interval =
         static_cast<std::int64_t>(PPC_LOAD_U64(ctx.r5.u32));
     if (interval < 0) {
@@ -1948,6 +2584,17 @@ def render_body(name: str) -> str:
     }
     ctx.r3.u64 = 0u;
   }
+"""
+    if name == "XamTaskSchedule":
+        # r278: diagnostic trace only -- r198's deferred contract (the
+        # scheduled guest callback is not executed) is unchanged. The trace
+        # names the callback address and its context so the boot's post-read
+        # stall can be attributed to the not-yet-executed XAM task pipeline.
+        return """  if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
+    std::fprintf(stderr, "[XamTaskSchedule] callback=0x%08x context=0x%08x\\n",
+                 ctx.r3.u32, ctx.r4.u32);
+  }
+  ctx.r3.u64 = 0u;
 """
     if name == "XamTaskCloseHandle":
         # r230: r198 deferred both XamTaskSchedule and XamTaskCloseHandle
@@ -2446,6 +3093,115 @@ def render_body(name: str) -> str:
       guest_vprintf(base, ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, next_arg);
   ctx.r3.u64 = static_cast<std::uint32_t>(written);
 """
+    if name == "XexCheckExecutablePrivilege":
+        # r239: single real call site observed at startup (0x821f5ed0's
+        # early init). The generic offline fallback returned
+        # kOfflineStatus (0xC00000BB, STATUS_NOT_SUPPORTED) which is
+        # negative; the guest's own entry path then immediately
+        # terminated the title via HalReturnToFirmware/XamLoaderTerminateTitle
+        # (observed: entry called XexCheckExecutablePrivilege then exited
+        # via std::exit(0) before any other import). No evidence at this
+        # site distinguishes which privilege ID is being checked, but the
+        # only honest offline answer that lets a retail title continue
+        # past its own startup privilege gate is "granted": return
+        # STATUS_SUCCESS (0). This matches the single-offline-profile
+        # assumption already used for XamUserCheckPrivilege (r182) and
+        # the "only index 0 is signed in" convention (r176).
+        return "  ctx.r3.u64 = 0u;  // STATUS_SUCCESS, privilege granted\n"
+    if name == "NtQueryInformationFile":
+        # r240: 9 real sites? Same shape as NtSetInformationFile. The probe
+        # showed DATA.TBL open followed by NtQueryInformationFile returning
+        # kOfflineStatus, causing the file-open sequence to be treated as
+        # failure and routed to the dirty-disc path. Return success and
+        # zero-fill the information buffer; the status check that gates the
+        # dirty-disc branch passes.
+        # r276: the missing producer is traced -- sub_821CC008 (the PAC read
+        # pipeline's queue creator) opens each catalog file and derives the
+        # shared read-buffer size from the sum of the queried file sizes;
+        # sub_821F4E08 reads *(IoStatusBlock+4) as the size. The r240
+        # zero-fill collapsed every size to 0, so the queue buffer got a
+        # 0-byte allocation (probe evidence: queue+332 = 0, buffer = 0 at
+        # NtReadFile) and the entry read loop failed downstream. Fill the
+        # real size for the size-bearing information classes (r7):
+        # 5 = FileStandardInformation (AllocationSize@0, EndOfFile@8),
+        # 20 = FileEndOfFileInformation (EndOfFile@0),
+        # 34 = FileNetworkOpenInformation (AllocationSize@32, EndOfFile@40;
+        # matches the retail wrapper's Length=56 at sub_821F5630).
+        # IoStatusBlock Information = the size per the observed retail
+        # guest convention (sub_821F4E08). Unknown handles/classes keep the
+        # r240 zero-fill (no fabricated content for unbound files).
+        return """  std::uint64_t size = 0u;
+  bool known = false;
+  if (const auto real = ac6::native::native_guest_media_service().file_size(ctx.r3.u32)) {
+    size = *real;
+    known = true;
+  }
+  const std::uint32_t info_class = ctx.r7.u32;
+  if (ctx.r5.u32 != 0u && ctx.r6.u32 != 0u) {
+    for (std::uint32_t i = 0; i < ctx.r6.u32; ++i) {
+      PPC_STORE_U8(ctx.r5.u32 + i, 0u);
+    }
+  }
+  if (known && ctx.r5.u32 != 0u) {
+    if (info_class == 5u) {
+      PPC_STORE_U32(ctx.r5.u32 + 0u, static_cast<std::uint32_t>(size >> 32));
+      PPC_STORE_U32(ctx.r5.u32 + 4u, static_cast<std::uint32_t>(size));
+      PPC_STORE_U32(ctx.r5.u32 + 8u, static_cast<std::uint32_t>(size >> 32));
+      PPC_STORE_U32(ctx.r5.u32 + 12u, static_cast<std::uint32_t>(size));
+    } else if (info_class == 20u) {
+      PPC_STORE_U32(ctx.r5.u32 + 0u, static_cast<std::uint32_t>(size >> 32));
+      PPC_STORE_U32(ctx.r5.u32 + 4u, static_cast<std::uint32_t>(size));
+    } else if (info_class == 34u) {
+      PPC_STORE_U32(ctx.r5.u32 + 32u, static_cast<std::uint32_t>(size >> 32));
+      PPC_STORE_U32(ctx.r5.u32 + 36u, static_cast<std::uint32_t>(size));
+      PPC_STORE_U32(ctx.r5.u32 + 40u, static_cast<std::uint32_t>(size >> 32));
+      PPC_STORE_U32(ctx.r5.u32 + 44u, static_cast<std::uint32_t>(size));
+    }
+  }
+  if (ctx.r4.u32 != 0u) {
+    PPC_STORE_U32(ctx.r4.u32 + 0u, 0u);
+    PPC_STORE_U32(ctx.r4.u32 + 4u, known ? static_cast<std::uint32_t>(size) : 0u);
+  }
+  ctx.r3.u64 = 0u;
+"""
+    if name == "NtSetInformationFile":
+        # r240: companion to NtQueryInformationFile. Real call site after
+        # DATA.TBL open sets file position or similar. Returning success
+        # lets the boot path continue. No buffer is read back on success.
+        return """  if (ctx.r4.u32 != 0u) {
+    PPC_STORE_U32(ctx.r4.u32 + 0u, 0u);
+    PPC_STORE_U32(ctx.r4.u32 + 4u, 0u);
+  }
+  ctx.r3.u64 = 0u;
+"""
+    if name == "VdGetSystemCommandBuffer":
+        # r240: hardware returns a GPU command buffer pointer. The generic
+        # offline stub returned kOfflineStatus as a fake pointer value.
+        # Allocate a small guest buffer so a non-null pointer is returned
+        # without dereferencing garbage. The native renderer owns the Vd
+        # lifecycle, so the content is not interpreted beyond being non-zero.
+        return """  const std::uint32_t buffer = allocate_guest(base, 0x1000u);
+  if (buffer != 0u) {
+    ac6::native::native_guest_vd_service().register_allocation(base, buffer, 0x1000u);
+  }
+  ctx.r3.u64 = buffer;
+"""
+    if name == "VdPersistDisplay":
+        # r240: VdPersistDisplay was fail-closed. The probe shows it is
+        # called before file access; returning success avoids a spurious
+        # error path while the native renderer owns the display.
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamShowDirtyDiscErrorUI":
+        # r240: shown when file open fails. Returning synchronously with
+        # success and no UI lets the boot retry path be avoided once files
+        # are actually present. The probe showed this was invoked after
+        # DATA.TBL failures.
+        return "  ctx.r3.u64 = 0u;\n"
+    if name == "XamLoaderLaunchTitle":
+        # r240: XamLoaderLaunchTitle would reboot the title on dirty disc.
+        # Return success without launching to keep the current title running
+        # when files are now available.
+        return "  ctx.r3.u64 = 0u;\n"
     return f"""  trace_offline_import("{name}");
   ctx.r3.u64 = kOfflineStatus;
 """

@@ -468,7 +468,9 @@ def test_thread_create_honors_creation_flags_suspended_bit(
     assert MODULE.render(mapping, output) == 1
     text = output.read_text()
     assert "const std::uint32_t creation_flags = ctx.r9.u32" in text
-    assert "kCreateSuspended = 0x00000004u" in text
+    # r280: kernel CREATE_SUSPENDED is bit 0 (sub_821F7A18 maps the game's
+    # Win32 bit 2 down to it); r114's 0x4 was never what the guest passed.
+    assert "kCreateSuspended = 0x00000001u" in text
     assert "(creation_flags & kCreateSuspended) != 0u" in text
     assert "if (start_suspended) create_event(handle" in text
     assert "/*manual_reset=*/true," in text
@@ -491,8 +493,17 @@ def test_park_until_resumed_blocks_indefinitely_not_bounded(
     # an actual resume, reintroducing r114's crash) -- it uses an
     # unbounded g_event_cv.wait(), not wait_for().
     park_body = text.split("void park_until_resumed")[1].split("\n}\n")[0]
-    assert "g_event_cv.wait(lock" in park_body
-    assert "wait_for" not in park_body
+    # r277 made the park a bounded wait_for loop so a parked thread also sees
+    # the shutdown stop flag; it still only leaves the loop on a real resume
+    # (signaled) or on stop (which ends the thread), never on the timeout.
+    # r280 aligned this assertion with that tracked change.
+    assert "g_event_cv.wait_for(lock, std::chrono::milliseconds(100)" in park_body
+    assert "it->second.signaled" in park_body
+    assert "native_guest_threads_stop_requested()" in park_body
+    assert "throw ac6::native::GuestThreadTerminated{}" in park_body
+    # The loop must not leave on the timeout alone: the only exits are the
+    # signaled predicate and the stop flag.
+    assert "if (ac6::native::native_guest_threads_stop_requested()) break;" in park_body
 
 
 def test_resume_thread_releases_a_parked_thread(tmp_path: Path) -> None:
@@ -542,7 +553,7 @@ def test_virtual_memory_binding_is_bounded_and_zeroing(tmp_path: Path) -> None:
     assert "g_next_virtual{0x10000000u}" in text
     assert "PPC_LOAD_U32(ctx.r4.u32)" in text
     assert "PPC_STORE_U32(ctx.r3.u32, address)" in text
-    assert "allocate_guest(base, requested)" in text
+    assert "allocate_guest(base, region_size)" in text  # r281: page-rounded size
     assert "std::memset(base + address" in text
 
 
@@ -573,12 +584,17 @@ def test_critical_sections_use_real_mutual_exclusion(tmp_path: Path) -> None:
     text = output.read_text()
     # r116: must not still be the stale single-guest-thread no-op.
     assert "single guest thread" not in text
-    assert "critical_section_for(ctx.r3.u32).lock()" in text
     assert "critical_section_for(ctx.r3.u32).unlock()" in text
     enter_body = text.split("void __imp__RtlEnterCriticalSection(")[1].split(
         "\n}\n"
     )[0]
-    assert "lock()" in enter_body
+    # r282: a raw blocking lock() here left an abandoned section (leaked by
+    # a wait stub's GuestThreadTerminated unwind) able to hang shutdown's
+    # join() forever -- acquisition must be interruptible instead.
+    assert "critical_section_for(ctx.r3.u32).lock()" not in text
+    assert "section.try_lock()" in enter_body
+    assert "native_guest_threads_stop_requested()" in enter_body
+    assert "throw ac6::native::GuestThreadTerminated{}" in enter_body
     leave_body = text.split("void __imp__RtlLeaveCriticalSection(")[1].split(
         "\n}\n"
     )[0]
@@ -587,6 +603,27 @@ def test_critical_sections_use_real_mutual_exclusion(tmp_path: Path) -> None:
     # address, same pattern g_events already uses for handles.
     assert "std::recursive_mutex" in text
     assert "g_critical_sections" in text
+
+
+def test_critical_section_acquire_is_interruptible_by_shutdown(
+    tmp_path: Path,
+) -> None:
+    # r282: confirmed at runtime -- a permanently abandoned critical section
+    # (leaked by a wait stub's stop-triggered GuestThreadTerminated unwind
+    # while the section was held) made every later `lock()` on that same
+    # key block forever, and native_guest_threads_stop_and_join()'s join()
+    # on that blocked thread never returned. try_lock() polling checks the
+    # same stop flag those wait stubs already use, so a thread stuck
+    # acquiring an abandoned section still terminates when shutdown begins.
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__RtlEnterCriticalSection);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    body = output.read_text().split(
+        "void __imp__RtlEnterCriticalSection("
+    )[1].split("\n}\n")[0]
+    assert "while (!section.try_lock())" in body
+    assert "if (ac6::native::native_guest_threads_stop_requested())" in body
 
 
 def test_crt_bootstrap_bindings_return_success(tmp_path: Path) -> None:
@@ -624,7 +661,8 @@ def test_thread_binding_dispatches_only_generated_guest_targets(tmp_path: Path) 
     assert MODULE.render(mapping, output) == 1
     text = output.read_text()
     assert "PPC_LOOKUP_FUNC(base, shim_address)" in text
-    assert "std::thread([shim, worker, base, handle, start_suspended]" in text
+    # r277 named the thread so the registry can join it (r280 aligned this).
+    assert "std::thread guest_thread([shim, worker, base, handle, start_suspended]" in text
     assert "worker.r1.u32 = g_next_thread_stack.fetch_sub(0x10000u)" in text
     assert "routine_address < PPC_CODE_BASE" in text
 
@@ -676,6 +714,39 @@ def test_wait_event_blocks_briefly_instead_of_busy_spinning(
     assert "g_event_cv.notify_all()" in text
 
 
+def test_wait_event_counts_auto_reset_releases_instead_of_one_shared_flag(
+    tmp_path: Path,
+) -> None:
+    # r285: two threads legitimately waiting on the same auto-reset handle
+    # (r284 traced the retail game's own "kick and wait for target" utility
+    # used concurrently by two threads on one shared event pair) used to
+    # race on a single `signaled` bool -- whichever thread reacquired the
+    # mutex first consumed it, and the other saw `signaled == false` and
+    # reported a false STATUS_TIMEOUT for a signal that had just fired.
+    # Counting releases means every set_event() is honored by exactly one
+    # wait_event(), never zero, never a spurious timeout for a signal that
+    # already happened.
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__NtWaitForSingleObjectEx);\n"
+        "PPC_EXTERN_FUNC(__imp__NtSetEvent);\n"
+        "PPC_EXTERN_FUNC(__imp__NtClearEvent);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 3
+    text = output.read_text()
+    assert "pending_releases" in text
+    assert "++event.pending_releases" in text
+    assert "event.pending_releases = 0" in text  # NtClearEvent discards credit
+    wait_body = text.split("bool wait_event")[1].split("\n}\n")[0]
+    assert "try_claim" in wait_body
+    # A manual-reset event stays level-triggered: it never consumes a
+    # credit and every waiter keeps seeing it signaled.
+    assert "event.manual_reset ? event.signaled" in wait_body or (
+        "manual_reset" in wait_body and "pending_releases" in wait_body
+    )
+
+
 def test_mutant_and_semaphore_release_succeed_without_contention_model(
     tmp_path: Path,
 ) -> None:
@@ -687,13 +758,16 @@ def test_mutant_and_semaphore_release_succeed_without_contention_model(
     output = tmp_path / "stubs.cpp"
     assert MODULE.render(mapping, output) == 2
     text = output.read_text()
-    assert text.count("ctx.r3.u64 = 0u") == 2
     mutant_body = text.split("void __imp__NtReleaseMutant")[1].split(
         "void __imp__NtReleaseSemaphore"
     )[0]
     semaphore_body = text.split("void __imp__NtReleaseSemaphore")[1]
-    # NtReleaseMutant(handle, PreviousCount*): r4 is the out pointer.
+    # r286: NtReleaseMutant now releases a real, tracked Mutant (see
+    # g_mutants) -- only the owning thread may succeed; a non-owner gets
+    # STATUS_MUTANT_NOT_OWNED instead of an unconditional success.
+    assert "release_mutant(ctx.r3.u32)" in mutant_body
     assert "PPC_STORE_U32(ctx.r4.u32, 0u)" in mutant_body
+    assert "0xC0000046u" in mutant_body  # STATUS_MUTANT_NOT_OWNED
     # NtReleaseSemaphore(handle, ReleaseCount, PreviousCount*): r4 is the
     # ReleaseCount integer, not a pointer -- r5 is the real out pointer, and
     # the release must actually signal the semaphore's wait state (r145).
@@ -702,6 +776,54 @@ def test_mutant_and_semaphore_release_succeed_without_contention_model(
     assert "set_event(ctx.r3.u32)" in semaphore_body
     assert "kOfflineStatus" not in mutant_body
     assert "kOfflineStatus" not in semaphore_body
+
+
+def test_mutant_creation_registers_a_real_single_owner_object(
+    tmp_path: Path,
+) -> None:
+    # r286: a Mutant is not an event -- r285's own diagnostic trace
+    # confirmed this project's generic "kick and wait for target" utility
+    # (r283/r284) acquires and releases a real Xbox 360 Mutant, which
+    # NtCreateMutant previously never registered anywhere, so a real wait
+    # on it failed instantly (a map-lookup miss) instead of correctly
+    # contending for ownership.
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtCreateMutant);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    body = output.read_text().split("void __imp__NtCreateMutant(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "g_mutants[handle]" in body
+    assert "ctx.r5.u32 != 0u" in body  # InitialOwner
+
+
+def test_wait_and_signal_stubs_acquire_and_release_a_real_mutant(
+    tmp_path: Path,
+) -> None:
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__NtWaitForSingleObjectEx);\n"
+        "PPC_EXTERN_FUNC(__imp__NtSignalAndWaitForSingleObjectEx);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 2
+    text = output.read_text()
+    wait_body = text.split("void __imp__NtWaitForSingleObjectEx(")[1].split(
+        "\n}\n"
+    )[0]
+    assert "wait_mutant(ctx.r3.u32)" in wait_body
+    signal_wait_body = text.split(
+        "void __imp__NtSignalAndWaitForSingleObjectEx("
+    )[1].split("\n}\n")[0]
+    assert "release_mutant(ctx.r3.u32)" in signal_wait_body
+    assert "wait_mutant(ctx.r4.u32)" in signal_wait_body
+    # r286 (revised, same cycle): the guest's own retry loop never checks
+    # this call's return status before proceeding straight to the wait
+    # side regardless -- a failed release must not skip that wait, so
+    # unlike NtReleaseMutant itself, this path never early-returns
+    # STATUS_MUTANT_NOT_OWNED.
+    assert "0xC0000046u" not in signal_wait_body
 
 
 def test_create_semaphore_registers_a_waitable_event(tmp_path: Path) -> None:
@@ -1149,8 +1271,15 @@ def test_spinlock_and_irql_primitives_use_real_mutual_exclusion(
     ].split("\n}\n")[0]
     assert "spin_lock_for(ctx.r3.u32).lock()" in text
     assert "spin_lock_for(ctx.r3.u32).unlock()" in text
-    assert "g_dpc_level_mutex.lock()" in text
-    assert "g_dpc_level_mutex.unlock()" in text
+    # r422: KeRaiseIrqlToDpcLevel/KfLowerIrql go through raise_dpc_level()/
+    # lower_dpc_level() (native_guest_threads.h), not g_dpc_level_mutex
+    # directly -- that mutex now lives in native_guest_threads.cpp, paired
+    # with a thread_local depth counter so a GuestThreadTerminated thrown
+    # between a Raise and its matching Lower can release what this thread
+    # still holds (release_residual_dpc_level()) instead of orphaning the
+    # mutex for every other thread forever.
+    assert "ac6::native::raise_dpc_level()" in text
+    assert "ac6::native::lower_dpc_level()" in text
 
     acquire_body = text.split("void __imp__KfAcquireSpinLock(")[1].split(
         "\n}\n"
@@ -1175,15 +1304,21 @@ def test_spinlock_and_irql_primitives_use_real_mutual_exclusion(
     raise_body = text.split("void __imp__KeRaiseIrqlToDpcLevel(")[1].split(
         "\n}\n"
     )[0]
-    assert "g_dpc_level_mutex.lock()" in raise_body
+    assert "ac6::native::raise_dpc_level()" in raise_body
 
     lower_body = text.split("void __imp__KfLowerIrql(")[1].split("\n}\n")[0]
-    assert "g_dpc_level_mutex.unlock()" in lower_body
+    assert "ac6::native::lower_dpc_level()" in lower_body
 
-    # r191: g_dpc_level_mutex must be recursive -- unlike a spinlock object,
-    # real IRQL is per-thread state, so the same thread legitimately nests
-    # Raise/Lower pairs without that being a self-reacquisition.
-    assert "std::recursive_mutex g_dpc_level_mutex" in text
+    # r422: g_dpc_level_mutex itself, and the recursive-locking rationale
+    # (r191: real IRQL is per-thread state, so the same thread legitimately
+    # nests Raise/Lower pairs without that being a self-reacquisition), now
+    # live in native_guest_threads.cpp -- not in the generated stubs file,
+    # which only calls raise_dpc_level()/lower_dpc_level() and can no
+    # longer touch the mutex directly (that's what makes
+    # release_residual_dpc_level() able to release it safely on
+    # GuestThreadTerminated instead of every call site needing its own
+    # exception-safe unlock).
+    assert "g_dpc_level_mutex" not in text
 
 
 def test_semaphore_and_try_spinlock_use_real_mutual_exclusion(
@@ -1539,6 +1674,15 @@ def test_ex_create_thread_catches_guest_thread_terminated(tmp_path: Path) -> Non
     assert MODULE.render(mapping, output) == 1
     text = output.read_text()
     assert "catch (const ac6::native::GuestThreadTerminated&)" in text
+    # r422: a worker terminated between KeRaiseIrqlToDpcLevel and its
+    # matching KfLowerIrql must release whatever IRQL depth it still
+    # holds here, or it orphans g_dpc_level_mutex for every other thread
+    # forever (see reports/ac6-retail-native-codegen-gate2-r421-hang-
+    # thread-pinned-live-blocked-on-non-raii-global-irql-mutex-20260908.md).
+    catch_body = text.split("catch (const ac6::native::GuestThreadTerminated&)")[
+        1
+    ].split("}")[0]
+    assert "ac6::native::release_residual_dpc_level()" in catch_body
 
 
 def test_ex_register_title_terminate_notification_always_succeeds(
@@ -1743,3 +1887,66 @@ def test_vsnprintf_reads_varargs_from_the_guest_va_list_pointer(
     assert "PPC_LOAD_U32(va_list_ptr + offset + 4u)" in body
     assert "offset += 8u" in body
     assert "guest_vprintf(base, ctx.r3.u32, ctx.r4.u32, ctx.r5.u32, next_arg)" in body
+
+
+def test_ex_create_thread_uses_kernel_create_suspended_bit_one(tmp_path: Path) -> None:
+    # r280: sub_821F7A18 maps the game's Win32 CREATE_SUSPENDED (bit 2) to
+    # ExCreateThread CreationFlags bit 0; r114's 0x4 never matched.
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__ExCreateThread);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    body = output.read_text().split("void __imp__ExCreateThread(")[1].split("\n}\n")[0]
+    assert "kCreateSuspended = 0x00000001u" in body
+    assert "kCreateSuspended = 0x00000004u" not in body
+
+
+def test_shared_wait_and_set_stubs_trace_under_their_own_import_names(
+    tmp_path: Path,
+) -> None:
+    # r280: the four wait imports share one body; each must trace as itself,
+    # and NtSetEvent must not print the KeSetEvent label.
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text(
+        "PPC_EXTERN_FUNC(__imp__NtWaitForSingleObjectEx);\n"
+        "PPC_EXTERN_FUNC(__imp__NtWaitForMultipleObjectsEx);\n"
+        "PPC_EXTERN_FUNC(__imp__KeWaitForSingleObject);\n"
+        "PPC_EXTERN_FUNC(__imp__KeWaitForMultipleObjects);\n"
+        "PPC_EXTERN_FUNC(__imp__NtSetEvent);\n"
+        "PPC_EXTERN_FUNC(__imp__KeSetEvent);\n"
+    )
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 6
+    text = output.read_text()
+    for name in (
+        "NtWaitForSingleObjectEx",
+        "NtWaitForMultipleObjectsEx",
+        "KeWaitForSingleObject",
+        "KeWaitForMultipleObjects",
+        "NtSetEvent",
+        "KeSetEvent",
+    ):
+        body = text.split(f"void __imp__{name}(")[1].split("\n}\n")[0]
+        assert f'"[{name}] ' in body, name
+    nt_set = text.split("void __imp__NtSetEvent(")[1].split("\n}\n")[0]
+    assert "[KeSetEvent]" not in nt_set
+
+
+def test_nt_allocate_virtual_memory_rounds_region_outward_to_pages(
+    tmp_path: Path,
+) -> None:
+    # r281: a caller-supplied base is rounded down to a page and the end up
+    # to a page; both the base and the rounded size are written back. The
+    # guest heap reads committed_end = base_out + size_out and counts pages
+    # as size >> 16 on every call that carries the 0x20000000 bit.
+    mapping = tmp_path / "mapping.cpp"
+    mapping.write_text("PPC_EXTERN_FUNC(__imp__NtAllocateVirtualMemory);\n")
+    output = tmp_path / "stubs.cpp"
+    assert MODULE.render(mapping, output) == 1
+    body = output.read_text().split("void __imp__NtAllocateVirtualMemory(")[1].split("\n}\n")[0]
+    assert "(allocation_type & 0x20000000u) != 0u ? 0x10000u : 0x1000u" in body
+    assert "address & ~static_cast<std::uint64_t>(page_mask)" in body
+    assert "+ requested + page_mask) &" in body
+    assert "PPC_STORE_U32(ctx.r4.u32, region_size)" in body
+    assert "address &= 0xffff0000u" not in body
+    assert "PPC_STORE_U32(ctx.r4.u32, requested)" not in body
