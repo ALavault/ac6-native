@@ -1,6 +1,23 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r465 — le blocage `ac6recomp_codegen` nommé par r464 est LEVÉ (décision utilisateur explicite) : garde retiré de `build.py` (diff isolé, ~6 lignes — la cible n'est qu'un passage `rex::rexglue codegen` hors-ligne, sans dépendance Ghidra en direct). Le profil `rexglue-oracle` régénère, compile (231/232 cibles) et valide (`static-validation.json` neuf) de bout en bout pour la première fois depuis le 30 août. **La campagne oracle tourne mais bute sur un blocage DÉJÀ CONNU, sans rapport avec ce cycle** : le « movie worker » reste figé en cinématique (même symptôme exact que `reports/retail-us-mission01-flight-long-candidate-20260828.md`, image Xvfb identique entre deux captures espacées de 5 min), route arrêtée à 573 s avant tout contenu de vol réel. **228 fichiers/114 nuanceurs capturés, comparaison exhaustive avec les 253 nuanceurs déjà connus : ZÉRO nouveau nuanceur** — la route n'atteint jamais la zone de tirages non couverts caractérisée par r456/r462. Profil `native` restauré et vérifié sans régression (`ctest` 11/11, `presented_frames=5 state=2`, capture inchangée).**
+0. **r466 — le « movie worker » nommé par r465 tracé jusqu'à sa source : `thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_threading.cpp:102-104` (adresses `0x82916E3C`/`2C`/`08`, un VRAI thread invité, pas un artefact hôte) — instrumentation présente depuis le tout PREMIER commit du sous-module vendu `AC6_recomp` (`ddf7c285`, avril 2026, auteurs d'origine ReXGlue), donc antérieure à toute cette campagne. Journal de r465 réanalysé (pas de nouvelle route lancée) : le thread ne bloque JAMAIS — `KeWaitForMultipleObjects` retourne `result=0` (immédiat) à chaque appel sur 159 644 lignes, boucle serrée sans attente réelle. Corrélé avec `render_hooks.cpp` : une VRAIE cutscene en moteur (pas de FMV/XMV) démarre à 23:57:35, se termine proprement ~46 s plus tard à 23:58:22, puis le monde 3D ne démarre JAMAIS pour les 6 min 45 s restantes du run, pendant que le movie worker continue sa boucle. **Cause racine non établie** (lequel des deux objets d'attente reste signalé, et pourquoi) — nécessite une session gdb en direct. Aucun état de build touché ce cycle.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r466-movie-worker-stall-characterized-real-guest-thread-busy-spin-predates-this-campaign-20260909.md`.
+   **Nommé pour r467** : session gdb en direct sur le binaire oracle
+   (profil `rexglue-oracle`), point d'arrêt sur le retour de
+   `xeKeSetEvent`/`KeWaitForMultipleObjects` pour les trois adresses
+   nommées, lecture de l'état interne des objets noyau au moment
+   précis du blocage (~23:58:22, juste après la fin de cutscene) —
+   tranchera entre stub hôte incomplet et limitation déjà connue des
+   auteurs d'origine ReXGlue. Une fois résolu, la piste « étendre le
+   registre épinglé via l'oracle » (r454-r465) pourra reprendre. Reste
+   ouvert, non bloquant : une fois le câblage `PinnedShaderRuntime`
+   jugé mûr, reconsidérer le committage groupé de l'arriéré natif
+   (r433/r434/r438/r454-r462) ; mise à jour de
+   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
+   du profil natif (confort, pas une nécessité).
+
+1. **r465 — le blocage `ac6recomp_codegen` nommé par r464 est LEVÉ (décision utilisateur explicite) : garde retiré de `build.py` (diff isolé, ~6 lignes — la cible n'est qu'un passage `rex::rexglue codegen` hors-ligne, sans dépendance Ghidra en direct). Le profil `rexglue-oracle` régénère, compile (231/232 cibles) et valide (`static-validation.json` neuf) de bout en bout pour la première fois depuis le 30 août. **La campagne oracle tourne mais bute sur un blocage DÉJÀ CONNU, sans rapport avec ce cycle** : le « movie worker » reste figé en cinématique (même symptôme exact que `reports/retail-us-mission01-flight-long-candidate-20260828.md`, image Xvfb identique entre deux captures espacées de 5 min), route arrêtée à 573 s avant tout contenu de vol réel. **228 fichiers/114 nuanceurs capturés, comparaison exhaustive avec les 253 nuanceurs déjà connus : ZÉRO nouveau nuanceur** — la route n'atteint jamais la zone de tirages non couverts caractérisée par r456/r462. Profil `native` restauré et vérifié sans régression (`ctest` 11/11, `presented_frames=5 state=2`, capture inchangée).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r465-codegen-regenerated-oracle-runs-but-hits-known-cinematic-stall-zero-new-shader-coverage-20260909.md`.
    **Nommé pour r466** : la piste « étendre le registre épinglé via
