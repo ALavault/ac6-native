@@ -1,6 +1,13 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r431 — correctif appliqué et vérifié en direct : `presented_frames` reflète enfin la réalité (`5`), `state=2` (`kRunning`). `diagnostics()` (`native_runtime.h`) synchronise désormais `presented_frames`/`state` depuis `backend_.present_count()` À LA LECTURE (pas seulement dans le code mort `submit_ring()`) — `diagnostics_` rendu `mutable`, `state()` routé à travers `diagnostics()`. Vérifié : `ctest` natif 11/11, lancement autonome propre, `presented_frames=5` identique avec et sans trace. **La chaîne r399-r431 est close, plus aucun blocage connu** (PAS un blocage qualifié).**
+0. **r432 — correctif appliqué et vérifié : r430 double-présentait dans le chemin de secours pour tests (`readback_==0`, `guest_vd_service_present_executes_offscreen`) — trouvé par une reconstruction VRAIMENT propre (reconfiguration CMake depuis zéro + 123 cibles), pas par les lancements ciblés qui avaient validé r430. Garde `readback_ != 0u` ajoutée à l'appel direct de r430. `ctest` complet 11/11, `presented_frames=5 state=2` inchangé sur le chemin réel. **Découverte séparée et plus large** : l'arriéré non committé de `native/` dépasse largement ce que r424 avait nommé (« l'arriéré Vulkan ») — `native_guest_media`, `native_guest_memory`, `native_shader_translator`, `native_xenos`, des fichiers de test, TOUS modifiés sans committer. Décision explicite : NE PAS committer cet arriéré élargi ce cycle — reste la décision de l'utilisateur (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r432-r430-regression-fixed-full-clean-rebuild-catches-double-present-vulkan-backlog-scope-larger-than-expected-20260908.md`.
+   **Nommé pour r433** : si l'utilisateur souhaite poursuivre, cataloguer
+   précisément l'arriéré `native/` élargi avant toute décision de
+   committer, fichier par fichier.
+
+1. **r431 — correctif appliqué et vérifié en direct : `presented_frames` reflète enfin la réalité (`5`), `state=2` (`kRunning`). `diagnostics()` (`native_runtime.h`) synchronise désormais `presented_frames`/`state` depuis `backend_.present_count()` À LA LECTURE (pas seulement dans le code mort `submit_ring()`) — `diagnostics_` rendu `mutable`, `state()` routé à travers `diagnostics()`. Vérifié : `ctest` natif 11/11, lancement autonome propre, `presented_frames=5` identique avec et sans trace. **La chaîne r399-r431 est close, plus aucun blocage connu** (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r431-presented-frames-diagnostic-reconnected-applied-and-live-verified-20260908.md`.
    **Nommé pour r432** : aucun blocage restant. Ligne ouverte la

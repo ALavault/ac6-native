@@ -380,8 +380,17 @@ void NativeGuestVdService::publish_write_address(
   // receives. So there is no ring offset to get right: call the present
   // path directly instead of trying to inject a synthetic packet into an
   // unrelated stream (reports/ac6-retail-native-codegen-gate2-r430-*).
+  // r432: gated on readback_ != 0u -- the same condition the branch below
+  // uses to tell the real retail path from "the small, explicit unit-test/
+  // API fixture" path (comment a few lines down). That fixture publishes a
+  // real hand-built XE_SWAP packet through the ring/drain_locked() path on
+  // purpose, to exercise decode+execute end to end; firing this direct
+  // call unconditionally there double-presented (guest_vd_service_present_
+  // executes_offscreen expects present_count()==2 after one packet, a
+  // full clean rebuild caught present_count()==3 -- this fix was missing
+  // the guard until then).
   if (base_ != nullptr && base == base_ && backend_ != nullptr &&
-      present_target_ != nullptr) {
+      present_target_ != nullptr && readback_ != 0u) {
     const PresentPacket packet{0u, present_target_->width(),
                                present_target_->height(), 0u};
     if (!backend_->present_to_offscreen(*present_target_, packet, 0.0f, 0.0f,
