@@ -1,6 +1,20 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r456 — régression d'image indéfinie (r455) CORRIGÉE et vérifiée : `publish_write_address()` détecte maintenant via `pinned_->edram_resolves()` (delta) si une résolution a réellement eu lieu ; sinon, appelle `present_target_->clear(...)` DIRECTEMENT (pas via `backend_->present_to_offscreen()`, qui doublerait le compte dans la somme additive de r455). Vérifié : `ctest` 11/11, capture réussit maintenant (`pixels=921600`=1280×720, plus d'erreur « not in a blittable layout »). `non_black=0 distinct_colors=1` — un noir uniforme, EXACTEMENT le comportement de l'ancien chemin, préservé sans régression. **Caractérisé pourquoi le vrai contenu n'apparaît toujours pas ce cycle** : 9 replis, deux motifs déjà documentés dans le code — registre épinglé de 271 variantes non exhaustif, et expansion de listes de rectangles qualifiée seulement pour index 16 bits (r265). PAS de nouveaux bugs — des limitations de couverture connues. Toujours NON committé (PAS un blocage qualifié).**
+0. **r457 — corrigé un vrai bug de garde dans `draw_pinned()` (listes de rectangles) : la vérification `draw.index_format != 1u` s'appliquait SANS CONDITION à tout tirage de liste de rectangles, y compris les tirages auto-indexés (`index_address==0`, `indexed_draw=false`) pour lesquels `index_format` vaut toujours 0 par construction (`native_xenos.cpp`, décodage `DRAW_INDX_2`). Or r435 avait établi que TOUS les tirages réels observés sont auto-indexés — donc AUCUN tirage de liste de rectangles réel ne pouvait jamais être épinglé, un rejet garanti par la structure du code, pas par la couverture du registre de nuanceurs. Corrigé en gardant la vérification par `indexed_draw &&`. Vérifié : `ctest` 11/11 (dont `ac6_native_xenos_tests`, aucune régression), et un lancement tracé contre l'ISO réelle confirme la disparition du motif de rejet « 16-bit guest indices ». **Toujours pas de contenu visible ce run** : `presented_frames=5 state=2`, capture `pixels=921600 non_black=0 distinct_colors=1` — un nouveau motif de rejet distinct est apparu pour les tirages débloqués : « MSAA render targets are not qualified this cycle », non investigué ce cycle. Toujours NON committé (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r457-real-bug-fixed-rect-list-index-format-check-wrongly-rejected-every-auto-indexed-draw-new-msaa-gap-surfaced-20260908.md`.
+   **Nommé pour r458** : investiguer le motif « MSAA render targets
+   are not qualified this cycle » — probablement un autre correctif
+   ciblé sans besoin d'oracle, même modèle que ce cycle. Reste ouvert
+   sinon : (1) le premier motif de rejet caractérisé par r456
+   (couverture du registre épinglé) nécessite probablement une
+   session oracle — décision utilisateur ; (2) une fois le câblage
+   jugé mûr, reconsidérer le committage groupé de l'arriéré
+   (r433/r434/r438/r454-r457) ; (3) mise à jour de
+   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
+   (confort, pas une nécessité).
+
+1. **r456 — régression d'image indéfinie (r455) CORRIGÉE et vérifiée : `publish_write_address()` détecte maintenant via `pinned_->edram_resolves()` (delta) si une résolution a réellement eu lieu ; sinon, appelle `present_target_->clear(...)` DIRECTEMENT (pas via `backend_->present_to_offscreen()`, qui doublerait le compte dans la somme additive de r455). Vérifié : `ctest` 11/11, capture réussit maintenant (`pixels=921600`=1280×720, plus d'erreur « not in a blittable layout »). `non_black=0 distinct_colors=1` — un noir uniforme, EXACTEMENT le comportement de l'ancien chemin, préservé sans régression. **Caractérisé pourquoi le vrai contenu n'apparaît toujours pas ce cycle** : 9 replis, deux motifs déjà documentés dans le code — registre épinglé de 271 variantes non exhaustif, et expansion de listes de rectangles qualifiée seulement pour index 16 bits (r265). PAS de nouveaux bugs — des limitations de couverture connues. Toujours NON committé (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r456-undefined-image-regression-fixed-verified-capture-now-succeeds-still-a-black-clear-shader-coverage-gaps-characterized-20260908.md`.
    **Nommé pour r457** : (1) étendre la couverture du registre
