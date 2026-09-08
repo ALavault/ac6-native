@@ -759,16 +759,16 @@ def main() -> int:
                 ("sleep", "60", ""), ("capture", "mission-briefing", ""),
                 ("key", "space", "0.6"),
                 ("sleep", "45", ""), ("capture", "mission-cinematic", ""),
-                ("sleep", "30", ""), ("capture", "post-cinematic-30s", ""),
-                # Keep the sealed route's terminal cinematic handoff: let the
-                # launch movie advance naturally, then send only Escape. An A
-                # edge here may enter flight before Escape, making Escape pause
-                # the world and leaving a stale, HUD-less frame to capture.
-                ("sleep", "10", ""), ("capture", "cinematic-view-3", ""),
-                ("sleep", "10", ""), ("capture", "cinematic-view-4", ""),
-                ("sleep", "10", ""), ("capture", "cinematic-view-5", ""),
+                # r470: step-78 "mission-cinematic" was byte-identical to
+                # every later capture in every r465-r469 run (sha256-verified)
+                # -- viewing it shows a static "Deploy with this selection?
+                # A OK / B CANCEL" confirmation dialog, not a playing
+                # cinematic. It needs one more A/space confirm, not Escape.
+                ("sleep", "2", ""),
+                ("key", "space", "0.6"),
+                ("sleep", "10", ""), ("capture", "post-deploy-confirm-10s", ""),
+                ("sleep", "30", ""), ("capture", "post-deploy-confirm-40s", ""),
                 ("sync-log", "", ""),
-                ("key", "Escape", "0.6"),
                 ("wait", r"\[ac6-visual-phase\].*cinematic=0.*world=1.*hud=1.*stable=30", "120"),
                 ("capture", "gameplay-hud", ""),
             ]
