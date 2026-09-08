@@ -157,7 +157,7 @@ def main() -> int:
         run(["cmake", "--build", str(build), "--target", "ac6_native_frontend_tests",
              "ac6_native_runtime_tests", "ac6_native_xex_tests",
              "ac6_native_xdvdfs_tests", "ac6_native_guest_memory_tests",
-             "ac6_native_guest_input_tests",
+             "ac6_native_guest_input_tests", "ac6_native_guest_threads_tests",
              *guest_targets, "-j2"])
         run(["ctest", "--test-dir", str(build), "--output-on-failure"])
         install_prefix = root / "native-install"
