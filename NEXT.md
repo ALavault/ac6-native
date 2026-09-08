@@ -1,6 +1,15 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r415 — le double-octroi ORIGINAL de r399 a disparu : rejoué SANS MODIFICATION le repro exact de r398 (`sub_8236E868`, requêtes taille-1/taille-256, `+294`/`+343`) sur le binaire corrigé par r414. r398 : les deux requêtes recevaient `0x10082ab0`, déterministe sur 3 lancements — LE symptôme qui a motivé la qualification "r399". Ce cycle : quatre adresses toutes DISTINCTES (`0x10024200`/`0x100a4520`/`0x100b1fc0`/`0x100b1fe0`), déterministe sur 2 lancements. Preuve directe, pas une inférence indirecte comme le saut `883→67239` de r414 (PAS un blocage qualifié).**
+0. **r416 — la frontière de boot avance : `sub_821D5F48` (jamais retourné à travers seize constats depuis r358, voir `reports/handoff/CURRENT.json`) RETOURNE désormais, `sub_821D7AE0`/`sub_821D7CD0` (la boucle par image, jamais atteinte) s'exécutent — MAIS seulement DEUX fois, puis le thread du point d'entrée se termine de lui-même (`generated entry terminated its own thread`) et `presented_frames` reste `0`. Reproduit à l'identique sur 2 lancements indépendants (timing quasi identique, `+1.9s`) (PAS un blocage qualifié — nouveau point d'arrêt, pas résolu).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r416-boot-frontier-advances-sub821d5f48-returns-first-time-ever-per-frame-loop-runs-twice-then-thread-exits-20260908.md`.
+   **Nommé pour r417** : lire le code PPC de `sub_821D7AE0`/
+   `sub_821D7CD0` et de leur appelant pour déterminer si l'arrêt après
+   deux itérations est une sortie normale (sous-système à deux passes,
+   pas "la" boucle de présentation) ou un nouveau blocage empêchant
+   une boucle soutenue.
+
+1. **r415 — le double-octroi ORIGINAL de r399 a disparu : rejoué SANS MODIFICATION le repro exact de r398 (`sub_8236E868`, requêtes taille-1/taille-256, `+294`/`+343`) sur le binaire corrigé par r414. r398 : les deux requêtes recevaient `0x10082ab0`, déterministe sur 3 lancements — LE symptôme qui a motivé la qualification "r399". Ce cycle : quatre adresses toutes DISTINCTES (`0x10024200`/`0x100a4520`/`0x100b1fc0`/`0x100b1fe0`), déterministe sur 2 lancements. Preuve directe, pas une inférence indirecte comme le saut `883→67239` de r414 (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r415-r399-double-issue-resolved-confirmed-against-original-r398-repro-20260908.md`.
    **Nommé pour la suite** : la chaîne causale précise entre le
