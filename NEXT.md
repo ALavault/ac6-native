@@ -1,6 +1,18 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r442 — chaîne causale complète établie, sans contradiction résiduelle : `sub_821D5F48` n'a que 2 sorties (`return;`) — un échec précoce (`r3=0`, `loc_821D6138`, 4 sites convergents) et un succès tardif juste après le bloc d'écriture (déjà prouvé non atteint par r441). Par élimination, `sub_821D5F48` échoue et retourne 0 dans ce run. **Correction du cadrage « doit réussir » de r440/r441** : `sub_821F5B18` (appelé par `sub_821D7DE0` sur cet échec) est un classifieur de chaîne (motif `strcmp`), PAS un abandon fatal — et la décompilation de r440 montre déjà qu'aucun branchement de sortie ne suit cet appel. Le boot continue TOUJOURS sans condition, qu'il y ait échec ou non. Chaîne causale : `sub_821D5F48` échoue silencieusement (log non fatal) → jamais d'écriture de `*0x82935D98` → `sub_821D6C20` appelé quand même → déréférence non gardée → `SIGSEGV`. Reste ouvert : laquelle des 4 conditions échoue (PAS un blocage qualifié).**
+0. **r443 — pinpointé EN DIRECT (points d'arrêt sur les 4 callees candidats plutôt que sur les sites de branchement) : c'est la vérification 2 de `sub_821D5F48` qui échoue — `sub_821CC508(0x829ddd80)` retourne `0xFFFFFFFF` (-1), déclenchant le branchement `js` vers l'échec immédiatement. Vérifications 3 et 4 (`sub_821D28C8`/`sub_821D5600`) JAMAIS atteintes, confirmant que l'exécution s'arrête là. `sub_821CC508` partage le même descripteur constant `0x829ddd80` avec `sub_821CC008` (déjà analysée par r441 : énumère de vrais fichiers par chemin, taille, ouverture/fermeture) — motif classique de sondage de complétion d'une opération de contenu/fichier asynchrone qui échoue dans cet environnement offline. Piège méthodologique noté : `finish`+`$eax` a donné une valeur incohérente (0x102) ; la lecture correcte a nécessité un point d'arrêt exact sur l'instruction chargeant `ctx.r3` (cohérent avec le piège déjà connu des décalages `ctx.rN`). Reste ouvert : ce que représente `0x829ddd80` et pourquoi l'opération échoue (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r443-live-verified-sub-821cc508-returns-negative-one-pinpointing-which-of-4-checks-fails-20260908.md`.
+   **Nommé pour r444** : décompiler `sub_821CC508` elle-même (déjà
+   désassemblée dans le projet Ghidra `ac6-us` par r441) pour
+   comprendre quelle condition la fait retourner -1, et tracer en
+   direct l'appel `sub_821CC008` qui la précède pour identifier le
+   fichier/chemin exact concerné et si un stub hôte natif
+   (`NtCreateFile`/`NtReadFile`) est en cause. Reste ouvert sinon :
+   décision de committage de l'arriéré `native_vulkan_backend.cpp`
+   (r433/r434/r438).
+
+1. **r442 — chaîne causale complète établie, sans contradiction résiduelle : `sub_821D5F48` n'a que 2 sorties (`return;`) — un échec précoce (`r3=0`, `loc_821D6138`, 4 sites convergents) et un succès tardif juste après le bloc d'écriture (déjà prouvé non atteint par r441). Par élimination, `sub_821D5F48` échoue et retourne 0 dans ce run. **Correction du cadrage « doit réussir » de r440/r441** : `sub_821F5B18` (appelé par `sub_821D7DE0` sur cet échec) est un classifieur de chaîne (motif `strcmp`), PAS un abandon fatal — et la décompilation de r440 montre déjà qu'aucun branchement de sortie ne suit cet appel. Le boot continue TOUJOURS sans condition, qu'il y ait échec ou non. Chaîne causale : `sub_821D5F48` échoue silencieusement (log non fatal) → jamais d'écriture de `*0x82935D98` → `sub_821D6C20` appelé quand même → déréférence non gardée → `SIGSEGV`. Reste ouvert : laquelle des 4 conditions échoue (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r442-must-succeed-framing-corrected-func-821f5b18-is-a-non-fatal-logger-boot-continues-regardless-20260908.md`.
    **Nommé pour r443** : identifier laquelle des 4 conditions
