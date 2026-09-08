@@ -89,8 +89,16 @@ import java.util.Set;
 
 public class MicroExecuteFunction extends GhidraScript {
 
-    private static final String QUALIFIED_XEX_SHA256 =
-        "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde";
+    // PAL (reconstruction/ace-combat-6, the calibration suite's target) plus
+    // NTSC-U/J (recompilation/ace-combat-6-retail's default.xex,
+    // ghidra-projects/ac6-us, sha256 per
+    // recompilation/ace-combat-6-retail/targets/ntsc-uj.json) -- added r401
+    // to discriminate the NTSC-US allocator double-issue bug (r399) via the
+    // same instrument, without touching what the 138 committed PAL specs
+    // already assert against the PAL identity.
+    private static final Set<String> QUALIFIED_XEX_SHA256 = Set.of(
+        "acc302c1599c7a2fd38bd5a7de395b418a157d7001b6f986ab7113f45711bcde",
+        "6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc");
 
     private static final long RETURN_SENTINEL = 0x00DEAD00L;
     private static final byte POISON_A = (byte) 0xCD;
@@ -1012,7 +1020,7 @@ public class MicroExecuteFunction extends GhidraScript {
     @Override
     protected void run() throws Exception {
         String sha = currentProgram.getExecutableSHA256();
-        if (!QUALIFIED_XEX_SHA256.equalsIgnoreCase(sha)) {
+        if (sha == null || QUALIFIED_XEX_SHA256.stream().noneMatch(sha::equalsIgnoreCase)) {
             throw new IllegalStateException("unexpected XEX SHA-256: " + sha);
         }
         String[] args = getScriptArgs();

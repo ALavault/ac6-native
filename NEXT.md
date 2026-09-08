@@ -28,18 +28,47 @@
    `native_hud_gpu_overlay.{h,cpp}`, cf. règle HUD nommée ci-dessous) ; le
    blocage runtime r399 (inchangé, voir item 1).
 
-1. **r399 — continuation normale (PAS un blocage qualifié) : tracer en direct depuis les sites d'appel `+294` (taille 1) et `+343` (taille 256) de `sub_8236E868` jusque dans `sub_821F9E10` pour trouver exactement où ces deux requêtes convergent sur la même adresse retournée (`0x10082ab0`), et quelle instruction/branche échoue à avancer le curseur/pointeur-de-tas responsable ; une fois isolé, appliquer le correctif via le script idempotent établi, reconstruire, et vérifier si `sub_821D5F48` revient enfin et si la boucle par image s'exécute.
-   **Nommé pour r401** : avant un dix-septième correctif ad hoc, trancher
-   codegen-vs-stub-hôte en un cycle avec le harnais `MicroExecuteFunction.java`
-   déjà existant — capturer en direct l'état registres/mémoire au moment de
-   l'appel `+294`, rejouer cet état dans microexec sur `sub_821F9E10`,
-   comparer le `r3` retourné à l'observation live. Divergence = bug de
-   codegen dans la traduction PPC->hôte de cette famille de fonctions.
-   Concordance = bug en amont (mémoire initiale ou stub hôte,
-   `MmAllocatePhysicalMemoryEx` déjà nommé suspect par r389, jamais
-   suivi). Un blocage qualifié (budget oracle Xenia) et le choix "un bug
-   à la fois" restent nommés pour l'utilisateur si ce test ne tranche
-   pas — voir le plan approuvé.**
+1. **r401 — discriminant microexec exécuté : mauvaise traduction de codegen RÉFUTÉE pour `sub_821F9E10`, la cause est en amont (état du tas), PAS un blocage qualifié.**
+   État exact capturé en direct (`ctx.r3=0x10000000`, `r4=0`, `r5=1` puis
+   `r5=256`, même `sp`) et instantané du tas invité
+   `[0x10000000,0x10200000)` au moment précis des deux appels
+   `sub_821F9E10` qui retournent tous deux `0x10082ab0` dans le run natif
+   compilé (re-confirmé, identique à r398). Rejoué dans
+   `MicroExecuteFunction.java` (interprète p-code Ghidra, indépendant du
+   C++ compilé, sur les MÊMES octets d'instruction retail) : **les deux
+   cas retournent également `0x10082ab0`**, sortie propre (`exit=return`,
+   pas de fault). Deux moteurs d'exécution indépendants s'accordent sur la
+   même sortie à partir du même état — une mauvaise traduction de codegen
+   n'aurait pas dû survivre à une réimplémentation indépendante.
+   **`sub_821F9E10` fait ce que ses instructions disent de faire ; le
+   problème est en amont, dans l'état du tas au moment de ces deux
+   appels**, pas dans la traduction de la fonction. A nécessité d'élargir
+   le gate SHA du harnais (`scripts/MicroExecuteFunction.java`, figé sur
+   le seul hash PAL de la suite de calibration) à un `Set` incluant le
+   hash NTSC-U/J — prouvé sans effet sur le chemin PAL existant par
+   comparaison directe avant/après (sortie identique octet pour octet).
+   La calibration automatisée complète n'a pas pu tourner (charge utile
+   extraite manquante, préexistante, sans rapport avec ce cycle) ; un
+   second constat préexistant (le fichier de référence
+   `rotation-822a1e80.ppc.json` ne correspond déjà plus à une exécution
+   fraîche, indépendamment de ce cycle) a aussi été trouvé — les deux
+   nommés pour r402, pas résolus ici. Voir
+   `reports/ac6-retail-native-codegen-gate2-r401-microexec-discriminator-codegen-refuted-20260908.md`.
+   **Nommé pour r402** : (1) tracer en arrière depuis l'instantané figé
+   du tas (`heap2_call1_size1.bin`) pour trouver quelle fonction a écrit
+   la freelist dans cette forme AVANT ces deux appels — continuation de
+   la chasse à l'écrivain r378-r398, maintenant avec un instantané
+   rejouable au lieu d'une observation uniquement live ; le suspect nommé
+   par r389 (`MmAllocatePhysicalMemoryEx`, chevauchement de plage avec la
+   freelist vivante) reste jamais suivi ; (2) réparer la lacune de
+   calibration (payload manquant + fichier de référence obsolète) sans
+   quoi tout futur changement à ce harnais reste invérifiable ; (3) un
+   blocage qualifié (budget oracle Xenia, trace des quatre premières
+   allocations de `sub_8236E868`) et le choix "un bug à la fois" restent
+   nommés pour l'utilisateur si la chasse à l'écrivain ne tranche pas —
+   voir le plan approuvé.
+
+2. **r399 (historique, affiné par r401 ci-dessus) — tracer en direct depuis les sites d'appel `+294` (taille 1) et `+343` (taille 256) de `sub_8236E868` jusque dans `sub_821F9E10` pour trouver exactement où ces deux requêtes convergent sur la même adresse retournée (`0x10082ab0`), et quelle instruction/branche échoue à avancer le curseur/pointeur-de-tas responsable ; une fois isolé, appliquer le correctif via le script idempotent établi, reconstruire, et vérifier si `sub_821D5F48` revient enfin et si la boucle par image s'exécute.**
    r398 a désassemblé `__imp__sub_8236E868` directement et armé un
    point d'arrêt à chacun des décalages hôte où les 4 premiers appels
    d'allocation retournent leur valeur (`+150`=784, `+225`=55944,
