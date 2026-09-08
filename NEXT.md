@@ -1,6 +1,21 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r468 — analyse statique (aucun processus lancé) : `world=1` ([ac6-visual-phase]) est détecté par UN SEUL hash de nuanceur pixel du compositeur monde (`0x17e5e4ac3e713245`, `command_processor.cpp:4204-4206`, `NotifyWorldCompositorDraw()`) — le MÊME hash déjà connu de r254 dans la liste `neutralize` (pas une découverte accidentelle). L'hypothèse la moins chère (trou de montage d'assets façon r452) est ÉCARTÉE : l'ISO est passée directement en argument, pas via `assets/`. Relecture du journal DÉJÀ CAPTURÉ par r465 (573 s, pas de nouveau run) : 39 nuanceurs pixel distincts liés durant tout le run, AUCUN n'est ce hash — cohérent avec (pas contradictoire avec) le plafond campagne/monde déjà établi par r463-r467, et affaiblit l'hypothèse d'un détecteur trop étroit (le nuanceur n'est simplement jamais soumis). **Cette frontière préexiste à toute la campagne r454-r468** (`reports/retail-us-mission01-flight-long-candidate-20260828.md` documente déjà le même plafond). Cause racine du blocage lui-même toujours NON établie. Profil `native` non touché ce cycle (aucune reconstruction).**
+0. **r469 — analyse statique (aucun processus lancé, relecture du journal déjà capturé par r465) : le tick du gestionnaire monde (`rex_sub_8226CEA0`, sonde diagnostique déjà écrite `ac6_world_submission_owner_probe.cpp`, activée par `--mission-render-summary` dans CHAQUE run r465-r468) n'est **JAMAIS appelé, zéro occurrence** sur 573 s. Le flux `NtReadFile` async vers `DATA00.PAC` s'arrête à **95,2 %** (2 158 782 464 / 2 267 086 848 octets) après ≈3 min de lecture active, sans reprendre. **Le jeu continue pourtant à rendre activement** après cet arrêt (compteur de frame déjà à 15 000+, tirages réels 128-149 par frame, présentations GPU continues) — **ce n'est pas un gel**, ce qui affaiblit encore la piste « movie worker figé » (r466/r467) et renforce une piste nouvelle : un écran de confirmation (hangar/carte/sortie) probablement affiché en boucle, jamais avancé faute d'entrée. `run_gate.py` porte déjà des drapeaux nommés pour cela (`--mission-hangar-confirm`, `--mission-map-confirm`, `--mission-sortie-long-press`…), jamais essayés en combinaison avec `--mission-render-summary` par cette chaîne. Profil `native` non touché ce cycle (aucune reconstruction).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r469-world-owner-tick-never-runs-pac-stream-stalls-at-95-percent-while-game-keeps-rendering-20260909.md`.
+   **Nommé pour r470** : relancer `run_gate.py` avec
+   `--mission-hangar-confirm --mission-map-confirm` (et/ou
+   `--mission-sortie-long-press`/`--mission-launch-hold`) en plus de
+   `--mission-render-summary --mission-d5b4-final-white`, pour voir si
+   fournir les confirmations d'écran manquantes débloque enfin la
+   transition campagne→monde. Si cela échoue, relire une capture
+   d'écran déjà produite (r465-r468) pour identifier directement
+   l'écran affiché à l'arrêt. Reste ouvert, non bloquant : le
+   committage groupé de l'arriéré `PinnedShaderRuntime`
+   (r433/r434/r438/r454-r468) reste une piste indépendante si le
+   plafond campagne/monde s'avère trop coûteux à lever.
+
+1. **r468 — analyse statique (aucun processus lancé) : `world=1` ([ac6-visual-phase]) est détecté par UN SEUL hash de nuanceur pixel du compositeur monde (`0x17e5e4ac3e713245`, `command_processor.cpp:4204-4206`, `NotifyWorldCompositorDraw()`) — le MÊME hash déjà connu de r254 dans la liste `neutralize` (pas une découverte accidentelle). L'hypothèse la moins chère (trou de montage d'assets façon r452) est ÉCARTÉE : l'ISO est passée directement en argument, pas via `assets/`. Relecture du journal DÉJÀ CAPTURÉ par r465 (573 s, pas de nouveau run) : 39 nuanceurs pixel distincts liés durant tout le run, AUCUN n'est ce hash — cohérent avec (pas contradictoire avec) le plafond campagne/monde déjà établi par r463-r467, et affaiblit l'hypothèse d'un détecteur trop étroit (le nuanceur n'est simplement jamais soumis). **Cette frontière préexiste à toute la campagne r454-r468** (`reports/retail-us-mission01-flight-long-candidate-20260828.md` documente déjà le même plafond). Cause racine du blocage lui-même toujours NON établie. Profil `native` non touché ce cycle (aucune reconstruction).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r468-world-compositor-detector-traced-to-one-shader-hash-never-bound-rules-out-asset-mount-gap-and-narrow-detector-bug-20260909.md`.
    **Nommé pour r469** : (1) identifier précisément où/pourquoi la
