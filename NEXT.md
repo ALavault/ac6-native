@@ -1,6 +1,25 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r411 — le commit du redimensionnement du tableau croissant ne s'exécute JAMAIS : `begin` (`0x82a5eef0`) n'est écrit qu'UNE SEULE FOIS dans tout le run (`seq=2`, création), jamais après — y compris après une croissance réelle et confirmée en direct (`alloc(256o)->0x100015a0`, `free(0x10000770)`, `seq=5`/`6`). Le tableau continue ensuite d'écrire indéfiniment dans son tampon déjà libéré (`end` avance de 4 octets à chaque appel, 17 déclenchements consécutifs captés, `seq` figé à `6` — aucune nouvelle allocation ne se produit) : un débordement de tas NON BORNÉ, pas un simple use-after-free ponctuel. CORRIGE/PRÉCISE r410 (la lecture complète de `sub_821FA9E0` réfute l'hypothèse d'un bug dans le `realloc()` lui-même — il est textuellement correct) (PAS un blocage qualifié).**
+0. **r412 — cause racine confirmée au niveau instruction : `sub_821F90A8` (requête de capacité, sous `sub_82385AF0`) retourne délibérément `-1` (sentinelle "libéré") une fois le tampon rendu au tas ; `sub_8237FA50` compare ce retour au besoin avec `cmplw` (NON SIGNÉ) — `-1` devient `0xFFFFFFFF`, "capacité maximale", et la revérification de capacité est désactivée pour toujours après la première libération. Capturé en direct sur 188 requêtes consécutives : `0x80`(=128, correct) tant que le bloc est marqué en cours d'utilisation, `-1` systématiquement après (PAS un blocage qualifié).**
+   `r422_capacity_query.gdb` — lecture CORRIGÉE (la valeur de retour
+   de `sub_821F90A8` est stockée dans `ctx.r3` en mémoire, PAS laissée
+   dans `%rax` au `ret` x86 ; une première tentative lisant `$rax`
+   donnait systématiquement `0`, contredisant la dérivation depuis le
+   code source — désassemblage x86 statique a montré la vraie
+   convention). C'est ce défaut, pas le saut de commit de `begin`
+   documenté par r411, qui rend le débordement PERMANENT : même si le
+   commit avait fonctionné et fait pointer le tableau vers le nouveau
+   tampon (`0x100015a0`), sa PROCHAINE libération aurait déclenché
+   exactement le même défaut de sentinelle. Voir
+   `reports/ac6-retail-native-codegen-gate2-r412-root-cause-nailed-negative-one-sentinel-read-as-unsigned-max-20260908.md`.
+   **Nommé pour la suite** : relire `loc_8237FAF0` (le saut de commit
+   non expliqué de r411) reste ouvert mais n'est plus bloquant pour
+   comprendre le débordement lui-même ; déterminer si ce défaut existe
+   dans le binaire retail réel (aucun oracle utilisé pour ce cycle) ou
+   proposer/qualifier un correctif est la prochaine décision (précédent
+   r1111/r1113 : ne pas deviner sans preuve).
+
+1. **r411 — le commit du redimensionnement du tableau croissant ne s'exécute JAMAIS : `begin` (`0x82a5eef0`) n'est écrit qu'UNE SEULE FOIS dans tout le run (`seq=2`, création), jamais après — y compris après une croissance réelle et confirmée en direct (`alloc(256o)->0x100015a0`, `free(0x10000770)`, `seq=5`/`6`). Le tableau continue ensuite d'écrire indéfiniment dans son tampon déjà libéré (`end` avance de 4 octets à chaque appel, 17 déclenchements consécutifs captés, `seq` figé à `6` — aucune nouvelle allocation ne se produit) : un débordement de tas NON BORNÉ, pas un simple use-after-free ponctuel. CORRIGE/PRÉCISE r410 (la lecture complète de `sub_821FA9E0` réfute l'hypothèse d'un bug dans le `realloc()` lui-même — il est textuellement correct) (PAS un blocage qualifié).**
    `r419_grow_alloc_ret.gdb` capture l'allocation interne en direct
    (entrée ET retour) : `seq=5`, `r5(size)=0x100`, pile
    `sub_821F9E10<-sub_821FA9E0<-sub_823857E0<-sub_8237FA50<-
