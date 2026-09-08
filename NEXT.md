@@ -1,6 +1,44 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r404 — une invocation de `sub_821F9E10` insère en direct un nœud "libre" (bucket 17, `0x10082aa0`) depuis l'intérieur d'un bloc de 525 Ko qu'une invocation antérieure de la MÊME fonction, chaîne d'appel différente, avait déjà remis à `sub_8236E868` et jamais libéré (PAS un blocage qualifié).**
+0. **r406 — corrige r404 : ordre exact établi en direct par capture fusionnée (points d'observation matériel + compteur de séquence). Le nœud du bucket 17 (`0x10082aa0`) est un reliquat ORDINAIRE créé par un split normal (`seq=874`) ; le pool de `sub_8236E868` (`seq=877`, trois appels plus tard, zéro libération entre les deux) est obtenu via `sub_821F92B8` (chemin "croissance", jamais lu) et recouvre cette adresse déjà distribuée (PAS un blocage qualifié).**
+   Une relecture du journal de libérations déjà capturé par r404
+   (`r405_free_check_r5.log`) a montré que 40 des 47 pointeurs libérés
+   tombent DANS la plage du pool (`[0x10011c60, 0x10091f80)`) — mais
+   TOUS avant sa création (`seq<=838` contre `seq=877` pour le pool,
+   aucune libération entre les deux) : réutilisation légitime côté
+   petits blocs, qui n'explique PAS le chevauchement. Une capture
+   fusionnée (les trois points d'observation matériel de r404 PLUS un
+   compteur de séquence partagé sur les entrées de
+   `sub_821F9E10`/`sub_821FA6F8`/`sub_821F92B8`, même run) établit
+   l'ordre exact : `seq=874` (appel `r5=0x22b8=8888` octets, chaîne
+   `sub_821F7A88 <- sub_821F59E0 <- sub_821D74A8 <- sub_823B86D0 <-
+   sub_823B8770`, identique à celle déjà relevée par r404) insère
+   `0x10082aa0` dans le bucket 17 comme reliquat ordinaire d'un split —
+   légitime à ce moment. `seq=876` et `seq=877` (le pool, `r5=0x80310`)
+   tombent tous deux dans `sub_821F92B8` (arbre de grands blocs épuisé
+   après le split de `874`) ; pendant `877`, `sub_82372128` (le
+   formateur du pool) écrase les champs de chaînage retour du nœud
+   `0x10082aa0` — même mémoire physique, confirmé indépendamment de
+   r404. **Le sens de r404 était inversé** : ce n'est pas une insertion
+   tardive dans un bloc déjà remis, c'est `sub_821F92B8` qui, en
+   croissant le tas, rend une plage qui recouvre une adresse déjà
+   distribuée au niveau octet — structurellement le même type de défaut
+   que celui documenté par r389 pour `MmAllocatePhysicalMemoryEx`, mais
+   sur un chemin jamais rapproché de celui-là jusqu'ici. Voir
+   `reports/ac6-retail-native-codegen-gate2-r406-r404-direction-reversed-remainder-overlaps-freshly-carved-pool-20260908.md`
+   (et r405,
+   `reports/ac6-retail-native-codegen-gate2-r405-remainder-path-read-not-yet-the-bug-20260908.md`,
+   pour la lecture de source de `loc_821FA1D4`/`loc_821FA0BC` qui a
+   nommé `sub_821F92B8`).
+   **Nommé pour r407** : lire `sub_821F92B8` en entier pour identifier
+   le stub hôte qu'elle appelle et comment elle calcule la plage
+   retournée ; si elle appelle un stub déjà audité (candidat nommé :
+   `MmAllocatePhysicalMemoryEx`, déjà mis en cause par r389), rapprocher
+   explicitement les deux fils. Vérifier en direct la plage exacte
+   retournée par `sub_821F92B8` à `seq=877` avant tout correctif
+   (précédent r1111/r1113).
+
+1. **r404 — une invocation de `sub_821F9E10` insère en direct un nœud "libre" (bucket 17, `0x10082aa0`) depuis l'intérieur d'un bloc de 525 Ko qu'une invocation antérieure de la MÊME fonction, chaîne d'appel différente, avait déjà remis à `sub_8236E868` et jamais libéré (PAS un blocage qualifié). CORRIGÉ PAR r406 CI-DESSUS : l'ordre était inversé.**
    Suite de r403 : point d'observation matériel armé sur `0x10000208`
    (en-tête bucket 17) et `0x10082aa8`/`0x10082aac` (chaînage retour du
    nœud) depuis l'entrée du constructeur `GuestAddressSpace`. Six
