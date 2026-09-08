@@ -7,6 +7,7 @@
 #include "ac6/native_ppc_abi.h"
 #include "ac6/native_services.h"
 #include "ac6/native_vulkan_backend.h"
+#include "ac6/native_vulkan_device.h"
 #include "ac6/native_xex.h"
 #include "ac6/native_xdvdfs.h"
 #include "ac6/native_xenos.h"
@@ -31,6 +32,16 @@ namespace ac6::native {
 // thread -- every guest thread entry point must catch this by value and
 // let the thread return normally afterward.
 struct GuestThreadTerminated final {};
+
+// r277: defined in the materialized import-stub translation unit. Sets the
+// guest-worker stop flag (the wait/delay/park stubs turn it into
+// GuestThreadTerminated, which each worker's entry lambda catches) and
+// joins every ExCreateThread worker before the runtime tears down, so the
+// stubs' globals and the guest address space outlive their last use.
+// The detached _xstart entry thread is not in this registry (its loops
+// observe only guest memory), which is why shutdown() also releases the
+// guest address space to process exit instead of unmapping it.
+void native_guest_threads_stop_and_join() noexcept;
 
 enum class RuntimeState : std::uint8_t {
   kCreated,
@@ -73,10 +84,28 @@ class NativeRuntime final {
                                   std::vector<std::uint8_t>& bytes) const;
   [[nodiscard]] bool shutdown() noexcept;
 
+  // r431: presented_frames/state used to be synced from backend_'s own
+  // present_count() only inside submit_ring() -- dead code (r292/r418),
+  // never called by the real runtime, so this diagnostic stayed 0 even
+  // after r430 made the real present path (NativeGuestVdService, via
+  // VdSwap) actually increment backend_'s counter. Sync here instead,
+  // read-time rather than write-time: real presents happen asynchronously
+  // on whatever thread calls VdSwap, with no direct hook back into this
+  // object, so catching up whenever a caller asks is simpler and just as
+  // correct as trying to push an update from there.
   [[nodiscard]] const RuntimeDiagnostics& diagnostics() const noexcept {
+    if (backend_.present_count() != diagnostics_.presented_frames) {
+      diagnostics_.presented_frames = backend_.present_count();
+      if (diagnostics_.state == RuntimeState::kBooted) {
+        diagnostics_.state = RuntimeState::kRunning;
+      }
+    }
     return diagnostics_;
   }
-  [[nodiscard]] RuntimeState state() const noexcept { return diagnostics_.state; }
+  // r431: routed through diagnostics() so a caller of state() alone still
+  // observes the same read-time presented_frames/state sync, instead of
+  // risking a stale kBooted if nothing has called diagnostics() yet.
+  [[nodiscard]] RuntimeState state() const noexcept { return diagnostics().state; }
   [[nodiscard]] GuestAddressSpace& guest_address_space() noexcept {
     return guest_address_space_;
   }
@@ -89,6 +118,13 @@ class NativeRuntime final {
   [[nodiscard]] const XexMetadata* xex_metadata() const noexcept {
     return xex_metadata_.has_value() ? &*xex_metadata_ : nullptr;
   }
+  // r295: true once bind_guest_vd() has successfully wired a real present
+  // target into NativeGuestVdService. False on a host with no usable
+  // Vulkan device -- not fatal to boot, but a PresentPacket the guest
+  // issues will be silently dropped while this is false (see r294).
+  [[nodiscard]] bool has_offscreen_present_target() const noexcept {
+    return offscreen_target_ != nullptr;
+  }
 
  private:
   NativeRuntime(MediaInput media, std::filesystem::path user_data);
@@ -96,7 +132,10 @@ class NativeRuntime final {
 
   MediaInput media_;
   std::filesystem::path user_data_;
-  RuntimeDiagnostics diagnostics_;
+  // r431: mutable so the const diagnostics() accessor can lazily sync
+  // presented_frames/state from backend_.present_count() on read -- see
+  // that accessor's own comment for why read-time sync, not write-time.
+  mutable RuntimeDiagnostics diagnostics_;
   MmioBus bus_;
   VdBridge bridge_;
   XenosState xenos_state_;
@@ -108,6 +147,15 @@ class NativeRuntime final {
   std::optional<XexMetadata> xex_metadata_;
   std::unique_ptr<AtomicSaveStore> saves_;
   std::unique_ptr<StrictInputReplay> replay_;
+  // r295: bind_guest_vd() constructs these so NativeGuestVdService has a
+  // real present target -- previously nothing in the real runtime ever
+  // called bind_offscreen(), so a PresentPacket could never be observed
+  // or acted on even if the guest issued one (found r294). Null when the
+  // host has no usable Vulkan device (matches this project's existing
+  // headless-skip contract in native_xenos_tests.cpp); declared in this
+  // order so the target (which borrows the device) is destroyed first.
+  std::unique_ptr<VulkanDevice> offscreen_device_;
+  std::unique_ptr<VulkanOffscreenTarget> offscreen_target_;
 };
 
 }  // namespace ac6::native
