@@ -1,6 +1,15 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r426 — confirmé au niveau octet : aucun paquet PM4 `XE_SWAP` (opcode `0x64`) n'apparaît jamais autour du curseur transmis à `VdSwap`, sur les 5 appels capturés — de vrais paquets PM4 existent juste avant (opcodes `0x36`/`0x46`/`0x3c`, en-têtes de type 3 authentiques). Une fenêtre de sonde 3× plus longue (75s vs 25s) ne change rien : l'anneau plafonne au même niveau, le jeu ne progresse PAS vers un swap avec plus de temps. Correction méthodologique en cours de route : `ctx.r3` de `__imp__VdSwap` vit à `ctx+0x00`, pas `ctx+0x08` (même piège que r412, corrigé avant publication) (PAS un blocage qualifié).**
+0. **r427 — CAUSE RACINE TROUVÉE : le jeu invité ne construit JAMAIS lui-même le paquet PM4 `XE_SWAP` — `sub_821F03B0` réserve de l'espace dans l'anneau (`sub_821E4F88`, lu en entier : n'écrit RIEN, un simple allocateur de curseur) puis transmet ses 7 paramètres de présentation (tampon frontal, palette, dimensions) EN ARGUMENTS à l'appel noyau `VdSwap`, confiant au NOYAU la construction/injection du paquet — comportement Xbox 360 réel et attendu. Notre stub hôte de `VdSwap` (`tools/materialize_native_import_stubs.py`) ne lit QUE `ctx.r3` (comptabilité de curseur via `publish_write_address`) et ignore intégralement `ctx.r4`..`ctx.r10` — il ne synthétise ni n'injecte jamais le paquet. Ce n'est PAS un défaut du jeu retail ni de la chaîne r399-r422 : une lacune d'implémentation localisée dans le stub hôte lui-même (PAS un blocage qualifié — correctif à concevoir).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r427-root-cause-found-native-vdswap-stub-never-synthesizes-the-xe-swap-packet-20260908.md`.
+   **Nommé pour r428** : décortiquer les sept arguments de `VdSwap`
+   (structures pointées sur la pile dans `sub_821F03B0`), puis
+   concevoir, appliquer et vérifier en direct un correctif du stub qui
+   synthétise réellement un paquet PM4 `XE_SWAP` et l'injecte au
+   curseur réservé avant `publish_write_address`.
+
+1. **r426 — confirmé au niveau octet : aucun paquet PM4 `XE_SWAP` (opcode `0x64`) n'apparaît jamais autour du curseur transmis à `VdSwap`, sur les 5 appels capturés — de vrais paquets PM4 existent juste avant (opcodes `0x36`/`0x46`/`0x3c`, en-têtes de type 3 authentiques). Une fenêtre de sonde 3× plus longue (75s vs 25s) ne change rien : l'anneau plafonne au même niveau, le jeu ne progresse PAS vers un swap avec plus de temps. Correction méthodologique en cours de route : `ctx.r3` de `__imp__VdSwap` vit à `ctx+0x00`, pas `ctx+0x08` (même piège que r412, corrigé avant publication) (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r426-no-xe-swap-packet-ever-appears-near-vdswap-cursor-confirmed-byte-level-20260908.md`.
    **Nommé pour r427** : lire `sub_821F03B0` ligne par ligne (et
