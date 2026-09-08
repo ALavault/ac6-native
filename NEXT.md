@@ -1,6 +1,29 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r409 — origine réelle localisée en direct : une découpe à `seq=8` (alloc de 80 octets) écrit un reliquat de `0x823f` unités là où `3` étaient dues, créant un nœud fantôme de 533 Ko `[0x100007c0,0x10082bb0)` — l'adresse même au centre de r399-r408. Première conséquence concrète confirmée : chevauchement mémoire à `seq=284`, 590 appels avant la chaîne r399. CORRIGE r408 (`seq=348` était une écriture de comptabilité intermédiaire pendant un free ordinaire, pas un free anormal) (PAS un blocage qualifié).**
+0. **r410 — l'écrivain de `0x100007f0..+0xc` n'est PAS un sous-système sans rapport : c'est le tas général lui-même, agissant comme client de sa propre API. `sub_8237FA50` (`push_back` d'un tableau croissant global, appelé depuis la boucle des constructeurs statiques C++, `sub_821F7B28`) libère son propre tampon (`free(0x10000770)`, pile d'appel exacte capturée : `sub_821FA6F8<-sub_821FA9E0<-sub_823857E0<-sub_8237FA50<-sub_8237FB58<-sub_821F7B28<-__xstart`) puis continue d'écrire à travers un pointeur de fin resté périmé — un use-after-free interne à un agrandissement de tampon, pas une corruption externe. CORRIGE la version précédente de r410 elle-même (« sans rapport avec l'allocateur », réfutée par la lecture directe du code PPC de `sub_8237FA50`/`sub_821F7B28`) (PAS un blocage qualifié).**
+   `0x10000770` = exactement le pointeur retourné par `seq=2` (r409,
+   128 octets) ; le tampon du tableau croissant global (globales de
+   contrôle invité `0x82a5eef0`/`0x82a5eeec`) EST ce bloc. `end` du
+   tableau (`0x82a5eeec`) atteint la borne de capacité exacte
+   (`0x10000770+0x80=0x100007f0`) puis la dépasse d'un mot à chaque
+   appel, tandis que `begin` (`0x82a5eef0`) reste bloqué à `0x10000770`
+   sur les quatre écritures capturées — alors qu'un `free()` de ce même
+   pointeur vient d'avoir lieu dans le MÊME appel. Ceci ferme la boucle
+   avec r409 : `loc_821FA288` ne fait que propager une valeur déjà
+   écrite par ce use-after-free. Voir
+   `reports/ac6-retail-native-codegen-gate2-r410-mechanism-traced-to-x86-neighbor-coalesce-merges-live-block-20260908.md`.
+   **Nommé pour r411** : lire directement le code PPC de
+   `sub_823857E0`/`sub_821FA9E0` pour trancher entre registre `r30`
+   périmé après l'appel, ou `sub_823857E0` qui échoue à agrandir
+   réellement le tampon avant de libérer l'ancien.
+
+1. **r409 — origine réelle localisée en direct : une découpe à `seq=8` (alloc de 80 octets) écrit un reliquat de `0x823f` unités là où `3` étaient dues, créant un nœud fantôme de 533 Ko `[0x100007c0,0x10082bb0)` — l'adresse même au centre de r399-r408. Première conséquence concrète confirmée : chevauchement mémoire à `seq=284`, 590 appels avant la chaîne r399. CORRIGE r408 (`seq=348` était une écriture de comptabilité intermédiaire pendant un free ordinaire, pas un free anormal) (PAS un blocage qualifié).**
+   **CORRIGÉ PAR r410 CI-DESSUS** : l'affirmation « l'erreur naît
+   pendant le traitement de la découpe elle-même, pas d'un en-tête déjà
+   corrompu » ci-dessous est fausse — r410 (`r414_header_trace.gdb`) a
+   montré que l'en-tête était DÉJÀ garbage à `seq=8`-pre, avant même que
+   `sub_821F9E10` n'exécute `loc_821FA288`. La cause est le
+   use-after-free documenté par r410, pas la découpe elle-même.
    En-tête du bloc trouvé (le bloc alloué `seq=2`/128 octets, libéré
    `seq=6`) confirmé CORRECT (`9` unités) juste avant `seq=8` — l'erreur
    naît pendant le traitement de la découpe elle-même, pas d'un en-tête
