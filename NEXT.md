@@ -1,6 +1,31 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r408 — capture décisive, recontextualise toute la chaîne r358-r407 : le tas octet-par-octet écrit dans une page RÉSERVÉE-MAIS-NON-COMMISE dès `seq=348` (529 appels avant `seq=877`, le pool). Sur matériel réel ceci lèverait une violation d'accès — le titre s'exécute sur console, donc la divergence recomp/retail précède TOUT ce que r358-r407 ont examiné. Origine non établie (PAS un blocage qualifié).**
+0. **r409 — origine réelle localisée en direct : une découpe à `seq=8` (alloc de 80 octets) écrit un reliquat de `0x823f` unités là où `3` étaient dues, créant un nœud fantôme de 533 Ko `[0x100007c0,0x10082bb0)` — l'adresse même au centre de r399-r408. Première conséquence concrète confirmée : chevauchement mémoire à `seq=284`, 590 appels avant la chaîne r399. CORRIGE r408 (`seq=348` était une écriture de comptabilité intermédiaire pendant un free ordinaire, pas un free anormal) (PAS un blocage qualifié).**
+   En-tête du bloc trouvé (le bloc alloué `seq=2`/128 octets, libéré
+   `seq=6`) confirmé CORRECT (`9` unités) juste avant `seq=8` — l'erreur
+   naît pendant le traitement de la découpe elle-même, pas d'un en-tête
+   déjà corrompu. Quatre écritures capturées en direct (point
+   d'observation matériel armé seulement à l'entrée de l'appel ciblé,
+   technique affinée après l'incident r408c), chaîne d'appel jamais vue
+   dans ce fil (`sub_821F7A88<-sub_821F59E0<-sub_821D74A8<-
+   sub_821DE8D8<-sub_82346B48<-sub_8233E1D8<-sub_8234F2C8`). À
+   `seq=284`, la première découpe du nœud fantôme (`r5=0x8c`, retourne
+   `0x100007d0`) chevauche physiquement le bloc encore vivant alloué à
+   `seq=3` (`[0x100007f0,0x10000d80)`, jamais libéré) — le premier
+   chevauchement mémoire confirmé du run entier. À `seq=349`, le
+   fragment `[0x10080000,0x10082bb0)` du nœud fantôme porte la MÊME
+   signature "lien retour NUL" que r403 avait documentée pour
+   `0x10082aa0` — la même anomalie de chaînage, pas un mécanisme
+   défensif. Corroboration indépendante : le compteur d'unités libres
+   du tas (`heap+0x30`) passe négatif entre `seq=200` et `seq=300`. Voir
+   `reports/ac6-retail-native-codegen-gate2-r409-phantom-node-created-at-seq8-writer-pinned-20260908.md`.
+   **Nommé pour r410** : convertir les trois adresses hôte des
+   écritures du champ de taille en labels PPC (comptage d'instructions,
+   technique r403) ; capturer en direct le registre/champ source de
+   `0x823f` ; lire la nouvelle chaîne d'appel si nécessaire (précédent
+   r1111/r1113).
+
+1. **r408 — CORRIGÉ PAR r409 CI-DESSUS : `seq=348` était une écriture de comptabilité intermédiaire pendant un free ordinaire, pas un free anormal. Recontextualise toute la chaîne r358-r407 : le tas octet-par-octet écrit dans une page RÉSERVÉE-MAIS-NON-COMMISE dès `seq=348` (529 appels avant `seq=877`, le pool). Sur matériel réel ceci lèverait une violation d'accès — le titre s'exécute sur console, donc la divergence recomp/retail précède TOUT ce que r358-r407 ont examiné. Origine non établie (PAS un blocage qualifié).**
    Deux runs combinés par corrélation de `seq` (déterministe, confirmé
    d'un run à l'autre) : (r408b, tous les appels
    `NtAllocateVirtualMemory` du run) aucune commission capturée entre
