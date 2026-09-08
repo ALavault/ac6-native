@@ -1,6 +1,16 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r444 — site d'échec exact localisé EN DIRECT à l'intérieur de `sub_821CC508` : deux sites de retour `-1` distincts existent (machine à états), points d'arrêt sur les deux confirment que le SECOND (`+6171`) est réellement emprunté. Contexte immédiat : `ctx.r3 = 0x8275a414` puis `call sub_821D4988` (SANS vérification de son propre retour) puis `-1` inconditionnel — motif « journaliser puis échouer », comme `sub_821F5B18` (r442) pour un autre échec. Tentative de lecture de la chaîne à `0x8275a414` infructueuse (chaîne vide) — non résolue. Reste ouvert : sémantique de `sub_821D4988`, et tracer `sub_821CC008` pour identifier le fichier/chemin exact impliqué (PAS un blocage qualifié).**
+0. **r445 — `sub_821D4988` décompilée (nouvel outil `scripts/DecompileD4988Logger.java`, committé) : journal d'événements générique à tampon circulaire de 64 entrées (verrou/écriture/déverrouillage/attente avec `WAIT_TIMEOUT`=0x102 comme issue normale) — PAS une chaîne de diagnostic, ce qui explique l'échec de lecture de r444 (`0x8275a414` est une valeur numérique loggée, pas un pointeur de chaîne). **Correction importante en direct** : points d'arrêt sur les instructions EXACTES de la branche « énumération de fichiers » de `sub_821CC008` (construction de chemin, ouverture) — AUCUN ne se déclenche sur ce run. `sub_821CC008` emprunte sa branche SANS accès fichier. **L'hypothèse « fichier manquant » de r443/r444 est donc écartée pour ce chemin d'exécution** — la vraie cause de l'échec de `sub_821CC508` reste à trouver ailleurs (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r445-sub-821d4988-is-a-generic-event-logger-not-a-diagnostic-string-file-hypothesis-corrected-by-live-evidence-20260908.md`.
+   **Nommé pour r446** : revenir à l'intérieur de `sub_821CC508` avec
+   cette information (branche fichiers de `sub_821CC008` écartée) —
+   tracer en direct les valeurs réellement comparées juste avant le
+   site d'échec confirmé (`+6171`) sans présupposer une cause
+   fichier. Reste ouvert sinon : décision de committage de l'arriéré
+   `native_vulkan_backend.cpp` (r433/r434/r438).
+
+1. **r444 — site d'échec exact localisé EN DIRECT à l'intérieur de `sub_821CC508` : deux sites de retour `-1` distincts existent (machine à états), points d'arrêt sur les deux confirment que le SECOND (`+6171`) est réellement emprunté. Contexte immédiat : `ctx.r3 = 0x8275a414` puis `call sub_821D4988` (SANS vérification de son propre retour) puis `-1` inconditionnel — motif « journaliser puis échouer », comme `sub_821F5B18` (r442) pour un autre échec. Tentative de lecture de la chaîne à `0x8275a414` infructueuse (chaîne vide) — non résolue. Reste ouvert : sémantique de `sub_821D4988`, et tracer `sub_821CC008` pour identifier le fichier/chemin exact impliqué (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r444-live-pinpointed-the-exact-failure-exit-inside-sub-821cc508-a-call-to-sub-821d4988-immediately-before-the-minus-one-return-20260908.md`.
    **Nommé pour r445** : (1) décompiler `sub_821D4988` pour comprendre
