@@ -1,6 +1,15 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r417 — CORRIGE r416 : la boucle par image tourne bien de façon soutenue (`sub_821D7DE0` : `goto` inconditionnel, vraiment infinie ; 292 déclenchements de `NtWaitForSingleObjectEx` capturés sur 5s côté `sub_82331E78`, cadence quasi constante ~16-17ms — un rythme réaliste, pas un blocage). « `generated entry terminated its own thread` » est le mécanisme d'arrêt PROPRE et voulu de r277 (vérifié dans `tools/materialize_native_import_stubs.py` : les stubs d'attente lancent `GuestThreadTerminated` sur `stop_requested()`), pas un nouveau point d'arrêt côté jeu (PAS un blocage qualifié).**
+0. **r418 — `presented_frames=0` est du câblage mort déjà documenté par r292 (`submit_ring()` jamais appelé par le vrai runtime, seul appelant = un test), SANS RAPPORT avec r399-r417. Le vrai chemin GPU (`NativeGuestVdService`) montre une nette amélioration sur le binaire corrigé par r414 : l'anneau ne se tait plus après une salve (11 salves contre 5 avant, `write_index` en progression continue) — mais `present=0` dans TOUTES les salves, aucun paquet de présentation jamais émis. Nouveau symptôme sans rapport apparent : le processus met ~100-150s de trop à sortir avec `AC6_NATIVE_VD_TRACE=1` activé, non corrélé de façon confirmée à ce drapeau (PAS un blocage qualifié — piste ouverte, pas caractérisée).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r418-gpu-ring-no-longer-goes-silent-still-zero-present-packets-new-shutdown-hang-with-vd-trace-20260908.md`.
+   **Nommé pour r419** : (1) isoler si le nouvel arrêt de processus
+   long est spécifique à `AC6_NATIVE_VD_TRACE=1` avant de le qualifier
+   de blocage réel ; (2) si confirmé indépendant, tracer où le paquet
+   `Present` invité serait censé être émis (`sub_821D7AE0`/
+   `sub_821D7CD0`, toujours jamais lus) et pourquoi il ne l'est jamais.
+
+1. **r417 — CORRIGE r416 : la boucle par image tourne bien de façon soutenue (`sub_821D7DE0` : `goto` inconditionnel, vraiment infinie ; 292 déclenchements de `NtWaitForSingleObjectEx` capturés sur 5s côté `sub_82331E78`, cadence quasi constante ~16-17ms — un rythme réaliste, pas un blocage). « `generated entry terminated its own thread` » est le mécanisme d'arrêt PROPRE et voulu de r277 (vérifié dans `tools/materialize_native_import_stubs.py` : les stubs d'attente lancent `GuestThreadTerminated` sur `stop_requested()`), pas un nouveau point d'arrêt côté jeu (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r417-per-frame-loop-runs-sustained-terminated-message-is-designed-shutdown-not-a-bug-20260908.md`.
    **Nommé pour r418** : lire `sub_821D7AE0`/`sub_821D7CD0` (jamais lus)
