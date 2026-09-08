@@ -1,6 +1,14 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r424 — test ciblé ajouté et vérifié pour la classe de régression IRQL de r421/r422 : `native/tests/native_guest_threads_tests.cpp` (nouveau, `ac6_native_guest_threads_tests`, `TIMEOUT 10`) — simule un thread qui élève l'IRQL (imbriqué) puis le libère via `release_residual_dpc_level()` sans jamais appeler `lower_dpc_level()` (exactement le déroulement `GuestThreadTerminated`), vérifie qu'un second thread progresse ensuite ; vérifie aussi que l'exclusion mutuelle réelle entre threads n'est pas affaiblie. `ctest` natif 11/11 (nouvelle cible incluse), `ac6recomp` toujours propre en lancement autonome (PAS un blocage qualifié).**
+0. **r425 — `VdSwap` (le vrai appel noyau de présentation) EST appelé par le jeu invité (5x/25s, jamais vérifié avant), et son chemin de validation drain parfois du contenu réellement neuf de l'anneau (`vd swap commit`, 1/5 appels) — mais MÊME ALORS, le lot décodé ne contient jamais de paquet `Present`, malgré du rendu réel (jusqu'à 50 tirages dans un autre lot). Ferme l'hypothèse r292-r296 (bug de scrutation/découverte) : la découverte fonctionne, le drainage a lieu, il manque simplement le paquet `XE_SWAP` lui-même dans le flux (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r425-vdswap-called-but-never-carries-a-present-packet-even-on-clean-commit-20260908.md`.
+   **Nommé pour r426** : lire `sub_821F03B0` (l'appelant direct de
+   `VdSwap`) en entier pour localiser où/si le jeu construit un paquet
+   PM4 `XE_SWAP` avant d'appeler ce noyau, et si sa structure
+   correspond à ce que `native_xenos.cpp:401` attend.
+
+1. **r424 — test ciblé ajouté et vérifié pour la classe de régression IRQL de r421/r422 : `native/tests/native_guest_threads_tests.cpp` (nouveau, `ac6_native_guest_threads_tests`, `TIMEOUT 10`) — simule un thread qui élève l'IRQL (imbriqué) puis le libère via `release_residual_dpc_level()` sans jamais appeler `lower_dpc_level()` (exactement le déroulement `GuestThreadTerminated`), vérifie qu'un second thread progresse ensuite ; vérifie aussi que l'exclusion mutuelle réelle entre threads n'est pas affaiblie. `ctest` natif 11/11 (nouvelle cible incluse), `ac6recomp` toujours propre en lancement autonome (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r424-regression-test-added-for-r421-r422-irql-fix-20260908.md`.
    **Nommé pour r425** : aucun blocage restant identifié. Revenir à
