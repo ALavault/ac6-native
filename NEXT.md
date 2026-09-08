@@ -1,6 +1,20 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r462 — le chemin de viewport `PA_CL_CLIP_CNTL::clip_disable` IMPLÉMENTÉ à partir d'une citation exacte du code source public de Xenia (`draw_util.cc:362-386` + `vulkan_command_processor.cc:2440-2444` + `xenos.h:1139-1141` — lecture GitHub, PAS un run d'oracle N3, même méthodologie que le cycle 399). Point clé découvert par la lecture : l'étendue fixe utilisée n'est PAS la taille de la cible de rendu mais `min(8192, VkPhysicalDeviceLimits::maxViewportDimensions)` du périphérique HÔTE — un piège de lecture naïve évité par la citation directe. **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif ciblé (0 occurrence). **Fait notable : les 9 replis de ce run portent désormais TOUS le même motif unique** — le trou de couverture du registre épinglé (271 variantes, r456) — chaque AUTRE motif de rejet rencontré depuis r457 est maintenant éliminé par un correctif mécanique vérifié. `presented_frames`/capture inchangés. Toujours NON committé (PAS un blocage qualifié).**
+0. **r463 — la campagne oracle nommée par r462 (décision utilisateur explicite : dépenser une session oracle pour étendre le registre épinglé) N'A PAS PU DÉMARRER : `build/ntsc-uj/manifest.json`/`static-validation.json` sont un chemin PARTAGÉ entre les profils `native` et `rexglue-oracle` (pas de sous-répertoire par profil) ; le manifeste `rexglue-oracle` a été écrasé par la préparation du profil `native` (30 août, 21h13-21h17), rendant `tools/run_gate.py` inutilisable. La tentative de régénération (`prepare.py --profile rexglue-oracle`) échoue séparément : le sous-module `AC6_recomp` porte un arriéré substantiel et manifestement délibéré (23 fichiers modifiés touchant le moteur ReXGlue lui-même) qui bloque `prepare.py` (« submodule must be clean »). **Aucune action destructrice tentée** (pas de `git stash`/`checkout` forcé sur le sous-module, pas de contournement manuel de `run_gate.py`) — décision explicite de ne pas prendre seul la décision du sort de cet arriéré. État restauré intégralement : rien n'a été écrit dans `build/ntsc-uj/` (vérifié par diff contre une sauvegarde), le répertoire de sortie vide créé sous `artifacts/` a été supprimé. **Blocage qualifié nommé, décision utilisateur requise.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r463-oracle-shader-coverage-campaign-blocked-by-shared-manifest-and-dirty-submodule-20260908.md`.
+   **Nommé pour r464** : décision utilisateur sur le sort de l'arriéré
+   non committé du sous-module `AC6_recomp` (committer en l'état,
+   isoler, ou autre option) — sans cette décision, la campagne oracle
+   pour étendre le registre épinglé (271 variantes, r456) reste
+   ouverte mais non actionnable. Reste ouvert, non bloquant : (1) une
+   fois le câblage natif jugé mûr, reconsidérer le committage groupé
+   de l'arriéré natif (r433/r434/r438/r454-r462, sans rapport avec
+   celui du sous-module) ; (2) mise à jour de
+   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
+   (confort, pas une nécessité).
+
+1. **r462 — le chemin de viewport `PA_CL_CLIP_CNTL::clip_disable` IMPLÉMENTÉ à partir d'une citation exacte du code source public de Xenia (`draw_util.cc:362-386` + `vulkan_command_processor.cc:2440-2444` + `xenos.h:1139-1141` — lecture GitHub, PAS un run d'oracle N3, même méthodologie que le cycle 399). Point clé découvert par la lecture : l'étendue fixe utilisée n'est PAS la taille de la cible de rendu mais `min(8192, VkPhysicalDeviceLimits::maxViewportDimensions)` du périphérique HÔTE — un piège de lecture naïve évité par la citation directe. **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif ciblé (0 occurrence). **Fait notable : les 9 replis de ce run portent désormais TOUS le même motif unique** — le trou de couverture du registre épinglé (271 variantes, r456) — chaque AUTRE motif de rejet rencontré depuis r457 est maintenant éliminé par un correctif mécanique vérifié. `presented_frames`/capture inchangés. Toujours NON committé (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r462-clip-disable-viewport-path-implemented-from-xenia-source-citation-eliminates-last-non-oracle-rejection-20260908.md`.
    **Nommé pour r463** : un seul motif de rejet restant, et il pointe
