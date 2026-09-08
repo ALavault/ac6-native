@@ -1,6 +1,20 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r461 — un scissor démesuré (idiome matériel « pas de découpage supplémentaire », `scissor_tl=0x0 scissor_br=0x20002000` = région (0,0)-(8192,8192), observé en direct) est maintenant BORNÉ à la surface EDRAM réelle (réutilisant la géométrie de tuile déjà calculée : `image_width - origin_x`/`image_height - origin_y`) au lieu d'être rejeté par la constante arbitraire `kMaxEdramRegionWidth`/`Height`. Contrairement à la question de disposition d'échantillons EDRAM sous MSAA (r459, explicitement refusée faute de preuve), ceci est le comportement standard, bien compris, d'un test de scissor GPU. **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif ciblé (0 occurrence). Le tirage précédemment rejeté progresse maintenant plus loin dans le pipeline et révèle une garde `clip_disable viewport path not qualified this cycle` **jamais atteinte auparavant** (le rejet de scissor court-circuitait systématiquement avant). `presented_frames`/capture inchangés. Toujours NON committé (PAS un blocage qualifié).**
+0. **r462 — le chemin de viewport `PA_CL_CLIP_CNTL::clip_disable` IMPLÉMENTÉ à partir d'une citation exacte du code source public de Xenia (`draw_util.cc:362-386` + `vulkan_command_processor.cc:2440-2444` + `xenos.h:1139-1141` — lecture GitHub, PAS un run d'oracle N3, même méthodologie que le cycle 399). Point clé découvert par la lecture : l'étendue fixe utilisée n'est PAS la taille de la cible de rendu mais `min(8192, VkPhysicalDeviceLimits::maxViewportDimensions)` du périphérique HÔTE — un piège de lecture naïve évité par la citation directe. **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif ciblé (0 occurrence). **Fait notable : les 9 replis de ce run portent désormais TOUS le même motif unique** — le trou de couverture du registre épinglé (271 variantes, r456) — chaque AUTRE motif de rejet rencontré depuis r457 est maintenant éliminé par un correctif mécanique vérifié. `presented_frames`/capture inchangés. Toujours NON committé (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r462-clip-disable-viewport-path-implemented-from-xenia-source-citation-eliminates-last-non-oracle-rejection-20260908.md`.
+   **Nommé pour r463** : un seul motif de rejet restant, et il pointe
+   vers une décision utilisateur — étendre la couverture du registre
+   de nuanceurs épinglé (271 variantes, r456) nécessite probablement
+   une nouvelle session oracle Xenia, un blocage qualifié (dépense de
+   budget N3) au sens de `CLAUDE.md`, pas à prendre unilatéralement.
+   Reste ouvert, non bloquant : une fois le câblage jugé mûr,
+   reconsidérer le committage groupé de l'arriéré
+   (r433/r434/r438/r454-r462) ; mise à jour de
+   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
+   (confort, pas une nécessité).
+
+1. **r461 — un scissor démesuré (idiome matériel « pas de découpage supplémentaire », `scissor_tl=0x0 scissor_br=0x20002000` = région (0,0)-(8192,8192), observé en direct) est maintenant BORNÉ à la surface EDRAM réelle (réutilisant la géométrie de tuile déjà calculée : `image_width - origin_x`/`image_height - origin_y`) au lieu d'être rejeté par la constante arbitraire `kMaxEdramRegionWidth`/`Height`. Contrairement à la question de disposition d'échantillons EDRAM sous MSAA (r459, explicitement refusée faute de preuve), ceci est le comportement standard, bien compris, d'un test de scissor GPU. **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif ciblé (0 occurrence). Le tirage précédemment rejeté progresse maintenant plus loin dans le pipeline et révèle une garde `clip_disable viewport path not qualified this cycle` **jamais atteinte auparavant** (le rejet de scissor court-circuitait systématiquement avant). `presented_frames`/capture inchangés. Toujours NON committé (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r461-oversized-scissor-clamped-to-surface-instead-of-rejected-eliminates-rejection-new-clip-disable-gate-surfaced-20260908.md`.
    **Nommé pour r462** : (1) le motif de rejet du registre épinglé
