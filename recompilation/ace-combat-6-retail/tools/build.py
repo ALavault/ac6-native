@@ -221,8 +221,12 @@ def main() -> int:
     run(configure)
     generated_sources = source / "generated/sources.cmake"
     if not generated_sources.is_file():
-        if arguments.target == "ntsc-uj":
-            parser.error("NTSC-U/J code generation is already consumed; generated sources required")
+        # r465: NTSC-U/J codegen regeneration explicitly authorized by the
+        # user (r464 named it as a qualified blocker). ac6recomp_codegen
+        # (rexglue_bootstrap.cmake) runs `rex::rexglue codegen
+        # ac6recomp_config.toml`, a self-contained, deterministic, offline
+        # recompiler pass over assets/default.xex -- not a live
+        # Ghidra-dependent step.
         run(["cmake", "--build", str(build), "--target", "ac6recomp_codegen", "-j16"])
         if not generated_sources.is_file():
             raise RuntimeError("codegen completed without generated/sources.cmake")
