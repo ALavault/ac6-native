@@ -1,6 +1,34 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r407 — `sub_821F92B8` lue en entier : DEUX chemins possibles (table de 64 segments existants / réserve-puis-commit via `NtAllocateVirtualMemory`) ; un seul segment existe dans l'instantané déjà capturé et semble épuisé (`+0x30=12`), mais lequel des deux chemins l'appel `seq=877` a pris N'EST PAS établi (PAS un blocage qualifié).**
+0. **r408 — capture décisive, recontextualise toute la chaîne r358-r407 : le tas octet-par-octet écrit dans une page RÉSERVÉE-MAIS-NON-COMMISE dès `seq=348` (529 appels avant `seq=877`, le pool). Sur matériel réel ceci lèverait une violation d'accès — le titre s'exécute sur console, donc la divergence recomp/retail précède TOUT ce que r358-r407 ont examiné. Origine non établie (PAS un blocage qualifié).**
+   Deux runs combinés par corrélation de `seq` (déterministe, confirmé
+   d'un run à l'autre) : (r408b, tous les appels
+   `NtAllocateVirtualMemory` du run) aucune commission capturée entre
+   `seq=0` (réserve+commet `[0x10000000,0x10010000)`, pile
+   `sub_821F9860<-sub_821F7D50<-sub_821F7E28<-__xstart`, l'init du tas
+   déjà identifié par r404) et `seq=877` ne couvre `0x10080000` ;
+   (r408c, points d'observation matériel sur `0x10080000` et
+   `0x10082aa0`, armés dès le début du processus, plafonné à 14
+   déclenchements) TOUS les déclenchements portent sur `0x10080000`, le
+   premier dès `seq=348` — 529 appels avant `seq=877` — via une
+   activité alloc/free/coalescence tout à fait ordinaire du tas
+   octet-par-octet (`sub_821F94F8<-sub_821FA6F8`, `sub_821F9E10`,
+   `sub_821F85F8`). Le double-octroi bucket-17 documenté par r404-r407
+   n'est donc probablement qu'un SYMPTÔME tardif d'un état de tas déjà
+   faux dès `seq≈348` ou avant, pas la cause elle-même. Anomalie notée
+   sans interprétation : le premier accès capturé est un `free()`, pas
+   un `alloc()` — aucune allocation observée n'a émis ce bloc. Voir
+   `reports/ac6-retail-native-codegen-gate2-r408-commit-tracking-lags-byte-level-heap-real-overlap-locus-still-open-20260908.md`.
+   **Nommé pour r409, dans l'ordre** : (1) lire `sub_821F9860` (init du
+   tas) pour son dimensionnement initial ; (2) instantané précoce
+   (`seq≈5`) de `heap+384`/du descripteur `0x10000630` ; (3) étendre la
+   capture de séquence avec le RETOUR de `sub_821F9E10`
+   (`r5_in`/`r3_out`) pour chercher le premier retour `0x1008xxxx`
+   avant `seq=348` ; (4) placer `MmAllocatePhysicalMemoryEx` (suspect
+   nommé par r389, jamais mis sur cette chronologie) sur le même
+   compteur (précédent r1111/r1113).
+
+1. **r407 — `sub_821F92B8` lue en entier : DEUX chemins possibles (table de 64 segments existants / réserve-puis-commit via `NtAllocateVirtualMemory`) ; un seul segment existe dans l'instantané déjà capturé et semble épuisé (`+0x30=12`), mais lequel des deux chemins l'appel `seq=877` a pris N'EST PAS établi (PAS un blocage qualifié).**
    Suite de r406 : `sub_821F92B8` (`ppc_recomp.27.cpp:12734`) commence
    par une recherche dans une table de 64 pointeurs de segments
    (`heap+96`..`+352`). Un seul slot non nul dans l'instantané déjà
