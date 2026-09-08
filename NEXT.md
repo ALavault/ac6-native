@@ -1,21 +1,22 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r467 — session gdb en direct sur le « movie worker » TENTÉE, non aboutie : trois obstacles d'environnement caractérisés séparément. (1) `ptrace_scope=1` + pas de root ferme l'attachement à un run `run_gate.py` normal. (2) Un lancement direct sous gdb (seule voie sans root) révèle un VRAI crash spécifique au débogueur (`SIGSEGV` dans `rex_sub_821E4378`, jamais vu en lancement normal — cohérent avec un mécanisme de signal interne au moteur cassé par l'interception gdb) ; `handle SIGSEGV pass` contourne le crash mais ralentit massivement l'exécution. (3) Le ralentissement dépasse le budget de temps d'une tâche d'arrière-plan du harnais, qui tue le processus avant d'atteindre le point d'arrêt. Recherche statique des trois adresses dans le code PPC généré : zéro occurrence (attendu — adresses calculées par arithmétique de registres, pas des littéraux). **Cause racine toujours NON établie.** Nettoyage complet effectué ; profil `native` intégralement restauré et vérifié (`ctest` 11/11, sonde en direct identique à la ligne de base r454-r466, aucune régression). Toujours NON committé côté source (aucune source de production modifiée ce cycle).**
+0. **r467 — session gdb en direct sur le « movie worker » TENTÉE deux fois, non aboutie sur la cause racine, mais une CORRECTION importante trouvée par un troisième lancement (sans gdb, en contournant les trois obstacles d'environnement plutôt qu'en les résolvant). Tentative 1 (point d'arrêt conditionnel sur `is_ac6_movie_worker_wait`) : 12+ min sans jamais toucher le point d'arrêt (évaluation de condition gdb trop coûteuse sur un site appelé en boucle serrée) — tuée. Tentative 2 (rapportée par le fork précédent, jamais committée) : trois obstacles distincts — `ptrace_scope=1` sans root ferme l'attachement à un `run_gate.py` normal ; un lancement direct sous gdb révèle un VRAI `SIGSEGV` spécifique au débogueur dans `rex_sub_821E4378` (jamais vu hors gdb) ; `handle SIGSEGV pass` contourne le crash mais ralentit trop pour tenir dans le budget d'une tâche d'arrière-plan. **Troisième lancement (celui qui compte) : `ac6recomp` relancé EN DIRECT, sans gdb du tout**, sur le même Xvfb — le journal montre le motif `KeSetEvent(ptr=82916E3C)` → `KeWaitForMultipleObjects(objects=[82916E2C 82916E08]) result=0` **DÈS LA PREMIÈRE SECONDE après le boot** (`00:44:50`, avant tout chargement de monde ou cinématique), identique en forme à ce que r466 avait lu comme le symptôme du blocage. **Ceci corrige r466** : cette boucle n'est PAS spécifique au blocage — elle tourne en continu depuis le tout début du processus, ce qui ressemble beaucoup plus à un sondage normal par tick (attendu, pas cassé) qu'à un thread réellement bloqué. **Cause racine du blocage de transition monde/campagne toujours NON établie** — la piste « movie worker figé » est affaiblie par cette preuve ; le vrai blocage est probablement ailleurs. Nettoyage complet effectué (tous les processus `ac6recomp`/`gdb`/`Xvfb` orphelins tués, répertoires temporaires supprimés) ; profil `native` non touché ce cycle (aucune reconstruction). Toujours NON committé côté source (aucune source de production modifiée ce cycle).**
    Voir
-   `reports/ac6-retail-native-codegen-gate2-r467-live-gdb-attempt-blocked-by-environment-static-and-runtime-obstacles-characterized-20260909.md`.
-   **Nommé pour r468** : prochaine étape resserrée, différente — soit
-   (a) une session Ghidra headless (projet `ac6-us`) pour trouver par
-   xrefs statiques où le code PPC retail écrit ces deux `XEvent`, sans
-   processus long sous débogueur, soit (b) investiguer D'ABORD, sans
-   gdb, pourquoi `rex_sub_821E4378` ne crashe jamais en lancement
-   normal (pourrait débloquer un futur lancement gdb plus rapide).
-   Reste ouvert, non bloquant : (1) le trou de couverture du registre
-   épinglé (r456) reste la piste principale une fois ce blocage
-   résolu ; (2) une fois le câblage `PinnedShaderRuntime` jugé mûr,
-   reconsidérer le committage groupé de l'arriéré natif
-   (r433/r434/r438/r454-r462) ; (3) mise à jour de
-   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
-   du profil natif (confort, pas une nécessité).
+   `reports/ac6-retail-native-codegen-gate2-r467-movie-worker-busy-spin-present-from-boot-not-stall-specific-corrects-r466-20260909.md`.
+   **Nommé pour r468** : la vraie cause du blocage de transition
+   monde/campagne reste à trouver ailleurs que dans la boucle du
+   movie worker — regarder ce qui gouverne l'activation
+   `[ac6-visual-phase] world=1` elle-même plutôt que ce site de
+   wait précis ; envisager une session Ghidra headless (projet
+   `ac6-us`) pour les xrefs statiques de cette activation plutôt
+   qu'un nouveau lancement gdb long. Reste ouvert, non bloquant :
+   (1) le trou de couverture du registre épinglé (r456) reste la
+   piste principale une fois ce blocage résolu ; (2) une fois le
+   câblage `PinnedShaderRuntime` jugé mûr, reconsidérer le
+   committage groupé de l'arriéré natif (r433/r434/r438/r454-r462) ;
+   (3) mise à jour de `tools/prepare.py`/`tools/build.py` pour le
+   chemin ISO par défaut du profil natif (confort, pas une
+   nécessité).
 
 1. **r466 — le « movie worker » nommé par r465 tracé jusqu'à sa source : `thirdparty/rexglue-sdk/src/kernel/xboxkrnl/xboxkrnl_threading.cpp:102-104` (adresses `0x82916E3C`/`2C`/`08`, un VRAI thread invité, pas un artefact hôte) — instrumentation présente depuis le tout PREMIER commit du sous-module vendu `AC6_recomp` (`ddf7c285`, avril 2026, auteurs d'origine ReXGlue), donc antérieure à toute cette campagne. Journal de r465 réanalysé (pas de nouvelle route lancée) : le thread ne bloque JAMAIS — `KeWaitForMultipleObjects` retourne `result=0` (immédiat) à chaque appel sur 159 644 lignes, boucle serrée sans attente réelle. Corrélé avec `render_hooks.cpp` : une VRAIE cutscene en moteur (pas de FMV/XMV) démarre à 23:57:35, se termine proprement ~46 s plus tard à 23:58:22, puis le monde 3D ne démarre JAMAIS pour les 6 min 45 s restantes du run, pendant que le movie worker continue sa boucle. **Cause racine non établie** (lequel des deux objets d'attente reste signalé, et pourquoi) — nécessite une session gdb en direct. Aucun état de build touché ce cycle.**
    Voir
