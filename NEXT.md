@@ -1,6 +1,15 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r413 — le commit manquant de r411 EXPLIQUÉ : le correctif INVENTÉ de r366 (`tools/apply_sub_821fa9e0_leave_fix.py`, fuite de section critique, 2026-09-07) réutilise `ctx.r3` comme registre de travail pour l'appel `RtlLeaveCriticalSection` SANS sauvegarder/restaurer la valeur de retour qu'il vient de recharger deux lignes plus haut — `sub_821FA9E0` retourne donc `0` au lieu du nouveau pointeur `0x100015a0` à chaque fois que le verrou a été pris (systématiquement, pour toute croissance réelle). CE N'EST PAS un bug retail : c'est une régression introduite par ce correctif appliqué à la recompilation elle-même (PAS un blocage qualifié).**
+0. **r414 — correctif appliqué et vérifié en direct : `sub_821FA9E0` retourne désormais le bon pointeur (nouveau script `apply_sub_821fa9e0_leave_return_fix.py`, sauvegarde/restauration de `ctx.r3` autour de l'appel `RtlLeaveCriticalSection` de r366). Rejoué SANS MODIFICATION le harnais `r424_return_chain.gdb` : les trois étages (`sub_821FA9E0`/`sub_823857E0`/`sub_8237FA50`) propagent maintenant `0x100015a0` au lieu de `0`, 3/3 croissances capturées. Signal indirect fort : le compteur alloc/free combiné passe de `883` à `67239` sur le même run — le tableau croissant statique C++ grandit désormais normalement au lieu de déborder silencieusement (PAS un blocage qualifié).**
+   Processus reconstruit (`ninja ac6recomp`) et testé stable (sortie
+   normale, aucun crash introduit). Voir
+   `reports/ac6-retail-native-codegen-gate2-r414-return-value-fix-applied-and-verified-live-20260908.md`.
+   **Nommé pour r415** : rechercher si un double-octroi équivalent à
+   `seq≈874`/`877` (r401-r409) se produit encore ailleurs dans la
+   séquence désormais bien plus longue (`67239` événements), ou si ce
+   correctif ferme réellement le blocage r399 original.
+
+1. **r413 — le commit manquant de r411 EXPLIQUÉ : le correctif INVENTÉ de r366 (`tools/apply_sub_821fa9e0_leave_fix.py`, fuite de section critique, 2026-09-07) réutilise `ctx.r3` comme registre de travail pour l'appel `RtlLeaveCriticalSection` SANS sauvegarder/restaurer la valeur de retour qu'il vient de recharger deux lignes plus haut — `sub_821FA9E0` retourne donc `0` au lieu du nouveau pointeur `0x100015a0` à chaque fois que le verrou a été pris (systématiquement, pour toute croissance réelle). CE N'EST PAS un bug retail : c'est une régression introduite par ce correctif appliqué à la recompilation elle-même (PAS un blocage qualifié).**
    `r424_return_chain.gdb` capture les trois étages en un seul run :
    `sub_821F9E10` retourne correctement `0x100015a0` ; `sub_821FA9E0`
    (le `realloc()` qui l'englobe) retourne `0x0` ; `sub_823857E0` et
