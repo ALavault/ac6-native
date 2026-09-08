@@ -1,6 +1,20 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r457 — corrigé un vrai bug de garde dans `draw_pinned()` (listes de rectangles) : la vérification `draw.index_format != 1u` s'appliquait SANS CONDITION à tout tirage de liste de rectangles, y compris les tirages auto-indexés (`index_address==0`, `indexed_draw=false`) pour lesquels `index_format` vaut toujours 0 par construction (`native_xenos.cpp`, décodage `DRAW_INDX_2`). Or r435 avait établi que TOUS les tirages réels observés sont auto-indexés — donc AUCUN tirage de liste de rectangles réel ne pouvait jamais être épinglé, un rejet garanti par la structure du code, pas par la couverture du registre de nuanceurs. Corrigé en gardant la vérification par `indexed_draw &&`. Vérifié : `ctest` 11/11 (dont `ac6_native_xenos_tests`, aucune régression), et un lancement tracé contre l'ISO réelle confirme la disparition du motif de rejet « 16-bit guest indices ». **Toujours pas de contenu visible ce run** : `presented_frames=5 state=2`, capture `pixels=921600 non_black=0 distinct_colors=1` — un nouveau motif de rejet distinct est apparu pour les tirages débloqués : « MSAA render targets are not qualified this cycle », non investigué ce cycle. Toujours NON committé (PAS un blocage qualifié).**
+0. **r458 — le rejet MSAA nommé par r457 est confirmé un VRAI trou de couverture, pas un bug de décodage : une trace de diagnostic locale (`AC6_NATIVE_VD_TRACE`, non committée) sur `derive_edram_render_target()` montre `RB_SURFACE_INFO=0x0a020280` → `msaa_bits=2` = un vrai encodage Xenos 4× MSAA (pas une valeur corrompue). **Corrige la prévision de r457** (qui supposait « probablement un autre correctif ciblé sans oracle, même modèle ») : `PinnedShaderRuntime` ne sait simplement pas encore créer/résoudre une cible EDRAM multi-échantillonnée — un vrai morceau de travail de moteur de rendu (image Vulkan multisample + résolution), pas une correction d'une ligne. Non implémenté ce cycle (dimensionnement hors périmètre d'un cycle d'investigation). `ctest` 11/11, aucune régression. Toujours NON committé (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r458-msaa-rejection-confirmed-genuine-4x-msaa-not-a-decode-bug-real-coverage-gap-named-for-r459-20260908.md`.
+   **Nommé pour r459** : (1) dimensionner et implémenter le support
+   d'une cible EDRAM 4× MSAA dans `PinnedShaderRuntime` — travail de
+   moteur réel, probablement son propre cycle dédié voire plusieurs ;
+   (2) le premier motif de rejet caractérisé par r456 (couverture du
+   registre épinglé) nécessite probablement une session oracle —
+   décision utilisateur. Reste ouvert sinon : une fois le câblage
+   jugé mûr, reconsidérer le committage groupé de l'arriéré
+   (r433/r434/r438/r454-r458) ; mise à jour de
+   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
+   (confort, pas une nécessité).
+
+1. **r457 — corrigé un vrai bug de garde dans `draw_pinned()` (listes de rectangles) : la vérification `draw.index_format != 1u` s'appliquait SANS CONDITION à tout tirage de liste de rectangles, y compris les tirages auto-indexés (`index_address==0`, `indexed_draw=false`) pour lesquels `index_format` vaut toujours 0 par construction (`native_xenos.cpp`, décodage `DRAW_INDX_2`). Or r435 avait établi que TOUS les tirages réels observés sont auto-indexés — donc AUCUN tirage de liste de rectangles réel ne pouvait jamais être épinglé, un rejet garanti par la structure du code, pas par la couverture du registre de nuanceurs. Corrigé en gardant la vérification par `indexed_draw &&`. Vérifié : `ctest` 11/11 (dont `ac6_native_xenos_tests`, aucune régression), et un lancement tracé contre l'ISO réelle confirme la disparition du motif de rejet « 16-bit guest indices ». **Toujours pas de contenu visible ce run** : `presented_frames=5 state=2`, capture `pixels=921600 non_black=0 distinct_colors=1` — un nouveau motif de rejet distinct est apparu pour les tirages débloqués : « MSAA render targets are not qualified this cycle », non investigué ce cycle. Toujours NON committé (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r457-real-bug-fixed-rect-list-index-format-check-wrongly-rejected-every-auto-indexed-draw-new-msaa-gap-surfaced-20260908.md`.
    **Nommé pour r458** : investiguer le motif « MSAA render targets
