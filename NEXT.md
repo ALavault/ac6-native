@@ -1,6 +1,16 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r432 — correctif appliqué et vérifié : r430 double-présentait dans le chemin de secours pour tests (`readback_==0`, `guest_vd_service_present_executes_offscreen`) — trouvé par une reconstruction VRAIMENT propre (reconfiguration CMake depuis zéro + 123 cibles), pas par les lancements ciblés qui avaient validé r430. Garde `readback_ != 0u` ajoutée à l'appel direct de r430. `ctest` complet 11/11, `presented_frames=5 state=2` inchangé sur le chemin réel. **Découverte séparée et plus large** : l'arriéré non committé de `native/` dépasse largement ce que r424 avait nommé (« l'arriéré Vulkan ») — `native_guest_media`, `native_guest_memory`, `native_shader_translator`, `native_xenos`, des fichiers de test, TOUS modifiés sans committer. Décision explicite : NE PAS committer cet arriéré élargi ce cycle — reste la décision de l'utilisateur (PAS un blocage qualifié).**
+0. **r433 — catalogue précis de l'arriéré `native/` élargi (découvert par r432) : 20 chemins inventoriés, deux groupes. 14 fichiers suivis avec delta contre HEAD (dont `native_vulkan_backend.cpp` +2881/-0 sur 3015 lignes et `native_xenos_tests.cpp` +3825/-16 sur 4241 — le moteur de rendu natif et ses tests vivent presque entièrement hors de HEAD, dernière trace committée `e0afccdd` du 2026-08-31, un rattrapage précédent pour r2-r76) ; 6 chemins jamais committés (`native_pinned_shaders.*`, `native_vulkan_device.*`, la fixture binaire, le générateur `tools/`, plus le fichier scratch `.new_header_part` déjà disposé par r432). Provenance par grep des rapports : arriéré continu depuis r94 jusqu'à r432, pas récent. Ce code est celui que `ctest` exerce et fait passer depuis r413 — pas du travail spéculatif. Un précédent de committage groupé existe déjà (`e0afccdd`). **Décision de committer explicitement NON prise ce cycle** — catalogue seul, reste la décision de l'utilisateur (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r433-backlog-catalogue-no-commit-decision-taken-20260908.md`.
+   **Nommé pour r434** : si l'utilisateur souhaite committer cet
+   arriéré (maintenant catalogué précisément), décider du découpage
+   (un seul commit de rattrapage façon `e0afccdd`, ou par
+   sous-système) ; sinon, revenir aux lignes ouvertes déjà nommées par
+   r431/r432 (contenu visuel réel des présents, ou fichier scratch
+   Vulkan déjà disposé).
+
+1. **r432 — correctif appliqué et vérifié : r430 double-présentait dans le chemin de secours pour tests (`readback_==0`, `guest_vd_service_present_executes_offscreen`) — trouvé par une reconstruction VRAIMENT propre (reconfiguration CMake depuis zéro + 123 cibles), pas par les lancements ciblés qui avaient validé r430. Garde `readback_ != 0u` ajoutée à l'appel direct de r430. `ctest` complet 11/11, `presented_frames=5 state=2` inchangé sur le chemin réel. **Découverte séparée et plus large** : l'arriéré non committé de `native/` dépasse largement ce que r424 avait nommé (« l'arriéré Vulkan ») — `native_guest_media`, `native_guest_memory`, `native_shader_translator`, `native_xenos`, des fichiers de test, TOUS modifiés sans committer. Décision explicite : NE PAS committer cet arriéré élargi ce cycle — reste la décision de l'utilisateur (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r432-r430-regression-fixed-full-clean-rebuild-catches-double-present-vulkan-backlog-scope-larger-than-expected-20260908.md`.
    **Nommé pour r433** : si l'utilisateur souhaite poursuivre, cataloguer
