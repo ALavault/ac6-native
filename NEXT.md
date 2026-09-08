@@ -1,6 +1,21 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r416 — la frontière de boot avance : `sub_821D5F48` (jamais retourné à travers seize constats depuis r358, voir `reports/handoff/CURRENT.json`) RETOURNE désormais, `sub_821D7AE0`/`sub_821D7CD0` (la boucle par image, jamais atteinte) s'exécutent — MAIS seulement DEUX fois, puis le thread du point d'entrée se termine de lui-même (`generated entry terminated its own thread`) et `presented_frames` reste `0`. Reproduit à l'identique sur 2 lancements indépendants (timing quasi identique, `+1.9s`) (PAS un blocage qualifié — nouveau point d'arrêt, pas résolu).**
+0. **r417 — CORRIGE r416 : la boucle par image tourne bien de façon soutenue (`sub_821D7DE0` : `goto` inconditionnel, vraiment infinie ; 292 déclenchements de `NtWaitForSingleObjectEx` capturés sur 5s côté `sub_82331E78`, cadence quasi constante ~16-17ms — un rythme réaliste, pas un blocage). « `generated entry terminated its own thread` » est le mécanisme d'arrêt PROPRE et voulu de r277 (vérifié dans `tools/materialize_native_import_stubs.py` : les stubs d'attente lancent `GuestThreadTerminated` sur `stop_requested()`), pas un nouveau point d'arrêt côté jeu (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r417-per-frame-loop-runs-sustained-terminated-message-is-designed-shutdown-not-a-bug-20260908.md`.
+   **Nommé pour r418** : lire `sub_821D7AE0`/`sub_821D7CD0` (jamais lus)
+   pour localiser où `presented_frames` devrait s'incrémenter et
+   pourquoi il reste `0` malgré une boucle qui tourne visiblement à un
+   rythme réaliste — probablement sans rapport avec la chaîne
+   allocateur r399-r415, plus probablement lié à l'absence d'une vraie
+   surface d'affichage dans ce harnais de sonde sans fenêtre. Écart non
+   résolu, à noter : r416 n'avait capté que 2 entrées de
+   `sub_821D7AE0`/`sub_821D7CD0` sur 120s, en contradiction apparente
+   avec les 292 déclenchements de `sub_82331E78` sur 5s ici — vérifier
+   si c'est un artefact du script r425 avant de conclure quoi que ce
+   soit sur la fréquence réelle de ces deux fonctions.
+
+1. **r416 — la frontière de boot avance : `sub_821D5F48` (jamais retourné à travers seize constats depuis r358, voir `reports/handoff/CURRENT.json`) RETOURNE désormais, `sub_821D7AE0`/`sub_821D7CD0` (la boucle par image, jamais atteinte) s'exécutent — MAIS seulement DEUX fois, puis le thread du point d'entrée se termine de lui-même (`generated entry terminated its own thread`) et `presented_frames` reste `0`. Reproduit à l'identique sur 2 lancements indépendants (timing quasi identique, `+1.9s`) (PAS un blocage qualifié — nouveau point d'arrêt, pas résolu).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r416-boot-frontier-advances-sub821d5f48-returns-first-time-ever-per-frame-loop-runs-twice-then-thread-exits-20260908.md`.
    **Nommé pour r417** : lire le code PPC de `sub_821D7AE0`/
