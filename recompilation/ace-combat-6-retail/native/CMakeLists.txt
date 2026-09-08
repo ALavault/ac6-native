@@ -19,6 +19,7 @@ add_library(ac6_native_xenos STATIC
   src/native_guest_vd.cpp
   src/native_guest_media.cpp
   src/native_guest_input.cpp
+  src/native_guest_threads.cpp
   src/native_xex.cpp
   src/native_xdvdfs.cpp
   src/native_runtime.cpp
@@ -135,4 +136,15 @@ if(BUILD_TESTING)
   target_link_libraries(ac6_native_guest_input_tests PRIVATE ac6_native_xenos)
   target_compile_options(ac6_native_guest_input_tests PRIVATE ${AC6_TEST_NO_NDEBUG})
   add_test(NAME ac6_native_guest_input_tests COMMAND ac6_native_guest_input_tests)
+  # r424: covers the r421/r422 regression class directly (residual raised
+  # IRQL released on simulated thread termination) instead of relying only
+  # on the end-to-end standalone-launch verification r422 ran by hand.
+  add_executable(ac6_native_guest_threads_tests tests/native_guest_threads_tests.cpp)
+  target_link_libraries(ac6_native_guest_threads_tests PRIVATE ac6_native_xenos)
+  target_compile_options(ac6_native_guest_threads_tests PRIVATE ${AC6_TEST_NO_NDEBUG})
+  add_test(NAME ac6_native_guest_threads_tests COMMAND ac6_native_guest_threads_tests)
+  # A regression here (the mutex left orphaned) hangs forever, not fails
+  # fast -- bound it so a broken build reports a clear CTest TIMEOUT
+  # instead of stalling every suite queued after it in the same run.
+  set_tests_properties(ac6_native_guest_threads_tests PROPERTIES TIMEOUT 10)
 endif()

@@ -1,6 +1,13 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r423 — CORRIGE r422 : son commit `2c07b1ec` a balayé un arriéré non committé de neuf cycles antérieurs (`r239, r240, r255, r276, r278, r280, r281, r282, r285, r286`) sur trois fichiers, en plus du correctif IRQL décrit dans son message — contenu cohérent et déjà vérifié par les suites de tests de r422 (rien n'est cassé), mais le message de commit ne le mentionnait pas. Pas de revert/amend (contenu sain, précédent `e0afccdd` pour ce type de rattrapage) — correction de traçabilité uniquement (PAS un blocage qualifié).**
+0. **r424 — test ciblé ajouté et vérifié pour la classe de régression IRQL de r421/r422 : `native/tests/native_guest_threads_tests.cpp` (nouveau, `ac6_native_guest_threads_tests`, `TIMEOUT 10`) — simule un thread qui élève l'IRQL (imbriqué) puis le libère via `release_residual_dpc_level()` sans jamais appeler `lower_dpc_level()` (exactement le déroulement `GuestThreadTerminated`), vérifie qu'un second thread progresse ensuite ; vérifie aussi que l'exclusion mutuelle réelle entre threads n'est pas affaiblie. `ctest` natif 11/11 (nouvelle cible incluse), `ac6recomp` toujours propre en lancement autonome (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r424-regression-test-added-for-r421-r422-irql-fix-20260908.md`.
+   **Nommé pour r425** : aucun blocage restant identifié. Revenir à
+   `presented_frames=0`/`present=0` (r418, jamais résolu) comme
+   prochaine question produit.
+
+1. **r423 — CORRIGE r422 : son commit `2c07b1ec` a balayé un arriéré non committé de neuf cycles antérieurs (`r239, r240, r255, r276, r278, r280, r281, r282, r285, r286`) sur trois fichiers, en plus du correctif IRQL décrit dans son message — contenu cohérent et déjà vérifié par les suites de tests de r422 (rien n'est cassé), mais le message de commit ne le mentionnait pas. Pas de revert/amend (contenu sain, précédent `e0afccdd` pour ce type de rattrapage) — correction de traçabilité uniquement (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r423-corrects-r422-commit-scope-backlog-swept-in-20260908.md`.
 
