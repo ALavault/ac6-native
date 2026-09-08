@@ -1,6 +1,38 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r403 — mécanisme exact localisé : le nœud `0x10082aa0` a été à moitié inséré dans le bucket 17, ses champs de chaînage retour jamais écrits ; `sub_821F9E10`'s triple-vérification refuse À RAISON de le retirer, donc le vrai défaut est en amont (PAS un blocage qualifié).**
+0. **r404 — une invocation de `sub_821F9E10` insère en direct un nœud "libre" (bucket 17, `0x10082aa0`) depuis l'intérieur d'un bloc de 525 Ko qu'une invocation antérieure de la MÊME fonction, chaîne d'appel différente, avait déjà remis à `sub_8236E868` et jamais libéré (PAS un blocage qualifié).**
+   Suite de r403 : point d'observation matériel armé sur `0x10000208`
+   (en-tête bucket 17) et `0x10082aa8`/`0x10082aac` (chaînage retour du
+   nœud) depuis l'entrée du constructeur `GuestAddressSpace`. Six
+   déclenchements : `sub_821F9E10` (chaîne
+   `sub_821F7A88 <- ... <- sub_823A5BA0`) insère correctement et
+   complètement le nœud `0x10082aa0` en tête du bucket 17 ; `sub_82372128`
+   (formateur générique de pool, relu en entier, aucune adresse codée en
+   dur) écrase ensuite les deux champs de chaînage retour du nœud, sans
+   toucher l'en-tête — d'où l'insertion à moitié effacée que r403 avait
+   documentée. Capture de registre confirmant `sub_8236E868` demande
+   exactement `0x80310` octets (525 072, la taille exacte de son pool —
+   corrige la lecture `+150=784` de r398, une troncature 16 bits) et que
+   le pointeur retourné (`0x10011c60`) contient le nœud `0x10082aa0`
+   inséré ensuite. Capture filtrée sur `sub_821FA6F8` (fonction `free`)
+   confirmant qu'aucun des 47 pointeurs libérés sur l'intégralité du run
+   n'est `0x10011c60` — le pool n'a jamais été libéré (une première
+   capture avait filtré par erreur sur `ctx.r4` au lieu de `ctx.r5`, le
+   registre réel du pointeur libéré selon le prologue de
+   `sub_821FA6F8` ; corrigée avant publication). Ni codegen (réfuté
+   quatre fois, r401-r404), ni taille mal demandée, ni "chevauchement
+   entre deux sous-systèmes indépendants" (hypothèse (a) de r380) — une
+   seule fonction, deux invocations, distribue deux fois la même
+   mémoire. La branche précise qui traite ce bloc comme disponible n'est
+   PAS encore identifiée. Voir
+   `reports/ac6-retail-native-codegen-gate2-r404-writer-found-sub82372128-pool-collides-with-live-node-20260908.md`.
+   **Nommé pour r405** : lire en entier `loc_821FA1D4` (suite, à partir
+   de `bne cr6,loc_821FA2F4`) et `loc_821FA0BC` (jamais lu, chemin
+   grand-bloc, `r29>=128`, pertinent pour la requête `0x80310`) dans
+   `sub_821F9E10`, pour localiser la branche exacte. Aucun correctif
+   tant qu'elle n'est pas confirmée en direct (précédent r1111/r1113).
+
+1. **r403 — mécanisme exact localisé : le nœud `0x10082aa0` a été à moitié inséré dans le bucket 17, ses champs de chaînage retour jamais écrits ; `sub_821F9E10`'s triple-vérification refuse À RAISON de le retirer, donc le vrai défaut est en amont (PAS un blocage qualifié).**
    Lecture complète de `sub_821F9E10` depuis `loc_821F9EC4` jusqu'au
    retour commun `loc_821FA528`. Une première lecture (déchaînement à
    triple vérification lui-même fautif, même famille que r356/r382) a
