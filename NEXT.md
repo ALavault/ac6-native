@@ -1,6 +1,20 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r441 — `sub_821D5F48` décompilée (nouvel outil `scripts/DecompileD5F48SettingsHelpers.java`, committé) : bootstrap Xenos/renderer très clair (résolution 1280×720, tailles de tampon en Mio codées en dur — confirme et dépasse l'hypothèse de r440). Un ÉCRIVAIN RÉEL de `*0x82935D98` trouvé dans le source généré (`ppc_recomp.23.cpp:20257`, `addi r11,r11,23960` + `stw r3,0(r11)`) — **auto-correction** : cette occurrence était déjà dans les résultats `grep "23960"` de r436/r439, mal classée comme un `lwz` de plus. **Vérifié EN DIRECT** (point d'arrêt sur l'instruction hôte exacte `0x555555724df8`) : ce point d'arrêt **ne se déclenche JAMAIS** — le processus va directement de `sub_821D5F48` au crash déjà connu dans `sub_821D6C20`. **Contradiction avec r437 pleinement réconciliée** : le code écrivain est réel mais conditionnel, `sub_821D5F48` retourne dans ce run via un chemin de retour ANTÉRIEUR (parmi plusieurs imbriqués) qui ne l'atteint jamais. La vraie divergence avec le matériel réel est CETTE condition de retour antérieur, pas le bloc d'écriture lui-même (PAS un blocage qualifié).**
+0. **r442 — chaîne causale complète établie, sans contradiction résiduelle : `sub_821D5F48` n'a que 2 sorties (`return;`) — un échec précoce (`r3=0`, `loc_821D6138`, 4 sites convergents) et un succès tardif juste après le bloc d'écriture (déjà prouvé non atteint par r441). Par élimination, `sub_821D5F48` échoue et retourne 0 dans ce run. **Correction du cadrage « doit réussir » de r440/r441** : `sub_821F5B18` (appelé par `sub_821D7DE0` sur cet échec) est un classifieur de chaîne (motif `strcmp`), PAS un abandon fatal — et la décompilation de r440 montre déjà qu'aucun branchement de sortie ne suit cet appel. Le boot continue TOUJOURS sans condition, qu'il y ait échec ou non. Chaîne causale : `sub_821D5F48` échoue silencieusement (log non fatal) → jamais d'écriture de `*0x82935D98` → `sub_821D6C20` appelé quand même → déréférence non gardée → `SIGSEGV`. Reste ouvert : laquelle des 4 conditions échoue (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r442-must-succeed-framing-corrected-func-821f5b18-is-a-non-fatal-logger-boot-continues-regardless-20260908.md`.
+   **Nommé pour r443** : identifier laquelle des 4 conditions
+   (lignes 18900/19153/19629/20046 du source généré, celle de 20046
+   la plus proche donc la plus économique à vérifier en premier)
+   échoue réellement dans cet environnement offline — nécessite une
+   corrélation adresse-hôte ↔ adresse-invité plus rigoureuse (le
+   réordonnancement du code compilé a invalidé l'approche textuelle
+   simple ce cycle), probablement via point d'arrêt sur les appels
+   précédant chaque `goto`. Reste ouvert sinon : décision de
+   committage de l'arriéré `native_vulkan_backend.cpp`
+   (r433/r434/r438).
+
+1. **r441 — `sub_821D5F48` décompilée (nouvel outil `scripts/DecompileD5F48SettingsHelpers.java`, committé) : bootstrap Xenos/renderer très clair (résolution 1280×720, tailles de tampon en Mio codées en dur — confirme et dépasse l'hypothèse de r440). Un ÉCRIVAIN RÉEL de `*0x82935D98` trouvé dans le source généré (`ppc_recomp.23.cpp:20257`, `addi r11,r11,23960` + `stw r3,0(r11)`) — **auto-correction** : cette occurrence était déjà dans les résultats `grep "23960"` de r436/r439, mal classée comme un `lwz` de plus. **Vérifié EN DIRECT** (point d'arrêt sur l'instruction hôte exacte `0x555555724df8`) : ce point d'arrêt **ne se déclenche JAMAIS** — le processus va directement de `sub_821D5F48` au crash déjà connu dans `sub_821D6C20`. **Contradiction avec r437 pleinement réconciliée** : le code écrivain est réel mais conditionnel, `sub_821D5F48` retourne dans ce run via un chemin de retour ANTÉRIEUR (parmi plusieurs imbriqués) qui ne l'atteint jamais. La vraie divergence avec le matériel réel est CETTE condition de retour antérieur, pas le bloc d'écriture lui-même (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r441-sub-821d5f48-decompiled-real-renderer-bootstrap-live-verified-the-writer-code-exists-but-executes-a-different-earlier-return-path-20260908.md`.
    **Nommé pour r442** : tracer EN DIRECT le chemin de retour
