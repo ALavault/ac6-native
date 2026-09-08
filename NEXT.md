@@ -1,6 +1,18 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r447 — `0x13D` (r446) tracé jusqu'à du VRAI CODE INVITÉ, PAS un stub hôte manquant — recadrage important. `sub_821F50A0` est un simple thunk vers `sub_821F75F0`. `sub_821F4E70` initialise un bloc de statut NT (`STATUS_PENDING`=0x103) puis fait un dispatch indirect via un objet noyau réel (`*0x823F07CC` → objet → `+16` → cible). **Résolu EN DIRECT** (pas statiquement) : `*0x823F07CC=0x823F07A0` (adresse `.data` valide), `*(0x823F07A0+16)=0x823D035C` — **dans `.text`, du vrai code PPC recompilé, aucun stub hôte nulle part dans cette chaîne d'appels.** L'hypothèse change : probablement une donnée/condition réelle divergente dans cet environnement offline, ou un bug de codegen localisé — pas un stub manquant. `0x823D035C` tombe dans `sub_823CFE08` (~4 Ko), non décompilée ce cycle (PAS un blocage qualifié).**
+0. **r448 — CAUSE RACINE TROUVÉE, rejoint une investigation antérieure déjà documentée (r240/r241/r275, bien avant cette session). `0x823D035C` (r447) n'est PAS du code PPC — Ghidra l'a nommé spontanément `NtReadFile`, un slot de table d'import du noyau. Ce stub natif existe déjà, extensivement instrumenté par des cycles antérieurs. Lancement avec `AC6_NATIVE_IMPORT_TRACE=1` (variable déjà supportée, jamais activée cette session) : `handle=0x82918a78` (un pointeur `FILE_OBJECT`, PAS un `HANDLE`) et `offset=0xFEFEFEFE` (motif de remplissage mémoire non initialisée) — correspondance EXACTE avec les commentaires r240/r241 déjà présents dans le code. `queue@0x829ddd80` confirme sans ambiguïté le même descripteur suivi par r443-r446. **Chaîne causale complète établie de bout en bout** : arguments incorrects → `NtReadFile` refuse correctement de fabriquer un succès (`STATUS_INVALID_HANDLE`) → 5 tentatives épuisées (r446) → `sub_821D5F48` échoue → objet de rendu jamais construit (r436-r441) → `sub_821D7DE0` continue quand même (r442) → `sub_821D6C20` déréférence le pointeur nul → `SIGSEGV`. Reste ouvert : POURQUOI le handle/décalage sont incorrects — bug de codegen ou étape d'initialisation manquante (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r448-root-cause-found-and-connects-to-earlier-campaign-r240-r241-r275-nt-readfile-garbage-handle-and-offset-20260908.md`.
+   **Nommé pour r449** : identifier pourquoi le handle passé à
+   `NtReadFile` est un pointeur `FILE_OBJECT` plutôt qu'un `HANDLE`
+   réel, et pourquoi le décalage est non initialisé — lecture
+   statique du désassemblage de `sub_821CC508`/`sub_821D5F48` autour
+   du site d'appel réel (la technique `lr`/backchain s'est révélée
+   inutilisable, `PPC_CONFIG_SKIP_LR`). Reste ouvert sinon : décision
+   de committage de l'arriéré `native_vulkan_backend.cpp`
+   (r433/r434/r438).
+
+1. **r447 — `0x13D` (r446) tracé jusqu'à du VRAI CODE INVITÉ, PAS un stub hôte manquant — recadrage important. `sub_821F50A0` est un simple thunk vers `sub_821F75F0`. `sub_821F4E70` initialise un bloc de statut NT (`STATUS_PENDING`=0x103) puis fait un dispatch indirect via un objet noyau réel (`*0x823F07CC` → objet → `+16` → cible). **Résolu EN DIRECT** (pas statiquement) : `*0x823F07CC=0x823F07A0` (adresse `.data` valide), `*(0x823F07A0+16)=0x823D035C` — **dans `.text`, du vrai code PPC recompilé, aucun stub hôte nulle part dans cette chaîne d'appels.** L'hypothèse change : probablement une donnée/condition réelle divergente dans cet environnement offline, ou un bug de codegen localisé — pas un stub manquant. `0x823D035C` tombe dans `sub_823CFE08` (~4 Ko), non décompilée ce cycle (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r447-error-0x13d-traced-to-real-guest-dispatch-code-not-a-missing-native-host-stub-20260908.md`.
    **Nommé pour r448** : décompiler `sub_823CFE08`
