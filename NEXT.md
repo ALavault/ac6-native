@@ -1,6 +1,16 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r446 — `sub_821CC508` a sa PROPRE lecture de fichier asynchrone réelle (`sub_821F4E70`/`func_0x821f50a0` équivalent `ReadFile`/`GetLastError`), indépendante de la branche fichiers de `sub_821CC008` déjà écartée par r445. Le site d'échec confirmé (`+6171`, r444) est en réalité la fin d'une boucle de **5 nouvelles tentatives** — décrémente un compteur, réessaie tant que non épuisé, journalise puis abandonne (`-1`) sinon. **Capturé EN DIRECT** : `sub_821F50A0` (équivalent `GetLastError`) retourne un code d'erreur **constant `0x13D` (317)** sur plusieurs appels consécutifs associés à ce site — pas un code Win32 standard reconnu, pas encore documenté ailleurs dans ce dépôt. Reste ouvert : signification exacte de `0x13D`, stub hôte natif responsable (`sub_821F4E70` n'appelle qu'un helper générique en surface), et fichier/handle concerné (PAS un blocage qualifié).**
+0. **r447 — `0x13D` (r446) tracé jusqu'à du VRAI CODE INVITÉ, PAS un stub hôte manquant — recadrage important. `sub_821F50A0` est un simple thunk vers `sub_821F75F0`. `sub_821F4E70` initialise un bloc de statut NT (`STATUS_PENDING`=0x103) puis fait un dispatch indirect via un objet noyau réel (`*0x823F07CC` → objet → `+16` → cible). **Résolu EN DIRECT** (pas statiquement) : `*0x823F07CC=0x823F07A0` (adresse `.data` valide), `*(0x823F07A0+16)=0x823D035C` — **dans `.text`, du vrai code PPC recompilé, aucun stub hôte nulle part dans cette chaîne d'appels.** L'hypothèse change : probablement une donnée/condition réelle divergente dans cet environnement offline, ou un bug de codegen localisé — pas un stub manquant. `0x823D035C` tombe dans `sub_823CFE08` (~4 Ko), non décompilée ce cycle (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r447-error-0x13d-traced-to-real-guest-dispatch-code-not-a-missing-native-host-stub-20260908.md`.
+   **Nommé pour r448** : décompiler `sub_823CFE08`
+   (`0x823CFE08`-`0x823D0E00`) pour comprendre précisément ce qui
+   produit `0x13D`, et déterminer si c'est une condition de données
+   légitime ou un bug de codegen localisé. Reste ouvert sinon :
+   décision de committage de l'arriéré `native_vulkan_backend.cpp`
+   (r433/r434/r438).
+
+1. **r446 — `sub_821CC508` a sa PROPRE lecture de fichier asynchrone réelle (`sub_821F4E70`/`func_0x821f50a0` équivalent `ReadFile`/`GetLastError`), indépendante de la branche fichiers de `sub_821CC008` déjà écartée par r445. Le site d'échec confirmé (`+6171`, r444) est en réalité la fin d'une boucle de **5 nouvelles tentatives** — décrémente un compteur, réessaie tant que non épuisé, journalise puis abandonne (`-1`) sinon. **Capturé EN DIRECT** : `sub_821F50A0` (équivalent `GetLastError`) retourne un code d'erreur **constant `0x13D` (317)** sur plusieurs appels consécutifs associés à ce site — pas un code Win32 standard reconnu, pas encore documenté ailleurs dans ce dépôt. Reste ouvert : signification exacte de `0x13D`, stub hôte natif responsable (`sub_821F4E70` n'appelle qu'un helper générique en surface), et fichier/handle concerné (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r446-sub-821cc508-does-its-own-real-async-read-live-captured-consistent-error-code-0x13d-across-retries-20260908.md`.
    **Nommé pour r447** : tracer plus profondément `sub_821F4E70`
