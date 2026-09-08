@@ -1,6 +1,17 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r414 — correctif appliqué et vérifié en direct : `sub_821FA9E0` retourne désormais le bon pointeur (nouveau script `apply_sub_821fa9e0_leave_return_fix.py`, sauvegarde/restauration de `ctx.r3` autour de l'appel `RtlLeaveCriticalSection` de r366). Rejoué SANS MODIFICATION le harnais `r424_return_chain.gdb` : les trois étages (`sub_821FA9E0`/`sub_823857E0`/`sub_8237FA50`) propagent maintenant `0x100015a0` au lieu de `0`, 3/3 croissances capturées. Signal indirect fort : le compteur alloc/free combiné passe de `883` à `67239` sur le même run — le tableau croissant statique C++ grandit désormais normalement au lieu de déborder silencieusement (PAS un blocage qualifié).**
+0. **r415 — le double-octroi ORIGINAL de r399 a disparu : rejoué SANS MODIFICATION le repro exact de r398 (`sub_8236E868`, requêtes taille-1/taille-256, `+294`/`+343`) sur le binaire corrigé par r414. r398 : les deux requêtes recevaient `0x10082ab0`, déterministe sur 3 lancements — LE symptôme qui a motivé la qualification "r399". Ce cycle : quatre adresses toutes DISTINCTES (`0x10024200`/`0x100a4520`/`0x100b1fc0`/`0x100b1fe0`), déterministe sur 2 lancements. Preuve directe, pas une inférence indirecte comme le saut `883→67239` de r414 (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r415-r399-double-issue-resolved-confirmed-against-original-r398-repro-20260908.md`.
+   **Nommé pour la suite** : la chaîne causale précise entre le
+   débordement précoce (`__xstart`, r410-r412) et CE symptôme tardif
+   précis (`sub_8236E868`) n'a jamais été tracée lien par lien — jugée
+   non nécessaire pour clore ce fil (disparition déterministe du
+   symptôme jugée suffisante), mais nommée si un doute resurgit. Le fil
+   r399-r415 est considéré clos en l'absence d'un blocage qualifié
+   exigeant plus.
+
+1. **r414 — correctif appliqué et vérifié en direct : `sub_821FA9E0` retourne désormais le bon pointeur (nouveau script `apply_sub_821fa9e0_leave_return_fix.py`, sauvegarde/restauration de `ctx.r3` autour de l'appel `RtlLeaveCriticalSection` de r366). Rejoué SANS MODIFICATION le harnais `r424_return_chain.gdb` : les trois étages (`sub_821FA9E0`/`sub_823857E0`/`sub_8237FA50`) propagent maintenant `0x100015a0` au lieu de `0`, 3/3 croissances capturées. Signal indirect fort : le compteur alloc/free combiné passe de `883` à `67239` sur le même run — le tableau croissant statique C++ grandit désormais normalement au lieu de déborder silencieusement (PAS un blocage qualifié).**
    Processus reconstruit (`ninja ac6recomp`) et testé stable (sortie
    normale, aucun crash introduit). Voir
    `reports/ac6-retail-native-codegen-gate2-r414-return-value-fix-applied-and-verified-live-20260908.md`.
