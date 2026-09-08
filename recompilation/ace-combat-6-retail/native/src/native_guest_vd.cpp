@@ -321,6 +321,33 @@ void NativeGuestVdService::drain_locked() noexcept {
           "present_target_configured=%d",
           draw, resolve, present_count, wait, indirect, micro_init,
           event_write, immediate_shader, present_target_ != nullptr ? 1 : 0);
+    // r435 (diagnostic only): r434 found PinnedShaderRuntime's shared-memory
+    // SSBO is a 64 MiB window addressed directly by guest address. Before
+    // deciding whether that window can hold real draws, name the real guest
+    // addresses a real draw actually carries: DrawPacket.index_address (the
+    // only guest address the packet itself carries -- vertex_address is
+    // never populated from DRAW_INDX/DRAW_INDX_2, see native_xenos.cpp) and
+    // the raw fetch-constant register block a real vertex/pixel shader
+    // would read its vertex/texture fetch addresses from.
+    if (draw != 0u) {
+      for (const XenosCommand& command : commands) {
+        const auto* drawpkt = std::get_if<DrawPacket>(&command);
+        if (drawpkt == nullptr) continue;
+        trace("vd draw index_address=0x%08x vertex_address=0x%08x "
+              "vertex_count=%u index_count=%u",
+              drawpkt->index_address, drawpkt->vertex_address,
+              drawpkt->vertex_count, drawpkt->index_count);
+      }
+      constexpr std::uint32_t kRegShaderConstantFetch000 = 0x4800u;
+      constexpr std::uint32_t kFetchConstantDwords = 192u;
+      for (std::uint32_t dword = 0u; dword < kFetchConstantDwords; ++dword) {
+        const std::uint32_t value =
+            state_->register_value(kRegShaderConstantFetch000 + dword);
+        if (value != 0u) {
+          trace("vd fetch_const[%u]=0x%08x", dword, value);
+        }
+      }
+    }
   }
   if (present_target_ != nullptr) {
     for (const XenosCommand& command : commands) {
