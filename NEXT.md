@@ -1,6 +1,23 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r463 — la campagne oracle nommée par r462 (décision utilisateur explicite : dépenser une session oracle pour étendre le registre épinglé) N'A PAS PU DÉMARRER : `build/ntsc-uj/manifest.json`/`static-validation.json` sont un chemin PARTAGÉ entre les profils `native` et `rexglue-oracle` (pas de sous-répertoire par profil) ; le manifeste `rexglue-oracle` a été écrasé par la préparation du profil `native` (30 août, 21h13-21h17), rendant `tools/run_gate.py` inutilisable. La tentative de régénération (`prepare.py --profile rexglue-oracle`) échoue séparément : le sous-module `AC6_recomp` porte un arriéré substantiel et manifestement délibéré (23 fichiers modifiés touchant le moteur ReXGlue lui-même) qui bloque `prepare.py` (« submodule must be clean »). **Aucune action destructrice tentée** (pas de `git stash`/`checkout` forcé sur le sous-module, pas de contournement manuel de `run_gate.py`) — décision explicite de ne pas prendre seul la décision du sort de cet arriéré. État restauré intégralement : rien n'a été écrit dans `build/ntsc-uj/` (vérifié par diff contre une sauvegarde), le répertoire de sortie vide créé sous `artifacts/` a été supprimé. **Blocage qualifié nommé, décision utilisateur requise.**
+0. **r464 — l'arriéré du sous-module `AC6_recomp` nommé par r463 a été COMMITTÉ tel quel (décision utilisateur explicite) : commit `6cf743269f5d4ea635b32e5b24369124fd25067b`, pointeur du dépôt parent avancé (`abf6513a`). `UPSTREAM_COMMIT` corrigé dans `tools/prepare.py`/`tools/build.py`/`README.md` (portait encore l'ancien pin). `prepare.py --profile rexglue-oracle` réussit alors. **Mais un DEUXIÈME blocage, plus profond, est apparu** : `build.py` refuse explicitement de régénérer le code généré NTSC-U/J du profil `rexglue-oracle` (`source/generated/sources.cmake`, sortie `ac6recomp_codegen`, traité comme une ressource « déjà consommée ») et aucune copie de cet artefact n'existe dans ce bac à sable — recherche exhaustive infructueuse. **Aucun contournement tenté** (le garde-fou n'a pas été levé). État du profil `native` intégralement restauré et vérifié sans régression (`ctest` 11/11, `presented_frames=5 state=2`, capture inchangée — seul `manifest.json`, chemin partagé entre profils, avait été temporairement écrasé par les tentatives `rexglue-oracle`). **Blocage qualifié nommé, décision utilisateur requise.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r464-submodule-backlog-committed-oracle-still-blocked-by-consumed-ntsc-uj-codegen-20260908.md`.
+   **Nommé pour r465** : décision utilisateur sur comment procéder
+   face à l'absence de `source/generated/sources.cmake` pour
+   `rexglue-oracle`/`ntsc-uj` — (a) autoriser explicitement une
+   régénération `ac6recomp_codegen` pour cette cible ; (b) rechercher
+   un archivage externe de cet artefact ; (c) tenter d'utiliser le
+   binaire oracle déjà compilé du 30 août tel quel, en reconstruisant
+   `static-validation.json` autrement ; (d) abandonner la piste oracle
+   pour cette campagne. Reste ouvert, non bloquant : une fois le
+   câblage `PinnedShaderRuntime` jugé mûr, reconsidérer le committage
+   groupé de l'arriéré natif (r433/r434/r438/r454-r462, distinct de
+   celui du sous-module déjà committé) ; mise à jour de
+   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
+   du profil natif (confort, pas une nécessité).
+
+1. **r463 — la campagne oracle nommée par r462 (décision utilisateur explicite : dépenser une session oracle pour étendre le registre épinglé) N'A PAS PU DÉMARRER : `build/ntsc-uj/manifest.json`/`static-validation.json` sont un chemin PARTAGÉ entre les profils `native` et `rexglue-oracle` (pas de sous-répertoire par profil) ; le manifeste `rexglue-oracle` a été écrasé par la préparation du profil `native` (30 août, 21h13-21h17), rendant `tools/run_gate.py` inutilisable. La tentative de régénération (`prepare.py --profile rexglue-oracle`) échoue séparément : le sous-module `AC6_recomp` porte un arriéré substantiel et manifestement délibéré (23 fichiers modifiés touchant le moteur ReXGlue lui-même) qui bloque `prepare.py` (« submodule must be clean »). **Aucune action destructrice tentée** (pas de `git stash`/`checkout` forcé sur le sous-module, pas de contournement manuel de `run_gate.py`) — décision explicite de ne pas prendre seul la décision du sort de cet arriéré. État restauré intégralement : rien n'a été écrit dans `build/ntsc-uj/` (vérifié par diff contre une sauvegarde), le répertoire de sortie vide créé sous `artifacts/` a été supprimé. **Blocage qualifié nommé, décision utilisateur requise.**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r463-oracle-shader-coverage-campaign-blocked-by-shared-manifest-and-dirty-submodule-20260908.md`.
    **Nommé pour r464** : décision utilisateur sur le sort de l'arriéré

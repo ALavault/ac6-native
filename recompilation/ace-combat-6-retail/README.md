@@ -2,7 +2,7 @@
 
 This is the active AC6 retail product tree. It has two explicit profiles:
 `rexglue-oracle` materializes a clean ignored working copy of BSD-3-Clause
-`AC6_recomp` commit `09144bb092ad871584808aeead69c395edbd5200`; `native`
+`AC6_recomp` commit `6cf743269f5d4ea635b32e5b24369124fd25067b`; `native`
 materializes only the standalone Xenos/Vulkan Gate 1 sources. Generated C++,
 XEX files, ISO files and extracted game data stay under ignored `build/`.
 

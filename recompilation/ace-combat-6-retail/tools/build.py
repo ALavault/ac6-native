@@ -14,7 +14,7 @@ from pathlib import Path
 
 
 PRODUCT = Path(__file__).resolve().parents[1]
-UPSTREAM_COMMIT = "09144bb092ad871584808aeead69c395edbd5200"
+UPSTREAM_COMMIT = "6cf743269f5d4ea635b32e5b24369124fd25067b"
 SDK_VERSION = "0.8.0"
 SDK_TREE = "abb22fd981596dae441af88eb25b43bbe27a0c8c"
 PROFILES = ("rexglue-oracle", "native")
