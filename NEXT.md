@@ -1,422 +1,1377 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
+0. **r400 — arbre stabilisé, gate JF restauré (PAS un blocage qualifié).**
+   La situation d'arbre non committé nommée "décision de l'utilisateur,
+   inchangée" depuis r239 (~160 cycles) bloquait en pratique le gate
+   `mission01-final-gate-v3.json` (`evidence size mismatch`), pas
+   seulement en principe. Résolu ce cycle : 57 fichiers racine vestiges
+   d'un fil PAL/NDXR/ENTRY9 sans rapport avec la campagne NTSC-US
+   supprimés (confirmé : aucune référence dans NEXT.md/RESUME.md/
+   EVIDENCE.md/AGENTS.md, aucun équivalent ailleurs dans l'arbre) après
+   confirmation explicite de l'utilisateur ; erreur immédiate corrigée
+   dans le même cycle (`GLOBAL_OFFLINE_LADDER.md` et
+   `XENIA_WINE_ORACLE_HANDOFF.md` restaurés, tous deux vivants malgré
+   l'apparence) ; `recompilation/ace-combat-6-demo` réduit à son archive
+   d'analyse statique (config/docs/tools), son build/source machinery
+   retiré, conforme au texte déjà à jour d'`AGENTS.md` ; trois fichiers
+   de travail en cours réel (`retail_session.cpp` : sélection caméra par
+   mode de vue + ancre free-flight NTSC-U/J ; `ntxr_texture.h` : lecture
+   pack par clé GIDX ; `retail_flight_orientation.h` : extraction
+   pitch/yaw/roll) re-pinnés via `refresh_contract_evidence.py` et
+   committés. **Les trois gates requis par `CLAUDE.md` sont maintenant
+   verts** (`audit_ac6_mission01_native_gate.py --require JF` = pass,
+   `audit_ac6_contract_artifacts.py` = pass, `audit_ac6_contract_addresses.py`
+   = pass 321/321) — première fois depuis le début de r239. Voir
+   `reports/ac6-retail-native-codegen-gate2-r400-tree-stabilization-mission01-gate-restored-20260908.md`.
+   **Reste non touché** : 72 fichiers modifiés / 206 non trackés hors du
+   chemin qui bloquait le gate (dont la surcouche HUD non tracée
+   `native_hud_gpu_overlay.{h,cpp}`, cf. règle HUD nommée ci-dessous) ; le
+   blocage runtime r399 (inchangé, voir item 1).
+
+1. **r399 — continuation normale (PAS un blocage qualifié) : tracer en direct depuis les sites d'appel `+294` (taille 1) et `+343` (taille 256) de `sub_8236E868` jusque dans `sub_821F9E10` pour trouver exactement où ces deux requêtes convergent sur la même adresse retournée (`0x10082ab0`), et quelle instruction/branche échoue à avancer le curseur/pointeur-de-tas responsable ; une fois isolé, appliquer le correctif via le script idempotent établi, reconstruire, et vérifier si `sub_821D5F48` revient enfin et si la boucle par image s'exécute.
+   **Nommé pour r401** : avant un dix-septième correctif ad hoc, trancher
+   codegen-vs-stub-hôte en un cycle avec le harnais `MicroExecuteFunction.java`
+   déjà existant — capturer en direct l'état registres/mémoire au moment de
+   l'appel `+294`, rejouer cet état dans microexec sur `sub_821F9E10`,
+   comparer le `r3` retourné à l'observation live. Divergence = bug de
+   codegen dans la traduction PPC->hôte de cette famille de fonctions.
+   Concordance = bug en amont (mémoire initiale ou stub hôte,
+   `MmAllocatePhysicalMemoryEx` déjà nommé suspect par r389, jamais
+   suivi). Un blocage qualifié (budget oracle Xenia) et le choix "un bug
+   à la fois" restent nommés pour l'utilisateur si ce test ne tranche
+   pas — voir le plan approuvé.**
+   r398 a désassemblé `__imp__sub_8236E868` directement et armé un
+   point d'arrêt à chacun des décalages hôte où les 4 premiers appels
+   d'allocation retournent leur valeur (`+150`=784, `+225`=55944,
+   `+294`=1, `+343`=256), tous en UNE SEULE exécution -- contournant la
+   limitation `gdb print <nom-local>` de r397. Résultat identique sur 3
+   lancements indépendants : la requête de 1 octet et la requête de
+   256 octets, émises l'une après l'autre SANS libération entre les
+   deux, retournent le MÊME pointeur exact, `0x10082ab0`.
+   `0x10082ab0 + 0x18 = 0x10082ac8`, précisément le nœud freelist
+   corrompu chassé depuis r378, et précisément le décalage `0x18`
+   identifié à l'origine par r380 (la découverte de r380 et celle-ci ne
+   sont PAS en conflit ; r392 avait réfuté une attribution DIFFÉRENTE).
+   L'hypothèse principale de r397 (Write 1 issue de la requête de 55944
+   octets, `0x10091f80`) est réfutée. **Ceci n'est plus une corrélation
+   plausible : c'est un fait live, déterministe, même-invocation** :
+   l'allocateur générique délivre le MÊME bloc vivant à deux requêtes
+   différentes sans rapport, sans qu'aucune ne le libère -- un bug de
+   double-émission de l'allocateur lui-même, pas un unlink manquant
+   côté appelant (r380/r392's thread), pas une collision de
+   sous-système non coordonné (r386-r389's thread). Règle la question
+   "quel côté viole son contrat de propriété mémoire" tournée en rond
+   depuis r386-r397. Aucun correctif appliqué : la branche exacte à
+   l'intérieur de `sub_821F9E10` qui échoue à marquer `0x10082ab0`
+   consommé avant la seconde requête n'est pas encore isolée -- c'est
+   la QUATRIÈME tentative d'attribution dans ce sous-fil, les trois
+   premières s'étant effondrées sous un examen plus strict (r380 par
+   r392 ; r393 par r395 puis re-confirmé par r396). `sub_821D5F48` n'est
+   toujours jamais revenu ; la boucle par image ne s'exécute toujours
+   jamais, après SEIZE découvertes du sous-système allocateur
+   (r358-r398).
+
+1. **r389 (historique, dépassé par ce qui précède) — r388 a effectué le test décisif nommé par r387 : capturé en direct
+   l'adresse de base réellement retournée par l'appel `MmAllocatePhysicalMemoryEx`
+   de `sub_821D5F48` (`*__imp__sub_821D5F48+1214`, `ctx.r3` = `0x16f80000`),
+   calculé la plage `[0x16f80000, 0x2e780000)` avec la taille `0x17800000`
+   capturée par r387, et confirmé que `0x280c0b10` (le nœud empoisonné de
+   r386) tombe DEDANS. **Lecture (1) confirmée** : la mémoire de la
+   freelist des gros blocs est LA MÊME mémoire que cette réservation de
+   375 Mio, pas une collision entre deux régions indépendantes (de toute
+   façon structurellement impossible vu le compteur monotone unique
+   `allocate_guest`, r387). Lecture (2) réfutée pour ce nœud.
+
+   Ceci ne résout PAS encore l'investigation. r386 avait déjà armé un
+   point de surveillance matériel sur `0x280c0b10` lui-même depuis le
+   tout début du processus et trouvé UNE SEULE écriture dans toute
+   l'exécution -- le memset empoisonnant (`0xFE`). Aucune routine
+   n'écrit jamais de pointeur « next » valide dans la mémoire propre de
+   ce nœud. Son appartenance apparente à la freelist (atteinte par le
+   scanner de `sub_821F8A00` en partant de la sentinelle `0x10000180`)
+   doit donc venir de quelque chose qui écrit le CHAÎNAGE DE LA
+   SENTINELLE elle-même vers `0x280c0b10` -- une cible de surveillance
+   différente de celle déjà vérifiée, pas encore armée.
+
+   Mécanisme plausible mais explicitement NON confirmé : une routine
+   d'insertion/découpe de pool qui suppose que la mémoire fraîchement
+   découpée est déjà mise à zéro (convention `next=0` = terminateur) et
+   qui, de ce fait, n'écrit jamais explicitement de terminateur dans le
+   nouveau nœud -- hypothèse brisée ici car cette mémoire a été
+   empoisonnée à `0xFE`, pas à zéro, par le memset antérieur et non lié
+   de `sub_821D5F48`. Correspondrait à la même forme "écriture manquante
+   sur un chemin" que tous les correctifs précédents de cette campagne,
+   mais PAS confirmé en direct -- pas de correctif appliqué, conformément
+   à la leçon apprise deux fois par r382.
+
+   Gate : `ctest` 10/10 (aucune source modifiée ce cycle, investigation
+   seule). `git status` après `ctest` : 523 chemins, identique à
+   r385-r387, aucune dérive. Aucun commit -- décision de l'utilisateur
+   inchangée.
+
+   **Nommé explicitement pour r389** : armer un point de surveillance
+   matériel sur le champ de chaînage propre de la sentinelle
+   (`0x10000180`, avec la convention de décalage de champ établie depuis
+   r369/r371) depuis le tout début du processus (technique de r371), pour
+   capturer l'écriture exacte qui lie `0x280c0b10` dans la chaîne pour la
+   première fois, et identifier la fonction invité responsable. Lire
+   cette fonction en entier, déterminer si elle suppose une mémoire mise
+   à zéro pour son terminateur, et si oui si le correctif doit écrire un
+   terminateur explicite dans le nouveau nœud, ou si le memset de
+   `sub_821D5F48` ne devrait tout simplement pas toucher cette plage (une
+   question d'ORDONNANCEMENT entre les deux mécanismes). C'est la
+   NEUVIÈME découverte du sous-système allocateur (r358-r388) sans encore
+   atteindre la boucle par image. Le thread principal n'est TOUJOURS
+   jamais revenu de `sub_821D5F48` ; la boucle par image ne s'est encore
+   jamais exécutée, ce cycle ou tout cycle précédent. Le choix permanent
+   de l'utilisateur "continuer un bug à la fois" reste en vigueur -- pas
+   d'escalade unilatérale vers un audit exhaustif par lot.
+
+   Voir §4.109 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r388-overlap-decisive/`.
+
+2. **r387/r388 — close, contexte historique.** r387 a
+2. **r386/r387 — close, contexte historique.** r386 a
+   localisé l'écrivain du septième candidat de r385/r384 : un point de
+   surveillance matériel armé sur `0x280c0b10` (l'unique nœud réel de la
+   freelist des gros blocs) depuis le tout début du processus a capturé
+   UNE SEULE écriture, ~1,6s après l'armement, ancienne valeur `0` :
+   `sub_823830F0` (un `memset` générique, confirmé correct par lecture
+   complète) appelé depuis `sub_821D5F48` -> `sub_821D7DE0`, remplissant
+   de `0xFE` toute une région obtenue via `sub_821F4078(dest=adresse
+   fixe, r4=-1, r5=0, r6=0x20000004)` -- structurellement un appel de
+   réservation+commit à adresse fixe façon `VirtualAlloc`/`mmap`, PAS
+   acheminé par l'allocateur à freelist étudié depuis r311.
+
+   **Ce N'EST PAS une huitième instance du même bug "Leave manquant"**
+   (r358, r365/366, r376, r378-380, r383) -- c'est un chevauchement de
+   plage d'adresses entre DEUX mécanismes de gestion mémoire
+   indépendants : la freelist, et la réservation à adresse fixe de
+   `sub_821F4078`. Lequel des deux est fautif n'est pas déterminé (`sub_821F4078`
+   lue seulement structurellement, pas en entier, ce cycle). Aucun
+   correctif appliqué -- ceci ne correspond plus au patron "ajouter un
+   appel Leave/unlink manquant, en miroir d'un frère correct" autorisé
+   jusqu'ici.
+
+   **Nommé explicitement pour r387** : (a) lire `sub_821F4078` en
+   entier pour déterminer quel côté du chevauchement est réellement en
+   tort ; (b) noter explicitement qu'après SEPT découvertes dans le
+   sous-système allocateur (r358 à r386) sans jamais atteindre la
+   boucle par image, et cette découverte étant de nature architecturale
+   différente des six précédentes (un possible conflit de propriété de
+   plage d'adresses entre sous-systèmes, pas un correctif d'une ligne),
+   ceci peut à nouveau justifier un point de contrôle stratégique avec
+   l'utilisateur avant de continuer unilatéralement -- signalé ici
+   explicitement, pas décidé seul, dans la continuité du précédent de
+   r381.
+
+   Voir §4.107 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r386-corrupted-node-writer/`.
+
+2. **r386 — continuation normale (PAS un blocage qualifié), désormais close.** r385 a
+   appliqué le contrôle strict de registre de r369 à l'invocation de
+   `sub_821F8A00` atteinte via `sub_821F9150` (r384) et l'a CONFIRMÉE
+   comme une vraie boucle infinie figée : trois échantillons SIGINT,
+   20s d'écart, montrent **tout le fichier de registres identique
+   bit-à-bit** (`rbx=0x10000180`, `r11=0`). La lecture croisée
+   désassemblage/source (`ppc_recomp.27.cpp:11468-11640`) PROUVE
+   mathématiquement l'auto-perpétuation : avec `r11=0`, `LOAD_U16`
+   près de `0xFFFFFFF8` puis `LOAD_U32(0)` retournent tous deux 0, donc
+   `r11` ne peut jamais converger vers le sentinel `0x10000180` (la
+   MÊME tête de freelist des gros blocs partagée depuis
+   r369/r371/r378-383, confirmée vivante et correctement écrite
+   ailleurs dans le run).
+
+   `sub_821F9150` (jamais lue avant r384) a été lue en entier ce
+   cycle : `NtAllocateVirtualMemory` -> `sub_821F8248` (jamais
+   examinée, initialise l'en-tête du nouveau bloc) -> épissage via
+   l'un de deux appels internes à `sub_821F8A00`. La relation exacte
+   entre les champs que `sub_821F8248` initialise et le pointeur
+   « next » que le scanner déréférence ensuite n'a PAS été résolue ce
+   cycle -- deviner ici répéterait l'erreur de r382 (corréler au lieu
+   de prouver).
+
+   **Confirmé : une SEPTIÈME instance du même défaut de chaînage
+   cassé** (r358, r365/366, r376, r378-380, r383). **Pas corrigée** --
+   aucun correctif appliqué, l'écrivain exact n'ayant pas été localisé
+   en direct.
+
+   **r386 doit** : (a) parcourir la freelist des gros blocs en direct,
+   tête-à-queue, juste avant que cette invocation ne commence son scan,
+   pour trouver le nœud précis dont le champ « next » lit déjà 0
+   (technique de r371) ; (b) armer un point de surveillance matériel
+   sur ce champ exact depuis le démarrage du processus (technique de
+   r371, PIE-safe, avant tout code invité) pour trouver l'écrivain ;
+   (c) lire `sub_821F8248` en entier (jamais examinée) et auditer par
+   chemin de sortie la fonction impliquée, selon la même technique qui
+   a trouvé chaque défaut précédent ; (d) continuer la discipline « un
+   bug à la fois, vérifié en direct avant correctif » explicitement
+   choisie par l'utilisateur (r381/r382) -- pas de correctif par lot,
+   pas de déduction depuis le seul désassemblage ou la seule
+   corrélation. Le thread principal n'est toujours jamais revenu de
+   `sub_821D5F48` (r384) -- ceci reste le test ultime une fois (si) ce
+   septième défaut corrigé. La situation d'arbre non commité (r239+,
+   sur la suppression massive du 2026-09-02) reste la décision de
+   l'utilisateur, inchangée.
+
+   Voir §4.106 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r385-sub821f9150-loop/`.
+
+2. **r385 (historique, résolu par r386 ci-dessus)** -- confirme le
+   sixième candidat de r384 comme une vraie boucle infinie figée, mais
+   ne localise pas l'écrivain. Voir §4.106.
+
+3. **r384 (historique, résolu par r385/r386 ci-dessus) — continuation normale (PAS un blocage qualifié).** r383 a
+   construit la technique primaire nommée nécessaire par r382 : une
+   trace d'exécution pas-à-pas réelle (`nexti`, sautant par-dessus les
+   appels) de l'invocation LIVE `ENTER#545` elle-même, du site d'Enter
+   jusqu'à son retour (`FUNC_BASE` calculé en direct sous ASLR, boucle
+   de trace sortie du callback `stop()` du point d'arrêt). La trace (122
+   instructions hôte uniques, pc de sortie identique à l'adresse de
+   retour déjà capturée par r382 pour `ENTER#545`) a révélé un
+   TROISIÈME chemin : un `jmp` inconditionnel (`+758`) sautant
+   directement vers la queue commune de la fonction, sans passer par
+   AUCUN des deux sites d'appel Leave connus -- réfutant la corrélation
+   `+758` de r382 comme pure coïncidence.
+
+   Identifié précisément par lecture croisée du source généré : le
+   chemin d'allocation « gros bloc » (`r29>=128`) appelle
+   `sub_821F92B8` ; en cas d'échec (`r3==0`), `loc_821FA630 ->
+   loc_821FA634 -> loc_821FA660 -> loc_821FA664 -> return;` ne passe
+   JAMAIS par la vérification Leave gardée par `r22` de `loc_821FA528`
+   -- même forme de bug que r358/r365-366/r376, cinquième instance
+   indépendante dans le même allocateur.
+
+   **Correctif appliqué et vérifié** (`tools/apply_sub_821f9e10_largeblock_failure_leave_fix.py`,
+   nouveau script suivi, idempotent) : insère le Leave gardé par `r22`
+   en tête de `loc_821FA664`, utilisant `r27` (pas `r30`) comme pointeur
+   d'objet tas, exactement comme `loc_821FA528` elle-même. Un premier
+   faux négatif (décalage hôte codé en dur périmé après reconstruction,
+   hérité du script de r382) a été capturé et corrigé en réarmant le
+   point d'arrêt Leave symboliquement sur `*__imp__RtlLeaveCriticalSection`
+   lui-même. Re-vérifié : `ENTER#545 leaves_since_enter=1 LEAK=False`.
+   Équilibre agrégé (60s) : `enter=575 leave=575 net=0` -- entièrement
+   équilibré. **Cinquième fuite de section critique confirmée en direct,
+   corrigée et vérifiée dans cette campagne.**
+
+   **MAIS re-testé la boucle par image** (`sub_821D7AE0`/`sub_821D7CD0`,
+   fenêtre de 120s post-correctif) : **zéro exécution, inchangé**. La
+   poignée de main avec l'ouvrier se déclenche encore exactement une
+   fois (`b5a0=1 a620=1 a610=1`) et le thread principal ne redemande
+   jamais -- le motif déjà caractérisé par r367/r377, maintenant
+   confirmé persister même avec l'allocateur entièrement et prouvément
+   propre (`net=0`). La sous-investigation de l'allocateur (r356-r358,
+   r365/366, r376, r378-383) est maintenant close à un point d'arrêt
+   honnête et complet -- un vrai progrès, mais pas la réponse à
+   « pourquoi `presented_frames` reste à 0 ».
+
+   **r384 doit** : revenir à la direction déjà nommée par r377/r382,
+   maintenant sur un allocateur prouvément propre -- instrumenter
+   directement la décision de re-demande de la poignée de main
+   (génération 2+) du thread principal (le code qui décide de réémettre
+   ou non une requête vers l'ouvrier après que la première soit
+   complétée), puisque c'est maintenant la seule candidate restante pour
+   le vrai blocage de la boucle par image. La situation d'arbre non
+   commité (r239+, sur la suppression massive du 2026-09-02) reste la
+   décision de l'utilisateur, inchangée.
+
+   Voir §4.104 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r383-enter545-instruction-trace/`.
+
+1. **r383 (historique, PAS un blocage qualifié).** L'utilisateur
+   a choisi explicitement « continuer un bug à la fois » sur le point de
+   décision stratégique de r381. r382 a vérifié en direct la troisième
+   paire Enter/Leave de `sub_821F9E10` et confirmé un déséquilibre
+   reproductible (`enter=589 leave=587 net=2` sur 60s, stable). Une
+   NOUVELLE technique (suivi par adresse de retour PAR INVOCATION) a
+   confirmé en direct qu'`ENTER#545` lui-même retourne à son appelant
+   (`sub_823801B8`) sans jamais avoir appelé Leave -- une fuite réelle, à
+   cadre unique. Un `jmp` inconditionnel statique (`+758`, correspondant
+   au chemin rapide « correspondance exacte de taille », `goto
+   loc_821FA528;` ligne ~16519) semblait corréler exactement (un point
+   d'arrêt dédié s'y est déclenché une fois, au moment précis où
+   `outstanding_before=1`). Un correctif a été appliqué
+   (`tools/apply_sub_821f9e10_smallbucket_leave_fix.py`, même motif
+   idempotent que r358, patchant aussi le doublon dans `sub_821F9E08`
+   comme pour r358) et reconstruit.
+
+   **MAIS la re-vérification par la MÊME technique de suivi de retour,
+   sur le binaire reconstruit, PROUVE qu'`ENTER#545` fuit TOUJOURS,
+   inchangé** (`leaves_since_enter=0, LEAK=True`). Le nouveau Leave
+   inséré s'exécute bien une fois dans la même fenêtre, mais sur une
+   invocation DIFFÉRENTE et bien plus tardive (séquence globale 587, pas
+   545/546) -- le déséquilibre agrégé reste inchangé (2, avant et après).
+   **La corrélation `+758` est explicitement rétractée** comme
+   coïncidence probable avec un appel sans rapport empruntant
+   légitimement le même chemin rapide avec `r22` déjà à 0, pas un lien
+   causal avec `ENTER#545`. Le correctif est CONSERVÉ (réel, correct,
+   inoffensif, en miroir d'une logique sœur déjà correcte, passe les
+   gates) mais ne résout PAS la fuite reproductible `ENTER#545`/`#546`
+   que cette sous-investigation (r378-r382) poursuit depuis.
+
+   **r383 doit** : re-dériver l'instruction de contournement réelle
+   d'`ENTER#545` en utilisant le suivi par adresse de retour par
+   invocation comme outil PRINCIPAL -- armer le suivi de retour d'abord,
+   puis biséquer l'intervalle entre l'Enter et son retour connu avec des
+   points d'arrêt conditionnels supplémentaires, plutôt que de deviner
+   des branches candidates depuis le désassemblage optimisé et
+   réordonné, qui a maintenant produit DEUX fausses pistes de suite pour
+   cette investigation précise (`+1949`/`+1970`/`+2063` en première
+   tentative, puis `+758` en seconde). La situation d'arbre non commité
+   (r239+, sur la suppression massive du 2026-09-02) reste la décision
+   de l'utilisateur, inchangée.
+
+   Voir §4.103 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r382-9e10-enter-leave-balance/`.
+
+
+1. **r380 — continuation normale (PAS un blocage qualifié).** r379 a
+   tracé en direct l'écrivain exact du NULL de r378 (technique de r371,
+   point d'observation armé avant tout code invité sur
+   `0x10082ac8`) : trois écritures seulement avant sortie normale du
+   processus -- bootstrap correct (`sub_821F9E10`, `next=head`), puis
+   deux initialiseurs légitimes SANS RAPPORT (`sub_82377C00`, table de
+   8 handles ; `sub_82372128`/`sub_82372198`, pool de 64 emplacements)
+   qui zèrent ce qu'ils croient être leur propre mémoire privée --
+   lecture complète des deux corps confirme qu'AUCUNE des deux n'est
+   défectueuse en elle-même. L'adresse `0x10082ac8` sert donc à trois
+   usages sans rapport en ~10ms de démarrage. Deux hypothèses non
+   départagées : (a) un appel d'allocation a distribué ce bloc aux
+   écritures 2/3 sans le retirer de la liste que `sub_821F8A00`
+   parcourt encore ailleurs (un déchaînement manquant côté allocation,
+   même famille de défaut que les quatre déjà trouvés mais dans une
+   fonction différente) ; (b) l'écriture 1 elle-même était
+   prématurée/erronée. **PAS corrigé** : appliquer un correctif à
+   `sub_82377C00`, `sub_82372128` ou `sub_821F9E10` maintenant serait
+   deviner sans contrôle en direct -- explicitement refusé (précédent
+   r1111/r1113), quatrième fois dans cette chaîne qu'une hypothèse
+   plausible sur l'écrivain lui-même est abandonnée au profit d'une
+   hypothèse mieux fondée un niveau plus haut. **Nommé pour r380** :
+   mettre un point d'arrêt sur les points d'entrée « allocate » de
+   l'allocateur général (`sub_821F92B8`/`sub_821F9150`) entre l'écriture
+   1 et l'écriture 2, capturer la taille demandée et l'adresse
+   retournée, vérifier si le déchaînement a eu lieu ; si l'écriture 1
+   s'avère être l'erreur à la place, auditer la logique d'appartenance
+   de bucket de `sub_821F9E10` comme r356 l'a fait pour `sub_821FA6F8`.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.100 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r379-null-writer/`.
+
+2. **(contexte, r379 — voir ci-dessus)**
+
+3. **r379 — continuation normale (PAS un blocage qualifié).** r378 a
+   appliqué le contrôle plus strict de r369 au candidat que r377 avait
+   trouvé (6 échantillons au même décalage dans `sub_821F8A00`) : point
+   d'arrêt compté sur `*__imp__sub_821F8A00+480`, capturant `r11`
+   (curseur) sur 30 arrêts consécutifs. `r11` atteint `0x00000000` à
+   l'arrêt #5 et y reste identique bit à bit sur les 26 arrêts suivants
+   -- **confirmé : une VRAIE boucle infinie gelée**, pas un artefact
+   d'échantillonnage. Lecture mémoire ciblée : le champ `next` brut de
+   l'entrée `0x10082ac8` est un NULL nu (`0x00000000`) que la
+   vérification de terminaison de cette boucle (uniquement contre la
+   sentinelle `0x10000180`) ne reconnaît jamais -- un QUATRIÈME bug de
+   chaînage de freelist indépendant (après r358, r365/366, r376), même
+   sous-système allocateur, forme de défaut similaire mais entrée/bucket
+   et valeur de corruption différentes (NULL, pas auto-référence). La
+   nouvelle chaîne d'appel n'est PAS un nouveau sous-système -- un
+   appelant inexaminé du même allocateur étudié depuis r311. **PAS
+   corrigé** : le symptôme est confirmé en direct, mais quelle fonction
+   en amont a écrit ce zéro n'a pas encore été tracé -- deviner un
+   correctif sans cette traçabilité violerait la discipline de preuve du
+   projet (précédent r1111/r1113). La vraie boucle par image
+   (`sub_821D7AE0`/`sub_821D7CD0`) ne s'exécute toujours pas (attendu,
+   aucun code changé ce cycle). **Nommé pour r379** : (1) tracer en
+   arrière depuis le champ `next` corrompu de `0x10082ac8` (réutiliser la
+   technique de point d'observation-depuis-le-démarrage-du-processus de
+   r371) pour trouver quelle fonction a écrit `0x00000000` au lieu d'un
+   lien correct ; (2) appliquer et vérifier un correctif via le même
+   script de correctif tracé déjà utilisé trois fois, une fois l'écrivain
+   identifié ; (3) ne pas supposer que ce sera le dernier bug de ce genre
+   -- quatre défauts de chaînage de freelist indépendants ont déjà été
+   trouvés dans cet unique allocateur. Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.99 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r378-newloop-control/`.
+
+2. **(contexte, r378 — voir ci-dessus)**
+
+3. **r378 — continuation normale (PAS un blocage qualifié).** r377
+   (pas de correctif ce cycle) a caractérisé la fenêtre post-r376 avec
+   une sonde d'échantillonnage périodique (SIGINT externe vers
+   l'inférieur, 6 arrêts sur 95s) : (a) la poignée de main ouvrier
+   (`sub_8233B5A0`/`sub_8233A620`) se déclenche désormais UNE FOIS,
+   à moins d'1ms du démarrage -- jamais vu depuis r315, mais une seule
+   occurrence, pas un régime stationnaire ; (b) les 6 échantillons
+   (t≈12s à t≈84s) atterrissent TOUS dans une NOUVELLE boucle de
+   recherche interne à `sub_821F8A00` (décalages `+489`/`+494`,
+   confirmés par désassemblage), distincte de la boucle déjà corrigée
+   de `sub_821F9E10`, se terminant à une sentinelle `+0x180` ; (c) la
+   pile d'appel complète menant ici
+   (`sub_821F9150 <- sub_821F92B8 <- sub_821F9E10 <- sub_821F7A88 <-
+   sub_821F59E0 <- sub_821D74A8 <- sub_823B86D0 <- sub_823B8770 <-
+   sub_823B0B48 <- sub_823A65A0 <- sub_8236E618`) est ENTIÈREMENT
+   NOUVELLE au-dessus de `sub_821D74A8` -- jamais examinée par
+   r311-r376. **Nommé pour r378** : (1) appliquer le contrôle
+   registre-à-travers-plusieurs-arrêts de r369 à ce nouveau candidat
+   AVANT de le traiter comme confirmé (6 échantillons au même décalage
+   sur 72s est une preuve circonstancielle forte, pas encore une
+   preuve directe comme celle de r369) ; (2) si confirmé, identifier
+   le bucket/liste concerné et lire les fonctions `823A`/`823B` jamais
+   examinées pour comprendre le sous-système demandeur ; (3) ne pas
+   présumer qu'un correctif similaire (missing-Leave / control-flow
+   gate) s'applique sans le vérifier en direct -- chaque bug de cette
+   investigation a eu un mécanisme distinct. Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.98 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r377-postfix-timeline/`.
+
+2. **(contexte, r377 — voir ci-dessus)**
+
+1. **r377 — continuation normale (PAS un blocage qualifié).** r376 a
+   CONFIRMÉ EN DIRECT l'inférence de r375 (le nœud `0x1009fa10` est
+   déjà la tête de la freelist surdimensionnée, pointée par la
+   sentinelle `0x10000180`, AVANT même que le 4e appel à
+   `sub_821F8A00` ne commence), puis a tracé les quatre appels
+   (`sub_821F92B8 -> sub_821F8368 -> sub_821F85F8 -> sub_821F8A00`) en
+   UNE SEULE passe (calibration de la disposition de `PPCContext` :
+   `r3@ctx+0x0`, `r4@ctx+0x10`, valable pour toutes les fonctions
+   partageant ce type). Résultat : `sub_821F85F8` reçoit un bloc
+   FRAÎCHEMENT alloué (`0x100b0000`) mais renvoie une adresse
+   complètement différente (`0x1009fa10`, le voisin arrière calculé en
+   interne) à l'appelant. **VRAI CORRECTIF appliqué et vérifié EN
+   DIRECT** : la 4e des quatre conditions de fusion-arrière de
+   `sub_821F85F8` (la vérification de cohérence de r375, déjà prouvée
+   CORRECTE) est la SEULE des quatre dont l'échec ne saute PAS vers
+   `loc_821F880C` (« pas de fusion, `r30` de l'appelant inchangé ») --
+   elle tombe à la place dans la logique « fusion acceptée », qui
+   substitue inconditionnellement le voisin invalide via `r30 = r31`.
+   Correctif (`tools/apply_sub_821f85f8_return_gate_fix.py`, nouveau,
+   tracé, idempotent) : aligne les deux branches d'échec de cette 4e
+   condition sur ses trois sœurs. Reconstruit, vérifié EN DIRECT : (1)
+   `sub_821F8A00` reçoit maintenant la vraie valeur `0x100b0000`, plus
+   un 5e appel authentiquement NOUVEAU (`0x2e780050`) qui n'existait
+   pas avant ; (2) la boucle infinie de `sub_821F9E10` a DISPARU -- 20
+   passages complets sur une fenêtre de 90 s, contre ~56 000+ passages
+   et en croissance non bornée avant ce correctif. **Cependant** : le
+   test de r360 sur la vraie boucle par image
+   (`sub_821D7AE0`/`sub_821D7CD0`) montre toujours ZÉRO exécution sur
+   la même fenêtre de 90 s -- le processus sort par le minuteur propre
+   du harnais de sonde, pas par un blocage, mais pas non plus par le
+   gameplay. **Nommé pour r377** : caractériser ce que fait maintenant
+   le thread principal pendant cette fenêtre de 90 s (un échantillon
+   d'état/pile pris à mi-fenêtre montrerait s'il progresse plus loin,
+   se bloque ailleurs, ou termine légitimement son travail disponible)
+   -- et NE PAS supposer qu'un éventuel nouveau blocage est un autre
+   bug d'allocateur sans preuve directe, ce correctif touchant un
+   mécanisme (portillon de flux de contrôle) fondamentalement différent
+   des trois précédents (appels `Leave` manquants). Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.97 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r376-return-gate-fix/README.md`.
+
+2. **(contexte, r376 — voir ci-dessus)**
+
+
+1. **r376 — continuation normale (PAS un blocage qualifié).** r375 a
+   RÉFUTÉ la prémisse partagée de r371-r374 : capture EN DIRECT
+   corrigée (première lecture au mauvais point d'instruction donnait un
+   faux positif, corrigée dans le même cycle) montre que la
+   vérification de cohérence fusion-arrière de `sub_821F85F8`
+   (`r9==r7`) évalue à FALSE de façon CORRECTE (le voisin candidat
+   `0x1009fa10` a `back=NULL`, `fwd=self` -- intrinsèquement
+   incohérent) et refuse à juste titre de fusionner. `sub_821F85F8`
+   n'est PAS le bug. La corruption est isolée entièrement dans la
+   propre boucle de recherche de `sub_821F8A00` : son chemin
+   grand/surdimensionné (`>=128`) parcourt une freelist triée SANS
+   AUCUNE vérification que le candidat trouvé n'est pas le nœud en
+   cours d'insertion -- l'explication la plus probable est que
+   `0x1009fa10` était DÉJÀ LIÉ dans cette freelist au moment du 4e appel
+   à `sub_821F8A00`. **Nommé pour r376** : (a) parcourir la freelist
+   surdimensionnée EN DIRECT juste avant le 4e appel à `sub_821F8A00`
+   pour confirmer directement que `0x1009fa10`/`0x1009fa18` y est déjà
+   lié, plutôt que par inférence depuis la destination de l'écriture
+   corrompue ; (b) si confirmé, tracer lequel des trois appels
+   antérieurs à `sub_821F8A00` (ou sa propre logique de coalescence/
+   allocation en amont) l'y a inséré sans retrait correspondant ; (c)
+   n'appliquer un correctif natif qu'une fois cette asymétrie
+   précisément vérifiée en direct. Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.96 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r375-backward-merge-check/README.md`.
+
+2. **(contexte, r375 — voir ci-dessus)**
+
+
+1. **(contexte, r374)** r374 a
+   testé et RÉFUTÉ deux hypothèses : (a) un chevauchement d'arrondi
+   dans le stub natif `NtAllocateVirtualMemory` (trace EN DIRECT
+   complète de tous les appels du run -- zéro chevauchement, zéro
+   ajustement d'arrondi observé, hypothèse refermée) ; (b) la recherche
+   interne secondaire de `sub_821F8368` nommée par r373 (capture EN
+   DIRECT montre que sa propre valeur de retour pour l'appel corrompu
+   est `0x100b0000`, pas `0x1009fa10` -- le candidat interne
+   `0x1009fa10` ne sert qu'à sa comptabilité locale, jamais transmis :
+   coïncidence d'adresse, pas un défaut). Relecture statique de
+   `sub_821F85F8` contre son garde réel (`r6=0`) montre que le bloc de
+   fusion-AVANT entier est sauté inconditionnellement pour cet appel --
+   **seul le bloc de fusion-ARRIÈRE (`loc_821F8708`-`loc_821F8768`)
+   peut être responsable.** Sa vérification de cohérence en deux
+   parties (`r9==r7 && r9==r8`, dérivée de `*(r31+12)`/`*(r31+8)`) est
+   maintenant la SEULE branche non auditée restante dans toute
+   l'investigation. **PAS corrigé, PAS un blocage qualifié.** **Nommé
+   pour r375** : (a) capturer en direct `r31`/`r11`/`r10`/`r9`/`r7`/`r8`
+   à `loc_821F8708` de `sub_821F85F8` pour l'appel exact produisant
+   `0x1009fa10`, pour déterminer si la vérification de cohérence passe
+   (déchaînement exécuté, écartant ce chemin aussi) ou échoue
+   (déchaînement sauté alors que la fusion/réinsertion continue quand
+   même -- la forme exacte de bug qui expliquerait tout depuis r369) ;
+   (b) n'appliquer un correctif natif qu'une fois un défaut précis
+   vérifié en direct. Les décalages hôte des deux fonctions sont déjà
+   sauvegardés dans
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r374-nav-hint-trace/disas_sub_821F85F8.txt`.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.95 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r374-nav-hint-trace/README.md`.
+
+2. **(contexte, r373/r374 — voir ci-dessus)**
+
+
+1. **(contexte, r372)** r372 a
+   étendu la sonde de r371 avec une capture de registres EN DIRECT à
+   l'instruction exacte de l'écriture auto-référentielle
+   (`__imp__sub_821F8A00+209`) : `r8` (= `r4+8`, le nœud en cours
+   d'épissure) et `r14_be` (= la valeur PPC r11 écrite, le point
+   d'insertion trouvé par la recherche) sont identiques bit pour bit
+   (`0x1009fa18` == `0x1009fa18`), **`VERDICT self-write-confirmed=True`**
+   -- ce n'est plus une hypothèse structurelle mais un fait vérifié en
+   direct. `sub_821F8A00` lui-même ne contient AUCUNE logique de
+   déchaînement (relu en entier) ; le déchaînement manquant doit donc
+   être en amont, dans `sub_821F85F8` (fonction de coalescence de blocs
+   appelée par `sub_821F92B8` juste avant `sub_821F8A00`), qui effectue
+   deux blocs de déchaînement inline (fusion-avant et fusion-arrière),
+   chacun gardé par des conditions pas encore auditées branche par
+   branche. **PAS ENCORE une localisation confirmée du déchaînement
+   manquant, PAS un blocage qualifié.** **Nommé pour r373** : (a)
+   compléter l'audit branche par branche des deux blocs de
+   coalescence/déchaînement de `sub_821F85F8` (fusion-avant autour de
+   `loc_821F8654`-`loc_821F86BC`-`loc_821F8708` ; fusion-arrière autour
+   de `loc_821F8708`-`loc_821F8768`), la même technique que r356 a
+   appliquée à `sub_821FA6F8`, pour trouver la condition exacte sous
+   laquelle un voisin fusionnable -- ou le bloc lui-même -- n'est pas
+   déchaîné avant que `sub_821F8A00` ne réinsère son épissure ; (b)
+   vérifier en direct avec un point d'arrêt conditionnel avant de
+   proposer tout correctif ; (c) n'appliquer un correctif natif qu'une
+   fois le mécanisme vérifié en direct, pas seulement plausible. Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.93 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r372-register-capture/README.md`.
+
+2. **(contexte, r372 — voir ci-dessus)**
+
+
+1. **(contexte, r371)** r371 a
+   armé un point d'observation matériel depuis le PLUS TÔT possible
+   (juste après le `mmap()` de `GuestAddressSpace::GuestAddressSpace()`,
+   avant même ses boucles de pré-touch) plutôt que depuis l'entrée de
+   `sub_821D5F48` (r369, trop tardif). Trois écritures EN DIRECT sur le
+   champ figé capturées avec pile d'appels et désassemblage :
+   `sub_821F9E10` écrit d'abord `0x10000180` (tête, correct), puis
+   `0x10082ac8` (toujours plausible), puis **`sub_821F8A00`** — déjà
+   nommée dans ce projet comme « chemin des blocs surdimensionnés » de
+   `sub_821FA6F8` — écrase avec `0x1009fa18`, l'adresse du champ
+   LUI-MÊME : destination et valeur écrite prouvées identiques, la
+   création de l'auto-référence est capturée sur le fait. Lecture
+   statique de `sub_821F8A00` (`ppc_recomp.27.cpp:11454-11627`) : il
+   divise un bloc libre et réinsère le reste via le MÊME motif
+   d'épissure doublement chaînée déjà confirmé correct dans
+   `sub_821FA6F8` (r356) ; les quatre écritures d'épissure sont
+   structurellement saines, donc l'auto-écriture ne peut avoir lieu que
+   si la recherche du point d'insertion retourne le nœud en cours de
+   division lui-même — probablement parce qu'il n'a jamais été
+   déchaîné de la freelist avant réinsertion. Hypothèse structurellement
+   fondée, PAS ENCORE vérifiée en direct. **PAS ENCORE un correctif
+   confirmé, PAS un blocage qualifié.** **Nommé pour r372** : (a)
+   capturer EN DIRECT les valeurs réelles de `r11`/`r9` au moment de
+   l'écriture fautive et comparer à l'adresse du bloc divisé pour
+   confirmer laquelle coïncide ; (b) remonter pour trouver si/où un
+   appel de déchaînement manque avant cette épissure, en auditant la
+   même façon que r356 a audité `sub_821FA6F8` ; (c) n'appliquer un
+   correctif natif qu'une fois le mécanisme vérifié en direct, pas
+   seulement plausible. Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.92 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r371-self-ref-write-located/README.md`.
+
+2. **(contexte, r371 — voir ci-dessus)**
+
+
+2. **(contexte, r370 — voir ci-dessus)**
+
+3. **r370 (historique, PAS un blocage qualifié).** r369 a
+   confirmé EN DIRECT, par comptage de déclenchements + capture de
+   registres à travers ~56 000 itérations et ~15s (pas de simples
+   échantillons PC séparés dans le temps), que le curseur de balayage
+   de `sub_821F9E10` (`rsi`) est figé BIT POUR BIT sur toutes les
+   observations : une véritable boucle infinie non bornée, confirmée,
+   pas un balayage long-mais-fini. Lecture mémoire en direct : l'entrée
+   à l'adresse invitée `0x1009fa18` a son propre `next` qui pointe sur
+   elle-même au lieu de la tête de liste (`0x10000180`) — la condition
+   de terminaison ne peut jamais devenir vraie. Un point d'observation
+   matériel armé dès la toute première entrée de `sub_821D5F48` (~2s,
+   bien avant le blocage) et maintenu 40s pleines ne s'est JAMAIS
+   déclenché : la valeur auto-référentielle était déjà présente avant
+   ce chemin d'appel ce cycle — donnée statique/pré-init, pas une
+   écriture au runtime sur ce chemin. **PAS ENCORE un blocage
+   qualifié** : deux possibilités restent ouvertes — (1) défaut de
+   chargement des données statiques propre à cette recompilation
+   native, ou (2) donnée fidèlement expédiée par le retail, avec une
+   omission en amont dans la logique du jeu original. **Nommé pour
+   r370** : (a) extraire les données statiques du XEX retail aux
+   adresses `0x1009fa18`/`0x10000180` depuis l'image disque qualifiée
+   et comparer octet pour octet avec l'observation en direct ; (b) si
+   fidèle, remonter ce qui devrait peupler/relier ce bucket en amont ;
+   (c) si défaut de chargement mécaniquement corrigeable, appliquer et
+   vérifier via le motif de correctif déjà autorisé — sinon nommer
+   précisément un point de décision pour l'utilisateur. Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.90 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r369-scan-cursor-check/README.md`.
+
+2. **(contexte, r369 — voir ci-dessus)**
+
+3. **r369 (historique, PAS un blocage qualifié).** r368 a
+   revérifié EN DIRECT la revendication d'épuisement de graphe d'appel
+   de r341/r349/r350 contre le binaire D'AUJOURD'HUI (deux fuites
+   corrigées) et l'a trouvée obsolète dans son cadrage : nouvelle
+   technique fiable de `SIGINT` envoyé DIRECTEMENT au PID de
+   l'inférieur (pas `gdb.execute("interrupt")` en thread python,
+   déjà prouvé non fiable r353), confirmée sur quatre exécutions.
+   `sub_821D7DE0` (disas) ne peut sauter sa vraie boucle par image par
+   aucune branche une fois atteinte — mais Sonde 1 (60s, neuf sites
+   d'appel/retour) montre ZÉRO déclenchement au-delà de l'entrée de
+   fonction : l'exécution ne revient JAMAIS de son premier appel,
+   `sub_821D5F48`. Sonde 2 : rafale de 293 passages dans la chaîne
+   allocateur déjà épuisée (`sub_821D5600`→...→`sub_821FA6F8`) en
+   <0,5s, puis silence total 59s — inchangé par les deux fuites
+   corrigées. Sonde 3 (backtrace des 25 threads via SIGINT) : le
+   thread principal a pris une AUTRE branche du répartiteur
+   `sub_82121308` que celle épuisée par r341-350, atteignant
+   `sub_8236B3F8`→`sub_8236E868`→`sub_823801B8`→`sub_821F9E10` — et y
+   EXÉCUTE EN DIRECT. Sonde 4 (3 échantillons PC espacés de 4s) :
+   tous dans une plage de 9 octets (`+2857`/`+2866`/`+2857`) au sein
+   d'une boucle de balayage de table à deux étages — preuve directe de
+   plusieurs secondes réelles passées ici, mais PAS une preuve de
+   boucle infinie (aucun registre comparé entre échantillons). **Ceci
+   corrige le CADRAGE de r341/r349/r350 (pas leurs mesures)** :
+   `sub_821D5F48` a une branche jamais parcourue, atteinte seulement
+   maintenant que les deux fuites sont corrigées et que le processus
+   survit assez longtemps. **PAS (encore) un blocage qualifié** — un
+   emplacement candidat, pas une dépendance externe confirmée. **Nommé
+   pour r369** : (a) breakpoint sur la cible de rebouclage
+   (`sub_821F9E10+2996`) et vérifier si le curseur de balayage avance
+   réellement entre les déclenchements, lire ce que représentent
+   `r8d`/`rdx` (échantillonnés `8093`/`8093`) depuis l'objet invité ;
+   (b) si borné et complet mais blocage persiste ensuite, reprendre le
+   parcours linéaire sur la suite ; (c) si le balayage cherche une
+   correspondance structurellement impossible dans ce bac à sable
+   (contenu disque/asset manquant), nommer alors explicitement le
+   blocage qualifié — pas avant. Voir
+   `reports/ac6-retail-native-codegen-gate2-r280-doc-deadlock-refuted-codec-starves-on-us-tbl-over-pal-pac-20260906.md`
+   §4.89 et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r368-e20-loop-second-pass/README.md`.
+
+2. **(contexte, r367-r368 — voir ci-dessus pour la suite)**
+
+3. **r367 (historique, PAS un blocage qualifié).** r367 a
+   instrumenté directement les points de décision de boucle de
+   l'OUVRIER (`sub_8233A890`) au niveau désassemblage (deux offsets de
+   branchement localisés : `+137` vérification initiale, `+343`
+   vérification de continuation). Sonde 120s : l'ouvrier entre une
+   fois, drapeau initial non nul, vrai travail par image entré une
+   fois, mais la vérification de continuation ne se déclenche JAMAIS.
+   Sonde 30s (chaque appel de l'itération instrumenté séparément) :
+   `sub_8233DF90`/`sub_8233A830`(×2)/`sub_8233E2F0` chacun une fois ;
+   `sub_82345CE0` (« attendre occupé ») exactement 3 fois, la 3e étant
+   le SECOND appel d'attente de l'ouvrier lui-même juste après la fin
+   du vrai travail — puis silence total sur ces 5 sites pour ~29s,
+   pendant que `sub_82345C88` (primitive générique partagée) tourne à
+   ~2800/s (processus vivant, pas planté). **Conclusion : le thread
+   ouvrier exécute complètement sa première itération réelle, puis
+   bloque LÉGITIMEMENT en attendant un second signal que le producteur
+   (thread principal) n'envoie jamais — le côté OUVRIER est
+   complètement EXONÉRÉ.** Ceci affine la découverte de r360/r366 côté
+   producteur (le triplet `sub_8233B5A0`/`sub_8233A620`/`sub_8233A610`
+   se déclenche UNE FOIS puis silence permanent jusqu'à 900s) : le
+   producteur ne repose jamais la question une seconde fois. Question
+   ouverte inchangée en nature, affinée en confiance : pourquoi
+   `sub_821D7DE0` (boucle principale) n'exécute jamais une seconde
+   itération, alors que r341/r349/r350 avaient déjà déclaré son graphe
+   d'appel statique exhaustivement tracé et vide, bien avant la
+   découverte des deux fuites de section critique (chaîne d'appel
+   différente, depuis `sub_821D5F48`). **Nommé pour r368** : (a)
+   revérifier la revendication d'épuisement de r341/r349 contre le
+   binaire ACTUEL (deux correctifs de fuite déjà appliqués) plutôt que
+   de faire confiance à une conclusion antérieure à ces correctifs ;
+   (b) chercher si la CONDITION d'entrée de la boucle par image dépend
+   d'une valeur de donnée à l'exécution (une cible d'appel indirect
+   résolue différemment, ou une comparaison contre une valeur que ce
+   bac à sable ne produit jamais) plutôt qu'un chemin de code manquant
+   — r356 a déjà trouvé exactement cette forme de bug une fois ; (c) si
+   cela aussi revient vide, nommer explicitement que l'instrumentation
+   côté hôte approche la limite de ce qu'elle peut résoudre pour ce
+   symptôme précis, et que continuer à y investir face à pivoter vers
+   le câblage mort de `presented_frames` (r292, toujours non corrigé
+   aujourd'hui) est une décision dont l'utilisateur pourrait vouloir
+   être informé. Voir
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r367-worker-flag-check/README.md`.
+
+2. **(contexte, r366-r367 — piste de fuite de section critique close ;
+   voir ci-dessus pour la suite)**
+
+3. **r366 (historique, PAS un blocage qualifié).** Sur choix
+   explicite de l'utilisateur ("inventer un correctif maintenant"),
+   r366 a appliqué et vérifié EN DIRECT le correctif INVENTÉ de
+   `sub_821FA9E0` (`RtlLeaveCriticalSection` conditionnel sur `r23 & 1`,
+   inséré juste avant l'unique retour de la fonction ; dérivé
+   directement de la lecture du corps généré, pas deviné). Sonde
+   globale de r364 (45s) : `sub_821FA9E0` maintenant **2/2, net 0**
+   (était 3/0, net +3) ; résidu total `net=1` (uniquement le +1
+   légitime déjà expliqué de `sub_821F9E10`) -- plus aucune fuite non
+   identifiée sur ce verrou. **MAIS** re-exécution de la sonde EXACTE
+   de r360 sur 300s post-correctif : `sub_821D7AE0`/`sub_821D7CD0` (la
+   vraie boucle par image) ne se déclenche TOUJOURS JAMAIS, et le
+   triplet de poignée de main (`sub_8233A620`/`sub_8233B5A0`/
+   `sub_8233A610`) ne se déclenche qu'UNE SEULE FOIS puis se tait pour
+   les ~299s restantes -- motif IDENTIQUE à r360, totalement INCHANGÉ
+   par cette seconde correction réelle et vérifiée. **Conclusion
+   centrale** : deux corrections de fuite de section critique
+   indépendamment confirmées (r358, r366) n'ont fait avancer d'AUCUNE
+   itération le test d'entrée dans la boucle par image -- la piste de
+   fuite/blocage mutuel tracée depuis r311 se clôt ici à son terminus
+   honnête (les deux fuites connues sur ce verrou sont maintenant
+   corrigées et vérifiées, sa comptabilité est entièrement expliquée)
+   SANS avoir répondu à la question posée par l'utilisateur
+   ("pourquoi `presented_frames` reste à 0"). **Nommé pour r367** :
+   pivoter vers l'instrumentation directe du côté OUVRIER du triplet de
+   poignée de main (qu'est-ce qui change entre le succès de
+   l'itération 1 et le silence de l'itération 2), en n'utilisant QUE
+   des breakpoints locaux à la fonction ou des fenêtres longues sans
+   gdb. **NOUVEAU risque d'instrumentation documenté** : le crochet
+   global `RtlEnterCriticalSection`/`RtlLeaveCriticalSection` (utilisé
+   depuis r364) a provoqué un SIGSEGV connu (course CREATE_SUSPENDED,
+   r114/r280/r327/r339/r340) sur deux exécutions longues (45s et
+   180s) ; la trace « verrou tenu, nouvelle pile d'appel » qui en a
+   résulté est explicitement RÉTRACTÉE (capturée pendant/après le
+   crash, pas en direct) -- confirmée dépendante de la durée par une
+   exécution de contrôle à 20s qui sort proprement. **Ne plus utiliser
+   ce crochet global au-delà d'environ 45s.** Voir
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r366-invented-fix/README.md`.
+
+2. **(contexte, r365 — épuisé par r366 ci-dessus, décision suivante déjà prise et exécutée)**
+
+3. **r365 (historique) — décision de l'utilisateur nommée
+   par r365.** L'utilisateur a choisi l'option 1 de r364 ("continuer à
+   remonter"). r365 a remonté la chaîne d'appel au-dessus de
+   `sub_821FA9E0` jusqu'à épuisement : **correction à r364** -- les 4
+   sites d'appel de `sub_823857E0` se partagent entre DEUX fonctions
+   distinctes (`sub_8237FA48` : 2 sites, jamais appelée en direct dans
+   ce scénario, confirmé par 225s cumulées de breakpoint EN DIRECT sans
+   aucun coup ; `sub_8237FA50` : les 2 autres, confirmée comme le VRAI
+   appelant par 3 backtraces identiques en direct sur `sub_821FA9E0`
+   lui-même). Chaîne réelle : `sub_821FA9E0` <- `sub_823857E0` <-
+   `sub_8237FA50` <- `sub_8237FB58` <- `sub_821F7B28` (marcheur
+   GÉNÉRIQUE de table d'initialiseurs statiques du CRT -- deux plages
+   de table fixes, appel indirect `bctrl` sur chaque entrée non nulle,
+   ZÉRO section critique, zéro logique métier) <- `__imp___xstart`
+   (machinerie hôte de création de thread) <- `std::thread` -- un
+   thread OUVRIER dédié, pas la pile bloquée du thread principal.
+   **Plus aucune chaîne d'appel invité à remonter** : la frontière
+   invité/hôte est atteinte. Le candidat « frère » à motif partagé
+   (`sub_821FB060`, dont les adresses retail chevauchent la queue de
+   `sub_821FA9E0`) est un STUB DE CODEGEN INCOMPLET (`// ERROR
+   821FB0B0` puis un `return` nu) -- pas une copie correcte à imiter.
+   **L'option 1 est donc close sur ses PROPRES termes** (frontière
+   atteinte, pas budget épuisé) : l'hypothèse « aucun niveau ne relâche
+   ce verrou » est confirmée avec toute la profondeur possible.
+   **Décision affinée nommée pour l'utilisateur** : (1) appliquer
+   maintenant un correctif inventé dans `sub_821FA9E0` lui-même (choix
+   réfléchi après épuisement de la remontée, pas un raccourci) ; (2)
+   explorer un protocole armer/désarmer INTER-appels plutôt qu'une
+   paire enter/exit du même appel (piste plus profonde, sans garantie
+   de succès) ; ou (3) arrêter la fermeture du blocage par correctif
+   natif et rediriger vers le câblage toujours mort de
+   `presented_frames` (r292/r359) ou un autre angle. **NE PAS réarmer
+   un `gdb.BP_WATCHPOINT` brut sur ce mutex** (crash de GDB, r362).
+   Voir `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r365-upward-trace/README.md`.
+
+2. **(contexte, r364 — épuisé par r365 ci-dessus)** Une sonde EN DIRECT globale filtrée par clé (une seule paire
+   de breakpoints sur les points d'entrée hôte de
+   `__imp__RtlEnterCriticalSection`/`__imp__RtlLeaveCriticalSection`,
+   filtrée sur `*(uint32_t*)$rdi == 0x10000610`, comptée par adresse de
+   retour de l'appelant -- au lieu du balayage statique des 242 sites
+   nommé par r363) a **entièrement expliqué** le résidu `__count=4` de
+   r361 : `sub_821F9E10` (575/574, net +1, structurellement incapable
+   de fuir -- un appel légitimement en vol sur un autre thread) ;
+   `sub_821FA6F8` (208/208, net **0** -- **le correctif r358 est
+   confirmé PARFAITEMENT équilibré en direct**) ; `sub_821FA9E0` (3/0,
+   net **+3** -- une SECONDE fuite Enter/Leave réelle, jamais
+   corrigée). `1+0+3=4`, aucune source inconnue ne subsiste.
+   `sub_821FA9E0` (1136 lignes générées) entre conditionnellement
+   `*(r27+1408)` (même motif que `sub_821FA6F8` sur `*(r30+1408)`, même
+   idiome de drapeau) mais **zéro** appel `RtlLeaveCriticalSection`
+   nulle part dans la fonction, ni dans son unique appelant
+   (`sub_823857E0`), ni dans les appelants de celui-ci (`sub_8237FA48`,
+   tracés ce cycle). **Contrairement à `sub_821FA6F8`, aucun chemin de
+   sortie frère déjà correct n'existe dans la même fonction pour servir
+   de modèle** -- corriger ici exigerait d'INVENTER une logique de
+   relâchement plutôt que d'en copier une déjà correcte, un changement
+   d'une nature matériellement différente de celui autorisé pour
+   r356/r358. **Décision nommée pour l'utilisateur** : (1) continuer à
+   remonter la chaîne d'appel (`sub_8237FA48` et au-delà) pour trouver
+   un site de relâchement authentique à imiter -- reste dans le motif
+   déjà autorisé, mais peut prendre plusieurs cycles de plus, comme la
+   chaîne à 13 fonctions de r354 ; (2) appliquer un correctif inventé
+   par analogie (Leave sur le même bit de drapeau, au retour de la
+   fonction) sans contrôle local prouvant que c'est le bon site --
+   plus rapide, mais une décision d'une nature nouvelle ; ou (3)
+   accepter l'état actuel (359943→4, un bug entièrement corrigé et
+   vérifié) comme point final de cette piste et rediriger vers autre
+   chose (p.ex. le câblage toujours mort de `presented_frames`,
+   r292/r359). **NE PAS réarmer un `gdb.BP_WATCHPOINT` brut sur ce
+   mutex** -- cela a fait planter GDB LUI-MÊME (r362) ; un breakpoint
+   conditionnel simple (utilisé ce cycle) fonctionne bien. Voir
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r364-second-leak-hunt/README.md`.
+
+2. **(contexte, r362-r364, déjà traité ci-dessus)**
+
+3. **r361 — contexte historique.** r361 a
+   CORRIGÉ la prémisse de r360 (« r316 jamais exécutée » était FAUX --
+   r316-r325 avaient déjà entièrement achevé cette tâche, prouvant en
+   direct un blocage circulaire AB-BA de manuel entre le thread
+   principal et le worker sur ce verrou exact). r361 a re-exécuté la
+   technique BYTE POUR BYTE de r325 sur le binaire POST-correctif r358
+   : backtrace du détenteur IDENTIQUE à r325 (thread principal bloqué
+   sur un futex en détenant `0x10000610`), **`__count=4` au lieu de
+   `359943`** -- le correctif r358 a réduit l'AMPLEUR d'une contribution
+   à la récursion détenue, mais PAS fermé le blocage : `__lock=1` tenu
+   par un autre thread bloque le worker quel que soit le compte. Deux
+   pistes à départager pour r362 : (a) une SECONDE paire Enter/Leave
+   déséquilibrée, encore non corrigée, ailleurs dans les ~90 sites
+   d'appel de l'allocateur (réutiliser les techniques statiques de
+   r326-r333, restreintes maintenant à « qu'est-ce qui entre encore
+   `0x10000610` sans Leave correspondant, post-correctif ») ; (b) un
+   problème d'ORDONNANCEMENT structurel -- le propre Enter du thread
+   principal n'est simplement jamais suivi de son Leave avant qu'il
+   n'atteigne l'attente bloquante (`sub_8233B5A0`→`sub_82345CE0`). Ce
+   sont deux bugs différents avec deux correctifs différents. Si (b),
+   vérifier si le code retail Xbox 360 original emprunte ici un chemin
+   plus étroit/différent avant de supposer qu'un correctif natif est
+   même nécessaire -- ceci pourrait devenir un nouveau point de
+   décision QUALIFIÉ. Ne PAS re-citer `presented_frames` ou le
+   comportement de sortie du processus comme preuve que le blocage est
+   résolu -- les deux sont maintenant des signaux confirmés non
+   fiables. Voir §4.82 du rapport et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r361-postfix-holder-identify/README.md`.
+
+## Historique (r360-r361, contexte précédent conservé)
+
+1. **r360 — re-tester la méthode de r312-r314 (vraie boucle par image
+   `loc_821D7E84` dans `sub_821D7DE0`, via `sub_821D7AE0`/
+   `sub_821D7CD0`) POST-correctif r358, sur une fenêtre >=600s.**
+   r359 a relu la lacune r311-r333 en entier et confirmé (r325/r326
+   l'avaient déjà nommé) que le blocage circulaire résolu par r358 EST
+   la continuation directe de la question r283-r297 (« pourquoi
+   `presented_frames` reste à 0 »), pas un sujet séparé. r359 a aussi
+   RECONFIRMÉ que `presented_frames` est câblé sur du code mort depuis
+   r292 (`submit_ring()`, un seul appelant = un test unitaire),
+   inchangé aujourd'hui -- **ne plus le citer comme signal de
+   progrès** ; le signal correct est la trace `AC6_NATIVE_VD_TRACE`
+   et/ou un décodage `PresentPacket`/`XE_SWAP`. Une sonde de 600s
+   post-correctif a trouvé un NOUVEAU 6e lot d'anneau VD (jamais vu
+   avant le correctif à AUCUNE fenêtre testée, 15s-180s) avec du
+   contenu réellement neuf (write_index 19→25→31→37) -- preuve directe
+   que le correctif a permis un progrès mesurable au-delà de tout ce
+   qui était observé avant. Mais toujours zéro `PresentPacket` décodé,
+   et le progrès s'arrête de nouveau après ce 6e lot -- question
+   ouverte pour r360. r312-r314 avaient trouvé (entièrement AVANT le
+   correctif) que le thread principal n'atteint JAMAIS la vraie boucle
+   par image en 400s -- ceci n'a PAS encore été re-testé après le
+   correctif et doit l'être en premier. Aucun blocage qualifié ce
+   cycle. Voir §4.80 du rapport et
+   `recompilation/ace-combat-6-retail/artifacts/retail-us-native-r359-postfix-longwindow/README.md`.
+
+## Historique (r359, contexte précédent conservé)
+
+1. **r359 — investiguer pourquoi `presented_frames` reste à 0 après le
+   correctif de r358.** L'utilisateur a explicitement choisi
+   « Apply the minimal native-side fix » (option 2 du point de
+   décision qualifié r356/357). r358 a appliqué ce correctif via un
+   NOUVEAU script TRACKÉ `tools/apply_sub_821fa6f8_leave_fix.py` :
+   ajout d'un `RtlLeaveCriticalSection(*(r30+1408))` CONDITIONNEL
+   (subordonné à `r25 != 0`) à `loc_821FA94C` (sortie du chemin B de
+   `sub_821FA6F8`), reflétant la logique déjà correcte de
+   `loc_821FA924`. Le bloc cible apparaissait deux fois (duplication
+   par XenonRecomp d'un épilogue partagé avec `sub_821FA6F0`, même
+   code retail, pas deux bugs) -- les deux occurrences sont patchées
+   par cohérence. **VÉRIFIÉ EN DIRECT** via la cascade `A830Watch`
+   déjà prouvée : `recursion=4` au lieu de `359943` au MÊME point de
+   contrôle -- **la fuite confirmée depuis r324 est éliminée.** Un run
+   propre de 90s se termine maintenant NORMALEMENT de lui-même
+   (`generated entry terminated its own thread`) au lieu de rester
+   bloqué -- le blocage mutuel circulaire confirmé (r315-338) ne se
+   produit plus. **`ctest` 10/10, `pytest` 222/1 skip** -- aucune
+   régression. **Cependant** : `presented_frames=0`,
+   `entry_returned=0` toujours après ce même run de 90s -- le
+   correctif résout le blocage SPÉCIFIQUE confirmé, mais ne démontre
+   PAS à lui seul que le jeu atteint un gameplay effectivement rendu.
+   Étant donné l'historique de ce projet (des centaines de cycles
+   antérieurs à travers de nombreux sous-systèmes), il ne serait pas
+   surprenant qu'un AUTRE goulot d'étranglement devienne maintenant le
+   facteur limitant. Étapes pour r359 : — investiguer pourquoi `presented_frames` reste à 0 après le
+   correctif de r358.** L'utilisateur a explicitement choisi
+   « Apply the minimal native-side fix » (option 2 du point de
+   décision qualifié r356/357). r358 a appliqué ce correctif via un
+   NOUVEAU script TRACKÉ `tools/apply_sub_821fa6f8_leave_fix.py` :
+   ajout d'un `RtlLeaveCriticalSection(*(r30+1408))` CONDITIONNEL
+   (subordonné à `r25 != 0`) à `loc_821FA94C` (sortie du chemin B de
+   `sub_821FA6F8`), reflétant la logique déjà correcte de
+   `loc_821FA924`. Le bloc cible apparaissait deux fois (duplication
+   par XenonRecomp d'un épilogue partagé avec `sub_821FA6F0`, même
+   code retail, pas deux bugs) -- les deux occurrences sont patchées
+   par cohérence. **VÉRIFIÉ EN DIRECT** via la cascade `A830Watch`
+   déjà prouvée : `recursion=4` au lieu de `359943` au MÊME point de
+   contrôle -- **la fuite confirmée depuis r324 est éliminée.** Un run
+   propre de 90s se termine maintenant NORMALEMENT de lui-même
+   (`generated entry terminated its own thread`) au lieu de rester
+   bloqué -- le blocage mutuel circulaire confirmé (r315-338) ne se
+   produit plus. **`ctest` 10/10, `pytest` 222/1 skip** -- aucune
+   régression. **Cependant** : `presented_frames=0`,
+   `entry_returned=0` toujours après ce même run de 90s -- le
+   correctif résout le blocage SPÉCIFIQUE confirmé, mais ne démontre
+   PAS à lui seul que le jeu atteint un gameplay effectivement rendu.
+   Étant donné l'historique de ce projet (des centaines de cycles
+   antérieurs à travers de nombreux sous-systèmes), il ne serait pas
+   surprenant qu'un AUTRE goulot d'étranglement devienne maintenant le
+   facteur limitant. Étapes pour r359 :
+   (a) investiguer pourquoi `presented_frames` reste à 0 -- fenêtre de
+       test plus longue et/ou instrumentation différente pour
+       déterminer si un NOUVEAU goulot d'étranglement est devenu le
+       facteur limitant, ou si plus de temps/un déclencheur différent
+       est simplement nécessaire ;
+   (b) envisager d'intégrer le script de correctif au pipeline de
+       build habituel (invocation automatique après régénération du
+       codegen) plutôt qu'une invocation manuelle après chaque
+       `generate_native_guest.py` frais ;
+   (c) ceci reste très plausiblement UNE PARTIE de la réponse à la
+       question originelle de r283-r297 (« pourquoi `presented_frames`
+       reste à 0 ») -- le blocage spécifique tracé depuis r311 est
+       résolu, mais la question globale peut nécessiter d'autres
+       correctifs encore non identifiés ;
+   (d) NE PAS revenir sur le côté hôte déjà vérifié (sondeur VD,
+       câblage de présentation, primitives d'attente bornées, ni la
+       course `CREATE_SUSPENDED` déjà adressée r114/r280) sans preuve
+       nouvelle et directe.
+2. **Discipline** : resync `native` → `native-source` avant chaque build ;
+   build sous cgroup ; ctest 10/10 ; pytest `tests/` ; pour poser un point
+   d'arrêt sur une instruction précise, `break *(NOM_SYMBOLE+DÉCALAGE)` ;
+   avant d'ajouter un nouveau verrou global à un site d'appel à haute
+   fréquence, vérifier s'il peut être PAR CLÉ plutôt que global (piège
+   introduit puis corrigé en r286/r287, sur le modèle déjà établi de
+   `critical_section_for`) ; vérifier toute chaîne `\n` ajoutée dans
+   `materialize_native_import_stubs.py` en régénérant et en lisant le
+   fichier produit (`\\n` à deux caractères — et vérifier qu'aucun `#`
+   n'apparaît par erreur en colonne 0 dans le texte C++ généré, ce qui
+   casserait la compilation comme directive de préprocesseur invalide —
+   piège rencontré et corrigé dans le MÊME cycle avant tout build) ; ne
+   pas garder les traces brutes (réduire en extraits représentatifs) ;
+   rapports + artefacts par cycle ; pas de commit tant que la gate racine
+   échoue pour une cause étrangère au cycle — le dire dans le rapport.
+
+## Contexte r310 (verrouillé) — corrige r309 : PAS un minuteur périodique, une course divergente
+
+- Sur 150s : `sub_8233A610` reste FIXE à 2 occurrences (réfute le
+  minuteur périodique) ; `sub_8233B378` continue à ~473/s (mise à
+  l'échelle linéaire, PAS une rafale qui plafonne).
+- Le compteur `+64` galope indéfiniment (>70 000 en 150s) — pas bloqué.
+  La CIBLE de `sub_8233B5A0` doit donc croître plus vite que le
+  compteur après un succès précoce — course divergente, pas minuteur.
+- `sub_8233A890` reste vivant tout le temps (sondage `/proc` 90s) — pas
+  de mort précoce.
+- N'invalide PAS le constat de r309 sur r291 (10 minutes déjà testées
+  sans effet sur `presented_frames`) — juste le MÉCANISME (course
+  divergente, pas minuteur périodique).
+- r311 doit lire directement cible et compteur aux invocations de
+  `sub_8233B5A0` pour confirmer.
+
+## Contexte r309 (verrouillé) — CLÔTURE r298-r308 ; PIVOT vers la vraie frontière de r297
+
+- `objet+88`/`+96` de `sub_8233B378` sont son verrou PRIVÉ (Mutant/
+  Événement générique), pas une ressource externe. La boucle est un
+  compteur pur, borné uniquement par la cadence ~2ms des primitives
+  hôte — explique exactement les ~459/s de r308.
+- La cadence de ~15s de `sub_8233B5A0` (~6900 incréments) ressemble à
+  un COMPTEUR/MINUTEUR LOGICIEL DÉLIBÉRÉ, pas un bug. TOUTE la chaîne
+  (r283-r308) est maintenant confirmée fonctionner correctement.
+- RÉCONCILIATION CRITIQUE avec r291 : 10 minutes déjà testées,
+  ~180-420 cycles complétés, ZÉRO effet sur `presented_frames`.
+  Répondre à la cadence CPU n'allait JAMAIS répondre à la présentation
+  d'image (r294-r297 : le contenu d'anneau n'inclut jamais de vrai
+  présent, quel que soit le nombre de cycles).
+- r310 doit PIVOTER vers la seconde recommandation de r297 jamais
+  achevée : localiser le code invité de CONSTRUCTION d'un
+  `PresentPacket`, pas l'appel `VdSwap` lui-même.
+
+## Contexte r308 (verrouillé) — corrige r303 ; la question devient quantitative, pas mécanique
+
+- Relecture COMPLÈTE de `sub_8233B378` (82 lignes, r303 s'était arrêté à
+  35) révèle une VRAIE boucle interne jamais vue par la mesure d'entrée
+  de r303. Correction explicite nommée.
+- Mesure directe (point d'arrêt sur le vrai site d'appel dans la
+  boucle, `__imp__sub_8233B378+0xcd`) : ~459 itérations/seconde (13 761
+  en 30s), tid=16.
+- Malgré ceci, `sub_8233A610` (signal-occupé de `sub_8233B5A0`) ne se
+  déclenche que 2 fois/30s — confirmation 1:1 avec les complétions de
+  `sub_8233B5A0`.
+- Le compteur `+64` avance VITE ; c'est la CIBLE de `sub_8233B5A0` qui
+  exige des milliers d'incréments (~6900 estimé) par cycle. AUCUN
+  mécanisme cassé ou lent trouvé nulle part — question maintenant
+  QUANTITATIVE (combien de travail réel par cycle, pas pourquoi c'est
+  lent par appel).
+- r309 doit identifier l'unité de travail réelle de la boucle et ce qui
+  fixe la cible.
+
+## Contexte r307 (verrouillé) — le thread confirmé sonde légitimement, ni affamé ni bloqué
+
+- TID OS réel de `sub_8233A890` capturé avec certitude via gdb
+  (perturbation minimale, un seul arrêt ponctuel).
+- Échantillonnage `/proc` de CE thread précis : 94% du temps en
+  `hrtimer_nanosleep` LÉGITIME (sondage actif borné de `wait_mutant`,
+  r288 — pas `futex_do_wait` comme r301 avait trouvé pour un AUTRE
+  mécanisme/thread).
+- ÉCARTE DÉFINITIVEMENT la famine OS ET une primitive bloquée pour ce
+  thread précis. La question reste celle de r298/r299 : pourquoi la
+  condition qu'il sonde prend-elle tant de tentatives (des dizaines de
+  milliers à ~200µs chacune) ?
+- r308 doit mesurer directement le rythme du signal-occupé de
+  `sub_8233B5A0` sur la porte `+152` de `sub_8233A890` (jamais mesuré
+  isolément) — même technique que r299.
+
+## Contexte r306 (verrouillé) — corrige la prémisse : aucun réengendrement, retour au cadrage original de r298/r299
+
+- Trace d'engendrement sur 90s IDENTIQUE OCTET POUR OCTET à celle de 30s
+  de r305 — les 8 threads ouvriers sont créés UNE SEULE FOIS, tôt, JAMAIS
+  réengendrés (même motif que r292-r294 pour l'anneau GPU, r298-r300
+  pour la chaîne d'appel invitée).
+- `sub_8233A890` n'est PAS réengendrée — c'est l'UNIQUE instance déjà
+  caractérisée par r287-r299. L'angle de création de thread (r304-r306)
+  est ÉPUISÉ.
+- La question revient au cadrage ORIGINAL de r298/r299 avec pleine
+  confiance : pourquoi la boucle interne de CETTE instance unique
+  prend-elle 5-8s par itération.
+- r307 doit identifier le VRAI TID OS de `sub_8233A890` et lui appliquer
+  l'échantillonnage `/proc` de r301, ciblant cette fois le bon thread
+  confirmé plutôt que deviné.
+
+## Contexte r305 (verrouillé) — PLUS GRANDE CORRECTION JUSQU'ICI : `sub_8233A890` lui-même est engendré fraîchement, pas persistant
+
+- Vrai répartiteur trouvé : `sub_823453E8` charge `task_function` depuis
+  `*(descripteur+20)`, `task_argument` depuis `+24`, appelle
+  indirectement.
+- Sur 30s, 8 threads ont exécuté 6 fonctions de tâche DISTINCTES :
+  `sub_8233B378` (confirme r303), `sub_8233B748` (nouvelle),
+  **`sub_8233A890` LUI-MÊME**, `sub_823466C0` (×3), `sub_82344050`,
+  `sub_8211C7A8`.
+- CONFIRME ET AFFINE la correction de r304 : elle s'applique à
+  `sub_8233A890`, l'objet central de toute l'investigation, pas
+  seulement à `sub_8233B378`. N'annule PAS les mesures internes de
+  r287-r299 (boucle propre à l'instance vivante), change seulement le
+  CADRE (thread créé fraîchement, pas persistant).
+- r306 doit tracer `ExCreateThread` filtré sur
+  `task_function==0x8233a890` sur une fenêtre longue et trouver qui
+  l'appelle — c'est la cible précise et correcte de « pourquoi 5-8s ».
+
+## Contexte r304 (verrouillé) — `sub_821F8008` n'est PAS un répartiteur ; correction de la description de r283
+
+- `sub_821F8008` : trampoline générique d'entrée de thread à usage
+  unique (appelle le pointeur reçu, puis `ExTerminateThread`
+  inconditionnellement). Aucune logique de répartition.
+- `ExCreateThread` : 21 déclenchements en 15s, dont 8 SÉPARÉS avec
+  `routine=0x823453e8` — PAS un pool fixe de 8 persistants créés une
+  fois à l'amorçage. CORRECTION EXPLICITE de la description de r283.
+- Modèle de création de thread PAR TÂCHE : un argument
+  (`routine_argument`, `ctx.r8.u32`) détermine la tâche réelle.
+- r305 doit capturer cet argument (variable dédiée, PAS
+  `AC6_NATIVE_IMPORT_TRACE`) pour corréler quel argument mène à quelle
+  sous-tâche, puis trouver qui décide de demander la tâche
+  `sub_8233B378`.
+
+## Contexte r303 (verrouillé) — écrivain du compteur trouvé, encore plus rare que tout le reste
+
+- `sub_8233B378` (l'écrivain de `*(objet+64+16)`) trouvé en cherchant
+  tous les appelants de `sub_82345C88`. Incrémente `*(objet+8)` sous
+  section critique, écrit la nouvelle valeur via `sub_82345C88`.
+- Balayage gdb : `sub_8233B378` — 1 SEULE occurrence en 15s. Appelée via
+  `sub_823453E8` (routine ouvrier, r283) → `sub_821F8008`, un chemin
+  DIFFÉRENT de celui vers `sub_8233A890`. Sur tid=16 (le thread « bruit »
+  de r299 — pas du bruit pour CE mécanisme).
+- Le pool d'ouvriers répartit vers des sous-tâches indépendamment
+  rares — `sub_8233B378` pourrait être la VRAIE composante limitante,
+  pas `sub_8233A890`.
+- r304 doit lire `sub_821F8008` (le répartiteur) pour comprendre la
+  condition de répartition.
+
+## Contexte r302 (verrouillé) — les « sites jumeaux » attendent le MÊME objet, pas deux ouvriers différents
+
+- `sub_8233B4D0`/`sub_8233B538` lus en entier : vraies boucles de
+  relance (motif de `sub_82345CE0`, r298), TOUTES DEUX sur le MÊME objet
+  `r31+64` (un troisième objet-porte, distinct de celui de r298/r299).
+- Poignée de main en DEUX PHASES autour de `sub_8233E0A8`/VdSwap :
+  `>=` cible (B4D0) → travail VdSwap → `>` cible rechargée (B538).
+- CORRECTION EXPLICITE de l'hypothèse de travail de r301 : même objet,
+  pas des ouvriers différents en séquence.
+- r303 doit mesurer chaque phase indépendamment par gdb et trouver ce
+  qui écrit `*(cet-objet+16)`.
+
+## Contexte r301 (verrouillé) — échantillonnage OS : famine par l'ordonnanceur écartée comme explication probable
+
+- ~15 des 29 threads : ~93% CPU en continu — probable source, par
+  thread, du bruit agrégé de r289 (nombreux threads busy-pollant chacun
+  leur propre objet-porte).
+- AU MOINS UN thread : `futex_do_wait` sur TOUTE une fenêtre de 20s —
+  réellement stationné, pas affamé par l'ordonnanceur.
+- Écarte la famine OS comme explication probable pour la poignée de main
+  suivie depuis r283 ; un thread stationné dans un vrai futex attend
+  d'être RÉVEILLÉ (signal applicatif), pas de temps CPU.
+- r302 doit lire `sub_8233B4D0`/`sub_8233B538` (jamais lus en entier) —
+  la cadence de 5-8s pourrait être la SOMME de plusieurs attentes
+  séquentielles sur différents ouvriers dans un seul appel.
+
+## Contexte r300 (verrouillé) — la remontée dans le code invité est ÉPUISÉE (résultat négatif propre)
+
+- `sub_82331E78` (43 lignes) : triviale, aucune attente propre.
+- `sub_821D7DE0` (142 lignes, la vraie boucle de jeu, r283) : boucle
+  INCONDITIONNELLE sans aucune attente/minuterie/pause, appelle
+  `sub_82331E78` À CHAQUE itération.
+- La chaîne ENTIÈRE (boucle principale → poignée de main → ouvrier) a
+  été lue de bout en bout : aucun mécanisme de cadence délibéré dans le
+  code invité examiné jusqu'ici.
+- Candidats restants : famine du thread ouvrier par l'ordonnanceur OS,
+  ou dépendance bloquante non examinée dans le vrai travail par image de
+  l'ouvrier lui-même (`sub_8233DF90`/`sub_8233A830`/`sub_8233E2F0`,
+  jamais lues en entier).
+- r301 REDIRIGE vers l'échantillonnage d'état OS (`/proc`, sans gdb) —
+  la lecture de code généré supplémentaire n'est plus la bonne méthode.
+
+## Contexte r299 (verrouillé) — le vrai travail par image lui-même est l'événement rare
+
+- Écriture exacte de `*(porte+16)` trouvée dans `sub_82345C88`
+  (`PPC_STORE_U64(porte+16, valeur)`, second argument de l'appelant).
+- `sub_8233DF90` (premier appel de vrai travail, un hit propre par
+  itération d'ouvrier) : EXACTEMENT 2 hits en 15 s (~0,13 Hz).
+- `sub_82345C88` : 6670 hits/15s, mais 6664 sur tid=16 (bruit sans
+  rapport, jamais examiné — même leçon que r289 sur l'agrégat non
+  filtré). Seulement 5 sur tid=2 (principal), 1 sur tid=18 (ouvrier).
+- La question remonte d'un niveau : pourquoi `sub_82331E78` n'appelle
+  `sub_8233B5A0` qu'environ une fois toutes les 5-8 secondes ? Rien dans
+  `sub_8233B5A0`/`sub_82345CE0`/`sub_8233A890`/`sub_82345C88` n'explique
+  une cadence de plusieurs secondes — l'écart doit être dans
+  `sub_82331E78` lui-même ou un de ses appels non encore lus en entier.
+
+## Contexte r298 (verrouillé) — confirmé et affiné par mesure directe + désassemblage
+
+- Test de ratio 1:1 en direct (`sub_8233B5A0`:`sub_8233E0A8`, points
+  d'arrêt simultanés) : chaque entrée dans `sub_8233B5A0` est
+  immédiatement suivie d'une entrée dans `sub_8233E0A8`, même thread —
+  confirme empiriquement la revendication causale de r297.
+- `sub_8233B5A0` est en fait ENTIÈREMENT LINÉAIRE (aucune branche) —
+  le blocage se trouve plus loin, dans `sub_82345CE0` (atteinte via
+  `sub_8233A620`), qui contient une VRAIE boucle de relance côté INVITÉ :
+  `sub_821F4128`/`sub_821F5868` répétés jusqu'à
+  `*(porte+16) == cible`.
+- Ceci N'EST PAS une correction de r297 — c'est l'identification précise
+  d'OÙ et COMMENT le blocage se produit physiquement.
+- r299 doit trouver l'instruction exacte, côté ouvrier, qui écrit
+  `*(porte+16)`, et mesurer son propre rythme.
+
+## Contexte r297 (verrouillé) — DÉCOUVERTE UNIFICATRICE : la porte CPU EST la chaîne VdSwap
+
+- Pile d'appels gdb en direct : `sub_82331E78` → `sub_8233B5A0` (moitié
+  productrice de la porte CPU, r283-r291) → `sub_8233E0A8` →
+  `sub_8234F558` → `sub_82347158` → `sub_821F03B0` → `VdSwap`.
+- `sub_8233B5A0` n'atteint `VdSwap` qu'APRÈS le succès (rare,
+  ~0,3-0,7/s) de son attente-de-terminé sur la porte Mutant/événement.
+- Réconcilie TOUT r283-r297 en UNE SEULE cause racine ; corrige la
+  portée implicite de r293 (mesure du débit agrégé dominé par les
+  échecs, pas les succès — pas de contradiction réelle).
+- `presented_frames=0` n'est pas plusieurs blocages indépendants : le
+  taux de succès de la porte CPU EST la question à résoudre (r298).
+
+## Contexte r296 (verrouillé) — mécanisme entier expliqué ; `VdSwap` appelé mais périmé
+
+- Trace d'entrée ajoutée à `publish_write_address()` : `VdSwap` EST
+  appelé (deux fois/15s, bien câblé), mais ZÉRO commit — no-op périmé
+  les deux fois.
+- Diagnostic affiné : `discovered=1` et `write_index == already_read`
+  EXACTEMENT (19==19, 31==31) — le sondeur autonome a déjà drainé la
+  même valeur avant l'appel `VdSwap` de l'invité.
+- Le mécanisme entier est maintenant expliqué sans spéculation hôte
+  supplémentaire : sondeur correct (r293), câblage présentation correct
+  (r295), contenu d'anneau sans jamais de vrai présent (r294), appel
+  `VdSwap` réel mais toujours périmé (r296).
+- L'investigation bascule ENTIÈREMENT côté INVITÉ pour r297.
+
+## Contexte r295 (verrouillé) — CORRECTIF RÉEL appliqué ; ambiguïté résolue définitivement
+
+- `bind_guest_vd()` construit maintenant un vrai `VulkanDevice` +
+  `VulkanOffscreenTarget` et appelle `bind_offscreen()`. Confirmé
+  fonctionnel EN DIRECT sur cet hôte (test dédié, exit 0, aucune note de
+  repli ; `present_target_configured=1` dans chaque lot sur l'ISO US).
+- Malgré le correctif, TOUJOURS zéro `PresentPacket` décodé,
+  `presented_frames` toujours 0 — ÉLIMINE définitivement l'hypothèse
+  « hôte ignorait silencieusement une présentation ». L'invité n'en émet
+  simplement jamais avant l'arrêt de son anneau.
+- L'investigation converge maintenant sur UNE SEULE question côté
+  INVITÉ, recoupant r283-r295 : pourquoi l'exécution s'arrête-t-elle de
+  progresser après un peu de travail initial, dans au moins trois
+  sous-systèmes montrant ce motif identique.
+
+## Contexte r294 (verrouillé) — de vrais dessins ont lieu ; second bug de câblage confirmé (`bind_offscreen()`)
+
+- 28 `DrawPacket` réels + 8 `ImmediateShaderPacket` + synchronisation
+  dans les lots 2/4/5 de la rafale VD — PAS juste de l'init PM4. Le jeu
+  dessine réellement quelque chose.
+- `present_target_configured=0` dans chaque lot, zéro `PresentPacket`
+  décodé. `bind_offscreen()` (seul point d'écriture de `present_target_`)
+  n'a AUCUN appelant réel dans tout `native/` — seul un test unitaire
+  l'appelle. Même motif que `submit_ring()` (r292).
+- Même si l'invité émettait un `PresentPacket`, le runtime réel ne
+  pourrait actuellement ni l'observer ni agir dessus.
+- r295 doit câbler `bind_offscreen()` (tâche d'intégration dédiée,
+  construire un `VulkanOffscreenTarget` réel, l'appeler au bon moment
+  dans `boot()`), PUIS relancer une fenêtre longue pour distinguer
+  « l'invité n'émet jamais de présentation » de « l'hôte en ignorait
+  une silencieusement ».
+
+## Contexte r293 (verrouillé) — aucun couplage causal étroit entre les deux stalls ; le VD n'est pas bogué
+
+- `discover_write_index_locked` relit directement le champ live de
+  l'invité à chaque poll de 1 ms — pas de redécouverte qui pourrait
+  manquer une mise à jour. Le silence GPU = l'invité n'écrit simplement
+  plus, pas un bug hôte.
+- Sonde combinée 30 s (CPU + GPU) : l'anneau GPU s'arrête en ~1 s, la
+  porte CPU continue à taux constant (550-715k/s) sur TOUTE la fenêtre,
+  sans changement au moment de l'arrêt GPU. Aucun couplage étroit
+  observable — n'écarte pas une cause partagée de plus haut niveau
+  (progression du jeu bloquée avant les deux), mais aucun lien direct
+  entre les deux mécanismes.
+
+## Contexte r292 (verrouillé) — `presented_frames` est câblé sur du code mort ; le vrai chemin GPU vit puis s'arrête, comme la porte CPU
+
+- `NativeRuntime::submit_ring()` (seul écrivain de `presented_frames`)
+  n'a AUCUN appelant réel — seul un test unitaire l'appelle. Le
+  diagnostic ne peut jamais devenir non nul par le vrai chemin de code.
+- Le vrai chemin, `NativeGuestVdService::drain_locked()`, piloté par un
+  thread réel, EST vivant : 5 « drain accepted » réels en 15 s, aucun
+  rejet. Sur 90 s : trace IDENTIQUE octet pour octet — l'activité GPU
+  s'arrête complètement après le 5e drain, sans erreur.
+- Motif IDENTIQUE à la porte CPU de r283-r291 (« progrès puis silence »)
+  mais dans un sous-système DIFFÉRENT et sans lien causal établi —
+  possibilité d'une cause racine partagée, non confirmée.
+- `presented_frames=0` n'a jamais été un signal fiable depuis r280 — bug
+  de diagnostic réel, séparé du blocage runtime recherché.
+
+## Contexte r291 (verrouillé) — PIVOT : la porte n'est probablement pas la cause ; suivre le chemin GPU
+
+- Fenêtre de 10 min sans gdb/trace : `presented_frames=0` inchangé,
+  malgré ~180-420 itérations réussies de la porte estimées au taux de
+  succès de r290. Écarte « il suffit d'attendre plus longtemps ».
+- `presented_frames` reflète `backend_.present_count()` (Vulkan),
+  incrémenté sur un `PresentPacket`/`XE_SWAP` — chemin de soumission GPU
+  ENTIÈREMENT SÉPARÉ de la porte CPU (Mutant/événement) investiguée
+  depuis r283. Aucun lien causal établi entre les deux.
+- r292 doit suivre le chemin GPU (`draw_count`/`resolve_count`/
+  `present_count`, puis `submit()`/`present_to_offscreen()`), PAS
+  reprendre l'investigation de la porte CPU sans preuve nouvelle.
+
+## Contexte r290 (verrouillé) — les deux hypothèses de r289 sont RÉFUTÉES : c'est un vrai spin avec un succès rare, pas un artefact
+
+- Réutilisation de handle ÉCARTÉE (lecture de code, pas de build) :
+  `g_next_handle` est un compteur unique strictement croissant, jamais
+  recyclé ; `NtClose` n'efface même pas `g_mutants`. `0x120`/`0x121`
+  désignent le MÊME objet pour toute la vie du process.
+- Surcharge de gdb ÉCARTÉE (mesure contrôlée, même run) : rejoué le point
+  d'arrêt de r286/r287 sur `sub_82345CE0` EN MÊME TEMPS que le heartbeat
+  de r289. Résultat : 5 occurrences en 15 s (cohérent avec r286/r287),
+  MAIS le débit `gate120`/`gate121` reste à 162 000-196 000/s à CHAQUE
+  seconde — indiscernable de la mesure sans gdb. gdb n'est PAS la cause.
+- CONCLUSION RÉELLE, confirmée côté moteur : ~190 000 tentatives/s, mais
+  seulement ~0,3-0,7 succès PAR SECONDE (pas par 15s) — ratio d'environ 1
+  sur plusieurs cent mille. C'est un spin/livelock réel, pas un artefact
+  de mesure.
+- CORRECTION EXPLICITE DE r287 (par son nom) : sa caractérisation
+  « parfois ~100ms, parfois 1,4s+, aucune explication » décrivait
+  l'écart entre succès rares comme si c'était la durée d'un appel
+  bloquant. Ce n'en est pas un. Les autres conclusions de r287 (correctif
+  de verrouillage par clé, capture du cycle en 120ms) restent correctes.
+
+## Contexte r289 (verrouillé) — DÉCOUVERTE INITIALE : la porte ne s'arrête jamais, contredit r283-r287 (hypothèses tranchées en r290 ci-dessus)
+
+- Compteur d'appels 1/s ajouté à `wait_event`/`wait_mutant`, filtré sur
+  les handles exacts de la porte (`gate120`=Mutant, `gate121`=événement).
+- RÉSULTAT : ~182 000 appels/s SOUTENUS sur ces deux handles, sur toute
+  une fenêtre de ~79 s sans gdb, jamais un creux. `presented_frames`
+  reste 0.
+- CONTREDIT DIRECTEMENT r286/r287 : leur point d'arrêt gdb sur la MÊME
+  instruction de comparaison avait mesuré ~4 occurrences/15s — six
+  ordres de grandeur d'écart.
+- Hypothèse dominante NON TRANCHÉE : la surcharge de gdb sur un point
+  d'arrêt touché des centaines de milliers de fois/s pourrait avoir
+  ralenti l'exécution réelle au point de faire paraître bloquée une
+  boucle qui tourne en fait sans jamais s'arrêter. Alternative non
+  écartée : réutilisation de handle. Si l'hypothèse gdb se confirme,
+  ceci n'est plus un blocage mais un spin/livelock sans progression, et
+  la caractérisation « variance élevée » de r287 doit être corrigée par
+  son nom.
+
+## Contexte r288 (verrouillé) — les deux primitives hôte sont innocentées, la variance est ailleurs
+
+- `wait_event()`/`wait_mutant()` instrumentés (bornés, anomalie
+  `elapsed_ms>5` seulement) — gardé, sur sa PROPRE variable dédiée
+  `AC6_NATIVE_WAIT_TIMING_TRACE` (pas `AC6_NATIVE_IMPORT_TRACE`, qui
+  réactive les vieilles traces par-appel r284/r286/r287 et flood — 487
+  Mo/4,3 M lignes en <1 min mesuré directement ce cycle).
+- RÉSULTAT SUR FENÊTRE PROPRE (75 s, US ISO, sans gdb) : exactement 2
+  anomalies (14 ms, 6 ms), toutes `wait_event`, zéro `wait_mutant`. Ces
+  deux primitives NE dépassent JAMAIS leur borne d'environ 2 ms.
+  `presented_frames` reste 0.
+- CONCLUSION : la variance de 1,4 s+ (r283-r287) N'EST PAS dans
+  `wait_event`/`wait_mutant`. Reste à déterminer si elle est dans les
+  écarts ENTRE appels (site d'appel invité `sub_8233A890` à instrumenter,
+  r289) ou dans un sous-système non instrumenté (`NtReadFile`, non
+  écarté) ou si `presented_frames` exige un jalon ultérieur distinct.
+
+## Contexte r287 (verrouillé) — correctif réel gardé, symptôme non résolu, mais nouvelle compréhension
+
+- Verrouillage par Mutant (pas un verrou global) — gardé, corrige un
+  vrai convoi de verrou (un tiers thread sans rapport monopolisait le
+  verrou partagé 6922 fois/15s), mais SANS EFFET sur le symptôme observé.
+- DÉCOUVERTE CLÉ : le mécanisme peut compléter un cycle complet en moins
+  de 120 ms (capturé directement) — ce n'est PAS un blocage fixe, c'est
+  une VARIANCE non expliquée entre cycles rapides et cycles de 1,4 s ou
+  plus. 90 s sans débogueur ne suffisent toujours pas à atteindre
+  `presented_frames` > 0.
+
+## Contexte r286/r285/r284/r283/r282/r281/r280 (verrouillés)
+
+- Voir les rapports précédents (§4ter à §4septies du rapport r280) — tous
+  les correctifs sont réels, gardés et confirmés individuellement, mais
+  aucun n'a encore résolu le symptôme de la boucle de jeu.
+
 ## Résultat requis
 
 Atteindre visiblement le début du gameplay Mission 01 avec le runtime natif,
 sans substitution de frontbuffer, état synthétique, compteur injecté ni
-fallback ReXGlue.
-
-## Identité scellée
-
-- cible : retail NTSC-U/J, `default.xex`, SHA-256
-  `6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc`;
-- ISO : `204c5e645d79da8776699c12f17bd069f869fbdb10ae79015d1a0ef2b743c98c`;
-- projet Ghidra : `ghidra-projects/ac6-us.gpr` +
-  `ghidra-projects/ac6-us.rep/`;
-- programme Ghidra : `default.xex`, `PowerPC:BE:64:Xenon`;
-- AC6_recomp : `09144bb092ad871584808aeead69c395edbd5200`;
-- renderer oracle : ReXGlue, hors produit et hors installation seulement.
-
-## État courant
-
-- La famille de configuration plateforme Vd/X ouverte par r168 est
-  entièrement fermée depuis r175 (détail dans `STATE.md` r169-r175).
-- r176/r177 ont corrigé `XamUserGetSigninState`/`XamGetSystemVersion`.
-- r178 (documentation seule) : `XexCheckExecutablePrivilege` vérifié, non
-  corrigé (précédent r164, sémantique de privilège non déterminable
-  localement).
-- r179 a corrigé `KeQuerySystemTime` (FILETIME réel via l'horloge de
-  l'hôte).
-- r180 (autorisé explicitement par l'utilisateur) : backend d'entrée
-  manette natif via SDL2 (`NativeGuestInputService`) —
-  `XamInputGetState`/`SetState`/`GetCapabilities` implémentés avec preuve
-  réelle du contrat de transfert (code d'erreur `0x48F`, offsets
-  `XINPUT_CAPABILITIES`). Découverte importante : modifier `native/`
-  nécessite `tools/prepare.py --profile native` (resynchronise
-  `native-source/`), pas seulement `build.py` — voir RESUME.md. Aucune
-  manette physique disponible ici; le symptôme « contrôles nuls » reste à
-  confirmer par une future observation runtime.
-- r181 a corrigé `XamInputGetKeystrokeEx` (dernier import de la famille
-  `XamInput*`) : renvoie `ERROR_EMPTY` (0x4306) sans condition — forme
-  réelle valide, aucune file de keystrokes n'existe encore.
-- r182 a corrigé `XamUserCheckPrivilege` : `ERROR_SUCCESS` + bool de
-  sortie `TRUE` (accordé) — identifié comme le thunk `0x823cfe8c` que r176
-  avait laissé anonyme.
-- r183 a corrigé `RtlImageXexHeaderField` : renvoie `0` (absent) — la
-  valeur de retour EST le pointeur de champ ici (pas un statut); les 2
-  sites d'appel réels le déréférencent quand non nul, donc
-  `kOfflineStatus` était un vrai risque de crash, pas un trou cosmétique.
-- r184 a corrigé `XeCryptSha` : calcule un VRAI condensé SHA-1 (OpenSSL
-  EVP) sur les octets invités réels — le condensé alimente une
-  comparaison réelle en aval, donc un condensé absent échouait toujours.
-- r185 a corrigé `RtlTimeToTimeFields`/`RtlTimeFieldsToTime` (via C++20
-  `<chrono>`) — complète le fix r179 (`KeQuerySystemTime`), resté
-  incomplet seul puisque ces 2 imports étaient encore des no-op.
-- r186 a corrigé `RtlFillMemoryUlong`/`RtlCompareMemoryUlong` (algorithme
-  RTL standard fixe, aucune ambiguïté).
-- r187 a corrigé `RtlUnicodeToMultiByteN` : convertit et renvoie
-  `STATUS_SUCCESS` — le seul site d'appel réel prenait TOUJOURS la branche
-  d'échec avec `kOfflineStatus` (NTSTATUS négatif).
-- r188 a corrigé `RtlUnicodeStringToAnsiString`/`RtlFreeAnsiString`
-  (allocation réelle via `allocate_guest`, conversion, libération
-  cohérente avec le précédent `ExFreePool`).
-- r189 a corrigé `NtQueryFullAttributesFile` (réutilise la forme
-  ObjectAttributes de `NtCreateFile`; ajoute
-  `NativeGuestMediaService::file_size()`).
-- r190 a corrigé `NtQueryVolumeInformationFile` (FileFsSizeInformation,
-  unité d'allocation FATX 16 Kio, 8 Gio libre/total — un 2e site de
-  validation non entièrement retracé, nommé honnêtement).
-- r191 a corrigé les primitives spinlock/IRQL (`KfAcquireSpinLock`/
-  `KfReleaseSpinLock`, `KeAcquireSpinLockAtRaisedIrql`/
-  `KeReleaseSpinLockFromRaisedIrql`, `KeRaiseIrqlToDpcLevel`/`KfLowerIrql`)
-  — vraie exclusion mutuelle, même risque de concurrence réelle que r116
-  mais pour une famille bien plus répandue (88-110 sites d'appel réels par
-  fonction).
-- r192 a corrigé le reste de cette famille : `KeTryToAcquireSpinLockAtRaisedIrql`
-  (variante non bloquante) et `KeInitializeSemaphore`/`KeReleaseSemaphore`
-  (un vrai `KSEMAPHORE` jamais relâché — tout wait expirait toujours).
-  Vérifié aussi, non corrigé : `NtQueryInformationFile` (bloqué par le
-  média en lecture seule, même famille que r178); `sprintf`/`_vsnprintf`
-  (moteur printf varargs, hors scope d'un cycle borné).
-- r193 a corrigé `KeBugCheck`/`KeBugCheckEx` (ne retournent jamais sur
-  vrai matériel; le no-op offline retournait normalement — vrai risque
-  d'exécution après un point jamais prévu comme atteignable — maintenant
-  `std::abort()` avec diagnostic réel).
-- r194 a corrigé `KeDelayExecutionThread` (le no-op offline retournait
-  instantanément au lieu d'attendre — maintenant un vrai
-  `std::this_thread::sleep_for` sur l'intervalle relatif réel).
-- r195 a corrigé `XamAlloc`/`XamFree` (statut Win32 signé — le no-op
-  offline échouait systématiquement aux 3 sites d'appel réels — utilise
-  maintenant `allocate_guest`).
-- r196 a corrigé `ObCreateSymbolicLink`/`ObDeleteSymbolicLink` (boucle
-  réelle de montage de périphérique — le no-op offline échouait
-  systématiquement, un vrai blocage de boot — retourne maintenant
-  `STATUS_SUCCESS` sans condition).
-- r197 a corrigé `KeLockL2`/`KeUnlockL2`/`KiApcNormalRoutineNop` (retour
-  ignoré par tous les appelants réels — `STATUS_SUCCESS` sans condition).
-  Vérifié aussi, non corrigé : `XamSessionCreateHandle`/
-  `XamSessionRefObjByHandle` (pas assez tracé) et `NtDuplicateObject`
-  (signature ambiguë).
-- r198 a corrigé `XamTaskShouldExit` (défaut « continue le travail » au
-  lieu d'abandonner immédiatement). Vérifié aussi, non corrigé :
-  `XamTaskSchedule`/`XamTaskCloseHandle` (nécessiterait un sous-système
-  d'exécution de callback invité) et `VdGetSystemCommandBuffer` (hors
-  politique du renderer natif).
-- r199 a corrigé `NtFlushBuffersFile` (média en lecture seule, jamais
-  d'écriture en attente — `STATUS_SUCCESS` sans condition).
-- r200 a corrigé `XNotifyGetNext`/`XNotifyPositionUI` (le no-op offline
-  signalait une notification à chaque appel, lisant un id depuis la
-  pile non initialisée — retourne maintenant « aucune notification »).
-- r201 a corrigé `NtOpenFile` (9 sites d'appel réels — le plus haut
-  compte du balayage — rejoint le chemin média déjà correct de
-  `NtCreateFile`, même contrat de registres r3/r5/r6).
-- r202 (documentation seule) : `NtWriteFile`/`NtDeviceIoControlFile`
-  tracés comme un vrai écriveur de sauvegarde (forme FATX classique) —
-  c'est la frontière « save/reload » de Gate 2 au niveau binaire, non
-  implémentée (nécessite un vrai support d'écriture). SEH
-  (`RtlRaiseException`/`RtlUnwind`/`RtlCaptureContext`) et clé console
-  (`XeKeysConsolePrivateKeySign`/`Verification`, hors de portée
-  permanente) vérifiés sans fix sûr.
-- r203 corrige r197 : `0x823cfe4c` est le vrai import
-  `XMsgStartIORequest` (17 sites réels), pas une fonction interne de
-  télémétrie — la famille `XamSession*` de r197 fait du vrai trafic
-  IPC, effort de fix plus large que pensé, toujours différé. Corrigé
-  aussi : `XAudioGetVoiceCategoryVolumeChangeMask`/
-  `XAudioGetVoiceCategoryVolume` (masque « rien n'a changé », volume
-  plein par défaut).
-- r204 a corrigé `IoDismountVolume`/`IoDismountVolumeByFileHandle`
-  (retour ignoré par tous les appelants réels — `STATUS_SUCCESS` sans
-  condition).
-- r205 a corrigé `XamNotifyCreateListener` (retourne un HANDLE, pas un
-  NTSTATUS — alloue maintenant un vrai handle via `g_next_handle`).
-- r206 a corrigé la famille `XAudioRegisterRenderDriverClient`/
-  `Unregister`/`SubmitRenderDriverFrame` (Unregister bloquait
-  systématiquement l'init audio — vérifié en signé, kOfflineStatus
-  négatif). Vérifié aussi, non corrigé : `XamGetExecutionId`
-  (champ de struct non confirmé), `XamShowMessageBoxUIEx` (attente
-  overlapped non implémentée), 6 dialogues `XamShow*` (trampolines non
-  tracés).
-- r207 a corrigé `XamVoiceHeadsetPresent` (booléen, pas NTSTATUS —
-  signalait « casque présent » à tort). Vérifié aussi, non corrigé :
-  `XamVoiceCreate` (échec actuel déjà honnête, pas de fix forcé).
-- r208 a corrigé `XamVoiceClose` (retour ignoré aux 3 sites d'appel
-  réels — `STATUS_SUCCESS` sans condition).
-- r209 a corrigé `XamLoaderTerminateTitle` (ne retourne jamais — aucun
-  épilogue après son 2e site d'appel réel — `std::exit(0)`). Addenda :
-  `XamGetExecutionId` (r206) garde en réalité au moins 4 sites d'appel
-  réels de `XamUserReadProfileSettings`, portée plus large que scopée —
-  toujours non corrigé.
-- r210 a corrigé `XMACreateContext`/`XMAReleaseContext` (Create bloquait
-  systématiquement l'init audio XMA, vérifié en signé). Vérifié aussi,
-  non corrigé : `XamVoiceSubmitPacket` (dépend d'un handle que
-  `XamVoiceCreate` ne produit jamais — fixer seul serait inerte).
-- r211 (documentation seule) : escalade de `XamGetExecutionId` — garde
-  en réalité au moins 7 sites d'appel réels (`XamUserReadProfileSettings`
-  ×4, `XamUserCreateStatsEnumerator` ×2,
-  `XamUserCreateAchievementEnumerator` ×1); vraie signature = pointeur-
-  vers-pointeur, pas remplissage de struct. `XamUserAreUsersFriends`
-  vérifié adéquat sans fix. `XamUserGetXUID`/`GetSigninInfo` vérifiés,
-  non corrigés (motif de masquage de retour non confirmé).
-- r212 (documentation seule) : `XexGetModuleHandle`/
-  `XexGetProcedureAddress` — l'échec actuel EST le bon chemin de repli
-  statique (motif de compatibilité ascendante Xbox 360), confirmé
-  adéquat, aucun fix nécessaire. `XamContentCreateEx` vérifié, même
-  territoire save/reload que r202.
-- r213 a corrigé `ExTerminateThread` (ne retourne jamais, termine
-  seulement son propre thread — `GuestThreadTerminated`, rattrapé par
-  `ExCreateThread` et la sonde d'entrée principale) et
-  `ExRegisterTitleTerminateNotification` (retour ignoré partout).
-  Édite de vrais fichiers `native/` — `prepare.py` relancé.
-- r214 a corrigé `HalReturnToFirmware` (ne retourne jamais, arrêt
-  niveau console — `std::exit(0)`).
-- r215 a corrigé `XMsgCancelIORequest` (retour ignoré aux 3 sites
-  d'appel réels — `STATUS_SUCCESS` sans condition).
-- r216 a corrigé `NtSetTimerEx`/`NtCancelTimer`/`NtCreateTimer` (signature
-  8 arguments résolue via wrapper; minuteur réel via `std::thread`,
-  enregistré dans `g_events` — `NtCreateTimer` ne l'enregistrait jamais
-  avant).
-- r217 a corrigé `VdSetDisplayMode` (retour ignoré — `STATUS_SUCCESS`
-  sans condition). Vérifié aussi, non corrigé : `VdPersistDisplay`
-  (territoire renderer natif fail-closed).
-- r218 (documentation seule) : bilan complet du balayage r169-r217
-  (125→87 imports restants), catégorisé par gros chantier. Voir ce
-  rapport avant de reprendre le balayage — il évite de redécouvrir la
-  carte des chantiers restants.
-- r219 (documentation seule) : corrige r209/r211 — la porte
-  `XamGetExecutionId` (5 appelants réels tracés jusqu'à LEURS propres
-  appelants) est TOUJOURS contournée (valeur de contrôle littérale 0
-  partout), jamais un vrai blocage. `XamUserCreateStatsEnumerator`/
-  `XamUserCreateAchievementEnumerator` confirmés déjà adéquats;
-  `XamUserReadProfileSettings` reste différé mais pour son propre
-  contrat d'achèvement asynchrone (même famille que
-  `XamShowMessageBoxUIEx`), pas la porte.
-- r220 (documentation seule) : protocole d'achèvement overlapped
-  partiellement tracé (layout Internal@0/InternalHigh@4 confirmé via le
-  helper d'attente `Function_821F50F8`) mais NON implémenté — l'adresse
-  pile réelle de `pOverlapped` reste ambiguë entre plusieurs candidates,
-  risque réel d'écriture au mauvais offset.
-- r221 (documentation seule) : signature réelle à 9 paramètres de
-  `XamShowMessageBoxUIEx` entièrement résolue (`pOverlapped` = 9e
-  argument pile, résultat final à `pOverlapped+0x14`). Toujours non
-  implémenté : convention d'accès `ctx.r1.u32 + 0x54` pour un argument
-  pile depuis un stub natif non confirmée par un exemple existant dans
-  ce projet (recherché, résultat négatif).
-- r222 a corrigé `XamShowMessageBoxUIEx` (réexamen : la réserve de r221
-  ne s'appliquait pas — `ctx.r1.u32` EST le `r1` de l'appelant par
-  construction, pas une convention à confirmer séparément. Écrit
-  `pMessageBoxResult`/`pOverlapped+0x14` à 0, retourne `STATUS_SUCCESS`
-  jamais 997, saute le helper d'attente asynchrone).
-- r223 a corrigé `XamUserReadProfileSettings` (les deux cibles de
-  branchement « code non concordant » de l'appelant sont des retours
-  propres, pas des erreurs — retourne `STATUS_SUCCESS`; struct-fill non
-  fait, signature au-delà de 4 paramètres pas assez confirmée).
-- r224 (documentation seule) : les trampolines `XamShow*` sont en
-  réalité les cibles de repli d'une table de résolution dynamique (≥14
-  entrées) IDENTIQUE au mécanisme déjà confirmé actif par r212 pour
-  `XexGetModuleHandle`/`XexGetProcedureAddress` — confirmées
-  atteignables (pas du code mort), mais toujours non implémenté (la
-  fonction résolveur qui lit cette table reste à tracer).
-- r225 (documentation seule) corrige r224 : `scripts/ReferencesTo.java`
-  (déjà présent, interroge par adresse brute) montre que 12 des 14
-  entrées de la table n'ont AUCUNE référence dans ce XEX, et que la base
-  de la table elle-même n'en a aucune non plus — il n'existe aucune
-  preuve statique d'une fonction résolveur qui lirait cette table en
-  boucle. Seules 2 adresses voisines (`0x821f4680`, `0x821f4678`, ni
-  l'une ni l'autre porteuse d'un symbole Ghidra) ont de vrais appelants
-  directs — mais ce sont des adresses `.text` internes ordinaires déjà
-  recompilées par XenonRecomp, PAS des gaps de stub d'import : ce fil de
-  recherche est clos et hors périmètre du balayage.
-- r226 a corrigé `XamUserGetName` (2 vrais sites d'appel confirment
-  indépendamment `cchUserName=0x10`; l'un des deux appelants n'a jamais
-  vérifié le statut de retour et utilisait le buffer sans condition —
-  même classe de risque que r183. Écrit un nom ASCII synthétique
-  explicite (« Player »), tronqué/terminé à la taille confirmée,
-  retourne `STATUS_SUCCESS`).
-- r227 a corrigé `XamUserGetSigninInfo` (escalade de r211 : le wrapper
-  passthrough confirmé par désassemblage brut, 6 vrais appelants, 3
-  tracés — tous lisent un seul bit à l'offset +8 qui conditionne
-  l'exécution de la vraie logique par-joueur. Remplit XUID=0 et le bit
-  de garde à 0 pour l'utilisateur 0 (même convention que
-  `XamUserGetSigninState`, r176); les autres index gardent l'échec
-  offline existant).
-- r228 a corrigé `XamUserGetXUID` (escalade de r211 : wrapper à
-  remappage d'arguments confirmé par désassemblage brut — insère
-  `dwFlags=7` littéral, même motif que `NtSetTimerEx`/
-  `XamShowMessageBoxUIEx`. 6 vrais appelants, 3 tracés confirment un
-  XUID de sortie 8 octets; l'un des trois utilise le buffer sans
-  aucune vérification de statut. Remplit XUID=0 pour l'utilisateur 0,
-  même convention que r227; les autres index gardent l'échec offline).
-- r229 (documentation seule) : 11 imports confirmés MORTS dans ce build
-  (zéro appelant réel) — `XamWriteGamerTile`, tout le cluster
-  `XamContent{GetDeviceState,GetDeviceData,Close,Delete,SetThumbnail,
-  CreateEnumerator}`, `NtQueryDirectoryFile`, `NtReadFileScatter`,
-  `StfsControlDevice`, `StfsCreateDevice`, `XamLoaderLaunchTitle`,
-  `XamContentCreateEx`, `XamEnumerate`. `NtSetInformationFile` (9 sites
-  réels, le plus haut compte tracé) confirmé déjà adéquat : les 4 sites
-  tracés vérifient tous le statut avant de continuer, même famille que
-  le chantier save/reload de r202, pas un bug de forme de contrat.
-- r230 a corrigé `XamTaskCloseHandle` (r198 avait différé ce couple avec
-  `XamTaskSchedule` ensemble, mais son unique vrai site d'appel ignore
-  totalement le retour — même motif que `KeLockL2`/`IoDismountVolume`/
-  `XamVoiceClose`/`XMsgCancelIORequest`. `XamTaskSchedule` lui-même reste
-  différé). `__C_specific_handler` vérifié : zéro référence dans ce XEX,
-  cohérent avec r202 (SEH jamais réellement invoqué dans ce build).
-- r231 (documentation seule) : les 29 imports `NetDll_*` sont clos —
-  26 sans aucun appelant réel, et les 3 restants
-  (`WSAGetLastError`/`___WSAFDIsSet`/`XNetQosLookup`) déjà adéquats : le
-  générique offline ne correspond jamais aux valeurs comparées par leurs
-  appelants, et ces 3 chaînes sont de toute façon gardées par un champ
-  handle-socket qui reste toujours `-1` puisque `socket`/`connect` sont
-  eux-mêmes morts. Bucket fermé, pas seulement réduit.
-- r232 (documentation seule) : `XamSessionCreateHandle`/
-  `XamSessionRefObjByHandle` (r197 : « pas assez tracé ») entièrement
-  tracés — 1 + 11 sites réels, TOUS vérifient le statut avant d'utiliser
-  l'objet référencé ou retournent l'échec honnêtement sinon. Le
-  générique offline est déjà correct partout; paire close, aucun fix
-  nécessaire.
-- r233 (documentation seule) : `NtDuplicateObject`/`XamVoiceCreate`/
-  `XamVoiceSubmitPacket` re-confirmés déjà adéquats (tous les sites
-  réels vérifient le statut). `XexCheckExecutablePrivilege` : la
-  tentation d'un fix (« défaut = privilège refusé, offline ») a été
-  examinée et EXPLICITEMENT refusée à nouveau — r178 avait déjà pesé
-  exactement ce compromis sans contrôle disponible pour trancher; aucune
-  preuve nouvelle ne renverse cette décision.
-- r234 (documentation seule) : `sprintf`/`_vsnprintf` scopés (7+2 sites
-  réels, formats hétérogènes, chemins de diagnostic save/reload) —
-  confirme r192 : moteur printf varargs complet nécessaire, hors d'un
-  cycle borné. **Le balayage des imports offline (r148-r233) est déclaré
-  à son point d'arrêt naturel** : chaque candidat restant du catalogue
-  r218 a désormais une disposition tracée et nommée (mort, déjà adéquat,
-  bloqué par sous-système/politique/périmètre, ou sans cas de contrôle);
-  aucun ne correspond plus à la méthode de ce balayage (fix borné à un
-  seul import, dérivé de preuve). Rouvrir n'importe lequel exige une
-  preuve nouvelle, pas un nouveau passage sur les mêmes sites d'appel.
-- r235 (documentation seule) : tentative de réduire encore le périmètre
-  de `_vsnprintf` — les spécificateurs des 7 sites `sprintf` sont bien un
-  petit ensemble fermé (`%s`/`%d`/`%x`/`%X`), mais le vrai consommateur
-  de `_vsnprintf` (`Function_821EF4E0`/`Function_821EF458`, des wrappers
-  qui transmettent leurs propres varargs) a 20 + 8 vrais appelants réels
-  répartis sur au moins 4 fonctions distinctes, la plupart avec des
-  chaînes de format non encore décodées — un seul chemin (dump crash
-  `Function_821EF878`) est confirmé mort, les autres non. Réaffirme
-  r234 avec bien plus de preuve : une implémentation partielle
-  désynchroniserait silencieusement les lectures varargs sur tout
-  spécificateur non couvert — pire que le no-op honnête actuel.
-- r236 a corrigé `sprintf`/`_vsnprintf` : DÉCODAGE EXHAUSTIF (pas
-  échantillonné) de CHAQUE chaîne de format atteignant CHAQUE vrai
-  appelant des deux imports (y compris une table dynamique de 11
-  entrées littérales) — l'ensemble complet de spécificateurs observés
-  est fermé : littéraux, `%s` (largeur décimale optionnelle),
-  `%d`, `%x`/`%X` (largeur zéro-paddée optionnelle). Le pointeur
-  `va_list` réel de `_vsnprintf` est résolu par désassemblage brut
-  (`std r5,0x20(r1)`…`std r10,0x48(r1)`, slots de 8 octets, valeur aux
-  4 octets bas). Parseur partagé `guest_vprintf()` ajouté (HEADER),
-  spécificateur non reconnu copié tel quel plutôt que deviné. Vérifié
-  par un smoke-test runtime autonome (8/8) contre CHAQUE chaîne de
-  format réelle décodée, en plus de `ctest`/pytest.
-- r237 (documentation seule) : `XamTaskSchedule` réexaminé après avoir
-  remarqué que `ExCreateThread` (r114) établit déjà un mécanisme réel de
-  rappel vers du code invité (`PPC_LOOKUP_FUNC`) — « pas de sous-système
-  de callback » n'est donc plus une raison de différer en soi. Le seul
-  site d'appel réel (désassemblage brut) résout la vraie signature :
-  routine fixe `0x823917f8`, contexte, options, handle de sortie. À
-  l'époque supposé lié au chantier save/reload (r202) — **corrigé par
-  r238 ci-dessous : c'est en fait la gestion du cache disque→disque dur,
-  pas la sauvegarde**.
-- r238 (documentation seule) corrige r202 ET r237 : les chaînes de
-  chemin réelles ouvertes par `Function_82392878`/`Function_82392978`
-  (décodées cette fois, pas seulement la forme de l'appel) sont
-  `\Device\Harddisk0\Partition1`, `\Device\Harddisk0\WindowsPartition`,
-  `\Device\Harddisk0\Cache%u\` — la gestion du **cache disque dur
-  disque→HDD** du dashboard Xbox 360 (une fonctionnalité réelle et
-  documentée, complètement distincte des données de sauvegarde
-  utilisateur), pas un écriveur de sauvegarde. `XamTaskSchedule` (r237)
-  planifie exactement cette même chaîne de cache, pas une sauvegarde.
-  L'absence de disque dur compatible est une condition NORMALE et
-  pleinement supportée sur le vrai matériel (`\Device\Harddisk0\...`
-  échoue proprement); `NtCreateFile`/`NtOpenFile` de ce projet route déjà
-  tout chemin invité via `native_guest_media_service()` (lié uniquement
-  à l'ISO retail), donc un chemin de disque dur y échoue déjà
-  honnêtement (`STATUS_OBJECT_NAME_NOT_FOUND`) — exactement l'équivalent
-  du comportement matériel réel sans disque dur. **Aucun fix nécessaire
-  ici; aucune nouvelle portée d'ingénierie (formatage FATX, etc.) n'est
-  justifiée par ce fil.** Le vrai chemin d'écriture de sauvegarde
-  utilisateur, s'il existe, n'a PAS été localisé dans ce build qualifié
-  (`XamContentCreateEx`/`XamContent*` restent confirmés morts, r229).
-- Suite pytest 211/211 (210 + 1 skip, inchangée), `ctest` 10/10.
-- La chaîne DATA.TBL est tracée et close à son niveau actuel. La traduction
-  `IM_LOAD_IMMEDIATE` vers SPIR-V reste bloquée par politique de preuve.
-- PAL, M02–M15, save/reload et release restent bloqués par Gate 2.
-
-## Prochaine décision
-
-Le balayage des imports offline (r148-r238) est clos : plus aucun
-candidat borné n'y reste, y compris `sprintf`/`_vsnprintf` (r236, corrigé
-après décodage exhaustif de tout appelant réel). r238 corrige r202 ET
-r237 : la chaîne `NtOpenFile`→`NtDeviceIoControlFile`→`NtWriteFile`
-tracée par r202, et la routine de `XamTaskSchedule` que r237 y avait
-rattachée, ouvrent en réalité `\Device\Harddisk0\Partition1`/
-`WindowsPartition`/`Cache%u\` — la gestion du cache disque→disque dur du
-dashboard, PAS un écriveur de sauvegarde utilisateur. L'absence de
-disque dur compatible est une condition normale sur le vrai matériel, et
-`NtCreateFile`/`NtOpenFile` de ce projet échoue déjà honnêtement sur ces
-chemins (`STATUS_OBJECT_NAME_NOT_FOUND`, via `native_guest_media_service()`
-lié uniquement à l'ISO retail) — exactement l'équivalent du comportement
-matériel sans disque dur. **Aucun fix n'est nécessaire ici, et aucune
-nouvelle portée d'ingénierie (formatage FATX, sous-système d'écriture)
-n'est justifiée par ce fil.** Le vrai chemin d'écriture de sauvegarde
-utilisateur, s'il existe dans ce build qualifié, n'a PAS été localisé
-(`XamContentCreateEx`/`XamContent*` restent confirmés morts, r229) — ce
-n'est donc plus une décision de périmètre en attente, faute d'un
-candidat à décider. Les 2 pistes suivantes restent ouvertes, mais aucune
-n'est actionnable sans une ressource externe :
-
-1. Confirmer par une observation runtime (avec un vrai périphérique quand
-   disponible — absent de cet environnement) que le backend d'entrée
-   r180 résout effectivement le symptôme historique « contrôles nuls ».
-2. Si le 2e site de validation de r190 (comparaison de l'unité
-   d'allocation contre une valeur attendue non retracée) échoue en
-   pratique, tracer la source de cette valeur avant d'ajuster les
-   constantes — conditionné à une observation qui n'a pas eu lieu.
-3. Si un vrai chemin d'écriture de sauvegarde est un jour localisé dans
-   un build qualifié futur (ce n'est PAS celui que r202 avait tracé —
-   voir r238), reprendre le balayage depuis ce nouveau point plutôt que
-   depuis `Function_82392878`/`Function_82392978`, qui sont maintenant
-   résolus comme gestion de cache disque dur, sans rapport.
-4. Ne pas supposer qu'un import est un remplissage de structure sans lire ses
-   sites d'appel réels — r170 a montré que l'hypothèse de r168/r169 pour
-   `VdQueryVideoFlags` était fausse. Ne pas supposer non plus qu'une valeur
-   parmi plusieurs candidates également plausibles est arbitraire sans lire
-   comment CE XEX la consomme — r172 a montré que le contrôle de flux propre
-   du binaire tranche entre `0x101` et `0x102`.
-
-`done_when` : layout binaire qualifié, implémentation sans valeur devinée,
-tests ciblés verts, CTest 9/9 et validation native fraîche. Si le layout reste
-ambigu après valorisation statique, nommer précisément l'ambiguïté avant toute
-observation runtime.
-
-## Preuves courantes
-
-- `reports/handoff/CURRENT.json`;
-- `reports/ac6-retail-native-codegen-gate2-r238-doc-r202-save-reload-writer-was-actually-hdd-cache-formatting-already-adequate-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r237-doc-xamtaskschedule-callback-is-the-same-save-reload-frontier-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r236-real-fix-sprintf-and-vsnprintf-implement-the-exhaustively-verified-specifier-set-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r235-doc-vsnprintf-helper-is-pervasive-not-bounded-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r234-doc-offline-import-sweep-at-its-natural-stopping-point-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r233-doc-remaining-voice-and-privilege-imports-already-handled-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r232-doc-xamsession-pair-fully-traced-already-adequate-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r231-doc-networking-cluster-dead-or-already-adequate-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r230-real-fix-xamtaskclosehandle-returns-success-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r229-doc-unreached-cluster-plus-ntsetinformationfile-already-adequate-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r228-real-fix-xamusergetxuid-fills-a-zero-xuid-for-user-zero-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r227-real-fix-xamusergetsignininfo-fills-the-gating-bit-for-user-zero-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r226-real-fix-xamusergetname-writes-a-name-and-succeeds-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r225-doc-xamshow-table-has-no-static-resolver-callers-go-direct-20260903.md`;
-- `reports/ac6-retail-native-codegen-gate2-r224-doc-xamshow-trampolines-are-the-fallback-table-from-r212-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r223-real-fix-xamuserreadprofilesettings-returns-success-20260902.md`;
-- `reports/ac6-retail-native-codegen-gate2-r218-doc-sweep-status-checkpoint-r169-through-r217-20260902.md`
-  (bilan par gros chantier — à lire avant de reprendre le balayage);
-- `STATE.md` et `EVIDENCE.md` pour l'historique (r169-r224).
-
-Le catalogue d'architecture local manque; aucune assertion générique ne doit
-en être dérivée. N2 sous `reconstruction/` reste historique et hors cible.
+fallback ReXGlue — sur l'identité US scellée (`6eefba42…` / `204c5e64…`),
+disponible dans le bac à sable.
