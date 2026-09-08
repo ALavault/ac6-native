@@ -1,6 +1,16 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r445 — `sub_821D4988` décompilée (nouvel outil `scripts/DecompileD4988Logger.java`, committé) : journal d'événements générique à tampon circulaire de 64 entrées (verrou/écriture/déverrouillage/attente avec `WAIT_TIMEOUT`=0x102 comme issue normale) — PAS une chaîne de diagnostic, ce qui explique l'échec de lecture de r444 (`0x8275a414` est une valeur numérique loggée, pas un pointeur de chaîne). **Correction importante en direct** : points d'arrêt sur les instructions EXACTES de la branche « énumération de fichiers » de `sub_821CC008` (construction de chemin, ouverture) — AUCUN ne se déclenche sur ce run. `sub_821CC008` emprunte sa branche SANS accès fichier. **L'hypothèse « fichier manquant » de r443/r444 est donc écartée pour ce chemin d'exécution** — la vraie cause de l'échec de `sub_821CC508` reste à trouver ailleurs (PAS un blocage qualifié).**
+0. **r446 — `sub_821CC508` a sa PROPRE lecture de fichier asynchrone réelle (`sub_821F4E70`/`func_0x821f50a0` équivalent `ReadFile`/`GetLastError`), indépendante de la branche fichiers de `sub_821CC008` déjà écartée par r445. Le site d'échec confirmé (`+6171`, r444) est en réalité la fin d'une boucle de **5 nouvelles tentatives** — décrémente un compteur, réessaie tant que non épuisé, journalise puis abandonne (`-1`) sinon. **Capturé EN DIRECT** : `sub_821F50A0` (équivalent `GetLastError`) retourne un code d'erreur **constant `0x13D` (317)** sur plusieurs appels consécutifs associés à ce site — pas un code Win32 standard reconnu, pas encore documenté ailleurs dans ce dépôt. Reste ouvert : signification exacte de `0x13D`, stub hôte natif responsable (`sub_821F4E70` n'appelle qu'un helper générique en surface), et fichier/handle concerné (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r446-sub-821cc508-does-its-own-real-async-read-live-captured-consistent-error-code-0x13d-across-retries-20260908.md`.
+   **Nommé pour r447** : tracer plus profondément `sub_821F4E70`
+   au-delà de son helper de prologue générique pour trouver le vrai
+   stub hôte natif responsable de `0x13D`, et résoudre l'index
+   `pcVar19`/la table `iRam8293b94c` vers un fichier/handle concret.
+   Reste ouvert sinon : décision de committage de l'arriéré
+   `native_vulkan_backend.cpp` (r433/r434/r438).
+
+1. **r445 — `sub_821D4988` décompilée (nouvel outil `scripts/DecompileD4988Logger.java`, committé) : journal d'événements générique à tampon circulaire de 64 entrées (verrou/écriture/déverrouillage/attente avec `WAIT_TIMEOUT`=0x102 comme issue normale) — PAS une chaîne de diagnostic, ce qui explique l'échec de lecture de r444 (`0x8275a414` est une valeur numérique loggée, pas un pointeur de chaîne). **Correction importante en direct** : points d'arrêt sur les instructions EXACTES de la branche « énumération de fichiers » de `sub_821CC008` (construction de chemin, ouverture) — AUCUN ne se déclenche sur ce run. `sub_821CC008` emprunte sa branche SANS accès fichier. **L'hypothèse « fichier manquant » de r443/r444 est donc écartée pour ce chemin d'exécution** — la vraie cause de l'échec de `sub_821CC508` reste à trouver ailleurs (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r445-sub-821d4988-is-a-generic-event-logger-not-a-diagnostic-string-file-hypothesis-corrected-by-live-evidence-20260908.md`.
    **Nommé pour r446** : revenir à l'intérieur de `sub_821CC508` avec
