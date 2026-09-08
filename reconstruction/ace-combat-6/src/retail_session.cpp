@@ -160,7 +160,8 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
                                                    CampaignLoadout loadout,
                                                    RetailSessionConfig config) {
   if (!store.valid() || !loadout.valid() || config.mission_id == 0 ||
-      config.mission_id > kPalCampaignDataTableEntries.size() ||
+      config.mission_id >
+          retail_campaign_data_table_entries(store.target()).size() ||
       config.script_drive != RetailScriptDrive::ExternalProbe) {
     return nullptr;
   }
@@ -172,14 +173,22 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
   // selected campaign entry.  A product launch (the public commands) imports
   // the common table and is checked here when it is present; the payload-only
   // fixture remains a valid test overload without claiming a hangar model.
+  std::optional<RetailCameraRecord> camera_record;
   if (store.find(kRetailCameraTableEntry) != nullptr) {
     const std::optional<RetailCampaignBundle> common =
         RetailCampaignBundle::open_entry(store, kRetailCameraTableEntry);
     if (!common.has_value()) return nullptr;
     const std::optional<RetailCameraTable> cameras = RetailCameraTable::open(*common);
-    if (!cameras.has_value() || cameras->record_for_loadout(loadout, 1u) == nullptr) {
+    const std::optional<RetailCameraModeSelection> selected =
+        resolve_retail_camera_mode(config.camera_mode_word);
+    const RetailCameraRecord* selected_record =
+        cameras.has_value() && selected.has_value()
+            ? cameras->record_for_loadout(loadout, selected->view_mode)
+            : nullptr;
+    if (selected_record == nullptr) {
       return nullptr;
     }
+    camera_record = *selected_record;
   }
   std::optional<RetailMissionBundle> mission = RetailMissionBundle::open(
       store, {config.mission_id, config.difficulty, loadout});
@@ -189,7 +198,7 @@ std::unique_ptr<RetailSession> RetailSession::open(const RetailContentStore& sto
   }
   std::unique_ptr<RetailSession> session = open_parsed(
       std::move(*mission->scenario_payload()), std::move(*mission->scenario()), config,
-      &store, loadout);
+      &store, loadout, std::move(camera_record));
   if (session == nullptr) return nullptr;
   session->bundle_ = RetailSessionBundle{
       mission->data_table_entry(), loadout, mission->content_index_sha256(),
@@ -217,7 +226,9 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
                                                            MissionScenario scenario,
                                                            RetailSessionConfig config,
                                                            const RetailContentStore* store,
-                                                           CampaignLoadout loadout) {
+                                                           CampaignLoadout loadout,
+                                                           std::optional<RetailCameraRecord>
+                                                               camera_record) {
   const std::optional<RetailCameraModeSelection> camera_mode =
       resolve_retail_camera_mode(config.camera_mode_word);
   if (!camera_mode.has_value()) return nullptr;
@@ -233,6 +244,22 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
   const std::optional<EntityId> player = local_player_entity(world->build);
   if (!player.has_value()) return nullptr;
 
+  std::optional<CombatVector> free_flight_anchor;
+  if (store != nullptr && store->target() == RetailTarget::NtscUj &&
+      camera_mode->view_mode == 2U && camera_record.has_value()) {
+    const CombatUnitState* player_state = world->combat.unit(*player);
+    if (player_state == nullptr) return nullptr;
+    for (const EntityId entity : world->placed) {
+      const CombatUnitState* candidate = world->combat.unit(entity);
+      if (candidate != nullptr && candidate->active &&
+          candidate->faction == player_state->faction) {
+        free_flight_anchor = candidate->position;
+        break;
+      }
+    }
+    if (!free_flight_anchor.has_value()) return nullptr;
+  }
+
   std::unique_ptr<RetailSession> session(new RetailSession);
   session->mission_id_ = config.mission_id;
   session->camera_mode_ = *camera_mode;
@@ -241,16 +268,24 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
   session->payload_ = std::make_unique<ScenarioPayload>(std::move(payload));
   session->scenario_ = std::make_unique<MissionScenario>(std::move(scenario));
   session->world_ = std::make_unique<RetailWorld>(std::move(*world));
+  if (free_flight_anchor.has_value()) {
+    std::optional<RetailFreeFlight> free_flight = RetailFreeFlight::open(
+        std::move(*camera_record), *free_flight_anchor);
+    if (!free_flight.has_value()) return nullptr;
+    session->free_flight_ = std::move(*free_flight);
+  }
   session->script_ = MissionScriptRunner::from(*session->scenario_);
   const std::optional<RetailFrontendResources> frontend_resources =
       store == nullptr ? std::nullopt : RetailFrontendResources::open(*store);
 
+  const auto campaign_entries =
+      store == nullptr ? std::span<const std::uint32_t>{}
+                       : retail_campaign_data_table_entries(store->target());
   std::vector<AssetId> resource_ids;
   if (store != nullptr) {
-    const std::uint32_t campaign_entry =
-        kPalCampaignDataTableEntries[config.mission_id - 1];
+    const std::uint32_t campaign_entry = campaign_entries[config.mission_id - 1];
     const std::optional<std::uint32_t> world_entry =
-        mission_world_data_table_entry(config.mission_id);
+        mission_world_data_table_entry(store->target(), config.mission_id);
     resource_ids.push_back(campaign_entry);
     // Bounded store fixtures may import only the scenario root. The product
     // cache adds the world root when present; absence here keeps the parser
@@ -281,8 +316,8 @@ std::unique_ptr<RetailSession> RetailSession::open_parsed(ScenarioPayload payloa
         session->world_->objectives.find_by_mission(config.mission_id).size());
     const CampaignMissionSpec spec{
         config.mission_id,
-        {config.mission_id, kPalCampaignDataTableEntries[config.mission_id - 1],
-         kPalCampaignDataTableEntries[config.mission_id - 1]},
+        {config.mission_id, campaign_entries[config.mission_id - 1],
+         campaign_entries[config.mission_id - 1]},
         objective_count,
         {}};
     if (!loadout.valid() || !session->campaign_.add(spec) ||
@@ -411,12 +446,21 @@ bool RetailSession::restart() noexcept {
   if (frontend_enabled_ && frontend_.state() == FrontendState::Pause) {
     if (!frontend_.resume()) return false;
   }
+  if (free_flight_.has_value()) free_flight_->reset();
   return true;
 }
 
 RetailSessionFrame RetailSession::frame_from_snapshot(InputFrame input) const noexcept {
   RetailSessionFrame frame;
   const RuntimeSnapshot snapshot = execution_->snapshot();
+  if (free_flight_.has_value()) {
+    frame.world = free_flight_->world_frame(
+        snapshot.tick, mission_id_,
+        static_cast<std::uint32_t>(execution_->units().active_count()),
+        player_entity_, input);
+    frame.world.mission_ready =
+        execution_->scenario().state() == ScenarioState::Gameplay;
+  } else {
   frame.world.tick = snapshot.tick;
   frame.world.mission_id = mission_id_;
   frame.world.mission_ready = false;
@@ -436,6 +480,7 @@ RetailSessionFrame RetailSession::frame_from_snapshot(InputFrame input) const no
   frame.world.camera_target_y = snapshot.position_y;
   frame.world.camera_target_z = snapshot.position_z;
   frame.world.input = input;
+  }
   frame.camera_mode = camera_mode_;
   frame.sub_mission = script_.sub_mission();
   frame.step = script_.step();
@@ -443,8 +488,8 @@ RetailSessionFrame RetailSession::frame_from_snapshot(InputFrame input) const no
   const std::optional<MissionArea> area = current_area();
   if (area.has_value()) {
     frame.player_inside_area = area_contains(
-        *area, ScenarioVector{snapshot.position_x, snapshot.position_y,
-                              snapshot.position_z});
+        *area, ScenarioVector{frame.world.position_x, frame.world.position_y,
+                              frame.world.position_z});
   }
   return frame;
 }
@@ -465,7 +510,20 @@ RetailSessionFrame RetailSession::tick(float fixed_dt, InputFrame input) noexcep
       !script_.ended()) {
     (void)advance_script();
   }
-  frame.world = execution_->tick(fixed_dt, input);
+  if (free_flight_.has_value()) {
+    if (execution_->scenario().state() == ScenarioState::Gameplay &&
+        !free_flight_->step(fixed_dt, input)) {
+      return {};
+    }
+    const RuntimeSnapshot before = execution_->snapshot();
+    const WorldFrame pose = free_flight_->world_frame(
+        before.tick, mission_id_,
+        static_cast<std::uint32_t>(execution_->units().active_count()),
+        player_entity_, input);
+    frame.world = execution_->tick_external(fixed_dt, input, pose);
+  } else {
+    frame.world = execution_->tick(fixed_dt, input);
+  }
   if (frontend_enabled_ && frontend_.state() == FrontendState::Mission &&
       (execution_->scenario().state() == ScenarioState::Complete ||
        execution_->scenario().state() == ScenarioState::Aborted)) {
@@ -492,9 +550,30 @@ SimulationSnapshot RetailSession::render_snapshot() const noexcept {
     const RetailSessionFrame frame = frame_from_snapshot({});
     const std::vector<ObjectiveRecord> objectives =
         execution_->scenario().objectives().snapshot();
-    return make_simulation_snapshot(
+    SimulationSnapshot snapshot = make_simulation_snapshot(
         frame.world, execution_->scenario().state(), frame.sub_mission,
         frame.step, frame.script_ended, objectives);
+    if (free_flight_.has_value()) {
+      const RetailFreeFlightFrame& flight = free_flight_->frame();
+      for (std::size_t row = 0; row < 3U; ++row) {
+        for (std::size_t lane = 0; lane < 3U; ++lane) {
+          snapshot.player_basis[row * 3U + lane] =
+              flight.basis.rows[row][lane];
+        }
+      }
+      snapshot.camera.up = {flight.camera.basis.rows[1][0],
+                            flight.camera.basis.rows[1][1],
+                            flight.camera.basis.rows[1][2]};
+      snapshot.camera.vertical_fov_radians = flight.camera_fov_radians;
+    }
+    // Mission 01's qualified camera initialiser stamps a 24000-unit far
+    // plane.  The generic RenderCamera default (4096) clips the retail map
+    // before Vulkan depth testing, producing the banded diagnostic frame.
+    // Keep this correction at the retail snapshot boundary; it does not
+    // qualify the unresolved per-frame TCAM projection.
+    snapshot.camera.far_plane = 24000.0F;
+    snapshot.refresh_digest();
+    return snapshot;
   } catch (...) {
     return {};
   }
@@ -618,7 +697,8 @@ bool RetailSession::restore_checkpoint(
 }
 
 bool RetailSession::restore_save(const SessionSaveSnapshot& snapshot) noexcept {
-  if (!bundle_.has_value() || snapshot.mission_id != mission_id_ ||
+  if (free_flight_.has_value() || !bundle_.has_value() ||
+      snapshot.mission_id != mission_id_ ||
       !snapshot.checkpoint.has_value() ||
       snapshot.checkpoint->retail_sequencer_state.empty() ||
       std::all_of(snapshot.content_index_sha256.begin(),

@@ -249,9 +249,9 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-      "sha256": "a9cdad60137d33d5b8bbfd9ddff95ab7a10c6c138b3ccfcf7de7e07072a1e2df",
+      "sha256": "74ea1cbefe0ddd5a5637c7a7b8e3aaf04361444c9203920295e71b4d961e095e",
       "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from the class-0 Set on the campaign arm (820a72c0, 0x820A72EC, vtable 0x820568D4 = CAce6UnitPlayer) and from category 2 only on the online arm, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-      "size": 29655
+      "size": 33334
      }
     ]
    },
@@ -330,8 +330,8 @@
      {
       "kind": "derivation",
       "path": "reconstruction/ace-combat-6/include/ac6/ntxr_texture.h",
-      "sha256": "1563bbc6cfca231254f9d2b3aa2cf7d5fe89182f026829c9de3809ca2f15e7ba",
-      "size": 14091,
+      "sha256": "7f6d4d07decbfa0edf70132b01e29a39859ec10e8a949fe6a708a546823292c8",
+      "size": 14689,
       "claim": "include/ac6/ntxr_texture.h carries the whole derivation and names what is not derived: the descriptor base and texture count from 0x8234B0C0/0x8234B0B8, the field layout from 0x8234B360, the level count from 0x8234B128, the cube flag from 0x8234B118, both section bases from 0x8234B284/0x8234B28C, the context choice in 0x8234AED8, the field mapping in 0x8234AA68, the surface arithmetic of 0x821DF838 and 0x821DF958 under XGSetTextureHeader at 0x821FBE30, and the chunk layout as retail's own writer 0x821D9478 emits it"
      }
     ]

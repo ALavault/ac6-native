@@ -38,6 +38,8 @@
 // float32(pi/180) correctly rounded -- unlike 0x82008AD8, the seven-digit
 // literal 0.3183099 that cycle 1374 caught masquerading as 1/pi.
 
+#include "ac6/retail_transform.h"
+
 #include <cstdint>
 
 namespace ac6::retail {
@@ -73,6 +75,18 @@ struct FlightRotationAngles {
   bool operator==(const FlightRotationAngles&) const = default;
 };
 
+// The three scalar orientation fields slot 32 writes after rotating the live
+// basis. The source reads are documented above; their scalar helpers were
+// already swept against libm. Keeping this extraction beside the rotation
+// step lets the native session publish a player attitude without rebuilding a
+// second, potentially transposed basis from accumulated Euler angles.
+struct FlightBasisAttitude {
+  float pitch{};  // -asin(row2.y), [model+16]
+  float yaw{};    // atan2(row2.x, row2.z), [model+20]
+  float roll{};   // atan2(row0.y, row1.y), [model+24]
+  bool operator==(const FlightBasisAttitude&) const = default;
+};
+
 inline constexpr float kDegreesToRadians = 0.01745329238474369F;  // 0x82069BF4
 inline constexpr float kRow1Scale = 0.06666667014360428F;         // 1/15, 0x82007D5C
 inline constexpr float kRow2Scale = 0.6666666865348816F;          // 2/3,  0x82069C1C
@@ -100,5 +114,7 @@ FlightRotationAngles flight_rotation_angles(const FlightRotationLimits& limits,
                                             const FlightRotationAxes& axes,
                                             float step,
                                             float row0_divisor) noexcept;
+
+FlightBasisAttitude flight_basis_attitude(const RetailBasis& basis) noexcept;
 
 }  // namespace ac6::retail

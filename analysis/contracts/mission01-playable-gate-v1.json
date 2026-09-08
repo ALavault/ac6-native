@@ -249,9 +249,9 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/src/retail_session.cpp",
-            "sha256": "a9cdad60137d33d5b8bbfd9ddff95ab7a10c6c138b3ccfcf7de7e07072a1e2df",
+            "sha256": "74ea1cbefe0ddd5a5637c7a7b8e3aaf04361444c9203920295e71b4d961e095e",
             "claim": "src/retail_session.cpp opens the payload, follows 0x8219BDD8's order through build_retail_world, takes the player from the class-0 Set on the campaign arm (820a72c0, 0x820A72EC, vtable 0x820568D4 = CAce6UnitPlayer) and from category 2 only on the online arm, installs the container's own combat states instead of the developer spawn layout, and draws only the units the container gives a position",
-            "size": 29655
+            "size": 33334
           }
         ]
       },
@@ -679,8 +679,8 @@
           {
             "kind": "derivation",
             "path": "reconstruction/ace-combat-6/include/ac6/retail_flight_orientation.h",
-            "sha256": "7c3a2a031ab71f2ff3e11a9e65493d61e5f283efe7751467d9c5c0eaa8fdc064",
-            "size": 5112,
+            "sha256": "26fed2be13e43b55b06e500dbffb9ff6f5164b533a99587cbb1e1196c9016a6b",
+            "size": 5857,
             "claim": "include/ac6/retail_flight_orientation.h carries the derivation, records that the three clamps are not alike, corrects cycle 1376's `bit 3` to bit 4 by decoding rlwinm r11,r10,28,31,31, and states that the Euler extraction is NOT ported and that 0x820936E8 returns zero below 2^-16 where std::atan2 does not"
           }
         ]

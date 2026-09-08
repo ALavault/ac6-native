@@ -247,6 +247,7 @@ enum class NtxrRefusal {
   NotBlockFormat,
   CubeMap,
   PayloadSizeMismatch,
+  IdentifierNotFound,
 };
 
 // Decodes the **base level** of a block texture, whether or not it carries a
@@ -259,6 +260,15 @@ enum class NtxrRefusal {
 std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
                                                      std::size_t size, bool swap_16,
                                                      NtxrRefusal* refusal) noexcept;
+
+// Selects one texture from a retail NTXR pack by its GIDX registry key and
+// decodes its base level. The pack count and section-1 base are derived retail
+// fields; the 0x50 sibling spacing and final zero descriptor are the qualified
+// Mission 01 convention. This bounded reader currently accepts single-level
+// pack entries only. Missing keys are reported separately from malformed packs.
+std::optional<DecodedTexture> decode_ntxr_pack_texture(
+    const std::uint8_t* bytes, std::size_t size, std::uint32_t identifier,
+    bool swap_16, NtxrRefusal* refusal) noexcept;
 
 // The Xenos Tiled2D block address, in bytes, for a block at (x, y) of a
 // surface whose pitch is `pitch_blocks`. Public hardware layout, not derived
