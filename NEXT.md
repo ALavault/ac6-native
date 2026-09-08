@@ -1,6 +1,17 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r452 — LE CRASH EST RÉSOLU, vérifié deux fois : lancer `ac6recomp` directement contre l'ISO retail réelle (déjà présente dans ce workspace, `disc-image/Ace Combat 6 - Fires of Liberation (USA, Japan)....iso`) au lieu du répertoire `build/.../source/assets/` (qui ne contient que le XEX, cause racine de r451) **fait disparaître le `SIGSEGV`**. `NativeGuestMediaService` supporte déjà nativement un mode ISO complet (streaming direct, déjà qualifié pour `DATA00.PAC` 2,2 Gio par r240). Le manifeste de build référence l'ISO à un chemin périmé (déplacée depuis vers `disc-image/`) — artefact gitignoré, pas un fichier à corriger. **Deux lancements identiques et reproductibles** : `exit=0`, `presented_frames=5 state=2`, **`generated entry terminated its own thread`** — un arrêt PROPRE jamais vu dans toute la chaîne r427-r451. **AUCUN changement de source nécessaire** — ferme la chaîne d'investigation r399-r452 par un test positif.**
+0. **r453 — quantification de l'impact du correctif r452 : lancement complet tracé contre l'ISO réelle sur 25 s → **86 vrais tirages (`vd draw`) capturés**, contre 0-1 par présent dans TOUTES les captures de r425 à r450. 5 présents complets (`1280×720`), arrêt propre confirmé une troisième fois. Le correctif ne fait pas que supprimer le crash — il débloque un traitement de contenu substantiellement plus riche, cohérent avec la chaîne causale r399-r451 (le jeu peut maintenant lire/utiliser le vrai contenu PAC). Non établi : si ce contenu est RÉELLEMENT rendu à l'écran (`PinnedShaderRuntime` toujours non branché, r434/r435/r438, inchangé). Ceci rend la piste « contenu visuel réel » nettement plus intéressante à reprendre maintenant qu'il y a de vraies données à rendre (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r453-iso-launch-fix-confirmed-substantially-richer-rendering-86-draws-vs-near-zero-before-20260908.md`.
+   **Nommé pour r454** : reprendre le fil du contenu visuel réel
+   (`PinnedShaderRuntime` jamais branché au chemin `VdSwap`) —
+   maintenant justifié par la richesse de contenu confirmée. Reste
+   ouvert sinon : mise à jour de `tools/prepare.py`/`tools/build.py`
+   pour le chemin ISO par défaut (confort, pas une nécessité) ;
+   décision de committage de l'arriéré `native_vulkan_backend.cpp`
+   (r433/r434/r438).
+
+1. **r452 — LE CRASH EST RÉSOLU, vérifié deux fois : lancer `ac6recomp` directement contre l'ISO retail réelle (déjà présente dans ce workspace, `disc-image/Ace Combat 6 - Fires of Liberation (USA, Japan)....iso`) au lieu du répertoire `build/.../source/assets/` (qui ne contient que le XEX, cause racine de r451) **fait disparaître le `SIGSEGV`**. `NativeGuestMediaService` supporte déjà nativement un mode ISO complet (streaming direct, déjà qualifié pour `DATA00.PAC` 2,2 Gio par r240). Le manifeste de build référence l'ISO à un chemin périmé (déplacée depuis vers `disc-image/`) — artefact gitignoré, pas un fichier à corriger. **Deux lancements identiques et reproductibles** : `exit=0`, `presented_frames=5 state=2`, **`generated entry terminated its own thread`** — un arrêt PROPRE jamais vu dans toute la chaîne r427-r451. **AUCUN changement de source nécessaire** — ferme la chaîne d'investigation r399-r452 par un test positif.**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r452-crash-fixed-verified-launch-against-the-real-iso-instead-of-the-incomplete-assets-directory-no-source-change-needed-20260908.md`.
    **Nommé pour r453** : (1) mettre à jour `tools/prepare.py`/
