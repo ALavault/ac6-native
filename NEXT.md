@@ -1,6 +1,19 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r460 — support des masques d'écriture RB_COLOR_MASK partiels IMPLÉMENTÉ (nommé par r459, piste 2) : traduction mécanique et sans ambiguïté des 4 bits (R/G/B/A) vers `colorWriteMask` Vulkan (`PipelineKey` étendu, comme `sample_count` en r459). Une trace en direct a montré la vraie valeur rencontrée : `RB_COLOR_MASK=0x0` (aucune composante écrite). **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif de rejet (0 occurrence) ET une amélioration réelle : le compte de replis passe de 9 à 8, un tirage échouant auparavant est maintenant réellement épinglé (exécuté via `execute_frame()`, pas la validation structurelle de repli) — cohérent avec un masque nul qui n'écrit par construction aucun pixel visible (`non_black`/`distinct_colors` inchangés, comme attendu). Un nouveau motif sans rapport, non investigué, est apparu une fois : « render target region exceeds the bounded size ». Toujours NON committé (PAS un blocage qualifié).**
+0. **r461 — un scissor démesuré (idiome matériel « pas de découpage supplémentaire », `scissor_tl=0x0 scissor_br=0x20002000` = région (0,0)-(8192,8192), observé en direct) est maintenant BORNÉ à la surface EDRAM réelle (réutilisant la géométrie de tuile déjà calculée : `image_width - origin_x`/`image_height - origin_y`) au lieu d'être rejeté par la constante arbitraire `kMaxEdramRegionWidth`/`Height`. Contrairement à la question de disposition d'échantillons EDRAM sous MSAA (r459, explicitement refusée faute de preuve), ceci est le comportement standard, bien compris, d'un test de scissor GPU. **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif ciblé (0 occurrence). Le tirage précédemment rejeté progresse maintenant plus loin dans le pipeline et révèle une garde `clip_disable viewport path not qualified this cycle` **jamais atteinte auparavant** (le rejet de scissor court-circuitait systématiquement avant). `presented_frames`/capture inchangés. Toujours NON committé (PAS un blocage qualifié).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r461-oversized-scissor-clamped-to-surface-instead-of-rejected-eliminates-rejection-new-clip-disable-gate-surfaced-20260908.md`.
+   **Nommé pour r462** : (1) le motif de rejet du registre épinglé
+   (couverture des 271 variantes, r456) nécessite probablement une
+   session oracle — décision utilisateur ; (2) la garde `clip_disable
+   viewport path not qualified this cycle`, nouvellement atteignable,
+   jamais investiguée. Reste ouvert sinon : une fois le câblage jugé
+   mûr, reconsidérer le committage groupé de l'arriéré
+   (r433/r434/r438/r454-r461) ; mise à jour de
+   `tools/prepare.py`/`tools/build.py` pour le chemin ISO par défaut
+   (confort, pas une nécessité).
+
+1. **r460 — support des masques d'écriture RB_COLOR_MASK partiels IMPLÉMENTÉ (nommé par r459, piste 2) : traduction mécanique et sans ambiguïté des 4 bits (R/G/B/A) vers `colorWriteMask` Vulkan (`PipelineKey` étendu, comme `sample_count` en r459). Une trace en direct a montré la vraie valeur rencontrée : `RB_COLOR_MASK=0x0` (aucune composante écrite). **Vérifié sans régression** : `ctest` 11/11 ; lancement réel confirme la disparition du motif de rejet (0 occurrence) ET une amélioration réelle : le compte de replis passe de 9 à 8, un tirage échouant auparavant est maintenant réellement épinglé (exécuté via `execute_frame()`, pas la validation structurelle de repli) — cohérent avec un masque nul qui n'écrit par construction aucun pixel visible (`non_black`/`distinct_colors` inchangés, comme attendu). Un nouveau motif sans rapport, non investigué, est apparu une fois : « render target region exceeds the bounded size ». Toujours NON committé (PAS un blocage qualifié).**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r460-partial-write-mask-support-implemented-verified-eliminates-rejection-one-draw-now-succeeds-20260908.md`.
    **Nommé pour r461** : (1) le motif de rejet du registre épinglé
