@@ -17,7 +17,34 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r504 — huitième cycle de capture (3 tentatives), sous garde VRAM
+0. **r505 — lecture Ghidra statique du côté invité pendant la fenêtre
+   `sleep(4)` (nommée par r504, jamais tentée avant).** Trouve la
+   ligne exacte qui écrit `type28=30` (`Function_821C5268`, case 3 :
+   `*(iVar2+0x1c) = 0x1e`, où `iVar2+0x1c` = `screen+28` = le champ
+   `type` journalisé par `ReadSaveSnapshot` dans
+   `overlay/ac6_route_sync_ntsc_uj.cpp`), gardée par un drapeau
+   (`screen+0x184`) et un sondage. Trois fonctions invitées
+   (`0x821C3800`/`0x821C5268`/`0x821C5708`) pilotent chacune leur
+   propre machine à états sur la même structure « screen » partagée,
+   avec deux vrais délais temporisés (0,5s et 0,2s, lus directement
+   en mémoire — `_UNK_8205474c`/`_UNK_82069c20`, motifs IEEE-754
+   `0x3f000000`/`0x3e4ccccd`) chaînés séquentiellement. **Conclusion :
+   `type28=30` provient d'une séquence d'initialisation d'écran de
+   sauvegarde légitimement lente (delais temporisés réels), pas d'un
+   bug** — recontextualise sans contredire la conclusion de r499.
+   Somme totale du délai non quantifiée (7 fonctions callées non
+   décompilées, hors périmètre). Aucune capture oracle lancée,
+   `native/` non touché.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r505-guest-save-screen-state-machine-has-real-timer-debounces-type28-30-is-legitimate-not-a-bug-20260909.md`.
+   **Nommé pour r506** : (1) décompiler les fonctions restantes pour
+   quantifier le délai total exact vers `type28=30`, ce qui
+   déterminerait si le budget de route actuel est structurellement
+   trop court ; (2) si oui, allonger ce budget plutôt que retenter à
+   l'identique ; (3) les 3 états cibles de r478 restent non capturés
+   après 8 cycles/~19 tentatives, aucune reprise décidée ce cycle.
+
+1. **r504 — huitième cycle de capture (3 tentatives), sous garde VRAM
    ≥4 Go stricte (règle explicite de l'utilisateur, vérifiée avant
    chaque tentative — jamais sautée, VRAM stable à 7911 MiB libres
    tout le cycle).** Toujours aucune donnée fusionnable : les 3
