@@ -410,6 +410,14 @@ def stage_trace_input(snapshot: TraceInputSnapshot, destination: Path) -> None:
 
 class OracleRun:
     def __init__(self, arguments: argparse.Namespace) -> None:
+        # Installed here, not in this module's own main(), because
+        # tools/run_gate.py drives a OracleRun subclass (RetailRun) with its
+        # own independent try/finally: run.close() loop and never calls this
+        # module's main() at all -- every real campaign capture goes through
+        # that path, not this one. __init__ is the one place both entry
+        # points actually share. See close()/terminate_owned() above for why
+        # this matters: SIGTERM's default disposition skips `finally`.
+        signal.signal(signal.SIGTERM, _raise_keyboard_interrupt_on_sigterm)
         self.args = arguments
         self.deadline = time.monotonic() + arguments.duration
         self.display_env = {**os.environ, "DISPLAY": arguments.display,
@@ -733,7 +741,6 @@ def _raise_keyboard_interrupt_on_sigterm(signum: int, frame: object) -> None:
 
 
 def main() -> int:
-    signal.signal(signal.SIGTERM, _raise_keyboard_interrupt_on_sigterm)
     arguments = parse_args()
     try:
         arguments.display = normalize_display(arguments.display)

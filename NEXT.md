@@ -17,7 +17,26 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r493 — corrige la fuite de groupe de processus `Xvfb`/`ac6recomp`
+0. **r494 — corrige un défaut réel dans r493 (le gestionnaire SIGTERM
+   était installé dans `ac6-oracle-run.py::main()`, un point d'entrée
+   que `run_gate.py` — utilisé par TOUTE la campagne — n'appelle
+   jamais ; déplacé vers `OracleRun.__init__()`, partagé par les deux
+   chemins) et confirme, deux fois, qu'il fonctionne réellement via
+   `run_gate.py`. La capture reste bloquée par la contention hôte :
+   2/2 tentatives réelles (`us-pretype28-startup.steps`, `timeout
+   240` chacune, charge 33-40) ont expiré sans produire de
+   `RESULT.json` — aucune nouvelle donnée de nuanceur. `native/` non
+   touché.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r494-capture-still-blocked-by-contention-fixes-r493-wrong-install-site-20260909.md`.
+   **Nommé pour r495** : le correctif de fuite de processus est
+   maintenant réellement effectif sur le chemin réel de la campagne.
+   Les 3 états cibles de r478 restent non capturés, bloqués sur une
+   fenêtre de charge hôte suffisamment basse — aucune piste statique
+   nouvelle disponible (movie-worker et `fetch_const[1]` tous deux
+   clos).
+
+1. **r493 — corrige la fuite de groupe de processus `Xvfb`/`ac6recomp`
    signalée indépendamment par r482 et r492 : `timeout` externe
    n'exécutait jamais `OracleRun.close()` (qui nettoie correctement
    via `os.killpg`) car seul `KeyboardInterrupt` était intercepté, pas
