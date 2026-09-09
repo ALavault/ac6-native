@@ -17,7 +17,36 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r498 — contrainte de charge CPU/GPU levée sur décision
+0. **r499 — lecture statique des deux pistes nommées par r495/r498
+   (décision utilisateur : arrêter les tentatives de capture,
+   investiguer statiquement). `sleep(4)` de r498 refermé : délai de
+   réglage documenté (`tools/ac6-oracle-run.py::wait_log()`), le
+   timeout de la tentative 3 n'y révèle rien de spécifique — c'est
+   juste l'endroit où l'horloge globale a expiré. Blocage
+   `AudioRuntime: worker thread did not exit within 2s` (r495)
+   compris : PAS un verrou mort — `Shutdown()` signale correctement
+   `worker_running_=false` + 2 events, mais `WorkerThreadMain()`
+   (`upstream/AC6_recomp/thirdparty/rexglue-sdk/src/native/audio/audio_runtime.cpp:802-935`)
+   ne revérifie `worker_running_` qu'une fois par tour de boucle
+   externe, après avoir dispatché des rappels audio invités pour
+   jusqu'à 8 clients (`kMaximumAudioClientCount`) — sous contention
+   hôte (déjà mesurée r489/r497), un tour lent peut dépasser 2000ms
+   sans deadlock. Correctif identifié (revérifier `worker_running_`
+   entre chaque client) mais NON appliqué — touche le sous-module
+   `AC6_recomp`, décision utilisateur requise (même raisonnement que
+   r463). Aucune capture lancée, `native/` et `upstream/AC6_recomp/`
+   non modifiés.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r499-static-audiorunetime-shutdown-and-sleep4-timeout-point-read-20260909.md`.
+   **Nommé pour r500** : six pistes de contention/timing explorées
+   (charge CPU r489, GPU r497, RAM r498, `sleep(4)` et `AudioRuntime`
+   r499) sans cause unique corrigible identifiée pour la totalité de
+   la variance. Décision utilisateur requise : nouvelle tentative de
+   capture, correctif `AudioRuntime` sous réserve d'accord (sous-module),
+   ou pause de Piste A. Les 3 états cibles de r478 restent non
+   capturés.
+
+1. **r498 — contrainte de charge CPU/GPU levée sur décision
    utilisateur explicite (« Enlève la contrainte de charge » / « La
    seule limite est sur la RAM ») : 3 tentatives directes de capture,
    RAM vérifiée saine (105 Go disponibles/124 Go) avant et pendant,
