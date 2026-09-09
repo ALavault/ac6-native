@@ -17,7 +17,31 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r486 — tentative du merge différé (nommé par r485), sur décision
+0. **r487 — lecture Ghidra directe du guest (choisie par l'utilisateur
+   après 8 cycles de rendements décroissants) : le « movie worker »
+   est un sondage NON-BLOQUANT par conception dans le code invité —
+   preuve de source, pas une inférence de logs.**
+   `Function_823AD9C0` (désassemblage réel, `ghidra-projects/ac6-us`)
+   appelle `KeSetEvent(0x82916e3c)` PUIS `KeWaitForMultipleObjects(...,
+   timeout=&0)` — un pointeur vers une valeur zéro EXPLICITE, donc un
+   sondage à retour immédiat, jamais une attente bloquante. Confirme
+   r467 (`result=0` sur 159 644 occurrences dès la première seconde
+   après boot) par la preuve de code source, deux campagnes plus tard.
+   **Corrige r482** (« l'attente est donc réelle ») qui avait rouvert
+   cette hypothèse sans la confronter à r467. **Conséquence : les 8
+   cycles r479-r486 ont cherché une cause dans le mauvais mécanisme.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r487-ghidra-movie-worker-is-a-genuine-non-blocking-poll-by-guest-design-corrects-r482-r486-premise-20260909.md`.
+   **Nommé pour r488** : (1) décompiler
+   `Function_823AD0D8`/`Function_823AD1C0` et tracer `*(iVar2+0x130)`
+   pour trouver le vrai déclencheur de progression ; (2) caractériser
+   directement la contention de charge hôte pendant un run flaky
+   (mesure système, pas une supposition) — piste nommée par r486,
+   jamais tentée ; (3) piste `fetch_const` du HUD de vol (r475),
+   toujours indépendante. `native/` non touché ce cycle (lecture
+   statique pure).
+
+1. **r486 — tentative du merge différé (nommé par r485), sur décision
    utilisateur explicite de traiter `native/` comme libre (calme
    depuis 4h+, aucun propriétaire identifiable via `ListAgents`).**
    Pipeline de traduction corrigé et vérifié fonctionnel (erreur
