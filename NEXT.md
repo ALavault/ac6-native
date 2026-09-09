@@ -17,7 +17,29 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r505 — lecture Ghidra statique du côté invité pendant la fenêtre
+0. **r506 — test empirique d'un délai de 900s (15 min, 3,75x le
+   standard 240s) sur `routes/us-pretype28-startup.steps` : ÉCHOUE
+   AUSSI, contredisant l'hypothèse « juste lent » de r505.** Le
+   journal (229 577 lignes, 14min19s de trace) montre UNE SEULE
+   image `PRESENT` à 8 secondes, puis 900+ secondes sans aucune
+   deuxième image, pendant qu'un thread tourne en continu dans le
+   sondage non bloquant « movie worker » (r487/r488). ZÉRO occurrence
+   de `type28`/`selector44`/`ac6-save-*` dans tout le journal — la
+   machine à états lue par r505 n'est JAMAIS atteinte dans ce
+   scénario. Le vrai blocage est plus précoce que ce que r505
+   investiguait. VRAM vérifiée ≥4Go avant lancement (règle
+   utilisateur respectée). Aucun processus résiduel après (correctif
+   r502 confirmé). `native/` non touché.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r506-900s-timeout-still-fails-contradicts-r505-hypothesis-20260909.md`.
+   **Nommé pour r507** : lire directement (Ghidra) ce qui devrait se
+   passer entre la première image et la suivante ; comparer avec le
+   cadencement du produit natif au même instant (divergence
+   documentée depuis r479/r480, peut-être le même point précis). Les
+   3 états cibles de r478 restent non capturés après 9 cycles/~20
+   tentatives.
+
+1. **r505 — lecture Ghidra statique du côté invité pendant la fenêtre
    `sleep(4)` (nommée par r504, jamais tentée avant).** Trouve la
    ligne exacte qui écrit `type28=30` (`Function_821C5268`, case 3 :
    `*(iVar2+0x1c) = 0x1e`, où `iVar2+0x1c` = `screen+28` = le champ
