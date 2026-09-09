@@ -737,6 +737,15 @@ def _raise_keyboard_interrupt_on_sigterm(signum: int, frame: object) -> None:
     # and the game alive and still logging well past the deadline (found
     # independently by two campaign cycles). Re-raising as KeyboardInterrupt
     # reuses the exact cleanup path already in place for Ctrl-C.
+    #
+    # Ignore further SIGTERMs immediately: a second SIGTERM arriving while
+    # `close()`/`terminate_owned()` is already unwinding from the first one
+    # re-raises KeyboardInterrupt again, aborting cleanup mid-os.killpg and
+    # re-orphaning Xvfb/the game -- observed once (ac6-retail-native-codegen-gate2
+    # r501). terminate_owned() already has its own bounded
+    # SIGINT/SIGTERM/SIGKILL escalation with timeouts, so ignoring repeat
+    # signals here does not risk hanging -- it lets that escalation finish.
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
     raise KeyboardInterrupt
 
 

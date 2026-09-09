@@ -17,7 +17,26 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r501 — sixième cycle de capture (3 tentatives), toujours aucune
+0. **r502 — corrige le bug de nettoyage `SIGTERM` ré-entrant trouvé
+   par r501 (troisième bug dans cette chaîne de nettoyage : r493
+   jamais appelé, r494 mauvais endroit, r502 ré-entrant).** Le
+   gestionnaire pose `signal.SIG_IGN` comme première action avant de
+   relancer `KeyboardInterrupt`, empêchant un second `SIGTERM` reçu
+   pendant `close()`/`terminate_owned()` d'abandonner le nettoyage à
+   mi-chemin. Vérifié par test direct (3 `SIGTERM` réels envoyés au
+   wrapper) — aucun processus résiduel, mais la fenêtre de course
+   exacte de r501 n'a pas pu être reproduite manuellement (nettoyage
+   trop rapide dans cet environnement) ; correction validée par
+   raisonnement direct du mécanisme, pas par reproduction empirique
+   de la race. `native/` non touché.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r502-fixes-reentrant-sigterm-cleanup-abort-20260909.md`.
+   **Nommé pour r503** : les 3 états cibles de r478 restent non
+   capturés après 6 cycles/~15 tentatives (r492-r498, r501). Le
+   correctif `AudioRuntime` de r500 reste non vérifié par une capture
+   réussie. Aucune reprise décidée ce cycle.
+
+1. **r501 — sixième cycle de capture (3 tentatives), toujours aucune
    donnée fusionnable, correctif `AudioRuntime` de r500 non testé
    (aucune tentative n'a atteint l'arrêt propre).** 2/3 tentatives
    bloquées au même point exact que r498 (`sleep(4)` dans
