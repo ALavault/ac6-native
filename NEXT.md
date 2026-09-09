@@ -9,7 +9,7 @@ intégration des contournements. Aucun gameplay prouvé.
 
 ---
 
-# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r489, `reports/ac6-retail-native-codegen-gate2-r*`)
+# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r490, `reports/ac6-retail-native-codegen-gate2-r*`)
 
 **Piste séparée, même dépôt, coordonnée pour ne PAS toucher `native/`
 pendant que la chaîne ci-dessus (r488+) y a des modifications non
@@ -17,7 +17,36 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r489 — mesure directe de la charge hôte pendant une capture,
+0. **r490 — décodage statique de `fetch_const[1]` (nommé par r475,
+   piste indépendante choisie plutôt que relancer une capture sur un
+   hôte encore chargé). Identifié précisément : offset 1 du bloc de
+   192 mots de constantes de texture fetch = `dword_1` de la
+   constante de texture t0 (`fetch_constant=0`). La disposition de
+   bits déjà implémentée par `decode_pixel_texture()`
+   (`native_vulkan_backend.cpp`) est confirmée identique bit pour bit
+   à `xe_gpu_texture_fetch_t` de `xenia-project/xenia` (lecture
+   GitHub directe, pas un run d'oracle). Les deux valeurs observées
+   par r475 décodent : `0x10000056` → format=22 (`k_24_8`, profondeur/
+   stencil), endian=k8in16 ; `0x1000001a` → format=26
+   (`k_16_16_16_16`), endian=none ; les deux partagent
+   `base_address=0x10000000`. **Ni l'un ni l'autre n'est `k_8_8_8_8`
+   (format 6)**, le seul format que `decode_pixel_texture()` accepte
+   — un second motif de rejet potentiel, indépendant du trou de
+   couverture du registre de nuanceurs, MAIS la corrélation directe
+   avec les 86 tirages d'interface rejetés n'est PAS établie (journal
+   source non conservé par r475, aucun nouveau sondage lancé ce
+   cycle). Aucune source `native/` modifiée.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r490-fetch-const1-decodes-to-two-unsupported-texture-formats-not-k-8-8-8-8-20260909.md`.
+   **Nommé pour r491** : établir la corrélation per-tirage manquante,
+   soit (1) une trace étendue lors d'un futur sondage natif (une fois
+   la contention hôte retombée), soit (2) une lecture Ghidra directe
+   du nuanceur pixel des tirages rejetés (méthode statique,
+   immédiatement disponible). Reste ouvert : piste 2 de r488 (autre
+   mécanisme d'attente bloquant, jamais tentée) ; décision de
+   committage groupé si un arriéré natif s'accumule à nouveau.
+
+1. **r489 — mesure directe de la charge hôte pendant une capture,
    piste 1 nommée par r488 : 2/2 tentatives de
    `routes/us-pretype28-startup.steps` échouent (timeout 240s) sous
    une charge système de 44-52 sur 32 cœurs — dominée par deux
