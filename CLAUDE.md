@@ -202,3 +202,23 @@ A third checker guards the documentation instead of the contracts:
 table — never front to back. A shape that is written but not indexed is, for
 that reader, not written, and this catches exactly that. Run it whenever you add
 a shape; it is instant.
+
+## HUD pixels need a retail draw, not a hand-picked rectangle
+
+Any HUD pixel in a gated delivery path must come from a retail draw call
+actually executed through the qualified shader/texture pinning chain
+(`recompilation/ace-combat-6-retail`, r256-r259 and onward). Nothing under
+`reconstruction/` counts as retail HUD evidence, however plausible it looks —
+it is a diagnostic tool, not a trace of the real game. A file that draws
+screen-space rectangles at coordinates typed in by hand is fine as long as it
+says so; it stops being fine the moment it is read as retail parity. This
+almost happened once: `native_hud_gpu_overlay.cpp` sat untracked, uncited, and
+unguarded for cycles before anything wrote down that it was diagnostic-only.
+
+    python3 tools/audit_hud_geometry_citations.py [ROOT ...]
+
+Flags any source file with hand-picked HUD-style pixel geometry (four or more
+`N.NF` literal coordinates passed to a rect/outline/panel/overlay-named call)
+that carries no `reports/*.md` citation explaining why. Defaults to scanning
+`recompilation/`, the gated path; pass `reconstruction` to check the
+diagnostic tree too.
