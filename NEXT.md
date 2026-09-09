@@ -17,7 +17,33 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r487 — lecture Ghidra directe du guest (choisie par l'utilisateur
+0. **r488 — suite de la lecture Ghidra (choisie par l'utilisateur) :
+   `*(iVar2+0x130)`, le champ qui sélectionne la branche de
+   `Function_823AD9C0`, est un COMPTEUR DE THREADS VIVANTS, pas un
+   indicateur de progression — la piste « movie worker » est
+   définitivement close, sous toute interprétation.**
+   `Function_823ADBD8` (l'initialisateur du sous-système) met ce
+   compteur à zéro puis l'incrémente une fois par thread « movie
+   worker » réellement créé (jusqu'à 6 candidats via
+   `func_0x823d039c`/`ExCreateThread`, points d'entrée
+   `Function_823AD848`/`Function_823AD910`). La branche de
+   `Function_823AD9C0` se lit : « aucun thread vivant → travailler
+   directement ; sinon → sonder sans bloquer (r487) ». Aucune des deux
+   branches ne peut bloquer quoi que ce soit. Trouvé par un scan direct
+   des 735 908 instructions de `.text` pour toute écriture à l'offset
+   0x130 (53 hits, 24 décharges de pile non pertinentes, 29 réels —
+   la paire dans `Function_823ADBD8` était la bonne piste).
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r488-movie-worker-field-0x130-is-a-live-thread-count-mechanism-is-benign-not-a-progression-gate-20260909.md`.
+   **Nommé pour r489** : la piste « movie worker » est close — reste
+   ouvert (1) caractériser directement la contention de charge hôte
+   pendant un run flaky (nommé par r486, jamais mesuré, maintenant la
+   piste la plus directe) ; (2) si insuffisant, chercher un AUTRE
+   mécanisme d'attente réellement bloquant via la même méthode
+   (lecture Ghidra directe sur un point de blocage observé) ; (3) piste
+   `fetch_const` du HUD de vol (r475), toujours indépendante.
+
+1. **r487 — lecture Ghidra directe du guest (choisie par l'utilisateur
    après 8 cycles de rendements décroissants) : le « movie worker »
    est un sondage NON-BLOQUANT par conception dans le code invité —
    preuve de source, pas une inférence de logs.**
