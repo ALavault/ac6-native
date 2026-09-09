@@ -1,16 +1,31 @@
-# Bounded US menu-navigation diagnostic (r481). Extends
+# Bounded US menu-navigation diagnostic (r481, settle fix r483). Extends
 # us-pretype28-startup.steps through the game-data-browser selection screen,
-# mirroring the first 13 lines of the sealed mission01-qualified-96.steps
-# route exactly (same keys/waits), to probe whether a highlighted/selected
-# menu cursor draws with a different primitive_type than the static title
-# screen. Stops before any hangar/deploy/gameplay step.
-key	Escape	0.1
-sleep	2
-capture	post-escape
-key	space	0.1
-sleep	4
-capture	post-space
-wait-pulse	type28=30	Escape+space
+# to probe whether a highlighted/selected menu cursor draws with a different
+# primitive_type than the static title screen. Stops before any
+# hangar/deploy/gameplay step.
+#
+# r482 tried making this preamble byte-identical to us-pretype28-startup's
+# (which reliably succeeds) -- still stalled identically, ruling out route
+# content matching that route as the fix (see r482's report).
+#
+# r483: the mission01-qualified-96.steps sealed route's own literal first
+# steps (key Escape 0.1 / sleep 2 / key space 0.1 / wait-pulse type28=30
+# Escape+space -- the same pattern r482's byte-identical preamble used) are
+# the pattern run_gate.py's mission_cinematic_handoff / mission_render_summary
+# special case explicitly REPLACES before running (tools/run_gate.py:745-756)
+# -- its own comment documents that firing the Escape/space pulse
+# immediately, before the renderer/movie workers settle, can "straddle the
+# movie transition" and stop presentation. --dump_shaders (added r481) does
+# not apply that override, so this probe inherited the flaky raw pattern.
+# Fixed here by using the DIFFERENT settle-then-Escape-only-pulse shape
+# run_gate.py's own override already uses (not literal identity with either
+# existing route) -- verified end to end (clean_shutdown, game_status=0,
+# all three captures, translatable shader cache). One successful run is not
+# proof against r482's documented cycle-time variance; re-verify before
+# relying on this route being reliable.
+sleep	20
+capture	post-settle
+wait-pulse	type28=30	Escape@90
 capture	type28-30
 sleep	1
 key	space	0.1

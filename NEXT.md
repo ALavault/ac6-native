@@ -9,7 +9,7 @@ intégration des contournements. Aucun gameplay prouvé.
 
 ---
 
-# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r481, `reports/ac6-retail-native-codegen-gate2-r*`)
+# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r483, `reports/ac6-retail-native-codegen-gate2-r*`)
 
 **Piste séparée, même dépôt, coordonnée pour ne PAS toucher `native/`
 pendant que la chaîne ci-dessus (r488+) y a des modifications non
@@ -17,7 +17,39 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r482 — piste A (suite) : l'hypothèse « préambule insuffisamment
+0. **r483 — piste A (suite, cycle exécuté en parallèle du r482
+   ci-dessous, renuméroté après coup pour éviter une collision de
+   numéro — les deux résultats sont réels et complémentaires, pas
+   contradictoires) : un troisième motif de repli — DIFFÉRENT du
+   préambule byte-identique que r482 a réfuté — franchit le blocage
+   « movie worker » une fois. Motif utilisé : celui que
+   `tools/run_gate.py:745-756` applique déjà lui-même pour ses propres
+   routes scellées (`sleep 20` puis `wait-pulse type28=30 Escape@90`,
+   pulsation `Escape` seule, pas `Escape+space`). Résultat vérifié de
+   bout en bout : `clean_shutdown=true`, `game_status=0`, les 3
+   captures attendues produites, cache `.xsh`/`.fsi.vk.xpso` traduit
+   (11 nuanceurs, 8 pipelines). `game-data-browser` ne contient
+   toujours AUCUNE des 3 cibles de r478 (7 nuanceurs nouveaux, aucun
+   ne correspond). Une seule réussite n'écarte pas la variance de
+   cycle documentée par r482/r280 — à re-vérifier avant de considérer
+   ce motif fiable. AUCUN fichier sous `native/` touché ce cycle
+   (vérifié avant/après, 34 min de silence côté chaîne r488+, la plus
+   longue observée à ce jour).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r483-different-settle-pattern-clears-the-movie-worker-stall-once-game-data-browser-still-lacks-the-3-targets-20260909.md`.
+   **Nommé pour r484** : (1) lire le désassemblage invité autour de
+   `0x82916E2C`/`0x82916E3C`/`0x82916E08` (session Ghidra requise,
+   toujours la piste la plus solide, nommée par r482) ; (2)
+   re-vérifier le motif `sleep 20`+`Escape@90` sur plusieurs runs avant
+   de le croire fiable ; (3) explorer une navigation réelle dans
+   `game-data-browser` ou un écran plus loin (hangar/carte tactique)
+   avec `--dump_shaders` actif ; (4) reconsidérer la piste HUD de vol
+   (`fetch_const`, r475) ; (5) envisager une pause de piste A — 3
+   cycles (r481-r483) sans nouvelle cible capturée depuis r477, décision
+   utilisateur à confirmer plutôt qu'à prendre seul (même principe que
+   r480).
+
+1. **r482 — piste A (suite) : l'hypothèse « préambule insuffisamment
    stabilisé » pour le blocage « movie worker » de
    `us-menu-navigation-probe.steps` (nommée par r481) TESTÉE et
    RÉFUTÉE. Préambule rendu strictement identique octet pour octet à
