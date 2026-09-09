@@ -17,7 +17,24 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r484 — piste A (re-vérification du motif de repli de r483,
+0. **r485 — piste A MISE EN PAUSE, sur décision utilisateur explicite
+   répondant à la question posée par r484.** Bilan de la chaîne
+   r481-r484 : 4 cycles de progrès réels mais négatifs (route
+   `--mission-dump-shaders` découplée, hypothèse de préambule réfutée,
+   motif de stabilisation trouvé puis confirmé flaky à 2/3), aucune
+   nouvelle capture des 3 états cibles de r478 depuis r477. `native/`
+   toujours pas touché par cette chaîne, calme depuis 3h30+ au moment
+   de ce rapport (bien au-delà du cadencement observé de l'autre
+   chaîne r488+) — noté pour la prochaine décision, non agi. Voir
+   `reports/ac6-retail-native-codegen-gate2-r485-piste-a-paused-user-decision-4-cycles-diminishing-returns-20260909.md`.
+   **Nommé pour r486** : reprise possible via (1) une session Ghidra
+   ciblée sur l'attente « movie worker » (seule piste attaquant la
+   cause), (2) le merge différé des 12 traductions de r481 une fois
+   `native/` confirmé stablement libre, (3) la piste `fetch_const` du
+   HUD de vol (r475, jamais suivie). Aucune reprise sans nouvelle
+   décision utilisateur.
+
+1. **r484 — piste A (re-vérification du motif de repli de r483,
    décision utilisateur explicite « one more cycle: verify the settle
    fix ») : 2 exécutions supplémentaires du motif `sleep 20`+
    `Escape@90` — une réussie (« a », `game-data-browser` atteint
