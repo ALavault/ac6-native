@@ -17,7 +17,27 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r496 — quatrième cycle consécutif (r492, r494, r495, r496) échoue
+0. **r497 — instrumentation au-delà de la charge CPU (décision
+   utilisateur explicite après r496) : le GPU est déjà à 61 %
+   d'utilisation et 16/24 GiB de VRAM occupés par au moins 3 jobs
+   CUDA/PyTorch externes AVANT même le lancement d'`ac6recomp` ;
+   pendant une exécution réelle instrumentée, l'utilisation GPU
+   oscille 15-100 % avec deux pointes à 90-100 % dans les 25
+   dernières secondes avant l'échec par timeout. La swap croît aussi
+   en continu (+239 Mio sur ~215 s). r489 n'avait mesuré QUE la
+   charge CPU — ni le GPU ni la mémoire. Corrélation temporelle
+   observée, pas encore statistiquement établie (une seule exécution
+   instrumentée). Le correctif SIGTERM de r493/r494 reconfirmé
+   fonctionnel (zéro processus résiduel après le timeout). `native/`
+   non touché.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r497-gpu-contention-measured-cpu-load-alone-does-not-explain-failures-20260909.md`.
+   **Nommé pour r498** : répéter l'instrumentation GPU sur 2-3
+   exécutions pour une vraie corrélation statistique ; le bug
+   `AudioRuntime` de r495 reste ouvert et non réinvestigué (cette
+   exécution n'a jamais atteint la fin de route).
+
+1. **r496 — quatrième cycle consécutif (r492, r494, r495, r496) échoue
    à capturer les 3 états cibles, malgré une charge hôte mesurée
    PLUS BASSE (31-35) qu'aucun cycle précédent. Les deux tentatives
    échouent PLUS TÔT que les cycles précédents (avant même le premier
