@@ -17,6 +17,32 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
+0. **r492 — tentative de capture oracle malgré la contention hôte
+   confirmée par r489 (décision utilisateur explicite : essayer plutôt
+   qu'attendre). Résultat mitigé, aucune donnée fusionnable.** Tentative
+   1 (`--display :241`) : les 8/8 étapes de la route exécutées,
+   `type28-30` bien atteint, mais arrêt non propre
+   (`AudioRuntime: worker thread did not exit within 2s`) → aucun
+   cache `.xsh`/`.xpso` persistant → traduction bloquée par
+   construction (fail-closed, déjà documenté r481/r486). Tentative 2
+   (`--display :242`) : **fuite de processus confirmée** — `timeout
+   240` a tué le wrapper Python mais PAS `Xvfb`/`ac6recomp`
+   (détachés du groupe de processus, même mécanisme que r482 avait
+   noté pour `Xvfb` seul, ici étendu à `ac6recomp` lui-même) ; trouvés
+   toujours actifs 4 minutes après la fin apparente, `type28-30`
+   jamais atteint, terminés manuellement. `native/` non touché,
+   vérifié identique avant/après (7 fichiers, propriété de la session
+   concurrente). Charge hôte encore ~38-45 au moment de ce rapport,
+   inchangée depuis plus d'une heure.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r492-oracle-attempt-despite-contention-mixed-result-no-mergeable-data-20260909.md`.
+   **Nommé pour r493** : (1) réessayer avec arrêt propre explicite
+   (`xdotool windowclose`, motif r480) plutôt que de compter sur
+   l'arrêt interne ; (2) attendre une charge plus basse (`uptime` sous
+   ~10-15) ; (3) corriger `run_gate.py` pour tuer le groupe de
+   processus complet au timeout, pas seulement le wrapper — corrigerait
+   la fuite à la source.
+
 0. **r491 — le nuanceur pixel réel des tirages d'interface rejetés
    (digest `e41b4b062083e5bf`, retrouvé via un journal scratch
    `/fastdata/lavaulta/tmp/ac6-r478-probe.log` non nettoyé d'un cycle
