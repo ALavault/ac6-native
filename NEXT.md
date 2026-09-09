@@ -17,7 +17,24 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r500 — applique le correctif `AudioRuntime` de r499 (décision
+0. **r501 — sixième cycle de capture (3 tentatives), toujours aucune
+   donnée fusionnable, correctif `AudioRuntime` de r500 non testé
+   (aucune tentative n'a atteint l'arrêt propre).** 2/3 tentatives
+   bloquées au même point exact que r498 (`sleep(4)` dans
+   `wait_log()`). **Nouveau bug trouvé** : sur la tentative restante,
+   un DEUXIÈME `SIGTERM` reçu PENDANT `close()` a interrompu le
+   nettoyage lui-même (`KeyboardInterrupt` levée dans
+   `terminate_owned()`), laissant `Xvfb`/`ac6recomp` actifs — nettoyés
+   manuellement. Source du second signal non identifiée. Aucun des ~11
+   nuanceurs capturés au total ne correspond aux 3 cibles de r478.
+   `native/` non touché. Voir
+   `reports/ac6-retail-native-codegen-gate2-r501-third-retry-after-audioruntime-fix-still-fails-at-sleep4-new-reentrant-sigterm-leak-found-20260909.md`.
+   **Nommé pour r502** : six cycles/~15 tentatives sans capture des 3
+   cibles. Le bug de réentrance `SIGTERM` mérite une garde avant de se
+   fier aux futures tentatives ; le correctif `AudioRuntime` reste non
+   vérifié ; le blocage `sleep(4)` reste sans cause identifiée.
+
+1. **r500 — applique le correctif `AudioRuntime` de r499 (décision
    utilisateur explicite : appliquer, pas laisser en l'état).**
    Revérification de `worker_running_` ajoutée dans la boucle `for
    (clients_)` de `WorkerThreadMain()`
