@@ -17,7 +17,30 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r494 — corrige un défaut réel dans r493 (le gestionnaire SIGTERM
+0. **r495 — troisième cycle consécutif (r492, r494, r495) d'essais
+   bornés (2 tentatives max) échoue à capturer les 3 états cibles,
+   sous une charge hôte 33-34 (la plus basse observée, toujours
+   élevée). Tentative 1 : timeout complet, aucune donnée. Tentative
+   2 : atteint la cible (8/8 étapes) mais arrêt non propre — cause
+   NOUVELLE et distincte de tout ce qui a été corrigé aujourd'hui :
+   `AudioRuntime: worker thread did not exit within 2s, terminating`
+   (un blocage interne au thread audio de `ac6recomp`, pas un
+   problème de nettoyage du wrapper Python — celui-ci fonctionne,
+   vérifié une troisième fois, aucun processus résiduel). Dump de
+   nuanceurs produit dans un format incompatible avec la traduction,
+   correctement rejeté sans forcer de fusion. Recommande explicitement
+   d'attendre une baisse de charge nettement plus marquée (sous
+   ~15-20, pas seulement sous 35) avant une nouvelle tentative, ou
+   d'investiguer le blocage audio comme piste distincte, plutôt que
+   de répéter un quatrième cycle sous des conditions similaires.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r495-third-capped-attempt-fails-recommends-longer-pause-20260909.md`.
+   **Nommé pour r496** : (1) lire le code de l'arrêt du thread
+   `AudioRuntime` (délai 2s codé en dur) ; (2) attendre une charge
+   hôte nettement plus basse avant toute nouvelle capture. Les 3 états
+   cibles de r478 restent non capturés.
+
+1. **r494 — corrige un défaut réel dans r493 (le gestionnaire SIGTERM
    était installé dans `ac6-oracle-run.py::main()`, un point d'entrée
    que `run_gate.py` — utilisé par TOUTE la campagne — n'appelle
    jamais ; déplacé vers `OracleRun.__init__()`, partagé par les deux
