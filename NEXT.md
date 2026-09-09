@@ -17,7 +17,28 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r497 — instrumentation au-delà de la charge CPU (décision
+0. **r498 — contrainte de charge CPU/GPU levée sur décision
+   utilisateur explicite (« Enlève la contrainte de charge » / « La
+   seule limite est sur la RAM ») : 3 tentatives directes de capture,
+   RAM vérifiée saine (105 Go disponibles/124 Go) avant et pendant,
+   toutes échouées. Tentatives 1-2 : timeout complet, aucun nuanceur
+   dumpé. Tentative 3 : timeout pendant un `sleep(4)` interne, AVANT
+   `type28=30` — 5 nuanceurs dumpés, 2 jamais vus dans cette campagne,
+   aucun ne correspond aux 3 cibles de r478. Le correctif de nettoyage
+   r493/r494 reconfirmé (aucun processus résiduel après les 3
+   timeouts). Un incident opérationnel (double mise en arrière-plan
+   par erreur, orphelinisant un processus) détecté et corrigé en cours
+   de cycle, sans utiliser les données produites. `native/` non
+   touché.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r498-load-constraint-removed-still-no-target-capture-20260909.md`.
+   **Nommé pour r499** : retirer la contrainte de charge n'a rien
+   changé sur cet échantillon de 3 — candidats : répéter avec un plus
+   grand échantillon, reprendre la piste `AudioRuntime` de r495
+   (statique, indépendante), ou lire le code autour du point de
+   blocage précis (`wait_log`/`sleep(4)`) où la tentative 3 a expiré.
+
+1. **r497 — instrumentation au-delà de la charge CPU (décision
    utilisateur explicite après r496) : le GPU est déjà à 61 %
    d'utilisation et 16/24 GiB de VRAM occupés par au moins 3 jobs
    CUDA/PyTorch externes AVANT même le lancement d'`ac6recomp` ;
