@@ -17,7 +17,27 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r485 — piste A MISE EN PAUSE, sur décision utilisateur explicite
+0. **r486 — tentative du merge différé (nommé par r485), sur décision
+   utilisateur explicite de traiter `native/` comme libre (calme
+   depuis 4h+, aucun propriétaire identifiable via `ListAgents`).**
+   Pipeline de traduction corrigé et vérifié fonctionnel (erreur
+   d'invocation de `build.sh`, pas un bug). **4 tentatives de capture
+   sur `routes/us-pretype28-startup.steps` (route documentée fiable
+   par r481) : 0 succès propre** — 2 timeouts complets, 1 arrêt sale
+   refusé à raison par `parse_rexglue_cache.py` (fail-closed), 1
+   corruption par une fuite de processus non nettoyée à temps
+   (identifiée et corrigée en cours de cycle). Aucun merge forcé sur
+   des données incomplètes. `native/` reste inchangé (7 fichiers,
+   même état que r481-r485, aucun ajout ce cycle). Voir
+   `reports/ac6-retail-native-codegen-gate2-r486-deferred-merge-attempt-capture-pipeline-reliability-degraded-not-forced-20260909.md`.
+   **Nommé pour r487** : abandonner cette piste spécifique (faible
+   bénéfice : 1 seul nuanceur nouveau, aucune des 3 cibles) au profit
+   d'une piste Ghidra sur l'attente « movie worker » (pas de
+   dépendance à un lancement oracle-hybride complet, donc pas exposée
+   à cette variance de charge), ou réessayer avec une mesure de charge
+   hôte instrumentée plutôt que deviner.
+
+1. **r485 — piste A MISE EN PAUSE, sur décision utilisateur explicite
    répondant à la question posée par r484.** Bilan de la chaîne
    r481-r484 : 4 cycles de progrès réels mais négatifs (route
    `--mission-dump-shaders` découplée, hypothèse de préambule réfutée,
