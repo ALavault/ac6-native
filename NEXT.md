@@ -17,7 +17,25 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r499 — lecture statique des deux pistes nommées par r495/r498
+0. **r500 — applique le correctif `AudioRuntime` de r499 (décision
+   utilisateur explicite : appliquer, pas laisser en l'état).**
+   Revérification de `worker_running_` ajoutée dans la boucle `for
+   (clients_)` de `WorkerThreadMain()`
+   (`upstream/AC6_recomp/thirdparty/rexglue-sdk/src/native/audio/audio_runtime.cpp`),
+   permettant à l'arrêt d'interrompre le dispatch entre deux clients
+   plutôt qu'entre deux tours complets. Committé dans le sous-module
+   (`2e79f3f4`) et le pointeur mis à jour dans le dépôt parent.
+   `native/` non touché (ce correctif concerne uniquement le profil
+   `rexglue-oracle`). Non re-vérifié par une capture réelle ce cycle.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r500-applies-audioruntime-shutdown-fix-user-authorized-20260909.md`.
+   **Nommé pour r501** : les 3 états cibles de r478 restent non
+   capturés après 5 cycles/~12 tentatives (r492-r498), six dimensions
+   de contention/minutage explorées (CPU, GPU, RAM, `sleep(4)`,
+   `AudioRuntime`) sans cause unique. Aucune reprise de capture
+   décidée ce cycle.
+
+1. **r499 — lecture statique des deux pistes nommées par r495/r498
    (décision utilisateur : arrêter les tentatives de capture,
    investiguer statiquement). `sleep(4)` de r498 refermé : délai de
    réglage documenté (`tools/ac6-oracle-run.py::wait_log()`), le
