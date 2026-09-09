@@ -32,6 +32,17 @@ class NativeGuestVdService final {
   // writeback; the bus decode cursor has already advanced, exactly as with
   // any accepted decode whose backend step rejects.
   void bind_offscreen(VulkanOffscreenTarget* target) noexcept;
+  // Optional non-owning real renderer: when bound (alongside an offscreen
+  // target), DrawPacket/PresentPacket decode routes through it instead of
+  // VulkanBackend's validate-only submit()/plain-clear present_to_offscreen()
+  // -- real EDRAM-target draws and a real resolve on present, not a
+  // placeholder. Null (default) keeps the existing validate+clear behavior
+  // exactly as before. r454: guest memory is synced into the runtime's
+  // shared-memory SSBO (full 512 MiB, matching its direct address-as-offset
+  // contract) once per drain, before any draw -- the naive, unoptimized
+  // approach; real guest fetch addresses only need to be within that
+  // window, not at a particular offset within it.
+  void bind_pinned(PinnedShaderRuntime* pinned) noexcept;
   void unbind() noexcept;
   void register_allocation(std::uint8_t* base, GuestAddress guest_address,
                            std::uint32_t bytes) noexcept;
@@ -65,6 +76,7 @@ class NativeGuestVdService final {
   XenosState* state_{};
   VulkanBackend* backend_{};
   VulkanOffscreenTarget* present_target_{};
+  PinnedShaderRuntime* pinned_{};
   GuestAddress ring_base_{};
   GuestAddress ring_guest_base_{};
   std::uint32_t ring_size_{};

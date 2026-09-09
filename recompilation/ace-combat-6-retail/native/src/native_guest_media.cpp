@@ -38,23 +38,31 @@ std::optional<std::uint32_t> NativeGuestMediaService::open_file(
   } else {
     // A real title package can run to tens of megabytes; bound it well
     // above any single asset file this product has seen without being
-    // unbounded.
+    // unbounded. r240: retail PACs exceed the old 512 MiB cap (DATA00.PAC
+    // is 2.2 GiB). Stream large files on demand instead of rejecting.
     constexpr std::size_t kMaximumFileSize = 512u * 1024u * 1024u;
-    std::vector<std::uint8_t>& bytes = opened.bytes;
     std::error_code error;
     const std::filesystem::path candidate = media_.path / relative_path;
     if (!std::filesystem::is_regular_file(candidate, error) || error) {
       return std::nullopt;
     }
     const std::uintmax_t size = std::filesystem::file_size(candidate, error);
-    if (error || size > kMaximumFileSize) return std::nullopt;
-    std::ifstream stream(candidate, std::ios::binary);
-    if (!stream) return std::nullopt;
-    bytes.resize(static_cast<std::size_t>(size));
-    if (!bytes.empty() &&
-        !stream.read(reinterpret_cast<char*>(bytes.data()),
-                     static_cast<std::streamsize>(bytes.size()))) {
-      return std::nullopt;
+    if (error) return std::nullopt;
+    if (size > kMaximumFileSize) {
+      opened.assets_streamed = true;
+      opened.assets_path = candidate;
+      opened.size = size;
+    } else {
+      std::vector<std::uint8_t>& bytes = opened.bytes;
+      std::ifstream stream(candidate, std::ios::binary);
+      if (!stream) return std::nullopt;
+      bytes.resize(static_cast<std::size_t>(size));
+      if (!bytes.empty() &&
+          !stream.read(reinterpret_cast<char*>(bytes.data()),
+                       static_cast<std::streamsize>(bytes.size()))) {
+        return std::nullopt;
+      }
+      opened.size = size;
     }
   }
 
@@ -76,7 +84,7 @@ bool NativeGuestMediaService::read_file(std::uint32_t handle,
   }
   const OpenFile& opened = it->second;
   const std::uint64_t file_size =
-      opened.streamed ? opened.size : opened.bytes.size();
+      opened.streamed || opened.assets_streamed ? opened.size : opened.bytes.size();
   if (offset >= file_size) {
     bytes_read = 0u;
     return true;
@@ -93,6 +101,19 @@ bool NativeGuestMediaService::read_file(std::uint32_t handle,
       }
       stream.seekg(static_cast<std::streamoff>(opened.iso_offset + offset),
                    std::ios::beg);
+      stream.read(reinterpret_cast<char*>(dest),
+                  static_cast<std::streamsize>(copy_length));
+      if (!stream) {
+        bytes_read = 0u;
+        return true;
+      }
+    } else if (opened.assets_streamed) {
+      std::ifstream stream(opened.assets_path, std::ios::binary);
+      if (!stream) {
+        bytes_read = 0u;
+        return true;
+      }
+      stream.seekg(static_cast<std::streamoff>(offset), std::ios::beg);
       stream.read(reinterpret_cast<char*>(dest),
                   static_cast<std::streamsize>(copy_length));
       if (!stream) {
@@ -118,7 +139,7 @@ std::optional<std::uint64_t> NativeGuestMediaService::file_size(
   const auto it = files_.find(handle);
   if (it == files_.end()) return std::nullopt;
   const OpenFile& opened = it->second;
-  return opened.streamed ? opened.size : opened.bytes.size();
+  return opened.streamed || opened.assets_streamed ? opened.size : opened.bytes.size();
 }
 
 NativeGuestMediaService& native_guest_media_service() noexcept {

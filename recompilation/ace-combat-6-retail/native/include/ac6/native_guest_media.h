@@ -55,10 +55,15 @@ class NativeGuestMediaService final {
     // ISO mode: streamed directly from `iso_offset`/`size` on every read,
     // since a real title's data packages run past 2GiB and this project
     // never pulls a file that size into memory at once.
+    // r240: large assets-directory files (e.g. retail DATA00.PAC at
+    // 2.2 GiB) exceed the previous 512 MiB in-memory cap. Stream them
+    // from the host file on demand instead of rejecting them.
     std::vector<std::uint8_t> bytes;
     bool streamed{};
     std::uint64_t iso_offset{};
     std::uint64_t size{};
+    std::filesystem::path assets_path;
+    bool assets_streamed{};
   };
 
   std::mutex mutex_;

@@ -79,6 +79,23 @@ std::uint32_t XenosState::register_value(std::uint32_t index) const noexcept {
   return index < kRegisterCount ? registers_[index] : 0u;
 }
 
+bool XenosState::stage_shader(std::uint32_t shader_type,
+                              std::span<const std::uint32_t> microcode) {
+  if (shader_type > 1u || microcode.empty() ||
+      microcode.size() > kMaxShaderDwords) {
+    return false;
+  }
+  active_shaders_[shader_type].assign(microcode.begin(), microcode.end());
+  shader_generation_ = generation_;
+  return true;
+}
+
+std::span<const std::uint32_t> XenosState::active_shader(
+    std::uint32_t shader_type) const noexcept {
+  if (shader_type > 1u) return {};
+  return active_shaders_[shader_type];
+}
+
 DecodeResult Pm4Decoder::decode_one(std::span<const std::uint32_t> words,
                                     XenosState& state,
                                     std::vector<XenosCommand>& output) {
@@ -218,8 +235,17 @@ DecodeResult Pm4Decoder::decode_one(std::span<const std::uint32_t> words,
         return {0u, make_error(Pm4ErrorCode::kInvalidPayload, 1u,
                                "IM_LOAD_IMMEDIATE shader envelope is invalid")};
       }
-      staged.emplace_back(ImmediateShaderPacket{payload[0], payload[1] >> 16u,
-                                                payload[1] & 0xffffu});
+      const std::uint32_t dwords = payload[1] & 0xffffu;
+      ImmediateShaderPacket packet{payload[0], payload[1] >> 16u, dwords, {}};
+      packet.microcode.assign(payload.begin() + 2,
+                              payload.begin() + 2 + dwords);
+      // Real GPU semantics: the loaded microcode becomes the active shader
+      // of its stage; the pinned-registry draw path consumes it (r256).
+      if (!next_state.stage_shader(payload[0], packet.microcode)) {
+        return {0u, make_error(Pm4ErrorCode::kInvalidPayload, 2u,
+                               "IM_LOAD_IMMEDIATE shader staging failed")};
+      }
+      staged.emplace_back(std::move(packet));
       break;
     }
     case pm4::kOpcodeRegRmw: {

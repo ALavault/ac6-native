@@ -8,6 +8,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace ac6::native {
 namespace {
@@ -100,6 +104,12 @@ void NativeGuestVdService::unbind() noexcept {
   state_ = nullptr;
   backend_ = nullptr;
   present_target_ = nullptr;
+  pinned_ = nullptr;
+}
+
+void NativeGuestVdService::bind_pinned(PinnedShaderRuntime* pinned) noexcept {
+  std::lock_guard lock(mutex_);
+  pinned_ = pinned;
 }
 
 void NativeGuestVdService::bind_offscreen(
@@ -270,7 +280,52 @@ void NativeGuestVdService::drain_locked() noexcept {
   bridge_->set_ring_words(ring_words_);
   std::vector<XenosCommand> commands;
   const DecodeResult result = bridge_->pump(*state_, commands);
-  if (!result.ok() || !backend_->submit(*state_, commands)) {
+  // r454: route real draws through the pinned real-renderer when bound,
+  // instead of VulkanBackend's validate-only submit(). Guest memory is
+  // synced into the runtime's shared-memory SSBO once per drain, before
+  // any draw -- a full-range copy bounded by the SSBO's own size (512 MiB,
+  // r438), not incremental. This is the naive first-cut approach: correct
+  // (any in-window fetch address sees real guest bytes) but not optimized
+  // for the copy cost. execute_frame() already resolves EDRAM on its own
+  // PresentPacket handling, so the plain-clear present block below must be
+  // skipped when this path is used, or present_count() double-counts
+  // (the same double-present class r432 already fixed once for the
+  // publish_write_address path).
+  const bool use_pinned =
+      pinned_ != nullptr && pinned_->valid() && present_target_ != nullptr;
+  bool backend_accepted = false;
+  // r454: only true once execute_frame() itself succeeds -- distinct from
+  // use_pinned, which just says a pinned runtime is bound and eligible.
+  // draw_pinned() fails closed on any draw state it doesn't have a pinned
+  // shader variant for (a real, expected case -- the pinned registry is
+  // 271 oracle-derived translations, not exhaustive, r255), and unlike
+  // VulkanBackend::submit()'s pure structural validation, that failure is
+  // about render *capability*, not packet validity. Treating it as an
+  // overall decode rejection would stall the guest ring (readback never
+  // advances below), a real regression VulkanBackend::submit() alone never
+  // had -- so an unpinned draw falls back to plain structural validation
+  // for this batch instead, preserving the pre-r454 accept/stall behavior
+  // exactly, and only ever adding real rendering on top of it, never
+  // taking it away.
+  bool pinned_handled_present = false;
+  if (result.ok()) {
+    if (use_pinned) {
+      const std::uint64_t sync_bytes = pinned_->shared_memory_dwords() * 4u;
+      pinned_->write_shared_memory(
+          0u, std::span<const std::uint8_t>(base_, sync_bytes));
+      backend_accepted = pinned_->execute_frame(*present_target_, *state_, commands);
+      if (backend_accepted) {
+        pinned_handled_present = true;
+      } else {
+        trace("vd drain pinned execute_frame rejected, falling back to "
+              "structural validation: %s", pinned_->error().c_str());
+        backend_accepted = backend_->submit(*state_, commands);
+      }
+    } else {
+      backend_accepted = backend_->submit(*state_, commands);
+    }
+  }
+  if (!result.ok() || !backend_accepted) {
     if (!result.ok()) {
       trace("vd drain rejected decode_ok=0 code=%u offset=%zu detail=%s commands=%zu",
             static_cast<unsigned>(result.error.code), result.error.dword_offset,
@@ -349,7 +404,14 @@ void NativeGuestVdService::drain_locked() noexcept {
       }
     }
   }
-  if (present_target_ != nullptr) {
+  // r454: PresentPacket already resolved inside execute_frame() above when
+  // pinned_handled_present -- redoing it here through the plain-clear path
+  // would double-count present_count() (the same class of bug r432 fixed
+  // for the publish_write_address path). Deliberately NOT gated on
+  // use_pinned alone: a failed pinned attempt falls back to plain
+  // structural validation above, and that fallback still needs this block
+  // to actually present.
+  if (present_target_ != nullptr && !pinned_handled_present) {
     for (const XenosCommand& command : commands) {
       const auto* present = std::get_if<PresentPacket>(&command);
       if (present == nullptr) continue;
@@ -420,14 +482,53 @@ void NativeGuestVdService::publish_write_address(
       present_target_ != nullptr && readback_ != 0u) {
     const PresentPacket packet{0u, present_target_->width(),
                                present_target_->height(), 0u};
-    if (!backend_->present_to_offscreen(*present_target_, packet, 0.0f, 0.0f,
-                                        0.0f, 1.0f)) {
+    // r454: VdSwap's own direct present (r430) is the real per-frame swap
+    // on this path -- resolve whatever the pinned runtime's EDRAM render
+    // target already holds from this frame's ring-drained draws, instead
+    // of just clearing, when a real renderer is bound.
+    const bool use_pinned =
+        pinned_ != nullptr && pinned_->valid() && state_ != nullptr;
+    bool ok = false;
+    std::uint64_t count = 0u;
+    std::string_view err;
+    if (use_pinned) {
+      // r456: execute_frame()'s PresentPacket handling increments
+      // present_count() unconditionally (even with no active EDRAM render
+      // target -- there is simply nothing to resolve, per its own code),
+      // so a "successful" pinned present is not proof the image was
+      // actually touched. r455's capture diagnostic found exactly this:
+      // when no pinned draw ever matched a shader this session (a real,
+      // expected case, r454), the image stayed at its initial UNDEFINED
+      // layout forever -- a real regression versus the old path, which
+      // always cleared. Detect it via edram_resolves()'s own delta (the
+      // one signal PinnedShaderRuntime already exposes for "did a resolve
+      // actually happen") and fall back to a bare clear() -- not
+      // backend_->present_to_offscreen(), which would double-count this
+      // same present in diagnostics()'s now-additive backend_+pinned_ sum
+      // (r455) -- only when nothing did.
+      const std::uint64_t resolves_before = pinned_->edram_resolves();
+      const std::vector<XenosCommand> one_cmd{packet};
+      ok = pinned_->execute_frame(*present_target_, *state_, one_cmd);
+      count = pinned_->present_count();
+      err = pinned_->error();
+      if (ok && pinned_->edram_resolves() == resolves_before) {
+        if (!present_target_->clear(0.0f, 0.0f, 0.0f, 1.0f)) {
+          trace("vd swap fallback clear failed: %s",
+                present_target_->error().c_str());
+        }
+      }
+    } else {
+      ok = backend_->present_to_offscreen(*present_target_, packet, 0.0f,
+                                          0.0f, 0.0f, 1.0f);
+      count = backend_->present_count();
+      err = backend_->error();
+    }
+    if (!ok) {
       trace("vd swap present failed %ux%u: %s", packet.width, packet.height,
-            backend_->error().c_str());
+            std::string(err).c_str());
     } else {
       trace("vd swap presented %ux%u present_count=%llu", packet.width,
-            packet.height,
-            static_cast<unsigned long long>(backend_->present_count()));
+            packet.height, static_cast<unsigned long long>(count));
     }
   }
   if (base_ == nullptr || base != base_ || bus_ == nullptr ||

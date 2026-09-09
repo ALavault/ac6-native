@@ -24,11 +24,48 @@ NativeRuntime::NativeRuntime(MediaInput media, std::filesystem::path user_data)
       guest_address_space_(),
       guest_memory_(16u * 1024u * 1024u) {}
 
-NativeRuntime::~NativeRuntime() = default;
+NativeRuntime::~NativeRuntime() {
+  native_guest_vd_service().unbind();
+}
 
 void NativeRuntime::bind_guest_vd() noexcept {
   native_guest_vd_service().bind(guest_address_space_.base(), bus_, bridge_,
                                   xenos_state_, backend_);
+  // r295: give the VD service a real present target. Without this,
+  // present_target_ stays null forever and any PresentPacket the guest
+  // issues is silently dropped by drain_locked()'s own
+  // `if (present_target_ != nullptr)` guard -- found r294, after
+  // confirming the guest's ring already submits real DrawPacket/
+  // ImmediateShaderPacket work, not just boot-time setup. Constructed
+  // here (not in the constructor) because bind_guest_vd() runs on the
+  // probe-entry thread, matching where the rest of the guest Vd wiring
+  // already happens; failure here (no usable Vulkan device) is not
+  // fatal -- present_target_ simply stays null, the same degraded state
+  // this runtime was already in before this change.
+  offscreen_device_ = std::make_unique<VulkanDevice>();
+  if (offscreen_device_->valid()) {
+    offscreen_target_ =
+        std::make_unique<VulkanOffscreenTarget>(*offscreen_device_);
+    if (offscreen_target_->valid()) {
+      native_guest_vd_service().bind_offscreen(offscreen_target_.get());
+      // r454: real renderer, same null-on-no-device contract as
+      // offscreen_device_/offscreen_target_ above. A failed construction
+      // (host Vulkan device rejects the shared-memory SSBO, etc.) is not
+      // fatal -- native_guest_vd_service() simply keeps validating/clearing
+      // as it already did, the same degraded state as before this change.
+      pinned_runtime_ =
+          std::make_unique<PinnedShaderRuntime>(*offscreen_device_);
+      if (pinned_runtime_->valid()) {
+        native_guest_vd_service().bind_pinned(pinned_runtime_.get());
+      } else {
+        pinned_runtime_.reset();
+      }
+    } else {
+      offscreen_target_.reset();
+    }
+  } else {
+    offscreen_device_.reset();
+  }
 }
 
 void NativeRuntime::fail(std::string message) noexcept {
@@ -158,12 +195,22 @@ ServiceError NativeRuntime::load(std::string_view name,
 
 bool NativeRuntime::shutdown() noexcept {
   if (diagnostics_.state == RuntimeState::kStopped) return true;
-  if (diagnostics_.state == RuntimeState::kFailed) return false;
+  // r277: join the guest worker threads before any teardown step (their
+  // stop flag ends wait-driven loops), then hand the guest address space
+  // to process exit for the entry thread, which cannot be interrupted.
+  native_guest_threads_stop_and_join();
+  guest_address_space_.release();
+  if (diagnostics_.state == RuntimeState::kFailed) {
+    native_guest_vd_service().unbind();
+    return false;
+  }
   if (replay_ && replay_->finalize() != ServiceError::kNone) {
     diagnostics_.state = RuntimeState::kFailed;
     diagnostics_.error = "input replay incomplete at shutdown";
+    native_guest_vd_service().unbind();
     return false;
   }
+  native_guest_vd_service().unbind();
   diagnostics_.state = RuntimeState::kStopped;
   return true;
 }

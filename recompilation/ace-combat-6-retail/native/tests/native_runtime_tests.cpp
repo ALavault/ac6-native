@@ -8,6 +8,7 @@ suite then passes vacuously. Build this target with -UNDEBUG."
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -93,6 +94,19 @@ int main() {
   assert(runtime->xex_metadata()->entry_point == 0x82000010u);
   assert(runtime->loaded_guest_image_size() == 0x1000u);
   assert(runtime->guest_address_space().base()[0x82000000u] == 'M');
+  // r295: bind_guest_vd() previously never wired a real present target
+  // (NativeGuestVdService::bind_offscreen() had zero callers outside a
+  // Xenos-level unit test -- r294) -- a PresentPacket the guest issued
+  // was silently dropped forever. Not fatal on a host with no usable
+  // Vulkan device (matches native_xenos_tests.cpp's own skip contract);
+  // this only asserts the wiring happened when a device is actually
+  // available, since that's the condition r295 changed.
+  runtime->bind_guest_vd();
+  if (!runtime->has_offscreen_present_target()) {
+    std::fprintf(stderr,
+                 "note: no usable Vulkan device -- present target wiring "
+                 "not exercised on this host\n");
+  }
   assert(runtime->attach_replay({{1u, 0u, 1u, 0, 0, 0, 0}}));
   ac6::native::ReplaySample sample;
   assert(runtime->poll_input(1u, 0u, sample) == ac6::native::ServiceError::kNone);

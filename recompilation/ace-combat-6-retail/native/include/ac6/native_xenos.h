@@ -129,6 +129,10 @@ struct ImmediateShaderPacket final {
   std::uint32_t shader_type{};
   std::uint32_t start{};
   std::uint32_t dword_count{};
+  // Raw microcode dwords exactly as carried by the IM_LOAD_IMMEDIATE
+  // payload (dword_count words). Retained for signature-pinned translation;
+  // never interpreted by the decoder itself.
+  std::vector<std::uint32_t> microcode{};
 };
 
 using XenosCommand = std::variant<DrawPacket, ResolvePacket, PresentPacket,
@@ -148,6 +152,9 @@ class XenosState final {
   // headroom for content this session hasn't captured yet.
   static constexpr std::size_t kRegisterCount = 0x8000;
   static constexpr std::uint32_t kMaxEdramBytes = 0xA00000;
+  // Bounded active-shader staging: the qualified capsule tops out at 705
+  // dwords; 4096 leaves headroom without an unbounded copy (r256).
+  static constexpr std::uint32_t kMaxShaderDwords = 4096u;
 
   explicit XenosState(std::uint32_t edram_bytes = kMaxEdramBytes) noexcept;
 
@@ -164,10 +171,25 @@ class XenosState final {
     return registers_;
   }
 
+  // Real GPU semantics: IM_LOAD (immediate or pointer-based) makes the loaded
+  // microcode the active shader of its stage. The decoder stages a bounded
+  // copy; the pinned-registry draw path reads it back at draw time. Types
+  // outside {0=vertex, 1=pixel} are refused (fail closed).
+  [[nodiscard]] bool stage_shader(std::uint32_t shader_type,
+                                  std::span<const std::uint32_t> microcode);
+  [[nodiscard]] std::span<const std::uint32_t> active_shader(
+      std::uint32_t shader_type) const noexcept;
+  // Monotonic stamp of the last staging (diagnostics only).
+  [[nodiscard]] std::uint32_t active_shader_generation() const noexcept {
+    return shader_generation_;
+  }
+
  private:
   std::array<std::uint32_t, kRegisterCount> registers_{};
   std::uint32_t edram_bytes_{};
   std::uint32_t generation_{};
+  std::array<std::vector<std::uint32_t>, 2u> active_shaders_{};
+  std::uint32_t shader_generation_{};
 };
 
 enum class Pm4ErrorCode : std::uint8_t {

@@ -94,8 +94,18 @@ class NativeRuntime final {
   // object, so catching up whenever a caller asks is simpler and just as
   // correct as trying to push an update from there.
   [[nodiscard]] const RuntimeDiagnostics& diagnostics() const noexcept {
-    if (backend_.present_count() != diagnostics_.presented_frames) {
-      diagnostics_.presented_frames = backend_.present_count();
+    // r454/r455: presents now split across two counters -- VulkanBackend's
+    // (the plain-clear path, still used whenever native_guest_vd falls back
+    // from an unpinned-shader rejection, or when no pinned runtime is
+    // bound at all) and PinnedShaderRuntime's own (the real-render path).
+    // Neither call site ever presents through both for the same packet
+    // (native_guest_vd.cpp's pinned_handled_present/use_pinned guards), so
+    // the two counters are additive, not overlapping.
+    const std::uint64_t total_presented =
+        backend_.present_count() +
+        (pinned_runtime_ ? pinned_runtime_->present_count() : 0u);
+    if (total_presented != diagnostics_.presented_frames) {
+      diagnostics_.presented_frames = total_presented;
       if (diagnostics_.state == RuntimeState::kBooted) {
         diagnostics_.state = RuntimeState::kRunning;
       }
@@ -124,6 +134,19 @@ class NativeRuntime final {
   // issues will be silently dropped while this is false (see r294).
   [[nodiscard]] bool has_offscreen_present_target() const noexcept {
     return offscreen_target_ != nullptr;
+  }
+  // r455: read back the offscreen target's current pixels for diagnostic
+  // visual verification (e.g. confirming real content replaced the r430
+  // placeholder clear, not just that present_count() advanced). Empty
+  // vector when there is no target, matching VulkanOffscreenTarget::
+  // readback()'s own empty-on-failure contract.
+  [[nodiscard]] std::vector<std::uint8_t> readback_offscreen_pixels() const noexcept {
+    if (offscreen_target_ == nullptr) return {};
+    return offscreen_target_->readback();
+  }
+  [[nodiscard]] const std::string& offscreen_error() const noexcept {
+    static const std::string kNoTarget = "no offscreen target bound";
+    return offscreen_target_ != nullptr ? offscreen_target_->error() : kNoTarget;
   }
 
  private:
@@ -156,6 +179,13 @@ class NativeRuntime final {
   // order so the target (which borrows the device) is destroyed first.
   std::unique_ptr<VulkanDevice> offscreen_device_;
   std::unique_ptr<VulkanOffscreenTarget> offscreen_target_;
+  // r454: constructed alongside offscreen_device_/offscreen_target_ (same
+  // null-on-no-Vulkan-device contract) and bound to native_guest_vd_service()
+  // so the live VdSwap/ring-drain path can route real draws through it
+  // instead of VulkanBackend's validate-only submit()/plain-clear present.
+  // Declared after offscreen_device_ (which it borrows) so it is destroyed
+  // first.
+  std::unique_ptr<PinnedShaderRuntime> pinned_runtime_;
 };
 
 }  // namespace ac6::native

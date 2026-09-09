@@ -29,6 +29,18 @@ class GuestAddressSpace final {
   [[nodiscard]] bool write(std::uint32_t address,
                            std::span<const std::uint8_t> bytes) noexcept;
 
+  // r277: detach the mapping from this object's lifetime without unmapping.
+  // Guest threads (the detached _xstart entry thread and the ExCreateThread
+  // workers) only observe guest memory and cannot be interrupted from
+  // outside -- their spin loops make no import calls a stub could flag.
+  // The console's real teardown is the title quitting via XAM notification,
+  // which is not modeled offline, so a fabricated guest-visible quit flag
+  // would be a guest-behavior change rather than an infrastructure fix.
+  // shutdown() therefore calls this before the runtime's own teardown and
+  // process exit reclaims the reservation; the destructor then unmaps only
+  // if the runtime was never shut down with guest threads live.
+  void release() noexcept { base_ = nullptr; }
+
  private:
   std::uint8_t* base_{};
 };

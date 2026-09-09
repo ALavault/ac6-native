@@ -3,15 +3,39 @@ project(ac6_native_xenos LANGUAGES CXX)
 
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 find_package(SDL2 REQUIRED)
+find_package(Vulkan REQUIRED)
+find_library(XCB_LIBRARY NAMES xcb REQUIRED)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Pinned US shader registry: the fixture is the single source of truth; the
+# generated wrapper only carries its bytes into the build tree (ignored
+# working copy). Never commit or install generated output.
+set(AC6_PINNED_SHADER_FIXTURE
+    "${CMAKE_CURRENT_SOURCE_DIR}/fixtures/pinned-shader-registry.v1.bin"
+    CACHE FILEPATH "pinned US shader registry capsule fixture")
+set(AC6_PINNED_SHADER_DATA
+    "${CMAKE_CURRENT_BINARY_DIR}/native_pinned_shaders_data.cpp")
+add_custom_command(
+  OUTPUT "${AC6_PINNED_SHADER_DATA}"
+  COMMAND "${Python3_EXECUTABLE}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/tools/materialize_pinned_shader_data.py"
+          --capsule "${AC6_PINNED_SHADER_FIXTURE}"
+          --output "${AC6_PINNED_SHADER_DATA}"
+  DEPENDS "${AC6_PINNED_SHADER_FIXTURE}"
+          "${CMAKE_CURRENT_SOURCE_DIR}/tools/materialize_pinned_shader_data.py"
+  VERBATIM)
+
 add_library(ac6_native_xenos STATIC
   src/native_xenos.cpp
   src/native_vulkan_backend.cpp
+  src/native_vulkan_device.cpp
   src/native_shader_translator.cpp
+  src/native_pinned_shaders.cpp
+  "${AC6_PINNED_SHADER_DATA}"
   src/native_services.cpp
   src/native_ppc_abi.cpp
   src/native_frontend.cpp
@@ -25,7 +49,7 @@ add_library(ac6_native_xenos STATIC
   src/native_runtime.cpp
 )
 target_include_directories(ac6_native_xenos PUBLIC include)
-target_link_libraries(ac6_native_xenos PUBLIC OpenSSL::Crypto SDL2::SDL2)
+target_link_libraries(ac6_native_xenos PUBLIC OpenSSL::Crypto SDL2::SDL2 Vulkan::Vulkan ${XCB_LIBRARY})
 target_compile_options(ac6_native_xenos PRIVATE
   $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic -Wconversion>
 )
@@ -136,6 +160,7 @@ if(BUILD_TESTING)
   target_link_libraries(ac6_native_guest_input_tests PRIVATE ac6_native_xenos)
   target_compile_options(ac6_native_guest_input_tests PRIVATE ${AC6_TEST_NO_NDEBUG})
   add_test(NAME ac6_native_guest_input_tests COMMAND ac6_native_guest_input_tests)
+
   # r424: covers the r421/r422 regression class directly (residual raised
   # IRQL released on simulated thread termination) instead of relying only
   # on the end-to-end standalone-launch verification r422 ran by hand.

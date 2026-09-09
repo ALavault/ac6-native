@@ -12,6 +12,8 @@
 #include <iostream>
 #include <string_view>
 #include <thread>
+#include <unordered_set>
+#include <vector>
 
 namespace {
 
@@ -207,6 +209,35 @@ int main(int argc, char** argv) {
               << entry_returned.load() << ")\n" << std::flush;
     std::cout << "ac6recomp: presented_frames=" << runtime->diagnostics().presented_frames
               << " state=" << static_cast<int>(runtime->diagnostics().state) << "\n" << std::flush;
+    // r455: diagnostic-only visual verification -- confirm the pinned
+    // real-render path (r454) actually replaced the r430 placeholder
+    // clear with real content, not just that present_count() advanced.
+    // No file I/O, no PNG conversion: a plain non-black-pixel count and a
+    // distinct-color sample are enough to distinguish "still a flat
+    // clear" from "real geometry drew something".
+    if (std::getenv("AC6_NATIVE_CAPTURE") != nullptr) {
+      const std::vector<std::uint8_t> pixels = runtime->readback_offscreen_pixels();
+      if (pixels.empty()) {
+        std::cout << "ac6recomp: capture failed: has_offscreen_present_target="
+                  << (runtime->has_offscreen_present_target() ? 1 : 0)
+                  << " error=" << runtime->offscreen_error() << "\n" << std::flush;
+      } else {
+        std::size_t non_black = 0u;
+        std::unordered_set<std::uint32_t> distinct_colors;
+        for (std::size_t i = 0; i + 4u <= pixels.size(); i += 4u) {
+          const std::uint32_t rgba = (static_cast<std::uint32_t>(pixels[i]) << 24) |
+                                     (static_cast<std::uint32_t>(pixels[i + 1]) << 16) |
+                                     (static_cast<std::uint32_t>(pixels[i + 2]) << 8) |
+                                     static_cast<std::uint32_t>(pixels[i + 3]);
+          if ((rgba >> 8) != 0u) ++non_black;
+          distinct_colors.insert(rgba);
+        }
+        std::cout << "ac6recomp: capture pixels=" << (pixels.size() / 4u)
+                  << " non_black=" << non_black
+                  << " distinct_colors=" << distinct_colors.size() << "\n"
+                  << std::flush;
+      }
+    }
   }
 #endif
   if (!runtime->shutdown()) {
