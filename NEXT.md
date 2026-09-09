@@ -9,7 +9,7 @@ intégration des contournements. Aucun gameplay prouvé.
 
 ---
 
-# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r483, `reports/ac6-retail-native-codegen-gate2-r*`)
+# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r484, `reports/ac6-retail-native-codegen-gate2-r*`)
 
 **Piste séparée, même dépôt, coordonnée pour ne PAS toucher `native/`
 pendant que la chaîne ci-dessus (r488+) y a des modifications non
@@ -17,7 +17,33 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r483 — piste A (suite, cycle exécuté en parallèle du r482
+0. **r484 — piste A (re-vérification du motif de repli de r483,
+   décision utilisateur explicite « one more cycle: verify the settle
+   fix ») : 2 exécutions supplémentaires du motif `sleep 20`+
+   `Escape@90` — une réussie (« a », `game-data-browser` atteint
+   proprement), une échouée exactement au même blocage `type28=30`
+   que r479/r480/r482 (« b »). Bilan cumulé sur 3 exécutions connues
+   (r483 + a + b) : 2 succès, 1 échec — **motif confirmé FLAKY, pas
+   fiable**, cohérent avec la variance de cycle déjà documentée par
+   r482/r280. Le run réussi ne contient toujours aucune des 3 cibles
+   de r478 (mêmes 11 nuanceurs déjà connus depuis r483). `native/`
+   toujours pas touché, vérifié calme depuis **3h28** (05:07:55 →
+   08:36) — bien au-delà de tout intervalle observé dans la chaîne
+   concurrente, signal fort mais non confirmé d'une pause stable.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r484-settle-pattern-reverifie-2-succes-sur-3-flaky-pas-fiable-20260909.md`.
+   **Nommé pour r485** : (1) lire le désassemblage invité autour de
+   `0x82916E2C`/`0x82916E3C`/`0x82916E08` (session Ghidra requise,
+   piste la plus solide, nommée depuis r482, toujours non suivie) ;
+   (2) explorer plus loin dans `game-data-browser`/hangar/carte
+   tactique avec `--dump_shaders` actif ; (3) piste HUD de vol
+   (`fetch_const`, r475) ; (4) **recommandation explicite : pause de
+   la piste A** — 4 cycles consécutifs (r481-r484) sans nouvelle
+   cible depuis r477, décision utilisateur à confirmer comme pour
+   r480 ; (5) vérifier si le silence de 3h28 sur `native/` est une
+   pause stable avant toute fusion de registre ou reprise d'édition.
+
+1. **r483 — piste A (suite, cycle exécuté en parallèle du r482
    ci-dessous, renuméroté après coup pour éviter une collision de
    numéro — les deux résultats sont réels et complémentaires, pas
    contradictoires) : un troisième motif de repli — DIFFÉRENT du
