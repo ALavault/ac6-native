@@ -17,7 +17,36 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r481 — piste A reprise (décision utilisateur explicite) : nouveau
+0. **r482 — piste A (suite) : l'hypothèse « préambule insuffisamment
+   stabilisé » pour le blocage « movie worker » de
+   `us-menu-navigation-probe.steps` (nommée par r481) TESTÉE et
+   RÉFUTÉE. Préambule rendu strictement identique octet pour octet à
+   `us-pretype28-startup.steps` (route qui réussit de façon
+   reproductible) — le blocage se reproduit à l'identique (journal
+   muet dès 05:32:27, processus actif à 121% CPU jusqu'au timeout
+   externe, même profil que r479/r480). La cause n'est donc pas dans
+   le contenu de la route. Confirmé que le mécanisme « AC6 movie
+   worker » est une vraie primitive noyau
+   (`xboxkrnl_threading.cpp:100-114`, trois adresses constantes,
+   uniquement journalisées, jamais forcées) — l'attente est réelle,
+   pas un artefact diagnostique. Processus orphelin (le `timeout`
+   externe n'avait tué que le wrapper `run_gate.py`, pas
+   `ac6recomp`/`Xvfb`, `start_new_session=True`) détecté et nettoyé
+   manuellement. AUCUN fichier sous `native/` touché ce cycle (vérifié
+   avant/après, identique à r481).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r482-menu-navigation-probe-stall-is-not-caused-by-preamble-timing-likely-flaky-boot-not-route-content-20260909.md`.
+   **Nommé pour r483** : (1) lire le désassemblage invité autour de
+   `0x82916E2C`/`0x82916E3C`/`0x82916E08` (session Ghidra requise) —
+   pas une nouvelle supposition de minutage ; (2) retester
+   `us-pretype28-startup.steps` pour vérifier si elle échoue aussi de
+   façon intermittente sous la charge hôte actuelle ; (3) une fois
+   `native/` calme côté chaîne r488+, fusionner les traductions de
+   r481 ; (4) envisager une pause de la piste A — 2 cycles consécutifs
+   (r481, r482) de rendements décroissants, aucune nouvelle capture
+   utile depuis r477.
+
+1. **r481 — piste A reprise (décision utilisateur explicite) : nouveau
    drapeau `--mission-dump-shaders` (`run_gate.py`, découplé de D5B4)
    confirme par une méthode de capture indépendante la même paire
    (nuanceur, modification) manquante déjà nommée par r477/r478 ; le

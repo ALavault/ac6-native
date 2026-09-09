@@ -6,7 +6,10 @@
 # screen. Stops before any hangar/deploy/gameplay step.
 key	Escape	0.1
 sleep	2
+capture	post-escape
 key	space	0.1
+sleep	4
+capture	post-space
 wait-pulse	type28=30	Escape+space
 capture	type28-30
 sleep	1
