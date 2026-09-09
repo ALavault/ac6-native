@@ -17,7 +17,26 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r507 — découverte majeure : une investigation antérieure massive
+0. **r508 — échantillonnage OS direct (`/proc/$PID/task/*/{stat,wchan}`,
+   technique r301) pendant un blocage confirmé : `Main XThread` (le
+   thread invité principal) est `R`/`wchan=0` avec `utime` croissant
+   sur les deux échantillons (5s d'intervalle) — authentiquement
+   occupé, PAS parqué. Aucun thread ne correspond au motif r301
+   (parqué sur un signal jamais délivré) ; les ~50 threads ouvriers
+   `XThread*` sont légitimement inactifs (`futex_do_wait` stable,
+   pool sans travail assigné). Conclusion : **livelock du thread
+   principal, pas un deadlock classique à la r301.**
+   `native/` non touché.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r508-thread-sampling-finds-livelock-not-deadlock-20260909.md`.
+   **Nommé pour r509** : tracer précisément ce que `Main XThread`
+   calcule en boucle nécessiterait `gdb`/`strace` (risques déjà
+   documentés par r467) ou une instrumentation de trace
+   supplémentaire — hors périmètre d'un cycle d'échantillonnage OS
+   pur. Les 3 états cibles de r478 restent non capturés après 8
+   cycles/~20 tentatives (r492-r506).
+
+1. **r507 — découverte majeure : une investigation antérieure massive
    (~80 cycles, `artifacts/retail-us-native-r279` à `r358`, bien
    avant la chaîne r454+) a déjà caractérisé ET corrigé EXACTEMENT le
    symptôme de r506 (une image puis blocage total), mais côté
