@@ -9,7 +9,7 @@ intégration des contournements. Aucun gameplay prouvé.
 
 ---
 
-# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r484, `reports/ac6-retail-native-codegen-gate2-r*`)
+# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r489, `reports/ac6-retail-native-codegen-gate2-r*`)
 
 **Piste séparée, même dépôt, coordonnée pour ne PAS toucher `native/`
 pendant que la chaîne ci-dessus (r488+) y a des modifications non
@@ -17,7 +17,29 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r488 — suite de la lecture Ghidra (choisie par l'utilisateur) :
+0. **r489 — mesure directe de la charge hôte pendant une capture,
+   piste 1 nommée par r488 : 2/2 tentatives de
+   `routes/us-pretype28-startup.steps` échouent (timeout 240s) sous
+   une charge système de 44-52 sur 32 cœurs — dominée par deux
+   processus SANS RAPPORT avec ce dépôt
+   (`generated_image_extract_frozen_features.py` à 2261% CPU,
+   `signalshield_v3_s23_cal2_freeze` à 533% CPU, ~28 cœurs à eux
+   deux).** `ac6recomp` reste actif (103-132% CPU) tout le long, pas
+   figé — juste ralenti par le partage forcé du CPU. `run_gate.py`
+   met lui-même 54s à lancer `ac6recomp` sous cette charge. Corrèle
+   directement avec la fiabilité originale de r481 (~56s, contexte de
+   charge non mesuré) et les échecs r479/r480/r482/r486. Processus
+   `ac6recomp`/`Xvfb` orphelins nettoyés après chaque timeout (même
+   fuite que r482/r486). `native/` non touché (mesure diagnostique).
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r489-host-load-contention-explains-capture-flakiness-20260909.md`.
+   **Nommé pour r490** : retenter une capture une fois la charge
+   externe retombée (hors contrôle de cette campagne) ; envisager
+   d'augmenter le timeout des routes diagnostiques pour absorber le
+   ralentissement plutôt qu'échouer ; piste `fetch_const` du HUD de
+   vol (r475, indépendante de la charge, jamais suivie).
+
+1. **r488 — suite de la lecture Ghidra (choisie par l'utilisateur) :
    `*(iVar2+0x130)`, le champ qui sélectionne la branche de
    `Function_823AD9C0`, est un COMPTEUR DE THREADS VIVANTS, pas un
    indicateur de progression — la piste « movie worker » est
