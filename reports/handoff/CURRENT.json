@@ -4,14 +4,13 @@
  "active_gate": "retail-us-native-runtime-gate2",
  "active_product": "recompilation/ace-combat-6-retail",
  "target": "ntsc-uj",
- "source_report": "reports/ac6-retail-native-codegen-gate2-r481-piste-b-native-backlog-committed-27-cycles-stabilized-20260909.md",
+ "source_report": "reports/hud-geometry-citation-guard-rail-20260909.md",
  "working_set": [
-  "reports/ac6-retail-native-codegen-gate2-r479-zero-input-direct-launch-does-not-reach-the-target-screen-hypothesis-refuted-20260909.md",
-  "reports/ac6-retail-native-codegen-gate2-r480-single-space-confirm-still-misses-the-three-target-shaders-clean-shutdown-produces-no-persistent-cache-20260909.md",
-  "reports/ac6-retail-native-codegen-gate2-r481-piste-b-native-backlog-committed-27-cycles-stabilized-20260909.md"
+  "reports/ac6-retail-native-codegen-gate2-r481-piste-b-native-backlog-committed-27-cycles-stabilized-20260909.md",
+  "reports/hud-geometry-citation-guard-rail-20260909.md"
  ],
  "blocker": {
-  "kind": "investigate",
-  "summary": "r481 (Piste B of the approved plan) committed the native source backlog that 27 consecutive cycles (r454-r480) built on, tested, and verified without regression. Reviewed the full diff (17 modified + 5 untracked files, 8070 working-tree diff lines): no secrets found, the three diagnostic fprintf traces added during the campaign (r459/r461/r478) are all gated by AC6_NATIVE_VD_TRACE and are legitimate permanent tooling, not scratch. Found and deliberately excluded one orphaned scratch file (native/src/native_vulkan_backend.cpp.new_header_part, an old superseded header draft) -- left on disk, not committed, not deleted. Committed as a single synthesized commit (7dec3f57) rather than split by subsystem, since the files are tightly interdependent (new native_pinned_shaders.h/native_vulkan_device.h included by native_vulkan_backend.cpp, CMakeLists.txt wiring) and splitting without verifying each intermediate build was judged riskier than one clear commit. Verified the full triptych (three contract audits, native ctest, root ctest, live --probe-entry probe) both before and after committing: identical results each time (native ctest 11/11, root ctest only the pre-existing unrelated ac6-cpp-complexity failure, probe presented_frames=5 state=2 capture non_black=0 distinct_colors=1 -- Piste A's open goal, unaffected by this commit). Named for r482: Piste B is closed. Piste C (HUD guard-rail, reconstruction/ace-combat-6, independent of this product) is next and ready to start. Piste A remains paused at r480 pending explicit user decision to resume. The orphaned scratch file remains on disk awaiting a future explicit delete/keep decision."
+  "kind": "none",
+  "summary": "r482 (Piste C of the approved plan groovy-beaming-book.md) closes the plan: CLAUDE.md HUD guard-rail section + tools/audit_hud_geometry_citations.py committed (c6a242a3), verified HUD-only diff (no unrelated CLAUDE.md content swept in despite a pre-existing dirty CLAUDE.md at session start). native_hud_gpu_overlay.{h,cpp} citation-marked but left untracked (committing needs the entangled CMakeLists.txt link, inside reconstruction/ace-combat-6's separate ~240-file backlog, out of scope). Orphaned scratch file native_vulkan_backend.cpp.new_header_part (named by r481) inspected -- superseded header draft, not referenced by any CMakeLists.txt -- and deleted. All three plan tracks now closed: Piste A paused at r480 (3 uncaptured primitive_type shader states, unexplained oracle/native boot-pacing divergence, documented and resumable), Piste B committed (7dec3f57/32fbf6ae), Piste C committed (c6a242a3). No qualified blocker or open frontier from this plan remains; next work needs a fresh user decision (resume Piste A, tackle the reconstruction/ace-combat-6 backlog, or something else)."
  }
 }

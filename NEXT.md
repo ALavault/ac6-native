@@ -1,15 +1,25 @@
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
-0. **r481 — piste B (plan approuvé) : l'arriéré source natif stabilisé sur 27 cycles (r454-r480) est COMMITTÉ (`7dec3f57`), vérifié identique avant/après le commit sur le triptyque complet (3 audits de contrats, `ctest` natif 11/11, `ctest` racine, sondage `--probe-entry` réel — `presented_frames=5 state=2`, `non_black=0 distinct_colors=1`, inchangé). Un seul commit synthétique (fichiers fortement interdépendants, découpage jugé plus risqué que bénéfique sans budget de vérification par sous-état). Un fichier de scratch orphelin (`native_vulkan_backend.cpp.new_header_part`, un vieux brouillon d'en-tête bien antérieur à l'état actuel) trouvé et délibérément exclu, laissé sur le disque. Aucun secret trouvé ; les trois traces de diagnostic ajoutées pendant la campagne (r459/r461/r478) confirmées gardées par `AC6_NATIVE_VD_TRACE`, légitimes. Piste A reste en pause à r480.**
+0. **r482 — piste C (plan approuvé, DERNIÈRE piste) : garde-fou HUD ajouté et vérifié — le plan `groovy-beaming-book.md` est maintenant ENTIÈREMENT exécuté (Piste A en pause documentée, Piste B committée, Piste C committée).** Nouvelle section `CLAUDE.md` (« HUD pixels need a retail draw, not a hand-picked rectangle ») + `tools/audit_hud_geometry_citations.py` (patron des ~55 audits existants), committés en `c6a242a3` avec le rapport dédié. `reconstruction/ace-combat-6/{include/ac6,src}/native_hud_gpu_overlay.{h,cpp}` marqués par une citation d'en-tête vers `reports/ac6-native-visual-shader-hud-20260829.md` mais laissés non suivis (les committer entremêlerait le lien `CMakeLists.txt`, dans l'arriéré massif non lié de `reconstruction/ace-combat-6`, hors périmètre). Fait notable trouvé en chemin : la copie de travail de ce `CMakeLists.txt` référence déjà le `.cpp`, mais **`HEAD` ne le référence pas du tout** — pas de rupture de build latente pour un clone frais aujourd'hui. `git diff c6a242a3` confirmé HUD-only (pas de contenu `CLAUDE.md` étranger balayé malgré le `M CLAUDE.md` préexistant en début de session). Le fichier de scratch orphelin nommé par r481 (`native_vulkan_backend.cpp.new_header_part`) a été inspecté (brouillon d'en-tête superseded, non référencé par aucun `CMakeLists.txt`/build) et supprimé.**
+   Voir `reports/hud-geometry-citation-guard-rail-20260909.md`.
+   **Nommé pour r483** : aucune piste active du plan approuvé ne reste
+   ouverte. Reprendre seulement sur nouvelle décision utilisateur —
+   candidats naturels : (1) Piste A (campagne oracle ciblée écran-titre,
+   3 états `primitive_type` non capturés nommés par r478, divergence de
+   cadencement de boot oracle/natif non expliquée par r479/r480) ; (2)
+   décision sur l'arriéré massif non committé de `reconstruction/ace-combat-6`
+   (~240 fichiers, hors périmètre de toute piste de ce plan) ; (3) tout
+   autre travail que l'utilisateur identifie.
+
+1. **r481 — piste B (plan approuvé) : l'arriéré source natif stabilisé sur 27 cycles (r454-r480) est COMMITTÉ (`7dec3f57`), vérifié identique avant/après le commit sur le triptyque complet (3 audits de contrats, `ctest` natif 11/11, `ctest` racine, sondage `--probe-entry` réel — `presented_frames=5 state=2`, `non_black=0 distinct_colors=1`, inchangé). Un seul commit synthétique (fichiers fortement interdépendants, découpage jugé plus risqué que bénéfique sans budget de vérification par sous-état). Un fichier de scratch orphelin (`native_vulkan_backend.cpp.new_header_part`, un vieux brouillon d'en-tête bien antérieur à l'état actuel) trouvé et délibérément exclu, laissé sur le disque. Aucun secret trouvé ; les trois traces de diagnostic ajoutées pendant la campagne (r459/r461/r478) confirmées gardées par `AC6_NATIVE_VD_TRACE`, légitimes. Piste A reste en pause à r480.**
    Voir
    `reports/ac6-retail-native-codegen-gate2-r481-piste-b-native-backlog-committed-27-cycles-stabilized-20260909.md`.
    **Nommé pour r482** : piste C du plan approuvé (garde-fou HUD,
    `reconstruction/ace-combat-6`, indépendante) — prête à démarrer.
    Reste ouvert sinon : piste A (campagne oracle ciblée écran-titre)
    en pause à r480, à reprendre seulement sur décision utilisateur
-   explicite ; le fichier de scratch orphelin reste sur le disque,
-   non committé, décision de suppression/committage à prendre plus
-   tard.
+   explicite ; le fichier de scratch orphelin, inspecté et supprimé
+   par r482 (superseded, non référencé par le build).
 
 1. **r480 — piste A (plan approuvé) : une pression `space` unique ~6s après le boot (dernière tentative bornée autorisée par l'utilisateur après r479) n'atteint TOUJOURS PAS les trois nuanceurs cibles de r478. Réutilisé la mécanique `xdotool keydown/keyup` de `tools/ac6-oracle-run.py` (le moteur que `run_gate.py` charge dynamiquement). **Nouveau fait notable** : le boot de ce lancement direct a pris plus de 700s réels (CPU actif en continu, pas gelé) avant l'arrêt manuel — un ordre de grandeur au-delà de toute route `run_gate.py` normale, confirmant sans l'expliquer la divergence de cadencement déjà notée par r479. `xdotool windowclose` a produit un arrêt propre réel (~20s), mais AUCUN fichier `.xpso`/`.xsh` persistant n'a été produit malgré cela — seulement les mêmes 4 nuanceurs vertex que le lancement zéro-entrée de r479. **Recommandation explicite : mettre Piste A en pause ici** — 5 cycles consécutifs (r476-r480) de rendements décroissants sur ce sous-problème précis. Aucune source touchée, profil natif non affecté.**
    Voir
