@@ -17,6 +17,24 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
+0. **r491 — le nuanceur pixel réel des tirages d'interface rejetés
+   (digest `e41b4b062083e5bf`, retrouvé via un journal scratch
+   `/fastdata/lavaulta/tmp/ac6-r478-probe.log` non nettoyé d'un cycle
+   antérieur) ne référence AUCUNE texture sous ses 4 variantes de
+   modification pinnées (désassemblage SPIR-V direct : aucun
+   `OpTypeImage`/`OpImageSample*`). **`fetch_const[1]` (r490) est donc
+   un cul-de-sac pour ces tirages précis — le seul motif de rejet réel
+   reste l'incompatibilité de modification côté VERTEX, déjà
+   caractérisée depuis r476/r477/r478, inchangée. Aucune source
+   `native/` modifiée.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r491-rejected-ui-pixel-shader-samples-no-texture-fetch-const1-is-a-dead-end-20260909.md`.
+   **Nommé pour r492** : piste 2 de r488 (autre mécanisme d'attente
+   bloquant, lecture Ghidra directe, jamais tentée) ; capture oracle
+   ciblée sur les 3 nuanceurs vertex (r477/r478) une fois la contention
+   hôte retombée ; décision de committage groupé de l'arriéré natif
+   restant.
+
 0. **r490 — décodage statique de `fetch_const[1]` (nommé par r475,
    piste indépendante choisie plutôt que relancer une capture sur un
    hôte encore chargé). Identifié précisément : offset 1 du bloc de
