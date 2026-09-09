@@ -8,8 +8,10 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace ac6 {
@@ -39,6 +41,31 @@ inline constexpr std::array<std::uint32_t, 17>
     kPalRequiredDataTableEntries{
         1, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 119};
 
+// NTSC-U/J uses the same ordinal layout. Its source and media identities are
+// distinct and remain enforced by the selected policy.
+inline constexpr auto kNtscUjCampaignDataTableEntries =
+    kPalCampaignDataTableEntries;
+inline constexpr auto kNtscUjFrontendFontDataTableEntries =
+    kPalFrontendFontDataTableEntries;
+inline constexpr auto kNtscUjFrontendLocaleDataTableEntries =
+    kPalFrontendLocaleDataTableEntries;
+inline constexpr auto kNtscUjRequiredDataTableEntries =
+    kPalRequiredDataTableEntries;
+
+enum class RetailTarget : std::uint8_t { Pal = 0, NtscUj = 1 };
+
+const char* retail_target_name(RetailTarget target) noexcept;
+std::optional<RetailTarget> retail_target_from_string(
+    std::string_view name) noexcept;
+std::span<const std::uint32_t> retail_campaign_data_table_entries(
+    RetailTarget target) noexcept;
+std::span<const std::uint32_t> retail_frontend_font_data_table_entries(
+    RetailTarget target) noexcept;
+std::span<const std::uint32_t> retail_frontend_locale_data_table_entries(
+    RetailTarget target) noexcept;
+std::span<const std::uint32_t> retail_required_data_table_entries(
+    RetailTarget target) noexcept;
+
 enum class RetailArchive : std::uint8_t { Data00 = 0, Data01 = 1 };
 enum class RetailStorageCodec : std::uint8_t {
   Mode1PiXorRawDeflate = 1,
@@ -58,12 +85,14 @@ struct RetailSourceIdentity final {
 };
 
 struct RetailIdentityPolicy final {
+  RetailTarget target{RetailTarget::Pal};
   RetailSourceIdentity identity{};
   RetailMediaPolicy media{};
   std::uint32_t data_table_entries{};
   std::uint32_t pack_count{};
 
   static RetailIdentityPolicy pal();
+  static RetailIdentityPolicy ntsc_uj();
 };
 
 struct RetailImportLimits final {
@@ -149,6 +178,7 @@ class RetailContentStore final {
   RetailContentError error() const noexcept { return error_; }
   const std::string& detail() const noexcept { return detail_; }
   const RetailSourceIdentity& identity() const noexcept { return identity_; }
+  RetailTarget target() const noexcept { return policy_.target; }
   const Sha256Digest& index_sha256() const noexcept { return index_sha256_; }
   const RetailMediaStore& media() const noexcept { return media_; }
   const RetailResourceGraph* resource_graph() const noexcept {
@@ -175,6 +205,7 @@ class RetailContentStore final {
 };
 
 std::filesystem::path default_retail_cache_root();
+std::filesystem::path default_retail_cache_root(RetailTarget target);
 
 // The transform is symmetric. It is public so the codec can be checked with
 // independent fixtures without exposing a second storage format.

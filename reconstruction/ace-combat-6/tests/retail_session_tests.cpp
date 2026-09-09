@@ -274,6 +274,7 @@ void check_qualified_store_backed_session(const std::filesystem::path& cache) {
           session->camera_mode().view_mode == 1);
   REQUIRE(session->world().published == 230);
   REQUIRE(session->scenario().sub_missions().size() == 4);
+  REQUIRE(session->render_snapshot().camera.far_plane == 24000.0F);
 }
 
 // The same input every run: the session must be a function of the payload and

@@ -34,6 +34,12 @@ struct SimulationSnapshot final {
   EntityId player_entity{};
   std::array<float, 3> player_position{};
   std::array<float, 3> player_attitude{};
+  // Row-major qualified locator basis. Generic adapters publish identity;
+  // RetailSession replaces it with the composed flight basis.
+  std::array<float, 9> player_basis{
+      1.0F, 0.0F, 0.0F,
+      0.0F, 1.0F, 0.0F,
+      0.0F, 0.0F, 1.0F};
   float player_speed{};
   std::uint32_t active_units{};
   RenderCamera camera{};

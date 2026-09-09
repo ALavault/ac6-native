@@ -481,15 +481,16 @@ bool MissionTextureDatabase::sample(std::uint32_t mission_id, const std::string&
   };
   const std::uint32_t c00 = fetch(x0, y0), c10 = fetch(x1, y0);
   const std::uint32_t c01 = fetch(x0, y1), c11 = fetch(x1, y1);
-  std::uint32_t result = 0xFF000000u;
-  for (unsigned channel = 0; channel < 3; ++channel) {
-    const unsigned shift = 16u - channel * 8u;
+  std::uint32_t result = 0;
+  constexpr unsigned channel_shifts[] = {16u, 8u, 0u, 24u};
+  for (unsigned channel = 0; channel < 4; ++channel) {
+    const unsigned shift = channel_shifts[channel];
     const float top = static_cast<float>((c00 >> shift) & 0xFFu) * (1.0f - fx) +
                       static_cast<float>((c10 >> shift) & 0xFFu) * fx;
     const float bottom = static_cast<float>((c01 >> shift) & 0xFFu) * (1.0f - fx) +
                          static_cast<float>((c11 >> shift) & 0xFFu) * fx;
-    result |= static_cast<std::uint32_t>(std::clamp(top * (1.0f - fy) + bottom * fy,
-                                                    0.0f, 255.0f)) << shift;
+    result |= static_cast<std::uint32_t>(std::clamp(
+        top * (1.0f - fy) + bottom * fy, 0.0f, 255.0f)) << shift;
   }
   rgba = result;
   return true;

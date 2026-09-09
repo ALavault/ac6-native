@@ -690,8 +690,70 @@ bool parse_index(std::span<const std::uint8_t> bytes,
 
 }  // namespace
 
+const char* retail_target_name(RetailTarget target) noexcept {
+  switch (target) {
+    case RetailTarget::Pal: return "pal";
+    case RetailTarget::NtscUj: return "ntsc-uj";
+  }
+  return "unknown";
+}
+
+std::optional<RetailTarget> retail_target_from_string(
+    std::string_view name) noexcept {
+  if (name == "pal") return RetailTarget::Pal;
+  if (name == "ntsc-uj" || name == "ntsc_uj" || name == "us") {
+    return RetailTarget::NtscUj;
+  }
+  return std::nullopt;
+}
+
+std::span<const std::uint32_t> retail_campaign_data_table_entries(
+    RetailTarget target) noexcept {
+  switch (target) {
+    case RetailTarget::Pal:
+      return std::span<const std::uint32_t>(kPalCampaignDataTableEntries);
+    case RetailTarget::NtscUj:
+      return std::span<const std::uint32_t>(kNtscUjCampaignDataTableEntries);
+  }
+  return {};
+}
+
+std::span<const std::uint32_t> retail_frontend_font_data_table_entries(
+    RetailTarget target) noexcept {
+  switch (target) {
+    case RetailTarget::Pal:
+      return std::span<const std::uint32_t>(kPalFrontendFontDataTableEntries);
+    case RetailTarget::NtscUj:
+      return std::span<const std::uint32_t>(kNtscUjFrontendFontDataTableEntries);
+  }
+  return {};
+}
+
+std::span<const std::uint32_t> retail_frontend_locale_data_table_entries(
+    RetailTarget target) noexcept {
+  switch (target) {
+    case RetailTarget::Pal:
+      return std::span<const std::uint32_t>(kPalFrontendLocaleDataTableEntries);
+    case RetailTarget::NtscUj:
+      return std::span<const std::uint32_t>(kNtscUjFrontendLocaleDataTableEntries);
+  }
+  return {};
+}
+
+std::span<const std::uint32_t> retail_required_data_table_entries(
+    RetailTarget target) noexcept {
+  switch (target) {
+    case RetailTarget::Pal:
+      return std::span<const std::uint32_t>(kPalRequiredDataTableEntries);
+    case RetailTarget::NtscUj:
+      return std::span<const std::uint32_t>(kNtscUjRequiredDataTableEntries);
+  }
+  return {};
+}
+
 RetailIdentityPolicy RetailIdentityPolicy::pal() {
   RetailIdentityPolicy policy;
+  policy.target = RetailTarget::Pal;
   policy.identity.xex_size = 7483392;
   policy.identity.data_table_size = 14824;
   policy.identity.data00_size = 2267086848ull;
@@ -706,6 +768,27 @@ RetailIdentityPolicy RetailIdentityPolicy::pal() {
   (void)parse_sha256("c3ed20ec6ef0260671d9cd5f3e088fab2a8d983cb6739efab350c87c6fb74816",
                      policy.identity.data00_sha256);
   (void)parse_sha256("eddb687418d4b49e36dd8b4e06f387e79be9c0792e97ea3405ab00dab76c03b4",
+                     policy.identity.data01_sha256);
+  return policy;
+}
+
+RetailIdentityPolicy RetailIdentityPolicy::ntsc_uj() {
+  RetailIdentityPolicy policy;
+  policy.target = RetailTarget::NtscUj;
+  policy.identity.xex_size = 7483392;
+  policy.identity.data_table_size = 14824;
+  policy.identity.data00_size = 2266267648ull;
+  policy.identity.data01_size = 664141824ull;
+  policy.data_table_entries = 926;
+  policy.pack_count = 2;
+  policy.media = RetailMediaPolicy::ntsc_uj();
+  (void)parse_sha256("6eefba42cdfe9121207e534d8d290009c98b1a8c60ae5334a33a4f15167cbbbc",
+                     policy.identity.xex_sha256);
+  (void)parse_sha256("bad3a157eb75c839d9d6187f69ac061dee6d075d9cd61e0aa73b533473863b2f",
+                     policy.identity.data_table_sha256);
+  (void)parse_sha256("a0a638af761f5a9613a7e0403537dbc2a899d86cbf9dc6405db5deb10f56c783",
+                     policy.identity.data00_sha256);
+  (void)parse_sha256("f9479ed38f60e4da9062cddb6b6cbe432d6fb0bec13e8c22b593383e3f19fe3d",
                      policy.identity.data01_sha256);
   return policy;
 }
@@ -1002,6 +1085,12 @@ std::filesystem::path default_retail_cache_root() {
     if (root.is_absolute()) return root / ".cache" / "ac6-native";
   }
   return {};
+}
+
+std::filesystem::path default_retail_cache_root(RetailTarget target) {
+  const std::filesystem::path root = default_retail_cache_root();
+  if (root.empty() || target == RetailTarget::Pal) return root;
+  return root / retail_target_name(target);
 }
 
 }  // namespace ac6

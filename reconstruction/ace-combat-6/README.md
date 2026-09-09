@@ -8,21 +8,28 @@ The PAC/DATA archives are import-time inputs only. They are never installed or
 opened by the existing Mission 01 comparison lane, which consumes bounded,
 content-addressed buffers plus a local reference pack.
 
+The handwritten runtime now has explicit PAL and NTSC-U/J target profiles. PAL
+remains the default for compatibility; US caches are isolated under the
+`ntsc-uj` cache namespace and use the metadata-only qualification record
+`analysis/oracle/ac6-recomp-ab90b-us/content-identity.json`.
+
 ## Retail import and sealed cache
 
 ```sh
-ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]
+ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] \
+  [--target pal|ntsc-uj] [--frontend]
 ```
 
-The importer requires the qualified PAL `default.xex`, `DATA.TBL`,
-`DATA00.PAC` and `DATA01.PAC` identities. It parses all 926 big-endian table
-rows with bounded 64-bit ranges, then descrambles and raw-DEFLATE decodes the
-complete offline closure into a version-2 content/resource graph. A wrong
-identity, duplicate request, truncated range, size-limit violation or decode
-error fails before a new generation is published.
+The importer requires the selected target's qualified `default.xex`,
+`DATA.TBL`, `DATA00.PAC`, `DATA01.PAC` and six media-pack identities. It parses
+all 926 big-endian table rows with bounded 64-bit ranges, then descrambles and
+raw-DEFLATE decodes the complete offline closure into a version-2
+content/resource graph. A wrong identity, duplicate request, truncated range,
+size-limit violation or decode error fails before a new generation is
+published.
 
 `--frontend` remains accepted for compatibility; the qualified product import
-already includes entries 1–926 and the six PAL media blobs. The public `play`
+already includes entries 1–926 and the six media blobs for selected target. The public `play`
 and `replay` commands reject a cache that lacks the complete frontend/media
 closure instead of falling back to invented UI text.
 
@@ -38,8 +45,14 @@ dependency inventory with:
 
 ```sh
 python3 tools/audit_ac6_retail_content_cache.py CACHE_ROOT \
-  --matrix-out reports/ac6-pal-campaign-import-matrix.json
+  --target ntsc-uj \
+  --matrix-out reports/ac6-ntsc-uj-native-baseline-contract.json
 ```
+
+The audit defaults to PAL for compatibility. The NTSC-U/J lane uses separate
+content-identity, campaign-route and structural-payload contracts; missing or
+PAL-only evidence fails closed. Its receipt records static boundaries without
+promoting them to runtime or gameplay evidence.
 
 `RetailMission01SceneBundle` opens world entry 119 directly from that store.
 It validates the nested root/map/mapset FHM hierarchy, then opens terrain,
@@ -87,8 +100,9 @@ then transforms the adjusted offset through the live player's basis and
 position before applying manager rotations `+0x3a4` and `+0x3a0` in retail
 order. Results of the retail RNG call are injected as two auditable 15-bit
 draws, so replay owns their sequence and the camera code does not invent a
-second global RNG. The producer of the live camera-manager/player fields
-remains open.
+second global RNG. The NTSC-U/J N1b free-flight path publishes live player
+pose, basis and a mode-2 camera. Its bounded M01-B receipt qualifies the joined
+Vulkan scene and HUD; broader TCAM parity remains outside that gate.
 
 `RetailMission01CpuCompositor` is the first marker-free product composition
 lane over that store boundary. It depth-rasterises the persistent terrain fans,
@@ -118,6 +132,24 @@ the actual presented native target, not a parity claim; until the remaining
 camera/scene bindings are qualified it may still contain the explicitly
 diagnostic world-marker lane. Omitting `--frames` keeps `play` interactive.
 
+The qualified NTSC-U/J free-flight receipt is a separate fail-closed mode:
+
+```sh
+SDL_AUDIODRIVER=dummy xvfb-run -a ac6-native play \
+  --cache CACHE_ROOT --target ntsc-uj --free-flight \
+  --frames 3600 --aircraft 1 --weapon 1 --difficulty 1 \
+  --replay /tmp/ac6-n1b.replay \
+  --free-flight-receipt /tmp/ac6-n1b-receipt
+```
+
+The receipt directory must be absent or empty. This mode rejects PAL,
+diagnostic camera, CPU scene capture, save/resume and any duration or loadout
+outside the N1b contract. It preserves the N1a control sequence during the
+first 1,800 ticks, sustains neutral flight to tick 3,600 and records eight
+fixed Vulkan PPM samples. The fail-closed receipt proves visible
+pitch/roll/yaw/throttle/brake effects, live sustained flight, HUD visibility
+and the complete store-backed scene before reporting `jv_eligible=true`.
+
 For a marker-free inspection of the retail terrain/city/water composition in
 the same presented Vulkan target, request the explicit diagnostic scene lane:
 
@@ -127,8 +159,8 @@ SDL_AUDIODRIVER=dummy xvfb-run -a ac6-native play \
   --scene-report /tmp/ac6-retail-scene.json
 ```
 
-This one-shot view uses the qualified mode-2 base offset and a fixed inspection
-pose because the live player pose/camera producers remain open. Its report
+This one-shot diagnostic view uses the qualified mode-2 base offset and a fixed
+inspection pose; it is not the live N1a free-flight path. Its report
 therefore must say `marker_free=true` and `jv_eligible=false`; it is evidence
 that sealed retail scene bytes reach the same target, not a JV claim.
 

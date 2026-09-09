@@ -305,6 +305,66 @@ WorldFrame MissionRuntime::tick(float fixed_dt, InputFrame input) {
                     position_z_ + follow_distance, position_x_, position_y_, position_z_, input};
 }
 
+WorldFrame MissionRuntime::tick_external(float fixed_dt, InputFrame input,
+                                         const WorldFrame& external_pose) {
+  const bool scheduler_stopped = scenario_ != nullptr &&
+      (scenario_->state() == ScenarioState::Paused ||
+       scenario_->state() == ScenarioState::Complete ||
+       scenario_->state() == ScenarioState::Aborted);
+  if (!scheduler_stopped) {
+    if (!(fixed_dt > 0.0F) || fixed_dt > 0.25F) fixed_dt = 1.0F / 60.0F;
+    constexpr float kSimulationDt = 1.0F / 60.0F;
+    constexpr std::uint32_t kMaximumStepsPerCall = 16U;
+    fixed_accumulator_ = std::min(fixed_accumulator_ + fixed_dt, 0.25F);
+    std::uint32_t steps = 0U;
+    while (fixed_accumulator_ + 1.0e-7F >= kSimulationDt &&
+           steps < kMaximumStepsPerCall) {
+      fixed_accumulator_ = std::max(0.0F, fixed_accumulator_ - kSimulationDt);
+      ++tick_;
+      ++steps;
+    }
+  }
+
+  const auto finite = [](const float value) { return std::isfinite(value); };
+  if (!finite(external_pose.position_x) || !finite(external_pose.position_y) ||
+      !finite(external_pose.position_z) || !finite(external_pose.pitch) ||
+      !finite(external_pose.roll) || !finite(external_pose.yaw) ||
+      !finite(external_pose.speed) || !finite(external_pose.camera_x) ||
+      !finite(external_pose.camera_y) || !finite(external_pose.camera_z) ||
+      !finite(external_pose.camera_target_x) ||
+      !finite(external_pose.camera_target_y) ||
+      !finite(external_pose.camera_target_z)) {
+    return {};
+  }
+  position_x_ = external_pose.position_x;
+  position_y_ = external_pose.position_y;
+  position_z_ = external_pose.position_z;
+  pitch_ = external_pose.pitch;
+  roll_ = external_pose.roll;
+  yaw_ = external_pose.yaw;
+
+  bool ready = assets_ != nullptr && definition_ != nullptr &&
+               scenario_ != nullptr &&
+               scenario_->state() == ScenarioState::Gameplay;
+  if (ready) {
+    for (const AssetId id : definition_->asset_ids) {
+      if (assets_->resolve(id) == nullptr) {
+        ready = false;
+        break;
+      }
+    }
+  }
+  WorldFrame frame = external_pose;
+  frame.tick = tick_;
+  frame.mission_id = mission_id_;
+  frame.mission_ready = ready;
+  frame.active_units =
+      units_ ? static_cast<std::uint32_t>(units_->active_count()) : 0U;
+  frame.player_entity = scenario_ ? scenario_->player() : EntityId{};
+  frame.input = input;
+  return frame;
+}
+
 MissionExecution::MissionExecution(const MissionDefinition& definition,
                                    const MissionAssetDatabase* assets,
                                    const MissionObjectiveDatabase* objectives,
@@ -559,13 +619,27 @@ bool MissionExecution::fire_weapon(std::uint32_t weapon_id) noexcept {
 }
 
 WorldFrame MissionExecution::tick(float fixed_dt, InputFrame input) noexcept {
+  return tick_impl(fixed_dt, input, nullptr);
+}
+
+WorldFrame MissionExecution::tick_external(
+    float fixed_dt, InputFrame input,
+    const WorldFrame& external_pose) noexcept {
+  return tick_impl(fixed_dt, input, &external_pose);
+}
+
+WorldFrame MissionExecution::tick_impl(float fixed_dt, InputFrame input,
+                                       const WorldFrame* external_pose) noexcept {
   if (!launched_) return {};
   if (input_ != nullptr && input.buttons != 0) {
     const InputBinding* binding = input_->resolve(input.buttons);
     if (binding != nullptr && !dispatch({binding->event, scenario_.player()})) return {};
   }
   if (scenario_.state() == ScenarioState::Gameplay) combat_.tick(fixed_dt);
-  WorldFrame frame = runtime_.tick(fixed_dt, input);
+  WorldFrame frame = external_pose == nullptr
+                         ? runtime_.tick(fixed_dt, input)
+                         : runtime_.tick_external(fixed_dt, input,
+                                                  *external_pose);
   if (scenario_.state() == ScenarioState::Gameplay) (void)radio_.tick(fixed_dt);
   if (scenario_.state() == ScenarioState::Gameplay && waves_ != nullptr &&
       !waves_->spawn_due(definition_->id, frame.tick, units_, combat_)) {

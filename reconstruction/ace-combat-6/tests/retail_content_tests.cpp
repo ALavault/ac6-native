@@ -169,6 +169,38 @@ void sha256_and_mode1_tables_are_exact() {
           "61fbdce73b2a88f54f78929bf539faf3977aa5a8914e0b14607afc967932a625");
 }
 
+void target_profiles_are_explicit_and_region_separated() {
+  const ac6::RetailIdentityPolicy pal = ac6::RetailIdentityPolicy::pal();
+  const ac6::RetailIdentityPolicy us = ac6::RetailIdentityPolicy::ntsc_uj();
+  REQUIRE(pal.target == ac6::RetailTarget::Pal);
+  REQUIRE(us.target == ac6::RetailTarget::NtscUj);
+  REQUIRE(std::string(ac6::retail_target_name(pal.target)) == "pal");
+  REQUIRE(std::string(ac6::retail_target_name(us.target)) == "ntsc-uj");
+  REQUIRE(ac6::retail_target_from_string("us") == ac6::RetailTarget::NtscUj);
+  REQUIRE(!ac6::retail_target_from_string("xbox-one").has_value());
+  REQUIRE(pal.identity.xex_sha256 != us.identity.xex_sha256);
+  REQUIRE(pal.identity.data_table_sha256 != us.identity.data_table_sha256);
+  REQUIRE(pal.identity.data00_size != us.identity.data00_size);
+  REQUIRE(us.identity.data00_size == 2266267648ull);
+  REQUIRE(us.identity.data01_size == 664141824ull);
+  REQUIRE(us.media.assets[static_cast<std::size_t>(ac6::RetailMediaAsset::Movie)].size ==
+          698417152ull);
+  REQUIRE(ac6::sha256_hex(
+              us.media.assets[static_cast<std::size_t>(ac6::RetailMediaAsset::Movie)]
+                  .sha256) ==
+          "106cdfdc71d9b92239d14e69d56a70ee7f56aea0994c488ebe75f96ffafc78cc");
+  REQUIRE(ac6::retail_campaign_data_table_entries(ac6::RetailTarget::NtscUj).size() ==
+          15);
+  REQUIRE(ac6::retail_required_data_table_entries(ac6::RetailTarget::NtscUj).back() ==
+          119);
+  const std::filesystem::path pal_cache = ac6::default_retail_cache_root();
+  const std::filesystem::path us_cache =
+      ac6::default_retail_cache_root(ac6::RetailTarget::NtscUj);
+  if (!pal_cache.empty()) {
+    REQUIRE(us_cache == pal_cache / "ntsc-uj");
+  }
+}
+
 void import_is_reproducible_and_store_reads_the_payload() {
   TempRoot root;
   Fixture fixture(root.path());
@@ -626,6 +658,7 @@ void asf_index_parser_is_bounded_and_rejects_truncation() {
 
 int main() {
   sha256_and_mode1_tables_are_exact();
+  target_profiles_are_explicit_and_region_separated();
   import_is_reproducible_and_store_reads_the_payload();
   raw_mode1_payloads_are_descrambled_without_inflation();
   bad_hash_cannot_replace_a_valid_current_index();

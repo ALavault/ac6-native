@@ -61,7 +61,16 @@ bool qualified_layout(const RetailCampaignBundle& bundle) noexcept {
 
 std::optional<std::uint32_t> mission_world_data_table_entry(
     std::uint32_t mission_id) noexcept {
-  if (mission_id == 0 || mission_id > kLastWorldEntry - kFirstWorldEntry + 1u) {
+  return mission_world_data_table_entry(RetailTarget::Pal, mission_id);
+}
+
+std::optional<std::uint32_t> mission_world_data_table_entry(
+    RetailTarget target, std::uint32_t mission_id) noexcept {
+  // Both qualified releases retain the same world ordinal block. Keep the
+  // target argument explicit so future region differences cannot be hidden by
+  // a PAL-only helper.
+  if ((target != RetailTarget::Pal && target != RetailTarget::NtscUj) ||
+      mission_id == 0 || mission_id > kLastWorldEntry - kFirstWorldEntry + 1u) {
     return std::nullopt;
   }
   return kFirstWorldEntry + mission_id - 1u;
@@ -70,7 +79,7 @@ std::optional<std::uint32_t> mission_world_data_table_entry(
 std::optional<RetailMissionWorldBundle> RetailMissionWorldBundle::open(
     const RetailContentStore& store, std::uint32_t mission_id) {
   const std::optional<std::uint32_t> entry =
-      mission_world_data_table_entry(mission_id);
+      mission_world_data_table_entry(store.target(), mission_id);
   if (!entry.has_value()) return std::nullopt;
   std::optional<RetailMissionWorldBundle> result = open_entry(store, *entry);
   if (result.has_value()) result->mission_id_ = mission_id;

@@ -33,6 +33,7 @@ struct RetailMediaPolicy final {
   bool required{};
 
   static RetailMediaPolicy pal();
+  static RetailMediaPolicy ntsc_uj();
 };
 
 struct RetailMediaRecord final {

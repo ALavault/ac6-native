@@ -29,6 +29,7 @@ struct RetailCameraModeSelection final {
 };
 
 inline constexpr std::uint32_t kRetailOpeningCameraModeWord = 0;
+inline constexpr std::uint32_t kRetailFreeFlightCameraModeWord = 2;
 
 // 0x82223AC0 maps raw 2 -> view 2, raw 3 -> view 3, and every other
 // supported initial value -> view 1.  Values above 3 are intentionally

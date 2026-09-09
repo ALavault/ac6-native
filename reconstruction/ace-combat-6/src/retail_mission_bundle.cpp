@@ -7,7 +7,8 @@ namespace ac6::retail {
 std::optional<RetailMissionBundle> RetailMissionBundle::open(
     const RetailContentStore& store, RetailMissionBundleConfig config) {
   if (!store.valid() || config.mission_id == 0 ||
-      config.mission_id > kPalCampaignDataTableEntries.size() ||
+      config.mission_id >
+          retail_campaign_data_table_entries(store.target()).size() ||
       !config.loadout.valid() ||
       static_cast<std::uint8_t>(config.difficulty) >
           static_cast<std::uint8_t>(RetailDifficulty::Ace)) {
@@ -30,7 +31,7 @@ std::optional<RetailMissionBundle> RetailMissionBundle::open(
   result.scenario_payload_ = std::move(*scenario_payload);
   result.scenario_ = std::move(*scenario);
   if (const std::optional<std::uint32_t> world_entry =
-          mission_world_data_table_entry(config.mission_id);
+          mission_world_data_table_entry(store.target(), config.mission_id);
       world_entry.has_value() && store.find(*world_entry) != nullptr) {
     std::optional<RetailMissionWorldBundle> world =
         RetailMissionWorldBundle::open(store, config.mission_id);

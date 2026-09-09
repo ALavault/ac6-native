@@ -16,10 +16,10 @@ bool add_within(std::uint64_t left, std::uint64_t right,
   return left <= limit && right <= limit - left;
 }
 
-bool is_campaign_entry(std::uint32_t data_table_entry) noexcept {
-  return std::find(kPalCampaignDataTableEntries.begin(),
-                   kPalCampaignDataTableEntries.end(),
-                   data_table_entry) != kPalCampaignDataTableEntries.end();
+bool is_campaign_entry(RetailTarget target,
+                       std::uint32_t data_table_entry) noexcept {
+  const auto entries = retail_campaign_data_table_entries(target);
+  return std::find(entries.begin(), entries.end(), data_table_entry) != entries.end();
 }
 
 }  // namespace
@@ -27,11 +27,12 @@ bool is_campaign_entry(std::uint32_t data_table_entry) noexcept {
 std::optional<RetailCampaignBundle> RetailCampaignBundle::open(
     const RetailContentStore& store, std::uint32_t mission_id) {
   if (!store.valid() || mission_id == 0 ||
-      mission_id > kPalCampaignDataTableEntries.size()) {
+      mission_id > retail_campaign_data_table_entries(store.target()).size()) {
     return std::nullopt;
   }
+  const auto entries = retail_campaign_data_table_entries(store.target());
   std::optional<RetailCampaignBundle> bundle =
-      open_entry(store, kPalCampaignDataTableEntries[mission_id - 1]);
+      open_entry(store, entries[mission_id - 1]);
   if (bundle.has_value()) bundle->mission_id_ = mission_id;
   return bundle;
 }
@@ -77,7 +78,7 @@ std::optional<RetailCampaignBundle> RetailCampaignBundle::open_entry(
     }
   }
   if (!bundle.child(0).has_value()) return std::nullopt;
-  if (is_campaign_entry(data_table_entry)) {
+  if (is_campaign_entry(store.target(), data_table_entry)) {
     std::optional<RetailSceneTcamCatalog> catalog =
         RetailSceneTcamCatalog::scan(bundle.bytes_);
     if (!catalog.has_value()) return std::nullopt;

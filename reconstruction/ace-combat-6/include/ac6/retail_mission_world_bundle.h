@@ -14,6 +14,8 @@ namespace ac6::retail {
 // guessed filename or a generated-resource name.
 std::optional<std::uint32_t> mission_world_data_table_entry(
     std::uint32_t mission_id) noexcept;
+std::optional<std::uint32_t> mission_world_data_table_entry(
+    RetailTarget target, std::uint32_t mission_id) noexcept;
 
 // The common world boundary shared by the qualified PAL campaign maps.  It
 // validates only structure that is present in all fifteen payloads; geometry,

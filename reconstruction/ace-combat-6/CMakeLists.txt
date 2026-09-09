@@ -41,7 +41,7 @@ add_library(ac6_product_core STATIC src/product_runtime.cpp src/asset_runtime.cp
   src/native_hud.cpp
   src/mission01_compare.cpp src/campaign_progression.cpp src/session_save.cpp
   src/retail_scenario.cpp src/retail_mission_state.cpp src/retail_state_machine.cpp
-  src/retail_mission_script.cpp src/retail_session.cpp
+  src/retail_mission_script.cpp src/retail_session.cpp src/retail_free_flight.cpp
   src/retail_session_replay.cpp
   src/retail_projection_receipt.cpp
   src/retail_projection_replay_bytes.cpp
@@ -121,11 +121,13 @@ if(AC6_BUILD_PLATFORM)
 
   add_library(ac6_platform STATIC
     src/sdl_input.cpp
+    src/native_hud_gpu_overlay.cpp
     src/vulkan_surface.cpp
     src/vulkan_swapchain.cpp
     src/vulkan_scene_renderer.cpp
     src/vulkan_scene_resource_cache.cpp
-    src/retail_mission01_vulkan_scene.cpp)
+    src/retail_mission01_vulkan_scene.cpp
+    src/retail_free_flight_receipt.cpp)
   target_include_directories(ac6_platform PUBLIC include)
   target_link_libraries(ac6_platform PUBLIC ac6_product_core ac6_vulkan_backend
     PkgConfig::SDL3 Vulkan::Vulkan)
@@ -610,11 +612,12 @@ if(Python3_Interpreter_FOUND)
       ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map.tsv
       --rejects ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/class-map-rejects.tsv
       --require J2)
-  add_test(NAME ac6-oracle-manifest-contract
+  add_test(NAME ac6-ntsc-uj-static-contract
     COMMAND ${Python3_EXECUTABLE}
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_oracle_manifest.py
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/oracle/ac6-recomp-dcd41b/manifest.json
-      --artifact-root ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+      ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_ntsc_uj_contract.py
+      --identity ${CMAKE_CURRENT_SOURCE_DIR}/../../analysis/oracle/ac6-recomp-ab90b-us/content-identity.json
+      --campaign ${CMAKE_CURRENT_SOURCE_DIR}/../../recompilation/ace-combat-6-retail/targets/ntsc-uj-campaign.json
+      --payloads ${CMAKE_CURRENT_SOURCE_DIR}/../../artifacts/retail-us-mission-payloads-static-20260828/manifest.json)
   add_test(NAME ac6-global-ladder-contract
     COMMAND ${Python3_EXECUTABLE}
       ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_global_ladder.py)
@@ -689,6 +692,7 @@ install(PROGRAMS
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_product_boundary.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_campaign_catalog.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_retail_content_cache.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_ac6_ntsc_uj_contract.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/generate_campaign_manifest.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/audit_code_reachability.py
   ${CMAKE_CURRENT_SOURCE_DIR}/../../scripts/probe_ntxr_bc.py

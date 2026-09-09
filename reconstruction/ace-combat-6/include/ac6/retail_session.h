@@ -24,6 +24,7 @@
 #include "ac6/render_scene.h"
 #include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
+#include "ac6/retail_free_flight.h"
 #include "ac6/retail_mission_script.h"
 #include "ac6/retail_mission_bundle.h"
 #include "ac6/retail_mission_state.h"
@@ -118,6 +119,12 @@ class RetailSession final {
   const RetailCameraModeSelection& camera_mode() const noexcept {
     return camera_mode_;
   }
+  bool free_flight_enabled() const noexcept {
+    return free_flight_.has_value();
+  }
+  const RetailFreeFlight* free_flight() const noexcept {
+    return free_flight_.has_value() ? &*free_flight_ : nullptr;
+  }
 
   // The rectangle this sub-mission installs, normalised by the port of
   // FUN_82268B28. None when the sub-mission has no tag-0 step.
@@ -189,7 +196,9 @@ class RetailSession final {
                                                     MissionScenario scenario,
                                                     RetailSessionConfig config,
                                                     const RetailContentStore* store = nullptr,
-                                                    CampaignLoadout loadout = {});
+                                                    CampaignLoadout loadout = {},
+                                                    std::optional<RetailCameraRecord>
+                                                        camera_record = std::nullopt);
   void track_objective(std::uint32_t sub_mission) noexcept;
   RetailSessionFrame frame_from_snapshot(InputFrame input) const noexcept;
   // Resolve tag-7 steps at the same dispatch boundary as retail. A satisfied
@@ -213,6 +222,7 @@ class RetailSession final {
   EntityId player_entity_{};
   std::uint32_t mission_id_{};
   RetailCameraModeSelection camera_mode_{retail_opening_camera_mode()};
+  std::optional<RetailFreeFlight> free_flight_;
   std::uint64_t tick_{};
   RetailScriptDrive script_drive_{RetailScriptDrive::ExternalProbe};
   std::uint16_t previous_buttons_{};

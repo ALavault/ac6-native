@@ -155,6 +155,7 @@ namespace {
   RenderScene stable = scene;
   stable.tick = 1U;
   stable.camera = {};
+  for (DrawPacket& packet : stable.draw_packets) packet.transform = {};
   stable.refresh_digest();
   return stable.digest;
 }

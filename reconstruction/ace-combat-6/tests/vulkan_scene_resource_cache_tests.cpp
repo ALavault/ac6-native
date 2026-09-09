@@ -214,6 +214,19 @@ int check_world_textured_path(
       world_readback[translated_center + 3U] != 255U) {
     return fail("world_depth_order_readback");
   }
+  ac6::RenderScene moved_world = world_scene;
+  moved_world.tick = 2U;
+  moved_world.draw_packets[0].transform[12] += 0.125F;
+  moved_world.refresh_digest();
+  if (!cache.render_dynamic(moved_world)) {
+    return fail("world_dynamic_transform_submit");
+  }
+  ac6::RenderScene different_world_mesh = moved_world;
+  different_world_mesh.draw_packets[0].mesh_id = "different-world-mesh";
+  different_world_mesh.refresh_digest();
+  if (cache.render_dynamic(different_world_mesh)) {
+    return fail("world_dynamic_resource_mutation_accepted");
+  }
   cache.reset();
   if (cache.ready() || cache.live_mesh_count() != 0U ||
       cache.live_pipeline_count() != 0U || cache.live_texture_count() != 0U ||
@@ -328,7 +341,6 @@ int main() {
       pixels[center + 3U] != 255U) {
     return fail("persistent_readback");
   }
-
   cache.reset();
   if (cache.ready() || cache.live_mesh_count() != 0U ||
       cache.live_pipeline_count() != 0U || backend.live_mesh_count() != 0U ||

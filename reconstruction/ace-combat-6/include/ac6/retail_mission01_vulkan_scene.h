@@ -35,6 +35,14 @@ struct RetailMission01VulkanSceneReport final {
   std::size_t runtime_textures{};
   std::size_t terrain_draw_instances{};
   std::size_t water_lookup_entries{};
+  std::size_t water_sampled_cells{};
+  std::size_t water_visible_cells{};
+  std::size_t water_draw_instances{};
+  std::size_t player_aircraft_vertices{};
+  std::size_t player_aircraft_source_indices{};
+  std::size_t player_aircraft_draw_instances{};
+  std::uint32_t player_aircraft_texture_identifier{};
+  bool free_flight_world_complete{};
   bool complete_render_scene{};
 };
 
@@ -80,7 +88,8 @@ class RetailMission01VulkanScene final {
   static std::optional<RetailMission01VulkanScene> open_runtime(
       const RetailContentStore& store, const SimulationSnapshot& snapshot,
       bool swap_16 = true, std::uint32_t width = 1280U,
-      std::uint32_t height = 720U);
+      std::uint32_t height = 720U,
+      std::string* refusal_detail = nullptr);
 
   // Test-only construction still follows the same NDXR/NTXR and scene
   // contracts, but does not claim sealed-cache provenance.
@@ -131,7 +140,9 @@ class RetailMission01VulkanScene final {
                              std::vector<std::uint32_t> fragment_spirv,
                              RenderScene scene,
                              RetailMission01VulkanSceneReport report,
-                             std::string material_id) noexcept;
+                             std::string material_id,
+                             std::optional<std::size_t>
+                                 player_aircraft_packet = std::nullopt) noexcept;
 
   static std::optional<RetailMission01VulkanScene> build(
       RetailMission01MapRenderAssets assets,
@@ -144,8 +155,9 @@ class RetailMission01VulkanScene final {
       std::uint32_t width, std::uint32_t height);
 
   static std::optional<RetailMission01VulkanScene> build_runtime(
-      RetailMission01MapRenderAssets assets, const SimulationSnapshot& snapshot,
-      bool swap_16, std::uint32_t width, std::uint32_t height);
+      const RetailContentStore& store, RetailMission01MapRenderAssets assets,
+      const SimulationSnapshot& snapshot, bool swap_16, std::uint32_t width,
+      std::uint32_t height, std::string* refusal_detail);
 
   RetailMission01MapRenderAssets assets_;
   VulkanMission01ClipTexturedUpload upload_;
@@ -156,6 +168,7 @@ class RetailMission01VulkanScene final {
   RenderScene scene_;
   RetailMission01VulkanSceneReport report_;
   std::string material_id_;
+  std::optional<std::size_t> player_aircraft_packet_;
 };
 
 }  // namespace ac6::retail

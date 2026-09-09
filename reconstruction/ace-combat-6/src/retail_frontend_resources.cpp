@@ -75,10 +75,12 @@ std::optional<RetailFrontendResources> RetailFrontendResources::open(
     const RetailContentStore& store) noexcept {
   if (!store.valid()) return std::nullopt;
   RetailFrontendResources resources;
+  resources.target_ = store.target();
   resources.content_index_sha256_ = store.index_sha256();
-  for (std::size_t ordinal = 0;
-       ordinal < kPalFrontendFontDataTableEntries.size(); ++ordinal) {
-    const std::uint32_t entry = kPalFrontendFontDataTableEntries[ordinal];
+  const auto font_entries =
+      retail_frontend_font_data_table_entries(store.target());
+  for (std::size_t ordinal = 0; ordinal < font_entries.size(); ++ordinal) {
+    const std::uint32_t entry = font_entries[ordinal];
     const RetailContentRecord* record = store.find(entry);
     if (record == nullptr || record->payload_size == 0u) return std::nullopt;
     std::vector<std::uint8_t> payload;

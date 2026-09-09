@@ -7,6 +7,9 @@
 
 #include "ac6/retail_flight_orientation.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace ac6::retail {
 
 FlightRotationAngles flight_rotation_angles(const FlightRotationLimits& limits,
@@ -58,6 +61,23 @@ FlightRotationAngles flight_rotation_angles(const FlightRotationLimits& limits,
     angles.about_row2 = value * kDegreesToRadians;
   }
   return angles;
+}
+
+FlightBasisAttitude flight_basis_attitude(const RetailBasis& basis) noexcept {
+  // 0x820936E8 returns zero when both arguments are smaller than 2^-16. That
+  // guard is observable on a level aircraft and prevents atan2(near-zero,
+  // near-zero) from manufacturing a 45-degree roll.
+  constexpr float kAtanGuard = 1.0F / 65536.0F;
+  const auto guarded_atan2 = [](const float y, const float x) noexcept {
+    return std::fabs(y) < kAtanGuard && std::fabs(x) < kAtanGuard
+               ? 0.0F
+               : std::atan2(y, x);
+  };
+  return {
+      -std::asin(std::clamp(basis.rows[2][1], -1.0F, 1.0F)),
+      guarded_atan2(basis.rows[2][0], basis.rows[2][2]),
+      guarded_atan2(basis.rows[0][1], basis.rows[1][1]),
+  };
 }
 
 }  // namespace ac6::retail

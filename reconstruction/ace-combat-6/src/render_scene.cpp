@@ -136,6 +136,7 @@ SimulationSnapshot make_simulation_snapshot(
 bool SimulationSnapshot::valid() const {
   if (mission_id == 0 || player_entity == 0 || !camera.valid() ||
       !finite_array(player_position) || !finite_array(player_attitude) ||
+      !finite_array(player_basis) ||
       !std::isfinite(player_speed) || !nonzero_digest(digest)) {
     return false;
   }
@@ -162,6 +163,7 @@ Sha256Digest simulation_snapshot_digest(const SimulationSnapshot& snapshot) {
   append_u32(bytes, snapshot.player_entity);
   for (const float value : snapshot.player_position) append_float(bytes, value);
   for (const float value : snapshot.player_attitude) append_float(bytes, value);
+  for (const float value : snapshot.player_basis) append_float(bytes, value);
   append_float(bytes, snapshot.player_speed);
   append_u32(bytes, snapshot.active_units);
   append_camera(bytes, snapshot.camera);

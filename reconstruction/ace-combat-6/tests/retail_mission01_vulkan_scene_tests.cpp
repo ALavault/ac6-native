@@ -3,6 +3,7 @@
 #include "fixtures/vulkan_clip_mesh_spirv.h"
 #include "fixtures/vulkan_textured_triangle_spirv.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdlib>
 #include <iostream>
@@ -13,7 +14,20 @@ int main() {
     std::cout << "retail_mission01_vulkan_scene_skipped=no_cache\n";
     return 77;
   }
-  ac6::RetailContentStore store;
+  ac6::RetailIdentityPolicy policy = ac6::RetailIdentityPolicy::pal();
+  if (const char* target_name = std::getenv("AC6_RETAIL_TARGET");
+      target_name != nullptr && *target_name != '\0') {
+    const std::optional<ac6::RetailTarget> target =
+        ac6::retail_target_from_string(target_name);
+    if (!target.has_value()) {
+      std::cerr << "retail_mission01_vulkan_scene=fail condition=target\n";
+      return 1;
+    }
+    policy = *target == ac6::RetailTarget::NtscUj
+                 ? ac6::RetailIdentityPolicy::ntsc_uj()
+                 : ac6::RetailIdentityPolicy::pal();
+  }
+  ac6::RetailContentStore store(policy);
   if (!store.open(cache_root)) {
     std::cerr << "retail_mission01_vulkan_scene=fail condition=cache\n";
     return 1;
@@ -103,17 +117,85 @@ int main() {
   frame.camera_target_z = 0.0F;
   const ac6::SimulationSnapshot snapshot = ac6::make_simulation_snapshot(
       frame, ac6::ScenarioState::Gameplay, 1U, 0U, false);
-  const auto runtime = ac6::retail::RetailMission01VulkanScene::open_runtime(
-      store, snapshot, true, 1280U, 720U);
+  std::string runtime_refusal;
+  auto runtime = ac6::retail::RetailMission01VulkanScene::open_runtime(
+      store, snapshot, true, 1280U, 720U, &runtime_refusal);
+  const bool placed_packet_uses_row_vector_translation =
+      runtime.has_value() && std::any_of(
+          runtime->scene().draw_packets.begin(),
+          runtime->scene().draw_packets.end(), [](const ac6::DrawPacket& packet) {
+            return packet.transform[12] != 0.0F || packet.transform[13] != 0.0F ||
+                   packet.transform[14] != 0.0F;
+          });
+  const bool placed_packet_has_no_column_translation =
+      runtime.has_value() && std::all_of(
+          runtime->scene().draw_packets.begin(),
+          runtime->scene().draw_packets.end(), [](const ac6::DrawPacket& packet) {
+            return packet.transform[3] == 0.0F && packet.transform[7] == 0.0F &&
+                   packet.transform[11] == 0.0F;
+          });
   if (!runtime.has_value() || runtime->report().runtime_draw_instances != 4226U ||
       runtime->report().terrain_draw_instances != 65536U ||
       runtime->report().runtime_meshes == 0U ||
       runtime->report().runtime_textures == 0U ||
-      runtime->report().complete_render_scene || runtime->report().jv_eligible) {
-    std::cerr << "retail_mission01_vulkan_scene=fail condition=runtime_scene\n";
+      runtime->report().complete_render_scene !=
+          (store.target() == ac6::RetailTarget::NtscUj) ||
+      runtime->report().jv_eligible ||
+      !placed_packet_uses_row_vector_translation ||
+      !placed_packet_has_no_column_translation) {
+    std::cerr << "retail_mission01_vulkan_scene=fail condition=runtime_scene"
+              << " refusal=" << runtime_refusal;
+    if (runtime.has_value()) {
+      std::cerr << " draws=" << runtime->report().runtime_draw_instances
+                << " terrain=" << runtime->report().terrain_draw_instances
+                << " meshes=" << runtime->report().runtime_meshes
+                << " textures=" << runtime->report().runtime_textures;
+    }
+    std::cerr << '\n';
     return 1;
   }
+  if (store.target() == ac6::RetailTarget::NtscUj) {
+    const auto aircraft = std::find_if(
+        runtime->scene().draw_packets.begin(),
+        runtime->scene().draw_packets.end(), [](const ac6::DrawPacket& packet) {
+          return packet.mesh_id == "retail-m01-player-f16-lod1";
+        });
+    if (!runtime->report().free_flight_world_complete ||
+        runtime->report().water_sampled_cells != 65536U ||
+        runtime->report().water_visible_cells == 0U ||
+        runtime->report().water_draw_instances == 0U ||
+        runtime->report().player_aircraft_vertices != 4435U ||
+        runtime->report().player_aircraft_source_indices != 6468U ||
+        runtime->report().player_aircraft_draw_instances != 1U ||
+        aircraft == runtime->scene().draw_packets.end()) {
+      std::cerr << "retail_mission01_vulkan_scene=fail condition=us_free_flight_world\n";
+      return 1;
+    }
+    const std::array<float, 16> initial_aircraft_transform = aircraft->transform;
+    ac6::SimulationSnapshot moved_snapshot = snapshot;
+    moved_snapshot.tick = 2U;
+    moved_snapshot.player_position = {100.0F, 200.0F, 300.0F};
+    moved_snapshot.refresh_digest();
+    if (!runtime->update_snapshot(moved_snapshot)) {
+      std::cerr << "retail_mission01_vulkan_scene=fail condition=aircraft_update\n";
+      return 1;
+    }
+    const auto moved_aircraft = std::find_if(
+        runtime->scene().draw_packets.begin(),
+        runtime->scene().draw_packets.end(), [](const ac6::DrawPacket& packet) {
+          return packet.mesh_id == "retail-m01-player-f16-lod1";
+        });
+    if (moved_aircraft == runtime->scene().draw_packets.end() ||
+        moved_aircraft->transform == initial_aircraft_transform ||
+        moved_aircraft->transform[12] != 100.0F ||
+        moved_aircraft->transform[13] != 200.0F ||
+        moved_aircraft->transform[14] != 300.0F) {
+      std::cerr << "retail_mission01_vulkan_scene=fail condition=aircraft_transform\n";
+      return 1;
+    }
+  }
   std::cout << "retail_mission01_vulkan_scene=pass draw=1 jv_eligible=0"
+            << " complete=" << (runtime->report().complete_render_scene ? 1 : 0)
             << " runtime_draw=" << runtime->report().runtime_draw_instances
             << " runtime_meshes=" << runtime->report().runtime_meshes
             << " runtime_textures=" << runtime->report().runtime_textures

@@ -167,8 +167,15 @@ bool SdlInputAdapter::apply(const SDL_Event& event, InputFrame& frame,
     frame.roll = signed_axis(held_keys_[3], held_keys_[2], 32767, -32768);
     frame.yaw = signed_axis(held_keys_[5], held_keys_[4], 32767, -32768);
     if (held_keys_[6]) frame.throttle = 255u;
-    else if (held_keys_[7]) frame.throttle = 0u;
     else frame.throttle = 0u;
+    // The host InputFrame has one unsigned throttle lane. Preserve the fifth
+    // flight control as the XInput left-shoulder bit instead of collapsing the
+    // brake key onto the same zero value as an idle throttle.
+    constexpr std::uint16_t kBrakeMask = 0x0100U;
+    buttons = held_keys_[7]
+                  ? static_cast<std::uint16_t>(buttons | kBrakeMask)
+                  : static_cast<std::uint16_t>(buttons & ~kBrakeMask);
+    frame.buttons = buttons;
     return true;
   }
   if (event.type != SDL_EVENT_GAMEPAD_BUTTON_DOWN &&

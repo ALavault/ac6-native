@@ -3,10 +3,12 @@
 #include "ac6/campaign_progression.h"
 #include "ac6/execution_trace.h"
 #include "ac6/native_hud.h"
+#include "ac6/native_hud_gpu_overlay.h"
 #include "ac6/retail_campaign_bundle.h"
 #include "ac6/retail_camera_table.h"
 #include "ac6/retail_content.h"
 #include "ac6/retail_frontend_resources.h"
+#include "ac6/retail_free_flight_receipt.h"
 #include "ac6/retail_mission01_cpu_compositor.h"
 #include "ac6/retail_projection_receipt.h"
 #include "ac6/retail_session.h"
@@ -15,7 +17,6 @@
 #include "ac6/vulkan_backend.h"
 #include "ac6/vulkan_scene_resource_cache.h"
 #include "ac6/retail_mission01_vulkan_scene.h"
-#include "vulkan_retail_shaders.h"
 
 #include <SDL3/SDL.h>
 
@@ -26,9 +27,11 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -53,6 +56,7 @@ bool append_native_replay_trace_sample(
 namespace {
 
 struct Options final {
+  RetailTarget target{RetailTarget::Pal};
   std::filesystem::path cache;
   std::filesystem::path save;
   std::filesystem::path resume;
@@ -62,8 +66,11 @@ struct Options final {
   std::filesystem::path capture;
   std::filesystem::path scene_capture;
   std::filesystem::path scene_report;
+  std::filesystem::path free_flight_receipt;
   std::filesystem::path trace;
   bool projection_receipt_seen{};
+  bool diagnostic_gpu{};
+  bool free_flight{};
   std::uint32_t aircraft{1};
   std::uint32_t weapon{1};
   retail::RetailDifficulty difficulty{retail::RetailDifficulty::Normal};
@@ -84,15 +91,30 @@ bool parse_u32(std::string_view text, std::uint32_t& value) noexcept {
 }
 
 bool parse_play_options(int argc, char** argv, Options& options) {
+  bool target_seen = false;
   bool aircraft_seen = false;
   bool weapon_seen = false;
   bool difficulty_seen = false;
   bool frames_seen = false;
   for (int index = 2; index < argc; ++index) {
     const std::string_view option(argv[index]);
+    if (option == "--diagnostic-gpu" && !options.diagnostic_gpu) {
+      options.diagnostic_gpu = true;
+      continue;
+    }
+    if (option == "--free-flight" && !options.free_flight) {
+      options.free_flight = true;
+      continue;
+    }
     if (index + 1 >= argc) return false;
     const std::filesystem::path value(argv[++index]);
-    if (option == "--cache" && options.cache.empty()) options.cache = value;
+    if (option == "--target" && !target_seen) {
+      const std::optional<RetailTarget> parsed =
+          retail_target_from_string(value.string());
+      if (!parsed.has_value()) return false;
+      options.target = *parsed;
+      target_seen = true;
+    } else if (option == "--cache" && options.cache.empty()) options.cache = value;
     else if (option == "--save" && options.save.empty()) options.save = value;
     else if (option == "--resume" && options.resume.empty()) options.resume = value;
     else if (option == "--replay" && options.replay.empty()) options.replay = value;
@@ -101,6 +123,9 @@ bool parse_play_options(int argc, char** argv, Options& options) {
       options.scene_capture = value;
     } else if (option == "--scene-report" && options.scene_report.empty()) {
       options.scene_report = value;
+    } else if (option == "--free-flight-receipt" &&
+               options.free_flight_receipt.empty()) {
+      options.free_flight_receipt = value;
     }
     else if (option == "--frames" && !frames_seen) {
       if (!parse_u32(value.string(), options.frames) || options.frames > 600000u) {
@@ -126,16 +151,22 @@ bool parse_play_options(int argc, char** argv, Options& options) {
       return false;
     }
   }
-  return !options.cache.empty() &&
-      (options.scene_report.empty() || !options.scene_capture.empty());
+  return options.scene_report.empty() || !options.scene_capture.empty();
 }
 
 bool parse_replay_options(int argc, char** argv, Options& options) {
+  bool target_seen = false;
   for (int index = 2; index < argc; ++index) {
     const std::string_view option(argv[index]);
     if (index + 1 >= argc) return false;
     const std::filesystem::path value(argv[++index]);
-    if (option == "--cache" && options.cache.empty()) options.cache = value;
+    if (option == "--target" && !target_seen) {
+      const std::optional<RetailTarget> parsed =
+          retail_target_from_string(value.string());
+      if (!parsed.has_value()) return false;
+      options.target = *parsed;
+      target_seen = true;
+    } else if (option == "--cache" && options.cache.empty()) options.cache = value;
     else if (option == "--replay" && options.replay.empty()) options.replay = value;
     else if (option == "--projection-receipt" &&
              !options.projection_receipt_seen) {
@@ -146,7 +177,13 @@ bool parse_replay_options(int argc, char** argv, Options& options) {
     else if (option == "--trace" && options.trace.empty()) options.trace = value;
     else return false;
   }
-  return !options.cache.empty() && !options.replay.empty() && !options.report.empty();
+  return !options.replay.empty() && !options.report.empty();
+}
+
+RetailIdentityPolicy policy_for_target(RetailTarget target) {
+  return target == RetailTarget::NtscUj
+             ? RetailIdentityPolicy::ntsc_uj()
+             : RetailIdentityPolicy::pal();
 }
 
 bool open_store(const std::filesystem::path& cache, RetailContentStore& store) {
@@ -171,6 +208,21 @@ bool loadout_qualified(const RetailContentStore& store,
   const std::optional<retail::RetailCameraTable> cameras =
       retail::RetailCameraTable::open(*common);
   return cameras.has_value() && cameras->record_for_loadout(loadout, 1u) != nullptr;
+}
+
+SimulationSnapshot diagnostic_gpu_camera(SimulationSnapshot snapshot) noexcept {
+  // This is an explicitly chosen edge-of-field overview. Keeping the eye
+  // outside the terrain extent prevents the diagnostic mesh from crossing the
+  // Vulkan near plane; the live TCAM producer remains unresolved, so this
+  // camera is never used by the production lane.
+  snapshot.camera.position = {1000.0F, 420.0F, -70000.0F};
+  snapshot.camera.target = {1000.0F, 420.0F, -69999.0F};
+  snapshot.camera.up = {0.0F, 1.0F, 0.0F};
+  snapshot.camera.vertical_fov_radians = 0.6632251143F;
+  snapshot.camera.near_plane = 1.0F;
+  snapshot.camera.far_plane = 24000.0F;
+  snapshot.refresh_digest();
+  return snapshot;
 }
 
 struct NativeGraphics final {
@@ -248,10 +300,11 @@ class NativeMission01GpuRenderer final {
       failure_detail_ = "target";
       return false;
     }
+    std::string scene_refusal;
     scene_ = retail::RetailMission01VulkanScene::open_runtime(
-        store, snapshot, true, 1280U, 720U);
+        store, snapshot, true, 1280U, 720U, &scene_refusal);
     if (!scene_.has_value()) {
-      failure_detail_ = "adapter_open";
+      failure_detail_ = "adapter_open:" + scene_refusal;
       return false;
     }
     resources_ = std::make_unique<VulkanSceneResourceCache>(*backend_);
@@ -267,22 +320,30 @@ class NativeMission01GpuRenderer final {
       failure_detail_ = resources_->failure_detail();
       return false;
     }
+    if (!hud_overlay_.initialize(*backend_, target_, 1280U, 720U)) {
+      failure_detail_ = "hud_overlay";
+      return false;
+    }
     return true;
   }
 
   bool render(const SimulationSnapshot& snapshot,
-              std::vector<std::uint8_t>& pixels) noexcept {
+              std::vector<std::uint8_t>& pixels,
+              const bool target_marker_visible,
+              const bool readback) noexcept {
     if (!resources_ || !scene_.has_value() ||
         !scene_->update_snapshot(snapshot) ||
         !resources_->render_dynamic(scene_->scene())) {
       return false;
     }
-    if (direct_present_) {
+    if (!hud_overlay_.render(snapshot, target_marker_visible)) return false;
+    if (readback) {
+      pixels = backend_->readback_rgba8(target_);
+      if (pixels.size() != 1280U * 720U * 4U) return false;
+    } else {
       pixels.clear();
-      return backend_->present_target(target_);
     }
-    pixels = backend_->readback_rgba8(target_);
-    return pixels.size() == 1280U * 720U * 4U;
+    return !direct_present_ || backend_->present_target(target_);
   }
 
   bool direct_present() const noexcept { return direct_present_; }
@@ -291,7 +352,7 @@ class NativeMission01GpuRenderer final {
     return scene_.has_value() ? &scene_->report() : nullptr;
   }
 
-  const char* failure_detail() const noexcept { return failure_detail_; }
+  const char* failure_detail() const noexcept { return failure_detail_.c_str(); }
 
  private:
   std::unique_ptr<VulkanBackend> backend_;
@@ -299,14 +360,20 @@ class NativeMission01GpuRenderer final {
   std::optional<retail::RetailMission01VulkanScene> scene_;
   VulkanRenderTargetHandle target_{};
   bool direct_present_{};
-  const char* failure_detail_{"unknown"};
+  NativeHudGpuOverlay hud_overlay_;
+  std::string failure_detail_{"unknown"};
 };
 
 bool render_frame(NativeGraphics& graphics, NativeMission01GpuRenderer& renderer,
                   std::vector<std::uint8_t>& pixels,
-                  const SimulationSnapshot& snapshot) {
-  if (!renderer.render(snapshot, pixels)) return false;
-  return renderer.direct_present() || graphics.present_rgba8(pixels, 1280U, 720U);
+                  const SimulationSnapshot& snapshot,
+                  const bool target_marker_visible,
+                  const bool readback = true) {
+  if (!renderer.render(snapshot, pixels, target_marker_visible, readback)) {
+    return false;
+  }
+  return renderer.direct_present() || !readback ||
+         graphics.present_rgba8(pixels, 1280U, 720U);
 }
 
 std::optional<retail::Mission01CpuFrame> render_retail_scene(
@@ -391,9 +458,167 @@ bool write_rgba8_ppm(const std::filesystem::path& path,
   return static_cast<bool>(output);
 }
 
+void record_play_tick(retail::RetailSession& session,
+                      retail::RetailSessionReplay& replay,
+                      retail::RetailSessionFrame& frame,
+                      const InputFrame input) {
+  frame = session.tick(1.0F / 60.0F, input);
+  replay.frames.push_back(input);
+  if (replay.frames.size() % 600U == 0U) {
+    const auto frame_index = static_cast<std::uint32_t>(replay.frames.size());
+    replay.checkpoints.push_back(
+        {frame_index, replay.input_digest(frame_index)});
+  }
+}
+
+int run_free_flight_receipt_loop(
+    retail::RetailSession& session, NativeGraphics& graphics,
+    NativeMission01GpuRenderer& renderer,
+    retail::RetailFreeFlightReceipt& receipt,
+    retail::RetailSessionReplay& replay, retail::RetailSessionFrame& frame,
+    std::vector<std::uint8_t>& gpu_pixels) {
+  while (replay.frames.size() <
+         retail::kNativeFreeFlightQualificationTicks) {
+    SDL_Event host_event{};
+    while (SDL_PollEvent(&host_event)) {
+      if (host_event.type == SDL_EVENT_QUIT ||
+          host_event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
+        std::fprintf(stderr,
+                     "ac6_retail=fail error=free_flight_interrupted\n");
+        return 133;
+      }
+    }
+    const auto tick = static_cast<std::uint32_t>(replay.frames.size() + 1U);
+    const InputFrame input =
+        retail::native_free_flight_qualification_input(tick);
+    record_play_tick(session, replay, frame, input);
+    const SimulationSnapshot snapshot = session.render_snapshot();
+    const bool sample = retail::retail_free_flight_receipt_sample_tick(tick);
+    if (!render_frame(graphics, renderer, gpu_pixels, snapshot, false, sample)) {
+      return 128;
+    }
+    if (!sample) continue;
+    const retail::RetailFreeFlight* free_flight = session.free_flight();
+    if (free_flight == nullptr ||
+        !receipt.observe(tick, input, snapshot, free_flight->state_digest(),
+                         gpu_pixels)) {
+      std::fprintf(stderr,
+                   "ac6_retail=fail error=free_flight_receipt "
+                   "detail=%s tick=%u\n",
+                   receipt.failure_detail().c_str(), tick);
+      return 133;
+    }
+  }
+  return 0;
+}
+
+int run_realtime_play_loop(
+    const Options& options, retail::RetailSession& session,
+    NativeGraphics& graphics,
+    std::optional<NativeMission01GpuRenderer>& gpu_renderer,
+    SdlEventPump& pump, SdlInputAdapter& input_adapter,
+    InputMappingDatabase& mappings, InputFrame& input_frame,
+    std::uint16_t& buttons, std::vector<Event>& events,
+    retail::RetailSessionReplay& replay, retail::RetailSessionFrame& frame,
+    std::vector<std::uint8_t>& gpu_pixels, const bool direct_vulkan,
+    const std::function<bool()>& capture) {
+  const std::uint32_t requested_frames =
+      options.scene_capture.empty()
+          ? options.frames
+          : (options.frames == 0U ? 1U : options.frames);
+  using Clock = std::chrono::steady_clock;
+  auto previous = Clock::now();
+  double accumulator = 0.0;
+  bool quit = false;
+  while (!quit &&
+         (requested_frames == 0U || replay.frames.size() < requested_frames)) {
+    events.clear();
+    (void)pump.pump(input_adapter, input_frame, buttons, mappings,
+                    session.player_entity(), events, quit);
+    for (const Event event : events) {
+      (void)session.execution().dispatch(event);
+    }
+    const auto now = Clock::now();
+    accumulator = std::min(
+        accumulator + std::chrono::duration<double>(now - previous).count(),
+        0.25);
+    previous = now;
+    bool stepped = false;
+    while (accumulator >= 1.0 / 60.0) {
+      record_play_tick(session, replay, frame, input_frame);
+      accumulator -= 1.0 / 60.0;
+      stepped = true;
+    }
+    if (stepped) {
+      SimulationSnapshot snapshot = session.render_snapshot();
+      if (options.diagnostic_gpu) {
+        snapshot = diagnostic_gpu_camera(std::move(snapshot));
+      }
+      if (!gpu_renderer.has_value() ||
+          !render_frame(graphics, *gpu_renderer, gpu_pixels, snapshot,
+                        session.target_entity() != 0U, !direct_vulkan)) {
+        return 128;
+      }
+    }
+    if (stepped && !capture()) return 129;
+    SDL_Delay(1);
+  }
+  return 0;
+}
+
+bool free_flight_options_valid(const Options& options) noexcept {
+  const bool receipt_mode = !options.free_flight_receipt.empty();
+  if (options.free_flight &&
+      (options.target != RetailTarget::NtscUj || options.diagnostic_gpu ||
+       !options.scene_capture.empty())) {
+    return false;
+  }
+  return !receipt_mode ||
+         (options.free_flight &&
+          options.frames == retail::kNativeFreeFlightQualificationTicks &&
+          options.aircraft == 1U && options.weapon == 1U &&
+          options.difficulty == retail::RetailDifficulty::Normal &&
+          options.save.empty() && options.resume.empty() &&
+          !options.replay.empty() && options.capture.empty());
+}
+
+int finalize_free_flight_receipt(
+    const bool receipt_mode,
+    std::optional<retail::RetailFreeFlightReceipt>& receipt,
+    const retail::RetailSessionReplay& replay) {
+  if (!receipt_mode) return 0;
+  if (!receipt.has_value() ||
+      !receipt->finalize(replay.final_tick, replay.final_digest)) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=free_flight_receipt detail=%s\n",
+                 receipt.has_value() ? receipt->failure_detail().c_str()
+                                     : "missing");
+    return 133;
+  }
+  if (!receipt->eligible()) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=free_flight_unqualified "
+                 "detail=%s receipt=%s\n",
+                 receipt->failure_detail().c_str(),
+                 receipt->manifest_path().string().c_str());
+    return 133;
+  }
+  return 0;
+}
+
 int run_play_impl(const Options& options) {
-  RetailContentStore store;
-  if (!open_store(options.cache, store)) return 120;
+  const bool receipt_mode = !options.free_flight_receipt.empty();
+  if (!free_flight_options_valid(options)) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=free_flight_options "
+                 "detail=ntsc_uj_vulkan_f16_normal_3600_replay_no_diagnostic\n");
+    return 119;
+  }
+  const std::filesystem::path cache =
+      options.cache.empty() ? default_retail_cache_root(options.target)
+                            : options.cache;
+  RetailContentStore store(policy_for_target(options.target));
+  if (!open_store(cache, store)) return 120;
   if (!frontend_resources_qualified(store)) {
     std::fprintf(stderr,
                  "ac6_retail=fail error=cache_incomplete detail=frontend_font_resources\n");
@@ -418,10 +643,19 @@ int run_play_impl(const Options& options) {
   }
   std::unique_ptr<retail::RetailSession> session =
       retail::RetailSession::open(store, loadout,
-                                  {1, {0, 0}, retail::kRetailOpeningCameraModeWord,
+                                  {1, {0, 0},
+                                   options.free_flight
+                                       ? retail::kRetailFreeFlightCameraModeWord
+                                       : retail::kRetailOpeningCameraModeWord,
                                    options.difficulty,
                                    retail::RetailScriptDrive::ExternalProbe});
   if (session == nullptr) return 125;
+  if (options.free_flight && !session->free_flight_enabled()) {
+    std::fprintf(stderr,
+                 "ac6_retail=fail error=free_flight_unavailable "
+                 "detail=placed_player_or_mode2_camera\n");
+    return 125;
+  }
   if (!options.resume.empty()) {
     SessionSaveStore saves;
     const SessionSaveSnapshot* snapshot = nullptr;
@@ -439,13 +673,34 @@ int run_play_impl(const Options& options) {
                  "ac6_retail=fail error=vulkan_unavailable detail=interactive_backend\n");
     return 125;
   }
-  const SimulationSnapshot initial_snapshot = session->render_snapshot();
+  SimulationSnapshot initial_snapshot = session->render_snapshot();
+  if (options.diagnostic_gpu) {
+    initial_snapshot = diagnostic_gpu_camera(std::move(initial_snapshot));
+  }
+  if (options.diagnostic_gpu) {
+    std::fprintf(stderr,
+                 "ac6_retail=diagnostic camera=(%.3f,%.3f,%.3f)->(%.3f,%.3f,%.3f) "
+                 "fov=%.6f near=%.3f far=%.3f player=(%.3f,%.3f,%.3f)\n",
+                 initial_snapshot.camera.position[0],
+                 initial_snapshot.camera.position[1],
+                 initial_snapshot.camera.position[2],
+                 initial_snapshot.camera.target[0],
+                 initial_snapshot.camera.target[1],
+                 initial_snapshot.camera.target[2],
+                 initial_snapshot.camera.vertical_fov_radians,
+                 initial_snapshot.camera.near_plane,
+                 initial_snapshot.camera.far_plane,
+                 initial_snapshot.player_position[0],
+                 initial_snapshot.player_position[1],
+                 initial_snapshot.player_position[2]);
+  }
   std::optional<NativeRenderTarget> diagnostic_target;
   if (!options.scene_capture.empty()) {
     diagnostic_target.emplace();
     if (!diagnostic_target->resize(1280, 720)) return 126;
   }
   std::optional<NativeMission01GpuRenderer> gpu_renderer;
+  std::optional<retail::RetailFreeFlightReceipt> free_flight_receipt;
   if (options.scene_capture.empty()) {
     gpu_renderer.emplace();
     if (!gpu_renderer->initialize(store, initial_snapshot, graphics,
@@ -457,23 +712,44 @@ int run_play_impl(const Options& options) {
     }
     const retail::RetailMission01VulkanSceneReport* report =
         gpu_renderer->report();
-    if (report == nullptr || !report->complete_render_scene ||
-        !report->jv_eligible) {
+    const bool free_flight_world_qualified =
+        options.free_flight && report != nullptr &&
+        report->free_flight_world_complete;
+    if ((report == nullptr || !report->complete_render_scene ||
+         !report->jv_eligible) &&
+        !free_flight_world_qualified) {
+      if (!options.diagnostic_gpu) {
+        std::fprintf(stderr,
+                     "ac6_retail=fail error=mission01_unqualified "
+                     "detail=checkpoint2_scene_tcam\n");
+        return 126;
+      }
       std::fprintf(stderr,
-                   "ac6_retail=fail error=mission01_unqualified "
-                   "detail=checkpoint2_scene_tcam\n");
-      return 126;
+                   "ac6_retail=diagnostic mode=gpu_unqualified "
+                   "detail=checkpoint2_scene_tcam jv_eligible=%d complete=%d\n",
+                   report != nullptr && report->jv_eligible ? 1 : 0,
+                   report != nullptr && report->complete_render_scene ? 1 : 0);
+    }
+    if (receipt_mode) {
+      free_flight_receipt.emplace(options.free_flight_receipt);
+      if (report == nullptr ||
+          !free_flight_receipt->begin(store.index_sha256(), *report)) {
+        std::fprintf(stderr,
+                     "ac6_retail=fail error=free_flight_receipt "
+                     "detail=%s\n",
+                     free_flight_receipt->failure_detail().c_str());
+        return 126;
+      }
     }
   }
   NativeHudRenderer hud;
   SdlEventPump pump;
-  if (!pump.initialize()) return 127;
+  if (!receipt_mode && !pump.initialize()) return 127;
   SdlInputAdapter input_adapter;
   InputMappingDatabase mappings;
   InputFrame input_frame{};
   std::uint16_t buttons = 0;
   std::vector<Event> events;
-  bool quit = false;
   retail::RetailSessionReplay replay;
   replay.mission_id = 1;
   replay.difficulty = options.difficulty;
@@ -483,7 +759,8 @@ int run_play_impl(const Options& options) {
   std::vector<std::uint8_t> gpu_pixels;
   if (options.scene_capture.empty()) {
     if (!gpu_renderer.has_value() ||
-        !render_frame(graphics, *gpu_renderer, gpu_pixels, initial_snapshot)) {
+        !render_frame(graphics, *gpu_renderer, gpu_pixels, initial_snapshot,
+                      session->target_entity() != 0U, !direct_vulkan)) {
       return 128;
     }
   } else {
@@ -508,47 +785,21 @@ int run_play_impl(const Options& options) {
     return true;
   };
   if (!capture()) return 129;
-  const std::uint32_t requested_frames =
-      options.scene_capture.empty()
-          ? options.frames
-          : (options.frames == 0 ? 1u : options.frames);
-  using Clock = std::chrono::steady_clock;
-  auto previous = Clock::now();
-  double accumulator = 0.0;
-  while (!quit &&
-         (requested_frames == 0 || replay.frames.size() < requested_frames)) {
-    events.clear();
-    (void)pump.pump(input_adapter, input_frame, buttons, mappings,
-                    session->player_entity(), events, quit);
-    for (const Event event : events) (void)session->execution().dispatch(event);
-    const auto now = Clock::now();
-    accumulator = std::min(accumulator +
-                               std::chrono::duration<double>(now - previous).count(),
-                           0.25);
-    previous = now;
-    bool stepped = false;
-    while (accumulator >= 1.0 / 60.0) {
-      frame = session->tick(1.0f / 60.0f, input_frame);
-      replay.frames.push_back(input_frame);
-      if (replay.frames.size() % 600u == 0u) {
-        const auto frame_index = static_cast<std::uint32_t>(replay.frames.size());
-        replay.checkpoints.push_back(
-            {frame_index, replay.input_digest(frame_index)});
-      }
-      accumulator -= 1.0 / 60.0;
-      stepped = true;
-    }
-    if (stepped && (!gpu_renderer.has_value() ||
-                    !render_frame(graphics, *gpu_renderer, gpu_pixels,
-                                  session->render_snapshot()))) {
-      return 128;
-    }
-    if (stepped && !capture()) return 129;
-    SDL_Delay(1);
-  }
+  const int loop_status = receipt_mode
+      ? run_free_flight_receipt_loop(
+            *session, graphics, *gpu_renderer, *free_flight_receipt, replay,
+            frame, gpu_pixels)
+      : run_realtime_play_loop(
+            options, *session, graphics, gpu_renderer, pump, input_adapter,
+            mappings, input_frame, buttons, events, replay, frame, gpu_pixels,
+            direct_vulkan, capture);
+  if (loop_status != 0) return loop_status;
   replay.final_tick = replay.frames.size();
   replay.final_digest = replay.input_digest();
   if (!options.replay.empty() && !replay.write_file(options.replay)) return 130;
+  const int receipt_status = finalize_free_flight_receipt(
+      receipt_mode, free_flight_receipt, replay);
+  if (receipt_status != 0) return receipt_status;
   if (!options.save.empty()) {
     SessionSaveStore saves;
     MissionExecution::Checkpoint checkpoint;
@@ -563,6 +814,13 @@ int run_play_impl(const Options& options) {
                static_cast<unsigned long long>(frame.world.tick), replay.frames.size(),
                static_cast<unsigned>(options.difficulty),
                sha256_hex(store.index_sha256()).c_str());
+  if (receipt_mode) {
+    std::fprintf(stdout,
+                 "ac6_free_flight=pass ticks=3600 controls=5 renderer=vulkan "
+                 "receipt_sha256=%s receipt=%s\n",
+                 sha256_hex(free_flight_receipt->manifest_sha256()).c_str(),
+                 free_flight_receipt->manifest_path().string().c_str());
+  }
   return 0;
 }
 
@@ -717,8 +975,11 @@ std::optional<ReplayRun> replay_once(const RetailContentStore& store,
 }
 
 int run_replay_impl(const Options& options) {
-  RetailContentStore store;
-  if (!open_store(options.cache, store)) return 131;
+  const std::filesystem::path cache =
+      options.cache.empty() ? default_retail_cache_root(options.target)
+                            : options.cache;
+  RetailContentStore store(policy_for_target(options.target));
+  if (!open_store(cache, store)) return 131;
   if (!frontend_resources_qualified(store)) {
     std::fprintf(stderr,
                  "ac6_retail=fail error=cache_incomplete detail=frontend_font_resources\n");
@@ -830,6 +1091,89 @@ int run_replay_impl(const Options& options) {
 }
 
 }  // namespace
+
+int run_import(int argc, char** argv) {
+  std::filesystem::path source;
+  std::filesystem::path cache;
+  bool frontend = false;
+  RetailTarget target = RetailTarget::Pal;
+  bool target_seen = false;
+  for (int index = 2; index < argc; ++index) {
+    const std::string_view option(argv[index]);
+    if (option == "--frontend") {
+      if (frontend) {
+        std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_or_duplicate_option\n");
+        return 2;
+      }
+      frontend = true;
+      continue;
+    }
+    if (index + 1 >= argc) {
+      std::fprintf(stderr,
+                   "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--target pal|ntsc-uj] [--frontend]\n");
+      return 2;
+    }
+    if (option == "--source" && source.empty()) {
+      source = argv[index + 1];
+    } else if (option == "--cache" && cache.empty()) {
+      cache = argv[index + 1];
+    } else if (option == "--target" && !target_seen) {
+      const std::optional<RetailTarget> parsed =
+          retail_target_from_string(argv[index + 1]);
+      if (!parsed.has_value()) {
+        std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_target\n");
+        return 2;
+      }
+      target = *parsed;
+      target_seen = true;
+    } else {
+      std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_or_duplicate_option\n");
+      return 2;
+    }
+    ++index;
+  }
+  if (source.empty()) {
+    std::fprintf(stderr,
+                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--target pal|ntsc-uj] [--frontend]\n");
+    return 2;
+  }
+  if (cache.empty()) cache = default_retail_cache_root(target);
+  if (cache.empty()) {
+    std::fprintf(stderr,
+                 "ac6_import=fail error=invalid_argument detail=no_absolute_XDG_or_HOME_cache_root\n");
+    return 2;
+  }
+  // A product import seals the complete DATA.TBL closure. `--frontend` is
+  // retained as a compatibility spelling; the frontend resources are already
+  // part of the same generation and are never imported as a partial cache.
+  const RetailIdentityPolicy policy =
+      target == RetailTarget::NtscUj
+          ? RetailIdentityPolicy::ntsc_uj()
+          : RetailIdentityPolicy::pal();
+  std::vector<std::uint32_t> selected(policy.data_table_entries);
+  std::iota(selected.begin(), selected.end(), 0u);
+  const RetailImportReport report =
+      RetailContentImporter(policy).run(source, cache, selected);
+  if (!report.passed()) {
+    std::fprintf(stderr, "ac6_import=fail error=%s detail=%s\n",
+                 retail_content_error_name(report.error), report.detail.c_str());
+    return 3;
+  }
+  RetailContentStore store(policy);
+  if (!store.open(cache) || store.index_sha256() != report.index_sha256 ||
+      store.records().size() != report.imported_records) {
+    std::fprintf(stderr, "ac6_import=fail error=%s detail=%s\n",
+                 retail_content_error_name(store.error()), store.detail().c_str());
+    return 3;
+  }
+  std::fprintf(stdout,
+               "ac6_import=pass target=%s records=%zu bytes=%llu frontend=%s index_sha256=%s cache=%s\n",
+               retail_target_name(target), report.imported_records,
+               static_cast<unsigned long long>(report.imported_bytes),
+               frontend ? "true" : "false",
+               sha256_hex(report.index_sha256).c_str(), cache.c_str());
+  return 0;
+}
 
 int run_play(int argc, char** argv) {
   Options options;

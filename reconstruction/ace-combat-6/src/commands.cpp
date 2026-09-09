@@ -3,7 +3,6 @@
 #include "ac6/native_renderer.h"
 #include "ac6/mission01_compare.h"
 #include "ac6/native_hud.h"
-#include "ac6/retail_content.h"
 #include "ac6/retail_commands.h"
 #include "ac6/retail_session.h"
 #include "ac6/sdl_input.h"
@@ -19,80 +18,10 @@
 #include <fstream>
 #include <iomanip>
 #include <memory>
-#include <numeric>
 #include <string_view>
 #include <thread>
 #include <vector>
 namespace {
-int run_import_command(int argc, char** argv) {
-  std::filesystem::path source;
-  std::filesystem::path cache;
-  bool frontend = false;
-  for (int index = 2; index < argc; ++index) {
-    const std::string_view option(argv[index]);
-    if (option == "--frontend") {
-      if (frontend) {
-        std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_or_duplicate_option\n");
-        return 2;
-      }
-      frontend = true;
-      continue;
-    }
-    if (index + 1 >= argc) {
-      std::fprintf(stderr,
-                   "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n");
-      return 2;
-    }
-    if (option == "--source" && source.empty()) {
-      source = argv[index + 1];
-    } else if (option == "--cache" && cache.empty()) {
-      cache = argv[index + 1];
-    } else {
-      std::fprintf(stderr, "ac6_import=fail error=invalid_argument detail=unknown_or_duplicate_option\n");
-      return 2;
-    }
-    ++index;
-  }
-  if (source.empty()) {
-    std::fprintf(stderr,
-                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n");
-    return 2;
-  }
-  if (cache.empty()) cache = ac6::default_retail_cache_root();
-  if (cache.empty()) {
-    std::fprintf(stderr,
-                 "ac6_import=fail error=invalid_argument detail=no_absolute_XDG_or_HOME_cache_root\n");
-    return 2;
-  }
-  // A product import seals the complete DATA.TBL closure. `--frontend` is
-  // retained as a compatibility spelling; the frontend resources are already
-  // part of the same generation and are never imported as a partial cache.
-  const ac6::RetailIdentityPolicy policy = ac6::RetailIdentityPolicy::pal();
-  std::vector<std::uint32_t> selected(policy.data_table_entries);
-  std::iota(selected.begin(), selected.end(), 0u);
-  const ac6::RetailImportReport report =
-      ac6::RetailContentImporter{}.run(source, cache, selected);
-  if (!report.passed()) {
-    std::fprintf(stderr, "ac6_import=fail error=%s detail=%s\n",
-                 ac6::retail_content_error_name(report.error), report.detail.c_str());
-    return 3;
-  }
-  ac6::RetailContentStore store;
-  if (!store.open(cache) || store.index_sha256() != report.index_sha256 ||
-      store.records().size() != report.imported_records) {
-    std::fprintf(stderr, "ac6_import=fail error=%s detail=%s\n",
-                 ac6::retail_content_error_name(store.error()),
-                 store.detail().c_str());
-    return 3;
-  }
-  std::fprintf(stdout,
-               "ac6_import=pass records=%zu bytes=%llu frontend=%s index_sha256=%s cache=%s\n",
-               report.imported_records,
-               static_cast<unsigned long long>(report.imported_bytes),
-               frontend ? "true" : "false",
-               ac6::sha256_hex(report.index_sha256).c_str(), cache.c_str());
-  return 0;
-}
 bool same_world_frame(const ac6::WorldFrame& a, const ac6::WorldFrame& b) {
   return a.tick == b.tick && a.mission_id == b.mission_id &&
       a.mission_ready == b.mission_ready && a.position_x == b.position_x &&
@@ -1000,18 +929,20 @@ int run_present_manifest(int argc, char** argv) {
 int run_commands(int argc, char** argv) {
   if (argc >= 2 && std::string_view(argv[1]) == "--help") {
     std::fprintf(stdout,
-                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--frontend]\n"
-                 "       ac6-native play --cache CACHE_ROOT [--save SAVE_PATH] [--resume SAVE_PATH]\n"
+                 "usage: ac6-native import --source DATA_ROOT [--cache CACHE_ROOT] [--target pal|ntsc-uj] [--frontend]\n"
+                 "       ac6-native play --cache CACHE_ROOT [--target pal|ntsc-uj] [--save SAVE_PATH] [--resume SAVE_PATH]\n"
                  "                       [--replay REPLAY_FILE] [--capture PPM]\n"
                  "                       [--scene-capture PPM] [--scene-report JSON]\n"
+                 "                       [--diagnostic-gpu]\n"
+                 "                       [--free-flight] [--free-flight-receipt OUTPUT_DIR]\n"
                  "                       [--frames COUNT] [--aircraft ID] [--weapon ID]\n"
                  "                       [--difficulty 0..4]\n"
-                 "       ac6-native replay --cache CACHE_ROOT --replay FILE --report OUTPUT_DIR\n"
+                 "       ac6-native replay --cache CACHE_ROOT [--target pal|ntsc-uj] --replay FILE --report OUTPUT_DIR\n"
                  "                         [--projection-receipt RECEIPT_JSON] [--trace RAW_JSONL]\n");
     return 0;
   }
   if (argc >= 2 && std::string_view(argv[1]) == "import") {
-    return run_import_command(argc, argv);
+    return ac6::retail_cli::run_import(argc, argv);
   }
   if (argc >= 2 && std::string_view(argv[1]) == "play") {
     if (argc < 3) {

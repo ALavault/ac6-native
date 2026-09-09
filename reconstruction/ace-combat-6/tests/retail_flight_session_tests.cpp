@@ -4,6 +4,7 @@
 // frames, and that a stick input reaches the attitude.
 
 #include "ac6/retail_flight_session.h"
+#include "ac6/retail_free_flight.h"
 
 #include <cmath>
 #include <cstdio>
@@ -285,6 +286,56 @@ void the_holds_reach_the_ramps() {
   check_bits(state.ramps.at364, 0.0F, "while the other ramp stays put");
 }
 
+void the_native_free_flight_composes_five_controls_deterministically() {
+  RetailCameraRecord camera{};
+  camera.fields[1] = 0.860000014F;
+  camera.fields[2] = -5.9000001F;
+  camera.fields[0x68 / sizeof(float)] = 0.8F;
+  const auto make = [&]() {
+    return RetailFreeFlight::open(camera, {1000.0F, 20.0F, -24000.0F});
+  };
+  std::optional<RetailFreeFlight> first = make();
+  std::optional<RetailFreeFlight> second = make();
+  check(first.has_value() && second.has_value(),
+        "the store-shaped mode-2 camera opens the native free flight");
+  if (!first.has_value() || !second.has_value()) return;
+
+  RetailBasis baseline{};
+  RetailBasis pitched{};
+  RetailBasis rolled{};
+  RetailBasis yawed{};
+  float accelerated = 0.0F;
+  float braked = 0.0F;
+  for (std::uint32_t tick = 1U;
+       tick <= kNativeFreeFlightQualificationTicks; ++tick) {
+    const ac6::InputFrame input =
+        native_free_flight_qualification_input(tick);
+    check(first->step(kFrame, input) && second->step(kFrame, input),
+          "a free-flight fixed step remains valid");
+    if (tick == 300) baseline = first->frame().basis;
+    if (tick == 540) pitched = first->frame().basis;
+    if (tick == 780) rolled = first->frame().basis;
+    if (tick == 1020) yawed = first->frame().basis;
+    if (tick == 1260) accelerated = first->frame().speed_kmh;
+    if (tick == 1500) braked = first->frame().speed_kmh;
+  }
+  check(!(baseline == pitched), "pitch changes the live player basis");
+  check(!(pitched == rolled), "roll changes the live player basis");
+  check(!(rolled == yawed), "yaw changes the live player basis");
+  check(accelerated > 900.0F, "throttle increases the live speed");
+  check(braked < accelerated, "brake decreases the live speed");
+  check(first->frame() == second->frame() &&
+            first->state_digest() == second->state_digest(),
+        "two 1800-tick free flights are bit-identical");
+  const ac6::WorldFrame world = first->world_frame(1800, 1, 230, 4097, {});
+  check(world.tick == 1800 && world.player_entity == 4097 &&
+            world.speed > 0.0F &&
+            (world.camera_x != world.camera_target_x ||
+             world.camera_y != world.camera_target_y ||
+             world.camera_z != world.camera_target_z),
+        "the composed state publishes a live player and camera pose");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -304,6 +355,7 @@ int main(int argc, char** argv) {
   the_digest_moves_with_the_state();
   the_position_integrates_and_the_floor_holds();
   the_gravity_bias_only_touches_the_vertical();
+  the_native_free_flight_composes_five_controls_deterministically();
   if (failures != 0) {
     std::printf("retail_flight_session: %d failure(s)\n", failures);
     return 1;

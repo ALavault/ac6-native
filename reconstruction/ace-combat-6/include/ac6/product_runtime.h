@@ -1043,6 +1043,11 @@ class MissionRuntime final {
   MissionRuntime(std::uint32_t mission_id, const MissionAssetDatabase* assets = nullptr);
   MissionRuntime(const MissionDefinition& definition, const MissionAssetDatabase* assets = nullptr);
   WorldFrame tick(float fixed_dt, InputFrame input);
+  // Advances the fixed scheduler clock while accepting a pose from a
+  // subsystem-specific runtime. No generic axis/position integration runs on
+  // this path.
+  WorldFrame tick_external(float fixed_dt, InputFrame input,
+                           const WorldFrame& external_pose);
   WorldFrame run_replay(float fixed_dt, const ReplayLog& replay);
   RuntimeSnapshot snapshot() const noexcept;
   // The launch snapshot (tick zero) is a valid restart boundary. Ordinary
@@ -1094,6 +1099,8 @@ class MissionExecution final {
   void set_failure_tick(std::uint64_t tick) noexcept { failure_tick_ = tick; }
   std::uint64_t failure_tick() const noexcept { return failure_tick_; }
   WorldFrame tick(float fixed_dt, InputFrame input) noexcept;
+  WorldFrame tick_external(float fixed_dt, InputFrame input,
+                           const WorldFrame& external_pose) noexcept;
   WorldFrame run_replay(float fixed_dt, const ReplayLog& replay) noexcept;
   RuntimeSnapshot snapshot() const noexcept;
   bool restore(RuntimeSnapshot snapshot) noexcept;
@@ -1131,6 +1138,8 @@ class MissionExecution final {
   std::uint32_t weapon_count() const noexcept { return weapon_count_; }
 
  private:
+  WorldFrame tick_impl(float fixed_dt, InputFrame input,
+                       const WorldFrame* external_pose) noexcept;
   const MissionDefinition* definition_{};
   const MissionAssetDatabase* assets_{};
   const MissionObjectiveDatabase* objectives_{};

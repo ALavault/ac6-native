@@ -1,6 +1,8 @@
 #include "ac6/ntxr_texture.h"
 
+#include <algorithm>
 #include <cstring>
+#include <limits>
 
 namespace ac6::retail {
 namespace {
@@ -151,26 +153,50 @@ std::uint32_t xenos_tiled_2d_offset(std::uint32_t x, std::uint32_t y,
           ((outer_inner >> 8) << 12));
 }
 
-std::optional<NtxrDescriptor> parse_ntxr_descriptor(const std::uint8_t* bytes,
-                                                    std::size_t size) noexcept {
-  if (bytes == nullptr || size < kDataOffsetOffset + 4) return std::nullopt;
-  if (read_u32(bytes) != kSignature) return std::nullopt;
+namespace {
 
+std::optional<NtxrDescriptor> parse_descriptor_at(
+    const std::uint8_t* bytes, const std::size_t size,
+    const std::size_t descriptor_base) noexcept {
+  constexpr std::size_t kMinimumDescriptorBytes = 0x24U;
+  if (bytes == nullptr || descriptor_base > size ||
+      kMinimumDescriptorBytes > size - descriptor_base) {
+    return std::nullopt;
+  }
   NtxrDescriptor descriptor;
-  descriptor.mip_count = bytes[kMipCountOffset];
-  descriptor.format_code = bytes[kFormatCodeOffset];
-  // 0x8234B374: a code at or above the bound fails the retail load outright.
+  descriptor.mip_count =
+      bytes[descriptor_base + kMipCountOffset - kDescriptorBase];
+  descriptor.format_code =
+      bytes[descriptor_base + kFormatCodeOffset - kDescriptorBase];
   if (descriptor.format_code >= kFormatCodeBound) return std::nullopt;
   descriptor.xenos_format = kXenosFormatTable[descriptor.format_code];
-  descriptor.width = read_u16(bytes + kWidthOffset);
-  descriptor.height = read_u16(bytes + kHeightOffset);
-  descriptor.cube_map = (read_u32(bytes + kFlagsOffset) & kCubeMapBit) != 0;
-  descriptor.data_offset = read_u32(bytes + kDataOffsetOffset);
-  if (descriptor.mip_count > 1 && size >= kMipChainOffset + 4) {
-    descriptor.base_surface_bytes = read_u32(bytes + kBaseSurfaceOffset);
-    descriptor.mip_chain_bytes = read_u32(bytes + kMipChainOffset);
+  descriptor.width =
+      read_u16(bytes + descriptor_base + kWidthOffset - kDescriptorBase);
+  descriptor.height =
+      read_u16(bytes + descriptor_base + kHeightOffset - kDescriptorBase);
+  descriptor.cube_map =
+      (read_u32(bytes + descriptor_base + kFlagsOffset - kDescriptorBase) &
+       kCubeMapBit) != 0;
+  descriptor.data_offset = read_u32(
+      bytes + descriptor_base + kDataOffsetOffset - kDescriptorBase);
+  if (descriptor.mip_count > 1U && descriptor_base + 0x38U <= size) {
+    descriptor.base_surface_bytes = read_u32(
+        bytes + descriptor_base + kBaseSurfaceOffset - kDescriptorBase);
+    descriptor.mip_chain_bytes = read_u32(
+        bytes + descriptor_base + kMipChainOffset - kDescriptorBase);
   }
   return descriptor;
+}
+
+}  // namespace
+
+std::optional<NtxrDescriptor> parse_ntxr_descriptor(const std::uint8_t* bytes,
+                                                    std::size_t size) noexcept {
+  if (bytes == nullptr || size < kDataOffsetOffset + 4U ||
+      read_u32(bytes) != kSignature) {
+    return std::nullopt;
+  }
+  return parse_descriptor_at(bytes, size, kDescriptorBase);
 }
 
 std::optional<std::uint32_t> ntxr_gidx_identifier(
@@ -205,16 +231,20 @@ std::size_t single_level_surface_bytes(const NtxrDescriptor& descriptor) noexcep
   return static_cast<std::size_t>(blocks_x) * blocks_y * block_bytes;
 }
 
-std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
-                                                     std::size_t size, bool swap_16,
-                                                     NtxrRefusal* refusal) noexcept {
+namespace {
+
+std::optional<DecodedTexture> decode_base_level_at(
+    const std::uint8_t* bytes, const std::size_t size,
+    const std::size_t descriptor_base, const std::size_t payload_end,
+    const bool swap_16, NtxrRefusal* const refusal) noexcept {
   const auto refuse = [&](NtxrRefusal cause) {
     if (refusal != nullptr) *refusal = cause;
     return std::optional<DecodedTexture>{};
   };
   if (refusal != nullptr) *refusal = NtxrRefusal::None;
 
-  const std::optional<NtxrDescriptor> descriptor = parse_ntxr_descriptor(bytes, size);
+  const std::optional<NtxrDescriptor> descriptor =
+      parse_descriptor_at(bytes, size, descriptor_base);
   if (!descriptor.has_value()) return refuse(NtxrRefusal::BadHeader);
 
   const std::uint32_t block_bytes = bytes_per_block(descriptor->xenos_format);
@@ -224,9 +254,15 @@ std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
   // the file states where it ends.
   if (descriptor->cube_map) return refuse(NtxrRefusal::CubeMap);
 
-  const std::size_t start = kDescriptorBase + descriptor->data_offset;
-  if (start > size) return refuse(NtxrRefusal::BadHeader);
-  const std::size_t payload = size - start;
+  if (descriptor->data_offset >
+      std::numeric_limits<std::size_t>::max() - descriptor_base) {
+    return refuse(NtxrRefusal::BadHeader);
+  }
+  const std::size_t start = descriptor_base + descriptor->data_offset;
+  if (start > payload_end || payload_end > size) {
+    return refuse(NtxrRefusal::BadHeader);
+  }
+  const std::size_t payload = payload_end - start;
   const std::size_t expected = single_level_surface_bytes(*descriptor);
   if (expected == 0) return refuse(NtxrRefusal::PayloadSizeMismatch);
   // Two independent statements of the same number, and both are checked.
@@ -264,7 +300,7 @@ std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
     for (std::uint32_t bx = 0; bx < blocks_x; ++bx) {
       const std::size_t offset =
           start + xenos_tiled_2d_offset(bx, by, pitch, log2_block);
-      if (offset > size || block_bytes > size - offset) {
+      if (offset > payload_end || block_bytes > payload_end - offset) {
         return refuse(NtxrRefusal::PayloadSizeMismatch);
       }
       std::memcpy(block, bytes + offset, block_bytes);
@@ -310,6 +346,133 @@ std::optional<DecodedTexture> decode_ntxr_base_level(const std::uint8_t* bytes,
     }
   }
   return out;
+}
+
+}  // namespace
+
+std::optional<DecodedTexture> decode_ntxr_base_level(
+    const std::uint8_t* bytes, const std::size_t size, const bool swap_16,
+    NtxrRefusal* const refusal) noexcept {
+  if (bytes == nullptr || size < kDataOffsetOffset + 4U ||
+      read_u32(bytes) != kSignature) {
+    if (refusal != nullptr) *refusal = NtxrRefusal::BadHeader;
+    return std::nullopt;
+  }
+  return decode_base_level_at(bytes, size, kDescriptorBase, size, swap_16,
+                              refusal);
+}
+
+std::optional<DecodedTexture> decode_ntxr_pack_texture(
+    const std::uint8_t* bytes, const std::size_t size,
+    const std::uint32_t identifier, const bool swap_16,
+    NtxrRefusal* const refusal) noexcept {
+  const auto refuse = [&](const NtxrRefusal cause) {
+    if (refusal != nullptr) *refusal = cause;
+    return std::optional<DecodedTexture>{};
+  };
+  if (refusal != nullptr) *refusal = NtxrRefusal::None;
+  constexpr std::size_t kSiblingStride = 0x50U;
+  constexpr std::uint16_t kMaximumTextures = 4096U;
+  if (bytes == nullptr || identifier == 0U ||
+      size < kDescriptorBase + 0x24U || read_u32(bytes) != kSignature) {
+    return refuse(NtxrRefusal::BadHeader);
+  }
+  const std::uint16_t texture_count = read_u16(bytes + 0x06U);
+  if (texture_count == 0U || texture_count > kMaximumTextures) {
+    return refuse(NtxrRefusal::BadHeader);
+  }
+  const std::size_t section_offset = read_u16(bytes + kDescriptorBase + 0x0CU);
+  if (section_offset > std::numeric_limits<std::size_t>::max() -
+                           kDescriptorBase) {
+    return refuse(NtxrRefusal::BadHeader);
+  }
+  const std::size_t section_base = kDescriptorBase + section_offset;
+  if (section_base < kDescriptorBase + kSiblingStride ||
+      static_cast<std::size_t>(texture_count - 1U) >
+          (std::numeric_limits<std::size_t>::max() - section_base) /
+              kSiblingStride) {
+    return refuse(NtxrRefusal::BadHeader);
+  }
+  const std::size_t terminator_base =
+      section_base + static_cast<std::size_t>(texture_count - 1U) *
+                         kSiblingStride;
+  if (terminator_base > size || 0x24U > size - terminator_base ||
+      bytes[terminator_base + 0x11U] != 0U ||
+      read_u16(bytes + terminator_base + 0x14U) != 0U ||
+      read_u16(bytes + terminator_base + 0x16U) != 0U) {
+    return refuse(NtxrRefusal::BadHeader);
+  }
+
+  struct PackEntry final {
+    std::uint32_t identifier{};
+    std::size_t descriptor_base{};
+    std::size_t data_begin{};
+    std::size_t data_end{};
+  };
+  std::vector<PackEntry> entries;
+  entries.reserve(texture_count);
+  std::optional<std::size_t> selected;
+  for (std::uint16_t index = 0U; index < texture_count; ++index) {
+    const std::size_t descriptor_base =
+        index == 0U
+            ? kDescriptorBase
+            : section_base + static_cast<std::size_t>(index - 1U) *
+                                 kSiblingStride;
+    const std::size_t next_descriptor =
+        section_base + static_cast<std::size_t>(index) * kSiblingStride;
+    if (next_descriptor < 0x20U || next_descriptor > size ||
+        std::memcmp(bytes + next_descriptor - 0x20U, "eXt\0", 4U) != 0 ||
+        read_u32(bytes + next_descriptor - 0x1CU) != 0x20U ||
+        std::memcmp(bytes + next_descriptor - 0x10U, "GIDX", 4U) != 0 ||
+        read_u32(bytes + next_descriptor - 0x0CU) != 0x10U) {
+      return refuse(NtxrRefusal::BadHeader);
+    }
+    const std::uint32_t candidate =
+        read_u32(bytes + next_descriptor - 0x08U);
+    if (candidate == 0U ||
+        std::any_of(entries.begin(), entries.end(),
+                    [candidate](const PackEntry& entry) {
+                      return entry.identifier == candidate;
+                    })) {
+      return refuse(NtxrRefusal::BadHeader);
+    }
+    const std::optional<NtxrDescriptor> descriptor =
+        parse_descriptor_at(bytes, size, descriptor_base);
+    if (!descriptor.has_value() || descriptor->mip_count != 1U) {
+      return refuse(NtxrRefusal::BadHeader);
+    }
+    const std::size_t payload = single_level_surface_bytes(*descriptor);
+    if (payload == 0U || descriptor->data_offset >
+                             std::numeric_limits<std::size_t>::max() -
+                                 descriptor_base) {
+      return refuse(NtxrRefusal::NotBlockFormat);
+    }
+    const std::size_t data_begin = descriptor_base + descriptor->data_offset;
+    if (data_begin > size || payload > size - data_begin) {
+      return refuse(NtxrRefusal::PayloadSizeMismatch);
+    }
+    entries.push_back(
+        {candidate, descriptor_base, data_begin, data_begin + payload});
+    if (candidate == identifier) {
+      if (selected.has_value()) return refuse(NtxrRefusal::BadHeader);
+      selected = entries.size() - 1U;
+    }
+  }
+  for (std::size_t index = 0U; index + 1U < entries.size(); ++index) {
+    if (entries[index].data_end != entries[index + 1U].data_begin) {
+      return refuse(NtxrRefusal::PayloadSizeMismatch);
+    }
+  }
+  const std::size_t logical_end = entries.back().data_end;
+  if (logical_end > size ||
+      !std::all_of(bytes + logical_end, bytes + size,
+                   [](const std::uint8_t value) { return value == 0U; })) {
+    return refuse(NtxrRefusal::PayloadSizeMismatch);
+  }
+  if (!selected.has_value()) return refuse(NtxrRefusal::IdentifierNotFound);
+  const PackEntry& entry = entries[*selected];
+  return decode_base_level_at(bytes, size, entry.descriptor_base,
+                              entry.data_end, swap_16, refusal);
 }
 
 }  // namespace ac6::retail

@@ -1,4 +1,5 @@
 #include "ac6/sdl_input.h"
+#include "ac6/retail_free_flight_receipt.h"
 #include "test_fixtures.h"
 
 #include <array>
@@ -33,6 +34,13 @@ SDL_Event button_event(const Uint32 type, const SDL_GamepadButton button) {
   SDL_Event event{};
   event.type = type;
   event.gbutton.button = static_cast<Uint8>(button);
+  return event;
+}
+
+SDL_Event key_event(const Uint32 type, const SDL_Scancode key) {
+  SDL_Event event{};
+  event.type = type;
+  event.key.scancode = key;
   return event;
 }
 
@@ -96,5 +104,38 @@ int main() {
   REQUIRE(buttons == 0x1000u);
   REQUIRE((frame == ac6::InputFrame{123, -456, 789, 42u, 0x1000u}));
   REQUIRE(events.empty());
+
+  ac6::InputFrame keyboard_frame{};
+  std::uint16_t keyboard_buttons = 0U;
+  REQUIRE(adapter.apply(key_event(SDL_EVENT_KEY_DOWN, SDL_SCANCODE_F),
+                        keyboard_frame, keyboard_buttons, mappings, kSubject,
+                        events));
+  REQUIRE(keyboard_buttons == 0x0100U);
+  REQUIRE(keyboard_frame.buttons == 0x0100U);
+  REQUIRE(adapter.apply(key_event(SDL_EVENT_KEY_UP, SDL_SCANCODE_F),
+                        keyboard_frame, keyboard_buttons, mappings, kSubject,
+                        events));
+  REQUIRE(keyboard_buttons == 0U);
+  REQUIRE(keyboard_frame.buttons == 0U);
+
+  REQUIRE(!ac6::retail::retail_free_flight_receipt_sample_tick(299U));
+  REQUIRE(ac6::retail::retail_free_flight_receipt_sample_tick(300U));
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(300U) ==
+          ac6::InputFrame{});
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(540U).pitch ==
+          18000);
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(780U).roll ==
+          18000);
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(1020U).yaw ==
+          18000);
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(1260U).throttle ==
+          255U);
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(1500U).buttons ==
+          ac6::retail::kNativeFreeFlightBrakeButton);
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(1800U) ==
+          ac6::InputFrame{});
+  REQUIRE(ac6::retail::retail_free_flight_receipt_sample_tick(3600U));
+  REQUIRE(ac6::retail::native_free_flight_qualification_input(3600U) ==
+          ac6::InputFrame{});
   return 0;
 }

@@ -5,6 +5,7 @@
 // adapter in src (rather than the installed API) makes the dependency explicit
 // and prevents generated/oracle shader output from entering the product.
 #include "../tests/fixtures/vulkan_clip_mesh_spirv.h"
+#include "../tests/fixtures/vulkan_alpha_textured_fragment_spirv.h"
 #include "../tests/fixtures/vulkan_textured_triangle_spirv.h"
 #include "../tests/fixtures/vulkan_world_textured_spirv.h"
 
@@ -20,6 +21,6 @@ inline constexpr const auto& kRetailTexturedFragmentSpirv =
 inline constexpr const auto& kRetailWorldVertexSpirv =
     ac6_test::kWorldTexturedVertexSpirv;
 inline constexpr const auto& kRetailWorldFragmentSpirv =
-    ac6_test::kTexturedTriangleFragmentSpirv;
+    ac6_test::kAlphaTexturedFragmentSpirv;
 
 }  // namespace ac6::retail_cli::detail

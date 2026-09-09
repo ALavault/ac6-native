@@ -52,6 +52,24 @@ constexpr std::array<MediaDescriptor, kRetailMediaAssetCount> kPalDescriptors{{
      "82af039f582d741c574f62060adb1170ee087a2a0fa00fa241d18b846b03adcd"},
 }};
 
+// NTSC-U/J shares the five audio/demo banks with PAL. Its movie pack is a
+// distinct retail asset and is qualified separately rather than silently
+// reusing the PAL identity.
+constexpr std::array<MediaDescriptor, kRetailMediaAssetCount> kNtscUjDescriptors{{
+    {"bgmpack.bin", "RIFF/XMA", 724762624ull,
+     "78db61397696a5c98decc83052a1c36db8f816405b49c9910b689f8ad52c86fa"},
+    {"demopack_eng.bin", "RIFF/XMA", 234217472ull,
+     "31aae3a752b01553f42e63d6654ba0e45867e6962360a2fa5dc7cf3c4392c589"},
+    {"demopack_jpn.bin", "RIFF/XMA", 234455040ull,
+     "70e8159859662cedc98dcc44740b2e21fd93004a861abda77dcb52f36d410501"},
+    {"moviepack.bin", "ASF", 698417152ull,
+     "106cdfdc71d9b92239d14e69d56a70ee7f56aea0994c488ebe75f96ffafc78cc"},
+    {"voicepack_eng.bin", "RIFF/XMA", 279078912ull,
+     "3e1c358714617337e30aef9ebae0b5bf43a7b84342f9d31093b8ec18296e8726"},
+    {"voicepack_jpn.bin", "RIFF/XMA", 327245824ull,
+     "82af039f582d741c574f62060adb1170ee087a2a0fa00fa241d18b846b03adcd"},
+}};
+
 bool read_exact(const std::filesystem::path& path, std::uint64_t offset,
                 std::uint64_t size, std::vector<std::uint8_t>& output) {
   if (size > std::numeric_limits<std::size_t>::max() ||
@@ -168,6 +186,19 @@ RetailMediaPolicy RetailMediaPolicy::pal() {
     policy.assets[i].container = source.container;
     policy.assets[i].size = source.size;
     // Every descriptor is parsed from a complete, measured SHA-256 identity.
+    (void)parse_sha256(source.digest, policy.assets[i].sha256);
+  }
+  return policy;
+}
+
+RetailMediaPolicy RetailMediaPolicy::ntsc_uj() {
+  RetailMediaPolicy policy;
+  policy.required = true;
+  for (std::size_t i = 0; i < policy.assets.size(); ++i) {
+    const auto& source = kNtscUjDescriptors[i];
+    policy.assets[i].filename = source.filename;
+    policy.assets[i].container = source.container;
+    policy.assets[i].size = source.size;
     (void)parse_sha256(source.digest, policy.assets[i].sha256);
   }
   return policy;

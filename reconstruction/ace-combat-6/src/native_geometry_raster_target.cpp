@@ -30,6 +30,7 @@ struct ScreenPoint {
   float ndc_x{};
   float ndc_y{};
   float ndc_z{};
+  float inv_w{};
 };
 
 float dot(Vec3 a, Vec3 b) noexcept {
@@ -119,6 +120,7 @@ bool project_clip_point(const MissionCameraDefinition& camera, Vec3 world,
   screen.ndc_x = ndc_x;
   screen.ndc_y = ndc_y;
   screen.ndc_z = ndc_z;
+  screen.inv_w = 1.0f / w;
   // c218–c221 are Xenos-style homogeneous rows (depth range -1..1),
   // whereas the native depth plane is normalized to [0,1].
   screen.depth = std::clamp(ndc_z * 0.5f + 0.5f, 0.0f, 1.0f);
@@ -198,6 +200,7 @@ bool project_point(const NativeCameraProjection& projection, Vec3 world,
   screen.ndc_x = ndc_x;
   screen.ndc_y = ndc_y;
   screen.ndc_z = screen.depth * 2.0f - 1.0f;
+  screen.inv_w = 1.0f / view_z;
   return true;
 }
 
@@ -208,8 +211,9 @@ struct NativeRenderTarget::ClipVertex {
   float x{};
   float y{};
   float z{};
-  float u{};
-  float v{};
+  float u_over_w{};
+  float v_over_w{};
+  float inv_w{};
 };
 
 struct NativeRenderTarget::GeometryRasterContext {
@@ -538,18 +542,15 @@ std::uint32_t NativeRenderTarget::shade_fragment(const GeometryRasterContext& co
   std::uint32_t sampled = 0;
   const bool has_sample = context.texture_database != nullptr &&
       context.texture_database->sample(texture.mission_id, texture.stable_id, u, v, sampled);
-  const std::uint32_t rgb = (has_sample ? sampled : material.base_color) & 0x00FFFFFFu;
-  const std::uint32_t identity =
-      salt ^ context.texture_salt ^ context.shader_salt ^ context.material_salt;
-  const float gain = 0.78f + static_cast<float>(identity & 0x3Fu) / 256.0f;
-  const auto modulate = [gain](std::uint32_t value) {
-    return static_cast<std::uint32_t>(
-        std::clamp(static_cast<float>(value) * gain, 0.0f, 255.0f));
-  };
-  return (material.base_color & 0xFF000000u) |
-         (modulate((rgb >> 16u) & 0xFFu) << 16u) |
-         (modulate((rgb >> 8u) & 0xFFu) << 8u) |
-         modulate(rgb & 0xFFu);
+  // The native path is now a real texture sample, not a diagnostic colour
+  // hash. Keep the authored RGBA value intact so shader output is stable
+  // across draw order, cache identity and process runs. The salt arguments
+  // remain part of the private ABI for callers that already pass them.
+  (void)salt;
+  (void)context.texture_salt;
+  (void)context.shader_salt;
+  (void)context.material_salt;
+  return has_sample ? sampled : material.base_color;
 }
 
 bool NativeRenderTarget::write_projected_fragment(GeometryRasterContext& context,
@@ -563,6 +564,13 @@ bool NativeRenderTarget::write_projected_fragment(GeometryRasterContext& context
   if (material.depth_test && depth_value >= depth_[pixel]) return false;
   ++metrics.depth_pass_fragments;
   const std::uint32_t shaded = shade_fragment(context, salt, u, v);
+  // Alpha-tested/alpha-blended Xenos surfaces discard a fully transparent
+  // texel before colour, depth or object-id writes. Keeping the fragment in
+  // the depth plane made transparent HUD/FX texels occlude later geometry and
+  // showed up as black/white quads in the native capture.
+  if (material.blend_mode == "alpha" && ((shaded >> 24u) & 0xFFu) == 0u) {
+    return false;
+  }
   if (material.blend_mode == "opaque") {
     color_[pixel] = shaded;
   } else if (material.blend_mode == "alpha") {
@@ -625,7 +633,7 @@ void NativeRenderTarget::rasterize_clipped_triangle(GeometryRasterContext& conte
         std::min(height_ - 1u, static_cast<std::uint32_t>(
                                    (0.5f - safe_y * 0.5f) * static_cast<float>(height_))),
         std::clamp(vertex.z * 0.5f + 0.5f, 0.0f, 1.0f),
-        vertex.x, vertex.y, vertex.z};
+        vertex.x, vertex.y, vertex.z, vertex.inv_w};
   };
   const ScreenPoint a = screen_from_clip(clip_a);
   const ScreenPoint b = screen_from_clip(clip_b);
@@ -661,8 +669,12 @@ void NativeRenderTarget::rasterize_clipped_triangle(GeometryRasterContext& conte
       if (wa < -0.001f || wb < -0.001f || wc < -0.001f) continue;
       ++metrics.inside_fragments;
       const float depth = wa * a.depth + wb * b.depth + wc * c.depth;
-      const float u = wa * clip_a.u + wb * clip_b.u + wc * clip_c.u;
-      const float v = wa * clip_a.v + wb * clip_b.v + wc * clip_c.v;
+      const float inv_w = wa * clip_a.inv_w + wb * clip_b.inv_w + wc * clip_c.inv_w;
+      if (!std::isfinite(inv_w) || inv_w <= 0.000001F) continue;
+      const float u = (wa * clip_a.u_over_w + wb * clip_b.u_over_w +
+                      wc * clip_c.u_over_w) / inv_w;
+      const float v = (wa * clip_a.v_over_w + wb * clip_b.v_over_w +
+                      wc * clip_c.v_over_w) / inv_w;
       (void)write_projected_fragment(context, x, y, depth,
                                      context.drawable->asset ^ context.ordinal ^ salt, u, v);
     }
@@ -691,9 +703,15 @@ bool NativeRenderTarget::rasterize_triangle(GeometryRasterContext& context,
     return true;
   }
   std::array<ClipVertex, 16> polygon{};
-  polygon[0] = {a.ndc_x, a.ndc_y, a.ndc_z, decoded.vertices[ia].u, decoded.vertices[ia].v};
-  polygon[1] = {b.ndc_x, b.ndc_y, b.ndc_z, decoded.vertices[ib].u, decoded.vertices[ib].v};
-  polygon[2] = {c.ndc_x, c.ndc_y, c.ndc_z, decoded.vertices[ic].u, decoded.vertices[ic].v};
+  polygon[0] = {a.ndc_x, a.ndc_y, a.ndc_z,
+                decoded.vertices[ia].u * a.inv_w,
+                decoded.vertices[ia].v * a.inv_w, a.inv_w};
+  polygon[1] = {b.ndc_x, b.ndc_y, b.ndc_z,
+                decoded.vertices[ib].u * b.inv_w,
+                decoded.vertices[ib].v * b.inv_w, b.inv_w};
+  polygon[2] = {c.ndc_x, c.ndc_y, c.ndc_z,
+                decoded.vertices[ic].u * c.inv_w,
+                decoded.vertices[ic].v * c.inv_w, c.inv_w};
   std::size_t polygon_count = 3;
   const auto clip_coordinate = [](const ClipVertex& vertex, std::uint32_t axis) noexcept {
     return axis == 0 ? vertex.x : (axis == 1 ? vertex.y : vertex.z);
@@ -705,8 +723,9 @@ bool NativeRenderTarget::rasterize_triangle(GeometryRasterContext& context,
         left.x + (right.x - left.x) * factor,
         left.y + (right.y - left.y) * factor,
         left.z + (right.z - left.z) * factor,
-        left.u + (right.u - left.u) * factor,
-        left.v + (right.v - left.v) * factor,
+        left.u_over_w + (right.u_over_w - left.u_over_w) * factor,
+        left.v_over_w + (right.v_over_w - left.v_over_w) * factor,
+        left.inv_w + (right.inv_w - left.inv_w) * factor,
     };
   };
   const auto clip_plane = [&](std::uint32_t axis, float boundary, bool keep_greater) {
