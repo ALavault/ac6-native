@@ -17,7 +17,26 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r503 — septième cycle de capture (3 tentatives) : deux blocages
+0. **r504 — huitième cycle de capture (3 tentatives), sous garde VRAM
+   ≥4 Go stricte (règle explicite de l'utilisateur, vérifiée avant
+   chaque tentative — jamais sautée, VRAM stable à 7911 MiB libres
+   tout le cycle).** Toujours aucune donnée fusionnable : les 3
+   tentatives bloquent au MÊME point `sleep(4)` exact que
+   r498/r501/r503, avec une VRAM confortable et constante — ferme
+   l'hypothèse VRAM pour CE blocage spécifique (distinct du crash
+   `SIGABRT`/`EDRAM` de r503, qui lui restait corrélé à une VRAM
+   basse). 3 nuanceurs capturés par la tentative 3 avant interruption,
+   aucun ne correspond aux 3 cibles de r478. Correctif `SIGTERM` de
+   r502 vérifié une troisième fois (aucun processus résiduel après
+   les 3 tentatives). `native/` non touché.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r504-vram-gated-attempts-still-block-at-sleep4-20260909.md`.
+   **Nommé pour r505** : 8 cycles/~19 tentatives, toujours aucune des
+   3 cibles. Le blocage `sleep(4)` répété reste inexpliqué — candidat
+   le plus direct : lecture Ghidra statique de ce qui se passe côté
+   invité pendant cette fenêtre de 4s, jamais tentée.
+
+1. **r503 — septième cycle de capture (3 tentatives) : deux blocages
    `sleep(4)` identiques à r498/r501 (3/9 tentatives sur les 3
    derniers cycles — motif quasi-systématique, pas juste aléatoire)
    PLUS un nouveau mode d'échec jamais vu : crash `SIGABRT`
