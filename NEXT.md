@@ -17,7 +17,26 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r492 — tentative de capture oracle malgré la contention hôte
+0. **r493 — corrige la fuite de groupe de processus `Xvfb`/`ac6recomp`
+   signalée indépendamment par r482 et r492 : `timeout` externe
+   n'exécutait jamais `OracleRun.close()` (qui nettoie correctement
+   via `os.killpg`) car seul `KeyboardInterrupt` était intercepté, pas
+   `SIGTERM`. Gestionnaire `signal.signal(SIGTERM, ...)` ajouté dans
+   `tools/ac6-oracle-run.py::main()`, transforme un `SIGTERM` en
+   `KeyboardInterrupt` pour réutiliser le chemin de nettoyage
+   existant. Vérifié directement : `timeout 15` sur une route qui met
+   largement plus de 15s à atteindre son objectif → aucun processus
+   résiduel après (contraste net avec le comportement documenté par
+   r482/r492). `native/` non touché.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r493-fixes-timeout-process-group-leak-in-ac6-oracle-run-20260909.md`.
+   **Nommé pour r494** : ce correctif rend les futures tentatives de
+   capture plus sûres à répéter (plus de nettoyage manuel après
+   `timeout`), mais ne change rien à la contention hôte elle-même
+   (r489) ni à la friabilité de capture qui en découle. Reste ouvert :
+   les 3 états cibles de r478, toujours non capturés.
+
+1. **r492 — tentative de capture oracle malgré la contention hôte
    confirmée par r489 (décision utilisateur explicite : essayer plutôt
    qu'attendre). Résultat mitigé, aucune donnée fusionnable.** Tentative
    1 (`--display :241`) : les 8/8 étapes de la route exécutées,

@@ -571,13 +571,29 @@ class OracleRun:
             elif operation == "capture":
                 # XAM movies are guest-boundary artefacts.  Host presentation
                 # frames are deliberately outside both recording and replay.
+                if limit:
+                    self.sleep(float(limit))
                 if not (getattr(self.args, "xam_movie_record", False) or
                         getattr(self.args, "xam_movie_replay", None)):
                     self.capture(argument)
             elif operation == "wait":
                 self.wait_log(argument, float(limit))
             elif operation == "wait-pulse":
-                self.wait_log(argument, self.deadline - time.monotonic(), limit)
+                pulse = limit
+                timeout = self.deadline - time.monotonic()
+                if "@" in limit:
+                    pulse, timeout_text = limit.rsplit("@", 1)
+                    timeout = min(timeout, float(timeout_text))
+                self.wait_log(argument, timeout, pulse)
+            elif operation == "sync-log":
+                if argument or limit:
+                    raise RunError("sync-log does not accept arguments")
+                # Route predicates normally search all text accumulated since
+                # the previous wait. At an input boundary, explicitly discard
+                # that history so the following wait can only match a guest
+                # event emitted after the edge.
+                self.pending_log_text = ""
+                self.new_log_text()
             elif operation == "present":
                 start = self.present_count()
                 target = start + int(argument)
@@ -703,7 +719,21 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _raise_keyboard_interrupt_on_sigterm(signum: int, frame: object) -> None:
+    # `timeout(1)` sends SIGTERM to this process only, never to Xvfb/the
+    # game (both launched with start_new_session=True, so they sit in a
+    # detached process group `timeout` never reaches). Python's default
+    # SIGTERM disposition terminates immediately without unwinding, so the
+    # `finally: runner.close()` below -- which calls terminate_owned() and
+    # does reach the whole group via os.killpg -- never ran, leaving Xvfb
+    # and the game alive and still logging well past the deadline (found
+    # independently by two campaign cycles). Re-raising as KeyboardInterrupt
+    # reuses the exact cleanup path already in place for Ctrl-C.
+    raise KeyboardInterrupt
+
+
 def main() -> int:
+    signal.signal(signal.SIGTERM, _raise_keyboard_interrupt_on_sigterm)
     arguments = parse_args()
     try:
         arguments.display = normalize_display(arguments.display)
