@@ -542,6 +542,10 @@ def main() -> int:
         help="disable culling only for D5B4 while retaining final-white and depth bypass",
     )
     parser.add_argument(
+        "--mission-dump-shaders", action="store_true",
+        help="diagnostic only: dump shaders on a bounded diagnostic route, independent of D5B4 final-white",
+    )
+    parser.add_argument(
         "--mission-stock-deswizzle", action="store_true",
         help="diagnostic only: disable the AC6 manual de-swizzle fix for one visual comparison",
     )
@@ -580,6 +584,8 @@ def main() -> int:
         parser.error("--mission-d5b4-depth-bypass requires --mission-d5b4-final-white")
     if arguments.mission_d5b4_cull_bypass and not arguments.mission_d5b4_depth_bypass:
         parser.error("--mission-d5b4-cull-bypass requires --mission-d5b4-depth-bypass")
+    if arguments.mission_dump_shaders and arguments.diagnostic_route is None:
+        parser.error("--mission-dump-shaders requires --diagnostic-route")
     if arguments.mission_stock_deswizzle and arguments.diagnostic_route is None:
         parser.error("--mission-stock-deswizzle requires --diagnostic-route")
     if arguments.mission_stock_water_gradients and arguments.diagnostic_route is None:
@@ -1021,6 +1027,8 @@ def main() -> int:
                     "--ac6_d5b4_final_white=true",
                     f"--dump_shaders={self.args.output / 'shader-dump'}",
                 ])
+            if arguments.mission_dump_shaders and not arguments.mission_d5b4_final_white:
+                command.append(f"--dump_shaders={self.args.output / 'shader-dump'}")
             if arguments.mission_d5b4_depth_bypass:
                 command.append("--ac6_d5b4_depth_stencil_bypass=true")
             if arguments.mission_d5b4_cull_bypass:

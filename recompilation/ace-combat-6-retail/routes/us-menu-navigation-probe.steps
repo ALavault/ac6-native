@@ -1,0 +1,20 @@
+# Bounded US menu-navigation diagnostic (r481). Extends
+# us-pretype28-startup.steps through the game-data-browser selection screen,
+# mirroring the first 13 lines of the sealed mission01-qualified-96.steps
+# route exactly (same keys/waits), to probe whether a highlighted/selected
+# menu cursor draws with a different primitive_type than the static title
+# screen. Stops before any hangar/deploy/gameplay step.
+key	Escape	0.1
+sleep	2
+key	space	0.1
+wait-pulse	type28=30	Escape+space
+capture	type28-30
+sleep	1
+key	space	0.1
+wait	type28=[^ ]*37	20
+key	Left	0.1
+key	space	0.1
+wait	type28=[^ ]*35	20
+key	space	0.1
+wait	selector44=[^ ]*3	20
+capture	game-data-browser

@@ -1,3 +1,45 @@
+# AC6 retail US — reprise r490
+
+R488/r489 : les A/B profondeur+format atteignent la résolution ; le blit
+dimensionnel permet cinq PRESENT, mais la capture reste `non_black=0`.
+Les rectangles ont une cible 640x4096, MSAA4, masque 0xf ; les points ont
+masque 0. Lire `reports/ac6-retail-native-r488-r489-black-screen-20260909.md`.
+Qualifier la sortie pixel du rectangle et le mapping EDRAM avant toute
+intégration des contournements. Aucun gameplay prouvé.
+
+---
+
+# AC6 retail NTSC-U/J — Gate 2 runtime natif (chaîne r454-r481, `reports/ac6-retail-native-codegen-gate2-r*`)
+
+**Piste séparée, même dépôt, coordonnée pour ne PAS toucher `native/`
+pendant que la chaîne ci-dessus (r488+) y a des modifications non
+committées en cours.** Voir
+`reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
+ci-dessus (r488+) ; cette section ne le remplace pas.
+
+0. **r481 — piste A reprise (décision utilisateur explicite) : nouveau
+   drapeau `--mission-dump-shaders` (`run_gate.py`, découplé de D5B4)
+   confirme par une méthode de capture indépendante la même paire
+   (nuanceur, modification) manquante déjà nommée par r477/r478 ; le
+   troisième nuanceur cible (`4dd456c4ea0923c1`) reste introuvable ;
+   une route diagnostique étendue vers le sélecteur de sauvegarde
+   (`routes/us-menu-navigation-probe.steps`) échoue par un blocage
+   « movie worker » non investigué. AUCUN fichier sous `native/`
+   touché ce cycle (vérifié `git status`).**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r481-decoupled-dump-shaders-diagnostic-route-confirms-structural-mismatch-independently-native-unchanged-20260909.md`.
+   **Nommé pour r482** : (1) déboguer le blocage « movie worker » de
+   la route de navigation menu (lecture de code requise, pas une
+   supposition) ; (2) une fois `native/` confirmé calme côté chaîne
+   r488+, fusionner les traductions de ce cycle (aucune des 3 cibles,
+   1 nuanceur réellement nouveau, bénéfice marginal) ; (3) envisager
+   la route scellée complète avec `--mission-dump-shaders`, coûteuse
+   en budget oracle (573s+), non tentée ce cycle.
+
+---
+
+# Historique complet r454-r482 (chaîne `ac6-retail-native-codegen-gate2-r*`, préservé — écrasé sur disque par une édition externe entre r482 et r488, restauré ici depuis le commit 99a6a769)
+
 # AC6 retail NTSC-U/J — Gate 2 runtime natif
 
 0. **r482 — piste C (plan approuvé, DERNIÈRE piste) : garde-fou HUD ajouté et vérifié — le plan `groovy-beaming-book.md` est maintenant ENTIÈREMENT exécuté (Piste A en pause documentée, Piste B committée, Piste C committée).** Nouvelle section `CLAUDE.md` (« HUD pixels need a retail draw, not a hand-picked rectangle ») + `tools/audit_hud_geometry_citations.py` (patron des ~55 audits existants), committés en `c6a242a3` avec le rapport dédié. `reconstruction/ace-combat-6/{include/ac6,src}/native_hud_gpu_overlay.{h,cpp}` marqués par une citation d'en-tête vers `reports/ac6-native-visual-shader-hud-20260829.md` mais laissés non suivis (les committer entremêlerait le lien `CMakeLists.txt`, dans l'arriéré massif non lié de `reconstruction/ace-combat-6`, hors périmètre). Fait notable trouvé en chemin : la copie de travail de ce `CMakeLists.txt` référence déjà le `.cpp`, mais **`HEAD` ne le référence pas du tout** — pas de rupture de build latente pour un clone frais aujourd'hui. `git diff c6a242a3` confirmé HUD-only (pas de contenu `CLAUDE.md` étranger balayé malgré le `M CLAUDE.md` préexistant en début de session). Le fichier de scratch orphelin nommé par r481 (`native_vulkan_backend.cpp.new_header_part`) a été inspecté (brouillon d'en-tête superseded, non référencé par aucun `CMakeLists.txt`/build) et supprimé.**
