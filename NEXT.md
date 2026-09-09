@@ -17,7 +17,43 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r506 — test empirique d'un délai de 900s (15 min, 3,75x le
+0. **r507 — découverte majeure : une investigation antérieure massive
+   (~80 cycles, `artifacts/retail-us-native-r279` à `r358`, bien
+   avant la chaîne r454+) a déjà caractérisé ET corrigé EXACTEMENT le
+   symptôme de r506 (une image puis blocage total), mais côté
+   produit `native`, pas `rexglue-oracle`.** Cause racine exacte
+   trouvée par cette chaîne : le thread principal invité tient un
+   verrou de section critique du tas (`0x10000610`, récursion mesurée
+   à 359 943 sur 8+ lancements) sans jamais le relâcher avant d'entrer
+   dans l'attente du signal d'un thread ouvrier qui a lui-même besoin
+   de ce même verrou — un déséquilibre `Enter`/`Leave` dans
+   `sub_821FA6F8` causé par un artefact de génération de code
+   XenonRecomp (épilogue retail partagé entre deux fonctions
+   synthétiques adjacentes, dupliqué au lieu d'un saut inter-fonction,
+   perdant l'appel `Leave` sur l'une des deux copies). Corrigé en
+   r358 (`tools/apply_sub_821fa6f8_leave_fix.py`, sur décision
+   utilisateur explicite) — vérifié (`recursion=4` au lieu de
+   `359943`). **Ce correctif NE se transpose PAS au produit
+   `rexglue-oracle`** : lu directement dans
+   `xboxkrnl_rtl.cpp:382/432/625-630`, ReXGlue exécute le code
+   machine PowerPC réel via des hooks d'export XBOXKRNL, pas une
+   retraduction C++ statique par fonction — le concept même du bug
+   (duplication d'épilogue XenonRecomp) n'existe pas pour un
+   interpréteur. r487/r488 (sondage movie-worker non bloquant) ne
+   sont PAS corrigés — le parallèle natif (r301 : ~15/29 threads en
+   sondage actif normal, le vrai coupable étant un thread différent,
+   authentiquement parqué) confirme et renforce leur conclusion.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r507-prior-native-stall-investigation-does-not-directly-transfer-to-oracle-hybrid-20260909.md`.
+   **Nommé pour r508** : reproduire la technique d'échantillonnage OS
+   de r301 (`/proc/$PID/task/*/{stat,wchan}`, pas de gdb, pas de
+   `timeout` externe) directement sur un lancement `rexglue-oracle`
+   bloqué après sa première image, pour trouver le thread réellement
+   parqué (si un tel thread existe) plutôt que de seulement constater
+   que le movie-worker tourne. Les 3 états cibles de r478 restent non
+   capturés.
+
+1. **r506 — test empirique d'un délai de 900s (15 min, 3,75x le
    standard 240s) sur `routes/us-pretype28-startup.steps` : ÉCHOUE
    AUSSI, contredisant l'hypothèse « juste lent » de r505.** Le
    journal (229 577 lignes, 14min19s de trace) montre UNE SEULE
