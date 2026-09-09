@@ -17,7 +17,26 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r495 — troisième cycle consécutif (r492, r494, r495) d'essais
+0. **r496 — quatrième cycle consécutif (r492, r494, r495, r496) échoue
+   à capturer les 3 états cibles, malgré une charge hôte mesurée
+   PLUS BASSE (31-35) qu'aucun cycle précédent. Les deux tentatives
+   échouent PLUS TÔT que les cycles précédents (avant même le premier
+   `wait-pulse`, en pleine création de threads invités) — contredit
+   l'hypothèse simple « charge basse ⇒ capture réussie » établie par
+   r489 sur seulement 2 échantillons. Correctif SIGTERM r493/r494
+   vérifié une quatrième fois, aucun processus résiduel. Aucune
+   fusion.**
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r496-fourth-consecutive-capture-cycle-fails-recommends-a-strategy-change-20260909.md`.
+   **Nommé pour r497** : recommandation explicite de CHANGER DE
+   STRATÉGIE plutôt que retenter une cinquième fois — soit profiler
+   finement la ressource réellement contendue (`vmstat`/`iostat`/`pidstat`
+   en continu pendant un essai, pas juste `uptime` avant lancement),
+   soit revenir à l'investigation statique (lecture du code d'arrêt
+   `AudioRuntime` trouvé par r495, jamais lu). 8 tentatives bornées au
+   total sur 4 cycles, 0 capture des 3 états cibles.
+
+1. **r495 — troisième cycle consécutif (r492, r494, r495) d'essais
    bornés (2 tentatives max) échoue à capturer les 3 états cibles,
    sous une charge hôte 33-34 (la plus basse observée, toujours
    élevée). Tentative 1 : timeout complet, aucune donnée. Tentative
