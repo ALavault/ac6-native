@@ -17,7 +17,28 @@ committées en cours.** Voir
 `reports/handoff/CURRENT.json` pour le pointeur actif de LA chaîne
 ci-dessus (r488+) ; cette section ne le remplace pas.
 
-0. **r502 — corrige le bug de nettoyage `SIGTERM` ré-entrant trouvé
+0. **r503 — septième cycle de capture (3 tentatives) : deux blocages
+   `sleep(4)` identiques à r498/r501 (3/9 tentatives sur les 3
+   derniers cycles — motif quasi-systématique, pas juste aléatoire)
+   PLUS un nouveau mode d'échec jamais vu : crash `SIGABRT`
+   (`Failed to create the EDRAM buffer`) corrélé directement à
+   16075/24467 MiB de VRAM déjà utilisés par un job CUDA externe au
+   moment du crash — première fois qu'un lien concret (message
+   d'erreur + mesure VRAM immédiate) est établi, pas juste une
+   corrélation de charge.** Correctif `SIGTERM` de r502 vérifié
+   fonctionnel en usage réel (aucun processus résiduel après 2
+   timeouts). 3 nuanceurs capturés (tentative 2b), tous déjà connus
+   depuis r479, aucun des 3 états cibles de r478. `native/` non
+   touché.
+   Voir
+   `reports/ac6-retail-native-codegen-gate2-r503-third-failure-mode-edram-vram-crash-20260909.md`.
+   **Nommé pour r504** : (1) corréler VRAM libre et succès/échec de
+   façon systématique — piste la plus concrète trouvée à ce jour ;
+   (2) lire directement le code source au point `sleep(4)` plutôt
+   que d'autres tentatives aveugles. Les 3 états cibles restent non
+   capturés après 7 cycles/~18 tentatives.
+
+1. **r502 — corrige le bug de nettoyage `SIGTERM` ré-entrant trouvé
    par r501 (troisième bug dans cette chaîne de nettoyage : r493
    jamais appelé, r494 mauvais endroit, r502 ré-entrant).** Le
    gestionnaire pose `signal.SIG_IGN` comme première action avant de
