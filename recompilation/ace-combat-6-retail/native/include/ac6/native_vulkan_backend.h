@@ -75,6 +75,63 @@ class VulkanBackend final {
 // UpdateSystemConstants derivation for the fields the pinned shaders read;
 // every constant block is raw guest register words elsewhere. Anything not
 // covered (texture sets 2/3, push constants, memexport) fails closed.
+// r523: untiles a 2D tiled DXT4_5 (BC3, 16-byte blocks) surface into
+// linear block-row-major bytes, applying the fetch endianness per
+// CopySwapBlock semantics (0 = none, 1 = 8-in-16 pairs, 2 = 8-in-32
+// words). Tiled math per the cited Xenos 2D rules (32x32-block tiles,
+// GetTiledOffset2D). Fail-closed on zero/oversize dims, pitch below
+// width or off the 32-block grid, other endianness, and short source.
+// Free function (no device) so unit tests cover it without a runtime.
+bool untile_tiled_dxt45_2d(const std::uint8_t* tiled_bytes,
+                           std::uint64_t tiled_size,
+                           std::uint32_t width_blocks,
+                           std::uint32_t height_blocks,
+                           std::uint32_t pitch_blocks,
+                           std::uint32_t endianness,
+                           std::vector<std::uint8_t>& linear_out) noexcept;
+
+// r524: block geometry + conservative tiled footprint for a 2D BC3
+// surface (width/height texels, pitch pixels): blocks are 4x4 texels,
+// footprint upper-bounds the tile grid covering pitch x height
+// (16 KiB per 32x32-block tile, tile-row-major per the cited rules).
+// Fail-closed on the same bounds untile enforces. No device needed.
+bool tiled_dxt45_layout(std::uint32_t width_pixels, std::uint32_t height_pixels,
+                        std::uint32_t pitch_pixels, std::uint32_t& width_blocks,
+                        std::uint32_t& height_blocks,
+                        std::uint32_t& pitch_blocks,
+                        std::uint64_t& linear_bytes,
+                        std::uint64_t& footprint_bytes) noexcept;
+
+// Untiles a 2D tiled DXT1 (BC1, 8-byte blocks) surface into linear
+// block-row-major bytes.  Same tiling rules as DXT4_5 but with
+// bytes_per_block_log2 = 3 (8 KiB per 32x32-block macro tile).
+bool untile_tiled_dxt1_2d(const std::uint8_t* tiled_bytes,
+                          std::uint64_t tiled_size,
+                          std::uint32_t width_blocks,
+                          std::uint32_t height_blocks,
+                          std::uint32_t pitch_blocks,
+                          std::uint32_t endianness,
+                          std::vector<std::uint8_t>& linear_out) noexcept;
+
+bool tiled_dxt1_layout(std::uint32_t width_pixels, std::uint32_t height_pixels,
+                       std::uint32_t pitch_pixels, std::uint32_t& width_blocks,
+                       std::uint32_t& height_blocks,
+                       std::uint32_t& pitch_blocks,
+                       std::uint64_t& linear_bytes,
+                       std::uint64_t& footprint_bytes) noexcept;
+
+// r526: quad-list index expansion ([a,b,c,d] -> [a,b,c,a,c,d] per
+// quad) as a single run: triangle lists have no bridging primitives,
+// so no restart splitting. The words form takes host-order guest
+// index values and refuses primitive restarts (fail-closed: a restart
+// has no meaning inside one list draw); the auto form numbers verts
+// sequentially. Both fail closed on zero/remainder/over-bound counts.
+// Free functions (no device) so unit tests cover them directly.
+bool expand_quad_list_auto(std::uint32_t index_count,
+                           std::vector<std::uint32_t>& out) noexcept;
+bool expand_quad_list_words(std::span<const std::uint32_t> guest_indices,
+                            std::vector<std::uint32_t>& out) noexcept;
+
 class PinnedShaderRuntime final {
  public:
   explicit PinnedShaderRuntime(const VulkanDevice& device) noexcept;
@@ -90,6 +147,11 @@ class PinnedShaderRuntime final {
   // byte-swap the fetched data themselves.
   bool write_shared_memory(std::uint64_t dword_address,
                            std::span<const std::uint8_t> bytes) noexcept;
+  // Byte-addressed form for registered allocation ranges, which need not
+  // start at a dword boundary. Returns false with error() on an unmapped
+  // buffer or a range outside the SSBO; no bytes are copied on failure.
+  bool write_shared_memory_bytes(std::uint64_t byte_address,
+                                 std::span<const std::uint8_t> bytes) noexcept;
   [[nodiscard]] std::uint64_t shared_memory_dwords() const noexcept {
     return shared_memory_dwords_;
   }
@@ -131,6 +193,15 @@ class PinnedShaderRuntime final {
     std::uint64_t texture_layout_signature;
     std::uint32_t sample_count{1u};
     std::uint32_t color_mask{0xFu};
+    // r490 depth/stencil pipeline state: the VkPipelineDepthStencilState-
+    // bearing subset. depth_format 0 = no depth attachment bound (guest
+    // DepthRenderTargetFormat 1 when bound). The packed stencil word is
+    // ref | mask << 8 | write_mask << 16 from RB_STENCILREFMASK; op words
+    // pack the guest compare/op values that map mechanically to Vulkan.
+    std::uint32_t depth_format{0u};
+    std::uint32_t depth_flags{0u};
+    std::uint32_t depth_op_word{0u};
+    std::uint32_t stencil_state{0u};
     bool operator==(const PipelineKey&) const noexcept = default;
   };
   struct PipelineKeyHash final {
@@ -146,6 +217,14 @@ class PinnedShaderRuntime final {
               (seed << 6) + (seed >> 2);
       seed ^= std::hash<std::uint32_t>{}(key.color_mask) + 0x9e3779b97f4a7c15ull +
               (seed << 6) + (seed >> 2);
+      seed ^= std::hash<std::uint32_t>{}(key.depth_format) + 0x9e3779b97f4a7c15ull +
+              (seed << 6) + (seed >> 2);
+      seed ^= std::hash<std::uint32_t>{}(key.depth_flags) + 0x9e3779b97f4a7c15ull +
+              (seed << 6) + (seed >> 2);
+      seed ^= std::hash<std::uint32_t>{}(key.depth_op_word) + 0x9e3779b97f4a7c15ull +
+              (seed << 6) + (seed >> 2);
+      seed ^= std::hash<std::uint32_t>{}(key.stencil_state) + 0x9e3779b97f4a7c15ull +
+              (seed << 6) + (seed >> 2);
       return seed;
     }
   };
@@ -160,6 +239,9 @@ class PinnedShaderRuntime final {
                        std::uint64_t texture_layout_signature,
                        VkDescriptorSetLayout texture_layout,
                        std::uint32_t sample_count, std::uint32_t color_mask,
+                       VkFormat depth_format, std::uint32_t depth_flags,
+                       std::uint32_t depth_op_word,
+                       std::uint32_t stencil_state,
                        VkPipeline& pipeline_out) noexcept;
   // The register-driven EDRAM render target (r257): RB_MODECONTROL,
   // RB_SURFACE_INFO, RB_COLOR_INFO, RB_COLOR_MASK, RB_DEPTHCONTROL and the
@@ -175,19 +257,34 @@ class PinnedShaderRuntime final {
     std::uint32_t height{};
     std::uint32_t image_width{};
     std::uint32_t image_height{};
-    // RB_SURFACE_INFO bits 16:17 (r459): 1, 2 or 4. The tile origin/pitch
-    // math above is NOT adjusted for sample_count > 1 -- it is unverified
-    // against retail or oracle evidence whether RB_SURFACE_INFO's pitch
-    // field already accounts for the sample count or needs a host-side
-    // adjustment; see native_vulkan_backend.cpp's derive_edram_render_target
-    // comment. Included in operator== so a sample-count change alone
-    // invalidates the cached EDRAM surface and forces a fresh clear.
+    // RB_SURFACE_INFO bits 16:17 (r459): 1, 2 or 4. The tile pitch follows
+    // the oracle's GetSurfacePitchTiles (r490): the guest pitch is in pixels
+    // and shifts by one sample bit at 4x MSAA (2x unchanged), so no
+    // host-side sample-count guess remains. Included in operator== so a
+    // sample-count change alone invalidates the cached EDRAM surface and
+    // forces a fresh clear.
     std::uint32_t sample_count{1u};
     // RB_COLOR_MASK bits 0:3 (r460): R=bit0, G=bit1, B=bit2, A=bit3.
     // Translated directly to VkPipelineColorBlendAttachmentState's
     // colorWriteMask -- a mechanical bit-order-preserving mapping, unlike
     // sample_count's EDRAM tile geometry question.
     std::uint32_t color_mask{0xFu};
+    // r490 depth surface (RB_DEPTH_INFO 0x2002 + RB_DEPTHCONTROL): base
+    // tiles share the color surface's tile-pitched mapping; the guest depth
+    // format is 0 (D24S8) or 1 (D24FS8, fail-closed this cycle). Included
+    // in operator== for the depth clear policy. The color clear policy
+    // separately ignores depth and channel-mask changes (r572).
+    std::uint32_t depth_base_tiles{};
+    std::uint32_t depth_format{};
+    std::uint32_t depth_origin_x{};
+    std::uint32_t depth_origin_y{};
+    // r491: the depth region clamps to the depth surface's own image
+    // bounds (the same per-surface clamp real hardware applies to a
+    // nominally larger scissor), which may be smaller than the color
+    // region when the depth base sits low in the tile grid.
+    std::uint32_t depth_width{};
+    std::uint32_t depth_height{};
+    bool depth_enable{false};
     bool operator==(const EdramRenderTarget&) const noexcept = default;
   };
   bool derive_edram_render_target(const XenosState& state,
@@ -198,11 +295,53 @@ class PinnedShaderRuntime final {
   // compatible with the UNORM target, so the clear/load pass pair is
   // cached per format (r268).
   static VkFormat edram_image_format(std::uint32_t color_format) noexcept;
+  // r490: the guest depth format (0 = D24S8, 1 = D24FS8) maps to a host
+  // depth-stencil attachment format; VK_FORMAT_UNDEFINED when no depth
+  // surface is bound. D24FS8 stores 20e4 [0,2) floats on the guest; the
+  // host attachment keeps plain fp32 depth, which is unobservable while
+  // every qualified draw's zfunc is ALWAYS (values are never read) and is
+  // a recorded divergence for any later depth-reading configuration.
+  static VkFormat edram_depth_image_format(std::uint32_t depth_format) noexcept;
   bool ensure_edram_passes(VkFormat format, std::uint32_t sample_count,
-                           VkRenderPass& clear_out,
+                           VkFormat depth_format, VkRenderPass& clear_out,
                            VkRenderPass& load_out) noexcept;
+  // The depth-only pass pair (r491): color LOAD/store untouched, depth
+  // CLEAR (first draw on the target) or LOAD. Used when the depth base
+  // differs from the color base, so depth content lands at the depth
+  // surface's own tile origin.
+  bool ensure_edram_depth_passes(VkFormat format, std::uint32_t sample_count,
+                                 VkFormat depth_format,
+                                 VkRenderPass& clear_out,
+                                 VkRenderPass& load_out) noexcept;
+  // region_width/height clamp the resolved EDRAM window: draws use the
+  // target's own region (r490), PRESENT uses the swap dimensions at the
+  // surface origin.
   bool resolve_edram_to_target(VulkanOffscreenTarget& target,
-                               const EdramRenderTarget& rt) noexcept;
+                               const EdramRenderTarget& rt,
+                               std::uint32_t region_width,
+                               std::uint32_t region_height) noexcept;
+  // Diagnostic-only (r490, env-gated): read back the resolved present
+  // target and report the non-black pixel count and bounding box, so a
+  // black capture distinguishes "no pixels drawn" from "pixels drawn
+  // outside the resolved window".
+  void probe_present_pixels(VulkanOffscreenTarget& target,
+                            std::uint64_t present_index) noexcept;
+  // Diagnostic-only (r492, env-gated): resolve the multisample EDRAM image
+  // into its 1x companion (or read the 1x image directly) and report the
+  // non-black pixel count and bounding box across the whole tile-pitched
+  // image, so a black draw can be traced to its actual write location.
+  void probe_edram_image(const EdramRenderTarget& rt) noexcept;
+  // Diagnostic-only (r492, env-gated): read back the depth surface's
+  // stencil (and depth) content after a depth-enabled draw. A non-zero
+  // stencil byte (guest zpass REPLACE) or non-default depth value proves
+  // fragments were actually rasterized, splitting "no fragments" from
+  // "fragments with black pixel-shader output".
+  void probe_depth_surface(const EdramRenderTarget& rt) noexcept;
+  // Staging buffer for the EDRAM image probe; allocated on first use.
+  VkBuffer probe_buffer_{VK_NULL_HANDLE};
+  VkDeviceMemory probe_memory_{VK_NULL_HANDLE};
+  std::uint8_t* probe_mapped_{nullptr};
+  VkDeviceSize probe_size_{};
   // The EDRAM surface is created lazily per tile pitch (see
   // ensure_edram_surface); draws render into its register-driven region.
   bool draw_pinned(VulkanOffscreenTarget& target, const XenosState& state,
@@ -252,8 +391,10 @@ class PinnedShaderRuntime final {
       std::span<const std::uint32_t> spirv,
       std::vector<PixelTextureBinding>& bindings_out) noexcept;
   // Decodes the guest texture fetch constant (registers 0x4800 + 6*index)
-  // and validates it against the bounded subset (kTexture, linear, k_8_8_8_8,
-  // unsigned signs, 2D, single mip, point/linear filters).
+  // and validates it against the bounded subset (kTexture, linear,
+  // k_8_8_8_8, unsigned signs, 2D, single mip, point/linear filters;
+  // plus tiled DXT4_5/BC3 and tiled DXT1/BC1, unpacked,
+  // identity-swizzled, 2D).
   struct PixelTexture final {
     std::uint32_t fetch_constant{};
     std::uint32_t width{};
@@ -266,6 +407,11 @@ class PinnedShaderRuntime final {
     VkFilter filter{};
     VkSamplerAddressMode address_x{};
     VkSamplerAddressMode address_y{};
+    // r523: tiled DXT4_5 (BC3) class. Decoded (dimensions, address,
+    // sampler state) but not yet uploaded — the upload path still
+    // fails closed on it with a named message.
+    bool tiled_dxt45{false};
+    bool tiled_dxt1{false};
   };
   bool decode_pixel_texture(const XenosState& state,
                             std::uint32_t fetch_constant,
@@ -356,6 +502,10 @@ class PinnedShaderRuntime final {
     std::uint32_t height{};
     std::uint32_t layers{1u};
     bool cube_view{false};
+    // r524: BC3/BC1 vs RGBA8 image/view format; a slot is recreated when
+    // the format class changes.
+    bool bc3{false};
+    bool bc1{false};
     VkImageLayout layout{VK_IMAGE_LAYOUT_UNDEFINED};
     bool valid{false};
     bool upload_needed{false};
@@ -392,20 +542,38 @@ class PinnedShaderRuntime final {
   VkImage edram_resolve_image_{VK_NULL_HANDLE};
   VkDeviceMemory edram_resolve_memory_{VK_NULL_HANDLE};
   VkImageView edram_resolve_view_{VK_NULL_HANDLE};
+  // r490 depth surface: separate image/view in the same tile-pitched EDRAM
+  // geometry, attached to the render pass only when the draw's
+  // RB_DEPTHCONTROL enables depth or stencil.
+  VkImage edram_depth_image_{VK_NULL_HANDLE};
+  VkDeviceMemory edram_depth_memory_{VK_NULL_HANDLE};
+  VkImageView edram_depth_view_{VK_NULL_HANDLE};
   VkFramebuffer edram_framebuffer_{VK_NULL_HANDLE};
+  // r491: color-only framebuffer for the color pass of a two-pass draw
+  // (depth base differs from the color base); the combined framebuffer is
+  // used by the depth-only pass.
+  VkFramebuffer edram_color_framebuffer_{VK_NULL_HANDLE};
   struct EdramPasses final {
     VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
     std::uint32_t samples{1u};
+    VkFormat depth_format{VK_FORMAT_UNDEFINED};
     VkRenderPass clear{VK_NULL_HANDLE};
     VkRenderPass load{VK_NULL_HANDLE};
+    VkRenderPass depth_clear{VK_NULL_HANDLE};
+    VkRenderPass depth_load{VK_NULL_HANDLE};
   };
-  EdramPasses edram_passes_[4]{};
+  EdramPasses edram_passes_[8]{};
   std::uint32_t edram_pass_count_{0u};
   EdramRenderTarget edram_surface_dims_{};
   EdramRenderTarget edram_active_rt_{};
   bool edram_rt_valid_{false};
   std::uint64_t resolve_count_{};
   std::uint64_t last_pixel_modification_{};
+  // r570: correlate at most four sampled textured draws with their next swap.
+  std::uint64_t r570_pending_present_draw_{};
+  // r571/r573: only the first sampled texture-to-swap interval, at most 128 draws.
+  std::uint64_t r571_chain_start_draw_{};
+  bool r571_chain_closed_{};
   std::unordered_map<std::uint64_t, VkShaderModule> shader_modules_[2];
   std::unordered_map<PipelineKey, VkPipeline, PipelineKeyHash> pipelines_;
   std::uint64_t present_count_{};

@@ -9,14 +9,9 @@ namespace ac6::native {
 namespace {
 constexpr int kMaxUsers = 4;
 
-// r474: a probe-only, env-var-gated synthetic pad on user slot 0, for
-// AC6_NATIVE_ALLOW_ENTRY_PROBE runs in a headless sandbox with no real
-// SDL controller. Pulses the A button on a fixed 60Hz-tick duty cycle
-// (held for the first half of every window, released for the second) so
-// an unknown confirmation screen (e.g. the "Deploy with this selection?"
-// dialog run_gate.py's oracle route needed an explicit A for, r470) gets
-// a chance to advance without needing to know its exact tick offset.
-// Default OFF: get_state()/is_connected() are unchanged unless set.
+// Probe-only synthetic pad on slot 0. A is held for fifteen successful
+// get_state calls, then released for fifteen; this counts input polls,
+// not wall-clock or 60 Hz ticks. The default uses real SDL controllers.
 bool fake_pad_enabled() noexcept {
   return std::getenv("AC6_NATIVE_INPUT_AUTO_CONFIRM") != nullptr;
 }
@@ -69,8 +64,8 @@ bool NativeGuestInputService::get_state(std::uint32_t user_index,
                                         GamepadState& state) noexcept {
   if (user_index == 0u && fake_pad_enabled()) {
     std::lock_guard<std::mutex> lock(mutex_);
-    constexpr std::uint32_t kWindowTicks = 30u;  // ~0.5s at 60Hz
-    const bool press = (packet_number_ % kWindowTicks) < (kWindowTicks / 2u);
+    constexpr std::uint32_t kWindowPolls = 30u;
+    const bool press = (packet_number_ % kWindowPolls) < (kWindowPolls / 2u);
     state = GamepadState{};
     state.buttons = press ? kButtonA : 0u;
     state.packet_number = ++packet_number_;

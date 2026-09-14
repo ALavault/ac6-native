@@ -180,9 +180,11 @@ constexpr std::uint32_t kRegRbColorControl = 0x2202u;
 constexpr std::uint32_t kRegPaSuPointMinmax = 0x2281u;
 constexpr std::uint32_t kRegPaSuPointSize = 0x2280u;
 constexpr std::uint32_t kRegRbColorInfo = 0x2001u;
+constexpr std::uint32_t kRegRbDepthInfo = 0x2002u;
 constexpr std::uint32_t kRegRbSurfaceInfo = 0x2000u;
 constexpr std::uint32_t kRegRbDepthControl = 0x2200u;
 constexpr std::uint32_t kRegRbColorMask = 0x2104u;
+constexpr std::uint32_t kRegRbStencilRefMask = 0x210Du;
 constexpr std::uint32_t kRegRbModeControl = 0x2208u;
 constexpr std::uint32_t kRegPaScScreenScissorTL = 0x200Eu;
 constexpr std::uint32_t kRegPaScScreenScissorBR = 0x200Fu;
@@ -255,6 +257,29 @@ constexpr std::uint32_t kSysFlagPrimitiveLine = 1u << 12u;
 constexpr std::uint32_t kAlphaPassIfLessShift = 16u;
 constexpr std::uint32_t kCompareFunctionAlways = 7u;
 
+// r490: the guest CompareFunction and VkCompareOp enums share one order
+// (never, less, equal, less-equal, greater, not-equal, greater-equal,
+// always), so the mapping is a pure renumber. Same for StencilOp and
+// VkStencilOp (keep, zero, replace, increment-clamp, decrement-clamp,
+// invert, increment-wrap, decrement-wrap).
+[[nodiscard]] VkCompareOp vk_compare_op(std::uint32_t guest_func) noexcept {
+  return static_cast<VkCompareOp>(guest_func);
+}
+
+[[nodiscard]] VkStencilOp vk_stencil_op(std::uint32_t guest_op) noexcept {
+  return static_cast<VkStencilOp>(guest_op);
+}
+
+// Color formats carry different component counts (the oracle's
+// GetColorRenderTargetFormatComponentCount): k_32_FLOAT stores one
+// component, every other qualified format stores four. The write mask is
+// clamped to the components the attachment actually has (Vulkan rejects
+// colorWriteMask bits for non-existent components).
+[[nodiscard]] std::uint32_t color_format_component_mask(
+    std::uint32_t color_format) noexcept {
+  return color_format == 14u ? 0x1u : 0xFu;
+}
+
 [[nodiscard]] VkPrimitiveTopology topology_of(std::uint32_t primitive, bool& ok) noexcept {
   switch (primitive) {
     case 0x02u: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -264,7 +289,12 @@ constexpr std::uint32_t kCompareFunctionAlways = 7u;
     case 0x06u: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
     // Rectangle lists are expanded to two-triangle strips host-side
     // (r265; the oracle's kRectangleListAsTriangleStrip scheme).
+    case 0x01u:  // Points use the shader expansion, too.
     case 0x08u: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+    // r526: quad lists expand to plain triangle lists host-side
+    // ([a,b,c,d] -> [a,b,c,a,c,d]); lists need no restart splitting
+    // since no bridging primitive can exist between triangles.
+    case 0x0Du: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     default:
       ok = false;
       return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -276,7 +306,10 @@ constexpr std::uint32_t kCompareFunctionAlways = 7u;
 }
 
 [[nodiscard]] bool is_polygonal_primitive(std::uint32_t primitive) noexcept {
-  return primitive == 0x04u || primitive == 0x07u || primitive == 0x08u;
+  // r526: quad lists execute as triangle lists (same area/front-face
+  // semantics as 0x04 for the sysflag consumers).
+  return primitive == 0x04u || primitive == 0x07u || primitive == 0x08u ||
+         primitive == 0x0Du;
 }
 
 }  // namespace
@@ -613,12 +646,21 @@ PinnedShaderRuntime::~PinnedShaderRuntime() noexcept {
     if (edram_passes_[index].load != VK_NULL_HANDLE) {
       vkDestroyRenderPass(dev, edram_passes_[index].load, nullptr);
     }
+    if (edram_passes_[index].depth_clear != VK_NULL_HANDLE) {
+      vkDestroyRenderPass(dev, edram_passes_[index].depth_clear, nullptr);
+    }
+    if (edram_passes_[index].depth_load != VK_NULL_HANDLE) {
+      vkDestroyRenderPass(dev, edram_passes_[index].depth_load, nullptr);
+    }
     if (edram_passes_[index].clear != VK_NULL_HANDLE) {
       vkDestroyRenderPass(dev, edram_passes_[index].clear, nullptr);
     }
   }
   if (edram_framebuffer_ != VK_NULL_HANDLE) {
     vkDestroyFramebuffer(dev, edram_framebuffer_, nullptr);
+  }
+  if (edram_color_framebuffer_ != VK_NULL_HANDLE) {
+    vkDestroyFramebuffer(dev, edram_color_framebuffer_, nullptr);
   }
   if (edram_view_ != VK_NULL_HANDLE) {
     vkDestroyImageView(dev, edram_view_, nullptr);
@@ -637,6 +679,25 @@ PinnedShaderRuntime::~PinnedShaderRuntime() noexcept {
   }
   if (edram_resolve_memory_ != VK_NULL_HANDLE) {
     vkFreeMemory(dev, edram_resolve_memory_, nullptr);
+  }
+  if (edram_depth_view_ != VK_NULL_HANDLE) {
+    vkDestroyImageView(dev, edram_depth_view_, nullptr);
+  }
+  if (edram_depth_image_ != VK_NULL_HANDLE) {
+    vkDestroyImage(dev, edram_depth_image_, nullptr);
+  }
+  if (edram_depth_memory_ != VK_NULL_HANDLE) {
+    vkFreeMemory(dev, edram_depth_memory_, nullptr);
+  }
+  if (probe_buffer_ != VK_NULL_HANDLE) {
+    if (probe_mapped_ != nullptr) {
+      vkUnmapMemory(dev, probe_memory_);
+      probe_mapped_ = nullptr;
+    }
+    vkDestroyBuffer(dev, probe_buffer_, nullptr);
+  }
+  if (probe_memory_ != VK_NULL_HANDLE) {
+    vkFreeMemory(dev, probe_memory_, nullptr);
   }
   for (std::uint32_t layout_index = 0u; layout_index < pipeline_layout_count_;
        ++layout_index) {
@@ -681,13 +742,22 @@ bool PinnedShaderRuntime::valid() const noexcept {
 
 bool PinnedShaderRuntime::write_shared_memory(
     std::uint64_t dword_address, std::span<const std::uint8_t> bytes) noexcept {
+  if (dword_address > shared_memory_dwords_) {
+    error_ = "pinned runtime: shared memory write out of bounds";
+    return false;
+  }
+  return write_shared_memory_bytes(dword_address * 4u, bytes);
+}
+
+bool PinnedShaderRuntime::write_shared_memory_bytes(
+    std::uint64_t byte_offset, std::span<const std::uint8_t> bytes) noexcept {
   error_.clear();
   if (shared_memory_mapped_ == nullptr) {
     error_ = "pinned runtime: shared memory not mapped";
     return false;
   }
-  const std::uint64_t byte_offset = dword_address * 4u;
-  if (byte_offset + bytes.size() > shared_memory_dwords_ * 4u) {
+  const auto total_bytes = shared_memory_dwords_ * 4u;
+  if (byte_offset > total_bytes || bytes.size() > total_bytes - byte_offset) {
     error_ = "pinned runtime: shared memory write out of bounds";
     return false;
   }
@@ -1075,6 +1145,203 @@ bool PinnedShaderRuntime::parse_pixel_texture_bindings(
   return true;
 }
 
+// r523: Xenos 2D tiled-block offset, mechanical translation of the
+// cited rules (ReXGlue texture/util.h GetTiledOffset2D, itself citing
+// UModel UnTexture.cpp): pitch pre-aligned to 32, macro tile origins
+// plus micro bit-mixing. x/y/pitch in BLOCKS (not texels),
+// bytes_per_block_log2 = log2 of the D3D9 block size (4 for 16-byte
+// DXT blocks). Negative results are out-of-range (caller fails
+// closed); no device needed.
+static std::int32_t tiled_offset_2d(std::int32_t x, std::int32_t y,
+                                     std::uint32_t pitch_blocks,
+                                     std::uint32_t bytes_per_block_log2) noexcept {
+  const std::uint32_t aligned_pitch =
+      (pitch_blocks + 32u - 1u) / 32u * 32u;
+  const std::int32_t macro =
+      ((x >> 5) + (y >> 5) * static_cast<std::int32_t>(aligned_pitch >> 5))
+      << (bytes_per_block_log2 + 7u);
+  const std::int32_t micro =
+      ((x & 7) + ((y & 0xE) << 2)) << bytes_per_block_log2;
+  const std::int32_t offset =
+      macro + ((micro & ~0xF) << 1) + (micro & 0xF) + ((y & 1) << 4);
+  return ((offset & ~0x1FF) << 3) + ((y & 16) << 7) + ((offset & 0x1C0) << 2) +
+         (((((y & 8) >> 2) + (x >> 3)) & 3) << 6) + (offset & 0x3F);
+}
+
+bool tiled_dxt45_layout(std::uint32_t width_pixels, std::uint32_t height_pixels,
+                        std::uint32_t pitch_pixels, std::uint32_t& width_blocks,
+                        std::uint32_t& height_blocks,
+                        std::uint32_t& pitch_blocks,
+                        std::uint64_t& linear_bytes,
+                        std::uint64_t& footprint_bytes) noexcept {
+  if (width_pixels == 0u || height_pixels == 0u || pitch_pixels == 0u ||
+      width_pixels > 4096u || height_pixels > 4096u ||
+      (width_pixels % 4u) != 0u || (height_pixels % 4u) != 0u ||
+      (pitch_pixels % 4u) != 0u || pitch_pixels < width_pixels) {
+    return false;
+  }
+  width_blocks = width_pixels / 4u;
+  height_blocks = height_pixels / 4u;
+  pitch_blocks = pitch_pixels / 4u;
+  if (width_blocks > 1024u || height_blocks > 1024u || pitch_blocks == 0u ||
+      (pitch_blocks % 32u) != 0u) {
+    return false;
+  }
+  linear_bytes =
+      static_cast<std::uint64_t>(width_blocks) * height_blocks * 16u;
+  const std::uint64_t tiles_x =
+      (static_cast<std::uint64_t>(pitch_blocks) + 32u - 1u) / 32u;
+  const std::uint64_t tiles_y =
+      (static_cast<std::uint64_t>(height_blocks) + 32u - 1u) / 32u;
+  if (tiles_x > (0xFFFFFFFFull / 16384u) ||
+      tiles_y > (0xFFFFFFFFull / 16384u) ||
+      tiles_x * tiles_y > (0xFFFFFFFFull / 16384u)) {
+    return false;
+  }
+  footprint_bytes = tiles_x * tiles_y * 16384u;
+  return true;
+}
+
+bool untile_tiled_dxt45_2d(
+    const std::uint8_t* tiled_bytes, std::uint64_t tiled_size,
+    std::uint32_t width_blocks, std::uint32_t height_blocks,
+    std::uint32_t pitch_blocks, std::uint32_t endianness,
+    std::vector<std::uint8_t>& linear_out) noexcept {
+  // DXT4_5/BC3 blocks are 4x4 texels, 16 bytes. Bounds mirror the
+  // pitched-texture contract (4096 texels, 1024 blocks per side).
+  if (tiled_bytes == nullptr || width_blocks == 0u || height_blocks == 0u ||
+      width_blocks > 1024u || height_blocks > 1024u || pitch_blocks == 0u ||
+      width_blocks > pitch_blocks || (pitch_blocks % 32u) != 0u ||
+      endianness > 2u) {
+    return false;
+  }
+  const std::uint64_t block_count =
+      static_cast<std::uint64_t>(width_blocks) * height_blocks;
+  if (block_count > (0xFFFFFFFFull / 16u)) {
+    return false;
+  }
+  linear_out.assign(static_cast<std::size_t>(block_count * 16u), 0u);
+  for (std::uint32_t by = 0u; by < height_blocks; ++by) {
+    for (std::uint32_t bx = 0u; bx < width_blocks; ++bx) {
+      const std::int32_t offset = tiled_offset_2d(
+          static_cast<std::int32_t>(bx), static_cast<std::int32_t>(by),
+          pitch_blocks, 4u);
+      if (offset < 0 ||
+          static_cast<std::uint64_t>(offset) + 16u > tiled_size) {
+        linear_out.clear();
+        return false;
+      }
+      std::uint8_t* dst =
+          linear_out.data() +
+          (static_cast<std::uint64_t>(by) * width_blocks + bx) * 16u;
+      const std::uint8_t* src = tiled_bytes + offset;
+      // Endian application per CopySwapBlock (cited): whole-block
+      // byte transforms, not per-texel (blocks stay opaque 16B).
+      if (endianness == 0u) {
+        std::memcpy(dst, src, 16u);
+      } else if (endianness == 1u) {
+        for (std::uint32_t pair = 0u; pair < 8u; ++pair) {
+          dst[pair * 2u] = src[pair * 2u + 1u];
+          dst[pair * 2u + 1u] = src[pair * 2u];
+        }
+      } else {
+        for (std::uint32_t word = 0u; word < 4u; ++word) {
+          std::uint32_t value = 0u;
+          std::memcpy(&value, src + word * 4u, 4u);
+          value = __builtin_bswap32(value);
+          std::memcpy(dst + word * 4u, &value, 4u);
+        }
+      }
+    }
+  }
+  return true;
+}
+
+bool tiled_dxt1_layout(std::uint32_t width_pixels, std::uint32_t height_pixels,
+                       std::uint32_t pitch_pixels, std::uint32_t& width_blocks,
+                       std::uint32_t& height_blocks,
+                       std::uint32_t& pitch_blocks,
+                       std::uint64_t& linear_bytes,
+                       std::uint64_t& footprint_bytes) noexcept {
+  if (width_pixels == 0u || height_pixels == 0u || pitch_pixels == 0u ||
+      width_pixels > 4096u || height_pixels > 4096u ||
+      (width_pixels % 4u) != 0u || (height_pixels % 4u) != 0u ||
+      (pitch_pixels % 4u) != 0u || pitch_pixels < width_pixels) {
+    return false;
+  }
+  width_blocks = width_pixels / 4u;
+  height_blocks = height_pixels / 4u;
+  pitch_blocks = pitch_pixels / 4u;
+  if (width_blocks > 1024u || height_blocks > 1024u || pitch_blocks == 0u ||
+      (pitch_blocks % 32u) != 0u) {
+    return false;
+  }
+  linear_bytes =
+      static_cast<std::uint64_t>(width_blocks) * height_blocks * 8u;
+  const std::uint64_t tiles_x =
+      (static_cast<std::uint64_t>(pitch_blocks) + 32u - 1u) / 32u;
+  const std::uint64_t tiles_y =
+      (static_cast<std::uint64_t>(height_blocks) + 32u - 1u) / 32u;
+  if (tiles_x > (0xFFFFFFFFull / 8192u) ||
+      tiles_y > (0xFFFFFFFFull / 8192u) ||
+      tiles_x * tiles_y > (0xFFFFFFFFull / 8192u)) {
+    return false;
+  }
+  footprint_bytes = tiles_x * tiles_y * 8192u;
+  return true;
+}
+
+bool untile_tiled_dxt1_2d(
+    const std::uint8_t* tiled_bytes, std::uint64_t tiled_size,
+    std::uint32_t width_blocks, std::uint32_t height_blocks,
+    std::uint32_t pitch_blocks, std::uint32_t endianness,
+    std::vector<std::uint8_t>& linear_out) noexcept {
+  if (tiled_bytes == nullptr || width_blocks == 0u || height_blocks == 0u ||
+      width_blocks > 1024u || height_blocks > 1024u || pitch_blocks == 0u ||
+      width_blocks > pitch_blocks || (pitch_blocks % 32u) != 0u ||
+      endianness > 2u) {
+    return false;
+  }
+  const std::uint64_t block_count =
+      static_cast<std::uint64_t>(width_blocks) * height_blocks;
+  if (block_count > (0xFFFFFFFFull / 8u)) {
+    return false;
+  }
+  linear_out.assign(static_cast<std::size_t>(block_count * 8u), 0u);
+  for (std::uint32_t by = 0u; by < height_blocks; ++by) {
+    for (std::uint32_t bx = 0u; bx < width_blocks; ++bx) {
+      const std::int32_t offset = tiled_offset_2d(
+          static_cast<std::int32_t>(bx), static_cast<std::int32_t>(by),
+          pitch_blocks, 3u);
+      if (offset < 0 ||
+          static_cast<std::uint64_t>(offset) + 8u > tiled_size) {
+        linear_out.clear();
+        return false;
+      }
+      std::uint8_t* dst =
+          linear_out.data() +
+          (static_cast<std::uint64_t>(by) * width_blocks + bx) * 8u;
+      const std::uint8_t* src = tiled_bytes + offset;
+      if (endianness == 0u) {
+        std::memcpy(dst, src, 8u);
+      } else if (endianness == 1u) {
+        for (std::uint32_t pair = 0u; pair < 4u; ++pair) {
+          dst[pair * 2u] = src[pair * 2u + 1u];
+          dst[pair * 2u + 1u] = src[pair * 2u];
+        }
+      } else {
+        for (std::uint32_t word = 0u; word < 2u; ++word) {
+          std::uint32_t value = 0u;
+          std::memcpy(&value, src + word * 4u, 4u);
+          value = __builtin_bswap32(value);
+          std::memcpy(dst + word * 4u, &value, 4u);
+        }
+      }
+    }
+  }
+  return true;
+}
+
 bool PinnedShaderRuntime::decode_pixel_texture(
     const XenosState& state, std::uint32_t fetch_constant,
     PixelTexture& texture) noexcept {
@@ -1092,13 +1359,25 @@ bool PinnedShaderRuntime::decode_pixel_texture(
     error_ = "pinned texture: fetch constant is not a texture";
     return false;
   }
-  if (((words[0] >> 2u) & 0xFFu) != 0u) {
-    error_ =
-        "pinned texture: signed/gamma texture signs are not qualified this "
-        "cycle";
+  const std::uint32_t sign_bits = (words[0] >> 2u) & 0xFFu;
+  if (sign_bits != 0u) {
+    char msg[128];
+    std::snprintf(msg, sizeof(msg),
+                  "pinned texture: sign bits 0x%02x are not qualified this "
+                  "cycle (only unsigned/0x00)",
+                  sign_bits);
+    error_ = msg;
     return false;
   }
-  if ((words[0] >> 31u) != 0u) {
+  // r523: tiled DXT4_5 (format 20) takes the subclass path (shared
+  // checks below plus tiled-only gates at the end); all other tiled
+  // formats keep the old refusal. The format word is peeked here
+  // because the format gate sits below with the shared checks.
+  const std::uint32_t format_peek = words[1] & 0x3Fu;
+  const bool is_tiled = (words[0] >> 31u) != 0u;
+  const bool tiled_dxt45 = is_tiled && (format_peek == 20u);
+  const bool tiled_dxt1 = is_tiled && (format_peek == 4u);
+  if (is_tiled && !tiled_dxt45 && !tiled_dxt1) {
     error_ = "pinned texture: tiled textures are not qualified this cycle";
     return false;
   }
@@ -1123,10 +1402,13 @@ bool PinnedShaderRuntime::decode_pixel_texture(
   // dword1: format 0:5, endianness 6:7, request_size 8:9, stacked 10,
   // nearest_clamp_policy 11, base_address 12:31 (page >> 12).
   const std::uint32_t format = words[1] & 0x3Fu;
-  if (format != 6u) {  // TextureFormat::k_8_8_8_8
-    error_ =
-        "pinned texture: texture format is not k_8_8_8_8 (only format 6 is "
-        "qualified this cycle)";
+  if (format != 6u && !tiled_dxt45 && !tiled_dxt1) {
+    char msg[128];
+    std::snprintf(msg, sizeof(msg),
+                  "pinned texture: format %u is not qualified this cycle "
+                  "(6/k_8_8_8_8, 20/k_DXT4_5, 4/k_DXT1 only)",
+                  format);
+    error_ = msg;
     return false;
   }
   texture.endianness = (words[1] >> 6u) & 0x3u;
@@ -1178,8 +1460,15 @@ bool PinnedShaderRuntime::decode_pixel_texture(
   }
   // dword4: mip_min_level 2:5, mip_max_level 6:9 must both be 0 (single
   // base mip; mip address trees are a later cycle).
-  if (((words[4] >> 2u) & 0xFu) != 0u || ((words[4] >> 6u) & 0xFu) != 0u) {
-    error_ = "pinned texture: mip levels are not qualified this cycle";
+  const std::uint32_t mip_min = (words[4] >> 2u) & 0xFu;
+  const std::uint32_t mip_max = (words[4] >> 6u) & 0xFu;
+  if (mip_min != 0u || mip_max != 0u) {
+    char msg[128];
+    std::snprintf(msg, sizeof(msg),
+                  "pinned texture: mip levels min=%u max=%u are not qualified "
+                  "this cycle (single base mip only)",
+                  mip_min, mip_max);
+    error_ = msg;
     return false;
   }
   // dword5 bits 9:10: the data dimension (DataDimension). Cube textures
@@ -1192,12 +1481,45 @@ bool PinnedShaderRuntime::decode_pixel_texture(
   } else if (dimension == 3u) {
     texture.layer_count = 6u;
   } else {
-    error_ = "pinned texture: texture dimension is not 2D or cube this cycle";
+    char msg[128];
+    std::snprintf(msg, sizeof(msg),
+                  "pinned texture: dimension %u is not qualified this cycle "
+                  "(1/2D or 3/cube only)",
+                  dimension);
+    error_ = msg;
     return false;
   }
   if (((words[5] >> 11u) & 0x1u) != 0u) {
     error_ = "pinned texture: packed mips are not qualified this cycle";
     return false;
+  }
+  if (tiled_dxt45 || tiled_dxt1) {
+    if (((words[3] >> 1u) & 0xFFFu) != 0x688u) {
+      error_ =
+          "pinned texture: non-identity tiled swizzle is not qualified "
+          "this cycle";
+      return false;
+    }
+    if (texture.layer_count != 1u) {
+      error_ =
+          "pinned texture: tiled cube textures are not qualified this cycle";
+      return false;
+    }
+    if (texture.endianness > 2u) {
+      error_ =
+          "pinned texture: tiled k16in32 endianness is not qualified this "
+          "cycle";
+      return false;
+    }
+    if ((texture.width % 4u) != 0u || (texture.height % 4u) != 0u ||
+        (texture.pitch_pixels % 4u) != 0u) {
+      error_ =
+          "pinned texture: tiled compressed dimensions are not "
+          "block-multiples this cycle";
+      return false;
+    }
+    texture.tiled_dxt45 = tiled_dxt45;
+    texture.tiled_dxt1 = tiled_dxt1;
   }
   texture.fetch_constant = fetch_constant;
   return true;
@@ -1272,6 +1594,43 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
       return false;
     }
   }
+  {
+    bool bc3_seen = false;
+    bool bc1_seen = false;
+    for (std::uint32_t slot_index = 0u; slot_index < fetch_count;
+         ++slot_index) {
+      bc3_seen = bc3_seen || decoded[slot_index].tiled_dxt45;
+      bc1_seen = bc1_seen || decoded[slot_index].tiled_dxt1;
+    }
+    constexpr VkFormatFeatureFlags kBcNeed =
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+        VK_FORMAT_FEATURE_TRANSFER_DST_BIT |
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    if (bc3_seen) {
+      VkFormatProperties bc3_props{};
+      vkGetPhysicalDeviceFormatProperties(device_->physical_device(),
+                                          VK_FORMAT_BC3_UNORM_BLOCK,
+                                          &bc3_props);
+      if ((bc3_props.optimalTilingFeatures & kBcNeed) != kBcNeed) {
+        error_ =
+            "pinned texture: host without BC3 filtering is not qualified "
+            "this cycle";
+        return false;
+      }
+    }
+    if (bc1_seen) {
+      VkFormatProperties bc1_props{};
+      vkGetPhysicalDeviceFormatProperties(device_->physical_device(),
+                                          VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                                          &bc1_props);
+      if ((bc1_props.optimalTilingFeatures & kBcNeed) != kBcNeed) {
+        error_ =
+            "pinned texture: host without BC1 filtering is not qualified "
+            "this cycle";
+        return false;
+      }
+    }
+  }
   // Grow the shared staging buffer ONCE for all uploads: growing between
   // per-slot fills would destroy the earlier slots' staged bytes.
   {
@@ -1279,8 +1638,32 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
     for (std::uint32_t slot_index = 0u; slot_index < fetch_count;
          ++slot_index) {
       const PixelTexture& texture = decoded[slot_index];
-      total += static_cast<std::uint64_t>(texture.pitch_pixels) * 4u *
-               texture.height * texture.layer_count;
+      if (texture.tiled_dxt45) {
+        std::uint32_t wb = 0u, hb = 0u, pb = 0u;
+        std::uint64_t linear = 0u, footprint = 0u;
+        if (!tiled_dxt45_layout(texture.width, texture.height,
+                                texture.pitch_pixels, wb, hb, pb, linear,
+                                footprint)) {
+          error_ = "pinned texture: tiled DXT4_5 layout is not qualified";
+          return false;
+        }
+        total = (total + 15ull) & ~15ull;
+        total += linear * texture.layer_count;
+      } else if (texture.tiled_dxt1) {
+        std::uint32_t wb = 0u, hb = 0u, pb = 0u;
+        std::uint64_t linear = 0u, footprint = 0u;
+        if (!tiled_dxt1_layout(texture.width, texture.height,
+                               texture.pitch_pixels, wb, hb, pb, linear,
+                               footprint)) {
+          error_ = "pinned texture: tiled DXT1 layout is not qualified";
+          return false;
+        }
+        total = (total + 7ull) & ~7ull;
+        total += linear * texture.layer_count;
+      } else {
+        total += static_cast<std::uint64_t>(texture.pitch_pixels) * 4u *
+                 texture.height * texture.layer_count;
+      }
     }
     if (texture_staging_size_ < static_cast<VkDeviceSize>(total)) {
       const VkDeviceSize needed = static_cast<VkDeviceSize>(total);
@@ -1346,29 +1729,64 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
   for (std::uint32_t slot_index = 0u; slot_index < fetch_count;
        ++slot_index) {
     const PixelTexture& texture = decoded[slot_index];
-    const std::uint64_t row_bytes =
-        static_cast<std::uint64_t>(texture.pitch_pixels) * 4u;
-    const std::uint64_t copy_bytes =
-        static_cast<std::uint64_t>(texture.width) * 4u;
-    const std::uint64_t total_bytes =
-        row_bytes * texture.height * texture.layer_count;
-    if (texture.byte_address + total_bytes >
-        shared_memory_dwords_ * 4u) {
-      error_ = "pinned texture: guest range exceeds the shared memory size";
-      return false;
+    // r524: BC3 path works in 4x4-texel blocks; the linear path in
+    // texels. Block geometry also revalidates the decode contract
+    // (defense in depth: same inputs, same math as the tests).
+    std::uint32_t block_w = 0u, block_h = 0u, block_pitch = 0u;
+    std::uint64_t block_linear = 0u, block_footprint = 0u;
+    std::uint64_t row_bytes = 0u, copy_bytes = 0u, total_bytes = 0u;
+    if (texture.tiled_dxt45) {
+      if (!tiled_dxt45_layout(texture.width, texture.height,
+                              texture.pitch_pixels, block_w, block_h,
+                              block_pitch, block_linear, block_footprint)) {
+        error_ = "pinned texture: tiled DXT4_5 layout is not qualified";
+        return false;
+      }
+      total_bytes = block_linear * texture.layer_count;
+      if (texture.byte_address + block_footprint >
+          shared_memory_dwords_ * 4u) {
+        error_ = "pinned texture: guest range exceeds the shared memory size";
+        return false;
+      }
+    } else if (texture.tiled_dxt1) {
+      if (!tiled_dxt1_layout(texture.width, texture.height,
+                             texture.pitch_pixels, block_w, block_h,
+                             block_pitch, block_linear, block_footprint)) {
+        error_ = "pinned texture: tiled DXT1 layout is not qualified";
+        return false;
+      }
+      total_bytes = block_linear * texture.layer_count;
+      if (texture.byte_address + block_footprint >
+          shared_memory_dwords_ * 4u) {
+        error_ = "pinned texture: guest range exceeds the shared memory size";
+        return false;
+      }
+    } else {
+      row_bytes = static_cast<std::uint64_t>(texture.pitch_pixels) * 4u;
+      copy_bytes = static_cast<std::uint64_t>(texture.width) * 4u;
+      total_bytes =
+          row_bytes * texture.height * texture.layer_count;
+      if (texture.byte_address + total_bytes >
+          shared_memory_dwords_ * 4u) {
+        error_ = "pinned texture: guest range exceeds the shared memory size";
+        return false;
+      }
     }
-    if (texture.endianness == 1u || texture.endianness == 3u) {
+    if (!texture.tiled_dxt45 && !texture.tiled_dxt1 &&
+        (texture.endianness == 1u || texture.endianness == 3u)) {
       error_ =
           "pinned texture: k8in16/k16in32 endianness is not qualified this "
           "cycle (kNone or k8in32 only)";
       return false;
     }
     PixelTextureSlot& slot = texture_slots_[slot_index];
-    // Image: recreate only when the dimensions or the view type change.
+    // Image: recreate when dimensions, view type, or texel format change.
     if (slot.image != VK_NULL_HANDLE &&
         (slot.width != texture.width || slot.height != texture.height ||
          slot.layers != texture.layer_count ||
-         slot.cube_view != fetch_cubes[slot_index])) {
+         slot.cube_view != fetch_cubes[slot_index] ||
+         slot.bc3 != texture.tiled_dxt45 ||
+         slot.bc1 != texture.tiled_dxt1)) {
       vkDestroySampler(dev, slot.sampler, nullptr);
       slot.sampler = VK_NULL_HANDLE;
       vkDestroyImageView(dev, slot.view, nullptr);
@@ -1383,7 +1801,9 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
       VkImageCreateInfo image_info{};
       image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
       image_info.imageType = VK_IMAGE_TYPE_2D;
-      image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+      image_info.format = texture.tiled_dxt45 ? VK_FORMAT_BC3_UNORM_BLOCK
+                       : texture.tiled_dxt1 ? VK_FORMAT_BC1_RGBA_UNORM_BLOCK
+                                            : VK_FORMAT_R8G8B8A8_UNORM;
       image_info.extent = {texture.width, texture.height, 1u};
       image_info.mipLevels = 1u;
       image_info.arrayLayers = texture.layer_count;
@@ -1433,7 +1853,9 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
       view_info.viewType = fetch_cubes[slot_index]
                                ? VK_IMAGE_VIEW_TYPE_CUBE
                                : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-      view_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+      view_info.format = texture.tiled_dxt45 ? VK_FORMAT_BC3_UNORM_BLOCK
+                       : texture.tiled_dxt1 ? VK_FORMAT_BC1_RGBA_UNORM_BLOCK
+                                            : VK_FORMAT_R8G8B8A8_UNORM;
       view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       view_info.subresourceRange.levelCount = 1u;
       view_info.subresourceRange.layerCount = texture.layer_count;
@@ -1446,6 +1868,8 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
       slot.height = texture.height;
       slot.layers = texture.layer_count;
       slot.cube_view = fetch_cubes[slot_index];
+      slot.bc3 = texture.tiled_dxt45;
+      slot.bc1 = texture.tiled_dxt1;
       slot.layout = VK_IMAGE_LAYOUT_UNDEFINED;
       slot.valid = false;
     }
@@ -1465,8 +1889,40 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
       }
     }
       // Stage the guest rows (shared staging buffer, one region per slot).
+    if (texture.tiled_dxt45) {
+      staging_total = (staging_total + 15u) & ~15u;
+    } else if (texture.tiled_dxt1) {
+      staging_total = (staging_total + 7u) & ~7u;
+    }
     const VkDeviceSize needed =
         static_cast<VkDeviceSize>(total_bytes);
+    if (texture.tiled_dxt45) {
+      std::vector<std::uint8_t> linear;
+      const std::uint64_t shared_avail =
+          shared_memory_dwords_ * 4u - texture.byte_address;
+      if (!untile_tiled_dxt45_2d(shared_memory_mapped_ + texture.byte_address,
+                                 shared_avail, block_w, block_h, block_pitch,
+                                 texture.endianness, linear) ||
+          linear.size() != total_bytes) {
+        error_ = "pinned texture: tiled DXT4_5 untile failed";
+        return false;
+      }
+      std::memcpy(texture_staging_mapped_ + staging_total, linear.data(),
+                  linear.size());
+    } else if (texture.tiled_dxt1) {
+      std::vector<std::uint8_t> linear;
+      const std::uint64_t shared_avail =
+          shared_memory_dwords_ * 4u - texture.byte_address;
+      if (!untile_tiled_dxt1_2d(shared_memory_mapped_ + texture.byte_address,
+                                shared_avail, block_w, block_h, block_pitch,
+                                texture.endianness, linear) ||
+          linear.size() != total_bytes) {
+        error_ = "pinned texture: tiled DXT1 untile failed";
+        return false;
+      }
+      std::memcpy(texture_staging_mapped_ + staging_total, linear.data(),
+                  linear.size());
+    } else
     {
       const std::uint8_t* guest =
           shared_memory_mapped_ + texture.byte_address;
@@ -1499,7 +1955,7 @@ bool PinnedShaderRuntime::ensure_pixel_textures(
         }
       }
     }
-      pending[pending_count++] = {slot_index, texture.width, texture.height,
+    pending[pending_count++] = {slot_index, texture.width, texture.height,
                                   texture.layer_count,
                                   static_cast<VkDeviceSize>(staging_total),
                                   needed};
@@ -1618,8 +2074,14 @@ void PinnedShaderRuntime::record_texture_upload(
     slot.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     VkBufferImageCopy regions[6]{};
     const std::uint32_t region_count = info.layers;
+    const VkDeviceSize blocks_w =
+        (static_cast<VkDeviceSize>(info.width) + 3u) / 4u;
+    const VkDeviceSize blocks_h =
+        (static_cast<VkDeviceSize>(info.height) + 3u) / 4u;
     const VkDeviceSize face_bytes =
-        static_cast<VkDeviceSize>(info.width) * 4u * info.height;
+        slot.bc3 ? blocks_w * blocks_h * 16u
+        : slot.bc1 ? blocks_w * blocks_h * 8u
+                   : static_cast<VkDeviceSize>(info.width) * 4u * info.height;
     for (std::uint32_t layer = 0u; layer < region_count; ++layer) {
       regions[layer].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u,
                                          1u};
@@ -1668,18 +2130,13 @@ bool PinnedShaderRuntime::derive_edram_render_target(
   // MSAA_NumSamples: 0=1x, 1=2x, 2=4x, 3=8x). r459: 1x/2x/4x are qualified
   // for the Vulkan multisample-image-plus-resolve-attachment plumbing below;
   // 8x is not (unobserved this campaign, and a later cycle's problem if it
-  // ever is). NOTE (r459, deliberately NOT resolved this cycle): the tile
-  // origin/pitch math further down is UNCHANGED from the 1x-only version --
-  // it treats pitch_pixels/base_tiles as plain pixel units regardless of
-  // sample_count. Whether RB_SURFACE_INFO's pitch field already accounts for
-  // the sample count (so no host-side adjustment is needed) or needs one is
-  // NOT established from retail control or an oracle read; it is flagged
-  // honestly in the r459 report rather than guessed. It is falsifiable once
-  // real MSAA content renders (a systematically offset/torn image would be
-  // the symptom), unlike the byte-accounting precedent already in this file
-  // for the plain VulkanBackend::submit() ResolvePacket path (source_bytes =
-  // width * height * sample_count * 4, i.e. linear in sample_count for a
-  // fixed pixel width/height) that motivated qualifying MSAA at all here.
+  // ever is). The r459 tile-pitch question is resolved from the oracle
+  // (r490): GetSurfacePitchTiles (rex/graphics/xenos.h) shifts the pitch by
+  // one sample bit at 4x MSAA (2x unchanged) and doubles the tile pitch for
+  // 64bpp formats; the same mapping is applied to the depth base below, so
+  // pitch_pixels stays a plain pixel count and no sample-count guess
+  // remains. It stays falsifiable: a systematically offset/torn image
+  // under real MSAA content would still be the symptom of a wrong mapping.
   const std::uint32_t surface_info = state.register_value(kRegRbSurfaceInfo);
   const std::uint32_t pitch_pixels = surface_info & 0x3FFFu;
   const std::uint32_t msaa_bits = (surface_info >> 16u) & 0x3u;
@@ -1697,9 +2154,14 @@ bool PinnedShaderRuntime::derive_edram_render_target(
                   "r459: RB_SURFACE_INFO=0x%08x msaa_bits=%u sample_count=%u "
                   "pitch_pixels=%u\n",
                   surface_info, msaa_bits, sample_count, pitch_pixels);
-  }
-  if (pitch_pixels == 0u) {
-    error_ = "pinned draw: RB_SURFACE_INFO pitch is zero";
+  }  if (pitch_pixels == 0u) {
+    char detail[128];
+    std::snprintf(detail, sizeof(detail),
+                  "pinned draw: RB_SURFACE_INFO pitch is zero (surface=0x%08x color=0x%08x depth=0x%08x mask=0x%08x)",
+                  surface_info, state.register_value(kRegRbColorInfo),
+                  state.register_value(kRegRbDepthControl),
+                  state.register_value(kRegRbColorMask));
+    error_ = detail;
     return false;
   }
   // RB_COLOR_INFO: base 0:11 (11-bit periodic tiles + bit 11), format 16:19.
@@ -1707,21 +2169,29 @@ bool PinnedShaderRuntime::derive_edram_render_target(
   const std::uint32_t color_info = state.register_value(kRegRbColorInfo);
   const std::uint32_t base_tiles = color_info & 0xFFFu;
   const std::uint32_t format = (color_info >> 16u) & 0xFu;
-  // Qualified formats (r266, r268, r269): k_8_8_8_8 (0),
-  // k_8_8_8_8_GAMMA (1), k_2_10_10_10 (2) and k_16_16_16_16_FLOAT (7).
+  // Qualified formats (r266, r268, r269, r490): k_8_8_8_8 (0),
+  // k_8_8_8_8_GAMMA (1), k_2_10_10_10 (2), k_16_16_16_16_FLOAT (7) and
+  // k_32_FLOAT (14, r490: the retail entry-path render target format).
   // The oracle's GetColorVulkanFormat maps 1 to VK_FORMAT_R8G8B8A8_UNORM
   // (byte-identical storage with format 0 - the copy resolve path
   // applies), 2 to VK_FORMAT_A8B8G8R8_UNORM_PACK32 (byte-identical with
   // R8G8B8A8_UNORM) and 7 to VK_FORMAT_R16G16B16A16_SFLOAT (float
   // formats are not render-pass compatible with the UNORM target:
   // per-format pass pairs, and the resolve blits with conversion instead
-  // of copying). Everything else stays fail-closed (k_32_FLOAT's R32F
-  // blit support is driver-dependent; a later cycle).
-  if (format != 0u && format != 1u && format != 2u && format != 7u) {
-    error_ =
-        "pinned draw: color render target format is not qualified this "
-        "cycle (k_8_8_8_8, k_8_8_8_8_GAMMA, k_2_10_10_10 and "
-        "k_16_16_16_16_FLOAT only)";
+  // of copying). 14 maps to VK_FORMAT_R32_SFLOAT: single-component
+  // attachment, write mask clamped to R. k_32_FLOAT blits to UNORM are
+  // driver-dependent, so a format-14 surface still fails closed at
+  // PRESENT (the display surface is reconfigured to a UNORM format
+  // before swap). Everything else stays fail-closed.
+  if (format != 0u && format != 1u && format != 2u && format != 7u &&
+      format != 14u) {
+    char detail[160];
+    std::snprintf(detail, sizeof(detail),
+                  "pinned draw: color render target format is not qualified (color=0x%08x format=%u surface=0x%08x depth=0x%08x mask=0x%08x)",
+                  color_info, format, surface_info,
+                  state.register_value(kRegRbDepthControl),
+                  state.register_value(kRegRbColorMask));
+    error_ = detail;
     return false;
   }
   // RB_COLOR_MASK bits 0:3 (r460, was previously required to be all-on):
@@ -1737,11 +2207,43 @@ bool PinnedShaderRuntime::derive_edram_render_target(
   // (component-order-preserving) and carry no unverified geometry
   // assumption, unlike the r459 EDRAM-tile-under-MSAA question.
   const std::uint32_t color_mask = state.register_value(kRegRbColorMask) & 0xFu;
-  // RB_DEPTHCONTROL bits 0:2 (stencil/z enable, z write): no depth surface
-  // is modeled this cycle; depth-enabled draws fail closed.
-  if ((state.register_value(kRegRbDepthControl) & 0x7u) != 0u) {
-    error_ = "pinned draw: depth/stencil tests are not qualified this cycle";
-    return false;
+  // RB_DEPTHCONTROL (r490): bit0 stencil_enable, bit1 z_enable, bit2
+  // z_write_enable, bit7 backface_enable, zfunc bits 4:6, stencilfunc bits
+  // 8:10, stencil ops bits 11:19. The previously fail-closed depth path is
+  // now qualified for the subset retail configures (r488 evidence:
+  // 0x8777 = z test + z write + stencil test, zfunc/stencilfunc ALWAYS).
+  // Compare functions and stencil ops map mechanically to Vulkan (identical
+  // enum order), so all 8 values of each are accepted; the unqualified
+  // remainder (backface enable, D24FS8 depth format, depth base differing
+  // from the color base) fails closed with its register values recorded.
+  const std::uint32_t depth_control = state.register_value(kRegRbDepthControl);
+  const bool stencil_enable = (depth_control & 0x1u) != 0u;
+  const bool z_enable = (depth_control & 0x2u) != 0u;
+  const bool z_write_enable = (depth_control & 0x4u) != 0u;
+  const std::uint32_t backface_enable = (depth_control >> 7u) & 0x1u;
+  const std::uint32_t stencil_refmask =
+      state.register_value(kRegRbStencilRefMask);
+  (void)stencil_refmask;
+  // RB_DEPTH_INFO (0x2002): base 0:11 (same 11-bit periodic tiles + bit 11
+  // as the color base), format bit 16 (0 = D24S8, 1 = D24FS8).
+  const std::uint32_t depth_info = state.register_value(kRegRbDepthInfo);
+  const bool depth_enable = z_enable || z_write_enable || stencil_enable;
+  std::uint32_t depth_base_tiles = 0u;
+  std::uint32_t depth_format = 0u;
+  std::uint32_t depth_origin_x = 0u;
+  std::uint32_t depth_origin_y = 0u;
+  if (depth_enable) {
+    depth_base_tiles = depth_info & 0xFFFu;
+    depth_format = (depth_info >> 16u) & 0x1u;
+    if (backface_enable != 0u) {
+      char detail[128];
+      std::snprintf(detail, sizeof(detail),
+                    "pinned draw: backface stencil state is not qualified "
+                    "this cycle (depth=0x%08x)",
+                    depth_control);
+      error_ = detail;
+      return false;
+    }
   }
   if (state.register_value(kRegPaScWindowOffset) != 0u) {
     error_ =
@@ -1751,11 +2253,17 @@ bool PinnedShaderRuntime::derive_edram_render_target(
   }
   // Tile-pitched linear EDRAM surface: tile = 80x16 samples. The base is a
   // tile index; pixel (x,y) of the target maps to image pixel
-  // ((base % pitch_tiles)*80 + x, (base / pitch_tiles)*16 + y). Computed
-  // before the scissor region below (r461) so the scissor can be clamped
-  // to the real surface instead of rejected outright.
+  // ((base % pitch_tiles)*80 + x, (base / pitch_tiles)*16 + y). r490: the
+  // oracle's GetSurfacePitchTiles shifts the pixel pitch by one sample bit
+  // at 4x MSAA (2x unchanged) and doubles the tile pitch for 64bpp formats
+  // (k_16_16_16_16_FLOAT is the only qualified 64bpp format). The depth
+  // base uses the same tile-pitched mapping below.
+  const std::uint32_t pitch_samples =
+      pitch_pixels << (sample_count == 4u ? 1u : 0u);
+  const bool pitch_64bpp = format == 7u;
   const std::uint32_t pitch_tiles =
-      (pitch_pixels + kEdramTileWidthSamples - 1u) / kEdramTileWidthSamples;
+      ((pitch_samples + kEdramTileWidthSamples - 1u) / kEdramTileWidthSamples)
+      << (pitch_64bpp ? 1u : 0u);
   const std::uint32_t image_width = pitch_tiles * kEdramTileWidthSamples;
   const std::uint32_t tile_rows =
       (kEdramTileCount + pitch_tiles - 1u) / pitch_tiles;
@@ -1849,6 +2357,48 @@ bool PinnedShaderRuntime::derive_edram_render_target(
   rt.image_height = image_height;
   rt.sample_count = sample_count;
   rt.color_mask = color_mask;
+  // r490 depth surface geometry: the depth base maps through the same
+  // tile-pitched grid as the color base; a base differing from the color
+  // base fails closed (the single framebuffer cannot offset the depth
+  // attachment independently, and retail evidence for a differing base is
+  // not recorded yet).
+  rt.depth_enable = depth_enable;
+  rt.depth_base_tiles = depth_base_tiles;
+  rt.depth_format = depth_format;
+  // r491: the depth base maps through the same tile-pitched grid as the
+  // color base, but it may differ from it (retail evidence r490: color
+  // base 0, depth base 0x2d0 -- the depth surface sits directly below the
+  // 720-row color frame at 4x MSAA). The depth region must fit inside the
+  // tile-pitched image; a differing base is served by the depth-only
+  // second render pass, so depth content lands at the depth surface's own
+  // tile origin.
+  depth_origin_x = (depth_base_tiles % pitch_tiles) * kEdramTileWidthSamples;
+  depth_origin_y = (depth_base_tiles / pitch_tiles) * kEdramTileHeightSamples;
+  // r491: the depth region clamps to the depth surface's own image bounds
+  // -- real hardware clamps rasterization to the actual surface rather
+  // than a nominally larger scissor (the r461 precedent), and the scissor
+  // clamp above is relative to the color surface's bounds only.
+  std::uint32_t depth_width = region_width;
+  std::uint32_t depth_height = region_height;
+  if (depth_enable) {
+    if (depth_origin_x >= image_width || depth_origin_y >= image_height) {
+      depth_width = 0u;
+      depth_height = 0u;
+    } else {
+      depth_width = std::min(depth_width, image_width - depth_origin_x);
+      depth_height = std::min(depth_height, image_height - depth_origin_y);
+    }
+    if (depth_width == 0u || depth_height == 0u) {
+      error_ =
+          "pinned draw: depth surface clamps to an empty region on this "
+          "EDRAM surface";
+      return false;
+    }
+  }
+  rt.depth_origin_x = depth_origin_x;
+  rt.depth_origin_y = depth_origin_y;
+  rt.depth_width = depth_width;
+  rt.depth_height = depth_height;
   return true;
 }
 
@@ -1857,72 +2407,104 @@ VkFormat PinnedShaderRuntime::edram_image_format(
   // The oracle's GetColorVulkanFormat mapping (render_target_cache.cpp):
   // k_8_8_8_8 and k_8_8_8_8_GAMMA -> R8G8B8A8_UNORM (byte-identical
   // storage), k_2_10_10_10 -> A8B8G8R8_UNORM_PACK32 (byte-identical
-  // storage), k_16_16_16_16_FLOAT -> R16G16B16A16_SFLOAT.
+  // storage), k_16_16_16_16_FLOAT -> R16G16B16A16_SFLOAT, and r490:
+  // k_32_FLOAT -> R32_SFLOAT (single-component attachment).
   switch (color_format) {
     case 1u:
     case 2u:
       return VK_FORMAT_A8B8G8R8_UNORM_PACK32;
     case 7u:
       return VK_FORMAT_R16G16B16A16_SFLOAT;
+    case 14u:
+      return VK_FORMAT_R32_SFLOAT;
     default:
       return VK_FORMAT_R8G8B8A8_UNORM;
   }
 }
 
+VkFormat PinnedShaderRuntime::edram_depth_image_format(
+    std::uint32_t depth_format) noexcept {
+  // r491: guest D24S8 (0) maps to the byte-compatible host D24S8; guest
+  // D24FS8 (1, the retail entry-path format, depth_info=0x102d0) maps to
+  // D32_SFLOAT_S8_UINT -- the 20e4 [0,2) guest encoding is stored as plain
+  // fp32, which the qualified ALWAYS zfunc never reads back this cycle.
+  return depth_format == 1u ? VK_FORMAT_D32_SFLOAT_S8_UINT
+                            : VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
 bool PinnedShaderRuntime::ensure_edram_passes(
-    VkFormat format, std::uint32_t sample_count, VkRenderPass& clear_out,
-    VkRenderPass& load_out) noexcept {
+    VkFormat format, std::uint32_t sample_count, VkFormat depth_format,
+    VkRenderPass& clear_out, VkRenderPass& load_out) noexcept {
   for (std::uint32_t index = 0u; index < edram_pass_count_; ++index) {
     if (edram_passes_[index].format == format &&
         edram_passes_[index].samples == sample_count &&
+        edram_passes_[index].depth_format == depth_format &&
         edram_passes_[index].clear != VK_NULL_HANDLE) {
       clear_out = edram_passes_[index].clear;
       load_out = edram_passes_[index].load;
       return true;
     }
   }
-  if (edram_pass_count_ >= 4u) {
+  if (edram_pass_count_ >= 8u) {
     error_ = "pinned runtime: EDRAM render pass cache exhausted";
     return false;
   }
   VkDevice dev = device_->device();
-  // EDRAM render passes (r257): one color attachment. The first draw on a
-  // (re)configured target clears; subsequent draws load (EDRAM persists
-  // between draws on real hardware until reconfiguration). Both passes end
-  // in TRANSFER_SRC_OPTIMAL so the XE_SWAP resolve can move the surface
-  // into the readable image without extra layout churn. The format is the
-  // surface's image format (float formats are not compatible with the
-  // UNORM target).
+  // EDRAM render passes (r257): one color attachment, plus the r490 depth
+  // attachment when the draw's RB_DEPTHCONTROL enables depth or stencil.
+  // The first draw on a (re)configured target clears; subsequent draws load
+  // (EDRAM persists between draws on real hardware until reconfiguration).
+  // Both passes end in TRANSFER_SRC_OPTIMAL so the XE_SWAP resolve can move
+  // the surface into the readable image without extra layout churn. The
+  // format is the surface's image format (float formats are not compatible
+  // with the UNORM target).
   //
   // r459: at sample_count > 1 this attachment is simply multisampled
   // (vk_sample_count(sample_count)); it is still legal to end a multisample
   // color attachment in TRANSFER_SRC_OPTIMAL (vkCmdResolveImage accepts a
-  // multisample source in that layout). No second attachment is added here
-  // -- the EDRAM surface persists across draws exactly like the 1x case
-  // (same clear/load semantics, same single image), and downsampling to a
-  // 1x-readable image happens once, explicitly, in resolve_edram_to_target
-  // at present time (via vkCmdResolveImage into edram_resolve_image_) --
-  // not per-draw via an automatic subpass resolve, which would have thrown
-  // away not-yet-resolved multisample content between accumulating draws on
-  // the same target.
-  VkAttachmentDescription attachment{};
-  attachment.format = format;
-  attachment.samples = vk_sample_count(sample_count);
-  attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-  attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  attachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-  attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  // multisample source in that layout). No automatic subpass resolve is
+  // used -- the EDRAM surface persists across draws exactly like the 1x
+  // case (same clear/load semantics, same single image), and downsampling
+  // to a 1x-readable image happens once, explicitly, in
+  // resolve_edram_to_target at present time (via vkCmdResolveImage into
+  // edram_resolve_image_) -- not per-draw, which would have thrown away
+  // not-yet-resolved multisample content between accumulating draws on the
+  // same target.
+  VkAttachmentDescription attachments[2]{};
+  attachments[0].format = format;
+  attachments[0].samples = vk_sample_count(sample_count);
+  attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  attachments[0].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+  attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  attachments[1].format = depth_format;
+  attachments[1].samples = vk_sample_count(sample_count);
+  attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+  const std::uint32_t attachment_count = depth_format == VK_FORMAT_UNDEFINED
+                                             ? 1u
+                                             : 2u;
   VkAttachmentReference color_ref{};
   color_ref.attachment = 0u;
   color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  VkAttachmentReference depth_ref{};
+  depth_ref.attachment = 1u;
+  depth_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   VkSubpassDescription subpass{};
   subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
   subpass.colorAttachmentCount = 1u;
   subpass.pColorAttachments = &color_ref;
+  if (depth_format != VK_FORMAT_UNDEFINED) {
+    subpass.pDepthStencilAttachment = &depth_ref;
+  }
   VkRenderPassCreateInfo render_pass_info{};
   render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-  render_pass_info.attachmentCount = 1u;
-  render_pass_info.pAttachments = &attachment;
+  render_pass_info.attachmentCount = attachment_count;
+  render_pass_info.pAttachments = attachments;
   render_pass_info.subpassCount = 1u;
   render_pass_info.pSubpasses = &subpass;
   VkRenderPass clear_pass = VK_NULL_HANDLE;
@@ -1932,8 +2514,14 @@ bool PinnedShaderRuntime::ensure_edram_passes(
     error_ = "pinned runtime: EDRAM clear render pass failed";
     return false;
   }
-  attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-  attachment.initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+  attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+  attachments[0].initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+  if (depth_format != VK_FORMAT_UNDEFINED) {
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[1].initialLayout =
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  }
   VkRenderPass load_pass = VK_NULL_HANDLE;
   if (vkCreateRenderPass(dev, &render_pass_info, nullptr, &load_pass) !=
           VK_SUCCESS ||
@@ -1945,10 +2533,109 @@ bool PinnedShaderRuntime::ensure_edram_passes(
   EdramPasses& cached = edram_passes_[edram_pass_count_++];
   cached.format = format;
   cached.samples = sample_count;
+  cached.depth_format = depth_format;
   cached.clear = clear_pass;
   cached.load = load_pass;
   clear_out = clear_pass;
   load_out = load_pass;
+  return true;
+}
+
+bool PinnedShaderRuntime::ensure_edram_depth_passes(
+    VkFormat format, std::uint32_t sample_count, VkFormat depth_format,
+    VkRenderPass& clear_out, VkRenderPass& load_out) noexcept {
+  for (std::uint32_t index = 0u; index < edram_pass_count_; ++index) {
+    if (edram_passes_[index].format == format &&
+        edram_passes_[index].samples == sample_count &&
+        edram_passes_[index].depth_format == depth_format &&
+        edram_passes_[index].depth_clear != VK_NULL_HANDLE) {
+      clear_out = edram_passes_[index].depth_clear;
+      load_out = edram_passes_[index].depth_load;
+      return true;
+    }
+  }
+  VkDevice dev = device_->device();
+  // r491 depth-only pass pair (two-pass draw when the depth base differs
+  // from the color base): the color attachment LOADs and STOREs untouched
+  // (the depth pipeline's color write mask is 0), the depth attachment
+  // CLEARs on the first draw of the target and LOADs afterwards. The final
+  // depth layout is DEPTH_STENCIL_ATTACHMENT_OPTIMAL; the color attachment
+  // keeps the same TRANSFER_SRC_OPTIMAL final layout the resolve expects.
+  VkAttachmentDescription attachments[2]{};
+  attachments[0].format = format;
+  attachments[0].samples = vk_sample_count(sample_count);
+  attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  attachments[0].initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+  attachments[0].finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+  attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+  attachments[1].format = depth_format;
+  attachments[1].samples = vk_sample_count(sample_count);
+  attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+  VkAttachmentReference color_ref{};
+  color_ref.attachment = 0u;
+  color_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  VkAttachmentReference depth_ref{};
+  depth_ref.attachment = 1u;
+  depth_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  VkSubpassDescription subpass{};
+  subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+  subpass.colorAttachmentCount = 1u;
+  subpass.pColorAttachments = &color_ref;
+  subpass.pDepthStencilAttachment = &depth_ref;
+  VkRenderPassCreateInfo render_pass_info{};
+  render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+  render_pass_info.attachmentCount = 2u;
+  render_pass_info.pAttachments = attachments;
+  render_pass_info.subpassCount = 1u;
+  render_pass_info.pSubpasses = &subpass;
+  VkRenderPass depth_clear_pass = VK_NULL_HANDLE;
+  if (vkCreateRenderPass(dev, &render_pass_info, nullptr,
+                         &depth_clear_pass) != VK_SUCCESS ||
+      depth_clear_pass == VK_NULL_HANDLE) {
+    error_ = "pinned runtime: EDRAM depth clear render pass failed";
+    return false;
+  }
+  attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+  attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+  attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  VkRenderPass depth_load_pass = VK_NULL_HANDLE;
+  if (vkCreateRenderPass(dev, &render_pass_info, nullptr, &depth_load_pass) !=
+          VK_SUCCESS ||
+      depth_load_pass == VK_NULL_HANDLE) {
+    vkDestroyRenderPass(dev, depth_clear_pass, nullptr);
+    error_ = "pinned runtime: EDRAM depth load render pass failed";
+    return false;
+  }
+  for (std::uint32_t index = 0u; index < edram_pass_count_; ++index) {
+    if (edram_passes_[index].format == format &&
+        edram_passes_[index].samples == sample_count &&
+        edram_passes_[index].depth_format == depth_format) {
+      edram_passes_[index].depth_clear = depth_clear_pass;
+      edram_passes_[index].depth_load = depth_load_pass;
+      clear_out = depth_clear_pass;
+      load_out = depth_load_pass;
+      return true;
+    }
+  }
+  if (edram_pass_count_ >= 8u) {
+    vkDestroyRenderPass(dev, depth_clear_pass, nullptr);
+    vkDestroyRenderPass(dev, depth_load_pass, nullptr);
+    error_ = "pinned runtime: EDRAM render pass cache exhausted";
+    return false;
+  }
+  EdramPasses& cached = edram_passes_[edram_pass_count_++];
+  cached.format = format;
+  cached.samples = sample_count;
+  cached.depth_format = depth_format;
+  cached.depth_clear = depth_clear_pass;
+  cached.depth_load = depth_load_pass;
+  clear_out = depth_clear_pass;
+  load_out = depth_load_pass;
   return true;
 }
 
@@ -1958,13 +2645,28 @@ bool PinnedShaderRuntime::ensure_edram_surface(
       edram_surface_dims_.image_width == rt.image_width &&
       edram_surface_dims_.image_height == rt.image_height &&
       edram_surface_dims_.format == rt.format &&
-      edram_surface_dims_.sample_count == rt.sample_count) {
+      edram_surface_dims_.sample_count == rt.sample_count &&
+      (!rt.depth_enable ||
+       (edram_surface_dims_.depth_enable &&
+        edram_surface_dims_.depth_format == rt.depth_format &&
+        edram_depth_image_ != VK_NULL_HANDLE &&
+        edram_framebuffer_ != VK_NULL_HANDLE))) {
+    // r572: disabling depth does not destroy the compatible color image
+    // or its cached depth attachment. Keep dims as the allocation's
+    // description so re-enabling that depth format can reuse it too.
     return true;
   }
+  // A missing or differently formatted depth attachment still follows
+  // the existing full reconstruction below; that boundary is separate
+  // from reusing an already allocated attachment across on/off changes.
   VkDevice dev = device_->device();
   if (edram_framebuffer_ != VK_NULL_HANDLE) {
     vkDestroyFramebuffer(dev, edram_framebuffer_, nullptr);
     edram_framebuffer_ = VK_NULL_HANDLE;
+  }
+  if (edram_color_framebuffer_ != VK_NULL_HANDLE) {
+    vkDestroyFramebuffer(dev, edram_color_framebuffer_, nullptr);
+    edram_color_framebuffer_ = VK_NULL_HANDLE;
   }
   if (edram_view_ != VK_NULL_HANDLE) {
     vkDestroyImageView(dev, edram_view_, nullptr);
@@ -1989,6 +2691,18 @@ bool PinnedShaderRuntime::ensure_edram_surface(
   if (edram_resolve_memory_ != VK_NULL_HANDLE) {
     vkFreeMemory(dev, edram_resolve_memory_, nullptr);
     edram_resolve_memory_ = VK_NULL_HANDLE;
+  }
+  if (edram_depth_view_ != VK_NULL_HANDLE) {
+    vkDestroyImageView(dev, edram_depth_view_, nullptr);
+    edram_depth_view_ = VK_NULL_HANDLE;
+  }
+  if (edram_depth_image_ != VK_NULL_HANDLE) {
+    vkDestroyImage(dev, edram_depth_image_, nullptr);
+    edram_depth_image_ = VK_NULL_HANDLE;
+  }
+  if (edram_depth_memory_ != VK_NULL_HANDLE) {
+    vkFreeMemory(dev, edram_depth_memory_, nullptr);
+    edram_depth_memory_ = VK_NULL_HANDLE;
   }
   edram_rt_valid_ = false;  // fresh surface: first draw clears
   const bool multisample = rt.sample_count > 1u;
@@ -2100,31 +2814,132 @@ bool PinnedShaderRuntime::ensure_edram_surface(
       return false;
     }
   }
+  // r490 depth surface: a separate depth-stencil image in the same
+  // tile-pitched geometry, created only when the target's depth subset is
+  // enabled. The attachment support check is explicit: an absent feature
+  // fails closed instead of silently disabling depth tests.
+  if (rt.depth_enable) {
+    const VkFormat depth_vk_format = edram_depth_image_format(rt.depth_format);
+    VkFormatProperties depth_props{};
+    vkGetPhysicalDeviceFormatProperties(device_->physical_device(),
+                                        depth_vk_format, &depth_props);
+    if ((depth_props.optimalTilingFeatures &
+         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0u) {
+      error_ =
+          "pinned runtime: the guest depth format has no host depth-stencil "
+          "attachment support on this Vulkan device";
+      return false;
+    }
+    VkImageCreateInfo depth_info{};
+    depth_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    depth_info.imageType = VK_IMAGE_TYPE_2D;
+    depth_info.format = depth_vk_format;
+    depth_info.extent = {rt.image_width, rt.image_height, 1u};
+    depth_info.mipLevels = 1u;
+    depth_info.arrayLayers = 1u;
+    depth_info.samples = vk_sample_count(rt.sample_count);
+    depth_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depth_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    if (vkCreateImage(dev, &depth_info, nullptr, &edram_depth_image_) !=
+            VK_SUCCESS ||
+        edram_depth_image_ == VK_NULL_HANDLE) {
+      error_ = "pinned runtime: EDRAM depth image creation failed";
+      return false;
+    }
+    VkMemoryRequirements depth_reqs{};
+    vkGetImageMemoryRequirements(dev, edram_depth_image_, &depth_reqs);
+    std::uint32_t depth_memory_type = 0xFFFFFFFFu;
+    for (std::uint32_t type = 0u; type < props.memoryTypeCount; ++type) {
+      const VkMemoryType& memory = props.memoryTypes[type];
+      if ((depth_reqs.memoryTypeBits & (1u << type)) != 0u &&
+          (memory.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0u) {
+        depth_memory_type = type;
+        break;
+      }
+    }
+    if (depth_memory_type == 0xFFFFFFFFu) {
+      error_ = "pinned runtime: no device-local memory type for EDRAM depth";
+      return false;
+    }
+    VkMemoryAllocateInfo depth_alloc{};
+    depth_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    depth_alloc.allocationSize = depth_reqs.size;
+    depth_alloc.memoryTypeIndex = depth_memory_type;
+    if (vkAllocateMemory(dev, &depth_alloc, nullptr, &edram_depth_memory_) !=
+            VK_SUCCESS ||
+        vkBindImageMemory(dev, edram_depth_image_, edram_depth_memory_, 0) !=
+            VK_SUCCESS) {
+      error_ = "pinned runtime: EDRAM depth memory allocation failed";
+      return false;
+    }
+    VkImageViewCreateInfo depth_view_info{};
+    depth_view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    depth_view_info.image = edram_depth_image_;
+    depth_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    depth_view_info.format = depth_vk_format;
+    depth_view_info.subresourceRange.aspectMask =
+        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    depth_view_info.subresourceRange.levelCount = 1u;
+    depth_view_info.subresourceRange.layerCount = 1u;
+    if (vkCreateImageView(dev, &depth_view_info, nullptr,
+                          &edram_depth_view_) != VK_SUCCESS) {
+      error_ = "pinned runtime: EDRAM depth image view failed";
+      return false;
+    }
+  }
   VkRenderPass surface_clear_pass = VK_NULL_HANDLE;
   VkRenderPass surface_load_pass = VK_NULL_HANDLE;
-  if (!ensure_edram_passes(image_format, rt.sample_count, surface_clear_pass,
-                           surface_load_pass)) {
+  if (!ensure_edram_passes(image_format, rt.sample_count,
+                           rt.depth_enable
+                               ? edram_depth_image_format(rt.depth_format)
+                               : VK_FORMAT_UNDEFINED,
+                           surface_clear_pass, surface_load_pass)) {
     return false;
   }
   VkFramebufferCreateInfo framebuffer_info{};
   framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-  framebuffer_info.renderPass = surface_clear_pass;
-  framebuffer_info.attachmentCount = 1u;
-  framebuffer_info.pAttachments = &edram_view_;
   framebuffer_info.width = rt.image_width;
   framebuffer_info.height = rt.image_height;
   framebuffer_info.layers = 1u;
-  if (vkCreateFramebuffer(dev, &framebuffer_info, nullptr,
-                          &edram_framebuffer_) != VK_SUCCESS) {
-    error_ = "pinned runtime: EDRAM framebuffer failed";
+  // r491: the color framebuffer binds the color-ONLY pass (one attachment);
+  // the combined framebuffer below binds the color+depth pass pair the
+  // depth-only passes use. A framebuffer must be created against a
+  // compatible render pass (VUID-VkFramebufferCreateInfo-attachmentCount-
+  // 00876).
+  VkRenderPass color_only_clear_pass = VK_NULL_HANDLE;
+  VkRenderPass color_only_load_pass = VK_NULL_HANDLE;
+  if (!ensure_edram_passes(image_format, rt.sample_count, VK_FORMAT_UNDEFINED,
+                           color_only_clear_pass, color_only_load_pass)) {
     return false;
+  }
+  framebuffer_info.renderPass = color_only_clear_pass;
+  VkImageView color_attachments[1] = {edram_view_};
+  VkImageView all_attachments[2] = {
+      edram_view_, rt.depth_enable ? edram_depth_view_ : VK_NULL_HANDLE};
+  framebuffer_info.attachmentCount = 1u;
+  framebuffer_info.pAttachments = color_attachments;
+  if (vkCreateFramebuffer(dev, &framebuffer_info, nullptr,
+                          &edram_color_framebuffer_) != VK_SUCCESS) {
+    error_ = "pinned runtime: EDRAM color framebuffer failed";
+    return false;
+  }
+  if (rt.depth_enable) {
+    framebuffer_info.renderPass = surface_clear_pass;
+    framebuffer_info.attachmentCount = 2u;
+    framebuffer_info.pAttachments = all_attachments;
+    if (vkCreateFramebuffer(dev, &framebuffer_info, nullptr,
+                            &edram_framebuffer_) != VK_SUCCESS) {
+      error_ = "pinned runtime: EDRAM framebuffer failed";
+      return false;
+    }
   }
   edram_surface_dims_ = rt;
   return true;
 }
 
 bool PinnedShaderRuntime::resolve_edram_to_target(
-    VulkanOffscreenTarget& target, const EdramRenderTarget& rt) noexcept {
+    VulkanOffscreenTarget& target, const EdramRenderTarget& rt,
+    std::uint32_t region_width, std::uint32_t region_height) noexcept {
   VkCommandBufferAllocateInfo alloc_info{};
   alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   alloc_info.commandPool = pool_;
@@ -2197,29 +3012,37 @@ bool PinnedShaderRuntime::resolve_edram_to_target(
     ok = target.begin_transfer_dst(commands);
   }
   if (ok) {
-    if (edram_image_format(rt.format) == VK_FORMAT_R8G8B8A8_UNORM) {
+    // r490: the resolved window is an explicit region (draws use the
+    // target's own region; PRESENT uses the swap dimensions clamped to the
+    // surface), not implicitly rt.width/height.
+    const bool exact_size = region_width == target.width() &&
+                            region_height == target.height();
+    if (edram_image_format(rt.format) == VK_FORMAT_R8G8B8A8_UNORM &&
+        exact_size) {
       VkImageCopy region{};
       region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
       region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
       region.srcOffset = {static_cast<std::int32_t>(rt.origin_x),
                           static_cast<std::int32_t>(rt.origin_y), 0};
       region.dstOffset = {0, 0, 0};
-      region.extent = {rt.width, rt.height, 1u};
+      region.extent = {region_width, region_height, 1u};
       vkCmdCopyImage(commands, read_image,
                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target.image(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region);
     } else {
-      // Float formats convert at resolve: blit into the UNORM present
-      // target (the EDRAM image ends each pass in TRANSFER_SRC_OPTIMAL,
-      // which is also BLIT_SRC-capable; the target is TRANSFER_DST).
+      // Resolve and size-convert into the present target. Xenos permits a
+      // differently-sized resolved window to feed the swap surface; Vulkan's
+      // copy path cannot express that scaling, so use a nearest blit.
       VkImageBlit region{};
       region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
       region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+      region.srcOffsets[0] = {static_cast<std::int32_t>(rt.origin_x),
+                              static_cast<std::int32_t>(rt.origin_y), 0};
       region.srcOffsets[1] = {
-          static_cast<std::int32_t>(rt.origin_x + rt.width),
-          static_cast<std::int32_t>(rt.origin_y + rt.height), 1};
-      region.dstOffsets[1] = {static_cast<std::int32_t>(rt.width),
-                              static_cast<std::int32_t>(rt.height), 1};
+          static_cast<std::int32_t>(rt.origin_x + region_width),
+          static_cast<std::int32_t>(rt.origin_y + region_height), 1};
+      region.dstOffsets[1] = {static_cast<std::int32_t>(target.width()),
+                              static_cast<std::int32_t>(target.height()), 1};
       vkCmdBlitImage(commands, read_image,
                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, target.image(),
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region,
@@ -2235,14 +3058,26 @@ bool PinnedShaderRuntime::resolve_edram_to_target(
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit.commandBufferCount = 1u;
     submit.pCommandBuffers = &commands;
+    // r491: the fence must be reset before every submission
+    // (VUID-vkQueueSubmit-fence-00063); the previous wait-then-reset-only
+    // protocol left a signaled fence on the second resolve and every later
+    // submission on the shared fence failed.
+    vkResetFences(device_->device(), 1u, &fence_);
     ok = vkQueueSubmit(device_->queue(), 1u, &submit, fence_) == VK_SUCCESS;
     if (ok) {
       ok = vkWaitForFences(device_->device(), 1u, &fence_, VK_TRUE,
                            10u * 1000u * 1000u * 1000u) == VK_SUCCESS;
-      vkResetFences(device_->device(), 1u, &fence_);
+      if (ok) {
+        vkResetFences(device_->device(), 1u, &fence_);
+      }
     }
   }
-  vkFreeCommandBuffers(device_->device(), pool_, 1u, &commands);
+  // r491: only free the command buffer once the submission completed; a
+  // pending command buffer must not be freed
+  // (VUID-vkFreeCommandBuffers-pCommandBuffers-00047).
+  if (ok) {
+    vkFreeCommandBuffers(device_->device(), pool_, 1u, &commands);
+  }
   if (!ok && error_.empty()) {
     error_ = "pinned resolve: submission failed";
   }
@@ -2280,11 +3115,14 @@ bool PinnedShaderRuntime::ensure_pipeline(
     VkShaderModule pixel, std::uint64_t vs_digest, std::uint64_t ps_digest,
     std::uint64_t texture_layout_signature, VkDescriptorSetLayout texture_layout,
     std::uint32_t sample_count, std::uint32_t color_mask,
+    VkFormat depth_format, std::uint32_t depth_flags,
+    std::uint32_t depth_op_word, std::uint32_t stencil_state,
     VkPipeline& pipeline_out) noexcept {
   const PipelineKey key{primitive_type,
                         static_cast<std::uint32_t>(color_format), vs_digest,
                         ps_digest, texture_layout_signature, sample_count,
-                        color_mask};
+                        color_mask, static_cast<std::uint32_t>(depth_format),
+                        depth_flags, depth_op_word, stencil_state};
   auto found = pipelines_.find(key);
   if (found != pipelines_.end()) {
     pipeline_out = found->second;
@@ -2343,6 +3181,12 @@ bool PinnedShaderRuntime::ensure_pipeline(
     error_ = "pinned draw: primitive topology not qualified this cycle";
     return false;
   }
+  // r491: the pinned shaders fetch vertices from shared memory inside the
+  // shader; the pipeline still needs a valid empty vertex input state
+  // (VUID-VkGraphicsPipelineCreateInfo-pStages-02097).
+  VkPipelineVertexInputStateCreateInfo vertex_input{};
+  vertex_input.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
   // No dynamic index buffer: auto-indexed draws only this cycle; the vertex
   // fetch reads shared memory inside the pinned shader.
   VkPipelineRasterizationStateCreateInfo raster{};
@@ -2357,17 +3201,50 @@ bool PinnedShaderRuntime::ensure_pipeline(
   multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
   multisample.rasterizationSamples = vk_sample_count(sample_count);
   VkPipelineColorBlendAttachmentState blend_attachment{};
-  // r460: RB_COLOR_MASK bits 0:3 translated directly, R=bit0..A=bit3.
+  // r460: RB_COLOR_MASK bits 0:3 translated directly, R=bit0..A=bit3,
+  // clamped to the attachment's component count (r490: k_32_FLOAT stores
+  // only red; Vulkan rejects write-mask bits for non-existent components).
   VkColorComponentFlags write_mask = 0u;
   if ((color_mask & 0x1u) != 0u) write_mask |= VK_COLOR_COMPONENT_R_BIT;
   if ((color_mask & 0x2u) != 0u) write_mask |= VK_COLOR_COMPONENT_G_BIT;
   if ((color_mask & 0x4u) != 0u) write_mask |= VK_COLOR_COMPONENT_B_BIT;
   if ((color_mask & 0x8u) != 0u) write_mask |= VK_COLOR_COMPONENT_A_BIT;
+  write_mask &= static_cast<VkColorComponentFlags>(
+      color_format == VK_FORMAT_R32_SFLOAT ? 0x1u : 0xFu);
   blend_attachment.colorWriteMask = write_mask;
   VkPipelineColorBlendStateCreateInfo blend{};
   blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
   blend.attachmentCount = 1u;
   blend.pAttachments = &blend_attachment;
+  // r490 depth/stencil state from the decoded RB_DEPTHCONTROL/RB_STENCILREF-
+  // MASK subset (depth_flags bit0 z test, bit1 z write, bit2 stencil test;
+  // op words pack the guest compare/op values whose enum order matches
+  // Vulkan's). With no depth attachment bound, both tests must stay disabled
+  // (Vulkan validity), so the guest's enabled-but-attachmentless state cannot
+  // silently change behavior.
+  const bool has_depth = depth_format != VK_FORMAT_UNDEFINED;
+  const bool z_test = has_depth && (depth_flags & 0x1u) != 0u;
+  const bool z_write = has_depth && (depth_flags & 0x2u) != 0u;
+  const bool stencil_test = has_depth && (depth_flags & 0x4u) != 0u;
+  VkPipelineDepthStencilStateCreateInfo depth_stencil{};
+  depth_stencil.sType =
+      VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  depth_stencil.depthTestEnable = z_test ? VK_TRUE : VK_FALSE;
+  depth_stencil.depthWriteEnable = z_write ? VK_TRUE : VK_FALSE;
+  depth_stencil.depthCompareOp = vk_compare_op(depth_op_word & 0x7u);
+  depth_stencil.stencilTestEnable = stencil_test ? VK_TRUE : VK_FALSE;
+  VkStencilOpState stencil_front{};
+  stencil_front.failOp = vk_stencil_op((depth_op_word >> 3u) & 0x7u);
+  stencil_front.passOp = vk_stencil_op((depth_op_word >> 6u) & 0x7u);
+  stencil_front.depthFailOp = vk_stencil_op((depth_op_word >> 9u) & 0x7u);
+  stencil_front.compareOp = vk_compare_op((depth_op_word >> 12u) & 0x7u);
+  stencil_front.compareMask = (stencil_state >> 8u) & 0xFFu;
+  stencil_front.writeMask = (stencil_state >> 16u) & 0xFFu;
+  stencil_front.reference = stencil_state & 0xFFu;
+  depth_stencil.front = stencil_front;
+  depth_stencil.back = stencil_front;
+  VkPipelineDepthStencilStateCreateInfo* depth_state =
+      has_depth ? &depth_stencil : nullptr;
   VkPipelineViewportStateCreateInfo viewport{};
   viewport.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
   viewport.viewportCount = 1u;
@@ -2384,16 +3261,18 @@ bool PinnedShaderRuntime::ensure_pipeline(
   pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   pipeline_info.stageCount = 2u;
   pipeline_info.pStages = stages;
+  pipeline_info.pVertexInputState = &vertex_input;
   pipeline_info.pInputAssemblyState = &ia;
   pipeline_info.pRasterizationState = &raster;
   pipeline_info.pMultisampleState = &multisample;
   pipeline_info.pColorBlendState = &blend;
+  pipeline_info.pDepthStencilState = depth_state;
   pipeline_info.pViewportState = &viewport;
   pipeline_info.pDynamicState = &dynamic_info;
   VkRenderPass pipeline_clear_pass = VK_NULL_HANDLE;
   VkRenderPass pipeline_load_pass = VK_NULL_HANDLE;
-  if (!ensure_edram_passes(color_format, sample_count, pipeline_clear_pass,
-                           pipeline_load_pass)) {
+  if (!ensure_edram_passes(color_format, sample_count, depth_format,
+                           pipeline_clear_pass, pipeline_load_pass)) {
     return false;
   }
   pipeline_info.layout = pipeline_layout;
@@ -2427,6 +3306,54 @@ std::uint64_t PinnedShaderRuntime::derive_pixel_modification_high(
   return depth_stencil_mode << 46u;  // dword1 bit 14 -> value bit 46
 }
 
+bool expand_quad_list_auto(std::uint32_t index_count,
+                           std::vector<std::uint32_t>& out) noexcept {
+  if (index_count == 0u || index_count % 4u != 0u ||
+      index_count / 4u > (1u << 20u)) {
+    return false;
+  }
+  out.clear();
+  out.reserve(static_cast<std::size_t>(index_count) * 6u / 4u);
+  for (std::uint32_t quad = 0u; quad < index_count / 4u; ++quad) {
+    const std::uint32_t base = quad * 4u;
+    out.push_back(base);
+    out.push_back(base + 1u);
+    out.push_back(base + 2u);
+    out.push_back(base);
+    out.push_back(base + 2u);
+    out.push_back(base + 3u);
+  }
+  return true;
+}
+
+bool expand_quad_list_words(std::span<const std::uint32_t> guest_indices,
+                            std::vector<std::uint32_t>& out) noexcept {
+  if (guest_indices.empty() || guest_indices.size() % 4u != 0u ||
+      guest_indices.size() / 4u > (1u << 20u)) {
+    return false;
+  }
+  out.clear();
+  out.reserve(guest_indices.size() * 6u / 4u);
+  for (std::size_t quad = 0u; quad < guest_indices.size() / 4u; ++quad) {
+    const std::uint32_t corners[4] = {
+        guest_indices[quad * 4u], guest_indices[quad * 4u + 1u],
+        guest_indices[quad * 4u + 2u], guest_indices[quad * 4u + 3u]};
+    for (std::uint32_t corner = 0u; corner < 4u; ++corner) {
+      if (corners[corner] == 0xFFFFFFFFu) {
+        out.clear();
+        return false;
+      }
+    }
+    out.push_back(corners[0]);
+    out.push_back(corners[1]);
+    out.push_back(corners[2]);
+    out.push_back(corners[0]);
+    out.push_back(corners[2]);
+    out.push_back(corners[3]);
+  }
+  return true;
+}
+
 bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
                                       const XenosState& state,
                                       const DrawPacket& draw) noexcept {
@@ -2439,21 +3366,23 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
   // converts them into a Vulkan index buffer too). Primitive-restart
   // values fail closed.
   const bool indexed_draw = draw.index_address != 0u;
-  // Rectangle lists (guest primitive 0x08) are expanded host-side to
-  // two-triangle strips (r265; the oracle's kRectangleListAsTriangleStrip
-  // scheme): one 4-vertex strip per 3 guest vertices, with primitive
-  // restarts between strips; the pinned VS (host type 9 variant) maps
-  // host index (i<<2)|j to guest vertex (i*3 + min(j, 2)) and optionally
-  // loads the real guest index from the guest index buffer.
+  // Qualified host shader types: 9 expands one point, 10 reconstructs a
+  // rectangle from three guest vertices. Both consume four host strip indices.
   const bool rect_strip_expand = draw.primitive_type == 0x08u;
+  const bool point_strip_expand = draw.primitive_type == 0x01u;
+  const bool strip_expand = rect_strip_expand || point_strip_expand;
+  // r526: quad lists take the host index buffer too (expanded above),
+  // drawn as plain triangle lists (topology_of).
+  const bool quad_list_expand = draw.primitive_type == 0x0Du;
+  const std::uint32_t vertices_per_primitive = rect_strip_expand ? 3u : 1u;
   if (rect_strip_expand &&
       (draw.index_count == 0u || draw.index_count % 3u != 0u)) {
     error_ =
         "pinned draw: rectangle-list vertex count is not a multiple of 3";
     return false;
   }
-  if (rect_strip_expand &&
-      draw.index_count / 3u > (1u << 20u)) {
+  if (strip_expand &&
+      draw.index_count / vertices_per_primitive > (1u << 20u)) {
     error_ = "pinned draw: rectangle-list draw exceeds the bounded "
              "primitive count";
     return false;
@@ -2479,7 +3408,7 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
   std::vector<std::uint32_t> run_firsts;
   std::vector<std::uint32_t> run_counts;
   bool restart_found = false;
-  if (rect_strip_expand) {
+  if (strip_expand) {
     // The host index buffer is the oracle's two-triangle-strip builtin:
     // per primitive i, the strip indices (i<<2)+0..3, with a primitive
     // restart between strips (each strip then draws as its own run via
@@ -2528,7 +3457,7 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
         }
       }
     }
-    const std::uint32_t primitive_count = draw.index_count / 3u;
+    const std::uint32_t primitive_count = draw.index_count / vertices_per_primitive;
     host_indices.reserve(static_cast<std::size_t>(primitive_count) * 5u);
     for (std::uint32_t primitive = 0u; primitive < primitive_count;
          ++primitive) {
@@ -2546,6 +3475,50 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
         run_firsts.push_back(static_cast<std::uint32_t>(entry));
       }
     }
+    run_firsts.push_back(static_cast<std::uint32_t>(host_indices.size()));
+  } else if (quad_list_expand) {
+    // r526: quads expand host-side (free functions above); the pinned VS
+    // fetches by the expanded index exactly like any indexed draw, so no
+    // shader change is needed. restart_found stays set (as for strips)
+    // to keep the in-shader index-load flag off: the host buffer carries
+    // the indices. 16-bit DMA quads stay fail-closed (unobserved).
+    if (indexed_draw && draw.index_format != 1u) {
+      error_ =
+          "pinned draw: quad-list expansion is not qualified with 16-bit "
+          "guest indices this cycle";
+      return false;
+    }
+    if (indexed_draw) {
+      const std::uint64_t byte_offset = draw.index_address;
+      const std::uint64_t needed =
+          static_cast<std::uint64_t>(draw.index_count) * 4u;
+      if (shared_memory_mapped_ == nullptr ||
+          byte_offset + needed > shared_memory_dwords_ * 4u) {
+        error_ = "pinned draw: index buffer outside shared memory";
+        return false;
+      }
+      std::vector<std::uint32_t> guest_words(draw.index_count);
+      for (std::uint32_t index = 0u; index < draw.index_count; ++index) {
+        const std::uint8_t* word =
+            shared_memory_mapped_ + byte_offset + index * 4u;
+        guest_words[index] = (static_cast<std::uint32_t>(word[0]) << 24u) |
+                             (static_cast<std::uint32_t>(word[1]) << 16u) |
+                             (static_cast<std::uint32_t>(word[2]) << 8u) |
+                             static_cast<std::uint32_t>(word[3]);
+      }
+      if (!expand_quad_list_words(guest_words, host_indices)) {
+        error_ =
+            "pinned draw: quad-list guest indices are not qualified this "
+            "cycle";
+        return false;
+      }
+    } else if (!expand_quad_list_auto(draw.index_count, host_indices)) {
+      error_ =
+          "pinned draw: quad-list vertex count is not qualified this cycle";
+      return false;
+    }
+    restart_found = true;
+    run_firsts.push_back(0u);
     run_firsts.push_back(static_cast<std::uint32_t>(host_indices.size()));
   } else if (indexed_draw && draw.index_format == 0u) {
     // 16-bit guest indices: big-endian words, 2 bytes each, at the guest
@@ -2639,7 +3612,7 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
   const bool use_host_index_buffer =
       (indexed_draw &&
        (draw.index_format == 0u || restart_found)) ||
-      rect_strip_expand;
+      strip_expand || quad_list_expand;
   const auto vertex = state.active_shader(0u);
   const auto pixel = state.active_shader(1u);
   if (vertex.empty() || pixel.empty()) {
@@ -2682,20 +3655,36 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
         1u, 0u, pixel, candidate);
     if (pixel_translation.ok()) break;
   }
+  // r495: the oracle passes the pipeline's PS interpolator mask into the
+  // vertex shader modification (VulkanPipelineCache::GetCurrentVertexShader
+  // Modification sets modification.vertex.interpolator_mask from the paired
+  // PS's consumed interpolators), so the pinned VS translation declares
+  // exactly the interpolator outputs the paired PS reads. Derive the mask
+  // from the matched pinned PS variant's dword0 bits 0:15 instead of 0 --
+  // with 0 the type-10 rectangle translation omitted xe_out_interpolator_0
+  // and the retail title PS read an undefined (black) interpolator.
   const std::uint64_t vertex_high =
-      rect_strip_expand ? (9ull << 32u) : 0ull;  // kRectangleListAsTriangleStrip
+      (rect_strip_expand ? (10ull << 32u)
+                         : point_strip_expand ? (9ull << 32u) : 0ull) |
+      (pixel_translation.modification & 0xFFFFull);
   const ShaderTranslation vertex_translation =
-      ShaderTranslator::translate_ucode_variant(0u, 0u, vertex, vertex_high);
+      ShaderTranslator::translate_ucode_variant(0u, 0u, vertex, vertex_high,
+                                                static_cast<std::uint32_t>(
+                                                    pixel_translation.modification &
+                                                    0xFFFFu));
   if (!vertex_translation.ok() || !pixel_translation.ok()) {
     if (std::getenv("AC6_NATIVE_VD_TRACE") != nullptr) {
       const std::uint64_t vdig = ShaderTranslator::digest_words(vertex);
       const std::uint64_t pdig = ShaderTranslator::digest_words(pixel);
       std::fprintf(stderr,
                     "r478 probe: primitive_type=0x%02x rect_strip_expand=%d "
+                    "rb_modecontrol=0x%08x rb_surface_info=0x%08x "
                     "vertex_digest=%016llx vertex_mod=%016llx "
                     "vertex_ok=%d pixel_digest=%016llx pixel_mod_tried="
                     "{%016llx,%016llx,%016llx,%016llx} pixel_ok=%d\n",
                     draw.primitive_type, rect_strip_expand ? 1 : 0,
+                    state.register_value(kRegRbModeControl),
+                    state.register_value(kRegRbSurfaceInfo),
                     static_cast<unsigned long long>(vdig),
                     static_cast<unsigned long long>(vertex_high),
                     vertex_translation.ok() ? 1 : 0,
@@ -2751,6 +3740,15 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
   bool topology_ok = true;
   (void)topology_of(draw.primitive_type, topology_ok);
   if (!topology_ok) {
+    // r525 probe: name the refused primitive_type with its draw size
+    // (VD_TRACE-gated; the error contract below is unchanged).
+    if (std::getenv("AC6_NATIVE_VD_TRACE") != nullptr) {
+      std::fprintf(stderr,
+                   "r525 probe: primitive_type=0x%02x vertex_count=%u "
+                   "index_count=%u\n",
+                   draw.primitive_type, draw.vertex_count,
+                   draw.index_count);
+    }
     error_ = "pinned draw: primitive topology not qualified this cycle";
     return false;
   }
@@ -2760,9 +3758,12 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
   if (!derive_edram_render_target(state, rt)) {
     return false;
   }
+  const bool previous_surface_valid = edram_rt_valid_;
+  const auto previous_rt = edram_active_rt_;
   if (!ensure_edram_surface(rt)) {
     return false;
   }
+  const bool surface_invalidated = previous_surface_valid && !edram_rt_valid_;
 
   // Constant blocks: the system block is derived from XenosState registers
   // (bounded to what the pinned shaders read); everything else is raw guest
@@ -2796,6 +3797,11 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
   // half_pixel_offset defaults to true in this engine.
   float ndc_scale[3] = {0.0f, 0.0f, 0.0f};
   float ndc_offset[3] = {0.0f, 0.0f, 0.0f};
+  // r571: the viewport used to undo this NDC transform must have the
+  // same extent, independently of the (possibly larger) scissor/EDRAM.
+  float viewport_offset[2] = {0.0f, 0.0f};
+  float viewport_extent[2] = {static_cast<float>(rt.width),
+                              static_cast<float>(rt.height)};
   {
     const std::uint32_t clip_cntl = state.register_value(kRegPaClClipCntl);
     // The viewport registers are float bit patterns; bit-cast, never
@@ -2889,6 +3895,8 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
         const std::uint32_t axis_extent_int = axis_1_int - axis_0_int;
         if (axis_extent_int != 0u) {
           const float axis_extent = static_cast<float>(axis_extent_int);
+          viewport_offset[axis] = static_cast<float>(axis_0_int);
+          viewport_extent[axis] = axis_extent;
           ndc_scale[axis] = scale_axis * 2.0f / axis_extent;
           ndc_offset[axis] =
               (offset_axis -
@@ -2939,9 +3947,9 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
     system[kSysOffsetVertexIndexLoadAddress / 4u] = draw.index_address;
     system[kSysOffsetVertexIndexEndian / 4u] = 2u;  // k8in32
   }
-  if (rect_strip_expand) {
-    // The pinned VS derives guest_index = (host>>2)*3 + min(host&3, 2)
-    // and, for DMA draws, loads the real guest index from the guest index
+  if (strip_expand) {
+    // The point VS consumes one guest vertex; the rectangle VS runs three
+    // guest vertices and synthesizes its fourth corner. Both load DMA indices
     // buffer at member 1 + mapped_index * size (k8in32 big-endian words).
     if (indexed_draw) {
       flags |= kSysFlagComputeOrPrimitiveVertexIndexLoad |
@@ -3038,9 +4046,9 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
     system[160u / 4u] = to_float_bits(
         static_cast<float>((point_size >> 16u) & 0xFFFFu) * (2.0f / 16.0f));
     const float ndc_radius_x =
-        1.0f / static_cast<float>(rt.width > 0u ? rt.width : 1u);
+        1.0f / viewport_extent[0];
     const float ndc_radius_y =
-        1.0f / static_cast<float>(rt.height > 0u ? rt.height : 1u);
+        1.0f / viewport_extent[1];
     system[164u / 4u] = to_float_bits(ndc_radius_x);
     system[168u / 4u] = to_float_bits(ndc_radius_y);
   }
@@ -3075,11 +4083,55 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
       break;
     }
   }
+  // r490 depth/stencil pipeline state, re-decoded from the same registers
+  // derive_edram_render_target validated (draws use their position's state
+  // snapshot). depth_flags bit0 z test, bit1 z write, bit2 stencil test;
+  // depth_op_word packs zfunc, stencil ops and stencilfunc; stencil_state
+  // packs RB_STENCILREFMASK ref/mask/write-mask.
+  const std::uint32_t depth_control = state.register_value(kRegRbDepthControl);
+  const std::uint32_t z_test_flag =
+      rt.depth_enable && (depth_control & 0x2u) != 0u ? 0x1u : 0u;
+  const std::uint32_t z_write_flag =
+      rt.depth_enable && (depth_control & 0x4u) != 0u ? 0x2u : 0u;
+  const std::uint32_t stencil_flag =
+      rt.depth_enable && (depth_control & 0x1u) != 0u ? 0x4u : 0u;
+  const std::uint32_t depth_op_word =
+      ((depth_control >> 4u) & 0x7u) |
+      (((depth_control >> 11u) & 0x7u) << 3u) |
+      (((depth_control >> 14u) & 0x7u) << 6u) |
+      (((depth_control >> 17u) & 0x7u) << 9u) |
+      (((depth_control >> 8u) & 0x7u) << 12u);
+  const std::uint32_t stencil_refmask =
+      state.register_value(kRegRbStencilRefMask);
+  const std::uint32_t stencil_state =
+      (stencil_refmask & 0xFFu) | ((stencil_refmask >> 8u) & 0xFFu) << 8u |
+      ((stencil_refmask >> 16u) & 0xFFu) << 16u;
+  const VkFormat host_depth_format =
+      rt.depth_enable ? edram_depth_image_format(rt.depth_format)
+                      : VK_FORMAT_UNDEFINED;
   VkPipeline pipeline = VK_NULL_HANDLE;
-  if (!ensure_pipeline(draw.primitive_type, edram_image_format(rt.format),
-                       vertex_module, pixel_module, vertex_digest,
-                       pixel_digest, texture_layout_signature, texture_layout,
-                       rt.sample_count, rt.color_mask, pipeline)) {
+  // Color pass pipeline: no depth attachment state (the depth-only second
+  // pass below carries it).
+  if (!ensure_pipeline(
+          draw.primitive_type, edram_image_format(rt.format), vertex_module,
+          pixel_module, vertex_digest, pixel_digest, texture_layout_signature,
+          texture_layout, rt.sample_count,
+          rt.color_mask & color_format_component_mask(rt.format),
+          VK_FORMAT_UNDEFINED, 0u, 0u, 0u, pipeline)) {
+    return false;
+  }
+  // r491 depth pipeline: same shaders, color write mask 0, the decoded
+  // depth/stencil state. Used by the depth-only pass so depth content lands
+  // at the depth surface's own tile origin even when it differs from the
+  // color base.
+  VkPipeline depth_pipeline = VK_NULL_HANDLE;
+  if (rt.depth_enable &&
+      !ensure_pipeline(
+          draw.primitive_type, edram_image_format(rt.format), vertex_module,
+          pixel_module, vertex_digest, pixel_digest, texture_layout_signature,
+          texture_layout, rt.sample_count, 0u, host_depth_format,
+          z_test_flag | z_write_flag | stencil_flag, depth_op_word,
+          stencil_state, depth_pipeline)) {
     return false;
   }
 
@@ -3170,35 +4222,36 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
                 static_cast<std::size_t>(needed));
   }
     record_texture_upload(commands);
-  // First draw on a (re)configured target clears the EDRAM surface;
-  // subsequent draws on the same target load (EDRAM persists between draws
-  // until the registers reconfigure it).
-    const bool clear_surface =
+  // First draw on a new color allocation/region clears it; color mask and
+  // depth state changes preserve the existing color image (r572). The
+  // historical clear-on-color-region-change policy remains. r491 records a
+  // color-only pass, plus a depth-only pass at the depth surface's own tile
+  // origin when the draw has depth/stencil state -- that also serves a
+  // depth base differing from the color base (retail r490: color base 0,
+  // depth base 0x2d0), which a single render pass cannot express because
+  // both attachments share one render area.
+  const bool clear_depth_surface =
       !edram_rt_valid_ || !(rt == edram_active_rt_);
-  VkClearValue clear_value{};
-  clear_value.color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+  const bool clear_surface = !edram_rt_valid_ ||
+      rt.base_tiles != edram_active_rt_.base_tiles ||
+      rt.pitch_pixels != edram_active_rt_.pitch_pixels ||
+      rt.format != edram_active_rt_.format ||
+      rt.sample_count != edram_active_rt_.sample_count ||
+      rt.width != edram_active_rt_.width || rt.height != edram_active_rt_.height;
+  VkClearValue clear_values[2]{};
+  clear_values[0].color = {{0.0f, 0.0f, 0.0f, 0.0f}};
+  clear_values[1].depthStencil = {1.0f, 0u};
   const VkFormat surface_format = edram_image_format(rt.format);
+  const VkFormat surface_depth_format =
+      rt.depth_enable ? edram_depth_image_format(rt.depth_format)
+                      : VK_FORMAT_UNDEFINED;
   VkRenderPass record_clear_pass = VK_NULL_HANDLE;
   VkRenderPass record_load_pass = VK_NULL_HANDLE;
-  if (!ensure_edram_passes(surface_format, rt.sample_count, record_clear_pass,
+  if (!ensure_edram_passes(surface_format, rt.sample_count,
+                           VK_FORMAT_UNDEFINED, record_clear_pass,
                            record_load_pass)) {
     return false;
   }
-  VkRenderPassBeginInfo pass_begin{};
-  pass_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  pass_begin.renderPass =
-      clear_surface ? record_clear_pass : record_load_pass;
-  pass_begin.framebuffer = edram_framebuffer_;
-  pass_begin.renderArea.offset.x =
-      static_cast<std::int32_t>(rt.origin_x);
-  pass_begin.renderArea.offset.y =
-      static_cast<std::int32_t>(rt.origin_y);
-  pass_begin.renderArea.extent.width = rt.width;
-  pass_begin.renderArea.extent.height = rt.height;
-  pass_begin.clearValueCount = clear_surface ? 1u : 0u;
-  pass_begin.pClearValues = &clear_value;
-    vkCmdBeginRenderPass(commands, &pass_begin, VK_SUBPASS_CONTENTS_INLINE);
-  vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
   VkDescriptorSet pixel_texture_bound_set = descriptor_set_empty_;
   if (!texture_bindings.empty()) {
     for (std::uint32_t layout_index = 0u;
@@ -3221,31 +4274,67 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
       break;
     }
   }
-  vkCmdBindDescriptorSets(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          bound_layout, 0u, 4u, sets, 0u, nullptr);
-  const VkViewport viewport{
-      static_cast<float>(rt.origin_x), static_cast<float>(rt.origin_y),
-      static_cast<float>(rt.width), static_cast<float>(rt.height), 0.0f, 1.0f};
-  const VkRect2D scissor{
-      {static_cast<std::int32_t>(rt.origin_x),
-       static_cast<std::int32_t>(rt.origin_y)},
-      {rt.width, rt.height}};
-  vkCmdSetViewport(commands, 0u, 1u, &viewport);
-  vkCmdSetScissor(commands, 0u, 1u, &scissor);
-  if (use_host_index_buffer && !host_indices.empty()) {
-    // Each run after a restart is its own indexed draw: no bridging
-    // primitive is rendered. Without restarts the single run covers the
-    // whole stream (r262 behavior).
-    vkCmdBindIndexBuffer(commands, index_buffer_, 0,
-                         VK_INDEX_TYPE_UINT32);
-    for (std::size_t run = 0u; run < run_firsts.size(); ++run) {
-      vkCmdDrawIndexed(commands, run_counts[run], 1u, run_firsts[run], 0u,
-                       0u);
+  const auto record_pass = [&](VkRenderPass pass, VkFramebuffer framebuffer,
+                               VkPipeline bound_pipeline,
+                               std::uint32_t origin_x, std::uint32_t origin_y,
+                               std::uint32_t region_w, std::uint32_t region_h,
+                               std::uint32_t clear_count) {
+    VkRenderPassBeginInfo pass_begin{};
+    pass_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    pass_begin.renderPass = pass;
+    pass_begin.framebuffer = framebuffer;
+    pass_begin.renderArea.offset.x = static_cast<std::int32_t>(origin_x);
+    pass_begin.renderArea.offset.y = static_cast<std::int32_t>(origin_y);
+    pass_begin.renderArea.extent.width = region_w;
+    pass_begin.renderArea.extent.height = region_h;
+    pass_begin.clearValueCount = clear_count;
+    pass_begin.pClearValues = clear_values;
+    vkCmdBeginRenderPass(commands, &pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      bound_pipeline);
+    vkCmdBindDescriptorSets(commands, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            bound_layout, 0u, 4u, sets, 0u, nullptr);
+    const VkViewport viewport{
+        static_cast<float>(origin_x) + viewport_offset[0],
+        static_cast<float>(origin_y) + viewport_offset[1],
+        viewport_extent[0], viewport_extent[1], 0.0f,
+        1.0f};
+    const VkRect2D scissor{{static_cast<std::int32_t>(origin_x),
+                            static_cast<std::int32_t>(origin_y)},
+                           {region_w, region_h}};
+    vkCmdSetViewport(commands, 0u, 1u, &viewport);
+    vkCmdSetScissor(commands, 0u, 1u, &scissor);
+    if (use_host_index_buffer && !host_indices.empty()) {
+      // Each run after a restart is its own indexed draw: no bridging
+      // primitive is rendered. Without restarts the single run covers the
+      // whole stream (r262 behavior).
+      vkCmdBindIndexBuffer(commands, index_buffer_, 0,
+                           VK_INDEX_TYPE_UINT32);
+      for (std::size_t run = 0u; run < run_firsts.size(); ++run) {
+        vkCmdDrawIndexed(commands, run_counts[run], 1u, run_firsts[run], 0u,
+                         0u);
+      }
+    } else {
+      vkCmdDraw(commands, draw.vertex_count, 1u, 0u, 0u);
     }
-  } else {
-    vkCmdDraw(commands, draw.vertex_count, 1u, 0u, 0u);
+    vkCmdEndRenderPass(commands);
+  };
+  record_pass(clear_surface ? record_clear_pass : record_load_pass,
+              edram_color_framebuffer_, pipeline, rt.origin_x, rt.origin_y,
+              rt.width, rt.height, clear_surface ? 1u : 0u);
+  if (rt.depth_enable) {
+    VkRenderPass depth_clear_pass = VK_NULL_HANDLE;
+    VkRenderPass depth_load_pass = VK_NULL_HANDLE;
+    if (!ensure_edram_depth_passes(surface_format, rt.sample_count,
+                                   surface_depth_format, depth_clear_pass,
+                                   depth_load_pass)) {
+      return false;
+    }
+    record_pass(clear_depth_surface ? depth_clear_pass : depth_load_pass,
+                edram_framebuffer_, depth_pipeline, rt.depth_origin_x,
+                rt.depth_origin_y, rt.depth_width, rt.depth_height,
+                clear_depth_surface ? 2u : 0u);
   }
-  vkCmdEndRenderPass(commands);
   edram_rt_valid_ = true;
   edram_active_rt_ = rt;
   if (vkEndCommandBuffer(commands) != VK_SUCCESS) {
@@ -3267,6 +4356,550 @@ bool PinnedShaderRuntime::draw_pinned(VulkanOffscreenTarget& target,
     return false;
   }
   ++draw_count_;
+  // r527: live-draw vertex-bytes diagnostic (VD_TRACE-gated, bounded to
+  // the first 8 executed draws per process; error contract unchanged).
+  // Named for the r526 quad path (degenerate boot geometry, r495 v1==v2
+  // precedent, polygonal flag excluded), but the trigger covers every
+  // executed primitive: prototype runs showed the 25 s boot path
+  // deterministically executing 0x01/0x08 draws with zero 0x0D quads
+  // (vs 45 refused quads at r525), so gating on quads alone yields no
+  // data. Fetch the draw's vertex bytes via the vf0 fetch constant (same
+  // source as the r495 probe below) and report per-draw degeneracy so
+  // one traced run decides degenerate-vs-killed between the executed
+  // draws and the screen. Stride assumption is stated, not asserted:
+  // positions decode as big-endian floats at 28-byte (7-dword,
+  // r495-observed) stride.
+  if (std::getenv("AC6_NATIVE_VD_TRACE") != nullptr) {
+    static unsigned r527_quad_probe_count = 0u;
+    if (r527_quad_probe_count < 8u) {
+      ++r527_quad_probe_count;
+      const std::uint32_t vf0 = state.register_value(0x4800u);
+      const std::uint32_t vf1 = state.register_value(0x4801u);
+      const std::uint32_t vf_address = (vf0 >> 2u) * 4u;
+      const std::uint64_t mem_bytes =
+          static_cast<std::uint64_t>(shared_memory_dwords_) * 4u;
+      constexpr std::size_t kR527Bytes = 112u;  // 4 verts x 28 B stride
+      if (shared_memory_mapped_ == nullptr ||
+          static_cast<std::uint64_t>(vf_address) + kR527Bytes > mem_bytes) {
+        std::fprintf(stderr,
+                     "r527 quad probe: draw=%llu prim=0x%02x idx_count=%u "
+                     "idx_addr=0x%08x vf0=0x%08x vf1=0x%08x vf_addr=0x%08x "
+                     "unreadable\n",
+                     static_cast<unsigned long long>(draw_count_),
+                     draw.primitive_type, draw.index_count,
+                     draw.index_address, vf0, vf1, vf_address);
+      } else {
+        auto be_word_at = [&](std::size_t off) {
+          return (static_cast<std::uint32_t>(
+                      shared_memory_mapped_[vf_address + off])
+                  << 24u) |
+                 (static_cast<std::uint32_t>(
+                      shared_memory_mapped_[vf_address + off + 1u])
+                  << 16u) |
+                 (static_cast<std::uint32_t>(
+                      shared_memory_mapped_[vf_address + off + 2u])
+                  << 8u) |
+                 static_cast<std::uint32_t>(
+                     shared_memory_mapped_[vf_address + off + 3u]);
+        };
+        float v[4][3];
+        for (unsigned vi = 0u; vi < 4u; ++vi) {
+          for (unsigned ci = 0u; ci < 3u; ++ci) {
+            const std::uint32_t w = be_word_at(vi * 28u + ci * 4u);
+            std::memcpy(&v[vi][ci], &w, sizeof(float));
+          }
+        }
+        const bool v1_eq_v2 = be_word_at(28u) == be_word_at(56u) &&
+                              be_word_at(32u) == be_word_at(60u) &&
+                              be_word_at(36u) == be_word_at(64u);
+        const bool v0_eq_v1 = be_word_at(0u) == be_word_at(28u) &&
+                              be_word_at(4u) == be_word_at(32u) &&
+                              be_word_at(8u) == be_word_at(36u);
+        // Expanded triangles are (0,1,2) and (0,2,3); zero area on both
+        // means nothing can rasterize regardless of shader/color path.
+        const float area_a = (v[1][0] - v[0][0]) * (v[2][1] - v[0][1]) -
+                             (v[1][1] - v[0][1]) * (v[2][0] - v[0][0]);
+        const float area_b = (v[2][0] - v[0][0]) * (v[3][1] - v[0][1]) -
+                             (v[2][1] - v[0][1]) * (v[3][0] - v[0][0]);
+        std::fprintf(stderr,
+                     "r527 quad probe: draw=%llu prim=0x%02x idx_count=%u "
+                     "idx_addr=0x%08x vf0=0x%08x vf1=0x%08x vf_addr=0x%08x "
+                     "v0=(%.3f,%.3f,%.3f) v1=(%.3f,%.3f,%.3f) "
+                     "v2=(%.3f,%.3f,%.3f) v3=(%.3f,%.3f,%.3f) "
+                     "v1_eq_v2=%d v0_eq_v1=%d area2_a=%.6f area2_b=%.6f "
+                     "bytes112=",
+                     static_cast<unsigned long long>(draw_count_),
+                     draw.primitive_type, draw.index_count,
+                     draw.index_address, vf0, vf1, vf_address, v[0][0],
+                     v[0][1], v[0][2], v[1][0], v[1][1], v[1][2], v[2][0],
+                     v[2][1], v[2][2], v[3][0], v[3][1], v[3][2],
+                     v1_eq_v2 ? 1 : 0, v0_eq_v1 ? 1 : 0,
+                     static_cast<double>(area_a < 0.0f ? -area_a : area_a),
+                     static_cast<double>(area_b < 0.0f ? -area_b : area_b));
+        for (std::size_t bi = 0u; bi < kR527Bytes; ++bi) {
+          std::fprintf(stderr, "%02x", shared_memory_mapped_[vf_address + bi]);
+        }
+          std::fprintf(stderr, " (stride-assumed-28B)\n");
+      }
+    }
+  }
+  // r535: fetch-constant census for textured draws (VD_TRACE or r562
+  // BOOT_ADDRESS_TRACE, without enabling the full per-draw trace),
+  // first 4 textured draws per process; error contract unchanged. The
+  // r495/r527 vf0-slot read goes out-of-bounds on textured quads
+  // (vf=0x81000000), so dump every nonzero fetch slot's 6 dwords: the
+  // vertex-fetch slot names the draws' real vertex base.
+  if ((std::getenv("AC6_NATIVE_VD_TRACE") != nullptr ||
+       std::getenv("AC6_NATIVE_BOOT_ADDRESS_TRACE") != nullptr) &&
+      !texture_bindings.empty()) {
+    static unsigned r535_fetch_probe_count = 0u;
+    if (r535_fetch_probe_count < 4u) {
+      ++r535_fetch_probe_count;
+      std::fprintf(stderr,
+                   "r535 fetch probe: draw=%llu prim=0x%02x slots=",
+                   static_cast<unsigned long long>(draw_count_),
+                   draw.primitive_type);
+      for (std::uint32_t slot = 0u; slot < 32u; ++slot) {
+        std::uint32_t words[6];
+        bool nonzero = false;
+        for (std::uint32_t i = 0u; i < 6u; ++i) {
+          words[i] = state.register_value(0x4800u + 6u * slot + i);
+          if (words[i] != 0u) nonzero = true;
+        }
+        if (nonzero) {
+          std::fprintf(stderr, "[%u]=%08x %08x %08x %08x %08x %08x", slot,
+                       words[0], words[1], words[2], words[3], words[4],
+                       words[5]);
+        }
+      }
+      std::fprintf(stderr, "\n");
+    }
+  }
+  // r536: first-valid-vertex-fetch dump (VD_TRACE or BOOT_ADDRESS_TRACE, first 4
+  // textured draws per process; error contract unchanged). r535
+  // misread the census: group 31 holds type-3 (kVertex) entries
+  // (#94/#95, endian 2, in-window) while slots 1-30 are invalid, so
+  // the draws' VS may fetch real vertices. Scan all 32 groups for
+  // the first vertex entry with type==3, nonzero size, in-window
+  // address, and dump 112 bytes there (same 28 B stride reading as
+  // r527; stride stated, not asserted).
+  if ((std::getenv("AC6_NATIVE_VD_TRACE") != nullptr ||
+       std::getenv("AC6_NATIVE_BOOT_ADDRESS_TRACE") != nullptr) &&
+      !texture_bindings.empty()) {
+    static unsigned r536_vertex_probe_count = 0u;
+    if (r536_vertex_probe_count < 4u) {
+      ++r536_vertex_probe_count;
+      const std::uint64_t mem_bytes =
+          static_cast<std::uint64_t>(shared_memory_dwords_) * 4u;
+      // r570: the alias upload is qualified, but the final retail frame is
+      // black. Observe matrix/state and the image after this draw, then its
+      // next swap. The shared four-draw cap keeps the broad EDRAM trace off.
+      if (std::getenv("AC6_NATIVE_BOOT_ADDRESS_TRACE") != nullptr) {
+        std::fprintf(stderr,
+            "r570 draw draw=%llu present=%llu prim=%u vertices=%u indices=%u "
+            "indexed=%u index_address=%08x host_indices=%zu "
+            "vs=%016llx vmod=%016llx ps=%016llx pmod=%016llx "
+            "flags=%08x color_exp_bias=%08x ndc_scale=%g,%g,%g ndc_offset=%g,%g,%g "
+            "ndc_scale_bits=%08x,%08x,%08x ndc_offset_bits=%08x,%08x,%08x "
+            "viewport_offset=%g,%g viewport_extent=%g,%g "
+            "rt_format=%u rt_origin=%u,%u rt_region=%u,%u rt_image=%u,%u rt_samples=%u\n",
+            static_cast<unsigned long long>(draw_count_),
+            static_cast<unsigned long long>(present_count_), draw.primitive_type,
+            draw.vertex_count, draw.index_count, static_cast<unsigned>(indexed_draw),
+            draw.index_address, host_indices.size(),
+            static_cast<unsigned long long>(vertex_digest),
+            static_cast<unsigned long long>(vertex_translation.modification),
+            static_cast<unsigned long long>(pixel_digest),
+            static_cast<unsigned long long>(pixel_translation.modification), flags,
+            system[kSysOffsetColorExpBias / 4u],
+            ndc_scale[0], ndc_scale[1], ndc_scale[2],
+            ndc_offset[0], ndc_offset[1], ndc_offset[2],
+            system[kSysOffsetNdcScale / 4u], system[kSysOffsetNdcScale / 4u + 1u],
+            system[kSysOffsetNdcScale / 4u + 2u], system[kSysOffsetNdcOffset / 4u],
+            system[kSysOffsetNdcOffset / 4u + 1u], system[kSysOffsetNdcOffset / 4u + 2u],
+            viewport_offset[0], viewport_offset[1], viewport_extent[0], viewport_extent[1], rt.format,
+            rt.origin_x, rt.origin_y, rt.width, rt.height,
+            rt.image_width, rt.image_height, rt.sample_count);
+        std::fprintf(stderr, "r570 registers draw=%llu",
+                     static_cast<unsigned long long>(draw_count_));
+        for (const auto reg : {kRegPaClVteCntl, kRegPaClClipCntl,
+                 kRegPaSuScModeCntl, kRegPaSuVtxCntl, kRegPaScWindowOffset,
+                 kRegPaClVportXScale, kRegPaClVportXScale + 1u,
+                 kRegPaClVportXScale + 2u, kRegPaClVportXScale + 3u,
+                 kRegPaClVportXScale + 4u, kRegPaClVportXScale + 5u,
+                 kRegPaScScreenScissorTL, kRegPaScScreenScissorBR,
+                 kRegRbColorInfo, kRegRbColorMask, kRegRbColorControl,
+                 kRegRbDepthControl, kRegRbSurfaceInfo,
+                 kRegVgtIndxOffset, kRegVgtMinVtxIndx, kRegVgtMaxVtxIndx}) {
+          std::fprintf(stderr, " r%04x=%08x", reg, state.register_value(reg));
+        }
+        std::fputc('\n', stderr);
+        // The observed US VS uses c40..c43 and c255. Record only the active
+        // variant's bitmap entries within its fixed 256-slot domain.
+        const auto trace_constants = [&](const char* name, std::uint32_t bank,
+              const ShaderTranslation& stage, const std::uint32_t* uploaded) {
+          std::fprintf(stderr, "r570 constants draw=%llu stage=%s map=%u dynamic=%u count=%u",
+              static_cast<unsigned long long>(draw_count_), name,
+              static_cast<unsigned>(stage.has_constant_map),
+              static_cast<unsigned>(stage.constant_map.float_dynamic),
+              static_cast<unsigned>(stage.constant_map.float_count));
+          std::uint32_t packed = 0u;
+          for (std::uint32_t c = 0u; c < 256u; ++c) {
+            if ((stage.constant_map.float_bitmap[c / 64u] & (1ull << (c % 64u))) == 0u) continue;
+            const auto slot = stage.has_constant_map && stage.constant_map.float_dynamic == 0u &&
+                stage.constant_map.float_count != 0u ? packed++ : c;
+            std::fprintf(stderr, " c%u=%08x,%08x,%08x,%08x uploaded=%08x,%08x,%08x,%08x", c,
+                state.register_value(bank + 4u * c), state.register_value(bank + 4u * c + 1u),
+                state.register_value(bank + 4u * c + 2u), state.register_value(bank + 4u * c + 3u),
+                uploaded[4u * slot], uploaded[4u * slot + 1u], uploaded[4u * slot + 2u], uploaded[4u * slot + 3u]);
+          }
+          std::fputc('\n', stderr);
+        };
+        trace_constants("vs", kRegShaderConstant000X, vertex_translation, float_vertex);
+        trace_constants("ps", kRegShaderConstant256X, pixel_translation, float_pixel);
+        std::fprintf(stderr, "r570 indices draw=%llu count=%zu values=",
+            static_cast<unsigned long long>(draw_count_), host_indices.size());
+        for (std::size_t i = 0u; i < std::min<std::size_t>(host_indices.size(), 24u); ++i) {
+          std::fprintf(stderr, "%s%u", i ? "," : "", host_indices[i]);
+        }
+        std::fputc('\n', stderr);
+        // This existing readback stores four bytes per pixel. Qualify the
+        // new call as RGBA8; a float16 target would require eight bytes.
+        if (edram_image_format(rt.format) == VK_FORMAT_R8G8B8A8_UNORM) {
+          probe_edram_image(rt);
+        } else {
+          std::fprintf(stderr, "r570 image draw=%llu unsupported_format=%u\n",
+              static_cast<unsigned long long>(draw_count_), rt.format);
+        }
+        r570_pending_present_draw_ = draw_count_;
+        if (r571_chain_start_draw_ == 0u) r571_chain_start_draw_ = draw_count_;
+      }
+      // r569: verify the upload in the same SSBO and draw that consume the
+      // texture. Address extraction matches decode_pixel_texture; the raw
+      // sample is bounded independently of the texture's decoded dimensions.
+      unsigned texture_samples = 0u;
+      std::uint32_t sampled_fetches = 0u;
+      for (const auto& binding : texture_bindings) {
+        const auto fetch = binding.fetch_constant;
+        if (binding.is_sampler || fetch >= 32u || texture_samples >= 4u ||
+            (sampled_fetches & (1u << fetch)) != 0u) continue;
+        sampled_fetches |= 1u << fetch;
+        ++texture_samples;
+        const auto word0 = state.register_value(0x4800u + 6u * fetch);
+        const auto address = state.register_value(0x4801u + 6u * fetch) & 0xfffff000u;
+        const bool valid = (word0 & 3u) == 2u && shared_memory_mapped_ != nullptr &&
+            static_cast<std::uint64_t>(address) + 4u <= mem_bytes;
+        const auto bytes = valid ? std::min<std::uint64_t>(16384u, mem_bytes - address) : 0u;
+        unsigned nonzero = 0u;
+        for (std::uint64_t i = 0u; i < bytes; ++i) nonzero += shared_memory_mapped_[address + i] != 0u;
+        std::uint32_t first = 0u;
+        if (valid) {
+          for (unsigned i = 0u; i < 4u; ++i) first = (first << 8u) | shared_memory_mapped_[address + i];
+        }
+        std::fprintf(stderr, "r569 texture draw=%llu fetch=%u address=%08x sample_valid=%u "
+                     "bytes=%llu gpu_nonzero=%u gpu_first=%08x\n",
+                     static_cast<unsigned long long>(draw_count_), fetch, address,
+                     static_cast<unsigned>(valid), static_cast<unsigned long long>(bytes), nonzero, first);
+      }
+      // r568: the first valid entry observed by r536 was #94, whereas
+      // the textured logo shader declares #95. Sample the current shader's
+      // recorded fetch usage instead of inferring use from descriptor type.
+      // Keep the old probe below as historical comparison, not authority.
+      unsigned required_samples = 0u;
+      for (unsigned fetch = 0u; vertex_translation.has_constant_map && fetch < 96u &&
+                                  required_samples < 4u; ++fetch) {
+        if ((vertex_translation.constant_map.vertex_fetch_bitmap[fetch / 32u] &
+             (1u << (fetch % 32u))) == 0u) continue;
+        ++required_samples;
+        const auto wa = state.register_value(0x4800u + 2u * fetch);
+        const auto wb = state.register_value(0x4801u + 2u * fetch);
+        const auto address = wa & ~3u;
+        const bool valid = (wa & 3u) == 3u && (wb >> 2u) != 0u &&
+            shared_memory_mapped_ != nullptr && static_cast<std::uint64_t>(address) + 112u <= mem_bytes;
+        unsigned nonzero = 0u;
+        if (valid) {
+          for (unsigned i = 0u; i < 112u; ++i) nonzero += shared_memory_mapped_[address + i] != 0u;
+        }
+        std::fprintf(stderr, "r568 shader-fetch draw=%llu fetch=%u wa=%08x wb=%08x address=%08x "
+                     "sample_valid=%u nonzero=%u bytes112=",
+                     static_cast<unsigned long long>(draw_count_), fetch, wa, wb, address,
+                     static_cast<unsigned>(valid), nonzero);
+        if (valid) {
+          for (unsigned i = 0u; i < 112u; ++i) std::fprintf(stderr, "%02x", shared_memory_mapped_[address + i]);
+        }
+        std::fprintf(stderr, "\n");
+        if (std::getenv("AC6_NATIVE_BOOT_ADDRESS_TRACE") != nullptr) {
+          // The qualified logo VS strides 13 DWORDs: 208 bytes cover four
+          // vertices. Bounds qualify only this raw window, not another VS.
+          const bool full_valid = valid && static_cast<std::uint64_t>(address) + 208u <= mem_bytes;
+          std::fprintf(stderr, "r570 vertices draw=%llu fetch=%u address=%08x valid=%u bytes208=",
+              static_cast<unsigned long long>(draw_count_), fetch, address,
+              static_cast<unsigned>(full_valid));
+          if (full_valid) {
+            for (unsigned i = 0u; i < 208u; ++i) std::fprintf(stderr, "%02x", shared_memory_mapped_[address + i]);
+          }
+          std::fputc('\n', stderr);
+        }
+      }
+      if (required_samples == 0u)
+        std::fprintf(stderr, "r568 shader-fetch draw=%llu map_valid=%u selected=0\n",
+                     static_cast<unsigned long long>(draw_count_),
+                     static_cast<unsigned>(vertex_translation.has_constant_map));
+      std::uint32_t hit_addr = 0u;
+      std::uint32_t hit_slot = 0u;
+      std::uint32_t hit_entry = 0u;
+      for (std::uint32_t slot = 0u; slot < 32u && hit_addr == 0u; ++slot) {
+        // A group holding a texture fetch (word0 type==2) aliases its
+        // middle words as type-3 vertex entries; skip the whole group.
+        if ((state.register_value(0x4800u + 6u * slot) & 3u) == 2u) {
+          continue;
+        }
+        for (std::uint32_t entry = 0u; entry < 3u; ++entry) {
+          const std::uint32_t wa =
+              state.register_value(0x4800u + 6u * slot + 2u * entry);
+          const std::uint32_t wb =
+              state.register_value(0x4800u + 6u * slot + 2u * entry + 1u);
+          const std::uint32_t addr = (wa >> 2u) * 4u;
+          const std::uint32_t size = wb >> 2u;
+          if ((wa & 3u) == 3u && size != 0u &&
+              static_cast<std::uint64_t>(addr) + 112u <= mem_bytes) {
+            hit_addr = addr;
+            hit_slot = slot;
+            hit_entry = entry;
+            break;
+          }
+        }
+      }
+      if (hit_addr == 0u || shared_memory_mapped_ == nullptr) {
+        std::fprintf(stderr,
+                     "r536 vertex probe: draw=%llu prim=0x%02x no-valid-fetch\n",
+                     static_cast<unsigned long long>(draw_count_),
+                     draw.primitive_type);
+      } else {
+        std::fprintf(stderr,
+                     "r536 vertex probe: draw=%llu prim=0x%02x "
+                     "slot=%u entry=%u addr=0x%08x bytes112=",
+                     static_cast<unsigned long long>(draw_count_),
+                     draw.primitive_type, hit_slot, hit_entry, hit_addr);
+        for (std::size_t bi = 0u; bi < 112u; ++bi) {
+          std::fprintf(stderr, "%02x",
+                       shared_memory_mapped_[hit_addr + bi]);
+        }
+        std::fprintf(stderr, "\n");
+      }
+    }
+  }
+  // r541: late big-draw forensics (VD_TRACE-gated, first 6 draws with
+  // >=8 vertices/indices per process; error contract unchanged). The
+  // r492 block caps at draw 2000 (early boot only), so the r540
+  // marathon's late (8,8)/(80,80) classes were never characterized.
+  // Reports prim, shader digests, texture checksums and the first
+  // valid vertex fetch with 112 bytes, mirroring the r492/r536
+  // patterns. Fires whenever big draws occur, no window tuning.
+  if (std::getenv("AC6_NATIVE_VD_TRACE") != nullptr &&
+      (draw.vertex_count >= 8u || draw.index_count >= 8u)) {
+    static unsigned r541_big_probe_count = 0u;
+    if (r541_big_probe_count < 6u) {
+      ++r541_big_probe_count;
+      std::fprintf(stderr,
+                   "r541 big probe: draw=%llu prim=0x%02x vcount=%u "
+                   "icount=%u vdigest=%016llx pdigest=%016llx bindings=%zu\n",
+                   static_cast<unsigned long long>(draw_count_),
+                   draw.primitive_type, draw.vertex_count, draw.index_count,
+                   static_cast<unsigned long long>(
+                       ShaderTranslator::digest_words(vertex)),
+                   static_cast<unsigned long long>(
+                       ShaderTranslator::digest_words(pixel)),
+                   texture_bindings.size());
+      for (const auto& binding : texture_bindings) {
+        if (binding.is_sampler) continue;
+        PixelTexture texture{};
+        if (!decode_pixel_texture(state, binding.fetch_constant, texture)) {
+          std::fprintf(stderr,
+                       "r541 big probe: binding fetch=%u decode failed: %s\n",
+                       binding.fetch_constant, error_.c_str());
+          continue;
+        }
+        const std::size_t bytes = std::min<std::uint64_t>(
+            static_cast<std::uint64_t>(texture.pitch_pixels) * 4u *
+                texture.height,
+            4096u);
+        std::uint64_t checksum = 0u;
+        for (std::size_t index = 0u; index < bytes; ++index) {
+          checksum = checksum * 1099511628211ull +
+                     shared_memory_mapped_[texture.byte_address + index];
+        }
+        std::fprintf(stderr,
+                     "r541 big probe: texture fetch=%u %ux%u pitch=%u "
+                     "addr=0x%08x checksum=%016llx\n",
+                     binding.fetch_constant, texture.width, texture.height,
+                     texture.pitch_pixels, texture.byte_address,
+                     static_cast<unsigned long long>(checksum));
+      }
+      const std::uint64_t mem_bytes =
+          static_cast<std::uint64_t>(shared_memory_dwords_) * 4u;
+      std::uint32_t hit_addr = 0u;
+      for (std::uint32_t slot = 0u; slot < 32u && hit_addr == 0u; ++slot) {
+        if ((state.register_value(0x4800u + 6u * slot) & 3u) == 2u) {
+          continue;
+        }
+        for (std::uint32_t entry = 0u; entry < 3u; ++entry) {
+          const std::uint32_t wa =
+              state.register_value(0x4800u + 6u * slot + 2u * entry);
+          const std::uint32_t wb =
+              state.register_value(0x4800u + 6u * slot + 2u * entry + 1u);
+          const std::uint32_t addr = (wa >> 2u) * 4u;
+          if ((wa & 3u) == 3u && (wb >> 2u) != 0u &&
+              static_cast<std::uint64_t>(addr) + 112u <= mem_bytes) {
+            hit_addr = addr;
+            break;
+          }
+        }
+      }
+      if (hit_addr == 0u || shared_memory_mapped_ == nullptr) {
+        std::fprintf(stderr, "r541 big probe: no-valid-fetch\n");
+      } else {
+        std::fprintf(stderr, "r541 big probe: vf_addr=0x%08x bytes112=",
+                     hit_addr);
+        for (std::size_t bi = 0u; bi < 112u; ++bi) {
+          std::fprintf(stderr, "%02x",
+                       shared_memory_mapped_[hit_addr + bi]);
+        }
+        std::fprintf(stderr, "\n");
+      }
+    }
+  }
+  // r572 observed 74 draws before the first swap. Keep the same single
+  // causal interval, with room for that observed batching (never a global trace).
+  if (r571_chain_start_draw_ != 0u && !r571_chain_closed_ &&
+      draw_count_ > r571_chain_start_draw_ && draw_count_ - r571_chain_start_draw_ <= 128u) {
+    std::fprintf(stderr, "r571 chain draw=%llu anchor=%llu delta=%llu prim=%u "
+        "vs=%016llx ps=%016llx clear=%u invalidated=%u "
+        "format=%u base=%u region=%u,%u mask=%x depth=%u depth_format=%u depth_base=%u "
+        "previous=%u,%u,%u,%u,%u,%u,%u,%u "
+        "color_control=%08x blend_control=%08x depth_control=%08x point_size=%08x point_minmax=%08x "
+        "viewport=%g,%g,%g,%g\n",
+        static_cast<unsigned long long>(draw_count_),
+        static_cast<unsigned long long>(r571_chain_start_draw_),
+        static_cast<unsigned long long>(draw_count_ - r571_chain_start_draw_), draw.primitive_type,
+        static_cast<unsigned long long>(vertex_digest), static_cast<unsigned long long>(pixel_digest),
+        static_cast<unsigned>(clear_surface), static_cast<unsigned>(surface_invalidated),
+        rt.format, rt.base_tiles, rt.width, rt.height, rt.color_mask,
+        static_cast<unsigned>(rt.depth_enable), rt.depth_format, rt.depth_base_tiles,
+        previous_rt.format, previous_rt.base_tiles, previous_rt.width, previous_rt.height,
+        previous_rt.color_mask, static_cast<unsigned>(previous_rt.depth_enable),
+        previous_rt.depth_format, previous_rt.depth_base_tiles,
+        color_control, state.register_value(0x2201u), depth_control,
+        state.register_value(kRegPaSuPointSize), state.register_value(kRegPaSuPointMinmax),
+        viewport_offset[0], viewport_offset[1], viewport_extent[0], viewport_extent[1]);
+    if (edram_image_format(rt.format) == VK_FORMAT_R8G8B8A8_UNORM) probe_edram_image(rt);
+    // One shader-required fetch window per intervening draw, enough to
+    // recover the observed point/clear vertex color without a global dump.
+    for (unsigned fetch_index = 0u; vertex_translation.has_constant_map && fetch_index < 96u; ++fetch_index) {
+      if ((vertex_translation.constant_map.vertex_fetch_bitmap[fetch_index / 32u] &
+           (1u << (fetch_index % 32u))) == 0u) continue;
+      const auto wa = state.register_value(0x4800u + 2u * fetch_index);
+      const auto address = wa & ~3u;
+      const bool valid = (wa & 3u) == 3u && shared_memory_mapped_ != nullptr &&
+          static_cast<std::uint64_t>(address) + 112u <= shared_memory_dwords_ * 4u;
+      std::fprintf(stderr, "r571 chain-vertex draw=%llu fetch=%u address=%08x valid=%u bytes112=",
+          static_cast<unsigned long long>(draw_count_), fetch_index, address, static_cast<unsigned>(valid));
+      if (valid) for (unsigned i = 0u; i < 112u; ++i) std::fprintf(stderr, "%02x", shared_memory_mapped_[address + i]);
+      std::fputc('\n', stderr);
+      break;
+    }
+  }
+  if (std::getenv("AC6_NATIVE_EDRAM_PROBE") != nullptr) {
+    // Cheap per-draw state trace: every draw up to the bounded cap.
+    if (draw_count_ <= 2000u) {
+      std::fprintf(stderr,
+                   "r492 draw probe: draw=%llu prim=0x%02x vdigest=%016llx "
+                   "vmod=%016llx pdigest=%016llx pmod=%016llx bindings=%zu\n",
+                   static_cast<unsigned long long>(draw_count_),
+                   draw.primitive_type,
+                   static_cast<unsigned long long>(
+                       ShaderTranslator::digest_words(vertex)),
+                   static_cast<unsigned long long>(vertex_high),
+                   static_cast<unsigned long long>(
+                       ShaderTranslator::digest_words(pixel)),
+                   static_cast<unsigned long long>(
+                       pixel_translation.modification),
+                   texture_bindings.size());
+      for (const auto& binding : texture_bindings) {
+        if (binding.is_sampler) continue;
+        PixelTexture texture{};
+        if (!decode_pixel_texture(state, binding.fetch_constant, texture)) {
+          std::fprintf(stderr,
+                       "r492 draw probe: binding fetch=%u decode failed: %s\n",
+                       binding.fetch_constant, error_.c_str());
+          continue;
+        }
+        const std::size_t bytes =
+            std::min<std::uint64_t>(
+                static_cast<std::uint64_t>(texture.pitch_pixels) * 4u *
+                    texture.height,
+                4096u);
+        std::uint64_t checksum = 0u;
+        for (std::size_t index = 0u; index < bytes; ++index) {
+          checksum = checksum * 1099511628211ull +
+                     shared_memory_mapped_[texture.byte_address + index];
+        }
+        std::fprintf(stderr,
+                     "r492 draw probe: texture fetch=%u %ux%u pitch=%u "
+                     "addr=0x%08x checksum=%016llx\n",
+                     binding.fetch_constant, texture.width, texture.height,
+                     texture.pitch_pixels, texture.byte_address,
+                     static_cast<unsigned long long>(checksum));
+      }
+      {
+        // r495: the PS export is interpolator_0 * 2^color_exp_bias, and
+        // the rect VS takes its color from the guest vertex fetch --
+        // print both inputs plus the viewport-transform state so a black
+        // export can be attributed to the exp bias, the fetched bytes or
+        // the geometry mapping, and reproduced in a synthetic test.
+        const std::uint32_t color_info_reg =
+            state.register_value(kRegRbColorInfo);
+        std::uint32_t exp_field = (color_info_reg >> 20u) & 0x3Fu;
+        if (exp_field & 0x20u) exp_field |= 0xFFFFFFC0u;
+        const std::uint32_t vf0 = state.register_value(0x4800u);
+        const std::uint32_t vf1 = state.register_value(0x4801u);
+        const std::uint32_t vf_address = (vf0 >> 2u) * 4u;
+        std::fprintf(stderr,
+                     "r495 draw probe: color_info=0x%08x exp_bias=%d "
+                     "colormask=0x%08x vte=0x%08x vport=[%08x %08x %08x %08x %08x %08x] "
+                     "scissor=[%08x %08x] vgt_minmax_off=[%08x %08x %08x] "
+                     "vf0=0x%08x vf1=0x%08x vf_addr=0x%08x bytes192=",
+                     color_info_reg, static_cast<std::int32_t>(exp_field),
+                     state.register_value(kRegRbColorMask),
+                     state.register_value(kRegPaClVteCntl),
+                     state.register_value(kRegPaClVportXScale),
+                     state.register_value(kRegPaClVportXScale + 1u),
+                     state.register_value(kRegPaClVportXScale + 2u),
+                     state.register_value(kRegPaClVportXScale + 3u),
+                     state.register_value(kRegPaClVportXScale + 4u),
+                     state.register_value(kRegPaClVportXScale + 5u),
+                     state.register_value(kRegPaScScreenScissorTL),
+                     state.register_value(kRegPaScScreenScissorBR),
+                     state.register_value(0x2100u),
+                     state.register_value(0x2101u),
+                     state.register_value(0x2102u),
+                     vf0, vf1, vf_address);
+        const std::size_t dump_bytes = 192u;
+        for (std::size_t index = 0u; index < dump_bytes; ++index) {
+          std::fprintf(stderr, "%02x",
+                       shared_memory_mapped_[vf_address + index]);
+        }
+        std::fprintf(stderr, "\n");
+      }
+    }
+    // Heavy full-image readbacks: first draws only.
+    if (draw_count_ <= 24u) {
+      probe_edram_image(rt);
+      if (rt.depth_enable) {
+        probe_depth_surface(rt);
+      }
+    }
+  }
   return true;
 }
 
@@ -3292,7 +4925,40 @@ bool PinnedShaderRuntime::execute_frame(
               error_ = "pinned frame: DRAW packet has no drawable vertices";
               return false;
             }
-            return draw_pinned(target, state, packet);
+            return draw_pinned(target,
+                               packet.state_snapshot ? *packet.state_snapshot : state,
+                               packet);
+          } else if constexpr (std::is_same_v<Packet, ResolvePacket>) {
+            // DRAW_INDX in RB_MODECONTROL=kCopy is an EDRAM resolve. The
+            // decoder emits ResolvePacket before shader selection, matching
+            // Xenia's IssueCopy dispatch. A copy with no active EDRAM target
+            // is a valid no-op for this bounded frame; PRESENT will still
+            // validate its dimensions and resolve the active target.
+            // r553: log the packet fields (VD_TRACE gate, unbounded --
+            // resolves are rare). A render-to-texture resolve (destination
+            // other than the present surface, dims not matching the swap)
+            // would be misrouted below, which exactly yields exercised
+            // texture uploads over blank texels.
+            if (std::getenv("AC6_NATIVE_VD_TRACE") != nullptr) {
+              std::fprintf(stderr,
+                           "r553 resolve: src_edram=0x%08x dst_surface=%u "
+                           "%ux%u msaa=%u endian=%u depth=%d rt_valid=%d\n",
+                           packet.source_edram, packet.destination_surface,
+                           packet.width, packet.height, packet.sample_count,
+                           static_cast<unsigned>(packet.color_endian),
+                           packet.depth ? 1 : 0,
+                           edram_rt_valid_ ? 1 : 0);
+            }
+            if (edram_rt_valid_) {
+              const EdramRenderTarget& rt = edram_active_rt_;
+              if (!resolve_edram_to_target(target, edram_active_rt_,
+                                           edram_active_rt_.width,
+                                           edram_active_rt_.height)) {
+                return false;
+              }
+              ++resolve_count_;
+            }
+            return true;
           } else if constexpr (std::is_same_v<Packet, PresentPacket>) {
             if (packet.surface >= 16u || packet.width == 0u ||
                 packet.height == 0u) {
@@ -3300,20 +4966,61 @@ bool PinnedShaderRuntime::execute_frame(
               return false;
             }
             // XE_SWAP resolves the active EDRAM render-target surface into
-            // the readable image (the Xenos present boundary). The bounded
-            // gate requires the swap dimensions to match the surface region.
+            // the readable image (the Xenos present boundary). r490: the
+            // resolved window is the swap dimensions at the surface origin
+            // (clamped to the tile-pitched surface), no longer the scissor
+            // clamp -- a 1280x720 swap resolves exactly the 1280x720 frame
+            // the game drew. A float R32F surface (format 14) still fails
+            // closed here: its blit to the UNORM present target is
+            // driver-dependent, and the game is expected to reconfigure the
+            // display surface to a UNORM format before swap.
             if (edram_rt_valid_) {
-              const EdramRenderTarget& rt = edram_active_rt_;
-              if (rt.width != packet.width || rt.height != packet.height) {
+              if (edram_active_rt_.format == 14u) {
                 error_ =
-                    "pinned frame: swap dimensions differ from the EDRAM "
-                    "render target (not qualified this cycle)";
+                    "pinned frame: PRESENT of a k_32_FLOAT EDRAM surface is "
+                    "not qualified this cycle";
                 return false;
               }
-              if (!resolve_edram_to_target(target, rt)) {
+              const EdramRenderTarget& present_rt = edram_active_rt_;
+              const std::uint32_t region_width = std::min(
+                  packet.width, present_rt.image_width - present_rt.origin_x);
+              const std::uint32_t region_height = std::min(
+                  packet.height,
+                  present_rt.image_height - present_rt.origin_y);
+              if (region_width == 0u || region_height == 0u) {
+                error_ =
+                    "pinned frame: swap dimensions resolve to an empty "
+                    "EDRAM region";
+                return false;
+              }
+              if (!resolve_edram_to_target(target, present_rt, region_width,
+                                           region_height)) {
                 return false;
               }
               ++resolve_count_;
+              if (r571_chain_start_draw_ != 0u && !r571_chain_closed_) {
+                std::fprintf(stderr, "r571 chain-end anchor=%llu last_draw=%llu present=%llu intervening=%llu\n",
+                    static_cast<unsigned long long>(r571_chain_start_draw_),
+                    static_cast<unsigned long long>(draw_count_),
+                    static_cast<unsigned long long>(present_count_),
+                    static_cast<unsigned long long>(draw_count_ - r571_chain_start_draw_));
+                r571_chain_closed_ = true;
+              }
+              if (r570_pending_present_draw_ != 0u) {
+                std::fprintf(stderr, "r570 present present=%llu sampled_draw=%llu last_draw=%llu "
+                    "surface=%u swap=%u,%u rt_format=%u rt_origin=%u,%u rt_region=%u,%u rt_image=%u,%u\n",
+                    static_cast<unsigned long long>(present_count_),
+                    static_cast<unsigned long long>(r570_pending_present_draw_),
+                    static_cast<unsigned long long>(draw_count_), packet.surface,
+                    packet.width, packet.height, present_rt.format,
+                    present_rt.origin_x, present_rt.origin_y, region_width, region_height,
+                    present_rt.image_width, present_rt.image_height);
+                probe_present_pixels(target, present_count_);
+                r570_pending_present_draw_ = 0u;
+              }
+  if (std::getenv("AC6_NATIVE_EDRAM_PROBE") != nullptr) {
+                probe_present_pixels(target, present_count_);
+              }
             }
             ++present_count_;
             return true;
@@ -3327,6 +5034,409 @@ bool PinnedShaderRuntime::execute_frame(
     if (!handled) return false;
   }
   return true;
+}
+
+void PinnedShaderRuntime::probe_edram_image(const EdramRenderTarget& rt) noexcept {
+  VkDevice dev = device_->device();
+  const std::uint32_t copy_width = std::min(rt.image_width, 1280u);
+  const std::uint32_t copy_height = std::min(rt.image_height, 2048u);
+  const VkDeviceSize needed =
+      static_cast<VkDeviceSize>(copy_width) * copy_height * 4u;
+  if (probe_size_ < needed) {
+    if (probe_mapped_ != nullptr) {
+      vkUnmapMemory(dev, probe_memory_);
+      probe_mapped_ = nullptr;
+    }
+    if (probe_buffer_ != VK_NULL_HANDLE) {
+      vkDestroyBuffer(dev, probe_buffer_, nullptr);
+      probe_buffer_ = VK_NULL_HANDLE;
+    }
+    if (probe_memory_ != VK_NULL_HANDLE) {
+      vkFreeMemory(dev, probe_memory_, nullptr);
+      probe_memory_ = VK_NULL_HANDLE;
+    }
+    VkBufferCreateInfo buffer_info{};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.size = needed;
+    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    if (vkCreateBuffer(dev, &buffer_info, nullptr, &probe_buffer_) !=
+            VK_SUCCESS ||
+        probe_buffer_ == VK_NULL_HANDLE) {
+      return;
+    }
+    VkMemoryRequirements reqs{};
+    vkGetBufferMemoryRequirements(dev, probe_buffer_, &reqs);
+    VkPhysicalDeviceMemoryProperties props{};
+    vkGetPhysicalDeviceMemoryProperties(device_->physical_device(), &props);
+    std::uint32_t memory_type = 0xFFFFFFFFu;
+    for (std::uint32_t type = 0u; type < props.memoryTypeCount; ++type) {
+      const VkMemoryType& memory = props.memoryTypes[type];
+      if ((reqs.memoryTypeBits & (1u << type)) != 0u &&
+          (memory.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0u &&
+          (memory.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) !=
+              0u) {
+        memory_type = type;
+        break;
+      }
+    }
+    if (memory_type == 0xFFFFFFFFu) {
+      return;
+    }
+    VkMemoryAllocateInfo alloc{};
+    alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc.allocationSize = reqs.size;
+    alloc.memoryTypeIndex = memory_type;
+    if (vkAllocateMemory(dev, &alloc, nullptr, &probe_memory_) != VK_SUCCESS ||
+        vkBindBufferMemory(dev, probe_buffer_, probe_memory_, 0) !=
+            VK_SUCCESS ||
+        vkMapMemory(dev, probe_memory_, 0, needed, 0,
+                    reinterpret_cast<void**>(&probe_mapped_)) != VK_SUCCESS) {
+      return;
+    }
+    probe_size_ = needed;
+  }
+  VkCommandBufferAllocateInfo alloc_info{};
+  alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  alloc_info.commandPool = pool_;
+  alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  alloc_info.commandBufferCount = 1u;
+  VkCommandBuffer commands = VK_NULL_HANDLE;
+  if (vkAllocateCommandBuffers(device_->device(), &alloc_info, &commands) !=
+      VK_SUCCESS) {
+    return;
+  }
+  VkCommandBufferBeginInfo begin{};
+  begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  if (vkBeginCommandBuffer(commands, &begin) != VK_SUCCESS) {
+    vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+    return;
+  }
+  const bool multisample = rt.sample_count > 1u;
+  VkImage src_image = edram_image_;
+  if (multisample) {
+    // Downsample the accumulation image into the 1x companion first; a
+    // multisample image cannot be copied to a buffer directly.
+    VkImageMemoryBarrier to_dst{};
+    to_dst.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    to_dst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    to_dst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    to_dst.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    to_dst.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    to_dst.image = edram_resolve_image_;
+    to_dst.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    to_dst.subresourceRange.levelCount = 1u;
+    to_dst.subresourceRange.layerCount = 1u;
+    to_dst.srcAccessMask = 0u;
+    to_dst.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    vkCmdPipelineBarrier(commands, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                         nullptr, 1u, &to_dst);
+    VkImageResolve resolve_region{};
+    resolve_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    resolve_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    resolve_region.extent = {rt.image_width, rt.image_height, 1u};
+    vkCmdResolveImage(commands, edram_image_,
+                      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                      edram_resolve_image_,
+                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u,
+                      &resolve_region);
+    VkImageMemoryBarrier to_src{};
+    to_src.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    to_src.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    to_src.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    to_src.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    to_src.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    to_src.image = edram_resolve_image_;
+    to_src.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    to_src.subresourceRange.levelCount = 1u;
+    to_src.subresourceRange.layerCount = 1u;
+    to_src.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    to_src.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    vkCmdPipelineBarrier(commands, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                         nullptr, 1u, &to_src);
+    src_image = edram_resolve_image_;
+  }
+  VkBufferImageCopy region{};
+  region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  region.imageSubresource.layerCount = 1u;
+  region.imageExtent = {copy_width, copy_height, 1u};
+  vkCmdCopyImageToBuffer(commands, src_image,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, probe_buffer_,
+                         1u, &region);
+  if (vkEndCommandBuffer(commands) != VK_SUCCESS) {
+    vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+    return;
+  }
+  VkSubmitInfo submit{};
+  submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submit.commandBufferCount = 1u;
+  submit.pCommandBuffers = &commands;
+  VkFenceCreateInfo fence_info{};
+  fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  VkFence fence = VK_NULL_HANDLE;
+  if (vkCreateFence(dev, &fence_info, nullptr, &fence) != VK_SUCCESS) {
+    vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+    return;
+  }
+  const bool ok = vkQueueSubmit(device_->queue(), 1u, &submit, fence) ==
+                      VK_SUCCESS &&
+                  vkWaitForFences(dev, 1u, &fence, VK_TRUE, UINT64_MAX) ==
+                      VK_SUCCESS;
+  vkDestroyFence(dev, fence, nullptr);
+  vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+  if (!ok || probe_mapped_ == nullptr) {
+    return;
+  }
+  std::size_t non_black = 0u;
+  std::uint32_t min_x = UINT32_MAX, min_y = UINT32_MAX;
+  std::uint32_t max_x = 0u, max_y = 0u;
+  for (std::uint32_t y = 0u; y < copy_height; ++y) {
+    for (std::uint32_t x = 0u; x < copy_width; ++x) {
+      const std::size_t offset =
+          (static_cast<std::size_t>(y) * copy_width + x) * 4u;
+      if (probe_mapped_[offset] != 0u || probe_mapped_[offset + 1u] != 0u ||
+          probe_mapped_[offset + 2u] != 0u) {
+        ++non_black;
+        min_x = std::min(min_x, x);
+        min_y = std::min(min_y, y);
+        max_x = std::max(max_x, x);
+        max_y = std::max(max_y, y);
+      }
+    }
+  }
+  std::fprintf(stderr,
+               "r492 edram image probe: draw=%llu fmt=%u origin=%u,%u region=%ux%u depth=%u@%u,%u image=%ux%u samples=%u non_black=%zu bbox=(%u,%u)-(%u,%u)\n",
+               static_cast<unsigned long long>(draw_count_), rt.format,
+               rt.origin_x, rt.origin_y, rt.width, rt.height,
+               rt.depth_format, rt.depth_origin_x, rt.depth_origin_y,
+               rt.image_width, rt.image_height, rt.sample_count, non_black,
+               min_x == UINT32_MAX ? 0u : min_x,
+               min_y == UINT32_MAX ? 0u : min_y, max_x, max_y);
+}
+
+void PinnedShaderRuntime::probe_depth_surface(
+    const EdramRenderTarget& rt) noexcept {
+  VkDevice dev = device_->device();
+  const std::uint32_t copy_width = std::min(rt.image_width, 1280u);
+  const std::uint32_t copy_height = std::min(rt.image_height, 2048u);
+  // One stencil byte + one depth float per pixel.
+  const VkDeviceSize needed =
+      static_cast<VkDeviceSize>(copy_width) * copy_height * 5u;
+  if (probe_size_ < needed) {
+    if (probe_mapped_ != nullptr) {
+      vkUnmapMemory(dev, probe_memory_);
+      probe_mapped_ = nullptr;
+    }
+    if (probe_buffer_ != VK_NULL_HANDLE) {
+      vkDestroyBuffer(dev, probe_buffer_, nullptr);
+      probe_buffer_ = VK_NULL_HANDLE;
+    }
+    if (probe_memory_ != VK_NULL_HANDLE) {
+      vkFreeMemory(dev, probe_memory_, nullptr);
+      probe_memory_ = VK_NULL_HANDLE;
+    }
+    VkBufferCreateInfo buffer_info{};
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.size = needed;
+    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    if (vkCreateBuffer(dev, &buffer_info, nullptr, &probe_buffer_) !=
+            VK_SUCCESS ||
+        probe_buffer_ == VK_NULL_HANDLE) {
+      return;
+    }
+    VkMemoryRequirements reqs{};
+    vkGetBufferMemoryRequirements(dev, probe_buffer_, &reqs);
+    VkPhysicalDeviceMemoryProperties props{};
+    vkGetPhysicalDeviceMemoryProperties(device_->physical_device(), &props);
+    std::uint32_t memory_type = 0xFFFFFFFFu;
+    for (std::uint32_t type = 0u; type < props.memoryTypeCount; ++type) {
+      const VkMemoryType& memory = props.memoryTypes[type];
+      if ((reqs.memoryTypeBits & (1u << type)) != 0u &&
+          (memory.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0u &&
+          (memory.propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) !=
+              0u) {
+        memory_type = type;
+        break;
+      }
+    }
+    if (memory_type == 0xFFFFFFFFu) {
+      return;
+    }
+    VkMemoryAllocateInfo alloc{};
+    alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc.allocationSize = reqs.size;
+    alloc.memoryTypeIndex = memory_type;
+    if (vkAllocateMemory(dev, &alloc, nullptr, &probe_memory_) != VK_SUCCESS ||
+        vkBindBufferMemory(dev, probe_buffer_, probe_memory_, 0) !=
+            VK_SUCCESS ||
+        vkMapMemory(dev, probe_memory_, 0, needed, 0,
+                    reinterpret_cast<void**>(&probe_mapped_)) != VK_SUCCESS) {
+      return;
+    }
+    probe_size_ = needed;
+  }
+  VkCommandBufferAllocateInfo alloc_info{};
+  alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+  alloc_info.commandPool = pool_;
+  alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  alloc_info.commandBufferCount = 1u;
+  VkCommandBuffer commands = VK_NULL_HANDLE;
+  if (vkAllocateCommandBuffers(device_->device(), &alloc_info, &commands) !=
+      VK_SUCCESS) {
+    return;
+  }
+  VkCommandBufferBeginInfo begin{};
+  begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  if (vkBeginCommandBuffer(commands, &begin) != VK_SUCCESS) {
+    vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+    return;
+  }
+  // The depth image ended the draw's depth pass in DEPTH_STENCIL_ATTACHMENT
+  // _OPTIMAL; transfer copies need TRANSFER_SRC_OPTIMAL, transitioned back
+  // afterwards so the next load pass still sees the attachment layout.
+  const auto barrier = [&](VkImageLayout old_layout, VkImageLayout new_layout,
+                           VkPipelineStageFlags stages) {
+    VkImageMemoryBarrier b{};
+    b.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    b.oldLayout = old_layout;
+    b.newLayout = new_layout;
+    b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    b.image = edram_depth_image_;
+    b.subresourceRange.aspectMask =
+        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    b.subresourceRange.levelCount = 1u;
+    b.subresourceRange.layerCount = 1u;
+    b.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    b.dstAccessMask = (new_layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+                          ? VK_ACCESS_TRANSFER_READ_BIT
+                          : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    vkCmdPipelineBarrier(commands, stages, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u,
+                         0u, nullptr, 0u, nullptr, 1u, &b);
+  };
+  barrier(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+          VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT);
+  VkBufferImageCopy stencil_region{};
+  stencil_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+  stencil_region.imageSubresource.layerCount = 1u;
+  stencil_region.imageExtent = {copy_width, copy_height, 1u};
+  vkCmdCopyImageToBuffer(commands, edram_depth_image_,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, probe_buffer_,
+                         1u, &stencil_region);
+  VkBufferImageCopy depth_region{};
+  depth_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+  depth_region.imageSubresource.layerCount = 1u;
+  depth_region.imageExtent = {copy_width, copy_height, 1u};
+  depth_region.bufferOffset =
+      static_cast<VkDeviceSize>(copy_width) * copy_height;
+  vkCmdCopyImageToBuffer(commands, edram_depth_image_,
+                         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, probe_buffer_,
+                         1u, &depth_region);
+  barrier(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+          VK_PIPELINE_STAGE_TRANSFER_BIT);
+  if (vkEndCommandBuffer(commands) != VK_SUCCESS) {
+    vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+    return;
+  }
+  VkSubmitInfo submit{};
+  submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submit.commandBufferCount = 1u;
+  submit.pCommandBuffers = &commands;
+  VkFenceCreateInfo fence_info{};
+  fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  VkFence fence = VK_NULL_HANDLE;
+  if (vkCreateFence(dev, &fence_info, nullptr, &fence) != VK_SUCCESS) {
+    vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+    return;
+  }
+  const bool ok = vkQueueSubmit(device_->queue(), 1u, &submit, fence) ==
+                      VK_SUCCESS &&
+                  vkWaitForFences(dev, 1u, &fence, VK_TRUE, UINT64_MAX) ==
+                      VK_SUCCESS;
+  vkDestroyFence(dev, fence, nullptr);
+  vkFreeCommandBuffers(dev, pool_, 1u, &commands);
+  if (!ok || probe_mapped_ == nullptr) {
+    return;
+  }
+  const std::size_t stencil_bytes =
+      static_cast<std::size_t>(copy_width) * copy_height;
+  std::size_t stencil_nonzero = 0u;
+  std::size_t depth_nondefault = 0u;
+  for (std::size_t index = 0u; index < stencil_bytes; ++index) {
+    if (probe_mapped_[index] != 0u) ++stencil_nonzero;
+    float depth = 0.0f;
+    std::memcpy(&depth, probe_mapped_ + stencil_bytes + index * 4u, 4u);
+    if (depth != 1.0f) ++depth_nondefault;
+  }
+  std::fprintf(stderr,
+               "r492 depth probe: draw=%llu fmt=%u origin=%u,%u region=%ux%u "
+               "image=%ux%u stencil_nonzero=%zu depth_nondefault=%zu\n",
+               static_cast<unsigned long long>(draw_count_), rt.format,
+               rt.origin_x, rt.origin_y, rt.width, rt.height, rt.image_width,
+               rt.image_height, stencil_nonzero, depth_nondefault);
+}
+
+void PinnedShaderRuntime::probe_present_pixels(
+    VulkanOffscreenTarget& target, std::uint64_t present_index) noexcept {
+  const std::vector<std::uint8_t> pixels = target.readback();
+  if (pixels.empty()) {
+    std::fprintf(stderr, "r490 edram probe: present=%llu readback failed: %s\n",
+                 static_cast<unsigned long long>(present_index),
+                 target.error().c_str());
+    return;
+  }
+  std::size_t non_black = 0u;
+  std::uint32_t min_x = UINT32_MAX, min_y = UINT32_MAX;
+  std::uint32_t max_x = 0u, max_y = 0u;
+  const std::uint32_t width = target.width();
+  for (std::uint32_t y = 0u; y < target.height(); ++y) {
+    for (std::uint32_t x = 0u; x < width; ++x) {
+      const std::size_t offset = (static_cast<std::size_t>(y) * width + x) * 4u;
+      if (offset + 4u > pixels.size()) break;
+      if (pixels[offset] != 0u || pixels[offset + 1u] != 0u ||
+          pixels[offset + 2u] != 0u) {
+        ++non_black;
+        min_x = std::min(min_x, x);
+        min_y = std::min(min_y, y);
+        max_x = std::max(max_x, x);
+        max_y = std::max(max_y, y);
+      }
+    }
+  }
+  std::fprintf(stderr,
+               "r490 edram probe: present=%llu pixels=%zu non_black=%zu "
+               "bbox=(%u,%u)-(%u,%u)\n",
+               static_cast<unsigned long long>(present_index), pixels.size() / 4u,
+               non_black,
+               min_x == UINT32_MAX ? 0u : min_x, min_y == UINT32_MAX ? 0u : min_y,
+               max_x, max_y);
+  // r570 keeps the bounded intermediate presents, since a black final
+  // capture alone cannot establish whether an earlier logo was visible.
+  const char* capture_path = std::getenv("AC6_NATIVE_CAPTURE_PATH");
+  if (r570_pending_present_draw_ != 0u && capture_path != nullptr &&
+      pixels.size() == static_cast<std::size_t>(width) * target.height() * 4u) {
+    const std::string path = std::string(capture_path) + ".draw-" +
+        std::to_string(r570_pending_present_draw_) + ".ppm";
+    std::vector<std::uint8_t> rgb(pixels.size() / 4u * 3u);
+    for (std::size_t i = 0u; i < pixels.size() / 4u; ++i) {
+      std::memcpy(rgb.data() + i * 3u, pixels.data() + i * 4u, 3u);
+    }
+    bool saved = false;
+    if (std::FILE* file = std::fopen(path.c_str(), "wb")) {
+      saved = std::fprintf(file, "P6\n%u %u\n255\n", width, target.height()) > 0 &&
+          std::fwrite(rgb.data(), 1u, rgb.size(), file) == rgb.size();
+      saved = std::fclose(file) == 0 && saved;
+    }
+    std::fprintf(stderr, "r570 capture draw=%llu present=%llu saved=%u path=%s\n",
+        static_cast<unsigned long long>(r570_pending_present_draw_),
+        static_cast<unsigned long long>(present_index), static_cast<unsigned>(saved), path.c_str());
+  }
 }
 
 }  // namespace ac6::native

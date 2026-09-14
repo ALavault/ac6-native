@@ -247,6 +247,335 @@ void indirect_buffers_expand_and_cycles_fail_closed() {
   assert(bus.ring_read() == 0u);
 }
 
+void draw_state_follows_nested_pm4_order() {
+  using namespace ac6::native;
+  const auto write = pm4::header(pm4::kType0, 1u, 0x2200u);
+  const auto load = pm4::type3_header(pm4::kOpcodeImLoadImmediate, 3u);
+  const auto draw = pm4::type3_header(pm4::kOpcodeDrawIndx2, 1u);
+  const auto ib = pm4::type3_header(pm4::kOpcodeIndirectBuffer, 2u);
+  const auto triangle = 4u | (2u << 6u) | (3u << 16u);
+  // The nested draw inherits B, writes C, and returns to a parent draw
+  // before the parent's final D write. Flattening must preserve this order.
+  const std::vector<std::uint32_t> inner{
+      draw, triangle, write, 3u, load, 0u, 1u, 0xC0u, draw, triangle};
+  const std::vector<std::uint32_t> outer{
+      write, 2u, load, 0u, 1u, 0xB0u,
+      ib, 0x2100u, static_cast<std::uint32_t>(inner.size()), draw, triangle};
+  std::vector<std::uint32_t> ring{
+      write, 1u, load, 0u, 1u, 0xA0u, draw, triangle,
+      ib, 0x2000u, static_cast<std::uint32_t>(outer.size()), draw, triangle,
+      write, 4u, load, 0u, 1u, 0xD0u, draw, triangle};
+  const auto written = static_cast<std::uint32_t>(ring.size() * 4u);
+  ring.resize(64u);
+  std::vector<std::uint32_t> guest(64u + inner.size());
+  std::copy(outer.begin(), outer.end(), guest.begin());
+  std::copy(inner.begin(), inner.end(), guest.begin() + 64u);
+  MmioBus bus;
+  assert(bus.write(MmioBus::kRingSize, 256u));
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  assert(bus.write(MmioBus::kRingWrite, written));
+  VdBridge bridge(bus);
+  bridge.set_ring_words(ring);
+  bridge.set_guest_words(0x2000u, guest);
+  XenosState state;
+  std::vector<XenosCommand> commands;
+  assert(bridge.pump(state, commands).ok());
+  assert(bus.ring_read() == written);
+  assert(state.register_value(0x2200u) == 4u);
+  assert(state.active_shader(0u)[0] == 0xD0u);
+  // A later submission cannot alter the retained draws either.
+  assert(state.set_register(0x2200u, 99u));
+  const std::uint32_t expected[] = {1u, 2u, 3u, 3u, 3u, 4u};
+  std::size_t index = 0u;
+  for (const auto& command : commands) {
+    if (const auto* packet = std::get_if<DrawPacket>(&command)) {
+      assert(index < std::size(expected));
+      assert(packet->state_snapshot);
+      const auto& snapshot = *packet->state_snapshot;
+      assert(snapshot.register_value(0x2200u) == expected[index]);
+      assert(snapshot.active_shader(0u)[0] == 0x90u + expected[index] * 0x10u);
+      assert(snapshot.generation() == packet->state_generation);
+      ++index;
+    }
+  }
+  assert(index == std::size(expected));
+  // Failure in a nested buffer leaves the published ring, caller state
+  // and output unchanged, including draws staged before the failing IB.
+  guest[64u] = pm4::type3_header(0x7Fu, 1u);
+  bridge.set_guest_words(0x2000u, guest);
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  const auto count = commands.size();
+  assert(!bridge.pump(state, commands).ok());
+  assert(bus.ring_read() == 0u);
+  assert(state.register_value(0x2200u) == 99u);
+  assert(commands.size() == count);
+}
+
+// r517 prefix-commit: a repeated IDENTICAL failure with a sane complete
+// prefix commits the prefix (bus cursor, state, output) while still
+// reporting the error. First failure drops everything (transients heal
+// with zero behavior change); only the confirmed repeat advances, and
+// only through fully-decoded top-level packets.
+void failed_decode_commits_sane_prefix_on_identical_repeat() {
+  using namespace ac6::native;
+  const auto draw = pm4::type3_header(pm4::kOpcodeDrawIndx2, 1u);
+  const auto triangle = 4u | (2u << 6u) | (3u << 16u);
+  const auto ib = pm4::type3_header(pm4::kOpcodeIndirectBuffer, 2u);
+  const auto bad = pm4::type3_header(0x7Fu, 1u);
+  // Prefix: 1 draw + 4 register writes of 8 dwords each = 5 packets,
+  // 34 dwords (above the 4-packet / 32-word sanity gates).
+  std::vector<std::uint32_t> ring{draw, triangle};
+  for (std::uint32_t reg = 0u; reg < 4u; ++reg) {
+    ring.push_back(pm4::header(pm4::kType0, 7u, 0x2200u + reg * 0x10u));
+    for (std::uint32_t value = 0u; value < 7u; ++value) {
+      ring.push_back(0x100u + reg * 0x10u + value);
+    }
+  }
+  assert(ring.size() == 34u);
+  ring.push_back(ib);
+  ring.push_back(0x3000u);
+  ring.push_back(4u);
+  const auto written = static_cast<std::uint32_t>(ring.size() * 4u);
+  ring.resize(64u);
+  // Nested body: one good register write, then an unsupported opcode.
+  // The nested write must roll back with the failing IB (its cursor
+  // cannot advance mid-packet).
+  const std::vector<std::uint32_t> guest{
+      pm4::header(pm4::kType0, 1u, 0x2300u), 0xDEADu, bad, 0u};
+  MmioBus bus;
+  assert(bus.write(MmioBus::kRingSize, 256u));
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  assert(bus.write(MmioBus::kRingWrite, written));
+  VdBridge bridge(bus);
+  bridge.set_ring_words(ring);
+  bridge.set_guest_words(0x3000u, guest);
+  XenosState state;
+  assert(state.set_register(0x2300u, 0x5A5Au));
+  std::vector<XenosCommand> output;
+  // First identical failure: exact rollback, as before r517.
+  auto first = bridge.pump(state, output);
+  assert(!first.ok());
+  assert(first.consumed == 0u);
+  assert(bus.ring_read() == 0u);
+  assert(output.empty());
+  assert(state.register_value(0x2300u) == 0x5A5Au);
+  // Second identical failure: prefix commits, error still reports.
+  auto second = bridge.pump(state, output);
+  assert(!second.ok());
+  assert(second.consumed == 34u);
+  assert(bus.ring_read() == 34u * 4u);
+  assert(output.size() == 1u);
+  assert(std::holds_alternative<DrawPacket>(output.front()));
+  for (std::uint32_t reg = 0u; reg < 4u; ++reg) {
+    assert(state.register_value(0x2200u + reg * 0x10u) == 0x100u + reg * 0x10u);
+  }
+  assert(state.register_value(0x2300u) == 0x5A5Au);
+  // Third failure starts at the IB packet itself: zero prefix, drop.
+  auto third = bridge.pump(state, output);
+  assert(!third.ok());
+  assert(third.consumed == 0u);
+  assert(bus.ring_read() == 34u * 4u);
+  assert(output.size() == 1u);
+}
+
+void failed_decode_keeps_drop_path_below_sanity_gates() {
+  using namespace ac6::native;
+  const auto bad = pm4::type3_header(0x7Fu, 1u);
+  // Failure at the first packet, repeated: zero prefix, never commits.
+  std::vector<std::uint32_t> ring{bad, 0u};
+  ring.resize(64u);
+  MmioBus bus;
+  assert(bus.write(MmioBus::kRingSize, 256u));
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  assert(bus.write(MmioBus::kRingWrite, 8u));
+  VdBridge bridge(bus);
+  bridge.set_ring_words(ring);
+  XenosState state;
+  std::vector<XenosCommand> output;
+  for (int attempt = 0; attempt < 3; ++attempt) {
+    const auto result = bridge.pump(state, output);
+    assert(!result.ok());
+    assert(result.consumed == 0u);
+    assert(bus.ring_read() == 0u);
+    assert(output.empty());
+  }
+}
+
+// r532 causal-intervention experiment: with AC6_NATIVE_PREFIX_ADVANCE_TEST
+// set, a repeated identical nested failure with a below-gates prefix and
+// stable IB content (double-read retries==0) consumes the ring window
+// (lossy, diagnostic only) instead of dropping; without the env var the
+// drop path above applies unchanged. Streak>=3 rules out transients:
+// pumps 1-2 drop, pump 3 advances.
+void failed_decode_advance_test_consumes_window_on_third_identical_repeat() {
+  using namespace ac6::native;
+  const auto ib = pm4::type3_header(pm4::kOpcodeIndirectBuffer, 2u);
+  const auto bad = pm4::type3_header(0x7Fu, 1u);
+  // Zero-prefix window: the failing IB packet is first (below the
+  // 4-packet/32-word sanity gates, mirroring the frozen-window wedge).
+  std::vector<std::uint32_t> ring{ib, 0x1000u, 4u};
+  const auto written = static_cast<std::uint32_t>(ring.size() * 4u);
+  ring.resize(64u);
+  // Nested body: one good register write, then an unsupported opcode at
+  // nested offset 2 (deterministic failure signature across pumps).
+  const std::uint32_t nested[4] = {
+      pm4::header(pm4::kType0, 1u, 0x2300u), 0xDEADu, bad, 0u};
+  std::vector<std::uint8_t> memory(0x1000u + 16u, 0u);
+  for (std::size_t i = 0u; i < 4u; ++i) {
+    const std::uint32_t be = __builtin_bswap32(nested[i]);
+    std::memcpy(memory.data() + 0x1000u + i * 4u, &be, 4u);
+  }
+  MmioBus bus;
+  assert(bus.write(MmioBus::kRingSize, 256u));
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  assert(bus.write(MmioBus::kRingWrite, written));
+  VdBridge bridge(bus);
+  bridge.set_ring_words(ring);
+  bridge.set_guest_memory(memory.data());
+  XenosState state;
+  std::vector<XenosCommand> output;
+  assert(setenv("AC6_NATIVE_PREFIX_ADVANCE_TEST", "1", 1) == 0);
+  // Pumps 1-2: streak 1-2, drop path (no cursor move).
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    const auto result = bridge.pump(state, output);
+    assert(!result.ok());
+    assert(result.consumed == 0u);
+    assert(bus.ring_read() == 0u);
+    assert(output.empty());
+  }
+  // Pump 3: streak hits 3 with stable content -> experimental advance
+  // consumes the window; the error still reports and no work is staged.
+  const auto third = bridge.pump(state, output);
+  assert(!third.ok());
+  assert(third.consumed == 3u);
+  assert(bus.ring_read() == written);
+  assert(output.empty());
+  assert(unsetenv("AC6_NATIVE_PREFIX_ADVANCE_TEST") == 0);
+}
+
+// r533 non-lossy nested-prefix commit: a repeated identical depth-1
+// nested failure with a below-gates TOP prefix but 32+ valid nested
+// words commits the nested prefix (state, output) and consumes the
+// failing top-level packet whole on the SECOND identical failure --
+// only the cut packet's work is lost (still reported), nothing guessed.
+// First failure drops (transients heal with zero behavior change).
+void failed_decode_commits_nested_prefix_on_identical_repeat() {
+  using namespace ac6::native;
+  const auto draw = pm4::type3_header(pm4::kOpcodeDrawIndx2, 1u);
+  const auto triangle = 4u | (2u << 6u) | (3u << 16u);
+  const auto ib = pm4::type3_header(pm4::kOpcodeIndirectBuffer, 2u);
+  const auto bad = pm4::type3_header(0x7Fu, 1u);
+  // Zero top-level prefix (below the 4-packet/32-word gates): the failing
+  // IB packet is first, mirroring the frozen-window wedge class.
+  std::vector<std::uint32_t> ring{ib, 0x1000u, 38u};
+  const auto written = static_cast<std::uint32_t>(ring.size() * 4u);
+  ring.resize(64u);
+  // Nested body: 1 draw + 4 register writes of 8 dwords (5 packets,
+  // 34 words >= 32), then an unsupported opcode at nested offset 34.
+  std::vector<std::uint32_t> nested{draw, triangle};
+  for (std::uint32_t reg = 0u; reg < 4u; ++reg) {
+    nested.push_back(pm4::header(pm4::kType0, 7u, 0x2200u + reg * 0x10u));
+    for (std::uint32_t value = 0u; value < 7u; ++value) {
+      nested.push_back(0x100u + reg * 0x10u + value);
+    }
+  }
+  assert(nested.size() == 34u);
+  nested.push_back(bad);
+  nested.push_back(0u);
+  assert(nested.size() == 36u);
+  std::vector<std::uint8_t> memory(0x1000u + 38u * 4u, 0u);
+  for (std::size_t i = 0u; i < nested.size(); ++i) {
+    const std::uint32_t be = __builtin_bswap32(nested[i]);
+    std::memcpy(memory.data() + 0x1000u + i * 4u, &be, 4u);
+  }
+  // Staged count covers the body (36) plus 2 trailing words: the cut
+  // packet's header is present, its payload is not.
+  MmioBus bus;
+  assert(bus.write(MmioBus::kRingSize, 256u));
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  assert(bus.write(MmioBus::kRingWrite, written));
+  VdBridge bridge(bus);
+  bridge.set_ring_words(ring);
+  bridge.set_guest_memory(memory.data());
+  XenosState state;
+  std::vector<XenosCommand> output;
+  // First identical failure: exact rollback, as before r533.
+  auto first = bridge.pump(state, output);
+  assert(!first.ok());
+  assert(first.consumed == 0u);
+  assert(bus.ring_read() == 0u);
+  assert(output.empty());
+  // Second identical failure: nested prefix commits (cursor past the
+  // 3-word top-level IB packet), nested draw staged, registers applied.
+  auto second = bridge.pump(state, output);
+  assert(!second.ok());
+  assert(second.consumed == 3u);
+  assert(bus.ring_read() == 3u * 4u);
+  assert(output.size() == 1u);
+  assert(std::holds_alternative<DrawPacket>(output.front()));
+  for (std::uint32_t reg = 0u; reg < 4u; ++reg) {
+    assert(state.register_value(0x2200u + reg * 0x10u) == 0x100u + reg * 0x10u);
+  }
+}
+
+void failed_decode_resets_on_changed_signature() {  using namespace ac6::native;
+  const auto draw = pm4::type3_header(pm4::kOpcodeDrawIndx2, 1u);
+  const auto triangle = 4u | (2u << 6u) | (3u << 16u);
+  const auto ib = pm4::type3_header(pm4::kOpcodeIndirectBuffer, 2u);
+  const auto bad = pm4::type3_header(0x7Fu, 1u);
+  std::vector<std::uint32_t> ring{draw, triangle};
+  for (std::uint32_t reg = 0u; reg < 4u; ++reg) {
+    ring.push_back(pm4::header(pm4::kType0, 7u, 0x2200u + reg * 0x10u));
+    for (std::uint32_t value = 0u; value < 7u; ++value) {
+      ring.push_back(0u);
+    }
+  }
+  ring.push_back(ib);
+  ring.push_back(0x3000u);
+  ring.push_back(4u);
+  const auto written = static_cast<std::uint32_t>(ring.size() * 4u);
+  ring.resize(64u);
+  const std::vector<std::uint32_t> guest{
+      pm4::header(pm4::kType0, 1u, 0x2300u), 0xDEADu, bad, 0u};
+  MmioBus bus;
+  assert(bus.write(MmioBus::kRingSize, 256u));
+  assert(bus.write(MmioBus::kRingRead, 0u));
+  assert(bus.write(MmioBus::kRingWrite, written));
+  VdBridge bridge(bus);
+  bridge.set_ring_words(ring);
+  bridge.set_guest_words(0x3000u, guest);
+  XenosState state;
+  std::vector<XenosCommand> output;
+  // First failure records the signature and drops.
+  assert(!bridge.pump(state, output).ok());
+  assert(bus.ring_read() == 0u);
+  // A different failure (unmapped IB address: range error, not an
+  // unsupported opcode) does not chain onto the recorded one.
+  ring[35] = 0x9000u;
+  bridge.set_ring_words(ring);
+  const auto changed = bridge.pump(state, output);
+  assert(!changed.ok());
+  assert(changed.consumed == 0u);
+  assert(bus.ring_read() == 0u);
+  assert(output.empty());
+}
+
+void draw_indx_checks_length_before_index_fields() {
+  using namespace ac6::native;
+  XenosState state;
+  std::vector<XenosCommand> commands;
+  const auto header = pm4::type3_header(pm4::kOpcodeDrawIndx, 2u);
+  const std::vector<std::uint32_t> short_indexed{header, 0u, 4u | (3u << 16u)};
+  assert(!Pm4Decoder::decode_one(short_indexed, state, commands).ok());
+  assert(commands.empty());
+  const std::vector<std::uint32_t> auto_indexed{
+      header, 0u, 4u | (2u << 6u) | (3u << 16u)};
+  assert(Pm4Decoder::decode_one(auto_indexed, state, commands).ok());
+  const auto& packet = std::get<DrawPacket>(commands.front());
+  assert(packet.index_address == 0u && packet.index_format == 0u);
+  assert(packet.vertex_stride == 1u && packet.state_snapshot);
+}
+
 void vulkan_boundary_fails_closed() {
   XenosState state;
   VulkanBackend backend;
@@ -585,8 +914,74 @@ void ucode_registry_matches_pinned_only() {
   assert(!ShaderTranslator::translate_ucode(0u, 0u, flipped).ok());
 }
 
-void guest_vd_service_drains_published_dword_index() {
+// r517: drain-level prefix commit. A repeated identical short-count IB
+// failure commits the complete top-level prefix through the full drain
+// (backend submit + bus cursor + state) while the nested fragment rolls
+// back; a third identical failure starts at the IB itself (zero prefix)
+// and drops. Deterministic: no threads, no Vulkan device.
+void guest_vd_service_drain_commits_prefix_on_repeated_wedge() {
+  using namespace ac6::native;
   ac6::native::GuestAddressSpace guest;
+  assert(guest.valid());
+  ac6::native::MmioBus bus;
+  ac6::native::VdBridge bridge(bus);
+  ac6::native::XenosState state;
+  ac6::native::VulkanBackend backend;
+  ac6::native::NativeGuestVdService service;
+  service.bind(guest.base(), bus, bridge, state, backend);
+  constexpr std::uint32_t ring = 0x10000u;
+  constexpr std::uint32_t ib_body = 0x12000u;
+  service.register_allocation(guest.base(), ring, 256u);
+  service.initialize_ring(guest.base(), ring, 5u);  // 1 << (5 + 3) bytes
+  assert(state.set_register(0x2300u, 0x5A5Au));
+  // Prefix: 1 present + 4 eight-dword register writes = 5 packets,
+  // 37 dwords (above the 4-packet / 32-word sanity gates).
+  std::vector<std::uint32_t> words{
+      ac6::native::pm4::type3_header(ac6::native::pm4::kOpcodeXeSwap, 4u),
+      ac6::native::pm4::kSwapSignature, 0x10000u, 1280u, 720u};
+  for (std::uint32_t reg = 0u; reg < 4u; ++reg) {
+    words.push_back(ac6::native::pm4::header(pm4::kType0, 7u, 0x2200u + reg * 0x10u));
+    for (std::uint32_t value = 0u; value < 7u; ++value) {
+      words.push_back(0x100u + reg * 0x10u + value);
+    }
+  }
+  assert(words.size() == 37u);
+  words.push_back(ac6::native::pm4::type3_header(pm4::kOpcodeIndirectBuffer, 2u));
+  words.push_back(ib_body);
+  words.push_back(8u);
+  assert(words.size() == 40u);
+  for (std::size_t index = 0u; index < words.size(); ++index) {
+    const std::uint32_t encoded = __builtin_bswap32(words[index]);
+    std::memcpy(guest.base() + ring + index * 4u, &encoded, sizeof(encoded));
+  }
+  // Nested body: one good write, then a 770-dword TYPE0 block of which
+  // only 5 payload dwords are staged (short count, r510 shape).
+  const std::array<std::uint32_t, 8> body{
+      ac6::native::pm4::header(pm4::kType0, 1u, 0x2300u), 0xDEADu,
+      0x03000100u, 0u, 0u, 0u, 0u, 0u};
+  for (std::size_t index = 0u; index < body.size(); ++index) {
+    const std::uint32_t encoded = __builtin_bswap32(body[index]);
+    std::memcpy(guest.base() + ib_body + index * 4u, &encoded, sizeof(encoded));
+  }
+  // First identical failure: exact rollback, cursor unmoved.
+  service.publish_write_address(guest.base(), ring + 160u);
+  assert(bus.ring_read() == 0u);
+  assert(state.register_value(0x2300u) == 0x5A5Au);
+  // Second identical failure: prefix commits through the drain.
+  service.publish_write_address(guest.base(), ring + 160u);
+  assert(bus.ring_read() == 37u * 4u);
+  for (std::uint32_t reg = 0u; reg < 4u; ++reg) {
+    assert(state.register_value(0x2200u + reg * 0x10u) == 0x100u + reg * 0x10u);
+  }
+  assert(state.register_value(0x2300u) == 0x5A5Au);
+  // Third failure starts at the IB packet itself: zero prefix, drop,
+  // cursor unmoved (no free chaining).
+  service.publish_write_address(guest.base(), ring + 160u);
+  assert(bus.ring_read() == 37u * 4u);
+  service.unbind();
+}
+
+void guest_vd_service_drains_published_dword_index() {  ac6::native::GuestAddressSpace guest;
   assert(guest.valid());
   ac6::native::MmioBus bus;
   ac6::native::VdBridge bridge(bus);
@@ -785,9 +1180,9 @@ void bundled_pinned_registry_fully_hits() {
   assert(ac6::native::register_bundled_pinned_shader_registry());
   const auto capsule = ac6::native::bundled_pinned_shader_registry();
   const auto entries = ac6::native::parse_pinned_shader_capsule(capsule);
-  assert(entries.size() == 320u);
+  assert(entries.size() == 323u);
   assert(ShaderTranslator::pinned_count() >= entries.size());
-  // 320 runtime modifications over 255 distinct fetch signatures: some
+  // 321 runtime modifications over 255 distinct fetch signatures: some
   // shaders were translated under 2-3 modifications. The legacy
   // ShaderTranslator::translate_ucode() lookup resolves a duplicate to the
   // first registered entry (capsule order is deterministic); the r260/r271
@@ -819,7 +1214,7 @@ void bundled_pinned_registry_fully_hits() {
       zero_mod_spirv.emplace(key, entry.spirv);
     }
   }
-  assert(vertex_count == 127u);
+  assert(vertex_count == 130u);
   assert(pixel_count == 193u);
   for (const auto& entry : entries) {
     const auto hit = ShaderTranslator::translate_ucode(
@@ -844,7 +1239,7 @@ void bundled_pinned_registry_fully_hits() {
                                               entry.microcode)
                 .ok());
   }
-  assert(vertex_count == 127u);
+  assert(vertex_count == 130u);
   assert(pixel_count == 193u);
   // Idempotent reload: the registry does not grow.
   const std::size_t pinned_before = ShaderTranslator::pinned_count();
@@ -1018,8 +1413,8 @@ void pinned_shaders_execute_a_real_frame() {
   // with D3D-style -Y): a full 1280x720 guest viewport.
   {
     const std::uint32_t bits[6] = {
-        0x43C00000u,  // XSCALE  = 640
-        0x43C00000u,  // XOFFSET = 640
+        0x44200000u,  // XSCALE  = 640
+        0x44200000u,  // XOFFSET = 640
         0xC3B40000u,  // YSCALE  = -360
         0x43B40000u,  // YOFFSET = 360
         0x3F800000u,  // ZSCALE  = 1
@@ -1054,6 +1449,12 @@ void pinned_shaders_execute_a_real_frame() {
   assert(output.size() == 4u);
   assert(state.active_shader(0u).size() == vertex_entry->microcode.size());
   assert(state.active_shader(1u).size() == pixel_entry->microcode.size());
+
+  // The submitted draw owns its earlier shader/register state. Poisoning
+  // the final state must not change this test's real pixel readback.
+  const std::array<std::uint32_t, 1> later_shader{0xDEADBEEFu};
+  assert(state.stage_shader(0u, later_shader));
+  assert(state.set_register(0x2200u, 0u));
 
   // Raw guest bytes (big-endian): 9-dword records at dword address 0x1000,
   // 36-byte stride (the full VS's fetch; the r273 derivation fixture).
@@ -1101,7 +1502,8 @@ void pinned_shaders_execute_a_real_frame() {
   assert(pixels[corner + 3u] == 0u);
 }
 
-void pinned_shader_samples_a_real_texture() {
+void pinned_shader_samples_a_real_texture(bool registered_aliases,
+                                         bool oversized_scissor = false) {
   ac6::native::VulkanDevice device;
   if (!device.valid()) {
     std::fprintf(stderr, "SKIP pinned_shader_samples_a_real_texture: no device\n");
@@ -1206,7 +1608,7 @@ void pinned_shader_samples_a_real_texture() {
   }
   {
     const std::uint32_t bits[6] = {
-        0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u, 0x3F800000u, 0u,
+        0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u, 0x3F800000u, 0u,
     };
     ring.push_back(ac6::native::pm4::header(ac6::native::pm4::kType0, 6u, 0x210Fu));
     for (const std::uint32_t value : bits) ring.push_back(value);
@@ -1224,7 +1626,7 @@ void pinned_shader_samples_a_real_texture() {
     ring.push_back(0xFu);
     ring.push_back(ac6::native::pm4::header(ac6::native::pm4::kType0, 2u, 0x200Eu));
     ring.push_back(0u);
-    ring.push_back(720u << 16u | 1280u);
+    ring.push_back(oversized_scissor ? 0x20002000u : (720u << 16u | 1280u));
   }
   push_packet(ac6::native::pm4::kOpcodeDrawIndx2,
               {4u | (2u << 6u) | (3u << 16u)});
@@ -1252,9 +1654,31 @@ void pinned_shader_samples_a_real_texture() {
                   sizeof(swapped));
     }
   }
-  assert(runtime.write_shared_memory(0x1000u, vertex_bytes));
+  ac6::native::GuestAddressSpace guest;
+  assert(guest.valid());
+  ac6::native::VulkanBackend backend;
+  ac6::native::NativeGuestVdService service;
+  constexpr std::uint32_t guest_ring = 0x20010000u;
+  if (registered_aliases) {
+    // r569 regression: ring and texture lie in the wrapped part of one
+    // allocation. Its alias also covers the vertex address; a later low
+    // registration must restore these vertices after the high alias copy.
+    service.bind(guest.base(), bus, bridge, state, backend);
+    service.bind_pinned(&runtime);
+    service.bind_offscreen(&target);
+    service.register_allocation(guest.base(), 0x1ffff000u, 0x141000u);
+    std::memcpy(guest.base() + 0x4000u, vertex_bytes.data(), vertex_bytes.size());
+    service.register_allocation(guest.base(), 0x4000u, static_cast<std::uint32_t>(vertex_bytes.size()));
+    for (std::size_t i = 0u; i < ring.size(); ++i) {
+      const auto word = __builtin_bswap32(ring[i]);
+      std::memcpy(guest.base() + guest_ring + i * 4u, &word, 4u);
+    }
+    service.initialize_ring(guest.base(), 0x10000u, 7u);  // 1024 bytes
+  } else {
+    assert(runtime.write_shared_memory(0x1000u, vertex_bytes));
+  }
 
-  // The texture: 256x256 k_8_8_8_8 at guest byte address 0x100000, stored
+  // The texture: 256x256 k_8_8_8_8 at physical byte address 0x100000, stored
   // big-endian (k8in32). Frame 1: solid (64,255,128,255); frame 2: solid
   // (255,0,0,255). The shader samples a clamped edge texel of the solid
   // texture, so every fragment receives exactly the texel color.
@@ -1272,6 +1696,16 @@ void pinned_shader_samples_a_real_texture() {
     return bytes;
   };
   auto run_frame = [&](const std::vector<std::uint8_t>& texture_bytes) {
+    if (registered_aliases) {
+      std::memcpy(guest.base() + 0x20100000u, texture_bytes.data(), texture_bytes.size());
+      assert(bus.write(ac6::native::MmioBus::kRingRead, 0u));
+      assert(bus.write(ac6::native::MmioBus::kRingWrite, 0u));
+      service.publish_write_address(guest.base(), guest_ring + ring_bytes);
+      assert(bus.ring_read() == ring_bytes);
+      // Sync changes only GPU memory, never materializes over the low guest view.
+      assert(guest.base()[0x100000u] == 0u);
+      return target.readback();
+    }
     assert(runtime.write_shared_memory(0x100000u / 4u, texture_bytes));
     const bool ok = runtime.execute_frame(target, state, output);
     if (!ok) {
@@ -1299,6 +1733,21 @@ void pinned_shader_samples_a_real_texture() {
   assert(pixels_b[probe + 1u] == 0u);
   assert(pixels_b[probe + 2u] == 0u);
   assert(pixels_b[probe + 3u] == 255u);
+  if (registered_aliases) {
+    // The retail gate requires this marker, so a missing Vulkan device cannot
+    // silently turn the pixel regression into a successful skipped test.
+    std::fprintf(stderr, "r569 wrapped-alias pixel regression PASS\n");
+  }
+  if (oversized_scissor) {
+    // A 2048-row EDRAM image must not stretch the 720-row viewport. This
+    // point lies below the triangle; the existing probe lies inside it.
+    const std::size_t outside = (600u * 1280u + 640u) * 4u;
+    for (unsigned channel = 0u; channel < 3u; ++channel) {
+      assert(pixels_a[outside + channel] == 0u);
+      assert(pixels_b[outside + channel] == 0u);
+    }
+    std::fprintf(stderr, "r571 viewport pixel regression PASS\n");
+  }
 }
 
 void pinned_texture_shader_uses_compacted_constants() {
@@ -1414,7 +1863,7 @@ void pinned_texture_shader_uses_compacted_constants() {
   }
   {
     const std::uint32_t bits[6] = {
-        0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u, 0x3F800000u, 0u,
+        0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u, 0x3F800000u, 0u,
     };
     ring.push_back(ac6::native::pm4::header(ac6::native::pm4::kType0, 6u, 0x210Fu));
     for (const std::uint32_t value : bits) ring.push_back(value);
@@ -1598,7 +2047,7 @@ void pinned_shader_selects_modification_by_draw_state() {
   }
   {
     const std::uint32_t bits[6] = {
-        0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u, 0x3F800000u, 0u,
+        0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u, 0x3F800000u, 0u,
     };
     ring.push_back(ac6::native::pm4::header(ac6::native::pm4::kType0, 6u, 0x210Fu));
     for (const std::uint32_t value : bits) ring.push_back(value);
@@ -1795,7 +2244,7 @@ void pinned_edram_draws_accumulate_and_reconfig_recovers() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
@@ -1929,6 +2378,46 @@ void pinned_edram_draws_accumulate_and_reconfig_recovers() {
   assert(pixels_4[p2 + 1u] == 0u);
   assert(pixels_4[p2 + 2u] == 0u);
   assert(pixels_4[p2 + 3u] == 0u);
+
+  // r572 reproduces the US transition: a draw with color writes and depth,
+  // then draws with no attachment writes. None may erase the color image.
+  // Keep executing every draw and test the reverse transition as well.
+  const auto draw_and_swap = [&] {
+    push_packet(ac6::native::pm4::kOpcodeDrawIndx2,
+                {4u | (2u << 6u) | (3u << 16u)});
+    push_packet(ac6::native::pm4::kOpcodeXeSwap,
+                {ac6::native::pm4::kSwapSignature, 0u, 1280u, 720u});
+    return pump_and_execute(2u);
+  };
+  write_vertices(v1);
+  push_type0(0x2002u, {0x000102D0u});  // observed D24FS8 at depth tile720
+  push_type0(0x2200u, {0x00700764u});
+  push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});
+  const auto pixels_5 = draw_and_swap();
+  assert(pixels_5[p1] == 255u && pixels_5[p1 + 1u] == 255u &&
+         pixels_5[p1 + 2u] == 255u && pixels_5[p1 + 3u] == 255u);
+
+  push_type0(0x2104u, {0u});
+  push_type0(0x2200u, {0u});
+  const auto pixels_6 = draw_and_swap();
+  assert(pixels_6 == pixels_5);
+
+  push_type0(0x2200u, {0x00700764u});
+  const auto pixels_7 = draw_and_swap();
+  assert(pixels_7 == pixels_5);
+
+  // Restoring the color mask must LOAD too. Draw a disjoint triangle;
+  // its new color appears while the earlier white triangle survives.
+  write_vertices(v2);
+  push_type0(0x2104u, {0xFu});
+  push_type0(0x47FCu, {0x3F000000u, 0u, 0u, 0u});
+  const auto pixels_8 = draw_and_swap();
+  assert(pixels_8[p1] == 255u && pixels_8[p1 + 1u] == 255u &&
+         pixels_8[p1 + 2u] == 255u && pixels_8[p1 + 3u] == 255u);
+  assert(pixels_8[p2] == 127u && pixels_8[p2 + 1u] == 255u &&
+         pixels_8[p2 + 2u] == 255u && pixels_8[p2 + 3u] == 255u);
+  assert(runtime.draw_count() == 8u && runtime.edram_resolves() == 8u);
+  std::fprintf(stderr, "r572 color preservation pixel regression PASS\n");
 }
 
 void pinned_indexed_draw_renders_guest_index_order() {
@@ -2006,7 +2495,7 @@ void pinned_indexed_draw_renders_guest_index_order() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
@@ -2220,7 +2709,7 @@ void pinned_indexed_draw_honors_primitive_restart() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
@@ -2432,7 +2921,7 @@ void pinned_shader_samples_two_textures() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_packet(ac6::native::pm4::kOpcodeDrawIndx2,
@@ -2507,11 +2996,11 @@ void pinned_shader_samples_two_textures() {
   assert(pixels_b[probe + 3u] == 255u);
 }
 
-void pinned_rect_list_expands_to_triangle_strips() {
+void pinned_point_list_expands_to_triangle_strips() {
   ac6::native::VulkanDevice device;
   if (!device.valid()) {
     std::fprintf(stderr,
-                 "SKIP pinned_rect_list_expands_to_triangle_strips: no device\n");
+                 "SKIP pinned_point_list_expands_to_triangle_strips: no device\n");
     return;
   }
   ac6::native::VulkanOffscreenTarget target(device);
@@ -2519,12 +3008,12 @@ void pinned_rect_list_expands_to_triangle_strips() {
   ac6::native::PinnedShaderRuntime runtime(device);
   if (!runtime.valid()) {
     std::fprintf(stderr,
-                 "SKIP pinned_rect_list_expands_to_triangle_strips: %s\n",
+                 "SKIP pinned_point_list_expands_to_triangle_strips: %s\n",
                  runtime.error().c_str());
     return;
   }
   // r265: a rectangle-list draw (guest primitive 0x08) with a pinned VS
-  // whose qualified variant is host type 9 (kRectangleListAsTriangleStrip,
+  // whose qualified variant is host type 9 (kPointListAsTriangleStrip,
   // digest 0x9dd1c7cddae1141, 24 dwords, mod 0x900000000). The runtime
   // draws the oracle's two-triangle-strip builtin index buffer ((i<<2)+0..3
   // per primitive, primitive restarts between strips); the pinned VS loads
@@ -2589,7 +3078,7 @@ void pinned_rect_list_expands_to_triangle_strips() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
@@ -2597,8 +3086,8 @@ void pinned_rect_list_expands_to_triangle_strips() {
   // constant quad diameter. PA_SU_POINT_MINMAX: min 0, max 0xFFFF.
   push_type0(0x2280u, {0x0A000A00u});
   push_type0(0x2281u, {0xFFFF0000u});
-  // DRAW_INDX source 0, PRIMITIVE 0x08 (rectangle list), 6 guest
-  // vertices (2 rectangles), 32-bit guest indices at guest byte 0x8000.
+  // DRAW_INDX source 0, PRIMITIVE 0x01 (point list), 6 guest
+  // vertices (6 points), 32-bit guest indices at guest byte 0x8000.
   {
     const std::uint32_t indices[6] = {0u, 1u, 2u, 3u, 4u, 5u};
     std::vector<std::uint8_t> index_bytes(6u * 4u);
@@ -2609,7 +3098,7 @@ void pinned_rect_list_expands_to_triangle_strips() {
     assert(runtime.write_shared_memory(0x2000u, index_bytes));
   }
   push_packet(ac6::native::pm4::kOpcodeDrawIndx,
-              {0u, 8u | (6u << 16u), 0x8000u, 1u | (1u << 11u)});
+              {0u, 1u | (6u << 16u), 0x8000u, 1u | (1u << 11u)});
   push_packet(ac6::native::pm4::kOpcodeXeSwap,
               {ac6::native::pm4::kSwapSignature, 0u, 1280u, 720u});
   const std::uint32_t ring_bytes = static_cast<std::uint32_t>(ring.size()) * 4u;
@@ -2630,8 +3119,8 @@ void pinned_rect_list_expands_to_triangle_strips() {
   const auto pixels = target.readback();
   assert(runtime.draw_count() == 1u);
   assert(runtime.edram_resolves() == 1u);
-  // Each rectangle expands to a 320x320 px quad centered at (640, 360)
-  // (the two strips overlap). Inside = white; outside = clear.
+  // Each point expands to a 320x320 px quad centered at (640, 360)
+  // (the six strips overlap). Inside = white; outside = clear.
   const auto expect = [&](std::uint32_t x, std::uint32_t y, std::uint8_t v) {
     const std::size_t off = (y * 1280u + x) * 4u;
     assert(pixels[off + 0u] == v);
@@ -2648,6 +3137,500 @@ void pinned_rect_list_expands_to_triangle_strips() {
   expect(640u, 530u, 0u);     // outside bottom
 }
 
+
+void pinned_rectangle_reconstructs_three_vertices() {
+  ac6::native::VulkanDevice device;
+  if (!device.valid()) {
+    std::fprintf(stderr,
+                 "SKIP pinned_rectangle_reconstructs_three_vertices: no device\n");
+    return;
+  }
+  ac6::native::VulkanOffscreenTarget target(device);
+  assert(target.valid());
+  ac6::native::PinnedShaderRuntime runtime(device);
+  if (!runtime.valid()) {
+    std::fprintf(stderr,
+                 "SKIP pinned_rectangle_reconstructs_three_vertices: %s\n",
+                 runtime.error().c_str());
+    return;
+  }
+  // Three guest positions define an axis-aligned rectangle. Sampling the
+  // opposite corner distinguishes reconstruction from drawing one triangle
+  // or expanding a point using PA_SU_POINT_SIZE.
+  assert(ac6::native::register_bundled_pinned_shader_registry());
+  const auto capsule = ac6::native::bundled_pinned_shader_registry();
+  const auto entries = ac6::native::parse_pinned_shader_capsule(capsule);
+  constexpr std::uint64_t kVertexDigest = 0x57b8e5f14b93cff4ull;
+  constexpr std::uint64_t kPixelDigest = 0x240522311d02461bull;  // AB5C776B
+  const ac6::native::PinnedShaderEntry* vertex_entry = nullptr;
+  const ac6::native::PinnedShaderEntry* pixel_entry = nullptr;
+  for (const auto& entry : entries) {
+    if (entry.signature.digest == kVertexDigest && entry.signature.shader_type == 0u && entry.modification == 0xA00000000ull) {
+      vertex_entry = &entry;
+    }
+    if (entry.signature.digest == kPixelDigest && entry.signature.shader_type == 1u) {
+      pixel_entry = &entry;
+    }
+  }
+  assert(vertex_entry != nullptr && pixel_entry != nullptr);
+
+  ac6::native::XenosState state;
+  ac6::native::MmioBus bus;
+  ac6::native::VdBridge bridge(bus);
+  std::vector<std::uint32_t> ring;
+  auto push_packet = [&ring](std::uint32_t opcode,
+                             std::vector<std::uint32_t> payload) {
+    ring.push_back(ac6::native::pm4::type3_header(
+        opcode, static_cast<std::uint32_t>(payload.size())));
+    ring.insert(ring.end(), payload.begin(), payload.end());
+  };
+  auto push_type0 = [&ring](std::uint32_t base,
+                            std::vector<std::uint32_t> values) {
+    ring.push_back(ac6::native::pm4::header(
+        ac6::native::pm4::kType0, static_cast<std::uint32_t>(values.size()),
+        base));
+    ring.insert(ring.end(), values.begin(), values.end());
+  };
+  {
+    std::vector<std::uint32_t> payload{0u,
+                                       static_cast<std::uint32_t>(vertex_entry->microcode.size())};
+    payload.insert(payload.end(), vertex_entry->microcode.begin(),
+                   vertex_entry->microcode.end());
+    push_packet(ac6::native::pm4::kOpcodeImLoadImmediate, payload);
+  }
+  {
+    std::vector<std::uint32_t> payload{1u,
+                                       static_cast<std::uint32_t>(pixel_entry->microcode.size())};
+    payload.insert(payload.end(), pixel_entry->microcode.begin(),
+                   pixel_entry->microcode.end());
+    push_packet(ac6::native::pm4::kOpcodeImLoadImmediate, payload);
+  }
+  // The qualified SPIR-V reads fetch words 0/1 (cmap bitmap bit 0).
+  // The guest disassembly name vf95 is remapped by the translator.
+  push_type0(0x4800u, {3u | (0x1000u << 2u), 2u | (21u << 2u)});
+  push_type0(0x2208u, {4u});
+  push_type0(0x2000u, {1280u});
+  push_type0(0x2001u, {16u});
+  push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
+  push_type0(0x2104u, {0xFu});
+  push_type0(0x2100u, {0xFFFFFFFFu, 0u});
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
+                       0x3F800000u, 0u});
+  push_type0(0x2206u, {0x3Fu});
+  push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
+  push_type0(0x2280u, {0x00100010u});  // tiny points must not define rectangle size
+  push_type0(0x2281u, {0xFFFF0000u});
+  const float vertices[3][7] = {
+      {-0.5f, -0.5f, 0.5f, 1.f, 1.f, 1.f, 1.f},
+      { 0.5f, -0.5f, 0.5f, 1.f, 1.f, 1.f, 1.f},
+      {-0.5f,  0.5f, 0.5f, 1.f, 1.f, 1.f, 1.f},
+  };
+  std::vector<std::uint8_t> vertex_bytes(sizeof(vertices));
+  for (std::size_t i = 0; i < sizeof(vertices) / 4u; ++i) {
+    std::uint32_t word;
+    std::memcpy(&word, reinterpret_cast<const std::uint8_t*>(vertices) + i * 4u, 4u);
+    word = __builtin_bswap32(word);
+    std::memcpy(vertex_bytes.data() + i * 4u, &word, 4u);
+  }
+  assert(runtime.write_shared_memory(0x1000u, vertex_bytes));
+  push_packet(ac6::native::pm4::kOpcodeDrawIndx2, {8u | (2u << 6u) | (3u << 16u)});
+  push_packet(ac6::native::pm4::kOpcodeXeSwap,
+              {ac6::native::pm4::kSwapSignature, 0u, 1280u, 720u});
+  const std::uint32_t ring_bytes = static_cast<std::uint32_t>(ring.size()) * 4u;
+  ring.resize(256u, 0u);
+  bridge.set_ring_words(ring);
+  assert(bus.write(ac6::native::MmioBus::kRingSize, 1024u));
+  assert(bus.write(ac6::native::MmioBus::kRingRead, 0u));
+  assert(bus.write(ac6::native::MmioBus::kRingWrite, ring_bytes));
+  std::vector<ac6::native::XenosCommand> output;
+  auto pump_result = bridge.pump(state, output);
+  assert(pump_result.ok());
+  assert(output.size() == 4u);  // 2 shader loads + 1 draw + 1 present
+  const bool ok = runtime.execute_frame(target, state, output);
+  if (!ok) {
+    std::fprintf(stderr, "RECT FRAME ERR: %s\n", runtime.error().c_str());
+  }
+  assert(ok);
+  const auto pixels = target.readback();
+  assert(runtime.draw_count() == 1u);
+  assert(runtime.edram_resolves() == 1u);
+  const auto expect = [&](std::uint32_t x, std::uint32_t y, std::uint8_t v) {
+    const std::size_t off = (y * 1280u + x) * 4u;
+    if (pixels[off] != v) {
+      std::uint32_t min_x = 1280u, min_y = 720u, max_x = 0u, max_y = 0u;
+      std::size_t lit = 0u;
+      for (std::uint32_t py = 0u; py < 720u; ++py) {
+        for (std::uint32_t px = 0u; px < 1280u; ++px) {
+          if (pixels[(py * 1280u + px) * 4u] != 0u) {
+            ++lit;
+            min_x = std::min(min_x, px); min_y = std::min(min_y, py);
+            max_x = std::max(max_x, px); max_y = std::max(max_y, py);
+          }
+        }
+      }
+      std::fprintf(stderr, "rectangle pixel (%u,%u) expected=%u actual=%u; lit=%zu bounds=(%u,%u)-(%u,%u)\n",
+                   x, y, unsigned(v), unsigned(pixels[off]), lit, min_x, min_y, max_x, max_y);
+    }
+    assert(pixels[off + 0u] == v);
+    assert(pixels[off + 1u] == v);
+    assert(pixels[off + 2u] == v);
+    assert(pixels[off + 3u] == (v == 0u ? 0u : 255u));
+  };
+  expect(640u, 360u, 255u);
+  expect(900u, 220u, 255u);  // fourth-corner region outside the source triangle
+  expect(380u, 500u, 255u);
+  expect(300u, 360u, 0u);
+  expect(980u, 360u, 0u);
+  expect(640u, 150u, 0u);
+  expect(640u, 560u, 0u);
+}
+
+// r490: the rectangle frame parameterized over the EDRAM surface and depth
+// configuration, so the qualified pitch/MSAA mapping and the depth subset
+// are exercised end-to-end against the same pinned shaders. expect_ok
+// false means execute_frame must fail closed with a recorded error.
+static void run_rectangle_surface_frame(std::uint32_t surface_info,
+                                        std::uint32_t color_base,
+                                        std::uint32_t depth_control,
+                                        std::uint32_t depth_info,
+                                        bool expect_ok,
+                                        std::uint64_t pixel_digest =
+                                            0x240522311d02461bull) {
+  ac6::native::VulkanDevice device;
+  if (!device.valid()) {
+    std::fprintf(stderr, "SKIP run_rectangle_surface_frame: no device\n");
+    return;
+  }
+  ac6::native::VulkanOffscreenTarget target(device);
+  assert(target.valid());
+  ac6::native::PinnedShaderRuntime runtime(device);
+  if (!runtime.valid()) {
+    std::fprintf(stderr, "SKIP run_rectangle_surface_frame: %s\n",
+                 runtime.error().c_str());
+    return;
+  }
+  assert(ac6::native::register_bundled_pinned_shader_registry());
+  const auto capsule = ac6::native::bundled_pinned_shader_registry();
+  const auto entries = ac6::native::parse_pinned_shader_capsule(capsule);
+  constexpr std::uint64_t kVertexDigest = 0x57b8e5f14b93cff4ull;
+  const ac6::native::PinnedShaderEntry* vertex_entry = nullptr;
+  const ac6::native::PinnedShaderEntry* pixel_entry = nullptr;
+  for (const auto& entry : entries) {
+    if (entry.signature.digest == kVertexDigest &&
+        entry.signature.shader_type == 0u &&
+        entry.modification == 0xA00000000ull) {
+      vertex_entry = &entry;
+    }
+    if (entry.signature.digest == pixel_digest &&
+        entry.signature.shader_type == 1u) {
+      pixel_entry = &entry;
+    }
+  }
+  assert(vertex_entry != nullptr && pixel_entry != nullptr);
+
+  ac6::native::XenosState state;
+  ac6::native::MmioBus bus;
+  ac6::native::VdBridge bridge(bus);
+  std::vector<std::uint32_t> ring;
+  auto push_packet = [&ring](std::uint32_t opcode,
+                             std::vector<std::uint32_t> payload) {
+    ring.push_back(ac6::native::pm4::type3_header(
+        opcode, static_cast<std::uint32_t>(payload.size())));
+    ring.insert(ring.end(), payload.begin(), payload.end());
+  };
+  auto push_type0 = [&ring](std::uint32_t base,
+                            std::vector<std::uint32_t> values) {
+    ring.push_back(ac6::native::pm4::header(
+        ac6::native::pm4::kType0, static_cast<std::uint32_t>(values.size()),
+        base));
+    ring.insert(ring.end(), values.begin(), values.end());
+  };
+  {
+    std::vector<std::uint32_t> payload{0u,
+                                       static_cast<std::uint32_t>(vertex_entry->microcode.size())};
+    payload.insert(payload.end(), vertex_entry->microcode.begin(),
+                   vertex_entry->microcode.end());
+    push_packet(ac6::native::pm4::kOpcodeImLoadImmediate, payload);
+  }
+  {
+    std::vector<std::uint32_t> payload{1u,
+                                       static_cast<std::uint32_t>(pixel_entry->microcode.size())};
+    payload.insert(payload.end(), pixel_entry->microcode.begin(),
+                   pixel_entry->microcode.end());
+    push_packet(ac6::native::pm4::kOpcodeImLoadImmediate, payload);
+  }
+  push_type0(0x4800u, {3u | (0x1000u << 2u), 2u | (21u << 2u)});
+  push_type0(0x2208u, {4u});
+  push_type0(0x2000u, {surface_info});
+  push_type0(0x2001u, {color_base});
+  push_type0(0x2002u, {depth_info});
+  push_type0(0x2200u, {depth_control});
+  push_type0(0x210Du, {0x000000FFu});
+  push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
+  push_type0(0x2104u, {0xFu});
+  push_type0(0x2100u, {0xFFFFFFFFu, 0u});
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
+                       0x3F800000u, 0u});
+  push_type0(0x2206u, {0x3Fu});
+  push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});
+  push_type0(0x2280u, {0x00100010u});
+  push_type0(0x2281u, {0xFFFF0000u});
+  const float vertices[3][7] = {
+      {-0.5f, -0.5f, 0.5f, 1.f, 1.f, 1.f, 1.f},
+      { 0.5f, -0.5f, 0.5f, 1.f, 1.f, 1.f, 1.f},
+      {-0.5f,  0.5f, 0.5f, 1.f, 1.f, 1.f, 1.f},
+  };
+  std::vector<std::uint8_t> vertex_bytes(sizeof(vertices));
+  for (std::size_t i = 0; i < sizeof(vertices) / 4u; ++i) {
+    std::uint32_t word;
+    std::memcpy(&word, reinterpret_cast<const std::uint8_t*>(vertices) + i * 4u, 4u);
+    word = __builtin_bswap32(word);
+    std::memcpy(vertex_bytes.data() + i * 4u, &word, 4u);
+  }
+  assert(runtime.write_shared_memory(0x1000u, vertex_bytes));
+  push_packet(ac6::native::pm4::kOpcodeDrawIndx2, {8u | (2u << 6u) | (3u << 16u)});
+  push_packet(ac6::native::pm4::kOpcodeXeSwap,
+              {ac6::native::pm4::kSwapSignature, 0u, 1280u, 720u});
+  const std::uint32_t ring_bytes = static_cast<std::uint32_t>(ring.size()) * 4u;
+  ring.resize(256u, 0u);
+  bridge.set_ring_words(ring);
+  assert(bus.write(ac6::native::MmioBus::kRingSize, 1024u));
+  assert(bus.write(ac6::native::MmioBus::kRingRead, 0u));
+  assert(bus.write(ac6::native::MmioBus::kRingWrite, ring_bytes));
+  std::vector<ac6::native::XenosCommand> output;
+  auto pump_result = bridge.pump(state, output);
+  assert(pump_result.ok());
+  assert(output.size() == 4u);
+  const bool ok = runtime.execute_frame(target, state, output);
+  if (!expect_ok) {
+    assert(!ok);
+    assert(!runtime.error().empty());
+    std::fprintf(stderr, "rectangle surface frame failed closed as expected: %s\n",
+                 runtime.error().c_str());
+    return;
+  }
+  if (!ok) {
+    std::fprintf(stderr, "RECT SURFACE FRAME ERR: %s\n",
+                 runtime.error().c_str());
+  }
+  assert(ok);
+  assert(runtime.draw_count() == 1u);
+  assert(runtime.edram_resolves() == 1u);
+  const auto pixels = target.readback();
+  assert(pixels.size() == static_cast<std::size_t>(1280u) * 720u * 4u);
+  std::size_t lit = 0u;
+  std::uint32_t min_x = 1280u, min_y = 720u, max_x = 0u, max_y = 0u;
+  for (std::uint32_t y = 0u; y < 720u; ++y) {
+    for (std::uint32_t x = 0u; x < 1280u; ++x) {
+      const std::size_t off = (y * 1280u + x) * 4u;
+      if (pixels[off] != 0u) {
+        ++lit;
+        min_x = std::min(min_x, x); min_y = std::min(min_y, y);
+        max_x = std::max(max_x, x); max_y = std::max(max_y, y);
+      }
+    }
+  }
+  const auto expect = [&](std::uint32_t x, std::uint32_t y, std::uint8_t v) {
+    const std::size_t off = (y * 1280u + x) * 4u;
+    if (pixels[off] != v) {
+      std::fprintf(stderr, "rect surface pixel (%u,%u) expected=%u actual=%u lit=%zu bounds=(%u,%u)-(%u,%u)\n",
+                   x, y, unsigned(v), unsigned(pixels[off]), lit, min_x, min_y,
+                   max_x, max_y);
+    }
+    assert(pixels[off] == v);
+  };
+  // Robust interior/exterior sample points: they must not flip under the
+  // surface origin or the MSAA sample pattern (edges are far away).
+  expect(640u, 360u, 255u);
+  expect(700u, 300u, 255u);
+  expect(100u, 100u, 0u);
+  expect(1180u, 620u, 0u);
+  assert(lit > 10000u);
+  assert(min_x >= 100u && max_x <= 1180u && min_y >= 100u && max_y <= 620u);
+}
+
+void pinned_rectangle_msaa4_pitch_matches_swap_dims() {
+  // r490: pitch 640 pixels at 4x MSAA maps to a 1280-sample-wide EDRAM
+  // image (the oracle's GetSurfacePitchTiles), so the 1280x720 swap
+  // resolves the drawn frame 1:1 instead of squashing a 640x4096 region.
+  run_rectangle_surface_frame(640u | (2u << 16u), 0u, 0u, 0u, true);
+}
+
+void pinned_rectangle_depth_always_writes_d24s8() {
+  // r490: the retail entry-path depth subset (RB_DEPTHCONTROL 0x8777:
+  // z test + z write + stencil test with ALWAYS funcs; D24S8 at the color
+  // base) renders the same pixels with the depth attachment bound.
+  run_rectangle_surface_frame(1280u, 16u, 0x8777u, 16u, true);
+}
+
+void pinned_rectangle_d24fs8_depth_below_color_frame() {
+  // r491: the retail r490 configuration -- D24FS8 (format bit 1) at depth
+  // base 0x2d0 with 4x MSAA pitch 640, i.e. the depth surface sits directly
+  // below the 720-row color frame once the oracle's pitch mapping applies.
+  // The depth-only second pass must place depth content there while color
+  // pixels stay unchanged.
+  run_rectangle_surface_frame(640u | (2u << 16u), 0u, 0x8777u,
+                              0x2d0u | (1u << 16u), true);
+}
+
+// r495: the exact retail early-boot vertex bytes (r495 probe, draw 2 at
+// vf_addr 0x126c0138, three 7-dword records: v0=(-0.5,-0.5,1.0) black,
+// v1=v2=(1.0,639.5) red-transparent) render ZERO fragments through the
+// corrected pairing -- the guest's own early-boot rect quads are
+// degenerate (v1+v2-v0 synthesis with coincident v1/v2), consistent with
+// the r476 oracle evidence that this window shows a diagnostic screen,
+// not title content. The visible-content gate is the guest's main-thread
+// livelock (draw-54 plateau), not the renderer.
+static void run_retail_vertex_bytes_diagnostic() {
+  ac6::native::VulkanDevice device;
+  if (!device.valid()) {
+    std::fprintf(stderr, "SKIP run_retail_vertex_bytes_diagnostic: no device\n");
+    return;
+  }
+  ac6::native::VulkanOffscreenTarget target(device);
+  assert(target.valid());
+  ac6::native::PinnedShaderRuntime runtime(device);
+  if (!runtime.valid()) {
+    std::fprintf(stderr, "SKIP run_retail_vertex_bytes_diagnostic: %s\n",
+                 runtime.error().c_str());
+    return;
+  }
+  assert(ac6::native::register_bundled_pinned_shader_registry());
+  const auto capsule = ac6::native::bundled_pinned_shader_registry();
+  const auto entries = ac6::native::parse_pinned_shader_capsule(capsule);
+  constexpr std::uint64_t kVertexDigest = 0x57b8e5f14b93cff4ull;
+  const ac6::native::PinnedShaderEntry* vertex_entry = nullptr;
+  const ac6::native::PinnedShaderEntry* pixel_entry = nullptr;
+  for (const auto& entry : entries) {
+    if (entry.signature.digest == kVertexDigest &&
+        entry.signature.shader_type == 0u &&
+        entry.modification == 0xA00000001ull) {
+      vertex_entry = &entry;
+    }
+    if (entry.signature.digest == 0xe41b4b062083e5bfull &&
+        entry.signature.shader_type == 1u &&
+        entry.modification == 0x0000400000010001ull) {
+      pixel_entry = &entry;
+    }
+  }
+  assert(vertex_entry != nullptr && pixel_entry != nullptr);
+
+  ac6::native::XenosState state;
+  ac6::native::MmioBus bus;
+  ac6::native::VdBridge bridge(bus);
+  std::vector<std::uint32_t> ring;
+  auto push_packet = [&ring](std::uint32_t opcode,
+                             std::vector<std::uint32_t> payload) {
+    ring.push_back(ac6::native::pm4::type3_header(
+        opcode, static_cast<std::uint32_t>(payload.size())));
+    ring.insert(ring.end(), payload.begin(), payload.end());
+  };
+  auto push_type0 = [&ring](std::uint32_t base,
+                            std::vector<std::uint32_t> values) {
+    ring.push_back(ac6::native::pm4::header(
+        ac6::native::pm4::kType0, static_cast<std::uint32_t>(values.size()),
+        base));
+    ring.insert(ring.end(), values.begin(), values.end());
+  };
+  {
+    std::vector<std::uint32_t> payload{0u,
+                                       static_cast<std::uint32_t>(vertex_entry->microcode.size())};
+    payload.insert(payload.end(), vertex_entry->microcode.begin(),
+                   vertex_entry->microcode.end());
+    push_packet(ac6::native::pm4::kOpcodeImLoadImmediate, payload);
+  }
+  {
+    std::vector<std::uint32_t> payload{1u,
+                                       static_cast<std::uint32_t>(pixel_entry->microcode.size())};
+    payload.insert(payload.end(), pixel_entry->microcode.begin(),
+                   pixel_entry->microcode.end());
+    push_packet(ac6::native::pm4::kOpcodeImLoadImmediate, payload);
+  }
+  push_type0(0x4800u, {3u | (0x1000u << 2u), 2u | (21u << 2u)});
+  push_type0(0x2208u, {4u});
+  push_type0(0x2000u, {1280u});
+  push_type0(0x2001u, {16u});
+  // Retail probe state (r495): vte=0x300 (screen-space passthrough),
+  // vport 640/640/-464/368 (unused with VTX_*_FMT), scissor 8192x8192.
+  push_type0(0x2206u, {0x300u});
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
+                       0x3F800000u, 0u});
+  push_type0(0x200Eu, {0u, 0x20002000u});
+  push_type0(0x2104u, {0xFu});
+  push_type0(0x2100u, {0xFFFFFFFFu, 0u});
+  push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});
+  push_type0(0x2280u, {0x00100010u});
+  push_type0(0x2281u, {0xFFFF0000u});
+  // The exact retail vertex dwords (big-endian words as stored in guest
+  // memory): v0, v1, v2 = three 7-dword records.
+  const std::uint32_t retail_words[21] = {
+      0xbf000000u, 0xbf000000u, 0x3f800000u, 0x00000000u, 0x00000000u,
+      0x00000000u, 0x00000000u, 0x3f800000u, 0x441fe000u, 0xbf000000u,
+      0x3f800000u, 0x00000000u, 0x00000000u, 0x00000000u, 0x3f800000u,
+      0x441fe000u, 0x43b3c000u, 0x3f800000u, 0x00000000u, 0x00000000u,
+      0x00000000u,
+  };
+  // Guest stores big-endian words; write_shared_memory takes the byte
+  // stream as-is at dword address 0x1000>>2.
+  std::vector<std::uint8_t> vertex_bytes(sizeof(retail_words));
+  for (std::size_t i = 0; i < 21u; ++i) {
+    const std::uint32_t word = __builtin_bswap32(retail_words[i]);
+    std::memcpy(vertex_bytes.data() + i * 4u, &word, 4u);
+  }
+  assert(runtime.write_shared_memory(0x1000u, vertex_bytes));
+  push_packet(ac6::native::pm4::kOpcodeDrawIndx2, {8u | (2u << 6u) | (3u << 16u)});
+  push_packet(ac6::native::pm4::kOpcodeXeSwap,
+              {ac6::native::pm4::kSwapSignature, 0u, 1280u, 720u});
+  const std::uint32_t ring_bytes = static_cast<std::uint32_t>(ring.size()) * 4u;
+  ring.resize(256u, 0u);
+  bridge.set_ring_words(ring);
+  assert(bus.write(ac6::native::MmioBus::kRingSize, 1024u));
+  assert(bus.write(ac6::native::MmioBus::kRingRead, 0u));
+  assert(bus.write(ac6::native::MmioBus::kRingWrite, ring_bytes));
+  std::vector<ac6::native::XenosCommand> output;
+  auto pump_result = bridge.pump(state, output);
+  assert(pump_result.ok());
+  const bool ok = runtime.execute_frame(target, state, output);
+  if (!ok) {
+    std::fprintf(stderr, "RETAIL BYTES FRAME ERR: %s\n",
+                 runtime.error().c_str());
+  }
+  assert(ok);
+  const auto pixels = target.readback();
+  std::size_t lit = 0u;
+  std::uint32_t min_x = 1280u, min_y = 720u, max_x = 0u, max_y = 0u;
+  for (std::uint32_t y = 0u; y < 720u; ++y) {
+    for (std::uint32_t x = 0u; x < 1280u; ++x) {
+      const std::size_t off = (y * 1280u + x) * 4u;
+      if (pixels[off] != 0u || pixels[off + 1u] != 0u || pixels[off + 2u] != 0u) {
+        ++lit;
+        min_x = std::min(min_x, x); min_y = std::min(min_y, y);
+        max_x = std::max(max_x, x); max_y = std::max(max_y, y);
+      }
+    }
+  }
+  std::fprintf(stderr,
+               "r495 retail-bytes diagnostic: lit=%zu bounds=(%u,%u)-(%u,%u)\n",
+               lit, min_x, min_y, max_x, max_y);
+  assert(lit == 0u);
+}
+
+void pinned_rectangle_pair_exports_interpolator_color() {
+  // r495: the retail title pairing (rect VS 0A6D + pinned PS e41b, which
+  // exports interpolator_0 * exp_bias) needs the VS modification's
+  // interpolator mask from the paired PS -- with mask 0 the type-10
+  // translation declared no xe_out_interpolator_0 and the screen stayed
+  // black. The fetched vertex color (1,1,1,1) must now reach the target.
+  run_rectangle_surface_frame(1280u, 16u, 0u, 0u, true, 0xe41b4b062083e5bfull);
+}
+
+void pinned_depth_unqualified_configs_fail_closed() {
+  // Backface stencil state enabled.
+  run_rectangle_surface_frame(1280u, 16u, 0x8777u | 0x80u, 16u, false);
+  // Depth region exceeding the tile-pitched surface (base 0xff0 maps below
+  // the 2048-row image at 1x pitch 1280).
+  run_rectangle_surface_frame(1280u, 16u, 0x8777u, 0xff0u, false);
+}
 
 void pinned_edram_format_2_10_10_10_accepted_and_reconfigures() {
   ac6::native::VulkanDevice device;
@@ -2755,7 +3738,7 @@ void pinned_edram_format_2_10_10_10_accepted_and_reconfigures() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
@@ -2913,7 +3896,7 @@ void pinned_cube_texture_samples_expected_face_texels() {
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});  // VGT max / min vertex index
   push_type0(0x2102u, {0u});               // VGT_INDX_OFFSET
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   // Vertex float constants c218-c221 = the identity matrix rows.
@@ -3135,7 +4118,7 @@ void pinned_edram_format_8_8_8_8_gamma_renders_like_8_8_8_8() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
@@ -3302,7 +4285,7 @@ void pinned_edram_format_16_16_16_16_float_renders_and_resolves() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   push_type0(0x47FCu, {0x3F800000u, 0u, 0u, 0u});  // c255.x = 1 -> white
@@ -3349,11 +4332,11 @@ void pinned_edram_format_16_16_16_16_float_renders_and_resolves() {
   assert(pixels_2[p1 + 3u] == 0u);
 }
 
-void pinned_rect_loop_variant_expands_per_vertex_quads() {
+void pinned_point_loop_variant_expands_per_vertex_quads() {
   ac6::native::VulkanDevice device;
   if (!device.valid()) {
     std::fprintf(stderr,
-                 "SKIP pinned_rect_loop_variant_expands_per_vertex_quads: no device\n");
+                 "SKIP pinned_point_loop_variant_expands_per_vertex_quads: no device\n");
     return;
   }
   ac6::native::VulkanOffscreenTarget target(device);
@@ -3361,11 +4344,11 @@ void pinned_rect_loop_variant_expands_per_vertex_quads() {
   ac6::native::PinnedShaderRuntime runtime(device);
   if (!runtime.valid()) {
     std::fprintf(stderr,
-                 "SKIP pinned_rect_loop_variant_expands_per_vertex_quads: %s\n",
+                 "SKIP pinned_point_loop_variant_expands_per_vertex_quads: %s\n",
                  runtime.error().c_str());
     return;
   }
-  // r267: the loop-variant pinned rectangle-expansion VS (host type 9,
+  // r267: the loop-variant pinned point-expansion VS (host type 9,
   // digest 0xec556475b428778f, 51 dwords, mod 0x900010001) exercised
   // end-to-end: 12-byte vertex records ([position scalar], [diameter
   // source], [packed rgb]), the compacted float slots c104 (position
@@ -3430,7 +4413,7 @@ void pinned_rect_loop_variant_expands_per_vertex_quads() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   // The pinned VS's compacted float slots (vertex bank, cN at
@@ -3473,10 +4456,10 @@ void pinned_rect_loop_variant_expands_per_vertex_quads() {
     }
     assert(runtime.write_shared_memory(0x2000u, index_bytes));
   }
-  // DRAW_INDX source 0, PRIMITIVE 0x08 (rectangle list), 6 guest
+  // DRAW_INDX source 0, PRIMITIVE 0x01 (point list), 6 guest
   // vertices, 32-bit guest indices.
   push_packet(ac6::native::pm4::kOpcodeDrawIndx,
-              {0u, 8u | (6u << 16u), 0x8000u, 1u | (1u << 11u)});
+              {0u, 1u | (6u << 16u), 0x8000u, 1u | (1u << 11u)});
   push_packet(ac6::native::pm4::kOpcodeXeSwap,
               {ac6::native::pm4::kSwapSignature, 0u, 1280u, 720u});
   const std::uint32_t ring_bytes = static_cast<std::uint32_t>(ring.size()) * 4u;
@@ -3497,8 +4480,8 @@ void pinned_rect_loop_variant_expands_per_vertex_quads() {
   const auto pixels = target.readback();
   assert(runtime.draw_count() == 1u);
   assert(runtime.edram_resolves() == 1u);
-  // Each rectangle expands to a 320x320 px quad centered at (640, 360)
-  // (the two strips overlap). Inside = white; outside = clear.
+  // Each point expands to a 320x320 px quad centered at (640, 360)
+  // (the six strips overlap). Inside = white; outside = clear.
   const auto expect = [&](std::uint32_t x, std::uint32_t y, std::uint8_t v) {
     const std::size_t off = (y * 1280u + x) * 4u;
     assert(pixels[off + 0u] == v);
@@ -3515,8 +4498,182 @@ void pinned_rect_loop_variant_expands_per_vertex_quads() {
   expect(640u, 530u, 0u);     // outside bottom
 }
 
-void pinned_deswizzle_identity_renders_restore_pass() {
-  ac6::native::VulkanDevice device;
+// r523: tiled DXT4_5 untile matches the cited 2D layout. 8x8 texels =
+// 2x2 blocks at pitch 32 blocks: hand-computed cited offsets are
+// (0,0)->0, (1,0)->32, (0,1)->16, (1,1)->48, so tiled order is
+// [b0, b2, b1, b3] and linear row-major order is [b0, b1, b2, b3].
+// r524: block geometry + conservative footprint for the refused boot
+// descriptor (64x64 texels, pitch 128): 16x16 blocks, pitch 32 blocks,
+// 4,096 linear bytes in one 16 KiB tile. Fail-closed on the same
+// bounds the untile helper enforces.
+void tiled_dxt45_layout_bounds_footprint() {
+  std::uint32_t wb = 0u, hb = 0u, pb = 0u;
+  std::uint64_t linear = 0u, footprint = 0u;
+  assert(ac6::native::tiled_dxt45_layout(64u, 64u, 128u, wb, hb, pb, linear,
+                                         footprint));
+  assert(wb == 16u);
+  assert(hb == 16u);
+  assert(pb == 32u);
+  assert(linear == 4096u);
+  assert(footprint == 16384u);
+  assert(!ac6::native::tiled_dxt45_layout(0u, 64u, 128u, wb, hb, pb, linear,
+                                          footprint));
+  assert(!ac6::native::tiled_dxt45_layout(64u, 64u, 64u, wb, hb, pb, linear,
+                                          footprint));
+  assert(!ac6::native::tiled_dxt45_layout(66u, 64u, 128u, wb, hb, pb, linear,
+                                          footprint));
+  assert(!ac6::native::tiled_dxt45_layout(64u, 64u, 36u, wb, hb, pb, linear,
+                                          footprint));
+  assert(!ac6::native::tiled_dxt45_layout(8192u, 64u, 8192u, wb, hb, pb, linear,
+                                          footprint));
+}
+
+// r526: quad-list index expansion ([a,b,c,d] -> [a,b,c,a,c,d] per
+// quad, single run). Triangle lists have no bridging primitives.
+void expand_quad_list_auto_produces_two_triangles() {
+  std::vector<std::uint32_t> out{99u};
+  assert(ac6::native::expand_quad_list_auto(8u, out));
+  const std::vector<std::uint32_t> expected{0u, 1u, 2u, 0u, 2u, 3u,
+                                            4u, 5u, 6u, 4u, 6u, 7u};
+  assert(out == expected);
+  assert(!ac6::native::expand_quad_list_auto(0u, out));
+  assert(!ac6::native::expand_quad_list_auto(6u, out));
+  assert(!ac6::native::expand_quad_list_auto((((1u << 20u) + 1u) * 4u), out));
+}
+
+void expand_quad_list_words_remaps_dma_and_refuses_restart() {
+  const std::vector<std::uint32_t> guest{10u, 11u, 12u, 13u,
+                                         20u, 21u, 22u, 23u};
+  std::vector<std::uint32_t> out;
+  assert(ac6::native::expand_quad_list_words(guest, out));
+  const std::vector<std::uint32_t> expected{10u, 11u, 12u, 10u, 12u, 13u,
+                                            20u, 21u, 22u, 20u, 22u, 23u};
+  assert(out == expected);
+  const std::vector<std::uint32_t> restarted{10u, 11u, 0xFFFFFFFFu, 13u};
+  assert(!ac6::native::expand_quad_list_words(restarted, out));
+  assert(out.empty());
+  const std::vector<std::uint32_t> empty;
+  assert(!ac6::native::expand_quad_list_words(empty, out));
+}
+
+void untile_tiled_dxt45_matches_documented_layout() {  std::vector<std::uint8_t> tiled(64u, 0u);
+  for (std::uint32_t block = 0u; block < 4u; ++block) {
+    // Tiled placement per the offsets above.
+    const std::size_t at = block == 0u ? 0u : (block == 1u ? 32u : (block == 2u ? 16u : 48u));
+    for (std::uint32_t byte = 0u; byte < 16u; ++byte) {
+      tiled[at + byte] = static_cast<std::uint8_t>(block * 16u + byte);
+    }
+  }
+  std::vector<std::uint8_t> linear;
+  assert(ac6::native::untile_tiled_dxt45_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 32u, 0u, linear));
+  assert(linear.size() == 64u);
+  for (std::uint32_t block = 0u; block < 4u; ++block) {
+    for (std::uint32_t byte = 0u; byte < 16u; ++byte) {
+      assert(linear[block * 16u + byte] == static_cast<std::uint8_t>(block * 16u + byte));
+    }
+  }
+  // k8in16 endianness pair-swaps each block on the way out (cited
+  // CopySwapBlock): store swapped, expect unswapped linear.
+  std::vector<std::uint8_t> tiled_swapped(64u, 0u);
+  for (std::uint32_t block = 0u; block < 4u; ++block) {
+    const std::size_t at = block == 0u ? 0u : (block == 1u ? 32u : (block == 2u ? 16u : 48u));
+    for (std::uint32_t pair = 0u; pair < 8u; ++pair) {
+      tiled_swapped[at + pair * 2u] = static_cast<std::uint8_t>(block * 16u + pair * 2u + 1u);
+      tiled_swapped[at + pair * 2u + 1u] = static_cast<std::uint8_t>(block * 16u + pair * 2u);
+    }
+  }
+  std::vector<std::uint8_t> linear_swapped;
+  assert(ac6::native::untile_tiled_dxt45_2d(
+      tiled_swapped.data(), tiled_swapped.size(), 2u, 2u, 32u, 1u, linear_swapped));
+  assert(linear_swapped == linear);
+  // Fail-closed: null, zero dims, pitch below width or off the
+  // 32-block grid, unsupported endianness, short source.
+  std::vector<std::uint8_t> out;
+  assert(!ac6::native::untile_tiled_dxt45_2d(
+      nullptr, 64u, 2u, 2u, 32u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt45_2d(
+      tiled.data(), tiled.size(), 0u, 2u, 32u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt45_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 1u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt45_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 4u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt45_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 32u, 3u, out));
+  assert(!ac6::native::untile_tiled_dxt45_2d(
+      tiled.data(), 48u, 2u, 2u, 32u, 0u, out));
+}
+
+void tiled_dxt1_layout_bounds_footprint() {
+  std::uint32_t wb = 0u, hb = 0u, pb = 0u;
+  std::uint64_t linear = 0u, footprint = 0u;
+  assert(ac6::native::tiled_dxt1_layout(64u, 64u, 128u, wb, hb, pb, linear,
+                                        footprint));
+  assert(wb == 16u);
+  assert(hb == 16u);
+  assert(pb == 32u);
+  assert(linear == 2048u);
+  assert(footprint == 8192u);
+  assert(!ac6::native::tiled_dxt1_layout(0u, 64u, 128u, wb, hb, pb, linear,
+                                         footprint));
+  assert(!ac6::native::tiled_dxt1_layout(64u, 64u, 64u, wb, hb, pb, linear,
+                                         footprint));
+  assert(!ac6::native::tiled_dxt1_layout(66u, 64u, 128u, wb, hb, pb, linear,
+                                         footprint));
+  assert(!ac6::native::tiled_dxt1_layout(64u, 64u, 36u, wb, hb, pb, linear,
+                                         footprint));
+}
+
+void untile_tiled_dxt1_matches_documented_layout() {
+  // 2x2 blocks (8x8 texels), pitch 32 blocks, 8 bytes per block.
+  // tiled_offset_2d with log2=3: (0,0)->0, (1,0)->8, (0,1)->16, (1,1)->24.
+  std::vector<std::uint8_t> tiled(32u, 0u);
+  for (std::uint32_t block = 0u; block < 4u; ++block) {
+    const std::size_t at = block == 0u ? 0u : (block == 1u ? 8u : (block == 2u ? 16u : 24u));
+    for (std::uint32_t byte = 0u; byte < 8u; ++byte) {
+      tiled[at + byte] = static_cast<std::uint8_t>(block * 8u + byte);
+    }
+  }
+  std::vector<std::uint8_t> linear;
+  assert(ac6::native::untile_tiled_dxt1_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 32u, 0u, linear));
+  assert(linear.size() == 32u);
+  for (std::uint32_t block = 0u; block < 4u; ++block) {
+    for (std::uint32_t byte = 0u; byte < 8u; ++byte) {
+      assert(linear[block * 8u + byte] == static_cast<std::uint8_t>(block * 8u + byte));
+    }
+  }
+  // k8in16 endianness pair-swaps each block.
+  std::vector<std::uint8_t> tiled_swapped(32u, 0u);
+  for (std::uint32_t block = 0u; block < 4u; ++block) {
+    const std::size_t at = block == 0u ? 0u : (block == 1u ? 8u : (block == 2u ? 16u : 24u));
+    for (std::uint32_t pair = 0u; pair < 4u; ++pair) {
+      tiled_swapped[at + pair * 2u] = static_cast<std::uint8_t>(block * 8u + pair * 2u + 1u);
+      tiled_swapped[at + pair * 2u + 1u] = static_cast<std::uint8_t>(block * 8u + pair * 2u);
+    }
+  }
+  std::vector<std::uint8_t> linear_swapped;
+  assert(ac6::native::untile_tiled_dxt1_2d(
+      tiled_swapped.data(), tiled_swapped.size(), 2u, 2u, 32u, 1u, linear_swapped));
+  assert(linear_swapped == linear);
+  // Fail-closed: null, zero dims, pitch below width, off 32-block grid,
+  // unsupported endianness, short source.
+  std::vector<std::uint8_t> out;
+  assert(!ac6::native::untile_tiled_dxt1_2d(
+      nullptr, 32u, 2u, 2u, 32u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt1_2d(
+      tiled.data(), tiled.size(), 0u, 2u, 32u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt1_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 1u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt1_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 4u, 0u, out));
+  assert(!ac6::native::untile_tiled_dxt1_2d(
+      tiled.data(), tiled.size(), 2u, 2u, 32u, 3u, out));
+  assert(!ac6::native::untile_tiled_dxt1_2d(
+      tiled.data(), 24u, 2u, 2u, 32u, 0u, out));
+}
+
+void pinned_deswizzle_identity_renders_restore_pass() {  ac6::native::VulkanDevice device;
   if (!device.valid()) {
     std::fprintf(stderr,
                  "SKIP pinned_deswizzle_identity_renders_restore_pass: no "
@@ -3615,7 +4772,7 @@ void pinned_deswizzle_identity_renders_restore_pass() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   // Alpha test ENABLED with function ALWAYS (RB_COLORCONTROL bit 3 + the
   // function 7): the pinned shader's kill passes and the state-derived
@@ -3815,7 +4972,7 @@ void pinned_deswizzle_slot4_payload_renders_tile_restore() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFu});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   // RB_COLORCONTROL = 0: alpha test AND alpha-to-coverage disabled -> the
@@ -4065,7 +5222,7 @@ void pinned_hoisted_gradients_payload_renders_via_interpolator() {
   push_type0(0x200Eu, {0u, 720u << 16u | 1280u});
   push_type0(0x2104u, {0xFFFFFFFFu, 0u});
   push_type0(0x2100u, {0xFFFFFFFFu, 0u});
-  push_type0(0x210Fu, {0x43C00000u, 0x43C00000u, 0xC3B40000u, 0x43B40000u,
+  push_type0(0x210Fu, {0x44200000u, 0x44200000u, 0xC3B40000u, 0x43B40000u,
                        0x3F800000u, 0u});
   push_type0(0x2206u, {0x3Fu});
   // RB_COLORCONTROL = 0: alpha test AND alpha-to-coverage disabled -> the
@@ -4213,9 +5370,23 @@ static void run_isolated(const char* name, void (*fn)()) {
 }
 
 int main() {
+  run_isolated("draw_state_follows_nested_pm4_order", draw_state_follows_nested_pm4_order);
+  run_isolated("failed_decode_commits_sane_prefix_on_identical_repeat", failed_decode_commits_sane_prefix_on_identical_repeat);
+  run_isolated("failed_decode_keeps_drop_path_below_sanity_gates", failed_decode_keeps_drop_path_below_sanity_gates);
+  run_isolated("failed_decode_advance_test_consumes_window_on_third_identical_repeat", failed_decode_advance_test_consumes_window_on_third_identical_repeat);
+  run_isolated("failed_decode_commits_nested_prefix_on_identical_repeat", failed_decode_commits_nested_prefix_on_identical_repeat);
+  run_isolated("failed_decode_resets_on_changed_signature", failed_decode_resets_on_changed_signature);
+  run_isolated("draw_indx_checks_length_before_index_fields", draw_indx_checks_length_before_index_fields);
 
   run_isolated("pinned_shader_samples_two_textures", pinned_shader_samples_two_textures);
-  run_isolated("pinned_rect_list_expands_to_triangle_strips", pinned_rect_list_expands_to_triangle_strips);
+  run_isolated("pinned_point_list_expands_to_triangle_strips", pinned_point_list_expands_to_triangle_strips);
+  run_isolated("pinned_rectangle_reconstructs_three_vertices", pinned_rectangle_reconstructs_three_vertices);
+  run_isolated("pinned_rectangle_msaa4_pitch_matches_swap_dims", pinned_rectangle_msaa4_pitch_matches_swap_dims);
+  run_isolated("pinned_rectangle_depth_always_writes_d24s8", pinned_rectangle_depth_always_writes_d24s8);
+  run_isolated("pinned_rectangle_d24fs8_depth_below_color_frame", pinned_rectangle_d24fs8_depth_below_color_frame);
+  run_isolated("pinned_rectangle_pair_exports_interpolator_color", pinned_rectangle_pair_exports_interpolator_color);
+  run_isolated("run_retail_vertex_bytes_diagnostic", run_retail_vertex_bytes_diagnostic);
+  run_isolated("pinned_depth_unqualified_configs_fail_closed", pinned_depth_unqualified_configs_fail_closed);
   run_isolated("endian_modes_are_distinct_and_bounded", endian_modes_are_distinct_and_bounded);
   run_isolated("decoder_commits_only_complete_packet", decoder_commits_only_complete_packet);
   run_isolated("decoder_rejects_unknown_and_bad_wait", decoder_rejects_unknown_and_bad_wait);
@@ -4236,26 +5407,42 @@ int main() {
   run_isolated("ucode_registry_matches_pinned_only", ucode_registry_matches_pinned_only);
   run_isolated("shader_boundary_accepts_only_valid_spirv", shader_boundary_accepts_only_valid_spirv);
   run_isolated("guest_vd_service_drains_published_dword_index", guest_vd_service_drains_published_dword_index);
+  run_isolated("guest_vd_service_drain_commits_prefix_on_repeated_wedge", guest_vd_service_drain_commits_prefix_on_repeated_wedge);
   run_isolated("guest_vd_service_present_executes_offscreen", guest_vd_service_present_executes_offscreen);
   run_isolated("guest_vd_service_event_write_applies_single_endian_swap", guest_vd_service_event_write_applies_single_endian_swap);
   run_isolated("bundled_pinned_registry_fully_hits", bundled_pinned_registry_fully_hits);
   run_isolated("pinned_shaders_execute_a_real_frame", pinned_shaders_execute_a_real_frame);
-  run_isolated("pinned_shader_samples_a_real_texture", pinned_shader_samples_a_real_texture);
+  run_isolated("pinned_shader_samples_a_real_texture", [] { pinned_shader_samples_a_real_texture(false); });
+  run_isolated("guest_vd_wrapped_alias_texture_and_latest_identity", [] { pinned_shader_samples_a_real_texture(true); });
+  run_isolated("pinned_viewport_independent_of_oversized_scissor", [] { pinned_shader_samples_a_real_texture(false, true); });
   run_isolated("pinned_texture_shader_uses_compacted_constants", pinned_texture_shader_uses_compacted_constants);
   run_isolated("pinned_shader_selects_modification_by_draw_state", pinned_shader_selects_modification_by_draw_state);
   run_isolated("pinned_edram_draws_accumulate_and_reconfig_recovers", pinned_edram_draws_accumulate_and_reconfig_recovers);
   run_isolated("pinned_indexed_draw_renders_guest_index_order", pinned_indexed_draw_renders_guest_index_order);
   run_isolated("pinned_indexed_draw_honors_primitive_restart", pinned_indexed_draw_honors_primitive_restart);
   run_isolated("pinned_shader_samples_two_textures", pinned_shader_samples_two_textures);
-  run_isolated("pinned_rect_list_expands_to_triangle_strips", pinned_rect_list_expands_to_triangle_strips);
+  run_isolated("pinned_point_list_expands_to_triangle_strips", pinned_point_list_expands_to_triangle_strips);
+  run_isolated("pinned_rectangle_reconstructs_three_vertices", pinned_rectangle_reconstructs_three_vertices);
+  run_isolated("pinned_rectangle_msaa4_pitch_matches_swap_dims", pinned_rectangle_msaa4_pitch_matches_swap_dims);
+  run_isolated("pinned_rectangle_depth_always_writes_d24s8", pinned_rectangle_depth_always_writes_d24s8);
+  run_isolated("pinned_rectangle_d24fs8_depth_below_color_frame", pinned_rectangle_d24fs8_depth_below_color_frame);
+  run_isolated("pinned_rectangle_pair_exports_interpolator_color", pinned_rectangle_pair_exports_interpolator_color);
+  run_isolated("run_retail_vertex_bytes_diagnostic", run_retail_vertex_bytes_diagnostic);
+  run_isolated("pinned_depth_unqualified_configs_fail_closed", pinned_depth_unqualified_configs_fail_closed);
   run_isolated("pinned_edram_format_2_10_10_10_accepted_and_reconfigures", pinned_edram_format_2_10_10_10_accepted_and_reconfigures);
-  run_isolated("pinned_rect_loop_variant_expands_per_vertex_quads", pinned_rect_loop_variant_expands_per_vertex_quads);
+  run_isolated("pinned_point_loop_variant_expands_per_vertex_quads", pinned_point_loop_variant_expands_per_vertex_quads);
   run_isolated("pinned_edram_format_16_16_16_16_float_renders_and_resolves", pinned_edram_format_16_16_16_16_float_renders_and_resolves);
   run_isolated("pinned_edram_format_8_8_8_8_gamma_renders_like_8_8_8_8", pinned_edram_format_8_8_8_8_gamma_renders_like_8_8_8_8);
   run_isolated("pinned_cube_texture_samples_expected_face_texels", pinned_cube_texture_samples_expected_face_texels);
   run_isolated("pinned_deswizzle_slot4_payload_renders_tile_restore", pinned_deswizzle_slot4_payload_renders_tile_restore);
   run_isolated("pinned_deswizzle_identity_renders_restore_pass", pinned_deswizzle_identity_renders_restore_pass);
+  run_isolated("untile_tiled_dxt45_matches_documented_layout", untile_tiled_dxt45_matches_documented_layout);
+  run_isolated("expand_quad_list_auto_produces_two_triangles", expand_quad_list_auto_produces_two_triangles);
+  run_isolated("expand_quad_list_words_remaps_dma_and_refuses_restart", expand_quad_list_words_remaps_dma_and_refuses_restart);
+  run_isolated("tiled_dxt45_layout_bounds_footprint", tiled_dxt45_layout_bounds_footprint);
+  run_isolated("tiled_dxt1_layout_bounds_footprint", tiled_dxt1_layout_bounds_footprint);
+  run_isolated("untile_tiled_dxt1_matches_documented_layout", untile_tiled_dxt1_matches_documented_layout);
   run_isolated("pinned_hoisted_gradients_payload_renders_via_interpolator", pinned_hoisted_gradients_payload_renders_via_interpolator);
-  run_isolated("pinned_shader_samples_a_real_texture", pinned_shader_samples_a_real_texture);
+  run_isolated("pinned_shader_samples_a_real_texture", [] { pinned_shader_samples_a_real_texture(false); });
   return 0;
 }

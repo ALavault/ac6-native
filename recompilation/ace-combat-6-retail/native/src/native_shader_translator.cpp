@@ -1,6 +1,7 @@
 #include "ac6/native_shader_translator.h"
 
 #include <cstddef>
+#include <cstdio>
 #include <utility>
 
 namespace ac6::native {
@@ -114,11 +115,17 @@ ShaderTranslation ShaderTranslator::translate_ucode(
 ShaderTranslation ShaderTranslator::translate_ucode_variant(
     std::uint32_t shader_type, std::uint32_t start,
     std::span<const std::uint32_t> microcode,
-    std::uint64_t modification_high_value) {
+    std::uint64_t modification_high_value,
+    std::uint32_t required_interpolator_mask) {
   const std::uint64_t digest = digest_words(microcode);
   constexpr std::uint64_t kHighMask = 0xFFFFFFFF00000000ull;
+  constexpr std::uint32_t kInterpolatorMask = 0xFFFFu;
+  // The caller may pass the full modification (high dword + the paired PS's
+  // interpolator mask); the high-dword filter below compares high dwords.
+  const std::uint64_t required_high = modification_high_value & kHighMask;
   std::lock_guard lock(registry_mutex());
   const PinnedEntry* matched = nullptr;
+  std::uint32_t matched_mask_popcount = 0u;
   for (const PinnedEntry& entry : pinned_registry()) {
     if (entry.signature.shader_type != shader_type ||
         entry.signature.start != start ||
@@ -126,7 +133,18 @@ ShaderTranslation ShaderTranslator::translate_ucode_variant(
         entry.signature.digest != digest) {
       continue;
     }
-    if ((entry.modification & kHighMask) != modification_high_value) {
+    if ((entry.modification & kHighMask) != required_high) {
+      continue;
+    }
+    const std::uint32_t declared_mask =
+        static_cast<std::uint32_t>(entry.modification & kInterpolatorMask);
+    if ((declared_mask & required_interpolator_mask) !=
+        required_interpolator_mask) {
+      continue;
+    }
+    const std::uint32_t mask_popcount =
+        __builtin_popcount(declared_mask);
+    if (matched != nullptr && mask_popcount >= matched_mask_popcount) {
       continue;
     }
     bool equal = true;
@@ -138,7 +156,7 @@ ShaderTranslation ShaderTranslator::translate_ucode_variant(
     }
     if (equal) {
       matched = &entry;
-      break;
+      matched_mask_popcount = mask_popcount;
     }
   }
   if (matched == nullptr) {
@@ -184,8 +202,14 @@ ShaderTranslation ShaderTranslator::translate_ucode(
       return result;
     }
   }
-  return {{}, {}, false, 0,
-          "no pinned fetch signature matches this microcode"};
+  char msg[128];
+  std::snprintf(msg, sizeof(msg),
+                "no pinned fetch signature matches this microcode "
+                "(type=%u start=%u dwords=%zu digest=%016llx mod=%016llx)",
+                shader_type, start, microcode.size(),
+                static_cast<unsigned long long>(digest),
+                static_cast<unsigned long long>(modification));
+  return {{}, {}, false, 0, msg};
 }
 
 ShaderTranslation ShaderTranslator::translate(
