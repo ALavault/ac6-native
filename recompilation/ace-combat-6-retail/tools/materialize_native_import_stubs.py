@@ -2093,9 +2093,20 @@ def render_body(name: str) -> str:
     status = (bytes_read == 0u && ctx.r9.u32 != 0u)
         ? 0xC0000011u   // STATUS_END_OF_FILE
         : 0u;           // STATUS_SUCCESS
-  } else if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr) {
-    std::fprintf(stderr, "[NtReadFile] invalid handle=0x%08x offset=%llu len=%u\\n",
-                 ctx.r3.u32, static_cast<unsigned long long>(offset), ctx.r9.u32);
+  } else if (std::getenv("AC6_NATIVE_IMPORT_TRACE") != nullptr ||
+             std::getenv("AC6_NATIVE_NTREADFILE_ERR") != nullptr) {
+    // r587: dedicated, rate-limited invalid-handle trace so the PAC
+    // handle (r240/r241: 0x829xxxxx) can be captured in a short run
+    // without the 73 GB IMPORT_TRACE flood. r4 = Event handle (advisor
+    // note: a non-NULL Event should be signaled on completion).
+    static std::atomic<unsigned> err_count{0u};
+    if (err_count.fetch_add(1u) < 64u) {
+      std::fprintf(stderr,
+                   "[NtReadFile] invalid handle=0x%08x r4=0x%08x offset=%llu len=%u tid=%ld\\n",
+                   ctx.r3.u32, ctx.r4.u32,
+                   static_cast<unsigned long long>(offset), ctx.r9.u32,
+                   static_cast<long>(gettid()));
+    }
   }
   if (ctx.r7.u32 != 0u) {
     PPC_STORE_U32(ctx.r7.u32 + 0u, status);
