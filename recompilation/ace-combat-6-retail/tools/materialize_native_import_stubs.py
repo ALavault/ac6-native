@@ -39,6 +39,7 @@ HEADER = """// Generated build-only import boundary; never install or track this
 #include <string>
 #include <string_view>
 #include <thread>
+#include <poll.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
@@ -753,14 +754,26 @@ inline bool is_guest_object_key(std::uint32_t key) {
   return key >= kMaxGuestHandle && key <= 0xFFFFFFF8u;
 }
 
-// Returns true when the object is signaled; a synchronization event's
-// signal is consumed, a notification event's is left set.
+// Guest dispatcher objects (KEVENT headers in guest memory, keyed by
+// their guest address) block on this shared condvar instead of spinning.
+// set_guest_object writes the SignalState AND notifies, so a waiter wakes
+// immediately.  The 4 ms fallback re-checks the SignalState in case the
+// guest wrote it directly.  A wait for an object nobody signals blocks
+// honestly -- that is a real gap in the HLE signal graph (r497/r583), not
+// something to paper over with a timeout force-signal.
+inline std::mutex g_guest_object_mutex;
+inline std::condition_variable g_guest_object_cv;
+
 inline bool wait_guest_object(uint8_t* base, std::uint32_t ptr) {
   if (!is_guest_object_key(ptr)) return false;
   const std::uint32_t state = PPC_LOAD_U32(ptr + 4u);
-  if (state == 0u) return false;
-  if (PPC_LOAD_U8(ptr + 0u) == 1u) PPC_STORE_U32(ptr + 4u, 0u);
-  return true;
+  if (state != 0u) {
+    if (PPC_LOAD_U8(ptr + 0u) == 1u) PPC_STORE_U32(ptr + 4u, 0u);
+    return true;
+  }
+  std::unique_lock<std::mutex> lock(g_guest_object_mutex);
+  g_guest_object_cv.wait_for(lock, std::chrono::milliseconds(4));
+  return false;
 }
 
 inline void set_guest_object(uint8_t* base, std::uint32_t ptr) {
@@ -771,6 +784,7 @@ inline void set_guest_object(uint8_t* base, std::uint32_t ptr) {
     const std::uint32_t state = PPC_LOAD_U32(ptr + 4u);
     if (state < 0x7FFFFFFFu) PPC_STORE_U32(ptr + 4u, state + 1u);
   }
+  g_guest_object_cv.notify_all();
 }
 
 inline void clear_guest_object(uint8_t* base, std::uint32_t ptr) {
@@ -1463,12 +1477,15 @@ def render_body(name: str) -> str:
         # per-thread contention) should actually report.
         return "  ctx.r3.u64 = 1u;\n"
     if name == "NetDll_recvfrom":
-        # r583: return SOCKET_ERROR immediately without trace output.
-        # The game polls recvfrom every frame; with AC6_NATIVE_IMPORT_TRACE
-        # the generic fallback generated 73 GB of stderr. This dedicated
-        # stub silences the per-call trace (the offline-import counter in
-        # the generic path is lost, but the shape is identical).
-        return "  ctx.r3.u64 = 0xFFFFFFFFFFFFFFFFull;\n"
+        # r583: return SOCKET_ERROR with a 1 ms kernel poll throttle.
+        # Dedicated network threads poll recvfrom in a tight loop; an
+        # instant return spins 7 threads at 100% CPU and starves the game
+        # loop (livelock).  poll(NULL,0,1) sleeps efficiently in the kernel
+        # (no busy-wait) capping the poll rate at ~1 kHz.  The game loop's
+        # own once-per-frame recvfrom adds at most 1 ms/frame.
+        return """  ::poll(nullptr, 0, 1);
+  ctx.r3.u64 = 0xFFFFFFFFFFFFFFFFull;
+"""
     if name in {"NetDll_XNetStartup", "NetDll_WSAStartup"}:
         # r167: real signature is INT (0 = success), the WinSock/XNet
         # convention, not an NTSTATUS. sub_821FCCE0/sub_821FCED0 (this
